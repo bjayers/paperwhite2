@@ -1,3 +1,82 @@
+# Paper White 2 (read this first)
+
+This repository is **bjayers/paperwhite2**, the user's fork of
+[fuddlesworth/pokebw2](https://github.com/fuddlesworth/pokebw2), used as the base of a **White 2 ROM hack named
+Paper White 2**. Everything below this section is upstream's guide for decomp contributors. Where they conflict,
+this section wins.
+
+## Two Claude sessions share this repo
+
+- A **cloud session** (the long-running one, with most of the project's history) writes code, data tools and the
+  new editor, but has no base ROM and can't build ROMs.
+- A **Remote Control session** runs on the user's Windows PC in WSL, in `~/paperwhite2`, and does everything that
+  needs the base ROM: builds, extraction, ROM tests.
+- They share work only through git. **Pull before starting, push when done**, and record results, findings and
+  next steps in `docs/paperwhite2/STATUS.md` so the other session can pick up. Create that file if it's missing.
+- Commit and push only when the user asks. Stage files by name.
+
+## What changes from upstream's rules
+
+- **Modified builds are the point.** The hack is White 2 only (`w2_us`); Black 2 isn't built or kept matching.
+  Once the hack's changes land, the ROM no longer matches the original SHA1. A plain build still byte-matches only
+  until then. Upstream's matching rules, `docs/nonmatching-functions.md` rows, `compile_all.py` before every push,
+  and "both SHA1s must match" don't apply to hack changes.
+- `configure.py` currently has only `--shift` (pads the code to test relocations) and `--bugfix`, both of which skip
+  the SHA1 checks. A normal build of modified data or code fails at the SHA1 check. A mode for hack builds (no SHA1
+  check, no padding) may be needed; see the trial below.
+- **Don't** claim or comment on upstream's `[Decomp]`/`[Names]` issues, push to upstream, or open pull requests
+  there. This fork's `origin` is bjayers/paperwhite2. To take upstream fixes, add a remote
+  (`git remote add upstream https://github.com/fuddlesworth/pokebw2`) and merge `upstream/main` when the user asks.
+- **Still applies:** the build steps in the README and `docs/building.md`; natural C and the code standards for any
+  C we write (`docs/code-standards.md`); `// BUG:` with `#ifdef BUGFIX` for fixes of original bugs; names in English;
+  never committing ROMs or anything extracted from them (`orig/`, `extract/`, `build/` are ignored, and
+  `.claude/hooks/guard.py` blocks editing them).
+- Hack features should be easy to find: put new code and data in their own files where practical, and mark changes
+  to original functions with a short `// Paper White 2:` comment saying what changed and why.
+
+## Files the user keeps locally (never commit)
+
+- `orig/baserom_w2_us.nds`: the user's own dump of their cartridge, US White 2 (check it against `w2_us.sha1`).
+- `orig/hack_w2.nds` (or a similar name; ask): the current Paper White 2 ROM, built with a fork of Frost's Gen 5
+  Editor (bjayers/FrostsGen5Editor) on top of the clean ROM, with PMC code-injection DLLs in `patches/`.
+
+## The hack so far (in the ROM, not yet in this repo)
+
+Edited with Frost's editor: wild encounter tables, NPC scripts, new NPCs, story and misc text, gym leader parties.
+It also has a season-changing code injection (day / week / month / real time / fixed season) and the
+**Following Pokémon** runtime: PMC DLLs `patches/PokewebFollowing{Field,Events,Core,Options,Battle}W2.dll` (base
+package; riding and custom Surf are dropped) with data in `following/` (`runtime-registry.bin`, `native.bin`,
+`positioning.narc`, `contextual-dialogues.narc`, `contextual-items.narc`, `interactions.bin`, `emotes.narc`,
+`effects.narc`, `install.json`) and changes to `a/0/4/7`, `a/0/4/8` and Options text in `a/0/0/2`. Its source is in
+bjayers/pokeweb-serverless, `runtime/following-pokemon/`. PMC DLLs hook fixed addresses, so they won't work once
+code moves; the plan is to port the follower runtime into this source.
+
+## Current step: the trial
+
+Decide whether to move the hack onto the decomp. Report results plainly, failures with their output.
+
+1. Check the base ROM's SHA1. If it differs, stop and tell the user.
+2. Build a matching White 2: `python3 configure.py w2_us && ninja`. Install missing prerequisites (Python 3.11+,
+   ninja, clang, llvm-objcopy); ask before using `sudo`.
+3. Make one small, visible change and build it as a modified ROM. Give the user the output path in Windows form
+   (`\\wsl$\<distro>\home\<user>\paperwhite2\build\...`) to test in an emulator and on hardware (flashcart in
+   DS mode, or TWiLight Menu++/Unlaunch in DSi mode). Note what a hack build needs from `configure.py`.
+4. Importing the hack: run the per-archive extraction scripts (`tools/data/`, `tools/text/`, see `docs/data.md`)
+   on the hack ROM's archives, compare with the clean sources in `res/`, and report which changes come through
+   cleanly, which need work (for example scripts using commands added by code injection), and what can't be
+   extracted. Don't commit to `res/` until the user decides.
+
+## After the trial (context only)
+
+- A new desktop editor that edits `res/` and builds the ROM (likely Electron + TypeScript, with three.js previews of
+  the decomp's glTF maps), with an "Import from ROM" tool so edits made in Frost meanwhile aren't lost.
+- Port the Following Pokémon runtime into this source, then add the planned dialogue, interaction and gift features
+  (bjayers/FrostsGen5Editor, `docs/following-pokemon-plans.md`).
+- Later ideas: day/night encounter tables per season, overworld (symbol) encounters, party-wide Exp. Share, a
+  shiny-making item.
+
+---
+
 # pokebw2
 
 A matching decompilation of Pokémon Black 2 and White 2 (NDS/DSi, MWCC `dsi/1.1p1`), aiming at 100% C like
