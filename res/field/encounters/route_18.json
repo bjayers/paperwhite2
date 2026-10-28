@@ -1,6 +1,6 @@
 {
     "$schema": "encounters.schema.json",
-    "all_year": {
+    "spring": {
         "rates": {
             "grass": 1,
             "dark_grass": 3,
@@ -11,123 +11,321 @@
             "rippling_fishing": 1,
             "flags": 0
         },
-        "grass": {
-            "black2": [
-                [ "SPECIES_SCRAFTY", 57, 57 ],
-                [ "SPECIES_CRUSTLE", 57, 57 ],
-                [ "SPECIES_WATCHOG", 56, 56 ],
-                [ "SPECIES_TROPIUS", 58, 58 ],
-                [ "SPECIES_SAWK", 57, 57 ],
-                [ "SPECIES_CARNIVINE", 58, 58 ],
-                [ "SPECIES_SCRAFTY", 58, 58 ],
-                [ "SPECIES_SAWK", 59, 59 ],
-                [ "SPECIES_SCRAFTY", 58, 58 ],
-                [ "SPECIES_SAWK", 59, 59 ],
-                [ "SPECIES_SCRAFTY", 58, 58 ],
-                [ "SPECIES_SAWK", 59, 59 ]
-            ],
-            "white2": [
-                [ "SPECIES_SCRAFTY", 57, 57 ],
-                [ "SPECIES_CRUSTLE", 57, 57 ],
-                [ "SPECIES_WATCHOG", 56, 56 ],
-                [ "SPECIES_TROPIUS", 58, 58 ],
-                [ "SPECIES_THROH", 57, 57 ],
-                [ "SPECIES_CARNIVINE", 58, 58 ],
-                [ "SPECIES_SCRAFTY", 58, 58 ],
-                [ "SPECIES_THROH", 59, 59 ],
-                [ "SPECIES_SCRAFTY", 58, 58 ],
-                [ "SPECIES_THROH", 59, 59 ],
-                [ "SPECIES_SCRAFTY", 58, 58 ],
-                [ "SPECIES_THROH", 59, 59 ]
-            ]
-        },
-        "dark_grass": {
-            "black2": [
-                [ "SPECIES_SCRAFTY", 65, 65 ],
-                [ "SPECIES_CRUSTLE", 65, 65 ],
-                [ "SPECIES_WATCHOG", 64, 64 ],
-                [ "SPECIES_TROPIUS", 66, 66 ],
-                [ "SPECIES_SAWK", 65, 65 ],
-                [ "SPECIES_CARNIVINE", 66, 66 ],
-                [ "SPECIES_SCRAFTY", 66, 66 ],
-                [ "SPECIES_SAWK", 67, 67 ],
-                [ "SPECIES_SCRAFTY", 66, 66 ],
-                [ "SPECIES_SAWK", 67, 67 ],
-                [ "SPECIES_SCRAFTY", 66, 66 ],
-                [ "SPECIES_SAWK", 67, 67 ]
-            ],
-            "white2": [
-                [ "SPECIES_SCRAFTY", 65, 65 ],
-                [ "SPECIES_CRUSTLE", 65, 65 ],
-                [ "SPECIES_WATCHOG", 64, 64 ],
-                [ "SPECIES_TROPIUS", 66, 66 ],
-                [ "SPECIES_THROH", 65, 65 ],
-                [ "SPECIES_CARNIVINE", 66, 66 ],
-                [ "SPECIES_SCRAFTY", 66, 66 ],
-                [ "SPECIES_THROH", 67, 67 ],
-                [ "SPECIES_SCRAFTY", 66, 66 ],
-                [ "SPECIES_THROH", 67, 67 ],
-                [ "SPECIES_SCRAFTY", 66, 66 ],
-                [ "SPECIES_THROH", 67, 67 ]
-            ]
-        },
-        "shaking_grass": {
-            "black2": [
-                [ "SPECIES_AUDINO", 56, 56 ],
-                [ "SPECIES_AUDINO", 56, 56 ],
-                [ "SPECIES_AUDINO", 57, 57 ],
-                [ "SPECIES_DUNSPARCE", 57, 57 ],
-                [ "SPECIES_AUDINO", 58, 58 ],
-                [ "SPECIES_AUDINO", 58, 58 ],
-                [ "SPECIES_AUDINO", 59, 59 ],
-                [ "SPECIES_AUDINO", 59, 59 ],
-                [ "SPECIES_AUDINO", 59, 59 ],
-                [ "SPECIES_THROH", 59, 59 ],
-                [ "SPECIES_AUDINO", 59, 59 ],
-                [ "SPECIES_THROH", 59, 59 ]
-            ],
-            "white2": [
-                [ "SPECIES_AUDINO", 56, 56 ],
-                [ "SPECIES_AUDINO", 56, 56 ],
-                [ "SPECIES_AUDINO", 57, 57 ],
-                [ "SPECIES_DUNSPARCE", 57, 57 ],
-                [ "SPECIES_AUDINO", 58, 58 ],
-                [ "SPECIES_AUDINO", 58, 58 ],
-                [ "SPECIES_AUDINO", 59, 59 ],
-                [ "SPECIES_AUDINO", 59, 59 ],
-                [ "SPECIES_AUDINO", 59, 59 ],
-                [ "SPECIES_SAWK", 59, 59 ],
-                [ "SPECIES_AUDINO", 59, 59 ],
-                [ "SPECIES_SAWK", 59, 59 ]
-            ]
-        },
+        "grass": [
+            [ "SPECIES_PELIPPER", 57, 57 ],
+            [ "SPECIES_FEAROW", 57, 57 ],
+            [ "SPECIES_UNFEZANT", 56, 56 ],
+            [ "SPECIES_TROPIUS", 58, 58 ],
+            [ "SPECIES_PELIPPER", 57, 57 ],
+            [ "SPECIES_FEAROW", 58, 58 ],
+            [ "SPECIES_WINGULL", 58, 58 ],
+            [ "SPECIES_SPEAROW", 59, 59 ],
+            [ "SPECIES_TRAPINCH", 58, 58 ],
+            [ "SPECIES_GLIGAR", 59, 59 ],
+            [ "SPECIES_CARNIVINE", 56, 59 ],
+            [ "SPECIES_EXEGGCUTE", 56, 59 ]
+        ],
+        "dark_grass": [
+            [ "SPECIES_PELIPPER", 65, 65 ],
+            [ "SPECIES_FEAROW", 65, 65 ],
+            [ "SPECIES_UNFEZANT", 64, 64 ],
+            [ "SPECIES_CARNIVINE", 64, 67 ],
+            [ "SPECIES_PELIPPER", 65, 65 ],
+            [ "SPECIES_FEAROW", 66, 66 ],
+            [ "SPECIES_WINGULL", 66, 66 ],
+            [ "SPECIES_SPEAROW", 67, 67 ],
+            [ "SPECIES_TRAPINCH", 66, 66 ],
+            [ "SPECIES_GLIGAR", 67, 67 ],
+            [ "SPECIES_TROPIUS", 66, 66 ],
+            [ "SPECIES_EXEGGCUTE", 64, 67 ]
+        ],
+        "shaking_grass": [
+            [ "SPECIES_AUDINO", 56, 56 ],
+            [ "SPECIES_TROPIUS", 56, 56 ],
+            [ "SPECIES_GLIGAR", 57, 57 ],
+            [ "SPECIES_EXEGGCUTE", 56, 64 ],
+            [ "SPECIES_TRAPINCH", 58, 58 ],
+            [ "SPECIES_TROPIUS", 58, 58 ],
+            [ "SPECIES_TROPIUS", 59, 59 ],
+            [ "SPECIES_GLIGAR", 59, 59 ],
+            [ "SPECIES_FEAROW", 64, 64 ],
+            [ "SPECIES_VIBRAVA", 64, 64 ],
+            [ "SPECIES_GLISCOR", 64, 64 ],
+            [ "SPECIES_BEHEEYEM", 64, 64 ]
+        ],
         "surf": [
+            [ "SPECIES_WINGULL", 45, 60 ],
             [ "SPECIES_FRILLISH", 45, 60 ],
-            [ "SPECIES_FRILLISH", 45, 60 ],
-            [ "SPECIES_FRILLISH", 50, 60 ],
-            [ "SPECIES_FRILLISH", 50, 60 ],
-            [ "SPECIES_FRILLISH", 50, 60 ]
+            [ "SPECIES_SHELLOS", 45, 60, 1 ],
+            [ "SPECIES_TENTACOOL", 50, 60 ],
+            [ "SPECIES_TENTACOOL", 50, 60 ]
         ],
         "rippling_surf": [
-            [ "SPECIES_ALOMOMOLA", 45, 60 ],
-            [ "SPECIES_ALOMOMOLA", 45, 60 ],
-            [ "SPECIES_ALOMOMOLA", 50, 60 ],
-            [ "SPECIES_JELLICENT", 50, 60 ],
-            [ "SPECIES_JELLICENT", 50, 60 ]
+            [ "SPECIES_PELIPPER", 45, 60 ],
+            [ "SPECIES_JELLICENT", 45, 60 ],
+            [ "SPECIES_GASTRODON", 45, 60, 1 ],
+            [ "SPECIES_GASTRODON", 45, 60, 1 ],
+            [ "SPECIES_GASTRODON", 45, 60, 1 ]
         ],
         "fishing": [
-            [ "SPECIES_FINNEON", 50, 60 ],
             [ "SPECIES_HORSEA", 50, 60 ],
-            [ "SPECIES_FINNEON", 60, 70 ],
-            [ "SPECIES_CORSOLA", 60, 70 ],
-            [ "SPECIES_CORSOLA", 60, 70 ]
+            [ "SPECIES_REMORAID", 50, 60 ],
+            [ "SPECIES_CHINCHOU", 60, 70 ],
+            [ "SPECIES_CLAMPERL", 60, 70 ],
+            [ "SPECIES_CLAMPERL", 60, 70 ]
         ],
         "rippling_fishing": [
+            [ "SPECIES_SEADRA", 50, 60 ],
+            [ "SPECIES_OCTILLERY", 50, 60 ],
+            [ "SPECIES_LANTURN", 60, 70 ],
+            [ "SPECIES_LANTURN", 60, 70 ],
+            [ "SPECIES_LANTURN", 60, 70 ]
+        ]
+    },
+    "summer": {
+        "rates": {
+            "grass": 1,
+            "dark_grass": 3,
+            "shaking_grass": 1,
+            "surf": 10,
+            "rippling_surf": 1,
+            "fishing": 50,
+            "rippling_fishing": 1,
+            "flags": 0
+        },
+        "grass": [
+            [ "SPECIES_PELIPPER", 57, 57 ],
+            [ "SPECIES_FEAROW", 57, 57 ],
+            [ "SPECIES_TROPIUS", 59, 59 ],
+            [ "SPECIES_EXEGGUTOR", 58, 58 ],
+            [ "SPECIES_PELIPPER", 57, 57 ],
+            [ "SPECIES_FEAROW", 58, 58 ],
+            [ "SPECIES_WINGULL", 58, 58 ],
+            [ "SPECIES_TRAPINCH", 59, 59 ],
+            [ "SPECIES_GLIGAR", 58, 58 ],
+            [ "SPECIES_EXEGGCUTE", 56, 59 ],
+            [ "SPECIES_CHATOT", 58, 58 ],
+            [ "SPECIES_CARNIVINE", 56, 59 ]
+        ],
+        "dark_grass": [
+            [ "SPECIES_PELIPPER", 65, 65 ],
+            [ "SPECIES_FEAROW", 65, 65 ],
+            [ "SPECIES_CARNIVINE", 64, 67 ],
+            [ "SPECIES_EXEGGUTOR", 66, 66 ],
+            [ "SPECIES_PELIPPER", 65, 65 ],
+            [ "SPECIES_FEAROW", 66, 66 ],
+            [ "SPECIES_WINGULL", 66, 66 ],
+            [ "SPECIES_TRAPINCH", 67, 67 ],
+            [ "SPECIES_GLIGAR", 66, 66 ],
+            [ "SPECIES_EXEGGCUTE", 64, 67 ],
+            [ "SPECIES_CHATOT", 66, 66 ],
+            [ "SPECIES_TROPIUS", 67, 67 ]
+        ],
+        "shaking_grass": [
+            [ "SPECIES_AUDINO", 56, 56 ],
+            [ "SPECIES_TROPIUS", 56, 56 ],
+            [ "SPECIES_CHATOT", 57, 57 ],
+            [ "SPECIES_GLIGAR", 57, 57 ],
+            [ "SPECIES_ELGYEM", 58, 58 ],
+            [ "SPECIES_TRAPINCH", 58, 58 ],
+            [ "SPECIES_EXEGGUTOR", 56, 64 ],
+            [ "SPECIES_CHATOT", 59, 59 ],
+            [ "SPECIES_FEAROW", 64, 64 ],
+            [ "SPECIES_VIBRAVA", 64, 64 ],
+            [ "SPECIES_GLISCOR", 64, 64 ],
+            [ "SPECIES_BEHEEYEM", 64, 64 ]
+        ],
+        "surf": [
+            [ "SPECIES_WINGULL", 45, 60 ],
+            [ "SPECIES_FRILLISH", 45, 60 ],
+            [ "SPECIES_SHELLOS", 45, 60 ],
+            [ "SPECIES_TENTACOOL", 50, 60 ],
+            [ "SPECIES_TENTACOOL", 50, 60 ]
+        ],
+        "rippling_surf": [
+            [ "SPECIES_PELIPPER", 45, 60 ],
+            [ "SPECIES_JELLICENT", 45, 60 ],
+            [ "SPECIES_GASTRODON", 45, 60 ],
+            [ "SPECIES_GASTRODON", 45, 60 ],
+            [ "SPECIES_GASTRODON", 45, 60 ]
+        ],
+        "fishing": [
             [ "SPECIES_HORSEA", 50, 60 ],
-            [ "SPECIES_LUMINEON", 50, 60 ],
-            [ "SPECIES_SEADRA", 60, 70 ],
-            [ "SPECIES_KINGDRA", 60, 70 ],
-            [ "SPECIES_KINGDRA", 60, 70 ]
+            [ "SPECIES_REMORAID", 50, 60 ],
+            [ "SPECIES_CHINCHOU", 60, 70 ],
+            [ "SPECIES_CLAMPERL", 60, 70 ],
+            [ "SPECIES_CLAMPERL", 60, 70 ]
+        ],
+        "rippling_fishing": [
+            [ "SPECIES_SEADRA", 50, 60 ],
+            [ "SPECIES_OCTILLERY", 50, 60 ],
+            [ "SPECIES_LANTURN", 60, 70 ],
+            [ "SPECIES_LANTURN", 60, 70 ],
+            [ "SPECIES_KINGDRA", 50, 70 ]
+        ]
+    },
+    "autumn": {
+        "rates": {
+            "grass": 1,
+            "dark_grass": 3,
+            "shaking_grass": 1,
+            "surf": 10,
+            "rippling_surf": 1,
+            "fishing": 50,
+            "rippling_fishing": 1,
+            "flags": 0
+        },
+        "grass": [
+            [ "SPECIES_PELIPPER", 57, 57 ],
+            [ "SPECIES_FEAROW", 57, 57 ],
+            [ "SPECIES_UNFEZANT", 56, 56 ],
+            [ "SPECIES_SPEAROW", 59, 59 ],
+            [ "SPECIES_PELIPPER", 57, 57 ],
+            [ "SPECIES_FEAROW", 58, 58 ],
+            [ "SPECIES_WINGULL", 58, 58 ],
+            [ "SPECIES_EXEGGUTOR", 56, 59 ],
+            [ "SPECIES_TRAPINCH", 58, 58 ],
+            [ "SPECIES_GLIGAR", 59, 59 ],
+            [ "SPECIES_EXEGGUTOR", 56, 59 ],
+            [ "SPECIES_CARNIVINE", 56, 59 ]
+        ],
+        "dark_grass": [
+            [ "SPECIES_PELIPPER", 65, 65 ],
+            [ "SPECIES_FEAROW", 65, 65 ],
+            [ "SPECIES_UNFEZANT", 64, 64 ],
+            [ "SPECIES_CARNIVINE", 64, 67 ],
+            [ "SPECIES_PELIPPER", 65, 65 ],
+            [ "SPECIES_FEAROW", 66, 66 ],
+            [ "SPECIES_WINGULL", 66, 66 ],
+            [ "SPECIES_SPEAROW", 67, 67 ],
+            [ "SPECIES_TRAPINCH", 66, 66 ],
+            [ "SPECIES_GLIGAR", 67, 67 ],
+            [ "SPECIES_TROPIUS", 66, 66 ],
+            [ "SPECIES_EXEGGUTOR", 64, 67 ]
+        ],
+        "shaking_grass": [
+            [ "SPECIES_AUDINO", 56, 56 ],
+            [ "SPECIES_TROPIUS", 56, 56 ],
+            [ "SPECIES_GLIGAR", 57, 57 ],
+            [ "SPECIES_EXEGGUTOR", 56, 64 ],
+            [ "SPECIES_TRAPINCH", 58, 58 ],
+            [ "SPECIES_TROPIUS", 58, 58 ],
+            [ "SPECIES_TROPIUS", 59, 59 ],
+            [ "SPECIES_GLIGAR", 59, 59 ],
+            [ "SPECIES_FEAROW", 64, 64 ],
+            [ "SPECIES_VIBRAVA", 64, 64 ],
+            [ "SPECIES_GLISCOR", 64, 64 ],
+            [ "SPECIES_BEHEEYEM", 64, 64 ]
+        ],
+        "surf": [
+            [ "SPECIES_WINGULL", 45, 60 ],
+            [ "SPECIES_FRILLISH", 45, 60 ],
+            [ "SPECIES_SHELLOS", 45, 60 ],
+            [ "SPECIES_TENTACOOL", 50, 60 ],
+            [ "SPECIES_TENTACOOL", 50, 60 ]
+        ],
+        "rippling_surf": [
+            [ "SPECIES_PELIPPER", 45, 60 ],
+            [ "SPECIES_JELLICENT", 45, 60 ],
+            [ "SPECIES_GASTRODON", 45, 60 ],
+            [ "SPECIES_GASTRODON", 45, 60 ],
+            [ "SPECIES_GASTRODON", 45, 60 ]
+        ],
+        "fishing": [
+            [ "SPECIES_HORSEA", 50, 60 ],
+            [ "SPECIES_REMORAID", 50, 60 ],
+            [ "SPECIES_CHINCHOU", 60, 70 ],
+            [ "SPECIES_CLAMPERL", 60, 70 ],
+            [ "SPECIES_CLAMPERL", 60, 70 ]
+        ],
+        "rippling_fishing": [
+            [ "SPECIES_SEADRA", 50, 60 ],
+            [ "SPECIES_OCTILLERY", 50, 60 ],
+            [ "SPECIES_LANTURN", 60, 70 ],
+            [ "SPECIES_CORSOLA", 50, 70 ],
+            [ "SPECIES_KINGDRA", 50, 70 ]
+        ]
+    },
+    "winter": {
+        "rates": {
+            "grass": 1,
+            "dark_grass": 3,
+            "shaking_grass": 1,
+            "surf": 10,
+            "rippling_surf": 1,
+            "fishing": 50,
+            "rippling_fishing": 1,
+            "flags": 0
+        },
+        "grass": [
+            [ "SPECIES_PELIPPER", 57, 57 ],
+            [ "SPECIES_FEAROW", 57, 57 ],
+            [ "SPECIES_UNFEZANT", 56, 56 ],
+            [ "SPECIES_EXEGGCUTE", 56, 59 ],
+            [ "SPECIES_PELIPPER", 57, 57 ],
+            [ "SPECIES_FEAROW", 58, 58 ],
+            [ "SPECIES_WINGULL", 58, 58 ],
+            [ "SPECIES_SPEAROW", 59, 59 ],
+            [ "SPECIES_TRAPINCH", 58, 58 ],
+            [ "SPECIES_GLIGAR", 59, 59 ],
+            [ "SPECIES_TROPIUS", 58, 58 ],
+            [ "SPECIES_CARNIVINE", 56, 59 ]
+        ],
+        "dark_grass": [
+            [ "SPECIES_PELIPPER", 65, 65 ],
+            [ "SPECIES_FEAROW", 65, 65 ],
+            [ "SPECIES_UNFEZANT", 64, 64 ],
+            [ "SPECIES_CARNIVINE", 64, 67 ],
+            [ "SPECIES_PELIPPER", 65, 65 ],
+            [ "SPECIES_FEAROW", 66, 66 ],
+            [ "SPECIES_WINGULL", 66, 66 ],
+            [ "SPECIES_SPEAROW", 67, 67 ],
+            [ "SPECIES_TRAPINCH", 66, 66 ],
+            [ "SPECIES_GLIGAR", 67, 67 ],
+            [ "SPECIES_TROPIUS", 66, 66 ],
+            [ "SPECIES_EXEGGCUTE", 64, 67 ]
+        ],
+        "shaking_grass": [
+            [ "SPECIES_AUDINO", 56, 56 ],
+            [ "SPECIES_TROPIUS", 56, 56 ],
+            [ "SPECIES_GLIGAR", 57, 57 ],
+            [ "SPECIES_EXEGGCUTE", 56, 64 ],
+            [ "SPECIES_TRAPINCH", 58, 58 ],
+            [ "SPECIES_TROPIUS", 58, 58 ],
+            [ "SPECIES_TROPIUS", 59, 59 ],
+            [ "SPECIES_GLIGAR", 59, 59 ],
+            [ "SPECIES_FEAROW", 64, 64 ],
+            [ "SPECIES_VIBRAVA", 64, 64 ],
+            [ "SPECIES_GLISCOR", 64, 64 ],
+            [ "SPECIES_BEHEEYEM", 64, 64 ]
+        ],
+        "surf": [
+            [ "SPECIES_WINGULL", 45, 60 ],
+            [ "SPECIES_FRILLISH", 45, 60 ],
+            [ "SPECIES_SHELLOS", 45, 60, 1 ],
+            [ "SPECIES_TENTACOOL", 50, 60 ],
+            [ "SPECIES_TENTACOOL", 50, 60 ]
+        ],
+        "rippling_surf": [
+            [ "SPECIES_PELIPPER", 45, 60 ],
+            [ "SPECIES_JELLICENT", 45, 60 ],
+            [ "SPECIES_GASTRODON", 45, 60, 1 ],
+            [ "SPECIES_GASTRODON", 45, 60, 1 ],
+            [ "SPECIES_GASTRODON", 45, 60, 1 ]
+        ],
+        "fishing": [
+            [ "SPECIES_HORSEA", 50, 60 ],
+            [ "SPECIES_REMORAID", 50, 60 ],
+            [ "SPECIES_CHINCHOU", 60, 70 ],
+            [ "SPECIES_CLAMPERL", 60, 70 ],
+            [ "SPECIES_CLAMPERL", 60, 70 ]
+        ],
+        "rippling_fishing": [
+            [ "SPECIES_SEADRA", 50, 60 ],
+            [ "SPECIES_OCTILLERY", 50, 60 ],
+            [ "SPECIES_CORSOLA", 50, 70 ],
+            [ "SPECIES_LANTURN", 60, 70 ],
+            [ "SPECIES_LANTURN", 60, 70 ]
         ]
     }
 }

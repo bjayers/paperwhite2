@@ -1,6 +1,6 @@
 {
     "$schema": "encounters.schema.json",
-    "all_year": {
+    "spring": {
         "rates": {
             "grass": 1,
             "dark_grass": 3,
@@ -12,110 +12,320 @@
             "flags": 0
         },
         "grass": [
+            [ "SPECIES_BUTTERFREE", 56, 56 ],
             [ "SPECIES_WATCHOG", 56, 56 ],
-            [ "SPECIES_HERDIER", 56, 56 ],
-            [ "SPECIES_JIGGLYPUFF", 57, 57 ],
-            [ "SPECIES_HERDIER", 57, 57 ],
+            [ "SPECIES_PIDGEOT", 57, 57 ],
+            [ "SPECIES_LILLIGANT", 57, 57 ],
+            [ "SPECIES_BUTTERFREE", 58, 58 ],
             [ "SPECIES_WATCHOG", 58, 58 ],
-            [ "SPECIES_HERDIER", 58, 58 ],
-            [ "SPECIES_WATCHOG", 59, 59 ],
-            [ "SPECIES_HERDIER", 59, 59 ],
-            [ "SPECIES_WATCHOG", 59, 59 ],
-            [ "SPECIES_HERDIER", 59, 59 ],
-            [ "SPECIES_WATCHOG", 59, 59 ],
-            [ "SPECIES_HERDIER", 59, 59 ]
+            [ "SPECIES_METAPOD", 59, 59 ],
+            [ "SPECIES_CATERPIE", 59, 59 ],
+            [ "SPECIES_PATRAT", 59, 59 ],
+            [ "SPECIES_PIDGEOT", 59, 59 ],
+            [ "SPECIES_BUNEARY", 59, 59 ],
+            [ "SPECIES_BUNEARY", 59, 59 ]
         ],
         "dark_grass": [
-            [ "SPECIES_WATCHOG", 64, 64 ],
-            [ "SPECIES_HERDIER", 64, 64 ],
-            [ "SPECIES_JIGGLYPUFF", 65, 65 ],
-            [ "SPECIES_HERDIER", 65, 65 ],
-            [ "SPECIES_WATCHOG", 66, 66 ],
-            [ "SPECIES_SCRAFTY", 66, 66 ],
-            [ "SPECIES_WATCHOG", 67, 67 ],
-            [ "SPECIES_HERDIER", 67, 67 ],
-            [ "SPECIES_WATCHOG", 67, 67 ],
-            [ "SPECIES_HERDIER", 67, 67 ],
-            [ "SPECIES_WATCHOG", 67, 67 ],
-            [ "SPECIES_SCRAFTY", 67, 67 ]
+            [ "SPECIES_PIDGEOT", 64, 64 ],
+            [ "SPECIES_LILLIGANT", 64, 64 ],
+            [ "SPECIES_WHIMSICOTT", 65, 65 ],
+            [ "SPECIES_UNFEZANT", 65, 65 ],
+            [ "SPECIES_PIDGEOT", 66, 66 ],
+            [ "SPECIES_LILLIGANT", 66, 66 ],
+            [ "SPECIES_PIDGEOTTO", 67, 67 ],
+            [ "SPECIES_PIDGEY", 67, 67 ],
+            [ "SPECIES_PETILIL", 67, 67 ],
+            [ "SPECIES_WHIMSICOTT", 67, 67 ],
+            [ "SPECIES_BUNEARY", 67, 67 ],
+            [ "SPECIES_BUNEARY", 67, 67 ]
         ],
         "shaking_grass": [
             [ "SPECIES_AUDINO", 56, 56 ],
-            [ "SPECIES_AUDINO", 56, 56 ],
-            [ "SPECIES_AUDINO", 57, 57 ],
-            [ "SPECIES_DUNSPARCE", 57, 57 ],
-            [ "SPECIES_AUDINO", 58, 58 ],
-            [ "SPECIES_AUDINO", 58, 58 ],
-            [ "SPECIES_AUDINO", 59, 59 ],
-            [ "SPECIES_AUDINO", 59, 59 ],
-            [ "SPECIES_STOUTLAND", 59, 59 ],
-            [ "SPECIES_WIGGLYTUFF", 59, 59 ],
-            [ "SPECIES_STOUTLAND", 59, 59 ],
-            [ "SPECIES_WIGGLYTUFF", 59, 59 ]
+            [ "SPECIES_BUNEARY", 56, 56 ],
+            [ "SPECIES_BUNEARY", 57, 57 ],
+            [ "SPECIES_UNFEZANT", 62, 62 ],
+            [ "SPECIES_LILLIGANT", 63, 63 ],
+            [ "SPECIES_WHIMSICOTT", 63, 63 ],
+            [ "SPECIES_BUNEARY", 59, 59 ],
+            [ "SPECIES_UNFEZANT", 64, 64 ],
+            [ "SPECIES_UNFEZANT", 64, 64 ],
+            [ "SPECIES_LILLIGANT", 64, 64 ],
+            [ "SPECIES_LOPUNNY", 64, 64 ],
+            [ "SPECIES_LOPUNNY", 64, 64 ]
         ],
-        "surf": {
-            "black2": [
-                [ "SPECIES_BASCULIN", 45, 60 ],
-                [ "SPECIES_BASCULIN", 45, 60 ],
-                [ "SPECIES_BASCULIN", 50, 60 ],
-                [ "SPECIES_BASCULIN", 50, 60 ],
-                [ "SPECIES_BASCULIN", 50, 60 ]
-            ],
-            "white2": [
-                [ "SPECIES_BASCULIN", 45, 60, 1 ],
-                [ "SPECIES_BASCULIN", 45, 60, 1 ],
-                [ "SPECIES_BASCULIN", 50, 60, 1 ],
-                [ "SPECIES_BASCULIN", 50, 60, 1 ],
-                [ "SPECIES_BASCULIN", 50, 60, 1 ]
-            ]
+        "surf": [
+            [ "SPECIES_TYMPOLE", 45, 60 ],
+            [ "SPECIES_MARILL", 45, 60 ],
+            [ "SPECIES_PSYDUCK", 50, 60 ],
+            [ "SPECIES_BASCULIN", 50, 60, 1 ],
+            [ "SPECIES_BASCULIN", 50, 60, 1 ]
+        ],
+        "rippling_surf": [
+            [ "SPECIES_PALPITOAD", 45, 60 ],
+            [ "SPECIES_AZUMARILL", 45, 60 ],
+            [ "SPECIES_BASCULIN", 50, 60, 1 ],
+            [ "SPECIES_BASCULIN", 50, 60, 1 ],
+            [ "SPECIES_BASCULIN", 50, 60, 1 ]
+        ],
+        "fishing": [
+            [ "SPECIES_MAGIKARP", 40, 60 ],
+            [ "SPECIES_GOLDEEN", 40, 60 ],
+            [ "SPECIES_BARBOACH", 50, 70 ],
+            [ "SPECIES_CORPHISH", 50, 70 ],
+            [ "SPECIES_CORPHISH", 50, 70 ]
+        ],
+        "rippling_fishing": [
+            [ "SPECIES_SEAKING", 40, 60 ],
+            [ "SPECIES_WHISCASH", 40, 60 ],
+            [ "SPECIES_CRAWDAUNT", 50, 70 ],
+            [ "SPECIES_BASCULIN", 50, 70, 1 ],
+            [ "SPECIES_BASCULIN", 50, 70, 1 ]
+        ]
+    },
+    "summer": {
+        "rates": {
+            "grass": 1,
+            "dark_grass": 3,
+            "shaking_grass": 1,
+            "surf": 10,
+            "rippling_surf": 1,
+            "fishing": 50,
+            "rippling_fishing": 1,
+            "flags": 0
         },
-        "rippling_surf": {
-            "black2": [
-                [ "SPECIES_BASCULIN", 45, 60, 1 ],
-                [ "SPECIES_BASCULIN", 45, 60, 1 ],
-                [ "SPECIES_BASCULIN", 50, 60, 1 ],
-                [ "SPECIES_BASCULIN", 50, 60, 1 ],
-                [ "SPECIES_BASCULIN", 50, 60, 1 ]
-            ],
-            "white2": [
-                [ "SPECIES_BASCULIN", 45, 60 ],
-                [ "SPECIES_BASCULIN", 45, 60 ],
-                [ "SPECIES_BASCULIN", 50, 60 ],
-                [ "SPECIES_BASCULIN", 50, 60 ],
-                [ "SPECIES_BASCULIN", 50, 60 ]
-            ]
+        "grass": [
+            [ "SPECIES_BUTTERFREE", 56, 56 ],
+            [ "SPECIES_WATCHOG", 56, 56 ],
+            [ "SPECIES_PIDGEOT", 57, 57 ],
+            [ "SPECIES_LILLIGANT", 57, 57 ],
+            [ "SPECIES_BUTTERFREE", 58, 58 ],
+            [ "SPECIES_WATCHOG", 58, 58 ],
+            [ "SPECIES_METAPOD", 59, 59 ],
+            [ "SPECIES_CATERPIE", 59, 59 ],
+            [ "SPECIES_PATRAT", 59, 59 ],
+            [ "SPECIES_PIDGEOT", 59, 59 ],
+            [ "SPECIES_BUNEARY", 59, 59 ],
+            [ "SPECIES_BUNEARY", 59, 59 ]
+        ],
+        "dark_grass": [
+            [ "SPECIES_PIDGEOT", 64, 64 ],
+            [ "SPECIES_LILLIGANT", 64, 64 ],
+            [ "SPECIES_WHIMSICOTT", 65, 65 ],
+            [ "SPECIES_UNFEZANT", 65, 65 ],
+            [ "SPECIES_PIDGEOT", 66, 66 ],
+            [ "SPECIES_LILLIGANT", 66, 66 ],
+            [ "SPECIES_PIDGEOTTO", 67, 67 ],
+            [ "SPECIES_PIDGEY", 67, 67 ],
+            [ "SPECIES_PETILIL", 67, 67 ],
+            [ "SPECIES_WHIMSICOTT", 67, 67 ],
+            [ "SPECIES_BUNEARY", 67, 67 ],
+            [ "SPECIES_BUNEARY", 67, 67 ]
+        ],
+        "shaking_grass": [
+            [ "SPECIES_AUDINO", 56, 56 ],
+            [ "SPECIES_BUNEARY", 56, 56 ],
+            [ "SPECIES_BUNEARY", 57, 57 ],
+            [ "SPECIES_UNFEZANT", 62, 62 ],
+            [ "SPECIES_LILLIGANT", 63, 63 ],
+            [ "SPECIES_WHIMSICOTT", 63, 63 ],
+            [ "SPECIES_BUNEARY", 59, 59 ],
+            [ "SPECIES_UNFEZANT", 64, 64 ],
+            [ "SPECIES_UNFEZANT", 64, 64 ],
+            [ "SPECIES_LILLIGANT", 64, 64 ],
+            [ "SPECIES_LOPUNNY", 64, 64 ],
+            [ "SPECIES_LOPUNNY", 64, 64 ]
+        ],
+        "surf": [
+            [ "SPECIES_TYMPOLE", 45, 60 ],
+            [ "SPECIES_MARILL", 45, 60 ],
+            [ "SPECIES_PSYDUCK", 50, 60 ],
+            [ "SPECIES_BASCULIN", 50, 60, 1 ],
+            [ "SPECIES_BASCULIN", 50, 60, 1 ]
+        ],
+        "rippling_surf": [
+            [ "SPECIES_PALPITOAD", 45, 60 ],
+            [ "SPECIES_AZUMARILL", 45, 60 ],
+            [ "SPECIES_BASCULIN", 50, 60, 1 ],
+            [ "SPECIES_BASCULIN", 50, 60, 1 ],
+            [ "SPECIES_BASCULIN", 50, 60, 1 ]
+        ],
+        "fishing": [
+            [ "SPECIES_MAGIKARP", 40, 60 ],
+            [ "SPECIES_GOLDEEN", 40, 60 ],
+            [ "SPECIES_BARBOACH", 50, 70 ],
+            [ "SPECIES_CORPHISH", 50, 70 ],
+            [ "SPECIES_CORPHISH", 50, 70 ]
+        ],
+        "rippling_fishing": [
+            [ "SPECIES_SEAKING", 40, 60 ],
+            [ "SPECIES_WHISCASH", 40, 60 ],
+            [ "SPECIES_CRAWDAUNT", 50, 70 ],
+            [ "SPECIES_BASCULIN", 50, 70, 1 ],
+            [ "SPECIES_BASCULIN", 50, 70, 1 ]
+        ]
+    },
+    "autumn": {
+        "rates": {
+            "grass": 1,
+            "dark_grass": 3,
+            "shaking_grass": 1,
+            "surf": 10,
+            "rippling_surf": 1,
+            "fishing": 50,
+            "rippling_fishing": 1,
+            "flags": 0
         },
-        "fishing": {
-            "black2": [
-                [ "SPECIES_BASCULIN", 40, 60 ],
-                [ "SPECIES_BASCULIN", 40, 60 ],
-                [ "SPECIES_BASCULIN", 50, 70 ],
-                [ "SPECIES_FEEBAS", 50, 70 ],
-                [ "SPECIES_FEEBAS", 50, 70 ]
-            ],
-            "white2": [
-                [ "SPECIES_BASCULIN", 40, 60, 1 ],
-                [ "SPECIES_BASCULIN", 40, 60, 1 ],
-                [ "SPECIES_BASCULIN", 50, 70, 1 ],
-                [ "SPECIES_FEEBAS", 50, 70 ],
-                [ "SPECIES_FEEBAS", 50, 70 ]
-            ]
+        "grass": [
+            [ "SPECIES_BUTTERFREE", 56, 56 ],
+            [ "SPECIES_WATCHOG", 56, 56 ],
+            [ "SPECIES_PIDGEOT", 57, 57 ],
+            [ "SPECIES_LILLIGANT", 57, 57 ],
+            [ "SPECIES_BUTTERFREE", 58, 58 ],
+            [ "SPECIES_WATCHOG", 58, 58 ],
+            [ "SPECIES_METAPOD", 59, 59 ],
+            [ "SPECIES_CATERPIE", 59, 59 ],
+            [ "SPECIES_PATRAT", 59, 59 ],
+            [ "SPECIES_PIDGEOT", 59, 59 ],
+            [ "SPECIES_BUNEARY", 59, 59 ],
+            [ "SPECIES_BUNEARY", 59, 59 ]
+        ],
+        "dark_grass": [
+            [ "SPECIES_PIDGEOT", 64, 64 ],
+            [ "SPECIES_LILLIGANT", 64, 64 ],
+            [ "SPECIES_WHIMSICOTT", 65, 65 ],
+            [ "SPECIES_UNFEZANT", 65, 65 ],
+            [ "SPECIES_PIDGEOT", 66, 66 ],
+            [ "SPECIES_LILLIGANT", 66, 66 ],
+            [ "SPECIES_PIDGEOTTO", 67, 67 ],
+            [ "SPECIES_PIDGEY", 67, 67 ],
+            [ "SPECIES_PETILIL", 67, 67 ],
+            [ "SPECIES_WHIMSICOTT", 67, 67 ],
+            [ "SPECIES_BUNEARY", 67, 67 ],
+            [ "SPECIES_BUNEARY", 67, 67 ]
+        ],
+        "shaking_grass": [
+            [ "SPECIES_AUDINO", 56, 56 ],
+            [ "SPECIES_BUNEARY", 56, 56 ],
+            [ "SPECIES_BUNEARY", 57, 57 ],
+            [ "SPECIES_UNFEZANT", 62, 62 ],
+            [ "SPECIES_LILLIGANT", 63, 63 ],
+            [ "SPECIES_WHIMSICOTT", 63, 63 ],
+            [ "SPECIES_BUNEARY", 59, 59 ],
+            [ "SPECIES_UNFEZANT", 64, 64 ],
+            [ "SPECIES_UNFEZANT", 64, 64 ],
+            [ "SPECIES_LILLIGANT", 64, 64 ],
+            [ "SPECIES_LOPUNNY", 64, 64 ],
+            [ "SPECIES_LOPUNNY", 64, 64 ]
+        ],
+        "surf": [
+            [ "SPECIES_TYMPOLE", 45, 60 ],
+            [ "SPECIES_MARILL", 45, 60 ],
+            [ "SPECIES_PSYDUCK", 50, 60 ],
+            [ "SPECIES_BASCULIN", 50, 60, 1 ],
+            [ "SPECIES_BASCULIN", 50, 60, 1 ]
+        ],
+        "rippling_surf": [
+            [ "SPECIES_PALPITOAD", 45, 60 ],
+            [ "SPECIES_AZUMARILL", 45, 60 ],
+            [ "SPECIES_BASCULIN", 50, 60, 1 ],
+            [ "SPECIES_BASCULIN", 50, 60, 1 ],
+            [ "SPECIES_BASCULIN", 50, 60, 1 ]
+        ],
+        "fishing": [
+            [ "SPECIES_MAGIKARP", 40, 60 ],
+            [ "SPECIES_GOLDEEN", 40, 60 ],
+            [ "SPECIES_BARBOACH", 50, 70 ],
+            [ "SPECIES_CORPHISH", 50, 70 ],
+            [ "SPECIES_CORPHISH", 50, 70 ]
+        ],
+        "rippling_fishing": [
+            [ "SPECIES_SEAKING", 40, 60 ],
+            [ "SPECIES_WHISCASH", 40, 60 ],
+            [ "SPECIES_CRAWDAUNT", 50, 70 ],
+            [ "SPECIES_BASCULIN", 50, 70, 1 ],
+            [ "SPECIES_BASCULIN", 50, 70, 1 ]
+        ]
+    },
+    "winter": {
+        "rates": {
+            "grass": 1,
+            "dark_grass": 3,
+            "shaking_grass": 1,
+            "surf": 10,
+            "rippling_surf": 1,
+            "fishing": 50,
+            "rippling_fishing": 1,
+            "flags": 0
         },
-        "rippling_fishing": {
-            "black2": [
-                [ "SPECIES_FEEBAS", 40, 60 ],
-                [ "SPECIES_BASCULIN", 40, 60, 1 ],
-                [ "SPECIES_FEEBAS", 50, 70 ],
-                [ "SPECIES_MILOTIC", 50, 70 ],
-                [ "SPECIES_MILOTIC", 50, 70 ]
-            ],
-            "white2": [
-                [ "SPECIES_FEEBAS", 40, 60 ],
-                [ "SPECIES_BASCULIN", 40, 60 ],
-                [ "SPECIES_FEEBAS", 50, 70 ],
-                [ "SPECIES_MILOTIC", 50, 70 ],
-                [ "SPECIES_MILOTIC", 50, 70 ]
-            ]
-        }
+        "grass": [
+            [ "SPECIES_BUTTERFREE", 56, 56 ],
+            [ "SPECIES_WATCHOG", 56, 56 ],
+            [ "SPECIES_PIDGEOT", 57, 57 ],
+            [ "SPECIES_LILLIGANT", 57, 57 ],
+            [ "SPECIES_BUTTERFREE", 58, 58 ],
+            [ "SPECIES_WATCHOG", 58, 58 ],
+            [ "SPECIES_METAPOD", 59, 59 ],
+            [ "SPECIES_CATERPIE", 59, 59 ],
+            [ "SPECIES_PATRAT", 59, 59 ],
+            [ "SPECIES_PIDGEOT", 59, 59 ],
+            [ "SPECIES_BUNEARY", 59, 59 ],
+            [ "SPECIES_BUNEARY", 59, 59 ]
+        ],
+        "dark_grass": [
+            [ "SPECIES_PIDGEOT", 64, 64 ],
+            [ "SPECIES_LILLIGANT", 64, 64 ],
+            [ "SPECIES_WHIMSICOTT", 65, 65 ],
+            [ "SPECIES_UNFEZANT", 65, 65 ],
+            [ "SPECIES_PIDGEOT", 66, 66 ],
+            [ "SPECIES_LILLIGANT", 66, 66 ],
+            [ "SPECIES_PIDGEOTTO", 67, 67 ],
+            [ "SPECIES_PIDGEY", 67, 67 ],
+            [ "SPECIES_PETILIL", 67, 67 ],
+            [ "SPECIES_WHIMSICOTT", 67, 67 ],
+            [ "SPECIES_BUNEARY", 67, 67 ],
+            [ "SPECIES_BUNEARY", 67, 67 ]
+        ],
+        "shaking_grass": [
+            [ "SPECIES_AUDINO", 56, 56 ],
+            [ "SPECIES_BUNEARY", 56, 56 ],
+            [ "SPECIES_BUNEARY", 57, 57 ],
+            [ "SPECIES_UNFEZANT", 62, 62 ],
+            [ "SPECIES_LILLIGANT", 63, 63 ],
+            [ "SPECIES_WHIMSICOTT", 63, 63 ],
+            [ "SPECIES_BUNEARY", 59, 59 ],
+            [ "SPECIES_UNFEZANT", 64, 64 ],
+            [ "SPECIES_UNFEZANT", 64, 64 ],
+            [ "SPECIES_LILLIGANT", 64, 64 ],
+            [ "SPECIES_LOPUNNY", 64, 64 ],
+            [ "SPECIES_LOPUNNY", 64, 64 ]
+        ],
+        "surf": [
+            [ "SPECIES_TYMPOLE", 45, 60 ],
+            [ "SPECIES_MARILL", 45, 60 ],
+            [ "SPECIES_PSYDUCK", 50, 60 ],
+            [ "SPECIES_BASCULIN", 50, 60, 1 ],
+            [ "SPECIES_BASCULIN", 50, 60, 1 ]
+        ],
+        "rippling_surf": [
+            [ "SPECIES_PALPITOAD", 45, 60 ],
+            [ "SPECIES_AZUMARILL", 45, 60 ],
+            [ "SPECIES_BASCULIN", 50, 60, 1 ],
+            [ "SPECIES_BASCULIN", 50, 60, 1 ],
+            [ "SPECIES_BASCULIN", 50, 60, 1 ]
+        ],
+        "fishing": [
+            [ "SPECIES_MAGIKARP", 40, 60 ],
+            [ "SPECIES_GOLDEEN", 40, 60 ],
+            [ "SPECIES_BARBOACH", 50, 70 ],
+            [ "SPECIES_CORPHISH", 50, 70 ],
+            [ "SPECIES_CORPHISH", 50, 70 ]
+        ],
+        "rippling_fishing": [
+            [ "SPECIES_SEAKING", 40, 60 ],
+            [ "SPECIES_WHISCASH", 40, 60 ],
+            [ "SPECIES_CRAWDAUNT", 50, 70 ],
+            [ "SPECIES_BASCULIN", 50, 70, 1 ],
+            [ "SPECIES_BASCULIN", 50, 70, 1 ]
+        ]
     }
 }

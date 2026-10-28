@@ -34,12 +34,14 @@ VirbankCity_Text_MedalsReallyPrettyIsnt = My Medal's really pretty, isn't it?!{b
 VirbankCity_Text_FirstTurnCGears = First, turn the C-Gear's power on!{be01}\nThen tap {ff00:1}CONNECTED{ff00:0}\nin the center of the C-Gear screen{be00}\nto check the Tag Log!
 VirbankCity_Text_FirstTurnCGears_2 = First, turn the C-Gear's power on!{be01}\nThen tap {ff00:1}WIRELESS{ff00:0}.\nFinally, tap {ff00:1}ENTRALINK{ff00:0}!{be00}\nIf you have some time, give it a try!{be00}\nIt's amazing!
 VirbankCity_Text_OneTwoThreeFour = One, two, three, four, five, six!{be01}\nThe number of Poké Balls\nyou can put in your belt is six.{be00}\nSo you can take six Pokémon with you!
-VirbankCity_Text_RoxieThoughtMoviePretty = Roxie: I thought your movie\nwas pretty good.{be01}
-VirbankCity_Text_PopRoxieSawMovie = Pop Roxie: So you saw it...{be01}\nThat movie was...{be01}\nNo, it wasn't the movie. It was me.\nI was so excited that I didn't really{be00}\nbecome Riolu-Man!{be01}\nActing like that won't\nthrill or excite anyone...{be01}
+VirbankCity_Text_RoxieOhYoureBack = Roxie: Oh, you're back.\nSo, uh...{be01}\nHow was your movie?{be01}
+VirbankCity_Text_PopRoxieMovieNo = Pop Roxie: The movie was...{be01}\nNo, it wasn't the movie. It was me.\nI was so excited that I didn't really{be00}\nbecome Riolu-Man!{be01}\nActing like that won't\nthrill or excite anyone...{be01}
 VirbankCity_Text_RoxieCmonDontGet = Roxie: C'mon!\nDon't get down!{be01}\nYou can keep trying while\nyou continue on as captain!{be01}\nAs long as you don't cause anyone\ntrouble, I won't get mad.{be01}\nI don't know how the Pokéstar Studios\npeople feel about that, though!{be01}
 VirbankCity_Text_OhDidHearUs = Oh...\nDid you hear us?{be01}\nWell, it looks like everyone\nfrom Team Plasma got away...{be01}\nI don't feel really good about it,\nbut at least they're gone.{be01}\nOh! There was a lot of ruckus, but\nyou can sail to Castelia City now!{be01}
 VirbankCity_Text_PopRoxieOkGuess = Pop Roxie: OK! I guess\nI'll do my best as a captain!{be01}\nI'll excite and thrill everyone\nby barreling through rough waves!{be01}
 VirbankCity_Text_VirbankCityCityFalling = This is Virbank City!\nCity of falling fog and rising stars!
 VirbankCity_Text_PokestarStudiosAheadBringing = Pokéstar Studios Ahead\nBringing a new golden age of cinema!
 VirbankCity_Text_VirbankCityPokemonGym = Virbank City Pokémon Gym\nLeader: Roxie{be00}\nPoison days, poison on the stage!
-\pad{ca}
+VirbankCity_Text_PiCooCoo = Pi-coo... coo...
+VirbankCity_Text_PeskyRatattaGettingInto = Pesky Ratatta getting into\nthe shipments again...{be01}\nI'll get in trouble again if it\nruins anything...
+VirbankCity_Text_DroppedWhatDugOut = It dropped what it dug\nout of the trash...\x{ffff}

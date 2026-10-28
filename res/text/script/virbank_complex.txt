@@ -6,4 +6,4 @@ VirbankComplex_Text_OhSeriouslyMustKidding_2 = Oh! Seriously? You must be kiddin
 VirbankComplex_Text_SeeItsGoodDeal = See? It's a good deal, isn't it?\nWe can trade again tomorrow if you want!
 VirbankComplex_Text_OhSeriouslyMustKidding_3 = Oh! Seriously? You must be kidding.\nYou have way too many Great Balls!
 VirbankComplex_Text_GaveExchange = Gave the {0109:0} in exchange for\nthe {0109:2}!
-\pad{ae}
+VirbankComplex_Text_SomePunkPurrloinStole = Some punk Purrloin stole my\nsandwich and ran off.{be01}\nHow am I supposed to work\non an empty stomach?\x{ffff}

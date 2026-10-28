@@ -47,8 +47,8 @@
                 "height": 0
             },
             "grid": {
-                "x": 5,
-                "z": 12,
+                "x": 1,
+                "z": 5,
                 "y": 0
             }
         },
@@ -207,19 +207,19 @@
         {
             "id": 9,
             "model": "OBJ_CODE_SCHOOL_KID_F",
-            "movement": 15,
+            "movement": 7,
             "type": 0,
             "flag": 0,
             "script": 4,
-            "direction": "DIR_DOWN",
+            "direction": "DIR_RIGHT",
             "params": [ 0, 0, 0 ],
             "area": {
                 "width": 0,
                 "height": 0
             },
             "grid": {
-                "x": 9,
-                "z": 12,
+                "x": 2,
+                "z": 16,
                 "y": 0
             }
         },
@@ -260,6 +260,44 @@
                 "z": 12,
                 "y": 0
             }
+        },
+        {
+            "id": 12,
+            "model": "OBJ_CODE_76",
+            "movement": 0,
+            "type": 0,
+            "flag": "EVENT_FLAG_DAILY_0x0af0",
+            "script": 10851,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 5,
+                "z": 12,
+                "y": 0
+            }
+        },
+        {
+            "id": 13,
+            "model": "OBJ_CODE_56",
+            "movement": 0,
+            "type": 0,
+            "flag": "EVENT_FLAG_TRAINER_TEAM_PLASMA_GRUNT_3",
+            "script": 6,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 10,
+                "z": 11,
+                "y": 0
+            }
         }
     ],
     "warps": [
@@ -281,8 +319,12 @@
     "triggers": [],
     "init_scripts": [
         {
-            "type": 4,
-            "script": 10635
+            "type": 2,
+            "script": 2102
+        },
+        {
+            "type": 3,
+            "script": 2104
         },
         {
             "type": 4,
@@ -290,19 +332,15 @@
         },
         {
             "type": 3,
-            "script": 10636
-        },
-        {
-            "type": 3,
             "script": 10396
         },
         {
-            "type": 2,
-            "script": 2102
+            "type": 4,
+            "script": 10635
         },
         {
             "type": 3,
-            "script": 2104
+            "script": 10636
         }
     ]
 }

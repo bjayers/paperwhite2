@@ -2,7 +2,7 @@
     "$schema": "../item.schema.json",
     "name": "Chesto Berry",
     "name_plural": "Chesto Berries",
-    "description": "If held by a Pokémon,\nit recovers from sleep.",
+    "description": "If held by a Pokémon,\nit recovers from sleep.\nHas a dry flavor.",
     "price": 2,
     "hold_effect": "HOLD_EFFECT_SLP_RESTORE",
     "hold_param": 0,

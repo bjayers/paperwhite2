@@ -1,6 +1,6 @@
 {
     "$schema": "encounters.schema.json",
-    "all_year": {
+    "spring": {
         "rates": {
             "grass": 0,
             "dark_grass": 3,
@@ -13,18 +13,114 @@
         },
         "grass": [],
         "dark_grass": [
-            [ "SPECIES_RATICATE", 64, 64 ],
-            [ "SPECIES_GOLBAT", 64, 64 ],
-            [ "SPECIES_WATCHOG", 65, 65 ],
-            [ "SPECIES_JIGGLYPUFF", 65, 65 ],
-            [ "SPECIES_MUNNA", 65, 65 ],
-            [ "SPECIES_MUNNA", 66, 66 ],
-            [ "SPECIES_LIEPARD", 65, 65 ],
-            [ "SPECIES_LIEPARD", 66, 66 ],
-            [ "SPECIES_RATICATE", 67, 67 ],
-            [ "SPECIES_GOLBAT", 67, 67 ],
-            [ "SPECIES_RATICATE", 67, 67 ],
-            [ "SPECIES_GOLBAT", 67, 67 ]
+            [ "SPECIES_HYPNO", 64, 64 ],
+            [ "SPECIES_ALAKAZAM", 64, 64 ],
+            [ "SPECIES_HYPNO", 65, 65 ],
+            [ "SPECIES_ALAKAZAM", 65, 65 ],
+            [ "SPECIES_HYPNO", 65, 65 ],
+            [ "SPECIES_ALAKAZAM", 66, 66 ],
+            [ "SPECIES_DROWZEE", 65, 65 ],
+            [ "SPECIES_KADABRA", 66, 66 ],
+            [ "SPECIES_ABRA", 67, 67 ],
+            [ "SPECIES_MISDREAVUS", 67, 67 ],
+            [ "SPECIES_MUNNA", 67, 67 ],
+            [ "SPECIES_SOLOSIS", 67, 67 ]
+        ],
+        "shaking_grass": [],
+        "surf": [],
+        "rippling_surf": [],
+        "fishing": [],
+        "rippling_fishing": []
+    },
+    "summer": {
+        "rates": {
+            "grass": 0,
+            "dark_grass": 3,
+            "shaking_grass": 0,
+            "surf": 0,
+            "rippling_surf": 0,
+            "fishing": 0,
+            "rippling_fishing": 0,
+            "flags": 0
+        },
+        "grass": [],
+        "dark_grass": [
+            [ "SPECIES_HYPNO", 64, 64 ],
+            [ "SPECIES_ALAKAZAM", 64, 64 ],
+            [ "SPECIES_HYPNO", 65, 65 ],
+            [ "SPECIES_ALAKAZAM", 65, 65 ],
+            [ "SPECIES_HYPNO", 65, 65 ],
+            [ "SPECIES_ALAKAZAM", 66, 66 ],
+            [ "SPECIES_DROWZEE", 65, 65 ],
+            [ "SPECIES_KADABRA", 66, 66 ],
+            [ "SPECIES_ABRA", 67, 67 ],
+            [ "SPECIES_MISDREAVUS", 67, 67 ],
+            [ "SPECIES_MUNNA", 67, 67 ],
+            [ "SPECIES_SOLOSIS", 67, 67 ]
+        ],
+        "shaking_grass": [],
+        "surf": [],
+        "rippling_surf": [],
+        "fishing": [],
+        "rippling_fishing": []
+    },
+    "autumn": {
+        "rates": {
+            "grass": 0,
+            "dark_grass": 3,
+            "shaking_grass": 0,
+            "surf": 0,
+            "rippling_surf": 0,
+            "fishing": 0,
+            "rippling_fishing": 0,
+            "flags": 0
+        },
+        "grass": [],
+        "dark_grass": [
+            [ "SPECIES_HYPNO", 64, 64 ],
+            [ "SPECIES_ALAKAZAM", 64, 64 ],
+            [ "SPECIES_HYPNO", 65, 65 ],
+            [ "SPECIES_ALAKAZAM", 65, 65 ],
+            [ "SPECIES_HYPNO", 65, 65 ],
+            [ "SPECIES_ALAKAZAM", 66, 66 ],
+            [ "SPECIES_DROWZEE", 65, 65 ],
+            [ "SPECIES_KADABRA", 66, 66 ],
+            [ "SPECIES_ABRA", 67, 67 ],
+            [ "SPECIES_MISDREAVUS", 67, 67 ],
+            [ "SPECIES_MUNNA", 67, 67 ],
+            [ "SPECIES_SOLOSIS", 67, 67 ]
+        ],
+        "shaking_grass": [],
+        "surf": [],
+        "rippling_surf": [],
+        "fishing": [],
+        "rippling_fishing": []
+    },
+    "winter": {
+        "rates": {
+            "grass": 0,
+            "dark_grass": 3,
+            "shaking_grass": 0,
+            "surf": 0,
+            "rippling_surf": 0,
+            "fishing": 0,
+            "rippling_fishing": 0,
+            "flags": 0
+        },
+        "grass": [],
+        "dark_grass": [
+            [ "SPECIES_HYPNO", 64, 64 ],
+            [ "SPECIES_ALAKAZAM", 64, 64 ],
+            [ "SPECIES_HYPNO", 65, 65 ],
+            [ "SPECIES_ALAKAZAM", 65, 65 ],
+            [ "SPECIES_HYPNO", 65, 65 ],
+            [ "SPECIES_ALAKAZAM", 66, 66 ],
+            [ "SPECIES_DROWZEE", 65, 65 ],
+            [ "SPECIES_KADABRA", 66, 66 ],
+            [ "SPECIES_ABRA", 67, 67 ],
+            [ "SPECIES_MISDREAVUS", 67, 67 ],
+            [ "SPECIES_MUNNA", 67, 67 ],
+            [ "SPECIES_SOLOSIS", 67, 67 ]
         ],
         "shaking_grass": [],
         "surf": [],

@@ -116,7 +116,7 @@ Script_2:
     ActorsPauseAll
     SEPlay SEQ_SE_MESSAGE
     ActorSetEyeToEye
-    // "Normal-type Pokémon are weak\nto Fighting-type Pokémon.[f000]븁\u0000\nBut the only Pokémon around here like\nthat are the Riolu in Floccesy Ranch...[f000]븁\u0000\nIf you're going to battle with a Fire-,\nWater-, or Grass-type Pokémon,[f000]븀\u0000\nit'll be a simple test of strength!"
+    // "Normal-type Pokémon are weak\nto Fighting-type Pokémon.[f000]븁\u0000\nBut the only Pokémon around here like\nthat are the Riolu in Floccesy Ranch...[f000]븁\u0000\n...and they only train there\nin Summer and Autumn.[f000]븁\u0000\nIf you're going to battle with a Fire-,\nWater-, or Grass-type Pokémon,[f000]븀\u0000\nit'll be a simple test of strength!"
     ParentActorMsg MSGFILE_SCRIPT, AspertiaCity9_Text_NormalTypePokemonWeak, 0, 0
     LastKeyWait
     ActorMsgClose

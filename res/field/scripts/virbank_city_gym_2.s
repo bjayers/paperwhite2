@@ -10,11 +10,13 @@
     ScriptEntry Script_7
     ScriptEntry Script_8
     ScriptEntry Script_9
+    ScriptEntry Script_10
+    ScriptEntry Script_11
+    ScriptEntry Script_12
+    ScriptEntry Script_13
+    ScriptEntry Script_14
+    ScriptEntry Script_15
     ScriptEntriesEnd
-    WorkSetConst 0x8020, 0
-    WorkSetConst 0x8021, 0
-    WorkSetConst 0x8022, 0
-    WorkSetConst 0x8023, 0
 
 Script_1:
     TrainerCardHasBadge 0x8008, 1
@@ -103,13 +105,13 @@ Script_3:
 L_0157:
     SEPlay SEQ_SE_MESSAGE
     ActorSetEyeToEye
-    VMCall L_0478
+    VMCall Script_10
     TrainerCardHasBadge 0x8008, 1
     VMStackPush 0x8008
     VMStackPushConst 0
     VMStackCmp CMP_EQ
     VMJumpIf CMP_STACK, L_0188
-    VMCall L_01D3
+    VMCall Script_11
     VMJump L_01CD
 
 L_0188:
@@ -136,8 +138,273 @@ L_01CD:
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
+    .byte 0x00
 
-L_01D3:
+Script_4:
+    ActorsPauseAll
+    SEPlay SEQ_SE_MESSAGE
+    ActorSetEyeToEye
+    // "Your Pokémon WANTED this win![f000]븁\u0000\nKeep on going on like this,\nand do all sorts of stuff!"
+    ParentActorMsg MSGFILE_SCRIPT, VirbankCityGym2_Text_PokemonWantedWinKeep, 0, 0
+    LastKeyWait
+    ActorMsgClose
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+
+Script_5:
+    ActorsPauseAll
+    SEPlay SEQ_SE_MESSAGE
+    ActorSetEyeToEye
+    WorkSetConst 0x8020, 178
+    VMStackPushFlag EVENT_FLAG_0x010e
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMJumpIf CMP_STACK, L_0223
+    VMCall Script_12
+    VMCall Script_13
+    VMJump L_0258
+
+L_0223:
+    VMCall Script_14
+    TrainerBattleIsVictory 0x8010
+    VMStackPush 0x8010
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMJumpIf CMP_STACK, L_0252
+    CallTrainerBattleEnd
+    VMCall Script_13
+    FlagSet EVENT_FLAG_0x010e
+    VMJump L_0254
+
+L_0252:
+    CallTrainerLose
+
+L_0254:
+    TrainerFlagSet 0x8020
+
+L_0258:
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+
+Script_6:
+    ActorsPauseAll
+    SEPlay SEQ_SE_MESSAGE
+    ActorSetEyeToEye
+    WorkSetConst 0x8020, 179
+    VMStackPushFlag EVENT_FLAG_0x010f
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMJumpIf CMP_STACK, L_0291
+    VMCall Script_12
+    VMCall Script_15
+    VMJump L_02C6
+
+L_0291:
+    VMCall Script_14
+    TrainerBattleIsVictory 0x8010
+    VMStackPush 0x8010
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMJumpIf CMP_STACK, L_02C0
+    CallTrainerBattleEnd
+    VMCall Script_15
+    FlagSet EVENT_FLAG_0x010f
+    VMJump L_02C2
+
+L_02C0:
+    CallTrainerLose
+
+L_02C2:
+    TrainerFlagSet 0x8020
+
+L_02C6:
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+
+Script_7:
+    ActorsPauseAll
+    SEPlay SEQ_SE_MESSAGE
+    ActorSetEyeToEye
+    // "That's a Gym Leader for you!\nShe really brings out the charms[f000]븀\u0000\nof her Pokémon![f000]븁\u0000\nBut she's too wrapped up\nin what she's doing here..."
+    ParentActorMsg MSGFILE_SCRIPT, VirbankCityGym2_Text_ThatsGymLeaderShe, 0, 0
+    LastKeyWait
+    ActorMsgClose
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+
+Script_8:
+    ActorsPauseAll
+    WorkSetConst 0x8026, 0
+    WorkSetConst 0x8027, 0
+    PlayerGetGPos 0x8026, 0x8027
+    ActorSetGPos 3, 13, 0, 6, 2
+    BGMPlay SEQ_BGM_PW_LAND
+    VMStackPush 0x8026
+    VMStackPushConst 3
+    VMStackCmp CMP_EQ
+    VMJumpIf CMP_STACK, L_032D
+    ActorCmdExec 3, Movement_043A
+    VMJump L_0335
+
+L_032D:
+    ActorCmdExec 3, Movement_0442
+
+L_0335:
+    ActorCmdWait
+    ActorCmdExec 255, Movement_044A
+    ActorCmdWait
+    // "Congratulations on your win,\nbut we need your help![f000]븁\u0000\nThere are some guys by the docks\ncalling themselves Team Plasma![f000]븁\u0000\nIf you deal with them,\nI'll talk to the Captain for you.[f000]븁\u0000"
+    ActorMsg MSGFILE_SCRIPT, VirbankCityGym2_Text_CongratulationsWinButWe, 3, 0, 0
+    MsgWinCloseAll
+    VMStackPush 0x8026
+    VMStackPushConst 3
+    VMStackCmp CMP_EQ
+    VMJumpIf CMP_STACK, L_0374
+    ActorCmdExec 3, Movement_0452
+    VMSleep 10
+    VMJump L_0380
+
+L_0374:
+    ActorCmdExec 3, Movement_045A
+    VMSleep 10
+
+L_0380:
+    BGMChangeMap
+    VMStackPush 0x8026
+    VMStackPushConst 3
+    VMStackCmp CMP_EQ
+    VMJumpIf CMP_STACK, L_03A7
+    VMSleep 30
+    ActorCmdExec 4, Movement_0462
+    VMJump L_03B3
+
+L_03A7:
+    VMSleep 30
+    ActorCmdExec 4, Movement_047A
+
+L_03B3:
+    ActorCmdWait
+    VMStackPush 0x8026
+    VMStackPushConst 3
+    VMStackCmp CMP_EQ
+    VMJumpIf CMP_STACK, L_03CE
+    VMJump L_03D8
+
+L_03CE:
+    ActorCmdExec 255, Movement_0492
+    ActorCmdWait
+
+L_03D8:
+    // "Did he say... Team Plasma?\nAnd after such a good battle...[f000]븁\u0000\nUgh, I'll deal with this...\nJust meet me at the docks.[f000]븁\u0000"
+    ActorMsg MSGFILE_SCRIPT, VirbankCityGym2_Text_DidHeSayTeam, 4, 0, 0
+    MsgWinCloseAll
+    VMStackPush 0x8026
+    VMStackPushConst 3
+    VMStackCmp CMP_EQ
+    VMJumpIf CMP_STACK, L_0407
+    ActorCmdExec 4, Movement_049A
+    VMJump L_041B
+
+L_0407:
+    ActorCmdExec 4, Movement_04A2
+    VMSleep 20
+    ActorCmdExec 255, Movement_04AE
+
+L_041B:
+    ActorCmdWait
+    ActorDelete 3
+    ActorDelete 4
+    WorkSetConst EVENT_WORK_0x40ad, 2
+    FlagSet EVENT_FLAG_0x02d1
+    FlagSet EVENT_FLAG_0x02d0
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+    .byte 0x00
+
+Movement_043A:
+    Move 14, 9
+    MoveEnd
+
+Movement_0442:
+    Move 14, 8
+    MoveEnd
+
+Movement_044A:
+    Move 35, 1
+    MoveEnd
+
+Movement_0452:
+    Move 15, 10
+    MoveEnd
+
+Movement_045A:
+    Move 15, 9
+    MoveEnd
+
+Movement_0462:
+    Move 14, 1
+    Move 13, 1
+    Move 14, 3
+    Move 13, 2
+    Move 34, 1
+    MoveEnd
+
+Movement_047A:
+    Move 14, 1
+    Move 13, 1
+    Move 14, 4
+    Move 13, 2
+    Move 35, 1
+    MoveEnd
+
+Movement_0492:
+    Move 34, 1
+    MoveEnd
+
+Movement_049A:
+    Move 15, 10
+    MoveEnd
+
+Movement_04A2:
+    Move 13, 1
+    Move 15, 10
+    MoveEnd
+
+Movement_04AE:
+    Move 35, 1
+    MoveEnd
+
+Script_9:
+    ActorsPauseAll
+    SEPlay SEQ_SE_MESSAGE
+    ActorSetEyeToEye
+    // "I'm running the PA![f000]븁\u0000\nI balance the sound in the venue\nso it's easy to hear![f000]븁\u0000\nAre you a Trainer?[f000]븁\u0000\nSo does that mean you're thinking about\nthe type balance of the Pokémon in[f000]븀\u0000\nyour party?"
+    ParentActorMsg MSGFILE_SCRIPT, VirbankCityGym2_Text_ImRunningPaBalance, 0, 0
+    LastKeyWait
+    ActorMsgClose
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+
+Script_10:
+    ISSSwitchQuery 0x8010, 3
+    VMStackPush 0x8010
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMJumpIf CMP_STACK, L_04F5
+    ISSSwitchDisable 3
+    WorkSetConst EVENT_WORK_0x4002, 1
+
+L_04F5:
+    VMReturn
+    .byte 0x00
+
+Script_11:
     // "Get ready! I'm gonna knock\nsome sense outta ya![f000]븁\u0000"
     ActorMsg MSGFILE_SCRIPT, VirbankCityGym2_Text_GetReadyImGonna, 0, 0, 1
     MsgWinCloseAll
@@ -146,61 +413,61 @@ L_01D3:
     VMStackPush 0x8024
     VMStackPushConst 2
     VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_020C
+    VMJumpIf CMP_STACK, L_0531
     CallTrainerBattle TRAINER_LEADER_ROXIE_2, 0, 0
-    VMJump L_0214
+    VMJump L_0539
 
-L_020C:
+L_0531:
     CallTrainerBattle TRAINER_LEADER_ROXIE, 0, 0
 
-L_0214:
+L_0539:
     WorkSetConst 0x8024, 0
     TrainerBattleIsVictory 0x8010
     VMStackPush 0x8010
     VMStackPushConst 1
     VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_02B2
+    VMJumpIf CMP_STACK, L_05D7
     FlagSet EVENT_FLAG_0x02fb
     FlagReset EVENT_FLAG_0x02d1
     ActorDelete 0
     ActorAdd 4
     PlayerGetDir 0x8010
     WorkCmpConst 0x8010, 1
-    VMJumpIf CMP_EQ, L_0258
-    VMJump L_0266
+    VMJumpIf CMP_EQ, L_057D
+    VMJump L_058B
 
-L_0258:
-    ActorCmdExec 4, Movement_0744
-    VMJump L_02A8
+L_057D:
+    ActorCmdExec 4, Movement_06B0
+    VMJump L_05CD
 
-L_0266:
+L_058B:
     WorkCmpConst 0x8010, 2
-    VMJumpIf CMP_EQ, L_0279
-    VMJump L_0287
+    VMJumpIf CMP_EQ, L_059E
+    VMJump L_05AC
 
-L_0279:
-    ActorCmdExec 4, Movement_075C
-    VMJump L_02A8
+L_059E:
+    ActorCmdExec 4, Movement_06B8
+    VMJump L_05CD
 
-L_0287:
+L_05AC:
     WorkCmpConst 0x8010, 3
-    VMJumpIf CMP_EQ, L_029A
-    VMJump L_02A8
+    VMJumpIf CMP_EQ, L_05BF
+    VMJump L_05CD
 
-L_029A:
-    ActorCmdExec 4, Movement_0754
-    VMJump L_02A8
+L_05BF:
+    ActorCmdExec 4, Movement_06C0
+    VMJump L_05CD
 
-L_02A8:
+L_05CD:
     ActorCmdWait
     CallTrainerBattleEnd
-    VMJump L_02B4
+    VMJump L_05D9
 
-L_02B2:
+L_05D7:
     CallTrainerLose
 
-L_02B4:
-    VMCall L_0478
+L_05D9:
+    VMCall Script_10
     VirbankGymStopModelAnimations 0
     VirbankGymStopModelAnimations 1
     VirbankGymStopModelAnimations 2
@@ -216,14 +483,14 @@ L_02B4:
     VMStackPush 0x8025
     VMStackPushConst 0
     VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_030A
+    VMJumpIf CMP_STACK, L_062F
     PlayFieldEffect 4
-    VMJump L_030E
+    VMJump L_0633
 
-L_030A:
+L_062F:
     PlayFieldEffect 56
 
-L_030E:
+L_0633:
     MEWait
     WorkSetConst 0x8025, 0
     // "[f000]Ā\u0001\u0000 received the\nToxic Badge from Roxie![f000]븁\u0000"
@@ -248,337 +515,65 @@ L_030E:
     WorkSetConst EVENT_WORK_0x40ad, 1
     WorkSetConst EVENT_WORK_0x410a, 1
     WorkSetConst EVENT_WORK_0x40ac, 3
+    WorkSetConst EVENT_WORK_0x40ac, 4
+    FlagReset EVENT_FLAG_0x02d4
     FlagSet EVENT_FLAG_0x02d5
     FlagSet EVENT_FLAG_0x096f
     VMReturn
+    .balign 4, 0
 
-Script_4:
-    ActorsPauseAll
-    SEPlay SEQ_SE_MESSAGE
-    ActorSetEyeToEye
-    // "Your Pokémon WANTED this win![f000]븁\u0000\nKeep on going on like this,\nand do all sorts of stuff!"
-    ParentActorMsg MSGFILE_SCRIPT, VirbankCityGym2_Text_PokemonWantedWinKeep, 0, 0
-    LastKeyWait
-    ActorMsgClose
-    FinishAllEvents
-    ActorsUnpauseAll
-    VMHalt
+Movement_06B0:
+    Move 0, 1
+    MoveEnd
 
-Script_5:
-    ActorsPauseAll
-    SEPlay SEQ_SE_MESSAGE
-    ActorSetEyeToEye
-    WorkSetConst 0x8020, 178
-    VMStackPushFlag EVENT_FLAG_0x010e
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_03CF
-    VMCall L_04F9
-    VMCall L_049D
-    VMJump L_0404
+Movement_06B8:
+    Move 3, 1
+    MoveEnd
 
-L_03CF:
-    VMCall L_050F
-    TrainerBattleIsVictory 0x8010
-    VMStackPush 0x8010
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_03FE
-    CallTrainerBattleEnd
-    VMCall L_049D
-    FlagSet EVENT_FLAG_0x010e
-    VMJump L_0400
+Movement_06C0:
+    Move 2, 1
+    MoveEnd
 
-L_03FE:
-    CallTrainerLose
-
-L_0400:
-    TrainerFlagSet 0x8020
-
-L_0404:
-    FinishAllEvents
-    ActorsUnpauseAll
-    VMHalt
-
-Script_6:
-    ActorsPauseAll
-    SEPlay SEQ_SE_MESSAGE
-    ActorSetEyeToEye
-    WorkSetConst 0x8020, 179
-    VMStackPushFlag EVENT_FLAG_0x010f
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_043D
-    VMCall L_04F9
-    VMCall L_04D0
-    VMJump L_0472
-
-L_043D:
-    VMCall L_050F
-    TrainerBattleIsVictory 0x8010
-    VMStackPush 0x8010
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_046C
-    CallTrainerBattleEnd
-    VMCall L_04D0
-    FlagSet EVENT_FLAG_0x010f
-    VMJump L_046E
-
-L_046C:
-    CallTrainerLose
-
-L_046E:
-    TrainerFlagSet 0x8020
-
-L_0472:
-    FinishAllEvents
-    ActorsUnpauseAll
-    VMHalt
-
-L_0478:
-    ISSSwitchQuery 0x8010, 3
-    VMStackPush 0x8010
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_049B
-    ISSSwitchDisable 3
-    WorkSetConst EVENT_WORK_0x4002, 1
-
-L_049B:
-    VMReturn
-
-L_049D:
-    ISSSwitchQuery 0x8010, 1
-    VMStackPush 0x8010
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_04CE
-    ISSSwitchDisable 1
-    ISSSwitchDisable 4
-    VirbankGymSetActorFlag 1
-    WorkSetConst EVENT_WORK_0x4000, 1
-    WorkSetConst EVENT_WORK_0x4003, 1
-
-L_04CE:
-    VMReturn
-
-L_04D0:
-    ISSSwitchQuery 0x8010, 2
-    VMStackPush 0x8010
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_04F7
-    ISSSwitchDisable 2
-    VirbankGymSetActorFlag 2
-    WorkSetConst EVENT_WORK_0x4001, 1
-
-L_04F7:
-    VMReturn
-
-L_04F9:
+Script_12:
     TrainerGetMessageTypes 0x8021, 0x8022, 0x8023
     TrainerSayMessage 0x8020, 0x8022, 0x8011
     LastKeyWait
     ActorMsgClose
     VMReturn
 
-L_050F:
+Script_13:
+    ISSSwitchQuery 0x8010, 1
+    VMStackPush 0x8010
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMJumpIf CMP_STACK, L_070F
+    ISSSwitchDisable 1
+    ISSSwitchDisable 4
+    VirbankGymSetActorFlag 1
+    WorkSetConst EVENT_WORK_0x4000, 1
+    WorkSetConst EVENT_WORK_0x4003, 1
+
+L_070F:
+    VMReturn
+    .byte 0x00
+
+Script_14:
     TrainerGetMessageTypes 0x8021, 0x8022, 0x8023
     TrainerSayMessage 0x8020, 0x8021, 0x8011
     ActorMsgClose
     CallTrainerBattle 0x8020, 0, 0
     VMReturn
 
-Script_7:
-    ActorsPauseAll
-    SEPlay SEQ_SE_MESSAGE
-    ActorSetEyeToEye
-    // "That's a Gym Leader for you!\nShe really brings out the charms[f000]븀\u0000\nof her Pokémon![f000]븁\u0000\nBut she's too wrapped up\nin what she's doing here..."
-    ParentActorMsg MSGFILE_SCRIPT, VirbankCityGym2_Text_ThatsGymLeaderShe, 0, 0
-    LastKeyWait
-    ActorMsgClose
-    FinishAllEvents
-    ActorsUnpauseAll
-    VMHalt
-
-Script_9:
-    ActorsPauseAll
-    SEPlay SEQ_SE_MESSAGE
-    ActorSetEyeToEye
-    // "I'm running the PA![f000]븁\u0000\nI balance the sound in the venue\nso it's easy to hear![f000]븁\u0000\nAre you a Trainer?[f000]븁\u0000\nSo does that mean you're thinking about\nthe type balance of the Pokémon in[f000]븀\u0000\nyour party?"
-    ParentActorMsg MSGFILE_SCRIPT, VirbankCityGym2_Text_ImRunningPaBalance, 0, 0
-    LastKeyWait
-    ActorMsgClose
-    FinishAllEvents
-    ActorsUnpauseAll
-    VMHalt
-
-Script_8:
-    ActorsPauseAll
-    WorkSetConst 0x8026, 0
-    WorkSetConst 0x8027, 0
-    PlayerGetGPos 0x8026, 0x8027
-    ActorSetGPos 3, 13, 0, 6, 2
-    BGMPlay SEQ_BGM_PW_LAND
-    VMStackPush 0x8026
-    VMStackPushConst 3
+Script_15:
+    ISSSwitchQuery 0x8010, 2
+    VMStackPush 0x8010
+    VMStackPushConst 1
     VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_05A8
-    ActorCmdExec 3, Movement_06C0
-    VMJump L_05B0
+    VMJumpIf CMP_STACK, L_0755
+    ISSSwitchDisable 2
+    VirbankGymSetActorFlag 2
+    WorkSetConst EVENT_WORK_0x4001, 1
 
-L_05A8:
-    ActorCmdExec 3, Movement_06C8
-
-L_05B0:
-    ActorCmdWait
-    ActorCmdExec 255, Movement_077C
-    ActorCmdWait
-    // "Hey you![f000]븁\u0000\nI felt like you were something special\nduring your battle with Roxie.[f000]븁\u0000\nPlease come with me to Pokéstar Studios![f000]븁\u0000"
-    ActorMsg MSGFILE_SCRIPT, VirbankCityGym2_Text_HeyFeltLikeWere, 3, 0, 0
-    MsgWinCloseAll
-    VMStackPush 0x8026
-    VMStackPushConst 3
-    VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_05EF
-    ActorCmdExec 3, Movement_06D0
-    VMSleep 10
-    VMJump L_05FB
-
-L_05EF:
-    ActorCmdExec 3, Movement_06D8
-    VMSleep 10
-
-L_05FB:
-    BGMChangeMap
-    VMStackPush 0x8026
-    VMStackPushConst 3
-    VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_0622
-    VMSleep 30
-    ActorCmdExec 4, Movement_06E0
-    VMJump L_062E
-
-L_0622:
-    VMSleep 30
-    ActorCmdExec 4, Movement_06F8
-
-L_062E:
-    ActorCmdWait
-    VMStackPush 0x8026
-    VMStackPushConst 3
-    VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_0649
-    VMJump L_0653
-
-L_0649:
-    ActorCmdExec 255, Movement_0774
-    ActorCmdWait
-
-L_0653:
-    // "You're going to Pokéstar Studios?![f000]븁\u0000\nOH! I forgot! The old man!\nI have to get him back to work[f000]븀\u0000\nas captain![f000]븁\u0000"
-    ActorMsg MSGFILE_SCRIPT, VirbankCityGym2_Text_YoureGoingPokestarStudios, 4, 0, 0
-    MsgWinCloseAll
-    VMStackPush 0x8026
-    VMStackPushConst 3
-    VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_0682
-    ActorCmdExec 4, Movement_0710
-    VMJump L_0696
-
-L_0682:
-    ActorCmdExec 4, Movement_0718
-    VMSleep 20
-    ActorCmdExec 255, Movement_077C
-
-L_0696:
-    ActorCmdWait
-    ActorDelete 3
-    ActorDelete 4
-    WorkSetConst EVENT_WORK_0x40ad, 2
-    FlagSet EVENT_FLAG_0x02d1
-    FlagSet EVENT_FLAG_0x02d0
-    FlagSet EVENT_FLAG_0x02d5
-    WorkSetConst EVENT_WORK_0x40ac, 3
-    FinishAllEvents
-    ActorsUnpauseAll
-    VMHalt
+L_0755:
+    VMReturn
     .balign 4, 0
-
-Movement_06C0:
-    Move 14, 9
-    MoveEnd
-
-Movement_06C8:
-    Move 14, 8
-    MoveEnd
-
-Movement_06D0:
-    Move 15, 10
-    MoveEnd
-
-Movement_06D8:
-    Move 15, 9
-    MoveEnd
-
-Movement_06E0:
-    Move 14, 1
-    Move 13, 1
-    Move 14, 3
-    Move 13, 2
-    Move 34, 1
-    MoveEnd
-
-Movement_06F8:
-    Move 14, 1
-    Move 13, 1
-    Move 14, 4
-    Move 13, 2
-    Move 35, 1
-    MoveEnd
-
-Movement_0710:
-    Move 15, 10
-    MoveEnd
-
-Movement_0718:
-    Move 13, 1
-    Move 15, 10
-    MoveEnd
-    Move 13, 1
-    MoveEnd
-    Move 12, 1
-    MoveEnd
-    Move 15, 1
-    MoveEnd
-    Move 14, 1
-    MoveEnd
-
-Movement_0744:
-    Move 0, 1
-    MoveEnd
-    Move 1, 1
-    MoveEnd
-
-Movement_0754:
-    Move 2, 1
-    MoveEnd
-
-Movement_075C:
-    Move 3, 1
-    MoveEnd
-    Move 32, 1
-    MoveEnd
-    Move 33, 1
-    MoveEnd
-
-Movement_0774:
-    Move 34, 1
-    MoveEnd
-
-Movement_077C:
-    Move 35, 1
-    MoveEnd
-    Move 75, 1
-    MoveEnd

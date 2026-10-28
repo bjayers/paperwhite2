@@ -12,7 +12,27 @@
             }
         }
     ],
-    "npcs": [],
+    "npcs": [
+        {
+            "id": 0,
+            "model": "OBJ_CODE_122",
+            "movement": 0,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x041b",
+            "script": 9,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 15,
+                "z": 15,
+                "y": 0
+            }
+        }
+    ],
     "warps": [
         {
             "zone": "ZONE_FLOCCESY_TOWN",

@@ -24,511 +24,8 @@
     ScriptEntry Script_21
     ScriptEntry Script_22
     ScriptEntry Script_23
+    ScriptEntry Script_24
     ScriptEntriesEnd
-    WorkSetConst 0x8020, 0
-
-Script_23:
-    VMHalt
-
-Script_22:
-    ActorsPauseAll
-    WorkSetConst 0x8021, 0
-    WorkSetConst 0x8022, 0
-    WorkSetConst 0x8023, 0
-    ActorGetRailPos 255, 0x8021, 0x8022, 0x8023
-    VMStackPush 0x8023
-    VMStackPushConst 11
-    VMStackCmp CMP_GT
-    VMJumpIf CMP_STACK, L_00A1
-    ActorCmdExec 0, Movement_0A0C
-    ActorCmdWait
-
-L_00A1:
-    // "Iris: Hey, c'mon![f000]븁\u0000\nThumb Pier is past here![f000]븁\u0000\nIf you mention a suspicious\nplace in Castelia City, the[f000]븀\u0000\nonly places that come to mind[f000]븀\u0000\nare Narrow Street and here![f000]븁\u0000"
-    ActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_IrisHeyCmonThumb, 0, 0, 0
-    MsgWinCloseAll
-    VMStackPush 0x8023
-    VMStackPushConst 11
-    VMStackCmp CMP_GT
-    VMJumpIf CMP_STACK, L_00D4
-    DebugPrint 300
-    ActorCmdExec 0, Movement_010C
-    VMJump L_00DC
-
-L_00D4:
-    ActorCmdExec 0, Movement_0114
-
-L_00DC:
-    ActorCmdWait
-    WorkSetConst EVENT_WORK_0x40b1, 2
-    FlagSet EVENT_FLAG_0x02ef
-    FlagReset EVENT_FLAG_0x0406
-    ActorAdd 12
-    ActorDelete 0
-    WorkSetConst 0x8023, 0
-    WorkSetConst 0x8022, 0
-    WorkSetConst 0x8021, 0
-    FinishAllEvents
-    ActorsUnpauseAll
-    VMHalt
-
-Movement_010C:
-    Move 15, 12
-    MoveEnd
-
-Movement_0114:
-    Move 15, 8
-    MoveEnd
-
-Script_9:
-    ActorsPauseAll
-    // "Iris: This way! This way!\nC'mon! Have a look![f000]븁\u0000"
-    ActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_IrisWayWayCmon, 12, 0, 0
-    MsgWinCloseAll
-    ActorCmdExec 12, Movement_015C
-    ActorCmdWait
-    SEPlay SEQ_SE_KAIDAN
-    ActorDelete 12
-    SEWait
-    WorkSetConst EVENT_WORK_0x40b1, 3
-    FlagSet EVENT_FLAG_0x0406
-    FlagReset EVENT_FLAG_0x02f1
-    WorkSetConst EVENT_WORK_0x40b2, 1
-    FinishAllEvents
-    ActorsUnpauseAll
-    VMHalt
-    .balign 4, 0
-
-Movement_015C:
-    Move 13, 8
-    MoveEnd
-
-Script_20:
-    ActorsPauseAll
-    WorkSetConst 0x8024, 0
-    WorkSetConst 0x8025, 0
-    WorkSetConst 0x8026, 0
-    ActorCmdExec 11, Movement_0A2C
-    ActorCmdWait
-    PlayerGetRailPos 0x8024, 0x8025, 0x8026
-    VMStackPush 0x8024
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8025
-    VMStackPushConst 4
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8026
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_01CB
-    ActorCmdExec 11, Movement_08D8
-    VMJump L_03CD
-
-L_01CB:
-    VMStackPush 0x8024
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8025
-    VMStackPushConst 3
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8026
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_020C
-    ActorCmdExec 11, Movement_08E4
-    VMJump L_03CD
-
-L_020C:
-    VMStackPush 0x8024
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8025
-    VMStackPushConst 2
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8026
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_024D
-    ActorCmdExec 11, Movement_08F0
-    VMJump L_03CD
-
-L_024D:
-    VMStackPush 0x8024
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8025
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8026
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_028E
-    ActorCmdExec 11, Movement_08FC
-    VMJump L_03CD
-
-L_028E:
-    VMStackPush 0x8024
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8025
-    VMStackPushConst 0
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8026
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_02CF
-    ActorCmdExec 11, Movement_0908
-    VMJump L_03CD
-
-L_02CF:
-    VMStackPush 0x8024
-    VMStackPushConst 3
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8025
-    VMStackPushConst 28
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8026
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_0310
-    ActorCmdExec 11, Movement_0914
-    VMJump L_03CD
-
-L_0310:
-    VMStackPush 0x8024
-    VMStackPushConst 3
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8025
-    VMStackPushConst 27
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8026
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_0351
-    ActorCmdExec 11, Movement_091C
-    VMJump L_03CD
-
-L_0351:
-    VMStackPush 0x8024
-    VMStackPushConst 3
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8025
-    VMStackPushConst 26
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8026
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_0392
-    ActorCmdExec 11, Movement_0928
-    VMJump L_03CD
-
-L_0392:
-    VMStackPush 0x8024
-    VMStackPushConst 3
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8025
-    VMStackPushConst 25
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8026
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_03CD
-    ActorCmdExec 11, Movement_0934
-
-L_03CD:
-    ActorCmdWait
-    // "Welcome to Castelia City!!\nIt's the Castelia Harlequin Hunt![f000]븁\u0000\nI bet this is your first visit to\nCastelia City.[f000]븁\u0000\nThat's great!\nHere, have this Bicycle![f000]븁\u0000"
-    ActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_WelcomeCasteliaCityIts, 11, 0, 0
-    MsgWinCloseAll
-    VMStackPush 0x8000
-    VMStackPush 0x8001
-    WorkSet 0x8000, 450
-    WorkSet 0x8001, 1
-    RTCallGlobal 2805
-    VMStackPop 0x8001
-    VMStackPop 0x8000
-    // "The Castelia Harlequin Hunt's\nrules are simple![f000]븁\u0000\nAll you have to do is visit specific\nplaces and talk to the Harlequin there![f000]븀\u0000\nWhether you participate is up to you![f000]븀\u0000\nThe places to look are...[f000]븁\u0000\nThe Medal Office![f000]븁\u0000\nPasserby Analytics HQ![f000]븁\u0000\nAnd the Battle Company![f000]븁\u0000\nRide the Bicycle I gave\nyou, and go, go, go!"
-    ActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_CasteliaHarlequinHuntsRules, 11, 0, 0
-    MsgWaitAdvance
-    MsgWinCloseAll
-    VMStackPush 0x8024
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8025
-    VMStackPushConst 4
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8026
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_044E
-    ActorCmdExec 11, Movement_0940
-    VMJump L_0650
-
-L_044E:
-    VMStackPush 0x8024
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8025
-    VMStackPushConst 3
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8026
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_048F
-    ActorCmdExec 11, Movement_0950
-    VMJump L_0650
-
-L_048F:
-    VMStackPush 0x8024
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8025
-    VMStackPushConst 2
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8026
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_04D0
-    ActorCmdExec 11, Movement_0960
-    VMJump L_0650
-
-L_04D0:
-    VMStackPush 0x8024
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8025
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8026
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_0511
-    ActorCmdExec 11, Movement_0970
-    VMJump L_0650
-
-L_0511:
-    VMStackPush 0x8024
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8025
-    VMStackPushConst 0
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8026
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_0552
-    ActorCmdExec 11, Movement_0980
-    VMJump L_0650
-
-L_0552:
-    VMStackPush 0x8024
-    VMStackPushConst 3
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8025
-    VMStackPushConst 28
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8026
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_0593
-    ActorCmdExec 11, Movement_0990
-    VMJump L_0650
-
-L_0593:
-    VMStackPush 0x8024
-    VMStackPushConst 3
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8025
-    VMStackPushConst 27
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8026
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_05D4
-    ActorCmdExec 11, Movement_099C
-    VMJump L_0650
-
-L_05D4:
-    VMStackPush 0x8024
-    VMStackPushConst 3
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8025
-    VMStackPushConst 26
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8026
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_0615
-    ActorCmdExec 11, Movement_09AC
-    VMJump L_0650
-
-L_0615:
-    VMStackPush 0x8024
-    VMStackPushConst 3
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8025
-    VMStackPushConst 25
-    VMStackCmp CMP_EQ
-    VMStackPush 0x8026
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_0650
-    ActorCmdExec 11, Movement_09BC
-
-L_0650:
-    ActorCmdWait
-    WorkSetConst EVENT_WORK_0x40e2, 2
-    MedalDiscover 19
-    FlagSet EVENT_FLAG_ARRIVED_CASTELIA_CITY
-    WorkSetConst 0x8026, 0
-    WorkSetConst 0x8025, 0
-    WorkSetConst 0x8024, 0
-    FinishAllEvents
-    ActorsUnpauseAll
-    VMHalt
-
-Script_21:
-    ActorsPauseAll
-    SEPlay SEQ_SE_MESSAGE
-    ActorSetEyeToEye
-    VMStackPush EVENT_WORK_0x40e2
-    VMStackPushConst 6
-    VMStackCmp CMP_NE
-    VMJumpIf CMP_STACK, L_07E7
-    // "Free-for-all! It's the Castelia\nHarlequin Hunt! You haven't visited...[f000]븁\u0000"
-    ParentActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_FreeAllItsCastelia, 0, 0
-    VMStackPush EVENT_WORK_0x40e2
-    VMStackPushConst 5
-    VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_06F6
-    // "You still need to visit\nthis many places: Wow! Zero![f000]븁\u0000\nThat means you've completed\nthe Castelia Harlequin Hunt![f000]븁\u0000\nCongratulations!\nThis is a small commemorative gift![f000]븁\u0000"
-    ParentActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_StillNeedVisitMany_2, 0, 0
-    MsgWinCloseAll
-    VMStackPush 0x8000
-    VMStackPush 0x8001
-    WorkSet 0x8000, 50
-    WorkSet 0x8001, 1
-    RTCallGlobal 2805
-    VMStackPop 0x8001
-    VMStackPop 0x8000
-    // "The Castelia Harlequin Hunt is a way\nto make more people love Castelia City![f000]븁\u0000\nThat's why we generously gave you a\nBicycle at the beginning. It's the best[f000]븀\u0000\nway to get around Castelia City![f000]븁\u0000\nKeep loving Castelia City![f000]븁\u0000\nCastelia City, Castelia City,\nCastelia City! ♪ Here we go! ♪"
-    ParentActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_CasteliaHarlequinHuntWay, 0, 0
-    LastKeyWait
-    MsgWinCloseAll
-    WorkSetConst EVENT_WORK_0x40e2, 6
-    VMJump L_07E1
-
-L_06F6:
-    WorkSetConst 0x8027, 0
-    WorkSetConst 0x8028, 0
-
-L_0702:
-    VMStackPush 0x8028
-    VMStackPushConst 3
-    VMStackCmp CMP_LT
-    VMJumpIf CMP_STACK, L_07CC
-    VMStackPush 0x8028
-    VMStackPushConst 0
-    VMStackCmp CMP_EQ
-    VMStackPushFlag EVENT_FLAG_0x0138
-    VMStackPushConst 0
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_0750
-    // "The Medal Office![f000]븁\u0000"
-    ActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_MedalOffice, 11, 0, 0
-    WorkAdd 0x8027, 1
-    VMJump L_07C0
-
-L_0750:
-    VMStackPush 0x8028
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMStackPushFlag EVENT_FLAG_0x0139
-    VMStackPushConst 0
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_078B
-    // "Passerby Analytics HQ![f000]븁\u0000"
-    ActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_PasserbyAnalyticsHq, 11, 0, 0
-    WorkAdd 0x8027, 1
-    VMJump L_07C0
-
-L_078B:
-    VMStackPush 0x8028
-    VMStackPushConst 2
-    VMStackCmp CMP_EQ
-    VMStackPushFlag EVENT_FLAG_0x013a
-    VMStackPushConst 0
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_07C0
-    // "The Battle Company![f000]븁\u0000"
-    ActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_BattleCompany, 11, 0, 0
-    WorkAdd 0x8027, 1
-
-L_07C0:
-    WorkAdd 0x8028, 1
-    VMJump L_0702
-
-L_07CC:
-    WordSetNumber 0, 0x8027, 1
-    // "You still need to visit\nthis many places: [f000]Ȁ\u0001\u0000![f000]븁\u0000\nSo explore Castelia City, and enjoy\nthe Castelia Harlequin Hunt!"
-    ParentActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_StillNeedVisitMany, 0, 0
-    LastKeyWait
-    MsgWinCloseAll
-
-L_07E1:
-    VMJump L_07F5
-
-L_07E7:
-    // "The Castelia Harlequin Hunt is a way\nto make more people love Castelia City![f000]븁\u0000\nThat's why we generously gave you a\nBicycle at the beginning. It's the best[f000]븀\u0000\nway to get around Castelia City![f000]븁\u0000\nKeep loving Castelia City![f000]븁\u0000\nCastelia City, Castelia City,\nCastelia City! ♪ Here we go! ♪"
-    ParentActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_CasteliaHarlequinHuntWay, 0, 0
-    LastKeyWait
-    MsgWinCloseAll
-
-L_07F5:
-    WorkSetConst 0x8028, 0
-    WorkSetConst 0x8027, 0
-    FinishAllEvents
-    ActorsUnpauseAll
-    VMHalt
 
 Script_1:
     ActorsPauseAll
@@ -617,138 +114,27 @@ Script_8:
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
-    .balign 4, 0
 
-Movement_08D8:
-    Move 14, 5
-    Move 13, 2
-    MoveEnd
-
-Movement_08E4:
-    Move 14, 4
-    Move 13, 2
-    MoveEnd
-
-Movement_08F0:
-    Move 14, 3
-    Move 13, 2
-    MoveEnd
-
-Movement_08FC:
-    Move 14, 2
-    Move 13, 2
-    MoveEnd
-
-Movement_0908:
-    Move 14, 1
-    Move 13, 2
-    MoveEnd
-
-Movement_0914:
-    Move 13, 2
-    MoveEnd
-
-Movement_091C:
-    Move 15, 1
-    Move 13, 2
-    MoveEnd
-
-Movement_0928:
-    Move 15, 2
-    Move 13, 2
-    MoveEnd
-
-Movement_0934:
-    Move 15, 3
-    Move 13, 2
-    MoveEnd
-
-Movement_0940:
-    Move 12, 2
-    Move 15, 5
-    Move 33, 1
-    MoveEnd
-
-Movement_0950:
-    Move 12, 2
-    Move 15, 4
-    Move 33, 1
-    MoveEnd
-
-Movement_0960:
-    Move 12, 2
-    Move 15, 3
-    Move 33, 1
-    MoveEnd
-
-Movement_0970:
-    Move 12, 2
-    Move 15, 2
-    Move 33, 1
-    MoveEnd
-
-Movement_0980:
-    Move 12, 2
-    Move 15, 1
-    Move 33, 1
-    MoveEnd
-
-Movement_0990:
-    Move 12, 2
-    Move 33, 1
-    MoveEnd
-
-Movement_099C:
-    Move 12, 2
-    Move 14, 1
-    Move 33, 1
-    MoveEnd
-
-Movement_09AC:
-    Move 12, 2
-    Move 14, 2
-    Move 33, 1
-    MoveEnd
-
-Movement_09BC:
-    Move 12, 2
-    Move 14, 3
-    Move 33, 1
-    MoveEnd
-    Move 13, 1
-    MoveEnd
-    Move 12, 1
-    MoveEnd
-    Move 15, 1
-    MoveEnd
-    Move 14, 1
-    MoveEnd
-    Move 0, 1
-    MoveEnd
-    Move 1, 1
-    MoveEnd
+Script_9:
+    ActorsPauseAll
+    // "Iris: This way! This way!\nC'mon! Have a look![f000]븁\u0000"
+    ActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_IrisWayWayCmon, 12, 0, 0
+    MsgWinCloseAll
+    ActorCmdExec 12, Movement_0170
+    ActorCmdWait
+    SEPlay SEQ_SE_KAIDAN
+    ActorDelete 12
+    SEWait
+    WorkSetConst EVENT_WORK_0x40b1, 3
+    FlagSet EVENT_FLAG_0x0406
+    FlagReset EVENT_FLAG_0x02f1
+    WorkSetConst EVENT_WORK_0x40b2, 1
+    FinishAllEvents
+    ActorsUnpauseAll
     VMHalt
-    .byte 0x01
-    .byte 0x00
-    .byte 0xfe
-    .balign 4, 0
-    Move 3, 1
-    MoveEnd
 
-Movement_0A0C:
-    Move 32, 1
-    MoveEnd
-    Move 33, 1
-    MoveEnd
-    Move 34, 1
-    MoveEnd
-    Move 35, 1
-    MoveEnd
-
-Movement_0A2C:
-    Move 75, 1
-    MoveEnd
-    Move 159, 1
+Movement_0170:
+    Move 13, 8
     MoveEnd
 
 Script_10:
@@ -870,4 +256,727 @@ Script_19:
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
-    .balign 4, 0
+
+Script_20:
+    ActorsPauseAll
+    WorkSetConst 0x8024, 0
+    WorkSetConst 0x8025, 0
+    WorkSetConst 0x8026, 0
+    ActorCmdExec 11, Movement_07A6
+    ActorCmdWait
+    PlayerGetRailPos 0x8024, 0x8025, 0x8026
+    VMStackPush 0x8024
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8025
+    VMStackPushConst 4
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8026
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_02F9
+    ActorCmdExec 11, Movement_07AE
+    VMJump L_04FB
+
+L_02F9:
+    VMStackPush 0x8024
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8025
+    VMStackPushConst 3
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8026
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_033A
+    ActorCmdExec 11, Movement_07BA
+    VMJump L_04FB
+
+L_033A:
+    VMStackPush 0x8024
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8025
+    VMStackPushConst 2
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8026
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_037B
+    ActorCmdExec 11, Movement_07C2
+    VMJump L_04FB
+
+L_037B:
+    VMStackPush 0x8024
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8025
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8026
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_03BC
+    ActorCmdExec 11, Movement_07CE
+    VMJump L_04FB
+
+L_03BC:
+    VMStackPush 0x8024
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8025
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8026
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_03FD
+    ActorCmdExec 11, Movement_07DA
+    VMJump L_04FB
+
+L_03FD:
+    VMStackPush 0x8024
+    VMStackPushConst 3
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8025
+    VMStackPushConst 28
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8026
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_043E
+    ActorCmdExec 11, Movement_07E6
+    VMJump L_04FB
+
+L_043E:
+    VMStackPush 0x8024
+    VMStackPushConst 3
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8025
+    VMStackPushConst 27
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8026
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_047F
+    ActorCmdExec 11, Movement_07F2
+    VMJump L_04FB
+
+L_047F:
+    VMStackPush 0x8024
+    VMStackPushConst 3
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8025
+    VMStackPushConst 26
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8026
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_04C0
+    ActorCmdExec 11, Movement_07FE
+    VMJump L_04FB
+
+L_04C0:
+    VMStackPush 0x8024
+    VMStackPushConst 3
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8025
+    VMStackPushConst 25
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8026
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_04FB
+    ActorCmdExec 11, Movement_080A
+
+L_04FB:
+    ActorCmdWait
+    // "Welcome to Castelia City!!\nIt's the Castelia Harlequin Hunt![f000]븁\u0000\nI bet this is your first visit to\nCastelia City.[f000]븁\u0000\nThat's great!\nHere, have this Bicycle![f000]븁\u0000"
+    ActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_WelcomeCasteliaCityIts, 11, 0, 0
+    MsgWinCloseAll
+    VMStackPush 0x8000
+    VMStackPush 0x8001
+    WorkSet 0x8000, 450
+    WorkSet 0x8001, 1
+    RTCallGlobal 2805
+    VMStackPop 0x8001
+    VMStackPop 0x8000
+    // "The Castelia Harlequin Hunt's\nrules are simple![f000]븁\u0000\nAll you have to do is visit specific\nplaces and talk to the Harlequin there![f000]븀\u0000\nWhether you participate is up to you![f000]븀\u0000\nThe places to look are...[f000]븁\u0000\nThe Medal Office![f000]븁\u0000\nPasserby Analytics HQ![f000]븁\u0000\nAnd the Battle Company![f000]븁\u0000\nRide the Bicycle I gave\nyou, and go, go, go!"
+    ActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_CasteliaHarlequinHuntsRules, 11, 0, 0
+    MsgWaitAdvance
+    MsgWinCloseAll
+    VMStackPush 0x8024
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8025
+    VMStackPushConst 4
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8026
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_057C
+    ActorCmdExec 11, Movement_0816
+    VMJump L_077E
+
+L_057C:
+    VMStackPush 0x8024
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8025
+    VMStackPushConst 3
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8026
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_05BD
+    ActorCmdExec 11, Movement_0826
+    VMJump L_077E
+
+L_05BD:
+    VMStackPush 0x8024
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8025
+    VMStackPushConst 2
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8026
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_05FE
+    ActorCmdExec 11, Movement_0832
+    VMJump L_077E
+
+L_05FE:
+    VMStackPush 0x8024
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8025
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8026
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_063F
+    ActorCmdExec 11, Movement_0842
+    VMJump L_077E
+
+L_063F:
+    VMStackPush 0x8024
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8025
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8026
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_0680
+    ActorCmdExec 11, Movement_0852
+    VMJump L_077E
+
+L_0680:
+    VMStackPush 0x8024
+    VMStackPushConst 3
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8025
+    VMStackPushConst 28
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8026
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_06C1
+    ActorCmdExec 11, Movement_0862
+    VMJump L_077E
+
+L_06C1:
+    VMStackPush 0x8024
+    VMStackPushConst 3
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8025
+    VMStackPushConst 27
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8026
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_0702
+    ActorCmdExec 11, Movement_0872
+    VMJump L_077E
+
+L_0702:
+    VMStackPush 0x8024
+    VMStackPushConst 3
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8025
+    VMStackPushConst 26
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8026
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_0743
+    ActorCmdExec 11, Movement_0882
+    VMJump L_077E
+
+L_0743:
+    VMStackPush 0x8024
+    VMStackPushConst 3
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8025
+    VMStackPushConst 25
+    VMStackCmp CMP_EQ
+    VMStackPush 0x8026
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_077E
+    ActorCmdExec 11, Movement_0892
+
+L_077E:
+    ActorCmdWait
+    WorkSetConst EVENT_WORK_0x40e2, 2
+    MedalDiscover 19
+    FlagSet EVENT_FLAG_ARRIVED_CASTELIA_CITY
+    WorkSetConst 0x8026, 0
+    WorkSetConst 0x8025, 0
+    WorkSetConst 0x8024, 0
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+
+Movement_07A6:
+    Move 75, 1
+    MoveEnd
+
+Movement_07AE:
+    Move 14, 1
+    Move 13, 5
+    MoveEnd
+
+Movement_07BA:
+    Move 13, 5
+    MoveEnd
+
+Movement_07C2:
+    Move 15, 1
+    Move 13, 5
+    MoveEnd
+
+Movement_07CE:
+    Move 15, 2
+    Move 13, 5
+    MoveEnd
+
+Movement_07DA:
+    Move 15, 3
+    Move 13, 5
+    MoveEnd
+
+Movement_07E6:
+    Move 15, 4
+    Move 13, 5
+    MoveEnd
+
+Movement_07F2:
+    Move 15, 5
+    Move 13, 5
+    MoveEnd
+
+Movement_07FE:
+    Move 15, 6
+    Move 13, 5
+    MoveEnd
+
+Movement_080A:
+    Move 15, 7
+    Move 13, 5
+    MoveEnd
+
+Movement_0816:
+    Move 12, 5
+    Move 15, 1
+    Move 33, 1
+    MoveEnd
+
+Movement_0826:
+    Move 12, 5
+    Move 33, 1
+    MoveEnd
+
+Movement_0832:
+    Move 12, 5
+    Move 14, 1
+    Move 33, 1
+    MoveEnd
+
+Movement_0842:
+    Move 12, 5
+    Move 14, 2
+    Move 33, 1
+    MoveEnd
+
+Movement_0852:
+    Move 12, 5
+    Move 14, 3
+    Move 33, 1
+    MoveEnd
+
+Movement_0862:
+    Move 12, 5
+    Move 14, 4
+    Move 33, 1
+    MoveEnd
+
+Movement_0872:
+    Move 12, 5
+    Move 14, 5
+    Move 33, 1
+    MoveEnd
+
+Movement_0882:
+    Move 12, 5
+    Move 14, 6
+    Move 33, 1
+    MoveEnd
+
+Movement_0892:
+    Move 12, 5
+    Move 14, 7
+    Move 33, 1
+    MoveEnd
+
+Script_21:
+    ActorsPauseAll
+    SEPlay SEQ_SE_MESSAGE
+    ActorSetEyeToEye
+    VMStackPush EVENT_WORK_0x40e2
+    VMStackPushConst 6
+    VMStackCmp CMP_NE
+    VMJumpIf CMP_STACK, L_0A11
+    // "Free-for-all! It's the Castelia\nHarlequin Hunt! You haven't visited...[f000]븁\u0000"
+    ParentActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_FreeAllItsCastelia, 0, 0
+    VMStackPush EVENT_WORK_0x40e2
+    VMStackPushConst 5
+    VMStackCmp CMP_EQ
+    VMJumpIf CMP_STACK, L_0920
+    // "You still need to visit\nthis many places: Wow! Zero![f000]븁\u0000\nThat means you've completed\nthe Castelia Harlequin Hunt![f000]븁\u0000\nCongratulations!\nThis is a small commemorative gift![f000]븁\u0000"
+    ParentActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_StillNeedVisitMany_2, 0, 0
+    MsgWinCloseAll
+    VMStackPush 0x8000
+    VMStackPush 0x8001
+    WorkSet 0x8000, 50
+    WorkSet 0x8001, 1
+    RTCallGlobal 2805
+    VMStackPop 0x8001
+    VMStackPop 0x8000
+    // "The Castelia Harlequin Hunt is a way\nto make more people love Castelia City![f000]븁\u0000\nThat's why we generously gave you a\nBicycle at the beginning. It's the best[f000]븀\u0000\nway to get around Castelia City![f000]븁\u0000\nKeep loving Castelia City![f000]븁\u0000\nCastelia City, Castelia City,\nCastelia City! ♪ Here we go! ♪"
+    ParentActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_CasteliaHarlequinHuntWay, 0, 0
+    LastKeyWait
+    MsgWinCloseAll
+    WorkSetConst EVENT_WORK_0x40e2, 6
+    VMJump L_0A0B
+
+L_0920:
+    WorkSetConst 0x8027, 0
+    WorkSetConst 0x8028, 0
+
+L_092C:
+    VMStackPush 0x8028
+    VMStackPushConst 3
+    VMStackCmp CMP_LT
+    VMJumpIf CMP_STACK, L_09F6
+    VMStackPush 0x8028
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMStackPushFlag EVENT_FLAG_0x0138
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_097A
+    // "The Medal Office![f000]븁\u0000"
+    ActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_MedalOffice, 11, 0, 0
+    WorkAdd 0x8027, 1
+    VMJump L_09EA
+
+L_097A:
+    VMStackPush 0x8028
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMStackPushFlag EVENT_FLAG_0x0139
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_09B5
+    // "Passerby Analytics HQ![f000]븁\u0000"
+    ActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_PasserbyAnalyticsHq, 11, 0, 0
+    WorkAdd 0x8027, 1
+    VMJump L_09EA
+
+L_09B5:
+    VMStackPush 0x8028
+    VMStackPushConst 2
+    VMStackCmp CMP_EQ
+    VMStackPushFlag EVENT_FLAG_0x013a
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_09EA
+    // "The Battle Company![f000]븁\u0000"
+    ActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_BattleCompany, 11, 0, 0
+    WorkAdd 0x8027, 1
+
+L_09EA:
+    WorkAdd 0x8028, 1
+    VMJump L_092C
+
+L_09F6:
+    WordSetNumber 0, 0x8027, 1
+    // "You still need to visit\nthis many places: [f000]Ȁ\u0001\u0000![f000]븁\u0000\nSo explore Castelia City, and enjoy\nthe Castelia Harlequin Hunt!"
+    ParentActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_StillNeedVisitMany, 0, 0
+    LastKeyWait
+    MsgWinCloseAll
+
+L_0A0B:
+    VMJump L_0A1F
+
+L_0A11:
+    // "The Castelia Harlequin Hunt is a way\nto make more people love Castelia City![f000]븁\u0000\nThat's why we generously gave you a\nBicycle at the beginning. It's the best[f000]븀\u0000\nway to get around Castelia City![f000]븁\u0000\nKeep loving Castelia City![f000]븁\u0000\nCastelia City, Castelia City,\nCastelia City! ♪ Here we go! ♪"
+    ParentActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_CasteliaHarlequinHuntWay, 0, 0
+    LastKeyWait
+    MsgWinCloseAll
+
+L_0A1F:
+    WorkSetConst 0x8028, 0
+    WorkSetConst 0x8027, 0
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+    .byte 0x00
+
+Script_22:
+    ActorsPauseAll
+    WorkSetConst 0x8021, 0
+    WorkSetConst 0x8022, 0
+    WorkSetConst 0x8023, 0
+    ActorGetRailPos 255, 0x8021, 0x8022, 0x8023
+    VMStackPush 0x8023
+    VMStackPushConst 11
+    VMStackCmp CMP_GT
+    VMJumpIf CMP_STACK, L_0A6D
+    ActorCmdExec 0, Movement_0AD8
+    ActorCmdWait
+
+L_0A6D:
+    // "Iris: Hey, c'mon![f000]븁\u0000\nThumb Pier is past here![f000]븁\u0000\nIf you mention a suspicious\nplace in Castelia City, the[f000]븀\u0000\nonly places that come to mind[f000]븀\u0000\nare Narrow Street and here![f000]븁\u0000"
+    ActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_IrisHeyCmonThumb, 0, 0, 0
+    MsgWinCloseAll
+    VMStackPush 0x8023
+    VMStackPushConst 11
+    VMStackCmp CMP_GT
+    VMJumpIf CMP_STACK, L_0AA0
+    DebugPrint 300
+    ActorCmdExec 0, Movement_0AE0
+    VMJump L_0AA8
+
+L_0AA0:
+    ActorCmdExec 0, Movement_0AE8
+
+L_0AA8:
+    ActorCmdWait
+    WorkSetConst EVENT_WORK_0x40b1, 2
+    FlagSet EVENT_FLAG_0x02ef
+    FlagReset EVENT_FLAG_0x0406
+    ActorAdd 12
+    ActorDelete 0
+    WorkSetConst 0x8023, 0
+    WorkSetConst 0x8022, 0
+    WorkSetConst 0x8021, 0
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+
+Movement_0AD8:
+    Move 32, 1
+    MoveEnd
+
+Movement_0AE0:
+    Move 15, 12
+    MoveEnd
+
+Movement_0AE8:
+    Move 15, 8
+    MoveEnd
+
+Script_23:
+    VMHalt
+
+Script_24:
+    ActorsPauseAll
+    SEPlay SEQ_SE_MESSAGE
+    FlagGet EVENT_FLAG_0x0229, 0x8009
+    WorkCmpConst 0x8009, 1
+    VMJumpIf CMP_EQ, L_0C04
+    // "The water's so clear here..."
+    ParentActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_WatersClearHere, 1, 0
+    LastKeyWait
+    ActorMsgClose
+    ActorSetEyeToEye
+    ActorCmdExec 32, Movement_0C24
+    ActorCmdWait
+    // "Oh―hey.[f000]븁\u0000\nSee them?[f000]븁\u0000\nThe Basculin?"
+    ParentActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_OhHeySeeThem, 1, 0
+    LastKeyWait
+    ActorMsgClose
+    ActorCmdExec 32, Movement_0C2C
+    ActorCmdWait
+    PlayerGetDir 0x800a
+    WorkCmpConst 0x800a, 1
+    VMJumpIf CMP_EQ, L_0B54
+    VMJump L_0B76
+
+L_0B54:
+    ActorCmdExec 255, Movement_0C34
+    ActorCmdWait
+    ActorCmdExec 255, Movement_0C48
+    ActorCmdExec 32, Movement_0C50
+    ActorCmdWait
+    VMJump L_0B78
+
+L_0B76:
+    ActorSetEyeToEye
+
+L_0B78:
+    // "Someone told me the [f000][ff00]\u0001\u0001red[f000][ff00]\u0001\u0000 stripe\nBasculin live in [f000][ff00]\u0001\u0001east[f000][ff00]\u0001\u0000 Unova,[f000]븀\u0000\nwhile the [f000][ff00]\u0001\u0002blue[f000][ff00]\u0001\u0000 live in the [f000][ff00]\u0001\u0002west[f000][ff00]\u0001\u0000."
+    ParentActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_SomeoneToldRedStripe, 1, 0
+    LastKeyWait
+    ActorMsgClose
+    ActorCmdExec 32, Movement_0C58
+    ActorCmdWait
+    // "I didn't expect to see them\nin the harbor, though.[f000]븀\u0000\nThey're freshwater Pokémon."
+    ParentActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_DidntExpectSeeThem, 1, 0
+    LastKeyWait
+    ActorMsgClose
+    ActorCmdExec 32, Movement_0C68
+    ActorCmdWait
+    WorkCmpConst 0x800a, 1
+    VMJumpIf CMP_EQ, L_0BBB
+    VMJump L_0BCB
+
+L_0BBB:
+    ActorCmdExec 32, Movement_0C74
+    ActorCmdWait
+    VMJump L_0BCD
+
+L_0BCB:
+    ActorSetEyeToEye
+
+L_0BCD:
+    ActorCmdExec 32, Movement_0C7C
+    ActorCmdWait
+    TrainerCardGetBadgeCount 0x8008
+    WordSetNumber 0, 0x8008, 1
+    // "I'm Misty.[f000]븁\u0000\nI came from Kanto to battle in the\n[f000][ff00]\u0001\u0002Pokémon World Tournament[f000][ff00]\u0001\u0000 in Driftveil.[f000]븁\u0000\nIf you're heading that way,\nyou should sign up too.[f000]븀\u0000\nMaybe you'll get to see my Starmie!"
+    ParentActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_ImMistyCameFrom, 1, 0
+    LastKeyWait
+    ActorMsgClose
+    ActorCmdExec 32, Movement_0C84
+    ActorCmdWait
+    FlagSet EVENT_FLAG_0x0229
+    VMJump L_0C1E
+
+L_0C04:
+    ActorSetEyeToEye
+    // "I think I'm going to watch the sea\na bit longer, but you go ahead.[f000]븀\u0000\nI'll see you in Driftveil!"
+    ParentActorMsg MSGFILE_SCRIPT, CasteliaCity_Text_ThinkImGoingWatch, 1, 0
+    LastKeyWait
+    ActorMsgClose
+    ActorCmdExec 32, Movement_0C8C
+    ActorCmdWait
+
+L_0C1E:
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+
+Movement_0C24:
+    Move 75, 1
+    MoveEnd
+
+Movement_0C2C:
+    Move 33, 1
+    MoveEnd
+
+Movement_0C34:
+    Move 14, 1
+    Move 13, 1
+    Move 65, 1
+    Move 65, 1
+    MoveEnd
+
+Movement_0C48:
+    Move 35, 1
+    MoveEnd
+
+Movement_0C50:
+    Move 34, 1
+    MoveEnd
+
+Movement_0C58:
+    Move 33, 1
+    Move 65, 1
+    Move 65, 1
+    MoveEnd
+
+Movement_0C68:
+    Move 65, 1
+    Move 65, 1
+    MoveEnd
+
+Movement_0C74:
+    Move 34, 1
+    MoveEnd
+
+Movement_0C7C:
+    Move 65, 1
+    MoveEnd
+
+Movement_0C84:
+    Move 33, 1
+    MoveEnd
+
+Movement_0C8C:
+    Move 33, 1
+    MoveEnd

@@ -69,6 +69,63 @@
                 "z": 33,
                 "y": 0
             }
+        },
+        {
+            "id": 3,
+            "model": "OBJ_CODE_POKEMON_UNOWN_FORM_11",
+            "movement": 0,
+            "type": 0,
+            "flag": 0,
+            "script": 0,
+            "direction": "DIR_RIGHT",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 14,
+                "z": 58,
+                "y": 0
+            }
+        },
+        {
+            "id": 4,
+            "model": "OBJ_CODE_POKEMON_UNOWN_FORM_11",
+            "movement": 0,
+            "type": 0,
+            "flag": 0,
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 13,
+                "z": 54,
+                "y": 0
+            }
+        },
+        {
+            "id": 5,
+            "model": "OBJ_CODE_POKEMON_MEOWTH",
+            "movement": 0,
+            "type": 0,
+            "flag": 0,
+            "script": 0,
+            "direction": "DIR_LEFT",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 19,
+                "z": 54,
+                "y": 0
+            }
         }
     ],
     "warps": [

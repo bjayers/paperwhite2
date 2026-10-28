@@ -18,6 +18,7 @@ in a/0/9/0 (TrainerMsg_Load). That order is the trainers of res/trainers/data/me
 messages, in ID order; the packer writes both tables from it.
 """
 import argparse
+import functools
 import struct
 import sys
 from pathlib import Path
@@ -49,6 +50,17 @@ def ordered_trainers() -> list[str]:
     return [trainer for trainer, _ in trainers]
 
 
+@functools.cache
+def item_names() -> dict[int, str]:
+    return {v: k for k, v in reversed(load_list("items").items())}
+
+
+def item_name(item: int) -> str | int:
+    """An item's constant from items.txt. name("ITEM_", ...) would also find the ITEM_ICON_ constants of item_icons.txt,
+    which share the prefix."""
+    return item_names().get(item, item)
+
+
 def trainer_json(trainer: bytes, party: bytes) -> dict:
     kind, class_, style, count, *items, ai, heals, money, reward = TRAINER.unpack(trainer)
     size = MON.size + (2 if kind & PARTY_ITEMS else 0) + (8 if kind & PARTY_MOVES else 0)
@@ -64,7 +76,7 @@ def trainer_json(trainer: bytes, party: bytes) -> dict:
                "gender": gender_ability & 0xF, "ability": gender_ability >> 4}
         offset = MON.size
         if kind & PARTY_ITEMS:
-            mon["item"] = name("ITEM_", struct.unpack_from("<H", entry, offset)[0])
+            mon["item"] = item_name(struct.unpack_from("<H", entry, offset)[0])
             offset += 2
         if kind & PARTY_MOVES:
             mon["moves"] = [name("MOVE_", m) for m in struct.unpack_from("<4H", entry, offset) if m]
@@ -73,11 +85,11 @@ def trainer_json(trainer: bytes, party: bytes) -> dict:
         "$schema": "trainer.schema.json",
         "class": name("TRAINER_CLASS_", class_),
         "battle_style": name("BTL_STYLE_", style),
-        "items": [name("ITEM_", item) for item in items if item],
+        "items": [item_name(item) for item in items if item],
         "ai_flags": [name("AI_FLAG_", 1 << bit) for bit in range(32) if ai >> bit & 1],
         "heals": bool(heals),
         "money": money,
-        "reward": name("ITEM_", reward),
+        "reward": item_name(reward),
         "party": mons,
     }
 

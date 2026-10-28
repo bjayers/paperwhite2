@@ -513,18 +513,20 @@ def get_dsd(tools_dir: Path, from_source: bool) -> Path:
     return dsd
 
 
-def add_version(n: Writer, version: str, dsd: Path, bugfix: bool, shift: int) -> tuple[list[Path], list[str]]:
-    """Adds the build steps of one version. Returns its check targets and dsd config files. A build with the bugs fixed
-    or with its code shifted does not match, so its only targets are the ROM and its archives."""
-    matching = not bugfix and not shift
+def add_version(n: Writer, version: str, dsd: Path, bugfix: bool, shift: int,
+                hack: bool) -> tuple[list[Path], list[str]]:
+    """Adds the build steps of one version. Returns its check targets and dsd config files. A build with the bugs fixed,
+    with its code shifted or of Paper White 2 does not match, so its only targets are the ROM and its archives."""
+    matching = not bugfix and not shift and not hack
     baserom = Path("orig") / f"baserom_{version}.nds"
     extract_dir = Path("extract") / version
     config_dir = Path("config") / version
     build_dir = Path("build") / version
     arm9_config = config_dir / "arm9" / "config.yaml"
-    rom = Path("build") / VERSIONS[version]["rom"]
+    # Paper White 2: the hack's ROM has a name of its own, so it is never taken for a matching build
+    rom = Path("build") / ("paperwhite2.nds" if hack else VERSIONS[version]["rom"])
     sha1_file = Path(f"{version}.sha1")
-    sha1_file.write_text(f"{VERSIONS[version]['sha1']}  {rom}\n")
+    sha1_file.write_text(f"{VERSIONS[version]['sha1']}  {Path('build') / VERSIONS[version]['rom']}\n")
 
     dsd_configs = sorted(str(p) for p in config_dir.rglob("*.txt")) + [str(arm9_config)]
 
@@ -774,6 +776,9 @@ def main():
                              "code sizes; the ROMs no longer match. A multiple of 32, such as 0x100")
     parser.add_argument("--bugfix", action="store_true",
                         help="fix the game's bugs that are marked with BUGFIX in the source; the ROMs no longer match")
+    parser.add_argument("--hack", action="store_true",
+                        help="Paper White 2: build the modified ROM as build/paperwhite2.nds, without the SHA1 and "
+                             "archive checks")
     args = parser.parse_args()
 
     versions = args.versions or [v for v in VERSIONS if (ROOT / "orig" / f"baserom_{v}.nds").exists()]
@@ -879,7 +884,7 @@ def main():
     n.rule("complete_report", "$python tools/build/complete_report.py $in $out", "Counting complete files in $out")
     n.rule("progress", "$python tools/build/progress.py $in", "Progress")
     # A regeneration keeps the options that chose the tools, so that a build with another dsd keeps it
-    configure_args = [*args.versions, *(["--bugfix"] if args.bugfix else []),
+    configure_args = [*args.versions, *(["--bugfix"] if args.bugfix else []), *(["--hack"] if args.hack else []),
                       *([f"--shift {args.shift:#x}"] if args.shift else []),
                       *([f"--dsd {shlex.quote(str(args.dsd.resolve()))}"] if args.dsd else []),
                       *(["--dsd-from-source"] if args.dsd_from_source else []),
@@ -942,7 +947,7 @@ def main():
 
     checks, configs = [], []
     for version in versions:
-        version_checks, version_configs = add_version(n, version, dsd, args.bugfix, args.shift)
+        version_checks, version_configs = add_version(n, version, dsd, args.bugfix, args.shift, args.hack)
         checks += version_checks
         configs += version_configs
 
@@ -971,7 +976,7 @@ def main():
 
     (ROOT / "build.ninja").write_text(n.out.getvalue())
     write_compile_flags()
-    fixes = ", with the bugs fixed" if args.bugfix else ""
+    fixes = (", with the bugs fixed" if args.bugfix else "") + (", as Paper White 2" if args.hack else "")
     shifted = f", with the code shifted by {args.shift:#x} bytes" if args.shift else ""
     print(f"Wrote build.ninja for {', '.join(versions)}{fixes}{shifted}, now run ninja")
 

@@ -12,156 +12,6 @@
             }
         },
         {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 139,
-                "y": 657,
-                "z": 32
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 137,
-                "y": 650,
-                "z": 32
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 154,
-                "y": 660,
-                "z": 32
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 157,
-                "y": 649,
-                "z": 32
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 153,
-                "y": 654,
-                "z": 32
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 135,
-                "y": 645,
-                "z": 32
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 162,
-                "y": 643,
-                "z": 32
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 168,
-                "y": 668,
-                "z": -48
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 165,
-                "y": 670,
-                "z": -48
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 164,
-                "y": 668,
-                "z": -48
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 178,
-                "y": 656,
-                "z": -16
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 173,
-                "y": 658,
-                "z": -32
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 177,
-                "y": 659,
-                "z": -32
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 175,
-                "y": 668,
-                "z": -48
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 171,
-                "y": 669,
-                "z": -48
-            }
-        },
-        {
             "script": 8193,
             "condition": 2,
             "direction": 4,
@@ -284,7 +134,7 @@
             },
             "grid": {
                 "x": 165,
-                "z": 655,
+                "z": 659,
                 "y": -196608
             }
         },
@@ -329,19 +179,19 @@
         {
             "id": 7,
             "model": "OBJ_CODE_YOUNGSTER",
-            "movement": 14,
+            "movement": 8,
             "type": 1,
             "flag": 0,
             "script": 3164,
-            "direction": "DIR_UP",
-            "params": [ 3, 0, 0 ],
+            "direction": "DIR_DOWN",
+            "params": [ 7, 0, 0 ],
             "area": {
                 "width": 0,
                 "height": 0
             },
             "grid": {
-                "x": 141,
-                "z": 664,
+                "x": 139,
+                "z": 659,
                 "y": 131072
             }
         },
@@ -454,27 +304,27 @@
                 "height": 0
             },
             "grid": {
-                "x": 157,
-                "z": 654,
+                "x": 156,
+                "z": 653,
                 "y": 131072
             }
         },
         {
             "id": 14,
-            "model": "OBJ_CODE_110",
-            "movement": 0,
+            "model": "OBJ_CODE_POKEMON_SILCOON",
+            "movement": 3,
             "type": 0,
-            "flag": "EVENT_FLAG_0x0450",
-            "script": 7004,
+            "flag": "EVENT_FLAG_0x0254",
+            "script": 30,
             "direction": "DIR_DOWN",
             "params": [ 0, 0, 0 ],
             "area": {
-                "width": 0,
-                "height": 0
+                "width": 4,
+                "height": 4
             },
             "grid": {
-                "x": 143,
-                "z": 650,
+                "x": 145,
+                "z": 651,
                 "y": 131072
             }
         },
@@ -518,20 +368,20 @@
         },
         {
             "id": 17,
-            "model": "OBJ_CODE_110",
-            "movement": 0,
+            "model": "OBJ_CODE_POKEMON_CASCOON",
+            "movement": 3,
             "type": 0,
-            "flag": "EVENT_FLAG_0x0453",
-            "script": 7007,
+            "flag": "EVENT_FLAG_0x0256",
+            "script": 31,
             "direction": "DIR_DOWN",
             "params": [ 0, 0, 0 ],
             "area": {
-                "width": 0,
-                "height": 0
+                "width": 4,
+                "height": 4
             },
             "grid": {
-                "x": 173,
-                "z": 693,
+                "x": 144,
+                "z": 652,
                 "y": -196608
             }
         },
@@ -556,7 +406,7 @@
         },
         {
             "id": 19,
-            "model": "OBJ_CODE_216",
+            "model": "OBJ_CODE_110",
             "movement": 0,
             "type": 0,
             "flag": "EVENT_FLAG_0x0455",
@@ -568,8 +418,8 @@
                 "height": 0
             },
             "grid": {
-                "x": 162,
-                "z": 670,
+                "x": 143,
+                "z": 650,
                 "y": -196608
             }
         },
@@ -651,12 +501,107 @@
         },
         {
             "id": 24,
-            "model": "OBJ_CODE_14",
+            "model": "OBJ_CODE_POKEMON_GLOOM",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x020d",
+            "script": 11,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 2,
+                "height": 2
+            },
+            "grid": {
+                "x": 170,
+                "z": 691,
+                "y": 131072
+            }
+        },
+        {
+            "id": 25,
+            "model": "OBJ_CODE_POKEMON_WURMPLE",
+            "movement": 41,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x021c",
+            "script": 14,
+            "direction": "DIR_LEFT",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 4,
+                "height": 4
+            },
+            "grid": {
+                "x": 141,
+                "z": 652,
+                "y": 0
+            }
+        },
+        {
+            "id": 26,
+            "model": "OBJ_CODE_POKEMON_SILCOON",
             "movement": 0,
             "type": 0,
-            "flag": 0,
-            "script": 11,
-            "direction": "DIR_LEFT",
+            "flag": "EVENT_FLAG_0x021d",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 144,
+                "z": 655,
+                "y": 0
+            }
+        },
+        {
+            "id": 27,
+            "model": "OBJ_CODE_POKEMON_CASCOON",
+            "movement": 0,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0220",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 162,
+                "z": 641,
+                "y": 0
+            }
+        },
+        {
+            "id": 28,
+            "model": "OBJ_CODE_POKEMON_SILCOON",
+            "movement": 0,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0221",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 180,
+                "z": 647,
+                "y": 0
+            }
+        },
+        {
+            "id": 29,
+            "model": "OBJ_CODE_POKEMON_HOOTHOOT",
+            "movement": 0,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x023c",
+            "script": 0,
+            "direction": "DIR_DOWN",
             "params": [ 0, 0, 0 ],
             "area": {
                 "width": 0,
@@ -664,8 +609,521 @@
             },
             "grid": {
                 "x": 140,
-                "z": 660,
-                "y": 131072
+                "z": 655,
+                "y": 0
+            }
+        },
+        {
+            "id": 30,
+            "model": "OBJ_CODE_POKEMON_SWINUB",
+            "movement": 6,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0219",
+            "script": 15,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 150,
+                "z": 667,
+                "y": 0
+            }
+        },
+        {
+            "id": 31,
+            "model": "OBJ_CODE_POKEMON_HOOTHOOT",
+            "movement": 5,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x023e",
+            "script": 16,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 3,
+                "height": 0
+            },
+            "grid": {
+                "x": 175,
+                "z": 656,
+                "y": 0
+            }
+        },
+        {
+            "id": 32,
+            "model": "OBJ_CODE_POKEMON_HOOTHOOT",
+            "movement": 4,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x023d",
+            "script": 17,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 3
+            },
+            "grid": {
+                "x": 158,
+                "z": 652,
+                "y": 0
+            }
+        },
+        {
+            "id": 33,
+            "model": "OBJ_CODE_POKEMON_ODDISH",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0233",
+            "script": 18,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 2,
+                "height": 1
+            },
+            "grid": {
+                "x": 166,
+                "z": 668,
+                "y": 0
+            }
+        },
+        {
+            "id": 34,
+            "model": "OBJ_CODE_POKEMON_ODDISH",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0230",
+            "script": 19,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 2,
+                "height": 1
+            },
+            "grid": {
+                "x": 167,
+                "z": 668,
+                "y": 0
+            }
+        },
+        {
+            "id": 35,
+            "model": "OBJ_CODE_POKEMON_CASCOON",
+            "movement": 0,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0224",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 156,
+                "z": 674,
+                "y": 0
+            }
+        },
+        {
+            "id": 36,
+            "model": "OBJ_CODE_POKEMON_BIDOOF",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x01f8",
+            "script": 20,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 1,
+                "height": 2
+            },
+            "grid": {
+                "x": 175,
+                "z": 667,
+                "y": 0
+            }
+        },
+        {
+            "id": 37,
+            "model": "OBJ_CODE_POKEMON_BIDOOF",
+            "movement": 9,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x01f6",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 146,
+                "z": 656,
+                "y": 0
+            }
+        },
+        {
+            "id": 38,
+            "model": "OBJ_CODE_POKEMON_NOCTOWL",
+            "movement": 4,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x023a",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 4
+            },
+            "grid": {
+                "x": 165,
+                "z": 646,
+                "y": 0
+            }
+        },
+        {
+            "id": 39,
+            "model": "OBJ_CODE_POKEMON_LEDYBA",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0209",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 3,
+                "height": 3
+            },
+            "grid": {
+                "x": 135,
+                "z": 676,
+                "y": 0
+            }
+        },
+        {
+            "id": 40,
+            "model": "OBJ_CODE_POKEMON_TAILLOW",
+            "movement": 13,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x01fb",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 154,
+                "z": 643,
+                "y": 0
+            }
+        },
+        {
+            "id": 41,
+            "model": "OBJ_CODE_POKEMON_TAILLOW",
+            "movement": 10,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x01fc",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 157,
+                "z": 658,
+                "y": 0
+            }
+        },
+        {
+            "id": 42,
+            "model": "OBJ_CODE_POKEMON_TAILLOW",
+            "movement": 10,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x01f9",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 176,
+                "z": 662,
+                "y": 0
+            }
+        },
+        {
+            "id": 43,
+            "model": "OBJ_CODE_POKEMON_TAILLOW",
+            "movement": 13,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x01fc",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 176,
+                "z": 647,
+                "y": 0
+            }
+        },
+        {
+            "id": 44,
+            "model": "OBJ_CODE_POKEMON_UNOWN_FORM_10",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x021e",
+            "script": 21,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 2,
+                "height": 1
+            },
+            "grid": {
+                "x": 165,
+                "z": 668,
+                "y": 0
+            }
+        },
+        {
+            "id": 45,
+            "model": "OBJ_CODE_POKEMON_SILCOON",
+            "movement": 0,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0221",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 165,
+                "z": 684,
+                "y": 0
+            }
+        },
+        {
+            "id": 46,
+            "model": "OBJ_CODE_POKEMON_YANMA",
+            "movement": 4,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0201",
+            "script": 22,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 5
+            },
+            "grid": {
+                "x": 149,
+                "z": 654,
+                "y": 0
+            }
+        },
+        {
+            "id": 47,
+            "model": "OBJ_CODE_POKEMON_BEAUTIFLY",
+            "movement": 44,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0255",
+            "script": 32,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 4,
+                "height": 4
+            },
+            "grid": {
+                "x": 141,
+                "z": 648,
+                "y": 0
+            }
+        },
+        {
+            "id": 48,
+            "model": "OBJ_CODE_POKEMON_DUSTOX",
+            "movement": 43,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0257",
+            "script": 33,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 4,
+                "height": 4
+            },
+            "grid": {
+                "x": 145,
+                "z": 652,
+                "y": 0
+            }
+        },
+        {
+            "id": 49,
+            "model": "OBJ_CODE_POKEMON_SPINARAK",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x020d",
+            "script": 24,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 1,
+                "height": 1
+            },
+            "grid": {
+                "x": 157,
+                "z": 654,
+                "y": 0
+            }
+        },
+        {
+            "id": 50,
+            "model": "OBJ_CODE_POKEMON_SHROOMISH",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0216",
+            "script": 25,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 2,
+                "height": 2
+            },
+            "grid": {
+                "x": 138,
+                "z": 668,
+                "y": 0
+            }
+        },
+        {
+            "id": 51,
+            "model": "OBJ_CODE_148",
+            "movement": 0,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0208",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 164,
+                "z": 653,
+                "y": 0
+            }
+        },
+        {
+            "id": 52,
+            "model": "OBJ_CODE_POKEMON_SPINARAK",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x020c",
+            "script": 26,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 1,
+                "height": 1
+            },
+            "grid": {
+                "x": 164,
+                "z": 654,
+                "y": 0
+            }
+        },
+        {
+            "id": 53,
+            "model": "OBJ_CODE_POKEMON_HOOTHOOT",
+            "movement": 0,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x023e",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 160,
+                "z": 685,
+                "y": 0
+            }
+        },
+        {
+            "id": 54,
+            "model": "OBJ_CODE_POKEMON_WURMPLE",
+            "movement": 0,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x020d",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 170,
+                "z": 689,
+                "y": 0
+            }
+        },
+        {
+            "id": 55,
+            "model": "OBJ_CODE_POKEMON_ODDISH",
+            "movement": 0,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0235",
+            "script": 28,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 158,
+                "z": 691,
+                "y": 0
+            }
+        },
+        {
+            "id": 56,
+            "model": "OBJ_CODE_POKEMON_PARAS",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0236",
+            "script": 27,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 2,
+                "height": 2
+            },
+            "grid": {
+                "x": 152,
+                "z": 655,
+                "y": 0
             }
         }
     ],
@@ -835,6 +1293,11 @@
         {
             "type": 4,
             "script": 8
+        },
+        {
+            "type": 2,
+            "script": 13
         }
-    ]
+    ],
+    "extra_padding": 2
 }

@@ -1,6 +1,8 @@
 #include "asm/field_script.inc"
 #include "text/script/global_10520.h"
 
+// Script plugin 14, from the zones that start its scripts
+
     ScriptEntry Script_1
     ScriptEntry Script_2
     ScriptEntry Script_3

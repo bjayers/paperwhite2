@@ -47,8 +47,8 @@
                 "height": 0
             },
             "grid": {
-                "x": 5,
-                "z": 12,
+                "x": 1,
+                "z": 5,
                 "y": 0
             }
         },
@@ -230,15 +230,15 @@
             "type": 0,
             "flag": 0,
             "script": 5,
-            "direction": "DIR_DOWN",
+            "direction": "DIR_RIGHT",
             "params": [ 0, 0, 0 ],
             "area": {
                 "width": 0,
                 "height": 0
             },
             "grid": {
-                "x": 10,
-                "z": 11,
+                "x": 1,
+                "z": 13,
                 "y": 0
             }
         },
@@ -257,6 +257,44 @@
             },
             "grid": {
                 "x": 3,
+                "z": 12,
+                "y": 0
+            }
+        },
+        {
+            "id": 12,
+            "model": "OBJ_CODE_151",
+            "movement": 0,
+            "type": 0,
+            "flag": "EVENT_FLAG_TRAINER_TEAM_PLASMA_GRUNT_3",
+            "script": 8,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 10,
+                "z": 11,
+                "y": 0
+            }
+        },
+        {
+            "id": 13,
+            "model": "OBJ_CODE_76",
+            "movement": 0,
+            "type": 0,
+            "flag": "EVENT_FLAG_DAILY_0x0af0",
+            "script": 10851,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 5,
                 "z": 12,
                 "y": 0
             }
@@ -282,7 +320,15 @@
     "init_scripts": [
         {
             "type": 4,
-            "script": 10635
+            "script": 6
+        },
+        {
+            "type": 2,
+            "script": 2102
+        },
+        {
+            "type": 3,
+            "script": 2104
         },
         {
             "type": 4,
@@ -290,27 +336,15 @@
         },
         {
             "type": 3,
-            "script": 10636
-        },
-        {
-            "type": 3,
             "script": 10396
         },
         {
-            "type": 1,
-            "conditions": []
-        },
-        {
-            "type": 2,
-            "script": 2102
-        },
-        {
             "type": 4,
-            "script": 6
+            "script": 10635
         },
         {
             "type": 3,
-            "script": 2104
+            "script": 10636
         }
     ]
 }

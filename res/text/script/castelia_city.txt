@@ -26,4 +26,11 @@ CasteliaCity_Text_AheadNarrowStreetOcean = Ahead: Narrow Street\nOcean Side: Uni
 CasteliaCity_Text_AheadPokemonGymOcean = Ahead: Pokémon Gym\nOcean Side: Liberty Pier
 CasteliaCity_Text_PasserbyAnalyticsHqPeople = Passerby Analytics HQ\n...People pass by as they walk along.
 CasteliaCity_Text_BattleCompanyTalentedTrainers = Battle Company\nTalented Trainers Welcome!
-\pad{f6}
+CasteliaCity_Text_MimeMiiiiime = Mime-miiiiime!
+CasteliaCity_Text_ChillChin = Chill-chin?
+CasteliaCity_Text_WatersClearHere = The water's so clear here...
+CasteliaCity_Text_OhHeySeeThem = Oh―hey.{be01}\nSee them?{be01}\nThe Basculin?
+CasteliaCity_Text_SomeoneToldRedStripe = Someone told me the {ff00:1}red{ff00:0} stripe\nBasculin live in {ff00:1}east{ff00:0} Unova,{be00}\nwhile the {ff00:2}blue{ff00:0} live in the {ff00:2}west{ff00:0}.
+CasteliaCity_Text_DidntExpectSeeThem = I didn't expect to see them\nin the harbor, though.{be00}\nThey're freshwater Pokémon.
+CasteliaCity_Text_ImMistyCameFrom = I'm Misty.{be01}\nI came from Kanto to battle in the\n{ff00:2}Pokémon World Tournament{ff00:0} in Driftveil.{be01}\nIf you're heading that way,\nyou should sign up too.{be00}\nMaybe you'll get to see my Starmie!
+CasteliaCity_Text_ThinkImGoingWatch = I think I'm going to watch the sea\na bit longer, but you go ahead.{be00}\nI'll see you in Driftveil!

@@ -1,6 +1,6 @@
 {
     "$schema": "encounters.schema.json",
-    "all_year": {
+    "spring": {
         "rates": {
             "grass": 0,
             "dark_grass": 0,
@@ -14,18 +14,114 @@
         "grass": [],
         "dark_grass": [],
         "shaking_grass": [
-            [ "SPECIES_DUCKLETT", 23, 23 ],
-            [ "SPECIES_DUCKLETT", 23, 23 ],
-            [ "SPECIES_DUCKLETT", 24, 24 ],
-            [ "SPECIES_DUCKLETT", 24, 24 ],
-            [ "SPECIES_DUCKLETT", 25, 25 ],
-            [ "SPECIES_DUCKLETT", 25, 25 ],
-            [ "SPECIES_DUCKLETT", 26, 26 ],
-            [ "SPECIES_DUCKLETT", 25, 25 ],
-            [ "SPECIES_DUCKLETT", 26, 26 ],
-            [ "SPECIES_DUCKLETT", 26, 26 ],
-            [ "SPECIES_DUCKLETT", 26, 26 ],
-            [ "SPECIES_DUCKLETT", 26, 26 ]
+            [ "SPECIES_PIDOVE", 23, 31 ],
+            [ "SPECIES_WINGULL", 23, 31 ],
+            [ "SPECIES_WINGULL", 23, 31 ],
+            [ "SPECIES_TRANQUILL", 23, 31 ],
+            [ "SPECIES_SWANNA", 30, 30 ],
+            [ "SPECIES_WINGULL", 23, 31 ],
+            [ "SPECIES_WINGULL", 23, 31 ],
+            [ "SPECIES_TRANQUILL", 23, 31 ],
+            [ "SPECIES_WINGULL", 23, 31 ],
+            [ "SPECIES_TRANQUILL", 23, 31 ],
+            [ "SPECIES_PIDOVE", 23, 31 ],
+            [ "SPECIES_WINGULL", 23, 31 ]
+        ],
+        "surf": [],
+        "rippling_surf": [],
+        "fishing": [],
+        "rippling_fishing": []
+    },
+    "summer": {
+        "rates": {
+            "grass": 0,
+            "dark_grass": 0,
+            "shaking_grass": 1,
+            "surf": 0,
+            "rippling_surf": 0,
+            "fishing": 0,
+            "rippling_fishing": 0,
+            "flags": 2
+        },
+        "grass": [],
+        "dark_grass": [],
+        "shaking_grass": [
+            [ "SPECIES_PIDOVE", 23, 31 ],
+            [ "SPECIES_WINGULL", 23, 31 ],
+            [ "SPECIES_WINGULL", 23, 31 ],
+            [ "SPECIES_TRANQUILL", 23, 31 ],
+            [ "SPECIES_ALTARIA", 30, 30 ],
+            [ "SPECIES_WINGULL", 23, 31 ],
+            [ "SPECIES_WINGULL", 23, 31 ],
+            [ "SPECIES_TRANQUILL", 23, 31 ],
+            [ "SPECIES_WINGULL", 23, 31 ],
+            [ "SPECIES_TRANQUILL", 23, 31 ],
+            [ "SPECIES_PIDOVE", 23, 31 ],
+            [ "SPECIES_WINGULL", 23, 31 ]
+        ],
+        "surf": [],
+        "rippling_surf": [],
+        "fishing": [],
+        "rippling_fishing": []
+    },
+    "autumn": {
+        "rates": {
+            "grass": 0,
+            "dark_grass": 0,
+            "shaking_grass": 1,
+            "surf": 0,
+            "rippling_surf": 0,
+            "fishing": 0,
+            "rippling_fishing": 0,
+            "flags": 2
+        },
+        "grass": [],
+        "dark_grass": [],
+        "shaking_grass": [
+            [ "SPECIES_DUCKLETT", 23, 31 ],
+            [ "SPECIES_DUCKLETT", 23, 31 ],
+            [ "SPECIES_SWANNA", 29, 29 ],
+            [ "SPECIES_WINGULL", 23, 31 ],
+            [ "SPECIES_TRANQUILL", 23, 31 ],
+            [ "SPECIES_SWANNA", 30, 30 ],
+            [ "SPECIES_SWANNA", 31, 31 ],
+            [ "SPECIES_WINGULL", 23, 31 ],
+            [ "SPECIES_SWANNA", 31, 31 ],
+            [ "SPECIES_WINGULL", 23, 31 ],
+            [ "SPECIES_DUCKLETT", 23, 31 ],
+            [ "SPECIES_SWANNA", 31, 31 ]
+        ],
+        "surf": [],
+        "rippling_surf": [],
+        "fishing": [],
+        "rippling_fishing": []
+    },
+    "winter": {
+        "rates": {
+            "grass": 0,
+            "dark_grass": 0,
+            "shaking_grass": 1,
+            "surf": 0,
+            "rippling_surf": 0,
+            "fishing": 0,
+            "rippling_fishing": 0,
+            "flags": 2
+        },
+        "grass": [],
+        "dark_grass": [],
+        "shaking_grass": [
+            [ "SPECIES_DUCKLETT", 23, 31 ],
+            [ "SPECIES_DUCKLETT", 23, 31 ],
+            [ "SPECIES_SWANNA", 29, 29 ],
+            [ "SPECIES_WINGULL", 23, 31 ],
+            [ "SPECIES_TRANQUILL", 23, 31 ],
+            [ "SPECIES_SWANNA", 30, 30 ],
+            [ "SPECIES_SWANNA", 31, 31 ],
+            [ "SPECIES_WINGULL", 23, 31 ],
+            [ "SPECIES_SWANNA", 31, 31 ],
+            [ "SPECIES_WINGULL", 23, 31 ],
+            [ "SPECIES_DUCKLETT", 23, 31 ],
+            [ "SPECIES_SWANNA", 31, 31 ]
         ],
         "surf": [],
         "rippling_surf": [],

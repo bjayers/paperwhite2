@@ -14,18 +14,36 @@
             "form": 0,
             "level": 11,
             "difficulty": 50,
-            "gender": 0,
+            "gender": 1,
             "ability": 2,
             "moves": [ "MOVE_WORK_UP", "MOVE_BITE", "MOVE_TACKLE" ]
         },
         {
             "species": "SPECIES_LILLIPUP",
             "form": 0,
-            "level": 13,
+            "level": 11,
             "difficulty": 50,
-            "gender": 0,
+            "gender": 1,
             "ability": 1,
             "moves": [ "MOVE_WORK_UP", "MOVE_BITE", "MOVE_TACKLE" ]
+        },
+        {
+            "species": "SPECIES_PIDOVE",
+            "form": 0,
+            "level": 11,
+            "difficulty": 50,
+            "gender": 1,
+            "ability": 1,
+            "moves": [ "MOVE_GROWL", "MOVE_QUICK_ATTACK", "MOVE_GUST" ]
+        },
+        {
+            "species": "SPECIES_CINCCINO",
+            "form": 0,
+            "level": 13,
+            "difficulty": 150,
+            "gender": 2,
+            "ability": 1,
+            "moves": [ "MOVE_GROWL", "MOVE_SING", "MOVE_DOUBLE_SLAP" ]
         }
     ],
     "messages": [

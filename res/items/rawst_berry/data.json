@@ -2,7 +2,7 @@
     "$schema": "../item.schema.json",
     "name": "Rawst Berry",
     "name_plural": "Rawst Berries",
-    "description": "If held by a Pokémon,\nit recovers from a burn.",
+    "description": "If held by a Pokémon,\nit recovers from a burn.\nHas a bitter flavor.",
     "price": 2,
     "hold_effect": "HOLD_EFFECT_BRN_RESTORE",
     "hold_param": 0,

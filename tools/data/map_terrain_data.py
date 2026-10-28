@@ -139,8 +139,8 @@ def patch_terrains(chunk, directory):
                     raise ValueError(f"{path}: plane tile {index} exceeds slope or height table")
                 if shape == 2 and offset >= len(splits):
                     raise ValueError(f"{path}: split tile {index} refers past split table")
-                if shape not in (0, 2):
-                    raise ValueError(f"{path}: unsupported tile shape {shape}")
+                # Paper White 2: the original maps use only shapes 0 and 2, but the hack's map editor wrote shape 1 on
+                # some tiles; any other shape is packed as it is, without a table check
                 struct.pack_into("<HHI", result, start + 4 + 8 * index,
                                  shape | slope << 2, offset, flags)
         if chunk[:2] != b"RD":

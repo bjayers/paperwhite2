@@ -11,65 +11,62 @@
             "rippling_fishing": 1,
             "flags": 0
         },
-        "grass": {
-            "black2": [
-                [ "SPECIES_PALPITOAD", 54, 54 ],
-                [ "SPECIES_SHELMET", 54, 54 ],
-                [ "SPECIES_PALPITOAD", 55, 55 ],
-                [ "SPECIES_CROAGUNK", 55, 55 ],
-                [ "SPECIES_STUNFISK", 55, 55 ],
-                [ "SPECIES_STUNFISK", 56, 56 ],
-                [ "SPECIES_PALPITOAD", 56, 56 ],
-                [ "SPECIES_CROAGUNK", 56, 56 ],
-                [ "SPECIES_PALPITOAD", 57, 57 ],
-                [ "SPECIES_KARRABLAST", 57, 57 ],
-                [ "SPECIES_PALPITOAD", 57, 57 ],
-                [ "SPECIES_KARRABLAST", 57, 57 ]
-            ],
-            "white2": [
-                [ "SPECIES_PALPITOAD", 54, 54 ],
-                [ "SPECIES_KARRABLAST", 54, 54 ],
-                [ "SPECIES_PALPITOAD", 55, 55 ],
-                [ "SPECIES_CROAGUNK", 55, 55 ],
-                [ "SPECIES_STUNFISK", 55, 55 ],
-                [ "SPECIES_STUNFISK", 56, 56 ],
-                [ "SPECIES_PALPITOAD", 56, 56 ],
-                [ "SPECIES_CROAGUNK", 56, 56 ],
-                [ "SPECIES_PALPITOAD", 57, 57 ],
-                [ "SPECIES_SHELMET", 57, 57 ],
-                [ "SPECIES_PALPITOAD", 57, 57 ],
-                [ "SPECIES_SHELMET", 57, 57 ]
-            ]
-        },
+        "grass": [
+            [ "SPECIES_QUAGSIRE", 54, 54 ],
+            [ "SPECIES_LUDICOLO", 54, 54 ],
+            [ "SPECIES_SEISMITOAD", 55, 55 ],
+            [ "SPECIES_QUAGSIRE", 55, 55 ],
+            [ "SPECIES_QUAGSIRE", 55, 55 ],
+            [ "SPECIES_LUDICOLO", 56, 56 ],
+            [ "SPECIES_WOOPER", 56, 56 ],
+            [ "SPECIES_LOMBRE", 56, 56 ],
+            [ "SPECIES_LOTAD", 57, 57 ],
+            [ "SPECIES_CROAGUNK", 57, 57 ],
+            [ "SPECIES_CARNIVINE", 57, 57 ],
+            [ "SPECIES_SURSKIT", 57, 57 ]
+        ],
         "dark_grass": [],
-        "shaking_grass": [],
+        "shaking_grass": [
+            [ "SPECIES_AUDINO", 54, 54 ],
+            [ "SPECIES_TYMPOLE", 54, 54 ],
+            [ "SPECIES_WOOPER", 55, 55 ],
+            [ "SPECIES_CARNIVINE", 55, 55 ],
+            [ "SPECIES_TYMPOLE", 55, 55 ],
+            [ "SPECIES_WOOPER", 55, 55 ],
+            [ "SPECIES_MUDKIP", 56, 56 ],
+            [ "SPECIES_CROAGUNK", 56, 56 ],
+            [ "SPECIES_LOTAD", 56, 56 ],
+            [ "SPECIES_WOOPER", 56, 56 ],
+            [ "SPECIES_CARNIVINE", 57, 57 ],
+            [ "SPECIES_WOOPER", 57, 57 ]
+        ],
         "surf": [
-            [ "SPECIES_STUNFISK", 45, 60 ],
-            [ "SPECIES_STUNFISK", 45, 60 ],
-            [ "SPECIES_STUNFISK", 60, 60 ],
+            [ "SPECIES_TYMPOLE", 45, 60 ],
+            [ "SPECIES_LOTAD", 45, 60 ],
+            [ "SPECIES_WOOPER", 60, 60 ],
             [ "SPECIES_STUNFISK", 60, 60 ],
             [ "SPECIES_STUNFISK", 60, 60 ]
         ],
         "rippling_surf": [
-            [ "SPECIES_STUNFISK", 45, 60 ],
-            [ "SPECIES_STUNFISK", 45, 60 ],
-            [ "SPECIES_STUNFISK", 60, 60 ],
-            [ "SPECIES_SEISMITOAD", 60, 60 ],
-            [ "SPECIES_SEISMITOAD", 60, 60 ]
+            [ "SPECIES_PALPITOAD", 45, 60 ],
+            [ "SPECIES_LOMBRE", 45, 60 ],
+            [ "SPECIES_QUAGSIRE", 60, 60 ],
+            [ "SPECIES_QUAGSIRE", 60, 60 ],
+            [ "SPECIES_QUAGSIRE", 60, 60 ]
         ],
         "fishing": [
+            [ "SPECIES_MAGIKARP", 45, 60 ],
             [ "SPECIES_BARBOACH", 45, 60 ],
-            [ "SPECIES_STUNFISK", 45, 60 ],
-            [ "SPECIES_BARBOACH", 60, 60 ],
-            [ "SPECIES_BARBOACH", 60, 60 ],
-            [ "SPECIES_BARBOACH", 60, 60 ]
+            [ "SPECIES_CORPHISH", 60, 60 ],
+            [ "SPECIES_FEEBAS", 60, 60 ],
+            [ "SPECIES_FEEBAS", 60, 60 ]
         ],
         "rippling_fishing": [
-            [ "SPECIES_BARBOACH", 45, 60 ],
-            [ "SPECIES_STUNFISK", 45, 60 ],
-            [ "SPECIES_WHISCASH", 60, 60 ],
-            [ "SPECIES_WHISCASH", 60, 60 ],
-            [ "SPECIES_WHISCASH", 60, 60 ]
+            [ "SPECIES_WHISCASH", 45, 60 ],
+            [ "SPECIES_CRAWDAUNT", 45, 60 ],
+            [ "SPECIES_SEAKING", 60, 60 ],
+            [ "SPECIES_SEAKING", 60, 60 ],
+            [ "SPECIES_SEAKING", 60, 60 ]
         ]
     },
     "summer": {
@@ -83,65 +80,62 @@
             "rippling_fishing": 1,
             "flags": 0
         },
-        "grass": {
-            "black2": [
-                [ "SPECIES_PALPITOAD", 54, 54 ],
-                [ "SPECIES_SHELMET", 54, 54 ],
-                [ "SPECIES_PALPITOAD", 55, 55 ],
-                [ "SPECIES_CROAGUNK", 55, 55 ],
-                [ "SPECIES_STUNFISK", 55, 55 ],
-                [ "SPECIES_STUNFISK", 56, 56 ],
-                [ "SPECIES_PALPITOAD", 56, 56 ],
-                [ "SPECIES_CROAGUNK", 56, 56 ],
-                [ "SPECIES_PALPITOAD", 57, 57 ],
-                [ "SPECIES_KARRABLAST", 57, 57 ],
-                [ "SPECIES_PALPITOAD", 57, 57 ],
-                [ "SPECIES_KARRABLAST", 57, 57 ]
-            ],
-            "white2": [
-                [ "SPECIES_PALPITOAD", 54, 54 ],
-                [ "SPECIES_KARRABLAST", 54, 54 ],
-                [ "SPECIES_PALPITOAD", 55, 55 ],
-                [ "SPECIES_CROAGUNK", 55, 55 ],
-                [ "SPECIES_STUNFISK", 55, 55 ],
-                [ "SPECIES_STUNFISK", 56, 56 ],
-                [ "SPECIES_PALPITOAD", 56, 56 ],
-                [ "SPECIES_CROAGUNK", 56, 56 ],
-                [ "SPECIES_PALPITOAD", 57, 57 ],
-                [ "SPECIES_SHELMET", 57, 57 ],
-                [ "SPECIES_PALPITOAD", 57, 57 ],
-                [ "SPECIES_SHELMET", 57, 57 ]
-            ]
-        },
+        "grass": [
+            [ "SPECIES_QUAGSIRE", 54, 54 ],
+            [ "SPECIES_SWANNA", 54, 54 ],
+            [ "SPECIES_LUDICOLO", 55, 55 ],
+            [ "SPECIES_SEISMITOAD", 55, 55 ],
+            [ "SPECIES_QUAGSIRE", 55, 55 ],
+            [ "SPECIES_SWANNA", 56, 56 ],
+            [ "SPECIES_WOOPER", 56, 56 ],
+            [ "SPECIES_DUCKLETT", 56, 56 ],
+            [ "SPECIES_LUDICOLO", 57, 57 ],
+            [ "SPECIES_CROAGUNK", 57, 57 ],
+            [ "SPECIES_CARNIVINE", 57, 57 ],
+            [ "SPECIES_SURSKIT", 57, 57 ]
+        ],
         "dark_grass": [],
-        "shaking_grass": [],
+        "shaking_grass": [
+            [ "SPECIES_AUDINO", 54, 54 ],
+            [ "SPECIES_DUCKLETT", 54, 54 ],
+            [ "SPECIES_CARNIVINE", 55, 55 ],
+            [ "SPECIES_TYMPOLE", 55, 55 ],
+            [ "SPECIES_DUCKLETT", 55, 55 ],
+            [ "SPECIES_CARNIVINE", 55, 55 ],
+            [ "SPECIES_MARSHTOMP", 56, 56 ],
+            [ "SPECIES_WOOPER", 56, 56 ],
+            [ "SPECIES_LOTAD", 56, 56 ],
+            [ "SPECIES_TYMPOLE", 56, 56 ],
+            [ "SPECIES_CARNIVINE", 57, 57 ],
+            [ "SPECIES_WOOPER", 57, 57 ]
+        ],
         "surf": [
-            [ "SPECIES_STUNFISK", 45, 60 ],
-            [ "SPECIES_STUNFISK", 45, 60 ],
-            [ "SPECIES_STUNFISK", 60, 60 ],
-            [ "SPECIES_STUNFISK", 60, 60 ],
-            [ "SPECIES_STUNFISK", 60, 60 ]
+            [ "SPECIES_DUCKLETT", 45, 60 ],
+            [ "SPECIES_TYMPOLE", 45, 60 ],
+            [ "SPECIES_LOTAD", 60, 60 ],
+            [ "SPECIES_WOOPER", 60, 60 ],
+            [ "SPECIES_WOOPER", 60, 60 ]
         ],
         "rippling_surf": [
-            [ "SPECIES_STUNFISK", 45, 60 ],
-            [ "SPECIES_STUNFISK", 45, 60 ],
-            [ "SPECIES_STUNFISK", 60, 60 ],
-            [ "SPECIES_SEISMITOAD", 60, 60 ],
-            [ "SPECIES_SEISMITOAD", 60, 60 ]
+            [ "SPECIES_SWANNA", 45, 60 ],
+            [ "SPECIES_PALPITOAD", 45, 60 ],
+            [ "SPECIES_QUAGSIRE", 60, 60 ],
+            [ "SPECIES_QUAGSIRE", 60, 60 ],
+            [ "SPECIES_QUAGSIRE", 60, 60 ]
         ],
         "fishing": [
+            [ "SPECIES_MAGIKARP", 45, 60 ],
             [ "SPECIES_BARBOACH", 45, 60 ],
-            [ "SPECIES_STUNFISK", 45, 60 ],
-            [ "SPECIES_BARBOACH", 60, 60 ],
-            [ "SPECIES_BARBOACH", 60, 60 ],
-            [ "SPECIES_BARBOACH", 60, 60 ]
+            [ "SPECIES_CORPHISH", 60, 60 ],
+            [ "SPECIES_FEEBAS", 60, 60 ],
+            [ "SPECIES_FEEBAS", 60, 60 ]
         ],
         "rippling_fishing": [
-            [ "SPECIES_BARBOACH", 45, 60 ],
-            [ "SPECIES_STUNFISK", 45, 60 ],
-            [ "SPECIES_WHISCASH", 60, 60 ],
-            [ "SPECIES_WHISCASH", 60, 60 ],
-            [ "SPECIES_WHISCASH", 60, 60 ]
+            [ "SPECIES_WHISCASH", 45, 60 ],
+            [ "SPECIES_CRAWDAUNT", 45, 60 ],
+            [ "SPECIES_SEAKING", 60, 60 ],
+            [ "SPECIES_SEAKING", 60, 60 ],
+            [ "SPECIES_SEAKING", 60, 60 ]
         ]
     },
     "autumn": {
@@ -155,65 +149,62 @@
             "rippling_fishing": 1,
             "flags": 0
         },
-        "grass": {
-            "black2": [
-                [ "SPECIES_PALPITOAD", 54, 54 ],
-                [ "SPECIES_SHELMET", 54, 54 ],
-                [ "SPECIES_PALPITOAD", 55, 55 ],
-                [ "SPECIES_CROAGUNK", 55, 55 ],
-                [ "SPECIES_STUNFISK", 55, 55 ],
-                [ "SPECIES_STUNFISK", 56, 56 ],
-                [ "SPECIES_PALPITOAD", 56, 56 ],
-                [ "SPECIES_CROAGUNK", 56, 56 ],
-                [ "SPECIES_PALPITOAD", 57, 57 ],
-                [ "SPECIES_KARRABLAST", 57, 57 ],
-                [ "SPECIES_PALPITOAD", 57, 57 ],
-                [ "SPECIES_KARRABLAST", 57, 57 ]
-            ],
-            "white2": [
-                [ "SPECIES_PALPITOAD", 54, 54 ],
-                [ "SPECIES_KARRABLAST", 54, 54 ],
-                [ "SPECIES_PALPITOAD", 55, 55 ],
-                [ "SPECIES_CROAGUNK", 55, 55 ],
-                [ "SPECIES_STUNFISK", 55, 55 ],
-                [ "SPECIES_STUNFISK", 56, 56 ],
-                [ "SPECIES_PALPITOAD", 56, 56 ],
-                [ "SPECIES_CROAGUNK", 56, 56 ],
-                [ "SPECIES_PALPITOAD", 57, 57 ],
-                [ "SPECIES_SHELMET", 57, 57 ],
-                [ "SPECIES_PALPITOAD", 57, 57 ],
-                [ "SPECIES_SHELMET", 57, 57 ]
-            ]
-        },
+        "grass": [
+            [ "SPECIES_QUAGSIRE", 54, 54 ],
+            [ "SPECIES_STUNFISK", 54, 54 ],
+            [ "SPECIES_LUDICOLO", 55, 55 ],
+            [ "SPECIES_SEISMITOAD", 55, 55 ],
+            [ "SPECIES_QUAGSIRE", 55, 55 ],
+            [ "SPECIES_STUNFISK", 56, 56 ],
+            [ "SPECIES_WOOPER", 56, 56 ],
+            [ "SPECIES_LUDICOLO", 56, 56 ],
+            [ "SPECIES_LOMBRE", 57, 57 ],
+            [ "SPECIES_LOTAD", 57, 57 ],
+            [ "SPECIES_CARNIVINE", 57, 57 ],
+            [ "SPECIES_CROAGUNK", 57, 57 ]
+        ],
         "dark_grass": [],
-        "shaking_grass": [],
+        "shaking_grass": [
+            [ "SPECIES_AUDINO", 54, 54 ],
+            [ "SPECIES_CARNIVINE", 54, 54 ],
+            [ "SPECIES_TYMPOLE", 55, 55 ],
+            [ "SPECIES_STUNFISK", 55, 55 ],
+            [ "SPECIES_CARNIVINE", 55, 55 ],
+            [ "SPECIES_TYMPOLE", 55, 55 ],
+            [ "SPECIES_SWAMPERT", 56, 56 ],
+            [ "SPECIES_WOOPER", 56, 56 ],
+            [ "SPECIES_CROAGUNK", 56, 56 ],
+            [ "SPECIES_STUNFISK", 56, 56 ],
+            [ "SPECIES_CARNIVINE", 57, 57 ],
+            [ "SPECIES_WOOPER", 57, 57 ]
+        ],
         "surf": [
-            [ "SPECIES_STUNFISK", 45, 60 ],
-            [ "SPECIES_STUNFISK", 45, 60 ],
-            [ "SPECIES_STUNFISK", 60, 60 ],
+            [ "SPECIES_TYMPOLE", 45, 60 ],
+            [ "SPECIES_LOTAD", 45, 60 ],
+            [ "SPECIES_WOOPER", 60, 60 ],
             [ "SPECIES_STUNFISK", 60, 60 ],
             [ "SPECIES_STUNFISK", 60, 60 ]
         ],
         "rippling_surf": [
-            [ "SPECIES_STUNFISK", 45, 60 ],
-            [ "SPECIES_STUNFISK", 45, 60 ],
-            [ "SPECIES_STUNFISK", 60, 60 ],
-            [ "SPECIES_SEISMITOAD", 60, 60 ],
-            [ "SPECIES_SEISMITOAD", 60, 60 ]
+            [ "SPECIES_PALPITOAD", 45, 60 ],
+            [ "SPECIES_LOMBRE", 45, 60 ],
+            [ "SPECIES_QUAGSIRE", 60, 60 ],
+            [ "SPECIES_QUAGSIRE", 60, 60 ],
+            [ "SPECIES_QUAGSIRE", 60, 60 ]
         ],
         "fishing": [
+            [ "SPECIES_MAGIKARP", 45, 60 ],
             [ "SPECIES_BARBOACH", 45, 60 ],
-            [ "SPECIES_STUNFISK", 45, 60 ],
-            [ "SPECIES_BARBOACH", 60, 60 ],
-            [ "SPECIES_BARBOACH", 60, 60 ],
-            [ "SPECIES_BARBOACH", 60, 60 ]
+            [ "SPECIES_CORPHISH", 60, 60 ],
+            [ "SPECIES_FEEBAS", 60, 60 ],
+            [ "SPECIES_FEEBAS", 60, 60 ]
         ],
         "rippling_fishing": [
-            [ "SPECIES_BARBOACH", 45, 60 ],
-            [ "SPECIES_STUNFISK", 45, 60 ],
-            [ "SPECIES_WHISCASH", 60, 60 ],
-            [ "SPECIES_WHISCASH", 60, 60 ],
-            [ "SPECIES_WHISCASH", 60, 60 ]
+            [ "SPECIES_WHISCASH", 45, 60 ],
+            [ "SPECIES_CRAWDAUNT", 45, 60 ],
+            [ "SPECIES_SEAKING", 60, 60 ],
+            [ "SPECIES_SEAKING", 60, 60 ],
+            [ "SPECIES_SEAKING", 60, 60 ]
         ]
     },
     "winter": {
@@ -228,35 +219,61 @@
             "flags": 0
         },
         "grass": [],
-        "dark_grass": [],
-        "shaking_grass": [],
+        "dark_grass": [
+            [ "SPECIES_PILOSWINE", 54, 54 ],
+            [ "SPECIES_MAMOSWINE", 54, 54 ],
+            [ "SPECIES_SHROOMISH", 55, 55 ],
+            [ "SPECIES_BEARTIC", 55, 55 ],
+            [ "SPECIES_PILOSWINE", 55, 55 ],
+            [ "SPECIES_MAMOSWINE", 55, 55 ],
+            [ "SPECIES_SHROOMISH", 56, 56 ],
+            [ "SPECIES_BEARTIC", 56, 56 ],
+            [ "SPECIES_SHROOMISH", 56, 56 ],
+            [ "SPECIES_BEARTIC", 56, 56 ],
+            [ "SPECIES_WEAVILE", 57, 57 ],
+            [ "SPECIES_WEAVILE", 57, 57 ]
+        ],
+        "shaking_grass": [
+            [ "SPECIES_AUDINO", 54, 54 ],
+            [ "SPECIES_PILOSWINE", 54, 54 ],
+            [ "SPECIES_SWINUB", 55, 55 ],
+            [ "SPECIES_SHROOMISH", 55, 55 ],
+            [ "SPECIES_PILOSWINE", 55, 55 ],
+            [ "SPECIES_PILOSWINE", 55, 55 ],
+            [ "SPECIES_MUDKIP", 56, 56 ],
+            [ "SPECIES_WEAVILE", 56, 56 ],
+            [ "SPECIES_WEAVILE", 56, 56 ],
+            [ "SPECIES_SHROOMISH", 56, 56 ],
+            [ "SPECIES_PILOSWINE", 57, 57 ],
+            [ "SPECIES_WEAVILE", 57, 57 ]
+        ],
         "surf": [
-            [ "SPECIES_STUNFISK", 45, 60 ],
-            [ "SPECIES_STUNFISK", 45, 60 ],
+            [ "SPECIES_SEEL", 45, 60 ],
+            [ "SPECIES_SPHEAL", 45, 60 ],
+            [ "SPECIES_TYMPOLE", 50, 60 ],
             [ "SPECIES_STUNFISK", 50, 60 ],
-            [ "SPECIES_STUNFISK", 50, 60 ],
-            [ "SPECIES_STUNFISK", 50, 60 ]
+            [ "SPECIES_PILOSWINE", 50, 60 ]
         ],
         "rippling_surf": [
-            [ "SPECIES_STUNFISK", 45, 60 ],
-            [ "SPECIES_STUNFISK", 45, 60 ],
-            [ "SPECIES_STUNFISK", 50, 60 ],
-            [ "SPECIES_SEISMITOAD", 50, 60 ],
-            [ "SPECIES_SEISMITOAD", 50, 60 ]
+            [ "SPECIES_DEWGONG", 45, 60 ],
+            [ "SPECIES_SEALEO", 45, 60 ],
+            [ "SPECIES_PALPITOAD", 50, 60 ],
+            [ "SPECIES_PALPITOAD", 50, 60 ],
+            [ "SPECIES_PALPITOAD", 50, 60 ]
         ],
         "fishing": [
+            [ "SPECIES_MAGIKARP", 45, 60 ],
             [ "SPECIES_BARBOACH", 45, 60 ],
-            [ "SPECIES_STUNFISK", 45, 60 ],
-            [ "SPECIES_BARBOACH", 50, 60 ],
-            [ "SPECIES_BARBOACH", 50, 60 ],
-            [ "SPECIES_BARBOACH", 50, 60 ]
+            [ "SPECIES_CORPHISH", 50, 60 ],
+            [ "SPECIES_FEEBAS", 50, 60 ],
+            [ "SPECIES_FEEBAS", 50, 60 ]
         ],
         "rippling_fishing": [
-            [ "SPECIES_BARBOACH", 45, 60 ],
-            [ "SPECIES_STUNFISK", 45, 60 ],
-            [ "SPECIES_WHISCASH", 50, 60 ],
-            [ "SPECIES_WHISCASH", 50, 60 ],
-            [ "SPECIES_WHISCASH", 50, 60 ]
+            [ "SPECIES_WHISCASH", 45, 60 ],
+            [ "SPECIES_CRAWDAUNT", 45, 60 ],
+            [ "SPECIES_SEAKING", 50, 60 ],
+            [ "SPECIES_SEAKING", 50, 60 ],
+            [ "SPECIES_SEAKING", 50, 60 ]
         ]
     }
 }

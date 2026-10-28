@@ -92,7 +92,7 @@ L_0129:
     RTCallGlobal 2805
     VMStackPop 0x8001
     VMStackPop 0x8000
-    // "If you use the move Flash, the accuracy\nof the opponent's moves goes down.[f000]븁\u0000\nWhen you use it twice, the rate to get\nhit by a move will be about half.[f000]븁\u0000\n'Cause it means more light![f000]븁\u0000"
+    // "If you use the move Flash, the accuracy\nof the opponent's moves goes down.[f000]븁\u0000\nUse it three times, and the rate to get\nhit by a move will be about half.[f000]븁\u0000\n'Cause it means more light![f000]븁\u0000"
     ActorMsg MSGFILE_SCRIPT, CasteliaCity7_Text_IfUseMoveFlash, 0, 3, 0
     MsgWinCloseAll
     WorkCmpConst 0x8020, 15
@@ -208,7 +208,7 @@ Script_3:
     RTCallGlobal 2805
     VMStackPop 0x8001
     VMStackPop 0x8000
-    // "If you use the move Flash, the accuracy\nof the opponent's moves goes down.[f000]븁\u0000\nWhen you use it twice, the rate to get\nhit by a move will be about half.[f000]븁\u0000\n'Cause it means more light!"
+    // "If you use the move Flash, the accuracy\nof the opponent's moves goes down.[f000]븁\u0000\nUse it three times, and the rate to get\nhit by a move will be about half.[f000]븁\u0000\n'Cause it means more light!"
     ActorMsg MSGFILE_SCRIPT, CasteliaCity7_Text_IfUseMoveFlash_2, 0, 3, 0
     LastKeyWait
     MsgWinCloseAll
@@ -216,7 +216,7 @@ Script_3:
     VMJump L_02E9
 
 L_02D9:
-    // "If you use the move Flash, the accuracy\nof the opponent's moves goes down.[f000]븁\u0000\nWhen you use it twice, the rate to get\nhit by a move will be about half.[f000]븁\u0000\n'Cause it means more light!"
+    // "If you use the move Flash, the accuracy\nof the opponent's moves goes down.[f000]븁\u0000\nUse it three times, and the rate to get\nhit by a move will be about half.[f000]븁\u0000\n'Cause it means more light!"
     ActorMsg MSGFILE_SCRIPT, CasteliaCity7_Text_IfUseMoveFlash_2, 0, 3, 0
     LastKeyWait
     MsgWinCloseAll

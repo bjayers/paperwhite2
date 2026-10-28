@@ -2,7 +2,7 @@
     "$schema": "../item.schema.json",
     "name": "Aspear Berry",
     "name_plural": "Aspear Berries",
-    "description": "If held by a Pokémon,\nit defrosts it.",
+    "description": "If held by a Pokémon,\nit defrosts it.\nHas a sour flavor.",
     "price": 2,
     "hold_effect": "HOLD_EFFECT_FRZ_RESTORE",
     "hold_param": 0,

@@ -1,6 +1,6 @@
 {
     "$schema": "encounters.schema.json",
-    "all_year": {
+    "spring": {
         "rates": {
             "grass": 7,
             "dark_grass": 0,
@@ -12,18 +12,114 @@
             "flags": 0
         },
         "grass": [
-            [ "SPECIES_GOLURK", 55, 55 ],
-            [ "SPECIES_GOLURK", 55, 55 ],
-            [ "SPECIES_GOLURK", 56, 56 ],
-            [ "SPECIES_GOLURK", 56, 56 ],
-            [ "SPECIES_GOLURK", 57, 57 ],
-            [ "SPECIES_GOLURK", 57, 57 ],
-            [ "SPECIES_GOLURK", 58, 58 ],
-            [ "SPECIES_GOLURK", 58, 58 ],
-            [ "SPECIES_GOLURK", 58, 58 ],
-            [ "SPECIES_GOLURK", 58, 58 ],
-            [ "SPECIES_GOLURK", 58, 58 ],
-            [ "SPECIES_GOLURK", 58, 58 ]
+            [ "SPECIES_BRONZONG", 56, 56 ],
+            [ "SPECIES_BRONZONG", 55, 58 ],
+            [ "SPECIES_BRONZONG", 56, 56 ],
+            [ "SPECIES_BRONZONG", 58, 58 ],
+            [ "SPECIES_BRONZONG", 58, 58 ],
+            [ "SPECIES_BRONZONG", 55, 58 ],
+            [ "SPECIES_BRONZOR", 55, 55 ],
+            [ "SPECIES_BAGON", 58, 58 ],
+            [ "SPECIES_DRATINI", 58, 58 ],
+            [ "SPECIES_DEINO", 58, 58 ],
+            [ "SPECIES_GOLETT", 57, 57 ],
+            [ "SPECIES_DRUDDIGON", 58, 58 ]
+        ],
+        "dark_grass": [],
+        "shaking_grass": [],
+        "surf": [],
+        "rippling_surf": [],
+        "fishing": [],
+        "rippling_fishing": []
+    },
+    "summer": {
+        "rates": {
+            "grass": 7,
+            "dark_grass": 0,
+            "shaking_grass": 0,
+            "surf": 0,
+            "rippling_surf": 0,
+            "fishing": 0,
+            "rippling_fishing": 0,
+            "flags": 0
+        },
+        "grass": [
+            [ "SPECIES_BRONZONG", 56, 56 ],
+            [ "SPECIES_BRONZONG", 55, 58 ],
+            [ "SPECIES_BRONZONG", 56, 56 ],
+            [ "SPECIES_BRONZONG", 58, 58 ],
+            [ "SPECIES_BRONZONG", 58, 58 ],
+            [ "SPECIES_BRONZONG", 55, 58 ],
+            [ "SPECIES_BRONZOR", 55, 55 ],
+            [ "SPECIES_BAGON", 58, 58 ],
+            [ "SPECIES_DRATINI", 58, 58 ],
+            [ "SPECIES_DEINO", 58, 58 ],
+            [ "SPECIES_GOLETT", 57, 57 ],
+            [ "SPECIES_DRUDDIGON", 58, 58 ]
+        ],
+        "dark_grass": [],
+        "shaking_grass": [],
+        "surf": [],
+        "rippling_surf": [],
+        "fishing": [],
+        "rippling_fishing": []
+    },
+    "autumn": {
+        "rates": {
+            "grass": 7,
+            "dark_grass": 0,
+            "shaking_grass": 0,
+            "surf": 0,
+            "rippling_surf": 0,
+            "fishing": 0,
+            "rippling_fishing": 0,
+            "flags": 0
+        },
+        "grass": [
+            [ "SPECIES_BRONZONG", 56, 56 ],
+            [ "SPECIES_BRONZONG", 55, 58 ],
+            [ "SPECIES_BRONZONG", 56, 56 ],
+            [ "SPECIES_BRONZONG", 58, 58 ],
+            [ "SPECIES_BRONZONG", 58, 58 ],
+            [ "SPECIES_BRONZONG", 55, 58 ],
+            [ "SPECIES_BRONZOR", 55, 55 ],
+            [ "SPECIES_BAGON", 58, 58 ],
+            [ "SPECIES_DRATINI", 58, 58 ],
+            [ "SPECIES_DEINO", 58, 58 ],
+            [ "SPECIES_GOLETT", 57, 57 ],
+            [ "SPECIES_DRUDDIGON", 58, 58 ]
+        ],
+        "dark_grass": [],
+        "shaking_grass": [],
+        "surf": [],
+        "rippling_surf": [],
+        "fishing": [],
+        "rippling_fishing": []
+    },
+    "winter": {
+        "rates": {
+            "grass": 7,
+            "dark_grass": 0,
+            "shaking_grass": 0,
+            "surf": 0,
+            "rippling_surf": 0,
+            "fishing": 0,
+            "rippling_fishing": 0,
+            "flags": 0
+        },
+        "grass": [
+            [ "SPECIES_BRONZONG", 56, 56 ],
+            [ "SPECIES_BRONZONG", 55, 58 ],
+            [ "SPECIES_BRONZONG", 56, 56 ],
+            [ "SPECIES_BRONZONG", 58, 58 ],
+            [ "SPECIES_BRONZONG", 58, 58 ],
+            [ "SPECIES_BRONZONG", 55, 58 ],
+            [ "SPECIES_BRONZOR", 55, 55 ],
+            [ "SPECIES_BAGON", 58, 58 ],
+            [ "SPECIES_DRATINI", 58, 58 ],
+            [ "SPECIES_DEINO", 58, 58 ],
+            [ "SPECIES_GOLETT", 57, 57 ],
+            [ "SPECIES_DRUDDIGON", 58, 58 ]
         ],
         "dark_grass": [],
         "shaking_grass": [],

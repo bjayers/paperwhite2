@@ -160,12 +160,9 @@
             "script": 6
         },
         {
-            "type": 1,
-            "conditions": []
-        },
-        {
             "type": 3,
             "script": 8
         }
-    ]
+    ],
+    "extra_padding": 2
 }

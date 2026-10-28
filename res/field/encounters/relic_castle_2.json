@@ -1,6 +1,6 @@
 {
     "$schema": "encounters.schema.json",
-    "all_year": {
+    "spring": {
         "rates": {
             "grass": 7,
             "dark_grass": 0,
@@ -12,18 +12,114 @@
             "flags": 0
         },
         "grass": [
-            [ "SPECIES_SANDILE", 18, 18 ],
-            [ "SPECIES_YAMASK", 18, 18 ],
-            [ "SPECIES_SANDILE", 19, 19 ],
-            [ "SPECIES_YAMASK", 19, 19 ],
+            [ "SPECIES_CUBONE", 18, 18 ],
+            [ "SPECIES_DIGLETT", 18, 18 ],
             [ "SPECIES_SANDSHREW", 19, 19 ],
-            [ "SPECIES_SANDSHREW", 20, 20 ],
-            [ "SPECIES_SANDILE", 20, 20 ],
-            [ "SPECIES_YAMASK", 20, 20 ],
-            [ "SPECIES_SANDILE", 21, 21 ],
+            [ "SPECIES_ROGGENROLA", 19, 19 ],
+            [ "SPECIES_CUBONE", 19, 19 ],
+            [ "SPECIES_DIGLETT", 20, 20 ],
+            [ "SPECIES_MAROWAK", 20, 20 ],
+            [ "SPECIES_DUGTRIO", 20, 20 ],
+            [ "SPECIES_SANDSHREW", 21, 21 ],
+            [ "SPECIES_SANDSLASH", 21, 21 ],
             [ "SPECIES_YAMASK", 21, 21 ],
-            [ "SPECIES_SANDILE", 21, 21 ],
-            [ "SPECIES_YAMASK", 21, 21 ]
+            [ "SPECIES_ZUBAT", 21, 21 ]
+        ],
+        "dark_grass": [],
+        "shaking_grass": [],
+        "surf": [],
+        "rippling_surf": [],
+        "fishing": [],
+        "rippling_fishing": []
+    },
+    "summer": {
+        "rates": {
+            "grass": 7,
+            "dark_grass": 0,
+            "shaking_grass": 0,
+            "surf": 0,
+            "rippling_surf": 0,
+            "fishing": 0,
+            "rippling_fishing": 0,
+            "flags": 0
+        },
+        "grass": [
+            [ "SPECIES_CUBONE", 18, 18 ],
+            [ "SPECIES_DIGLETT", 18, 18 ],
+            [ "SPECIES_SANDSHREW", 19, 19 ],
+            [ "SPECIES_ROGGENROLA", 19, 19 ],
+            [ "SPECIES_CUBONE", 19, 19 ],
+            [ "SPECIES_DIGLETT", 20, 20 ],
+            [ "SPECIES_MAROWAK", 20, 20 ],
+            [ "SPECIES_DUGTRIO", 20, 20 ],
+            [ "SPECIES_SANDSHREW", 21, 21 ],
+            [ "SPECIES_SANDSLASH", 21, 21 ],
+            [ "SPECIES_YAMASK", 21, 21 ],
+            [ "SPECIES_ZUBAT", 21, 21 ]
+        ],
+        "dark_grass": [],
+        "shaking_grass": [],
+        "surf": [],
+        "rippling_surf": [],
+        "fishing": [],
+        "rippling_fishing": []
+    },
+    "autumn": {
+        "rates": {
+            "grass": 7,
+            "dark_grass": 0,
+            "shaking_grass": 0,
+            "surf": 0,
+            "rippling_surf": 0,
+            "fishing": 0,
+            "rippling_fishing": 0,
+            "flags": 0
+        },
+        "grass": [
+            [ "SPECIES_CUBONE", 18, 18 ],
+            [ "SPECIES_DIGLETT", 18, 18 ],
+            [ "SPECIES_SANDSHREW", 19, 19 ],
+            [ "SPECIES_ROGGENROLA", 19, 19 ],
+            [ "SPECIES_CUBONE", 19, 19 ],
+            [ "SPECIES_DIGLETT", 20, 20 ],
+            [ "SPECIES_MAROWAK", 20, 20 ],
+            [ "SPECIES_DUGTRIO", 20, 20 ],
+            [ "SPECIES_SANDSHREW", 21, 21 ],
+            [ "SPECIES_SANDSLASH", 21, 21 ],
+            [ "SPECIES_YAMASK", 21, 21 ],
+            [ "SPECIES_ZUBAT", 21, 21 ]
+        ],
+        "dark_grass": [],
+        "shaking_grass": [],
+        "surf": [],
+        "rippling_surf": [],
+        "fishing": [],
+        "rippling_fishing": []
+    },
+    "winter": {
+        "rates": {
+            "grass": 7,
+            "dark_grass": 0,
+            "shaking_grass": 0,
+            "surf": 0,
+            "rippling_surf": 0,
+            "fishing": 0,
+            "rippling_fishing": 0,
+            "flags": 0
+        },
+        "grass": [
+            [ "SPECIES_CUBONE", 18, 18 ],
+            [ "SPECIES_DIGLETT", 18, 18 ],
+            [ "SPECIES_SANDSHREW", 19, 19 ],
+            [ "SPECIES_ROGGENROLA", 19, 19 ],
+            [ "SPECIES_CUBONE", 19, 19 ],
+            [ "SPECIES_DIGLETT", 20, 20 ],
+            [ "SPECIES_MAROWAK", 20, 20 ],
+            [ "SPECIES_DUGTRIO", 20, 20 ],
+            [ "SPECIES_SANDSHREW", 21, 21 ],
+            [ "SPECIES_SANDSLASH", 21, 21 ],
+            [ "SPECIES_YAMASK", 21, 21 ],
+            [ "SPECIES_ZUBAT", 21, 21 ]
         ],
         "dark_grass": [],
         "shaking_grass": [],

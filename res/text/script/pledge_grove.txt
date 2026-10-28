@@ -10,4 +10,4 @@ PledgeGrove_Text_12TaDa = 1, {be02:20}2, and{be02:20}... {be02:20}... {be02:20}.
 PledgeGrove_Text_RememberedMoveSecretSword = {0102:0} remembered the move\nSecret Sword!
 PledgeGrove_Text_What = What?\n{0102:0} is...{be01}
 PledgeGrove_Text_HasResolvedBattleHas = {0102:0} has resolved to battle\nand has changed into Resolute Form!
-\pad{8a}
+PledgeGrove_Text_Moveid = moveID: {0100:0}{be01}\x{ffff}

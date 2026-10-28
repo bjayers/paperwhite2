@@ -180,8 +180,8 @@
                 "height": 0
             },
             "grid": {
-                "x": 5,
-                "z": 12,
+                "x": 1,
+                "z": 5,
                 "y": 0
             }
         },
@@ -192,15 +192,15 @@
             "type": 0,
             "flag": 0,
             "script": 4,
-            "direction": "DIR_UP",
+            "direction": "DIR_DOWN",
             "params": [ 0, 0, 0 ],
             "area": {
                 "width": 0,
                 "height": 0
             },
             "grid": {
-                "x": 9,
-                "z": 12,
+                "x": 13,
+                "z": 7,
                 "y": 0
             }
         },
@@ -256,8 +256,8 @@
                 "height": 0
             },
             "grid": {
-                "x": 1,
-                "z": 5,
+                "x": 3,
+                "z": 7,
                 "y": 196608
             }
         },
@@ -276,6 +276,25 @@
             },
             "grid": {
                 "x": 3,
+                "z": 12,
+                "y": 0
+            }
+        },
+        {
+            "id": 13,
+            "model": "OBJ_CODE_76",
+            "movement": 0,
+            "type": 0,
+            "flag": "EVENT_FLAG_DAILY_0x0af0",
+            "script": 10851,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 5,
                 "z": 12,
                 "y": 0
             }
@@ -301,19 +320,11 @@
     "init_scripts": [
         {
             "type": 4,
-            "script": 10635
-        },
-        {
-            "type": 4,
             "script": 5
         },
         {
-            "type": 3,
-            "script": 10636
-        },
-        {
-            "type": 3,
-            "script": 10396
+            "type": 2,
+            "script": 10
         },
         {
             "type": 2,
@@ -322,6 +333,18 @@
         {
             "type": 3,
             "script": 2104
+        },
+        {
+            "type": 3,
+            "script": 10396
+        },
+        {
+            "type": 4,
+            "script": 10635
+        },
+        {
+            "type": 3,
+            "script": 10636
         }
     ]
 }

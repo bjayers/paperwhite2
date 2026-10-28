@@ -2,7 +2,7 @@
     "$schema": "../item.schema.json",
     "name": "Pecha Berry",
     "name_plural": "Pecha Berries",
-    "description": "If held by a Pokémon,\nit recovers from poison.",
+    "description": "If held by a Pokémon,\nit recovers from poison.\nHas a sweet flavor.",
     "price": 2,
     "hold_effect": "HOLD_EFFECT_PSN_RESTORE",
     "hold_param": 0,

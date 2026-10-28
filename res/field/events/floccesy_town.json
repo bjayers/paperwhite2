@@ -12,172 +12,12 @@
             }
         },
         {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 123,
-                "y": 697,
-                "z": 16
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 120,
-                "y": 688,
-                "z": 16
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 110,
-                "y": 690,
-                "z": 16
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 102,
-                "y": 687,
-                "z": 16
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 102,
-                "y": 674,
-                "z": 16
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 109,
-                "y": 682,
-                "z": 16
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 119,
-                "y": 677,
-                "z": 16
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 120,
-                "y": 679,
-                "z": 16
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 118,
-                "y": 679,
-                "z": 16
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 110,
-                "y": 657,
-                "z": 32
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 105,
-                "y": 665,
-                "z": 32
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 117,
-                "y": 666,
-                "z": 32
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 103,
-                "y": 670,
-                "z": 32
-            }
-        },
-        {
             "script": 15,
             "condition": 0,
             "direction": 0,
             "grid": {
                 "x": 110,
                 "y": 682,
-                "z": 16
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 104,
-                "y": 657,
-                "z": 32
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 123,
-                "y": 674,
-                "z": 16
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 124,
-                "y": 688,
                 "z": 16
             }
         },
@@ -363,6 +203,443 @@
                 "z": 676,
                 "y": 65536
             }
+        },
+        {
+            "id": 9,
+            "model": "OBJ_CODE_POKEMON_PIDOVE",
+            "movement": 0,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x01ff",
+            "script": 0,
+            "direction": "DIR_RIGHT",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 108,
+                "z": 678,
+                "y": 0
+            }
+        },
+        {
+            "id": 10,
+            "model": "OBJ_CODE_POKEMON_PIDOVE",
+            "movement": 0,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0220",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 110,
+                "z": 693,
+                "y": 0
+            }
+        },
+        {
+            "id": 11,
+            "model": "OBJ_CODE_POKEMON_PIDOVE",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0221",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 1,
+                "height": 1
+            },
+            "grid": {
+                "x": 107,
+                "z": 692,
+                "y": 0
+            }
+        },
+        {
+            "id": 12,
+            "model": "OBJ_CODE_POKEMON_PIDOVE",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0224",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 1
+            },
+            "grid": {
+                "x": 105,
+                "z": 691,
+                "y": 0
+            }
+        },
+        {
+            "id": 13,
+            "model": "OBJ_CODE_POKEMON_PIDOVE",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x021e",
+            "script": 0,
+            "direction": "DIR_RIGHT",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 1,
+                "height": 1
+            },
+            "grid": {
+                "x": 107,
+                "z": 689,
+                "y": 0
+            }
+        },
+        {
+            "id": 14,
+            "model": "OBJ_CODE_POKEMON_PIDOVE",
+            "movement": 0,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0219",
+            "script": 0,
+            "direction": "DIR_LEFT",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 106,
+                "z": 678,
+                "y": 0
+            }
+        },
+        {
+            "id": 15,
+            "model": "OBJ_CODE_POKEMON_PIDOVE",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0222",
+            "script": 0,
+            "direction": "DIR_RIGHT",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 1
+            },
+            "grid": {
+                "x": 117,
+                "z": 692,
+                "y": 0
+            }
+        },
+        {
+            "id": 16,
+            "model": "OBJ_CODE_POKEMON_PIDOVE",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0225",
+            "script": 0,
+            "direction": "DIR_LEFT",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 1
+            },
+            "grid": {
+                "x": 122,
+                "z": 691,
+                "y": 0
+            }
+        },
+        {
+            "id": 17,
+            "model": "OBJ_CODE_POKEMON_PIDOVE",
+            "movement": 46,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x021f",
+            "script": 0,
+            "direction": "DIR_LEFT",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 117,
+                "z": 690,
+                "y": 0
+            }
+        },
+        {
+            "id": 18,
+            "model": "OBJ_CODE_POKEMON_UNOWN",
+            "movement": 0,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x021e",
+            "script": 0,
+            "direction": "DIR_RIGHT",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 120,
+                "z": 675,
+                "y": 0
+            }
+        },
+        {
+            "id": 19,
+            "model": "OBJ_CODE_POKEMON_SILCOON",
+            "movement": 0,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x020b",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 124,
+                "z": 670,
+                "y": 0
+            }
+        },
+        {
+            "id": 20,
+            "model": "OBJ_CODE_POKEMON_LEDYBA",
+            "movement": 4,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x020e",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 6
+            },
+            "grid": {
+                "x": 127,
+                "z": 680,
+                "y": 0
+            }
+        },
+        {
+            "id": 21,
+            "model": "OBJ_CODE_POKEMON_CASCOON",
+            "movement": 0,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x020a",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 126,
+                "z": 670,
+                "y": 0
+            }
+        },
+        {
+            "id": 22,
+            "model": "OBJ_CODE_POKEMON_LEDYBA",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x020f",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 2,
+                "height": 2
+            },
+            "grid": {
+                "x": 122,
+                "z": 667,
+                "y": 0
+            }
+        },
+        {
+            "id": 23,
+            "model": "OBJ_CODE_POKEMON_SWELLOW",
+            "movement": 44,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x01f5",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 3,
+                "height": 3
+            },
+            "grid": {
+                "x": 121,
+                "z": 666,
+                "y": 0
+            }
+        },
+        {
+            "id": 24,
+            "model": "OBJ_CODE_POKEMON_YANMA",
+            "movement": 42,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x01f5",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 3,
+                "height": 3
+            },
+            "grid": {
+                "x": 124,
+                "z": 666,
+                "y": 0
+            }
+        },
+        {
+            "id": 25,
+            "model": "OBJ_CODE_POKEMON_SWELLOW",
+            "movement": 43,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x01f6",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 4,
+                "height": 4
+            },
+            "grid": {
+                "x": 109,
+                "z": 680,
+                "y": 0
+            }
+        },
+        {
+            "id": 26,
+            "model": "OBJ_CODE_POKEMON_PIDOVE",
+            "movement": 11,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0225",
+            "script": 0,
+            "direction": "DIR_RIGHT",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 98,
+                "z": 684,
+                "y": 0
+            }
+        },
+        {
+            "id": 27,
+            "model": "OBJ_CODE_POKEMON_PIDOVE",
+            "movement": 11,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0225",
+            "script": 0,
+            "direction": "DIR_RIGHT",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 98,
+                "z": 683,
+                "y": 0
+            }
+        },
+        {
+            "id": 28,
+            "model": "OBJ_CODE_POKEMON_PIDOVE",
+            "movement": 11,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0225",
+            "script": 0,
+            "direction": "DIR_RIGHT",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 98,
+                "z": 681,
+                "y": 0
+            }
+        },
+        {
+            "id": 29,
+            "model": "OBJ_CODE_POKEMON_PIDOVE",
+            "movement": 11,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0225",
+            "script": 0,
+            "direction": "DIR_RIGHT",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 98,
+                "z": 680,
+                "y": 0
+            }
+        },
+        {
+            "id": 30,
+            "model": "OBJ_CODE_POKEMON_PIDOVE",
+            "movement": 11,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0225",
+            "script": 0,
+            "direction": "DIR_RIGHT",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 98,
+                "z": 679,
+                "y": 0
+            }
+        },
+        {
+            "id": 31,
+            "model": "OBJ_CODE_POKEMON_PIDOVE",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0225",
+            "script": 0,
+            "direction": "DIR_RIGHT",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 98,
+                "z": 677,
+                "y": 0
+            }
         }
     ],
     "warps": [
@@ -531,6 +808,10 @@
         {
             "type": 4,
             "script": 2
+        },
+        {
+            "type": 2,
+            "script": 10852
         },
         {
             "type": 1,

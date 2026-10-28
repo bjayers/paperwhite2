@@ -15,17 +15,35 @@
             "level": 16,
             "difficulty": 50,
             "gender": 0,
-            "ability": 0,
+            "ability": 1,
             "moves": [ "MOVE_SMOG", "MOVE_ASSURANCE", "MOVE_TACKLE" ]
+        },
+        {
+            "species": "SPECIES_TRUBBISH",
+            "form": 0,
+            "level": 16,
+            "difficulty": 50,
+            "gender": 0,
+            "ability": 1,
+            "moves": [ "MOVE_POUND", "MOVE_POISON_GAS", "MOVE_ACID_SPRAY", "MOVE_DOUBLE_SLAP" ]
         },
         {
             "species": "SPECIES_WHIRLIPEDE",
             "form": 0,
-            "level": 18,
-            "difficulty": 100,
+            "level": 16,
+            "difficulty": 50,
             "gender": 0,
             "ability": 1,
             "moves": [ "MOVE_VENOSHOCK", "MOVE_POISON_STING", "MOVE_PROTECT", "MOVE_PURSUIT" ]
+        },
+        {
+            "species": "SPECIES_CROAGUNK",
+            "form": 0,
+            "level": 18,
+            "difficulty": 150,
+            "gender": 1,
+            "ability": 3,
+            "moves": [ "MOVE_POISON_STING", "MOVE_VACUUM_WAVE", "MOVE_REVENGE", "MOVE_PURSUIT" ]
         }
     ],
     "messages": [

@@ -3,16 +3,247 @@
     ScriptEntry Script_1
     ScriptEntry Script_2
     ScriptEntry Script_3
+    ScriptEntry Script_4
+    ScriptEntry Script_5
+    ScriptEntry Script_6
     ScriptEntriesEnd
 
 Script_1:
-    VMCall L_0024
-    VMCall L_0324
+    VMCall Script_4
+    VMCall Script_5
     FieldSetTeleportZone 18
     MoneyAdd 3000
     VMHalt
 
-L_0024:
+Script_2:
+    VMStackPushFlag EVENT_FLAG_0x0960
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMJumpIf CMP_STACK, L_0049
+    VMCall Script_6
+
+L_0049:
+    PokePartyRecoverAll
+    FieldSetTeleportZone 18
+    FieldSetNextZone 428, 2, 13, 0, 5
+    FlagSet EVENT_FLAG_CONTINUE_SCRIPT
+    VMStackPushFlag EVENT_FLAG_0x02a7
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMStackPushFlag EVENT_FLAG_0x0101
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_0086
+    FlagReset EVENT_FLAG_0x02a7
+
+L_0086:
+    VMStackPushFlag EVENT_FLAG_0x0321
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMStackPushFlag EVENT_FLAG_0x012d
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_00AD
+    FlagReset EVENT_FLAG_0x0321
+
+L_00AD:
+    VMStackPushFlag EVENT_FLAG_0x0322
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMStackPushFlag EVENT_FLAG_0x012f
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_00D4
+    FlagReset EVENT_FLAG_0x0322
+
+L_00D4:
+    VMStackPushFlag EVENT_FLAG_0x032a
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMStackPushFlag EVENT_FLAG_0x014a
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_00FB
+    FlagReset EVENT_FLAG_0x032a
+
+L_00FB:
+    VMStackPushFlag EVENT_FLAG_0x0176
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMJumpIf CMP_STACK, L_0118
+    WorkSetConst EVENT_WORK_0x410c, 0
+    FlagSet EVENT_FLAG_0x040d
+
+L_0118:
+    VMStackPushFlag EVENT_FLAG_0x017c
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMStackPush EVENT_WORK_0x4074
+    VMStackPushConst 3
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_0141
+    WorkSetConst EVENT_WORK_0x4074, 1
+
+L_0141:
+    VMStackPushFlag EVENT_FLAG_0x017b
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMStackPush EVENT_WORK_0x4073
+    VMStackPushConst 3
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_016A
+    WorkSetConst EVENT_WORK_0x4073, 1
+
+L_016A:
+    VMStackPushFlag EVENT_FLAG_0x018c
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMStackPush EVENT_WORK_0x4116
+    VMStackPushConst 3
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_0193
+    WorkSetConst EVENT_WORK_0x4116, 1
+
+L_0193:
+    VMStackPushFlag EVENT_FLAG_0x018d
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMStackPush EVENT_WORK_0x4117
+    VMStackPushConst 3
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_01BC
+    WorkSetConst EVENT_WORK_0x4117, 1
+
+L_01BC:
+    VMStackPushFlag EVENT_FLAG_0x018e
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMStackPush EVENT_WORK_0x4118
+    VMStackPushConst 3
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_01E5
+    WorkSetConst EVENT_WORK_0x4118, 1
+
+L_01E5:
+    VMStackPushFlag EVENT_FLAG_0x03a0
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMStackPushFlag EVENT_FLAG_0x0193
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_020C
+    FlagReset EVENT_FLAG_0x03a0
+
+L_020C:
+    VMStackPushFlag EVENT_FLAG_0x0399
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMStackPushFlag EVENT_FLAG_0x018f
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_0233
+    FlagReset EVENT_FLAG_0x0399
+
+L_0233:
+    VMStackPushFlag EVENT_FLAG_0x039a
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMStackPushFlag EVENT_FLAG_0x0190
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_025A
+    FlagReset EVENT_FLAG_0x039a
+
+L_025A:
+    VMStackPushFlag EVENT_FLAG_0x039b
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMStackPushFlag EVENT_FLAG_0x0191
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_0281
+    FlagReset EVENT_FLAG_0x039b
+
+L_0281:
+    VMStackPushFlag EVENT_FLAG_0x039c
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMStackPushFlag EVENT_FLAG_0x0192
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_02A8
+    FlagReset EVENT_FLAG_0x039c
+
+L_02A8:
+    VMStackPushFlag EVENT_FLAG_0x03b2
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMStackPushFlag EVENT_FLAG_0x01a4
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_02CF
+    FlagReset EVENT_FLAG_0x03b2
+
+L_02CF:
+    VMStackPushFlag EVENT_FLAG_0x029b
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMStackPushFlag EVENT_FLAG_0x00ea
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMStackPush EVENT_WORK_0x411b
+    VMStackPushConst 2
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_0306
+    FlagReset EVENT_FLAG_0x029b
+
+L_0306:
+    VMStackPushFlag EVENT_FLAG_0x03ec
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMStackPushFlag EVENT_FLAG_0x00f9
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMStackPushFlag EVENT_FLAG_0x01e0
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMStackCmp CMP_AND
+    VMStackCmp CMP_AND
+    VMJumpIf CMP_STACK, L_0341
+    FlagReset EVENT_FLAG_0x03ec
+    FlagSet EVENT_FLAG_0x03eb
+
+L_0341:
+    VMHalt
+    .byte 0x00
+
+Script_3:
+    VMCall Script_4
+    FieldSetTeleportZone 3
+    FlagSet EVENT_FLAG_0x006a
+    FlagSet EVENT_FLAG_0x0961
+    FlagSet EVENT_FLAG_0x0962
+    GiveRunningShoes
+    VMHalt
+
+Script_4:
     FlagSet EVENT_FLAG_0x03dd
     FlagSet EVENT_FLAG_0x025f
     FlagSet EVENT_FLAG_0x0265
@@ -206,276 +437,49 @@ L_0024:
     FlagSet EVENT_FLAG_0x041a
     VMReturn
 
-L_0324:
+Script_5:
     GameGetVersion 0x8010
     WorkCmpConst 0x8010, 23
-    VMJumpIf CMP_EQ, L_033B
-    VMJump L_0347
+    VMJumpIf CMP_EQ, L_0675
+    VMJump L_0681
 
-L_033B:
+L_0675:
     SurveyCmd_WriteOwnAnswer 0, 1
-    VMJump L_0366
+    VMJump L_06A0
 
-L_0347:
+L_0681:
     WorkCmpConst 0x8010, 22
-    VMJumpIf CMP_EQ, L_035A
-    VMJump L_0366
+    VMJumpIf CMP_EQ, L_0694
+    VMJump L_06A0
 
-L_035A:
+L_0694:
     SurveyCmd_WriteOwnAnswer 0, 2
-    VMJump L_0366
+    VMJump L_06A0
 
-L_0366:
+L_06A0:
     TrainerCardGetSex 0x8010
     WorkCmpConst 0x8010, 0
-    VMJumpIf CMP_EQ, L_037D
-    VMJump L_0389
+    VMJumpIf CMP_EQ, L_06B7
+    VMJump L_06C3
 
-L_037D:
+L_06B7:
     SurveyCmd_WriteOwnAnswer 1, 1
-    VMJump L_03A8
+    VMJump L_06E2
 
-L_0389:
+L_06C3:
     WorkCmpConst 0x8010, 1
-    VMJumpIf CMP_EQ, L_039C
-    VMJump L_03A8
+    VMJumpIf CMP_EQ, L_06D6
+    VMJump L_06E2
 
-L_039C:
+L_06D6:
     SurveyCmd_WriteOwnAnswer 1, 2
-    VMJump L_03A8
+    VMJump L_06E2
 
-L_03A8:
+L_06E2:
     SurveyCmd_WriteOwnAnswer 29, 1
     VMReturn
 
-Script_3:
-    VMCall L_0024
-    FieldSetTeleportZone 3
-    FlagSet EVENT_FLAG_0x006a
-    FlagSet EVENT_FLAG_0x0961
-    FlagSet EVENT_FLAG_0x0962
-    GiveRunningShoes
-    VMHalt
-
-Script_2:
-    VMStackPushFlag EVENT_FLAG_0x0960
-    VMStackPushConst 0
-    VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_03E3
-    VMCall L_06DD
-
-L_03E3:
-    PokePartyRecoverAll
-    FieldSetTeleportZone 18
-    FieldSetNextZone 428, 2, 13, 0, 5
-    FlagSet EVENT_FLAG_CONTINUE_SCRIPT
-    VMStackPushFlag EVENT_FLAG_0x02a7
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMStackPushFlag EVENT_FLAG_0x0101
-    VMStackPushConst 0
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_0420
-    FlagReset EVENT_FLAG_0x02a7
-
-L_0420:
-    VMStackPushFlag EVENT_FLAG_0x0321
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMStackPushFlag EVENT_FLAG_0x012d
-    VMStackPushConst 0
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_0447
-    FlagReset EVENT_FLAG_0x0321
-
-L_0447:
-    VMStackPushFlag EVENT_FLAG_0x0322
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMStackPushFlag EVENT_FLAG_0x012f
-    VMStackPushConst 0
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_046E
-    FlagReset EVENT_FLAG_0x0322
-
-L_046E:
-    VMStackPushFlag EVENT_FLAG_0x032a
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMStackPushFlag EVENT_FLAG_0x014a
-    VMStackPushConst 0
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_0495
-    FlagReset EVENT_FLAG_0x032a
-
-L_0495:
-    VMStackPushFlag EVENT_FLAG_0x0176
-    VMStackPushConst 0
-    VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_04B2
-    WorkSetConst EVENT_WORK_0x410c, 0
-    FlagSet EVENT_FLAG_0x040d
-
-L_04B2:
-    VMStackPushFlag EVENT_FLAG_0x017c
-    VMStackPushConst 0
-    VMStackCmp CMP_EQ
-    VMStackPush EVENT_WORK_0x4074
-    VMStackPushConst 3
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_04DB
-    WorkSetConst EVENT_WORK_0x4074, 1
-
-L_04DB:
-    VMStackPushFlag EVENT_FLAG_0x017b
-    VMStackPushConst 0
-    VMStackCmp CMP_EQ
-    VMStackPush EVENT_WORK_0x4073
-    VMStackPushConst 3
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_0504
-    WorkSetConst EVENT_WORK_0x4073, 1
-
-L_0504:
-    VMStackPushFlag EVENT_FLAG_0x018c
-    VMStackPushConst 0
-    VMStackCmp CMP_EQ
-    VMStackPush EVENT_WORK_0x4116
-    VMStackPushConst 3
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_052D
-    WorkSetConst EVENT_WORK_0x4116, 1
-
-L_052D:
-    VMStackPushFlag EVENT_FLAG_0x018d
-    VMStackPushConst 0
-    VMStackCmp CMP_EQ
-    VMStackPush EVENT_WORK_0x4117
-    VMStackPushConst 3
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_0556
-    WorkSetConst EVENT_WORK_0x4117, 1
-
-L_0556:
-    VMStackPushFlag EVENT_FLAG_0x018e
-    VMStackPushConst 0
-    VMStackCmp CMP_EQ
-    VMStackPush EVENT_WORK_0x4118
-    VMStackPushConst 3
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_057F
-    WorkSetConst EVENT_WORK_0x4118, 1
-
-L_057F:
-    VMStackPushFlag EVENT_FLAG_0x03a0
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMStackPushFlag EVENT_FLAG_0x0193
-    VMStackPushConst 0
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_05A6
-    FlagReset EVENT_FLAG_0x03a0
-
-L_05A6:
-    VMStackPushFlag EVENT_FLAG_0x0399
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMStackPushFlag EVENT_FLAG_0x018f
-    VMStackPushConst 0
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_05CD
-    FlagReset EVENT_FLAG_0x0399
-
-L_05CD:
-    VMStackPushFlag EVENT_FLAG_0x039a
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMStackPushFlag EVENT_FLAG_0x0190
-    VMStackPushConst 0
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_05F4
-    FlagReset EVENT_FLAG_0x039a
-
-L_05F4:
-    VMStackPushFlag EVENT_FLAG_0x039b
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMStackPushFlag EVENT_FLAG_0x0191
-    VMStackPushConst 0
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_061B
-    FlagReset EVENT_FLAG_0x039b
-
-L_061B:
-    VMStackPushFlag EVENT_FLAG_0x039c
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMStackPushFlag EVENT_FLAG_0x0192
-    VMStackPushConst 0
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_0642
-    FlagReset EVENT_FLAG_0x039c
-
-L_0642:
-    VMStackPushFlag EVENT_FLAG_0x03b2
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMStackPushFlag EVENT_FLAG_0x01a4
-    VMStackPushConst 0
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_0669
-    FlagReset EVENT_FLAG_0x03b2
-
-L_0669:
-    VMStackPushFlag EVENT_FLAG_0x029b
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMStackPushFlag EVENT_FLAG_0x00ea
-    VMStackPushConst 0
-    VMStackCmp CMP_EQ
-    VMStackPush EVENT_WORK_0x411b
-    VMStackPushConst 2
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_06A0
-    FlagReset EVENT_FLAG_0x029b
-
-L_06A0:
-    VMStackPushFlag EVENT_FLAG_0x03ec
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMStackPushFlag EVENT_FLAG_0x00f9
-    VMStackPushConst 0
-    VMStackCmp CMP_EQ
-    VMStackPushFlag EVENT_FLAG_0x01e0
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMStackCmp CMP_AND
-    VMStackCmp CMP_AND
-    VMJumpIf CMP_STACK, L_06DB
-    FlagReset EVENT_FLAG_0x03ec
-    FlagSet EVENT_FLAG_0x03eb
-
-L_06DB:
-    VMHalt
-
-L_06DD:
+Script_6:
     FlagSet EVENT_FLAG_0x0960
     HollowRivalSetValue 0, 0
     HollowRivalSetValue 1, 40
@@ -520,6 +524,5 @@ L_06DD:
     FlagSet EVENT_FLAG_0x0284
     FlagReset EVENT_FLAG_0x03f0
     FlagSet EVENT_FLAG_0x0409
-    VMReturn
     VMReturn
     .balign 4, 0

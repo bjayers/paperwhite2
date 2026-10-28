@@ -8,7 +8,7 @@
     "text": "SCRIPT_TEXT_BLACK_CITY",
     "bgm": "SEQ_BGM_C_10_B",
     "encounters": null,
-    "enc_slot": 0,
+    "enc_slot": 7,
     "parent": "ZONE_BLACK_CITY",
     "place": "PLACE_BLACK_CITY",
     "place_display": 1,

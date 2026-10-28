@@ -20,6 +20,16 @@
             "moves": [ "MOVE_VENOSHOCK", "MOVE_ASSURANCE", "MOVE_TACKLE", "MOVE_SMOG" ]
         },
         {
+            "species": "SPECIES_TRUBBISH",
+            "form": 0,
+            "level": 16,
+            "difficulty": 250,
+            "gender": 0,
+            "ability": 1,
+            "item": "ITEM_NONE",
+            "moves": [ "MOVE_POUND", "MOVE_POISON_GAS", "MOVE_ACID_SPRAY", "MOVE_DOUBLE_SLAP" ]
+        },
+        {
             "species": "SPECIES_GRIMER",
             "form": 0,
             "level": 16,
@@ -32,12 +42,22 @@
         {
             "species": "SPECIES_WHIRLIPEDE",
             "form": 0,
-            "level": 18,
+            "level": 16,
             "difficulty": 250,
             "gender": 0,
             "ability": 1,
             "item": "ITEM_SITRUS_BERRY",
             "moves": [ "MOVE_VENOSHOCK", "MOVE_POISON_STING", "MOVE_PROTECT", "MOVE_ROLLOUT" ]
+        },
+        {
+            "species": "SPECIES_CROAGUNK",
+            "form": 0,
+            "level": 18,
+            "difficulty": 250,
+            "gender": 0,
+            "ability": 3,
+            "item": "ITEM_NONE",
+            "moves": [ "MOVE_VACUUM_WAVE", "MOVE_PURSUIT", "MOVE_POISON_STING", "MOVE_REVENGE" ]
         }
     ],
     "messages": [

@@ -2,176 +2,6 @@
     "$schema": "events.schema.json",
     "bg_events": [
         {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 4,
-                "y": 20,
-                "z": 0
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 24,
-                "y": 39,
-                "z": 32
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 30,
-                "y": 53,
-                "z": 0
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 29,
-                "y": 57,
-                "z": -48
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 26,
-                "y": 32,
-                "z": 32
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 16,
-                "y": 35,
-                "z": 32
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 7,
-                "y": 35,
-                "z": 0
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 10,
-                "y": 29,
-                "z": 32
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 8,
-                "y": 49,
-                "z": 0
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 13,
-                "y": 58,
-                "z": -16
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 17,
-                "y": 58,
-                "z": -16
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 16,
-                "y": 39,
-                "z": 32
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 26,
-                "y": 46,
-                "z": 0
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 10,
-                "y": 32,
-                "z": 32
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 13,
-                "y": 27,
-                "z": 0
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 5,
-                "y": 39,
-                "z": 0
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 24,
-                "y": 41,
-                "z": 32
-            }
-        },
-        {
             "script": 8085,
             "condition": 2,
             "direction": 4,
@@ -189,6 +19,16 @@
                 "x": 26,
                 "y": 29,
                 "z": 0
+            }
+        },
+        {
+            "script": 9,
+            "condition": 0,
+            "direction": 4,
+            "grid": {
+                "x": 15,
+                "y": 59,
+                "z": -16
             }
         }
     ],
@@ -226,7 +66,7 @@
                 "height": 0
             },
             "grid": {
-                "x": 15,
+                "x": 16,
                 "z": 58,
                 "y": -65536
             }
@@ -420,6 +260,595 @@
                 "z": 54,
                 "y": -65536
             }
+        },
+        {
+            "id": 12,
+            "model": "OBJ_CODE_POKEMON_GROWLITHE",
+            "movement": 43,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x01fc",
+            "script": 11,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 4,
+                "height": 3
+            },
+            "grid": {
+                "x": 16,
+                "z": 27,
+                "y": 0
+            }
+        },
+        {
+            "id": 13,
+            "model": "OBJ_CODE_POKEMON_GROWLITHE",
+            "movement": 5,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x021a",
+            "script": 12,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 1,
+                "height": 0
+            },
+            "grid": {
+                "x": 22,
+                "z": 28,
+                "y": 0
+            }
+        },
+        {
+            "id": 14,
+            "model": "OBJ_CODE_POKEMON_SKARMORY",
+            "movement": 43,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x021e",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 4,
+                "height": 4
+            },
+            "grid": {
+                "x": 13,
+                "z": 53,
+                "y": 196608
+            }
+        },
+        {
+            "id": 15,
+            "model": "OBJ_CODE_POKEMON_VOLTORB",
+            "movement": 8,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x021f",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 19,
+                "z": 51,
+                "y": 393216
+            }
+        },
+        {
+            "id": 16,
+            "model": "OBJ_CODE_POKEMON_MAGNEMITE",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0221",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 2,
+                "height": 2
+            },
+            "grid": {
+                "x": 14,
+                "z": 35,
+                "y": 196608
+            }
+        },
+        {
+            "id": 17,
+            "model": "OBJ_CODE_POKEMON_VOLTORB",
+            "movement": 5,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0221",
+            "script": 13,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 1,
+                "height": 0
+            },
+            "grid": {
+                "x": 28,
+                "z": 44,
+                "y": 131072
+            }
+        },
+        {
+            "id": 18,
+            "model": "OBJ_CODE_POKEMON_SKARMORY",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x021f",
+            "script": 14,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 1,
+                "height": 1
+            },
+            "grid": {
+                "x": 27,
+                "z": 33,
+                "y": 0
+            }
+        },
+        {
+            "id": 19,
+            "model": "OBJ_CODE_POKEMON_KOFFING",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x021e",
+            "script": 15,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 1,
+                "height": 1
+            },
+            "grid": {
+                "x": 28,
+                "z": 36,
+                "y": 0
+            }
+        },
+        {
+            "id": 20,
+            "model": "OBJ_CODE_POKEMON_MAGNEMITE",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0222",
+            "script": 16,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 1,
+                "height": 1
+            },
+            "grid": {
+                "x": 22,
+                "z": 39,
+                "y": 0
+            }
+        },
+        {
+            "id": 21,
+            "model": "OBJ_CODE_POKEMON_GRIMER",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x021d",
+            "script": 17,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 1,
+                "height": 1
+            },
+            "grid": {
+                "x": 29,
+                "z": 35,
+                "y": 0
+            }
+        },
+        {
+            "id": 22,
+            "model": "OBJ_CODE_POKEMON_MAWILE",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x024e",
+            "script": 18,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 1,
+                "height": 1
+            },
+            "grid": {
+                "x": 27,
+                "z": 31,
+                "y": 0
+            }
+        },
+        {
+            "id": 23,
+            "model": "OBJ_CODE_POKEMON_UNOWN",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x021c",
+            "script": 19,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 1,
+                "height": 1
+            },
+            "grid": {
+                "x": 6,
+                "z": 34,
+                "y": 0
+            }
+        },
+        {
+            "id": 24,
+            "model": "OBJ_CODE_POKEMON_VOLTORB",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0220",
+            "script": 20,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 1,
+                "height": 1
+            },
+            "grid": {
+                "x": 25,
+                "z": 47,
+                "y": 0
+            }
+        },
+        {
+            "id": 25,
+            "model": "OBJ_CODE_POKEMON_KOFFING",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x021f",
+            "script": 21,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 1,
+                "height": 1
+            },
+            "grid": {
+                "x": 8,
+                "z": 42,
+                "y": 0
+            }
+        },
+        {
+            "id": 26,
+            "model": "OBJ_CODE_POKEMON_RIOLU",
+            "movement": 0,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0219",
+            "script": 0,
+            "direction": "DIR_RIGHT",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 4,
+                "z": 45,
+                "y": 196608
+            }
+        },
+        {
+            "id": 27,
+            "model": "OBJ_CODE_POKEMON_KOFFING",
+            "movement": 37,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x021d",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 2,
+                "height": 2
+            },
+            "grid": {
+                "x": 7,
+                "z": 49,
+                "y": 262144
+            }
+        },
+        {
+            "id": 28,
+            "model": "OBJ_CODE_POKEMON_RIOLU",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x01fb",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 1,
+                "height": 3
+            },
+            "grid": {
+                "x": 1,
+                "z": 37,
+                "y": 131072
+            }
+        },
+        {
+            "id": 29,
+            "model": "OBJ_CODE_POKEMON_ELEKID",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x01f4",
+            "script": 22,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 1,
+                "height": 1
+            },
+            "grid": {
+                "x": 9,
+                "z": 32,
+                "y": 0
+            }
+        },
+        {
+            "id": 30,
+            "model": "OBJ_CODE_POKEMON_MAGBY",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x01fe",
+            "script": 23,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 1,
+                "height": 1
+            },
+            "grid": {
+                "x": 8,
+                "z": 35,
+                "y": 0
+            }
+        },
+        {
+            "id": 31,
+            "model": "OBJ_CODE_POKEMON_ELEKID",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0212",
+            "script": 24,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 1,
+                "height": 1
+            },
+            "grid": {
+                "x": 26,
+                "z": 46,
+                "y": 0
+            }
+        },
+        {
+            "id": 32,
+            "model": "OBJ_CODE_POKEMON_MAGBY",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0208",
+            "script": 25,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 1,
+                "height": 1
+            },
+            "grid": {
+                "x": 22,
+                "z": 41,
+                "y": 0
+            }
+        },
+        {
+            "id": 33,
+            "model": "OBJ_CODE_324",
+            "movement": 0,
+            "type": 0,
+            "flag": 0,
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 3,
+                "z": 62,
+                "y": 0
+            }
+        },
+        {
+            "id": 34,
+            "model": "OBJ_CODE_323",
+            "movement": 0,
+            "type": 0,
+            "flag": 0,
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 2,
+                "z": 62,
+                "y": 0
+            }
+        },
+        {
+            "id": 35,
+            "model": "OBJ_CODE_POKEMON_MAGNEMITE",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0220",
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 2,
+                "height": 2
+            },
+            "grid": {
+                "x": 6,
+                "z": 58,
+                "y": 196608
+            }
+        },
+        {
+            "id": 36,
+            "model": "OBJ_CODE_POKEMON_WOOBAT",
+            "movement": 4,
+            "type": 0,
+            "flag": 0,
+            "script": 26,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 17,
+                "z": 58,
+                "y": -65536
+            }
+        },
+        {
+            "id": 37,
+            "model": "OBJ_CODE_POKEMON_GROWLITHE",
+            "movement": 5,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x01fb",
+            "script": 27,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 1,
+                "height": 0
+            },
+            "grid": {
+                "x": 13,
+                "z": 27,
+                "y": 0
+            }
+        },
+        {
+            "id": 38,
+            "model": "OBJ_CODE_POKEMON_GROWLITHE",
+            "movement": 0,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x01fd",
+            "script": 28,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 16,
+                "z": 26,
+                "y": 0
+            }
+        },
+        {
+            "id": 39,
+            "model": "OBJ_CODE_POKEMON_GROWLITHE",
+            "movement": 0,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0219",
+            "script": 29,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 1
+            },
+            "grid": {
+                "x": 20,
+                "z": 26,
+                "y": 0
+            }
+        },
+        {
+            "id": 40,
+            "model": "OBJ_CODE_POKEMON_GROWLITHE",
+            "movement": 0,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x021b",
+            "script": 30,
+            "direction": "DIR_LEFT",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 22,
+                "z": 26,
+                "y": 196608
+            }
+        },
+        {
+            "id": 41,
+            "model": "OBJ_CODE_POKEMON_PICHU_FORM_1",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x024f",
+            "script": 31,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 1,
+                "height": 1
+            },
+            "grid": {
+                "x": 7,
+                "z": 31,
+                "y": 0
+            }
+        },
+        {
+            "id": 42,
+            "model": "OBJ_CODE_POKEMON_GROWLITHE",
+            "movement": 3,
+            "type": 0,
+            "flag": "EVENT_FLAG_0x0250",
+            "script": 32,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 1,
+                "height": 1
+            },
+            "grid": {
+                "x": 22,
+                "z": 46,
+                "y": 0
+            }
         }
     ],
     "warps": [
@@ -443,6 +872,10 @@
         {
             "type": 4,
             "script": 6
+        },
+        {
+            "type": 2,
+            "script": 10
         }
     ]
 }

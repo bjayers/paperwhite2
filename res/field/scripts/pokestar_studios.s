@@ -42,98 +42,97 @@
     ScriptEntry Script_37
     ScriptEntry Script_38
     ScriptEntriesEnd
-    WorkSetConst 0x8020, 0
-    WorkSetConst 0x8021, 0
-    WorkSetConst 0x8022, 0
 
 Script_1:
     VMStackPush EVENT_WORK_0x413c
     VMStackPushConst 1
     VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_00C7
+    VMJumpIf CMP_STACK, L_00B5
     FlagReset EVENT_FLAG_0x03e3
     FlagReset EVENT_FLAG_0x03e2
 
-L_00C7:
+L_00B5:
     PokewoodGetLevel EVENT_WORK_0x400f
     VMStackPush EVENT_WORK_0x400f
     VMStackPushConst 1
     VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_00E8
+    VMJumpIf CMP_STACK, L_00D6
     FlagReset EVENT_FLAG_0x02b3
-    VMJump L_0151
+    VMJump L_013F
 
-L_00E8:
+L_00D6:
     VMStackPush EVENT_WORK_0x400f
     VMStackPushConst 2
     VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_0109
+    VMJumpIf CMP_STACK, L_00F7
     FlagReset EVENT_FLAG_0x02b3
     FlagReset EVENT_FLAG_0x02b4
-    VMJump L_0151
+    VMJump L_013F
 
-L_0109:
+L_00F7:
     VMStackPush EVENT_WORK_0x400f
     VMStackPushConst 3
     VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_012E
+    VMJumpIf CMP_STACK, L_011C
     FlagReset EVENT_FLAG_0x02b3
     FlagReset EVENT_FLAG_0x02b4
     FlagReset EVENT_FLAG_0x02b5
-    VMJump L_0151
+    VMJump L_013F
 
-L_012E:
+L_011C:
     VMStackPush EVENT_WORK_0x400f
     VMStackPushConst 4
     VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_0151
+    VMJumpIf CMP_STACK, L_013F
     FlagReset EVENT_FLAG_0x02b3
     FlagReset EVENT_FLAG_0x02b4
     FlagReset EVENT_FLAG_0x02b5
     FlagReset EVENT_FLAG_0x02b6
 
-L_0151:
+L_013F:
     VMHalt
+    .byte 0x00
 
 Script_2:
     VMStackPush EVENT_WORK_0x410a
     VMStackPushConst 1
     VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_0184
+    VMJumpIf CMP_STACK, L_0173
     ActorSetGPos 0, 32, 0, 56, 2
     ActorSetGPos 26, 30, 0, 56, 3
-    VMJump L_01A3
+    VMJump L_0192
 
-L_0184:
+L_0173:
     VMStackPush EVENT_WORK_0x410a
     VMStackPushConst 2
     VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_01A3
+    VMJumpIf CMP_STACK, L_0192
     ActorSetGPos 0, 45, 0, 19, 1
 
-L_01A3:
+L_0192:
     VMStackPush EVENT_WORK_0x413c
     VMStackPushConst 1
     VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_0200
+    VMJumpIf CMP_STACK, L_01EF
     ActorSetGPos 0, 45, 2, 21, 0
     ActorSetGPos 26, 31, 2, 9, 0
     ActorDelete 17
     VMStackPushFlag EVENT_FLAG_0x02b5
     VMStackPushConst 0
     VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_01E9
+    VMJumpIf CMP_STACK, L_01D8
     ActorDelete 35
 
-L_01E9:
+L_01D8:
     VMStackPushFlag EVENT_FLAG_0x02b6
     VMStackPushConst 0
     VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_0200
+    VMJumpIf CMP_STACK, L_01EF
     ActorDelete 36
 
-L_0200:
+L_01EF:
     VMHalt
+    .byte 0x00
 
 Script_3:
     ActorsPauseAll
@@ -147,37 +146,37 @@ Script_3:
     // "Indeed... And that kid should\nbe here any moment![f000]븁\u0000"
     ActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_IndeedKidShouldHere, 0, 0, 0
     MsgWinCloseAll
-    ActorCmdExec 0, Movement_0E60
+    ActorCmdExec 0, Movement_040C
     ActorCmdWait
-    ActorCmdExec 0, Movement_0E88
+    ActorCmdExec 0, Movement_0414
     ActorCmdWait
     // "Oh!\nAnd look who should appear![f000]븁\u0000"
     ActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_OhLookWhoShould, 0, 0, 0
     MsgWinCloseAll
-    ActorCmdExec 26, Movement_0E60
+    ActorCmdExec 26, Movement_041C
     ActorWalkRoute 255, 31, 58, 1, 8, 0
     ActorCmdWait
     WordSetPlayerName 0
     // "Welcome...to Pokéstar Studios![f000]븁\u0000\nHey, [f000]Ā\u0001\u0000!\nWe've been waiting for you![f000]븁\u0000\nThis is our boss,\nMr. Stu Deeoh![f000]븁\u0000"
     ActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_WelcomePokestarStudiosHey, 0, 0, 0
     MsgWinCloseAll
-    ActorCmdExec 0, Movement_0550
+    ActorCmdExec 0, Movement_0424
     ActorCmdWait
-    ActorCmdExec 26, Movement_0E08
+    ActorCmdExec 26, Movement_0434
     ActorCmdWait
-    ActorCmdExec 26, Movement_0E60
+    ActorCmdExec 26, Movement_043C
     ActorCmdWait
     // "Bonsoir! Hello!\nI'm Stu Deeoh! Charmed, I'm sure![f000]븁\u0000\nSo you must be [f000]Ā\u0001\u0000.\nWe were just talking about you![f000]븁\u0000\nI'd like to explain Pokéstar Studios,\nbut I need a little time to prepare![f000]븁\u0000\nI'm so sorry, dahling,\ncould you wait an eensy moment?[f000]븁\u0000"
     ActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_BonsoirHelloImStu, 26, 3, 0
     MsgWinCloseAll
-    ActorCmdExec 0, Movement_0DF8
+    ActorCmdExec 0, Movement_0444
     ActorCmdWait
     // "In the meantime, I'll show you around\nPokéstar Studios![f000]븁\u0000"
     ActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_MeantimeIllShowAround, 0, 0, 0
     MsgWinCloseAll
-    ActorCmdExec 26, Movement_0E70
+    ActorCmdExec 26, Movement_044C
     VMSleep 8
-    ActorCmdExec 0, Movement_0E68
+    ActorCmdExec 0, Movement_0454
     ActorCmdWait
     // "Oh, that would be maaarvelous![f000]븁\u0000\nMovies! They're amazing![f000]븁\u0000\nPokéstar Studios inspires and\nmoves people all over the world![f000]븀\u0000\nYou can make sure [f000]Ā\u0001\u0000[f000]븀\u0000\nexperiences its many charms![f000]븁\u0000\nWell then, I absolutely must\nbe off and start my preparations![f000]븀\u0000\nI'll see you in a minute!"
     ActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_OhWouldMaaarvelousMovies, 26, 3, 0
@@ -185,12 +184,12 @@ Script_3:
     MsgWinCloseAll
     ActorWalkRoute 26, 31, 45, 0, 4, 1
     VMSleep 12
-    ActorCmdExec 0, Movement_0E58
+    ActorCmdExec 0, Movement_045C
     ActorCmdWait
     ActorDelete 26
-    ActorCmdExec 0, Movement_0E10
+    ActorCmdExec 0, Movement_0464
     ActorCmdWait
-    ActorCmdExec 0, Movement_0E60
+    ActorCmdExec 0, Movement_046C
     ActorCmdWait
     // "That's my boss for you!\nWhat graceful footwork![f000]븁\u0000\nWell then, [f000]Ā\u0001\u0000,\ncome with me![f000]븁\u0000"
     ActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_ThatsBossWhatGraceful, 0, 0, 0
@@ -199,22 +198,22 @@ Script_3:
     EvCameraWait
     EvCameraRebind
     EvCameraEnd
-    ActorCmdExec 0, Movement_0DF8
+    ActorCmdExec 0, Movement_0474
     ActorCmdWait
-    ActorCmdExec 0, Movement_0E60
+    ActorCmdExec 0, Movement_047C
     ActorCmdWait
     ActorWalkRoute 0, 31, 32, 0, 8, 0
     VMSleep 4
     ActorWalkRoute 255, 31, 33, 1, 8, 0
     ActorCmdWait
-    ActorCmdExec 0, Movement_0E60
+    ActorCmdExec 0, Movement_0484
     ActorCmdWait
     // "First, let me tell you briefly\nwhat Pokéstar Studios is all about![f000]븁\u0000\nPokéstar Studios was built for making\nfilms--it's a movie metropolis![f000]븁\u0000\nMany films are made and released\nright here![f000]븁\u0000"
     ActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_FirstLetTellBriefly, 0, 0, 0
     MsgWinCloseAll
-    ActorCmdExec 0, Movement_0508
+    ActorCmdExec 0, Movement_048C
     VMSleep 4
-    ActorCmdExec 255, Movement_04E8
+    ActorCmdExec 255, Movement_04A8
     ActorCmdWait
     EvCameraInit
     EvCameraUnbind
@@ -229,11 +228,11 @@ Script_3:
     EvCameraEnd
     ActorWalkRoute 0, 45, 20, 0, 8, 1
     ActorCmdWait
-    ActorCmdExec 0, Movement_0E60
+    ActorCmdExec 0, Movement_04C0
     ActorCmdWait
-    ActorCmdExec 0, Movement_0524
+    ActorCmdExec 0, Movement_04C8
     VMSleep 4
-    ActorCmdExec 255, Movement_0500
+    ActorCmdExec 255, Movement_04D4
     ActorCmdWait
     WorkSetConst EVENT_WORK_0x410a, 2
     MapChangeWarp ZONE_POKESTAR_STUDIOS_4, 15, 31, 0
@@ -242,134 +241,101 @@ Script_3:
     ActorsUnpauseAll
     VMHalt
 
-Script_33:
-    ActorsPauseAll
-    FadeInBlack
-    ActorCmdExec 0, Movement_0560
-    VMSleep 4
-    ActorCmdExec 255, Movement_0530
-    FadeWait
-    ActorCmdWait
-    ActorCmdExec 0, Movement_0570
-    VMSleep 8
-    ActorCmdExec 255, Movement_053C
-    ActorCmdWait
-    EvCameraInit
-    EvCameraUnbind
-    EvCameraMoveTo 5592, 0, 0x105000, 0x148000, 0x3000f, 0x118000, 40
-    EvCameraWait
-    // "This is the filming studio![f000]븁\u0000\nThis is where Pokéstar Studios\nmovies are born![f000]븁\u0000\nWell now, come inside!\nMr. Deeoh should be waiting![f000]븁\u0000"
-    InfoMsg PokestarStudios_Text_FilmingStudioWherePokestar, 2
-    InfoMsgClose_0039
-    EvCameraMoveToDefault 40
-    EvCameraWait
-    EvCameraRebind
-    EvCameraEnd
-    ActorCmdExec 0, Movement_058C
-    ActorCmdWait
-    ActorCmdExec 0, Movement_059C
-    VMSleep 4
-    ActorCmdExec 255, Movement_0584
-    ActorCmdWait
-    FlagSet EVENT_FLAG_0x0988
-    RTReserveScript 10819
-    MapChangeWarp ZONE_POKESTAR_STUDIOS_3, 14, 21, 0
-    WorkSetConst EVENT_WORK_0x410a, 3
-    WorkSetConst EVENT_WORK_0x40ac, 4
-    FlagReset EVENT_FLAG_0x02d4
-    FinishAllEvents
-    ActorsUnpauseAll
-    VMHalt
-    .balign 4, 0
-    Move 15, 1
-    Move 12, 18
-    MoveEnd
-    Move 12, 18
-    MoveEnd
-    Move 14, 1
-    Move 12, 18
+Movement_040C:
+    Move 33, 1
     MoveEnd
 
-Movement_04E8:
-    Move 12, 1
-    Move 15, 4
-    Move 12, 5
-    Move 15, 10
-    Move 12, 6
+Movement_0414:
+    Move 75, 1
     MoveEnd
 
-Movement_0500:
-    Move 12, 3
+Movement_041C:
+    Move 33, 1
     MoveEnd
 
-Movement_0508:
-    Move 15, 4
-    Move 12, 5
-    Move 15, 10
-    Move 12, 6
-    Move 15, 1
-    Move 32, 1
-    MoveEnd
-
-Movement_0524:
-    Move 12, 2
-    Move 69, 1
-    MoveEnd
-
-Movement_0530:
-    Move 13, 9
-    Move 34, 1
-    MoveEnd
-
-Movement_053C:
-    Move 14, 10
-    Move 12, 3
-    Move 14, 15
-    Move 32, 1
-    MoveEnd
-
-Movement_0550:
+Movement_0424:
     Move 71, 1
     Move 12, 1
     Move 72, 1
     MoveEnd
 
-Movement_0560:
-    Move 13, 8
-    Move 14, 1
+Movement_0434:
+    Move 15, 1
+    MoveEnd
+
+Movement_043C:
+    Move 33, 1
+    MoveEnd
+
+Movement_0444:
+    Move 13, 1
+    MoveEnd
+
+Movement_044C:
     Move 35, 1
     MoveEnd
 
-Movement_0570:
-    Move 14, 9
-    Move 12, 3
-    Move 14, 16
+Movement_0454:
+    Move 34, 1
+    MoveEnd
+
+Movement_045C:
     Move 32, 1
     MoveEnd
 
-Movement_0584:
-    Move 12, 3
+Movement_0464:
+    Move 14, 1
     MoveEnd
 
-Movement_058C:
-    Move 12, 1
+Movement_046C:
+    Move 33, 1
+    MoveEnd
+
+Movement_0474:
+    Move 13, 1
+    MoveEnd
+
+Movement_047C:
+    Move 33, 1
+    MoveEnd
+
+Movement_0484:
+    Move 33, 1
+    MoveEnd
+
+Movement_048C:
+    Move 15, 4
+    Move 12, 5
+    Move 15, 10
+    Move 12, 6
     Move 15, 1
+    Move 32, 1
+    MoveEnd
+
+Movement_04A8:
+    Move 12, 1
+    Move 15, 4
+    Move 12, 5
+    Move 15, 10
+    Move 12, 6
+    MoveEnd
+
+Movement_04C0:
     Move 33, 1
     MoveEnd
 
-Movement_059C:
-    Move 12, 3
+Movement_04C8:
+    Move 12, 2
+    Move 69, 1
     MoveEnd
-    Move 34, 1
-    Move 62, 1
-    Move 35, 1
-    Move 62, 1
-    Move 33, 1
+
+Movement_04D4:
+    Move 12, 3
     MoveEnd
 
 Script_4:
     ActorsPauseAll
-    ActorCmdExec 0, Movement_0E88
+    ActorCmdExec 0, Movement_076C
     ActorCmdWait
     WorkSetConst 0x8023, 0
     WorkSetConst 0x8024, 0
@@ -386,84 +352,84 @@ Script_4:
     VMSleep 4
     ActorWalkRoute 255, 44, 27, 4, 8, 1
     ActorCmdWait
-    ActorCmdExec 255, Movement_0E60
-    ActorCmdExec 0, Movement_0E60
-    ActorCmdExec 20, Movement_0E20
+    ActorCmdExec 255, Movement_0774
+    ActorCmdExec 0, Movement_077C
+    ActorCmdExec 20, Movement_0784
     ActorCmdWait
     // "[f000]Ā\u0001\u0000, congratulations![f000]븁\u0000\nToday is a special day for you\nand for Pokéstar Studios![f000]븁\u0000\nI treasure the time I've\nspent acting with you!"
     ActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_CongratulationsTodaySpecialDay, 20, 0, 0
     MsgWaitAdvance
     MsgWinCloseAll
-    ActorCmdExec 0, Movement_0884
+    ActorCmdExec 0, Movement_078C
     VMSleep 4
-    ActorCmdExec 255, Movement_0884
+    ActorCmdExec 255, Movement_0798
     VMSleep 8
-    ActorCmdExec 20, Movement_0E68
+    ActorCmdExec 20, Movement_07A4
     ActorCmdWait
-    ActorCmdExec 21, Movement_0E20
+    ActorCmdExec 21, Movement_07AC
     ActorCmdWait
     // "Hey, [f000]Ā\u0001\u0000![f000]븁\u0000\nI'm honored to have\nbeen in a movie with you![f000]븁\u0000\nMe? You don't remember me?[f000]븁\u0000\nYou can't be serious!\nI was the UFO!"
     ActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_HeyImHonoredHave, 21, 2, 0
     MsgWaitAdvance
     MsgWinCloseAll
-    ActorCmdExec 0, Movement_0890
+    ActorCmdExec 0, Movement_07B4
     VMSleep 4
-    ActorCmdExec 255, Movement_0890
+    ActorCmdExec 255, Movement_07C0
     VMSleep 8
-    ActorCmdExec 21, Movement_0E68
+    ActorCmdExec 21, Movement_07CC
     ActorCmdWait
-    ActorCmdExec 25, Movement_0E00
+    ActorCmdExec 25, Movement_07D4
     ActorCmdWait
-    ActorCmdExec 25, Movement_0E80
+    ActorCmdExec 25, Movement_07DC
     ActorCmdWait
     // "If it isn't [f000]Ā\u0001\u0000!\nYou're too much! I'm so moved![f000]븀\u0000\nCongratulations and everything![f000]븁\u0000\nI-I'm so glad I was your\nfan, [f000]Ā\u0001\u0000!"
     ActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_IfIsntYoureToo, 25, 2, 0
     MsgWaitAdvance
     MsgWinCloseAll
-    ActorCmdExec 0, Movement_089C
+    ActorCmdExec 0, Movement_07E4
     VMSleep 2
-    ActorCmdExec 255, Movement_08B0
+    ActorCmdExec 255, Movement_07F8
     ActorCmdWait
     // "Acting with you...[f000]븁\u0000\nIt was pretty fun and a\ngood experience.[f000]븁\u0000\nComing clear out here\nwas worth it."
     ActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_ActingPrettyFunGood, 24, 2, 0
     MsgWaitAdvance
     MsgWinCloseAll
-    ActorCmdExec 0, Movement_08C8
+    ActorCmdExec 0, Movement_0810
     VMSleep 2
-    ActorCmdExec 255, Movement_08C8
+    ActorCmdExec 255, Movement_081C
     ActorCmdWait
     // "I'm proud that I was\nable to make movies with you![f000]븁\u0000\nCongratulations, [f000]Ā\u0001\u0000!"
     ActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_ImProudAbleMake, 23, 2, 0
     MsgWaitAdvance
     MsgWinCloseAll
-    ActorCmdExec 0, Movement_08D4
+    ActorCmdExec 0, Movement_0828
     VMSleep 2
-    ActorCmdExec 255, Movement_08D4
+    ActorCmdExec 255, Movement_0834
     ActorCmdWait
-    ActorCmdExec 22, Movement_0E10
+    ActorCmdExec 22, Movement_0840
     ActorCmdWait
     // "How great, [f000]Ā\u0001\u0000![f000]븁\u0000\nNow listen!\nI was the director of your debut![f000]븁\u0000\nSo I'm almost like your parent!\nDon't forget to be grateful!"
     ActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_HowGreatNowListen, 22, 2, 0
     MsgWaitAdvance
     MsgWinCloseAll
-    ActorCmdExec 0, Movement_08EC
+    ActorCmdExec 0, Movement_0848
     VMSleep 4
-    ActorCmdExec 255, Movement_08EC
+    ActorCmdExec 255, Movement_0850
     VMSleep 4
-    ActorCmdExec 22, Movement_08E0
+    ActorCmdExec 22, Movement_0858
     ActorCmdWait
     // "Hey, boss!\nWe're here!"
     ActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_HeyBossWereHere, 0, 2, 0
     MsgWaitAdvance
     MsgWinCloseAll
-    ActorCmdExec 0, Movement_08F4
+    ActorCmdExec 0, Movement_0864
     VMSleep 8
-    ActorCmdExec 255, Movement_0E00
+    ActorCmdExec 255, Movement_0870
     ActorCmdWait
     VMSleep 30
-    ActorCmdExec 27, Movement_0E60
+    ActorCmdExec 27, Movement_0878
     VMSleep 15
-    ActorCmdExec 26, Movement_0E60
+    ActorCmdExec 26, Movement_0880
     ActorCmdWait
     // "Hm...[f000]븁\u0000\n[f000]Ā\u0001\u0000,\ntoday's a day to be remembered.[f000]븁\u0000\nWhen I built this place,\nI made a wish and a promise.[f000]븁\u0000\nFor the day Pokéstar Studios\nwould grow until it was a temple[f000]븀\u0000\nof entertainment that would[f000]븀\u0000\namaze the whole world...[f000]븁\u0000\nAnd for the day that Pokéstar Studios\ncreated a new star worthy of it...[f000]븁\u0000\nI wouldn't build anything\non this platform.[f000]븁\u0000\nBut look...[f000]븁\u0000\nThere's a bronze statue here now.\nIn other words, my wish has come true,[f000]븀\u0000\nand I fulfilled my promise.[f000]븁\u0000\nThat's right, [f000]Ā\u0001\u0000...\nIt's all thanks to you!"
     ActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_HmTodaysDayRemembered, 26, 2, 0
@@ -473,7 +439,7 @@ Script_4:
     ActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_ActingExcitesStaffOther, 27, 2, 0
     MsgWaitAdvance
     MsgWinCloseAll
-    ActorCmdExec 26, Movement_0DF8
+    ActorCmdExec 26, Movement_0888
     ActorCmdWait
     // "[f000]Ā\u0001\u0000![f000]븁\u0000\nYou are the true star\nof Pokéstar Studios![f000]븁\u0000\nYou're the shooting star across\nthe night sky that is the silver screen!"
     ActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_TrueStarPokestarStudios, 26, 2, 0
@@ -484,9 +450,9 @@ Script_4:
     ActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_ThatsWhyWeGot, 26, 2, 0
     MsgWaitAdvance
     MsgWinCloseAll
-    ActorCmdExec 0, Movement_0E08
+    ActorCmdExec 0, Movement_0890
     VMSleep 8
-    ActorCmdExec 255, Movement_0E68
+    ActorCmdExec 255, Movement_0898
     ActorCmdWait
     // "Yessir, boss![f000]븁\u0000\nOK! [f000]Ā\u0001\u0000!\nCome this way!"
     ActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_YessirBossOkCome, 0, 2, 0
@@ -502,39 +468,71 @@ Script_4:
     ActorsUnpauseAll
     VMHalt
     .balign 4, 0
-    Move 13, 1
-    Move 15, 1
-    Move 1, 1
-    MoveEnd
-    Move 13, 1
-    Move 14, 1
-    Move 1, 1
-    MoveEnd
-    Move 13, 6
-    Move 14, 1
-    Move 1, 1
-    MoveEnd
-    Move 13, 7
+
+Movement_076C:
+    Move 75, 1
     MoveEnd
 
-Movement_0884:
+Movement_0774:
+    Move 33, 1
+    MoveEnd
+
+Movement_077C:
+    Move 33, 1
+    MoveEnd
+
+Movement_0784:
+    Move 8, 1
+    MoveEnd
+
+Movement_078C:
     Move 14, 4
     Move 1, 1
     MoveEnd
 
-Movement_0890:
+Movement_0798:
     Move 14, 4
     Move 1, 1
     MoveEnd
 
-Movement_089C:
+Movement_07A4:
+    Move 34, 1
+    MoveEnd
+
+Movement_07AC:
+    Move 8, 1
+    MoveEnd
+
+Movement_07B4:
+    Move 14, 4
+    Move 1, 1
+    MoveEnd
+
+Movement_07C0:
+    Move 14, 4
+    Move 1, 1
+    MoveEnd
+
+Movement_07CC:
+    Move 34, 1
+    MoveEnd
+
+Movement_07D4:
+    Move 12, 1
+    MoveEnd
+
+Movement_07DC:
+    Move 48, 2
+    MoveEnd
+
+Movement_07E4:
     Move 12, 3
     Move 14, 4
     Move 12, 5
     Move 3, 1
     MoveEnd
 
-Movement_08B0:
+Movement_07F8:
     Move 14, 1
     Move 12, 3
     Move 14, 4
@@ -542,28 +540,70 @@ Movement_08B0:
     Move 3, 1
     MoveEnd
 
-Movement_08C8:
+Movement_0810:
     Move 12, 2
     Move 2, 1
     MoveEnd
 
-Movement_08D4:
+Movement_081C:
+    Move 12, 2
+    Move 2, 1
+    MoveEnd
+
+Movement_0828:
     Move 12, 3
     Move 3, 1
     MoveEnd
 
-Movement_08E0:
+Movement_0834:
+    Move 12, 3
+    Move 3, 1
+    MoveEnd
+
+Movement_0840:
+    Move 14, 1
+    MoveEnd
+
+Movement_0848:
+    Move 12, 2
+    MoveEnd
+
+Movement_0850:
+    Move 12, 2
+    MoveEnd
+
+Movement_0858:
     Move 15, 1
     Move 32, 1
     MoveEnd
 
-Movement_08EC:
-    Move 12, 2
-    MoveEnd
-
-Movement_08F4:
+Movement_0864:
     Move 14, 2
     Move 35, 1
+    MoveEnd
+
+Movement_0870:
+    Move 12, 1
+    MoveEnd
+
+Movement_0878:
+    Move 33, 1
+    MoveEnd
+
+Movement_0880:
+    Move 33, 1
+    MoveEnd
+
+Movement_0888:
+    Move 13, 1
+    MoveEnd
+
+Movement_0890:
+    Move 15, 1
+    MoveEnd
+
+Movement_0898:
+    Move 34, 1
     MoveEnd
 
 Script_5:
@@ -573,7 +613,7 @@ Script_5:
     VMStackPush EVENT_WORK_0x400f
     VMStackPushConst 3
     VMStackCmp CMP_LT
-    VMJumpIf CMP_STACK, L_0954
+    VMJumpIf CMP_STACK, L_08F4
     WorkSetConst 0x8025, 0
     Random 0x8025, 4
     WorkSetConst 0x8026, 0
@@ -584,9 +624,9 @@ Script_5:
     ParentActorMsg MSGFILE_SCRIPT, 0x8026, 0, 0
     LastKeyWait
     ActorMsgClose
-    VMJump L_0968
+    VMJump L_0908
 
-L_0954:
+L_08F4:
     SEPlay SEQ_SE_MESSAGE
     ActorSetEyeToEye
     // "Why, if it isn't [f000]Ā\u0001\u0000!\nI thought you were my AD![f000]븁\u0000\nA star as big as you\ncan be in one of my films![f000]븁\u0000\nWould you replace that Lillipup\nand play the Pokémon's part?"
@@ -594,7 +634,7 @@ L_0954:
     LastKeyWait
     ActorMsgClose
 
-L_0968:
+L_0908:
     WorkSetConst 0x8026, 0
     WorkSetConst 0x8025, 0
     FinishAllEvents
@@ -608,22 +648,22 @@ Script_6:
     VMStackPush EVENT_WORK_0x400f
     VMStackPushConst 3
     VMStackCmp CMP_LT
-    VMJumpIf CMP_STACK, L_09AE
+    VMJumpIf CMP_STACK, L_094E
     SEPlay SEQ_SE_MESSAGE
     // "Well now...[f000]븁\u0000\nI'd like to see a love story\njust like ours!"
     ParentActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_WellNowIdLike, 0, 0
     LastKeyWait
     MsgWinCloseAll
-    VMJump L_09C0
+    VMJump L_0960
 
-L_09AE:
+L_094E:
     SEPlay SEQ_SE_MESSAGE
     // "Hm... What movie to see...[f000]븁\u0000\n[f000]Ā\u0001\u0000 is the one who\nalways acts really well, right?"
     ParentActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_HmWhatMovieSee, 0, 0
     LastKeyWait
     MsgWinCloseAll
 
-L_09C0:
+L_0960:
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
@@ -733,22 +773,22 @@ Script_15:
     VMStackPush EVENT_WORK_0x400f
     VMStackPushConst 3
     VMStackCmp CMP_LT
-    VMJumpIf CMP_STACK, L_0AE2
+    VMJumpIf CMP_STACK, L_0A82
     SEPlay SEQ_SE_MESSAGE
     // "Hey, darling!\nWhat are we going to watch today?"
     ParentActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_HeyDarlingWhatWe, 0, 0
     LastKeyWait
     MsgWinCloseAll
-    VMJump L_0AF4
+    VMJump L_0A94
 
-L_0AE2:
+L_0A82:
     SEPlay SEQ_SE_MESSAGE
     // "C'mon, darling!\nLet's watch one of [f000]Ā\u0001\u0000's[f000]븀\u0000\nmovies today!"
     ParentActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_CmonDarlingLetsWatch, 0, 0
     LastKeyWait
     MsgWinCloseAll
 
-L_0AF4:
+L_0A94:
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
@@ -760,29 +800,29 @@ Script_16:
     VMStackPush EVENT_WORK_0x400f
     VMStackPushConst 2
     VMStackCmp CMP_LT
-    VMJumpIf CMP_STACK, L_0B30
+    VMJumpIf CMP_STACK, L_0AD0
     SEPlay SEQ_SE_MESSAGE
     ActorSetEyeToEye
     // "Hello there! How about a portrait of one\nof Pokéstar Studios' famous stars?[f000]븁\u0000\nRight now...[f000]븁\u0000\nBrycen's is a hot ticket\nwith women and kids.[f000]븁\u0000\nSabrina's is extremely popular with guys![f000]븁\u0000\nHuh? I'm afraid we don't carry one\nof [f000]Ā\u0001\u0000."
     ParentActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_HelloThereHowAbout, 0, 0
     LastKeyWait
     ActorMsgClose
-    VMJump L_0B71
+    VMJump L_0B11
 
-L_0B30:
+L_0AD0:
     VMStackPush EVENT_WORK_0x400f
     VMStackPushConst 4
     VMStackCmp CMP_LT
-    VMJumpIf CMP_STACK, L_0B5D
+    VMJumpIf CMP_STACK, L_0AFD
     SEPlay SEQ_SE_MESSAGE
     ActorSetEyeToEye
     // "Good day! How about a portrait of one of\nPokéstar Studios' famous stars?[f000]븁\u0000\nRight now...[f000]븁\u0000\nBrycen's is very popular with\nwomen and kids.[f000]븁\u0000\nSabrina's is extremely popular with guys![f000]븁\u0000\nHuh? We've started stocking portraits\nof [f000]Ā\u0001\u0000 recently, but the sales[f000]븀\u0000\nare nothing to write home about."
     ParentActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_GoodDayHowAbout, 0, 0
     LastKeyWait
     ActorMsgClose
-    VMJump L_0B71
+    VMJump L_0B11
 
-L_0B5D:
+L_0AFD:
     SEPlay SEQ_SE_MESSAGE
     ActorSetEyeToEye
     // "Hello there! How about a portrait of one\nof Pokéstar Studios' famous stars?[f000]븁\u0000\nRight now, the most popular is...[f000]븁\u0000\n[f000]Ā\u0001\u0000. There's no doubt about it!\nHey, has anyone ever mentioned[f000]븀\u0000\nyou look kinda like [f000]Ā\u0001\u0000?[f000]븁\u0000\nI'm really jealous!\nI wish I resembled a star like that."
@@ -790,10 +830,11 @@ L_0B5D:
     LastKeyWait
     ActorMsgClose
 
-L_0B71:
+L_0B11:
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
+    .byte 0x00
 
 Script_17:
     ActorsPauseAll
@@ -802,16 +843,16 @@ Script_17:
     VMStackPush EVENT_WORK_0x400f
     VMStackPushConst 3
     VMStackCmp CMP_LT
-    VMJumpIf CMP_STACK, L_0BAD
+    VMJumpIf CMP_STACK, L_0B4E
     SEPlay SEQ_SE_MESSAGE
     ActorSetEyeToEye
     // "Someday, I'm going to be in pictures,\nbecome a famous actor,[f000]븀\u0000\nand buy a mansion![f000]븁\u0000\nA really big mansion! A huge one!"
     ParentActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_SomedayImGoingPictures, 0, 0
     LastKeyWait
     ActorMsgClose
-    VMJump L_0BC1
+    VMJump L_0B62
 
-L_0BAD:
+L_0B4E:
     SEPlay SEQ_SE_MESSAGE
     ActorSetEyeToEye
     // "Oh! It's the star who was in the movie\nI just watched--[f000]Ā\u0001\u0000![f000]븁\u0000\n[f000]Ā\u0001\u0000, you're a star,\nso you're living in a mansion, right?[f000]븀\u0000\nA really big one? A huge one?"
@@ -819,7 +860,7 @@ L_0BAD:
     LastKeyWait
     ActorMsgClose
 
-L_0BC1:
+L_0B62:
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
@@ -887,7 +928,7 @@ Script_22:
 Script_23:
     ActorsPauseAll
     SEPlay SEQ_SE_MESSAGE
-    ActorCmdExec 18, Movement_0E78
+    ActorCmdExec 18, Movement_0C18
     ActorCmdWait
     // "Good grief...\nI've been waiting for three hours...[f000]븁\u0000\nHow long does it take\nto put on makeup anyway?"
     ParentActorMsg MSGFILE_SCRIPT, PokestarStudios_Text_GoodGriefIveBeen, 0, 0
@@ -896,6 +937,10 @@ Script_23:
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
+
+Movement_0C18:
+    Move 36, 4
+    MoveEnd
 
 Script_24:
     ActorsPauseAll
@@ -909,6 +954,7 @@ Script_24:
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
+    .byte 0x00
 
 Script_25:
     ActorsPauseAll
@@ -922,6 +968,7 @@ Script_25:
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
+    .byte 0x00
 
 Script_26:
     ActorsPauseAll
@@ -935,6 +982,7 @@ Script_26:
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
+    .byte 0x00
 
 Script_27:
     ActorsPauseAll
@@ -948,6 +996,7 @@ Script_27:
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
+    .byte 0x00
 
 Script_28:
     ActorsPauseAll
@@ -961,6 +1010,7 @@ Script_28:
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
+    .byte 0x00
 
 Script_29:
     ActorsPauseAll
@@ -974,6 +1024,7 @@ Script_29:
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
+    .byte 0x00
 
 Script_30:
     ActorsPauseAll
@@ -987,6 +1038,7 @@ Script_30:
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
+    .byte 0x00
 
 Script_31:
     ActorsPauseAll
@@ -1000,6 +1052,7 @@ Script_31:
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
+    .byte 0x00
 
 Script_32:
     ActorsPauseAll
@@ -1013,6 +1066,84 @@ Script_32:
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
+    .byte 0x00
+
+Script_33:
+    ActorsPauseAll
+    FadeInBlack
+    ActorCmdExec 0, Movement_0DE0
+    VMSleep 4
+    ActorCmdExec 255, Movement_0DF0
+    FadeWait
+    ActorCmdWait
+    ActorCmdExec 0, Movement_0DFC
+    VMSleep 8
+    ActorCmdExec 255, Movement_0E10
+    ActorCmdWait
+    EvCameraInit
+    EvCameraUnbind
+    EvCameraMoveTo 5592, 0, 0x105000, 0x148000, 0x3000f, 0x118000, 40
+    EvCameraWait
+    // "This is the filming studio![f000]븁\u0000\nThis is where Pokéstar Studios\nmovies are born![f000]븁\u0000\nWell now, come inside!\nMr. Deeoh should be waiting![f000]븁\u0000"
+    InfoMsg PokestarStudios_Text_FilmingStudioWherePokestar, 2
+    InfoMsgClose_0039
+    EvCameraMoveToDefault 40
+    EvCameraWait
+    EvCameraRebind
+    EvCameraEnd
+    ActorCmdExec 0, Movement_0E24
+    ActorCmdWait
+    ActorCmdExec 0, Movement_0E34
+    VMSleep 4
+    ActorCmdExec 255, Movement_0E3C
+    ActorCmdWait
+    FlagSet EVENT_FLAG_0x0988
+    RTReserveScript 10819
+    MapChangeWarp ZONE_POKESTAR_STUDIOS_3, 14, 21, 0
+    WorkSetConst EVENT_WORK_0x410a, 3
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+    .balign 4, 0
+
+Movement_0DE0:
+    Move 13, 8
+    Move 14, 1
+    Move 35, 1
+    MoveEnd
+
+Movement_0DF0:
+    Move 13, 9
+    Move 34, 1
+    MoveEnd
+
+Movement_0DFC:
+    Move 14, 9
+    Move 12, 3
+    Move 14, 16
+    Move 32, 1
+    MoveEnd
+
+Movement_0E10:
+    Move 14, 10
+    Move 12, 3
+    Move 14, 15
+    Move 32, 1
+    MoveEnd
+
+Movement_0E24:
+    Move 12, 1
+    Move 15, 1
+    Move 33, 1
+    MoveEnd
+
+Movement_0E34:
+    Move 12, 3
+    MoveEnd
+
+Movement_0E3C:
+    Move 12, 3
+    MoveEnd
 
 Script_34:
     ActorsPauseAll
@@ -1024,6 +1155,7 @@ Script_34:
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
+    .byte 0x00
 
 Script_35:
     ActorsPauseAll
@@ -1035,6 +1167,7 @@ Script_35:
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
+    .byte 0x00
 
 Script_36:
     ActorsPauseAll
@@ -1046,6 +1179,7 @@ Script_36:
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
+    .byte 0x00
 
 Script_37:
     ActorsPauseAll
@@ -1057,6 +1191,7 @@ Script_37:
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
+    .byte 0x00
 
 Script_38:
     ActorsPauseAll
@@ -1069,70 +1204,3 @@ Script_38:
     ActorsUnpauseAll
     VMHalt
     .balign 4, 0
-
-Movement_0DF8:
-    Move 13, 1
-    MoveEnd
-
-Movement_0E00:
-    Move 12, 1
-    MoveEnd
-
-Movement_0E08:
-    Move 15, 1
-    MoveEnd
-
-Movement_0E10:
-    Move 14, 1
-    MoveEnd
-    Move 9, 1
-    MoveEnd
-
-Movement_0E20:
-    Move 8, 1
-    MoveEnd
-    Move 11, 1
-    MoveEnd
-    Move 10, 1
-    MoveEnd
-    Move 0, 1
-    MoveEnd
-    Move 1, 1
-    MoveEnd
-    VMHalt
-    .byte 0x01
-    .byte 0x00
-    .byte 0xfe
-    .balign 4, 0
-    Move 3, 1
-    MoveEnd
-
-Movement_0E58:
-    Move 32, 1
-    MoveEnd
-
-Movement_0E60:
-    Move 33, 1
-    MoveEnd
-
-Movement_0E68:
-    Move 34, 1
-    MoveEnd
-
-Movement_0E70:
-    Move 35, 1
-    MoveEnd
-
-Movement_0E78:
-    Move 36, 4
-    MoveEnd
-
-Movement_0E80:
-    Move 48, 2
-    MoveEnd
-
-Movement_0E88:
-    Move 75, 1
-    MoveEnd
-    Move 159, 1
-    MoveEnd

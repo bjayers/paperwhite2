@@ -1,6 +1,6 @@
 {
     "$schema": "encounters.schema.json",
-    "all_year": {
+    "spring": {
         "rates": {
             "grass": 7,
             "dark_grass": 0,
@@ -11,36 +11,116 @@
             "rippling_fishing": 0,
             "flags": 0
         },
-        "grass": {
-            "black2": [
-                [ "SPECIES_LITWICK", 31, 31 ],
-                [ "SPECIES_GOTHITA", 31, 31 ],
-                [ "SPECIES_RATICATE", 32, 32 ],
-                [ "SPECIES_GOLBAT", 32, 32 ],
-                [ "SPECIES_LITWICK", 33, 33 ],
-                [ "SPECIES_BANETTE", 32, 32 ],
-                [ "SPECIES_RATICATE", 33, 33 ],
-                [ "SPECIES_GOLBAT", 33, 33 ],
-                [ "SPECIES_BANETTE", 34, 34 ],
-                [ "SPECIES_GOTHORITA", 34, 34 ],
-                [ "SPECIES_BANETTE", 34, 34 ],
-                [ "SPECIES_GOTHORITA", 34, 34 ]
-            ],
-            "white2": [
-                [ "SPECIES_LITWICK", 31, 31 ],
-                [ "SPECIES_SOLOSIS", 31, 31 ],
-                [ "SPECIES_RATICATE", 32, 32 ],
-                [ "SPECIES_GOLBAT", 32, 32 ],
-                [ "SPECIES_LITWICK", 33, 33 ],
-                [ "SPECIES_BANETTE", 32, 32 ],
-                [ "SPECIES_RATICATE", 33, 33 ],
-                [ "SPECIES_GOLBAT", 33, 33 ],
-                [ "SPECIES_BANETTE", 34, 34 ],
-                [ "SPECIES_DUOSION", 34, 34 ],
-                [ "SPECIES_BANETTE", 34, 34 ],
-                [ "SPECIES_DUOSION", 34, 34 ]
-            ]
+        "grass": [
+            [ "SPECIES_SHUPPET", 31, 31 ],
+            [ "SPECIES_GASTLY", 31, 31 ],
+            [ "SPECIES_DUSKULL", 32, 32 ],
+            [ "SPECIES_SHUPPET", 32, 32 ],
+            [ "SPECIES_SHUPPET", 33, 33 ],
+            [ "SPECIES_GASTLY", 32, 32 ],
+            [ "SPECIES_BANETTE", 33, 33 ],
+            [ "SPECIES_HAUNTER", 33, 33 ],
+            [ "SPECIES_GENGAR", 34, 34 ],
+            [ "SPECIES_LITWICK", 34, 34 ],
+            [ "SPECIES_YAMASK", 34, 34 ],
+            [ "SPECIES_MISDREAVUS", 34, 34 ]
+        ],
+        "dark_grass": [],
+        "shaking_grass": [],
+        "surf": [],
+        "rippling_surf": [],
+        "fishing": [],
+        "rippling_fishing": []
+    },
+    "summer": {
+        "rates": {
+            "grass": 7,
+            "dark_grass": 0,
+            "shaking_grass": 0,
+            "surf": 0,
+            "rippling_surf": 0,
+            "fishing": 0,
+            "rippling_fishing": 0,
+            "flags": 0
         },
+        "grass": [
+            [ "SPECIES_SHUPPET", 31, 31 ],
+            [ "SPECIES_GASTLY", 31, 31 ],
+            [ "SPECIES_DUSKULL", 32, 32 ],
+            [ "SPECIES_SHUPPET", 32, 32 ],
+            [ "SPECIES_SHUPPET", 33, 33 ],
+            [ "SPECIES_GASTLY", 32, 32 ],
+            [ "SPECIES_BANETTE", 33, 33 ],
+            [ "SPECIES_HAUNTER", 33, 33 ],
+            [ "SPECIES_GENGAR", 34, 34 ],
+            [ "SPECIES_LITWICK", 34, 34 ],
+            [ "SPECIES_YAMASK", 34, 34 ],
+            [ "SPECIES_MISDREAVUS", 34, 34 ]
+        ],
+        "dark_grass": [],
+        "shaking_grass": [],
+        "surf": [],
+        "rippling_surf": [],
+        "fishing": [],
+        "rippling_fishing": []
+    },
+    "autumn": {
+        "rates": {
+            "grass": 7,
+            "dark_grass": 0,
+            "shaking_grass": 0,
+            "surf": 0,
+            "rippling_surf": 0,
+            "fishing": 0,
+            "rippling_fishing": 0,
+            "flags": 0
+        },
+        "grass": [
+            [ "SPECIES_SHUPPET", 31, 31 ],
+            [ "SPECIES_GASTLY", 31, 31 ],
+            [ "SPECIES_DUSKULL", 32, 32 ],
+            [ "SPECIES_SHUPPET", 32, 32 ],
+            [ "SPECIES_SHUPPET", 33, 33 ],
+            [ "SPECIES_GASTLY", 32, 32 ],
+            [ "SPECIES_BANETTE", 33, 33 ],
+            [ "SPECIES_HAUNTER", 33, 33 ],
+            [ "SPECIES_GENGAR", 34, 34 ],
+            [ "SPECIES_LITWICK", 34, 34 ],
+            [ "SPECIES_YAMASK", 34, 34 ],
+            [ "SPECIES_MISDREAVUS", 34, 34 ]
+        ],
+        "dark_grass": [],
+        "shaking_grass": [],
+        "surf": [],
+        "rippling_surf": [],
+        "fishing": [],
+        "rippling_fishing": []
+    },
+    "winter": {
+        "rates": {
+            "grass": 7,
+            "dark_grass": 0,
+            "shaking_grass": 0,
+            "surf": 0,
+            "rippling_surf": 0,
+            "fishing": 0,
+            "rippling_fishing": 0,
+            "flags": 0
+        },
+        "grass": [
+            [ "SPECIES_SHUPPET", 31, 31 ],
+            [ "SPECIES_GASTLY", 31, 31 ],
+            [ "SPECIES_DUSKULL", 32, 32 ],
+            [ "SPECIES_SHUPPET", 32, 32 ],
+            [ "SPECIES_SHUPPET", 33, 33 ],
+            [ "SPECIES_GASTLY", 32, 32 ],
+            [ "SPECIES_BANETTE", 33, 33 ],
+            [ "SPECIES_HAUNTER", 33, 33 ],
+            [ "SPECIES_GENGAR", 34, 34 ],
+            [ "SPECIES_LITWICK", 34, 34 ],
+            [ "SPECIES_YAMASK", 34, 34 ],
+            [ "SPECIES_MISDREAVUS", 34, 34 ]
+        ],
         "dark_grass": [],
         "shaking_grass": [],
         "surf": [],

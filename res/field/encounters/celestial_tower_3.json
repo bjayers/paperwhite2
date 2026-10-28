@@ -1,6 +1,6 @@
 {
     "$schema": "encounters.schema.json",
-    "all_year": {
+    "spring": {
         "rates": {
             "grass": 7,
             "dark_grass": 0,
@@ -12,18 +12,114 @@
             "flags": 0
         },
         "grass": [
-            [ "SPECIES_LITWICK", 29, 29 ],
-            [ "SPECIES_LITWICK", 29, 29 ],
-            [ "SPECIES_LITWICK", 30, 30 ],
-            [ "SPECIES_ELGYEM", 30, 30 ],
-            [ "SPECIES_LITWICK", 31, 31 ],
-            [ "SPECIES_ELGYEM", 31, 31 ],
-            [ "SPECIES_GOLBAT", 32, 32 ],
-            [ "SPECIES_GOLBAT", 32, 32 ],
-            [ "SPECIES_LITWICK", 32, 32 ],
-            [ "SPECIES_ELGYEM", 32, 32 ],
-            [ "SPECIES_LITWICK", 32, 32 ],
-            [ "SPECIES_ELGYEM", 32, 32 ]
+            [ "SPECIES_GASTLY", 29, 29 ],
+            [ "SPECIES_DUSKULL", 29, 29 ],
+            [ "SPECIES_GASTLY", 30, 30 ],
+            [ "SPECIES_DUSKULL", 30, 30 ],
+            [ "SPECIES_GASTLY", 31, 31 ],
+            [ "SPECIES_DUSKULL", 31, 31 ],
+            [ "SPECIES_HAUNTER", 32, 32 ],
+            [ "SPECIES_GENGAR", 32, 32 ],
+            [ "SPECIES_DUSCLOPS", 32, 32 ],
+            [ "SPECIES_DUSCLOPS", 29, 32 ],
+            [ "SPECIES_MISDREAVUS", 32, 32 ],
+            [ "SPECIES_LITWICK", 32, 32 ]
+        ],
+        "dark_grass": [],
+        "shaking_grass": [],
+        "surf": [],
+        "rippling_surf": [],
+        "fishing": [],
+        "rippling_fishing": []
+    },
+    "summer": {
+        "rates": {
+            "grass": 7,
+            "dark_grass": 0,
+            "shaking_grass": 0,
+            "surf": 0,
+            "rippling_surf": 0,
+            "fishing": 0,
+            "rippling_fishing": 0,
+            "flags": 0
+        },
+        "grass": [
+            [ "SPECIES_GASTLY", 29, 29 ],
+            [ "SPECIES_DUSKULL", 29, 29 ],
+            [ "SPECIES_GASTLY", 30, 30 ],
+            [ "SPECIES_DUSKULL", 30, 30 ],
+            [ "SPECIES_GASTLY", 31, 31 ],
+            [ "SPECIES_DUSKULL", 31, 31 ],
+            [ "SPECIES_HAUNTER", 32, 32 ],
+            [ "SPECIES_GENGAR", 32, 32 ],
+            [ "SPECIES_DUSCLOPS", 32, 32 ],
+            [ "SPECIES_DUSCLOPS", 29, 32 ],
+            [ "SPECIES_MISDREAVUS", 32, 32 ],
+            [ "SPECIES_LITWICK", 32, 32 ]
+        ],
+        "dark_grass": [],
+        "shaking_grass": [],
+        "surf": [],
+        "rippling_surf": [],
+        "fishing": [],
+        "rippling_fishing": []
+    },
+    "autumn": {
+        "rates": {
+            "grass": 7,
+            "dark_grass": 0,
+            "shaking_grass": 0,
+            "surf": 0,
+            "rippling_surf": 0,
+            "fishing": 0,
+            "rippling_fishing": 0,
+            "flags": 0
+        },
+        "grass": [
+            [ "SPECIES_GASTLY", 29, 29 ],
+            [ "SPECIES_DUSKULL", 29, 29 ],
+            [ "SPECIES_GASTLY", 30, 30 ],
+            [ "SPECIES_DUSKULL", 30, 30 ],
+            [ "SPECIES_GASTLY", 31, 31 ],
+            [ "SPECIES_DUSKULL", 31, 31 ],
+            [ "SPECIES_HAUNTER", 32, 32 ],
+            [ "SPECIES_GENGAR", 32, 32 ],
+            [ "SPECIES_DUSCLOPS", 32, 32 ],
+            [ "SPECIES_DUSCLOPS", 29, 32 ],
+            [ "SPECIES_MISDREAVUS", 32, 32 ],
+            [ "SPECIES_LITWICK", 32, 32 ]
+        ],
+        "dark_grass": [],
+        "shaking_grass": [],
+        "surf": [],
+        "rippling_surf": [],
+        "fishing": [],
+        "rippling_fishing": []
+    },
+    "winter": {
+        "rates": {
+            "grass": 7,
+            "dark_grass": 0,
+            "shaking_grass": 0,
+            "surf": 0,
+            "rippling_surf": 0,
+            "fishing": 0,
+            "rippling_fishing": 0,
+            "flags": 0
+        },
+        "grass": [
+            [ "SPECIES_GASTLY", 29, 29 ],
+            [ "SPECIES_DUSKULL", 29, 29 ],
+            [ "SPECIES_GASTLY", 30, 30 ],
+            [ "SPECIES_DUSKULL", 30, 30 ],
+            [ "SPECIES_GASTLY", 31, 31 ],
+            [ "SPECIES_DUSKULL", 31, 31 ],
+            [ "SPECIES_HAUNTER", 32, 32 ],
+            [ "SPECIES_GENGAR", 32, 32 ],
+            [ "SPECIES_DUSCLOPS", 32, 32 ],
+            [ "SPECIES_DUSCLOPS", 29, 32 ],
+            [ "SPECIES_MISDREAVUS", 32, 32 ],
+            [ "SPECIES_LITWICK", 32, 32 ]
         ],
         "dark_grass": [],
         "shaking_grass": [],

@@ -2,7 +2,7 @@
     "$schema": "../item.schema.json",
     "name": "Cheri Berry",
     "name_plural": "Cheri Berries",
-    "description": "If held by a Pokémon,\nit recovers from paralysis.",
+    "description": "If held by a Pokémon,\nit recovers from paralysis.\nHas a spicy flavor.",
     "price": 2,
     "hold_effect": "HOLD_EFFECT_PRZ_RESTORE",
     "hold_param": 0,

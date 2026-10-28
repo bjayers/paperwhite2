@@ -49,4 +49,14 @@ FloccesyRanch2_Text_Baawn = Baawn!
 FloccesyRanch2_Text_BaaBaa = Baa baa!
 FloccesyRanch2_Text_BaaHaa = Baa haa!
 FloccesyRanch2_Text_BaBaaa = Ba baaa!
-\pad{e8}
+FloccesyRanch2_Text_Bwoof = Bwoof!{be01}
+FloccesyRanch2_Text_BawowWoof = Bawow woof!{be01}
+FloccesyRanch2_Text_GrrrBawoof = Grrr... bawoof!{be01}
+FloccesyRanch2_Text_Brrrrrwoof = Brrrrrwoof!{be01}
+FloccesyRanch2_Text_ChanSey = Chan-sey!{be01}
+FloccesyRanch2_Text_Chance = Chance...?{be01}
+FloccesyRanch2_Text_ChanseyWantsHealPokemon = Chansey wants to heal\nyour Pokémon...  Let it?
+FloccesyRanch2_Text_ChanseyUsedSoftBoiled = Chansey used Soft-boiled!{be01}
+FloccesyRanch2_Text_Hapiii = Hapiii!{be01}
+FloccesyRanch2_Text_BroughtSomethingBack = It brought something back for you...{be01}
+FloccesyRanch2_Text_XY = X {0100:0}, Y {0100:1}.{be01}\x{ffff}

@@ -27,17 +27,37 @@
             "gender": 0,
             "ability": 2,
             "item": "ITEM_NONE",
-            "moves": [ "MOVE_WORK_UP", "MOVE_QUICK_ATTACK", "MOVE_LEER" ]
+            "moves": [ "MOVE_WORK_UP", "MOVE_QUICK_ATTACK", "MOVE_GUST" ]
         },
         {
             "species": "SPECIES_LILLIPUP",
             "form": 0,
-            "level": 13,
+            "level": 11,
             "difficulty": 250,
             "gender": 0,
             "ability": 1,
             "item": "ITEM_ORAN_BERRY",
             "moves": [ "MOVE_WORK_UP", "MOVE_BITE", "MOVE_TACKLE" ]
+        },
+        {
+            "species": "SPECIES_AUDINO",
+            "form": 0,
+            "level": 11,
+            "difficulty": 250,
+            "gender": 0,
+            "ability": 2,
+            "item": "ITEM_FLAME_ORB",
+            "moves": [ "MOVE_BESTOW", "MOVE_HEAL_BELL", "MOVE_DOUBLE_SLAP" ]
+        },
+        {
+            "species": "SPECIES_CINCCINO",
+            "form": 0,
+            "level": 13,
+            "difficulty": 250,
+            "gender": 0,
+            "ability": 1,
+            "item": "ITEM_NONE",
+            "moves": [ "MOVE_GROWL", "MOVE_DOUBLE_SLAP", "MOVE_SING" ]
         }
     ],
     "messages": [

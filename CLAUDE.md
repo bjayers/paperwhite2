@@ -21,9 +21,9 @@ this section wins.
   Once the hack's changes land, the ROM no longer matches the original SHA1. A plain build still byte-matches only
   until then. Upstream's matching rules, `docs/nonmatching-functions.md` rows, `compile_all.py` before every push,
   and "both SHA1s must match" don't apply to hack changes.
-- `configure.py` currently has only `--shift` (pads the code to test relocations) and `--bugfix`, both of which skip
-  the SHA1 checks. A normal build of modified data or code fails at the SHA1 check. A mode for hack builds (no SHA1
-  check, no padding) may be needed; see the trial below.
+- Build the hack with `python3 configure.py w2_us --hack && ninja`: it writes `build/paperwhite2.nds` and skips the
+  SHA1, module and archive checks. A plain `python3 configure.py w2_us` goes back to the matching build.
+- The clean data is the git tag `w2-original`: `git diff w2-original -- res/` shows every hack change.
 - **Don't** claim or comment on upstream's `[Decomp]`/`[Names]` issues, push to upstream, or open pull requests
   there. This fork's `origin` is bjayers/paperwhite2. To take upstream fixes, add a remote
   (`git remote add upstream https://github.com/fuddlesworth/pokebw2`) and merge `upstream/main` when the user asks.
@@ -37,7 +37,7 @@ this section wins.
 ## Files the user keeps locally (never commit)
 
 - `orig/baserom_w2_us.nds`: the user's own dump of their cartridge, US White 2 (check it against `w2_us.sha1`).
-- `orig/hack_w2.nds` (or a similar name; ask): the current Paper White 2 ROM, built with a fork of Frost's Gen 5
+- `orig/paperwhite2_v0.21.nds`: the current Paper White 2 ROM (newer versions will get new names), built with a fork of Frost's Gen 5
   Editor (bjayers/FrostsGen5Editor) on top of the clean ROM, with PMC code-injection DLLs in `patches/`.
 
 ## The hack so far (in the ROM, not yet in this repo)
@@ -51,9 +51,10 @@ package; riding and custom Surf are dropped) with data in `following/` (`runtime
 bjayers/pokeweb-serverless, `runtime/following-pokemon/`. PMC DLLs hook fixed addresses, so they won't work once
 code moves; the plan is to port the follower runtime into this source.
 
-## Current step: the trial
+## Current step: the trial (done 2026-10-28, see docs/paperwhite2/STATUS.md)
 
-Decide whether to move the hack onto the decomp. Report results plainly, failures with their output.
+The user chose to move the hack onto the decomp and edit `res/` directly. Steps 1-3 are done and the hack's data that
+the decomp's packers cover is imported; STATUS.md lists what isn't yet. The original plan, for reference:
 
 1. Check the base ROM's SHA1. If it differs, stop and tell the user.
 2. Build a matching White 2: `python3 configure.py w2_us && ninja`. Install missing prerequisites (Python 3.11+,

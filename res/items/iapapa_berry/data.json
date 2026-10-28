@@ -2,7 +2,7 @@
     "$schema": "../item.schema.json",
     "name": "Iapapa Berry",
     "name_plural": "Iapapa Berries",
-    "description": "If held by a Pokémon, it restores the\nuser's HP in a pinch, but will cause\nconfusion if it hates the taste.",
+    "description": "Restores the holder's HP in a pinch,\nbut it will cause confusion\nif it hates the sour taste.",
     "price": 2,
     "hold_effect": "HOLD_EFFECT_HP_RESTORE_SOUR",
     "hold_param": 8,
