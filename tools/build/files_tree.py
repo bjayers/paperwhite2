@@ -25,6 +25,10 @@ def mirror(source: Path, output: Path, built: set[Path], prefix: Path):
     for child in sorted(source.iterdir()):
         path = prefix / child.name
         if path in built:
+            # A file that has just started being built may still be linked to the extracted one, which the build
+            # would then write through
+            if (output / child.name).is_symlink():
+                (output / child.name).unlink()
             continue
         if any(path in b.parents for b in built):
             if (output / child.name).is_symlink():

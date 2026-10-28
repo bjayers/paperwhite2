@@ -79,8 +79,13 @@ species' 8-frame walking sprites, 256×32, which the follower plugin's entries a
   (`res/pokedex/habitats/`) are in `DATA_PACKS`; each packs the base ROM back byte for byte. Built, the rails equal the
   hack's with the header fixed (Castelia's rail file 11: 8 → 36 points, 6 → 30 lines, the originals an unchanged
   prefix), and the grottoes and habitats equal the hack's members.
-- Grottoes: 18 of 20 changed, Pokémon only. Gender thresholds kept from the replaced species: Route 2's Tepig is
-  always male in groups 0–1 and female in 2–3, Giant Chasm's Umbreon always male, Route 18's Chatot 30/30/60/60.
+- Grottoes: 18 of 20 changed, Pokémon only. Three slots had kept the gender thresholds of the species they replaced
+  (Nidoran♂/♀ 0/0/100/100, Ditto 0, Kingler/Corsola 30/30/60/60); at the user's request Route 2's Tepig and Giant
+  Chasm's Umbreon are now 12 and Route 18's Chatot 50, their species' ratios (31 and 127 of 256). The original game
+  sets most slots to 30 by hand, whatever the species.
+- Build bug, fixed: `tools/build/files_tree.py` left the symlink to the extracted file at a path that had just started
+  being built, so the first pack of a new `DATA_PACKS` archive wrote through it into `extract/<version>/files/` (it
+  overwrote the base's `a/2/7/3` and `a/2/9/6`, restored from a fresh extract). It now removes that link.
 - Habitats, as Frost regenerated them: every form icon is 0 (the base had 205 seasonal and regional forms), every area
   shows by season, and 18 areas are cut at the game's limit of 30 species (their encounters have 31–77). A habitat
   generator from `res/field/encounters/` that keeps forms belongs in the editor.

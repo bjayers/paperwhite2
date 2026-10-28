@@ -73,28 +73,28 @@
                     "species": "SPECIES_CHATOT",
                     "min_level": 55,
                     "max_level": 60,
-                    "female_below": 30,
+                    "female_below": 50,
                     "form": 0
                 },
                 {
                     "species": "SPECIES_CHATOT",
                     "min_level": 55,
                     "max_level": 60,
-                    "female_below": 30,
+                    "female_below": 50,
                     "form": 0
                 },
                 {
                     "species": "SPECIES_CHATOT",
                     "min_level": 55,
                     "max_level": 60,
-                    "female_below": 60,
+                    "female_below": 50,
                     "form": 0
                 },
                 {
                     "species": "SPECIES_CHATOT",
                     "min_level": 55,
                     "max_level": 60,
-                    "female_below": 60,
+                    "female_below": 50,
                     "form": 0
                 }
             ],

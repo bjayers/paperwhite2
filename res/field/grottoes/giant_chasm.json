@@ -7,28 +7,28 @@
                     "species": "SPECIES_UMBREON",
                     "min_level": 45,
                     "max_level": 50,
-                    "female_below": 0,
+                    "female_below": 12,
                     "form": 0
                 },
                 {
                     "species": "SPECIES_UMBREON",
                     "min_level": 45,
                     "max_level": 50,
-                    "female_below": 0,
+                    "female_below": 12,
                     "form": 0
                 },
                 {
                     "species": "SPECIES_UMBREON",
                     "min_level": 45,
                     "max_level": 50,
-                    "female_below": 0,
+                    "female_below": 12,
                     "form": 0
                 },
                 {
                     "species": "SPECIES_UMBREON",
                     "min_level": 45,
                     "max_level": 50,
-                    "female_below": 0,
+                    "female_below": 12,
                     "form": 0
                 }
             ],
