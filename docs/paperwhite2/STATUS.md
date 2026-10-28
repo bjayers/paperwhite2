@@ -101,6 +101,15 @@ hack's (English and Japanese "Paper White 2", the other languages "White Version
 the Chinese and Korean titles with 0xFFFF, and they are the original's again (empty, and the Korean "White Version
 2"). The icon is the original's, as in the hack.
 
+### DSi header check
+
+`tools/build/verify_dsi_rom.py build/paperwhite2.nds`: every DS and DSi sector digest, block digest and the six
+HMACs (ARM7, digest, banner, ARM9i, ARM7i, ARM9) are valid. The DSi settings (dsi.yaml: unit code, flags, access
+control, SCFG, title ID) equal the original's; the header bytes that differ are the sizes, offsets, digests and HMACs
+that dsd recomputes, and the header and logo CRCs are valid. The RSA signature is the original's, as in the hack,
+which runs in DSi mode through TWiLight Menu++ (it doesn't verify it). Run the verifier after every change to the
+ROM's layout or code. It can't read Frost's ROM, whose ARM9 isn't BLZ-compressed as it expects.
+
 ### Next
 
 1. The user tests `build/paperwhite2.nds` (`\\wsl$\Ubuntu\home\riku\paperwhite2\build\paperwhite2.nds`) in melonDS

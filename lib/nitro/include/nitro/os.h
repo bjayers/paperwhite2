@@ -216,6 +216,11 @@ typedef int OSHeapHandle;
 // Where the main arena begins on a DS: the SDK's SDK_MAIN_ARENA_LO, the end of the last overlay in main memory, which
 // is the end of overlay 290 here. The linker script has no symbol of its own for it
 extern u8 OV290_BSS_END[];
+#ifdef PAPERWHITE2
+// Paper White 2: the end of the highest overlay in main memory, which tools/build/plugin_lcf.py defines, since an
+// overlay that grows can end above overlay 290
+extern u8 SDK_MAIN_ARENA_LO[];
+#endif
 // Where it begins on a DSi, the end of the LTD module (the SDK's SDK_LTDAUTOLOAD_LTDMAIN_BSS_END), and the ITCM
 // arena (SDK_AUTOLOAD_ITCM_END): the linker script's symbols for the ends of those. The LTD module, the DSi mode's part
 // of the program, starts at LTD_AUTOLOAD_0_TEXT_START (RTCi_ProcessExCommand for the symbol table)

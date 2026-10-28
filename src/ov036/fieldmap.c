@@ -90,6 +90,9 @@
 #include "system/rtc.h"
 #include "system/season.h"
 #include "system/zone_weather.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/field.h"
+#endif
 
 // What a field routine returns: run on, with the other of its pair next frame; go on to the next routine; or end the
 // field
@@ -656,7 +659,12 @@ BOOL Field_CallRoutines(GameSystem *gsys, Field *field) {
     u32 result = 0;
     FieldRoutine routine;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: the example of a call into the hack's code, which counts the frame as the original does
+    field->framesSinceStart = PaperWhite2_NextFieldFrame(field->framesSinceStart);
+#else
     field->framesSinceStart++;
+#endif
     routine = FIELDMAP_ROUTINES[field->routineID][field->routineAlternator];
     if (routine != NULL) {
         result = routine(gsys, field);

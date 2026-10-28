@@ -134,7 +134,12 @@ static void *OS_GetInitArenaLo(OSArenaId arena) {
         if (OS_IsRunOnTwl()) {
             return LTD_AUTOLOAD_0_BSS_END;
         }
+#ifdef PAPERWHITE2
+        // Paper White 2: the arena begins after the highest overlay, whichever it is once the hack's code is added
+        return SDK_MAIN_ARENA_LO;
+#else
         return OV290_BSS_END;
+#endif
     case OS_ARENA_MAINEX: {
         u32 consoleSize;
 

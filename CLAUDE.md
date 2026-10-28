@@ -24,6 +24,10 @@ this section wins.
 - Build the hack with `python3 configure.py w2_us --hack && ninja`: it writes `build/paperwhite2.nds` and skips the
   SHA1, module and archive checks. A plain `python3 configure.py w2_us` goes back to the matching build.
 - The clean data is the git tag `w2-original`: `git diff w2-original -- res/` shows every hack change.
+- The hack's own code goes in `src/paperwhite2/{main,ovNNN}/` and `include/paperwhite2/`, its data in
+  `res/paperwhite2/`, and hooks are `#ifdef PAPERWHITE2` edits of the original C: see `docs/paperwhite2/plugins.md`.
+  A hack build whose code differs from the original needs the user's ARM7 BIOS at `orig/bios7.bin` (never commit it).
+  Run `tools/build/verify_dsi_rom.py build/paperwhite2.nds` after every code or layout change: DSi mode matters.
 - **Don't** claim or comment on upstream's `[Decomp]`/`[Names]` issues, push to upstream, or open pull requests
   there. This fork's `origin` is bjayers/paperwhite2. To take upstream fixes, add a remote
   (`git remote add upstream https://github.com/fuddlesworth/pokebw2`) and merge `upstream/main` when the user asks.

@@ -10,6 +10,7 @@ import io
 import json
 import os
 import platform
+import re
 import shlex
 import shutil
 import stat
@@ -518,6 +519,30 @@ def get_dsd(tools_dir: Path, from_source: bool) -> Path:
     return dsd
 
 
+# Paper White 2: the hack's own code and headers, which only its build compiles (docs/paperwhite2/plugins.md)
+PLUGIN_DIR = ROOT / "src" / "paperwhite2"
+PLUGIN_PATHS = ("src/paperwhite2/", "include/paperwhite2/")
+# The user's own dump of a DS's ARM7 BIOS, which the hack's ROM needs once ARM9 main changes, never committed
+ARM7_BIOS = "orig/bios7.bin"
+
+
+def plugin_sources() -> list[tuple[Path, str]]:
+    """Returns the hack's C files and the name of the module that each links into, in the linker script's terms: a file
+    of src/paperwhite2/main/ goes in ARM9 main, one of src/paperwhite2/ov036/ in overlay 36."""
+    sources = []
+    for source in sorted(PLUGIN_DIR.rglob("*.c")):
+        relative = source.relative_to(ROOT)
+        directory = source.relative_to(PLUGIN_DIR).parts[0]
+        if directory == "main":
+            module = "ARM9"
+        elif re.fullmatch(r"ov\d{3}", directory):
+            module = directory.upper()
+        else:
+            sys.exit(f"{relative}: the hack's C files go in src/paperwhite2/main/ or src/paperwhite2/ovNNN/")
+        sources.append((relative, module))
+    return sources
+
+
 def add_version(n: Writer, version: str, dsd: Path, bugfix: bool, shift: int,
                 hack: bool) -> tuple[list[Path], list[str]]:
     """Adds the build steps of one version. Returns its check targets and dsd config files. A build with the bugs fixed,
@@ -563,6 +588,27 @@ def add_version(n: Writer, version: str, dsd: Path, bugfix: bool, shift: int,
     n.build([lcf_file, objects_file], "lcf", dsd_configs,
             implicit=[extract_dir / "config.yaml", "config/linker_symbols.toml"], variables={"config": str(arm9_config)})
     link_lcf = lcf_file
+    link_objects_file = objects_file
+    version_defines = VERSIONS[version]["defines"] + (["BUGFIX"] if bugfix else []) + (["PAPERWHITE2"] if hack else [])
+    defines = " ".join(f"-d {define}" for define in version_defines)
+    # Paper White 2: the hack's own code, src/paperwhite2/<module>/, compiled like the game's and placed after its
+    # module's original objects (tools/build/plugin_lcf.py, docs/paperwhite2/plugins.md)
+    plugin_objects = []
+    if hack:
+        plugin_lcf = build_dir / "arm9_paperwhite2.lcf"
+        plugin_objects_file = build_dir / "objects_paperwhite2.txt"
+        for source, module in plugin_sources():
+            obj = build_dir / source.with_suffix(".o")
+            n.build([obj], "mwcc", [source], order_only=["constants_headers"],
+                    variables={"defines": defines, "dep": obj.with_suffix(".d"),
+                               "flags": " ".join(source_compiler(source).flags)})
+            plugin_objects.append((module, obj))
+        n.build([plugin_lcf, plugin_objects_file], "plugin_lcf", [lcf_file, objects_file],
+                implicit=["tools/build/plugin_lcf.py", *(obj for _, obj in plugin_objects)],
+                variables={"objects": " ".join(f"--object {module}={obj}" for module, obj in plugin_objects)})
+        link_lcf = plugin_lcf
+        link_objects_file = plugin_objects_file
+    placed_lcf = link_lcf
     if shift:
         # Padding in the linker script moves the code and data after it, see tools/build/shift_lcf.py
         shifted_lcf = build_dir / "arm9_shifted.lcf"
@@ -573,8 +619,6 @@ def add_version(n: Writer, version: str, dsd: Path, bugfix: bool, shift: int,
     # Source files are listed in delinks.txt by their path. Complete files are linked from the compiled object, and
     # incomplete ones are still compiled so objdiff can compare them. A file in config/deadstrip.toml is compiled to an
     # object under unstripped/, which the strip turns into the one at the usual path.
-    version_defines = VERSIONS[version]["defines"] + (["BUGFIX"] if bugfix else [])
-    defines = " ".join(f"-d {define}" for define in version_defines)
     as_defines = " ".join(f"-D{define}" for define in version_defines)
     objects = []
     compiled = []
@@ -608,6 +652,7 @@ def add_version(n: Writer, version: str, dsd: Path, bugfix: bool, shift: int,
         if f["link_object"] != f["object_to_link"]:
             n.build([f["link_object"]], "link_copy", [f["object_to_link"]])
         objects.append(f["link_object"])
+    objects += [str(obj) for _, obj in plugin_objects]
     # An entry for a file the version doesn't compile would strip nothing, unnoticed
     unbuilt = sorted(set(DEADSTRIP) - deadstripped)
     if unbuilt:
@@ -627,7 +672,7 @@ def add_version(n: Writer, version: str, dsd: Path, bugfix: bool, shift: int,
 
     # Preserve the LTD autoload grouping in both the private prelink and final link.
     grouped_objects = build_dir / "objects_link.txt"
-    n.build([grouped_objects], "ltd_objects", [objects_file, lcf_file],
+    n.build([grouped_objects], "ltd_objects", [link_objects_file, placed_lcf],
             implicit=["tools/build/ltd_objects.py"])
 
     # Keep DS Protect's legacy interworking glue separate from its compiler objects, one derived object per copy of
@@ -737,13 +782,25 @@ def add_version(n: Writer, version: str, dsd: Path, bugfix: bool, shift: int,
     else:
         rom_implicit = []
     n.build([rom_config], "rom_config", [arm9_o], implicit=rom_implicit, variables=rom_variables)
-    n.build([rom], "rom_build", [rom_config], implicit=[files_ok, *archives])
+    # Paper White 2: once ARM9 main's first 0x4000 bytes change, as any change to main's code or data size does, dsd
+    # needs the ARM7 BIOS to encrypt them again for the DSi header's values (docs/paperwhite2/plugins.md)
+    bios = [ARM7_BIOS] if hack and (ROOT / ARM7_BIOS).exists() else []
+    n.build([rom], "rom_build", [rom_config], implicit=[files_ok, *archives, *bios],
+            variables={"bios": f"--arm7-bios {ARM7_BIOS}"} if bios else None)
 
     modules_ok = stamp_dir / "modules.ok"
     n.build([modules_ok], "check_modules", [rom_config], variables={"config": str(arm9_config)})
     rom_ok = stamp_dir / "rom.ok"
     n.build([rom_ok], "sha1", [sha1_file], implicit=[rom], variables={"rom": str(rom)})
-    n.build([version], "phony", [modules_ok, rom_ok] if matching else [rom])
+    # Paper White 2: the hack's code has to fit in memory with the heaps (tools/build/check_memory.py)
+    memory_checks = []
+    if hack:
+        memory_report = build_dir / "memory.txt"
+        n.build([memory_report], "check_memory", [link_lcf], implicit=[arm9_o, "tools/build/check_memory.py"],
+                variables={"map": f"{arm9_o}.xMAP",
+                           "modules": " ".join(sorted({"OV036", *(m for m, _ in plugin_objects if m != "ARM9")}))})
+        memory_checks.append(memory_report)
+    n.build([version], "phony", [modules_ok, rom_ok] if matching else [rom, *memory_checks])
 
     # Context files for decomp.me scratches, made by objdiff
     for obj in compiled:
@@ -763,7 +820,7 @@ def add_version(n: Writer, version: str, dsd: Path, bugfix: bool, shift: int,
     # The checks also compile every source file, so that an incomplete file, whose object only feeds the report and
     # is never linked, can't stop compiling without the default build noticing.
     if not matching:
-        return [rom, *checks, *deadstrip_checks, *compiled], dsd_configs
+        return [rom, *memory_checks, *checks, *deadstrip_checks, *compiled], dsd_configs
     return [modules_ok, rom_ok, *checks, *deadstrip_checks, *compiled], dsd_configs
 
 
@@ -856,6 +913,10 @@ def main():
            "@$out.rsp", "Checking references to dead-stripped code in $config", rspfile="$out.rsp",
            rspfile_content="$in_newline")
     n.rule("shift_lcf", "$python tools/build/shift_lcf.py $in $out $amount", "Shifting $in")
+    if args.hack:
+        # Paper White 2: the hack's objects in the linker script, and the check that the program fits in memory
+        n.rule("plugin_lcf", "$python tools/build/plugin_lcf.py $in $out $objects", "Placing Paper White 2's objects")
+        n.rule("check_memory", "$python tools/build/check_memory.py $in $map $out $modules", "Checking memory")
     n.rule("ltd_objects", "$python tools/build/ltd_objects.py $in $out", "Grouping the LTD autoload's objects in $out")
     n.rule("link_copy", "cp $in $out", "Copying $in for the link")
     n.rule("mwld", f"$wine {shlex.quote(str(mwld))} {' '.join(LD_FLAGS)} @$objects $lcf -o $out", "Linking $out")
@@ -883,7 +944,7 @@ def main():
     # needs a backup suffix after -i, which GNU sed also takes. $banner_edit, if set, points the ROM at another banner
     n.rule("rom_config", "$dsd rom config --elf $in --config $config && sed -i.bak "
            "-e 's|^files_dir: .*|files_dir: ../files|' $banner_edit $out && rm $out.bak", "Configuring ROM for $config")
-    n.rule("rom_build", "$dsd rom build --config $in --rom $out", "Building $out")
+    n.rule("rom_build", "$dsd rom build --config $in --rom $out" + (" $bios" if args.hack else ""), "Building $out")
     n.rule("check_modules", "$dsd check modules --config-path $config --fail && touch $out", "Checking modules")
     n.rule("sha1", "sha1sum --quiet -c $in && touch $out", "Checking $rom")
     # The context stays UTF-8, for decomp.me
@@ -976,13 +1037,17 @@ def main():
     # the data files again
     source_dirs = [d for _, d, *_ in DATA_PACKS] + list(ARCHIVES.values())
     source_dirs += list(TEXT_ARCHIVES.values()) + ["generated"]
+    if args.hack:
+        # Paper White 2: a C file added to the hack's code is a new build step
+        source_dirs.append(PLUGIN_DIR.relative_to(ROOT).as_posix())
     data_dirs = sorted({str(p.relative_to(ROOT)) for d in source_dirs for p in [ROOT / d, *(ROOT / d).rglob("*")]
                         if p.is_dir()})
     n.build(["build.ninja"], "configure", ["configure.py"],
             implicit=[*configs, "config/compiler_flags.toml", "config/deadstrip.toml",
                       *(str(p.relative_to(ROOT)) for p in sorted(LIB_DIR.glob("*/library.toml"))), *data_dirs])
     sources = sorted(str(p.relative_to(ROOT)) for pattern in ("src/**/*.c", "lib/*/src/**/*.[ch]", "include/**/*.h",
-                                                               "lib/*/include/**/*.h") for p in ROOT.glob(pattern))
+                                                               "lib/*/include/**/*.h") for p in ROOT.glob(pattern)
+               if args.hack or not p.relative_to(ROOT).as_posix().startswith(PLUGIN_PATHS))
     n.build(["format"], "format", sources)
     n.build(["check"], "phony", checks)
     n.default(["check", "objdiff.json"])
@@ -992,6 +1057,8 @@ def main():
     fixes = (", with the bugs fixed" if args.bugfix else "") + (", as Paper White 2" if args.hack else "")
     shifted = f", with the code shifted by {args.shift:#x} bytes" if args.shift else ""
     print(f"Wrote build.ninja for {', '.join(versions)}{fixes}{shifted}, now run ninja")
+    if args.hack and not (ROOT / ARM7_BIOS).exists():
+        print(f"No ARM7 BIOS at {ARM7_BIOS}: the ROM build fails once ARM9 main changes, see docs/paperwhite2/plugins.md")
 
 
 if __name__ == "__main__":

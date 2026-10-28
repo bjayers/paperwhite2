@@ -1,5 +1,6 @@
 # Base ROMs and anything extracted from them are never committed
 orig/*.nds
+orig/*.bin
 *.nds
 extract/
 /build/
