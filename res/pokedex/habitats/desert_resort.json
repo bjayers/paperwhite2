@@ -1,0 +1,82 @@
+{
+    "$schema": "habitat.schema.json",
+    "land_text": "sand",
+    "habitats": {
+        "land": true,
+        "water": false,
+        "fishing": false
+    },
+    "by_season": {
+        "land": true,
+        "water": true,
+        "fishing": true
+    },
+    "species": [
+        {
+            "species": "SPECIES_MARACTUS",
+            "land": [ "spring", "summer", "autumn", "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_SANDILE",
+            "land": [ "spring", "summer", "autumn", "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_CUBONE",
+            "land": [ "spring", "summer", "autumn", "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_SIGILYPH",
+            "land": [ "spring", "summer", "autumn", "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_DODRIO",
+            "land": [ "spring", "summer", "autumn", "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_KROKOROK",
+            "land": [ "spring", "summer", "autumn", "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_SCRAGGY",
+            "land": [ "spring", "summer", "autumn", "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_HIPPOPOTAS",
+            "land": [ "spring", "summer", "autumn", "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_CACNEA",
+            "land": [ "spring", "summer", "autumn", "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_TRAPINCH",
+            "land": [ "spring", "summer", "autumn", "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_VULLABY",
+            "land": [ "winter" ],
+            "water": [],
+            "fishing": []
+        }
+    ]
+}

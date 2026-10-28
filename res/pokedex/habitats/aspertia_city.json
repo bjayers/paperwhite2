@@ -1,0 +1,70 @@
+{
+    "$schema": "habitat.schema.json",
+    "land_text": "none",
+    "habitats": {
+        "land": false,
+        "water": true,
+        "fishing": true
+    },
+    "by_season": {
+        "land": true,
+        "water": true,
+        "fishing": true
+    },
+    "species": [
+        {
+            "species": "SPECIES_TYMPOLE",
+            "land": [],
+            "water": [ "spring", "summer", "autumn", "winter" ],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_MARILL",
+            "land": [],
+            "water": [ "spring", "summer", "autumn", "winter" ],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_PSYDUCK",
+            "land": [],
+            "water": [ "spring", "summer", "autumn", "winter" ],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_BASCULIN",
+            "land": [],
+            "water": [ "spring", "summer", "autumn", "winter" ],
+            "fishing": [ "spring", "summer", "autumn", "winter" ]
+        },
+        {
+            "species": "SPECIES_MAGIKARP",
+            "land": [],
+            "water": [],
+            "fishing": [ "spring", "summer", "autumn", "winter" ]
+        },
+        {
+            "species": "SPECIES_GOLDEEN",
+            "land": [],
+            "water": [],
+            "fishing": [ "spring", "summer", "autumn", "winter" ]
+        },
+        {
+            "species": "SPECIES_BARBOACH",
+            "land": [],
+            "water": [],
+            "fishing": [ "spring", "summer", "autumn", "winter" ]
+        },
+        {
+            "species": "SPECIES_SEAKING",
+            "land": [],
+            "water": [],
+            "fishing": [ "spring", "summer", "autumn", "winter" ]
+        },
+        {
+            "species": "SPECIES_WHISCASH",
+            "land": [],
+            "water": [],
+            "fishing": [ "spring", "summer", "autumn", "winter" ]
+        }
+    ]
+}

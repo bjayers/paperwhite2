@@ -1,0 +1,142 @@
+{
+    "$schema": "habitat.schema.json",
+    "land_text": "tall_grass",
+    "habitats": {
+        "land": true,
+        "water": false,
+        "fishing": false
+    },
+    "by_season": {
+        "land": true,
+        "water": true,
+        "fishing": true
+    },
+    "species": [
+        {
+            "species": "SPECIES_FURRET",
+            "land": [ "spring", "summer", "autumn", "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_LIEPARD",
+            "land": [ "spring", "summer", "autumn", "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_JIGGLYPUFF",
+            "land": [ "spring", "summer", "autumn", "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_UNFEZANT",
+            "land": [ "spring", "summer", "autumn", "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_MIGHTYENA",
+            "land": [ "spring", "summer", "autumn", "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_SENTRET",
+            "land": [ "spring", "summer", "autumn", "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_LICKITUNG",
+            "land": [ "spring", "summer", "autumn", "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_HERDIER",
+            "land": [ "spring", "summer" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_STOUTLAND",
+            "land": [ "spring", "summer" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_WIGGLYTUFF",
+            "land": [ "spring", "summer", "autumn", "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_AUDINO",
+            "land": [ "spring", "summer", "autumn", "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_LICKILICKY",
+            "land": [ "spring", "summer", "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_JUMPLUFF",
+            "land": [ "spring", "summer", "autumn" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_WATCHOG",
+            "land": [ "spring", "summer", "autumn", "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_GLOOM",
+            "land": [ "autumn" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_SEEDOT",
+            "land": [ "autumn" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_DRIFLOON",
+            "land": [ "autumn" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_VILEPLUME",
+            "land": [ "autumn" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_DRIFBLIM",
+            "land": [ "autumn" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_POOCHYENA",
+            "land": [ "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_LINOONE",
+            "land": [ "winter" ],
+            "water": [],
+            "fishing": []
+        }
+    ]
+}

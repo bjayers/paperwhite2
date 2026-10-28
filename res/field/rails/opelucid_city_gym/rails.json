@@ -1,0 +1,141 @@
+{
+    "$schema": "../rails.schema.json",
+    "unk0": 347218,
+    "tile_width": 4096,
+    "points": [
+        {
+            "name": "RE_POINT_0",
+            "lines": [ 0, 3, 65535, 65535 ],
+            "dirs": [ 1, 3, 0, 0 ],
+            "widths": [ 16, 16, 16, 16 ],
+            "pos": [ 1015808, 0, 3047424 ],
+            "camera": 0
+        },
+        {
+            "name": "RE_POINT_1",
+            "lines": [ 1, 0, 65535, 65535 ],
+            "dirs": [ 1, 3, 0, 0 ],
+            "widths": [ 16, 16, 16, 16 ],
+            "pos": [ 1015808, 262144, 2588672 ],
+            "camera": 1
+        },
+        {
+            "name": "RE_POINT_2",
+            "lines": [ 2, 65535, 65535, 65535 ],
+            "dirs": [ 3, 0, 0, 0 ],
+            "widths": [ 16, 16, 16, 16 ],
+            "pos": [ 1015808, 393216, 1867776 ],
+            "camera": 2
+        },
+        {
+            "name": "RE_POINT_3",
+            "lines": [ 1, 2, 65535, 65535 ],
+            "dirs": [ 3, 1, 0, 0 ],
+            "widths": [ 16, 16, 16, 16 ],
+            "pos": [ 1015808, 393216, 2195456 ],
+            "camera": 3
+        },
+        {
+            "name": "RE_POINT_4",
+            "lines": [ 3, 65535, 65535, 65535 ],
+            "dirs": [ 1, 0, 0, 0 ],
+            "widths": [ 16, 16, 16, 16 ],
+            "pos": [ 1015808, -131072, 3440640 ],
+            "camera": 4
+        }
+    ],
+    "lines": [
+        {
+            "name": "RE_LINE_0",
+            "point_a": 0,
+            "point_b": 1,
+            "dir": 1,
+            "curve": 0,
+            "camera": 5,
+            "length": 8
+        },
+        {
+            "name": "RE_LINE_1",
+            "point_a": 1,
+            "point_b": 3,
+            "dir": 1,
+            "curve": 1,
+            "camera": 6,
+            "length": 6
+        },
+        {
+            "name": "RE_LINE_3",
+            "point_a": 3,
+            "point_b": 2,
+            "dir": 1,
+            "curve": 2,
+            "camera": 7,
+            "length": 5
+        },
+        {
+            "name": "RE_LINE_4",
+            "point_a": 4,
+            "point_b": 0,
+            "dir": 1,
+            "curve": 3,
+            "camera": 8,
+            "length": 6
+        }
+    ],
+    "cameras": [
+        {
+            "func": 1,
+            "params": [ 10756, 0, 622592, 0, 0, 0, 0, 0 ]
+        },
+        {
+            "func": 1,
+            "params": [ 10756, 0, 622592, 0, 0, 0, 0, 0 ]
+        },
+        {
+            "func": 1,
+            "params": [ 10756, 0, 622592, 0, 0, 0, 0, 0 ]
+        },
+        {
+            "func": 1,
+            "params": [ 10756, 0, 622592, 0, 0, 0, 0, 0 ]
+        },
+        {
+            "func": 1,
+            "params": [ 10756, 0, 622592, 0, 0, 0, 0, 0 ]
+        },
+        {
+            "func": 2,
+            "params": [ 6568, 0, 917504, 0, 0, 0, 0, 0 ]
+        },
+        {
+            "func": 2,
+            "params": [ 6568, 0, 917504, 0, 0, 0, 0, 0 ]
+        },
+        {
+            "func": 2,
+            "params": [ 6568, 0, 917504, 0, 0, 0, 0, 0 ]
+        },
+        {
+            "func": 2,
+            "params": [ 6568, 0, 917504, 0, 0, 0, 0, 0 ]
+        }
+    ],
+    "curves": [
+        {
+            "handler": 0,
+            "center": [ 0, 0, 0 ]
+        },
+        {
+            "handler": 0,
+            "center": [ 0, 0, 0 ]
+        },
+        {
+            "handler": 0,
+            "center": [ 0, 0, 0 ]
+        },
+        {
+            "handler": 0,
+            "center": [ 0, 0, 0 ]
+        }
+    ]
+}

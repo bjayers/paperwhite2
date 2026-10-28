@@ -329,6 +329,11 @@ DATA_PACKS = [
     ("tools/data/facility_data.py", "res/trainers/facilities/pwt_rental", ["a/2/5/7"], False, ["res/trainers/facilities"]),
     # The zones' events, in the order of res/field/events/order.json
     ("tools/data/event_data.py", "res/field/events", ["a/1/2/6"], False),
+    # Paper White 2: the field rails, their tile attributes, and the rail maps that zones name in zonedata.c
+    ("tools/data/rail_data.py", "res/field/rails", ["a/0/7/8", "a/1/1/0"], False),
+    # Paper White 2: the Hidden Grottoes' Pokémon and items, and the Pokédex's habitat lists
+    ("tools/data/grotto_data.py", "res/field/grottoes", ["a/2/7/3"], False),
+    ("tools/data/habitat_data.py", "res/pokedex/habitats", ["a/2/9/6"], False),
 ]
 # The 2D graphics archives, each a directory of res/graphics/ named after its ARCID_* constant, which gives its file
 DATA_PACKS += [("tools/data/graphics_archive.py", f"res/graphics/{directory.name}", [directory_archive(directory)], True)

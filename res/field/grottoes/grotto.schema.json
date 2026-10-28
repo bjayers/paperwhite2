@@ -1,0 +1,53 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "A Hidden Grotto: res/field/grottoes/<grotto>.json",
+    "description": "What a Hidden Grotto can hold (archive a/2/7/3, HollowFile in src/ov036/scrcmd_hidden_hollow.c), which s0294_HiddenHollowGetParam reads. Every day generateHollow rolls the grotto's slot, 0 to 10 (or none), and a group, 0 to 3: slots 0 to 2 are the Pokémon of white2 or black2 (each version reads its own), 3 to 6 the items, 7 to 10 the hidden items, and the group picks one of the four entries of the slot. tools/data/grotto_data.py packs the grottoes in the order of their entrances in src/ov012/hidden_hollow.c (its GROTTOES). A string value is the name of a constant from generated/ or include/constants/.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "white2", "black2", "items", "hidden_items" ],
+    "properties": {
+        "$schema": { "type": "string", "description": "This schema, for editors" },
+        "white2": { "$ref": "#/$defs/pokemon_slots", "description": "The Pokémon of slots 0 to 2 in White 2" },
+        "black2": { "$ref": "#/$defs/pokemon_slots", "description": "The Pokémon of slots 0 to 2 in Black 2" },
+        "items": { "$ref": "#/$defs/item_slots", "description": "The items of slots 3 to 6, which lie in the grotto as an item ball" },
+        "hidden_items": { "$ref": "#/$defs/item_slots", "description": "The items of slots 7 to 10, hidden in the grotto" }
+    },
+    "$defs": {
+        "pokemon_slots": {
+            "type": "array", "minItems": 3, "maxItems": 3,
+            "items": {
+                "type": "object", "additionalProperties": false, "required": [ "groups", "unk18" ],
+                "description": "A slot of Pokémon (HollowSlot)",
+                "properties": {
+                    "groups": {
+                        "type": "array", "minItems": 4, "maxItems": 4, "items": { "$ref": "#/$defs/pokemon" },
+                        "description": "The Pokémon of each group"
+                    },
+                    "unk18": {
+                        "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/u8" },
+                        "description": "Two bytes that no code reads, 0 in every grotto"
+                    }
+                }
+            }
+        },
+        "pokemon": {
+            "type": "object", "additionalProperties": false,
+            "required": [ "species", "min_level", "max_level", "female_below", "form" ],
+            "properties": {
+                "species": { "type": [ "string", "integer" ], "x-constant": "SPECIES_", "minimum": 0, "maximum": 65535 },
+                "min_level": { "$ref": "#/$defs/u8", "description": "The lowest level" },
+                "max_level": { "$ref": "#/$defs/u8", "description": "The level is min_level plus a random number below max_level - min_level, so max_level itself is never rolled" },
+                "female_below": { "type": "integer", "minimum": 0, "maximum": 255, "description": "The grotto's gender roll is 0 to 99, and the Pokémon is female when the roll is below this: 0 is always male, 100 always female" },
+                "form": { "$ref": "#/$defs/u8" }
+            }
+        },
+        "item_slots": {
+            "type": "array", "minItems": 4, "maxItems": 4,
+            "items": {
+                "type": "array", "minItems": 4, "maxItems": 4, "description": "The item of each group",
+                "items": { "type": [ "string", "integer" ], "x-constant": "ITEM_", "minimum": 0, "maximum": 65535 }
+            }
+        },
+        "u8": { "type": "integer", "minimum": 0, "maximum": 255 }
+    }
+}

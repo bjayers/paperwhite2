@@ -1,0 +1,52 @@
+{
+    "$schema": "habitat.schema.json",
+    "land_text": "at_this_place",
+    "habitats": {
+        "land": true,
+        "water": false,
+        "fishing": false
+    },
+    "by_season": {
+        "land": true,
+        "water": true,
+        "fishing": true
+    },
+    "species": [
+        {
+            "species": "SPECIES_PIDOVE",
+            "land": [ "spring", "summer" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_WINGULL",
+            "land": [ "spring", "summer", "autumn", "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_TRANQUILL",
+            "land": [ "spring", "summer", "autumn", "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_SWANNA",
+            "land": [ "spring", "autumn", "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_ALTARIA",
+            "land": [ "summer" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_DUCKLETT",
+            "land": [ "autumn", "winter" ],
+            "water": [],
+            "fishing": []
+        }
+    ]
+}

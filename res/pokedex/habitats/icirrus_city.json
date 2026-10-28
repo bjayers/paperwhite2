@@ -1,0 +1,196 @@
+{
+    "$schema": "habitat.schema.json",
+    "land_text": "swamp",
+    "habitats": {
+        "land": true,
+        "water": true,
+        "fishing": true
+    },
+    "by_season": {
+        "land": true,
+        "water": true,
+        "fishing": true
+    },
+    "species": [
+        {
+            "species": "SPECIES_QUAGSIRE",
+            "land": [ "spring", "summer", "autumn" ],
+            "water": [ "spring", "summer", "autumn" ],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_LUDICOLO",
+            "land": [ "spring", "summer", "autumn" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_SEISMITOAD",
+            "land": [ "spring", "summer", "autumn" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_WOOPER",
+            "land": [ "spring", "summer", "autumn" ],
+            "water": [ "spring", "summer", "autumn" ],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_LOMBRE",
+            "land": [ "spring", "autumn" ],
+            "water": [ "spring", "autumn" ],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_LOTAD",
+            "land": [ "spring", "summer", "autumn" ],
+            "water": [ "spring", "summer", "autumn" ],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_CROAGUNK",
+            "land": [ "spring", "summer", "autumn" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_CARNIVINE",
+            "land": [ "spring", "summer", "autumn" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_SURSKIT",
+            "land": [ "spring", "summer" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_AUDINO",
+            "land": [ "spring", "summer", "autumn", "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_TYMPOLE",
+            "land": [ "spring", "summer", "autumn" ],
+            "water": [ "spring", "summer", "autumn", "winter" ],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_MUDKIP",
+            "land": [ "spring", "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_STUNFISK",
+            "land": [ "autumn" ],
+            "water": [ "spring", "autumn", "winter" ],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_PALPITOAD",
+            "land": [],
+            "water": [ "spring", "summer", "autumn", "winter" ],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_MAGIKARP",
+            "land": [],
+            "water": [],
+            "fishing": [ "spring", "summer", "autumn", "winter" ]
+        },
+        {
+            "species": "SPECIES_BARBOACH",
+            "land": [],
+            "water": [],
+            "fishing": [ "spring", "summer", "autumn", "winter" ]
+        },
+        {
+            "species": "SPECIES_CORPHISH",
+            "land": [],
+            "water": [],
+            "fishing": [ "spring", "summer", "autumn", "winter" ]
+        },
+        {
+            "species": "SPECIES_FEEBAS",
+            "land": [],
+            "water": [],
+            "fishing": [ "spring", "summer", "autumn", "winter" ]
+        },
+        {
+            "species": "SPECIES_WHISCASH",
+            "land": [],
+            "water": [],
+            "fishing": [ "spring", "summer", "autumn", "winter" ]
+        },
+        {
+            "species": "SPECIES_CRAWDAUNT",
+            "land": [],
+            "water": [],
+            "fishing": [ "spring", "summer", "autumn", "winter" ]
+        },
+        {
+            "species": "SPECIES_SEAKING",
+            "land": [],
+            "water": [],
+            "fishing": [ "spring", "summer", "autumn", "winter" ]
+        },
+        {
+            "species": "SPECIES_SWANNA",
+            "land": [ "summer" ],
+            "water": [ "summer" ],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_DUCKLETT",
+            "land": [ "summer" ],
+            "water": [ "summer" ],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_MARSHTOMP",
+            "land": [ "summer" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_SWAMPERT",
+            "land": [ "autumn" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_PILOSWINE",
+            "land": [ "winter" ],
+            "water": [ "winter" ],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_MAMOSWINE",
+            "land": [ "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_SHROOMISH",
+            "land": [ "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_BEARTIC",
+            "land": [ "winter" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_WEAVILE",
+            "land": [ "winter" ],
+            "water": [],
+            "fishing": []
+        }
+    ]
+}

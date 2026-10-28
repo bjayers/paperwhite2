@@ -1,0 +1,63 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "An area of the Pokédex's habitat list: res/pokedex/habitats/<area>.json",
+    "description": "The species of one area of the Pokédex's habitat screen (archive a/2/9/6, ARCID_POKEDEX_HABITAT; PokedexHabitatFile in include/app/pokedex_common.h), which src/ov302/pokedex_common.c reads. sPokedexHabitats there gives each area's zone and file, and tools/data/habitat_data.py packs the files in that order (its AREAS). It is not read by the encounters: an area's list should match the encounter tables of its zones. A string value is the name of a constant from generated/ or include/constants/.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "land_text", "habitats", "by_season", "species" ],
+    "properties": {
+        "$schema": { "type": "string", "description": "This schema, for editors" },
+        "land_text": {
+            "description": "The habitat screen's message for the area's land habitat (unk6, PokedexHabitat_GetHabitatMessage): Pokémon living in the tall grass, in the sand, in the swamp, in this place, at this place, on the land, or no Pokémon lives here",
+            "anyOf": [
+                { "enum": [ "tall_grass", "sand", "swamp", "this_place", "at_this_place", "land", "none" ] },
+                { "type": "integer", "minimum": 0, "maximum": 65535 }
+            ]
+        },
+        "habitats": {
+            "$ref": "#/$defs/by_type",
+            "description": "The kinds of habitat the area has (conditions): the area is listed once the player has reached one of them, land always and water and fishing after the flags of PokedexCommon_GetConditions, and its award counts the species of each"
+        },
+        "by_season": {
+            "$ref": "#/$defs/by_type",
+            "description": "For each kind of habitat, whether the screen shows its species by season (values); when not, it shows the spring ones"
+        },
+        "species": {
+            "type": "array", "maxItems": 30, "items": { "$ref": "#/$defs/species" },
+            "description": "The area's species, at most 30"
+        }
+    },
+    "$defs": {
+        "by_type": {
+            "type": "object", "additionalProperties": false, "required": [ "land", "water", "fishing" ],
+            "properties": { "land": { "type": "boolean" }, "water": { "type": "boolean" }, "fishing": { "type": "boolean" } }
+        },
+        "seasons": {
+            "type": "array", "maxItems": 4, "items": { "enum": [ "spring", "summer", "autumn", "winter" ] },
+            "description": "The seasons in which it lives there, none for never"
+        },
+        "forms": {
+            "type": "array", "minItems": 4, "maxItems": 4, "items": { "$ref": "#/$defs/u8" },
+            "description": "By season, spring to winter"
+        },
+        "species": {
+            "type": "object", "additionalProperties": false, "required": [ "species", "land", "water", "fishing" ],
+            "properties": {
+                "species": { "type": [ "string", "integer" ], "x-constant": "SPECIES_", "minimum": 0, "maximum": 65535 },
+                "land": { "$ref": "#/$defs/seasons" },
+                "water": { "$ref": "#/$defs/seasons" },
+                "fishing": { "$ref": "#/$defs/seasons" },
+                "forms": {
+                    "type": "object", "additionalProperties": false, "required": [ "land", "water", "fishing" ],
+                    "description": "The form whose icon the screen shows, by kind of habitat and season, if the player has seen that form (other); all 0 when left out",
+                    "properties": {
+                        "land": { "$ref": "#/$defs/forms" }, "water": { "$ref": "#/$defs/forms" },
+                        "fishing": { "$ref": "#/$defs/forms" }
+                    }
+                },
+                "unk1a": { "type": "integer", "minimum": 0, "maximum": 65535, "description": "Two bytes that no code reads, 0 in every area; 0 when left out" }
+            }
+        },
+        "u8": { "type": "integer", "minimum": 0, "maximum": 255 }
+    }
+}

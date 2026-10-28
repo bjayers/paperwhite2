@@ -1,0 +1,154 @@
+{
+    "$schema": "habitat.schema.json",
+    "land_text": "swamp",
+    "habitats": {
+        "land": true,
+        "water": true,
+        "fishing": true
+    },
+    "by_season": {
+        "land": true,
+        "water": true,
+        "fishing": true
+    },
+    "species": [
+        {
+            "species": "SPECIES_QUAGSIRE",
+            "land": [ "spring", "summer", "autumn" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_LUDICOLO",
+            "land": [ "spring", "summer", "autumn" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_UNFEZANT",
+            "land": [ "spring", "summer", "autumn" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_SEISMITOAD",
+            "land": [ "spring", "summer", "autumn" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_WOOPER",
+            "land": [ "spring", "summer", "autumn" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_LOMBRE",
+            "land": [ "spring", "summer", "autumn" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_LOTAD",
+            "land": [ "spring", "summer", "autumn" ],
+            "water": [ "spring", "summer", "autumn" ],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_AZURILL",
+            "land": [ "spring", "summer", "autumn" ],
+            "water": [],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_TYMPOLE",
+            "land": [],
+            "water": [ "spring", "summer", "autumn", "winter" ],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_MARILL",
+            "land": [],
+            "water": [ "spring", "summer", "autumn" ],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_PSYDUCK",
+            "land": [],
+            "water": [ "spring", "summer", "autumn" ],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_PALPITOAD",
+            "land": [],
+            "water": [ "spring", "summer", "autumn", "winter" ],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_AZUMARILL",
+            "land": [],
+            "water": [ "spring", "summer", "autumn" ],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_MAGIKARP",
+            "land": [],
+            "water": [],
+            "fishing": [ "spring", "summer", "autumn", "winter" ]
+        },
+        {
+            "species": "SPECIES_BARBOACH",
+            "land": [],
+            "water": [],
+            "fishing": [ "spring", "summer", "autumn", "winter" ]
+        },
+        {
+            "species": "SPECIES_GOLDEEN",
+            "land": [],
+            "water": [],
+            "fishing": [ "spring", "summer", "autumn", "winter" ]
+        },
+        {
+            "species": "SPECIES_WHISCASH",
+            "land": [],
+            "water": [],
+            "fishing": [ "spring", "summer", "autumn", "winter" ]
+        },
+        {
+            "species": "SPECIES_SEAKING",
+            "land": [],
+            "water": [],
+            "fishing": [ "spring", "summer", "autumn", "winter" ]
+        },
+        {
+            "species": "SPECIES_SEEL",
+            "land": [],
+            "water": [ "winter" ],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_SPHEAL",
+            "land": [],
+            "water": [ "winter" ],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_DEWGONG",
+            "land": [],
+            "water": [ "winter" ],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_SEALEO",
+            "land": [],
+            "water": [ "winter" ],
+            "fishing": []
+        },
+        {
+            "species": "SPECIES_WALREIN",
+            "land": [],
+            "water": [ "winter" ],
+            "fishing": []
+        }
+    ]
+}

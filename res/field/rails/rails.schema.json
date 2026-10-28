@@ -1,0 +1,68 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "A rail file: res/field/rails/<rails>/rails.json",
+    "description": "One rail file of the rail archive (a/0/7/8), which FieldRailLoader_LoadFile reads (src/ov036/field_rail_loader.c): the points, lines, cameras and curves of a map without a grid. The lines and points name each other, the cameras and curves, and the zones' events place NPCs, warps and triggers on the rails, all by index, so an entry's place in its list is its ID. Positions and distances are fx32, in 4096ths of a unit, as integers. The tiles' attributes are in attributes/line_NN.csv beside this file. tools/data/rail_data.py packs it.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "unk0", "tile_width", "points", "lines", "cameras", "curves" ],
+    "properties": {
+        "$schema": { "type": "string", "description": "This schema, for editors" },
+        "unk0": { "$ref": "#/$defs/u32", "description": "The header's first word, which the game doesn't read; every file has 347218 (0x54c52)" },
+        "tile_width": { "$ref": "#/$defs/s32", "description": "The size of a tile of the rails, fx32 (RailDataHandle's tileWidth); 4096 in every file" },
+        "points": { "type": "array", "items": { "$ref": "#/$defs/point" }, "description": "The points, RailPoint, by ID" },
+        "lines": { "type": "array", "items": { "$ref": "#/$defs/line" }, "description": "The lines, RailLine, by ID" },
+        "cameras": { "type": "array", "items": { "$ref": "#/$defs/camera" }, "description": "The cameras, RailCamera, by ID" },
+        "curves": { "type": "array", "items": { "$ref": "#/$defs/curve" }, "description": "The curves, RailCurve, by ID" }
+    },
+    "$defs": {
+        "u8": { "type": "integer", "minimum": 0, "maximum": 255 },
+        "u32": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+        "s32": { "type": "integer", "minimum": -2147483648, "maximum": 2147483647 },
+        "id": { "$ref": "#/$defs/u32", "description": "An ID of a point, line, camera or curve; 65535 (RAIL_ID_NONE) for none" },
+        "dir": { "type": "integer", "minimum": 0, "maximum": 4294967295, "description": "A direction on the rails: 0 none, 1 up, 2 right, 3 down, 4 left (RAIL_DIR_*)" },
+        "vec": { "type": "array", "items": { "$ref": "#/$defs/s32" }, "minItems": 3, "maxItems": 3, "description": "x, y and z, fx32" },
+        "four_ids": { "type": "array", "items": { "$ref": "#/$defs/id" }, "minItems": 4, "maxItems": 4 },
+        "point": {
+            "type": "object", "additionalProperties": false,
+            "required": [ "name", "lines", "dirs", "widths", "pos", "camera" ],
+            "properties": {
+                "name": { "type": "string", "pattern": "^[\\x20-\\x7e]{0,48}$", "description": "The point's name, at most 48 characters, which the file pads with spaces" },
+                "lines": { "$ref": "#/$defs/four_ids", "description": "The lines that meet at the point, 65535 in a free slot" },
+                "dirs": { "type": "array", "items": { "$ref": "#/$defs/dir" }, "minItems": 4, "maxItems": 4, "description": "The direction of each slot's line from the point" },
+                "widths": { "type": "array", "items": { "$ref": "#/$defs/s32" }, "minItems": 4, "maxItems": 4, "description": "The width of each slot's line at the point, in sixteenths of a tile" },
+                "pos": { "$ref": "#/$defs/vec", "description": "Where the point is in the world" },
+                "camera": { "$ref": "#/$defs/id", "description": "The camera at the point" }
+            }
+        },
+        "line": {
+            "type": "object", "additionalProperties": false,
+            "required": [ "name", "point_a", "point_b", "dir", "curve", "camera", "length" ],
+            "properties": {
+                "name": { "type": "string", "pattern": "^[\\x20-\\x7e]{0,47}$", "description": "The line's name, at most 47 characters, which the file pads with zeros" },
+                "point_a": { "$ref": "#/$defs/id", "description": "The point where the line starts" },
+                "point_b": { "$ref": "#/$defs/id", "description": "The point where it ends" },
+                "dir": { "$ref": "#/$defs/dir", "description": "The direction from point_a to point_b" },
+                "curve": { "$ref": "#/$defs/id", "description": "The curve that bends the line" },
+                "camera": { "$ref": "#/$defs/id", "description": "The camera on the line" },
+                "length": { "$ref": "#/$defs/u32", "description": "The line's length in tiles" }
+            }
+        },
+        "camera": {
+            "type": "object", "additionalProperties": false,
+            "required": [ "func", "params" ],
+            "properties": {
+                "func": { "$ref": "#/$defs/u32", "description": "The camera function to call, an index of the rail system's camera functions" },
+                "params": { "type": "array", "items": { "$ref": "#/$defs/s32" }, "minItems": 8, "maxItems": 8, "description": "The function's parameters (RailCamera's unk4 to unk20)" }
+            }
+        },
+        "curve": {
+            "type": "object", "additionalProperties": false,
+            "required": [ "handler", "center" ],
+            "properties": {
+                "handler": { "$ref": "#/$defs/u32", "description": "The pair of functions that convert between rail and world positions, an index of the rail system's railToWorld and worldToRail functions" },
+                "center": { "$ref": "#/$defs/vec", "description": "The center of the arc" },
+                "unk10": { "type": "array", "items": { "$ref": "#/$defs/u8" }, "minItems": 20, "maxItems": 20, "description": "RailCurve's last 20 bytes, zero when left out, as in every file" }
+            }
+        }
+    }
+}

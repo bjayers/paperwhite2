@@ -1,0 +1,23 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "The rail maps: res/field/rails/maps.json",
+    "description": "The rail maps' archive (a/1/1/0), one NoGridMapperHeader each (src/ov036/field_nogrid_mapper.c). ZONE_RAIL_ASSIGNMENTS in src/system/zonedata.c gives each zone with rails the index of its map here, and the map names the zone's rail file and its camera areas. tools/data/rail_data.py packs it.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "maps" ],
+    "properties": {
+        "$schema": { "type": "string", "description": "This schema, for editors" },
+        "maps": {
+            "type": "array",
+            "description": "The maps, by index",
+            "items": {
+                "type": "object", "additionalProperties": false,
+                "required": [ "rails", "camera_areas" ],
+                "properties": {
+                    "rails": { "type": [ "string", "null" ], "description": "The rail file, a directory of res/field/rails/ in order.json, or null for none" },
+                    "camera_areas": { "anyOf": [ { "type": "integer", "minimum": 0, "maximum": 65534 }, { "type": "null" } ], "description": "The camera areas that LoadCameraDataToSceneAreaLoader loads, or null for none" }
+                }
+            }
+        }
+    }
+}

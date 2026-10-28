@@ -21,7 +21,8 @@ res/
     maps/{models,textures}/
     props/{exterior,interior}/{models,textures}/
     actors/                 the overworld's people and objects, with pokemon/ and models/ for its Pokémon and 3D models
-    trades/  places/
+    trades/  places/  grottoes/
+  pokedex/habitats/         the Pokédex's habitat lists, an area each
   lighting/{field,battle}/
   town_map/
   sound/{sequences,banks,wave_archives,streams}/
@@ -78,7 +79,10 @@ which documents the format and can write them again.
 | `a/1/7/5` | `res/field/props/interior/textures/<bundle>/` (PNG) | Interior field prop textures | `tools/data/map_texture_data.py` |
 | `a/0/1/4` | `res/field/maps/textures/<set>/` (PNG) | All 409 field texture sets | `tools/data/map_texture_data.py` |
 | `a/0/1/3` | `res/field/areas/<area>.json` | Area records | `tools/data/area_data.py` |
+| `a/2/7/3` | `res/field/grottoes/` (JSON) | The Hidden Grottoes' Pokémon (a set for each version) and items | `tools/data/grotto_data.py` |
+| `a/2/9/6` | `res/pokedex/habitats/` (JSON) | The Pokédex's habitat lists: each area's species by season and habitat | `tools/data/habitat_data.py` |
 | `a/1/2/6` | `res/field/events/` (JSON) | Zone events: signs, NPCs, warps, triggers and init scripts | `tools/data/event_data.py` |
+| `a/0/7/8`, `a/1/1/0` | `res/field/rails/` (JSON, CSV) | Field rails: points, lines, cameras, curves and tile attributes, and the rail maps | `tools/data/rail_data.py` |
 | `a/0/4/7`, `a/0/4/8` | `res/field/actors/<code>/` (JSON, PNG, palette, Nitro model) | The field actors' models: their table and graphics | `tools/data/field_actor_data.py` |
 | `a/1/2/7` | `res/field/encounters/` (JSON) | Wild encounters | `tools/data/encounter_data.py` |
 | `a/1/6/3` | `res/field/trades/` (JSON) | In-game trades | `tools/data/trade_data.py` |
@@ -1034,6 +1038,24 @@ when it runs, or, for type 1, conditions on variables. A zone's header gives the
 in `res/field/zones/`), and `tools/data/event_data.py pack` puts each zone's events at that number; the numbers in
 `res/field/events/placeholders.json`, which no zone uses, hold the game's 4-byte placeholder. Both versions have the same
 events.
+
+## Field rails
+
+The maps without a grid (Castelia City's streets, Skyarrow Bridge, the Pokémon League and the others) move the player
+along rails. Each rail file of `a/0/7/8` (`ARCID_RAIL_HEADERS`) is a directory, `res/field/rails/<rails>/`, named after
+the first zone that uses it, and `res/field/rails/order.json` lists them in archive order. Its `rails.json` holds the
+file's points, lines, cameras and curves (`RailPoint`, `RailLine`, `RailCamera` and `RailCurve` in
+`include/field/field_rail.h`), each list in ID order, since the lines and points name each other and the zones' events
+place NPCs, warps and triggers on the rails by index: add entries at the end. Positions are fx32 integers.
+`attributes/line_NN.csv` holds line NN's tile attributes (`rail_attr.c`), a row per tile along the line and a column per
+tile across it, each a u32 in hex. The archive has the rail files, then their attribute files in the same order.
+
+`res/field/rails/maps.json` is `a/1/1/0` (`ARCID_RAIL_DATA`), the rail maps (`NoGridMapperHeader`): a zone with rails
+has the index of its map in `ZONE_RAIL_ASSIGNMENTS` (`src/system/zonedata.c`), and the map names its rail directory and
+its camera areas. `tools/data/rail_data.py` packs both archives, with `rails.schema.json` and `rail_maps.schema.json`
+beside the sources. The game's rail file starts with seven words, a constant and the offsets of the tile width, the
+points, lines, cameras, curves and the end; Frost's Gen 5 Editor writes six, without the end, which makes the game read
+the tile width as the end of the curves. The dump reads both, and pack always writes the game's header.
 
 ## 2D graphics
 

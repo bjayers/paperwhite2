@@ -1,0 +1,105 @@
+{
+    "$schema": "rail_maps.schema.json",
+    "maps": [
+        {
+            "rails": "black_city",
+            "camera_areas": null
+        },
+        {
+            "rails": "castelia_city",
+            "camera_areas": 0
+        },
+        {
+            "rails": "castelia_city_2",
+            "camera_areas": null
+        },
+        {
+            "rails": "castelia_city_8",
+            "camera_areas": null
+        },
+        {
+            "rails": "gear_station",
+            "camera_areas": null
+        },
+        {
+            "rails": "icirrus_city_2",
+            "camera_areas": null
+        },
+        {
+            "rails": "opelucid_city_gym",
+            "camera_areas": null
+        },
+        {
+            "rails": "pokemon_league_2",
+            "camera_areas": null
+        },
+        {
+            "rails": "pokemon_league_5",
+            "camera_areas": null
+        },
+        {
+            "rails": "pokemon_league_6",
+            "camera_areas": null
+        },
+        {
+            "rails": "pokemon_league_7",
+            "camera_areas": null
+        },
+        {
+            "rails": "pokemon_league_8",
+            "camera_areas": null
+        },
+        {
+            "rails": "pokemon_league_9",
+            "camera_areas": null
+        },
+        {
+            "rails": "dragonspiral_tower_5",
+            "camera_areas": null
+        },
+        {
+            "rails": "dragonspiral_tower_7",
+            "camera_areas": null
+        },
+        {
+            "rails": "victory_road_2",
+            "camera_areas": null
+        },
+        {
+            "rails": "abyssal_ruins",
+            "camera_areas": null
+        },
+        {
+            "rails": "skyarrow_bridge",
+            "camera_areas": null
+        },
+        {
+            "rails": "village_bridge",
+            "camera_areas": null
+        },
+        {
+            "rails": "marine_tube",
+            "camera_areas": null
+        },
+        {
+            "rails": "celestial_tower_2",
+            "camera_areas": null
+        },
+        {
+            "rails": "celestial_tower_3",
+            "camera_areas": null
+        },
+        {
+            "rails": "celestial_tower_4",
+            "camera_areas": null
+        },
+        {
+            "rails": "celestial_tower_5",
+            "camera_areas": null
+        },
+        {
+            "rails": "white_forest",
+            "camera_areas": null
+        }
+    ]
+}
