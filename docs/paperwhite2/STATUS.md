@@ -110,6 +110,14 @@ that dsd recomputes, and the header and logo CRCs are valid. The RSA signature i
 which runs in DSi mode through TWiLight Menu++ (it doesn't verify it). Run the verifier after every change to the
 ROM's layout or code. It can't read Frost's ROM, whose ARM9 isn't BLZ-compressed as it expects.
 
+### First code build (2026-10-28)
+
+With the user's DS ARM7 BIOS at `orig/bios7.bin` (16 KB, ignored by git), `--hack` builds with the example hook
+(`PaperWhite2_NextFieldFrame` in ov036, called every field frame) and `--hack --shift 0x100` both build and pass
+`verify_dsi_rom.py` (the secure area's own sector digests can't be checked from a decrypted ROM, so it skips them).
+The user play-tests both: `build/paperwhite2.nds` and `build/paperwhite2_shifted.nds` (a copy; a shifted build
+writes `build/paperwhite2.nds`).
+
 ### Next
 
 1. The user tests `build/paperwhite2.nds` (`\\wsl$\Ubuntu\home\riku\paperwhite2\build\paperwhite2.nds`) in melonDS
