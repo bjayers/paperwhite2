@@ -40,6 +40,9 @@
 #include "system/mcss.h"
 #include "system/palanm.h"
 #include "system/vm.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/battle_type_icons.h"
+#endif
 
 // Built by BtlvEffect_Create (swan's name), 0x34 bytes, copied into the work by the init
 struct BtlvEffectSetup {
@@ -374,7 +377,12 @@ void BtlvEffect_Main(void) {
         BtlvStage_Main(sBtlvEffect->stage);
         BtlvField_Main(sBtlvEffect->field);
         BtlvCamera_Main(sBtlvEffect->camera);
+#ifdef PAPERWHITE2
+        // Paper White 2: Type Icons paints its wedges again after the gauges' update when their mon or box changed
+        PaperWhite2_TypeIconsUpdate(sBtlvEffect->gauge);
+#else
         BtlvGauge_Update(sBtlvEffect->gauge);
+#endif
         BtlvClact_Draw(sBtlvEffect->clact);
         GFL_G3DSysReset();
         GFL_G3DSysMtxViewFlush();
@@ -656,6 +664,20 @@ void BtlvEffect_SetPokeAnimeSpeed(u8 viewPos, fx32 speed) {
 }
 
 void BtlvEffect_AddGauge(BtlMainModule *mainModule, BattleMon *mon, u32 viewPos) {
+#ifdef PAPERWHITE2
+    // Paper White 2: Type Icons takes its wedge off the gauge before the mon is set, and attaches it to the mon after
+    switch (sBtlvEffect->setup.battleStyle) {
+    case BTL_STYLE_TRIPLE:
+        PaperWhite2_TypeIconsSetBattleMon(sBtlvEffect->gauge, mainModule, mon, 2, viewPos);
+        break;
+    case BTL_STYLE_ROTATION:
+        PaperWhite2_TypeIconsSetBattleMon(sBtlvEffect->gauge, mainModule, mon, 3, viewPos);
+        break;
+    default:
+        PaperWhite2_TypeIconsSetBattleMon(sBtlvEffect->gauge, mainModule, mon, 0, viewPos);
+        break;
+    }
+#else
     switch (sBtlvEffect->setup.battleStyle) {
     case BTL_STYLE_TRIPLE:
         BtlvGauge_SetBattleMon(sBtlvEffect->gauge, mainModule, mon, 2, viewPos);
@@ -667,9 +689,24 @@ void BtlvEffect_AddGauge(BtlMainModule *mainModule, BattleMon *mon, u32 viewPos)
         BtlvGauge_SetBattleMon(sBtlvEffect->gauge, mainModule, mon, 0, viewPos);
         break;
     }
+#endif
 }
 
 void BtlvEffect_AddGaugeByPkm(PokeDexSave *pokedex, PartyPkm *pkm, u32 viewPos) {
+#ifdef PAPERWHITE2
+    // Paper White 2: Type Icons takes its wedge off the gauge before a party Pokémon is set, which it doesn't color
+    switch (sBtlvEffect->setup.battleStyle) {
+    case BTL_STYLE_TRIPLE:
+        PaperWhite2_TypeIconsSetPartyPkm(sBtlvEffect->gauge, pokedex, pkm, 2, viewPos);
+        break;
+    case BTL_STYLE_ROTATION:
+        PaperWhite2_TypeIconsSetPartyPkm(sBtlvEffect->gauge, pokedex, pkm, 3, viewPos);
+        break;
+    default:
+        PaperWhite2_TypeIconsSetPartyPkm(sBtlvEffect->gauge, pokedex, pkm, 0, viewPos);
+        break;
+    }
+#else
     switch (sBtlvEffect->setup.battleStyle) {
     case BTL_STYLE_TRIPLE:
         BtlvGauge_SetPartyPkm(sBtlvEffect->gauge, pokedex, pkm, 2, viewPos);
@@ -681,10 +718,16 @@ void BtlvEffect_AddGaugeByPkm(PokeDexSave *pokedex, PartyPkm *pkm, u32 viewPos) 
         BtlvGauge_SetPartyPkm(sBtlvEffect->gauge, pokedex, pkm, 0, viewPos);
         break;
     }
+#endif
 }
 
 void BtlvEffect_DelGauge(u32 viewPos) {
+#ifdef PAPERWHITE2
+    // Paper White 2: Type Icons takes its wedge off the gauge before it is hidden
+    PaperWhite2_TypeIconsHide(sBtlvEffect->gauge, viewPos);
+#else
     BtlvGauge_Hide(sBtlvEffect->gauge, viewPos);
+#endif
 }
 
 void BtlvEffect_CalcGaugeHP(u32 viewPos, s32 hp) {
@@ -724,7 +767,12 @@ void BtlvEffect_SetGaugeDrawEnable(BOOL visible, u32 viewPos) {
 }
 
 void BtlvEffect_SetGaugeStatus(u32 status, u8 pos) {
+#ifdef PAPERWHITE2
+    // Paper White 2: Type Icons hides its wedge under a status and paints it again when the status is cured
+    PaperWhite2_TypeIconsSetStatus(sBtlvEffect->gauge, status, pos);
+#else
     BtlvGauge_SetStatus(sBtlvEffect->gauge, status, pos);
+#endif
 }
 
 void BtlvEffect_GaugeAction(u32 viewPos) {

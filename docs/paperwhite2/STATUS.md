@@ -2,6 +2,25 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-28: the battle plugins ported (Remote Control session)
+
+Type Icons (the angular-wedge "Solid" style the hack's ROM has) and Move Effectiveness Preview are C in overlay 168,
+`src/paperwhite2/ov168/paperwhite2_{type_icons,move_preview}.c`, hooked from `btlv_effect.c`, `btlv_gauge.c` and
+`btlv_input.c` under `PAPERWHITE2`. `docs/paperwhite2/plugins.md` has the files, the hook table and the data.
+
+- The installer's panel expansion is in `res/graphics/btlv/438.png` (8 more blank tiles) and `439.ncer` (a third OAM
+  piece); packed, `a/0/1/1` members 438 and 439 equal the hack ROM's.
+- The move colors are the hack's (its installer edited the DLL's six color bytes at `0xba4`): super effective light
+  blue `0x7ecc`, resisted yellow `0x2f7e`, immune gray `0x4210`.
+- `BtlvGauge`, `BtlvInput` and `PaletteFade` moved from their `.c` files into their headers, unchanged; a plain
+  `configure.py w2_us` build still passes `ninja build/w2_us/stamps/modules.ok`.
+- The hack builds and `verify_dsi_rom.py` says intact. Memory: 210 KB left in the main arena after the heaps (was
+  220 KB); overlay 168 is now the highest overlay.
+- Not yet play-tested: wedges on the name boxes in single, double and triple battles (player and enemy), hidden under
+  a status and back after a cure, following type changes (Roost, Soak, Reflect Type, Illusion); move names colored on
+  the move screen in single and rotation battles, and the selected move's name above the target cards in double and
+  triple battles.
+
 ## 2026-10-28: the trial and the first import (Remote Control session)
 
 ### Build
@@ -42,9 +61,10 @@ The trial's comparison scripts are in `tools/paperwhite2/` (start of the editor'
   `field_camera_data_index.tbl`.
 - (Done, see below: Unown sprites.)
 - (Done, see below: Hidden Grottoes and Pokédex habitats.)
-- **Type icons** `a/0/1/1` members 438–439 (TypeIconsW2 plugin graphics).
+- (Done, see the battle plugins above: the type icons' `a/0/1/1` members 438–439.)
 - (Done: the banner, see below.)
-- Code: arm9 and overlays (PMC hooks, seasons, MoveEffectiveness, TypeIcons, following) — the plugin port.
+- Code: arm9 and overlays (PMC hooks, seasons, following) — the plugin port. (MoveEffectiveness and TypeIcons are
+  done, see above.)
 
 ### Left alone on purpose
 

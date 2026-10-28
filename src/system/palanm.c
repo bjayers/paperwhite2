@@ -20,43 +20,12 @@ typedef struct {
     u16 unused : 1;
 } PaletteColor;
 
-// How a buffer fades: the palettes it fades, and its steps from cur to end of 16 toward color
-typedef struct {
-    u16 paletteMask;
-    u16 delay : 6;
-    u16 cur : 5;
-    u16 end : 5;
-    u16 color : 15;
-    u16 direction : 1;
-    u16 step : 5;
-    u16 delayCounter : 6;
-} FadeControl;
-
-typedef struct {
-    u16 *unfaded;
-    u16 *faded;
-    u32 size;
-    FadeControl fade;
-} PaletteBuffer;
-
 // A channel blended fraction of 16 of the way from one value to another
 #define BLEND_CHANNEL(from, to, fraction) ((from) + ((((to) - (from)) * (fraction)) >> 4))
 
 // The fade task's states
 #define PALFADE_STATE_IDLE 0
 #define PALFADE_STATE_ACTIVE 1
-
-struct PaletteFade {
-    PaletteBuffer buffers[PALFADE_BUFFER_COUNT];
-    u16 state : 2;
-    // The buffers still fading
-    u16 activeMask : 14;
-    // The buffers PaletteFade_Transfer copies
-    u16 transferMask : 14;
-    u16 taskActive : 1;
-    u16 transferAll : 1;
-    u8 stopRequested;
-};
 
 static void PaletteFade_SetBuffer(PaletteFade *fade, u32 buffer, u16 *unfaded, u16 *faded, u32 size);
 static u8 IsBitSet(u16 mask, u16 bit);

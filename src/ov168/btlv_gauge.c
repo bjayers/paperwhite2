@@ -34,6 +34,9 @@
 #include "system/palanm.h"
 #include "system/printsys.h"
 #include "system/str_tool.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/battle_type_icons.h"
+#endif
 
 // A gauge's animated value before its first step
 #define GAUGE_ANIM_START ((s32)0x80000000)
@@ -53,96 +56,6 @@
 
 // The status icon's sequence for no status
 #define GAUGE_STATUS_NONE 8
-
-// What a gauge shows of its mon, cleared when a mon is set, 0x44 bytes
-typedef struct {
-    u32 type;       // 0x00  the battle's style, BTL_STYLE_*
-    u32 side;       // 0x04  1 for the opponent's
-    s32 hp;         // 0x08
-    s32 maxHp;      // 0x0c
-    s32 hpAnim;     // 0x10  the HP shown, in 1/256 when maxHp is below the bar's 48 pixels
-    s32 exp;        // 0x14  since the level started
-    s32 expMax;     // 0x18  the level's EXP
-    s32 nextExpMax; // 0x1c  the next level's, after a level up
-    s32 expDelta;   // 0x20  the EXP to take away, so negated
-    s32 expAnim;    // 0x24
-    s32 hpDelta;    // 0x28  the HP to take away
-    u8 level;       // 0x2c
-    u8 sex;         // 0x2d  2 for no sex mark
-    u8 unk2e;
-    u8 caught; // 0x2f
-    // 0x30
-    u32 hpMoving : 1;     // bit 0
-    u32 expMoving : 1;    // bit 1
-    u32 levelUp : 1;      // bit 2
-    u32 shown : 1;        // bit 3
-    u32 levelUpSeq : 4;   // bits 4-7
-    u32 expSeFrames : 8;  // bits 8-15: frames since the EXP sound started
-    u32 slideFrames : 4;  // bits 16-19
-    u32 shaking : 1;      // bit 20
-    u32 blinkCount : 5;   // bits 21-25: the lost HP's blinks left
-    u32 blinking : 1;     // bit 26
-    u32 changed : 1;      // bit 27
-    u32 expSe : 1;        // bit 28: the EXP sound plays
-    u32 visible : 1;      // bit 29
-    u32 statusHidden : 1; // bit 30
-    u32 unk30_31 : 1;
-    u32 hpSpeed;    // 0x34  0 to change at once
-    s32 hpDots;     // 0x38  the HP bar's pixels
-    u32 status;     // 0x3c  the status icon's sequence, in mode 2
-    TCB *slideTask; // 0x40
-} BtlvGaugeMon;
-
-// A battler's gauge, 0x84 bytes
-typedef struct {
-    ClActor *nameActor;   // 0x00  the box with the name, sex, level and caught mark
-    ClActor *hpNumActor;  // 0x04
-    ClActor *hpBarActor;  // 0x08
-    ClActor *damageActor; // 0x0c  the HP the bar lost, which blinks
-    ClActor *expActor;    // 0x10  the player's side in single and double battles only
-    ClActor *statusActor; // 0x14
-    u32 nameChars;        // 0x18
-    u32 nameCellAnims;    // 0x1c
-    u32 hpNumChars;       // 0x20
-    u32 hpNumCellAnims;   // 0x24
-    u32 hpBarChars;       // 0x28
-    u32 hpBarCellAnims;   // 0x2c
-    u32 damageChars;      // 0x30
-    u32 damageCellAnims;  // 0x34
-    u32 expChars;         // 0x38
-    u32 expCellAnims;     // 0x3c
-    BtlvGaugeMon mon;     // 0x40
-} BtlvGaugeEntry;
-
-// The gauges' work, 0x46c bytes
-struct BtlvGauge {
-    ClActUnit *unit;           // 0x000
-    ArcTool *arc;              // 0x004  archive 11
-    Font *font;                // 0x008
-    TCB *flashTask;            // 0x00c
-    void *charFile;            // 0x010
-    u8 *chars;                 // 0x014  the tiles the gauges are drawn from
-    u32 palettes[6];           // 0x018  by view position, the positions from 2 on taking 0 and 1's
-    u32 statusChars;           // 0x030
-    u32 statusCellAnims;       // 0x034
-    u32 statusPalette;         // 0x038
-    u32 statusPaletteDark;     // 0x03c  for the rotation's back mons
-    BtlvGaugeEntry entries[8]; // 0x040  by view position
-    // 0x460
-    u32 unk460_0 : 1;
-    u32 bgmFading : 1;     // bit 1
-    u32 pinch : 1;         // bit 2: the pinch music plays
-    u32 bgmReplayed : 1;   // bit 3
-    u32 showNumbers : 1;   // bit 4: the player's HP numbers instead of the bar, in triple and rotation battles
-    u32 shakeAngle : 16;   // bits 5-20
-    u32 noPinchBgm : 1;    // bit 21
-    u32 toggleRequest : 1; // bit 22
-    u32 loaded : 1;        // bit 23
-    u32 mode : 2;          // bits 24-25
-    u32 unk460_26 : 6;
-    u32 bgm;       // 0x464  the battle's music
-    HeapID heapId; // 0x468
-}; // 0x46c
 
 // The red flash of the gauges losing HP
 typedef struct {
@@ -206,6 +119,10 @@ BtlvGauge *BtlvGauge_Create(Font *font, u32 mode, HeapID heapId) {
 }
 
 void BtlvGauge_Delete(BtlvGauge *gauge) {
+#ifdef PAPERWHITE2
+    // Paper White 2: Type Icons takes its wedges off the gauges before their resources are freed
+    PaperWhite2_TypeIconsRelease(gauge);
+#endif
     BtlvGauge_FreeResources(gauge);
     if (gauge->pinch) {
         GFL_SndBGMPop();
@@ -333,7 +250,12 @@ void BtlvGauge_SetBattleMon(BtlvGauge *gauge, BtlMainModule *mainModule, BattleM
     } else {
         status = GetBattleMonStatus(mon);
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: Type Icons hides its wedge under a status
+    PaperWhite2_TypeIconsSetStatus(gauge, status, index);
+#else
     BtlvGauge_SetStatus(gauge, status, index);
+#endif
     BtlvGauge_SetPos(gauge, index, NULL);
     BtlvGauge_ShowHpParts(gauge, index, TRUE);
     BtlvGauge_CalcHpDots(&gauge->entries[index]);
@@ -374,7 +296,12 @@ void BtlvGauge_SetPartyPkm(BtlvGauge *gauge, PokeDexSave *pokedex, PartyPkm *pkm
     } else {
         gauge->entries[index].mon.sex = 2;
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: Type Icons hides its wedge under a status
+    PaperWhite2_TypeIconsSetStatus(gauge, GetStatusCond(pkm), index);
+#else
     BtlvGauge_SetStatus(gauge, GetStatusCond(pkm), index);
+#endif
     BtlvGauge_SetPos(gauge, index, NULL);
     BtlvGauge_ShowHpParts(gauge, index, TRUE);
     BtlvGauge_CalcHpDots(&gauge->entries[index]);
@@ -457,7 +384,12 @@ static void BtlvGauge_FreeResources(BtlvGauge *gauge) {
 
     if (gauge->loaded == TRUE) {
         for (pos = 0; pos < BTLV_GAUGE_POS_MAX; pos++) {
+#ifdef PAPERWHITE2
+            // Paper White 2: Type Icons takes its wedge off the gauge before it is hidden
+            PaperWhite2_TypeIconsHide(gauge, pos);
+#else
             BtlvGauge_Hide(gauge, pos);
+#endif
             BtlvGauge_DeleteActors(gauge, pos);
         }
         for (i = 0; i < 6; i++) {
@@ -610,6 +542,10 @@ static void BtlvGauge_DeleteActors(BtlvGauge *gauge, int index) {
 }
 
 static void BtlvGauge_Show(BtlvGauge *gauge, u32 type, int index, PartyPkm *pkm) {
+#ifdef PAPERWHITE2
+    PaperWhite2TypeIcon *icon;
+
+#endif
     BtlvGauge_StepGauge(gauge->entries[index].mon.maxHp, gauge->entries[index].mon.hp, 0,
                         &gauge->entries[index].mon.hpAnim, 6, 1);
     BtlvGauge_DrawBar(gauge, index, 0);
@@ -618,10 +554,25 @@ static void BtlvGauge_Show(BtlvGauge *gauge, u32 type, int index, PartyPkm *pkm)
                             &gauge->entries[index].mon.expAnim, 10, 1);
         BtlvGauge_DrawBar(gauge, index, 1);
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: Type Icons takes its wedge and the header's shift off the box while the name, sex and level are
+    // drawn, and puts them back after each
+    icon = PaperWhite2_TypeIconsBeforeText(gauge, &gauge->entries[index]);
+    BtlvGauge_DrawName(gauge, &gauge->entries[index], pkm);
+    PaperWhite2_TypeIconsAfterText(icon);
+    icon = PaperWhite2_TypeIconsBeforeText(gauge, &gauge->entries[index]);
+    BtlvGauge_DrawSex(gauge, &gauge->entries[index]);
+    PaperWhite2_TypeIconsAfterText(icon);
+    BtlvGauge_DrawHpNumbers(gauge, &gauge->entries[index], gauge->entries[index].mon.hp);
+    icon = PaperWhite2_TypeIconsBeforeText(gauge, &gauge->entries[index]);
+    BtlvGauge_DrawLevel(gauge, &gauge->entries[index]);
+    PaperWhite2_TypeIconsAfterText(icon);
+#else
     BtlvGauge_DrawName(gauge, &gauge->entries[index], pkm);
     BtlvGauge_DrawSex(gauge, &gauge->entries[index]);
     BtlvGauge_DrawHpNumbers(gauge, &gauge->entries[index], gauge->entries[index].mon.hp);
     BtlvGauge_DrawLevel(gauge, &gauge->entries[index]);
+#endif
     if (gauge->entries[index].mon.side && !BtlvEffect_GetBattleType()) {
         BtlvGauge_DrawCaughtMark(gauge, &gauge->entries[index]);
     }
@@ -1323,6 +1274,9 @@ static void BtlvGauge_DrawDamage(BtlvGauge *gauge, BtlvGaugeEntry *entry, s32 do
 
 static void BtlvGauge_UpdateLevelUp(BtlvGauge *gauge, int index) {
     BtlvGaugeEntry *entry = &gauge->entries[index];
+#ifdef PAPERWHITE2
+    PaperWhite2TypeIcon *icon;
+#endif
 
     if (!entry->mon.expMoving) {
         switch (entry->mon.levelUpSeq) {
@@ -1343,7 +1297,14 @@ static void BtlvGauge_UpdateLevelUp(BtlvGauge *gauge, int index) {
             BtlvGauge_DrawBar(gauge, index, 0);
             BtlvGauge_DrawBar(gauge, index, 1);
             BtlvGauge_DrawHpNumbers(gauge, entry, entry->mon.hp);
+#ifdef PAPERWHITE2
+            // Paper White 2: Type Icons takes its wedge and the header's shift off the box while the level is drawn
+            icon = PaperWhite2_TypeIconsBeforeText(gauge, entry);
             BtlvGauge_DrawLevel(gauge, entry);
+            PaperWhite2_TypeIconsAfterText(icon);
+#else
+            BtlvGauge_DrawLevel(gauge, entry);
+#endif
             entry->mon.levelUp = FALSE;
             break;
         }

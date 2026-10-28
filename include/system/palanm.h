@@ -49,6 +49,37 @@ enum {
     PALFADE_UNFADED,
 };
 
+// How a buffer fades: the palettes it fades, and its steps from cur to end of 16 toward color
+typedef struct {
+    u16 paletteMask;
+    u16 delay : 6;
+    u16 cur : 5;
+    u16 end : 5;
+    u16 color : 15;
+    u16 direction : 1;
+    u16 step : 5;
+    u16 delayCounter : 6;
+} FadeControl;
+
+typedef struct {
+    u16 *unfaded;
+    u16 *faded;
+    u32 size;
+    FadeControl fade;
+} PaletteBuffer;
+
+struct PaletteFade {
+    PaletteBuffer buffers[PALFADE_BUFFER_COUNT];
+    u16 state : 2;
+    // The buffers still fading
+    u16 activeMask : 14;
+    // The buffers PaletteFade_Transfer copies
+    u16 transferMask : 14;
+    u16 taskActive : 1;
+    u16 transferAll : 1;
+    u8 stopRequested;
+};
+
 PaletteFade *PaletteFade_Create(u32 heapId);
 void PaletteFade_Free(PaletteFade *fade);
 // Allocates a buffer's two copies of size bytes
