@@ -147,6 +147,15 @@ builds keep every original function at its address (new code goes after each mod
 shifted build moves them. Suspect a fixed-address patch of nds-bootstrap's. nds-bootstrap wrote no log
 (`NDSBTSRP.LOG`). Retest it after big changes to main, the one module whose growth moves everything after it.
 
+### Upstream sync
+
+Remote `upstream` is fuddlesworth/pokebw2; merge (never rebase) `upstream/main` between milestones. First sync
+2026-10-28, 102 commits (8f5bf2788c): only data conflicts, in files the hack changed, because upstream renamed script
+commands and changed `event_data.py`. Resolve such conflicts by taking upstream's file and dumping the hack's data
+again with the new tools (`tools/paperwhite2/events_lenient.py`, `tools/script/field_script.py disasm` after the
+hack's text is in `res/text/script/`), never by hand. Then check `ninja build/w2_us/stamps/modules.ok` (code still
+matches), build `--hack`, run `verify_dsi_rom.py`, and compare the archives with `tools/paperwhite2/narc_diff.py`.
+
 ### Next
 
 1. The user tests `build/paperwhite2.nds` (`\\wsl$\Ubuntu\home\riku\paperwhite2\build\paperwhite2.nds`) in melonDS
