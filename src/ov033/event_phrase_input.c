@@ -98,9 +98,9 @@ GameEventReturnCode EventPhraseInput_Callback(GameEvent *event, u32 *state, void
 
 void EventPhraseInput_StoreResult(struct EventPhraseInputData *data, NameEntryParam *param) {
     if (data->result != NULL) {
-        *data->result = param->unk1C == 0;
+        *data->result = param->canceled == FALSE;
     }
-    if (param->unk1C == 1) {
+    if (param->canceled == TRUE) {
         return;
     }
     switch (data->mode) {
@@ -137,7 +137,7 @@ void EventPhraseInput_StoreResult(struct EventPhraseInputData *data, NameEntryPa
     }
 }
 
-BOOL Scrcmd_CheckWifiListFlags(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_PhraseInput_CheckWifiListFlags(VM *vm, FieldScriptEnv *env) {
     ScriptWork *work;
     GameSystem *gsys;
     GameData *gameData;
@@ -163,7 +163,7 @@ BOOL Scrcmd_CheckWifiListFlags(VM *vm, FieldScriptEnv *env) {
     return FALSE;
 }
 
-BOOL Scrcmd_WifiListOperation(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_PhraseInput_WifiListOperation(VM *vm, FieldScriptEnv *env) {
     ScriptWork *work;
     GameSystem *gsys;
     GameData *gameData;
@@ -218,7 +218,7 @@ BOOL Scrcmd_WifiListOperation(VM *vm, FieldScriptEnv *env) {
     return FALSE;
 }
 
-BOOL Scrcmd_SetWifiFriendNameWord(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_PhraseInput_SetWifiFriendNameWord(VM *vm, FieldScriptEnv *env) {
     ScriptWork *work;
     GameSystem *gsys;
     GameData *gameData;

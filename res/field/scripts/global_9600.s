@@ -444,7 +444,7 @@ Script_5:
     VMJump L_0681
 
 L_0675:
-    SurveyCmd_WriteOwnAnswer 0, 1
+    SurveyWriteOwnAnswer 0, 1
     VMJump L_06A0
 
 L_0681:
@@ -453,7 +453,7 @@ L_0681:
     VMJump L_06A0
 
 L_0694:
-    SurveyCmd_WriteOwnAnswer 0, 2
+    SurveyWriteOwnAnswer 0, 2
     VMJump L_06A0
 
 L_06A0:
@@ -463,7 +463,7 @@ L_06A0:
     VMJump L_06C3
 
 L_06B7:
-    SurveyCmd_WriteOwnAnswer 1, 1
+    SurveyWriteOwnAnswer 1, 1
     VMJump L_06E2
 
 L_06C3:
@@ -472,11 +472,11 @@ L_06C3:
     VMJump L_06E2
 
 L_06D6:
-    SurveyCmd_WriteOwnAnswer 1, 2
+    SurveyWriteOwnAnswer 1, 2
     VMJump L_06E2
 
 L_06E2:
-    SurveyCmd_WriteOwnAnswer 29, 1
+    SurveyWriteOwnAnswer 29, 1
     VMReturn
 
 Script_6:

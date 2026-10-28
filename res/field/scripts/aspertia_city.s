@@ -214,7 +214,7 @@ L_0251:
     SystemMsg AspertiaCity_Text_ReceivedPairRunningShoes, 0
     MEWait
     MsgWaitAdvance
-    InfoMsgClose
+    SystemMsgClose
     // "Mom: A perfect fit!\nI'll read the instructions to you![f000]븁\u0000\n“Hold the B Button to run faster than\nnormal. Put on the Running Shoes and[f000]븀\u0000\nrace around to your heart's content!\"[f000]븁\u0000\nNow, you and [f000]ā\u0001\u0002 can\nrun anywhere you want![f000]븁\u0000"
     ActorMsg MSGFILE_SCRIPT, AspertiaCity_Text_MomPerfectFitIll, 1, 1, 0
     MsgWinCloseAll
@@ -1374,7 +1374,7 @@ Script_29:
 
 Script_30:
     ActorsPauseAll
-    Plugin14Cmd_StartAspertiaSeasonAnimations
+    StartAspertiaSeasonAnimations
     ActorCmdExec 251, Movement_1324
     ActorCmdWait
     VMSleep 45
@@ -1483,7 +1483,7 @@ L_13DF:
 
 Script_32:
     ActorsPauseAll
-    Plugin14Cmd_LoadAspertiaBG3Picture
+    LoadAspertiaBG3Picture
     ActorDelete 4
     ActorSetGPos 255, 53, 0, 750, 1
     GameGetVersion 0x8010
@@ -2186,7 +2186,7 @@ Script_36:
     VMStackCmp CMP_EQ
     VMJumpIf CMP_STACK, L_1E2F
     WorkSetConst EVENT_WORK_0x4030, 0
-    SurveyCmd_WriteOwnAnswer 8, 3
+    SurveyWriteOwnAnswer 8, 3
     WorkSetConst 0x8025, 495
     WordSetPokeSpecies 1, 495
     WordSetPokeSpecies 2, 495
@@ -2198,7 +2198,7 @@ L_1E2F:
     VMStackCmp CMP_EQ
     VMJumpIf CMP_STACK, L_1E64
     WorkSetConst EVENT_WORK_0x4030, 1
-    SurveyCmd_WriteOwnAnswer 8, 1
+    SurveyWriteOwnAnswer 8, 1
     WorkSetConst 0x8025, 498
     WordSetPokeSpecies 1, 498
     WordSetPokeSpecies 2, 498
@@ -2206,7 +2206,7 @@ L_1E2F:
 
 L_1E64:
     WorkSetConst EVENT_WORK_0x4030, 2
-    SurveyCmd_WriteOwnAnswer 8, 2
+    SurveyWriteOwnAnswer 8, 2
     WorkSetConst 0x8025, 501
     WordSetPokeSpecies 1, 501
     WordSetPokeSpecies 2, 501
@@ -2218,7 +2218,7 @@ L_1E80:
     SystemMsg AspertiaCity_Text_Chose, 1
     MEWait
     MsgWaitAdvance
-    InfoMsgClose
+    SystemMsgClose
     PokePartyAdd 0x8010, 0x8025, 0, 5
     FlagSet EVENT_FLAG_0x0961
     WorkSetConst 0x8025, 0
@@ -2264,7 +2264,7 @@ L_1F31:
     SystemMsg AspertiaCity_Text_ReceivedPokedex, 1
     MEWait
     MsgWaitAdvance
-    InfoMsgClose
+    SystemMsgClose
     // "Bianca: You want to know what it does?[f000]븁\u0000\nThe Pokédex is a high-tech device\nthat automatically records the[f000]븀\u0000\nPokémon you encounter![f000]븁\u0000\nSo Professor Juniper wants you to carry\nthis Pokédex, visit a lot of places, and[f000]븀\u0000\nmeet all the Pokémon in the Unova region[f000]븀\u0000\n―and beyond!"
     ActorMsg MSGFILE_SCRIPT, AspertiaCity_Text_BiancaWantKnowWhat, 2, 1, 0
     LastKeyWait
@@ -2389,7 +2389,7 @@ L_2097:
     VMJumpIf CMP_STACK, L_2191
     // "Turn on the C-Gear and\nestablish communications?"
     SystemMsg AspertiaCity_Text_TurnCGearEstablish, 2
-    ListMenu_AnchorTopRight 31, 13, 0, 1, 32784
+    ListMenuAnchorTopRight 31, 13, 0, 1, 32784
     ListMenuAdd 102, 65535, 0
     ListMenuAdd 103, 65535, 1
     ListMenuShow
@@ -2426,7 +2426,7 @@ L_212F:
 L_213B:
     // "Some functions of the C-Gear\nwill be restricted. Is that OK?"
     SystemMsg AspertiaCity_Text_SomeFunctionsCGear, 2
-    ListMenu_AnchorTopRight 31, 13, 0, 1, 32784
+    ListMenuAnchorTopRight 31, 13, 0, 1, 32784
     ListMenuAdd 102, 65535, 0
     ListMenuAdd 103, 65535, 1
     ListMenuShow
@@ -2559,7 +2559,7 @@ L_233F:
     // "It dropped something..."
     InfoMsg AspertiaCity_Text_DroppedSomething, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     WorkSetConst 0x8010, 1
     WorkSetConst 0x8011, 134
     RTCallGlobal 10853
@@ -2606,7 +2606,7 @@ Script_43:
     WorkAdd 0x8008, 134
     ParentActorMsg MSGFILE_SCRIPT, 0x8008, 0, 0
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt

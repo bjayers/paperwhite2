@@ -122,6 +122,8 @@ u8 UnityTowerVisitor_GetCountry(PlayerInfo *playerInfo);
 u32 UnityTowerSurvey_RegisterTrade(UnityTowerSurveySave *save, UnityTowerVisitor *visitor);
 void Scrcmd_FillPartnerCandidates(GameSystem *gsys, s32 floor, u32 value);
 void Scrcmd_CollectPartnersByLanguage(UnityTowerSurveySave *save, UnityTowerFloor *output, s32 floor, u32 value);
+// The survey's index of the floor's candidate, or UNITY_TOWER_HISTORY_INDEX_NONE when there is none
+#define UNITY_TOWER_HISTORY_INDEX_NONE 0xff
 u32 Scrcmd_GetPartnerCandidateHistoryIndex(UnityTowerFloor *output, u32 index);
 u32 Scrcmd_CalcPartnerGreetingIndex(u32 gender, u32 id, u32 province, u32 a3, u32 hasProvince);
 void UnityTowerSave_Init(UnityTowerFloor *save);
@@ -130,8 +132,8 @@ u32 Scrcmd_GetPartnerGreetingMessage(WordSet *wordSet, GameSystem *gsys, UnityTo
 void LoadUnityTowerVisitorWordSet(WordSet *wordSet, GameData *gameData, u32 index);
 
 // Overlay 12's scrcmd_unity_tower.c
-BOOL s01CE_UnityTowerGetTrainerClass(VM *vm, FieldScriptEnv *env);
-BOOL s01CF_UnityTowerGetStateParam(VM *vm, FieldScriptEnv *env);
-BOOL s01D0_UnityTowerCallFloorSelect(VM *vm, FieldScriptEnv *env);
+BOOL Scrcmd_UnityTower_UnityTowerGetTrainerClass(VM *vm, FieldScriptEnv *env);
+BOOL Scrcmd_UnityTower_UnityTowerGetStateParam(VM *vm, FieldScriptEnv *env);
+BOOL Scrcmd_UnityTower_UnityTowerCallFloorSelect(VM *vm, FieldScriptEnv *env);
 
 #endif // POKEBW2_FIELD_UNITY_TOWER_H

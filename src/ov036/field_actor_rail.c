@@ -582,7 +582,7 @@ static void RailActor_SaveUnitPosition(ActorRailWork *rail, FieldActor *actor) {
 
 static void RailActor_ReleaseUnit(ActorRailWork *rail, FieldActor *actor) {
     FieldNoGridMapper_ReleaseUnit(FldActSys_GetNoGridMapper(GetActorMModelSystem(actor)), rail->unit);
-    ClearActorFlag(actor, 0x2000);
+    ClearActorFlag(actor, ACTOR_FLAG_RAIL);
 }
 
 static void RailActor_ReacquireUnit(ActorRailWork *rail, FieldActor *actor) {
@@ -609,7 +609,7 @@ static void RailActorWait_Init(FieldActor *actor, u16 dirs) {
 
     work->wait = RailActor_ChooseListValue(WAIT_TIMES, -1);
     work->dirs = dirs;
-    FldAct_SetDrawStatus(actor, 0);
+    FldAct_SetDrawStatus(actor, DRAW_STATUS_STOP);
     FldAct_ClearMoving(actor);
 }
 
@@ -638,7 +638,7 @@ static void RailActorWalk_Init(FieldActor *actor, u32 dir) {
     work->dir = dir;
     work->front = pos.posFront;
     work->side = pos.posSide;
-    FldAct_SetDrawStatus(actor, 0);
+    FldAct_SetDrawStatus(actor, DRAW_STATUS_STOP);
     FldAct_ClearMoving(actor);
 }
 
@@ -711,7 +711,7 @@ static void RailActorPatrol_Init(FieldActor *actor) {
     work->reversed = 0;
     work->front = pos.posFront;
     work->side = pos.posSide;
-    FldAct_SetDrawStatus(actor, 0);
+    FldAct_SetDrawStatus(actor, DRAW_STATUS_STOP);
     FldAct_ClearMoving(actor);
 }
 

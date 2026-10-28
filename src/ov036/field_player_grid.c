@@ -1056,7 +1056,7 @@ static void FieldPlayerGrid_UpdateNormalCatwalkExit(FieldPlayerGrid *grid, Field
     FldAct_SetAcmd(actor, GetAcmdForDir(dir, ACMD_JUMP_1));
     FldAct_SetHeightCalcDisabled(actor, TRUE);
     FldAct_SetLandingDustDisabled(actor, TRUE);
-    SetActorMovementFlag(actor, 0x8000);
+    SetActorMovementFlag(actor, ACTOR_MOVEMENT_FLAG_HIDE_SHADOW);
     grid->state = GRID_STATE_CATWALK_EXIT;
 }
 
@@ -1077,7 +1077,7 @@ static void FieldPlayerGrid_UpdateNormalFall(FieldPlayerGrid *grid, FieldActor *
         pos.y -= FALL_SPEED;
         if (pos.y < height) {
             pos.y = height;
-            ClearActorMovementFlag(actor, 0x8000);
+            ClearActorMovementFlag(actor, ACTOR_MOVEMENT_FLAG_HIDE_SHADOW);
             grid->verticalMoveOnly = TRUE;
         }
         SetActorWPosValue(actor, &pos);
@@ -1344,7 +1344,7 @@ void FieldPlayerGrid_ForceBrake(FieldPlayerGrid *grid) {
 
         FldAct_FreeAcmd(actor);
         CheckSetActorFaceDir(actor, dir);
-        FldAct_SetDrawStatus(actor, 0);
+        FldAct_SetDrawStatus(actor, DRAW_STATUS_STOP);
         FieldPlayerCore_SetMoveStatus(grid->core, PLAYER_MOVE_STATUS_NONE);
     }
 }
@@ -1362,7 +1362,7 @@ BOOL FieldPlayerGrid_StopTurnOrBlocked(FieldPlayerGrid *grid) {
 
         FldAct_FreeAcmd(actor);
         CheckSetActorFaceDir(actor, dir);
-        FldAct_SetDrawStatus(actor, 0);
+        FldAct_SetDrawStatus(actor, DRAW_STATUS_STOP);
         FieldPlayerCore_SetMoveStatus(grid->core, PLAYER_MOVE_STATUS_NONE);
         break;
     }

@@ -732,7 +732,7 @@ L_09BD:
     // "[f000]Ā\u0001\u0000 seems happy to see you!"
     InfoMsg Route20_Text_SeemsHappySee, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
 
 L_09C6:
     WorkCmpConst EVENT_WORK_0x4031, 6
@@ -743,7 +743,7 @@ L_09D9:
     // "[f000]Ā\u0001\u0000 is really happy to see you!"
     InfoMsg Route20_Text_ReallyHappySee, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
 
 L_09E2:
     FlagGet EVENT_FLAG_DAILY_0x0aef, 0x8008
@@ -757,7 +757,7 @@ L_0A08:
     // "[f000]Ā\u0001\u0000 looks hungry."
     InfoMsg Route20_Text_LooksHungry, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
 
 L_0A11:
     VMCall Script_29
@@ -781,21 +781,21 @@ L_0A74:
     // "You don't have any berries it likes..."
     InfoMsg Route20_Text_DontHaveAnyBerries, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_0B46
 
 L_0A83:
     // "[f000]Ā\u0001\u0000 ate the berry.[f000]븁\u0000\nIt likes the [f000][ff00]\u0001\u0002sweet[f000][ff00]\u0001\u0000 flavor,\nbut maybe it would like it better[f000]븀\u0000\nif you gave it a [f000][ff00]\u0001\u0002dry[f000][ff00]\u0001\u0000 or [f000][ff00]\u0001\u0002bitter[f000][ff00]\u0001\u0000 berry?[f000]븁\u0000\nIt still seems to have\ngrown closer to you!"
     InfoMsg Route20_Text_AteBerryLikesSweet, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_0B46
 
 L_0A92:
     // "[f000]Ā\u0001\u0000 loves the dry flavor![f000]븁\u0000\nIt seems to have grown\ncloser to you!"
     InfoMsg Route20_Text_LovesDryFlavorSeems, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     WorkCmpConst EVENT_WORK_0x4031, 3
     VMJumpIf CMP_GE, L_0AAE
     VMJump L_0AD7
@@ -810,7 +810,7 @@ L_0AAE:
     // "[f000]Ā\u0001\u0000 seems stronger![f000]븁\u0000\nYou should come back and\ncheck on it later!"
     InfoMsg Route20_Text_SeemsStrongerShouldCome, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_0B46
 
 L_0AD7:
@@ -820,7 +820,7 @@ L_0ADD:
     // "[f000]Ā\u0001\u0000 loves the bitter flavor![f000]븁\u0000\nIt seems to have grown\ncloser to you!"
     InfoMsg Route20_Text_LovesBitterFlavorSeems, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     WorkCmpConst EVENT_WORK_0x4031, 3
     VMJumpIf CMP_GE, L_0AF9
     VMJump L_0B22
@@ -835,7 +835,7 @@ L_0AF9:
     // "[f000]Ā\u0001\u0000 seems stronger![f000]븁\u0000\nYou should come back and\ncheck on it later!"
     InfoMsg Route20_Text_SeemsStrongerShouldCome, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_0B46
 
 L_0B22:
@@ -845,14 +845,14 @@ L_0B28:
     // "[f000]Ā\u0001\u0000 looks happy with it's belly full!"
     InfoMsg Route20_Text_LooksHappyItsBelly, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_0B46
 
 L_0B37:
     // "[f000]Ā\u0001\u0000 looks sad..."
     InfoMsg Route20_Text_LooksSad, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_0B46
 
 L_0B46:
@@ -899,7 +899,7 @@ L_0BBC:
     // "It dropped something..."
     InfoMsg Route20_Text_DroppedSomething, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     WorkSetConst 0x8010, 2
     WorkSetConst 0x8011, 86
     RTCallGlobal 10853
@@ -969,7 +969,7 @@ L_0C96:
     // "It dropped something..."
     InfoMsg Route20_Text_DroppedSomething, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     WorkSetConst 0x8010, 7
     WorkSetConst 0x8011, 565
     RTCallGlobal 10853
@@ -1010,7 +1010,7 @@ L_0D1E:
     // "It dropped something..."
     InfoMsg Route20_Text_DroppedSomething, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     WorkSetConst 0x8010, 7
     WorkSetConst 0x8011, 565
     RTCallGlobal 10853
@@ -1050,7 +1050,7 @@ L_0DB0:
     // "It dropped something..."
     InfoMsg Route20_Text_DroppedSomething, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     Random 0x8008, 2
     WorkCmpConst 0x8008, 1
     VMJumpIf CMP_EQ, L_0DD8
@@ -1114,7 +1114,7 @@ L_0E94:
     // "It dropped something..."
     InfoMsg Route20_Text_DroppedSomething, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     Random 0x8008, 2
     WorkCmpConst 0x8008, 1
     VMJumpIf CMP_EQ, L_0EBC
@@ -1414,7 +1414,7 @@ L_123A:
     // "It dropped something..."
     InfoMsg Route20_Text_DroppedSomething, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     WorkSetConst 0x8010, 2
     WorkSetConst 0x8011, 86
     RTCallGlobal 10853
@@ -1469,7 +1469,7 @@ Script_29:
 L_1303:
     // "Give it a berry?[f000]븁\u0000"
     InfoMsg Route20_Text_GiveBerry, 2
-    ListMenu_AnchorTopRight 30, 10, 0, 1, 32776
+    ListMenuAnchorTopRight 30, 10, 0, 1, 32776
     ItemCheckAmount ITEM_PECHA_BERRY, 1, 0x8009
     WorkCmpConst 0x8009, 0
     VMJumpIf CMP_EQ, L_132E
@@ -1544,7 +1544,7 @@ L_1429:
     // "[f000]Ā\u0001\u0000 seems happy to see you!"
     InfoMsg Route20_Text_SeemsHappySee, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
 
 L_1432:
     WorkCmpConst EVENT_WORK_0x4031, 6
@@ -1555,7 +1555,7 @@ L_1445:
     // "[f000]Ā\u0001\u0000 is really happy to see you!"
     InfoMsg Route20_Text_ReallyHappySee, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
 
 L_144E:
     FlagGet EVENT_FLAG_DAILY_0x0aef, 0x8008
@@ -1569,7 +1569,7 @@ L_1474:
     // "[f000]Ā\u0001\u0000 looks hungry."
     InfoMsg Route20_Text_LooksHungry, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
 
 L_147D:
     VMCall Script_29
@@ -1593,21 +1593,21 @@ L_14E0:
     // "You don't have any berries it likes..."
     InfoMsg Route20_Text_DontHaveAnyBerries, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_1576
 
 L_14EF:
     // "[f000]Ā\u0001\u0000 ate the berry.[f000]븁\u0000\nIt likes the [f000][ff00]\u0001\u0002sweet[f000][ff00]\u0001\u0000 flavor,\nbut maybe it would like it better[f000]븀\u0000\nif you gave it a [f000][ff00]\u0001\u0002dry[f000][ff00]\u0001\u0000 berry?[f000]븁\u0000\nIt still seems to have\ngrown closer to you!"
     InfoMsg Route20_Text_AteBerryLikesSweet_3, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_1576
 
 L_14FE:
     // "[f000]Ā\u0001\u0000 loves the dry flavor![f000]븁\u0000\nIt seems to have grown\ncloser to you!"
     InfoMsg Route20_Text_LovesDryFlavorSeems, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     WorkCmpConst EVENT_WORK_0x4031, 6
     VMJumpIf CMP_GE, L_151A
     VMJump L_1543
@@ -1622,7 +1622,7 @@ L_151A:
     // "[f000]Ā\u0001\u0000 seems stronger![f000]븁\u0000\nYou should come back and\ncheck on it later!"
     InfoMsg Route20_Text_SeemsStrongerShouldCome, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_1576
 
 L_1543:
@@ -1632,21 +1632,21 @@ L_1549:
     // "It doesn't seem to like [f000][ff00]\u0001\u0002bitter[f000][ff00]\u0001\u0000 flavors..."
     InfoMsg Route20_Text_DoesntSeemLikeBitter, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_1576
 
 L_1558:
     // "[f000]Ā\u0001\u0000 looks happy with it's belly full!"
     InfoMsg Route20_Text_LooksHappyItsBelly, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_1576
 
 L_1567:
     // "[f000]Ā\u0001\u0000 looks sad..."
     InfoMsg Route20_Text_LooksSad, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_1576
 
 L_1576:
@@ -1684,7 +1684,7 @@ L_15D1:
     // "[f000]Ā\u0001\u0000 seems happy to see you!"
     InfoMsg Route20_Text_SeemsHappySee, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
 
 L_15DA:
     WorkCmpConst EVENT_WORK_0x4031, 6
@@ -1695,7 +1695,7 @@ L_15ED:
     // "[f000]Ā\u0001\u0000 is really happy to see you!"
     InfoMsg Route20_Text_ReallyHappySee, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
 
 L_15F6:
     FlagGet EVENT_FLAG_DAILY_0x0aef, 0x8008
@@ -1709,7 +1709,7 @@ L_161C:
     // "[f000]Ā\u0001\u0000 looks hungry."
     InfoMsg Route20_Text_LooksHungry, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
 
 L_1625:
     VMCall Script_29
@@ -1733,28 +1733,28 @@ L_1688:
     // "You don't have any berries it likes..."
     InfoMsg Route20_Text_DontHaveAnyBerries, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_171E
 
 L_1697:
     // "[f000]Ā\u0001\u0000 ate the berry.[f000]븁\u0000\nIt likes the [f000][ff00]\u0001\u0002sweet[f000][ff00]\u0001\u0000 flavor,\nbut maybe it would like it better[f000]븀\u0000\nif you gave it a [f000][ff00]\u0001\u0002bitter[f000][ff00]\u0001\u0000 berry?[f000]븁\u0000\nIt still seems to have\ngrown closer to you!"
     InfoMsg Route20_Text_AteBerryLikesSweet_2, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_171E
 
 L_16A6:
     // "It doesn't seem to like [f000][ff00]\u0001\u0002dry[f000][ff00]\u0001\u0000 flavors..."
     InfoMsg Route20_Text_DoesntSeemLikeDry, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_171E
 
 L_16B5:
     // "[f000]Ā\u0001\u0000 loves the bitter flavor![f000]븁\u0000\nIt seems to have grown\ncloser to you!"
     InfoMsg Route20_Text_LovesBitterFlavorSeems, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     WorkCmpConst EVENT_WORK_0x4031, 6
     VMJumpIf CMP_GE, L_16D1
     VMJump L_16FA
@@ -1769,7 +1769,7 @@ L_16D1:
     // "[f000]Ā\u0001\u0000 seems stronger![f000]븁\u0000\nYou should come back and\ncheck on it later!"
     InfoMsg Route20_Text_SeemsStrongerShouldCome, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_171E
 
 L_16FA:
@@ -1779,14 +1779,14 @@ L_1700:
     // "[f000]Ā\u0001\u0000 looks happy with it's belly full!"
     InfoMsg Route20_Text_LooksHappyItsBelly, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_171E
 
 L_170F:
     // "[f000]Ā\u0001\u0000 looks sad..."
     InfoMsg Route20_Text_LooksSad, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_171E
 
 L_171E:
@@ -1824,7 +1824,7 @@ L_1779:
     // "[f000]Ā\u0001\u0000 seems happy to see you!"
     InfoMsg Route20_Text_SeemsHappySee, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
 
 L_1782:
     WorkCmpConst EVENT_WORK_0x4031, 6
@@ -1835,7 +1835,7 @@ L_1795:
     // "[f000]Ā\u0001\u0000 is really happy to see you!"
     InfoMsg Route20_Text_ReallyHappySee, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
 
 L_179E:
     FlagGet EVENT_FLAG_DAILY_0x0aef, 0x8008
@@ -1849,7 +1849,7 @@ L_17C4:
     // "[f000]Ā\u0001\u0000 looks hungry."
     InfoMsg Route20_Text_LooksHungry, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
 
 L_17CD:
     VMCall Script_29
@@ -1900,7 +1900,7 @@ L_1899:
     // "[f000]Ā\u0001\u0000 has something for you!"
     InfoMsg Route20_Text_HasSomething, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     RTCallGlobal 10853
     WordSetPokeSpecies 0, 267
     WorkCmpConst 0x8012, 0
@@ -1911,35 +1911,35 @@ L_18BE:
     // "[f000]Ā\u0001\u0000 is beaming!"
     InfoMsg Route20_Text_Beaming, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_1909
 
 L_18CD:
     // "It doesn't seem to like [f000][ff00]\u0001\u0002bitter[f000][ff00]\u0001\u0000 flavors..."
     InfoMsg Route20_Text_DoesntSeemLikeBitter, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_1909
 
 L_18DC:
     // "You don't have any berries it likes..."
     InfoMsg Route20_Text_DontHaveAnyBerries, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_1909
 
 L_18EB:
     // "[f000]Ā\u0001\u0000 looks happy with it's belly full!"
     InfoMsg Route20_Text_LooksHappyItsBelly, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_1909
 
 L_18FA:
     // "[f000]Ā\u0001\u0000 looks sad..."
     InfoMsg Route20_Text_LooksSad, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_1909
 
 L_1909:
@@ -1971,7 +1971,7 @@ L_1951:
     // "[f000]Ā\u0001\u0000 seems happy to see you!"
     InfoMsg Route20_Text_SeemsHappySee, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
 
 L_195A:
     WorkCmpConst EVENT_WORK_0x4031, 6
@@ -1982,7 +1982,7 @@ L_196D:
     // "[f000]Ā\u0001\u0000 is really happy to see you!"
     InfoMsg Route20_Text_ReallyHappySee, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
 
 L_1976:
     FlagGet EVENT_FLAG_DAILY_0x0aef, 0x8008
@@ -1996,7 +1996,7 @@ L_199C:
     // "[f000]Ā\u0001\u0000 looks hungry."
     InfoMsg Route20_Text_LooksHungry, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
 
 L_19A5:
     VMCall Script_29
@@ -2047,7 +2047,7 @@ L_1A71:
     // "[f000]Ā\u0001\u0000 has something for you!"
     InfoMsg Route20_Text_HasSomething, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     RTCallGlobal 10853
     WordSetPokeSpecies 0, 269
     WorkCmpConst 0x8012, 0
@@ -2058,35 +2058,35 @@ L_1A96:
     // "[f000]Ā\u0001\u0000 is beaming!"
     InfoMsg Route20_Text_Beaming, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_1AE1
 
 L_1AA5:
     // "It doesn't seem to like [f000][ff00]\u0001\u0002dry[f000][ff00]\u0001\u0000 flavors..."
     InfoMsg Route20_Text_DoesntSeemLikeDry, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_1AE1
 
 L_1AB4:
     // "You don't have any berries it likes..."
     InfoMsg Route20_Text_DontHaveAnyBerries, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_1AE1
 
 L_1AC3:
     // "[f000]Ā\u0001\u0000 looks happy with it's belly full!"
     InfoMsg Route20_Text_LooksHappyItsBelly, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_1AE1
 
 L_1AD2:
     // "[f000]Ā\u0001\u0000 looks sad..."
     InfoMsg Route20_Text_LooksSad, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_1AE1
 
 L_1AE1:

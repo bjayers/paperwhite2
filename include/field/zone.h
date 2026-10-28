@@ -8,6 +8,9 @@
 #include "nitro/fx.h"
 #include "struct_decls.h"
 
+// The number of zones, one past the last, which code also uses for no zone
+#define ZONE_MAX 615
+
 struct RailPosition {
     u16 componentId;
     u8 componentIsLine;
@@ -111,6 +114,28 @@ struct ZoneTrigger {
         } rail;
     } pos;
     u16 unk14;
+};
+
+// A warp's transition type, which picks the events that take the player out through it and in at the other end
+// (entrance_camera.c) and how it is taken (fieldmap_event.c): stepped on (NONE, WARP_PAD, GATE), walked off from where
+// the player stands (MAT) or walked into from the tile before it (the rest)
+enum {
+    // No entrance: a map change to a position, and the one warp of the Pokémon League's entrance
+    WARP_TRANSITION_NONE,
+    // A warp the player stands on and walks off the map from, such as a building's exit mat
+    WARP_TRANSITION_MAT,
+    // The player walks one tile into the warp and one tile out of the other end. The code treats WALK_IN_2 alike; the
+    // maps use it between a house's floors and between some of the towers' and caves'
+    WARP_TRANSITION_WALK_IN_2,
+    // A building's door, which opens for the player
+    WARP_TRANSITION_DOOR,
+    WARP_TRANSITION_WALK_IN,
+    // The warp pads that spin the player away and down, as EventMapChangeWarpPad_Create's map change
+    WARP_TRANSITION_WARP_PAD,
+    // The way through a gate, from one of its halves to the other, with a fade and a sound
+    WARP_TRANSITION_GATE,
+    // The first of the entrances with an entrance camera, each with its file of archive 0xb1 from here
+    WARP_TRANSITION_CAMERA,
 };
 
 struct ZoneWarp {
@@ -303,6 +328,14 @@ BOOL IsZonesWithRailsArrayHasZoneID(u16 zoneId);
 BOOL IsZoneLEQ76(u16 zoneId);
 // The zone's place name for a game of the given version
 u16 GetZoneLocationNameIdx(u16 zoneId, u32 version);
+// When the field shows the zone's place name on entering it: never, always, only when the game continues from the
+// save there, or except then
+enum {
+    PLACE_NAME_DISP_NEVER,
+    PLACE_NAME_DISP_ALWAYS,
+    PLACE_NAME_DISP_ON_CONTINUE,
+    PLACE_NAME_DISP_NOT_ON_CONTINUE,
+};
 u32 GetZoneLocNameDispType(u16 zoneId);
 u32 GetZoneEasyChallengeModeLevelAdjust(u16 zoneId);
 u16 GetZoneNameIcon(u16 zoneId);

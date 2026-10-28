@@ -1056,7 +1056,7 @@ L_0D8C:
     ActorMsgClose
     // "It drops a feather at your feet...[f000]븁\u0000"
     SystemMsg Route19_Text_DropsFeatherFeet, 0
-    InfoMsgClose
+    SystemMsgClose
     WorkSetConst 0x8001, 1
     RTCallGlobal 2805
     VMJump L_0DE9

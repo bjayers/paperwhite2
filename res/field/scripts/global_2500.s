@@ -17,7 +17,7 @@ Script_1:
     // "It's lined with Pokémon picture books."
     InfoMsg Global2500_Text_ItsLinedPokemonPicture, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
@@ -29,7 +29,7 @@ Script_2:
     // "Are these books for Pokémon\nto read?"
     InfoMsg Global2500_Text_TheseBooksPokemonRead, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
@@ -41,7 +41,7 @@ Script_3:
     // "It's chock full of Pokémon books and\nphoto collections."
     InfoMsg Global2500_Text_ItsChockFullPokemon, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
@@ -53,7 +53,7 @@ Script_4:
     // "There are lots of Pokémon magazines![f000]븁\u0000\n“Pokémon Pal\"\n“Pokémon Handbook\"[f000]븀\u0000\n“Adorable Pokémon\""
     InfoMsg Global2500_Text_ThereLotsPokemonMagazines, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
@@ -81,7 +81,7 @@ L_00D9:
     // "It's a trash can."
     InfoMsg Global2500_Text_ItsTrashCan, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_036E
 
 L_00E8:
@@ -89,7 +89,7 @@ L_00E8:
     WorkAdd 0x8008, 12
     InfoMsg 0x8008, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     VMJump L_036E
 
 L_0103:
@@ -219,7 +219,7 @@ L_02CA:
     // "Someone threw this away?"
     InfoMsg Global2500_Text_SomeoneThrewAway, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     WorkSetConst 0x8001, 1
     RTCallGlobal 2805
     VMJump L_036E
@@ -254,7 +254,7 @@ L_035B:
     // "There's a Pokémon inside!"
     InfoMsg Global2500_Text_TheresPokemonInside, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     RTCallGlobal 10854
     VMJump L_036E
 
@@ -272,7 +272,7 @@ Script_6:
     // "The shelves are jammed with vibrant\nPokémon goods."
     InfoMsg Global2500_Text_ShelvesJammedVibrantPokemon, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
@@ -284,7 +284,7 @@ Script_7:
     // "It looks like a cabinet full of\nPokémon goods."
     InfoMsg Global2500_Text_LooksLikeCabinetFull, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
@@ -296,7 +296,7 @@ Script_8:
     // "Goods are arranged on the shelves in a\nvery orderly fashion."
     InfoMsg Global2500_Text_GoodsArrangedShelvesVery, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt

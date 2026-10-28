@@ -85,7 +85,7 @@ Script_5:
     ActorSetEyeToEye
     // "Hi! I have some questions for you![f000]븁\u0000\nIf you want to play, where do\nyou prefer: outside or at home?"
     ActorMsg MSGFILE_SCRIPT, VirbankCityPokemonCenter_Text_HiHaveSomeQuestions, 8, 2, 0
-    ListMenu_AnchorTopRight 31, 1, 0, 0, 32784
+    ListMenuAnchorTopRight 31, 1, 0, 0, 32784
     ListMenuAdd 11, 65535, 1
     ListMenuAdd 12, 65535, 2
     ListMenuAdd 13, 65535, 3
@@ -115,7 +115,7 @@ L_015B:
 L_0174:
     // "I see! I see![f000]븁\u0000\nThen, which one are you interested in:\nthe thing everybody knows[f000]븀\u0000\nor the thing nobody knows?"
     ActorMsg MSGFILE_SCRIPT, VirbankCityPokemonCenter_Text_SeeSeeThenWhich, 8, 2, 0
-    ListMenu_AnchorTopRight 31, 1, 0, 0, 32784
+    ListMenuAnchorTopRight 31, 1, 0, 0, 32784
     ListMenuAdd 14, 65535, 1
     ListMenuAdd 15, 65535, 2
     ListMenuAdd 13, 65535, 3
@@ -261,7 +261,7 @@ L_03AA:
     VMJump L_03BA
 
 L_03BA:
-    ListMenu_AnchorTopRight 30, 8, 0, 1, 32780
+    ListMenuAnchorTopRight 30, 8, 0, 1, 32780
     ListMenuAdd 22, 0, 0
     ListMenuAdd 23, 0, 1
     ListMenuAdd 24, 0, 2
@@ -308,7 +308,7 @@ L_0478:
 L_048E:
     // "Projecting seasons naturally in...\nIn 3...[f000]븁\u0000"
     ParentActorMsg MSGFILE_SCRIPT, VirbankCityPokemonCenter_Text_ProjectingSeasonsNaturally3, 0, 0
-    ListMenu_AnchorTopRight 30, 8, 0, 1, 32780
+    ListMenuAnchorTopRight 30, 8, 0, 1, 32780
     ListMenuAdd 32, 0, 4
     ListMenuAdd 33, 0, 5
     ListMenuAdd 34, 0, 6

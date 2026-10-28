@@ -318,7 +318,7 @@ L_0418:
     VMJump L_0428
 
 L_0428:
-    ListMenu_AnchorTopRight 30, 8, 0, 1, 32780
+    ListMenuAnchorTopRight 30, 8, 0, 1, 32780
     ListMenuAdd 22, 0, 0
     ListMenuAdd 23, 0, 1
     ListMenuAdd 24, 0, 2
@@ -360,7 +360,7 @@ L_04E6:
 
 L_04FC:
     ParentActorMsg MSGFILE_SCRIPT, 31, 0, 0
-    ListMenu_AnchorTopRight 30, 8, 0, 1, 32780
+    ListMenuAnchorTopRight 30, 8, 0, 1, 32780
     ListMenuAdd 32, 0, 4
     ListMenuAdd 33, 0, 5
     ListMenuAdd 34, 0, 6

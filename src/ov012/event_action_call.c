@@ -103,7 +103,7 @@ FieldActor *EventActionCall_FindActor(MMSys *mmSys, u16 actorId) {
     FieldActor *actor;
 
     if (actorId == 0xf2) {
-        actor = FindActorByMoveCode(mmSys, 0x30);
+        actor = FindActorByMoveCode(mmSys, MOVE_CODE_FOLLOW_PLAYER);
     } else if (actorId != 0xf1) {
         actor = FindFieldActor(mmSys, actorId);
     }
@@ -206,7 +206,7 @@ GameEventReturnCode EventActorLinearMove_Callback(GameEvent *event, u32 *state, 
     switch (*state) {
     case 0:
         EnableActorMovement(work->actor);
-        SetActorMovementFlag(work->actor, 0x8000);
+        SetActorMovementFlag(work->actor, ACTOR_MOVEMENT_FLAG_HIDE_SHADOW);
         *state = 1;
         break;
     case 1:

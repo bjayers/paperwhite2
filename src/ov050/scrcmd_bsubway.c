@@ -135,7 +135,7 @@ static u32 BSubway_GetModeRegulation(u32 mode);
 static u32 BSubway_GetZonePlayMode(Field *field);
 static u16 BSubway_GetPlayerObjCode(PlayerInfo *info);
 
-BOOL BSubwayCmd_CreateWork(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Bsubway_CreateWork(VM *vm, FieldScriptEnv *env) {
     ScriptWork *work = FieldScriptEnv_GetScriptWork(env);
     ScriptFieldWork *fieldWork = ScriptWork_GetFieldWork(work);
     GameSystem *gsys = ScriptWork_GetGameSystem(work);
@@ -145,7 +145,7 @@ BOOL BSubwayCmd_CreateWork(VM *vm, FieldScriptEnv *env) {
     return FALSE;
 }
 
-BOOL BSubwayCmd_ClearWork(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Bsubway_ClearWork(VM *vm, FieldScriptEnv *env) {
     ScriptWork *work = FieldScriptEnv_GetScriptWork(env);
     ScriptFieldWork *fieldWork = ScriptWork_GetFieldWork(work);
 
@@ -153,7 +153,7 @@ BOOL BSubwayCmd_ClearWork(VM *vm, FieldScriptEnv *env) {
     return FALSE;
 }
 
-BOOL BSubwayCmd_FreeWork(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Bsubway_FreeWork(VM *vm, FieldScriptEnv *env) {
     ScriptWork *work = FieldScriptEnv_GetScriptWork(env);
     ScriptFieldWork *fieldWork = ScriptWork_GetFieldWork(work);
     GameSystem *gsys = ScriptWork_GetGameSystem(work);
@@ -162,7 +162,7 @@ BOOL BSubwayCmd_FreeWork(VM *vm, FieldScriptEnv *env) {
     return FALSE;
 }
 
-BOOL BSubwayCmd_Tool(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Bsubway_Tool(VM *vm, FieldScriptEnv *env) {
     PartyPkm *pkm;
     BOOL result = FALSE;
     ScriptWork *work = FieldScriptEnv_GetScriptWork(env);
@@ -1157,7 +1157,7 @@ static void BSubway_PlacePassengers(BSubwayScrWork *bsw, GameData *gameData, MMS
                 } else {
                     objCode = sTable7040[index];
                 }
-                actor = CreateNewActorByParam(mmSys, pos->x, pos->z, i % 4, id, objCode, 2, zoneId);
+                actor = CreateNewActorByParam(mmSys, pos->x, pos->z, i % 4, id, objCode, MOVE_CODE_TURN_RANDOM, zoneId);
                 SetActorUserParam(actor, count - 1, 0);
                 SetActorSCRID(actor, 5);
                 i++;
@@ -1185,7 +1185,8 @@ static void BSubway_PlacePassengers(BSubwayScrWork *bsw, GameData *gameData, MMS
         }
         while (entry->objCode != 0xffff) {
             if (sStages[entry->stage - 1] == stage) {
-                actor = CreateNewActorByParam(mmSys, entry->x, entry->z, i % 4, id, entry->objCode, 2, zoneId);
+                actor = CreateNewActorByParam(mmSys, entry->x, entry->z, i % 4, id, entry->objCode,
+                                              MOVE_CODE_TURN_RANDOM, zoneId);
                 SetActorUserParam(actor, i, 0);
                 SetActorUserParam(actor, entry->unkA, 1);
                 SetActorSCRID(actor, 5);

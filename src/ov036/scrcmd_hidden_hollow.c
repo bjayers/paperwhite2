@@ -3,6 +3,7 @@
 // holds is hidden_hollow_generate.c, before it. Names from swan (https://github.com/ds-pokemon-hacking/swan, GPL-3.0)
 // Additional helper and table names are our descriptive guesses.
 #include "types.h"
+#include "constants/directions.h"
 #include "constants/flags.h"
 #include "constants/obj_codes.h"
 #include "constants/species.h"
@@ -36,6 +37,27 @@
 #define HOLLOW_FILE_VERSION 0
 #endif
 
+// What Scrcmd_HiddenHollow_HiddenHollowGetParam gives of the grotto's slot: the Pokémon's species, level, form and
+// whether it is female, the item in a ball or the hidden item, whether the slot is a hidden item, and the grotto
+enum {
+    HIDDEN_HOLLOW_PARAM_SPECIES,
+    HIDDEN_HOLLOW_PARAM_LEVEL,
+    HIDDEN_HOLLOW_PARAM_FORM,
+    HIDDEN_HOLLOW_PARAM_FEMALE,
+    HIDDEN_HOLLOW_PARAM_ITEM,
+    HIDDEN_HOLLOW_PARAM_HIDDEN_ITEM,
+    HIDDEN_HOLLOW_PARAM_HAS_HIDDEN_ITEM,
+    HIDDEN_HOLLOW_PARAM_HOLLOW,
+};
+
+// The steps of the warps into and out of a grotto: fade out, change the map, fade in once its actors are loaded, end
+enum {
+    HOLLOW_WARP_STATE_FADE_OUT,
+    HOLLOW_WARP_STATE_MAP_CHANGE,
+    HOLLOW_WARP_STATE_FADE_IN,
+    HOLLOW_WARP_STATE_END,
+};
+
 // What a grotto holds in each slot, from the grotto's file in the archive
 typedef struct {
     u16 species[4];
@@ -47,11 +69,12 @@ typedef struct {
     u8 unk18[2];
 } HollowSlot;
 
-// A grotto's file: the Pokémon of each version's three slots, White 2's first, then the items of the other slots
+// A grotto's file: the Pokémon of each version's three slots, White 2's first, then the items in balls of the next
+// four slots and the hidden items of the last four
 typedef struct {
     HollowSlot slots[2][3];
-    u16 itemsA[4][4];
-    u16 itemsB[4][4];
+    u16 items[4][4];
+    u16 hiddenItems[4][4];
 } HollowFile;
 
 // What the events that set a grotto up, and the warp into it, work on
@@ -88,7 +111,7 @@ static void CreateMissionHiddenHollowPokemonActor(HollowEventWork *work);
 static void ActivateHiddenHollowMission(HollowEventWork *work);
 static u32 GetHiddenHollowMissionLevel(u32 hollow);
 
-BOOL s0294_HiddenHollowGetParam(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_HiddenHollow_HiddenHollowGetParam(VM *vm, FieldScriptEnv *env) {
     FesGimmick *gimmick;
     Field *field;
     u8 slot;
@@ -117,15 +140,15 @@ BOOL s0294_HiddenHollowGetParam(VM *vm, FieldScriptEnv *env) {
         mission = TRUE;
     }
     switch (param) {
-    case 0:
+    case HIDDEN_HOLLOW_PARAM_SPECIES:
         if (!mission) {
             GFL_ArcSysRead(&file, SLOT_ARC, hollow);
             *result = getSlotFilePtr(&file, slot)->species[group];
         } else {
-            *result = entry->unk4;
+            *result = entry->species;
         }
         break;
-    case 1:
+    case HIDDEN_HOLLOW_PARAM_LEVEL:
         if (!mission) {
             HollowSlot *slotData;
             u8 min;
@@ -138,15 +161,15 @@ BOOL s0294_HiddenHollowGetParam(VM *vm, FieldScriptEnv *env) {
             *result = GetHiddenHollowMissionLevel(hollow);
         }
         break;
-    case 2:
+    case HIDDEN_HOLLOW_PARAM_FORM:
         if (!mission) {
             GFL_ArcSysRead(&file, SLOT_ARC, hollow);
             *result = getSlotFilePtr(&file, slot)->form[group];
         } else {
-            *result = entry->unk6;
+            *result = entry->form;
         }
         break;
-    case 3:
+    case HIDDEN_HOLLOW_PARAM_FEMALE:
         if (!mission) {
             u32 gender = getHollowGender(rival, hollow);
             BOOL female = FALSE;
@@ -157,20 +180,20 @@ BOOL s0294_HiddenHollowGetParam(VM *vm, FieldScriptEnv *env) {
             }
             *result = female;
         } else {
-            *result = entry->unk1;
+            *result = entry->female;
         }
         break;
-    case 4:
+    case HIDDEN_HOLLOW_PARAM_ITEM:
         GFL_ArcSysRead(&file, SLOT_ARC, hollow);
-        *result = file.itemsA[(u8)(slot - 3)][group];
+        *result = file.items[(u8)(slot - 3)][group];
         break;
-    case 5:
+    case HIDDEN_HOLLOW_PARAM_HIDDEN_ITEM:
         GFL_ArcSysRead(&file, SLOT_ARC, hollow);
-        *result = file.itemsB[(u8)(slot - 7)][group];
+        *result = file.hiddenItems[(u8)(slot - 7)][group];
         break;
-    case 6:
+    case HIDDEN_HOLLOW_PARAM_HAS_HIDDEN_ITEM:
         if (!mission) {
-            if (getTypeOfFilledSlot(rival, hollow) == 3) {
+            if (getTypeOfFilledSlot(rival, hollow) == HOLLOW_SLOT_TYPE_HIDDEN_ITEM) {
                 *result = 1;
             } else {
                 *result = 0;
@@ -179,14 +202,14 @@ BOOL s0294_HiddenHollowGetParam(VM *vm, FieldScriptEnv *env) {
             *result = 0;
         }
         break;
-    case 7:
+    case HIDDEN_HOLLOW_PARAM_HOLLOW:
         *result = getHollowNum(rival);
         break;
     }
     return FALSE;
 }
 
-BOOL s0295_HiddenHollowReset(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_HiddenHollow_HiddenHollowReset(VM *vm, FieldScriptEnv *env) {
     GameData *gameData;
     Field *field;
     RivalDataSave *rival;
@@ -211,7 +234,7 @@ BOOL s0295_HiddenHollowReset(VM *vm, FieldScriptEnv *env) {
     return FALSE;
 }
 
-BOOL s0293_HiddenHollowCallWarpIn(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_HiddenHollow_HiddenHollowCallWarpIn(VM *vm, FieldScriptEnv *env) {
     GameSystem *gsys = FieldScriptEnv_GetGameSystem(env);
     GameData *gameData = FieldScriptEnv_GetGameData(env);
     ScriptWork *scriptWork = FieldScriptEnv_GetScriptWork(env);
@@ -238,29 +261,29 @@ static GameEventReturnCode EventHiddenHollowWarpIn_Callback(GameEvent *event, u3
     VecFx32 pos;
 
     switch (*state) {
-    case 0:
+    case HOLLOW_WARP_STATE_FADE_OUT:
         setHollowNum(work->rival, work->hollow);
         ActivateHiddenHollowMission(work);
         DisableAllActorsMovement(Field_GetActorSystem(work->field));
-        next = CallFieldMapEntranceOutTransitionDefault(work->gsys, work->field, 4, 0);
+        next = CallFieldMapEntranceOutTransitionDefault(work->gsys, work->field, FIELD_TRANSITION_WIPE, FALSE);
         GameEvent_ChainNext(event, next);
         (*state)++;
         break;
-    case 1:
+    case HOLLOW_WARP_STATE_MAP_CHANGE:
         CreateHiddenHollowWarpPosVec(&pos, 15, 0, 27);
-        next = EventMapChange_CreateGridDefault(work->gsys, work->field, ZONE_HIDDEN_GROTTO, &pos, 0);
+        next = EventMapChange_CreateGridDefault(work->gsys, work->field, ZONE_HIDDEN_GROTTO, &pos, DIR_UP);
         GameEvent_ChainNext(event, next);
         (*state)++;
         break;
-    case 2:
+    case HOLLOW_WARP_STATE_FADE_IN:
         if (FldActSys_IsAsyncLoadPending(Field_GetActorSystem(work->field)) == TRUE) {
             break;
         }
-        next = CallFieldMapEntranceInTransition(work->gsys, work->field, 0, 1, 1, 0, 0);
+        next = CallFieldMapEntranceInTransition(work->gsys, work->field, FIELD_TRANSITION_FADE_BLACK, TRUE, TRUE, 0, 0);
         GameEvent_ChainNext(event, next);
         (*state)++;
         break;
-    case 3:
+    case HOLLOW_WARP_STATE_END:
         EnableAllActorsMovement(Field_GetActorSystem(work->field));
         return GAMEEVENT_DONE;
     }
@@ -279,15 +302,15 @@ static void SetupHiddenHollowEvents(HollowEventWork *work) {
 
     if (!hollowFesMissions(gimmick, work->hollow)) {
         switch (type) {
-        case 1:
+        case HOLLOW_SLOT_TYPE_POKEMON:
             CreateGenericHiddenHollowPokemonActor(work);
             EventWork_FlagReset(work->eventWork, EVENT_FLAG_0x097f);
             break;
-        case 2:
+        case HOLLOW_SLOT_TYPE_ITEM:
             CreateHiddenHollowItemActor(work->actors);
             EventWork_FlagReset(work->eventWork, EVENT_FLAG_0x097f);
             break;
-        case 3:
+        case HOLLOW_SLOT_TYPE_HIDDEN_ITEM:
             EventWork_FlagSet(work->eventWork, EVENT_FLAG_0x097f);
             break;
         }
@@ -312,22 +335,23 @@ static void CreateGenericHiddenHollowPokemonActor(HollowEventWork *work) {
     if (gender < slotData->femaleBelow[group]) {
         female = TRUE;
     }
-    CreateHiddenHollowPokemonActor(work->actors, slotData->species[group], female, slotData->form[group], 0, 0x15);
+    CreateHiddenHollowPokemonActor(work->actors, slotData->species[group], female, slotData->form[group], FALSE,
+                                   HEAPID_FIELDMAP);
 }
 
 static void CreateHiddenHollowPokemonActor(MMSys *actors, u16 species, u16 sex, u16 form, u32 moves, u32 heapId) {
     FieldActor *actor;
 
     if (!isFoongusAmoongus(species)) {
-        TPokeData *data = LoadTPokeData(0x15);
+        TPokeData *data = LoadTPokeData(HEAPID_FIELDMAP);
         u16 objCode = GetPokemonFieldOBJCODE(data, species, sex, form);
         FreeTPokeData(data);
-        actor = CreateNewActorByParam(actors, 0xf, 0xc, 1, 0xe0, objCode, 0, ZONE_HIDDEN_GROTTO);
+        actor = CreateNewActorByParam(actors, 0xf, 0xc, 1, 0xe0, objCode, MOVE_CODE_NONE, ZONE_HIDDEN_GROTTO);
     } else {
-        actor = CreateNewActorByParam(actors, 0xf, 0xc, 1, 0xe0, OBJ_CODE_110, 0, ZONE_HIDDEN_GROTTO);
+        actor = CreateNewActorByParam(actors, 0xf, 0xc, 1, 0xe0, OBJ_CODE_110, MOVE_CODE_NONE, ZONE_HIDDEN_GROTTO);
     }
     SetActorSCRID(actor, 1);
-    if (moves == 1) {
+    if (moves == TRUE) {
         SetActorMovementFlag(actor, 1 << 20);
     }
 }
@@ -340,12 +364,13 @@ static BOOL isFoongusAmoongus(u16 species) {
 }
 
 static void CreateHiddenHollowItemActor(MMSys *actors) {
-    FieldActor *actor = CreateNewActorByParam(actors, 0xf, 0xc, 1, 0xe0, OBJ_CODE_110, 0, ZONE_HIDDEN_GROTTO);
+    FieldActor *actor =
+        CreateNewActorByParam(actors, 0xf, 0xc, 1, 0xe0, OBJ_CODE_110, MOVE_CODE_NONE, ZONE_HIDDEN_GROTTO);
 
     SetActorSCRID(actor, 2);
 }
 
-BOOL s0296_HiddenHollowCallWarpOut(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_HiddenHollow_HiddenHollowCallWarpOut(VM *vm, FieldScriptEnv *env) {
     GameSystem *gsys = FieldScriptEnv_GetGameSystem(env);
     GameData *gameData = FieldScriptEnv_GetGameData(env);
     ScriptWork *scriptWork = FieldScriptEnv_GetScriptWork(env);
@@ -369,33 +394,33 @@ static GameEventReturnCode EventHiddenHollowWarpOut_Callback(GameEvent *event, u
     VecFx32 pos;
 
     switch (*state) {
-    case 0:
+    case HOLLOW_WARP_STATE_FADE_OUT:
         DisableAllActorsMovement(Field_GetActorSystem(work->field));
-        next = CallFieldMapEntranceOutTransitionDefault(work->gsys, work->field, 1, 1);
+        next = CallFieldMapEntranceOutTransitionDefault(work->gsys, work->field, FIELD_TRANSITION_FADE_WHITE, TRUE);
         GameEvent_ChainNext(event, next);
         (*state)++;
         break;
-    case 1: {
+    case HOLLOW_WARP_STATE_MAP_CHANGE: {
         u16 zone = GetHiddenHollowEntranceParam(work->hollow, 0);
         u32 x = GetHiddenHollowEntranceParam(work->hollow, 1);
         u32 y = GetHiddenHollowEntranceParam(work->hollow, 2);
         u32 z = GetHiddenHollowEntranceParam(work->hollow, 3);
 
         CreateHiddenHollowWarpPosVec(&pos, x, y, z);
-        next = EventMapChange_CreateGridDefault(work->gsys, work->field, zone, &pos, 1);
+        next = EventMapChange_CreateGridDefault(work->gsys, work->field, zone, &pos, DIR_DOWN);
         GameEvent_ChainNext(event, next);
         (*state)++;
         break;
     }
-    case 2:
+    case HOLLOW_WARP_STATE_FADE_IN:
         if (FldActSys_IsAsyncLoadPending(Field_GetActorSystem(work->field)) == TRUE) {
             break;
         }
-        next = CallFieldMapEntranceInTransition(work->gsys, work->field, 1, 1, 1, 0, 0);
+        next = CallFieldMapEntranceInTransition(work->gsys, work->field, FIELD_TRANSITION_FADE_WHITE, TRUE, TRUE, 0, 0);
         GameEvent_ChainNext(event, next);
         (*state)++;
         break;
-    case 3:
+    case HOLLOW_WARP_STATE_END:
         EnableAllActorsMovement(Field_GetActorSystem(work->field));
         return GAMEEVENT_DONE;
     }
@@ -406,7 +431,7 @@ static HollowSlot *getSlotFilePtr(HollowFile *file, u32 slot) {
     return &file->slots[HOLLOW_FILE_VERSION][slot];
 }
 
-BOOL s02E5_HiddenHollowSet(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_HiddenHollow_HiddenHollowSet(VM *vm, FieldScriptEnv *env) {
     GameData *gameData = FieldScriptEnv_GetGameData(env);
     u8 hollow = ScriptReadAny(vm, env);
     u16 slot = ScriptReadAny(vm, env);
@@ -429,7 +454,7 @@ static void CreateMissionHiddenHollowPokemonActor(HollowEventWork *work) {
     FesGimmick *gimmick = Field_GetFesGimmick(work->field);
     RivalEntry *entry = RivalSelect_GetEntry(gimmick, work->hollow);
 
-    CreateHiddenHollowPokemonActor(work->actors, entry->unk4, entry->unk1, entry->unk6, 1, 0x15);
+    CreateHiddenHollowPokemonActor(work->actors, entry->species, entry->female, entry->form, TRUE, HEAPID_FIELDMAP);
 }
 
 static void ActivateHiddenHollowMission(HollowEventWork *work) {
@@ -442,7 +467,7 @@ static void ActivateHiddenHollowMission(HollowEventWork *work) {
     }
 }
 
-BOOL s02E6_HiddenHollowCreateEvents(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_HiddenHollow_HiddenHollowCreateEvents(VM *vm, FieldScriptEnv *env) {
     GameSystem *gsys = FieldScriptEnv_GetGameSystem(env);
     GameData *gameData = FieldScriptEnv_GetGameData(env);
     RivalDataSave *rival;

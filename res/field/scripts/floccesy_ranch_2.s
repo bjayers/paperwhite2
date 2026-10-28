@@ -145,7 +145,7 @@ L_0250:
     SEPlay SEQ_SE_ARDEMO_01
     // "[f000]Ā\u0001\u0000 handed over\nthe Town Map![f000]븁\u0000"
     SystemMsg FloccesyRanch2_Text_HandedOverTownMap, 0
-    InfoMsgClose
+    SystemMsgClose
     SEWait
     // "[f000]Ā\u0001\u0001: Tch...\nShe didn't have to do that...[f000]븁\u0000\nThanks to you, too. We just left,\nand you've already helped me out.[f000]븁\u0000"
     ActorMsg MSGFILE_SCRIPT, FloccesyRanch2_Text_TchSheDidntHave, 0, 0, 0
@@ -1365,21 +1365,21 @@ Script_28:
     VMJump L_1317
 
 L_12ED:
-    InfoMsgClose
+    SystemMsgClose
     PVPlay 113, 0
     // "Chan-sey![f000]븁\u0000"
     ParentActorMsg MSGFILE_SCRIPT, FloccesyRanch2_Text_ChanSey, 0, 0
     ActorMsgClose
     // "Chansey used Soft-boiled![f000]븁\u0000"
     SystemMsg FloccesyRanch2_Text_ChanseyUsedSoftBoiled, 0
-    InfoMsgClose
+    SystemMsgClose
     SEPlay SEQ_SE_RECOVERY
     SEWait
     PokePartyRecoverAll
     VMJump L_132B
 
 L_1317:
-    InfoMsgClose
+    SystemMsgClose
     // "Chance...?[f000]븁\u0000"
     ParentActorMsg MSGFILE_SCRIPT, FloccesyRanch2_Text_Chance, 0, 0
     MsgWinCloseAll
@@ -1449,7 +1449,7 @@ L_13D5:
     ActorCmdWait
     // "It brought something back for you...[f000]븁\u0000"
     SystemMsg FloccesyRanch2_Text_BroughtSomethingBack, 0
-    InfoMsgClose
+    SystemMsgClose
     RTCallGlobal 2805
     ActorCmdExec 42, Movement_1464
     ActorCmdWait
@@ -1506,7 +1506,7 @@ L_1499:
     ActorCmdWait
     // "It brought something back for you...[f000]븁\u0000"
     SystemMsg FloccesyRanch2_Text_BroughtSomethingBack, 0
-    InfoMsgClose
+    SystemMsgClose
     RTCallGlobal 2805
     ActorCmdExec 43, Movement_1528
     ActorCmdWait

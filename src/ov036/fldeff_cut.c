@@ -1,7 +1,7 @@
 // The slash that Cut leaves, and the script commands of the League's lift, the beacons and the Pass Powers that share
 // its range. The ROM names it fldeff_iaigiri.c, by GFL_HeapAllocate's file argument; the commands' names are from swan
-// (https://github.com/ds-pokemon-hacking/swan, GPL-3.0), except s01DD_BroadcastGameBeacon and s01DF_CallPassPowerFlash,
-// which are ours
+// (https://github.com/ds-pokemon-hacking/swan, GPL-3.0), except Scrcmd_FldeffCut_BroadcastGameBeacon and
+// Scrcmd_FldeffCut_CallPassPowerFlash, which are ours
 #include "types.h"
 #include "field/event_league_lift.h"
 #include "field/field_actor.h"
@@ -19,6 +19,25 @@
 #include "system/game_system.h"
 
 #define CUT_ANM_COUNT 3
+
+// What Scrcmd_FldeffCut_BroadcastGameBeacon broadcasts, each by its GameBeacon_Broadcast function
+enum {
+    BEACON_COMMAND_FOUND_ITEM,
+    BEACON_COMMAND_FIELD_MOVE,
+    BEACON_COMMAND_UNION_ROOM_RECEPTION,
+    BEACON_COMMAND_BATTLE_INSTITUTE_CHALLENGE,
+    BEACON_COMMAND_BATTLE_INSTITUTE_RANK,
+    BEACON_COMMAND_POKE_TRANSFER,
+    BEACON_COMMAND_BATTLE_SUBWAY_CHALLENGE,
+    BEACON_COMMAND_BATTLE_SUBWAY_WIN_STREAK,
+    BEACON_COMMAND_BATTLE_SUBWAY_TROPHY,
+    BEACON_COMMAND_TOURNAMENT_CHALLENGE,
+    BEACON_COMMAND_TOURNAMENT_WIN,
+    BEACON_COMMAND_TOURNAMENT_LOSS,
+    BEACON_COMMAND_AREA_CHALLENGE,
+    BEACON_COMMAND_AREA_CLEARED,
+    BEACON_COMMAND_POKESTAR_SHOOTING,
+};
 
 typedef struct {
     FieldEffects *effects;
@@ -103,7 +122,7 @@ void FldeffCut_Start(FieldActor *actor, FieldEffects *effects) {
         pos.x += FX32_CONST(16);
         break;
     }
-    params.effect = FieldEffects_GetHandleData(effects, 11);
+    params.effect = FieldEffects_GetHandleData(effects, FLDEFF_CUT);
     params.pos = pos;
     FieldEffects_TCBCreate(effects, &CUT_TASK_VTABLE, NULL, 0, &params, 0);
 }
@@ -165,7 +184,7 @@ static void FldeffCut_Draw(FieldEffectTask *task, void *data) {
     GFL_G3DSysDrawObjBBoxCull(work->actor, &mtx);
 }
 
-BOOL s01B1_CallLeagueLiftWarp(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_FldeffCut_CallLeagueLiftWarp(VM *vm, FieldScriptEnv *env) {
     ScriptWork *work = FieldScriptEnv_GetScriptWork(env);
     GameSystem *gsys = FieldScriptEnv_GetGameSystem(env);
 
@@ -173,7 +192,7 @@ BOOL s01B1_CallLeagueLiftWarp(VM *vm, FieldScriptEnv *env) {
     return TRUE;
 }
 
-BOOL s01DD_BroadcastGameBeacon(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_FldeffCut_BroadcastGameBeacon(VM *vm, FieldScriptEnv *env) {
     u16 command = ScriptReadAny(vm, env);
     u16 value = ScriptReadAny(vm, env);
     u16 extra = ScriptReadAny(vm, env);
@@ -186,56 +205,56 @@ BOOL s01DD_BroadcastGameBeacon(VM *vm, FieldScriptEnv *env) {
     zoneId = GetScriptEnvZoneID(env);
 
     switch (command) {
-    case 0:
+    case BEACON_COMMAND_FOUND_ITEM:
         GameBeacon_BroadcastFoundItem(value);
         break;
-    case 1:
+    case BEACON_COMMAND_FIELD_MOVE:
         GameBeacon_BroadcastFieldMove(value);
         break;
-    case 2:
+    case BEACON_COMMAND_UNION_ROOM_RECEPTION:
         GameBeacon_BroadcastUnionRoomReception();
         break;
-    case 3:
+    case BEACON_COMMAND_BATTLE_INSTITUTE_CHALLENGE:
         GameBeacon_BroadcastBattleInstituteChallenge();
         break;
-    case 4:
+    case BEACON_COMMAND_BATTLE_INSTITUTE_RANK:
         GameBeacon_BroadcastBattleInstituteRank(value);
         break;
-    case 5:
+    case BEACON_COMMAND_POKE_TRANSFER:
         GameBeacon_BroadcastPokeTransfer();
         break;
-    case 6:
+    case BEACON_COMMAND_BATTLE_SUBWAY_CHALLENGE:
         GameBeacon_BroadcastBattleSubwayChallenge();
         break;
-    case 7:
+    case BEACON_COMMAND_BATTLE_SUBWAY_WIN_STREAK:
         GameBeacon_BroadcastBattleSubwayWinStreak(value);
         break;
-    case 8:
+    case BEACON_COMMAND_BATTLE_SUBWAY_TROPHY:
         GameBeacon_BroadcastBattleSubwayTrophy();
         break;
-    case 9:
+    case BEACON_COMMAND_TOURNAMENT_CHALLENGE:
         GameBeacon_BroadcastTournamentChallenge(value);
         break;
-    case 10:
+    case BEACON_COMMAND_TOURNAMENT_WIN:
         GameBeacon_BroadcastTournamentWin(value, extra);
         break;
-    case 11:
+    case BEACON_COMMAND_TOURNAMENT_LOSS:
         GameBeacon_BroadcastTournamentLoss(value, extra);
         break;
-    case 12:
+    case BEACON_COMMAND_AREA_CHALLENGE:
         GameBeacon_BroadcastAreaChallenge(value, zoneId);
         break;
-    case 13:
+    case BEACON_COMMAND_AREA_CLEARED:
         GameBeacon_BroadcastAreaCleared(value, zoneId);
         break;
-    case 14:
+    case BEACON_COMMAND_POKESTAR_SHOOTING:
         GameBeacon_BroadcastPokestarShooting(value);
         break;
     }
     return FALSE;
 }
 
-BOOL s01DE_PassPowerPopDepletedID(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_FldeffCut_PassPowerPopDepletedID(VM *vm, FieldScriptEnv *env) {
     u16 *depletedId = ScriptReadVar(vm, env);
     u16 *remains = ScriptReadVar(vm, env);
 
@@ -252,7 +271,7 @@ BOOL s01DE_PassPowerPopDepletedID(VM *vm, FieldScriptEnv *env) {
     return FALSE;
 }
 
-BOOL s01DF_CallPassPowerFlash(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_FldeffCut_CallPassPowerFlash(VM *vm, FieldScriptEnv *env) {
     ScriptWork *work = FieldScriptEnv_GetScriptWork(env);
 
     ScriptWork_CallEvent(work, EventPassPowerFlash_Create(FieldScriptEnv_GetGameSystem(env)));

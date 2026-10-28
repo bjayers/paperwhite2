@@ -34,7 +34,7 @@ Script_1:
     VMStackPushConst 0
     VMStackCmp CMP_EQ
     VMJumpIf CMP_STACK, L_007F
-    InfoMsgClose_0039
+    InfoMsgClose
     VMCall Script_2
     VMJump L_0088
 
@@ -42,7 +42,7 @@ L_007F:
     // "The Poké Ball has stopped moving..."
     InfoMsg PledgeGrove_Text_PokeBallHasStopped, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
 
 L_0088:
     VMJump L_0097
@@ -51,7 +51,7 @@ L_008E:
     // "Three sharp marks are deeply\ncut into the rock."
     InfoMsg PledgeGrove_Text_ThreeSharpMarksDeeply, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
 
 L_0097:
     FinishAllEvents
@@ -238,11 +238,11 @@ Script_4:
     EvCameraWait
     // "What?\n[f000]Ă\u0001\u0000 is...[f000]븁\u0000"
     InfoMsg PledgeGrove_Text_What, 2
-    InfoMsgClose_0039
-    Plugin16Cmd_CallFormEvent
+    InfoMsgClose
+    CallFormEvent
     FadeEx 12, 0, 16, 4
     FadeExWait
-    Plugin16Cmd_HideActor2
+    HideActor2
     ActorDelete 251
     ActorNew 15, 13, 1, 251, 373, 0
     PlayFieldEffect 115
@@ -254,7 +254,7 @@ Script_4:
     // "[f000]Ă\u0001\u0000 has resolved to battle\nand has changed into Resolute Form!"
     InfoMsg PledgeGrove_Text_HasResolvedBattleHas, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     EvCameraReturn 30
     EvCameraWait
     EvCameraRebind
@@ -275,7 +275,7 @@ Script_5:
     MEPlay SEQ_ME_LVUP
     MEWait
     MsgWaitAdvance
-    InfoMsgClose
+    SystemMsgClose
     PokePartyLearnMove 0x8021, 0x8010, 0x8022
     WorkSetConst 0x8010, 1
     VMReturn
@@ -338,7 +338,7 @@ Script_7:
     VMReturn
 
 L_04B2:
-    InfoMsgClose
+    SystemMsgClose
     CallPokeMoveReplace 0x8010, 0x8023, 0x8021, 0x8022
     VMStackPush 0x8010
     VMStackPushConst 0
@@ -369,7 +369,7 @@ L_04FF:
     MEPlay SEQ_ME_LVUP
     MEWait
     MsgWaitAdvance
-    InfoMsgClose
+    SystemMsgClose
     PokePartyLearnMove 0x8021, 0x8023, 0x8022
     WorkSetConst 0x8026, 1
     VMReturn
@@ -386,7 +386,7 @@ Script_8:
     WordSetPartyPokeName 0, 0x8021
     // "[f000]Ă\u0001\u0000 did not remember the\nmove Secret Sword.[f000]븁\u0000"
     SystemMsg PledgeGrove_Text_DidNotRememberMove, 0
-    InfoMsgClose
+    SystemMsgClose
     WorkSetConst 0x8026, 1
     VMReturn
 

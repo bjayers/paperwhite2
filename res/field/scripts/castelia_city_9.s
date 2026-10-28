@@ -12,7 +12,7 @@ Script_2:
     ActorSetEyeToEye
     WorkSetConst 0x8020, 0
     WorkSetConst 0x8021, 0
-    Scrcmd_GetWifiHistoryCountryCount 0, 0x8008
+    GetWifiHistoryCountryCount 0, 0x8008
     UnityTowerGetVisitorCountry 0x8009
     VMStackPush 0x8008
     VMStackPushConst 0
@@ -30,7 +30,7 @@ L_004F:
     VMJumpIf CMP_STACK, L_00F7
     // "Hello, hello!\nWould you like to go to Unity Tower?"
     ActorMsg MSGFILE_SCRIPT, CasteliaCity9_Text_HelloHelloWouldLike, 1, 2, 0
-    ListMenu_AnchorTopRight 31, 1, 0, 1, 32801
+    ListMenuAnchorTopRight 31, 1, 0, 1, 32801
     ListMenuAdd 5, 65535, 0
     ListMenuAdd 6, 65535, 1
     ListMenuAdd 7, 65535, 2

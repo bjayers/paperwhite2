@@ -2,6 +2,7 @@
 // no name for the file; scrcmd_mapchange.c is descriptive. Function names from swan
 // (https://github.com/ds-pokemon-hacking/swan, GPL-3.0)
 #include "types.h"
+#include "constants/directions.h"
 #include "field/event_data.h"
 #include "field/event_mapchange.h"
 #include "field/field.h"
@@ -10,6 +11,7 @@
 #include "field/field_script.h"
 #include "field/scrcmd_mapchange.h"
 #include "field/zone.h"
+#include "gfl/heap.h"
 #include "nitro/fx.h"
 #include "system/game_data.h"
 #include "system/game_event.h"
@@ -19,7 +21,7 @@
 // The world position of a tile
 #define GRID_TO_FX32(n) ((n) * FX32_CONST(16))
 
-BOOL s00C2_MapChangeWarp(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Mapchange_MapChangeWarp(VM *vm, FieldScriptEnv *env) {
     VecFx32 pos;
     GameSystem *gsys = ScriptWork_GetGameSystem(FieldScriptEnv_GetScriptWork(env));
     Field *field = GSYS_GetField(gsys);
@@ -37,7 +39,7 @@ BOOL s00C2_MapChangeWarp(VM *vm, FieldScriptEnv *env) {
     return TRUE;
 }
 
-BOOL s00BE_MapChangeFake(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Mapchange_MapChangeFake(VM *vm, FieldScriptEnv *env) {
     VecFx32 pos;
     GameSystem *gsys = ScriptWork_GetGameSystem(FieldScriptEnv_GetScriptWork(env));
     Field *field = GSYS_GetField(gsys);
@@ -56,7 +58,7 @@ BOOL s00BE_MapChangeFake(VM *vm, FieldScriptEnv *env) {
 }
 
 // Sink into the quicksand under the player
-BOOL s00C1_MapChangeQuicksand(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Mapchange_MapChangeQuicksand(VM *vm, FieldScriptEnv *env) {
     VecFx32 effectPos;
     VecFx32 pos;
     VecFx32 playerPos;
@@ -76,7 +78,7 @@ BOOL s00C1_MapChangeQuicksand(VM *vm, FieldScriptEnv *env) {
     eventData = GameData_GetEventData(gameData);
     eventWork = GameData_GetEventWork(gameData);
     FieldPlayer_GetWPos(Field_GetPlayer(field), &playerPos);
-    trigger = FindQuicksandTrigger(eventData, eventWork, &playerPos, 9);
+    trigger = FindQuicksandTrigger(eventData, eventWork, &playerPos, DIR_NONE);
     if (trigger != NULL) {
         GetTriggerCenterPos(trigger, &effectPos);
     }
@@ -86,11 +88,11 @@ BOOL s00C1_MapChangeQuicksand(VM *vm, FieldScriptEnv *env) {
     event = GSYS_GetNowEvent(gsys);
     GameEvent_ChainNext(event, EventMapChangeQuicksand_Create(gsys, field, &effectPos, zoneId, &pos));
     actor = FieldPlayer_GetActor(Field_GetPlayer(field));
-    FldeffEmotionBubble_StartHeld(Field_GetFieldEffects(field), actor, 0, 1);
+    FldeffEmotionBubble_StartHeld(Field_GetFieldEffects(field), actor, 0, TRUE);
     return TRUE;
 }
 
-BOOL s00BF_MapChangeWarpPad(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Mapchange_MapChangeWarpPad(VM *vm, FieldScriptEnv *env) {
     VecFx32 pos;
     GameSystem *gsys = ScriptWork_GetGameSystem(FieldScriptEnv_GetScriptWork(env));
     Field *field = GSYS_GetField(gsys);
@@ -108,7 +110,7 @@ BOOL s00BF_MapChangeWarpPad(VM *vm, FieldScriptEnv *env) {
     return TRUE;
 }
 
-BOOL s00C3_MapChangeUnionRoom(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Mapchange_MapChangeUnionRoom(VM *vm, FieldScriptEnv *env) {
     GameSystem *gsys = ScriptWork_GetGameSystem(FieldScriptEnv_GetScriptWork(env));
     Field *field = GSYS_GetField(gsys);
     GameEvent *event = GSYS_GetNowEvent(gsys);
@@ -117,7 +119,7 @@ BOOL s00C3_MapChangeUnionRoom(VM *vm, FieldScriptEnv *env) {
     return TRUE;
 }
 
-BOOL s00C4_MapChangeCore(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Mapchange_MapChangeCore(VM *vm, FieldScriptEnv *env) {
     VecFx32 pos;
     GameSystem *gsys = ScriptWork_GetGameSystem(FieldScriptEnv_GetScriptWork(env));
     Field *field = GSYS_GetField(gsys);
@@ -137,40 +139,42 @@ BOOL s00C4_MapChangeCore(VM *vm, FieldScriptEnv *env) {
     return TRUE;
 }
 
-BOOL s00C0_MapChangeWarpRail(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Mapchange_MapChangeWarpRail(VM *vm, FieldScriptEnv *env) {
     RailPosition pos;
     GameSystem *gsys = ScriptWork_GetGameSystem(FieldScriptEnv_GetScriptWork(env));
     Field *field = GSYS_GetField(gsys);
     u16 zoneId = VM_Read16(vm);
-    u16 a2 = VM_Read16(vm);
-    u16 a3 = VM_Read16(vm);
-    u16 a4 = VM_Read16(vm);
+    u16 componentId = VM_Read16(vm);
+    u16 front = VM_Read16(vm);
+    u16 side = VM_Read16(vm);
     u16 dir = VM_Read16(vm);
     GameEvent *event = GSYS_GetNowEvent(gsys);
 
-    FieldNoGridMapper_CreatePosExternal(Field_GetNoGridMapper(field), zoneId, a2, a3, a4, &pos, 21);
+    FieldNoGridMapper_CreatePosExternal(Field_GetNoGridMapper(field), zoneId, componentId, front, side, &pos,
+                                        HEAPID_FIELDMAP);
     GameEvent_ChainNext(event, EventMapChangeWarp_CreateRail(gsys, field, zoneId, &pos, dir, FALSE));
     return TRUE;
 }
 
-BOOL s0247_MapChangeRail(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Mapchange_MapChangeRail(VM *vm, FieldScriptEnv *env) {
     RailPosition pos;
     GameSystem *gsys = ScriptWork_GetGameSystem(FieldScriptEnv_GetScriptWork(env));
     Field *field = GSYS_GetField(gsys);
     u16 zoneId = VM_Read16(vm);
-    u16 a2 = VM_Read16(vm);
-    u16 a3 = VM_Read16(vm);
-    u16 a4 = VM_Read16(vm);
+    u16 componentId = VM_Read16(vm);
+    u16 front = VM_Read16(vm);
+    u16 side = VM_Read16(vm);
     u16 dir = VM_Read16(vm);
     GameEvent *event = GSYS_GetNowEvent(gsys);
 
-    FieldNoGridMapper_CreatePosExternal(Field_GetNoGridMapper(field), zoneId, a2, a3, a4, &pos, 21);
+    FieldNoGridMapper_CreatePosExternal(Field_GetNoGridMapper(field), zoneId, componentId, front, side, &pos,
+                                        HEAPID_FIELDMAP);
     GameEvent_ChainNext(event, EventMapChange_CreateRail(gsys, field, zoneId, &pos, dir, FALSE));
     return TRUE;
 }
 
 // Fly to the zone's spawn point
-BOOL s028A_MapChangeFlyWarp(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Mapchange_MapChangeFlyWarp(VM *vm, FieldScriptEnv *env) {
     ZoneSpawnInfo spawn;
     GameEvent *event;
     GameSystem *gsys = ScriptWork_GetGameSystem(FieldScriptEnv_GetScriptWork(env));

@@ -35,7 +35,7 @@ typedef struct {
 // A Trainer who can be aboard
 typedef struct {
     u32 objCode;
-    u32 unk4;
+    u32 trainerId;
     u32 values[2];
 } TrainerEntry;
 
@@ -45,10 +45,10 @@ typedef struct {
     u32 values[2];
 } PersonEntry;
 
-// Which side a room is on and something else about it (the counts of PleasureBoat_GetInfo)
+// Which side a room is on and whether its door is blue (the counts of PleasureBoat_GetInfo)
 typedef struct {
     u32 isPort;
-    u32 unk4;
+    u32 hasBlueDoor;
 } RoomSide;
 
 static void RoomPicker_Reset(RoomPicker *picker);
@@ -154,7 +154,7 @@ void PleasureBoat_SetUpRooms(PleasureBoat *boat, BOOL flag) {
         } else {
             boat->infoCounts[1]++;
         }
-        if (side->unk4 == 0) {
+        if (side->hasBlueDoor == 0) {
             boat->infoCounts[2]++;
         } else {
             boat->infoCounts[3]++;
@@ -170,12 +170,12 @@ void PleasureBoat_SetUpRooms(PleasureBoat *boat, BOOL flag) {
         boat->rooms[room].kind = ROOM_TRAINER;
         slot++;
         if (flag == 1) {
-            boat->rooms[room].unk4 = sTrainers[trainer].unk4;
+            boat->rooms[room].trainerId = sTrainers[trainer].trainerId;
             boat->rooms[room].objCode = sTrainers[trainer].objCode;
             boat->rooms[room].values[0] = sTrainers[trainer].values[0];
             boat->rooms[room].values[1] = sTrainers[trainer].values[1];
         } else {
-            boat->rooms[room].unk4 = sTrainersAlt[trainer].unk4;
+            boat->rooms[room].trainerId = sTrainersAlt[trainer].trainerId;
             boat->rooms[room].objCode = sTrainersAlt[trainer].objCode;
             boat->rooms[room].values[0] = sTrainersAlt[trainer].values[0];
             boat->rooms[room].values[1] = sTrainersAlt[trainer].values[1];
@@ -186,7 +186,7 @@ void PleasureBoat_SetUpRooms(PleasureBoat *boat, BOOL flag) {
         u32 person = picker.pairs[i];
 
         boat->rooms[room].index = i;
-        boat->rooms[room].unk4 = 0;
+        boat->rooms[room].trainerId = 0;
         boat->rooms[room].objCode = sPairs[person].objCode;
         boat->rooms[room].kind = ROOM_PAIR;
         slot++;
@@ -198,7 +198,7 @@ void PleasureBoat_SetUpRooms(PleasureBoat *boat, BOOL flag) {
         u32 person = picker.people[j];
 
         boat->rooms[room].index = j;
-        boat->rooms[room].unk4 = 0;
+        boat->rooms[room].trainerId = 0;
         boat->rooms[room].objCode = sPeople[person].objCode;
         boat->rooms[room].kind = ROOM_PERSON;
         slot++;

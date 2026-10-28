@@ -341,7 +341,7 @@ L_048C:
     VMJump L_049C
 
 L_049C:
-    ListMenu_AnchorTopRight 30, 8, 0, 1, 32780
+    ListMenuAnchorTopRight 30, 8, 0, 1, 32780
     ListMenuAdd 18, 0, 0
     ListMenuAdd 19, 0, 1
     ListMenuAdd 20, 0, 2
@@ -388,7 +388,7 @@ L_055A:
 L_0570:
     // "Oh?  You wish for\nthe seasons to flow?[f000]븁\u0000"
     ParentActorMsg MSGFILE_SCRIPT, AspertiaCityPokemonCenter_Text_OhWishSeasonsFlow, 0, 0
-    ListMenu_AnchorTopRight 30, 8, 0, 1, 32780
+    ListMenuAnchorTopRight 30, 8, 0, 1, 32780
     ListMenuAdd 28, 0, 4
     ListMenuAdd 29, 0, 5
     ListMenuAdd 30, 0, 6

@@ -30,17 +30,29 @@ static const FieldAmbientSound FIELD_AMBIENT_SOUNDS[] = {
     { SEQ_SE_GYM_H02, TRUE },  { SEQ_SE_SW_CATTLEYA_03, TRUE },
 };
 
+// The steps of a subscreen change: request it once the subscreen is ready, then wait until it is ready again
+enum {
+    SUBSCREEN_CHANGE_STATE_REQUEST,
+    SUBSCREEN_CHANGE_STATE_WAIT,
+};
+
+// The word pairs that Scrcmd_Field_CheckPmsWordPair checks a sentence's two words against, named by their words
+enum {
+    PMS_WORD_PAIR_EVERYONE_HAPPY = 1,
+    PMS_WORD_PAIR_SIMPLE_CONNECTION,
+};
+
 static GameEventReturnCode EventFieldSubscreenChange_Callback(GameEvent *event, u32 *state, void *data) {
     EventFieldSubscreenChange *change = data;
 
     switch (*state) {
-    case 0:
+    case SUBSCREEN_CHANGE_STATE_REQUEST:
         if (FieldSubscreen_IsReady(change->subscreen)) {
             FieldSubscreen_ReqChange(change->subscreen, change->mode);
             (*state)++;
         }
         break;
-    case 1:
+    case SUBSCREEN_CHANGE_STATE_WAIT:
         if (FieldSubscreen_IsReady(change->subscreen)) {
             return GAMEEVENT_DONE;
         }
@@ -49,7 +61,7 @@ static GameEventReturnCode EventFieldSubscreenChange_Callback(GameEvent *event, 
     return GAMEEVENT_CONTINUE;
 }
 
-BOOL s0198_FieldSubscreenChange(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Field_FieldSubscreenChange(VM *vm, FieldScriptEnv *env) {
     ScriptWork *work = FieldScriptEnv_GetScriptWork(env);
     ScriptFieldWork *fieldWork = ScriptWork_GetFieldWork(work);
     u16 index = ScriptReadAny(vm, env);
@@ -65,7 +77,7 @@ BOOL s0198_FieldSubscreenChange(VM *vm, FieldScriptEnv *env) {
     return TRUE;
 }
 
-BOOL s0199_FieldSubscreenReturn(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Field_FieldSubscreenReturn(VM *vm, FieldScriptEnv *env) {
     ScriptWork *work = FieldScriptEnv_GetScriptWork(env);
     FieldSubscreen *subscreen = Field_GetSubscreen(ScriptWork_GetFieldWork(work)->field);
     GameEvent *event = GameEvent_Create(FieldScriptEnv_GetGameSystem(env), NULL, EventFieldSubscreenChange_Callback,
@@ -84,14 +96,14 @@ BOOL FieldScriptSubEventFinish_Subscreen(FinishScriptSubEventsWork *work, u32 *s
     FieldSubscreen *subscreen = Field_GetSubscreen(fieldWork->field);
 
     switch (*state) {
-    case 0:
+    case SUBSCREEN_CHANGE_STATE_REQUEST:
         if (FieldSubscreen_IsReady(subscreen)) {
             FieldSubscreen_ReqChange(subscreen, FLD_SUBSCREEN_ID_DEFAULT);
             FieldScriptSubEvent_Unregister(SCRIPT_SUB_EVENT_SUBSCREEN);
             (*state)++;
         }
         break;
-    case 1:
+    case SUBSCREEN_CHANGE_STATE_WAIT:
         if (FieldSubscreen_IsReady(subscreen)) {
             return TRUE;
         }
@@ -100,7 +112,7 @@ BOOL FieldScriptSubEventFinish_Subscreen(FinishScriptSubEventsWork *work, u32 *s
     return FALSE;
 }
 
-BOOL Scrcmd_CheckPmsWordPair(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Field_CheckPmsWordPair(VM *vm, FieldScriptEnv *env) {
     u16 kind = ScriptReadAny(vm, env);
     u16 word1 = ScriptReadAny(vm, env);
     u16 word2 = ScriptReadAny(vm, env);
@@ -109,11 +121,11 @@ BOOL Scrcmd_CheckPmsWordPair(VM *vm, FieldScriptEnv *env) {
     u16 second;
 
     switch (kind) {
-    case 1:
+    case PMS_WORD_PAIR_EVERYONE_HAPPY:
         first = PMS_WORD_PEOPLE_EVERYONE;
         second = PMS_WORD_FEELINGS_HAPPY;
         break;
-    case 2:
+    case PMS_WORD_PAIR_SIMPLE_CONNECTION:
         first = PMS_WORD_FEELINGS_SIMPLE;
         second = PMS_WORD_CONNECTION_CONNECTION;
         break;

@@ -173,7 +173,7 @@ L_01E7:
     // "[f000]Ā\u0001\u0000 pressed the switch.[f000]븁\u0000\nThe roller coaster's path\nhas been changed!"
     SystemMsg NimbasaCity17_Text_PressedSwitchRollerCoasters, 2
     LastKeyWait
-    InfoMsgClose
+    SystemMsgClose
     VMReturn
 
 Script_6:
@@ -228,12 +228,12 @@ Script_7:
     VMStackCmp CMP_EQ
     VMJumpIf CMP_STACK, L_02C6
     VMCall L_02E2
-    ScrcmdFieldGimmickCartLanes_UnlockLaneFromScript 1
+    RollerCoasterSetCarIntroSeen 1
     VMJump L_02D0
 
 L_02C6:
     VMCall L_0349
-    ScrcmdFieldGimmickCartLanes_UnlockLaneFromScript 2
+    RollerCoasterSetCarIntroSeen 2
 
 L_02D0:
     WorkSetConst 0x8027, 0

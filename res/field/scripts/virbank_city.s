@@ -1225,7 +1225,7 @@ L_115D:
     // "It dropped what it dug\nout of the trash..."
     InfoMsg VirbankCity_Text_DroppedWhatDugOut, 2
     LastKeyWait
-    InfoMsgClose_0039
+    InfoMsgClose
     WorkSetConst 0x8010, 4
     WorkSetConst 0x8011, 30
     RTCallGlobal 10853

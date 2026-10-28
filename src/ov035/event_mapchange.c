@@ -83,7 +83,8 @@ struct EventMapChange {
     Field *field;
     u16 zoneId;
     ZoneSpawnInfo spawn;
-    u32 unk2C;
+    // The transition type of the warp the player leaves by
+    u32 departureTransitionType;
     u8 mode;
     VecFx32 unk34;
     BOOL unk40;
@@ -247,7 +248,8 @@ GameEventReturnCode EventFieldFirst_Callback(GameEvent *event, u32 *state, void 
         (*state)++;
         break;
     case 4:
-        GameEvent_ChainNext(event, CallFieldMapEntranceInTransition(gsys, GSYS_GetField(gsys), 0, 0, 1, 0, 0));
+        GameEvent_ChainNext(event, CallFieldMapEntranceInTransition(gsys, GSYS_GetField(gsys),
+                                                                    FIELD_TRANSITION_FADE_BLACK, 0, 1, 0, 0));
         (*state)++;
         break;
     case 5:
@@ -346,8 +348,8 @@ GameEventReturnCode EventFieldContinue_Callback(GameEvent *event, u32 *state, vo
             EventScriptCall_Start(event, 0x83b, NULL, 0, HEAPID_FIELDMAP);
         } else {
             u8 season = GameData_GetSeason(gameData);
-            GameEvent_ChainNext(event,
-                                CallFieldMapEntranceInTransition(gsys, GSYS_GetField(gsys), 3, 0, 0, season, season));
+            GameEvent_ChainNext(event, CallFieldMapEntranceInTransition(gsys, GSYS_GetField(gsys),
+                                                                        FIELD_TRANSITION_SEASON, 0, 0, season, season));
         }
         (*state)++;
         break;
@@ -426,7 +428,7 @@ void EventMapChange_SetupWarpSequenceOut(EventMapChange *wk, GameEvent *parent) 
     warp->gsys = wk->gsys;
     warp->gameData = wk->gameData;
     warp->field = wk->field;
-    warp->unk10 = wk->unk2C;
+    warp->departureTransitionType = wk->departureTransitionType;
     warp->parent = parent;
     warp->zoneId = wk->zoneId;
     warp->spawn = wk->spawn;
@@ -436,7 +438,7 @@ void EventMapChange_SetupWarpSequenceOut(EventMapChange *wk, GameEvent *parent) 
     warp->startSeason = Season_GetNext(wk->prevSeason);
     warp->endSeason = wk->season;
     warp->zoneBGMChanged = 0;
-    warp->unk4C = 0;
+    warp->bgmFadedOut = 0;
 }
 
 void EventMapChange_SetupWarpSequenceIn(EventMapChange *wk, GameEvent *parent) {
@@ -445,7 +447,7 @@ void EventMapChange_SetupWarpSequenceIn(EventMapChange *wk, GameEvent *parent) {
     warp->gsys = wk->gsys;
     warp->gameData = wk->gameData;
     warp->field = wk->field;
-    warp->unk10 = wk->unk2C;
+    warp->departureTransitionType = wk->departureTransitionType;
     warp->parent = parent;
     warp->zoneId = wk->zoneId;
     warp->spawn = wk->spawn;
@@ -455,7 +457,7 @@ void EventMapChange_SetupWarpSequenceIn(EventMapChange *wk, GameEvent *parent) {
     warp->startSeason = Season_GetNext(wk->prevSeason);
     warp->endSeason = wk->season;
     if (wk->spawn.changeType == ZONE_SPAWN_CHANGE_TYPE_POSITION) {
-        warp->transitionType = 0;
+        warp->transitionType = WARP_TRANSITION_NONE;
     } else {
         warp->transitionType =
             GetWarpTransitionType(GetZoneWarpByID(GameData_GetEventData(wk->gameData), wk->spawn.warpId));
@@ -662,7 +664,8 @@ GameEventReturnCode EventMapChangeFakeWarp_Callback(GameEvent *event, u32 *state
         break;
     case 1:
         if (wk->unk40 && wk->seasonChanged) {
-            GameEvent_ChainNext(event, CallFieldMapEntranceOutTransitionDefault(gsys, field, 0, 0));
+            GameEvent_ChainNext(event,
+                                CallFieldMapEntranceOutTransitionDefault(gsys, field, FIELD_TRANSITION_FADE_BLACK, 0));
         } else {
             GameEvent_ChainNext(event,
                                 CallFieldMapEntranceOutTransitionDefault(
@@ -676,8 +679,8 @@ GameEventReturnCode EventMapChangeFakeWarp_Callback(GameEvent *event, u32 *state
         break;
     case 3:
         if (wk->unk40 && wk->seasonChanged) {
-            GameEvent_ChainNext(event,
-                                CallFieldMapEntranceInTransition(gsys, field, 3, 0, 0, wk->prevSeason, wk->season));
+            GameEvent_ChainNext(event, CallFieldMapEntranceInTransition(gsys, field, FIELD_TRANSITION_SEASON, 0, 0,
+                                                                        wk->prevSeason, wk->season));
         } else {
             GameEvent_ChainNext(
                 event, CallFieldMapEntranceInTransition(
@@ -849,7 +852,8 @@ GameEventReturnCode EventMapChangeDiveOut_Callback(GameEvent *event, u32 *state,
 
     switch (*state) {
     case 0:
-        GameEvent_ChainNext(event, CallFieldMapEntranceOutTransitionDefault(gsys, field, 1, 0));
+        GameEvent_ChainNext(event,
+                            CallFieldMapEntranceOutTransitionDefault(gsys, field, FIELD_TRANSITION_FADE_WHITE, 0));
         (*state)++;
         break;
     case 1:
@@ -863,7 +867,8 @@ GameEventReturnCode EventMapChangeDiveOut_Callback(GameEvent *event, u32 *state,
         (*state)++;
         break;
     case 3:
-        GameEvent_ChainNext(event, CallFieldMapEntranceInTransition(gsys, field, 1, 0, 1, 0, 0));
+        GameEvent_ChainNext(event,
+                            CallFieldMapEntranceInTransition(gsys, field, FIELD_TRANSITION_FADE_WHITE, 0, 1, 0, 0));
         (*state)++;
         break;
     case 4:
@@ -884,7 +889,8 @@ GameEventReturnCode EventMapChangeDiveIn_Callback(GameEvent *event, u32 *state, 
         (*state)++;
         break;
     case 1:
-        GameEvent_ChainNext(event, CallFieldMapEntranceOutTransitionDefault(gsys, field, 0, 0));
+        GameEvent_ChainNext(event,
+                            CallFieldMapEntranceOutTransitionDefault(gsys, field, FIELD_TRANSITION_FADE_BLACK, 0));
         (*state)++;
         break;
     case 2: {
@@ -897,7 +903,8 @@ GameEventReturnCode EventMapChangeDiveIn_Callback(GameEvent *event, u32 *state, 
         break;
     }
     case 3:
-        GameEvent_ChainNext(event, CallFieldMapEntranceInTransition(gsys, field, 0, 0, 1, 0, 0));
+        GameEvent_ChainNext(event,
+                            CallFieldMapEntranceInTransition(gsys, field, FIELD_TRANSITION_FADE_BLACK, 0, 1, 0, 0));
         (*state)++;
         break;
     case 4:
@@ -1026,7 +1033,7 @@ GameEvent *EventMapChangeWarp_CreateGrid(GameSystem *gsys, Field *field, u16 zon
     InitMapChangeEvent(wk, gsys);
     dir = ConvDirToWarpDir(dir);
     CreateZoneChangeData(&wk->spawn, zoneId, dir, pos->x, pos->y, pos->z);
-    wk->unk2C = 0;
+    wk->departureTransitionType = WARP_TRANSITION_NONE;
     wk->unk40 = unk40;
     wk->lensFlareStarted = TRUE;
     return event;
@@ -1040,7 +1047,7 @@ GameEvent *EventMapChangeWarp_CreateRail(GameSystem *gsys, Field *field, u16 zon
     InitMapChangeEvent(wk, gsys);
     dir = ConvDirToWarpDir(dir);
     CreateZoneChangeDataRail(&wk->spawn, zoneId, dir, pos->componentId, pos->posFront, pos->posSide);
-    wk->unk2C = 0;
+    wk->departureTransitionType = WARP_TRANSITION_NONE;
     wk->unk40 = unk40;
     wk->lensFlareStarted = TRUE;
     return event;
@@ -1054,7 +1061,7 @@ GameEvent *EventMapChange_CreateRail(GameSystem *gsys, Field *field, u16 zoneId,
     InitMapChangeEvent(wk, gsys);
     dir = ConvDirToWarpDir(dir);
     CreateZoneChangeDataRail(&wk->spawn, zoneId, dir, pos->componentId, pos->posFront, pos->posSide);
-    wk->unk2C = 0;
+    wk->departureTransitionType = WARP_TRANSITION_NONE;
     wk->unk40 = unk40;
     return event;
 }
@@ -1067,7 +1074,7 @@ GameEvent *EventMapChangeQuicksand_Create(GameSystem *gsys, Field *field, const 
     InitMapChangeEvent(wk, gsys);
     CreateZoneChangeData(&wk->spawn, zoneId, WARP_DIR_UP, pos->x, pos->y, pos->z);
     VEC_Set(&wk->unk34, effectPos->x, effectPos->y, effectPos->z);
-    wk->unk2C = 0;
+    wk->departureTransitionType = WARP_TRANSITION_NONE;
     return event;
 }
 
@@ -1079,7 +1086,7 @@ GameEvent *EventMapChangeEscapeRope_Create(Field *field, GameSystem *gsys) {
     wk->spawn = *GameData_GetEscapeRopeZone(wk->gameData);
     AdjustEscapeRopeSpawn(wk->gameData, &wk->spawn);
     wk->spawn.changeType = ZONE_SPAWN_CHANGE_TYPE_POSITION;
-    wk->unk2C = 0;
+    wk->departureTransitionType = WARP_TRANSITION_NONE;
     wk->unk40 = TRUE;
     return event;
 }
@@ -1092,7 +1099,7 @@ GameEvent *EventMapChangeDig_Create(GameSystem *gsys) {
     wk->spawn = *GameData_GetEscapeRopeZone(wk->gameData);
     AdjustEscapeRopeSpawn(wk->gameData, &wk->spawn);
     wk->spawn.changeType = ZONE_SPAWN_CHANGE_TYPE_POSITION;
-    wk->unk2C = 0;
+    wk->departureTransitionType = WARP_TRANSITION_NONE;
     wk->unk40 = TRUE;
     return event;
 }
@@ -1105,7 +1112,7 @@ GameEvent *EventMapChangeTeleport_Create(GameSystem *gsys) {
     InitMapChangeEvent(wk, gsys);
     LoadZoneSpawnInfoCheckRail(&wk->spawn, GetRespawnZoneMainZone(returnLocation));
     wk->spawn.changeType = ZONE_SPAWN_CHANGE_TYPE_POSITION;
-    wk->unk2C = 0;
+    wk->departureTransitionType = WARP_TRANSITION_NONE;
     return event;
 }
 
@@ -1117,7 +1124,7 @@ GameEvent *EventMapChangeDiveOut_Create(GameSystem *gsys) {
     wk->spawn = *GameData_GetNextZone(wk->gameData);
     wk->spawn.changeType = ZONE_SPAWN_CHANGE_TYPE_POSITION;
     wk->spawn.warpDir = WARP_DIR_DOWN;
-    wk->unk2C = 0;
+    wk->departureTransitionType = WARP_TRANSITION_NONE;
     return event;
 }
 
@@ -1131,7 +1138,7 @@ GameEvent *EventMapChangeDiveIn_Create(GameSystem *gsys, u16 zoneId) {
 
     InitMapChangeEvent(wk, gsys);
     LoadZoneSpawnInfoCheckRail(&wk->spawn, zoneId);
-    wk->unk2C = 0;
+    wk->departureTransitionType = WARP_TRANSITION_NONE;
     wk->spawn.warpDir = WARP_DIR_UP;
 
     // Resurface where the dive started
@@ -1150,7 +1157,7 @@ GameEvent *EventMapChangeWarpPad_Create(GameSystem *gsys, Field *field, u16 zone
     InitMapChangeEvent(wk, gsys);
     dir = ConvDirToWarpDir(dir);
     CreateZoneChangeData(&wk->spawn, zoneId, dir, pos->x, pos->y, pos->z);
-    wk->unk2C = 5;
+    wk->departureTransitionType = WARP_TRANSITION_WARP_PAD;
     wk->unk40 = FALSE;
     wk->lensFlareStarted = TRUE;
     return event;
@@ -1162,7 +1169,7 @@ GameEvent *EventUnionRoomWarp_Create(GameSystem *gsys, Field *field) {
 
     InitMapChangeEvent(wk, gsys);
     CreateZoneChangeData(&wk->spawn, ZONE_UNION_ROOM, ConvDirToWarpDir(0), FX32_CONST(184), 0, FX32_CONST(248));
-    wk->unk2C = 0;
+    wk->departureTransitionType = WARP_TRANSITION_NONE;
     return event;
 }
 
@@ -1240,7 +1247,7 @@ GameEvent *EventMapChangeWarp_CreateFromEntity(GameSystem *gsys, Field *field, Z
     } else {
         SetupWarpParamByWarp(warp, &wk->spawn, a3);
     }
-    wk->unk2C = GetWarpTransitionType(warp);
+    wk->departureTransitionType = GetWarpTransitionType(warp);
 
     // Remember the exit when going from the overworld into a building or cave
     remember = GetOutboundWarpRememberSpawnInfo(gameData);
@@ -1259,7 +1266,7 @@ GameEvent *EventMapChange_CreateGrid(GameSystem *gsys, Field *field, u8 mode, u1
     InitMapChangeEvent(wk, gsys);
     dir = ConvDirToWarpDir(dir);
     CreateZoneChangeData(&wk->spawn, zoneId, dir, pos->x, pos->y, pos->z);
-    wk->unk2C = 0;
+    wk->departureTransitionType = WARP_TRANSITION_NONE;
     wk->mode = mode;
     wk->lensFlareStarted = TRUE;
     return event;
@@ -1280,7 +1287,7 @@ GameEvent *EventMapChange_CreateForFly(GameSystem *gsys, Field *field, u32 unuse
     InitMapChangeEvent(wk, gsys);
     wk->spawn = *spawn;
     wk->spawn.warpDir = warpDir;
-    wk->unk2C = 0;
+    wk->departureTransitionType = WARP_TRANSITION_NONE;
     wk->mode = 1;
     GameData_UpdateEscapeRopeZone(gameData, &wk->spawn);
     return event;
@@ -1293,7 +1300,7 @@ GameEvent *EventMapChangeFakeWarp_Create(GameSystem *gsys, Field *field, u16 zon
     InitMapChangeEvent(wk, gsys);
     dir = ConvDirToWarpDir(dir);
     CreateZoneChangeData(&wk->spawn, zoneId, dir, pos->x, pos->y, pos->z);
-    wk->unk2C = 0;
+    wk->departureTransitionType = WARP_TRANSITION_NONE;
     wk->lensFlareStarted = TRUE;
     return event;
 }
@@ -1305,7 +1312,7 @@ GameEvent *EventMapChangeEnding_Create(GameSystem *gsys, Field *field, u16 zoneI
     InitMapChangeEvent(wk, gsys);
     dir = ConvDirToWarpDir(dir);
     CreateZoneChangeData(&wk->spawn, zoneId, dir, pos->x, pos->y, pos->z);
-    wk->unk2C = 0;
+    wk->departureTransitionType = WARP_TRANSITION_NONE;
     wk->mode = 0;
     wk->lensFlareStarted = TRUE;
     return event;
@@ -1643,7 +1650,8 @@ GameEventReturnCode EventEntralinkWarp_Callback(GameEvent *event, u32 *state, vo
         PlaceName_Cancel(Field_GetPlaceName(field));
         if (wk->festMissionStatus != 0) {
             GFL_SndSEPlay(SEQ_SE_FLD_131);
-            GameEvent_ChainNext(event, CallFieldMapEntranceOutTransition(gsys, field, 1, 0, 4));
+            GameEvent_ChainNext(event,
+                                CallFieldMapEntranceOutTransition(gsys, field, FIELD_TRANSITION_FADE_WHITE, 0, 4));
         } else {
             GFL_SndSEPlay(SEQ_SE_FLD_131);
             EncEff_StartEvent(Field_GetEncEff(field), event, 0x25);
@@ -1656,7 +1664,7 @@ GameEventReturnCode EventEntralinkWarp_Callback(GameEvent *event, u32 *state, vo
 
         InitMapChangeEvent(mapChangeWk, gsys);
         mapChangeWk->spawn = wk->spawn;
-        mapChangeWk->unk2C = 0;
+        mapChangeWk->departureTransitionType = WARP_TRANSITION_NONE;
         mapChangeWk->unk40 = FALSE;
         GameEvent_ChainNext(event, mapChange);
         (*state)++;
@@ -1664,9 +1672,11 @@ GameEventReturnCode EventEntralinkWarp_Callback(GameEvent *event, u32 *state, vo
     }
     case 2:
         if (wk->festMissionStatus != 0) {
-            GameEvent_ChainNext(event, EventGameTransition_CreateFadeInEventWithBgRestore(gsys, field, 1, 0, 2));
+            GameEvent_ChainNext(event, EventGameTransition_CreateFadeInEventWithBgRestore(
+                                           gsys, field, FIELD_TRANSITION_FADE_WHITE, 0, 2));
         } else {
-            GameEvent_ChainNext(event, EventGameTransition_CreateFadeInEventWithBgRestore(gsys, field, 0, 0, 2));
+            GameEvent_ChainNext(event, EventGameTransition_CreateFadeInEventWithBgRestore(
+                                           gsys, field, FIELD_TRANSITION_FADE_BLACK, 0, 2));
         }
         (*state)++;
         break;

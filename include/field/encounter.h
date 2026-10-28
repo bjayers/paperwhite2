@@ -116,7 +116,7 @@ u16 EffectEncount_GetItemId(EncountSystem *system);
 // The wild encounters of field_encount.c
 EncountSystem *EncSys_Create(Field *field);
 void EncSys_Free(EncountSystem *system);
-BOOL EncSys_IsActive(EncountSystem *system, u32 a1);
+BOOL EncSys_IsActive(EncountSystem *system, u32 unused);
 void EncSys_Update(EncountSystem *system, BOOL moved, BOOL turned);
 // The flags of a static encounter that make its Pokémon: shiny, without its held item, with its hidden ability, never
 // shiny, male or female. The others change the battle
@@ -136,7 +136,8 @@ void EffectEncount_ConsumeSpot(EncountSystem *system);
 void BtlSetup_SetTrainerLocal(EncountSystem *encountSystem, BtlSetup *setup, u32 style, u32 partnerId, u32 trainerId,
                               u32 trainerId2, HeapID heapId);
 // The battle's encounter effect and music, against the wild species or the trainer
-void EventBattleCall_DecideEnvWild(s32 species, s32 form, s32 a2, BOOL a3, Field *field, u32 *encEffect, u16 *bgm);
+void EventBattleCall_DecideEnvWild(s32 species, s32 form, s32 encountMode, BOOL isDouble, Field *field, u32 *encEffect,
+                                   u16 *bgm);
 void EventBattleCall_DecideEnvTrainer(u32 trainerId, Field *field, u32 *encEffect, u16 *bgm);
 
 void EncountSystem_CancelPhenomenon(EncountSystem *encountSystem);

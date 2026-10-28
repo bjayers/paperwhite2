@@ -24,6 +24,25 @@ enum {
     FIELD_FADE_IN_WHITE,
 };
 
+// FieldFadeEvent_Callback's sequence: start the fade of its mode, then wait for it
+enum {
+    FIELD_FADE_SEQ_INIT,
+    FIELD_FADE_SEQ_OUT_BLACK,
+    FIELD_FADE_SEQ_IN_BLACK,
+    FIELD_FADE_SEQ_OUT_WHITE,
+    FIELD_FADE_SEQ_IN_WHITE,
+    FIELD_FADE_SEQ_WAIT,
+};
+
+// The planes that the fades brighten and darken, every one but BG1, and all of them, which a white fade takes on the
+// sub screen
+#define FIELD_FADE_PLANES                                                                                              \
+    (GX_BLEND_PLANEMASK_BG0 | GX_BLEND_PLANEMASK_BG2 | GX_BLEND_PLANEMASK_BG3 | GX_BLEND_PLANEMASK_OBJ |               \
+     GX_BLEND_PLANEMASK_BD)
+#define FIELD_FADE_PLANES_ALL                                                                                          \
+    (GX_BLEND_PLANEMASK_BG0 | GX_BLEND_PLANEMASK_BG1 | GX_BLEND_PLANEMASK_BG2 | GX_BLEND_PLANEMASK_BG3 |               \
+     GX_BLEND_PLANEMASK_OBJ | GX_BLEND_PLANEMASK_BD)
+
 typedef struct {
     Field *field;
     u32 mode;
@@ -34,7 +53,7 @@ static BOOL letBrightnessFinishAdjusting(VM *vm, void *env);
 static BOOL ScriptNative_WaitFieldFade(VM *vm, void *env);
 static GameEventReturnCode FieldFadeEvent_Callback(GameEvent *event, u32 *state, void *data);
 
-BOOL s00B3_FadeEx(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Fade_FadeEx(VM *vm, FieldScriptEnv *env) {
     u16 mode = VM_Read16(vm);
     u16 start = VM_Read16(vm);
     u16 end = VM_Read16(vm);
@@ -58,101 +77,102 @@ static BOOL ScriptNative_WaitFieldFade(VM *vm, void *env) {
     return TRUE;
 }
 
-BOOL s01AA_CallSeasonBanner(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Fade_CallSeasonBanner(VM *vm, FieldScriptEnv *env) {
     ScriptWork *work = FieldScriptEnv_GetScriptWork(env);
     GameSystem *gsys = FieldScriptEnv_GetGameSystem(env);
     GameData *gameData = GSYS_GetGameData(gsys);
     Field *field = GSYS_GetField(gsys);
     u32 season = GameData_GetSeason(gameData);
 
-    ScriptWork_CallEvent(work, CallFieldMapEntranceInTransition(gsys, field, 3, 0, 0, season, season));
+    ScriptWork_CallEvent(work,
+                         CallFieldMapEntranceInTransition(gsys, field, FIELD_TRANSITION_SEASON, 0, 0, season, season));
     return FALSE;
 }
 
-BOOL s01A8_FadeInBlackQ_(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Fade_FadeInBlackQ_01A8(VM *vm, FieldScriptEnv *env) {
     FieldScriptEnv_GetScriptWork(env);
     GameSystem *gsys = FieldScriptEnv_GetGameSystem(env);
 
-    FieldFadeTCB_Start(gsys, GSYS_GetField(gsys), 0, 0, 0);
+    FieldFadeTCB_Start(gsys, GSYS_GetField(gsys), FIELD_FADE_TYPE_IN_QUICK, 0, 0);
     return FALSE;
 }
 
-BOOL s01A3_FadeInBlackQ(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Fade_FadeInBlackQ(VM *vm, FieldScriptEnv *env) {
     FieldScriptEnv_GetScriptWork(env);
     GameSystem *gsys = FieldScriptEnv_GetGameSystem(env);
 
-    FieldFadeTCB_Start(gsys, GSYS_GetField(gsys), 0, 0, 0);
+    FieldFadeTCB_Start(gsys, GSYS_GetField(gsys), FIELD_FADE_TYPE_IN_QUICK, 0, 0);
     return FALSE;
 }
 
-BOOL s01A4_FadeOutBlackQ(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Fade_FadeOutBlackQ(VM *vm, FieldScriptEnv *env) {
     FieldScriptEnv_GetScriptWork(env);
     GameSystem *gsys = FieldScriptEnv_GetGameSystem(env);
 
-    FieldFadeTCB_Start(gsys, GSYS_GetField(gsys), 1, 0, 0);
+    FieldFadeTCB_Start(gsys, GSYS_GetField(gsys), FIELD_FADE_TYPE_OUT_QUICK, 0, 0);
     return FALSE;
 }
 
-BOOL s01A5_FadeInWhiteQ(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Fade_FadeInWhiteQ(VM *vm, FieldScriptEnv *env) {
     FieldScriptEnv_GetScriptWork(env);
     GameSystem *gsys = FieldScriptEnv_GetGameSystem(env);
 
-    FieldFadeTCB_Start(gsys, GSYS_GetField(gsys), 0, 1, 0);
+    FieldFadeTCB_Start(gsys, GSYS_GetField(gsys), FIELD_FADE_TYPE_IN_QUICK, 1, 0);
     return FALSE;
 }
 
-BOOL s01A6_FadeOutWhiteQ(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Fade_FadeOutWhiteQ(VM *vm, FieldScriptEnv *env) {
     FieldScriptEnv_GetScriptWork(env);
     GameSystem *gsys = FieldScriptEnv_GetGameSystem(env);
 
-    FieldFadeTCB_Start(gsys, GSYS_GetField(gsys), 1, 1, 0);
+    FieldFadeTCB_Start(gsys, GSYS_GetField(gsys), FIELD_FADE_TYPE_OUT_QUICK, 1, 0);
     return FALSE;
 }
 
-BOOL s01AB_FadeInBlack(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Fade_FadeInBlack(VM *vm, FieldScriptEnv *env) {
     FieldScriptEnv_GetScriptWork(env);
     GameSystem *gsys = FieldScriptEnv_GetGameSystem(env);
 
-    FieldFadeTCB_Start(gsys, GSYS_GetField(gsys), 2, 0, 0);
+    FieldFadeTCB_Start(gsys, GSYS_GetField(gsys), FIELD_FADE_TYPE_IN, 0, 0);
     return FALSE;
 }
 
-BOOL s01AC_FadeOutBlack(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Fade_FadeOutBlack(VM *vm, FieldScriptEnv *env) {
     FieldScriptEnv_GetScriptWork(env);
     GameSystem *gsys = FieldScriptEnv_GetGameSystem(env);
 
-    FieldFadeTCB_Start(gsys, GSYS_GetField(gsys), 3, 0, 0);
+    FieldFadeTCB_Start(gsys, GSYS_GetField(gsys), FIELD_FADE_TYPE_OUT, 0, 0);
     return FALSE;
 }
 
-BOOL s01AD_FadeInWhite(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Fade_FadeInWhite(VM *vm, FieldScriptEnv *env) {
     FieldScriptEnv_GetScriptWork(env);
     GameSystem *gsys = FieldScriptEnv_GetGameSystem(env);
 
-    FieldFadeTCB_Start(gsys, GSYS_GetField(gsys), 2, 1, 0);
+    FieldFadeTCB_Start(gsys, GSYS_GetField(gsys), FIELD_FADE_TYPE_IN, 1, 0);
     return FALSE;
 }
 
-BOOL s01AE_FadeOutWhite(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Fade_FadeOutWhite(VM *vm, FieldScriptEnv *env) {
     FieldScriptEnv_GetScriptWork(env);
     GameSystem *gsys = FieldScriptEnv_GetGameSystem(env);
 
-    FieldFadeTCB_Start(gsys, GSYS_GetField(gsys), 3, 1, 0);
+    FieldFadeTCB_Start(gsys, GSYS_GetField(gsys), FIELD_FADE_TYPE_OUT, 1, 0);
     return FALSE;
 }
 
-BOOL s00B4_FadeExWait(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Fade_FadeExWait(VM *vm, FieldScriptEnv *env) {
     VM_SetNativeCallback(vm, letBrightnessFinishAdjusting);
     return TRUE;
 }
 
-BOOL s01A7_FadeWait(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Fade_FadeWait(VM *vm, FieldScriptEnv *env) {
     VM_SetNativeCallback(vm, ScriptNative_WaitFieldFade);
     return TRUE;
 }
 
 // Fades out to black when black is 1, otherwise white
-BOOL s02E8_CallFieldFadeOut(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Fade_CallFieldFadeOut(VM *vm, FieldScriptEnv *env) {
     GameSystem *gsys = FieldScriptEnv_GetGameSystem(env);
     ScriptWork *work = FieldScriptEnv_GetScriptWork(env);
     Field *field = GSYS_GetField(gsys);
@@ -178,7 +198,7 @@ BOOL s02E8_CallFieldFadeOut(VM *vm, FieldScriptEnv *env) {
     return TRUE;
 }
 
-BOOL s02E9_CallFieldFadeIn(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Fade_CallFieldFadeIn(VM *vm, FieldScriptEnv *env) {
     GameSystem *gsys = FieldScriptEnv_GetGameSystem(env);
     ScriptWork *work = FieldScriptEnv_GetScriptWork(env);
     Field *field = GSYS_GetField(gsys);
@@ -207,11 +227,11 @@ static GameEventReturnCode FieldFadeEvent_Callback(GameEvent *event, u32 *state,
     u32 enabledBGs;
 
     switch (*state) {
-    case 0:
+    case FIELD_FADE_SEQ_INIT:
         resetLCD = FALSE;
         switch (fade->mode) {
         case FIELD_FADE_OUT_BLACK:
-            *state = 1;
+            *state = FIELD_FADE_SEQ_OUT_BLACK;
             break;
         case FIELD_FADE_IN_BLACK:
             if (fade->useSubscreenMasterBrightness == TRUE) {
@@ -219,10 +239,10 @@ static GameEventReturnCode FieldFadeEvent_Callback(GameEvent *event, u32 *state,
                 GXS_SetMasterBrightness(-16);
                 resetLCD = TRUE;
             }
-            *state = 2;
+            *state = FIELD_FADE_SEQ_IN_BLACK;
             break;
         case FIELD_FADE_OUT_WHITE:
-            *state = 3;
+            *state = FIELD_FADE_SEQ_OUT_WHITE;
             break;
         case FIELD_FADE_IN_WHITE:
             if (fade->useSubscreenMasterBrightness == TRUE) {
@@ -230,7 +250,7 @@ static GameEventReturnCode FieldFadeEvent_Callback(GameEvent *event, u32 *state,
                 GXS_SetMasterBrightness(16);
                 resetLCD = TRUE;
             }
-            *state = 4;
+            *state = FIELD_FADE_SEQ_IN_WHITE;
             break;
         }
         if (resetLCD == TRUE) {
@@ -240,43 +260,43 @@ static GameEventReturnCode FieldFadeEvent_Callback(GameEvent *event, u32 *state,
             FieldG2D_Prepare3DSurface(fade->field);
         }
         break;
-    case 1:
+    case FIELD_FADE_SEQ_OUT_BLACK:
         if (fade->useSubscreenMasterBrightness == TRUE) {
-            BrightnessController_StartTransition(16, -16, 0, 0x3d, BRIGHTNESS_MAIN_SCREEN);
+            BrightnessController_StartTransition(16, -16, 0, FIELD_FADE_PLANES, BRIGHTNESS_MAIN_SCREEN);
             GFL_FadeSet(FADE_ENGINE_B_BLACK, 0, 16, 1);
         } else {
-            BrightnessController_StartTransition(4, -16, 0, 0x3d, BRIGHTNESS_BOTH_SCREENS);
+            BrightnessController_StartTransition(4, -16, 0, FIELD_FADE_PLANES, BRIGHTNESS_BOTH_SCREENS);
         }
-        *state = 5;
+        *state = FIELD_FADE_SEQ_WAIT;
         break;
-    case 2:
+    case FIELD_FADE_SEQ_IN_BLACK:
         if (fade->useSubscreenMasterBrightness == TRUE) {
             GFL_FadeSet(FADE_ENGINE_A_BLACK | FADE_ENGINE_B_BLACK, 16, 0, 1);
         } else {
-            BrightnessController_StartTransition(6, 0, -16, 0x3d, BRIGHTNESS_BOTH_SCREENS);
+            BrightnessController_StartTransition(6, 0, -16, FIELD_FADE_PLANES, BRIGHTNESS_BOTH_SCREENS);
         }
-        *state = 5;
+        *state = FIELD_FADE_SEQ_WAIT;
         break;
-    case 3:
+    case FIELD_FADE_SEQ_OUT_WHITE:
         if (fade->useSubscreenMasterBrightness == TRUE) {
-            BrightnessController_StartTransition(16, 16, 0, 0x3d, BRIGHTNESS_MAIN_SCREEN);
+            BrightnessController_StartTransition(16, 16, 0, FIELD_FADE_PLANES, BRIGHTNESS_MAIN_SCREEN);
             GFL_FadeSet(FADE_ENGINE_B_WHITE, 0, 16, 1);
         } else {
-            BrightnessController_StartTransition(4, 16, 0, 0x3d, BRIGHTNESS_MAIN_SCREEN);
-            BrightnessController_StartTransition(4, 16, 0, 0x3f, BRIGHTNESS_SUB_SCREEN);
+            BrightnessController_StartTransition(4, 16, 0, FIELD_FADE_PLANES, BRIGHTNESS_MAIN_SCREEN);
+            BrightnessController_StartTransition(4, 16, 0, FIELD_FADE_PLANES_ALL, BRIGHTNESS_SUB_SCREEN);
         }
-        *state = 5;
+        *state = FIELD_FADE_SEQ_WAIT;
         break;
-    case 4:
+    case FIELD_FADE_SEQ_IN_WHITE:
         if (fade->useSubscreenMasterBrightness == TRUE) {
             GFL_FadeSet(FADE_ENGINE_A_WHITE | FADE_ENGINE_B_WHITE, 16, 0, 1);
         } else {
-            BrightnessController_StartTransition(6, 0, 16, 0x3d, BRIGHTNESS_MAIN_SCREEN);
-            BrightnessController_StartTransition(6, 0, 16, 0x3f, BRIGHTNESS_SUB_SCREEN);
+            BrightnessController_StartTransition(6, 0, 16, FIELD_FADE_PLANES, BRIGHTNESS_MAIN_SCREEN);
+            BrightnessController_StartTransition(6, 0, 16, FIELD_FADE_PLANES_ALL, BRIGHTNESS_SUB_SCREEN);
         }
-        *state = 5;
+        *state = FIELD_FADE_SEQ_WAIT;
         break;
-    case 5:
+    case FIELD_FADE_SEQ_WAIT:
         if (BrightnessController_IsTransitionComplete(BRIGHTNESS_BOTH_SCREENS) == TRUE &&
             GFL_FadeIsRunning() == FALSE) {
             if (fade->mode == FIELD_FADE_IN_BLACK || fade->mode == FIELD_FADE_IN_WHITE) {

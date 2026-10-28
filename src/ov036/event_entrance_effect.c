@@ -158,7 +158,7 @@ static void EntranceEffect_SetArrivalSteps(EntranceEffectWork *work) {
             work->steps[9] = ARRIVAL_STEP_END;
             break;
         }
-    } else if (CityState_IsSlotIndexOutOfRange(warp->transitionType)) {
+    } else if (IsEntranceCameraTransition(warp->transitionType)) {
         work->steps[0] = ARRIVAL_STEP_START;
         work->steps[1] = ARRIVAL_STEP_TRANSITION;
         work->steps[2] = ARRIVAL_STEP_2;
@@ -298,13 +298,13 @@ GameEvent *EntranceEffect_CreateB(WarpSequence *warp) {
     work->dir = Field_GetPlayerDirection(warp->field);
     work->stepIndex = 0;
     work->camera = EntranceCamera_Create(warp->field);
-    work->cameraParam.transitionType = warp->unk10;
+    work->cameraParam.transitionType = warp->departureTransitionType;
     work->cameraParam.isArrival = FALSE;
     work->cameraParam.isDeparture = TRUE;
     EntranceEffect_GetFrontPosition(warp->field, &work->pos);
     EntranceEffect_CreateDoorHandle(work);
     EntranceEffect_SetDepartureSteps(work);
-    if (CityState_IsSlotIndexOutOfRange(warp->unk10)) {
+    if (IsEntranceCameraTransition(warp->departureTransitionType)) {
         work->continueDirect = TRUE;
     } else {
         work->continueDirect = FALSE;
@@ -548,8 +548,8 @@ static void EntranceEffect_ChainArrivalTransition(GameEvent *event, EntranceEffe
     GameEvent *transition;
 
     if (warp->seasonChanged) {
-        transition =
-            CallFieldMapEntranceInTransition(warp->gsys, warp->field, 3, 0, 0, warp->startSeason, warp->endSeason);
+        transition = CallFieldMapEntranceInTransition(warp->gsys, warp->field, FIELD_TRANSITION_SEASON, 0, 0,
+                                                      warp->startSeason, warp->endSeason);
     } else {
         transition = CallFieldMapEntranceInTransition(warp->gsys, warp->field, warp->inTransition, 0, 1, 0, 0);
     }
@@ -561,7 +561,7 @@ static void EntranceEffect_ChainDepartureTransition(GameEvent *event, EntranceEf
     GameEvent *transition;
 
     if (warp->seasonChanged) {
-        transition = CallFieldMapEntranceOutTransitionDefault(warp->gsys, warp->field, 0, 0);
+        transition = CallFieldMapEntranceOutTransitionDefault(warp->gsys, warp->field, FIELD_TRANSITION_FADE_BLACK, 0);
     } else {
         transition = CallFieldMapEntranceOutTransitionDefault(warp->gsys, warp->field, warp->outTransition, 0);
     }
@@ -575,7 +575,7 @@ static BOOL EntranceEffect_ShouldPlayStairsSound(EntranceEffectWork *work) {
     if (EntranceEffect_HasDoor(work)) {
         return FALSE;
     }
-    if (warp->outTransition != 2) {
+    if (warp->outTransition != FIELD_TRANSITION_BUILDING) {
         return TRUE;
     }
     return FALSE;

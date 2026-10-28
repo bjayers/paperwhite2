@@ -21,7 +21,7 @@ static const FieldAsyncProcDef FIELD_ACTOR_ANM_ASYNC_PROC_TEMPLATE = {
     0, 0x1a0, NULL, NULL, FieldActorAnmProc_Update, FieldActorAnmProc_Draw,
 };
 
-BOOL s0157_ActorAnimationInit(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_FieldActorAnimation_ActorAnimationInit(VM *vm, FieldScriptEnv *env) {
     ScriptWork *work = FieldScriptEnv_GetScriptWork(env);
     ScriptFieldWork *fieldWork = ScriptWork_GetFieldWork(work);
     HeapID heapId = Field_GetHeapID(fieldWork->field);
@@ -33,7 +33,7 @@ BOOL s0157_ActorAnimationInit(VM *vm, FieldScriptEnv *env) {
     return FALSE;
 }
 
-BOOL s0158_ActorAnimationFree(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_FieldActorAnimation_ActorAnimationFree(VM *vm, FieldScriptEnv *env) {
     ScriptWork *work = FieldScriptEnv_GetScriptWork(env);
 
     FieldActorAnmProc_Free(ScriptWork_GetActorAnmProc(work));
@@ -41,7 +41,7 @@ BOOL s0158_ActorAnimationFree(VM *vm, FieldScriptEnv *env) {
     return FALSE;
 }
 
-BOOL s0159_ActorAnimationPlay(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_FieldActorAnimation_ActorAnimationPlay(VM *vm, FieldScriptEnv *env) {
     ScriptWork *work = FieldScriptEnv_GetScriptWork(env);
     u16 animation = ScriptReadAny(vm, env);
 
@@ -55,7 +55,7 @@ GameEventReturnCode EventActorAnmProcWait_Callback(GameEvent *event, u32 *state,
     return FieldActorAnmProc_IsPlaying(work->proc) == TRUE ? GAMEEVENT_DONE : GAMEEVENT_CONTINUE;
 }
 
-BOOL s015A_ActorAnimationWait(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_FieldActorAnimation_ActorAnimationWait(VM *vm, FieldScriptEnv *env) {
     ScriptWork *work = FieldScriptEnv_GetScriptWork(env);
     GameSystem *gsys = FieldScriptEnv_GetGameSystem(env);
     GameEvent *event = GameEvent_Create(gsys, NULL, EventActorAnmProcWait_Callback, sizeof(EventActorAnmProcWaitWork));
@@ -88,7 +88,7 @@ void FieldActorAnmProc_Play(FieldActorAnmProc *proc, u16 animation) {
     proc->finished = TRUE;
     proc->animation = animation;
     FieldActorAnmProc_CommitTransform(proc->curve, proc->actor, &proc->pos);
-    SetActorMovementFlag(proc->actor, 0x8000);
+    SetActorMovementFlag(proc->actor, ACTOR_MOVEMENT_FLAG_HIDE_SHADOW);
 }
 
 BOOL FieldActorAnmProc_IsPlaying(FieldActorAnmProc *proc) {
@@ -110,7 +110,7 @@ void FieldActorAnmProc_Update(FieldAsyncProc *asyncProc, Field *field, void *dat
             CopyActorWPos(work->actor, &pos);
             SetActorWPosAll(work->actor, &pos, GetActorFaceDir(work->actor));
             if (FIELD_ACTOR_ANM_IS_ALLOW_MOVE_ON_END[work->animation] != 0) {
-                ClearActorMovementFlag(work->actor, 0x8000);
+                ClearActorMovementFlag(work->actor, ACTOR_MOVEMENT_FLAG_HIDE_SHADOW);
             }
         }
         FldAct_InvokeUpdateCallback(work->actor);

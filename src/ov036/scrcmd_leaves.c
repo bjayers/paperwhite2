@@ -135,10 +135,10 @@ void LoadPWTTournamentTypeText(HeapID heapId, u32 tournament, StrBuf *strbuf) {
 }
 
 u8 GetPWTSeason(const WbtSystem *wbt) {
-    return wbt->unk1E;
+    return wbt->season;
 }
 
-BOOL s02CF_PokeDexCheckHabitatList(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Leaves_PokeDexCheckHabitatList(VM *vm, FieldScriptEnv *env) {
     HeapID heapId;
     PokeDexSave *pokedex;
     GameSystem *gsys;
@@ -197,7 +197,7 @@ BOOL CheckHabitatList(const HabitatList *list, PokeDexSave *pokedex, u8 time, u3
     return TRUE;
 }
 
-BOOL s02D1_KeyInfoGetMyCityProgress(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Leaves_KeyInfoGetMyCityProgress(VM *vm, FieldScriptEnv *env) {
     GameData *gameData = GSYS_GetGameData(FieldScriptEnv_GetGameSystem(env));
     SaveControl *save = GameData_GetSaveControl(gameData);
     u16 *result = ScriptReadVar(vm, env);
@@ -207,7 +207,7 @@ BOOL s02D1_KeyInfoGetMyCityProgress(VM *vm, FieldScriptEnv *env) {
     return FALSE;
 }
 
-BOOL s02D5_WbtIsTrainerBeaten(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Leaves_WbtIsTrainerBeaten(VM *vm, FieldScriptEnv *env) {
     WbtSave *block = GameData_GetWbtSave(FieldScriptEnv_GetGameData(env));
     u16 index = ScriptReadAny(vm, env);
     u16 *result = ScriptReadVar(vm, env);
@@ -216,7 +216,7 @@ BOOL s02D5_WbtIsTrainerBeaten(VM *vm, FieldScriptEnv *env) {
     return FALSE;
 }
 
-BOOL Scrcmd_GetWifiHistoryCountryCount(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Leaves_GetWifiHistoryCountryCount(VM *vm, FieldScriptEnv *env) {
     GameSystem *gsys;
     u16 index;
     u16 *result;
@@ -233,7 +233,7 @@ BOOL Scrcmd_GetWifiHistoryCountryCount(VM *vm, FieldScriptEnv *env) {
     return FALSE;
 }
 
-BOOL s02DD_UnityTowerGetVisitorCount(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Leaves_UnityTowerGetVisitorCount(VM *vm, FieldScriptEnv *env) {
     GameSystem *gsys;
     u16 *result;
 
@@ -245,7 +245,7 @@ BOOL s02DD_UnityTowerGetVisitorCount(VM *vm, FieldScriptEnv *env) {
     return FALSE;
 }
 
-BOOL Scrcmd_MarkPartnerCandidate(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Leaves_MarkPartnerCandidate(VM *vm, FieldScriptEnv *env) {
     GameData *gameData;
     UnityTowerFloor *unityTower;
     u8 visitor;
@@ -256,13 +256,14 @@ BOOL Scrcmd_MarkPartnerCandidate(VM *vm, FieldScriptEnv *env) {
     unityTower = GameData_GetUnityTowerSave(gameData);
     visitor = ScriptReadAny(vm, env);
     index = Scrcmd_GetPartnerCandidateHistoryIndex(unityTower, visitor);
-    if (index != 0xff) {
-        UnityTower_SetVisitorParam(getUnityTower_SurveySaveBlkAddrress(GameData_GetSaveControl(gameData)), index, 5, 1);
+    if (index != UNITY_TOWER_HISTORY_INDEX_NONE) {
+        UnityTower_SetVisitorParam(getUnityTower_SurveySaveBlkAddrress(GameData_GetSaveControl(gameData)), index,
+                                   UNITY_TOWER_VISITOR_PARAM_SCRIPT_FLAG, TRUE);
     }
     return FALSE;
 }
 
-BOOL Scrcmd_IsPartnerCandidateMarked(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Leaves_UnityTowerGetVisitorParam(VM *vm, FieldScriptEnv *env) {
     GameData *gameData;
     UnityTowerFloor *unityTower;
     u16 visitor;
@@ -276,7 +277,7 @@ BOOL Scrcmd_IsPartnerCandidateMarked(VM *vm, FieldScriptEnv *env) {
     result = ScriptReadVar(vm, env);
     *result = FALSE;
     index = Scrcmd_GetPartnerCandidateHistoryIndex(unityTower, visitor);
-    if (index != 0xff &&
+    if (index != UNITY_TOWER_HISTORY_INDEX_NONE &&
         (u8)UnityTower_GetVisitorParam(getUnityTower_SurveySaveBlkAddrress(GameData_GetSaveControl(gameData)), index,
                                        UNITY_TOWER_VISITOR_PARAM_SCRIPT_FLAG)) {
         *result = TRUE;
@@ -284,7 +285,7 @@ BOOL Scrcmd_IsPartnerCandidateMarked(VM *vm, FieldScriptEnv *env) {
     return FALSE;
 }
 
-BOOL s02DA_UnityTowerSetRatingLevel(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Leaves_UnityTowerSetRatingLevel(VM *vm, FieldScriptEnv *env) {
     GameSystem *gsys;
     u8 index;
 
@@ -296,7 +297,7 @@ BOOL s02DA_UnityTowerSetRatingLevel(VM *vm, FieldScriptEnv *env) {
     return FALSE;
 }
 
-BOOL s02DE_UnityTowerSetHobby(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Leaves_UnityTowerSetHobby(VM *vm, FieldScriptEnv *env) {
     GameSystem *gsys;
     u8 hobby;
     UnityTowerSurveySave *save;
@@ -309,7 +310,7 @@ BOOL s02DE_UnityTowerSetHobby(VM *vm, FieldScriptEnv *env) {
     return FALSE;
 }
 
-BOOL s02DF_UnityTowerGetHobby(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Leaves_UnityTowerGetHobby(VM *vm, FieldScriptEnv *env) {
     GameSystem *gsys;
     u16 *result;
     UnityTowerSurveySave *save;
@@ -322,7 +323,7 @@ BOOL s02DF_UnityTowerGetHobby(VM *vm, FieldScriptEnv *env) {
     return FALSE;
 }
 
-BOOL s02DB_UnityTowerSetFloor(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Leaves_UnityTowerSetFloor(VM *vm, FieldScriptEnv *env) {
     GameSystem *gsys;
     u16 floor;
     u16 value;
@@ -335,7 +336,7 @@ BOOL s02DB_UnityTowerSetFloor(VM *vm, FieldScriptEnv *env) {
     return FALSE;
 }
 
-BOOL s02DC_UnityTowerInitVisitorMessage(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Leaves_UnityTowerInitVisitorMessage(VM *vm, FieldScriptEnv *env) {
     ScriptWork *work;
     GameSystem *gsys;
     UnityTowerFloor *save;
@@ -355,7 +356,7 @@ BOOL s02DC_UnityTowerInitVisitorMessage(VM *vm, FieldScriptEnv *env) {
     return FALSE;
 }
 
-BOOL Scrcmd_HasPlayerLanguage(VM *vm, FieldScriptEnv *env) {
+BOOL Scrcmd_Leaves_UnityTowerGetVisitorCountry(VM *vm, FieldScriptEnv *env) {
     u16 *result;
     GameSystem *gsys;
 

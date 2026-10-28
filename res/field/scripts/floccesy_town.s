@@ -461,7 +461,7 @@ L_0586:
     SystemMsg FloccesyTown_Text_BiancaTakesPokedex, 0
     SEWait
     MsgWaitAdvance
-    InfoMsgClose
+    SystemMsgClose
     // "With the Habitat List, you can check\nwhich Pokémon are in the area![f000]븁\u0000\nIt's a mode in the Pokédex![f000]븁\u0000"
     ActorMsg MSGFILE_SCRIPT, FloccesyTown_Text_HabitatListCanCheck, 251, 0, 0
     // "To use it, open up the Pokédex like this\nand tap \"Habitat List\" right here[f000]븀\u0000\non the lower left of the Touch Screen![f000]븁\u0000\nNext, pick the area you want to see![f000]븁\u0000\nYou can see all the Pokémon that live in\nthat area. It even tells you which ones[f000]븀\u0000\nyou've already caught![f000]븁\u0000"

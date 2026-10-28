@@ -149,7 +149,7 @@ L_01CC:
     VMJump L_01DC
 
 L_01DC:
-    ListMenu_AnchorTopRight 30, 8, 0, 1, 32780
+    ListMenuAnchorTopRight 30, 8, 0, 1, 32780
     ListMenuAdd 11, 0, 0
     ListMenuAdd 12, 0, 1
     ListMenuAdd 13, 0, 2
@@ -196,7 +196,7 @@ L_029A:
 L_02B0:
     // "Experiencing the seasons naturally, eh?[f000]븁\u0000"
     ParentActorMsg MSGFILE_SCRIPT, FloccesyTownPokemonCenter_Text_ExperiencingSeasonsNaturallyEh, 0, 0
-    ListMenu_AnchorTopRight 30, 8, 0, 1, 32780
+    ListMenuAnchorTopRight 30, 8, 0, 1, 32780
     ListMenuAdd 21, 0, 4
     ListMenuAdd 22, 0, 5
     ListMenuAdd 23, 0, 6
