@@ -23,6 +23,8 @@ this section wins.
   and "both SHA1s must match" don't apply to hack changes.
 - Build the hack with `python3 configure.py w2_us --hack && ninja`: it writes `build/paperwhite2.nds` and skips the
   SHA1, module and archive checks. A plain `python3 configure.py w2_us` goes back to the matching build.
+- On the user's PC, `paperwhite2.local` (ignored) names a Windows folder that each `--hack` build copies
+  `paperwhite2.nds` into, for RetroArch; tell the user to test that copy.
 - The clean data is the git tag `w2-original`: `git diff w2-original -- res/` shows every hack change.
 - The hack's own code goes in `src/paperwhite2/{main,ovNNN}/` and `include/paperwhite2/`, its data in
   `res/paperwhite2/`, and hooks are `#ifdef PAPERWHITE2` edits of the original C: see `docs/paperwhite2/plugins.md`.

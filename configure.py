@@ -801,7 +801,19 @@ def add_version(n: Writer, version: str, dsd: Path, bugfix: bool, shift: int,
                 variables={"map": f"{arm9_o}.xMAP",
                            "modules": " ".join(sorted({"OV036", *(m for m, _ in plugin_objects if m != "ARM9")}))})
         memory_checks.append(memory_report)
-    n.build([version], "phony", [modules_ok, rom_ok] if matching else [rom, *memory_checks])
+    installs = []
+    install_file = Path("paperwhite2.local")
+    if hack and install_file.exists():
+        # Paper White 2: paperwhite2.local, never committed, names a folder (a Windows one through /mnt/c in WSL)
+        # that each build copies the ROM into, overwriting only that one file
+        install_dir = Path(install_file.read_text().strip())
+        if not install_dir.is_dir():
+            sys.exit(f"{install_file} names {install_dir}, which isn't a folder")
+        installed = stamp_dir / "installed.ok"
+        n.build([installed], "install_rom", [rom], implicit=[str(install_file)],
+                variables={"target": shlex.quote(str(install_dir / rom.name))})
+        installs.append(installed)
+    n.build([version], "phony", [modules_ok, rom_ok] if matching else [rom, *memory_checks, *installs])
 
     # Context files for decomp.me scratches, made by objdiff
     for obj in compiled:
@@ -821,7 +833,7 @@ def add_version(n: Writer, version: str, dsd: Path, bugfix: bool, shift: int,
     # The checks also compile every source file, so that an incomplete file, whose object only feeds the report and
     # is never linked, can't stop compiling without the default build noticing.
     if not matching:
-        return [rom, *memory_checks, *checks, *deadstrip_checks, *compiled], dsd_configs
+        return [rom, *memory_checks, *installs, *checks, *deadstrip_checks, *compiled], dsd_configs
     return [modules_ok, rom_ok, *checks, *deadstrip_checks, *compiled], dsd_configs
 
 
@@ -946,6 +958,7 @@ def main():
     n.rule("rom_config", "$dsd rom config --elf $in --config $config && sed -i.bak "
            "-e 's|^files_dir: .*|files_dir: ../files|' $banner_edit $out && rm $out.bak", "Configuring ROM for $config")
     n.rule("rom_build", "$dsd rom build --config $in --rom $out" + (" $bios" if args.hack else ""), "Building $out")
+    n.rule("install_rom", "cp $in $target && touch $out", "Copying $in to $target")
     n.rule("check_modules", "$dsd check modules --config-path $config --fail && touch $out", "Checking modules")
     n.rule("sha1", "sha1sum --quiet -c $in && touch $out", "Checking $rom")
     # The context stays UTF-8, for decomp.me
