@@ -81,7 +81,8 @@ species' 8-frame walking sprites, 256×32, which the follower plugin's entries a
   prefix), and the grottoes and habitats equal the hack's members.
 - Grottoes: 18 of 20 changed, Pokémon only. Three slots had kept the gender thresholds of the species they replaced
   (Nidoran♂/♀ 0/0/100/100, Ditto 0, Kingler/Corsola 30/30/60/60); at the user's request Route 2's Tepig and Giant
-  Chasm's Umbreon are now 12 and Route 18's Chatot 50, their species' ratios (31 and 127 of 256). The original game
+  Chasm's Umbreon are now 12 and Route 18's Chatot 50, their species' ratios (31 and 127 of 256), and so are all
+  15 starters in grottoes (12, in both versions' sets where the hack placed them). The original game
   sets most slots to 30 by hand, whatever the species.
 - Build bug, fixed: `tools/build/files_tree.py` left the symlink to the extracted file at a path that had just started
   being built, so the first pack of a new `DATA_PACKS` archive wrote through it into `extract/<version>/files/` (it

@@ -40,28 +40,28 @@
                     "species": "SPECIES_CHIMCHAR",
                     "min_level": 35,
                     "max_level": 40,
-                    "female_below": 30,
+                    "female_below": 12,
                     "form": 0
                 },
                 {
                     "species": "SPECIES_CHIMCHAR",
                     "min_level": 35,
                     "max_level": 40,
-                    "female_below": 30,
+                    "female_below": 12,
                     "form": 0
                 },
                 {
                     "species": "SPECIES_CHIMCHAR",
                     "min_level": 35,
                     "max_level": 40,
-                    "female_below": 30,
+                    "female_below": 12,
                     "form": 0
                 },
                 {
                     "species": "SPECIES_CHIMCHAR",
                     "min_level": 35,
                     "max_level": 40,
-                    "female_below": 30,
+                    "female_below": 12,
                     "form": 0
                 }
             ],

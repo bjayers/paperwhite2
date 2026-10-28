@@ -40,28 +40,28 @@
                     "species": "SPECIES_MUDKIP",
                     "min_level": 30,
                     "max_level": 35,
-                    "female_below": 30,
+                    "female_below": 12,
                     "form": 0
                 },
                 {
                     "species": "SPECIES_MUDKIP",
                     "min_level": 30,
                     "max_level": 35,
-                    "female_below": 30,
+                    "female_below": 12,
                     "form": 0
                 },
                 {
                     "species": "SPECIES_MUDKIP",
                     "min_level": 30,
                     "max_level": 35,
-                    "female_below": 30,
+                    "female_below": 12,
                     "form": 0
                 },
                 {
                     "species": "SPECIES_MUDKIP",
                     "min_level": 30,
                     "max_level": 35,
-                    "female_below": 30,
+                    "female_below": 12,
                     "form": 0
                 }
             ],

@@ -40,28 +40,28 @@
                     "species": "SPECIES_CHIKORITA",
                     "min_level": 50,
                     "max_level": 55,
-                    "female_below": 30,
+                    "female_below": 12,
                     "form": 0
                 },
                 {
                     "species": "SPECIES_CHIKORITA",
                     "min_level": 50,
                     "max_level": 55,
-                    "female_below": 30,
+                    "female_below": 12,
                     "form": 0
                 },
                 {
                     "species": "SPECIES_CHIKORITA",
                     "min_level": 50,
                     "max_level": 55,
-                    "female_below": 30,
+                    "female_below": 12,
                     "form": 0
                 },
                 {
                     "species": "SPECIES_CHIKORITA",
                     "min_level": 50,
                     "max_level": 55,
-                    "female_below": 30,
+                    "female_below": 12,
                     "form": 0
                 }
             ],

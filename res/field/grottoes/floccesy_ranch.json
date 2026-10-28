@@ -40,28 +40,28 @@
                     "species": "SPECIES_TORCHIC",
                     "min_level": 10,
                     "max_level": 15,
-                    "female_below": 30,
+                    "female_below": 12,
                     "form": 0
                 },
                 {
                     "species": "SPECIES_TORCHIC",
                     "min_level": 10,
                     "max_level": 15,
-                    "female_below": 30,
+                    "female_below": 12,
                     "form": 0
                 },
                 {
                     "species": "SPECIES_TORCHIC",
                     "min_level": 10,
                     "max_level": 15,
-                    "female_below": 30,
+                    "female_below": 12,
                     "form": 0
                 },
                 {
                     "species": "SPECIES_TORCHIC",
                     "min_level": 10,
                     "max_level": 15,
-                    "female_below": 30,
+                    "female_below": 12,
                     "form": 0
                 }
             ],

@@ -40,28 +40,28 @@
                     "species": "SPECIES_OSHAWOTT",
                     "min_level": 55,
                     "max_level": 60,
-                    "female_below": 30,
+                    "female_below": 12,
                     "form": 0
                 },
                 {
                     "species": "SPECIES_OSHAWOTT",
                     "min_level": 55,
                     "max_level": 60,
-                    "female_below": 30,
+                    "female_below": 12,
                     "form": 0
                 },
                 {
                     "species": "SPECIES_OSHAWOTT",
                     "min_level": 55,
                     "max_level": 60,
-                    "female_below": 30,
+                    "female_below": 12,
                     "form": 0
                 },
                 {
                     "species": "SPECIES_OSHAWOTT",
                     "min_level": 55,
                     "max_level": 60,
-                    "female_below": 30,
+                    "female_below": 12,
                     "form": 0
                 }
             ],

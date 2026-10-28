@@ -40,28 +40,28 @@
                     "species": "SPECIES_TURTWIG",
                     "min_level": 40,
                     "max_level": 45,
-                    "female_below": 30,
+                    "female_below": 12,
                     "form": 0
                 },
                 {
                     "species": "SPECIES_TURTWIG",
                     "min_level": 40,
                     "max_level": 45,
-                    "female_below": 30,
+                    "female_below": 12,
                     "form": 0
                 },
                 {
                     "species": "SPECIES_TURTWIG",
                     "min_level": 40,
                     "max_level": 45,
-                    "female_below": 30,
+                    "female_below": 12,
                     "form": 0
                 },
                 {
                     "species": "SPECIES_TURTWIG",
                     "min_level": 40,
                     "max_level": 45,
-                    "female_below": 30,
+                    "female_below": 12,
                     "form": 0
                 }
             ],
