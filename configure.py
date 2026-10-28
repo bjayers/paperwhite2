@@ -728,7 +728,15 @@ def add_version(n: Writer, version: str, dsd: Path, bugfix: bool, shift: int,
             checks.append(archive_ok)
 
     rom_config = build_dir / "build" / "rom_config.yaml"
-    n.build([rom_config], "rom_config", [arm9_o], variables={"config": str(arm9_config)})
+    rom_variables = {"config": str(arm9_config)}
+    if hack:
+        # Paper White 2: the hack's banner, its title and icon, from res/paperwhite2/banner/
+        banner = Path("res/paperwhite2/banner/banner.yaml")
+        rom_variables["banner_edit"] = f"-e 's|^banner: .*|banner: {os.path.relpath(banner, rom_config.parent)}|'"
+        rom_implicit = sorted(str(p) for p in banner.parent.iterdir())
+    else:
+        rom_implicit = []
+    n.build([rom_config], "rom_config", [arm9_o], implicit=rom_implicit, variables=rom_variables)
     n.build([rom], "rom_build", [rom_config], implicit=[files_ok, *archives])
 
     modules_ok = stamp_dir / "modules.ok"
@@ -872,9 +880,9 @@ def main():
     n.rule("files_tree", "$python tools/build/files_tree.py $source $output $built --stamp $out",
            "Linking the files of $output")
     # dsd points the ROM at the extracted files, and the build's own file system replaces them. BSD sed, as on macOS,
-    # needs a backup suffix after -i, which GNU sed also takes
+    # needs a backup suffix after -i, which GNU sed also takes. $banner_edit, if set, points the ROM at another banner
     n.rule("rom_config", "$dsd rom config --elf $in --config $config && sed -i.bak "
-           "'s|^files_dir: .*|files_dir: ../files|' $out && rm $out.bak", "Configuring ROM for $config")
+           "-e 's|^files_dir: .*|files_dir: ../files|' $banner_edit $out && rm $out.bak", "Configuring ROM for $config")
     n.rule("rom_build", "$dsd rom build --config $in --rom $out", "Building $out")
     n.rule("check_modules", "$dsd check modules --config-path $config --fail && touch $out", "Checking modules")
     n.rule("sha1", "sha1sum --quiet -c $in && touch $out", "Checking $rom")

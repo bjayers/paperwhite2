@@ -1,0 +1,35 @@
+version: Animated
+title:
+  japanese: |-
+    Pokémon
+    Paper White 2
+    Nintendo
+  english: |-
+    Pokémon
+    Paper White 2
+    Nintendo
+  french: |-
+    Pokémon
+    White Version 2
+    Nintendo
+  german: |-
+    Pokémon
+    White Version 2
+    Nintendo
+  italian: |-
+    Pokémon
+    White Version 2
+    Nintendo
+  spanish: |-
+    Pokémon
+    White Version 2
+    Nintendo
+  chinese: ""
+  korean: |-
+    Pokémon
+    White Version 2
+    Nintendo
+images:
+  bitmap_path: bitmap.png
+  palette_path: palette.png
+  animation_path: animation.bin

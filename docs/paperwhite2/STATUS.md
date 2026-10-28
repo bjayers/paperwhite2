@@ -43,7 +43,7 @@ The trial's comparison scripts are in `tools/paperwhite2/` (start of the editor'
 - (Done, see below: Unown sprites.)
 - (Done, see below: Hidden Grottoes and Pokédex habitats.)
 - **Type icons** `a/0/1/1` members 438–439 (TypeIconsW2 plugin graphics).
-- **Banner** title "Paper White 2": the ROM build takes the banner from `extract/w2_us/banner/`, not from source.
+- (Done: the banner, see below.)
 - Code: arm9 and overlays (PMC hooks, seasons, MoveEffectiveness, TypeIcons, following) — the plugin port.
 
 ### Left alone on purpose
@@ -93,9 +93,16 @@ species' 8-frame walking sprites, 256×32, which the follower plugin's entries a
 - `trade_data.py`'s dump names `held_item` with `name("ITEM_")`, which can give `ITEM_ICON_*` names (as trainer_data
   did); the current trade sources are right.
 
+### Banner
+
+`res/paperwhite2/banner/` (banner.yaml, bitmap.png, palette.png, animation.bin) is the hack's banner; `--hack` builds
+point the ROM config at it (`banner_edit` in configure.py), matching builds keep the original. The title is the
+hack's (English and Japanese "Paper White 2", the other languages "White Version 2" as in the hack); Frost had filled
+the Chinese and Korean titles with 0xFFFF, and they are the original's again (empty, and the Korean "White Version
+2"). The icon is the original's, as in the hack.
+
 ### Next
 
 1. The user tests `build/paperwhite2.nds` (`\\wsl$\Ubuntu\home\riku\paperwhite2\build\paperwhite2.nds`) in melonDS
    (DSi mode) and on 3DS TWiLight Menu++. It is the hack's data on clean code: no followers, seasons or plugins.
-2. Banner from source.
 3. Port the PMC plugins.
