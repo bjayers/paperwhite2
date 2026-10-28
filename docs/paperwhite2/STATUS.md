@@ -138,6 +138,15 @@ With the user's DS ARM7 BIOS at `orig/bios7.bin` (16 KB, ignored by git), `--hac
 The user play-tests both: `build/paperwhite2.nds` and `build/paperwhite2_shifted.nds` (a copy; a shifted build
 writes `build/paperwhite2.nds`).
 
+### Hardware tests (2026-10-28)
+
+On the user's 3DS through TWiLight Menu++ (nds-bootstrap; DSi mode at 133 MHz, and DS mode): the normal hack build
+with the battle plugins boots, loads the save and battles. The `--shift 0x100` build reaches the title screen and
+the save menu, then goes black on loading the save, in both modes; melonDS runs it. Known issue, not chased: real
+builds keep every original function at its address (new code goes after each module's original code), and only the
+shifted build moves them. Suspect a fixed-address patch of nds-bootstrap's. nds-bootstrap wrote no log
+(`NDSBTSRP.LOG`). Retest it after big changes to main, the one module whose growth moves everything after it.
+
 ### Next
 
 1. The user tests `build/paperwhite2.nds` (`\\wsl$\Ubuntu\home\riku\paperwhite2\build\paperwhite2.nds`) in melonDS
