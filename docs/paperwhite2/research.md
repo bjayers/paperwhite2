@@ -37,3 +37,24 @@ Verdict: **medium**. The engine's triple support is generic and nothing forbids 
   - The intro camera with three wild foes is untested.
   - Other double-only paths, such as the follower-ally multi setup, must not be taken.
 - Not read: the escape chance, the dark-grass capture modifier, the AI scripts in `src/ov170/tr_ai.c`.
+
+## Follower shiny palettes and shiny icons (2026-10-29)
+
+- Shiny Zekrom's follower palette (`res/field/actors/followers/zekrom_shiny/sprite.pal`) is wrong: same index map as
+  the normal sheet, but a recolour (tan and brown, pink key colour) instead of the teal-grey shiny. It is the same
+  in Pokeweb's own `src/assets/following/gen5-followers.narc`, so there is no corrected upstream set.
+- Of the followers, 348 have their own sheets (174 normal and shiny pairs); the others reuse the original walking
+  sprites. Follower palettes are their own 16-colour quantisations and share no index order with the battle
+  sprites' palettes, so they can't be swapped in directly.
+- A data-only fix works: for each follower colour, find the nearest battle-normal colour, add the battle sprite's
+  shiny minus normal difference, keep index 0 and black and white. Zekrom regenerated that way looks right (teal-grey
+  body, green accents). Scripts: the scratchpad's `research2/r.py` and `h.py` (not committed).
+- Suspects by comparing each follower's average shiny shift with its battle sprite's: kyurem_form_2, zekrom, kyurem,
+  frillish (and female), jellicent_female, thundurus (and form 1), tornadus, darmanitan_form_1, reshiram, swoobat,
+  venipede, landorus (both forms), samurott, deerling_form_3; then munna, deino, druddigon, tornadus_form_1,
+  kyurem_form_1, cubchoo, krokorok, accelgor, cottonee, deerling_form_1, emboar. 51 pairs change the key colour too.
+- Shiny party and box icons: the game has none. Icons use three shared 16-colour palettes chosen per species
+  (`sPokeIconPalettes` in `src/system/poke_icon.c`). Showing shinies needs a shiny icon palette per species (about
+  21 KB, derivable from the battle sprites' shiny shift) and, on each screen, a spare OBJ palette slot per visible
+  shiny. Moderate for the party, the box and the in-battle party (`src/ov165/plist_plate.c`, `src/ov255/box2_obj.c`,
+  `src/ov165/plist_battle.c`); about 35 overlays use icons in all.
