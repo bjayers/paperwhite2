@@ -1125,11 +1125,11 @@ void SetActorWPosOffset(FieldActor *actor, const VecFx32 *offset) {
 }
 
 void FldAct_GetOuterDrawOffset(FieldActor *actor, VecFx32 *dest) {
-    *dest = actor->unk5C;
+    *dest = actor->outerDrawOffset;
 }
 
 void FldAct_SetOuterDrawOffset(FieldActor *actor, const VecFx32 *value) {
-    actor->unk5C = *value;
+    actor->outerDrawOffset = *value;
 }
 
 void FldAct_GetAttrDrawOffset(FieldActor *actor, VecFx32 *dest) {

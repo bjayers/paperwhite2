@@ -11,7 +11,9 @@
 #include "gfl/heap.h"
 #include "nitro/fx.h"
 
-#define GRASS_KIND_COUNT 8
+#ifdef PAPERWHITE2
+#include "stddef.h"
+#endif
 
 // A step's grass: it shakes, settles on its rest step, and stays until the actor leaves its tile. Grass that isn't
 // animated starts settling
@@ -21,32 +23,6 @@ enum {
     GRASS_STATE_SETTLED,
     GRASS_STATE_WAIT_LEAVE,
 };
-
-typedef struct {
-    FieldEffects *effects;
-    BillboardActorSys *billboardActor;
-    u16 matIndices[GRASS_KIND_COUNT];
-} FieldEffectGrass;
-
-// What a step's grass starts from
-typedef struct {
-    FieldEffectGrass *grass;
-    FieldActor *actor;
-    int gx;
-    int gz;
-    u16 uid;
-    u16 zoneId;
-    VecFx32 pos;
-    int kind;
-} GrassTaskParams;
-
-typedef struct {
-    int state;
-    GrassTaskParams params;
-    FieldActorIdentity identity;
-    u16 unk2E;
-    u16 actorIndex;
-} GrassTask;
 
 static void Grass_LoadTextures(FieldEffectGrass *grass);
 static void Grass_FreeTextures(FieldEffectGrass *grass);
@@ -290,3 +266,15 @@ static BOOL GrassTask_IsActorOnTile(GrassTask *grassTask) {
     }
     return TRUE;
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: whether a billboard actor's callbackData, which GrassTask_Init sets to its work, is a live task of
+// grass that shakes, for the Following Pokémon's grass pass (paperwhite2_following_render.c). The work is the task's
+// work array, so the task is that far before it
+BOOL PaperWhite2_IsShakingGrassTask(const GrassTask *grassTask) {
+    // style-ok: byte-offset the task that holds the work, from the work's place in it
+    const FieldEffectTask *task = (const FieldEffectTask *)((const u8 *)grassTask - offsetof(FieldEffectTask, work));
+
+    return task->mode == TRUE && task->vtable.init == GrassTask_Init && task->vtable.update == GrassTask_Update;
+}
+#endif

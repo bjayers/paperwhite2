@@ -751,3 +751,15 @@ void RailActorAcmd_InitJumpWithSe(FieldActor *actor, u16 dir, u32 speed, u32 tim
                                   u16 step) {
     RailActorAcmd_InitJump(actor, dir, speed, timer, drawStatus, height, step, SEQ_SE_DANSA);
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: the shadow and the grass of the Following Pokémon's follower, whose movement doesn't run the actors'
+// map attribute passes (paperwhite2_following_field.c). Neither reads the tile below or the config
+void PaperWhite2_FldActEnsureShadow(FieldActor *actor) {
+    RailActor_EnsureShadow(actor, TILE_TYPE_NONE, TILE_TYPE_NONE, NULL);
+}
+
+void PaperWhite2_FldActEnterGrass(FieldActor *actor, u32 tile) {
+    RailActor_MapAttrGrassProc12(actor, tile, TILE_TYPE_NONE, NULL);
+}
+#endif

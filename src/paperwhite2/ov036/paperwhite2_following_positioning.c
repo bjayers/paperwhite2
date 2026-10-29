@@ -21,6 +21,21 @@ static u32 Read32(const u8 *p) {
     return Read16(p) | (u32)Read16(p + 2) << 16;
 }
 
+BOOL FollowingPositioning_ReadRegistryCrc(ArcTool *arc, u32 *crc) {
+    u8 header[POSITIONING_HEADER_SIZE];
+
+    if (GFL_ArcToolGetDataMax(arc) <= FOLLOWING_POSITIONING_FILE ||
+        GFL_ArcToolGetDataLength(arc, FOLLOWING_POSITIONING_FILE) < POSITIONING_HEADER_SIZE) {
+        return FALSE;
+    }
+    GFL_ArcToolReadRange(arc, FOLLOWING_POSITIONING_FILE, 0, POSITIONING_HEADER_SIZE, header);
+    if (Read32(header) != POSITIONING_MAGIC || Read16(header + 4) != POSITIONING_VERSION) {
+        return FALSE;
+    }
+    *crc = Read32(header + 12);
+    return TRUE;
+}
+
 BOOL FollowingPositioning_ReadLand(ArcTool *arc, u32 row, u32 count, u32 registryCrc, u8 *out) {
     u8 header[POSITIONING_HEADER_SIZE];
     u32 length;

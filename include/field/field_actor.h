@@ -497,6 +497,11 @@ BOOL FldAct_IsHeightCalcDisabled(FieldActor *actor);
 // Sets or clears movement flag 0x40000, and whether it is set
 void FldAct_SetSplashed(FieldActor *actor, BOOL value);
 BOOL FldAct_IsSplashed(FieldActor *actor);
+#ifdef PAPERWHITE2
+// Paper White 2: overlay 36's field_actor_g3dobj.c, for the Following Pokémon's follower
+void PaperWhite2_FldActEnsureShadow(FieldActor *actor);
+void PaperWhite2_FldActEnterGrass(FieldActor *actor, u32 tile);
+#endif
 BOOL FldAct_CheckStatusBitAttrOffsetOff(FieldActor *actor);
 void FldAct_SetReflectingFlag(FieldActor *actor, BOOL value);
 BOOL FldAct_CheckReflectingFlag(FieldActor *actor);

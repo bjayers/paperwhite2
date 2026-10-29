@@ -13,6 +13,9 @@
 // The size of a row of the land table: its gaps up, down, left and right first
 #define FOLLOWING_POSITIONING_ROW_SIZE 12
 
+// The CRC-32 of the registry that the table was written for, which the registry's own header doesn't hold: FALSE when
+// the table is missing or isn't one
+BOOL FollowingPositioning_ReadRegistryCrc(ArcTool *arc, u32 *crc);
 // Reads row of the land table, of count rows, into out, through arc, the field actors' open handle of
 // ARCID_MMODEL_TBL. FALSE, with out's gaps not to be used, when the table is missing, isn't for the registry whose
 // CRC-32 is registryCrc, or has a gap out of range: the caller then keeps the gaps it computed

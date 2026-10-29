@@ -13,15 +13,6 @@
 // is done, when the event that called it goes on. The file's name is the ROM's string, from GFL_HeapAllocate's
 // calls. The names of the functions are swan's
 
-struct GameEvent {
-    // The event that goes on when this one is done
-    GameEvent *parent;
-    GameEventCallback callback;
-    u32 state;
-    void *data;
-    GameSystem *gsys;
-};
-
 typedef struct EventProcessCallWork {
     s32 overlayId;
     const GameProcFunctions *functions;

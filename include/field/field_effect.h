@@ -4,6 +4,7 @@
 // Function names from swan (https://github.com/ds-pokemon-hacking/swan, GPL-3.0)
 
 #include "types.h"
+#include "field/field_actor.h"
 #include "gfl/billboard_actor.h"
 #include "gfl/heap.h"
 #include "gfl/tcb.h"
@@ -63,7 +64,40 @@ void FldeffShadow_Start(FieldActor *actor, FieldEffects *effects);
 void FldeffDust_Start(FieldActor *actor, FieldEffects *effects);
 // The dust in front of an actor
 void FldeffDust_StartFacing(FieldActor *actor, FieldEffects *effects);
+// fldeff_grass.c: the grass that shakes where an actor steps, a task for each step, whose work is a GrassTask
+#define GRASS_KIND_COUNT 8
+
+typedef struct {
+    FieldEffects *effects;
+    BillboardActorSys *billboardActor;
+    u16 matIndices[GRASS_KIND_COUNT];
+} FieldEffectGrass;
+
+// What a step's grass starts from
+typedef struct {
+    FieldEffectGrass *grass;
+    FieldActor *actor;
+    int gx;
+    int gz;
+    u16 uid;
+    u16 zoneId;
+    VecFx32 pos;
+    int kind;
+} GrassTaskParams;
+
+typedef struct {
+    int state;
+    GrassTaskParams params;
+    FieldActorIdentity identity;
+    u16 unk2E;
+    u16 actorIndex;
+} GrassTask;
+
 void GrassTask_Start(FieldEffects *effects, FieldActor *actor, BOOL animate, int kind);
+#ifdef PAPERWHITE2
+// Paper White 2: for the Following Pokémon's grass pass
+BOOL PaperWhite2_IsShakingGrassTask(const GrassTask *grassTask);
+#endif
 // fldeff_footmark.c: the marks an actor leaves, by kind: footprints in sand and snow, the tracks of actors whose
 // footprint type is 2 in sand and snow, and tracks in deep sand. Tracks turn with the actor. The actor's map
 // attributes pass FOOTMARK_KIND_MAX for no mark

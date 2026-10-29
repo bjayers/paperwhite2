@@ -11,6 +11,9 @@
 // The size of the page that the registry is read through
 #define FOLLOWING_REGISTRY_PAGE 1024
 
+// The file of ARCID_MMODEL_TBL that holds the registry, after the model table
+#define FOLLOWING_REGISTRY_FILE 1
+
 // Reads size bytes at offset of the registry into dest, TRUE when it read them
 typedef BOOL (*FollowingRegistryRead)(void *context, u32 offset, void *dest, u32 size);
 

@@ -71,3 +71,11 @@ static GameEventReturnCode EventFieldMenuReturn_Callback(GameEvent *event, u32 *
     }
     return GAMEEVENT_CONTINUE;
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: whether an event is the field menu's return, for the Following Pokémon's unload, which brings the
+// follower back at once after the menu (paperwhite2_following_field.c)
+BOOL PaperWhite2_IsFieldMenuReturnCallback(GameEventCallback callback) {
+    return callback == EventFieldMenuReturn_Callback;
+}
+#endif
