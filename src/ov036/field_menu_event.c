@@ -10,14 +10,6 @@
 #include "system/game_event.h"
 #include "system/game_system.h"
 
-typedef struct EventFieldMenuReturn {
-    GameEvent *event;
-    GameSystem *gsys;
-    Field *field;
-    u32 screenId;
-    u8 seq;
-} EventFieldMenuReturn;
-
 // The steps of the return from the field menu: change the touch screen once it is ready, remember it once the
 // change is done, and let the actors move again
 enum {

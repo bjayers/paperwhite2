@@ -53,34 +53,6 @@
 #include "system/game_system.h"
 #include "system/zone_weather.h"
 
-// The work of EventBattleCall_Callback, the battle itself
-typedef struct {
-    GameSystem *gsys;
-    GameData *gameData;
-    BtlSetup *setup;
-    EventBattleReturnParam battleReturnParam;
-    // Whether the caller returns to the field itself
-    u32 unk14;
-    // Whether losing doesn't black the player out
-    u32 unk18;
-    // Whether it is the Trial House's
-    u32 unk1C;
-    // Whether the caller frees the setup
-    u32 unk20;
-    u32 encEffect;
-    u32 flags;
-} EventBattleCallWork;
-
-// The work of EventWildBattleCall_Callback
-typedef struct {
-    GameSystem *gsys;
-    BtlSetup *setup;
-    u8 unk08;
-    u8 specialIndex;
-    u8 unk0A;
-    u32 unk0C;
-} EventWildBattleCallWork;
-
 static GameEventReturnCode EventBattleCall_Callback(GameEvent *event, u32 *state, void *work);
 static void EventBattleCall_BroadcastTrainerBattle(u16 trainerId, u32 kind);
 static void EventBattleCall_BroadcastWildBattle(BtlSetup *setup, u32 kind);
@@ -716,3 +688,15 @@ static void *EventBattleCall_DSProtTamper3(void *seed, void *work) {
 static void *EventBattleCall_DSProtNop3(void *seed, void *work) {
     return work;
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: whether a callback is a battle's, for the Following Pokémon's scene policy, which lets a follower in
+// front carry into a local single battle's opening (paperwhite2_following_scene.c)
+BOOL PaperWhite2_IsWildBattleCallCallback(GameEventCallback callback) {
+    return callback == EventWildBattleCall_Callback;
+}
+
+BOOL PaperWhite2_IsBattleCallCallback(GameEventCallback callback) {
+    return callback == EventBattleCall_Callback;
+}
+#endif

@@ -7,7 +7,17 @@
 #include "types.h"
 #include "field/field_script.h"
 #include "struct_decls.h"
+#include "system/game_event.h"
 #include "system/vm.h"
+
+// The work of the event that plays a cry
+typedef struct {
+    u16 species;
+    u16 form;
+    // Plays the save's Chatot recording in place of Chatot's cry
+    BOOL chatter;
+    FieldScriptEnv *env;
+} PokeVoiceEvent;
 
 BOOL Scrcmd_Sound_BGMPlay(VM *vm, FieldScriptEnv *env);
 BOOL Scrcmd_Sound_BGMPlayEx(VM *vm, FieldScriptEnv *env);
@@ -39,4 +49,8 @@ BOOL Scrcmd_Sound_ISSSwitchEnable(VM *vm, FieldScriptEnv *env);
 BOOL Scrcmd_Sound_ISSSwitchDisable(VM *vm, FieldScriptEnv *env);
 BOOL Scrcmd_Sound_ISSSwitchQuery(VM *vm, FieldScriptEnv *env);
 
+#ifdef PAPERWHITE2
+// Paper White 2: overlay 36's scrcmd_sound.c, for the Following Pokémon
+BOOL PaperWhite2_IsPokeVoicePlayCallback(GameEventCallback callback);
+#endif
 #endif // POKEBW2_FIELD_SCRCMD_SOUND_H

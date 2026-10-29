@@ -21,14 +21,15 @@
 #include "nitro/mi.h"
 #include "paperwhite2/following.h"
 #include "paperwhite2/following_effects.h"
+#include "paperwhite2/following_events.h"
 #include "paperwhite2/following_field.h"
-#include "paperwhite2/following_hooks.h"
 #include "paperwhite2/following_interaction.h"
 #include "paperwhite2/following_positioning.h"
 #include "paperwhite2/following_reactions.h"
 #include "paperwhite2/following_registry.h"
 #include "paperwhite2/following_render.h"
 #include "paperwhite2/following_resident.h"
+#include "paperwhite2/following_scene.h"
 #include "pml/poke_party.h"
 #include "save/config.h"
 #include "save/player_info.h"
@@ -42,8 +43,8 @@
 // walks the player's trail (paperwhite2_following_trail.c), with the swap when the player steps back onto it, the stand
 // beside the player, the ball that a large follower stays in under a floor or indoors, L and R to switch it, and A in
 // front of it to talk to it (paperwhite2_following_interaction.c), from the field's event checks. Its state lives here
-// and goes with overlay 36; what must outlive the field is a resident token. The calls into the parts that step 4
-// brings (the scene policy and the events bridge) are following_hooks.h's stubs; the ball effects are
+// and goes with overlay 36; what must outlive the field is a resident token. The scene policy
+// (paperwhite2_following_scene.c) says which events keep the follower and which recall it; the ball effects are
 // paperwhite2_following_effects.c.
 // The original's FollowingDebug, a block of values for its emulator tests, isn't ported; the last reason that kept the
 // follower away, which its talk reads, is sReason
@@ -2155,7 +2156,7 @@ static void UpdateBefore(MMSys *system) {
         FollowingTalk_Cancel();
     }
     ownTalk = FollowingTalk_FieldOwns(field);
-    eventState = FollowingScene_Poll(field);
+    eventState = FollowingScene_Poll();
     if (eventState == FOLLOWING_SCENE_INVALID) {
         sEventsReady = FALSE;
     }

@@ -1046,6 +1046,17 @@ def main():
                 implicit=["tools/paperwhite2/season_preview.py", "tools/data/gen_constants.py", "generated/areas.txt",
                           "generated/map_models.txt"])
         constant_headers.append(output)
+        # Paper White 2: the Following Pokémon's scene policy, its commands and sound events, from
+        # res/paperwhite2/following/ (docs/paperwhite2/following-pokemon.md, Step 4)
+        n.rule("following_scene_policy",
+               "$python tools/paperwhite2/following_scene_policy.py $in config/w2_us/arm9/symbols.txt $out",
+               "Generating $out", restat="1")
+        outputs = [Path(GENERATED_INCLUDE_DIR) / "paperwhite2" / "following_scene_policy.h",
+                   Path(GENERATED_INCLUDE_DIR) / "paperwhite2" / "following_sound_policy.h"]
+        n.build(outputs, "following_scene_policy",
+                ["res/paperwhite2/following/event-policy.json", "res/paperwhite2/following/audio-event-policy.json"],
+                implicit=["tools/paperwhite2/following_scene_policy.py", "config/w2_us/arm9/symbols.txt"])
+        constant_headers += outputs
     n.build(["constants_headers"], "phony", constant_headers)
 
     checks, configs = [], []

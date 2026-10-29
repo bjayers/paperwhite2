@@ -25,13 +25,6 @@ typedef struct {
 typedef struct {
     GameSystem *gsys;
     Field *field;
-    GameData *gameData;
-    u32 unk0C;
-} EventFieldOpenWork;
-
-typedef struct {
-    GameSystem *gsys;
-    Field *field;
     s32 overlayId;
     const GameProcFunctions *functions;
     void *param;
@@ -406,3 +399,23 @@ GameEvent *EventPokeList_Create(GameSystem *gsys, Field *field, PokeListParam *p
     wk->summaryParam = summaryParam;
     return event;
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: whether a callback is EventFieldOpen_Callback's, or one of the field's close and open around a
+// subprocess, which the Following Pokémon's scene policy lets run in a PC's storage (paperwhite2_following_scene.c)
+BOOL PaperWhite2_IsFieldOpenCallback(GameEventCallback callback) {
+    return callback == EventFieldOpen_Callback;
+}
+
+BOOL PaperWhite2_IsFieldSubprocessCallback(GameEventCallback callback) {
+    // BUG: the original compared with an address 8 bytes into EventFieldSubprocessTransitionWithCallback_Callback,
+    // which no callback has, so that event recalls the follower in a PC's storage
+#ifdef BUGFIX
+    if (callback == EventFieldSubprocessTransitionWithCallback_Callback) {
+        return TRUE;
+    }
+#endif
+    return callback == EventFieldSubprocessCall_Callback || callback == EventFieldClose_Callback ||
+           callback == EventFieldCloseKeepSound_Callback || callback == EventFieldOpen_Callback;
+}
+#endif

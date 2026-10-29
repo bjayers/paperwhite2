@@ -79,3 +79,11 @@ GameEvent *EventFinishScriptSubEvents_Create(FieldScriptEnv *env) {
     work->count = NELEMS(FIELD_SCRIPT_SUB_EVENT_FINISH_FUNCS);
     return event;
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: the script's sub events that are running, which the Following Pokémon's scene policy checks at the
+// script's end (paperwhite2_following_scene.c)
+u32 PaperWhite2_GetActiveFieldScriptSubEvents(void) {
+    return g_ActiveFieldScriptSubEvents;
+}
+#endif

@@ -425,4 +425,8 @@ u16 *ScriptWork_GetLocalWork(ScriptWork *work, u16 id);
 WordSet *ScriptWork_GetWordSet(ScriptWork *work);
 MMSys *GetScrEnvActorSys(FieldScriptEnv *env);
 
+#ifdef PAPERWHITE2
+// Paper White 2: overlay 12's script_sub_event.c, for the Following Pokémon
+u32 PaperWhite2_GetActiveFieldScriptSubEvents(void);
+#endif
 #endif // POKEBW2_FIELD_FIELD_SCRIPT_H

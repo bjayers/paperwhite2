@@ -7,6 +7,14 @@
 #include "struct_decls.h"
 #include "system/game_event.h"
 
+typedef struct EventFieldMenuReturn {
+    GameEvent *event;
+    GameSystem *gsys;
+    Field *field;
+    u32 screenId;
+    u8 seq;
+} EventFieldMenuReturn;
+
 struct FieldMenuWork {
     u16 code;
     u16 pad02;
