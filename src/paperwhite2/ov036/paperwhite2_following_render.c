@@ -48,8 +48,8 @@ typedef struct {
 // can't dip a sheet's feet through the floor, which leaves them all floating; the user's playtests put the feet on the
 // ground 4 pixels below that. The actor table's offset can't carry it: FldeffShadow_Draw adds the actor's model offset
 // to the oval too, which would then sink a unit or more under the floor, and a W-buffered room (the Pokémon Centers)
-// draws the floor over it. So the lift is the quad's alone, and FollowingRender_OverOval keeps the lowered feet in
-// front of the oval
+// draws the floor over it. So the lift is the quad's alone. Pulling the quad toward the camera to keep the feet in
+// front of the oval was tried, and drew the follower over the player; the oval may show over the lowest rows instead
 #define FOLLOWING_SPRITE_LIFT -2
 
 // A camera-facing quad leans back by its height, so a 64-pixel body reaches walls a 32-pixel NPC never touches. It
@@ -570,11 +570,7 @@ void FollowingRender_Draw(BillboardActorSys *system, G3DCamera *camera, G3DLight
                 adjusted.position.y = (fx32)y;
                 changed = TRUE;
             }
-            // The lowered feet are pulled in front of the oval on the follower's ground, with the same picture
             drawn = adjusted;
-            if (FollowingRender_OverOval(&adjusted, follower->wPos.y, &view, &drawn)) {
-                changed = TRUE;
-            }
             sSubmitted.world = follower->wPos;
             sSubmitted.native = original.position;
             sSubmitted.resource = follower->config.rscIndices.res1;

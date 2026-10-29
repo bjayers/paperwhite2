@@ -500,35 +500,6 @@ BOOL FollowingRender_ShadowMatch(const FollowingPose *shadow, const VecFx32 *fee
     return FollowingRender_ShadowTuck(shadow, sprite, camera, keep, output);
 }
 
-BOOL FollowingRender_OverOval(const FollowingPose *body, fx32 ground, const FollowingCamera *camera,
-                              FollowingPose *output) {
-    VecFx32 direction;
-    s64 gap;
-    s32 change;
-
-    if (body == NULL || camera == NULL || output == NULL) {
-        return FALSE;
-    }
-    *output = *body;
-    if (camera->projection > G3DCAM_PROJECTION_ORTHO || !IsScaleValid(body)) {
-        return FALSE;
-    }
-    if (!Delta(&camera->eye, &camera->target, &direction, 1 << 27) || !Axis(direction, &direction)) {
-        return FALSE;
-    }
-    // The ray through the bottom row meets the oval's plane gap / sin(pitch) nearer the camera than the body. A
-    // camera that doesn't look down has no oval in front of the feet
-    gap = (s64)ground + FOLLOWING_RENDER_OVAL_RISE - body->position.y;
-    if (gap <= 0 || direction.y <= 0) {
-        return FALSE;
-    }
-    change = Divide(gap * FX32_ONE, direction.y);
-    if (change > FOLLOWING_RENDER_OVAL_CAP) {
-        change = FOLLOWING_RENDER_OVAL_CAP;
-    }
-    return ShiftDepth(body, camera, &direction, change, output);
-}
-
 void FollowingRender_PrivateScene(BillboardActorScene *scene, const BillboardActorScene *live, BillboardActor *actors,
                                   BillboardActorMaterial *materials, u16 actorCount, u16 materialCount) {
     if (scene == NULL) {

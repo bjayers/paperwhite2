@@ -673,6 +673,9 @@ depth), half of 0x136 at 237 units is about 4.5 units, against the 5 to 7 that a
   doesn't move, until its bottom row clears the oval's plane: (ground + 1 - bottom) / sin(pitch), half a tile at
   most, about 5 to 8 units at the field's cameras. It runs on every map: in a Z-buffered one it only adds to the
   offset. The strips of a tall body are cut first and the base window is pulled with the rest.
+- **Reverted after the third test.** The pull drew the follower in front of the player too often, and the user
+  won't move the player to compensate. `FollowingRender_OverOval` is gone: the quad keeps its lowered pose, and the
+  engine's oval may again show over the lowest rows of some sheets, chiefly in the Pokémon Centers' W-buffered rooms.
 - **The shadow pass is gone.** Pokeweb's pass looked for the follower's oval among the effects' camera-facing quads
   (type 0) to push it away; the oval is type 3, so it never found it, and the oval was always the engine's. It
   and `FollowingRender_OvalBehind` are removed: `PaperWhite2_FollowingEffectsDraw` submits the shadows as the
