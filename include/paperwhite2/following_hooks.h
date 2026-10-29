@@ -9,10 +9,9 @@
 #include "system/game_system.h"
 
 // Paper White 2: what the Following Pokémon's field code (src/paperwhite2/ov036/paperwhite2_following_field.c) asks
-// of the parts of Pokeweb's runtime that the port's step 4 brings: the ball effects (effects.c), talking to the
-// follower (interaction.c), the scene policy (scene.c) and the events bridge (events.c). Until then each is a stub
-// that keeps the base behavior safe: no ball, so the follower just disappears where the original recalls it and
-// appears where it sends it out; no talk; and any running event is unsafe, so it recalls the follower
+// of the parts of Pokeweb's runtime that the port's step 4 brings: talking to the follower (interaction.c), the scene
+// policy (scene.c) and the events bridge (events.c); the ball effects are following_effects.h. Until then each is a
+// stub that keeps the base behavior safe: no talk, and any running event is unsafe, so it recalls the follower
 // (docs/paperwhite2/following-pokemon.md, "Step 3")
 
 // What the scene's poll says of the running event: nothing, the follower waits, the follower was recalled; with
@@ -37,79 +36,6 @@ typedef struct {
 } FollowingRestore;
 
 #define FOLLOWING_RESTORE_MAGIC ('F' | 'W' << 8 | 'S' << 16 | (u32)'R' << 24)
-
-// The ball effects, effects.c. TODO step 4: the ball, the send-out flash and the recall. style-ok: todo
-static inline void FollowingEffects_SetResourceCount(u32 count) {
-}
-
-static inline void FollowingEffects_Prepare(FieldActor *actor) {
-}
-
-static inline void FollowingEffects_Snapshot(FieldActor *actor) {
-}
-
-// The send-out: without it the follower just appears
-static inline void FollowingEffects_Out(FieldActor *actor) {
-}
-
-// The recall: without it the follower just disappears
-static inline void FollowingEffects_Recall(FieldActor *actor) {
-}
-
-static inline void FollowingEffects_Tick(void) {
-}
-
-static inline void FollowingEffects_SetBall(u32 ball) {
-}
-
-static inline void FollowingEffects_Cancel(void) {
-}
-
-static inline void FollowingEffects_Destroy(void) {
-}
-
-static inline void FollowingEffects_Warm(HeapID heapId) {
-}
-
-static inline BOOL FollowingEffects_HidesActor(void) {
-    return FALSE;
-}
-
-// The closed ball's shake and refusal beep where L or R can't switch
-static inline void FollowingEffects_Cue(const VecFx32 *at) {
-}
-
-static inline void FollowingEffects_RestAt(const VecFx32 *at) {
-}
-
-static inline BOOL FollowingEffects_IsResting(void) {
-    return FALSE;
-}
-
-static inline void FollowingEffects_RestRecall(void) {
-}
-
-static inline void FollowingEffects_RestBounce(void) {
-}
-
-static inline BOOL FollowingEffects_IsBusy(void) {
-    return FALSE;
-}
-
-static inline BOOL FollowingEffects_IsRecalling(void) {
-    return FALSE;
-}
-
-// TRUE, since L and R switch the follower only when its effects are there
-static inline BOOL FollowingEffects_IsAvailable(void) {
-    return TRUE;
-}
-
-static inline void FollowingEffects_SetPlayer(FieldActor *player) {
-}
-
-static inline void FollowingEffects_Draw(G3DCamera *camera, G3DLight *lights) {
-}
 
 // Talking to the follower, interaction.c. TODO step 4: A in front of it, and its reactions. style-ok: todo
 static inline void FollowingTalk_PollInput(void) {

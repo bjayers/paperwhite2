@@ -20,6 +20,7 @@
 #include "nitro/fx.h"
 #include "nitro/mi.h"
 #include "paperwhite2/following.h"
+#include "paperwhite2/following_effects.h"
 #include "paperwhite2/following_field.h"
 #include "paperwhite2/following_hooks.h"
 #include "paperwhite2/following_positioning.h"
@@ -38,7 +39,8 @@
 // walks the player's trail (paperwhite2_following_trail.c), with the swap when the player steps back onto it, the stand
 // beside the player, the ball that a large follower stays in under a floor or indoors, and L and R to switch it. Its
 // state lives here and goes with overlay 36; what must outlive the field is a resident token. The calls into the parts
-// that step 4 brings (the ball effects, talking, the scene policy and the events bridge) are following_hooks.h's stubs.
+// that step 4 brings (talking, the scene policy and the events bridge) are following_hooks.h's stubs; the ball effects
+// are paperwhite2_following_effects.c.
 // The original's FollowingDebug, a block of values for its emulator tests, isn't ported; the last reason that kept the
 // follower away, which its talk reads, is sReason
 
@@ -1825,7 +1827,7 @@ void PaperWhite2_FollowingPreloadFollower(Field *field, MMSys *system) {
     if (sOwner != system) {
         FollowingEffects_Destroy();
     }
-    FollowingEffects_Warm(system->fieldHeapId);
+    FollowingEffects_Warm(system);
     sWarmed = FollowingEffects_IsAvailable() ? system : NULL;
     slot = -1;
     if (!SelectFollower(gameData, &selected, 0, &slot)) {
@@ -2225,7 +2227,7 @@ static void UpdateBefore(MMSys *system) {
         ClearRestore();
         FollowingTalk_Cancel();
         if (!(reason & REASON_OFF) && (reason & REASON_EVENT)) {
-            FollowingEffects_Warm(system->fieldHeapId);
+            FollowingEffects_Warm(system);
         }
         if (IsOwned() && !(sFollower.actor->flags & FOLLOWING_ACTOR_FLAG_HIDDEN) &&
             (reason & (REASON_EX_STATE | REASON_EVENT | REASON_PAIR))) {

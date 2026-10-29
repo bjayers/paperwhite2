@@ -113,8 +113,8 @@ void BillboardActorScene_SetColEmissive(BillboardActorScene *scene, const GXRgb 
 void BillboardActorScene_SetBasePolyID(BillboardActorScene *scene, const u8 *id);
 void BillboardActorScene_SetGeomOrigin(BillboardActorScene *scene, u8 origin);
 void BillboardActorScene_SetTexcoordOffset(BillboardActorScene *scene, s16 s, s16 t);
-// The width and height of a texture of a billboard actor size, its width's GX_TEXSIZE_S* in bits 4 to 6 and its height's in
-// bits 0 to 2
+// The width and height of a texture of a billboard actor size, its width's GX_TEXSIZE_S* in bits 4 to 6 and its
+// height's in bits 0 to 2
 void BillboardActor_GetTexDimensions(int size, u16 *width, u16 *height);
 
 // Add a material of a texture resource, of one read from an archive, or of a texture already in VRAM, faceWidth by
@@ -140,6 +140,15 @@ void BillboardActorScene_GetMaterialPlttKey(BillboardActorScene *scene, u32 mate
 // Where a face is in its material's texture, and how big it is
 void BillboardActorScene_GetMaterialFaceLocation(BillboardActorScene *scene, u32 material, int face, u32 *offset,
                                                  u32 *faceSize, u8 byRow);
+
+#ifdef PAPERWHITE2
+// Paper White 2: billboard.c's material setup, for a material outside a scene's slots: its texture bound and uploaded
+// (texAddr and plttAddr 0 when it can't be), and its format, size and faces as BillboardActorScene_AddMaterialNewTex
+// gives them
+void PaperWhite2_BillboardActorMaterialBindTexture(BillboardActorMaterial *material, G3DResource *texResource);
+void PaperWhite2_BillboardActorMaterialSet(BillboardActorMaterial *material, u32 format, int size, u8 faceWidth,
+                                           u8 faceHeight);
+#endif
 
 u32 BillboardActorScene_AddNewActor(BillboardActorScene *scene, u32 material, s16 scaleX, s16 scaleY,
                                     const VecFx32 *pos, u8 alpha, u32 lights, u32 type);
