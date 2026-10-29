@@ -53,6 +53,11 @@ typedef struct {
     u8 tiles;
 } FollowingWallBehind;
 
+// World pixels added to every follower's height. Pokeweb's runtime lifts every follower by 2 so that the walking hop
+// can't dip a sheet's feet through the floor, which leaves them all floating; at 0 a follower stands as the game's own
+// NPCs and walking Pokémon do, on the same sheets
+#define FOLLOWING_SPRITE_LIFT 0
+
 // A camera-facing quad leans back by its height, so a 64-pixel body reaches walls a 32-pixel NPC never touches. It
 // draws as it is unless a wall stands within four tiles behind it. Then the field's submit keeps the bottom
 // STRIP_BASE_ROWS rows: the feet, where grass and the oval meet the body. The rows above go through one submit of the
@@ -562,10 +567,10 @@ void FollowingRender_Draw(BillboardActorSys *system, G3DCamera *camera, G3DLight
             GetCamera(camera, &view);
             py = (s64)player->wPos.y + player->wPosOffset.y + player->outerDrawOffset.y;
             playerY = py < LONG_MIN || py > LONG_MAX ? player->wPos.y : (fx32)py;
-            // The registry's Y replaces the config's on this quad only. Every facing uses that one offset, then two
-            // world pixels of lift. The engine's hop stays in the field's billboard. The camera doesn't move the quad,
+            // The registry's Y replaces the config's on this quad only. Every facing uses that one offset, then
+            // FOLLOWING_SPRITE_LIFT. The engine's hop stays in the field's billboard. The camera doesn't move the quad,
             // no facing adds Z, and the actor and its oval aren't written
-            delta = spriteY - follower->config.wPosOffsetY + 2;
+            delta = spriteY - follower->config.wPosOffsetY + FOLLOWING_SPRITE_LIFT;
             y = (s64)adjusted.position.y + (s64)delta * FX32_ONE;
             if (delta != 0 && y >= LONG_MIN && y <= LONG_MAX) {
                 adjusted.position.y = (fx32)y;

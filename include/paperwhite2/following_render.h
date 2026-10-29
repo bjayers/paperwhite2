@@ -25,7 +25,7 @@ typedef struct {
 // The descriptor's Z offset moves the model and its shadow together, and stays the same whatever the facing, so
 // turning snaps neither
 void FollowingRender_Anchor(FieldActor *actor, u32 face);
-// The actors' pass: the follower's quad at its registry Y (spriteY) and two world pixels up, its own tile's light
+// The actors' pass: the follower's quad at its registry Y (spriteY) plus a fixed lift (none), its own tile's light
 // when the player has one of the two plain masks (shaded), and a tall one split into strips in front of a wall
 // behind it. The player's quad is only read, and everything is put back after the submit
 void FollowingRender_Draw(BillboardActorSys *system, G3DCamera *camera, G3DLight *lights, FieldActor *follower,
