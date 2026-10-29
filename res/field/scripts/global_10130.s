@@ -17,6 +17,9 @@
     ScriptEntry Script_14
     ScriptEntry Script_15
     ScriptEntry Script_16
+#ifdef PAPERWHITE2_DEBUG_MENU
+    ScriptEntry Script_17
+#endif
     ScriptEntriesEnd
     WorkSetConst 0x8020, 0
 
@@ -211,4 +214,40 @@ Script_16:
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
+
+#ifdef PAPERWHITE2_DEBUG_MENU
+// Paper White 2: the debug menu that START opens in the field (src/ov036/fieldmap_event.c): a message, a list of
+// options, and a message for the option picked
+Script_17:
+    ActorsPauseAll
+    // "TEST"
+    SystemMsg Global10130_Text_DebugTest, 2
+    ListMenuAnchorTopRight 31, 1, 0, 1, 0x8020
+    ListMenuAdd Global10130_Text_DebugOptionA, 65535, 0
+    ListMenuAdd Global10130_Text_DebugOptionB, 65535, 1
+    ListMenuAdd Global10130_Text_DebugClose, 65535, 2
+    ListMenuShow
+    VMStackPush 0x8020
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMJumpIf CMP_STACK, L_DebugMenuNotOptionA
+    // "You picked Option A."
+    SystemMsg Global10130_Text_DebugPickedOptionA, 2
+    LastKeyWait
+    VMJump L_DebugMenuClose
+
+L_DebugMenuNotOptionA:
+    VMStackPush 0x8020
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMJumpIf CMP_STACK, L_DebugMenuClose
+    // "You picked Option B."
+    SystemMsg Global10130_Text_DebugPickedOptionB, 2
+    LastKeyWait
+
+L_DebugMenuClose:
+    SystemMsgClose
+    ActorsUnpauseAll
+    VMHalt
+#endif
     .balign 4, 0

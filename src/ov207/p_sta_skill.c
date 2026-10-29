@@ -18,6 +18,9 @@
 #include "pml/poke_party.h"
 #include "system/app_menu_common.h"
 #include "system/hp_gauge.h"
+#ifdef PAPERWHITE2
+#include "text/system/p_sta_sys.h"
+#endif
 
 // The summary screen's skill page: the stats and ability, and the moves as plates of sprites, with the details of the
 // move picked, swapping two moves, and, when a new move is learned, picking the move to forget. The names of the
@@ -79,6 +82,13 @@ struct PStaSkillWork {
     GFLBitmap *forgetBitmap;
     PStaOamActor *forgetOam;
     SkillPlate plates[PLATE_COUNT];
+#ifdef PAPERWHITE2
+    // Paper White 2: whether L or R shows the stats' EVs and IVs, the title bar's text for them, and the hint for L
+    // and R
+    BOOL showHidden;
+    BmpWin *titleWindow;
+    BmpWin *hintWindow;
+#endif
 };
 
 static void PStaSkill_PrintStats(PStatusWork *wk, PStaSkillWork *skill);
@@ -109,6 +119,12 @@ static void PStaSkill_HidePlate(PStatusWork *wk, PStaSkillWork *skill, SkillPlat
 static void PStaSkill_GetPlateRect(SkillPlate *plate, TouchRect *rect);
 static void PStaSkill_GetPlatePos(SkillPlate *plate, ClActorPos *pos);
 static void PStaSkill_SetPlateAnim(SkillPlate *plate, u32 anim);
+#ifdef PAPERWHITE2
+static void PStaSkill_PrintStatRows(PStatusWork *wk, PStaSkillWork *skill, PartyPkm *pkm, u32 nature);
+static void PStaSkill_PrintHiddenRow(PStatusWork *wk, BmpWin *window, PartyPkm *pkm, u32 stat);
+static void PStaSkill_PrintHiddenTitle(PStatusWork *wk, PStaSkillWork *skill);
+static void PStaSkill_PrintRight(PStatusWork *wk, BmpWin *window, u32 msgId, u16 right, u16 color);
+#endif
 
 // The Pokémon's move in a slot
 static inline u32 PStaSkill_GetMove(PStatusWork *wk, u32 slot) {
@@ -123,6 +139,35 @@ static const PStaWindowSetup sSkillWindows[SKILL_WINDOW_COUNT] = {
     { 10, 10, 14, 2 }, { 1, 13, 30, 6 }, { 4, 20, 24, 4 },
 };
 
+#ifdef PAPERWHITE2
+// Paper White 2: the hidden stats' columns, the right edges of the EVs and the IVs in the stats' windows (which all
+// start at column 8), so that the IVs end where the stats' values do
+#define HIDDEN_EV_RIGHT 76
+#define HIDDEN_IV_RIGHT 105
+// The title bar's window over the empty bar and the page's name (« STATS »), and where its texts end: the columns'
+// names over the columns, the title at the right
+static const PStaWindowSetup sHiddenTitleWindow = { 13, 1, 19, 2 };
+#define HIDDEN_TITLE_EV_RIGHT 36
+#define HIDDEN_TITLE_IV_RIGHT 65
+#define HIDDEN_TITLE_RIGHT 144
+// The page's name in the title bar, which the title replaces, and the empty bar left of it that covers it
+#define HIDDEN_PAGE_NAME_X 22
+#define HIDDEN_EMPTY_BAR_X 13
+#define HIDDEN_PAGE_NAME_WIDTH 7
+// The hint for L and R, at the left of the HP's row
+static const PStaWindowSetup sHiddenHintWindow = { 0, 4, 8, 2 };
+
+// The stats in the rows' order, HP first, the stats' value, EV and IV
+static const u8 sStatRowParams[][3] = {
+    { PKM_PARAM_MAX_HP, PKM_PARAM_EV_HP, PKM_PARAM_IV_HP },
+    { PKM_PARAM_ATTACK, PKM_PARAM_EV_ATTACK, PKM_PARAM_IV_ATTACK },
+    { PKM_PARAM_DEFENSE, PKM_PARAM_EV_DEFENSE, PKM_PARAM_IV_DEFENSE },
+    { PKM_PARAM_SP_ATTACK, PKM_PARAM_EV_SP_ATTACK, PKM_PARAM_IV_SP_ATTACK },
+    { PKM_PARAM_SP_DEFENSE, PKM_PARAM_EV_SP_DEFENSE, PKM_PARAM_IV_SP_DEFENSE },
+    { PKM_PARAM_SPEED, PKM_PARAM_EV_SPEED, PKM_PARAM_IV_SPEED },
+};
+#endif
+
 PStaSkillWork *PStaSkill_Create(PStatusWork *wk) {
     PStaSkillWork *skill = GFL_HeapAllocate(wk->heapId, sizeof(PStaSkillWork), FALSE, "p_sta_skill.c", 334);
     u8 i;
@@ -136,6 +181,10 @@ PStaSkillWork *PStaSkill_Create(PStatusWork *wk) {
     skill->forgetConfirmed = FALSE;
     skill->swapSrc = SLOT_NONE;
     skill->cursor = CURSOR_NONE;
+#ifdef PAPERWHITE2
+    // Paper White 2: the stats first, until L or R
+    skill->showHidden = FALSE;
+#endif
     if (wk->param->mode == PSTATUS_MODE_FORGET_MOVE && wk->param->move != MOVE_NONE) {
         skill->moveCount = PLATE_COUNT;
     } else {
@@ -169,6 +218,13 @@ void PStaSkill_Main(PStatusWork *wk, PStaSkillWork *skill) {
                 break;
             }
         }
+#ifdef PAPERWHITE2
+        // Paper White 2: and the title and the hint
+        if (PrintQueue_IsBitmapPending(wk->printQueue, BmpWin_GetBitmap(skill->titleWindow)) == TRUE ||
+            PrintQueue_IsBitmapPending(wk->printQueue, BmpWin_GetBitmap(skill->hintWindow)) == TRUE) {
+            done = FALSE;
+        }
+#endif
         if (done == TRUE) {
             for (i = 0; i <= 7; i++) {
                 window = skill->windows[i];
@@ -327,6 +383,13 @@ void PStaSkill_Load(PStatusWork *wk, PStaSkillWork *skill) {
                                                  sSkillWindows[i].height, 14, 1);
     }
     BmpWin_SetPalette(skill->windows[1], 13);
+#ifdef PAPERWHITE2
+    // Paper White 2: the windows of the hidden stats' title and of the hint for L and R
+    skill->titleWindow = BmpWin_CreateDynamic(4, sHiddenTitleWindow.x, sHiddenTitleWindow.y, sHiddenTitleWindow.width,
+                                              sHiddenTitleWindow.height, 14, 1);
+    skill->hintWindow = BmpWin_CreateDynamic(4, sHiddenHintWindow.x, sHiddenHintWindow.y, sHiddenHintWindow.width,
+                                             sHiddenHintWindow.height, 14, 1);
+#endif
     PStaSkill_PrintStats(wk, skill);
     for (i = 0; i < skill->moveCount; i++) {
         PStaSkill_LoadPlate(wk, skill, &skill->plates[i]);
@@ -358,6 +421,11 @@ void PStaSkill_Unload(PStatusWork *wk, PStaSkillWork *skill) {
     for (i = 0; i < SKILL_WINDOW_COUNT; i++) {
         BmpWin_Free(skill->windows[i]);
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the hidden stats' title and the hint
+    BmpWin_Free(skill->titleWindow);
+    BmpWin_Free(skill->hintWindow);
+#endif
     skill->isShown = FALSE;
 }
 
@@ -380,7 +448,14 @@ void PStaSkill_Clear(PStatusWork *wk, PStaSkillWork *skill) {
 
 static void PStaSkill_PrintStats(PStatusWork *wk, PStaSkillWork *skill) {
     PStaSkill_PrintStatValues(wk, skill);
+#ifdef PAPERWHITE2
+    // Paper White 2: the HP's bar only with the stats, not with their EVs and IVs
+    if (skill->showHidden == FALSE) {
+        PStaSkill_DrawHpBar(wk, skill);
+    }
+#else
     PStaSkill_DrawHpBar(wk, skill);
+#endif
 }
 
 static void PStaSkill_DrawStats(PStatusWork *wk, PStaSkillWork *skill) {
@@ -394,11 +469,31 @@ static void PStaSkill_DrawStats(PStatusWork *wk, PStaSkillWork *skill) {
         BmpWin_FlushMap(window);
         GFL_BGSysLoadScr(BmpWin_GetBGIndex(window));
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the hidden stats' title and the hint for L and R
+    BmpWin_FlushChar(skill->titleWindow);
+    BmpWin_FlushMap(skill->titleWindow);
+    BmpWin_FlushChar(skill->hintWindow);
+    BmpWin_FlushMap(skill->hintWindow);
+    GFL_BGSysLoadScr(BmpWin_GetBGIndex(skill->titleWindow));
+#endif
     GFL_BGSysBufferScrDefault(6, skill->screens[1].screen->rawData, skill->screens[1].screen->szByte);
     GFL_BGSysQueueScrLoad(6);
     GFL_BGSysLoadScrArea(5, 0, 0, 32, 3, skill->screens[3].screen->rawData, 0, 0, 32, 32);
+#ifdef PAPERWHITE2
+    // Paper White 2: with the EVs and IVs, the empty bar over the page's name, which the title replaces
+    if (skill->showHidden == TRUE) {
+        GFL_BGSysLoadScrArea(5, HIDDEN_PAGE_NAME_X, 1, HIDDEN_PAGE_NAME_WIDTH, 2, skill->screens[3].screen->rawData,
+                             HIDDEN_EMPTY_BAR_X, 1, 32, 32);
+    }
+#endif
     GFL_BGSysQueueScrLoad(5);
+#ifdef PAPERWHITE2
+    // Paper White 2: the HP bar's frame only with the stats
+    ClActor_SetVisible(skill->actors[0], skill->showHidden == FALSE);
+#else
     ClActor_SetVisible(skill->actors[0], TRUE);
+#endif
     ClActor_SetVisible(skill->actors[1], FALSE);
     ClActor_SetVisible(wk->typeIcons[0], FALSE);
     ClActor_SetVisible(wk->typeIcons[1], FALSE);
@@ -463,11 +558,17 @@ static void PStaSkill_DrawDetail(PStatusWork *wk, PStaSkillWork *skill) {
 static void PStaSkill_PrintStatValues(PStatusWork *wk, PStaSkillWork *skill) {
     PartyPkm *pkm = PStatus_GetPartyPkm(wk);
     u32 nature = PokeParty_GetParam(pkm, PKM_PARAM_NATURE, NULL);
+#ifndef PAPERWHITE2
     WordSet *wordSet;
+#endif
     u32 ability;
     MsgData *msgData;
     StrBuf *str;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: the stats' rows, or their EVs and IVs once L or R shows them
+    PStaSkill_PrintStatRows(wk, skill, pkm, nature);
+#else
     PStatus_PrintToWindow(wk, skill->windows[0], 0x6e, 25, 1, PRINT_COLOR(15, 2, 0));
     wordSet = GFL_WordSetSystemCreateDefault(wk->heapId);
     WordSetNumber(wordSet, 0, PokeParty_GetParam(pkm, PKM_PARAM_HP, NULL), 3, 1, 1);
@@ -504,6 +605,7 @@ static void PStaSkill_PrintStatValues(PStatusWork *wk, PStaSkillWork *skill) {
     WordSetNumber(wordSet, 0, PokeParty_GetParam(pkm, PKM_PARAM_SPEED, NULL), 3, 1, 1);
     PStatus_PrintFormattedRightToWindow(wk, skill->windows[6], wordSet, 0x7c, 105, 1, PRINT_COLOR(1, 2, 0));
     GFL_WordSetSystemFree(wordSet);
+#endif
 
     PStatus_PrintToWindow(wk, skill->windows[7], 0x74, 5, 1, PRINT_COLOR(15, 2, 0));
     ability = PokeParty_GetParam(pkm, PKM_PARAM_ABILITY, NULL);
@@ -713,6 +815,15 @@ static BOOL PStaSkill_HandleKeys(PStatusWork *wk, PStaSkillWork *skill) {
         return FALSE;
     }
     if (wk->isInputEnabled == TRUE) {
+#ifdef PAPERWHITE2
+        // Paper White 2: L or R switches the stats and their EVs and IVs
+        if (GCTX_HIDGetPressedKeys() & (PAD_BUTTON_L | PAD_BUTTON_R)) {
+            skill->showHidden = skill->showHidden == FALSE;
+            PStaSkill_PrintStats(wk, skill);
+            GFL_SndSEPlay(SEQ_SE_SELECT1);
+            return TRUE;
+        }
+#endif
         if (GCTX_HIDGetPressedKeys() == PAD_BUTTON_A) {
             skill->cursor = 0;
             wk->isTouch = FALSE;
@@ -1345,3 +1456,81 @@ static void PStaSkill_GetPlatePos(SkillPlate *plate, ClActorPos *pos) {
 static void PStaSkill_SetPlateAnim(SkillPlate *plate, u32 anim) {
     ClActor_SetSequence(plate->plate, plate->slot + anim * PLATE_COUNT);
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: the rows of HP and the five stats, with their names and either their values, as the original prints
+// them, or their EVs and IVs, then the title bar's text and the hint for L and R
+static void PStaSkill_PrintStatRows(PStatusWork *wk, PStaSkillWork *skill, PartyPkm *pkm, u32 nature) {
+    WordSet *wordSet;
+    BmpWin *window;
+    u32 i;
+
+    for (i = 0; i <= 6; i++) {
+        GFL_BitmapFill(BmpWin_GetBitmap(skill->windows[i]), 0);
+    }
+    PStatus_PrintToWindow(wk, skill->windows[0], PStaSys_Text_Hp, 25, 1, PRINT_COLOR(15, 2, 0));
+    if (skill->showHidden == TRUE) {
+        PStaSkill_PrintHiddenRow(wk, skill->windows[0], pkm, 0);
+    } else {
+        wordSet = GFL_WordSetSystemCreateDefault(wk->heapId);
+        WordSetNumber(wordSet, 0, PokeParty_GetParam(pkm, PKM_PARAM_HP, NULL), 3, 1, 1);
+        PStatus_PrintFormattedRightToWindow(wk, skill->windows[0], wordSet, 0x77, 89, 1, PRINT_COLOR(1, 2, 0));
+        GFL_WordSetSystemFree(wordSet);
+        PStatus_PrintToWindow(wk, skill->windows[0], 0x75, 93, 1, PRINT_COLOR(1, 2, 0));
+        wordSet = GFL_WordSetSystemCreateDefault(wk->heapId);
+        WordSetNumber(wordSet, 0, PokeParty_GetParam(pkm, PKM_PARAM_MAX_HP, NULL), 3, 1, 1);
+        PStatus_PrintFormattedRightToWindow(wk, skill->windows[0], wordSet, 0x76, 121, 1, PRINT_COLOR(1, 2, 0));
+        GFL_WordSetSystemFree(wordSet);
+    }
+    for (i = 1; i < NELEMS(sStatRowParams); i++) {
+        window = skill->windows[i + 1];
+        PStatus_PrintToWindow(wk, window, PStaSys_Text_Hp + i, 1, 1, PStaSkill_GetStatColor(wk, skill, nature, i));
+        if (skill->showHidden == TRUE) {
+            PStaSkill_PrintHiddenRow(wk, window, pkm, i);
+        } else {
+            wordSet = GFL_WordSetSystemCreateDefault(wk->heapId);
+            WordSetNumber(wordSet, 0, PokeParty_GetParam(pkm, sStatRowParams[i][0], NULL), 3, 1, 1);
+            PStatus_PrintFormattedRightToWindow(wk, window, wordSet, 0x77 + i, 105, 1, PRINT_COLOR(1, 2, 0));
+            GFL_WordSetSystemFree(wordSet);
+        }
+    }
+    PStaSkill_PrintHiddenTitle(wk, skill);
+}
+
+// A stat's EV and IV, in their columns
+static void PStaSkill_PrintHiddenRow(PStatusWork *wk, BmpWin *window, PartyPkm *pkm, u32 stat) {
+    WordSet *wordSet = GFL_WordSetSystemCreateDefault(wk->heapId);
+
+    WordSetNumber(wordSet, 0, PokeParty_GetParam(pkm, sStatRowParams[stat][1], NULL), 3, 1, 1);
+    PStatus_PrintFormattedRightToWindow(wk, window, wordSet, 0x78, HIDDEN_EV_RIGHT, 1, PRINT_COLOR(1, 2, 0));
+    WordSetNumber(wordSet, 0, PokeParty_GetParam(pkm, sStatRowParams[stat][2], NULL), 3, 1, 1);
+    PStatus_PrintFormattedRightToWindow(wk, window, wordSet, 0x78, HIDDEN_IV_RIGHT, 1, PRINT_COLOR(1, 2, 0));
+    GFL_WordSetSystemFree(wordSet);
+}
+
+// With the EVs and IVs, the columns' names and the title in the title bar; and the hint for what L and R show
+static void PStaSkill_PrintHiddenTitle(PStatusWork *wk, PStaSkillWork *skill) {
+    GFL_BitmapFill(BmpWin_GetBitmap(skill->titleWindow), 0);
+    GFL_BitmapFill(BmpWin_GetBitmap(skill->hintWindow), 0);
+    if (skill->showHidden == TRUE) {
+        PStaSkill_PrintRight(wk, skill->titleWindow, PStaSys_Text_EvColumn, HIDDEN_TITLE_EV_RIGHT,
+                             PRINT_COLOR(15, 2, 0));
+        PStaSkill_PrintRight(wk, skill->titleWindow, PStaSys_Text_IvColumn, HIDDEN_TITLE_IV_RIGHT,
+                             PRINT_COLOR(15, 2, 0));
+        PStaSkill_PrintRight(wk, skill->titleWindow, PStaSys_Text_HiddenStats, HIDDEN_TITLE_RIGHT,
+                             PRINT_COLOR(15, 2, 0));
+        PStatus_PrintToWindow(wk, skill->hintWindow, PStaSys_Text_ShowStats, 4, 1, PRINT_COLOR(15, 2, 0));
+    } else {
+        PStatus_PrintToWindow(wk, skill->hintWindow, PStaSys_Text_ShowHiddenStats, 4, 1, PRINT_COLOR(15, 2, 0));
+    }
+}
+
+// A message of the summary's bank that ends at a column
+static void PStaSkill_PrintRight(PStatusWork *wk, BmpWin *window, u32 msgId, u16 right, u16 color) {
+    StrBuf *str = GFL_MsgDataLoadStrbufNew(wk->msgData, msgId);
+    u32 width = GFL_FontGetBlockWidth(str, wk->font, 0);
+
+    PrintQueue_PrintColor(wk->printQueue, BmpWin_GetBitmap(window), right - width, 1, str, wk->font, color);
+    GFL_StrBufFree(str);
+}
+#endif

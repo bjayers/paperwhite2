@@ -169,6 +169,25 @@ double and triple battles on the selected move's name, which it carries above th
 | `0x021eaa86` | `BtlvInput_SetScreen` → `BtlvInput_ClearScreen` | `PaperWhite2_MovePreviewBeforeClear` and `AfterClear`: carries the selected move's name to the target screen |
 | `0x021eb2a6`, `0x021eb65c` | `BtlvInput_CheckInput`, `BtlvInput_MoveScreenMain` (both calls) → `BtlvInput_KeyInput` | `PaperWhite2_MovePreviewAfterKeyInput`: colors again for the cursor's target |
 
+### Hidden stats on the summary screen
+
+The summary's skill page (`src/ov207/p_sta_skill.c`, overlay 207) shows HP and the five stats on the top screen, with
+"« STATS »" in its title bar. L or R switches the six rows to their EVs and IVs, in two columns that end where the
+values do, with "EV" and "IV" over them and "HIDDEN STATS" in place of the page's name in the bar (the empty bar's
+tiles cover the « STATS » tiles); the HP bar and its frame are hidden. L or R again switches back, and the view stays
+across Pokémon and pages until the summary closes. A hint at the left of the HP's row ("L/R: EV/IV", "L/R: Stats")
+says what L and R do: the game's archives have no L or R button art that the summary could use, so it is text until
+there is art. Everything is under `PAPERWHITE2` in that file (`showHidden`, `PStaSkill_PrintStatRows` and the
+`HIDDEN_` constants), and the text is at the end of the summary's bank, `res/text/system/p_sta_sys.txt`.
+
+### Debug menu
+
+`PAPERWHITE2_DEBUG_MENU`, defined in every hack build for now (`configure.py`, beside `PAPERWHITE2`): START in the
+field, on grid maps and rails, starts `Script_17` of `res/field/scripts/global_10130.s` (script 10146,
+`SCRID_PAPERWHITE2_DEBUG_MENU` in `src/ov036/fieldmap_event.c`), where the original's field doesn't use START. It
+shows "TEST" with a list, Option A, Option B and Close; an option shows a message, then closes. Its text is at the end
+of `res/text/script/global_10130.txt`. Removing the define from `configure.py` removes the menu; the text stays.
+
 ### Seasons
 
 The hack's season setting, revised from the PMC plugin ToggleableSeasons (`gen5-seasons-patch`, `Seasons.cpp`,
@@ -303,7 +322,7 @@ VRAM E and I stay the engines' OBJ VRAM, unused.
 | Top | 2 (0) | Geonet's message window (2,19, 28 by 4 tiles, message frame): the setting ("Seasons: Weekly", "Seasons: Locked to Winter", "Seasons: Real time (Northern)") and "Current season: X" (the season the game has now), or the hemisphere on its page, or a confirmation after a change |
 | Top | 1 (2) | the season's banner, the game's art, in palette 8 with its black background (color 1) made transparent; over the preview it is moved up 22 pixels (`BANNER_PREVIEW_OFFSET_Y`), so that the season's name is centered in the view above the message window (line 72), over the preview's shadow |
 | Top | 0 (3) | the 3D preview (below) |
-| Top | 3 (3) | Geonet's grid, only if the preview didn't load |
+| Top | 3 (3) | Geonet's grid, if the preview didn't load or while it loads a season |
 | Touch | 6 (0) | the menu's buttons (Set Season, Dynamic Options, Set Hemisphere, and QUIT), or a page's buttons |
 | Touch | 7 (3) | Geonet's grid |
 
@@ -342,8 +361,8 @@ texture pattern animation file's `FieldTerrainTexPatAnimationPack` (`field_groun
 
 The 3D setup is the field's (`FieldG3D_InitCallback`, Z buffer as the field camera's setups have it) without fog or edge
 marking. When the previewed season changes, everything the preview loaded is freed and the new season loaded again
-(about 200 KB from the card), with the 3D layer darkened (`G2x_SetBlendBrightness_` on BG 0) for 2 frames and faded in
-over 6, so the frame drawn with the old textures isn't seen. The banner changes after the preview's load: its palette
+(about 200 KB from the card), with the 3D layer off and Geonet's grid in its place from the load until 2 frames after
+it (`PREVIEW_HIDDEN_FRAMES`), so the frame drawn with the old textures isn't seen. The banner changes after the preview's load: its palette
 and characters go to VRAM at once, but its screen and scroll (`GFL_BGSysQueueScrLoad`, `GFL_BGSysMoveBGReq`) only at the
 next VBlank, so its BG is off from the load until the frame after that VBlank, and the new name is first seen in its
 place (its own `sBannerNameAdjustY` over `BANNER_PREVIEW_OFFSET_Y`) rather than at the last one's scroll. If a file

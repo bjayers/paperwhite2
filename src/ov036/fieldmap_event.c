@@ -91,6 +91,10 @@
 // A repel has run out, with another of the same in the bag, and without one
 #define SCRID_REPEL_ANOTHER 0x27a0
 #define SCRID_REPEL_WORN_OFF 0x2792
+#ifdef PAPERWHITE2_DEBUG_MENU
+// Paper White 2: the debug menu, Script_17 of res/field/scripts/global_10130.s
+#define SCRID_PAPERWHITE2_DEBUG_MENU 10146
+#endif
 // What the player reads with A in front of a PC, a TV, the bookcases, the trash cans, the shelves of odds and ends
 // and a vending machine
 #define SCRID_PC 0x276a
@@ -390,6 +394,13 @@ static GameEvent *FieldEventProvider_Grid_CheckForEvent(GameSystem *gsys, Field 
     if (GSYS_IsNetErrorPending(gsys) == TRUE && GFL_WipeIsFinished() && wk.canAct) {
         return EventCommError_Create(gsys, field);
     }
+#ifdef PAPERWHITE2_DEBUG_MENU
+    // Paper White 2: START opens the debug menu, which the original's field doesn't use START for
+    if ((wk.pressed & PAD_BUTTON_START) && wk.canAct && GFL_WipeIsFinished()) {
+        *scriptCalled = TRUE;
+        return EventScriptCall_Create(gsys, SCRID_PAPERWHITE2_DEBUG_MENU, NULL, wk.heapId);
+    }
+#endif
     if (wk.xPressed && GFL_WipeIsFinished()) {
         if (FieldSubscreen_GetScreenID(Field_GetSubscreen(field)) == FLD_SUBSCREEN_ID_DOWSING) {
             return NULL;
@@ -630,6 +641,12 @@ static GameEvent *FieldEventProvider_NoGrid_CheckForEvent(GameSystem *gsys, Fiel
     if (GSYS_IsNetErrorPending(gsys) == TRUE && GFL_WipeIsFinished() && wk.canAct) {
         return EventCommError_Create(gsys, field);
     }
+#ifdef PAPERWHITE2_DEBUG_MENU
+    // Paper White 2: START opens the debug menu on rails too
+    if ((wk.pressed & PAD_BUTTON_START) && wk.canAct && GFL_WipeIsFinished()) {
+        return EventScriptCall_Create(gsys, SCRID_PAPERWHITE2_DEBUG_MENU, NULL, wk.heapId);
+    }
+#endif
     if (wk.xPressed && GFL_WipeIsFinished()) {
         if (FieldSubscreen_GetScreenID(Field_GetSubscreen(field)) == FLD_SUBSCREEN_ID_DOWSING) {
             return NULL;

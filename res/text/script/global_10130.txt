@@ -14,4 +14,10 @@ Global10130_Text_CantWarpEntralinkBecause = You can't warp to the Entralink beca
 Global10130_Text_ParticipatingOngoingMissionEntralink = Participating in an ongoing mission\nat the Entralink!{be01}\nYou'll return here after the mission.{be01}\nYou will warp to another person's\nEntralink to participate in the mission!{be01}
 Global10130_Text_ConnectionHasBeenLost = The connection has been lost.
 Global10130_Text_CantWarpEntralinkIf = You can't warp to the Entralink\nif you have someone with you.
+Global10130_Text_DebugTest = TEST
+Global10130_Text_DebugOptionA = Option A
+Global10130_Text_DebugOptionB = Option B
+Global10130_Text_DebugClose = Close
+Global10130_Text_DebugPickedOptionA = You picked Option A.
+Global10130_Text_DebugPickedOptionB = You picked Option B.
 \pad{d2}

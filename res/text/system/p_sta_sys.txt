@@ -194,4 +194,9 @@ PStaSys_Text_Empty_171 =        \x{ffff}
 PStaSys_Text_Forget = FORGET
 PStaSys_Text_Empty_172 =        \x{ffff}
 PStaSys_Text_Empty_173 =            \x{ffff}
+PStaSys_Text_HiddenStats = HIDDEN STATS
+PStaSys_Text_EvColumn = EV
+PStaSys_Text_IvColumn = IV
+PStaSys_Text_ShowHiddenStats = L/R: EV/IV
+PStaSys_Text_ShowStats = L/R: Stats
 \pad{98}

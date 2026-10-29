@@ -599,7 +599,10 @@ def add_version(n: Writer, version: str, dsd: Path, bugfix: bool, shift: int,
             implicit=[extract_dir / "config.yaml", "config/linker_symbols.toml"], variables={"config": str(arm9_config)})
     link_lcf = lcf_file
     link_objects_file = objects_file
-    version_defines = VERSIONS[version]["defines"] + (["BUGFIX"] if bugfix else []) + (["PAPERWHITE2"] if hack else [])
+    # Paper White 2: PAPERWHITE2_DEBUG_MENU is the debug menu that START opens in the field, on in every hack build for
+    # now; leave it out to build without it
+    version_defines = (VERSIONS[version]["defines"] + (["BUGFIX"] if bugfix else [])
+                       + (["PAPERWHITE2", "PAPERWHITE2_DEBUG_MENU"] if hack else []))
     defines = " ".join(f"-d {define}" for define in version_defines)
     # Paper White 2: the hack's own code, src/paperwhite2/<module>/, compiled like the game's and placed after its
     # module's original objects (tools/build/plugin_lcf.py, docs/paperwhite2/plugins.md)

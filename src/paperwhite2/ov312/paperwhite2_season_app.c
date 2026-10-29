@@ -80,11 +80,9 @@ enum {
 // Summer's art is drawn two lines lower than the others, and Spring's one line higher (its "p" and "g" hang below)
 static const s8 sBannerNameAdjustY[SEASON_COUNT] = { -1, 2, 0, 0 };
 
-// The frames that the preview stays dark after it loads a season, while the frame drawn with the last one's textures
-// is shown, then the frames it takes to fade in
-#define PREVIEW_DARK_FRAMES 2
-#define PREVIEW_FADE_FRAMES 6
-#define PREVIEW_DARK_BRIGHTNESS -16
+// The frames that the preview stays hidden behind the grid after it loads a season, while the frame drawn with the
+// last one's textures is shown
+#define PREVIEW_HIDDEN_FRAMES 2
 
 // The BGs: on the top screen, the main engine's, the message window over the banner over the 3D preview, or over the
 // grid without it, and on the touch screen, the sub engine's, the buttons over the grid
@@ -206,9 +204,9 @@ typedef struct {
     u8 currentButton;
     AppTaskMenuWin *buttons[BUTTON_MAX];
     TouchRect buttonRects[BUTTON_MAX + 1];
-    // The 3D preview, NULL once it fails to load, and the frames left of its fade in after a season loads
+    // The 3D preview, NULL once it fails to load, and the frames left that it stays hidden after a season loads
     SeasonPreview *preview;
-    u8 previewFade;
+    u8 previewHidden;
     // Whether the BGs are on, as they are from the fade in
     u8 bgsEnabled;
 } SeasonAppWork;
@@ -232,7 +230,7 @@ static void SeasonApp_ShowHemisphere(SeasonAppWork *work);
 static void SeasonApp_ShowBanner(SeasonAppWork *work, u8 season);
 static void SeasonApp_ShowPreview(SeasonAppWork *work, u8 season);
 static void SeasonApp_FreePreview(SeasonAppWork *work);
-static void SeasonApp_UpdatePreviewFade(SeasonAppWork *work);
+static void SeasonApp_UpdatePreviewHidden(SeasonAppWork *work);
 static void SeasonApp_ClearBannerBackground(u8 *chars, u32 size);
 static void SeasonApp_UpdatePreview(SeasonAppWork *work);
 static void SeasonApp_OpenPage(SeasonAppWork *work, u8 page);
@@ -396,7 +394,7 @@ static BOOL SeasonAppProc_Main(GameProc *proc, u32 *state, void *param, void *pr
     SeasonApp_UpdateButtons(work);
     PrintQueue_Main(work->queue);
     if (work->preview != NULL) {
-        SeasonApp_UpdatePreviewFade(work);
+        SeasonApp_UpdatePreviewHidden(work);
         SeasonPreview_Draw(work->preview);
     }
     return result;
@@ -509,12 +507,13 @@ static void SeasonApp_FreeGraphics(void) {
     GFL_BGSysFree();
 }
 
-// The top screen has the preview or, without it, the grid. A banner just loaded stays hidden until the next frame
+// The top screen has the preview or, without it or while it loads a season, the grid. A banner just loaded stays
+// hidden until the next frame
 static void SeasonApp_SetBGsEnabled(SeasonAppWork *work, BOOL enabled) {
     work->bgsEnabled = enabled;
     GFL_BGSysSetBGEnabled(BG_TOP_TEXT, enabled);
     GFL_BGSysSetBGEnabled(BG_TOP_BANNER, enabled && !work->bannerHidden);
-    if (work->preview != NULL && enabled) {
+    if (work->preview != NULL && work->previewHidden == 0 && enabled) {
         GFL_BGSysSet3DBGPriority(BG_TOP_3D_PRIORITY);
         GFL_BGSysSetBGEnabled(BG_TOP_GRID, FALSE);
     } else {
@@ -680,20 +679,18 @@ static void SeasonApp_ShowBanner(SeasonAppWork *work, u8 season) {
     GFL_ArcToolFree(arc);
 }
 
-// Loads the season in the preview, dark until a frame is drawn with it, then fading in. If it doesn't load, the top
-// screen goes back to the grid, without the preview
+// Loads the season in the preview, with the grid in its place while it loads and until a frame is drawn with it. If it
+// doesn't load, the top screen stays on the grid, without the preview
 static void SeasonApp_ShowPreview(SeasonAppWork *work, u8 season) {
     if (work->preview == NULL) {
         return;
     }
-    G2x_SetBlendBrightness_(REG_BLDCNT_ADDR, GX_BLEND_PLANEMASK_BG0, PREVIEW_DARK_BRIGHTNESS);
-    if (SeasonPreview_Load(work->preview, season)) {
-        work->previewFade = PREVIEW_DARK_FRAMES + PREVIEW_FADE_FRAMES;
-        return;
-    }
-    SeasonApp_FreePreview(work);
+    work->previewHidden = PREVIEW_HIDDEN_FRAMES;
     if (work->bgsEnabled) {
         SeasonApp_SetBGsEnabled(work, TRUE);
+    }
+    if (!SeasonPreview_Load(work->preview, season)) {
+        SeasonApp_FreePreview(work);
     }
 }
 
@@ -703,19 +700,16 @@ static void SeasonApp_FreePreview(SeasonAppWork *work) {
     }
     SeasonPreview_Free(work->preview);
     work->preview = NULL;
-    G2_BlendNone();
 }
 
-// Brightens the preview from dark, a step a frame
-static void SeasonApp_UpdatePreviewFade(SeasonAppWork *work) {
-    if (work->previewFade == 0) {
+// Shows the preview in the grid's place once its hidden frames are over
+static void SeasonApp_UpdatePreviewHidden(SeasonAppWork *work) {
+    if (work->previewHidden == 0) {
         return;
     }
-    work->previewFade--;
-    if (work->previewFade == 0) {
-        G2_BlendNone();
-    } else if (work->previewFade < PREVIEW_FADE_FRAMES) {
-        G2x_ChangeBlendBrightness_(REG_BLDCNT_ADDR, PREVIEW_DARK_BRIGHTNESS * work->previewFade / PREVIEW_FADE_FRAMES);
+    work->previewHidden--;
+    if (work->previewHidden == 0 && work->bgsEnabled) {
+        SeasonApp_SetBGsEnabled(work, TRUE);
     }
 }
 
