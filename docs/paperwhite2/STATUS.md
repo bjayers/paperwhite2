@@ -319,9 +319,12 @@ included: it hooks the end of `MIi_UncompressBackward` (0x02004ea4) and writes a
 the VRAM manager's tables, so billboard-actor and BG allocations failed (invisible NPCs and player, "Virban") and
 the original's unchecked AREAMAN_FAIL path then freed garbage (Data Abort at 0x20202020). Confirmed on the 3DS: a
 per-ROM override (`sd:/_nds/nds-bootstrap/apFix/<rom>.ips` restoring `bx lr`) fixed the failing build. Fix: hack
-builds use game code IRDZ (`HACK_GAMECODE` in configure.py; the DSi title ID follows). nds-bootstrap's Gen 5 fixes
-(alternate read method, ROM location, ARM9 patch) check only "IRD", so they still apply. DS Protect is disarmed,
-so the AP fix isn't needed.
+builds use game code IRDD, White 2's German code (`HACK_GAMECODE` in configure.py; the DSi title ID follows). IRDZ
+was tried first, but emulators then don't know the save chip (melonDS: "The save data could not be accessed").
+nds-bootstrap's fixes for IRDO and IRDJ match any CRC (FFFF), those for IRDD/F/I/S/K only the retail ROM's header CRC;
+`tools/paperwhite2/check_header_crc.py` fails the build if ours ever equals IRDD's (0xE2DB). nds-bootstrap's Gen 5
+fixes (alternate read method, ROM location, ARM9 patch) check only "IRD", so they still apply. DS Protect is
+disarmed, so the AP fix isn't needed.
 
 ### Next
 
