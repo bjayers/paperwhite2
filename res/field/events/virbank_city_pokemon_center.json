@@ -282,25 +282,6 @@
         },
         {
             "id": 13,
-            "model": "OBJ_CODE_346",
-            "movement": "MOVE_CODE_NONE",
-            "type": "ACTOR_EVENT_TYPE_NONE",
-            "flag": "EVENT_FLAG_TRAINER_TEAM_PLASMA_GRUNT_3",
-            "script": 6,
-            "direction": "DIR_DOWN",
-            "params": [ 0, 0, 0 ],
-            "area": {
-                "width": 0,
-                "height": 0
-            },
-            "grid": {
-                "x": 10,
-                "z": 11,
-                "y": 0
-            }
-        },
-        {
-            "id": 14,
             "model": "OBJ_CODE_POKEMON_AUDINO",
             "movement": "MOVE_CODE_NONE",
             "type": "ACTOR_EVENT_TYPE_NONE",

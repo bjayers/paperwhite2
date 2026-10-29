@@ -468,7 +468,7 @@ L_0668:
     VMJumpIf CMP_STACK, L_06AC
     SEPlay SEQ_SE_MESSAGE
     ActorSetEyeToEye
-    // "Check this! The C-Gear was activated,\nand that screen showed up![f000]븁\u0000\nIf you touch the “?\" icon in the\nbottom-right corner of the[f000]븀\u0000\nC-Gear screen, you can read about[f000]븀\u0000\nthe C-Gear.[f000]븁\u0000\nLike, what are you going to do now?\nYou know, there's another Pokémon Gym[f000]븀\u0000\nin Virbank City, which is just past[f000]븀\u0000\nFloccesy Town.[f000]븁\u0000\n...[f000]븁\u0000\nOh, I almost forgot![f000]븁\u0000\nThere's a new service in the\nPokémon Center![f000]븁\u0000\nNow you can change the current\nseason anytime you want.[f000]븁\u0000\nYou can even make time pass\nfaster or more slowly![f000]븁\u0000\nYou should go check it out if you want\nUnova to have a different vibe~"
+    // "Check this! The C-Gear was activated,\nand that screen showed up![f000]븁\u0000\nIf you touch the “?\" icon in the\nbottom-right corner of the[f000]븀\u0000\nC-Gear screen, you can read about[f000]븀\u0000\nthe C-Gear.[f000]븁\u0000\nLike, what are you going to do now?\nYou know, there's another Pokémon Gym[f000]븀\u0000\nin Virbank City, which is just past[f000]븀\u0000\nFloccesy Town."
     ParentActorMsg MSGFILE_SCRIPT, AspertiaCity_Text_CheckCGearActivated, 0, 0
     LastKeyWait
     ActorMsgClose
@@ -477,7 +477,7 @@ L_0668:
 L_06AC:
     SEPlay SEQ_SE_MESSAGE
     ActorSetEyeToEye
-    // "If you want to turn on the C-Gear, touch\nthe Power symbol at the bottom right of[f000]븀\u0000\nthe C-Gear screen.[f000]븁\u0000\nThen, after turning on the power,\nif you touch the “?\" icon in the[f000]븀\u0000\nbottom-right corner of the[f000]븀\u0000\nC-Gear screen, you can read about[f000]븀\u0000\nthe C-Gear.[f000]븁\u0000\nLike, what are you going to do now?\nYou know, there's another Pokémon Gym[f000]븀\u0000\nin Virbank City, which is just past[f000]븀\u0000\nFloccesy Town.[f000]븁\u0000\n...[f000]븁\u0000\nOh, I almost forgot![f000]븁\u0000\nThere's a new service in the\nPokémon Center![f000]븁\u0000\nNow you can change the current\nseason anytime you want.[f000]븁\u0000\nYou can even make time pass\nfaster or more slowly![f000]븁\u0000\nYou should go check it out if you want\nUnova to have a different vibe~"
+    // "If you want to turn on the C-Gear, touch\nthe Power symbol at the bottom right of[f000]븀\u0000\nthe C-Gear screen.[f000]븁\u0000\nThen, after turning on the power,\nif you touch the “?\" icon in the[f000]븀\u0000\nbottom-right corner of the[f000]븀\u0000\nC-Gear screen, you can read about[f000]븀\u0000\nthe C-Gear.[f000]븁\u0000\nLike, what are you going to do now?\nYou know, there's another Pokémon Gym[f000]븀\u0000\nin Virbank City, which is just past[f000]븀\u0000\nFloccesy Town."
     ParentActorMsg MSGFILE_SCRIPT, AspertiaCity_Text_IfWantTurnC, 0, 0
     LastKeyWait
     ActorMsgClose
@@ -617,7 +617,7 @@ Script_13:
     ActorsPauseAll
     SEPlay SEQ_SE_MESSAGE
     ActorSetEyeToEye
-    // "The power of science is amazing![f000]븁\u0000\nNow you can change the season\nfrom any Pokémon Center![f000]븁\u0000\n...Without restarting your DS!"
+    // "The power of science is amazing![f000]븁\u0000\nNow you can use communications\nto play with a hundred people[f000]븀\u0000\nat the same time!"
     ParentActorMsg MSGFILE_SCRIPT, AspertiaCity_Text_PowerScienceAmazingNow, 0, 0
     LastKeyWait
     ActorMsgClose
@@ -743,7 +743,6 @@ Script_18:
     VMSleep 16
     // "[f000]Ā\u0001\u0001: All riiight!\nLet's go find that person named Bianca!"
     ActorMsg MSGFILE_SCRIPT, AspertiaCity_Text_AllRiiightLetsGo, 0, 0, 0
-    FlagSet EVENT_FLAG_TRAINER_TEAM_PLASMA_GRUNT_3
     MsgWaitAdvance
     MsgWinCloseAll
     ActorCmdWait
@@ -933,7 +932,6 @@ Movement_0C5C:
 
 Script_23:
     ActorsPauseAll
-    FlagReset EVENT_FLAG_TRAINER_TEAM_PLASMA_GRUNT_3
     // "Bianca: Heeey![f000]븁\u0000"
     // "Bianca: Yoo-hoo![f000]븁\u0000"
     ActorMsgGendered 1024, AspertiaCity_Text_BiancaHeeey, AspertiaCity_Text_BiancaYooHoo, 2, 0, 0
@@ -2407,7 +2405,7 @@ L_2097:
     SEPlay SEQ_SE_DECIDE3
     CGearPowerOn 1
     SEWait
-    // "Check this! The C-Gear was activated,\nand that screen showed up![f000]븁\u0000\nIf you touch the “?\" icon in the\nbottom-right corner of the[f000]븀\u0000\nC-Gear screen, you can read about[f000]븀\u0000\nthe C-Gear.[f000]븁\u0000\nLike, what are you going to do now?\nYou know, there's another Pokémon Gym[f000]븀\u0000\nin Virbank City, which is just past[f000]븀\u0000\nFloccesy Town.[f000]븁\u0000\n...[f000]븁\u0000\nOh, I almost forgot![f000]븁\u0000\nThere's a new service in the\nPokémon Center![f000]븁\u0000\nNow you can change the current\nseason anytime you want.[f000]븁\u0000\nYou can even make time pass\nfaster or more slowly![f000]븁\u0000\nYou should go check it out if you want\nUnova to have a different vibe~"
+    // "Check this! The C-Gear was activated,\nand that screen showed up![f000]븁\u0000\nIf you touch the “?\" icon in the\nbottom-right corner of the[f000]븀\u0000\nC-Gear screen, you can read about[f000]븀\u0000\nthe C-Gear.[f000]븁\u0000\nLike, what are you going to do now?\nYou know, there's another Pokémon Gym[f000]븀\u0000\nin Virbank City, which is just past[f000]븀\u0000\nFloccesy Town."
     ActorMsg MSGFILE_SCRIPT, AspertiaCity_Text_CheckCGearActivated, 2, 0, 0
     VMJump L_212F
 
@@ -2416,7 +2414,7 @@ L_2117:
     SystemMsg AspertiaCity_Text_WirelessCommunicationsTurnedOff, 2
     MsgWinCloseAll
     CGearPowerOn 0
-    // "If you want to turn on the C-Gear, touch\nthe Power symbol at the bottom right of[f000]븀\u0000\nthe C-Gear screen.[f000]븁\u0000\nThen, after turning on the power,\nif you touch the “?\" icon in the[f000]븀\u0000\nbottom-right corner of the[f000]븀\u0000\nC-Gear screen, you can read about[f000]븀\u0000\nthe C-Gear.[f000]븁\u0000\nLike, what are you going to do now?\nYou know, there's another Pokémon Gym[f000]븀\u0000\nin Virbank City, which is just past[f000]븀\u0000\nFloccesy Town.[f000]븁\u0000\n...[f000]븁\u0000\nOh, I almost forgot![f000]븁\u0000\nThere's a new service in the\nPokémon Center![f000]븁\u0000\nNow you can change the current\nseason anytime you want.[f000]븁\u0000\nYou can even make time pass\nfaster or more slowly![f000]븁\u0000\nYou should go check it out if you want\nUnova to have a different vibe~"
+    // "If you want to turn on the C-Gear, touch\nthe Power symbol at the bottom right of[f000]븀\u0000\nthe C-Gear screen.[f000]븁\u0000\nThen, after turning on the power,\nif you touch the “?\" icon in the[f000]븀\u0000\nbottom-right corner of the[f000]븀\u0000\nC-Gear screen, you can read about[f000]븀\u0000\nthe C-Gear.[f000]븁\u0000\nLike, what are you going to do now?\nYou know, there's another Pokémon Gym[f000]븀\u0000\nin Virbank City, which is just past[f000]븀\u0000\nFloccesy Town."
     ActorMsg MSGFILE_SCRIPT, AspertiaCity_Text_IfWantTurnC, 2, 0, 0
 
 L_212F:
@@ -2437,7 +2435,7 @@ L_213B:
     MsgWinCloseAll
     CGearControlWarning 0
     CGearPowerOn 0
-    // "If you want to turn on the C-Gear, touch\nthe Power symbol at the bottom right of[f000]븀\u0000\nthe C-Gear screen.[f000]븁\u0000\nThen, after turning on the power,\nif you touch the “?\" icon in the[f000]븀\u0000\nbottom-right corner of the[f000]븀\u0000\nC-Gear screen, you can read about[f000]븀\u0000\nthe C-Gear.[f000]븁\u0000\nLike, what are you going to do now?\nYou know, there's another Pokémon Gym[f000]븀\u0000\nin Virbank City, which is just past[f000]븀\u0000\nFloccesy Town.[f000]븁\u0000\n...[f000]븁\u0000\nOh, I almost forgot![f000]븁\u0000\nThere's a new service in the\nPokémon Center![f000]븁\u0000\nNow you can change the current\nseason anytime you want.[f000]븁\u0000\nYou can even make time pass\nfaster or more slowly![f000]븁\u0000\nYou should go check it out if you want\nUnova to have a different vibe~"
+    // "If you want to turn on the C-Gear, touch\nthe Power symbol at the bottom right of[f000]븀\u0000\nthe C-Gear screen.[f000]븁\u0000\nThen, after turning on the power,\nif you touch the “?\" icon in the[f000]븀\u0000\nbottom-right corner of the[f000]븀\u0000\nC-Gear screen, you can read about[f000]븀\u0000\nthe C-Gear.[f000]븁\u0000\nLike, what are you going to do now?\nYou know, there's another Pokémon Gym[f000]븀\u0000\nin Virbank City, which is just past[f000]븀\u0000\nFloccesy Town."
     ActorMsg MSGFILE_SCRIPT, AspertiaCity_Text_IfWantTurnC, 2, 0, 0
     WorkSetConst 0x8029, 555
 

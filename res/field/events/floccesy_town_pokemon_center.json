@@ -207,19 +207,19 @@
         {
             "id": 9,
             "model": "OBJ_CODE_SCHOOL_KID_F",
-            "movement": "MOVE_CODE_TURN_RANDOM_UP_RIGHT",
+            "movement": "MOVE_CODE_FACE_DOWN",
             "type": "ACTOR_EVENT_TYPE_NONE",
             "flag": 0,
             "script": 4,
-            "direction": "DIR_RIGHT",
+            "direction": "DIR_DOWN",
             "params": [ 0, 0, 0 ],
             "area": {
                 "width": 0,
                 "height": 0
             },
             "grid": {
-                "x": 2,
-                "z": 16,
+                "x": 9,
+                "z": 12,
                 "y": 0
             }
         },
@@ -277,25 +277,6 @@
             "grid": {
                 "x": 5,
                 "z": 12,
-                "y": 0
-            }
-        },
-        {
-            "id": 13,
-            "model": "OBJ_CODE_56",
-            "movement": "MOVE_CODE_NONE",
-            "type": "ACTOR_EVENT_TYPE_NONE",
-            "flag": "EVENT_FLAG_TRAINER_TEAM_PLASMA_GRUNT_3",
-            "script": 6,
-            "direction": "DIR_DOWN",
-            "params": [ 0, 0, 0 ],
-            "area": {
-                "width": 0,
-                "height": 0
-            },
-            "grid": {
-                "x": 10,
-                "z": 11,
                 "y": 0
             }
         }

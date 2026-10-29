@@ -2,6 +2,29 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-28: the seasons ported, revised (Remote Control session, not committed)
+
+The PMC season plugin is C again, revised rather than copied (docs/paperwhite2/plugins.md, Seasons): the setting is
+still `EVENT_WORK_SEASON_SETTING` (bits 0-3 the mode, bit 4 the hemisphere; old saves' 0-7 mean what they meant), with a
+southern hemisphere and a chaos mode (8) added, the daily mode counting real days (the plugin's `month * 31 + day`
+skipped days at month ends) and the banner shown once for every mode but real time, which keeps the original's walk,
+and chaos, which shows none. `Season_GetNext`/`GetPrevious` are the original's again. The 24 calendar zones' weather
+is drawn once a day from per-season rates (`res/paperwhite2/seasonal_weather.json`, dumped from `a/0/9/6` by
+`tools/paperwhite2/seasonal_weather.py`). `--hack` builds, `verify_dsi_rom.py` says intact, 210 KB (`0x34800`) left
+in the main arena, `ninja build/w2_us/stamps/modules.ok` passes on a plain configure, and a host test of the date
+math (every day of 2000-2099) passes. No in-game test yet; with the season NPC gone the mode can only be set by a
+debug edit of the save's work value until the Season app exists.
+
+## 2026-10-28: the season NPC removed (Remote Control session, not built yet)
+
+The hack's season-change NPC (sets `EVENT_WORK_SEASON_SETTING`, the PMC season code's setting) is gone from the Pokémon
+Centers of Aspertia, Floccesy and Virbank: its NPC (at 10,11, shown by `EVENT_FLAG_TRAINER_TEAM_PLASMA_GRUNT_3`), its
+script and its messages. Floccesy's and Virbank's scripts and text are the original's again; Aspertia's keep the
+hack's other changes, and the daily-gift NPC (global 10851) keeps its messages in Aspertia's bank. Castelia's Center
+had only an unreachable copy of the script (no NPC, numeric message IDs past its text), now removed. Bianca's
+post-gym scene in `aspertia_city.s` no longer resets that flag (nor Hugh's opening scene sets it), and her C-Gear
+lines are the original's again (the hack had appended the "new service in the Pokémon Center" speech).
+
 ## 2026-10-28: the battle plugins ported (Remote Control session)
 
 Type Icons (the angular-wedge "Solid" style the hack's ROM has) and Move Effectiveness Preview are C in overlay 168,
@@ -155,6 +178,15 @@ commands and changed `event_data.py`. Resolve such conflicts by taking upstream'
 again with the new tools (`tools/paperwhite2/events_lenient.py`, `tools/script/field_script.py disasm` after the
 hack's text is in `res/text/script/`), never by hand. Then check `ninja build/w2_us/stamps/modules.ok` (code still
 matches), build `--hack`, run `verify_dsi_rom.py`, and compare the archives with `tools/paperwhite2/narc_diff.py`.
+
+### NPCs moved back (2026-10-28)
+
+The Aspertia science guy's line is the original again. Back to their original places: Aspertia's advice NPC
+(script 5), Floccesy's school kid (script 4, with her original facing and movement), Castelia's Geonet girl
+(script 4, 9,12 facing up; the user remembers her on the season NPCs' tile 10,11 facing down after her event,
+which the data doesn't show: ask before moving her). Kept as the user placed them: Mr. Medal (global 10638) in the
+top-left corner of every Center up to Castelia, moved there so his medals aren't triggered by accident, and
+Castelia's upstairs clerk (script 6) moved to make room for him.
 
 ### Next
 
