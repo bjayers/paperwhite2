@@ -64,6 +64,14 @@ static void GameEvent_Free(GameEvent *event) {
     GFL_HeapFree(event);
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: frees an event that the Following Pokémon's talk took off the game system's chain when it is cancelled
+// (paperwhite2_following_interaction.c)
+void PaperWhite2_GameEventFree(GameEvent *event) {
+    GameEvent_Free(event);
+}
+#endif
+
 void GameEvent_Transplant(GameEvent *event, GameEventCallback callback, u32 size) {
     event->state = 0;
     event->callback = callback;

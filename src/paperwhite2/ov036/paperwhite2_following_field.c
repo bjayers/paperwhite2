@@ -23,6 +23,7 @@
 #include "paperwhite2/following_effects.h"
 #include "paperwhite2/following_field.h"
 #include "paperwhite2/following_hooks.h"
+#include "paperwhite2/following_interaction.h"
 #include "paperwhite2/following_positioning.h"
 #include "paperwhite2/following_registry.h"
 #include "paperwhite2/following_render.h"
@@ -39,8 +40,8 @@
 // walks the player's trail (paperwhite2_following_trail.c), with the swap when the player steps back onto it, the stand
 // beside the player, the ball that a large follower stays in under a floor or indoors, and L and R to switch it. Its
 // state lives here and goes with overlay 36; what must outlive the field is a resident token. The calls into the parts
-// that step 4 brings (talking, the scene policy and the events bridge) are following_hooks.h's stubs; the ball effects
-// are paperwhite2_following_effects.c.
+// that step 4 brings (the scene policy and the events bridge) are following_hooks.h's stubs; the ball effects are
+// paperwhite2_following_effects.c and the talk paperwhite2_following_interaction.c.
 // The original's FollowingDebug, a block of values for its emulator tests, isn't ported; the last reason that kept the
 // follower away, which its talk reads, is sReason
 

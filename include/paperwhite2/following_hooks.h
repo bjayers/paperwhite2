@@ -9,9 +9,9 @@
 #include "system/game_system.h"
 
 // Paper White 2: what the Following Pokémon's field code (src/paperwhite2/ov036/paperwhite2_following_field.c) asks
-// of the parts of Pokeweb's runtime that the port's step 4 brings: talking to the follower (interaction.c), the scene
-// policy (scene.c) and the events bridge (events.c); the ball effects are following_effects.h. Until then each is a
-// stub that keeps the base behavior safe: no talk, and any running event is unsafe, so it recalls the follower
+// of the parts of Pokeweb's runtime that the port's step 4 brings: the scene policy (scene.c) and the events bridge
+// (events.c); the ball effects are following_effects.h and the talk following_interaction.h. Until then each is a stub
+// that keeps the base behavior safe: any running event is unsafe, so it recalls the follower
 // (docs/paperwhite2/following-pokemon.md, "Step 3")
 
 // What the scene's poll says of the running event: nothing, the follower waits, the follower was recalled; with
@@ -36,28 +36,6 @@ typedef struct {
 } FollowingRestore;
 
 #define FOLLOWING_RESTORE_MAGIC ('F' | 'W' << 8 | 'S' << 16 | (u32)'R' << 24)
-
-// Talking to the follower, interaction.c. TODO step 4: A in front of it, and its reactions. style-ok: todo
-static inline void FollowingTalk_PollInput(void) {
-}
-
-static inline BOOL FollowingTalk_IsActive(void) {
-    return FALSE;
-}
-
-static inline BOOL FollowingTalk_Owns(Field *field) {
-    return FALSE;
-}
-
-static inline BOOL FollowingTalk_FieldOwns(Field *field) {
-    return FALSE;
-}
-
-static inline void FollowingTalk_Cancel(void) {
-}
-
-static inline void FollowingTalk_Unload(void) {
-}
 
 // The scene policy, scene.c: which events keep the follower, which pause it and which recall it, the PC's restore,
 // the menu and battle markers, and the actors on the follower's way. TODO step 4: all of it. style-ok: todo

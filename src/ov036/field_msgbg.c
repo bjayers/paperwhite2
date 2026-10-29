@@ -1196,6 +1196,15 @@ ActorMsgWin *ActorMsgWin_CheckAndCreate(FieldMsgBG *sys, s32 type, const VecFx32
     return NULL;
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: whether ActorMsgWin_CheckAndCreate can open a balloon of type now: the system has its talk windows
+// and that balloon is free. The Following Pokémon's talk asks before it allocates the balloon's string
+// (paperwhite2_following_interaction.c)
+BOOL PaperWhite2_CanOpenActorMsgWin(FieldMsgBG *sys, s32 type) {
+    return sys->talk != NULL && sys->actorWins[type].talk == NULL;
+}
+#endif
+
 void MsgBGPrinter_DeleteTalkWin(ActorMsgWin *win) {
     if (win->strbuf != NULL) {
         GFL_StrBufFree(win->strbuf);
