@@ -2,6 +2,15 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-29: the follower's return after menus and battles, the ball's light, the recall's height (not committed)
+
+Three fixes from the first melonDS test (docs/paperwhite2/following-pokemon.md, "Fixes after the first melonDS test"):
+the follower comes back at once beside the player after a menu's application, a battle, or a warp a menu started (Fly,
+Dig, Teleport, the Escape Rope), placed during the return's fade and the reopened X menu, while doors keep the walk-in;
+the Poké Ball effect is lit as the follower's body (it showed light 0's color, about 2/3 of its palette by day and 1/3
+at night); the recall's silhouette shrinks at the body's drawn height instead of sinking to its feet. `--hack` builds
+with no warnings, `verify_dsi_rom.py` says intact, the memory check passes (0x285c0, 161 KB left). Next: test in melonDS.
+
 ## 2026-10-29: the follower's Options row and battle opening (branch following-port, not yet tested in an emulator)
 
 Steps 5 and 6 of the Following Pokémon port are done, so the base package is ported

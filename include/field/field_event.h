@@ -152,5 +152,7 @@ u32 FieldEventProvider_CountAlivePartyMembers(GameSystem *gsys);
 // Paper White 2: main's field_event.c, for the Following Pokémon
 BOOL PaperWhite2_IsFieldOpenCallback(GameEventCallback callback);
 BOOL PaperWhite2_IsFieldSubprocessCallback(GameEventCallback callback);
+// Paper White 2: overlay 36's field_transition.c, for the Following Pokémon
+BOOL PaperWhite2_IsFieldFadeInCallback(GameEventCallback callback);
 #endif
 #endif // POKEBW2_FIELD_FIELD_EVENT_H

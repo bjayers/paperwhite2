@@ -2,6 +2,7 @@
 #include "battle/btl_setup.h"
 #include "constants/obj_codes.h"
 #include "constants/pokemon.h"
+#include "field/app_call.h"
 #include "field/event_battle.h"
 #include "field/event_sound.h"
 #include "field/field_acmd.h"
@@ -71,6 +72,13 @@
 // The highest state of a battle's event while it still starts the battle
 #define BATTLE_EVENT_STARTING 3
 
+// The event types of an application's result (EventFieldAppCall_ConvAppResultToEventType) after which the field menu
+// goes on to another event once the field is back: a field move (CreateHMEvent: Fly, Dig, Teleport, Cut and the rest),
+// an item's common event (the Escape Rope) and a script
+#define APP_EVENT_FIELD_MOVE 2
+#define APP_EVENT_COMMON 3
+#define APP_EVENT_SCRIPT 5
+
 // A rail's step is replayed for at most this many frames, its slowest walk
 #define RAIL_STEP_FRAMES 16
 
@@ -113,6 +121,11 @@ typedef struct FollowingScene {
     // The player's own run, which a seamless zone change's event can end between the poll and the run
     BOOL naturalRun;
     GameEvent *menuRoot;
+    // The follower was out, its body or its resting ball, when the running events began
+    BOOL wasOut;
+    // The events that were running when the field came back from a menu's application or a battle, which the follower
+    // waits through; their fades back in and music restores too
+    GameEvent *returnEvents[EVENT_LIMIT];
     VM *pcVm;
     GameEvent *battleRoot;
     BtlSetup *battleSetup;
@@ -135,6 +148,9 @@ static void Pause(void) {
     if (!sScene.active) {
         sScene.active = TRUE;
         sScene.previousState = sScene.follower->state;
+        sScene.wasOut =
+            (sScene.follower->actor != NULL && !(sScene.follower->actor->flags & FOLLOWING_ACTOR_FLAG_HIDDEN)) ||
+            FollowingEffects_IsResting();
     }
     if (!sScene.recalled && sScene.follower->actor != NULL && sScene.follower->state != FOLLOWING_STATE_INTERACTING) {
         sScene.follower->state = FOLLOWING_STATE_EVENT_PAUSED;
@@ -288,12 +304,44 @@ BOOL FollowingScene_IsBattleEntry(void) {
     return sScene.battleSetup != NULL && !sScene.recalled && IsBattleChain(sScene.gsys->event);
 }
 
+static BOOL IsReturnRoot(GameEvent *event) {
+    u32 i;
+
+    for (i = 0; i < EVENT_LIMIT; i++) {
+        if (sScene.returnEvents[i] != NULL && sScene.returnEvents[i] == event) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+// Whether event is one of the return's: an event that was running when the field came back, or a fade back in or a
+// music restore under one. A freed event leaves the list (ForgetEvent), so its address can't be trusted again; a new
+// application, field move or script that the menu starts is none of these, and the policy decides on it as ever
+static BOOL IsReturnEvent(GameEvent *event) {
+    u32 depth;
+
+    for (depth = 0; event != NULL && depth < EVENT_LIMIT; depth++, event = event->parent) {
+        if (event->gsys != sScene.gsys) {
+            return FALSE;
+        }
+        if (IsReturnRoot(event)) {
+            return TRUE;
+        }
+        if (!PaperWhite2_IsFieldFadeInCallback(event->callback) && !PaperWhite2_IsFieldOpenCallback(event->callback) &&
+            !PaperWhite2_IsBGMRestoreCallback(event->callback)) {
+            return FALSE;
+        }
+    }
+    return FALSE;
+}
+
 // Whether the policy lets event run with the follower kept. A recycled event's address or another application's
 // child is never trusted: each exception checks its event's work against the bound game system and field
 static BOOL IsSafeCallback(GameEvent *event, GameEventCallback callback) {
     void *work;
 
-    if (IsBattleChain(event)) {
+    if (IsBattleChain(event) || IsReturnEvent(event)) {
         return TRUE;
     }
     work = event->data;
@@ -792,6 +840,11 @@ static void ForgetEvent(GameEvent *event) {
     if (event == sScene.menuRoot) {
         sScene.menuRoot = NULL;
     }
+    for (i = 0; i < EVENT_LIMIT; i++) {
+        if (sScene.returnEvents[i] == event) {
+            sScene.returnEvents[i] = NULL;
+        }
+    }
     if (event == sScene.battleRoot) {
         sScene.battleRoot = NULL;
         sScene.battleSetup = NULL;
@@ -1039,6 +1092,38 @@ BOOL FollowingScene_IsMenuActive(void) {
     return sScene.menuRoot != NULL && !sScene.recalled;
 }
 
+BOOL FollowingScene_WasOut(void) {
+    return sScene.active && sScene.wasOut;
+}
+
+BOOL FollowingScene_BeginReturn(void) {
+    GameEvent *event;
+    u32 depth;
+
+    if (sScene.system == NULL) {
+        return FALSE;
+    }
+    // An application that hands the menu a field move, an item's event or a script: the follower waits for that event
+    // to end, or for the field it leads to
+    for (event = sScene.gsys->event, depth = 0; event != NULL && depth < EVENT_LIMIT; depth++, event = event->parent) {
+        if (event->gsys != sScene.gsys) {
+            return FALSE;
+        }
+        if (event->callback == EventFieldAppCall_Callback) {
+            FieldAppCallWork *work = event->data;
+            u32 type = work != NULL && work->input != NULL ? work->input->eventType : APP_EVENT_SCRIPT;
+
+            if (type == APP_EVENT_FIELD_MOVE || type == APP_EVENT_COMMON || type == APP_EVENT_SCRIPT) {
+                return FALSE;
+            }
+        }
+    }
+    for (event = sScene.gsys->event, depth = 0; event != NULL && depth < EVENT_LIMIT; depth++, event = event->parent) {
+        sScene.returnEvents[depth] = event;
+    }
+    return TRUE;
+}
+
 BOOL FollowingScene_TakeRestore(FollowingRestore *restore) {
     if (sScene.system == NULL || !FollowingEvents_Consume(restore)) {
         return FALSE;
@@ -1083,12 +1168,14 @@ u32 FollowingScene_Poll(void) {
         sScene.boxPreserve = FALSE;
         sScene.naturalRun = FALSE;
         sScene.menuRoot = NULL;
+        sScene.wasOut = FALSE;
         sScene.pcVm = NULL;
         sScene.battleRoot = NULL;
         sScene.battleSetup = NULL;
         for (i = 0; i < EVENT_LIMIT; i++) {
             sScene.events[i].event = NULL;
             sScene.events[i].callback = NULL;
+            sScene.returnEvents[i] = NULL;
         }
         for (i = 0; i < VM_LIMIT; i++) {
             sScene.vms[i].vm = NULL;
@@ -1109,9 +1196,9 @@ BOOL FollowingScene_IsPcFade(void) {
     return sScene.active && !sScene.recalled && sScene.pcActive && sScene.pcFade;
 }
 
-void FollowingScene_Restored(void) {
+void FollowingScene_PauseAs(FollowingState state) {
     if (sScene.active && !sScene.recalled) {
-        sScene.previousState = FOLLOWING_STATE_FOLLOWING;
+        sScene.previousState = state;
         sScene.follower->state = FOLLOWING_STATE_EVENT_PAUSED;
     }
 }

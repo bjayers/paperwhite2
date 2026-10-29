@@ -245,16 +245,18 @@ BOOL FollowingRender_EffectPose(FieldActor *actor, const VecFx32 *live, Followin
     s64 y;
 
     if (actor == NULL || live == NULL || out == NULL || sSubmitted.actor != actor ||
-        sSubmitted.resource != actor->config.rscIndices.res1 || !SamePosition(&sSubmitted.world, &actor->wPos)) {
+        sSubmitted.resource != actor->config.rscIndices.res1) {
         return FALSE;
     }
     // The draw hasn't put the quad back yet: the live quad is the submitted pose
-    if (SamePosition(live, &sSubmitted.submitted.position)) {
+    if (SamePosition(&sSubmitted.world, &actor->wPos) && SamePosition(live, &sSubmitted.submitted.position)) {
         *out = sSubmitted.submitted;
         return TRUE;
     }
-    // Put back, or a bob that landed after it was. The draw-only lift (the registry's Y and two world pixels) stays, so
-    // the effect on it doesn't drop to the unlifted feet
+    // Put back, a bob that landed after it was, or a step taken since. The draw-only lift (the registry's Y and
+    // FOLLOWING_SPRITE_LIFT) is the same on every tile and facing, so it stays: an effect started mid-step is drawn at
+    // the body's height, not at the unlifted native quad's. Pokeweb's runtime gave up on a moved actor, and a recall
+    // begun while walking drew its silhouette at the native height
     lift = sSubmitted.submitted.position.y - sSubmitted.native.y;
     y = (s64)live->y + lift;
     if (y < LONG_MIN || y > LONG_MAX) {

@@ -846,3 +846,12 @@ void FieldG3D_SetLCDConfigKeepBGs(Field *field) {
 void EventGameTransition_ResetBgAffine(Field *field) {
     FieldG2D_Prepare3DSurface(field);
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: whether a callback is one of the plain fades back in that a return to the field runs, from a
+// menu's application or a battle (CallFieldMapEntranceInTransition with FIELD_TRANSITION_FADE_BLACK or the building
+// fade), which the Following Pokémon's scene policy lets run with the follower placed (paperwhite2_following_scene.c)
+BOOL PaperWhite2_IsFieldFadeInCallback(GameEventCallback callback) {
+    return callback == EventGameTransition_RunFadeIn || callback == EventGameTransition_RunDefaultFadeIn;
+}
+#endif

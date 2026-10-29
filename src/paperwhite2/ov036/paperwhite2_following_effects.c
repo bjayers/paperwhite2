@@ -149,6 +149,8 @@ typedef struct {
     BillboardActorMaterial material;
     BillboardActorMaterial whiteMaterial;
     SRTMatrix transform;
+    // The ball's one material, which LightBall writes before each draw
+    NNSG3dResMatData *ballMaterial;
 } FollowingEffects;
 
 // A bubble: its two frames, and its own scene of one quad
@@ -172,6 +174,8 @@ static FieldActor *sPlayer;
 static u16 sResourceCount;
 // The model table that the effects were loaded through, which the balls' art is read from
 static ArcTool *sArc;
+// The actor system the effects were loaded for, whose actors' scene lights the ball
+static MMSys *sSystem;
 static FollowingEffectsHeld sHeld[HELD_COUNT];
 static u32 sClock;
 static BOOL sDrop;
@@ -437,6 +441,7 @@ void FollowingEffects_Destroy(void) {
     sDrop = FALSE;
     sFx.ready = 0;
     sArc = NULL;
+    sSystem = NULL;
 }
 
 void FollowingEffects_Warm(MMSys *system) {
@@ -548,6 +553,7 @@ static BOOL Init(MMSys *system) {
         return FALSE;
     }
     sArc = arc;
+    sSystem = system;
     for (i = 0; i < 3; i++) {
         sFx.resources[i] = GFL_G3DSysReadArcToolResource(arc, FOLLOWING_EFFECTS_FILE_BALL + i);
         if (sFx.resources[i] == NULL) {
@@ -579,6 +585,8 @@ static BOOL Init(MMSys *system) {
         return StopInit();
     }
     GFL_G3DActorBindAnm(sFx.actors[1], 0);
+    sFx.ballMaterial = NNS_G3dGetMatDataByIdx(
+        NNS_G3dGetMat(NNS_G3dGetMdlByIdx(NNS_G3dGetMdlSet(GFL_G3DResGetResData(sFx.resources[0])), 0)), 0);
     sFx.transform.scale.x = FX32_ONE;
     sFx.transform.scale.y = FX32_ONE;
     sFx.transform.scale.z = FX32_ONE;
@@ -856,6 +864,113 @@ void FollowingEffects_Tick(void) {
     }
 }
 
+// The field's actors' quads stand on their bottom edge (origin 2 of billboard.c, set by FieldG3D_Init), and
+// their middle is one unit of their scale above it, along the quad's up. The recall's silhouette shrinks about that
+// middle, so it pulls in where the body was drawn, at its height with the lift, instead of sinking to its feet. A
+// camera-facing quad's up is the camera's, as BillboardActorScene_Draw's inverse of its look-at turns it
+static void KeepMiddle(BillboardActor *quad, s32 fullScaleY, G3DCamera *camera) {
+    VecFx32 eye;
+    VecFx32 target;
+    VecFx32 up;
+    VecFx32 back;
+    VecFx32 side;
+    fx32 rise;
+
+    up.x = 0;
+    up.y = FX32_ONE;
+    up.z = 0;
+    if (quad->type == BILLBOARD_ACTOR_TYPE_FACE_CAMERA) {
+        GFL_G3DCameraGetLookatPos(camera, &eye);
+        GFL_G3DCameraGetLookatTarget(camera, &target);
+        GFL_G3DCameraGetLookatUpVector(camera, &up);
+        VEC_Subtract(&eye, &target, &back);
+        VEC_Normalize(&back, &back);
+        VEC_CrossProduct(&up, &back, &side);
+        VEC_Normalize(&side, &side);
+        VEC_CrossProduct(&back, &side, &up);
+    }
+    rise = FX_Mul(sFx.scene.setup.scale.x, fullScaleY - quad->scaleY);
+    VEC_MultAdd(rise, &up, &quad->pos, &quad->pos);
+}
+
+// One channel of a lit color as the geometry engine sums it for one light (GBATEK's lighting): the material's ambient
+// times the light, and its diffuse times the light and the cosine between the light and the normal, f in fx32
+static u32 LightChannel(u32 ambient, u32 diffuse, u32 light, fx32 f) {
+    return (ambient * light >> 5) + (u32)(((s64)diffuse * light * f) >> (5 + FX32_SHIFT));
+}
+
+// HeartGold's ball material has no diffuse, specular or emission color and a white ambient one, and lights only light
+// 0, so it draws the palette times light 0's color: 22/31 of it in most of the field's daylight sets (22, 22, 20), a
+// third at night (11, 11, 16). The field's actors, the follower too, are lit from their scene's material colors (the
+// area's preset of field_bbd_color.c; every area has preset 1: emission 9, diffuse 31, ambient and specular 16) and its
+// custom normal (FldActMatColorPreset_Apply sets it, facing up and toward the camera), with light 0, or light 3 in the
+// shade. The ball's quad faces south, nearly across the field's lights, so those colors on its own normal would still
+// lose the diffuse half. Its color is worked out here as the follower's body gets it, without the specular, and drawn
+// unlit: the material's emission, with the same color as diffuse and vertex color, and no light. The ball is then as
+// bright as the body it stands for, in every area, weather and time of day
+static void LightBall(G3DLight *lights) {
+    FieldBillboardActor *fieldBillboard;
+    BillboardActorSys *system;
+    const BillboardActorScene *scene;
+    BillboardActorScene *playerScene;
+    BillboardActor *playerQuad;
+    VecFx16 normal;
+    u32 mask;
+    u32 channel[3];
+    u32 c;
+    u32 i;
+    GXRgb color;
+
+    if (sFx.ballMaterial == NULL || sSystem == NULL || lights == NULL) {
+        return;
+    }
+    fieldBillboard = FldActSys_GetFieldBillboardActor(sSystem);
+    system = fieldBillboard != NULL ? FieldBillboardActor_GetBillboardActorSys(fieldBillboard) : NULL;
+    if (system == NULL || system->scene == NULL) {
+        return;
+    }
+    scene = system->scene;
+    // FollowingRender_Draw's light for the follower
+    mask = FollowingField_IsShaded() ? FOLLOWING_LIGHTS_SHADE : FOLLOWING_LIGHTS_SUN;
+    playerQuad = sPlayer != NULL ? GetQuad(sPlayer, &playerScene) : NULL;
+    if (playerQuad != NULL && playerQuad->lights != FOLLOWING_LIGHTS_SUN &&
+        playerQuad->lights != FOLLOWING_LIGHTS_SHADE) {
+        mask = playerQuad->lights;
+    }
+    normal = scene->normal;
+    for (c = 0; c < 3; c++) {
+        channel[c] = scene->setup.emission >> (5 * c) & 31u;
+    }
+    for (i = 0; i < 4; i++) {
+        VecFx16 direction;
+        GXRgb light;
+        fx32 f;
+
+        if (!(mask & 1u << i)) {
+            continue;
+        }
+        GFL_G3DLightGetDirVector(lights, (u8)i, &direction);
+        GFL_G3DLightGetColor(lights, (u8)i, &light);
+        f = -VEC_Fx16DotProduct(&direction, &normal);
+        if (f < 0) {
+            f = 0;
+        }
+        for (c = 0; c < 3; c++) {
+            channel[c] += LightChannel(scene->setup.ambient >> (5 * c) & 31u, scene->setup.diffuse >> (5 * c) & 31u,
+                                       light >> (5 * c) & 31u, f);
+        }
+    }
+    for (c = 0; c < 3; c++) {
+        if (channel[c] > 31) {
+            channel[c] = 31;
+        }
+    }
+    color = GX_RGB(channel[0], channel[1], channel[2]);
+    sFx.ballMaterial->diffAmb = GX_PACK_DIFFAMB_PARAM(color, 0, TRUE);
+    sFx.ballMaterial->specEmi = GX_PACK_SPECEMI_PARAM(0, color, FALSE);
+    sFx.ballMaterial->polyAttr &= ~REG_G3_POLYGON_ATTR_LE_MASK;
+}
+
 // The closed ball where the effect stands, moved dx along x and raised by the resting ball's hop or bounce
 static void DrawBall(fx32 dx) {
     static const u8 hop[HOP_STEPS] = { 0, 1, 2, 2, 1, 0, 0, 0 };
@@ -876,6 +991,7 @@ void FollowingEffects_Draw(G3DCamera *camera, G3DLight *lights) {
     if (sFx.ready != 1) {
         return;
     }
+    LightBall(lights);
     if (sFx.mode == EFFECT_NONE) {
         if (!sRest.on) {
             return;
@@ -899,6 +1015,7 @@ void FollowingEffects_Draw(G3DCamera *camera, G3DLight *lights) {
 
         sFx.billboard.scaleX = (sFx.billboard.scaleX * scale[sFx.age]) >> FX32_SHIFT;
         sFx.billboard.scaleY = (sFx.billboard.scaleY * scale[sFx.age]) >> FX32_SHIFT;
+        KeepMiddle(&sFx.billboard, original.scaleY, camera);
         BillboardActorScene_Draw(&sFx.scene, camera, lights);
         sFx.billboard = original;
     } else if ((sFx.mode == EFFECT_OUT && sFx.age < OUT_BALL_TICKS) || sFx.mode == EFFECT_RECALL) {

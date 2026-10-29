@@ -32,8 +32,8 @@ void FollowingRender_Draw(BillboardActorSys *system, G3DCamera *camera, G3DLight
                           FieldActor *player, s32 spriteY, BOOL shaded);
 // The shadows' pass, the field's effect billboards: the follower's oval is moved behind its body for the submit
 void FollowingRender_ShadowPass(BillboardActorSys *system, G3DCamera *camera, G3DLight *lights);
-// The body as submitted by the last actors' pass, while the actor hasn't moved. live is the quad now: the submitted
-// pose when it is that, or live with the same draw-only lift
+// The body as submitted by the last actors' pass. live is the quad now: the submitted pose when it is that and the
+// actor hasn't moved, or else live with the same draw-only lift
 BOOL FollowingRender_EffectPose(FieldActor *actor, const VecFx32 *live, FollowingEffectPose *out);
 void FollowingRender_ClearGrass(void);
 // The wild effects' pass: the grass on the follower's and the player's tiles clears their feet

@@ -47,5 +47,6 @@ GameEvent *EventBGMFadeWait_Create(GameSystem *gsys);
 #ifdef PAPERWHITE2
 // Paper White 2: main's event_sound.c, for the Following Pokémon
 BOOL PaperWhite2_IsFollowingSoundCallback(GameEventCallback callback);
+BOOL PaperWhite2_IsBGMRestoreCallback(GameEventCallback callback);
 #endif
 #endif // POKEBW2_FIELD_EVENT_SOUND_H

@@ -591,6 +591,45 @@ the player's platform as the battle fades in, the wild one appears, and after it
 send-out as usual and the opponent's HP bar shown; with the follower off or recalled, a double battle and a link battle,
 the opening is the original's; the next battle without the follower in front opens as usual (the mark is gone).
 
+## Fixes after the first melonDS test
+
+**Coming back after a menu, a battle or a menu's warp.** The save's load placed the follower at once because the boot's
+summon token reaches a field whose only event is the field's opening, which the scene policy keeps; the summon is placed
+as soon as that ends. A menu's application and a battle stored the token too (a battle only when the follower had been
+carried into its opening, `FollowingScene_IsBattleEntry`), but the rebuilt field still ran the application's call
+(`EventFieldAppCall_Callback`, then the X menu it goes back to) or the battle's call in its return states, which the
+policy doesn't know: it recalled, so the follower stayed away through the fade back in and the reopened menu, and a
+battle it wasn't carried into (not the lead, a double battle, a trainer seen first) walked in. Now:
+
+- The unload arms the token for a menu's application (`IsChainOf(field, IsMenuCallback)`), for a field move or item
+  started from a menu that warps (`sMenuSession`: the field came back from a menu and no event has ended its chain since:
+  Fly, Dig, Teleport, the Escape Rope, the Infinity dungeon's retire), and for any battle (`IsBattleCallback`) when the
+  follower was out as its events began (`FollowingScene_WasOut`) or Followers are off.
+- The next field compares the zone and the player's tile at once (`IsSummonOrigin`). Back where it was, the events running
+  then, and the fades back in and music restores under them, are kept by the policy (`FollowingScene_BeginReturn`), and
+  the follower is built and placed during them with `PlaceSummon`, the boot's placement (behind, a side, or beside when
+  facing down), and waits there (`FollowingScene_PauseAs`). An application that hands the menu a field move, an item's
+  event or a script (event types 2, 3, 5) doesn't keep them: the follower comes after that event, or on the field it
+  warps to. A battle that ends elsewhere (a loss) walks in; a menu's request places the follower on the warp's field
+  once its arrival ends.
+- An application that keeps the field (the save) gives the follower back beside the player when the menu's events end
+  (`RecallForScene`).
+- Doors and every other map change still consume the token and walk in.
+
+**The ball looked dark.** HeartGold's ball material is diffuse 0, ambient 31, specular and emission 0, light 0 only, so
+it showed light 0's color times the palette: (21, 21, 19) of 31 in the field's usual daylight set (light 0 (22, 22, 20))
+and (10, 10, 15) at night (11, 11, 16), whatever the ball's palette. The field's actors, the follower too, are lit from
+the actors' preset (every area: emission 9, diffuse 31, ambient 16) and its normal, which faces the light; the ball's quad
+faces south, across it. `LightBall` works the body's color out on the CPU from the same lights, preset and normal, and
+draws the ball unlit in that color: white in daylight, (21, 21, 28) on that night set, as the body.
+
+**The recall dipped into the ground.** The silhouette is a quad of the actors' scene, which stands on its bottom edge
+(origin 2), so its shrink fell to its feet; and a recall begun mid-step lost the registry's Y and the lift
+(`FollowingRender_EffectPose` gave up on a moved actor). The silhouette now shrinks about its middle (`KeepMiddle`) at
+the drawn height, lift included, and then the ball shows at its place on the ground. Pokeweb's design was the same
+("uses the last submitted ground/depth-corrected pose before shrinking in place", EFFECTS.md): the shrink toward the feet
+is its origin's, not a stated intent.
+
 ## What remains
 
 Every step of the base package is ported (1 to 6, above), each built with `--hack`, no warnings, `verify_dsi_rom.py`

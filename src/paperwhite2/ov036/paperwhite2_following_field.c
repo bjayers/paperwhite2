@@ -2,6 +2,7 @@
 #include "constants/pokemon.h"
 #include "constants/sound.h"
 #include "constants/types.h"
+#include "field/event_battle.h"
 #include "field/field.h"
 #include "field/field_actor.h"
 #include "field/field_actor_internal.h"
@@ -152,6 +153,9 @@ static void Removed(FieldActor *actor);
 static BOOL IsOwned(void);
 static BOOL IsLargeKept(const FieldActor *actor);
 static void Cleanup(void);
+static BOOL IsMenuCallback(GameEventCallback callback);
+static BOOL IsChainOf(Field *field, BOOL (*isEvent)(GameEventCallback callback));
+static BOOL IsSummonOrigin(Field *field, const FollowingSummon *request);
 
 // The follower's move: its code, then its init, update, delete and return functions. Its update is the follower's step
 // on the trail
@@ -194,16 +198,25 @@ static u16 sCycleFace;
 static u8 sCyclePending;
 static FollowingRestore sRestore;
 // TRUE while the next follower should be placed at once, with its send-out, instead of waiting for the player to walk:
-// at boot, when SELECT turns it on, and after a menu or a battle that closed the field with the follower out. A map
-// change is neither, so it keeps the walk-in. The request crosses the overlay's reload as the resident summon token:
-// valid from boot, stored only by a menu's or battle's unload, read once by the next field. The return must also be on
-// the unload's zone and tile. The player moving first, or no open tile, clears it
+// at boot, when SELECT turns it on, after a menu's application or a battle that closed the field, and after a warp that
+// a menu started (Fly, Dig, Teleport, the Escape Rope). A door or another map change is none of these, so it keeps the
+// walk-in. The request crosses the overlay's reload as the resident summon token: valid from boot, stored only by a
+// menu's or battle's unload (PaperWhite2_FollowingUnload), read once by the next field. A battle's return must be on
+// the unload's zone and tile, so a loss's warp to a Pokémon Center walks in. The player moving first, or no open tile,
+// clears it
 static u8 sSummon;
 static u8 sSummonSeen;
-static u8 sSummonMatch;
-static u16 sSummonZone;
 static VecFx32 sSummonAt;
-static VecFx32 sSummonFrom;
+// TRUE while the summon is placed during the return's events, as the field fades back in or under the menu that the
+// application went back to: the field came back from a menu's application or a battle on the tile it left
+// (FollowingScene_BeginReturn). Otherwise the summon waits until no event holds the field
+static u8 sReturnSummon;
+// TRUE from a field that a menu's application brought back until no event holds it: the menu's chain goes on, and a
+// field move or item that it started (Fly, Dig, Teleport, the Escape Rope) and that warps arms the summon as the menu
+// does, though the menu's own event is gone from the chain by then
+static u8 sMenuSession;
+// TRUE while the actor made for the return's summon waits hidden for its place: the scene's pause doesn't reveal it
+static u8 sReturnHold;
 // TRUE after something stepped onto the resting ball: the trail restarts and the ball stays away until the hold places
 // it again
 static u8 sBallOff;
@@ -1204,8 +1217,11 @@ static BOOL PlaceSummon(FieldActor *actor) {
     u32 back;
     u32 i;
 
-    if (sFollower.state != FOLLOWING_STATE_WAITING || !(actor->flags & FOLLOWING_ACTOR_FLAG_HIDDEN) || sSwap.active ||
-        player->faceDir > DIR_RIGHT || (!rail && !IsCentered(&player->wPos))) {
+    // During the return's events the scene holds the waiting follower as paused
+    if ((sFollower.state != FOLLOWING_STATE_WAITING &&
+         !(sReturnSummon && sFollower.state == FOLLOWING_STATE_EVENT_PAUSED)) ||
+        !(actor->flags & FOLLOWING_ACTOR_FLAG_HIDDEN) || sSwap.active || player->faceDir > DIR_RIGHT ||
+        (!rail && !IsCentered(&player->wPos))) {
         return FALSE;
     }
     // The body's sheet and any running effect are waited for; the summon stays pending
@@ -1329,11 +1345,21 @@ static void Move(FieldActor *actor) {
         return;
     }
     // An event may own the sprite, but the route keeps the player's steps, or a short pause while running would grow
-    // past a tile and the trail would drop. A pause and a full stop don't advance the ease, so a held gap stays put
+    // past a tile and the trail would drop. A pause and a full stop don't advance the ease, so a held gap stays put.
+    // The return's summon is placed during its events and waits there with them; without an open tile it stays hidden
+    // until they end and walks in
     if (paused) {
+        if (sSummon && sReturnSummon && PlaceSummon(actor)) {
+            sReturnHold = FALSE;
+            FollowingScene_PauseAs(sFollower.state);
+        }
         return;
     }
     if (sSummon && PlaceSummon(actor)) {
+        if (sReturnSummon) {
+            sReturnHold = FALSE;
+            FollowingScene_PauseAs(sFollower.state);
+        }
         GateAnimation(actor);
         return;
     }
@@ -1495,7 +1521,8 @@ BOOL PaperWhite2_FollowingHoldsPlayer(void) {
     return FollowingEffects_IsRecalling() && GetRestBall() == NULL;
 }
 
-// The scene policy's recall
+// The scene policy's recall. An application of the menu that keeps the field (the save) gives the follower back
+// beside the player once the menu's events end, as one that closes the field does on the next
 static void RecallForScene(void) {
     if (IsOwned() && !(sFollower.actor->flags & FOLLOWING_ACTOR_FLAG_HIDDEN)) {
         FollowingEffects_Recall(sFollower.actor);
@@ -1503,6 +1530,10 @@ static void RecallForScene(void) {
         FollowingEffects_RestRecall();
     }
     Cleanup();
+    if (sOwner != NULL && IsChainOf(sOwner->field, IsMenuCallback)) {
+        sSummon = TRUE;
+        sSummonSeen = FALSE;
+    }
 }
 
 static u16 Read16(const u8 *p) {
@@ -2058,7 +2089,6 @@ static void ToggleBySelect(Field *field, BOOL ownTalk, BOOL paused, u32 *reason)
         *reason &= ~REASON_OFF;
         sSummon = TRUE;
         sSummonSeen = TRUE;
-        sSummonMatch = FALSE;
         sSummonAt = player->wPos;
     }
 }
@@ -2125,14 +2155,14 @@ static void UpdateBefore(MMSys *system) {
         sWarmed = NULL;
         sOwner = system;
         sSummonSeen = FALSE;
-        sSummon = sSummonMatch = FALSE;
+        sSummon = sReturnSummon = sReturnHold = sMenuSession = FALSE;
         if (PaperWhite2_FollowingTokenConsume(FOLLOWING_TOKEN_SUMMON, &request, sizeof(request))) {
-            sSummon = TRUE;
-            sSummonMatch = request.source != FOLLOWING_SUMMON_BOOT;
-            sSummonZone = (u16)request.zone;
-            sSummonFrom.x = request.x;
-            sSummonFrom.y = 0;
-            sSummonFrom.z = request.z;
+            BOOL here = request.source != FOLLOWING_SUMMON_BOOT && IsSummonOrigin(system->field, &request);
+
+            // A menu's request also stands after the warp of a field move or item it started, which lands elsewhere
+            sSummon = request.source != FOLLOWING_SUMMON_BATTLE || here;
+            sReturnSummon = here;
+            sMenuSession = request.source == FOLLOWING_SUMMON_MENU;
         }
         Following_Init(&sFollower, ++sGeneration);
         if (keepManual) {
@@ -2141,6 +2171,9 @@ static void UpdateBefore(MMSys *system) {
             sFollower.hasSelection = TRUE;
         }
         sEventsReady = FollowingScene_Attach(system, &sFollower, sGeneration, RecallForScene);
+        if (sReturnSummon && !(sEventsReady && FollowingScene_BeginReturn())) {
+            sReturnSummon = FALSE;
+        }
         ClearRestore();
         if (system != NULL && system->field != NULL && IsFollowersOff(system->field->gameData)) {
             FollowingEvents_Discard();
@@ -2151,6 +2184,9 @@ static void UpdateBefore(MMSys *system) {
     field = system->field;
     if (field != NULL) {
         SyncBall(field->gameData);
+        if (GSYS_GetNowEvent(field->gameSystem) == NULL) {
+            sMenuSession = FALSE;
+        }
     }
     if (FollowingTalk_IsActive() && !FollowingTalk_Owns(field)) {
         FollowingTalk_Cancel();
@@ -2187,21 +2223,20 @@ static void UpdateBefore(MMSys *system) {
 
         sPlayer = fieldPlayer != NULL ? FieldPlayer_GetActor(fieldPlayer) : NULL;
         FollowingScene_SetPlayer(sPlayer);
-        // Judged once no event holds the field, so a door's step out or a warp's arrival script has already moved the
-        // player
+        // Judged once no event holds the field, so a warp's arrival script has already moved the player; a return's
+        // summon was judged on the field's first frame and may already be placed (Move)
         if (sSummon && sPlayer != NULL && !paused) {
             VecFx32 at = sPlayer->wPos;
 
             if (!sSummonSeen) {
                 sSummonSeen = TRUE;
                 sSummonAt = at;
-                if (sSummonMatch && (field->zoneId != sSummonZone || at.x != sSummonFrom.x || at.z != sSummonFrom.z)) {
-                    sSummon = FALSE;
-                }
-                sSummonMatch = FALSE;
             } else if (at.x != sSummonAt.x || at.y != sSummonAt.y || at.z != sSummonAt.z) {
                 sSummon = FALSE;
             }
+        }
+        if (!paused) {
+            sReturnSummon = sReturnHold = FALSE;
         }
         if (sPlayer == NULL || !(sPlayer->flags & FOLLOWING_ACTOR_FLAG_USE) ||
             (sPlayer->flags & FOLLOWING_ACTOR_FLAG_HIDDEN) ||
@@ -2218,7 +2253,8 @@ static void UpdateBefore(MMSys *system) {
         if (GameData_CheckPairFlag(gameData)) {
             reason |= REASON_PAIR;
         }
-        if (reason == 0 && !ownTalk && (!paused || sRestore.magic == FOLLOWING_RESTORE_MAGIC) &&
+        if (reason == 0 && !ownTalk &&
+            (!paused || sRestore.magic == FOLLOWING_RESTORE_MAGIC || (sSummon && sReturnSummon)) &&
             (sFollower.actor == NULL || sTick % 30 == 0 || (eventState & FOLLOWING_SCENE_REFRESH))) {
             FollowingPokemon selected;
 
@@ -2269,8 +2305,9 @@ static void UpdateBefore(MMSys *system) {
         FollowingTrail_Clear(&sFollower.trail);
         ClearEase();
     }
-    // Only a matching return from the PC's storage may build the follower again during a paused event
-    if (paused && sRestore.magic != FOLLOWING_RESTORE_MAGIC) {
+    // Only a matching return from the PC's storage, or the return's summon, may build the follower again during a
+    // paused event
+    if (paused && sRestore.magic != FOLLOWING_RESTORE_MAGIC && !(sSummon && sReturnSummon)) {
         return;
     }
     if (sRestore.magic == FOLLOWING_RESTORE_MAGIC &&
@@ -2279,7 +2316,7 @@ static void UpdateBefore(MMSys *system) {
          sRestore.player.z != sPlayer->wPos.z)) {
         ClearRestore();
     }
-    if (paused && sRestore.magic != FOLLOWING_RESTORE_MAGIC) {
+    if (paused && sRestore.magic != FOLLOWING_RESTORE_MAGIC && !(sSummon && sReturnSummon)) {
         return;
     }
     if (sFollower.actor == NULL) {
@@ -2385,7 +2422,11 @@ static void UpdateBefore(MMSys *system) {
             FollowingRender_Anchor(actor, sRestore.face);
             RevealFollower(actor);
             sFollower.state = FOLLOWING_STATE_FOLLOWING;
-            FollowingScene_Restored();
+            FollowingScene_PauseAs(FOLLOWING_STATE_FOLLOWING);
+        } else if (paused && sSummon && sReturnSummon) {
+            // Hidden until Move places it. The events' end gives it back as waiting
+            sReturnHold = TRUE;
+            FollowingScene_PauseAs(FOLLOWING_STATE_WAITING);
         }
         ClearRestore();
     }
@@ -2460,7 +2501,7 @@ void PaperWhite2_FollowingUpdate(MMSys *system) {
 
         // Move can run before the material's loading writes the billboard's handle. Here the hidden flag clears on the
         // frame that handle becomes real. The VBlank task owns the upload, which isn't finished here
-        if ((actor->flags & FOLLOWING_ACTOR_FLAG_HIDDEN) &&
+        if ((actor->flags & FOLLOWING_ACTOR_FLAG_HIDDEN) && !sReturnHold &&
             (sFollower.state == FOLLOWING_STATE_FOLLOWING || sFollower.state == FOLLOWING_STATE_EVENT_PAUSED)) {
             RevealFollower(actor);
         }
@@ -2512,36 +2553,62 @@ void PaperWhite2_FollowingTerrainDraw(BillboardActorSys *system, G3DCamera *came
     FollowingRender_GrassDraw(system, camera, lights, IsOwned() ? sFollower.actor : NULL);
 }
 
-// The field menu's chain of events leaving the field for an application: EventFieldMenu_Callback, the
-// EventFieldAppCall_Callback it chains, or the menu's return. The scene policy recalls the follower for that
-// application before this unload, so the menu's marker and the actor are both gone by then; the chain isn't
-#define MENU_CHAIN_DEPTH 16
+// The events of the chain that closes the field, from the one running up through its parents
+#define CHAIN_DEPTH 16
 
-static BOOL IsMenuChain(Field *field) {
+// The field menu's chain of events leaving the field for an application: EventFieldMenu_Callback, the
+// EventFieldAppCall_Callback it chains, or the menu's return; the Y button's shortcut menu chains the same application
+// call. The scene policy recalls the follower for that application before this unload, so the menu's marker and the
+// actor are both gone by then; the chain isn't
+static BOOL IsMenuCallback(GameEventCallback callback) {
+    return callback == EventFieldMenu_Callback || callback == EventFieldAppCall_Callback ||
+           PaperWhite2_IsFieldMenuReturnCallback(callback);
+}
+
+// A battle's chain: the wild battle's event or the battle call that every wild, trainer and scripted battle runs,
+// whether or not the follower was carried into it
+static BOOL IsBattleCallback(GameEventCallback callback) {
+    return PaperWhite2_IsWildBattleCallCallback(callback) || PaperWhite2_IsBattleCallCallback(callback);
+}
+
+static BOOL IsChainOf(Field *field, BOOL (*isEvent)(GameEventCallback callback)) {
     GameSystem *gsys = field != NULL ? field->gameSystem : NULL;
     GameEvent *event = gsys != NULL ? GSYS_GetNowEvent(gsys) : NULL;
     u32 depth;
 
-    for (depth = 0; event != NULL && depth < MENU_CHAIN_DEPTH; depth++, event = event->parent) {
+    for (depth = 0; event != NULL && depth < CHAIN_DEPTH; depth++, event = event->parent) {
         if (event->gsys != gsys) {
             return FALSE;
         }
-        if (event->callback == EventFieldMenu_Callback || event->callback == EventFieldAppCall_Callback ||
-            PaperWhite2_IsFieldMenuReturnCallback(event->callback)) {
+        if (isEvent(event->callback)) {
             return TRUE;
         }
     }
     return FALSE;
 }
 
+// Whether the field that request was stored for is back, in the same zone and on the same tile: a menu's or a
+// battle's return, and not a warp's. A rail's player is placed again from its rail position, so the tile is compared
+// rather than the exact point
+static BOOL IsSummonOrigin(Field *field, const FollowingSummon *request) {
+    FieldActor *player = field != NULL && field->player != NULL ? FieldPlayer_GetActor(field->player) : NULL;
+
+    return player != NULL && field->zoneId == request->zone &&
+           Following_Tile(player->wPos.x) == Following_Tile(request->x) &&
+           Following_Tile(player->wPos.z) == Following_Tile(request->z);
+}
+
 void PaperWhite2_FollowingUnload(GameSystem *gsys, Field *field) {
-    // Only a menu or a battle closing the field places the follower on the return; every map change goes through this
-    // same unload and keeps the walk-in. The return must also land on this same tile
+    // Only a menu's application, a warp that a menu started, or a battle closing the field places the follower on the
+    // next field; every other map change goes through this same unload and keeps the walk-in. A battle arms when the
+    // follower was out as it began, or Followers are off (SELECT or the Options turn them on later)
     FieldPlayer *fieldPlayer = field != NULL ? field->player : NULL;
     FieldActor *player = fieldPlayer != NULL ? FieldPlayer_GetActor(fieldPlayer) : NULL;
-    BOOL menu = FollowingScene_IsMenuActive() || IsMenuChain(field);
-    BOOL battle = !menu && FollowingScene_IsBattleEntry();
-    BOOL arm = player != NULL && (menu || (battle && (IsOwned() || IsFollowersOff(field->gameData))));
+    BOOL menu = FollowingScene_IsMenuActive() || IsChainOf(field, IsMenuCallback) ||
+                (sMenuSession && GSYS_GetNowEvent(gsys) != NULL);
+    BOOL battle = !menu && IsChainOf(field, IsBattleCallback);
+    BOOL arm = player != NULL &&
+               (menu || (battle && (IsOwned() || FollowingScene_WasOut() || IsFollowersOff(field->gameData))));
     FollowingSummon request;
 
     request.source = menu ? FOLLOWING_SUMMON_MENU : FOLLOWING_SUMMON_BATTLE;
@@ -2554,7 +2621,7 @@ void PaperWhite2_FollowingUnload(GameSystem *gsys, Field *field) {
     } else {
         PaperWhite2_FollowingTokenConsume(FOLLOWING_TOKEN_SUMMON, &request, sizeof(request));
     }
-    sSummon = FALSE;
+    sSummon = sReturnSummon = sReturnHold = sMenuSession = FALSE;
     FollowingScene_Detach();
     sEventsReady = FALSE;
     Cleanup();

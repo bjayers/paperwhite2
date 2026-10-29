@@ -35,9 +35,16 @@ BOOL FollowingScene_IsPcFade(void);
 BOOL FollowingScene_IsBattleEntry(void);
 // Takes the PC's restore token for the field just attached: FALSE when there is none
 BOOL FollowingScene_TakeRestore(FollowingRestore *restore);
-// The follower was put back from the restore token: it waits until the PC's event ends
-void FollowingScene_Restored(void);
+// The follower was put back (from the PC's restore token) or placed (on a return) while the scene waits: it waits until
+// the events end, then goes on in state
+void FollowingScene_PauseAs(FollowingState state);
 BOOL FollowingScene_IsMenuActive(void);
+// Whether the follower was out, as its body or its resting ball, when the running events began
+BOOL FollowingScene_WasOut(void);
+// The field just attached came back from a menu's application or a battle on the tile it left: the events running now,
+// and the fades back in and music restores under them, keep the follower (it is placed and waits). FALSE, and nothing
+// kept, when an application handed the menu a field move, an item's event or a script to run next
+BOOL FollowingScene_BeginReturn(void);
 // Notes event, the menu that the field's checks opened, as the menu's
 void FollowingScene_MarkMenu(GameEvent *event);
 // Whether no other actor stands on target or is stepping onto it, before the follower steps there
