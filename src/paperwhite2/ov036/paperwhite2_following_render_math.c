@@ -500,32 +500,33 @@ BOOL FollowingRender_ShadowMatch(const FollowingPose *shadow, const VecFx32 *fee
     return FollowingRender_ShadowTuck(shadow, sprite, camera, keep, output);
 }
 
-BOOL FollowingRender_OvalBehind(const FollowingPose *shadow, const FollowingCamera *camera, FollowingPose *output) {
+BOOL FollowingRender_OverOval(const FollowingPose *body, fx32 ground, const FollowingCamera *camera,
+                              FollowingPose *output) {
     VecFx32 direction;
-    s32 back;
+    s64 gap;
+    s32 change;
 
-    if (shadow == NULL || camera == NULL || output == NULL) {
+    if (body == NULL || camera == NULL || output == NULL) {
         return FALSE;
     }
-    *output = *shadow;
-    // An orthographic ShiftDepth can't keep the picture still, and an unknown projection isn't a field camera
-    if (camera->projection >= G3DCAM_PROJECTION_ORTHO || !IsScaleValid(shadow)) {
+    *output = *body;
+    if (camera->projection > G3DCAM_PROJECTION_ORTHO || !IsScaleValid(body)) {
         return FALSE;
     }
     if (!Delta(&camera->eye, &camera->target, &direction, 1 << 27) || !Axis(direction, &direction)) {
         return FALSE;
     }
-    // The oval is flat, its rim on the camera's side nearer than its center, and a bob can drop the body onto that
-    // center: both are covered, without ever chasing the sprite, since a large margin is what walked the oval up the
-    // body
-    back = OvalRim(shadow, &direction) + 8 * FX32_ONE;
-    if (back < FOLLOWING_RENDER_SHADOW_KEEP) {
-        back = FOLLOWING_RENDER_SHADOW_KEEP;
+    // The ray through the bottom row meets the oval's plane gap / sin(pitch) nearer the camera than the body. A
+    // camera that doesn't look down has no oval in front of the feet
+    gap = (s64)ground + FOLLOWING_RENDER_OVAL_RISE - body->position.y;
+    if (gap <= 0 || direction.y <= 0) {
+        return FALSE;
     }
-    if (back > FOLLOWING_TILE) {
-        back = FOLLOWING_TILE;
+    change = Divide(gap * FX32_ONE, direction.y);
+    if (change > FOLLOWING_RENDER_OVAL_CAP) {
+        change = FOLLOWING_RENDER_OVAL_CAP;
     }
-    return ShiftDepth(shadow, camera, &direction, -back, output);
+    return ShiftDepth(body, camera, &direction, change, output);
 }
 
 void FollowingRender_PrivateScene(BillboardActorScene *scene, const BillboardActorScene *live, BillboardActor *actors,

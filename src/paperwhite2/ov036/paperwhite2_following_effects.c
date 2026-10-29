@@ -37,12 +37,15 @@ enum {
 #define SILHOUETTE_LIGHT_CYAN GX_RGB(19, 28, 31)
 #define SILHOUETTE_WHITE GX_RGB(31, 31, 31)
 
-// The frames of each effect: the send-out's ball shows for its first two, and the recall's silhouette for its first
-// RECALL_SPRITE_TICKS
-#define OUT_TICKS 10
-#define OUT_BALL_TICKS 2
+// The frames of each effect. The recall is three frames of the body's silhouette where it stood, five that shrink it
+// into the ball, and four of the ball. The send-out is its mirror: four of the ball, five that grow the silhouette out
+// of it, and three of the silhouette where the body stands, with the ball's flash from the ball's opening
+#define OUT_TICKS 12
+#define OUT_BALL_TICKS 4
 #define RECALL_TICKS 12
 #define RECALL_SPRITE_TICKS 8
+#define SILHOUETTE_HOLD 3
+#define SILHOUETTE_STEPS 5
 // The frames that the closed ball stays up for a refused switch, and how many of them shake it a pixel either way
 #define CUE_TICKS 30
 #define CUE_SHAKE 12
@@ -139,6 +142,10 @@ typedef struct {
     s32 mode;
     s32 age;
     BOOL snapshot;
+    // The update that the snapshot was taken in
+    u32 snapshotClock;
+    // The sheet of the follower that the send-out brings out
+    u16 outResource;
     // The rows of each frame of the white sheet whose top and bottom pixels are opaque, for the bubble's height
     u8 outlineTop[OUTLINE_FRAMES_MAX];
     u8 outlineBottom[OUTLINE_FRAMES_MAX];
@@ -704,7 +711,12 @@ void FollowingEffects_Snapshot(FieldActor *actor) {
     BillboardActor *quad;
     FollowingEffectPose submitted;
 
-    if (sFx.white == NULL || sFx.mode == EFFECT_RECALL || (actor->flags & FOLLOWING_ACTOR_FLAG_HIDDEN)) {
+    if (sFx.mode == EFFECT_RECALL || (actor->flags & FOLLOWING_ACTOR_FLAG_HIDDEN)) {
+        return;
+    }
+    // Another follower's sheet isn't this one's silhouette: without its own, the recall shows the ball throughout
+    if (sFx.white == NULL || sFx.whiteId != actor->config.rscIndices.res1) {
+        sFx.snapshot = FALSE;
         return;
     }
     quad = GetQuad(actor, &scene);
@@ -713,8 +725,12 @@ void FollowingEffects_Snapshot(FieldActor *actor) {
     }
     sFx.billboard = *quad;
     sFx.material = scene->materials[quad->material];
-    // The field's header isn't copied: the recall's flash is a second submit
+    // The field's header isn't copied: the recall's flash is a second submit. The quad stands on its bottom edge, as
+    // the field's do: the private scene's own origin, the middle, drew the first frame half a body lower
     FollowingRender_PrivateScene(&sFx.scene, scene, &sFx.billboard, &sFx.material, 1, 1);
+    sFx.scene.setup.origin = scene->setup.origin;
+    sFx.scene.texOffsetS = scene->texOffsetS;
+    sFx.scene.texOffsetT = scene->texOffsetT;
     sFx.scene.setup.diffuse = GX_RGB(31, 31, 31);
     sFx.scene.setup.ambient = GX_RGB(31, 31, 31);
     sFx.scene.setup.specular = 0;
@@ -734,6 +750,7 @@ void FollowingEffects_Snapshot(FieldActor *actor) {
     sFx.material.texKey = sFx.whiteMaterial.texKey;
     sFx.material.plttKey = sFx.whiteMaterial.plttKey;
     sFx.snapshot = TRUE;
+    sFx.snapshotClock = sClock;
 }
 
 static void SetBallAt(const VecFx32 *at) {
@@ -745,6 +762,9 @@ void FollowingEffects_Out(FieldActor *actor) {
     if (sFx.ready != 1) {
         return;
     }
+    // The silhouette is this follower's sheet: a switch brings out another than the last one recalled
+    FollowingEffects_Prepare(actor);
+    sFx.outResource = actor->config.rscIndices.res1;
     ApplyBall();
     SetBallAt(&actor->wPos);
     sFx.mode = EFFECT_OUT;
@@ -839,6 +859,10 @@ BOOL FollowingEffects_HidesActor(void) {
     return sFx.mode == EFFECT_OUT && sFx.age < OUT_BALL_TICKS;
 }
 
+BOOL FollowingEffects_CoversBody(void) {
+    return sFx.mode == EFFECT_OUT && sFx.age >= OUT_BALL_TICKS && sFx.white != NULL && sFx.whiteId == sFx.outResource;
+}
+
 void FollowingEffects_Tick(void) {
     s32 ticks;
 
@@ -864,17 +888,28 @@ void FollowingEffects_Tick(void) {
     }
 }
 
-// The field's actors' quads stand on their bottom edge (origin 2 of billboard.c, set by FieldG3D_Init), and
-// their middle is one unit of their scale above it, along the quad's up. The recall's silhouette shrinks about that
-// middle, so it pulls in where the body was drawn, at its height with the lift, instead of sinking to its feet. A
-// camera-facing quad's up is the camera's, as BillboardActorScene_Draw's inverse of its look-at turns it
-static void KeepMiddle(BillboardActor *quad, s32 fullScaleY, G3DCamera *camera) {
+// The silhouette's sizes, of the body's, as it shrinks into the ball; the send-out grows it through them backward
+static const s32 sSilhouetteScale[SILHOUETTE_STEPS] = { 3440, 2784, 2112, 1456, 768 };
+
+// The silhouette at step of SILHOUETTE_STEPS from the body toward the ball: its size from sSilhouetteScale, and its
+// middle that far of the way from the body's middle to the ball's, where its smallest size stands on the ball's spot.
+// The field's actors' quads stand on their bottom edge (origin 2 of billboard.c, set by FieldG3D_Init), and their
+// middle is one unit of their scale above it, along the quad's up: a camera-facing quad's up is the camera's, as
+// BillboardActorScene_Draw's inverse of its look-at turns it
+static void PlaceSilhouette(BillboardActor *quad, u32 step, G3DCamera *camera) {
+    s32 size = sSilhouetteScale[step];
+    s32 smallest = sSilhouetteScale[SILHOUETTE_STEPS - 1];
+    fx32 progress = (fx32)((FX32_ONE - size) * FX32_ONE / (FX32_ONE - smallest));
+    fx32 scale = sFx.scene.setup.scale.x;
     VecFx32 eye;
     VecFx32 target;
     VecFx32 up;
     VecFx32 back;
     VecFx32 side;
-    fx32 rise;
+    VecFx32 start;
+    VecFx32 end;
+    VecFx32 middle;
+    s32 fullScaleY = quad->scaleY;
 
     up.x = 0;
     up.y = FX32_ONE;
@@ -889,8 +924,14 @@ static void KeepMiddle(BillboardActor *quad, s32 fullScaleY, G3DCamera *camera) 
         VEC_Normalize(&side, &side);
         VEC_CrossProduct(&back, &side, &up);
     }
-    rise = FX_Mul(sFx.scene.setup.scale.x, fullScaleY - quad->scaleY);
-    VEC_MultAdd(rise, &up, &quad->pos, &quad->pos);
+    quad->scaleX = (s16)((quad->scaleX * size) >> FX32_SHIFT);
+    quad->scaleY = (s16)((quad->scaleY * size) >> FX32_SHIFT);
+    VEC_MultAdd(FX_Mul(scale, fullScaleY), &up, &quad->pos, &start);
+    VEC_MultAdd(FX_Mul(scale, (fullScaleY * smallest) >> FX32_SHIFT), &up, &sFx.transform.translation, &end);
+    middle.x = start.x + FX_Mul(end.x - start.x, progress);
+    middle.y = start.y + FX_Mul(end.y - start.y, progress);
+    middle.z = start.z + FX_Mul(end.z - start.z, progress);
+    VEC_MultAdd(-FX_Mul(scale, quad->scaleY), &up, &middle, &quad->pos);
 }
 
 // One channel of a lit color as the geometry engine sums it for one light (GBATEK's lighting): the material's ambient
@@ -1008,27 +1049,37 @@ void FollowingEffects_Draw(G3DCamera *camera, G3DLight *lights) {
         }
         DrawBall(shake);
     } else if (sFx.mode == EFFECT_RECALL && sFx.age < RECALL_SPRITE_TICKS && sFx.snapshot) {
-        // Three frames of the recolored sheet show the silhouette, then five quick steps pull it into the ball. The
-        // last four frames are the ball's
-        static const s32 scale[RECALL_SPRITE_TICKS] = { 4096, 4096, 4096, 3440, 2784, 2112, 1456, 768 };
+        // The silhouette's first frames are the body's last drawn quad, unchanged
         BillboardActor original = sFx.billboard;
 
-        sFx.billboard.scaleX = (sFx.billboard.scaleX * scale[sFx.age]) >> FX32_SHIFT;
-        sFx.billboard.scaleY = (sFx.billboard.scaleY * scale[sFx.age]) >> FX32_SHIFT;
-        KeepMiddle(&sFx.billboard, original.scaleY, camera);
+        if (sFx.age >= SILHOUETTE_HOLD) {
+            PlaceSilhouette(&sFx.billboard, (u32)(sFx.age - SILHOUETTE_HOLD), camera);
+        }
         BillboardActorScene_Draw(&sFx.scene, camera, lights);
         sFx.billboard = original;
     } else if ((sFx.mode == EFFECT_OUT && sFx.age < OUT_BALL_TICKS) || sFx.mode == EFFECT_RECALL) {
         DrawBall(0);
     } else {
         fx32 frame;
+        s32 grow = sFx.age - OUT_BALL_TICKS;
 
+        // The body is covered: its silhouette, from this frame's pose of it, grows out of the ball and then stands
+        // where the body does until the body shows
+        if (FollowingEffects_CoversBody() && sFx.snapshot && sFx.snapshotClock == sClock) {
+            BillboardActor original = sFx.billboard;
+
+            if (grow < SILHOUETTE_STEPS) {
+                PlaceSilhouette(&sFx.billboard, (u32)(SILHOUETTE_STEPS - 1 - grow), camera);
+            }
+            BillboardActorScene_Draw(&sFx.scene, camera, lights);
+            sFx.billboard = original;
+        }
         // The body's first frame is the field's billboard alone. The flash starts on the next, so the two submits
         // aren't in the same scan
         if (FollowingField_IsFirstBody()) {
             return;
         }
-        frame = (sFx.age - OUT_BALL_TICKS) * FX32_ONE;
+        frame = grow * FX32_ONE;
         GFL_G3DActorSetAnmFrame(sFx.actors[1], 0, &frame);
         GFL_G3DSysDrawObj(sFx.actors[1], &sFx.transform);
     }

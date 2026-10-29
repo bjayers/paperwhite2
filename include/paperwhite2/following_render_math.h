@@ -62,6 +62,13 @@ typedef struct {
 #define FOLLOWING_RENDER_CLEAR_FRONT (4 * FX32_ONE)
 // A shadow moved back stays a unit behind its sprite
 #define FOLLOWING_RENDER_SHADOW_KEEP (1 * FX32_ONE)
+// The shadow's oval is flat, one world unit above the actor's ground (fldeff_shadow.c's FldeffShadow_Draw). A body
+// drawn lower than that has its bottom rows behind the oval's near half, which then draws over the feet wherever no
+// projection offset sorts them: in a W-buffered room (the Pokémon Centers' camera 3) the field's object offsets do
+// nothing, since they move clip Z and the W buffer compares W
+#define FOLLOWING_RENDER_OVAL_RISE (1 * FX32_ONE)
+// The pull clears at most half a tile, about the gap of a 3-unit drop at a 20-degree camera
+#define FOLLOWING_RENDER_OVAL_CAP (8 * FX32_ONE)
 // The distance along the ground that puts the center about four units of depth behind the feet at the field's
 // ordinary camera, and never as far as half a tile. The screen's half-width (8 * scaleX) isn't a world distance
 #define FOLLOWING_RENDER_PLANE_CAP (6 * FX32_ONE)
@@ -121,10 +128,11 @@ BOOL FollowingRender_ShadowTuck(const FollowingPose *shadow, const VecFx32 *spri
 // FollowingRender_ShadowTuck, for a shadow within four tiles of feet
 BOOL FollowingRender_ShadowMatch(const FollowingPose *shadow, const VecFx32 *feet, const VecFx32 *sprite,
                                  const FollowingCamera *camera, s32 keep, FollowingPose *output);
-// Pushes the oval on the ground away from the camera by the depth of its near rim plus eight world units, a tile at
-// most, scaled so the picture stays on its ground point. Orthographic and unknown cameras leave it, and it doesn't
-// follow the body
-BOOL FollowingRender_OvalBehind(const FollowingPose *shadow, const FollowingCamera *camera, FollowingPose *output);
+// Pulls a body whose bottom edge is below its oval's top (ground plus FOLLOWING_RENDER_OVAL_RISE) toward the camera
+// until that row clears the oval, FOLLOWING_RENDER_OVAL_CAP at most, scaled so its picture stays where it is. A body
+// at or above that height is left
+BOOL FollowingRender_OverOval(const FollowingPose *body, fx32 ground, const FollowingCamera *camera,
+                              FollowingPose *output);
 // A billboard scene of the follower's own for a second submit, from the field's live one: its heap, scale and four
 // light colors, with the rest zero. The live polygon ID isn't copied: with the copied tail, the field's ID is what the
 // 3DS's edge buffer draws as black lines, which emulators don't keep. The ID is 1, or 2 when the live scene's is 1

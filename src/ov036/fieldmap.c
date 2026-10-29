@@ -1414,7 +1414,7 @@ void FieldRenderPhase2_Fieldmap(Field *field) {
     NNS_G3dGlbFlushP();
     NNS_G3dGeFlushBuffer();
 #ifdef PAPERWHITE2
-    // Paper White 2: the Following Pokémon's shadow behind its body, and its effects (field-billboard-draw)
+    // Paper White 2: the shadows, then the Following Pokémon's effects (field-billboard-draw)
     PaperWhite2_FollowingEffectsDraw(field->effectBillboardActor, field->g3dCamera, field->g3dLights);
 #else
     BillboardActorSys_Draw(field->effectBillboardActor, field->g3dCamera, field->g3dLights);

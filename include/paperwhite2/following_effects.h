@@ -33,11 +33,12 @@ void FollowingEffects_SetResourceCount(u32 count);
 // Loads the effects through system's open model table, unless its field heap is low, and the actor's sheet as the
 // recall's silhouette: two colors from its palette's light and dark halves
 void FollowingEffects_Prepare(FieldActor *actor);
-// Copies the follower's quad as the field drew it, for the recall's silhouette
+// Copies the follower's quad as the field drew it, for the silhouette of the recall and the send-out
 void FollowingEffects_Snapshot(FieldActor *actor);
-// The send-out: the ball for two frames, then the flash while the follower appears
+// The send-out: the ball for four frames, then the ball's flash while the silhouette grows out of it to the standing
+// body, which then shows
 void FollowingEffects_Out(FieldActor *actor);
-// The recall: the silhouette shrinks into the ball, with the ball's sound
+// The recall: the silhouette shrinks from the standing body into the ball, with the ball's sound
 void FollowingEffects_Recall(FieldActor *actor);
 // The effects' frame, from the field's update
 void FollowingEffects_Tick(void);
@@ -51,6 +52,8 @@ void FollowingEffects_Destroy(void);
 void FollowingEffects_Warm(MMSys *system);
 // Whether the send-out's first frames hide the follower
 BOOL FollowingEffects_HidesActor(void);
+// Whether the send-out's silhouette stands in for the follower's body this frame: the actors' pass doesn't submit it
+BOOL FollowingEffects_CoversBody(void);
 // The closed ball at at, with a shake of a pixel either way and the refusal beep
 void FollowingEffects_Cue(const VecFx32 *at);
 // The closed ball resting at at while no effect plays; NULL removes it

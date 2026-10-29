@@ -17,18 +17,9 @@
 // Paper White 2: the Following Pokémon's draws, ported from Pokeweb's render.c. Each pass changes the follower's
 // quads just before the field's own submit of their billboards and puts them back after it. The original's
 // FollowingRenderDebug, a block of values for its emulator tests, isn't ported, nor the depth readings that only it
-// kept (the view distance and gap, the swap's ease and the shadow's push)
-
-// The shadows' pass's ground, filled in the actors' pass and used once. sprite is the submitted body, which the oval
-// doesn't follow
-typedef struct {
-    VecFx32 ground;
-    VecFx32 sprite;
-    VecFx32 player;
-    BillboardActorSys *actorSystem;
-    u8 valid;
-    u8 hasPlayer;
-} FollowingShadowTie;
+// kept (the view distance and gap, the swap's ease and the shadow's push). The follower's shadow is the engine's own
+// oval, drawn as every actor's (fldeff_shadow.c): Pokeweb's shadow pass, which looked for it among the effects' quads
+// to push it behind the body, only looked at camera-facing quads and never found the flat oval
 
 // The bodies the last actors' pass submitted, for the grass and the effects drawn on them
 typedef struct {
@@ -55,7 +46,10 @@ typedef struct {
 
 // World pixels added to every follower's height. Pokeweb's runtime lifts every follower by 2 so that the walking hop
 // can't dip a sheet's feet through the floor, which leaves them all floating; the user's playtests put the feet on the
-// ground 4 pixels below that
+// ground 4 pixels below that. The actor table's offset can't carry it: FldeffShadow_Draw adds the actor's model offset
+// to the oval too, which would then sink a unit or more under the floor, and a W-buffered room (the Pokémon Centers)
+// draws the floor over it. So the lift is the quad's alone, and FollowingRender_OverOval keeps the lowered feet in
+// front of the oval
 #define FOLLOWING_SPRITE_LIFT -2
 
 // A camera-facing quad leans back by its height, so a 64-pixel body reaches walls a 32-pixel NPC never touches. It
@@ -115,7 +109,6 @@ typedef struct {
     s16 scaleY;
 } FollowingUpper;
 
-static FollowingShadowTie sShadowTie;
 static FollowingSubmitted sSubmitted;
 static FollowingWallBehind sBehind;
 static s32 sLine = LINE_NATIVE;
@@ -241,8 +234,9 @@ void FollowingRender_GrassDraw(BillboardActorSys *system, G3DCamera *camera, G3D
 }
 
 BOOL FollowingRender_EffectPose(FieldActor *actor, const VecFx32 *live, FollowingEffectPose *out) {
-    s32 lift;
+    s64 x;
     s64 y;
+    s64 z;
 
     if (actor == NULL || live == NULL || out == NULL || sSubmitted.actor != actor ||
         sSubmitted.resource != actor->config.rscIndices.res1) {
@@ -253,19 +247,20 @@ BOOL FollowingRender_EffectPose(FieldActor *actor, const VecFx32 *live, Followin
         *out = sSubmitted.submitted;
         return TRUE;
     }
-    // Put back, a bob that landed after it was, or a step taken since. The draw-only lift (the registry's Y and
-    // FOLLOWING_SPRITE_LIFT) is the same on every tile and facing, so it stays: an effect started mid-step is drawn at
-    // the body's height, not at the unlifted native quad's. Pokeweb's runtime gave up on a moved actor, and a recall
-    // begun while walking drew its silhouette at the native height
-    lift = sSubmitted.submitted.position.y - sSubmitted.native.y;
-    y = (s64)live->y + lift;
-    if (y < LONG_MIN || y > LONG_MAX) {
+    // Put back, a bob that landed after it was, or a step taken since. The draw-only move (the registry's Y,
+    // FOLLOWING_SPRITE_LIFT and the pull over the oval along the eye ray) barely changes within a step, so it stays:
+    // an effect started mid-step is drawn where the body is, not at the native quad. Pokeweb's runtime gave up on a
+    // moved actor, and a recall begun while walking drew its silhouette at the native height
+    x = (s64)live->x + sSubmitted.submitted.position.x - sSubmitted.native.x;
+    y = (s64)live->y + sSubmitted.submitted.position.y - sSubmitted.native.y;
+    z = (s64)live->z + sSubmitted.submitted.position.z - sSubmitted.native.z;
+    if (x < LONG_MIN || x > LONG_MAX || y < LONG_MIN || y > LONG_MAX || z < LONG_MIN || z > LONG_MAX) {
         return FALSE;
     }
     *out = sSubmitted.submitted;
-    out->position.x = live->x;
-    out->position.y = (s32)y;
-    out->position.z = live->z;
+    out->position.x = (fx32)x;
+    out->position.y = (fx32)y;
+    out->position.z = (fx32)z;
     return TRUE;
 }
 
@@ -528,25 +523,24 @@ static BOOL SplitBody(BillboardActorSys *system, BillboardActor *quad, FieldActo
 }
 
 void FollowingRender_Draw(BillboardActorSys *system, G3DCamera *camera, G3DLight *lights, FieldActor *follower,
-                          FieldActor *player, s32 spriteY, BOOL shaded) {
+                          FieldActor *player, s32 spriteY, BOOL shaded, BOOL covered) {
     BillboardActor *quad = NULL;
     BillboardActor *playerQuad = NULL;
     FollowingPose original;
     FollowingPose adjusted;
+    FollowingPose drawn;
     BOOL changed = FALSE;
     BOOL lightingChanged = FALSE;
+    BOOL hidden = FALSE;
     u16 originalLights = 0;
 
     sSubmitted.actor = sSubmitted.player = NULL;
-    sShadowTie.valid = sShadowTie.hasPlayer = FALSE;
     if (system != NULL && camera != NULL && follower != NULL && player != NULL && follower != player &&
         follower->actorSystem == player->actorSystem) {
         quad = GetBillboard(system, follower);
         playerQuad = GetBillboard(system, player);
         if (quad != NULL) {
             FollowingCamera view;
-            s64 py;
-            fx32 playerY;
             s32 delta;
             s64 y;
 
@@ -567,36 +561,26 @@ void FollowingRender_Draw(BillboardActorSys *system, G3DCamera *camera, G3DLight
                 lightingChanged = quad->lights != originalLights;
             }
             GetCamera(camera, &view);
-            py = (s64)player->wPos.y + player->wPosOffset.y + player->outerDrawOffset.y;
-            playerY = py < LONG_MIN || py > LONG_MAX ? player->wPos.y : (fx32)py;
             // The registry's Y replaces the config's on this quad only. Every facing uses that one offset, then
-            // FOLLOWING_SPRITE_LIFT. The engine's hop stays in the field's billboard. The camera doesn't move the quad,
-            // no facing adds Z, and the actor and its oval aren't written
+            // FOLLOWING_SPRITE_LIFT. The engine's hop stays in the field's billboard. No facing adds Z, and the actor
+            // and its oval aren't written
             delta = spriteY - follower->config.wPosOffsetY + FOLLOWING_SPRITE_LIFT;
             y = (s64)adjusted.position.y + (s64)delta * FX32_ONE;
             if (delta != 0 && y >= LONG_MIN && y <= LONG_MAX) {
                 adjusted.position.y = (fx32)y;
                 changed = TRUE;
             }
-            if ((follower->movementFlags & FOLLOWING_ACTOR_MOVEMENT_SHADOW_SET) &&
-                !(follower->movementFlags & FOLLOWING_ACTOR_MOVEMENT_SHADOW_HIDDEN)) {
-                sShadowTie.ground.x = follower->wPos.x;
-                sShadowTie.ground.y = follower->wPos.y;
-                sShadowTie.ground.z = follower->wPos.z + follower->modelPosOffsetZ * FX32_ONE;
-                sShadowTie.sprite = adjusted.position;
-                sShadowTie.player.x = player->wPos.x;
-                sShadowTie.player.y = playerY;
-                sShadowTie.player.z = player->wPos.z;
-                sShadowTie.actorSystem = system;
-                sShadowTie.hasPlayer = TRUE;
-                sShadowTie.valid = TRUE;
+            // The lowered feet are pulled in front of the oval on the follower's ground, with the same picture
+            drawn = adjusted;
+            if (FollowingRender_OverOval(&adjusted, follower->wPos.y, &view, &drawn)) {
+                changed = TRUE;
             }
             sSubmitted.world = follower->wPos;
             sSubmitted.native = original.position;
             sSubmitted.resource = follower->config.rscIndices.res1;
-            sSubmitted.submitted.position = adjusted.position;
-            sSubmitted.submitted.scaleX = (s16)adjusted.scaleX;
-            sSubmitted.submitted.scaleY = (s16)adjusted.scaleY;
+            sSubmitted.submitted.position = drawn.position;
+            sSubmitted.submitted.scaleX = (s16)drawn.scaleX;
+            sSubmitted.submitted.scaleY = (s16)drawn.scaleY;
             sSubmitted.actor = follower;
             if (playerQuad != NULL) {
                 sSubmitted.player = player;
@@ -605,12 +589,22 @@ void FollowingRender_Draw(BillboardActorSys *system, G3DCamera *camera, G3DLight
                 sSubmitted.playerSubmitted.scaleX = playerQuad->scaleX;
                 sSubmitted.playerSubmitted.scaleY = playerQuad->scaleY;
             }
-            if (changed) {
+            if (covered) {
+                // A ball effect draws the body's silhouette in its place this frame
+                quad->visible = FALSE;
+                hidden = TRUE;
+            } else {
+                // The strips are cut from the lowered quad, whose scale is a whole number of rows, then the base
+                // window is pulled with the rest of the body
                 quad->pos = adjusted.position;
-                quad->scaleX = (s16)adjusted.scaleX;
-                quad->scaleY = (s16)adjusted.scaleY;
+                if (SplitBody(system, quad, follower, &view)) {
+                    quad->scaleY = (s16)(drawn.scaleY / (64 / STRIP_BASE_ROWS));
+                } else {
+                    quad->scaleY = (s16)drawn.scaleY;
+                }
+                quad->pos = drawn.position;
+                quad->scaleX = (s16)drawn.scaleX;
             }
-            SplitBody(system, quad, follower, &view);
         }
     }
     BillboardActorSys_Draw(system, camera, lights);
@@ -629,103 +623,11 @@ void FollowingRender_Draw(BillboardActorSys *system, G3DCamera *camera, G3DLight
     if (lightingChanged) {
         quad->lights = originalLights;
     }
+    if (hidden) {
+        quad->visible = TRUE;
+    }
     if (sUpper.live != NULL) {
         sUpper.live = NULL;
         BillboardActorScene_Draw(&sUpper.scene, camera, lights);
     }
-}
-
-// The nearest visible quad within half a tile (X and Z) and two tiles (Y) of the follower's ground. An oval that sits
-// on the player, within six world pixels, isn't the follower's. Only the shadows' scene is walked, never the actors'
-static BillboardActor *FindFollowerOval(BillboardActorSys *system) {
-    BillboardActorScene *scene = system->scene;
-    BillboardActorHandle *handles = system->handles;
-    u32 capacity = system->handleCount;
-    u32 actors;
-    BillboardActor *chosen = NULL;
-    u64 best = ~(u64)0;
-    s32 half = FOLLOWING_TILE / 2;
-    s32 tall = 2 * FOLLOWING_TILE;
-    u32 i;
-
-    if (scene == NULL || handles == NULL || capacity > HANDLE_LIMIT || scene->actors == NULL) {
-        return NULL;
-    }
-    actors = scene->setup.actorCount;
-    for (i = 0; i < capacity; i++) {
-        u32 index = handles[i].actor;
-        BillboardActor *quad;
-        s64 dx;
-        s64 dy;
-        s64 dz;
-        u64 dist;
-
-        if (index >= actors) {
-            continue;
-        }
-        quad = &scene->actors[index];
-        if (quad->type != 0 || quad->material == BILLBOARD_ACTOR_MATERIAL_NONE || !quad->visible) {
-            continue;
-        }
-        dx = (s64)quad->pos.x - sShadowTie.ground.x;
-        dy = (s64)quad->pos.y - sShadowTie.ground.y;
-        dz = (s64)quad->pos.z - sShadowTie.ground.z;
-        if (dx > half || dx < -(s64)half || dz > half || dz < -(s64)half || dy > tall || dy < -(s64)tall) {
-            continue;
-        }
-        if (sShadowTie.hasPlayer) {
-            s64 px = (s64)quad->pos.x - sShadowTie.player.x;
-            s64 pz = (s64)quad->pos.z - sShadowTie.player.z;
-
-            if (px <= 6 * FX32_ONE && px >= -6 * FX32_ONE && pz <= 6 * FX32_ONE && pz >= -6 * FX32_ONE) {
-                u64 pd = (u64)(px * px) + (u64)(pz * pz);
-                u64 fd = (u64)(dx * dx) + (u64)(dz * dz);
-
-                if (pd <= (u64)6 * FX32_ONE * (u64)6 * FX32_ONE && pd < fd) {
-                    continue;
-                }
-            }
-        }
-        dist = (u64)(dx * dx) + (u64)(dz * dz);
-        if (dist < best) {
-            best = dist;
-            chosen = quad;
-        }
-    }
-    return chosen;
-}
-
-void FollowingRender_ShadowPass(BillboardActorSys *system, G3DCamera *camera, G3DLight *lights) {
-    // The actors are already submitted. This is the ovals' one submit, in the shadow pass's own depth state. The
-    // follower's oval is pushed away from the camera for it and put back. The body, the player and every other oval
-    // stay where the engine has them
-    BillboardActor *chosen = NULL;
-    BillboardActor saved;
-    BOOL applied = FALSE;
-
-    if (sShadowTie.valid && system != NULL && camera != NULL && system != sShadowTie.actorSystem) {
-        chosen = FindFollowerOval(system);
-        if (chosen != NULL) {
-            FollowingCamera view;
-            FollowingPose native;
-            FollowingPose out;
-
-            GetCamera(camera, &view);
-            native.position = chosen->pos;
-            native.scaleX = chosen->scaleX;
-            native.scaleY = chosen->scaleY;
-            if (FollowingRender_OvalBehind(&native, &view, &out)) {
-                saved = *chosen;
-                chosen->pos = out.position;
-                chosen->scaleX = (s16)out.scaleX;
-                chosen->scaleY = (s16)out.scaleY;
-                applied = TRUE;
-            }
-        }
-    }
-    BillboardActorSys_Draw(system, camera, lights);
-    if (applied) {
-        *chosen = saved;
-    }
-    sShadowTie.valid = sShadowTie.hasPlayer = FALSE;
 }

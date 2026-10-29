@@ -2540,11 +2540,16 @@ BOOL FollowingField_IsShaded(void) {
 void PaperWhite2_FollowingDraw(BillboardActorSys *system, G3DCamera *camera, G3DLight *lights) {
     sShownNow = IsOwned() && !(sFollower.actor->flags & FOLLOWING_ACTOR_FLAG_HIDDEN);
     FollowingRender_Draw(system, camera, lights, IsOwned() ? sFollower.actor : NULL, sPlayer, sFollower.spriteY,
-                         FollowingField_IsShaded());
+                         FollowingField_IsShaded(), FollowingEffects_CoversBody());
 }
 
 void PaperWhite2_FollowingEffectsDraw(BillboardActorSys *system, G3DCamera *camera, G3DLight *lights) {
-    FollowingRender_ShadowPass(system, camera, lights);
+    // The shadows are the engine's, the follower's oval too
+    BillboardActorSys_Draw(system, camera, lights);
+    // The body as this frame drew it, for a silhouette that starts or grows from it
+    if (sShownNow && IsOwned()) {
+        FollowingEffects_Snapshot(sFollower.actor);
+    }
     FollowingEffects_SetPlayer(sPlayer != NULL && !(sPlayer->flags & FOLLOWING_ACTOR_FLAG_HIDDEN) ? sPlayer : NULL);
     FollowingEffects_Draw(camera, lights);
 }

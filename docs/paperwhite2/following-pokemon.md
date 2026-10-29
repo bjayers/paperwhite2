@@ -77,7 +77,7 @@ of the original where `.s` has a continuation); `THUMB_BRANCH_LINK` replaces one
 | field-unload | ov036 `0x021801e4` | `FieldRoutine_MapUnload` (same) | whole function | `FollowingUnload`, then the original | frees the follower before the field's actors. Ported: `PaperWhite2_FollowingUnload` at the function's start (step 3) |
 | field-actor-billboard-draw | ov036 `0x0218119a` | `FieldRenderPhase2_Fieldmap` +0xaa (same) | `BillboardActorSys_Draw` (the actors) | `FollowingDraw` | the actors' pass with the follower's and player's depth corrections and map light. Ported: `PaperWhite2_FollowingDraw` in place of the call (step 3) |
 | field-terrain-billboard-draw | ov036 `0x021811b0` | `FieldRenderPhase2_Fieldmap` +0xc0 (same) | `BillboardActorSys_Draw` (the grass at `field + 0xc8`) | `FollowingTerrainDraw` | grass over the follower's feet. Ported: `PaperWhite2_FollowingTerrainDraw` in place of the call (step 3) |
-| field-billboard-draw | ov036 `0x0218122e` | `FieldRenderPhase2_Fieldmap` +0x13e (same) | `BillboardActorSys_Draw` (the effects) | `FollowingEffectsDraw` | the recall flash, ball and emote bubbles. Ported: `PaperWhite2_FollowingEffectsDraw` in place of the call: the shadow pass (step 3), then `FollowingEffects_Draw` (step 4) |
+| field-billboard-draw | ov036 `0x0218122e` | `FieldRenderPhase2_Fieldmap` +0x13e (same) | `BillboardActorSys_Draw` (the effects) | `FollowingEffectsDraw` | the recall flash, ball and emote bubbles. Ported: `PaperWhite2_FollowingEffectsDraw` in place of the call: the engine's own submit (the follower's oval is the engine's, as every actor's), the silhouette's snapshot of the body, then `FollowingEffects_Draw` (step 4) |
 | field-player-recall-direction-gate | ov036 `0x0219a610` | `FieldPlayer_GetMoveDirByKey` (`src/ov036/field_player.c`) | whole function | `FollowingPlayerMoveDir` | holds the D-pad while the follower is recalled. Ported: `PaperWhite2_FollowingHoldsPlayer` returns `PLAYER_DIR_NONE` first (step 3) |
 | follower-grid-event | ov036 `0x021818bc` | `FieldEventProvider_Grid` +0x20 (`src/ov036/fieldmap_event.c`) | `FieldEventProvider_Grid_CheckForEvent` | `FollowingGridEvents` | talking to the follower (A in front of it) when the field's events found none, and the scene's menu marker for a menu they opened (L/R is in the field's update in the base package). Ported: `PaperWhite2_FollowingGridEvent(gsys, field, event, &scriptCalled, menuOpened)` after the call; a talk counts as a script called, and `FollowingScene_MarkMenu` notes the menu (step 4) |
 | follower-rail-event | ov036 `0x02181a6c` | `FieldEventProvider_NoGrid` +0x4 (same) | `FieldEventProvider_NoGrid_CheckForEvent` | `FollowingRailEvents` | the talk on rails, when the field's events found none. Ported: `PaperWhite2_FollowingRailEvent(gsys, field, event)` after the call (step 4) |
@@ -404,8 +404,9 @@ the side-by-side stand, the large follower's ball under a floor and indoors, the
 SELECT, L/R switching (it is in the field's update in the base package, not in the grid/rail event hooks), the
 SELECT toggle of the Followers setting, the shadow and grass of its tiles, the registry and the positioning row read
 through the field actors' open handle of `a/0/4/7`, the preload and the unload. `paperwhite2_following_render.c`
-(`following_render.h`) is `render.c`: the actors' pass (registry Y, two pixels of lift, the follower's own light, the
-strips of a 64-pixel body in front of a wall), the grass pass and the shadow pass, and the effect pose for step 4.
+(`following_render.h`) is `render.c`: the actors' pass (registry Y, two pixels down, the pull over the oval, the
+follower's own light, the strips of a 64-pixel body in front of a wall), the grass pass, and the effect pose for step 4.
+Its shadow pass is gone (below, after the second melonDS test).
 native.bin's values: the enabled switch is `FOLLOWING_ENABLED`; the model table's row count is file 0's first u32
 (3,582), the resources are `a/0/4/8`'s file count (1,323), both checked against the registry's header by its stream,
 and the registry's outer CRC-32 is the positioning table's (`FollowingPositioning_ReadRegistryCrc`, the one other file
@@ -629,6 +630,60 @@ draws the ball unlit in that color: white in daylight, (21, 21, 28) on that nigh
 the drawn height, lift included, and then the ball shows at its place on the ground. Pokeweb's design was the same
 ("uses the last submitted ground/depth-corrected pose before shrinking in place", EFFECTS.md): the shrink toward the feet
 is its origin's, not a stated intent.
+
+## Fixes after the second melonDS test
+
+**The recall sank, then rose.** `FollowingRender_PrivateScene` copies the live scene's scale and colors but not its
+origin, so the silhouette's scene had origin 0, the quad's middle, where the field's actors stand on their bottom edge
+(origin 2, `FieldG3D_Init`): the first glow frame drew the body half its height lower, and `KeepMiddle` then raised it
+as it shrank. `FollowingEffects_Snapshot` now copies the origin and the texture offsets, so the first three frames are
+the body's last drawn quad exactly. The snapshot is also taken in the effects' pass, after the body's submit
+(`PaperWhite2_FollowingEffectsDraw`), from `FollowingRender_EffectPose`, which now carries the whole draw-only move
+(X, Y and Z, and the pulled scale), not just Y. `PlaceSilhouette` replaces `KeepMiddle`: the five shrinking frames
+(3440 to 768 of 4096) move the quad's middle from the body's middle to the ball's spot (`transform.translation`,
+the actor's ground six units forward), where the smallest one stands, then the ball shows. A sheet that isn't the
+actor's (a switch before the next `Prepare`) clears the snapshot, so the recall shows the ball throughout.
+
+**The send-out is the recall's mirror.** `OUT_TICKS` is 12: four frames of the ball (`OUT_BALL_TICKS`, the actor
+hidden), then the ball's sound and its flash while the silhouette grows out of the ball through the same five sizes
+backward, and three frames of it standing. From the fifth frame the actor is shown and the actors' pass works out its
+pose but doesn't submit it (`FollowingEffects_CoversBody`, the `covered` argument of `FollowingRender_Draw`); the
+effects' pass takes that pose and draws the silhouette there, so its last frame and the body's first are the same
+pixels. `FollowingEffects_Out` prepares the follower's own sheet first; without one, the body shows with the flash as
+before. The engine starts the oval the update after the body is shown, under the growing silhouette.
+
+**The oval over the feet.** The follower's oval is the engine's: `FldeffShadow_Draw` puts it, flat
+(`BILLBOARD_ACTOR_TYPE_FACE_CAMERA_Y_FLAT`), at the actor's ground plus its model offset (the actor table's `offset`,
+`modelPosOffset*`, whole world units like the lift: `CopyActorPosOffset` multiplies by `FX32_ONE`) plus one unit, and
+half a unit lower for a 32-pixel type 10 or 11 outside the Entree Forest. The body quad is the same position plus
+`wPosOffset`, the outer and attribute offsets and the camera's actor Y (`Field_CalcActorYOffset`, 0 to 2 units down).
+`FieldRenderPhase2_Fieldmap` draws the actors with `objectProjectionMatrixOffset` added to the projection's clip Z
+and the effects, the ovals, with half of it, which sorts a body in front of its oval's near half. Lowered two units, the
+follower's bottom rows are behind that near half, which the shadow's later pass then draws over them wherever the
+offset isn't enough. In a W-buffered room it does nothing: the buffer compares W, which clip Z doesn't change. Camera
+setup 3 (`a/0/5/9`, 229 units away at 39 degrees, `swapMode` 1) is the one every Pokémon Center has, and few other zones;
+the ordinary cameras are Z-buffered, and the zones with projection type 0 have the smaller offset (0x136 against
+0x1ee): estimated from the projection (near 1, far 1024: a clip Z offset k is about k * distance / 2 units of
+depth), half of 0x136 at 237 units is about 4.5 units, against the 5 to 7 that a two-unit drop needs.
+
+- **Not native.** A follower offset of -2 in the actor table (`data.json` `offset.y`) would move the body and the oval
+  together, as an NPC's, but it puts the oval 1 to 1.5 units under the floor, which a W-buffered room's floor then
+  covers: no shadow in a Pokémon Center. The lift stays on the quad alone (`FOLLOWING_SPRITE_LIFT`, -2, unchanged).
+- **The fix.** `FollowingRender_OverOval` pulls the body toward the camera along the eye ray, scaled so its picture
+  doesn't move, until its bottom row clears the oval's plane: (ground + 1 - bottom) / sin(pitch), half a tile at
+  most, about 5 to 8 units at the field's cameras. It runs on every map: in a Z-buffered one it only adds to the
+  offset. The strips of a tall body are cut first and the base window is pulled with the rest.
+- **The shadow pass is gone.** Pokeweb's pass looked for the follower's oval among the effects' camera-facing quads
+  (type 0) to push it away; the oval is type 3, so it never found it, and the oval was always the engine's. It
+  and `FollowingRender_OvalBehind` are removed: `PaperWhite2_FollowingEffectsDraw` submits the shadows as the
+  original does.
+
+**To test** (melonDS): recall a follower standing still and mid-step (L or R to the next member, or let a script
+start) and watch the first glow frame: the same pixels as the body, then shrinking down into the ball. Send one out the
+same two ways: the ball for four frames, then the silhouette growing up out of it to the standing pose, and the body
+on the frame after. In a Pokémon Center and outdoors, with a 32-pixel follower (Pikachu) and a 64-pixel one outdoors
+(a 64-pixel follower stays in its ball indoors), in the sun and in the shade, standing and walking each way: the oval
+under the feet, never over them.
 
 ## What remains
 
