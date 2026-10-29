@@ -292,7 +292,7 @@ from the decomp's headers, adding fields where they are still `unk`.
 
 | File (`following/`) | Format | Read by | Where it lives |
 | --- | --- | --- | --- |
-| `a/0/4/7`, `a/0/4/8` (archives) | the model table and graphics (`field_actor_data.py`) | the game's actor code, through `GetIndexOfObjID` for codes from 0x3000 | `res/field/actors/followers/`, step 2 |
+| `a/0/4/7`, `a/0/4/8` (archives) | the model table and graphics (`field_actor_data.py`) | the game's actor code, through `GetIndexOfObjID` for codes from 0x3000 | `res/field/actors/followers/`, step 2, done |
 | `runtime-registry.bin` (61,808 bytes) | "FWDB" version 3: a 32-byte header (version, ABI 1, size, 2,574 rows, 0 zones, 3,582 descriptors, 1,323 resources, code base 0x3000, 1,008 stock rows, inner CRC-32) and 24-byte rows sorted by `species * 2048 + form * 8 + sex * 2 + shiny`: species, form, sex (0 male, 1 female, 2 none), shiny, placeholder flag, table row, graphics member, size (32 or 64), animation profile, art X, sprite Y, Z, side gap (0-6), 8 zero bytes | `field.c` `config` (streamed in 1 KB pages by `registry.c` `fw_registry_stream`, building a per-species index), `model` (one species' rows) | generated from `res/field/actors/followers/` (row, member, size) plus a per-follower JSON of the rest (placeholder, profile, offsets, side gap), step 3 |
 | `native.bin` (32 bytes) | "FWNT": enabled (the ROM-wide switch), format 2, the registry's size, the table's and graphics' counts, the registry's CRC-32 | `field.c` `config`, `options.c` (enabled only) | derived at build time; enabled from a JSON setting, step 3 |
 | `positioning.narc` (30,972 bytes) | one member "FWPO" version 1: 24-byte header (2,574 land rows of 12 bytes, 0 Surf rows, the registry's CRC, payload CRC) and per row the up, down, left and right gaps (each `min(side gap + 6, 10 - abs(art X))` here) and 8 zero rider bytes; an optional member 1 of zone overrides (none) | `positioning.c` (header and one row per lookup) | the gaps in the per-follower JSON, packed with the registry, step 3 |
@@ -329,7 +329,7 @@ hardware. In the current hack build that range is `.rodata` of `vman.o` (`sObjTi
 
 1. This map. Done.
 2. The followers' sprites and table entries as sources, with constants, packing the hack's `a/0/4/7` and `a/0/4/8`
-   byte for byte.
+   byte for byte. Done: see below.
 3. The core and the field: a follower that appears and walks behind the player. `core.c`, `object_codes.c`,
    `registry.c`, `following.c`, `positioning.c`, `render.c`, `render_math.c`, the movement and draw parts of
    `field.c`, and the hooks object-code-lookup, descriptor-offset-width, field-actor-update, field-follower-matcache,
@@ -339,3 +339,23 @@ hardware. In the current hack build that range is `.rodata` of `vman.o` (`sObjTi
    `interaction.c`, `reactions.c`, `gifts.c`, the rest of `field.c`, their hooks and data.
 5. Options and its text: `options.c`, the options hooks, `a/0/0/2`'s `title_2` changes.
 6. Battle: `battle.c`, the two opening hooks.
+
+### Step 2: the follower sprites
+
+`tools/paperwhite2/import_followers.py extract/pw2_v021/files res/field/actors` wrote the 2,574 rows that the
+installer added to `a/0/4/7` (rows 1,008-3,581, codes 0x3000-0x3a0d) as `res/field/actors/followers/<name>/`, and
+their constants `OBJ_CODE_FOLLOWER_<SPECIES>[_FORM_<n>][_FEMALE][_SHINY]` into `generated/obj_codes.txt`, from the
+registry's species, form, sex and shininess of each row (sex 0 and 2 have no suffix, as the walking Pokémon's
+`OBJ_CODE_POKEMON_`). Of the 348 sprites the installer added (`a/0/4/8` members 975-1,322), each is in the directory
+of the first row that shows it; the other rows name their sprite's code in `"sprite"`: 564 of the original walking
+Pokémon's (`OBJ_CODE_POKEMON_...`) and the followers' own. `field_actor_data.py` gained:
+
+- `"sprite"`: a sprite that shows another code's `sprite.png`, as `"model"` does for models;
+- `"texture_set_format": "pokeweb"`: the texture set as the installer wrote it with ndspy (textures `following0` and
+  on, palette `following`, the dictionaries without their search trees, no bit 31 in the size word);
+- `"sprite_batch"`: the installer appended eight sprites later (Kyurem's White and Black forms, members 1,315-1,318,
+  then the Blue-Striped Basculin's and Keldeo's Resolute Form's, 1,319-1,322), out of the rows' order; their batch
+  numbers 1 and 2 keep their places.
+
+Packed, `a/0/4/7` and `a/0/4/8` equal the hack ROM's byte for byte. The registry names rows and members by number,
+so until step 3 generates it, changing which followers have their own sprite would move members under it.

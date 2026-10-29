@@ -16,8 +16,10 @@ def texture_params(offset, width, height, fmt, color0):
             | fmt << 26 | int(color0) << 29)
 
 
-def texture_set(textures, palettes):
-    """Returns a BTX0 of textures, (name, width, height, fmt, color0, data), and palettes, (name, data)."""
+def texture_set(textures, palettes, ndspy=False):
+    """Returns a BTX0 of textures, (name, width, height, fmt, color0, data), and palettes, (name, data). With ndspy,
+    it is written as ndspy writes one, as Pokeweb's Following Pokémon installer did for the follower sprites that
+    Paper White 2 has: the dictionaries without their search trees, and no bit 31 in each texture's size word."""
     texel_data = b"".join(data for *_, data in textures)
     palette_data = b"".join(data for _, data in palettes)
     records, offset = [], 0
@@ -25,14 +27,14 @@ def texture_set(textures, palettes):
         if len(data) != width * height * BITS[fmt] // 8:
             raise ValueError(f"texture {name}: {len(data)} bytes of data for {width} by {height}")
         records.append(struct.pack("<II", texture_params(offset, width, height, fmt, color0),
-                                   width | height << 11 | 0x80000000))
+                                   width | height << 11 | (0 if ndspy else 0x80000000)))
         offset += len(data)
-    texture_dictionary = build_dictionary([name for name, *_ in textures], records)
+    texture_dictionary = build_dictionary([name for name, *_ in textures], records, not ndspy)
     palette_records, offset = [], 0
     for _, data in palettes:
         palette_records.append(struct.pack("<HH", offset >> 3, 0))
         offset += len(data)
-    palette_dictionary = build_dictionary([name for name, _ in palettes], palette_records)
+    palette_dictionary = build_dictionary([name for name, _ in palettes], palette_records, not ndspy)
     palette_info = TEX0_HEADER + len(texture_dictionary)
     texel_start = palette_info + len(palette_dictionary)
     palette_start = texel_start + len(texel_data)

@@ -18,6 +18,18 @@
             "type": "string", "x-constant": "OBJ_CODE_",
             "description": "For a model, the object code whose model.nsbmd it shows, when it has none of its own"
         },
+        "sprite": {
+            "type": "string", "x-constant": "OBJ_CODE_",
+            "description": "For a sprite, the object code whose sprite.png and sprite.pal it shows, when it has none of its own"
+        },
+        "sprite_batch": {
+            "type": "integer", "minimum": 0,
+            "description": "For a sprite of its own, the group its graphics come in, 0 if none: a/0/4/8 has the sprites of each batch after those of the batches before it, in code order within one. Paper White 2's followers have it where Pokeweb's installer added their sprites later"
+        },
+        "texture_set_format": {
+            "enum": [ "game", "pokeweb" ],
+            "description": "For a sprite of its own, how its texture set is written: as the game's (the default), or as Pokeweb's Following Pokémon installer wrote them, with textures named following0 and on, a palette named following, and no search trees"
+        },
         "scene_node_type": { "$ref": "#/$defs/u8", "description": "sceneNodeType" },
         "shadow": { "type": "boolean", "description": "Whether the actor casts a shadow (enableShadow)" },
         "footprint_type": { "$ref": "#/$defs/u8", "description": "The footprints it leaves (footprintType)" },

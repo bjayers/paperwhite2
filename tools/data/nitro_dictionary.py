@@ -72,14 +72,18 @@ def replace_names(data, offset, names):
         data[names_offset + 16 * index:names_offset + 16 * (index + 1)] = encoded.ljust(16, b"\0")
 
 
-def build_dictionary(names, records):
+def build_dictionary(names, records, search_tree=True):
     """Returns a dictionary of the names and their records, which all have one size: four bytes for a material's
-    bindings or a palette, eight for a texture."""
+    bindings or a palette, eight for a texture. Without search_tree, only the root of the search nodes is written and
+    the others are zeros, as ndspy writes them (the game looks names up through the tree, but nothing looks up a
+    field sprite's textures by name)."""
     size = len(records[0]) if records else 4
     if len(names) != len(records) or any(len(record) != size for record in records):
         raise ValueError("Nitro dictionary needs a record of one size for each name")
     count = len(names)
     nodes = search_nodes(names)
+    if not search_tree:
+        nodes = [nodes[0]] + [(0, 0, 0, 0)] * count
     result = bytearray(struct.pack("<BBHHH", 0, count, 16 + (20 + size) * count, 8, 12 + 4 * count))
     for node in nodes:
         result.extend(bytes(node))

@@ -15,11 +15,15 @@ field_actor.schema.json, and its graphics:
   image editor reordered on saving; the .pal file sets the colors.
 - a 3D model (type "model") has model.nsbmd, a Nitro model, unless data.json's "model" names the object code whose
   model it shows.
+- a sprite can show another code's sprite.png instead, which data.json's "sprite" names, as Paper White 2's
+  followers (followers/ for OBJ_CODE_FOLLOWER_) do with the walking Pokémon's and with each other's.
 - an actor of type "none" has no graphics.
 
 The table has the codes in the list's order. The graphics archive has the models, then the sprites, each in the order
-of the codes that show them, and the packer writes each code's place in it into the table, so a new code is a
-constant and a directory. The sprites' texture sets are written from the PNGs, as the game's are, byte for byte.
+of the codes that have one of their own (a sprite's "sprite_batch", 0 if it has none, puts it after those of a lower
+batch), and the packer writes each code's place in it into the table, so a new code is a constant and a directory.
+The sprites' texture sets are written from the PNGs, as the game's are, byte for byte, or as Pokeweb's follower
+installer wrote them for a sprite whose "texture_set_format" is "pokeweb".
 """
 import struct
 import sys
@@ -55,7 +59,7 @@ def codes() -> list[tuple[str, int]]:
     return [(found[number], number) for number in sorted(found)]
 
 
-GROUPS = (("POKEMON_", "pokemon"), ("MODEL_", "models"))
+GROUPS = (("POKEMON_", "pokemon"), ("MODEL_", "models"), ("FOLLOWER_", "followers"))
 
 
 def directory(root: Path, code: str) -> Path:
@@ -92,16 +96,18 @@ def sprite_frames(blob: bytes) -> tuple[int, int, bytes, list]:
     return size * count, size, pixels, colors
 
 
-def sprite_texture_set(width: int, height: int, pixels: bytes, colors: list) -> bytes:
-    """Returns the texture set of a strip of frames, named by their size and count as the game's are."""
+def sprite_texture_set(width: int, height: int, pixels: bytes, colors: list, texture_set_format: str = "game") -> bytes:
+    """Returns the texture set of a strip of frames, named by their size and count as the game's are, or for the
+    "pokeweb" format as Pokeweb's Following Pokémon installer wrote them (following0 and on, palette following)."""
     count = width // height
     frames = [bytes(pixels[y * width + index * height + x] for y in range(height) for x in range(height))
               for index in range(count)]
-    base = f"t{height // 8}x{height // 8}x{count}"
-    textures = [(f"{base}.{index}", height, height, TEXTURE_FORMAT, True,
+    pokeweb = texture_set_format == "pokeweb"
+    base = "following" if pokeweb else f"t{height // 8}x{height // 8}x{count}"
+    textures = [(f"{base}{index}" if pokeweb else f"{base}.{index}", height, height, TEXTURE_FORMAT, True,
                  encode_characters(height, height, frame, linear=True)) for index, frame in enumerate(frames)]
     palette = b"".join(struct.pack("<H", r | g << 5 | b << 10) for r, g, b in map(color5, colors))
-    return texture_set(textures, [(base, palette)])
+    return texture_set(textures, [(base, palette)], ndspy=pokeweb)
 
 
 def record_json(record: tuple, model_owner: str | None) -> dict:
@@ -161,7 +167,7 @@ def check(condition: bool, path: Path, message: str):
         raise DataError(f"{label(path)}: {message}")
 
 
-def sprite(path: Path) -> bytes:
+def sprite(path: Path, texture_set_format: str = "game") -> bytes:
     palette = path / "sprite.pal"
     image = path / "sprite.png"
     check(palette.is_file() and image.is_file(), path, "a sprite needs sprite.png and sprite.pal")
@@ -172,7 +178,8 @@ def sprite(path: Path) -> bytes:
           f"must be frames side by side, each square and {' or '.join(map(str, FRAME_SIZES))} pixels wide, "
           f"not {width} by {height}")
     check(width // height <= 255, image, "has more frames than a texture set can name")
-    return sprite_texture_set(width, height, palette_indices(image, pixels, png_colors, colors), colors)
+    return sprite_texture_set(width, height, palette_indices(image, pixels, png_colors, colors), colors,
+                              texture_set_format)
 
 
 def pack(root: Path, table_output: Path, graphics_output: Path):
@@ -187,6 +194,12 @@ def pack(root: Path, table_output: Path, graphics_output: Path):
         check(data["type"] == "model" or "model" not in data and not own_model, path,
               "only a 3D model (type \"model\") has a model.nsbmd or a \"model\"")
         check(not (own_model and "model" in data), path, "a model has its own model.nsbmd or a \"model\", not both")
+        own_sprite = (path / "sprite.png").is_file()
+        check(data["type"] == "sprite" or not ({"sprite", "sprite_batch", "texture_set_format"} & data.keys()), path,
+              "only a sprite (type \"sprite\") has a \"sprite\", \"sprite_batch\" or \"texture_set_format\"")
+        check(not (own_sprite and "sprite" in data), path, "a sprite has its own sprite.png or a \"sprite\", not both")
+        check("sprite" not in data or not ({"sprite_batch", "texture_set_format"} & data.keys()), path,
+              "a sprite that shows another code's sprite.png has no \"sprite_batch\" or \"texture_set_format\"")
         entries.append((code, number, path, data))
     models: list[bytes] = []
     model_index: dict[str, int] = {}
@@ -195,12 +208,22 @@ def pack(root: Path, table_output: Path, graphics_output: Path):
             check((path / "model.nsbmd").is_file(), path, "a model without \"model\" needs model.nsbmd")
             model_index[code] = len(models)
             models.append((path / "model.nsbmd").read_bytes())
+    # The sprites in the order of the codes that have one of their own, those of a later "sprite_batch" after them
     sprites: list[bytes] = []
+    sprite_index: dict[str, int] = {}
+    owners = [(data.get("sprite_batch", 0), position, code, path, data)
+              for position, (code, _, path, data) in enumerate(entries)
+              if data["type"] == "sprite" and "sprite" not in data]
+    for _, _, code, path, data in sorted(owners, key=lambda owner: owner[:2]):
+        sprite_index[code] = len(models) + len(sprites)
+        sprites.append(sprite(path, data.get("texture_set_format", "game")))
     records = []
     for code, number, path, data in entries:
         if data["type"] == "sprite":
-            resource = len(models) + len(sprites)
-            sprites.append(sprite(path))
+            owner = data.get("sprite", code)
+            check(owner in sprite_index, path,
+                  f"{owner} is no sprite with a sprite.png of its own, which a \"sprite\" must name")
+            resource = sprite_index[owner]
         elif data["type"] == "model":
             owner = data.get("model", code)
             check(owner in model_index, path, f"{owner} is no 3D model with a model.nsbmd of its own, which a \"model\" "

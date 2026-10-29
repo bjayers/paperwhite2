@@ -2,6 +2,15 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-29: the followers' field actors as sources (branch following-port)
+
+The Following Pokémon port has started on the branch `following-port` (docs/paperwhite2/following-pokemon.md: the
+hooks, calls, data and steps). Step 2 is done: the 2,574 table rows and 348 sprites that Pokeweb's installer added to
+`a/0/4/7` and `a/0/4/8` are `res/field/actors/followers/` (`tools/paperwhite2/import_followers.py`), with their
+constants `OBJ_CODE_FOLLOWER_<SPECIES>[_FORM_<n>][_FEMALE][_SHINY]` from 0x3000 in `generated/obj_codes.txt`; rows
+that show another code's sprite name it in `"sprite"`. Packed, both archives equal the hack ROM's byte for byte, so
+STATUS's "Not imported yet" no longer has them. No code yet: the ROM has the entries, and nothing uses them.
+
 ## 2026-10-28: a 3D preview of Route 1 in the Season app (Remote Control session, not committed)
 
 The Season app's top screen is now a live 3D view of the southern stretch of Route 1 in the previewed season, under
@@ -149,8 +158,8 @@ The trial's comparison scripts are in `tools/paperwhite2/` (start of the editor'
 
 ### Not imported yet
 
-- **Following Pokémon** (port with its code): Options text `title_2` (`a/0/0/2` member 32); 2,574 new field actors
-  in `a/0/4/7`/`a/0/4/8` (1,008 → 3,582 entries) which need new `OBJ_CODE_` constants; files in `following/`,
+- **Following Pokémon** (port with its code): Options text `title_2` (`a/0/0/2` member 32); (done on the branch
+  `following-port`: the 2,574 new field actors in `a/0/4/7`/`a/0/4/8`); files in `following/`,
   `patches/`, `codeinjection/`, `overlay/overlay_0344.bin`, and the root `rail_data_index.tbl` and
   `field_camera_data_index.tbl`.
 - (Done, see below: Unown sprites.)

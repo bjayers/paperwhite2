@@ -986,6 +986,10 @@ in it into the table. To add an actor, add its constant to the list, with a valu
 copy of one to start from. Two places in the code still load sprites by their place in the graphics archive, the
 Funfest Missions' player icons (`sFMissionViewPlayerModels`) and an entrant's default sprite in `wbt_setup.c`, so adding a 3D model moves the sprites those name. Only a 3D model has a `model.nsbmd` or a
 `"model"`, and the code it names must have a `model.nsbmd` of its own.
+A sprite can show another code's `sprite.png` and `sprite.pal` instead of its own, by naming it in `"sprite"`, as Paper
+White 2's followers (`followers/`, `OBJ_CODE_FOLLOWER_`, see `docs/paperwhite2/following-pokemon.md`) do; their own
+sprites have `"texture_set_format": "pokeweb"`, the texture sets as Pokeweb's installer wrote them, and some a
+`"sprite_batch"`, which puts their graphics after the others'.
 `tools/data/field_actor_data.py` writes the sprites' texture sets as the game's are, so the sources pack both archives
 byte for byte; `.venv/bin/python tools/data/field_actor_data.py dump extract/b2_us/files res/field/actors` writes
 them again.
