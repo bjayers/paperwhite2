@@ -1031,6 +1031,16 @@ def main():
                     variables={"module": str(Path("extract") / version / module), "start": hex(start),
                                "end": hex(end), "macro": macro})
             constant_headers.append(output)
+    if args.hack:
+        # Paper White 2: the weather rates' table, from res/paperwhite2/seasonal_weather.json
+        # (docs/paperwhite2/plugins.md, Seasons)
+        n.rule("seasonal_weather", "$python tools/paperwhite2/seasonal_weather.py header $in $out", "Generating $out",
+               restat="1")
+        output = Path(GENERATED_INCLUDE_DIR) / "paperwhite2" / "seasonal_weather.inc"
+        n.build([output], "seasonal_weather", ["res/paperwhite2/seasonal_weather.json"],
+                implicit=["tools/paperwhite2/seasonal_weather.py", "generated/zones.txt",
+                          "include/system/zone_weather.h"])
+        constant_headers.append(output)
     n.build(["constants_headers"], "phony", constant_headers)
 
     checks, configs = [], []

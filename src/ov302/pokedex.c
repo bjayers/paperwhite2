@@ -17,6 +17,10 @@
 #include "system/game_data.h"
 #include "system/season.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/season.h"
+#endif
+
 // The Pokédex: a state machine that starts the process of each of its screens, waits for it, and picks the next from
 // what it returns
 
@@ -141,7 +145,12 @@ static BOOL Pokedex_Init(GameProc *proc, u32 *state, void *param, void *work) {
     PokedexCommon_SelectSeen(wk->param->pokedex, wk->list, wk->count);
     PokedexCommon_InitCriteria(wk->param->pokedex, &wk->criteria);
     habitat = SaveControl_GetPokedexHabitatSave(GameData_GetSaveControl(wk->param->gameData));
+#ifdef PAPERWHITE2
+    // Paper White 2: the habitats of the season of the player's setting, which for chaos is the one the game has
+    PokedexHabitatSave_SetSeason(habitat, PaperWhite2_GetCurrentSeason(wk->param->gameData));
+#else
     PokedexHabitatSave_SetSeason(habitat, Season_GetRealTime());
+#endif
     PokedexHabitatSave_SetType(habitat, 0);
     if (wk->param->start == POKEDEX_START_OPEN) {
         wk->state = STATE_OPEN;
@@ -525,7 +534,12 @@ static u32 Pokedex_StateAfterAwards(PokedexWork *work) {
     case AWARDS_RESULT_HABITATS: {
         PokedexHabitatSave *habitat = SaveControl_GetPokedexHabitatSave(GameData_GetSaveControl(work->param->gameData));
 
+#ifdef PAPERWHITE2
+        // Paper White 2: the habitats of the season of the player's setting, as above
+        PokedexHabitatSave_SetSeason(habitat, PaperWhite2_GetCurrentSeason(work->param->gameData));
+#else
         PokedexHabitatSave_SetSeason(habitat, Season_GetRealTime());
+#endif
         PokedexHabitatSave_SetType(habitat, 0);
         PokeDex_SetMode(work->param->pokedex, DEX_HABITAT);
         next = STATE_HABITAT;

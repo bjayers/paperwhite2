@@ -12,6 +12,10 @@
 #include "system/game_system.h"
 #include "system/season.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/season.h"
+#endif
+
 GameEvent *Event3DDemo_Create(GameSystem *gsys, GameEvent *parent, u32 demoId, u32 param, u32 realTime) {
     GameEvent *event = GameEvent_Create(gsys, parent, Event3DDemo_Callback, sizeof(Event3DDemoWork));
     Event3DDemoWork *work = GameEvent_GetData(event);
@@ -90,7 +94,12 @@ void SetupPlaySequenceEventRealTime(Demo3DParam *out, GameSystem *gsys, u8 demoI
     u8 season;
 
     RTC_GetCachedTime(&time);
+#ifdef PAPERWHITE2
+    // Paper White 2: the season of the player's setting, which for chaos is the one the game has
+    season = PaperWhite2_GetCurrentSeason(GSYS_GetGameData(gsys));
+#else
     season = Season_GetRealTime();
+#endif
     CreateSeqLoadParam(out, gsys, demoId, param, 0, time.hour, time.minute, season);
 }
 

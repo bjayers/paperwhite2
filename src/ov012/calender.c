@@ -5,6 +5,10 @@
 #include "gfl/heap.h"
 #include "system/game_data.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/weather.h"
+#endif
+
 #define CALENDAR_ZONE_MAX 24
 // The weather of a zone with no weather by date
 #define CALENDAR_NO_OFFSET 0xffff
@@ -54,10 +58,16 @@ static void Calendar_ReleaseArc(Calendar *calendar) {
 }
 
 static u16 Calendar_GetWeatherCore(Calendar *calendar, u16 zoneId) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the weather of the day is drawn from the zone's rates for the season, in place of the archive's
+    // weather of the day of the year
+    return PaperWhite2_GetCalendarWeather(calendar->gameData, zoneId);
+#else
     u32 month = GameData_GetMonth(calendar->gameData);
     u32 day = GameData_GetDay(calendar->gameData);
 
     return Calendar_ReadWeatherValue(calendar, zoneId, month, day);
+#endif
 }
 
 static u16 Calendar_ReadWeatherValue(Calendar *calendar, u16 zoneId, u8 month, u8 day) {

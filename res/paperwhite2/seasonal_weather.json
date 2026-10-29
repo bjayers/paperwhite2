@@ -1,0 +1,148 @@
+{
+  "zones": {
+    "ZONE_DRIFTVEIL_CITY": {
+      "spring": {"WEATHER_SUNNY": 68, "WEATHER_RAIN": 24},
+      "summer": {"WEATHER_SUNNY": 90},
+      "autumn": {"WEATHER_SUNNY": 68, "WEATHER_RAIN": 24},
+      "winter": {"WEATHER_SUNNY": 31, "WEATHER_FLAKE": 39, "WEATHER_FLUTTER": 22}
+    },
+    "ZONE_ROUTE_6": {
+      "spring": {"WEATHER_SUNNY": 68, "WEATHER_RAIN": 24},
+      "summer": {"WEATHER_SUNNY": 90},
+      "autumn": {"WEATHER_SUNNY": 68, "WEATHER_RAIN": 24},
+      "winter": {"WEATHER_SUNNY": 31, "WEATHER_FLAKE": 39, "WEATHER_FLUTTER": 22}
+    },
+    "ZONE_CHARGESTONE_CAVE": {
+      "spring": {"WEATHER_SUNNY": 68, "WEATHER_RAIN": 24},
+      "summer": {"WEATHER_SUNNY": 90},
+      "autumn": {"WEATHER_SUNNY": 68, "WEATHER_RAIN": 24},
+      "winter": {"WEATHER_SUNNY": 31, "WEATHER_FLAKE": 39, "WEATHER_FLUTTER": 22}
+    },
+    "ZONE_MISTRALTON_CITY": {
+      "spring": {"WEATHER_SUNNY": 44, "WEATHER_RAIN": 48},
+      "summer": {"WEATHER_SUNNY": 78, "WEATHER_RAIN": 12},
+      "autumn": {"WEATHER_SUNNY": 44, "WEATHER_RAIN": 48},
+      "winter": {"WEATHER_SUNNY": 31, "WEATHER_FLAKE": 39, "WEATHER_FLUTTER": 22}
+    },
+    "ZONE_ROUTE_7": {
+      "spring": {"WEATHER_SUNNY": 44, "WEATHER_RAIN": 48},
+      "summer": {"WEATHER_SUNNY": 78, "WEATHER_RAIN": 12},
+      "autumn": {"WEATHER_SUNNY": 44, "WEATHER_RAIN": 48},
+      "winter": {"WEATHER_SUNNY": 31, "WEATHER_FLAKE": 39, "WEATHER_FLUTTER": 22}
+    },
+    "ZONE_TWIST_MOUNTAIN": {
+      "spring": {"WEATHER_SUNNY": 44, "WEATHER_RAIN": 48},
+      "summer": {"WEATHER_SUNNY": 78, "WEATHER_RAIN": 12},
+      "autumn": {"WEATHER_SUNNY": 44, "WEATHER_RAIN": 48},
+      "winter": {"WEATHER_SUNNY": 31, "WEATHER_FLAKE": 39, "WEATHER_FLUTTER": 22}
+    },
+    "ZONE_TWIST_MOUNTAIN_2": {
+      "spring": {"WEATHER_SUNNY": 44, "WEATHER_RAIN": 48},
+      "summer": {"WEATHER_SUNNY": 78, "WEATHER_RAIN": 12},
+      "autumn": {"WEATHER_SUNNY": 44, "WEATHER_RAIN": 48},
+      "winter": {"WEATHER_SUNNY": 31, "WEATHER_FLAKE": 39, "WEATHER_FLUTTER": 22}
+    },
+    "ZONE_ICIRRUS_CITY": {
+      "spring": {"WEATHER_SUNNY": 33, "WEATHER_RAIN": 59},
+      "summer": {"WEATHER_SUNNY": 66, "WEATHER_RAIN": 24},
+      "autumn": {"WEATHER_SUNNY": 32, "WEATHER_RAIN": 60},
+      "winter": {"WEATHER_SUNNY": 24, "WEATHER_FLAKE": 51, "WEATHER_BLIZZARD": 16, "WEATHER_DIAMOND_DUST": 1}
+    },
+    "ZONE_DRAGONSPIRAL_TOWER": {
+      "spring": {"WEATHER_SUNNY": 33, "WEATHER_RAIN": 59},
+      "summer": {"WEATHER_SUNNY": 66, "WEATHER_RAIN": 24},
+      "autumn": {"WEATHER_SUNNY": 32, "WEATHER_RAIN": 60},
+      "winter": {"WEATHER_SUNNY": 24, "WEATHER_FLAKE": 52, "WEATHER_BLIZZARD": 16}
+    },
+    "ZONE_DRAGONSPIRAL_TOWER_2": {
+      "spring": {"WEATHER_SUNNY": 33, "WEATHER_RAIN": 59},
+      "summer": {"WEATHER_SUNNY": 66, "WEATHER_RAIN": 24},
+      "autumn": {"WEATHER_SUNNY": 32, "WEATHER_RAIN": 60},
+      "winter": {"WEATHER_SUNNY": 24, "WEATHER_FLAKE": 52, "WEATHER_BLIZZARD": 16}
+    },
+    "ZONE_ROUTE_8": {
+      "spring": {"WEATHER_SUNNY": 33, "WEATHER_RAIN": 59},
+      "summer": {"WEATHER_SUNNY": 31, "WEATHER_RAIN": 59},
+      "autumn": {"WEATHER_SUNNY": 32, "WEATHER_RAIN": 60},
+      "winter": {"WEATHER_SUNNY": 24, "WEATHER_FLAKE": 52, "WEATHER_BLIZZARD": 16}
+    },
+    "ZONE_ROUTE_12": {
+      "spring": {"WEATHER_SUNNY": 68, "WEATHER_RAIN": 24},
+      "summer": {"WEATHER_SUNNY": 90},
+      "autumn": {"WEATHER_SUNNY": 68, "WEATHER_RAIN": 24},
+      "winter": {"WEATHER_SUNNY": 41, "WEATHER_RAIN": 51}
+    },
+    "ZONE_ROUTE_14": {
+      "spring": {"WEATHER_SUNNY": 21, "WEATHER_TINT_9": 71},
+      "summer": {"WEATHER_SUNNY": 24, "WEATHER_TINT_9": 66},
+      "autumn": {"WEATHER_SUNNY": 14, "WEATHER_TINT_9": 78},
+      "winter": {"WEATHER_SUNNY": 13, "WEATHER_TINT_9": 79}
+    },
+    "ZONE_ROUTE_15": {
+      "spring": {"WEATHER_SUNNY": 21, "WEATHER_TINT_9": 71},
+      "summer": {"WEATHER_SUNNY": 24, "WEATHER_TINT_9": 66},
+      "autumn": {"WEATHER_SUNNY": 14, "WEATHER_TINT_9": 78},
+      "winter": {"WEATHER_SUNNY": 13, "WEATHER_TINT_9": 79}
+    },
+    "ZONE_FLOCCESY_TOWN": {
+      "spring": {"WEATHER_SUNNY": 71, "WEATHER_RAIN": 21},
+      "summer": {"WEATHER_SUNNY": 78, "WEATHER_RAIN": 12},
+      "autumn": {"WEATHER_SUNNY": 92},
+      "winter": {"WEATHER_SUNNY": 60, "WEATHER_FLAKE": 32}
+    },
+    "ZONE_PLEDGE_GROVE": {
+      "spring": {"WEATHER_SUNNY": 71, "WEATHER_RAIN": 21},
+      "summer": {"WEATHER_SUNNY": 78, "WEATHER_RAIN": 12},
+      "autumn": {"WEATHER_SUNNY": 92},
+      "winter": {"WEATHER_SUNNY": 60, "WEATHER_FLAKE": 32}
+    },
+    "ZONE_ROUTE_20": {
+      "spring": {"WEATHER_SUNNY": 71, "WEATHER_RAIN": 21},
+      "summer": {"WEATHER_SUNNY": 78, "WEATHER_RAIN": 12},
+      "autumn": {"WEATHER_SUNNY": 92},
+      "winter": {"WEATHER_SUNNY": 60, "WEATHER_FLAKE": 32}
+    },
+    "ZONE_FLOCCESY_RANCH": {
+      "spring": {"WEATHER_SUNNY": 71, "WEATHER_RAIN": 21},
+      "summer": {"WEATHER_SUNNY": 78, "WEATHER_RAIN": 12},
+      "autumn": {"WEATHER_SUNNY": 92},
+      "winter": {"WEATHER_SUNNY": 60, "WEATHER_FLAKE": 32}
+    },
+    "ZONE_FLOCCESY_RANCH_2": {
+      "spring": {"WEATHER_SUNNY": 71, "WEATHER_RAIN": 21},
+      "summer": {"WEATHER_SUNNY": 78, "WEATHER_RAIN": 12},
+      "autumn": {"WEATHER_SUNNY": 92},
+      "winter": {"WEATHER_SUNNY": 60, "WEATHER_FLAKE": 32}
+    },
+    "ZONE_VIRBANK_CITY": {
+      "spring": {"WEATHER_SUNNY": 68, "WEATHER_RAIN": 24},
+      "summer": {"WEATHER_SUNNY": 88, "WEATHER_RAIN": 2},
+      "autumn": {"WEATHER_SUNNY": 68, "WEATHER_RAIN": 24},
+      "winter": {"WEATHER_SUNNY": 57, "WEATHER_FLAKE": 35}
+    },
+    "ZONE_VIRBANK_COMPLEX": {
+      "spring": {"WEATHER_SUNNY": 68, "WEATHER_RAIN": 24},
+      "summer": {"WEATHER_SUNNY": 88, "WEATHER_RAIN": 2},
+      "autumn": {"WEATHER_SUNNY": 68, "WEATHER_RAIN": 24},
+      "winter": {"WEATHER_SUNNY": 57, "WEATHER_FLAKE": 35}
+    },
+    "ZONE_VIRBANK_COMPLEX_2": {
+      "spring": {"WEATHER_SUNNY": 68, "WEATHER_RAIN": 24},
+      "summer": {"WEATHER_SUNNY": 88, "WEATHER_RAIN": 2},
+      "autumn": {"WEATHER_SUNNY": 68, "WEATHER_RAIN": 24},
+      "winter": {"WEATHER_SUNNY": 57, "WEATHER_FLAKE": 35}
+    },
+    "ZONE_LENTIMAS_TOWN": {
+      "spring": {"WEATHER_SUNNY": 48, "WEATHER_SANDSTORM": 44},
+      "summer": {"WEATHER_SUNNY": 42, "WEATHER_SANDSTORM": 48},
+      "autumn": {"WEATHER_SUNNY": 92},
+      "winter": {"WEATHER_SUNNY": 78, "WEATHER_SANDSTORM": 14}
+    },
+    "ZONE_REVERSAL_MOUNTAIN": {
+      "spring": {"WEATHER_SUNNY": 48, "WEATHER_SANDSTORM": 44},
+      "summer": {"WEATHER_SUNNY": 42, "WEATHER_SANDSTORM": 48},
+      "autumn": {"WEATHER_SUNNY": 92},
+      "winter": {"WEATHER_SUNNY": 78, "WEATHER_SANDSTORM": 14}
+    }
+  }
+}

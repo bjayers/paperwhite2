@@ -15,6 +15,11 @@
 #include "system/game_event.h"
 #include "system/season.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/season.h"
+#include "system/game_system.h"
+#endif
+
 typedef enum {
     SEASON_BANNER_TYPE_FIELD,
     SEASON_BANNER_TYPE_STANDALONE,
@@ -132,7 +137,12 @@ GameEvent *EventSeasonBanner_CreateFieldTransition(GameSystem *gsys, Field *fiel
     wk->type = SEASON_BANNER_TYPE_FIELD;
     wk->cancelled = FALSE;
     wk->endSeason = endSeason;
+#ifdef PAPERWHITE2
+    // Paper White 2: the player's setting decides whether the banners walk through the seasons or show the last only
+    wk->season = Season_GetPrevious(PaperWhite2_GetSeasonBannerStart(GSYS_GetGameData(gsys), startSeason, endSeason));
+#else
     wk->season = Season_GetPrevious(startSeason);
+#endif
     wk->callback = NULL;
     wk->callbackArg = NULL;
     FieldLensFlare_Cancel(Field_GetLensFlare(wk->field));
@@ -152,7 +162,12 @@ GameEvent *EventSeasonBanner_CreateFieldTransitionEx(GameSystem *gsys, Field *fi
     wk->type = SEASON_BANNER_TYPE_FIELD;
     wk->cancelled = FALSE;
     wk->endSeason = endSeason;
+#ifdef PAPERWHITE2
+    // Paper White 2: the walk or the last season only, as above
+    wk->season = Season_GetPrevious(PaperWhite2_GetSeasonBannerStart(GSYS_GetGameData(gsys), startSeason, endSeason));
+#else
     wk->season = Season_GetPrevious(startSeason);
+#endif
     wk->callback = callback;
     wk->callbackArg = callbackArg;
     EventSeasonBanner_ProcessState(wk, state, SEASON_BANNER_STATE_INIT);

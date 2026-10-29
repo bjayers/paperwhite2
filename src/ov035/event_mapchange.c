@@ -59,6 +59,10 @@
 #include "system/season.h"
 #include "system/zone_weather.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/season.h"
+#endif
+
 struct EventGameOpening {
     GameSystem *gsys;
     GameSystemProcData *procData;
@@ -182,10 +186,20 @@ GameEventReturnCode EventGameOpening_Callback(GameEvent *event, u32 *state, void
         (*state)++;
         break;
     case 1:
+#ifdef PAPERWHITE2
+        // Paper White 2: the season of the player's setting, without the banner for chaos
+        realSeason = PaperWhite2_GetCurrentSeason(gameData);
+        Season_Set(gameData, realSeason);
+        season = GameData_GetSeason(gameData);
+        if (PaperWhite2_GetSeasonBanner(gameData) != SEASON_BANNER_NONE) {
+            GameEvent_ChainNext(event, EventSeasonBanner_CreateStandalone(gsys, season, season));
+        }
+#else
         realSeason = Season_GetRealTime();
         Season_Set(gameData, realSeason);
         season = GameData_GetSeason(gameData);
         GameEvent_ChainNext(event, EventSeasonBanner_CreateStandalone(gsys, season, season));
+#endif
         (*state)++;
         break;
     case 2:
@@ -346,6 +360,12 @@ GameEventReturnCode EventFieldContinue_Callback(GameEvent *event, u32 *state, vo
     case 3:
         if (wk->continueFromSave && *EventWork_GetWkPtr(eventWork, EVENT_WORK_CONTINUE_SCRIPT) != 0) {
             EventScriptCall_Start(event, 0x83b, NULL, 0, HEAPID_FIELDMAP);
+#ifdef PAPERWHITE2
+        } else if (PaperWhite2_GetSeasonBanner(gameData) == SEASON_BANNER_NONE) {
+            // Paper White 2: chaos shows no banner, so the field fades in from black as when a new game starts
+            GameEvent_ChainNext(event, CallFieldMapEntranceInTransition(gsys, GSYS_GetField(gsys),
+                                                                        FIELD_TRANSITION_FADE_BLACK, 0, 1, 0, 0));
+#endif
         } else {
             u8 season = GameData_GetSeason(gameData);
             GameEvent_ChainNext(event, CallFieldMapEntranceInTransition(gsys, GSYS_GetField(gsys),
@@ -416,7 +436,13 @@ void EventMapChange_LoadSeasons(EventMapChange *wk) {
     AreaData_Free(areaData);
 
     if (season != prevSeason && isExterior) {
+#ifdef PAPERWHITE2
+        // Paper White 2: seasonChanged says whether the banner shows, which it doesn't for chaos. The season changes
+        // all the same: EventMapChangeCore_Callback compares the two seasons
+        wk->seasonChanged = PaperWhite2_GetSeasonBanner(wk->gameData) != SEASON_BANNER_NONE;
+#else
         wk->seasonChanged = TRUE;
+#endif
         wk->prevSeason = prevSeason;
         wk->season = season;
     }
@@ -506,7 +532,13 @@ GameEventReturnCode EventMapChangeCore_Callback(GameEvent *event, u32 *state, vo
     case 3:
         DSPROT_CHECKED_CALL(DSProt_CallRunChecks2, EventMapChange_DSProtNop, EventMapChange_DSProtTamper1, wk, gsys);
         FieldMapControl_DeleteAllActors(gsys);
+#ifdef PAPERWHITE2
+        // Paper White 2: the season changes with or without its banner. EventMapChange_LoadSeasons sets the two
+        // seasons apart only when it changes, and InitMapChangeEvent sets them the same
+        if (wk->unk40 && wk->season != wk->prevSeason) {
+#else
         if (wk->unk40 && wk->seasonChanged) {
+#endif
             AdventureTime *adventureTime;
             u8 season;
             PokeParty *party;

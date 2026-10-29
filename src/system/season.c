@@ -5,6 +5,10 @@
 #include "system/game_data.h"
 #include "system/game_system.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/season.h"
+#endif
+
 // The seasons, which change with the month. The file's name is a guess. Function names from swan
 // (https://github.com/ds-pokemon-hacking/swan, GPL-3.0)
 
@@ -19,7 +23,13 @@ BOOL GameData_GetSeasons(GameData *gameData, u16 *prevSeason, u16 *season) {
         return FALSE;
     }
     *prevSeason = GameData_GetSeason(gameData);
+#ifdef PAPERWHITE2
+    // Paper White 2: the season of the player's setting, which for chaos is drawn here, at each map change with a
+    // loading screen
+    *season = PaperWhite2_GetSeasonForMapChange(gameData);
+#else
     *season = Season_GetRealTime();
+#endif
     if (*prevSeason != *season) {
         return TRUE;
     }

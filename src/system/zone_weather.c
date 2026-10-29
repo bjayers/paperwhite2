@@ -13,6 +13,10 @@
 #include "system/season.h"
 #include "system/version.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/season.h"
+#endif
+
 // Which weather a zone has. The ROM doesn't name the file; the name is a guess. Names from swan
 // (https://github.com/ds-pokemon-hacking/swan, GPL-3.0), except EntralinkWeatherFlag and its fields
 
@@ -69,7 +73,12 @@ u8 GetWeatherAll(GameSystem *gsys, u32 zoneId) {
 }
 
 static BOOL IsSeasonCurrent(GameData *gameData) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the season of the player's setting, which for chaos is the one the game has
+    if (GameData_GetSeason(gameData) == PaperWhite2_GetCurrentSeason(gameData)) {
+#else
     if (GameData_GetSeason(gameData) == Season_GetRealTime()) {
+#endif
         return TRUE;
     }
     return FALSE;

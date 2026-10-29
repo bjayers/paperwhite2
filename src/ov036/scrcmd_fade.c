@@ -17,6 +17,10 @@
 #include "system/game_system.h"
 #include "system/vm.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/season.h"
+#endif
+
 enum {
     FIELD_FADE_OUT_BLACK,
     FIELD_FADE_IN_BLACK,
@@ -84,6 +88,14 @@ BOOL Scrcmd_Fade_CallSeasonBanner(VM *vm, FieldScriptEnv *env) {
     Field *field = GSYS_GetField(gsys);
     u32 season = GameData_GetSeason(gameData);
 
+#ifdef PAPERWHITE2
+    // Paper White 2: chaos shows no banner, so the field fades in from black as when a new game starts
+    if (PaperWhite2_GetSeasonBanner(gameData) == SEASON_BANNER_NONE) {
+        ScriptWork_CallEvent(work,
+                             CallFieldMapEntranceInTransition(gsys, field, FIELD_TRANSITION_FADE_BLACK, 0, 1, 0, 0));
+        return FALSE;
+    }
+#endif
     ScriptWork_CallEvent(work,
                          CallFieldMapEntranceInTransition(gsys, field, FIELD_TRANSITION_SEASON, 0, 0, season, season));
     return FALSE;
