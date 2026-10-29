@@ -44,6 +44,17 @@ Agreed with the user on 2026-10-29. Design notes, not final; each big item gets 
   Pull) as weight modifiers, fishing, Sweet Scent, shaking grass and rippling water drops.
 - Roaming legendaries: look for BW1's roaming Tornadus/Thundurus code first.
 
+## Shiny palettes (deep dive before changing any)
+
+- Goal: one place to define a species' shiny colours (or several variants) that the battle sprites, the follower
+  sprites and the party/box icons all follow, so editing or adding a palette is one change.
+- Questions: whether shiny followers can use the normal follower sheet with only a different palette (making the
+  174 duplicated shiny sheets obsolete, and saving their space; it depends on how the billboard texture sets bind
+  palettes); whether follower and icon palettes can be derived from the battle sprite's palettes (research.md has a
+  colour-shift rule that fixes Zekrom); how a variant is picked (PID bits) and stored; spare palette slots for icons
+  on the party, box and battle party screens.
+- Hold the regeneration of the wrong follower shiny palettes (research.md lists the suspects) until then.
+
 ## NPC spawn system
 
 - Spawn groups per zone, with candidates, weights and conditions, pick one or N, and mutually exclusive groups;
