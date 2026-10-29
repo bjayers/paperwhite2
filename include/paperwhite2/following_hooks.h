@@ -5,6 +5,7 @@
 #include "gfl/heap.h"
 #include "nitro/fx.h"
 #include "paperwhite2/following.h"
+#include "paperwhite2/following_events.h"
 #include "struct_decls.h"
 #include "system/game_system.h"
 
@@ -23,19 +24,6 @@ enum {
     FOLLOWING_SCENE_REFRESH = 4,
     FOLLOWING_SCENE_INVALID = 8,
 };
-
-// What a PC's storage keeps of the follower, to put it back where it was when the player returns to the same tile
-typedef struct {
-    u32 magic;
-    VecFx32 player;
-    VecFx32 follower;
-    s16 grid[3];
-    u16 face;
-    u16 zone;
-    FollowingPokemon selected;
-} FollowingRestore;
-
-#define FOLLOWING_RESTORE_MAGIC ('F' | 'W' << 8 | 'S' << 16 | (u32)'R' << 24)
 
 // The scene policy, scene.c: which events keep the follower, which pause it and which recall it, the PC's restore,
 // the menu and battle markers, and the actors on the follower's way. TODO step 4: all of it. style-ok: todo
@@ -85,10 +73,6 @@ static inline void FollowingScene_MarkMenu(GameEvent *event) {
 // Whether no other actor stands on target or is stepping onto it
 static inline BOOL FollowingScene_IsStepClear(FieldActor *follower, const VecFx32 *target) {
     return TRUE;
-}
-
-// The events bridge, events.c. TODO step 4: the PC's restore token. style-ok: todo
-static inline void FollowingEvents_Discard(void) {
 }
 
 #endif // PAPERWHITE2_FOLLOWING_HOOKS_H
