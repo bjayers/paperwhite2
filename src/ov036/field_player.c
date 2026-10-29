@@ -19,6 +19,10 @@
 #include "system/game_data.h"
 #include "system/game_system.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/following_field.h"
+#endif
+
 // The field's player: the core, and the grid and rail movement that the map's controller sets up
 
 struct FieldPlayer {
@@ -147,6 +151,13 @@ FieldEffectTask *FieldPlayer_GetRideEffect(FieldPlayer *player) {
 }
 
 u16 FieldPlayer_GetMoveDirByKey(FieldPlayer *player, u32 heldKeys) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the player's step waits while the Following Pokémon's follower is recalled into its ball
+    // (field-player-recall-direction-gate)
+    if (PaperWhite2_FollowingHoldsPlayer()) {
+        return PLAYER_DIR_NONE;
+    }
+#endif
     return FieldPlayerCore_GetMoveDirByKey(player->core, heldKeys);
 }
 
