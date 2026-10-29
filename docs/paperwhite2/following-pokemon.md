@@ -691,13 +691,17 @@ under the feet, never over them.
 ## Small followers in front of counters
 
 **The clipping.** In a Pokémon Center a 32-pixel follower's middle rows went into the counter on the walk's down
-frames. The body is a camera-facing quad, so it leans back by its height: at the centers' camera (229 units, 39
-degrees) a row h units up the quad stands 0.63h behind the feet and 0.78h above them. A counter tile behind the
-follower has its face 8 units back, so rows above 12.7 are behind that face, and they show only while they are above
-the counter's top. A native 32-pixel sprite (the player, at the counter) clears it: the map is built for that. The
-follower is drawn lower: `FOLLOWING_SPRITE_LIFT` (2 units), and the down frames' art a pixel or two more, so the rows
-just above 12.7 sink under the counter's top. The room is W-buffered, so the actors' clip Z offset, which keeps NPCs in
-front of walls on the other maps, does nothing there. A 64-pixel body was already split (`SplitBody`).
+frames. The body is a camera-facing quad 28 units tall (32 pixels at the actors' scene scale of 7), so it leans back by
+its height: at the centers' camera (camera setup 3: 229 units, 39.2 degrees) a row h units up the quad stands 0.63h
+behind the feet and 0.78h above them. Every center is the map model `m_pc01_00_00`. Its nurse counter (terrain tiles
+x 5 to 9 of row z 11, class 0xd4, and the PC at x 4, class 0xd6; one layer, at the floor's height 0, with the
+collision flag) is, in the glb at tile 7: a foot sloping from z 192.7 at 1.5 units up to 188.4 at 8.2, a lip out to
+190.3, a face back to 188.4 at 12.7 and a top at 12.7 to 13.3; the tiles beside curve back. The feet stand at z 200.
+A native 32-pixel sprite (the player, at the counter) clears it: the map is built for that. The follower is drawn lower:
+`FOLLOWING_SPRITE_LIFT` (2 units), and the down frames' art about 2 pixels more. A ray cast of the model shows a whole
+follower losing rows 10 and 11 (from the top) at rest and rows 8 to 13 on the down frames at tiles 6 to 8. The room is
+W-buffered, so the actors' clip Z offset, which keeps NPCs in front of walls on the other maps, does nothing there.
+A 64-pixel body was already split (`SplitBody`).
 
 **The small split** (`SplitSmallBody`, its own `SMALL_*` constants; `SplitBody`, its constants and its results are
 unchanged). Only for a 32 by 32 face that isn't flipped, and only when the tile right behind the follower, away from the
@@ -705,33 +709,50 @@ camera on the nearer grid axis, isn't walkable at its height (`SMALL_WALL_TILES`
 columns as the large check, which still reads four tiles). Then:
 
 - The field's quad keeps the bottom 8 rows, the feet, which don't move, so the oval and the grass meet them as before.
-  8 rows lean back 5 units at the centers' camera and under 7 below a 61-degree pitch: in front of a face 8 units back.
 - The 24 rows above are 3 strips of 8 in the follower's own scene, as the large ones. Each moves along its own eye ray,
-  shrunk so its pixels stay where they were, until its top edge stands a unit in front of the wall's face along the
+  shrunk so its pixels stay where they were, until its top edge stands a unit in front of the wall tile's edge along the
   ground (`sSmallLine`, eased as `sLine`), with no jut for eaves.
 - The line is never in front of the feet, so no strip's top passes the bottom one along the ground, and moving toward
   the eye only raises a strip, never below the feet's window.
 - A strip moves as far as its top needs, within the large split's cap (`FOLLOWING_RENDER_SPLIT_CAP`, 5 tiles of
-  depth), and no further: the line, not the cap, stops it. A host test of `FollowingRender_Strips` at the centers'
-  camera with a counter's face 8 units back gives the strips 15.3, 9.7 and 3.8 units of depth (top to bottom), and
-  under a 61-degree pitch 34.8, 24.5 and 12.9; the large ones move up to about 50. The first version capped them at
-  what lifts the rows back by the height the follower was lowered (4 / sin 39 = 6.4 units), which left the top two
-  strips short of the line, and they still clipped the counter a little; it also stopped them short of a player beside
-  the follower, which the user dropped: the follower is far enough from the player that the strips don't reach them.
+  depth): 12.6, 7.5 and 2.3 units of depth at the centers' camera (top to bottom). `SplitSmallBody` places each strip
+  with its own `FollowingRender_Strips` call, which gives the same strip as one call for all three.
+- **The player limit** (the user's rule: strips never draw over the player, and the player is never moved). A strip
+  whose picture overlaps the player's quad on the screen (`ScreenOverlap`: both quads' whole rectangles, each over its
+  depth) moves no nearer the camera than `FOLLOWING_RENDER_SORT_BEHIND` (a unit) behind the player's quad
+  (`GetSmallStripCap`). Depth is along the view axis, which is what a W-buffer compares, so in the centers too the
+  strip is a unit behind the player wherever they overlap. With the player a tile in front the limit doesn't bind: the top
+  strip reaches its line 1.4 behind them. Side by side at the counter, at the follower's depth, the strips can't move
+  (a lowered follower stands 1.3 deeper than the player, so they move 0.3) and the counter cuts the middle rows on the
+  down frames again: a row behind the player's camera-facing plane at the counter's height is behind the counter's
+  face, so no pull can do both. The user accepted that. A player two tiles beside doesn't overlap.
 - With no wall a tile behind, the follower draws whole, as before.
 
-`FollowingRender_Strips` takes its cap from the stack (`FollowingStripStack.cap`); both splits pass
-`FOLLOWING_RENDER_SPLIT_CAP`, `SplitBody`'s old constant, and a host comparison of the old and new function over
-2,000,000 random 64-pixel cases gave the same output in every one, again after the small cap changed (`SplitBody` and
-`FollowingRender_Strips` didn't). `GetWallLine`, `EaseLine` and `IsMaterialShared` are `SplitBody`'s
-code moved, unchanged; the wall cache also keys on the distance read.
+**Whether it runs at the counter.** The user saw the clipping unchanged after the strips' cap went from 6.4 units to the
+large split's, which looked as if the split wasn't running. It runs: `IsWallAt` over the terrain CSV (every front tile,
+x 2 to 12 of row 12, feet at z 196 to 205) finds the counter, the PC or the stairs' side a tile behind or beside it (the
+counter's tiles: one layer at height 0, `above` 0, the collision flag set: not walkable, so a wall), and the file's own
+`IsWallAt` to `SplitSmallBody`, compiled on the host over that terrain and camera, splits at every one of them, with the
+wall line 7 units behind the feet. The facing doesn't enter the check. The ray cast clears rows 8 to 13 with either cap,
+so the two versions draw the same: the 6.4 cap already covered the middle strip's 7.5 well enough. What the cast still
+hides, with the split or not, is the bottom of the feet's window, which never moves: the floor covers the rows below the
+terrain's height (the 3 lowest at rest, 6 on the down frames), and the counter's translucent floor shadow (`in02_kage`,
+1.5 units up, out to z 201.6) dims 2 more in front of it. If the cut that shows is there, it is the lift against the
+W-buffered floor, not the counter; pulling the feet's window too would need the oval and the grass moved with it.
+
+`FollowingRender_Strips` takes its cap from the stack (`FollowingStripStack.cap`); `SplitBody` passes
+`FOLLOWING_RENDER_SPLIT_CAP`, its old constant, and a host comparison of the old and new function over 2,000,000 random
+64-pixel cases gave the same output in every one, again after the player limit (`SplitBody` and
+`FollowingRender_Strips` didn't change). `GetWallLine`, `EaseLine` and `IsMaterialShared` are `SplitBody`'s code
+moved, unchanged; the wall cache also keys on the distance read.
 
 **To test** (melonDS): a 32-pixel follower (Pikachu) walking along a Pokémon Center's counter and the PC's, and standing
-in front of them, facing each way: no rows cut on any frame, including the walk's down frames, the feet and the oval
-where they were, and the strips meeting without a gap or a step. With the player beside or in front of the follower at
-the counter, check the strips don't draw over them. On a route, in a town's open square and in grass, nothing
-changes. Against a building's wall a tile behind, the upper rows move toward the camera and the picture must not. A
-64-pixel follower outdoors in front of a wall: as before.
+in front of them, facing each way: no middle rows cut on any frame, including the walk's down frames, the feet and the
+oval where they were, and the strips meeting without a gap or a step; note any rows still cut, and whether they are
+the feet's. With the player in front of, beside and behind the follower at the counter, the strips never draw over the
+player (beside, the middle rows may be cut again). On a route, in a town's open square and in grass, nothing changes.
+Against a building's wall a tile behind, the upper rows move toward the camera and the picture must not. A 64-pixel
+follower outdoors in front of a wall: as before.
 
 ## What remains
 

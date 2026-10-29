@@ -126,6 +126,8 @@ enum {
 #define BUTTON_MAX 6
 // What SeasonApp_GetCurrentValue gives for the menu, whose buttons set nothing
 #define NO_CURRENT_VALUE 0xff
+// The current button when no button of the page is the current setting's
+#define NO_CURRENT_BUTTON 0xff
 
 #define BUTTON_TEXT_COLOR PRINT_COLOR(14, 15, 3)
 
@@ -200,6 +202,8 @@ typedef struct {
     u8 bannerHidden;
     // Whether the buttons' BG is off until the next frame, while the new buttons' screen waits for the VBlank
     u8 buttonsHidden;
+    // The button drawn in the current setting's colors, or NO_CURRENT_BUTTON
+    u8 currentButton;
     AppTaskMenuWin *buttons[BUTTON_MAX];
     TouchRect buttonRects[BUTTON_MAX + 1];
     // The 3D preview, NULL once it fails to load, and the frames left of its fade in after a season loads
@@ -239,6 +243,7 @@ static void SeasonApp_CreateButton(SeasonAppWork *work, u8 index, AppTaskMenuRes
                                    u8 width);
 static void SeasonApp_FreeButtons(SeasonAppWork *work);
 static void SeasonApp_UpdateButtons(SeasonAppWork *work);
+static void SeasonApp_MoveCurrentButton(SeasonAppWork *work);
 static BOOL SeasonApp_UpdatePage(SeasonAppWork *work);
 static u8 SeasonApp_FindButton(SeasonAppWork *work, int directionX, int directionY);
 static BOOL SeasonApp_PickButton(SeasonAppWork *work);
@@ -780,8 +785,9 @@ static u8 SeasonApp_GetCurrentValue(SeasonAppWork *work) {
 }
 
 // Makes the page's buttons, the current setting's in its own colors, then the Quit or Back button, and their rectangles
-// of the touch screen. Their characters go to VRAM at once, over the last buttons', but their screen only at the next
-// VBlank, so the buttons' BG stays off until the frame after it: no frame shows the new characters with the old screen
+// of the touch screen, when a page opens. Their characters go to VRAM at once, over the last buttons', but their screen
+// only at the next VBlank, so the buttons' BG stays off until the frame after it: no frame shows the new characters
+// with the old screen. A pick that keeps the page only moves the colors (SeasonApp_MoveCurrentButton)
 static void SeasonApp_CreateButtons(SeasonAppWork *work) {
     const SeasonAppPage *setup = &sSeasonAppPages[work->page];
     u8 current = SeasonApp_GetCurrentValue(work);
@@ -789,10 +795,15 @@ static void SeasonApp_CreateButtons(SeasonAppWork *work) {
 
     work->buttonsHidden = TRUE;
     GFL_BGSysSetBGEnabled(BG_TOUCH_TEXT, FALSE);
+    work->currentButton = NO_CURRENT_BUTTON;
     for (i = 0; i < setup->count; i++) {
         const SeasonAppButtonSetup *button = &setup->buttons[i];
-        AppTaskMenuRes *res = button->value == current ? work->currentButtonRes : work->buttonRes;
+        AppTaskMenuRes *res = work->buttonRes;
 
+        if (button->value == current) {
+            res = work->currentButtonRes;
+            work->currentButton = i;
+        }
         SeasonApp_CreateButton(work, i, res, button->label, 0, button->x, button->y, setup->buttonWidth);
     }
     SeasonApp_CreateButton(work, setup->count, work->buttonRes, setup->exitLabel, APP_TASKMENU_ITEM_RETURN,
@@ -852,6 +863,32 @@ static void SeasonApp_UpdateButtons(SeasonAppWork *work) {
             AppTaskMenuWin_Update(work->buttons[i]);
         }
     }
+}
+
+// After a pick that keeps the page: ends the picked button's flash, draws the new current setting's button in its
+// colors and the last one in the others', and shows the cursor on the picked button as before, unless the touch screen
+// is in use. Only the palette numbers of those buttons' screen change, at the next VBlank: no button is made again or
+// hidden, and the others aren't touched
+static void SeasonApp_MoveCurrentButton(SeasonAppWork *work) {
+    const SeasonAppPage *setup = &sSeasonAppPages[work->page];
+    u8 current = SeasonApp_GetCurrentValue(work);
+    u8 next = NO_CURRENT_BUTTON;
+    BOOL cursorShown = GCTX_HIDIsUsingTouch() == FALSE;
+    u8 i;
+
+    for (i = 0; i < setup->count; i++) {
+        if (setup->buttons[i].value == current) {
+            next = i;
+        }
+    }
+    AppTaskMenuWin_ResetFlash(work->buttons[work->cursor]);
+    for (i = 0; i < setup->count; i++) {
+        if (i == work->cursor || i == work->currentButton || i == next) {
+            AppTaskMenuWin_SetRes(work->buttons[i], i == next ? work->currentButtonRes : work->buttonRes,
+                                  cursorShown && i == work->cursor);
+        }
+    }
+    work->currentButton = next;
 }
 
 // Reads the touch screen and the keys as the game's task menus do: a touch picks a button, and in touch mode the first
@@ -951,7 +988,7 @@ static BOOL SeasonApp_PickButton(SeasonAppWork *work) {
 }
 
 // Sets what the picked button sets, shows the new current button and says what changes, with the banner of the
-// season the next map change into an exterior brings, the game's own for chaos
+// season the next map change into an exterior brings, the game's own for chaos. The page stays, so its buttons do too
 static void SeasonApp_ApplyButton(SeasonAppWork *work) {
     const SeasonAppButtonSetup *button = &sSeasonAppPages[work->page].buttons[work->cursor];
 
@@ -960,11 +997,9 @@ static void SeasonApp_ApplyButton(SeasonAppWork *work) {
     } else {
         PaperWhite2_SetSeasonMode(work->gameData, button->value);
     }
-    SeasonApp_FreeButtons(work);
+    SeasonApp_MoveCurrentButton(work);
     work->messageSeason = PaperWhite2_GetCurrentSeason(work->gameData);
     SeasonApp_ClearMessage(work);
     SeasonApp_PrintLine(work, button->confirmation, 0);
-    // The old buttons show until the preview's load is done, as their screen is copied only at the next VBlank
     SeasonApp_UpdatePreview(work);
-    SeasonApp_CreateButtons(work);
 }

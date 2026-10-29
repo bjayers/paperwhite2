@@ -93,8 +93,10 @@ typedef struct {
 // SMALL_WALL_TILES behind is read, the field's quad keeps the bottom SMALL_STRIP_BASE_ROWS rows (the feet, which never
 // move), and the rows above are SMALL_STRIP_COUNT strips of SMALL_STRIP_ROWS. Each moves toward the camera only as far
 // as its top needs to clear the wall's face (no jut) and never along the ground past the feet, within the large
-// split's FOLLOWING_RENDER_SPLIT_CAP. At the Pokémon Centers' 39-degree camera a counter's face 8 units back takes the
-// strips 15.3, 9.7 and 3.8 units of depth (top to bottom)
+// split's FOLLOWING_RENDER_SPLIT_CAP. The body is 28 units tall (the actors' scene scale is 7), so at the Pokémon
+// Centers' 39-degree camera a counter tile behind the feet takes the strips 12.6, 7.5 and 2.3 units of depth (top to
+// bottom). A strip whose picture overlaps the player's on the screen never comes nearer the camera than
+// FOLLOWING_RENDER_SORT_BEHIND behind the player's quad: the player is never drawn over, and never moved
 #define SMALL_STRIP_ROWS 8
 #define SMALL_STRIP_COUNT 3
 #define SMALL_STRIP_BASE_ROWS (32 - SMALL_STRIP_COUNT * SMALL_STRIP_ROWS)
@@ -569,10 +571,73 @@ static BOOL SplitBody(BillboardActorSys *system, BillboardActor *quad, FieldActo
     return TRUE;
 }
 
+// Whether the screen rectangles of two camera-facing quads overlap: a, a half-width either side of a center column
+// and low to high up from the point it stands on, against b. Each is an offset from the eye along the camera's right
+// and up axes over its depth, which is 1 for an orthographic camera
+static BOOL ScreenOverlap(const FollowingCameraBasis *basis, const VecFx32 *a, s64 aHalf, s64 aLow, s64 aHigh,
+                          const VecFx32 *b, s64 bHalf, s64 bHigh) {
+    s64 ax = (((s64)a->x - basis->eye.x) * basis->right.x + ((s64)a->y - basis->eye.y) * basis->right.y +
+              ((s64)a->z - basis->eye.z) * basis->right.z) >>
+             FX32_SHIFT;
+    s64 ay = (((s64)a->x - basis->eye.x) * basis->up.x + ((s64)a->y - basis->eye.y) * basis->up.y +
+              ((s64)a->z - basis->eye.z) * basis->up.z) >>
+             FX32_SHIFT;
+    s64 bx = (((s64)b->x - basis->eye.x) * basis->right.x + ((s64)b->y - basis->eye.y) * basis->right.y +
+              ((s64)b->z - basis->eye.z) * basis->right.z) >>
+             FX32_SHIFT;
+    s64 by = (((s64)b->x - basis->eye.x) * basis->up.x + ((s64)b->y - basis->eye.y) * basis->up.y +
+              ((s64)b->z - basis->eye.z) * basis->up.z) >>
+             FX32_SHIFT;
+    s64 ad = FX32_ONE;
+    s64 bd = FX32_ONE;
+
+    if (!basis->ortho) {
+        ad = (((s64)basis->eye.x - a->x) * basis->view.x + ((s64)basis->eye.y - a->y) * basis->view.y +
+              ((s64)basis->eye.z - a->z) * basis->view.z) >>
+             FX32_SHIFT;
+        bd = (((s64)basis->eye.x - b->x) * basis->view.x + ((s64)basis->eye.y - b->y) * basis->view.y +
+              ((s64)basis->eye.z - b->z) * basis->view.z) >>
+             FX32_SHIFT;
+        if (ad <= 0 || bd <= 0) {
+            return TRUE;
+        }
+    }
+    // a0 / ad < b1 / bd and b0 / bd < a1 / ad, on both axes, with the depths multiplied across. The values are 20.12
+    // units within a few hundred of the eye, so the products fit
+    return (ax - aHalf) * bd < (bx + bHalf) * ad && (bx - bHalf) * ad < (ax + aHalf) * bd &&
+           (ay + aLow) * bd < (by + bHigh) * ad && by * ad < (ay + aHigh) * bd;
+}
+
+// The most depth a 32-pixel follower's strip from low to high up its body may move: FOLLOWING_RENDER_SPLIT_CAP, and
+// where its picture overlaps the player's on the screen, no nearer the camera than FOLLOWING_RENDER_SORT_BEHIND behind
+// the player's quad. A strip keeps its picture as it moves, so the overlap is that of its rows where they are
+static s32 GetSmallStripCap(const FollowingCameraBasis *basis, const FollowingPose *body, s32 half, s32 low, s32 high,
+                            const BillboardActor *playerQuad, s64 scale) {
+    s64 gap;
+    s64 cap = FOLLOWING_RENDER_SPLIT_CAP;
+
+    if (playerQuad == NULL) {
+        return (s32)cap;
+    }
+    // The follower's depth less the player's: the player is nearer the camera when positive
+    gap = (((s64)playerQuad->pos.x - body->position.x) * basis->view.x +
+           ((s64)playerQuad->pos.y - body->position.y) * basis->view.y +
+           ((s64)playerQuad->pos.z - body->position.z) * basis->view.z) >>
+          FX32_SHIFT;
+    if (gap - FOLLOWING_RENDER_SORT_BEHIND >= cap ||
+        !ScreenOverlap(basis, &body->position, half, low, high, &playerQuad->pos,
+                       (scale * playerQuad->scaleX) >> FX32_SHIFT, (2 * scale * playerQuad->scaleY) >> FX32_SHIFT)) {
+        return (s32)cap;
+    }
+    cap = gap - FOLLOWING_RENDER_SORT_BEHIND;
+    return cap > 0 ? (s32)cap : 0;
+}
+
 // SplitBody for a 32-pixel body in front of a wall a tile behind it: the field's quad keeps the base rows, which don't
-// move, and sUpper holds the strips above, each moved toward the camera to clear it, never past the feet's line
+// move, and sUpper holds the strips above, each moved toward the camera to clear it, never past the feet's line, and
+// never in front of the player where they overlap it on the screen
 static BOOL SplitSmallBody(BillboardActorSys *system, BillboardActor *quad, FieldActor *actor,
-                           const FollowingCamera *camera) {
+                           const FollowingCamera *camera, const BillboardActor *playerQuad) {
     BillboardActorScene *scene;
     u32 mat;
     BillboardActorMaterial *material;
@@ -642,10 +707,15 @@ static BOOL SplitSmallBody(BillboardActorSys *system, BillboardActor *quad, Fiel
     stack.forward = 0;
     stack.rise = 0;
     stack.ramp = FX32_ONE;
-    stack.cap = FOLLOWING_RENDER_SPLIT_CAP;
-    if (!FollowingRender_Strips(&body, camera, (s32)half, (s32)height, row * SMALL_STRIP_ROWS, SMALL_STRIP_COUNT,
-                                &stack, stripScaleY, out)) {
-        return FALSE;
+    // One strip at a time, each with its own cap: FollowingRender_Strips places each strip from its own top alone
+    for (i = 0; i < SMALL_STRIP_COUNT; i++) {
+        s32 high = (s32)height - (s32)i * row * SMALL_STRIP_ROWS;
+
+        stack.cap = GetSmallStripCap(&basis, &body, (s32)half, high - row * SMALL_STRIP_ROWS, high, playerQuad, scale);
+        if (!FollowingRender_Strips(&body, camera, (s32)half, high, row * SMALL_STRIP_ROWS, 1, &stack, stripScaleY,
+                                    &out[i])) {
+            return FALSE;
+        }
     }
     // Strip i shows rows 8i to 8i + 7 from the top of the frame; the field's quad keeps the last 8
     for (i = 0; i < SMALL_STRIP_COUNT; i++) {
@@ -751,7 +821,8 @@ void FollowingRender_Draw(BillboardActorSys *system, G3DCamera *camera, G3DLight
                 // The strips are cut from the lowered quad, whose scale is a whole number of rows, then the base
                 // window is pulled with the rest of the body
                 quad->pos = adjusted.position;
-                if (SplitBody(system, quad, follower, &view) || SplitSmallBody(system, quad, follower, &view)) {
+                if (SplitBody(system, quad, follower, &view) ||
+                    SplitSmallBody(system, quad, follower, &view, playerQuad != quad ? playerQuad : NULL)) {
                     quad->scaleY = (s16)(drawn.scaleY / sUpper.windows);
                 } else {
                     quad->scaleY = (s16)drawn.scaleY;

@@ -279,7 +279,8 @@ no Geonet. It is Geonet's process slot and overlay with Geonet's parts, without 
   It is linked into overlay 312, Geonet's, which `CallGeonet` loads, so it is in memory only while the app runs.
 - `src/system/app_taskmenu.c` gains `AppTaskMenuRes_CreateFromArchive` under `PAPERWHITE2` (96 bytes in main): the
   task menus' button resources with the frame and palettes from another archive, so the app's buttons have art of
-  their own.
+  their own; and `AppTaskMenuWin_SetRes`, which moves one button to another resource's palettes without drawing it
+  again.
 - Text: `res/text/system/season_app.txt`, bank `TEXT_BANK_SEASON_APP`, a new last file of `a/0/0/2`
   (`generated/text_banks.txt`). Every label, status line and confirmation is there.
 - Graphics: Geonet's archive (`ARCID_GEONET`, `res/graphics/geonet/`) gains three members, see below. The banners
@@ -393,18 +394,24 @@ with the return arrow). The current mode's or hemisphere's button is drawn in th
 **Input.** The menu and the pages alike: a touch picks a button; the D-pad moves the cursor (up and down to the nearest
 row, left and right within the row) and A picks; B picks QUIT or BACK; after a touch the first key only brings the
 cursor back, as the game's task menus do. A picked button flashes, then the menu opens its page, or a page's setting is
-set, the current button is drawn again and the message window confirms ("The season will change to Winter when you go
-outside.", "The seasons will now change each week, on Mondays."); the page stays open. BACK returns to the menu, with
-the cursor on the button of the page it came from, and QUIT fades out to the field. The setting shows at the next map
-change into an exterior, as the Seasons section says.
+set, the current setting's colors move to its button and the message window confirms ("The season will change to Winter
+when you go outside.", "The seasons will now change each week, on Mondays."); the page stays open. BACK returns to the
+menu, with the cursor on the button of the page it came from, and QUIT fades out to the field. The setting shows at the
+next map change into an exterior, as the Seasons section says.
 
-The buttons are made again for each page and after each pick. Their characters go to VRAM at once, over the last
-buttons' (freed in the same frame), but the touch BG's screen only at the next VBlank, and a preview's load before that
-VBlank takes frames: those frames showed the new characters through the old screen, pieces of both sets. So the
-buttons are made last, after the message and the preview's load (`SeasonApp_OpenPage`, `SeasonApp_ApplyButton`; until
-then the old buttons show whole, since the freed ones' screen and characters stay in VRAM), and
-`SeasonApp_CreateButtons` turns the buttons' BG off until the frame after that VBlank (`buttonsHidden`, as
-`bannerHidden` for the banner): one frame without buttons, then the new ones.
+The buttons are made again only when the set of buttons changes: the menu opening a page, and Back to the menu. Their
+characters go to VRAM at once, over the last buttons' (freed in the same frame), but the touch BG's screen only at the
+next VBlank, and a preview's load before that VBlank takes frames: those frames showed the new characters through the
+old screen, pieces of both sets. So the buttons are made last, after the message and the preview's load
+(`SeasonApp_OpenPage`; until then the old buttons show whole, since the freed ones' screen and characters stay in VRAM),
+and `SeasonApp_CreateButtons` turns the buttons' BG off until the frame after that VBlank (`buttonsHidden`, as
+`bannerHidden` for the banner): one frame without buttons, then the new ones. A pick that keeps the page (a season, a
+mode or a hemisphere) makes nothing again and hides nothing (`SeasonApp_ApplyButton`, `SeasonApp_MoveCurrentButton`):
+the picked button's flash ends, and only the old and the new current buttons and the cursor's change palettes.
+`AppTaskMenuWin_SetRes`, under `PAPERWHITE2` in `src/system/app_taskmenu.c` (main), moves a button to the other
+resource's pair of palettes, as `AppTaskMenuWin_SetActive` shows it, so only its screen's palette numbers change, at the
+next VBlank; the two resources share the frame's characters. The cursor shows on the picked button again unless the
+touch screen is in use, as when a page opens.
 
 **Replacing the button art.** The buttons are the task menus' (`AppTaskMenuWin`, `app_taskmenu.c`), with their frame
 from the app's own files:

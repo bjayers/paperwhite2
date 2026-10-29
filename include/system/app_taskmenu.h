@@ -91,6 +91,11 @@ BOOL AppTaskMenuWin_IsTouched(AppTaskMenuWin *win);
 void AppTaskMenuWin_ResetFlash(AppTaskMenuWin *win);
 // Moves the buttons of res to another pair of palettes, and sets the colors the button pulses between
 void AppTaskMenuWin_SetPalette(AppTaskMenuWin *win, AppTaskMenuRes *res, u16 palette, u16 color1, u16 color2);
+#ifdef PAPERWHITE2
+// Paper White 2: shows the button in res's pair of palettes, the cursor's if active, without drawing it again. res has
+// the frame of the button's own resource
+void AppTaskMenuWin_SetRes(AppTaskMenuWin *win, AppTaskMenuRes *res, BOOL active);
+#endif
 void AppTaskMenuWin_ClearScreen(AppTaskMenuWin *win);
 void AppTaskMenuWin_FlushMap(AppTaskMenuWin *win);
 BOOL AppTaskMenuWin_IsUpdatingText(AppTaskMenuWin *win);

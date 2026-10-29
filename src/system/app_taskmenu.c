@@ -595,6 +595,16 @@ void AppTaskMenuWin_SetPalette(AppTaskMenuWin *win, AppTaskMenuRes *res, u16 pal
     GFL_BGSysQueueScrLoad(BmpWin_GetBGIndex(win->window));
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: moves one button to another resource's pair of palettes, as AppTaskMenuWin_SetActive shows it. Its
+// frame and text aren't drawn again, so only its screen's palette numbers change, at the next VBlank: the Season app
+// moves its current setting's colors from button to button this way. Both resources must have the same frame
+void AppTaskMenuWin_SetRes(AppTaskMenuWin *win, AppTaskMenuRes *res, BOOL active) {
+    win->res = res;
+    AppTaskMenuWin_SetActive(win, active);
+}
+#endif
+
 static void AppTaskMenu_DrawFrame(BmpWin *window, AppTaskMenuRes *res, u32 type) {
     u8 x;
     u8 y;
