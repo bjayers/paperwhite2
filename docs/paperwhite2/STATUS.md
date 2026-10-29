@@ -341,6 +341,13 @@ disarmed, so the AP fix isn't needed.
   `bx lr`, restore it and copy back the build's own bytes of 0x020933d0-0x020934af from a copy the build embeds. That
   makes hack builds immune to that fix whatever their game code; it can't cover a future fix at other addresses.
   After any nds-bootstrap update, a quick Castelia check (NPCs visible) on the 3DS.
+- If the follower's shadow ever misbehaves badly in Pokémon Centers: try switching camera setup 3 (`a/0/5/9`, used by
+  every Pokémon Center) from W-buffering to Z-buffering. In W mode the field's projection depth offsets (actors full,
+  shadows half, `FieldRenderPhase2_Fieldmap`) do nothing, so the floor and the oval beat the lowered follower; in Z
+  mode the Centers would sort like outdoor maps, and the shadow pass's offset could be lowered to push the oval back
+  without sinking it. Risks: z-fighting of near-coplanar details (floor emblem, rugs, counter top, trims), and any
+  other map sharing setup 3 (check; give the Centers their own copy if so). One test build, revert if anything flickers.
+  The user chose to leave it, since the current state works and the shadow has taken many rounds.
 
 ### Next
 
