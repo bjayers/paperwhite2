@@ -337,6 +337,9 @@ disarmed, so the AP fix isn't needed.
 
 ### Later (polish)
 
+- The small follower's occasional clip at the Pokémon Center counter: the split runs there and clears the counter in a
+  model of the real geometry; the user still sees something now and then. Look again with a screenshot.
+
 - Boot-time repair of nds-bootstrap's IRDO anti-piracy fix: at startup, if the word at 0x02004ea4 isn't the original
   `bx lr`, restore it and copy back the build's own bytes of 0x020933d0-0x020934af from a copy the build embeds. That
   makes hack builds immune to that fix whatever their game code; it can't cover a future fix at other addresses.
