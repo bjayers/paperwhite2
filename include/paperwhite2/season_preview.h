@@ -11,8 +11,10 @@
 
 typedef struct SeasonPreview SeasonPreview;
 
-// Sets up the 3D system and the camera, with nothing loaded yet
-SeasonPreview *SeasonPreview_Create(HeapID heapId);
+// Sets up the 3D system and the camera, with nothing loaded yet. Over a loaded season the preview draws a soft
+// shadow, a dark ellipse that fades out from its center at the middle of line shadowY, behind the 2D layers: the
+// app's banner, for the season's name
+SeasonPreview *SeasonPreview_Create(HeapID heapId, int shadowY);
 // Frees what is loaded, the camera and the 3D system
 void SeasonPreview_Free(SeasonPreview *preview);
 // Loads the spot with a season's textures and props, after freeing the last season's. Returns FALSE, with nothing

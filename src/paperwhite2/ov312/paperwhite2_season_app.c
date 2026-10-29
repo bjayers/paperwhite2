@@ -68,8 +68,11 @@ enum {
 // The banners' color around the season's name, which the app makes transparent so that the grid or the preview shows
 // there
 #define BANNER_BACKGROUND_COLOR 1
-// How far the banner is moved up over the preview, so that the season's name is at the top of the screen
-#define BANNER_PREVIEW_OFFSET_Y 72
+// The middle of the season's name in the banners' art, which centers it on the screen
+#define BANNER_NAME_CENTER_Y 94
+// How far the banner is moved up over the preview, so that the season's name is centered in the view above the
+// message window, the top screen's first 144 lines, with the preview's shadow behind it
+#define BANNER_PREVIEW_OFFSET_Y 22
 
 // The frames that the preview stays dark after it loads a season, while the frame drawn with the last one's textures
 // is shown, then the frames it takes to fade in
@@ -415,7 +418,7 @@ static BOOL SeasonApp_Main(SeasonAppWork *work, u32 *state) {
     switch (*state) {
     case SEQ_INIT:
         SeasonApp_LoadBGs(work);
-        work->preview = SeasonPreview_Create(work->heapId);
+        work->preview = SeasonPreview_Create(work->heapId, BANNER_NAME_CENTER_Y - BANNER_PREVIEW_OFFSET_Y);
         SeasonApp_ShowStatus(work);
         GFL_WipeSet(WIPE_MODE_BOTH, WIPE_TYPE_FADE_IN, WIPE_TYPE_FADE_IN, WIPE_COLOR_BLACK, 6, 1, work->heapId);
         SeasonApp_SetBGsEnabled(work, TRUE);

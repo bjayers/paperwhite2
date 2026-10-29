@@ -300,7 +300,7 @@ VRAM E and I stay the engines' OBJ VRAM, unused.
 | Screen | BG (priority) | What |
 | --- | --- | --- |
 | Top | 2 (0) | Geonet's message window (2,19, 28 by 4 tiles, message frame): the setting ("Seasons: Weekly", "Seasons: Locked to Winter", "Seasons: Real time (Northern)") and "Current season: X" (the season the game has now), or the hemisphere on its page, or a confirmation after a change |
-| Top | 1 (2) | the season's banner, the game's art, in palette 8 with its black background (color 1) made transparent; over the preview it is moved up 72 pixels (`BANNER_PREVIEW_OFFSET_Y`), so that the season's name is a label at the top |
+| Top | 1 (2) | the season's banner, the game's art, in palette 8 with its black background (color 1) made transparent; over the preview it is moved up 22 pixels (`BANNER_PREVIEW_OFFSET_Y`), so that the season's name is centered in the view above the message window (line 72), over the preview's shadow |
 | Top | 0 (3) | the 3D preview (below) |
 | Top | 3 (3) | Geonet's grid, only if the preview didn't load |
 | Touch | 6 (0) | the list (9,8, 14 by 8 tiles, Geonet's menu frame: Set Season, Dynamic Options, Set Hemisphere, Cancel), or a page's buttons |
@@ -356,8 +356,20 @@ field camera's parameters (`FieldCameraApply_TransRot`): `target` (world units, 
 x * 512 + 256 and z * 512 + 256), `distance`, `yaw` (degrees about the target, from the south, positive to the
 right), `pitch` (degrees down from the horizontal), `fov` (half the vertical angle) and `near`/`far`. Route 1's own
 field camera (camera 0 of ARCID 59) is distance 237, yaw 0, pitch 53.2, fov 20, near 1, far 1024. The preview's is
-target (12592, 4, 11440), 48 units east and 80 north of cell 24,22's center, distance 300, yaw 30 (the camera turned
-to the right, looking a little to the left, north-west), pitch 45 (lower than the field's 53.2), fov 20.
+target (12586, 4, 11448), 42 units east and 72 north of cell 24,22's center, distance 300, yaw 20 (the camera turned
+to the right, looking a little to the left, north-west), pitch 40 (lower than the field's 53.2, so it looks a little
+further), fov 20. The target is where the ground the earlier camera (yaw 30, pitch 45, target 12592, 11440) showed
+stays at about the same places on the screen, so the view keeps the same stretch; the two chunks still cover the frame,
+whose far corner on the left is behind the trees at the chunks' west edge.
+
+**The shadow.** Behind the banner, the preview draws a soft shadow over the map, so that the season's name reads on the
+bright grass: a dark ellipse, 208 by 80 pixels, at alpha 18 of 31 over the middle of it (within half its radius) and
+fading to nothing at its edge (`SeasonPreview_LoadShadow`, the `SHADOW_` constants). It is a quad in the screen's
+coordinates, in front of the map with identity matrices, with an A5I3 texture that the code makes when a season loads:
+a quarter of the ellipse, 128 by 64 texels of 5-bit alpha over a black palette (8 KB of texture VRAM and 16 bytes of
+palette VRAM), repeated flipped to make the whole, a texel a pixel. The app gives the preview the line of its center,
+the banner's name's (`SeasonPreview_Create`). Without the preview, over the grid, there is no shadow, and without room
+for it in the heap or VRAM the preview is drawn without it.
 
 To move the spot, change `target` (x east, z south) and keep `chunks` covering what the camera sees (the zone's
 matrix is `res/field/matrices/`, its models' names `generated/map_models.txt`); for a closer view lower `distance`; to

@@ -12,6 +12,7 @@
 #include "gfl/rtc_cache.h"
 #include "nitro/fx.h"
 #include "nitro/gx.h"
+#include "nitro/mi.h"
 #include "nitro/os.h"
 #include "nnsys/g3d.h"
 #include "nnsys/gfd.h"
@@ -26,8 +27,8 @@
 // the chunks' models with the area's textures of the season (FieldG3DMapper_LoadMapTextures, FieldChunk_LinkMdlTex),
 // the area's SRT animation on each model and its texture pattern animation over the textures in VRAM
 // (field_ground_anime.c), the chunks' props with the area's prop bundle (field_buildmodel.c), and the area's lights at
-// the time of day (field_light.c). The spot and the camera are res/paperwhite2/season_preview.json's
-// (docs/paperwhite2/plugins.md, Season app)
+// the time of day (field_light.c). Over the map, a soft shadow behind the app's banner. The spot and the camera are
+// res/paperwhite2/season_preview.json's (docs/paperwhite2/plugins.md, Season app)
 
 // The map replacements, which map_replace.c reads by number
 #define ARCID_MAP_REPLACE 10
@@ -44,6 +45,28 @@
 #define PROP_ANIMATION_MAX 4
 // The most targets a texture pattern animation of the preview has
 #define TEXPAT_TARGET_MAX 4
+
+// The screen's size, which the viewport covers
+#define SCREEN_WIDTH 256
+#define SCREEN_HEIGHT 192
+
+// The shadow behind the banner's season name: an ellipse of these radii in pixels, centered on the screen's middle
+// column, black at SHADOW_ALPHA (of 31) inside SHADOW_CORE (in 256ths of the squared radius, a quarter of it is half
+// the radius) and fading out to its edge. Its texture is a quarter of it, the top left, an A5I3 texture of one texel a
+// pixel that the shadow repeats flipped right and down; the radii must stay within its 128 by 64 texels
+#define SHADOW_RADIUS_X 104
+#define SHADOW_RADIUS_Y 40
+#define SHADOW_ALPHA 18
+#define SHADOW_CORE 64
+#define SHADOW_TEXTURE_WIDTH 128
+#define SHADOW_TEXTURE_HEIGHT 64
+#define SHADOW_TEXTURE_SIZE (SHADOW_TEXTURE_WIDTH * SHADOW_TEXTURE_HEIGHT)
+// An A5I3 texture's palette, 8 colors, all black
+#define SHADOW_PALETTE_SIZE (8 * sizeof(GXRgb))
+// A polygon ID that the map's translucent polygons don't have, so that the shadow blends over them, and an alpha under
+// 31, so that the shadow is drawn with the translucent polygons, after the map
+#define SHADOW_POLYGON_ID 63
+#define SHADOW_POLYGON_ALPHA 30
 
 // FieldLightEntry's material colors
 enum {
@@ -115,6 +138,11 @@ typedef struct {
 struct SeasonPreview {
     HeapID heapId;
     BOOL loaded;
+    // The line of the shadow's center on the screen, and its texture and palette in VRAM, or NNS_GFD_ALLOC_ERROR_TEXKEY
+    // if it isn't loaded
+    int shadowY;
+    NNSGfdTexKey shadowTexKey;
+    NNSGfdPlttKey shadowPlttKey;
     G3DCamera *camera;
     G3DResource *mapTextures;
     // The area's SRT animation file, which every chunk's animation plays
@@ -166,6 +194,11 @@ static BOOL SeasonPreview_LoadPropResource(SeasonPreview *preview, ArcTool *prop
 static void SeasonPreview_FreePropResource(SeasonPreviewPropResource *resource);
 static void SeasonPreview_LoadLights(SeasonPreview *preview, u32 lightsId, u8 season);
 static void SeasonPreview_FlushLights(SeasonPreview *preview);
+static void SeasonPreview_LoadShadow(SeasonPreview *preview);
+static void SeasonPreview_FreeShadow(SeasonPreview *preview);
+static void SeasonPreview_DrawShadow(SeasonPreview *preview);
+static fx16 SeasonPreview_GetScreenX(int x);
+static fx16 SeasonPreview_GetScreenY(int y);
 
 static const SeasonPreviewChunkSetup sSeasonPreviewChunks[SEASON_PREVIEW_CHUNK_COUNT] = { SEASON_PREVIEW_CHUNKS };
 
@@ -175,13 +208,16 @@ static const char sSeasonPreviewFileName[] = "paperwhite2_season_preview.c";
 
 static const VecFx32 sSeasonPreviewScale = { FX32_ONE, FX32_ONE, FX32_ONE };
 
-SeasonPreview *SeasonPreview_Create(HeapID heapId) {
+SeasonPreview *SeasonPreview_Create(HeapID heapId, int shadowY) {
     SeasonPreview *preview = GFL_HeapAllocate(heapId, sizeof(SeasonPreview), TRUE, sSeasonPreviewFileName, __LINE__);
     VecFx32 eye = { SEASON_PREVIEW_EYE_X, SEASON_PREVIEW_EYE_Y, SEASON_PREVIEW_EYE_Z };
     VecFx32 target = { 0, SEASON_PREVIEW_TARGET_Y, 0 };
     VecFx32 up = { 0, FX32_ONE, 0 };
 
     preview->heapId = heapId;
+    preview->shadowY = shadowY;
+    preview->shadowTexKey = NNS_GFD_ALLOC_ERROR_TEXKEY;
+    preview->shadowPlttKey = NNS_GFD_ALLOC_ERROR_PLTTKEY;
     // The field's: texture VRAM and palette VRAM in one slot each, managed as linked lists
     GFL_G3DSysCreate(FALSE, 1, FALSE, 1, 0, heapId, SeasonPreview_InitG3D);
     preview->camera = GFL_G3DCameraCreate(G3DCAM_PROJECTION_PERSPECTIVE, FX_SinIdx(SEASON_PREVIEW_FOV),
@@ -236,6 +272,7 @@ BOOL SeasonPreview_Load(SeasonPreview *preview, u8 season) {
     }
     if (loaded) {
         SeasonPreview_LoadLights(preview, AreaData_GetLightsID(area), season);
+        SeasonPreview_LoadShadow(preview);
     }
     AreaData_Free(area);
     // What is loaded is freed, unless it all is
@@ -252,6 +289,7 @@ void SeasonPreview_Unload(SeasonPreview *preview) {
     if (!preview->loaded) {
         return;
     }
+    SeasonPreview_FreeShadow(preview);
     for (i = 0; i < preview->propResourceCount; i++) {
         SeasonPreview_FreePropResource(&preview->propResources[i]);
     }
@@ -325,6 +363,7 @@ void SeasonPreview_Draw(SeasonPreview *preview) {
         MTX_RotY33_(&status.rotation, FX_SinIdx(prop->rotationY), FX_CosIdx(prop->rotationY));
         GFL_G3DSysDrawObj(preview->propResources[prop->resource].actor, &status);
     }
+    SeasonPreview_DrawShadow(preview);
     GFL_G3DSysReqSwapBuffers();
 }
 
@@ -906,4 +945,125 @@ static void SeasonPreview_FlushLights(SeasonPreview *preview) {
                                    preview->materials[LIGHT_MATERIAL_AMBIENT], TRUE);
     NNS_G3dGlbMaterialColorSpecEmi(preview->materials[LIGHT_MATERIAL_SPECULAR],
                                    preview->materials[LIGHT_MATERIAL_EMISSION], FALSE);
+}
+
+// Makes the shadow's texture in the heap and uploads it with its palette. Without room in the heap or VRAM, the
+// preview is drawn without it
+static void SeasonPreview_LoadShadow(SeasonPreview *preview) {
+    u32 radiusX2 = SHADOW_RADIUS_X * 2;
+    u32 radiusY2 = SHADOW_RADIUS_Y * 2;
+    // The squared distances from the center in half texels, scaled so that the edge is at whole, then down by 16 bits
+    // for the fade, whose square must fit in 32 bits
+    u32 whole = radiusX2 * radiusX2 * radiusY2 * radiusY2;
+    u32 core = (whole >> 16) * (256 - SHADOW_CORE) / 256;
+    u8 *texels;
+    u32 x;
+    u32 y;
+
+    if (!SeasonPreview_Fits(preview, SHADOW_TEXTURE_SIZE + SHADOW_PALETTE_SIZE)) {
+        return;
+    }
+    preview->shadowTexKey = NNS_GfdAllocTexVram(SHADOW_TEXTURE_SIZE, FALSE, 0);
+    preview->shadowPlttKey = NNS_GfdAllocPlttVram(SHADOW_PALETTE_SIZE, FALSE, 0);
+    if (preview->shadowTexKey == NNS_GFD_ALLOC_ERROR_TEXKEY || preview->shadowPlttKey == NNS_GFD_ALLOC_ERROR_PLTTKEY) {
+        SeasonPreview_FreeShadow(preview);
+        return;
+    }
+    texels = GFL_HeapAllocate(preview->heapId, SHADOW_TEXTURE_SIZE + SHADOW_PALETTE_SIZE, FALSE, sSeasonPreviewFileName,
+                              __LINE__);
+    for (y = 0; y < SHADOW_TEXTURE_HEIGHT; y++) {
+        // From the middle of the texel to the center, at the texture's bottom right corner
+        u32 dy2 = (SHADOW_TEXTURE_HEIGHT - 1 - y) * 2 + 1;
+
+        for (x = 0; x < SHADOW_TEXTURE_WIDTH; x++) {
+            u32 dx2 = (SHADOW_TEXTURE_WIDTH - 1 - x) * 2 + 1;
+            u32 distance = dx2 * dx2 * radiusY2 * radiusY2 + dy2 * dy2 * radiusX2 * radiusX2;
+            u32 alpha = 0;
+
+            if (distance < whole) {
+                u32 fade = (whole - distance) >> 16;
+
+                alpha = fade >= core ? SHADOW_ALPHA : SHADOW_ALPHA * fade * fade / (core * core);
+            }
+            // A5I3: the alpha in the top 5 bits, over color 0
+            texels[y * SHADOW_TEXTURE_WIDTH + x] = alpha << 3;
+        }
+    }
+    MI_CpuClear16(texels + SHADOW_TEXTURE_SIZE, SHADOW_PALETTE_SIZE);
+    DC_FlushRange(texels, SHADOW_TEXTURE_SIZE + SHADOW_PALETTE_SIZE);
+    GX_BeginLoadTex();
+    GX_LoadTex(texels, NNS_GfdGetTexKeyAddr(preview->shadowTexKey), SHADOW_TEXTURE_SIZE);
+    GX_EndLoadTex();
+    GX_BeginLoadTexPltt();
+    GX_LoadTexPltt(texels + SHADOW_TEXTURE_SIZE, NNS_GfdGetPlttKeyAddr(preview->shadowPlttKey), SHADOW_PALETTE_SIZE);
+    GX_EndLoadTexPltt();
+    GFL_HeapFree(texels);
+}
+
+static void SeasonPreview_FreeShadow(SeasonPreview *preview) {
+    if (preview->shadowTexKey != NNS_GFD_ALLOC_ERROR_TEXKEY) {
+        NNS_GfdFreeTexVram(preview->shadowTexKey);
+        preview->shadowTexKey = NNS_GFD_ALLOC_ERROR_TEXKEY;
+    }
+    if (preview->shadowPlttKey != NNS_GFD_ALLOC_ERROR_PLTTKEY) {
+        NNS_GfdFreePlttVram(preview->shadowPlttKey);
+        preview->shadowPlttKey = NNS_GFD_ALLOC_ERROR_PLTTKEY;
+    }
+}
+
+// Draws the shadow over the map, a quad in the screen's coordinates in front of it, with the projection and the
+// position matrices set to identity and put back after
+static void SeasonPreview_DrawShadow(SeasonPreview *preview) {
+    fx16 left = SeasonPreview_GetScreenX(SCREEN_WIDTH / 2 - SHADOW_RADIUS_X);
+    fx16 right = SeasonPreview_GetScreenX(SCREEN_WIDTH / 2 + SHADOW_RADIUS_X);
+    fx16 top = SeasonPreview_GetScreenY(preview->shadowY - SHADOW_RADIUS_Y);
+    fx16 bottom = SeasonPreview_GetScreenY(preview->shadowY + SHADOW_RADIUS_Y);
+    // The shadow's center is the texture's bottom right corner, where it flips
+    fx32 s0 = (SHADOW_TEXTURE_WIDTH - SHADOW_RADIUS_X) * FX32_ONE;
+    fx32 s1 = (SHADOW_TEXTURE_WIDTH + SHADOW_RADIUS_X) * FX32_ONE;
+    fx32 t0 = (SHADOW_TEXTURE_HEIGHT - SHADOW_RADIUS_Y) * FX32_ONE;
+    fx32 t1 = (SHADOW_TEXTURE_HEIGHT + SHADOW_RADIUS_Y) * FX32_ONE;
+
+    if (preview->shadowTexKey == NNS_GFD_ALLOC_ERROR_TEXKEY) {
+        return;
+    }
+    NNS_G3dGeFlushBuffer();
+    G3_MtxMode(GX_MTXMODE_PROJECTION);
+    G3_PushMtx();
+    G3_Identity();
+    G3_MtxMode(GX_MTXMODE_TEXTURE);
+    G3_Identity();
+    G3_MtxMode(GX_MTXMODE_POSITION_VECTOR);
+    G3_PushMtx();
+    G3_Identity();
+    G3_PolygonAttr(GX_LIGHTMASK_NONE, GX_POLYGONMODE_MODULATE, GX_CULL_NONE, SHADOW_POLYGON_ID, SHADOW_POLYGON_ALPHA,
+                   0);
+    G3_TexImageParam(GX_TEXFMT_A5I3, GX_TEXGEN_TEXCOORD, GX_TEXSIZE_S128, GX_TEXSIZE_T64, GX_TEXREPEAT_ST,
+                     GX_TEXFLIP_ST, GX_TEXPLTTCOLOR0_USE, NNS_GfdGetTexKeyAddr(preview->shadowTexKey));
+    G3_TexPlttBase(NNS_GfdGetPlttKeyAddr(preview->shadowPlttKey), GX_TEXFMT_A5I3);
+    G3_Color(GX_RGB(0, 0, 0));
+    G3_Begin(GX_BEGIN_QUADS);
+    G3_TexCoord(s0, t0);
+    G3_Vtx(left, top, 0);
+    G3_TexCoord(s0, t1);
+    G3_Vtx(left, bottom, 0);
+    G3_TexCoord(s1, t1);
+    G3_Vtx(right, bottom, 0);
+    G3_TexCoord(s1, t0);
+    G3_Vtx(right, top, 0);
+    G3_End();
+    G3_PopMtx(1);
+    G3_MtxMode(GX_MTXMODE_PROJECTION);
+    G3_PopMtx(1);
+    G3_MtxMode(GX_MTXMODE_POSITION_VECTOR);
+}
+
+// A pixel's column and line as the viewport maps them, from -1 at the left to 1 at the right, and from 1 at the top
+// to -1 at the bottom
+static fx16 SeasonPreview_GetScreenX(int x) {
+    return x * FX16_ONE * 2 / SCREEN_WIDTH - FX16_ONE;
+}
+
+static fx16 SeasonPreview_GetScreenY(int y) {
+    return FX16_ONE - y * FX16_ONE * 2 / SCREEN_HEIGHT;
 }

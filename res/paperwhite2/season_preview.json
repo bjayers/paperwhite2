@@ -15,13 +15,13 @@
     "props": true,
     "camera": {
         "target": {
-            "x": 12592,
+            "x": 12586,
             "y": 4,
-            "z": 11440
+            "z": 11448
         },
         "distance": 300,
-        "yaw": 30,
-        "pitch": 45,
+        "yaw": 20,
+        "pitch": 40,
         "fov": 20,
         "near": 1,
         "far": 1024
