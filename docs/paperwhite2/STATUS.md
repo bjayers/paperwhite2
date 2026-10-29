@@ -2,6 +2,21 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-29: the follower's Options row and battle opening (branch following-port, not yet tested in an emulator)
+
+Steps 5 and 6 of the Following Pokémon port are done, so the base package is ported
+(docs/paperwhite2/following-pokemon.md, "Step 5" and "Step 6"). The Options screen has a sixth row, FOLLOWERS: ON/OFF,
+saved in Config's `followersOff` (`src/paperwhite2/ov140/paperwhite2_following_options.c`; the screen's work types moved
+unchanged into `include/app/config_panel_work.h`, with PAPERWHITE2 wrappers of seven statics in `config_panel.c`). Its
+text, the four `title_2` entries the installer changed, is imported into `res/text/system/title_2.txt`; packed, they
+equal the hack's (the hack's file is 10 bytes shorter only because the installer dropped four unchanged entries' second
+terminator and the size rounding). A wild or trainer single battle that the field marked opens with the follower already
+on the platform: no throw, ball or "Go!" (`src/ov167/btlv_scu.c` under PAPERWHITE2). Overlay 140 is
+0x0219d320-0x0219fda0; overlay 167 grew 0x1a0, so overlay 168 starts at 0x021de0a0; the DS arena still has 0x28c00 (163
+KB). `--hack` builds with no warnings, `verify_dsi_rom.py` says intact, nothing of the hack's is in the IRDO range, and
+a plain configure passes `ninja build/w2_us/stamps/modules.ok`. Next: test in melonDS (the doc's lists for steps 3 to
+6). Open question: the gifts' claims in block C's ribbons.
+
 ## 2026-10-29: the follower's events, talk and effects (branch following-port, not yet tested in an emulator)
 
 Step 4 of the Following Pokémon port is done (docs/paperwhite2/following-pokemon.md, "Step 4"): the ball effects with
@@ -185,8 +200,8 @@ The trial's comparison scripts are in `tools/paperwhite2/` (start of the editor'
 
 ### Not imported yet
 
-- **Following Pokémon** (port with its code): Options text `title_2` (`a/0/0/2` member 32); (done on the branch
-  `following-port`: the 2,574 new field actors in `a/0/4/7`/`a/0/4/8`); files in `following/`,
+- **Following Pokémon** (port with its code): (done on the branch `following-port`: the 2,574 new field actors in
+  `a/0/4/7`/`a/0/4/8`, and the Options text of `title_2`, `a/0/0/2` member 32); files in `following/`,
   `patches/`, `codeinjection/`, `overlay/overlay_0344.bin`, and the root `rail_data_index.tbl` and
   `field_camera_data_index.tbl`.
 - (Done, see below: Unown sprites.)

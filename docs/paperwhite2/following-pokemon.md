@@ -90,14 +90,14 @@ of the original where `.s` has a continuation); `THUMB_BRANCH_LINK` replaces one
 | ambient-callback | ov012 `0x021671c8` | `FldAct_CallMoveProc` (same) | whole function | `FollowingAmbientUpdate` | NPCs' own movement around the follower. Ported: `PaperWhite2_FollowingBeginAmbient` and `EndAmbient` around the move code's update |
 | ambient-grid-collision | ov012 `0x0215e538` | `CheckActorNewPosOtherActorCollision` (`src/ov012/field_actor_tool.c`) | whole function | `FollowingAmbientGrid` | NPCs don't walk into the follower. Ported: the original is the static `CheckOtherActorCollision`, wrapped by `PaperWhite2_FollowingCheckGridCollision` |
 | ambient-rail-collision | ov036 `0x02195714` | `RailActor_CheckCollision` +0x6c (`src/ov036/field_actor_rail.c`) | `RailActor_CheckActorCollision` | `FollowingAmbientRail` | the same on rails. Ported: `PaperWhite2_FollowingCheckRailCollision(actor, to, RailActor_CheckActorCollision(actor, to))` |
-| options-init | ov140 `0x0219d002` | `ConfigPanel_Init` +0x142 (`src/ov140/config_panel.c`) | `ConfigPanelScroll_Init` | `FollowingOptionsInit` | the sixth row, FOLLOWERS: ON/OFF |
-| options-exit | ov140 `0x0219d0b0` | `ConfigPanel_Exit` +0x28 (same) | `ConfigPanelScroll_Exit` | `FollowingOptionsExit` | frees the row |
-| options-main | ov140 `0x0219eb6e` | `ConfigPanelSeq_Input` +0x66 (same) | `ConfigPanelScroll_Main` | `FollowingOptionsMain` | the row's input and drawing |
-| options-select | ov140 `0x0219dd8a` | `ConfigPanelAppBar_Main` +0x22 (same) | `ConfigPanelScroll_GetCursor` | `FollowingOptionsSelect` | the cursor on the row |
-| options-compare-exit, -cancel | ov140 `0x0219ebec`, `0x0219ec22` | `ConfigPanelSeq_Input` +0xe4, +0x11a (same) | `ConfigPanelOptions_Equals` | `FollowingOptionsCompare` | a staged change counts as a change |
-| options-commit | ov140 `0x0219ee2e` | `ConfigPanelSeq_Save` +0x16 (same) | `ConfigPanelOptions_Apply` | `FollowingOptionsCommit` | stores the choice in Options bit 11 |
-| battle-wild-opening | ov167 `0x021d12b4` | `BtlvScu_StartEncount` +0x1f0 (`src/ov167/btlv_scu.c`) | the wild intro's procedure pointer | `FollowingBattleWild` | a slot-1 follower already on the platform: no throw, send-out or "Go!" |
-| battle-trainer-opening | ov167 `0x021d12b8` | `BtlvScu_StartEncount` +0x1f4 (same) | the trainer intro's procedure pointer | `FollowingBattleTrainer` | the same in trainer battles |
+| options-init | ov140 `0x0219d002` | `ConfigPanel_Init` +0x142 (`src/ov140/config_panel.c`) | `ConfigPanelScroll_Init` | `FollowingOptionsInit` | the sixth row, FOLLOWERS: ON/OFF. Ported: `PaperWhite2_FollowingOptionsInit`, which also takes the screen's font and messages (step 5) |
+| options-exit | ov140 `0x0219d0b0` | `ConfigPanel_Exit` +0x28 (same) | `ConfigPanelScroll_Exit` | `FollowingOptionsExit` | frees the row. Ported: `PaperWhite2_FollowingOptionsExit` (step 5) |
+| options-main | ov140 `0x0219eb6e` | `ConfigPanelSeq_Input` +0x66 (same) | `ConfigPanelScroll_Main` | `FollowingOptionsMain` | the row's input and drawing. Ported: `PaperWhite2_FollowingOptionsMain` (step 5) |
+| options-select | ov140 `0x0219dd8a` | `ConfigPanelAppBar_Main` +0x22 (same) | `ConfigPanelScroll_GetCursor` | `FollowingOptionsSelect` | the cursor on the row. Ported: `PaperWhite2_FollowingOptionsGetCursor` (step 5) |
+| options-compare-exit, -cancel | ov140 `0x0219ebec`, `0x0219ec22` | `ConfigPanelSeq_Input` +0xe4, +0x11a (same) | `ConfigPanelOptions_Equals` | `FollowingOptionsCompare` | a staged change counts as a change. Ported: `PaperWhite2_FollowingOptionsEquals` at both calls (step 5) |
+| options-commit | ov140 `0x0219ee2e` | `ConfigPanelSeq_Save` +0x16 (same) | `ConfigPanelOptions_Apply` | `FollowingOptionsCommit` | stores the choice in Options bit 11. Ported: `PaperWhite2_FollowingOptionsApply`, into Config's `followersOff` (step 5) |
+| battle-wild-opening | ov167 `0x021d12b4` | `BtlvScu_StartEncount` +0x1f0 (`src/ov167/btlv_scu.c`) | the wild intro's procedure pointer | `FollowingBattleWild` | a slot-1 follower already on the platform: no throw, send-out or "Go!". Ported: `BtlvScu_EncountFollowingWildSingle` in `btlv_scu.c` (step 6) |
+| battle-trainer-opening | ov167 `0x021d12b8` | `BtlvScu_StartEncount` +0x1f4 (same) | the trainer intro's procedure pointer | `FollowingBattleTrainer` | the same in trainer battles. Ported: `BtlvScu_EncountFollowingTrainerSingle` (step 6) |
 
 The full package's hooks (`surf-mount-draw`, `surf-entry-mount-draw`, `mounted-surf-*`, `land-mount-flat-step`) are
 not ported.
@@ -304,7 +304,7 @@ from the decomp's headers, adding fields where they are still `unk`.
 | `contextual-items.narc` (76 bytes) | one member "FWTI" ABI 1-2 (empty) | `interaction.c`, `gifts.c` | `a/0/4/7` member 5 (the NARC's member), from `res/paperwhite2/following/items.json` (`items.schema.json`, ABI 2's fields), done |
 | `event-policy.json`, `audio-event-policy.json` (Pokeweb's sources, not ROM files) | the reviewed script commands (375 opcodes) and cleanup finishers that keep the follower, and the eight sound events | `generate_scene_policy.py` into `scene-policy.h` | `res/paperwhite2/following/`, as they are; `tools/paperwhite2/following_scene_policy.py` writes `following_scene_policy.h` (opcodes, finishers' mask) and `following_sound_policy.h` (the sound callbacks by name, from W2's `symbols.txt`) into `build/include/generated/paperwhite2/` in `--hack` builds, done (step 4) |
 | `install.json` | the installer's state | nothing in the game | not ported |
-| `a/0/0/2` member 32 (`title_2` bank) | the Options rows' text, four entries changed | the Options menu | `res/text/system/`, step 5 |
+| `a/0/0/2` member 32 (`title_2` bank) | the Options rows' text, four entries changed | the Options menu | `res/text/system/title_2.txt`: `Title2_Text_Followers` (6), `FollowersOn` (21), `FollowersOff` (22), `ChooseWhetherPokemonFollow` (30), done (step 5) |
 
 The files are read by name (`rom:/following/...`, `FS_OpenFile`). dsd builds the file system from the extracted ROM's
 `config.yaml` and path order, and adding new files there is not supported by the build yet (a file would take an ID),
@@ -529,27 +529,75 @@ the hack's is in the IRDO range.
   mark (the opening itself is step 6); a double battle or a link battle recalls it.
 - The menu (X): the follower waits, and is back at once after the party or the bag.
 
+### Step 5: the Options row
+
+Done. `src/paperwhite2/ov140/paperwhite2_following_options.c` (`following_options.h`), from `options.c`: a sixth row
+under the five options, FOLLOWERS: ON/OFF, with its own three windows (its name, ON, OFF) and two values' frames, the
+fifth row's tiles copied under it and its palette kept as the rows scroll, its cursor told apart from Confirm's (the
+screen's cursor has places for five options and the two buttons only, so the row and Confirm share `CURSOR_CONFIRM`),
+left and right or a touch to pick, its explanation in the message window, a change of it counted as a change when
+leaving (the question), and the choice saved in Config's `followersOff` by Confirm. `FOLLOWING_ENABLED` replaces the
+original's read of `native.bin`.
+
+The code is in its own file because its state needs a `.bss`, which `config_panel.o` has none of in dsd's linker
+script (the link warns that the section is referenced but not written). So the screen's constants and the parts of
+its work that the row reads (`ConfigPanelPoint`, `ConfigPanelLabel`, `ConfigPanelOptions`, `ConfigPanelBg`,
+`ConfigPanelObj`, `ConfigPanelGraphic`, `ConfigPanelUi`, `ConfigPanelMsg`, `ConfigPanelAppBar`, `ConfigPanelScroll`,
+and the BG, window, actor, option, cursor and input constants) moved unchanged into `include/app/config_panel_work.h`,
+which only `config_panel.c` and the row include, and `config_panel.c` has PAPERWHITE2 wrappers of the seven static
+functions the row calls (`PaperWhite2_ConfigPanelScrollInit`, `...ScrollExit`, `...ScrollMain`, `...ScrollGetCursor`,
+`PaperWhite2_ConfigPanelOptionsEquals`, `...OptionsApply`, `PaperWhite2_ConfigPanelMsgPrint`). The seven hooks are the
+options-* rows above.
+
+**Text.** `a/0/0/2` member 32 (`title_2`): the four entries the installer changed (`optionsOriginalText` has their
+originals), imported into `res/text/system/title_2.txt` with IDs that name them. Packed, those four equal the hack's.
+The installer rewrote the whole file, so the hack's member is 10 bytes shorter: four entries it didn't change (19, 20,
+29, 36, all spaces) lost the second terminator the original has after them, and its size isn't rounded up to four
+bytes. Encoding only; they stay as the original's.
+
+**Not 1:1.** `options.c` read the screen's font and messages through the graphics work's pointer, past its end into
+the screen's work; ported, the hook passes them. The row's state is zeroed when overlay 140 loads, as the DLL's was
+when NitroKernel loaded it.
+
+**Memory.** Overlay 140 0x0219d320-0x0219fda0 (0x2a80, grows 0x23060 before the arena moves); the arena and the other
+overlays unchanged.
+
+**To test** (melonDS): Options from the menu shows FOLLOWERS under SAVE BEFORE IR with ON and OFF, the rows' colors
+and bevel as the others', and its explanation "Choose whether Pokémon follow you." when the cursor reaches it; up and
+down go through the row to Confirm and Quit and back (down from Quit to TEXT SPEED); left and right pick, with the
+select sound; touching the row and its values picks them; OFF then Confirm saves, and the follower is gone in the
+field and stays gone after a save and reload; ON then Confirm brings it back; changing only the row and then Quit or
+the close icon asks whether to make the changes, and No leaves it as it was; scrolling the rows keeps the row's frames
+and palette with them.
+
+### Step 6: the battle opening
+
+Done. `battle.c` is in `src/ov167/btlv_scu.c` under PAPERWHITE2 (`BtlvScu_EncountFollowingSingle` and its wild and
+trainer entries), since it runs that file's static opening procedures, window fade and gauges on its static work types
+and needs no state of its own (so no `.bss`). When the setup is a local single (`FollowingBattle_IsLocalSingle`) and
+marked (`FOLLOWING_BATTLE_PRESENT`, which step 4's scene sets), and the battle isn't recorded, the player's lead is
+added to its platform at the start; if it isn't party member 0 the mark goes and the original opening runs. Once the
+opponent's message window has hidden (state 5 wild, 6 trainer), the trainer battle shows the opponent's gauge, the
+opening's mon becomes the player's, the battle's camera starts (effect 0x236), and the opening goes on at its last
+state (9, 11), which shows the player's gauge. The mark is taken off when the opening ends. The two procedures replace
+the singles' in `BtlvScu_StartEncount` (battle-wild-opening, battle-trainer-opening).
+
+**Memory.** Overlay 167 grew 0x1a0, so overlay 168 is 0x021de0a0-0x021f7000 (grows 0xb7e0 before the arena moves);
+the arena unchanged.
+
+**To test** (melonDS): a wild single battle with the follower walking behind the player: the follower's Pokémon is on
+the player's platform as the battle fades in, the wild one appears, and after its message there is no throw, ball or
+"Go!", the camera goes to the usual view and the player's HP bar shows; the same in a trainer battle, with the trainer's
+send-out as usual and the opponent's HP bar shown; with the follower off or recalled, a double battle and a link battle,
+the opening is the original's; the next battle without the follower in front opens as usual (the mark is gone).
+
 ## What remains
 
-Port in this order, each step built with `--hack`, no warnings, `verify_dsi_rom.py` intact, the memory check, and a
-plain build's `ninja build/w2_us/stamps/modules.ok`:
+Every step of the base package is ported (1 to 6, above), each built with `--hack`, no warnings, `verify_dsi_rom.py`
+intact, the memory check, and a plain build's `ninja build/w2_us/stamps/modules.ok`. Nothing has been tested in an
+emulator yet: the lists of steps 3 to 6 are the test plan.
 
-1. **Data as sources**: done (below, "The registry and positioning").
-2. **Core**: done. `src/paperwhite2/main/paperwhite2_following_resident.c` and
-   `include/paperwhite2/following_resident.h`: the tokens (restore, mount, summon, generic by kind and size, as the
-   original) and the event hooks, which the field binds (`PaperWhite2_FollowingBindEventHooks`) and clears.
-   `VM_Run` calls `PaperWhite2_FollowingOnOpcode` after each `VM_Read16`, `GameEvent_RunCallback` asks
-   `PaperWhite2_FollowingHoldEvent` before the callback (TRUE returns `GAMEEVENT_CONTINUE`, the original's 0),
-   `GameEvent_Free` and `VM_Free` call theirs before freeing. The original's resident bridge passed the event to the
-   events module, which read the callback and the game system from it by offset; ported, the hooks get them. Main
-   grew 0x220 bytes; nothing of the hack's is in the IRDO range.
-3. **Field**: done but for the talk (above, "Step 3: the follower in the field"). The follower-grid-event and
-   follower-rail-event hooks are only the talk and the menu's marker in the base package, so they are step 4's.
-4. **Events and the rest of the field**: done (above, "Step 4"). Still to decide: the gift claims in block C's
-   ribbons.
-5. **Options** (`src/paperwhite2/ov140/`): `options.c`, its seven hooks in `config_panel.c`, and `a/0/0/2` member 32's
-   four `title_2` entries in `res/text/system/`.
-6. **Battle** (`src/paperwhite2/ov167/`): `battle.c` and the two procedure pointers in `btlv_scu.c`.
+Open questions:
 
-Size check: the field module was 84 KB as GCC built it; overlay 36 has 0x7520 bytes before the DS arena moves, and
-the arena 210 KB after the heaps.
+- The gifts keep their claims in the top 16 bits of block C's ribbons, as the original did, which the game may show or
+  clear as ribbons; keep them there or move them (step 4).
