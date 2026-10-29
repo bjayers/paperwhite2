@@ -17,18 +17,6 @@
 // day, which it fades between, and flashes to a color. Also the color filter of the field's textures. Function names
 // from swan (https://github.com/ds-pokemon-hacking/swan, GPL-3.0); the layouts are ours
 
-#define FIELD_LIGHT_MAX_ENTRIES 16
-
-// A light setup at a time of day: which of the four lights are on, their colors and directions, and the material colors
-typedef struct {
-    u16 period;
-    s16 minute;
-    u8 enabled[4];
-    GXRgb colors[4];
-    VecFx16 dirs[4];
-    GXRgb materials[6];
-} FieldLightEntry;
-
 // A color that moves from one color to another by steps of its red, green and blue
 typedef struct {
     u16 r;

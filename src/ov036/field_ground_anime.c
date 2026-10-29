@@ -13,28 +13,8 @@
 #include "nnsys/gfd.h"
 #include "system/aeabi.h"
 
-// The texture pattern animations a map can have
-#define FIELD_TERRAIN_TEXPAT_ANIMATION_MAX 16
 // The size of each chunk's SRT animation object, fixed whatever the animation
 #define FIELD_TERRAIN_SRT_ANMOBJ_SIZE 0x80
-
-// A texture pattern animation's value at a frame
-typedef struct {
-    u8 textureIndex;
-    u8 paletteIndex;
-} GFBTPValue;
-
-// A texture pattern animation file: the key frames, with each one's texture and palette, and each target's first key
-// frame
-typedef struct {
-    u16 *keyFrames;
-    u8 *textureIndices;
-    u8 *paletteIndices;
-    u8 *targets;
-    u32 keyFrameCount;
-    u32 targetCount;
-    u32 frameCount;
-} GFBTPController;
 
 struct FieldTerrainSRTAnimatorChunkState {
     u32 used : 1;
@@ -61,16 +41,6 @@ typedef struct {
     GFBTPController gfbtpController;
     G3DResource *privateTextures;
 } FieldTerrainTexPatAnimation;
-
-typedef struct {
-    u32 gfbtpOffset;
-    u32 nsbtxOffset;
-} FieldTerrainTexPatAnimationEntry;
-
-typedef struct {
-    u32 dataCount;
-    FieldTerrainTexPatAnimationEntry offsets[0];
-} FieldTerrainTexPatAnimationPack;
 
 typedef struct {
     FieldTerrainTexPatAnimation animations[FIELD_TERRAIN_TEXPAT_ANIMATION_MAX];

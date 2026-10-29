@@ -1034,6 +1034,16 @@ def main():
                     variables={"module": str(Path("extract") / version / module), "start": hex(start),
                                "end": hex(end), "macro": macro})
             constant_headers.append(output)
+    if args.hack:
+        # Paper White 2: the Season app's preview, its map spot and camera, from res/paperwhite2/season_preview.json
+        # (docs/paperwhite2/plugins.md, Season app)
+        n.rule("season_preview", "$python tools/paperwhite2/season_preview.py $in $out", "Generating $out",
+               restat="1")
+        output = Path(GENERATED_INCLUDE_DIR) / "paperwhite2" / "season_preview_config.h"
+        n.build([output], "season_preview", ["res/paperwhite2/season_preview.json"],
+                implicit=["tools/paperwhite2/season_preview.py", "tools/data/gen_constants.py", "generated/areas.txt",
+                          "generated/map_models.txt"])
+        constant_headers.append(output)
     n.build(["constants_headers"], "phony", constant_headers)
 
     checks, configs = [], []

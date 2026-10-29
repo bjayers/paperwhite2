@@ -290,21 +290,79 @@ no Geonet. It is Geonet's process slot and overlay with Geonet's parts, without 
 | `Script_9` of `res/field/scripts/global_2100.s` | the globe of every Center: `EVENT_FLAG_0x006a` set gave "It seems you can't use it yet." | always `CallGeonet`; the flag and the Castelia Geonet girl's event stay as they were |
 | `Scrcmd_ProcFld_CallGeonet` (`src/ov036/scrcmd_proc_fld.c`) | `GEONET_PROC_FUNCTIONS` in `OVERLAY_GEONET` | `SEASON_APP_PROC_FUNCTIONS` in the same overlay |
 
-**Screens.** As Geonet's, the top screen is the sub engine and the touch screen the main engine
-(`GX_DISP_SELECT_SUB_MAIN`), BG mode 0 on both, no 3D and no OBJs; VRAM A is the touch screen's BGs and VRAM C the top
-screen's (each: screens at 0x0000-0x17ff, text characters at 0x4000, the banner's at 0x8000, the grid's at 0x10000).
+**Screens.** Unlike Geonet's, the top screen is the main engine, since only the main engine has the 3D on its BG 0,
+and the touch screen the sub engine (`GX_DISP_SELECT_MAIN_SUB`, as the field has them), BG mode 0 on both and no OBJs.
+VRAM B is the top screen's BGs and VRAM C the touch screen's (each: screens at 0x0000-0x17ff, text characters at 0x4000,
+the banner's at 0x8000, the grid's at 0x10000); VRAM A is the preview's textures (texture slot 0) and VRAM F their
+palettes (palette slot 0), which the 3D system manages as linked lists (`GFL_G3DSysCreate(FALSE, 1, FALSE, 1, ...)`);
+VRAM E and I stay the engines' OBJ VRAM, unused.
 
 | Screen | BG (priority) | What |
 | --- | --- | --- |
-| Top | 6 (0) | Geonet's message window (2,19, 28 by 4 tiles, message frame): the setting ("Seasons: Weekly", "Seasons: Locked to Winter", "Seasons: Real time (Northern)") and "Current season: X" (the season the game has now), or the hemisphere on its page, or a confirmation after a change |
-| Top | 5 (2) | the season's banner, the game's art, in palette 8 with its black background (color 1) made transparent, so that the grid shows around the season's name |
-| Top | 7 (3) | Geonet's grid |
-| Touch | 2 (0) | the list (9,8, 14 by 8 tiles, Geonet's menu frame: Set Season, Dynamic Options, Set Hemisphere, Cancel), or a page's buttons |
-| Touch | 3 (3) | Geonet's grid |
+| Top | 2 (0) | Geonet's message window (2,19, 28 by 4 tiles, message frame): the setting ("Seasons: Weekly", "Seasons: Locked to Winter", "Seasons: Real time (Northern)") and "Current season: X" (the season the game has now), or the hemisphere on its page, or a confirmation after a change |
+| Top | 1 (2) | the season's banner, the game's art, in palette 8 with its black background (color 1) made transparent; over the preview it is moved up 72 pixels (`BANNER_PREVIEW_OFFSET_Y`), so that the season's name is a label at the top |
+| Top | 0 (3) | the 3D preview (below) |
+| Top | 3 (3) | Geonet's grid, only if the preview didn't load |
+| Touch | 6 (0) | the list (9,8, 14 by 8 tiles, Geonet's menu frame: Set Season, Dynamic Options, Set Hemisphere, Cancel), or a page's buttons |
+| Touch | 7 (3) | Geonet's grid |
 
-The banner shows the season the message window talks about: the current one with the status, the one the next map
-change into an exterior brings after a change (`PaperWhite2_GetCurrentSeason`; for chaos the game's own), and on the
-Set Season page the season under the key cursor.
+The banner and the preview show the season the message window talks about: the current one with the status, the one
+the next map change into an exterior brings after a change (`PaperWhite2_GetCurrentSeason`; for chaos the game's own),
+and on the Set Season page the season under the key cursor.
+
+**The preview.** `src/paperwhite2/ov312/paperwhite2_season_preview.c`, `include/paperwhite2/season_preview.h`, in
+overlay 312 with the app. It draws the southern stretch of Route 1 (the chunk of matrix cell 24,22, whose southern edge
+is Nuvema Town's border with Professor Juniper's orange-roofed lab just south of it, and cell 24,21 north of it to fill
+the far corner): the sand path north from Nuvema, the tall grass across it, the yellow flower patches, the trees, the
+pond, the two signs, and the falling petals or leaves. The field's overlay 36 isn't loaded with the app, so the preview
+does again, in a few lines each, what the field does:
+
+- the area's record of the season (`AreaData_Create` with the season as the variant, as `Field_Create` reads it): its
+  texture set (ARCID 14, `shared_dansa01a_2` to `_5` for Route 1's spring to winter) uploaded and trimmed as
+  `FieldG3DMapper_LoadMapTextures` does, its SRT animation (ARCID 68, file 0: the water's and the grass edges' scroll)
+  bound to each chunk's model, its texture pattern animation (ARCID 69, file 0: the yellow flowers' `hana01`, the sea's
+  `sea_simi` and others, as `field_ground_anime.c` uploads their frames over the area's textures at VBlank), and its
+  lights;
+- each chunk's model section and props section of its file (ARCID 8; the terrain isn't read), with the model swapped for
+  its season's by the game's map replacements (archive 10, the entries by season only), which for Route 1 changes only
+  the petals' prop;
+- the chunks' props from the area's prop bundle (ARCID 225 and its textures, ARCID 174): only the props' own entries are
+  read from the bundle, and an ambient prop's animations loop (`FieldPropAnmController_Ambient_Init`). Route 1's
+  `r01_a_<season>` and `r01_b_<season>` props (resource IDs 295 to 302) are the falling petals in spring and the
+  leaves in autumn: planes the size of the chunk with an SRT animation that scrolls their textures. Doors aren't
+  placed, and time-of-day props don't animate;
+- the lights of the time of day (`RTC_ConvertDaySecondsCached`), the area's light set (ARCID 60, Route 1's 140 to 143)
+  picked as `FieldLight_Create` picks it, with its material colors and clear color, without the fog.
+
+For that, three of the field's file layouts moved, unchanged, from their `.c` files into their headers:
+`FieldLightEntry` (`field_light.c` to `field/field_environment.h`), and `GFBTPValue`, `GFBTPController` and the
+texture pattern animation file's `FieldTerrainTexPatAnimationPack` (`field_ground_anime.c` to
+`field/field_terrain_animator.h`).
+
+The 3D setup is the field's (`FieldG3D_InitCallback`, Z buffer as the field camera's setups have it) without fog or
+edge marking. When the previewed season changes, everything the preview loaded is freed and the new season loaded
+again (about 200 KB from the card), with the 3D layer darkened (`G2x_SetBlendBrightness_` on BG 0) for 2 frames and
+faded in over 6, so the frame drawn with the old textures isn't seen. If a file doesn't fit in the heap
+(`GFL_HeapGetHighestAllocatableSize` with a 16 KB margin, as the field's effects check) or the textures don't fit in
+VRAM, the preview is freed and the top screen is the banner over the grid, as before.
+
+**The spot and the camera** are `res/paperwhite2/season_preview.json`, which `tools/paperwhite2/season_preview.py`
+turns into `build/include/generated/paperwhite2/season_preview_config.h` in a `--hack` build (its docstring has every
+field): `area` (its textures, animations, lights and props), `chunks` (one to four map models and their matrix cells),
+`props`, `camera` and `light_hour` (null for the time of day, or a fixed hour). A header from the JSON at build time,
+rather than a file read at run time: a new file in the ROM would take a file ID before the game's or a new archive
+member and its loader, while the header costs nothing at run time and is checked when it is built. The camera has the
+field camera's parameters (`FieldCameraApply_TransRot`): `target` (world units, 16 a tile; a chunk's center is at
+x * 512 + 256 and z * 512 + 256), `distance`, `yaw` (degrees about the target, from the south, positive to the
+right), `pitch` (degrees down from the horizontal), `fov` (half the vertical angle) and `near`/`far`. Route 1's own
+field camera (camera 0 of ARCID 59) is distance 237, yaw 0, pitch 53.2, fov 20, near 1, far 1024. The preview's is
+target (12592, 4, 11440), 48 units east and 80 north of cell 24,22's center, distance 300, yaw 30 (the camera turned
+to the right, looking a little to the left, north-west), pitch 45 (lower than the field's 53.2), fov 20.
+
+To move the spot, change `target` (x east, z south) and keep `chunks` covering what the camera sees (the zone's
+matrix is `res/field/matrices/`, its models' names `generated/map_models.txt`); for a closer view lower `distance`; to
+look from more to the side raise `yaw`; to look down more steeply raise `pitch` (the field's is 53.2). Another
+area's spot needs that area's `area` too (`res/field/zones/<zone>.json`). Then rebuild with `--hack`.
 
 **Pages.** Set Season: Spring, Summer, Autumn, Winter (a 2 by 2 grid), locking that season. Dynamic Options: Monthly,
 Weekly, Daily, Real-time (two rows of two) and Chaos (centered below). Set Hemisphere: Northern, Southern (stored
@@ -340,12 +398,20 @@ them (`graphics_archive.py`). Icons for the season buttons would need a new item
 app's code to use it. The banners are the game's `res/graphics/season_banner/` (four 256 by 192, 16-color screens,
 palette, characters and screen for each season), which the field's season change shows too.
 
-**Memory.** The app adds 0x1000 bytes to overlay 312 (0x2440 to 0x3440). Overlay 312 shares its address with
-overlays 35, 69, 253, 338 and others, which are never loaded with it, and overlays 36, 170 and 337 are placed after
-the largest of them; overlay 312 is now that largest (overlay 35 is 0x2d20), so those three moved up 0x720 bytes, which
-the field's overlay 36 had room for (`memory.txt`: overlay 312 and 36 grow 0x6860 more before the arena moves). The
-DS arena moved only by main's 0x60.
+**Memory.** In hack builds overlay 312 is the app and the preview only (Geonet is compiled out): 0x21e0 bytes, of
+which the preview is 0x11e0. Overlay 312 shares its address with overlays 35, 69, 253, 338 and others, which are never
+loaded with it; overlay 35 (0x2c40) is the largest of them, so overlays 36, 170 and 337, placed after the largest, don't
+move, and overlay 312 can grow 0xa60 more before it moves them (`memory.txt` then gives the room left). The DS arena
+moved only by main's 0x60 for the task menus' function.
 
-**Heap and exit.** The app takes Geonet's heap ID (0x7c, 256 KB from `HEAPID_USER`), and frees on Cancel, in order,
-the list or buttons (after their text is printed), the button resources, the windows, the BGs, the font and the
-message bank, then the BG system and the heap, and puts the display layout back.
+**Heap and exit.** The app takes Geonet's heap ID (0x7c) from `HEAPID_USER`, at 384 KB (it was 256 KB; Geonet's own
+was 512 KB, in the same place). The preview takes about 90 KB of it for Route 1: the area's textures trimmed to 6 KB
+after their upload (53 KB read), the SRT animation 13 KB, the prop bundle's textures trimmed to 4 KB (64 KB read), the
+two chunks' models 41 KB, the four props 16 KB (signs, petals), the texture pattern animations 4 KB, and the 3D
+system's and models' small allocations; its peak while it loads is the 64 KB of the props' textures over what is
+already loaded. In VRAM the textures take 104 KB of VRAM A's 128 KB (45 KB the area's, 59 KB the props') and their
+palettes 4 KB of VRAM F's 16 KB. On Cancel the app frees, in order, the preview (its props, chunks, animations,
+textures and VRAM, the camera and the 3D system), the list or buttons (after their text is printed), the button
+resources, the windows, the BGs, the font and the message bank, then the BG system and the heap, and puts the display
+layout back (main engine on top, as the field has it).
+

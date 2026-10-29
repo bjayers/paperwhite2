@@ -6,7 +6,25 @@
 #include "types.h"
 #include "gfl/g3d.h"
 #include "gfl/heap.h"
+#include "nitro/fx.h"
+#include "nitro/gx.h"
 #include "struct_decls.h"
+
+// The most light setups a file of the field's lights (ARCID_LIGHTS_FIELD) has
+#define FIELD_LIGHT_MAX_ENTRIES 16
+
+// A light setup at a time of day, an entry of a file of the field's lights: the day period it ends at
+// (GetLightChangeHoursForSeasons) and the minutes after that period's hour, which of the four lights are on, their
+// colors and directions, and the material colors: diffuse, ambient, specular, emission, then the fog's color and the
+// clear color
+typedef struct {
+    u16 period;
+    s16 minute;
+    u8 enabled[4];
+    GXRgb colors[4];
+    VecFx16 dirs[4];
+    GXRgb materials[6];
+} FieldLightEntry;
 
 FieldLight *Field_GetLightSystem(Field *field);
 FieldFogCtrl *Field_GetFogCtrl(Field *field);

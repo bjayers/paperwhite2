@@ -31,6 +31,39 @@ typedef struct {
     u16 idPat;
 } FieldTerrainAnimatorSetup;
 
+// The texture pattern animations a map can have
+#define FIELD_TERRAIN_TEXPAT_ANIMATION_MAX 16
+
+// A texture pattern animation's value at a frame
+typedef struct {
+    u8 textureIndex;
+    u8 paletteIndex;
+} GFBTPValue;
+
+// A texture pattern animation file: the key frames, with each one's texture and palette, and each target's first key
+// frame
+typedef struct {
+    u16 *keyFrames;
+    u8 *textureIndices;
+    u8 *paletteIndices;
+    u8 *targets;
+    u32 keyFrameCount;
+    u32 targetCount;
+    u32 frameCount;
+} GFBTPController;
+
+// A file of ARCID_AREA_ANIME_PAT: its texture pattern animations, each a GFBTP file and the NSBTX of its frames'
+// textures, at offsets from the start of the file
+typedef struct {
+    u32 gfbtpOffset;
+    u32 nsbtxOffset;
+} FieldTerrainTexPatAnimationEntry;
+
+typedef struct {
+    u32 dataCount;
+    FieldTerrainTexPatAnimationEntry offsets[0];
+} FieldTerrainTexPatAnimationPack;
+
 FieldTerrainAnimator *FieldTerrainAnimator_Create(const FieldTerrainAnimatorSetup *setup, G3DResource *mapTextures,
                                                   HeapID heapId);
 void FieldTerrainAnimator_Free(FieldTerrainAnimator *animator);

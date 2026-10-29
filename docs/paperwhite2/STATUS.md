@@ -2,6 +2,28 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-28: a 3D preview of Route 1 in the Season app (Remote Control session, not committed)
+
+The Season app's top screen is now a live 3D view of the southern stretch of Route 1 in the previewed season, under
+the season's banner (moved up as a label) and the message window (docs/paperwhite2/plugins.md, Season app: The
+preview, The spot and the camera). The engines are swapped (main engine on top for the 3D, the touch UI on the sub
+engine); VRAM B and C are the BGs, A the textures, F their palettes. `src/paperwhite2/ov312/paperwhite2_season_preview.c`
+draws matrix cells 24,22 and 24,21 with the area's season texture set (`shared_dansa01a_2` to `_5`), its SRT animation
+(water), its texture pattern animation (the yellow flowers), its props (the two signs and the `r01_a`/`r01_b` falling
+petals or leaves, which the season's map replacement picks) and the lights of the time of day (light sets 140 to 143).
+The spot and the camera are `res/paperwhite2/season_preview.json`, turned into a header by
+`tools/paperwhite2/season_preview.py` in `--hack` builds: target (12592, 4, 11440), distance 300, yaw 30, pitch 45,
+fov 20 (the field's Route 1 camera is distance 237, yaw 0, pitch 53.2, fov 20). If the preview doesn't fit, the old
+banner-over-grid top screen comes back. The app's heap is 384 KB (was 256 KB); the preview takes about 90 KB, 104 KB
+of texture VRAM and 4 KB of palette VRAM. Overlay 312 is 0x21e0 bytes, still under overlay 35's 0x2c40, so nothing
+moved; the DS arena still has 210 KB (`0x34880`). `FieldLightEntry` and the GFBTP types moved, unchanged, into
+`field/field_environment.h` and `field/field_terrain_animator.h`. `--hack` builds with no warnings, `verify_dsi_rom.py`
+says intact, and a plain configure passes `ninja build/w2_us/stamps/modules.ok`. Not yet tested in an emulator or on
+hardware. Offline renders of the framing (a software rasterizer of the GLBs, an approximation) were made in the session's
+scratchpad. To test: open a Center's globe; the top screen should show Route 1 with "Spring" (or the current season) at
+the top; on Set Season, move the key cursor over the four seasons (each change blinks the view dark and fades in the
+season's textures); Cancel should fade out to the field cleanly. To reframe, edit the JSON and rebuild with `--hack`.
+
 ## 2026-10-28: one weather date a day, from an editable calendar; chaos never repeats (Remote Control session, not committed)
 
 The calendar zones' weather is the original's again, read for one date a day (docs/paperwhite2/plugins.md, Seasons):

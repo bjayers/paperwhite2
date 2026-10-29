@@ -1,0 +1,30 @@
+{
+    "area": "AREA_ROUTE_1",
+    "chunks": [
+        {
+            "model": "MAP_MODEL_OVERWORLD_2_MAP24_22",
+            "x": 24,
+            "z": 22
+        },
+        {
+            "model": "MAP_MODEL_OVERWORLD_2_MAP24_21",
+            "x": 24,
+            "z": 21
+        }
+    ],
+    "props": true,
+    "camera": {
+        "target": {
+            "x": 12592,
+            "y": 4,
+            "z": 11440
+        },
+        "distance": 300,
+        "yaw": 30,
+        "pitch": 45,
+        "fov": 20,
+        "near": 1,
+        "far": 1024
+    },
+    "light_hour": null
+}

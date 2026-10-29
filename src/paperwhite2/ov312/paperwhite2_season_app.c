@@ -23,6 +23,7 @@
 #include "nnsys/g2d.h"
 #include "paperwhite2/season.h"
 #include "paperwhite2/season_app.h"
+#include "paperwhite2/season_preview.h"
 #include "system/app_taskmenu.h"
 #include "system/bmp_menulist.h"
 #include "system/bmp_menuwork.h"
@@ -37,12 +38,14 @@
 // Paper White 2: the Season app, which the Pokémon Centers' globe opens in Geonet's place, in Geonet's overlay 312. It
 // is built from Geonet's parts (src/ov312/geonet.c): its grid on both screens, its message window, its list menu and
 // its touch buttons, without the globe. The top screen shows the setting, the season and the season's banner; on the
-// touch screen a list leads to pages of buttons that set the season setting of paperwhite2/season.h
-// (docs/paperwhite2/plugins.md, Season app)
+// touch screen a list leads to pages of buttons that set the season setting of paperwhite2/season.h. Behind the top
+// screen's banner, a 3D preview shows a spot of the field's map in the season (paperwhite2/season_preview.h), or
+// Geonet's grid if it doesn't load (docs/paperwhite2/plugins.md, Season app)
 
-// Geonet's heap, which the app takes in its place
+// Geonet's heap, which the app takes in its place, at 384 KB, with room for the preview's map, textures and props;
+// Geonet's own was 512 KB
 #define HEAPID_SEASON_APP 0x7c
-#define SEASON_APP_HEAP_SIZE 0x40000
+#define SEASON_APP_HEAP_SIZE 0x60000
 
 // Geonet's graphics (ARCID_GEONET): its grid, then the app's buttons, a frame laid out as the menus' common archive's
 // file 0x20 is, and the palettes of the buttons and of the button of the current setting
@@ -62,18 +65,31 @@ enum {
     BANNER_FILE_COUNT,
 };
 
-// The banners' color around the season's name, which the app makes transparent so that the grid shows there
+// The banners' color around the season's name, which the app makes transparent so that the grid or the preview shows
+// there
 #define BANNER_BACKGROUND_COLOR 1
+// How far the banner is moved up over the preview, so that the season's name is at the top of the screen
+#define BANNER_PREVIEW_OFFSET_Y 72
 
-// The BGs: on the top screen, the sub engine's, the message window over the banner over the grid, and on the touch
-// screen, the main engine's, the list and the buttons over the grid
+// The frames that the preview stays dark after it loads a season, while the frame drawn with the last one's textures
+// is shown, then the frames it takes to fade in
+#define PREVIEW_DARK_FRAMES 2
+#define PREVIEW_FADE_FRAMES 6
+#define PREVIEW_DARK_BRIGHTNESS -16
+
+// The BGs: on the top screen, the main engine's, the message window over the banner over the 3D preview, or over the
+// grid without it, and on the touch screen, the sub engine's, the list and the buttons over the grid
 enum {
-    BG_TOUCH_TEXT = 2,
-    BG_TOUCH_GRID = 3,
-    BG_TOP_BANNER = 5,
-    BG_TOP_TEXT = 6,
-    BG_TOP_GRID = 7,
+    BG_TOP_3D = 0,
+    BG_TOP_BANNER = 1,
+    BG_TOP_TEXT = 2,
+    BG_TOP_GRID = 3,
+    BG_TOUCH_TEXT = 6,
+    BG_TOUCH_GRID = 7,
 };
+
+// The priority of the 3D preview's BG, under the banner's
+#define BG_TOP_3D_PRIORITY 3
 
 // The palettes: the grid has 0 to 3 of both engines, and the font and the window frames are Geonet's
 #define PALETTE_FONT 4
@@ -176,6 +192,11 @@ typedef struct {
     u8 bannerSeason;
     AppTaskMenuWin *buttons[BUTTON_MAX];
     TouchRect buttonRects[BUTTON_MAX + 1];
+    // The 3D preview, NULL once it fails to load, and the frames left of its fade in after a season loads
+    SeasonPreview *preview;
+    u8 previewFade;
+    // Whether the BGs are on, as they are from the fade in
+    u8 bgsEnabled;
 } SeasonAppWork;
 
 static BOOL SeasonAppProc_Init(GameProc *proc, u32 *state, void *param, void *procWork);
@@ -185,7 +206,7 @@ static BOOL SeasonAppProc_End(GameProc *proc, u32 *state, void *param, void *pro
 static void SeasonApp_SetVRAMBanks(void);
 static void SeasonApp_InitGraphics(HeapID heapId);
 static void SeasonApp_FreeGraphics(void);
-static void SeasonApp_SetBGsEnabled(BOOL enabled);
+static void SeasonApp_SetBGsEnabled(SeasonAppWork *work, BOOL enabled);
 static void SeasonApp_LoadBGs(SeasonAppWork *work);
 static void SeasonApp_LoadGrid(ArcTool *arc, u8 bg, u32 palType, HeapID heapId);
 static void SeasonApp_FreeBGs(SeasonAppWork *work);
@@ -195,6 +216,9 @@ static void SeasonApp_PrintLine(SeasonAppWork *work, u32 message, u8 line);
 static void SeasonApp_ShowStatus(SeasonAppWork *work);
 static void SeasonApp_ShowHemisphere(SeasonAppWork *work);
 static void SeasonApp_ShowBanner(SeasonAppWork *work, u8 season);
+static void SeasonApp_ShowPreview(SeasonAppWork *work, u8 season);
+static void SeasonApp_FreePreview(SeasonAppWork *work);
+static void SeasonApp_UpdatePreviewFade(SeasonAppWork *work);
 static void SeasonApp_ClearBannerBackground(u8 *chars, u32 size);
 static void SeasonApp_UpdatePreview(SeasonAppWork *work);
 static void SeasonApp_ListCursorCallback(BmpMenuList *list, s32 value, u8 init);
@@ -214,13 +238,14 @@ static u8 SeasonApp_FindButton(SeasonAppWork *work, int directionX, int directio
 static BOOL SeasonApp_PickButton(SeasonAppWork *work);
 static void SeasonApp_ApplyButton(SeasonAppWork *work);
 
+// The preview's textures in VRAM A and their palettes in VRAM F, slot 0 of each as the 3D system manages them
 static const BGSysVRAMConfig sSeasonAppVRAMConfig = {
-    GX_VRAM_BG_128_A, GX_VRAM_BGEXTPLTT_NONE,  GX_VRAM_SUB_BG_128_C,       GX_VRAM_SUB_BGEXTPLTT_NONE,
+    GX_VRAM_BG_128_B, GX_VRAM_BGEXTPLTT_NONE,  GX_VRAM_SUB_BG_128_C,       GX_VRAM_SUB_BGEXTPLTT_NONE,
     GX_VRAM_OBJ_64_E, GX_VRAM_OBJEXTPLTT_NONE, GX_VRAM_SUB_OBJ_16_I,       GX_VRAM_SUB_OBJEXTPLTT_NONE,
-    GX_VRAM_TEX_NONE, GX_VRAM_TEXPLTT_NONE,    GX_OBJVRAMMODE_CHAR_1D_32K, GX_OBJVRAMMODE_CHAR_1D_32K,
+    GX_VRAM_TEX_0_A,  GX_VRAM_TEXPLTT_0_F,     GX_OBJVRAMMODE_CHAR_1D_32K, GX_OBJVRAMMODE_CHAR_1D_32K,
 };
 
-static const BGSysLCDConfig sSeasonAppLCDConfig = { GX_DISPMODE_GRAPHICS, GX_BGMODE_0, GX_BGMODE_0, FALSE };
+static const BGSysLCDConfig sSeasonAppLCDConfig = { GX_DISPMODE_GRAPHICS, GX_BGMODE_0, GX_BGMODE_0, TRUE };
 
 // Each engine's BG VRAM has the screens first, then the text's characters, the banner's and the grid's
 static const BGSetup sSeasonAppTextBGSetup = {
@@ -365,7 +390,7 @@ static BOOL SeasonAppProc_Init(GameProc *proc, u32 *state, void *param, void *pr
     work->bannerSeason = SEASON_COUNT;
     SeasonApp_SetVRAMBanks();
     SeasonApp_InitGraphics(work->heapId);
-    GFL_BGSysSetDisplayLayout(GX_DISP_SELECT_SUB_MAIN);
+    GFL_BGSysSetDisplayLayout(GX_DISP_SELECT_MAIN_SUB);
     work->queue = PrintQueue_CreateDefault(work->heapId);
     work->msgData = GFL_MsgSysLoadData(FALSE, ARCID_SYSTEM_MESSAGE, TEXT_BANK_SEASON_APP, work->heapId);
     return TRUE;
@@ -377,6 +402,10 @@ static BOOL SeasonAppProc_Main(GameProc *proc, u32 *state, void *param, void *pr
 
     SeasonApp_UpdateButtons(work);
     PrintQueue_Main(work->queue);
+    if (work->preview != NULL) {
+        SeasonApp_UpdatePreviewFade(work);
+        SeasonPreview_Draw(work->preview);
+    }
     return result;
 }
 
@@ -386,9 +415,10 @@ static BOOL SeasonApp_Main(SeasonAppWork *work, u32 *state) {
     switch (*state) {
     case SEQ_INIT:
         SeasonApp_LoadBGs(work);
+        work->preview = SeasonPreview_Create(work->heapId);
         SeasonApp_ShowStatus(work);
         GFL_WipeSet(WIPE_MODE_BOTH, WIPE_TYPE_FADE_IN, WIPE_TYPE_FADE_IN, WIPE_COLOR_BLACK, 6, 1, work->heapId);
-        SeasonApp_SetBGsEnabled(TRUE);
+        SeasonApp_SetBGsEnabled(work, TRUE);
         *state = SEQ_FADE_IN;
         break;
     case SEQ_FADE_IN:
@@ -441,6 +471,7 @@ static BOOL SeasonApp_Main(SeasonAppWork *work, u32 *state) {
         break;
     case SEQ_END:
         if (GFL_WipeIsFinished() == TRUE) {
+            SeasonApp_FreePreview(work);
             SeasonApp_FreeBGs(work);
             result = TRUE;
         }
@@ -463,7 +494,7 @@ static BOOL SeasonAppProc_End(GameProc *proc, u32 *state, void *param, void *pro
     PrintQueue_Clear(work->queue);
     PrintQueue_Free(work->queue);
     GFL_MsgDataFree(work->msgData);
-    SeasonApp_SetBGsEnabled(FALSE);
+    SeasonApp_SetBGsEnabled(work, FALSE);
     GFL_BGSysSetDisplayLayout(GX_DISP_SELECT_MAIN_SUB);
     SeasonApp_FreeGraphics();
     GFL_ProcReleaseSubsystem(proc);
@@ -495,10 +526,18 @@ static void SeasonApp_FreeGraphics(void) {
     GFL_BGSysFree();
 }
 
-static void SeasonApp_SetBGsEnabled(BOOL enabled) {
+// The top screen has the preview or, without it, the grid
+static void SeasonApp_SetBGsEnabled(SeasonAppWork *work, BOOL enabled) {
+    work->bgsEnabled = enabled;
     GFL_BGSysSetBGEnabled(BG_TOP_TEXT, enabled);
     GFL_BGSysSetBGEnabled(BG_TOP_BANNER, enabled);
-    GFL_BGSysSetBGEnabled(BG_TOP_GRID, enabled);
+    if (work->preview != NULL && enabled) {
+        GFL_BGSysSet3DBGPriority(BG_TOP_3D_PRIORITY);
+        GFL_BGSysSetBGEnabled(BG_TOP_GRID, FALSE);
+    } else {
+        GFL_BGSysSetBGEnabled(BG_TOP_3D, FALSE);
+        GFL_BGSysSetBGEnabled(BG_TOP_GRID, enabled);
+    }
     GFL_BGSysSetBGEnabled(BG_TOUCH_TEXT, enabled);
     GFL_BGSysSetBGEnabled(BG_TOUCH_GRID, enabled);
 }
@@ -514,9 +553,9 @@ static void SeasonApp_LoadBGs(SeasonAppWork *work) {
     GFL_BGSysClearScr(BG_TOP_TEXT);
     GFL_BGSysCreateBG(BG_TOP_BANNER, &sSeasonAppBannerBGSetup, BGMODE_TEXT);
     GFL_BGSysClearScr(BG_TOP_BANNER);
-    SeasonApp_LoadGrid(arc, BG_TOP_GRID, PALTYPE_SUB_BG, work->heapId);
+    SeasonApp_LoadGrid(arc, BG_TOP_GRID, PALTYPE_MAIN_BG, work->heapId);
     LoadSysMsgBox(BG_TOP_TEXT, FRAME_MESSAGE_CHAR, FRAME_MESSAGE_PALETTE, 0, work->heapId);
-    GFL_BGSysLoadNCLRDefault(ARCID_FONT, 5, PALTYPE_SUB_BG, PALETTE_FONT * 0x20, 0x20, work->heapId);
+    GFL_BGSysLoadNCLRDefault(ARCID_FONT, 5, PALTYPE_MAIN_BG, PALETTE_FONT * 0x20, 0x20, work->heapId);
     GFL_BGSysClearCharCore(BG_TOP_TEXT, 0x20, 0, work->heapId);
     GFL_BGSysResetStdPalette(BG_TOP_TEXT, GX_RGB(19, 26, 17));
     work->messageWindow = SeasonApp_CreateWindow(&sSeasonAppMessageWindow);
@@ -526,9 +565,9 @@ static void SeasonApp_LoadBGs(SeasonAppWork *work) {
 
     GFL_BGSysCreateBG(BG_TOUCH_TEXT, &sSeasonAppTextBGSetup, BGMODE_TEXT);
     GFL_BGSysClearScr(BG_TOUCH_TEXT);
-    SeasonApp_LoadGrid(arc, BG_TOUCH_GRID, PALTYPE_MAIN_BG, work->heapId);
+    SeasonApp_LoadGrid(arc, BG_TOUCH_GRID, PALTYPE_SUB_BG, work->heapId);
     LoadSysMsgBox(BG_TOUCH_TEXT, FRAME_MENU_CHAR, FRAME_MENU_PALETTE, 0, work->heapId);
-    GFL_BGSysLoadNCLRDefault(ARCID_FONT, 5, PALTYPE_MAIN_BG, PALETTE_FONT * 0x20, 0x20, work->heapId);
+    GFL_BGSysLoadNCLRDefault(ARCID_FONT, 5, PALTYPE_SUB_BG, PALETTE_FONT * 0x20, 0x20, work->heapId);
     GFL_BGSysClearCharCore(BG_TOUCH_TEXT, 0x20, 0, work->heapId);
     GFL_BGSysResetStdPalette(BG_TOUCH_TEXT, GX_RGB(0, 0, 0));
     work->buttonRes =
@@ -612,7 +651,8 @@ static void SeasonApp_ShowHemisphere(SeasonAppWork *work) {
     SeasonApp_PrintLine(work, SeasonApp_Text_HemisphereUsedByRealTime, 1);
 }
 
-// Shows a season's banner, as EventSeasonBanner_LoadGraphics loads it, in the banner's palette of the top screen
+// Shows a season's banner, as EventSeasonBanner_LoadGraphics loads it, in the banner's palette of the top screen, and
+// the season in the preview
 static void SeasonApp_ShowBanner(SeasonAppWork *work, u8 season) {
     ArcTool *arc;
     void *file;
@@ -645,6 +685,48 @@ static void SeasonApp_ShowBanner(SeasonAppWork *work, u8 season) {
     GFL_BGSysQueueScrLoad(BG_TOP_BANNER);
 
     GFL_ArcToolFree(arc);
+    SeasonApp_ShowPreview(work, season);
+}
+
+// Loads the season in the preview, dark until a frame is drawn with it, then fading in. If it doesn't load, the top
+// screen goes back to the grid, without the preview
+static void SeasonApp_ShowPreview(SeasonAppWork *work, u8 season) {
+    if (work->preview == NULL) {
+        return;
+    }
+    G2x_SetBlendBrightness_(REG_BLDCNT_ADDR, GX_BLEND_PLANEMASK_BG0, PREVIEW_DARK_BRIGHTNESS);
+    if (SeasonPreview_Load(work->preview, season)) {
+        work->previewFade = PREVIEW_DARK_FRAMES + PREVIEW_FADE_FRAMES;
+        GFL_BGSysMoveBG(BG_TOP_BANNER, BG_MOVE_SET_Y, BANNER_PREVIEW_OFFSET_Y);
+        return;
+    }
+    SeasonApp_FreePreview(work);
+    GFL_BGSysMoveBG(BG_TOP_BANNER, BG_MOVE_SET_Y, 0);
+    if (work->bgsEnabled) {
+        SeasonApp_SetBGsEnabled(work, TRUE);
+    }
+}
+
+static void SeasonApp_FreePreview(SeasonAppWork *work) {
+    if (work->preview == NULL) {
+        return;
+    }
+    SeasonPreview_Free(work->preview);
+    work->preview = NULL;
+    G2_BlendNone();
+}
+
+// Brightens the preview from dark, a step a frame
+static void SeasonApp_UpdatePreviewFade(SeasonAppWork *work) {
+    if (work->previewFade == 0) {
+        return;
+    }
+    work->previewFade--;
+    if (work->previewFade == 0) {
+        G2_BlendNone();
+    } else if (work->previewFade < PREVIEW_FADE_FRAMES) {
+        G2x_ChangeBlendBrightness_(REG_BLDCNT_ADDR, PREVIEW_DARK_BRIGHTNESS * work->previewFade / PREVIEW_FADE_FRAMES);
+    }
 }
 
 // Makes the banner's background color transparent in its 4bpp characters, two pixels a byte
