@@ -1,0 +1,58 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Paper White 2: the Following Pokémon's gifts, res/paperwhite2/following/items.json",
+    "description": "Items the follower gives the player when talked to in given places and conditions, each slot once a Pokémon (member 0 of following/contextual-items.narc of Pokeweb's runtime, \"FWTI\"), packed by tools/paperwhite2/following_assets.py as member 5 of the model table's archive (a/0/4/7), whose docstring has the format: ABI 1 with 28-byte rows, ABI 2 with 36-byte rows when a rule has tile bounds. The runtime takes the first rule in order whose slot the Pokémon hasn't given yet and that matches; a rule without a condition matches any. The Pokémon keeps the slots it has given in its data. The packed member and its one-member NARC must fit the runtime's 4 KB page. A string value is the name of a constant from generated/.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "rules" ],
+    "properties": {
+        "$schema": { "type": "string", "description": "This schema, for editors" },
+        "rules": { "type": "array", "maxItems": 65535, "items": { "$ref": "#/$defs/rule" }, "description": "The gifts, tried in order" }
+    },
+    "$defs": {
+        "rule": {
+            "type": "object", "additionalProperties": false, "required": [ "slot", "item", "quantity", "item_name", "text" ],
+            "properties": {
+                "slot": { "type": "integer", "minimum": 0, "maximum": 9, "description": "The gift's slot, 0 to 9: a Pokémon gives each slot once" },
+                "item": { "type": "string", "x-constant": "ITEM_", "description": "The item it gives" },
+                "quantity": { "type": "integer", "minimum": 1, "maximum": 99, "description": "How many" },
+                "item_name": { "type": "string", "description": "The item's name as {item} shows it, at most 191 characters, on one line" },
+                "text": { "type": "string", "description": "The text, at most 191 characters: \\n starts a line, {nickname} is the Pokémon's nickname, {player} the player's name, {location} the zone, as \"Zone N\", {item} the item_name" },
+                "zone": { "type": "string", "x-constant": "ZONE_", "description": "The zone it is given in; not ZONE_BLACK_CITY, whose 0 stands for any" },
+                "species": { "type": "string", "x-constant": "SPECIES_", "description": "The follower's species" },
+                "form": { "type": "integer", "minimum": 0, "maximum": 254, "description": "The follower's form, which needs a species" },
+                "type": { "type": "string", "x-constant": "TYPE_", "description": "A type the follower has" },
+                "hp": { "$ref": "#/$defs/hp" },
+                "friendship": { "$ref": "#/$defs/friendship" },
+                "status": { "$ref": "#/$defs/status" },
+                "facing": { "$ref": "#/$defs/facing" },
+                "tile_bounds": { "$ref": "#/$defs/tile_bounds" }
+            }
+        },
+        "hp": {
+            "enum": [ "full", "75_to_99_percent", "50_to_74_percent", "25_to_49_percent", "1_to_24_percent" ],
+            "description": "The HP the Pokémon has left"
+        },
+        "friendship": {
+            "enum": [ "255", "200_to_254", "150_to_199", "90_to_149", "60_to_89", "30_to_59", "1_to_29", "0", "90_or_more", "below_60" ],
+            "description": "The Pokémon's friendship"
+        },
+        "status": {
+            "enum": [ "healthy", "burn", "freeze", "paralysis", "poison", "any_status", "sleep" ],
+            "description": "The Pokémon's status condition (poison takes in bad poison, any_status any but healthy)"
+        },
+        "facing": {
+            "enum": [ "right", "left", "up", "down" ],
+            "description": "The way the Pokémon faces to look at the player, which is where the player stands from it"
+        },
+        "tile_bounds": {
+            "type": "object", "additionalProperties": false,
+            "description": "The tiles of the zone's matrix the player must stand in, inclusive: x goes east, y south; any of the four",
+            "properties": {
+                "min_x": { "$ref": "#/$defs/s16" }, "max_x": { "$ref": "#/$defs/s16" },
+                "min_y": { "$ref": "#/$defs/s16" }, "max_y": { "$ref": "#/$defs/s16" }
+            }
+        },
+        "s16": { "type": "integer", "minimum": -32768, "maximum": 32767 }
+    }
+}

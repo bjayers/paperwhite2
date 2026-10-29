@@ -290,7 +290,9 @@ DATA_PACKS = [
     ("tools/data/item_data.py", "res/items", ["a/0/2/4"], False),  # Item data
     ("tools/data/item_icon_data.py", "res/items", ["a/0/2/5"], True),  # Item icons
     # The field actors' models: their table and their sprites' and 3D models' graphics
-    ("tools/data/field_actor_data.py", "res/field/actors", ["a/0/4/7", "a/0/4/8"], False),
+    # Paper White 2: with followers, a/0/4/7 also has the follower's data from res/paperwhite2/following/
+    ("tools/data/field_actor_data.py", "res/field/actors", ["a/0/4/7", "a/0/4/8"], False,
+     ["res/paperwhite2/following"]),
     # Trainers, their parties, and the table of their messages with its offsets
     ("tools/data/trainer_data.py", "res/trainers/data", ["a/0/9/1", "a/0/9/2", "a/0/8/9", "a/0/9/0"], False),
     # Trainer sprites, front and back, and a/0/6/3, a copy of the back sprites

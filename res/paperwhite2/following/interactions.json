@@ -1,0 +1,1599 @@
+{
+    "$schema": "interactions.schema.json",
+    "rules": [
+        {
+            "hgss_reaction": 472,
+            "status": "poison",
+            "chance": 100,
+            "steps": [
+                {
+                    "motion": 3,
+                    "message": 27,
+                    "cry": "slow_cry",
+                    "bubble": 6,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 400,
+            "status": "burn",
+            "chance": 90,
+            "steps": [
+                {
+                    "motion": 3,
+                    "message": 23,
+                    "cry": "slow_cry",
+                    "bubble": 3,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 307,
+            "status": "freeze",
+            "chance": 90,
+            "steps": [
+                {
+                    "motion": 3,
+                    "message": 20,
+                    "cry": "slow_cry",
+                    "bubble": 4,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 222,
+            "status": "any_status",
+            "chance": 100,
+            "steps": [
+                {
+                    "motion": 3,
+                    "message": 16,
+                    "cry": "slow_cry",
+                    "bubble": 3,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 436,
+            "hp": "1_to_24_percent",
+            "chance": 90,
+            "steps": [
+                {
+                    "motion": 4,
+                    "message": 25,
+                    "cry": "slow_cry",
+                    "bubble": 3,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 363,
+            "hp": "25_to_49_percent",
+            "chance": 60,
+            "steps": [
+                {
+                    "motion": 3,
+                    "message": 21,
+                    "cry": "none",
+                    "bubble": 3,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 93,
+            "friendship": "90_or_more",
+            "chance": 20,
+            "steps": [
+                {
+                    "motion": 2,
+                    "message": 0,
+                    "cry": "cry",
+                    "bubble": 0,
+                    "wait": 0
+                },
+                {
+                    "motion": 2,
+                    "message": 7,
+                    "cry": "none",
+                    "bubble": 2,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 92,
+            "friendship": "90_or_more",
+            "chance": 20,
+            "steps": [
+                {
+                    "motion": 2,
+                    "message": 6,
+                    "cry": "cry",
+                    "bubble": 2,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 84,
+            "friendship": "90_or_more",
+            "chance": 30,
+            "steps": [
+                {
+                    "motion": 2,
+                    "message": 0,
+                    "cry": "none",
+                    "bubble": 0,
+                    "wait": 0
+                },
+                {
+                    "motion": 2,
+                    "message": 2,
+                    "cry": "cry",
+                    "bubble": 5,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 88,
+            "friendship": "255",
+            "facing": "left",
+            "chance": 30,
+            "steps": [
+                {
+                    "motion": 9,
+                    "message": 5,
+                    "cry": "cry",
+                    "bubble": 2,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 89,
+            "friendship": "255",
+            "facing": "right",
+            "chance": 30,
+            "steps": [
+                {
+                    "motion": 10,
+                    "message": 5,
+                    "cry": "cry",
+                    "bubble": 2,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 90,
+            "friendship": "255",
+            "facing": "up",
+            "chance": 30,
+            "steps": [
+                {
+                    "motion": 11,
+                    "message": 5,
+                    "cry": "cry",
+                    "bubble": 2,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 91,
+            "friendship": "255",
+            "facing": "down",
+            "chance": 30,
+            "steps": [
+                {
+                    "motion": 12,
+                    "message": 5,
+                    "cry": "cry",
+                    "bubble": 2,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 85,
+            "friendship": "255",
+            "chance": 30,
+            "steps": [
+                {
+                    "motion": 2,
+                    "message": 3,
+                    "cry": "cry",
+                    "bubble": 1,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 103,
+            "friendship": "200_to_254",
+            "chance": 30,
+            "steps": [
+                {
+                    "motion": 1,
+                    "message": 0,
+                    "cry": "none",
+                    "bubble": 7,
+                    "wait": 0
+                },
+                {
+                    "motion": 1,
+                    "message": 12,
+                    "cry": "none",
+                    "bubble": 2,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 97,
+            "friendship": "200_to_254",
+            "chance": 30,
+            "steps": [
+                {
+                    "motion": 2,
+                    "message": 9,
+                    "cry": "none",
+                    "bubble": 2,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 99,
+            "friendship": "150_to_199",
+            "chance": 30,
+            "steps": [
+                {
+                    "motion": 2,
+                    "message": 0,
+                    "cry": "cry",
+                    "bubble": 0,
+                    "wait": 0
+                },
+                {
+                    "motion": 2,
+                    "message": 10,
+                    "cry": "none",
+                    "bubble": 5,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 100,
+            "friendship": "150_to_199",
+            "chance": 30,
+            "steps": [
+                {
+                    "motion": 2,
+                    "message": 11,
+                    "cry": "cry",
+                    "bubble": 2,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 83,
+            "friendship": "90_to_149",
+            "chance": 30,
+            "steps": [
+                {
+                    "motion": 2,
+                    "message": 0,
+                    "cry": "none",
+                    "bubble": 0,
+                    "wait": 0
+                },
+                {
+                    "motion": 2,
+                    "message": 1,
+                    "cry": "cry",
+                    "bubble": 5,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 441,
+            "friendship": "90_to_149",
+            "facing": "left",
+            "chance": 30,
+            "steps": [
+                {
+                    "motion": 2,
+                    "message": 0,
+                    "cry": "cry",
+                    "bubble": 0,
+                    "wait": 0
+                },
+                {
+                    "motion": 2,
+                    "message": 26,
+                    "cry": "none",
+                    "bubble": 2,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 185,
+            "friendship": "90_to_149",
+            "facing": "right",
+            "chance": 30,
+            "steps": [
+                {
+                    "motion": 1,
+                    "message": 0,
+                    "cry": "cry",
+                    "bubble": 2,
+                    "wait": 0
+                },
+                {
+                    "motion": 6,
+                    "message": 14,
+                    "cry": "none",
+                    "bubble": 5,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 186,
+            "friendship": "90_to_149",
+            "facing": "up",
+            "chance": 30,
+            "steps": [
+                {
+                    "motion": 1,
+                    "message": 0,
+                    "cry": "cry",
+                    "bubble": 2,
+                    "wait": 0
+                },
+                {
+                    "motion": 7,
+                    "message": 14,
+                    "cry": "none",
+                    "bubble": 5,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 187,
+            "friendship": "90_to_149",
+            "facing": "down",
+            "chance": 20,
+            "steps": [
+                {
+                    "motion": 1,
+                    "message": 0,
+                    "cry": "cry",
+                    "bubble": 2,
+                    "wait": 0
+                },
+                {
+                    "motion": 8,
+                    "message": 14,
+                    "cry": "none",
+                    "bubble": 5,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 96,
+            "friendship": "60_to_89",
+            "chance": 20,
+            "steps": [
+                {
+                    "motion": 1,
+                    "message": 8,
+                    "cry": "none",
+                    "bubble": 7,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 432,
+            "friendship": "60_to_89",
+            "facing": "left",
+            "chance": 20,
+            "steps": [
+                {
+                    "motion": 2,
+                    "message": 0,
+                    "cry": "cry",
+                    "bubble": 0,
+                    "wait": 0
+                },
+                {
+                    "motion": 2,
+                    "message": 24,
+                    "cry": "none",
+                    "bubble": 2,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 125,
+            "friendship": "60_to_89",
+            "facing": "right",
+            "chance": 20,
+            "steps": [
+                {
+                    "motion": 6,
+                    "message": 13,
+                    "cry": "cry",
+                    "bubble": 5,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 126,
+            "friendship": "60_to_89",
+            "facing": "up",
+            "chance": 20,
+            "steps": [
+                {
+                    "motion": 7,
+                    "message": 13,
+                    "cry": "cry",
+                    "bubble": 5,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 127,
+            "friendship": "60_to_89",
+            "facing": "down",
+            "chance": 20,
+            "steps": [
+                {
+                    "motion": 8,
+                    "message": 13,
+                    "cry": "cry",
+                    "bubble": 5,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 86,
+            "friendship": "60_to_89",
+            "chance": 20,
+            "steps": [
+                {
+                    "motion": 2,
+                    "message": 0,
+                    "cry": "cry",
+                    "bubble": 0,
+                    "wait": 0
+                },
+                {
+                    "motion": 2,
+                    "message": 4,
+                    "cry": "none",
+                    "bubble": 2,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 226,
+            "hp": "full",
+            "friendship": "90_or_more",
+            "chance": 60,
+            "steps": [
+                {
+                    "motion": 2,
+                    "message": 0,
+                    "cry": "none",
+                    "bubble": 0,
+                    "wait": 0
+                },
+                {
+                    "motion": 2,
+                    "message": 17,
+                    "cry": "cry",
+                    "bubble": 2,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 376,
+            "hp": "75_to_99_percent",
+            "friendship": "90_or_more",
+            "chance": 70,
+            "steps": [
+                {
+                    "motion": 2,
+                    "message": 0,
+                    "cry": "none",
+                    "bubble": 0,
+                    "wait": 0
+                },
+                {
+                    "motion": 2,
+                    "message": 22,
+                    "cry": "none",
+                    "bubble": 2,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 264,
+            "hp": "50_to_74_percent",
+            "chance": 50,
+            "steps": [
+                {
+                    "motion": 3,
+                    "message": 19,
+                    "cry": "slow_cry",
+                    "bubble": 3,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 205,
+            "chance": 50,
+            "steps": [
+                {
+                    "motion": 5,
+                    "message": 15,
+                    "cry": "none",
+                    "bubble": 0,
+                    "wait": 0
+                }
+            ]
+        },
+        {
+            "hgss_reaction": 254,
+            "chance": 100,
+            "steps": [
+                {
+                    "motion": 1,
+                    "message": 18,
+                    "cry": "none",
+                    "bubble": 7,
+                    "wait": 0
+                }
+            ]
+        }
+    ],
+    "motions": [
+        {
+            "hgss_motion": 2,
+            "steps": [
+                {
+                    "turn": null,
+                    "frames": 1,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": null,
+                    "frames": 1,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": true
+                }
+            ]
+        },
+        {
+            "hgss_motion": 3,
+            "steps": [
+                {
+                    "turn": null,
+                    "frames": 1,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": null,
+                    "frames": 1,
+                    "x": 0,
+                    "y": 5,
+                    "z": 0,
+                    "cry": true
+                },
+                {
+                    "turn": null,
+                    "frames": 1,
+                    "x": 0,
+                    "y": 3,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": null,
+                    "frames": 1,
+                    "x": 0,
+                    "y": 1,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": null,
+                    "frames": 1,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": null,
+                    "frames": 1,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": null,
+                    "frames": 1,
+                    "x": 0,
+                    "y": -1,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": null,
+                    "frames": 1,
+                    "x": 0,
+                    "y": -3,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": null,
+                    "frames": 1,
+                    "x": 0,
+                    "y": -5,
+                    "z": 0,
+                    "cry": false
+                }
+            ]
+        },
+        {
+            "hgss_motion": 8,
+            "steps": [
+                {
+                    "turn": null,
+                    "frames": 1,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": null,
+                    "frames": 2,
+                    "x": 2,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": null,
+                    "frames": 2,
+                    "x": -4,
+                    "y": 0,
+                    "z": 0,
+                    "cry": true
+                },
+                {
+                    "turn": null,
+                    "frames": 2,
+                    "x": 4,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": null,
+                    "frames": 2,
+                    "x": -4,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": null,
+                    "frames": 2,
+                    "x": 4,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": null,
+                    "frames": 2,
+                    "x": -4,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": null,
+                    "frames": 2,
+                    "x": 4,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": null,
+                    "frames": 5,
+                    "x": -2,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                }
+            ]
+        },
+        {
+            "hgss_motion": 11,
+            "steps": [
+                {
+                    "turn": null,
+                    "frames": 3,
+                    "x": 0,
+                    "y": 0,
+                    "z": 2,
+                    "cry": true
+                },
+                {
+                    "turn": null,
+                    "frames": 20,
+                    "x": 0,
+                    "y": 0,
+                    "z": -2,
+                    "cry": false
+                },
+                {
+                    "turn": null,
+                    "frames": 2,
+                    "x": 0,
+                    "y": 0,
+                    "z": 2,
+                    "cry": false
+                },
+                {
+                    "turn": null,
+                    "frames": 5,
+                    "x": 0,
+                    "y": 0,
+                    "z": -2,
+                    "cry": false
+                },
+                {
+                    "turn": null,
+                    "frames": 2,
+                    "x": 0,
+                    "y": 0,
+                    "z": 2,
+                    "cry": false
+                },
+                {
+                    "turn": null,
+                    "frames": 7,
+                    "x": 0,
+                    "y": 0,
+                    "z": -2,
+                    "cry": false
+                }
+            ]
+        },
+        {
+            "hgss_motion": 12,
+            "steps": [
+                {
+                    "turn": null,
+                    "frames": 1,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": true
+                },
+                {
+                    "turn": null,
+                    "frames": 1,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_LEFT",
+                    "frames": 20,
+                    "x": -1,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_DOWN",
+                    "frames": 3,
+                    "x": 1,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_RIGHT",
+                    "frames": 20,
+                    "x": 1,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_DOWN",
+                    "frames": 15,
+                    "x": -1,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                }
+            ]
+        },
+        {
+            "hgss_motion": 32,
+            "steps": [
+                {
+                    "turn": "DIR_RIGHT",
+                    "frames": 1,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_RIGHT",
+                    "frames": 2,
+                    "x": 2,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_RIGHT",
+                    "frames": 2,
+                    "x": 2,
+                    "y": 0,
+                    "z": 0,
+                    "cry": true
+                },
+                {
+                    "turn": "DIR_RIGHT",
+                    "frames": 2,
+                    "x": -2,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_RIGHT",
+                    "frames": 2,
+                    "x": -2,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_RIGHT",
+                    "frames": 2,
+                    "x": 2,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_RIGHT",
+                    "frames": 2,
+                    "x": 2,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_RIGHT",
+                    "frames": 2,
+                    "x": -2,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_RIGHT",
+                    "frames": 4,
+                    "x": -2,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                }
+            ]
+        },
+        {
+            "hgss_motion": 33,
+            "steps": [
+                {
+                    "turn": "DIR_UP",
+                    "frames": 1,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_UP",
+                    "frames": 2,
+                    "x": 0,
+                    "y": 0,
+                    "z": -2,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_UP",
+                    "frames": 2,
+                    "x": 0,
+                    "y": 0,
+                    "z": -2,
+                    "cry": true
+                },
+                {
+                    "turn": "DIR_UP",
+                    "frames": 2,
+                    "x": 0,
+                    "y": 0,
+                    "z": 2,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_UP",
+                    "frames": 2,
+                    "x": 0,
+                    "y": 0,
+                    "z": 2,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_UP",
+                    "frames": 2,
+                    "x": 0,
+                    "y": 0,
+                    "z": -2,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_UP",
+                    "frames": 2,
+                    "x": 0,
+                    "y": 0,
+                    "z": -2,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_UP",
+                    "frames": 2,
+                    "x": 0,
+                    "y": 0,
+                    "z": 2,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_UP",
+                    "frames": 4,
+                    "x": 0,
+                    "y": 0,
+                    "z": 2,
+                    "cry": false
+                }
+            ]
+        },
+        {
+            "hgss_motion": 34,
+            "steps": [
+                {
+                    "turn": "DIR_DOWN",
+                    "frames": 1,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_DOWN",
+                    "frames": 2,
+                    "x": 0,
+                    "y": 0,
+                    "z": 2,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_DOWN",
+                    "frames": 2,
+                    "x": 0,
+                    "y": 0,
+                    "z": 2,
+                    "cry": true
+                },
+                {
+                    "turn": "DIR_DOWN",
+                    "frames": 2,
+                    "x": 0,
+                    "y": 0,
+                    "z": -2,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_DOWN",
+                    "frames": 2,
+                    "x": 0,
+                    "y": 0,
+                    "z": -2,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_DOWN",
+                    "frames": 2,
+                    "x": 0,
+                    "y": 0,
+                    "z": 2,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_DOWN",
+                    "frames": 2,
+                    "x": 0,
+                    "y": 0,
+                    "z": 2,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_DOWN",
+                    "frames": 2,
+                    "x": 0,
+                    "y": 0,
+                    "z": -2,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_DOWN",
+                    "frames": 4,
+                    "x": 0,
+                    "y": 0,
+                    "z": -2,
+                    "cry": false
+                }
+            ]
+        },
+        {
+            "hgss_motion": 35,
+            "steps": [
+                {
+                    "turn": "DIR_LEFT",
+                    "frames": 5,
+                    "x": -2,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_LEFT",
+                    "frames": 2,
+                    "x": -2,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_LEFT",
+                    "frames": 20,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_UP",
+                    "frames": 5,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": true
+                },
+                {
+                    "turn": "DIR_LEFT",
+                    "frames": 2,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_DOWN",
+                    "frames": 5,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_LEFT",
+                    "frames": 2,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_UP",
+                    "frames": 5,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_LEFT",
+                    "frames": 3,
+                    "x": 2,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_LEFT",
+                    "frames": 4,
+                    "x": 2,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                }
+            ]
+        },
+        {
+            "hgss_motion": 36,
+            "steps": [
+                {
+                    "turn": "DIR_RIGHT",
+                    "frames": 5,
+                    "x": 2,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_RIGHT",
+                    "frames": 2,
+                    "x": 2,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_RIGHT",
+                    "frames": 20,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_UP",
+                    "frames": 5,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": true
+                },
+                {
+                    "turn": "DIR_RIGHT",
+                    "frames": 2,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_DOWN",
+                    "frames": 5,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_RIGHT",
+                    "frames": 2,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_UP",
+                    "frames": 5,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_RIGHT",
+                    "frames": 3,
+                    "x": -2,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_RIGHT",
+                    "frames": 4,
+                    "x": -2,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                }
+            ]
+        },
+        {
+            "hgss_motion": 37,
+            "steps": [
+                {
+                    "turn": "DIR_UP",
+                    "frames": 5,
+                    "x": 0,
+                    "y": 0,
+                    "z": -2,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_UP",
+                    "frames": 2,
+                    "x": 0,
+                    "y": 0,
+                    "z": -2,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_UP",
+                    "frames": 20,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_RIGHT",
+                    "frames": 5,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": true
+                },
+                {
+                    "turn": "DIR_UP",
+                    "frames": 2,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_LEFT",
+                    "frames": 5,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_UP",
+                    "frames": 2,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_UP",
+                    "frames": 5,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_UP",
+                    "frames": 3,
+                    "x": 0,
+                    "y": 0,
+                    "z": 2,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_UP",
+                    "frames": 4,
+                    "x": 0,
+                    "y": 0,
+                    "z": 2,
+                    "cry": false
+                }
+            ]
+        },
+        {
+            "hgss_motion": 38,
+            "steps": [
+                {
+                    "turn": "DIR_DOWN",
+                    "frames": 5,
+                    "x": 0,
+                    "y": 0,
+                    "z": 2,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_DOWN",
+                    "frames": 2,
+                    "x": 0,
+                    "y": 0,
+                    "z": 2,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_DOWN",
+                    "frames": 20,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_LEFT",
+                    "frames": 5,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": true
+                },
+                {
+                    "turn": "DIR_DOWN",
+                    "frames": 2,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_RIGHT",
+                    "frames": 5,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_DOWN",
+                    "frames": 2,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_RIGHT",
+                    "frames": 5,
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_DOWN",
+                    "frames": 3,
+                    "x": 0,
+                    "y": 0,
+                    "z": -2,
+                    "cry": false
+                },
+                {
+                    "turn": "DIR_DOWN",
+                    "frames": 4,
+                    "x": 0,
+                    "y": 0,
+                    "z": -2,
+                    "cry": false
+                }
+            ]
+        }
+    ],
+    "messages": [
+        {
+            "hgss_message": 48,
+            "text": "{nickname} is steadily keeping up\nwith you!"
+        },
+        {
+            "hgss_message": 49,
+            "text": "{nickname} seems to want to play with\n{player}!"
+        },
+        {
+            "hgss_message": 50,
+            "text": "{nickname} is regarding you with\nadoration!"
+        },
+        {
+            "hgss_message": 51,
+            "text": "{nickname} is doing its best to keep\nup with you!"
+        },
+        {
+            "hgss_message": 53,
+            "text": "{nickname} is happily cuddling up to\nyou!"
+        },
+        {
+            "hgss_message": 54,
+            "text": "{nickname} looks very happy!"
+        },
+        {
+            "hgss_message": 55,
+            "text": "{nickname} seems to be feeling great\nabout walking with you!"
+        },
+        {
+            "hgss_message": 58,
+            "text": "{nickname} is focusing its attention\non you."
+        },
+        {
+            "hgss_message": 59,
+            "text": "{nickname} turned to face you\nand smiled!"
+        },
+        {
+            "hgss_message": 61,
+            "text": "{nickname} is happily skipping about!"
+        },
+        {
+            "hgss_message": 62,
+            "text": "{nickname} seems to be very happy!"
+        },
+        {
+            "hgss_message": 65,
+            "text": "{nickname} is staring straight in this\ndirection!"
+        },
+        {
+            "hgss_message": 83,
+            "text": "{nickname} is nipping at your feet!"
+        },
+        {
+            "hgss_message": 132,
+            "text": "{nickname} began poking you in the\nstomach!"
+        },
+        {
+            "hgss_message": 150,
+            "text": "{nickname} is wandering around."
+        },
+        {
+            "hgss_message": 165,
+            "text": "{nickname} is trying very hard to\nkeep up with you..."
+        },
+        {
+            "hgss_message": 169,
+            "text": "{nickname} is glowing with health!"
+        },
+        {
+            "hgss_message": 197,
+            "text": "{nickname} is looking down steadily."
+        },
+        {
+            "hgss_message": 208,
+            "text": "{nickname} seems a little tired."
+        },
+        {
+            "hgss_message": 248,
+            "text": "{nickname} seems very cold!"
+        },
+        {
+            "hgss_message": 293,
+            "text": "{nickname} is dizzy!"
+        },
+        {
+            "hgss_message": 306,
+            "text": "{nickname} is still feeling great!"
+        },
+        {
+            "hgss_message": 328,
+            "text": "{nickname}'s burn looks painful!"
+        },
+        {
+            "hgss_message": 355,
+            "text": "{nickname} is poking at your feet."
+        },
+        {
+            "hgss_message": 359,
+            "text": "{nickname} seems to be about to fall\nover!"
+        },
+        {
+            "hgss_message": 364,
+            "text": "{nickname} is poking at your belly."
+        },
+        {
+            "hgss_message": 395,
+            "text": "{nickname} is shivering with the\neffects of being poisoned..."
+        }
+    ],
+    "bubbles": [
+        {
+            "name": "heart",
+            "texture": "fuki_heart",
+            "hgss_emote": 1,
+            "durations": [ 1, 4, 8, 12 ],
+            "frames": [ 0, 1, 0, 1 ]
+        },
+        {
+            "name": "happy",
+            "texture": "fuki_kao1",
+            "hgss_emote": 2,
+            "durations": [ 1, 4, 8, 12 ],
+            "frames": [ 0, 1, 0, 1 ]
+        },
+        {
+            "name": "sad",
+            "texture": "fuki_kao3",
+            "hgss_emote": 4,
+            "durations": [ 1, 4, 8, 12 ],
+            "frames": [ 0, 1, 0, 1 ]
+        },
+        {
+            "name": "angry",
+            "texture": "fuki_kao5",
+            "hgss_emote": 6,
+            "durations": [ 1, 4, 8, 12 ],
+            "frames": [ 0, 1, 0, 1 ]
+        },
+        {
+            "name": "note",
+            "texture": "fuki_onpu",
+            "hgss_emote": 7,
+            "durations": [ 1, 4, 8, 12 ],
+            "frames": [ 0, 1, 0, 1 ]
+        },
+        {
+            "name": "poison",
+            "texture": "fuki_doku",
+            "hgss_emote": 12,
+            "durations": [ 1, 4, 8, 12 ],
+            "frames": [ 0, 1, 0, 1 ]
+        },
+        {
+            "name": "ellipsis",
+            "texture": "fuki_chinmoku",
+            "hgss_emote": 13,
+            "durations": [ 1, 4, 8, 12 ],
+            "frames": [ 0, 1, 0, 1 ]
+        }
+    ]
+}
