@@ -1831,7 +1831,13 @@ void GetNPCMdlInfoForOBJCODE(const MMSys *actorSystem, u16 objCode, FieldActorCo
     s32 i;
     u32 index;
     FieldActor *actor;
+#ifdef PAPERWHITE2
+    // Paper White 2: the followers' rows (from 1,008) put the record past 64 KB from row 2,341 on
+    // (docs/paperwhite2/following-pokemon.md, descriptor-offset-width)
+    u32 offset;
+#else
     u16 offset;
+#endif
     u16 *cache = actorSystem->actorConfigCache;
     u16 count = cache[0];
 

@@ -330,7 +330,8 @@ hardware. In the current hack build that range is `.rodata` of `vman.o` (`sObjTi
 1. This map. Done.
 2. The followers' sprites and table entries as sources, with constants, packing the hack's `a/0/4/7` and `a/0/4/8`
    byte for byte. Done: see below.
-3. The core and the field: a follower that appears and walks behind the player. `core.c`, `object_codes.c`,
+3. The core and the field. The first part is done (see below): object-code-lookup and descriptor-offset-width, so the
+   game shows the follower codes. The rest: a follower that appears and walks behind the player. `core.c`, `object_codes.c`,
    `registry.c`, `following.c`, `positioning.c`, `render.c`, `render_math.c`, the movement and draw parts of
    `field.c`, and the hooks object-code-lookup, descriptor-offset-width, field-actor-update, field-follower-matcache,
    field-unload, field-actor-billboard-draw, field-terrain-billboard-draw, field-player-recall-direction-gate; the
@@ -359,3 +360,49 @@ Pokémon's (`OBJ_CODE_POKEMON_...`) and the followers' own. `field_actor_data.py
 
 Packed, `a/0/4/7` and `a/0/4/8` equal the hack ROM's byte for byte. The registry names rows and members by number,
 so until step 3 generates it, changing which followers have their own sprite would move members under it.
+
+### Step 3, first part: the follower codes in the game
+
+`GetIndexOfObjID` (`src/system/field_actor_savedata.c`) maps `OBJ_CODE_FOLLOWER_BULBASAUR` to
+`OBJ_CODE_FOLLOWER_GENESECT_FORM_4_SHINY` to the table's rows from 1,008 (0x3f0), as the core's
+`PokewebFollowingObjectRow` does once the field has published the registry's row count; the count is the sources'
+now, so it holds from boot and the registry isn't asked. `GetNPCMdlInfoForOBJCODE` (`src/ov012/field_actor.c`) keeps
+the record's offset in the table 32-bit (the original's u16 wraps from row 2,341), which the core's
+`descriptor-offset-width` patch did in the instructions. Main grew 0x20 bytes. To test: give an NPC in
+`res/field/events/` the model `OBJ_CODE_FOLLOWER_PIKACHU` (row 1,108) and one past row 2,341, such as
+`OBJ_CODE_FOLLOWER_SNIVY` or `OBJ_CODE_FOLLOWER_GENESECT`; both should walk with the follower's sprite.
+
+## What remains
+
+Port in this order, each step built with `--hack`, no warnings, `verify_dsi_rom.py` intact, the memory check, and a
+plain build's `ninja build/w2_us/stamps/modules.ok`:
+
+1. **Data as sources** (before the code that reads them): `res/paperwhite2/following/followers/<code>.json` per
+   registry row (placeholder flag, animation profile, art X, sprite Y, Z, side gap, the four gaps) beside the actor
+   directories, and a packer (`tools/paperwhite2/following_data.py`) that writes the registry (rows sorted by key,
+   rows and members from the packed `a/0/4/7`, the size from the sprite), `positioning.narc` and `native.bin`, checked
+   against the hack's files byte for byte. Decide where they go in the ROM (a new member of an existing archive, or a
+   generated header for `native.bin`'s values); the reads in `field.c` `config`/`registry_read` and `positioning.c`
+   change with it.
+2. **Core** (`src/paperwhite2/main/`): `core.c` (the published count goes, the lookup above replaces it),
+   `resident_events.c` and its four hooks in `vm.c` and `game_event.c` (needed by the scene policy in step 4, so with
+   it).
+3. **Field** (`src/paperwhite2/ov036/`): `following.c` (the 64-sample trail, pure logic), `registry.c`,
+   `positioning.c`, `render_math.c`, `render.c`, and `field.c`'s creation, movement, cycling (L/R), recall gate and
+   draw hooks; `native.h`'s `Actor`/`ActorSystem` become `FieldActor`/`MMSys` of `include/field/field_actor.h` and
+   `field_actor_internal.h`, every `U32`/`PTR` offset a named field (the struct-recovery agent for the ones still
+   unknown), every `CALL` the function in the table above. GCC-only constructs go: `_Static_assert` (keep as
+   comments or a `STATIC_ASSERT` macro if the project has one), `__attribute__`, designated initializers where MWCC
+   rejects them, `uint32_t` for `u32`, `__aeabi_lmul` (MWCC's own 64-bit multiply), the VCOUNT spin in
+   `fw_vram_window` stays (hardware register, `volatile` with its comment).
+4. **Events and the rest of the field**: `events.c` (`src/paperwhite2/ov012/`, its hooks in `field_actor.c` and
+   `field_actor_tool.c`, `field_actor_rail.c`), `scene.c` with `scene-policy.h` (generate it from the two policy
+   JSON files in `res/paperwhite2/following/`), `effects.c` (with `ball_assets.h`, the ball types), `interaction.c`,
+   `reactions.c`, `gifts.c`, the grid/rail event hooks, and the data of interactions, emotes, effects, dialogues and
+   items.
+5. **Options** (`src/paperwhite2/ov140/`): `options.c`, its seven hooks in `config_panel.c`, and `a/0/0/2` member 32's
+   four `title_2` entries in `res/text/system/`.
+6. **Battle** (`src/paperwhite2/ov167/`): `battle.c` and the two procedure pointers in `btlv_scu.c`.
+
+Size check: the field module was 84 KB as GCC built it; overlay 36 has 0x7520 bytes before the DS arena moves, and
+the arena 210 KB after the heaps.

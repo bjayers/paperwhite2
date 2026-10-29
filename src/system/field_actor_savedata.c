@@ -4,6 +4,10 @@
 #include "gfl/std.h"
 #include "save/field_actor_savedata.h"
 
+#ifdef PAPERWHITE2
+#include "constants/obj_codes.h"
+#endif
+
 // The save block of the field's actors, and the index of an object code's record, which the actors' system reads its
 // configs with. The ROM has no string for the file, so the name is descriptive. Block 0x29.
 
@@ -186,5 +190,12 @@ u32 GetIndexOfObjID(u16 objCode) {
     if (objCode >= 0x2000 && objCode < 0x200b) {
         return (u16)(objCode - 0x2000 + 0x3e5);
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the Following Pokémon's codes (res/field/actors/followers/) are the table's rows after the 3D
+    // models', as Pokeweb's runtime maps them (docs/paperwhite2/following-pokemon.md, object-code-lookup)
+    if (objCode >= OBJ_CODE_FOLLOWER_BULBASAUR && objCode <= OBJ_CODE_FOLLOWER_GENESECT_FORM_4_SHINY) {
+        return (u16)(objCode - OBJ_CODE_FOLLOWER_BULBASAUR + 0x3f0);
+    }
+#endif
     return 10;
 }
