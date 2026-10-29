@@ -72,13 +72,13 @@ of the original where `.s` has a continuation); `THUMB_BRANCH_LINK` replaces one
 | event-callback | `0x02016cf8` | `GameEvent_RunCallback` (`src/system/game_event.c`) | whole function | `FollowingResidentCallback` | forwards the callback and notes the running event |
 | event-free | `0x02016d08` | `GameEvent_Free` (same) | prologue | `FollowingResidentFree` | drops tokens tied to an event, then the original |
 | event-vm-free | `0x020158f8` | `VM_Free` (`src/system/vm.c`) | whole function | `FollowingResidentVmFree` | drops a script's token, then frees as the original |
-| field-actor-update | ov036 `0x02180078` | `FieldRoutine_Run` +0xd4 (`src/ov036/fieldmap.c`) | `FldActSys_Update` | `FollowingUpdate` | the follower's frame: creates, moves, recalls it, then updates the actors |
-| field-follower-matcache | ov036 `0x0217fe88` | `FieldRoutine_MapSpawnFinish` +0x58 (same) | `FieldG3D_Update` | `FollowingPreloadFollower`, then the original | binds the follower's sprite while the map is spawned |
-| field-unload | ov036 `0x021801e4` | `FieldRoutine_MapUnload` (same) | whole function | `FollowingUnload`, then the original | frees the follower before the field's actors |
-| field-actor-billboard-draw | ov036 `0x0218119a` | `FieldRenderPhase2_Fieldmap` +0xaa (same) | `BillboardActorSys_Draw` (the actors) | `FollowingDraw` | the actors' pass with the follower's and player's depth corrections and map light |
-| field-terrain-billboard-draw | ov036 `0x021811b0` | `FieldRenderPhase2_Fieldmap` +0xc0 (same) | `BillboardActorSys_Draw` (the grass at `field + 0xc8`) | `FollowingTerrainDraw` | grass over the follower's feet |
-| field-billboard-draw | ov036 `0x0218122e` | `FieldRenderPhase2_Fieldmap` +0x13e (same) | `BillboardActorSys_Draw` (the effects) | `FollowingEffectsDraw` | the recall flash, ball and emote bubbles |
-| field-player-recall-direction-gate | ov036 `0x0219a610` | `FieldPlayer_GetMoveDirByKey` (`src/ov036/field_player.c`) | whole function | `FollowingPlayerMoveDir` | holds the D-pad while the follower is recalled |
+| field-actor-update | ov036 `0x02180078` | `FieldRoutine_Run` +0xd4 (`src/ov036/fieldmap.c`) | `FldActSys_Update` | `FollowingUpdate` | the follower's frame: creates, moves, recalls it, then updates the actors. Ported: `PaperWhite2_FollowingUpdate` wraps `FldActSys_Update` (step 3) |
+| field-follower-matcache | ov036 `0x0217fe88` | `FieldRoutine_MapSpawnFinish` +0x58 (same) | `FieldG3D_Update` | `FollowingPreloadFollower`, then the original | binds the follower's sprite while the map is spawned. Ported: `PaperWhite2_FollowingPreloadFollower(field, field->actorSystem)` before `FieldG3D_Update` (step 3) |
+| field-unload | ov036 `0x021801e4` | `FieldRoutine_MapUnload` (same) | whole function | `FollowingUnload`, then the original | frees the follower before the field's actors. Ported: `PaperWhite2_FollowingUnload` at the function's start (step 3) |
+| field-actor-billboard-draw | ov036 `0x0218119a` | `FieldRenderPhase2_Fieldmap` +0xaa (same) | `BillboardActorSys_Draw` (the actors) | `FollowingDraw` | the actors' pass with the follower's and player's depth corrections and map light. Ported: `PaperWhite2_FollowingDraw` in place of the call (step 3) |
+| field-terrain-billboard-draw | ov036 `0x021811b0` | `FieldRenderPhase2_Fieldmap` +0xc0 (same) | `BillboardActorSys_Draw` (the grass at `field + 0xc8`) | `FollowingTerrainDraw` | grass over the follower's feet. Ported: `PaperWhite2_FollowingTerrainDraw` in place of the call (step 3) |
+| field-billboard-draw | ov036 `0x0218122e` | `FieldRenderPhase2_Fieldmap` +0x13e (same) | `BillboardActorSys_Draw` (the effects) | `FollowingEffectsDraw` | the recall flash, ball and emote bubbles. Ported: `PaperWhite2_FollowingEffectsDraw` in place of the call: the shadow pass now, the effects a stub (step 3) |
+| field-player-recall-direction-gate | ov036 `0x0219a610` | `FieldPlayer_GetMoveDirByKey` (`src/ov036/field_player.c`) | whole function | `FollowingPlayerMoveDir` | holds the D-pad while the follower is recalled. Ported: `PaperWhite2_FollowingHoldsPlayer` returns `PLAYER_DIR_NONE` first (step 3) |
 | follower-grid-event | ov036 `0x021818bc` | `FieldEventProvider_Grid` +0x20 (`src/ov036/fieldmap_event.c`) | `FieldEventProvider_Grid_CheckForEvent` | `FollowingGridEvents` | talking to the follower (A in front of it) and L/R cycling, before the field's events |
 | follower-rail-event | ov036 `0x02181a6c` | `FieldEventProvider_NoGrid` +0x4 (same) | `FieldEventProvider_NoGrid_CheckForEvent` | `FollowingRailEvents` | the same on rails |
 | event-actor-action-queued | ov012 `0x02166ecc` | `FldAct_SetAcmd` +0x4 (`src/ov012/field_actor.c`) | `SetNextActorAcmd` | `FollowingEventAction` | a script moving an actor: recall the follower if it is in the way |
@@ -330,12 +330,9 @@ hardware. In the current hack build that range is `.rodata` of `vman.o` (`sObjTi
 1. This map. Done.
 2. The followers' sprites and table entries as sources, with constants, packing the hack's `a/0/4/7` and `a/0/4/8`
    byte for byte. Done: see below.
-3. The core and the field. The first part is done (see below): object-code-lookup and descriptor-offset-width, so the
-   game shows the follower codes. The rest: a follower that appears and walks behind the player. `core.c`, `object_codes.c`,
-   `registry.c`, `following.c`, `positioning.c`, `render.c`, `render_math.c`, the movement and draw parts of
-   `field.c`, and the hooks object-code-lookup, descriptor-offset-width, field-actor-update, field-follower-matcache,
-   field-unload, field-actor-billboard-draw, field-terrain-billboard-draw, field-player-recall-direction-gate; the
-   registry, native and positioning data as sources.
+3. The core and the field. Done but for the talk: see "Step 3" below. The first part made the game show the follower
+   codes (object-code-lookup and descriptor-offset-width); the rest is a follower that appears and walks behind the
+   player, switched with L and R.
 4. Events, interactions, dialogues, emotes, effects: `resident_events.c`, `events.c`, `scene.c`, `effects.c`,
    `interaction.c`, `reactions.c`, `gifts.c`, the rest of `field.c`, their hooks and data.
 5. Options and its text: `options.c`, the options hooks, `a/0/0/2`'s `title_2` changes.
@@ -393,6 +390,56 @@ nothing for it.
 packer now writes together, and its "enabled" (the ROM-wide switch, 1 in the hack) becomes a constant of the port's
 header in the field step.
 
+### Step 3: the follower in the field
+
+`src/paperwhite2/ov036/paperwhite2_following_field.c` (header `include/paperwhite2/following_field.h`) is `field.c`
+without the talk: the follower's actor (uids 0xf0-0xf8, its own move code whose update walks the trail), the swap,
+the side-by-side stand, the large follower's ball under a floor and indoors, the summon after a menu, a battle or
+SELECT, L/R switching (it is in the field's update in the base package, not in the grid/rail event hooks), the
+SELECT toggle of the Followers setting, the shadow and grass of its tiles, the registry and the positioning row read
+through the field actors' open handle of `a/0/4/7`, the preload and the unload. `paperwhite2_following_render.c`
+(`following_render.h`) is `render.c`: the actors' pass (registry Y, two pixels of lift, the follower's own light, the
+strips of a 64-pixel body in front of a wall), the grass pass and the shadow pass, and the effect pose for step 4.
+native.bin's values: the enabled switch is `FOLLOWING_ENABLED`; the model table's row count is file 0's first u32
+(3,582), the resources are `a/0/4/8`'s file count (1,323), both checked against the registry's header by its stream,
+and the registry's outer CRC-32 is the positioning table's (`FollowingPositioning_ReadRegistryCrc`, the one other file
+that records it; `0xf1693dee` in the hack). The core's publish and clear went with step 3's first part.
+
+**Stubs for step 4** (`include/paperwhite2/following_hooks.h`, each `// TODO step 4:`): the ball effects
+(`FollowingEffects_*`: no send-out and no recall, so the follower just appears and disappears; `IsAvailable` is TRUE
+so L/R works; no cue, rest ball, warm or draw), the talk (`FollowingTalk_*`: never active), the scene policy
+(`FollowingScene_*`: attach succeeds, `Poll` returns RECALLED while `GSYS_GetNowEvent` has an event, so any event
+removes the follower and it walks in again after; no PC restore, menu or battle marker; `IsStepClear` is TRUE, so
+NPCs don't recall the follower), and the events bridge (`FollowingEvents_Discard`). `FollowingRestore` is the
+events' restore token's layout.
+
+**Moved and renamed.** `struct GameEvent` moved, unchanged, from `src/system/game_event.c` to
+`include/system/game_event.h` (the unload walks the menu's chain); `FieldEffectGrass`, `GrassTaskParams`, `GrassTask`
+and `GRASS_KIND_COUNT` from `src/ov036/fldeff_grass.c` to `include/field/field_effect.h`, which now includes
+`field/field_actor.h`. `FieldActor.unk5C` is `outerDrawOffset` (the accessors' name). `Config` gains `followersOff`
+(bit 11) under `PAPERWHITE2`. New in original files, under `PAPERWHITE2`: `PaperWhite2_IsShakingGrassTask`
+(fldeff_grass.c, the task check of the grass pass), `PaperWhite2_FldActEnsureShadow` and
+`PaperWhite2_FldActEnterGrass` (field_actor_g3dobj.c, the static `RailActor_EnsureShadow` and
+`RailActor_MapAttrGrassProc12`), `PaperWhite2_IsFieldMenuReturnCallback` (field_menu_event.c).
+
+**Not 1:1.** The debug blocks (`FollowingDebug`, `FollowingRenderDebug`) and the depth readings only they kept are
+gone; the last reason is `sReason` for the talk. The packed 12-byte registry rows (full package) aren't read. The
+zone overrides (positioning.narc member 1) aren't ported: none exist, and member 1 is now the registry. The SELECT
+toggle's "no event" check reads the game system's event: the original read GameData + 0x18, a word of the player's
+saved state. The ABI and size checks between modules are gone.
+
+**Memory.** Overlay 36 is the highest overlay now (0x6fac0 bytes, ends 0x021ef3e0); the DS arena has 0x322c0
+(200 KB) after the heaps, from 0x34880 before the field ports.
+
+**To test** (melonDS, `build/paperwhite2.nds`): the lead walks behind the player on a route and in a town; it swaps
+when the player steps back onto it; it climbs stairs and drops off ledges; on a rail map (the Skyarrow Bridge, the Driftveil
+Drawbridge) it follows the rail; L and R switch it to the next party member (both together do nothing); a 64-pixel
+follower stays in its ball indoors and under a bridge (the ball isn't drawn yet); grass shakes on its tile and covers
+its feet; its shadow sits on the ground; it disappears while a script, the menu or a battle runs, and walks in again;
+after the menu leaves the field for the party or the bag it
+comes back at once beside the player; SELECT turns it off and on; a map change and a door bring it
+back walking in.
+
 ## What remains
 
 Port in this order, each step built with `--hack`, no warnings, `verify_dsi_rom.py` intact, the memory check, and a
@@ -407,19 +454,15 @@ plain build's `ninja build/w2_us/stamps/modules.ok`:
    `GameEvent_Free` and `VM_Free` call theirs before freeing. The original's resident bridge passed the event to the
    events module, which read the callback and the game system from it by offset; ported, the hooks get them. Main
    grew 0x220 bytes; nothing of the hack's is in the IRDO range.
-3. **Field** (`src/paperwhite2/ov036/`): `following.c` (the 64-sample trail, pure logic), `registry.c`,
-   `positioning.c`, `render_math.c`, `render.c`, and `field.c`'s creation, movement, cycling (L/R), recall gate and
-   draw hooks; `native.h`'s `Actor`/`ActorSystem` become `FieldActor`/`MMSys` of `include/field/field_actor.h` and
-   `field_actor_internal.h`, every `U32`/`PTR` offset a named field (the struct-recovery agent for the ones still
-   unknown), every `CALL` the function in the table above. GCC-only constructs go: `_Static_assert` (keep as
-   comments or a `STATIC_ASSERT` macro if the project has one), `__attribute__`, designated initializers where MWCC
-   rejects them, `uint32_t` for `u32`, `__aeabi_lmul` (MWCC's own 64-bit multiply), the VCOUNT spin in
-   `fw_vram_window` stays (hardware register, `volatile` with its comment).
+3. **Field**: done but for the talk (above, "Step 3: the follower in the field"). The follower-grid-event and
+   follower-rail-event hooks are only the talk and the menu's marker in the base package, so they are step 4's.
 4. **Events and the rest of the field**: `events.c` (`src/paperwhite2/ov012/`, its hooks in `field_actor.c` and
    `field_actor_tool.c`, `field_actor_rail.c`), `scene.c` with `scene-policy.h` (generate it from the two policy
    JSON files in `res/paperwhite2/following/`), `effects.c` (with `ball_assets.h`, the ball types), `interaction.c`,
    `reactions.c`, `gifts.c`, the grid/rail event hooks, and the data of interactions, emotes, effects, dialogues and
-   items.
+   items. The stubs of `following_hooks.h` become those modules'
+   calls (and the header goes), the talk (`try_talk`, the snapshot in `SelectFollower`) joins the field file, and
+   `FollowingScene_Poll` takes no argument again.
 5. **Options** (`src/paperwhite2/ov140/`): `options.c`, its seven hooks in `config_panel.c`, and `a/0/0/2` member 32's
    four `title_2` entries in `res/text/system/`.
 6. **Battle** (`src/paperwhite2/ov167/`): `battle.c` and the two procedure pointers in `btlv_scu.c`.

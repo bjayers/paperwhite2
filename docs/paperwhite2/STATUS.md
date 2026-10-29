@@ -2,6 +2,19 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-29: the follower walks behind the player (branch following-port, not yet tested in an emulator)
+
+Step 3 of the Following Pokémon port is done but for the talk (docs/paperwhite2/following-pokemon.md, "Step 3: the
+follower in the field"): `field.c` and `render.c` are `src/paperwhite2/ov036/paperwhite2_following_field.c` and
+`paperwhite2_following_render.c`, and the hooks field-actor-update, field-follower-matcache, field-unload, the three
+billboard draws and field-player-recall-direction-gate are in `src/ov036/fieldmap.c` and `field_player.c`. The lead
+follows on grids and rails with swaps, stairs and ledges, L/R switches it, SELECT turns it off and on. Ball effects,
+talk, the scene policy and the events bridge are stubs (`include/paperwhite2/following_hooks.h`): no ball, and any
+running event removes the follower, which walks in again after. Overlay 36 ends at 0x021ef3e0; the DS arena has
+0x322c0 (200 KB) left. `--hack` builds with no warnings, `verify_dsi_rom.py` says intact, nothing of the hack's is in
+the IRDO range, and a plain configure passes `ninja build/w2_us/stamps/modules.ok`. Next: test in melonDS (the
+doc's list), then step 4.
+
 ## 2026-10-29: the followers' field actors as sources (branch following-port)
 
 The Following Pokémon port has started on the branch `following-port` (docs/paperwhite2/following-pokemon.md: the
