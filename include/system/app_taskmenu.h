@@ -61,6 +61,12 @@ void AppTaskMenu_SetLocked(AppTaskMenu *menu, BOOL locked);
 void AppTaskMenu_SetCursorPos(AppTaskMenu *menu, u32 pos);
 
 AppTaskMenuRes *AppTaskMenuRes_Create(u8 bg, u8 palette, Font *font, PrintQueue *queue, HeapID heapId);
+#ifdef PAPERWHITE2
+// Paper White 2: AppTaskMenuRes_Create with the frame's characters (charFile, a frame as the menus' common archive's
+// file 0x20 lays it out) and its two palettes (paletteFile, the cursor's then the others') from another archive
+AppTaskMenuRes *AppTaskMenuRes_CreateFromArchive(u8 bg, u8 palette, u32 arcId, u32 charFile, u32 paletteFile,
+                                                 Font *font, PrintQueue *queue, HeapID heapId);
+#endif
 void AppTaskMenuRes_Free(AppTaskMenuRes *res);
 
 // A single button at x and y, width tiles wide and 3 tall

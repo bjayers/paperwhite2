@@ -2,6 +2,24 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-28: the Season app at the Centers' globe (Remote Control session, not committed)
+
+The Pokémon Centers' globe opens a touch-screen Season app instead of Geonet, which hack builds no longer have
+(docs/paperwhite2/plugins.md, Season app): `src/paperwhite2/ov312/paperwhite2_season_app.c`, linked into Geonet's
+overlay 312 and started by `Scrcmd_ProcFld_CallGeonet` under `PAPERWHITE2`; `global_2100.s`'s `Script_9` no longer
+checks `EVENT_FLAG_0x006a` in hack builds (the flag and the Castelia Geonet girl are untouched). It is Geonet's parts
+without the globe: the grid on both screens, the message window on the top screen with the setting, the current
+season and the game's season banner (its black made transparent over the grid), and on the touch screen Geonet's list
+(Set Season, Dynamic Options, Set Hemisphere, Cancel) leading to pages of task-menu buttons with Geonet's Quit button
+as BACK. Touch and D-pad + A/B both work; the current mode's or hemisphere's button is amber. Text is a new bank,
+`res/text/system/season_app.txt` (`TEXT_BANK_SEASON_APP`); the buttons' art is three new members of Geonet's archive,
+`res/graphics/geonet/08.png` (a copy of the task menus' frame), `09.pal` and `10.pal`, loaded through a new
+`AppTaskMenuRes_CreateFromArchive` in `app_taskmenu.c`. `--hack` builds with no warnings, `verify_dsi_rom.py` says
+intact, the memory check passes (209 KB left; overlay 312 0x3440 bytes, now the largest of its group, so overlays 36,
+170 and 337 moved up 0x720, within overlay 36's room), and a plain configure passes `ninja
+build/w2_us/stamps/modules.ok`. Not yet tested in an emulator or on hardware: plugins.md has the layout; the test is
+to open the globe, try every page by touch and by keys, and leave the Center after each change to see its banner.
+
 ## 2026-10-28: the seasons ported, revised (Remote Control session, not committed)
 
 The PMC season plugin is C again, revised rather than copied (docs/paperwhite2/plugins.md, Seasons): the setting is

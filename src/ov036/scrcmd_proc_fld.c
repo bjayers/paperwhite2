@@ -30,6 +30,10 @@
 #include "system/game_system.h"
 #include "system/vm.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/season_app.h"
+#endif
+
 // What the PC Box's callback stores its result from
 typedef struct {
     GameData *gameData;
@@ -165,8 +169,14 @@ BOOL Scrcmd_ProcFld_CallGeonet(VM *vm, FieldScriptEnv *env) {
     ScriptWork *work = FieldScriptEnv_GetScriptWork(env);
     Field *field = GSYS_GetField(gsys);
 
+#ifdef PAPERWHITE2
+    // Paper White 2: the Pokémon Centers' globe opens the Season app, which replaces Geonet in its overlay
+    ScriptWork_CallEvent(work, EventFieldSubprocessTransition_Create(
+                                   gsys, field, OVERLAY_GEONET, &SEASON_APP_PROC_FUNCTIONS, GSYS_GetGameData(gsys)));
+#else
     ScriptWork_CallEvent(work, EventFieldSubprocessTransition_Create(gsys, field, OVERLAY_GEONET,
                                                                      &GEONET_PROC_FUNCTIONS, GSYS_GetGameData(gsys)));
+#endif
     return TRUE;
 }
 

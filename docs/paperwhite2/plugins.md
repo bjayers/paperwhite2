@@ -91,7 +91,7 @@ only, and a new overlay file would take a file ID before the game's files.
 ## Port order
 
 1. MoveEffectiveness and TypeIcons (battle): done, see below.
-2. ToggleableSeasons: done, see below (Seasons).
+2. ToggleableSeasons: done, see below (Seasons), with the Season app at the Centers' globe (Season app).
 3. Following Pokémon (`bjayers/pokeweb-serverless`, `runtime/following-pokemon/`), with its data in
    `res/paperwhite2/following/`.
 
@@ -156,7 +156,7 @@ drops its workarounds: the banner's walk is decided in one place instead of bend
 
 - `src/paperwhite2/main/paperwhite2_season.c`, `include/paperwhite2/season.h`: the setting and the season. In ARM9
   main, since the season is asked for by main (`season.c`, `zone_weather.c`) and by overlays 12, 35, 36 and 302. The
-  header is the API that a Season app will use: get and set the mode and the hemisphere, the current season, and the
+  header is the API that the Season app uses: get and set the mode and the hemisphere, the current season, and the
   `SEASON_MODE_` constants.
 - `src/paperwhite2/ov012/paperwhite2_weather.c`, `include/paperwhite2/weather.h`: the weather of the calendar's
   zones, in overlay 12 beside `calender.c`.
@@ -228,5 +228,85 @@ Reversal Mountain all year but autumn; `TINT_9` most days on Routes 14 and 15.
 
 Together they cost about 2.3 KB: 460 bytes in main and 1.4 KB in overlay 12 (the table is 1.2 KB). The date math
 has a host test (every day of 2000-2099: weekly changes exactly on Mondays, daily every day across months, years and
-February 29th, real time on the 21sts in both hemispheres), not committed. A Season app (later) will set the mode;
-until then the work value has to be set by other means.
+February 29th, real time on the 21sts in both hemispheres), not committed. The Season app (below) sets the mode and
+the hemisphere.
+
+### Season app
+
+The Pokémon Centers' globe opens a touch-screen app that sets the season setting, in Geonet's place: hack builds have
+no Geonet. It is Geonet's process slot and overlay with Geonet's parts, without the globe.
+
+- `src/paperwhite2/ov312/paperwhite2_season_app.c`, `include/paperwhite2/season_app.h` (`SEASON_APP_PROC_FUNCTIONS`).
+  It is linked into overlay 312, Geonet's, which `CallGeonet` loads, so it is in memory only while the app runs.
+- `src/system/app_taskmenu.c` gains `AppTaskMenuRes_CreateFromArchive` under `PAPERWHITE2` (96 bytes in main): the
+  task menus' button resources with the frame and palettes from another archive, so the app's buttons have art of
+  their own.
+- Text: `res/text/system/season_app.txt`, bank `TEXT_BANK_SEASON_APP`, a new last file of `a/0/0/2`
+  (`generated/text_banks.txt`). Every label, status line and confirmation is there.
+- Graphics: Geonet's archive (`ARCID_GEONET`, `res/graphics/geonet/`) gains three members, see below. The banners
+  are the game's own (`ARCID_SEASON_BANNER`, `res/graphics/season_banner/`), unchanged.
+
+| Hook | Where | What |
+| --- | --- | --- |
+| `Script_9` of `res/field/scripts/global_2100.s` | the globe of every Center: `EVENT_FLAG_0x006a` set gave "It seems you can't use it yet." | always `CallGeonet`; the flag and the Castelia Geonet girl's event stay as they were |
+| `Scrcmd_ProcFld_CallGeonet` (`src/ov036/scrcmd_proc_fld.c`) | `GEONET_PROC_FUNCTIONS` in `OVERLAY_GEONET` | `SEASON_APP_PROC_FUNCTIONS` in the same overlay |
+
+**Screens.** As Geonet's, the top screen is the sub engine and the touch screen the main engine
+(`GX_DISP_SELECT_SUB_MAIN`), BG mode 0 on both, no 3D and no OBJs; VRAM A is the touch screen's BGs and VRAM C the top
+screen's (each: screens at 0x0000-0x17ff, text characters at 0x4000, the banner's at 0x8000, the grid's at 0x10000).
+
+| Screen | BG (priority) | What |
+| --- | --- | --- |
+| Top | 6 (0) | Geonet's message window (2,19, 28 by 4 tiles, message frame): the setting ("Seasons: Weekly", "Seasons: Locked to Winter", "Seasons: Real time (Northern)") and "Current season: X" (the season the game has now), or the hemisphere on its page, or a confirmation after a change |
+| Top | 5 (2) | the season's banner, the game's art, in palette 8 with its black background (color 1) made transparent, so that the grid shows around the season's name |
+| Top | 7 (3) | Geonet's grid |
+| Touch | 2 (0) | the list (9,8, 14 by 8 tiles, Geonet's menu frame: Set Season, Dynamic Options, Set Hemisphere, Cancel), or a page's buttons |
+| Touch | 3 (3) | Geonet's grid |
+
+The banner shows the season the message window talks about: the current one with the status, the one the next map
+change into an exterior brings after a change (`PaperWhite2_GetCurrentSeason`; for chaos the game's own), and on the
+Set Season page the season under the key cursor.
+
+**Pages.** Set Season: Spring, Summer, Autumn, Winter (a 2 by 2 grid), locking that season. Dynamic Options: Monthly,
+Weekly, Daily, Real-time (two rows of two) and Chaos (centered below). Set Hemisphere: Northern, Southern (stored
+apart from the mode; only real time reads it). Each has Geonet's Quit button, labeled BACK, at its place (23,21, 9
+tiles wide, with the return arrow). The current mode's or hemisphere's button is drawn in the current palette pair.
+The buttons are 13 by 3 tiles, with their labels centered; their places are the tables `sSeasonApp*Buttons`.
+
+**Input.** The list: the D-pad and A, B for Cancel, or a touch on a row, which picks it at once. A page: a touch picks
+a button; the D-pad moves the cursor (up and down to the nearest row, left and right within the row) and A picks; B
+picks BACK; after a touch the first key only brings the cursor back, as the game's task menus do. A picked button
+flashes, then its setting is set, the current button is drawn again and the message window confirms ("The season will
+change to Winter when you go outside.", "The seasons will now change each week, on Mondays."); the page stays open.
+BACK returns to the list, and Cancel fades out to the field. The setting shows at the next map change into an
+exterior, as the Seasons section says.
+
+**Replacing the button art.** The buttons are the task menus' (`AppTaskMenuWin`, `app_taskmenu.c`), with their frame
+from the app's own files:
+
+- `res/graphics/geonet/08.png`: the frame, a copy of the menus' common archive's (`res/graphics/app_menu_common/032.png`),
+  24 by 72 pixels, 4bpp (at most 16 colors in its palette, or the packer makes it 8bpp, which the buttons can't use).
+  Its 8 by 8 tiles, row by row: the top left corner, top, top right corner; left, middle, right; bottom left corner,
+  bottom, bottom right corner; then three tiles for each icon, of which the first two are drawn at the right end of an
+  icon's button (the return arrow, the BACK button's, first). A button of any width and height repeats the edges and
+  the middle tile, so the frame tiles must tile. Color 0 is transparent; the label is printed over it in colors 14
+  (text), 15 (shadow).
+- `res/graphics/geonet/09.pal`: 32 colors, the cursor's palette, then the other buttons'. Color 6 of the cursor's
+  palette pulses between two blues while the cursor is on a button (the task menus' code sets it each frame).
+- `res/graphics/geonet/10.pal`: the same for the button of the current setting: with the cursor on it, then without.
+  The first version's are the common palettes with amber fills and gold bevels for the current button.
+
+Edit the PNG in indexed mode (its pixels are the palettes' indices) and the palettes as JASC files; the build packs
+them (`graphics_archive.py`). Icons for the season buttons would need a new item type in the frame sheet and the
+app's code to use it. The banners are the game's `res/graphics/season_banner/` (four 256 by 192, 16-color screens,
+palette, characters and screen for each season), which the field's season change shows too.
+
+**Memory.** The app adds 0x1000 bytes to overlay 312 (0x2440 to 0x3440). Overlay 312 shares its address with
+overlays 35, 69, 253, 338 and others, which are never loaded with it, and overlays 36, 170 and 337 are placed after
+the largest of them; overlay 312 is now that largest (overlay 35 is 0x2d20), so those three moved up 0x720 bytes, which
+the field's overlay 36 had room for (`memory.txt`: overlay 312 and 36 grow 0x6860 more before the arena moves). The
+DS arena moved only by main's 0x60.
+
+**Heap and exit.** The app takes Geonet's heap ID (0x7c, 256 KB from `HEAPID_USER`), and frees on Cancel, in order,
+the list or buttons (after their text is printed), the button resources, the windows, the BGs, the font and the
+message bank, then the BG system and the heap, and puts the display layout back.

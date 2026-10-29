@@ -494,3 +494,5 @@ TEXT_BANK_POKEDEX_HEIGHTS_JA
 TEXT_BANK_SPECIES_NAMES_JA
 TEXT_BANK_SPECIES_CATEGORIES_JA
 TEXT_BANK_POKEDEX_WEIGHTS_JA
+# Paper White 2: the Season app's (src/paperwhite2/ov312/paperwhite2_season_app.c), after the original's files
+TEXT_BANK_SEASON_APP

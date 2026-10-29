@@ -926,6 +926,11 @@ Movement_0C70:
 Script_9:
     ActorsPauseAll
     SEPlay SEQ_SE_MESSAGE
+#ifdef PAPERWHITE2
+    // Paper White 2: the globe always opens the Season app, which CallGeonet starts in Geonet's place
+    // (src/ov036/scrcmd_proc_fld.c), without Geonet's check of EVENT_FLAG_0x006a
+    CallGeonet
+#else
     VMStackPushFlag EVENT_FLAG_0x006a
     VMStackPushConst 1
     VMStackCmp CMP_EQ
@@ -940,6 +945,7 @@ L_0C99:
     InfoMsgClose
 
 L_0CA2:
+#endif
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt

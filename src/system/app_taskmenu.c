@@ -437,6 +437,29 @@ AppTaskMenuRes *AppTaskMenuRes_Create(u8 bg, u8 palette, Font *font, PrintQueue 
     return res;
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: AppTaskMenuRes_Create with the frame's characters and its two palettes from files of another archive,
+// so that an app's buttons can have a look of their own (the Season app's, in res/graphics/geonet/)
+AppTaskMenuRes *AppTaskMenuRes_CreateFromArchive(u8 bg, u8 palette, u32 arcId, u32 charFile, u32 paletteFile,
+                                                 Font *font, PrintQueue *queue, HeapID heapId) {
+    AppTaskMenuRes *res = GFL_HeapAllocate(heapId, sizeof(AppTaskMenuRes), FALSE, "app_taskmenu.c", 716);
+    u32 palType = PALTYPE_MAIN_BG;
+
+    MI_CpuFill8(res, 0, sizeof(AppTaskMenuRes));
+    res->bg = bg;
+    res->palette = palette;
+    res->font = font;
+    res->queue = queue;
+    if (bg > MAIN_BG_LAST) {
+        palType = PALTYPE_SUB_BG;
+    }
+
+    res->characterFile = GFL_G2DIOReadBGNCGR(arcId, charFile, FALSE, &res->character, heapId);
+    GFL_BGSysLoadNCLRDefault(arcId, paletteFile, palType, palette * 0x20, 2 * 0x20, heapId);
+    return res;
+}
+#endif
+
 void AppTaskMenuRes_Free(AppTaskMenuRes *res) {
     GFL_HeapFree(res->characterFile);
     GFL_HeapFree(res);

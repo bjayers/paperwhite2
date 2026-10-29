@@ -45,6 +45,10 @@
 #include "system/wordset.h"
 #include "text/system/event_mapchange_2.h"
 
+// Paper White 2: the hack has no Geonet; the globe opens the Season app (src/paperwhite2/ov312/), which takes this
+// overlay's room, so that the overlays after it keep their original addresses
+#ifndef PAPERWHITE2
+
 // Geonet, the globe of the Pokémon Centers: the player registers where they live, and the globe shows the places of
 // the people they have traded and battled with. The ROM has no name for this file; "geonet.c" is a guess. It is the
 // Generation 4 globe's code (pokeplatinum's wifi_earth) moved to this game's libraries
@@ -1723,3 +1727,5 @@ static u32 Geonet_GetDistance(const GeonetAngles *a, const GeonetAngles *b) {
     }
     return FX_Sqrt((x * x + y * y) << FX32_SHIFT) >> FX32_SHIFT;
 }
+
+#endif // PAPERWHITE2
