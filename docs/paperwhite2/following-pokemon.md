@@ -369,7 +369,7 @@ so until step 3 generates it, changing which followers have their own sprite wou
 now, so it holds from boot and the registry isn't asked. `GetNPCMdlInfoForOBJCODE` (`src/ov012/field_actor.c`) keeps
 the record's offset in the table 32-bit (the original's u16 wraps from row 2,341), which the core's
 `descriptor-offset-width` patch did in the instructions. Main grew 0x20 bytes. To test: give an NPC in
-`res/field/events/` the model `OBJ_CODE_FOLLOWER_PIKACHU` (row 1,108) and one past row 2,341, such as
+`res/field/events/` the model `OBJ_CODE_FOLLOWER_PIKACHU` (row 1,104) and one past row 2,341, such as
 `OBJ_CODE_FOLLOWER_SNIVY` or `OBJ_CODE_FOLLOWER_GENESECT`; both should walk with the follower's sprite.
 
 ## What remains
