@@ -326,6 +326,13 @@ nds-bootstrap's fixes for IRDO and IRDJ match any CRC (FFFF), those for IRDD/F/I
 fixes (alternate read method, ROM location, ARM9 patch) check only "IRD", so they still apply. DS Protect is
 disarmed, so the AP fix isn't needed.
 
+### Later (polish)
+
+- Boot-time repair of nds-bootstrap's IRDO anti-piracy fix: at startup, if the word at 0x02004ea4 isn't the original
+  `bx lr`, restore it and copy back the build's own bytes of 0x020933d0-0x020934af from a copy the build embeds. That
+  makes hack builds immune to that fix whatever their game code; it can't cover a future fix at other addresses.
+  After any nds-bootstrap update, a quick Castelia check (NPCs visible) on the 3DS.
+
 ### Next
 
 1. The user tests `build/paperwhite2.nds` (`\\wsl$\Ubuntu\home\riku\paperwhite2\build\paperwhite2.nds`) in melonDS
