@@ -399,9 +399,14 @@ Port in this order, each step built with `--hack`, no warnings, `verify_dsi_rom.
 plain build's `ninja build/w2_us/stamps/modules.ok`:
 
 1. **Data as sources**: done (below, "The registry and positioning").
-2. **Core** (`src/paperwhite2/main/`): `core.c` (the published count goes, the lookup above replaces it),
-   `resident_events.c` and its four hooks in `vm.c` and `game_event.c` (needed by the scene policy in step 4, so with
-   it).
+2. **Core**: done. `src/paperwhite2/main/paperwhite2_following_resident.c` and
+   `include/paperwhite2/following_resident.h`: the tokens (restore, mount, summon, generic by kind and size, as the
+   original) and the event hooks, which the field binds (`PaperWhite2_FollowingBindEventHooks`) and clears.
+   `VM_Run` calls `PaperWhite2_FollowingOnOpcode` after each `VM_Read16`, `GameEvent_RunCallback` asks
+   `PaperWhite2_FollowingHoldEvent` before the callback (TRUE returns `GAMEEVENT_CONTINUE`, the original's 0),
+   `GameEvent_Free` and `VM_Free` call theirs before freeing. The original's resident bridge passed the event to the
+   events module, which read the callback and the game system from it by offset; ported, the hooks get them. Main
+   grew 0x220 bytes; nothing of the hack's is in the IRDO range.
 3. **Field** (`src/paperwhite2/ov036/`): `following.c` (the 64-sample trail, pure logic), `registry.c`,
    `positioning.c`, `render_math.c`, `render.c`, and `field.c`'s creation, movement, cycling (L/R), recall gate and
    draw hooks; `native.h`'s `Actor`/`ActorSystem` become `FieldActor`/`MMSys` of `include/field/field_actor.h` and
