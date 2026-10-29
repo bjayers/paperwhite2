@@ -21,6 +21,7 @@
     ScriptEntry Script_18
 #ifdef PAPERWHITE2
     ScriptEntry Script_19
+    ScriptEntry Script_20
 #endif
     ScriptEntriesEnd
 
@@ -631,8 +632,9 @@ L_0831:
 Script_19:
     ActorsPauseAll
     WordSetItemName 0, ITEM_EXP_SHARE
+    // VMJumpIf CMP_STACK jumps when the comparison is false: to turning it on when the flag isn't 0
     VMStackPushFlag EVENT_FLAG_EXP_SHARE_OFF
-    VMStackPushConst 1
+    VMStackPushConst 0
     VMStackCmp CMP_EQ
     VMJumpIf CMP_STACK, L_ExpShareTurnOn
     FlagSet EVENT_FLAG_EXP_SHARE_OFF
@@ -650,6 +652,21 @@ L_ExpShareTurnOn:
 L_ExpShareDone:
     LastKeyWait
     SystemMsgClose
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+
+// Paper White 2: script 2819, after a wild battle in which a shiny Pokémon fainted (SCRID_SHINY_CANDY_DROP,
+// paperwhite2/shiny_candy.h): it says the Shiny Candy dropped, then gives it with the fanfare as Script_7 does, or says
+// there is no room for it
+Script_20:
+    ActorsPauseAll
+    // "The shiny Pokémon dropped\na Shiny Candy!"
+    SystemMsg Global7000_Text_ShinyCandyDropped, 0
+    LastKeyWait
+    WorkSetConst 0x8000, ITEM_SHINY_CANDY
+    WorkSetConst 0x8001, 1
+    VMCall L_0151
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt

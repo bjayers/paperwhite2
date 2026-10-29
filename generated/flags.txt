@@ -1486,8 +1486,7 @@ EVENT_FLAG_0x05cc
 EVENT_FLAG_0x05cd
 EVENT_FLAG_0x05ce
 EVENT_FLAG_0x05cf
-# Paper White 2: set when the player turns the Exp. Share off (unused in the original game)
-EVENT_FLAG_EXP_SHARE_OFF
+EVENT_FLAG_0x05d0
 EVENT_FLAG_0x05d1
 EVENT_FLAG_0x05d2
 EVENT_FLAG_0x05d3
@@ -2350,7 +2349,8 @@ EVENT_FLAG_0x092b
 EVENT_FLAG_0x092c
 EVENT_FLAG_0x092d
 EVENT_FLAG_0x092e
-EVENT_FLAG_0x092f
+# Paper White 2: set when the player turns the Exp. Share off, in the hack's block 0x92f-0x95f (docs/paperwhite2/plugins.md)
+EVENT_FLAG_EXP_SHARE_OFF
 EVENT_FLAG_0x0930
 EVENT_FLAG_0x0931
 EVENT_FLAG_0x0932
@@ -3032,7 +3032,8 @@ EVENT_FLAG_HIDDEN_ITEM_209
 EVENT_FLAG_HIDDEN_ITEM_210
 EVENT_FLAG_HIDDEN_ITEM_211
 EVENT_FLAG_HIDDEN_ITEM_212
-EVENT_FLAG_HIDDEN_ITEM_213
+# Paper White 2: the debug menu's Always shiny, in the debug toggles' block 0xbd9-0xbf7 (docs/paperwhite2/plugins.md)
+EVENT_FLAG_DEBUG_ALWAYS_SHINY
 EVENT_FLAG_HIDDEN_ITEM_214
 EVENT_FLAG_HIDDEN_ITEM_215
 EVENT_FLAG_HIDDEN_ITEM_216

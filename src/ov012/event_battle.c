@@ -52,6 +52,9 @@
 #include "system/game_event.h"
 #include "system/game_system.h"
 #include "system/zone_weather.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/shiny_candy.h"
+#endif
 
 static GameEventReturnCode EventBattleCall_Callback(GameEvent *event, u32 *state, void *work);
 static void EventBattleCall_BroadcastTrainerBattle(u16 trainerId, u32 kind);
@@ -153,6 +156,10 @@ static GameEventReturnCode EventWildBattleCall_Callback(GameEvent *event, u32 *s
         break;
     }
     case 2:
+#ifdef PAPERWHITE2
+        // Paper White 2: back on the field, a shiny Pokémon that fainted may have dropped a Shiny Candy
+        PaperWhite2_ShinyCandyDrop(event, wk->shinyFoe, GameData_GetLastBtlResult(gameData));
+#endif
         (*state)++;
         break;
     case 3:
@@ -173,6 +180,10 @@ GameEvent *EventWildBattleCall_CreateCore(GameSystem *gsys, Field *field, BtlSet
     work->unk0C = a4;
     work->specialIndex = specialIndex;
     work->unk0A = BtlSetup_CheckFlag(setup, 1);
+#ifdef PAPERWHITE2
+    // Paper White 2: the setup is freed by the battle's end, so the wild Pokémon are looked at now
+    work->shinyFoe = PaperWhite2_HasShinyFoe(setup);
+#endif
     if (a4 == ENCOUNT_MODE_EFFECT) {
         BtlSetup_SetFlag(setup, 1 << 14);
     }

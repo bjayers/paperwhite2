@@ -14,10 +14,6 @@
 #include "nnsys/g3d.h"
 #include "system/game_system.h"
 
-#ifdef PAPERWHITE2
-#include "constants/items.h"
-#endif
-
 struct FieldFlashG3D {
     G3DResource *resource;
     G3DActor *actor;
@@ -29,20 +25,14 @@ typedef struct {
     u16 effectId;
 } FieldEffectScriptEntry;
 
-// clang-format off
-static const FieldEffectScriptEntry FIELD_EFFECT_SCRIPT_ENTRIES[] = {
+static const FieldEffectScriptEntry FIELD_EFFECT_SCRIPT_ENTRIES[31] = {
     { 0x268, 0x0 },  { 0x269, 0x27 }, { 0x26e, 0x28 }, { 0x1d2, 0x29 }, { 0x1b5, 0x1 },  { 0x1ba, 0x2a },
     { 0x1bf, 0x2b }, { 0x1c2, 0x2c }, { 0x1d1, 0x2d }, { 0x1d7, 0x2e }, { 0x26d, 0x41 }, { 0x272, 0x30 },
     { 0x242, 0x31 }, { 0x26f, 0x32 }, { 0x270, 0x33 }, { 0x271, 0x34 }, { 0x243, 0x35 }, { 0x273, 0x45 },
     { 0x276, 0x46 }, { 0x277, 0x47 }, { 0x278, 0x48 }, { 0x279, 0x49 }, { 0x27a, 0x4a }, { 0x27b, 0x4b },
     { 0x274, 0x4c }, { 0x275, 0x4d }, { 0x27c, 0x41 }, { 0x27d, 0x30 }, { 0x1c5, 0x70 }, { 0x1ca, 0x71 },
     { 0x27e, 0x72 },
-#ifdef PAPERWHITE2
-    // Paper White 2: the Exp. Share, now a key item, gets the Bicycle's (0x1c2's) item-get effect
-    { ITEM_EXP_SHARE, 0x2c },
-#endif
 };
-// clang-format on
 
 FieldFlashG3D *FieldFlashG3D_Create(HeapID heapId) {
     FieldFlashG3D *flash = GFL_HeapAllocate(heapId, sizeof(FieldFlashG3D), TRUE, "fld_wipe_3dobj.c", 36);
@@ -133,7 +123,7 @@ BOOL Scrcmd_FldWipe3dobj_FieldEffect(VM *vm, FieldScriptEnv *env) {
     u16 effectId;
     u32 i;
 
-    for (i = 0; i < NELEMS(FIELD_EFFECT_SCRIPT_ENTRIES); i++) {
+    for (i = 0; i < 31; i++) {
         if (scriptId == FIELD_EFFECT_SCRIPT_ENTRIES[i].scriptId) {
             found = TRUE;
             effectId = FIELD_EFFECT_SCRIPT_ENTRIES[i].effectId;

@@ -19,6 +19,7 @@
 #include "field/scrcmd_camera.h"
 #include "field/scrcmd_menu.h"
 #include "field/scrcmd_sound.h"
+#include "field/shortcut_menu.h"
 #include "field/zone.h"
 #include "nitro/mi.h"
 #include "paperwhite2/following.h"
@@ -359,6 +360,13 @@ static BOOL IsSafeCallback(GameEvent *event, GameEventCallback callback) {
         FieldMenuWork *menu = work;
 
         return menu != NULL && menu->gameSystem == sScene.gsys && menu->field == sScene.field;
+    }
+    // The Y button's shortcut, with its menu or its one item, while it stays on the field: what it chains (an
+    // application, an item's event such as the Exp. Share's script) is decided on as ever
+    if (callback == EventShortcutCallDirect_Callback || callback == EventShortcutChoicePopup_Callback) {
+        ShortcutMenuWork *shortcut = work;
+
+        return shortcut != NULL && shortcut->gameSystem == sScene.gsys && shortcut->field == sScene.field;
     }
     if (PaperWhite2_IsFieldMenuReturnCallback(callback)) {
         EventFieldMenuReturn *menuReturn = work;

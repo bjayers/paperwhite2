@@ -172,21 +172,51 @@ double and triple battles on the selected move's name, which it carries above th
 ### Hidden stats on the summary screen
 
 The summary's skill page (`src/ov207/p_sta_skill.c`, overlay 207) shows HP and the five stats on the top screen, with
-"« STATS »" in its title bar. L or R switches the six rows to their EVs and IVs, in two columns that end where the
-values do, with "EV" and "IV" over them and "HIDDEN STATS" in place of the page's name in the bar (the empty bar's
-tiles cover the « STATS » tiles); the HP bar and its frame are hidden. L or R again switches back, and the view stays
-across Pokémon and pages until the summary closes. A hint at the left of the HP's row ("L/R: EV/IV", "L/R: Stats")
-says what L and R do: the game's archives have no L or R button art that the summary could use, so it is text until
-there is art. Everything is under `PAPERWHITE2` in that file (`showHidden`, `PStaSkill_PrintStatRows` and the
-`HIDDEN_` constants), and the text is at the end of the summary's bank, `res/text/system/p_sta_sys.txt`.
+"« STATS »" in its title bar. L or R switches the six rows to their EVs and IVs: in each row's part of the white panel,
+a blue EV bar (0-252), the EV and the IV, and a red IV bar (0-31), the bars rounded, with a dark outline round a white
+track, drawn into the rows' windows with fills (`PStaSkill_DrawHiddenBar`). "EV" and "IV" stand over their columns in
+the title bar, where the empty bar's tiles cover « STATS »; the HP bar and its frame are hidden. The rows' windows are 19
+tiles wide in hack builds instead of 16 and 14, to the panel's edge on the HP's row (x 216), which BG 4's 768 tiles
+allow (754 used). L or R again switches back, and the view stays across Pokémon and pages until the summary closes. A
+hint at the left of the HP's row ("L/R: EV/IV", "L/R: Stats") says what L and R do: the game's archives have no L or R
+button art that the summary could use, so it is text until there is art. Everything is under `PAPERWHITE2` in that file
+(`showHidden`, `PStaSkill_PrintStatRows` and the `HIDDEN_` constants at the top: the columns and bars in screen pixels,
+the headers' and hint's places, the colors of the font's palette), and the text is at the end of the summary's bank,
+`res/text/system/p_sta_sys.txt`. The rows use `PKM_PARAM_EV_*`/`PKM_PARAM_IV_*` of their own stat, the same parameters
+the stat calculation (`PokeParty_RecalcStats`) and Hidden Power read.
 
 ### Debug menu
 
 `PAPERWHITE2_DEBUG_MENU`, defined in every hack build for now (`configure.py`, beside `PAPERWHITE2`): START in the
 field, on grid maps and rails, starts `Script_17` of `res/field/scripts/global_10130.s` (script 10146,
 `SCRID_PAPERWHITE2_DEBUG_MENU` in `src/ov036/fieldmap_event.c`), where the original's field doesn't use START. It
-shows "TEST" with a list, Option A, Option B and Close; an option shows a message, then closes. Its text is at the end
-of `res/text/script/global_10130.txt`. Removing the define from `configure.py` removes the menu; the text stays.
+shows "DEBUG" with a list of toggles, each with its state, and Close; picking a toggle flips it and shows the list
+again. The toggles are flags of the debug block (Flags, below). To add one: a `DEBUG_ENTRY_*` value, its `VMCall` in
+the list, its `WorkCmpConst` after it, and an `L_DebugAdd*`/`L_DebugToggle*` pair, with its ON and OFF texts at the
+end of `res/text/script/global_10130.txt`. Removing the define from `configure.py` removes the menu and the toggles'
+code; the text stays.
+
+| Toggle | Flag | Code |
+| --- | --- | --- |
+| Always shiny | `EVENT_FLAG_DEBUG_ALWAYS_SHINY` (0xbd9) | `FieldEncount_CreateWildPkm` (`src/ov036/enc_pokeset.c`) rolls the PID up to `ALWAYS_SHINY_ROLLS` (0x4000) times until it is shiny: every Pokémon of `FieldEncount_SetupNormal`, grass, surfing, fishing and `EventWildBattleCall_CreateStatic`'s scripted encounters. Gifts, eggs and trainers' Pokémon aren't affected |
+
+### Flags
+
+The save's event flags that the hack uses, from the blocks the user found unused (`generated/flags.txt`, where each
+used one is named with a `# Paper White 2:` comment). New features take theirs from these blocks.
+
+| Block | Purpose | Used |
+| --- | --- | --- |
+| 0x1f4-0x257 | the hack's seasonal NPC spawns (Frost's editor) | all; don't touch |
+| 0x41b | Keldeo | in use |
+| 0x41c-0x44b | free | |
+| 0x754 | free (was the old season NPC's) | |
+| 0x755-0x757 | free | |
+| 0x92f-0x95f | the hack's features | 0x92f `EVENT_FLAG_EXP_SHARE_OFF` |
+| 0xbd9-0xbf7 | the debug menu's toggles | 0xbd9 `EVENT_FLAG_DEBUG_ALWAYS_SHINY` |
+
+Flags elsewhere, even ones no text search finds, may be reached by a base plus an index (hidden items, trainers), so
+don't take them. 0x5d0, which the Exp. Share used first, is back to its original name.
 
 ### Seasons
 
@@ -322,7 +352,7 @@ VRAM E and I stay the engines' OBJ VRAM, unused.
 | Top | 2 (0) | Geonet's message window (2,19, 28 by 4 tiles, message frame): the setting ("Seasons: Weekly", "Seasons: Locked to Winter", "Seasons: Real time (Northern)") and "Current season: X" (the season the game has now), or the hemisphere on its page, or a confirmation after a change |
 | Top | 1 (2) | the season's banner, the game's art, in palette 8 with its black background (color 1) made transparent; over the preview it is moved up 22 pixels (`BANNER_PREVIEW_OFFSET_Y`), so that the season's name is centered in the view above the message window (line 72), over the preview's shadow |
 | Top | 0 (3) | the 3D preview (below) |
-| Top | 3 (3) | Geonet's grid, if the preview didn't load or while it loads a season |
+| Top | 3 (3) | Geonet's grid, only if the preview didn't load |
 | Touch | 6 (0) | the menu's buttons (Set Season, Dynamic Options, Set Hemisphere, and QUIT), or a page's buttons |
 | Touch | 7 (3) | Geonet's grid |
 
@@ -361,8 +391,8 @@ texture pattern animation file's `FieldTerrainTexPatAnimationPack` (`field_groun
 
 The 3D setup is the field's (`FieldG3D_InitCallback`, Z buffer as the field camera's setups have it) without fog or edge
 marking. When the previewed season changes, everything the preview loaded is freed and the new season loaded again
-(about 200 KB from the card), with the 3D layer off and Geonet's grid in its place from the load until 2 frames after
-it (`PREVIEW_HIDDEN_FRAMES`), so the frame drawn with the old textures isn't seen. The banner changes after the preview's load: its palette
+(about 200 KB from the card), with the 3D layer darkened (`G2x_SetBlendBrightness_` on BG 0) for 2 frames and faded in
+over 6, so the frame drawn with the old textures isn't seen. The banner changes after the preview's load: its palette
 and characters go to VRAM at once, but its screen and scroll (`GFL_BGSysQueueScrLoad`, `GFL_BGSysMoveBGReq`) only at the
 next VBlank, so its BG is off from the load until the frame after that VBlank, and the new name is first seen in its
 place (its own `sBannerNameAdjustY` over `BANNER_PREVIEW_OFFSET_Y`) rather than at the last one's scroll. If a file

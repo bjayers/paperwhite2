@@ -38,6 +38,10 @@
 #include "system/palanm.h"
 #include "system/printsys.h"
 #include "system/scroll_bar.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/exp_share.h"
+#include "text/system/btl_main.h"
+#endif
 #include "system/text_speed.h"
 #include "system/wordset.h"
 
@@ -505,6 +509,16 @@ void ItemMenuDisp_DrawItemInfo(ItemMenuWork *work) {
         BmpWin_FlushChar(work->pocketLabelWindow.window);
     }
     setItemDescriptionTextToStrbuf(work->strbuf, slot->item, work->heapId);
+#ifdef PAPERWHITE2
+    // Paper White 2: the Exp. Share's description ends with whether it is on
+    if (slot->item == ITEM_EXP_SHARE) {
+        GFL_MsgDataLoadStrbuf(work->msgData,
+                              PaperWhite2_IsExpShareOn(work->gameData) ? BtlMain_Text_ExpShareStateOn
+                                                                       : BtlMain_Text_ExpShareStateOff,
+                              work->expandBuf);
+        GFL_StrBufConcat(work->strbuf, work->expandBuf);
+    }
+#endif
     ItemMenuDisp_Print(work, &work->descWindow, work->strbuf, 0, 4, ITEMMENU_TEXT_COLOR);
     ItemMenuDisp_TransferScreen(&work->pocketLabelWindow);
     ItemMenuDisp_TransferScreen(&work->itemNameWindow);

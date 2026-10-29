@@ -2,7 +2,7 @@
     "$schema": "../item.schema.json",
     "name": "Exp. Share",
     "name_plural": "Exp. Shares",
-    "description": "Turn it on, and all the Pokémon in\nyour party that didn't battle will\nget some Exp. Points from battles.",
+    "description": "When it's on, the Pokémon in your party\nthat didn't battle get Exp. Points too.",
     "price": 0,
     "hold_effect": "HOLD_EFFECT_NONE",
     "hold_param": 0,

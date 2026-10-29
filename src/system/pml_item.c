@@ -257,8 +257,8 @@ static const u16 ITEM_GRAPHICS_CHARS_AND_PALETTES[][2] = {
     [ITEM_ODD_KEYSTONE] = { ITEM_ICON_ODD_KEYSTONE, ITEM_ICON_PALETTE_ODD_KEYSTONE },
     [ITEM_GRISEOUS_ORB] = { ITEM_ICON_GRISEOUS_ORB, ITEM_ICON_PALETTE_GRISEOUS_ORB },
 #ifdef PAPERWHITE2
-    // Paper White 2: the Shiny Candy, which takes unused item 113, shows the Shiny Charm's icon
-    [ITEM_SHINY_CANDY] = { ITEM_ICON_SHINY_CHARM, ITEM_ICON_PALETTE_SHINY_CHARM },
+    // Paper White 2: the Shiny Candy, which takes unused item 113, has its own icon
+    [ITEM_SHINY_CANDY] = { ITEM_ICON_SHINY_CANDY, ITEM_ICON_PALETTE_SHINY_CANDY },
 #else
     [ITEM_SHINY_CANDY] = { ITEM_ICON_NONE, ITEM_ICON_PALETTE_NONE },
 #endif

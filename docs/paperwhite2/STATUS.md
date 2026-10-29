@@ -2,6 +2,33 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-29: fixes after the first test of the Shiny Candy, the Exp. Share and the summary (not committed, not yet tested)
+
+- **Shiny Candy**: its own icon (`ITEM_ICON_SHINY_CANDY` and `_PALETTE_`, appended to `generated/item_icons.txt`;
+  `res/items/shiny_candy/icon.png` and `icon.pal`, for now copies of the Rare Candy's to redraw), price 1 in the data
+  (prices are in tens: ₽10), the Medicine pocket (data and `myitem_savedata.c`), sorted after the Rare Candy; still at
+  Virbank. **Drops:** a wild battle won (`BTL_RESULT_VICTORY`) against a shiny Pokémon gives one at
+  `SHINY_CANDY_DROP_PERCENT` (50), back on the field: "The shiny Pokémon dropped a Shiny Candy!", then the usual
+  obtained/put-away messages, or "no more room" with a full bag (`Script_20` of `global_2800.s`, script 2819, via
+  `L_0151`). `src/paperwhite2/ov012/paperwhite2_shiny_candy_drop.c`, from `EventWildBattleCall_Callback`; the setup's
+  shininess is read when the event is created (`shinyFoe`), since the battle frees the setup. Grass, surfing and fishing
+  encounters only: a scripted static battle returns before the field's fade back in.
+- **Exp. Share from Y** never turned it on: `VMJumpIf CMP_STACK` jumps when the comparison is *false*, so Script_19
+  took the "off" branch whenever the flag was set. Fixed (compare with 0). Its flag moved to 0x92f (the hack's block,
+  see plugins.md's Flags); 0x5d0 is `EVENT_FLAG_0x05d0` again, so a save that turned it off is on again. The follower
+  stayed recalled after it: the Y shortcut's events (`EventShortcutCallDirect_Callback`,
+  `EventShortcutChoicePopup_Callback`) weren't known to the scene policy, so it now keeps the follower out through them
+  as through the X menu; what they chain (an application, the bike, a script) is decided on as before. The Bag's
+  description ends with "It is currently ON./OFF." (`itemmenu_disp.c`, text in `btl_main.txt`; the description is two
+  lines now). The Bicycle's item-get effect is gone: effects are fixed 3D cut-ins (`Fld3DCi`), none shows an item's
+  icon, so the Exp. Share gets the plain key-item fanfare.
+- **Summary**: the IV order was right (each row reads its own stat's `PKM_PARAM_IV_*`, as the stat calculation and
+  Hidden Power do). Bars added, "HIDDEN STATS" removed (plugins.md). Freeze review: the hidden view has no loop or
+  timer; its redraw waits on the print queue only while connected; it found nothing that could hang.
+- **Season globe**: back to the black fade while the preview reloads (5f58c202c7's parent).
+- **Debug menu**: "Always shiny: ON/OFF" (`EVENT_FLAG_DEBUG_ALWAYS_SHINY`, 0xbd9), in a list built to take more toggles.
+- `--hack` builds with no warnings, `verify_dsi_rom.py` intact, memory check passes; the matching `modules.ok` passes.
+
 ## 2026-10-29: shinies at 1/1024, the Shiny Candy, and the Gen 6 Exp. Share (not committed, not yet tested)
 
 - **Shiny rate**: `PID_RARE_THRESHOLD` (`include/pml/poke_party.h`) is 64 in hack builds, 8 in the original;
@@ -13,7 +40,7 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   which with bits 13-16 orders the box data's blocks) and Wurmple's evolution side; eggs and shinies get "It won't
   have any effect." For testing, Virbank City's second Mart clerk (shop 22) sells it (`scrcmd_shop.c`).
 - **Exp. Share**: a registrable key item (same ID and icon). It is on while the bag has it and
-  `EVENT_FLAG_EXP_SHARE_OFF` (0x5d0, unused in the original) is clear, so it starts on when received. "Use" in the bag
+  `EVENT_FLAG_EXP_SHARE_OFF` (0x5d0 then, 0x92f now) is clear, so it starts on when received. "Use" in the bag
   toggles it with a message; registered to Y (`SHORTCUT_EXP_SHARE`) it runs `FIELD_COMMON_EVENT_EXP_SHARE`, script 2818
   (`Script_19` of `global_2800.s`). Receiving it shows the Bicycle's item-get effect (`fld_wipe_3dobj.c`, effect 0x2c;
   check in a test that it isn't the Bicycle's own picture). In battle (`AddExpAndEVs`), while it is on, each party

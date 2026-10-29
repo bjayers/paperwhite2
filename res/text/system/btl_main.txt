@@ -161,4 +161,6 @@ BtlMain_Text_CannotFind = Cannot find.
 BtlMain_Text_PutAway = Put Away
 BtlMain_Text_ExpShareTurnedOn = The {0109:1} was turned on.
 BtlMain_Text_ExpShareTurnedOff = The {0109:1} was turned off.
+BtlMain_Text_ExpShareStateOn = \nIt is currently ON.
+BtlMain_Text_ExpShareStateOff = \nIt is currently OFF.
 \pad{54}

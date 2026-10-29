@@ -216,38 +216,53 @@ Script_16:
     VMHalt
 
 #ifdef PAPERWHITE2_DEBUG_MENU
-// Paper White 2: the debug menu that START opens in the field (src/ov036/fieldmap_event.c): a message, a list of
-// options, and a message for the option picked
+// Paper White 2: the debug menu that START opens in the field (src/ov036/fieldmap_event.c): a list of toggles, each
+// with its state, and Close. Picking a toggle flips its flag (the debug block of docs/paperwhite2/plugins.md's Flags)
+// and shows the list again. To add one: a DEBUG_ENTRY_* value, its VMCall in the list, its WorkCmpConst after the
+// list, and its L_DebugAdd*/L_DebugToggle* pair, with its On and Off texts in global_10130.txt
+#define DEBUG_ENTRY_ALWAYS_SHINY 0
+#define DEBUG_ENTRY_CLOSE 1
+
 Script_17:
     ActorsPauseAll
-    // "TEST"
-    SystemMsg Global10130_Text_DebugTest, 2
+
+L_DebugMenu:
+    // "DEBUG"
+    SystemMsg Global10130_Text_DebugTitle, 2
     ListMenuAnchorTopRight 31, 1, 0, 1, 0x8020
-    ListMenuAdd Global10130_Text_DebugOptionA, 65535, 0
-    ListMenuAdd Global10130_Text_DebugOptionB, 65535, 1
-    ListMenuAdd Global10130_Text_DebugClose, 65535, 2
+    VMCall L_DebugAddAlwaysShiny
+    ListMenuAdd Global10130_Text_DebugClose, 65535, DEBUG_ENTRY_CLOSE
     ListMenuShow
-    VMStackPush 0x8020
-    VMStackPushConst 0
-    VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_DebugMenuNotOptionA
-    // "You picked Option A."
-    SystemMsg Global10130_Text_DebugPickedOptionA, 2
-    LastKeyWait
-    VMJump L_DebugMenuClose
-
-L_DebugMenuNotOptionA:
-    VMStackPush 0x8020
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_DebugMenuClose
-    // "You picked Option B."
-    SystemMsg Global10130_Text_DebugPickedOptionB, 2
-    LastKeyWait
-
-L_DebugMenuClose:
+    WorkCmpConst 0x8020, DEBUG_ENTRY_ALWAYS_SHINY
+    VMJumpIf CMP_EQ, L_DebugToggleAlwaysShiny
     SystemMsgClose
     ActorsUnpauseAll
     VMHalt
+
+// VMJumpIf CMP_STACK jumps when the comparison is false: these jump when the flag is set
+L_DebugAddAlwaysShiny:
+    VMStackPushFlag EVENT_FLAG_DEBUG_ALWAYS_SHINY
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMJumpIf CMP_STACK, L_DebugAddAlwaysShinyOn
+    ListMenuAdd Global10130_Text_DebugAlwaysShinyOff, 65535, DEBUG_ENTRY_ALWAYS_SHINY
+    VMReturn
+
+L_DebugAddAlwaysShinyOn:
+    ListMenuAdd Global10130_Text_DebugAlwaysShinyOn, 65535, DEBUG_ENTRY_ALWAYS_SHINY
+    VMReturn
+
+L_DebugToggleAlwaysShiny:
+    SEPlay SEQ_SE_SELECT1
+    VMStackPushFlag EVENT_FLAG_DEBUG_ALWAYS_SHINY
+    VMStackPushConst 0
+    VMStackCmp CMP_EQ
+    VMJumpIf CMP_STACK, L_DebugAlwaysShinyOff
+    FlagSet EVENT_FLAG_DEBUG_ALWAYS_SHINY
+    VMJump L_DebugMenu
+
+L_DebugAlwaysShinyOff:
+    FlagReset EVENT_FLAG_DEBUG_ALWAYS_SHINY
+    VMJump L_DebugMenu
 #endif
     .balign 4, 0

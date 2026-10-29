@@ -36,6 +36,10 @@ typedef struct {
     u8 specialIndex;
     u8 unk0A;
     u32 unk0C;
+#ifdef PAPERWHITE2
+    // Paper White 2: whether a wild Pokémon of the battle is shiny, for the Shiny Candy that it may drop
+    BOOL shinyFoe;
+#endif
 } EventWildBattleCallWork;
 
 // A wild battle, and the same with the index of the special Pokémon met, 0xff for none

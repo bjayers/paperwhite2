@@ -11,4 +11,17 @@
 // Returns whether the candy was used, which the caller takes from the bag
 BOOL PaperWhite2_UseShinyCandy(PokeListWork *wk);
 
+// A wild shiny Pokémon that the player defeats drops a Shiny Candy this often, in percent
+// (src/paperwhite2/ov012/paperwhite2_shiny_candy_drop.c, from the wild battle's event in src/ov012/event_battle.c)
+#define SHINY_CANDY_DROP_PERCENT 50
+// The script that says the Shiny Candy dropped and gives it, or says the bag has no room: Script_20 of
+// res/field/scripts/global_2800.s
+#define SCRID_SHINY_CANDY_DROP 2819
+
+// Whether one of the wild Pokémon of a battle's setup is shiny
+BOOL PaperWhite2_HasShinyFoe(BtlSetup *setup);
+// After a wild battle that the player won (result, a BTL_RESULT_*) with a shiny Pokémon among the wild ones, starts
+// the drop's script under event at SHINY_CANDY_DROP_PERCENT's chance
+void PaperWhite2_ShinyCandyDrop(GameEvent *event, BOOL shinyFoe, u32 result);
+
 #endif // PAPERWHITE2_SHINY_CANDY_H

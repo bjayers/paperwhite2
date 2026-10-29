@@ -3,7 +3,7 @@
     "name": "Shiny Candy",
     "name_plural": "Shiny Candies",
     "description": "A candy that glitters with a strange\nlight. It makes a single Pokémon\nshiny.",
-    "price": 1000,
+    "price": 1,
     "hold_effect": "HOLD_EFFECT_NONE",
     "hold_param": 0,
     "pluck_effect": 0,
@@ -13,12 +13,12 @@
     "natural_gift_type": "TYPE_NORMAL",
     "important": false,
     "registrable": false,
-    "field_pocket": "BAG_POCKET_ITEMS",
+    "field_pocket": "BAG_POCKET_MEDICINE",
     "battle_pocket": [],
     "field_func": 1,
     "battle_func": 0,
     "kind": 0,
     "unk_e": 0,
-    "sort_index": 0,
+    "sort_index": 71,
     "value": 0
 }

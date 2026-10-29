@@ -20,4 +20,5 @@ Global7000_Text_FunfestMissionScoreWent = The Funfest Mission score\nwent up by 
 Global7000_Text_Obtained_5 = {0100:0} obtained\n{0200:2} {0109:1}!
 Global7000_Text_ExpShareTurnedOn = The {0109:0} was turned on.
 Global7000_Text_ExpShareTurnedOff = The {0109:0} was turned off.
+Global7000_Text_ShinyCandyDropped = The shiny Pokémon dropped\na Shiny Candy!
 \pad{f8}

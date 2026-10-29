@@ -319,6 +319,11 @@ u8 FieldEncount_RndCheckNPoke(EncountManager *manager, u32 zoneId) {
     return candidates[GFL_RandomLCAlt(count)];
 }
 
+#ifdef PAPERWHITE2_DEBUG_MENU
+// Paper White 2: the most PIDs that the debug menu's Always shiny rolls for a wild Pokémon
+#define ALWAYS_SHINY_ROLLS 0x4000
+#endif
+
 void FieldEncount_CreateWildPkm(PartyPkm *pkm, const EncountManager *manager, WildPkmParam *param) {
     PersonalData *personal = PML_PersonalLoad(param->species, param->form, 4);
     u32 rolls = 1;
@@ -329,6 +334,13 @@ void FieldEncount_CreateWildPkm(PartyPkm *pkm, const EncountManager *manager, Wi
         rolls += 2;
     }
     rolls = PassPower_ApplyLuckyShiny(rolls);
+#ifdef PAPERWHITE2_DEBUG_MENU
+    // Paper White 2: the debug menu's Always shiny rolls until the PID is shiny, about 1024 rolls at 1/1024, within
+    // a bound that a PID the encounter's constraints can't make shiny still ends
+    if (EventWork_FlagGet(GameData_GetEventWork(manager->gameData), EVENT_FLAG_DEBUG_ALWAYS_SHINY)) {
+        rolls = ALWAYS_SHINY_ROLLS;
+    }
+#endif
     for (i = 0; i < rolls; i++) {
         pid = FieldEncount_GenPID(manager, personal, param);
         if (PML_UtilPIDIsRare(manager->trainerId, pid)) {

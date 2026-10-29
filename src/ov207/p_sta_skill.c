@@ -123,6 +123,7 @@ static void PStaSkill_SetPlateAnim(SkillPlate *plate, u32 anim);
 static void PStaSkill_PrintStatRows(PStatusWork *wk, PStaSkillWork *skill, PartyPkm *pkm, u32 nature);
 static void PStaSkill_PrintHiddenRow(PStatusWork *wk, BmpWin *window, PartyPkm *pkm, u32 stat);
 static void PStaSkill_PrintHiddenTitle(PStatusWork *wk, PStaSkillWork *skill);
+static void PStaSkill_DrawHiddenBar(GFLBitmap *bitmap, u16 x, u32 value, u32 max, u8 color, u8 shade);
 static void PStaSkill_PrintRight(PStatusWork *wk, BmpWin *window, u32 msgId, u16 right, u16 color);
 #endif
 
@@ -133,29 +134,59 @@ static inline u32 PStaSkill_GetMove(PStatusWork *wk, u32 slot) {
 
 static const PlatePos sPlatePos[PLATE_COUNT] = { { 1, 2 }, { 1, 6 }, { 1, 10 }, { 1, 14 }, { 1, 20 } };
 
+#ifdef PAPERWHITE2
+// Paper White 2: the rows of HP and the stats are 19 tiles wide instead of 16 and 14, to the white panel's right edge
+// on the HP's row, for the hidden stats' bars
+static const PStaWindowSetup sSkillWindows[SKILL_WINDOW_COUNT] = {
+    { 8, 4, 19, 2 },   { 17, 6, 6, 1 },  { 8, 7, 19, 2 },  { 8, 9, 19, 2 },  { 8, 11, 19, 2 },
+    { 8, 13, 19, 2 },  { 8, 15, 19, 2 }, { 6, 18, 20, 6 }, { 10, 6, 14, 2 }, { 10, 8, 14, 2 },
+    { 10, 10, 14, 2 }, { 1, 13, 30, 6 }, { 4, 20, 24, 4 },
+};
+#else
 static const PStaWindowSetup sSkillWindows[SKILL_WINDOW_COUNT] = {
     { 8, 4, 16, 2 },   { 17, 6, 6, 1 },  { 8, 7, 14, 2 },  { 8, 9, 14, 2 },  { 8, 11, 14, 2 },
     { 8, 13, 14, 2 },  { 8, 15, 14, 2 }, { 6, 18, 20, 6 }, { 10, 6, 14, 2 }, { 10, 8, 14, 2 },
     { 10, 10, 14, 2 }, { 1, 13, 30, 6 }, { 4, 20, 24, 4 },
 };
+#endif
 
 #ifdef PAPERWHITE2
-// Paper White 2: the hidden stats' columns, the right edges of the EVs and the IVs in the stats' windows (which all
-// start at column 8), so that the IVs end where the stats' values do
-#define HIDDEN_EV_RIGHT 76
-#define HIDDEN_IV_RIGHT 105
-// The title bar's window over the empty bar and the page's name (« STATS »), and where its texts end: the columns'
-// names over the columns, the title at the right
-static const PStaWindowSetup sHiddenTitleWindow = { 13, 1, 19, 2 };
-#define HIDDEN_TITLE_EV_RIGHT 36
-#define HIDDEN_TITLE_IV_RIGHT 65
-#define HIDDEN_TITLE_RIGHT 144
-// The page's name in the title bar, which the title replaces, and the empty bar left of it that covers it
+// Paper White 2: the hidden stats' layout. Each row has, in the stats' white panel (x 120 to 216 on the HP's row, the
+// narrowest), the EV's bar, the EV and the IV, right-aligned, and the IV's bar. Positions are the top screen's pixels
+#define HIDDEN_EV_BAR_X 122
+#define HIDDEN_EV_RIGHT 168
+#define HIDDEN_IV_RIGHT 186
+#define HIDDEN_IV_BAR_X 189
+// The rows' windows start at column 8
+#define HIDDEN_ROW_LEFT 64
+// The bars: their size and height in the row, and the values that fill them, an EV's useful most and an IV's most
+#define HIDDEN_BAR_WIDTH 26
+#define HIDDEN_BAR_HEIGHT 6
+#define HIDDEN_BAR_Y 5
+#define HIDDEN_EV_BAR_MAX 252
+#define HIDDEN_IV_BAR_MAX 31
+// The bars' colors in the font's palette: a dark outline round a white track, and the fill, light above its shade,
+// blue for the EVs and red for the IVs
+#define HIDDEN_BAR_OUTLINE_COLOR 1
+#define HIDDEN_BAR_TRACK_COLOR 15
+#define HIDDEN_EV_BAR_COLOR 6
+#define HIDDEN_EV_BAR_SHADE_COLOR 5
+#define HIDDEN_IV_BAR_COLOR 4
+#define HIDDEN_IV_BAR_SHADE_COLOR 3
+// The title bar's window, over the empty bar and the page's name (« STATS »), with "EV" and "IV" ending where their
+// columns do
+static const PStaWindowSetup sHiddenTitleWindow = { 15, 1, 12, 2 };
+#define HIDDEN_HEADER_EV_RIGHT HIDDEN_EV_RIGHT
+#define HIDDEN_HEADER_IV_RIGHT HIDDEN_IV_RIGHT
+#define HIDDEN_HEADER_Y 1
+// The page's name in the title bar, which the empty bar left of it covers with the EVs and IVs
 #define HIDDEN_PAGE_NAME_X 22
 #define HIDDEN_EMPTY_BAR_X 13
 #define HIDDEN_PAGE_NAME_WIDTH 7
-// The hint for L and R, at the left of the HP's row
+// The hint for L and R, at the left of the HP's row, and where it starts in its window
 static const PStaWindowSetup sHiddenHintWindow = { 0, 4, 8, 2 };
+#define HIDDEN_HINT_X 4
+#define HIDDEN_HINT_Y 1
 
 // The stats in the rows' order, HP first, the stats' value, EV and IV
 static const u8 sStatRowParams[][3] = {
@@ -1497,40 +1528,71 @@ static void PStaSkill_PrintStatRows(PStatusWork *wk, PStaSkillWork *skill, Party
     PStaSkill_PrintHiddenTitle(wk, skill);
 }
 
-// A stat's EV and IV, in their columns
+// A stat's EV and IV, in their columns between their bars
 static void PStaSkill_PrintHiddenRow(PStatusWork *wk, BmpWin *window, PartyPkm *pkm, u32 stat) {
     WordSet *wordSet = GFL_WordSetSystemCreateDefault(wk->heapId);
+    GFLBitmap *bitmap = BmpWin_GetBitmap(window);
+    u32 ev = PokeParty_GetParam(pkm, sStatRowParams[stat][1], NULL);
+    u32 iv = PokeParty_GetParam(pkm, sStatRowParams[stat][2], NULL);
 
-    WordSetNumber(wordSet, 0, PokeParty_GetParam(pkm, sStatRowParams[stat][1], NULL), 3, 1, 1);
-    PStatus_PrintFormattedRightToWindow(wk, window, wordSet, 0x78, HIDDEN_EV_RIGHT, 1, PRINT_COLOR(1, 2, 0));
-    WordSetNumber(wordSet, 0, PokeParty_GetParam(pkm, sStatRowParams[stat][2], NULL), 3, 1, 1);
-    PStatus_PrintFormattedRightToWindow(wk, window, wordSet, 0x78, HIDDEN_IV_RIGHT, 1, PRINT_COLOR(1, 2, 0));
+    PStaSkill_DrawHiddenBar(bitmap, HIDDEN_EV_BAR_X - HIDDEN_ROW_LEFT, ev, HIDDEN_EV_BAR_MAX, HIDDEN_EV_BAR_COLOR,
+                            HIDDEN_EV_BAR_SHADE_COLOR);
+    PStaSkill_DrawHiddenBar(bitmap, HIDDEN_IV_BAR_X - HIDDEN_ROW_LEFT, iv, HIDDEN_IV_BAR_MAX, HIDDEN_IV_BAR_COLOR,
+                            HIDDEN_IV_BAR_SHADE_COLOR);
+    WordSetNumber(wordSet, 0, ev, 3, 1, 1);
+    PStatus_PrintFormattedRightToWindow(wk, window, wordSet, 0x78, HIDDEN_EV_RIGHT - HIDDEN_ROW_LEFT, 1,
+                                        PRINT_COLOR(1, 2, 0));
+    WordSetNumber(wordSet, 0, iv, 3, 1, 1);
+    PStatus_PrintFormattedRightToWindow(wk, window, wordSet, 0x78, HIDDEN_IV_RIGHT - HIDDEN_ROW_LEFT, 1,
+                                        PRINT_COLOR(1, 2, 0));
     GFL_WordSetSystemFree(wordSet);
 }
 
-// With the EVs and IVs, the columns' names and the title in the title bar; and the hint for what L and R show
-static void PStaSkill_PrintHiddenTitle(PStatusWork *wk, PStaSkillWork *skill) {
-    GFL_BitmapFill(BmpWin_GetBitmap(skill->titleWindow), 0);
-    GFL_BitmapFill(BmpWin_GetBitmap(skill->hintWindow), 0);
-    if (skill->showHidden == TRUE) {
-        PStaSkill_PrintRight(wk, skill->titleWindow, PStaSys_Text_EvColumn, HIDDEN_TITLE_EV_RIGHT,
-                             PRINT_COLOR(15, 2, 0));
-        PStaSkill_PrintRight(wk, skill->titleWindow, PStaSys_Text_IvColumn, HIDDEN_TITLE_IV_RIGHT,
-                             PRINT_COLOR(15, 2, 0));
-        PStaSkill_PrintRight(wk, skill->titleWindow, PStaSys_Text_HiddenStats, HIDDEN_TITLE_RIGHT,
-                             PRINT_COLOR(15, 2, 0));
-        PStatus_PrintToWindow(wk, skill->hintWindow, PStaSys_Text_ShowStats, 4, 1, PRINT_COLOR(15, 2, 0));
-    } else {
-        PStatus_PrintToWindow(wk, skill->hintWindow, PStaSys_Text_ShowHiddenStats, 4, 1, PRINT_COLOR(15, 2, 0));
+// A rounded bar of a value out of its most: an outline without its corners round the track, and the fill, its last
+// line in the shade
+static void PStaSkill_DrawHiddenBar(GFLBitmap *bitmap, u16 x, u32 value, u32 max, u8 color, u8 shade) {
+    u32 fill;
+
+    if (value > max) {
+        value = max;
+    }
+    fill = value * (HIDDEN_BAR_WIDTH - 2) / max;
+    GFL_BitmapFillArea(bitmap, x + 1, HIDDEN_BAR_Y, HIDDEN_BAR_WIDTH - 2, HIDDEN_BAR_HEIGHT, HIDDEN_BAR_OUTLINE_COLOR);
+    GFL_BitmapFillArea(bitmap, x, HIDDEN_BAR_Y + 1, HIDDEN_BAR_WIDTH, HIDDEN_BAR_HEIGHT - 2, HIDDEN_BAR_OUTLINE_COLOR);
+    GFL_BitmapFillArea(bitmap, x + 1, HIDDEN_BAR_Y + 1, HIDDEN_BAR_WIDTH - 2, HIDDEN_BAR_HEIGHT - 2,
+                       HIDDEN_BAR_TRACK_COLOR);
+    if (fill != 0) {
+        GFL_BitmapFillArea(bitmap, x + 1, HIDDEN_BAR_Y + 1, fill, HIDDEN_BAR_HEIGHT - 3, color);
+        GFL_BitmapFillArea(bitmap, x + 1, HIDDEN_BAR_Y + HIDDEN_BAR_HEIGHT - 2, fill, 1, shade);
     }
 }
 
-// A message of the summary's bank that ends at a column
+// With the EVs and IVs, the columns' names in the title bar; and the hint for what L and R show
+static void PStaSkill_PrintHiddenTitle(PStatusWork *wk, PStaSkillWork *skill) {
+    u16 left = sHiddenTitleWindow.x * 8;
+
+    GFL_BitmapFill(BmpWin_GetBitmap(skill->titleWindow), 0);
+    GFL_BitmapFill(BmpWin_GetBitmap(skill->hintWindow), 0);
+    if (skill->showHidden == TRUE) {
+        PStaSkill_PrintRight(wk, skill->titleWindow, PStaSys_Text_EvColumn, HIDDEN_HEADER_EV_RIGHT - left,
+                             PRINT_COLOR(15, 2, 0));
+        PStaSkill_PrintRight(wk, skill->titleWindow, PStaSys_Text_IvColumn, HIDDEN_HEADER_IV_RIGHT - left,
+                             PRINT_COLOR(15, 2, 0));
+        PStatus_PrintToWindow(wk, skill->hintWindow, PStaSys_Text_ShowStats, HIDDEN_HINT_X, HIDDEN_HINT_Y,
+                              PRINT_COLOR(15, 2, 0));
+    } else {
+        PStatus_PrintToWindow(wk, skill->hintWindow, PStaSys_Text_ShowHiddenStats, HIDDEN_HINT_X, HIDDEN_HINT_Y,
+                              PRINT_COLOR(15, 2, 0));
+    }
+}
+
+// A header of the summary's bank in the title bar, ending at a column
 static void PStaSkill_PrintRight(PStatusWork *wk, BmpWin *window, u32 msgId, u16 right, u16 color) {
     StrBuf *str = GFL_MsgDataLoadStrbufNew(wk->msgData, msgId);
     u32 width = GFL_FontGetBlockWidth(str, wk->font, 0);
 
-    PrintQueue_PrintColor(wk->printQueue, BmpWin_GetBitmap(window), right - width, 1, str, wk->font, color);
+    PrintQueue_PrintColor(wk->printQueue, BmpWin_GetBitmap(window), right - width, HIDDEN_HEADER_Y, str, wk->font,
+                          color);
     GFL_StrBufFree(str);
 }
 #endif

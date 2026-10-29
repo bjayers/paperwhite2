@@ -146,7 +146,12 @@ static const u8 sItemPockets[ITEM_LAST + 1] = {
     BAG_POCKET_ITEMS, // ITEM_OVAL_STONE
     BAG_POCKET_ITEMS, // ITEM_ODD_KEYSTONE
     BAG_POCKET_ITEMS, // ITEM_GRISEOUS_ORB
+#ifdef PAPERWHITE2
+    // Paper White 2: the Shiny Candy, which takes unused item 113, goes in Medicine with the Rare Candy
+    BAG_POCKET_MEDICINE, // ITEM_SHINY_CANDY
+#else
     BAG_POCKET_ITEMS, // ITEM_SHINY_CANDY
+#endif
     BAG_POCKET_ITEMS, // ITEM_UNUSED_114
     BAG_POCKET_ITEMS, // ITEM_UNUSED_115
     BAG_POCKET_ITEMS, // ITEM_DOUSE_DRIVE
