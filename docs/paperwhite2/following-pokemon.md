@@ -711,26 +711,27 @@ columns as the large check, which still reads four tiles). Then:
   ground (`sSmallLine`, eased as `sLine`), with no jut for eaves.
 - The line is never in front of the feet, so no strip's top passes the bottom one along the ground, and moving toward
   the eye only raises a strip, never below the feet's window.
-- A strip moves at most what lifts its rows back up the eye ray by the height the follower lost against a native
-  sprite: how far its quad is lowered (2 units for the plain lift) plus 2 for the down frame, within half a tile
-  (`GetSmallCap`). At the centers' camera that is 4 / sin 39 = 6.4 units of depth. A host test of
-  `FollowingRender_Strips` there gives the strips 6.4, 6.4 and 3.8 units of depth (top to bottom); the large ones move
-  up to about 50.
-- A player whose body is beside the follower's on the screen (the frames' middle halves meet: closer than a tile across)
-  and isn't clearly behind it caps the strips a unit short of the player's depth. A player a tile in front is 12.4
-  units nearer, more than the 6.4, and side by side a tile apart the bodies don't meet. With no room the follower draws
-  whole, as before.
+- A strip moves as far as its top needs, within the large split's cap (`FOLLOWING_RENDER_SPLIT_CAP`, 5 tiles of
+  depth), and no further: the line, not the cap, stops it. A host test of `FollowingRender_Strips` at the centers'
+  camera with a counter's face 8 units back gives the strips 15.3, 9.7 and 3.8 units of depth (top to bottom), and
+  under a 61-degree pitch 34.8, 24.5 and 12.9; the large ones move up to about 50. The first version capped them at
+  what lifts the rows back by the height the follower was lowered (4 / sin 39 = 6.4 units), which left the top two
+  strips short of the line, and they still clipped the counter a little; it also stopped them short of a player beside
+  the follower, which the user dropped: the follower is far enough from the player that the strips don't reach them.
+- With no wall a tile behind, the follower draws whole, as before.
 
-`FollowingRender_Strips` takes its cap from the stack (`FollowingStripStack.cap`); `SplitBody` passes
-`FOLLOWING_RENDER_SPLIT_CAP`, its old constant, and a host comparison of the old and new function over 2,000,000 random
-64-pixel cases gave the same output in every one. `GetWallLine`, `EaseLine` and `IsMaterialShared` are `SplitBody`'s
+`FollowingRender_Strips` takes its cap from the stack (`FollowingStripStack.cap`); both splits pass
+`FOLLOWING_RENDER_SPLIT_CAP`, `SplitBody`'s old constant, and a host comparison of the old and new function over
+2,000,000 random 64-pixel cases gave the same output in every one, again after the small cap changed (`SplitBody` and
+`FollowingRender_Strips` didn't). `GetWallLine`, `EaseLine` and `IsMaterialShared` are `SplitBody`'s
 code moved, unchanged; the wall cache also keys on the distance read.
 
 **To test** (melonDS): a 32-pixel follower (Pikachu) walking along a Pokémon Center's counter and the PC's, and standing
-in front of them, facing each way: no rows cut on any frame, the feet and the oval where they were, and never over the
-player beside or in front. On a route, in a town's open square and in grass, nothing changes. Against a building's
-wall a tile behind, the middle rows may move a little and the picture must not. A 64-pixel follower outdoors in front
-of a wall: as before.
+in front of them, facing each way: no rows cut on any frame, including the walk's down frames, the feet and the oval
+where they were, and the strips meeting without a gap or a step. With the player beside or in front of the follower at
+the counter, check the strips don't draw over them. On a route, in a town's open square and in grass, nothing
+changes. Against a building's wall a tile behind, the upper rows move toward the camera and the picture must not. A
+64-pixel follower outdoors in front of a wall: as before.
 
 ## What remains
 

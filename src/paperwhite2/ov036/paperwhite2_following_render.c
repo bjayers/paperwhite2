@@ -92,17 +92,13 @@ typedef struct {
 // offset does nothing) the rows that a counter's top only just cleared go into it. So the split is smaller: only a wall
 // SMALL_WALL_TILES behind is read, the field's quad keeps the bottom SMALL_STRIP_BASE_ROWS rows (the feet, which never
 // move), and the rows above are SMALL_STRIP_COUNT strips of SMALL_STRIP_ROWS. Each moves toward the camera only as far
-// as its top needs to clear the wall's face (no jut) and never along the ground past the feet, and by no more than
-// lifts its rows back up its eye ray by the height the follower lost against a native sprite: how far its quad is
-// lowered, plus SMALL_FRAME_DROP, within SMALL_RISE_MAX. At the Pokémon Centers' 39-degree camera and the plain lift
-// that is 4 units of height, 6.4 of depth at most, under the 12.4 that a player a tile in front stands nearer; and a
-// strip beside the player's body comes no nearer the camera than the player
+// as its top needs to clear the wall's face (no jut) and never along the ground past the feet, within the large
+// split's FOLLOWING_RENDER_SPLIT_CAP. At the Pokémon Centers' 39-degree camera a counter's face 8 units back takes the
+// strips 15.3, 9.7 and 3.8 units of depth (top to bottom)
 #define SMALL_STRIP_ROWS 8
 #define SMALL_STRIP_COUNT 3
 #define SMALL_STRIP_BASE_ROWS (32 - SMALL_STRIP_COUNT * SMALL_STRIP_ROWS)
 #define SMALL_WALL_TILES 1
-#define SMALL_FRAME_DROP (2 * FX32_ONE)
-#define SMALL_RISE_MAX (FOLLOWING_TILE / 2)
 // With no wall, behind every row of a 24-unit stack at any pitch
 #define SMALL_LINE_NATIVE (-2 * FOLLOWING_TILE)
 
@@ -573,52 +569,10 @@ static BOOL SplitBody(BillboardActorSys *system, BillboardActor *quad, FieldActo
     return TRUE;
 }
 
-// The most depth a 32-pixel follower's strips may move: what lifts their rows back up the eye ray by the height they
-// were lowered (lowered world units under the native quad, and a walk frame's drop), and for a player whose body is
-// beside the follower's on the screen, no nearer the camera than the player's quad less a margin
-static s32 GetSmallCap(const FollowingCameraBasis *basis, const BillboardActor *quad, const BillboardActor *playerQuad,
-                       s64 scale, s32 lowered) {
-    s64 rise = SMALL_FRAME_DROP + (lowered > 0 ? (s64)lowered * FX32_ONE : 0);
-    s64 cap;
-
-    if (rise > SMALL_RISE_MAX) {
-        rise = SMALL_RISE_MAX;
-    }
-    // A pull p along the eye ray lifts a row about p times the view axis's height
-    if (basis->view.y < FX32_ONE / 16) {
-        return 0;
-    }
-    cap = rise * FX32_ONE / basis->view.y;
-    if (playerQuad != NULL && playerQuad != quad) {
-        s64 dx = (s64)quad->pos.x - playerQuad->pos.x;
-        s64 dy = (s64)quad->pos.y - playerQuad->pos.y;
-        s64 dz = (s64)quad->pos.z - playerQuad->pos.z;
-        s64 across = (dx * basis->right.x + dy * basis->right.y + dz * basis->right.z) / FX32_ONE;
-        // The player's depth less the follower's: nearer the camera when positive
-        s64 gap = -(dx * basis->view.x + dy * basis->view.y + dz * basis->view.z) / FX32_ONE;
-        // The middle half of each frame, where the bodies are: a tile apart, side by side, they don't meet
-        s64 reach = (scale * quad->scaleX + scale * playerQuad->scaleX) / 2 >> FX32_SHIFT;
-
-        if (across < 0) {
-            across = -across;
-        }
-        if (across < reach && gap > -FOLLOWING_RENDER_SORT_BEHIND && cap > gap - FOLLOWING_RENDER_SORT_BEHIND) {
-            cap = gap - FOLLOWING_RENDER_SORT_BEHIND;
-        }
-    }
-    if (cap < 0) {
-        cap = 0;
-    }
-    if (cap > FOLLOWING_RENDER_SPLIT_CAP) {
-        cap = FOLLOWING_RENDER_SPLIT_CAP;
-    }
-    return (s32)cap;
-}
-
 // SplitBody for a 32-pixel body in front of a wall a tile behind it: the field's quad keeps the base rows, which don't
-// move, and sUpper holds the strips above, each moved toward the camera a little, never along the ground past the feet
+// move, and sUpper holds the strips above, each moved toward the camera to clear it, never past the feet's line
 static BOOL SplitSmallBody(BillboardActorSys *system, BillboardActor *quad, FieldActor *actor,
-                           const FollowingCamera *camera, s32 delta, const BillboardActor *playerQuad) {
+                           const FollowingCamera *camera) {
     BillboardActorScene *scene;
     u32 mat;
     BillboardActorMaterial *material;
@@ -688,9 +642,9 @@ static BOOL SplitSmallBody(BillboardActorSys *system, BillboardActor *quad, Fiel
     stack.forward = 0;
     stack.rise = 0;
     stack.ramp = FX32_ONE;
-    stack.cap = GetSmallCap(&basis, quad, playerQuad, scale, -delta);
-    if (stack.cap == 0 || !FollowingRender_Strips(&body, camera, (s32)half, (s32)height, row * SMALL_STRIP_ROWS,
-                                                  SMALL_STRIP_COUNT, &stack, stripScaleY, out)) {
+    stack.cap = FOLLOWING_RENDER_SPLIT_CAP;
+    if (!FollowingRender_Strips(&body, camera, (s32)half, (s32)height, row * SMALL_STRIP_ROWS, SMALL_STRIP_COUNT,
+                                &stack, stripScaleY, out)) {
         return FALSE;
     }
     // Strip i shows rows 8i to 8i + 7 from the top of the frame; the field's quad keeps the last 8
@@ -797,8 +751,7 @@ void FollowingRender_Draw(BillboardActorSys *system, G3DCamera *camera, G3DLight
                 // The strips are cut from the lowered quad, whose scale is a whole number of rows, then the base
                 // window is pulled with the rest of the body
                 quad->pos = adjusted.position;
-                if (SplitBody(system, quad, follower, &view) ||
-                    SplitSmallBody(system, quad, follower, &view, delta, playerQuad)) {
+                if (SplitBody(system, quad, follower, &view) || SplitSmallBody(system, quad, follower, &view)) {
                     quad->scaleY = (s16)(drawn.scaleY / sUpper.windows);
                 } else {
                     quad->scaleY = (s16)drawn.scaleY;

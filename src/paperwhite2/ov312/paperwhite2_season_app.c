@@ -74,7 +74,7 @@ enum {
 #define BANNER_PREVIEW_OFFSET_Y 22
 // How far the shadow's middle sits below the name's: the lowercase letters carry most of a name's weight, so the
 // shadow centered on the capitals' span looks high
-#define BANNER_SHADOW_DROP_Y 4
+#define BANNER_SHADOW_DROP_Y 2
 
 // How far each season's banner is moved up on top of that, so that the four names' capitals stand on the same rows:
 // Summer's art is drawn two lines lower than the others, and Spring's one line higher (its "p" and "g" hang below)
@@ -198,6 +198,8 @@ typedef struct {
     u8 bannerSeason;
     // Whether the banner's BG is off until the next frame, while its new screen and scroll wait for the VBlank
     u8 bannerHidden;
+    // Whether the buttons' BG is off until the next frame, while the new buttons' screen waits for the VBlank
+    u8 buttonsHidden;
     AppTaskMenuWin *buttons[BUTTON_MAX];
     TouchRect buttonRects[BUTTON_MAX + 1];
     // The 3D preview, NULL once it fails to load, and the frames left of its fade in after a season loads
@@ -380,6 +382,11 @@ static BOOL SeasonAppProc_Main(GameProc *proc, u32 *state, void *param, void *pr
         work->bannerHidden = FALSE;
         GFL_BGSysSetBGEnabled(BG_TOP_BANNER, work->bgsEnabled);
     }
+    // And the buttons' screen
+    if (work->buttonsHidden) {
+        work->buttonsHidden = FALSE;
+        GFL_BGSysSetBGEnabled(BG_TOUCH_TEXT, work->bgsEnabled);
+    }
     result = SeasonApp_Main(work, state);
     SeasonApp_UpdateButtons(work);
     PrintQueue_Main(work->queue);
@@ -509,7 +516,7 @@ static void SeasonApp_SetBGsEnabled(SeasonAppWork *work, BOOL enabled) {
         GFL_BGSysSetBGEnabled(BG_TOP_3D, FALSE);
         GFL_BGSysSetBGEnabled(BG_TOP_GRID, enabled);
     }
-    GFL_BGSysSetBGEnabled(BG_TOUCH_TEXT, enabled);
+    GFL_BGSysSetBGEnabled(BG_TOUCH_TEXT, enabled && !work->buttonsHidden);
     GFL_BGSysSetBGEnabled(BG_TOUCH_GRID, enabled);
 }
 
@@ -747,11 +754,12 @@ static void SeasonApp_OpenPage(SeasonAppWork *work, u8 page) {
             work->cursor = i;
         }
     }
-    SeasonApp_CreateButtons(work);
     if (page == PAGE_HEMISPHERE) {
         SeasonApp_ShowHemisphere(work);
     }
+    // The preview's load takes frames, and the buttons' old screen and characters stay until it is done
     SeasonApp_UpdatePreview(work);
+    SeasonApp_CreateButtons(work);
 }
 
 static void SeasonApp_ClosePage(SeasonAppWork *work) {
@@ -772,12 +780,15 @@ static u8 SeasonApp_GetCurrentValue(SeasonAppWork *work) {
 }
 
 // Makes the page's buttons, the current setting's in its own colors, then the Quit or Back button, and their rectangles
-// of the touch screen
+// of the touch screen. Their characters go to VRAM at once, over the last buttons', but their screen only at the next
+// VBlank, so the buttons' BG stays off until the frame after it: no frame shows the new characters with the old screen
 static void SeasonApp_CreateButtons(SeasonAppWork *work) {
     const SeasonAppPage *setup = &sSeasonAppPages[work->page];
     u8 current = SeasonApp_GetCurrentValue(work);
     u8 i;
 
+    work->buttonsHidden = TRUE;
+    GFL_BGSysSetBGEnabled(BG_TOUCH_TEXT, FALSE);
     for (i = 0; i < setup->count; i++) {
         const SeasonAppButtonSetup *button = &setup->buttons[i];
         AppTaskMenuRes *res = button->value == current ? work->currentButtonRes : work->buttonRes;
@@ -950,9 +961,10 @@ static void SeasonApp_ApplyButton(SeasonAppWork *work) {
         PaperWhite2_SetSeasonMode(work->gameData, button->value);
     }
     SeasonApp_FreeButtons(work);
-    SeasonApp_CreateButtons(work);
     work->messageSeason = PaperWhite2_GetCurrentSeason(work->gameData);
     SeasonApp_ClearMessage(work);
     SeasonApp_PrintLine(work, button->confirmation, 0);
+    // The old buttons show until the preview's load is done, as their screen is copied only at the next VBlank
     SeasonApp_UpdatePreview(work);
+    SeasonApp_CreateButtons(work);
 }

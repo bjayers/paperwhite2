@@ -371,7 +371,8 @@ fading to nothing at its edge (`SeasonPreview_LoadShadow`, the `SHADOW_` constan
 coordinates, in front of the map with identity matrices, with an A5I3 texture that the code makes when a season loads:
 a quarter of the ellipse, 128 by 64 texels of 5-bit alpha over a black palette (8 KB of texture VRAM and 16 bytes of
 palette VRAM), repeated flipped to make the whole, a texel a pixel. The app gives the preview the line of its center,
-the banner's name's (`SeasonPreview_Create`). Without the preview, over the grid, there is no shadow, and without room
+2 pixels below the banner's name's (`BANNER_SHADOW_DROP_Y`, `SeasonPreview_Create`): the lowercase letters carry most
+of a name's weight. Without the preview, over the grid, there is no shadow, and without room
 for it in the heap or VRAM the preview is drawn without it.
 
 To move the spot, change `target` (x east, z south) and keep `chunks` covering what the camera sees (the zone's
@@ -396,6 +397,14 @@ set, the current button is drawn again and the message window confirms ("The sea
 outside.", "The seasons will now change each week, on Mondays."); the page stays open. BACK returns to the menu, with
 the cursor on the button of the page it came from, and QUIT fades out to the field. The setting shows at the next map
 change into an exterior, as the Seasons section says.
+
+The buttons are made again for each page and after each pick. Their characters go to VRAM at once, over the last
+buttons' (freed in the same frame), but the touch BG's screen only at the next VBlank, and a preview's load before that
+VBlank takes frames: those frames showed the new characters through the old screen, pieces of both sets. So the
+buttons are made last, after the message and the preview's load (`SeasonApp_OpenPage`, `SeasonApp_ApplyButton`; until
+then the old buttons show whole, since the freed ones' screen and characters stay in VRAM), and
+`SeasonApp_CreateButtons` turns the buttons' BG off until the frame after that VBlank (`buttonsHidden`, as
+`bannerHidden` for the banner): one frame without buttons, then the new ones.
 
 **Replacing the button art.** The buttons are the task menus' (`AppTaskMenuWin`, `app_taskmenu.c`), with their frame
 from the app's own files:

@@ -72,7 +72,7 @@ typedef struct {
 // Where the top edges of the strips stand, along the ground from the feet (toward the camera when positive): base
 // (-5 to 2 tiles), plus forward (0 to 2 tiles) ramped in over ramp units of height from rise up. A strip whose top
 // already stands there or nearer doesn't move. No strip moves more than cap (0 to FOLLOWING_RENDER_SPLIT_CAP) of
-// depth: FOLLOWING_RENDER_SPLIT_CAP for a 64-pixel body, less for a 32-pixel one
+// depth: FOLLOWING_RENDER_SPLIT_CAP for a 64-pixel body and a 32-pixel one
 typedef struct {
     s32 base;
     s32 forward;
