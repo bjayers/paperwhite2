@@ -525,6 +525,8 @@ def get_dsd(tools_dir: Path, from_source: bool) -> Path:
 
 # Paper White 2: the hack's own code and headers, which only its build compiles (docs/paperwhite2/plugins.md)
 PLUGIN_DIR = ROOT / "src" / "paperwhite2"
+# Paper White 2's game code: White 2's IRDO with another region letter, see add_version
+HACK_GAMECODE = "IRDZ"
 PLUGIN_PATHS = ("src/paperwhite2/", "include/paperwhite2/")
 # The user's own dump of a DS's ARM7 BIOS, which the hack's ROM needs once ARM9 main changes, never committed
 ARM7_BIOS = "orig/bios7.bin"
@@ -781,8 +783,14 @@ def add_version(n: Writer, version: str, dsd: Path, bugfix: bool, shift: int,
     if hack:
         # Paper White 2: the hack's banner, its title and icon, from res/paperwhite2/banner/
         banner = Path("res/paperwhite2/banner/banner.yaml")
-        rom_variables["banner_edit"] = f"-e 's|^banner: .*|banner: {os.path.relpath(banner, rom_config.parent)}|'"
-        rom_implicit = sorted(str(p) for p in banner.parent.iterdir())
+        # The hack's game code: nds-bootstrap (TWiLight Menu++) writes an anti-piracy fix into main RAM at a fixed
+        # address for every ROM whose code is IRDO, which corrupts moved code and data; its Pokémon fixes look at the
+        # first three letters only, so another region letter keeps those and drops the fix (docs/paperwhite2/STATUS.md)
+        header = build_dir / "build" / "paperwhite2_header.yaml"
+        n.build([header], "hack_header", [extract_dir / "header.yaml"], variables={"gamecode": HACK_GAMECODE})
+        rom_variables["banner_edit"] = (f"-e 's|^banner: .*|banner: {os.path.relpath(banner, rom_config.parent)}|' "
+                                        f"-e 's|^header: .*|header: {os.path.relpath(header, rom_config.parent)}|'")
+        rom_implicit = sorted(str(p) for p in banner.parent.iterdir()) + [str(header)]
     else:
         rom_implicit = []
     n.build([rom_config], "rom_config", [arm9_o], implicit=rom_implicit, variables=rom_variables)
@@ -960,6 +968,7 @@ def main():
     # needs a backup suffix after -i, which GNU sed also takes. $banner_edit, if set, points the ROM at another banner
     n.rule("rom_config", "$dsd rom config --elf $in --config $config && sed -i.bak "
            "-e 's|^files_dir: .*|files_dir: ../files|' $banner_edit $out && rm $out.bak", "Configuring ROM for $config")
+    n.rule("hack_header", "sed 's/^gamecode: .*/gamecode: $gamecode/' $in > $out", "Writing $out")
     n.rule("rom_build", "$dsd rom build --config $in --rom $out" + (" $bios" if args.hack else ""), "Building $out")
     n.rule("install_rom", "cp $in $target && touch $out", "Copying $in to $target")
     n.rule("check_modules", "$dsd check modules --config-path $config --fail && touch $out", "Checking modules")

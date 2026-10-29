@@ -260,6 +260,18 @@ which the data doesn't show: ask before moving her). Kept as the user placed the
 top-left corner of every Center up to Castelia, moved there so his medals aren't triggered by accident, and
 Castelia's upstairs clerk (script 6) moved to make room for him.
 
+### The 3DS crashes: nds-bootstrap's IRDO anti-piracy fix (2026-10-29)
+
+nds-bootstrap applies `retail/apfix/files/IRDO-FFFF.ips` to every ROM with game code IRDO, modified ones
+included: it hooks the end of `MIi_UncompressBackward` (0x02004ea4) and writes a 224-byte stub over
+0x020933d0-0x020934af. The original has an unused debug font there; once main moved, it overwrote AreaMan's and
+the VRAM manager's tables, so billboard-actor and BG allocations failed (invisible NPCs and player, "Virban") and
+the original's unchecked AREAMAN_FAIL path then freed garbage (Data Abort at 0x20202020). Confirmed on the 3DS: a
+per-ROM override (`sd:/_nds/nds-bootstrap/apFix/<rom>.ips` restoring `bx lr`) fixed the failing build. Fix: hack
+builds use game code IRDZ (`HACK_GAMECODE` in configure.py; the DSi title ID follows). nds-bootstrap's Gen 5 fixes
+(alternate read method, ROM location, ARM9 patch) check only "IRD", so they still apply. DS Protect is disarmed,
+so the AP fix isn't needed.
+
 ### Next
 
 1. The user tests `build/paperwhite2.nds` (`\\wsl$\Ubuntu\home\riku\paperwhite2\build\paperwhite2.nds`) in melonDS
