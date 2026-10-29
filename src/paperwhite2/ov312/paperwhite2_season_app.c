@@ -25,8 +25,6 @@
 #include "paperwhite2/season_app.h"
 #include "paperwhite2/season_preview.h"
 #include "system/app_taskmenu.h"
-#include "system/bmp_menulist.h"
-#include "system/bmp_menuwork.h"
 #include "system/bmp_winframe.h"
 #include "system/game_data.h"
 #include "system/gf_font.h"
@@ -36,10 +34,10 @@
 #include "text/system/season_app.h"
 
 // Paper White 2: the Season app, which the Pokémon Centers' globe opens in Geonet's place, in Geonet's overlay 312. It
-// is built from Geonet's parts (src/ov312/geonet.c): its grid on both screens, its message window, its list menu and
-// its touch buttons, without the globe. The top screen shows the setting, the season and the season's banner; on the
-// touch screen a list leads to pages of buttons that set the season setting of paperwhite2/season.h. Behind the top
-// screen's banner, a 3D preview shows a spot of the field's map in the season (paperwhite2/season_preview.h), or
+// is built from Geonet's parts (src/ov312/geonet.c): its grid on both screens, its message window and its touch
+// buttons, without the globe. The top screen shows the setting, the season and the season's banner; on the touch
+// screen a menu of buttons leads to pages of buttons that set the season setting of paperwhite2/season.h. Behind the
+// top screen's banner, a 3D preview shows a spot of the field's map in the season (paperwhite2/season_preview.h), or
 // Geonet's grid if it doesn't load (docs/paperwhite2/plugins.md, Season app)
 
 // Geonet's heap, which the app takes in its place, at 384 KB, with room for the preview's map, textures and props;
@@ -89,7 +87,7 @@ static const s8 sBannerNameAdjustY[SEASON_COUNT] = { -1, 2, 0, 0 };
 #define PREVIEW_DARK_BRIGHTNESS -16
 
 // The BGs: on the top screen, the main engine's, the message window over the banner over the 3D preview, or over the
-// grid without it, and on the touch screen, the sub engine's, the list and the buttons over the grid
+// grid without it, and on the touch screen, the sub engine's, the buttons over the grid
 enum {
     BG_TOP_3D = 0,
     BG_TOP_BANNER = 1,
@@ -106,8 +104,6 @@ enum {
 #define PALETTE_FONT 4
 #define FRAME_MESSAGE_CHAR 4
 #define FRAME_MESSAGE_PALETTE 6
-#define FRAME_MENU_CHAR 0x22
-#define FRAME_MENU_PALETTE 7
 // The top screen's banner
 #define PALETTE_BANNER 8
 // The touch screen's buttons: the cursor's and the others', then the same for the button of the current setting
@@ -118,38 +114,39 @@ enum {
 #define WINDOW_FILL_COLOR 15
 #define MESSAGE_LINE_HEIGHT 16
 
-// The buttons' size in tiles, and the Back button's place, Geonet's Quit button's
+// The buttons' size in tiles, the menu's wider ones, and the place of the menu's Quit button and the pages' Back
+// button, Geonet's Quit button's
 #define BUTTON_WIDTH 13
+#define MENU_BUTTON_WIDTH 16
 #define BUTTON_HEIGHT 3
-#define BACK_BUTTON_X 23
-#define BACK_BUTTON_Y 21
-#define BACK_BUTTON_WIDTH 9
-// The most buttons a page has, with its Back button
+#define EXIT_BUTTON_X 23
+#define EXIT_BUTTON_Y 21
+#define EXIT_BUTTON_WIDTH 9
+// The most buttons a page has, with its Quit or Back button
 #define BUTTON_MAX 6
+// What SeasonApp_GetCurrentValue gives for the menu, whose buttons set nothing
+#define NO_CURRENT_VALUE 0xff
 
 #define BUTTON_TEXT_COLOR PRINT_COLOR(14, 15, 3)
 
 enum {
     SEQ_INIT,
     SEQ_FADE_IN,
-    SEQ_LIST_OPEN,
-    SEQ_LIST,
     SEQ_PAGE,
     SEQ_PAGE_PICKED,
     SEQ_FADE_OUT,
     SEQ_END,
 };
 
-// The list's items, whose values are the pages they open, and the pages
+// The pages: the three of the settings, which the menu's buttons open, and the menu, the first one
 enum {
     PAGE_SEASON,
     PAGE_DYNAMIC,
     PAGE_HEMISPHERE,
-    LIST_CANCEL,
-    LIST_ITEM_COUNT,
+    PAGE_MENU,
+    PAGE_COUNT,
 };
 
-#define PAGE_COUNT LIST_CANCEL
 #define PAGE_NONE PAGE_COUNT
 
 typedef struct {
@@ -161,8 +158,8 @@ typedef struct {
     u8 palette;
 } SeasonAppWindowSetup;
 
-// A button of a page: its label, the message once it is picked, the SEASON_MODE_* or HEMISPHERE_* it sets, and its
-// place in tiles
+// A button of a page: its label, the message once it is picked, the SEASON_MODE_* or HEMISPHERE_* it sets, or on the
+// menu the PAGE_* it opens, and its place in tiles
 typedef struct {
     u32 label;
     u32 confirmation;
@@ -171,9 +168,12 @@ typedef struct {
     u8 y;
 } SeasonAppButtonSetup;
 
+// A page's buttons, their width in tiles, and the label of its last button, the menu's Quit or a page's Back
 typedef struct {
     const SeasonAppButtonSetup *buttons;
     u8 count;
+    u8 buttonWidth;
+    u32 exitLabel;
 } SeasonAppPage;
 
 typedef struct {
@@ -185,13 +185,8 @@ typedef struct {
     u8 textColors[3];
     BmpWin *messageWindow;
     PrintWindow messagePrint;
-    BmpWin *listWindow;
-    PrintWindow listPrint;
-    BmpMenuList *list;
-    ListMenuOption *options;
-    // The list's row of the cursor, kept while a page is open
-    u16 listRow;
-    TouchRect listRects[LIST_ITEM_COUNT + 1];
+    // The menu's button of the page that is open, where the cursor goes back to
+    u8 menuCursor;
     AppTaskMenuRes *buttonRes;
     AppTaskMenuRes *currentButtonRes;
     // PAGE_* or PAGE_NONE
@@ -201,6 +196,8 @@ typedef struct {
     // The season of the message window's text, and the season the banner shows, SEASON_COUNT before the first
     u8 messageSeason;
     u8 bannerSeason;
+    // Whether the banner's BG is off until the next frame, while its new screen and scroll wait for the VBlank
+    u8 bannerHidden;
     AppTaskMenuWin *buttons[BUTTON_MAX];
     TouchRect buttonRects[BUTTON_MAX + 1];
     // The 3D preview, NULL once it fails to load, and the frames left of its fade in after a season loads
@@ -232,10 +229,6 @@ static void SeasonApp_FreePreview(SeasonAppWork *work);
 static void SeasonApp_UpdatePreviewFade(SeasonAppWork *work);
 static void SeasonApp_ClearBannerBackground(u8 *chars, u32 size);
 static void SeasonApp_UpdatePreview(SeasonAppWork *work);
-static void SeasonApp_ListCursorCallback(BmpMenuList *list, s32 value, u8 init);
-static void SeasonApp_CreateList(SeasonAppWork *work);
-static s32 SeasonApp_UpdateList(SeasonAppWork *work);
-static void SeasonApp_FreeList(SeasonAppWork *work);
 static void SeasonApp_OpenPage(SeasonAppWork *work, u8 page);
 static void SeasonApp_ClosePage(SeasonAppWork *work);
 static u8 SeasonApp_GetCurrentValue(SeasonAppWork *work);
@@ -305,46 +298,16 @@ static const BGSetup sSeasonAppGridBGSetup = {
     FALSE,
 };
 
-// Geonet's message window, at the bottom of the top screen, and the list in the middle of the touch screen
+// Geonet's message window, at the bottom of the top screen
 static const SeasonAppWindowSetup sSeasonAppMessageWindow = { BG_TOP_TEXT, 2, 19, 28, 4, PALETTE_FONT };
-static const SeasonAppWindowSetup sSeasonAppListWindow = { BG_TOUCH_TEXT, 9, 8, 14, 8, PALETTE_FONT };
-
-static const BmpMenuListHeader sSeasonAppListHeader = {
-    NULL,
-    NULL,
-    NULL,
-    LIST_ITEM_COUNT,
-    LIST_ITEM_COUNT,
-    0,
-    12,
-    0,
-    0,
-    1,
-    15,
-    2,
-    0,
-    0,
-    BMPMENULIST_SKIP_NONE,
-    0,
-    BMPMENULIST_CURSOR_SHOW,
-    NULL,
-    0,
-    0,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    20,
-};
-
-static const u32 sSeasonAppListItems[LIST_ITEM_COUNT] = {
-    SeasonApp_Text_SetSeason,
-    SeasonApp_Text_DynamicOptions,
-    SeasonApp_Text_SetHemisphere,
-    SeasonApp_Text_Cancel,
-};
 
 // clang-format off
+static const SeasonAppButtonSetup sSeasonAppMenuButtons[] = {
+    {SeasonApp_Text_SetSeason, 0, PAGE_SEASON, 8, 4},
+    {SeasonApp_Text_DynamicOptions, 0, PAGE_DYNAMIC, 8, 9},
+    {SeasonApp_Text_SetHemisphere, 0, PAGE_HEMISPHERE, 8, 14},
+};
+
 static const SeasonAppButtonSetup sSeasonAppSeasonButtons[] = {
     {SeasonApp_Text_Spring, SeasonApp_Text_ChangeToSpring, SEASON_MODE_SPRING, 2, 5},
     {SeasonApp_Text_Summer, SeasonApp_Text_ChangeToSummer, SEASON_MODE_SUMMER, 17, 5},
@@ -368,9 +331,10 @@ static const SeasonAppButtonSetup sSeasonAppHemisphereButtons[] = {
 // clang-format on
 
 static const SeasonAppPage sSeasonAppPages[PAGE_COUNT] = {
-    { sSeasonAppSeasonButtons, NELEMS(sSeasonAppSeasonButtons) },
-    { sSeasonAppDynamicButtons, NELEMS(sSeasonAppDynamicButtons) },
-    { sSeasonAppHemisphereButtons, NELEMS(sSeasonAppHemisphereButtons) },
+    { sSeasonAppSeasonButtons, NELEMS(sSeasonAppSeasonButtons), BUTTON_WIDTH, SeasonApp_Text_Back },
+    { sSeasonAppDynamicButtons, NELEMS(sSeasonAppDynamicButtons), BUTTON_WIDTH, SeasonApp_Text_Back },
+    { sSeasonAppHemisphereButtons, NELEMS(sSeasonAppHemisphereButtons), BUTTON_WIDTH, SeasonApp_Text_Back },
+    { sSeasonAppMenuButtons, NELEMS(sSeasonAppMenuButtons), MENU_BUTTON_WIDTH, SeasonApp_Text_Quit },
 };
 
 // The real-time mode's message is the northern hemisphere's here
@@ -409,8 +373,14 @@ static BOOL SeasonAppProc_Init(GameProc *proc, u32 *state, void *param, void *pr
 
 static BOOL SeasonAppProc_Main(GameProc *proc, u32 *state, void *param, void *procWork) {
     SeasonAppWork *work = procWork;
-    BOOL result = SeasonApp_Main(work, state);
+    BOOL result;
 
+    // The VBlank since the banner was loaded has set its screen and scroll
+    if (work->bannerHidden) {
+        work->bannerHidden = FALSE;
+        GFL_BGSysSetBGEnabled(BG_TOP_BANNER, work->bgsEnabled);
+    }
+    result = SeasonApp_Main(work, state);
     SeasonApp_UpdateButtons(work);
     PrintQueue_Main(work->queue);
     if (work->preview != NULL) {
@@ -429,35 +399,14 @@ static BOOL SeasonApp_Main(SeasonAppWork *work, u32 *state) {
         work->preview =
             SeasonPreview_Create(work->heapId, BANNER_NAME_CENTER_Y - BANNER_PREVIEW_OFFSET_Y + BANNER_SHADOW_DROP_Y);
         SeasonApp_ShowStatus(work);
+        SeasonApp_OpenPage(work, PAGE_MENU);
         GFL_WipeSet(WIPE_MODE_BOTH, WIPE_TYPE_FADE_IN, WIPE_TYPE_FADE_IN, WIPE_COLOR_BLACK, 6, 1, work->heapId);
         SeasonApp_SetBGsEnabled(work, TRUE);
         *state = SEQ_FADE_IN;
         break;
     case SEQ_FADE_IN:
         if (GFL_WipeIsFinished() == TRUE) {
-            *state = SEQ_LIST_OPEN;
-        }
-        break;
-    case SEQ_LIST_OPEN:
-        SeasonApp_CreateList(work);
-        *state = SEQ_LIST;
-        break;
-    case SEQ_LIST:
-        if (PrintQueue_IsEmpty(work->queue)) {
-            s32 choice = SeasonApp_UpdateList(work);
-
-            if (choice != BMPMENULIST_NULL) {
-                SeasonApp_FreeList(work);
-                if (choice == LIST_CANCEL || choice == BMPMENULIST_CANCEL) {
-                    GFL_SndSEPlay(SEQ_SE_CANCEL1);
-                    *state = SEQ_FADE_OUT;
-                } else {
-                    GFL_SndSEPlay(SEQ_SE_DECIDE1);
-                    work->listRow = choice;
-                    SeasonApp_OpenPage(work, choice);
-                    *state = SEQ_PAGE;
-                }
-            }
+            *state = SEQ_PAGE;
         }
         break;
     case SEQ_PAGE:
@@ -467,10 +416,22 @@ static BOOL SeasonApp_Main(SeasonAppWork *work, u32 *state) {
         break;
     case SEQ_PAGE_PICKED:
         if (AppTaskMenuWin_IsFlashFinished(work->buttons[work->cursor])) {
-            if (work->cursor == work->buttonCount - 1) {
+            if (work->page == PAGE_MENU) {
+                if (work->cursor == work->buttonCount - 1) {
+                    *state = SEQ_FADE_OUT;
+                } else {
+                    u8 page = sSeasonAppMenuButtons[work->cursor].value;
+
+                    work->menuCursor = work->cursor;
+                    SeasonApp_ClosePage(work);
+                    SeasonApp_OpenPage(work, page);
+                    *state = SEQ_PAGE;
+                }
+            } else if (work->cursor == work->buttonCount - 1) {
                 SeasonApp_ClosePage(work);
                 SeasonApp_ShowStatus(work);
-                *state = SEQ_LIST_OPEN;
+                SeasonApp_OpenPage(work, PAGE_MENU);
+                *state = SEQ_PAGE;
             } else {
                 SeasonApp_ApplyButton(work);
                 *state = SEQ_PAGE;
@@ -483,6 +444,7 @@ static BOOL SeasonApp_Main(SeasonAppWork *work, u32 *state) {
         break;
     case SEQ_END:
         if (GFL_WipeIsFinished() == TRUE) {
+            SeasonApp_ClosePage(work);
             SeasonApp_FreePreview(work);
             SeasonApp_FreeBGs(work);
             result = TRUE;
@@ -490,9 +452,6 @@ static BOOL SeasonApp_Main(SeasonAppWork *work, u32 *state) {
         break;
     }
 
-    if (work->list != NULL) {
-        PrintWindow_Flush(&work->listPrint, work->queue);
-    }
     if (work->messageWindow != NULL) {
         PrintWindow_Flush(&work->messagePrint, work->queue);
     }
@@ -538,11 +497,11 @@ static void SeasonApp_FreeGraphics(void) {
     GFL_BGSysFree();
 }
 
-// The top screen has the preview or, without it, the grid
+// The top screen has the preview or, without it, the grid. A banner just loaded stays hidden until the next frame
 static void SeasonApp_SetBGsEnabled(SeasonAppWork *work, BOOL enabled) {
     work->bgsEnabled = enabled;
     GFL_BGSysSetBGEnabled(BG_TOP_TEXT, enabled);
-    GFL_BGSysSetBGEnabled(BG_TOP_BANNER, enabled);
+    GFL_BGSysSetBGEnabled(BG_TOP_BANNER, enabled && !work->bannerHidden);
     if (work->preview != NULL && enabled) {
         GFL_BGSysSet3DBGPriority(BG_TOP_3D_PRIORITY);
         GFL_BGSysSetBGEnabled(BG_TOP_GRID, FALSE);
@@ -578,7 +537,6 @@ static void SeasonApp_LoadBGs(SeasonAppWork *work) {
     GFL_BGSysCreateBG(BG_TOUCH_TEXT, &sSeasonAppTextBGSetup, BGMODE_TEXT);
     GFL_BGSysClearScr(BG_TOUCH_TEXT);
     SeasonApp_LoadGrid(arc, BG_TOUCH_GRID, PALTYPE_SUB_BG, work->heapId);
-    LoadSysMsgBox(BG_TOUCH_TEXT, FRAME_MENU_CHAR, FRAME_MENU_PALETTE, 0, work->heapId);
     GFL_BGSysLoadNCLRDefault(ARCID_FONT, 5, PALTYPE_SUB_BG, PALETTE_FONT * 0x20, 0x20, work->heapId);
     GFL_BGSysClearCharCore(BG_TOUCH_TEXT, 0x20, 0, work->heapId);
     GFL_BGSysResetStdPalette(BG_TOUCH_TEXT, GX_RGB(0, 0, 0));
@@ -663,19 +621,29 @@ static void SeasonApp_ShowHemisphere(SeasonAppWork *work) {
     SeasonApp_PrintLine(work, SeasonApp_Text_HemisphereUsedByRealTime, 1);
 }
 
-// Shows a season's banner, as EventSeasonBanner_LoadGraphics loads it, in the banner's palette of the top screen, and
-// the season in the preview
+// Shows the season in the preview, then its banner, as EventSeasonBanner_LoadGraphics loads it, in the banner's palette
+// of the top screen. The palette and the characters are loaded at once, the screen and the scroll at the next VBlank,
+// after the preview's load has taken its frames, so the banner's BG stays off until the frame after that VBlank: no
+// frame shows the new characters with the last banner's screen or scroll
 static void SeasonApp_ShowBanner(SeasonAppWork *work, u8 season) {
     ArcTool *arc;
     void *file;
     NNSG2dPaletteData *palette;
     NNSG2dCharacterData *character;
     NNSG2dScreenData *screen;
+    int offsetY;
 
     if (season == work->bannerSeason) {
         return;
     }
     work->bannerSeason = season;
+    SeasonApp_ShowPreview(work, season);
+    offsetY = sBannerNameAdjustY[season];
+    if (work->preview != NULL) {
+        offsetY += BANNER_PREVIEW_OFFSET_Y;
+    }
+    work->bannerHidden = TRUE;
+    GFL_BGSysSetBGEnabled(BG_TOP_BANNER, FALSE);
     arc = GFL_ArcSysCreateFileHandle(ARCID_SEASON_BANNER, work->heapId);
 
     file = GFL_ArcToolReadHeapNew(arc, season * BANNER_FILE_COUNT + BANNER_FILE_NCLR, work->heapId);
@@ -695,9 +663,9 @@ static void SeasonApp_ShowBanner(SeasonAppWork *work, u8 season) {
     GFL_HeapFree(file);
     GFL_BGSysSetScrPaletteNo(BG_TOP_BANNER, 0, 0, 32, 32, PALETTE_BANNER);
     GFL_BGSysQueueScrLoad(BG_TOP_BANNER);
+    GFL_BGSysMoveBGReq(BG_TOP_BANNER, BG_MOVE_SET_Y, offsetY);
 
     GFL_ArcToolFree(arc);
-    SeasonApp_ShowPreview(work, season);
 }
 
 // Loads the season in the preview, dark until a frame is drawn with it, then fading in. If it doesn't load, the top
@@ -709,11 +677,9 @@ static void SeasonApp_ShowPreview(SeasonAppWork *work, u8 season) {
     G2x_SetBlendBrightness_(REG_BLDCNT_ADDR, GX_BLEND_PLANEMASK_BG0, PREVIEW_DARK_BRIGHTNESS);
     if (SeasonPreview_Load(work->preview, season)) {
         work->previewFade = PREVIEW_DARK_FRAMES + PREVIEW_FADE_FRAMES;
-        GFL_BGSysMoveBG(BG_TOP_BANNER, BG_MOVE_SET_Y, BANNER_PREVIEW_OFFSET_Y + sBannerNameAdjustY[season]);
         return;
     }
     SeasonApp_FreePreview(work);
-    GFL_BGSysMoveBG(BG_TOP_BANNER, BG_MOVE_SET_Y, sBannerNameAdjustY[season]);
     if (work->bgsEnabled) {
         SeasonApp_SetBGsEnabled(work, TRUE);
     }
@@ -765,76 +731,6 @@ static void SeasonApp_UpdatePreview(SeasonAppWork *work) {
     SeasonApp_ShowBanner(work, season);
 }
 
-static void SeasonApp_ListCursorCallback(BmpMenuList *list, s32 value, u8 init) {
-    if (!init) {
-        GFL_SndSEPlay(SEQ_SE_MESSAGE);
-    }
-}
-
-// Geonet's menu, with the cursor where it was, and the rows' rectangles of the touch screen
-static void SeasonApp_CreateList(SeasonAppWork *work) {
-    BmpMenuListHeader header;
-    u32 rowHeight;
-    int i;
-
-    work->listWindow = SeasonApp_CreateWindow(&sSeasonAppListWindow);
-    work->options = ListMenuCore_CreateOptionList(LIST_ITEM_COUNT, work->heapId);
-    for (i = 0; i < LIST_ITEM_COUNT; i++) {
-        ListMenuCore_AppendMsgOption(work->options, work->msgData, sSeasonAppListItems[i], i, work->heapId);
-    }
-    PrintWindow_Init(&work->listPrint, work->listWindow);
-    header = sSeasonAppListHeader;
-    header.options = work->options;
-    header.cursorCallback = SeasonApp_ListCursorCallback;
-    header.fontSizeX = 12;
-    header.fontSizeY = GFL_FontGetCharHeight(work->font);
-    header.msgData = work->msgData;
-    header.printWindow = &work->listPrint;
-    header.queue = work->queue;
-    header.font = work->font;
-    work->list = BmpMenuList_Create(&header, 0, work->listRow, work->heapId);
-    BmpMenuList_LoadCursor(work->list, work->heapId);
-    BmpWin_DrawFrame(work->listWindow, WINFRAME_TRANSFER_NOW, FRAME_MENU_CHAR, FRAME_MENU_PALETTE);
-    BmpWin_FlushChar(work->listWindow);
-
-    rowHeight = BmpMenuList_GetParam(work->list, BMPMENULIST_PARAM_ROW_HEIGHT);
-    for (i = 0; i < LIST_ITEM_COUNT; i++) {
-        work->listRects[i].top = sSeasonAppListWindow.y * 8 + BmpMenuList_GetRowY(work->list, i);
-        work->listRects[i].bottom = work->listRects[i].top + rowHeight - 1;
-        work->listRects[i].left = sSeasonAppListWindow.x * 8;
-        work->listRects[i].right = (sSeasonAppListWindow.x + sSeasonAppListWindow.width) * 8 - 1;
-    }
-    work->listRects[i].top = TOUCH_RECT_END;
-}
-
-// Reads the touch screen, where a row's item is chosen at once, then the keys. Returns BmpMenuList_Update's result
-static s32 SeasonApp_UpdateList(SeasonAppWork *work) {
-    s32 row = GFL_HIDGetTouchPressedRect(work->listRects);
-    s32 choice;
-
-    if (row != TOUCH_RECT_NONE) {
-        GCTX_HIDSetUsingTouch(TRUE);
-        return BmpMenuList_GetOptionValue(work->list, row);
-    }
-    choice = BmpMenuList_Update(work->list);
-    if (choice != BMPMENULIST_NULL) {
-        GCTX_HIDSetUsingTouch(FALSE);
-    }
-    return choice;
-}
-
-static void SeasonApp_FreeList(SeasonAppWork *work) {
-    while (PrintQueue_IsBitmapPending(work->queue, BmpWin_GetBitmap(work->listWindow))) {
-        PrintQueue_Main(work->queue);
-    }
-    BmpWin_ClearScreen(work->listWindow);
-    BmpWin_ClearFrame(work->listWindow, WINFRAME_TRANSFER_VBLANK);
-    BmpWin_Free(work->listWindow);
-    BmpMenuList_Free(work->list, NULL, NULL);
-    ListMenuCore_FreeOptionList(work->options);
-    work->list = NULL;
-}
-
 static void SeasonApp_OpenPage(SeasonAppWork *work, u8 page) {
     const SeasonAppPage *setup = &sSeasonAppPages[page];
     u8 current;
@@ -842,8 +738,9 @@ static void SeasonApp_OpenPage(SeasonAppWork *work, u8 page) {
 
     work->page = page;
     work->buttonCount = setup->count + 1;
-    // The cursor starts on the button of the current setting, if the page has it
-    work->cursor = 0;
+    // The cursor starts on the menu's button of the page it came back from, or on the button of the current setting,
+    // if the page has it
+    work->cursor = page == PAGE_MENU ? work->menuCursor : 0;
     current = SeasonApp_GetCurrentValue(work);
     for (i = 0; i < setup->count; i++) {
         if (setup->buttons[i].value == current) {
@@ -863,16 +760,19 @@ static void SeasonApp_ClosePage(SeasonAppWork *work) {
     work->buttonCount = 0;
 }
 
-// The setting that the page's buttons set
+// The setting that the page's buttons set, NO_CURRENT_VALUE for the menu
 static u8 SeasonApp_GetCurrentValue(SeasonAppWork *work) {
+    if (work->page == PAGE_MENU) {
+        return NO_CURRENT_VALUE;
+    }
     if (work->page == PAGE_HEMISPHERE) {
         return PaperWhite2_GetSeasonHemisphere(work->gameData);
     }
     return PaperWhite2_GetSeasonMode(work->gameData);
 }
 
-// Makes the page's buttons, the current setting's in its own colors, then the Back button, and their rectangles of
-// the touch screen
+// Makes the page's buttons, the current setting's in its own colors, then the Quit or Back button, and their rectangles
+// of the touch screen
 static void SeasonApp_CreateButtons(SeasonAppWork *work) {
     const SeasonAppPage *setup = &sSeasonAppPages[work->page];
     u8 current = SeasonApp_GetCurrentValue(work);
@@ -882,18 +782,18 @@ static void SeasonApp_CreateButtons(SeasonAppWork *work) {
         const SeasonAppButtonSetup *button = &setup->buttons[i];
         AppTaskMenuRes *res = button->value == current ? work->currentButtonRes : work->buttonRes;
 
-        SeasonApp_CreateButton(work, i, res, button->label, 0, button->x, button->y, BUTTON_WIDTH);
+        SeasonApp_CreateButton(work, i, res, button->label, 0, button->x, button->y, setup->buttonWidth);
     }
-    SeasonApp_CreateButton(work, setup->count, work->buttonRes, SeasonApp_Text_Back, APP_TASKMENU_ITEM_RETURN,
-                           BACK_BUTTON_X, BACK_BUTTON_Y, BACK_BUTTON_WIDTH);
+    SeasonApp_CreateButton(work, setup->count, work->buttonRes, setup->exitLabel, APP_TASKMENU_ITEM_RETURN,
+                           EXIT_BUTTON_X, EXIT_BUTTON_Y, EXIT_BUTTON_WIDTH);
     work->buttonRects[work->buttonCount].top = TOUCH_RECT_END;
     if (GCTX_HIDIsUsingTouch() == FALSE) {
         AppTaskMenuWin_SetActive(work->buttons[work->cursor], TRUE);
     }
 }
 
-// Makes a button of the page and its rectangle: the Back button as Geonet's Quit button, the others with their text
-// centered
+// Makes a button of the page and its rectangle: the Quit or Back button as Geonet's Quit button, the others with their
+// text centered
 static void SeasonApp_CreateButton(SeasonAppWork *work, u8 index, AppTaskMenuRes *res, u32 label, u32 type, u8 x, u8 y,
                                    u8 width) {
     AppTaskMenuItem item;
@@ -944,7 +844,7 @@ static void SeasonApp_UpdateButtons(SeasonAppWork *work) {
 }
 
 // Reads the touch screen and the keys as the game's task menus do: a touch picks a button, and in touch mode the first
-// key but B only shows the cursor again. B picks the Back button. Returns whether a button was picked
+// key but B only shows the cursor again. B picks the Quit or Back button. Returns whether a button was picked
 static BOOL SeasonApp_UpdatePage(SeasonAppWork *work) {
     u32 pressed = GCTX_HIDGetPressedKeys();
     u32 typed = GCTX_HIDGetTypedKeys();
@@ -1028,7 +928,7 @@ static u8 SeasonApp_FindButton(SeasonAppWork *work, int directionX, int directio
     return best;
 }
 
-// Flashes the cursor's button, as Geonet's Quit button flashes, with the Back button's sound for it
+// Flashes the cursor's button, as Geonet's Quit button flashes, with the Quit or Back button's sound for it
 static BOOL SeasonApp_PickButton(SeasonAppWork *work) {
     AppTaskMenuWin_SetFlashing(work->buttons[work->cursor], TRUE);
     if (work->cursor == work->buttonCount - 1) {

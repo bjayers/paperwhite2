@@ -1,7 +1,7 @@
 SeasonApp_Text_SetSeason = Set Season
 SeasonApp_Text_DynamicOptions = Dynamic Options
 SeasonApp_Text_SetHemisphere = Set Hemisphere
-SeasonApp_Text_Cancel = Cancel
+SeasonApp_Text_Quit = QUIT
 SeasonApp_Text_Spring = Spring
 SeasonApp_Text_Summer = Summer
 SeasonApp_Text_Autumn = Autumn

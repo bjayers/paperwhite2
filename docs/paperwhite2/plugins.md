@@ -303,7 +303,7 @@ VRAM E and I stay the engines' OBJ VRAM, unused.
 | Top | 1 (2) | the season's banner, the game's art, in palette 8 with its black background (color 1) made transparent; over the preview it is moved up 22 pixels (`BANNER_PREVIEW_OFFSET_Y`), so that the season's name is centered in the view above the message window (line 72), over the preview's shadow |
 | Top | 0 (3) | the 3D preview (below) |
 | Top | 3 (3) | Geonet's grid, only if the preview didn't load |
-| Touch | 6 (0) | the list (9,8, 14 by 8 tiles, Geonet's menu frame: Set Season, Dynamic Options, Set Hemisphere, Cancel), or a page's buttons |
+| Touch | 6 (0) | the menu's buttons (Set Season, Dynamic Options, Set Hemisphere, and QUIT), or a page's buttons |
 | Touch | 7 (3) | Geonet's grid |
 
 The banner and the preview show the season the message window talks about: the current one with the status, the one
@@ -339,12 +339,15 @@ For that, three of the field's file layouts moved, unchanged, from their `.c` fi
 texture pattern animation file's `FieldTerrainTexPatAnimationPack` (`field_ground_anime.c` to
 `field/field_terrain_animator.h`).
 
-The 3D setup is the field's (`FieldG3D_InitCallback`, Z buffer as the field camera's setups have it) without fog or
-edge marking. When the previewed season changes, everything the preview loaded is freed and the new season loaded
-again (about 200 KB from the card), with the 3D layer darkened (`G2x_SetBlendBrightness_` on BG 0) for 2 frames and
-faded in over 6, so the frame drawn with the old textures isn't seen. If a file doesn't fit in the heap
-(`GFL_HeapGetHighestAllocatableSize` with a 16 KB margin, as the field's effects check) or the textures don't fit in
-VRAM, the preview is freed and the top screen is the banner over the grid, as before.
+The 3D setup is the field's (`FieldG3D_InitCallback`, Z buffer as the field camera's setups have it) without fog or edge
+marking. When the previewed season changes, everything the preview loaded is freed and the new season loaded again
+(about 200 KB from the card), with the 3D layer darkened (`G2x_SetBlendBrightness_` on BG 0) for 2 frames and faded in
+over 6, so the frame drawn with the old textures isn't seen. The banner changes after the preview's load: its palette
+and characters go to VRAM at once, but its screen and scroll (`GFL_BGSysQueueScrLoad`, `GFL_BGSysMoveBGReq`) only at the
+next VBlank, so its BG is off from the load until the frame after that VBlank, and the new name is first seen in its
+place (its own `sBannerNameAdjustY` over `BANNER_PREVIEW_OFFSET_Y`) rather than at the last one's scroll. If a file
+doesn't fit in the heap (`GFL_HeapGetHighestAllocatableSize` with a 16 KB margin, as the field's effects check) or the
+textures don't fit in VRAM, the preview is freed and the top screen is the banner over the grid, as before.
 
 **The spot and the camera** are `res/paperwhite2/season_preview.json`, which `tools/paperwhite2/season_preview.py`
 turns into `build/include/generated/paperwhite2/season_preview_config.h` in a `--hack` build (its docstring has every
@@ -376,19 +379,23 @@ matrix is `res/field/matrices/`, its models' names `generated/map_models.txt`); 
 look from more to the side raise `yaw`; to look down more steeply raise `pitch` (the field's is 53.2). Another
 area's spot needs that area's `area` too (`res/field/zones/<zone>.json`). Then rebuild with `--hack`.
 
-**Pages.** Set Season: Spring, Summer, Autumn, Winter (a 2 by 2 grid), locking that season. Dynamic Options: Monthly,
-Weekly, Daily, Real-time (two rows of two) and Chaos (centered below). Set Hemisphere: Northern, Southern (stored
-apart from the mode; only real time reads it). Each has Geonet's Quit button, labeled BACK, at its place (23,21, 9
-tiles wide, with the return arrow). The current mode's or hemisphere's button is drawn in the current palette pair.
-The buttons are 13 by 3 tiles, with their labels centered; their places are the tables `sSeasonApp*Buttons`.
+**The menu** is the first page: Set Season, Dynamic Options and Set Hemisphere, one above the other (8,4, 8,9 and 8,14,
+16 by 3 tiles), each opening its page, and Geonet's Quit button, labeled QUIT as Geonet's, at its place (23,21), which
+closes the app.
 
-**Input.** The list: the D-pad and A, B for Cancel, or a touch on a row, which picks it at once. A page: a touch picks
-a button; the D-pad moves the cursor (up and down to the nearest row, left and right within the row) and A picks; B
-picks BACK; after a touch the first key only brings the cursor back, as the game's task menus do. A picked button
-flashes, then its setting is set, the current button is drawn again and the message window confirms ("The season will
-change to Winter when you go outside.", "The seasons will now change each week, on Mondays."); the page stays open.
-BACK returns to the list, and Cancel fades out to the field. The setting shows at the next map change into an
-exterior, as the Seasons section says.
+**Pages.** Set Season: Spring, Summer, Autumn, Winter (a 2 by 2 grid), locking that season. Dynamic Options: Monthly,
+Weekly, Daily, Real-time (two rows of two) and Chaos (centered below). Set Hemisphere: Northern, Southern (stored apart
+from the mode; only real time reads it). Each has Geonet's Quit button, labeled BACK, at its place (23,21, 9 tiles wide,
+with the return arrow). The current mode's or hemisphere's button is drawn in the current palette pair. The buttons are
+13 by 3 tiles, with their labels centered; their places are the tables `sSeasonApp*Buttons`.
+
+**Input.** The menu and the pages alike: a touch picks a button; the D-pad moves the cursor (up and down to the nearest
+row, left and right within the row) and A picks; B picks QUIT or BACK; after a touch the first key only brings the
+cursor back, as the game's task menus do. A picked button flashes, then the menu opens its page, or a page's setting is
+set, the current button is drawn again and the message window confirms ("The season will change to Winter when you go
+outside.", "The seasons will now change each week, on Mondays."); the page stays open. BACK returns to the menu, with
+the cursor on the button of the page it came from, and QUIT fades out to the field. The setting shows at the next map
+change into an exterior, as the Seasons section says.
 
 **Replacing the button art.** The buttons are the task menus' (`AppTaskMenuWin`, `app_taskmenu.c`), with their frame
 from the app's own files:
@@ -416,14 +423,14 @@ loaded with it; overlay 35 (0x2c40) is the largest of them, so overlays 36, 170 
 move, and overlay 312 can grow 0xa60 more before it moves them (`memory.txt` then gives the room left). The DS arena
 moved only by main's 0x60 for the task menus' function.
 
-**Heap and exit.** The app takes Geonet's heap ID (0x7c) from `HEAPID_USER`, at 384 KB (it was 256 KB; Geonet's own
-was 512 KB, in the same place). The preview takes about 90 KB of it for Route 1: the area's textures trimmed to 6 KB
-after their upload (53 KB read), the SRT animation 13 KB, the prop bundle's textures trimmed to 4 KB (64 KB read), the
-two chunks' models 41 KB, the four props 16 KB (signs, petals), the texture pattern animations 4 KB, and the 3D
-system's and models' small allocations; its peak while it loads is the 64 KB of the props' textures over what is
-already loaded. In VRAM the textures take 104 KB of VRAM A's 128 KB (45 KB the area's, 59 KB the props') and their
-palettes 4 KB of VRAM F's 16 KB. On Cancel the app frees, in order, the preview (its props, chunks, animations,
-textures and VRAM, the camera and the 3D system), the list or buttons (after their text is printed), the button
-resources, the windows, the BGs, the font and the message bank, then the BG system and the heap, and puts the display
-layout back (main engine on top, as the field has it).
+**Heap and exit.** The app takes Geonet's heap ID (0x7c) from `HEAPID_USER`, at 384 KB (it was 256 KB; Geonet's own was
+512 KB, in the same place). The preview takes about 90 KB of it for Route 1: the area's textures trimmed to 6 KB after
+their upload (53 KB read), the SRT animation 13 KB, the prop bundle's textures trimmed to 4 KB (64 KB read), the two
+chunks' models 41 KB, the four props 16 KB (signs, petals), the texture pattern animations 4 KB, and the 3D system's and
+models' small allocations; its peak while it loads is the 64 KB of the props' textures over what is already loaded. In
+VRAM the textures take 104 KB of VRAM A's 128 KB (45 KB the area's, 59 KB the props') and their palettes 4 KB of VRAM
+F's 16 KB. On Quit the app frees, in order, the buttons (after their text is printed), the preview (its props, chunks,
+animations, textures and VRAM, the camera and the 3D system), the button resources, the windows, the BGs, the font and
+the message bank, then the BG system and the heap, and puts the display layout back (main engine on top, as the field
+has it).
 
