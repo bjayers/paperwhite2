@@ -2,6 +2,18 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-28: DS Protect disarmed in hack builds (Remote Control session, not committed)
+
+Hack builds never run DS Protect (docs/paperwhite2/plugins.md, DS Protect), the suspected cause of the shifted
+build's black screen on the 3DS (Hardware tests below). Its four sites, in `game_system.c`, `event_battle.c`,
+`event_mapchange.c` and `pokelist.c`, call under `PAPERWHITE2` the callbacks that its checks call when they pass, and
+overlay 337 is never loaded. No object outside `lib/dsprot` references `DSProt_Init` or `DSProt_CallRunChecks*` in a
+hack build. `--hack` and `--hack --shift 0x100` build with no warnings and `verify_dsi_rom.py` says intact for both,
+and a plain configure passes `ninja build/w2_us/stamps/modules.ok`. To test on the 3DS through TWiLight Menu++, in DS
+and DSi mode: `paperwhite2.nds` and `paperwhite2_shifted.nds` in the Windows folder (the shifted one is also
+`build/paperwhite2_shifted.nds`). Load the save, change maps, battle, open the party list. If the shifted build still
+goes black, DS Protect wasn't the cause (or not the only one).
+
 ## 2026-10-28: the Season app at the Centers' globe (Remote Control session, not committed)
 
 The Pokémon Centers' globe opens a touch-screen Season app instead of Geonet, which hack builds no longer have
@@ -183,10 +195,11 @@ writes `build/paperwhite2.nds`).
 
 On the user's 3DS through TWiLight Menu++ (nds-bootstrap; DSi mode at 133 MHz, and DS mode): the normal hack build
 with the battle plugins boots, loads the save and battles. The `--shift 0x100` build reaches the title screen and
-the save menu, then goes black on loading the save, in both modes; melonDS runs it. Known issue, not chased: real
-builds keep every original function at its address (new code goes after each module's original code), and only the
-shifted build moves them. Suspect a fixed-address patch of nds-bootstrap's. nds-bootstrap wrote no log
-(`NDSBTSRP.LOG`). Retest it after big changes to main, the one module whose growth moves everything after it.
+the save menu, then goes black on loading the save, in both modes; melonDS runs it. nds-bootstrap wrote no log
+(`NDSBTSRP.LOG`). The suspected cause is DS Protect (overlay 337): nds-bootstrap disarms it with patches at the
+original's addresses, which miss once code moves, and the first check after the save loads is the map change's. The
+hack's builds no longer run DS Protect (2026-10-28 entry above); that fix is pending a 3DS test. It matters for normal
+hack builds too: ARM9 main has grown since, so every overlay has moved.
 
 ### Upstream sync
 

@@ -416,6 +416,36 @@ static GameEventReturnCode EventBattleCall_Callback(GameEvent *event, u32 *state
         }
         (*state)++;
         break;
+#ifdef PAPERWHITE2
+    // Paper White 2: DS Protect never runs after a battle (docs/paperwhite2/plugins.md, DS Protect): nds-bootstrap's
+    // patches of it are at the original's addresses, which miss once the hack's code moves. States 6 and 7 call the
+    // callbacks that its checks call when they pass, so overlay 337 isn't loaded and the pair isn't set up
+    case 5:
+        FieldStatus_SetBusyFlag(GameData_GetFieldStatus(gameData), FLD_STATUS_BUSY_NONE);
+        CommPlayerSupport_EndBattle(GameData_GetCommPlayerSupport(gameData));
+        (*state)++;
+        break;
+    case 6:
+        // Paper White 2: what DSProt_CallRunChecks1 does when its checks pass. The callback advances the random
+        // numbers as it does in the original and leaves seed alone
+        EventBattleCall_DSProtNop1(&seed, wk);
+        EventBattleCall_SyncGameDataOnReturn(wk, gameData);
+        if (wk->unk1C) {
+            SyncTrialHouseWkStatsFromBattle(*GetTrialHouseWkPPtr(gameData), wk->setup);
+        }
+        (*state)++;
+        break;
+    case 7:
+        // Paper White 2: what DSProt_CallRunChecks3 does when its checks pass
+        EventBattleCall_DSProtNop3(&seed, wk);
+        if (wk->unk18 == FALSE && EventBattleCall_IsResultDefeat(wk) == TRUE) {
+            GameEvent_ChainNext(event, EventBGMFadeStop_Create(gsys, 30));
+        } else {
+            GameEvent_ChainNext(event, EventBGMFadePop_Create(gsys));
+        }
+        (*state)++;
+        break;
+#else
     case 5: {
         u32 index;
 
@@ -479,6 +509,7 @@ static GameEventReturnCode EventBattleCall_Callback(GameEvent *event, u32 *state
         (*state)++;
         break;
     }
+#endif
     case 8:
         if (wk->unk18 == FALSE && EventBattleCall_IsResultDefeat(wk) == TRUE) {
             if (wk->unk14 == TRUE) {

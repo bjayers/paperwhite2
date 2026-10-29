@@ -73,7 +73,13 @@ static BOOL PokeListProc_Exit(GameProc *proc, u32 *state, void *param, void *wor
     GFL_ProcReleaseSubsystem(proc);
     heapId = HEAPID_POKELIST;
     result = TRUE;
+#ifdef PAPERWHITE2
+    // Paper White 2: DS Protect's check is skipped (docs/paperwhite2/plugins.md, DS Protect). When it passes,
+    // DSProt_CallRunChecks returns what the callback returns: the heap is deleted and ret points at result
+    ret = PokeListProc_DeleteHeap(&heapId, &result);
+#else
     DSPROT_CHECKED_RUN(ret, DSProt_CallRunChecks, DSProt_CallCrash, PokeListProc_DeleteHeap, &heapId, &result);
+#endif
     return *ret;
 }
 

@@ -62,6 +62,29 @@ at `orig/bios7.bin` (ignored, never committed) and run `configure.py` again; the
 `dsd rom build --arm7-bios`. Without it the build stops at `build/paperwhite2.nds` with dsd's message about the
 secure area, after the link and the memory check.
 
+## DS Protect
+
+Hack builds never run DS Protect, the game's anti-piracy library (`lib/dsprot`: overlay 337, and a copy linked into
+the party list's overlay 165). Loaders such as nds-bootstrap (TWiLight Menu++ on a 3DS) disarm it with patches at
+the original game's addresses. Once the hack's code moves (any growth of ARM9 main moves every overlay, and
+`--shift` moves everything), those patches miss, DS Protect sees the loader, and its responses break the game: a
+`--shift 0x100` build went black on loading the save, the first map change, which runs it, while melonDS ran it.
+
+Each site does under `PAPERWHITE2` what it does when DS Protect finds nothing: the checks then call the callback the
+game put first in the pair (`DSProtCheckArgs.nop`, or overlay 165's `callback`) once, with the same arguments, and
+return what it returns. So overlay 337 is never loaded and `DSProt_Init` and the checksum loops are gone, but the
+callbacks still run:
+
+| Site | What runs instead |
+| --- | --- |
+| `GameSystem_Init` (`src/system/game_system.c`), at boot | `GameSystem_DSProtNop1` (creates and deletes the trial house's heap) and `GameSystem_DSProtNop2`; `seed`, `flag` and `size` keep their values, so the badge loop doesn't run |
+| `EventBattleCall_Callback` (`src/ov012/event_battle.c`), states 5 to 7 | `EventBattleCall_DSProtNop1` (two `GFL_RandomMT` calls) and `EventBattleCall_DSProtNop3`; `seed` stays a multiple of 0x1933 |
+| `EventMapChangeCore_Callback` (`src/ov035/event_mapchange.c`), states 1 and 3 | `EventMapChange_DSProtNop` twice, which does nothing |
+| `PokeListProc_Exit` (`src/ov165/pokelist.c`) | `PokeListProc_DeleteHeap`, which deletes the list's heap and returns `&result` (TRUE) |
+
+Nothing outside `lib/dsprot` references `DSProt_Init` or `DSProt_CallRunChecks*` in a hack build. Overlay 337 is
+still in the ROM, and overlay 165's copy still decrypts itself when that overlay loads, which checks nothing.
+
 ## Memory
 
 `ninja` writes `build/w2_us/memory.txt` and stops if the program doesn't fit (`tools/build/check_memory.py`).

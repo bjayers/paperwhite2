@@ -107,6 +107,17 @@ static BOOL GameSystem_Init(GameProc *proc, u32 *state, void *param, void *work)
     s32 badges;
 
     seed = 0xc35ffb;
+#ifdef PAPERWHITE2
+    // Paper White 2: DS Protect never runs (docs/paperwhite2/plugins.md, DS Protect). nds-bootstrap disarms it with
+    // patches at the original's addresses, which miss once the hack's code moves, and its responses then break the
+    // game. This is what its checks do when they pass: each calls the callback the game put first, with the same
+    // arguments. Neither changes seed, flag or size, so the badge loop below doesn't run
+    GFL_HeapCreateChild(HEAPID_USER, HEAPID_GAMESYSTEM, 0xc000);
+    GFL_HeapCreateChild(HEAPID_USER, HEAPID_GAMEEVENT, 0x10000);
+    GameSystem_DSProtNop1(&seed, &flag);
+    GFL_HeapCreateChild(HEAPID_DEVICE_ALLOC, HEAPID_TRIAL_HOUSE, 0x1400);
+    GameSystem_DSProtNop2(&seed, &size);
+#else
     GFL_OvlLoad(OVERLAY_DSPROT);
     DSProt_Init();
     GFL_HeapCreateChild(HEAPID_USER, HEAPID_GAMESYSTEM, 0xc000);
@@ -157,6 +168,7 @@ static BOOL GameSystem_Init(GameProc *proc, u32 *state, void *param, void *work)
         }
     }
     GFL_OvlUnload(OVERLAY_DSPROT);
+#endif
 
     gsys = GFL_ProcInitSubsystem(proc, size, HEAPID_GAMESYSTEM);
     MI_CpuFill8(gsys, 0, size);

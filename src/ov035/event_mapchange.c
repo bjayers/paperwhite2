@@ -512,8 +512,14 @@ GameEventReturnCode EventMapChangeCore_Callback(GameEvent *event, u32 *state, vo
         break;
     }
     case 1:
+#ifdef PAPERWHITE2
+        // Paper White 2: DS Protect never runs on a map change (docs/paperwhite2/plugins.md, DS Protect):
+        // nds-bootstrap's patches of it are at the original's addresses, which miss once the hack's code moves, so
+        // overlay 337 isn't loaded and state 3 calls what its checks call when they pass
+#else
         GFL_OvlLoad(OVERLAY_DSPROT);
         DSProt_Init();
+#endif
         if (IsZoneGameCommDisabled(wk->spawn.zoneId) == TRUE) {
             u8 status = GameCommSys_BootCheck(comm);
             if (status == 1 || status == 2) {
@@ -530,7 +536,12 @@ GameEventReturnCode EventMapChangeCore_Callback(GameEvent *event, u32 *state, vo
         }
         break;
     case 3:
+#ifdef PAPERWHITE2
+        // Paper White 2: what DSProt_CallRunChecks2 does when its checks pass
+        EventMapChange_DSProtNop(wk, gsys);
+#else
         DSPROT_CHECKED_CALL(DSProt_CallRunChecks2, EventMapChange_DSProtNop, EventMapChange_DSProtTamper1, wk, gsys);
+#endif
         FieldMapControl_DeleteAllActors(gsys);
 #ifdef PAPERWHITE2
         // Paper White 2: the season changes with or without its banner. EventMapChange_LoadSeasons sets the two
@@ -550,7 +561,12 @@ GameEventReturnCode EventMapChangeCore_Callback(GameEvent *event, u32 *state, vo
             TransformVsPokePartyBySeason(gameData, party, season);
             ShayminForm_CheckNight(gameData, party, &adventureTime->time, season);
         }
+#ifdef PAPERWHITE2
+        // Paper White 2: what DSProt_CallRunChecks4 does when its checks pass
+        EventMapChange_DSProtNop(wk, gsys);
+#else
         DSPROT_CHECKED_CALL(DSProt_CallRunChecks4, EventMapChange_DSProtNop, EventMapChange_DSProtTamper2, wk, gsys);
+#endif
         FieldMapControl_LoadZone(gsys, wk->spawn.zoneId);
         GameData_UpdateZoneChangeFlag(gameData, wk->spawn.zoneId, wk->zoneId);
         FieldMapControl_InitSpawn(gsys, &wk->spawn);
@@ -571,7 +587,11 @@ GameEventReturnCode EventMapChangeCore_Callback(GameEvent *event, u32 *state, vo
         if (wk->mode != 0) {
             ShutdownFollowWork(wk->gameData);
         }
+#ifdef PAPERWHITE2
+        // Paper White 2: overlay 337 wasn't loaded (state 1)
+#else
         GFL_OvlUnload(OVERLAY_DSPROT);
+#endif
         func_ov012_02153668(comm);
         (*state)++;
         break;
