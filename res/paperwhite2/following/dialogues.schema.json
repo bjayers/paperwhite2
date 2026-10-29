@@ -1,0 +1,57 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Paper White 2: the Following Pokémon's contextual dialogues, res/paperwhite2/following/dialogues.json",
+    "description": "Texts the follower says in given places and conditions when the player talks to it, before the interactions' reactions are tried (member 0 of following/contextual-dialogues.narc of Pokeweb's runtime, \"FWCD\"), packed by tools/paperwhite2/following_assets.py as member 4 of the model table's archive (a/0/4/7), whose docstring has the format: ABI 1 with 20-byte rows, ABI 2 when a rule has a motion, and ABI 3 with 28-byte rows when a rule has tile bounds. The runtime rolls each rule in order and says the text of the first that matches and passes its chance. A rule without a condition matches any. The packed member and its one-member NARC must fit the runtime's 4 KB page. A string value is the name of a constant from generated/.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "rules" ],
+    "properties": {
+        "$schema": { "type": "string", "description": "This schema, for editors" },
+        "rules": { "type": "array", "maxItems": 65535, "items": { "$ref": "#/$defs/rule" }, "description": "The dialogues, tried in order" }
+    },
+    "$defs": {
+        "rule": {
+            "type": "object", "additionalProperties": false, "required": [ "text" ],
+            "properties": {
+                "zone": { "type": "string", "x-constant": "ZONE_", "description": "The zone it is said in; not ZONE_BLACK_CITY, whose 0 stands for any" },
+                "species": { "type": "string", "x-constant": "SPECIES_", "description": "The follower's species" },
+                "form": { "type": "integer", "minimum": 0, "maximum": 254, "description": "The follower's form, which needs a species" },
+                "type": { "type": "string", "x-constant": "TYPE_", "description": "A type the follower has" },
+                "hp": { "$ref": "#/$defs/hp" },
+                "friendship": { "$ref": "#/$defs/friendship" },
+                "status": { "$ref": "#/$defs/status" },
+                "facing": { "$ref": "#/$defs/facing" },
+                "chance": { "type": "integer", "minimum": 1, "maximum": 100, "description": "The chance in percent that it is said when it matches; without it, 100" },
+                "tile_bounds": { "$ref": "#/$defs/tile_bounds" },
+                "before_motion": { "type": "integer", "minimum": 1, "maximum": 12, "description": "The interactions' motion (interactions.json's motions, from 1) that the follower plays, with its cry, before the text" },
+                "after_motion": { "type": "integer", "minimum": 1, "maximum": 12, "description": "The interactions' motion that it plays, with its cry, after the text" },
+                "text": { "type": "string", "description": "The text, at most 191 characters: \\n starts a line, {nickname} is the Pokémon's nickname, {player} the player's name, {location} the zone, as \"Zone N\"" }
+            }
+        },
+        "hp": {
+            "enum": [ "full", "75_to_99_percent", "50_to_74_percent", "25_to_49_percent", "1_to_24_percent" ],
+            "description": "The HP the Pokémon has left"
+        },
+        "friendship": {
+            "enum": [ "255", "200_to_254", "150_to_199", "90_to_149", "60_to_89", "30_to_59", "1_to_29", "0", "90_or_more", "below_60" ],
+            "description": "The Pokémon's friendship"
+        },
+        "status": {
+            "enum": [ "healthy", "burn", "freeze", "paralysis", "poison", "any_status", "sleep" ],
+            "description": "The Pokémon's status condition (poison takes in bad poison, any_status any but healthy)"
+        },
+        "facing": {
+            "enum": [ "right", "left", "up", "down" ],
+            "description": "The way the Pokémon faces to look at the player, which is where the player stands from it"
+        },
+        "tile_bounds": {
+            "type": "object", "additionalProperties": false,
+            "description": "The tiles of the zone's matrix the player must stand in, inclusive: x goes east, y south; any of the four",
+            "properties": {
+                "min_x": { "$ref": "#/$defs/s16" }, "max_x": { "$ref": "#/$defs/s16" },
+                "min_y": { "$ref": "#/$defs/s16" }, "max_y": { "$ref": "#/$defs/s16" }
+            }
+        },
+        "s16": { "type": "integer", "minimum": -32768, "maximum": 32767 }
+    }
+}

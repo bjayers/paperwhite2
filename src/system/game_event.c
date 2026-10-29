@@ -5,18 +5,13 @@
 #include "system/game_event.h"
 #include "system/game_system.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/following_resident.h"
+#endif
+
 // The game's events: each is a callback with a state and its own data, run once a frame by the game system until it
 // is done, when the event that called it goes on. The file's name is the ROM's string, from GFL_HeapAllocate's
 // calls. The names of the functions are swan's
-
-struct GameEvent {
-    // The event that goes on when this one is done
-    GameEvent *parent;
-    GameEventCallback callback;
-    u32 state;
-    void *data;
-    GameSystem *gsys;
-};
 
 typedef struct EventProcessCallWork {
     s32 overlayId;
@@ -49,15 +44,33 @@ GameEvent *GameEvent_Create(GameSystem *gsys, GameEvent *parent, GameEventCallba
 }
 
 static GameEventReturnCode GameEvent_RunCallback(GameEvent *event) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the follower sees each event, and holds one while its recall finishes (event-callback)
+    if (PaperWhite2_FollowingHoldEvent(event, event->gsys, event->callback)) {
+        return GAMEEVENT_CONTINUE;
+    }
+#endif
     return event->callback(event, &event->state, event->data);
 }
 
 static void GameEvent_Free(GameEvent *event) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the follower forgets an event that ends (event-free)
+    PaperWhite2_FollowingOnEventFree(event, event->gsys);
+#endif
     if (event->data != NULL) {
         GFL_HeapFree(event->data);
     }
     GFL_HeapFree(event);
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: frees an event that the Following Pokémon's talk took off the game system's chain when it is cancelled
+// (paperwhite2_following_interaction.c)
+void PaperWhite2_GameEventFree(GameEvent *event) {
+    GameEvent_Free(event);
+}
+#endif
 
 void GameEvent_Transplant(GameEvent *event, GameEventCallback callback, u32 size) {
     event->state = 0;

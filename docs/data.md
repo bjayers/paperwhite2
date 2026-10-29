@@ -85,7 +85,7 @@ which documents the format and can write them again.
 | `a/2/9/6` | `res/pokedex/habitats/` (JSON) | The Pokédex's habitat lists: each area's species by season and habitat | `tools/data/habitat_data.py` |
 | `a/1/2/6` | `res/field/events/` (JSON) | Zone events: signs, NPCs, warps, triggers and init scripts | `tools/data/event_data.py` |
 | `a/0/7/8`, `a/1/1/0` | `res/field/rails/` (JSON, CSV) | Field rails: points, lines, cameras, curves and tile attributes, and the rail maps | `tools/data/rail_data.py` |
-| `a/0/4/7`, `a/0/4/8` | `res/field/actors/<code>/` (JSON, PNG, palette, Nitro model) | The field actors' models: their table and graphics | `tools/data/field_actor_data.py` |
+| `a/0/4/7`, `a/0/4/8` | `res/field/actors/<code>/` (JSON, PNG, palette, Nitro model), and in Paper White 2 `res/paperwhite2/following/` | The field actors' models: their table and graphics, and the Following Pokémon's data | `tools/data/field_actor_data.py` |
 | `a/1/2/7` | `res/field/encounters/` (JSON) | Wild encounters | `tools/data/encounter_data.py` |
 | `a/1/6/3` | `res/field/trades/` (JSON) | In-game trades | `tools/data/trade_data.py` |
 | `a/2/1/2`, `a/2/1/1` | `res/trainers/facilities/battle_subway/` (JSON) | Battle Subway and Trial House trainers and Pokémon | `tools/data/facility_data.py` |
@@ -986,6 +986,10 @@ in it into the table. To add an actor, add its constant to the list, with a valu
 copy of one to start from. Two places in the code still load sprites by their place in the graphics archive, the
 Funfest Missions' player icons (`sFMissionViewPlayerModels`) and an entrant's default sprite in `wbt_setup.c`, so adding a 3D model moves the sprites those name. Only a 3D model has a `model.nsbmd` or a
 `"model"`, and the code it names must have a `model.nsbmd` of its own.
+A sprite can show another code's `sprite.png` and `sprite.pal` instead of its own, by naming it in `"sprite"`, as Paper
+White 2's followers (`followers/`, `OBJ_CODE_FOLLOWER_`, see `docs/paperwhite2/following-pokemon.md`) do; their own
+sprites have `"texture_set_format": "pokeweb"`, the texture sets as Pokeweb's installer wrote them, and some a
+`"sprite_batch"`, which puts their graphics after the others'.
 `tools/data/field_actor_data.py` writes the sprites' texture sets as the game's are, so the sources pack both archives
 byte for byte; `.venv/bin/python tools/data/field_actor_data.py dump extract/b2_us/files res/field/actors` writes
 them again.

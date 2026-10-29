@@ -190,3 +190,11 @@ static GameEventReturnCode EventFieldCameraWait_Callback(GameEvent *event, u32 *
     }
     return GAMEEVENT_DONE;
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: whether a callback is one of the camera's waits, which the Following Pokémon's scene policy lets run
+// with the follower kept (paperwhite2_following_scene.c)
+BOOL PaperWhite2_IsCameraWaitCallback(GameEventCallback callback) {
+    return callback == EventWaitCameraSetEvCamera_Callback || callback == EventFieldCameraWait_Callback;
+}
+#endif

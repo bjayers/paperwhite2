@@ -10,14 +10,6 @@
 #include "system/game_event.h"
 #include "system/game_system.h"
 
-typedef struct EventFieldMenuReturn {
-    GameEvent *event;
-    GameSystem *gsys;
-    Field *field;
-    u32 screenId;
-    u8 seq;
-} EventFieldMenuReturn;
-
 // The steps of the return from the field menu: change the touch screen once it is ready, remember it once the
 // change is done, and let the actors move again
 enum {
@@ -71,3 +63,11 @@ static GameEventReturnCode EventFieldMenuReturn_Callback(GameEvent *event, u32 *
     }
     return GAMEEVENT_CONTINUE;
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: whether an event is the field menu's return, for the Following Pokémon's unload, which brings the
+// follower back at once after the menu (paperwhite2_following_field.c)
+BOOL PaperWhite2_IsFieldMenuReturnCallback(GameEventCallback callback) {
+    return callback == EventFieldMenuReturn_Callback;
+}
+#endif

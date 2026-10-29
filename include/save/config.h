@@ -17,7 +17,13 @@ struct Config {
     u16 unk9 : 1;
     // Whether the C-Gear is on, which a continue sets from the answer to the start menu's question
     u16 cgearOn : 1;
+#ifdef PAPERWHITE2
+    // Paper White 2: the Following Pokémon's Followers Off choice, which the original leaves zero
+    u16 followersOff : 1;
+    u16 : 4;
+#else
     u16 : 5;
+#endif
     u16 unk2;
 };
 

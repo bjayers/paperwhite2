@@ -7,6 +7,14 @@
 #include "struct_decls.h"
 #include "system/game_event.h"
 
+typedef struct EventFieldMenuReturn {
+    GameEvent *event;
+    GameSystem *gsys;
+    Field *field;
+    u32 screenId;
+    u8 seq;
+} EventFieldMenuReturn;
+
 struct FieldMenuWork {
     u16 code;
     u16 pad02;
@@ -21,6 +29,10 @@ struct FieldMenuWork {
 };
 
 GameEventReturnCode EventFieldMenu_Callback(GameEvent *event, u32 *state, void *data);
+#ifdef PAPERWHITE2
+// Paper White 2: overlay 36's field_menu_event.c, for the Following Pokémon
+BOOL PaperWhite2_IsFieldMenuReturnCallback(GameEventCallback callback);
+#endif
 GameEvent *EventFieldMenu_Create(GameSystem *gsys, Field *field, u16 param);
 GameEvent *EventFieldMenu_CreateUnionRoom(GameSystem *gsys, Field *field, u16 param);
 

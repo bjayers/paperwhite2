@@ -2,6 +2,57 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-29: the follower's Options row and battle opening (branch following-port, not yet tested in an emulator)
+
+Steps 5 and 6 of the Following Pokémon port are done, so the base package is ported
+(docs/paperwhite2/following-pokemon.md, "Step 5" and "Step 6"). The Options screen has a sixth row, FOLLOWERS: ON/OFF,
+saved in Config's `followersOff` (`src/paperwhite2/ov140/paperwhite2_following_options.c`; the screen's work types moved
+unchanged into `include/app/config_panel_work.h`, with PAPERWHITE2 wrappers of seven statics in `config_panel.c`). Its
+text, the four `title_2` entries the installer changed, is imported into `res/text/system/title_2.txt`; packed, they
+equal the hack's (the hack's file is 10 bytes shorter only because the installer dropped four unchanged entries' second
+terminator and the size rounding). A wild or trainer single battle that the field marked opens with the follower already
+on the platform: no throw, ball or "Go!" (`src/ov167/btlv_scu.c` under PAPERWHITE2). Overlay 140 is
+0x0219d320-0x0219fda0; overlay 167 grew 0x1a0, so overlay 168 starts at 0x021de0a0; the DS arena still has 0x28c00 (163
+KB). `--hack` builds with no warnings, `verify_dsi_rom.py` says intact, nothing of the hack's is in the IRDO range, and
+a plain configure passes `ninja build/w2_us/stamps/modules.ok`. Next: test in melonDS (the doc's lists for steps 3 to
+6). Open question: the gifts' claims in block C's ribbons.
+
+## 2026-10-29: the follower's events, talk and effects (branch following-port, not yet tested in an emulator)
+
+Step 4 of the Following Pokémon port is done (docs/paperwhite2/following-pokemon.md, "Step 4"): the ball effects with
+the follower's own ball type, the reactions and gifts, the talk (A in front of the follower), the events bridge in
+overlay 12 with its actor hooks in `field_actor.c`, `field_actor_tool.c` and `field_actor_rail.c`, and the scene
+policy, whose command and sound lists `tools/paperwhite2/following_scene_policy.py` generates from
+`res/paperwhite2/following/event-policy.json` and `audio-event-policy.json`. The stubs header
+`following_hooks.h` is gone: the follower now waits through talks, signs, prompts and music, and is recalled into its
+ball when a script moves something through it. Overlay 36 ends at 0x021f8aa0, overlay 12 at 0x0216ef60; the DS arena
+has 0x28c00 (163 KB) left. `--hack` builds with no warnings, `verify_dsi_rom.py` says intact, nothing of the hack's
+is in the IRDO range, and a plain configure passes `ninja build/w2_us/stamps/modules.ok`. Open question for the user:
+the gifts keep their claims in the top 16 bits of block C's ribbons, as the original did. Next: test in melonDS (the
+doc's lists for steps 3 and 4), then step 5 (Options).
+
+## 2026-10-29: the follower walks behind the player (branch following-port, not yet tested in an emulator)
+
+Step 3 of the Following Pokémon port is done but for the talk (docs/paperwhite2/following-pokemon.md, "Step 3: the
+follower in the field"): `field.c` and `render.c` are `src/paperwhite2/ov036/paperwhite2_following_field.c` and
+`paperwhite2_following_render.c`, and the hooks field-actor-update, field-follower-matcache, field-unload, the three
+billboard draws and field-player-recall-direction-gate are in `src/ov036/fieldmap.c` and `field_player.c`. The lead
+follows on grids and rails with swaps, stairs and ledges, L/R switches it, SELECT turns it off and on. Ball effects,
+talk, the scene policy and the events bridge are stubs (`include/paperwhite2/following_hooks.h`): no ball, and any
+running event removes the follower, which walks in again after. Overlay 36 ends at 0x021ef3e0; the DS arena has
+0x322c0 (200 KB) left. `--hack` builds with no warnings, `verify_dsi_rom.py` says intact, nothing of the hack's is in
+the IRDO range, and a plain configure passes `ninja build/w2_us/stamps/modules.ok`. Next: test in melonDS (the
+doc's list), then step 4.
+
+## 2026-10-29: the followers' field actors as sources (branch following-port)
+
+The Following Pokémon port has started on the branch `following-port` (docs/paperwhite2/following-pokemon.md: the
+hooks, calls, data and steps). Step 2 is done: the 2,574 table rows and 348 sprites that Pokeweb's installer added to
+`a/0/4/7` and `a/0/4/8` are `res/field/actors/followers/` (`tools/paperwhite2/import_followers.py`), with their
+constants `OBJ_CODE_FOLLOWER_<SPECIES>[_FORM_<n>][_FEMALE][_SHINY]` from 0x3000 in `generated/obj_codes.txt`; rows
+that show another code's sprite name it in `"sprite"`. Packed, both archives equal the hack ROM's byte for byte, so
+STATUS's "Not imported yet" no longer has them. No code yet: the ROM has the entries, and nothing uses them.
+
 ## 2026-10-28: a 3D preview of Route 1 in the Season app (Remote Control session, not committed)
 
 The Season app's top screen is now a live 3D view of the southern stretch of Route 1 in the previewed season, under
@@ -149,8 +200,8 @@ The trial's comparison scripts are in `tools/paperwhite2/` (start of the editor'
 
 ### Not imported yet
 
-- **Following Pokémon** (port with its code): Options text `title_2` (`a/0/0/2` member 32); 2,574 new field actors
-  in `a/0/4/7`/`a/0/4/8` (1,008 → 3,582 entries) which need new `OBJ_CODE_` constants; files in `following/`,
+- **Following Pokémon** (port with its code): (done on the branch `following-port`: the 2,574 new field actors in
+  `a/0/4/7`/`a/0/4/8`, and the Options text of `title_2`, `a/0/0/2` member 32); files in `following/`,
   `patches/`, `codeinjection/`, `overlay/overlay_0344.bin`, and the root `rail_data_index.tbl` and
   `field_camera_data_index.tbl`.
 - (Done, see below: Unown sprites.)

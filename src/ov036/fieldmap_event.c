@@ -77,6 +77,9 @@
 #include "system/game_event.h"
 #include "system/game_system.h"
 #include "system/wipe.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/following_field.h"
+#endif
 
 // The scripts that these events call
 #define SCRID_NONE 0xffff
@@ -426,6 +429,11 @@ GameEvent *FieldEventProvider_Grid(GameSystem *gsys, void *data) {
 
     EncountSystem_CancelPhenomenonIfActorHit(encounter);
     event = FieldEventProvider_Grid_CheckForEvent(gsys, data, &scriptCalled, &menuOpened);
+#ifdef PAPERWHITE2
+    // Paper White 2: the Following Pokémon's scene notes a menu these checks opened, and with no event A in front of
+    // the follower talks to it (follower-grid-event)
+    event = PaperWhite2_FollowingGridEvent(gsys, data, event, &scriptCalled, menuOpened);
+#endif
     if (event != NULL) {
         CasteliaRush *rush;
 
@@ -514,6 +522,10 @@ GameEvent *FieldEventProvider_UnionRoom(GameSystem *gsys, void *data) {
 GameEvent *FieldEventProvider_NoGrid(GameSystem *gsys, void *data) {
     GameEvent *event = FieldEventProvider_NoGrid_CheckForEvent(gsys, data);
 
+#ifdef PAPERWHITE2
+    // Paper White 2: with no event, A in front of the Following Pokémon talks to it (follower-rail-event)
+    event = PaperWhite2_FollowingRailEvent(gsys, data, event);
+#endif
     if (event != NULL) {
         CasteliaRush *rush;
         Field *field = GSYS_GetField(gsys);

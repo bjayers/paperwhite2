@@ -32,6 +32,9 @@
 #include "system/palanm.h"
 #include "system/printsys.h"
 #include "system/text_speed.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/following_battle_entry.h"
+#endif
 
 // The work of btlv_scu.c, the message and command unit of the battle display, recovered from its accesses in
 // BtlvScu_Create through BtlvScu_ClearMsgWin. BtlvScu_Create allocates it with
@@ -241,6 +244,10 @@ static BOOL BtlvScu_EncountRecPlayTriple(BtlvScu *scu, s32 *seq);
 static BOOL BtlvScu_EncountWildSingle(s32 *seq, void *arg);
 static u16 BtlvScu_GetWildEncountMsg(BtlvScu *scu);
 static BOOL BtlvScu_EncountTrainerSingle(s32 *seq, void *arg);
+#ifdef PAPERWHITE2
+static BOOL BtlvScu_EncountFollowingWildSingle(s32 *seq, void *arg);
+static BOOL BtlvScu_EncountFollowingTrainerSingle(s32 *seq, void *arg);
+#endif
 static BOOL BtlvScu_EncountCommSingle(s32 *seq, void *arg);
 static BOOL BtlvScu_EncountWildDouble(s32 *seq, void *arg);
 static BOOL BtlvScu_EncountWildDoubleMulti(s32 *seq, void *arg);
@@ -519,11 +526,21 @@ void BtlvScu_StartEncount(BtlvScu *scu, BOOL recPlay) {
         case 0:
         case 4:
         default:
+#ifdef PAPERWHITE2
+            // Paper White 2: the Following Pokémon's follower may already be on the platform
+            BtlvScu_SetSubProc(scu, BtlvScu_EncountFollowingWildSingle);
+#else
             BtlvScu_SetSubProc(scu, BtlvScu_EncountWildSingle);
+#endif
             break;
         case 1:
         case 2:
+#ifdef PAPERWHITE2
+            // Paper White 2: the same in a trainer battle
+            BtlvScu_SetSubProc(scu, BtlvScu_EncountFollowingTrainerSingle);
+#else
             BtlvScu_SetSubProc(scu, BtlvScu_EncountTrainerSingle);
+#endif
             break;
         case 3:
             BtlvScu_SetSubProc(scu, BtlvScu_EncountCommSingle);
@@ -845,6 +862,66 @@ static BOOL BtlvScu_EncountTrainerSingle(s32 *seq, void *arg) {
     }
     return FALSE;
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: the Following Pokémon's battle opening, ported from Pokeweb's battle.c
+// (docs/paperwhite2/following-pokemon.md). When the field marked the setup (FOLLOWING_BATTLE_PRESENT), the player's
+// lead is the follower that walked into the battle, so it is on its platform from the start, and the player's throw,
+// the ball and the "Go!" message are skipped. The mark is taken off when the opening ends, or at once if the lead isn't
+// party member 0 after all
+static BOOL BtlvScu_EncountFollowingSingle(s32 *seq, BtlvScu *scu, BOOL trainer) {
+    BtlSetup *setup = scu->mainModule->setup;
+    BtlvScuSingleWork *work = (BtlvScuSingleWork *)scu->work;
+    BOOL result;
+
+    if (!FollowingBattle_IsLocalSingle(setup) || !(setup->flags & FOLLOWING_BATTLE_PRESENT) || scu->recPlay) {
+        return trainer ? BtlvScu_EncountTrainerSingle(seq, scu) : BtlvScu_EncountWildSingle(seq, scu);
+    }
+    if (*seq == 0) {
+        BattleMon *mon = PokeCon_GetPosMonInner(scu->pokeCon, ViewPosToBattlePos(scu->mainModule, 0));
+
+        // The field marks only party member 0
+        if (mon == NULL || GetMonID(mon) != 0) {
+            setup->flags &= ~FOLLOWING_BATTLE_PRESENT;
+            return trainer ? BtlvScu_EncountTrainerSingle(seq, scu) : BtlvScu_EncountWildSingle(seq, scu);
+        }
+        BtlvEffect_AddPokemon(BattleMon_GetViewSrcData(mon), 0);
+    }
+    // The opponent's message is done and its window hiding: skip the player's ball gauge, throw and "Go!"
+    if (*seq == (trainer ? 6 : 5)) {
+        u8 pos;
+
+        if (!BtlvScuWinFade_Update(&scu->msgFade) || BtlvEffect_IsBusy()) {
+            return FALSE;
+        }
+        if (trainer) {
+            BtlvScuGauge_Show(&scu->gauges[work->pos]);
+        }
+        pos = ViewPosToBattlePos(scu->mainModule, 0);
+        work->mon = PokeCon_GetPosMonInner(scu->pokeCon, pos);
+        work->pos = pos;
+        work->viewPos = 0;
+        work->monId = 0;
+        // No trainer sprite or ball was made: the battle's own camera, then the last state shows the player's gauge
+        BtlvEffect_Start(0x236);
+        *seq = trainer ? 11 : 9;
+        return FALSE;
+    }
+    result = trainer ? BtlvScu_EncountTrainerSingle(seq, scu) : BtlvScu_EncountWildSingle(seq, scu);
+    if (result) {
+        setup->flags &= ~FOLLOWING_BATTLE_PRESENT;
+    }
+    return result;
+}
+
+static BOOL BtlvScu_EncountFollowingWildSingle(s32 *seq, void *arg) {
+    return BtlvScu_EncountFollowingSingle(seq, arg, FALSE);
+}
+
+static BOOL BtlvScu_EncountFollowingTrainerSingle(s32 *seq, void *arg) {
+    return BtlvScu_EncountFollowingSingle(seq, arg, TRUE);
+}
+#endif
 
 // A single battle over communication
 static BOOL BtlvScu_EncountCommSingle(s32 *seq, void *arg) {

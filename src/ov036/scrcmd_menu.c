@@ -11,13 +11,6 @@
 
 typedef struct {
     FieldScriptEnv *env;
-    // Set to whether the player chose no
-    u16 *result;
-    ListMenuUI *window;
-} YesNoEvent;
-
-typedef struct {
-    FieldScriptEnv *env;
     BOOL ex;
 } ListMenuEvent;
 
@@ -191,3 +184,15 @@ BOOL Scrcmd_Menu_ListMenuShow2(VM *vm, FieldScriptEnv *env) {
     ScriptWork_CallEvent(work, CreateListMenuCallEvent(FieldScriptEnv_GetGameSystem(env), env, FALSE));
     return TRUE;
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: whether a callback is the Yes/No prompt's or the list's, which the Following Pokémon's scene policy
+// lets run with the follower kept (paperwhite2_following_scene.c)
+BOOL PaperWhite2_IsYesNoEventCallback(GameEventCallback callback) {
+    return callback == ScrcmdMsgwin_YesNoEventMain;
+}
+
+BOOL PaperWhite2_IsListMenuEventCallback(GameEventCallback callback) {
+    return callback == ListMenuEvent_Callback;
+}
+#endif

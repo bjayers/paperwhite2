@@ -10,6 +10,10 @@
 #include "nitro/fx.h"
 #include "nitro/math.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/following_events.h"
+#endif
+
 // The grid height of a height on the map
 #define HEIGHT_TO_GRID(height) ((s16)(((height) >> 4) / FX32_ONE))
 
@@ -556,7 +560,12 @@ static inline BOOL CheckAreaOverActor(FieldActor *actor, const GPosXYZ *pos, s16
     return TRUE;
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: the original CheckActorNewPosOtherActorCollision, which the hack's wraps
+static BOOL CheckOtherActorCollision(const FieldActor *actor, s16 x, s16 y, s16 z) {
+#else
 BOOL CheckActorNewPosOtherActorCollision(const FieldActor *actor, s16 x, s16 y, s16 z) {
+#endif
     const MMSys *system = actor->actorSystem;
     u32 ignoreFlags;
     s16 maxX;
@@ -587,6 +596,14 @@ BOOL CheckActorNewPosOtherActorCollision(const FieldActor *actor, s16 x, s16 y, 
     }
     return FALSE;
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: an actor's own move code doesn't walk it into the Following Pokémon
+// (docs/paperwhite2/following-pokemon.md, ambient-grid-collision)
+BOOL CheckActorNewPosOtherActorCollision(const FieldActor *actor, s16 x, s16 y, s16 z) {
+    return PaperWhite2_FollowingCheckGridCollision(actor, x, y, z, CheckOtherActorCollision(actor, x, y, z));
+}
+#endif
 
 BOOL CheckActorVolumeOverGPos(FieldActor *actor, s16 x, s16 z, BOOL checkInit) {
     if (CheckAreaOverActor(actor, &actor->gPos, x, x, z, z)) {

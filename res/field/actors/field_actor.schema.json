@@ -18,6 +18,45 @@
             "type": "string", "x-constant": "OBJ_CODE_",
             "description": "For a model, the object code whose model.nsbmd it shows, when it has none of its own"
         },
+        "sprite": {
+            "type": "string", "x-constant": "OBJ_CODE_",
+            "description": "For a sprite, the object code whose sprite.png and sprite.pal it shows, when it has none of its own"
+        },
+        "sprite_batch": {
+            "type": "integer", "minimum": 0,
+            "description": "For a sprite of its own, the group its graphics come in, 0 if none: a/0/4/8 has the sprites of each batch after those of the batches before it, in code order within one. Paper White 2's followers have it where Pokeweb's installer added their sprites later"
+        },
+        "texture_set_format": {
+            "enum": [ "game", "pokeweb" ],
+            "description": "For a sprite of its own, how its texture set is written: as the game's (the default), or as Pokeweb's Following Pokémon installer wrote them, with textures named following0 and on, a palette named following, and no search trees"
+        },
+        "follower": {
+            "type": "object", "additionalProperties": false,
+            "required": [ "species", "form", "sex", "shiny", "placeholder", "animation_profile", "art_offset", "side_gap", "gaps" ],
+            "description": "Paper White 2: the Following Pokémon this sprite shows, its row of the follower registry and of the positioning table (tools/paperwhite2/following_data.py, docs/paperwhite2/following-pokemon.md). Only the rows after the original's, OBJ_CODE_FOLLOWER_, have one",
+            "properties": {
+                "species": { "type": "string", "x-constant": "SPECIES_", "description": "The species it follows as" },
+                "form": { "$ref": "#/$defs/u8", "description": "Its form" },
+                "sex": { "enum": [ "GENDER_MALE", "GENDER_FEMALE", null ], "x-constant": "GENDER_", "description": "Its sex, null for a species without one" },
+                "shiny": { "type": "boolean", "description": "Whether it is the shiny one" },
+                "placeholder": { "type": "boolean", "description": "Whether its art stands in for the Pokémon's own (Pokeweb's editor marks these; the runtime ignores it)" },
+                "animation_profile": { "enum": [ "mirrored", "asymmetric" ], "description": "Whether its right-facing frames mirror the left-facing ones (6 frames) or have their own (8 frames)" },
+                "art_offset": {
+                    "type": "object", "additionalProperties": false, "required": [ "x", "y", "z" ],
+                    "description": "How far its art is from the center: x limits its side gap, y moves it up or down as drawn, z is unused",
+                    "properties": { "x": { "$ref": "#/$defs/s8" }, "y": { "$ref": "#/$defs/s8" }, "z": { "$ref": "#/$defs/s8" } }
+                },
+                "side_gap": { "type": "integer", "minimum": 0, "maximum": 6, "description": "The spacing its art needs at its sides, from the art" },
+                "gaps": {
+                    "type": "object", "additionalProperties": false, "required": [ "up", "down", "left", "right" ],
+                    "description": "The walking gap behind the player when the player faces each way, in world units (16 a tile)",
+                    "properties": {
+                        "up": { "type": "integer", "minimum": 0, "maximum": 12 }, "down": { "type": "integer", "minimum": 0, "maximum": 12 },
+                        "left": { "type": "integer", "minimum": 0, "maximum": 12 }, "right": { "type": "integer", "minimum": 0, "maximum": 12 }
+                    }
+                }
+            }
+        },
         "scene_node_type": { "$ref": "#/$defs/u8", "description": "sceneNodeType" },
         "shadow": { "type": "boolean", "description": "Whether the actor casts a shadow (enableShadow)" },
         "footprint_type": { "$ref": "#/$defs/u8", "description": "The footprints it leaves (footprintType)" },

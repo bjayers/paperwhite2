@@ -171,6 +171,19 @@ static void BillboardActorMaterial_Set(BillboardActorMaterial *material, u32 for
     material->facesPerColumn = material->texHeight / material->faceHeight;
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: a material of the Following Pokémon's effects' own scenes (paperwhite2_following_effects.c), which
+// aren't in a scene's slots
+void PaperWhite2_BillboardActorMaterialBindTexture(BillboardActorMaterial *material, G3DResource *texResource) {
+    BillboardActorMaterial_BindTexture(material, texResource);
+}
+
+void PaperWhite2_BillboardActorMaterialSet(BillboardActorMaterial *material, u32 format, int size, u8 faceWidth,
+                                           u8 faceHeight) {
+    BillboardActorMaterial_Set(material, format, size, faceWidth, faceHeight);
+}
+#endif
+
 u32 BillboardActorScene_AddMaterialNewTex(BillboardActorScene *scene, G3DResource *texResource, u32 format, int size,
                                           u8 faceWidth, u8 faceHeight) {
     u32 idx;

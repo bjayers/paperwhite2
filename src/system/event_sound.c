@@ -10,14 +10,9 @@
 #include "system/game_event.h"
 #include "system/game_system.h"
 
-// The work of every event in this file; each uses only some of it
-typedef struct {
-    GameSystem *gsys;
-    FieldSound *fieldSound;
-    u32 bgm;
-    u16 fadeInFrames;
-    u16 fadeOutFrames;
-} EventSoundWork;
+#ifdef PAPERWHITE2
+#include "paperwhite2/following_sound_policy.h"
+#endif
 
 static GameEventReturnCode EventBGMFadeIn_Callback(GameEvent *event, u32 *state, void *data);
 static GameEventReturnCode EventBGMFadeOut_Callback(GameEvent *event, u32 *state, void *data);
@@ -517,3 +512,12 @@ GameEvent *EventBGMFadeWait_Create(GameSystem *gsys) {
     work->fieldSound = GameData_GetFieldSoundSystem(gameData);
     return event;
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: whether a callback is one of the sound events that the Following Pokémon's scene policy lets
+// run with the follower kept, those of res/paperwhite2/following/audio-event-policy.json
+// (paperwhite2_following_scene.c)
+BOOL PaperWhite2_IsFollowingSoundCallback(GameEventCallback callback) {
+    return Following_IsSoundCallback(callback);
+}
+#endif

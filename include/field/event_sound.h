@@ -7,6 +7,16 @@
 
 #include "types.h"
 #include "struct_decls.h"
+#include "system/game_event.h"
+
+// The work of every event in this file; each uses only some of it
+typedef struct {
+    GameSystem *gsys;
+    FieldSound *fieldSound;
+    u32 bgm;
+    u16 fadeInFrames;
+    u16 fadeOutFrames;
+} EventSoundWork;
 
 GameEvent *EventBGMFadeIn_Create(GameSystem *gsys, u32 fadeInFrames);
 GameEvent *EventBGMFadeOut_Create(GameSystem *gsys, u32 fadeOutFrames);
@@ -34,4 +44,8 @@ GameEvent *EventWaitFieldSound_Create(GameSystem *gsys);
 // Waits until no pop is left
 GameEvent *EventBGMFadeWait_Create(GameSystem *gsys);
 
+#ifdef PAPERWHITE2
+// Paper White 2: main's event_sound.c, for the Following Pokémon
+BOOL PaperWhite2_IsFollowingSoundCallback(GameEventCallback callback);
+#endif
 #endif // POKEBW2_FIELD_EVENT_SOUND_H

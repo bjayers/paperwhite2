@@ -12,6 +12,10 @@
 #include "nitro/os.h"
 #include "save/event_work.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/following_events.h"
+#endif
+
 // The field actors (the ROM's fldmmdl.c, by the file name that its allocations pass): the system that holds them, their
 // creation from a zone's entities, their state, and the saved positions of the strength boulders. swan's names here are
 // in English: its MMDL is FieldActor and its BlAct BillboardActor
@@ -259,6 +263,11 @@ static FieldActor *CreateNewActorByEntity(MMSys *system, const ZoneNPC *npc, s32
     FieldActor *actor;
     ZoneNPC entity = *npc;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: the Following Pokémon's scene sees a new actor on the follower's tile or slot
+    // (docs/paperwhite2/following-pokemon.md, event-actor-allocation)
+    PaperWhite2_FollowingOnActorAllocate(system, &entity);
+#endif
     actor = GetPtrToFirstFreeActorSlot(system);
     InitNewActor(actor, system, zoneId);
     LoadActorParamsByZoneNPC(actor, &entity, eventWork, system);
@@ -334,6 +343,13 @@ static inline void RemoveActorTCB(FieldActor *actor) {
 }
 
 void DeleteActor(FieldActor *actor) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the Following Pokémon's scene sees the follower deleted by another, and the follower's own actor,
+    // which it has already removed, is left alone (event-actor-delete)
+    if (!PaperWhite2_FollowingOnActorDelete(actor)) {
+        return;
+    }
+#endif
     if (FldActSys_IsDrawInited(actor->actorSystem)) {
         if (actor->sceneNodeVTable->onDelete != NULL) {
             actor->sceneNodeVTable->onDelete(actor);
@@ -574,14 +590,30 @@ BOOL IsAllActorAcmdFinished(FieldActor *actor) {
 }
 
 void FldAct_SetAcmd(FieldActor *actor, u16 acmd) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the Following Pokémon's scene sees a script moving an actor, and recalls the follower in its way
+    // (event-actor-action-queued)
+    if (PaperWhite2_FollowingOnActorAction(actor, acmd)) {
+        SetNextActorAcmd(actor, acmd);
+    }
+#else
     SetNextActorAcmd(actor, acmd);
+#endif
     FldAct_SetAcmdState(actor, 0);
     SetActorMovementFlag(actor, 0x200);
     ClearActorMovementFlag(actor, 0x400);
 }
 
 void FldAct_SetLocalAcmd(FieldActor *actor, u16 acmd) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the Following Pokémon's scene sees a script moving an actor, and recalls the follower in its way
+    // (event-actor-action-reset)
+    if (PaperWhite2_FollowingOnActorAction(actor, acmd)) {
+        SetNextActorAcmd(actor, acmd);
+    }
+#else
     SetNextActorAcmd(actor, acmd);
+#endif
     FldAct_SetAcmdState(actor, 0);
     ClearActorMovementFlag(actor, 0x400);
 }
@@ -930,9 +962,17 @@ void FldAct_CallMoveInitProc(FieldActor *actor) {
 }
 
 void FldAct_CallMoveProc(FieldActor *actor) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the Following Pokémon's scene blocks the collision queries of the actor's own move code that would
+    // walk it into the follower (ambient-callback)
+    FieldActor *previous = PaperWhite2_FollowingBeginAmbient(actor);
+#endif
     if (actor->moveCodeVTable->unk8 != NULL) {
         actor->moveCodeVTable->unk8(actor);
     }
+#ifdef PAPERWHITE2
+    PaperWhite2_FollowingEndAmbient(previous);
+#endif
 }
 
 static void FldAct_CallMoveReturnProc(FieldActor *actor) {
@@ -1109,6 +1149,12 @@ void CopyActorWPos(FieldActor *actor, VecFx32 *dest) {
 }
 
 void SetActorWPosValue(FieldActor *actor, const VecFx32 *pos) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the Following Pokémon's scene sees an actor stepping onto the follower (event-actor-world-step)
+    if (!PaperWhite2_FollowingOnActorStep(actor, pos)) {
+        return;
+    }
+#endif
     actor->wPos = *pos;
 }
 
@@ -1125,11 +1171,11 @@ void SetActorWPosOffset(FieldActor *actor, const VecFx32 *offset) {
 }
 
 void FldAct_GetOuterDrawOffset(FieldActor *actor, VecFx32 *dest) {
-    *dest = actor->unk5C;
+    *dest = actor->outerDrawOffset;
 }
 
 void FldAct_SetOuterDrawOffset(FieldActor *actor, const VecFx32 *value) {
-    actor->unk5C = *value;
+    actor->outerDrawOffset = *value;
 }
 
 void FldAct_GetAttrDrawOffset(FieldActor *actor, VecFx32 *dest) {
@@ -1683,6 +1729,12 @@ BOOL FldAct_CheckObjCodeShared(FieldActor *actor, u16 objCode) {
 }
 
 void SetActorWPosAll(FieldActor *actor, const VecFx32 *pos, u16 dir) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the Following Pokémon's scene sees an actor placed on the follower (event-actor-position)
+    if (!PaperWhite2_FollowingOnActorPosition(actor, pos)) {
+        return;
+    }
+#endif
     SetActorGPosX(actor, POS_TO_GRID(pos->x));
     SetActorGPosY(actor, POS_TO_GRID(pos->y));
     SetActorGPosZ(actor, POS_TO_GRID(pos->z));
@@ -1831,7 +1883,13 @@ void GetNPCMdlInfoForOBJCODE(const MMSys *actorSystem, u16 objCode, FieldActorCo
     s32 i;
     u32 index;
     FieldActor *actor;
+#ifdef PAPERWHITE2
+    // Paper White 2: the followers' rows (from 1,008) put the record past 64 KB from row 2,341 on
+    // (docs/paperwhite2/following-pokemon.md, descriptor-offset-width)
+    u32 offset;
+#else
     u16 offset;
+#endif
     u16 *cache = actorSystem->actorConfigCache;
     u16 count = cache[0];
 

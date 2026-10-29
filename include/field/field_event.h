@@ -7,6 +7,13 @@
 #include "struct_decls.h"
 #include "system/game_event.h"
 
+typedef struct {
+    GameSystem *gsys;
+    Field *field;
+    GameData *gameData;
+    u32 unk0C;
+} EventFieldOpenWork;
+
 // What a battle started from the field takes from it, which SaveBtlFieldStatus of overlay 36 fills in
 struct BtlFieldStatus {
     u32 bgId;
@@ -141,4 +148,9 @@ GameEvent *FieldEventProvider_Hybrid(GameSystem *gsys, void *data);
 // How many Pokémon in the party can battle: not Eggs, and not fainted
 u32 FieldEventProvider_CountAlivePartyMembers(GameSystem *gsys);
 
+#ifdef PAPERWHITE2
+// Paper White 2: main's field_event.c, for the Following Pokémon
+BOOL PaperWhite2_IsFieldOpenCallback(GameEventCallback callback);
+BOOL PaperWhite2_IsFieldSubprocessCallback(GameEventCallback callback);
+#endif
 #endif // POKEBW2_FIELD_FIELD_EVENT_H

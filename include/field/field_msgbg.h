@@ -183,6 +183,10 @@ BmpWin *MsgBGPrinter_GetInfoSysWinBmpWin(FieldMsgWin *win);
 // TALKMSG_WIN_TAIL_ corner for the top and bottom balloons
 ActorMsgWin *ActorMsgWin_CheckAndCreate(FieldMsgBG *sys, s32 type, const VecFx32 *pos, StrBuf *strbuf, u32 frameType,
                                         u32 tail);
+#ifdef PAPERWHITE2
+// Paper White 2: whether a balloon of type can open now, for the Following Pokémon's talk
+BOOL PaperWhite2_CanOpenActorMsgWin(FieldMsgBG *sys, s32 type);
+#endif
 void MsgBGPrinter_DeleteTalkWin(ActorMsgWin *win);
 BOOL MsgBGPrinter_WaitTalkWinClose(ActorMsgWin *win);
 void MsgBGPrinter_ClearTalkWin(ActorMsgWin *win);

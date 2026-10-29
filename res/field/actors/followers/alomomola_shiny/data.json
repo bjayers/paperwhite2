@@ -1,0 +1,42 @@
+{
+    "$schema": "field_actor.schema.json",
+    "type": "sprite",
+    "scene_node_type": 10,
+    "shadow": true,
+    "footprint_type": 0,
+    "reflections": true,
+    "billboard_size": 0,
+    "sprite_atlas_size": 21,
+    "sprite_controller_type": 14,
+    "gender": null,
+    "collision": {
+        "width": 1,
+        "height": 1
+    },
+    "offset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+    },
+    "follower": {
+        "species": "SPECIES_ALOMOMOLA",
+        "form": 0,
+        "sex": "GENDER_MALE",
+        "shiny": true,
+        "placeholder": false,
+        "animation_profile": "asymmetric",
+        "art_offset": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+        },
+        "side_gap": 0,
+        "gaps": {
+            "up": 6,
+            "down": 6,
+            "left": 6,
+            "right": 6
+        }
+    },
+    "texture_set_format": "pokeweb"
+}

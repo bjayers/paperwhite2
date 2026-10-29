@@ -17,6 +17,10 @@
 #include "nitro/fx.h"
 #include "nitro/mi.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/following_events.h"
+#endif
+
 // The place an actor holds on the rail, with the rail unit that follows it, at the start of the actor's work for its
 // move code
 typedef struct {
@@ -205,7 +209,13 @@ static u32 RailActor_CheckCollision(FieldActor *actor, const RailPosition *from,
             *tile = tileType;
         }
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: an actor's own move code doesn't walk it into the Following Pokémon on rails
+    // (docs/paperwhite2/following-pokemon.md, ambient-rail-collision)
+    if (PaperWhite2_FollowingCheckRailCollision(actor, to, RailActor_CheckActorCollision(actor, to))) {
+#else
     if (RailActor_CheckActorCollision(actor, to)) {
+#endif
         flags |= 4;
     }
     return flags;

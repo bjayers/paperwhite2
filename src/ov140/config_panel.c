@@ -1,5 +1,6 @@
 #include "types.h"
 #include "app/config_panel.h"
+#include "app/config_panel_work.h"
 #include "app/ui/touchbar.h"
 #include "app/ui/ui_scene.h"
 #include "constants/arc.h"
@@ -47,6 +48,9 @@
 #include "system/text_speed.h"
 #include "text/script/global_10520.h"
 #include "text/system/title_2.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/following_options.h"
+#endif
 
 // The options screen of the menu: five options in rows that scroll, each with two or three values to pick with the
 // keys or the touch screen, an explanation of the row under the cursor, and the buttons that confirm the changes or
@@ -54,68 +58,9 @@
 
 #define HEAPID_CONFIG_PANEL 0x1c
 
-#define BG_COUNT 6
-#define BG_BAR 0
-#define BG_TEXT 1
-#define BG_ROWS 2
-#define BG_CONFIRM 3
-#define BG_MESSAGE 4
-
-// The windows: the values, the options' names, the title, the explanation and the question
-#define LABEL_COUNT 16
-enum {
-    WINDOW_OPTION = 11,
-    WINDOW_TITLE = 16,
-    WINDOW_MESSAGE,
-    WINDOW_CONFIRM,
-    WINDOW_COUNT,
-};
-
-// The actors: the values' frames from ACTOR_ITEM on
-#define ACTOR_COUNT 14
-#define ACTOR_ITEM 2
-
-// The options and all their values
-enum {
-    OPTION_TEXT_SPEED,
-    OPTION_BATTLE_SCENE,
-    OPTION_BATTLE_STYLE,
-    OPTION_SOUND,
-    OPTION_SAVE_BEFORE_IR,
-    OPTION_COUNT,
-};
-#define ITEM_COUNT 11
-
-// The cursor: an option, or one of the buttons
-enum {
-    CURSOR_CONFIRM = OPTION_COUNT,
-    CURSOR_QUIT,
-    CURSOR_MAX = CURSOR_QUIT,
-};
-
 // The top and bottom of the rows on the screen
 #define ROWS_TOP 24
 #define ROWS_BOTTOM 168
-
-// What the player did this frame
-enum {
-    INPUT_NONE,
-    INPUT_SLIDE,
-    INPUT_2,
-    INPUT_TOUCH,
-    INPUT_UP,
-    INPUT_DOWN,
-    INPUT_RIGHT,
-    INPUT_LEFT,
-    INPUT_DECIDE,
-    INPUT_CANCEL,
-    INPUT_UP_HELD,
-    INPUT_DOWN_HELD,
-    INPUT_Y,
-    INPUT_X,
-    // The first key after the touch screen, which only brings the cursor back
-    INPUT_KEY_MODE,
-};
 
 // The points the input keeps: where the touch began, how far it moved this frame, and where it is
 enum {
@@ -147,11 +92,6 @@ enum {
 };
 
 typedef struct {
-    s32 x;
-    s32 y;
-} ConfigPanelPoint;
-
-typedef struct {
     s32 left;
     s32 top;
     s32 right;
@@ -163,15 +103,6 @@ typedef struct {
     BGSetup setup;
     u32 mode;
 } ConfigPanelBgSetup;
-
-// A text of the screen: its message and its window, in tiles. The width is set from the text
-typedef struct {
-    u32 msgId;
-    u8 x;
-    u8 y;
-    u8 width;
-    u8 height;
-} ConfigPanelLabel;
 
 // An option: its explanation and its values
 typedef struct {
@@ -192,40 +123,6 @@ typedef struct {
     s16 hitHeight;
 } ConfigPanelItem;
 
-// The options as the screen edits them. changed is the value last picked, ITEM_COUNT when none
-typedef struct {
-    u8 values[OPTION_COUNT];
-    u8 changed;
-    Config *config;
-} ConfigPanelOptions;
-
-typedef struct {
-    BmpWin *windows[WINDOW_COUNT];
-    u16 pulseAngle;
-    u16 pad4E;
-    u16 pulseColor;
-    void *titleCharBuf;
-    NNSG2dCharacterData *titleChars;
-    u16 cursorPalette[16];
-} ConfigPanelBg;
-
-typedef struct {
-    ClActUnit *unit;
-    u32 palette;
-    u32 chars;
-    u32 cellAnims;
-    u32 knobChars;
-    u32 knobCellAnims;
-    ClActor *actors[ACTOR_COUNT];
-    u16 frame;
-} ConfigPanelObj;
-
-typedef struct {
-    ConfigPanelBg bg;
-    ConfigPanelObj obj;
-    TCB *vblankTcb;
-} ConfigPanelGraphic;
-
 typedef struct ConfigPanelSeq ConfigPanelSeq;
 typedef void (*ConfigPanelSeqFunc)(ConfigPanelSeq *seq, u32 *state, void *data);
 
@@ -235,59 +132,6 @@ struct ConfigPanelSeq {
     u32 state;
     void *data;
 };
-
-typedef struct {
-    u32 input;
-    ConfigPanelPoint start;
-    ConfigPanelPoint slide;
-    ConfigPanelPoint now;
-    BOOL touching;
-} ConfigPanelUi;
-
-typedef struct {
-    MsgData *msgData;
-    Font *font;
-    PrintStream *stream;
-    TCBExManager *tcbManager;
-    BmpWin *window;
-    StrBuf *strbuf;
-    u16 clearColor;
-    u16 heapId;
-    PrintWindow printWindow;
-    PrintQueue *queue;
-    u32 mode;
-    AppPrintsysCommon common;
-    u32 unk34;
-} ConfigPanelMsg;
-
-typedef struct {
-    Font *font;
-    PrintQueue *queue;
-    TouchBar *touchBar;
-    s32 button;
-    BOOL decided;
-    AppTaskMenuRes *res;
-    MsgData *msgData;
-    AppTaskMenuItem items[2];
-    AppTaskMenuWin *wins[2];
-    GameData *gameData;
-    // Whether a button or an icon was touched this frame, which hides the cursor
-    BOOL touched;
-} ConfigPanelAppBar;
-
-typedef struct {
-    u16 textBg;
-    u16 rowsBg;
-    s32 cursor;
-    ClActor *actors[ITEM_COUNT];
-    s32 y;
-    u32 repeat;
-    u32 unk3C;
-    u32 unk40;
-    ConfigPanelOptions options;
-    BOOL update;
-    BOOL cursorVisible;
-} ConfigPanelScroll;
 
 typedef struct {
     ConfigPanelMsg msg;
@@ -510,7 +354,13 @@ static BOOL ConfigPanel_Init(GameProc *proc, u32 *state, void *param, void *work
     gameData = GSYS_GetGameData(wk->param->gsys);
     ConfigPanelAppBar_Init(&wk->appBar, ConfigPanelGraphic_GetUnit(&wk->graphic), wk->font, wk->queue, wk->msgData,
                            wk->buttonRes, gameData, HEAPID_CONFIG_PANEL);
+#ifdef PAPERWHITE2
+    // Paper White 2: the rows, then the Followers row under them
+    PaperWhite2_FollowingOptionsInit(&wk->scroll, BG_TEXT, BG_ROWS, &wk->graphic, &wk->saved, HEAPID_CONFIG_PANEL,
+                                     wk->font, wk->msgData);
+#else
     ConfigPanelScroll_Init(&wk->scroll, BG_TEXT, BG_ROWS, &wk->graphic, &wk->saved, HEAPID_CONFIG_PANEL);
+#endif
     ConfigPanelUi_Init(&wk->ui, HEAPID_CONFIG_PANEL);
     ConfigPanelMsg_Init(&wk->msg, ConfigPanelGraphic_GetWindow(&wk->graphic, WINDOW_MESSAGE), wk->font, wk->msgData,
                         wk->tcbManager, wk->queue, HEAPID_CONFIG_PANEL);
@@ -525,7 +375,12 @@ static BOOL ConfigPanel_Exit(GameProc *proc, u32 *state, void *param, void *work
     ConfigPanelConfirm_Exit(&wk->confirm);
     ConfigPanelMsg_Exit(&wk->msg);
     ConfigPanelUi_Exit(&wk->ui);
+#ifdef PAPERWHITE2
+    // Paper White 2: frees the Followers row, then the rows
+    PaperWhite2_FollowingOptionsExit(&wk->scroll);
+#else
     ConfigPanelScroll_Exit(&wk->scroll);
+#endif
     ConfigPanelAppBar_Exit(&wk->appBar);
     ConfigPanelSeq_Exit(&wk->seq);
     ConfigPanelOptions_Exit(&wk->saved);
@@ -1068,7 +923,12 @@ static void ConfigPanelAppBar_Main(ConfigPanelAppBar *appBar, ConfigPanelUi *ui,
     } else {
         input = ConfigPanelUi_GetInput(ui);
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the Followers row is the last option for the bar, Confirm and Quit the buttons
+    cursor = PaperWhite2_FollowingOptionsGetCursor(scroll);
+#else
     cursor = ConfigPanelScroll_GetCursor(scroll);
+#endif
 
     switch (input) {
     case INPUT_KEY_MODE:
@@ -1821,7 +1681,12 @@ static void ConfigPanelSeq_Input(ConfigPanelSeq *seq, u32 *state, void *data) {
     case 0:
         ConfigPanelUi_Main(&wk->ui);
         if (!ConfigPanelAppBar_GetDecided(&wk->appBar, NULL)) {
+#ifdef PAPERWHITE2
+            // Paper White 2: the rows with the Followers row's cursor, input and drawing
+            PaperWhite2_FollowingOptionsMain(&wk->scroll, &wk->ui, &wk->msg, &wk->graphic, &wk->appBar);
+#else
             ConfigPanelScroll_Main(&wk->scroll, &wk->ui, &wk->msg, &wk->graphic, &wk->appBar);
+#endif
         }
         ConfigPanelAppBar_Main(&wk->appBar, &wk->ui, &wk->scroll);
         if (ConfigPanelAppBar_IsTouched(&wk->appBar)) {
@@ -1840,7 +1705,12 @@ static void ConfigPanelSeq_Input(ConfigPanelSeq *seq, u32 *state, void *data) {
 
                 wk->param->result = TRUE;
                 ConfigPanelScroll_GetOptions(&wk->scroll, &options);
+#ifdef PAPERWHITE2
+                // Paper White 2: a change of the Followers row is a change too
+                if (PaperWhite2_FollowingOptionsEquals(&wk->saved, &options)) {
+#else
                 if (ConfigPanelOptions_Equals(&wk->saved, &options)) {
+#endif
                     ConfigPanelSeq_SetNext(seq, ConfigPanelSeq_Quit);
                 } else {
                     ConfigPanelAppBar_ResetButtons(&wk->appBar);
@@ -1853,7 +1723,12 @@ static void ConfigPanelSeq_Input(ConfigPanelSeq *seq, u32 *state, void *data) {
                     ConfigPanelOptions options;
 
                     ConfigPanelScroll_GetOptions(&wk->scroll, &options);
+#ifdef PAPERWHITE2
+                    // Paper White 2: a change of the Followers row is a change too
+                    if (PaperWhite2_FollowingOptionsEquals(&wk->saved, &options)) {
+#else
                     if (ConfigPanelOptions_Equals(&wk->saved, &options)) {
+#endif
                         ConfigPanelSeq_SetNext(seq, ConfigPanelSeq_Quit);
                     } else {
                         ConfigPanelAppBar_ResetButtons(&wk->appBar);
@@ -1970,7 +1845,12 @@ static void ConfigPanelSeq_Save(ConfigPanelSeq *seq, u32 *state, void *data) {
     ConfigPanelOptions options;
 
     ConfigPanelScroll_GetOptions(&wk->scroll, &options);
+#ifdef PAPERWHITE2
+    // Paper White 2: saves the Followers row's value with the options
+    PaperWhite2_FollowingOptionsApply(&options);
+#else
     ConfigPanelOptions_Apply(&options);
+#endif
     GFL_SndSEPlay(SEQ_SE_SAVE);
     ConfigPanelSeq_SetNext(seq, ConfigPanelSeq_FadeOut);
 }
@@ -1979,3 +1859,36 @@ static BOOL ConfigPanel_IsInRect(const ConfigPanelRect *rect, const ConfigPanelP
     return ((u32)(point->x - rect->left) <= (u32)(rect->right - rect->left)) &
            ((u32)(point->y - rect->top) <= (u32)(rect->bottom - rect->top));
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: the functions that the Following Pokémon's row (paperwhite2_following_options.c) calls
+void PaperWhite2_ConfigPanelScrollInit(ConfigPanelScroll *scroll, u16 textBg, u16 rowsBg, ConfigPanelGraphic *graphic,
+                                       const ConfigPanelOptions *options, HeapID heapId) {
+    ConfigPanelScroll_Init(scroll, textBg, rowsBg, graphic, options, heapId);
+}
+
+void PaperWhite2_ConfigPanelScrollExit(ConfigPanelScroll *scroll) {
+    ConfigPanelScroll_Exit(scroll);
+}
+
+void PaperWhite2_ConfigPanelScrollMain(ConfigPanelScroll *scroll, ConfigPanelUi *ui, ConfigPanelMsg *msg,
+                                       ConfigPanelGraphic *graphic, ConfigPanelAppBar *appBar) {
+    ConfigPanelScroll_Main(scroll, ui, msg, graphic, appBar);
+}
+
+s32 PaperWhite2_ConfigPanelScrollGetCursor(ConfigPanelScroll *scroll) {
+    return ConfigPanelScroll_GetCursor(scroll);
+}
+
+BOOL PaperWhite2_ConfigPanelOptionsEquals(const ConfigPanelOptions *a, const ConfigPanelOptions *b) {
+    return ConfigPanelOptions_Equals(a, b);
+}
+
+void PaperWhite2_ConfigPanelOptionsApply(const ConfigPanelOptions *options) {
+    ConfigPanelOptions_Apply(options);
+}
+
+void PaperWhite2_ConfigPanelMsgPrint(ConfigPanelMsg *msg, u32 msgId, s32 wait, BOOL stream) {
+    ConfigPanelMsg_Print(msg, msgId, wait, stream);
+}
+#endif

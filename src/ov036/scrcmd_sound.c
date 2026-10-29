@@ -18,15 +18,6 @@
 // The players of the sound effects that ScriptWork_GetSEBitMask tracks
 #define SE_PLAYER_COUNT 5
 
-// The work of the event that plays a cry
-typedef struct {
-    u16 species;
-    u16 form;
-    // Plays the save's Chatot recording in place of Chatot's cry
-    BOOL chatter;
-    FieldScriptEnv *env;
-} PokeVoiceEvent;
-
 static GameEventReturnCode EventPokeVoicePlay_Callback(GameEvent *event, u32 *state, void *data);
 
 // Plays a cry with the save's Chatot recording, which Chatot's cry plays in place of its own. The callback reads the
@@ -424,3 +415,11 @@ static GameEventReturnCode EventPokeVoicePlay_Callback(GameEvent *event, u32 *st
     SetScrEnvNowPkmVoice(voice->env, handle);
     return GAMEEVENT_DONE;
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: whether a callback is the cry's, which the Following Pokémon's scene policy lets run under the
+// script that played it (paperwhite2_following_scene.c)
+BOOL PaperWhite2_IsPokeVoicePlayCallback(GameEventCallback callback) {
+    return callback == EventPokeVoicePlay_Callback;
+}
+#endif

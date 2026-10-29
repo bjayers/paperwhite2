@@ -949,3 +949,14 @@ void GFL_G3DSysResetGeometryCounter(void) {
     g_G3DSystem.polygonCount = 0;
     g_G3DSystem.vertexCount = 0;
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: for the Following Pokémon's ball (paperwhite2_following_effects.c)
+HeapID GFL_G3DSysGetHeapID(void) {
+    return g_G3DSystem.sys->heapId;
+}
+
+void GFL_G3DResSetResData(G3DResource *resource, NNSG3dResFileHeader *data) {
+    resource->data = data;
+}
+#endif

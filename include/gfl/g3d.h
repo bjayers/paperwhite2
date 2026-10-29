@@ -167,6 +167,13 @@ NNSGfdPlttKey GFL_G3DResGetPltVRAMHandle(G3DResource *resource);
 void *GFL_G3DResGetTexImageData(G3DResource *resource);
 void *GFL_G3DResGetTexPaletteData(G3DResource *resource);
 NNSG3dResFileHeader *GFL_G3DResGetResData(G3DResource *resource);
+#ifdef PAPERWHITE2
+// Paper White 2: the heap that the 3D system reads resources into, and a resource's file swapped for a copy in a block
+// of that heap, which GFL_G3DResFree frees as it would the original (the Following Pokémon's ball, which
+// paperwhite2_following_effects.c gives a larger palette)
+HeapID GFL_G3DSysGetHeapID(void);
+void GFL_G3DResSetResData(G3DResource *resource, NNSG3dResFileHeader *data);
+#endif
 void GFL_G3DResFree(G3DResource *resource);
 G3DModel *GFL_G3DMdlCreate(G3DResource *resource, u32 modelId, G3DResource *texture);
 void GFL_G3DMdlFree(G3DModel *model);

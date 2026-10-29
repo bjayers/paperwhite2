@@ -92,6 +92,7 @@
 #include "system/zone_weather.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/field.h"
+#include "paperwhite2/following_field.h"
 #endif
 
 // What a field routine returns: run on, with the other of its pair next frame; go on to the next routine; or end the
@@ -446,6 +447,11 @@ u32 FieldRoutine_MapSpawnFinish(GameSystem *gsys, Field *field) {
         while (FieldWeather_IsTaskActive(field->weatherSystem)) {
             FieldWeather_Update(field->weatherSystem, HEAPID_FIELD_WEATHER);
         }
+#ifdef PAPERWHITE2
+        // Paper White 2: the Following Pokémon's sprite is bound before the entrance fade shows the map
+        // (field-follower-matcache)
+        PaperWhite2_FollowingPreloadFollower(field, field->actorSystem);
+#endif
         FieldG3D_Update(field);
         FieldG3D_RenderPhase1(field);
         FieldG3D_RenderPhase2(field);
@@ -518,7 +524,12 @@ u32 FieldRoutine_Run(GameSystem *gsys, Field *field) {
     FieldSubscreen_Update(field->subscreen);
     if (field->actorSystem != NULL) {
         MI_SetMainMemoryPriority(MI_PROCESSOR_ARM9);
+#ifdef PAPERWHITE2
+        // Paper White 2: the Following Pokémon's frame, which updates the actors itself (field-actor-update)
+        PaperWhite2_FollowingUpdate(field->actorSystem);
+#else
         FldActSys_Update(field->actorSystem);
+#endif
         MI_SetMainMemoryPriority(MI_PROCESSOR_ARM7);
     }
     Field_UpdateGimmick(field);
@@ -580,6 +591,10 @@ u32 FieldRoutine_RunAltFrame(GameSystem *gsys, Field *field) {
 u32 FieldRoutine_MapUnload(GameSystem *gsys, Field *field) {
     GameData *gameData;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: the Following Pokémon's follower goes before the field's actors (field-unload)
+    PaperWhite2_FollowingUnload(gsys, field);
+#endif
     FesGimmick_DeleteSparkles(field->fesGimmick);
     EncEff_Free(field->encEff);
     Fld3DCi_Free(field->g3dCi);
@@ -1381,8 +1396,15 @@ void FieldRenderPhase2_Fieldmap(Field *field) {
     NNS_G3dGeFlushBuffer();
     FieldEffects_Draw(field->fieldEffects);
     FieldG3DObjSystem_Draw(field->g3DObjSystem);
+#ifdef PAPERWHITE2
+    // Paper White 2: the Following Pokémon's follower at its own height and light, and the grass over its feet
+    // (field-actor-billboard-draw, field-terrain-billboard-draw)
+    PaperWhite2_FollowingDraw(field->actorBillboardActor, field->g3dCamera, field->g3dLights);
+    PaperWhite2_FollowingTerrainDraw(field->wildEffectBillboardActor, field->g3dCamera, field->g3dLights);
+#else
     BillboardActorSys_Draw(field->actorBillboardActor, field->g3dCamera, field->g3dLights);
     BillboardActorSys_Draw(field->wildEffectBillboardActor, field->g3dCamera, field->g3dLights);
+#endif
     if (field->unionEffect != NULL) {
         UnionEff_Draw(field->unionEffect);
     }
@@ -1391,7 +1413,12 @@ void FieldRenderPhase2_Fieldmap(Field *field) {
     NNS_G3dGlbSetProjectionMtx(&mtx);
     NNS_G3dGlbFlushP();
     NNS_G3dGeFlushBuffer();
+#ifdef PAPERWHITE2
+    // Paper White 2: the Following Pokémon's shadow behind its body, and its effects (field-billboard-draw)
+    PaperWhite2_FollowingEffectsDraw(field->effectBillboardActor, field->g3dCamera, field->g3dLights);
+#else
     BillboardActorSys_Draw(field->effectBillboardActor, field->g3dCamera, field->g3dLights);
+#endif
     NNS_G3dGlbSetProjectionMtx(&saved);
     NNS_G3dGlbFlushP();
     FieldAsyncProcManager_Draw(field->asyncProcManager);

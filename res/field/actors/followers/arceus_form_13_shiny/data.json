@@ -1,0 +1,42 @@
+{
+    "$schema": "field_actor.schema.json",
+    "type": "sprite",
+    "scene_node_type": 11,
+    "shadow": true,
+    "footprint_type": 0,
+    "reflections": true,
+    "billboard_size": 2,
+    "sprite_atlas_size": 30,
+    "sprite_controller_type": 13,
+    "gender": null,
+    "collision": {
+        "width": 1,
+        "height": 1
+    },
+    "offset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+    },
+    "follower": {
+        "species": "SPECIES_ARCEUS",
+        "form": 13,
+        "sex": null,
+        "shiny": true,
+        "placeholder": true,
+        "animation_profile": "mirrored",
+        "art_offset": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+        },
+        "side_gap": 6,
+        "gaps": {
+            "up": 10,
+            "down": 10,
+            "left": 10,
+            "right": 10
+        }
+    },
+    "sprite": "OBJ_CODE_POKEMON_ARCEUS_FORM_13"
+}

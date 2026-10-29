@@ -91,7 +91,8 @@ struct FieldActor {
     s16 unk42;
     VecFx32 wPos;
     VecFx32 wPosOffset;
-    VecFx32 unk5C;
+    // The offset that FldAct_SetOuterDrawOffset sets, added to the drawn position with wPosOffset
+    VecFx32 outerDrawOffset;
     VecFx32 unk68;
     u32 currentTileUnder;
     u32 currentTileUnderOrigY;

@@ -1,0 +1,116 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Paper White 2: the Following Pokémon's interactions, res/paperwhite2/following/interactions.json",
+    "description": "What the follower does when the player talks to it (following/interactions.bin of Pokeweb's runtime, \"FWTK\" ABI 1), packed by tools/paperwhite2/following_assets.py as member 3 of the model table's archive (a/0/4/7), whose docstring has the format. The runtime rolls each rule in order and takes the first that matches and passes its chance; the last must always match. A rule runs its steps: each can play a motion, show a message and a bubble, and cry. The motions, messages and bubbles came from HeartGold's neutral-mood reactions (a/2/2/0 to a/2/2/2, messages of bank 265, emotes of a/1/0/3), whose numbers the hgss_ fields keep. A string value of a turn is a DIR_* constant of include/constants/directions.h.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "rules", "motions", "messages", "bubbles" ],
+    "properties": {
+        "$schema": { "type": "string", "description": "This schema, for editors" },
+        "rules": {
+            "type": "array", "minItems": 1, "maxItems": 70, "items": { "$ref": "#/$defs/rule" },
+            "description": "The reactions, tried in order"
+        },
+        "motions": {
+            "type": "array", "minItems": 1, "maxItems": 64, "items": { "$ref": "#/$defs/motion" },
+            "description": "The motions that steps play, numbered from 1; the contextual dialogues' before_motion and after_motion name them by these numbers too"
+        },
+        "messages": {
+            "type": "array", "minItems": 1, "maxItems": 128, "items": { "$ref": "#/$defs/message" },
+            "description": "The messages that steps show, numbered from 1"
+        },
+        "bubbles": {
+            "type": "array", "minItems": 1, "maxItems": 14, "items": { "$ref": "#/$defs/bubble" },
+            "description": "The emote bubbles that steps show over the Pokémon, numbered from 1; each has two frames, emotes/<name>_1.png and _2.png, members 6 and on of a/0/4/7, two a bubble in this order"
+        }
+    },
+    "$defs": {
+        "u8": { "type": "integer", "minimum": 0, "maximum": 255 },
+        "u16": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "hp": {
+            "enum": [ "full", "75_to_99_percent", "50_to_74_percent", "25_to_49_percent", "1_to_24_percent" ],
+            "description": "The HP the Pokémon has left; without it, any"
+        },
+        "friendship": {
+            "enum": [ "255", "200_to_254", "150_to_199", "90_to_149", "60_to_89", "30_to_59", "1_to_29", "0", "90_or_more", "below_60" ],
+            "description": "The Pokémon's friendship; without it, any"
+        },
+        "status": {
+            "enum": [ "healthy", "burn", "freeze", "paralysis", "poison", "any_status", "sleep" ],
+            "description": "The Pokémon's status condition (poison takes in bad poison, any_status any but healthy); without it, any"
+        },
+        "facing": {
+            "enum": [ "right", "left", "up", "down" ],
+            "description": "The way the Pokémon faces to look at the player, which is where the player stands from it; without it, any"
+        },
+        "rule": {
+            "type": "object", "additionalProperties": false, "required": [ "hgss_reaction", "chance", "steps" ],
+            "properties": {
+                "hgss_reaction": { "type": "integer", "minimum": 1, "maximum": 65535, "description": "The HeartGold reaction it came from (a/2/2/1 member + 1); the runtime only needs it not 0" },
+                "hp": { "$ref": "#/$defs/hp" },
+                "friendship": { "$ref": "#/$defs/friendship" },
+                "status": { "$ref": "#/$defs/status" },
+                "facing": { "$ref": "#/$defs/facing" },
+                "chance": { "type": "integer", "minimum": 0, "maximum": 100, "description": "The chance in percent that it is taken when it matches" },
+                "steps": {
+                    "type": "array", "minItems": 1, "maxItems": 5,
+                    "description": "What it does, in order",
+                    "items": {
+                        "type": "object", "additionalProperties": false, "required": [ "motion", "message", "cry", "bubble", "wait" ],
+                        "properties": {
+                            "motion": { "$ref": "#/$defs/u16", "description": "The motion it plays, from 1, 0 for none" },
+                            "message": { "$ref": "#/$defs/u16", "description": "The message it shows, from 1, 0 for none" },
+                            "cry": { "enum": [ "none", "cry", "slow_cry" ], "description": "Whether the Pokémon cries, and whether slowed down (PokeVoice_AdjustSpeed)" },
+                            "bubble": { "$ref": "#/$defs/u8", "description": "The bubble it shows, from 1, 0 for none" },
+                            "wait": { "$ref": "#/$defs/u8", "description": "The frames it waits after" }
+                        }
+                    }
+                }
+            }
+        },
+        "motion": {
+            "type": "object", "additionalProperties": false, "required": [ "hgss_motion", "steps" ],
+            "properties": {
+                "hgss_motion": { "$ref": "#/$defs/u16", "description": "The HeartGold motion it came from (a/2/2/2 member + 1)" },
+                "steps": {
+                    "type": "array", "minItems": 1, "maxItems": 10,
+                    "description": "Its steps, in order",
+                    "items": {
+                        "type": "object", "additionalProperties": false, "required": [ "turn", "frames", "x", "y", "z", "cry" ],
+                        "properties": {
+                            "turn": { "enum": [ null, "DIR_UP", "DIR_DOWN", "DIR_LEFT", "DIR_RIGHT" ], "description": "The way the Pokémon turns to face, null to keep its facing" },
+                            "frames": { "type": "integer", "minimum": 1, "maximum": 120, "description": "The frames the step lasts" },
+                            "x": { "type": "integer", "minimum": -16, "maximum": 16, "description": "The pixels it moves the Pokémon's drawing east" },
+                            "y": { "type": "integer", "minimum": -16, "maximum": 16, "description": "The pixels it moves the Pokémon's drawing up, except Diglett's and Dugtrio's, which stay in the ground" },
+                            "z": { "type": "integer", "minimum": -16, "maximum": 16, "description": "The pixels it moves the Pokémon's drawing south" },
+                            "cry": { "type": "boolean", "description": "Whether the step's start plays the Pokémon's cry, if the rule's step cries" }
+                        }
+                    }
+                }
+            }
+        },
+        "message": {
+            "type": "object", "additionalProperties": false, "required": [ "hgss_message", "text" ],
+            "properties": {
+                "hgss_message": { "$ref": "#/$defs/u16", "description": "The HeartGold message it came from (of bank 265)" },
+                "text": { "type": "string", "description": "The text, at most 127 characters: \\n starts a line, {nickname} is the Pokémon's nickname, {player} the player's name" }
+            }
+        },
+        "bubble": {
+            "type": "object", "additionalProperties": false, "required": [ "name", "texture", "hgss_emote", "durations", "frames" ],
+            "properties": {
+                "name": { "type": "string", "pattern": "^[a-z0-9_]+$", "description": "The name of its frames' files, emotes/<name>_1.png and .pal and emotes/<name>_2.png and .pal" },
+                "texture": { "type": "string", "pattern": "^[\\x21-\\x7e]{1,14}$", "description": "The name of its texture sets' palette, and of their textures with .1 and .2, as HeartGold names them" },
+                "hgss_emote": { "type": "integer", "minimum": 1, "maximum": 14, "description": "The HeartGold emote it came from" },
+                "durations": {
+                    "type": "array", "minItems": 4, "maxItems": 4, "items": { "type": "integer", "minimum": 1, "maximum": 120 },
+                    "description": "The frames each of its four steps shows for"
+                },
+                "frames": {
+                    "type": "array", "minItems": 4, "maxItems": 4, "items": { "type": "integer", "minimum": 0, "maximum": 1 },
+                    "description": "The frame each step shows: 0 its first, 1 its second"
+                }
+            }
+        }
+    }
+}
