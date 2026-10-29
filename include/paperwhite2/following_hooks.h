@@ -77,6 +77,11 @@ static inline BOOL FollowingScene_IsMenuActive(void) {
     return FALSE;
 }
 
+// Notes event, the menu that the field's checks opened, as the menu's (scene.c's fws_mark_menu)
+// TODO step 4: the scene's marker. style-ok: todo
+static inline void FollowingScene_MarkMenu(GameEvent *event) {
+}
+
 // Whether no other actor stands on target or is stepping onto it
 static inline BOOL FollowingScene_IsStepClear(FieldActor *follower, const VecFx32 *target) {
     return TRUE;

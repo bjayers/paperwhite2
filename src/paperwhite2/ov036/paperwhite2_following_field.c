@@ -25,11 +25,13 @@
 #include "paperwhite2/following_hooks.h"
 #include "paperwhite2/following_interaction.h"
 #include "paperwhite2/following_positioning.h"
+#include "paperwhite2/following_reactions.h"
 #include "paperwhite2/following_registry.h"
 #include "paperwhite2/following_render.h"
 #include "paperwhite2/following_resident.h"
 #include "pml/poke_party.h"
 #include "save/config.h"
+#include "save/player_info.h"
 #include "save/trainer_data_savedata.h"
 #include "system/game_data.h"
 #include "system/game_event.h"
@@ -38,10 +40,11 @@
 // Paper White 2: the Following Pokémon's follower in the field, ported from Pokeweb's field.c (its base package). The
 // follower is a field actor of the party member's follower code that doesn't run a move of its own: each frame it
 // walks the player's trail (paperwhite2_following_trail.c), with the swap when the player steps back onto it, the stand
-// beside the player, the ball that a large follower stays in under a floor or indoors, and L and R to switch it. Its
-// state lives here and goes with overlay 36; what must outlive the field is a resident token. The calls into the parts
-// that step 4 brings (the scene policy and the events bridge) are following_hooks.h's stubs; the ball effects are
-// paperwhite2_following_effects.c and the talk paperwhite2_following_interaction.c.
+// beside the player, the ball that a large follower stays in under a floor or indoors, L and R to switch it, and A in
+// front of it to talk to it (paperwhite2_following_interaction.c), from the field's event checks. Its state lives here
+// and goes with overlay 36; what must outlive the field is a resident token. The calls into the parts that step 4
+// brings (the scene policy and the events bridge) are following_hooks.h's stubs; the ball effects are
+// paperwhite2_following_effects.c.
 // The original's FollowingDebug, a block of values for its emulator tests, isn't ported; the last reason that kept the
 // follower away, which its talk reads, is sReason
 
@@ -1699,9 +1702,10 @@ static u16 GetFollowerCode(MMSys *system, const FollowingPokemon *mon) {
 }
 
 // The party member that follows: the lead, or for direction (1 for L, -1 for R) the next from the current one, or the
-// one that L or R chose while it can still follow. The original also filled the talk's snapshot of it here, for step
-// 4's talk
-static BOOL SelectFollower(GameData *gameData, FollowingPokemon *out, s32 direction, s32 *chosenSlot) {
+// one that L or R chose while it can still follow. With snapshot, also what the talk's reactions read of it and of the
+// player, but for the zone, which the talk adds
+static BOOL SelectFollower(GameData *gameData, FollowingPokemon *out, s32 direction, s32 *chosenSlot,
+                           FollowingReactionSnapshot *snapshot) {
     PokeParty *party = GameData_GetParty(gameData);
     u32 count;
     FollowingPokemon mons[FOLLOWING_PARTY_CAPACITY];
@@ -1793,6 +1797,26 @@ static BOOL SelectFollower(GameData *gameData, FollowingPokemon *out, s32 direct
     type1 = PokeParty_GetParam(selected, PKM_PARAM_TYPE1, NULL);
     type2 = PokeParty_GetParam(selected, PKM_PARAM_TYPE2, NULL);
     sFlying = type1 == TYPE_FLYING || type2 == TYPE_FLYING;
+    if (snapshot != NULL) {
+        PlayerInfo *info;
+
+        MI_CpuFill8(snapshot, 0, sizeof(*snapshot));
+        snapshot->pokemon = *out;
+        snapshot->friendship = (u8)PokeParty_GetParam(selected, PKM_PARAM_HAPPINESS, NULL);
+        snapshot->status = PokeParty_GetParam(selected, PKM_PARAM_STATUS, NULL);
+        snapshot->type1 = (u8)type1;
+        snapshot->type2 = (u8)type2;
+        PokeParty_GetParam(selected, PKM_PARAM_NICKNAME_RAW, snapshot->nickname);
+        snapshot->nickname[NELEMS(snapshot->nickname) - 1] = 0xffff;
+        info = GetGameDataPlayerInfo(gameData);
+        if (info == NULL) {
+            return FALSE;
+        }
+        for (i = 0; i < NELEMS(info->name); i++) {
+            snapshot->playerName[i] = info->name[i];
+        }
+        snapshot->playerName[NELEMS(snapshot->playerName) - 1] = 0xffff;
+    }
     return TRUE;
 }
 
@@ -1831,7 +1855,7 @@ void PaperWhite2_FollowingPreloadFollower(Field *field, MMSys *system) {
     FollowingEffects_Warm(system);
     sWarmed = FollowingEffects_IsAvailable() ? system : NULL;
     slot = -1;
-    if (!SelectFollower(gameData, &selected, 0, &slot)) {
+    if (!SelectFollower(gameData, &selected, 0, &slot, NULL)) {
         return;
     }
     code = GetFollowerCode(system, &selected);
@@ -1900,7 +1924,7 @@ static void CycleFollower(GameData *gameData) {
     // SelectFollower steps from the current pick; a large one skipped becomes the pick for the next step. Six steps
     // cover the party
     for (i = 0; i < FOLLOWER_SELECT_STEPS; i++) {
-        if (!SelectFollower(gameData, &next, keys == PAD_BUTTON_R ? 1 : -1, &slot)) {
+        if (!SelectFollower(gameData, &next, keys == PAD_BUTTON_R ? 1 : -1, &slot, NULL)) {
             code = 0;
             break;
         }
@@ -2197,7 +2221,7 @@ static void UpdateBefore(MMSys *system) {
             (sFollower.actor == NULL || sTick % 30 == 0 || (eventState & FOLLOWING_SCENE_REFRESH))) {
             FollowingPokemon selected;
 
-            if (!SelectFollower(gameData, &selected, 0, NULL)) {
+            if (!SelectFollower(gameData, &selected, 0, NULL, NULL)) {
                 reason |= REASON_SELECTION;
             } else if (!sFollower.hasSelection || !FollowingPokemon_IsSame(&selected, &sFollower.selected)) {
                 u16 code = GetFollowerCode(system, &selected);
@@ -2540,4 +2564,58 @@ void PaperWhite2_FollowingUnload(GameSystem *gsys, Field *field) {
     sOwner = NULL;
     sConfigState = 0;
     sRegistrySize = 0;
+}
+
+// The field's own events come first. A in front of the follower, with the player standing and nothing else running,
+// talks to it
+static GameEvent *TryTalk(GameSystem *gsys, Field *field) {
+    FieldPlayer *fieldPlayer;
+    u32 status;
+    FollowingPokemon selected;
+    FollowingReactionSnapshot snapshot;
+
+    if (!IsOwned() || sOwner->field != field || FollowingTalk_IsActive() || sPlayer == NULL ||
+        sFollower.state != FOLLOWING_STATE_FOLLOWING || sReason != 0) {
+        return NULL;
+    }
+    if (!(GCTX_HIDGetPressedKeys() & PAD_BUTTON_A) || field->fadeFlag) {
+        return NULL;
+    }
+    fieldPlayer = field->player;
+    if (fieldPlayer == NULL) {
+        return NULL;
+    }
+    status = FieldPlayer_GetMoveObserveStatus(fieldPlayer);
+    if (status != PLAYER_OBSERVE_NONE && status != PLAYER_OBSERVE_END) {
+        return NULL;
+    }
+    if (FieldPlayer_GetExState(fieldPlayer) != 0) {
+        return NULL;
+    }
+    if (!SelectFollower(field->gameData, &selected, 0, NULL, &snapshot) ||
+        !FollowingPokemon_IsSame(&selected, &sFollower.selected)) {
+        return NULL;
+    }
+    snapshot.zone = field->zoneId;
+    snapshot.direction = (u8)(sPlayer->faceDir ^ 1);
+    return FollowingTalk_Begin(&sFollower, sPlayer, sFollower.actor, field, gsys, &snapshot);
+}
+
+GameEvent *PaperWhite2_FollowingGridEvent(GameSystem *gsys, Field *field, GameEvent *event, BOOL *scriptCalled,
+                                          BOOL menuOpened) {
+    if (event != NULL) {
+        if (menuOpened) {
+            FollowingScene_MarkMenu(event);
+        }
+        return event;
+    }
+    event = TryTalk(gsys, field);
+    if (event != NULL) {
+        *scriptCalled = TRUE;
+    }
+    return event;
+}
+
+GameEvent *PaperWhite2_FollowingRailEvent(GameSystem *gsys, Field *field, GameEvent *event) {
+    return event != NULL ? event : TryTalk(gsys, field);
 }

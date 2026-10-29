@@ -51,6 +51,12 @@ void PaperWhite2_FollowingTerrainDraw(BillboardActorSys *system, G3DCamera *came
 void PaperWhite2_FollowingEffectsDraw(BillboardActorSys *system, G3DCamera *camera, G3DLight *lights);
 // Whether the player's D-pad waits while the follower is recalled into its ball (field-player-recall-direction-gate)
 BOOL PaperWhite2_FollowingHoldsPlayer(void);
+// In fieldmap_event.c, after the field's own event checks on a grid and on rails, given the event they found: the
+// scene notes a menu that the grid's checks opened, and with no event, A in front of the follower talks to it, which on
+// a grid counts as a script called (follower-grid-event, follower-rail-event)
+GameEvent *PaperWhite2_FollowingGridEvent(GameSystem *gsys, Field *field, GameEvent *event, BOOL *scriptCalled,
+                                          BOOL menuOpened);
+GameEvent *PaperWhite2_FollowingRailEvent(GameSystem *gsys, Field *field, GameEvent *event);
 
 // Whether the follower's tile is in the shade, for its light
 BOOL FollowingField_IsShaded(void);
