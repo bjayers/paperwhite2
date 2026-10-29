@@ -77,7 +77,7 @@ of the original where `.s` has a continuation); `THUMB_BRANCH_LINK` replaces one
 | field-unload | ov036 `0x021801e4` | `FieldRoutine_MapUnload` (same) | whole function | `FollowingUnload`, then the original | frees the follower before the field's actors. Ported: `PaperWhite2_FollowingUnload` at the function's start (step 3) |
 | field-actor-billboard-draw | ov036 `0x0218119a` | `FieldRenderPhase2_Fieldmap` +0xaa (same) | `BillboardActorSys_Draw` (the actors) | `FollowingDraw` | the actors' pass with the follower's and player's depth corrections and map light. Ported: `PaperWhite2_FollowingDraw` in place of the call (step 3) |
 | field-terrain-billboard-draw | ov036 `0x021811b0` | `FieldRenderPhase2_Fieldmap` +0xc0 (same) | `BillboardActorSys_Draw` (the grass at `field + 0xc8`) | `FollowingTerrainDraw` | grass over the follower's feet. Ported: `PaperWhite2_FollowingTerrainDraw` in place of the call (step 3) |
-| field-billboard-draw | ov036 `0x0218122e` | `FieldRenderPhase2_Fieldmap` +0x13e (same) | `BillboardActorSys_Draw` (the effects) | `FollowingEffectsDraw` | the recall flash, ball and emote bubbles. Ported: `PaperWhite2_FollowingEffectsDraw` in place of the call: the shadow pass now, the effects a stub (step 3) |
+| field-billboard-draw | ov036 `0x0218122e` | `FieldRenderPhase2_Fieldmap` +0x13e (same) | `BillboardActorSys_Draw` (the effects) | `FollowingEffectsDraw` | the recall flash, ball and emote bubbles. Ported: `PaperWhite2_FollowingEffectsDraw` in place of the call: the shadow pass (step 3), then `FollowingEffects_Draw` (step 4) |
 | field-player-recall-direction-gate | ov036 `0x0219a610` | `FieldPlayer_GetMoveDirByKey` (`src/ov036/field_player.c`) | whole function | `FollowingPlayerMoveDir` | holds the D-pad while the follower is recalled. Ported: `PaperWhite2_FollowingHoldsPlayer` returns `PLAYER_DIR_NONE` first (step 3) |
 | follower-grid-event | ov036 `0x021818bc` | `FieldEventProvider_Grid` +0x20 (`src/ov036/fieldmap_event.c`) | `FieldEventProvider_Grid_CheckForEvent` | `FollowingGridEvents` | talking to the follower (A in front of it) and L/R cycling, before the field's events |
 | follower-rail-event | ov036 `0x02181a6c` | `FieldEventProvider_NoGrid` +0x4 (same) | `FieldEventProvider_NoGrid_CheckForEvent` | `FollowingRailEvents` | the same on rails |
@@ -299,6 +299,7 @@ from the decomp's headers, adding fields where they are still `unk`.
 | `interactions.bin` (3,852 bytes) | "FWTK" ABI 1: 34 rules, 12 motions, 27 messages (UCS-2 with 0xFFFF end, 0xFFFE newline, 0xFFF0 nickname, 0xFFF1 player), 7 bubbles, with emotes.narc's size and CRC | `interaction.c` `load` (whole, into an 8 KB buffer), `reactions.c` | `a/0/4/7` member 3, from `res/paperwhite2/following/interactions.json` (rules, motions, messages as text, bubbles; `interactions.schema.json`); the emotes' size and CRC computed from members 6-19, done |
 | `emotes.narc` (10,076 bytes) | 14 BTX0 members (7 bubbles × 2 frames, 32×32, 16 colors), from HeartGold | `effects.c` (members), `interaction.c` (size and CRC) | `a/0/4/7` members 6-19 (bubble order, 2 frames each), from `res/paperwhite2/following/emotes/<bubble>_{1,2}.png` and `.pal`, packed with `nitro_btx.py` (`split_from`: the search nodes Pokeweb's ndspy split kept), done |
 | `effects.narc` (3,052 bytes) | 3 members: the ball model (BMD0), the send-out flash (BMD0), its texture animation (BTA0), from HeartGold's `a/1/0/3` 129, 104, 164; size and CRC compiled in (`effects_assets.h`) | `effects.c` | `a/0/4/7` members 20-22, from `res/paperwhite2/following/effects/` (`ball.nsbmd`, `send_out_flash.nsbmd`, `.nsbta`), as they are, done |
+| `ball_assets.h` (4,000 bytes, compiled in) | for each White 2 ball ID 1-25, its 16x16 4bpp texture (128 bytes) and 16 BGR555 colors, from Pokeweb's `ball-art/*.png` (`import_balls.py`) | `effects.c` (put over the ball model's texture and palette) | `a/0/4/7` member 23, from `res/paperwhite2/following/balls/<ball>.png`, done (step 4) |
 | `contextual-dialogues.narc` (76 bytes) | one member "FWCD" ABI 1-3 (empty: 0 rules) | `interaction.c` (whole, 4 KB), `reactions.c` | `a/0/4/7` member 4 (the NARC's member), from `res/paperwhite2/following/dialogues.json` (`dialogues.schema.json` documents ABI 3's fields), done |
 | `contextual-items.narc` (76 bytes) | one member "FWTI" ABI 1-2 (empty) | `interaction.c`, `gifts.c` | `a/0/4/7` member 5 (the NARC's member), from `res/paperwhite2/following/items.json` (`items.schema.json`, ABI 2's fields), done |
 | `install.json` | the installer's state | nothing in the game | not ported |
@@ -384,9 +385,11 @@ files byte for byte. An archive member rather than generated C data, since the r
 positioning table 30 KB, which as data would take that from the memory budget for good, and the runtime reads them
 a page or a row at a time (`GFL_ArcToolReadRange`, as `GetNPCMdlInfoForOBJCODE` reads the table). Rather than new
 ROM files, which the build can't add. The game reads only member 0, at offsets in it, so the new members change
-nothing for it. The rest of the runtime's data follows as members 3 to 22 (the Data table above), packed from
+nothing for it. The rest of the runtime's data follows as members 3 to 23 (the Data table above), packed from
 `res/paperwhite2/following/` by `tools/paperwhite2/following_assets.py`, whose docstring has their formats;
-`import_following_assets.py` wrote the sources from the hack's files, and all of them pack byte for byte.
+`import_following_assets.py` wrote the sources of members 3 to 22 from the hack's files, and all of them pack byte for
+byte. Member 23, the balls' art, was in the runtime's code (`ball_assets.h`): its PNGs are Pokeweb's `ball-art/`, and
+they pack to the same 4,000 bytes.
 
 `native.bin` goes: its counts and the registry's CRC checked an installer's files against each other, which the
 packer now writes together, and its "enabled" (the ROM-wide switch, 1 in the hack) becomes a constant of the port's

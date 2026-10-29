@@ -1,11 +1,12 @@
-"""Paper White 2: the Following Pokémon's interactions, emotes, effects, contextual dialogues and gifts, packed from
-res/paperwhite2/following/.
+"""Paper White 2: the Following Pokémon's interactions, emotes, effects, balls, contextual dialogues and gifts, packed
+from res/paperwhite2/following/.
 
 field_actor_data.py calls members() when it packs the model table (a/0/4/7, ARCID_MMODEL_TBL) with followers, after
 the table, the registry and the positioning table (members 0 to 2, following_data.py): the archive then has these
-as members 3 to 22, which the follower runtime (src/paperwhite2/) reads. Each is one of the files of Pokeweb's
-Following Pokémon runtime in the hack's ROM (following/), in the format its runtime read them, so the sources pack
-them byte for byte (docs/paperwhite2/following-pokemon.md, Data). Every number is little-endian, and every text is
+as members 3 to 23, which the follower runtime (src/paperwhite2/) reads. Members 3 to 22 are each one of the files of
+Pokeweb's Following Pokémon runtime in the hack's ROM (following/), in the format its runtime read them, so the
+sources pack them byte for byte (docs/paperwhite2/following-pokemon.md, Data); member 23 is the balls' art, which
+Pokeweb's runtime had in its code. Every number is little-endian, and every text is
 UCS-2 words ending in 0xFFFF, with 0xFFFE a new line, 0xFFF0 the Pokémon's nickname and 0xFFF1 the player's name
 (and in the dialogues and gifts 0xFFF2 the zone, "Zone N", and in a gift's text 0xFFF3 its item's name), which the
 JSON writes as text with "\\n", {nickname}, {player}, {location} and {item}:
@@ -44,6 +45,12 @@ JSON writes as text with "\\n", {nickname}, {player}, {location} and {item}:
   effects/send_out_flash.nsbta, its texture animation (BTA0), HeartGold's a/1/0/3 members 129, 104 and 164. They are
   Nitro G3D resources as HeartGold's build compiled them, packed as they are: no editor is needed, and tools such as
   NitroPaint open them.
+- member 23, the balls' art (Pokeweb's ball_assets.h, which its import_balls.py wrote from ball-art/), from
+  balls/<ball>.png, each 16 by 16 with 16 colors at most, index 0 transparent and the art in rows 5 to 14: for each
+  ball ID from 1 to 25 (BALLS, the order of pml_item.c's MONS_BALL_ITEMS), 160 bytes, its texture as linear 4bpp rows
+  (128 bytes) then its palette, 16 BGR555 colors with color 0 black and each of the PNG's colors' channels' top five
+  bits (what Pokeweb's importer wrote, not nitro_2d.color5's rounding), black past the PNG's palette. The runtime puts
+  them over the ball's texture and palette, which it gives room for 16 colors.
 
 The rules' conditions are written by name: hp, the HP left (HP_CONDITIONS), friendship (FRIENDSHIP_CONDITIONS),
 status (STATUS_CONDITIONS), and facing, the way the Pokémon faces to look at the player (FACING_CONDITIONS); a rule
@@ -90,6 +97,13 @@ EMOTE_FRAMES = 2
 TEXTURE_FORMAT = 3
 EFFECTS = ("ball.nsbmd", "send_out_flash.nsbmd", "send_out_flash.nsbta")
 EFFECT_MAGICS = (b"BMD0", b"BMD0", b"BTA0")
+# pml_item.c MONS_BALL_ITEMS: ball ID n is BALLS[n - 1]
+BALLS = ("master", "ultra", "great", "poke", "safari", "net", "dive", "nest", "repeat", "timer", "luxury", "premier",
+         "dusk", "heal", "quick", "cherish", "fast", "level", "lure", "heavy", "love", "friend", "moon", "sport",
+         "dream")
+BALL_SIZE = 16
+BALL_COLORS = 16
+BALL_ROWS = range(5, 15)
 
 HP_CONDITIONS = {"full": 1, "75_to_99_percent": 2, "50_to_74_percent": 3, "25_to_49_percent": 4,
                  "1_to_24_percent": 5}
@@ -154,6 +168,26 @@ def emote_set(path: Path, texture: str, frame: int) -> bytes:
     return texture_set([(names[frame - 1], EMOTE_SIZE, EMOTE_SIZE, TEXTURE_FORMAT, True,
                          encode_characters(EMOTE_SIZE, EMOTE_SIZE, pixels, linear=True))],
                        [(texture, data)], split_from=names)
+
+
+def balls(source: Path) -> bytes:
+    """Returns the balls' member of balls/<ball>.png."""
+    data = bytearray()
+    for name in BALLS:
+        path = source / "balls" / f"{name}.png"
+        if not path.is_file():
+            raise DataError(f"{label(path)}: a ball's art is a PNG")
+        width, height, pixels, colors = read_indexed_png(path)
+        if (width, height) != (BALL_SIZE, BALL_SIZE):
+            raise DataError(f"{label(path)}: must be {BALL_SIZE} by {BALL_SIZE}, not {width} by {height}")
+        if max(pixels) >= BALL_COLORS:
+            raise DataError(f"{label(path)}: uses palette index {max(pixels)}, past {BALL_COLORS - 1}")
+        if any(pixels[:BALL_ROWS.start * BALL_SIZE]) or any(pixels[BALL_ROWS.stop * BALL_SIZE:]):
+            raise DataError(f"{label(path)}: the art must stay in rows {BALL_ROWS.start} to {BALL_ROWS.stop - 1}")
+        colors = (list(colors) + [(0, 0, 0)] * BALL_COLORS)[:BALL_COLORS]
+        data += encode_characters(BALL_SIZE, BALL_SIZE, pixels, linear=True)
+        data += struct.pack(f"<{BALL_COLORS}H", 0, *(r >> 3 | (g >> 3) << 5 | (b >> 3) << 10 for r, g, b in colors[1:]))
+    return bytes(data)
 
 
 def pokeweb_narc(files: list[bytes]) -> bytes:
@@ -301,8 +335,8 @@ def items(rules: list[dict]) -> bytes:
 
 
 def members(source: Path = SOURCE) -> list[bytes]:
-    """Returns members 3 to 22 of the model table's archive: the interactions, the contextual dialogues and gifts,
-    the emotes and the effects."""
+    """Returns members 3 to 23 of the model table's archive: the interactions, the contextual dialogues and gifts,
+    the emotes, the effects and the balls."""
     data = load(source / "interactions.json", load_schema(source / "interactions.schema.json"))
     emotes = [emote_set(source / "emotes" / f"{bubble['name']}_{frame}", bubble["texture"], frame)
               for bubble in data["bubbles"] for frame in range(1, EMOTE_FRAMES + 1)]
@@ -315,4 +349,4 @@ def members(source: Path = SOURCE) -> list[bytes]:
     return [interactions(data, emotes),
             dialogues(load(source / "dialogues.json", load_schema(source / "dialogues.schema.json"))["rules"]),
             items(load(source / "items.json", load_schema(source / "items.schema.json"))["rules"]),
-            *emotes, *effects]
+            *emotes, *effects, balls(source)]

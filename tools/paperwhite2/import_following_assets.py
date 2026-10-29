@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Write the Following Pokémon's interactions, emotes, effects, contextual dialogues and gifts of a Paper White 2 ROM
-into res/paperwhite2/following/, which following_assets.py packs as members 3 to 22 of a/0/4/7.
+into res/paperwhite2/following/, which following_assets.py packs as members 3 to 22 of a/0/4/7. Member 23, the balls'
+art (balls/), isn't a file of the hack's: it was in Pokeweb's code, and its PNGs are Pokeweb's ball-art/.
 
     import_following_assets.py HACK_FILES [SOURCE]
 
@@ -208,6 +209,8 @@ def main(files: Path, source: Path):
         (source / "effects" / name).write_bytes(blob)
     expected = [hack_interactions, hack_dialogues[0], hack_items[0], *hack_emotes, *hack_effects]
     packed = assets.members(source)
+    # The balls' member follows the hack's files
+    packed = packed[:-1]
     differing = [assets.FIRST_MEMBER + index for index, (ours, theirs) in enumerate(zip(packed, expected))
                  if ours != theirs]
     if len(packed) != len(expected) or differing:

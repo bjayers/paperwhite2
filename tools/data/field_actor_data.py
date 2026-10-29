@@ -25,8 +25,8 @@ batch), and the packer writes each code's place in it into the table, so a new c
 The sprites' texture sets are written from the PNGs, as the game's are, byte for byte, or as Pokeweb's follower
 installer wrote them for a sprite whose "texture_set_format" is "pokeweb". When some codes have a "follower", the
 table's archive gets the follower registry and positioning table as members 1 and 2
-(tools/paperwhite2/following_data.py), and the follower's interactions, contextual dialogues and gifts, emotes and
-effects from res/paperwhite2/following/ as members 3 to 22 (tools/paperwhite2/following_assets.py).
+(tools/paperwhite2/following_data.py), and the follower's interactions, contextual dialogues and gifts, emotes,
+effects and balls from res/paperwhite2/following/ as members 3 to 23 (tools/paperwhite2/following_assets.py).
 """
 import struct
 import sys
@@ -254,7 +254,8 @@ def pack(root: Path, table_output: Path, graphics_output: Path):
     table = [struct.pack("<I", len(records)) + b"".join(records)]
     if followers:
         # Paper White 2: the Following Pokémon's registry and positioning (tools/paperwhite2/following_data.py), then
-        # its interactions, contextual dialogues and gifts, emotes and effects (tools/paperwhite2/following_assets.py)
+        # its interactions, contextual dialogues and gifts, emotes, effects and balls
+        # (tools/paperwhite2/following_assets.py)
         try:
             table += members(followers, len(records), len(models) + len(sprites), followers[0][0], followers[0][1],
                              load_list("species"))
