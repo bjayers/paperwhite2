@@ -71,12 +71,14 @@ typedef struct {
 
 // Where the top edges of the strips stand, along the ground from the feet (toward the camera when positive): base
 // (-5 to 2 tiles), plus forward (0 to 2 tiles) ramped in over ramp units of height from rise up. A strip whose top
-// already stands there or nearer doesn't move
+// already stands there or nearer doesn't move. No strip moves more than cap (0 to FOLLOWING_RENDER_SPLIT_CAP) of
+// depth: FOLLOWING_RENDER_SPLIT_CAP for a 64-pixel body, less for a 32-pixel one
 typedef struct {
     s32 base;
     s32 forward;
     s32 rise;
     s32 ramp;
+    s32 cap;
 } FollowingStripStack;
 
 // The camera-facing axes that FollowingRender_Strips uses, built once a frame
@@ -143,7 +145,7 @@ BOOL FollowingRender_PlaneKeep(const VecFx32 *feet, const FollowingCamera *camer
 // Horizontal strips of a tall body, for a submit of their own. body is the camera-facing quad as submitted (anchored at
 // the feet), half its half-width in the world. Strip i spans top - (i + 1) * strip to top - i * strip world units up
 // the camera's plane, with scale stripScaleY. Each moves toward the camera along its own eye ray until its top edge
-// stands where stack says, within FOLLOWING_RENDER_SPLIT_CAP of depth, with its pixels where they were. FALSE for an
+// stands where stack says, within stack's cap of depth, with its pixels where they were. FALSE for an
 // unknown projection, a camera looking straight down or a pose that can't be used
 BOOL FollowingRender_Strips(const FollowingPose *body, const FollowingCamera *camera, s32 half, s32 top, s32 strip,
                             u32 count, const FollowingStripStack *stack, s32 stripScaleY, FollowingPose *output);

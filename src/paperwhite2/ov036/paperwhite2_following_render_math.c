@@ -793,6 +793,7 @@ BOOL FollowingRender_Strips(const FollowingPose *body, const FollowingCamera *ca
     s32 ahead;
     s32 rise;
     s32 ramp;
+    s32 cap;
     s32 distance;
     s32 eyeToward;
     s32 high;
@@ -811,10 +812,12 @@ BOOL FollowingRender_Strips(const FollowingPose *body, const FollowingCamera *ca
     ahead = stack->forward;
     rise = stack->rise;
     ramp = stack->ramp;
+    cap = stack->cap;
     if (camera->projection > G3DCAM_PROJECTION_ORTHO || body->scaleX <= 0 || body->scaleX > 32767 || stripScaleY <= 0 ||
         stripScaleY > 32767 || half <= 0 || strip <= 0 || top > 5 * FOLLOWING_TILE || top - (s64)strip * count < 0 ||
         base < -5 * FOLLOWING_TILE || base > 2 * FOLLOWING_TILE || ahead < 0 || ahead > 2 * FOLLOWING_TILE ||
-        rise < 0 || rise > 5 * FOLLOWING_TILE || ramp <= 0 || ramp > 4 * FOLLOWING_TILE) {
+        rise < 0 || rise > 5 * FOLLOWING_TILE || ramp <= 0 || ramp > 4 * FOLLOWING_TILE || cap < 0 ||
+        cap > FOLLOWING_RENDER_SPLIT_CAP) {
         return FALSE;
     }
     if (!FollowingRender_Basis(camera, &basis) || !Delta(&camera->eye, &body->position, &ray, 1 << 27)) {
@@ -851,15 +854,15 @@ BOOL FollowingRender_Strips(const FollowingPose *body, const FollowingCamera *ca
                 // camera
                 gain = eyeToward - (s32)((s64)high * basis.upToward / FX32_ONE);
                 if (gain <= dh) {
-                    pull = FOLLOWING_RENDER_SPLIT_CAP + 1;
+                    pull = cap + 1;
                 } else {
                     q = Divide((s64)dh << 16, gain);
                     pull = q * distance / 65536;
                 }
             }
         }
-        if (pull > FOLLOWING_RENDER_SPLIT_CAP) {
-            pull = FOLLOWING_RENDER_SPLIT_CAP;
+        if (pull > cap) {
+            pull = cap;
             q = -1;
         }
         if (!BandPose(&basis, body, distance, low, pull, q, stripScaleY, &output[i])) {

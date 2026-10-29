@@ -42,6 +42,7 @@ typedef struct {
     s8 sz;
     u8 valid;
     u8 tiles;
+    u8 limit;
 } FollowingWallBehind;
 
 // World pixels added to every follower's height. Pokeweb's runtime lifts every follower by 2 so that the walking hop
@@ -85,6 +86,26 @@ typedef struct {
 #define LINE_NATIVE (-4 * FOLLOWING_TILE)
 #define LINE_STEP (12 * FX32_ONE)
 
+// A 32-pixel body leans back half as far, and a native 32-pixel sprite (the player, an NPC) already clears the walls
+// and counters the maps put behind it. The follower is drawn lower than one: FOLLOWING_SPRITE_LIFT, and the walk's
+// down frames sit up to two more pixels low, so in a W-buffered room (the Pokémon Centers, where the actors' clip Z
+// offset does nothing) the rows that a counter's top only just cleared go into it. So the split is smaller: only a wall
+// SMALL_WALL_TILES behind is read, the field's quad keeps the bottom SMALL_STRIP_BASE_ROWS rows (the feet, which never
+// move), and the rows above are SMALL_STRIP_COUNT strips of SMALL_STRIP_ROWS. Each moves toward the camera only as far
+// as its top needs to clear the wall's face (no jut) and never along the ground past the feet, and by no more than
+// lifts its rows back up its eye ray by the height the follower lost against a native sprite: how far its quad is
+// lowered, plus SMALL_FRAME_DROP, within SMALL_RISE_MAX. At the Pokémon Centers' 39-degree camera and the plain lift
+// that is 4 units of height, 6.4 of depth at most, under the 12.4 that a player a tile in front stands nearer; and a
+// strip beside the player's body comes no nearer the camera than the player
+#define SMALL_STRIP_ROWS 8
+#define SMALL_STRIP_COUNT 3
+#define SMALL_STRIP_BASE_ROWS (32 - SMALL_STRIP_COUNT * SMALL_STRIP_ROWS)
+#define SMALL_WALL_TILES 1
+#define SMALL_FRAME_DROP (2 * FX32_ONE)
+#define SMALL_RISE_MAX (FOLLOWING_TILE / 2)
+// With no wall, behind every row of a 24-unit stack at any pitch
+#define SMALL_LINE_NATIVE (-2 * FOLLOWING_TILE)
+
 // A terrain layer whose class is this has no tile
 #define TILE_CLASS_NONE 0xff
 
@@ -107,11 +128,15 @@ typedef struct {
     BillboardActorMaterial *live;
     u16 face;
     s16 scaleY;
+    // The material's face height, and the base windows that the face is cut into
+    u8 faceHeight;
+    u8 windows;
 } FollowingUpper;
 
 static FollowingSubmitted sSubmitted;
 static FollowingWallBehind sBehind;
 static s32 sLine = LINE_NATIVE;
+static s32 sSmallLine = SMALL_LINE_NATIVE;
 static FollowingUpper sUpper;
 
 static void GetCamera(G3DCamera *camera, FollowingCamera *view) {
@@ -335,8 +360,8 @@ static BOOL IsWallAt(FieldG3DMapper *mapper, const FieldActor *actor, fx32 x, fx
     return raised || !walkable;
 }
 
-// The tiles behind the follower to the nearest wall along sx, sz, 0 for none within WALL_TILES
-static u32 GetWallTiles(FieldActor *actor, s8 sx, s8 sz) {
+// The tiles behind the follower to the nearest wall along sx, sz, 0 for none within limit
+static u32 GetWallTiles(FieldActor *actor, s8 sx, s8 sz, u32 limit) {
     s16 tx = actor->gPos.x;
     s16 tz = actor->gPos.z;
     s16 ty = (s16)(actor->wPos.y / FOLLOWING_TILE);
@@ -349,7 +374,7 @@ static u32 GetWallTiles(FieldActor *actor, s8 sx, s8 sz) {
     s32 k;
 
     if (sBehind.valid && sBehind.x == tx && sBehind.z == tz && sBehind.y == ty && sBehind.sx == sx &&
-        sBehind.sz == sz) {
+        sBehind.sz == sz && sBehind.limit == limit) {
         return sBehind.tiles;
     }
     mapper = actor->actorSystem != NULL ? GetMMSysG3DMapper(actor->actorSystem) : NULL;
@@ -359,7 +384,7 @@ static u32 GetWallTiles(FieldActor *actor, s8 sx, s8 sz) {
         open[side + 1] = !IsWallAt(mapper, actor, actor->wPos.x + (sx ? 0 : side) * FOLLOWING_TILE,
                                    actor->wPos.z + (sz ? 0 : side) * FOLLOWING_TILE);
     }
-    for (k = 1; mapper != NULL && !found && k <= WALL_TILES; k++) {
+    for (k = 1; mapper != NULL && !found && k <= (s32)limit; k++) {
         for (side = -1; !found && side <= 1; side++) {
             if (open[side + 1] && IsWallAt(mapper, actor, actor->wPos.x + (sx * k + (sx ? 0 : side)) * FOLLOWING_TILE,
                                            actor->wPos.z + (sz * k + (sz ? 0 : side)) * FOLLOWING_TILE)) {
@@ -374,7 +399,67 @@ static u32 GetWallTiles(FieldActor *actor, s8 sx, s8 sz) {
     sBehind.sz = sz;
     sBehind.valid = TRUE;
     sBehind.tiles = (u8)found;
+    sBehind.limit = (u8)limit;
     return found;
+}
+
+// The line the strips' tops stand on, from the feet along the ground: a unit in front of the face of the nearest wall
+// within limit tiles behind the follower, away from the camera on the nearer grid axis. native, or no farther back
+// than it, with no wall
+static s32 GetWallLine(FieldActor *actor, const FollowingCameraBasis *basis, u32 limit, s32 native) {
+    s32 ax = basis->toward.x < 0 ? -basis->toward.x : basis->toward.x;
+    s32 az = basis->toward.z < 0 ? -basis->toward.z : basis->toward.z;
+    s8 sx = 0;
+    s8 sz = 0;
+    u32 tiles;
+    s32 target;
+
+    if (ax >= az) {
+        sx = basis->toward.x > 0 ? -1 : 1;
+    } else {
+        sz = basis->toward.z > 0 ? -1 : 1;
+    }
+    tiles = GetWallTiles(actor, sx, sz, limit);
+    target = native;
+    if (tiles != 0) {
+        // The face is the near edge of the wall's tile, from the feet as they are
+        fx32 c = sx ? actor->wPos.x : actor->wPos.z;
+        s32 dir = sx ? sx : sz;
+        s32 t = Following_Tile(c);
+        fx32 edge = (dir < 0 ? t - (s32)tiles + 1 : t + (s32)tiles) * FOLLOWING_TILE;
+        fx32 face = dir < 0 ? c - edge : edge - c;
+
+        target = WALL_MARGIN - face;
+        if (target < native) {
+            target = native;
+        }
+    }
+    return target;
+}
+
+// Moves line one step of LINE_STEP toward target
+static s32 EaseLine(s32 line, s32 target) {
+    if (line < target) {
+        return line + LINE_STEP < target ? line + LINE_STEP : target;
+    }
+    if (line > target) {
+        return line - LINE_STEP > target ? line - LINE_STEP : target;
+    }
+    return line;
+}
+
+// Whether a visible quad of another actor than quad is on material mat, and would lose rows to a split
+static BOOL IsMaterialShared(const BillboardActorScene *scene, const BillboardActor *quad, u32 mat) {
+    u32 i;
+
+    for (i = 0; i < scene->setup.actorCount; i++) {
+        const BillboardActor *other = &scene->actors[i];
+
+        if (other != quad && other->visible && other->material == mat) {
+            return TRUE;
+        }
+    }
+    return FALSE;
 }
 
 // Splits a tall body in front of a wall: the field's quad keeps the base rows, and sUpper holds the strips above
@@ -387,11 +472,6 @@ static BOOL SplitBody(BillboardActorSys *system, BillboardActor *quad, FieldActo
     s64 height;
     s64 half;
     FollowingCameraBasis basis;
-    s32 ax;
-    s32 az;
-    s8 sx;
-    s8 sz;
-    u32 tiles;
     s32 target;
     FollowingPose body;
     s32 row;
@@ -430,46 +510,14 @@ static BOOL SplitBody(BillboardActorSys *system, BillboardActor *quad, FieldActo
     if (!FollowingRender_Basis(camera, &basis)) {
         return FALSE;
     }
-    // Away from the camera along the ground, on the nearer grid axis
-    ax = basis.toward.x < 0 ? -basis.toward.x : basis.toward.x;
-    az = basis.toward.z < 0 ? -basis.toward.z : basis.toward.z;
-    sx = 0;
-    sz = 0;
-    if (ax >= az) {
-        sx = basis.toward.x > 0 ? -1 : 1;
-    } else {
-        sz = basis.toward.z > 0 ? -1 : 1;
-    }
-    tiles = GetWallTiles(actor, sx, sz);
-    target = LINE_NATIVE;
-    if (tiles != 0) {
-        // The face is the near edge of the wall's tile, from the feet as they are
-        fx32 c = sx ? actor->wPos.x : actor->wPos.z;
-        s32 dir = sx ? sx : sz;
-        s32 t = Following_Tile(c);
-        fx32 edge = (dir < 0 ? t - (s32)tiles + 1 : t + (s32)tiles) * FOLLOWING_TILE;
-        fx32 face = dir < 0 ? c - edge : edge - c;
-
-        target = WALL_MARGIN - face;
-        if (target < LINE_NATIVE) {
-            target = LINE_NATIVE;
-        }
-    }
-    if (sLine < target) {
-        sLine = sLine + LINE_STEP < target ? sLine + LINE_STEP : target;
-    } else if (sLine > target) {
-        sLine = sLine - LINE_STEP > target ? sLine - LINE_STEP : target;
-    }
+    target = GetWallLine(actor, &basis, WALL_TILES, LINE_NATIVE);
+    sLine = EaseLine(sLine, target);
     if (sLine <= LINE_NATIVE) {
         return FALSE;
     }
     // A visible quad of another actor on the follower's material would lose its upper rows
-    for (i = 0; i < scene->setup.actorCount; i++) {
-        const BillboardActor *other = &scene->actors[i];
-
-        if (other != quad && other->visible && other->material == mat) {
-            return FALSE;
-        }
+    if (IsMaterialShared(scene, quad, mat)) {
+        return FALSE;
     }
     body.position = quad->pos;
     body.scaleX = quad->scaleX;
@@ -488,6 +536,7 @@ static BOOL SplitBody(BillboardActorSys *system, BillboardActor *quad, FieldActo
     stack.forward = WALL_JUT;
     stack.rise = WALL_RISE;
     stack.ramp = WALL_RAMP;
+    stack.cap = FOLLOWING_RENDER_SPLIT_CAP;
     if (!FollowingRender_Strips(&body, camera, (s32)half, (s32)height, row * STRIP_ROWS, STRIP_COUNT, &stack,
                                 stripScaleY, out)) {
         return FALSE;
@@ -516,9 +565,164 @@ static BOOL SplitBody(BillboardActorSys *system, BillboardActor *quad, FieldActo
     sUpper.live = material;
     sUpper.face = quad->face;
     sUpper.scaleY = quad->scaleY;
+    sUpper.faceHeight = 64;
+    sUpper.windows = 64 / STRIP_BASE_ROWS;
     material->faceHeight = STRIP_BASE_ROWS;
     quad->face = (u16)((sheetRow * (64 / STRIP_BASE_ROWS) + 64 / STRIP_BASE_ROWS - 1) * material->facesPerRow + col);
     quad->scaleY = (s16)(quad->scaleY / (64 / STRIP_BASE_ROWS));
+    return TRUE;
+}
+
+// The most depth a 32-pixel follower's strips may move: what lifts their rows back up the eye ray by the height they
+// were lowered (lowered world units under the native quad, and a walk frame's drop), and for a player whose body is
+// beside the follower's on the screen, no nearer the camera than the player's quad less a margin
+static s32 GetSmallCap(const FollowingCameraBasis *basis, const BillboardActor *quad, const BillboardActor *playerQuad,
+                       s64 scale, s32 lowered) {
+    s64 rise = SMALL_FRAME_DROP + (lowered > 0 ? (s64)lowered * FX32_ONE : 0);
+    s64 cap;
+
+    if (rise > SMALL_RISE_MAX) {
+        rise = SMALL_RISE_MAX;
+    }
+    // A pull p along the eye ray lifts a row about p times the view axis's height
+    if (basis->view.y < FX32_ONE / 16) {
+        return 0;
+    }
+    cap = rise * FX32_ONE / basis->view.y;
+    if (playerQuad != NULL && playerQuad != quad) {
+        s64 dx = (s64)quad->pos.x - playerQuad->pos.x;
+        s64 dy = (s64)quad->pos.y - playerQuad->pos.y;
+        s64 dz = (s64)quad->pos.z - playerQuad->pos.z;
+        s64 across = (dx * basis->right.x + dy * basis->right.y + dz * basis->right.z) / FX32_ONE;
+        // The player's depth less the follower's: nearer the camera when positive
+        s64 gap = -(dx * basis->view.x + dy * basis->view.y + dz * basis->view.z) / FX32_ONE;
+        // The middle half of each frame, where the bodies are: a tile apart, side by side, they don't meet
+        s64 reach = (scale * quad->scaleX + scale * playerQuad->scaleX) / 2 >> FX32_SHIFT;
+
+        if (across < 0) {
+            across = -across;
+        }
+        if (across < reach && gap > -FOLLOWING_RENDER_SORT_BEHIND && cap > gap - FOLLOWING_RENDER_SORT_BEHIND) {
+            cap = gap - FOLLOWING_RENDER_SORT_BEHIND;
+        }
+    }
+    if (cap < 0) {
+        cap = 0;
+    }
+    if (cap > FOLLOWING_RENDER_SPLIT_CAP) {
+        cap = FOLLOWING_RENDER_SPLIT_CAP;
+    }
+    return (s32)cap;
+}
+
+// SplitBody for a 32-pixel body in front of a wall a tile behind it: the field's quad keeps the base rows, which don't
+// move, and sUpper holds the strips above, each moved toward the camera a little, never along the ground past the feet
+static BOOL SplitSmallBody(BillboardActorSys *system, BillboardActor *quad, FieldActor *actor,
+                           const FollowingCamera *camera, s32 delta, const BillboardActor *playerQuad) {
+    BillboardActorScene *scene;
+    u32 mat;
+    BillboardActorMaterial *material;
+    s64 scale;
+    s64 height;
+    s64 half;
+    FollowingCameraBasis basis;
+    s32 target;
+    FollowingPose body;
+    s32 row;
+    s16 stripScaleY;
+    u32 sheetRow;
+    u32 col;
+    FollowingPose out[SMALL_STRIP_COUNT];
+    FollowingStripStack stack;
+    u32 i;
+
+    sUpper.live = NULL;
+    // A 32-pixel billboard that isn't flipped upside down
+    if (actor->config.billboardSize != ACTOR_BILLBOARD_SIZE_32 || quad->flipT) {
+        return FALSE;
+    }
+    scene = system->scene;
+    mat = quad->material;
+    if (scene == NULL || scene->materials == NULL || scene->actors == NULL || mat >= scene->setup.materialCount) {
+        return FALSE;
+    }
+    material = &scene->materials[mat];
+    if (material->faceWidth != 32 || material->faceHeight != 32 || material->facesPerRow == 0 || quad->scaleY <= 0 ||
+        (quad->scaleY & 31) || quad->scaleX <= 0) {
+        return FALSE;
+    }
+    // The quad is 2 * scale * scaleY tall and scale * scaleX either side of its feet
+    scale = scene->setup.scale.x;
+    if (scale <= 0) {
+        return FALSE;
+    }
+    height = (2 * scale * quad->scaleY) >> FX32_SHIFT;
+    half = (scale * quad->scaleX) >> FX32_SHIFT;
+    if (height <= 0 || height > 2 * (s64)FOLLOWING_TILE || half <= 0 || half > 2 * (s64)FOLLOWING_TILE) {
+        return FALSE;
+    }
+    if (!FollowingRender_Basis(camera, &basis)) {
+        return FALSE;
+    }
+    // Never past the feet along the ground: the blinds lean forward, but no slat passes the bottom one
+    target = GetWallLine(actor, &basis, SMALL_WALL_TILES, SMALL_LINE_NATIVE);
+    if (target > 0) {
+        target = 0;
+    }
+    sSmallLine = EaseLine(sSmallLine, target);
+    if (sSmallLine <= SMALL_LINE_NATIVE || IsMaterialShared(scene, quad, mat)) {
+        return FALSE;
+    }
+    body.position = quad->pos;
+    body.scaleX = quad->scaleX;
+    body.scaleY = quad->scaleY;
+    row = (s32)height / 32;
+    stripScaleY = (s16)(quad->scaleY / (32 / SMALL_STRIP_ROWS));
+    sheetRow = 0;
+    col = quad->face;
+    while (col >= material->facesPerRow) {
+        col -= material->facesPerRow;
+        sheetRow++;
+    }
+    stack.base = sSmallLine;
+    stack.forward = 0;
+    stack.rise = 0;
+    stack.ramp = FX32_ONE;
+    stack.cap = GetSmallCap(&basis, quad, playerQuad, scale, -delta);
+    if (stack.cap == 0 || !FollowingRender_Strips(&body, camera, (s32)half, (s32)height, row * SMALL_STRIP_ROWS,
+                                                  SMALL_STRIP_COUNT, &stack, stripScaleY, out)) {
+        return FALSE;
+    }
+    // Strip i shows rows 8i to 8i + 7 from the top of the frame; the field's quad keeps the last 8
+    for (i = 0; i < SMALL_STRIP_COUNT; i++) {
+        BillboardActor *strip = &sUpper.strips[i];
+
+        *strip = *quad;
+        strip->material = 0;
+        strip->type = 0;
+        strip->pos = out[i].position;
+        strip->scaleX = (s16)out[i].scaleX;
+        strip->scaleY = (s16)out[i].scaleY;
+        strip->face = (u16)((sheetRow * (32 / SMALL_STRIP_ROWS) + i) * material->facesPerRow + col);
+    }
+    sUpper.material = *material;
+    sUpper.material.faceHeight = SMALL_STRIP_ROWS;
+    FollowingRender_PrivateScene(&sUpper.scene, scene, sUpper.strips, &sUpper.material, SMALL_STRIP_COUNT, 1);
+    sUpper.scene.setup.basePolygonId = scene->setup.basePolygonId;
+    sUpper.scene.setup.origin = scene->setup.origin;
+    sUpper.scene.customNormal = scene->customNormal;
+    sUpper.scene.normal = scene->normal;
+    sUpper.scene.texOffsetS = scene->texOffsetS;
+    sUpper.scene.texOffsetT = scene->texOffsetT;
+    sUpper.live = material;
+    sUpper.face = quad->face;
+    sUpper.scaleY = quad->scaleY;
+    sUpper.faceHeight = 32;
+    sUpper.windows = 32 / SMALL_STRIP_BASE_ROWS;
+    material->faceHeight = SMALL_STRIP_BASE_ROWS;
+    quad->face =
+        (u16)((sheetRow * (32 / SMALL_STRIP_BASE_ROWS) + 32 / SMALL_STRIP_BASE_ROWS - 1) * material->facesPerRow + col);
+    quad->scaleY = (s16)(quad->scaleY / (32 / SMALL_STRIP_BASE_ROWS));
     return TRUE;
 }
 
@@ -593,8 +797,9 @@ void FollowingRender_Draw(BillboardActorSys *system, G3DCamera *camera, G3DLight
                 // The strips are cut from the lowered quad, whose scale is a whole number of rows, then the base
                 // window is pulled with the rest of the body
                 quad->pos = adjusted.position;
-                if (SplitBody(system, quad, follower, &view)) {
-                    quad->scaleY = (s16)(drawn.scaleY / (64 / STRIP_BASE_ROWS));
+                if (SplitBody(system, quad, follower, &view) ||
+                    SplitSmallBody(system, quad, follower, &view, delta, playerQuad)) {
+                    quad->scaleY = (s16)(drawn.scaleY / sUpper.windows);
                 } else {
                     quad->scaleY = (s16)drawn.scaleY;
                 }
@@ -607,7 +812,7 @@ void FollowingRender_Draw(BillboardActorSys *system, G3DCamera *camera, G3DLight
     // The draw uses the quads at once. The player's quad is never written: only the follower's quad, its material and
     // its light mask are put back
     if (sUpper.live != NULL) {
-        sUpper.live->faceHeight = 64;
+        sUpper.live->faceHeight = sUpper.faceHeight;
         quad->face = sUpper.face;
         quad->scaleY = sUpper.scaleY;
     }

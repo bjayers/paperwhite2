@@ -405,7 +405,7 @@ SELECT, L/R switching (it is in the field's update in the base package, not in t
 SELECT toggle of the Followers setting, the shadow and grass of its tiles, the registry and the positioning row read
 through the field actors' open handle of `a/0/4/7`, the preload and the unload. `paperwhite2_following_render.c`
 (`following_render.h`) is `render.c`: the actors' pass (registry Y, two pixels down, the pull over the oval, the
-follower's own light, the strips of a 64-pixel body in front of a wall), the grass pass, and the effect pose for step 4.
+follower's own light, the strips of a 64-pixel body in front of a wall and the smaller split of a 32-pixel one), the grass pass, and the effect pose for step 4.
 Its shadow pass is gone (below, after the second melonDS test).
 native.bin's values: the enabled switch is `FOLLOWING_ENABLED`; the model table's row count is file 0's first u32
 (3,582), the resources are `a/0/4/8`'s file count (1,323), both checked against the registry's header by its stream,
@@ -687,6 +687,50 @@ same two ways: the ball for four frames, then the silhouette growing up out of i
 on the frame after. In a Pokémon Center and outdoors, with a 32-pixel follower (Pikachu) and a 64-pixel one outdoors
 (a 64-pixel follower stays in its ball indoors), in the sun and in the shade, standing and walking each way: the oval
 under the feet, never over them.
+
+## Small followers in front of counters
+
+**The clipping.** In a Pokémon Center a 32-pixel follower's middle rows went into the counter on the walk's down
+frames. The body is a camera-facing quad, so it leans back by its height: at the centers' camera (229 units, 39
+degrees) a row h units up the quad stands 0.63h behind the feet and 0.78h above them. A counter tile behind the
+follower has its face 8 units back, so rows above 12.7 are behind that face, and they show only while they are above
+the counter's top. A native 32-pixel sprite (the player, at the counter) clears it: the map is built for that. The
+follower is drawn lower: `FOLLOWING_SPRITE_LIFT` (2 units), and the down frames' art a pixel or two more, so the rows
+just above 12.7 sink under the counter's top. The room is W-buffered, so the actors' clip Z offset, which keeps NPCs in
+front of walls on the other maps, does nothing there. A 64-pixel body was already split (`SplitBody`).
+
+**The small split** (`SplitSmallBody`, its own `SMALL_*` constants; `SplitBody`, its constants and its results are
+unchanged). Only for a 32 by 32 face that isn't flipped, and only when the tile right behind the follower, away from the
+camera on the nearer grid axis, isn't walkable at its height (`SMALL_WALL_TILES` 1, the same `IsWallAt` and three
+columns as the large check, which still reads four tiles). Then:
+
+- The field's quad keeps the bottom 8 rows, the feet, which don't move, so the oval and the grass meet them as before.
+  8 rows lean back 5 units at the centers' camera and under 7 below a 61-degree pitch: in front of a face 8 units back.
+- The 24 rows above are 3 strips of 8 in the follower's own scene, as the large ones. Each moves along its own eye ray,
+  shrunk so its pixels stay where they were, until its top edge stands a unit in front of the wall's face along the
+  ground (`sSmallLine`, eased as `sLine`), with no jut for eaves.
+- The line is never in front of the feet, so no strip's top passes the bottom one along the ground, and moving toward
+  the eye only raises a strip, never below the feet's window.
+- A strip moves at most what lifts its rows back up the eye ray by the height the follower lost against a native
+  sprite: how far its quad is lowered (2 units for the plain lift) plus 2 for the down frame, within half a tile
+  (`GetSmallCap`). At the centers' camera that is 4 / sin 39 = 6.4 units of depth. A host test of
+  `FollowingRender_Strips` there gives the strips 6.4, 6.4 and 3.8 units of depth (top to bottom); the large ones move
+  up to about 50.
+- A player whose body is beside the follower's on the screen (the frames' middle halves meet: closer than a tile across)
+  and isn't clearly behind it caps the strips a unit short of the player's depth. A player a tile in front is 12.4
+  units nearer, more than the 6.4, and side by side a tile apart the bodies don't meet. With no room the follower draws
+  whole, as before.
+
+`FollowingRender_Strips` takes its cap from the stack (`FollowingStripStack.cap`); `SplitBody` passes
+`FOLLOWING_RENDER_SPLIT_CAP`, its old constant, and a host comparison of the old and new function over 2,000,000 random
+64-pixel cases gave the same output in every one. `GetWallLine`, `EaseLine` and `IsMaterialShared` are `SplitBody`'s
+code moved, unchanged; the wall cache also keys on the distance read.
+
+**To test** (melonDS): a 32-pixel follower (Pikachu) walking along a Pokémon Center's counter and the PC's, and standing
+in front of them, facing each way: no rows cut on any frame, the feet and the oval where they were, and never over the
+player beside or in front. On a route, in a town's open square and in grass, nothing changes. Against a building's
+wall a tile behind, the middle rows may move a little and the picture must not. A 64-pixel follower outdoors in front
+of a wall: as before.
 
 ## What remains
 
