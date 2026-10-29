@@ -18,5 +18,25 @@
         "y": 0,
         "z": 0
     },
+    "follower": {
+        "species": "SPECIES_HITMONCHAN",
+        "form": 0,
+        "sex": "GENDER_MALE",
+        "shiny": false,
+        "placeholder": false,
+        "animation_profile": "mirrored",
+        "art_offset": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+        },
+        "side_gap": 0,
+        "gaps": {
+            "up": 6,
+            "down": 6,
+            "left": 6,
+            "right": 6
+        }
+    },
     "sprite": "OBJ_CODE_POKEMON_HITMONCHAN"
 }

@@ -18,6 +18,26 @@
         "y": 0,
         "z": 0
     },
+    "follower": {
+        "species": "SPECIES_KELDEO",
+        "form": 1,
+        "sex": null,
+        "shiny": true,
+        "placeholder": false,
+        "animation_profile": "asymmetric",
+        "art_offset": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+        },
+        "side_gap": 6,
+        "gaps": {
+            "up": 10,
+            "down": 10,
+            "left": 10,
+            "right": 10
+        }
+    },
     "texture_set_format": "pokeweb",
     "sprite_batch": 2
 }

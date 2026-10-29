@@ -372,18 +372,33 @@ the record's offset in the table 32-bit (the original's u16 wraps from row 2,341
 `res/field/events/` the model `OBJ_CODE_FOLLOWER_PIKACHU` (row 1,104) and one past row 2,341, such as
 `OBJ_CODE_FOLLOWER_SNIVY` or `OBJ_CODE_FOLLOWER_GENESECT`; both should walk with the follower's sprite.
 
+### The registry and positioning
+
+Each follower's `data.json` has a `"follower"` object (`field_actor.schema.json`): species, form, sex, shiny, the
+placeholder flag, the animation profile (`mirrored` or `asymmetric`), the art's offsets, the side gap and the four
+walking gaps. `import_followers.py` writes it from the hack's registry and `positioning.narc`. The table row, the
+graphics member and the sprite's size aren't stored: the packer knows them.
+
+**Placement.** The registry and the positioning table are new members of the model table's archive, `a/0/4/7`
+(`ARCID_MMODEL_TBL`), which `field_actor_data.py` packs (with `tools/paperwhite2/following_data.py`) whenever an
+object code has a follower: member 0 the table as before, member 1 the registry (`runtime-registry.bin`'s bytes),
+member 2 the positioning table (`positioning.narc`'s member 0, "FWPO"). Packed, members 1 and 2 equal the hack's
+files byte for byte. An archive member rather than generated C data, since the registry is 60 KB and the
+positioning table 30 KB, which as data would take that from the memory budget for good, and the runtime reads them
+a page or a row at a time (`GFL_ArcToolReadRange`, as `GetNPCMdlInfoForOBJCODE` reads the table). Rather than new
+ROM files, which the build can't add. The game reads only member 0, at offsets in it, so the new members change
+nothing for it.
+
+`native.bin` goes: its counts and the registry's CRC checked an installer's files against each other, which the
+packer now writes together, and its "enabled" (the ROM-wide switch, 1 in the hack) becomes a constant of the port's
+header in the field step.
+
 ## What remains
 
 Port in this order, each step built with `--hack`, no warnings, `verify_dsi_rom.py` intact, the memory check, and a
 plain build's `ninja build/w2_us/stamps/modules.ok`:
 
-1. **Data as sources** (before the code that reads them): `res/paperwhite2/following/followers/<code>.json` per
-   registry row (placeholder flag, animation profile, art X, sprite Y, Z, side gap, the four gaps) beside the actor
-   directories, and a packer (`tools/paperwhite2/following_data.py`) that writes the registry (rows sorted by key,
-   rows and members from the packed `a/0/4/7`, the size from the sprite), `positioning.narc` and `native.bin`, checked
-   against the hack's files byte for byte. Decide where they go in the ROM (a new member of an existing archive, or a
-   generated header for `native.bin`'s values); the reads in `field.c` `config`/`registry_read` and `positioning.c`
-   change with it.
+1. **Data as sources**: done (below, "The registry and positioning").
 2. **Core** (`src/paperwhite2/main/`): `core.c` (the published count goes, the lookup above replaces it),
    `resident_events.c` and its four hooks in `vm.c` and `game_event.c` (needed by the scene policy in step 4, so with
    it).

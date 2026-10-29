@@ -18,5 +18,25 @@
         "y": 0,
         "z": 0
     },
+    "follower": {
+        "species": "SPECIES_LEDIAN",
+        "form": 0,
+        "sex": "GENDER_MALE",
+        "shiny": true,
+        "placeholder": true,
+        "animation_profile": "mirrored",
+        "art_offset": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+        },
+        "side_gap": 3,
+        "gaps": {
+            "up": 9,
+            "down": 9,
+            "left": 9,
+            "right": 9
+        }
+    },
     "sprite": "OBJ_CODE_POKEMON_LEDIAN"
 }

@@ -25,32 +25,60 @@ sys.path[:0] = [str(ROOT), str(ROOT / "tools" / "data")]
 from tools.data import field_actor_data as actors  # noqa: E402
 from tools.data.datajson import write  # noqa: E402
 from tools.data.gen_constants import load as load_list  # noqa: E402
+from tools.data.narc import read_narc  # noqa: E402
 from tools.data.nitro_2d import write_indexed_png, write_palette  # noqa: E402
 from tools.paperwhite2.import_field_actors import read  # noqa: E402
 
 REGISTRY = "following/runtime-registry.bin"
+POSITIONING = "following/positioning.narc"
 CODE_BASE = 0x3000
 BASE_ROWS = 1008
 BASE_MEMBERS = 975
-# A registry row (version 3): species, form, sex (0 male, 1 female, 2 none), shiny, then the table row and its member
-REGISTRY_ROW = struct.Struct("<HBBBBHH")
+# A registry row (version 3): species, form, sex (0 male, 1 female, 2 none), shiny, placeholder, the table row, its
+# member, the sprite's size, the animation profile, the art's offsets, the side gap (following_data.py)
+REGISTRY_ROW = struct.Struct("<HBBBBHHBBbbbB8x")
 REGISTRY_STRIDE = 24
 LIST = ROOT / "generated" / "obj_codes.txt"
 LIST_COMMENT = ("# Paper White 2: the Following Pokémon's (res/field/actors/followers/, import_followers.py), the rows\n"
                 "# that Pokeweb's follower installer added, by species, form, sex and shininess\n")
 
 
-def registry_rows(files: Path) -> dict[int, tuple[int, int, int, int]]:
-    """Returns the registry's species, form, sex and shininess of each table row."""
+def registry_rows(files: Path) -> dict[int, tuple]:
+    """Returns each table row's registry row."""
     data = (files / REGISTRY).read_bytes()
     if data[:4] != b"FWDB" or struct.unpack_from("<H", data, 4)[0] != 3:
         raise SystemExit(f"{REGISTRY} isn't a version 3 follower registry")
     count = struct.unpack_from("<H", data, 12)[0]
     rows = {}
     for index in range(count):
-        species, form, sex, shiny, _, row, _ = REGISTRY_ROW.unpack_from(data, 32 + REGISTRY_STRIDE * index)
-        rows[row] = (species, form, sex, shiny)
+        row = REGISTRY_ROW.unpack_from(data, 32 + REGISTRY_STRIDE * index)
+        rows[row[5]] = row
     return rows
+
+
+def positioning_rows(files: Path) -> list[bytes]:
+    """Returns the positioning table's rows, by table row from the first follower's."""
+    member = read_narc((files / POSITIONING).read_bytes())[0]
+    count = struct.unpack_from("<H", member, 6)[0]
+    rows = [member[24 + 12 * index:36 + 12 * index] for index in range(count)]
+    if any(row[4:] != bytes(8) for row in rows):
+        raise SystemExit("a follower has rider anchors, which the base package doesn't have")
+    return rows
+
+
+def follower_json(species_names: dict[int, str], row: tuple, positioning: bytes) -> dict:
+    species, form, sex, shiny, placeholder, _, _, _, profile, x, y, z, side_gap = row
+    return {
+        "species": species_names[species],
+        "form": form,
+        "sex": {0: "GENDER_MALE", 1: "GENDER_FEMALE", 2: None}[sex],
+        "shiny": bool(shiny),
+        "placeholder": bool(placeholder),
+        "animation_profile": ("mirrored", "asymmetric")[profile],
+        "art_offset": {"x": x, "y": y, "z": z},
+        "side_gap": side_gap,
+        "gaps": dict(zip(("up", "down", "left", "right"), positioning[:4])),
+    }
 
 
 def code_name(species_names: dict[int, str], species: int, form: int, sex: int, shiny: int) -> str:
@@ -67,6 +95,7 @@ def code_name(species_names: dict[int, str], species: int, form: int, sex: int, 
 def main(files: Path, root: Path):
     records, graphics = read(files)
     rows = registry_rows(files)
+    positioning = positioning_rows(files)
     species_names = {value: name for name, value in reversed(load_list("species").items())}
     base_codes = [code for code, number in actors.codes() if number < CODE_BASE]
     if len(base_codes) != BASE_ROWS or len(records) <= BASE_ROWS or len(graphics) <= BASE_MEMBERS:
@@ -78,7 +107,7 @@ def main(files: Path, root: Path):
         record = records[row]
         if record[0] != CODE_BASE + row - BASE_ROWS or record[1] != 1 or row not in rows:
             raise SystemExit(f"row {row}: expected a sprite with code {CODE_BASE + row - BASE_ROWS:#x} in the registry")
-        names.append(code_name(species_names, *rows[row]))
+        names.append(code_name(species_names, *rows[row][:4]))
     if len(set(names)) != len(names):
         raise SystemExit("two follower rows would have one name")
     # Each new member's owner is the first row that shows it; a member whose owner comes before the previous member's
@@ -100,6 +129,7 @@ def main(files: Path, root: Path):
         path = actors.directory(root, name)
         path.mkdir(parents=True, exist_ok=True)
         data = actors.record_json(record, None)
+        data["follower"] = follower_json(species_names, rows[row], positioning[row - BASE_ROWS])
         if owner_of[member] == name:
             width, height, pixels, colors = actors.sprite_frames(graphics[member])
             if actors.sprite_texture_set(width, height, pixels, colors, "pokeweb") != graphics[member]:

@@ -23,7 +23,9 @@ The table has the codes in the list's order. The graphics archive has the models
 of the codes that have one of their own (a sprite's "sprite_batch", 0 if it has none, puts it after those of a lower
 batch), and the packer writes each code's place in it into the table, so a new code is a constant and a directory.
 The sprites' texture sets are written from the PNGs, as the game's are, byte for byte, or as Pokeweb's follower
-installer wrote them for a sprite whose "texture_set_format" is "pokeweb".
+installer wrote them for a sprite whose "texture_set_format" is "pokeweb". When some codes have a "follower", the
+table's archive gets the follower registry and positioning table as members 1 and 2
+(tools/paperwhite2/following_data.py).
 """
 import struct
 import sys
@@ -36,6 +38,7 @@ from tools.data.narc import read_narc, write_narc  # noqa: E402
 from tools.data.nitro_2d import (color5, encode_characters, palette_indices, read_indexed_png,  # noqa: E402
                                  read_palette, write_indexed_png, write_palette)
 from tools.data.nitro_btx import texture_set  # noqa: E402
+from tools.paperwhite2.following_data import members  # noqa: E402
 
 TABLE = "a/0/4/7"
 GRAPHICS = "a/0/4/8"
@@ -214,11 +217,18 @@ def pack(root: Path, table_output: Path, graphics_output: Path):
     owners = [(data.get("sprite_batch", 0), position, code, path, data)
               for position, (code, _, path, data) in enumerate(entries)
               if data["type"] == "sprite" and "sprite" not in data]
+    sprite_size: dict[str, int] = {}
     for _, _, code, path, data in sorted(owners, key=lambda owner: owner[:2]):
         sprite_index[code] = len(models) + len(sprites)
         sprites.append(sprite(path, data.get("texture_set_format", "game")))
+        sprite_size[code] = read_indexed_png(path / "sprite.png")[1]
     records = []
+    followers = []
     for code, number, path, data in entries:
+        if "follower" in data:
+            owner = data.get("sprite", code)
+            check(data["type"] == "sprite" and owner in sprite_index, path, "a follower is a sprite")
+            followers.append((number, len(records), sprite_index[owner], sprite_size[owner], data["follower"]))
         if data["type"] == "sprite":
             owner = data.get("sprite", code)
             check(owner in sprite_index, path,
@@ -239,8 +249,16 @@ def pack(root: Path, table_output: Path, graphics_output: Path):
             data["sprite_atlas_size"], data["sprite_controller_type"], gender, data["collision"]["width"],
             data["collision"]["height"], data["offset"]["x"], data["offset"]["y"], data["offset"]["z"], resource,
             *others, 0))
+    table = [struct.pack("<I", len(records)) + b"".join(records)]
+    if followers:
+        # Paper White 2: the Following Pokémon's registry and positioning (tools/paperwhite2/following_data.py)
+        try:
+            table += members(followers, len(records), len(models) + len(sprites), followers[0][0], followers[0][1],
+                             load_list("species"))
+        except ValueError as error:
+            raise DataError(f"{label(root)}: {error}") from error
     table_output.parent.mkdir(parents=True, exist_ok=True)
-    table_output.write_bytes(write_narc([struct.pack("<I", len(records)) + b"".join(records)]))
+    table_output.write_bytes(write_narc(table))
     graphics_output.parent.mkdir(parents=True, exist_ok=True)
     graphics_output.write_bytes(write_narc(models + sprites))
 

@@ -18,5 +18,25 @@
         "y": 0,
         "z": 0
     },
+    "follower": {
+        "species": "SPECIES_BASCULIN",
+        "form": 1,
+        "sex": "GENDER_FEMALE",
+        "shiny": false,
+        "placeholder": false,
+        "animation_profile": "asymmetric",
+        "art_offset": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+        },
+        "side_gap": 1,
+        "gaps": {
+            "up": 7,
+            "down": 7,
+            "left": 7,
+            "right": 7
+        }
+    },
     "sprite": "OBJ_CODE_FOLLOWER_BASCULIN_FORM_1"
 }

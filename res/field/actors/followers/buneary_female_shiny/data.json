@@ -18,5 +18,25 @@
         "y": 0,
         "z": 0
     },
+    "follower": {
+        "species": "SPECIES_BUNEARY",
+        "form": 0,
+        "sex": "GENDER_FEMALE",
+        "shiny": true,
+        "placeholder": true,
+        "animation_profile": "asymmetric",
+        "art_offset": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+        },
+        "side_gap": 0,
+        "gaps": {
+            "up": 6,
+            "down": 6,
+            "left": 6,
+            "right": 6
+        }
+    },
     "sprite": "OBJ_CODE_POKEMON_BUNEARY"
 }

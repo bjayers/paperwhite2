@@ -18,5 +18,25 @@
         "y": 0,
         "z": 0
     },
+    "follower": {
+        "species": "SPECIES_ANORITH",
+        "form": 0,
+        "sex": "GENDER_MALE",
+        "shiny": false,
+        "placeholder": false,
+        "animation_profile": "mirrored",
+        "art_offset": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+        },
+        "side_gap": 5,
+        "gaps": {
+            "up": 10,
+            "down": 10,
+            "left": 10,
+            "right": 10
+        }
+    },
     "sprite": "OBJ_CODE_POKEMON_ANORITH"
 }

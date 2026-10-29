@@ -18,5 +18,25 @@
         "y": 0,
         "z": 0
     },
+    "follower": {
+        "species": "SPECIES_PHANPY",
+        "form": 0,
+        "sex": "GENDER_MALE",
+        "shiny": true,
+        "placeholder": true,
+        "animation_profile": "mirrored",
+        "art_offset": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+        },
+        "side_gap": 2,
+        "gaps": {
+            "up": 8,
+            "down": 8,
+            "left": 8,
+            "right": 8
+        }
+    },
     "sprite": "OBJ_CODE_POKEMON_PHANPY"
 }
