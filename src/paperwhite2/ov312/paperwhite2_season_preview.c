@@ -52,12 +52,13 @@
 
 // The shadow behind the banner's season name: an ellipse of these radii in pixels, centered on the screen's middle
 // column, black at SHADOW_ALPHA (of 31) inside SHADOW_CORE (in 256ths of the squared radius, a quarter of it is half
-// the radius) and fading out to its edge. Its texture is a quarter of it, the top left, an A5I3 texture of one texel a
-// pixel that the shadow repeats flipped right and down; the radii must stay within its 128 by 64 texels
+// the radius) and fading out to its edge along a smoothstep, eased at both ends so that neither has a visible rim. Its
+// texture is a quarter of it, the top left, an A5I3 texture of one texel a pixel that the shadow repeats flipped right
+// and down; the radii must stay within its 128 by 64 texels
 #define SHADOW_RADIUS_X 104
 #define SHADOW_RADIUS_Y 40
 #define SHADOW_ALPHA 18
-#define SHADOW_CORE 64
+#define SHADOW_CORE 36
 #define SHADOW_TEXTURE_WIDTH 128
 #define SHADOW_TEXTURE_HEIGHT 64
 #define SHADOW_TEXTURE_SIZE (SHADOW_TEXTURE_WIDTH * SHADOW_TEXTURE_HEIGHT)
@@ -983,7 +984,9 @@ static void SeasonPreview_LoadShadow(SeasonPreview *preview) {
             if (distance < whole) {
                 u32 fade = (whole - distance) >> 16;
 
-                alpha = fade >= core ? SHADOW_ALPHA : SHADOW_ALPHA * fade * fade / (core * core);
+                // smoothstep(s) = s * s * (3 - 2s), with s = fade / core, in integers
+                alpha = fade >= core ? SHADOW_ALPHA
+                                     : SHADOW_ALPHA * fade * fade / core * (3 * core - 2 * fade) / (core * core);
             }
             // A5I3: the alpha in the top 5 bits, over color 0
             texels[y * SHADOW_TEXTURE_WIDTH + x] = alpha << 3;

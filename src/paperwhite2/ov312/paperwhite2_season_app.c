@@ -68,11 +68,19 @@ enum {
 // The banners' color around the season's name, which the app makes transparent so that the grid or the preview shows
 // there
 #define BANNER_BACKGROUND_COLOR 1
-// The middle of the season's name in the banners' art, which centers it on the screen
+// The middle of the season's name in the banners' art, from the top of its capitals to its baseline, which centers it
+// on the screen
 #define BANNER_NAME_CENTER_Y 94
 // How far the banner is moved up over the preview, so that the season's name is centered in the view above the
 // message window, the top screen's first 144 lines, with the preview's shadow behind it
 #define BANNER_PREVIEW_OFFSET_Y 22
+// How far the shadow's middle sits below the name's: the lowercase letters carry most of a name's weight, so the
+// shadow centered on the capitals' span looks high
+#define BANNER_SHADOW_DROP_Y 4
+
+// How far each season's banner is moved up on top of that, so that the four names' capitals stand on the same rows:
+// Summer's art is drawn two lines lower than the others, and Spring's one line higher (its "p" and "g" hang below)
+static const s8 sBannerNameAdjustY[SEASON_COUNT] = { -1, 2, 0, 0 };
 
 // The frames that the preview stays dark after it loads a season, while the frame drawn with the last one's textures
 // is shown, then the frames it takes to fade in
@@ -418,7 +426,8 @@ static BOOL SeasonApp_Main(SeasonAppWork *work, u32 *state) {
     switch (*state) {
     case SEQ_INIT:
         SeasonApp_LoadBGs(work);
-        work->preview = SeasonPreview_Create(work->heapId, BANNER_NAME_CENTER_Y - BANNER_PREVIEW_OFFSET_Y);
+        work->preview =
+            SeasonPreview_Create(work->heapId, BANNER_NAME_CENTER_Y - BANNER_PREVIEW_OFFSET_Y + BANNER_SHADOW_DROP_Y);
         SeasonApp_ShowStatus(work);
         GFL_WipeSet(WIPE_MODE_BOTH, WIPE_TYPE_FADE_IN, WIPE_TYPE_FADE_IN, WIPE_COLOR_BLACK, 6, 1, work->heapId);
         SeasonApp_SetBGsEnabled(work, TRUE);
@@ -700,11 +709,11 @@ static void SeasonApp_ShowPreview(SeasonAppWork *work, u8 season) {
     G2x_SetBlendBrightness_(REG_BLDCNT_ADDR, GX_BLEND_PLANEMASK_BG0, PREVIEW_DARK_BRIGHTNESS);
     if (SeasonPreview_Load(work->preview, season)) {
         work->previewFade = PREVIEW_DARK_FRAMES + PREVIEW_FADE_FRAMES;
-        GFL_BGSysMoveBG(BG_TOP_BANNER, BG_MOVE_SET_Y, BANNER_PREVIEW_OFFSET_Y);
+        GFL_BGSysMoveBG(BG_TOP_BANNER, BG_MOVE_SET_Y, BANNER_PREVIEW_OFFSET_Y + sBannerNameAdjustY[season]);
         return;
     }
     SeasonApp_FreePreview(work);
-    GFL_BGSysMoveBG(BG_TOP_BANNER, BG_MOVE_SET_Y, 0);
+    GFL_BGSysMoveBG(BG_TOP_BANNER, BG_MOVE_SET_Y, sBannerNameAdjustY[season]);
     if (work->bgsEnabled) {
         SeasonApp_SetBGsEnabled(work, TRUE);
     }
