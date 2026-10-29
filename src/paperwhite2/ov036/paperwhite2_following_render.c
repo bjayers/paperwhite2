@@ -54,9 +54,9 @@ typedef struct {
 } FollowingWallBehind;
 
 // World pixels added to every follower's height. Pokeweb's runtime lifts every follower by 2 so that the walking hop
-// can't dip a sheet's feet through the floor, which leaves them all floating; at 0 a follower stands as the game's own
-// NPCs and walking Pokémon do, on the same sheets
-#define FOLLOWING_SPRITE_LIFT 0
+// can't dip a sheet's feet through the floor, which leaves them all floating; the user's playtests put the feet on the
+// ground 4 pixels below that
+#define FOLLOWING_SPRITE_LIFT -2
 
 // A camera-facing quad leans back by its height, so a 64-pixel body reaches walls a 32-pixel NPC never touches. It
 // draws as it is unless a wall stands within four tiles behind it. Then the field's submit keeps the bottom
