@@ -79,17 +79,17 @@ of the original where `.s` has a continuation); `THUMB_BRANCH_LINK` replaces one
 | field-terrain-billboard-draw | ov036 `0x021811b0` | `FieldRenderPhase2_Fieldmap` +0xc0 (same) | `BillboardActorSys_Draw` (the grass at `field + 0xc8`) | `FollowingTerrainDraw` | grass over the follower's feet. Ported: `PaperWhite2_FollowingTerrainDraw` in place of the call (step 3) |
 | field-billboard-draw | ov036 `0x0218122e` | `FieldRenderPhase2_Fieldmap` +0x13e (same) | `BillboardActorSys_Draw` (the effects) | `FollowingEffectsDraw` | the recall flash, ball and emote bubbles. Ported: `PaperWhite2_FollowingEffectsDraw` in place of the call: the shadow pass (step 3), then `FollowingEffects_Draw` (step 4) |
 | field-player-recall-direction-gate | ov036 `0x0219a610` | `FieldPlayer_GetMoveDirByKey` (`src/ov036/field_player.c`) | whole function | `FollowingPlayerMoveDir` | holds the D-pad while the follower is recalled. Ported: `PaperWhite2_FollowingHoldsPlayer` returns `PLAYER_DIR_NONE` first (step 3) |
-| follower-grid-event | ov036 `0x021818bc` | `FieldEventProvider_Grid` +0x20 (`src/ov036/fieldmap_event.c`) | `FieldEventProvider_Grid_CheckForEvent` | `FollowingGridEvents` | talking to the follower (A in front of it) when the field's events found none, and the scene's menu marker for a menu they opened (L/R is in the field's update in the base package). Ported: `PaperWhite2_FollowingGridEvent(gsys, field, event, &scriptCalled, menuOpened)` after the call; a talk counts as a script called (step 4; the marker is a stub until scene.c) |
+| follower-grid-event | ov036 `0x021818bc` | `FieldEventProvider_Grid` +0x20 (`src/ov036/fieldmap_event.c`) | `FieldEventProvider_Grid_CheckForEvent` | `FollowingGridEvents` | talking to the follower (A in front of it) when the field's events found none, and the scene's menu marker for a menu they opened (L/R is in the field's update in the base package). Ported: `PaperWhite2_FollowingGridEvent(gsys, field, event, &scriptCalled, menuOpened)` after the call; a talk counts as a script called, and `FollowingScene_MarkMenu` notes the menu (step 4) |
 | follower-rail-event | ov036 `0x02181a6c` | `FieldEventProvider_NoGrid` +0x4 (same) | `FieldEventProvider_NoGrid_CheckForEvent` | `FollowingRailEvents` | the talk on rails, when the field's events found none. Ported: `PaperWhite2_FollowingRailEvent(gsys, field, event)` after the call (step 4) |
-| event-actor-action-queued | ov012 `0x02166ecc` | `FldAct_SetAcmd` +0x4 (`src/ov012/field_actor.c`) | `SetNextActorAcmd` | `FollowingEventAction` | a script moving an actor: recall the follower if it is in the way |
-| event-actor-action-reset | ov012 `0x02166ef4` | `FldAct_SetLocalAcmd` +0x4 (same) | `SetNextActorAcmd` | `FollowingEventAction` | the same |
-| event-actor-allocation | ov012 `0x02166836` | `CreateNewActorByEntity` +0x1e (same) | `GetPtrToFirstFreeActorSlot` | `FollowingEventAllocate` | a new actor on the follower's tile or slot |
-| event-actor-position | ov012 `0x02167c0c` | `SetActorWPosAll` (same) | prologue | `FollowingEventPosition` | an actor placed on the follower |
-| event-actor-delete | ov012 `0x02166980` | `DeleteActor` (same) | prologue | `FollowingEventDelete` | the follower deleted by someone else |
-| event-actor-world-step | ov012 `0x02167348` | `SetActorWPosValue` (same) | whole function | `FollowingEventWorldStep` | an actor stepping onto the follower |
-| ambient-callback | ov012 `0x021671c8` | `FldAct_CallMoveProc` (same) | whole function | `FollowingAmbientUpdate` | NPCs' own movement around the follower |
-| ambient-grid-collision | ov012 `0x0215e538` | `CheckActorNewPosOtherActorCollision` (`src/ov012/field_actor_tool.c`) | whole function | `FollowingAmbientGrid` | NPCs don't walk into the follower |
-| ambient-rail-collision | ov036 `0x02195714` | `RailActor_CheckCollision` +0x6c (`src/ov036/field_actor_rail.c`) | `RailActor_CheckActorCollision` | `FollowingAmbientRail` | the same on rails |
+| event-actor-action-queued | ov012 `0x02166ecc` | `FldAct_SetAcmd` +0x4 (`src/ov012/field_actor.c`) | `SetNextActorAcmd` | `FollowingEventAction` | a script moving an actor: recall the follower if it is in the way. Ported: `PaperWhite2_FollowingOnActorAction` before `SetNextActorAcmd`, which it skips if the observer deleted the actor (the rest of the function goes on, as the original's) |
+| event-actor-action-reset | ov012 `0x02166ef4` | `FldAct_SetLocalAcmd` +0x4 (same) | `SetNextActorAcmd` | `FollowingEventAction` | the same. Ported: the same in `FldAct_SetLocalAcmd` |
+| event-actor-allocation | ov012 `0x02166836` | `CreateNewActorByEntity` +0x1e (same) | `GetPtrToFirstFreeActorSlot` | `FollowingEventAllocate` | a new actor on the follower's tile or slot. Ported: `PaperWhite2_FollowingOnActorAllocate(system, &entity)` before the call, with the stack copy of the entity, as `events.s` passed it |
+| event-actor-position | ov012 `0x02167c0c` | `SetActorWPosAll` (same) | prologue | `FollowingEventPosition` | an actor placed on the follower. Ported: `PaperWhite2_FollowingOnActorPosition` at the start, returning if the observer deleted the actor |
+| event-actor-delete | ov012 `0x02166980` | `DeleteActor` (same) | prologue | `FollowingEventDelete` | the follower deleted by someone else. Ported: `PaperWhite2_FollowingOnActorDelete` at the start, the same |
+| event-actor-world-step | ov012 `0x02167348` | `SetActorWPosValue` (same) | whole function | `FollowingEventWorldStep` | an actor stepping onto the follower. Ported: `PaperWhite2_FollowingOnActorStep` before the write (a position notice while the move code isn't set up) |
+| ambient-callback | ov012 `0x021671c8` | `FldAct_CallMoveProc` (same) | whole function | `FollowingAmbientUpdate` | NPCs' own movement around the follower. Ported: `PaperWhite2_FollowingBeginAmbient` and `EndAmbient` around the move code's update |
+| ambient-grid-collision | ov012 `0x0215e538` | `CheckActorNewPosOtherActorCollision` (`src/ov012/field_actor_tool.c`) | whole function | `FollowingAmbientGrid` | NPCs don't walk into the follower. Ported: the original is the static `CheckOtherActorCollision`, wrapped by `PaperWhite2_FollowingCheckGridCollision` |
+| ambient-rail-collision | ov036 `0x02195714` | `RailActor_CheckCollision` +0x6c (`src/ov036/field_actor_rail.c`) | `RailActor_CheckActorCollision` | `FollowingAmbientRail` | the same on rails. Ported: `PaperWhite2_FollowingCheckRailCollision(actor, to, RailActor_CheckActorCollision(actor, to))` |
 | options-init | ov140 `0x0219d002` | `ConfigPanel_Init` +0x142 (`src/ov140/config_panel.c`) | `ConfigPanelScroll_Init` | `FollowingOptionsInit` | the sixth row, FOLLOWERS: ON/OFF |
 | options-exit | ov140 `0x0219d0b0` | `ConfigPanel_Exit` +0x28 (same) | `ConfigPanelScroll_Exit` | `FollowingOptionsExit` | frees the row |
 | options-main | ov140 `0x0219eb6e` | `ConfigPanelSeq_Input` +0x66 (same) | `ConfigPanelScroll_Main` | `FollowingOptionsMain` | the row's input and drawing |
@@ -302,6 +302,7 @@ from the decomp's headers, adding fields where they are still `unk`.
 | `ball_assets.h` (4,000 bytes, compiled in) | for each White 2 ball ID 1-25, its 16x16 4bpp texture (128 bytes) and 16 BGR555 colors, from Pokeweb's `ball-art/*.png` (`import_balls.py`) | `effects.c` (put over the ball model's texture and palette) | `a/0/4/7` member 23, from `res/paperwhite2/following/balls/<ball>.png`, done (step 4) |
 | `contextual-dialogues.narc` (76 bytes) | one member "FWCD" ABI 1-3 (empty: 0 rules) | `interaction.c` (whole, 4 KB), `reactions.c` | `a/0/4/7` member 4 (the NARC's member), from `res/paperwhite2/following/dialogues.json` (`dialogues.schema.json` documents ABI 3's fields), done |
 | `contextual-items.narc` (76 bytes) | one member "FWTI" ABI 1-2 (empty) | `interaction.c`, `gifts.c` | `a/0/4/7` member 5 (the NARC's member), from `res/paperwhite2/following/items.json` (`items.schema.json`, ABI 2's fields), done |
+| `event-policy.json`, `audio-event-policy.json` (Pokeweb's sources, not ROM files) | the reviewed script commands (375 opcodes) and cleanup finishers that keep the follower, and the eight sound events | `generate_scene_policy.py` into `scene-policy.h` | `res/paperwhite2/following/`, as they are; `tools/paperwhite2/following_scene_policy.py` writes `following_scene_policy.h` (opcodes, finishers' mask) and `following_sound_policy.h` (the sound callbacks by name, from W2's `symbols.txt`) into `build/include/generated/paperwhite2/` in `--hack` builds, done (step 4) |
 | `install.json` | the installer's state | nothing in the game | not ported |
 | `a/0/0/2` member 32 (`title_2` bank) | the Options rows' text, four entries changed | the Options menu | `res/text/system/`, step 5 |
 
@@ -335,7 +336,7 @@ hardware. In the current hack build that range is `.rodata` of `vman.o` (`sObjTi
    codes (object-code-lookup and descriptor-offset-width); the rest is a follower that appears and walks behind the
    player, switched with L and R.
 4. Events, interactions, dialogues, emotes, effects: `resident_events.c`, `events.c`, `scene.c`, `effects.c`,
-   `interaction.c`, `reactions.c`, `gifts.c`, the rest of `field.c`, their hooks and data.
+   `interaction.c`, `reactions.c`, `gifts.c`, the rest of `field.c`, their hooks and data. Done: see "Step 4" below.
 5. Options and its text: `options.c`, the options hooks, `a/0/0/2`'s `title_2` changes.
 6. Battle: `battle.c`, the two opening hooks.
 
@@ -410,7 +411,7 @@ native.bin's values: the enabled switch is `FOLLOWING_ENABLED`; the model table'
 and the registry's outer CRC-32 is the positioning table's (`FollowingPositioning_ReadRegistryCrc`, the one other file
 that records it; `0xf1693dee` in the hack). The core's publish and clear went with step 3's first part.
 
-**Stubs for step 4** (`include/paperwhite2/following_hooks.h`, each `// TODO step 4:`): the ball effects
+**Stubs for step 4** (`include/paperwhite2/following_hooks.h`, each `// TODO step 4:`, all gone with step 4): the ball effects
 (`FollowingEffects_*`: no send-out and no recall, so the follower just appears and disappears; `IsAvailable` is TRUE
 so L/R works; no cue, rest ball, warm or draw), the talk (`FollowingTalk_*`: never active), the scene policy
 (`FollowingScene_*`: attach succeeds, `Poll` returns RECALLED while `GSYS_GetNowEvent` has an event, so any event
@@ -445,6 +446,89 @@ after the menu leaves the field for the party or the bag it
 comes back at once beside the player; SELECT turns it off and on; a map change and a door bring it
 back walking in.
 
+### Step 4: events, the talk and the effects
+
+Done. What is ported, each from Pokeweb's file of the same name, in `src/paperwhite2/`:
+
+- `ov036/paperwhite2_following_effects.c` (`following_effects.h`), `effects.c`: the send-out flash, the recall's white
+  silhouette shrinking into the ball, the resting ball and its hop, the refused switch's cue, the warm upload under a
+  fade, the follower's own ball type (member 23's art over the ball model), the emote bubbles that the talk shows.
+- `ov036/paperwhite2_following_reactions.c` and `paperwhite2_following_gifts.c`, `reactions.c` and `gifts.c`: the
+  rules of the interactions, contextual dialogues and gifts, chosen by HP, friendship, status, facing, zone, species,
+  form, type and tile; the gifts' claims on the party member.
+- `ov036/paperwhite2_following_interaction.c` (`following_interaction.h`), `interaction.c`: the talk, A in front of
+  the follower after the field's own checks found nothing (follower-grid-event, follower-rail-event in
+  `fieldmap_event.c`): the motion, the bubble, the cry and the message balloon, closed with A or B.
+- `ov012/paperwhite2_following_events.c` (`following_events.h`), `events.c`: the events bridge, which binds main's
+  event hooks (`PaperWhite2_FollowingBindEventHooks`) for the one observer, and the hooks of overlay 12's
+  `field_actor.c` and `field_actor_tool.c` and overlay 36's `field_actor_rail.c` (the event-actor-* and ambient-*
+  rows above); the PC's restore token, `FollowingRestore`.
+- `ov036/paperwhite2_following_scene.c` (`following_scene.h`, `following_battle_entry.h` from `battle-entry.h`),
+  `scene.c`: while an event runs the follower waits if every event of the chain and every script command is one the
+  policy knows, and is recalled otherwise, or when an actor of the event would walk into it; NPCs' own moves don't
+  walk into it; the PC's storage keeps the restore token; the menu and a local single battle with the follower in
+  front are marked (`FOLLOWING_BATTLE_PRESENT` in the setup's flags, which step 6's opening reads); the follower's
+  steps wait for an actor on the way (`FollowingScene_IsStepClear`).
+
+`include/paperwhite2/following_hooks.h`, the stubs, is gone.
+
+**Data.** a/0/4/7 members 3 to 23 (the Data table), packed by `following_assets.py`; the two policy files, through
+`following_scene_policy.py` (the Data table).
+
+**Moved and added under PAPERWHITE2.** Unchanged into headers: `EventScriptCallData` (`field/field_script_event.h`),
+`EventBattleCallWork`, `EventWildBattleCallWork` (`field/event_battle.h`), `EventFieldOpenWork`
+(`field/field_event.h`), `EventSoundWork` (`field/event_sound.h`), `EventFieldMenuReturn` (`field/field_menu.h`),
+`PokeVoiceEvent` (`field/scrcmd_sound.h`), `YesNoEvent` (`field/scrcmd_menu.h`). The policy's static callbacks are
+asked by predicates in their files: `PaperWhite2_IsWildBattleCallCallback`, `PaperWhite2_IsBattleCallCallback`
+(event_battle.c), `PaperWhite2_IsFieldOpenCallback`, `PaperWhite2_IsFieldSubprocessCallback` (field_event.c, main),
+`PaperWhite2_IsFollowingSoundCallback` (event_sound.c, main, from the generated header),
+`PaperWhite2_IsPokeVoicePlayCallback` (scrcmd_sound.c), `PaperWhite2_IsYesNoEventCallback`,
+`PaperWhite2_IsListMenuEventCallback` (scrcmd_menu.c), `PaperWhite2_IsCameraWaitCallback` (scrcmd_camera.c), and
+`PaperWhite2_GetActiveFieldScriptSubEvents` (script_sub_event.c's static). The earlier parts added
+`PaperWhite2_GameEventFree`, `PaperWhite2_CanOpenActorMsgWin`, `GFL_G3DSysGetHeapID`, `GFL_G3DResSetResData` and
+billboard.c's material wrappers. `CheckActorNewPosOtherActorCollision`'s original body is the static
+`CheckOtherActorCollision` in hack builds.
+
+**Not 1:1.**
+
+- The scene's debug block (`FollowingSceneDebug`) and its reasons (`FWS_UNKNOWN_COMMAND` and the rest) are gone; the
+  script ID that the Repel's exception reads from it is read from the script's work at each command, as it was.
+- The original compared a callback with 0x02019655, 8 bytes into `EventFieldSubprocessTransitionWithCallback_Callback`,
+  so that event never counted as the PC storage's: kept, `// BUG:` in `PaperWhite2_IsFieldSubprocessCallback`, with
+  the function's start under `BUGFIX`.
+- The events DLL's `DllMain` cleared main's hooks when NitroKernel unloaded it; ported, the field's unload
+  (field-unload) detaches the scene, which unbinds the bridge and clears them.
+- The ABI and size checks between the modules (`FollowingEventsAPI.abi`, `FWRE_ABI`) are gone.
+- The interactions' and effects' records of the emotes and effects files' sizes and CRCs went with the installer.
+- **To decide:** the gifts keep the original's storage of a party member's ten gift claims in the top 16 bits of
+  block C's ribbons (`PkmBlockC`), which the game may show or clear as ribbons; the user hasn't chosen whether to
+  keep it there or move it.
+
+**Memory.** After the events bridge: overlay 12 0x021507c0-0x0216eea0 (0x1e6e0), overlay 36 0x0217fdc0-0x021f6be0
+(0x76e20), the DS arena 0x2aac0 (170 KB) after the heaps. After the scene: overlay 12 0x02150860-0x0216ef60
+(0x1e700), overlay 36 0x0217fe80-0x021f8aa0 (0x78c20), main 0xa0 bytes more, the arena 0x28c00 (163 KB). Nothing of
+the hack's is in the IRDO range.
+
+**To test** (melonDS, `build/paperwhite2.nds`), besides step 3's list:
+
+- L or R: the follower goes back into its own ball type with the white silhouette shrinking, and the next one comes
+  out with the flash; L or R with no other member to switch to gives the refused cue.
+- A 64-pixel follower indoors or under a bridge waits as its resting ball, which hops, and leaves with the ball's
+  sound.
+- A in front of the follower: it moves, shows a bubble, cries and talks in a balloon over it, closed with A or B; at
+  low HP, with a status, on grass, in a cave and facing away the talk changes; the talk works on a rail map too.
+- A gift rule (items.json; empty in the hack, so a rule must be added to test it) gives the item once.
+- Talking to an NPC, reading a sign, a Yes/No prompt, a list menu, a cutscene's camera, the music and fanfare
+  commands: the follower stays where it is and waits, and walks on after.
+- A script that moves an actor through the follower, a cutscene that moves the player, a warp or a door: the follower
+  is recalled into its ball, the script waits for the ball, and the follower comes out after.
+- NPCs wandering near the follower don't walk into it, on a grid and on a rail map; a crowd in Castelia doesn't
+  either, and one that has to recalls it.
+- The PC: log in, the storage, log off: the follower is back on its tile facing the same way.
+- A wild or trainer single battle started with the follower in front, healthy and the lead: its setup carries the
+  mark (the opening itself is step 6); a double battle or a link battle recalls it.
+- The menu (X): the follower waits, and is back at once after the party or the bag.
+
 ## What remains
 
 Port in this order, each step built with `--hack`, no warnings, `verify_dsi_rom.py` intact, the memory check, and a
@@ -461,13 +545,8 @@ plain build's `ninja build/w2_us/stamps/modules.ok`:
    grew 0x220 bytes; nothing of the hack's is in the IRDO range.
 3. **Field**: done but for the talk (above, "Step 3: the follower in the field"). The follower-grid-event and
    follower-rail-event hooks are only the talk and the menu's marker in the base package, so they are step 4's.
-4. **Events and the rest of the field**: `events.c` (`src/paperwhite2/ov012/`, its hooks in `field_actor.c` and
-   `field_actor_tool.c`, `field_actor_rail.c`), `scene.c` with `scene-policy.h` (generate it from the two policy
-   JSON files in `res/paperwhite2/following/`), `effects.c` (with `ball_assets.h`, the ball types), `interaction.c`,
-   `reactions.c`, `gifts.c`, the grid/rail event hooks, and the data of interactions, emotes, effects, dialogues and
-   items. The stubs of `following_hooks.h` become those modules'
-   calls (and the header goes), the talk (`try_talk`, the snapshot in `SelectFollower`) joins the field file, and
-   `FollowingScene_Poll` takes no argument again.
+4. **Events and the rest of the field**: done (above, "Step 4"). Still to decide: the gift claims in block C's
+   ribbons.
 5. **Options** (`src/paperwhite2/ov140/`): `options.c`, its seven hooks in `config_panel.c`, and `a/0/0/2` member 32's
    four `title_2` entries in `res/text/system/`.
 6. **Battle** (`src/paperwhite2/ov167/`): `battle.c` and the two procedure pointers in `btlv_scu.c`.

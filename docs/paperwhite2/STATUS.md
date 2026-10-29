@@ -2,6 +2,20 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-29: the follower's events, talk and effects (branch following-port, not yet tested in an emulator)
+
+Step 4 of the Following Pokémon port is done (docs/paperwhite2/following-pokemon.md, "Step 4"): the ball effects with
+the follower's own ball type, the reactions and gifts, the talk (A in front of the follower), the events bridge in
+overlay 12 with its actor hooks in `field_actor.c`, `field_actor_tool.c` and `field_actor_rail.c`, and the scene
+policy, whose command and sound lists `tools/paperwhite2/following_scene_policy.py` generates from
+`res/paperwhite2/following/event-policy.json` and `audio-event-policy.json`. The stubs header
+`following_hooks.h` is gone: the follower now waits through talks, signs, prompts and music, and is recalled into its
+ball when a script moves something through it. Overlay 36 ends at 0x021f8aa0, overlay 12 at 0x0216ef60; the DS arena
+has 0x28c00 (163 KB) left. `--hack` builds with no warnings, `verify_dsi_rom.py` says intact, nothing of the hack's
+is in the IRDO range, and a plain configure passes `ninja build/w2_us/stamps/modules.ok`. Open question for the user:
+the gifts keep their claims in the top 16 bits of block C's ribbons, as the original did. Next: test in melonDS (the
+doc's lists for steps 3 and 4), then step 5 (Options).
+
 ## 2026-10-29: the follower walks behind the player (branch following-port, not yet tested in an emulator)
 
 Step 3 of the Following Pokémon port is done but for the talk (docs/paperwhite2/following-pokemon.md, "Step 3: the
