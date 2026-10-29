@@ -19,6 +19,9 @@
     ScriptEntry Script_16
     ScriptEntry Script_17
     ScriptEntry Script_18
+#ifdef PAPERWHITE2
+    ScriptEntry Script_19
+#endif
     ScriptEntriesEnd
 
 Script_1:
@@ -621,4 +624,34 @@ L_0831:
     MsgWaitAdvance
     VMCall L_04A5
     VMReturn
+
+#ifdef PAPERWHITE2
+// Paper White 2: script 2818, which the Y button's Exp. Share runs (FIELD_COMMON_EVENT_EXP_SHARE): it turns the
+// Exp. Share on or off, as the bag does (paperwhite2/exp_share.h), and says so
+Script_19:
+    ActorsPauseAll
+    WordSetItemName 0, ITEM_EXP_SHARE
+    VMStackPushFlag EVENT_FLAG_EXP_SHARE_OFF
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMJumpIf CMP_STACK, L_ExpShareTurnOn
+    FlagSet EVENT_FLAG_EXP_SHARE_OFF
+    SEPlay SEQ_SE_SYS_07
+    // "The [Exp. Share] was turned off."
+    SystemMsg Global7000_Text_ExpShareTurnedOff, 0
+    VMJump L_ExpShareDone
+
+L_ExpShareTurnOn:
+    FlagReset EVENT_FLAG_EXP_SHARE_OFF
+    SEPlay SEQ_SE_SYS_07
+    // "The [Exp. Share] was turned on."
+    SystemMsg Global7000_Text_ExpShareTurnedOn, 0
+
+L_ExpShareDone:
+    LastKeyWait
+    SystemMsgClose
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+#endif
     .balign 4, 0

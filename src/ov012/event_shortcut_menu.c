@@ -457,6 +457,12 @@ u32 ShortcutMenu_SetKeyItemID(FieldAppCallInput *input, u32 item) {
         input->appId = FIELD_APP_POKELIST;
         input->appParam = ITEM_REVEAL_GLASS;
         return 0;
+#ifdef PAPERWHITE2
+    // Paper White 2: the Exp. Share runs its common event, which turns it on or off
+    case SHORTCUT_EXP_SHARE:
+        input->eventId = FIELD_COMMON_EVENT_EXP_SHARE;
+        return 1;
+#endif
     default:
         input->appId = FIELD_APP_POKEDEX;
         return 0;
@@ -494,6 +500,10 @@ BOOL ShortcutMenu_GetActionFromKeyItem(s32 item, u32 *action, u32 *invalid) {
     case SHORTCUT_DNA_SPLICERS_FUSE:
     case SHORTCUT_DNA_SPLICERS_SEPARATE:
     case SHORTCUT_REVEAL_GLASS:
+#ifdef PAPERWHITE2
+    // Paper White 2: the Exp. Share can be turned on or off anywhere
+    case SHORTCUT_EXP_SHARE:
+#endif
         return FALSE;
     default:
         *invalid = 1;

@@ -17,6 +17,10 @@
 #include "system/game_event.h"
 #include "system/game_system.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/exp_share.h"
+#endif
+
 // Whether a field action is blocked where the player stands
 typedef enum {
     FIELD_ACTION_BLOCKED = -1,
@@ -53,11 +57,17 @@ static FieldActionResult FieldActionBlockCheck_NormalZoneNotRoyalUnova(GameData 
 static GameEventReturnCode EventFieldToggleCycling_Callback(GameEvent *event, u32 *state, void *data);
 static GameEventReturnCode EventFieldToggleDowsing_Callback(GameEvent *event, u32 *state, void *data);
 
+// clang-format off
 static const FieldCommonEvent FIELD_COMMON_EVENTS[FIELD_COMMON_EVENT_COUNT] = {
     { EventFieldToggleCycling_Create, 0 },  { EventEntralinkWarpIn_CreateDefault, 0xff },
     { EventMapChangeEscapeRope_Create, 3 }, { EventSweetScent_Create, 0xff },
     { EventFieldFishing_Create, 5 },        { EventFieldToggleDowsing_Create, 9 },
+#ifdef PAPERWHITE2
+    // Paper White 2: the Exp. Share's script, which any place allows
+    { PaperWhite2_EventToggleExpShare_Create, 0xff },
+#endif
 };
+// clang-format on
 
 static const FieldActionBlockCheck FIELD_ACTION_BLOCK_CHECKS[12] = {
     FieldActionBlockCheck_Cycling,

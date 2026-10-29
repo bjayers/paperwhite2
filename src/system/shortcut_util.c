@@ -25,6 +25,10 @@ static const ItemShortcut sItemShortcuts[] = {
     { ITEM_DNA_SPLICERS_FUSE, SHORTCUT_DNA_SPLICERS_FUSE },
     { ITEM_DNA_SPLICERS_SEPARATE, SHORTCUT_DNA_SPLICERS_SEPARATE },
     { ITEM_REVEAL_GLASS, SHORTCUT_REVEAL_GLASS },
+#ifdef PAPERWHITE2
+    // Paper White 2: the Exp. Share registers to Y
+    { ITEM_EXP_SHARE, SHORTCUT_EXP_SHARE },
+#endif
 };
 
 void ShortcutMenuPos_Init(ShortcutMenuPos *pos) {

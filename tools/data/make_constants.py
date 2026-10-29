@@ -19,7 +19,7 @@ generates the headers from them with gen_constants.py.
 
 Names are the English names in upper case, with words split at spaces, hyphens and capitals inside a word, so that
 "ThunderPunch" becomes MOVE_THUNDER_PUNCH. Items named "???" are unused, and are named after their ID, as
-ITEM_UNUSED_113, so that each has a constant and a data file.
+ITEM_UNUSED_114, so that each has a constant and a data file.
 """
 import argparse
 import re

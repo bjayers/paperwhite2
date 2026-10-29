@@ -2,6 +2,26 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-29: shinies at 1/1024, the Shiny Candy, and the Gen 6 Exp. Share (not committed, not yet tested)
+
+- **Shiny rate**: `PID_RARE_THRESHOLD` (`include/pml/poke_party.h`) is 64 in hack builds, 8 in the original;
+  `PML_UtilPIDIsRare` uses it, and every check (wild and egg PIDs, the Shiny Charm's and the Masuda method's rerolls,
+  `PML_GenPID`) goes through it. The Shiny Charm still adds two rerolls.
+- **Shiny Candy** (`ITEM_SHINY_CANDY`, unused item 113, Items pocket, the Shiny Charm's icon, 10000): used from the bag
+  on a party Pokémon (`src/paperwhite2/ov165/paperwhite2_shiny_candy.c`, called from the party list's item mode in
+  `plist_sys.c`). It rewrites the PID's high half and keeps its low 18 bits (sex; bit 16, the ability slot; bit 17,
+  which with bits 13-16 orders the box data's blocks) and Wurmple's evolution side; eggs and shinies get "It won't
+  have any effect." For testing, Virbank City's second Mart clerk (shop 22) sells it (`scrcmd_shop.c`).
+- **Exp. Share**: a registrable key item (same ID and icon). It is on while the bag has it and
+  `EVENT_FLAG_EXP_SHARE_OFF` (0x5d0, unused in the original) is clear, so it starts on when received. "Use" in the bag
+  toggles it with a message; registered to Y (`SHORTCUT_EXP_SHARE`) it runs `FIELD_COMMON_EVENT_EXP_SHARE`, script 2818
+  (`Script_19` of `global_2800.s`). Receiving it shows the Bicycle's item-get effect (`fld_wipe_3dobj.c`, effect 0x2c;
+  check in a test that it isn't the Bicycle's own picture). In battle (`AddExpAndEVs`), while it is on, each party
+  member that can battle but didn't face the defeated Pokémon gets half the undivided experience, and its EVs; the
+  battlers' share is unchanged; holding one does nothing. A save that has it in the Items pocket won't find it.
+- `--hack` builds with no warnings, `verify_dsi_rom.py` intact, memory check passes (159 KB left); the matching
+  `modules.ok` passes. Next: test in melonDS.
+
 ## 2026-10-29: the follower's return after menus and battles, the ball's light, the recall's height (not committed)
 
 Three fixes from the first melonDS test (docs/paperwhite2/following-pokemon.md, "Fixes after the first melonDS test"):

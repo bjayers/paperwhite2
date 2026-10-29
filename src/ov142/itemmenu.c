@@ -46,6 +46,10 @@
 #include "system/wordset.h"
 #include "text/system/btl_main.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/exp_share.h"
+#endif
+
 // The bag (itemmenu.c): its proc, the item list and its menus
 
 // The key items that are used from the bag, and what using them does
@@ -95,6 +99,9 @@ static BOOL ItemMenu_UseDowsingMchn(ItemMenuWork *work);
 static BOOL ItemMenu_UseEscapeRope(ItemMenuWork *work);
 static BOOL ItemMenu_UseXtransceiver(ItemMenuWork *work);
 static BOOL ItemMenu_UseMedalBox(ItemMenuWork *work);
+#ifdef PAPERWHITE2
+static BOOL ItemMenu_UseExpShare(ItemMenuWork *work);
+#endif
 static s32 ItemMenu_FindFieldUse(u16 item);
 static void ItemMenu_StateItemMenu(ItemMenuWork *work);
 static void ItemMenu_StateSelectItem(ItemMenuWork *work);
@@ -192,6 +199,10 @@ static const ItemMenuFieldUse sItemMenuFieldUses[] = {
     { ITEM_XTRANSCEIVER_MALE, 1, ItemMenu_UseXtransceiver },
     { ITEM_XTRANSCEIVER_FEMALE, 1, ItemMenu_UseXtransceiver },
     { ITEM_MEDAL_BOX, 1, ItemMenu_UseMedalBox },
+#ifdef PAPERWHITE2
+    // Paper White 2: the Exp. Share is a key item that turns on and off in the bag
+    { ITEM_EXP_SHARE, 1, ItemMenu_UseExpShare },
+#endif
 };
 
 static void ItemMenu_SetState(ItemMenuWork *work, ItemMenuState state) {
@@ -761,6 +772,19 @@ static BOOL ItemMenu_UseXtransceiver(ItemMenuWork *work) {
 static BOOL ItemMenu_UseMedalBox(ItemMenuWork *work) {
     return ItemMenu_UseInField(work, 11, 22, FALSE);
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: turns the Exp. Share on or off, and stays in the bag to say so
+static BOOL ItemMenu_UseExpShare(ItemMenuWork *work) {
+    if (PaperWhite2_ToggleExpShare(work->gameData)) {
+        ItemMenu_ShowItemMessage(work, BtlMain_Text_ExpShareTurnedOn);
+    } else {
+        ItemMenu_ShowItemMessage(work, BtlMain_Text_ExpShareTurnedOff);
+    }
+    GFL_SndSEPlay(SEQ_SE_SYS_07);
+    return FALSE;
+}
+#endif
 
 // The entry of the key items an item uses, or -1
 static s32 ItemMenu_FindFieldUse(u16 item) {

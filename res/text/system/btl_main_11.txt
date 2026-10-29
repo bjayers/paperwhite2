@@ -190,3 +190,4 @@ BtlMain11_Text_CommunicatingPleaseWait = Communicating. Please wait.
 BtlMain11_Text_Yes = YES
 BtlMain11_Text_No = NO
 BtlMain11_Text_UsedLast = You used your last {0109:0}.
+BtlMain11_Text_BecameShiny = {0102:0} became shiny!

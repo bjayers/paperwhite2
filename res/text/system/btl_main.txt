@@ -159,4 +159,6 @@ BtlMain_Text_NumberItemTypesFound_2 = Number of item types found: {0202:1}!
 BtlMain_Text_SortedItemsByNumber = Sorted items by number!
 BtlMain_Text_CannotFind = Cannot find.
 BtlMain_Text_PutAway = Put Away
+BtlMain_Text_ExpShareTurnedOn = The {0109:1} was turned on.
+BtlMain_Text_ExpShareTurnedOff = The {0109:1} was turned off.
 \pad{54}

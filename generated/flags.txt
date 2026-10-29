@@ -1486,7 +1486,8 @@ EVENT_FLAG_0x05cc
 EVENT_FLAG_0x05cd
 EVENT_FLAG_0x05ce
 EVENT_FLAG_0x05cf
-EVENT_FLAG_0x05d0
+# Paper White 2: set when the player turns the Exp. Share off (unused in the original game)
+EVENT_FLAG_EXP_SHARE_OFF
 EVENT_FLAG_0x05d1
 EVENT_FLAG_0x05d2
 EVENT_FLAG_0x05d3

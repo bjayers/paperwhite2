@@ -49,6 +49,11 @@ enum {
     SHORTCUT_POKEDEX_AWARDS,
     SHORTCUT_POKEDEX_HABITAT,
     SHORTCUT_REVEAL_GLASS,
+#ifdef PAPERWHITE2
+    // Paper White 2: the Exp. Share, a key item that turns on and off. The 34 slots of ShortcutSave still hold every
+    // shortcut that can be registered at once, since only one of the DNA Splicers' two can be
+    SHORTCUT_EXP_SHARE,
+#endif
 };
 
 // What ShortcutUtil_GetItemShortcut returns for an item without a shortcut

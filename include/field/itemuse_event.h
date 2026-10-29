@@ -18,6 +18,10 @@ enum {
     FIELD_COMMON_EVENT_SWEET_SCENT,
     FIELD_COMMON_EVENT_FISHING,
     FIELD_COMMON_EVENT_DOWSING,
+#ifdef PAPERWHITE2
+    // Paper White 2: turns the Exp. Share on or off from the Y button (paperwhite2/exp_share.h)
+    FIELD_COMMON_EVENT_EXP_SHARE,
+#endif
     FIELD_COMMON_EVENT_COUNT,
 };
 

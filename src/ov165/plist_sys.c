@@ -48,6 +48,10 @@
 #include "system/wipe.h"
 #include "system/wordset.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/shiny_candy.h"
+#endif
+
 // The party list's screen: its graphics, the cursor, and what each mode does with the Pokémon picked. The ROM
 // doesn't name this file; it is named for the list's system, which pokelist.c's proc runs
 
@@ -1045,6 +1049,13 @@ static void PokeList_SelectPokemon(PokeListWork *wk) {
                 wk->demo = 5;
                 wk->demoForm = 2;
             }
+#ifdef PAPERWHITE2
+        } else if (wk->param->item == ITEM_SHINY_CANDY) {
+            // Paper White 2: the Shiny Candy makes the Pokémon shiny
+            if (PaperWhite2_UseShinyCandy(wk)) {
+                PokeList_SubFromBag(wk, wk->param->item);
+            }
+#endif
         } else {
             PokeList_ShowItemUseless(wk);
         }

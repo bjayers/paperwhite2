@@ -152,6 +152,12 @@ enum {
 #define ARCID_SHOP_ITEMS 282
 #define ARCID_SHOP_ITEM_COUNTS 283
 
+#ifdef PAPERWHITE2
+// Paper White 2: the list of the second clerk of Virbank City's Poké Mart (Script_2 of
+// res/field/scripts/virbank_city_pokemon_center.s), which also sells the Shiny Candy for testing
+#define SHOP_ID_VIRBANK_CITY 22
+#endif
+
 typedef struct {
     u16 item;
     u32 price;
@@ -1134,7 +1140,12 @@ static void ShopUI_LoadPokeMartItems(ShopUIWork *wk, u32 shopId, u32 fileId, u32
         wk->listMode = SHOP_LIST_TMS;
     }
     count = counts[file];
+#ifdef PAPERWHITE2
+    // Paper White 2: Virbank City's second clerk sells the Shiny Candy too, after the list's items, for testing
+    wk->options = ListMenuCore_CreateOptionList(count + 1 + (shopId == SHOP_ID_VIRBANK_CITY), wk->heapId);
+#else
     wk->options = ListMenuCore_CreateOptionList(count + 1, wk->heapId);
+#endif
     for (i = 0; i < count; i++) {
         u16 item = items[i];
 
@@ -1142,6 +1153,14 @@ static void ShopUI_LoadPokeMartItems(ShopUIWork *wk, u32 shopId, u32 fileId, u32
         wk->entries[i].item = item;
         wk->entries[i].price = PassPower_ApplyBargain(GetItemParam(item, ITEM_PARAM_PRICE, wk->heapId));
     }
+#ifdef PAPERWHITE2
+    if (shopId == SHOP_ID_VIRBANK_CITY) {
+        ShopUI_AppendOption(wk, i, wk->listMode, ITEM_SHINY_CANDY, msgData);
+        wk->entries[i].item = ITEM_SHINY_CANDY;
+        wk->entries[i].price = PassPower_ApplyBargain(GetItemParam(ITEM_SHINY_CANDY, ITEM_PARAM_PRICE, wk->heapId));
+        i++;
+    }
+#endif
     wk->entryCount = i;
     ShopUI_CheckSellingTMHM(wk->entries, wk->entryCount);
     ListMenuCore_AppendMsgOption(&wk->options[i], wk->msgData, ScrcmdShop_Text_Cancel, BMPMENULIST_CANCEL, wk->heapId);

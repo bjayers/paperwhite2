@@ -29,6 +29,10 @@
 #include "save/player_info.h"
 #include "system/rtc.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/exp_share.h"
+#endif
+
 static u8 CollectTargetsSingle(BtlServerFlow *flow, BattleMon *mon, u8 target, BtlFlowMoveParam *param, u8 redirect,
                                BtlMonSet *targets);
 static u8 GetCurseTargetPos(BtlServerFlow *flow, BtlFlowMoveParam *param, BattleMon *mon, u8 pos, u8 targetPos);
@@ -505,6 +509,10 @@ void AddExpAndEVs(BtlServerFlow *flow, BattleParty *party, BattleMon *defeated, 
     for (i = 0; i < 6; i++) {
         MI_CpuFill8(&entries[i], 0, sizeof(BtlFlowExpEntry));
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the Exp. Share is a key item, so holding one does nothing; its share comes after the battlers'
+    // (below)
+#else
     // An Exp. Share takes half the experience, split among the mons that hold one
     for (i = 0; i < numMons; i++) {
         mon = GetBattleMonFromParty(party, i);
@@ -526,6 +534,7 @@ void AddExpAndEVs(BtlServerFlow *flow, BattleParty *party, BattleMon *defeated, 
             }
         }
     }
+#endif
     // The rest is split among the mons that faced the defeated one and are still standing
     numFaced = BattleMon_GetConfrontedMonCount(defeated);
     numStanding = 0;
@@ -549,6 +558,22 @@ void AddExpAndEVs(BtlServerFlow *flow, BattleParty *party, BattleMon *defeated, 
             }
         }
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: while the Exp. Share is on, each mon that can battle (not fainted, not an egg) but didn't face
+    // the defeated one gets half of the whole experience, not split among them, as in Gen 6. It gets the EVs too
+    // (AddEVs below), and the boosts and the scaling by its level as the battlers do. The battlers' share is as before
+    if (PaperWhite2_IsExpShareOn(GetGameData(flow->mainModule))) {
+        shareExp = baseExp / 2;
+        if (shareExp == 0) {
+            shareExp = 1;
+        }
+        for (i = 0; i < numMons; i++) {
+            if (entries[i].exp == 0 && CanPokemonBattle(GetBattleMonFromParty(party, i))) {
+                entries[i].exp = shareExp;
+            }
+        }
+    }
+#endif
     for (i = 0; i < numMons; i++) {
         entry = &entries[i];
         if (entries[i].exp != 0) {

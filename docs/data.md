@@ -560,7 +560,7 @@ The price is in tens of Pokédollars, which `PML_ItemGetParam` multiplies by 10.
 `effects`, what it does used on a Pokémon (`ItemParams`); the packer sets the record's work type from which. The pocket
 outside battle is a `BAG_POCKET_*`, and its battle bag pockets are a list of `BATTLE_POCKET_*` flags. An item's article
 is "a" or "an" by its first letter unless `name_article` says otherwise ("an HP Up", "the Leftovers", none for Honey).
-The 20 unused items, named "???", have constants of their own, as `ITEM_UNUSED_113`. Both versions have the same item
+The 20 unused items, named "???", have constants of their own, as `ITEM_UNUSED_114`. Both versions have the same item
 data.
 
 ### Item icons

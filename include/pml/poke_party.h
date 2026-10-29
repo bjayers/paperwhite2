@@ -129,6 +129,14 @@ enum {
     PID_RARE_RANDOM,
 };
 u32 PML_GenPID(u32 id, u16 species, u16 form, u32 sex, u32 ability, u32 rare);
+// A personality is shiny when the XOR of the trainer ID's and the PID's four 16-bit halves is below this, which every
+// shiny check, PML_GenPID and the Shiny Charm's rerolls go through PML_UtilPIDIsRare for
+#ifdef PAPERWHITE2
+// Paper White 2: shinies are 1 in 1024 (64 of the 65536 values) instead of 1 in 8192
+#define PID_RARE_THRESHOLD 64
+#else
+#define PID_RARE_THRESHOLD 8
+#endif
 // Whether the personality is shiny for the trainer ID
 BOOL PML_UtilPIDIsRare(u32 id, u32 pid);
 u32 makeSpecialPID(u32 id, u16 species, u16 form, u8 sex, u8 a4, BOOL a5);

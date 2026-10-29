@@ -667,7 +667,8 @@ BOOL PML_PkmIsRare(BoxPkm *pkm) {
 }
 
 BOOL PML_UtilPIDIsRare(u32 id, u32 pid) {
-    return (((id & 0xffff0000) >> 16) ^ (id & 0xffff) ^ ((pid & 0xffff0000) >> 16) ^ (pid & 0xffff)) < 8;
+    return (((id & 0xffff0000) >> 16) ^ (id & 0xffff) ^ ((pid & 0xffff0000) >> 16) ^ (pid & 0xffff)) <
+           PID_RARE_THRESHOLD;
 }
 
 BOOL isKyuremTransformed(u16 species, u8 form) {
