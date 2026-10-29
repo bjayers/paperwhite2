@@ -1,0 +1,47 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "A zone's weather by date: res/field/weather_calendar/<zone>.json",
+    "description": "The weather of a zone on each day of the year (archive a/0/9/6, read by src/ov012/calender.c), named after the zone's ZONE_ constant, lowercased without the prefix. Each month lists its days with weather, as \"day\" or \"first-last\"; every day it doesn't list is WEATHER_SUNNY. February has a 29th. The original game reads today's date; Paper White 2 reads one date of the current season's months for every zone (docs/paperwhite2/plugins.md, Seasons), and the season of a month is (month - 1) % 4: spring is january, may and september, summer february, june and october, autumn march, july and november, winter april, august and december. order.json lists the zones in the table's order, at most 24; a zone it doesn't list comes after them. tools/data/weather_calendar_data.py packs them.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "months" ],
+    "properties": {
+        "$schema": { "type": "string", "description": "This schema, for editors" },
+        "months": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "The months' days with weather; a month left out is sunny every day",
+            "properties": {
+                "january": { "$ref": "#/$defs/month", "description": "31 days, spring" },
+                "february": { "$ref": "#/$defs/month", "description": "29 days, summer" },
+                "march": { "$ref": "#/$defs/month", "description": "31 days, autumn" },
+                "april": { "$ref": "#/$defs/month", "description": "30 days, winter" },
+                "may": { "$ref": "#/$defs/month", "description": "31 days, spring" },
+                "june": { "$ref": "#/$defs/month", "description": "30 days, summer" },
+                "july": { "$ref": "#/$defs/month", "description": "31 days, autumn" },
+                "august": { "$ref": "#/$defs/month", "description": "31 days, winter" },
+                "september": { "$ref": "#/$defs/month", "description": "30 days, spring" },
+                "october": { "$ref": "#/$defs/month", "description": "31 days, summer" },
+                "november": { "$ref": "#/$defs/month", "description": "30 days, autumn" },
+                "december": { "$ref": "#/$defs/month", "description": "31 days, winter" }
+            }
+        }
+    },
+    "$defs": {
+        "month": {
+            "type": "object",
+            "description": "Each key is a day (\"13\") or a range of days (\"4-5\"), and its value the weather of those days. The days may not overlap",
+            "propertyNames": { "pattern": "^([1-9]|[12][0-9]|3[01])(-([1-9]|[12][0-9]|3[01]))?$" },
+            "additionalProperties": { "$ref": "#/$defs/weather" }
+        },
+        "weather": {
+            "description": "A weather of the enum in include/system/zone_weather.h",
+            "enum": [
+                "WEATHER_SUNNY", "WEATHER_FLAKE", "WEATHER_RAIN", "WEATHER_SANDSTORM", "WEATHER_BLIZZARD",
+                "WEATHER_FLUTTER", "WEATHER_THUNDERSTORM", "WEATHER_GUSTY_RAIN", "WEATHER_DIAMOND_DUST",
+                "WEATHER_TINT_9", "WEATHER_TINT_10", "WEATHER_TINT_11", "WEATHER_SANDSTORM_2", "WEATHER_TINT_13",
+                "WEATHER_TINT_14"
+            ]
+        }
+    }
+}

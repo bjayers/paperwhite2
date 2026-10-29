@@ -2,6 +2,25 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-28: one weather date a day, from an editable calendar; chaos never repeats (Remote Control session, not committed)
+
+The calendar zones' weather is the original's again, read for one date a day (docs/paperwhite2/plugins.md, Seasons):
+each real day picks one date of the current season's months (a hash of the save clock's day number and GameData's
+season, uniform over the season's 92 or 90 days), and every calendar zone reads its original weather of that date
+through `Calendar_ReadWeatherValue`, so neighbors agree (Virbank City and both Virbank Complex zones snow on the same
+winter days). The per-season rates are gone (`res/paperwhite2/seasonal_weather.json`,
+`tools/paperwhite2/seasonal_weather.py`, the hack-only `.inc` rule, the rates table). The calendar `a/0/9/6` is now
+built from `res/field/weather_calendar/`, a JSON file per zone (each month's days with weather, by "day" or
+"first-last", the rest sunny) plus `order.json`, by `tools/data/weather_calendar_data.py` in `DATA_PACKS`; dump and pack
+of the base ROM round-trip byte for byte, and the matching build's archive check passes. More than 24 zones would need
+`CALENDAR_ZONE_MAX` and `Calendar.zones[24]` raised. Chaos now draws among the three seasons other than GameData's, so
+no two exteriors in a row share a season (a discarded interior draw doesn't change the saved season). `--hack` builds
+with no warnings, `verify_dsi_rom.py` says intact, the memory check passes (`0x34880`, 210 KB left), `ninja
+build/w2_us/stamps/modules.ok` and the `a/0/9/6` check pass on a plain configure, and a host test of the date pick
+(every day of 2000-2099 in every season) passes. Not yet tested in game: on a winter day Virbank City and both Complex
+zones should snow or not together; spring should bring rain on some days in most zones; in chaos every warp or Fly into
+an exterior should change the season.
+
 ## 2026-10-28: DS Protect disarmed in hack builds (Remote Control session, not committed)
 
 Hack builds never run DS Protect (docs/paperwhite2/plugins.md, DS Protect), the suspected cause of the shifted

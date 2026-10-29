@@ -6,8 +6,8 @@
 #include "struct_decls.h"
 
 // Paper White 2: the seasons by the player's setting (src/paperwhite2/main/paperwhite2_season.c), in place of the
-// original's season by the month. The setting is event work EVENT_WORK_SEASON_SETTING, which the original game doesn't use:
-// its low four bits are the mode and bit 4 the hemisphere (docs/paperwhite2/plugins.md, Seasons)
+// original's season by the month. The setting is event work EVENT_WORK_SEASON_SETTING, which the original game doesn't
+// use: its low four bits are the mode and bit 4 the hemisphere (docs/paperwhite2/plugins.md, Seasons)
 
 // The season setting's modes. A value past the last is taken as monthly
 enum {
@@ -56,8 +56,8 @@ u8 PaperWhite2_GetSeasonOfDate(u8 mode, u8 hemisphere, const RTCDate *date);
 // The season now, by the setting and the clock; for chaos the one the game has. It replaces the original's
 // Season_GetRealTime wherever the game asks for the season it should have
 u8 PaperWhite2_GetCurrentSeason(GameData *gameData);
-// The season a map change with a loading screen moves to: the current one, or for chaos a new draw. Only
-// GameData_GetSeasons calls it
+// The season a map change with a loading screen moves to: the current one, or for chaos a new draw among the three
+// seasons other than the game's. Only GameData_GetSeasons calls it
 u8 PaperWhite2_GetSeasonForMapChange(GameData *gameData);
 // How the setting's mode shows a change of season: no banner for chaos, the walk for real time, else one banner
 u8 PaperWhite2_GetSeasonBanner(GameData *gameData);

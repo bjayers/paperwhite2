@@ -181,12 +181,11 @@ drops its workarounds: the banner's walk is decided in one place instead of bend
   main, since the season is asked for by main (`season.c`, `zone_weather.c`) and by overlays 12, 35, 36 and 302. The
   header is the API that the Season app uses: get and set the mode and the hemisphere, the current season, and the
   `SEASON_MODE_` constants.
-- `src/paperwhite2/ov012/paperwhite2_weather.c`, `include/paperwhite2/weather.h`: the weather of the calendar's
-  zones, in overlay 12 beside `calender.c`.
-- `res/paperwhite2/seasonal_weather.json`: the weather rates, the source to edit. `tools/paperwhite2/seasonal_weather.py
-  dump extract/w2_us/files/a/0/9/6 res/paperwhite2/seasonal_weather.json` wrote it from the original; the hack's
-  build turns it into `build/include/generated/paperwhite2/seasonal_weather.inc` (`seasonal_weather.py header`),
-  the rows of the C file's table. The original's `a/0/9/6` stays as it is.
+- `src/paperwhite2/ov012/paperwhite2_weather.c`, `include/paperwhite2/weather.h`: the weather's date of the day, in
+  overlay 12 beside `calender.c`.
+- `res/field/weather_calendar/`: the original's weather calendar (`a/0/9/6`), the source to edit, a JSON file per
+  zone. `tools/data/weather_calendar_data.py` dumped it and packs it in every build, the matching one too, whose check
+  proves it byte for byte (docs/data.md). The hack hasn't changed it yet.
 
 **The setting** is `EVENT_WORK_SEASON_SETTING`, which the original game doesn't use: bits 0-3 the mode, bit 4 the hemisphere
 (0 northern, 1 southern, read by the real-time mode only). A mode past 8 is taken as monthly.
@@ -198,7 +197,7 @@ drops its workarounds: the banner's walk is decided in one place instead of bend
 | 5 weekly | The weeks from Monday, counted from the one 2000-01-01 is in, `% 4`: it changes each Monday | One |
 | 6 daily | The days since 2000-01-01 (`RTC_ConvertDateToDay`) `% 4`: it changes each midnight | One |
 | 7 real time | Spring from March 21st, summer from June 21st, autumn from September 21st, winter from December 21st; in the southern hemisphere spring and autumn change places, and summer and winter | The original's walk, from the season after the saved one to the new one |
-| 8 chaos | A random season (`GFL_RandomLC`, repeats allowed), drawn at each map change with a loading screen | None, also on loading a save, on a new game and from the script command |
+| 8 chaos | A random season other than the game's (`GFL_RandomLC(3)` of the other three), drawn at each map change with a loading screen, so every one into an exterior changes it | None, also on loading a save, on a new game and from the script command |
 
 **When the season changes.** As in the original, only on a map change that closes the field (a warp, Fly, an Escape
 Rope, Dig, a fake warp) into an exterior: `EventMapChange_LoadSeasons` asks `GameData_GetSeasons` for the new season
@@ -209,11 +208,14 @@ change's core only. A new setting therefore shows at the next such map change.
 
 **Chaos draws once.** Only `GameData_GetSeasons`, which only the map change calls, draws a season
 (`PaperWhite2_GetSeasonForMapChange`). Every other place that asks for the season of the date asks
-`PaperWhite2_GetCurrentSeason`, which for chaos is the season the game has (`GameData_GetSeason`, saved with the
-game): the Pokédex's habitats, the 3D demos, the weather's check that the season is current, and the new game's
-season. The draw happens on every map change with a loading screen, also into an interior, where it is thrown away,
-as the original's season of the date is there. `GameData_Create` keeps the original's monthly season: it is the
-season only until the save's is loaded, and a new game's setting is 0, monthly.
+`PaperWhite2_GetCurrentSeason`, which for chaos is the season the game has (`GameData_GetSeason`, saved with the game):
+the Pokédex's habitats, the 3D demos, the weather's check that the season is current, and the new game's season. The
+draw happens on every map change with a loading screen, also into an interior, where it is thrown away, as the
+original's season of the date is there. The draw is among the three seasons other than the game's (`(GameData_GetSeason
++ 1 + GFL_RandomLC(3)) % 4`), and the game's is the one the last exterior got, since a draw thrown away doesn't change
+it: two exteriors in a row never have the same season. A forced season sync (`GameData_IsForceSeasonSync`) keeps the
+season without a draw, as in the original. `GameData_Create` keeps the original's monthly season: it is the season only
+until the save's is loaded, and a new game's setting is 0, monthly.
 
 **The banner** is decided by `PaperWhite2_GetSeasonBanner` alone (none, one, or the walk). For none, the map change's
 `seasonChanged`, which picks the season's fade and banner on every path (the warp sequences, the fake warp, Escape
@@ -221,19 +223,31 @@ Rope, Dig and their spin), stays `FALSE`, and the core compares the two seasons 
 the ordinary fades. For one, `EventSeasonBanner_CreateFieldTransition` and `...Ex` start at the last season, so each
 caller's walk becomes its last banner.
 
-**The weather.** The 24 zones of the original's calendar had a weather byte for each day of the year. Each now draws
-its weather once a day: a hash of the date's day number (the save's clock, `getAddressAdventureTimeBlk`, as the
-original read) and the zone picks from the zone's rates for the season the game has, so it stays all day and after a
-reload, and changes with the season. The dump counted the original's days of each season's months (90 in summer,
-with February the 29th, 92 in the others); a day without weather is `WEATHER_SUNNY` (0) there, so it counts as that. A zone
-missing from the file, or without rates for the season, has its zone header's weather, as a zone without weather by
-date has in the original; a zone can be added to the file. The original's rules before the calendar stay
-(`GetWeatherAll`: forced weather, the Entralink, Route 7's event, the birthday on Routes 14 and 15), and the calendar
-applies only while the game's season is the current one. In the dump: snow (`FLAKE`, with `FLUTTER` in Driftveil,
-Route 6, Chargestone Cave, Mistralton, Route 7 and Twist Mountain) in winter in the north and in Floccesy, Pledge
-Grove, Route 20 and Virbank; blizzards in winter in Icirrus, Dragonspiral Tower and Route 8 (with one day of diamond
-dust in Icirrus); rain in the other seasons in most zones (Route 12 also in winter); sandstorms in Lentimas and
-Reversal Mountain all year but autumn; `TINT_9` most days on Routes 14 and 15.
+**The weather.** The 24 zones of the original's calendar (`res/field/weather_calendar/`) have a weather for each day
+of the year, and neighbors share it on the same dates: Virbank City and both Virbank Complex zones snow on the same
+winter days. The original reads today's date, whose month is always the season's there; with the hack's other modes
+it isn't, so the hack keeps the calendar and changes the date it reads: each real day picks one date of the original's
+year, from the days of the months of the season the game has (by the original's months, `(month - 1) % 4`: spring is
+the 92 days of January, May and September, summer the 90 of February with its 29th, June and October, and so on), and
+every calendar zone reads its weather of that date through the original's `Calendar_ReadWeatherValue`. The pick is a
+hash of the day number of the save's clock (`getAddressAdventureTimeBlk`, as the original read, through
+`RTC_ConvertDateToDay`) and the season, uniform over the season's days, so it holds all day and after a reload, the
+zones always agree, and it changes with the season. A zone missing from the calendar has its zone header's weather, as
+in the original. The original's rules before the calendar stay (`GetWeatherAll`: forced weather, the Entralink, Route
+7's event, the birthday on Routes 14 and 15), and the calendar applies only while the game's season is the current one.
+In the calendar: snow (`FLAKE`, with `FLUTTER` in Driftveil, Route 6, Chargestone Cave, Mistralton, Route 7 and Twist
+Mountain) in winter in the north and in Floccesy, Pledge Grove, Route 20 and Virbank; blizzards in winter in Icirrus,
+Dragonspiral Tower and Route 8 (with one day of diamond dust in Icirrus); rain in the other seasons in most zones
+(Route 12 also in winter); sandstorms in Lentimas and Reversal Mountain all year but autumn; `TINT_9` most days on
+Routes 14 and 15.
+
+To give a zone more rain or snow, add days to its file: each month lists its days with weather, by `"day"` or
+`"first-last"`, and every other day is sunny, so `"april": { "1-30": "WEATHER_FLAKE" }` snows on every day of April,
+which is one of winter's three months. Since a winter day picks one of winter's 92 dates, a weather on N of them comes
+on N / 92 of winter's days. A zone can be taken out of the calendar or swapped for another (its file, and
+`order.json`), but not added past 24: `Calendar_Preload` reads `CALENDAR_ZONE_MAX` (24) entries into
+`Calendar.zones[24]`, so a 25th zone needs both raised in `calender.c` and `field/calender.h`, and the packer's
+`ZONE_MAX` with them (the u16 offsets allow up to 179 zones).
 
 | Hook | Where | What |
 | --- | --- | --- |
@@ -247,12 +261,14 @@ Reversal Mountain all year but autumn; `TINT_9` most days on Routes 14 and 15.
 | `EventMapChangeCore_Callback` (same) | `if (unk40 && seasonChanged)` before `Season_Set` | `if (unk40 && season != prevSeason)` |
 | `EventSeasonBanner_CreateFieldTransition`, `...Ex` (`src/ov035/event_season_banner.c`) | the walk's first season | `PaperWhite2_GetSeasonBannerStart`: the last one but for real time |
 | `Scrcmd_Fade_CallSeasonBanner` (`src/ov036/scrcmd_fade.c`) | the script's banner | a fade from black for chaos |
-| `Calendar_GetWeatherCore` (`src/ov012/calender.c`) | the archive's weather of the day of the year | `PaperWhite2_GetCalendarWeather` |
+| `Calendar_GetWeatherCore` (`src/ov012/calender.c`) | today's month and day | `PaperWhite2_GetWeatherDate`'s, for `Calendar_ReadWeatherValue` |
 
-Together they cost about 2.3 KB: 460 bytes in main and 1.4 KB in overlay 12 (the table is 1.2 KB). The date math
-has a host test (every day of 2000-2099: weekly changes exactly on Mondays, daily every day across months, years and
-February 29th, real time on the 21sts in both hemispheres), not committed. The Season app (below) sets the mode and
-the hemisphere.
+Together they cost about 700 bytes: about 470 in main and 200 in overlay 12. The date math has host tests, not
+committed: the seasons (every day of 2000-2099: weekly changes exactly on Mondays, daily every day across months, years
+and February 29th, real time on the 21sts in both hemispheres) and the weather's date (every day of 2000-2099 in each
+season: the pick is a real date of the season's months, the same on every call, and spread evenly, each of the season's
+dates picked 347 to 459 times against a mean of 397 to 406, a chi-squared test passes). The Season app (below) sets the
+mode and the hemisphere.
 
 ### Season app
 

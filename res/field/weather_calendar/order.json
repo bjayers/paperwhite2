@@ -1,0 +1,28 @@
+{
+    "zones": [
+        "ZONE_DRIFTVEIL_CITY",
+        "ZONE_ROUTE_6",
+        "ZONE_CHARGESTONE_CAVE",
+        "ZONE_MISTRALTON_CITY",
+        "ZONE_ROUTE_7",
+        "ZONE_TWIST_MOUNTAIN",
+        "ZONE_TWIST_MOUNTAIN_2",
+        "ZONE_ICIRRUS_CITY",
+        "ZONE_DRAGONSPIRAL_TOWER",
+        "ZONE_DRAGONSPIRAL_TOWER_2",
+        "ZONE_ROUTE_8",
+        "ZONE_ROUTE_12",
+        "ZONE_ROUTE_14",
+        "ZONE_ROUTE_15",
+        "ZONE_FLOCCESY_TOWN",
+        "ZONE_PLEDGE_GROVE",
+        "ZONE_ROUTE_20",
+        "ZONE_FLOCCESY_RANCH",
+        "ZONE_FLOCCESY_RANCH_2",
+        "ZONE_VIRBANK_CITY",
+        "ZONE_VIRBANK_COMPLEX",
+        "ZONE_VIRBANK_COMPLEX_2",
+        "ZONE_LENTIMAS_TOWN",
+        "ZONE_REVERSAL_MOUNTAIN"
+    ]
+}

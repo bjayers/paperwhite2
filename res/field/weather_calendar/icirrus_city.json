@@ -1,0 +1,83 @@
+{
+    "$schema": "weather_calendar.schema.json",
+    "months": {
+        "january": {
+            "3-7": "WEATHER_RAIN",
+            "11-15": "WEATHER_RAIN",
+            "19-23": "WEATHER_RAIN",
+            "27-31": "WEATHER_RAIN"
+        },
+        "february": {
+            "8-11": "WEATHER_RAIN",
+            "19-22": "WEATHER_RAIN"
+        },
+        "march": {
+            "3-7": "WEATHER_RAIN",
+            "11-15": "WEATHER_RAIN",
+            "19-23": "WEATHER_RAIN",
+            "27-31": "WEATHER_RAIN"
+        },
+        "april": {
+            "1-4": "WEATHER_FLAKE",
+            "9-13": "WEATHER_FLAKE",
+            "14": "WEATHER_BLIZZARD",
+            "17-23": "WEATHER_FLAKE",
+            "24": "WEATHER_BLIZZARD",
+            "27-29": "WEATHER_FLAKE",
+            "30": "WEATHER_BLIZZARD"
+        },
+        "may": {
+            "3-7": "WEATHER_RAIN",
+            "11-15": "WEATHER_RAIN",
+            "19-23": "WEATHER_RAIN",
+            "27-31": "WEATHER_RAIN"
+        },
+        "june": {
+            "8-11": "WEATHER_RAIN",
+            "19-22": "WEATHER_RAIN"
+        },
+        "july": {
+            "3-7": "WEATHER_RAIN",
+            "11-15": "WEATHER_RAIN",
+            "19-23": "WEATHER_RAIN",
+            "26-31": "WEATHER_RAIN"
+        },
+        "august": {
+            "1-3": "WEATHER_FLAKE",
+            "7-10": "WEATHER_FLAKE",
+            "11": "WEATHER_BLIZZARD",
+            "12-13": "WEATHER_FLAKE",
+            "18-22": "WEATHER_FLAKE",
+            "23-24": "WEATHER_BLIZZARD",
+            "27-28": "WEATHER_FLAKE",
+            "29-30": "WEATHER_BLIZZARD",
+            "31": "WEATHER_FLAKE"
+        },
+        "september": {
+            "3-7": "WEATHER_RAIN",
+            "11-15": "WEATHER_RAIN",
+            "19-23": "WEATHER_RAIN",
+            "27-30": "WEATHER_RAIN"
+        },
+        "october": {
+            "8-11": "WEATHER_RAIN",
+            "19-22": "WEATHER_RAIN"
+        },
+        "november": {
+            "3-7": "WEATHER_RAIN",
+            "11-15": "WEATHER_RAIN",
+            "19-23": "WEATHER_RAIN",
+            "27-30": "WEATHER_RAIN"
+        },
+        "december": {
+            "1-4": "WEATHER_FLAKE",
+            "8-11": "WEATHER_FLAKE",
+            "12-14": "WEATHER_BLIZZARD",
+            "17-21": "WEATHER_FLAKE",
+            "22-24": "WEATHER_BLIZZARD",
+            "27-28": "WEATHER_FLAKE",
+            "29-30": "WEATHER_BLIZZARD",
+            "31": "WEATHER_DIAMOND_DUST"
+        }
+    }
+}

@@ -335,6 +335,8 @@ DATA_PACKS = [
     # Paper White 2: the Hidden Grottoes' Pokémon and items, and the Pokédex's habitat lists
     ("tools/data/grotto_data.py", "res/field/grottoes", ["a/2/7/3"], False),
     ("tools/data/habitat_data.py", "res/pokedex/habitats", ["a/2/9/6"], False),
+    # Paper White 2: the weather calendar, the weather by date of the zones that have one
+    ("tools/data/weather_calendar_data.py", "res/field/weather_calendar", ["a/0/9/6"], False),
 ]
 # The archives of Nitro resources and data, each a directory named after its ARCID_* constant, which gives its file, in
 # the root for what it holds (graphics_archive.ARCHIVE_ROOTS)
@@ -346,9 +348,10 @@ DATA_PACKS += [("tools/data/graphics_archive.py", str(directory.relative_to(ROOT
 DATA_PACK_TOOLS = ["tools/data/datajson.py", "tools/text/text_ids.py", "tools/data/gen_constants.py", "tools/data/narc.py",
                    "tools/text/text_sources.py", "tools/text/text_data.py", "tools/text/msgdata.py",
                    "src/ov036/scrcmd_shop.c", "tools/data/facility_data.py", "tools/data/make_constants.py"]
-# The C files a packer reads its tables from, besides scrcmd_shop.c
+# The C files a packer reads its tables from, besides scrcmd_shop.c, and the headers it reads an enum from
 DATA_PACK_SOURCES = {"tools/data/pokemon_graphics.py": ["src/system/poke_icon.c"],
-                     "tools/data/pokemon_cries.py": ["src/system/poke_icon.c"]}
+                     "tools/data/pokemon_cries.py": ["src/system/poke_icon.c"],
+                     "tools/data/weather_calendar_data.py": ["include/system/zone_weather.h"]}
 
 
 def script_imports(script: str) -> list[str]:
@@ -1031,16 +1034,6 @@ def main():
                     variables={"module": str(Path("extract") / version / module), "start": hex(start),
                                "end": hex(end), "macro": macro})
             constant_headers.append(output)
-    if args.hack:
-        # Paper White 2: the weather rates' table, from res/paperwhite2/seasonal_weather.json
-        # (docs/paperwhite2/plugins.md, Seasons)
-        n.rule("seasonal_weather", "$python tools/paperwhite2/seasonal_weather.py header $in $out", "Generating $out",
-               restat="1")
-        output = Path(GENERATED_INCLUDE_DIR) / "paperwhite2" / "seasonal_weather.inc"
-        n.build([output], "seasonal_weather", ["res/paperwhite2/seasonal_weather.json"],
-                implicit=["tools/paperwhite2/seasonal_weather.py", "generated/zones.txt",
-                          "include/system/zone_weather.h"])
-        constant_headers.append(output)
     n.build(["constants_headers"], "phony", constant_headers)
 
     checks, configs = [], []

@@ -1,0 +1,98 @@
+{
+    "$schema": "weather_calendar.schema.json",
+    "months": {
+        "january": {
+            "1": "WEATHER_SANDSTORM",
+            "3": "WEATHER_SANDSTORM",
+            "6": "WEATHER_SANDSTORM",
+            "8": "WEATHER_SANDSTORM",
+            "10-11": "WEATHER_SANDSTORM",
+            "18": "WEATHER_SANDSTORM",
+            "20": "WEATHER_SANDSTORM",
+            "23-24": "WEATHER_SANDSTORM",
+            "26-28": "WEATHER_SANDSTORM",
+            "30-31": "WEATHER_SANDSTORM"
+        },
+        "february": {
+            "2": "WEATHER_SANDSTORM",
+            "5": "WEATHER_SANDSTORM",
+            "7": "WEATHER_SANDSTORM",
+            "9-10": "WEATHER_SANDSTORM",
+            "12": "WEATHER_SANDSTORM",
+            "14": "WEATHER_SANDSTORM",
+            "17": "WEATHER_SANDSTORM",
+            "19": "WEATHER_SANDSTORM",
+            "22-23": "WEATHER_SANDSTORM",
+            "25-27": "WEATHER_SANDSTORM",
+            "29": "WEATHER_SANDSTORM"
+        },
+        "march": {},
+        "april": {
+            "1": "WEATHER_SANDSTORM",
+            "3": "WEATHER_SANDSTORM",
+            "6": "WEATHER_SANDSTORM",
+            "8": "WEATHER_SANDSTORM",
+            "10-11": "WEATHER_SANDSTORM",
+            "18": "WEATHER_SANDSTORM",
+            "20": "WEATHER_SANDSTORM",
+            "23-24": "WEATHER_SANDSTORM",
+            "26-28": "WEATHER_SANDSTORM",
+            "30": "WEATHER_SANDSTORM"
+        },
+        "may": {
+            "1": "WEATHER_SANDSTORM",
+            "3": "WEATHER_SANDSTORM",
+            "6": "WEATHER_SANDSTORM",
+            "8": "WEATHER_SANDSTORM",
+            "10-11": "WEATHER_SANDSTORM",
+            "18": "WEATHER_SANDSTORM",
+            "20": "WEATHER_SANDSTORM",
+            "23-24": "WEATHER_SANDSTORM",
+            "26-28": "WEATHER_SANDSTORM",
+            "30-31": "WEATHER_SANDSTORM"
+        },
+        "june": {
+            "2": "WEATHER_SANDSTORM",
+            "5": "WEATHER_SANDSTORM",
+            "7": "WEATHER_SANDSTORM",
+            "9-10": "WEATHER_SANDSTORM",
+            "12": "WEATHER_SANDSTORM",
+            "14": "WEATHER_SANDSTORM",
+            "17": "WEATHER_SANDSTORM",
+            "19": "WEATHER_SANDSTORM",
+            "22-23": "WEATHER_SANDSTORM",
+            "25-27": "WEATHER_SANDSTORM",
+            "29-30": "WEATHER_SANDSTORM"
+        },
+        "july": {},
+        "august": {},
+        "september": {
+            "1": "WEATHER_SANDSTORM",
+            "3": "WEATHER_SANDSTORM",
+            "6": "WEATHER_SANDSTORM",
+            "8": "WEATHER_SANDSTORM",
+            "10-11": "WEATHER_SANDSTORM",
+            "18": "WEATHER_SANDSTORM",
+            "20": "WEATHER_SANDSTORM",
+            "23-24": "WEATHER_SANDSTORM",
+            "26-28": "WEATHER_SANDSTORM",
+            "30": "WEATHER_SANDSTORM"
+        },
+        "october": {
+            "1": "WEATHER_SANDSTORM",
+            "3": "WEATHER_SANDSTORM",
+            "6": "WEATHER_SANDSTORM",
+            "8": "WEATHER_SANDSTORM",
+            "10-11": "WEATHER_SANDSTORM",
+            "13": "WEATHER_SANDSTORM",
+            "15": "WEATHER_SANDSTORM",
+            "18": "WEATHER_SANDSTORM",
+            "20": "WEATHER_SANDSTORM",
+            "23-24": "WEATHER_SANDSTORM",
+            "26-28": "WEATHER_SANDSTORM",
+            "30-31": "WEATHER_SANDSTORM"
+        },
+        "november": {},
+        "december": {}
+    }
+}

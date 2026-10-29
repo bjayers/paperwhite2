@@ -59,9 +59,13 @@ static void Calendar_ReleaseArc(Calendar *calendar) {
 
 static u16 Calendar_GetWeatherCore(Calendar *calendar, u16 zoneId) {
 #ifdef PAPERWHITE2
-    // Paper White 2: the weather of the day is drawn from the zone's rates for the season, in place of the archive's
-    // weather of the day of the year
-    return PaperWhite2_GetCalendarWeather(calendar->gameData, zoneId);
+    // Paper White 2: every zone has the archive's weather of one date of the season, drawn for the day, in place of
+    // today's date
+    u8 month;
+    u8 day;
+
+    PaperWhite2_GetWeatherDate(calendar->gameData, &month, &day);
+    return Calendar_ReadWeatherValue(calendar, zoneId, month, day);
 #else
     u32 month = GameData_GetMonth(calendar->gameData);
     u32 day = GameData_GetDay(calendar->gameData);

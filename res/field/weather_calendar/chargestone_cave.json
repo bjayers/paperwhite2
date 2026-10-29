@@ -1,0 +1,72 @@
+{
+    "$schema": "weather_calendar.schema.json",
+    "months": {
+        "january": {
+            "4-5": "WEATHER_RAIN",
+            "12-13": "WEATHER_RAIN",
+            "20-21": "WEATHER_RAIN",
+            "28-29": "WEATHER_RAIN"
+        },
+        "february": {},
+        "march": {
+            "4-5": "WEATHER_RAIN",
+            "12-13": "WEATHER_RAIN",
+            "20-21": "WEATHER_RAIN",
+            "28-29": "WEATHER_RAIN"
+        },
+        "april": {
+            "1-4": "WEATHER_FLUTTER",
+            "9-10": "WEATHER_FLUTTER",
+            "11-12": "WEATHER_FLAKE",
+            "13": "WEATHER_FLUTTER",
+            "14": "WEATHER_FLAKE",
+            "18": "WEATHER_FLAKE",
+            "19-20": "WEATHER_FLUTTER",
+            "21-24": "WEATHER_FLAKE",
+            "28-30": "WEATHER_FLAKE"
+        },
+        "may": {
+            "4-5": "WEATHER_RAIN",
+            "12-13": "WEATHER_RAIN",
+            "20-21": "WEATHER_RAIN",
+            "28-29": "WEATHER_RAIN"
+        },
+        "june": {},
+        "july": {
+            "4-5": "WEATHER_RAIN",
+            "12-13": "WEATHER_RAIN",
+            "20-21": "WEATHER_RAIN",
+            "28-29": "WEATHER_RAIN"
+        },
+        "august": {
+            "1-2": "WEATHER_FLUTTER",
+            "8-10": "WEATHER_FLUTTER",
+            "11-13": "WEATHER_FLAKE",
+            "18-19": "WEATHER_FLUTTER",
+            "20-24": "WEATHER_FLAKE",
+            "28-31": "WEATHER_FLAKE"
+        },
+        "september": {
+            "4-5": "WEATHER_RAIN",
+            "12-13": "WEATHER_RAIN",
+            "20-21": "WEATHER_RAIN",
+            "28-29": "WEATHER_RAIN"
+        },
+        "october": {},
+        "november": {
+            "4-5": "WEATHER_RAIN",
+            "12-13": "WEATHER_RAIN",
+            "20-21": "WEATHER_RAIN",
+            "28-29": "WEATHER_RAIN"
+        },
+        "december": {
+            "1-3": "WEATHER_FLUTTER",
+            "4": "WEATHER_FLAKE",
+            "8-9": "WEATHER_FLUTTER",
+            "10-14": "WEATHER_FLAKE",
+            "18": "WEATHER_FLUTTER",
+            "19-24": "WEATHER_FLAKE",
+            "28-31": "WEATHER_FLAKE"
+        }
+    }
+}

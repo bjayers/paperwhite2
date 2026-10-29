@@ -102,7 +102,9 @@ u8 PaperWhite2_GetCurrentSeason(GameData *gameData) {
 
 u8 PaperWhite2_GetSeasonForMapChange(GameData *gameData) {
     if (PaperWhite2_GetSeasonMode(gameData) == SEASON_MODE_CHAOS) {
-        return GFL_RandomLC(SEASON_COUNT);
+        // One of the three seasons other than the game's. The game's is the one the last exterior got: a draw into an
+        // interior is thrown away and doesn't change it, so no two exteriors in a row get the same season
+        return (GameData_GetSeason(gameData) + 1 + GFL_RandomLC(SEASON_COUNT - 1)) % SEASON_COUNT;
     }
     return PaperWhite2_GetCurrentSeason(gameData);
 }
