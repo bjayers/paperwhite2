@@ -1,0 +1,4 @@
+node_modules/
+dist/
+# Per-user settings: playtest folder, window state, the commit switch
+settings.local.json
