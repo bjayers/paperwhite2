@@ -39,6 +39,7 @@ L_DebugMenu:
     ListMenuAdd Global10200_Text_DebugPlayer, 65535, 4
     ListMenuAdd Global10200_Text_DebugInfo, 65535, 5
     ListMenuAdd Global10200_Text_DebugConditions, 65535, 6
+    ListMenuAdd Global10200_Text_DebugFollower, 65535, 7
     ListMenuAdd Global10200_Text_DebugClose, 65535, DEBUG_LIST_BACK
     ListMenuShow
     WorkCmpConst 0x8020, 0
@@ -55,6 +56,8 @@ L_DebugMenu:
     VMJumpIf CMP_EQ, L_DebugInfo
     WorkCmpConst 0x8020, 6
     VMJumpIf CMP_EQ, L_DebugConditions
+    WorkCmpConst 0x8020, 7
+    VMJumpIf CMP_EQ, L_DebugFollower
 
 L_DebugClose:
     SystemMsgClose
@@ -677,4 +680,79 @@ L_DebugConditionsPick:
     SystemMsg Global10200_Text_DebugConditionsPick, 2
     LastKeyWait
     VMJump L_DebugMenu
+
+// Follower...: the Following Pokémon's steps and waiting item, a pickup now, and the rules that would be chosen now
+L_DebugFollower:
+    Debug DEBUG_ACTION_FOLLOWER_WORDS, 0, 0, 0x8025
+    WorkCmpConst 0x8025, 0
+    VMJumpIf CMP_EQ, L_DebugFollowerAbsent
+    SystemMsg Global10200_Text_DebugFollowerTitle, 2
+    ListMenuAnchorTopRight 31, 1, 0, 1, 0x8020
+    ListMenuAdd Global10200_Text_DebugFollowerShow, 65535, 0
+    ListMenuAdd Global10200_Text_DebugFollowerSetSteps, 65535, 1
+    ListMenuAdd Global10200_Text_DebugFollowerPickup, 65535, 2
+    ListMenuAdd Global10200_Text_DebugFollowerClearItem, 65535, 3
+    ListMenuAdd Global10200_Text_DebugFollowerRules, 65535, 4
+    ListMenuAdd Global10200_Text_DebugBack, 65535, DEBUG_LIST_BACK
+    ListMenuShow
+    WorkCmpConst 0x8020, 0
+    VMJumpIf CMP_EQ, L_DebugFollowerShow
+    WorkCmpConst 0x8020, 1
+    VMJumpIf CMP_EQ, L_DebugFollowerSetSteps
+    WorkCmpConst 0x8020, 2
+    VMJumpIf CMP_EQ, L_DebugFollowerPickup
+    WorkCmpConst 0x8020, 3
+    VMJumpIf CMP_EQ, L_DebugFollowerClearItem
+    WorkCmpConst 0x8020, 4
+    VMJumpIf CMP_EQ, L_DebugFollowerRules
+    VMJump L_DebugMenu
+
+L_DebugFollowerAbsent:
+    SystemMsg Global10200_Text_DebugFollowerAbsent, 2
+    LastKeyWait
+    VMJump L_DebugMenu
+
+L_DebugFollowerShow:
+    Debug DEBUG_ACTION_FOLLOWER_WORDS, 0, 0, 0x8025
+    SystemMsg Global10200_Text_DebugFollowerRecord, 2
+    LastKeyWait
+    VMJump L_DebugFollower
+
+// Set steps...: a value, which the record keeps up to 4095
+L_DebugFollowerSetSteps:
+    Debug DEBUG_ACTION_NUMBER_BEGIN, DEBUG_NUMBER_VALUE, 100, 0x8025
+    VMCall L_DebugNumber
+    WorkCmpConst 0x8024, 0
+    VMJumpIf CMP_EQ, L_DebugFollower
+    Debug DEBUG_ACTION_FOLLOWER_SET_STEPS, 0, 0, 0x8025
+    VMJump L_DebugFollowerDone
+
+L_DebugFollowerPickup:
+    Debug DEBUG_ACTION_FOLLOWER_PICKUP, 0, 0, 0x8025
+    WorkCmpConst 0x8025, 0
+    VMJumpIf CMP_EQ, L_DebugFollowerNothing
+    SEPlay SEQ_SE_SELECT1
+    SystemMsg Global10200_Text_DebugFollowerFound, 2
+    LastKeyWait
+    VMJump L_DebugFollower
+
+L_DebugFollowerNothing:
+    SystemMsg Global10200_Text_DebugFollowerNothing, 2
+    LastKeyWait
+    VMJump L_DebugFollower
+
+L_DebugFollowerClearItem:
+    Debug DEBUG_ACTION_FOLLOWER_CLEAR_ITEM, 0, 0, 0x8025
+
+L_DebugFollowerDone:
+    SEPlay SEQ_SE_SELECT1
+    SystemMsg Global10200_Text_DebugFollowerDone, 2
+    LastKeyWait
+    VMJump L_DebugFollower
+
+L_DebugFollowerRules:
+    Debug DEBUG_ACTION_FOLLOWER_RULES, 0, 0, 0x8025
+    SystemMsg Global10200_Text_DebugFollowerRule, 2
+    LastKeyWait
+    VMJump L_DebugFollower
 #endif

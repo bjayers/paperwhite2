@@ -21,6 +21,9 @@
 #include "paperwhite2/debug.h"
 #include "paperwhite2/debug_actions.h"
 #include "paperwhite2/debug_commands.h"
+#include "paperwhite2/following_ambient.h"
+#include "paperwhite2/following_data.h"
+#include "paperwhite2/following_dialogue.h"
 #include "paperwhite2/following_field.h"
 #include "paperwhite2/season.h"
 #include "paperwhite2/shiny_candy.h"
@@ -76,6 +79,11 @@
 #define HEX_DIGITS_SEED 8
 // The longest text of a word that the conditions' readout writes from ASCII (the word set's are 0x40 characters)
 #define ASCII_WORD_LENGTH 40
+// The Follower entries' words
+#define FOLLOWER_WORD_SPECIES 0
+#define FOLLOWER_WORD_STEPS 1
+#define FOLLOWER_WORD_TOTAL 2
+#define FOLLOWER_WORD_ITEM 3
 // The rules that one message of the readout shows
 #define CONDITIONS_RULES_PER_PAGE 3
 
@@ -196,6 +204,8 @@ static BOOL DebugCommands_Warp(GameSystem *gsys, u16 zoneId);
 static BOOL DebugCommands_Info(FieldScriptEnv *env);
 static void DebugCommands_FillConditions(FieldScriptEnv *env, ConditionContext *ctx);
 static void DebugCommands_SetWordRule(FieldScriptEnv *env, u32 index, const ConditionTable *table, s32 rule);
+static BOOL DebugCommands_FollowerWords(FieldScriptEnv *env, Field *field);
+static BOOL DebugCommands_FollowerRules(FieldScriptEnv *env, Field *field);
 static void DebugCommands_ConditionsWorld(FieldScriptEnv *env);
 static BOOL DebugCommands_ConditionsParty(FieldScriptEnv *env);
 static u32 DebugCommands_ConditionsRules(FieldScriptEnv *env, u32 first);
@@ -371,6 +381,23 @@ static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2
     case DEBUG_ACTION_CONDITIONS_PICK:
         DebugCommands_ConditionsPick(env);
         return TRUE;
+    case DEBUG_ACTION_FOLLOWER_WORDS:
+        return DebugCommands_FollowerWords(env, GSYS_GetField(gsys));
+    case DEBUG_ACTION_FOLLOWER_SET_STEPS:
+        return FollowingDebug_SetSteps(GSYS_GetField(gsys), sDebugNumber.value);
+    case DEBUG_ACTION_FOLLOWER_PICKUP:
+        if (!DebugCommands_FollowerWords(env, GSYS_GetField(gsys))) {
+            return FALSE;
+        }
+        value = FollowingDebug_ForcePickup(GSYS_GetField(gsys));
+        if (value != ITEM_NONE) {
+            loadItemNameToStrbuf(ScriptWork_GetWordSet(FieldScriptEnv_GetScriptWork(env)), FOLLOWER_WORD_ITEM, value);
+        }
+        return value != ITEM_NONE;
+    case DEBUG_ACTION_FOLLOWER_CLEAR_ITEM:
+        return FollowingDebug_ClearItem(GSYS_GetField(gsys));
+    case DEBUG_ACTION_FOLLOWER_RULES:
+        return DebugCommands_FollowerRules(env, GSYS_GetField(gsys));
     }
     // The actions on the target, which do nothing without one
     if (pkm == NULL) {
@@ -896,5 +923,55 @@ static void DebugCommands_ConditionsPick(FieldScriptEnv *env) {
     rng = Conditions_Seed(&ctx, CONDITION_SEED_LOAD, 0);
     DebugCommands_SetWordRule(env, 3, table, Conditions_Select(table, &ctx, table->share, &rng, NULL));
     GFL_HeapFree(table);
+}
+
+// The follower's species, its steps, its total steps and its waiting item, or "none"
+static BOOL DebugCommands_FollowerWords(FieldScriptEnv *env, Field *field) {
+    WordSet *wordSet = ScriptWork_GetWordSet(FieldScriptEnv_GetScriptWork(env));
+    FollowingRecord record;
+    u16 species;
+
+    if (!FollowingDebug_GetRecord(field, &record, &species)) {
+        return FALSE;
+    }
+    WordSet_LoadSpeciesName(wordSet, FOLLOWER_WORD_SPECIES, species);
+    DebugCommands_SetWordNumber(env, FOLLOWER_WORD_STEPS, record.steps);
+    DebugCommands_SetWordNumber(env, FOLLOWER_WORD_TOTAL, record.totalSteps);
+    if (record.itemWaiting != ITEM_NONE) {
+        loadItemNameToStrbuf(wordSet, FOLLOWER_WORD_ITEM, record.itemWaiting);
+    } else {
+        DebugCommands_SetWordText(env, FOLLOWER_WORD_ITEM, Global10200_Text_DebugNone);
+    }
+    return TRUE;
+}
+
+// The rules that would be chosen now: a rule's name, or "none"
+static BOOL DebugCommands_FollowerRules(FieldScriptEnv *env, Field *field) {
+    static const u8 tables[] = { FOLLOWING_TABLE_AMBIENT, FOLLOWING_TABLE_PICKUP };
+    const char *name;
+    u32 priority;
+    u32 matches;
+    s32 rule;
+    u32 i;
+
+    rule = FollowingDebug_GetRule(field, FOLLOWING_TABLE_TALK, &name, &priority, &matches);
+    if (rule == -2) {
+        return FALSE;
+    }
+    if (rule < 0) {
+        DebugCommands_SetWordText(env, 0, Global10200_Text_DebugNone);
+    } else {
+        DebugCommands_SetWordAscii(env, 0, name);
+    }
+    DebugCommands_SetWordNumber(env, 1, priority);
+    DebugCommands_SetWordNumber(env, 2, matches);
+    for (i = 0; i < NELEMS(tables); i++) {
+        if (FollowingDebug_GetRule(field, tables[i], &name, &priority, &matches) < 0) {
+            DebugCommands_SetWordText(env, 3 + i, Global10200_Text_DebugNone);
+        } else {
+            DebugCommands_SetWordAscii(env, 3 + i, name);
+        }
+    }
+    return TRUE;
 }
 #endif
