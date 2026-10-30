@@ -58,6 +58,8 @@ BLOCK_MAX = 0x1000
 SLOT_MAX = 64
 OUTBREAK_MAX = 128
 NO_RULE = 0xFFFF
+# The game's step settings that a walking or surfing rate names (field_encount.c's ENCOUNT_RATE_CONFIGS)
+RATE_CONFIGS = 12
 
 METHODS = ["grass", "dark_grass", "rustling", "surf", "rippling_surf", "fishing", "rippling_fishing"]
 SEASONS = ["spring", "summer", "autumn", "winter"]
@@ -218,6 +220,11 @@ def area_block(data: Data, area: str, entries: list[tuple[tuple, dict | None]]) 
     for season in SEASONS:
         season_rates = source["rates"].get("all_year", source["rates"].get(season, {}))
         rates += [season_rates.get(method, 0) for method in METHODS]
+        # A walking or surfing rate picks one of the game's 12 step settings (ENCOUNT_RATE_CONFIGS), and a higher one
+        # quietly gets the first; fishing's is a percent
+        for method in METHODS[:5]:
+            if season_rates.get(method, 0) > RATE_CONFIGS:
+                raise DataError(f"{where}: {method}'s rate {season_rates[method]} is above the game's {RATE_CONFIGS} settings")
     compiler = conditions.Compiler()
     rules = []
     body = bytearray()

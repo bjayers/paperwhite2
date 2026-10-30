@@ -26,6 +26,6 @@
                 "rippling_fishing": { "$ref": "#/$defs/rate" }
             }
         },
-        "rate": { "type": "integer", "minimum": 0, "maximum": 255 }
+        "rate": { "type": "integer", "minimum": 0, "maximum": 255, "description": "Walking and surfing: one of the game's 12 step settings (1 to 12); fishing: a percent" }
     }
 }
