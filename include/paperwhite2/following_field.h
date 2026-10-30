@@ -64,5 +64,8 @@ BOOL FollowingField_IsShaded(void);
 BOOL FollowingField_IsFirstBody(void);
 // The species of the Pokémon that follows the player, or 0 with none (the debug menu's Info)
 u16 PaperWhite2_FollowingGetSpecies(void);
+// The tile under the follower, as its terrain update last read it on a grid map, or TILE_TYPE_NONE with none out or
+// on rails (the conditions' follower terrain)
+u32 PaperWhite2_FollowingGetTile(void);
 
 #endif // PAPERWHITE2_FOLLOWING_FIELD_H

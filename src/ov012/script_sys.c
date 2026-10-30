@@ -24,6 +24,9 @@
 #include "system/game_system.h"
 #include "system/main.h"
 #include "system/vm.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/conditions.h"
+#endif
 
 // A range of global script IDs, with its script file and text bank
 struct GlobalScriptEntry {
@@ -207,9 +210,13 @@ static const struct OpcodePermissions EVCMD_PERM_TABLE[] = {
     { 0, 0, 0 }, { 1, 0, 0 }, { 0, 0, 0 }, { 1, 1, 1 }, { 0, 0, 0 }, { 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, 0 }, // 0x2e0
     { 1, 0, 0 }, { 1, 0, 0 }, { 1, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, // 0x2e8
     { 0, 0, 0 }, { 1, 1, 1 }, { 1, 1, 1 },                                                                  // 0x2f0
+#ifdef PAPERWHITE2
+    // Paper White 2: the hack's commands of EVCMD_TABLE (scrcmd_vm.c), which run at every feature level: the
+    // conditions' GetPartyLevel and CheckCondition, then the debug menu's Debug
+    { 1, 1, 1 }, { 1, 1, 1 }, // 0x2f3
+#endif
 #ifdef PAPERWHITE2_DEBUG_MENU
-    // Paper White 2: the hack's commands of EVCMD_TABLE (scrcmd_vm.c), which run at every feature level
-    { 1, 1, 1 }, // 0x2f3
+    { 1, 1, 1 }, // 0x2f5
 #endif
 };
 
@@ -455,6 +462,11 @@ void FieldScript_CallOnZoneInit(GameSystem *gsys, u32 arg1) {
     gameData = GSYS_GetGameData(gsys);
     eventWork = GameData_GetEventWork(gameData);
     FieldScript_ResetMapLocalEvents(eventWork);
+#ifdef PAPERWHITE2
+    // Paper White 2: counts the zone load for the conditions' load seed, before the zone's init scripts, which can
+    // then read the new zone's picks; a battle or a menu reopens the field without a zone init, so the picks hold
+    Conditions_OnZoneInit(gameData);
+#endif
     FieldScript_CallZoneInitCore(gsys, arg1, 2, 2);
 }
 

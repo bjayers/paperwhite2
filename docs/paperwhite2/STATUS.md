@@ -2,6 +2,27 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-30: the conditions engine, phase 1 (not committed, not yet tested in game)
+
+- **Built** per `design/conditions.md` (§10's decisions; §11 lists where it differs): the condition format
+  (`res/paperwhite2/conditions/condition.schema.json`, `terrain_groups.json`, `zone_groups.json`), the compiler
+  `tools/paperwhite2/conditions.py` (hack-only in `configure.py`: members 2 and 3 of the weather calendar's archive
+  `a/0/9/6`, and three generated headers), the matcher, selection, seeds and level scaling in main
+  (`paperwhite2_conditions.c`, `paperwhite2_conditions_context.c`), the field part in overlay 36
+  (`paperwhite2_conditions_field.c`), and the spawn system's empty placeholder (`include/paperwhite2/spawns.h`).
+- **Zone-load counter**: `EVENT_WORK_ZONE_LOAD_COUNTER` (0x4051), found free by the new variable survey
+  `tools/paperwhite2/var_usage.py`; bumped in `FieldScript_CallOnZoneInit` (`src/ov012/script_sys.c`).
+- **Level scaling**: `res/paperwhite2/level_scaling.json`, adjusted = median * 80% (floor), 2-100, wild +-5.
+- **Script commands**: `GetPartyLevel kind, result` (0x2f3) and `CheckCondition id, result` (0x2f4) in every hack
+  build; `Debug` moved from 0x2f3 to 0x2f5 (scripts reassemble by name). `script_conditions.json` gives
+  CheckCondition's IDs (`SCRIPT_CONDITION_NIGHT` ...).
+- **Debug readout**: START menu > Conditions: the context in two messages, the nine sample rules' matches, the pick.
+- The weather date's hash is now `Conditions_Hash` (same values; host-tested).
+- `--hack` builds with no warnings, `verify_dsi_rom.py` intact, memory check passes (150 KB left, about 4.8 KB used);
+  the matching `modules.ok` passes; check_style and clang-format clean; `global_scripts.py --check` current;
+  `python3 -m unittest tools.paperwhite2.test_conditions` passes (23 tests).
+- **To test in game**: plugins.md, Conditions, "The debug readout".
+
 ## 2026-10-29: the START debug menu built out (not committed, not yet tested)
 
 - **Moved** from `global_10130.s` (back to the original's, with its text) to `global_10200.s`, the original's empty

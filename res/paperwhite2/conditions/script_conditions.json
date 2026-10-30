@@ -1,0 +1,17 @@
+{
+  "$schema": "condition.schema.json#/$defs/rule_set",
+  "description": "The conditions that scripts test with CheckCondition id, result: each rule's name gives its ID's constant, SCRIPT_CONDITION_ and the name in capitals (paperwhite2/script_conditions.h), and its place the ID, so add new ones at the end",
+  "rules": [
+    { "name": "night", "when": { "time": [ "night", "late_night" ] } },
+    { "name": "daytime", "when": { "time": [ "morning", "day", "evening" ] } },
+    { "name": "raining", "when": { "weather": [ "WEATHER_RAIN", "WEATHER_THUNDERSTORM", "WEATHER_GUSTY_RAIN" ] } },
+    { "name": "snowing", "when": { "weather": [ "WEATHER_FLAKE", "WEATHER_BLIZZARD", "WEATHER_FLUTTER", "WEATHER_DIAMOND_DUST" ] } },
+    { "name": "outdoors", "when": { "exterior": true } },
+    { "name": "in_grass", "when": { "terrain": [ "grass", "dark_grass", "tall_grass" ] } },
+    { "name": "on_water", "when": { "terrain": [ "surf_water" ] } },
+    { "name": "spring", "when": { "season": [ "spring" ] } },
+    { "name": "summer", "when": { "season": [ "summer" ] } },
+    { "name": "autumn", "when": { "season": [ "autumn" ] } },
+    { "name": "winter", "when": { "season": [ "winter" ] } }
+  ]
+}

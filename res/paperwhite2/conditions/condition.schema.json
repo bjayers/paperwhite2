@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Paper White 2 conditions",
+  "description": "The shared condition of every consumer (encounters, spawns, the follower's rules, the Dexnav), the rule that wraps one, and the files beside it. tools/paperwhite2/conditions.py compiles them (docs/paperwhite2/plugins.md, Conditions).",
+  "$defs": {
+    "condition": {
+      "type": "object",
+      "description": "Matches when every field it sets matches; a list is any of its items. Every field is optional, so {} always matches.",
+      "additionalProperties": false,
+      "properties": {
+        "season": {
+          "type": "array", "minItems": 1,
+          "items": { "enum": [ "spring", "summer", "autumn", "winter" ] },
+          "description": "The field's season (GameData_GetSeason), which changes only at a map change with a loading screen into an exterior"
+        },
+        "time": {
+          "type": "array", "minItems": 1,
+          "items": { "enum": [ "morning", "day", "evening", "night", "late_night" ] },
+          "description": "The period of the day in the season (GetRealTimeDayPeriod); night and late_night are the night"
+        },
+        "weather": {
+          "type": "array", "minItems": 1,
+          "items": { "type": "string", "pattern": "^WEATHER_" },
+          "description": "The zone's computed weather (GetNowWeather), WEATHER_ constants of include/system/zone_weather.h"
+        },
+        "flags": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "set": { "type": "array", "items": { "$ref": "#/$defs/flag" } },
+            "unset": { "type": "array", "items": { "$ref": "#/$defs/flag" } }
+          },
+          "description": "Event flags that must be set, and ones that must be clear (all of them)"
+        },
+        "vars": {
+          "type": "array",
+          "items": {
+            "type": "object", "additionalProperties": false, "required": [ "var", "op", "value" ],
+            "properties": {
+              "var": { "type": "string", "x-constant": "EVENT_WORK_", "x-hex": true },
+              "op": { "enum": [ "=", "!=", ">=", "<=", ">", "<" ] },
+              "value": { "type": "integer", "minimum": 0, "maximum": 65535 }
+            }
+          },
+          "description": "Saved event variables (0x4000-0x41ae) compared with values (all of them)"
+        },
+        "zone": {
+          "type": "array", "minItems": 1, "items": { "type": "string", "x-constant": "ZONE_" },
+          "description": "The current zone"
+        },
+        "zone_group": {
+          "type": "array", "minItems": 1, "items": { "type": "string" },
+          "description": "Names of zone_groups.json's groups; the zone is in one of them"
+        },
+        "exterior": { "type": "boolean", "description": "Outdoors (AreaData_IsExterior), from the field" },
+        "terrain": {
+          "type": "array", "minItems": 1, "items": { "type": "string" },
+          "description": "Names of terrain_groups.json's groups of the subject's tile, from the field"
+        },
+        "party_level": { "$ref": "#/$defs/range", "description": "The party's median level, the lower middle one for an even count" },
+        "scaled_level": { "$ref": "#/$defs/range", "description": "The adjusted party median, the level wild Pokémon scale to (level_scaling.json)" },
+        "level": { "$ref": "#/$defs/range", "description": "The subject's level" },
+        "species": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "anyOf": [
+              { "type": "string", "x-constant": "SPECIES_" },
+              {
+                "type": "object", "additionalProperties": false, "required": [ "species" ],
+                "properties": {
+                  "species": { "type": "string", "x-constant": "SPECIES_" },
+                  "form": { "type": "integer", "minimum": 0, "maximum": 30 }
+                }
+              }
+            ]
+          },
+          "description": "The subject's species, of any form unless one is given"
+        },
+        "type": { "type": "array", "minItems": 1, "items": { "type": "string", "x-constant": "TYPE_" }, "description": "Either of the subject's types" },
+        "nature": { "type": "array", "minItems": 1, "items": { "type": "string", "x-constant": "NATURE_" }, "description": "The subject's nature" },
+        "hp": { "$ref": "#/$defs/range", "description": "The subject's HP in percent of its maximum (0-100), rounded down" },
+        "status": {
+          "type": "array", "minItems": 1,
+          "items": { "enum": [ "none", "poison", "sleep", "burn", "freeze", "paralysis", "any" ] },
+          "description": "The subject's major status (poison takes in bad poison; any is any but none)"
+        },
+        "friendship": { "$ref": "#/$defs/range", "description": "The subject's friendship (0-255)" },
+        "steps": { "$ref": "#/$defs/range", "description": "The steps the consumer counts for the subject (the follower's steps as the follower)" },
+        "follower": {
+          "anyOf": [
+            { "type": "boolean" },
+            { "type": "array", "minItems": 1, "items": { "type": "string", "x-constant": "SPECIES_" } }
+          ],
+          "description": "true: a follower is out; false: none is; a list: the follower is one of these species"
+        },
+        "chance": { "type": "integer", "minimum": 1, "maximum": 100, "description": "A percent, rolled each time the rule is checked" }
+      }
+    },
+    "flag": { "type": "string", "x-constant": "EVENT_FLAG_", "x-hex": true },
+    "range": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "min": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "max": { "type": "integer", "minimum": 0 }
+      },
+      "description": "From min to max, both included; either can be left out"
+    },
+    "rule": {
+      "type": "object",
+      "description": "A consumer's entry with a condition. A consumer adds its own fields beside these.",
+      "properties": {
+        "when": { "$ref": "#/$defs/condition" },
+        "priority": { "type": "integer", "minimum": 0, "maximum": 255, "description": "Higher is tried first; 0 by default" },
+        "weight": { "type": "integer", "minimum": 1, "maximum": 65535, "description": "The pick's weight within its priority; 1 by default" }
+      }
+    },
+    "rule_set": {
+      "type": "object",
+      "description": "A table of named rules, such as debug_samples.json: what Conditions_Select picks from",
+      "additionalProperties": false,
+      "required": [ "rules" ],
+      "properties": {
+        "$schema": { "type": "string" },
+        "description": { "type": "string" },
+        "share": {
+          "type": "integer", "minimum": 1, "maximum": 100,
+          "description": "The percent of the checks that pick from the highest priority that matches before trying the next; 100 by default (the follower and spawns), less for encounters"
+        },
+        "rules": {
+          "type": "array", "maxItems": 256,
+          "items": {
+            "type": "object", "additionalProperties": false, "required": [ "name" ],
+            "properties": {
+              "name": { "type": "string", "pattern": "^[ -~]{1,20}$" },
+              "when": { "$ref": "#/$defs/condition" },
+              "priority": { "type": "integer", "minimum": 0, "maximum": 255 },
+              "weight": { "type": "integer", "minimum": 1, "maximum": 65535 }
+            }
+          }
+        }
+      }
+    },
+    "terrain_groups": {
+      "type": "object", "additionalProperties": false, "required": [ "groups" ],
+      "properties": {
+        "$schema": { "type": "string" },
+        "groups": {
+          "type": "array", "minItems": 1, "maxItems": 32,
+          "items": {
+            "type": "object", "additionalProperties": false, "required": [ "name" ],
+            "properties": {
+              "name": { "type": "string", "pattern": "^[a-z_]{1,16}$" },
+              "classes": { "type": "array", "items": { "type": "string", "pattern": "^TILE_CLASS_" } },
+              "flags": { "type": "array", "items": { "type": "string", "pattern": "^TILE_FLAG_" } },
+              "exterior": { "type": "boolean" }
+            }
+          }
+        }
+      },
+      "description": "The terrain groups in their bits' order: a tile is in a group by its class, by one of its flags, or by the area's exterior"
+    },
+    "zone_groups": {
+      "type": "object", "additionalProperties": false, "required": [ "groups" ],
+      "properties": {
+        "$schema": { "type": "string" },
+        "groups": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object", "additionalProperties": false,
+            "properties": {
+              "parent": { "type": "array", "items": { "type": "string", "x-constant": "ZONE_" } },
+              "zones": { "type": "array", "items": { "type": "string", "x-constant": "ZONE_" } }
+            }
+          }
+        }
+      },
+      "description": "Named groups of zones: every zone whose parent (the zone header's) is one of parent, and the zones listed"
+    },
+    "level_scaling": {
+      "type": "object", "additionalProperties": false, "required": [ "percent", "offset", "min", "max", "spread" ],
+      "properties": {
+        "$schema": { "type": "string" },
+        "percent": { "type": "integer", "minimum": 1, "maximum": 200 },
+        "offset": { "type": "integer", "minimum": -100, "maximum": 100 },
+        "min": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "max": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "spread": { "type": "integer", "minimum": 0, "maximum": 50 }
+      },
+      "description": "The adjusted party median: median * percent / 100 + offset, rounded down, from min to max; wild levels around it from adjusted - spread to adjusted + spread"
+    }
+  }
+}

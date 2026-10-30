@@ -1,0 +1,7 @@
+{
+  "$schema": "condition.schema.json#/$defs/zone_groups",
+  "groups": {
+    "castelia": { "parent": [ "ZONE_CASTELIA_CITY" ] },
+    "castelia_sewers": { "parent": [ "ZONE_CASTELIA_SEWERS" ] }
+  }
+}

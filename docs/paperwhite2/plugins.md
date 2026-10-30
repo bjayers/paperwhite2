@@ -231,6 +231,7 @@ DEBUG                           L_DebugMenu
     Money...                        Set money... (number, 0-9999999) / +100000
   Info                            zone and place, x/y/z (or the rail's line, front and side), season and mode,
                                   time of day, weather, follower
+  Conditions                      the conditions' context, the debug samples' matches and pick (Conditions, below)
   Close
 ```
 
@@ -241,7 +242,7 @@ script's words like a message, so a block runs a `..._WORDS` action before its l
 script's work variables are listed at the top of its Script_2.
 
 **One command, many actions.** The menu's work is done by one script command, `Debug action, arg1, arg2, result`
-(0x2f3), which runs the action with the two arguments, each a value or a variable, and puts what it returns in the
+(0x2f5), which runs the action with the two arguments, each a value or a variable, and puts what it returns in the
 variable result (the script uses 0x8025). So a new option needs a new action, not a new opcode. The actions are
 `#define`s in `include/paperwhite2/debug_actions.h`, not an enum, since the script includes the header too; the handler
 is `Scrcmd_PaperWhite2_Debug` (`src/paperwhite2/ov012/paperwhite2_debug_commands.c`), a switch on the action. The
@@ -283,6 +284,10 @@ of the last number entry.
 | `NUMBER_SHOW` (31) | | the number in word 0, its name in word 1, the step in word 2; the kind's message |
 | `NUMBER_ADJUST` (32) | change (`DEBUG_NUMBER_STEP_*`) | plus or minus the step, or the step times or over ten |
 | `NUMBER_GET` (33) | | the number, kept as the kind's last |
+| `CONDITIONS_WORLD` (34) | | the conditions' world in words 0-10 (season, time, weather, zone, parent, exterior, terrain under the player and the follower, the follower) |
+| `CONDITIONS_PARTY` (35) | | the lead in words 0-4, the median, adjusted median and wild range in 5-8, the zone loads and seeds in 9-12; FALSE without a lead |
+| `CONDITIONS_RULES` (36) | first | up to three debug samples from first: names in words 0, 2, 4, yes/no in 1, 3, 5; how many |
+| `CONDITIONS_PICK` (37) | | the samples' pick with a check seed (0, its seed in 1), with the load seed twice (2, 3), a keyed seed (4) |
 
 **Number entry.** The game has no number input that a script can open: the Bag's and the shops' quantity selectors are
 parts of their apps, and no script command asks for a number. So the menu has its own, `L_DebugNumber`, a subroutine
@@ -337,8 +342,9 @@ with `Debug DEBUG_ACTION_FLAG_TOGGLE, <flag>, 0, 0x8025`. For a submenu: an entr
 Back and B jump back up. Removing the define from `configure.py` removes the menu, its command, its code and its
 hooks; the text stays.
 
-The hack's script command follows the original's last, 0x2f2, in `EVCMD_TABLE` (`src/ov012/scrcmd_vm.c`), with its
-row in `EVCMD_PERM_TABLE` (`src/ov012/script_sys.c`), both under `PAPERWHITE2_DEBUG_MENU`. Its entry in
+The hack's script commands follow the original's last, 0x2f2, in `EVCMD_TABLE` (`src/ov012/scrcmd_vm.c`), each with
+its row in `EVCMD_PERM_TABLE` (`src/ov012/script_sys.c`): the conditions' two (0x2f3, 0x2f4) under `PAPERWHITE2`, then
+`Debug` (0x2f5) under `PAPERWHITE2_DEBUG_MENU`, last, so that a build without the menu keeps the others' IDs. Its entry in
 `tools/script/field_commands.json` has a `"hack"` key, which `field_command_table.py` keeps when it writes the table
 again from the original ROM and `field_script.py inc` writes above the macro. To add another command (rarely needed
 now): its handler under `src/paperwhite2/`, its declaration in `include/paperwhite2/debug_commands.h`, its rows in
@@ -346,7 +352,7 @@ both tables, its entry in the JSON, then `python3 tools/script/field_script.py i
 
 | Command | ID | Arguments | Handler |
 | --- | --- | --- | --- |
-| `Debug action, arg1, arg2, result` | 0x2f3 (755) | a `DEBUG_ACTION_*`, two arguments, each a value or a variable, and the variable for the result | `Scrcmd_PaperWhite2_Debug` (`src/paperwhite2/ov012/paperwhite2_debug_commands.c`); the actions above. A warp action waits a frame, as the map change commands do |
+| `Debug action, arg1, arg2, result` | 0x2f5 (757) | a `DEBUG_ACTION_*`, two arguments, each a value or a variable, and the variable for the result | `Scrcmd_PaperWhite2_Debug` (`src/paperwhite2/ov012/paperwhite2_debug_commands.c`); the actions above. A warp action waits a frame, as the map change commands do |
 
 **Memory.** The menu costs about 4 KB of the budget (the main arena had 159 KB left before it, 155 KB after): the
 command's code and tables in overlay 12, the overrides and the shiny PID in main, the hooks.
@@ -656,6 +662,158 @@ animations, textures and VRAM, the camera and the 3D system), the button resourc
 the message bank, then the BG system and the heap, and puts the display layout back (main engine on top, as the field
 has it).
 
+
+### Conditions
+
+The shared conditions engine of `design/conditions.md` (phase 1: the engine, the script commands and the debug
+readout; no consumer uses it yet). It answers "does this apply right now?" for the encounters, the NPC spawns, the
+follower's rules and the Dexnav to come, with one condition format, one binary encoding and one matcher.
+
+**The format.** `res/paperwhite2/conditions/condition.schema.json` defines `$defs/condition` (every field optional,
+all of them must hold, a list is any of its items), `$defs/rule` (`when`, `priority` 0-255, default 0, `weight`
+1-65535, default 1), `$defs/rule_set` (a table's `share` and named `rules`), and the files beside it:
+
+| Field | Reads | Example |
+| --- | --- | --- |
+| `season` | the field's season, `GameData_GetSeason` | `["spring", "summer"]` |
+| `time` | `GetRealTimeDayPeriod(season)`: morning, day, evening, night, late_night | `["night", "late_night"]` |
+| `weather` | the zone's computed weather, `GetNowWeather` | `["WEATHER_RAIN"]` |
+| `flags` | `set` and `unset` lists of event flags | `{"set": ["EVENT_FLAG_DEBUG_ALWAYS_SHINY"]}` |
+| `vars` | saved variables against values, `=`, `!=`, `>=`, `<=`, `>`, `<` | `[{"var": "EVENT_WORK_...", "op": ">=", "value": 3}]` |
+| `zone`, `zone_group` | the zone; a group of `zone_groups.json` (zones whose header's parent is listed, plus `zones`) | `["castelia"]` |
+| `exterior` | `AreaData_IsExterior`, from the field | `true` |
+| `terrain` | the groups of `terrain_groups.json` of the subject's tile, from the field | `["grass", "dark_grass"]` |
+| `party_level`, `scaled_level` | the party's median, the adjusted median | `{"min": 20, "max": 40}` |
+| `level`, `species` (with an optional `form`), `type`, `nature`, `hp` (percent), `status`, `friendship`, `steps` | the subject: the lead (party slot 0) for encounters and spawns, the follower for its rules | `{"min": 20}` |
+| `follower` | `true` (one is out), `false`, or species | `["SPECIES_PIKACHU"]` |
+| `chance` | a percent rolled each check | `25` |
+
+`terrain_groups.json` lists the 18 groups in bit order (grass, dark_grass, tall_grass, surf_water, shore,
+shallow_water, puddle, swamp, sand, snow, ice, cave, leaves, bridge, ground, indoor, outdoor, encounter), each by tile
+classes, tile flags (`TILE_FLAG_WATER`, `TILE_FLAG_ENCOUNT`) or the area's exterior, so a tile can be in several.
+`zone_groups.json` has `castelia` (Castelia City's parent group, 37 zones) and `castelia_sewers`; custom groups come
+with the editor.
+
+**The compiler,** `tools/paperwhite2/conditions.py`, is a library for the consumers' packers and the build's commands:
+`archive` (below), `table` and `dump` for one table, and `terrain-header`, `level-scaling-header` and `script-header`
+for the generated headers in `build/include/generated/paperwhite2/`. It resolves names through `generated/` and
+`include/constants/` (`tools/data/datajson.py`), the weathers from `include/system/zone_weather.h`, the tile names from
+`include/field/field_map.h`, and the kinds' and ops' numbers from `include/paperwhite2/conditions.h`, so the C and the
+compiler can't disagree. `configure.py --hack` wires it: `HACK_ARCHIVE_MEMBERS` packs the weather calendar apart and
+then runs `archive` on it, and the three headers are `constants_headers`. The matching build runs none of it.
+
+**The binary layout** (little-endian):
+
+| Part | Layout |
+| --- | --- |
+| Table header, 12 bytes (`ConditionTable`) | u32 magic `PWCT` (0x54435750), u8 version 1, u8 share (percent), u16 rule count, u16 list count, u16 size in bytes |
+| Offsets | a u16 per rule then per list, from the table's start, each a multiple of 4; padded to 4 |
+| Rule (`ConditionRule`) | u8 clause count, u8 priority, u16 weight; the clauses; the consumer's payload up to the next rule, the first list or the size (a rule set's is the rule's ASCII name and a 0, padded to 4) |
+| Clause, 8 bytes (`Condition`) | u8 kind (`CONDITION_KIND_*`), u8 op (`CONDITION_OP_*`), u16 arg, u32 value |
+| List | u16 count, that many sorted u16s (zones, or species entries), padded to 4 |
+
+Each field compiles to one clause: the season, time, weather, terrain, type, nature and status to `MASK` (a bit per
+value in `value`); a flag to `SET` or `UNSET` with the flag in `arg`; a variable to `EQ`...`LT` with the variable in
+`arg` and the value in `value`; one zone, species or follower species to `EQ` with it in `arg`, several to `IN_LIST`
+with the list's number in `arg` (identical lists are shared, and a zone group is its zones' list); the exterior to `EQ`
+with 1 or 0; `follower: true` to `ANY`; a range to `RANGE`, the least in `arg` (0 by default) and the greatest in
+`value` (0xffffffff by default); a chance to its percent in `value`, always the last clause. A species entry is the
+species, plus (form + 1) << 11 for one form. A table holds 256 rules at most.
+
+**Where the tables are.** New members of the weather calendar's archive, `a/0/9/6` (`ARCID_CALENDAR`,
+`CONDITION_TABLE_ARCHIVE`), after its two files, which `Calendar_Preload` reads as before: member 2
+(`CONDITION_TABLE_MEMBER_DEBUG_SAMPLES`) is `debug_samples.json`, member 3 (`CONDITION_TABLE_MEMBER_SCRIPT`)
+`script_conditions.json`. It is the world-state archive (weather by date), small, and loaded only on demand. The
+consumers' own tables will go with their data (the encounters' and spawns' in their archives).
+
+**The C API** (`include/paperwhite2/conditions.h`):
+
+- `src/paperwhite2/main/paperwhite2_conditions.c` (main): `Conditions_Hash` (MurmurHash3's finalizer of
+  `a * 0x9e3779b1 + b`, now also the weather date's), `Conditions_Random` (an LCG step whose state is mixed by the hash),
+  `Conditions_Seed`, the table's checks and accessors, `Conditions_MatchRule`, `Conditions_Select`,
+  `Conditions_MedianLevel`, `Conditions_ScaledLevel` and the wild range. It reads nothing but the context and the table.
+- `src/paperwhite2/main/paperwhite2_conditions_context.c` (main): `ConditionContext_Init`, `FillWorld` (season,
+  period, weather, zone, parent, the event work, the zone-load counter, the save clock's day number and the seeds),
+  `FillSubject`/`FillLead` (species, form, level, types, nature, friendship, HP %, status, steps), `FillParty` (median,
+  adjusted median), `FillGame` (all three), `Conditions_OnZoneInit` and `Conditions_LoadTable`.
+- `src/paperwhite2/ov036/paperwhite2_conditions_field.c` (the field): `Conditions_TerrainGroups(tile, exterior)`,
+  `ConditionContext_FillField` (the exterior, the terrain under the player, `FieldPlayer_GetTileTypeUnder`, and under
+  the follower, `PaperWhite2_FollowingGetTile`, which the follower's terrain update keeps; its species) and
+  `ConditionContext_SetTerrain`.
+
+A caller fills the parts it needs; a clause on an unfilled part fails. **Selection:** the matching rules are grouped
+by priority, highest first; a group is picked from by weight in `share` percent of the checks (100 always), else the
+next lower group is tried, and the lowest group that matches is always picked from. **Seeds:** `CONDITION_SEED_LOAD`
+is `Conditions_Hash(loadSeed, key)` with `loadSeed = Conditions_Hash(zoneLoadCounter, zone)`; `CONDITION_SEED_DAY`
+the same with `Conditions_Hash(dayNumber, zone)`; `CONDITION_SEED_CHECK` draws `GFL_RandomLC(0)`. A key shared by
+groups gives them the same pick (the keyed seed).
+
+**The zone-load counter** is `EVENT_WORK_ZONE_LOAD_COUNTER` (0x4051), which `tools/paperwhite2/var_usage.py` (the
+variables' survey, beside `flag_usage.py`) found unused with 0x4052-0x406f. `FieldScript_CallOnZoneInit`
+(`src/ov012/script_sys.c`) bumps it under `PAPERWHITE2` before the zone's init scripts: every map change and seamless
+zone change, not a battle or a menu, so the load seed holds until the next zone load, and after a save and continue.
+
+**Level scaling.** `res/paperwhite2/level_scaling.json` (`paperwhite2/level_scaling_config.h`): the adjusted median is
+`median * percent / 100 + offset`, rounded down, from `min` to `max`, and wild levels go from it minus `spread` to it
+plus `spread` (1 to 100). The defaults are `percent` 80, `offset` 0, `min` 2, `max` 100, `spread` 5: a party median
+of 50 gives 40 and wild levels 35-45; 20 gives 16 (11-21); 5 gives 4 (1-9); 100 gives 80. The median is the lower
+middle level for an even count, Eggs left out.
+
+**Script commands,** in every hack build, before the debug menu's so its removal leaves their IDs:
+
+| Command | ID | What |
+| --- | --- | --- |
+| `GetPartyLevel kind, result` | 0x2f3 (755) | `PARTY_LEVEL_MEDIAN` (0), `_ADJUSTED` (1), `_WILD_MIN` (2), `_WILD_MAX` (3) (`paperwhite2/condition_script.h`) into the variable |
+| `CheckCondition id, result` | 0x2f4 (756) | 1 if the condition holds now, else 0; `id` is a `SCRIPT_CONDITION_*` of `paperwhite2/script_conditions.h` |
+
+`res/paperwhite2/conditions/script_conditions.json` names CheckCondition's conditions: `night`, `daytime`, `raining`,
+`snowing`, `outdoors`, `in_grass`, `on_water`, `spring` to `winter` (`SCRIPT_CONDITION_NIGHT` 0 and so on, by place:
+add new ones at the end). The context is the world, the lead, the party and the field. A script includes the headers
+under `PAPERWHITE2`, since only the hack's build generates the second:
+
+```
+#ifdef PAPERWHITE2
+#include "paperwhite2/condition_script.h"
+#include "paperwhite2/script_conditions.h"
+#endif
+    GetPartyLevel PARTY_LEVEL_ADJUSTED, 0x8000
+    CheckCondition SCRIPT_CONDITION_NIGHT, 0x8001
+```
+
+The handlers are `src/paperwhite2/ov012/paperwhite2_condition_commands.c`, declared in
+`include/paperwhite2/condition_commands.h`, with rows in `EVCMD_TABLE` and `EVCMD_PERM_TABLE` under `PAPERWHITE2` and
+`"hack"` entries in `tools/script/field_commands.json`; the debug menu's `Debug` moved to 0x2f5 (757).
+
+**The debug readout:** Conditions in the START menu (Debug menu, above): the world (season, time, weather, zone and
+place, parent zone and place, indoors or outdoors, the terrain groups under the player and under the follower, the
+follower), then the lead (species, level, HP %, status, nature), the party median, the adjusted median and the wild
+range, the zone loads, the load seed, the day number and the day seed; then each of `debug_samples.json`'s rules (night,
+rain, spring or summer, Castelia, lead level 20+, Always shiny on, zone loads 10+, grass outdoors, and a default at
+priority 0) with yes or no, three a message; then the pick of `Conditions_Select` with a check seed (and the seed), with
+the load seed twice (the same pick) and a keyed seed. Its actions are `DEBUG_ACTION_CONDITIONS_WORLD` to `_PICK`
+(34-37). To test: open it outdoors and in a building (Outdoors/Indoors, `outdoor`/`indoor`); in Route 20's grass and
+dark grass, on Virbank's puddles, in a cave, on Desert Resort's sand, in Icirrus's snow (the terrain); set the time and
+weather overrides in World (Night and Rain become yes); toggle Always shiny (its rule); walk through ten zone changes
+(Zone loads 10+; the load seed changes with each, and stays across a battle); in Castelia's buildings (Castelia yes);
+reorder the party (the lead and its level); compare the median and adjusted median with the party's levels.
+
+**Tests.** `python3 -m unittest tools.paperwhite2.test_conditions` compiles `paperwhite2_conditions.c` unchanged with
+the host's clang or gcc against stubs of the game's headers (u32 32 bits wide) and drives it through ctypes: every
+clause kind at its edges (each season and period, each variable op at the value and either side of it, ranges at their
+bounds, species by form, either type, unfilled parts), the samples' tables, the chance's and the weights' distributions
+by chi-squared, the share's fraction, priority order, stability under a seed, the median, the level scaling's defaults,
+the hash's identity with the weather date's, and the compiler's round trip, layout and bad names.
+
+**Memory.** About 4.8 KB of the arena's budget (155 KB left before, 150 KB after): main 0x920 bytes (the matcher and
+selection 1.6 KB, the fills and loading 0.7 KB), overlay 12 0x720 (the commands 0.25 KB, the spawns' empty stubs, the debug readout about
+1.5 KB, which goes with `PAPERWHITE2_DEBUG_MENU`), overlay 36 0x2e0 (the terrain table and the field fill). The tables
+are read into the script's heap for each check and freed: 332 and 268 bytes now. `Conditions_Select` keeps 32 bytes
+of match bits on the stack.
+
+**The spawn system's placeholder.** `include/paperwhite2/spawns.h` declares the API the spawn system will have, and
+`src/paperwhite2/ov012/paperwhite2_spawns.c` stubs it, empty; nothing calls it. Per the decisions (design §10), the
+research into how NPCs are loaded and moved comes first, then either a new method or the flag method of script 10852
+ported onto the engine.
 
 ## Adding global scripts
 

@@ -3797,9 +3797,23 @@
     .2byte \a1
     .endm
 
+    // Paper White 2: the conditions': puts a PARTY_LEVEL_* of the party (the median, the adjusted median that wild Pokémon scale to, or the wild range's ends; paperwhite2/condition_script.h) in a variable (include/paperwhite2/condition_commands.h)
+    .macro GetPartyLevel a0, a1
+    FieldCommand 755
+    .2byte \a0
+    .2byte \a1
+    .endm
+
+    // Paper White 2: the conditions': puts 1 in a variable if the condition (a SCRIPT_CONDITION_* of paperwhite2/script_conditions.h, from res/paperwhite2/conditions/script_conditions.json) holds now, else 0 (include/paperwhite2/condition_commands.h)
+    .macro CheckCondition a0, a1
+    FieldCommand 756
+    .2byte \a0
+    .2byte \a1
+    .endm
+
     // Paper White 2: the debug menu's, under PAPERWHITE2_DEBUG_MENU: runs one of its actions (DEBUG_ACTION_*, paperwhite2/debug_actions.h) with two arguments and puts the result in a variable (include/paperwhite2/debug_commands.h)
     .macro Debug a0, a1, a2, a3
-    FieldCommand 755
+    FieldCommand 757
     .2byte \a0
     .2byte \a1
     .2byte \a2

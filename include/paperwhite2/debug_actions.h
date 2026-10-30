@@ -91,6 +91,21 @@
 // Returns the number, and keeps it as the kind's last
 #define DEBUG_ACTION_NUMBER_GET 33
 
+// The conditions' readout (docs/paperwhite2/plugins.md, Conditions). Puts the world's words: the season (0), the
+// time (1), the weather (2), the zone and its place (3, 4), its parent zone and place (5, 6), indoors or outdoors (7),
+// the terrain groups under the player (8) and the follower (9), and the follower (10)
+#define DEBUG_ACTION_CONDITIONS_WORLD 34
+// Puts the lead's and the party's words: the lead's species (0), level (1), HP percent (2), status (3) and nature (4),
+// the party's median level (5), the adjusted median (6) and the wild levels' range (7, 8), the zone loads (9), the
+// load seed (10), the save clock's day number (11) and the day seed (12). Returns FALSE without a lead
+#define DEBUG_ACTION_CONDITIONS_PARTY 35
+// Puts the names of the debug samples' rules from arg1 (0, 2, 4) and whether each matches (1, 3, 5), three at most.
+// Returns how many, 0 past the last or without the samples' table
+#define DEBUG_ACTION_CONDITIONS_RULES 36
+// Puts the samples' pick (Conditions_Select): with a check seed (0, and its seed in 1), with the load seed (2) and with
+// it again (3), which is the same pick, and a keyed seed, the load seed with key 1 (4)
+#define DEBUG_ACTION_CONDITIONS_PICK 37
+
 // The kinds of number entry: their ranges and messages are sDebugNumberKinds (paperwhite2_debug_commands.c)
 #define DEBUG_NUMBER_LEVEL 0
 #define DEBUG_NUMBER_NATURE 1

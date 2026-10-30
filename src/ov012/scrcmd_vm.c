@@ -72,6 +72,7 @@
 #include "system/game_system.h"
 #include "system/vm.h"
 #ifdef PAPERWHITE2
+#include "paperwhite2/condition_commands.h"
 #include "paperwhite2/debug_commands.h"
 #endif
 
@@ -853,10 +854,15 @@ const FieldScriptCommand EVCMD_TABLE[] = {
     NULL,                                               // 0x2f0
     Scrcmd_GameState_SetOneShotDRObtained,              // 0x2f1
     Scrcmd_GameState_IsOneShotDRObtained_02F2,          // 0x2f2
+#ifdef PAPERWHITE2
+    // Paper White 2: the hack's commands, after the original's last, each with its row in script_sys.c's
+    // EVCMD_PERM_TABLE: the conditions' (include/paperwhite2/condition_commands.h) in every hack build, then the debug
+    // menu's (include/paperwhite2/debug_commands.h), last so that a build without the menu keeps the others' IDs
+    Scrcmd_PaperWhite2_GetPartyLevel,  // 0x2f3
+    Scrcmd_PaperWhite2_CheckCondition, // 0x2f4
+#endif
 #ifdef PAPERWHITE2_DEBUG_MENU
-    // Paper White 2: the hack's commands, after the original's last (include/paperwhite2/debug_commands.h), each
-    // with its row in script_sys.c's EVCMD_PERM_TABLE
-    Scrcmd_PaperWhite2_Debug, // 0x2f3
+    Scrcmd_PaperWhite2_Debug, // 0x2f5
 #endif
 };
 

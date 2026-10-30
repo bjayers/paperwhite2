@@ -340,6 +340,13 @@ DATA_PACKS = [
     # Paper White 2: the weather calendar, the weather by date of the zones that have one
     ("tools/data/weather_calendar_data.py", "res/field/weather_calendar", ["a/0/9/6"], False),
 ]
+# Paper White 2: archives that the hack's build gives members after their own: the archive, the tool whose archive
+# command writes it from the one packed apart, and the data it reads. The conditions' tables follow the weather
+# calendar's two files (tools/paperwhite2/conditions.py, docs/paperwhite2/plugins.md's Conditions)
+HACK_ARCHIVE_MEMBERS = {"a/0/9/6": ("tools/paperwhite2/conditions.py", "res/paperwhite2/conditions")}
+# What the conditions' compiler reads besides its data: the zones' parents, and the kinds, tile classes and weathers
+HACK_MEMBER_SOURCES = ["res/field/zones", "include/paperwhite2/conditions.h", "include/field/field_map.h",
+                       "include/system/zone_weather.h"]
 # The archives of Nitro resources and data, each a directory named after its ARCID_* constant, which gives its file, in
 # the root for what it holds (graphics_archive.ARCHIVE_ROOTS)
 DATA_PACKS += [("tools/data/graphics_archive.py", str(directory.relative_to(ROOT)), [directory_archive(directory)], True)
@@ -759,8 +766,21 @@ def add_version(n: Writer, version: str, dsd: Path, bugfix: bool, shift: int,
         game = VERSIONS[version]["defines"][0].lower() if per_version else ""
         dependencies = sorted({script, *DATA_PACK_TOOLS, *script_imports(script), *DATA_PACK_SOURCES.get(script, []),
                                *constant_sources})
-        n.build(outputs, "data_pack", sources, implicit=dependencies,
+        # Paper White 2: an archive that the hack adds members to is packed apart first, then given them
+        # (HACK_ARCHIVE_MEMBERS)
+        packed = [build_dir / "paperwhite2" / "packed" / path if hack and path in HACK_ARCHIVE_MEMBERS else output
+                  for path, output in zip(paths, outputs)]
+        n.build(packed, "data_pack", sources, implicit=dependencies,
                 order_only=[files_ok], variables={"script": script, "dir": data_dir, "game": game})
+        for path, source, output in zip(paths, packed, outputs):
+            if source != output:
+                tool, member_dir = HACK_ARCHIVE_MEMBERS[path]
+                members = sorted(str(p.relative_to(ROOT)) for d in [member_dir, *HACK_MEMBER_SOURCES]
+                                 for p in ([ROOT / d] if (ROOT / d).is_file() else (ROOT / d).rglob("*"))
+                                 if p.is_file())
+                n.build([output], "hack_members", [source], implicit=[tool, *members, *script_imports(tool),
+                                                                       *constant_sources],
+                        order_only=[files_ok], variables={"tool": tool})
         for path, archive in zip(paths, outputs):
             archive_ok = stamp_dir / "files" / f"{path.replace('/', '_')}.ok"
             n.build([archive_ok], "check_file", [archive], implicit=[extract_dir / "config.yaml"],
@@ -975,6 +995,7 @@ def main():
     n.rule("narc", "$python tools/data/narc.py pack $out $in", "Packing $out")
     n.rule("text_pack", "$python tools/text/text_data.py pack $dir $out", "Packing $out")
     n.rule("data_pack", "$python $script pack $dir $game $out", "Packing $dir")
+    n.rule("hack_members", "$python $tool archive $in $out", "Adding the hack's members to $out")
     n.rule("check_file", "cmp $in $original && mkdir -p $$(dirname $out) && touch $out", "Checking $in")
     n.rule("files_tree", "$python tools/build/files_tree.py $source $output $built --stamp $out",
            "Linking the files of $output")
@@ -1080,6 +1101,22 @@ def main():
                 ["res/paperwhite2/following/event-policy.json", "res/paperwhite2/following/audio-event-policy.json"],
                 implicit=["tools/paperwhite2/following_scene_policy.py", "config/w2_us/arm9/symbols.txt"])
         constant_headers += outputs
+        # Paper White 2: the conditions' generated headers, the terrain groups, the level scaling and CheckCondition's
+        # IDs (tools/paperwhite2/conditions.py, docs/paperwhite2/plugins.md's Conditions)
+        n.rule("conditions_header", "$python tools/paperwhite2/conditions.py $kind $out", "Generating $out",
+               restat="1")
+        conditions_inputs = {"terrain-header": "res/paperwhite2/conditions/terrain_groups.json",
+                             "level-scaling-header": "res/paperwhite2/level_scaling.json",
+                             "script-header": "res/paperwhite2/conditions/script_conditions.json"}
+        conditions_outputs = {"terrain-header": "terrain_groups.h", "level-scaling-header": "level_scaling_config.h",
+                              "script-header": "script_conditions.h"}
+        for kind, source in conditions_inputs.items():
+            output = Path(GENERATED_INCLUDE_DIR) / "paperwhite2" / conditions_outputs[kind]
+            n.build([output], "conditions_header", [source],
+                    implicit=["tools/paperwhite2/conditions.py", "res/paperwhite2/conditions/condition.schema.json",
+                              "include/field/field_map.h", "tools/data/datajson.py"],
+                    variables={"kind": kind})
+            constant_headers.append(output)
     n.build(["constants_headers"], "phony", constant_headers)
 
     checks, configs = [], []

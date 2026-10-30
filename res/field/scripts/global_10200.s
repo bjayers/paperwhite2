@@ -22,7 +22,7 @@ Script_1:
 // script's words, so a block's Debug ..._WORDS action before its list puts each entry's state (ON/OFF, a name) in them.
 // The work variables: 0x8020 a list's pick, 0x8023 the stat list's cursor, 0x8024 whether a number entry was Done,
 // 0x8025 the command's result, 0x8026 a first number kept for a second (an item and its count, a species and its
-// level, a variable and its value), 0x8027 the number entry's cursor. See docs/paperwhite2/plugins.md, Debug menu
+// level, a variable and its value) or the Conditions readout's first rule, 0x8027 the number entry's cursor. See docs/paperwhite2/plugins.md, Debug menu
 // A list's Back: a value no list's other entries take, under 0x4000, which ListMenuAdd would read as a variable
 #define DEBUG_LIST_BACK 100
 
@@ -38,6 +38,7 @@ L_DebugMenu:
     ListMenuAdd Global10200_Text_DebugEncounters, 65535, 3
     ListMenuAdd Global10200_Text_DebugPlayer, 65535, 4
     ListMenuAdd Global10200_Text_DebugInfo, 65535, 5
+    ListMenuAdd Global10200_Text_DebugConditions, 65535, 6
     ListMenuAdd Global10200_Text_DebugClose, 65535, DEBUG_LIST_BACK
     ListMenuShow
     WorkCmpConst 0x8020, 0
@@ -52,6 +53,8 @@ L_DebugMenu:
     VMJumpIf CMP_EQ, L_DebugPlayer
     WorkCmpConst 0x8020, 5
     VMJumpIf CMP_EQ, L_DebugInfo
+    WorkCmpConst 0x8020, 6
+    VMJumpIf CMP_EQ, L_DebugConditions
 
 L_DebugClose:
     SystemMsgClose
@@ -633,6 +636,45 @@ L_DebugInfo:
 
 L_DebugInfoRail:
     SystemMsg Global10200_Text_DebugInfoRail, 2
+    LastKeyWait
+    VMJump L_DebugMenu
+
+// Conditions: the conditions' context (the world, then the lead and the party with the seeds), each debug sample's
+// match (res/paperwhite2/conditions/debug_samples.json), three a message, then the samples' pick
+L_DebugConditions:
+    Debug DEBUG_ACTION_CONDITIONS_WORLD, 0, 0, 0x8025
+    SystemMsg Global10200_Text_DebugConditionsWorld, 2
+    LastKeyWait
+    Debug DEBUG_ACTION_CONDITIONS_PARTY, 0, 0, 0x8025
+    SystemMsg Global10200_Text_DebugConditionsParty, 2
+    LastKeyWait
+    WorkSetConst 0x8026, 0
+
+L_DebugConditionsRules:
+    Debug DEBUG_ACTION_CONDITIONS_RULES, 0x8026, 0, 0x8025
+    WorkCmpConst 0x8025, 0
+    VMJumpIf CMP_EQ, L_DebugConditionsPick
+    WorkCmpConst 0x8025, 1
+    VMJumpIf CMP_EQ, L_DebugConditionsRules1
+    WorkCmpConst 0x8025, 2
+    VMJumpIf CMP_EQ, L_DebugConditionsRules2
+    SystemMsg Global10200_Text_DebugConditionsRules3, 2
+    LastKeyWait
+    WorkAdd 0x8026, 3
+    VMJump L_DebugConditionsRules
+
+L_DebugConditionsRules1:
+    SystemMsg Global10200_Text_DebugConditionsRules1, 2
+    LastKeyWait
+    VMJump L_DebugConditionsPick
+
+L_DebugConditionsRules2:
+    SystemMsg Global10200_Text_DebugConditionsRules2, 2
+    LastKeyWait
+
+L_DebugConditionsPick:
+    Debug DEBUG_ACTION_CONDITIONS_PICK, 0, 0, 0x8025
+    SystemMsg Global10200_Text_DebugConditionsPick, 2
     LastKeyWait
     VMJump L_DebugMenu
 #endif

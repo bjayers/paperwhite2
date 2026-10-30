@@ -12,15 +12,19 @@
 #include "field/player_state.h"
 #include "field/scrcmd_pokemon.h"
 #include "field/zone.h"
+#include "gfl/heap.h"
 #include "gfl/msg.h"
+#include "gfl/random.h"
 #include "gfl/str.h"
 #include "nitro/fx.h"
+#include "paperwhite2/conditions.h"
 #include "paperwhite2/debug.h"
 #include "paperwhite2/debug_actions.h"
 #include "paperwhite2/debug_commands.h"
 #include "paperwhite2/following_field.h"
 #include "paperwhite2/season.h"
 #include "paperwhite2/shiny_candy.h"
+#include "paperwhite2/terrain_groups.h"
 #include "pml/poke_party.h"
 #include "save/bag.h"
 #include "save/event_work.h"
@@ -64,10 +68,16 @@
 #define PARTY_WORD_NAME 3
 // The digits a number shows at most: the money's seven
 #define NUMBER_DIGITS 7
-// A string's end, and the length of a hex ID's word: "0x", four digits and the end
+// A string's end, and the length of a hex word: "0x", eight digits at most and the end; a flag's or a variable's ID
+// has four, a seed eight
 #define STR_END 0xffff
-#define HEX_WORD_LENGTH 7
+#define HEX_WORD_LENGTH 11
 #define HEX_DIGITS 4
+#define HEX_DIGITS_SEED 8
+// The longest text of a word that the conditions' readout writes from ASCII (the word set's are 0x40 characters)
+#define ASCII_WORD_LENGTH 40
+// The rules that one message of the readout shows
+#define CONDITIONS_RULES_PER_PAGE 3
 
 // What a kind of number entry shows besides the number
 enum {
@@ -158,13 +168,19 @@ static const u16 sDebugKeyItems[] = {
     ITEM_OVAL_CHARM, ITEM_SHINY_CHARM,  ITEM_EXP_SHARE,         ITEM_DNA_SPLICERS_SEPARATE,
 };
 
+// The conditions' status names, by CONDITION_STATUS_*, and the terrain groups' (paperwhite2/terrain_groups.h)
+static const char *const sDebugStatusNames[] = { "OK", "poison", "sleep", "burn", "freeze", "paralysis" };
+static const char *const sDebugTerrainNames[TERRAIN_GROUP_COUNT] = { TERRAIN_GROUP_NAMES };
+
 // No original structure owns this state. It goes with overlay 12, which the field keeps loaded while a script runs
 static DebugNumber sDebugNumber;
 static u8 sDebugPartySlot;
 
 static void DebugCommands_SetWordText(FieldScriptEnv *env, u32 index, u32 message);
 static void DebugCommands_SetWordNumber(FieldScriptEnv *env, u32 index, s32 number);
-static void DebugCommands_SetWordHex(FieldScriptEnv *env, u32 index, u32 number);
+static void DebugCommands_SetWordHex(FieldScriptEnv *env, u32 index, u32 number, u32 digits);
+static void DebugCommands_SetWordAscii(FieldScriptEnv *env, u32 index, const char *text);
+static void DebugCommands_SetWordTerrain(FieldScriptEnv *env, u32 index, u32 groups);
 static void DebugCommands_SetWordOnOff(FieldScriptEnv *env, u32 index, BOOL on);
 static PartyPkm *DebugCommands_GetTarget(FieldScriptEnv *env);
 static void DebugCommands_SetStatWords(FieldScriptEnv *env, u32 stat, u32 value);
@@ -178,6 +194,12 @@ static void DebugCommands_SetWeather(GameSystem *gsys, u16 weather);
 static void DebugCommands_SetMoney(GameData *gameData, u32 money);
 static BOOL DebugCommands_Warp(GameSystem *gsys, u16 zoneId);
 static BOOL DebugCommands_Info(FieldScriptEnv *env);
+static void DebugCommands_FillConditions(FieldScriptEnv *env, ConditionContext *ctx);
+static void DebugCommands_SetWordRule(FieldScriptEnv *env, u32 index, const ConditionTable *table, s32 rule);
+static void DebugCommands_ConditionsWorld(FieldScriptEnv *env);
+static BOOL DebugCommands_ConditionsParty(FieldScriptEnv *env);
+static u32 DebugCommands_ConditionsRules(FieldScriptEnv *env, u32 first);
+static void DebugCommands_ConditionsPick(FieldScriptEnv *env);
 static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2, BOOL *wait);
 
 BOOL Scrcmd_PaperWhite2_Debug(VM *vm, FieldScriptEnv *env) {
@@ -262,7 +284,7 @@ static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2
         return TRUE;
     case DEBUG_ACTION_FLAG_GET:
         DebugCommands_SetWordNumber(env, 0, sDebugNumber.value);
-        DebugCommands_SetWordHex(env, 1, sDebugNumber.value);
+        DebugCommands_SetWordHex(env, 1, sDebugNumber.value, HEX_DIGITS);
         DebugCommands_SetWordOnOff(env, 2, EventWork_FlagGet(eventWork, sDebugNumber.value));
         return EventWork_FlagGet(eventWork, sDebugNumber.value);
     case DEBUG_ACTION_FLAG_SET:
@@ -275,7 +297,7 @@ static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2
     case DEBUG_ACTION_VAR_GET:
         value = *EventWork_GetWkPtr(eventWork, arg1);
         DebugCommands_SetWordNumber(env, 0, arg1);
-        DebugCommands_SetWordHex(env, 1, arg1);
+        DebugCommands_SetWordHex(env, 1, arg1, HEX_DIGITS);
         DebugCommands_SetWordNumber(env, 2, value);
         return value;
     case DEBUG_ACTION_VAR_SET:
@@ -339,6 +361,16 @@ static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2
     case DEBUG_ACTION_NUMBER_GET:
         sDebugNumber.last[sDebugNumber.kind] = sDebugNumber.value;
         return sDebugNumber.value;
+    case DEBUG_ACTION_CONDITIONS_WORLD:
+        DebugCommands_ConditionsWorld(env);
+        return TRUE;
+    case DEBUG_ACTION_CONDITIONS_PARTY:
+        return DebugCommands_ConditionsParty(env);
+    case DEBUG_ACTION_CONDITIONS_RULES:
+        return DebugCommands_ConditionsRules(env, arg1);
+    case DEBUG_ACTION_CONDITIONS_PICK:
+        DebugCommands_ConditionsPick(env);
+        return TRUE;
     }
     // The actions on the target, which do nothing without one
     if (pkm == NULL) {
@@ -411,20 +443,54 @@ static void DebugCommands_SetWordNumber(FieldScriptEnv *env, u32 index, s32 numb
     WordSetNumber(ScriptWork_GetWordSet(FieldScriptEnv_GetScriptWork(env)), index, number, NUMBER_DIGITS, 0, TRUE);
 }
 
-// A flag's or a variable's ID in hex, as the docs and the scripts write them: 0x and four digits
-static void DebugCommands_SetWordHex(FieldScriptEnv *env, u32 index, u32 number) {
+// A number in hex, as the docs and the scripts write them: 0x and its digits
+static void DebugCommands_SetWordHex(FieldScriptEnv *env, u32 index, u32 number, u32 digits) {
     u16 str[HEX_WORD_LENGTH];
     u32 digit;
     u32 i;
 
     str[0] = '0';
     str[1] = 'x';
-    for (i = 0; i < HEX_DIGITS; i++) {
-        digit = (number >> ((HEX_DIGITS - 1 - i) * 4)) & 0xf;
+    for (i = 0; i < digits; i++) {
+        digit = (number >> ((digits - 1 - i) * 4)) & 0xf;
         str[2 + i] = digit < 10 ? '0' + digit : 'a' + digit - 10;
     }
-    str[2 + HEX_DIGITS] = STR_END;
+    str[2 + digits] = STR_END;
     GFL_WordSetLoadStr(ScriptWork_GetWordSet(FieldScriptEnv_GetScriptWork(env)), index, str);
+}
+
+// A text of the readout's own, in ASCII, which the game's characters share
+static void DebugCommands_SetWordAscii(FieldScriptEnv *env, u32 index, const char *text) {
+    u16 str[ASCII_WORD_LENGTH + 1];
+    u32 i;
+
+    for (i = 0; i < ASCII_WORD_LENGTH && text[i] != '\0'; i++) {
+        str[i] = text[i];
+    }
+    str[i] = STR_END;
+    GFL_WordSetLoadStr(ScriptWork_GetWordSet(FieldScriptEnv_GetScriptWork(env)), index, str);
+}
+
+// The names of the terrain groups of a mask, joined by +, as far as the word holds them, or "none"
+static void DebugCommands_SetWordTerrain(FieldScriptEnv *env, u32 index, u32 groups) {
+    char text[ASCII_WORD_LENGTH + 1];
+    const char *name;
+    u32 length = 0;
+    u32 group;
+
+    for (group = 0; group < TERRAIN_GROUP_COUNT; group++) {
+        if (!((groups >> group) & 1)) {
+            continue;
+        }
+        if (length != 0 && length < ASCII_WORD_LENGTH) {
+            text[length++] = '+';
+        }
+        for (name = sDebugTerrainNames[group]; *name != '\0' && length < ASCII_WORD_LENGTH; name++) {
+            text[length++] = *name;
+        }
+    }
+    text[length] = '\0';
+    DebugCommands_SetWordAscii(env, index, length == 0 ? "none" : text);
 }
 
 static void DebugCommands_SetWordOnOff(FieldScriptEnv *env, u32 index, BOOL on) {
@@ -513,11 +579,11 @@ static void DebugCommands_ShowNumber(FieldScriptEnv *env) {
         loadItemNameToStrbuf(wordSet, NUMBER_WORD_NAME, value);
         break;
     case NUMBER_NAME_HEX:
-        DebugCommands_SetWordHex(env, NUMBER_WORD_NAME, value);
+        DebugCommands_SetWordHex(env, NUMBER_WORD_NAME, value, HEX_DIGITS);
         break;
     case NUMBER_NAME_FLAG_HEX:
         // The flag's state goes in the step's word's place after the hex, as the flag's message shows it
-        DebugCommands_SetWordHex(env, NUMBER_WORD_NAME, value);
+        DebugCommands_SetWordHex(env, NUMBER_WORD_NAME, value, HEX_DIGITS);
         DebugCommands_SetWordOnOff(env, NUMBER_WORD_STEP + 1,
                                    EventWork_FlagGet(GameData_GetEventWork(FieldScriptEnv_GetGameData(env)), value));
         break;
@@ -708,5 +774,127 @@ static BOOL DebugCommands_Info(FieldScriptEnv *env) {
         WordSet_LoadSpeciesName(wordSet, 9, species);
     }
     return rail;
+}
+// The context of the readout and of the samples: the world, the lead, the party and the field
+static void DebugCommands_FillConditions(FieldScriptEnv *env, ConditionContext *ctx) {
+    GameSystem *gsys = FieldScriptEnv_GetGameSystem(env);
+
+    ConditionContext_Init(ctx);
+    ConditionContext_FillGame(ctx, GSYS_GetGameData(gsys));
+    if (GSYS_GetField(gsys) != NULL) {
+        ConditionContext_FillField(ctx, GSYS_GetField(gsys));
+    }
+}
+
+// A sample rule's name, its payload, or "none" for no rule
+static void DebugCommands_SetWordRule(FieldScriptEnv *env, u32 index, const ConditionTable *table, s32 rule) {
+    u32 size;
+    const char *name;
+
+    if (rule < 0) {
+        DebugCommands_SetWordText(env, index, Global10200_Text_DebugNone);
+        return;
+    }
+    name = Conditions_GetPayload(table, rule, &size);
+    DebugCommands_SetWordAscii(env, index, size == 0 ? "?" : name);
+}
+
+static void DebugCommands_ConditionsWorld(FieldScriptEnv *env) {
+    WordSet *wordSet = ScriptWork_GetWordSet(FieldScriptEnv_GetScriptWork(env));
+    ConditionContext ctx;
+
+    DebugCommands_FillConditions(env, &ctx);
+    DebugCommands_SetWordText(env, 0, sDebugSeasonModeNames[SEASON_MODE_SPRING + ctx.season]);
+    DebugCommands_SetWordText(env, 1, sDebugDayPeriodNames[ctx.period]);
+    DebugCommands_SetWordText(env, 2,
+                              ctx.weather < WEATHER_MAX ? sDebugWeatherNames[ctx.weather] : Global10200_Text_DebugNone);
+    DebugCommands_SetWordNumber(env, 3, ctx.zone);
+    loadLocationNameToStrbuf(wordSet, 4, ZoneData_GetPlaceNameID(ctx.zone));
+    DebugCommands_SetWordNumber(env, 5, ctx.zoneParent);
+    loadLocationNameToStrbuf(wordSet, 6, ZoneData_GetPlaceNameID(ctx.zoneParent));
+    DebugCommands_SetWordAscii(env, 7, ctx.exterior ? "Outdoors" : "Indoors");
+    DebugCommands_SetWordTerrain(env, 8, ctx.terrain);
+    if (ctx.followerSpecies == 0) {
+        DebugCommands_SetWordText(env, 9, Global10200_Text_DebugNone);
+        DebugCommands_SetWordText(env, 10, Global10200_Text_DebugNone);
+    } else {
+        DebugCommands_SetWordTerrain(env, 9, ctx.followerTerrain);
+        WordSet_LoadSpeciesName(wordSet, 10, ctx.followerSpecies);
+    }
+}
+
+static BOOL DebugCommands_ConditionsParty(FieldScriptEnv *env) {
+    WordSet *wordSet = ScriptWork_GetWordSet(FieldScriptEnv_GetScriptWork(env));
+    ConditionContext ctx;
+
+    DebugCommands_FillConditions(env, &ctx);
+    DebugCommands_SetWordNumber(env, 5, ctx.medianLevel);
+    DebugCommands_SetWordNumber(env, 6, ctx.scaledLevel);
+    DebugCommands_SetWordNumber(env, 7, Conditions_ScaledLevelMin(ctx.scaledLevel));
+    DebugCommands_SetWordNumber(env, 8, Conditions_ScaledLevelMax(ctx.scaledLevel));
+    DebugCommands_SetWordNumber(env, 9, ctx.zoneLoadCounter);
+    DebugCommands_SetWordHex(env, 10, ctx.loadSeed, HEX_DIGITS_SEED);
+    DebugCommands_SetWordNumber(env, 11, ctx.dayNumber);
+    DebugCommands_SetWordHex(env, 12, ctx.daySeed, HEX_DIGITS_SEED);
+    if (!(ctx.filled & CONDITION_CONTEXT_SUBJECT)) {
+        DebugCommands_SetWordText(env, 0, Global10200_Text_DebugNone);
+        DebugCommands_SetWordNumber(env, 1, 0);
+        DebugCommands_SetWordNumber(env, 2, 0);
+        DebugCommands_SetWordAscii(env, 3, "-");
+        DebugCommands_SetWordAscii(env, 4, "-");
+        return FALSE;
+    }
+    WordSet_LoadSpeciesName(wordSet, 0, ctx.species);
+    DebugCommands_SetWordNumber(env, 1, ctx.level);
+    DebugCommands_SetWordNumber(env, 2, ctx.hpPercent);
+    DebugCommands_SetWordAscii(env, 3, sDebugStatusNames[ctx.status]);
+    loadNatureToStrbuf(wordSet, 4, ctx.nature);
+    return TRUE;
+}
+
+static u32 DebugCommands_ConditionsRules(FieldScriptEnv *env, u32 first) {
+    ConditionTable *table = Conditions_LoadTable(CONDITION_TABLE_MEMBER_DEBUG_SAMPLES, FieldScriptEnv_GetHeapID(env));
+    ConditionContext ctx;
+    u32 rng = GFL_RandomLC(0);
+    u32 i;
+
+    if (table == NULL) {
+        return 0;
+    }
+    DebugCommands_FillConditions(env, &ctx);
+    for (i = 0; i < CONDITIONS_RULES_PER_PAGE && first + i < table->ruleCount; i++) {
+        DebugCommands_SetWordRule(env, i * 2, table, first + i);
+        DebugCommands_SetWordText(env, i * 2 + 1,
+                                  Conditions_MatchRule(table, first + i, &ctx, &rng) ? Global10200_Text_DebugMatch
+                                                                                     : Global10200_Text_DebugNoMatch);
+    }
+    GFL_HeapFree(table);
+    return i;
+}
+
+static void DebugCommands_ConditionsPick(FieldScriptEnv *env) {
+    ConditionTable *table = Conditions_LoadTable(CONDITION_TABLE_MEMBER_DEBUG_SAMPLES, FieldScriptEnv_GetHeapID(env));
+    ConditionContext ctx;
+    u32 seed;
+    u32 rng;
+
+    DebugCommands_FillConditions(env, &ctx);
+    seed = Conditions_Seed(&ctx, CONDITION_SEED_CHECK, 0);
+    DebugCommands_SetWordHex(env, 1, seed, HEX_DIGITS_SEED);
+    DebugCommands_SetWordHex(env, 4, Conditions_Seed(&ctx, CONDITION_SEED_LOAD, 1), HEX_DIGITS_SEED);
+    if (table == NULL) {
+        DebugCommands_SetWordRule(env, 0, NULL, -1);
+        DebugCommands_SetWordRule(env, 2, NULL, -1);
+        DebugCommands_SetWordRule(env, 3, NULL, -1);
+        return;
+    }
+    rng = seed;
+    DebugCommands_SetWordRule(env, 0, table, Conditions_Select(table, &ctx, table->share, &rng, NULL));
+    // The load seed's pick twice, from the same start, so the same rule: a spawn's pick holds within a zone load
+    rng = Conditions_Seed(&ctx, CONDITION_SEED_LOAD, 0);
+    DebugCommands_SetWordRule(env, 2, table, Conditions_Select(table, &ctx, table->share, &rng, NULL));
+    rng = Conditions_Seed(&ctx, CONDITION_SEED_LOAD, 0);
+    DebugCommands_SetWordRule(env, 3, table, Conditions_Select(table, &ctx, table->share, &rng, NULL));
+    GFL_HeapFree(table);
 }
 #endif

@@ -1,0 +1,16 @@
+{
+  "$schema": "condition.schema.json#/$defs/rule_set",
+  "description": "The debug menu's sample rules (Conditions in the START menu): each one's match is shown, then the pick by priority and weight with a check seed and with the load seed",
+  "share": 100,
+  "rules": [
+    { "name": "Night", "when": { "time": [ "night", "late_night" ] }, "priority": 1 },
+    { "name": "Rain", "when": { "weather": [ "WEATHER_RAIN", "WEATHER_THUNDERSTORM", "WEATHER_GUSTY_RAIN" ] }, "priority": 1 },
+    { "name": "Spring or summer", "when": { "season": [ "spring", "summer" ] }, "priority": 1 },
+    { "name": "Castelia", "when": { "zone_group": [ "castelia" ] }, "priority": 1 },
+    { "name": "Lead Lv 20+", "when": { "level": { "min": 20 } }, "priority": 1 },
+    { "name": "Always shiny on", "when": { "flags": { "set": [ "EVENT_FLAG_DEBUG_ALWAYS_SHINY" ] } }, "priority": 1 },
+    { "name": "Zone loads 10+", "when": { "vars": [ { "var": "EVENT_WORK_ZONE_LOAD_COUNTER", "op": ">=", "value": 10 } ] }, "priority": 1 },
+    { "name": "Grass outdoors", "when": { "terrain": [ "grass", "dark_grass" ], "exterior": true }, "priority": 1, "weight": 3 },
+    { "name": "Default", "when": {} }
+  ]
+}

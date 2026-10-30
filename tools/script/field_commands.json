@@ -5393,6 +5393,24 @@
    "area": "TrainerCard"
   },
   "755": {
+   "handler": "Scrcmd_PaperWhite2_GetPartyLevel",
+   "overlay": 12,
+   "args": [
+    "any",
+    "var"
+   ],
+   "hack": "the conditions': puts a PARTY_LEVEL_* of the party (the median, the adjusted median that wild Pokémon scale to, or the wild range's ends; paperwhite2/condition_script.h) in a variable (include/paperwhite2/condition_commands.h)"
+  },
+  "756": {
+   "handler": "Scrcmd_PaperWhite2_CheckCondition",
+   "overlay": 12,
+   "args": [
+    "any",
+    "var"
+   ],
+   "hack": "the conditions': puts 1 in a variable if the condition (a SCRIPT_CONDITION_* of paperwhite2/script_conditions.h, from res/paperwhite2/conditions/script_conditions.json) holds now, else 0 (include/paperwhite2/condition_commands.h)"
+  },
+  "757": {
    "handler": "Scrcmd_PaperWhite2_Debug",
    "overlay": 12,
    "args": [

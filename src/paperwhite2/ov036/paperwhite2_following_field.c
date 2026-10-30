@@ -181,6 +181,9 @@ static u16 sTerrainZone;
 // The shade under the follower, which ActorTerrainEffect_Shadow gives an NPC. That pass never runs for this actor, so
 // the terrain update reads the same flag once a tile
 static u8 sShaded;
+// The tile under the follower that the terrain update read last, TILE_TYPE_NONE when it isn't out (the conditions'
+// terrain, PaperWhite2_FollowingGetTile)
+static u32 sTerrainTile = TILE_TYPE_NONE;
 // The last zone of the player whose trail samples share the current frame of coordinates. A seamless connection that
 // jumps more than a tile translates the trail instead of clearing it
 static u16 sTrailZone;
@@ -2443,6 +2446,7 @@ static void UpdateTerrain(void) {
     if (!IsOwned()) {
         sTerrainActor = NULL;
         sShaded = FALSE;
+        sTerrainTile = TILE_TYPE_NONE;
         return;
     }
     actor = sFollower.actor;
@@ -2452,6 +2456,7 @@ static void UpdateTerrain(void) {
         }
         sTerrainActor = NULL;
         sShaded = FALSE;
+        sTerrainTile = TILE_TYPE_NONE;
         return;
     }
     // The actor's field effects, as the actors' own grass reads them (FldAct_GetFieldEffects). The tile's query is
@@ -2472,6 +2477,7 @@ static void UpdateTerrain(void) {
     tile = 0;
     found = GetTileTypeAtPosByActor(actor, &center, &tile);
     sShaded = found && tile != TILE_TYPE_NONE && (GetTileFlags(tile) & TILE_FLAG_SHADE);
+    sTerrainTile = found ? tile : TILE_TYPE_NONE;
     sTerrainActor = actor;
     sTerrainEffects = effects;
     sTerrainX = actor->gPos.x;
@@ -2691,6 +2697,13 @@ GameEvent *PaperWhite2_FollowingGridEvent(GameSystem *gsys, Field *field, GameEv
 
 GameEvent *PaperWhite2_FollowingRailEvent(GameSystem *gsys, Field *field, GameEvent *event) {
     return event != NULL ? event : TryTalk(gsys, field);
+}
+
+u32 PaperWhite2_FollowingGetTile(void) {
+    if (!sFollower.hasSelection || sFollower.state == FOLLOWING_STATE_ABSENT) {
+        return TILE_TYPE_NONE;
+    }
+    return sTerrainTile;
 }
 
 u16 PaperWhite2_FollowingGetSpecies(void) {

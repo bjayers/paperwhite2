@@ -679,3 +679,42 @@ The user's answers to section 9:
 - **Zone groups:** the game's own parent groups first; custom named groups in the editor later.
 - **Moving NPCs:** if no better method turns up, a variant can move an NPC (as the Virbank birds do), so one NPC
   covers several positions.
+
+## 11. As built (phase 1, 2026-10-30)
+
+The engine, its script commands and the debug readout are built (plugins.md, Conditions); no consumer uses them yet,
+and the spawn system is an empty placeholder (`include/paperwhite2/spawns.h`). Where the build differs from the
+sections above:
+
+- **Files.** The compiler is `tools/paperwhite2/conditions.py` as planned; the C is three files, not one: the matcher
+  and selection (`src/paperwhite2/main/paperwhite2_conditions.c`, which reads only the context and the table, so the
+  host test compiles it unchanged), the fills (`.../main/paperwhite2_conditions_context.c`) and the field part
+  (`src/paperwhite2/ov036/paperwhite2_conditions_field.c`).
+- **Kinds.** `CONDITION_ZONE_GROUP` is gone: a zone group compiles to its zones' sorted list, so zone lists and groups
+  are one `CONDITION_KIND_ZONE` with `CONDITION_OP_IN_LIST`, at global and per-zone tables alike. Added:
+  `SCALED_LEVEL` (the adjusted median's range), `FOLLOWER` (the follower's species, or any). Variables also take `>`
+  and `<`. The ops are one enum (`EQ` to `LT`, `IN_LIST`, `ANY`, `RANGE`, `MASK`, `SET`, `UNSET`).
+- **The table** has a 12-byte header with its share and size, u16 offsets for the rules and then the lists, and a
+  rule's payload runs to the next offset; the lists are shared between rules. `Conditions_Match(clauses, count, ...)`
+  became `Conditions_MatchRule(table, index, ...)`, since a list clause needs its table.
+- **Selection:** the lowest priority that matches is always picked from, whatever the share, so a share below 100
+  never leaves a check with nothing when a default matches.
+- **Unfilled parts** fail without an assert under `PAPERWHITE2_DEBUG_MENU`: an assert's error screen would stop the
+  game for a data mistake, and the readout shows what is filled.
+- **The random state** is a u32 LCG whose output is mixed by `Conditions_Hash`, since neighboring seeds (consecutive
+  zone loads) gave neighboring draws from a plain LCG.
+- **The day seed** mixes the zone: `Conditions_Hash(dayNumber, zone)`; the load seed is
+  `Conditions_Hash(zoneLoadCounter, zone)`, and a pick's start is `Conditions_Hash(seed, key)`.
+- **The zone-load counter** is `EVENT_WORK_ZONE_LOAD_COUNTER` (0x4051), surveyed by a new sibling of `flag_usage.py`,
+  `tools/paperwhite2/var_usage.py`, rather than an extension of it.
+- **Terrain:** 18 groups (indoor and outdoor are two), the class table a list of 51 (class, groups) pairs, not 256
+  bytes; the follower's tile is the one its terrain update last read (`PaperWhite2_FollowingGetTile`, grid maps).
+- **The tables' place:** members 2 (the debug samples) and 3 (the scripts' conditions) of the weather calendar's
+  archive, `a/0/9/6`, added by the hack's build only (`HACK_ARCHIVE_MEMBERS` in `configure.py`).
+- **Script commands:** not one `PaperWhite2ConditionsInfo` at 0x2f4 but `GetPartyLevel` (0x2f3) and `CheckCondition`
+  (0x2f4) in every hack build, and `Debug` moved to 0x2f5; the readout is the debug menu's Conditions entry with four
+  `Debug` actions. `CheckCondition` tests the rules of `script_conditions.json` by their generated IDs.
+- **Level scaling** (§10's adjusted median): `res/paperwhite2/level_scaling.json`, `median * 80 / 100 + 0` within
+  2-100, wild levels within 5 of it (a median of 50 gives 40, wild 35-45).
+- **The lead** is party slot 0 as decided; an Egg there leaves the subject unfilled (its clauses fail).
+- **Cost:** about 4.8 KB of the arena, of which about 1.5 KB is the debug readout (plugins.md, Conditions).

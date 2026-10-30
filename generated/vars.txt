@@ -80,7 +80,9 @@ EVENT_WORK_0x404d
 EVENT_WORK_0x404e
 EVENT_WORK_0x404f
 EVENT_WORK_SEASON_SETTING
-EVENT_WORK_0x4051
+# Paper White 2: the zone loads counted for the conditions' load seed, bumped at every zone init (0x4051-0x406f were
+# unused, tools/paperwhite2/var_usage.py; docs/paperwhite2/plugins.md, Conditions)
+EVENT_WORK_ZONE_LOAD_COUNTER
 EVENT_WORK_0x4052
 EVENT_WORK_0x4053
 EVENT_WORK_0x4054
