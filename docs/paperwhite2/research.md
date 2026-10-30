@@ -118,3 +118,31 @@ accounted C sites and tables is hand-made from the code at this date: a new data
 as unresolved, but a new table holding flags only does once it is listed. The archives are read from
 `extract/w2_us`, the original game's; if the hack replaces one, the tool must read the replacement. Code outside
 src/ and lib/ (none known: every file is decompiled) isn't read.
+
+## Shiny palette system (2026-10-29)
+
+- **Battle sprites:** one choke point, `GetPokemonPaletteDataNo` (`src/system/pokegra.c`), picks file 18 (normal)
+  or 19 (shiny) per species, or the form palette pairs from `POKEGRA_FORM_PALETTES`; about 15 callers.
+- **Followers:** a sprite is one texture set with its palette inside, but texels and palette are uploaded separately
+  (`BillboardActorSys_TransferFace` / `TransferPltt`, `src/gfl/billboard_act.c`), and materials are cached per object
+  code. A shiny code can share the normal code's sheet (`"sprite": "<normal code>"`, which 1113 of the 1287 shiny
+  codes already do, showing normal colours) and get its palette patched in `FldBillboardActor_LoadMaterial`
+  (`src/ov036/field_actor_billboard.c`) from a table keyed by object code. Unverified: the palette survives
+  `BillboardActorScene_TrimMatTex`. Dropping the 174 own shiny sheets saves 870,408 bytes (a/0/4/8: 1323 → 1149
+  members); the palette table costs about 41 KB.
+- **Icons:** three shared banks (`sPokeIconPalettes`); a shiny icon needs its own OBJ palette slot (16 per engine),
+  so the box needs a slot cache with a normal-palette fallback. `PokeIcon_GetPalette` takes no shiny argument.
+- **Derived palettes:** the nearest-colour shift rule (follower/icon colour → nearest battle-normal colour → add
+  shiny − normal) has a median error of about 22 RGB units against Pokeweb's shiny palettes (46 for doing nothing);
+  it looks right for zekrom, braviary, chandelure, victini, archeops, scolipede, reshiram, serperior and emolga, and
+  drifts where the follower's colours are far from the battle ones (haxorus). Form-specific battle palettes aren't
+  handled yet. Recommended: derived by default, hand overrides per graphic and variant; perhaps a quarter of the
+  pairs need one. Scripts in the scratchpad's `research3/` (`gen.py`, `rend.py`).
+- **Variants:** PID bits 8–15 are free and random (bit 16 is the ability slot, the low byte gender and Spinda, the
+  high half Wurmple, the shiny check XORs the halves), and the Shiny Candy keeps them: `variant = ((pid >> 8) & 0xff)
+  % N` needs no storage and works for existing saves, but can't be chosen by an event. Stored alternatives, written
+  nowhere outside `poke_tool.c`'s generic accessors: `PkmBlockB.unk1C` (`PKM_PARAM_UNK72`, u32), `PkmBlockC.unk16`,
+  `PkmBlockD.unk1D`/`unk1E`, `BoxPkm.unk4_3`; unverified against Poké Transfer and Mystery Gift Pokémon.
+- **Proposed format:** per species and form, `res/pokemon/<sp>/[form_N/]shiny.json` listing the variants (variant 0
+  = today's `shiny.pal`), with optional `shiny_follower.pal` / `shiny_icon.pal` overrides; the build generates the
+  rest. Estimates: battle 1–2 days, followers 1–2, icons 3–5 (party, box, battle party first), build and overrides 1–2.
