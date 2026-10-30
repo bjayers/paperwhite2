@@ -272,3 +272,46 @@ codes enforced by the engine and the editor. Later come the visual-only billboar
 - The texture VRAM free in the busiest maps, before raising the material counts or adding many distinct ambient
   species.
 - Whether the 64-actor overflow freezes or corrupts silently (phase 0, step 4).
+
+## 8. The planned spawn system (the user's idea, 2026-10-30)
+
+Not built yet; the details are for later. This records the idea and the feasibility answer, so the encounter work
+keeps what it needs.
+
+**The idea.** In the map and NPC editor, the user makes an NPC once and gives it **instances**: each one where the
+NPC may appear and when (any conditions-engine rule, so "spring and summer" is one rule, not one NPC per flag range
+of 10852), with its own sprite (fixed, or taken from the area's current encounters, so one NPC serves for several
+birds), movement code, direction, script, event type and so on. No predefined spawn flags. One NPC can have many
+instances, but it is on one tile at a time.
+
+**Feasible: yes**, as phase 3 (D) grown to replace slot records:
+
+- **Storage:** the instances are in an archive of their own, read at zone entry into memory the hack allocates, so
+  they cost nothing of the 2436-byte events buffer and their count has no practical cap.
+- **Selection:** at zone entry the engine evaluates the zone's instances and picks at most one per NPC: the
+  instances are alternatives, which gives "one tile at a time". Picks come from the engine's seeds, so the same day,
+  period and zone give the same result. A day-keyed pick across zones also allows an NPC that is in one town of
+  several each day, with no saved state.
+- **Creation:** a live actor from a `ZoneNPC` built in C, as the follower is (`CreateNewActorByParam`, after checking
+  the actor pool and the heap). The actor keeps its own script ID (`FieldActor.scrId`, verified), so talking works
+  as for a placed NPC. A period change swaps or removes actors off-screen; save and continue restore them like any
+  actor, with a reserved uid range.
+- **Fields:** conditions; position and direction (grid now; rails need the rail position, as the follower has);
+  movement code and range; script and event type; trainers (their defeat is already tracked by trainer); a fixed
+  sprite, or one from the zone's current encounters filtered by a tag or type, through the follower sprites.
+- **Flags:** none for appearing. Lasting state (an NPC gone for good, a one-time gift) still needs a saved flag; the
+  build should assign it from a free range, so the editor only asks "disappears once done".
+
+**Constraints for the editor's budget checker** (the user expects never to need many NPCs on screen at once, but
+wants a validator in the map/NPC editor):
+
+- 64 live actors at once: the player, the follower, placed, script-added and spawned NPCs (§3).
+- 32 distinct sprite codes and 64 texture materials at once; each distinct species from the encounters is one. The
+  engine needs a per-zone cap on distinct codes, and the texture VRAM of the busiest maps is still unmeasured (§7).
+- Two NPCs picking one tile: the engine reserves tiles as it picks, and the editor warns.
+- Converted 10852 NPCs: the `ObjInitNPCGPos` record indices in scripts (§5 C). New NPCs don't use them.
+
+**For the encounter work:** "a sprite from the current encounters" reads the new encounter data by zone, season and
+time, so each encounter entry should be easy to query by species, type and tag.
+
+Still worth doing first: phase 0's padding test and phase 1's guard (§6), for the placed NPCs.
