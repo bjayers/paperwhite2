@@ -62,5 +62,7 @@ GameEvent *PaperWhite2_FollowingRailEvent(GameSystem *gsys, Field *field, GameEv
 BOOL FollowingField_IsShaded(void);
 // Whether this frame is the first that draws the follower's body, which the effects wait out
 BOOL FollowingField_IsFirstBody(void);
+// The species of the Pokémon that follows the player, or 0 with none (the debug menu's Info)
+u16 PaperWhite2_FollowingGetSpecies(void);
 
 #endif // PAPERWHITE2_FOLLOWING_FIELD_H

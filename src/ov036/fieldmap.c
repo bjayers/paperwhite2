@@ -93,6 +93,9 @@
 #ifdef PAPERWHITE2
 #include "paperwhite2/field.h"
 #include "paperwhite2/following_field.h"
+#ifdef PAPERWHITE2_DEBUG_MENU
+#include "paperwhite2/debug.h"
+#endif
 #endif
 
 // What a field routine returns: run on, with the other of its pair next frame; go on to the next routine; or end the
@@ -391,7 +394,12 @@ u32 FieldRoutine_MapLoad(GameSystem *gsys, Field *field) {
                                  GetZoneStaticLightDataIndex(field->zoneId), TRUE);
         {
             u32 lightsId = AreaData_GetLightsID(field->areaData);
+#ifdef PAPERWHITE2_DEBUG_MENU
+            // Paper White 2: the lights of the debug menu's time of day override
+            u32 daySeconds = PaperWhite2_Debug_GetDaySeconds(GameSystem_GetSeason(gsys), RTC_ConvertDaySecondsCached());
+#else
             u32 daySeconds = RTC_ConvertDaySecondsCached();
+#endif
 
             field->lightSystem = FieldLight_Create(lightsId, daySeconds, GameSystem_GetSeason(gsys), field->fog,
                                                    field->g3dLights, field->heapId);
@@ -984,7 +992,13 @@ void FieldG3D_Update(Field *field) {
     FieldWeather_Update(field->weatherSystem, HEAPID_FIELD_WEATHER);
     FieldLensFlare_Update(field->lensFlare, field->cameraSystem);
     FieldFog_Update(field->fog);
+#ifdef PAPERWHITE2_DEBUG_MENU
+    // Paper White 2: the lights of the debug menu's time of day override
+    FieldLight_Update(field->lightSystem, PaperWhite2_Debug_GetDaySeconds(GameData_GetSeason(field->gameData),
+                                                                          RTC_ConvertDaySecondsCached()));
+#else
     FieldLight_Update(field->lightSystem, RTC_ConvertDaySecondsCached());
+#endif
     MI_SetMainMemoryPriority(MI_PROCESSOR_ARM9);
     loading = FieldG3DMapper_Update(field->g3DMapper);
     MI_SetMainMemoryPriority(MI_PROCESSOR_ARM7);

@@ -92,8 +92,8 @@
 #define SCRID_REPEL_ANOTHER 0x27a0
 #define SCRID_REPEL_WORN_OFF 0x2792
 #ifdef PAPERWHITE2_DEBUG_MENU
-// Paper White 2: the debug menu, Script_17 of res/field/scripts/global_10130.s
-#define SCRID_PAPERWHITE2_DEBUG_MENU 10146
+// Paper White 2: the debug menu, Script_2 of res/field/scripts/global_10200.s
+#define SCRID_PAPERWHITE2_DEBUG_MENU 10201
 #endif
 // What the player reads with A in front of a PC, a TV, the bookcases, the trash cans, the shelves of odds and ends
 // and a vending machine

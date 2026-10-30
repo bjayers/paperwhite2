@@ -11,6 +11,9 @@
 // Makes the list's Pokémon shiny and says so, or says that it won't have any effect on an egg or a shiny one.
 // Returns whether the candy was used, which the caller takes from the bag
 BOOL PaperWhite2_UseShinyCandy(PokeListWork *wk);
+// A shiny PID for the trainer ID that keeps the low 18 bits of the old PID, so the sex, the nature, the ability slot,
+// the box data's block order and the side that Wurmple evolves to stay (src/paperwhite2/main/paperwhite2_shiny_pid.c)
+u32 PaperWhite2_MakeShinyPID(u32 id, u32 pid);
 
 // A wild shiny Pokémon that the player defeats drops a Shiny Candy this often, in percent, and so does a shiny
 // Pokémon that the player releases from the PC (src/paperwhite2/ov012/paperwhite2_shiny_candy_drop.c, from the wild

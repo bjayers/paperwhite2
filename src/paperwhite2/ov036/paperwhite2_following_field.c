@@ -2692,3 +2692,10 @@ GameEvent *PaperWhite2_FollowingGridEvent(GameSystem *gsys, Field *field, GameEv
 GameEvent *PaperWhite2_FollowingRailEvent(GameSystem *gsys, Field *field, GameEvent *event) {
     return event != NULL ? event : TryTalk(gsys, field);
 }
+
+u16 PaperWhite2_FollowingGetSpecies(void) {
+    if (!sFollower.hasSelection || sFollower.state == FOLLOWING_STATE_ABSENT) {
+        return 0;
+    }
+    return sFollower.selected.species;
+}

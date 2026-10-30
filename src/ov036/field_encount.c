@@ -29,6 +29,12 @@
 #include "system/game_system.h"
 #include "system/zone_weather.h"
 
+#ifdef PAPERWHITE2_DEBUG_MENU
+#include "constants/flags.h"
+#include "paperwhite2/debug.h"
+#include "save/event_work.h"
+#endif
+
 static int FieldEncount_DecideTypeByTerrain(u32 tileType, u32 mode);
 static const EncountRateConfig *EncSys_GetEncountRateConfig(EncountSystem *system, int encType);
 static BOOL EncSys_CheckRNGEncounter(EncountSystem *system, EncountState *state, u32 rate, int encType);
@@ -119,6 +125,12 @@ GameEvent *EventWildBattleCall_CreateRandom(EncountSystem *system, u32 mode) {
     if (!EncSys_IsActive(system, 1)) {
         return NULL;
     }
+#ifdef PAPERWHITE2_DEBUG_MENU
+    // Paper White 2: the debug menu's No wild encounters stops the step's roll; Sweet Scent still calls one
+    if (!forced && EventWork_FlagGet(GameData_GetEventWork(system->gameData), EVENT_FLAG_DEBUG_NO_WILD_ENCOUNTERS)) {
+        return NULL;
+    }
+#endif
     encType = FieldEncount_DecideTypeByTerrain(FieldPlayer_GetTileTypeUnder(player), mode);
     if (encType >= ENCTYPE_MAX || system->encData->userData[encType] == 0) {
         return NULL;
@@ -152,6 +164,10 @@ GameEvent *EventWildBattleCall_CreateRandom(EncountSystem *system, u32 mode) {
         if (count == 0) {
             return NULL;
         }
+#ifdef PAPERWHITE2_DEBUG_MENU
+        // Paper White 2: the debug menu's Force species and Wild level
+        PaperWhite2_Debug_OverrideWilds(params, count);
+#endif
         if (manager.doubleBattle && count == 1) {
             if (manager.pairActive) {
                 return NULL;

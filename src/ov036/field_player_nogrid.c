@@ -22,6 +22,14 @@
 #include "system/game_data.h"
 #include "system/game_system.h"
 
+#ifdef PAPERWHITE2_DEBUG_MENU
+#include "paperwhite2/debug.h"
+
+// Paper White 2: the rail's collision bit for a step off the rail's ends (RailActor_CheckCollision,
+// field_actor_rail.c), which the debug menu's Walk through walls keeps
+#define RAIL_COLL_OUT_OF_BOUNDS 1
+#endif
+
 // What the player is doing, which the next command depends on
 enum {
     NOGRID_STATE_IDLE,
@@ -379,7 +387,13 @@ static void FieldPlayerRail_UpdateFlagsAfterCheck(FieldPlayerNoGrid *nogrid, u32
 }
 
 static u32 FieldPlayerRail_GetHitBits(FieldPlayerNoGrid *nogrid, FieldActor *actor, u16 dir, u32 *tileType) {
+#ifdef PAPERWHITE2_DEBUG_MENU
+    // Paper White 2: the debug menu's Walk through walls, which leaves only the rail's ends
+    return PaperWhite2_Debug_FilterPlayerHit(GSYS_GetGameData(Field_GetGameSystem(nogrid->field)),
+                                             RailActor_GetHitBitsDir(actor, dir, tileType), RAIL_COLL_OUT_OF_BOUNDS);
+#else
     return RailActor_GetHitBitsDir(actor, dir, tileType);
+#endif
 }
 
 static void FieldPlayerRail_UpdateSpin(FieldPlayerNoGrid *nogrid) {

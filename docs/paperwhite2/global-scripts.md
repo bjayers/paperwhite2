@@ -27,8 +27,8 @@ and original file names are the user's reference list of Gen 5's global scripts.
 | 10100-10104 | `res/field/scripts/global_10100.s` | 1245 | `wifi_club_scr.ev` | Wi-Fi club/Pal pad actor scripts | 10100 (1) | 10101 | 4 |
 | 10105-10109 | `res/field/scripts/global_10105.s` | 1246 | `global_terminal_scr.ev` | Global Terminal - GTS/online scripts | 10105 (1) | 10106 | 4 |
 | 10110-10119 | `res/field/scripts/global_10110.s` | 1247 | `shop_scr.ev` | Regular and BP shops | 10110 (1) | 10111 | 9 |
-| 10130-10149 | `res/field/scripts/global_10130.s` | 1248 | `field_event.ev` | Basic field events - repel, fishing, entralink warp | 10130-10146 (17) | 10147 | 3 |
-| 10200-10249 | `res/field/scripts/global_10200.s` | 1249 | `dummy.ev` | Dummy script | 10200 (1) | 10201 | 49 |
+| 10130-10149 | `res/field/scripts/global_10130.s` | 1248 | `field_event.ev` | Basic field events - repel, fishing, entralink warp | 10130-10145 (16) | 10146 | 4 |
+| 10200-10249 | `res/field/scripts/global_10200.s` | 1249 | `dummy.ev` | Dummy script | 10200-10201 (2) | 10202 | 48 |
 | 10250-10259 | `res/field/scripts/global_10250.s` | 1250 | `blank.ev` | Dummy script | 10250 (1) | 10251 | 9 |
 | 10260-10269 | `res/field/scripts/global_10260.s` | 1251 | `competition_check.ev` | Tournament eligibility checking | 10260-10261 (2) | 10262 | 8 |
 | 10270-10279 | `res/field/scripts/global_10270.s` | 1252 | `deox_change_scr.ev` | Deoxys forme change system | 10270 (1) | 10271 | 9 |
@@ -83,7 +83,7 @@ changed without adding entries isn't listed.
 | 9603 | `res/field/scripts/global_9600.s` | Script_4 | The new game's starting flags, the original's subroutine of scripts 9600 and 9602 given an entry by the hack's data; nothing starts it by its ID |
 | 9604 | `res/field/scripts/global_9600.s` | Script_5 | The survey's answers by the version and the player's sex, the original's subroutine of script 9600 given an entry by the hack's data; nothing starts it by its ID |
 | 9605 | `res/field/scripts/global_9600.s` | Script_6 | The flags and work reset after the Hall of Fame, the original's subroutine of script 9601 given an entry by the hack's data; nothing starts it by its ID |
-| 10146 | `res/field/scripts/global_10130.s` | Script_17 | The debug menu that START opens in the field (`SCRID_PAPERWHITE2_DEBUG_MENU`, src/ov036/fieldmap_event.c), under PAPERWHITE2_DEBUG_MENU |
+| 10201 | `res/field/scripts/global_10200.s` | Script_2 | The debug menu that START opens in the field (`SCRID_PAPERWHITE2_DEBUG_MENU`, src/ov036/fieldmap_event.c), with its submenus as labeled blocks, under PAPERWHITE2_DEBUG_MENU |
 | 10851 | `res/field/scripts/global_10850.s` | Script_2 | The user's: the Pokémon Center lottery girl's daily gift, a random item by chance tiers (`EVENT_FLAG_DAILY_0x0af0`), from the Centers' events |
 | 10852 | `res/field/scripts/global_10850.s` | Script_3 | The user's: the seasonal NPC spawns, a map script that hides flags 500-599's NPCs and shows a random few of the current season's |
 | 10853 | `res/field/scripts/global_10850.s` | Script_4 | The user's: gives a random item, 0x8011 plus a random number below 0x8010, through script 2805; 0x8012 is whether the bag had no room (Aspertia City, Route 20) |

@@ -22,6 +22,10 @@
 #include "system/game_system.h"
 #include "system/season.h"
 
+#ifdef PAPERWHITE2_DEBUG_MENU
+#include "paperwhite2/debug.h"
+#endif
+
 // The field player's movement on the grid: each frame the held direction and the tile ahead decide a command, by
 // whether the player walks, cycles or surfs, and the command sets the actor's next animation command
 
@@ -1260,7 +1264,13 @@ static u32 PlayerMoveCollCheck(FieldPlayerGrid *grid, FieldActor *actor, u16 dir
         IsSavedStrengthRockAtPos(GetActorMModelSystem(actor), &pos) == TRUE) {
         hit &= ~2;
     }
+#ifdef PAPERWHITE2_DEBUG_MENU
+    // Paper White 2: the debug menu's Walk through walls, which leaves only the map's edge (ACTOR_COLL_OUT_OF_BOUNDS)
+    return PaperWhite2_Debug_FilterPlayerHit(GSYS_GetGameData(Field_GetGameSystem(grid->field)), hit,
+                                             ACTOR_COLL_OUT_OF_BOUNDS);
+#else
     return hit;
+#endif
 }
 
 static void FieldPlayerGrid_SetFlag(FieldPlayerGrid *grid, u32 flag) {

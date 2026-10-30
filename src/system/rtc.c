@@ -3,6 +3,10 @@
 #include "nitro/rtc.h"
 #include "system/season.h"
 
+#ifdef PAPERWHITE2_DEBUG_MENU
+#include "paperwhite2/debug.h"
+#endif
+
 // The periods of the day, which start at different hours in each season. The file's name is a guess, after swan's
 // header. Function names from swan (https://github.com/ds-pokemon-hacking/swan, GPL-3.0), except IsDayPeriodNight
 
@@ -60,7 +64,12 @@ u16 GetRealTimeDayPeriod(int season) {
     RTCTime time;
 
     RTC_GetCachedTime(&time);
+#ifdef PAPERWHITE2_DEBUG_MENU
+    // Paper White 2: the debug menu's time of day override, in place of the clock's period
+    return PaperWhite2_Debug_GetDayPeriod(GetDayPeriod(season, time.hour));
+#else
     return GetDayPeriod(season, time.hour);
+#endif
 }
 
 u16 GetDayPeriod(int season, u32 hour) {

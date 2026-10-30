@@ -3034,8 +3034,9 @@ EVENT_FLAG_HIDDEN_ITEM_211
 EVENT_FLAG_HIDDEN_ITEM_212
 # Paper White 2: the debug menu's Always shiny, in the debug toggles' block 0xbd9-0xbf7 (docs/paperwhite2/plugins.md)
 EVENT_FLAG_DEBUG_ALWAYS_SHINY
-EVENT_FLAG_HIDDEN_ITEM_214
-EVENT_FLAG_HIDDEN_ITEM_215
+# Paper White 2: the debug menu's No wild encounters (0xbda) and Walk through walls (0xbdb), in the debug toggles' block
+EVENT_FLAG_DEBUG_NO_WILD_ENCOUNTERS
+EVENT_FLAG_DEBUG_WALK_THROUGH_WALLS
 EVENT_FLAG_HIDDEN_ITEM_216
 EVENT_FLAG_HIDDEN_ITEM_217
 EVENT_FLAG_HIDDEN_ITEM_218

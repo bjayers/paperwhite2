@@ -190,44 +190,166 @@ the stat calculation (`PokeParty_RecalcStats`) and Hidden Power read.
 ### Debug menu
 
 `PAPERWHITE2_DEBUG_MENU`, defined in every hack build for now (`configure.py`, beside `PAPERWHITE2`): START in the
-field, on grid maps and rails, starts `Script_17` of `res/field/scripts/global_10130.s` (script 10146,
-`SCRID_PAPERWHITE2_DEBUG_MENU` in `src/ov036/fieldmap_event.c`), where the original's field doesn't use START. Every
-menu is a labeled block of that one script, so the submenus take no script IDs:
+field, on grid maps and rails, starts `Script_2` of `res/field/scripts/global_10200.s` (script 10201,
+`SCRID_PAPERWHITE2_DEBUG_MENU` in `src/ov036/fieldmap_event.c`), where the original's field doesn't use START. That
+file is the original's `dummy.ev`, whose range 10200-10249 (`GLOBAL_SCRIPT_TABLE`) held only its empty Script_1, which
+no script, zone or code starts; the menu moved there from `field_event.ev` (`global_10130.s`), which had 3 IDs left and
+is back to the original's. Its text is the end of `global_10200.txt`, the file's own bank: a new bank would be a new
+member of the script text archive and a line in `generated/script_text_banks.txt`, which the matching build packs
+too. Every menu is a labeled block of the one script, so the submenus take no script IDs:
 
 ```
-DEBUG                       L_DebugMenu
-  Always shiny: ON/OFF        toggles EVENT_FLAG_DEBUG_ALWAYS_SHINY
-  Party...                    L_DebugParty
-    Set EVs...                  L_DebugSetEVs: the stats (HP, Attack, Defense, Sp. Atk, Sp. Def, Speed) and Back
-      <stat>                      L_DebugEV<Stat>, then L_DebugEVValues: 0, 128, 252 and Back
-    Back
+DEBUG                           L_DebugMenu
+  Party...                        L_DebugParty: "Target: <species> (slot n)"
+    Next target                     the party's next Pokémon, after the last the first
+    Set EVs...                      the six stats, then 0 / 128 / 252 (the 510 total isn't enforced)
+    Set IVs...                      the six stats and All, then 0 / 15 / 31
+    Set level...                    number: the level's first experience, then the stats; the moves stay
+    Nature...                       number (0-24), with the nature's name
+    Make shiny                      the Shiny Candy's PID (PaperWhite2_MakeShinyPID); not an Egg or a shiny one
+    Friendship...                   0 / 70 / 255
+    Heal party                      PokeParty_RecoverAll, as a Center
+    Give Pokémon...                 number: species, then level; to the party, or the PC when it is full
+  Items...
+    Give item...                    number: item (with its name), then how many (1-999)
+    Give key items                  the safe ones (below), each the Bag doesn't have
+  World...
+    Time: <Off|period>              Off / Morning / Day / Evening / Night / Late night
+    Season: <Off|mode>              Off / Spring / Summer / Autumn / Winter
+    Weather: <Off|weather>          Off / Clear ... Diamond dust (WEATHER_SUNNY to WEATHER_DIAMOND_DUST)
+    Flag get/set...                 number (1-0xbf7), then its state with Set / Clear
+    Variable get/set...             number (0x4000-0x41ae), then its value with Change value...
+  Encounters...
+    Always shiny: ON/OFF            EVENT_FLAG_DEBUG_ALWAYS_SHINY
+    No wild encounters: ON/OFF      EVENT_FLAG_DEBUG_NO_WILD_ENCOUNTERS
+    Force species: <Off|species>    number, 0 for Off
+    Wild level: <Off|level>         number, 0 for Off
+  Player...
+    Warp to last Pokémon Center     the town of the last Center used, at its fly spot, as Teleport
+    Warp to zone...                 number (0-614, with its place name), at the zone's fly spot
+    Walk through walls: ON/OFF      EVENT_FLAG_DEBUG_WALK_THROUGH_WALLS
+    Money...                        Set money... (number, 0-9999999) / +100000
+  Info                            zone and place, x/y/z (or the rail's line, front and side), season and mode,
+                                  time of day, weather, follower
   Close
 ```
 
 A block shows its list, compares the result in 0x8020 with its entries and jumps to each one's block; B, Back and
-anything else go back to the menu above it. Picking a toggle flips it and shows the list again. Picking an EV value
-sets it on the party's first Pokémon with `PokePartySetEV`, which recalculates its stats, says "Set {stat} EVs to
-{value}." and shows the stat list again, its cursor on that stat. The 510 total isn't enforced, so a Pokémon can be
-put over it to test that. To add a toggle: a `DEBUG_ENTRY_*` value, its `VMCall` in the list, its `WorkCmpConst`
-after it, and an `L_DebugAdd*`/`L_DebugToggle*` pair, with its ON and OFF texts at the end of
-`res/text/script/global_10130.txt`. To add a submenu: a `DEBUG_ENTRY_*` value, its `ListMenuAdd` and `WorkCmpConst`
-in the list above it, and its block. Removing the define from `configure.py` removes the menu, the toggles' code and
-the hack's script commands; the text stays.
+anything else go back to the menu above it (B on the top menu closes it). A list entry's label is formatted with the
+script's words like a message, so a block runs a `..._WORDS` action before its list to put each entry's state in them
+("Always shiny: ON", "Time: Evening"). A toggle flips its flag and shows its list again, with the new state. The
+script's work variables are listed at the top of its Script_2.
 
-The hack's script commands follow the original's last, 0x2f2, in `EVCMD_TABLE` (`src/ov012/scrcmd_vm.c`), each with
-its row in `EVCMD_PERM_TABLE` (`src/ov012/script_sys.c`), both under `PAPERWHITE2_DEBUG_MENU`. Their entries in
-`tools/script/field_commands.json` have a `"hack"` key, which `field_command_table.py` keeps when it writes the table
-again from the original ROM and `field_script.py inc` writes above the macro. To add one: its handler under
-`src/paperwhite2/`, its declaration in `include/paperwhite2/debug_commands.h`, its rows in both tables, its entry in
-the JSON, then `python3 tools/script/field_script.py inc include/asm/field_script.inc`.
+**One command, many actions.** The menu's work is done by one script command, `Debug action, arg1, arg2, result`
+(0x2f3), which runs the action with the two arguments, each a value or a variable, and puts what it returns in the
+variable result (the script uses 0x8025). So a new option needs a new action, not a new opcode. The actions are
+`#define`s in `include/paperwhite2/debug_actions.h`, not an enum, since the script includes the header too; the handler
+is `Scrcmd_PaperWhite2_Debug` (`src/paperwhite2/ov012/paperwhite2_debug_commands.c`), a switch on the action. The
+EV command that this replaced, `PokePartySetEV slot, param, value`, is now `DEBUG_ACTION_PARTY_SET_EV`. "The target" is
+the party's Pokémon that the Party menu changes, the first until Next target picks another; "the number" is the value
+of the last number entry.
+
+| Action | Arguments | What it does, and what it returns |
+| --- | --- | --- |
+| `FLAG_WORD` (0) | word, flag | ON or OFF in the word; the flag |
+| `FLAG_TOGGLE` (1) | flag | flips it; its new state |
+| `PARTY_WORDS` (2) | | the target's species in word 0, its slot (from 1) in word 1; FALSE without a target |
+| `PARTY_NEXT` (3) | | the next party slot becomes the target |
+| `PARTY_SET_EV` (4) | stat (`DEBUG_STAT_*`), value | the EV, then `PokeParty_RecalcStats`; value in word 2, stat's name in word 3 |
+| `PARTY_SET_IV` (5) | stat or `DEBUG_STAT_ALL`, value | the same for IVs (0-31) |
+| `PARTY_SET_LEVEL` (6) | | the number's level: `setLevel` (the level's first experience, then the stats); moves unchanged |
+| `PARTY_SET_NATURE` (7) | | the number's nature (`PokeParty_SetNature`), then the stats; its name in word 3 |
+| `PARTY_MAKE_SHINY` (8) | | the Shiny Candy's PID (`PaperWhite2_MakeShinyPID`, now in main); `DEBUG_SHINY_DONE`, `_ALREADY` or `_EGG` |
+| `PARTY_SET_FRIENDSHIP` (9) | value | `PKM_PARAM_HAPPINESS`; not on an Egg (whose field is its steps) |
+| `PARTY_HEAL` (10) | | `PokeParty_RecoverAll` |
+| `GIVE_POKEMON` (11) | species | at the number's level, made as `PokePartyAdd` makes one (`addPkmToParty`, else `GameData_AddBoxPkm`); `DEBUG_GIVE_PARTY`, `_BOX` or `_FULL` |
+| `GIVE_ITEM` (12) | item | the number of them, `BagSave_AddItem`; name in word 0, count in word 2; whether it fit |
+| `GIVE_KEY_ITEMS` (13) | | each of `sDebugKeyItems` the Bag lacks; how many, also in word 0 |
+| `WORLD_WORDS` (14) | | the time, season and weather overrides' states in words 0-2 |
+| `SET_DAY_PERIOD` (15) | 0 off, or a `DAY_PERIOD_*` + 1 | the time of day override |
+| `SET_SEASON` (16) | 0 off, or a season + 1 | locks the season mode (`PaperWhite2_SetSeasonMode`), saving the replaced mode; 0 sets it again |
+| `SET_WEATHER` (17) | 0 off, or a `WEATHER_*` + 1 | the weather override, and the field's weather at once (`GetWeatherAll`, `FieldWeather_RequestChange`, `SetNowWeather`) |
+| `FLAG_GET` (18) | | the number's flag in words 0 (decimal) and 1 (hex), ON/OFF in word 2; its state |
+| `FLAG_SET` (19) | set | sets or clears the number's flag |
+| `VAR_GET` (20) | variable | its ID in words 0 and 1, its value in word 2; its value |
+| `VAR_SET` (21) | variable | sets it to the number |
+| `ENCOUNTER_WORDS` (22) | | the species and level overrides' states in words 2 and 3 |
+| `SET_WILD_SPECIES` (23), `SET_WILD_LEVEL` (24) | | the override to the number, 0 for off |
+| `WARP_LAST_CENTER` (25) | | `EventMapChangeTeleport_Create`, chained after the script, which waits a frame and ends |
+| `WARP_ZONE` (26) | | the number's zone at its fly spot (`LoadZoneSpawnInfoCheckRail`, `EventMapChange_CreateForFly`); FALSE, without a warp, for a zone whose fly spot is 0, 0, 0 |
+| `MONEY_SET` (27), `MONEY_ADD_THOUSANDS` (28) | -, thousands | the money to the number, or plus arg1 thousand up to 9,999,999; in word 0 |
+| `INFO` (29) | | the Info message's words 0-9; whether the player is on rails |
+| `NUMBER_BEGIN` (30) | kind (`DEBUG_NUMBER_*`), start | starts a number entry; its first value (below) |
+| `NUMBER_SHOW` (31) | | the number in word 0, its name in word 1, the step in word 2; the kind's message |
+| `NUMBER_ADJUST` (32) | change (`DEBUG_NUMBER_STEP_*`) | plus or minus the step, or the step times or over ten |
+| `NUMBER_GET` (33) | | the number, kept as the kind's last |
+
+**Number entry.** The game has no number input that a script can open: the Bag's and the shops' quantity selectors are
+parts of their apps, and no script command asks for a number. So the menu has its own, `L_DebugNumber`, a subroutine
+that every number uses: after `Debug DEBUG_ACTION_NUMBER_BEGIN, kind, start, 0x8025` it shows the kind's message
+("Species 25: Pikachu", "Zone 427: Aspertia City", "Flag 3033 (0x0bd9): OFF") and a list of +step, -step, Step x10,
+Step /10, Done and Cancel, with the cursor kept on the entry last picked, until Done (0x8024 1, the number in 0x8025)
+or Cancel or B (0x8024 0). The step starts at 1 and stays within the range's largest power of ten; plus or minus stops
+at the range's end, and from the end goes round to the other end. The kinds (`sDebugNumberKinds`) give the range, the
+message and the name: level 1-100, nature 0-24 (its name), species 1-649 (its name), item 1-638 (its name), count
+1-999, flag 1-0xbf7 (its hex and state), variable 0x4000-0x41ae (its hex), value 0-65535, money 0-9999999, zone 0-614
+(its place name), wild species 0-649 and wild level 0-100 (0 shows "(off)"). An entry starts at the target's level or
+nature, the money, the current zone, the override, a variable's value, or else the last number entered of the kind.
+The state lives in overlay 12 (`sDebugNumber`), which stays loaded while the script runs. A two-number option keeps the
+first in 0x8026.
+
+**Overrides and their hooks.** The overrides that hold a value (the time of day, the weather, the wild species and
+level, and the season mode a lock replaced) are RAM in main (`src/paperwhite2/main/paperwhite2_debug.c`,
+`include/paperwhite2/debug.h`), so a reset turns them off; the on/off toggles are flags (below), which the save keeps.
+Each hook is under `PAPERWHITE2_DEBUG_MENU` with the original in `#else`:
+
+| Option | Hook | What changes |
+| --- | --- | --- |
+| Time | `GetRealTimeDayPeriod` (`src/system/rtc.c`, main) | returns the override's period: every caller of the field's time of day (NPCs, encounters, `IsDayPeriodNight`). The save's adventure time (`GameData_GetDayPeriod`, ov012) isn't changed |
+| Time (lights) | the field's two `FieldLight_Update`/`FieldLight_Create` seconds (`src/ov036/fieldmap.c`) | `PaperWhite2_Debug_GetDaySeconds`: half an hour into the period's first hour in the season (`GetLightChangeHoursForSeasons`), so the lights match |
+| Season | none: `PaperWhite2_SetSeasonMode` | a locked mode, as the Season app sets it; the season changes at the next map change into an exterior. Off sets the saved mode again; after a reset there is none to restore, and the lock stays as a normal setting |
+| Weather | `GetWeatherAll` (`src/system/zone_weather.c`, main) | returns the override before every other source, so every zone, indoors too, has it on entry and on a seamless zone change; set from the menu it also changes the field's weather at once |
+| Flag/variable | none | `EventWork_FlagGet/Set/Reset`, `EventWork_GetWkPtr` |
+| Always shiny | `FieldEncount_CreateWildPkm` (`src/ov036/enc_pokeset.c`) | rolls the PID up to `ALWAYS_SHINY_ROLLS` (0x4000) times until it is shiny: grass, surfing, fishing and `EventWildBattleCall_CreateStatic`'s scripted encounters. Gifts, eggs and trainers' Pokémon aren't affected |
+| No wild encounters | `EventWildBattleCall_CreateRandom` (`src/ov036/field_encount.c`) | returns no battle before the step's roll; Sweet Scent and other forced encounters still happen |
+| Force species, wild level | `EventWildBattleCall_CreateRandom`, after `FieldEncount_GenWilds` | `PaperWhite2_Debug_OverrideWilds`: each wild Pokémon's species (with form 0, no item, a random sex and no hidden ability) and level. Roaming Pokémon, N's Pokémon and scripted battles keep theirs |
+| Walk through walls | `PlayerMoveCollCheck` (`src/ov036/field_player_grid.c`) and `FieldPlayerRail_GetHitBits` (`src/ov036/field_player_nogrid.c`) | the player's step only, with every collision bit cleared but the map's edge (`ACTOR_COLL_OUT_OF_BOUNDS`) on grids and the rail's ends (bit 1) on rails; walking, cycling, surfing, sliding and catwalks alike. Other actors still collide |
+| Warp to last Pokémon Center | none: `EventMapChangeTeleport_Create` (ov035) | the respawn index of the last Center (`GetReturnLocationIdx`), its town's fly spot, as Teleport and a blackout use |
+| Warp to zone | none: `EventMapChange_CreateForFly` | the zone's fly spot (`ZoneHeader`'s flyX/Y/Z, the same `LoadZoneSpawnInfoCheckRail` as Teleport): the only entry point a zone's header has without loading its events. 600 of the 616 zones' headers (`fly` in `res/field/zones/*.json`) have one, interiors too; the 16 at 0, 0, 0 (some of Castelia City's buildings among them) are refused with a message |
+| Info's follower | `PaperWhite2_FollowingGetSpecies` (`src/paperwhite2/ov036/paperwhite2_following_field.c`) | the follower's species, or none |
+
+**Give key items** adds the Bicycle, Dowsing MCHN, Super Rod, VS Recorder, Gracidea, Reveal Glass, both DNA Splicers,
+the Permit, the Oval and Shiny Charms and the Exp. Share (`sDebugKeyItems`). It leaves out, as its message says, the
+items that events give, check or take back (the Light and Dark Stones, the Dragon Skull, the Grams, the Plasma Card,
+the Colress Machine, the Grubby Hanky, the Dropped Items), those that come with their feature's setup (the Medal Box,
+the Prop Case), the Liberty Pass, the Xtransceivers (given at the start, one per sex), and the Key Items pocket's
+leftovers from the other games.
+
+**Adding an option.** For a new action: its `DEBUG_ACTION_*` number in `debug_actions.h` (after the last), its `case` in
+`DebugCommands_Run`, and its messages at the end of `global_10200.txt`. Then in the script: an entry in its menu's
+list (`ListMenuAdd <text>, 65535, <value>`, a value under 0x4000 other than `DEBUG_LIST_BACK`), its `WorkCmpConst` and
+`VMJumpIf` after `ListMenuShow`, and its block, which runs `Debug DEBUG_ACTION_<NAME>, arg1, arg2, 0x8025` and jumps
+back to the menu. For a number, the block calls `Debug DEBUG_ACTION_NUMBER_BEGIN, DEBUG_NUMBER_<KIND>, 0, 0x8025`,
+`VMCall L_DebugNumber`, and checks 0x8024 (a new kind is a `DEBUG_NUMBER_*` and a row of `sDebugNumberKinds`, with its
+message). For a toggle: a flag from the debug block (Flags, below) named in `generated/flags.txt`, a
+`Debug DEBUG_ACTION_FLAG_WORD, <word>, <flag>, 0x8025` before the list with `{0100:<word>}` in its label, and a block
+with `Debug DEBUG_ACTION_FLAG_TOGGLE, <flag>, 0, 0x8025`. For a submenu: an entry in the list above and a block, whose
+Back and B jump back up. Removing the define from `configure.py` removes the menu, its command, its code and its
+hooks; the text stays.
+
+The hack's script command follows the original's last, 0x2f2, in `EVCMD_TABLE` (`src/ov012/scrcmd_vm.c`), with its
+row in `EVCMD_PERM_TABLE` (`src/ov012/script_sys.c`), both under `PAPERWHITE2_DEBUG_MENU`. Its entry in
+`tools/script/field_commands.json` has a `"hack"` key, which `field_command_table.py` keeps when it writes the table
+again from the original ROM and `field_script.py inc` writes above the macro. To add another command (rarely needed
+now): its handler under `src/paperwhite2/`, its declaration in `include/paperwhite2/debug_commands.h`, its rows in
+both tables, its entry in the JSON, then `python3 tools/script/field_script.py inc include/asm/field_script.inc`.
 
 | Command | ID | Arguments | Handler |
 | --- | --- | --- | --- |
-| `PokePartySetEV slot, param, value` | 0x2f3 (755) | the party slot, a `PKM_PARAM_EV_*` (`constants/pokemon.h`), the value (0-255); each a value or a variable | `Scrcmd_PaperWhite2_PokePartySetEV` (`src/paperwhite2/ov012/paperwhite2_debug_commands.c`) sets the EV and calls `PokeParty_RecalcStats`, as `PokePartySetIV` does for an IV. Another parameter, a value over 255 or an empty slot does nothing; the 510 total isn't checked |
+| `Debug action, arg1, arg2, result` | 0x2f3 (755) | a `DEBUG_ACTION_*`, two arguments, each a value or a variable, and the variable for the result | `Scrcmd_PaperWhite2_Debug` (`src/paperwhite2/ov012/paperwhite2_debug_commands.c`); the actions above. A warp action waits a frame, as the map change commands do |
 
-| Toggle | Flag | Code |
-| --- | --- | --- |
-| Always shiny | `EVENT_FLAG_DEBUG_ALWAYS_SHINY` (0xbd9) | `FieldEncount_CreateWildPkm` (`src/ov036/enc_pokeset.c`) rolls the PID up to `ALWAYS_SHINY_ROLLS` (0x4000) times until it is shiny: every Pokémon of `FieldEncount_SetupNormal`, grass, surfing, fishing and `EventWildBattleCall_CreateStatic`'s scripted encounters. Gifts, eggs and trainers' Pokémon aren't affected |
+**Memory.** The menu costs about 4 KB of the budget (the main arena had 159 KB left before it, 155 KB after): the
+command's code and tables in overlay 12, the overrides and the shiny PID in main, the hooks.
 
 ### Flags
 
@@ -244,7 +366,7 @@ used one is named with a `# Paper White 2:` comment). New features take theirs f
 | 0x92f-0x95f | the hack's features | 0x92f `EVENT_FLAG_EXP_SHARE_OFF` |
 | 0xaef | the user's: the Wurmple daily-feeding mini-event (`route_20.s`), a daily flag | `EVENT_FLAG_DAILY_0x0aef`; don't touch |
 | 0xaf0 | the user's: the Pokémon Center lottery girl (`global_10850.s`, set in `aspertia_city.s` too), a daily flag | `EVENT_FLAG_DAILY_0x0af0`; don't touch |
-| 0xbd9-0xbf7 | the debug menu's toggles | 0xbd9 `EVENT_FLAG_DEBUG_ALWAYS_SHINY` |
+| 0xbd9-0xbf7 | the debug menu's toggles | 0xbd9 `EVENT_FLAG_DEBUG_ALWAYS_SHINY`, 0xbda `EVENT_FLAG_DEBUG_NO_WILD_ENCOUNTERS`, 0xbdb `EVENT_FLAG_DEBUG_WALK_THROUGH_WALLS` |
 
 Flags elsewhere, even ones no text search finds, may be reached by a base plus an index (hidden items, trainers), so
 don't take them. 0x5d0, which the Exp. Share used first, is back to its original name.

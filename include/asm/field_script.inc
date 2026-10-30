@@ -3797,12 +3797,13 @@
     .2byte \a1
     .endm
 
-    // Paper White 2: the debug menu's, under PAPERWHITE2_DEBUG_MENU: sets an EV of a party slot and recalculates its stats (include/paperwhite2/debug_commands.h)
-    .macro PokePartySetEV a0, a1, a2
+    // Paper White 2: the debug menu's, under PAPERWHITE2_DEBUG_MENU: runs one of its actions (DEBUG_ACTION_*, paperwhite2/debug_actions.h) with two arguments and puts the result in a variable (include/paperwhite2/debug_commands.h)
+    .macro Debug a0, a1, a2, a3
     FieldCommand 755
     .2byte \a0
     .2byte \a1
     .2byte \a2
+    .2byte \a3
     .endm
 
     // Plugin 1

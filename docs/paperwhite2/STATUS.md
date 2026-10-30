@@ -2,6 +2,27 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-29: the START debug menu built out (not committed, not yet tested)
+
+- **Moved** from `global_10130.s` (back to the original's, with its text) to `global_10200.s`, the original's empty
+  `dummy.ev` (10200-10249): `Script_2`, script 10201 (`SCRID_PAPERWHITE2_DEBUG_MENU`), its text at the end of
+  `global_10200.txt` (a new bank would change the matching build's archive list). `global-scripts.md` regenerated.
+- **One command**: `Debug action, arg1, arg2, result` (0x2f3) replaces `PokePartySetEV`; 34 actions in
+  `include/paperwhite2/debug_actions.h`, handled in `paperwhite2_debug_commands.c`.
+- **Menus**: Party (target cycling, EVs, IVs, level, nature, shiny, friendship, heal, give Pokémon), Items (give item,
+  safe key items), World (time, season, weather overrides, flag and variable get/set), Encounters (Always shiny, No
+  wild encounters, force species, wild level), Player (warp to last Center, warp to zone, walk through walls, money),
+  Info. Number entry is the script's own adjuster (+/- step, step x10 or /10, Done, Cancel) with names shown.
+- **Hooks**: `GetRealTimeDayPeriod` (rtc.c), the field's light seconds (fieldmap.c), `GetWeatherAll`
+  (zone_weather.c), `EventWildBattleCall_CreateRandom` (field_encount.c, twice), `PlayerMoveCollCheck`
+  (field_player_grid.c), `FieldPlayerRail_GetHitBits` (field_player_nogrid.c). The value overrides are RAM in main
+  (`paperwhite2_debug.c`): a reset clears them. New flags 0xbda (No wild encounters) and 0xbdb (Walk through walls).
+  The Shiny Candy's PID moved to main (`paperwhite2_shiny_pid.c`) for Make shiny.
+- `--hack` builds with no warnings, `verify_dsi_rom.py` intact, memory check passes (155 KB left); the matching
+  `modules.ok` passes; check_style, clang-format and `global_scripts.py --check` clean; `flag_usage.py` no conflicts.
+- Tests: see plugins.md's Debug menu; each category once (Party on the lead and after Next target, a give with a full
+  party, Items, each World override across a door, Encounters in grass, both warps, walls on a grid and a rail, Info).
+
 ## 2026-10-29: scripted drops reverted, EV bars grey what's out of reach, no wireless icon, Chaos shows ??? (not committed, not yet tested)
 
 - **Shiny Candy from scripted wild battles: reverted** (`PaperWhite2_ShinyCandyDropForScript`,

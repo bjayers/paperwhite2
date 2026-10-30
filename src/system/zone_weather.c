@@ -16,6 +16,9 @@
 #ifdef PAPERWHITE2
 #include "paperwhite2/season.h"
 #endif
+#ifdef PAPERWHITE2_DEBUG_MENU
+#include "paperwhite2/debug.h"
+#endif
 
 // Which weather a zone has. The ROM doesn't name the file; the name is a guess. Names from swan
 // (https://github.com/ds-pokemon-hacking/swan, GPL-3.0), except EntralinkWeatherFlag and its fields
@@ -48,6 +51,12 @@ u8 GetWeatherAll(GameSystem *gsys, u32 zoneId) {
     Calendar *calendar = GetCalendar(gameData);
     u32 weather;
 
+#ifdef PAPERWHITE2_DEBUG_MENU
+    // Paper White 2: the debug menu's Force weather, over every other weather of the zone
+    if (PaperWhite2_Debug_GetOverride(DEBUG_OVERRIDE_WEATHER) != DEBUG_OVERRIDE_OFF) {
+        return PaperWhite2_Debug_GetOverride(DEBUG_OVERRIDE_WEATHER);
+    }
+#endif
     weather = GetDefaultWeatherValue(gameData, zoneId);
     if (weather != WEATHER_NONE) {
         return weather;

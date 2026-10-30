@@ -856,7 +856,7 @@ const FieldScriptCommand EVCMD_TABLE[] = {
 #ifdef PAPERWHITE2_DEBUG_MENU
     // Paper White 2: the hack's commands, after the original's last (include/paperwhite2/debug_commands.h), each
     // with its row in script_sys.c's EVCMD_PERM_TABLE
-    Scrcmd_PaperWhite2_PokePartySetEV, // 0x2f3
+    Scrcmd_PaperWhite2_Debug, // 0x2f3
 #endif
 };
 
