@@ -686,6 +686,8 @@ all of them must hold, a list is any of its items), `$defs/rule` (`when`, `prior
 | `party_level`, `scaled_level` | the party's median, the adjusted median | `{"min": 20, "max": 40}` |
 | `level`, `species` (with an optional `form`), `type`, `nature`, `hp` (percent), `status`, `friendship`, `steps` | the subject: the lead (party slot 0) for encounters and spawns, the follower for its rules | `{"min": 20}` |
 | `follower` | `true` (one is out), `false`, or species | `["SPECIES_PIKACHU"]` |
+| `total_steps`, `item_waiting` | the subject's total steps and whether it keeps an item, which the consumer gives (the follower's record, following-pokemon.md) | `{"min": 1000}`, `true` |
+| `facing`, `tile_x`, `tile_y` | the position the consumer gives: the subject's facing (the follower's, toward the player) and the player's tile; a part of its own (`CONDITION_CONTEXT_POSITION`) | `["left", "right"]`, `{"min": 10, "max": 14}` |
 | `chance` | a percent rolled each check | `25` |
 
 `terrain_groups.json` lists the 18 groups in bit order (grass, dark_grass, tall_grass, surf_water, shore,
@@ -716,7 +718,7 @@ Each field compiles to one clause: the season, time, weather, terrain, type, nat
 value in `value`); a flag to `SET` or `UNSET` with the flag in `arg`; a variable to `EQ`...`LT` with the variable in
 `arg` and the value in `value`; one zone, species or follower species to `EQ` with it in `arg`, several to `IN_LIST`
 with the list's number in `arg` (identical lists are shared, and a zone group is its zones' list); the exterior to `EQ`
-with 1 or 0; `follower: true` to `ANY`; a range to `RANGE`, the least in `arg` (0 by default) and the greatest in
+with 1 or 0; `follower: true` and `item_waiting: true` to `ANY`; the facing to `MASK`; a range to `RANGE`, the least in `arg` (0 by default) and the greatest in
 `value` (0xffffffff by default); a chance to its percent in `value`, always the last clause. A species entry is the
 species, plus (form + 1) << 11 for one form. A table holds 256 rules at most.
 

@@ -57,6 +57,16 @@ enum {
     CONDITION_KIND_FOLLOWER = 18,
     // value: a percent, rolled with the check's random state each time the clause is tested
     CONDITION_KIND_CHANCE = 19,
+    // value: a bit for each DIR_UP to DIR_RIGHT: the way the subject faces, given by the consumer (the follower's to
+    // look at the player)
+    CONDITION_KIND_FACING = 20,
+    // RANGE of the player's tile in the map matrix, x and then z (gPos), given by the consumer
+    CONDITION_KIND_TILE_X = 21,
+    CONDITION_KIND_TILE_Y = 22,
+    // RANGE of the subject's total steps, which the consumer gives (the follower's, as the follower, which never reset)
+    CONDITION_KIND_TOTAL_STEPS = 23,
+    // The item the subject keeps for the player (the follower's pickup): op ANY for one, EQ with arg 0 for none
+    CONDITION_KIND_ITEM_WAITING = 24,
     CONDITION_KIND_COUNT,
 };
 
@@ -99,6 +109,7 @@ enum {
 #define CONDITION_CONTEXT_SUBJECT 0x4
 #define CONDITION_CONTEXT_PARTY 0x8
 #define CONDITION_CONTEXT_FOLLOWER 0x10
+#define CONDITION_CONTEXT_POSITION 0x20
 
 // The seeds a pick starts its random state from (Conditions_Seed): stable while the player stays in the zone and new on
 // the next zone load; stable for the day; or new for each check
@@ -190,6 +201,12 @@ typedef struct {
     u8 hpPercent;
     u8 status;
     u16 steps;
+    u16 itemWaiting;
+    u32 totalSteps;
+    // Position (set by the consumer): the subject's facing, a DIR_*, and the player's tile
+    u8 facing;
+    u16 tileX;
+    u16 tileY;
     // Party (ConditionContext_FillParty)
     u8 partyCount;
     u8 medianLevel;
@@ -235,8 +252,11 @@ u32 Conditions_ScaledLevelMax(u32 scaled);
 void ConditionContext_Init(ConditionContext *ctx);
 // The season, the period, the weather, the zone and its parent, the flags and variables, and the seeds
 void ConditionContext_FillWorld(ConditionContext *ctx, GameData *gameData);
-// The subject from a party member, with steps the caller counts. FALSE, with the subject not filled, for an Egg
+// The subject from a party member, with steps the caller counts. FALSE, with the subject not filled, for an Egg. The
+// total steps and the waiting item are 0; a consumer that counts them sets them after
 BOOL ConditionContext_FillSubject(ConditionContext *ctx, PartyPkm *pkm, u16 steps);
+// The position: the subject's facing (a DIR_*) and the player's tile
+void ConditionContext_SetPosition(ConditionContext *ctx, u32 facing, u32 tileX, u32 tileY);
 // The subject from the lead, party slot 0
 BOOL ConditionContext_FillLead(ConditionContext *ctx, PokeParty *party);
 // The party's median and adjusted median levels, of the members that aren't Eggs

@@ -92,6 +92,15 @@
           ],
           "description": "true: a follower is out; false: none is; a list: the follower is one of these species"
         },
+        "total_steps": { "$ref": "#/$defs/range", "description": "The subject's total steps, which never reset (the follower's as the follower)" },
+        "item_waiting": { "type": "boolean", "description": "true: the subject keeps an item for the player (the follower's pickup); false: none" },
+        "facing": {
+          "type": "array", "minItems": 1,
+          "items": { "enum": [ "up", "down", "left", "right" ] },
+          "description": "The way the subject faces (the follower's, to look at the player)"
+        },
+        "tile_x": { "$ref": "#/$defs/range", "description": "The player's tile in the map matrix, x (the follower's rules)" },
+        "tile_y": { "$ref": "#/$defs/range", "description": "The player's tile in the map matrix, z, the row (the follower's rules)" },
         "chance": { "type": "integer", "minimum": 1, "maximum": 100, "description": "A percent, rolled each time the rule is checked" }
       }
     },
