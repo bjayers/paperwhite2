@@ -231,7 +231,8 @@ DEBUG                           L_DebugMenu
     Money...                        Set money... (number, 0-9999999) / +100000
   Info                            zone and place, x/y/z (or the rail's line, front and side), season and mode,
                                   time of day, weather, follower
-  Conditions                      the conditions' context, the debug samples' matches and pick (Conditions, below)
+  Conditions                      All pages, or one: World and tiles / Party and seeds / Sample rules (each debug
+                                  sample's match) / Sample pick (Conditions, below)
   Follower...                     the Following Pokémon's steps and waiting item, Set steps..., Force a pickup,
                                   Clear waiting item, Rules now (following-pokemon.md, Dialogue rules, gifts and steps)
   Close
@@ -325,7 +326,7 @@ Each hook is under `PAPERWHITE2_DEBUG_MENU` with the original in `#else`:
 | Always shiny | `FieldEncount_CreateWildPkm` (`src/ov036/enc_pokeset.c`) | rolls the PID up to `ALWAYS_SHINY_ROLLS` (0x4000) times until it is shiny: grass, surfing, fishing and `EventWildBattleCall_CreateStatic`'s scripted encounters. Gifts, eggs and trainers' Pokémon aren't affected |
 | No wild encounters | `EventWildBattleCall_CreateRandom` (`src/ov036/field_encount.c`) | returns no battle before the step's roll; Sweet Scent and other forced encounters still happen |
 | Force species, wild level | `EventWildBattleCall_CreateRandom`, after `FieldEncount_GenWilds` | `PaperWhite2_Debug_OverrideWilds`: each wild Pokémon's species (with form 0, no item, a random sex and no hidden ability) and level. Roaming Pokémon, N's Pokémon and scripted battles keep theirs |
-| Walk through walls | `PlayerMoveCollCheck` (`src/ov036/field_player_grid.c`) and `FieldPlayerRail_GetHitBits` (`src/ov036/field_player_nogrid.c`) | the player's step only, with every collision bit cleared but the map's edge (`ACTOR_COLL_OUT_OF_BOUNDS`) on grids and the rail's ends (bit 1) on rails; walking, cycling, surfing, sliding and catwalks alike. Other actors still collide |
+| Walk through walls | `FieldPlayerGrid_UpdateMovement` (`src/ov036/field_player_grid.c`) and `FieldPlayerRail_GetHitBits` (`src/ov036/field_player_nogrid.c`) | the player's step only. On grids it turns on the grid's forced step (`GridMoveInput.force`, always off in the original), which clears every collision bit but the map's edge (`ACTOR_COLL_OUT_OF_BOUNDS`) and lets the player walk onto water and surf onto land; ledges are walked over, not jumped. On rails every bit but the rail's ends (bit 1). Other actors still collide |
 | Warp to last Pokémon Center | none: `EventMapChangeTeleport_Create` (ov035) | the respawn index of the last Center (`GetReturnLocationIdx`), its town's fly spot, as Teleport and a blackout use |
 | Warp to zone | none: `EventMapChange_CreateForFly` | the zone's fly spot (`ZoneHeader`'s flyX/Y/Z, the same `LoadZoneSpawnInfoCheckRail` as Teleport): the only entry point a zone's header has without loading its events. 600 of the 616 zones' headers (`fly` in `res/field/zones/*.json`) have one, interiors too; the 16 at 0, 0, 0 (some of Castelia City's buildings among them) are refused with a message |
 | Info's follower | `PaperWhite2_FollowingGetSpecies` (`src/paperwhite2/ov036/paperwhite2_following_field.c`) | the follower's species, or none |

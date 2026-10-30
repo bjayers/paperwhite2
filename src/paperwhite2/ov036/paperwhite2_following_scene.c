@@ -64,6 +64,13 @@
 #define CMD_CALL_WILD_BATTLE_EX 0x297
 #define CMD_REPEL_REARM 0x2c2
 
+// The hack's own commands (scrcmd_vm.c's table), which keep the follower: GetPartyLevel and CheckCondition only read,
+// and Debug, the debug menu's, changes data that the follower follows by itself (a new lead swaps it, a warp is a
+// zone change)
+#define CMD_GET_PARTY_LEVEL 0x2f3
+#define CMD_CHECK_CONDITION 0x2f4
+#define CMD_DEBUG 0x2f5
+
 // The script of the Repel's "Use another?" prompt, in res/field/scripts/global_10130.s
 #define SCRIPT_REPEL_PROMPT 10144
 
@@ -178,6 +185,10 @@ static void Recall(void) {
 static BOOL IsSafeCommand(u32 cmd) {
     u32 lo = 0;
     u32 hi = NELEMS(FOLLOWING_SAFE_COMMANDS);
+
+    if (cmd == CMD_GET_PARTY_LEVEL || cmd == CMD_CHECK_CONDITION || cmd == CMD_DEBUG) {
+        return TRUE;
+    }
 
     while (lo < hi) {
         u32 mid = (lo + hi) / 2;

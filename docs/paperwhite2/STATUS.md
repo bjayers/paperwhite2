@@ -117,11 +117,13 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
 - **Shiny Candy**: its own icon (`ITEM_ICON_SHINY_CANDY` and `_PALETTE_`, appended to `generated/item_icons.txt`;
   `res/items/shiny_candy/icon.png` and `icon.pal`, for now copies of the Rare Candy's to redraw), price 1 in the data
   (prices are in tens: ₽10), the Medicine pocket (data and `myitem_savedata.c`), sorted after the Rare Candy; still at
-  Virbank. **Drops:** a wild battle won (`BTL_RESULT_VICTORY`) against a shiny Pokémon gives one at
-  `SHINY_CANDY_DROP_PERCENT` (50), back on the field: "The shiny Pokémon dropped a Shiny Candy!", then the usual
+  Virbank. **Drops:** a wild battle won (`BTL_RESULT_VICTORY`) against a shiny Pokémon gives one if its PID says so
+  (`PaperWhite2_IsShinyCandyDropper`: a hash of the whole PID, under `SHINY_CANDY_DROP_PERCENT` (50) of 100, so the
+  Pokémon decides it when it is made and reloading doesn't reroll it; releasing a shiny uses the same test), back on
+  the field: "The shiny Pokémon dropped a Shiny Candy!", then the usual
   obtained/put-away messages, or "no more room" with a full bag (`Script_20` of `global_2800.s`, script 2819, via
   `L_0151`). `src/paperwhite2/ov012/paperwhite2_shiny_candy_drop.c`, from `EventWildBattleCall_Callback`; the setup's
-  shininess is read when the event is created (`shinyFoe`), since the battle frees the setup. Grass, surfing and fishing
+  shininess is read when the event is created (`candyFoe`), since the battle frees the setup. Grass, surfing and fishing
   encounters only: a scripted static battle returns before the field's fade back in.
 - **Exp. Share from Y** never turned it on: `VMJumpIf CMP_STACK` jumps when the comparison is *false*, so Script_19
   took the "off" branch whenever the flag was set. Fixed (compare with 0). Its flag moved to 0x92f (the hack's block,

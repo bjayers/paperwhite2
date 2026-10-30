@@ -36,8 +36,10 @@ u16 PaperWhite2_Debug_GetDayPeriod(u16 period);
 // The seconds of the day that the field's lights follow: the game's, or with a time of day override half an hour into
 // that period's first hour in the season (Field_Create and Field_Draw3D's FieldLight_Update, ov036/fieldmap.c)
 s32 PaperWhite2_Debug_GetDaySeconds(u32 season, s32 seconds);
-// The collision of the player's next step with Walk through walls on: only the bits of kept, which leave the map's
-// edge (grid) or the rail's end blocking. hit as the game computed it otherwise
+// Whether the debug menu's Walk through walls is on
+BOOL PaperWhite2_Debug_IsWalkingThroughWalls(GameData *gameData);
+// The collision of the player's next step with Walk through walls on: only the bits of kept, which leave the rail's
+// end blocking. hit as the game computed it otherwise
 u32 PaperWhite2_Debug_FilterPlayerHit(GameData *gameData, u32 hit, u32 kept);
 // Sets the species and the level overrides on the wild Pokémon of a random encounter, before they are made
 // (EventWildBattleCall_CreateRandom, ov036/field_encount.c)
