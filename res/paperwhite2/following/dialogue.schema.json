@@ -1,0 +1,98 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Paper White 2: the Following Pokémon's dialogue rules, res/paperwhite2/following/dialogue/",
+    "description": "The rules of dialogue/shared.json, which every species has, or of dialogue/species/<name>.json, one species' own, which tools/paperwhite2/following_dialogue.py packs as member 4 of the model table's archive (a/0/4/7). Every rule's when is a condition of the conditions module, whose subject is the follower: its steps are its steps as the follower since its last gift, its terrain is its own tile's, its facing the way it faces to look at the player (the talk) or its own (ambient and pickup), and tile_x and tile_y the player's tile. Of the rules that match, the highest priority is kept and one is picked by weight (docs/paperwhite2/following-pokemon.md, \"Dialogue rules, gifts and steps\"). A species' block, its shared rules and its own, packs to at most 4096 bytes. A string value of an item is the name of a constant from generated/.",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "$schema": { "type": "string", "description": "This schema, for editors" },
+        "description": { "type": "string" },
+        "species": { "type": "string", "x-constant": "SPECIES_", "description": "A species' file only: its species" },
+        "settings": {
+            "type": "object", "additionalProperties": false,
+            "properties": {
+                "talk_friendship": { "type": "integer", "minimum": 0, "maximum": 10, "description": "The friendship a talk gives, once a day for each Pokémon; 1 by default" }
+            },
+            "description": "shared.json only"
+        },
+        "messages": {
+            "type": "object", "additionalProperties": false, "required": [ "bag_full" ],
+            "properties": {
+                "bag_full": { "$ref": "#/$defs/message", "description": "Said in place of a gift's message when the Bag has no room, and the follower keeps the item" }
+            },
+            "description": "shared.json only: the library's own messages"
+        },
+        "rules": { "type": "array", "maxItems": 256, "items": { "$ref": "#/$defs/talk_rule" }, "description": "What the follower does when it is talked to" },
+        "ambient": { "type": "array", "maxItems": 256, "items": { "$ref": "#/$defs/ambient_rule" }, "description": "Emotes over the follower while it follows, after a step, without stopping the player" },
+        "pickup": { "type": "array", "maxItems": 256, "items": { "$ref": "#/$defs/pickup_rule" }, "description": "Items the follower finds after a step while it keeps none, which it gives when talked to (a talk rule with item_waiting and give_waiting)" }
+    },
+    "$defs": {
+        "name": { "type": "string", "pattern": "^[ -~]{1,20}$", "description": "The rule's name in the debug menu" },
+        "message": {
+            "type": "string", "minLength": 1,
+            "description": "Text with [N] a new line, [L] the next line after A, [C] a new page after A, and {nickname}, {player}, {location} (the zone's place name) and {item} (the step's gift). Any length: it runs over pages"
+        },
+        "emote": { "type": "string", "description": "A bubble's name of interactions.json: heart, happy, sad, angry, note, poison, ellipsis" },
+        "cry": { "enum": [ "none", "cry", "slow_cry" ], "description": "The follower's cry, or its cry slowed down; none by default" },
+        "step": {
+            "type": "object", "additionalProperties": false,
+            "properties": {
+                "message": { "$ref": "#/$defs/message" },
+                "box": { "enum": [ "default", "bubble", "yell", "event" ], "description": "default: the talk's balloon at the bottom with its tail to the follower; bubble: the balloon above or below as an NPC's; yell: that balloon with the spiky frame, which shakes; event: the plain window for descriptions" },
+                "emote": { "$ref": "#/$defs/emote" },
+                "motion": { "type": "integer", "minimum": 0, "maximum": 255, "description": "A motion of interactions.json, from 1, played on the sprite before the emote" },
+                "cry": { "$ref": "#/$defs/cry" },
+                "wait": { "type": "integer", "minimum": 0, "maximum": 65535, "description": "Frames after the step" },
+                "action": {
+                    "anyOf": [
+                        { "type": "object", "additionalProperties": false, "required": [ "give_item" ],
+                          "properties": { "give_item": { "type": "string", "x-constant": "ITEM_" }, "quantity": { "type": "integer", "minimum": 1, "maximum": 99 } } },
+                        { "type": "object", "additionalProperties": false, "required": [ "give_pool" ],
+                          "properties": { "give_pool": { "type": "string", "description": "A pool's name of pools.json" } } },
+                        { "type": "object", "additionalProperties": false, "required": [ "give_waiting" ],
+                          "properties": { "give_waiting": { "const": true } } },
+                        { "type": "object", "additionalProperties": false, "required": [ "friendship" ],
+                          "properties": { "friendship": { "type": "integer", "minimum": -128, "maximum": 127 } } },
+                        { "type": "object", "additionalProperties": false, "required": [ "script" ],
+                          "properties": { "script": { "type": "integer", "minimum": 1, "maximum": 65535, "description": "A script ID, started after the step; the talk hands the field over to it" } } },
+                        { "type": "object", "additionalProperties": false, "required": [ "reset_steps" ],
+                          "properties": { "reset_steps": { "const": true } } }
+                    ],
+                    "description": "Done as the step begins, before its message, which names a gift's item as {item}. A gift that the Bag has no room for becomes the item the follower keeps, if it keeps none, and the bag_full message is said"
+                }
+            }
+        },
+        "talk_rule": {
+            "type": "object", "additionalProperties": false, "required": [ "steps" ],
+            "properties": {
+                "name": { "$ref": "#/$defs/name" },
+                "when": { "$ref": "../conditions/condition.schema.json#/$defs/condition" },
+                "priority": { "type": "integer", "minimum": 0, "maximum": 255 },
+                "weight": { "type": "integer", "minimum": 1, "maximum": 65535 },
+                "steps": { "type": "array", "minItems": 1, "maxItems": 16, "items": { "$ref": "#/$defs/step" } }
+            }
+        },
+        "ambient_rule": {
+            "type": "object", "additionalProperties": false, "required": [ "emote" ],
+            "properties": {
+                "name": { "$ref": "#/$defs/name" },
+                "when": { "$ref": "../conditions/condition.schema.json#/$defs/condition" },
+                "priority": { "type": "integer", "minimum": 0, "maximum": 255 },
+                "weight": { "type": "integer", "minimum": 1, "maximum": 65535 },
+                "emote": { "$ref": "#/$defs/emote" },
+                "cry": { "$ref": "#/$defs/cry" },
+                "cooldown": { "type": "integer", "minimum": 0, "maximum": 65535, "description": "Steps before the next ambient emote may show" }
+            }
+        },
+        "pickup_rule": {
+            "type": "object", "additionalProperties": false, "required": [ "pool" ],
+            "properties": {
+                "name": { "$ref": "#/$defs/name" },
+                "when": { "$ref": "../conditions/condition.schema.json#/$defs/condition" },
+                "priority": { "type": "integer", "minimum": 0, "maximum": 255 },
+                "weight": { "type": "integer", "minimum": 1, "maximum": 65535 },
+                "pool": { "type": "string", "description": "A pool's name of pools.json" }
+            }
+        }
+    }
+}

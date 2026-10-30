@@ -300,8 +300,8 @@ from the decomp's headers, adding fields where they are still `unk`.
 | `emotes.narc` (10,076 bytes) | 14 BTX0 members (7 bubbles × 2 frames, 32×32, 16 colors), from HeartGold | `effects.c` (members), `interaction.c` (size and CRC) | `a/0/4/7` members 6-19 (bubble order, 2 frames each), from `res/paperwhite2/following/emotes/<bubble>_{1,2}.png` and `.pal`, packed with `nitro_btx.py` (`split_from`: the search nodes Pokeweb's ndspy split kept), done |
 | `effects.narc` (3,052 bytes) | 3 members: the ball model (BMD0), the send-out flash (BMD0), its texture animation (BTA0), from HeartGold's `a/1/0/3` 129, 104, 164; size and CRC compiled in (`effects_assets.h`) | `effects.c` | `a/0/4/7` members 20-22, from `res/paperwhite2/following/effects/` (`ball.nsbmd`, `send_out_flash.nsbmd`, `.nsbta`), as they are, done |
 | `ball_assets.h` (4,000 bytes, compiled in) | for each White 2 ball ID 1-25, its 16x16 4bpp texture (128 bytes) and 16 BGR555 colors, from Pokeweb's `ball-art/*.png` (`import_balls.py`) | `effects.c` (put over the ball model's texture and palette) | `a/0/4/7` member 23, from `res/paperwhite2/following/balls/<ball>.png`, done (step 4) |
-| `contextual-dialogues.narc` (76 bytes) | one member "FWCD" ABI 1-3 (empty: 0 rules) | `interaction.c` (whole, 4 KB), `reactions.c` | `a/0/4/7` member 4 (the NARC's member), from `res/paperwhite2/following/dialogues.json` (`dialogues.schema.json` documents ABI 3's fields), done |
-| `contextual-items.narc` (76 bytes) | one member "FWTI" ABI 1-2 (empty) | `interaction.c`, `gifts.c` | `a/0/4/7` member 5 (the NARC's member), from `res/paperwhite2/following/items.json` (`items.schema.json`, ABI 2's fields), done |
+| `contextual-dialogues.narc` (76 bytes) | one member "FWCD" ABI 1-3 (empty: 0 rules) | `interaction.c` (whole, 4 KB), `reactions.c` | replaced: `a/0/4/7` member 4 is the dialogue library "FWDL" (Dialogue rules, gifts and steps, below) |
+| `contextual-items.narc` (76 bytes) | one member "FWTI" ABI 1-2 (empty) | `interaction.c`, `gifts.c` | replaced: `a/0/4/7` member 5 is the item pools "FWPL" (below) |
 | `event-policy.json`, `audio-event-policy.json` (Pokeweb's sources, not ROM files) | the reviewed script commands (375 opcodes) and cleanup finishers that keep the follower, and the eight sound events | `generate_scene_policy.py` into `scene-policy.h` | `res/paperwhite2/following/`, as they are; `tools/paperwhite2/following_scene_policy.py` writes `following_scene_policy.h` (opcodes, finishers' mask) and `following_sound_policy.h` (the sound callbacks by name, from W2's `symbols.txt`) into `build/include/generated/paperwhite2/` in `--hack` builds, done (step 4) |
 | `install.json` | the installer's state | nothing in the game | not ported |
 | `a/0/0/2` member 32 (`title_2` bank) | the Options rows' text, four entries changed | the Options menu | `res/text/system/title_2.txt`: `Title2_Text_Followers` (6), `FollowersOn` (21), `FollowersOff` (22), `ChooseWhetherPokemonFollow` (30), done (step 5) |
@@ -501,9 +501,8 @@ billboard.c's material wrappers. `CheckActorNewPosOtherActorCollision`'s origina
   (field-unload) detaches the scene, which unbinds the bridge and clears them.
 - The ABI and size checks between the modules (`FollowingEventsAPI.abi`, `FWRE_ABI`) are gone.
 - The interactions' and effects' records of the emotes and effects files' sizes and CRCs went with the installer.
-- **To decide:** the gifts keep the original's storage of a party member's ten gift claims in the top 16 bits of
-  block C's ribbons (`PkmBlockC`), which the game may show or clear as ribbons; the user hasn't chosen whether to
-  keep it there or move it.
+- The original's ten gift claims in the top 16 bits of block C's ribbons are gone with its one-time gifts (Dialogue
+  rules, gifts and steps, below); those bits are the game's again.
 
 **Memory.** After the events bridge: overlay 12 0x021507c0-0x0216eea0 (0x1e6e0), overlay 36 0x0217fdc0-0x021f6be0
 (0x76e20), the DS arena 0x2aac0 (170 KB) after the heaps. After the scene: overlay 12 0x02150860-0x0216ef60
@@ -518,7 +517,7 @@ the hack's is in the IRDO range.
   sound.
 - A in front of the follower: it moves, shows a bubble, cries and talks in a balloon over it, closed with A or B; at
   low HP, with a status, on grass, in a cave and facing away the talk changes; the talk works on a rail map too.
-- A gift rule (items.json; empty in the hack, so a rule must be added to test it) gives the item once.
+- Gifts are dialogue steps now (Dialogue rules, gifts and steps, below).
 - Talking to an NPC, reading a sign, a Yes/No prompt, a list menu, a cutscene's camera, the music and fanfare
   commands: the follower stays where it is and waits, and walks on after.
 - A script that moves an actor through the follower, a cutscene that moves the player, a warp or a door: the follower
@@ -760,7 +759,176 @@ Every step of the base package is ported (1 to 6, above), each built with `--hac
 intact, the memory check, and a plain build's `ninja build/w2_us/stamps/modules.ok`. Nothing has been tested in an
 emulator yet: the lists of steps 3 to 6 are the test plan.
 
-Open questions:
+Open questions: none of the port's. The dialogue rules' remaining work is at the end of their section, below.
 
-- The gifts keep their claims in the top 16 bits of block C's ribbons, as the original did, which the game may show or
-  clear as ribbons; keep them there or move them (step 4).
+## Dialogue rules, gifts and steps
+
+The user's design notes (2026-10-28, decided 2026-10-30) replace the contextual dialogues and one-time gifts with rules
+of the conditions engine (`plugins.md`, Conditions): dialogue as steps, gifts as a step's action, pickups and ambient
+emotes on the follower's own steps, and a little friendship from a talk once a day. Branch `follower-dialogue`.
+
+### The sources and their formats
+
+| Source | Schema | What |
+| --- | --- | --- |
+| `res/paperwhite2/following/dialogue/shared.json` | `dialogue.schema.json` | the rules every follower has (`rules`, the talk's; `ambient`; `pickup`), the library's message `bag_full`, and `settings.talk_friendship` |
+| `res/paperwhite2/following/dialogue/species/<name>.json` | the same, with `species` | one species' own rules |
+| `res/paperwhite2/following/pools.json` | `pools.schema.json` | named, weighted item lists (`item`, `weight`, `quantity`) |
+
+Every rule is a conditions rule (`when`, `priority`, `weight`) with its consumer's fields, so the editor shares one
+condition editor for all of them. The subject is the follower: `steps` are its steps since its last gift, the new
+`total_steps` its total, `item_waiting` whether it keeps a found item, `terrain` its own tile's groups, `facing` the
+way it faces to look at the player (the talk) or its own (ambient, pickup), and `tile_x`/`tile_y` the player's tile.
+Selection is the engine's: of the rules that match, the highest priority, then a pick by weight (share 100).
+
+- **A talk rule** has 1 to 16 steps. A step has any of `message`, `box` (default, bubble, yell, event), `emote` (a
+  bubble of `interactions.json`: heart, happy, sad, angry, note, poison, ellipsis), `motion` (one of
+  `interactions.json`'s 12, from 1; the sprite only), `cry` (none, cry, slow_cry), `wait` (frames) and `action`:
+  `give_item` (with `quantity`), `give_pool`, `give_waiting`, `friendship` (-128 to 127), `script` (a script ID) or
+  `reset_steps`. The action runs as the step begins, before its message, which names the gift as `{item}`.
+- **An ambient rule** has an `emote`, a `cry` and a `cooldown` in steps.
+- **A pickup rule** names its `pool`; its chance is its `when.chance`.
+- **Messages** take Frost's text codes: `[N]` a new line, `[L]` the next line after A (the game's `{be01}` and a new
+  line), `[C]` a new page after A (`{be00}` and a new line), and `{nickname}`, `{player}`, `{location}` (the zone's
+  place name) and `{item}`, which become the game's word set's words 0 to 3. A message may be up to 1023 words, over as
+  many pages as it needs: the windows' own print streams wait for A at each `[L]` and `[C]`.
+
+`tools/paperwhite2/following_dialogue.py` packs them (its docstring has the byte layouts; `following_dialogue.py dump`
+decodes the sources' blocks): member 4 "FWDL", a 32-byte header, an index of a block number per species (block 0 is the
+shared rules alone), a block table, the blocks, and the texts (each once); member 5 "FWPL", the pools. A block is the
+three tables of the engine (talk, ambient, pickup), each a `ConditionTable` whose rule payloads are the steps (16 bytes
+each) or the ambient or pickup fields, then the rule's name for the debug menu. A species' block is the shared rules
+without a species clause, the shared rules that name it, and its own; a species without any has block 0. A block
+must fit 4096 bytes (the packer says which one doesn't).
+
+### The runtime
+
+- `paperwhite2_following_dialogue.c` (`following_dialogue.h`): reads the header, the species' index entry and its block
+  (`GFL_ArcToolReadRange` through the field actors' open handle of `a/0/4/7`) into the 4 KiB buffer the contextual
+  files used, checks it whole, and keeps it until the species changes or the field unloads; reads a message's words
+  from the ROM only when it is shown, into the field's heap, formats them with the word set into a StrBuf, and frees
+  them with the window; rolls a pool by reading its entries alone. `FollowingDialogue_FillContext` fills the context:
+  world, field, party, the follower as subject with its record, its tile's terrain, the position.
+- `paperwhite2_following_interaction.c`: a talk takes the library's rule first, the HeartGold interactions when none
+  matches. Its steps play as before (motion, bubble, message, wait), with the step's window and action. A library step
+  without a motion cries as it begins.
+- `paperwhite2_following_ambient.c` (`following_ambient.h`): once a frame from `PaperWhite2_FollowingUpdate`. While the
+  follower walks behind the player, or waits as its resting ball, each step of the player to another tile is a step
+  of its party member; then, if it keeps no item, a pickup rule is chosen and its pool rolled, and the item waits on
+  the Pokémon; then, while it is out and no talk or effect runs, an ambient rule's bubble shows over it, walking with
+  it, followed by the rule's cooldown. An ambient cry is skipped while the sound system loads.
+- `paperwhite2_following_data.c` (`following_data.h`): the record, the daily friendship and the gifts. A gift the Bag
+  has no room for becomes the follower's waiting item if it keeps none, and the library's `bag_full` message is said
+  instead of the step's; `give_waiting` gives it later (one item, whatever the pool's count). `paperwhite2_following_gifts.c`
+  (the ten claims) is gone.
+
+**Box styles**, the game's own windows (`scrcmd_msg.c`'s choices):
+
+| Style | Window |
+| --- | --- |
+| default | the talk's balloon as before: `ActorMsgWin_CheckAndCreate(ACTOR_MSG_WIN_BOTTOM, TALKMSG_WIN_FRAME_NORMAL, TALKMSG_WIN_TAIL_NONE)`, the tail to the follower's side |
+| bubble | an NPC's `ActorMsg` with `MSG_WIN_POS_AUTO`: `ActorMsgWin_CalcWinPosAuto` (above when the follower is farther up the screen than the player), `ActorMsgWin_GetBalloonTailParams`, `ActorMsgWin_GetBalloonOffset` |
+| yell | the bubble with `TALKMSG_WIN_FRAME_SPIKY`, which shakes as it opens (`ActorMsg`'s spiky frame, as `ScreamMsg`'s) |
+| event | `InfoMsg`'s plain window: `MsgBGPrinter_CreatePlainWin` across the bottom (1, 0x13, 30 by 4 tiles), no tail, closed at once with A or B |
+
+All four were possible. **The script step** (`script`) runs after its step: the talk puts its windows and pose away and
+ends the interaction, so the follower is back on its trail, then `GameEvent_Replace`s its own event with
+`EventScriptCall_Create(script, the follower's actor)`. The scene policy then treats it as any script: the follower
+waits through the commands it knows and is recalled for the others, as after an NPC's talk.
+
+### The storage on the Pokémon
+
+Five bytes, read as one 40-bit record (`FollowingRecord`): bits 0-9 the waiting item (0 none; past `ITEM_LAST` reads as
+none), 10-21 the steps since the last gift (0-4095, stops there; cleared by `give_waiting` and `reset_steps`), 22-39
+the total steps (0-262,143, stops there).
+
+| Bytes | Field | PK5 offset | Param |
+| --- | --- | --- | --- |
+| block B 0x1c-0x1f | `PkmBlockB.unk1C` (u32) | 0x44-0x47 | `PKM_PARAM_UNK72` (`FOLLOWING_RECORD_PARAM_LOW`) |
+| block C 0x16 | `PkmBlockC.unk16` (u8) | 0x5e | `PKM_PARAM_UNK76` (`FOLLOWING_RECORD_PARAM_HIGH`) |
+
+Four bytes can't hold a 10-bit item, a useful step counter and a total; the fifth gives the total 18 bits. The other
+candidates are left clean: `PkmBlockD.unk1D` (0x85, which Gen 4 transfers fill with their encounter type),
+`PkmBlockD.unk1E` (0x86), `BoxPkm.unk4_3` (the header's flags word) and block C's ribbon bits.
+
+**Evidence they are never written:**
+
+- `src/system/poke_tool.c` writes them only in its generic set switch (`PML_PkmSetParamCore`, `PKM_PARAM_UNK72` and
+  `_UNK76`); no other code names the params, and the add and block functions don't touch them.
+- Every module's delinked object (`build/w2_us/delinks/`, all 1,800, complete C or not) disassembled with
+  `arm-none-eabi-objdump -dr`: no call of `PokeParty_SetParam`, `PML_PkmSetParam` or their getters with r1 set to
+  0x72 or 0x76 (or 0x9b, 0x9c) in the 14 instructions before it, where the same scan finds the known users of 0x9a and
+  0x9d (`mystery_gift_pokemon.o`, `enc_pokeset.o`, `fld_trade.o`, `status_rcv.o`, ...). The only raw block users are
+  `poke_tool.o` and the battle recorder (`battle_rec_tool.o`, which builds temporary Pokémon for videos).
+- No code sets params in a loop over a range that includes them: the only such loops are the Shedinja copy's
+  (`src/ov284/evolution_demo.c`: 0x19-0x35, 0x4d-0x6c, 0x78-0x8c). Shedinja is a copy of Nincada's data, so under
+  `PAPERWHITE2` it now clears both fields.
+- New Pokémon (wild, gifts, Mystery Gift, eggs from the Day Care, `PokeParty_CreatePkm`) start from a zeroed buffer
+  and set named params only, so their record is 0; hatching and evolving keep the data.
+- Poké Transfer: the parent (`src/ov181/mb_parent_sys.c`, `MBParent_StorePokemon`) stores the child's BoxPkm as it
+  comes, only setting the met date. The child program converts Gen 4's data; it isn't in the decomp. PKHeX's model of
+  that conversion zeroes 0x44-0x47 (Platinum and HeartGold's egg and met locations in Gen 4) and 0x5e; if a
+  transferred Pokémon still had other values, they are at worst some steps, and an item past `ITEM_LAST` is none.
+  Not verified against the child binary; trades and the GTS don't matter (the design notes).
+
+**The daily friendship:** `EVENT_WORK_FOLLOWER_TALK_DAY_0` to `_5` (0x4052-0x4057, unused per
+`tools/paperwhite2/var_usage.py --check`), each a Pokémon's 8-bit PID hash and the low byte of the save clock's day
+number. A talk gives `talk_friendship` (1) once a day per Pokémon; a new Pokémon takes an entry of another day.
+
+### The debug menu
+
+START > Follower... (`res/field/scripts/global_10200.s`, actions 38-42, no new script IDs): the title shows the species,
+steps and waiting item; Steps and item (the steps, the total, the item); Set steps... (a value, kept up to 4095);
+Force a pickup (a pickup rule that matches at the greatest steps, chance or not, else pool 0; the item then waits);
+Clear waiting item; Rules now (the talk rule that would be chosen, its priority and how many match, and the ambient
+and pickup rules). Without a follower it says so.
+
+### The sample content
+
+- Shared: a found item (priority 20: a happy bubble, then `give_waiting` in the event window), low HP (10, hp at most
+  25%), rain outdoors (5), night outdoors (4, two pages with `[C]` and `{location}`), grass (3, event window), cave
+  (3), water (3: shallow water, puddles, the shore); ambient: a note while an item waits (cooldown 20), a happy bubble
+  sometimes after 50 steps; pickup: `berries` (Oran, Pecha, Cheri, Leppa, Sitrus) after 100 steps at 10% a step.
+- Keldeo: its Resolute Form yells (priority 2), water (6, two steps), a default and a friendship line (1).
+- Snivy: sunny daytime outdoors (2) and a default (1).
+
+### Memory
+
+The arena on a DS: 150 KB left before (0x25960), 148 KB after (0x25060), 2.3 KB in all: overlay 36 0x740 more (the
+library, the record and the ambient code, less the old dialogue and gift code), overlay 12 0x180 (the debug entries),
+main the engine's new kinds. The 4 KiB block buffer is the one the contextual files had; a message takes its words
+twice and its StrBuf from the field's heap while it shows, a pool roll its entries for a moment. The library is 4.5 KB
+in the ROM now and can grow to hundreds of KB: only one block is ever in memory.
+
+### To test (melonDS, `build/paperwhite2.nds`)
+
+1. With Keldeo leading on a route, talk to it in grass: "is sniffing the grass." in the plain window across the bottom.
+   On a puddle or the shore: Keldeo's two-step water line (the sprite's motion, then a happy bubble and a second
+   balloon). Elsewhere: its default or friendship line (friendship 200+: Party > Friendship 255).
+2. START > World > Time: Night, outdoors: the night line over two pages; A turns the page. Weather: Rain: the rain line.
+   Party > a Pokémon at low HP (battle it down): the low-HP line with the slowed cry.
+3. Resolute Keldeo: the spiky balloon that shakes. Snivy in sunny daytime: its sun line in the balloon above or below.
+4. START > Follower... > Steps and item, walk ten tiles, again: the steps and total grow by 10 (not while it is
+   recalled or a menu is open). Switch the follower with L/R: the old one's counts stay on it; the PC and a save and
+   reload keep them.
+5. Set steps... 100, then walk: within a few dozen steps a pickup (Steps and item shows the berry), and a note bubble
+   shows over the follower now and then while walking, without stopping the player. Or Force a pickup.
+6. Talk to it: "found something!", then "{player} received ... from ..." in the event window; the berry is in the Bag
+   and the steps are back to 0. With the Berries pocket full: the bag_full message, and the item still waits.
+7. Rules now in each place above: the talk rule named matches what the talk says (a weight pick may differ).
+8. Friendship: Party > Friendship 70, talk twice: 71 after the first talk of the day, and no more that day.
+9. Evolve a Nincada with a free slot and a Poké Ball after walking it: Shedinja's Steps and item reads 0.
+
+### What remains
+
+- **Movement routines on tiles** (running a circle if the 8 tiles are clear, running off and back): only the
+  visual-only motions are built (the sprite's offset, as HeartGold's). The hook is the actions' list in
+  `following_dialogue.h`: a walking action, played by the talk's motion stage with the field's collision checks
+  (`ActorRouteCollCheckOneTileInDir`), and a condition on the surrounding tiles as a new clause kind.
+- **No sample script step:** the `script` action and its hand-off are built and need a script to try (any global
+  script ID; one of policy-known commands keeps the follower waiting).
+- **Rails:** the talk's facing on a rail is the rail's line (0-3), not the compass, so `facing` clauses read the
+  rail's; tile bounds read the player's grid tile, which rails don't move as on a grid.
+- **Editor:** the formats are new (the schemas); Frost's editor needs the steps, boxes, pools and a page preview.
+  Motions are numbers until `interactions.json` names them.
+- **Not yet tested in an emulator.**

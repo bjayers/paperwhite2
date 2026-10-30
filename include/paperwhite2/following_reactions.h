@@ -5,24 +5,19 @@
 #include "nitro/fx.h"
 #include "paperwhite2/following.h"
 
-// Paper White 2: the Following Pokémon's reactions when it is talked to: checking and choosing its interactions,
-// contextual dialogues and gifts, their texts with the nickname and the player's name, and the steps of their motions
+// Paper White 2: the Following Pokémon's reactions of HeartGold's when it is talked to: checking and choosing its
+// interactions, their texts with the nickname and the player's name, and the steps of their motions and bubbles
 // (src/paperwhite2/ov036/paperwhite2_following_reactions.c), ported from Pokeweb's reactions.c. The talk reads the
-// files whole and keeps them; nothing here allocates or reads a file
+// file whole and keeps it; nothing here allocates or reads a file
 
-// The files of ARCID_MMODEL_TBL that hold the reactions: the interactions ("FWTK"), the contextual dialogues ("FWCD")
-// and the contextual gifts ("FWTI"), whose formats tools/paperwhite2/following_assets.py gives
+// The file of ARCID_MMODEL_TBL that holds the interactions ("FWTK"), whose format
+// tools/paperwhite2/following_assets.py gives
 #define FOLLOWING_INTERACTIONS_FILE 3
-#define FOLLOWING_DIALOGUES_FILE 4
-#define FOLLOWING_GIFTS_FILE 5
 
-// The largest interactions file, and the largest dialogues or gifts file, which the talk's buffers hold
+// The largest interactions file, which the talk's buffer holds
 #define FOLLOWING_INTERACTIONS_CAPACITY 8192
-#define FOLLOWING_CONTEXT_CAPACITY 4096
-// The words of a text with its end, which the talk's text buffer holds
+// The words of an interaction's text with its end, which the talk's text buffer holds
 #define FOLLOWING_TEXT_CAPACITY 192
-// The motions that a dialogue can play, of the interactions' motions
-#define FOLLOWING_CONTEXT_MOTIONS 12
 
 // The steps of a bubble
 #define FOLLOWING_BUBBLE_STEPS 4
@@ -59,23 +54,6 @@ typedef struct {
     s16 tileX;
     s16 tileY;
 } FollowingReactionSnapshot;
-
-// The contextual dialogues or gifts, checked: the file, its rule count and the size of a rule, which its format
-// version gives
-typedef struct {
-    const u8 *bytes;
-    u32 size;
-    u16 ruleCount;
-    u16 ruleSize;
-} FollowingContextRules;
-
-// A gift that a rule gives: the claim slot it takes, the item and the count of it, and the rule
-typedef struct {
-    u8 slot;
-    u8 quantity;
-    u16 item;
-    u32 rule;
-} FollowingGiftChoice;
 
 // A step of a reaction: the motion it plays and the message and bubble it shows, each counted from 1 and 0 for none,
 // its cry (0 none, 1 the cry, 2 the cry slowed down) and whether it waits for the player
@@ -120,27 +98,5 @@ BOOL FollowingReactions_GetBubble(const FollowingInteractions *data, u32 bubble,
 // doesn't rise. *cry is whether the frame starts a step that cries. FALSE once the motion has ended
 BOOL FollowingReactions_TickMotion(const FollowingInteractions *data, u32 motion, FollowingReactionMotion *state,
                                    BOOL grounded, BOOL *cry);
-
-// The contextual dialogues: TRUE when the size bytes at bytes are valid ones, which out then describes
-BOOL FollowingReactions_ValidateDialogues(FollowingContextRules *out, const void *bytes, u32 size);
-// The first dialogue whose conditions the snapshot meets and whose chance comes up, or -1
-s32 FollowingReactions_ChooseDialogue(const FollowingContextRules *data, const FollowingReactionSnapshot *snapshot,
-                                      u32 *rng);
-// Step step of dialogue rule: its motion before the text, the text, and its motion after
-BOOL FollowingReactions_GetDialogueStep(const FollowingContextRules *data, u32 rule, u32 step,
-                                        FollowingReactionStep *out);
-// Dialogue rule's text, as FollowingReactions_GetText
-u32 FollowingReactions_GetDialogueText(const FollowingContextRules *data, u32 rule,
-                                       const FollowingReactionSnapshot *snapshot, u16 *out, u32 capacity);
-
-// The contextual gifts: TRUE when the size bytes at bytes are valid ones, which out then describes
-BOOL FollowingReactions_ValidateGifts(FollowingContextRules *out, const void *bytes, u32 size);
-// The first gift whose slot isn't in claims (FollowingGifts_ReadClaims) and whose conditions the snapshot meets: TRUE
-// and *out, or FALSE
-BOOL FollowingReactions_ChooseGift(const FollowingContextRules *data, const FollowingReactionSnapshot *snapshot,
-                                   u16 claims, FollowingGiftChoice *out);
-// Gift rule's text with the names and its item's name put in, as FollowingReactions_GetText
-u32 FollowingReactions_GetGiftText(const FollowingContextRules *data, u32 rule,
-                                   const FollowingReactionSnapshot *snapshot, u16 *out, u32 capacity);
 
 #endif // PAPERWHITE2_FOLLOWING_REACTIONS_H

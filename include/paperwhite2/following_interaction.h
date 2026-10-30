@@ -6,8 +6,8 @@
 #include "paperwhite2/following_reactions.h"
 #include "struct_decls.h"
 
-// Paper White 2: talking to the Following Pokémon: A in front of it starts an event that plays its reaction, a
-// contextual dialogue or a gift, with its motions, bubble, cry and message balloon
+// Paper White 2: talking to the Following Pokémon: A in front of it starts an event that plays a rule of its dialogue
+// library or a reaction of HeartGold's, with its motions, bubbles, cries, messages and actions
 // (src/paperwhite2/ov036/paperwhite2_following_interaction.c), ported from Pokeweb's interaction.c
 
 // Once a frame: a talk that ended waits for A and B to be let go before another can begin
@@ -22,6 +22,9 @@ BOOL FollowingTalk_FieldOwns(Field *field);
 // field read them; the talk adds the player's tile and the follower's facing
 GameEvent *FollowingTalk_Begin(Follower *follower, FieldActor *player, FieldActor *actor, Field *field,
                                GameSystem *gsys, const FollowingReactionSnapshot *snapshot);
+// A bubble of the interactions (from 1), which the ambient emotes show too: FALSE when there is none or the
+// interactions can't be read
+BOOL FollowingTalk_GetBubble(MMSys *system, u32 bubble, FollowingBubble *out);
 // Ends a running talk at once and takes its event off the game system's chain
 void FollowingTalk_Cancel(void);
 // FollowingTalk_Cancel, and forgets the files read, for the field's unload

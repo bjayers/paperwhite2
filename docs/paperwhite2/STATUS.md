@@ -2,6 +2,24 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-30: the follower's dialogue rules, gifts, pickups and steps (branch follower-dialogue, not yet tested in game)
+
+- **Built** per the user's follower design notes, on the conditions engine (following-pokemon.md, "Dialogue rules,
+  gifts and steps"): a dialogue library and item pools as `a/0/4/7` members 4 and 5 (`tools/paperwhite2/following_dialogue.py`
+  from `res/paperwhite2/following/dialogue/` and `pools.json`, with schemas), talk rules as steps (message, box style,
+  emote, motion, cry, action), Frost's `[N]` `[L]` `[C]` codes with multi-page messages, gifts as actions (an item or
+  a pool), pickups and ambient emotes on the follower's steps, a talk's friendship once a day, a script step's
+  hand-off. The old contextual dialogues, one-time gifts and their ribbon-bit claims are gone.
+- **Engine:** new clause kinds `FACING`, `TILE_X`, `TILE_Y`, `TOTAL_STEPS`, `ITEM_WAITING` and the context part
+  `CONDITION_CONTEXT_POSITION`; compiler, schema and tests (24) updated.
+- **Storage:** five bytes the game never writes, block B 0x1c (u32) and block C 0x16 (u8): waiting item, steps since
+  the last gift, total steps; Shedinja clears them. Variables 0x4052-0x4057 (`EVENT_WORK_FOLLOWER_TALK_DAY_0`-`_5`).
+- **Debug:** START > Follower... (actions 38-42).
+- `configure.py`'s tool dependencies now follow `from tools.paperwhite2 import X`.
+- `--hack` builds without warnings, `verify_dsi_rom.py` intact, memory 148 KB left (2.3 KB used); matching
+  `modules.ok` passes; check_style, clang-format and the conditions tests pass.
+- **To test in game:** following-pokemon.md, "To test" of that section; what remains is at its end.
+
 ## 2026-10-30: the conditions engine, phase 1 (not committed, not yet tested in game)
 
 - **Built** per `design/conditions.md` (§10's decisions; §11 lists where it differs): the condition format
@@ -99,11 +117,13 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
 - **Shiny Candy**: its own icon (`ITEM_ICON_SHINY_CANDY` and `_PALETTE_`, appended to `generated/item_icons.txt`;
   `res/items/shiny_candy/icon.png` and `icon.pal`, for now copies of the Rare Candy's to redraw), price 1 in the data
   (prices are in tens: ₽10), the Medicine pocket (data and `myitem_savedata.c`), sorted after the Rare Candy; still at
-  Virbank. **Drops:** a wild battle won (`BTL_RESULT_VICTORY`) against a shiny Pokémon gives one at
-  `SHINY_CANDY_DROP_PERCENT` (50), back on the field: "The shiny Pokémon dropped a Shiny Candy!", then the usual
+  Virbank. **Drops:** a wild battle won (`BTL_RESULT_VICTORY`) against a shiny Pokémon gives one if its PID says so
+  (`PaperWhite2_IsShinyCandyDropper`: a hash of the whole PID, under `SHINY_CANDY_DROP_PERCENT` (50) of 100, so the
+  Pokémon decides it when it is made and reloading doesn't reroll it; releasing a shiny uses the same test), back on
+  the field: "The shiny Pokémon dropped a Shiny Candy!", then the usual
   obtained/put-away messages, or "no more room" with a full bag (`Script_20` of `global_2800.s`, script 2819, via
   `L_0151`). `src/paperwhite2/ov012/paperwhite2_shiny_candy_drop.c`, from `EventWildBattleCall_Callback`; the setup's
-  shininess is read when the event is created (`shinyFoe`), since the battle frees the setup. Grass, surfing and fishing
+  shininess is read when the event is created (`candyFoe`), since the battle frees the setup. Grass, surfing and fishing
   encounters only: a scripted static battle returns before the field's fade back in.
 - **Exp. Share from Y** never turned it on: `VMJumpIf CMP_STACK` jumps when the comparison is *false*, so Script_19
   took the "off" branch whenever the flag was set. Fixed (compare with 0). Its flag moved to 0x92f (the hack's block,

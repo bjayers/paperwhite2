@@ -79,7 +79,7 @@ void Test_SetVar(u32 var, u32 value) { sVars[var - 0x4000] = value; }
 
 enum { F_FILLED, F_SEASON, F_PERIOD, F_WEATHER, F_ZONE, F_EXTERIOR, F_TERRAIN, F_FOLLOWER, F_SPECIES, F_FORM,
        F_LEVEL, F_TYPE1, F_TYPE2, F_NATURE, F_FRIENDSHIP, F_HP, F_STATUS, F_STEPS, F_MEDIAN, F_SCALED, F_LOAD_SEED,
-       F_DAY_SEED, F_COUNT };
+       F_DAY_SEED, F_TOTAL_STEPS, F_ITEM_WAITING, F_FACING, F_TILE_X, F_TILE_Y, F_COUNT };
 
 static void Fill(ConditionContext *ctx, const u32 *v) {
     u32 i;
@@ -90,6 +90,8 @@ static void Fill(ConditionContext *ctx, const u32 *v) {
     ctx->type1 = v[F_TYPE1]; ctx->type2 = v[F_TYPE2]; ctx->nature = v[F_NATURE]; ctx->friendship = v[F_FRIENDSHIP];
     ctx->hpPercent = v[F_HP]; ctx->status = v[F_STATUS]; ctx->steps = v[F_STEPS]; ctx->medianLevel = v[F_MEDIAN];
     ctx->scaledLevel = v[F_SCALED]; ctx->loadSeed = v[F_LOAD_SEED]; ctx->daySeed = v[F_DAY_SEED];
+    ctx->totalSteps = v[F_TOTAL_STEPS]; ctx->itemWaiting = v[F_ITEM_WAITING]; ctx->facing = v[F_FACING];
+    ctx->tileX = v[F_TILE_X]; ctx->tileY = v[F_TILE_Y];
 }
 
 u32 Test_ContextFields(void) { return F_COUNT; }
@@ -118,8 +120,8 @@ u32 Test_Payload(const ConditionTable *table, u32 rule, const char **payload) {
 
 FIELDS = ["filled", "season", "period", "weather", "zone", "exterior", "terrain", "follower", "species", "form",
           "level", "type1", "type2", "nature", "friendship", "hp", "status", "steps", "median", "scaled", "load_seed",
-          "day_seed"]
-ALL = 0x1F
+          "day_seed", "total_steps", "item_waiting", "facing", "tile_x", "tile_y"]
+ALL = 0x3F
 U32 = ctypes.c_uint32
 
 
@@ -260,12 +262,23 @@ class MatcherTest(unittest.TestCase):
 
     def test_ranges(self):
         for field, context in (("level", "level"), ("party_level", "median"), ("scaled_level", "scaled"),
-                               ("hp", "hp"), ("friendship", "friendship"), ("steps", "steps")):
+                               ("hp", "hp"), ("friendship", "friendship"), ("steps", "steps"),
+                               ("total_steps", "total_steps"), ("tile_x", "tile_x"), ("tile_y", "tile_y")):
             self.check({field: {"min": 20, "max": 40}}, [({context: v}, 20 <= v <= 40) for v in (0, 19, 20, 40, 41)])
             self.check({field: {"min": 20}}, [({context: v}, v >= 20) for v in (19, 20, 255)])
             self.check({field: {"max": 5}}, [({context: v}, v <= 5) for v in (0, 5, 6)])
         with self.assertRaises(DataError):
             table_of({"level": {"min": 5, "max": 4}})
+
+    def test_follower_position_and_item(self):
+        self.check({"facing": ["left", "right"]}, [({"facing": f}, f in (2, 3)) for f in range(4)] +
+                   [({"facing": 9}, False)])
+        self.check({"item_waiting": True}, [({"item_waiting": 155}, True), ({"item_waiting": 0}, False)])
+        self.check({"item_waiting": False}, [({"item_waiting": 0}, True), ({"item_waiting": 155}, False)])
+        self.check({"total_steps": {"min": 100000 & 0xFFFF}}, [({"total_steps": 1 << 20}, True)])
+        # The position is its own part: a rule on it fails when the consumer gives none
+        self.check({"facing": ["up"]}, [({"filled": ALL & ~0x20, "facing": 0}, False)])
+        self.check({"tile_x": {"min": 3}}, [({"filled": ALL & ~0x20, "tile_x": 5}, False)])
 
     def test_species(self):
         deerling = constants()["SPECIES_DEERLING"]
@@ -406,7 +419,8 @@ class CompilerTest(unittest.TestCase):
 
     def test_kinds_are_the_headers(self):
         self.assertEqual(conditions.kind("SEASON"), 0)
-        self.assertEqual(conditions.kind("CHANCE"), len(conditions.enum("CONDITION_KIND_")) - 1)
+        self.assertEqual(conditions.kind("CHANCE"), 19)
+        self.assertEqual(conditions.kind("ITEM_WAITING"), len(conditions.enum("CONDITION_KIND_")) - 1)
         self.assertEqual(conditions.op("UNSET"), 11)
 
     def test_headers(self):

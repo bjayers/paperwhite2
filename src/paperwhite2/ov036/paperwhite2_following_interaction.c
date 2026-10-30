@@ -1,13 +1,17 @@
 #include "types.h"
 #include "constants/directions.h"
+#include "constants/items.h"
 #include "constants/sound.h"
 #include "constants/species.h"
 #include "field/field.h"
 #include "field/field_actor.h"
 #include "field/field_actor_internal.h"
+#include "field/field_camera.h"
 #include "field/field_internal.h"
 #include "field/field_msgbg.h"
 #include "field/field_player.h"
+#include "field/field_script_event.h"
+#include "field/scrcmd_msg.h"
 #include "field/talkmsgwin.h"
 #include "gfl/arc.h"
 #include "gfl/heap.h"
@@ -16,23 +20,29 @@
 #include "gfl/str.h"
 #include "nitro/fx.h"
 #include "nitro/mi.h"
+#include "paperwhite2/conditions.h"
 #include "paperwhite2/following.h"
+#include "paperwhite2/following_data.h"
+#include "paperwhite2/following_dialogue.h"
 #include "paperwhite2/following_effects.h"
 #include "paperwhite2/following_field.h"
-#include "paperwhite2/following_gifts.h"
 #include "paperwhite2/following_interaction.h"
 #include "paperwhite2/following_reactions.h"
 #include "paperwhite2/following_render.h"
+#include "system/game_data.h"
 #include "system/game_event.h"
 #include "system/game_system.h"
+#include "system/wordset.h"
 
 // Paper White 2: talking to the Following Pokémon, ported from Pokeweb's interaction.c. A in front of the follower
-// starts an event of its own that plays, step by step, the follower's motion, its bubble and cry and a message balloon
-// over it: an interaction of HeartGold's (file 3 of ARCID_MMODEL_TBL), a contextual dialogue (file 4) or a gift
-// (file 5), which the talk reads whole through the field actors' open handle of the archive. The original read them as
-// ROM files, and checked the emotes' file's size and CRC-32 against a record in the interactions; the files are now
-// members of the model table, which the packer writes together, and that check is gone, so a step's bubble always
-// plays. Its FollowingTalkDebug and FollowingGiftDebug, blocks of values for its emulator tests, aren't ported
+// starts an event of its own that plays, step by step, the follower's motion, its bubble and cry, a message and an
+// action: a rule of the dialogue library (paperwhite2/following_dialogue.h, file 4 of ARCID_MMODEL_TBL), or when none
+// matches an interaction of HeartGold's (file 3), which the talk reads whole through the field actors' open handle of
+// the archive. The original read them as ROM files, and checked the emotes' file's size and CRC-32 against a record in
+// the interactions; the files are now members of the model table, which the packer writes together, and that check is
+// gone, so a step's bubble always plays. The original's contextual dialogues and one-time gifts are the library's
+// rules now, whose gifts are steps (docs/paperwhite2/following-pokemon.md, "Dialogue rules, gifts and steps"). Its
+// FollowingTalkDebug and FollowingGiftDebug, blocks of values for its emulator tests, aren't ported
 
 // The heap that the talk's event is allocated from, and how much of it, and of the field's heap for the balloon, the
 // talk leaves
@@ -67,7 +77,14 @@
 // Half a tile, the most that the follower's height may differ from the player's and its draw offset be
 #define REACH_HEIGHT (8 * FX32_ONE)
 
-// The talk's stages: the next step, its motion, its bubble's start and its frames, its message, the balloon printing,
+// The plain window of FOLLOWING_BOX_EVENT, as InfoMsg opens it: across the bottom rows, its text 8 pixels in
+#define PLAIN_WIN_X 1
+#define PLAIN_WIN_Y 0x13
+#define PLAIN_WIN_WIDTH 0x1e
+#define PLAIN_WIN_HEIGHT 4
+#define PLAIN_WIN_TEXT_X 8
+
+// The talk's stages: the next step, its motion, its bubble's start and its frames, its message, the window printing,
 // waiting for A or B, closing, and the step's wait
 enum {
     STAGE_STEP,
@@ -81,6 +98,23 @@ enum {
     STAGE_WAIT,
 };
 
+// A step as it plays, of either kind: the motion, the bubble and the cry of HeartGold's steps; the window, the action
+// and the wait of the library's; and its message, HeartGold's (message, from 1) or a text of the library (textWords
+// with its end at text), 0 for none
+typedef struct {
+    u16 motion;
+    u16 cry;
+    u16 message;
+    u16 textWords;
+    u32 text;
+    u16 wait;
+    u16 arg;
+    u8 bubble;
+    u8 box;
+    u8 action;
+    s8 amount;
+} FollowingTalkStep;
+
 // The running talk. follower, generation, actor, system and moveCode are what the talk began with, so a follower
 // replaced since is never touched
 typedef struct {
@@ -92,10 +126,11 @@ typedef struct {
     GameSystem *gsys;
     GameEvent *event;
     ActorMsgWin *window;
+    InfoMsgWin *plain;
     StrBuf *string;
     FollowingReactionSnapshot snapshot;
     FollowingReactionMotion motion;
-    FollowingReactionStep step;
+    FollowingTalkStep step;
     FollowingBubble bubble;
     // The follower's draw offset when the talk began, which its motions are relative to, and where the balloon is
     VecFx32 offset;
@@ -103,16 +138,16 @@ typedef struct {
     u16 text[FOLLOWING_TEXT_CAPACITY];
     u32 generation;
     u32 rule;
-    u32 contextRule;
-    u32 giftRule;
+    // The library's rule, or -1 for HeartGold's interaction rule
+    s32 dialogueRule;
     u32 stepIndex;
     u32 stage;
     u32 age;
     u32 bubbleIndex;
     u32 bubbleAge;
-    BOOL contextual;
-    BOOL gift;
-    s32 giftGranted;
+    // The item that the step's text names, and a script that the step hands the talk over to after it
+    u16 item;
+    u16 script;
     u16 face;
     BOOL active;
     // A and B were let go since the balloon began to wait
@@ -122,13 +157,9 @@ typedef struct {
     BOOL finished;
 } FollowingTalk;
 
-// The interactions stay read until the field unloads; the dialogues and the gifts share one buffer, read again at each
-// talk, since only one of them is used by a talk
+// The interactions stay read until the field unloads; the library keeps the follower's species' block
 static u32 sInteractionBytes[FOLLOWING_INTERACTIONS_CAPACITY / 4];
-static u32 sContextBytes[FOLLOWING_CONTEXT_CAPACITY / 4];
 static FollowingInteractions sInteractions;
-static FollowingContextRules sDialogues;
-static FollowingContextRules sGifts;
 // 1 once the interactions are read and valid, -1 once that failed, which stays until the unload
 static s32 sLoaded;
 static BOOL sNeedRelease;
@@ -171,6 +202,10 @@ static BOOL Load(MMSys *system) {
     return TRUE;
 }
 
+BOOL FollowingTalk_GetBubble(MMSys *system, u32 bubble, FollowingBubble *out) {
+    return Load(system) && FollowingReactions_GetBubble(&sInteractions, bubble, out);
+}
+
 static BOOL IsValidActor(void) {
     FieldActor *actor = sTalk.actor;
 
@@ -209,6 +244,10 @@ static void CloseResources(void) {
     if (sTalk.window != NULL) {
         MsgBGPrinter_ClearTalkWin(sTalk.window);
         sTalk.window = NULL;
+    }
+    if (sTalk.plain != NULL) {
+        MsgBGPrinter_DeletePlainWin(sTalk.plain);
+        sTalk.plain = NULL;
     }
     if (sTalk.string != NULL) {
         GFL_StrBufFree(sTalk.string);
@@ -268,8 +307,7 @@ void FollowingTalk_Unload(void) {
     FollowingTalk_Cancel();
     sLoaded = 0;
     MI_CpuFill8(&sInteractions, 0, sizeof(sInteractions));
-    MI_CpuFill8(&sDialogues, 0, sizeof(sDialogues));
-    MI_CpuFill8(&sGifts, 0, sizeof(sGifts));
+    FollowingDialogue_Unload();
 }
 
 // Whether the follower stands where A talks to it: in front of the player within its gap, on the trail between them.
@@ -453,61 +491,191 @@ static void Cry(void) {
     sTalk.cryPending = 0;
 }
 
-// The message of a gift that the bag had no room for. The base package's own English text; the original's Italian
-// build read it from a file of its language instead
-static u32 GetFullBagText(u16 *out) {
-    static const u16 text[] = {
-        'T', 'h', 'e', ' ', 'B', 'a', 'g', ' ', 'i', 's', ' ', 'f', 'u', 'l', 'l', '.', 0xffff
-    };
-    u32 i;
-
-    for (i = 0; i < NELEMS(text); i++) {
-        out[i] = text[i];
-    }
-    return NELEMS(text) - 1;
+// The talk's party member, found again each time it is changed: NULL once it has left the party
+static PartyPkm *GetPartyPkm(void) {
+    return FollowingParty_Find(sTalk.field->gameData, sTalk.snapshot.pokemon.personality,
+                               sTalk.snapshot.pokemon.trainer, sTalk.snapshot.pokemon.species,
+                               sTalk.snapshot.pokemon.form);
 }
 
-static u32 GetText(void) {
-    if (sTalk.gift) {
-        if (sTalk.giftGranted) {
-            return FollowingReactions_GetGiftText(&sGifts, sTalk.giftRule, &sTalk.snapshot, sTalk.text,
-                                                  FOLLOWING_TEXT_CAPACITY);
+// The step to play, of the library's rule or HeartGold's: FALSE past the last
+static BOOL GetStep(void) {
+    const FollowingTalkRule *rule;
+    const FollowingDialogueStep *step;
+    FollowingReactionStep interaction;
+
+    MI_CpuFill8(&sTalk.step, 0, sizeof(sTalk.step));
+    if (sTalk.dialogueRule < 0) {
+        if (!FollowingReactions_GetStep(&sInteractions, sTalk.rule, sTalk.stepIndex, &interaction)) {
+            return FALSE;
         }
-        return GetFullBagText(sTalk.text);
+        sTalk.step.motion = interaction.motion;
+        sTalk.step.message = interaction.message;
+        sTalk.step.cry = interaction.cry;
+        sTalk.step.bubble = interaction.bubble;
+        sTalk.step.wait = interaction.wait;
+        return TRUE;
     }
-    if (sTalk.contextual) {
-        return FollowingReactions_GetDialogueText(&sDialogues, sTalk.contextRule, &sTalk.snapshot, sTalk.text,
-                                                  FOLLOWING_TEXT_CAPACITY);
+    rule = FollowingDialogue_GetRule(FOLLOWING_TABLE_TALK, sTalk.dialogueRule);
+    if (rule == NULL || sTalk.stepIndex >= rule->stepCount) {
+        return FALSE;
     }
-    return FollowingReactions_GetText(&sInteractions, sTalk.step.message, &sTalk.snapshot, sTalk.text,
-                                      FOLLOWING_TEXT_CAPACITY);
+    step = &rule->steps[sTalk.stepIndex];
+    sTalk.step.motion = step->motion;
+    sTalk.step.cry = step->cry;
+    sTalk.step.text = step->text;
+    sTalk.step.textWords = step->textWords;
+    sTalk.step.wait = step->wait;
+    sTalk.step.arg = step->arg;
+    sTalk.step.bubble = step->emote;
+    sTalk.step.box = step->box;
+    sTalk.step.action = step->action;
+    sTalk.step.amount = step->amount;
+    return TRUE;
 }
 
-// Opens the step's message in a balloon over the follower
-static BOOL OpenMessage(void) {
-    FieldMsgBG *bg;
-    HeapID heapId;
+// A gift's item, which the step's text names, and in place of the text the library's message of a full Bag unless the
+// item went into it
+static void NoteGift(u32 item, u32 result) {
+    u32 text;
+    u32 words;
 
-    if (GetText() == 0) {
+    sTalk.item = item;
+    if (result != FOLLOWING_GIFT_GIVEN && FollowingDialogue_GetBagFullText(&text, &words)) {
+        sTalk.step.text = text;
+        sTalk.step.textWords = words;
+    }
+}
+
+// The step's action, as it begins: FALSE skips the step, a gift of an item that isn't there
+static BOOL RunAction(void) {
+    GameData *gameData = sTalk.field->gameData;
+    PartyPkm *pkm;
+    FollowingRecord record;
+    u32 quantity;
+    u32 item;
+    u16 waiting;
+
+    if (sTalk.step.action == FOLLOWING_ACTION_NONE) {
+        return TRUE;
+    }
+    pkm = GetPartyPkm();
+    if (pkm == NULL) {
         return FALSE;
     }
-    bg = Field_GetMsgBGSys(sTalk.field);
-    if (bg == NULL || !PaperWhite2_CanOpenActorMsgWin(bg, TALK_WIN_TYPE)) {
+    switch (sTalk.step.action) {
+    case FOLLOWING_ACTION_GIVE_ITEM:
+        NoteGift(sTalk.step.arg, FollowingGift_Give(gameData, pkm, sTalk.step.arg, (u8)sTalk.step.amount));
+        break;
+    case FOLLOWING_ACTION_GIVE_POOL:
+        item = FollowingDialogue_RollPool(sTalk.system->actorConfigArc, sTalk.step.arg, &sRng, &quantity,
+                                          Field_GetHeapID(sTalk.field));
+        if (item == ITEM_NONE) {
+            return FALSE;
+        }
+        NoteGift(item, FollowingGift_Give(gameData, pkm, item, quantity));
+        break;
+    case FOLLOWING_ACTION_GIVE_WAITING:
+        item = FollowingGift_GiveWaiting(gameData, pkm, &waiting);
+        if (item == FOLLOWING_GIFT_NOT_GIVEN) {
+            return FALSE;
+        }
+        NoteGift(waiting, item);
+        break;
+    case FOLLOWING_ACTION_FRIENDSHIP:
+        FollowingFriendship_Add(pkm, sTalk.step.amount);
+        break;
+    case FOLLOWING_ACTION_SCRIPT:
+        sTalk.script = sTalk.step.arg;
+        break;
+    case FOLLOWING_ACTION_RESET_STEPS:
+        FollowingRecord_Read(pkm, &record);
+        record.steps = 0;
+        FollowingRecord_Write(pkm, &record);
+        break;
+    }
+    return TRUE;
+}
+
+// The step's message: a text of the library with its words put in, or HeartGold's with the names
+static StrBuf *MakeString(HeapID heapId) {
+    WordSet *words;
+    StrBuf *string;
+
+    if (sTalk.step.textWords != 0) {
+        words = FollowingDialogue_CreateWords(sTalk.field->gameData, GetPartyPkm(), sTalk.snapshot.zone, sTalk.item,
+                                              heapId);
+        string = FollowingDialogue_ReadText(sTalk.system->actorConfigArc, sTalk.step.text, sTalk.step.textWords, words,
+                                            heapId);
+        GFL_WordSetSystemFree(words);
+        return string;
+    }
+    if (FollowingReactions_GetText(&sInteractions, sTalk.step.message, &sTalk.snapshot, sTalk.text,
+                                   FOLLOWING_TEXT_CAPACITY) == 0) {
+        return NULL;
+    }
+    string = GFL_StrBufCreate(FOLLOWING_TEXT_CAPACITY, heapId);
+    GFL_StrBufLoadString(string, sTalk.text);
+    return string;
+}
+
+// Opens the step's message in its window: a balloon over the follower, or the plain window
+static BOOL OpenMessage(void) {
+    FieldMsgBG *bg = Field_GetMsgBGSys(sTalk.field);
+    HeapID heapId = Field_GetHeapID(sTalk.field);
+    FieldCamera *camera;
+    VecFx32 offset;
+    u32 position;
+    u32 type = TALK_WIN_TYPE;
+    u32 tail = TALKMSG_WIN_TAIL_NONE;
+    u32 frame = TALKMSG_WIN_FRAME_NORMAL;
+
+    if (bg == NULL || GFL_HeapGetFreeSize(heapId) < FIELD_HEAP_KEPT) {
         return FALSE;
     }
-    heapId = Field_GetHeapID(sTalk.field);
-    if (GFL_HeapGetFreeSize(heapId) < FIELD_HEAP_KEPT) {
+    sTalk.position = sTalk.actor->wPos;
+    // A balloon goes where an NPC's ActorMsg with MSG_WIN_POS_AUTO puts it: above when the follower is farther up the
+    // screen than the player, else below, with its tail to it
+    if (sTalk.step.box == FOLLOWING_BOX_BUBBLE || sTalk.step.box == FOLLOWING_BOX_YELL) {
+        position = ActorMsgWin_CalcWinPosAuto(FieldPlayer_GetActor(sTalk.field->player), &sTalk.position);
+        ActorMsgWin_GetBalloonTailParams(position, &type, &tail);
+        camera = Field_GetCameraSystem(sTalk.field);
+        ActorMsgWin_GetBalloonOffset(&sTalk.position, &offset, FieldCamera_GetG3DCamera(camera), camera, position);
+        sTalk.position.x += offset.x;
+        sTalk.position.y += offset.y;
+        sTalk.position.z += offset.z;
+        if (sTalk.step.box == FOLLOWING_BOX_YELL) {
+            frame = TALKMSG_WIN_FRAME_SPIKY;
+        }
+    }
+    if (sTalk.step.box != FOLLOWING_BOX_EVENT && !PaperWhite2_CanOpenActorMsgWin(bg, type)) {
         return FALSE;
     }
-    sTalk.string = GFL_StrBufCreate(FOLLOWING_TEXT_CAPACITY, heapId);
+    sTalk.string = MakeString(heapId);
     if (sTalk.string == NULL) {
         return FALSE;
     }
-    GFL_StrBufLoadString(sTalk.string, sTalk.text);
-    sTalk.position = sTalk.actor->wPos;
-    sTalk.window = ActorMsgWin_CheckAndCreate(bg, TALK_WIN_TYPE, &sTalk.position, sTalk.string,
-                                              TALKMSG_WIN_FRAME_NORMAL, TALKMSG_WIN_TAIL_NONE);
+    if (sTalk.step.box == FOLLOWING_BOX_EVENT) {
+        sTalk.plain = MsgBGPrinter_CreatePlainWin(bg, NULL, TALKMSG_WIN_FRAME_NORMAL, PLAIN_WIN_X, PLAIN_WIN_Y,
+                                                  PLAIN_WIN_WIDTH, PLAIN_WIN_HEIGHT);
+        MsgBGPrinter_PlainWinPrintStream(sTalk.plain, PLAIN_WIN_TEXT_X, 0, sTalk.string);
+        return TRUE;
+    }
+    sTalk.window = ActorMsgWin_CheckAndCreate(bg, type, &sTalk.position, sTalk.string, frame, tail);
     return sTalk.window != NULL;
+}
+
+// Hands the field over to the step's script once the talk's own windows and pose are put away, so the scene sees the
+// follower back on its trail, as after an NPC's talk, when the script's event begins
+static GameEventReturnCode HandOff(GameEvent *event) {
+    GameSystem *gsys = sTalk.gsys;
+    FieldActor *actor = sTalk.actor;
+    u16 script = sTalk.script;
+
+    CloseResources();
+    sTalk.event = NULL;
+    GameEvent_Replace(event, EventScriptCall_Create(gsys, script, actor, HEAPID_FIELDMAP));
+    return GAMEEVENT_CONTINUE;
 }
 
 static void Pose(const VecFx32 *offset, u32 face) {
@@ -534,23 +702,20 @@ static GameEventReturnCode TalkEvent(GameEvent *event, u32 *state, void *data) {
     Cry();
     switch (sTalk.stage) {
     case STAGE_STEP:
-        // A gift is one step: its message, with the cry and the first bubble when the item was given
-        if (sTalk.gift) {
-            sTalk.step.motion = 0;
-            sTalk.step.message = 1;
-            sTalk.step.wait = 1;
-            sTalk.step.cry = sTalk.giftGranted ? 1 : 0;
-            sTalk.step.bubble = sTalk.giftGranted ? 1 : 0;
-            sTalk.stage = sTalk.giftGranted ? STAGE_BUBBLE : STAGE_MESSAGE;
-            break;
-        }
-        if (!(sTalk.contextual
-                  ? FollowingReactions_GetDialogueStep(&sDialogues, sTalk.contextRule, sTalk.stepIndex, &sTalk.step)
-                  : FollowingReactions_GetStep(&sInteractions, sTalk.rule, sTalk.stepIndex, &sTalk.step))) {
+        if (!GetStep()) {
             return FinishEvent();
+        }
+        if (!RunAction()) {
+            sTalk.stepIndex++;
+            break;
         }
         MI_CpuFill8(&sTalk.motion, 0, sizeof(sTalk.motion));
         sTalk.motion.face = (u8)sTalk.face;
+        // A library's step without a motion cries as it begins; HeartGold's cry only with a motion's frame
+        if (sTalk.dialogueRule >= 0 && sTalk.step.motion == 0 && sTalk.step.cry != 0) {
+            sTalk.cryPending = sTalk.step.cry;
+            Cry();
+        }
         sTalk.stage = STAGE_MOTION;
         break;
     case STAGE_MOTION: {
@@ -600,7 +765,7 @@ static GameEventReturnCode TalkEvent(GameEvent *event, u32 *state, void *data) {
         }
         break;
     case STAGE_MESSAGE:
-        if (sTalk.step.message != 0) {
+        if (sTalk.step.message != 0 || sTalk.step.textWords != 0) {
             if (!OpenMessage()) {
                 return FinishEvent();
             }
@@ -611,19 +776,32 @@ static GameEventReturnCode TalkEvent(GameEvent *event, u32 *state, void *data) {
         }
         break;
     case STAGE_PRINT:
-        if (MsgBGPrinter_TalkWinMain(sTalk.window)) {
-            MsgBGPrinter_TalkWinDrawCursor(sTalk.window);
+        // The windows' streams wait for A or B at each page and scrolled line of the text themselves
+        if (sTalk.plain != NULL ? MsgBGPrinter_PlainWinMain(sTalk.plain) : MsgBGPrinter_TalkWinMain(sTalk.window)) {
             sTalk.stage = STAGE_INPUT;
             sTalk.released = FALSE;
         }
         break;
     case STAGE_INPUT:
-        MsgBGPrinter_TalkWinDrawCursor(sTalk.window);
+        if (sTalk.plain != NULL) {
+            MsgBGPrinter_PlainWinDrawCursor(sTalk.plain);
+        } else {
+            MsgBGPrinter_TalkWinDrawCursor(sTalk.window);
+        }
         if (sTalk.released && (pressed & TALK_KEYS)) {
-            MsgBGPrinter_DeleteTalkWin(sTalk.window);
             sTalk.age = 0;
-            sTalk.stage = STAGE_CLOSE;
             sTalk.released = FALSE;
+            // The plain window closes at once, as InfoMsgClose closes it
+            if (sTalk.plain != NULL) {
+                MsgBGPrinter_DeletePlainWin(sTalk.plain);
+                sTalk.plain = NULL;
+                GFL_StrBufFree(sTalk.string);
+                sTalk.string = NULL;
+                sTalk.stage = STAGE_WAIT;
+                break;
+            }
+            MsgBGPrinter_DeleteTalkWin(sTalk.window);
+            sTalk.stage = STAGE_CLOSE;
         }
         break;
     case STAGE_CLOSE:
@@ -638,10 +816,10 @@ static GameEventReturnCode TalkEvent(GameEvent *event, u32 *state, void *data) {
         }
         break;
     case STAGE_WAIT:
-        if (sTalk.gift) {
-            return FinishEvent();
-        }
         if (++sTalk.age >= sTalk.step.wait) {
+            if (sTalk.script != 0) {
+                return HandOff(event);
+            }
             sTalk.stepIndex++;
             sTalk.stage = STAGE_STEP;
         }
@@ -656,17 +834,15 @@ GameEvent *FollowingTalk_Begin(Follower *follower, FieldActor *player, FieldActo
                                GameSystem *gsys, const FollowingReactionSnapshot *snapshot) {
     FollowingReactionSnapshot current;
     GameData *gameData;
-    ArcTool *arc;
+    PartyPkm *pkm;
+    ConditionContext ctx;
+    BOOL library = FALSE;
     s32 dx;
     s32 dz;
     u32 face;
-    s32 giftRule = -1;
-    s32 contextRule = -1;
+    u32 rng;
+    s32 dialogueRule = -1;
     s32 rule = -1;
-    u16 claims = 0;
-    FollowingGiftChoice choice;
-    u32 size;
-    BOOL giftChosen;
 
     if (sTalk.active || sNeedRelease || actor == NULL || !Load(actor->actorSystem) ||
         !CanReach(follower, player, actor, field) || GSYS_GetNowEvent(gsys) != NULL) {
@@ -699,25 +875,18 @@ GameEvent *FollowingTalk_Begin(Follower *follower, FieldActor *player, FieldActo
     }
     current.direction = (u8)face;
     gameData = field->gameData;
-    arc = actor->actorSystem->actorConfigArc;
-    MI_CpuFill8(&choice, 0, sizeof(choice));
-    // A gift that the follower hasn't given yet comes first, then a dialogue of the place, then an interaction
-    size = ReadMember(arc, FOLLOWING_GIFTS_FILE, sContextBytes, sizeof(sContextBytes));
-    giftChosen = size != 0 && FollowingReactions_ValidateGifts(&sGifts, sContextBytes, size) && gameData != NULL &&
-                 FollowingGifts_ReadClaims(gameData, &current, &claims) &&
-                 FollowingReactions_ChooseGift(&sGifts, &current, claims, &choice);
-    if (giftChosen) {
-        giftRule = (s32)choice.rule;
+    pkm = FollowingParty_Find(gameData, current.pokemon.personality, current.pokemon.trainer, current.pokemon.species,
+                              current.pokemon.form);
+    // A rule of the library comes first, chosen by the conditions' selection, then an interaction of HeartGold's
+    if (pkm != NULL && FollowingDialogue_Load(actor->actorSystem->actorConfigArc, current.pokemon.species) &&
+        FollowingDialogue_FillContext(&ctx, field, pkm, face, (u16)current.tileX, (u16)current.tileY)) {
+        library = TRUE;
+        rng = Conditions_Seed(&ctx, CONDITION_SEED_CHECK, 0);
+        dialogueRule = FollowingDialogue_Select(FOLLOWING_TABLE_TALK, &ctx, &rng);
     }
-    if (giftRule < 0) {
-        size = ReadMember(arc, FOLLOWING_DIALOGUES_FILE, sContextBytes, sizeof(sContextBytes));
-        MI_CpuFill8(&sDialogues, 0, sizeof(sDialogues));
-        if (size != 0) {
-            FollowingReactions_ValidateDialogues(&sDialogues, sContextBytes, size);
-        }
-        contextRule = FollowingReactions_ChooseDialogue(&sDialogues, &current, &sRng);
-        rule = contextRule < 0 ? FollowingReactions_Choose(&sInteractions, &current, &sRng) : 0;
-        if (contextRule < 0 && rule < 0) {
+    if (dialogueRule < 0) {
+        rule = FollowingReactions_Choose(&sInteractions, &current, &sRng);
+        if (rule < 0) {
             return NULL;
         }
     }
@@ -735,19 +904,13 @@ GameEvent *FollowingTalk_Begin(Follower *follower, FieldActor *player, FieldActo
     sTalk.offset = actor->wPosOffset;
     sTalk.face = (u16)face;
     sTalk.rule = (u32)(rule < 0 ? 0 : rule);
-    sTalk.contextRule = (u32)(contextRule < 0 ? 0 : contextRule);
-    sTalk.giftRule = (u32)(giftRule < 0 ? 0 : giftRule);
-    sTalk.contextual = contextRule >= 0;
-    sTalk.gift = giftRule >= 0;
-    // The item goes into the bag now; the talk only says so. A party member that changed since is no gift
-    sTalk.giftGranted = sTalk.gift ? FollowingGifts_Grant(gameData, &current, &choice) : FOLLOWING_GIFT_NOT_GIVEN;
-    if (sTalk.gift && sTalk.giftGranted < 0) {
-        Following_EndInteraction(follower);
-        return NULL;
-    }
+    sTalk.dialogueRule = dialogueRule;
+    sTalk.item = ITEM_NONE;
+    sTalk.script = 0;
     sTalk.stage = STAGE_STEP;
     sTalk.stepIndex = sTalk.age = 0;
     sTalk.window = NULL;
+    sTalk.plain = NULL;
     sTalk.string = NULL;
     sTalk.released = FALSE;
     sTalk.cryPending = 0;
@@ -756,6 +919,11 @@ GameEvent *FollowingTalk_Begin(Follower *follower, FieldActor *player, FieldActo
     if (sTalk.event == NULL) {
         Following_EndInteraction(follower);
         return NULL;
+    }
+    // A talk's friendship, once a day for each Pokémon
+    if (library) {
+        FollowingFriendship_GiveDaily(GameData_GetEventWork(gameData), pkm, ctx.dayNumber,
+                                      FollowingDialogue_GetTalkFriendship());
     }
     sTalk.active = TRUE;
     actor->flags |= FOLLOWING_ACTOR_FLAG_PAUSE_ANIMATION;

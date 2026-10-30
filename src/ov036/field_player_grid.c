@@ -303,7 +303,13 @@ void FieldPlayerGrid_UpdateMovement(FieldPlayerGrid *grid, u32 pressedKeys, u32 
             input.heldKeys = heldKeys;
             input.dir = dir;
             input.flags = flags;
+#ifdef PAPERWHITE2_DEBUG_MENU
+            // Paper White 2: the debug menu's Walk through walls is the grid's forced step, which only the map's edge
+            // (ACTOR_COLL_OUT_OF_BOUNDS) stops, onto water and off it as well as through walls
+            input.force = PaperWhite2_Debug_IsWalkingThroughWalls(GSYS_GetGameData(Field_GetGameSystem(grid->field)));
+#else
             input.force = FALSE;
+#endif
             command = FieldPlayerGrid_DecideCommand(grid, &input);
             FieldPlayerGrid_SetCommonStatus(grid, command, &input);
             FieldPlayerGrid_UpdateCore(grid, command, &input);
@@ -1264,13 +1270,7 @@ static u32 PlayerMoveCollCheck(FieldPlayerGrid *grid, FieldActor *actor, u16 dir
         IsSavedStrengthRockAtPos(GetActorMModelSystem(actor), &pos) == TRUE) {
         hit &= ~2;
     }
-#ifdef PAPERWHITE2_DEBUG_MENU
-    // Paper White 2: the debug menu's Walk through walls, which leaves only the map's edge (ACTOR_COLL_OUT_OF_BOUNDS)
-    return PaperWhite2_Debug_FilterPlayerHit(GSYS_GetGameData(Field_GetGameSystem(grid->field)), hit,
-                                             ACTOR_COLL_OUT_OF_BOUNDS);
-#else
     return hit;
-#endif
 }
 
 static void FieldPlayerGrid_SetFlag(FieldPlayerGrid *grid, u32 flag) {

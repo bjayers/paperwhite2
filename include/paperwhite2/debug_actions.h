@@ -106,6 +106,21 @@
 // it again (3), which is the same pick, and a keyed seed, the load seed with key 1 (4)
 #define DEBUG_ACTION_CONDITIONS_PICK 37
 
+// The Following Pokémon's record and rules (docs/paperwhite2/following-pokemon.md, "Dialogue rules, gifts and steps"),
+// each FALSE without a follower. Puts its species (0), its steps since its last gift (1), its total steps (2) and its
+// waiting item (3)
+#define DEBUG_ACTION_FOLLOWER_WORDS 38
+// Sets its steps since its last gift to the number
+#define DEBUG_ACTION_FOLLOWER_SET_STEPS 39
+// Finds an item now (FollowingDebug_ForcePickup): its species in word 0 and the item in word 3; FALSE when none was
+// found
+#define DEBUG_ACTION_FOLLOWER_PICKUP 40
+// Forgets its waiting item
+#define DEBUG_ACTION_FOLLOWER_CLEAR_ITEM 41
+// Puts the talk rule that would be chosen now (0), its priority (1) and how many talk rules match (2), and the ambient
+// (3) and pickup rules (4) that would be
+#define DEBUG_ACTION_FOLLOWER_RULES 42
+
 // The kinds of number entry: their ranges and messages are sDebugNumberKinds (paperwhite2_debug_commands.c)
 #define DEBUG_NUMBER_LEVEL 0
 #define DEBUG_NUMBER_NATURE 1

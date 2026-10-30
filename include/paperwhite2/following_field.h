@@ -3,6 +3,7 @@
 
 #include "types.h"
 #include "field/field_actor.h"
+#include "paperwhite2/following.h"
 #include "struct_decls.h"
 
 // Paper White 2: the Following Pokémon's follower in the field: the party member that follows, its actor, which walks
@@ -62,6 +63,9 @@ GameEvent *PaperWhite2_FollowingRailEvent(GameSystem *gsys, Field *field, GameEv
 BOOL FollowingField_IsShaded(void);
 // Whether this frame is the first that draws the follower's body, which the effects wait out
 BOOL FollowingField_IsFirstBody(void);
+// The Pokémon chosen to follow the player and its actor, NULL while it has none: FALSE with none chosen (the debug
+// menu's Follower entries)
+BOOL PaperWhite2_FollowingGetSelection(FollowingPokemon *pokemon, FieldActor **actor);
 // The species of the Pokémon that follows the player, or 0 with none (the debug menu's Info)
 u16 PaperWhite2_FollowingGetSpecies(void);
 // The tile under the follower, as its terrain update last read it on a grid map, or TILE_TYPE_NONE with none out or

@@ -40,8 +40,12 @@ s32 PaperWhite2_Debug_GetDaySeconds(u32 season, s32 seconds) {
     return seconds;
 }
 
+BOOL PaperWhite2_Debug_IsWalkingThroughWalls(GameData *gameData) {
+    return EventWork_FlagGet(GameData_GetEventWork(gameData), EVENT_FLAG_DEBUG_WALK_THROUGH_WALLS);
+}
+
 u32 PaperWhite2_Debug_FilterPlayerHit(GameData *gameData, u32 hit, u32 kept) {
-    if (EventWork_FlagGet(GameData_GetEventWork(gameData), EVENT_FLAG_DEBUG_WALK_THROUGH_WALLS)) {
+    if (PaperWhite2_Debug_IsWalkingThroughWalls(gameData)) {
         return hit & kept;
     }
     return hit;

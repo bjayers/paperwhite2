@@ -5679,8 +5679,12 @@ static int Box2Seq_ReleaseDo(Box2SysWork *syswk) {
         syswk->app->subSeq++;
 #ifdef PAPERWHITE2
         // Paper White 2: a shiny Pokémon may leave a Shiny Candy behind, said before it is removed
-        if (PML_PkmIsRare(Box2Main_GetBoxPkm(syswk, syswk->tray, syswk->pos)) && PaperWhite2_RollShinyCandyDrop()) {
-            syswk->app->subSeq = RELEASE_SUBSEQ_SHINY_CANDY;
+        {
+            BoxPkm *pkm = Box2Main_GetBoxPkm(syswk, syswk->tray, syswk->pos);
+
+            if (PML_PkmIsRare(pkm) && PaperWhite2_IsShinyCandyDropper(PML_PkmGetParam(pkm, PKM_PARAM_PID, NULL))) {
+                syswk->app->subSeq = RELEASE_SUBSEQ_SHINY_CANDY;
+            }
         }
 #endif
         return BOX2SEQ_TRGWAIT;

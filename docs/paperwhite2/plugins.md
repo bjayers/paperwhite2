@@ -231,7 +231,10 @@ DEBUG                           L_DebugMenu
     Money...                        Set money... (number, 0-9999999) / +100000
   Info                            zone and place, x/y/z (or the rail's line, front and side), season and mode,
                                   time of day, weather, follower
-  Conditions                      the conditions' context, the debug samples' matches and pick (Conditions, below)
+  Conditions                      All pages, or one: World and tiles / Party and seeds / Sample rules (each debug
+                                  sample's match) / Sample pick (Conditions, below)
+  Follower...                     the Following Pokémon's steps and waiting item, Set steps..., Force a pickup,
+                                  Clear waiting item, Rules now (following-pokemon.md, Dialogue rules, gifts and steps)
   Close
 ```
 
@@ -288,6 +291,11 @@ of the last number entry.
 | `CONDITIONS_PARTY` (35) | | the lead in words 0-4, the median, adjusted median and wild range in 5-8, the zone loads and seeds in 9-12; FALSE without a lead |
 | `CONDITIONS_RULES` (36) | first | up to three debug samples from first: names in words 0, 2, 4, yes/no in 1, 3, 5; how many |
 | `CONDITIONS_PICK` (37) | | the samples' pick with a check seed (0, its seed in 1), with the load seed twice (2, 3), a keyed seed (4) |
+| `FOLLOWER_WORDS` (38) | | the follower's species, steps, total steps and waiting item in words 0-3; FALSE without one |
+| `FOLLOWER_SET_STEPS` (39) | | its steps since its last gift to the number (kept up to 4095) |
+| `FOLLOWER_PICKUP` (40) | | `FollowingDebug_ForcePickup`: the item in word 3; whether one was found |
+| `FOLLOWER_CLEAR_ITEM` (41) | | forgets its waiting item |
+| `FOLLOWER_RULES` (42) | | the talk rule that would be chosen now (0), its priority (1), the matches (2), the ambient (3) and pickup (4) rules |
 
 **Number entry.** The game has no number input that a script can open: the Bag's and the shops' quantity selectors are
 parts of their apps, and no script command asks for a number. So the menu has its own, `L_DebugNumber`, a subroutine
@@ -318,7 +326,7 @@ Each hook is under `PAPERWHITE2_DEBUG_MENU` with the original in `#else`:
 | Always shiny | `FieldEncount_CreateWildPkm` (`src/ov036/enc_pokeset.c`) | rolls the PID up to `ALWAYS_SHINY_ROLLS` (0x4000) times until it is shiny: grass, surfing, fishing and `EventWildBattleCall_CreateStatic`'s scripted encounters. Gifts, eggs and trainers' Pokémon aren't affected |
 | No wild encounters | `EventWildBattleCall_CreateRandom` (`src/ov036/field_encount.c`) | returns no battle before the step's roll; Sweet Scent and other forced encounters still happen |
 | Force species, wild level | `EventWildBattleCall_CreateRandom`, after `FieldEncount_GenWilds` | `PaperWhite2_Debug_OverrideWilds`: each wild Pokémon's species (with form 0, no item, a random sex and no hidden ability) and level. Roaming Pokémon, N's Pokémon and scripted battles keep theirs |
-| Walk through walls | `PlayerMoveCollCheck` (`src/ov036/field_player_grid.c`) and `FieldPlayerRail_GetHitBits` (`src/ov036/field_player_nogrid.c`) | the player's step only, with every collision bit cleared but the map's edge (`ACTOR_COLL_OUT_OF_BOUNDS`) on grids and the rail's ends (bit 1) on rails; walking, cycling, surfing, sliding and catwalks alike. Other actors still collide |
+| Walk through walls | `FieldPlayerGrid_UpdateMovement` (`src/ov036/field_player_grid.c`) and `FieldPlayerRail_GetHitBits` (`src/ov036/field_player_nogrid.c`) | the player's step only. On grids it turns on the grid's forced step (`GridMoveInput.force`, always off in the original), which clears every collision bit but the map's edge (`ACTOR_COLL_OUT_OF_BOUNDS`) and lets the player walk onto water and surf onto land; ledges are walked over, not jumped. On rails every bit but the rail's ends (bit 1). Other actors still collide |
 | Warp to last Pokémon Center | none: `EventMapChangeTeleport_Create` (ov035) | the respawn index of the last Center (`GetReturnLocationIdx`), its town's fly spot, as Teleport and a blackout use |
 | Warp to zone | none: `EventMapChange_CreateForFly` | the zone's fly spot (`ZoneHeader`'s flyX/Y/Z, the same `LoadZoneSpawnInfoCheckRail` as Teleport): the only entry point a zone's header has without loading its events. 600 of the 616 zones' headers (`fly` in `res/field/zones/*.json`) have one, interiors too; the 16 at 0, 0, 0 (some of Castelia City's buildings among them) are refused with a message |
 | Info's follower | `PaperWhite2_FollowingGetSpecies` (`src/paperwhite2/ov036/paperwhite2_following_field.c`) | the follower's species, or none |
@@ -686,6 +694,8 @@ all of them must hold, a list is any of its items), `$defs/rule` (`when`, `prior
 | `party_level`, `scaled_level` | the party's median, the adjusted median | `{"min": 20, "max": 40}` |
 | `level`, `species` (with an optional `form`), `type`, `nature`, `hp` (percent), `status`, `friendship`, `steps` | the subject: the lead (party slot 0) for encounters and spawns, the follower for its rules | `{"min": 20}` |
 | `follower` | `true` (one is out), `false`, or species | `["SPECIES_PIKACHU"]` |
+| `total_steps`, `item_waiting` | the subject's total steps and whether it keeps an item, which the consumer gives (the follower's record, following-pokemon.md) | `{"min": 1000}`, `true` |
+| `facing`, `tile_x`, `tile_y` | the position the consumer gives: the subject's facing (the follower's, toward the player) and the player's tile; a part of its own (`CONDITION_CONTEXT_POSITION`) | `["left", "right"]`, `{"min": 10, "max": 14}` |
 | `chance` | a percent rolled each check | `25` |
 
 `terrain_groups.json` lists the 18 groups in bit order (grass, dark_grass, tall_grass, surf_water, shore,
@@ -716,7 +726,7 @@ Each field compiles to one clause: the season, time, weather, terrain, type, nat
 value in `value`); a flag to `SET` or `UNSET` with the flag in `arg`; a variable to `EQ`...`LT` with the variable in
 `arg` and the value in `value`; one zone, species or follower species to `EQ` with it in `arg`, several to `IN_LIST`
 with the list's number in `arg` (identical lists are shared, and a zone group is its zones' list); the exterior to `EQ`
-with 1 or 0; `follower: true` to `ANY`; a range to `RANGE`, the least in `arg` (0 by default) and the greatest in
+with 1 or 0; `follower: true` and `item_waiting: true` to `ANY`; the facing to `MASK`; a range to `RANGE`, the least in `arg` (0 by default) and the greatest in
 `value` (0xffffffff by default); a chance to its percent in `value`, always the last clause. A species entry is the
 species, plus (form + 1) << 11 for one form. A table holds 256 rules at most.
 

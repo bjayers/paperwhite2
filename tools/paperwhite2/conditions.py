@@ -22,14 +22,14 @@ Only the hack's build runs it (configure.py --hack). The format (docs/paperwhite
 
 How the fields compile, each to one clause, so a rule's clauses are all of its fields:
 
-- season, time, weather, terrain, type, nature and status are a bit mask in value (CONDITION_OP_MASK);
+- season, time, weather, terrain, type, nature, status and facing are a bit mask in value (CONDITION_OP_MASK);
 - flags: a clause per flag, SET or UNSET; vars: a clause per comparison, the variable in arg and the value in value;
 - zone and species, and follower's species: one is EQ with it in arg, several are IN_LIST with arg the list's number;
 - zone_group: the zones of the named groups (zone_groups.json: every zone whose header's parent is one of "parent",
   and "zones"), as zone's list;
-- exterior: EQ with arg 1 or 0; follower true or false: ANY, or EQ 0;
-- the ranges (party_level, scaled_level, level, hp, friendship, steps): RANGE, arg the least (0 when left out) and
-  value the greatest (0xffffffff when left out);
+- exterior: EQ with arg 1 or 0; follower and item_waiting true or false: ANY, or EQ 0;
+- the ranges (party_level, scaled_level, level, hp, friendship, steps, total_steps, tile_x, tile_y): RANGE, arg the
+  least (0 when left out) and value the greatest (0xffffffff when left out);
 - chance: value the percent, the last clause, so it rolls only when the rest hold.
 """
 import argparse
@@ -73,7 +73,10 @@ PERIODS = ["morning", "day", "evening", "night", "late_night"]
 STATUSES = ["none", "poison", "sleep", "burn", "freeze", "paralysis"]
 VAR_OPS = {"=": "EQ", "!=": "NE", ">=": "GE", "<=": "LE", ">": "GT", "<": "LT"}
 RANGES = {"party_level": "PARTY_LEVEL", "scaled_level": "SCALED_LEVEL", "level": "LEVEL", "hp": "HP",
-          "friendship": "FRIENDSHIP", "steps": "STEPS"}
+          "friendship": "FRIENDSHIP", "steps": "STEPS", "total_steps": "TOTAL_STEPS", "tile_x": "TILE_X",
+          "tile_y": "TILE_Y"}
+# The facings in the order of DIR_UP to DIR_RIGHT (include/constants/directions.h)
+FACINGS = ["up", "down", "left", "right"]
 SPECIES_BITS = 11
 
 
@@ -260,6 +263,10 @@ class Compiler:
                 clauses.append((kind("FOLLOWER"), op("EQ"), 0, 0))
             else:
                 clauses.append(self.one_or_list("FOLLOWER", [value(s, f"{where}.follower") for s in follower]))
+        if "facing" in condition:
+            clauses.append((kind("FACING"), op("MASK"), 0, mask(condition["facing"], FACINGS, f"{where}.facing")))
+        if "item_waiting" in condition:
+            clauses.append((kind("ITEM_WAITING"), op("ANY" if condition["item_waiting"] else "EQ"), 0, 0))
         if "chance" in condition:
             clauses.append((kind("CHANCE"), op("EQ"), 0, condition["chance"]))
         return clauses

@@ -158,7 +158,7 @@ static GameEventReturnCode EventWildBattleCall_Callback(GameEvent *event, u32 *s
     case 2:
 #ifdef PAPERWHITE2
         // Paper White 2: back on the field, a shiny Pokémon that fainted may have dropped a Shiny Candy
-        PaperWhite2_ShinyCandyDrop(event, wk->shinyFoe, GameData_GetLastBtlResult(gameData));
+        PaperWhite2_ShinyCandyDrop(event, wk->candyFoe, GameData_GetLastBtlResult(gameData));
 #endif
         (*state)++;
         break;
@@ -182,7 +182,7 @@ GameEvent *EventWildBattleCall_CreateCore(GameSystem *gsys, Field *field, BtlSet
     work->unk0A = BtlSetup_CheckFlag(setup, 1);
 #ifdef PAPERWHITE2
     // Paper White 2: the setup is freed by the battle's end, so the wild Pokémon are looked at now
-    work->shinyFoe = PaperWhite2_HasShinyFoe(setup);
+    work->candyFoe = PaperWhite2_HasShinyCandyFoe(setup);
 #endif
     if (a4 == ENCOUNT_MODE_EFFECT) {
         BtlSetup_SetFlag(setup, 1 << 14);

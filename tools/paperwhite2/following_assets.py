@@ -3,13 +3,12 @@ from res/paperwhite2/following/.
 
 field_actor_data.py calls members() when it packs the model table (a/0/4/7, ARCID_MMODEL_TBL) with followers, after
 the table, the registry and the positioning table (members 0 to 2, following_data.py): the archive then has these
-as members 3 to 23, which the follower runtime (src/paperwhite2/) reads. Members 3 to 22 are each one of the files of
-Pokeweb's Following Pokémon runtime in the hack's ROM (following/), in the format its runtime read them, so the
+as members 3 to 23, which the follower runtime (src/paperwhite2/) reads. Members 3 and 6 to 22 are each one of the files
+of Pokeweb's Following Pokémon runtime in the hack's ROM (following/), in the format its runtime read them, so the
 sources pack them byte for byte (docs/paperwhite2/following-pokemon.md, Data); member 23 is the balls' art, which
 Pokeweb's runtime had in its code. Every number is little-endian, and every text is
-UCS-2 words ending in 0xFFFF, with 0xFFFE a new line, 0xFFF0 the Pokémon's nickname and 0xFFF1 the player's name
-(and in the dialogues and gifts 0xFFF2 the zone, "Zone N", and in a gift's text 0xFFF3 its item's name), which the
-JSON writes as text with "\\n", {nickname}, {player}, {location} and {item}:
+UCS-2 words ending in 0xFFFF, with 0xFFFE a new line, 0xFFF0 the Pokémon's nickname and 0xFFF1 the player's name,
+which the JSON writes as text with "\\n", {nickname} and {player}:
 
 - member 3, the interactions (following/interactions.bin), from interactions.json: "FWTK" ABI 1, a 48-byte header
   (the magic, the ABI, the member's size, the CRC-32 of the member from byte 16 on, the counts of the rules,
@@ -24,18 +23,10 @@ JSON writes as text with "\\n", {nickname}, {player}, {location} and {item}:
   and frames (0 or 1). Then each rule's steps, 8 bytes each: the motion, the message and the bubble that it shows,
   each 1 on and 0 for none, its cry (0 none, 1 the cry, 2 the cry slowed down) and its wait, then the messages'
   texts. The last rule matches always.
-- member 4, the contextual dialogues (member 0 of following/contextual-dialogues.narc), from dialogues.json: "FWCD",
-  a 16-byte header (the magic, the ABI, the rule count, the member's size, the CRC-32 of what follows the header),
-  then the rules, 20 bytes each in ABI 1, or in ABI 2 when a rule has a motion, and 28 bytes in ABI 3 when a rule has
-  tile bounds: the zone (0 any), the species (0 any), the form (255 any), the type (255 any), the HP, friendship,
-  status and facing conditions, the chance, the motion before the text, the text's offset, its length in words with
-  the end, the motion after it, and in ABI 3 the mask of the tile bounds it has (1 min x, 2 max x, 4 min y, 8 max y)
-  and the four bounds, s16 each, 0 where it has none; then the texts.
-- member 5, the contextual gifts (member 0 of following/contextual-items.narc), from items.json: "FWTI", the same
-  header, then the rules, 28 bytes each in ABI 1, or 36 in ABI 2 when a rule has tile bounds: the zone, the species,
-  the item, the gift's slot (0 to 9, each given once a Pokémon), the form, the type, the HP, friendship, status and
-  facing conditions, the quantity, the item name's offset and length, the text's offset and length, the mask of the
-  tile bounds (0 in ABI 1), and in ABI 2 the four bounds; then each rule's item name and text.
+- members 4 and 5, the dialogue library and the item pools, from dialogue/ and pools.json: their packer is
+  tools/paperwhite2/following_dialogue.py, whose docstring has their formats. They replace Pokeweb's contextual
+  dialogues and one-time gifts (following/contextual-dialogues.narc, contextual-items.narc), which they no longer
+  pack byte for byte.
 - members 6 to 19, the emotes (following/emotes.narc's members): for each bubble of interactions.json, in its order,
   its two frames, emotes/<bubble>_1.png and _2.png, each 32 by 32 and 16 colors with its JASC palette (.pal, color 0
   transparent), as a BTX0 of one texture (GX_TEXFMT_PLTT16) named <texture>.1 or .2 and its palette named <texture>,
@@ -59,15 +50,14 @@ without one matches any.
 import struct
 import sys
 import zlib
-from functools import cache
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from tools.data.datajson import DataError, constants, label, load, load_schema  # noqa: E402
-from tools.data.gen_constants import load as load_list  # noqa: E402
 from tools.data.narc import write_narc  # noqa: E402
 from tools.data.nitro_2d import color5, encode_characters, palette_indices, read_indexed_png, read_palette  # noqa: E402
 from tools.data.nitro_btx import texture_set  # noqa: E402
+from tools.paperwhite2 import following_dialogue  # noqa: E402
 
 SOURCE = Path(__file__).resolve().parents[2] / "res" / "paperwhite2" / "following"
 FIRST_MEMBER = 3
@@ -81,15 +71,11 @@ MOTION_STEPS = 10
 MESSAGE = struct.Struct("<IHH")
 BUBBLE = struct.Struct("<BBH4H4B")
 BUBBLE_STEPS = 4
-# The runtime's limits: an 8 KB buffer for the interactions, a 4 KB page for a contextual NARC
+# The runtime's limits: an 8 KB buffer for the interactions
 INTERACTIONS_MAX = 8192
 EMOTES_MAX = 32768
-CONTEXT_MAX = 4096
-# A one-member NARC's bytes besides its member, as Pokeweb's files have them
-NARC_OVERHEAD = 60
 LIMITS = {"rules": 70, "motions": 64, "messages": 128, "bubbles": 14}
 MESSAGE_WORDS = 128
-CONTEXT_WORDS = 192
 EMOTE_SIZE = 32
 EMOTE_COLORS = 16
 EMOTE_FRAMES = 2
@@ -112,8 +98,7 @@ FRIENDSHIP_CONDITIONS = {"255": 1, "200_to_254": 2, "150_to_199": 3, "90_to_149"
 STATUS_CONDITIONS = {"healthy": 1, "burn": 2, "freeze": 3, "paralysis": 4, "poison": 5, "any_status": 7, "sleep": 8}
 FACING_CONDITIONS = {"right": 1, "left": 2, "up": 3, "down": 4}
 CRIES = {"none": 0, "cry": 1, "slow_cry": 2}
-BOUNDS = ("min_x", "max_x", "min_y", "max_y")
-TOKENS = {"{nickname}": 0xFFF0, "{player}": 0xFFF1, "{location}": 0xFFF2, "{item}": 0xFFF3}
+TOKENS = {"{nickname}": 0xFFF0, "{player}": 0xFFF1}
 
 
 def encode_text(text: str, tokens: tuple[str, ...], limit: int, where: str, newline: bool = True) -> list[int]:
@@ -248,94 +233,8 @@ def interactions(data: dict, emotes: list[bytes]) -> bytes:
     return struct.pack("<4sIII", b"FWTK", INTERACTIONS_ABI, size, zlib.crc32(tail)) + tail
 
 
-@cache
-def constant_list(name: str) -> dict[str, int]:
-    return load_list(name)
-
-
-def list_value(name: str, constant: str, where: str) -> int:
-    """Returns the value of a constant of generated/<name>.txt."""
-    if constant not in constant_list(name):
-        raise DataError(f"{where}: {constant} is not a constant of generated/{name}.txt")
-    return constant_list(name)[constant]
-
-
-def selectors(rule: dict, where: str) -> tuple[int, int, int, int]:
-    """Returns a contextual rule's zone, species, form and type, 0, 0, 255 and 255 for any."""
-    zone = list_value("zones", rule["zone"], where) if "zone" in rule else 0
-    species = list_value("species", rule["species"], where) if "species" in rule else 0
-    if "zone" in rule and not zone:
-        raise DataError(f"{where}: zone 0 ({rule['zone']}) stands for any zone, which a rule writes without a zone")
-    if "species" in rule and not species:
-        raise DataError(f"{where}: a species, not {rule['species']}")
-    if "form" in rule and "species" not in rule:
-        raise DataError(f"{where}: a form needs a species")
-    return zone, species, rule.get("form", 255), list_value("types", rule["type"], where) if "type" in rule else 255
-
-
-def tile_bounds(rule: dict, where: str) -> tuple[int, bytes]:
-    """Returns a rule's tile bounds' mask and the four bounds."""
-    bounds = rule.get("tile_bounds", {})
-    for low, high in (("min_x", "max_x"), ("min_y", "max_y")):
-        if low in bounds and high in bounds and bounds[low] > bounds[high]:
-            raise DataError(f"{where}: {low} is more than {high}")
-    mask = sum(1 << index for index, key in enumerate(BOUNDS) if key in bounds)
-    return mask, struct.pack("<4h", *(bounds.get(key, 0) for key in BOUNDS))
-
-
-def context_member(magic: bytes, abi: int, rows: list[bytes], texts: bytes, name: str) -> bytes:
-    size = 16 + sum(map(len, rows)) + len(texts)
-    if size + NARC_OVERHEAD > CONTEXT_MAX:
-        raise DataError(f"{name} packs to {size} bytes, more than the {CONTEXT_MAX - NARC_OVERHEAD} that fit the "
-                        f"runtime's {CONTEXT_MAX}-byte page as a NARC")
-    tail = b"".join(rows) + texts
-    return struct.pack("<4sHHII", magic, abi, len(rows), size, zlib.crc32(tail)) + tail
-
-
-def dialogues(rules: list[dict]) -> bytes:
-    """Returns the contextual dialogues member (FWCD) of dialogues.json's rules."""
-    bounded = any(rule.get("tile_bounds") for rule in rules)
-    abi = 3 if bounded else 2 if any("before_motion" in rule or "after_motion" in rule for rule in rules) else 1
-    stride = 28 if bounded else 20
-    rows, texts = [], bytearray()
-    texts_at = 16 + stride * len(rules)
-    for index, rule in enumerate(rules):
-        where = f"dialogues.json: rules[{index}]"
-        words = encode_text(rule["text"], ("{nickname}", "{player}", "{location}"), CONTEXT_WORDS, where)
-        mask, bounds = tile_bounds(rule, where)
-        row = struct.pack("<HHBB6BIHBB", *selectors(rule, where), *conditions(rule), rule.get("chance", 100),
-                          rule.get("before_motion", 0), texts_at + len(texts), len(words), rule.get("after_motion", 0),
-                          mask)
-        rows.append(row + bounds if bounded else row)
-        texts += words_bytes(words)
-    return context_member(b"FWCD", abi, rows, bytes(texts), "dialogues.json")
-
-
-def items(rules: list[dict]) -> bytes:
-    """Returns the contextual gifts member (FWTI) of items.json's rules."""
-    bounded = any(rule.get("tile_bounds") for rule in rules)
-    stride = 36 if bounded else 28
-    rows, texts = [], bytearray()
-    texts_at = 16 + stride * len(rules)
-    for index, rule in enumerate(rules):
-        where = f"items.json: rules[{index}]"
-        zone, species, form, kind = selectors(rule, where)
-        item = list_value("items", rule["item"], where)
-        if not item:
-            raise DataError(f"{where}: an item, not {rule['item']}")
-        name = encode_text(rule["item_name"], (), CONTEXT_WORDS, f"{where}.item_name", newline=False)
-        text = encode_text(rule["text"], ("{nickname}", "{player}", "{location}", "{item}"), CONTEXT_WORDS, where)
-        mask, bounds = tile_bounds(rule, where)
-        name_at = texts_at + len(texts)
-        row = struct.pack("<HHHBBB5BIHIHH", zone, species, item, rule["slot"], form, kind, *conditions(rule),
-                          rule["quantity"], name_at, len(name), name_at + 2 * len(name), len(text), mask)
-        rows.append(row + bounds if bounded else row)
-        texts += words_bytes(name) + words_bytes(text)
-    return context_member(b"FWTI", 2 if bounded else 1, rows, bytes(texts), "items.json")
-
-
 def members(source: Path = SOURCE) -> list[bytes]:
-    """Returns members 3 to 23 of the model table's archive: the interactions, the contextual dialogues and gifts,
+    """Returns members 3 to 23 of the model table's archive: the interactions, the dialogue library and the pools,
     the emotes, the effects and the balls."""
     data = load(source / "interactions.json", load_schema(source / "interactions.schema.json"))
     emotes = [emote_set(source / "emotes" / f"{bubble['name']}_{frame}", bubble["texture"], frame)
@@ -346,7 +245,4 @@ def members(source: Path = SOURCE) -> list[bytes]:
         if not path.is_file() or path.read_bytes()[:4] != magic:
             raise DataError(f"{label(path)}: must be a Nitro {magic.decode()} resource")
         effects.append(path.read_bytes())
-    return [interactions(data, emotes),
-            dialogues(load(source / "dialogues.json", load_schema(source / "dialogues.schema.json"))["rules"]),
-            items(load(source / "items.json", load_schema(source / "items.schema.json"))["rules"]),
-            *emotes, *effects, balls(source)]
+    return [interactions(data, emotes), *following_dialogue.members(source), *emotes, *effects, balls(source)]

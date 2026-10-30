@@ -72,8 +72,17 @@ BOOL ConditionContext_FillSubject(ConditionContext *ctx, PartyPkm *pkm, u16 step
     ctx->hpPercent = maxHp == 0 ? 0 : PokeParty_GetParam(pkm, PKM_PARAM_HP, NULL) * PERCENT / maxHp;
     ctx->status = ConditionContext_GetStatus(PokeParty_GetParam(pkm, PKM_PARAM_STATUS, NULL));
     ctx->steps = steps;
+    ctx->totalSteps = 0;
+    ctx->itemWaiting = 0;
     ctx->filled |= CONDITION_CONTEXT_SUBJECT;
     return TRUE;
+}
+
+void ConditionContext_SetPosition(ConditionContext *ctx, u32 facing, u32 tileX, u32 tileY) {
+    ctx->facing = facing;
+    ctx->tileX = tileX;
+    ctx->tileY = tileY;
+    ctx->filled |= CONDITION_CONTEXT_POSITION;
 }
 
 BOOL ConditionContext_FillLead(ConditionContext *ctx, PokeParty *party) {

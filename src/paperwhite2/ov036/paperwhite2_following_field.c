@@ -21,6 +21,7 @@
 #include "nitro/fx.h"
 #include "nitro/mi.h"
 #include "paperwhite2/following.h"
+#include "paperwhite2/following_ambient.h"
 #include "paperwhite2/following_effects.h"
 #include "paperwhite2/following_events.h"
 #include "paperwhite2/following_field.h"
@@ -1494,6 +1495,7 @@ static BOOL IsOwned(void) {
 static void CleanupKeepingTrail(BOOL keepTrail) {
     FollowingRender_ClearGrass();
     FollowingTalk_Cancel();
+    FollowingAmbient_Reset();
     if (IsOwned()) {
         DeleteActor(sFollower.actor);
     }
@@ -2531,6 +2533,14 @@ void PaperWhite2_FollowingUpdate(MMSys *system) {
             FollowingEffects_Snapshot(actor);
         }
     }
+    // Its steps count while it walks behind the player or waits as its resting ball, and its ambient emotes show while
+    // it is out
+    FollowingAmbient_Update(
+        system->field, IsOwned() ? sFollower.actor : NULL, sPlayer, &sFollower.selected,
+        IsOwned() && sReason == 0 && sFollower.hasSelection &&
+            (sFollower.state == FOLLOWING_STATE_FOLLOWING || (sFollower.state == FOLLOWING_STATE_WAITING && sHeld)),
+        IsOwned() && sFollower.state == FOLLOWING_STATE_FOLLOWING &&
+            !(sFollower.actor->flags & FOLLOWING_ACTOR_FLAG_HIDDEN));
     FollowingEffects_RestAt(GetRestBall());
     GapRamp();
 }
@@ -2704,6 +2714,15 @@ u32 PaperWhite2_FollowingGetTile(void) {
         return TILE_TYPE_NONE;
     }
     return sTerrainTile;
+}
+
+BOOL PaperWhite2_FollowingGetSelection(FollowingPokemon *pokemon, FieldActor **actor) {
+    if (!sFollower.hasSelection) {
+        return FALSE;
+    }
+    *pokemon = sFollower.selected;
+    *actor = IsOwned() ? sFollower.actor : NULL;
+    return TRUE;
 }
 
 u16 PaperWhite2_FollowingGetSpecies(void) {

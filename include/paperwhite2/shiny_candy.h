@@ -2,7 +2,6 @@
 #define PAPERWHITE2_SHINY_CANDY_H
 
 #include "types.h"
-#include "gfl/random.h"
 #include "struct_decls.h"
 
 // Paper White 2: the Shiny Candy, which makes a Pokémon shiny (src/paperwhite2/ov165/paperwhite2_shiny_candy.c), used
@@ -23,15 +22,15 @@ u32 PaperWhite2_MakeShinyPID(u32 id, u32 pid);
 // res/field/scripts/global_2800.s, an event of its own after a wild battle of the field
 #define SCRID_SHINY_CANDY_DROP 2819
 
-// Whether a drop happens this time, at SHINY_CANDY_DROP_PERCENT's chance
-static inline BOOL PaperWhite2_RollShinyCandyDrop(void) {
-    return GFL_RandomLC(100) < SHINY_CANDY_DROP_PERCENT;
-}
+// Whether a shiny Pokémon of this PID drops a Shiny Candy, at SHINY_CANDY_DROP_PERCENT's chance over PIDs. The PID
+// decides it when the Pokémon is made, so loading a save again doesn't roll the drop again
+// (src/paperwhite2/main/paperwhite2_shiny_pid.c)
+BOOL PaperWhite2_IsShinyCandyDropper(u32 pid);
 
-// Whether one of the wild Pokémon of a battle's setup is shiny
-BOOL PaperWhite2_HasShinyFoe(BtlSetup *setup);
+// Whether one of the wild Pokémon of a battle's setup is shiny and one whose PID drops a Shiny Candy
+BOOL PaperWhite2_HasShinyCandyFoe(BtlSetup *setup);
 // After a wild battle of the field that the player won (result, a BTL_RESULT_*) with a shiny Pokémon among the wild
-// ones, starts the drop's script under event at SHINY_CANDY_DROP_PERCENT's chance
-void PaperWhite2_ShinyCandyDrop(GameEvent *event, BOOL shinyFoe, u32 result);
+// ones whose PID drops a Shiny Candy, starts the drop's script under event
+void PaperWhite2_ShinyCandyDrop(GameEvent *event, BOOL candyFoe, u32 result);
 
 #endif // PAPERWHITE2_SHINY_CANDY_H
