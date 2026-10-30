@@ -88,5 +88,5 @@ changed without adding entries isn't listed.
 | 10852 | `res/field/scripts/global_10850.s` | Script_3 | The user's: the seasonal NPC spawns, a map script that hides flags 500-599's NPCs and shows a random few of the current season's |
 | 10853 | `res/field/scripts/global_10850.s` | Script_4 | The user's: gives a random item, 0x8011 plus a random number below 0x8010, through script 2805; 0x8012 is whether the bag had no room (Aspertia City, Route 20) |
 | 10854 | `res/field/scripts/global_10850.s` | Script_5 | The user's: a scripted wild battle with species 0x8010 at four fifths of the lead's level, after its cry; 0x8012 is the result (Virbank Complex, Route 20) |
-| 10855 | `res/field/scripts/global_10850.s` | Script_6 | The user's: sorts the value in 0x8010 into one of six groups, returned in 0x8012; nothing starts it by its ID (not identified) |
-| 10856 | `res/field/scripts/global_10850.s` | Script_7 | The user's: picks a random value of tier 0x8010 (1-6) into 0x8012; nothing starts it by its ID (not identified) |
+| 10855 | `res/field/scripts/global_10850.s` | Script_6 | The user's berry flavor: 0x8010 is a berry's item ID; 0x8012 returns 0 spicy, 1 dry, 2 sweet, 3 bitter, 4 sour, 5 not a berry |
+| 10856 | `res/field/scripts/global_10850.s` | Script_7 | The user's random berry by category: 0x8010 is the category, 1 battle, 2 food (two of each flavor), 3 rare, 4 type resist, 5 EV, 6 forage; 0x8012 returns a random berry's item ID from it |

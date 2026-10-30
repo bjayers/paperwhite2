@@ -54,6 +54,9 @@ Agreed with the user on 2026-10-29. Design notes, not final; each big item gets 
   colour-shift rule that fixes Zekrom); how a variant is picked (PID bits) and stored; spare palette slots for icons
   on the party, box and battle party screens.
 - Hold the regeneration of the wrong follower shiny palettes (research.md lists the suspects) until then.
+- Decided 2026-10-29: shiny variants are chosen by PID bits 8–15 (`((pid >> 8) & 0xff) % N`), with the shiny check
+  itself unchanged, so every variant is "shiny" and the Shiny Candy gives a random one. N varies per species; most
+  have one. The unused Pokémon data bytes stay clean for later. Comes after the conditions module.
 
 ## NPC spawn system
 
