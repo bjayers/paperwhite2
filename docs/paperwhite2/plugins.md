@@ -191,12 +191,39 @@ the stat calculation (`PokeParty_RecalcStats`) and Hidden Power read.
 
 `PAPERWHITE2_DEBUG_MENU`, defined in every hack build for now (`configure.py`, beside `PAPERWHITE2`): START in the
 field, on grid maps and rails, starts `Script_17` of `res/field/scripts/global_10130.s` (script 10146,
-`SCRID_PAPERWHITE2_DEBUG_MENU` in `src/ov036/fieldmap_event.c`), where the original's field doesn't use START. It
-shows "DEBUG" with a list of toggles, each with its state, and Close; picking a toggle flips it and shows the list
-again. The toggles are flags of the debug block (Flags, below). To add one: a `DEBUG_ENTRY_*` value, its `VMCall` in
-the list, its `WorkCmpConst` after it, and an `L_DebugAdd*`/`L_DebugToggle*` pair, with its ON and OFF texts at the
-end of `res/text/script/global_10130.txt`. Removing the define from `configure.py` removes the menu and the toggles'
-code; the text stays.
+`SCRID_PAPERWHITE2_DEBUG_MENU` in `src/ov036/fieldmap_event.c`), where the original's field doesn't use START. Every
+menu is a labeled block of that one script, so the submenus take no script IDs:
+
+```
+DEBUG                       L_DebugMenu
+  Always shiny: ON/OFF        toggles EVENT_FLAG_DEBUG_ALWAYS_SHINY
+  Party...                    L_DebugParty
+    Set EVs...                  L_DebugSetEVs: the stats (HP, Attack, Defense, Sp. Atk, Sp. Def, Speed) and Back
+      <stat>                      L_DebugEV<Stat>, then L_DebugEVValues: 0, 128, 252 and Back
+    Back
+  Close
+```
+
+A block shows its list, compares the result in 0x8020 with its entries and jumps to each one's block; B, Back and
+anything else go back to the menu above it. Picking a toggle flips it and shows the list again. Picking an EV value
+sets it on the party's first Pokémon with `PokePartySetEV`, which recalculates its stats, says "Set {stat} EVs to
+{value}." and shows the stat list again, its cursor on that stat. The 510 total isn't enforced, so a Pokémon can be
+put over it to test that. To add a toggle: a `DEBUG_ENTRY_*` value, its `VMCall` in the list, its `WorkCmpConst`
+after it, and an `L_DebugAdd*`/`L_DebugToggle*` pair, with its ON and OFF texts at the end of
+`res/text/script/global_10130.txt`. To add a submenu: a `DEBUG_ENTRY_*` value, its `ListMenuAdd` and `WorkCmpConst`
+in the list above it, and its block. Removing the define from `configure.py` removes the menu, the toggles' code and
+the hack's script commands; the text stays.
+
+The hack's script commands follow the original's last, 0x2f2, in `EVCMD_TABLE` (`src/ov012/scrcmd_vm.c`), each with
+its row in `EVCMD_PERM_TABLE` (`src/ov012/script_sys.c`), both under `PAPERWHITE2_DEBUG_MENU`. Their entries in
+`tools/script/field_commands.json` have a `"hack"` key, which `field_command_table.py` keeps when it writes the table
+again from the original ROM and `field_script.py inc` writes above the macro. To add one: its handler under
+`src/paperwhite2/`, its declaration in `include/paperwhite2/debug_commands.h`, its rows in both tables, its entry in
+the JSON, then `python3 tools/script/field_script.py inc include/asm/field_script.inc`.
+
+| Command | ID | Arguments | Handler |
+| --- | --- | --- | --- |
+| `PokePartySetEV slot, param, value` | 0x2f3 (755) | the party slot, a `PKM_PARAM_EV_*` (`constants/pokemon.h`), the value (0-255); each a value or a variable | `Scrcmd_PaperWhite2_PokePartySetEV` (`src/paperwhite2/ov012/paperwhite2_debug_commands.c`) sets the EV and calls `PokeParty_RecalcStats`, as `PokePartySetIV` does for an IV. Another parameter, a value over 255 or an empty slot does nothing; the 510 total isn't checked |
 
 | Toggle | Flag | Code |
 | --- | --- | --- |
@@ -515,3 +542,8 @@ A global script file's IDs are limited by its row in `GLOBAL_SCRIPT_TABLE` (`src
 `FieldScript_ResolveSCRID`'s assert at run time, which shows "An error has occurred. Please turn off the power."
 (found 2026-10-29: the Shiny Candy drop's script 2820). Before adding a script past a file's last ID, raise that row's
 end under PAPERWHITE2, or put the script in a file with room.
+
+[global-scripts.md](global-scripts.md) lists every row with its file, what it holds, the IDs used, the first free one
+and how many are free, and the scripts the hack added, found by comparing each file's entries with the
+`w2-original` tag. `python3 tools/paperwhite2/global_scripts.py` writes it again; run it after adding a global script
+(and describe the script in its `HACK_SCRIPTS`), and `--check` says whether it is current.

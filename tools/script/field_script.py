@@ -94,6 +94,8 @@ class Command:
         self.ends = name in ENDS or "end" in entry.get("flow", [])
         # Unloads one overlay and loads another, which changes the plugin's commands
         self.swap = entry.get("swap")
+        # Paper White 2: what a command that the hack added is (field_command_table.py keeps them)
+        self.hack = entry.get("hack")
 
     @property
     def size(self) -> int:
@@ -230,6 +232,7 @@ def write_inc(path: Path):
     def macro(command: Command):
         params = [f"a{i}" for i in range(len(command.kinds))]
         out = [f"    // {command.handler}" if command.name.startswith(("Cmd_", "Plugin")) else None,
+               f"    // Paper White 2: {command.hack}" if command.hack else None,
                f"    .macro {command.name}{' ' if params else ''}{', '.join(params)}",
                f"    FieldCommand {command.id}"]
         for i, (param, kind) in enumerate(zip(params, command.kinds)):

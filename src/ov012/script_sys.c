@@ -110,6 +110,7 @@ static const GlobalScriptEntry GLOBAL_SCRIPT_TABLE[60] = {
 // The feature levels at which each command of EVCMD_TABLE may run, which FieldScript_OpcodeGuard checks: level 0 is
 // the full feature set, 1 and 2 the reduced ones. It is placed with its only reader: as script_work.c's first object
 // it would give the same bytes
+// clang-format off
 static const struct OpcodePermissions EVCMD_PERM_TABLE[] = {
     { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 0, 0 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, // 0x000
     { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, // 0x008
@@ -206,7 +207,13 @@ static const struct OpcodePermissions EVCMD_PERM_TABLE[] = {
     { 0, 0, 0 }, { 1, 0, 0 }, { 0, 0, 0 }, { 1, 1, 1 }, { 0, 0, 0 }, { 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, 0 }, // 0x2e0
     { 1, 0, 0 }, { 1, 0, 0 }, { 1, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, // 0x2e8
     { 0, 0, 0 }, { 1, 1, 1 }, { 1, 1, 1 },                                                                  // 0x2f0
+#ifdef PAPERWHITE2_DEBUG_MENU
+    // Paper White 2: the hack's commands of EVCMD_TABLE (scrcmd_vm.c), which run at every feature level
+    { 1, 1, 1 }, // 0x2f3
+#endif
 };
+
+// clang-format on
 
 GameEvent *EventScriptCall_Create(GameSystem *gsys, u16 scriptId, FieldActor *actor, HeapID heapId) {
     return EventScriptCall_CreateCore(gsys, heapId, scriptId, actor, 0);

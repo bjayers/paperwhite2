@@ -8,6 +8,10 @@ It needs dsd's disassembly in build/asm (see docs/decompiling.md). The field scr
 reads its arguments from the script through VM_Read16, VM_Read32, ScriptReadAny (a value or a variable), ScriptReadVar
 (a variable) and loads through the VM's pc, directly or in the functions it calls with the VM. Reads that only happen
 on some paths are marked, as are the commands that jump, call or end the script.
+
+Paper White 2: the hack's commands, appended to EVCMD_TABLE after the original's last, aren't in the original ROM that
+this reads, so they are kept from the output's previous contents: an entry with "hack" (what it is, which
+field_script.py inc writes above its macro) is written by hand.
 """
 import argparse
 import json
@@ -375,6 +379,11 @@ def main():
         global_scripts.append({"first": first, "last": last, "file": script_file, "text_archive": text_archive,
                                "text_file": text_file})
 
+    # Paper White 2: keep the hack's commands, which the original ROM doesn't have
+    if args.output.exists():
+        for cmd, entry in json.loads(args.output.read_text())["commands"].items():
+            if "hack" in entry:
+                commands[int(cmd)] = entry
     table = {"commands": commands, "plugins": plugins, "global_scripts": global_scripts}
     args.output.write_text(json.dumps(table, indent=1) + "\n")
 

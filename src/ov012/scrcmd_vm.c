@@ -71,6 +71,9 @@
 #include "system/game_data.h"
 #include "system/game_system.h"
 #include "system/vm.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/debug_commands.h"
+#endif
 
 // Whether a comparison's result meets each condition of the conditional jumps and calls, by VMCmp's result (less,
 // equal, greater)
@@ -850,6 +853,11 @@ const FieldScriptCommand EVCMD_TABLE[] = {
     NULL,                                               // 0x2f0
     Scrcmd_GameState_SetOneShotDRObtained,              // 0x2f1
     Scrcmd_GameState_IsOneShotDRObtained_02F2,          // 0x2f2
+#ifdef PAPERWHITE2_DEBUG_MENU
+    // Paper White 2: the hack's commands, after the original's last (include/paperwhite2/debug_commands.h), each
+    // with its row in script_sys.c's EVCMD_PERM_TABLE
+    Scrcmd_PaperWhite2_PokePartySetEV, // 0x2f3
+#endif
 };
 
 // MWCC lays the file's data out by size, so the count comes first in the ROM, ahead of the tables

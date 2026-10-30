@@ -5391,6 +5391,16 @@
     "var"
    ],
    "area": "TrainerCard"
+  },
+  "755": {
+   "handler": "Scrcmd_PaperWhite2_PokePartySetEV",
+   "overlay": 12,
+   "args": [
+    "any",
+    "any",
+    "any"
+   ],
+   "hack": "the debug menu's, under PAPERWHITE2_DEBUG_MENU: sets an EV of a party slot and recalculates its stats (include/paperwhite2/debug_commands.h)"
   }
  },
  "plugins": {

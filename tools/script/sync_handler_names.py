@@ -151,7 +151,9 @@ def main():
     if clash:
         sys.exit(f"new macro names already taken: {sorted(clash)}")
     named = set(by_address.values())
-    for name in sorted(handlers(json.loads(new_raw)) - named):
+    # Paper White 2: the hack's handlers aren't in the original's symbols
+    hack = {entry["handler"] for entry in json.loads(new_raw)["commands"].values() if "hack" in entry}
+    for name in sorted(handlers(json.loads(new_raw)) - named - hack):
         if not name.startswith("func_"):
             print(f"warning: no function is named {name}, and its address is unknown")
     for a, b in sorted(mapping.items()):
