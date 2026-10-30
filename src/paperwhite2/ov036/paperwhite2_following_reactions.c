@@ -3,9 +3,9 @@
 #include "paperwhite2/following_reactions.h"
 
 // Paper White 2: the Following Pokémon's reactions, ported from Pokeweb's reactions.c: the interactions (a/0/4/7
-// member 3), which are HeartGold's, the contextual dialogues (member 4) and the contextual gifts (member 5), each
-// checked whole before any of it is used. tools/paperwhite2/following_assets.py gives every format. The three choose
-// their rules by the same conditions: the follower's HP, friendship, status and facing, and a chance
+// member 3), which are HeartGold's, checked whole before any of it is used, whose rules choose by the follower's HP,
+// friendship, status and facing, and a chance. tools/paperwhite2/following_assets.py gives the format. The original's
+// contextual dialogues and gifts (members 4 and 5) are the dialogue library now (paperwhite2_following_dialogue.c)
 
 // The interactions' header: the magic, the format version, the size, the CRC-32 of what follows the first 16 bytes,
 // the counts and offsets of the tables, and the size and CRC-32 of the emotes as Pokeweb's installer wrote them
@@ -29,29 +29,15 @@
 #define MIN_EMOTES_SIZE 64
 #define MAX_EMOTES_SIZE 32768
 
-// The dialogues' and gifts' header: the magic, the format version, the rule count, the size, and the CRC-32 of what
-// follows it
-#define CONTEXT_HEADER_SIZE 16
-#define DIALOGUE_RULE_SIZE 20
-#define DIALOGUE_BOUNDED_RULE_SIZE 28
-#define GIFT_RULE_SIZE 28
-#define GIFT_BOUNDED_RULE_SIZE 36
-#define GIFT_SLOTS 10
-#define GIFT_TYPES 31
-
 // A rule's chance, in percent
 #define CHANCE_ALWAYS 100
-// A form or type condition that any meets
-#define ANY_VALUE 255
 
-// The words of a text: its end, a new line, the names and the zone that are put in, and the first of the words that
-// are no characters
+// The words of a text: its end, a new line, the names that are put in, and the first of the words that are no
+// characters
 #define TEXT_END 0xffff
 #define TEXT_NEWLINE 0xfffe
 #define TEXT_NICKNAME 0xfff0
 #define TEXT_PLAYER 0xfff1
-#define TEXT_ZONE 0xfff2
-#define TEXT_ITEM 0xfff3
 #define TEXT_SPECIAL 0xf000
 // The characters of the names that are put in
 #define NICKNAME_LENGTH 11
@@ -78,13 +64,6 @@
 #define STATUS_COND_FREEZE 0x20
 #define STATUS_COND_PARALYSIS 0x40
 #define STATUS_COND_BAD_POISON 0x80
-
-// The tile bounds of a rule: the bits of the ones it has, the least and greatest x, then y
-#define BOUND_MIN_X 1
-#define BOUND_MAX_X 2
-#define BOUND_MIN_Y 4
-#define BOUND_MAX_Y 8
-#define BOUNDS_ALL 15
 
 // The random state that a talk starts from when it has none, "FWTK"
 #define RANDOM_SEED 0x4657544b
@@ -243,32 +222,6 @@ static BOOL TextValid(const u8 *text, u32 words, u32 allowed) {
     return TRUE;
 }
 
-// Whether a dialogue's or gift's tile bounds are valid: only those of mask are set, and each pair is in order
-static BOOL BoundsValid(const u8 *bounds, u32 mask) {
-    u32 i;
-
-    if (mask & ~BOUNDS_ALL) {
-        return FALSE;
-    }
-    for (i = 0; i < 4; i++) {
-        if (!(mask & (1u << i)) && Read16(bounds + i * 2) != 0) {
-            return FALSE;
-        }
-    }
-    return ((mask & (BOUND_MIN_X | BOUND_MAX_X)) != (BOUND_MIN_X | BOUND_MAX_X) ||
-            (s16)Read16(bounds) <= (s16)Read16(bounds + 2)) &&
-           ((mask & (BOUND_MIN_Y | BOUND_MAX_Y)) != (BOUND_MIN_Y | BOUND_MAX_Y) ||
-            (s16)Read16(bounds + 4) <= (s16)Read16(bounds + 6));
-}
-
-// Whether the player's tile is in a rule's tile bounds, each inclusive
-static BOOL BoundsMet(const u8 *bounds, u32 mask, const FollowingReactionSnapshot *snapshot) {
-    return (!(mask & BOUND_MIN_X) || snapshot->tileX >= (s16)Read16(bounds)) &&
-           (!(mask & BOUND_MAX_X) || snapshot->tileX <= (s16)Read16(bounds + 2)) &&
-           (!(mask & BOUND_MIN_Y) || snapshot->tileY >= (s16)Read16(bounds + 4)) &&
-           (!(mask & BOUND_MAX_Y) || snapshot->tileY <= (s16)Read16(bounds + 6));
-}
-
 // Whether the follower can react at all: it has HP, is no egg, can follow and faces a way
 static BOOL CanReact(const FollowingReactionSnapshot *snapshot, u32 hp) {
     return hp != 0 && !snapshot->pokemon.egg && snapshot->pokemon.species != 0 &&
@@ -288,42 +241,10 @@ static BOOL PutName(u16 *out, u32 *n, u32 capacity, const u16 *name, u32 max) {
     return TRUE;
 }
 
-// Writes "Zone N": the dialogues and gifts have no table of the zones' names
-static BOOL PutZone(u16 *out, u32 *n, u32 capacity, u32 zone) {
-    u32 div;
-    u32 digit;
-    BOOL seen;
-
-    // The original makes room for "Zone " and one digit only, so a zone of more digits near the end of a full text
-    // writes up to two words past capacity, its end among them. Kept as it was
-    if (*n + 6 >= capacity) {
-        return FALSE;
-    }
-    out[(*n)++] = 'Z';
-    out[(*n)++] = 'o';
-    out[(*n)++] = 'n';
-    out[(*n)++] = 'e';
-    out[(*n)++] = ' ';
-    if (zone > 9999) {
-        zone = 9999;
-    }
-    seen = FALSE;
-    for (div = 1000; div != 0; div /= 10) {
-        digit = zone / div;
-        if (digit != 0 || seen || div == 1) {
-            out[(*n)++] = '0' + digit;
-            seen = TRUE;
-        }
-        zone %= div;
-    }
-    return TRUE;
-}
-
-// Copies words of text with the names, the zone and item (a gift's item name, or NULL) put in, ending in 0xFFFF:
-// its length, or 0 when it doesn't fit capacity. The original had a copy of this for each file, each putting in only
-// the words that its file's check lets its texts have, so one serves all three
-static u32 ExpandText(const u8 *text, u32 words, const FollowingReactionSnapshot *snapshot, const u16 *item, u16 *out,
-                      u32 capacity) {
+// Copies words of text with the names put in, ending in 0xFFFF: its length, or 0 when it doesn't fit capacity. The
+// original had a copy of this for each of its three files; the interactions' is the one left, the dialogue library's
+// texts having the game's word set (paperwhite2_following_dialogue.c)
+static u32 ExpandText(const u8 *text, u32 words, const FollowingReactionSnapshot *snapshot, u16 *out, u32 capacity) {
     u32 n = 0;
     u32 c;
     u32 i;
@@ -338,10 +259,6 @@ static u32 ExpandText(const u8 *text, u32 words, const FollowingReactionSnapshot
             fits = PutName(out, &n, capacity, snapshot->nickname, NICKNAME_LENGTH);
         } else if (c == TEXT_PLAYER) {
             fits = PutName(out, &n, capacity, snapshot->playerName, PLAYER_NAME_LENGTH);
-        } else if (c == TEXT_ITEM && item != NULL) {
-            fits = PutName(out, &n, capacity, item, FOLLOWING_TEXT_CAPACITY - 1);
-        } else if (c == TEXT_ZONE) {
-            fits = PutZone(out, &n, capacity, snapshot->zone);
         } else {
             fits = n + 1 < capacity;
             if (fits) {
@@ -520,7 +437,7 @@ u32 FollowingReactions_GetText(const FollowingInteractions *data, u32 message,
         return 0;
     }
     m = data->bytes + data->messages + (message - 1) * MESSAGE_SIZE;
-    return ExpandText(data->bytes + Read32(m), Read16(m + 4), snapshot, NULL, out, capacity);
+    return ExpandText(data->bytes + Read32(m), Read16(m + 4), snapshot, out, capacity);
 }
 
 BOOL FollowingReactions_GetBubble(const FollowingInteractions *data, u32 bubble, FollowingBubble *out) {
@@ -570,276 +487,4 @@ BOOL FollowingReactions_TickMotion(const FollowingInteractions *data, u32 motion
         state->index++;
     }
     return TRUE;
-}
-
-// A dialogue rule: the zone, the species, the form, the type, the four conditions, the chance, the motion before the
-// text, the text's offset and its length in words, the motion after it, and in version 3 the tile bounds' mask and the
-// bounds
-BOOL FollowingReactions_ValidateDialogues(FollowingContextRules *out, const void *bytes, u32 size) {
-    const u8 *b = bytes;
-    const u8 *rule;
-    u32 abi;
-    u32 ruleSize;
-    u32 count;
-    u32 text;
-    u32 words;
-    u32 i;
-
-    out->bytes = NULL;
-    out->size = 0;
-    out->ruleCount = out->ruleSize = 0;
-    // The original read the file from a NARC of one member, which it checked; it is now the member itself
-    if (b == NULL || size < CONTEXT_HEADER_SIZE || size > FOLLOWING_CONTEXT_CAPACITY ||
-        !IsMagic(b, 'F', 'W', 'C', 'D') || Read16(b + 4) < 1 || Read16(b + 4) > 3 || Read32(b + 8) != size ||
-        CalcCrc(b + CONTEXT_HEADER_SIZE, size - CONTEXT_HEADER_SIZE) != Read32(b + 12)) {
-        return FALSE;
-    }
-    abi = Read16(b + 4);
-    ruleSize = abi == 3 ? DIALOGUE_BOUNDED_RULE_SIZE : DIALOGUE_RULE_SIZE;
-    count = Read16(b + 6);
-    if (CONTEXT_HEADER_SIZE + count * ruleSize > size) {
-        return FALSE;
-    }
-    for (i = 0; i < count; i++) {
-        rule = b + CONTEXT_HEADER_SIZE + i * ruleSize;
-        text = Read32(rule + 12);
-        words = Read16(rule + 16);
-        // Version 1 has no motions, and only version 3 has tile bounds
-        if (!ConditionsValid(rule + 6) || rule[10] == 0 || rule[10] > CHANCE_ALWAYS ||
-            rule[11] > FOLLOWING_CONTEXT_MOTIONS || rule[18] > FOLLOWING_CONTEXT_MOTIONS ||
-            (abi == 3 ? !BoundsValid(rule + 20, rule[19]) : rule[19] != 0) ||
-            (abi == 1 && (rule[11] != 0 || rule[18] != 0)) || words == 0 || words > FOLLOWING_TEXT_CAPACITY ||
-            text & 1 || text < CONTEXT_HEADER_SIZE + count * ruleSize || text > size || words * 2 > size - text ||
-            !TextValid(b + text, words, TEXT_ALLOW_NAMES | TEXT_ALLOW(TEXT_ZONE))) {
-            return FALSE;
-        }
-    }
-    out->bytes = b;
-    out->size = size;
-    out->ruleCount = count;
-    out->ruleSize = ruleSize;
-    return TRUE;
-}
-
-s32 FollowingReactions_ChooseDialogue(const FollowingContextRules *data, const FollowingReactionSnapshot *snapshot,
-                                      u32 *rng) {
-    u32 hp;
-    u32 status;
-    const u8 *rule;
-    u32 zone;
-    u32 species;
-    u32 roll;
-    u32 i;
-
-    if (data == NULL || data->bytes == NULL || snapshot->pokemon.egg || snapshot->pokemon.species == 0 ||
-        snapshot->pokemon.species > FOLLOWING_MAX_SPECIES) {
-        return -1;
-    }
-    hp = GetHpCondition(snapshot);
-    status = GetStatusCondition(snapshot->status);
-    if (hp == 0 || snapshot->direction > 3) {
-        return -1;
-    }
-    for (i = 0; i < data->ruleCount; i++) {
-        rule = data->bytes + CONTEXT_HEADER_SIZE + i * data->ruleSize;
-        zone = Read16(rule);
-        species = Read16(rule + 2);
-        roll = NextRandom(rng) % 100;
-        if ((data->ruleSize != DIALOGUE_BOUNDED_RULE_SIZE || BoundsMet(rule + 20, rule[19], snapshot)) &&
-            roll < rule[10] && (zone == 0 || zone == snapshot->zone) &&
-            (species == 0 || species == snapshot->pokemon.species) &&
-            (rule[4] == ANY_VALUE || rule[4] == snapshot->pokemon.form) &&
-            (rule[5] == ANY_VALUE || rule[5] == snapshot->type1 || rule[5] == snapshot->type2) &&
-            ConditionsMet(rule + 6, snapshot, hp, status)) {
-            return i;
-        }
-    }
-    return -1;
-}
-
-BOOL FollowingReactions_GetDialogueStep(const FollowingContextRules *data, u32 rule, u32 step,
-                                        FollowingReactionStep *out) {
-    const u8 *r;
-    u32 before;
-    u32 after;
-    u32 motion = 0;
-
-    if (data == NULL || data->bytes == NULL || rule >= data->ruleCount) {
-        return FALSE;
-    }
-    r = data->bytes + CONTEXT_HEADER_SIZE + rule * data->ruleSize;
-    before = r[11];
-    after = r[18];
-    if (before != 0) {
-        if (step == 0) {
-            motion = before;
-        } else {
-            step--;
-        }
-    }
-    if (motion == 0) {
-        // The text, then the motion after it
-        if (step == 0) {
-            out->motion = 0;
-            out->message = 1;
-            out->cry = 0;
-            out->bubble = 0;
-            out->wait = TRUE;
-            return TRUE;
-        }
-        if (step != 1 || after == 0) {
-            return FALSE;
-        }
-        motion = after;
-    }
-    out->motion = motion;
-    out->message = 0;
-    out->cry = 1;
-    out->bubble = 0;
-    out->wait = TRUE;
-    return TRUE;
-}
-
-u32 FollowingReactions_GetDialogueText(const FollowingContextRules *data, u32 rule,
-                                       const FollowingReactionSnapshot *snapshot, u16 *out, u32 capacity) {
-    const u8 *r;
-
-    if (data == NULL || data->bytes == NULL || rule >= data->ruleCount || capacity == 0) {
-        return 0;
-    }
-    r = data->bytes + CONTEXT_HEADER_SIZE + rule * data->ruleSize;
-    return ExpandText(data->bytes + Read32(r + 12), Read16(r + 16), snapshot, NULL, out, capacity);
-}
-
-// A gift rule: the zone, the species, the item, the claim slot, the form, the type, the four conditions, the quantity,
-// the item name's offset and length in words, the text's offset and length, the tile bounds' mask (0 in version 1),
-// and in version 2 the bounds
-BOOL FollowingReactions_ValidateGifts(FollowingContextRules *out, const void *bytes, u32 size) {
-    const u8 *b = bytes;
-    const u8 *rule;
-    u32 ruleSize;
-    u32 count;
-    u32 floor;
-    u32 name;
-    u32 nameWords;
-    u32 text;
-    u32 textWords;
-    u32 i;
-
-    out->bytes = NULL;
-    out->size = 0;
-    out->ruleCount = out->ruleSize = 0;
-    // The original read the file from a NARC of one member, which it checked; it is now the member itself
-    if (b == NULL || size < CONTEXT_HEADER_SIZE || size > FOLLOWING_CONTEXT_CAPACITY ||
-        !IsMagic(b, 'F', 'W', 'T', 'I') || (Read16(b + 4) != 1 && Read16(b + 4) != 2) || Read32(b + 8) != size ||
-        CalcCrc(b + CONTEXT_HEADER_SIZE, size - CONTEXT_HEADER_SIZE) != Read32(b + 12)) {
-        return FALSE;
-    }
-    ruleSize = Read16(b + 4) == 2 ? GIFT_BOUNDED_RULE_SIZE : GIFT_RULE_SIZE;
-    count = Read16(b + 6);
-    floor = CONTEXT_HEADER_SIZE + count * ruleSize;
-    if (floor > size) {
-        return FALSE;
-    }
-    for (i = 0; i < count; i++) {
-        rule = b + CONTEXT_HEADER_SIZE + i * ruleSize;
-        name = Read32(rule + 14);
-        nameWords = Read16(rule + 18);
-        text = Read32(rule + 20);
-        textWords = Read16(rule + 24);
-        // A gift of a form is of a species, and only version 2 has tile bounds
-        if (rule[6] >= GIFT_SLOTS || Read16(rule + 4) == 0 || rule[13] == 0 ||
-            (rule[7] != ANY_VALUE && Read16(rule + 2) == 0) || (rule[8] > GIFT_TYPES && rule[8] != ANY_VALUE) ||
-            !ConditionsValid(rule + 9) ||
-            (ruleSize == GIFT_BOUNDED_RULE_SIZE ? !BoundsValid(rule + 28, Read16(rule + 26))
-                                                : Read16(rule + 26) != 0) ||
-            nameWords == 0 || nameWords > FOLLOWING_TEXT_CAPACITY || textWords == 0 ||
-            textWords > FOLLOWING_TEXT_CAPACITY || name % 2 != 0 || text % 2 != 0 || name < floor || text < floor ||
-            name + nameWords * 2 > size || text + textWords * 2 > size || !TextValid(b + name, nameWords, 0) ||
-            !TextValid(b + text, textWords, TEXT_ALLOW_NAMES | TEXT_ALLOW(TEXT_ZONE) | TEXT_ALLOW(TEXT_ITEM))) {
-            return FALSE;
-        }
-    }
-    out->bytes = b;
-    out->size = size;
-    out->ruleCount = count;
-    out->ruleSize = ruleSize;
-    return TRUE;
-}
-
-// Whether the follower meets a gift rule's conditions besides its slot and tile bounds
-static BOOL GiftConditionsMet(const u8 *rule, const FollowingReactionSnapshot *snapshot) {
-    u32 hp = GetHpCondition(snapshot);
-    u32 status = GetStatusCondition(snapshot->status);
-
-    return CanReact(snapshot, hp) && (Read16(rule) == 0 || Read16(rule) == snapshot->zone) &&
-           (Read16(rule + 2) == 0 || Read16(rule + 2) == snapshot->pokemon.species) &&
-           (rule[7] == ANY_VALUE || rule[7] == snapshot->pokemon.form) &&
-           (rule[8] == ANY_VALUE || rule[8] == snapshot->type1 || rule[8] == snapshot->type2) &&
-           ConditionsMet(rule + 9, snapshot, hp, status);
-}
-
-BOOL FollowingReactions_ChooseGift(const FollowingContextRules *data, const FollowingReactionSnapshot *snapshot,
-                                   u16 claims, FollowingGiftChoice *out) {
-    const u8 *rule;
-    u32 i;
-
-    if (data == NULL || data->bytes == NULL || out == NULL) {
-        return FALSE;
-    }
-    for (i = 0; i < data->ruleCount; i++) {
-        rule = data->bytes + CONTEXT_HEADER_SIZE + i * data->ruleSize;
-        if (!(claims & (1u << rule[6])) &&
-            (data->ruleSize != GIFT_BOUNDED_RULE_SIZE || BoundsMet(rule + 28, Read16(rule + 26), snapshot)) &&
-            GiftConditionsMet(rule, snapshot)) {
-            out->slot = rule[6];
-            out->quantity = rule[13];
-            out->item = Read16(rule + 4);
-            out->rule = i;
-            return TRUE;
-        }
-    }
-    return FALSE;
-}
-
-// Gift rule's item name, ending in 0xFFFF: its length, or 0 when it doesn't fit capacity
-static u32 GetGiftItemName(const FollowingContextRules *data, u32 rule, u16 *out, u32 capacity) {
-    const u8 *r;
-    const u8 *text;
-    u32 n = 0;
-    u32 c;
-    u32 i;
-
-    if (data == NULL || rule >= data->ruleCount || out == NULL || capacity == 0) {
-        return 0;
-    }
-    r = data->bytes + CONTEXT_HEADER_SIZE + rule * data->ruleSize;
-    text = data->bytes + Read32(r + 14);
-    for (i = 0; i < Read16(r + 18); i++) {
-        c = Read16(text + i * 2);
-        if (c == TEXT_END) {
-            break;
-        }
-        if (n + 1 >= capacity) {
-            return 0;
-        }
-        out[n++] = c;
-    }
-    out[n] = TEXT_END;
-    return n;
-}
-
-u32 FollowingReactions_GetGiftText(const FollowingContextRules *data, u32 rule,
-                                   const FollowingReactionSnapshot *snapshot, u16 *out, u32 capacity) {
-    const u8 *r;
-    u16 name[FOLLOWING_TEXT_CAPACITY];
-
-    if (data == NULL || rule >= data->ruleCount || snapshot == NULL || out == NULL || capacity == 0) {
-        return 0;
-    }
-    r = data->bytes + CONTEXT_HEADER_SIZE + rule * data->ruleSize;
-    if (GetGiftItemName(data, rule, name, FOLLOWING_TEXT_CAPACITY) == 0) {
-        return 0;
-    }
-    return ExpandText(data->bytes + Read32(r + 20), Read16(r + 24), snapshot, name, out, capacity);
 }

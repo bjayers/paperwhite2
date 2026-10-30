@@ -1,0 +1,77 @@
+{
+    "$schema": "../dialogue.schema.json",
+    "description": "The rules every follower has. Sample content: terrain, night, rain and low-HP lines, the gift of a found item, and a pickup from the berries after about 100 steps.",
+    "settings": { "talk_friendship": 1 },
+    "messages": {
+        "bag_full": "{nickname} wants to give you\n{item}, but your Bag is full.[L]{nickname} will keep it for now."
+    },
+    "rules": [
+        {
+            "name": "found item",
+            "when": { "item_waiting": true },
+            "priority": 20,
+            "steps": [
+                { "emote": "happy", "cry": "cry", "message": "{nickname} found something!", "box": "bubble" },
+                { "action": { "give_waiting": true }, "box": "event", "message": "{player} received\n{item} from {nickname}!" }
+            ]
+        },
+        {
+            "name": "low hp",
+            "when": { "hp": { "max": 25 } },
+            "priority": 10,
+            "steps": [ { "emote": "sad", "cry": "slow_cry", "message": "{nickname} is exhausted...[L]It looks like it needs some rest." } ]
+        },
+        {
+            "name": "rain",
+            "when": { "weather": [ "WEATHER_RAIN", "WEATHER_THUNDERSTORM" ], "exterior": true },
+            "priority": 5,
+            "steps": [ { "emote": "ellipsis", "message": "{nickname} is shaking the rain\noff its body." } ]
+        },
+        {
+            "name": "night",
+            "when": { "time": [ "night", "late_night" ], "exterior": true },
+            "priority": 4,
+            "steps": [ { "message": "{nickname} is gazing up at the\nnight sky.[C]The stars over {location}\nare shining brightly." } ]
+        },
+        {
+            "name": "grass",
+            "when": { "terrain": [ "grass", "dark_grass", "tall_grass" ] },
+            "priority": 3,
+            "steps": [ { "box": "event", "message": "{nickname} is sniffing the grass." } ]
+        },
+        {
+            "name": "cave",
+            "when": { "terrain": [ "cave" ] },
+            "priority": 3,
+            "steps": [ { "emote": "ellipsis", "message": "{nickname} is peering into the\ndarkness of the cave." } ]
+        },
+        {
+            "name": "water",
+            "when": { "terrain": [ "shallow_water", "puddle", "shore" ] },
+            "priority": 3,
+            "steps": [ { "emote": "happy", "motion": 2, "message": "{nickname} is splashing around\nin the water!" } ]
+        }
+    ],
+    "ambient": [
+        {
+            "name": "item waiting",
+            "when": { "item_waiting": true },
+            "priority": 1,
+            "emote": "note",
+            "cooldown": 20
+        },
+        {
+            "name": "long walk",
+            "when": { "steps": { "min": 50 }, "chance": 5 },
+            "emote": "happy",
+            "cooldown": 40
+        }
+    ],
+    "pickup": [
+        {
+            "name": "berries",
+            "when": { "steps": { "min": 100 }, "chance": 10 },
+            "pool": "berries"
+        }
+    ]
+}

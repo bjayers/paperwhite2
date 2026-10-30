@@ -1,0 +1,17 @@
+{
+    "$schema": "../../dialogue.schema.json",
+    "species": "SPECIES_SNIVY",
+    "rules": [
+        {
+            "name": "snivy sun",
+            "when": { "weather": [ "WEATHER_SUNNY" ], "time": [ "morning", "day" ], "exterior": true },
+            "priority": 2,
+            "steps": [ { "emote": "happy", "message": "{nickname} is soaking up the\nsunlight with its tail." } ]
+        },
+        {
+            "name": "snivy",
+            "priority": 1,
+            "steps": [ { "message": "{nickname} is looking at you\nwith a confident smirk." } ]
+        }
+    ]
+}

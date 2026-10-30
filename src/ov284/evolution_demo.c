@@ -52,6 +52,10 @@
 #include "system/text_speed.h"
 #include "system/wordset.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/following_data.h"
+#endif
+
 // The evolution process: its steps, the music, the messages, learning the new form's moves and making a Shedinja
 
 #define ACTOR_COUNT 6
@@ -1350,6 +1354,12 @@ static void EvolutionDemo_MakeShedinja(EvolutionDemoParam *param, EvolutionDemoW
         for (i = PKM_PARAM_RIBBON_G4_COOL; i < PKM_PARAM_OT_NAME; i++) {
             PokeParty_SetParam(shedinja, i, 0);
         }
+#ifdef PAPERWHITE2
+        // Paper White 2: the copy doesn't take the Following Pokémon's record of Nincada, its steps and its waiting
+        // item (paperwhite2/following_data.h)
+        PokeParty_SetParam(shedinja, FOLLOWING_RECORD_PARAM_LOW, 0);
+        PokeParty_SetParam(shedinja, FOLLOWING_RECORD_PARAM_HIGH, 0);
+#endif
         name =
             GFL_MsgDataLoadStrbufNew(g_PMLSpeciesNamesResident, PokeParty_GetParam(shedinja, PKM_PARAM_SPECIES, NULL));
         PokeParty_SetParam(shedinja, PKM_PARAM_NICKNAME, (u32)name);

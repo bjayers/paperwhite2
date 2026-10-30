@@ -1,0 +1,33 @@
+{
+    "$schema": "../../dialogue.schema.json",
+    "species": "SPECIES_KELDEO",
+    "rules": [
+        {
+            "name": "keldeo resolute",
+            "when": { "species": [ { "species": "SPECIES_KELDEO", "form": 1 } ] },
+            "priority": 2,
+            "steps": [ { "emote": "angry", "cry": "cry", "box": "yell", "message": "{nickname} is brimming with resolve!" } ]
+        },
+        {
+            "name": "keldeo water",
+            "when": { "terrain": [ "shallow_water", "puddle", "shore" ] },
+            "priority": 6,
+            "steps": [
+                { "motion": 2, "message": "{nickname} is gliding across the\nwater's surface!" },
+                { "emote": "happy", "message": "{nickname} looks back at you\nproudly." }
+            ]
+        },
+        {
+            "name": "keldeo",
+            "priority": 1,
+            "weight": 2,
+            "steps": [ { "emote": "note", "message": "{nickname} is keeping a sharp eye\non its surroundings." } ]
+        },
+        {
+            "name": "keldeo friends",
+            "when": { "friendship": { "min": 200 } },
+            "priority": 1,
+            "steps": [ { "emote": "heart", "message": "{nickname} nuzzles {player}.[L]It seems to trust you completely." } ]
+        }
+    ]
+}

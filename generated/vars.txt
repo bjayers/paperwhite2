@@ -83,12 +83,14 @@ EVENT_WORK_SEASON_SETTING
 # Paper White 2: the zone loads counted for the conditions' load seed, bumped at every zone init (0x4051-0x406f were
 # unused, tools/paperwhite2/var_usage.py; docs/paperwhite2/plugins.md, Conditions)
 EVENT_WORK_ZONE_LOAD_COUNTER
-EVENT_WORK_0x4052
-EVENT_WORK_0x4053
-EVENT_WORK_0x4054
-EVENT_WORK_0x4055
-EVENT_WORK_0x4056
-EVENT_WORK_0x4057
+# Paper White 2: the Following Pokémon's daily friendship from a talk, a Pokémon's hash and the day's low byte each
+# (0x4052-0x4057 were unused, tools/paperwhite2/var_usage.py; docs/paperwhite2/following-pokemon.md)
+EVENT_WORK_FOLLOWER_TALK_DAY_0
+EVENT_WORK_FOLLOWER_TALK_DAY_1
+EVENT_WORK_FOLLOWER_TALK_DAY_2
+EVENT_WORK_FOLLOWER_TALK_DAY_3
+EVENT_WORK_FOLLOWER_TALK_DAY_4
+EVENT_WORK_FOLLOWER_TALK_DAY_5
 EVENT_WORK_0x4058
 EVENT_WORK_0x4059
 EVENT_WORK_0x405a

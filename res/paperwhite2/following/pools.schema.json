@@ -1,0 +1,31 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Paper White 2: the Following Pokémon's item pools, res/paperwhite2/following/pools.json",
+    "description": "Named, weighted item lists that the dialogue rules' gifts (give_pool) and pickups roll from, packed by tools/paperwhite2/following_dialogue.py as member 5 of the model table's archive (a/0/4/7). A pickup's item is one, whatever its quantity. A string value of an item is the name of a constant from generated/.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "pools" ],
+    "properties": {
+        "$schema": { "type": "string", "description": "This schema, for editors" },
+        "pools": {
+            "type": "array", "maxItems": 256,
+            "items": {
+                "type": "object", "additionalProperties": false, "required": [ "name", "items" ],
+                "properties": {
+                    "name": { "type": "string", "pattern": "^[a-z0-9_]{1,32}$" },
+                    "items": {
+                        "type": "array", "minItems": 1, "maxItems": 128,
+                        "items": {
+                            "type": "object", "additionalProperties": false, "required": [ "item" ],
+                            "properties": {
+                                "item": { "type": "string", "x-constant": "ITEM_" },
+                                "weight": { "type": "integer", "minimum": 1, "maximum": 65535, "description": "1 by default" },
+                                "quantity": { "type": "integer", "minimum": 1, "maximum": 99, "description": "1 by default" }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
