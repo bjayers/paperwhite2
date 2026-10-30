@@ -142,11 +142,6 @@ static GameEventReturnCode EventWildBattleCall_Callback(GameEvent *event, u32 *s
             PokeParty_RecoverAll(GameData_GetParty(gameData));
         }
         if (wk->unk08 == 1) {
-#ifdef PAPERWHITE2
-            // Paper White 2: back in the script that called the battle, a shiny Pokémon that fainted may have dropped a
-            // Shiny Candy, which the script's end of the battle gives
-            PaperWhite2_ShinyCandyDropForScript(wk->shinyFoe, result);
-#endif
             CommPlayerSupport_Init(GameData_GetCommPlayerSupport(gameData));
             return GAMEEVENT_DONE;
         }

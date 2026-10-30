@@ -22,7 +22,6 @@
 #ifdef PAPERWHITE2
     ScriptEntry Script_19
     ScriptEntry Script_20
-    ScriptEntry Script_21
 #endif
     ScriptEntriesEnd
 
@@ -670,29 +669,6 @@ Script_20:
     VMCall L_0151
     FinishAllEvents
     ActorsUnpauseAll
-    VMHalt
-
-// Paper White 2: script 2820, called from a script after its wild battle, once its end of the battle has faded in
-// (SCRID_SHINY_CANDY_DROP_CALL, paperwhite2/shiny_candy.h): Script_20 as a global call, as Script_7 is Script_14's. The
-// calling script's work values 0x8000 to 0x801f aren't kept for it as 0x8020 on are, so it keeps those it uses itself
-Script_21:
-    VMStackPush 0x8000
-    VMStackPush 0x8001
-    VMStackPush 0x8008
-    VMStackPush 0x8009
-    VMStackPush 0x8010
-    // "The shiny Pokémon dropped\na Shiny Candy!"
-    SystemMsg Global7000_Text_ShinyCandyDropped, 0
-    LastKeyWait
-    WorkSetConst 0x8000, ITEM_SHINY_CANDY
-    WorkSetConst 0x8001, 1
-    VMCall L_0151
-    VMStackPop 0x8010
-    VMStackPop 0x8009
-    VMStackPop 0x8008
-    VMStackPop 0x8001
-    VMStackPop 0x8000
-    RTEndGlobal
     VMHalt
 #endif
     .balign 4, 0

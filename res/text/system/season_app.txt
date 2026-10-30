@@ -28,6 +28,7 @@ SeasonApp_Text_OutsideSpring = Season outside: Spring
 SeasonApp_Text_OutsideSummer = Season outside: Summer
 SeasonApp_Text_OutsideAutumn = Season outside: Autumn
 SeasonApp_Text_OutsideWinter = Season outside: Winter
+SeasonApp_Text_OutsideUnknown = Season outside: ???
 SeasonApp_Text_HemisphereNorthern = Hemisphere: Northern
 SeasonApp_Text_HemisphereSouthern = Hemisphere: Southern
 SeasonApp_Text_HemisphereUsedByRealTime = Real-time seasons follow it.

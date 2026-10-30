@@ -175,8 +175,8 @@ static const PStaWindowSetup sSkillWindows[SKILL_WINDOW_COUNT] = {
 #define HIDDEN_EV_BAR_SHADE_COLOR 5
 #define HIDDEN_IV_BAR_COLOR 4
 #define HIDDEN_IV_BAR_SHADE_COLOR 3
-// The EV bar's grey after the fill, to the most that stat can still reach with the EVs left of the total's most
-#define HIDDEN_EV_REACH_COLOR 2
+// The EV bar's grey past the most that stat can still reach with the EVs left of the total's most, to the bar's end
+#define HIDDEN_EV_UNREACHABLE_COLOR 2
 // The title bar's window, over the empty bar and the page's name (« STATS ») to the screen's right edge, with "EV"
 // and "IV" ending where their columns do, and the EVs' total ("EVs 85/510") at the right
 static const PStaWindowSetup sHiddenTitleWindow = { 15, 1, 17, 2 };
@@ -1541,8 +1541,8 @@ static void PStaSkill_PrintStatRows(PStatusWork *wk, PStaSkillWork *skill, Party
     PStaSkill_PrintHiddenTitle(wk, skill, evTotal);
 }
 
-// A stat's EV and IV, in their columns between their bars. The EV's bar is grey after its fill to the most the stat can
-// still reach, its EVs and those left of the total's most, up to the bar's most
+// A stat's EV and IV, in their columns between their bars. The EV's bar is grey past the most the stat can still reach,
+// its EVs and those left of the total's most, which the IV's bar has none of
 static void PStaSkill_PrintHiddenRow(PStatusWork *wk, BmpWin *window, PartyPkm *pkm, u32 stat, u32 evsLeft) {
     WordSet *wordSet = GFL_WordSetSystemCreateDefault(wk->heapId);
     GFLBitmap *bitmap = BmpWin_GetBitmap(window);
@@ -1551,8 +1551,8 @@ static void PStaSkill_PrintHiddenRow(PStatusWork *wk, BmpWin *window, PartyPkm *
 
     PStaSkill_DrawHiddenBar(bitmap, HIDDEN_EV_BAR_X - HIDDEN_ROW_LEFT, ev, ev + evsLeft, HIDDEN_EV_BAR_MAX,
                             HIDDEN_EV_BAR_COLOR, HIDDEN_EV_BAR_SHADE_COLOR);
-    PStaSkill_DrawHiddenBar(bitmap, HIDDEN_IV_BAR_X - HIDDEN_ROW_LEFT, iv, iv, HIDDEN_IV_BAR_MAX, HIDDEN_IV_BAR_COLOR,
-                            HIDDEN_IV_BAR_SHADE_COLOR);
+    PStaSkill_DrawHiddenBar(bitmap, HIDDEN_IV_BAR_X - HIDDEN_ROW_LEFT, iv, HIDDEN_IV_BAR_MAX, HIDDEN_IV_BAR_MAX,
+                            HIDDEN_IV_BAR_COLOR, HIDDEN_IV_BAR_SHADE_COLOR);
     WordSetNumber(wordSet, 0, ev, 3, 1, 1);
     PStatus_PrintFormattedRightToWindow(wk, window, wordSet, 0x78, HIDDEN_EV_RIGHT - HIDDEN_ROW_LEFT, 1,
                                         PRINT_COLOR(1, 2, 0));
@@ -1562,8 +1562,8 @@ static void PStaSkill_PrintHiddenRow(PStatusWork *wk, BmpWin *window, PartyPkm *
     GFL_WordSetSystemFree(wordSet);
 }
 
-// A rounded bar of a value out of its most: an outline without its corners round the track, grey from the start to
-// the reach, and the fill over it, its last line in the shade
+// A rounded bar of a value out of its most: an outline without its corners round the track, white up to the reach
+// and grey past it, and the fill over it, its last line in the shade
 static void PStaSkill_DrawHiddenBar(GFLBitmap *bitmap, u16 x, u32 value, u32 reach, u32 max, u8 color, u8 shade) {
     u32 fill;
     u32 reachFill;
@@ -1580,9 +1580,9 @@ static void PStaSkill_DrawHiddenBar(GFLBitmap *bitmap, u16 x, u32 value, u32 rea
     GFL_BitmapFillArea(bitmap, x, HIDDEN_BAR_Y + 1, HIDDEN_BAR_WIDTH, HIDDEN_BAR_HEIGHT - 2, HIDDEN_BAR_OUTLINE_COLOR);
     GFL_BitmapFillArea(bitmap, x + 1, HIDDEN_BAR_Y + 1, HIDDEN_BAR_WIDTH - 2, HIDDEN_BAR_HEIGHT - 2,
                        HIDDEN_BAR_TRACK_COLOR);
-    if (reachFill > fill) {
-        GFL_BitmapFillArea(bitmap, x + 1 + fill, HIDDEN_BAR_Y + 1, reachFill - fill, HIDDEN_BAR_HEIGHT - 2,
-                           HIDDEN_EV_REACH_COLOR);
+    if (reachFill < HIDDEN_BAR_WIDTH - 2) {
+        GFL_BitmapFillArea(bitmap, x + 1 + reachFill, HIDDEN_BAR_Y + 1, HIDDEN_BAR_WIDTH - 2 - reachFill,
+                           HIDDEN_BAR_HEIGHT - 2, HIDDEN_EV_UNREACHABLE_COLOR);
     }
     if (fill != 0) {
         GFL_BitmapFillArea(bitmap, x + 1, HIDDEN_BAR_Y + 1, fill, HIDDEN_BAR_HEIGHT - 3, color);

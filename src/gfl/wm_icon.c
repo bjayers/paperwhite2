@@ -79,6 +79,26 @@ static WmIcon *loadWifiStrengthIcons(u32 unused, u32 heapId, u32 x, u32 y, u32 t
     return icon;
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: the icon is never shown, nor the OBJ window under it, which screens set up only to keep the icon clear
+// of their dimming; its two OBJ stay hidden wherever it would be
+static void WmIcon_WriteOam(WmIcon *icon) {
+    GXOamAttr *oam;
+
+    if (WmIcon_GetEngineOfIcon(icon) == 1) {
+        oam = (GXOamAttr *)HW_OAM;
+    } else {
+        oam = (GXOamAttr *)HW_DB_OAM;
+    }
+    HideOam(oam);
+    HideOam(oam + 1);
+    if (oam != icon->oam) {
+        HideOam(icon->oam);
+        HideOam(icon->oam + 1);
+        icon->oam = oam;
+    }
+}
+#else
 static void WmIcon_WriteOam(WmIcon *icon) {
     u32 engine = WmIcon_GetEngineOfIcon(icon);
     u32 charNo = WmIcon_GetCharNo(engine, icon->level);
@@ -104,6 +124,7 @@ static void WmIcon_WriteOam(WmIcon *icon) {
         icon->oam = oam;
     }
 }
+#endif
 
 static u32 WmIcon_GetEngineOfIcon(WmIcon *icon) {
     switch (icon->screen) {

@@ -2,6 +2,32 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-29: scripted drops reverted, EV bars grey what's out of reach, no wireless icon, Chaos shows ??? (not committed, not yet tested)
+
+- **Shiny Candy from scripted wild battles: reverted** (`PaperWhite2_ShinyCandyDropForScript`,
+  `PaperWhite2_ShinyCandyDropAfterScriptBattle`, `Script_21` of `global_2800.s`). Field-battle and release drops stay.
+  The crash (Route 19's Patrat, a won battle with a drop): `GLOBAL_SCRIPT_TABLE` (`src/ov012/script_sys.c`) gives
+  global_2800 the IDs 2800-2819 only, so `FieldScript_ResolveSCRID` hit `GFL_ASSERT_MSG(scriptId <= end)` for 2820 and
+  the assert callback (`AssertFailErrorDisp`) showed "An error has occurred". The Venipede rolled no drop, so it never
+  created the VM. A new global script beyond a range's end needs that range's end raised (or a new range) first.
+  If retried: a script command (`PaperWhite2_GiveScriptShinyCandy`, say) that the hack's scripts call after
+  `CallWildBattleEnd`, which reads a flag the battle's event set and, through `RTCallGlobal`'s path, calls a drop
+  script whose ID the table covers; no hook in `CallWildBattleEnd`, which every script shares.
+- **EV bars**: the track is white up to min(252, EV + 510 - sum) and grey from there to 252 (the part the stat can't
+  reach any more); the IV bars have no grey. The old grey ran from the blue to the reach.
+- **Wireless icon**: hidden in hack builds at its only writer, `WmIcon_WriteOam` (`src/gfl/wm_icon.c`): both of its OBJ
+  (the icon and the OBJ window under it) are written hidden. The icon still exists, moves and takes its signal level;
+  the net error screen and the Union Room's sub screen just have no unblended square. "EVs n/510" (ending at x 252) is
+  no longer covered.
+- **Season app**: in Chaos the status says "Season outside: ???" (`SeasonApp_Text_OutsideUnknown`); the banner stays
+  the game's own season.
+- `--hack` builds with no warnings, `verify_dsi_rom.py` intact, memory check passes (159 KB left); the matching
+  `modules.ok` passes.
+- Tests: Always shiny on; Route 19's Patrat (Script_13/17) and a field shiny: win, no crash, field drop still ~50%;
+  release drop still works. Summary on a Pokémon with few EVs (no grey), one near 510 (right ends grey), one at 510
+  (grey right after each blue). C-Gear on: no icon at the top right of the summary or the field; Union Room and an
+  IR/wireless link still work. Season app in Chaos: "Season outside: ???".
+
 ## 2026-10-29: EV reach bars, the Season app's projected season, and more Shiny Candy drops (not committed, not yet tested)
 
 - **Summary, hidden view**: each EV bar is grey after its blue up to min(252, EV + 510 - the sum), the most that stat

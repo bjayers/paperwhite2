@@ -174,10 +174,10 @@ double and triple battles on the selected move's name, which it carries above th
 The summary's skill page (`src/ov207/p_sta_skill.c`, overlay 207) shows HP and the five stats on the top screen, with
 "« STATS »" in its title bar. L or R switches the six rows to their EVs and IVs: in each row's part of the white panel,
 a blue EV bar (0-252), the EV and the IV, and a red IV bar (0-31), the bars rounded, with a dark outline round a white
-track, drawn into the rows' windows with fills (`PStaSkill_DrawHiddenBar`). After its blue, each EV bar is grey up to
-the most that stat can still reach, min(252, EV + 510 - the six EVs' sum): no grey for a stat at 252 or once the sum
-is 510. "EV" and "IV" stand over their columns in the title bar, where the empty bar's tiles cover « STATS », and the
-sum at its right ("EVs 85/510", `PStaSys_Text_EvTotal`, ending at x 252); the HP bar and its frame are hidden. The rows' windows are 19
+track, drawn into the rows' windows with fills (`PStaSkill_DrawHiddenBar`). Each EV bar's track is white up to the most
+that stat can still reach, min(252, EV + 510 - the six EVs' sum), and grey from there to 252, the part it can no
+longer reach: no grey while the sum is low, the right ends grey near 510, and at 510 each bar is grey past its blue. "EV" and "IV" stand over their columns in the title bar, where the empty bar's tiles cover « STATS », and the
+sum at its right ("EVs 85/510", `PStaSys_Text_EvTotal`, ending at x 252, which the wireless icon covered until hack builds hid it); the HP bar and its frame are hidden. The rows' windows are 19
 tiles wide in hack builds instead of 16 and 14, to the panel's edge on the HP's row (x 216), which BG 4's 768 tiles
 allow (754 used). L or R again switches back, and the view stays across Pokémon and pages until the summary closes. A
 hint at the left of the HP's row ("L/R: EV/IV", "L/R: Stats") says what L and R do: the game's archives have no L or R
@@ -353,7 +353,7 @@ VRAM E and I stay the engines' OBJ VRAM, unused.
 
 | Screen | BG (priority) | What |
 | --- | --- | --- |
-| Top | 2 (0) | Geonet's message window (2,19, 28 by 4 tiles, message frame): the setting ("Seasons: Weekly", "Seasons: Locked to Winter", "Seasons: Real time (Northern)") and "Season outside: X" (the season the next map change into an exterior brings by the setting, `PaperWhite2_GetCurrentSeason`: the locked one, the date's in the mode, the game's own for chaos), or the hemisphere on its page, or a confirmation after a change |
+| Top | 2 (0) | Geonet's message window (2,19, 28 by 4 tiles, message frame): the setting ("Seasons: Weekly", "Seasons: Locked to Winter", "Seasons: Real time (Northern)") and "Season outside: X" (the season the next map change into an exterior brings by the setting, `PaperWhite2_GetCurrentSeason`: the locked one, the date's in the mode; "Season outside: ???" for chaos, whose season is rolled at the map change), or the hemisphere on its page, or a confirmation after a change |
 | Top | 1 (2) | the season's banner, the game's art, in palette 8 with its black background (color 1) made transparent; over the preview it is moved up 22 pixels (`BANNER_PREVIEW_OFFSET_Y`), so that the season's name is centered in the view above the message window (line 72), over the preview's shadow |
 | Top | 0 (3) | the 3D preview (below) |
 | Top | 3 (3) | Geonet's grid, only if the preview didn't load |
@@ -507,3 +507,11 @@ animations, textures and VRAM, the camera and the 3D system), the button resourc
 the message bank, then the BG system and the heap, and puts the display layout back (main engine on top, as the field
 has it).
 
+
+## Adding global scripts
+
+A global script file's IDs are limited by its row in `GLOBAL_SCRIPT_TABLE` (`src/ov012/script_sys.c`), e.g.
+`{ 2800, 2819, SCRIPTS_GLOBAL_2800, … }`. A script entry past the row's end assembles fine but fails
+`FieldScript_ResolveSCRID`'s assert at run time, which shows "An error has occurred. Please turn off the power."
+(found 2026-10-29: the Shiny Candy drop's script 2820). Before adding a script past a file's last ID, raise that row's
+end under PAPERWHITE2, or put the script in a file with room.

@@ -609,19 +609,24 @@ static void SeasonApp_PrintLine(SeasonAppWork *work, u32 message, u8 line) {
     GFL_StrBufFree(strbuf);
 }
 
-// Shows the setting and the season the next map change into an exterior brings by it (for chaos the game's own), and
-// that season's banner
+// Shows the setting and the season the next map change into an exterior brings by it, unknown for chaos, and the banner
+// of that season, for chaos the game's own
 static void SeasonApp_ShowStatus(SeasonAppWork *work) {
     u8 mode = PaperWhite2_GetSeasonMode(work->gameData);
     u32 modeMessage = sSeasonAppModeMessages[mode];
+    u32 outsideMessage;
 
     if (mode == SEASON_MODE_REAL_TIME && PaperWhite2_GetSeasonHemisphere(work->gameData) == HEMISPHERE_SOUTHERN) {
         modeMessage = SeasonApp_Text_ModeRealTimeSouthern;
     }
     work->messageSeason = PaperWhite2_GetCurrentSeason(work->gameData);
+    outsideMessage = sSeasonAppOutsideSeasonMessages[work->messageSeason];
+    if (mode == SEASON_MODE_CHAOS) {
+        outsideMessage = SeasonApp_Text_OutsideUnknown;
+    }
     SeasonApp_ClearMessage(work);
     SeasonApp_PrintLine(work, modeMessage, 0);
-    SeasonApp_PrintLine(work, sSeasonAppOutsideSeasonMessages[work->messageSeason], 1);
+    SeasonApp_PrintLine(work, outsideMessage, 1);
     SeasonApp_UpdatePreview(work);
 }
 
