@@ -232,6 +232,8 @@ DEBUG                           L_DebugMenu
   Info                            zone and place, x/y/z (or the rail's line, front and side), season and mode,
                                   time of day, weather, follower
   Conditions                      the conditions' context, the debug samples' matches and pick (Conditions, below)
+  Follower...                     the Following Pokémon's steps and waiting item, Set steps..., Force a pickup,
+                                  Clear waiting item, Rules now (following-pokemon.md, Dialogue rules, gifts and steps)
   Close
 ```
 
@@ -288,6 +290,11 @@ of the last number entry.
 | `CONDITIONS_PARTY` (35) | | the lead in words 0-4, the median, adjusted median and wild range in 5-8, the zone loads and seeds in 9-12; FALSE without a lead |
 | `CONDITIONS_RULES` (36) | first | up to three debug samples from first: names in words 0, 2, 4, yes/no in 1, 3, 5; how many |
 | `CONDITIONS_PICK` (37) | | the samples' pick with a check seed (0, its seed in 1), with the load seed twice (2, 3), a keyed seed (4) |
+| `FOLLOWER_WORDS` (38) | | the follower's species, steps, total steps and waiting item in words 0-3; FALSE without one |
+| `FOLLOWER_SET_STEPS` (39) | | its steps since its last gift to the number (kept up to 4095) |
+| `FOLLOWER_PICKUP` (40) | | `FollowingDebug_ForcePickup`: the item in word 3; whether one was found |
+| `FOLLOWER_CLEAR_ITEM` (41) | | forgets its waiting item |
+| `FOLLOWER_RULES` (42) | | the talk rule that would be chosen now (0), its priority (1), the matches (2), the ambient (3) and pickup (4) rules |
 
 **Number entry.** The game has no number input that a script can open: the Bag's and the shops' quantity selectors are
 parts of their apps, and no script command asks for a number. So the menu has its own, `L_DebugNumber`, a subroutine

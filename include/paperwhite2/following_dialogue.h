@@ -47,7 +47,9 @@ enum {
 
 // What a step does when it begins: gives an item (arg) and how many (amount); gives an item rolled from pool arg; gives
 // the item the Pokémon keeps; changes its friendship by amount; starts script arg after the step; clears its steps
-// since the last gift
+// since the last gift. A step's motion moves the sprite alone (its draw offset), as HeartGold's do; walking the
+// follower's actor on the tiles would be an action of its own here, played by the talk's motion stage with the field's
+// collision checks (docs/paperwhite2/following-pokemon.md, "What remains")
 enum {
     FOLLOWING_ACTION_NONE,
     FOLLOWING_ACTION_GIVE_ITEM,
