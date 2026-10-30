@@ -14,6 +14,10 @@ this section wins.
 - They share work only through git. **Pull before starting, push when done**, and record results, findings and
   next steps in `docs/paperwhite2/STATUS.md` so the other session can pick up. Create that file if it's missing.
 - Commit and push only when the user asks. Stage files by name.
+- **`editor/` belongs to the cloud session; everything else to the ROM session.** The editor (from 2026-10-29) lives in
+  `editor/` with its own `.gitignore` for dependencies and packaged builds, and reads and writes `res/` in place
+  rather than keeping copies of game data. The ROM session doesn't edit `editor/`, and the cloud session doesn't edit
+  files outside it. Both push to `main`: run `git fetch origin && git merge origin/main` before every push.
 
 ## What changes from upstream's rules
 
