@@ -32,6 +32,10 @@
 #include "system/palanm.h"
 #include "system/printsys.h"
 #include "system/wipe.h"
+#ifdef PAPERWHITE2
+#include "constants/items.h"
+#include "paperwhite2/shiny_candy.h"
+#endif
 
 // The PC box's sequences: one function per state of the box, run each frame by Box2Seq_Main, each returning the
 // next state. Names are ours
@@ -5656,6 +5660,11 @@ static int Box2Seq_ReleaseCheckMoves(Box2SysWork *syswk) {
     return 102;
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: the release's step that says a released shiny Pokémon left a Shiny Candy, after the goodbye
+#define RELEASE_SUBSEQ_SHINY_CANDY 4
+#endif
+
 // Releasing: says goodbye and removes the Pokémon
 static int Box2Seq_ReleaseDo(Box2SysWork *syswk) {
     switch (syswk->app->subSeq) {
@@ -5668,7 +5677,26 @@ static int Box2Seq_ReleaseDo(Box2SysWork *syswk) {
         Box2Bmp_PrintReleaseMsg(syswk, 2, 24);
         syswk->nextSeq = 103;
         syswk->app->subSeq++;
+#ifdef PAPERWHITE2
+        // Paper White 2: a shiny Pokémon may leave a Shiny Candy behind, said before it is removed
+        if (PML_PkmIsRare(Box2Main_GetBoxPkm(syswk, syswk->tray, syswk->pos)) && PaperWhite2_RollShinyCandyDrop()) {
+            syswk->app->subSeq = RELEASE_SUBSEQ_SHINY_CANDY;
+        }
+#endif
         return BOX2SEQ_TRGWAIT;
+#ifdef PAPERWHITE2
+    case RELEASE_SUBSEQ_SHINY_CANDY:
+        // Paper White 2: the Shiny Candy goes in the bag, if its pocket has room
+        if (BagSave_AddItem(syswk->param->bag, ITEM_SHINY_CANDY, 1, HEAPID_BOX2_APP) == TRUE) {
+            Box2Bmp_PrintReleaseMsg(syswk, 8, 24);
+        } else {
+            GFL_SndSEPlay(SEQ_SE_BEEP);
+            Box2Bmp_PrintReleaseMsg(syswk, 9, 24);
+        }
+        syswk->nextSeq = 103;
+        syswk->app->subSeq = 2;
+        return BOX2SEQ_TRGWAIT;
+#endif
     case 2:
         Box2Main_ClearPokeData(syswk, syswk->tray, syswk->pos);
         Box2Bmp_ClearMsgWindow(syswk->app, 24);

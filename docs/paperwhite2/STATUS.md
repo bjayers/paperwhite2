@@ -2,6 +2,30 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-29: EV reach bars, the Season app's projected season, and more Shiny Candy drops (not committed, not yet tested)
+
+- **Summary, hidden view**: each EV bar is grey after its blue up to min(252, EV + 510 - the sum), the most that stat
+  can still reach; none at 252 or with the sum at 510. The title bar shows "EVs 85/510" at its right, where HIDDEN
+  STATS was (the title window is 17 tiles again, to the screen's edge). IV bars unchanged (plugins.md).
+- **Season app**: the status says "Season outside: X", the season the next exterior gets by the setting
+  (`PaperWhite2_GetCurrentSeason`), not the game's current one; the banner and preview follow. On Dynamic Options the
+  D-pad cursor previews each mode's season of today (Chaos: the game's own); on Set Hemisphere it previews the
+  real-time season of that hemisphere, only while the mode is real time (in other modes the hemisphere changes nothing
+  outside, so the top screen keeps the season outside). BACK returns to the projected season.
+- **Shiny Candy from scripted wild battles** (`CallWildBattle`, `CallWildBattleEx`, every script): the battle's shiny
+  foe is recorded at its start as before; on its return to the script a victory rolls the 50%
+  (`PaperWhite2_ShinyCandyDropForScript`, from `EventWildBattleCall_Callback`), and the script's `CallWildBattleEnd`,
+  after its fade in, calls `Script_21` of `global_2800.s` (script 2820) as `RTCallGlobal` would, which keeps the
+  script's 0x8000-0x8010 values it uses. A catch, a run or a loss drops nothing.
+- **Releasing a shiny** in the PC (box or party side of the box app): after "Bye-bye, X!", 50%: "X left behind a Shiny
+  Candy!" with the candy in the bag, or "It left a Shiny Candy, but the Bag is full." (`Box2Seq_ReleaseDo`, text in
+  `box2_bmp.txt`). Eggs can't be released. The party list has no release.
+- **Flags**: 0xaef (Wurmple feeding) and 0xaf0 (the Center's lottery girl), the user's daily flags, in plugins.md.
+- Tests: Always shiny on (START debug menu); a scripted static Pokémon (e.g. Dreamyard's Latias or Latios,
+  any `CallWildBattle`): defeat it a few times (about half drop, message after the fade in, then the script goes on),
+  catch it or run (no drop). Release a shiny from the PC a few times (about half), once with 999 Shiny Candies (bag
+  full message). Summary: L/R on a Pokémon with some EVs. Season app: check the status in each mode and the hovers.
+
 ## 2026-10-29: fixes after the first test of the Shiny Candy, the Exp. Share and the summary (not committed, not yet tested)
 
 - **Shiny Candy**: its own icon (`ITEM_ICON_SHINY_CANDY` and `_PALETTE_`, appended to `generated/item_icons.txt`;

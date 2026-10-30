@@ -121,9 +121,9 @@ static void PStaSkill_GetPlatePos(SkillPlate *plate, ClActorPos *pos);
 static void PStaSkill_SetPlateAnim(SkillPlate *plate, u32 anim);
 #ifdef PAPERWHITE2
 static void PStaSkill_PrintStatRows(PStatusWork *wk, PStaSkillWork *skill, PartyPkm *pkm, u32 nature);
-static void PStaSkill_PrintHiddenRow(PStatusWork *wk, BmpWin *window, PartyPkm *pkm, u32 stat);
-static void PStaSkill_PrintHiddenTitle(PStatusWork *wk, PStaSkillWork *skill);
-static void PStaSkill_DrawHiddenBar(GFLBitmap *bitmap, u16 x, u32 value, u32 max, u8 color, u8 shade);
+static void PStaSkill_PrintHiddenRow(PStatusWork *wk, BmpWin *window, PartyPkm *pkm, u32 stat, u32 evsLeft);
+static void PStaSkill_PrintHiddenTitle(PStatusWork *wk, PStaSkillWork *skill, u32 evTotal);
+static void PStaSkill_DrawHiddenBar(GFLBitmap *bitmap, u16 x, u32 value, u32 reach, u32 max, u8 color, u8 shade);
 static void PStaSkill_PrintRight(PStatusWork *wk, BmpWin *window, u32 msgId, u16 right, u16 color);
 #endif
 
@@ -165,6 +165,8 @@ static const PStaWindowSetup sSkillWindows[SKILL_WINDOW_COUNT] = {
 #define HIDDEN_BAR_Y 5
 #define HIDDEN_EV_BAR_MAX 252
 #define HIDDEN_IV_BAR_MAX 31
+// The most EVs a Pokémon gains in all, the sum of its six
+#define HIDDEN_EV_TOTAL_MAX 510
 // The bars' colors in the font's palette: a dark outline round a white track, and the fill, light above its shade,
 // blue for the EVs and red for the IVs
 #define HIDDEN_BAR_OUTLINE_COLOR 1
@@ -173,11 +175,14 @@ static const PStaWindowSetup sSkillWindows[SKILL_WINDOW_COUNT] = {
 #define HIDDEN_EV_BAR_SHADE_COLOR 5
 #define HIDDEN_IV_BAR_COLOR 4
 #define HIDDEN_IV_BAR_SHADE_COLOR 3
-// The title bar's window, over the empty bar and the page's name (« STATS »), with "EV" and "IV" ending where their
-// columns do
-static const PStaWindowSetup sHiddenTitleWindow = { 15, 1, 12, 2 };
+// The EV bar's grey after the fill, to the most that stat can still reach with the EVs left of the total's most
+#define HIDDEN_EV_REACH_COLOR 2
+// The title bar's window, over the empty bar and the page's name (« STATS ») to the screen's right edge, with "EV"
+// and "IV" ending where their columns do, and the EVs' total ("EVs 85/510") at the right
+static const PStaWindowSetup sHiddenTitleWindow = { 15, 1, 17, 2 };
 #define HIDDEN_HEADER_EV_RIGHT HIDDEN_EV_RIGHT
 #define HIDDEN_HEADER_IV_RIGHT HIDDEN_IV_RIGHT
+#define HIDDEN_HEADER_TOTAL_RIGHT 252
 #define HIDDEN_HEADER_Y 1
 // The page's name in the title bar, which the empty bar left of it covers with the EVs and IVs
 #define HIDDEN_PAGE_NAME_X 22
@@ -1494,14 +1499,22 @@ static void PStaSkill_SetPlateAnim(SkillPlate *plate, u32 anim) {
 static void PStaSkill_PrintStatRows(PStatusWork *wk, PStaSkillWork *skill, PartyPkm *pkm, u32 nature) {
     WordSet *wordSet;
     BmpWin *window;
+    u32 evTotal = 0;
+    u32 evsLeft = 0;
     u32 i;
 
     for (i = 0; i <= 6; i++) {
         GFL_BitmapFill(BmpWin_GetBitmap(skill->windows[i]), 0);
     }
+    for (i = 0; i < NELEMS(sStatRowParams); i++) {
+        evTotal += PokeParty_GetParam(pkm, sStatRowParams[i][1], NULL);
+    }
+    if (evTotal < HIDDEN_EV_TOTAL_MAX) {
+        evsLeft = HIDDEN_EV_TOTAL_MAX - evTotal;
+    }
     PStatus_PrintToWindow(wk, skill->windows[0], PStaSys_Text_Hp, 25, 1, PRINT_COLOR(15, 2, 0));
     if (skill->showHidden == TRUE) {
-        PStaSkill_PrintHiddenRow(wk, skill->windows[0], pkm, 0);
+        PStaSkill_PrintHiddenRow(wk, skill->windows[0], pkm, 0, evsLeft);
     } else {
         wordSet = GFL_WordSetSystemCreateDefault(wk->heapId);
         WordSetNumber(wordSet, 0, PokeParty_GetParam(pkm, PKM_PARAM_HP, NULL), 3, 1, 1);
@@ -1517,7 +1530,7 @@ static void PStaSkill_PrintStatRows(PStatusWork *wk, PStaSkillWork *skill, Party
         window = skill->windows[i + 1];
         PStatus_PrintToWindow(wk, window, PStaSys_Text_Hp + i, 1, 1, PStaSkill_GetStatColor(wk, skill, nature, i));
         if (skill->showHidden == TRUE) {
-            PStaSkill_PrintHiddenRow(wk, window, pkm, i);
+            PStaSkill_PrintHiddenRow(wk, window, pkm, i, evsLeft);
         } else {
             wordSet = GFL_WordSetSystemCreateDefault(wk->heapId);
             WordSetNumber(wordSet, 0, PokeParty_GetParam(pkm, sStatRowParams[i][0], NULL), 3, 1, 1);
@@ -1525,19 +1538,20 @@ static void PStaSkill_PrintStatRows(PStatusWork *wk, PStaSkillWork *skill, Party
             GFL_WordSetSystemFree(wordSet);
         }
     }
-    PStaSkill_PrintHiddenTitle(wk, skill);
+    PStaSkill_PrintHiddenTitle(wk, skill, evTotal);
 }
 
-// A stat's EV and IV, in their columns between their bars
-static void PStaSkill_PrintHiddenRow(PStatusWork *wk, BmpWin *window, PartyPkm *pkm, u32 stat) {
+// A stat's EV and IV, in their columns between their bars. The EV's bar is grey after its fill to the most the stat can
+// still reach, its EVs and those left of the total's most, up to the bar's most
+static void PStaSkill_PrintHiddenRow(PStatusWork *wk, BmpWin *window, PartyPkm *pkm, u32 stat, u32 evsLeft) {
     WordSet *wordSet = GFL_WordSetSystemCreateDefault(wk->heapId);
     GFLBitmap *bitmap = BmpWin_GetBitmap(window);
     u32 ev = PokeParty_GetParam(pkm, sStatRowParams[stat][1], NULL);
     u32 iv = PokeParty_GetParam(pkm, sStatRowParams[stat][2], NULL);
 
-    PStaSkill_DrawHiddenBar(bitmap, HIDDEN_EV_BAR_X - HIDDEN_ROW_LEFT, ev, HIDDEN_EV_BAR_MAX, HIDDEN_EV_BAR_COLOR,
-                            HIDDEN_EV_BAR_SHADE_COLOR);
-    PStaSkill_DrawHiddenBar(bitmap, HIDDEN_IV_BAR_X - HIDDEN_ROW_LEFT, iv, HIDDEN_IV_BAR_MAX, HIDDEN_IV_BAR_COLOR,
+    PStaSkill_DrawHiddenBar(bitmap, HIDDEN_EV_BAR_X - HIDDEN_ROW_LEFT, ev, ev + evsLeft, HIDDEN_EV_BAR_MAX,
+                            HIDDEN_EV_BAR_COLOR, HIDDEN_EV_BAR_SHADE_COLOR);
+    PStaSkill_DrawHiddenBar(bitmap, HIDDEN_IV_BAR_X - HIDDEN_ROW_LEFT, iv, iv, HIDDEN_IV_BAR_MAX, HIDDEN_IV_BAR_COLOR,
                             HIDDEN_IV_BAR_SHADE_COLOR);
     WordSetNumber(wordSet, 0, ev, 3, 1, 1);
     PStatus_PrintFormattedRightToWindow(wk, window, wordSet, 0x78, HIDDEN_EV_RIGHT - HIDDEN_ROW_LEFT, 1,
@@ -1548,28 +1562,38 @@ static void PStaSkill_PrintHiddenRow(PStatusWork *wk, BmpWin *window, PartyPkm *
     GFL_WordSetSystemFree(wordSet);
 }
 
-// A rounded bar of a value out of its most: an outline without its corners round the track, and the fill, its last
-// line in the shade
-static void PStaSkill_DrawHiddenBar(GFLBitmap *bitmap, u16 x, u32 value, u32 max, u8 color, u8 shade) {
+// A rounded bar of a value out of its most: an outline without its corners round the track, grey from the start to
+// the reach, and the fill over it, its last line in the shade
+static void PStaSkill_DrawHiddenBar(GFLBitmap *bitmap, u16 x, u32 value, u32 reach, u32 max, u8 color, u8 shade) {
     u32 fill;
+    u32 reachFill;
 
     if (value > max) {
         value = max;
     }
+    if (reach > max) {
+        reach = max;
+    }
     fill = value * (HIDDEN_BAR_WIDTH - 2) / max;
+    reachFill = reach * (HIDDEN_BAR_WIDTH - 2) / max;
     GFL_BitmapFillArea(bitmap, x + 1, HIDDEN_BAR_Y, HIDDEN_BAR_WIDTH - 2, HIDDEN_BAR_HEIGHT, HIDDEN_BAR_OUTLINE_COLOR);
     GFL_BitmapFillArea(bitmap, x, HIDDEN_BAR_Y + 1, HIDDEN_BAR_WIDTH, HIDDEN_BAR_HEIGHT - 2, HIDDEN_BAR_OUTLINE_COLOR);
     GFL_BitmapFillArea(bitmap, x + 1, HIDDEN_BAR_Y + 1, HIDDEN_BAR_WIDTH - 2, HIDDEN_BAR_HEIGHT - 2,
                        HIDDEN_BAR_TRACK_COLOR);
+    if (reachFill > fill) {
+        GFL_BitmapFillArea(bitmap, x + 1 + fill, HIDDEN_BAR_Y + 1, reachFill - fill, HIDDEN_BAR_HEIGHT - 2,
+                           HIDDEN_EV_REACH_COLOR);
+    }
     if (fill != 0) {
         GFL_BitmapFillArea(bitmap, x + 1, HIDDEN_BAR_Y + 1, fill, HIDDEN_BAR_HEIGHT - 3, color);
         GFL_BitmapFillArea(bitmap, x + 1, HIDDEN_BAR_Y + HIDDEN_BAR_HEIGHT - 2, fill, 1, shade);
     }
 }
 
-// With the EVs and IVs, the columns' names in the title bar; and the hint for what L and R show
-static void PStaSkill_PrintHiddenTitle(PStatusWork *wk, PStaSkillWork *skill) {
+// With the EVs and IVs, the columns' names and the EVs' total in the title bar; and the hint for what L and R show
+static void PStaSkill_PrintHiddenTitle(PStatusWork *wk, PStaSkillWork *skill, u32 evTotal) {
     u16 left = sHiddenTitleWindow.x * 8;
+    WordSet *wordSet;
 
     GFL_BitmapFill(BmpWin_GetBitmap(skill->titleWindow), 0);
     GFL_BitmapFill(BmpWin_GetBitmap(skill->hintWindow), 0);
@@ -1578,6 +1602,12 @@ static void PStaSkill_PrintHiddenTitle(PStatusWork *wk, PStaSkillWork *skill) {
                              PRINT_COLOR(15, 2, 0));
         PStaSkill_PrintRight(wk, skill->titleWindow, PStaSys_Text_IvColumn, HIDDEN_HEADER_IV_RIGHT - left,
                              PRINT_COLOR(15, 2, 0));
+        wordSet = GFL_WordSetSystemCreateDefault(wk->heapId);
+        WordSetNumber(wordSet, 0, evTotal, 3, 1, 1);
+        WordSetNumber(wordSet, 1, HIDDEN_EV_TOTAL_MAX, 3, 1, 1);
+        PStatus_PrintFormattedRightToWindow(wk, skill->titleWindow, wordSet, PStaSys_Text_EvTotal,
+                                            HIDDEN_HEADER_TOTAL_RIGHT - left, HIDDEN_HEADER_Y, PRINT_COLOR(15, 2, 0));
+        GFL_WordSetSystemFree(wordSet);
         PStatus_PrintToWindow(wk, skill->hintWindow, PStaSys_Text_ShowStats, HIDDEN_HINT_X, HIDDEN_HINT_Y,
                               PRINT_COLOR(15, 2, 0));
     } else {

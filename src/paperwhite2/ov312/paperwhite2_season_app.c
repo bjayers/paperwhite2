@@ -235,6 +235,7 @@ static void SeasonApp_FreePreview(SeasonAppWork *work);
 static void SeasonApp_UpdatePreviewFade(SeasonAppWork *work);
 static void SeasonApp_ClearBannerBackground(u8 *chars, u32 size);
 static void SeasonApp_UpdatePreview(SeasonAppWork *work);
+static u8 SeasonApp_GetSeasonOf(SeasonAppWork *work, u8 mode, u8 hemisphere);
 static void SeasonApp_OpenPage(SeasonAppWork *work, u8 page);
 static void SeasonApp_ClosePage(SeasonAppWork *work);
 static u8 SeasonApp_GetCurrentValue(SeasonAppWork *work);
@@ -351,11 +352,11 @@ static const u32 sSeasonAppModeMessages[SEASON_MODE_COUNT] = {
     SeasonApp_Text_ModeDaily,   SeasonApp_Text_ModeRealTimeNorthern, SeasonApp_Text_ModeChaos,
 };
 
-static const u32 sSeasonAppCurrentSeasonMessages[SEASON_COUNT] = {
-    SeasonApp_Text_CurrentSpring,
-    SeasonApp_Text_CurrentSummer,
-    SeasonApp_Text_CurrentAutumn,
-    SeasonApp_Text_CurrentWinter,
+static const u32 sSeasonAppOutsideSeasonMessages[SEASON_COUNT] = {
+    SeasonApp_Text_OutsideSpring,
+    SeasonApp_Text_OutsideSummer,
+    SeasonApp_Text_OutsideAutumn,
+    SeasonApp_Text_OutsideWinter,
 };
 
 const GameProcFunctions SEASON_APP_PROC_FUNCTIONS = { SeasonAppProc_Init, SeasonAppProc_Main, SeasonAppProc_End };
@@ -608,7 +609,8 @@ static void SeasonApp_PrintLine(SeasonAppWork *work, u32 message, u8 line) {
     GFL_StrBufFree(strbuf);
 }
 
-// Shows the setting and the season the game has, and that season's banner
+// Shows the setting and the season the next map change into an exterior brings by it (for chaos the game's own), and
+// that season's banner
 static void SeasonApp_ShowStatus(SeasonAppWork *work) {
     u8 mode = PaperWhite2_GetSeasonMode(work->gameData);
     u32 modeMessage = sSeasonAppModeMessages[mode];
@@ -616,10 +618,10 @@ static void SeasonApp_ShowStatus(SeasonAppWork *work) {
     if (mode == SEASON_MODE_REAL_TIME && PaperWhite2_GetSeasonHemisphere(work->gameData) == HEMISPHERE_SOUTHERN) {
         modeMessage = SeasonApp_Text_ModeRealTimeSouthern;
     }
-    work->messageSeason = GameData_GetSeason(work->gameData);
+    work->messageSeason = PaperWhite2_GetCurrentSeason(work->gameData);
     SeasonApp_ClearMessage(work);
     SeasonApp_PrintLine(work, modeMessage, 0);
-    SeasonApp_PrintLine(work, sSeasonAppCurrentSeasonMessages[work->messageSeason], 1);
+    SeasonApp_PrintLine(work, sSeasonAppOutsideSeasonMessages[work->messageSeason], 1);
     SeasonApp_UpdatePreview(work);
 }
 
@@ -733,14 +735,35 @@ static void SeasonApp_ClearBannerBackground(u8 *chars, u32 size) {
     }
 }
 
-// Shows the banner of the season under the cursor on the season page, or else of the message's season
+// Shows the season the button under the key cursor would give now: on the season page its season, on the dynamic page
+// its mode's (the game's own for chaos), and on the hemisphere page, in the real-time mode, the hemisphere's. Else, and
+// on Back, the message's season
 static void SeasonApp_UpdatePreview(SeasonAppWork *work) {
+    const SeasonAppButtonSetup *button;
     u8 season = work->messageSeason;
 
-    if (work->page == PAGE_SEASON && work->cursor < work->buttonCount - 1 && GCTX_HIDIsUsingTouch() == FALSE) {
-        season = sSeasonAppSeasonButtons[work->cursor].value - SEASON_MODE_SPRING;
+    if (work->page < PAGE_MENU && work->cursor < work->buttonCount - 1 && GCTX_HIDIsUsingTouch() == FALSE) {
+        button = &sSeasonAppPages[work->page].buttons[work->cursor];
+        if (work->page == PAGE_HEMISPHERE) {
+            if (PaperWhite2_GetSeasonMode(work->gameData) == SEASON_MODE_REAL_TIME) {
+                season = SeasonApp_GetSeasonOf(work, SEASON_MODE_REAL_TIME, button->value);
+            }
+        } else {
+            season = SeasonApp_GetSeasonOf(work, button->value, PaperWhite2_GetSeasonHemisphere(work->gameData));
+        }
     }
     SeasonApp_ShowBanner(work, season);
+}
+
+// The season a mode and hemisphere give now, as PaperWhite2_GetCurrentSeason has it for the setting
+static u8 SeasonApp_GetSeasonOf(SeasonAppWork *work, u8 mode, u8 hemisphere) {
+    RTCDate date;
+
+    if (mode == SEASON_MODE_CHAOS) {
+        return GameData_GetSeason(work->gameData);
+    }
+    RTC_GetCachedDate(&date);
+    return PaperWhite2_GetSeasonOfDate(mode, hemisphere, &date);
 }
 
 static void SeasonApp_OpenPage(SeasonAppWork *work, u8 page) {

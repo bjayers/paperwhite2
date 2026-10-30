@@ -174,8 +174,10 @@ double and triple battles on the selected move's name, which it carries above th
 The summary's skill page (`src/ov207/p_sta_skill.c`, overlay 207) shows HP and the five stats on the top screen, with
 "« STATS »" in its title bar. L or R switches the six rows to their EVs and IVs: in each row's part of the white panel,
 a blue EV bar (0-252), the EV and the IV, and a red IV bar (0-31), the bars rounded, with a dark outline round a white
-track, drawn into the rows' windows with fills (`PStaSkill_DrawHiddenBar`). "EV" and "IV" stand over their columns in
-the title bar, where the empty bar's tiles cover « STATS »; the HP bar and its frame are hidden. The rows' windows are 19
+track, drawn into the rows' windows with fills (`PStaSkill_DrawHiddenBar`). After its blue, each EV bar is grey up to
+the most that stat can still reach, min(252, EV + 510 - the six EVs' sum): no grey for a stat at 252 or once the sum
+is 510. "EV" and "IV" stand over their columns in the title bar, where the empty bar's tiles cover « STATS », and the
+sum at its right ("EVs 85/510", `PStaSys_Text_EvTotal`, ending at x 252); the HP bar and its frame are hidden. The rows' windows are 19
 tiles wide in hack builds instead of 16 and 14, to the panel's edge on the HP's row (x 216), which BG 4's 768 tiles
 allow (754 used). L or R again switches back, and the view stays across Pokémon and pages until the summary closes. A
 hint at the left of the HP's row ("L/R: EV/IV", "L/R: Stats") says what L and R do: the game's archives have no L or R
@@ -213,6 +215,8 @@ used one is named with a `# Paper White 2:` comment). New features take theirs f
 | 0x754 | free (was the old season NPC's) | |
 | 0x755-0x757 | free | |
 | 0x92f-0x95f | the hack's features | 0x92f `EVENT_FLAG_EXP_SHARE_OFF` |
+| 0xaef | the user's: the Wurmple daily-feeding mini-event (`route_20.s`), a daily flag | `EVENT_FLAG_DAILY_0x0aef`; don't touch |
+| 0xaf0 | the user's: the Pokémon Center lottery girl (`global_10850.s`, set in `aspertia_city.s` too), a daily flag | `EVENT_FLAG_DAILY_0x0af0`; don't touch |
 | 0xbd9-0xbf7 | the debug menu's toggles | 0xbd9 `EVENT_FLAG_DEBUG_ALWAYS_SHINY` |
 
 Flags elsewhere, even ones no text search finds, may be reached by a base plus an index (hidden items, trainers), so
@@ -349,16 +353,20 @@ VRAM E and I stay the engines' OBJ VRAM, unused.
 
 | Screen | BG (priority) | What |
 | --- | --- | --- |
-| Top | 2 (0) | Geonet's message window (2,19, 28 by 4 tiles, message frame): the setting ("Seasons: Weekly", "Seasons: Locked to Winter", "Seasons: Real time (Northern)") and "Current season: X" (the season the game has now), or the hemisphere on its page, or a confirmation after a change |
+| Top | 2 (0) | Geonet's message window (2,19, 28 by 4 tiles, message frame): the setting ("Seasons: Weekly", "Seasons: Locked to Winter", "Seasons: Real time (Northern)") and "Season outside: X" (the season the next map change into an exterior brings by the setting, `PaperWhite2_GetCurrentSeason`: the locked one, the date's in the mode, the game's own for chaos), or the hemisphere on its page, or a confirmation after a change |
 | Top | 1 (2) | the season's banner, the game's art, in palette 8 with its black background (color 1) made transparent; over the preview it is moved up 22 pixels (`BANNER_PREVIEW_OFFSET_Y`), so that the season's name is centered in the view above the message window (line 72), over the preview's shadow |
 | Top | 0 (3) | the 3D preview (below) |
 | Top | 3 (3) | Geonet's grid, only if the preview didn't load |
 | Touch | 6 (0) | the menu's buttons (Set Season, Dynamic Options, Set Hemisphere, and QUIT), or a page's buttons |
 | Touch | 7 (3) | Geonet's grid |
 
-The banner and the preview show the season the message window talks about: the current one with the status, the one
-the next map change into an exterior brings after a change (`PaperWhite2_GetCurrentSeason`; for chaos the game's own),
-and on the Set Season page the season under the key cursor.
+The banner and the preview show the season the message window talks about: with the status and after a change, the
+one the next map change into an exterior brings (`PaperWhite2_GetCurrentSeason`; for chaos the game's own). With the
+key cursor on a page's button, they show the season that button would give now (`SeasonApp_UpdatePreview`): on Set
+Season its season, on Dynamic Options its mode's of today's date (`PaperWhite2_GetSeasonOfDate`; Chaos the game's
+own), and on Set Hemisphere, only while the mode is real time, the real-time season of that hemisphere; in other modes
+the hemisphere changes nothing outside, so the top screen keeps the season outside. On BACK, or with the touch screen
+in use, the message's season again. A hovered season equal to the one shown loads nothing.
 
 **The preview.** `src/paperwhite2/ov312/paperwhite2_season_preview.c`, `include/paperwhite2/season_preview.h`, in
 overlay 312 with the app. It draws the southern stretch of Route 1 (the chunk of matrix cell 24,22, whose southern edge

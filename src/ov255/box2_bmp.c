@@ -646,6 +646,16 @@ void Box2Bmp_PrintReleaseMsg(Box2SysWork *syswk, u32 type, u32 index) {
     case 6:
         msgId = Box2Bmp_Text_ThatsLastPokemon;
         break;
+#ifdef PAPERWHITE2
+    // Paper White 2: a released shiny Pokémon's Shiny Candy, put in the bag, or with no room for it
+    case 8:
+        msgId = Box2Bmp_Text_ShinyCandyLeftBehind;
+        loadBoxPokemonNameToStrbuf(syswk->app->wordSet, 0, Box2Main_GetBoxPkm(syswk, syswk->tray, syswk->pos));
+        break;
+    case 9:
+        msgId = Box2Bmp_Text_ShinyCandyBagFull;
+        break;
+#endif
     }
     PrintBoxMsg(syswk, msgId, index);
 }

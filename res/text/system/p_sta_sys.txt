@@ -198,4 +198,5 @@ PStaSys_Text_EvColumn = EV
 PStaSys_Text_IvColumn = IV
 PStaSys_Text_ShowHiddenStats = L/R: EV/IV
 PStaSys_Text_ShowStats = L/R: Stats
+PStaSys_Text_EvTotal = EVs {0202:0}/{0202:1}
 \pad{98}

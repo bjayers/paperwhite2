@@ -25,6 +25,9 @@
 #include "system/game_data.h"
 #include "system/game_system.h"
 #include "system/vm.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/shiny_candy.h"
+#endif
 
 #define FISHING_CHALLENGE_ZONE_COUNT 6
 #define FISHING_SLOT_COUNT 5
@@ -69,6 +72,10 @@ BOOL Scrcmd_Encount_CallWildBattleEnd(VM *vm, FieldScriptEnv *env) {
 
     ScriptWork_CallEvent(
         work, CallFieldMapEntranceInTransition(gsys, GSYS_GetField(gsys), FIELD_TRANSITION_FADE_BLACK, 0, 1, 0, 0));
+#ifdef PAPERWHITE2
+    // Paper White 2: after the fade in, the Shiny Candy that a shiny Pokémon of the script's battle may have dropped
+    PaperWhite2_ShinyCandyDropAfterScriptBattle(vm, env);
+#endif
     return TRUE;
 }
 
