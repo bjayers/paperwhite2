@@ -58,3 +58,63 @@ Verdict: **medium**. The engine's triple support is generic and nothing forbids 
   21 KB, derivable from the battle sprites' shiny shift) and, on each screen, a spare OBJ palette slot per visible
   shiny. Moderate for the party, the box and the in-battle party (`src/ov165/plist_plate.c`, `src/ov255/box2_obj.c`,
   `src/ov165/plist_battle.c`); about 35 overlays use icons in all.
+
+## Event flags (2026-10-29)
+
+`python3 tools/paperwhite2/flag_usage.py --csv flags.csv [--user-list list.csv]` lists every event flag with a
+status (`used`, `range`, `indirect-candidate`, `unused`), its region, and where it is referenced.
+
+**The flag space** (`include/save/event_work.h`, `src/system/event_work.c`): flag 0 means none. 3064 saved flags,
+0x1–0xbf7 (0x17f bytes), then 64 temporary ones, 0x4000–0x403f, which the save doesn't keep. Inside the saved ones:
+0x1–0x63 are cleared on every map change (`FieldScript_ResetMapLocalEvents`), the trainers' defeated flags are
+0x5f0 + trainer ID (0x5f1–0x91d for the 813 trainers), 0xaa0–0xb03 are cleared daily (`EventWork_ResetDailyFlags`),
+and the hidden items' are 0xb04 + `HIDDEN_ITEMS[].index` (0xb04–0xbd8, 213 items). A script can't name a temporary
+flag: the VM reads 0x4000–0xbfff as a variable (`ScriptWork_GetWkAddr`).
+
+**Method.** References come from: every script argument whose meaning in `tools/script/field_commands.json` is a
+flag or a trainer; the zone events' `flag` fields; every `EVENT_FLAG_` name in res/, generated/, src/, include/ and
+lib/; C calls of `EventWork_FlagGet/Set/Reset`, of the trainer flag functions and of their wrappers (found
+automatically) with constant arguments; the C tables that hold flags (medals, BGM, Entralink, habitat, respawn);
+the trainer NPCs (script 3000 + trainer); and three ROM archives the build packs unchanged: the Funfest missions
+(0x121), the stadium trainers (0xce) and the gate boards (0xa4). A flag in a variable is resolved by running each
+script in order with the set of values each variable can hold (WorkSet, WorkAdd, WorkMul, Random, RTCGetSeason,
+loops), and a global script's parameters from the WorkSets before each RTCallGlobal of it. Every C call with a
+non-constant argument must be in the tool's list of accounted sites, or it is reported as unresolved.
+
+**Results** (the hack as of this date):
+
+| Status | Flags |
+| --- | --- |
+| used | 2233 |
+| range | 287: 253 trainer flags no code reads or sets, and 34 flags only a computed script range reaches |
+| indirect-candidate | 0 (every variable reference resolved) |
+| unused | 607 |
+
+Unused: 0x2–0xe, 0x11–0x63 (map-local), 0x6b–0x6c, 0x71, 0x77, 0x7d–0x82, 0x86, 0x90, 0xd0, 0xd4, 0xd9, 0xdf–0xe0,
+0xeb, 0xed–0xee, 0xf5, 0xfe–0xff, 0x118, 0x11b–0x11f, 0x129, 0x13b–0x13d, 0x153–0x154, 0x158, 0x15b, 0x160, 0x188,
+0x18b, 0x1a2–0x1a3, 0x1a6–0x1a8, 0x1b7–0x1b9, 0x1dc–0x1df, 0x1f2–0x1f3, 0x258–0x25b, 0x25e, 0x268–0x26c,
+0x278–0x27b, 0x291–0x293, 0x29e, 0x2a0–0x2a5, 0x2ba, 0x2bc, 0x2c0–0x2c1, 0x2c5, 0x2eb, 0x32c–0x32d, 0x330–0x333,
+0x365–0x366, 0x36d, 0x389–0x38a, 0x3de, 0x400–0x401, 0x41c–0x44b, 0x450, 0x453, 0x5cc–0x5f0, 0x91e–0x92e,
+0x930–0x95f, 0x96c, 0x976–0x97c, 0x980–0x984, 0x98b, 0x98e, 0x9a3–0x9a4, 0xa01–0xa4f, 0xa80–0xa9f, 0xaa1–0xaa9,
+0xaad–0xaae, 0xab0–0xab1, 0xab6–0xab7, 0xada, 0xaea–0xaee, 0xaf1–0xb02 (daily), 0xbda–0xbf7, and all 64 temporary
+flags. Map-local and daily flags are cleared by the game, so they only suit flags meant to be cleared that way.
+
+The trainer flags no code reads or sets (the trainer is no trainer NPC, stadium trainer or `TrainerFlag*`
+argument) are free in practice; 124 of them belong to trainers that a script battles with `CallTrainerBattle`,
+which doesn't touch the flag. The CSV's `where` column says which.
+
+**The unused-flags list** (233 flags) checked against it: 0x1f4–0x257, 0x41b, 0x92f and 0xbd9 are used now, as
+expected (the seasonal spawns, Keldeo, the Exp. Share and the debug toggle; 22 of the seasonal ones only through
+`global_10850.s`'s computed loops, so they show as `range`). 0x754–0x757 are trainer flags
+(Team Plasma Grunt 3, Game Freak Nishino, Colress, Team Plasma Grunt 4) that no code reads or sets; 0x755–0x757's
+trainers are battled by scripts, without the flag. Every other flag on the list is unused. 481 unused flags aren't
+on the list, the largest runs being 0x2–0x63, 0x5cc–0x5ef, 0x91e–0x92e, 0xa01–0xa4f and 0xa80–0xa9f.
+
+**Limits.** The resolution of script variables is per file and flow-approximate: a subroutine reached with a
+variable its callers set gets every constant the file gives that variable. 45 trainer arguments come from
+variables the tool can't follow (the trainer NPC scripts in `global_3000.s`, `Cmd_0220` in `global_10510.s`); they
+stay inside the trainer range, but a trainer reached only that way would wrongly show as never read. The list of
+accounted C sites and tables is hand-made from the code at this date: a new data-driven flag access in C shows up
+as unresolved, but a new table holding flags only does once it is listed. The archives are read from
+`extract/w2_us`, the original game's; if the hack replaces one, the tool must read the replacement. Code outside
+src/ and lib/ (none known: every file is decompiled) isn't read.
