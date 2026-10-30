@@ -17,8 +17,12 @@ export function BuildPanel({ state, lines, onOpen, onClose }: {
   onOpen(path: string): void;
   onClose(): void;
 }) {
-  const end = useRef<HTMLDivElement>(null);
-  useEffect(() => end.current?.scrollIntoView({ block: "end" }), [lines.length]);
+  // The log follows its newest line by scrolling only itself: scrollIntoView would scroll every box around it too,
+  // which in Edge could move the whole page out of view
+  const log = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (log.current) log.current.scrollTop = log.current.scrollHeight;
+  }, [lines.length]);
   const seconds = state.startedAt ? Math.round(((state.finishedAt ?? Date.now()) - state.startedAt) / 1000) : 0;
 
   return (
@@ -33,7 +37,7 @@ export function BuildPanel({ state, lines, onOpen, onClose }: {
         </span>
         <button className="icon" title="Hide" onClick={onClose}>×</button>
       </header>
-      <div className="log">
+      <div className="log" ref={log}>
         {lines.map((line, i) => {
           const match = RES_PATH.exec(line);
           if (!match) return <div key={i} className={lineClass(line)}>{line || " "}</div>;
@@ -44,7 +48,6 @@ export function BuildPanel({ state, lines, onOpen, onClose }: {
             </div>
           );
         })}
-        <div ref={end} />
       </div>
     </section>
   );

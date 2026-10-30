@@ -45,7 +45,8 @@
 
 * { box-sizing: border-box; }
 
-html, body, #root { height: 100%; margin: 0; }
+/* The page itself never scrolls: each panel scrolls within its own box */
+html, body, #root { height: 100%; margin: 0; overflow: hidden; }
 
 body {
   background: var(--bg);
