@@ -1,8 +1,8 @@
-// The build's own Python, used for what must agree with the build exactly: the constants a value may name, and the
-// final check of a file against its schema before it is saved.
+// The build's own Python, used for what must agree with the build exactly: the constants a value may name, the final
+// check of a file against its schema before it is saved, and the game's 2D art drawn as the build reads it.
 
 import { execFileSync, spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { createInterface } from "node:readline";
 
@@ -17,6 +17,7 @@ export class Python {
   private constantsCache: Record<string, number> | null = null;
   private validator: ChildProcessWithoutNullStreams | null = null;
   private waiting: ((result: { ok: boolean; error?: string }) => void)[] = [];
+  private screens = new Map<string, Buffer>();
 
   constructor(private root: string) {}
 
@@ -57,6 +58,18 @@ export class Python {
     });
     this.validator = child;
     return child;
+  }
+
+  /** A 2D screen of res/ drawn as a PNG (screen.py), cached while its three files are unchanged. */
+  screen(chars: string, screen: string, palette: string): Buffer {
+    const files = [chars, screen, palette];
+    const key = files.map((f) => `${f}@${statSync(join(this.root, f)).mtimeMs}`).join("|");
+    let image = this.screens.get(key);
+    if (!image) {
+      image = execFileSync(pythonFor(this.root), [join(HERE, "screen.py"), ...files], { cwd: this.root, maxBuffer: 16 << 20 });
+      this.screens.set(key, image);
+    }
+    return image;
   }
 
   stop() {

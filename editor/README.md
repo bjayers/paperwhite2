@@ -20,6 +20,9 @@ If Edge can't reach it, WSL isn't forwarding the port: check that `localhostForw
 
 ## What it does
 
+- **Specialty editors** at the top of the sidebar, under **Editors**: everything about one subject in one place. The
+  first is the **Encounter Editor** (below). The per-file editors are under **Data files**, which folds away. A page
+  of a tool can be linked to: `http://localhost:7420/#tool/encounters`.
 - **Every kind of data in `res/`, found by itself.** Each data file names its schema in `"$schema"`; the editor groups
   the files by schema, so a new kind of data, a new field or a new file shows up without changing the editor.
 - **A form for any of it**, built from the schema: each field with its description, dropdowns of constants for
@@ -44,7 +47,39 @@ Keys: Ctrl+S save, Ctrl+Shift+S save all, Ctrl+Z / Ctrl+Y undo and redo, Ctrl+P 
 | `commitEnabled` | `false` | The Commit button stays disabled until this is `true`; the Claude sessions commit for now |
 | `port` | `7420` | |
 
-Restart the editor after changing them.
+Restart the editor after changing them. `PAPERWHITE_PORT` overrides the port for one run, so a second copy (a Claude
+session's checks) can run beside yours.
+
+## The Encounter Editor
+
+The new wild encounter system's editor (`src/modules/encounters/`), built before the system itself so that everything
+to be edited is settled first. **It doesn't save yet**: the new format isn't in `res/`, so it builds a draft from the
+current slot tables (`res/field/encounters/`), the game's swarms and the Hidden Grottoes, and keeps edits until the
+page is reloaded. Its pages:
+
+- **Pokémon**: the species list, sorted by number, family, generation or name, and filtered to those in the wild
+  (a habitat, an outbreak or a Hidden Grotto entry), not in the wild, whose family isn't, or whose family can't be had
+  at all (not wild nor traded, given or a static encounter); legendaries and mythicals are hidden unless asked for. A
+  species' page has its levels, battle styles, hidden ability, habitats (a list or a map), outbreaks and Hidden Grotto
+  entries. A habitat names areas or groups, and has a slot per season (methods, rarity, periods, weather): one for
+  every season or each its own, the season buttons then coloured as the rows. **Whole family** shows every member on
+  one page: their levels, and their own habitats or habitats they share (linked copies; each member keeps its own
+  rarity and levels; each member's file still has its own).
+- **Areas**: the groups of areas (one per parent zone from the import, and your own), which you can add, rename,
+  change and remove; then every area by parent zone with its number of Pokémon, its rates, its kind of rustling spots
+  (shaking grass, dust clouds, bridge shadows) and its Pokémon by method under the preview.
+- **Map**: the game's town map art (`GET /api/screen` draws it from `res/graphics/townmap_gra/`) under the places,
+  shaded by species, diversity, one Pokémon's share, or methods with nothing to meet (with methods to leave out), in
+  three colour schemes. Clicking a place lists its Pokémon beside the map, with a button to open its area.
+- **Settings**: the rarity tiers, level scaling and its gate, the hidden ability's chance, default battles, the
+  rustling spots' rule (shaking grass: Audino 30%; dust clouds and bridge shadows: the game's items 30%; the rest from
+  the area's Rare, Very rare and Exotic Pokémon, or all of it when there are none), the outbreaks' share (40%), and
+  the import's tier thresholds and evolution margin.
+
+The bar at the top sets the preview: season, period, weather, the party's level, and whether outbreaks are on.
+`model.ts` has the planned files; `convert.ts` the import; `resolve.ts` the rules the game will follow; `load.ts`
+what it reads, including the scripts' gifts and static battles and the swarm table through `GET /api/scan`;
+`lookup.ts` the families, legendaries and ways to get each species.
 
 ## How it is built
 
@@ -54,7 +89,7 @@ Restart the editor after changing them.
 | `shared/` | Used by both: JSON read and written without loss (`json.ts`), the schemas' validator (`schema.ts`), the API (`api.ts`) |
 | `src/` | The page (React): the frame in `App.tsx` and `shell/`, open files in `documents.ts` |
 | `src/modules/` | Editor modules, one folder each, found by themselves |
-| `tests/` | `npm test`: every data file round-trips byte for byte, and the editor's validator agrees with the build's |
+| `tests/` | `npm test`: every data file round-trips byte for byte, the editor's validator agrees with the build's, and the Encounter Editor's import and pages work on the real `res/` |
 
 ### Adding a module
 

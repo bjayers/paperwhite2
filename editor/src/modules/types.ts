@@ -4,7 +4,8 @@
 // Two kinds:
 // - a data view opens files of the kinds of data it handles (handles() scores each kind; the highest score wins,
 //   and the generic schema form answers 1 for every kind, so it is always the fallback);
-// - a tool has a page of its own in the sidebar, for work that spans many files (a map, an overview).
+// - a tool has a page of its own in the sidebar, for work that spans many files (a map, an overview). A tool in the
+//   "editors" section is a specialty editor: everything about one subject in one place, listed first.
 //
 // Modules read and change data only through the props they are given; saving, undo, validation and conflicts are the
 // shell's.
@@ -55,6 +56,10 @@ export interface ToolModule {
   icon: string;
   /** Kinds of data it needs, by schema path; it is hidden while any is missing from res/. */
   requires?: string[];
+  /** The sidebar section: "editors" for specialty editors, at the top; "tools" (the default) below them. */
+  section?: "editors" | "tools";
+  /** Its place among the section's entries, lowest first; then by title. */
+  order?: number;
   View: ComponentType<ToolProps>;
 }
 

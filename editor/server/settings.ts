@@ -30,6 +30,8 @@ export function loadSettings(): Settings {
     }
   }
   const settings = { ...DEFAULTS, ...saved };
+  // A second copy (a Claude session's screenshots) runs beside the user's on another port, without changing the file
+  if (process.env.PAPERWHITE_PORT) settings.port = Number(process.env.PAPERWHITE_PORT);
   if (!existsSync(SETTINGS_PATH)) writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2) + "\n");
   return settings;
 }

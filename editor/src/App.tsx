@@ -20,7 +20,11 @@ export function App() {
   const [info, setInfo] = useState<ProjectInfo | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [constants, setConstants] = useState<Constants>(new Map());
-  const [selection, setSelection] = useState<Selection>(null);
+  // The address's #tool/<id> names a tool to open, so a page of the editor can be linked to and reloaded
+  const [selection, setSelection] = useState<Selection>(() => {
+    const match = /^#tool\/([\w-]+)$/.exec(location.hash);
+    return match ? { kind: "tool", id: match[1] } : null;
+  });
   const [refresh, setRefresh] = useState(0);
   const [schemaEpoch, setSchemaEpoch] = useState(0);
   const [connected, setConnected] = useState(true);
@@ -32,6 +36,11 @@ export function App() {
   const [quickOpen, setQuickOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const { docs, order, active } = useDocuments();
+
+  useEffect(() => {
+    const hash = selection?.kind === "tool" ? `#tool/${selection.id}` : "";
+    if (location.hash !== hash) history.replaceState(null, "", hash || location.pathname);
+  }, [selection]);
 
   const loadProject = useCallback(() => api.project().then(setInfo, (e: Error) => setLoadError(e.message)), []);
   const loadConstants = useCallback(() => api.constants().then((c) => setConstants(new Map(Object.entries(c)))), []);

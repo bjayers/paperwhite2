@@ -2,6 +2,46 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-30: the editor's first specialty editor, the Encounter Editor (ROM session, in editor/)
+
+- **Who edits editor/ for now:** the user asked the ROM session to work in `editor/` until the encounter work is done,
+  and the cloud session is paused meanwhile. The usual split (CLAUDE.md) returns after that.
+- **The sidebar:** specialty editors first ("Editors", `ToolModule.section: "editors"`), then Tools, then the
+  per-file editors folded under "Data files". `#tool/<id>` in the address opens a tool. New requests:
+  `GET /api/data?schema=&keys=` (every file of a kind, parsed) and `GET /api/asset?path=` (a PNG under res/).
+  `PAPERWHITE_PORT` runs a second copy on another port.
+- **The Encounter Editor** (`editor/src/modules/encounters/`): the planned per-species format, built as a draft from
+  the current tables, editable but not saved. The user's decisions are in it: rarity tiers Common 55, Uncommon 25,
+  Rare 12, Very rare 7, Exotic 1 (editable, a tier's share split among its Pokémon); per-species min and max levels
+  (min gates appearing, max caps), scaled level 80% ± 3; five periods with Day/Night groups; hidden ability 10%;
+  single/double/triple chances with family or area partners. Planned files: `res/paperwhite2/encounters/settings.json`,
+  `areas/<area>.json`, `species/<name>.json`. The habitat dex will need a new filterable app (location, season,
+  weather, time).
+- **Revised after the user's review:** list sorts (family, generation) and filters (not in the wild, family not in
+  the wild, not obtainable: no family member wild, in a grotto, traded, gifted or static, read from `res/` and the
+  scripts); habitats with several places or a whole group (groups by parent zone), several methods, and per-season
+  slots ("Same in every season" or each its own); the import merges slots by species into one tier, methods and
+  seasons that agree, and groups, and refines levels by evolution (max = evolution level + 2, min = the level it
+  evolved at); the town map's real art (`07.png` + `16.nscr` + `00.pal`); a species habitat map coloured by season;
+  heatmap colour schemes and an "empty method" measure; areas grouped by parent; rustling spots tentatively Audino
+  30% and the rest from the area's Rare, Very rare and Exotic grass Pokémon; the level gate defaults to the scaled
+  level. 2,053 habitats for 493 wild species; 31 families can't be had (the legendaries and mythicals).
+- **Second revision:** outbreaks (the game's swarms, read from `SWARM_DATA`, White 2's) and Hidden Grotto entries on
+  a species' page, counting as "in the wild" for the filters; a legendaries and mythicals switch (off); groups the
+  user can add, rename, change and remove on the Areas page (removing one makes its habitats name its areas); a
+  whole-family view with shared, linked habitats (each member keeps its rarity and levels); season-coloured buttons
+  for per-season slots; on the map, places pinned by clicking with an Open area button, and methods to leave out of
+  the empty measure; rustling spots by kind (shaking grass Audino 30%, dust clouds and bridge shadows the game's items
+  30%, all of it with no Pokémon there), each area's kind from its zones (caves by battle background 4 and 5, bridges
+  by map type 11 and 18).
+- **Planned:** a rules pass over the encounter data (the user's rules and exceptions applied in bulk), and turning
+  trade-only evolutions into level evolutions.
+- **Checks:** `npm run typecheck`, the page builds, `tests/encounters.test.ts` (the import is exact, every slot is
+  covered by a habitat, merges, levels, rustling by kind, outbreaks, grottoes, sources) and
+  `tests/encounters-render.test.ts` pass; checked in Chromium with Playwright, no page errors. Two older editor tests fail on the conditions and
+  follower JSON: those files aren't in the data tools' layout, and their `$schema` has a `#/$defs/...` fragment that
+  the editor doesn't resolve.
+
 ## 2026-10-30: the follower's dialogue rules, gifts, pickups and steps (branch follower-dialogue, not yet tested in game)
 
 - **Built** per the user's follower design notes, on the conditions engine (following-pokemon.md, "Dialogue rules,

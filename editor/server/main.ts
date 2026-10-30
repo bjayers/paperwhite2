@@ -1,11 +1,11 @@
 // The editor's server: serves the page and an API over the checkout this folder sits in. It listens on this computer
 // only. Start it with `npm start` in editor/ (or ./start.sh), then open the address it prints in Edge.
 
-import { createReadStream, existsSync, readdirSync, statSync } from "node:fs";
+import { createReadStream, existsSync, globSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { extname, join, resolve } from "node:path";
 import { parseJson, JsonSyntaxError } from "../shared/json.ts";
-import { WRITE_HEADER, type ProjectInfo, type SaveRequest, type SaveResult, type ServerEvent } from "../shared/api.ts";
+import { WRITE_HEADER, type DataFile, type ProjectInfo, type SaveRequest, type SaveResult, type ServerEvent } from "../shared/api.ts";
 import { Builder } from "./build.ts";
 import { Git } from "./git.ts";
 import { Project, versionOf } from "./project.ts";
@@ -84,6 +84,60 @@ const routes: Record<string, Handler> = {
     const path = project.checkPath(url.searchParams.get("path") ?? "");
     if (!path || !existsSync(project.abs(path))) return error(res, 404, "No such file under res/");
     json(res, project.read(path));
+  },
+  // Every file of a kind of data in one answer, optionally with only some top-level keys: for modules that read a
+  // whole folder (the Encounter Editor reads every species). A file that isn't valid JSON is left out.
+  "GET /api/data": (_req, res, url) => {
+    const keys = url.searchParams.get("keys")?.split(",").filter(Boolean) ?? null;
+    const files: DataFile[] = [];
+    for (const { path } of project.entries(url.searchParams.get("schema") ?? "")) {
+      let data: Record<string, unknown>;
+      try {
+        // Read directly: these files aren't open in a tab, so the poller needn't watch them
+        data = JSON.parse(readFileSync(project.abs(path), "utf8"));
+      } catch {
+        continue;
+      }
+      if (keys) data = Object.fromEntries(keys.filter((k) => k in data).map((k) => [k, data[k]]));
+      files.push({ path, data });
+    }
+    json(res, files);
+  },
+  // The lines of files under res/ or src/ matching a regular expression, for modules that read sources that aren't
+  // JSON (the scripts, a table in C): ?glob=res/field/scripts/*.s&pattern=… gives each match's file, line and text.
+  // It only reads.
+  "GET /api/scan": (_req, res, url) => {
+    const glob = url.searchParams.get("glob") ?? "";
+    let pattern: RegExp;
+    try {
+      pattern = new RegExp(url.searchParams.get("pattern") ?? "");
+    } catch (e) {
+      return error(res, 400, (e as Error).message);
+    }
+    if (!/^(res|src)\//.test(glob) || glob.includes("..")) return error(res, 400, "Scan files under res/ or src/ only");
+    const found: { path: string; line: number; text: string }[] = [];
+    for (const path of globSync(glob, { cwd: ROOT })) {
+      const lines = readFileSync(project.abs(path), "utf8").split("\n");
+      lines.forEach((text, i) => {
+        if (pattern.test(text)) found.push({ path, line: i + 1, text });
+      });
+    }
+    json(res, found);
+  },
+  // An image under res/, such as a Pokémon's icon, for modules to show.
+  "GET /api/asset": (_req, res, url) => {
+    const path = project.checkPath(url.searchParams.get("path") ?? "");
+    if (!path || extname(path) !== ".png" || !existsSync(project.abs(path))) return error(res, 404, "No such image under res/");
+    res.writeHead(200, { "Content-Type": "image/png", "Cache-Control": "no-cache" });
+    createReadStream(project.abs(path)).pipe(res);
+  },
+  // A 2D screen of res/graphics drawn as the DS would (server/python/screen.py): ?chars=…png&screen=…nscr&palette=…pal
+  "GET /api/screen": (_req, res, url) => {
+    const files = ["chars", "screen", "palette"].map((k) => project.checkPath(url.searchParams.get(k) ?? ""));
+    if (files.some((f) => !f || !existsSync(project.abs(f)))) return error(res, 404, "No such graphics under res/");
+    const image = python.screen(files[0]!, files[1]!, files[2]!);
+    res.writeHead(200, { "Content-Type": "image/png", "Cache-Control": "no-cache" });
+    res.end(image);
   },
   "GET /api/constants": (_req, res) => json(res, python.constants()),
   "PUT /api/file": async (req, res) => {

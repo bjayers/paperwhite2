@@ -20,6 +20,21 @@ export interface Entry {
   label: string;
 }
 
+/** One file of a kind of data, parsed, for modules that read many at once (GET /api/data). */
+export interface DataFile {
+  path: string;
+  /** The file's JSON, or only the top-level keys that were asked for. */
+  data: Record<string, unknown>;
+}
+
+/** A line of a file that matched a scan (GET /api/scan). */
+export interface ScanMatch {
+  path: string;
+  /** From 1. */
+  line: number;
+  text: string;
+}
+
 export interface ProjectInfo {
   name: string;
   root: string;

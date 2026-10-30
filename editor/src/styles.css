@@ -132,6 +132,12 @@ kbd { border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 
 .nav-text { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .nav-sub { font-size: 11px; color: var(--muted); }
 .nav-icon { width: 18px; text-align: center; }
+.data-files { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 6px; }
+.fold { display: flex; align-items: center; gap: 6px; width: 100%; border: none; background: none; border-radius: 0;
+  padding: 6px 14px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); text-align: left; }
+.fold .count { margin-left: auto; text-transform: none; letter-spacing: 0; }
+.fold-arrow { display: inline-block; transition: transform 0.15s; }
+.fold.open .fold-arrow { transform: rotate(90deg); }
 .count { font-size: 11px; color: var(--muted); }
 
 .entry-list {

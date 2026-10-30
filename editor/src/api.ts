@@ -1,6 +1,6 @@
 // Requests to the editor's server, and its live events.
 
-import { WRITE_HEADER, type BuildState, type Entry, type FileContent, type GitState, type ProjectInfo,
+import { WRITE_HEADER, type BuildState, type DataFile, type Entry, type ScanMatch, type FileContent, type GitState, type ProjectInfo,
   type SaveRequest, type SaveResult, type ServerEvent } from "../shared/api.ts";
 import type { Schema } from "../shared/schema.ts";
 
@@ -31,6 +31,17 @@ export const api = {
     return schemas.get(path)!;
   },
   forgetSchema: (path: string) => schemas.delete(path),
+  /** Every file of a kind of data, parsed; keys limits each to those top-level keys. */
+  data: (schema: string, keys?: string[]) =>
+    request<DataFile[]>("GET", `/api/data?schema=${encodeURIComponent(schema)}${keys ? `&keys=${keys.join(",")}` : ""}`),
+  /** The lines of the files under res/ that a glob names which match a regular expression. */
+  scan: (glob: string, pattern: string) =>
+    request<ScanMatch[]>("GET", `/api/scan?glob=${encodeURIComponent(glob)}&pattern=${encodeURIComponent(pattern)}`),
+  /** The address of a 2D screen of res/ drawn as a PNG, from its character PNG, screen and palette. */
+  screenUrl: (chars: string, screen: string, palette: string) =>
+    `/api/screen?chars=${encodeURIComponent(chars)}&screen=${encodeURIComponent(screen)}&palette=${encodeURIComponent(palette)}`,
+  /** The address of an image under res/. */
+  assetUrl: (path: string) => `/api/asset?path=${encodeURIComponent(path)}`,
   constants: () => request<Record<string, number>>("GET", "/api/constants"),
   save: (save: SaveRequest) => request<SaveResult>("PUT", "/api/file", save),
   build: () => request<BuildState>("GET", "/api/build"),
