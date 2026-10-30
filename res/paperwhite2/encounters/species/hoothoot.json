@@ -4,90 +4,103 @@
         "min": 9,
         "max": 22
     },
+    "battles": {
+        "single": 0,
+        "double": 0,
+        "triple": 100,
+        "partners": "family"
+    },
     "habitats": [
         {
             "places": [ "lostlorn_forest" ],
             "seasons": [ "winter" ],
             "methods": [ "grass", "dark_grass" ],
             "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [ "night", "late_night" ]
         },
         {
             "places": [ "group:pinwheel_forest" ],
             "seasons": [ "winter" ],
             "methods": [ "grass", "dark_grass" ],
             "rarity": "rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [ "night", "late_night" ]
         },
         {
             "places": [ "route_3" ],
             "seasons": [ "winter" ],
             "methods": [ "grass" ],
             "rarity": "rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [ "night", "late_night" ]
         },
         {
             "places": [ "route_6" ],
             "seasons": [ "winter" ],
             "methods": [ "grass" ],
             "rarity": "uncommon",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [ "night", "late_night" ]
         },
         {
             "places": [ "route_6" ],
             "seasons": [ "winter" ],
             "methods": [ "dark_grass" ],
             "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [ "night", "late_night" ]
         },
         {
             "places": [ "route_12" ],
             "seasons": [ "winter" ],
             "methods": [ "grass", "dark_grass" ],
             "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [ "night", "late_night" ]
         },
         {
             "places": [ "route_14" ],
             "seasons": [ "winter" ],
             "methods": [ "grass" ],
             "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [ "night", "late_night" ]
         },
         {
             "places": [ "route_20" ],
             "seasons": [ "winter" ],
             "methods": [ "dark_grass" ],
             "rarity": "exotic",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [ "night", "late_night" ]
         },
         {
             "places": [ "route_22" ],
             "seasons": [ "winter" ],
             "methods": [ "grass" ],
             "rarity": "uncommon",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [ "night", "late_night" ]
         },
         {
             "places": [ "route_22" ],
             "seasons": [ "winter" ],
             "methods": [ "dark_grass" ],
             "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [ "night", "late_night" ]
         },
         {
             "places": [ "village_bridge" ],
             "seasons": [ "winter" ],
             "methods": [ "grass" ],
             "rarity": "uncommon",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [ "night", "late_night" ]
         },
         {
             "places": [ "village_bridge" ],
             "seasons": [ "winter" ],
             "methods": [ "dark_grass" ],
             "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [ "night", "late_night" ]
+        },
+        {
+            "places": [ "route_20" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass", "dark_grass", "rustling" ],
+            "rarity": "common",
+            "times": [ "night", "late_night" ]
         }
     ]
 }
