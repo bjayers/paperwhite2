@@ -655,3 +655,27 @@ The hack save block is not needed until phase 6 or later.
 9. **Zone groups:** besides `parent` and `place`, which named groups do you want first (cities, caves, coast,
    routes)?
 10. **Virbank's night repositioning:** should the spawn format support a variant that only moves an NPC?
+
+## 10. Decisions (2026-10-30)
+
+The user's answers to section 9:
+
+- **Scope now: the engine only.** Read every condition, match rules and expose them to every consumer that needs
+  them (C, scripts, the debug Info readout). The NPC spawn system is a placeholder: the user first wants research
+  into how NPCs are loaded and moved, whether more NPCs per map are possible without the freeze on entry, and
+  spawning NPCs dynamically from a map's encounters. Then either a new method is designed, or the old flag method
+  and script 10852 are ported onto the engine.
+- **Spawn coupling** (if the flag-style system is kept): chosen per zone, coupled or independent.
+- **Spawns change on zone load.** Re-evaluating off-screen NPCs on a period change is wanted too (night spawns such
+  as Virbank's Murkrow lingered into daylight).
+- **Encounter priority is a share** of the rolls, like mass outbreaks; outbreaks can become a conditional tier.
+- **The lead is party slot 0**, which is usually the follower. The **adjusted party median** (the scaled level
+  wild Pokémon use) is exposed to scripts, so custom scripts stop computing from slot 0's level.
+- **An even party's median is the lower middle level**; level choices take the lower option generally. The
+  adjusted-median formula is data the editor can tune, so the "not a difficulty hack" balance can be adjusted.
+- **Weather is the computed zone weather** (`GetNowWeather`).
+- **Data in the ROM:** new members of existing archives, where it fits best.
+- **Save block:** approved. The user won't use Dream Radar; Dream Radar's Pokémon will be obtainable in game.
+- **Zone groups:** the game's own parent groups first; custom named groups in the editor later.
+- **Moving NPCs:** if no better method turns up, a variant can move an NPC (as the Virbank birds do), so one NPC
+  covers several positions.
