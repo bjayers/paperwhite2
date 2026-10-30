@@ -44,6 +44,8 @@ export const api = {
   assetUrl: (path: string) => `/api/asset?path=${encodeURIComponent(path)}`,
   constants: () => request<Record<string, number>>("GET", "/api/constants"),
   save: (save: SaveRequest) => request<SaveResult>("PUT", "/api/file", save),
+  /** Removes a species' encounter file (the only kind the server lets go). */
+  removeFile: (path: string) => request<{ removed: boolean }>("DELETE", `/api/file?path=${encodeURIComponent(path)}`),
   build: () => request<BuildState>("GET", "/api/build"),
   startBuild: () => request<{ started: boolean }>("POST", "/api/build"),
   stopBuild: () => request("POST", "/api/build/stop"),

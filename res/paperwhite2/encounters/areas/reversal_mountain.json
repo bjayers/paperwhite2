@@ -1,0 +1,11 @@
+{
+    "$schema": "../area.schema.json",
+    "rates": {
+        "all_year": {
+            "grass": 1,
+            "dark_grass": 4,
+            "rustling": 1
+        }
+    },
+    "spots": "grass"
+}

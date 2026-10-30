@@ -1,0 +1,16 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 26,
+        "max": 26
+    },
+    "habitats": [
+        {
+            "places": [ "lostlorn_forest" ],
+            "seasons": [ "autumn" ],
+            "methods": [ "dark_grass" ],
+            "rarity": "rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

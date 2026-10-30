@@ -26,6 +26,10 @@
 #include "save/trainer_card.h"
 #include "system/game_data.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/encounters.h"
+#endif
+
 // The phenomena that the zone's encounter tables allow: of land, with shaking grass, and of water, with rare surfing
 // or fishing
 #define PHENOMENON_MASK_LAND 0x1
@@ -264,7 +268,14 @@ GameEvent *CreateRandomPhenomenonEvent(EncountSystem *system) {
     }
     roll = GFL_RandomLCAlt(1000);
     if (spot->kind == ENCOUNT_EFFECT_FLYING_SHADOW) {
+#ifdef PAPERWHITE2
+        // Paper White 2: the new encounter data's share of items, or always an item where no Pokémon can appear
+        if (PaperWhite2_Encounters_IsActive()
+                ? !PaperWhite2_Encounters_SpotGivesItem(system->gameData, ENCOUNTERS_SPOTS_SHADOW)
+                : roll < 200) {
+#else
         if (roll < 200) {
+#endif
             event = EventWildBattleCall_CreateRandom(system, ENCOUNT_MODE_EFFECT);
         } else {
             u16 itemId = GetRandomWingItemID();
@@ -274,7 +285,14 @@ GameEvent *CreateRandomPhenomenonEvent(EncountSystem *system) {
             gaveItem = TRUE;
         }
     } else if (spot->kind == ENCOUNT_EFFECT_DUST_CLOUD) {
+#ifdef PAPERWHITE2
+        // Paper White 2: as the shadows
+        if (PaperWhite2_Encounters_IsActive()
+                ? !PaperWhite2_Encounters_SpotGivesItem(system->gameData, ENCOUNTERS_SPOTS_DUST)
+                : roll < 400) {
+#else
         if (roll < 400) {
+#endif
             event = EventWildBattleCall_CreateRandom(system, ENCOUNT_MODE_EFFECT);
         } else {
             u16 itemId = EffectEncount_GenDustCloudItem(spot->zoneId);
@@ -284,6 +302,10 @@ GameEvent *CreateRandomPhenomenonEvent(EncountSystem *system) {
             gaveItem = TRUE;
         }
     } else {
+#ifdef PAPERWHITE2
+        // Paper White 2: shaking grass gives its own species at its share (paperwhite2/encounters.h)
+        PaperWhite2_Encounters_SetSpots(ENCOUNTERS_SPOTS_GRASS);
+#endif
         event = EventWildBattleCall_CreateRandom(system, ENCOUNT_MODE_EFFECT);
     }
     if (event == NULL) {

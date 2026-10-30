@@ -27,6 +27,10 @@
 #include "system/game_data.h"
 #include "system/zone_weather.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/encounters.h"
+#endif
+
 // The event flag that starts the swarms, which other systems wait for too
 #define FLAG_SWARMS EVENT_FLAG_0x0960
 // The event flag that lets N's Pokémon appear
@@ -61,12 +65,19 @@ static const u8 HELD_ITEM_RATES[4][3] = {
 
 // clang-format on
 
+#ifdef PAPERWHITE2
+// Paper White 2: and the new encounter data's weighted pick, ENCOUNTERS_SLOT_FUNC (paperwhite2/encounters.h)
+static int (*const ENCOUNT_SLOT_RANDOMIZE_FUNCS[5])(int count) = {
+    EncountMakeRnd12, EncountMakeRnd5T1, EncountMakeRnd5T2, EncountMakeRndFull, PaperWhite2_Encounters_PickSlot,
+};
+#else
 static int (*const ENCOUNT_SLOT_RANDOMIZE_FUNCS[4])(int count) = {
     EncountMakeRnd12,
     EncountMakeRnd5T1,
     EncountMakeRnd5T2,
     EncountMakeRndFull,
 };
+#endif
 
 // The chance of each slot, in percent, for each row the Lucky Encounter pass powers pick. The two five-slot tables are
 // declared the other way round, since MWCC's sort of the data by size swaps them
@@ -190,9 +201,18 @@ void CreateEncountManager(EncountManager *manager, GameData *gameData, int encTy
     }
     manager->pairActive = GameData_CheckPairFlag(gameData);
     manager->doubleBattle = FALSE;
+#ifdef PAPERWHITE2
+    // Paper White 2: with the new encounter data, the first wild Pokémon's battle styles decide a double battle
+    // (FieldEncount_GenWildsCore), not dark grass
+    if (!PaperWhite2_Encounters_IsActive() && manager->encType == ENCTYPE_GRASS_RARE &&
+        howManyPokesAreAbleToFight(party) >= 2 && GFL_RandomLC(100) < 40) {
+        manager->doubleBattle = TRUE;
+    }
+#else
     if (manager->encType == ENCTYPE_GRASS_RARE && howManyPokesAreAbleToFight(party) >= 2 && GFL_RandomLC(100) < 40) {
         manager->doubleBattle = TRUE;
     }
+#endif
     if (manager->pairActive) {
         manager->doubleBattle = TRUE;
     }
@@ -236,19 +256,50 @@ static int FieldEncount_GenWildsCore(EncountManager *manager, const WildEncSlot 
     for (i = 0; i < manager->pokeCount; i++) {
         WildPkmParam *param = &params[count];
 
+#ifdef PAPERWHITE2
+        // Paper White 2: the second is the first one's partner, of its family or of the area
+        if (i == 1) {
+            PaperWhite2_Encounters_BeginPartner();
+        }
+        FieldEncount_GenWildPokeParam(manager, slots, param);
+        // An empty slot's species 0 is no Pokémon, rather than one that crashes the battle
+        if (param->species != SPECIES_NONE && !FieldEncount_CheckLevelRepelled(manager, param->level)) {
+            count++;
+        }
+        // The first one's battle styles may make the encounter a double battle
+        if (i == 0 && count == 1 && PaperWhite2_Encounters_IsActive()) {
+            PaperWhite2_Encounters_RollPartner(manager,
+                                               howManyPokesAreAbleToFight(GameData_GetParty(manager->gameData)) >= 2);
+        }
+#else
         FieldEncount_GenWildPokeParam(manager, slots, param);
         if (!FieldEncount_CheckLevelRepelled(manager, param->level)) {
             count++;
         }
+#endif
     }
+#ifdef PAPERWHITE2
+    PaperWhite2_Encounters_EndPartner();
+#endif
     return count;
 }
 
 int FieldEncount_GenWilds(EncData *encData, EncountManager *manager, u16 zoneId, WildPkmParam *params) {
+#ifdef PAPERWHITE2
+    // Paper White 2: room for the new encounter data's candidates
+    WildEncSlot slots[ENCOUNTERS_SLOTS];
+#else
     WildEncSlot slots[12];
+#endif
 
     MIi_CpuClear32(0, slots, sizeof(slots));
     FieldEncount_PrepareActiveSlots(encData, manager, zoneId, slots);
+#ifdef PAPERWHITE2
+    // Paper White 2: where no Pokémon can appear, there is no encounter
+    if (manager->slotCount == 0) {
+        return 0;
+    }
+#endif
     return FieldEncount_GenWildsCore(manager, slots, params);
 }
 
@@ -401,7 +452,17 @@ void createNPkm(PartyPkm *pkm, const NPokeSpec *spec) {
 }
 
 u16 getSwarmLevelRangeFromData(GameData *gameData) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the bulletin board names the day's outbreak of the new encounter data
+    const SwarmData *swarm;
+
+    if (PaperWhite2_Encounters_HasData()) {
+        return PaperWhite2_Encounters_OutbreakZone(gameData);
+    }
+    swarm = getSwarmDataPtr(gameData);
+#else
     const SwarmData *swarm = getSwarmDataPtr(gameData);
+#endif
 
     if (swarm == NULL) {
         return 0xffff;
@@ -523,6 +584,12 @@ static u8 FieldEncount_PrepareActiveSlots(EncData *encData, EncountManager *mana
     const WildEncSlot *src;
     u32 funcIndex = 0;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: the new encounter data's candidates and outbreaks, which replace the table and the swarms
+    if (PaperWhite2_Encounters_IsActive()) {
+        return PaperWhite2_Encounters_PrepareSlots(manager, slots);
+    }
+#endif
     if (createSwarm(encData, manager, zoneId, slots)) {
         return manager->slotCount;
     }
@@ -587,13 +654,22 @@ static void FieldEncount_SetupFromData(const WildEncSlot *slot, WildPkmParam *pa
     } else {
         param->form = slot->form;
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the new encounter data's hidden ability chance
+    PaperWhite2_Encounters_SetupParam(slot, param);
+#endif
 }
 
 // What GetEncountIndexForPreferredType returns when no slot has the type
 #define ENCOUNT_SLOT_NONE 0xff
 
 static u8 GetEncountIndexForPreferredType(EncountManager *manager, const WildEncSlot *slots, u8 type) {
+#ifdef PAPERWHITE2
+    // Paper White 2: room for the new encounter data's candidates
+    u8 candidates[ENCOUNTERS_SLOTS];
+#else
     u8 candidates[12];
+#endif
     int count = 0;
     int i;
 

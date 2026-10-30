@@ -1,0 +1,16 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 52,
+        "max": 55
+    },
+    "habitats": [
+        {
+            "places": [ "victory_road_4", "victory_road_7", "victory_road_10" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "rustling" ],
+            "rarity": "exotic",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

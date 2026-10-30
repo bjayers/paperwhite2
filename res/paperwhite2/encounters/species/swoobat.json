@@ -1,0 +1,16 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 30,
+        "max": 30
+    },
+    "habitats": [
+        {
+            "places": [ "chargestone_cave_2", "chargestone_cave_3" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
+            "rarity": "rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

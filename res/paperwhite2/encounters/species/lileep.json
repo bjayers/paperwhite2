@@ -1,0 +1,16 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 25,
+        "max": 40
+    },
+    "habitats": [
+        {
+            "places": [ "route_13" ],
+            "seasons": [ "summer" ],
+            "methods": [ "surf" ],
+            "rarity": "exotic",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

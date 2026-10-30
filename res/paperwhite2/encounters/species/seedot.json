@@ -1,0 +1,69 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 2,
+        "max": 16
+    },
+    "habitats": [
+        {
+            "places": [ "floccesy_ranch_2" ],
+            "seasons": [ "autumn" ],
+            "methods": [ "grass" ],
+            "rarity": "uncommon",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "lostlorn_forest" ],
+            "by_season": {
+                "spring": {
+                    "methods": [ "grass" ],
+                    "rarity": "common",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "summer": {
+                    "methods": [ "grass" ],
+                    "rarity": "common",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "autumn": {
+                    "methods": [ "grass" ],
+                    "rarity": "uncommon",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "winter": {
+                    "methods": [ "grass" ],
+                    "rarity": "common",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                }
+            }
+        },
+        {
+            "places": [ "lostlorn_forest" ],
+            "seasons": [ "autumn", "winter" ],
+            "methods": [ "dark_grass" ],
+            "rarity": "common",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "route_2" ],
+            "seasons": [ "autumn" ],
+            "methods": [ "grass" ],
+            "rarity": "very_rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "route_19" ],
+            "seasons": [ "autumn" ],
+            "methods": [ "grass" ],
+            "rarity": "uncommon",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "route_20" ],
+            "seasons": [ "autumn" ],
+            "methods": [ "dark_grass" ],
+            "rarity": "common",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

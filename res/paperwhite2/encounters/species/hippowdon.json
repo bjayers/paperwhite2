@@ -1,0 +1,16 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 40,
+        "max": 55
+    },
+    "habitats": [],
+    "outbreaks": [
+        {
+            "places": [ "desert_resort_2" ],
+            "methods": [ "grass" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

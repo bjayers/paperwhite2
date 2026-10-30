@@ -1,0 +1,56 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 56,
+        "max": 67
+    },
+    "habitats": [
+        {
+            "places": [ "nature_preserve" ],
+            "by_season": {
+                "autumn": {
+                    "methods": [ "grass" ],
+                    "rarity": "uncommon",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "winter": {
+                    "methods": [ "grass" ],
+                    "rarity": "very_rare",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                }
+            }
+        },
+        {
+            "places": [ "nature_preserve" ],
+            "by_season": {
+                "spring": {
+                    "methods": [ "dark_grass" ],
+                    "rarity": "very_rare",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "summer": {
+                    "methods": [ "dark_grass" ],
+                    "rarity": "very_rare",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "autumn": {
+                    "methods": [ "dark_grass" ],
+                    "rarity": "uncommon",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "winter": {
+                    "methods": [ "dark_grass" ],
+                    "rarity": "very_rare",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                }
+            }
+        },
+        {
+            "places": [ "nature_preserve" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "rustling" ],
+            "rarity": "common",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

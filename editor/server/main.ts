@@ -1,7 +1,7 @@
 // The editor's server: serves the page and an API over the checkout this folder sits in. It listens on this computer
 // only. Start it with `npm start` in editor/ (or ./start.sh), then open the address it prints in Edge.
 
-import { createReadStream, existsSync, globSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { createReadStream, existsSync, globSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { extname, join, resolve } from "node:path";
 import { parseJson, JsonSyntaxError } from "../shared/json.ts";
@@ -176,6 +176,14 @@ const routes: Record<string, Handler> = {
       return error(res, 500, (e as Error).message);
     }
     json(res, { ok: true, version: versionOf(body.text) } satisfies SaveResult);
+  },
+  // Removes a data file that a specialty editor no longer needs: only a species' encounter file (one taken out of
+  // the wild), so nothing else can be removed from here
+  "DELETE /api/file": (_req, res, url) => {
+    const path = project.checkPath(url.searchParams.get("path") ?? "");
+    if (!path || !/^res\/paperwhite2\/encounters\/species\/[a-z0-9_]+\.json$/.test(path)) return error(res, 403, "Not a file that can be removed");
+    if (existsSync(project.abs(path))) rmSync(project.abs(path));
+    json(res, { removed: true });
   },
   "GET /api/build": (_req, res) => json(res, builder.state),
   "POST /api/build": (_req, res) => json(res, { started: builder.start(settings.buildCommand) }),

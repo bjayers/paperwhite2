@@ -1,0 +1,30 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 36,
+        "max": 36
+    },
+    "habitats": [
+        {
+            "places": [ "chargestone_cave", "chargestone_cave_2" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
+            "rarity": "rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "group:chargestone_cave" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "rustling" ],
+            "rarity": "uncommon",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "chargestone_cave_3" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
+            "rarity": "very_rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

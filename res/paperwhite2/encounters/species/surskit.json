@@ -1,0 +1,84 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 54,
+        "max": 54
+    },
+    "habitats": [
+        {
+            "places": [ "dragonspiral_tower_2" ],
+            "seasons": [ "spring", "summer", "autumn" ],
+            "methods": [ "dark_grass" ],
+            "rarity": "exotic",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "dragonspiral_tower_2" ],
+            "seasons": [ "spring", "summer", "autumn" ],
+            "methods": [ "rustling" ],
+            "rarity": "uncommon",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "moor_of_icirrus" ],
+            "seasons": [ "spring", "summer" ],
+            "methods": [ "grass" ],
+            "rarity": "exotic",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "pinwheel_forest" ],
+            "seasons": [ "spring", "summer", "autumn" ],
+            "methods": [ "grass" ],
+            "rarity": "exotic",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "pinwheel_forest" ],
+            "by_season": {
+                "spring": {
+                    "methods": [ "dark_grass" ],
+                    "rarity": "exotic",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "summer": {
+                    "methods": [ "dark_grass" ],
+                    "rarity": "exotic",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "autumn": {
+                    "methods": [ "dark_grass" ],
+                    "rarity": "common",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                }
+            }
+        },
+        {
+            "places": [ "pinwheel_forest" ],
+            "by_season": {
+                "spring": {
+                    "methods": [ "rustling" ],
+                    "rarity": "common",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "summer": {
+                    "methods": [ "rustling" ],
+                    "rarity": "uncommon",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "autumn": {
+                    "methods": [ "rustling" ],
+                    "rarity": "common",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                }
+            }
+        },
+        {
+            "places": [ "route_8" ],
+            "seasons": [ "spring", "summer", "autumn" ],
+            "methods": [ "grass" ],
+            "rarity": "exotic",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

@@ -1,0 +1,31 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Paper White 2: a wild encounter area, res/paperwhite2/encounters/areas/<area>.json",
+    "description": "One area of the wild encounters: the zones whose header names its ENCOUNTERS_* constant (the file's name in upper case) share it. Its encounter rates per method (0 or absent: none there) and the kind of its rustling spots. Its Pokémon are the species files' habitats that name it or its groups. Packed by tools/paperwhite2/encounters.py.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "rates", "spots" ],
+    "properties": {
+        "$schema": { "type": "string", "description": "This schema, for editors" },
+        "rates": {
+            "type": "object", "additionalProperties": false,
+            "description": "The per-step rate of each method, as the original tables gave it: \"all_year\", or one per season",
+            "properties": {
+                "all_year": { "$ref": "#/$defs/rates" }, "spring": { "$ref": "#/$defs/rates" }, "summer": { "$ref": "#/$defs/rates" },
+                "autumn": { "$ref": "#/$defs/rates" }, "winter": { "$ref": "#/$defs/rates" }
+            }
+        },
+        "spots": { "enum": [ "grass", "dust", "shadow" ], "description": "What its rustling spots are: shaking grass, dust clouds or bridge shadows" }
+    },
+    "$defs": {
+        "rates": {
+            "type": "object", "additionalProperties": false,
+            "properties": {
+                "grass": { "$ref": "#/$defs/rate" }, "dark_grass": { "$ref": "#/$defs/rate" }, "rustling": { "$ref": "#/$defs/rate" },
+                "surf": { "$ref": "#/$defs/rate" }, "rippling_surf": { "$ref": "#/$defs/rate" }, "fishing": { "$ref": "#/$defs/rate" },
+                "rippling_fishing": { "$ref": "#/$defs/rate" }
+            }
+        },
+        "rate": { "type": "integer", "minimum": 0, "maximum": 255 }
+    }
+}

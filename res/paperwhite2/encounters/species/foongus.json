@@ -1,0 +1,105 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 4,
+        "max": 41
+    },
+    "habitats": [
+        {
+            "places": [ "lostlorn_forest" ],
+            "by_season": {
+                "spring": {
+                    "methods": [ "grass" ],
+                    "rarity": "uncommon",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "summer": {
+                    "methods": [ "grass" ],
+                    "rarity": "uncommon",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "autumn": {
+                    "methods": [ "grass" ],
+                    "rarity": "common",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "winter": {
+                    "methods": [ "grass" ],
+                    "rarity": "exotic",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                }
+            }
+        },
+        {
+            "places": [ "lostlorn_forest" ],
+            "seasons": [ "autumn" ],
+            "methods": [ "dark_grass" ],
+            "rarity": "very_rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "lostlorn_forest" ],
+            "seasons": [ "autumn" ],
+            "methods": [ "rustling" ],
+            "rarity": "common",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "pinwheel_forest_2" ],
+            "seasons": [ "autumn" ],
+            "methods": [ "dark_grass" ],
+            "rarity": "very_rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "pinwheel_forest_2" ],
+            "seasons": [ "autumn" ],
+            "methods": [ "rustling" ],
+            "rarity": "common",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "route_6" ],
+            "seasons": [ "autumn" ],
+            "methods": [ "grass" ],
+            "rarity": "rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "route_6" ],
+            "seasons": [ "autumn" ],
+            "methods": [ "rustling" ],
+            "rarity": "common",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "route_14" ],
+            "seasons": [ "autumn" ],
+            "methods": [ "grass", "dark_grass" ],
+            "rarity": "exotic",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "route_14" ],
+            "seasons": [ "autumn" ],
+            "methods": [ "rustling" ],
+            "rarity": "common",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "route_20" ],
+            "by_season": {
+                "autumn": {
+                    "methods": [ "rustling" ],
+                    "rarity": "rare",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "winter": {
+                    "methods": [ "rustling" ],
+                    "rarity": "uncommon",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                }
+            }
+        }
+    ]
+}

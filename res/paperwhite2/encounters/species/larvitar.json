@@ -1,0 +1,58 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 48,
+        "max": 48
+    },
+    "habitats": [
+        {
+            "places": [ "rock_peak_chamber" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
+            "rarity": "exotic",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "rock_peak_chamber" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "rustling" ],
+            "rarity": "common",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "twist_mountain_3", "twist_mountain_4" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
+            "rarity": "exotic",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "twist_mountain_3", "twist_mountain_4" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "rustling" ],
+            "rarity": "common",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "victory_road_3" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass", "dark_grass" ],
+            "rarity": "rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "victory_road_3", "victory_road_4", "victory_road_7", "victory_road_10" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "rustling" ],
+            "rarity": "uncommon",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "victory_road_4", "victory_road_7", "victory_road_10" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass", "dark_grass" ],
+            "rarity": "very_rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

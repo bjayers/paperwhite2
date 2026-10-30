@@ -1,0 +1,34 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 7,
+        "max": 7
+    },
+    "habitats": [
+        {
+            "places": [ "route_20" ],
+            "by_season": {
+                "spring": {
+                    "methods": [ "grass" ],
+                    "rarity": "very_rare",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "summer": {
+                    "methods": [ "grass" ],
+                    "rarity": "rare",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "autumn": {
+                    "methods": [ "grass" ],
+                    "rarity": "very_rare",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "winter": {
+                    "methods": [ "grass" ],
+                    "rarity": "rare",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                }
+            }
+        }
+    ]
+}

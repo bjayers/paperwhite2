@@ -1,0 +1,75 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Paper White 2: a species' wild encounters, res/paperwhite2/encounters/species/<species>.json",
+    "description": "Everything about a species in the wild (the file's name is its res/pokemon folder): its levels, battle styles, hidden ability, habitats and outbreaks. A habitat names areas or \"group:<id>\"s and has a slot for each season it appears in: one for all of them, or each its own. Packed by tools/paperwhite2/encounters.py; a species without a file isn't found in the wild.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "levels", "habitats" ],
+    "properties": {
+        "$schema": { "type": "string", "description": "This schema, for editors" },
+        "levels": {
+            "type": "object", "additionalProperties": false, "required": [ "min", "max" ],
+            "description": "It appears only once the level gate (settings.json) reaches min, at the scaled level plus or minus the spread, never above max",
+            "properties": { "min": { "$ref": "#/$defs/level" }, "max": { "$ref": "#/$defs/level" } }
+        },
+        "battles": { "$ref": "#/$defs/battles", "description": "Its battle styles; the settings' when absent" },
+        "hidden_ability": { "type": "integer", "minimum": 0, "maximum": 100, "description": "The chance in percent of its hidden ability; the settings' when absent" },
+        "habitats": { "type": "array", "items": { "$ref": "#/$defs/habitat" } },
+        "outbreaks": {
+            "type": "array",
+            "description": "Its outbreaks: on the day one is on, it takes the settings' outbreak share of its places' encounters by its methods",
+            "items": {
+                "type": "object", "additionalProperties": false, "required": [ "places", "methods", "seasons", "times" ],
+                "properties": {
+                    "places": { "$ref": "#/$defs/places" }, "form": { "$ref": "#/$defs/form" }, "methods": { "$ref": "#/$defs/methods" },
+                    "seasons": { "$ref": "#/$defs/seasons" }, "times": { "$ref": "#/$defs/times" }
+                }
+            }
+        }
+    },
+    "$defs": {
+        "level": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "battles": {
+            "type": "object", "additionalProperties": false, "required": [ "single", "double", "triple", "partners" ],
+            "properties": {
+                "single": { "type": "integer", "minimum": 0, "maximum": 100 },
+                "double": { "type": "integer", "minimum": 0, "maximum": 100 },
+                "triple": { "type": "integer", "minimum": 0, "maximum": 100 },
+                "partners": { "enum": [ "family", "area" ] }
+            }
+        },
+        "form": { "type": "integer", "minimum": 0, "maximum": 31, "description": "0 by default" },
+        "places": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^(group:)?[a-z0-9_]+$" }, "description": "Area ids, or group:<id> for each area of a group" },
+        "method": { "enum": [ "grass", "dark_grass", "rustling", "surf", "rippling_surf", "fishing", "rippling_fishing" ] },
+        "methods": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/method" } },
+        "seasons": { "type": "array", "items": { "enum": [ "spring", "summer", "autumn", "winter" ] } },
+        "times": { "type": "array", "minItems": 1, "items": { "enum": [ "morning", "day", "evening", "night", "late_night" ] } },
+        "slot": {
+            "type": "object", "additionalProperties": false, "required": [ "methods", "rarity", "times" ],
+            "properties": {
+                "methods": { "$ref": "#/$defs/methods" },
+                "rarity": { "type": "string", "description": "A tier id of settings.json" },
+                "times": { "$ref": "#/$defs/times" },
+                "weather": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^WEATHER_" }, "description": "The zone's weathers it appears in (include/system/zone_weather.h); any when absent" }
+            }
+        },
+        "habitat": {
+            "type": "object", "additionalProperties": false, "required": [ "places" ],
+            "description": "With \"seasons\", one slot (methods, rarity, times, weather) for every season listed; with \"by_season\", each season its own",
+            "properties": {
+                "places": { "$ref": "#/$defs/places" },
+                "form": { "$ref": "#/$defs/form" },
+                "seasons": { "$ref": "#/$defs/seasons" },
+                "methods": { "$ref": "#/$defs/methods" },
+                "rarity": { "type": "string" },
+                "times": { "$ref": "#/$defs/times" },
+                "weather": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^WEATHER_" } },
+                "by_season": {
+                    "type": "object", "additionalProperties": false,
+                    "properties": { "spring": { "$ref": "#/$defs/slot" }, "summer": { "$ref": "#/$defs/slot" }, "autumn": { "$ref": "#/$defs/slot" }, "winter": { "$ref": "#/$defs/slot" } }
+                },
+                "when": { "$ref": "../conditions/condition.schema.json#/$defs/condition", "description": "More conditions-engine clauses that must hold too" }
+            }
+        }
+    }
+}

@@ -1,0 +1,121 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 45,
+        "max": 52
+    },
+    "habitats": [
+        {
+            "places": [ "dragonspiral_tower" ],
+            "by_season": {
+                "spring": {
+                    "methods": [ "grass" ],
+                    "rarity": "exotic",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "summer": {
+                    "methods": [ "grass" ],
+                    "rarity": "exotic",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "autumn": {
+                    "methods": [ "grass" ],
+                    "rarity": "very_rare",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "winter": {
+                    "methods": [ "grass" ],
+                    "rarity": "exotic",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                }
+            }
+        },
+        {
+            "places": [ "dragonspiral_tower" ],
+            "by_season": {
+                "spring": {
+                    "methods": [ "rustling" ],
+                    "rarity": "rare",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "summer": {
+                    "methods": [ "rustling" ],
+                    "rarity": "rare",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "autumn": {
+                    "methods": [ "rustling" ],
+                    "rarity": "uncommon",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                }
+            }
+        },
+        {
+            "places": [ "dragonspiral_tower_2" ],
+            "by_season": {
+                "spring": {
+                    "methods": [ "grass", "dark_grass" ],
+                    "rarity": "very_rare",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "summer": {
+                    "methods": [ "grass", "dark_grass" ],
+                    "rarity": "very_rare",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "autumn": {
+                    "methods": [ "grass", "dark_grass" ],
+                    "rarity": "very_rare",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "winter": {
+                    "methods": [ "grass", "dark_grass" ],
+                    "rarity": "rare",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                }
+            }
+        },
+        {
+            "places": [ "dragonspiral_tower_2" ],
+            "seasons": [ "spring", "summer", "autumn" ],
+            "methods": [ "rustling" ],
+            "rarity": "rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "dragonspiral_tower_3", "dragonspiral_tower_4" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
+            "rarity": "very_rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "giant_chasm_2" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
+            "rarity": "very_rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "giant_chasm_2" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "rustling" ],
+            "rarity": "uncommon",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "victory_road_3" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass", "dark_grass" ],
+            "rarity": "very_rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "victory_road_3" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "rustling" ],
+            "rarity": "uncommon",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

@@ -1,0 +1,16 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 59,
+        "max": 59
+    },
+    "habitats": [
+        {
+            "places": [ "nature_preserve" ],
+            "seasons": [ "spring" ],
+            "methods": [ "rustling" ],
+            "rarity": "exotic",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

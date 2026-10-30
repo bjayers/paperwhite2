@@ -1,0 +1,23 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 50,
+        "max": 50
+    },
+    "habitats": [
+        {
+            "places": [ "floccesy_ranch" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "fishing" ],
+            "rarity": "very_rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "pinwheel_forest" ],
+            "seasons": [ "winter" ],
+            "methods": [ "grass", "dark_grass" ],
+            "rarity": "exotic",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

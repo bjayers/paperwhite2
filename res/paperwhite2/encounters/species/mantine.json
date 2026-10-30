@@ -1,0 +1,16 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 35,
+        "max": 45
+    },
+    "habitats": [
+        {
+            "places": [ "humilau_city" ],
+            "seasons": [ "spring", "autumn", "winter" ],
+            "methods": [ "rippling_surf" ],
+            "rarity": "rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

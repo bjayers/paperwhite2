@@ -1,0 +1,37 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 36,
+        "max": 65
+    },
+    "habitats": [
+        {
+            "places": [ "pinwheel_forest_2" ],
+            "seasons": [ "summer" ],
+            "methods": [ "grass", "dark_grass" ],
+            "rarity": "exotic",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "pinwheel_forest_2" ],
+            "seasons": [ "summer" ],
+            "methods": [ "rustling" ],
+            "rarity": "common",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "route_12" ],
+            "seasons": [ "summer" ],
+            "methods": [ "grass", "dark_grass" ],
+            "rarity": "very_rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "route_12" ],
+            "seasons": [ "summer" ],
+            "methods": [ "rustling" ],
+            "rarity": "uncommon",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

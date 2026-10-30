@@ -141,3 +141,4 @@
 .enc-rarity-table { margin: 4px 0 0 12px; width: auto; }
 .enc-title-input { font-size: 18px; font-weight: 600; padding: 2px 6px; }
 .enc-user { display: inline-flex; align-items: center; gap: 4px; padding: 0 8px 0 2px; }
+.enc-header-2 { padding-top: 4px; padding-bottom: 6px; }

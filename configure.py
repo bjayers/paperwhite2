@@ -342,8 +342,12 @@ DATA_PACKS = [
 ]
 # Paper White 2: archives that the hack's build gives members after their own: the archive, the tool whose archive
 # command writes it from the one packed apart, and the data it reads. The conditions' tables follow the weather
-# calendar's two files (tools/paperwhite2/conditions.py, docs/paperwhite2/plugins.md's Conditions)
-HACK_ARCHIVE_MEMBERS = {"a/0/9/6": ("tools/paperwhite2/conditions.py", "res/paperwhite2/conditions")}
+# calendar's two files (tools/paperwhite2/conditions.py, docs/paperwhite2/plugins.md's Conditions); the wild
+# encounters' data follows their tables (tools/paperwhite2/encounters.py, docs/paperwhite2/encounters.md), and reads
+# the species' families too
+HACK_ARCHIVE_MEMBERS = {"a/0/9/6": ("tools/paperwhite2/conditions.py", "res/paperwhite2/conditions"),
+                        "a/1/2/7": ("tools/paperwhite2/encounters.py", "res/paperwhite2/encounters")}
+HACK_MEMBER_EXTRA_SOURCES = {"a/1/2/7": ["res/paperwhite2/conditions", "res/pokemon/*/data.json"]}
 # What the conditions' compiler reads besides its data: the zones' parents, and the kinds, tile classes and weathers
 HACK_MEMBER_SOURCES = ["res/field/zones", "include/paperwhite2/conditions.h", "include/field/field_map.h",
                        "include/system/zone_weather.h"]
@@ -780,6 +784,9 @@ def add_version(n: Writer, version: str, dsd: Path, bugfix: bool, shift: int,
                 members = sorted(str(p.relative_to(ROOT)) for d in [member_dir, *HACK_MEMBER_SOURCES]
                                  for p in ([ROOT / d] if (ROOT / d).is_file() else (ROOT / d).rglob("*"))
                                  if p.is_file())
+                members += sorted(str(p.relative_to(ROOT)) for pattern in HACK_MEMBER_EXTRA_SOURCES.get(path, [])
+                                  for p in (ROOT.glob(pattern) if "*" in pattern else (ROOT / pattern).rglob("*"))
+                                  if p.is_file())
                 n.build([output], "hack_members", [source], implicit=[tool, *members, *script_imports(tool),
                                                                        *constant_sources],
                         order_only=[files_ok], variables={"tool": tool})

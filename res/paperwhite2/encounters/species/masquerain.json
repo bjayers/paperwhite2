@@ -1,0 +1,31 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 55,
+        "max": 62
+    },
+    "habitats": [
+        {
+            "places": [ "dragonspiral_tower_2" ],
+            "seasons": [ "spring", "summer", "autumn" ],
+            "methods": [ "rustling" ],
+            "rarity": "very_rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "pinwheel_forest" ],
+            "seasons": [ "spring", "summer", "autumn" ],
+            "methods": [ "rustling" ],
+            "rarity": "exotic",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ],
+    "outbreaks": [
+        {
+            "places": [ "route_11" ],
+            "methods": [ "grass" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

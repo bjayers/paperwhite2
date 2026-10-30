@@ -1,0 +1,16 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 59,
+        "max": 62
+    },
+    "habitats": [
+        {
+            "places": [ "pinwheel_forest_2" ],
+            "seasons": [ "summer" ],
+            "methods": [ "rustling" ],
+            "rarity": "exotic",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

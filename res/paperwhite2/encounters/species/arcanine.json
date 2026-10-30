@@ -1,0 +1,16 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 36,
+        "max": 39
+    },
+    "habitats": [
+        {
+            "places": [ "reversal_mountain" ],
+            "seasons": [ "spring", "winter" ],
+            "methods": [ "rustling" ],
+            "rarity": "very_rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

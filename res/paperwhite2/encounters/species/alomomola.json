@@ -1,0 +1,30 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 30,
+        "max": 45
+    },
+    "habitats": [
+        {
+            "places": [ "humilau_city" ],
+            "seasons": [ "spring", "autumn", "winter" ],
+            "methods": [ "surf" ],
+            "rarity": "rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "route_21" ],
+            "seasons": [ "spring", "autumn", "winter" ],
+            "methods": [ "surf" ],
+            "rarity": "very_rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "undella_town" ],
+            "seasons": [ "spring", "autumn", "winter" ],
+            "methods": [ "surf" ],
+            "rarity": "rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

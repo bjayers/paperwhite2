@@ -1,0 +1,23 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 40,
+        "max": 60
+    },
+    "habitats": [
+        {
+            "places": [ "giant_chasm_2" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "surf" ],
+            "rarity": "rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "wellspring_cave_2" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "surf" ],
+            "rarity": "rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

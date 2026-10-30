@@ -1,0 +1,24 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 37,
+        "max": 38
+    },
+    "habitats": [
+        {
+            "places": [ "route_12" ],
+            "by_season": {
+                "autumn": {
+                    "methods": [ "grass" ],
+                    "rarity": "very_rare",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "winter": {
+                    "methods": [ "grass" ],
+                    "rarity": "rare",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                }
+            }
+        }
+    ]
+}

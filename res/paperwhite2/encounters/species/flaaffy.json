@@ -1,0 +1,34 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 15,
+        "max": 15
+    },
+    "habitats": [
+        {
+            "places": [ "floccesy_ranch_2" ],
+            "by_season": {
+                "spring": {
+                    "methods": [ "rustling" ],
+                    "rarity": "uncommon",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "summer": {
+                    "methods": [ "rustling" ],
+                    "rarity": "uncommon",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "autumn": {
+                    "methods": [ "rustling" ],
+                    "rarity": "common",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                },
+                "winter": {
+                    "methods": [ "rustling" ],
+                    "rarity": "common",
+                    "times": [ "morning", "day", "evening", "night", "late_night" ]
+                }
+            }
+        }
+    ]
+}

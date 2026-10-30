@@ -6,7 +6,7 @@ import { readShares, tierFor } from "../src/modules/encounters/convert.ts";
 import { buildDraft } from "../src/modules/encounters/load.ts";
 import { DEFAULT_SETTINGS, METHODS, SEASONS, TIMES } from "../src/modules/encounters/model.ts";
 import { levelRange, namesArea, placeOdds } from "../src/modules/encounters/resolve.ts";
-import { loadFromDisk } from "./encounter-files.ts";
+import { loadFromDisk } from "../scripts/encounter-files.ts";
 
 const loaded = loadFromDisk();
 const draft = buildDraft(loaded, DEFAULT_SETTINGS);

@@ -10,7 +10,7 @@ import { MapPage } from "../src/modules/encounters/MapPage.tsx";
 import { DEFAULT_CONTEXT, DEFAULT_SETTINGS } from "../src/modules/encounters/model.ts";
 import { SettingsPage } from "../src/modules/encounters/SettingsPage.tsx";
 import { SpeciesPage } from "../src/modules/encounters/SpeciesPage.tsx";
-import { loadFromDisk } from "./encounter-files.ts";
+import { loadFromDisk } from "../scripts/encounter-files.ts";
 
 test("the Encounter Editor's pages render", () => {
   const constants = new Map<string, number>();

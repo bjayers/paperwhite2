@@ -1,0 +1,49 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 32,
+        "max": 35
+    },
+    "habitats": [
+        {
+            "places": [
+                "reversal_mountain_2",
+                "reversal_mountain_3",
+                "reversal_mountain_4",
+                "reversal_mountain_5",
+                "reversal_mountain_6",
+                "reversal_mountain_7",
+                "reversal_mountain_8",
+                "reversal_mountain_9",
+                "reversal_mountain_10",
+                "reversal_mountain_11",
+                "reversal_mountain_12",
+                "reversal_mountain_13"
+            ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
+            "rarity": "uncommon",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [
+                "reversal_mountain_2",
+                "reversal_mountain_3",
+                "reversal_mountain_4",
+                "reversal_mountain_5",
+                "reversal_mountain_6",
+                "reversal_mountain_7",
+                "reversal_mountain_8",
+                "reversal_mountain_9",
+                "reversal_mountain_10",
+                "reversal_mountain_11",
+                "reversal_mountain_12",
+                "reversal_mountain_13"
+            ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "rustling" ],
+            "rarity": "common",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

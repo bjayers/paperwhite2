@@ -1,0 +1,33 @@
+{
+    "$schema": "../area.schema.json",
+    "rates": {
+        "spring": {
+            "grass": 12,
+            "surf": 10,
+            "rippling_surf": 1,
+            "fishing": 50,
+            "rippling_fishing": 1
+        },
+        "summer": {
+            "grass": 12,
+            "surf": 10,
+            "rippling_surf": 1,
+            "fishing": 50,
+            "rippling_fishing": 1
+        },
+        "autumn": {
+            "grass": 12,
+            "surf": 10,
+            "rippling_surf": 1,
+            "fishing": 50,
+            "rippling_fishing": 1
+        },
+        "winter": {
+            "surf": 10,
+            "rippling_surf": 1,
+            "fishing": 50,
+            "rippling_fishing": 1
+        }
+    },
+    "spots": "grass"
+}

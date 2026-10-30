@@ -94,7 +94,30 @@ class DataError(Exception):
 
 
 def load_schema(path: Path) -> dict:
-    return json.loads(path.read_text())
+    """Reads a schema. A $ref to another schema's definition ("other.schema.json#/$defs/name", relative to this one)
+    becomes a $ref to this schema's $defs, which take the other schema's definitions that they don't have themselves,
+    so validate() needs only its own root."""
+    schema = json.loads(path.read_text())
+    merged: dict = {}
+
+    def local(node):
+        if isinstance(node, dict):
+            ref = node.get("$ref")
+            if isinstance(ref, str) and "#/$defs/" in ref and not ref.startswith("#"):
+                file, _, name = ref.partition("#/$defs/")
+                other = load_schema((path.parent / file).resolve())
+                for key, definition in other.get("$defs", {}).items():
+                    merged.setdefault(key, definition)
+                node = {**node, "$ref": f"#/$defs/{name}"}
+            return {key: local(value) for key, value in node.items()}
+        if isinstance(node, list):
+            return [local(value) for value in node]
+        return node
+
+    schema = local(schema)
+    if merged:
+        schema["$defs"] = {**merged, **schema.get("$defs", {})}
+    return schema
 
 
 def validate(data, schema: dict, where: str, root: dict | None = None):

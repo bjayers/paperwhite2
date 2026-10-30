@@ -7,7 +7,16 @@ import type { DataFile, ScanMatch } from "../../../shared/api.ts";
 import type { Constants } from "../../../shared/schema.ts";
 import { api } from "../../api.ts";
 import { convert, readGrottoes, type Draft, type OldOutbreak, type OldTable, type OldZone } from "./convert.ts";
+import { LEVEL_SCALING, readDraft, readSettings, type EncounterFiles } from "./files.ts";
 import type { EncounterSettings, SpeciesInfo } from "./model.ts";
+
+/** The new encounter data's kinds (res/paperwhite2/encounters/) */
+export const DATA_SCHEMAS = {
+  settings: "res/paperwhite2/encounters/settings.schema.json",
+  groups: "res/paperwhite2/encounters/groups.schema.json",
+  areas: "res/paperwhite2/encounters/area.schema.json",
+  species: "res/paperwhite2/encounters/species.schema.json",
+};
 
 export const SCHEMAS = {
   encounters: "res/field/encounters/encounters.schema.json",
@@ -190,6 +199,27 @@ function readSources(files: Files, constants: Constants): Loaded["sources"] {
     }
   }
   return sources;
+}
+
+/** The new encounter data's files, or null when there are none yet. */
+export async function loadEncounterFiles(): Promise<EncounterFiles | null> {
+  const [settings, groups, areas, species, scaling] = await Promise.all([
+    api.data(DATA_SCHEMAS.settings), api.data(DATA_SCHEMAS.groups), api.data(DATA_SCHEMAS.areas), api.data(DATA_SCHEMAS.species),
+    api.file(LEVEL_SCALING),
+  ]);
+  if (!settings.length || !groups.length) return null;
+  return {
+    settings: settings[0].data as EncounterFiles["settings"],
+    levelScaling: JSON.parse(scaling.text),
+    groups: groups[0].data as EncounterFiles["groups"],
+    areas: areas.map(({ path, data }) => ({ id: fileName(path), data: data as EncounterFiles["settings"] })),
+    species: species.map(({ path, data }) => ({ folder: fileName(path), data: data as EncounterFiles["settings"] })),
+  };
+}
+
+/** The settings and the draft from the files. */
+export function draftFromFiles(loaded: Loaded, files: EncounterFiles): { settings: EncounterSettings; draft: Draft } {
+  return { settings: readSettings(files), draft: readDraft(files, loaded.tables, loaded.zones, readGrottoes(loaded.grottoes)) };
 }
 
 export function buildDraft(loaded: Loaded, settings: EncounterSettings): Draft {

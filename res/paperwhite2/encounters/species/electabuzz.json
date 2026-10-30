@@ -1,0 +1,16 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 59,
+        "max": 59
+    },
+    "habitats": [
+        {
+            "places": [ "p2_laboratory" ],
+            "seasons": [ "spring", "summer", "autumn" ],
+            "methods": [ "rustling" ],
+            "rarity": "very_rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

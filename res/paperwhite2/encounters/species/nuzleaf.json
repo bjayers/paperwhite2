@@ -1,0 +1,30 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 14,
+        "max": 24
+    },
+    "habitats": [
+        {
+            "places": [ "floccesy_ranch_2" ],
+            "seasons": [ "autumn" ],
+            "methods": [ "grass" ],
+            "rarity": "exotic",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "lostlorn_forest" ],
+            "seasons": [ "spring", "summer" ],
+            "methods": [ "grass" ],
+            "rarity": "rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "route_20" ],
+            "seasons": [ "autumn" ],
+            "methods": [ "dark_grass" ],
+            "rarity": "very_rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

@@ -1,0 +1,16 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 38,
+        "max": 38
+    },
+    "habitats": [
+        {
+            "places": [ "reversal_mountain" ],
+            "seasons": [ "summer" ],
+            "methods": [ "dark_grass" ],
+            "rarity": "rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

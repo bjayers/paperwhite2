@@ -825,6 +825,16 @@ of match bits on the stack.
 research into how NPCs are loaded and moved comes first, then either a new method or the flag method of script 10852
 ported onto the engine.
 
+### Wild encounters
+
+The slot tables are replaced by per-species data packed by area: `docs/paperwhite2/encounters.md`.
+- **Runtime:** `src/paperwhite2/main/paperwhite2_encounters.c`.
+- **Packer:** `tools/paperwhite2/encounters.py`, which adds a member after `a/1/2/7`'s tables.
+- **Data:** `res/paperwhite2/encounters/`.
+- **Hooks:** `src/ov012/eventdata_system.c`, `src/ov036/enc_pokeset.c` and `src/ov036/effect_encount.c`.
+
+Where no Pokémon can appear there is no encounter, and an original table's empty slot gives none either.
+
 ## Adding global scripts
 
 A global script file's IDs are limited by its row in `GLOBAL_SCRIPT_TABLE` (`src/ov012/script_sys.c`), e.g.

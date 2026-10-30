@@ -2,6 +2,29 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-30: the new wild encounter engine (ROM session; not yet tested in game)
+
+- **Built** per docs/paperwhite2/encounters.md:
+  - **Data:** per-species data in `res/paperwhite2/encounters/`, with schemas, exported from the original tables by
+    the editor's import (`editor/scripts/export-encounters.ts`). level_scaling.json's spread is now 3.
+  - **Packer:** `tools/paperwhite2/encounters.py` packs it into one member after `a/1/2/7`'s tables (`check`,
+    `odds`).
+  - **Runtime:** `src/paperwhite2/main/paperwhite2_encounters.c`, hooked into the table load, the slot picking,
+    `GenWildsCore`'s count and partner, the hidden ability, the bulletin board's swarm zone, and the rustling spots'
+    item chance.
+- **Failsafe:** where no Pokémon can appear, there is no encounter by any method, and an original table's empty slot
+  gives none either.
+- **Not yet:** wild triples (they count as doubles; the battle intro needs a 3-Pokémon wild version).
+- **Behaviour change:** dark grass no longer rolls its own 40% double battle; doubles come from the species' battle
+  styles, which default to 100% single.
+- **Editor:** the Encounter Editor reads and saves the files (Save, Revert, Settings' import). `datajson.load_schema`
+  now follows a `$ref` into another schema file (the habitats' `when`, the follower dialogue's).
+- **Checks:**
+  - `--hack` builds without warnings; `verify_dsi_rom.py` intact; the plain `modules.ok` passes; clang-format and
+    check_style are clean.
+  - The editor's tests pass, including `encounters-packed.test.ts`: the packed member's odds equal the editor's for a
+    sample of places. Playwright: the editor reads the files with nothing to save, and an edit marks one file.
+
 ## 2026-10-30: the editor's first specialty editor, the Encounter Editor (ROM session, in editor/)
 
 - **Who edits editor/ for now:** the user asked the ROM session to work in `editor/` until the encounter work is done,

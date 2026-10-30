@@ -1,0 +1,16 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 40,
+        "max": 70
+    },
+    "habitats": [
+        {
+            "places": [ "undella_bay" ],
+            "seasons": [ "summer", "autumn", "winter" ],
+            "methods": [ "rippling_fishing" ],
+            "rarity": "very_rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

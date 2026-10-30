@@ -1,0 +1,30 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 26,
+        "max": 64
+    },
+    "habitats": [
+        {
+            "places": [ "pinwheel_forest" ],
+            "seasons": [ "summer" ],
+            "methods": [ "grass" ],
+            "rarity": "common",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "pinwheel_forest" ],
+            "seasons": [ "summer" ],
+            "methods": [ "dark_grass" ],
+            "rarity": "uncommon",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "route_6" ],
+            "seasons": [ "spring", "summer" ],
+            "methods": [ "rippling_surf" ],
+            "rarity": "rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

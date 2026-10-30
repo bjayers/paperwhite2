@@ -1,4 +1,4 @@
-// The Encounter Editor's inputs read from the real res/, as the server would give them, for its tests.
+// The Encounter Editor's inputs read from the real res/, as the server would give them, for its tests and scripts.
 import { globSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { DataFile, ScanMatch } from "../shared/api.ts";

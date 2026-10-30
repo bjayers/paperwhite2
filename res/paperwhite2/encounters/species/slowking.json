@@ -1,0 +1,16 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 45,
+        "max": 60
+    },
+    "habitats": [
+        {
+            "places": [ "striaton_city" ],
+            "seasons": [ "summer" ],
+            "methods": [ "rippling_surf" ],
+            "rarity": "exotic",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

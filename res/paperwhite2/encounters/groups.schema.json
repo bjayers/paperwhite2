@@ -1,0 +1,23 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Paper White 2: the groups of wild encounter areas, res/paperwhite2/encounters/groups.json",
+    "description": "Areas that a habitat or an outbreak can name together as \"group:<id>\". The editor's import makes one for each parent zone with several areas; the rest are the user's. Packed by tools/paperwhite2/encounters.py, which gives each named group's areas their own entries.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "groups" ],
+    "properties": {
+        "$schema": { "type": "string", "description": "This schema, for editors" },
+        "groups": {
+            "type": "array",
+            "items": {
+                "type": "object", "additionalProperties": false, "required": [ "id", "name", "areas" ],
+                "properties": {
+                    "id": { "type": "string", "pattern": "^[a-z0-9_]{1,48}$" },
+                    "name": { "type": "string" },
+                    "areas": { "type": "array", "items": { "type": "string", "pattern": "^[a-z0-9_]+$" }, "description": "Area ids: files of res/paperwhite2/encounters/areas/" },
+                    "custom": { "type": "boolean", "description": "The user's own, rather than one of a parent zone; false by default" }
+                }
+            }
+        }
+    }
+}

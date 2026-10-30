@@ -1,0 +1,23 @@
+{
+    "$schema": "../area.schema.json",
+    "rates": {
+        "spring": {
+            "grass": 1,
+            "rustling": 1
+        },
+        "summer": {
+            "grass": 1,
+            "rustling": 1
+        },
+        "autumn": {
+            "grass": 1,
+            "rustling": 1
+        },
+        "winter": {
+            "grass": 1,
+            "dark_grass": 3,
+            "rustling": 1
+        }
+    },
+    "spots": "grass"
+}

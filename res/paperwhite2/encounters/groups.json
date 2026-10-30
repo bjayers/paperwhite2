@@ -1,0 +1,166 @@
+{
+    "$schema": "groups.schema.json",
+    "groups": [
+        {
+            "id": "castelia_sewers",
+            "name": "Castelia Sewers",
+            "areas": [ "castelia_sewers", "castelia_sewers_2", "castelia_sewers_3", "castelia_sewers_4", "castelia_sewers_5" ]
+        },
+        {
+            "id": "celestial_tower_2",
+            "name": "Celestial Tower 2",
+            "areas": [ "celestial_tower", "celestial_tower_2", "celestial_tower_3", "celestial_tower_4" ]
+        },
+        {
+            "id": "chargestone_cave",
+            "name": "Chargestone Cave",
+            "areas": [ "chargestone_cave", "chargestone_cave_2", "chargestone_cave_3" ]
+        },
+        {
+            "id": "clay_tunnel",
+            "name": "Clay Tunnel",
+            "areas": [
+                "clay_tunnel",
+                "clay_tunnel_2",
+                "clay_tunnel_3",
+                "iceberg_chamber",
+                "iron_chamber",
+                "rock_peak_chamber",
+                "underground_ruins",
+                "underground_ruins_2",
+                "underground_ruins_3"
+            ]
+        },
+        {
+            "id": "desert_resort",
+            "name": "Desert Resort",
+            "areas": [ "desert_resort", "desert_resort_2" ]
+        },
+        {
+            "id": "dragonspiral_tower",
+            "name": "Dragonspiral Tower",
+            "areas": [ "dragonspiral_tower", "dragonspiral_tower_2", "dragonspiral_tower_3", "dragonspiral_tower_4" ]
+        },
+        {
+            "id": "dreamyard",
+            "name": "Dreamyard",
+            "areas": [ "dreamyard", "dreamyard_2" ]
+        },
+        {
+            "id": "floccesy_ranch",
+            "name": "Floccesy Ranch",
+            "areas": [ "floccesy_ranch", "floccesy_ranch_2" ]
+        },
+        {
+            "id": "giant_chasm",
+            "name": "Giant Chasm",
+            "areas": [ "giant_chasm", "giant_chasm_2", "giant_chasm_3", "giant_chasm_4", "giant_chasm_5" ]
+        },
+        {
+            "id": "mistralton_cave",
+            "name": "Mistralton Cave",
+            "areas": [ "guidance_chamber", "mistralton_cave", "mistralton_cave_2" ]
+        },
+        {
+            "id": "pinwheel_forest",
+            "name": "Pinwheel Forest",
+            "areas": [ "pinwheel_forest", "pinwheel_forest_2" ]
+        },
+        {
+            "id": "relic_castle",
+            "name": "Relic Castle",
+            "areas": [
+                "relic_castle",
+                "relic_castle_2",
+                "relic_castle_3",
+                "relic_castle_4",
+                "relic_castle_5",
+                "relic_castle_6",
+                "relic_castle_7",
+                "relic_castle_8"
+            ]
+        },
+        {
+            "id": "relic_passage",
+            "name": "Relic Passage",
+            "areas": [ "relic_passage", "relic_passage_2", "relic_passage_3" ]
+        },
+        {
+            "id": "reversal_mountain",
+            "name": "Reversal Mountain",
+            "areas": [
+                "reversal_mountain",
+                "reversal_mountain_2",
+                "reversal_mountain_3",
+                "reversal_mountain_4",
+                "reversal_mountain_5",
+                "reversal_mountain_6",
+                "reversal_mountain_7",
+                "reversal_mountain_8",
+                "reversal_mountain_9",
+                "reversal_mountain_10",
+                "reversal_mountain_11",
+                "reversal_mountain_12",
+                "reversal_mountain_13"
+            ]
+        },
+        {
+            "id": "route_4",
+            "name": "Route 4",
+            "areas": [ "route_4", "route_4_2" ]
+        },
+        {
+            "id": "seaside_cave",
+            "name": "Seaside Cave",
+            "areas": [ "seaside_cave", "seaside_cave_2" ]
+        },
+        {
+            "id": "strange_house",
+            "name": "Strange House",
+            "areas": [
+                "strange_house",
+                "strange_house_2",
+                "strange_house_3",
+                "strange_house_4",
+                "strange_house_5",
+                "strange_house_6",
+                "strange_house_7",
+                "strange_house_8",
+                "strange_house_9",
+                "strange_house_10"
+            ]
+        },
+        {
+            "id": "twist_mountain",
+            "name": "Twist Mountain",
+            "areas": [ "twist_mountain", "twist_mountain_2", "twist_mountain_3", "twist_mountain_4" ]
+        },
+        {
+            "id": "victory_road",
+            "name": "Victory Road",
+            "areas": [
+                "victory_road",
+                "victory_road_2",
+                "victory_road_3",
+                "victory_road_4",
+                "victory_road_5",
+                "victory_road_6",
+                "victory_road_7",
+                "victory_road_8",
+                "victory_road_9",
+                "victory_road_10",
+                "victory_road_11"
+            ]
+        },
+        {
+            "id": "virbank_complex",
+            "name": "Virbank Complex",
+            "areas": [ "virbank_complex", "virbank_complex_2" ]
+        },
+        {
+            "id": "wellspring_cave",
+            "name": "Wellspring Cave",
+            "areas": [ "wellspring_cave", "wellspring_cave_2" ]
+        }
+    ]
+}

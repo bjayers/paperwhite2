@@ -1,10 +1,13 @@
-// The Encounter Editor's frame: it loads res/, builds the draft, and holds the settings, the draft's edits and the
-// preview's context, which every page shares. Nothing is written: the new format isn't in res/ yet.
+// The Encounter Editor's frame: it reads the encounter data (res/paperwhite2/encounters/, or an import of the original
+// tables when there is none yet) and holds the settings, the draft's edits and the preview's context, which every page
+// shares. Save writes the files that changed, in the data tools' layout, each checked by the build's validator.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ToolProps } from "../types.ts";
 import type { Draft } from "./convert.ts";
-import { buildDraft, load, type Loaded } from "./load.ts";
+import { api } from "../../api.ts";
+import { allTexts, speciesPath, type Json } from "./files.ts";
+import { buildDraft, draftFromFiles, load, loadEncounterFiles, type Loaded } from "./load.ts";
 import { DEFAULT_CONTEXT, DEFAULT_SETTINGS, type Area, type AreaGroup, type Context, type EncounterSettings, type Grotto,
   type SpeciesEncounters } from "./model.ts";
 import { AreasPage } from "./AreasPage.tsx";
@@ -51,13 +54,38 @@ export function EncounterEditor({ constants, open }: ToolProps) {
   const [species, setSelectedSpecies] = useState<string | null>(null);
   const [area, setSelectedArea] = useState<string | null>(null);
   const [sharedFamilies, setSharedFamilies] = useState<Set<string>>(new Set());
+  // The files as they were read or last saved, and the level scaling's own fields, which the texts keep
+  const [saved, setSaved] = useState<Map<string, string>>(new Map());
+  const [levelScaling, setLevelScaling] = useState<Json>({});
+  const [fromFiles, setFromFiles] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const read = useCallback(async () => {
+    const l = await load(constants);
+    const files = await loadEncounterFiles();
+    const grottoFiles = l.grottoes;
+    if (files) {
+      const { settings: s, draft: d } = draftFromFiles(l, files);
+      setSettings(s);
+      setDraft(d);
+      setLevelScaling(files.levelScaling);
+      setSaved(allTexts(d, s, l.species, files.levelScaling, grottoFiles));
+    } else {
+      const d = buildDraft(l, DEFAULT_SETTINGS);
+      const scaling = JSON.parse((await api.file("res/paperwhite2/level_scaling.json")).text);
+      setSettings(DEFAULT_SETTINGS);
+      setDraft(d);
+      setLevelScaling(scaling);
+      setSaved(new Map());
+    }
+    setFromFiles(!!files);
+    setLoaded(l);
+  }, [constants]);
 
   useEffect(() => {
     if (!constants.size || loaded) return;
-    load(constants).then((l) => {
-      setLoaded(l);
-      setDraft(buildDraft(l, DEFAULT_SETTINGS));
-    }, (e: Error) => setError(e.message));
+    read().catch((e: Error) => setError(e.message));
   }, [constants, loaded]);
 
   const setSpecies = useCallback((id: string, entry: SpeciesEncounters | null) => {
@@ -91,9 +119,54 @@ export function EncounterEditor({ constants, open }: ToolProps) {
 
   const reimport = () => {
     if (!loaded) return;
-    if (!confirm("Build the draft again from the current tables with these settings? Your edits in the editor are lost.")) return;
+    if (!confirm("Import the original tables again with these settings? Every habitat is replaced; nothing is written until you save.")) return;
     setDraft(buildDraft(loaded, settings));
   };
+
+  // What saving would write: the texts that differ from the files, and the species files to remove
+  const texts = useMemo(() => (loaded && draft ? allTexts(draft, settings, loaded.species, levelScaling, loaded.grottoes) : new Map<string, string>()),
+    [loaded, draft, settings, levelScaling]);
+  const changed = [...texts].filter(([path, text]) => saved.get(path) !== text).map(([path]) => path);
+  const removed = [...saved.keys()].filter((path) => path.startsWith(speciesPath("")) && !texts.has(path));
+  const dirty = changed.length + removed.length;
+
+  const save = async () => {
+    setSaving(true);
+    setMessage(null);
+    const next = new Map(saved);
+    try {
+      for (const path of changed) {
+        const result = await api.save({ path, text: texts.get(path)!, baseVersion: null });
+        if (!result.ok) throw new Error(`${path}: ${result.reason === "invalid" ? result.message : "changed on disk"}`);
+        next.set(path, texts.get(path)!);
+      }
+      for (const path of removed) {
+        await api.removeFile(path);
+        next.delete(path);
+      }
+      setFromFiles(true);
+      setMessage(`Saved ${changed.length + removed.length} file${changed.length + removed.length === 1 ? "" : "s"}.`);
+    } catch (e) {
+      setMessage(`Not everything was saved: ${(e as Error).message}`);
+    } finally {
+      setSaved(next);
+      setSaving(false);
+    }
+  };
+
+  const revert = async () => {
+    if (dirty && !confirm(`Throw away ${dirty} unsaved change${dirty === 1 ? "" : "s"} and read the files again?`)) return;
+    setMessage(null);
+    await read();
+  };
+
+  useEffect(() => {
+    const warn = (e: BeforeUnloadEvent) => {
+      if (dirty) e.preventDefault();
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
 
   const state: EditorState | null = useMemo(() => loaded && draft ? {
     loaded, draft, settings, ctx, setSpecies, setSpeciesMany, setGroups, setGrottoes, setAreas, sharedFamilies, setShared, open,
@@ -120,12 +193,22 @@ export function EncounterEditor({ constants, open }: ToolProps) {
           ))}
         </div>
         <span className="spacer" />
-        <ContextBar ctx={ctx} setCtx={setCtx} settings={settings} />
+        <span className={`small ${dirty ? "" : "muted"}`} title={[...changed, ...removed.map((p) => `${p} (removed)`)].join("\n")}>
+          {dirty ? `${dirty} file${dirty === 1 ? "" : "s"} to save` : "Saved"}
+        </span>
+        <button className="primary" disabled={!dirty || saving} onClick={save}>{saving ? "Saving…" : "Save"}</button>
+        <button disabled={saving} onClick={revert} title="Read the files again">Revert</button>
       </header>
-      <p className="notice warning enc-draft">
-        Draft: built from the current encounter tables, so you can check that everything you want is here. Nothing is
-        saved yet, since the new format isn't in res/; edits last until the page is reloaded.
-      </p>
+      <div className="enc-header enc-header-2">
+        <ContextBar ctx={ctx} setCtx={setCtx} settings={settings} />
+      </div>
+      {!fromFiles && (
+        <p className="notice warning enc-draft">
+          There is no encounter data in res/paperwhite2/encounters/ yet: this is an import of the original tables.
+          Save writes it.
+        </p>
+      )}
+      {message && <p className={`notice ${message.startsWith("Not") ? "error" : ""} enc-draft`}>{message}</p>}
       <div className="enc-body">
         {page === "pokemon" && <SpeciesPage state={state} constants={constants} selected={species} select={setSelectedSpecies} />}
         {page === "areas" && <AreasPage state={state} selected={area} select={setSelectedArea} />}

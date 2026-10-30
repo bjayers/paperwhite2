@@ -1,0 +1,12 @@
+{
+    "$schema": "../area.schema.json",
+    "rates": {
+        "all_year": {
+            "surf": 10,
+            "rippling_surf": 1,
+            "fishing": 80,
+            "rippling_fishing": 1
+        }
+    },
+    "spots": "grass"
+}

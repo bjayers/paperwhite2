@@ -1,0 +1,37 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 40,
+        "max": 70
+    },
+    "habitats": [
+        {
+            "places": [ "humilau_city" ],
+            "seasons": [ "summer", "autumn" ],
+            "methods": [ "rippling_fishing" ],
+            "rarity": "exotic",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "route_13" ],
+            "seasons": [ "spring", "summer", "autumn" ],
+            "methods": [ "rippling_fishing" ],
+            "rarity": "exotic",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "route_18" ],
+            "seasons": [ "summer", "autumn" ],
+            "methods": [ "rippling_fishing" ],
+            "rarity": "exotic",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "route_22" ],
+            "seasons": [ "summer", "autumn" ],
+            "methods": [ "rippling_fishing" ],
+            "rarity": "exotic",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

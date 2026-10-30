@@ -10,6 +10,10 @@
 #include "nitro/fx.h"
 #include "save/event_work.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/encounters.h"
+#endif
+
 EventData *EventData_Create(HeapID heapId) {
     EventData *data;
 
@@ -49,6 +53,10 @@ void EventData_LoadEntities(EventData *data, u16 zoneId, u8 season) {
 
 void EventData_LoadEncData(EventData *data, u16 zoneId, u8 season) {
     EncData_Load(&data->encData, data->encArc, zoneId, season);
+#ifdef PAPERWHITE2
+    // Paper White 2: the zone's area of the new encounter data, whose rates replace the table's
+    PaperWhite2_Encounters_Load(data->encArc, zoneId, season, &data->encData);
+#endif
     data->encLoaded = 1;
 }
 

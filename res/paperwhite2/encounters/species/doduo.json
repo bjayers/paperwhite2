@@ -1,0 +1,38 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 18,
+        "max": 33
+    },
+    "habitats": [
+        {
+            "places": [ "desert_resort" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
+            "rarity": "uncommon",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "reversal_mountain" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
+            "rarity": "common",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "reversal_mountain" ],
+            "seasons": [ "spring", "autumn", "winter" ],
+            "methods": [ "dark_grass" ],
+            "rarity": "common",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ],
+    "outbreaks": [
+        {
+            "places": [ "route_12" ],
+            "methods": [ "grass" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

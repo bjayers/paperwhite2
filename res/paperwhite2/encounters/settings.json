@@ -1,0 +1,62 @@
+{
+    "$schema": "settings.schema.json",
+    "tiers": [
+        {
+            "id": "common",
+            "name": "Common",
+            "share": 55
+        },
+        {
+            "id": "uncommon",
+            "name": "Uncommon",
+            "share": 25
+        },
+        {
+            "id": "rare",
+            "name": "Rare",
+            "share": 12
+        },
+        {
+            "id": "very_rare",
+            "name": "Very rare",
+            "share": 7
+        },
+        {
+            "id": "exotic",
+            "name": "Exotic",
+            "share": 1
+        }
+    ],
+    "level_gate": "scaled",
+    "hidden_ability": 10,
+    "battles": {
+        "single": 100,
+        "double": 0,
+        "triple": 0,
+        "partners": "family"
+    },
+    "rustling": {
+        "grass": {
+            "species": "SPECIES_AUDINO",
+            "share": 30
+        },
+        "dust": {
+            "share": 30
+        },
+        "shadow": {
+            "share": 30
+        },
+        "tiers": [ "rare", "very_rare", "exotic" ],
+        "from": [ "grass", "dark_grass" ]
+    },
+    "outbreak_share": 40,
+    "import": {
+        "thresholds": {
+            "common": 20,
+            "uncommon": 10,
+            "rare": 5,
+            "very_rare": 2
+        },
+        "evolution_margin": 2
+    }
+}

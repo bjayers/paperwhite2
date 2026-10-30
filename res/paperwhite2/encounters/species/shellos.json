@@ -1,0 +1,54 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 25,
+        "max": 32
+    },
+    "habitats": [
+        {
+            "places": [ "p2_laboratory" ],
+            "form": 1,
+            "seasons": [ "spring", "winter" ],
+            "methods": [ "surf" ],
+            "rarity": "rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "p2_laboratory" ],
+            "seasons": [ "summer", "autumn" ],
+            "methods": [ "surf" ],
+            "rarity": "rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "route_13" ],
+            "form": 1,
+            "seasons": [ "spring", "winter" ],
+            "methods": [ "surf" ],
+            "rarity": "rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "route_13" ],
+            "seasons": [ "summer", "autumn" ],
+            "methods": [ "surf" ],
+            "rarity": "very_rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "route_18" ],
+            "form": 1,
+            "seasons": [ "spring", "winter" ],
+            "methods": [ "surf" ],
+            "rarity": "rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "route_18" ],
+            "seasons": [ "summer", "autumn" ],
+            "methods": [ "surf" ],
+            "rarity": "rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

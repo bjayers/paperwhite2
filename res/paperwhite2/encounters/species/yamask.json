@@ -1,0 +1,45 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 21,
+        "max": 36
+    },
+    "habitats": [
+        {
+            "places": [
+                "relic_castle",
+                "relic_castle_2",
+                "relic_castle_3",
+                "relic_castle_5",
+                "relic_castle_6",
+                "relic_castle_7",
+                "relic_castle_8"
+            ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
+            "rarity": "exotic",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "group:strange_house" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
+            "rarity": "exotic",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "underground_ruins", "underground_ruins_2", "underground_ruins_3" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
+            "rarity": "exotic",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        },
+        {
+            "places": [ "underground_ruins", "underground_ruins_2", "underground_ruins_3" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "rustling" ],
+            "rarity": "uncommon",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

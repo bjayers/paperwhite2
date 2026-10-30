@@ -52,10 +52,12 @@ session's checks) can run beside yours.
 
 ## The Encounter Editor
 
-The new wild encounter system's editor (`src/modules/encounters/`), built before the system itself so that everything
-to be edited is settled first. **It doesn't save yet**: the new format isn't in `res/`, so it builds a draft from the
-current slot tables (`res/field/encounters/`), the game's swarms and the Hidden Grottoes, and keeps edits until the
-page is reloaded. Its pages:
+The wild encounters' editor (`src/modules/encounters/`): everything about the wild Pokémon in one place, read from
+and saved to `res/paperwhite2/encounters/` (`docs/paperwhite2/encounters.md`), with `res/paperwhite2/level_scaling.json`'s
+percent and spread and the Hidden Grottoes' files. **Save** writes the files that changed, each checked by the build's
+validator; **Revert** reads them again. With no data there yet, it starts from an import of the original tables, which
+Save writes; `scripts/export-encounters.ts` does the same from the command line. Settings' import replaces every
+habitat with a new import of the original tables (until saved). Its pages:
 
 - **Pokémon**: the species list, sorted by number, family, generation or name, and filtered to those in the wild
   (a habitat, an outbreak or a Hidden Grotto entry), not in the wild, whose family isn't, or whose family can't be had

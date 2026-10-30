@@ -1,0 +1,16 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 57,
+        "max": 57
+    },
+    "habitats": [
+        {
+            "places": [ "icirrus_city" ],
+            "seasons": [ "spring", "summer", "autumn" ],
+            "methods": [ "grass" ],
+            "rarity": "very_rare",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}

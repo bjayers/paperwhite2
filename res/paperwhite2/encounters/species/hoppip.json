@@ -1,0 +1,24 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 35,
+        "max": 35
+    },
+    "habitats": [
+        {
+            "places": [ "route_12" ],
+            "seasons": [ "spring", "summer", "autumn" ],
+            "methods": [ "grass" ],
+            "rarity": "uncommon",
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ],
+    "outbreaks": [
+        {
+            "places": [ "route_18" ],
+            "methods": [ "grass" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
+        }
+    ]
+}
