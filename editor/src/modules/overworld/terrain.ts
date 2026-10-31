@@ -61,6 +61,8 @@ export interface ZoneMap {
   /** The texture set of the zone's area in the season (res/field/maps/textures/<set>/), and its files' names. */
   textureSet: string | null;
   textures: Set<string>;
+  /** The area's prop bundle in the season, whose models the chunks' props are (res/field/props/.../models/<bundle>). */
+  propBundle: string | null;
   matrix: string;
   /** The matrix's size, in cells. */
   columns: number;
@@ -213,10 +215,13 @@ export async function loadZoneMap(zone: string, season: number, constants: Const
   const seasonal = areaNumber !== undefined && areaNumber >= AREA_SEASONS_FIRST && areaNumber < AREA_SEASONS_END;
   let textureSet: string | null = null;
   let textures = new Set<string>();
+  let propBundle: string | null = null;
   const areaName = areaNumber === undefined ? null : seasonal ? nameOf(constants, "AREA_", areaNumber + season) : zoneData.area!;
   if (areaName) {
     const area = await api.file(`res/field/areas/${areaName.replace(/^AREA_/, "").toLowerCase()}.json`)
-      .then((f) => JSON.parse(f.text) as { texture_set?: string }, () => null);
+      .then((f) => JSON.parse(f.text) as { texture_set?: string; prop_bundle?: string }, () => null);
+    const bundle = /^FIELD_PROPS_(EXTERIOR|INTERIOR)_(.+)$/.exec(area?.prop_bundle ?? "");
+    if (bundle) propBundle = `res/field/props/${bundle[1].toLowerCase()}/models/${bundle[2].toLowerCase()}`;
     if (area?.texture_set) {
       textureSet = area.texture_set.replace(/^MAP_TEXTURE_SET_/, "").toLowerCase();
       textures = new Set((await api.list(`res/field/maps/textures/${textureSet}/*.png`)).map((p) => p.slice(p.lastIndexOf("/") + 1)));
@@ -244,7 +249,7 @@ export async function loadZoneMap(zone: string, season: number, constants: Const
     chunk.layers = layers;
     return chunk;
   }));
-  return { zone, season, seasonal, textureSet, textures, matrix: matrixName, columns: matrix.maps[0]?.length ?? 0, rows: matrix.maps.length, chunks };
+  return { zone, season, seasonal, textureSet, textures, propBundle, matrix: matrixName, columns: matrix.maps[0]?.length ?? 0, rows: matrix.maps.length, chunks };
 }
 
 /** The tile at a global tile position, and its height, on a layer. */

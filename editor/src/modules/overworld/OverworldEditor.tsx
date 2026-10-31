@@ -17,11 +17,16 @@ import { ScriptEditor } from "../scripts/ScriptEditor.tsx";
 import { loadWorld, resolveScript, zoneLabel, type World } from "../world/world.ts";
 import { KIND_LISTS, KIND_NAMES, entitiesOf, positionEdits, type Entity, type EntityKind } from "./entities.ts";
 import { entityFields } from "./fields.tsx";
+import { BuildingPanel } from "./BuildingPanel.tsx";
 import { MapView, type OverlayMode } from "./MapView.tsx";
-import { SEASONS, TILE, flatTileFor, loadZoneMap, reloadLayers, tileAt, type ZoneMap } from "./terrain.ts";
+import { bundleModels, buildingEntities, dirtyPropChunks, loadProps, propsOf, propsSaveError, redoProps, revertProps, saveProps, setProps,
+  undoProps, usePropsVersion } from "./props.ts";
+import { CHUNK, CHUNK_TILES, SEASONS, TILE, flatTileFor, loadZoneMap, reloadLayers, tileAt, type ZoneMap } from "./terrain.ts";
 
 const EVENTS_BUDGET = 2436;
-const KINDS: EntityKind[] = ["npc", "proxy", "trigger", "warp", "level"];
+const KINDS: EntityKind[] = ["npc", "proxy", "building", "trigger", "warp", "level"];
+/** The undo history's name for a chunk's props, which aren't a document of the store. */
+const PROPS = "props:";
 
 /** The zone's events' packed size, as tools/data/event_data.py packs them. */
 function eventsSize(data: JsonValue | null): number {
@@ -63,6 +68,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   const [selected, setSelected] = useState<{ kind: EntityKind; index: number } | null>(null);
   const [tile, setTile] = useState<{ x: number; z: number } | null>(null);
   const [painting, setPainting] = useState(false);
+  const [preview, setPreview] = useState(false);
   const [paint, setPaint] = useState(0);
   /** What the painter sets: a tile type (PAINTS), or a flat height in tiles. */
   const [paintMode, setPaintMode] = useState<"type" | "height">("type");
@@ -79,8 +85,19 @@ export function OverworldEditor({ constants, open }: ToolProps) {
 
   const eventsPath = zone ? `res/field/events/${zone}.json` : null;
   const { data, schema } = useHeld(eventsPath);
-  const entities = useMemo(() => entitiesOf(data), [data]);
-  const visible = entities.filter((e) => shown.has(e.kind));
+  const propsVersion = usePropsVersion();
+  const [models, setModels] = useState<Map<number, string>>(new Map());
+  useEffect(() => {
+    setModels(new Map());
+    if (!map) return;
+    for (const c of map.chunks) loadProps(c.folder);
+    if (map.propBundle) bundleModels(map.propBundle).then(setModels, () => setModels(new Map()));
+  }, [map]);
+  const entities = useMemo(() => [...entitiesOf(data), ...(map ? buildingEntities(map, models) : [])],
+    // propsVersion: the chunks' props changed
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [data, map, models, propsVersion]);
+  const visible = useMemo(() => entities.filter((e) => shown.has(e.kind)), [entities, shown]);
   const chosen = selected ? entities.find((e) => e.kind === selected.kind && e.index === selected.index) ?? null : null;
   const size = eventsSize(data);
 
@@ -124,6 +141,14 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   }, []);
 
   const move = useCallback((e: Entity, x: number, z: number, height: number) => {
+    if (e.building) {
+      // By whole tiles, keeping its place in the tile and its height
+      const b = e.building;
+      const list = propsOf(b.chunk).map((p, i) => (i === b.index ? { ...p, x: p.x + (x - e.x!) * TILE, z: p.z + (z - e.z!) * TILE } : p));
+      setProps(b.chunk, list);
+      record([PROPS + b.chunk]);
+      return;
+    }
     if (!eventsPath) return;
     // One step for undo: the position's fields at once
     const doc = documents.get(eventsPath);
@@ -136,7 +161,23 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   }, [eventsPath, record]);
 
   /** A new entity of the module's kind on a tile: the schema's defaults, then its place. */
+  const [lastProp, setLastProp] = useState<number | null>(null);
   const add = useCallback((x: number, z: number, height: number) => {
+    if (module === "building") {
+      // The last prop chosen, or the bundle's first, at the tile's center
+      const found = map ? tileAt(map, x, z, layer) : null;
+      const id = lastProp ?? [...models.keys()].sort((a, b) => a - b)[0];
+      if (!found || id === undefined) return;
+      const c = found.chunk;
+      const list = [...propsOf(c.folder), { id, x: (x - c.column * CHUNK_TILES) * TILE + TILE / 2 - CHUNK / 2, y: height,
+                                              z: (z - c.row * CHUNK_TILES) * TILE + TILE / 2 - CHUNK / 2, angle: 0 }];
+      setProps(c.folder, list);
+      record([PROPS + c.folder]);
+      // Buildings are numbered through the chunks in the map's order
+      const before = map!.chunks.slice(0, map!.chunks.indexOf(c)).reduce((n, other) => n + propsOf(other.folder).length, 0);
+      setSelected({ kind: "building", index: before + list.length - 1 });
+      return;
+    }
     if (!eventsPath || !schema || !(data instanceof Map) || module === "level") return;
     const list = KIND_LISTS[module];
     const itemSchema: Schema = schemaAt(schema, [list, 0]);
@@ -175,9 +216,16 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     documents.edit(eventsPath, [list, items.length], value);
     record([eventsPath]);
     setSelected({ kind: module, index: items.length });
-  }, [eventsPath, schema, data, module, constants, record]);
+  }, [eventsPath, schema, data, module, constants, record, map, layer, lastProp, models]);
 
   const remove = () => {
+    if (chosen?.building) {
+      const b = chosen.building;
+      setProps(b.chunk, propsOf(b.chunk).filter((_, i) => i !== b.index));
+      record([PROPS + b.chunk]);
+      setSelected(null);
+      return;
+    }
     if (!eventsPath || !chosen) return;
     // The others keep their IDs (scripts name NPCs by ID); only the later ones' places in the list move up
     documents.edit(eventsPath, [KIND_LISTS[chosen.kind], chosen.index], undefined);
@@ -233,7 +281,11 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     // Edits from elsewhere (the form's own fields) are the events file's
     const paths = from.pop() ?? (eventsPath ? [eventsPath] : []);
     (redo ? h.undo : h.redo).push(paths);
-    for (const p of paths) if (redo) documents.redo(p); else documents.undo(p);
+    for (const p of paths) {
+      if (p.startsWith(PROPS)) { if (redo) redoProps(p.slice(PROPS.length)); else undoProps(p.slice(PROPS.length)); }
+      else if (redo) documents.redo(p);
+      else documents.undo(p);
+    }
     if (map && paths.some((p) => p.endsWith(".csv"))) {
       for (const chunk of map.chunks) if (chunk.layers.some((l) => paths.includes(l.path))) await reloadLayersFromDocs(chunk);
       setMap({ ...map });
@@ -242,6 +294,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
 
   const save = useCallback(async () => {
     for (const p of documents.dirtyPaths().filter((p) => p.startsWith("res/field/"))) await documents.save(p);
+    for (const chunk of dirtyPropChunks()) await saveProps(chunk);
   }, []);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -257,7 +310,10 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     return () => window.removeEventListener("keydown", onKey, true);
   }, [save, eventsPath, step]);
 
-  const unsaved = [...docs.values()].filter((d) => d.dirty && d.path.startsWith("res/field/"));
+  const unsavedDocs = [...docs.values()].filter((d) => d.dirty && d.path.startsWith("res/field/"));
+  const unsavedProps = dirtyPropChunks();
+  const unsaved = [...unsavedDocs.map((d) => ({ path: d.path, saveError: d.saveError })),
+                   ...unsavedProps.map((c) => ({ path: `${c}/model.glb`, saveError: propsSaveError(c) }))];
   const onTile = tile ? entities.filter((e) => e.x !== null && e.z !== null && tile.x >= e.x && tile.x < e.x + e.width && tile.z >= e.z && tile.z < e.z + e.depth) : [];
   const script = world && chosen?.script ? resolveScript(world, zoneInfo, chosen.script) : null;
   const chosenHere = chosen && chosen.x !== null && chosen.z !== null
@@ -265,7 +321,8 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     : [];
   const fields = useMemo(() => (chosen ? entityFields(chosen.kind, () => setScriptOpen(true)) : undefined), [chosen?.kind]);
   const revert = async () => {
-    for (const d of unsaved) await documents.reload(d.path);
+    for (const d of unsavedDocs) await documents.reload(d.path);
+    revertProps();
     for (const h of histories.current.values()) { h.undo = []; h.redo = []; }
     if (map) {
       for (const chunk of map.chunks) await reloadLayersFromDocs(chunk);
@@ -331,6 +388,9 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                 </label>
               )}
               <label className="ow-check"><input type="checkbox" checked={showModels} onChange={(e) => setShowModels(e.target.checked)} /> Models</label>
+              <button className={preview ? "active" : ""} onClick={() => setPreview(!preview)}
+                      title="The NPCs move as their move codes move them in game (at 30 frames a second, blocked as the game blocks them, without the player); their tiles stay marked">
+                {preview ? "■ Stop" : "▶ Movement"}</button>
               <label className="ow-check" title="Drag over tiles to paint them"><input type="checkbox" checked={painting} onChange={(e) => setPainting(e.target.checked)} /> Paint</label>
               {painting && (
                 <>
@@ -356,7 +416,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
               : mapError ? <p className="ow-error ow-empty">{mapError}</p>
               : !map ? <p className="muted ow-empty">Reading the map…</p>
               : <MapView map={map} entities={visible} selected={chosen} layer={layer} overlay={overlay} showModels={showModels}
-                         painting={painting} paintType={paintMode === "type" ? PAINTS[paint].type : null}
+                         painting={painting} preview={preview} paintType={paintMode === "type" ? PAINTS[paint].type : null}
                          onSelect={select} onMove={move} onAdd={add} onPaint={onPaint} />}
             {/* Over the map, so the map's view doesn't change when it opens */}
             {scriptOpen && chosen?.script !== undefined && (
@@ -399,7 +459,11 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                   <button key={`${e.kind}${e.index}`} className="link" onClick={() => setSelected({ kind: e.kind, index: e.index })}>{e.label}{e.model ? ` (${e.model.replace(/^OBJ_CODE_/, "")})` : ""}</button>
                 )).reduce<ReactNode[]>((a, b, i) => (i ? [...a, ", ", b] : [b]), [])}</p>
               )}
-              {eventsPath && <DocForm key={`${chosen.kind}:${chosen.index}`} path={eventsPath} at={[KIND_LISTS[chosen.kind], chosen.index]} constants={constants}
+              {chosen.building ? (
+                <BuildingPanel key={`${chosen.building.chunk}:${chosen.building.index}`} entity={chosen} models={models}
+                               onChange={(p) => { setProps(chosen.building!.chunk, propsOf(chosen.building!.chunk).map((q, i) => (i === chosen.building!.index ? p : q)));
+                                                  record([PROPS + chosen.building!.chunk]); setLastProp(p.id); }} />
+              ) : eventsPath && <DocForm key={`${chosen.kind}:${chosen.index}`} path={eventsPath} at={[KIND_LISTS[chosen.kind], chosen.index]} constants={constants}
                                       hideDescription flat render={fields} onEdit={() => record([eventsPath])} />}
             </div>
           ) : (

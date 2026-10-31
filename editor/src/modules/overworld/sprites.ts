@@ -39,26 +39,29 @@ function sheetOf(model: string): Promise<Sheet | null> {
   return sheets.get(model)!;
 }
 
-/** The frame of a sheet that faces a direction, and whether it is mirrored. */
-function frameFor(count: number, direction: string | undefined): { frame: number; mirror: boolean } {
+/** The frame of a sheet that faces a direction, and whether it is mirrored; step 1 or 2 is a walking frame (the
+ * group's second or third, a two-frame group's second for both). */
+function frameFor(count: number, direction: string | undefined, step = 0): { frame: number; mirror: boolean } {
   const group = count >= 12 ? 3 : count >= 6 ? 2 : 0;
   if (!group) return { frame: 0, mirror: false };
+  const walk = step ? Math.min(step, group - 1) : 0;
   switch (direction) {
-    case "DIR_UP": return { frame: 0, mirror: false };
-    case "DIR_LEFT": return { frame: 2 * group, mirror: false };
-    case "DIR_RIGHT": return { frame: 2 * group, mirror: true };
-    default: return { frame: group, mirror: false };
+    case "DIR_UP": return { frame: walk, mirror: false };
+    case "DIR_LEFT": return { frame: 2 * group + walk, mirror: false };
+    case "DIR_RIGHT": return { frame: 2 * group + walk, mirror: true };
+    default: return { frame: group + walk, mirror: false };
   }
 }
 
-/** A model's frame facing a direction, drawn in its colors, or null for a model without a sprite. */
-export function spriteFrame(model: string, direction?: string): Promise<HTMLCanvasElement | null> {
-  const key = `${model}:${direction ?? "DIR_DOWN"}`;
+/** A model's frame facing a direction (and a walking frame, step 1 or 2), drawn in its colors, or null for a model
+ * without a sprite. */
+export function spriteFrame(model: string, direction?: string, step = 0): Promise<HTMLCanvasElement | null> {
+  const key = `${model}:${direction ?? "DIR_DOWN"}:${step}`;
   if (!frames.has(key)) {
     frames.set(key, sheetOf(model).then((sheet) => {
       if (!sheet) return null;
       const size = Math.min(sheet.height, sheet.width);
-      const { frame, mirror } = frameFor(Math.floor(sheet.width / size), direction);
+      const { frame, mirror } = frameFor(Math.floor(sheet.width / size), direction, step);
       const canvas = document.createElement("canvas");
       canvas.width = canvas.height = size;
       const ctx = canvas.getContext("2d")!;

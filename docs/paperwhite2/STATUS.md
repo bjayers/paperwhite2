@@ -2,6 +2,22 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-31: seasons' maps, the events' limit in the build, buildings and movement previews
+
+- **Seasons' map models:** `res/field/map_replacements/replacements.json` (new, `tools/data/map_replace_data.py`,
+  `a/0/1/0` packed byte for byte in the build): the chunks and matrices that the season, the version or an event
+  replace when the field loads a matrix (`MapMatrix_Patch`). The Overworld Editor's **Season** shows a seasonal
+  zone's chunks and the season area's textures; painting edits the chunks shown (Route 20's autumn chunks have their
+  own collision). Built (hack build, DSi intact); not tested in game, nothing in game changed.
+- **The events' limit:** `event_data.py` refuses a zone whose packed events pass 2,436 bytes (the game freezes
+  entering it); the editor shows the zone's load as a bar (green, yellow from 80%, red past it).
+- **Buildings:** the chunks' props, drawn, moved, added, removed and turned, saved into the chunk's GLB through the
+  server's new `PUT /api/glb-props`. Checked: the saved GLB packs (`patch_props`) with the new turn, and an unedited
+  one still packs the ROM's chunk. Not built into a ROM or tested in game yet.
+- **Movement previews** (▶ Movement): the move codes as `src/ov036/field_actor_movecode.c` runs them. Checked by eye
+  in the browser; the ROUTE_* codes that read past their table in game start over in the preview.
+- Also: a warp's link to the zone it leads to, a border while painting, the wheel on the painter's height.
+
 ## 2026-10-31: Overworld Editor fixes after the user's first test (editor only)
 
 - Mouse: left selects, drags and paints; middle orbits, right pans, the wheel zooms to the cursor. The camera stays

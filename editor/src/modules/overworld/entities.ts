@@ -8,12 +8,14 @@
 import { toPlain, type JsonValue } from "../../../shared/json.ts";
 import { TILE } from "./terrain.ts";
 
-export type EntityKind = "npc" | "proxy" | "trigger" | "warp" | "level";
+export type EntityKind = "npc" | "proxy" | "building" | "trigger" | "warp" | "level";
 
 /** The events file's list of each kind, and the field each module edits. */
 export const KIND_LISTS: Record<EntityKind, string> = {
   npc: "npcs",
   proxy: "bg_events",
+  // Not the events': the chunks' props (props.ts)
+  building: "props",
   trigger: "triggers",
   warp: "warps",
   level: "init_scripts",
@@ -22,6 +24,7 @@ export const KIND_LISTS: Record<EntityKind, string> = {
 export const KIND_NAMES: Record<EntityKind, string> = {
   npc: "NPCs",
   proxy: "Proxies",
+  building: "Buildings",
   trigger: "Triggers",
   warp: "Warps",
   level: "Level scripts",
@@ -42,6 +45,8 @@ export interface Entity {
   label: string;
   model?: string;
   direction?: string;
+  /** An NPC's move code. */
+  movement?: string;
   /** An NPC's leash, in tiles each way. */
   leash?: { x: number; z: number };
   /** A trainer's sight, in tiles. */
@@ -49,6 +54,9 @@ export interface Entity {
   script?: number;
   /** A warp's zone (its file's name) and the warp of it that it leads to. */
   target?: { zone: string; warp: number };
+  /** A building's chunk folder, its place in the chunk's props, its prop ID, its model's folder (null when the area's
+   * bundle has none of that ID), its exact place in global units and its turn in degrees. */
+  building?: { chunk: string; index: number; id: number; model: string | null; ux: number; uy: number; uz: number; angle: number };
 }
 
 type Rec = Record<string, unknown>;
@@ -87,6 +95,7 @@ export function entitiesOf(data: JsonValue | null): Entity[] {
     out.push({
       kind: "npc", index, x: g ? num(g.x) : null, z: g ? num(g.z) : null, y: g ? num(g.y) / 4096 : 0, width: 1, depth: 1,
       label: `NPC ${num(n.id, index)}`, model: String(n.model ?? ""), direction: String(n.direction ?? "DIR_DOWN"),
+      movement: typeof n.movement === "string" ? n.movement : undefined,
       leash: area ? { x: num(area.width), z: num(area.height) } : undefined,
       sight: /TRAINER/.test(type) ? num(params[0]) : undefined, script: num(n.script),
     });

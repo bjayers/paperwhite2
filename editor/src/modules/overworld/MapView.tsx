@@ -9,7 +9,9 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { directionStep, type Entity } from "./entities.ts";
+import { FRAME_SECONDS, movers, type World } from "./movement.ts";
 import { spriteFrame } from "./sprites.ts";
 import { CHUNK, CHUNK_TILES, TILE, TILE_FLAG_COLLISION, TILE_FLAG_ENCOUNT, TILE_FLAG_WATER, standingOn, tileFlags, type ZoneMap } from "./terrain.ts";
 
@@ -27,13 +29,31 @@ export interface MapViewProps {
   painting: boolean;
   /** The tile type being painted, to color the tiles as the stroke passes; null to mark them yellow (a height). */
   paintType: number | null;
+  /** The NPCs move as their move codes move them in game, from their tiles, which stay marked. */
+  preview: boolean;
   onSelect(entity: Entity | null, tile: { x: number; z: number } | null): void;
   onMove(entity: Entity, x: number, z: number, height: number): void;
   onAdd(x: number, z: number, height: number): void;
   onPaint(tiles: { x: number; z: number }[]): void;
 }
 
-const KIND_COLORS: Record<string, number> = { npc: 0x3ac7e0, proxy: 0xf0c330, trigger: 0xf08a30, warp: 0xd040d0, level: 0x888888 };
+const KIND_COLORS: Record<string, number> = { npc: 0x3ac7e0, proxy: 0xf0c330, building: 0x50d070, trigger: 0xf08a30, warp: 0xd040d0, level: 0x888888 };
+
+/** A prop model's scene, read once and cloned for each placement. */
+const propModels = new Map<string, Promise<THREE.Object3D | null>>();
+const propLoader = new GLTFLoader();
+function propModel(folder: string): Promise<THREE.Object3D | null> {
+  if (!propModels.has(folder)) {
+    propModels.set(folder, propLoader.loadAsync(`/${folder}/model.glb`).then((gltf) => {
+      gltf.scene.traverse((o) => {
+        const mesh = o as THREE.Mesh;
+        if (mesh.isMesh) for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) { (m as THREE.MeshStandardMaterial).alphaTest = 0.5; m.side = THREE.DoubleSide; }
+      });
+      return gltf.scene;
+    }, () => null));
+  }
+  return propModels.get(folder)!;
+}
 
 /** A loader that draws a chunk with the zone's texture set in its season: each texture the set has (by its file's
  * name) from there, the others as the model names them. */
@@ -46,17 +66,23 @@ function chunkLoader(map: ZoneMap): GLTFLoader {
   return new GLTFLoader(manager);
 }
 const textures = new Map<string, Promise<THREE.Texture | null>>();
+/** The textures already read, for the preview's frames, which change every few frames. */
+const readyTextures = new Map<string, THREE.Texture | null>();
 
-/** A model's frame facing a direction as a texture. */
-function spriteTexture(model: string, direction?: string): Promise<THREE.Texture | null> {
-  const key = `${model}:${direction}`;
+/** A model's frame facing a direction (step 1 or 2 mid-walk) as a texture. */
+function spriteTexture(model: string, direction?: string, step = 0): Promise<THREE.Texture | null> {
+  const key = `${model}:${direction}:${step}`;
   if (!textures.has(key)) {
-    textures.set(key, spriteFrame(model, direction).then((canvas) => {
-      if (!canvas) return null;
+    textures.set(key, spriteFrame(model, direction, step).then((canvas) => {
+      if (!canvas) {
+        readyTextures.set(key, null);
+        return null;
+      }
       const texture = new THREE.CanvasTexture(canvas);
       texture.magFilter = THREE.NearestFilter;
       texture.minFilter = THREE.NearestFilter;
       texture.colorSpace = THREE.SRGBColorSpace;
+      readyTextures.set(key, texture);
       return texture;
     }));
   }
@@ -71,6 +97,8 @@ function tileColor(type: number, mode: OverlayMode): THREE.Color {
   if (flags & TILE_FLAG_ENCOUNT) return new THREE.Color(0x9ad040);
   return new THREE.Color(0xd8d8d8);
 }
+
+const same = (a: unknown[], b: unknown[]) => a.length === b.length && a.every((v, i) => v === b[i]);
 
 class MapScene {
   renderer: THREE.WebGLRenderer;
@@ -89,6 +117,13 @@ class MapScene {
   paintingNow = false;
   painted = new Map<string, { x: number; z: number }>();
   frame = 0;
+  /** The NPCs' sprites, and the preview's movers and time. */
+  npcSprites = new Map<Entity, THREE.Sprite>();
+  world: World | null = null;
+  previewTime = 0;
+  lastFrame = 0;
+  overlayKey: unknown[] = [];
+  marksKey: unknown[] = [];
   loadedZone: string | null = null;
   /** The zone and season whose models are loaded. */
   loadedKey: string | null = null;
@@ -122,6 +157,7 @@ class MapScene {
     const loop = () => {
       this.frame = requestAnimationFrame(loop);
       this.controls.update();
+      this.stepPreview();
       this.renderer.render(this.scene, this.camera);
     };
     loop();
@@ -149,8 +185,18 @@ class MapScene {
     const modelsChanged = props.showModels !== this.loadedModels;
     this.props = props;
     if (seasonChanged || modelsChanged) this.loadChunks(zoneChanged);
-    this.buildOverlay();
-    this.buildMarks();
+    // Only what changed: the overlay with the terrain or its look, the marks with the entities or the selection
+    const overlayKey = [props.map, props.layer, props.overlay];
+    if (!same(overlayKey, this.overlayKey)) this.buildOverlay();
+    const marksKey = [props.map, props.entities, props.selected, props.layer, props.showModels];
+    if (!same(marksKey, this.marksKey)) this.buildMarks();
+    this.overlayKey = overlayKey;
+    this.marksKey = marksKey;
+    // The preview starts from the NPCs' tiles, again whenever they change
+    if (!props.preview) {
+      if (this.world) this.buildMarks();
+      this.world = null;
+    } else if (!this.world || this.previewEntities !== props.entities) this.startPreview();
   }
 
   /** Each chunk's GLB at its cell: x east, z south, the cell's center its origin. */
@@ -221,10 +267,43 @@ class MapScene {
     }
   }
 
+  previewEntities: Entity[] | null = null;
+
+  startPreview() {
+    this.previewEntities = this.props.entities;
+    this.world = movers(this.props.map, this.props.entities);
+    this.previewTime = 0;
+    this.lastFrame = performance.now();
+  }
+
+  /** The preview's frames since the last drawing, at 30 a second, and the sprites where the movers are. */
+  stepPreview() {
+    const now = performance.now();
+    const elapsed = Math.min(0.25, (now - this.lastFrame) / 1000);
+    this.lastFrame = now;
+    if (!this.world) return;
+    this.previewTime += elapsed;
+    while (this.previewTime >= FRAME_SECONDS) {
+      this.world.tick();
+      this.previewTime -= FRAME_SECONDS;
+    }
+    for (const m of this.world.movers) {
+      const sprite = this.npcSprites.get(m.entity);
+      if (!sprite || !m.entity.model) continue;
+      const at = m.place();
+      sprite.position.set((at.x + 0.5) * TILE, m.y + 12, (at.z + 0.5) * TILE);
+      const key = `${m.entity.model}:${m.dir}:${at.frame}`;
+      const texture = readyTextures.get(key);
+      if (texture === undefined) spriteTexture(m.entity.model, m.dir, at.frame);
+      else if (texture && sprite.material.map !== texture) { sprite.material.map = texture; sprite.material.needsUpdate = true; }
+    }
+  }
+
   buildMarks() {
     const { entities, selected, map, layer } = this.props;
     this.marks.clear();
     this.entityMeshes = [];
+    this.npcSprites.clear();
     for (const e of entities) {
       if (e.x === null || e.z === null) continue;
       const isSelected = selected?.kind === e.kind && selected.index === e.index;
@@ -233,6 +312,10 @@ class MapScene {
       // On the other layer: faded, still to be clicked
       const fade = stands !== null && stands.layer !== Math.min(layer, this.layersAt(e.x, e.z) - 1) ? 0.35 : 1;
       const color = KIND_COLORS[e.kind];
+      if (e.building) {
+        this.addBuilding(e, isSelected);
+        continue;
+      }
       // Its tiles: a box the size of its area
       const box = new THREE.Mesh(
         new THREE.BoxGeometry(e.width * TILE - 1, isSelected ? 4 : 2, e.depth * TILE - 1),
@@ -253,6 +336,7 @@ class MapScene {
         if (e.model) spriteTexture(e.model, e.direction).then((t) => { if (t) { sprite.material.map = t; sprite.material.needsUpdate = true; sprite.visible = true; } });
         this.marks.add(sprite);
         this.entityMeshes.push({ object: sprite, entity: e });
+        this.npcSprites.set(e, sprite);
         // Its facing: a small arrow on its tile
         const [dx, dz] = directionStep(e.direction);
         const arrow = new THREE.ArrowHelper(new THREE.Vector3(dx, 0, dz), new THREE.Vector3((e.x + 0.5) * TILE, ground + 3, (e.z + 0.5) * TILE), 12, 0xffffff, 5, 4);
@@ -280,6 +364,33 @@ class MapScene {
     }
   }
 
+  /** A building: its prop's model where the chunk places it, turned, and a square at its origin. */
+  addBuilding(e: Entity, isSelected: boolean) {
+    const b = e.building!;
+    const base = new THREE.Mesh(new THREE.BoxGeometry(TILE - 2, isSelected ? 4 : 2, TILE - 2),
+      new THREE.MeshBasicMaterial({ color: isSelected ? 0xffffff : KIND_COLORS.building, transparent: true, opacity: isSelected ? 0.85 : 0.6, depthTest: false }));
+    base.position.set(b.ux, b.uy + 1.5, b.uz);
+    base.renderOrder = 3;
+    base.userData.base = base.position.clone();
+    this.marks.add(base);
+    this.entityMeshes.push({ object: base, entity: e });
+    if (!b.model || !this.props.showModels) return;
+    const holder = new THREE.Group();
+    holder.position.set(b.ux, b.uy, b.uz);
+    holder.rotation.y = (b.angle * Math.PI) / 180;
+    holder.userData.base = holder.position.clone();
+    this.marks.add(holder);
+    this.entityMeshes.push({ object: holder, entity: e });
+    const marks = this.marks;
+    propModel(b.model).then((scene) => {
+      if (!scene || holder.parent !== marks) return;
+      // The props are skinned meshes: their copies need their own bones
+      const copy = cloneSkinned(scene);
+      if (isSelected) copy.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh) m.material = (Array.isArray(m.material) ? m.material : [m.material]).map((x) => { const c = x.clone() as THREE.MeshStandardMaterial; c.emissive = new THREE.Color(0x335533); return c; }); });
+      holder.add(copy);
+    });
+  }
+
   /** How many layers the chunk under a tile has. */
   layersAt(x: number, z: number): number {
     const chunk = this.props.map.chunks.find((c) => c.column === Math.floor(x / CHUNK_TILES) && c.row === Math.floor(z / CHUNK_TILES));
@@ -303,8 +414,14 @@ class MapScene {
     const rect = this.renderer.domElement.getBoundingClientRect();
     const pointer = new THREE.Vector2(((ev.clientX - rect.left) / rect.width) * 2 - 1, -((ev.clientY - rect.top) / rect.height) * 2 + 1);
     this.raycaster.setFromCamera(pointer, this.camera);
-    const hitEntity = this.raycaster.intersectObjects(this.entityMeshes.map((m) => m.object), false)[0];
-    const entity = hitEntity ? this.entityMeshes.find((m) => m.object === hitEntity.object)?.entity ?? null : null;
+    // A building's model is a group of meshes: a hit on any of them is the building's
+    const hitEntity = this.raycaster.intersectObjects(this.entityMeshes.map((m) => m.object), true)[0];
+    let hitObject: THREE.Object3D | null = hitEntity?.object ?? null;
+    let entity: Entity | null = null;
+    while (hitObject && !entity) {
+      entity = this.entityMeshes.find((m) => m.object === hitObject)?.entity ?? null;
+      hitObject = hitObject.parent;
+    }
     let tile: { x: number; z: number; h: number } | null = null;
     for (const { mesh, tiles } of this.tileMeshes) {
       const hit = this.raycaster.intersectObject(mesh, false)[0];
@@ -353,6 +470,12 @@ class MapScene {
     const mark = this.entityMeshes.filter((m) => m.entity === this.dragging);
     for (const m of mark) {
       const e = m.entity;
+      // A building moves by whole tiles from where it is, keeping its place in its tile
+      if (e.building && m.object.userData.base) {
+        const base = m.object.userData.base as THREE.Vector3;
+        m.object.position.set(base.x + (tile.x - e.x!) * TILE, base.y, base.z + (tile.z - e.z!) * TILE);
+        continue;
+      }
       m.object.position.x = (tile.x + e.width / 2) * TILE;
       m.object.position.z = (tile.z + e.depth / 2) * TILE;
       m.object.position.y = tile.h + (m.object instanceof THREE.Sprite ? 12 : 1.5);

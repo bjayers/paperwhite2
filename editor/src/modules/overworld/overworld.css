@@ -32,7 +32,8 @@
 .ow-side { border-left: 1px solid var(--border); overflow-y: auto; min-width: 0; }
 .ow-panel { padding: 10px 12px 40px; }
 .ow-panel h4 { margin: 12px 0 4px; font-size: 13px; }
-.ow-panel-head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.ow-panel-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 6px; }
+.ow-panel-head button { white-space: nowrap; }
 .ow-panel .schema-form { padding: 0; }
 .ow-note { font-size: 13px; margin: 4px 0; }
 .ow-list { display: flex; flex-direction: column; }
@@ -67,3 +68,10 @@
 .ow-load.near .ow-load-fill { background: #d4a72c; }
 .ow-load.over .ow-load-fill { background: #e5534b; }
 .ow-load.over .ow-load-text { color: var(--error); font-weight: 600; }
+
+/* A building's panel */
+.ow-panel .row-control.ow-xyz { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 6px; }
+.ow-xyz label { display: inline-flex; align-items: center; gap: 4px; }
+.ow-number-box { width: 72px; }
+.ow-xyz button.active { border-color: var(--accent); background: var(--selected); }
+.ow-xyz .hint { flex-basis: 100%; }

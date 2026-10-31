@@ -11,6 +11,7 @@ import { WRITE_HEADER, type DataFile, type ProjectInfo, type SaveRequest, type S
 import { Builder } from "./build.ts";
 import { narcMember } from "./narc.ts";
 import { Git } from "./git.ts";
+import { setGlbProps, type GlbProp } from "./glb.ts";
 import { Project, versionOf } from "./project.ts";
 import { Python } from "./python.ts";
 import { loadSettings } from "./settings.ts";
@@ -250,6 +251,23 @@ const routes: Record<string, Handler> = {
       return error(res, 500, (e as Error).message);
     }
     json(res, { ok: true, version: versionOf(body.text) } satisfies SaveResult);
+  },
+  // Writes a map chunk's props (the Overworld Editor's buildings) into its GLB's prop nodes, which the build packs
+  "PUT /api/glb-props": async (req, res) => {
+    const body = (await readJson(req)) as { path: string; props: GlbProp[] };
+    const path = project.checkPath(body.path ?? "");
+    if (!path || !/^res\/field\/maps\/models\/[a-z0-9_]+\/model\.glb$/.test(path) || !existsSync(project.abs(path)))
+      return error(res, 400, "Name a map model's model.glb");
+    const props = body.props ?? [];
+    const finite = (v: unknown, n: number) => Array.isArray(v) && v.length === n && v.every((x) => typeof x === "number" && Number.isFinite(x));
+    if (!props.every((p) => Number.isInteger(p.id) && p.id >= 0 && p.id <= 65535 && finite(p.translation, 3) && finite(p.rotation, 4)))
+      return error(res, 400, "Each prop needs an ID from 0 to 65535, a translation and a rotation");
+    try {
+      await project.writeAtomic(path, setGlbProps(readFileSync(project.abs(path)), props));
+    } catch (e) {
+      return error(res, 500, (e as Error).message);
+    }
+    json(res, { ok: true });
   },
   // Removes a data file that a specialty editor no longer needs: only a species' encounter file (one taken out of
   // the wild), so nothing else can be removed from here

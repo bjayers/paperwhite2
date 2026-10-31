@@ -167,7 +167,7 @@ export class Project {
 
   /** Writes beside the file, lets check look at that copy, then renames it over the file, so a crash or a failed
    * check never leaves half a file or a bad one. */
-  async writeAtomic(path: string, text: string, check?: (temp: string) => Promise<void>) {
+  async writeAtomic(path: string, text: string | Buffer, check?: (temp: string) => Promise<void>) {
     const target = this.abs(path);
     const temp = join(dirname(target), `.${posix.basename(path)}.editor-${process.pid}.tmp`);
     writeFileSync(temp, text);

@@ -76,6 +76,9 @@ export const api = {
   /** Every file of a kind of data, parsed; keys limits each to those top-level keys. */
   data: (schema: string, keys?: string[]) =>
     request<DataFile[]>("GET", `/api/data?schema=${encodeURIComponent(schema)}${keys ? `&keys=${keys.join(",")}` : ""}`),
+  /** Writes a map chunk's props (nodes bw2_prop_*) into its model.glb. */
+  glbProps: (path: string, props: { id: number; translation: number[]; rotation: number[] }[]) =>
+    request<{ ok: boolean }>("PUT", "/api/glb-props", { path, props }),
   /** The lines of the files under res/ that a glob names which match a regular expression. */
   scan: (glob: string, pattern: string, options: { ignoreCase?: boolean; limit?: number } = {}) =>
     request<ScanMatch[]>("GET", `/api/scan?glob=${encodeURIComponent(glob)}&pattern=${encodeURIComponent(pattern)}` +
