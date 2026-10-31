@@ -203,6 +203,37 @@ void PaperWhite2_HabitatDex_Fill(HabitatDex *dex, u32 file, u32 kind, PokeDexSav
     }
 }
 
+BOOL PaperWhite2_HabitatDex_HasKind(HabitatDex *dex, u32 file, u32 kind) {
+    u32 count, i, j;
+    const HabitatDexEntry *entries = HabitatDex_GetEntries(dex, file, &count);
+
+    if (kind >= KIND_COUNT) {
+        return FALSE;
+    }
+    for (i = 0; i < count; i++) {
+        for (j = 0; j < KIND_METHOD_MAX; j++) {
+            if (sKindMethods[kind][j] == entries[i].method) {
+                return TRUE;
+            }
+        }
+    }
+    return FALSE;
+}
+
+u32 PaperWhite2_HabitatDex_GetSpecies(HabitatDex *dex, u16 *species, u32 max) {
+    u32 count = 0;
+    u32 i, j;
+
+    for (i = 0; i < dex->count && count < max; i++) {
+        for (j = 0; j < count && species[j] != dex->list[i]->species; j++) {
+        }
+        if (j == count) {
+            species[count++] = dex->list[i]->species;
+        }
+    }
+    return count;
+}
+
 const HabitatDexEntry *PaperWhite2_HabitatDex_GetCell(HabitatDex *dex, u32 cell) {
     u32 index = dex->page * HABITAT_DEX_PAGE_SIZE + cell;
 

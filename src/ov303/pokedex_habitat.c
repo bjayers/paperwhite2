@@ -505,6 +505,14 @@ static void PokedexHabitat_SeqList(PokedexHabitatWork *wk) {
     PokedexHabitatArea *area = PokedexHabitat_GetArea(wk);
     int hit = GFL_HIDGetTouchPressedRect(sPokedexHabitatListTouchRects);
 
+#ifdef PAPERWHITE2
+    // Paper White 2: a touch on the text box's tabs and filters, before the buttons' table, whose search runs on into
+    // the data after it (the BUG at the tables) and so never says that nothing was touched
+    if (PokedexHabitat_TouchTextBox(wk)) {
+        return;
+    }
+#endif
+
     switch (hit) {
     case LIST_TOUCH_SHORTCUT:
         GFL_SndSEPlay(SEQ_SE_SYS_07);
@@ -584,12 +592,6 @@ static void PokedexHabitat_SeqList(PokedexHabitatWork *wk) {
         }
         break;
     case TOUCH_RECT_NONE:
-#ifdef PAPERWHITE2
-        // Paper White 2: a touch on the text box's tabs and filters
-        if (PokedexHabitat_TouchTextBox(wk)) {
-            break;
-        }
-#endif
         PokedexHabitat_ListKeys(wk);
         break;
     }
@@ -847,6 +849,15 @@ static void PokedexHabitat_SeqButton(PokedexHabitatWork *wk) {
             if (species >= 0) {
                 PokeDex_SetLastSpecies(wk->pokedex, species);
             }
+#ifdef PAPERWHITE2
+            // Paper White 2: the Pokédex's page browses the Habitat Dex's list, which has the chosen Pokémon
+            {
+                u16 list[HABITAT_DEX_LIST_MAX];
+
+                PaperWhite2_HabitatDex_SetInfoList(list,
+                                                   PaperWhite2_HabitatDex_GetSpecies(&wk->dex, list, NELEMS(list)));
+            }
+#endif
             ClActor_SetSequence(actor, 29);
             GFL_SndSEPlay(SEQ_SE_DECIDE1);
         }
@@ -1641,6 +1652,16 @@ static void PokedexHabitat_CheckTypes(PokedexHabitatWork *wk) {
             wk->typeState[type] = AWARD_NONE;
         }
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: an area shows each kind of habitat the Habitat Dex has Pokémon for, past the original list's 30
+    for (type = 0; type < TYPE_COUNT; type++) {
+        if (PaperWhite2_HabitatDex_HasKind(
+                &wk->dex, sPokedexHabitatAreas[PokedexHabitat_GetHabitatIndex(PokedexHabitat_GetArea(wk)->zone)].file,
+                type)) {
+            wk->typeShown[type] = TRUE;
+        }
+    }
+#endif
     if (wk->areaCount <= 1) {
         ClActor_SetVisible(PokedexHabitatGraphic_GetActor(&wk->graphic, POKEDEX_HABITAT_OBJ_AREA_UP), FALSE);
         ClActor_SetVisible(PokedexHabitatGraphic_GetActor(&wk->graphic, POKEDEX_HABITAT_OBJ_AREA_DOWN), FALSE);

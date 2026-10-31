@@ -5,6 +5,8 @@ import { memo, useMemo, useState, type ReactNode } from "react";
 import { JsonFloat, numberOf, typeOf, type JsonMap, type JsonPath, type JsonValue } from "../../../shared/json.ts";
 import { resolve, validate, type Constants, type Schema, type SchemaError } from "../../../shared/schema.ts";
 import { SearchSelect, type Option } from "../../shell/SearchSelect.tsx";
+import { FOLLOWER_WORDS, fromFollowerText } from "../text/message.ts";
+import { TextBox } from "../text/TextBox.tsx";
 
 export interface FormContext {
   root: Schema;
@@ -168,6 +170,18 @@ function StringField({ schema, value, path, ctx }: { schema: Schema; value: Json
   }
   const text = typeof value === "string" ? value : "";
   const long = text.length > 60 || text.includes("\n");
+  // A message (x-message: "game" for the text files' codes, "follower" for the follower's dialogue's): its editor and
+  // the talk window's preview under it
+  const message = schema["x-message"];
+  if (message === "game" || message === "follower") {
+    return (
+      <div className="message-field">
+        <textarea className={invalid ? "invalid" : ""} value={text} rows={Math.max(2, Math.min(8, text.split("\n").length + 1))}
+                  onChange={(e) => ctx.edit(path, e.target.value)} />
+        <TextBox text={message === "follower" ? fromFollowerText(text) : text} words={message === "follower" ? FOLLOWER_WORDS : undefined} />
+      </div>
+    );
+  }
   return long ? (
     <textarea className={invalid ? "invalid" : ""} value={text} rows={Math.min(8, text.split("\n").length + 1)}
               onChange={(e) => ctx.edit(path, e.target.value)} />

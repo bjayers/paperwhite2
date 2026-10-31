@@ -527,7 +527,7 @@ export function PaletteEditor({ requested }: { requested?: { path: string } }) {
               <h3>Colors <span className="muted">{colors.length}</span></h3>
               <Swatches colors={shown} selected={selected} primary={primary} used={used} onSelect={(i, e) => select(i, e)} />
               <p className="muted pal-hint">Click a color; Shift+click for a range, Ctrl+click to add one.
-                {used && " Dimmed colors aren't in the image."}</p>
+                {used && " A ring in a color's corner: the image doesn't use it."}</p>
               {colors[primary] && <ColorEditor color={shown[primary]} index={primary} onChange={(c, g) => setOne(primary, c, g)} />}
 
               <div className="pal-tools">

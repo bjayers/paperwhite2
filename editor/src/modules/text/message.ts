@@ -77,3 +77,14 @@ export function toEditable(text: string): string {
 export function fromEditable(text: string): string {
   return text.replace(/\r?\n/g, "\\n");
 }
+
+/** The follower's dialogue's words (docs/paperwhite2/following-pokemon.md): the word set's buffers 0 to 3. */
+export const FOLLOWER_WORDS: Record<number, string> = { 0: "Snivy", 1: "Rosa", 2: "Route 20", 3: "Oran Berry" };
+
+/** The follower's dialogue's message (Frost's codes: [N] a new line, [L] the next line after A, [C] a new page after A,
+ * and {nickname}, {player}, {location}, {item}) as the game's codes, as following_dialogue.py packs it. */
+export function fromFollowerText(text: string): string {
+  return text.replace(/\[N\]/g, "\n").replace(/\[L\]/g, "{be01}\n").replace(/\[C\]/g, "{be00}\n")
+    .replace(/\{nickname\}/g, "{0100:0}").replace(/\{player\}/g, "{0100:1}")
+    .replace(/\{location\}/g, "{0100:2}").replace(/\{item\}/g, "{0100:3}");
+}

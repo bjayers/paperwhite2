@@ -17,6 +17,9 @@
 #include "save/save_control.h"
 #include "system/game_data.h"
 #include "system/wipe.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/habitat_dex.h"
+#endif
 
 // What the Pokédex's overlays share: the list of the species, and the habitat lists
 
@@ -202,6 +205,10 @@ ClActor *PokedexCommon_CreateActor(ClActUnit *unit, const PokedexActorTemplate *
 }
 
 u32 PokedexCommon_LoadHabitatSpecies(PokeDexSave *pokedex, PokedexHabitatSave *habitat, u16 **outList, HeapID heapId) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the Habitat Dex's list that its Info left, when it did (paperwhite2/habitat_dex.h)
+    u32 hackCount = PaperWhite2_HabitatDex_TakeInfoList(outList, heapId);
+#endif
     u16 total;
     PokedexHabitatFile file;
     u16 zone;
@@ -213,6 +220,11 @@ u32 PokedexCommon_LoadHabitatSpecies(PokeDexSave *pokedex, PokedexHabitatSave *h
     u32 i;
     u32 n = 0;
 
+#ifdef PAPERWHITE2
+    if (hackCount != 0) {
+        return hackCount;
+    }
+#endif
     total = 0;
     zone = PokedexHabitatSave_GetZone(habitat);
     type = PokedexHabitatSave_GetType(habitat);

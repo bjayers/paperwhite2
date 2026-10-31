@@ -29,7 +29,7 @@
     "$defs": {
         "name": { "type": "string", "pattern": "^[ -~]{1,20}$", "description": "The rule's name in the debug menu" },
         "message": {
-            "type": "string", "minLength": 1,
+            "type": "string", "minLength": 1, "x-message": "follower",
             "description": "Text with [N] a new line, [L] the next line after A, [C] a new page after A, and {nickname}, {player}, {location} (the zone's place name) and {item} (the step's gift). Any length: it runs over pages"
         },
         "emote": { "type": "string", "description": "A bubble's name of interactions.json: heart, happy, sad, angry, note, poison, ellipsis" },

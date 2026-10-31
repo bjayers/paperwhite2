@@ -196,7 +196,7 @@ textarea.raw {
 
 .schema-form { padding: 12px 20px 48px; max-width: 1100px; }
 .schema-description { color: var(--muted); margin: 0 0 12px; }
-.object { display: flex; flex-direction: column; }
+.object { display: flex; flex-direction: column; container-type: inline-size; }
 .row {
   display: grid; grid-template-columns: minmax(140px, 220px) 1fr; gap: 12px; align-items: start;
   padding: 5px 0; border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
@@ -208,6 +208,12 @@ textarea.raw {
 .row:hover .row-label button { opacity: 1; }
 .row-control { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .row-control > input, .row-control > select, .row-control > textarea, .row-control > .search-select { max-width: 460px; }
+/* A form in a narrow place (a nested object, a specialty editor's column): each label over its field, so the field
+   keeps its width rather than shrinking beside the label */
+@container (max-width: 460px) {
+  .row { grid-template-columns: 1fr; gap: 2px; }
+  .row-label { padding-top: 0; }
+}
 .hint { font-size: 12px; color: var(--muted); }
 .field-error { font-size: 12px; color: var(--error); }
 .group { border: 1px solid var(--border); border-radius: 8px; padding: 0 10px; background: var(--panel-2); }
@@ -216,11 +222,12 @@ textarea.raw {
 .group .row { border-bottom-color: color-mix(in srgb, var(--border) 60%, transparent); }
 .add-fields { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 0; }
 .checkbox { display: inline-flex; align-items: center; gap: 6px; }
-.number { display: inline-flex; align-items: center; gap: 8px; }
-.number input { width: 140px; }
+.number { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
+.number input { width: 140px; min-width: 90px; flex: none; }
 .range { font-size: 12px; }
 .multi-type, .any-of { display: flex; gap: 6px; align-items: flex-start; }
-.multi-type > :last-child, .any-of > :last-child { flex: 1; min-width: 200px; }
+.multi-type > :last-child, .any-of > :last-child { flex: 1; min-width: 160px; }
+.multi-type, .any-of { flex-wrap: wrap; }
 .type-switch { font-size: 12px; padding: 3px 4px; color: var(--muted); }
 .mismatch { color: var(--error); }
 
@@ -234,7 +241,7 @@ textarea.raw {
 .array-footer { display: flex; gap: 10px; align-items: center; padding-left: 36px; }
 
 .search-select { position: relative; }
-.search-select input { width: 100%; }
+.search-select input { width: 100%; min-width: 120px; }
 .search-select.invalid input { border-color: var(--error); background: var(--error-soft); }
 .search-select-list {
   position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 2px); max-height: 300px; overflow-y: auto;
@@ -316,3 +323,7 @@ textarea.raw {
 /* A species' party icon (src/modules/pokemon/SpeciesIcon.tsx), shared by the editors that list Pokémon */
 .species-icon { display: inline-block; overflow: hidden; flex: none; vertical-align: middle; image-rendering: pixelated; }
 .species-icon img { image-rendering: pixelated; display: block; }
+
+/* A message field (x-message): its text over the talk window's preview */
+.message-field { display: flex; flex-direction: column; gap: 4px; max-width: 540px; }
+.message-field textarea { font-family: var(--mono); font-size: 13px; }

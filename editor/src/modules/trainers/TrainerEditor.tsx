@@ -17,6 +17,9 @@ import { constantLabel, constantOptions } from "../schema-form/form.tsx";
 import { DocForm, useHeld } from "../followers/DocForm.tsx";
 import { SpeciesIcon } from "../pokemon/SpeciesIcon.tsx";
 import { TextBox } from "../text/TextBox.tsx";
+import type { ScanMatch } from "../../../shared/api.ts";
+import { navigate } from "../../navigation.ts";
+import { TRAINER_SCRIPT, TRAINER_SCRIPT_SECOND, eventLabel, loadWorld, scriptConstantOf, zoneLabel, type World } from "../world/world.ts";
 
 const SCHEMA = "res/trainers/data/trainer.schema.json";
 const DATA = "res/trainers/data";
@@ -27,6 +30,45 @@ interface Listed {
   name: string;
   cls: string;
   levels: number[];
+  /** Its TRAINER_* constant and number. */
+  constant: string;
+  number: number;
+}
+
+/** Where a trainer appears: an NPC that battles (script 3000 + its number, or 5000 + for the second of a pair), or a
+ * script that starts its battle (CallTrainerBattle), in the zones that use the script's file. */
+interface Place {
+  zone: string;
+  how: string;
+  /** The script file, for a battle a script starts. */
+  script?: string;
+}
+
+const LEADERS = /^TRAINER_CLASS_(LEADER|GYM_LEADER)/;
+const ELITE = /^TRAINER_CLASS_(ELITE_FOUR|CHAMPION|PKMN_TRAINER_ALDER|PKMN_TRAINER_IRIS)/;
+
+function findPlaces(world: World, battles: ScanMatch[], list: Listed[]): Map<string, Place[]> {
+  const byNumber = new Map(list.map((t) => [t.number, t]));
+  const byConstant = new Map(list.map((t) => [t.constant, t]));
+  const out = new Map<string, Place[]>();
+  const add = (t: Listed | undefined, place: Place) => {
+    if (!t) return;
+    const places = out.get(t.path) ?? [];
+    if (!places.some((p) => p.zone === place.zone && p.how === place.how)) places.push(place);
+    out.set(t.path, places);
+  };
+  for (const e of world.events) {
+    if (e.kind !== "npc" || e.script < TRAINER_SCRIPT) continue;
+    const n = e.script >= TRAINER_SCRIPT_SECOND ? e.script - TRAINER_SCRIPT_SECOND : e.script - TRAINER_SCRIPT;
+    add(byNumber.get(n), { zone: e.zone, how: `${eventLabel(e)}${e.script >= TRAINER_SCRIPT_SECOND ? ", the pair's second" : ""}` });
+  }
+  for (const b of battles) {
+    const constant = /\b(TRAINER_\w+)/.exec(b.text)?.[1];
+    const t = constant ? byConstant.get(constant) : undefined;
+    const file = scriptConstantOf(b.path);
+    for (const z of world.zones.filter((z) => z.scripts === file)) add(t, { zone: z.name, how: `a script's battle (line ${b.line})`, script: b.path });
+  }
+  return out;
 }
 
 function ClassSprite({ cls }: { cls: string }) {
@@ -122,7 +164,13 @@ function PartyCard({ path, index, mon, constants, withItems, withMoves, count }:
   );
 }
 
-function TrainerPage({ path, constants }: { path: string; constants: Constants }) {
+function TrainerPage({ path, constants, places, world, open }: {
+  path: string;
+  constants: Constants;
+  places: Place[] | undefined;
+  world: World | null;
+  open(path: string): void;
+}) {
   const { data, error } = useHeld(path);
   if (error) return <p className="trn-error">{error}</p>;
   if (!(data instanceof Map)) return <p className="muted">Reading…</p>;
@@ -160,6 +208,22 @@ function TrainerPage({ path, constants }: { path: string; constants: Constants }
           <p className="muted trn-note">{path}</p>
         </div>
       </div>
+      <section className="trn-card">
+        <h3>Where it appears</h3>
+        {!world ? <p className="muted trn-note">Reading the zones…</p> : places?.length ? (
+          <ul className="trn-places">
+            {places.map((p, i) => (
+              <li key={i}>
+                <button className="link" onClick={() => open(world.byName.get(p.zone)?.path ?? `res/field/zones/${p.zone}.json`)}>{zoneLabel(p.zone)}</button>
+                <span className="muted">: {p.how}</span>
+                {p.script && <> · <button className="link" onClick={() => navigate("scripts", { file: p.script! })}>the script</button></>}
+                {!p.script && <> · <button className="link" onClick={() => open(`res/field/events/${p.zone}.json`)}>its events</button></>}
+              </li>
+            ))}
+          </ul>
+        ) : <p className="muted trn-note">No NPC battles it and no script starts its battle.</p>}
+        <p className="muted trn-note">The NPC editor will link here once it exists.</p>
+      </section>
       <section className="trn-card">
         <h3>The trainer</h3>
         <div className="trn-settings">
@@ -204,22 +268,42 @@ function TrainerPage({ path, constants }: { path: string; constants: Constants }
   );
 }
 
-export function TrainerEditor({ constants }: ToolProps) {
+export function TrainerEditor({ constants, open }: ToolProps) {
   const [list, setList] = useState<Listed[] | null>(null);
   const [filter, setFilter] = useState("");
+  const [kind, setKind] = useState<"all" | "leaders" | "elite">("all");
+  const [byArea, setByArea] = useState(false);
+  const [world, setWorld] = useState<World | null>(null);
+  const [battles, setBattles] = useState<ScanMatch[]>([]);
+  useEffect(() => {
+    if (!constants.size) return;
+    loadWorld(constants).then(setWorld, () => setWorld(null));
+    api.scan("res/field/scripts/*.s", "CallTrainerBattle\\s+TRAINER_").then(setBattles, () => setBattles([]));
+  }, [constants]);
+  const places = useMemo(() => (world && list ? findPlaces(world, battles, list) : new Map<string, Place[]>()), [world, battles, list]);
+  /** A trainer's area: the parent zone of where it first appears. */
+  const areaOf = (t: Listed) => {
+    const first = places.get(t.path)?.[0];
+    if (!first) return "Not placed";
+    const parent = world?.byName.get(first.zone)?.parent;
+    return zoneLabel(parent ? parent.replace(/^ZONE_/, "").toLowerCase() : first.zone);
+  };
   const [chosen, setChosen] = useState<string | null>(null);
   const { docs } = useDocuments();
 
   useEffect(() => {
     api.data(SCHEMA, ["name", "class", "party"]).then((files) => {
-      setList(files.map(({ path, data }) => ({
-        path,
-        name: String(data.name ?? ""),
-        cls: String(data.class ?? ""),
-        levels: ((data.party as { level?: number }[] | undefined) ?? []).map((p) => Number(p.level ?? 0)),
-      })).sort((a, b) => a.path.localeCompare(b.path)));
+      setList(files.map(({ path, data }) => {
+        const constant = `TRAINER_${path.slice(path.lastIndexOf("/") + 1, -5).toUpperCase()}`;
+        return {
+          path, constant, number: constants.get(constant) ?? -1,
+          name: String(data.name ?? ""),
+          cls: String(data.class ?? ""),
+          levels: ((data.party as { level?: number }[] | undefined) ?? []).map((p) => Number(p.level ?? 0)),
+        };
+      }).sort((a, b) => a.path.localeCompare(b.path)));
     });
-  }, []);
+  }, [constants]);
 
   const unsaved = [...docs.values()].filter((d) => d.dirty && d.path.startsWith(`${DATA}/`));
   const save = useCallback(async () => {
@@ -241,9 +325,28 @@ export function TrainerEditor({ constants }: ToolProps) {
 
   const shown = useMemo(() => {
     const q = filter.trim().toLowerCase();
-    return (list ?? []).filter((t) => !q || t.name.toLowerCase().includes(q) || t.cls.toLowerCase().includes(q.replace(/ /g, "_")) ||
-      t.path.includes(q));
-  }, [list, filter]);
+    return (list ?? []).filter((t) => (kind === "all" || (kind === "leaders" ? LEADERS : ELITE).test(t.cls)) &&
+      (!q || t.name.toLowerCase().includes(q) || t.cls.toLowerCase().includes(q.replace(/ /g, "_")) || t.path.includes(q) ||
+       (byArea && areaOf(t).toLowerCase().includes(q))));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [list, filter, kind, byArea, places]);
+  const groups = useMemo(() => {
+    if (!byArea) return [["", shown] as [string, Listed[]]];
+    const map = new Map<string, Listed[]>();
+    for (const t of shown) {
+      const a = areaOf(t);
+      if (!map.has(a)) map.set(a, []);
+      map.get(a)!.push(t);
+    }
+    return [...map.entries()].sort((a, b) => (a[0] === "Not placed" ? 1 : b[0] === "Not placed" ? -1 : a[0].localeCompare(b[0])));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shown, byArea, places]);
+  const item = (t: Listed) => (
+    <button key={t.path} className={`trn-item${t.path === chosen ? " selected" : ""}`} onClick={() => setChosen(t.path)}>
+      <span className="trn-item-name">{title(t.cls, t.name)}{docs.get(t.path)?.dirty ? " •" : ""}</span>
+      <span className="muted trn-item-levels">{t.levels.length ? `${t.levels.length} · Lv. ${Math.max(...t.levels)}` : "no party"}</span>
+    </button>
+  );
 
   return (
     <div className="trn-editor">
@@ -257,18 +360,27 @@ export function TrainerEditor({ constants }: ToolProps) {
       {unsaved.filter((d) => d.saveError).map((d) => <div key={d.path} className="trn-error trn-bar">{d.path}: {d.saveError}</div>)}
       <div className="trn-split">
         <div className="trn-list">
-          <input className="filter" placeholder={`Filter ${list?.length ?? 0} trainers by name or class…`} value={filter} onChange={(e) => setFilter(e.target.value)} />
+          <input className="filter" placeholder={`Filter ${list?.length ?? 0} trainers by name, class or area…`} value={filter} onChange={(e) => setFilter(e.target.value)} />
+          <div className="trn-list-tools">
+            <select value={kind} onChange={(e) => setKind(e.target.value as typeof kind)}>
+              <option value="all">All trainers</option>
+              <option value="leaders">Gym Leaders</option>
+              <option value="elite">Elite Four and Champions</option>
+            </select>
+            <label><input type="checkbox" checked={byArea} onChange={(e) => setByArea(e.target.checked)} /> By area</label>
+          </div>
           <div className="trn-list-items">
-            {shown.map((t) => (
-              <button key={t.path} className={`trn-item${t.path === chosen ? " selected" : ""}`} onClick={() => setChosen(t.path)}>
-                <span className="trn-item-name">{title(t.cls, t.name)}{docs.get(t.path)?.dirty ? " •" : ""}</span>
-                <span className="muted trn-item-levels">{t.levels.length ? `${t.levels.length} · Lv. ${Math.max(...t.levels)}` : "no party"}</span>
-              </button>
+            {groups.map(([area, members]) => (
+              <div key={area}>
+                {area && <div className="trn-group">{area} <span className="muted">{members.length}</span></div>}
+                {members.map(item)}
+              </div>
             ))}
           </div>
         </div>
         <div className="trn-detail">
-          {chosen ? <TrainerPage key={chosen} path={chosen} constants={constants} /> : <p className="muted trn-empty">Choose a trainer.</p>}
+          {chosen ? <TrainerPage key={chosen} path={chosen} constants={constants} places={places.get(chosen)} world={world} open={open} />
+            : <p className="muted trn-empty">Choose a trainer.</p>}
         </div>
       </div>
     </div>

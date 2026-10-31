@@ -26,6 +26,8 @@ export interface Schema {
   anyOf?: Schema[];
   "x-constant"?: string;
   "x-hex"?: boolean;
+  /** Editor-only: a message, previewed in the talk window, in the text files' codes or the follower's dialogue's. */
+  "x-message"?: "game" | "follower";
   [key: string]: unknown;
 }
 

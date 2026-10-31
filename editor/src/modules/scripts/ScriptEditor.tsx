@@ -9,6 +9,9 @@ import { api } from "../../api.ts";
 import { documents, useDocuments } from "../../documents.ts";
 import { MessageEditor, useBank } from "../text/TextEditor.tsx";
 import { CodeEditor, type Caret } from "./CodeEditor.tsx";
+import type { Constants } from "../../../shared/schema.ts";
+import { navigate, useToolParams } from "../../navigation.ts";
+import { eventLabel, eventsRunning, loadWorld, scriptConstantOf, scriptId, zoneLabel, type World } from "../world/world.ts";
 import { loadCommands, replaceScript, scriptEntries, scriptRange, textBankOf, type Command } from "./commands.ts";
 
 const SCRIPTS = "res/field/scripts";
@@ -24,13 +27,17 @@ function useScriptFile(path: string | null) {
   return { text: doc?.text ?? null, dirty: doc?.dirty ?? false, saveError: doc?.saveError ?? null, error };
 }
 
-export function ScriptEditor({ file: initialFile, script: initialScript, embedded }: {
+export function ScriptEditor({ file: initialFile, script: initialScript, embedded, constants, open: openFile }: {
   /** A script file's path under res/field/scripts/. */
   file?: string;
   /** A script's number in the file, from 1. */
   script?: number;
   /** Without the file list, inside another editor. */
   embedded?: boolean;
+  /** For the files' numbers and the events that run the scripts. */
+  constants?: Constants;
+  /** Opens a data file in a tab, for the zone links. */
+  open?(path: string): void;
 } = {}) {
   const [files, setFiles] = useState<string[]>([]);
   const [filter, setFilter] = useState("");
@@ -40,6 +47,23 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
   const [caret, setCaret] = useState<Caret | null>(null);
   const [goTo, setGoTo] = useState<{ line: number } | null>(null);
   const { text, dirty, saveError, error } = useScriptFile(path);
+  const [sort, setSort] = useState<"name" | "number">(() => {
+    try {
+      return localStorage.getItem("script-sort") === "number" ? "number" : "name";
+    } catch {
+      return "name";
+    }
+  });
+  const [world, setWorld] = useState<World | null>(null);
+  const params = useToolParams("scripts");
+  useEffect(() => { if (constants?.size) loadWorld(constants).then(setWorld, () => setWorld(null)); }, [constants]);
+  // A link from another editor: #tool/scripts?file=...&script=<entry from 1>
+  useEffect(() => {
+    if (embedded) return;
+    const file = params.get("file");
+    if (file) { setPath(file); setIndex(Number(params.get("script")) || null); }
+  }, [params, embedded]);
+  const numberOf = (f: string) => constants?.get(scriptConstantOf(f));
   const { docs } = useDocuments();
   const unsaved = [...docs.values()].filter((d) => d.dirty && (d.path.startsWith(`${SCRIPTS}/`) || d.path.startsWith("res/text/")));
 
@@ -112,8 +136,12 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
   const isRef = caret && /^(L|Script|Movement|Conditions|Data)_\w+$/.test(caret.word);
   const shownFiles = useMemo(() => {
     const q = filter.trim().toLowerCase();
-    return files.filter((f) => !q || f.includes(q));
-  }, [files, filter]);
+    const list = files.filter((f) => !q || f.includes(q) || String(numberOf(f)) === q);
+    return sort === "number" ? [...list].sort((a, b) => (numberOf(a) ?? 1e9) - (numberOf(b) ?? 1e9)) : list;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [files, filter, sort, constants]);
+  const zonesOfFile = useMemo(() => (path && world ? world.zones.filter((z) => z.scripts === scriptConstantOf(path)) : []), [path, world]);
+  const running = useMemo(() => (path && world && entry ? eventsRunning(world, path, scriptId(path, entry.index)) : []), [path, world, entry]);
 
   return (
     <div className={`scr-editor${embedded ? " embedded" : ""}`}>
@@ -131,11 +159,17 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
       <div className={`scr-body${embedded ? " embedded" : ""}`}>
         {!embedded && (
           <div className="scr-files">
-            <input className="filter" placeholder={`Filter ${files.length} files…`} value={filter} onChange={(e) => setFilter(e.target.value)} />
+            <input className="filter" placeholder={`Filter ${files.length} files by name or number…`} value={filter} onChange={(e) => setFilter(e.target.value)} />
+            <label className="scr-sort">Sort
+              <select value={sort} onChange={(e) => { const v = e.target.value as "name" | "number"; setSort(v); try { localStorage.setItem("script-sort", v); } catch { /* private window */ } }}>
+                <option value="name">by name</option>
+                <option value="number">by number</option>
+              </select>
+            </label>
             <div className="scr-file-list">
               {shownFiles.map((f) => (
                 <button key={f} className={`scr-file${f === path ? " selected" : ""}`} onClick={() => { setPath(f); setIndex(null); setCaret(null); }}>
-                  {f.slice(SCRIPTS.length + 1, -2)}{documents.get(f)?.dirty ? " •" : ""}
+                  <span className="scr-number">{numberOf(f) ?? ""}</span> {f.slice(SCRIPTS.length + 1, -2)}{documents.get(f)?.dirty ? " •" : ""}
                 </button>
               ))}
             </div>
@@ -154,8 +188,8 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
               </button>
               {entries.map((e) => (
                 <button key={e.index} className={`scr-script${e.index === index ? " selected" : ""}`} onClick={() => { setIndex(e.index); setGoTo(null); }}
-                        title={e.label}>
-                  <strong>{e.index}</strong> <span className="muted scr-summary">{summaries.get(e.index) ?? (e.line === null ? "no label" : "")}</span>
+                        title={`${e.label}: script ID ${scriptId(path, e.index)}, Frost's ${scriptId(path, e.index) - 1}`}>
+                  <strong>{scriptId(path, e.index)}</strong> <span className="muted scr-summary">{summaries.get(e.index) ?? (e.line === null ? "no label" : "")}</span>
                 </button>
               ))}
             </div>
@@ -164,7 +198,27 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
                           onCaret={setCaret} goToLine={goTo?.line ?? null} key={`${path}:${index ?? "file"}`} />
             </div>
             <div className="scr-side">
-              {entry && <p className="muted scr-note">Script {entry.index} of {entries.length}: <code>{entry.label}</code>, lines {range?.start}–{range?.end}.</p>}
+              {zonesOfFile.length > 0 && (
+                <p className="muted scr-note">The file of {zonesOfFile.map((z, i) => (
+                  <span key={z.name}>{i ? ", " : ""}{openFile ? <button className="link" onClick={() => openFile(z.path)}>{zoneLabel(z.name)}</button> : zoneLabel(z.name)}</span>
+                ))}{text && textBankOf(text) && <> · <button className="link" onClick={() => navigate("text", { bank: textBankOf(text)! })}>its text</button></>}</p>
+              )}
+              {entry && (
+                <div className="scr-entry">
+                  <p className="scr-note"><strong>Script ID {scriptId(path, entry.index)}</strong> <span className="muted">(Frost's {scriptId(path, entry.index) - 1}) · <code>{entry.label}</code>, lines {range?.start}–{range?.end}</span></p>
+                  {world ? (
+                    running.length ? (
+                      <ul className="scr-running">
+                        {running.map((ev) => (
+                          <li key={`${ev.zone}:${ev.kind}:${ev.index}`}>
+                            {openFile ? <button className="link" onClick={() => openFile(`res/field/events/${ev.zone}.json`)}>{zoneLabel(ev.zone)}</button> : zoneLabel(ev.zone)}: {eventLabel(ev)}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : <p className="muted scr-note">No NPC, background event, trigger or level script runs it (another script may call it).</p>
+                  ) : <p className="muted scr-note">Reading the zones' events…</p>}
+                </div>
+              )}
               {caret ? (
                 <>
                   <p className="muted scr-note">Line {caret.line}</p>

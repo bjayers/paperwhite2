@@ -6,6 +6,7 @@ import type { Constants } from "../shared/schema.ts";
 import { api, listen } from "./api.ts";
 import { documents, useDocuments } from "./documents.ts";
 import { tools } from "./modules/registry.ts";
+import { readHash } from "./navigation.ts";
 import { BuildPanel } from "./shell/BuildPanel.tsx";
 import { DocumentView } from "./shell/DocumentView.tsx";
 import { EntryList } from "./shell/EntryList.tsx";
@@ -22,8 +23,8 @@ export function App() {
   const [constants, setConstants] = useState<Constants>(new Map());
   // The address's #tool/<id> names a tool to open, so a page of the editor can be linked to and reloaded
   const [selection, setSelection] = useState<Selection>(() => {
-    const match = /^#tool\/([\w-]+)$/.exec(location.hash);
-    return match ? { kind: "tool", id: match[1] } : null;
+    const hash = readHash();
+    return hash ? { kind: "tool", id: hash.tool } : null;
   });
   const [refresh, setRefresh] = useState(0);
   const [schemaEpoch, setSchemaEpoch] = useState(0);
@@ -38,9 +39,22 @@ export function App() {
   const { docs, order, active } = useDocuments();
 
   useEffect(() => {
+    // The address keeps the tool's own parameters while the tool stays open
+    const current = readHash();
+    if (selection?.kind === "tool" && current?.tool === selection.id) return;
     const hash = selection?.kind === "tool" ? `#tool/${selection.id}` : "";
     if (location.hash !== hash) history.replaceState(null, "", hash || location.pathname);
   }, [selection]);
+
+  // A link to another tool (navigate()) changes the address
+  useEffect(() => {
+    const changed = () => {
+      const hash = readHash();
+      if (hash) setSelection((s) => (s?.kind === "tool" && s.id === hash.tool ? s : { kind: "tool", id: hash.tool }));
+    };
+    window.addEventListener("hashchange", changed);
+    return () => window.removeEventListener("hashchange", changed);
+  }, []);
 
   const loadProject = useCallback(() => api.project().then(setInfo, (e: Error) => setLoadError(e.message)), []);
   const loadConstants = useCallback(() => api.constants().then((c) => setConstants(new Map(Object.entries(c)))), []);

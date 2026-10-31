@@ -100,4 +100,15 @@ void PaperWhite2_HabitatDex_Print(HabitatDex *dex, PokedexHabitatGraphic *graphi
 // A touch on the text box: a tab chooses it, a filter takes its next value. TRUE when the list changes
 BOOL PaperWhite2_HabitatDex_Touch(HabitatDex *dex, u32 x, u32 y);
 
+// Whether an area (its Habitat List file) has any Pokémon by a kind of habitat, whatever the filters
+BOOL PaperWhite2_HabitatDex_HasKind(HabitatDex *dex, u32 file, u32 kind);
+// The species of the list, each once, for the Pokédex's page that Info opens
+u32 PaperWhite2_HabitatDex_GetSpecies(HabitatDex *dex, u16 *species, u32 max);
+
+// In main: the list that the Pokédex's page browses after Info, which the Habitat List leaves and the Pokédex takes
+// once (PokedexCommon_LoadHabitatSpecies), in place of the original list's of the saved season
+void PaperWhite2_HabitatDex_SetInfoList(const u16 *species, u32 count);
+// The list, allocated, and its count; 0 when there is none
+u32 PaperWhite2_HabitatDex_TakeInfoList(u16 **list, HeapID heapId);
+
 #endif // PAPERWHITE2_HABITAT_DEX_H

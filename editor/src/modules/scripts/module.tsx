@@ -12,7 +12,7 @@ const module: ToolModule = {
   icon: "📜",
   section: "editors",
   order: 5,
-  View: () => <ScriptEditor />,
+  View: ({ constants, open }) => <ScriptEditor constants={constants} open={open} />,
 };
 
 export default module;

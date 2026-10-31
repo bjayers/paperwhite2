@@ -43,3 +43,6 @@
 .trn-add { min-height: 80px; border-style: dashed; }
 .trn-message { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
 .trn-text { width: 100%; max-width: 520px; font-family: var(--mono); font-size: 13px; }
+.trn-list-tools { display: flex; gap: 10px; align-items: center; margin: 0 10px 6px; font-size: 13px; }
+.trn-group { font-weight: 600; padding: 4px 10px; background: var(--panel-2); position: sticky; top: 0; z-index: 1; }
+.trn-places { margin: 4px 0; padding-left: 18px; font-size: 13px; }

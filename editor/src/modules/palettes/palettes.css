@@ -40,7 +40,10 @@
 .pal-swatch.zero::after { content: ""; position: absolute; left: 2px; top: 2px; width: 6px; height: 6px; border-radius: 1px;
   background: repeating-conic-gradient(#ccc 0 25%, #888 0 50%) 0 0 / 4px 4px; }
 .pal-swatches.small .pal-swatch.zero::after { display: none; }
-.pal-swatch.unused { opacity: 0.4; }
+/* A color the image doesn't use: a small hollow mark in its corner, keeping the swatch's own color true */
+.pal-swatch.unused::before { content: ""; position: absolute; right: 2px; bottom: 2px; width: 5px; height: 5px; border-radius: 50%;
+  border: 1px solid #fff; box-shadow: 0 0 0 1px #000; }
+.pal-swatches.small .pal-swatch.unused::before { display: none; }
 .pal-swatch.selected { outline: 2px solid var(--accent); outline-offset: 1px; }
 .pal-swatch.primary { outline: 3px solid var(--text); outline-offset: 1px; }
 

@@ -95,7 +95,10 @@ paperwhite2_habitat_dex.c`, hooked in `src/ov303/pokedex_habitat.c`): the area's
 lists all its Pokémon the player has seen, with their seen and caught marks, in pages of 20; the text box has the tabs
 of the kind's methods (all, or one) and the season, time and weather filters, each "any" until touched. L and R, or
 the arrows beside the grid, turn the pages, Select changes the tab, and the cursor moves on to the next page from the
-last row. A Pokémon is listed once, at its first method (grass before dark grass before rustling). The filters can't
+last row. The text box is checked before the buttons' touch table, whose search runs on past its end (its BUG), and an
+area shows each kind of habitat the Habitat Dex has. Info leaves the list for the Pokédex's page
+(`PaperWhite2_HabitatDex_SetInfoList`, taken by `PokedexCommon_LoadHabitatSpecies`), so the page opens on the Pokémon
+chosen, where the original list of the saved season didn't have it. A Pokémon is listed once, at its first method (grass before dark grass before rustling). The filters can't
 tell a habitat's extra conditions (`when`), so those Pokémon show whenever their seasons, times and weather allow.
 The map, the areas and the stamps are the original's. The Pokédex's area map (archive 176) isn't regenerated yet.
 

@@ -2,6 +2,29 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-31: fixes after the user's test of the Habitat Dex and the editors
+
+- **Habitat Dex** (built, DSi intact, plain `modules.ok` passes; **not yet tested in game**): touches on the text box
+  are checked before the buttons' unterminated touch table (whose search ran into other data, so the text box never
+  got them); an area shows each kind of habitat (water, fishing) the Habitat Dex has, past the original 30; Info leaves
+  the Habitat Dex's list for the Pokédex's page (`src/paperwhite2/main/paperwhite2_habitat_dex_info.c`, taken in
+  `PokedexCommon_LoadHabitatSpecies`), so it opens on the chosen Pokémon (Route 20 opened Patrat: the original list of
+  the saved season didn't have the Pokémon).
+- **Editor:**
+  - forms stack each label over its field in narrow places (a container query), so nested numbers and dropdowns keep
+    their width;
+  - a palette's unused colors get a ring in the corner instead of being dimmed, so each swatch shows its true color;
+  - `x-message` ("game" or "follower") in a schema shows the talk window under the field (the follower's dialogue, the
+    trainers' lines);
+  - the Text and Script editors have the files' numbers, a sort by name or number, collapsible groups (text), and the
+    zones that use a file, with links;
+  - the Script Editor shows the game's script ID (Frost's index is it minus 1) and the NPCs, background events,
+    triggers and level scripts that run it;
+  - the Trainer Editor has a Gym Leaders / Elite Four filter, grouping by area, and where each trainer appears (NPCs
+    from script 3000 + its number, and scripts' `CallTrainerBattle`);
+  - `#tool/<id>?<params>` links between the editors (`src/navigation.ts`), and `src/modules/world/world.ts` indexes the
+    zones and their events.
+
 ## 2026-10-31: C-Gear research (nothing changed)
 
 The user's questions about redesigning the C-Gear are answered in `docs/paperwhite2/design/cgear.md`: the native

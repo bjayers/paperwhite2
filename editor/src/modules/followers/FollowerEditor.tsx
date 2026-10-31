@@ -13,8 +13,8 @@ import { PalettePreview } from "../palettes/PaletteEditor.tsx";
 import { parsePal, type Rgb } from "../palettes/pal.ts";
 import { readIndexedPng, type IndexedImage } from "../palettes/png.ts";
 import { DocForm, useHeld } from "./DocForm.tsx";
-import { FOLLOWERS, FOLLOWING, INTERACTIONS, LINE_CHARACTERS, POOLS, SHARED_DIALOGUE, dialoguePath, loadFollowers,
-  messagePages, messagesOf, speciesName, spriteFolder, variantLabel, type FollowerSpecies, type Variant } from "./data.ts";
+import { FOLLOWERS, FOLLOWING, INTERACTIONS, POOLS, SHARED_DIALOGUE, dialoguePath, loadFollowers, speciesName, spriteFolder,
+  variantLabel, type FollowerSpecies, type Variant } from "./data.ts";
 
 type Page = "pokemon" | "shared" | "pools" | "interactions" | "art";
 const PAGES: { id: Page; title: string }[] = [
@@ -57,43 +57,6 @@ function Sprite({ variant }: { variant: Variant }) {
       <PalettePreview image={image.image} colors={image.colors} offset={0} zoom={2} transparent highlight={null} />
       {name !== variant.name && <p className="muted flw-note">{variant.name} shares {name}'s sprite ({variant.sprite}).</p>}
     </div>
-  );
-}
-
-function MessagePreview({ text }: { text: string }) {
-  const pages = messagePages(text);
-  return (
-    <div className="flw-message">
-      {pages.map((page, i) => (
-        <div key={i} className="flw-message-page">
-          {page.lines.map((line, j) => (
-            <div key={j} className={`flw-message-line${line.text.length > LINE_CHARACTERS ? " long" : ""}`}
-                 title={line.text.length > LINE_CHARACTERS ? "Probably too long for one line" : undefined}>
-              {line.text || " "}{line.waits && <span className="flw-wait">▼</span>}
-            </div>
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function Messages({ path }: { path: string }) {
-  const { data } = useHeld(path);
-  const messages = useMemo(() => (data !== null ? messagesOf(toPlain(data)) : []), [data]);
-  if (!messages.length) return null;
-  return (
-    <details className="flw-messages">
-      <summary>How its {messages.length} messages look <span className="muted">(with Snivy, Rosa, Route 20 and an Oran Berry for the words)</span></summary>
-      <div className="flw-message-list">
-        {messages.map((m, i) => (
-          <div key={i} className="flw-message-item">
-            <div className="muted flw-where">{m.where}</div>
-            <MessagePreview text={m.text} />
-          </div>
-        ))}
-      </div>
-    </details>
   );
 }
 
@@ -157,7 +120,6 @@ function SpeciesPage({ entry, constants, onChanged, open }: {
           <>
             <p className="muted flw-note"><code>{own}</code>: its own talk, ambient and pickup rules, beside the shared ones.</p>
             <DocForm path={own} constants={constants} hideDescription />
-            <Messages path={own} />
           </>
         ) : (
           <p>{speciesName(entry.species)} has only the shared rules. <button onClick={addDialogue}>Give it its own dialogue</button></p>
@@ -321,7 +283,6 @@ export function FollowerEditor({ constants, open }: ToolProps) {
           <p className="muted flw-note">The rules every follower has (<code>{SHARED_DIALOGUE}</code>). Of the rules that match, the highest priority is kept and one is picked by weight; a
             species' own rules join these. Every rule's <b>when</b> is a condition of the conditions engine, whose subject is the follower.</p>
           <DocForm path={SHARED_DIALOGUE} constants={constants} hideDescription />
-          <Messages path={SHARED_DIALOGUE} />
         </div></div>
       )}
       {page === "pools" && (

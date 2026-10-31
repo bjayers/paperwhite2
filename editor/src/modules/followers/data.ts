@@ -85,55 +85,6 @@ export function variantLabel(v: Variant): string {
   return parts.length ? parts.join(", ") : "Normal";
 }
 
-// ---------------------------------------------------------------- Messages
-
-/** A message's pages and lines as the game shows them: [C] starts a new page after A, [L] the next line after A, [N]
- * (or a line break) a new line. The words are filled with examples. */
-export interface MessagePage {
-  lines: { text: string; waits: boolean }[];
-}
-
-export const MESSAGE_WORDS: Record<string, string> = {
-  "{nickname}": "Snivy",
-  "{player}": "Rosa",
-  "{location}": "Route 20",
-  "{item}": "Oran Berry",
-};
-
-/** About the most characters of the font that fit on a line of the talk's window. */
-export const LINE_CHARACTERS = 34;
-
-export function messagePages(text: string, words: Record<string, string> = MESSAGE_WORDS): MessagePage[] {
-  let filled = text;
-  for (const [code, word] of Object.entries(words)) filled = filled.split(code).join(word);
-  return filled.split("[C]").map((page) => {
-    const lines: { text: string; waits: boolean }[] = [];
-    for (const [i, part] of page.split("[L]").entries()) {
-      const pieces = part.split(/\[N\]|\n/);
-      pieces.forEach((piece, j) => lines.push({ text: piece, waits: j === pieces.length - 1 && i < page.split("[L]").length - 1 }));
-    }
-    return { lines };
-  });
-}
-
-/** Every message in a dialogue file's data, with where it is, for the preview. */
-export function messagesOf(data: unknown): { where: string; text: string }[] {
-  const found: { where: string; text: string }[] = [];
-  const walk = (node: unknown, where: string) => {
-    if (Array.isArray(node)) node.forEach((v, i) => walk(v, `${where}[${i}]`));
-    else if (node && typeof node === "object") {
-      for (const [k, v] of Object.entries(node)) {
-        if (k === "message" && typeof v === "string") found.push({ where, text: v });
-        else if (k === "messages" && v && typeof v === "object" && !Array.isArray(v)) {
-          for (const [name, m] of Object.entries(v)) if (typeof m === "string") found.push({ where: name, text: m });
-        } else walk(v, where ? `${where}.${k}` : k);
-      }
-    }
-  };
-  walk(data, "");
-  return found;
-}
-
 /** The follower folder whose sprite a variant shows: its own, or another follower's that it names
  * (OBJ_CODE_FOLLOWER_SNIVY is snivy's); null for another kind of object code's. */
 export function spriteFolder(v: Variant): string | null {
