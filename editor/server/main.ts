@@ -314,6 +314,17 @@ const TYPES: Record<string, string> = {
   ".woff2": "font/woff2",
 };
 
+// A model or image under res/ by its own path (/res/field/maps/models/<model>/model.glb), so that a model's textures,
+// which it names by relative paths, load beside it. It only reads, and only models and images
+const RES_TYPES: Record<string, string> = { ".glb": "model/gltf-binary", ".png": "image/png" };
+function serveResFile(res: ServerResponse, pathname: string) {
+  const path = project.checkPath(decodeURIComponent(pathname).slice(1));
+  const type = path ? RES_TYPES[extname(path)] : undefined;
+  if (!path || !type || !existsSync(project.abs(path))) return error(res, 404, "No such model or image under res/");
+  res.writeHead(200, { "Content-Type": type, "Cache-Control": "no-cache" });
+  createReadStream(project.abs(path)).pipe(res);
+}
+
 function serveStatic(res: ServerResponse, pathname: string) {
   let file = join(DIST, decodeURIComponent(pathname));
   if (!file.startsWith(DIST) || !existsSync(file) || statSync(file).isDirectory()) file = join(DIST, "index.html");
@@ -337,6 +348,7 @@ createServer(async (req, res) => {
   const route = routes[`${method} ${url.pathname}`];
   try {
     if (route) await route(req, res, url);
+    else if (method === "GET" && url.pathname.startsWith("/res/")) serveResFile(res, url.pathname);
     else if (url.pathname.startsWith("/api/")) error(res, 404, "No such request");
     else serveStatic(res, url.pathname);
   } catch (e) {

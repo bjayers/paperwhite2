@@ -45,9 +45,12 @@ export interface World {
 }
 
 let world: Promise<World> | null = null;
+let worldConstants: Constants | null = null;
 
+/** The world, read once for a set of constants (read again when they change, as on the first load, which has none). */
 export function loadWorld(constants: Constants): Promise<World> {
-  if (!world) {
+  if (!world || worldConstants !== constants) {
+    worldConstants = constants;
     world = Promise.all([api.data(ZONE_SCHEMA, ["scripts", "text", "parent"]), api.data(EVENTS_SCHEMA)]).then(([zoneFiles, eventFiles]) => {
       const zones: Zone[] = zoneFiles.map(({ path, data }) => {
         const name = path.slice(path.lastIndexOf("/") + 1, -5);

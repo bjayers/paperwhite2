@@ -1,0 +1,38 @@
+/* The Overworld Editor. Colours are the shell's tokens, so it follows the theme. */
+
+.ow-editor { display: flex; flex-direction: column; flex: 1; min-height: 0; background: var(--panel); }
+.ow-header { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-bottom: 1px solid var(--border); }
+.ow-header h2 { margin: 0; font-size: 16px; }
+.ow-header .spacer, .ow-panel-head .spacer, .ow-script-head .spacer { flex: 1; }
+.ow-budget { font-size: 12px; font-family: var(--mono); color: var(--muted); }
+.ow-budget.near { color: var(--warning); }
+.ow-budget.over { color: var(--error); font-weight: 600; }
+.ow-error { color: var(--error); }
+.ow-bar { margin: 6px 14px 0; }
+.ow-body { display: grid; grid-template-columns: 220px 1fr 400px; flex: 1; min-height: 0; }
+.ow-zones { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--border); }
+.ow-zones > .filter { margin: 8px 10px 6px; }
+.ow-zone-list { flex: 1; overflow: auto; }
+.ow-zone { display: block; border: none; border-radius: 0; background: none; text-align: left; padding: 2px 10px; white-space: nowrap;
+  width: max-content; min-width: 100%; }
+.ow-zone:hover, .ow-item:hover { background: var(--hover); }
+.ow-zone.selected { background: var(--selected); box-shadow: inset 3px 0 var(--accent); }
+.ow-number { display: inline-block; min-width: 30px; text-align: right; color: var(--muted); font-family: var(--mono); font-size: 11px; }
+.ow-center { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.ow-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 6px 10px; border-bottom: 1px solid var(--border); font-size: 13px; }
+.ow-check, .ow-inline { display: inline-flex; align-items: center; gap: 4px; }
+.ow-map-wrap { flex: 1; min-height: 0; position: relative; }
+.ow-map { position: absolute; inset: 0; }
+.ow-map canvas { display: block; }
+.ow-empty { padding: 20px; }
+.ow-script { height: 46%; min-height: 260px; display: flex; flex-direction: column; border-top: 1px solid var(--border); }
+.ow-script-head { display: flex; align-items: center; gap: 10px; padding: 4px 10px; font-size: 13px; }
+.ow-script .scr-editor.embedded { flex: 1; min-height: 0; border: none; border-radius: 0; }
+.ow-side { border-left: 1px solid var(--border); overflow-y: auto; min-width: 0; }
+.ow-panel { padding: 10px 12px 40px; }
+.ow-panel h4 { margin: 12px 0 4px; font-size: 13px; }
+.ow-panel-head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.ow-panel .schema-form { padding: 0; }
+.ow-note { font-size: 13px; margin: 4px 0; }
+.ow-list { display: flex; flex-direction: column; }
+.ow-item { text-align: left; border: none; border-radius: 0; background: none; padding: 2px 4px; font-size: 13px; }

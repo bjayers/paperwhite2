@@ -176,6 +176,19 @@ them, so a mistake shows in the build's log.
 Other editors reuse it: `<ScriptEditor file={...} script={...} embedded />` is one file (and script) without the file
 list, and `<CodeEditor value={...} onChange={...} commands={...} />` the highlighted text box alone.
 
+## The Overworld Editor
+
+A zone's events on its 3D map (`src/modules/overworld/`, `res/field/events/<zone>.json`; the design is
+`docs/paperwhite2/design/overworld-editor.md`). The map is the zone's chunks from its matrix (each chunk's
+`model.glb`, which **Models** hides) with its collision tiles drawn at their heights (by type, by flag or hidden),
+layer 1 or 2 where a chunk has two. Modules: NPCs (their sprites, facing, leashes and a trainer's line of sight),
+Proxies (background events), Triggers, Warps and Level scripts. Click an entity to edit its fields in the side panel
+(several on one tile are listed), drag it to another tile (its height follows the tile), Shift+click a tile to add
+one, Remove to delete it. **Script** opens the entity's script below the map in the Script Editor, editable there.
+**Paint** sets the tiles' type (walkable, blocked, water, grass and the rest) in the chunk's `terrain_<layer>.csv`.
+The header counts the events' packed size against the game's 2,436-byte buffer. Save (Ctrl+S) writes the events and
+any painted terrain; Ctrl+Z and Ctrl+Y undo and redo. The server gives the models and their textures at `/res/...`.
+
 ## The Pokémon Editor
 
 Every species and form (`src/modules/pokemon/`, `res/pokemon/<species>/data.json` and `form_<n>/data.json`), by number

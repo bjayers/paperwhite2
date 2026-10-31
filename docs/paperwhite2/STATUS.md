@@ -2,6 +2,17 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-31: the Overworld Editor, phase 1 (editor only)
+
+- `editor/src/modules/overworld/`: a zone's events on its 3D map (chunks' GLBs, collision tiles at their heights,
+  two-layer chunks), NPCs with sprites, facing, leashes and sight; proxies, triggers, warps and level scripts; select,
+  drag, Shift+click add, remove, the script drawer (the embedded Script Editor), a tile-type painter, and the 2,436-byte
+  events budget. Tested in the browser on Virbank City, Virbank Complex (both layers) and Aspertia City Gym: loading,
+  add, remove, drag, the script drawer and the layer switch work. **Not yet tested:** a saved move or paint built and
+  run in game, painting's look on the map.
+- Still to come in phase 1: Buildings (map props, as CTRMap edits them), the movement preview, heights in the painter,
+  and a build check of the events budget. Then conditions and instances, ambients, groups (the design doc's phases).
+
 ## 2026-10-31: fixes after the user's test of the Habitat Dex and the editors
 
 - **Habitat Dex** (built, DSi intact, plain `modules.ok` passes; **not yet tested in game**): touches on the text box
