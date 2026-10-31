@@ -1,8 +1,8 @@
 # The DexNav's art
 
 The DexNav (`docs/paperwhite2/design/dexnav.md`) draws on Geonet's grid for now. This folder is for its own art, which
-the app isn't wired to yet: once a screen's art is here, the build gets a converter for it and the app's drawing code
-is pointed at it.
+the app isn't wired to yet: once a screen's art is here, it becomes an art target and the app's drawing code is pointed
+at it.
 
 ## The templates
 
@@ -35,6 +35,8 @@ writes the templates again from the app's layout.
 5. Put each screen here as `top.png` and `touch.png`, with any extra states (a chosen tab, a chosen cell) as their own
    small PNGs, named for what they are.
 
-The editor's **Palette Editor** works on the `.pal` files: **Download .pal** gives Aseprite a palette from `res/`
+The DexNav isn't one of the editor's art targets yet (`docs/paperwhite2/art.md`); once it is, the editor's
+**Graphics & Palettes**, page **Screens**, converts the PNGs and shows what doesn't fit. Its **Palettes** page works on
+the `.pal` files: **Download .pal** gives Aseprite a palette from `res/`
 (Aseprite loads JASC `.pal` files in its palette menu, **Load Palette**), **Import colors** takes a palette from a .pal
 or from your PNG, and **Open a PNG** shows your PNG with a palette while you tweak the colors.

@@ -44,3 +44,13 @@ test("indexed PNGs read as the build's packer reads them", async () => {
     assert.equal(`${image.width} ${image.height} ${hash}`, expected[i], file);
   }
 });
+
+test("every art target converts as it is", () => {
+  const targets = (JSON.parse(readFileSync(join(ROOT, "res/paperwhite2/art/targets.json"), "utf8")) as
+    { targets: { name: string }[] }).targets;
+  for (const { name } of targets) {
+    const out = execFileSync("python3", ["tools/paperwhite2/screen_art.py", "convert", name], { cwd: ROOT, encoding: "utf8" });
+    const report = JSON.parse(out) as { ok: boolean };
+    assert.ok(report.ok, name);
+  }
+});

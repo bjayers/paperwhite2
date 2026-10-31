@@ -5,7 +5,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../api.ts";
-import type { ToolProps } from "../types.ts";
 import { NO_ADJUSTMENT, adjust, bgr555, from5, fromHex, isAdjusted, parsePal, sameColor, snap, to5, toHex, writePal,
   type Adjustment, type Rgb } from "./pal.ts";
 import { readIndexedPng, type IndexedImage } from "./png.ts";
@@ -169,7 +168,8 @@ function ColorEditor({ color, index, onChange }: { color: Rgb; index: number; on
 
 // ---------------------------------------------------------------- The page
 
-export function PaletteEditor(_props: ToolProps) {
+/** requested opens a palette, as the Screens page's "Edit its palette" does. */
+export function PaletteEditor({ requested }: { requested?: { path: string } }) {
   const [paths, setPaths] = useState<string[]>([]);
   const [filter, setFilter] = useState("");
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set(["paperwhite2"]));
@@ -276,6 +276,12 @@ export function PaletteEditor(_props: ToolProps) {
     if (!path) return setCompare(null);
     api.file(path).then((f) => setCompare({ path, colors: parsePal(f.text) })).catch((e) => setMessage(`${path}: ${(e as Error).message}`));
   };
+
+  useEffect(() => {
+    if (requested) choose(requested.path);
+    // Only a new request opens a palette
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requested]);
 
   // ---------------------------------------------------------------- Editing
 
@@ -487,7 +493,7 @@ export function PaletteEditor(_props: ToolProps) {
 
       <div className="pal-main">
         <header className="pal-header">
-          <h2>Palette Editor</h2>
+          <h2>Palettes</h2>
           {file && <span className="pal-mono">{file.path}{dirty && " •"}</span>}
           <span className="spacer" />
           {file && (

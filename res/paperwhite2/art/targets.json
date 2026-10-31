@@ -1,0 +1,111 @@
+{
+    "$schema": "art_targets.schema.json",
+    "targets": [
+        {
+            "name": "boot_logos",
+            "title": "Boot logos",
+            "description": "The first screens at power on, The Pokémon Company's and Nintendo's logos, which a button skips (src/ov162/boot_screens.c). Both screens share one sheet of tiles.",
+            "palette": "res/graphics/title/11.pal",
+            "depth": 4,
+            "max_tiles": 1024,
+            "screens": [
+                {
+                    "name": "top",
+                    "title": "Top screen",
+                    "chars": "res/graphics/title/12.png",
+                    "screen": "res/graphics/title/13.nscr"
+                },
+                {
+                    "name": "touch",
+                    "title": "Touch screen",
+                    "chars": "res/graphics/title/12.png",
+                    "screen": "res/graphics/title/14.nscr"
+                }
+            ]
+        },
+        {
+            "name": "copyright",
+            "title": "Copyright notice",
+            "description": "The black screen of copyright lines after the boot logos (src/ov162/boot_screens.c). The end of the credits shows the top screen again in palette row 2's colors (src/ov266/staff_roll_main.c), and rows 1 and 2 are the credits' Japanese copyright screens', so the art keeps to the other rows.",
+            "palette": "res/graphics/copyright/00.pal",
+            "depth": 4,
+            "rows": [ 0, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 ],
+            "max_tiles": 1024,
+            "screens": [
+                {
+                    "name": "top",
+                    "title": "Top screen",
+                    "chars": "res/graphics/copyright/01.png",
+                    "screen": "res/graphics/copyright/02.nscr"
+                },
+                {
+                    "name": "touch",
+                    "title": "Touch screen",
+                    "chars": "res/graphics/copyright/03.png",
+                    "screen": "res/graphics/copyright/04.nscr"
+                }
+            ]
+        },
+        {
+            "name": "boot_extra",
+            "title": "Screen after the copyright",
+            "description": "Paper White 2's own boot screen, after the copyright notice, which A, B or Start skips (src/ov162/boot_screens.c). While its palette is all black it is skipped, so it stays off until it has art.",
+            "palette": "res/graphics/copyright/09.pal",
+            "colors": 256,
+            "depth": 4,
+            "max_tiles": 1024,
+            "screens": [
+                {
+                    "name": "top",
+                    "title": "Top screen",
+                    "chars": "res/graphics/copyright/10.png",
+                    "screen": "res/graphics/copyright/11.nscr"
+                },
+                {
+                    "name": "touch",
+                    "title": "Touch screen",
+                    "chars": "res/graphics/copyright/12.png",
+                    "screen": "res/graphics/copyright/13.nscr"
+                }
+            ]
+        },
+        {
+            "name": "title_logo",
+            "title": "Title screen logo",
+            "description": "The title screen's logo and the streaks scrolling behind it, in 256 colors, which share a sheet of tiles and the palette (src/ov162/title.c). The end of the credits shows the logo too (src/ov266/staff_roll_main.c).",
+            "palette": "res/graphics/title/white2/02.pal",
+            "depth": 8,
+            "max_tiles": 512,
+            "screens": [
+                {
+                    "name": "logo",
+                    "title": "Logo",
+                    "chars": "res/graphics/title/white2/00.png",
+                    "screen": "res/graphics/title/white2/01.nscr"
+                },
+                {
+                    "name": "streaks",
+                    "title": "Streaks behind it",
+                    "chars": "res/graphics/title/white2/00.png",
+                    "screen": "res/graphics/title/white2/03.nscr"
+                }
+            ]
+        },
+        {
+            "name": "title_top",
+            "title": "Title screen, other screen",
+            "description": "The title screen's other display, behind the 3D Pokémon, with \"Developed by GAME FREAK inc.\" (src/ov162/title.c).",
+            "palette": "res/graphics/title/white2/08.pal",
+            "depth": 4,
+            "max_tiles": 512,
+            "screens": [
+                {
+                    "name": "screen",
+                    "title": "Screen",
+                    "chars": "res/graphics/title/09.png",
+                    "screen": "res/graphics/title/10.nscr"
+                }
+            ]
+        }
+    ]
+}

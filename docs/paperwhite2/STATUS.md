@@ -2,6 +2,22 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-31 (overnight): the art converter and the boot screen
+
+The user's plan for the night: 1. the art converter in the editor, with the boot and title screens editable and one
+more boot screen after the copyright; 2. the Habitat Dex reworked; 3. a Follower Editor, fixing the editor's two old
+test failures; 4. shiny extras in the Palette Editor. Done so far:
+
+- **1. Art converter** (`docs/paperwhite2/art.md`): `tools/paperwhite2/screen_art.py` turns PNGs into a screen's
+  tiles, screen resources and palette, for the targets of `res/paperwhite2/art/targets.json` (boot logos, copyright,
+  the new boot screen, title logo, title's other screen). The editor's Palette Editor is now **Graphics & Palettes**,
+  with a **Screens** page (preview, problems per tile, Apply) beside **Palettes**.
+  - **New boot screen** after the copyright (`src/paperwhite2/ov162/paperwhite2_boot_screen.c`, hooked in
+    `boot_screens.c`): `ARCID_COPYRIGHT` members 9 to 13, blank, skipped while its palette is all black.
+  - **Checked:** every target's screens export and convert back pixel for pixel; art converted and built packs as
+    16-color members with the same pixels; Playwright on a scratch copy (choose art, problems marked, Apply). Not yet
+    tested in game: the boot with the new screen blank (should be unchanged) or with art.
+
 ## 2026-10-30: DexNav polish, its art templates, and the editor's Palette Editor
 
 - **DexNav** (not yet tested in game after these changes; the first build was tested and worked):

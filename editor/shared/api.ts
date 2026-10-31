@@ -106,3 +106,16 @@ export type ServerEvent =
 
 /** Mutating requests carry this header; a page on another site can't send it without permission. */
 export const WRITE_HEADER = "X-Paperwhite-Editor";
+
+/** What the art converter (tools/paperwhite2/screen_art.py) says about art for a target (POST /api/art/convert). */
+export interface ArtReport {
+  target: string;
+  ok: boolean;
+  /** Each screen's sheet: its tiles, the most it may have, and the palette rows it uses. */
+  screens: Record<string, { tiles: number; max_tiles: number; rows: number[] }>;
+  /** What keeps the art from being written; a tile's problem has its place in pixels. */
+  problems: { screen: string; message: string; x?: number; y?: number }[];
+  warnings: string[];
+  rows_changed: number[];
+  written?: boolean;
+}

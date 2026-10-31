@@ -1,5 +1,6 @@
 // The build's own Python, used for what must agree with the build exactly: the constants a value may name, the final
-// check of a file against its schema before it is saved, and the game's 2D art drawn as the build reads it.
+// check of a file against its schema before it is saved, the game's 2D art drawn as the build reads it, and art
+// converted into it.
 
 import { execFileSync, spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { existsSync, statSync } from "node:fs";
@@ -70,6 +71,18 @@ export class Python {
       this.screens.set(key, image);
     }
     return image;
+  }
+
+  /** Runs the art converter (tools/paperwhite2/screen_art.py) on this checkout; it exits 1 when the art has problems. */
+  art(args: string[]): Promise<{ code: number; stdout: string; stderr: string }> {
+    return new Promise((resolve) => {
+      const child = spawn(pythonFor(this.root), [join(this.root, "tools/paperwhite2/screen_art.py"), ...args],
+                          { cwd: this.root, env: { ...process.env, PAPERWHITE_ROOT: this.root } });
+      let stdout = "", stderr = "";
+      child.stdout.on("data", (c) => (stdout += c));
+      child.stderr.on("data", (c) => (stderr += c));
+      child.on("close", (code) => resolve({ code: code ?? 1, stdout, stderr }));
+    });
   }
 
   stop() {

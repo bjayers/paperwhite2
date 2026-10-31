@@ -12,9 +12,15 @@
 #include "gfl/std.h"
 #include "nitro/gx.h"
 #include "nitro/hw.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/boot_screen.h"
+#endif
 
 // The screens that the game shows when it starts: The Pokémon Company and Nintendo logos, which a button skips, then
 // the copyright notice
+#ifdef PAPERWHITE2
+// Paper White 2: then the hack's own screen, while it has art (paperwhite2/boot_screen.h)
+#endif
 
 enum {
     STATE_INIT,
@@ -30,6 +36,14 @@ enum {
     STATE_FADE_OUT_COPYRIGHT,
     STATE_WAIT_COPYRIGHT_FADE_OUT,
     STATE_PAUSE_AFTER_COPYRIGHT,
+#ifdef PAPERWHITE2
+    STATE_LOAD_EXTRA,
+    STATE_WAIT_EXTRA_FADE_IN,
+    STATE_SHOW_EXTRA,
+    STATE_FADE_OUT_EXTRA,
+    STATE_WAIT_EXTRA_FADE_OUT,
+    STATE_PAUSE_AFTER_EXTRA,
+#endif
     STATE_END,
 };
 
@@ -201,9 +215,51 @@ static BOOL BootScreens_Main(GameProc *proc, u32 *state, void *param, void *work
         break;
     case STATE_PAUSE_AFTER_COPYRIGHT:
         if (++wk->timer > 30) {
+#ifdef PAPERWHITE2
+            // Paper White 2: the hack's screen next, which the A, B and Start buttons skip as they do the logos
+            wk->state = STATE_LOAD_EXTRA;
+            wk->timer = 0;
+#else
+            wk->state = STATE_END;
+#endif
+        }
+        break;
+#ifdef PAPERWHITE2
+    case STATE_LOAD_EXTRA:
+        if (!PaperWhite2_BootScreen_HasArt(HEAPID_TITLE)) {
+            wk->state = STATE_END;
+            break;
+        }
+        PaperWhite2_BootScreen_Load(HEAPID_TITLE);
+        GFL_FadeSet(FADE_ENGINE_A_BLACK | FADE_ENGINE_B_BLACK, 16, 0, 2);
+        wk->state = STATE_WAIT_EXTRA_FADE_IN;
+        break;
+    case STATE_WAIT_EXTRA_FADE_IN:
+        if (!GFL_FadeIsRunning()) {
+            wk->state = STATE_SHOW_EXTRA;
+        }
+        break;
+    case STATE_SHOW_EXTRA:
+        if (++wk->timer > 90 || (GCTX_HIDGetPressedKeys() & (PAD_BUTTON_A | PAD_BUTTON_B | PAD_BUTTON_START))) {
+            wk->state = STATE_FADE_OUT_EXTRA;
+            wk->timer = 0;
+        }
+        break;
+    case STATE_FADE_OUT_EXTRA:
+        GFL_FadeSet(FADE_ENGINE_A_BLACK | FADE_ENGINE_B_BLACK, 0, 16, 2);
+        wk->state = STATE_WAIT_EXTRA_FADE_OUT;
+        break;
+    case STATE_WAIT_EXTRA_FADE_OUT:
+        if (!GFL_FadeIsRunning()) {
+            wk->state = STATE_PAUSE_AFTER_EXTRA;
+        }
+        break;
+    case STATE_PAUSE_AFTER_EXTRA:
+        if (++wk->timer > 30) {
             wk->state = STATE_END;
         }
         break;
+#endif
     case STATE_END:
         GFL_BGSysFree();
         return TRUE;

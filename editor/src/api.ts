@@ -3,6 +3,7 @@
 import { WRITE_HEADER, type BuildState, type DataFile, type Entry, type ScanMatch, type FileContent, type GitState, type ProjectInfo,
   type SaveRequest, type SaveResult, type ServerEvent } from "../shared/api.ts";
 import type { Schema } from "../shared/schema.ts";
+import type { ArtReport } from "../shared/api.ts";
 
 async function request<T>(method: string, url: string, body?: unknown): Promise<T> {
   const response = await fetch(url, {
@@ -45,6 +46,12 @@ export const api = {
     if (!response.ok) throw new Error(`${path}: ${response.statusText}`);
     return response.arrayBuffer();
   },
+  /** The address of an art target's screen as an indexed PNG in its palette, to draw over. */
+  artRenderUrl: (target: string, screen: string) =>
+    `/api/art/render?target=${encodeURIComponent(target)}&screen=${encodeURIComponent(screen)}`,
+  /** Converts art for some of a target's screens: the report and previews, and with write, the game's files replaced. */
+  artConvert: (target: string, images: Record<string, string>, write: boolean) =>
+    request<{ report: ArtReport; previews: Record<string, string> }>("POST", "/api/art/convert", { target, images, write }),
   /** The address of a 2D screen of res/ drawn as a PNG, from its character PNG, screen and palette. */
   screenUrl: (chars: string, screen: string, palette: string) =>
     `/api/screen?chars=${encodeURIComponent(chars)}&screen=${encodeURIComponent(screen)}&palette=${encodeURIComponent(palette)}`,

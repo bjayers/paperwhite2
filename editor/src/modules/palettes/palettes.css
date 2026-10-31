@@ -59,3 +59,22 @@
 .pal-file-button { position: relative; overflow: hidden; display: inline-flex; align-items: center; padding: 4px 10px;
   border: 1px solid var(--border); border-radius: 6px; background: var(--panel-2); cursor: pointer; font-size: 13px; }
 .pal-file-button input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+/* Graphics & Palettes' pages */
+.gfx-editor { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.gfx-pages { display: flex; gap: 4px; padding: 6px 14px; border-bottom: 1px solid var(--border); background: var(--panel-2); }
+.gfx-pages button.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+.gfx-page { display: flex; flex: 1; min-height: 0; }
+.gfx-page.hidden { display: none; }
+.gfx-page > .pal-editor { flex: 1; }
+
+/* The Screens page */
+.art-target { white-space: normal; padding-top: 5px; padding-bottom: 5px; }
+.art-body { flex-direction: column; flex-wrap: nowrap; }
+.art-about { max-width: 820px; }
+.art-about p { margin: 0 0 6px; }
+.art-screen { width: 100%; max-width: 1000px; }
+.art-overlay-wrap { position: relative; }
+.art-bad-tile { position: absolute; outline: 2px solid #ff2d55; background: rgba(255, 45, 85, 0.25); pointer-events: auto; }
+.art-problems ul { margin: 4px 0; padding-left: 20px; font-size: 13px; }
+a.pal-file-button { color: inherit; text-decoration: none; }

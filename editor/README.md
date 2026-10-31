@@ -21,7 +21,7 @@ If Edge can't reach it, WSL isn't forwarding the port: check that `localhostForw
 ## What it does
 
 - **Specialty editors** at the top of the sidebar, under **Editors**: everything about one subject in one place. The
-  first are the **Encounter Editor** and the **Palette Editor** (below). The per-file editors are under **Data files**, which folds away. A page
+  first are the **Encounter Editor** and **Graphics & Palettes** (below). The per-file editors are under **Data files**, which folds away. A page
   of a tool can be linked to: `http://localhost:7420/#tool/encounters`.
 - **Every kind of data in `res/`, found by itself.** Each data file names its schema in `"$schema"`; the editor groups
   the files by schema, so a new kind of data, a new field or a new file shows up without changing the editor.
@@ -83,11 +83,25 @@ The bar at the top sets the preview: season, period, weather, the party's level,
 what it reads, including the scripts' gifts and static battles and the swarm table through `GET /api/scan`;
 `lookup.ts` the families, legendaries and ways to get each species.
 
-## The Palette Editor
+## Graphics & Palettes
 
-Every JASC palette (`.pal`) under `res/`, by folder (`src/modules/palettes/`): a Pokémon's `normal` and
-`shiny`, a trainer's, an item's, a graphics archive's members, the hack's own. The art is drawn in an image editor
-such as Aseprite; this is for its colors.
+The game's 2D art (`src/modules/palettes/`), in two pages. The art itself is drawn in an image editor such as
+Aseprite; these turn it into the game's files and set its colors.
+
+### Screens
+
+The screens art can replace (`res/paperwhite2/art/targets.json`, `docs/paperwhite2/art.md`): the boot logos, the
+copyright notice, the hack's own boot screen after it, the title screen's logo and its other screen. Each shows as the
+game draws it now. **Download as PNG** gives a screen as an indexed PNG in its palette to draw over; **Choose art**
+takes a PNG of the screen's size (256×192 for a whole DS screen) and shows it as the DS will, with the tiles and palette
+rows it takes and each 8×8 tile that can't be drawn, marked on the preview. **Apply to the game's files** writes the
+tiles, screens and colors (`tools/paperwhite2/screen_art.py`, through `POST /api/art/convert`), and the next build packs
+them. **Edit its palette** opens the target's palette on the other page.
+
+### Palettes
+
+Every JASC palette (`.pal`) under `res/`, by folder: a Pokémon's `normal` and `shiny`, a trainer's, an item's, a
+graphics archive's members, the hack's own.
 
 - **The colors** are the DS's: 5 bits an axis, 0 to 31, written as the data tools write them (`pal.ts`), so an
   untouched color never changes and the build reads what is shown. A palette of more than 16 colors shows in rows of

@@ -1,0 +1,43 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Paper White 2: the screens that art can replace, res/paperwhite2/art/targets.json",
+    "description": "The 2D screens of res/ that tools/paperwhite2/screen_art.py (and the editor's Graphics & Palettes) can replace with art from an image editor: each target is one palette and the screens drawn with it, whose tiles, screen resources and colors it rewrites together. Nothing in the game reads this file; the files it names are the game's.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "targets" ],
+    "properties": {
+        "$schema": { "type": "string", "description": "This schema, for editors" },
+        "targets": {
+            "type": "array",
+            "items": {
+                "type": "object", "additionalProperties": false,
+                "required": [ "name", "title", "palette", "depth", "screens" ],
+                "properties": {
+                    "name": { "type": "string", "pattern": "^[a-z0-9_]{1,32}$" },
+                    "title": { "type": "string" },
+                    "description": { "type": "string", "description": "Where the game shows it, and anything to know before replacing it" },
+                    "palette": { "type": "string", "pattern": "^res/.+\\.pal$", "description": "The palette the screens are drawn with" },
+                    "colors": { "type": "integer", "minimum": 16, "maximum": 256, "description": "The palette's number of colors when it is a new file; 16 by default in 16-color mode, 256 in 256-color mode" },
+                    "depth": { "enum": [ 4, 8 ], "description": "4 for 16-color tiles, each tile using one palette row; 8 for 256-color tiles" },
+                    "rows": {
+                        "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 15 },
+                        "description": "In 16-color mode, the palette rows the art may use; every row of the palette by default. Leave out rows the game uses elsewhere"
+                    },
+                    "max_tiles": { "type": "integer", "minimum": 1, "maximum": 1024, "description": "The most different tiles the screens' character sheet may have, from the game's VRAM layout for them; 1024 by default" },
+                    "screens": {
+                        "type": "array", "minItems": 1,
+                        "items": {
+                            "type": "object", "additionalProperties": false, "required": [ "name", "title", "chars", "screen" ],
+                            "properties": {
+                                "name": { "type": "string", "pattern": "^[a-z0-9_]{1,32}$" },
+                                "title": { "type": "string" },
+                                "chars": { "type": "string", "pattern": "^res/.+\\.png$", "description": "Its character sheet; screens naming the same one share its tiles" },
+                                "screen": { "type": "string", "pattern": "^res/.+\\.nscr$", "description": "Its screen resource" }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

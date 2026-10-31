@@ -1,7 +1,8 @@
 // The editor's server: serves the page and an API over the checkout this folder sits in. It listens on this computer
 // only. Start it with `npm start` in editor/ (or ./start.sh), then open the address it prints in Edge.
 
-import { createReadStream, existsSync, globSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
+import { createReadStream, existsSync, globSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { extname, join, resolve, sep } from "node:path";
 import { parseJson, JsonSyntaxError } from "../shared/json.ts";
@@ -145,6 +146,52 @@ const routes: Record<string, Handler> = {
     const image = python.screen(files[0]!, files[1]!, files[2]!);
     res.writeHead(200, { "Content-Type": "image/png", "Cache-Control": "no-cache" });
     res.end(image);
+  },
+  // A screen of an art target (res/paperwhite2/art/targets.json) as an indexed PNG in its palette, to draw over
+  "GET /api/art/render": async (_req, res, url) => {
+    const [target, screen] = ["target", "screen"].map((k) => url.searchParams.get(k) ?? "");
+    if (!/^[a-z0-9_]+$/.test(target) || !/^[a-z0-9_]+$/.test(screen)) return error(res, 400, "Name a target and a screen");
+    const dir = mkdtempSync(join(tmpdir(), "paperwhite-art-"));
+    try {
+      const out = join(dir, "screen.png");
+      const run = await python.art(["render", target, screen, out]);
+      if (run.code !== 0) return error(res, 400, run.stderr.trim().split("\n").pop() ?? "Not rendered");
+      res.writeHead(200, { "Content-Type": "image/png", "Cache-Control": "no-cache" });
+      res.end(readFileSync(out));
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  },
+  // Art for some of a target's screens ({ target, images: { screen: base64 PNG }, write }): the converter's report
+  // and each screen as the DS would show it; with write and no problems, the target's files are replaced
+  "POST /api/art/convert": async (req, res) => {
+    const body = (await readJson(req)) as { target: string; images: Record<string, string>; write?: boolean };
+    if (!/^[a-z0-9_]+$/.test(body.target ?? "")) return error(res, 400, "Name a target");
+    const dir = mkdtempSync(join(tmpdir(), "paperwhite-art-"));
+    try {
+      const args = ["convert", body.target];
+      for (const [screen, data] of Object.entries(body.images ?? {})) {
+        if (!/^[a-z0-9_]+$/.test(screen)) return error(res, 400, "Bad screen name");
+        const path = join(dir, `${screen}.png`);
+        writeFileSync(path, Buffer.from(data, "base64"));
+        args.push(`${screen}=${path}`);
+      }
+      args.push("--preview", join(dir, "preview"));
+      if (body.write) args.push("--write");
+      const run = await python.art(args);
+      let report: Record<string, unknown>;
+      try {
+        report = JSON.parse(run.stdout);
+      } catch {
+        return error(res, 400, run.stderr.trim().split("\n").pop() || "The converter failed");
+      }
+      const previews: Record<string, string> = {};
+      const previewDir = join(dir, "preview");
+      if (existsSync(previewDir)) for (const name of readdirSync(previewDir)) previews[name.replace(/\.png$/, "")] = readFileSync(join(previewDir, name)).toString("base64");
+      json(res, { report, previews });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   },
   "GET /api/constants": (_req, res) => json(res, python.constants()),
   "PUT /api/file": async (req, res) => {
