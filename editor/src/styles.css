@@ -312,3 +312,7 @@ textarea.raw {
 .tok-number { color: #b0306a; }
 .tok-ref { color: #b5651d; }
 .tok-string { color: #9a6700; }
+
+/* A species' party icon (src/modules/pokemon/SpeciesIcon.tsx), shared by the editors that list Pokémon */
+.species-icon { display: inline-block; overflow: hidden; flex: none; vertical-align: middle; image-rendering: pixelated; }
+.species-icon img { image-rendering: pixelated; display: block; }

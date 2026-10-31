@@ -21,7 +21,7 @@ If Edge can't reach it, WSL isn't forwarding the port: check that `localhostForw
 ## What it does
 
 - **Specialty editors** at the top of the sidebar, under **Editors**: everything about one subject in one place. The
-  first are the **Encounter Editor**, **Graphics & Palettes**, the **Follower Editor**, the **Text Editor**, the **Script Editor** and the **Trainer Editor** (below). The per-file editors are under **Data files**, which folds away. A page
+  first are the **Encounter Editor**, **Graphics & Palettes**, the **Follower Editor**, the **Text Editor**, the **Script Editor**, the **Pokémon Editor** and the **Trainer Editor** (below). The per-file editors are under **Data files**, which folds away. A page
   of a tool can be linked to: `http://localhost:7420/#tool/encounters`.
 - **Every kind of data in `res/`, found by itself.** Each data file names its schema in `"$schema"`; the editor groups
   the files by schema, so a new kind of data, a new field or a new file shows up without changing the editor.
@@ -175,6 +175,16 @@ them, so a mistake shows in the build's log.
 
 Other editors reuse it: `<ScriptEditor file={...} script={...} embedded />` is one file (and script) without the file
 list, and `<CodeEditor value={...} onChange={...} commands={...} />` the highlighted text box alone.
+
+## The Pokémon Editor
+
+Every species and form (`src/modules/pokemon/`, `res/pokemon/<species>/data.json` and `form_<n>/data.json`), by number
+with their icons. A species' page has its front sprite (normal or shiny), its name and types, its base stats as bars
+with their total and its EV yields, its abilities, held items, breeding and the rest of its record, its evolutions
+(each method's parameter as an item, a move, a species or a number, as the method takes) with the family's tree, whose
+members open with a click, its learnset (by level, sorted; TMs and HMs; tutors; egg moves) and its Pokédex data. Save
+(Ctrl+S) checks each file with the build's validator. `<SpeciesIcon species={...} />` is a species' party icon in the
+colors poke_icon.c gives it, for any editor.
 
 ## The Trainer Editor
 

@@ -1,0 +1,51 @@
+/* The Pokémon Editor. Colours are the shell's tokens, so it follows the theme. */
+
+.pkm-editor { display: flex; flex-direction: column; flex: 1; min-height: 0; background: var(--panel); }
+.pkm-header { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-bottom: 1px solid var(--border); }
+.pkm-header h2 { margin: 0; font-size: 16px; }
+.pkm-header .spacer { flex: 1; }
+.pkm-error { color: var(--error); }
+.pkm-bar { margin: 6px 14px 0; }
+.pkm-note { font-size: 12px; margin: 2px 0 6px; }
+.pkm-split { display: grid; grid-template-columns: 250px 1fr; flex: 1; min-height: 0; }
+.pkm-list { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--border); }
+.pkm-list > .filter { margin: 8px 10px 6px; }
+.pkm-list-items { flex: 1; overflow-y: auto; }
+.pkm-item { display: flex; align-items: center; gap: 6px; width: 100%; border: none; border-radius: 0; background: none; text-align: left; padding: 1px 8px; }
+.pkm-item:hover { background: var(--hover); }
+.pkm-item.selected { background: var(--selected); box-shadow: inset 3px 0 var(--accent); }
+.pkm-number { width: 30px; text-align: right; font-size: 12px; }
+.pkm-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pkm-detail { overflow-y: auto; min-width: 0; }
+.pkm-empty { padding: 20px; }
+.pkm-page { padding: 12px 20px 48px; max-width: 1100px; display: flex; flex-direction: column; gap: 12px; }
+.pkm-top { display: flex; gap: 16px; align-items: flex-start; }
+.pkm-top h2 { margin: 0; font-size: 20px; }
+.pkm-top-fields { display: flex; flex-direction: column; gap: 4px; min-width: 420px; }
+.pkm-sprite { display: flex; flex-direction: column; align-items: center; gap: 4px; background: var(--panel-2); border-radius: 8px; padding: 6px; min-width: 96px; }
+.pkm-check { font-size: 12px; display: inline-flex; gap: 4px; align-items: center; }
+.pkm-card { border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; background: var(--panel); }
+.pkm-card h3 { margin: 0 0 8px; font-size: 14px; }
+.pkm-card h4 { margin: 10px 0 6px; font-size: 13px; }
+.pkm-stats-card { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; }
+.pkm-stats h4 { margin-top: 0; }
+.pkm-stat { display: grid; grid-template-columns: 70px 64px 1fr; align-items: center; gap: 8px; margin: 3px 0; font-size: 13px; }
+.pkm-stats-card .pkm-stats:last-child .pkm-stat { grid-template-columns: 70px 64px; }
+.pkm-bar { height: 10px; background: var(--panel-2); border-radius: 5px; overflow: hidden; }
+.pkm-bar span { display: block; height: 100%; border-radius: 5px; }
+.pkm-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 4px 16px; }
+.pkm-field { display: grid; grid-template-columns: 110px 1fr; align-items: start; gap: 6px; font-size: 13px; }
+.pkm-field .schema-form { padding: 0; }
+.pkm-evolutions { display: flex; flex-direction: column; gap: 6px; }
+.pkm-evolution { display: grid; grid-template-columns: 32px 1fr 1fr 1fr 28px; align-items: center; gap: 6px; }
+.pkm-param { display: grid; grid-template-columns: 70px 1fr; align-items: center; gap: 4px; font-size: 12px; }
+.pkm-family { display: flex; overflow-x: auto; padding: 4px 0; }
+.pkm-family-node { display: flex; align-items: center; gap: 6px; }
+.pkm-family-children { display: flex; flex-direction: column; gap: 4px; }
+.pkm-family-branch { display: flex; align-items: center; gap: 6px; }
+.pkm-family-how { font-size: 11px; white-space: nowrap; }
+.pkm-family-mon { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.pkm-family-mon.current { border-color: var(--accent); background: var(--selected); }
+.pkm-learnset { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.pkm-level-moves { display: flex; flex-direction: column; gap: 4px; }
+.pkm-level-move { display: grid; grid-template-columns: 64px 1fr 28px; gap: 6px; align-items: center; }

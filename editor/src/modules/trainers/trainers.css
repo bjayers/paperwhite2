@@ -43,5 +43,3 @@
 .trn-add { min-height: 80px; border-style: dashed; }
 .trn-message { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
 .trn-text { width: 100%; max-width: 520px; font-family: var(--mono); font-size: 13px; }
-.species-icon { display: inline-block; overflow: hidden; flex: none; }
-.species-icon img { image-rendering: pixelated; display: block; }
