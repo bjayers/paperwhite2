@@ -2,6 +2,28 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-31 (overnight, second batch): Text, Script, Pokémon and Trainer editors
+
+All in `editor/` (README sections for each); every editor test passes; each checked with Playwright on the real `res/`
+read only, and saving a text bank and a script on a scratch copy (each changed exactly the edited line).
+
+- **Text Editor** (`src/modules/text/`): story and system banks, line numbers, search in a bank or all, and the
+  reusable `TextBox`: the talk window of `talkmsgwin.c` (bottom balloon, `winframe/05.png` in `00.pal`), the game's
+  font 0 and palette 5 from `extract/` (`GET /api/font`, never in `res/` or git), printed a letter a frame; `{be01}`
+  waits then scrolls at the next line break, `{be00}` waits then starts a new box (its following line break, which all
+  3,758 have, starts the box), `{ff00:n}` colors, words as `Word<n>`. Click = A. The game's fonts keep each glyph's
+  widths in the first 3 bytes of its 48-byte cell. Also `MessageEditor` for other pages.
+- **Script Editor** (`src/modules/scripts/`): a file whole or one script by its ScriptEntry number, highlighted
+  (unknown commands from `field_script.inc` in red), the command's parameters at the cursor, Go to for labels, and the
+  message an ID names (editable, previewed). Reusable `ScriptEditor embedded` and `CodeEditor`.
+- **Pokémon Editor** (`src/modules/pokemon/`): sprite (normal/shiny), stats with bars, record, evolutions (parameter by
+  method) and the family tree, learnset, Pokédex. `SpeciesIcon` reads `sPokeIconPalettes` for the icon's bank.
+- **Trainer Editor** (`src/modules/trainers/`): class sprite, settings, party cards (items and moves for the whole
+  party or none), lines with the talk window.
+- **Not checked:** the preview against the game side by side (the frame and the line spacing are from the code, not a
+  screenshot); the words' samples are placeholders, not the script's real words. The user's editor was restarted
+  (detached) to serve the new endpoints.
+
 ## 2026-10-31 (overnight): the art converter and the boot screen
 
 The user's plan for the night: 1. the art converter in the editor, with the boot and title screens editable and one
