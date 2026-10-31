@@ -37,6 +37,14 @@ export const api = {
   /** The lines of the files under res/ that a glob names which match a regular expression. */
   scan: (glob: string, pattern: string) =>
     request<ScanMatch[]>("GET", `/api/scan?glob=${encodeURIComponent(glob)}&pattern=${encodeURIComponent(pattern)}`),
+  /** The paths of the files under res/ that a glob names, sorted. */
+  list: (glob: string) => request<string[]>("GET", `/api/list?glob=${encodeURIComponent(glob)}`),
+  /** An image under res/, as its file's bytes. */
+  async asset(path: string): Promise<ArrayBuffer> {
+    const response = await fetch(api.assetUrl(path));
+    if (!response.ok) throw new Error(`${path}: ${response.statusText}`);
+    return response.arrayBuffer();
+  },
   /** The address of a 2D screen of res/ drawn as a PNG, from its character PNG, screen and palette. */
   screenUrl: (chars: string, screen: string, palette: string) =>
     `/api/screen?chars=${encodeURIComponent(chars)}&screen=${encodeURIComponent(screen)}&palette=${encodeURIComponent(palette)}`,

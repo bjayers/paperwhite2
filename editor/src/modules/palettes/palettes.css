@@ -1,0 +1,61 @@
+/* The Palette Editor. Colours are the shell's tokens, so it follows the theme. */
+
+.pal-editor { display: grid; grid-template-columns: 260px 1fr; flex: 1; min-height: 0; background: var(--panel); }
+.pal-list { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--border); }
+.pal-list-tools { padding: 8px 10px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px; }
+.pal-list-tools .filter { width: 100%; }
+.pal-list-items { flex: 1; overflow-y: auto; padding-bottom: 24px; }
+.pal-group { display: block; width: 100%; border: none; border-radius: 0; background: var(--panel-2); text-align: left;
+  padding: 4px 10px; font-weight: 600; }
+.pal-item { display: block; width: 100%; border: none; border-radius: 0; background: none; text-align: left; padding: 2px 10px 2px 22px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pal-item:hover { background: var(--hover); }
+.pal-item.selected { background: var(--selected); box-shadow: inset 3px 0 var(--accent); }
+.pal-more { margin: 4px 22px; font-size: 12px; }
+
+.pal-main { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.pal-header { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 8px 14px; border-bottom: 1px solid var(--border); }
+.pal-header h2 { margin: 0 6px 0 0; font-size: 16px; }
+.pal-header .spacer { flex: 1; }
+.pal-message { margin: 8px 14px 0; padding: 6px 10px; border-radius: 6px; background: var(--accent-soft); }
+.pal-empty { padding: 20px; max-width: 720px; }
+.pal-body { flex: 1; overflow: auto; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px; padding: 12px 16px 48px; }
+.pal-panel { border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; background: var(--panel); }
+.pal-panel h3 { margin: 0 0 8px; font-size: 14px; }
+.pal-colors { flex: 0 0 440px; }
+.pal-preview { flex: 1; min-width: 320px; overflow-x: auto; }
+.pal-mono { font-family: var(--mono); font-size: 12px; }
+.pal-hint { font-size: 12px; margin: 6px 0; }
+.pal-error { color: var(--error); margin: 6px 0; }
+.pal-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.pal-row.wrap { flex-wrap: wrap; }
+.pal-row h3 { margin: 0; }
+.pal-inline { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; }
+
+.pal-swatches { display: flex; flex-direction: column; gap: 3px; }
+.pal-swatch-row { display: flex; align-items: center; gap: 3px; }
+.pal-bank { width: 18px; text-align: right; font-size: 11px; margin-right: 2px; }
+.pal-swatch { width: 26px; height: 26px; padding: 0; border: 1px solid var(--border); border-radius: 4px; position: relative; cursor: pointer; }
+.pal-swatches.small .pal-swatch { width: 14px; height: 14px; border-radius: 2px; cursor: default; }
+.pal-swatch.zero::after { content: ""; position: absolute; left: 2px; top: 2px; width: 6px; height: 6px; border-radius: 1px;
+  background: repeating-conic-gradient(#ccc 0 25%, #888 0 50%) 0 0 / 4px 4px; }
+.pal-swatches.small .pal-swatch.zero::after { display: none; }
+.pal-swatch.unused { opacity: 0.4; }
+.pal-swatch.selected { outline: 2px solid var(--accent); outline-offset: 1px; }
+.pal-swatch.primary { outline: 3px solid var(--text); outline-offset: 1px; }
+
+.pal-color { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+.pal-color-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.pal-big-swatch { width: 40px; height: 40px; border-radius: 6px; border: 1px solid var(--border); }
+.pal-axis { display: grid; grid-template-columns: 18px 1fr 56px; align-items: center; gap: 8px; margin: 4px 0; }
+.pal-axis.wide { grid-template-columns: 76px 1fr 36px; }
+.pal-axis input[type="number"] { width: 56px; }
+.pal-hex { width: 80px; }
+.pal-tools { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+
+.pal-images { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 10px; }
+.pal-images figure { margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.pal-canvas { image-rendering: pixelated; border: 1px solid var(--border); cursor: crosshair; }
+.pal-file-button { position: relative; overflow: hidden; display: inline-flex; align-items: center; padding: 4px 10px;
+  border: 1px solid var(--border); border-radius: 6px; background: var(--panel-2); cursor: pointer; font-size: 13px; }
+.pal-file-button input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }

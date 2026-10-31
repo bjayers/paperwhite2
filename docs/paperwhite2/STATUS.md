@@ -2,6 +2,20 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-30: DexNav polish, its art templates, and the editor's Palette Editor
+
+- **DexNav** (not yet tested in game after these changes; the first build was tested and worked):
+  - each tab row spaced evenly by the labels' widths, the chosen tab underlined;
+  - the cells' shares as wide as their icons and centered, an empty cell's share clear.
+- **Art:** `res/paperwhite2/dexnav/` has the README for custom art (the DS's limits, an Aseprite workflow) and
+  `templates/{top,touch}.png` of the current layout, from `tools/paperwhite2/dexnav_templates.py`. The converter and
+  the app's wiring wait for the first art.
+- **Editor:** the Palette Editor (`editor/src/modules/palettes/`, README): every `.pal` under `res/` in the DS's colors,
+  on the folder's images, with a sprite's other palette beside it (normal and shiny), hue/saturation/lightness shifts,
+  ramps, import from a .pal or a PNG, and .pal downloads for Aseprite. The server has `GET /api/list` (files under
+  `res/` by glob). Checked with Playwright on a scratch copy: loading, the preview, saving. `tests/palettes.test.ts`:
+  every palette round-trips; the PNG reader agrees with the build's.
+
 ## 2026-10-30: the DexNav (not yet tested in game)
 
 - **Built** per docs/paperwhite2/design/dexnav.md ("As built"):

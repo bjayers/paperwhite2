@@ -3,7 +3,7 @@
 
 import { createReadStream, existsSync, globSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { extname, join, resolve } from "node:path";
+import { extname, join, resolve, sep } from "node:path";
 import { parseJson, JsonSyntaxError } from "../shared/json.ts";
 import { WRITE_HEADER, type DataFile, type ProjectInfo, type SaveRequest, type SaveResult, type ServerEvent } from "../shared/api.ts";
 import { Builder } from "./build.ts";
@@ -123,6 +123,13 @@ const routes: Record<string, Handler> = {
       });
     }
     json(res, found);
+  },
+  // The paths of the files under res/ that a glob names (?glob=res/**/*.pal), sorted, for modules that browse files
+  // that aren't data, such as the Palette Editor's palettes. It only reads.
+  "GET /api/list": (_req, res, url) => {
+    const glob = url.searchParams.get("glob") ?? "";
+    if (!glob.startsWith("res/") || glob.includes("..")) return error(res, 400, "List files under res/ only");
+    json(res, globSync(glob, { cwd: ROOT }).map((p) => p.split(sep).join("/")).sort());
   },
   // An image under res/, such as a Pokémon's icon, for modules to show.
   "GET /api/asset": (_req, res, url) => {

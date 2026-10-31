@@ -21,12 +21,15 @@
   - `paperwhite2_dexnav.c` draws them on Geonet's grid, as the Season app does:
     - **Top screen:** the area's name; the chosen Pokémon's icon, name, types, rate, levels, and caught/seen/not
       seen; the outbreak or hidden ability chance; and the season, time and weather.
-    - **Touch screen:** the method tabs (Surf, Surf Ripple, Rod, Rod Ripple; Grass, Dark Grass, Rustling), the
-      chosen one in blue and those with nothing grey, over a scrolling grid of 6 by 3 icons with their shares.
+    - **Touch screen:** the method tabs (Surf, Surf Ripple, Rod, Rod Ripple; Grass, Dark Grass, Rustling), each
+      row spaced evenly by the labels' widths, the chosen one blue and underlined and those with nothing grey, over a
+      scrolling grid of 6 by 3 icons with their shares centered under them (an empty cell's share is clear).
     - **Unseen Pokémon:** the "?" icon (species 0's) and "???".
   - **Controls:** L/R or a tab changes the method, the D-pad or a touch picks a Pokémon, B or X leaves.
 - **Text:** `res/text/system/dexnav.txt` (`TEXT_BANK_DEXNAV`), and the Y menu's label (`ability_handlers_4.txt`'s
   `AbilityHandlers4_Text_Dexnav`).
+- **Art:** its own art goes in `res/paperwhite2/dexnav/`, whose README says what the DS allows and how to draw it;
+  `templates/` has both screens' layout to draw over. The converter and the wiring come with the first art.
 - **Not yet:** search, chains and their bonuses (phase 4); the original-table fallback (every zone with encounters
   has an area); a C-Gear button.
 

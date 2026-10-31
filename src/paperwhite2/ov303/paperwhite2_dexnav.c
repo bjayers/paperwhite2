@@ -75,7 +75,8 @@ enum {
 #define ICON_TILES 4
 #define ICON_BYTES 0x200
 
-// The grid: columns and rows of cells, each an icon over its share, and where it starts, in tiles
+// The grid: columns and rows of cells, each an icon over its share, and where it starts, in tiles. A cell's share is
+// under its icon, as wide, so the cells' labels stay apart
 #define GRID_COLUMNS 6
 #define GRID_ROWS 3
 #define GRID_CELLS (GRID_COLUMNS * GRID_ROWS)
@@ -83,12 +84,16 @@ enum {
 #define GRID_Y 5
 #define CELL_WIDTH 5
 #define CELL_HEIGHT 6
+#define LABEL_WIDTH ICON_TILES
 #define LABEL_HEIGHT 2
 
-// The tabs: the water row's tabs, then the land row's, their widths in pixels
+// The tabs: the water row's tabs, then the land row's, each row's labels spaced evenly across the screen, and the
+// chosen one underlined in the font's blue
 #define TAB_ROW_HEIGHT 16
-#define WATER_TAB_WIDTH 64
-#define LAND_TAB_WIDTH 80
+#define TABS_WIDTH 256
+#define TAB_UNDERLINE_Y 14
+#define TAB_UNDERLINE_HEIGHT 2
+#define TAB_UNDERLINE_COLOR 5
 
 enum {
     SEQ_INIT,
@@ -122,6 +127,10 @@ typedef struct {
     u8 method;
     u8 chosen[DEXNAV_METHOD_COUNT];
     u8 scroll;
+    // Each tab's place and its label's width, in pixels
+    u16 tabX[DEXNAV_METHOD_COUNT];
+    u16 tabWidth[DEXNAV_METHOD_COUNT];
+    u16 labelWidth[DEXNAV_METHOD_COUNT];
     // Whether a window's map changed, so the text BGs' screens are sent to VRAM at the end of the frame
     BOOL screensChanged;
     BmpWin *title;
@@ -229,6 +238,15 @@ static StrBuf *Dexnav_Format(DexnavWork *work, u32 message) {
 
 static void Dexnav_Print(DexnavWork *work, BmpWin *window, u32 message, s16 x, s16 y) {
     GFL_TextRendererDrawToBitmap(BmpWin_GetBitmap(window), x, y, Dexnav_Format(work, message), work->font);
+}
+
+// A message centered in a width of pixels
+static void Dexnav_PrintCentered(DexnavWork *work, BmpWin *window, u32 message, u32 width, s16 y) {
+    StrBuf *text = Dexnav_Format(work, message);
+    u32 textWidth = GFL_FontGetBlockWidth(text, work->font, 0);
+
+    GFL_TextRendererDrawToBitmap(BmpWin_GetBitmap(window), textWidth < width ? (width - textWidth) / 2 : 0, y, text,
+                                 work->font);
 }
 
 static void Dexnav_PrintColor(DexnavWork *work, BmpWin *window, u32 message, s16 x, s16 y, u16 color) {
@@ -411,19 +429,47 @@ static void Dexnav_DrawInfo(DexnavWork *work) {
     BmpWin_FlushChar(info);
 }
 
+// Spaces each row's tabs evenly: the labels' widths, the rest shared between them, the row's last tab to its end
+static void Dexnav_LayOutTabs(DexnavWork *work) {
+    u32 row, i;
+
+    for (row = 0; row < 2; row++) {
+        u32 first = row == 0 ? 0 : DEXNAV_WATER_METHODS;
+        u32 end = row == 0 ? DEXNAV_WATER_METHODS : DEXNAV_METHOD_COUNT;
+        u32 total = 0;
+        u32 x = 0;
+        u32 gap;
+
+        for (i = first; i < end; i++) {
+            work->labelWidth[i] = GFL_FontGetBlockWidth(Dexnav_Format(work, sMethodNames[i]), work->font, 0);
+            total += work->labelWidth[i];
+        }
+        gap = total < TABS_WIDTH ? (TABS_WIDTH - total) / (end - first) : 0;
+        for (i = first; i < end; i++) {
+            work->tabX[i] = x;
+            work->tabWidth[i] = i == end - 1 ? TABS_WIDTH - x : work->labelWidth[i] + gap;
+            x += work->tabWidth[i];
+        }
+    }
+}
+
 static void Dexnav_DrawTabs(DexnavWork *work) {
+    GFLBitmap *bitmap = BmpWin_GetBitmap(work->tabs);
     u32 i;
 
     Dexnav_Clear(work->tabs);
     for (i = 0; i < DEXNAV_METHOD_COUNT; i++) {
-        BOOL water = i < DEXNAV_WATER_METHODS;
-        s16 x = water ? i * WATER_TAB_WIDTH : (i - DEXNAV_WATER_METHODS) * LAND_TAB_WIDTH + LAND_TAB_WIDTH / 4;
-        s16 y = water ? 0 : TAB_ROW_HEIGHT;
+        s16 x = work->tabX[i] + (work->tabWidth[i] - work->labelWidth[i]) / 2;
+        s16 y = i < DEXNAV_WATER_METHODS ? 0 : TAB_ROW_HEIGHT;
         u16 color = i == work->method                       ? COLOR_CHOSEN
                     : Dexnav_GetMethod(work, i)->count == 0 ? COLOR_UNUSED
                                                             : PRINT_COLOR(1, 2, FILL_COLOR);
 
-        Dexnav_PrintColor(work, work->tabs, sMethodNames[i], x + 4, y, color);
+        Dexnav_PrintColor(work, work->tabs, sMethodNames[i], x, y, color);
+        if (i == work->method) {
+            GFL_BitmapFillArea(bitmap, x, y + TAB_UNDERLINE_Y, work->labelWidth[i], TAB_UNDERLINE_HEIGHT,
+                               TAB_UNDERLINE_COLOR);
+        }
     }
     BmpWin_FlushChar(work->tabs);
 }
@@ -438,12 +484,14 @@ static void Dexnav_DrawGrid(DexnavWork *work) {
         BmpWin *label = work->cellLabels[i];
 
         Dexnav_DrawIcon(work, work->cellIcons[i], entry);
-        Dexnav_Clear(label);
+        // An empty cell's label is clear, so the grid shows through
+        GFL_BitmapFill(BmpWin_GetBitmap(label), entry != NULL ? FILL_COLOR : 0);
         BmpWin_SetPalette(label, index == work->chosen[work->method] && entry != NULL ? PALETTE_CHOSEN : PALETTE_FONT);
         if (entry != NULL) {
             Dexnav_SetShare(work, 0, entry->share);
-            Dexnav_Print(work, label, entry->from == DEXNAV_FROM_ITEMS ? Dexnav_Text_CellItems : Dexnav_Text_Cell, 2,
-                         0);
+            Dexnav_PrintCentered(work, label,
+                                 entry->from == DEXNAV_FROM_ITEMS ? Dexnav_Text_CellItems : Dexnav_Text_Cell,
+                                 LABEL_WIDTH * 8, 0);
         }
         BmpWin_FlushChar(label);
         BmpWin_FlushMap(label);
@@ -507,11 +555,13 @@ static void Dexnav_Touch(DexnavWork *work, u32 x, u32 y) {
     u32 column, row;
 
     if (y < TAB_ROW_HEIGHT * 2) {
-        u32 tab = y < TAB_ROW_HEIGHT
-                      ? x / WATER_TAB_WIDTH
-                      : DEXNAV_WATER_METHODS + (x < LAND_TAB_WIDTH / 4 ? 0 : (x - LAND_TAB_WIDTH / 4) / LAND_TAB_WIDTH);
+        u32 end = y < TAB_ROW_HEIGHT ? DEXNAV_WATER_METHODS : DEXNAV_METHOD_COUNT;
+        u32 tab = y < TAB_ROW_HEIGHT ? 0 : DEXNAV_WATER_METHODS;
 
-        if (tab < DEXNAV_METHOD_COUNT && tab != work->method && Dexnav_GetMethod(work, tab)->count != 0) {
+        while (tab < end && x >= work->tabX[tab] + work->tabWidth[tab]) {
+            tab++;
+        }
+        if (tab < end && tab != work->method && Dexnav_GetMethod(work, tab)->count != 0) {
             GFL_SndSEPlay(SEQ_SE_SELECT1);
             Dexnav_ShowMethod(work, tab);
         }
@@ -623,7 +673,7 @@ static void Dexnav_LoadGraphics(DexnavWork *work) {
 
         work->cellIcons[i] = Dexnav_CreateWindowAt(BG_TOUCH_TEXT, x, y, ICON_TILES, ICON_TILES, PALETTE_ICONS);
         work->cellLabels[i] =
-            Dexnav_CreateWindowAt(BG_TOUCH_TEXT, x, y + ICON_TILES, CELL_WIDTH, LABEL_HEIGHT, PALETTE_FONT);
+            Dexnav_CreateWindowAt(BG_TOUCH_TEXT, x, y + ICON_TILES, LABEL_WIDTH, LABEL_HEIGHT, PALETTE_FONT);
     }
 }
 
@@ -687,6 +737,7 @@ static BOOL DexnavProc_Main(GameProc *proc, u32 *state, void *param, void *procW
     switch (*state) {
     case SEQ_INIT:
         Dexnav_LoadGraphics(work);
+        Dexnav_LayOutTabs(work);
         Dexnav_DrawTitle(work);
         Dexnav_DrawConditions(work);
         Dexnav_ShowMethod(work, Dexnav_GetFirstMethod(work));

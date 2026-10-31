@@ -21,7 +21,7 @@ If Edge can't reach it, WSL isn't forwarding the port: check that `localhostForw
 ## What it does
 
 - **Specialty editors** at the top of the sidebar, under **Editors**: everything about one subject in one place. The
-  first is the **Encounter Editor** (below). The per-file editors are under **Data files**, which folds away. A page
+  first are the **Encounter Editor** and the **Palette Editor** (below). The per-file editors are under **Data files**, which folds away. A page
   of a tool can be linked to: `http://localhost:7420/#tool/encounters`.
 - **Every kind of data in `res/`, found by itself.** Each data file names its schema in `"$schema"`; the editor groups
   the files by schema, so a new kind of data, a new field or a new file shows up without changing the editor.
@@ -83,6 +83,25 @@ The bar at the top sets the preview: season, period, weather, the party's level,
 what it reads, including the scripts' gifts and static battles and the swarm table through `GET /api/scan`;
 `lookup.ts` the families, legendaries and ways to get each species.
 
+## The Palette Editor
+
+Every JASC palette (`.pal`) under `res/`, by folder (`src/modules/palettes/`): a Pokémon's `normal` and
+`shiny`, a trainer's, an item's, a graphics archive's members, the hack's own. The art is drawn in an image editor
+such as Aseprite; this is for its colors.
+
+- **The colors** are the DS's: 5 bits an axis, 0 to 31, written as the data tools write them (`pal.ts`), so an
+  untouched color never changes and the build reads what is shown. A palette of more than 16 colors shows in rows of
+  16; each row's first color is transparent in a sprite.
+- **Editing:** click a color (Shift for a range, Ctrl to add one) and set it by its axes, a hex code or the picker. The
+  selection can be shifted in hue, saturation and lightness, made a ramp from its first color to its last, copied and
+  pasted, or taken from the palette beside it. Ctrl+S saves, Ctrl+Z and Ctrl+Y undo and redo.
+- **The preview** shows an indexed PNG of the folder in the palette (zoom, which row of the palette a 16-color image
+  uses, color 0 transparent, only the selected colors), and the same image in another palette of the folder beside
+  it: a sprite's shiny palette opens beside its normal one. Clicking a pixel chooses its color. **Open a PNG** shows
+  one from your computer, such as work in progress in Aseprite.
+- **Files:** **Download .pal** for Aseprite (its **Load Palette** reads JASC), **Import colors** from a .pal or an
+  indexed PNG's palette, **Save as** and **New 16-color palette** for new files under `res/`.
+
 ## How it is built
 
 | Folder | |
@@ -91,7 +110,7 @@ what it reads, including the scripts' gifts and static battles and the swarm tab
 | `shared/` | Used by both: JSON read and written without loss (`json.ts`), the schemas' validator (`schema.ts`), the API (`api.ts`) |
 | `src/` | The page (React): the frame in `App.tsx` and `shell/`, open files in `documents.ts` |
 | `src/modules/` | Editor modules, one folder each, found by themselves |
-| `tests/` | `npm test`: every data file round-trips byte for byte, the editor's validator agrees with the build's, and the Encounter Editor's import and pages work on the real `res/` |
+| `tests/` | `npm test`: every data file and palette round-trips byte for byte, the editor's validator agrees with the build's, and the Encounter Editor's import and pages work on the real `res/` |
 
 ### Adding a module
 
