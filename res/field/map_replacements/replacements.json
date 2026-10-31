@@ -1,0 +1,565 @@
+{
+    "$schema": "map_replacements.schema.json",
+    "replacements": [
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "season",
+            "values": [
+                "MAP_MODEL_OVERWORLD_2_MAP05_06",
+                "MAP_MODEL_OVERWORLD_2_MAP05_06",
+                "MAP_MODEL_OVERWORLD_2_MAP05_06",
+                "MAP_MODEL_WINTER05_06"
+            ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "season",
+            "values": [
+                "MAP_MODEL_OVERWORLD_2_MAP06_06",
+                "MAP_MODEL_OVERWORLD_2_MAP06_06",
+                "MAP_MODEL_OVERWORLD_2_MAP06_06",
+                "MAP_MODEL_WINTER06_06"
+            ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "season",
+            "values": [
+                "MAP_MODEL_OVERWORLD_2_MAP05_05",
+                "MAP_MODEL_OVERWORLD_2_MAP05_05",
+                "MAP_MODEL_OVERWORLD_2_MAP05_05",
+                "MAP_MODEL_WINTER05_05"
+            ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "season",
+            "values": [
+                "MAP_MODEL_OVERWORLD_2_MAP05_04",
+                "MAP_MODEL_OVERWORLD_2_MAP05_04",
+                "MAP_MODEL_OVERWORLD_2_MAP05_04",
+                "MAP_MODEL_WINTER05_04"
+            ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "season",
+            "values": [
+                "MAP_MODEL_OVERWORLD_2_MAP06_05",
+                "MAP_MODEL_OVERWORLD_2_MAP06_05",
+                "MAP_MODEL_OVERWORLD_2_MAP06_05",
+                "MAP_MODEL_WINTER06_05"
+            ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "season",
+            "values": [
+                "MAP_MODEL_OVERWORLD_2_MAP24_21",
+                "MAP_MODEL_SUMMER24_21",
+                "MAP_MODEL_AUTUMN24_21",
+                "MAP_MODEL_WINTER24_21"
+            ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "season",
+            "values": [
+                "MAP_MODEL_OVERWORLD_2_MAP24_22",
+                "MAP_MODEL_SUMMER24_22",
+                "MAP_MODEL_AUTUMN24_22",
+                "MAP_MODEL_WINTER24_22"
+            ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "season",
+            "values": [
+                "MAP_MODEL_OVERWORLD_2_MAP07_05",
+                "MAP_MODEL_OVERWORLD_2_MAP07_05",
+                "MAP_MODEL_OVERWORLD_2_MAP07_05",
+                "MAP_MODEL_WINTER07_05"
+            ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "season",
+            "values": [
+                "MAP_MODEL_OVERWORLD_2_MAP24_22",
+                "MAP_MODEL_SUMMER24_22",
+                "MAP_MODEL_AUTUMN24_22",
+                "MAP_MODEL_WINTER24_22"
+            ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "season",
+            "values": [
+                "MAP_MODEL_OVERWORLD_2_MAP04_20",
+                "MAP_MODEL_OVERWORLD_2_MAP04_20",
+                "MAP_MODEL_AUTUMN04_20",
+                "MAP_MODEL_OVERWORLD_2_MAP04_20"
+            ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "season",
+            "values": [
+                "MAP_MODEL_OVERWORLD_2_MAP04_21",
+                "MAP_MODEL_OVERWORLD_2_MAP04_21",
+                "MAP_MODEL_AUTUMN04_21",
+                "MAP_MODEL_OVERWORLD_2_MAP04_21"
+            ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "season",
+            "values": [
+                "MAP_MODEL_OVERWORLD_2_MAP05_20",
+                "MAP_MODEL_OVERWORLD_2_MAP05_20",
+                "MAP_MODEL_AUTUMN05_20",
+                "MAP_MODEL_OVERWORLD_2_MAP05_20"
+            ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "season",
+            "values": [
+                "MAP_MODEL_OVERWORLD_2_MAP05_21",
+                "MAP_MODEL_OVERWORLD_2_MAP05_21",
+                "MAP_MODEL_AUTUMN05_21",
+                "MAP_MODEL_OVERWORLD_2_MAP05_21"
+            ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD_2",
+            "kind": "chunk",
+            "condition": "season",
+            "values": [
+                "MAP_MODEL_OVERWORLD_2_MAP05_06",
+                "MAP_MODEL_OVERWORLD_2_MAP05_06",
+                "MAP_MODEL_OVERWORLD_2_MAP05_06",
+                "MAP_MODEL_WINTER05_06"
+            ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD_2",
+            "kind": "chunk",
+            "condition": "season",
+            "values": [
+                "MAP_MODEL_OVERWORLD_2_MAP06_06",
+                "MAP_MODEL_OVERWORLD_2_MAP06_06",
+                "MAP_MODEL_OVERWORLD_2_MAP06_06",
+                "MAP_MODEL_WINTER06_06"
+            ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD_2",
+            "kind": "chunk",
+            "condition": "season",
+            "values": [
+                "MAP_MODEL_OVERWORLD_2_MAP05_05",
+                "MAP_MODEL_OVERWORLD_2_MAP05_05",
+                "MAP_MODEL_OVERWORLD_2_MAP05_05",
+                "MAP_MODEL_WINTER05_05"
+            ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD_2",
+            "kind": "chunk",
+            "condition": "season",
+            "values": [
+                "MAP_MODEL_OVERWORLD_2_MAP05_04",
+                "MAP_MODEL_OVERWORLD_2_MAP05_04",
+                "MAP_MODEL_OVERWORLD_2_MAP05_04",
+                "MAP_MODEL_WINTER05_04"
+            ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD_2",
+            "kind": "chunk",
+            "condition": "season",
+            "values": [
+                "MAP_MODEL_OVERWORLD_2_MAP06_05",
+                "MAP_MODEL_OVERWORLD_2_MAP06_05",
+                "MAP_MODEL_OVERWORLD_2_MAP06_05",
+                "MAP_MODEL_WINTER06_05"
+            ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD_2",
+            "kind": "chunk",
+            "condition": "season",
+            "values": [
+                "MAP_MODEL_OVERWORLD_2_MAP07_05",
+                "MAP_MODEL_OVERWORLD_2_MAP07_05",
+                "MAP_MODEL_OVERWORLD_2_MAP07_05",
+                "MAP_MODEL_WINTER07_05"
+            ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "version",
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP02_10", "MAP_MODEL_WHITE02_10" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "version",
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP02_09", "MAP_MODEL_WHITE02_09" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "version",
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP02_08", "MAP_MODEL_WHITE02_08" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "version",
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP03_09", "MAP_MODEL_WHITE03_09" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "version",
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP12_04", "MAP_MODEL_WHITE12_04" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "version",
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP12_05", "MAP_MODEL_WHITE12_05" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "version",
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP13_04", "MAP_MODEL_WHITE13_04" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "version",
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP13_05", "MAP_MODEL_WHITE13_05" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "version",
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP12_16", "MAP_MODEL_WHITE12_16" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "version",
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP13_15", "MAP_MODEL_WHITE13_15" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "version",
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP13_16", "MAP_MODEL_WHITE13_16" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "version",
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP12_17", "MAP_MODEL_WHITE12_17" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "version",
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP13_17", "MAP_MODEL_WHITE13_17" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "version",
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP12_18", "MAP_MODEL_WHITE12_18" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": "version",
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP13_18", "MAP_MODEL_WHITE13_18" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD_2",
+            "kind": "chunk",
+            "condition": "version",
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP02_10", "MAP_MODEL_WHITE02_10" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD_2",
+            "kind": "chunk",
+            "condition": "version",
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP02_09", "MAP_MODEL_WHITE02_09" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD_2",
+            "kind": "chunk",
+            "condition": "version",
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP02_08", "MAP_MODEL_WHITE02_08" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD_2",
+            "kind": "chunk",
+            "condition": "version",
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP03_09", "MAP_MODEL_WHITE03_09" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD_2",
+            "kind": "chunk",
+            "condition": "version",
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP12_04", "MAP_MODEL_WHITE12_04" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD_2",
+            "kind": "chunk",
+            "condition": "version",
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP12_05", "MAP_MODEL_WHITE12_05" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD_2",
+            "kind": "chunk",
+            "condition": "version",
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP13_04", "MAP_MODEL_WHITE13_04" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD_2",
+            "kind": "chunk",
+            "condition": "version",
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP13_05", "MAP_MODEL_WHITE13_05" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OPELUCID_CITY_2",
+            "kind": "matrix",
+            "condition": "version",
+            "values": [ "MAP_MATRIX_OPELUCID_CITY_2", "MAP_MATRIX_M_WBUILL01" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OPELUCID_CITY_3",
+            "kind": "matrix",
+            "condition": "version",
+            "values": [ "MAP_MATRIX_OPELUCID_CITY_3", "MAP_MATRIX_M_WBUILL02" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OPELUCID_CITY_12",
+            "kind": "matrix",
+            "condition": "version",
+            "values": [ "MAP_MATRIX_OPELUCID_CITY_12", "MAP_MATRIX_M_OLDWBUILL01" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_DRIFTVEIL_CITY_7",
+            "kind": "matrix",
+            "condition": "version_season",
+            "values": [
+                "MAP_MATRIX_DRIFTVEIL_CITY_7",
+                "MAP_MATRIX_M_MARKET02",
+                "MAP_MATRIX_M_MARKET03",
+                "MAP_MATRIX_M_MARKET04",
+                "MAP_MATRIX_M_MARKET05"
+            ]
+        },
+        {
+            "matrix": "MAP_MATRIX_TWIST_MOUNTAIN_2",
+            "kind": "matrix",
+            "condition": "season",
+            "values": [
+                "MAP_MATRIX_TWIST_MOUNTAIN_2",
+                "MAP_MATRIX_TWIST_MOUNTAIN_2",
+                "MAP_MATRIX_TWIST_MOUNTAIN_2",
+                "MAP_MATRIX_WINTER0701"
+            ]
+        },
+        {
+            "matrix": "MAP_MATRIX_MOOR_OF_ICIRRUS",
+            "kind": "matrix",
+            "condition": "season",
+            "values": [
+                "MAP_MATRIX_MOOR_OF_ICIRRUS",
+                "MAP_MATRIX_MOOR_OF_ICIRRUS",
+                "MAP_MATRIX_MOOR_OF_ICIRRUS",
+                "MAP_MATRIX_WINTER1801"
+            ]
+        },
+        {
+            "matrix": "MAP_MATRIX_CASTELIA_SEWERS",
+            "kind": "matrix",
+            "condition": "season",
+            "values": [
+                "MAP_MATRIX_CASTELIA_SEWERS",
+                "MAP_MATRIX_CASTELIA_SEWERS",
+                "MAP_MATRIX_M_DUN1101",
+                "MAP_MATRIX_M_DUN1101"
+            ]
+        },
+        {
+            "matrix": "MAP_MATRIX_PLEDGE_GROVE",
+            "kind": "matrix",
+            "condition": "season",
+            "values": [ "MAP_MATRIX_PLEDGE_GROVE", "MAP_MATRIX_PLEDGE_GROVE", "MAP_MATRIX_AUTUMN3601", "MAP_MATRIX_PLEDGE_GROVE" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": 3,
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP12_04", "MAP_MODEL_FREEZEB_00_00" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": 3,
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP12_05", "MAP_MODEL_FREEZEB_00_01" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": 3,
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP13_04", "MAP_MODEL_FREEZEB_01_00" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": 3,
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP13_05", "MAP_MODEL_FREEZEB_01_01" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": 3,
+            "values": [ "MAP_MODEL_WHITE12_04", "MAP_MODEL_FREEZEW_00_00" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": 3,
+            "values": [ "MAP_MODEL_WHITE12_05", "MAP_MODEL_FREEZEW_00_01" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": 3,
+            "values": [ "MAP_MODEL_WHITE13_04", "MAP_MODEL_FREEZEW_01_00" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": 3,
+            "values": [ "MAP_MODEL_WHITE13_05", "MAP_MODEL_FREEZEW_01_01" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": 3,
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP10_05", "MAP_MODEL_FREEZEMAP10_05" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": 3,
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP11_05", "MAP_MODEL_FREEZEMAP11_05" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": 3,
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP14_05", "MAP_MODEL_FREEZEMAP14_05" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": 3,
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP15_05", "MAP_MODEL_FREEZEMAP15_05" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_PLASMA_FRIGATE_5",
+            "kind": "matrix",
+            "condition": 4,
+            "values": [ "MAP_MATRIX_PLASMA_FRIGATE_5", "MAP_MATRIX_M_DUN2721" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_PLASMA_FRIGATE_6",
+            "kind": "matrix",
+            "condition": 4,
+            "values": [ "MAP_MATRIX_PLASMA_FRIGATE_6", "MAP_MATRIX_M_DUN2722" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_PLASMA_FRIGATE_10",
+            "kind": "matrix",
+            "condition": 4,
+            "values": [ "MAP_MATRIX_PLASMA_FRIGATE_10", "MAP_MATRIX_M_DUN2723" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_PLASMA_FRIGATE_13",
+            "kind": "matrix",
+            "condition": 4,
+            "values": [ "MAP_MATRIX_PLASMA_FRIGATE_13", "MAP_MATRIX_M_DUN2724" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD_2",
+            "kind": "chunk",
+            "condition": 5,
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP12_04", "MAP_MODEL_WHITE12_04" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD_2",
+            "kind": "chunk",
+            "condition": 5,
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP12_05", "MAP_MODEL_WHITE12_05" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD_2",
+            "kind": "chunk",
+            "condition": 5,
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP13_04", "MAP_MODEL_WHITE13_04" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD_2",
+            "kind": "chunk",
+            "condition": 5,
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP13_05", "MAP_MODEL_WHITE13_05" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_CASTELIA_CITY_10",
+            "kind": "chunk",
+            "condition": 6,
+            "values": [ "MAP_MODEL_CASTELIA_CITY_10_C03_J00_00", "MAP_MODEL_SHIP_J00_00" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": 7,
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP06_15", "MAP_MODEL_TSHIP06_15" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": 8,
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP25_07", "MAP_MODEL_SHIP25_07" ]
+        },
+        {
+            "matrix": "MAP_MATRIX_OVERWORLD",
+            "kind": "chunk",
+            "condition": 9,
+            "values": [ "MAP_MODEL_OVERWORLD_2_MAP25_07", "MAP_MODEL_TSHIP25_07" ]
+        }
+    ]
+}

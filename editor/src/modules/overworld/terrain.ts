@@ -3,8 +3,14 @@
 // each chunk's collision is one or two layers of tiles (terrain_<layer>.csv), each with a shape, a slope and a height
 // index into the tables of src/ov036/field_map_chunk_height.c, and its tile type: flags in the high 16 bits (bit 0
 // blocks walking, 0x2 water, 0x4 wild encounters, 0x40 reflections) and the tile class in the low 16.
+//
+// Seasons (and the version and some events) replace chunks or whole matrices
+// (res/field/map_replacements/replacements.json, as MapMatrix_Patch applies them): a season's chunk is another map
+// model, with its own collision. The zone's area, whose number the season adds to (AreaData_Create), gives the
+// texture set the models are drawn with.
 
 import { api } from "../../api.ts";
+import type { Constants } from "../../../shared/schema.ts";
 
 export const TILE = 16;
 export const CHUNK_TILES = 32;
@@ -45,8 +51,16 @@ export interface Chunk {
   layers: TerrainLayer[];
 }
 
+export const SEASONS = ["Spring", "Summer", "Autumn", "Winter"];
+
 export interface ZoneMap {
   zone: string;
+  /** The season it is shown in, 0 to 3, and whether the zone's area has seasons. */
+  season: number;
+  seasonal: boolean;
+  /** The texture set of the zone's area in the season (res/field/maps/textures/<set>/), and its files' names. */
+  textureSet: string | null;
+  textures: Set<string>;
   matrix: string;
   /** The matrix's size, in cells. */
   columns: number;
@@ -143,19 +157,78 @@ export async function reloadLayers(chunk: Chunk, source?: TextSource): Promise<v
   chunk.layers = layers;
 }
 
-/** The zone's chunks: the matrix's cells that are the zone's (the overworld's name their zones), or all of a small
- * matrix's. */
-export async function loadZoneMap(zone: string): Promise<ZoneMap> {
-  const zoneData = JSON.parse((await api.file(`res/field/zones/${zone}.json`)).text) as { matrix: string };
-  const matrixFile = `res/field/matrices/${zoneData.matrix.replace(/^MAP_MATRIX_/, "").toLowerCase()}.json`;
+interface Replacement {
+  matrix: string | number;
+  kind: "chunk" | "matrix";
+  condition: string | number;
+  values: (string | number)[];
+}
+
+const AREA_SEASONS_FIRST = 2;
+const AREA_SEASONS_END = 0x11a;
+
+/** A constant's name for a value, of a prefix. */
+function nameOf(constants: Constants, prefix: string, value: number): string | null {
+  for (const [k, v] of constants) if (v === value && k.startsWith(prefix)) return k;
+  return null;
+}
+
+/** The value a replacement gives in White 2 in a season, or null for one an event or the version decides by default. */
+function replacementValue(r: Replacement, season: number): string | number | null {
+  switch (r.condition) {
+    case "season": return r.values[season] ?? null;
+    case "version_season": return r.values[season + 1] ?? null;
+    case "version": return r.values[1] ?? null;
+    default: return null;
+  }
+}
+
+/** The zone's chunks in a season: the matrix's cells that are the zone's (the overworld's name their zones), or all of
+ * a small matrix's, after the season's replacements. */
+export async function loadZoneMap(zone: string, season: number, constants: Constants): Promise<ZoneMap> {
+  const zoneData = JSON.parse((await api.file(`res/field/zones/${zone}.json`)).text) as { matrix: string; area?: string };
+  const same = (a: string | number, b: string | number) => a === b || (constants.get(String(a)) ?? a) === (constants.get(String(b)) ?? b);
+  const replacements = await api.file("res/field/map_replacements/replacements.json")
+    .then((f) => (JSON.parse(f.text) as { replacements: Replacement[] }).replacements, () => [] as Replacement[]);
+  // A matrix the season replaces, as the field loads the replacement
+  let matrixName = zoneData.matrix;
+  for (const r of replacements) {
+    if (r.kind !== "matrix" || !same(r.matrix, matrixName) || !same(r.values[0], matrixName)) continue;
+    const v = replacementValue(r, season);
+    if (v !== null) matrixName = typeof v === "number" ? nameOf(constants, "MAP_MATRIX_", v) ?? matrixName : v;
+  }
+  const matrixFile = `res/field/matrices/${matrixName.replace(/^MAP_MATRIX_/, "").toLowerCase()}.json`;
   const matrix = JSON.parse((await api.file(matrixFile)).text) as { maps: (string | null)[][]; zones?: (string | null)[][] };
+  const chunkSwaps = replacements.filter((r) => r.kind === "chunk" && same(r.matrix, zoneData.matrix));
+  const swapped = (model: string): string => {
+    for (const r of chunkSwaps) {
+      if (!same(r.values[0], model)) continue;
+      const v = replacementValue(r, season);
+      if (v !== null) return typeof v === "number" ? nameOf(constants, "MAP_MODEL_", v) ?? model : v;
+    }
+    return model;
+  };
+  // The area in the season, and its texture set
+  const areaNumber = zoneData.area ? constants.get(zoneData.area) : undefined;
+  const seasonal = areaNumber !== undefined && areaNumber >= AREA_SEASONS_FIRST && areaNumber < AREA_SEASONS_END;
+  let textureSet: string | null = null;
+  let textures = new Set<string>();
+  const areaName = areaNumber === undefined ? null : seasonal ? nameOf(constants, "AREA_", areaNumber + season) : zoneData.area!;
+  if (areaName) {
+    const area = await api.file(`res/field/areas/${areaName.replace(/^AREA_/, "").toLowerCase()}.json`)
+      .then((f) => JSON.parse(f.text) as { texture_set?: string }, () => null);
+    if (area?.texture_set) {
+      textureSet = area.texture_set.replace(/^MAP_TEXTURE_SET_/, "").toLowerCase();
+      textures = new Set((await api.list(`res/field/maps/textures/${textureSet}/*.png`)).map((p) => p.slice(p.lastIndexOf("/") + 1)));
+    }
+  }
   const tb = await heightTables();
   const constant = `ZONE_${zone.toUpperCase()}`;
   const cells: { model: string; column: number; row: number }[] = [];
   matrix.maps.forEach((row, r) => row.forEach((model, c) => {
     if (!model) return;
     if (matrix.zones && matrix.zones[r]?.[c] !== constant) return;
-    cells.push({ model, column: c, row: r });
+    cells.push({ model: swapped(model), column: c, row: r });
   }));
   const chunks = await Promise.all(cells.map(async (cell) => {
     const folder = `res/field/maps/models/${cell.model.replace(/^MAP_MODEL_/, "").toLowerCase()}`;
@@ -171,7 +244,7 @@ export async function loadZoneMap(zone: string): Promise<ZoneMap> {
     chunk.layers = layers;
     return chunk;
   }));
-  return { zone, matrix: zoneData.matrix, columns: matrix.maps[0]?.length ?? 0, rows: matrix.maps.length, chunks };
+  return { zone, season, seasonal, textureSet, textures, matrix: matrixName, columns: matrix.maps[0]?.length ?? 0, rows: matrix.maps.length, chunks };
 }
 
 /** The tile at a global tile position, and its height, on a layer. */

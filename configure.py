@@ -302,6 +302,8 @@ DATA_PACKS = [
     ("tools/data/zone_data.py", "res/field/zones", ["a/0/1/2"], False, ["res/field/events"]),
     ("tools/data/trade_data.py", "res/field/trades", ["a/1/6/3"], False),  # In-game trades
     ("tools/data/map_matrix_data.py", "res/field/matrices", ["a/0/0/9"], False),  # Map matrices
+    # The chunks and matrices that the season, the version or an event replace
+    ("tools/data/map_replace_data.py", "res/field/map_replacements", ["a/0/1/0"], False),
     # Map models, whose GLBs show the map texture sets' PNGs, which name the textures they bind
     ("tools/data/map_model_data.py", "res/field/maps/models", ["a/0/0/8"], True, ["res/field/maps/textures"]),
     # Field prop models, which their bundles' textures go with in the same way

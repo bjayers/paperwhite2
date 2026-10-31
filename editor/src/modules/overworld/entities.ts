@@ -47,6 +47,8 @@ export interface Entity {
   /** A trainer's sight, in tiles. */
   sight?: number;
   script?: number;
+  /** A warp's zone (its file's name) and the warp of it that it leads to. */
+  target?: { zone: string; warp: number };
 }
 
 type Rec = Record<string, unknown>;
@@ -104,7 +106,8 @@ export function entitiesOf(data: JsonValue | null): Entity[] {
     const g = w.grid as Rec | undefined;
     out.push({ kind: "warp", index, x: g ? Math.floor(num(g.x) / TILE) : null, z: g ? Math.floor(num(g.z) / TILE) : null,
                y: g ? signed16(num(g.y)) : 0, width: g ? Math.max(1, num(g.width, 1)) : 1, depth: g ? Math.max(1, num(g.height, 1)) : 1,
-               label: `Warp ${index} → ${String(w.zone ?? "").replace(/^ZONE_/, "").toLowerCase()}` });
+               label: `Warp ${index} → ${String(w.zone ?? "").replace(/^ZONE_/, "").toLowerCase()}`,
+               target: typeof w.zone === "string" ? { zone: w.zone.replace(/^ZONE_/, "").toLowerCase(), warp: num(w.warp) } : undefined });
   });
   (plain.init_scripts ?? []).forEach((l, index) => {
     out.push({ kind: "level", index, x: null, z: null, y: 0, width: 1, depth: 1, label: `Level script ${index}`, script: num(l.script) });

@@ -195,9 +195,14 @@ trainer's line of sight), Proxies (background events), Triggers, Warps and Level
   **←** back to the list. Remove leaves the other NPCs' IDs as they are.
 - **Scripts:** **Show script** opens the script over the lower half of the map, in the Script Editor, editable: a
   zone's own or a global one (GLOBAL_SCRIPT_TABLE in `src/ov012/script_sys.c` gives the ranges).
-- **Paint** sets tiles' type (walkable, blocked, water, grass and the rest) or a flat height in tiles, in the chunk's
-  `terrain_<layer>.csv`, colored as the stroke passes. A height is the nearest the game's height table has (half
-  tiles from -10 to 10 tiles, but -8).
+- **Seasons:** a zone whose area has seasons gets a **Season** choice, which shows the chunks the season puts in place
+  (`res/field/map_replacements/`, as the game patches the matrix) with the season area's textures. Painting edits
+  the chunks shown, so a season's own chunk has its own permissions.
+- **Warps:** a warp's panel links to the zone it leads to, with the warp it arrives at chosen. Each zone keeps its
+  unsaved changes and its undo while another is shown; Save writes them all.
+- **Paint** (the map gets a light blue border) sets tiles' type (walkable, blocked, water, grass and the rest) or a
+  flat height in tiles (the wheel over the box steps it by half a tile), in the chunk's `terrain_<layer>.csv`, colored
+  as the stroke passes. A height is the nearest the game's height table has (half tiles from -10 to 10 tiles, but -8).
 - The header counts the events' packed size against the game's 2,436-byte buffer. Save (Ctrl+S) writes the events and
   the painted terrain; Ctrl+Z and Ctrl+Y undo and redo moves, adds, removals, field edits and paint strokes (one step
   a stroke) in order. The server gives the models and their textures at `/res/...`.

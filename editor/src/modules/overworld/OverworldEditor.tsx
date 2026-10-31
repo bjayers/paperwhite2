@@ -18,7 +18,7 @@ import { loadWorld, resolveScript, zoneLabel, type World } from "../world/world.
 import { KIND_LISTS, KIND_NAMES, entitiesOf, positionEdits, type Entity, type EntityKind } from "./entities.ts";
 import { entityFields } from "./fields.tsx";
 import { MapView, type OverlayMode } from "./MapView.tsx";
-import { TILE, flatTileFor, loadZoneMap, reloadLayers, tileAt, type ZoneMap } from "./terrain.ts";
+import { SEASONS, TILE, flatTileFor, loadZoneMap, reloadLayers, tileAt, type ZoneMap } from "./terrain.ts";
 
 const EVENTS_BUDGET = 2436;
 const KINDS: EntityKind[] = ["npc", "proxy", "trigger", "warp", "level"];
@@ -53,6 +53,9 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   const [map, setMap] = useState<ZoneMap | null>(null);
   const [mapError, setMapError] = useState<string | null>(null);
   const [layer, setLayer] = useState(0);
+  const [season, setSeason] = useState(0);
+  /** An entity to select once its zone is read: the warp another zone's warp leads to. */
+  const [pending, setPending] = useState<{ kind: EntityKind; index: number } | null>(null);
   const [overlay, setOverlay] = useState<OverlayMode>("type");
   const [showModels, setShowModels] = useState(true);
   const [module, setModule] = useState<EntityKind>("npc");
@@ -65,7 +68,9 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   const [paintMode, setPaintMode] = useState<"type" | "height">("type");
   const [paintHeight, setPaintHeight] = useState(0);
   const [paintNote, setPaintNote] = useState<string | null>(null);
-  /** The editor's edits in order, each the files it changed, for one undo over the events and the terrain. */
+  /** The editor's edits in order, each the files it changed, for one undo over the events and the terrain; each zone
+   * keeps its own, and its unsaved changes, while another is shown. */
+  const histories = useRef(new Map<string, { undo: string[][]; redo: string[][] }>());
   const history = useRef<{ undo: string[][]; redo: string[][] }>({ undo: [], redo: [] });
   const record = useCallback((paths: string[]) => { history.current.undo.push(paths); history.current.redo = []; }, []);
   const [scriptOpen, setScriptOpen] = useState(false);
@@ -87,9 +92,23 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     setMapError(null);
     setSelected(null);
     setLayer(0);
-    history.current = { undo: [], redo: [] };
-    loadZoneMap(zone).then(setMap, (e: Error) => setMapError(e.message));
+    if (!histories.current.has(zone)) histories.current.set(zone, { undo: [], redo: [] });
+    history.current = histories.current.get(zone)!;
   }, [zone]);
+  // The zone's map in the season; a new season keeps the view until its map is read
+  useEffect(() => {
+    if (!zone || !constants.size) return;
+    let live = true;
+    loadZoneMap(zone, season, constants).then((m) => { if (live) setMap(m); }, (e: Error) => { if (live) setMapError(e.message); });
+    return () => { live = false; };
+  }, [zone, season, constants]);
+  useEffect(() => {
+    if (pending && entities.some((e) => e.kind === pending.kind && e.index === pending.index)) {
+      setSelected(pending);
+      setModule(pending.kind);
+      setPending(null);
+    }
+  }, [pending, entities]);
 
   const zones = useMemo(() => {
     const q = filter.trim().toLowerCase();
@@ -247,7 +266,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   const fields = useMemo(() => (chosen ? entityFields(chosen.kind, () => setScriptOpen(true)) : undefined), [chosen?.kind]);
   const revert = async () => {
     for (const d of unsaved) await documents.reload(d.path);
-    history.current = { undo: [], redo: [] };
+    for (const h of histories.current.values()) { h.undo = []; h.redo = []; }
     if (map) {
       for (const chunk of map.chunks) await reloadLayersFromDocs(chunk);
       setMap({ ...map });
@@ -302,6 +321,13 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                   </select>
                 </label>
               )}
+              {map?.seasonal && (
+                <label className="ow-inline" title="The zone's chunks and textures in a season, as the game replaces them; painting edits the chunks shown">Season
+                  <select value={season} onChange={(e) => setSeason(Number(e.target.value))}>
+                    {SEASONS.map((n, i) => <option key={i} value={i}>{n}</option>)}
+                  </select>
+                </label>
+              )}
               <label className="ow-check"><input type="checkbox" checked={showModels} onChange={(e) => setShowModels(e.target.checked)} /> Models</label>
               <label className="ow-check" title="Drag over tiles to paint them"><input type="checkbox" checked={painting} onChange={(e) => setPainting(e.target.checked)} /> Paint</label>
               {painting && (
@@ -315,7 +341,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                     </select>
                   ) : (
                     <label className="ow-inline" title="A flat tile at this height, in tiles (0.5 is half a tile)">
-                      <input type="number" step={0.5} className="ow-height" value={paintHeight} onChange={(e) => setPaintHeight(Number(e.target.value))} /> tiles
+                      <WheelNumber value={paintHeight} step={0.5} onChange={setPaintHeight} /> tiles
                     </label>
                   )}
                 </>
@@ -323,7 +349,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
             </div>
           )}
           {painting && paintNote && <div className="ow-bar muted">{paintNote}</div>}
-          <div className="ow-map-wrap">
+          <div className={`ow-map-wrap${painting ? " painting" : ""}`}>
             {!zone ? <p className="muted ow-empty">Choose a zone.</p>
               : mapError ? <p className="ow-error ow-empty">{mapError}</p>
               : !map ? <p className="muted ow-empty">Reading the map…</p>
@@ -359,6 +385,13 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                 <span className="spacer" />
                 <button onClick={remove} title="Remove it (the others keep their IDs)">Remove</button>
               </div>
+              {chosen.target && (
+                <p className="ow-note">Leads to warp {chosen.target.warp} of{" "}
+                  <button className="link" title="Show that zone, with the warp chosen; this zone's unsaved changes stay unsaved"
+                          onClick={() => { setPending({ kind: "warp", index: chosen.target!.warp }); setZone(chosen.target!.zone); }}>
+                    {zoneLabel(chosen.target.zone)}</button>
+                </p>
+              )}
               {chosenHere.length > 0 && (
                 <p className="ow-note">Also on this tile: {chosenHere.map((e) => (
                   <button key={`${e.kind}${e.index}`} className="link" onClick={() => setSelected({ kind: e.kind, index: e.index })}>{e.label}{e.model ? ` (${e.model.replace(/^OBJ_CODE_/, "")})` : ""}</button>
@@ -398,4 +431,25 @@ export function OverworldEditor({ constants, open }: ToolProps) {
 /** A chunk's layers again from the painter's edited text (still unsaved, so from the document store). */
 async function reloadLayersFromDocs(chunk: Parameters<typeof reloadLayers>[0]) {
   await reloadLayers(chunk, (path) => documents.get(path)?.text ?? null);
+}
+
+/** A number box that the mouse wheel steps while the pointer is over it (only here: the painter's height, in a bar
+ * that doesn't scroll). */
+function WheelNumber({ value, step, onChange }: { value: number; step: number; onChange(v: number): void }) {
+  const ref = useRef<HTMLInputElement>(null);
+  const current = useRef(value);
+  current.current = value;
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    // Not passive, so the wheel doesn't also scroll or zoom the page
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      onChange(Math.round((current.current + (e.deltaY < 0 ? step : -step)) / step) * step);
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [step, onChange]);
+  return <input ref={ref} type="number" step={step} className="ow-height" value={value} title="Scroll over it to step by half a tile"
+                onChange={(e) => onChange(Number(e.target.value))} />;
 }

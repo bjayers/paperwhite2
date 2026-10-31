@@ -35,7 +35,16 @@ export interface MapViewProps {
 
 const KIND_COLORS: Record<string, number> = { npc: 0x3ac7e0, proxy: 0xf0c330, trigger: 0xf08a30, warp: 0xd040d0, level: 0x888888 };
 
-const loader = new GLTFLoader();
+/** A loader that draws a chunk with the zone's texture set in its season: each texture the set has (by its file's
+ * name) from there, the others as the model names them. */
+function chunkLoader(map: ZoneMap): GLTFLoader {
+  const manager = new THREE.LoadingManager();
+  manager.setURLModifier((url) => {
+    const m = /\/textures\/[^/]+\/([^/]+\.png)$/.exec(url);
+    return m && map.textureSet && map.textures.has(m[1]) ? url.slice(0, m.index) + `/textures/${map.textureSet}/${m[1]}` : url;
+  });
+  return new GLTFLoader(manager);
+}
 const textures = new Map<string, Promise<THREE.Texture | null>>();
 
 /** A model's frame facing a direction as a texture. */
@@ -81,6 +90,8 @@ class MapScene {
   painted = new Map<string, { x: number; z: number }>();
   frame = 0;
   loadedZone: string | null = null;
+  /** The zone and season whose models are loaded. */
+  loadedKey: string | null = null;
   loadedModels = false;
 
   constructor(private host: HTMLDivElement, props: MapViewProps) {
@@ -134,9 +145,10 @@ class MapScene {
   update(props: MapViewProps) {
     // A new zone loads its models and frames the camera; an edit of the same zone's terrain keeps both
     const zoneChanged = props.map.zone !== this.loadedZone;
+    const seasonChanged = `${props.map.zone}:${props.map.season}` !== this.loadedKey;
     const modelsChanged = props.showModels !== this.loadedModels;
     this.props = props;
-    if (zoneChanged || modelsChanged) this.loadChunks(zoneChanged);
+    if (seasonChanged || modelsChanged) this.loadChunks(zoneChanged);
     this.buildOverlay();
     this.buildMarks();
   }
@@ -145,12 +157,14 @@ class MapScene {
   loadChunks(frame: boolean) {
     const { map, showModels } = this.props;
     this.loadedZone = map.zone;
+    const key = (this.loadedKey = `${map.zone}:${map.season}`);
     this.loadedModels = showModels;
     this.chunks.clear();
     if (showModels) {
+      const loader = chunkLoader(map);
       for (const chunk of map.chunks) {
         loader.load(`/${chunk.folder}/model.glb`, (gltf) => {
-          if (this.loadedZone !== map.zone || !this.loadedModels) return;
+          if (this.loadedKey !== key || !this.loadedModels) return;
           gltf.scene.position.set(chunk.column * CHUNK + CHUNK / 2, 0, chunk.row * CHUNK + CHUNK / 2);
           gltf.scene.traverse((o) => {
             const mesh = o as THREE.Mesh;

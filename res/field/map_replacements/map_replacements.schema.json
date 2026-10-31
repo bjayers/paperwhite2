@@ -1,0 +1,41 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "The map replacements: res/field/map_replacements/replacements.json",
+    "description": "The chunks and matrices that the season, the version or an event replace when the field loads a matrix (archive a/0/1/0, read by src/ov012/map_replace.c and MapMatrix_Patch in src/ov012/map_matrix.c), in the archive's order. tools/data/map_replace_data.py packs them.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "replacements" ],
+    "properties": {
+        "$schema": { "type": "string", "description": "This schema, for editors" },
+        "replacements": {
+            "type": "array",
+            "description": "The entries, in the archive's order",
+            "items": { "$ref": "#/$defs/replacement" }
+        }
+    },
+    "$defs": {
+        "replacement": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [ "matrix", "kind", "condition", "values" ],
+            "properties": {
+                "matrix": { "type": [ "string", "integer" ], "x-constant": "MAP_MATRIX_", "minimum": 0, "maximum": 65535, "description": "The matrix it changes, a MAP_MATRIX_* constant" },
+                "kind": { "enum": [ "chunk", "matrix" ], "description": "chunk: the value is a map model that takes the first value's place in the matrix; matrix: the value is a matrix loaded in place of the first value's" },
+                "condition": {
+                    "anyOf": [
+                        { "enum": [ "season", "version", "version_season" ], "description": "season: spring, summer, autumn, winter; version: Black (2), White (2); version_season: Black (2), then White (2) in each season" },
+                        { "type": "integer", "minimum": 3, "maximum": 255, "description": "An event of EVENT_MAP_REPLACE_TABLE (src/ov012/map_replace.c) by its condition: before it, after it" }
+                    ],
+                    "description": "What picks the value"
+                },
+                "values": {
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 5,
+                    "description": "One value for each case of the condition, the first the original: map models (MAP_MODEL_*) for a chunk, matrices (MAP_MATRIX_*) for a matrix",
+                    "items": { "type": [ "string", "integer" ], "minimum": 0, "maximum": 65535 }
+                }
+            }
+        }
+    }
+}

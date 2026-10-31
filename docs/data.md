@@ -74,6 +74,7 @@ which documents the format and can write them again.
 | `a/0/9/1`, `a/0/9/2`, `a/0/8/9`, `a/0/9/0` | `res/trainers/data/` (JSON) | Trainers, their parties, and the table of their messages | `tools/data/trainer_data.py` |
 | `a/0/7/1`, `a/0/7/2`, `a/0/6/3` | `res/trainers/sprites/{front,back}/<sprite>/` (PNG, palette, Nitro cells and animations) | Trainer sprites, front and back | `tools/data/trainer_graphics.py` |
 | `a/0/0/9` | `res/field/matrices/` (JSON) | Map matrices | `tools/data/map_matrix_data.py` |
+| `a/0/1/0` | `res/field/map_replacements/` (JSON) | Map replacements: the chunks and matrices that the season, the version or an event replace (the seasons' map models) | `tools/data/map_replace_data.py` |
 | `a/0/0/8` | `res/field/maps/models/<model>/` (glTF 2.0) | All 1,065 map models | `tools/data/map_model_data.py` |
 | `a/2/2/5`, `a/2/2/6` | `res/field/props/{exterior,interior}/models/<bundle>/<model>/` (glTF 2.0) | Field prop models | `tools/data/field_prop_model_data.py` |
 | `a/1/7/4` | `res/field/props/exterior/textures/<bundle>/` (PNG) | Exterior field prop textures | `tools/data/map_texture_data.py` |

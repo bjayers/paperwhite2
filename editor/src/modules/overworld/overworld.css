@@ -23,6 +23,8 @@
 .ow-check, .ow-inline { display: inline-flex; align-items: center; gap: 4px; }
 .ow-map-wrap { flex: 1; min-height: 0; position: relative; }
 .ow-map { position: absolute; inset: 0; }
+/* Painting: a thick light blue border, so a click isn't taken for a select */
+.ow-map-wrap.painting::after { content: ""; position: absolute; inset: 0; border: 5px solid #5cc8ff; pointer-events: none; z-index: 3; }
 .ow-map canvas { display: block; }
 .ow-empty { padding: 20px; }
 /* The script drawer lies over the lower half of the map, which keeps its size and view */
