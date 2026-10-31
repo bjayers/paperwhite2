@@ -42,6 +42,8 @@ export interface MapViewProps {
   rails: RailMap | null;
   /** The rails' height shown, in units, or null for every one (Castelia's rails are at several). */
   railLevel: number | null;
+  /** In a zone with both, which tiles are drawn and picked: the grid's, the rails' or both (the entities always). */
+  ground: "both" | "grid" | "rails";
   onMoveRail(entity: Entity, place: RailPlace): void;
   onAddRail(place: RailPlace, height: number): void;
   onPaintRail(places: RailPlace[]): void;
@@ -293,7 +295,7 @@ class MapScene {
     this.setOverhead(props.overhead);
     if (seasonChanged || modelsChanged) this.loadChunks(zoneChanged);
     // Only what changed: the overlay with the terrain or its look, the marks with the entities or the selection
-    const overlayKey = [props.map, props.layer, props.overlay, props.rails, props.railLevel];
+    const overlayKey = [props.map, props.layer, props.overlay, props.rails, props.railLevel, props.ground];
     if (!same(overlayKey, this.overlayKey)) this.buildOverlay();
     const marksKey = [props.map, props.entities, props.selected, props.layer, props.showModels, props.rails, props.railLevel];
     if (!same(marksKey, this.marksKey)) this.buildMarks();
@@ -353,7 +355,7 @@ class MapScene {
     const pickMaterial = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false, transparent: true, opacity: 0 });
     for (const chunk of map.chunks) {
       const l = chunk.layers[Math.min(layer, chunk.layers.length - 1)];
-      if (!l) continue;
+      if (!l || (this.props.rails && this.props.ground === "rails")) continue;
       // With a small depth bias too, beside liftOverlay
       const material = new THREE.MeshBasicMaterial({ transparent: true, opacity: overlay === "off" ? 0 : 0.45, depthWrite: false,
                                                      polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -24 });
@@ -385,7 +387,7 @@ class MapScene {
   buildRails() {
     const { rails, overlay } = this.props;
     this.railMeshes = [];
-    if (!rails) return;
+    if (!rails || this.props.ground === "grid") return;
     const material = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: overlay === "off" ? 0 : 0.45, depthWrite: false,
                                                    side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -24 });
     const inset = 0.06;
@@ -428,7 +430,7 @@ class MapScene {
 
   startPreview() {
     this.previewEntities = this.props.entities;
-    this.world = movers(this.props.map, this.props.entities);
+    this.world = movers(this.props.map, this.props.entities, this.props.rails);
     this.previewTime = 0;
     this.lastFrame = performance.now();
   }
@@ -443,6 +445,18 @@ class MapScene {
     while (this.previewTime >= FRAME_SECONDS) {
       this.world.tick();
       this.previewTime -= FRAME_SECONDS;
+    }
+    const rails = this.props.rails;
+    for (const m of this.world.railMovers) {
+      const sprite = this.npcSprites.get(m.entity);
+      if (!sprite || !m.entity.model || !rails) continue;
+      const at = m.place();
+      const pos = railToWorld(rails, m.line, at.front, at.side);
+      if (pos) sprite.position.set(pos[0], pos[1] + 12, pos[2]);
+      const key = `${m.entity.model}:${m.dir}:${at.frame}`;
+      const texture = readyTextures.get(key);
+      if (texture === undefined) spriteTexture(m.entity.model, m.dir, at.frame);
+      else if (texture && sprite.material.map !== texture) { sprite.material.map = texture; sprite.material.needsUpdate = true; }
     }
     for (const m of this.world.movers) {
       const sprite = this.npcSprites.get(m.entity);
@@ -555,6 +569,7 @@ class MapScene {
     if (e.model) spriteTexture(e.model, e.direction).then((t) => { if (t) { sprite.material.map = t; sprite.material.needsUpdate = true; sprite.visible = true; } });
     this.marks.add(sprite);
     this.entityMeshes.push({ object: sprite, entity: e });
+    this.npcSprites.set(e, sprite);
   }
 
   /** A building: its prop's model where the chunk places it, turned, and a square at its origin. */

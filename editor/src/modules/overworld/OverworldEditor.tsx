@@ -16,7 +16,7 @@ import { defaultFor } from "../schema-form/form.tsx";
 import { ScriptEditor } from "../scripts/ScriptEditor.tsx";
 import { loadWorld, resolveScript, zoneLabel, type World } from "../world/world.ts";
 import { KIND_LISTS, KIND_NAMES, entitiesOf, positionEdits, railEdits, type Entity, type EntityKind } from "./entities.ts";
-import { loadRails, railLevels, setRailTile, type RailMap, type RailPlace } from "./rails.ts";
+import { loadRails, railLevels, setRailTile, sidesAt, type RailMap, type RailPlace } from "./rails.ts";
 import { entityFields } from "./fields.tsx";
 import { BuildingPanel } from "./BuildingPanel.tsx";
 import { MapView, type OverlayMode } from "./MapView.tsx";
@@ -61,6 +61,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   /** The zone's rails, for a zone without a grid. */
   const [rails, setRails] = useState<RailMap | null>(null);
   const [railLevel, setRailLevel] = useState<number | null>(null);
+  const [ground, setGround] = useState<"both" | "grid" | "rails">("both");
   const [layer, setLayer] = useState(0);
   const [season, setSeason] = useState(0);
   /** An entity to select once its zone is read: the warp another zone's warp leads to. */
@@ -116,6 +117,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     setLayer(0);
     setRails(null);
     setRailLevel(null);
+    setGround("both");
     if (!histories.current.has(zone)) histories.current.set(zone, { undo: [], redo: [] });
     history.current = histories.current.get(zone)!;
   }, [zone]);
@@ -438,6 +440,13 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                   </select>
                 </label>
               )}
+              {rails && (
+                <label className="ow-inline" title="Which tiles to draw and pick in a zone with a grid and rails: an NPC is placed on whichever its tile is">Show
+                  <select value={ground} onChange={(e) => setGround(e.target.value as "both" | "grid" | "rails")}>
+                    <option value="both">grid and rails</option><option value="grid">grid</option><option value="rails">rails</option>
+                  </select>
+                </label>
+              )}
               {rails && railLevels(rails).length > 1 && (
                 <label className="ow-inline" title="The rails at one height (and the ramps that reach it), with what stands on them">Rails
                   <select value={railLevel ?? ""} onChange={(e) => setRailLevel(e.target.value === "" ? null : Number(e.target.value))}>
@@ -486,7 +495,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
               : <MapView map={map} entities={visible} selected={chosen} layer={layer} overlay={overlay} showModels={showModels}
                          painting={painting} preview={preview} overhead={overhead} paintType={paintMode === "type" ? PAINTS[paint].type : null}
                          onSelect={select} onMove={move} onAdd={add} onPaint={onPaint}
-                         rails={rails} railLevel={railLevel} onMoveRail={moveRail} onAddRail={(place, h) => add(0, 0, h, place)} onPaintRail={onPaintRail} />}
+                         rails={rails} railLevel={railLevel} ground={ground} onMoveRail={moveRail} onAddRail={(place, h) => add(0, 0, h, place)} onPaintRail={onPaintRail} />}
             {/* Over the map, so the map's view doesn't change when it opens */}
             {scriptOpen && chosen?.script !== undefined && (
               <div className="ow-script">
@@ -518,6 +527,16 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                 <span className="spacer" />
                 <button onClick={remove} title="Remove it (the others keep their IDs)">Remove</button>
               </div>
+              {chosen.rail && rails && (() => {
+                const r = chosen.rail;
+                const length = rails.lines[r.line]?.length ?? 0;
+                const sides = r.front < length ? sidesAt(rails, r.line, r.front) : [];
+                if (r.line < rails.lines.length && r.front < length && sides.includes(r.side)) return null;
+                return <p className="muted ow-note">Past its rail: {r.line >= rails.lines.length ? `the rails have no line ${r.line}`
+                  : r.front >= length ? `line ${r.line} is ${length} tiles long (front 0 to ${length - 1})`
+                  : `line ${r.line} is ${sides.length ? `${sides[sides.length - 1]} tiles wide each way here (side ${sides[0]} to ${sides[sides.length - 1]})` : "no width here"}`}.
+                  It stands past the rail's edge, where the player can't walk; the original game has one such NPC (Dragonspiral Tower).</p>;
+              })()}
               {chosen.target && (
                 <p className="ow-note">Leads to warp {chosen.target.warp} of{" "}
                   <button className="link" title="Show that zone, with the warp chosen; this zone's unsaved changes stay unsaved"

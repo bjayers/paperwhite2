@@ -201,7 +201,9 @@ trainer's line of sight), Proxies (background events), Triggers, Warps and Level
   tiles, straight or curved as the game places them, colored by their attributes; the NPCs, warps, triggers and
   proxies stand on them by line, front and side. Drag them along the rails, Shift+click a rail tile to add one,
   paint rail tiles' types (in `attributes/line_NN.csv`). **Rails** shows one height at a time (Castelia's rails are
-  at several). The rails themselves (points, lines) aren't edited here yet.
+  at several), and **Show** grid tiles, rail tiles or both in a zone with both. The panel notes an entity past its
+  rail's edge. ▶ Movement moves the NPCs on rails too (RAIL_WALK_RANDOM, RAIL_TURN_RANDOM_*, RAIL_PATROL, as
+  `field_actor_rail.c` does). The rails themselves (points, lines) aren't edited here yet.
 - Painting keeps the flags it doesn't set (a tile's 0x80, which every rail tile has and no code names yet).
 - **Buildings:** the chunks' props, as CTRMap edits them: each a model of the area's prop bundle
   (`res/field/props/`) placed in its chunk's GLB (`bw2_prop_<n>_id_<prop ID>` nodes, which the build packs). Click

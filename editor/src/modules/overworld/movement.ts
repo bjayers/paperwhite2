@@ -14,8 +14,16 @@
 // - WALK_BACK_AND_FORTH: along its facing to the leash's edge and back home, without waiting.
 // - LOOP_* and ROUTE_*: the four directions of the name in turn, to the leash's edge, then home (MC's route step).
 // - SPIN_*: a quarter turn every 24 frames.
+//
+// On the rails (src/ov036/field_actor_rail.c), an NPC steps along its line (front, toward the line's direction) or
+// across it (side, to the right of that direction), and never onto another line:
+// - RAIL_WALK_RANDOM (_UP_DOWN): as WALK_RANDOM, waiting 16 to 64 frames, within its area (width on the side, height on
+//   the front) and the line's tiles, not onto a tile whose collision flag is set or another NPC.
+// - RAIL_TURN_RANDOM_*: as TURN_RANDOM_*. RAIL_STAY stays.
+// - RAIL_PATROL: walks its facing until the line's end, its area or collision, then back to its tile and on.
 
 import type { Entity } from "./entities.ts";
+import { railTile, sidesAt, type RailMap } from "./rails.ts";
 import { CHUNK_TILES, standingOn, tileClass, tileFlags, tileIsValid, type ZoneMap } from "./terrain.ts";
 
 export type Dir = "DIR_UP" | "DIR_DOWN" | "DIR_LEFT" | "DIR_RIGHT";
@@ -219,8 +227,143 @@ export class Mover {
   }
 }
 
+/** A rail direction step: 1 up, 2 right, 3 down, 4 left (RAIL_DIR_*), as the NPCs' directions convert to them. */
+const RAIL_DIRS: Record<Dir, number> = { DIR_UP: 1, DIR_RIGHT: 2, DIR_DOWN: 3, DIR_LEFT: 4 };
+const turnRight = (d: number) => (d % 4) + 1;
+const turnLeft = (d: number) => ((d + 2) % 4) + 1;
+const opposite = (d: number) => ((d + 1) % 4) + 1;
+
+type RailPlan = { kind: "still" } | { kind: "turn"; dirs: Dir[] } | { kind: "walk"; dirs: Dir[] } | { kind: "patrol" };
+
+function railPlanOf(movement: string | undefined): RailPlan {
+  const code = (movement ?? "").replace(/^MOVE_CODE_RAIL_/, "");
+  if (code === "WALK_RANDOM") return { kind: "walk", dirs: ALL };
+  if (code === "WALK_RANDOM_UP_DOWN") return { kind: "walk", dirs: ["DIR_UP", "DIR_DOWN"] };
+  if (code === "TURN_RANDOM") return { kind: "turn", dirs: ALL };
+  if (code.startsWith("TURN_RANDOM_")) return { kind: "turn", dirs: dirsOf(code.slice(12)) };
+  if (code === "PATROL") return { kind: "patrol" };
+  return { kind: "still" };
+}
+
+/** An NPC on the rails, by line, front and side, as field_actor_rail.c moves it. */
+export class RailMover {
+  readonly entity: Entity;
+  readonly line: number;
+  readonly homeFront: number;
+  readonly homeSide: number;
+  front: number;
+  side: number;
+  fromFront: number;
+  fromSide: number;
+  dir: Dir;
+  stepLeft = 0;
+  private onSpot = false;
+  private steps = 0;
+  private timer: number;
+  private reversed = false;
+  private plan: RailPlan;
+  private area: { width: number; height: number };
+
+  constructor(entity: Entity, private rails: RailMap) {
+    this.entity = entity;
+    const r = entity.rail!;
+    this.line = r.line;
+    this.front = this.fromFront = this.homeFront = r.front;
+    this.side = this.fromSide = this.homeSide = r.side;
+    this.dir = (entity.direction as Dir) in STEPS ? (entity.direction as Dir) : "DIR_DOWN";
+    this.plan = railPlanOf(entity.movement);
+    this.area = { width: entity.leash?.x ?? 0, height: entity.leash?.z ?? 0 };
+    this.timer = random(WAITS);
+  }
+
+  /** Where it is, front and side between tiles while it walks, and its walk frame. */
+  place(): { front: number; side: number; frame: number } {
+    if (!this.stepLeft) return { front: this.front, side: this.side, frame: 0 };
+    const t = 1 - this.stepLeft / STEP_FRAMES;
+    const frame = t < 0.5 ? 1 + (this.steps % 2) : 0;
+    if (this.onSpot) return { front: this.front, side: this.side, frame };
+    return { front: this.fromFront + (this.front - this.fromFront) * t, side: this.fromSide + (this.side - this.fromSide) * t, frame };
+  }
+
+  /** The place a step in a direction leads to on its line. */
+  private next(dir: Dir): { front: number; side: number } {
+    const lineDir = this.rails.lines[this.line]?.dir ?? 1;
+    const d = RAIL_DIRS[dir];
+    if (d === lineDir) return { front: this.front + 1, side: this.side };
+    if (d === opposite(lineDir)) return { front: this.front - 1, side: this.side };
+    if (d === turnRight(lineDir)) return { front: this.front, side: this.side + 1 };
+    if (d === turnLeft(lineDir)) return { front: this.front, side: this.side - 1 };
+    return { front: this.front, side: this.side };
+  }
+
+  /** What stops a step: 1 off the line (its ends or its width), 2 a tile's collision, 4 another NPC; and whether the
+   * step leaves its area. */
+  private check(dir: Dir, world: World): { bits: number; outside: boolean; to: { front: number; side: number } } {
+    const to = this.next(dir);
+    let bits = 0;
+    const length = this.rails.lines[this.line]?.length ?? 0;
+    if (to.front < 0 || to.front >= length || !sidesAt(this.rails, this.line, to.front).includes(to.side)) bits |= 1;
+    const type = railTile(this.rails, { line: this.line, front: to.front, side: to.side });
+    if (type !== null && (type >>> 16) & 0x1) bits |= 2;
+    if (world.railOccupied(this.line, to.front, to.side, this)) bits |= 4;
+    const outside = (this.area.width !== NO_LIMIT && Math.abs(to.side - this.homeSide) > this.area.width) ||
+      (this.area.height !== NO_LIMIT && Math.abs(to.front - this.homeFront) > this.area.height);
+    return { bits, outside, to };
+  }
+
+  private step(to: { front: number; side: number } | null) {
+    this.fromFront = this.front;
+    this.fromSide = this.side;
+    this.onSpot = !to;
+    if (to) { this.front = to.front; this.side = to.side; }
+    this.stepLeft = STEP_FRAMES;
+    this.steps++;
+  }
+
+  tick(world: World) {
+    if (this.stepLeft) {
+      this.stepLeft--;
+      if (!this.stepLeft) { this.fromFront = this.front; this.fromSide = this.side; }
+      return;
+    }
+    const plan = this.plan;
+    switch (plan.kind) {
+      case "still":
+        return;
+      case "turn":
+        if (--this.timer > 0) return;
+        this.timer = random(WAITS);
+        this.dir = random(plan.dirs);
+        return;
+      case "walk": {
+        if (--this.timer > 0) return;
+        this.timer = random(WAITS);
+        this.dir = random(plan.dirs);
+        const c = this.check(this.dir, world);
+        if (!c.bits && !c.outside) this.step(c.to);
+        return;
+      }
+      case "patrol": {
+        const home = (this.entity.direction as Dir) in STEPS ? (this.entity.direction as Dir) : "DIR_DOWN";
+        if (this.reversed && this.front === this.homeFront && this.side === this.homeSide) this.reversed = false;
+        let dir = this.reversed ? OPPOSITE[home] : home;
+        let c = this.check(dir, world);
+        if (c.bits & 1 || c.outside) {
+          this.reversed = !this.reversed;
+          dir = OPPOSITE[dir];
+          c = this.check(dir, world);
+        }
+        this.dir = dir;
+        this.step(c.bits ? null : c.to);
+        return;
+      }
+    }
+  }
+}
+
 export class World {
   movers: Mover[] = [];
+  railMovers: RailMover[] = [];
 
   constructor(private map: ZoneMap) {}
 
@@ -240,15 +383,26 @@ export class World {
       ((m.gx === gx && m.gz === gz) || (m.stepLeft > 0 && m.fromX === gx && m.fromZ === gz)));
   }
 
+  /** Whether another NPC on the rails stands on a place or is leaving it. */
+  railOccupied(line: number, front: number, side: number, self: RailMover): boolean {
+    return this.railMovers.some((m) => m !== self && m.line === line &&
+      ((m.front === front && m.side === side) || (m.stepLeft > 0 && m.fromFront === front && m.fromSide === side)));
+  }
+
   tick() {
     for (const m of this.movers) m.tick(this);
+    for (const m of this.railMovers) m.tick(this);
   }
 }
 
 /** The movers of a zone's NPCs, each from its tile and height. */
-export function movers(map: ZoneMap, entities: Entity[]): World {
+export function movers(map: ZoneMap, entities: Entity[], rails: RailMap | null): World {
   const world = new World(map);
   for (const e of entities) {
+    if (e.kind === "npc" && e.rail && rails) {
+      world.railMovers.push(new RailMover(e, rails));
+      continue;
+    }
     if (e.kind !== "npc" || e.x === null || e.z === null) continue;
     world.movers.push(new Mover(e, standingOn(map, e.x, e.z, e.y)?.height ?? e.y));
   }
