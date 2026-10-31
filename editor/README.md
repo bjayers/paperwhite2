@@ -21,7 +21,7 @@ If Edge can't reach it, WSL isn't forwarding the port: check that `localhostForw
 ## What it does
 
 - **Specialty editors** at the top of the sidebar, under **Editors**: everything about one subject in one place. The
-  first are the **Encounter Editor**, **Graphics & Palettes**, the **Follower Editor**, the **Text Editor** and the **Script Editor** (below). The per-file editors are under **Data files**, which folds away. A page
+  first are the **Encounter Editor**, **Graphics & Palettes**, the **Follower Editor**, the **Text Editor**, the **Script Editor** and the **Trainer Editor** (below). The per-file editors are under **Data files**, which folds away. A page
   of a tool can be linked to: `http://localhost:7420/#tool/encounters`.
 - **Every kind of data in `res/`, found by itself.** Each data file names its schema in `"$schema"`; the editor groups
   the files by schema, so a new kind of data, a new field or a new file shows up without changing the editor.
@@ -175,6 +175,14 @@ them, so a mistake shows in the build's log.
 
 Other editors reuse it: `<ScriptEditor file={...} script={...} embedded />` is one file (and script) without the file
 list, and `<CodeEditor value={...} onChange={...} commands={...} />` the highlighted text box alone.
+
+## The Trainer Editor
+
+Every trainer (`src/modules/trainers/`, `res/trainers/data/`), filtered by name or class, with the class's sprite. The
+trainer's settings (name, class, battle style, money, reward, healing, items, AI flags) are the schema's fields; the
+party is cards: species with its icon, level, form, difficulty, ability and gender slots, and, as the whole party has
+them or not, held items and its own moves (else the moves of their levels). Each of the trainer's lines is edited with
+its talk window preview. Save (Ctrl+S) checks each file with the build's validator.
 
 ## How it is built
 

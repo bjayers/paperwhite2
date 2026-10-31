@@ -1,0 +1,47 @@
+/* The Trainer Editor. Colours are the shell's tokens, so it follows the theme. */
+
+.trn-editor { display: flex; flex-direction: column; flex: 1; min-height: 0; background: var(--panel); }
+.trn-header { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-bottom: 1px solid var(--border); }
+.trn-header h2 { margin: 0; font-size: 16px; }
+.trn-header .spacer { flex: 1; }
+.trn-error { color: var(--error); }
+.trn-bar { margin: 6px 14px 0; }
+.trn-note { font-size: 12px; margin: 2px 0; }
+.trn-split { display: grid; grid-template-columns: 280px 1fr; flex: 1; min-height: 0; }
+.trn-list { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--border); }
+.trn-list > .filter { margin: 8px 10px 6px; }
+.trn-list-items { flex: 1; overflow-y: auto; }
+.trn-item { display: flex; justify-content: space-between; gap: 6px; width: 100%; border: none; border-radius: 0; background: none;
+  text-align: left; padding: 3px 10px; }
+.trn-item:hover { background: var(--hover); }
+.trn-item.selected { background: var(--selected); box-shadow: inset 3px 0 var(--accent); }
+.trn-item-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trn-item-levels { font-size: 12px; white-space: nowrap; }
+.trn-detail { overflow-y: auto; min-width: 0; }
+.trn-empty { padding: 20px; }
+.trn-page { padding: 12px 20px 48px; max-width: 1100px; display: flex; flex-direction: column; gap: 12px; }
+.trn-top { display: flex; gap: 14px; align-items: center; }
+.trn-top h2 { margin: 0; font-size: 18px; }
+.trn-sprite { background: var(--panel-2); border-radius: 8px; padding: 4px; }
+.trn-sprite-missing { display: inline-block; width: 80px; text-align: center; font-size: 12px; }
+.trn-card { border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; background: var(--panel); }
+.trn-card h3 { margin: 0 0 8px; font-size: 14px; }
+.trn-settings { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 4px 16px; }
+.trn-setting { display: grid; grid-template-columns: 90px 1fr; align-items: start; gap: 6px; font-size: 13px; }
+.trn-setting .schema-form { padding: 0; }
+.trn-toggles { display: flex; gap: 16px; font-size: 13px; margin-bottom: 8px; }
+.trn-party { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
+.trn-mon { border: 1px solid var(--border); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 6px; background: var(--panel-2); }
+.trn-mon-head { display: flex; align-items: center; gap: 6px; }
+.trn-mon-head .search-select { flex: 1; }
+.trn-mon-actions { display: flex; }
+.trn-mon-fields { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.trn-field { display: flex; flex-direction: column; font-size: 11px; color: var(--muted); }
+.trn-field input { width: 100%; }
+.trn-row { display: grid; grid-template-columns: 40px 1fr; align-items: center; gap: 6px; font-size: 12px; }
+.trn-moves { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.trn-add { min-height: 80px; border-style: dashed; }
+.trn-message { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+.trn-text { width: 100%; max-width: 520px; font-family: var(--mono); font-size: 13px; }
+.species-icon { display: inline-block; overflow: hidden; flex: none; }
+.species-icon img { image-rendering: pixelated; display: block; }
