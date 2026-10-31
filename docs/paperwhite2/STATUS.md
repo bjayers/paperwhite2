@@ -2,6 +2,17 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-30: wild triple battles, and the Dexnav design (not yet tested in game)
+
+- **Triples:** a species' triple chance now makes a wild triple battle (docs/paperwhite2/encounters.md, Wild
+  triples): a new wild triple intro with a three-name message (the battle bank's message 201), three params,
+  style 2, and the wild double's AI flag. `--hack` builds without warnings, DSi intact, plain `modules.ok` passes.
+- **Dexnav:** the design is docs/paperwhite2/design/dexnav.md, based on Pokeweb's Pokenav, with eleven open questions
+  for the user. Found while researching:
+  - encounters' extra conditions can't test the terrain or indoors/outdoors, since BuildSlots fills only the game's
+    context;
+  - the Pokédex's Habitat List and area map still show the original tables.
+
 ## 2026-10-30: the new wild encounter engine (ROM session; not yet tested in game)
 
 - **Built** per docs/paperwhite2/encounters.md:

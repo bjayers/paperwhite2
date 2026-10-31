@@ -52,11 +52,11 @@ the area's Rare, Very rare and Exotic Pokémon found by grass and dark grass tha
 - The gates' bulletin board names its first area's first zone.
 
 **Battles.**
-- After the first wild Pokémon is made, its single, double and triple chances may make the encounter a double. The
-  partner is one of its family or anything there, by the same weights.
-- This needs two Pokémon that can fight, and never happens while fishing. A partner (NPC) still makes every encounter
-  a double.
-- A triple counts as a double for now: the battle's wild intro shows two Pokémon (see the triple notes below).
+- After the first wild Pokémon is made, its single, double and triple chances may make the encounter a double or a
+  triple. The partners are of its family or anything there, by the same weights.
+- A double needs two Pokémon that can fight and a triple three (with two, a triple is a double). Neither happens
+  while fishing. A partner (NPC) still makes every encounter a double.
+- If Repel keeps a partner away, the battle takes the ones that came.
 
 **Lead abilities, Repel and the rest** work as before. They read the slots that the candidates become:
 - Magnet Pull and Static;
@@ -89,7 +89,9 @@ the species-0 guard.
 | `CreateEncountManager` (`src/ov036/enc_pokeset.c`) | With the new data, dark grass doesn't roll the double battle itself. |
 | `FieldEncount_PrepareActiveSlots` | `PaperWhite2_Encounters_PrepareSlots`: the candidates become the slots (up to 66), weighted by `PaperWhite2_Encounters_PickSlot`, slot function 4. |
 | `FieldEncount_GenWilds` | Room for 66 slots; no slots means no encounter. |
-| `FieldEncount_GenWildsCore` | A species-0 Pokémon isn't counted. The first Pokémon's battle styles may add a partner. |
+| `FieldEncount_GenWildsCore` | A species-0 Pokémon isn't counted. The first Pokémon's battle styles may add one or two partners. |
+| `EventWildBattleCall_CreateRandom`, `BtlSetup_CreateFishing`, `FieldEncount_SetupNormal` (`src/ov036/field_encount.c`) | Room for three, and the triple's battle style. |
+| `BtlvScu_StartEncount` (`src/ov167/btlv_scu.c`), `GetClientAIFlags` (`src/ov167/btl_main.c`) | The wild triple's intro and AI. |
 | `FieldEncount_SetupFromData` | The candidate's hidden ability chance. |
 | `GetEncountIndexForPreferredType` | Room for 66 slots. |
 | `getSwarmLevelRangeFromData` | The day's outbreak's zone. |
@@ -97,14 +99,18 @@ the species-0 guard.
 
 Main's BSS holds a 4 KB block, the outbreaks and the slots' weights, about 7 KB in all.
 
-## Wild triples (not yet)
+## Wild triples
 
-The battle engine has an alone-triple setup (`BtlMain_SetupAloneTriple`), but its intro starts with a trainer
-appearing, and the wild message takes two names (`btlv_scu.c`). A wild triple needs:
-- `params[3]` in the three callers;
-- `SetupNormal` to make `pokeCount` Pokémon;
-- battle style 2 for `BtlSetup_SetWildNormal`;
-- a wild triple intro with a three-name message.
+The battle engine's triple setup (`BtlMain_SetupAloneTriple`) works for a wild party of three. Only its intro needed
+a wild version, `BtlvScu_EncountWildTriple` in `src/ov167/btlv_scu.c`: the three wild Pokémon appear as a wild double's
+do, with "Oh! A wild X, Y, and Z appeared!" (`Bank0019_Text_OhWildAppearedThree`, the battle bank's message 201). The
+player then sends out three as in a trainer's triple battle. The field side is in `src/ov036/field_encount.c`:
+- `params[3]`;
+- `FieldEncount_SetupNormal` makes `pokeCount` Pokémon, with battle style `pokeCount - 1`;
+- `CreateRandom`'s Repel fallback.
+
+A wild triple's foes get a wild double's AI flag (`GetClientAIFlags`, `btl_main.c`). The Poké Ball check already counts
+the live foes, so a ball can't be thrown while more than one is up.
 
 ## To test
 
@@ -113,4 +119,5 @@ appearing, and the wild message takes two names (`btlv_scu.c`). A wild triple ne
 - **Shaking grass:** about a third of its battles are Audino. Dust clouds give items about a third of the time.
 - **Fishing in an area with no fishing habitats:** no bite at all.
 - **Outbreaks**, after `FLAG_SWARMS`: one area each day, and the bulletin board names it.
-- **Doubles:** set a species' double chance in the editor, save, build.
+- **Doubles and triples:** Hoothoot is set to 100% triple (at night, in winter, with three Pokémon that can fight).
+  Check the intro, the message, catching after two have fainted, running, and that experience goes to all three.

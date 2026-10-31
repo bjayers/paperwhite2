@@ -199,4 +199,5 @@ Bank0019_Text_SkyDropWontLet = Sky Drop won't let {010c:0} go!
 Bank0019_Text_MatchForfeited = The match was forfeited.
 Bank0019_Text_SMetronome = ({0200:0})'s Metronome {0202:1}:{0107:2}
 Bank0019_Text_WildAppeared_4 = A wild {0101:0} appeared?!
+Bank0019_Text_OhWildAppearedThree = Oh! A wild {0101:0},\n{0101:1}, and{be00}\n{0101:2} appeared!
 \pad{48}

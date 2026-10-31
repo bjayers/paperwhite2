@@ -34,6 +34,7 @@
 #include "system/text_speed.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/following_battle_entry.h"
+#include "text/system/0019.h"
 #endif
 
 // The work of btlv_scu.c, the message and command unit of the battle display, recovered from its accesses in
@@ -152,6 +153,15 @@ typedef struct BtlvScuWildDoubleWork {
     u8 clientId;         // 0x0F
 } BtlvScuWildDoubleWork; // size 0x10
 
+#ifdef PAPERWHITE2
+// Paper White 2: three wild mons, BtlvScu_StepWildTripleAppear
+typedef struct BtlvScuWildTripleWork {
+    BattleMon *mons[3];
+    u8 monIds[3];
+    u8 pos[3];
+} BtlvScuWildTripleWork;
+#endif
+
 // Two mons sent out together: BtlvScu_StepEnemySendOutDoubleOneTrainer, 021d23d4, 021d2820, 021d29bc
 typedef struct BtlvScuDoubleWork {
     BattleMon *mons[2]; // 0x00
@@ -258,6 +268,10 @@ static BOOL BtlvScu_EncountCommDoubleMulti(s32 *seq, void *arg);
 static BOOL BtlvScu_EncountTriple(s32 *seq, void *arg);
 static BOOL BtlvScu_EncountCommTriple(s32 *seq, void *arg);
 static BOOL BtlvScu_StepWildDoubleAppear(BtlvScu *scu, s32 *seq);
+#ifdef PAPERWHITE2
+static BOOL BtlvScu_EncountWildTriple(s32 *seq, void *arg);
+static BOOL BtlvScu_StepWildTripleAppear(BtlvScu *scu, s32 *seq);
+#endif
 static BOOL BtlvScu_StepTrainerAppear(BtlvScu *scu, s32 *seq);
 static BOOL BtlvScu_StepTrainersAppear(BtlvScu *scu, s32 *seq);
 static BOOL BtlvScu_StepOneTrainerAppear(BtlvScu *scu, s32 *seq, u8 clientId);
@@ -321,6 +335,11 @@ static const BtlvScuEncountStep sDoubleTrainerMultiSteps[] = { BtlvScu_StepTrain
                                                                BtlvScu_StepPlayerSendOutDouble };
 static const BtlvScuEncountStep sTripleSteps[] = { BtlvScu_StepTrainerAppear, BtlvScu_StepEnemySendOutTriple,
                                                    BtlvScu_StepPlayerSendOutTriple };
+#ifdef PAPERWHITE2
+// Paper White 2: a wild triple battle (the new encounter data's, paperwhite2/encounters.h): the three wild mons
+// appear, then the player sends out as in a trainer's triple battle
+static const BtlvScuEncountStep sWildTripleSteps[] = { BtlvScu_StepWildTripleAppear, BtlvScu_StepPlayerSendOutTriple };
+#endif
 static const BtlvScuEncountStep sDoubleTrainerSteps[] = { BtlvScu_StepTrainerAppear, BtlvScu_StepEnemySendOutDouble,
                                                           BtlvScu_StepPlayerSendOutDouble };
 static const BtlvScuEncountStep sDoubleCommMultiSteps[] = { BtlvScu_StepTrainersAppear, BtlvScu_StepEnemySendOutDouble,
@@ -574,6 +593,13 @@ void BtlvScu_StartEncount(BtlvScu *scu, BOOL recPlay) {
         }
         break;
     case BTL_STYLE_TRIPLE:
+#ifdef PAPERWHITE2
+        // Paper White 2: a wild triple battle has no trainer to appear
+        if (type == 0) {
+            BtlvScu_SetSubProc(scu, BtlvScu_EncountWildTriple);
+            break;
+        }
+#endif
         if (type != 3) {
             BtlvScu_SetSubProc(scu, BtlvScu_EncountTriple);
         } else {
@@ -1137,6 +1163,24 @@ static BOOL BtlvScu_EncountTriple(s32 *seq, void *arg) {
     return TRUE;
 }
 
+#ifdef PAPERWHITE2
+static BOOL BtlvScu_EncountWildTriple(s32 *seq, void *arg) {
+    BtlvScu *scu = arg;
+
+    if (scu->recPlay) {
+        return BtlvScu_EncountRecPlayTriple(scu, seq);
+    }
+    if (scu->encountStep < NELEMS(sWildTripleSteps)) {
+        if (sWildTripleSteps[scu->encountStep](scu, seq)) {
+            scu->encountStep++;
+            *seq = 0;
+        }
+        return FALSE;
+    }
+    return TRUE;
+}
+#endif
+
 static BOOL BtlvScu_EncountCommTriple(s32 *seq, void *arg) {
     BtlvScu *scu = arg;
 
@@ -1209,6 +1253,74 @@ static BOOL BtlvScu_StepWildDoubleAppear(BtlvScu *scu, s32 *seq) {
     }
     return FALSE;
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: BtlvScu_StepWildDoubleAppear's appearance for three wild mons, with a message that names the three
+static BOOL BtlvScu_StepWildTripleAppear(BtlvScu *scu, s32 *seq) {
+    BtlvScuWildTripleWork *work = (BtlvScuWildTripleWork *)scu->work;
+    u8 viewPos;
+    u32 i;
+
+    switch (*seq) {
+    case 0:
+        viewPos = GetClientBattlePos(scu->mainModule, scu->clientId, 0);
+        for (i = 0; i < 3; i++) {
+            work->pos[i] = GetOpposingPos(scu->mainModule, viewPos, i);
+            work->mons[i] = PokeCon_GetPosMonInner(scu->pokeCon, work->pos[i]);
+            work->monIds[i] = GetMonID(work->mons[i]);
+        }
+        BtlvScuWinFade_StartHide(&scu->msgFade);
+        (*seq)++;
+        break;
+    case 1:
+        if (BtlvScuWinFade_Update(&scu->msgFade)) {
+            BtlvEffect_AddPokemon(BattleMon_GetViewSrcData(work->mons[0]),
+                                  BattlePosToViewPos(scu->mainModule, work->pos[0]));
+            (*seq)++;
+        }
+        break;
+    case 2:
+        if (!BtlvEffect_IsBusy()) {
+            BtlvEffect_AddPokemon(BattleMon_GetViewSrcData(work->mons[1]),
+                                  BattlePosToViewPos(scu->mainModule, work->pos[1]));
+            (*seq)++;
+        }
+        break;
+    case 3:
+        if (!BtlvEffect_IsBusy()) {
+            viewPos = BattlePosToViewPos(scu->mainModule, work->pos[2]);
+            BtlvEffect_AddPokemon(BattleMon_GetViewSrcData(work->mons[2]), viewPos);
+            BtlvEffect_StartPos(viewPos, 0x231);
+            BtlvScu_EncountFadeIn(2);
+            (*seq)++;
+        }
+        break;
+    case 4:
+        if (!BtlvEffect_IsBusy()) {
+            BtlString_FormatStdMsg(scu->strbuf, Bank0019_Text_OhWildAppearedThree, 3, work->monIds[0], work->monIds[1],
+                                   work->monIds[2]);
+            BtlvScu_StartMsg(scu, scu->strbuf, 80, NULL);
+            (*seq)++;
+        }
+        break;
+    case 5:
+        if (BtlvScu_WaitMsg(scu)) {
+            for (i = 0; i < 3; i++) {
+                BtlvScuGauge_Show(&scu->gauges[work->pos[i]]);
+            }
+            BtlvScuWinFade_StartHide(&scu->msgFade);
+            (*seq)++;
+        }
+        break;
+    case 6:
+        if (BtlvScuWinFade_Update(&scu->msgFade)) {
+            return TRUE;
+        }
+        break;
+    }
+    return FALSE;
+}
+#endif
 
 static BOOL BtlvScu_StepTrainerAppear(BtlvScu *scu, s32 *seq) {
     return BtlvScu_StepOneTrainerAppear(scu, seq, GetPlayerOpponentClientID(scu->mainModule, 0));

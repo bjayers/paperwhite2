@@ -30,6 +30,8 @@
 #define ENCOUNTERS_SLOT_FUNC 4
 // ENCOUNTERS_SLOT_MAX and the slots added to the candidates: the rustling spots' species and an outbreak's
 #define ENCOUNTERS_SLOTS (ENCOUNTERS_SLOT_MAX + 2)
+// The most wild Pokémon of one encounter: a triple battle's
+#define ENCOUNTERS_WILD_MAX 3
 
 // What a species' minimum level is compared with
 enum {
@@ -146,9 +148,10 @@ u8 PaperWhite2_Encounters_PrepareSlots(EncountManager *manager, WildEncSlot *slo
 int PaperWhite2_Encounters_PickSlot(int count);
 // After FieldEncount_SetupFromData made a param from a slot: notes the slot and rolls its hidden ability
 void PaperWhite2_Encounters_SetupParam(const WildEncSlot *slot, WildPkmParam *param);
-// After the first wild Pokémon is made: its battle styles may make it a double battle, with a partner from its family
-// or from the area (canDouble: two of the party's Pokémon can fight). Sets the manager's doubleBattle and pokeCount
-void PaperWhite2_Encounters_RollPartner(EncountManager *manager, BOOL canDouble);
+// After the first wild Pokémon is made: its battle styles may make it a double or a triple battle, with partners from
+// its family or from the area. A double needs two of the party's Pokémon that can fight (able), a triple three, or it
+// is a double. Sets the manager's doubleBattle and pokeCount
+void PaperWhite2_Encounters_RollPartner(EncountManager *manager, u32 able);
 // The next picks are the partner's, until EndPartner
 void PaperWhite2_Encounters_BeginPartner(void);
 void PaperWhite2_Encounters_EndPartner(void);

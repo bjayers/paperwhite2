@@ -311,18 +311,19 @@ void PaperWhite2_Encounters_SetupParam(const WildEncSlot *slot, WildPkmParam *pa
     param->hiddenAbility = GFL_RandomLC(100) < chance;
 }
 
-void PaperWhite2_Encounters_RollPartner(EncountManager *manager, BOOL canDouble) {
+void PaperWhite2_Encounters_RollPartner(EncountManager *manager, u32 able) {
     const EncountersCandidate *picked;
     u32 total = 0;
+    u32 roll;
     u32 i;
 
-    if (!sActive || sSlots == NULL || manager->doubleBattle || manager->isFishing || !canDouble ||
+    if (!sActive || sSlots == NULL || manager->doubleBattle || manager->isFishing || able < 2 ||
         sSlotCandidate[sPicked] == SLOT_SPECIAL) {
         return;
     }
     picked = &GetCandidates()[sSlotCandidate[sPicked]];
-    // A triple battle counts as a double until the battle can show three wild Pokémon
-    if (GFL_RandomLC(100) < picked->single || picked->doubleChance + picked->triple == 0) {
+    roll = GFL_RandomLC(100);
+    if (roll < picked->single || picked->doubleChance + picked->triple == 0) {
         return;
     }
     for (i = 0; i < sSlotCount; i++) {
@@ -335,7 +336,8 @@ void PaperWhite2_Encounters_RollPartner(EncountManager *manager, BOOL canDouble)
         return;
     }
     manager->doubleBattle = TRUE;
-    manager->pokeCount = 2;
+    // A triple past the double's chance, when three can fight
+    manager->pokeCount = picked->triple != 0 && able >= 3 && roll >= picked->single + picked->doubleChance ? 3 : 2;
 }
 
 void PaperWhite2_Encounters_BeginPartner(void) {

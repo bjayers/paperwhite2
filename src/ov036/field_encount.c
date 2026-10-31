@@ -29,6 +29,9 @@
 #include "system/game_system.h"
 #include "system/zone_weather.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/encounters.h"
+#endif
 #ifdef PAPERWHITE2_DEBUG_MENU
 #include "constants/flags.h"
 #include "paperwhite2/debug.h"
@@ -106,7 +109,12 @@ void EncSys_Update(EncountSystem *system, BOOL moved, BOOL turned) {
 }
 
 GameEvent *EventWildBattleCall_CreateRandom(EncountSystem *system, u32 mode) {
+#ifdef PAPERWHITE2
+    // Paper White 2: room for a triple battle's three
+    WildPkmParam params[ENCOUNTERS_WILD_MAX];
+#else
     WildPkmParam params[2];
+#endif
     EncountManager manager;
     int encType;
     BOOL forced = FALSE;
@@ -168,6 +176,17 @@ GameEvent *EventWildBattleCall_CreateRandom(EncountSystem *system, u32 mode) {
         // Paper White 2: the debug menu's Force species and Wild level
         PaperWhite2_Debug_OverrideWilds(params, count);
 #endif
+#ifdef PAPERWHITE2
+        // Paper White 2: fewer came than the battle needs (Repel kept one away): a partner's double battle doesn't
+        // happen, and any other takes the ones that came
+        if (count < manager.pokeCount) {
+            if (manager.pairActive) {
+                return NULL;
+            }
+            manager.doubleBattle = count > 1;
+            manager.pokeCount = count;
+        }
+#else
         if (manager.doubleBattle && count == 1) {
             if (manager.pairActive) {
                 return NULL;
@@ -175,6 +194,7 @@ GameEvent *EventWildBattleCall_CreateRandom(EncountSystem *system, u32 mode) {
             manager.doubleBattle = FALSE;
             manager.pokeCount = count;
         }
+#endif
         setup = BtlSetup_Create(4);
         FieldEncount_SetupNormal(system, &manager, setup, 4, params);
     }
@@ -242,7 +262,12 @@ GameEvent *EventWildBattleCall_CreateStatic(EncountSystem *system, u16 species, 
 }
 
 BtlSetup *BtlSetup_CreateFishing(EncountSystem *system, BOOL rare) {
+#ifdef PAPERWHITE2
+    // Paper White 2: room for the new encounter data's three, as CreateRandom's
+    WildPkmParam params[ENCOUNTERS_WILD_MAX];
+#else
     WildPkmParam params[2];
+#endif
     EncountManager manager;
     int encType;
     u8 rate;
@@ -360,7 +385,12 @@ static void FieldEncount_SetupNormal(EncountSystem *system, EncountManager *mana
     BtlFieldStatus status;
     int i;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: as many as the encounter made, which a triple battle makes three of; its battle style is one less
+    for (i = 0; i < manager->pokeCount; i++) {
+#else
     for (i = 0; i < (u8)manager->doubleBattle + 1; i++) {
+#endif
         FieldEncount_CreateWildPkm(pkm, manager, &params[i]);
         PokeParty_AddPkm(party, pkm);
     }
@@ -369,7 +399,11 @@ static void FieldEncount_SetupNormal(EncountSystem *system, EncountManager *mana
         BtlSetup_SetWildMulti(setup, system->gameData, party, GetNowFollowerAllyTrID(system->gameData), &status,
                               heapId);
     } else {
+#ifdef PAPERWHITE2
+        BtlSetup_SetWildNormal(setup, system->gameData, party, &status, manager->pokeCount - 1, heapId);
+#else
         BtlSetup_SetWildNormal(setup, system->gameData, party, &status, manager->doubleBattle, heapId);
+#endif
     }
     if (manager->encType == ENCTYPE_GRASS_RARE) {
         BtlSetup_SetFlag(setup, 0x20);

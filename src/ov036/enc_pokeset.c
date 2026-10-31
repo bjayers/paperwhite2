@@ -257,7 +257,7 @@ static int FieldEncount_GenWildsCore(EncountManager *manager, const WildEncSlot 
         WildPkmParam *param = &params[count];
 
 #ifdef PAPERWHITE2
-        // Paper White 2: the second is the first one's partner, of its family or of the area
+        // Paper White 2: the second (and a triple's third) is the first one's partner, of its family or of the area
         if (i == 1) {
             PaperWhite2_Encounters_BeginPartner();
         }
@@ -266,10 +266,10 @@ static int FieldEncount_GenWildsCore(EncountManager *manager, const WildEncSlot 
         if (param->species != SPECIES_NONE && !FieldEncount_CheckLevelRepelled(manager, param->level)) {
             count++;
         }
-        // The first one's battle styles may make the encounter a double battle
+        // The first one's battle styles may make the encounter a double or triple battle
         if (i == 0 && count == 1 && PaperWhite2_Encounters_IsActive()) {
             PaperWhite2_Encounters_RollPartner(manager,
-                                               howManyPokesAreAbleToFight(GameData_GetParty(manager->gameData)) >= 2);
+                                               howManyPokesAreAbleToFight(GameData_GetParty(manager->gameData)));
         }
 #else
         FieldEncount_GenWildPokeParam(manager, slots, param);
