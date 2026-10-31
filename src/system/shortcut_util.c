@@ -28,6 +28,8 @@ static const ItemShortcut sItemShortcuts[] = {
 #ifdef PAPERWHITE2
     // Paper White 2: the Exp. Share registers to Y
     { ITEM_EXP_SHARE, SHORTCUT_EXP_SHARE },
+    // Paper White 2: the DexNav registers to Y
+    { ITEM_POKE_RADAR, SHORTCUT_DEXNAV },
 #endif
 };
 

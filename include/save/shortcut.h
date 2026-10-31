@@ -8,7 +8,13 @@
 // The functions' names are swan's
 
 // How many of the slots are used
+#ifdef PAPERWHITE2
+// Paper White 2: all 36, for the DexNav's shortcut (system/shortcut_util.h). The original never writes the last two,
+// which ShortcutSave_Init leaves empty, so an old save has them empty
+#define SHORTCUT_SAVE_MAX 0x24
+#else
 #define SHORTCUT_SAVE_MAX 0x22
+#endif
 
 // The registered shortcuts, without gaps, SHORTCUT_NONE when a slot is empty
 struct ShortcutSave {

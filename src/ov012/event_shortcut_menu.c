@@ -462,6 +462,10 @@ u32 ShortcutMenu_SetKeyItemID(FieldAppCallInput *input, u32 item) {
     case SHORTCUT_EXP_SHARE:
         input->eventId = FIELD_COMMON_EVENT_EXP_SHARE;
         return 1;
+    // Paper White 2: the DexNav opens as one of the field's apps
+    case SHORTCUT_DEXNAV:
+        input->appId = FIELD_APP_DEXNAV;
+        return 0;
 #endif
     default:
         input->appId = FIELD_APP_POKEDEX;
@@ -501,8 +505,9 @@ BOOL ShortcutMenu_GetActionFromKeyItem(s32 item, u32 *action, u32 *invalid) {
     case SHORTCUT_DNA_SPLICERS_SEPARATE:
     case SHORTCUT_REVEAL_GLASS:
 #ifdef PAPERWHITE2
-    // Paper White 2: the Exp. Share can be turned on or off anywhere
+    // Paper White 2: the Exp. Share can be turned on or off anywhere, and the DexNav opened anywhere
     case SHORTCUT_EXP_SHARE:
+    case SHORTCUT_DEXNAV:
 #endif
         return FALSE;
     default:

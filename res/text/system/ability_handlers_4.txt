@@ -33,4 +33,5 @@ AbilityHandlers4_Text_PokedexHabitatList = Pokédex{ff00:1}>{ff00:0}Habitat List
 AbilityHandlers4_Text_PokedexHabitatInfo = Pokédex{ff00:1}>{ff00:0}Habitat Info
 AbilityHandlers4_Text_RevealGlass = {ff00:2}Reveal Glass{ff00:0}
 AbilityHandlers4_Text_ExpShare = {ff00:2}Exp. Share{ff00:0}
+AbilityHandlers4_Text_Dexnav = {ff00:2}DexNav{ff00:0}
 \pad{98}

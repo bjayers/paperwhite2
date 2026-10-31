@@ -68,6 +68,18 @@ def place_objects(lines: list[str], objects: list[tuple[str, Path]]) -> list[str
     out = []
     found = set()
     for line in lines:
+        # A module without a .data section, such as overlay 303, gets one after its constructors, where dsd places it in
+        # the modules that have one, when an added object has data
+        ctor = re.fullmatch(r"(\s*)(\w+?)_CTOR_END = \.;", line)
+        if ctor and (ctor.group(2), "DATA") in additions and not any(
+                re.fullmatch(rf"\s*{ctor.group(2)}_DATA_END = \.;", other) for other in lines):
+            indent, module = ctor.group(1), ctor.group(2)
+            found.add((module, "DATA"))
+            out.append(line)
+            out += [f"{indent}. = ALIGN(4);", f"{indent}{module}_DATA_START = .;",
+                    *[f"{indent}{entry}" for entry in additions[(module, "DATA")]],
+                    f"{indent}. = ALIGN(4);", f"{indent}{module}_DATA_END = .;"]
+            continue
         match = re.fullmatch(r"\s*(\w+?)_(TEXT|RODATA|DATA|BSS)_END = \.;", line)
         if match and (match.group(1), match.group(2)) in additions:
             key = (match.group(1), match.group(2))

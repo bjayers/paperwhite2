@@ -42,6 +42,8 @@ static u32 sPartnerWeights[ENCOUNTERS_SLOTS];
 static u8 sSpots = SPOTS_NONE;
 static ConditionContext sFieldContext;
 static BOOL sFieldContextSet;
+// The field's context when it last closed for an app, for the DexNav
+static ConditionContext sViewContext;
 
 static const EncountersArea *GetArea(void) {
     return (const EncountersArea *)sBlock;
@@ -269,6 +271,14 @@ u8 PaperWhite2_Encounters_Build(const ConditionContext *ctx, u32 encType, u32 sp
         break;
     }
     return build->count;
+}
+
+void PaperWhite2_Encounters_SaveViewContext(const ConditionContext *ctx) {
+    sViewContext = *ctx;
+}
+
+const ConditionContext *PaperWhite2_Encounters_GetViewContext(void) {
+    return &sViewContext;
 }
 
 void PaperWhite2_Encounters_SetFieldContext(const ConditionContext *ctx) {

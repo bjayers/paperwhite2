@@ -2,6 +2,21 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-30: the DexNav (not yet tested in game)
+
+- **Built** per docs/paperwhite2/design/dexnav.md ("As built"):
+  - the Poké Radar as the DexNav, from Y or the bag;
+  - an app in overlay 303 beside the Habitat List;
+  - lists from the encounter engine, with "?" for unseen species, the user's method names, and a scrolling grid;
+  - logic and screens in separate files, for a later redesign.
+- **Along the way:**
+  - The hack's `SHORTCUT_SAVE_MAX` is 36, using the save's two spare bytes.
+  - `plugin_lcf.py` adds a `.data` section to a module without one.
+  - The field saves the encounters' context whenever it closes for an app.
+- **Checks:**
+  - `--hack` builds without warnings; DSi intact; the plain `modules.ok` passes; main's DS arena has 137 KB left.
+  - Overlay 303 can grow 384 KB more before the arena moves.
+
 ## 2026-10-30: triple battle fixes, the Dexnav's engine API, the generated Habitat List
 
 - **Triples (the user tested them; they work):**

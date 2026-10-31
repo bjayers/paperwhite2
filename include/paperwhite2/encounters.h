@@ -188,6 +188,11 @@ const EncountersCandidate *PaperWhite2_Encounters_GetCandidate(u32 index);
 void PaperWhite2_Encounters_SetFieldContext(const ConditionContext *ctx);
 // Fills the next encounter's context, the field's part with it (overlay 36, paperwhite2_encounters_field.c)
 void PaperWhite2_EncountersField_SetContext(Field *field);
+// The field's context as it closes for an app (EventFieldAppCall_Callback), which the DexNav shows, and the saving of
+// it from the field (overlay 36)
+void PaperWhite2_Encounters_SaveViewContext(const ConditionContext *ctx);
+const ConditionContext *PaperWhite2_Encounters_GetViewContext(void);
+void PaperWhite2_EncountersField_SaveViewContext(Field *field);
 // FieldEncount_PrepareActiveSlots's replacement: the candidates that can appear now by the manager's method become the
 // slots, weighted; slotCount and slotFuncIndex are set. Returns the slot count, 0 for no encounter
 u8 PaperWhite2_Encounters_PrepareSlots(EncountManager *manager, WildEncSlot *slots);

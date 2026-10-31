@@ -1,5 +1,35 @@
 # Dexnav (design, not built)
 
+## As built (2026-10-30, phase 2's browser; not yet tested in game)
+
+- **Item:** the Poké Radar is the DexNav (`res/items/poke_radar/data.json`): a key item, registrable, with a Use. The
+  debug menu's Give key items gives it.
+- **Opening:** it is one of the field's apps, `FIELD_APP_DEXNAV` in `FIELD_PROC_LINK_LIST` (`src/ov012/event_field_proclink.c`),
+  so it opens from Y (`SHORTCUT_DEXNAV`, `src/ov012/event_shortcut_menu.c`) or from the bag's Use (`BAG_RESULT_DEXNAV`,
+  `src/ov142/itemmenu.c`), and closes back to the field. As the field closes for any app, `EventFieldAppCall_Callback`
+  saves the encounters' context with the field's part (`PaperWhite2_EncountersField_SaveViewContext`), which the
+  DexNav reads.
+- **Shortcut slots:** with the DexNav, 35 shortcuts can be registered at once, so `SHORTCUT_SAVE_MAX` is 36 in the
+  hack, the save block's last two bytes, which the original never writes (`include/save/shortcut.h`).
+- **Where:** overlay 303, beside the Habitat List, with the Habitat List's heap while the Pokédex isn't open. It
+  costs the field nothing: overlay 303 can grow 384 KB more before the arena moves (`memory.txt`). The overlay had
+  no `.data`, so `tools/build/plugin_lcf.py` now adds the section to a module without one.
+- **Two parts**, so the screens can be redesigned without touching the logic:
+  - `paperwhite2_dexnav_data.c` builds each method's list from `PaperWhite2_Encounters_Build`: merged by species
+    and form, shares in tenths of a percent as the editor computes them, dust clouds' and shadows' items at their
+    share, most common first, with the Pokédex's seen and caught marks.
+  - `paperwhite2_dexnav.c` draws them on Geonet's grid, as the Season app does:
+    - **Top screen:** the area's name; the chosen Pokémon's icon, name, types, rate, levels, and caught/seen/not
+      seen; the outbreak or hidden ability chance; and the season, time and weather.
+    - **Touch screen:** the method tabs (Surf, Surf Ripple, Rod, Rod Ripple; Grass, Dark Grass, Rustling), the
+      chosen one in blue and those with nothing grey, over a scrolling grid of 6 by 3 icons with their shares.
+    - **Unseen Pokémon:** the "?" icon (species 0's) and "???".
+  - **Controls:** L/R or a tab changes the method, the D-pad or a touch picks a Pokémon, B or X leaves.
+- **Text:** `res/text/system/dexnav.txt` (`TEXT_BANK_DEXNAV`), and the Y menu's label (`ability_handlers_4.txt`'s
+  `AbilityHandlers4_Text_Dexnav`).
+- **Not yet:** search, chains and their bonuses (phase 4); the original-table fallback (every zone with encounters
+  has an area); a C-Gear button.
+
 ## The user's decisions (2026-10-30)
 
 - **What it shows:** only what can appear in the current area under the current conditions. No "not now", level-locked
@@ -14,6 +44,7 @@
 - **Search and chains:** wanted if not too hard (Pokeweb's Pokenav has neither). A chain resets.
 - **Overlay:** the user prefers not to replace the Habitat Dex. Sharing overlay 303 means adding the Dexnav's code
   to that overlay beside the Habitat List, not replacing it; both apps stay.
+- **Redesign:** the user may redesign the DexNav later, so its logic and its screens are separate files.
 - **Done since:** the engine API (`PaperWhite2_Encounters_Build`), the field context for encounters, and the Habitat
   List generated from the encounter data at build time (docs/paperwhite2/encounters.md).
 

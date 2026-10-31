@@ -39,6 +39,12 @@
 #include "system/game_event.h"
 #include "system/game_system.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/dexnav.h"
+#include "paperwhite2/dexnav_event.h"
+#include "paperwhite2/encounters.h"
+#endif
+
 // clang-format off
 const FieldProcLink FIELD_PROC_LINK_LIST[FIELD_APP_MAX] = {
     { OVERLAY_ID(165), &POKELIST_PROC_FUNCTIONS, FieldAppCall_CreatePokeListParam, FieldAppCall_GetPokeListResult, NULL, FieldProcLink_FreeParam },
@@ -56,6 +62,10 @@ const FieldProcLink FIELD_PROC_LINK_LIST[FIELD_APP_MAX] = {
     { OVERLAY_ID(272), &BR_MAIN_PROC_FUNCTIONS, FieldAppCall_CreateBattleRecorderParam, FieldAppCall_GetBattleRecorderResult, NULL, FieldProcLink_FreeParam },
     { OVERLAY_ID(259), &XTRANSCEIVER_PROC_FUNCTIONS, FieldAppCall_CreateXtransceiverParam, FieldAppCall_GetXtransceiverResult, NULL, FieldProcLink_FreeParam },
     { OVERLAY_ID(145), &MEDALBOX_PROC_FUNCTIONS, FieldAppCall_CreateMedalBoxParam, FieldAppCall_GetMedalBoxResult, NULL, FieldProcLink_FreeParam },
+#ifdef PAPERWHITE2
+    // Paper White 2: the DexNav, in the Pokédex's Habitat List's overlay
+    { OVERLAY_ID(303), &DEXNAV_PROC_FUNCTIONS, PaperWhite2_FieldAppCall_CreateDexnavParam, PaperWhite2_FieldAppCall_GetDexnavResult, NULL, FieldProcLink_FreeParam },
+#endif
 };
 
 // clang-format on
@@ -124,6 +134,10 @@ GameEventReturnCode EventFieldAppCall_Callback(GameEvent *event, u32 *state, voi
         }
         break;
     case 6:
+#ifdef PAPERWHITE2
+        // Paper White 2: the encounters' context of the field that is closing, for the DexNav
+        PaperWhite2_EncountersField_SaveViewContext(work->input->field);
+#endif
         GameEvent_ChainNext(event, CallFieldMapEntranceOutTransitionDefault(work->input->gameSystem, work->input->field,
                                                                             FIELD_TRANSITION_FADE_BLACK, 0));
         *state = 7;
@@ -652,6 +666,12 @@ u32 FieldAppCall_GetBagResult(FieldAppCallWork *work, void *data) {
     case 7:
         work->nextAppId = FIELD_APP_TOWNMAP;
         return FIELD_APP_RESULT_NEXT;
+#ifdef PAPERWHITE2
+    // Paper White 2: the DexNav used from the bag
+    case BAG_RESULT_DEXNAV:
+        work->nextAppId = FIELD_APP_DEXNAV;
+        return FIELD_APP_RESULT_NEXT;
+#endif
     case 22:
         work->nextAppId = FIELD_APP_MEDALBOX;
         return FIELD_APP_RESULT_NEXT;

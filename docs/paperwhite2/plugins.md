@@ -835,6 +835,14 @@ The slot tables are replaced by per-species data packed by area: `docs/paperwhit
 
 Where no Pokémon can appear there is no encounter, and an original table's empty slot gives none either.
 
+### DexNav
+
+What can appear in the current area now, by method, with the encounter rules' shares and levels:
+docs/paperwhite2/design/dexnav.md ("As built").
+- **The item:** the Poké Radar, a key item that can be registered to Y.
+- **The app:** `FIELD_APP_DEXNAV`, in overlay 303 beside the Habitat List.
+- **The code:** `src/paperwhite2/ov303/paperwhite2_dexnav{,_data}.c` and `src/paperwhite2/ov012/paperwhite2_dexnav_event.c`.
+
 ## Adding global scripts
 
 A global script file's IDs are limited by its row in `GLOBAL_SCRIPT_TABLE` (`src/ov012/script_sys.c`), e.g.

@@ -61,6 +61,10 @@ enum {
     FIELD_APP_BATTLE_RECORDER,
     FIELD_APP_XTRANSCEIVER,
     FIELD_APP_MEDALBOX,
+#ifdef PAPERWHITE2
+    // Paper White 2: the DexNav (paperwhite2/dexnav.h)
+    FIELD_APP_DEXNAV,
+#endif
     FIELD_APP_MAX,
 };
 

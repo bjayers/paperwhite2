@@ -53,6 +53,9 @@ enum {
     // Paper White 2: the Exp. Share, a key item that turns on and off. The 34 slots of ShortcutSave still hold every
     // shortcut that can be registered at once, since only one of the DNA Splicers' two can be
     SHORTCUT_EXP_SHARE,
+    // Paper White 2: the DexNav, the Poké Radar's place (paperwhite2/dexnav.h). With it the shortcuts that can be
+    // registered at once are 35, more than the original's 34 slots, so ShortcutSave has its last two bytes too
+    SHORTCUT_DEXNAV,
 #endif
 };
 

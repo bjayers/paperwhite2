@@ -47,6 +47,7 @@
 #include "text/system/btl_main.h"
 
 #ifdef PAPERWHITE2
+#include "paperwhite2/dexnav_event.h"
 #include "paperwhite2/exp_share.h"
 #endif
 
@@ -101,6 +102,7 @@ static BOOL ItemMenu_UseXtransceiver(ItemMenuWork *work);
 static BOOL ItemMenu_UseMedalBox(ItemMenuWork *work);
 #ifdef PAPERWHITE2
 static BOOL ItemMenu_UseExpShare(ItemMenuWork *work);
+static BOOL ItemMenu_UseDexnav(ItemMenuWork *work);
 #endif
 static s32 ItemMenu_FindFieldUse(u16 item);
 static void ItemMenu_StateItemMenu(ItemMenuWork *work);
@@ -200,8 +202,9 @@ static const ItemMenuFieldUse sItemMenuFieldUses[] = {
     { ITEM_XTRANSCEIVER_FEMALE, 1, ItemMenu_UseXtransceiver },
     { ITEM_MEDAL_BOX, 1, ItemMenu_UseMedalBox },
 #ifdef PAPERWHITE2
-    // Paper White 2: the Exp. Share is a key item that turns on and off in the bag
+    // Paper White 2: the Exp. Share is a key item that turns on and off in the bag, and the DexNav opens from it
     { ITEM_EXP_SHARE, 1, ItemMenu_UseExpShare },
+    { ITEM_POKE_RADAR, 1, ItemMenu_UseDexnav },
 #endif
 };
 
@@ -783,6 +786,13 @@ static BOOL ItemMenu_UseExpShare(ItemMenuWork *work) {
     }
     GFL_SndSEPlay(SEQ_SE_SYS_07);
     return FALSE;
+}
+
+// Paper White 2: leaves the bag for the DexNav (paperwhite2/dexnav_event.h), anywhere
+static BOOL ItemMenu_UseDexnav(ItemMenuWork *work) {
+    work->result = BAG_RESULT_DEXNAV;
+    ItemMenu_SetState(work, NULL);
+    return TRUE;
 }
 #endif
 
