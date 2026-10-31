@@ -85,7 +85,7 @@ what it reads, including the scripts' gifts and static battles and the swarm tab
 
 ## Graphics & Palettes
 
-The game's 2D art (`src/modules/palettes/`), in two pages. The art itself is drawn in an image editor such as
+The game's 2D art (`src/modules/palettes/`), in three pages. The art itself is drawn in an image editor such as
 Aseprite; these turn it into the game's files and set its colors.
 
 ### Screens
@@ -115,6 +115,12 @@ graphics archive's members, the hack's own.
   one from your computer, such as work in progress in Aseprite.
 - **Files:** **Download .pal** for Aseprite (its **Load Palette** reads JASC), **Import colors** from a .pal or an
   indexed PNG's palette, **Save as** and **New 16-color palette** for new files under `res/`.
+
+### Shinies
+
+Every Pokémon's and form's front sprite (`front_single.png`) in its `normal.pal`, then its `shiny.pal`, as the DS
+shows them, by number, 48 a page, filtered by name or number, or to the shinies the same as their normal colors (5
+today) or different. The musical's sprites are left out. **Edit shiny** opens the shiny palette on the Palettes page, with the normal one beside it.
 
 ## The Follower Editor
 

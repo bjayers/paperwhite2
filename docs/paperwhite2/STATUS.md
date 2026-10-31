@@ -29,6 +29,12 @@ test failures; 4. shiny extras in the Palette Editor. Done so far:
   save check. Tools hold files without tabs (`documents.hold`, `documents.create`); schemas' cross-file `$ref`s are
   merged as `datajson.load_schema` does. Checked with Playwright on a scratch copy (Snivy's page, a save that changed
   one line, the shared page).
+- **4. Shinies** (Graphics & Palettes' third page): every Pokémon's and form's front sprite in its normal and shiny
+  palettes, filtered to the five shinies identical to normal (the placeholder, the egg, Manaphy's egg, Castform's
+  forms 1 and 3) or the rest; a click opens the shiny palette beside the normal.
+  Checked with Playwright read-only on the real `res/`.
+- **Also:** I stopped the user's running editor by mistake while stopping my test servers, and restarted it detached
+  (`setsid nohup editor/start.sh`, log in the session's scratchpad); it serves tonight's page.
 
 ## 2026-10-30: DexNav polish, its art templates, and the editor's Palette Editor
 

@@ -77,3 +77,15 @@
 .art-bad-tile { position: absolute; outline: 2px solid #ff2d55; background: rgba(255, 45, 85, 0.25); pointer-events: auto; }
 .art-problems ul { margin: 4px 0; padding-left: 20px; font-size: 13px; }
 a.pal-file-button { color: inherit; text-decoration: none; }
+
+/* The Shinies page */
+.shiny-page { flex: 1; }
+.shiny-page .pal-body { align-content: flex-start; }
+.shiny-page .filter { width: 220px; }
+.shiny-hint { width: 100%; margin: 0; }
+.shiny-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; width: 100%; }
+.shiny-card { border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; background: var(--panel); }
+.shiny-card.same { border-color: var(--error); }
+.shiny-title { font-size: 13px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.shiny-sprites { display: flex; gap: 6px; min-height: 98px; align-items: center; }
+.shiny-foot { display: flex; justify-content: space-between; font-size: 12px; margin-top: 4px; }
