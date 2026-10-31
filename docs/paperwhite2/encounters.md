@@ -84,9 +84,20 @@ of `a/1/2/7` (`configure.py`'s `HACK_ARCHIVE_MEMBERS`). Its docstring has the by
 
 `encounters.py habitats DIR` writes the Pokédex's Habitat List from this data, and the hack's build packs `a/2/9/6`
 from what it writes (`configure.py`'s `HACK_GENERATED_DATA`). `res/pokedex/habitats/` stays the template for each
-area's other fields and its species' order. The list has seasons only, and holds 30 species an area. The build prints
-the areas that have more; 16 do today, Pinwheel Forest with 77, and their extra species are left out until the
-Habitat Dex's overhaul. The Pokédex's area map (archive 176) isn't regenerated yet.
+area's other fields and its species' order. The original list has seasons only, and holds 30 species an area (16
+areas have more, Pinwheel Forest 77); it still gives the areas, their kinds of habitat and the stamps.
+
+**The Habitat Dex.** The same command writes `paperwhite2_habitat_dex.bin`, which `habitat_data.py pack` makes the
+member after the areas: every Pokémon of each area, one entry for each method of each habitat, outbreak and shaking
+grass's own species, with its seasons, times, weathers and rarity, sorted by method, rarity and number
+(`include/paperwhite2/habitat_dex.h`). The Habitat List's screen shows it (`src/paperwhite2/ov303/
+paperwhite2_habitat_dex.c`, hooked in `src/ov303/pokedex_habitat.c`): the area's kind of habitat (the original tabs)
+lists all its Pokémon the player has seen, with their seen and caught marks, in pages of 20; the text box has the tabs
+of the kind's methods (all, or one) and the season, time and weather filters, each "any" until touched. L and R, or
+the arrows beside the grid, turn the pages, Select changes the tab, and the cursor moves on to the next page from the
+last row. A Pokémon is listed once, at its first method (grass before dark grass before rustling). The filters can't
+tell a habitat's extra conditions (`when`), so those Pokémon show whenever their seasons, times and weather allow.
+The map, the areas and the stamps are the original's. The Pokédex's area map (archive 176) isn't regenerated yet.
 
 The original tables are still packed. A zone whose area has no file keeps its table and the original slot code, with
 the species-0 guard.

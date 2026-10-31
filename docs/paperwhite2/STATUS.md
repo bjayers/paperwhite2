@@ -17,6 +17,11 @@ test failures; 4. shiny extras in the Palette Editor. Done so far:
   - **Checked:** every target's screens export and convert back pixel for pixel; art converted and built packs as
     16-color members with the same pixels; Playwright on a scratch copy (choose art, problems marked, Apply). Not yet
     tested in game: the boot with the new screen blank (should be unchanged) or with art.
+- **2. Habitat Dex** (`docs/paperwhite2/encounters.md`, "The Habitat Dex"): the Habitat List's screen lists every
+  Pokémon of the area's kind of habitat from a new member of `a/2/9/6` (written by `encounters.py habitats`), in pages
+  of 20 (L/R, the side arrows, or the cursor past the last row), with method tabs (Select or touch) and season, time
+  and weather filters (touch, "any" by default) in the text box. The map, areas and stamps are unchanged. **Not yet
+  tested in game at all**; built without warnings, DSi intact.
 
 ## 2026-10-30: DexNav polish, its art templates, and the editor's Palette Editor
 

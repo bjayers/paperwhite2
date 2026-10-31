@@ -118,6 +118,11 @@ def pack(root: Path, output: Path):
         if not path.is_file():
             raise DataError(f"{label(path)} is missing: every area of AREAS has a file")
         members.append(area_bytes(load(path, schema), label(path)))
+    # Paper White 2: the Habitat Dex's lists, which the hack's build writes beside the areas (tools/paperwhite2/
+    # encounters.py habitats), are the member after them
+    extra = root / "paperwhite2_habitat_dex.bin"
+    if extra.is_file():
+        members.append(extra.read_bytes())
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_bytes(write_narc(members))
 

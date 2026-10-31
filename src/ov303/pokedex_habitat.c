@@ -30,6 +30,9 @@
 #include "system/printsys.h"
 #include "system/wordset.h"
 #include "text/system/pokedex_habitat.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/habitat_dex.h"
+#endif
 
 // The Pokédex's Habitat List: its process, its sequences and what they show. The ROM has no name for this file;
 // pokedex_habitat.c is a guess after pokedex.c, which calls the screen the habitat list.
@@ -38,6 +41,13 @@
 // screen lists the Pokémon of the area's kind of habitat and season that the player has seen, with the map of the
 // region and the area on it on the other screen. Once all the Pokémon of a kind of habitat are seen or caught, and
 // again once all those of the area are caught, it stamps the area
+#ifdef PAPERWHITE2
+//
+// Paper White 2: the list is the Habitat Dex's (paperwhite2/habitat_dex.h): every Pokémon of the area's kind of
+// habitat from the wild encounters' data, in pages, with tabs of its methods and filters of season, time and weather in
+// the text box. L and R, or the arrows that changed the season, turn the pages, and Select changes the tab. The stamps
+// still count the original list's Pokémon
+#endif
 
 // How far the two screens slide in
 #define SLIDE_DISTANCE 48
@@ -163,6 +173,10 @@ typedef struct {
     u32 timer;
     // Whether the kind of habitat has no Pokémon in this season
     BOOL empty;
+#ifdef PAPERWHITE2
+    // Paper White 2: the Habitat Dex's list, tabs and filters
+    HabitatDex dex;
+#endif
 } PokedexHabitatWork; // size: 0x94c
 
 typedef void (*PokedexHabitatSeqFunc)(PokedexHabitatWork *wk);
@@ -223,6 +237,11 @@ static void PokedexHabitat_ToggleShortcut(PokedexHabitatWork *wk);
 static void PokedexHabitat_UpdateShortcut(PokedexHabitatWork *wk);
 static BOOL PokedexHabitat_HasSeveralTypes(PokedexHabitatWork *wk);
 static void PokedexHabitat_ShowInfoButton(PokedexHabitatWork *wk, BOOL known, BOOL shown);
+#ifdef PAPERWHITE2
+static BOOL PokedexHabitat_HasArrows(PokedexHabitatWork *wk);
+static BOOL PokedexHabitat_TurnPage(PokedexHabitatWork *wk, int direction);
+static BOOL PokedexHabitat_TouchTextBox(PokedexHabitatWork *wk);
+#endif
 
 // clang-format off
 static const PokedexHabitatSeqFunc sPokedexHabitatSequences[SEQ_COUNT + 1] = {
@@ -370,10 +389,16 @@ static PokedexHabitatWork *PokedexHabitat_CreateWork(GameProc *proc, PokedexHabi
     wk->param = param;
     wk->msgData = GFL_MsgSysLoadData(FALSE, ARCID_SYSTEM_MESSAGE, TEXT_BANK_POKEDEX_HABITAT, HEAPID_POKEDEX_HABITAT);
     wk->wordSet = GFL_WordSetSystemCreateDefault(HEAPID_POKEDEX_HABITAT);
+#ifdef PAPERWHITE2
+    PaperWhite2_HabitatDex_Init(&wk->dex, HEAPID_POKEDEX_HABITAT);
+#endif
     return wk;
 }
 
 static void PokedexHabitat_FreeWork(GameProc *proc, PokedexHabitatWork *wk) {
+#ifdef PAPERWHITE2
+    PaperWhite2_HabitatDex_Free(&wk->dex);
+#endif
     GFL_WordSetSystemFree(wk->wordSet);
     GFL_MsgDataFree(wk->msgData);
     GFL_ProcReleaseSubsystem(proc);
@@ -511,12 +536,21 @@ static void PokedexHabitat_SeqList(PokedexHabitatWork *wk) {
         }
         break;
     case LIST_TOUCH_SEASON_LEFT:
+#ifdef PAPERWHITE2
+        // Paper White 2: the arrows turn the pages
+        if (PokedexHabitat_HasArrows(wk)) {
+#else
         if (area->values[wk->type] == 1) {
+#endif
             PokedexHabitat_SetSequence(wk, SEQ_CHANGE_SEASON, ACTION_LEFT);
         }
         break;
     case LIST_TOUCH_SEASON_RIGHT:
+#ifdef PAPERWHITE2
+        if (PokedexHabitat_HasArrows(wk)) {
+#else
         if (area->values[wk->type] == 1) {
+#endif
             PokedexHabitat_SetSequence(wk, SEQ_CHANGE_SEASON, ACTION_RIGHT);
         }
         break;
@@ -550,6 +584,12 @@ static void PokedexHabitat_SeqList(PokedexHabitatWork *wk) {
         }
         break;
     case TOUCH_RECT_NONE:
+#ifdef PAPERWHITE2
+        // Paper White 2: a touch on the text box's tabs and filters
+        if (PokedexHabitat_TouchTextBox(wk)) {
+            break;
+        }
+#endif
         PokedexHabitat_ListKeys(wk);
         break;
     }
@@ -567,6 +607,24 @@ static void PokedexHabitat_ListKeys(PokedexHabitatWork *wk) {
     u32 pressed = GCTX_HIDGetPressedKeys();
     PokedexHabitatArea *area = PokedexHabitat_GetArea(wk);
 
+#ifdef PAPERWHITE2
+    // Paper White 2: L and R turn the pages, Select changes the tab
+    if (pressed & PAD_BUTTON_SELECT) {
+        if (PaperWhite2_HabitatDex_NextTab(&wk->dex)) {
+            GFL_SndSEPlay(SEQ_SE_SELECT1);
+            PokedexHabitat_UpdateList(wk);
+            PokedexHabitat_UpdateTabs(wk);
+        }
+    } else if (repeat & PAD_BUTTON_L) {
+        if (PokedexHabitat_HasArrows(wk)) {
+            PokedexHabitat_SetSequence(wk, SEQ_CHANGE_SEASON, ACTION_LEFT);
+        }
+    } else if (repeat & PAD_BUTTON_R) {
+        if (PokedexHabitat_HasArrows(wk)) {
+            PokedexHabitat_SetSequence(wk, SEQ_CHANGE_SEASON, ACTION_RIGHT);
+        }
+    }
+#else
     if (repeat & PAD_BUTTON_L) {
         if (area->values[wk->type] == 1) {
             PokedexHabitat_SetSequence(wk, SEQ_CHANGE_SEASON, ACTION_LEFT);
@@ -575,7 +633,9 @@ static void PokedexHabitat_ListKeys(PokedexHabitatWork *wk) {
         if (area->values[wk->type] == 1) {
             PokedexHabitat_SetSequence(wk, SEQ_CHANGE_SEASON, ACTION_RIGHT);
         }
-    } else if (repeat & PAD_KEY_LEFT) {
+    }
+#endif
+    else if (repeat & PAD_KEY_LEFT) {
         if (PokedexHabitat_HasSeveralTypes(wk)) {
             PokedexHabitat_SetSequence(wk, SEQ_CHANGE_TYPE, ACTION_LEFT);
         }
@@ -821,16 +881,29 @@ static void PokedexHabitat_SeqChangeSeason(PokedexHabitatWork *wk) {
         ClActor_StopAnim(other);
         if (wk->action == ACTION_LEFT) {
             ClActor_SetSequence(pressed, 25);
+#ifdef PAPERWHITE2
+            // Paper White 2: the arrows turn the pages, around from the first to the last
+            if (!PokedexHabitat_TurnPage(wk, -1)) {
+                wk->dex.page = wk->dex.pageCount - 1;
+            }
+#else
             wk->season--;
             if (wk->season < 0) {
                 wk->season = SEASON_COUNT - 1;
             }
+#endif
         } else if (wk->action == ACTION_RIGHT) {
             ClActor_SetSequence(pressed, 23);
+#ifdef PAPERWHITE2
+            if (!PokedexHabitat_TurnPage(wk, 1)) {
+                wk->dex.page = 0;
+            }
+#else
             wk->season++;
             if (wk->season >= SEASON_COUNT) {
                 wk->season = 0;
             }
+#endif
         }
         ClActor_SetAnimFrame(pressed, 0);
         ClActor_SetAutoAnim(pressed, TRUE);
@@ -878,6 +951,9 @@ static void PokedexHabitat_SeqChangeArea(PokedexHabitatWork *wk) {
     case 0:
         wk->season = PokedexHabitatSave_GetSeason(wk->habitat);
         wk->type = wk->chosenType;
+#ifdef PAPERWHITE2
+        PaperWhite2_HabitatDex_Reset(&wk->dex);
+#endif
         if (wk->action == ACTION_UP) {
             wk->area--;
             if (wk->area < 0) {
@@ -946,6 +1022,9 @@ static void PokedexHabitat_SeqChangeType(PokedexHabitatWork *wk) {
 
     switch (wk->step) {
     case 0:
+#ifdef PAPERWHITE2
+        PaperWhite2_HabitatDex_Reset(&wk->dex);
+#endif
         if (wk->action == ACTION_LEFT) {
             wk->type--;
             if (wk->type < 0) {
@@ -1054,14 +1133,30 @@ static void PokedexHabitat_SeqMoveCursor(PokedexHabitatWork *wk) {
                 column = 0;
             }
         } else if (wk->action == ACTION_UP) {
-            row--;
-            if (row < 0) {
-                row = lastRow;
+#ifdef PAPERWHITE2
+            // Paper White 2: up from the first row is the previous page's last, down from the last the next page's
+            // first
+            if (row == 0 && PokedexHabitat_TurnPage(wk, -1)) {
+                row = (wk->speciesCount - 1) / POKEDEX_HABITAT_COLUMNS;
+            } else
+#endif
+            {
+                row--;
+                if (row < 0) {
+                    row = lastRow;
+                }
             }
         } else if (wk->action == ACTION_DOWN) {
-            row++;
-            if (row > lastRow) {
+#ifdef PAPERWHITE2
+            if (row == lastRow && PokedexHabitat_TurnPage(wk, 1)) {
                 row = 0;
+            } else
+#endif
+            {
+                row++;
+                if (row > lastRow) {
+                    row = 0;
+                }
             }
         } else if (wk->action == ACTION_NONE) {
         } else if (wk->action == ACTION_TOUCH) {
@@ -1260,6 +1355,10 @@ static void PokedexHabitat_SeqAllComplete(PokedexHabitatWork *wk) {
 
 // Prints what lives in the area's kind of habitat, and in which season if they differ
 static void PokedexHabitat_PrintHabitat(PokedexHabitatWork *wk) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the text box shows the Habitat Dex's tabs and filters
+    PaperWhite2_HabitatDex_Print(&wk->dex, &wk->graphic);
+#else
     PokedexHabitatArea *area = PokedexHabitat_GetArea(wk);
     u16 placeName = ZoneData_GetPlaceNameID(area->zone);
     u32 message;
@@ -1281,6 +1380,7 @@ static void PokedexHabitat_PrintHabitat(PokedexHabitatWork *wk) {
     PokedexHabitatGraphic_Print(POKEDEX_HABITAT_WIN_MAIN, strbuf, &wk->graphic, 12, 4, 240, 32, PRINT_COLOR(1, 2, 15));
     GFL_StrBufFree(format);
     GFL_StrBufFree(strbuf);
+#endif
 }
 
 static u32 PokedexHabitat_GetHabitatMessage(u32 type, u32 land) {
@@ -1338,6 +1438,41 @@ static PokedexHabitatArea *PokedexHabitat_GetArea(PokedexHabitatWork *wk) {
 
 // Lists the Pokémon of the area's kind of habitat and season that the player has seen, and asks for their icons
 static void PokedexHabitat_LoadSpecies(PokedexHabitatWork *wk) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the page of the Habitat Dex's list
+    PokedexHabitatArea *area = PokedexHabitat_GetArea(wk);
+    u32 count;
+    u32 i;
+
+    MI_CpuFill8(wk->species, 0, sizeof(wk->species));
+    PaperWhite2_HabitatDex_Fill(&wk->dex, sPokedexHabitatAreas[PokedexHabitat_GetHabitatIndex(area->zone)].file,
+                                wk->type, wk->pokedex);
+    count = PaperWhite2_HabitatDex_GetPageCount(&wk->dex);
+    for (i = 0; i < count; i++) {
+        const HabitatDexEntry *entry = PaperWhite2_HabitatDex_GetCell(&wk->dex, i);
+        u32 sex;
+        u32 form;
+        u32 rare;
+
+        PokeDex_GetShownSexRareForm(wk->pokedex, entry->species, &sex, &rare, &form, HEAPID_POKEDEX_HABITAT);
+        if (entry->form != 0 && PokeDex_HasSeenVariant(wk->pokedex, entry->species, sex, rare, entry->form) == TRUE) {
+            form = entry->form;
+        }
+        PokedexHabitatGraphic_RequestIcon(&wk->graphic, entry->species, form, sex, i);
+        PokedexHabitatGraphic_SetCellPalette(&wk->graphic, i, POKEDEX_HABITAT_CELL_FILLED);
+        wk->species[i] = entry->species;
+        PokedexHabitatGraphic_SetMark(&wk->graphic, i,
+                                      PokeDex_IsCaught(wk->pokedex, entry->species) ? POKEDEX_HABITAT_MARK_CAUGHT
+                                                                                    : POKEDEX_HABITAT_MARK_SEEN);
+    }
+    wk->empty = wk->dex.count == 0 && wk->dex.unseen == 0;
+    for (i = count; i < POKEDEX_HABITAT_ICON_COUNT; i++) {
+        PokedexHabitatGraphic_SetIconVisible(&wk->graphic, i, FALSE);
+        PokedexHabitatGraphic_SetCellPalette(&wk->graphic, i, POKEDEX_HABITAT_CELL_EMPTY);
+        PokedexHabitatGraphic_SetMark(&wk->graphic, i, POKEDEX_HABITAT_MARK_NONE);
+    }
+    wk->speciesCount = count;
+#else
     u8 count = 0;
     int i;
     u8 unseen = 0;
@@ -1385,6 +1520,7 @@ static void PokedexHabitat_LoadSpecies(PokedexHabitatWork *wk) {
         PokedexHabitatGraphic_SetMark(&wk->graphic, i, POKEDEX_HABITAT_MARK_NONE);
     }
     wk->speciesCount = count;
+#endif
 }
 
 static void PokedexHabitat_UpdateTabs(PokedexHabitatWork *wk) {
@@ -1442,11 +1578,19 @@ static void PokedexHabitat_UpdateList(PokedexHabitatWork *wk) {
         PokedexHabitat_SkipType(wk, TRUE);
     }
     PokedexHabitat_LoadSpecies(wk);
+#ifdef PAPERWHITE2
+    // Paper White 2: the arrows show where there are pages to turn
+    ClActor_SetVisible(PokedexHabitatGraphic_GetActor(&wk->graphic, POKEDEX_HABITAT_OBJ_SEASON_LEFT),
+                       PokedexHabitat_HasArrows(wk));
+    ClActor_SetVisible(PokedexHabitatGraphic_GetActor(&wk->graphic, POKEDEX_HABITAT_OBJ_SEASON_RIGHT),
+                       PokedexHabitat_HasArrows(wk));
+#else
     // The seasons' arrows show only where the seasons differ
     ClActor_SetVisible(PokedexHabitatGraphic_GetActor(&wk->graphic, POKEDEX_HABITAT_OBJ_SEASON_LEFT),
                        area->values[wk->type]);
     ClActor_SetVisible(PokedexHabitatGraphic_GetActor(&wk->graphic, POKEDEX_HABITAT_OBJ_SEASON_RIGHT),
                        area->values[wk->type]);
+#endif
 }
 
 // Takes the cursor off its cell, and shows or hides it on another
@@ -1547,10 +1691,17 @@ static void PokedexHabitat_ShowListButtons(PokedexHabitatWork *wk) {
     }
     ClActor_SetVisible(PokedexHabitatGraphic_GetActor(&wk->graphic, POKEDEX_HABITAT_OBJ_SHORTCUT), TRUE);
     ClActor_SetVisible(PokedexHabitatGraphic_GetActor(&wk->graphic, POKEDEX_HABITAT_OBJ_EXIT), TRUE);
+#ifdef PAPERWHITE2
+    ClActor_SetVisible(PokedexHabitatGraphic_GetActor(&wk->graphic, POKEDEX_HABITAT_OBJ_SEASON_LEFT),
+                       PokedexHabitat_HasArrows(wk));
+    ClActor_SetVisible(PokedexHabitatGraphic_GetActor(&wk->graphic, POKEDEX_HABITAT_OBJ_SEASON_RIGHT),
+                       PokedexHabitat_HasArrows(wk));
+#else
     ClActor_SetVisible(PokedexHabitatGraphic_GetActor(&wk->graphic, POKEDEX_HABITAT_OBJ_SEASON_LEFT),
                        area->values[wk->type]);
     ClActor_SetVisible(PokedexHabitatGraphic_GetActor(&wk->graphic, POKEDEX_HABITAT_OBJ_SEASON_RIGHT),
                        area->values[wk->type]);
+#endif
     ClActor_SetVisible(PokedexHabitatGraphic_GetActor(&wk->graphic, POKEDEX_HABITAT_OBJ_INFO), FALSE);
     PokedexHabitat_UpdateNewMarks(wk);
     PokedexHabitat_ClearInfoLabel(wk);
@@ -1688,6 +1839,36 @@ static void PokedexHabitat_ShowInfoButton(PokedexHabitatWork *wk, BOOL known, BO
         }
     }
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: the arrows that changed the season turn the Habitat Dex's pages
+static BOOL PokedexHabitat_HasArrows(PokedexHabitatWork *wk) {
+    return wk->dex.pageCount > 1;
+}
+
+// Turns the page and shows it; FALSE when there is none that way
+static BOOL PokedexHabitat_TurnPage(PokedexHabitatWork *wk, int direction) {
+    if (!PaperWhite2_HabitatDex_TurnPage(&wk->dex, direction)) {
+        return FALSE;
+    }
+    PokedexHabitat_UpdateList(wk);
+    PokedexHabitat_PrintHabitat(wk);
+    return TRUE;
+}
+
+// A touch on the text box's tabs or filters shows the list they make; TRUE when it does
+static BOOL PokedexHabitat_TouchTextBox(PokedexHabitatWork *wk) {
+    u32 x, y;
+
+    if (!GFL_HIDGetTouchPressedPoint(&x, &y) || !PaperWhite2_HabitatDex_Touch(&wk->dex, x, y)) {
+        return FALSE;
+    }
+    GFL_SndSEPlay(SEQ_SE_SELECT1);
+    PokedexHabitat_UpdateList(wk);
+    PokedexHabitat_UpdateTabs(wk);
+    return TRUE;
+}
+#endif
 
 // Defined after the functions: the ROM has it ahead of PokedexHabitat_SeqChangeType's table of the same size
 const GameProcFunctions PokedexHabitat_ProcFunctions = {

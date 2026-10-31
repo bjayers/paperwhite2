@@ -436,7 +436,70 @@ def habitats(output: Path):
         (output / path.name).write_text(json.dumps(result, ensure_ascii=False, indent=4) + "\n")
     if cut:
         print(f"encounters.py habitats: more species than the list's {HABITAT_SPECIES_MAX} in {', '.join(cut)}; "
-              f"the rest are left out", file=sys.stderr)
+              f"the rest are in the Habitat Dex's lists only", file=sys.stderr)
+    (output / HABITAT_DEX_FILE).write_bytes(habitat_dex(data, zones))
+
+
+# The Habitat Dex's lists (include/paperwhite2/habitat_dex.h): a header, each Habitat List area's offset in the order
+# of its archive (habitat_data.AREAS), then the areas' entries, each a species by one method
+HABITAT_DEX_FILE = "paperwhite2_habitat_dex.bin"
+HABITAT_DEX_MAGIC = 0x58444850  # "PHDX"
+HABITAT_DEX_VERSION = 1
+HABITAT_DEX_ENTRY = struct.Struct("<HBBBBBBI")
+HABITAT_DEX_OUTBREAK, HABITAT_DEX_RULE, HABITAT_DEX_SPOTS = 1, 2, 4
+# An outbreak's entries sort after the tiers'
+HABITAT_DEX_OUTBREAK_TIER = 0xFF
+
+
+def habitat_dex(data: Data, zones: dict) -> bytes:
+    """Every Pokémon an area of the Habitat List can have, one entry for each method of each of its habitats there,
+    with the habitat's seasons, times and weathers, so the Pokédex can filter them: its candidates, its outbreaks and
+    shaking grass's own species. Sorted by method, then rarity, then number. A habitat with extra conditions (\"when\")
+    is marked, as the Pokédex can't tell when they hold."""
+    from tools.data.habitat_data import AREAS
+    by_area = candidates(data)
+    special = data.settings["rustling"]["grass"]["species"]
+    blocks = []
+    for name in AREAS:
+        zone = f"ZONE_{name.upper()}"
+        areas = {z["encounters"].removeprefix("ENCOUNTERS_").lower() for zname, z in zones.items()
+                 if isinstance(z.get("encounters"), str) and z["encounters"].startswith("ENCOUNTERS_")
+                 and (f"ZONE_{zname.upper()}" == zone or z.get("parent") == zone)} & set(data.areas)
+        entries = set()
+        for area in sorted(areas):
+            for fields, when in by_area[area]:
+                number, _, weather, form, tier, methods, seasons, times = fields[:8]
+                for method in range(len(METHODS)):
+                    if methods >> method & 1:
+                        entries.add((method, tier, number, form, seasons, times,
+                                     HABITAT_DEX_RULE if when else 0, weather))
+            if data.areas[area]["spots"] == "grass":
+                rates = data.areas[area]["rates"]
+                seasons = [s for s in SEASONS if rates.get("all_year", rates.get(s, {})).get("rustling", 0)]
+                if seasons:
+                    entries.add((METHODS.index("rustling"), 0, species_numbers()[special], 0,
+                                 bits(seasons, SEASONS, area), (1 << len(TIMES)) - 1, HABITAT_DEX_SPOTS, 0))
+        for folder, entry in data.species.items():
+            where = label(SOURCE / "species" / f"{folder}.json")
+            for index, outbreak in enumerate(entry.get("outbreaks", [])):
+                at = f"{where}: outbreaks[{index}]"
+                if set(data.places(outbreak["places"], at)) & areas:
+                    methods = bits(outbreak["methods"], METHODS, at)
+                    for method in range(len(METHODS)):
+                        if methods >> method & 1:
+                            entries.add((method, HABITAT_DEX_OUTBREAK_TIER, data.species_number(folder),
+                                         outbreak.get("form", 0), bits(outbreak["seasons"], SEASONS, at),
+                                         bits(outbreak["times"], TIMES, at), HABITAT_DEX_OUTBREAK, 0))
+        blocks.append(b"".join(HABITAT_DEX_ENTRY.pack(number, form, method, seasons, times, tier, flags, weather)
+                               for method, tier, number, form, seasons, times, flags, weather in sorted(entries)))
+    header = struct.pack("<IHH", HABITAT_DEX_MAGIC, HABITAT_DEX_VERSION, len(blocks))
+    offset = len(header) + 4 * (len(blocks) + 1)
+    offsets = []
+    for block in blocks:
+        offsets.append(offset)
+        offset += len(block)
+    offsets.append(offset)
+    return header + struct.pack(f"<{len(offsets)}I", *offsets) + b"".join(blocks)
 
 
 def main():
