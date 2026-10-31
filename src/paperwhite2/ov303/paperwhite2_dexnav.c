@@ -122,6 +122,8 @@ typedef struct {
     u8 method;
     u8 chosen[DEXNAV_METHOD_COUNT];
     u8 scroll;
+    // Whether a window's map changed, so the text BGs' screens are sent to VRAM at the end of the frame
+    BOOL screensChanged;
     BmpWin *title;
     BmpWin *bigIcon;
     BmpWin *info;
@@ -261,6 +263,7 @@ static void Dexnav_DrawIcon(DexnavWork *work, BmpWin *window, const DexnavEntry 
     }
     BmpWin_FlushChar(window);
     BmpWin_FlushMap(window);
+    work->screensChanged = TRUE;
 }
 
 // ------------------------------------------------------------------------------------------------ The lists
@@ -445,6 +448,7 @@ static void Dexnav_DrawGrid(DexnavWork *work) {
         BmpWin_FlushChar(label);
         BmpWin_FlushMap(label);
     }
+    work->screensChanged = TRUE;
 }
 
 static void Dexnav_DrawAll(DexnavWork *work) {
@@ -452,6 +456,16 @@ static void Dexnav_DrawAll(DexnavWork *work) {
     Dexnav_DrawGrid(work);
     Dexnav_DrawInfo(work);
     Dexnav_DrawHelp(work);
+}
+
+// Sends the text BGs' screens, which the windows' maps are written into (BmpWin_FlushMap), to VRAM: the icons' and
+// the chosen cell's palettes are in the screens
+static void Dexnav_LoadScreens(DexnavWork *work) {
+    if (work->screensChanged) {
+        work->screensChanged = FALSE;
+        GFL_BGSysLoadScr(BG_TOP_TEXT);
+        GFL_BGSysLoadScr(BG_TOUCH_TEXT);
+    }
 }
 
 // ------------------------------------------------------------------------------------------------ Input
@@ -676,6 +690,8 @@ static BOOL DexnavProc_Main(GameProc *proc, u32 *state, void *param, void *procW
         Dexnav_DrawTitle(work);
         Dexnav_DrawConditions(work);
         Dexnav_ShowMethod(work, Dexnav_GetFirstMethod(work));
+        work->screensChanged = TRUE;
+        Dexnav_LoadScreens(work);
         Dexnav_SetBGsEnabled(TRUE);
         GFL_WipeSet(WIPE_MODE_BOTH, WIPE_TYPE_FADE_IN, WIPE_TYPE_FADE_IN, WIPE_COLOR_BLACK, 6, 1, work->heapId);
         *state = SEQ_FADE_IN;
@@ -689,6 +705,7 @@ static BOOL DexnavProc_Main(GameProc *proc, u32 *state, void *param, void *procW
         if (Dexnav_Input(work)) {
             *state = SEQ_FADE_OUT;
         }
+        Dexnav_LoadScreens(work);
         break;
     case SEQ_FADE_OUT:
         GFL_WipeSet(WIPE_MODE_BOTH, WIPE_TYPE_FADE_OUT, WIPE_TYPE_FADE_OUT, WIPE_COLOR_BLACK, 6, 1, work->heapId);
