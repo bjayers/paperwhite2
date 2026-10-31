@@ -68,3 +68,29 @@ Agreed with the user on 2026-10-29. Design notes, not final; each big item gets 
   hand-placed Pokémon where the user wants them. The user's existing hand placements up to Castelia are ported to the
   new structure.
 - Curved flight paths as a path movement type for scenery NPCs, not rails.
+
+## Map Editor (later, a big project; considered 2026-10-31)
+
+Editing map models and making new ones, as SDSME does: models and tiles from the decomp, collision (permissions,
+heights, grass), props, and custom models from Blender. **Feasible**: the decomp already has editable sources for
+most of it (`docs/data.md`, Map model sources):
+
+- every map chunk is a Blender GLB (`res/field/maps/models/<model>/model.glb`) that packs back into the game's model,
+  with geometry, UV, material color and texture binding edits; adding material slots or draw calls isn't supported
+  yet;
+- textures are shared PNGs per texture set, packed with RGB555 and palette checks;
+- collision is per-chunk CSVs (`terrain_0.csv`, a second layer for two-layer chunks, split planes), each cell's
+  shape, slope, height and tile type, with the height tables in `field_map_chunk_height.c`;
+- props are Blender empties in the GLB, and their 6,331 models are GLBs too;
+- map matrices (which chunk is where, and the overworld's zones) are JSON grids.
+
+**Still to build:**
+- an editor UI over these sources: a 3D view (three.js reads GLB directly) with a tile overlay for collision, painting
+  of tile types and heights, the matrix grid, and props;
+- adding new chunks and models: new archive members, which the packers would need to support;
+- whatever Nitro features a custom Blender model needs beyond the current converter (new material slots, draw calls).
+
+**Decided:** the Map Editor (terrain, models, props, matrices) and the Overworld Editor (what is placed on a map: NPCs,
+signs, warps, triggers, level scripts, spawn instances) are separate editors, on one shared map view: a reusable
+component that draws a zone's chunks from its matrix and lays a grid over them in the game's units. The Overworld
+Editor builds that view first, so the Map Editor reuses it, and each links to the other's map.
