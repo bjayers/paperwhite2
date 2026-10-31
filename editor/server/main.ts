@@ -9,6 +9,7 @@ import { parseJson, JsonSyntaxError } from "../shared/json.ts";
 import { splitSchemaId } from "../shared/schema.ts";
 import { WRITE_HEADER, type DataFile, type ProjectInfo, type SaveRequest, type SaveResult, type ServerEvent } from "../shared/api.ts";
 import { Builder } from "./build.ts";
+import { narcMember } from "./narc.ts";
 import { Git } from "./git.ts";
 import { Project, versionOf } from "./project.ts";
 import { Python } from "./python.ts";
@@ -116,12 +117,15 @@ const routes: Record<string, Handler> = {
     } catch (e) {
       return error(res, 400, (e as Error).message);
     }
-    if (!/^(res|src)\//.test(glob) || glob.includes("..")) return error(res, 400, "Scan files under res/ or src/ only");
+    if (!/^(res|src|include\/asm)\//.test(glob) || glob.includes("..")) return error(res, 400, "Scan files under res/, src/ or include/asm/ only");
+    // ?flags=i matches without case
+    if (url.searchParams.get("flags") === "i") pattern = new RegExp(pattern.source, "i");
+    const limit = Number(url.searchParams.get("limit") ?? 0) || Infinity;
     const found: { path: string; line: number; text: string }[] = [];
     for (const path of globSync(glob, { cwd: ROOT })) {
       const lines = readFileSync(project.abs(path), "utf8").split("\n");
       lines.forEach((text, i) => {
-        if (pattern.test(text)) found.push({ path, line: i + 1, text });
+        if (found.length < limit && pattern.test(text)) found.push({ path, line: i + 1, text });
       });
     }
     json(res, found);
@@ -132,6 +136,19 @@ const routes: Record<string, Handler> = {
     const glob = url.searchParams.get("glob") ?? "";
     if (!glob.startsWith("res/") || glob.includes("..")) return error(res, 400, "List files under res/ only");
     json(res, globSync(glob, { cwd: ROOT }).map((p) => p.split(sep).join("/")).sort());
+  },
+  // A member of the game's font archive (a/0/2/3, ARCID_FONT: the fonts 0 to 4 and their palettes 5 to 7), for the
+  // text box preview. The archive isn't in res/: it is read from the user's own extracted ROM (extract/), or the
+  // build's copy of it, and only shown, never written or committed.
+  "GET /api/font": (_req, res, url) => {
+    const member = Number(url.searchParams.get("member") ?? "0");
+    if (!Number.isInteger(member) || member < 0 || member > 7) return error(res, 400, "A member from 0 to 7");
+    const source = ["extract/w2_us/files/a/0/2/3", "build/w2_us/files/a/0/2/3"].map((p) => join(ROOT, p)).find(existsSync);
+    if (!source) return error(res, 404, "The game's font isn't here: extract the ROM first (extract/w2_us)");
+    const data = narcMember(readFileSync(source), member);
+    if (!data) return error(res, 404, "No such member");
+    res.writeHead(200, { "Content-Type": "application/octet-stream", "Cache-Control": "max-age=3600" });
+    res.end(data);
   },
   // An image under res/, such as a Pokémon's icon, for modules to show.
   "GET /api/asset": (_req, res, url) => {

@@ -77,8 +77,9 @@ export const api = {
   data: (schema: string, keys?: string[]) =>
     request<DataFile[]>("GET", `/api/data?schema=${encodeURIComponent(schema)}${keys ? `&keys=${keys.join(",")}` : ""}`),
   /** The lines of the files under res/ that a glob names which match a regular expression. */
-  scan: (glob: string, pattern: string) =>
-    request<ScanMatch[]>("GET", `/api/scan?glob=${encodeURIComponent(glob)}&pattern=${encodeURIComponent(pattern)}`),
+  scan: (glob: string, pattern: string, options: { ignoreCase?: boolean; limit?: number } = {}) =>
+    request<ScanMatch[]>("GET", `/api/scan?glob=${encodeURIComponent(glob)}&pattern=${encodeURIComponent(pattern)}` +
+      `${options.ignoreCase ? "&flags=i" : ""}${options.limit ? `&limit=${options.limit}` : ""}`),
   /** The paths of the files under res/ that a glob names, sorted. */
   list: (glob: string) => request<string[]>("GET", `/api/list?glob=${encodeURIComponent(glob)}`),
   /** An image under res/, as its file's bytes. */

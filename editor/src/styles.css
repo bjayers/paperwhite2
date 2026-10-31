@@ -281,3 +281,10 @@ textarea.raw {
 .quick-open ul { list-style: none; margin: 0; padding: 4px 0; max-height: 50vh; overflow-y: auto; }
 .quick-open li { padding: 5px 14px; cursor: pointer; font-size: 13px; }
 .quick-open li.highlight { background: var(--selected); }
+
+/* The text box preview (src/modules/text/TextBox.tsx), shared by the editors that show messages */
+.textbox { display: inline-flex; flex-direction: column; gap: 4px; }
+.textbox-canvas { image-rendering: pixelated; cursor: pointer; border-radius: 4px; }
+.textbox-status { font-size: 12px; }
+.textbox-warn { color: var(--error); }
+.textbox-error { color: var(--muted); font-size: 13px; }

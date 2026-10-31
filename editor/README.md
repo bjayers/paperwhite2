@@ -21,7 +21,7 @@ If Edge can't reach it, WSL isn't forwarding the port: check that `localhostForw
 ## What it does
 
 - **Specialty editors** at the top of the sidebar, under **Editors**: everything about one subject in one place. The
-  first are the **Encounter Editor**, **Graphics & Palettes** and the **Follower Editor** (below). The per-file editors are under **Data files**, which folds away. A page
+  first are the **Encounter Editor**, **Graphics & Palettes**, the **Follower Editor** and the **Text Editor** (below). The per-file editors are under **Data files**, which folds away. A page
   of a tool can be linked to: `http://localhost:7420/#tool/encounters`.
 - **Every kind of data in `res/`, found by itself.** Each data file names its schema in `"$schema"`; the editor groups
   the files by schema, so a new kind of data, a new field or a new file shows up without changing the editor.
@@ -144,6 +144,24 @@ file changed on disk reloads.
 Under each dialogue file, **How its messages look** shows every message as the game breaks it: pages at `[C]`, lines
 at `[N]` and line breaks, a ▼ where `[L]` waits for A, the words filled with examples, and a line in red that is
 probably too long for the window.
+
+## The Text Editor
+
+Every text bank (`src/modules/text/`, `docs/data.md`, Text): the story's, `res/text/script/` (each zone's and global
+script file's messages), and the rest, `res/text/system/`. A bank lists its messages by their file's line number,
+filtered by text or ID; **Search** finds a text in every bank. A message is edited with its line breaks as real ones,
+and shown in the talk window as the game draws it: the bottom balloon of `talkmsgwin.c` (30 by 4 tiles, the frame of
+`res/graphics/winframe/05.png` in `00.pal`), the game's own font 0 and its palette, printed a letter a frame. A click
+is the A button: it finishes the text up to the next wait, or goes on after one. `{be01}` waits and the next line
+scrolls, `{be00}` waits and starts a new box, `{ff00:n}` colors (1 red, 2 blue, 0 back), and a script's words
+(`{0100:n}` and the like) show as `Word0`; a line that runs past the window is reported. Save (Ctrl+S) writes every
+changed bank; Ctrl+Z and Ctrl+Y undo and redo outside the text box.
+
+The font isn't in `res/`: `GET /api/font` reads it from the user's extracted ROM (`extract/w2_us/files/a/0/2/3`, or the
+build's copy), and it is only shown. Without it, the preview says so.
+
+Other editors reuse it: `<TextBox text={...} />` is the window alone, `<MessageEditor path={...} line={...} />` (or
+`id={...}`) one message's editor with it, and `<TextEditor bank={...} line={...} />` the whole page.
 
 ## How it is built
 
