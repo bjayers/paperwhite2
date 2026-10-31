@@ -36,19 +36,26 @@ export function schemaAt(schema: Schema, at: JsonPath): Schema {
   return s;
 }
 
-export function DocForm({ path, at = [], constants, hideDescription }: {
+export function DocForm({ path, at = [], constants, hideDescription, render, flat, onEdit }: {
   path: string;
   /** The part of the file to show; the whole file by default. */
   at?: JsonPath;
   constants: Constants;
   hideDescription?: boolean;
+  /** The editor's own controls for some fields (FormContext.render). */
+  render?: FormContext["render"];
+  /** Nested objects unfolded. */
+  flat?: boolean;
+  /** Told of each edit, after it is made. */
+  onEdit?(at: JsonPath): void;
 }) {
   const { data, schema, error } = useHeld(path);
   const errors = useMemo(() => (data !== null && schema ? validate(data, schema, constants) : []), [data, schema, constants]);
   const ctx: FormContext | null = useMemo(() => schema ? {
     root: schema, constants, errors,
-    edit: (p: JsonPath, v: JsonValue | undefined) => documents.edit(path, p, v),
-  } : null, [schema, constants, errors, path]);
+    edit: (p: JsonPath, v: JsonValue | undefined) => { documents.edit(path, p, v); onEdit?.(p); },
+    render, flat,
+  } : null, [schema, constants, errors, path, render, flat, onEdit]);
   if (error) return <p className="flw-error">{path}: {error}</p>;
   if (data === null || !schema || !ctx) return <p className="muted">Reading {path}…</p>;
   const part = schemaAt(schema, at);

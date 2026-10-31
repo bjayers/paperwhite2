@@ -181,13 +181,27 @@ list, and `<CodeEditor value={...} onChange={...} commands={...} />` the highlig
 A zone's events on its 3D map (`src/modules/overworld/`, `res/field/events/<zone>.json`; the design is
 `docs/paperwhite2/design/overworld-editor.md`). The map is the zone's chunks from its matrix (each chunk's
 `model.glb`, which **Models** hides) with its collision tiles drawn at their heights (by type, by flag or hidden),
-layer 1 or 2 where a chunk has two. Modules: NPCs (their sprites, facing, leashes and a trainer's line of sight),
-Proxies (background events), Triggers, Warps and Level scripts. Click an entity to edit its fields in the side panel
-(several on one tile are listed), drag it to another tile (its height follows the tile), Shift+click a tile to add
-one, Remove to delete it. **Script** opens the entity's script below the map in the Script Editor, editable there.
-**Paint** sets the tiles' type (walkable, blocked, water, grass and the rest) in the chunk's `terrain_<layer>.csv`.
-The header counts the events' packed size against the game's 2,436-byte buffer. Save (Ctrl+S) writes the events and
-any painted terrain; Ctrl+Z and Ctrl+Y undo and redo. The server gives the models and their textures at `/res/...`.
+layer 1 or 2 where a chunk has two. Modules: NPCs (their sprites facing their direction, facing arrows, leashes and a
+trainer's line of sight), Proxies (background events), Triggers, Warps and Level scripts.
+
+- **Mouse:** the left button selects, drags an entity to another tile (its height follows the tile) and paints; the
+  middle button orbits, the right pans and the wheel zooms toward the cursor. Shift+click a tile adds one of the
+  shown kind.
+- **Heights and layers:** every height is in tiles (an NPC's y stores 65536 a tile, the others 16). The game stands an
+  entity on the layer whose tile is nearest its height, and so does the map; on the other layer it is drawn faded.
+- **The side panel:** the entity's fields, with groups (grid, area) open in place; the model with its sprite and
+  **Browse…**, a grid of every model's sprite filtered by name and by bank (the code's high digit: 0 people and
+  objects, 1 walking Pokémon, 2 3D models, 3 followers); **Show script** beside the script; the others on its tile;
+  **←** back to the list. Remove leaves the other NPCs' IDs as they are.
+- **Scripts:** **Show script** opens the script over the lower half of the map, in the Script Editor, editable: a
+  zone's own or a global one (GLOBAL_SCRIPT_TABLE in `src/ov012/script_sys.c` gives the ranges).
+- **Paint** sets tiles' type (walkable, blocked, water, grass and the rest) or a flat height in tiles, in the chunk's
+  `terrain_<layer>.csv`, colored as the stroke passes. A height is the nearest the game's height table has (half
+  tiles from -10 to 10 tiles, but -8).
+- The header counts the events' packed size against the game's 2,436-byte buffer. Save (Ctrl+S) writes the events and
+  the painted terrain; Ctrl+Z and Ctrl+Y undo and redo moves, adds, removals, field edits and paint strokes (one step
+  a stroke) in order. The server gives the models and their textures at `/res/...`.
+- A save made on a map keeps its NPCs as they were, so after a build leave the map and come back to see the changes.
 
 ## The Pokémon Editor
 

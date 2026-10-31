@@ -13,6 +13,10 @@ export interface FormContext {
   constants: Constants;
   errors: SchemaError[];
   edit(path: JsonPath, value: JsonValue | undefined): void;
+  /** An editor's own control for a field, or undefined for the form's; it may wrap <BaseField> (the form's). */
+  render?(path: JsonPath, value: JsonValue, schema: Schema, ctx: FormContext): ReactNode | undefined;
+  /** Nested objects as plain groups of fields, without folding. */
+  flat?: boolean;
 }
 
 const COLLAPSE_ITEMS = 24;
@@ -104,12 +108,16 @@ function typesOf(s: Schema): string[] {
 }
 
 /** One value of any kind. */
-export const Field = memo(function Field({ schema, value, path, ctx }: {
-  schema: Schema;
-  value: JsonValue;
-  path: JsonPath;
-  ctx: FormContext;
-}) {
+type FieldProps = { schema: Schema; value: JsonValue; path: JsonPath; ctx: FormContext };
+
+/** A field: the editor's control for it (FormContext.render), else the form's. */
+export const Field = memo(function Field(props: FieldProps) {
+  const custom = props.ctx.render?.(props.path, props.value, props.schema, props.ctx);
+  return custom !== undefined ? <>{custom}</> : <BaseField {...props} />;
+});
+
+/** The form's own control for a field, from its schema. */
+export function BaseField({ schema, value, path, ctx }: FieldProps) {
   const s = resolve(schema, ctx.root);
   if (s.anyOf) return <AnyOfField schema={s} value={value} path={path} ctx={ctx} />;
   if (s.enum) return <EnumField schema={s} value={value} path={path} ctx={ctx} />;
@@ -125,7 +133,7 @@ export const Field = memo(function Field({ schema, value, path, ctx }: {
                 onChange={(e) => ctx.edit(path, defaultFor({ ...s, type: e.target.value }, ctx))}>
           {types.map((t) => <option key={t} value={t}>{kindName(t, s)}</option>)}
         </select>
-        <Field schema={{ ...s, type: current }} value={value} path={path} ctx={ctx} />
+        <BaseField schema={{ ...s, type: current }} value={value} path={path} ctx={ctx} />
       </div>
     );
   }
@@ -151,7 +159,7 @@ export const Field = memo(function Field({ schema, value, path, ctx }: {
       return <span className="muted">none</span>;
   }
   return <Mismatch value={value} />;
-});
+}
 
 function Mismatch({ value }: { value: JsonValue }) {
   return <code className="mismatch" title="The form can't show this value; use the Text view">{typeOf(value)}</code>;
@@ -249,7 +257,7 @@ function AnyOfField({ schema, value, path, ctx }: { schema: Schema; value: JsonV
           {options.map((o, i) => <option key={i} value={i}>{name(o, i)}</option>)}
         </select>
       )}
-      <Field schema={{ ...options[chosen], description: undefined }} value={value} path={path} ctx={ctx} />
+      <BaseField schema={{ ...options[chosen], description: undefined }} value={value} path={path} ctx={ctx} />
     </div>
   );
 }
@@ -319,7 +327,7 @@ function ObjectField({ schema, value, path, ctx }: { schema: Schema; value: Json
       )}
     </div>
   );
-  if (!nested) return body;
+  if (!nested || ctx.flat) return body;
   const problems = ctx.errors.filter((e) => within(e.path, path)).length;
   return (
     <details className="group" open={path.length < 3}>

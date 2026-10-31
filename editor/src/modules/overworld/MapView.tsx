@@ -2,16 +2,16 @@
 // with their texture PNGs from /res/), each placed at its matrix cell, the collision tiles laid over them at their
 // heights (one layer at a time, for the two-layer chunks), and the entities on their tiles with their sprites,
 // leashes, sight lines and areas. It reports clicks, drags and painting in global tiles; the editor changes the data.
+// The left button selects, drags and paints; the middle orbits, the right pans and the wheel zooms. An entity stands
+// on the layer nearest its height, as in game; those on the other layer are drawn faded.
 
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { api } from "../../api.ts";
-import { parsePal } from "../palettes/pal.ts";
-import { readIndexedPng } from "../palettes/png.ts";
-import { actorFolder, directionStep, type Entity } from "./entities.ts";
-import { CHUNK, CHUNK_TILES, TILE, TILE_FLAG_COLLISION, TILE_FLAG_ENCOUNT, TILE_FLAG_WATER, tileFlags, type ZoneMap } from "./terrain.ts";
+import { directionStep, type Entity } from "./entities.ts";
+import { spriteFrame } from "./sprites.ts";
+import { CHUNK, CHUNK_TILES, TILE, TILE_FLAG_COLLISION, TILE_FLAG_ENCOUNT, TILE_FLAG_WATER, standingOn, tileFlags, type ZoneMap } from "./terrain.ts";
 
 export type OverlayMode = "off" | "walk" | "type";
 
@@ -25,6 +25,8 @@ export interface MapViewProps {
   showModels: boolean;
   /** While true, a drag paints tiles rather than moving entities. */
   painting: boolean;
+  /** The tile type being painted, to color the tiles as the stroke passes; null to mark them yellow (a height). */
+  paintType: number | null;
   onSelect(entity: Entity | null, tile: { x: number; z: number } | null): void;
   onMove(entity: Entity, x: number, z: number, height: number): void;
   onAdd(x: number, z: number, height: number): void;
@@ -34,41 +36,22 @@ export interface MapViewProps {
 const KIND_COLORS: Record<string, number> = { npc: 0x3ac7e0, proxy: 0xf0c330, trigger: 0xf08a30, warp: 0xd040d0, level: 0x888888 };
 
 const loader = new GLTFLoader();
-const sprites = new Map<string, Promise<THREE.Texture | null>>();
+const textures = new Map<string, Promise<THREE.Texture | null>>();
 
-/** A model's first sprite frame as a texture: its PNG in its palette, the frame as tall as the sheet. */
-function spriteTexture(model: string): Promise<THREE.Texture | null> {
-  if (!sprites.has(model)) {
-    const folder = actorFolder(model);
-    sprites.set(model, (async () => {
-      try {
-        const data = JSON.parse((await api.file(`${folder}/data.json`)).text) as { sprite?: string };
-        const from = data.sprite ? actorFolder(data.sprite) : folder;
-        const [image, pal] = await Promise.all([api.asset(`${from}/sprite.png`).then(readIndexedPng), api.file(`${from}/sprite.pal`)]);
-        const colors = parsePal(pal.text);
-        const size = Math.min(image.height, image.width);
-        const canvas = document.createElement("canvas");
-        canvas.width = canvas.height = size;
-        const ctx = canvas.getContext("2d")!;
-        const img = ctx.createImageData(size, size);
-        for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
-          const v = image.pixels[y * image.width + x];
-          if (!v) continue;
-          const c = colors[v] ?? [255, 0, 255];
-          img.data.set([c[0], c[1], c[2], 255], (y * size + x) * 4);
-        }
-        ctx.putImageData(img, 0, 0);
-        const texture = new THREE.CanvasTexture(canvas);
-        texture.magFilter = THREE.NearestFilter;
-        texture.minFilter = THREE.NearestFilter;
-        texture.colorSpace = THREE.SRGBColorSpace;
-        return texture;
-      } catch {
-        return null;
-      }
-    })());
+/** A model's frame facing a direction as a texture. */
+function spriteTexture(model: string, direction?: string): Promise<THREE.Texture | null> {
+  const key = `${model}:${direction}`;
+  if (!textures.has(key)) {
+    textures.set(key, spriteFrame(model, direction).then((canvas) => {
+      if (!canvas) return null;
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.magFilter = THREE.NearestFilter;
+      texture.minFilter = THREE.NearestFilter;
+      texture.colorSpace = THREE.SRGBColorSpace;
+      return texture;
+    }));
   }
-  return sprites.get(model)!;
+  return textures.get(key)!;
 }
 
 function tileColor(type: number, mode: OverlayMode): THREE.Color {
@@ -90,14 +73,14 @@ class MapScene {
   marks = new THREE.Group();
   raycaster = new THREE.Raycaster();
   /** The tiles under the pointer: each overlay mesh's instances as global tiles. */
-  tileMeshes: { mesh: THREE.InstancedMesh; tiles: { x: number; z: number; h: number }[] }[] = [];
+  tileMeshes: { mesh: THREE.InstancedMesh; drawn: THREE.InstancedMesh; tiles: { x: number; z: number; h: number }[] }[] = [];
   entityMeshes: { object: THREE.Object3D; entity: Entity }[] = [];
   props: MapViewProps;
   dragging: Entity | null = null;
   paintingNow = false;
   painted = new Map<string, { x: number; z: number }>();
   frame = 0;
-  loadedMap: ZoneMap | null = null;
+  loadedZone: string | null = null;
   loadedModels = false;
 
   constructor(private host: HTMLDivElement, props: MapViewProps) {
@@ -110,6 +93,9 @@ class MapScene {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.screenSpacePanning = true;
+    // The left button is the editor's: selecting, dragging and painting
+    this.controls.mouseButtons = { LEFT: null, MIDDLE: THREE.MOUSE.ROTATE, RIGHT: THREE.MOUSE.PAN };
+    this.controls.zoomToCursor = true;
     this.scene.background = new THREE.Color(0x1e2129);
     this.scene.add(new THREE.AmbientLight(0xffffff, 1.6));
     const sun = new THREE.DirectionalLight(0xffffff, 1.4);
@@ -119,6 +105,7 @@ class MapScene {
     dom.addEventListener("pointerdown", this.down);
     dom.addEventListener("pointermove", this.move);
     window.addEventListener("pointerup", this.up);
+    dom.addEventListener("contextmenu", (e) => e.preventDefault());
     new ResizeObserver(() => this.resize()).observe(host);
     this.resize();
     const loop = () => {
@@ -145,10 +132,11 @@ class MapScene {
   }
 
   update(props: MapViewProps) {
-    const mapChanged = props.map !== this.loadedMap;
+    // A new zone loads its models and frames the camera; an edit of the same zone's terrain keeps both
+    const zoneChanged = props.map.zone !== this.loadedZone;
     const modelsChanged = props.showModels !== this.loadedModels;
     this.props = props;
-    if (mapChanged || modelsChanged) this.loadChunks(mapChanged);
+    if (zoneChanged || modelsChanged) this.loadChunks(zoneChanged);
     this.buildOverlay();
     this.buildMarks();
   }
@@ -156,13 +144,13 @@ class MapScene {
   /** Each chunk's GLB at its cell: x east, z south, the cell's center its origin. */
   loadChunks(frame: boolean) {
     const { map, showModels } = this.props;
-    this.loadedMap = map;
+    this.loadedZone = map.zone;
     this.loadedModels = showModels;
     this.chunks.clear();
     if (showModels) {
       for (const chunk of map.chunks) {
         loader.load(`/${chunk.folder}/model.glb`, (gltf) => {
-          if (this.loadedMap !== map) return;
+          if (this.loadedZone !== map.zone || !this.loadedModels) return;
           gltf.scene.position.set(chunk.column * CHUNK + CHUNK / 2, 0, chunk.row * CHUNK + CHUNK / 2);
           gltf.scene.traverse((o) => {
             const mesh = o as THREE.Mesh;
@@ -215,43 +203,40 @@ class MapScene {
         pickMesh.setMatrixAt(i, m);
       }
       this.overlay.add(pickMesh);
-      this.tileMeshes.push({ mesh: pickMesh, tiles });
+      this.tileMeshes.push({ mesh: pickMesh, drawn: mesh, tiles });
     }
-  }
-
-  heightAt(x: number, z: number): number {
-    for (const { tiles } of this.tileMeshes) {
-      const t = tiles.find((t) => t.x === x && t.z === z);
-      if (t) return t.h;
-    }
-    return 0;
   }
 
   buildMarks() {
-    const { entities, selected } = this.props;
+    const { entities, selected, map, layer } = this.props;
     this.marks.clear();
     this.entityMeshes = [];
     for (const e of entities) {
       if (e.x === null || e.z === null) continue;
       const isSelected = selected?.kind === e.kind && selected.index === e.index;
-      const ground = e.kind === "npc" ? e.y || this.heightAt(e.x, e.z) : this.heightAt(e.x, e.z);
+      const stands = standingOn(map, e.x, e.z, e.y);
+      const ground = stands?.height ?? e.y;
+      // On the other layer: faded, still to be clicked
+      const fade = stands !== null && stands.layer !== Math.min(layer, this.layersAt(e.x, e.z) - 1) ? 0.35 : 1;
       const color = KIND_COLORS[e.kind];
       // Its tiles: a box the size of its area
       const box = new THREE.Mesh(
         new THREE.BoxGeometry(e.width * TILE - 1, isSelected ? 4 : 2, e.depth * TILE - 1),
-        new THREE.MeshBasicMaterial({ color: isSelected ? 0xffffff : color, transparent: true, opacity: isSelected ? 0.85 : 0.6, depthTest: false }),
+        new THREE.MeshBasicMaterial({ color: isSelected ? 0xffffff : color, transparent: true, opacity: (isSelected ? 0.85 : 0.6) * fade, depthTest: false }),
       );
       box.position.set((e.x + e.width / 2) * TILE, ground + 1.5, (e.z + e.depth / 2) * TILE);
       box.renderOrder = 3;
       this.marks.add(box);
       this.entityMeshes.push({ object: box, entity: e });
       if (e.kind === "npc") {
-        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xffffff, transparent: true, alphaTest: 0.5, depthTest: true }));
+        // Over its tile's marks and the models, so an NPC behind a building still shows
+        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xffffff, transparent: true, opacity: fade, alphaTest: 0.5 * fade, depthTest: false }));
+        sprite.renderOrder = 5;
         sprite.scale.set(24, 24, 1);
         // Shown once its sprite loads: a sprite without a texture draws as a white square
         sprite.visible = false;
         sprite.position.set((e.x + 0.5) * TILE, ground + 12, (e.z + 0.5) * TILE);
-        if (e.model) spriteTexture(e.model).then((t) => { if (t) { sprite.material.map = t; sprite.material.needsUpdate = true; sprite.visible = true; } });
+        if (e.model) spriteTexture(e.model, e.direction).then((t) => { if (t) { sprite.material.map = t; sprite.material.needsUpdate = true; sprite.visible = true; } });
         this.marks.add(sprite);
         this.entityMeshes.push({ object: sprite, entity: e });
         // Its facing: a small arrow on its tile
@@ -281,6 +266,25 @@ class MapScene {
     }
   }
 
+  /** How many layers the chunk under a tile has. */
+  layersAt(x: number, z: number): number {
+    const chunk = this.props.map.chunks.find((c) => c.column === Math.floor(x / CHUNK_TILES) && c.row === Math.floor(z / CHUNK_TILES));
+    return Math.max(1, chunk?.layers.length ?? 1);
+  }
+
+  /** Colors a tile as the stroke passes it, before the edit is made. */
+  markPainted(tile: { x: number; z: number }) {
+    const { paintType, overlay } = this.props;
+    const color = paintType === null ? new THREE.Color(0xffd400) : tileColor(paintType, overlay === "off" ? "type" : overlay);
+    for (const { drawn, tiles } of this.tileMeshes) {
+      const i = tiles.findIndex((t) => t.x === tile.x && t.z === tile.z);
+      if (i < 0) continue;
+      drawn.setColorAt(i, color);
+      drawn.instanceColor!.needsUpdate = true;
+      (drawn.material as THREE.MeshBasicMaterial).opacity = Math.max((drawn.material as THREE.MeshBasicMaterial).opacity, 0.45);
+    }
+  }
+
   pick(ev: PointerEvent): { tile: { x: number; z: number; h: number } | null; entity: Entity | null } {
     const rect = this.renderer.domElement.getBoundingClientRect();
     const pointer = new THREE.Vector2(((ev.clientX - rect.left) / rect.width) * 2 - 1, -((ev.clientY - rect.top) / rect.height) * 2 + 1);
@@ -303,15 +307,19 @@ class MapScene {
       this.paintingNow = true;
       this.controls.enabled = false;
       this.painted = new Map([[`${tile.x},${tile.z}`, tile]]);
+      this.markPainted(tile);
       return;
     }
     if (ev.shiftKey && tile) {
       this.props.onAdd(tile.x, tile.z, tile.h);
       return;
     }
-    this.props.onSelect(entity, tile);
-    if (entity && entity.x !== null) {
-      this.dragging = entity;
+    // On the selected entity's tile, the selected one (chosen from the panel's list of a tile's entities)
+    const sel = this.props.selected;
+    const onSelected = sel && entity && sel.x === entity.x && sel.z === entity.z ? sel : entity;
+    this.props.onSelect(onSelected, tile);
+    if (onSelected && onSelected.x !== null) {
+      this.dragging = onSelected;
       this.controls.enabled = false;
     }
   };
@@ -321,7 +329,11 @@ class MapScene {
     const { tile } = this.pick(ev);
     if (!tile) return;
     if (this.paintingNow) {
-      this.painted.set(`${tile.x},${tile.z}`, tile);
+      const key = `${tile.x},${tile.z}`;
+      if (!this.painted.has(key)) {
+        this.painted.set(key, tile);
+        this.markPainted(tile);
+      }
       return;
     }
     const mark = this.entityMeshes.filter((m) => m.entity === this.dragging);

@@ -2,6 +2,21 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-31: Overworld Editor fixes after the user's first test (editor only)
+
+- Mouse: left selects, drags and paints; middle orbits, right pans, the wheel zooms to the cursor. The camera stays
+  put after a paint. Paint shows during the stroke and is one undo step; one undo history covers the events and the
+  terrain. Painting heights: a flat tile at a height in tiles, from the game's height table.
+- Heights in tiles (an NPC's y is 65536 a tile, the others 16); entities stand on the layer nearest their height, as
+  `FieldG3DMapper_GetTerrain` chooses (the birds on Virbank City's wall), faded on the other layer. Sprites face
+  their direction (sheets: up, down, left; right mirrored). Global scripts open in the drawer (the table in
+  `script_sys.c`), which lies over the map. The model picker (sprites, banks), Show script beside the script, groups
+  open in place, the others on a tile, a back button.
+- Checked in the browser (Aspertia City, Virbank City and Complex): pan, the panel, the picker, a global script,
+  painting heights and its undo, layers. **Not yet checked:** saving and building these edits (the test ran on the
+  real checkout, so nothing was saved).
+- Found: the user's moved NPCs didn't show because the save file keeps a map's NPCs; leaving the map shows them.
+
 ## 2026-10-31: the Overworld Editor, phase 1 (editor only)
 
 - `editor/src/modules/overworld/`: a zone's events on its 3D map (chunks' GLBs, collision tiles at their heights,

@@ -13,7 +13,7 @@
 .scr-files, .scr-scripts { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--border); overflow-y: auto; }
 .scr-files > .filter { margin: 8px 10px 6px; }
 .scr-file-list { flex: 1; overflow: auto; }
-.scr-file, .scr-script { display: block; width: 100%; border: none; border-radius: 0; background: none; text-align: left; padding: 2px 10px; }
+.scr-file, .scr-script { display: block; flex: none; width: 100%; border: none; border-radius: 0; background: none; text-align: left; padding: 2px 10px; }
 .scr-script { padding: 4px 10px; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .scr-file:hover, .scr-script:hover { background: var(--hover); }
 .scr-file.selected, .scr-script.selected { background: var(--selected); box-shadow: inset 3px 0 var(--accent); }

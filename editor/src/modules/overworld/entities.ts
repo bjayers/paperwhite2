@@ -1,8 +1,9 @@
 // A zone's events (res/field/events/<zone>.json) as the map shows them: each NPC, proxy (background event), trigger,
 // warp and level script, with its place in global tiles and its height in units. The events write positions in
 // three ways: an NPC's and a trigger's grid is tiles (x, z) and a height y in fixed point (4096 a unit); a proxy's grid
-// is tiles too, its y the row and its z the height in units; a warp's is units, 16 a tile. Entities on rails have no
-// grid and aren't drawn (rail zones come later).
+// is tiles too, its y the row and its z the height in units; a warp's is units, 16 a tile, its height a u16 that is
+// negative past 32767. The editor shows every height in tiles. Entities on rails have no grid and aren't drawn (rail
+// zones come later). An entity's height only chooses the layer it stands on (standingOn in terrain.ts), as in game.
 
 import { toPlain, type JsonValue } from "../../../shared/json.ts";
 import { TILE } from "./terrain.ts";
@@ -51,6 +52,26 @@ export interface Entity {
 type Rec = Record<string, unknown>;
 
 const num = (v: unknown, d = 0) => (typeof v === "number" ? v : d);
+const signed16 = (v: number) => (v > 0x7fff ? v - 0x10000 : v);
+
+/** Each kind's height field, and its units in a tile: an NPC's y is fixed point (4096 a unit), the others units. */
+export const HEIGHT_FIELDS: Partial<Record<EntityKind, { field: string; perTile: number; unsigned?: boolean }>> = {
+  npc: { field: "y", perTile: TILE * 4096 },
+  proxy: { field: "z", perTile: TILE },
+  trigger: { field: "y", perTile: TILE },
+  warp: { field: "y", perTile: TILE, unsigned: true },
+};
+
+/** A stored height as tiles, and tiles as the value to store. */
+export function heightInTiles(kind: EntityKind, stored: number): number {
+  const h = HEIGHT_FIELDS[kind]!;
+  return (h.unsigned ? signed16(stored) : stored) / h.perTile;
+}
+export function storedHeight(kind: EntityKind, tiles: number): number {
+  const h = HEIGHT_FIELDS[kind]!;
+  const v = Math.round(tiles * h.perTile);
+  return h.unsigned && v < 0 ? v + 0x10000 : v;
+}
 
 export function entitiesOf(data: JsonValue | null): Entity[] {
   if (!(data instanceof Map)) return [];
@@ -82,7 +103,7 @@ export function entitiesOf(data: JsonValue | null): Entity[] {
   (plain.warps ?? []).forEach((w, index) => {
     const g = w.grid as Rec | undefined;
     out.push({ kind: "warp", index, x: g ? Math.floor(num(g.x) / TILE) : null, z: g ? Math.floor(num(g.z) / TILE) : null,
-               y: g ? num(g.y) : 0, width: g ? Math.max(1, num(g.width, 1)) : 1, depth: g ? Math.max(1, num(g.height, 1)) : 1,
+               y: g ? signed16(num(g.y)) : 0, width: g ? Math.max(1, num(g.width, 1)) : 1, depth: g ? Math.max(1, num(g.height, 1)) : 1,
                label: `Warp ${index} → ${String(w.zone ?? "").replace(/^ZONE_/, "").toLowerCase()}` });
   });
   (plain.init_scripts ?? []).forEach((l, index) => {
@@ -94,16 +115,15 @@ export function entitiesOf(data: JsonValue | null): Entity[] {
 /** The JSON path of an entity's position fields, and the values that put it on a tile at a height. */
 export function positionEdits(e: Entity, gx: number, gz: number, height: number): { path: (string | number)[]; value: number }[] {
   const base = [KIND_LISTS[e.kind], e.index, "grid"];
+  const y = (field: string) => ({ path: [...base, field], value: storedHeight(e.kind, height / TILE) });
   switch (e.kind) {
     case "npc":
-      return [{ path: [...base, "x"], value: gx }, { path: [...base, "z"], value: gz }, { path: [...base, "y"], value: Math.round(height * 4096) }];
     case "trigger":
-      return [{ path: [...base, "x"], value: gx }, { path: [...base, "z"], value: gz }, { path: [...base, "y"], value: Math.round(height) }];
+      return [{ path: [...base, "x"], value: gx }, { path: [...base, "z"], value: gz }, y("y")];
     case "proxy":
-      return [{ path: [...base, "x"], value: gx }, { path: [...base, "y"], value: gz }, { path: [...base, "z"], value: Math.round(height) }];
+      return [{ path: [...base, "x"], value: gx }, { path: [...base, "y"], value: gz }, y("z")];
     case "warp":
-      return [{ path: [...base, "x"], value: gx * TILE + TILE / 2 }, { path: [...base, "z"], value: gz * TILE + TILE / 2 },
-              { path: [...base, "y"], value: Math.round(height) }];
+      return [{ path: [...base, "x"], value: gx * TILE + TILE / 2 }, { path: [...base, "z"], value: gz * TILE + TILE / 2 }, y("y")];
     default:
       return [];
   }

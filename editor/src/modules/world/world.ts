@@ -42,6 +42,8 @@ export interface World {
   zones: Zone[];
   byName: Map<string, Zone>;
   events: ZoneEvent[];
+  /** The global scripts' ID ranges and their files, from GLOBAL_SCRIPT_TABLE (src/ov012/script_sys.c). */
+  globals: { start: number; end: number; file: string }[];
 }
 
 let world: Promise<World> | null = null;
@@ -51,7 +53,7 @@ let worldConstants: Constants | null = null;
 export function loadWorld(constants: Constants): Promise<World> {
   if (!world || worldConstants !== constants) {
     worldConstants = constants;
-    world = Promise.all([api.data(ZONE_SCHEMA, ["scripts", "text", "parent"]), api.data(EVENTS_SCHEMA)]).then(([zoneFiles, eventFiles]) => {
+    world = Promise.all([api.data(ZONE_SCHEMA, ["scripts", "text", "parent"]), api.data(EVENTS_SCHEMA), globalTable()]).then(([zoneFiles, eventFiles, globals]) => {
       const zones: Zone[] = zoneFiles.map(({ path, data }) => {
         const name = path.slice(path.lastIndexOf("/") + 1, -5);
         const constant = `ZONE_${name.toUpperCase()}`;
@@ -74,11 +76,31 @@ export function loadWorld(constants: Constants): Promise<World> {
           });
         }
       }
-      return { zones, byName: new Map(zones.map((z) => [z.name, z])), events };
+      return { zones, byName: new Map(zones.map((z) => [z.name, z])), events, globals };
     });
     world.catch(() => { world = null; });
   }
   return world;
+}
+
+/** The global script table's rows: { 10885, 10914, SCRIPTS_GLOBAL_10885, ... }. */
+async function globalTable(): Promise<World["globals"]> {
+  const lines = await api.scan("src/ov012/script_sys.c", "SCRIPTS_GLOBAL_");
+  const rows: World["globals"] = [];
+  for (const { text } of lines) {
+    const m = /\{\s*(\d+),\s*(\d+),\s*(SCRIPTS_GLOBAL_\d+)/.exec(text);
+    if (m) rows.push({ start: Number(m[1]), end: Number(m[2]), file: scriptFileOf(m[3]) });
+  }
+  return rows.sort((a, b) => b.start - a.start);
+}
+
+/** The file and entry (from 1) that a script ID runs in a zone, as FieldScript_ResolveSCRID finds them: the first global
+ * range that starts at or below it, else the zone's own file. Null for 0 or a zone without scripts. */
+export function resolveScript(w: World, zone: Zone | undefined, id: number): { file: string; entry: number } | null {
+  const global = w.globals.find((g) => id >= g.start);
+  if (global) return { file: global.file, entry: id - global.start + 1 };
+  if (id >= 1 && zone?.scripts) return { file: scriptFileOf(zone.scripts), entry: id };
+  return null;
 }
 
 /** "SCRIPTS_ASPERTIA_CITY" as its file, and back; the same for the text banks. */

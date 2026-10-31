@@ -63,7 +63,7 @@ interface HeightTables {
 let tables: Promise<HeightTables> | null = null;
 
 /** The slope and height tables, read from the C source so they stay the game's. */
-function heightTables(): Promise<HeightTables> {
+export function heightTables(): Promise<HeightTables> {
   if (!tables) {
     tables = api.scan("src/ov036/field_map_chunk_height.c", ".").then((lines) => {
       const text = lines.map((l) => l.text).join("\n");
@@ -135,8 +135,9 @@ async function loadLayer(path: string, splitsPath: string, tb: HeightTables, sou
 export async function reloadLayers(chunk: Chunk, source?: TextSource): Promise<void> {
   const tb = await heightTables();
   const layers: TerrainLayer[] = [];
-  for (let layer = 0; layer < 2; layer++) {
-    const l = await loadLayer(`${chunk.folder}/terrain_${layer}.csv`, `${chunk.folder}/terrain_${layer}_splits.csv`, tb, source);
+  // The layers it has, in their files: terrain_<layer>.csv and its splits
+  for (const old of chunk.layers) {
+    const l = await loadLayer(old.path, old.path.replace(/\.csv$/, "_splits.csv"), tb, source);
     if (l) layers.push(l);
   }
   chunk.layers = layers;
@@ -181,6 +182,36 @@ export function tileAt(map: ZoneMap, gx: number, gz: number, layer = 0): { chunk
   if (!chunk || !l) return null;
   const i = (gz - row * CHUNK_TILES) * CHUNK_TILES + (gx - column * CHUNK_TILES);
   return l.tiles[i] ? { chunk, tile: l.tiles[i], height: l.heights[i] } : null;
+}
+
+/** A tile type the game counts as a tile (MapTile_IsValid): not TILE_TYPE_NONE, nor of TILE_CLASS_NONE. */
+export const tileIsValid = (t: number) => t >>> 0 !== 0xffffffff && (t & 0xffff) !== 0xff;
+
+/** The layer an entity at a height stands on, and its height there: of the layers with a tile here, the one nearest
+ * the height (FieldG3DMapper_GetTerrain), as the game places an actor. Null off the map. */
+export function standingOn(map: ZoneMap, gx: number, gz: number, y: number): { layer: number; height: number } | null {
+  const column = Math.floor(gx / CHUNK_TILES), row = Math.floor(gz / CHUNK_TILES);
+  const chunk = map.chunks.find((c) => c.column === column && c.row === row);
+  if (!chunk?.layers.length) return null;
+  const i = (gz - row * CHUNK_TILES) * CHUNK_TILES + (gx - column * CHUNK_TILES);
+  if (chunk.layers.length === 1) return chunk.layers[0].tiles[i] ? { layer: 0, height: chunk.layers[0].heights[i] } : null;
+  let best: { layer: number; height: number } | null = null;
+  chunk.layers.forEach((l, layer) => {
+    const t = l.tiles[i];
+    if (!t || !tileIsValid(t.tileType)) return;
+    if (!best || Math.abs(l.heights[i] - y) < Math.abs(best.height - y)) best = { layer, height: l.heights[i] };
+  });
+  return best ?? (chunk.layers[0].tiles[i] ? { layer: 0, height: chunk.layers[0].heights[i] } : null);
+}
+
+/** The flat tile nearest a height, in units: slope 0 and the offset whose height is nearest, and that height (the
+ * offsets are the game's table, so not every height is there; half tiles are, from -10 to 10 tiles but -8). */
+export async function flatTileFor(height: number): Promise<{ slope: number; offset: number; height: number }> {
+  const tb = await heightTables();
+  const ny = tb.slopes[0][1];
+  let offset = 0;
+  tb.offsets.forEach((o, i) => { if (Math.abs(-o / ny - height) < Math.abs(-tb.offsets[offset] / ny - height)) offset = i; });
+  return { slope: 0, offset, height: -tb.offsets[offset] / ny };
 }
 
 /** A tile's flags and class, from its type. */

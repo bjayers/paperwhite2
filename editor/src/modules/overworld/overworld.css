@@ -25,7 +25,9 @@
 .ow-map { position: absolute; inset: 0; }
 .ow-map canvas { display: block; }
 .ow-empty { padding: 20px; }
-.ow-script { height: 46%; min-height: 260px; display: flex; flex-direction: column; border-top: 1px solid var(--border); }
+/* The script drawer lies over the lower half of the map, which keeps its size and view */
+.ow-script { position: absolute; left: 0; right: 0; bottom: 0; height: 52%; min-height: 260px; display: flex; flex-direction: column;
+  background: var(--panel); border-top: 1px solid var(--border); box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.25); z-index: 2; }
 .ow-script-head { display: flex; align-items: center; gap: 10px; padding: 4px 10px; font-size: 13px; }
 .ow-script .scr-editor.embedded { flex: 1; min-height: 0; border: none; border-radius: 0; }
 .ow-side { border-left: 1px solid var(--border); overflow-y: auto; min-width: 0; }
@@ -36,3 +38,24 @@
 .ow-note { font-size: 13px; margin: 4px 0; }
 .ow-list { display: flex; flex-direction: column; }
 .ow-item { text-align: left; border: none; border-radius: 0; background: none; padding: 2px 4px; font-size: 13px; }
+
+/* The panel's form: groups (grid, area) open in place */
+.ow-panel .object .object { padding-left: 4px; border-left: 2px solid var(--border); }
+.ow-panel .object .object .row { margin-bottom: 4px; }
+.ow-model { display: flex; align-items: center; gap: 6px; }
+.ow-model-field { flex: 1; min-width: 0; }
+.ow-sprite { display: inline-flex; flex: none; align-items: center; justify-content: center; image-rendering: pixelated; }
+.ow-sprite img { image-rendering: pixelated; }
+.ow-height { width: 64px; }
+
+/* The model picker: every model's sprite, by bank */
+.ow-picker { margin-top: 6vh; width: min(1100px, 94vw); height: 82vh; display: flex; flex-direction: column; background: var(--panel);
+  border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); overflow: hidden; }
+.ow-picker-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.ow-picker-head .filter { flex: 1; min-width: 220px; }
+.ow-picker-grid { flex: 1; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 4px; padding: 8px; align-content: start; }
+.ow-picker-item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px; border: 1px solid transparent; border-radius: 6px; background: none; }
+.ow-picker-item:hover { background: var(--hover); }
+.ow-picker-item.selected { border-color: var(--accent); background: var(--selected); }
+.ow-picker-name { font-size: 11px; text-align: center; line-height: 1.2; overflow-wrap: anywhere; }
+.ow-picker-number { font-size: 10px; font-family: var(--mono); }
