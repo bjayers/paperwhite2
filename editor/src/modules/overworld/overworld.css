@@ -4,9 +4,6 @@
 .ow-header { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-bottom: 1px solid var(--border); }
 .ow-header h2 { margin: 0; font-size: 16px; }
 .ow-header .spacer, .ow-panel-head .spacer, .ow-script-head .spacer { flex: 1; }
-.ow-budget { font-size: 12px; font-family: var(--mono); color: var(--muted); }
-.ow-budget.near { color: var(--warning); }
-.ow-budget.over { color: var(--error); font-weight: 600; }
 .ow-error { color: var(--error); }
 .ow-bar { margin: 6px 14px 0; }
 .ow-body { display: grid; grid-template-columns: 220px 1fr 400px; flex: 1; min-height: 0; }
@@ -61,3 +58,12 @@
 .ow-picker-item.selected { border-color: var(--accent); background: var(--selected); }
 .ow-picker-name { font-size: 11px; text-align: center; line-height: 1.2; overflow-wrap: anywhere; }
 .ow-picker-number { font-size: 10px; font-family: var(--mono); }
+
+/* The events buffer's load bar */
+.ow-load { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-family: var(--mono); color: var(--muted); }
+.ow-load-bar { width: 160px; height: 10px; border-radius: 5px; background: var(--border); overflow: hidden; }
+.ow-load-fill { display: block; height: 100%; border-radius: 5px; transition: width 0.2s; }
+.ow-load.ok .ow-load-fill { background: #3fb950; }
+.ow-load.near .ow-load-fill { background: #d4a72c; }
+.ow-load.over .ow-load-fill { background: #e5534b; }
+.ow-load.over .ow-load-text { color: var(--error); font-weight: 600; }

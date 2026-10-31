@@ -203,7 +203,8 @@ trainer's line of sight), Proxies (background events), Triggers, Warps and Level
 - **Paint** (the map gets a light blue border) sets tiles' type (walkable, blocked, water, grass and the rest) or a
   flat height in tiles (the wheel over the box steps it by half a tile), in the chunk's `terrain_<layer>.csv`, colored
   as the stroke passes. A height is the nearest the game's height table has (half tiles from -10 to 10 tiles, but -8).
-- The header counts the events' packed size against the game's 2,436-byte buffer. Save (Ctrl+S) writes the events and
+- The header's load bar is the events' packed size against the game's 2,436-byte buffer (green, yellow from 80%, red
+  past it, with a warning; the build refuses such a zone). Save (Ctrl+S) writes the events and
   the painted terrain; Ctrl+Z and Ctrl+Y undo and redo moves, adds, removals, field edits and paint strokes (one step
   a stroke) in order. The server gives the models and their textures at `/res/...`.
 - A save made on a map keeps its NPCs as they were, so after a build leave the map and come back to see the changes.

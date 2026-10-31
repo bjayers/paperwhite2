@@ -28,6 +28,10 @@ NPC = struct.Struct("<12HI8s")
 WARP = struct.Struct("<HHBBH12s")
 TRIGGER = struct.Struct("<5H10sH")
 PLACEHOLDER = bytes(4)
+# What LoadZoneEntities reads a zone's file into, with no check of its size: EventData's initScriptOffset, cache and
+# rest (include/field/event_data.h), 4 + 0x880 + 0x100 bytes. A larger file overwrites what follows, and the game
+# freezes on entering the zone (docs/paperwhite2/design/npc-research.md), so packing refuses it.
+EVENTS_BUFFER = 4 + 0x880 + 0x100
 NO_ZONE = 0xFFFF
 
 
@@ -213,7 +217,12 @@ def pack(root: Path, output: Path):
             members.append(PLACEHOLDER)
             continue
         path = root / file_name(zone)
-        members.append(events_bytes(load(path, schema), label(path)))
+        data = events_bytes(load(path, schema), label(path))
+        if len(data) > EVENTS_BUFFER:
+            raise DataError(f"{label(path)}: the zone's events take {len(data)} bytes, past the {EVENTS_BUFFER} the game reads "
+                            f"them into; it would freeze entering the zone. Each NPC takes 36 bytes, a proxy and a warp "
+                            f"20, a trigger 22")
+        members.append(data)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_bytes(write_narc(members))
 

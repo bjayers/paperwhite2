@@ -278,14 +278,16 @@ export function OverworldEditor({ constants, open }: ToolProps) {
       <header className="ow-header">
         <h2>Overworld Editor</h2>
         {zone && <strong>{zoneLabel(zone)}</strong>}
-        {zone && <span className={`ow-budget${size > EVENTS_BUDGET ? " over" : size > EVENTS_BUDGET * 0.9 ? " near" : ""}`}
-                       title="The zone's events, packed, against the field's buffer for them; past it the game freezes on entry">
-          {size} / {EVENTS_BUDGET} bytes</span>}
+        {zone && <LoadBar used={size} limit={EVENTS_BUDGET} />}
         <span className="spacer" />
         {unsaved.length > 0 && <span className="muted">{unsaved.length} unsaved</span>}
         <button onClick={revert} disabled={!unsaved.length}>Revert</button>
         <button className="primary" onClick={save} disabled={!unsaved.length} title="Ctrl+S">Save</button>
       </header>
+      {size > EVENTS_BUDGET && (
+        <div className="ow-error ow-bar">This zone's events take {size} bytes, past the {EVENTS_BUDGET} the game reads them into: the build
+          refuses them (the game would freeze entering the zone). Remove {Math.ceil((size - EVENTS_BUDGET) / 36)} NPC(s), or other events.</div>
+      )}
       {unsaved.filter((d) => d.saveError).map((d) => <div key={d.path} className="ow-error ow-bar">{d.path}: {d.saveError}</div>)}
       <div className="ow-body">
         <div className="ow-zones">
@@ -452,4 +454,16 @@ function WheelNumber({ value, step, onChange }: { value: number; step: number; o
   }, [step, onChange]);
   return <input ref={ref} type="number" step={step} className="ow-height" value={value} title="Scroll over it to step by half a tile"
                 onChange={(e) => onChange(Number(e.target.value))} />;
+}
+
+/** How full the zone's events buffer is: green under 80%, yellow from 80%, red past it. */
+function LoadBar({ used, limit }: { used: number; limit: number }) {
+  const share = used / limit;
+  const level = share > 1 ? "over" : share >= 0.8 ? "near" : "ok";
+  return (
+    <span className={`ow-load ${level}`} title={`The zone's events, packed, take ${used} of the ${limit} bytes the game reads them into; past it the game freezes on entry. An NPC takes 36 bytes, a proxy and a warp 20, a trigger 22.`}>
+      <span className="ow-load-bar"><span className="ow-load-fill" style={{ width: `${Math.min(100, share * 100)}%` }} /></span>
+      <span className="ow-load-text">{used} / {limit} bytes · {Math.round(share * 100)}%</span>
+    </span>
+  );
 }
