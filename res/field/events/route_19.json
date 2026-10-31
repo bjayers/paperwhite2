@@ -32,16 +32,6 @@
             }
         },
         {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 87,
-                "y": 687,
-                "z": 16
-            }
-        },
-        {
             "script": 8192,
             "condition": 2,
             "direction": 4,

@@ -2,6 +2,18 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-31: the Funfest mission spots removed from every zone
+
+- The 1,690 proxies with condition 4 and script 0 (up to 20 a zone, in 118 zones) were the Entralink Funfest missions'
+  places: `fest_mission_people.c` and `fest_mission_sparkle_place.c` pick their people's and sparkles' spots from a
+  zone's condition-4 (and 5) proxies, and nothing else reads them (`CheckProxyEntityEvent` skips condition 3 and up).
+  The user is removing the wireless features, so they are gone: 33,800 bytes, up to 400 a zone (11 NPCs). A mission
+  of those kinds now finds no place in a zone and shows no people or sparkles (no crash: `PickPlaces` returns FALSE
+  before placing any). Removing them shifts later proxies' indices, which only `ObjInitPointGPos` scripts
+  (aspertia_city_2, driftveil_city_gym_2, hidden_grotto) and Join Avenue's shops use, none in zones that had spots.
+- To do: remove those mission types from the Funfest's mission lists, or rework them with the new NPC spawn system.
+  Packs; not yet built or tested in game.
+
 ## 2026-10-31: rails in the Overworld Editor (editor only)
 
 - The zones without a grid show their rails (`editor/src/modules/overworld/rails.ts`, from `field_rail.c`,

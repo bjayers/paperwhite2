@@ -20,16 +20,6 @@
                 "y": 11,
                 "z": 32
             }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 52,
-                "y": 20,
-                "z": 32
-            }
         }
     ],
     "npcs": [

@@ -1,57 +1,6 @@
 {
     "$schema": "events.schema.json",
-    "bg_events": [
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 783,
-                "y": 220,
-                "z": -88
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 783,
-                "y": 227,
-                "z": -88
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 776,
-                "y": 245,
-                "z": -84
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 793,
-                "y": 235,
-                "z": -84
-            }
-        },
-        {
-            "script": 0,
-            "condition": 4,
-            "direction": 4,
-            "grid": {
-                "x": 776,
-                "y": 237,
-                "z": -84
-            }
-        }
-    ],
+    "bg_events": [],
     "npcs": [
         {
             "id": 0,
