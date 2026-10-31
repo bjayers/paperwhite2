@@ -193,9 +193,13 @@ trainer's line of sight), Proxies (background events), Triggers, Warps and Level
   **Browse…**, a grid of every model's sprite filtered by name and by bank (the code's high digit: 0 people and
   objects, 1 walking Pokémon, 2 3D models, 3 followers); **Show script** beside the script; the others on its tile;
   **←** back to the list. Remove leaves the other NPCs' IDs as they are.
+- **Overhead** looks straight down without perspective, north up; the camera only pans (right or middle button) and
+  zooms. The tiles are drawn with a depth bias, over what lies just above the ground (autumn's fallen leaves) but
+  behind walls and trees.
 - **Buildings:** the chunks' props, as CTRMap edits them: each a model of the area's prop bundle
   (`res/field/props/`) placed in its chunk's GLB (`bw2_prop_<n>_id_<prop ID>` nodes, which the build packs). Click
-  to choose, drag to move by whole tiles, Shift+click to add the last model chosen; the panel sets the model, the
+  to choose (it turns half seen through), drag to move by whole tiles, Shift+click to add the last model chosen; a
+  green outline marks the tiles under each model; the panel sets the model, the
   place in tiles and the turn. A prop has no collision: paint the tiles under it. Saving rewrites the chunk's
   `model.glb` (the server's `PUT /api/glb-props`).
 - **▶ Movement** plays the NPCs' move codes as the game runs them (`movement.ts`: random walks and turns, back and

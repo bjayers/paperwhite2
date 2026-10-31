@@ -31,6 +31,8 @@ export interface MapViewProps {
   paintType: number | null;
   /** The NPCs move as their move codes move them in game, from their tiles, which stay marked. */
   preview: boolean;
+  /** Straight down, without perspective, north up: the camera only pans and zooms. */
+  overhead: boolean;
   onSelect(entity: Entity | null, tile: { x: number; z: number } | null): void;
   onMove(entity: Entity, x: number, z: number, height: number): void;
   onAdd(x: number, z: number, height: number): void;
@@ -103,7 +105,14 @@ const same = (a: unknown[], b: unknown[]) => a.length === b.length && a.every((v
 class MapScene {
   renderer: THREE.WebGLRenderer;
   scene = new THREE.Scene();
-  camera: THREE.PerspectiveCamera;
+  camera: THREE.PerspectiveCamera | THREE.OrthographicCamera;
+  perspective: THREE.PerspectiveCamera;
+  /** The overhead view's camera, and the height of the map it shows at zoom 1, in units. */
+  ortho = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 20000);
+  orthoHeight = 1024;
+  overhead = false;
+  /** Where the perspective view looked when the overhead one took over. */
+  perspectiveTarget = new THREE.Vector3();
   controls: OrbitControls;
   chunks = new THREE.Group();
   overlay = new THREE.Group();
@@ -135,13 +144,8 @@ class MapScene {
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     host.appendChild(this.renderer.domElement);
-    this.camera = new THREE.PerspectiveCamera(45, 1, 1, 20000);
-    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-    this.controls.enableDamping = true;
-    this.controls.screenSpacePanning = true;
-    // The left button is the editor's: selecting, dragging and painting
-    this.controls.mouseButtons = { LEFT: null, MIDDLE: THREE.MOUSE.ROTATE, RIGHT: THREE.MOUSE.PAN };
-    this.controls.zoomToCursor = true;
+    this.camera = this.perspective = new THREE.PerspectiveCamera(45, 1, 1, 20000);
+    this.controls = this.makeControls(new THREE.Vector3());
     this.scene.background = new THREE.Color(0x1e2129);
     this.scene.add(new THREE.AmbientLight(0xffffff, 1.6));
     const sun = new THREE.DirectionalLight(0xffffff, 1.4);
@@ -170,12 +174,57 @@ class MapScene {
     this.renderer.domElement.remove();
   }
 
+  /** The camera's controls, about a target: the left button is the editor's (selecting, dragging and painting); the
+   * middle orbits (pans, overhead), the right pans and the wheel zooms toward the cursor. */
+  makeControls(target: THREE.Vector3): OrbitControls {
+    const controls = new OrbitControls(this.camera, this.renderer.domElement);
+    controls.enableDamping = true;
+    controls.screenSpacePanning = true;
+    controls.zoomToCursor = true;
+    controls.enableRotate = !this.overhead;
+    controls.mouseButtons = { LEFT: null, MIDDLE: this.overhead ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE, RIGHT: THREE.MOUSE.PAN };
+    controls.target.copy(target);
+    controls.update();
+    return controls;
+  }
+
+  /** Switches between the perspective view and the overhead one, over the same spot. */
+  setOverhead(on: boolean) {
+    if (on === this.overhead) return;
+    const target = this.controls.target.clone();
+    this.controls.dispose();
+    this.overhead = on;
+    if (on) {
+      this.perspectiveTarget.copy(target);
+      const distance = this.perspective.position.distanceTo(target);
+      this.orthoHeight = 2 * distance * Math.tan(THREE.MathUtils.degToRad(this.perspective.fov / 2));
+      this.ortho.zoom = 1;
+      this.placeOrtho(target);
+      this.camera = this.ortho;
+    } else {
+      // Back over where the overhead view was panned to
+      this.perspective.position.add(target.clone().sub(this.perspectiveTarget));
+      this.camera = this.perspective;
+    }
+    this.resize();
+    this.controls = this.makeControls(target);
+  }
+
+  placeOrtho(target: THREE.Vector3) {
+    this.ortho.position.set(target.x, target.y + 4000, target.z);
+    this.ortho.up.set(0, 0, -1);
+    this.ortho.lookAt(target);
+  }
+
   resize() {
     const { clientWidth: w, clientHeight: h } = this.host;
     if (!w || !h) return;
     this.renderer.setSize(w, h);
-    this.camera.aspect = w / h;
-    this.camera.updateProjectionMatrix();
+    this.perspective.aspect = w / h;
+    this.perspective.updateProjectionMatrix();
+    const half = this.orthoHeight / 2;
+    Object.assign(this.ortho, { left: -half * (w / h), right: half * (w / h), top: half, bottom: -half });
+    this.ortho.updateProjectionMatrix();
   }
 
   update(props: MapViewProps) {
@@ -184,6 +233,7 @@ class MapScene {
     const seasonChanged = `${props.map.zone}:${props.map.season}` !== this.loadedKey;
     const modelsChanged = props.showModels !== this.loadedModels;
     this.props = props;
+    this.setOverhead(props.overhead);
     if (seasonChanged || modelsChanged) this.loadChunks(zoneChanged);
     // Only what changed: the overlay with the terrain or its look, the marks with the entities or the selection
     const overlayKey = [props.map, props.layer, props.overlay];
@@ -228,7 +278,11 @@ class MapScene {
       const cx = ((Math.min(...xs) + Math.max(...xs) + 1) / 2) * CHUNK, cz = ((Math.min(...zs) + Math.max(...zs) + 1) / 2) * CHUNK;
       const span = Math.max(Math.max(...xs) - Math.min(...xs) + 1, Math.max(...zs) - Math.min(...zs) + 1) * CHUNK;
       this.controls.target.set(cx, 0, cz);
-      this.camera.position.set(cx, span * 0.9, cz + span * 0.6);
+      this.perspective.position.set(cx, span * 0.9, cz + span * 0.6);
+      this.orthoHeight = span * 1.1;
+      this.ortho.zoom = 1;
+      this.placeOrtho(this.controls.target);
+      this.resize();
       this.controls.update();
     }
   }
@@ -243,7 +297,10 @@ class MapScene {
     for (const chunk of map.chunks) {
       const l = chunk.layers[Math.min(layer, chunk.layers.length - 1)];
       if (!l) continue;
-      const material = new THREE.MeshBasicMaterial({ transparent: true, opacity: overlay === "off" ? 0 : 0.45, depthWrite: false });
+      // Pulled toward the camera in the depth test, so geometry just above the ground (autumn's fallen leaves) doesn't
+      // hide the tiles, while walls and trees still do
+      const material = new THREE.MeshBasicMaterial({ transparent: true, opacity: overlay === "off" ? 0 : 0.45, depthWrite: false,
+                                                     polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -24 });
       const mesh = new THREE.InstancedMesh(plane, material, l.tiles.length);
       const tiles: { x: number; z: number; h: number }[] = [];
       const m = new THREE.Matrix4();
@@ -386,8 +443,28 @@ class MapScene {
       if (!scene || holder.parent !== marks) return;
       // The props are skinned meshes: their copies need their own bones
       const copy = cloneSkinned(scene);
-      if (isSelected) copy.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh) m.material = (Array.isArray(m.material) ? m.material : [m.material]).map((x) => { const c = x.clone() as THREE.MeshStandardMaterial; c.emissive = new THREE.Color(0x335533); return c; }); });
+      // Chosen: half seen through, so the tiles under it show while it moves
+      if (isSelected) copy.traverse((o) => {
+        const m = o as THREE.Mesh;
+        if (!m.isMesh) return;
+        const half = (x: THREE.Material) => { const c = x.clone(); c.transparent = true; c.opacity = 0.5; c.depthWrite = false; return c; };
+        m.material = Array.isArray(m.material) ? m.material.map(half) : half(m.material);
+      });
       holder.add(copy);
+      // Its footprint: the tiles under the model, outlined on the ground
+      const box = new THREE.Box3().setFromObject(holder);
+      if (box.isEmpty()) return;
+      const x0 = Math.floor(box.min.x / TILE + 0.01), x1 = Math.ceil(box.max.x / TILE - 0.01);
+      const z0 = Math.floor(box.min.z / TILE + 0.01), z1 = Math.ceil(box.max.z / TILE - 0.01);
+      const y = b.uy + 2.5;
+      const outline = new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+        [[x0, z0], [x1, z0], [x1, z1], [x0, z1], [x0, z0]].map(([x, z]) => new THREE.Vector3(x * TILE, y, z * TILE))),
+        new THREE.LineBasicMaterial({ color: isSelected ? 0xffffff : KIND_COLORS.building, depthTest: false }));
+      outline.renderOrder = 4;
+      holder.userData.outline = outline;
+      outline.userData.base = outline.position.clone();
+      marks.add(outline);
+      this.entityMeshes.push({ object: outline, entity: e });
     });
   }
 

@@ -135,6 +135,15 @@ encounter sprites:
 It reuses the Encounter Editor's context and needs the conditions engine's matching in the editor (the Encounter
 Editor already has part of it).
 
+### The sprite load bar (the user's request, 2026-10-31)
+
+Beside the events buffer's load bar, a second bar for the sprites the zone can have loaded at once, against the
+actor sprite and texture limits (green, yellow from 80%, red past it). It counts the worst case over the conditions,
+not every sprite on the map: for each combination of the conditions the zone's NPCs, instances, groups and ambients
+use (season, time, weather, flags and vars as they appear), the NPCs and instances that can appear together (one per
+group, the most a group's members need), the ambients' budget and the overworld encounters' sprites, and takes the
+highest. Built with instances and ambients (phases 2 and 3), when the limit's real numbers are measured.
+
 ## Phases
 
 1. **The editor over the existing data.** The map view with tiles and layers; NPCs, proxies, triggers, warps and level

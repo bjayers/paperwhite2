@@ -69,6 +69,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   const [tile, setTile] = useState<{ x: number; z: number } | null>(null);
   const [painting, setPainting] = useState(false);
   const [preview, setPreview] = useState(false);
+  const [overhead, setOverhead] = useState(false);
   const [paint, setPaint] = useState(0);
   /** What the painter sets: a tile type (PAINTS), or a flat height in tiles. */
   const [paintMode, setPaintMode] = useState<"type" | "height">("type");
@@ -387,6 +388,8 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                   </select>
                 </label>
               )}
+              <label className="ow-check" title="Straight down, without perspective, north up: the right or middle button pans, the wheel zooms">
+                <input type="checkbox" checked={overhead} onChange={(e) => setOverhead(e.target.checked)} /> Overhead</label>
               <label className="ow-check"><input type="checkbox" checked={showModels} onChange={(e) => setShowModels(e.target.checked)} /> Models</label>
               <button className={preview ? "active" : ""} onClick={() => setPreview(!preview)}
                       title="The NPCs move as their move codes move them in game (at 30 frames a second, blocked as the game blocks them, without the player); their tiles stay marked">
@@ -416,7 +419,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
               : mapError ? <p className="ow-error ow-empty">{mapError}</p>
               : !map ? <p className="muted ow-empty">Reading the map…</p>
               : <MapView map={map} entities={visible} selected={chosen} layer={layer} overlay={overlay} showModels={showModels}
-                         painting={painting} preview={preview} paintType={paintMode === "type" ? PAINTS[paint].type : null}
+                         painting={painting} preview={preview} overhead={overhead} paintType={paintMode === "type" ? PAINTS[paint].type : null}
                          onSelect={select} onMove={move} onAdd={add} onPaint={onPaint} />}
             {/* Over the map, so the map's view doesn't change when it opens */}
             {scriptOpen && chosen?.script !== undefined && (
