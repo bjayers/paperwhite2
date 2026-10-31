@@ -56,6 +56,8 @@ export interface Entity {
   target?: { zone: string; warp: number };
   /** A building's chunk folder, its place in the chunk's props, its prop ID, its model's folder (null when the area's
    * bundle has none of that ID), its exact place in global units and its turn in degrees. */
+  /** Its place on the rails, in a zone without a grid: the line, front and side, and a warp's or trigger's spans. */
+  rail?: { line: number; front: number; side: number; frontSpan: number; sideSpan: number };
   building?: { chunk: string; index: number; id: number; model: string | null; ux: number; uy: number; uz: number; angle: number };
 }
 
@@ -63,6 +65,10 @@ type Rec = Record<string, unknown>;
 
 const num = (v: unknown, d = 0) => (typeof v === "number" ? v : d);
 const signed16 = (v: number) => (v > 0x7fff ? v - 0x10000 : v);
+const railOf = (r: Rec | undefined) => r ? {
+  line: num(r.component), front: num(r.front), side: signed16(num(r.side) & 0xffff),
+  frontSpan: Math.max(1, num(r.front_span, 1)), sideSpan: Math.max(1, num(r.side_span, 1)),
+} : undefined;
 
 /** Each kind's height field, and its units in a tile: an NPC's y is fixed point (4096 a unit), the others units. */
 export const HEIGHT_FIELDS: Partial<Record<EntityKind, { field: string; perTile: number; unsigned?: boolean }>> = {
@@ -97,31 +103,39 @@ export function entitiesOf(data: JsonValue | null): Entity[] {
       label: `NPC ${num(n.id, index)}`, model: String(n.model ?? ""), direction: String(n.direction ?? "DIR_DOWN"),
       movement: typeof n.movement === "string" ? n.movement : undefined,
       leash: area ? { x: num(area.width), z: num(area.height) } : undefined,
-      sight: /TRAINER/.test(type) ? num(params[0]) : undefined, script: num(n.script),
+      sight: /TRAINER/.test(type) ? num(params[0]) : undefined, script: num(n.script), rail: railOf(n.rail as Rec | undefined),
     });
   });
   (plain.bg_events ?? []).forEach((b, index) => {
     const g = b.grid as Rec | undefined;
     out.push({ kind: "proxy", index, x: g ? num(g.x) : null, z: g ? num(g.y) : null, y: g ? num(g.z) : 0, width: 1, depth: 1,
-               label: `Proxy ${index}`, script: num(b.script) });
+               label: `Proxy ${index}`, script: num(b.script), rail: railOf(b.rail as Rec | undefined) });
   });
   (plain.triggers ?? []).forEach((t, index) => {
     const g = t.grid as Rec | undefined;
     out.push({ kind: "trigger", index, x: g ? num(g.x) : null, z: g ? num(g.z) : null, y: g ? num(g.y) : 0,
                width: g ? Math.max(1, num(g.width, 1)) : 1, depth: g ? Math.max(1, num(g.height, 1)) : 1,
-               label: `Trigger ${index}`, script: num(t.script) });
+               label: `Trigger ${index}`, script: num(t.script), rail: railOf(t.rail as Rec | undefined) });
   });
   (plain.warps ?? []).forEach((w, index) => {
     const g = w.grid as Rec | undefined;
     out.push({ kind: "warp", index, x: g ? Math.floor(num(g.x) / TILE) : null, z: g ? Math.floor(num(g.z) / TILE) : null,
                y: g ? signed16(num(g.y)) : 0, width: g ? Math.max(1, num(g.width, 1)) : 1, depth: g ? Math.max(1, num(g.height, 1)) : 1,
                label: `Warp ${index} → ${String(w.zone ?? "").replace(/^ZONE_/, "").toLowerCase()}`,
-               target: typeof w.zone === "string" ? { zone: w.zone.replace(/^ZONE_/, "").toLowerCase(), warp: num(w.warp) } : undefined });
+               target: typeof w.zone === "string" ? { zone: w.zone.replace(/^ZONE_/, "").toLowerCase(), warp: num(w.warp) } : undefined,
+               rail: railOf(w.rail as Rec | undefined) });
   });
   (plain.init_scripts ?? []).forEach((l, index) => {
     out.push({ kind: "level", index, x: null, z: null, y: 0, width: 1, depth: 1, label: `Level script ${index}`, script: num(l.script) });
   });
   return out;
+}
+
+/** The rail fields that put an entity at a place on the rails (front_span and side_span stay). */
+export function railEdits(e: Entity, place: { line: number; front: number; side: number }): { path: (string | number)[]; value: number }[] {
+  const base = [KIND_LISTS[e.kind], e.index, "rail"];
+  return [{ path: [...base, "component"], value: place.line }, { path: [...base, "front"], value: place.front },
+          { path: [...base, "side"], value: place.side }];
 }
 
 /** The JSON path of an entity's position fields, and the values that put it on a tile at a height. */

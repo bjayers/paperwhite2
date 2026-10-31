@@ -2,6 +2,16 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-31: rails in the Overworld Editor (editor only)
+
+- The zones without a grid show their rails (`editor/src/modules/overworld/rails.ts`, from `field_rail.c`,
+  `field_rail_func.c` and `rail_attr.c`: straight lines, flat and 3D arcs, widths, attributes), with their NPCs,
+  warps, triggers and proxies on them; dragging along rails, adding on them, painting rail tiles' types, and one
+  height at a time (Castelia's levels: -3.5, about 1, 4.5, 7.5 and 10 tiles). Checked in the browser on Castelia City:
+  the rails follow the plaza's arcs, and a drag, an add and a paint each undo in one step. Not saved or built.
+- Painting now keeps a tile's flags other than collision, water, encounters and reflection (rail tiles carry 0x80).
+- Next: editing the rails themselves (points, lines, curves, widths), then the new features (conditions first).
+
 ## 2026-10-31: seasons' maps, the events' limit in the build, buildings and movement previews
 
 - **Seasons' map models:** `res/field/map_replacements/replacements.json` (new, `tools/data/map_replace_data.py`,

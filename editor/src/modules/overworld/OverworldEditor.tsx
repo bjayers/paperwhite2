@@ -15,13 +15,14 @@ import { DocForm, schemaAt, useHeld } from "../followers/DocForm.tsx";
 import { defaultFor } from "../schema-form/form.tsx";
 import { ScriptEditor } from "../scripts/ScriptEditor.tsx";
 import { loadWorld, resolveScript, zoneLabel, type World } from "../world/world.ts";
-import { KIND_LISTS, KIND_NAMES, entitiesOf, positionEdits, type Entity, type EntityKind } from "./entities.ts";
+import { KIND_LISTS, KIND_NAMES, entitiesOf, positionEdits, railEdits, type Entity, type EntityKind } from "./entities.ts";
+import { loadRails, railLevels, setRailTile, type RailMap, type RailPlace } from "./rails.ts";
 import { entityFields } from "./fields.tsx";
 import { BuildingPanel } from "./BuildingPanel.tsx";
 import { MapView, type OverlayMode } from "./MapView.tsx";
 import { bundleModels, buildingEntities, dirtyPropChunks, loadProps, propsOf, propsSaveError, redoProps, revertProps, saveProps, setProps,
   undoProps, usePropsVersion } from "./props.ts";
-import { CHUNK, CHUNK_TILES, SEASONS, TILE, flatTileFor, loadZoneMap, reloadLayers, tileAt, type ZoneMap } from "./terrain.ts";
+import { CHUNK, CHUNK_TILES, SEASONS, TILE, flatTileFor, paintOver, loadZoneMap, reloadLayers, tileAt, type ZoneMap } from "./terrain.ts";
 
 const EVENTS_BUDGET = 2436;
 const KINDS: EntityKind[] = ["npc", "proxy", "building", "trigger", "warp", "level"];
@@ -57,6 +58,9 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   const [filter, setFilter] = useState("");
   const [map, setMap] = useState<ZoneMap | null>(null);
   const [mapError, setMapError] = useState<string | null>(null);
+  /** The zone's rails, for a zone without a grid. */
+  const [rails, setRails] = useState<RailMap | null>(null);
+  const [railLevel, setRailLevel] = useState<number | null>(null);
   const [layer, setLayer] = useState(0);
   const [season, setSeason] = useState(0);
   /** An entity to select once its zone is read: the warp another zone's warp leads to. */
@@ -110,6 +114,8 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     setMapError(null);
     setSelected(null);
     setLayer(0);
+    setRails(null);
+    setRailLevel(null);
     if (!histories.current.has(zone)) histories.current.set(zone, { undo: [], redo: [] });
     history.current = histories.current.get(zone)!;
   }, [zone]);
@@ -118,6 +124,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     if (!zone || !constants.size) return;
     let live = true;
     loadZoneMap(zone, season, constants).then((m) => { if (live) setMap(m); }, (e: Error) => { if (live) setMapError(e.message); });
+    loadRails(zone, railSource).then((r) => { if (live) setRails(r); }, () => { if (live) setRails(null); });
     return () => { live = false; };
   }, [zone, season, constants]);
   useEffect(() => {
@@ -141,6 +148,17 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     setTile(t);
   }, []);
 
+  /** An entity moved along the rails: its line, front and side, one step for undo. */
+  const moveRail = useCallback((e: Entity, place: RailPlace) => {
+    const doc = eventsPath ? documents.get(eventsPath) : undefined;
+    if (!eventsPath || !(doc?.data instanceof Map)) return;
+    const item = (doc.data.get(KIND_LISTS[e.kind]) as JsonValue[])[e.index] as Map<string, JsonValue>;
+    const rail = new Map(item.get("rail") as Map<string, JsonValue>);
+    for (const edit of railEdits(e, place)) rail.set(String(edit.path[edit.path.length - 1]), edit.value);
+    documents.edit(eventsPath, [KIND_LISTS[e.kind], e.index, "rail"], rail);
+    record([eventsPath]);
+  }, [eventsPath, record]);
+
   const move = useCallback((e: Entity, x: number, z: number, height: number) => {
     if (e.building) {
       // By whole tiles, keeping its place in the tile and its height
@@ -163,7 +181,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
 
   /** A new entity of the module's kind on a tile: the schema's defaults, then its place. */
   const [lastProp, setLastProp] = useState<number | null>(null);
-  const add = useCallback((x: number, z: number, height: number) => {
+  const add = useCallback((x: number, z: number, height: number, onRail?: RailPlace) => {
     if (module === "building") {
       // The last prop chosen, or the bundle's first, at the tile's center
       const found = map ? tileAt(map, x, z, layer) : null;
@@ -196,7 +214,24 @@ export function OverworldEditor({ constants, open }: ToolProps) {
       value.set("script", 0);
       value.set("direction", "DIR_DOWN");
     }
-    // Its place on the grid (not a rail), with each kind's grid fields as the events write them
+    // On a rail: its place there, with each kind's rail fields as the events write them
+    if (value instanceof Map && onRail) {
+      value.delete("grid");
+      const rail = new Map<string, JsonValue>([["component", onRail.line], ["front", onRail.front], ["side", onRail.side]]);
+      if (module === "warp" || module === "trigger") { rail.set("front_span", 1); rail.set("side_span", 1); }
+      if (module === "warp") rail.set("param", 0);
+      value.set("rail", rail);
+      if (module === "npc") {
+        value.set("params", [0, 0, 0]);
+        value.set("area", new Map<string, JsonValue>([["width", 0], ["height", 0]]));
+        value.set("movement", "MOVE_CODE_RAIL_STAY");
+      }
+      documents.edit(eventsPath, [list, items.length], value);
+      record([eventsPath]);
+      setSelected({ kind: module, index: items.length });
+      return;
+    }
+    // Its place on the grid, with each kind's grid fields as the events write them
     if (value instanceof Map) {
       value.delete("rail");
       const grid = (keys: string[]) => new Map<string, JsonValue>(keys.map((k) => [k, k === "width" || k === "height" ? 1 : 0]));
@@ -263,7 +298,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
           parts[col("slope")] = String(flat.slope);
           parts[col("offset")] = String(flat.offset);
         } else {
-          parts[col("tile_type")] = String(PAINTS[paint].type);
+          parts[col("tile_type")] = String(paintOver(Number(parts[col("tile_type")]), PAINTS[paint].type));
         }
         lines[i] = parts.join(",");
       }
@@ -274,6 +309,26 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     if (byFile.size) record([...byFile.keys()]);
     setMap({ ...map });
   }, [map, layer, paint, paintMode, paintHeight, record]);
+
+  /** Paints rail tiles' types, in their lines' attribute CSVs: one undo step a stroke. */
+  const onPaintRail = useCallback(async (places: RailPlace[]) => {
+    if (!rails || paintMode !== "type") {
+      setPaintNote(rails && paintMode !== "type" ? "A rail's height is its points' and curves': the painter sets rail tiles' types only." : null);
+      return;
+    }
+    const byPath = new Map<string, RailPlace[]>();
+    for (const p of places) {
+      const path = rails.attributes[p.line]?.path;
+      if (path) byPath.set(path, [...(byPath.get(path) ?? []), p]);
+    }
+    for (const [path, list] of byPath) {
+      let text = (await documents.hold(path)).text;
+      for (const p of list) text = setRailTile(text, p, (old) => paintOver(old, PAINTS[paint].type));
+      documents.editText(path, text);
+    }
+    if (byPath.size) record([...byPath.keys()]);
+    setRails(await loadRails(zone!, railSource));
+  }, [rails, paintMode, paint, record, zone]);
 
   /** Undoes or redoes the editor's last edit, in every file it changed; the terrain is read again after. */
   const step = useCallback(async (redo: boolean) => {
@@ -287,11 +342,12 @@ export function OverworldEditor({ constants, open }: ToolProps) {
       else if (redo) documents.redo(p);
       else documents.undo(p);
     }
+    if (zone && rails && paths.some((p) => p.startsWith(rails.folder))) setRails(await loadRails(zone, railSource));
     if (map && paths.some((p) => p.endsWith(".csv"))) {
       for (const chunk of map.chunks) if (chunk.layers.some((l) => paths.includes(l.path))) await reloadLayersFromDocs(chunk);
       setMap({ ...map });
     }
-  }, [eventsPath, map]);
+  }, [eventsPath, map, rails, zone]);
 
   const save = useCallback(async () => {
     for (const p of documents.dirtyPaths().filter((p) => p.startsWith("res/field/"))) await documents.save(p);
@@ -329,6 +385,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
       for (const chunk of map.chunks) await reloadLayersFromDocs(chunk);
       setMap({ ...map });
     }
+    if (zone && rails) setRails(await loadRails(zone, railSource));
   };
 
   return (
@@ -381,6 +438,14 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                   </select>
                 </label>
               )}
+              {rails && railLevels(rails).length > 1 && (
+                <label className="ow-inline" title="The rails at one height (and the ramps that reach it), with what stands on them">Rails
+                  <select value={railLevel ?? ""} onChange={(e) => setRailLevel(e.target.value === "" ? null : Number(e.target.value))}>
+                    <option value="">every height</option>
+                    {railLevels(rails).map((h) => <option key={h} value={h}>at {Math.round((h / TILE) * 10) / 10} tiles</option>)}
+                  </select>
+                </label>
+              )}
               {map?.seasonal && (
                 <label className="ow-inline" title="The zone's chunks and textures in a season, as the game replaces them; painting edits the chunks shown">Season
                   <select value={season} onChange={(e) => setSeason(Number(e.target.value))}>
@@ -420,7 +485,8 @@ export function OverworldEditor({ constants, open }: ToolProps) {
               : !map ? <p className="muted ow-empty">Reading the map…</p>
               : <MapView map={map} entities={visible} selected={chosen} layer={layer} overlay={overlay} showModels={showModels}
                          painting={painting} preview={preview} overhead={overhead} paintType={paintMode === "type" ? PAINTS[paint].type : null}
-                         onSelect={select} onMove={move} onAdd={add} onPaint={onPaint} />}
+                         onSelect={select} onMove={move} onAdd={add} onPaint={onPaint}
+                         rails={rails} railLevel={railLevel} onMoveRail={moveRail} onAddRail={(place, h) => add(0, 0, h, place)} onPaintRail={onPaintRail} />}
             {/* Over the map, so the map's view doesn't change when it opens */}
             {scriptOpen && chosen?.script !== undefined && (
               <div className="ow-script">
@@ -447,6 +513,8 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                 <button onClick={() => setSelected(null)} title={`Back to the ${KIND_NAMES[chosen.kind]}`}>← {KIND_NAMES[chosen.kind]}</button>
                 <strong>{chosen.label}</strong>
                 {chosen.x !== null && <span className="muted"> at {chosen.x}, {chosen.z}</span>}
+                {chosen.rail && <span className="muted" title="Its place on the rails: the line, the tiles along it from its first point, and across it from its middle">
+                  {" "}on line {chosen.rail.line}, front {chosen.rail.front}, side {chosen.rail.side}</span>}
                 <span className="spacer" />
                 <button onClick={remove} title="Remove it (the others keep their IDs)">Remove</button>
               </div>
@@ -484,7 +552,9 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                 {entities.filter((e) => e.kind === module).map((e) => (
                   <button key={e.index} className="ow-item" onClick={() => setSelected({ kind: e.kind, index: e.index })}>
                     {e.label}{e.model ? <span className="muted"> {e.model.replace(/^OBJ_CODE_/, "")}</span> : null}
-                    {e.x !== null ? <span className="muted"> · {e.x}, {e.z}</span> : <span className="muted"> · no place</span>}
+                    {e.x !== null ? <span className="muted"> · {e.x}, {e.z}</span>
+                      : e.rail ? <span className="muted"> · line {e.rail.line}, {e.rail.front}, {e.rail.side}</span>
+                      : <span className="muted"> · no place</span>}
                   </button>
                 ))}
               </div>
@@ -496,6 +566,9 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     </div>
   );
 }
+
+/** The rails' attributes from the document store, where the painter left them unsaved. */
+const railSource = (path: string) => documents.get(path)?.text ?? null;
 
 /** A chunk's layers again from the painter's edited text (still unsaved, so from the document store). */
 async function reloadLayersFromDocs(chunk: Parameters<typeof reloadLayers>[0]) {

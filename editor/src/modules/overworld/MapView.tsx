@@ -12,6 +12,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { directionStep, type Entity } from "./entities.ts";
 import { FRAME_SECONDS, movers, type World } from "./movement.ts";
+import { lineAtLevel, railTile, railToWorld, sidesAt, type RailMap, type RailPlace } from "./rails.ts";
 import { spriteFrame } from "./sprites.ts";
 import { CHUNK, CHUNK_TILES, TILE, TILE_FLAG_COLLISION, TILE_FLAG_ENCOUNT, TILE_FLAG_WATER, standingOn, tileFlags, type ZoneMap } from "./terrain.ts";
 
@@ -37,6 +38,39 @@ export interface MapViewProps {
   onMove(entity: Entity, x: number, z: number, height: number): void;
   onAdd(x: number, z: number, height: number): void;
   onPaint(tiles: { x: number; z: number }[]): void;
+  /** The zone's rails, for a zone without a grid, and the same for places on them. */
+  rails: RailMap | null;
+  /** The rails' height shown, in units, or null for every one (Castelia's rails are at several). */
+  railLevel: number | null;
+  onMoveRail(entity: Entity, place: RailPlace): void;
+  onAddRail(place: RailPlace, height: number): void;
+  onPaintRail(places: RailPlace[]): void;
+}
+
+/** A tile of a rail, as picked: its place and its spot in the world. */
+type RailPick = RailPlace & { pos: [number, number, number] };
+
+/** The four corners of a rail tile, as a quad around its place (fronts and sides from - 0.5 to + 0.5), inset. */
+function railQuad(rails: RailMap, line: number, f0: number, f1: number, s0: number, s1: number, y: number): THREE.Vector3[] | null {
+  const len = rails.lines[line]?.length ?? 0;
+  const a = Math.max(0, f0), b = Math.min(len, f1);
+  const corners = [[a, s0], [a, s1], [b, s1], [b, s0]].map(([f, s]) => railToWorld(rails, line, f, s));
+  if (corners.some((c) => !c)) return null;
+  return corners.map((c) => new THREE.Vector3(c![0], c![1] + y, c![2]));
+}
+
+/** Quads as one mesh: two triangles each, a color each. */
+function quadMesh(quads: THREE.Vector3[][], colors: THREE.Color[], material: THREE.Material): THREE.Mesh {
+  const positions = new Float32Array(quads.length * 12), rgb = new Float32Array(quads.length * 12), index: number[] = [];
+  quads.forEach((q, i) => {
+    q.forEach((v, j) => { positions.set([v.x, v.y, v.z], i * 12 + j * 3); rgb.set([colors[i].r, colors[i].g, colors[i].b], i * 12 + j * 3); });
+    index.push(i * 4, i * 4 + 1, i * 4 + 2, i * 4, i * 4 + 2, i * 4 + 3);
+  });
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  g.setAttribute("color", new THREE.BufferAttribute(rgb, 3));
+  g.setIndex(index);
+  return new THREE.Mesh(g, material);
 }
 
 const KIND_COLORS: Record<string, number> = { npc: 0x3ac7e0, proxy: 0xf0c330, building: 0x50d070, trigger: 0xf08a30, warp: 0xd040d0, level: 0x888888 };
@@ -123,6 +157,9 @@ class MapScene {
   raycaster = new THREE.Raycaster();
   /** The tiles under the pointer: each overlay mesh's instances as global tiles. */
   tileMeshes: { mesh: THREE.InstancedMesh; drawn: THREE.InstancedMesh; tiles: { x: number; z: number; h: number }[] }[] = [];
+  /** The rails' tiles: a mesh a line, two triangles a tile. */
+  railMeshes: { mesh: THREE.Mesh; tiles: RailPick[] }[] = [];
+  paintedRail = new Map<string, RailPick>();
   entityMeshes: { object: THREE.Object3D; entity: Entity }[] = [];
   props: MapViewProps;
   dragging: Entity | null = null;
@@ -256,9 +293,9 @@ class MapScene {
     this.setOverhead(props.overhead);
     if (seasonChanged || modelsChanged) this.loadChunks(zoneChanged);
     // Only what changed: the overlay with the terrain or its look, the marks with the entities or the selection
-    const overlayKey = [props.map, props.layer, props.overlay];
+    const overlayKey = [props.map, props.layer, props.overlay, props.rails, props.railLevel];
     if (!same(overlayKey, this.overlayKey)) this.buildOverlay();
-    const marksKey = [props.map, props.entities, props.selected, props.layer, props.showModels];
+    const marksKey = [props.map, props.entities, props.selected, props.layer, props.showModels, props.rails, props.railLevel];
     if (!same(marksKey, this.marksKey)) this.buildMarks();
     this.overlayKey = overlayKey;
     this.marksKey = marksKey;
@@ -341,6 +378,50 @@ class MapScene {
       this.overlay.add(pickMesh);
       this.tileMeshes.push({ mesh: pickMesh, drawn: mesh, tiles });
     }
+    this.buildRails();
+  }
+
+  /** The rails' tiles, each line's around its places, colored by their attributes. */
+  buildRails() {
+    const { rails, overlay } = this.props;
+    this.railMeshes = [];
+    if (!rails) return;
+    const material = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: overlay === "off" ? 0 : 0.45, depthWrite: false,
+                                                   side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -24 });
+    const inset = 0.06;
+    rails.lines.forEach((line, i) => {
+      if (!lineAtLevel(rails, i, this.props.railLevel)) return;
+      const quads: THREE.Vector3[][] = [], colors: THREE.Color[] = [], tiles: RailPick[] = [];
+      for (let f = 0; f < line.length; f++) {
+        for (const side of sidesAt(rails, i, f)) {
+          const q = railQuad(rails, i, f - 0.5 + inset, f + 0.5 - inset, side - 0.5 + inset, side + 0.5 - inset, 0.6);
+          const pos = railToWorld(rails, i, f, side);
+          if (!q || !pos) continue;
+          quads.push(q);
+          const type = railTile(rails, { line: i, front: f, side });
+          colors.push(type === null ? new THREE.Color(0x777777) : tileColor(type, overlay === "off" ? "type" : overlay));
+          tiles.push({ line: i, front: f, side, pos });
+        }
+      }
+      if (!quads.length) return;
+      const mesh = quadMesh(quads, colors, material);
+      mesh.renderOrder = 1;
+      this.overlay.add(mesh);
+      this.railMeshes.push({ mesh, tiles });
+    });
+  }
+
+  /** Colors a rail tile as the stroke passes it. */
+  markPaintedRail(tile: RailPick) {
+    const { paintType, overlay } = this.props;
+    const color = paintType === null ? new THREE.Color(0xffd400) : tileColor(paintType, overlay === "off" ? "type" : overlay);
+    for (const { mesh, tiles } of this.railMeshes) {
+      const i = tiles.findIndex((t) => t.line === tile.line && t.front === tile.front && t.side === tile.side);
+      if (i < 0) continue;
+      const attr = mesh.geometry.getAttribute("color") as THREE.BufferAttribute;
+      for (let j = 0; j < 4; j++) attr.setXYZ(i * 4 + j, color.r, color.g, color.b);
+      attr.needsUpdate = true;
+    }
   }
 
   previewEntities: Entity[] | null = null;
@@ -381,8 +462,12 @@ class MapScene {
     this.entityMeshes = [];
     this.npcSprites.clear();
     for (const e of entities) {
-      if (e.x === null || e.z === null) continue;
       const isSelected = selected?.kind === e.kind && selected.index === e.index;
+      if (e.rail) {
+        this.addRailEntity(e, isSelected);
+        continue;
+      }
+      if (e.x === null || e.z === null) continue;
       const stands = standingOn(map, e.x, e.z, e.y);
       const ground = stands?.height ?? e.y;
       // On the other layer: faded, still to be clicked
@@ -438,6 +523,38 @@ class MapScene {
         }
       }
     }
+  }
+
+  /** An entity on the rails: its tiles (its spans' for a warp or a trigger) and an NPC's sprite. */
+  addRailEntity(e: Entity, isSelected: boolean) {
+    const rails = this.props.rails;
+    const r = e.rail!;
+    const center = rails ? railToWorld(rails, r.line, r.front, r.side) : null;
+    if (!rails || !center || !lineAtLevel(rails, r.line, this.props.railLevel)) return;
+    const quads: THREE.Vector3[][] = [];
+    for (let f = r.front; f < r.front + r.frontSpan; f++) {
+      const q = railQuad(rails, r.line, f - 0.5, f + 0.5, r.side - 0.5, r.side + r.sideSpan - 0.5, 1.5);
+      if (q) quads.push(q);
+    }
+    const color = new THREE.Color(isSelected ? 0xffffff : KIND_COLORS[e.kind]);
+    const box = quadMesh(quads, quads.map(() => color),
+      new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: isSelected ? 0.85 : 0.6, depthTest: false, side: THREE.DoubleSide }));
+    box.renderOrder = 3;
+    box.userData.center = new THREE.Vector3(...center);
+    box.userData.base = box.position.clone();
+    this.marks.add(box);
+    this.entityMeshes.push({ object: box, entity: e });
+    if (e.kind !== "npc") return;
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xffffff, transparent: true, alphaTest: 0.5, depthTest: false }));
+    sprite.renderOrder = 5;
+    sprite.scale.set(24, 24, 1);
+    sprite.visible = false;
+    sprite.position.set(center[0], center[1] + 12, center[2]);
+    sprite.userData.center = new THREE.Vector3(...center);
+    sprite.userData.base = sprite.position.clone();
+    if (e.model) spriteTexture(e.model, e.direction).then((t) => { if (t) { sprite.material.map = t; sprite.material.needsUpdate = true; sprite.visible = true; } });
+    this.marks.add(sprite);
+    this.entityMeshes.push({ object: sprite, entity: e });
   }
 
   /** A building: its prop's model where the chunk places it, turned, and a square at its origin. */
@@ -506,7 +623,7 @@ class MapScene {
     }
   }
 
-  pick(ev: PointerEvent): { tile: { x: number; z: number; h: number } | null; entity: Entity | null } {
+  pick(ev: PointerEvent): { tile: { x: number; z: number; h: number } | null; entity: Entity | null; rail: RailPick | null } {
     const rect = this.renderer.domElement.getBoundingClientRect();
     const pointer = new THREE.Vector2(((ev.clientX - rect.left) / rect.width) * 2 - 1, -((ev.clientY - rect.top) / rect.height) * 2 + 1);
     this.raycaster.setFromCamera(pointer, this.camera);
@@ -519,18 +636,43 @@ class MapScene {
       hitObject = hitObject.parent;
     }
     let tile: { x: number; z: number; h: number } | null = null;
+    let tileDistance = Infinity;
     for (const { mesh, tiles } of this.tileMeshes) {
       const hit = this.raycaster.intersectObject(mesh, false)[0];
-      if (hit && hit.instanceId !== undefined && (!tile || hit.distance < 0)) tile = tiles[hit.instanceId];
-      if (tile) break;
+      if (hit && hit.instanceId !== undefined) { tile = tiles[hit.instanceId]; tileDistance = hit.distance; break; }
     }
-    return { tile, entity };
+    // A rail's tile, when it is nearer than the grid's (the rails run over the chunks' own terrain)
+    let rail: RailPick | null = null;
+    let railDistance = Infinity;
+    for (const { mesh, tiles } of this.railMeshes) {
+      const hit = this.raycaster.intersectObject(mesh, false)[0];
+      if (hit && hit.faceIndex !== undefined && hit.faceIndex !== null && hit.distance < railDistance) {
+        rail = tiles[Math.floor(hit.faceIndex / 2)] ?? null;
+        railDistance = hit.distance;
+      }
+    }
+    if (rail && railDistance <= tileDistance + 1) tile = null;
+    else rail = null;
+    return { tile, entity, rail };
   }
 
   down = (ev: PointerEvent) => {
     if (ev.button !== 0) return;
-    const { tile, entity } = this.pick(ev);
+    const { tile, entity, rail } = this.pick(ev);
+    if (this.props.painting && rail) {
+      this.paintingNow = true;
+      this.controls.enabled = false;
+      this.painted = new Map();
+      this.paintedRail = new Map([[`${rail.line}:${rail.front}:${rail.side}`, rail]]);
+      this.markPaintedRail(rail);
+      return;
+    }
+    if (ev.shiftKey && rail) {
+      this.props.onAddRail(rail, rail.pos[1]);
+      return;
+    }
     if (this.props.painting && tile) {
+      this.paintedRail = new Map();
       this.paintingNow = true;
       this.controls.enabled = false;
       this.painted = new Map([[`${tile.x},${tile.z}`, tile]]);
@@ -545,7 +687,7 @@ class MapScene {
     const sel = this.props.selected;
     const onSelected = sel && entity && sel.x === entity.x && sel.z === entity.z ? sel : entity;
     this.props.onSelect(onSelected, tile);
-    if (onSelected && onSelected.x !== null) {
+    if (onSelected && (onSelected.x !== null || onSelected.rail)) {
       this.dragging = onSelected;
       this.controls.enabled = false;
     }
@@ -553,7 +695,25 @@ class MapScene {
 
   move = (ev: PointerEvent) => {
     if (!this.dragging && !this.paintingNow) return;
-    const { tile } = this.pick(ev);
+    const { tile, rail } = this.pick(ev);
+    if (rail && this.paintingNow) {
+      const key = `${rail.line}:${rail.front}:${rail.side}`;
+      if (!this.paintedRail.has(key)) {
+        this.paintedRail.set(key, rail);
+        this.markPaintedRail(rail);
+      }
+      return;
+    }
+    // An entity on the rails moves along them: its marks by the distance between the places' spots
+    if (this.dragging?.rail) {
+      if (!rail) return;
+      for (const m of this.entityMeshes.filter((x) => x.entity === this.dragging)) {
+        const { base, center } = m.object.userData as { base?: THREE.Vector3; center?: THREE.Vector3 };
+        if (base && center) m.object.position.set(base.x + rail.pos[0] - center.x, base.y + rail.pos[1] - center.y, base.z + rail.pos[2] - center.z);
+      }
+      (this.dragging as Entity & { toRail?: RailPick }).toRail = rail;
+      return;
+    }
     if (!tile) return;
     if (this.paintingNow) {
       const key = `${tile.x},${tile.z}`;
@@ -583,10 +743,21 @@ class MapScene {
     if (this.paintingNow) {
       this.paintingNow = false;
       this.controls.enabled = true;
-      this.props.onPaint([...this.painted.values()]);
+      if (this.painted.size) this.props.onPaint([...this.painted.values()]);
+      if (this.paintedRail.size) this.props.onPaintRail([...this.paintedRail.values()]);
       return;
     }
     if (!this.dragging) return;
+    if (this.dragging.rail) {
+      const e = this.dragging as Entity & { toRail?: RailPick };
+      const to = e.toRail;
+      delete e.toRail;
+      this.dragging = null;
+      this.controls.enabled = true;
+      const r = e.rail!;
+      if (to && (to.line !== r.line || to.front !== r.front || to.side !== r.side)) this.props.onMoveRail(e, to);
+      return;
+    }
     const to = (this.dragging as Entity & { to?: { x: number; z: number; h: number } }).to;
     const e = this.dragging;
     this.dragging = null;

@@ -195,8 +195,14 @@ trainer's line of sight), Proxies (background events), Triggers, Warps and Level
   **←** back to the list. Remove leaves the other NPCs' IDs as they are.
 - **Overhead** looks straight down without perspective, north up; the camera only pans (right or middle button) and
   zooms. The tiles are drawn a few units nearer the camera along its lines of sight (the same on screen), over what
-  lies just above the ground (autumn's fallen leaves) but
-  behind walls and trees.
+  lies just above the ground (autumn's fallen leaves) but behind walls and trees.
+- **Rails** (Castelia City's streets, Skyarrow Bridge and the other zones without a grid; `rails.ts`): the zone's rails
+  (`ZONE_RAIL_ASSIGNMENTS` → `res/field/rails/maps.json` → `res/field/rails/<rails>/`) drawn over the map as their
+  tiles, straight or curved as the game places them, colored by their attributes; the NPCs, warps, triggers and
+  proxies stand on them by line, front and side. Drag them along the rails, Shift+click a rail tile to add one,
+  paint rail tiles' types (in `attributes/line_NN.csv`). **Rails** shows one height at a time (Castelia's rails are
+  at several). The rails themselves (points, lines) aren't edited here yet.
+- Painting keeps the flags it doesn't set (a tile's 0x80, which every rail tile has and no code names yet).
 - **Buildings:** the chunks' props, as CTRMap edits them: each a model of the area's prop bundle
   (`res/field/props/`) placed in its chunk's GLB (`bw2_prop_<n>_id_<prop ID>` nodes, which the build packs). Click
   to choose (it turns half seen through), drag to move by whole tiles, Shift+click to add the last model chosen; a

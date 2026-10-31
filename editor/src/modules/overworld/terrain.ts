@@ -292,6 +292,12 @@ export async function flatTileFor(height: number): Promise<{ slope: number; offs
   return { slope: 0, offset, height: -tb.offsets[offset] / ny };
 }
 
+/** The flags the painter sets; it keeps a tile's others (rail tiles have 0x80, which no code names yet). */
+const PAINTED_FLAGS = (TILE_FLAG_COLLISION | TILE_FLAG_WATER | TILE_FLAG_ENCOUNT | TILE_FLAG_REFLECT) << 16;
+
+/** A tile type painted over another: the paint's class and known flags, the tile's other flags. */
+export const paintOver = (tile: number, paint: number) => ((((tile >>> 0) & ~(PAINTED_FLAGS | 0xffff)) | paint) >>> 0);
+
 /** A tile's flags and class, from its type. */
 export const tileFlags = (t: number) => (t >>> 16) & 0xffff;
 export const tileClass = (t: number) => t & 0xffff;
