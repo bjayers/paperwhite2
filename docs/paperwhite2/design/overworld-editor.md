@@ -100,20 +100,30 @@ entry, an NPC whose condition fails isn't created, without a flag. A flag is sti
   - the engine skips any that don't fit, rather than failing.
 - **Cost each frame:** a path's position per ambient, which is tiny.
 
-### Groups (a proposal)
+### Groups: sets where only one can appear (the user's idea, 2026-10-31)
 
-A **group** is a set of members (instances, ambients, and NPCs whose appearing it decides) with:
-- **a shared condition**, so a whole set appears only when it holds;
-- **a choice:**
-  - "all" (every member whose own condition holds);
-  - "one" (one member by weight);
-  - "some" (up to N members by weight, on different tiles).
+A group is a set of **mutually exclusive** members, as the old seasonal flag script used flags for: NPCs, instances
+and ambients each keep their own condition, and the group only says that at most one of them appears at a time. A group
+has no condition of its own. When several members' conditions hold, the group picks one, by its **mode**:
+- **priority:** the first in the group's order;
+- **random:** by the members' weights, from the day's seed.
 
-Each member keeps its own weight and condition. A host's instances are already an implicit "one" group of its
-alternatives, so groups are for choices across NPCs: a flock of three birds with one of four sprites, "one of these
-five wanderers today", a festival crowd in summer. With a day-keyed pick, a group can span zones ("this traveler is in
-one of these towns each day"), with no saved state. Groups come after instances and ambients, once their use is
-clearer.
+Members are hosts (an NPC with its instances counts as one, whichever instance it shows) or single instances and
+ambients. A host's own instances are already exclusive among themselves.
+
+**Rates as conditions.** A member's chance to appear (10%, as flags 590-599 did) is a clause of its condition. It
+is rolled from a seed, so it holds for a while rather than on every zone entry:
+- the day's seed by default: a 10% NPC is there all day or not at all, and leaving and coming back doesn't reroll it;
+- a member can choose the period's or each entry's instead.
+
+The group then chooses among the members whose conditions, rates included, hold.
+
+**Across zones.** A group can span zones ("this traveler is in one of these towns today"), as long as its members'
+conditions use only what every zone can know (season, time, day, flags, vars, rates on the day's seed). A zone's
+weather or terrain can't be known for another zone, so the editor warns about those in a cross-zone group.
+
+**Flags.** An instance whose flag is set leaves its host's pool for good (a one-time gift), and a host with none
+left shows nothing. The same goes for any member of a group.
 
 ### The preview mode
 
@@ -137,17 +147,21 @@ Editor already has part of it).
    - the editor's instance panels and purple boxes;
    - the preview mode.
 3. **Ambients:** the billboard renderer, paths, budget, and the editor's paths drawn on the map.
-4. **Groups.**
+4. **Groups** (mutually exclusive sets).
 
 Phase 0 and 1 of `npc-research.md` (the freeze test and the size guard) come with phase 1 here.
 
-## For the user to decide
+## The user's decisions (2026-10-31)
 
-1. **Buildings:** the props in the map chunks (houses, trees, fences and the like), which Frost's Buildings tab edits.
-   Signs you read are proxies.
-2. **The instance host:** the editor makes and hides it, so you never handle a blank NPC.
-3. **Lasting state:** an instance that should vanish for good after its script (a one-time gift) gets a flag the build
-   assigns from a free range, so the editor asks only "disappears once done".
-4. **The ambient budget** (8 a zone, 4 distinct sprites) as the first limit, raised after measuring.
-5. **Groups** as proposed, after instances and ambients.
+1. **Buildings:** the map chunks' props, as CTRMap's building editor edits them (Frost's editor had none). A sign is
+   two things: the building (the model) and its proxy (the tile that reads it), which move separately; the editor may
+   offer to move a proxy with its building.
+2. **The instance host:** the editor makes and hides it, off-map while unused.
+3. **Lasting state:** an instance whose flag is set leaves the pool (Groups, Flags).
+4. **The ambient budget:** 8 a zone and 4 distinct sprites to start. Planned for later, perhaps: overworld encounters
+   in grass and dark grass (sprites from the area's Pokémon that start a wild battle when touched), up to 3 on screen.
+   They would be actors, so they share the sprite and texture budget with ambients.
+5. **Groups:** mutually exclusive sets (Groups), pending the user's agreement; after instances and ambients.
 6. **Rail zones** after the grid ones.
+7. **The phases** as listed: the editor over the existing data, designed with room for the new; then the engine's
+   conditions and instances; then ambients and groups.
