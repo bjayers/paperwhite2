@@ -12,7 +12,7 @@
 .scr-body.embedded { grid-template-columns: 200px 1fr 360px; }
 .scr-files, .scr-scripts { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--border); overflow-y: auto; }
 .scr-files > .filter { margin: 8px 10px 6px; }
-.scr-file-list { flex: 1; overflow-y: auto; }
+.scr-file-list { flex: 1; overflow: auto; }
 .scr-file, .scr-script { display: block; width: 100%; border: none; border-radius: 0; background: none; text-align: left; padding: 2px 10px; }
 .scr-script { padding: 4px 10px; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .scr-file:hover, .scr-script:hover { background: var(--hover); }
@@ -27,3 +27,5 @@
 .scr-number { display: inline-block; min-width: 30px; text-align: right; color: var(--muted); font-family: var(--mono); font-size: 11px; }
 .scr-entry { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
 .scr-running { margin: 4px 0; padding-left: 18px; font-size: 13px; }
+/* A long name scrolls the list sideways rather than wrapping under its number */
+.scr-file { white-space: nowrap; width: max-content; min-width: 100%; }
