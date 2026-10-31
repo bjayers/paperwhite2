@@ -377,7 +377,7 @@
         },
         {
             "id": 18,
-            "model": "OBJ_CODE_POKEMON_UNOWN",
+            "model": "OBJ_CODE_POKEMON_PURRLOIN",
             "movement": "MOVE_CODE_NONE",
             "type": "ACTOR_EVENT_TYPE_NONE",
             "flag": "EVENT_FLAG_0x021e",

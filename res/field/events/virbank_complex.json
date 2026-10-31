@@ -177,7 +177,7 @@
         },
         {
             "id": 8,
-            "model": "OBJ_CODE_POKEMON_UNOWN",
+            "model": "OBJ_CODE_POKEMON_PURRLOIN",
             "movement": "MOVE_CODE_NONE",
             "type": "ACTOR_EVENT_TYPE_NONE",
             "flag": "EVENT_FLAG_0x021d",
@@ -196,7 +196,7 @@
         },
         {
             "id": 9,
-            "model": "OBJ_CODE_POKEMON_UNOWN",
+            "model": "OBJ_CODE_POKEMON_PURRLOIN",
             "movement": "MOVE_CODE_WALK_RANDOM",
             "type": "ACTOR_EVENT_TYPE_NONE",
             "flag": "EVENT_FLAG_0x021f",

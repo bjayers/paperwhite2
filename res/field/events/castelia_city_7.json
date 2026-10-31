@@ -72,7 +72,7 @@
         },
         {
             "id": 3,
-            "model": "OBJ_CODE_POKEMON_UNOWN_FORM_11",
+            "model": "OBJ_CODE_POKEMON_TRUBBISH",
             "movement": "MOVE_CODE_NONE",
             "type": "ACTOR_EVENT_TYPE_NONE",
             "flag": 0,
@@ -91,7 +91,7 @@
         },
         {
             "id": 4,
-            "model": "OBJ_CODE_POKEMON_UNOWN_FORM_11",
+            "model": "OBJ_CODE_POKEMON_TRUBBISH",
             "movement": "MOVE_CODE_NONE",
             "type": "ACTOR_EVENT_TYPE_NONE",
             "flag": 0,

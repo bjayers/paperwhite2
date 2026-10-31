@@ -397,7 +397,7 @@
         },
         {
             "id": 18,
-            "model": "OBJ_CODE_POKEMON_UNOWN_FORM_1",
+            "model": "OBJ_CODE_POKEMON_SWANNA",
             "movement": "MOVE_CODE_WALK_BACK_AND_FORTH",
             "type": "ACTOR_EVENT_TYPE_NONE",
             "flag": "EVENT_FLAG_0x0201",
@@ -416,7 +416,7 @@
         },
         {
             "id": 19,
-            "model": "OBJ_CODE_POKEMON_UNOWN",
+            "model": "OBJ_CODE_POKEMON_PURRLOIN",
             "movement": "MOVE_CODE_WALK_RANDOM_UP_DOWN",
             "type": "ACTOR_EVENT_TYPE_NONE",
             "flag": "EVENT_FLAG_0x0223",
@@ -492,7 +492,7 @@
         },
         {
             "id": 23,
-            "model": "OBJ_CODE_POKEMON_UNOWN",
+            "model": "OBJ_CODE_POKEMON_PURRLOIN",
             "movement": "MOVE_CODE_WALK_RANDOM_UP_DOWN",
             "type": "ACTOR_EVENT_TYPE_NONE",
             "flag": "EVENT_FLAG_0x0221",
@@ -739,7 +739,7 @@
         },
         {
             "id": 36,
-            "model": "OBJ_CODE_POKEMON_UNOWN",
+            "model": "OBJ_CODE_POKEMON_PURRLOIN",
             "movement": "MOVE_CODE_NONE",
             "type": "ACTOR_EVENT_TYPE_NONE",
             "flag": "EVENT_FLAG_0x0224",

@@ -17,6 +17,7 @@ const BANKS: { bank: number; label: string }[] = [
   { bank: 1, label: "Walking Pokémon" },
   { bank: 2, label: "3D models" },
   { bank: 3, label: "Followers" },
+  { bank: 4, label: "Paper White 2 Pokémon" },
 ];
 
 /** A sprite frame as an image, loaded when it is first on screen. */

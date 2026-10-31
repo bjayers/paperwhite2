@@ -195,9 +195,6 @@ u32 Following_RailFaceAt(s32 relX, s32 relZ, s32 frontX, s32 frontZ, s32 sideX, 
 // The facing after a swap. Both actors are on the player's line, so it is the player's rail facing, straight or on a
 // curve. The chord is the step just taken, not a compass to round
 u32 Following_RailSwapTurn(u32 playerFace, s32 chordX, s32 chordZ);
-// The form of the follower's sprite, palette and size row: Unown (201) always '?' (form 27) and Arceus (493) always
-// Normal (form 0), the others their own
-u32 Following_DisplayForm(u32 species, u32 form);
 // Replaces the trail with a walk of unit steps that ends on player, under gaps. Its pose is one tile of the metric
 // behind, the rest after a fresh load, which later steps keep. follower gives the far end's height. The samples take
 // player's direction, so the next step doesn't use the facing from before the turn

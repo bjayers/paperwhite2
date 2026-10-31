@@ -881,7 +881,7 @@
         },
         {
             "id": 44,
-            "model": "OBJ_CODE_POKEMON_UNOWN_FORM_10",
+            "model": "OBJ_CODE_POKEMON_VENIPEDE",
             "movement": "MOVE_CODE_WALK_RANDOM",
             "type": "ACTOR_EVENT_TYPE_NONE",
             "flag": "EVENT_FLAG_0x021e",

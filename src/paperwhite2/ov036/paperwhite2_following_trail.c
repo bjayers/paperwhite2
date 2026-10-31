@@ -6,20 +6,6 @@
 // Paper White 2: the Following Pokémon's follower, its trail behind the player, the swap when the player steps back
 // onto it and the choice of the party member that follows, ported from Pokeweb's following.c
 
-typedef struct {
-    u32 species;
-    u32 form;
-} FollowingForcedForm;
-
-// The display forms of the follower's sprite, palette and size row. Identity, dialogue, gifts and cries keep the
-// party member's own form. Every species without a row shows its own
-static const FollowingForcedForm sForcedForms[] = {
-    // Unown '?': forms 0 to 25 are A to Z, 26 is '!' and 27 is '?'
-    { 201, 27 },
-    // Arceus in its Normal form, whatever plate it holds
-    { 493, 0 },
-};
-
 static BOOL CanFollow(const FollowingPokemon *mon) {
     return !mon->egg && mon->species != 0 && mon->species <= FOLLOWING_MAX_SPECIES;
 }
@@ -843,17 +829,6 @@ s32 Following_RailSwapMirror(const VecFx32 *follower, const VecFx32 *origin, con
     out->y = follower->y + DivS64(((s64)origin->y - follower->y) * walked, span);
     out->z = follower->z + DivS64(((s64)origin->z - follower->z) * walked, span);
     return done;
-}
-
-u32 Following_DisplayForm(u32 species, u32 form) {
-    u32 i;
-
-    for (i = 0; i < NELEMS(sForcedForms); i++) {
-        if (sForcedForms[i].species == species) {
-            return sForcedForms[i].form;
-        }
-    }
-    return form;
 }
 
 BOOL Following_RailSegmentReach(const VecFx32 *player, const VecFx32 *follower, const VecFx32 *forward, u32 gap) {

@@ -2,6 +2,18 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-31: the user's walking Pokémon sprites out of Unown's forms
+
+- Before the decomp the user drew 22 walking sprites for Pokémon the original game has none for in place of Unown and
+  its forms 1 to 21. They are now codes of their own, `OBJ_CODE_POKEMON_PURRLOIN = 0x4000` on (generated/obj_codes.txt,
+  `res/field/actors/pokemon/<species>/`, 8 frames, sprite_controller_type 14), the table's rows after the followers'
+  (`GetIndexOfObjID`, src/system/field_actor_savedata.c); Unown's sprites are the original's again (w2-original), and
+  the 18 NPCs that used them (9 zones; no original NPC or script used Unown) use the new codes. The follower's forced
+  forms (Unown '?', Arceus Normal) are gone, so an Unown or Arceus follower shows its own form. Five species are still
+  to be named by the user: `CUSTOM_3`, `CUSTOM_13`, `CUSTOM_15`, `CUSTOM_16`, `CUSTOM_21` (rename with
+  `tools/data/rename_constant.py`). Built (hack, DSi intact); **not tested in game**: check an NPC with a new code
+  (Castelia's Trubbish), an Unown follower's letter and an Arceus follower's form.
+
 ## 2026-10-31: the Funfest mission spots removed from every zone
 
 - The 1,690 proxies with condition 4 and script 0 (up to 20 a zone, in 118 zones) were the Entralink Funfest missions'

@@ -1689,8 +1689,7 @@ static u16 GetFollowerCode(MMSys *system, const FollowingPokemon *mon) {
             sPageCount = 0;
             return 0;
         }
-        shown = Following_DisplayForm(mon->species, mon->form);
-        score = form == shown ? 8 : form == 0 ? 0 : -20;
+        score = form == mon->form ? 8 : form == 0 ? 0 : -20;
         score += gender == mon->gender ? 4 : gender == 2 ? 2 : -20;
         score += shiny == mon->shiny ? 1 : -20;
         if (score > best) {

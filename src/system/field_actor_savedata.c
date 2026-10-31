@@ -196,6 +196,11 @@ u32 GetIndexOfObjID(u16 objCode) {
     if (objCode >= OBJ_CODE_FOLLOWER_BULBASAUR && objCode <= OBJ_CODE_FOLLOWER_GENESECT_FORM_4_SHINY) {
         return (u16)(objCode - OBJ_CODE_FOLLOWER_BULBASAUR + 0x3f0);
     }
+    // Paper White 2: the walking Pokémon that the original game has no sprite for, the rows after the followers'
+    if (objCode >= OBJ_CODE_POKEMON_PURRLOIN && objCode <= OBJ_CODE_POKEMON_CUSTOM_21) {
+        return (u16)(objCode - OBJ_CODE_POKEMON_PURRLOIN + 0x3f0 +
+                     (OBJ_CODE_FOLLOWER_GENESECT_FORM_4_SHINY - OBJ_CODE_FOLLOWER_BULBASAUR + 1));
+    }
 #endif
     return 10;
 }

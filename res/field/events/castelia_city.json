@@ -677,7 +677,7 @@
         },
         {
             "id": 28,
-            "model": "OBJ_CODE_POKEMON_UNOWN_FORM_11",
+            "model": "OBJ_CODE_POKEMON_TRUBBISH",
             "movement": "MOVE_CODE_RAIL_TURN_RANDOM_DOWN_RIGHT",
             "type": "ACTOR_EVENT_TYPE_NONE",
             "flag": "EVENT_FLAG_0x0221",
