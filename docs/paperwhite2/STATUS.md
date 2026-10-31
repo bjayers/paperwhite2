@@ -2,6 +2,14 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-31: the Rails tab (editor only)
+
+- The Overworld Editor edits rail files: move points (also by their fields, in tiles), add points and lines (slots,
+  direction, curve, measured length and a new attributes file), set a line's curve and center, fit its length
+  (resizing its attributes), remove the last point or line. Checked in the browser on Castelia (edit, undo, add a
+  point, add a line) and that a rail file with an added point, line, curve and attributes packs
+  (`rail_data.py pack`). Not saved from the editor or built into a ROM yet.
+
 ## 2026-10-31: the user's walking Pokémon sprites out of Unown's forms
 
 - Before the decomp the user drew 22 walking sprites for Pokémon the original game has none for in place of Unown and

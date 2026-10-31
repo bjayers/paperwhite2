@@ -19,7 +19,7 @@
 .ow-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 6px 10px; border-bottom: 1px solid var(--border); font-size: 13px; }
 .ow-check, .ow-inline { display: inline-flex; align-items: center; gap: 4px; }
 .ow-map-wrap { flex: 1; min-height: 0; position: relative; }
-.ow-map { position: absolute; inset: 0; }
+.ow-map { position: absolute; inset: 0; user-select: none; }
 /* Painting: a thick light blue border, so a click isn't taken for a select */
 .ow-map-wrap.painting::after { content: ""; position: absolute; inset: 0; border: 5px solid #5cc8ff; pointer-events: none; z-index: 3; }
 .ow-map canvas { display: block; }
@@ -75,3 +75,7 @@
 .ow-number-box { width: 72px; }
 .ow-xyz button.active { border-color: var(--accent); background: var(--selected); }
 .ow-xyz .hint { flex-basis: 100%; }
+
+/* The Rails tab's panel */
+.ow-panel-box { border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; margin: 6px 0; }
+.ow-side-note { margin: 8px 12px 0; cursor: pointer; }

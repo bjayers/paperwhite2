@@ -2,7 +2,7 @@
 // its type, dropdowns of constants for x-constant fields, and the errors the build would report, where they are.
 
 import { memo, useMemo, useState, type ReactNode } from "react";
-import { JsonFloat, numberOf, typeOf, type JsonMap, type JsonPath, type JsonValue } from "../../../shared/json.ts";
+import { JsonFloat, fromPlain, numberOf, typeOf, type JsonMap, type JsonPath, type JsonValue } from "../../../shared/json.ts";
 import { resolve, validate, type Constants, type Schema, type SchemaError } from "../../../shared/schema.ts";
 import { SearchSelect, type Option } from "../../shell/SearchSelect.tsx";
 import { FOLLOWER_WORDS, fromFollowerText } from "../text/message.ts";
@@ -95,12 +95,6 @@ export function defaultFor(schema: Schema, ctx: Pick<FormContext, "root" | "cons
       return false;
   }
   return null;
-}
-
-function fromPlain(v: unknown): JsonValue {
-  if (Array.isArray(v)) return v.map(fromPlain);
-  if (v && typeof v === "object") return new Map(Object.entries(v).map(([k, x]) => [k, fromPlain(x)]));
-  return v as JsonValue;
 }
 
 function typesOf(s: Schema): string[] {

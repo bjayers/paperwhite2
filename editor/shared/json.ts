@@ -257,6 +257,13 @@ export function setIn(data: JsonValue, path: JsonPath, value: JsonValue | undefi
 }
 
 /** Plain JavaScript for a JsonValue (Maps to objects, floats to numbers), for display or for libraries. */
+/** Plain JSON (objects, arrays, numbers) as the editor's values, object keys in their order. */
+export function fromPlain(v: unknown): JsonValue {
+  if (Array.isArray(v)) return v.map(fromPlain);
+  if (v && typeof v === "object") return new Map(Object.entries(v).map(([k, x]) => [k, fromPlain(x)]));
+  return v as JsonValue;
+}
+
 export function toPlain(v: JsonValue): unknown {
   if (v instanceof JsonFloat) return v.value;
   if (v instanceof Map) return Object.fromEntries([...v].map(([k, x]) => [k, toPlain(x)]));

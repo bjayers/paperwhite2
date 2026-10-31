@@ -8,7 +8,7 @@
 import { toPlain, type JsonValue } from "../../../shared/json.ts";
 import { TILE } from "./terrain.ts";
 
-export type EntityKind = "npc" | "proxy" | "building" | "trigger" | "warp" | "level";
+export type EntityKind = "npc" | "proxy" | "building" | "trigger" | "warp" | "level" | "rail";
 
 /** The events file's list of each kind, and the field each module edits. */
 export const KIND_LISTS: Record<EntityKind, string> = {
@@ -16,6 +16,8 @@ export const KIND_LISTS: Record<EntityKind, string> = {
   proxy: "bg_events",
   // Not the events': the chunks' props (props.ts)
   building: "props",
+  // Not the events': the zone's rail file (rails.ts)
+  rail: "rails",
   trigger: "triggers",
   warp: "warps",
   level: "init_scripts",
@@ -25,6 +27,7 @@ export const KIND_NAMES: Record<EntityKind, string> = {
   npc: "NPCs",
   proxy: "Proxies",
   building: "Buildings",
+  rail: "Rails",
   trigger: "Triggers",
   warp: "Warps",
   level: "Level scripts",
@@ -58,6 +61,8 @@ export interface Entity {
    * bundle has none of that ID), its exact place in global units and its turn in degrees. */
   /** Its place on the rails, in a zone without a grid: the line, front and side, and a warp's or trigger's spans. */
   rail?: { line: number; front: number; side: number; frontSpan: number; sideSpan: number };
+  /** A rail's point or line, by its index in the rail file. */
+  railPart?: { type: "point" | "line"; index: number };
   building?: { chunk: string; index: number; id: number; model: string | null; ux: number; uy: number; uz: number; angle: number };
 }
 

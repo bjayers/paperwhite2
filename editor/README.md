@@ -203,7 +203,15 @@ trainer's line of sight), Proxies (background events), Triggers, Warps and Level
   paint rail tiles' types (in `attributes/line_NN.csv`). **Rails** shows one height at a time (Castelia's rails are
   at several), and **Show** grid tiles, rail tiles or both in a zone with both. The panel notes an entity past its
   rail's edge. ▶ Movement moves the NPCs on rails too (RAIL_WALK_RANDOM, RAIL_TURN_RANDOM_*, RAIL_PATROL, as
-  `field_actor_rail.c` does). The rails themselves (points, lines) aren't edited here yet.
+  `field_actor_rail.c` does).
+- **The Rails tab** (rail zones only) edits the rail file itself (`rails.json`, through its schema's form): points
+  are balls, lines tubes along their middles. Drag a point to move it at its height (its lines follow); Shift+click
+  adds a point; **New line from here**, then a click on another point (on the map, or in the list after ←), adds a
+  line between them with its direction, a free slot at each end, a straight curve, the length it measures and new
+  attributes (`attributes/line_NN.csv`). A line's panel sets its curve (straight, a flat arc or a 3D arc, and the
+  arc's center in tiles) and fits its length to its shape, resizing its attributes. Only the last point or line can
+  be removed, since the events and the attribute files name them by number. The rail cameras are edited by number for
+  now.
 - Painting keeps the flags it doesn't set (a tile's 0x80, which every rail tile has and no code names yet).
 - **Buildings:** the chunks' props, as CTRMap edits them: each a model of the area's prop bundle
   (`res/field/props/`) placed in its chunk's GLB (`bw2_prop_<n>_id_<prop ID>` nodes, which the build packs). Click

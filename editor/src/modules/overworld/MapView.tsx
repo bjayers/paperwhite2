@@ -47,6 +47,8 @@ export interface MapViewProps {
   onMoveRail(entity: Entity, place: RailPlace): void;
   onAddRail(place: RailPlace, height: number): void;
   onPaintRail(places: RailPlace[]): void;
+  /** A rail point dragged to a spot, in units, at its own height. */
+  onMoveRailPoint(index: number, x: number, z: number): void;
 }
 
 /** A tile of a rail, as picked: its place and its spot in the world. */
@@ -75,7 +77,7 @@ function quadMesh(quads: THREE.Vector3[][], colors: THREE.Color[], material: THR
   return new THREE.Mesh(g, material);
 }
 
-const KIND_COLORS: Record<string, number> = { npc: 0x3ac7e0, proxy: 0xf0c330, building: 0x50d070, trigger: 0xf08a30, warp: 0xd040d0, level: 0x888888 };
+const KIND_COLORS: Record<string, number> = { npc: 0x3ac7e0, proxy: 0xf0c330, building: 0x50d070, trigger: 0xf08a30, warp: 0xd040d0, level: 0x888888, rail: 0x7fe0ff };
 
 /** A prop model's scene, read once and cloned for each placement. */
 const propModels = new Map<string, Promise<THREE.Object3D | null>>();
@@ -477,6 +479,10 @@ class MapScene {
     this.npcSprites.clear();
     for (const e of entities) {
       const isSelected = selected?.kind === e.kind && selected.index === e.index;
+      if (e.railPart) {
+        this.addRailPart(e, isSelected);
+        continue;
+      }
       if (e.rail) {
         this.addRailEntity(e, isSelected);
         continue;
@@ -537,6 +543,36 @@ class MapScene {
         }
       }
     }
+  }
+
+  /** A rail's point (a ball at its spot) or line (a tube along its middle). */
+  addRailPart(e: Entity, isSelected: boolean) {
+    const rails = this.props.rails;
+    const part = e.railPart!;
+    if (!rails) return;
+    const material = new THREE.MeshBasicMaterial({ color: isSelected ? 0xffffff : KIND_COLORS.rail, transparent: true, opacity: 0.9, depthTest: false });
+    if (part.type === "point") {
+      const p = rails.points[part.index];
+      if (!p) return;
+      const ball = new THREE.Mesh(new THREE.SphereGeometry(isSelected ? 4 : 3, 12, 8), material);
+      ball.position.set(p.pos[0] / 4096, p.pos[1] / 4096 + 2, p.pos[2] / 4096);
+      ball.renderOrder = 6;
+      this.marks.add(ball);
+      this.entityMeshes.push({ object: ball, entity: e });
+      return;
+    }
+    const line = rails.lines[part.index];
+    if (!line?.length || !lineAtLevel(rails, part.index, this.props.railLevel)) return;
+    const points: THREE.Vector3[] = [];
+    for (let i = 0; i <= 32; i++) {
+      const p = railToWorld(rails, part.index, (line.length * i) / 32, 0);
+      if (p) points.push(new THREE.Vector3(p[0], p[1] + 2, p[2]));
+    }
+    if (points.length < 2) return;
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 64, isSelected ? 1.6 : 1, 6, false), material);
+    tube.renderOrder = 5;
+    this.marks.add(tube);
+    this.entityMeshes.push({ object: tube, entity: e });
   }
 
   /** An entity on the rails: its tiles (its spans' for a warp or a trigger) and an NPC's sprite. */
@@ -638,10 +674,15 @@ class MapScene {
     }
   }
 
-  pick(ev: PointerEvent): { tile: { x: number; z: number; h: number } | null; entity: Entity | null; rail: RailPick | null } {
+  /** Aims the raycaster from the camera through the pointer. */
+  aim(ev: PointerEvent) {
     const rect = this.renderer.domElement.getBoundingClientRect();
     const pointer = new THREE.Vector2(((ev.clientX - rect.left) / rect.width) * 2 - 1, -((ev.clientY - rect.top) / rect.height) * 2 + 1);
     this.raycaster.setFromCamera(pointer, this.camera);
+  }
+
+  pick(ev: PointerEvent): { tile: { x: number; z: number; h: number } | null; entity: Entity | null; rail: RailPick | null } {
+    this.aim(ev);
     // A building's model is a group of meshes: a hit on any of them is the building's
     const hitEntity = this.raycaster.intersectObjects(this.entityMeshes.map((m) => m.object), true)[0];
     let hitObject: THREE.Object3D | null = hitEntity?.object ?? null;
@@ -673,6 +714,8 @@ class MapScene {
 
   down = (ev: PointerEvent) => {
     if (ev.button !== 0) return;
+    // Shift+click is the editor's (adding), not the page's text selection
+    if (ev.shiftKey) ev.preventDefault();
     const { tile, entity, rail } = this.pick(ev);
     if (this.props.painting && rail) {
       this.paintingNow = true;
@@ -702,6 +745,7 @@ class MapScene {
     const sel = this.props.selected;
     const onSelected = sel && entity && sel.x === entity.x && sel.z === entity.z ? sel : entity;
     this.props.onSelect(onSelected, tile);
+    if (onSelected?.railPart && onSelected.railPart.type === "line") return;
     if (onSelected && (onSelected.x !== null || onSelected.rail)) {
       this.dragging = onSelected;
       this.controls.enabled = false;
@@ -710,6 +754,18 @@ class MapScene {
 
   move = (ev: PointerEvent) => {
     if (!this.dragging && !this.paintingNow) return;
+    // A rail point moves on the level of its own height
+    if (this.dragging?.railPart) {
+      const p = this.props.rails?.points[this.dragging.railPart.index];
+      if (!p) return;
+      const y = p.pos[1] / 4096;
+      this.aim(ev);
+      const hit = new THREE.Vector3();
+      if (!this.raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -y), hit)) return;
+      for (const m of this.entityMeshes.filter((x) => x.entity === this.dragging)) m.object.position.set(hit.x, y + 2, hit.z);
+      (this.dragging as Entity & { toSpot?: THREE.Vector3 }).toSpot = hit.clone();
+      return;
+    }
     const { tile, rail } = this.pick(ev);
     if (rail && this.paintingNow) {
       const key = `${rail.line}:${rail.front}:${rail.side}`;
@@ -763,6 +819,15 @@ class MapScene {
       return;
     }
     if (!this.dragging) return;
+    if (this.dragging.railPart) {
+      const e = this.dragging as Entity & { toSpot?: THREE.Vector3 };
+      const to = e.toSpot;
+      delete e.toSpot;
+      this.dragging = null;
+      this.controls.enabled = true;
+      if (to) this.props.onMoveRailPoint(e.railPart!.index, Math.round(to.x), Math.round(to.z));
+      return;
+    }
     if (this.dragging.rail) {
       const e = this.dragging as Entity & { toRail?: RailPick };
       const to = e.toRail;

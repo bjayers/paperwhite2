@@ -15,6 +15,7 @@
 // - The attributes: a row per front, a column per side (column = side + columns / 2), each a tile type as on a grid.
 
 import { api } from "../../api.ts";
+import type { Entity } from "./entities.ts";
 
 const NONE = 65535;
 const FX = 4096;
@@ -148,7 +149,8 @@ export async function loadRails(zone: string, source?: (path: string) => string 
   const name = maps.maps[index]?.rails;
   if (!name) return null;
   const folder = `res/field/rails/${name}`;
-  const data = JSON.parse((await api.file(`${folder}/rails.json`)).text) as { points: RailPoint[]; lines: RailLine[]; curves: RailCurve[] };
+  const own = source?.(`${folder}/rails.json`);
+  const data = JSON.parse(own ?? (await api.file(`${folder}/rails.json`)).text) as { points: RailPoint[]; lines: RailLine[]; curves: RailCurve[] };
   const attributes = await Promise.all(data.lines.map(async (_, i) => {
     const path = `${folder}/attributes/line_${String(i).padStart(2, "0")}.csv`;
     const text = source?.(path) ?? (await api.file(path).then((f) => f.text, () => ""));
@@ -180,6 +182,62 @@ export function lineAtLevel(rails: RailMap, line: number, level: number | null):
   if (level === null) return true;
   const l = rails.lines[line];
   return [l?.point_a, l?.point_b].some((p) => rails.points[p] && Math.round(rails.points[p].pos[1] / FX) === level);
+}
+
+/** The rail direction (1 up, 2 right, 3 down, 4 left) nearest a vector on the map, z down the screen. */
+export function railDirOf(dx: number, dz: number): number {
+  if (Math.abs(dx) > Math.abs(dz)) return dx > 0 ? 2 : 4;
+  return dz > 0 ? 3 : 1;
+}
+
+export const RAIL_DIR_NAMES = ["none", "up", "right", "down", "left"];
+export const oppositeRailDir = (d: number) => (d ? ((d + 1) % 4) + 1 : 0);
+
+/** A line's length along its shape, in tiles: summed from its middle at many points. */
+export function measuredLength(rails: RailMap, line: number): number {
+  const l = rails.lines[line];
+  if (!l?.length) return 0;
+  const steps = 64;
+  let total = 0;
+  let last = railToWorld(rails, line, 0, 0);
+  for (let i = 1; i <= steps; i++) {
+    const p = railToWorld(rails, line, (l.length * i) / steps, 0);
+    if (p && last) total += Math.hypot(p[0] - last[0], p[1] - last[1], p[2] - last[2]);
+    last = p;
+  }
+  return total / SIDE_UNITS;
+}
+
+/** A line's attributes resized to a number of rows (fronts), the last row repeated for new ones, and to a number of
+ * columns (sides), centered, new columns copying the edge. */
+export function resizeAttributes(text: string, rows: number, columns?: number): string {
+  let lines = text.trim() ? text.trim().split("\n").map((l) => l.split(",")) : [];
+  if (columns !== undefined && lines.length) {
+    lines = lines.map((row) => {
+      const out = [...row];
+      while (out.length < columns) { out.unshift(out[0]); if (out.length < columns) out.push(out[out.length - 1]); }
+      while (out.length > columns) { out.shift(); if (out.length > columns) out.pop(); }
+      return out;
+    });
+  }
+  while (lines.length < rows) lines.push([...(lines[lines.length - 1] ?? Array(columns ?? 1).fill("0x00800000"))]);
+  return lines.slice(0, rows).map((r) => r.join(",")).join("\n") + "\n";
+}
+
+/** The rails' points and lines as the map's entities: points at their spots, lines at their middles. */
+export function railEntities(rails: RailMap): Entity[] {
+  const out: Entity[] = [];
+  rails.points.forEach((p, i) => {
+    const [x, y, z] = units(p.pos);
+    out.push({ kind: "rail", index: i, x: Math.floor(x / 16), z: Math.floor(z / 16), y, width: 1, depth: 1,
+               label: `Point ${i} ${p.name}`, railPart: { type: "point", index: i } });
+  });
+  rails.lines.forEach((l, i) => {
+    const mid = railToWorld(rails, i, l.length / 2, 0);
+    out.push({ kind: "rail", index: rails.points.length + i, x: mid ? Math.floor(mid[0] / 16) : null, z: mid ? Math.floor(mid[2] / 16) : null,
+               y: mid?.[1] ?? 0, width: 1, depth: 1, label: `Line ${i} ${l.name}`, railPart: { type: "line", index: i } });
+  });
+  return out;
 }
 
 export { NONE as RAIL_NONE };

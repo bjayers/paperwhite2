@@ -6,8 +6,8 @@
 // bytes, docs/paperwhite2/design/npc-research.md). Instances, ambients and groups come with the engine's next phase.
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { documents, useDocuments } from "../../documents.ts";
-import { toPlain, type JsonValue } from "../../../shared/json.ts";
+import { currentText, documents, useDocuments } from "../../documents.ts";
+import { fromPlain, toPlain, type JsonValue } from "../../../shared/json.ts";
 import type { Schema } from "../../../shared/schema.ts";
 import type { ToolProps } from "../types.ts";
 import { navigate, useToolParams } from "../../navigation.ts";
@@ -16,7 +16,9 @@ import { defaultFor } from "../schema-form/form.tsx";
 import { ScriptEditor } from "../scripts/ScriptEditor.tsx";
 import { loadWorld, resolveScript, zoneLabel, type World } from "../world/world.ts";
 import { KIND_LISTS, KIND_NAMES, entitiesOf, positionEdits, railEdits, type Entity, type EntityKind } from "./entities.ts";
-import { loadRails, railLevels, setRailTile, sidesAt, type RailMap, type RailPlace } from "./rails.ts";
+import { loadRails, oppositeRailDir, railDirOf, railEntities, railLevels, railToWorld, resizeAttributes, setRailTile, sidesAt,
+  type RailMap, type RailPlace } from "./rails.ts";
+import { RailPanel } from "./RailPanel.tsx";
 import { entityFields } from "./fields.tsx";
 import { BuildingPanel } from "./BuildingPanel.tsx";
 import { MapView, type OverlayMode } from "./MapView.tsx";
@@ -25,7 +27,7 @@ import { bundleModels, buildingEntities, dirtyPropChunks, loadProps, propsOf, pr
 import { CHUNK, CHUNK_TILES, SEASONS, TILE, flatTileFor, paintOver, loadZoneMap, reloadLayers, tileAt, type ZoneMap } from "./terrain.ts";
 
 const EVENTS_BUDGET = 2436;
-const KINDS: EntityKind[] = ["npc", "proxy", "building", "trigger", "warp", "level"];
+const KINDS: EntityKind[] = ["npc", "proxy", "building", "rail", "trigger", "warp", "level"];
 /** The undo history's name for a chunk's props, which aren't a document of the store. */
 const PROPS = "props:";
 
@@ -62,6 +64,17 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   const [rails, setRails] = useState<RailMap | null>(null);
   const [railLevel, setRailLevel] = useState<number | null>(null);
   const [ground, setGround] = useState<"both" | "grid" | "rails">("both");
+  /** The point a new line starts from, while the next point clicked ends it. */
+  const [connecting, setConnecting] = useState<number | null>(null);
+  const railsPath = rails ? `${rails.folder}/rails.json` : null;
+  const { data: railsData } = useHeld(railsPath);
+  // The rail file as the editor holds it, read again after each edit
+  useEffect(() => {
+    if (!zone || !railsData) return;
+    let live = true;
+    loadRails(zone, railSource).then((r) => { if (live && r) setRails(r); });
+    return () => { live = false; };
+  }, [railsData, zone]);
   const [layer, setLayer] = useState(0);
   const [season, setSeason] = useState(0);
   /** An entity to select once its zone is read: the warp another zone's warp leads to. */
@@ -80,6 +93,8 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   const [paintMode, setPaintMode] = useState<"type" | "height">("type");
   const [paintHeight, setPaintHeight] = useState(0);
   const [paintNote, setPaintNote] = useState<string | null>(null);
+  /** A note on the last thing the editor couldn't do, shown in the side panel. */
+  const [note, setNote] = useState<string | null>(null);
   /** The editor's edits in order, each the files it changed, for one undo over the events and the terrain; each zone
    * keeps its own, and its unsaved changes, while another is shown. */
   const histories = useRef(new Map<string, { undo: string[][]; redo: string[][] }>());
@@ -99,10 +114,10 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     for (const c of map.chunks) loadProps(c.folder);
     if (map.propBundle) bundleModels(map.propBundle).then(setModels, () => setModels(new Map()));
   }, [map]);
-  const entities = useMemo(() => [...entitiesOf(data), ...(map ? buildingEntities(map, models) : [])],
+  const entities = useMemo(() => [...entitiesOf(data), ...(map ? buildingEntities(map, models) : []), ...(rails ? railEntities(rails) : [])],
     // propsVersion: the chunks' props changed
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [data, map, models, propsVersion]);
+    [data, map, models, propsVersion, rails]);
   const visible = useMemo(() => entities.filter((e) => shown.has(e.kind)), [entities, shown]);
   const chosen = selected ? entities.find((e) => e.kind === selected.kind && e.index === selected.index) ?? null : null;
   const size = eventsSize(data);
@@ -145,10 +160,73 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   const layers = Math.max(1, ...(map?.chunks.map((c) => c.layers.length) ?? [1]));
 
   const select = useCallback((e: Entity | null, t: { x: number; z: number } | null) => {
+    if (connecting !== null && e?.railPart?.type === "point" && e.railPart.index !== connecting) {
+      connect(connecting, e.railPart.index);
+      setConnecting(null);
+      return;
+    }
     setSelected(e ? { kind: e.kind, index: e.index } : null);
     if (e) setModule(e.kind);
     setTile(t);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connecting, rails, railsPath]);
+
+  /** A rail point moved to a spot at its height, in units. */
+  const moveRailPoint = useCallback((index: number, x: number, z: number) => {
+    if (!railsPath || !rails) return;
+    const p = rails.points[index];
+    documents.edit(railsPath, ["points", index, "pos"], [x * 4096, p.pos[1], z * 4096]);
+    record([railsPath]);
+  }, [railsPath, rails, record]);
+
+  /** A new line from one point to another: its direction from their spots, a free slot at each end, a straight curve,
+   * the length its shape measures, and attributes copied from the start point's first line (or walkable). */
+  function connect(a: number, b: number) {
+    if (!railsPath || !rails) return;
+    const doc = documents.get(railsPath);
+    if (!(doc?.data instanceof Map)) return;
+    const pa = rails.points[a], pb = rails.points[b];
+    const slotA = pa.lines.indexOf(65535), slotB = pb.lines.indexOf(65535);
+    if (slotA < 0 || slotB < 0) { setNote("A point has four line slots, and one of these has none free."); return; }
+    const dir = railDirOf(pb.pos[0] - pa.pos[0], pb.pos[2] - pa.pos[2]);
+    const lineIndex = rails.lines.length, curveIndex = rails.curves.length;
+    const width = pa.widths[slotA] || 32;
+    const length = Math.max(1, Math.round(Math.hypot(pb.pos[0] - pa.pos[0], pb.pos[1] - pa.pos[1], pb.pos[2] - pa.pos[2]) / 4096 / 16));
+    const plain = toPlain(doc.data) as { points: Record<string, unknown>[]; lines: unknown[]; curves: unknown[] };
+    const setSlot = (p: number, slot: number, d: number) => {
+      const point = plain.points[p] as { lines: number[]; dirs: number[]; widths: number[] };
+      point.lines[slot] = lineIndex;
+      point.dirs[slot] = d;
+      point.widths[slot] = width;
+    };
+    setSlot(a, slotA, dir);
+    setSlot(b, slotB, oppositeRailDir(dir));
+    plain.curves.push({ handler: 0, center: [0, 0, 0] });
+    plain.lines.push({ name: `RE_LINE_${lineIndex}`, point_a: a, point_b: b, dir, curve: curveIndex, camera: pa.camera, length });
+    documents.replace(railsPath, fromPlain(plain));
+    // Its attributes: the start point's first line's middle column, or walkable rail tiles
+    const csv = `${rails.folder}/attributes/line_${String(lineIndex).padStart(2, "0")}.csv`;
+    const first = pa.lines.find((l) => l !== 65535 && l !== lineIndex);
+    const sample = first !== undefined ? rails.attributes[first]?.rows[0] : undefined;
+    const value = sample ? `0x${(sample[Math.floor(sample.length / 2)] >>> 0).toString(16).padStart(8, "0")}` : "0x00800000";
+    const columns = 2 * Math.floor(width / 16) + 1;
+    if (!documents.get(csv)) documents.create(csv, null, null);
+    documents.editText(csv, Array.from({ length }, () => Array(columns).fill(value).join(",")).join("\n") + "\n");
+    record([railsPath, csv]);
+    setSelected({ kind: "rail", index: rails.points.length + lineIndex });
+  }
+
+  /** A line's length set, its attributes resized to it. */
+  const fitLength = useCallback(async (line: number, length: number) => {
+    if (!railsPath || !rails) return;
+    const csv = rails.attributes[line]?.path;
+    documents.edit(railsPath, ["lines", line, "length"], length);
+    if (csv) {
+      const doc = await documents.hold(csv);
+      documents.editText(csv, resizeAttributes(currentText(doc), length));
+    }
+    record(csv ? [railsPath, csv] : [railsPath]);
+  }, [railsPath, rails, record]);
 
   /** An entity moved along the rails: its line, front and side, one step for undo. */
   const moveRail = useCallback((e: Entity, place: RailPlace) => {
@@ -184,6 +262,22 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   /** A new entity of the module's kind on a tile: the schema's defaults, then its place. */
   const [lastProp, setLastProp] = useState<number | null>(null);
   const add = useCallback((x: number, z: number, height: number, onRail?: RailPlace) => {
+    if (module === "rail") {
+      // A point where the tile (or rail tile) is, its lines and camera to come
+      if (!railsPath || !rails) return;
+      const doc = documents.get(railsPath);
+      if (!(doc?.data instanceof Map)) return;
+      const spot = onRail ? railToWorld(rails, onRail.line, onRail.front, onRail.side) : [x * TILE + TILE / 2, height, z * TILE + TILE / 2];
+      if (!spot) return;
+      const plain = toPlain(doc.data) as { points: unknown[] };
+      const index = plain.points.length;
+      plain.points.push({ name: `RE_POINT_${index}`, lines: [65535, 65535, 65535, 65535], dirs: [0, 0, 0, 0], widths: [32, 32, 32, 32],
+                          pos: spot.map((v) => Math.round(v * 4096)), camera: rails.points[0]?.camera ?? 0 });
+      documents.replace(railsPath, fromPlain(plain));
+      record([railsPath]);
+      setSelected({ kind: "rail", index });
+      return;
+    }
     if (module === "building") {
       // The last prop chosen, or the bundle's first, at the tile's center
       const found = map ? tileAt(map, x, z, layer) : null;
@@ -254,9 +348,31 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     documents.edit(eventsPath, [list, items.length], value);
     record([eventsPath]);
     setSelected({ kind: module, index: items.length });
-  }, [eventsPath, schema, data, module, constants, record, map, layer, lastProp, models]);
+  }, [eventsPath, schema, data, module, constants, record, map, layer, lastProp, models, rails, railsPath]);
 
   const remove = () => {
+    if (chosen?.railPart && railsPath && rails) {
+      const { type, index } = chosen.railPart;
+      const doc = documents.get(railsPath);
+      if (!(doc?.data instanceof Map)) return;
+      const plain = toPlain(doc.data) as { points: { lines: number[]; dirs: number[] }[]; lines: { curve: number }[]; curves: unknown[] };
+      if (type === "point") {
+        if (index !== plain.points.length - 1 || plain.points[index].lines.some((l) => l !== 65535)) {
+          setNote("Only the last point, with no lines, can be removed: the lines and the events name points by number.");
+          return;
+        }
+        plain.points.pop();
+      } else {
+        if (index !== plain.lines.length - 1) { setNote("Only the last line can be removed: the events and attribute files name lines by number."); return; }
+        const [removed] = plain.lines.splice(index, 1);
+        if (removed.curve === plain.curves.length - 1 && !plain.lines.some((l) => l.curve === removed.curve)) plain.curves.pop();
+        for (const p of plain.points) p.lines.forEach((l, k) => { if (l === index) { p.lines[k] = 65535; p.dirs[k] = 0; } });
+      }
+      documents.replace(railsPath, fromPlain(plain));
+      record([railsPath]);
+      setSelected(null);
+      return;
+    }
     if (chosen?.building) {
       const b = chosen.building;
       setProps(b.chunk, propsOf(b.chunk).filter((_, i) => i !== b.index));
@@ -421,7 +537,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
           {zone && (
             <div className="ow-toolbar">
               <div className="view-switch">
-                {KINDS.map((k) => (
+                {KINDS.filter((k) => k !== "rail" || rails).map((k) => (
                   <button key={k} className={module === k ? "active" : ""} onClick={() => setModule(k)}
                           title={k === "level" ? "Level scripts have no place on the map" : `Shift+click a tile to add one`}>{KIND_NAMES[k]}</button>
                 ))}
@@ -495,7 +611,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
               : <MapView map={map} entities={visible} selected={chosen} layer={layer} overlay={overlay} showModels={showModels}
                          painting={painting} preview={preview} overhead={overhead} paintType={paintMode === "type" ? PAINTS[paint].type : null}
                          onSelect={select} onMove={move} onAdd={add} onPaint={onPaint}
-                         rails={rails} railLevel={railLevel} ground={ground} onMoveRail={moveRail} onAddRail={(place, h) => add(0, 0, h, place)} onPaintRail={onPaintRail} />}
+                         rails={rails} railLevel={railLevel} ground={ground} onMoveRailPoint={moveRailPoint} onMoveRail={moveRail} onAddRail={(place, h) => add(0, 0, h, place)} onPaintRail={onPaintRail} />}
             {/* Over the map, so the map's view doesn't change when it opens */}
             {scriptOpen && chosen?.script !== undefined && (
               <div className="ow-script">
@@ -516,6 +632,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
           </div>
         </div>
         <div className="ow-side">
+          {note && <p className="ow-note ow-error ow-side-note" onClick={() => setNote(null)} title="Click to dismiss">{note}</p>}
           {!zone ? null : chosen ? (
             <div className="ow-panel">
               <div className="ow-panel-head">
@@ -549,7 +666,11 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                   <button key={`${e.kind}${e.index}`} className="link" onClick={() => setSelected({ kind: e.kind, index: e.index })}>{e.label}{e.model ? ` (${e.model.replace(/^OBJ_CODE_/, "")})` : ""}</button>
                 )).reduce<ReactNode[]>((a, b, i) => (i ? [...a, ", ", b] : [b]), [])}</p>
               )}
-              {chosen.building ? (
+              {chosen.railPart && rails && railsPath ? (
+                <RailPanel rails={rails} path={railsPath} part={chosen.railPart} constants={constants} onEdit={() => record([railsPath])}
+                           connecting={connecting !== null} onConnect={() => setConnecting(connecting === null ? chosen.railPart!.index : null)}
+                           onFitLength={(length) => fitLength(chosen.railPart!.index, length)} />
+              ) : chosen.building ? (
                 <BuildingPanel key={`${chosen.building.chunk}:${chosen.building.index}`} entity={chosen} models={models}
                                onChange={(p) => { setProps(chosen.building!.chunk, propsOf(chosen.building!.chunk).map((q, i) => (i === chosen.building!.index ? p : q)));
                                                   record([PROPS + chosen.building!.chunk]); setLastProp(p.id); }} />
@@ -569,7 +690,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
               <h4>{KIND_NAMES[module]} <span className="muted">{entities.filter((e) => e.kind === module).length}</span></h4>
               <div className="ow-list">
                 {entities.filter((e) => e.kind === module).map((e) => (
-                  <button key={e.index} className="ow-item" onClick={() => setSelected({ kind: e.kind, index: e.index })}>
+                  <button key={e.index} className="ow-item" onClick={() => select(e, null)}>
                     {e.label}{e.model ? <span className="muted"> {e.model.replace(/^OBJ_CODE_/, "")}</span> : null}
                     {e.x !== null ? <span className="muted"> · {e.x}, {e.z}</span>
                       : e.rail ? <span className="muted"> · line {e.rail.line}, {e.rail.front}, {e.rail.side}</span>
@@ -587,7 +708,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
 }
 
 /** The rails' attributes from the document store, where the painter left them unsaved. */
-const railSource = (path: string) => documents.get(path)?.text ?? null;
+const railSource = (path: string) => { const doc = documents.get(path); return doc ? currentText(doc) : null; };
 
 /** A chunk's layers again from the painter's edited text (still unsaved, so from the document store). */
 async function reloadLayersFromDocs(chunk: Parameters<typeof reloadLayers>[0]) {
