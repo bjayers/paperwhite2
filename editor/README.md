@@ -194,7 +194,8 @@ trainer's line of sight), Proxies (background events), Triggers, Warps and Level
   objects, 1 walking Pokémon, 2 3D models, 3 followers); **Show script** beside the script; the others on its tile;
   **←** back to the list. Remove leaves the other NPCs' IDs as they are.
 - **Overhead** looks straight down without perspective, north up; the camera only pans (right or middle button) and
-  zooms. The tiles are drawn with a depth bias, over what lies just above the ground (autumn's fallen leaves) but
+  zooms. The tiles are drawn a few units nearer the camera along its lines of sight (the same on screen), over what
+  lies just above the ground (autumn's fallen leaves) but
   behind walls and trees.
 - **Buildings:** the chunks' props, as CTRMap edits them: each a model of the area's prop bundle
   (`res/field/props/`) placed in its chunk's GLB (`bw2_prop_<n>_id_<prop ID>` nodes, which the build packs). Click

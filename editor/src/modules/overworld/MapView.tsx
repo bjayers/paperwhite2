@@ -100,6 +100,9 @@ function tileColor(type: number, mode: OverlayMode): THREE.Color {
   return new THREE.Color(0xd8d8d8);
 }
 
+/** How far the tiles are drawn nearer the camera than they are, in units (liftOverlay). */
+const TILE_LIFT = 6;
+
 const same = (a: unknown[], b: unknown[]) => a.length === b.length && a.every((v, i) => v === b[i]);
 
 class MapScene {
@@ -161,6 +164,7 @@ class MapScene {
     const loop = () => {
       this.frame = requestAnimationFrame(loop);
       this.controls.update();
+      this.liftOverlay();
       this.stepPreview();
       this.renderer.render(this.scene, this.camera);
     };
@@ -186,6 +190,22 @@ class MapScene {
     controls.target.copy(target);
     controls.update();
     return controls;
+  }
+
+  /** Moves the tiles toward the camera along its lines of sight, by TILE_LIFT units at the point it looks at: they
+   * stay exactly where they were on screen, but nearer, so what lies a little above the ground (autumn's fallen leaves)
+   * doesn't hide them, whatever the GPU's depth precision, while walls and trees still do. */
+  liftOverlay() {
+    if (this.camera === this.ortho) {
+      this.overlay.scale.setScalar(1);
+      this.overlay.position.copy(this.camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(-TILE_LIFT));
+      return;
+    }
+    const eye = this.camera.position;
+    const distance = Math.max(eye.distanceTo(this.controls.target), TILE_LIFT * 4);
+    const scale = 1 - TILE_LIFT / distance;
+    this.overlay.scale.setScalar(scale);
+    this.overlay.position.copy(eye).multiplyScalar(1 - scale);
   }
 
   /** Switches between the perspective view and the overhead one, over the same spot. */
@@ -297,8 +317,7 @@ class MapScene {
     for (const chunk of map.chunks) {
       const l = chunk.layers[Math.min(layer, chunk.layers.length - 1)];
       if (!l) continue;
-      // Pulled toward the camera in the depth test, so geometry just above the ground (autumn's fallen leaves) doesn't
-      // hide the tiles, while walls and trees still do
+      // With a small depth bias too, beside liftOverlay
       const material = new THREE.MeshBasicMaterial({ transparent: true, opacity: overlay === "off" ? 0 : 0.45, depthWrite: false,
                                                      polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -24 });
       const mesh = new THREE.InstancedMesh(plane, material, l.tiles.length);
