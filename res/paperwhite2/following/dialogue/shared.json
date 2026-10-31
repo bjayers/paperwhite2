@@ -65,8 +65,13 @@
         }
     ],
     "ambient": [
-        { "name": "item waiting", "when": { "item_waiting": true }, "priority": 1, "emote": "note", "cooldown": 20 },
-        { "name": "long walk", "when": { "steps": { "min": 50 }, "chance": 5 }, "emote": "happy", "cooldown": 40 }
+        { "name": "item waiting", "when": { "item_waiting": true }, "priority": 1, "emote": "note", "cooldown": 500 },
+        {
+            "name": "long walk",
+            "when": { "friendship": { "min": 100 }, "steps": { "min": 50 }, "chance": 1 },
+            "emote": "happy",
+            "cooldown": 50
+        }
     ],
-    "pickup": [ { "name": "berries", "when": { "steps": { "min": 100 }, "chance": 10 }, "pool": "berries" } ]
+    "pickup": [ { "name": "berries", "when": { "steps": { "min": 2000 }, "chance": 5 }, "pool": "berries" } ]
 }

@@ -11,6 +11,7 @@
     ScriptEntriesEnd
 
 Script_1:
+    //Dummy
     VMHalt
 
 Script_2:
