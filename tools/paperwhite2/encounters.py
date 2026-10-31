@@ -5,6 +5,7 @@
     encounters.py member OUTPUT                     # the member alone
     encounters.py check                             # validate the data and print its sizes
     encounters.py odds AREA METHOD SEASON PERIOD WEATHER SCALED [MEDIAN]   # one place's odds from the packed member
+    encounters.py habitats OUTPUT_DIR               # the Pokédex's Habitat List (res/pokedex/habitats/) from this data
 
 The sources, each checked against its schema beside it: settings.json, groups.json, areas/<area>.json (an area is an
 original table, ENCOUNTERS_<AREA>) and species/<species>.json, with the scaled level's percent and spread from
@@ -365,6 +366,79 @@ def odds(area: str, method: str, season: str, period: str, weather: str, scaled:
     return [(*r, 100 * w / total) for r, w in zip(result, weights)]
 
 
+HABITATS = ROOT / "res" / "pokedex" / "habitats"
+# The Habitat List's kinds of habitat and the methods of each; a list holds at most 30 species
+HABITAT_KINDS = {"land": ["grass", "dark_grass", "rustling"], "water": ["surf", "rippling_surf"],
+                 "fishing": ["fishing", "rippling_fishing"]}
+HABITAT_SPECIES_MAX = 30
+
+
+def habitats(output: Path):
+    """Writes the Pokédex's Habitat List from the encounter data, for the hack's build to pack (habitat_data.py) in
+    place of res/pokedex/habitats/, which stays the template: each area's other fields, its file's name (a zone), and
+    the order of the species still there, with the others after them by number. An area's encounter areas are its
+    zone's and those of the zones whose parent it is. A species is in a kind of habitat in the seasons of its habitats
+    and outbreaks there by that kind's methods; shaking grass's own species is on land where the area has rustling
+    spots in shaking grass. The list has seasons only, not times, weather or levels."""
+    data = Data()
+    zones = {p.stem: json.loads(p.read_text()) for p in ZONES.glob("*.json") if not p.name.endswith(".schema.json")}
+    numbers = species_numbers()
+    special = data.settings["rustling"]["grass"]["species"]
+    output.mkdir(parents=True, exist_ok=True)
+    (output / "habitat.schema.json").write_text((HABITATS / "habitat.schema.json").read_text())
+    cut = []
+    for path in sorted(HABITATS.glob("*.json")):
+        if path.name.endswith(".schema.json"):
+            continue
+        template = json.loads(path.read_text())
+        zone = f"ZONE_{path.stem.upper()}"
+        areas = {z["encounters"].removeprefix("ENCOUNTERS_").lower() for name, z in zones.items()
+                 if isinstance(z.get("encounters"), str) and z["encounters"].startswith("ENCOUNTERS_")
+                 and (f"ZONE_{name.upper()}" == zone or z.get("parent") == zone)} & set(data.areas)
+        found: dict[str, dict[str, set]] = {}
+
+        def add(species: str, kind: str, seasons):
+            found.setdefault(species, {k: set() for k in HABITAT_KINDS})[kind].update(seasons)
+
+        for folder, entry in data.species.items():
+            species = f"SPECIES_{folder.upper()}"
+            where = label(SOURCE / "species" / f"{folder}.json")
+            for habitat in entry["habitats"]:
+                named = set(data.places(habitat["places"], where)) & areas
+                if not named:
+                    continue
+                slots = habitat["by_season"].items() if "by_season" in habitat else \
+                    [(season, habitat) for season in habitat.get("seasons", [])]
+                for season, slot in slots:
+                    for kind, methods in HABITAT_KINDS.items():
+                        if set(slot["methods"]) & set(methods):
+                            add(species, kind, [season])
+            for outbreak in entry.get("outbreaks", []):
+                if set(data.places(outbreak["places"], where)) & areas:
+                    for kind, methods in HABITAT_KINDS.items():
+                        if set(outbreak["methods"]) & set(methods):
+                            add(species, kind, outbreak["seasons"])
+        for area in areas:
+            if data.areas[area]["spots"] != "grass":
+                continue
+            rates = data.areas[area]["rates"]
+            add(special, "land", [s for s in SEASONS if rates.get("all_year", rates.get(s, {})).get("rustling", 0)])
+        found = {species: kinds for species, kinds in found.items() if any(kinds.values())}
+        order = [s["species"] for s in template["species"]]
+        ranked = sorted(found, key=lambda s: (order.index(s), 0) if s in order else (len(order), numbers.get(s, 0)))
+        if len(ranked) > HABITAT_SPECIES_MAX:
+            cut.append(f"{path.stem} ({len(ranked)})")
+            ranked = ranked[:HABITAT_SPECIES_MAX]
+        species_list = [{"species": s, **{kind: [season for season in SEASONS if season in found[s][kind]]
+                                          for kind in HABITAT_KINDS}} for s in ranked]
+        result = {**template, "species": species_list,
+                  "habitats": {kind: any(s[kind] for s in species_list) for kind in HABITAT_KINDS}}
+        (output / path.name).write_text(json.dumps(result, ensure_ascii=False, indent=4) + "\n")
+    if cut:
+        print(f"encounters.py habitats: more species than the list's {HABITAT_SPECIES_MAX} in {', '.join(cut)}; "
+              f"the rest are left out", file=sys.stderr)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -378,12 +452,15 @@ def main():
         command.add_argument(name)
     command.add_argument("scaled", type=int)
     command.add_argument("median", type=int, nargs="?", default=0)
+    commands.add_parser("habitats").add_argument("output", type=Path)
     args = parser.parse_args()
     try:
         if args.command == "archive":
             archive(args.source, args.output)
         elif args.command == "member":
             args.output.write_bytes(member())
+        elif args.command == "habitats":
+            habitats(args.output)
         elif args.command == "odds":
             names = {number: name for name, number in species_numbers().items()}
             for number, form, low, high, share in odds(args.area, args.method, args.season, args.period, args.weather,

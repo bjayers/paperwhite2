@@ -65,6 +65,10 @@ the area's Rare, Very rare and Exotic Pokémon found by grass and dark grass tha
 - Repel;
 - Synchronize, Cute Charm and Compound Eyes.
 
+**Extra conditions** see the whole context. Before a step's, a rod's or a rustling spot's encounter, the field's
+overlay fills the context with the game's part and the field's: the exterior and the player's tile. So a habitat's
+`when` can test the terrain or indoors and outdoors (`PaperWhite2_EncountersField_SetContext`).
+
 **No Pokémon, no encounter.** Where no candidate can appear, a step, Sweet Scent, a rod or a rustling spot gives no
 encounter: no slot, no battle, "Not even a nibble". An empty slot of an original table (species 0) gives none either.
 
@@ -78,8 +82,23 @@ of `a/1/2/7` (`configure.py`'s `HACK_ARCHIVE_MEMBERS`). Its docstring has the by
   and area, 128 outbreak entries, 8 tiers.
 - `encounters.py odds AREA METHOD SEASON PERIOD WEATHER SCALED [MEDIAN]` prints a place's odds from the packed member.
 
+`encounters.py habitats DIR` writes the Pokédex's Habitat List from this data, and the hack's build packs `a/2/9/6`
+from what it writes (`configure.py`'s `HACK_GENERATED_DATA`). `res/pokedex/habitats/` stays the template for each
+area's other fields and its species' order. The list has seasons only, and holds 30 species an area. The build prints
+the areas that have more; 16 do today, Pinwheel Forest with 77, and their extra species are left out until the
+Habitat Dex's overhaul. The Pokédex's area map (archive 176) isn't regenerated yet.
+
 The original tables are still packed. A zone whose area has no file keeps its table and the original slot code, with
 the species-0 guard.
+
+## The API
+
+`PaperWhite2_Encounters_Build` (main) answers "what can appear here by this method now". It takes a context, a method,
+the spots' kind, the day's outbreak and a random state, reads the loaded data, and writes only its result. That
+result is the slots, their weights, each one's candidate, and where it came from: the method, the spots' pool,
+Audino, or the outbreak. The encounter's `PrepareSlots` and `SpotGivesItem` call it, and a viewer (the Dexnav) can
+too, with its own state, without touching the next encounter. Read-only getters give the header, the current area,
+its number, a candidate and the day's outbreak.
 
 ## The hooks
 
@@ -95,7 +114,8 @@ the species-0 guard.
 | `FieldEncount_SetupFromData` | The candidate's hidden ability chance. |
 | `GetEncountIndexForPreferredType` | Room for 66 slots. |
 | `getSwarmLevelRangeFromData` | The day's outbreak's zone. |
-| `CreateRandomPhenomenonEvent` (`src/ov036/effect_encount.c`) | Dust clouds' and shadows' item chance; shaking grass's kind for the slots. |
+| `CreateRandomPhenomenonEvent` (`src/ov036/effect_encount.c`) | The field's context; dust clouds' and shadows' item chance; shaking grass's kind for the slots. |
+| `BtlvCore` (`src/ov167/btlv_core.c`), `b_bag_main.c` (ov286) | With three wild Pokémon up, the ball's message says three. |
 
 Main's BSS holds a 4 KB block, the outbreaks and the slots' weights, about 7 KB in all.
 
@@ -103,14 +123,18 @@ Main's BSS holds a 4 KB block, the outbreaks and the slots' weights, about 7 KB 
 
 The battle engine's triple setup (`BtlMain_SetupAloneTriple`) works for a wild party of three. Only its intro needed
 a wild version, `BtlvScu_EncountWildTriple` in `src/ov167/btlv_scu.c`: the three wild Pokémon appear as a wild double's
-do, with "Oh! A wild X, Y, and Z appeared!" (`Bank0019_Text_OhWildAppearedThree`, the battle bank's message 201). The
+do, with a message that groups the same species: "Oh! Three wild X appeared!", "Oh! Two wild X and a wild Y
+appeared!", or "Oh! A wild X, Y, and Z appeared!" (`Bank0019_Text_OhThreeWildAppeared`, `_OhTwoWildAndWildAppeared`,
+`_OhWildAppearedThree`, the battle bank's messages 201 to 203). The
 player then sends out three as in a trainer's triple battle. The field side is in `src/ov036/field_encount.c`:
 - `params[3]`;
 - `FieldEncount_SetupNormal` makes `pokeCount` Pokémon, with battle style `pokeCount - 1`;
 - `CreateRandom`'s Repel fallback.
 
 A wild triple's foes get a wild double's AI flag (`GetClientAIFlags`, `btl_main.c`). The Poké Ball check already counts
-the live foes, so a ball can't be thrown while more than one is up.
+the live foes, so a ball can't be thrown while more than one is up, and with three up its message says three
+(`BBagMain_Text_ItsNoGoodItsThree`, `BALL_ERROR_THREE_WILD`). Fishing is always a single battle, which the editor
+notes.
 
 ## To test
 

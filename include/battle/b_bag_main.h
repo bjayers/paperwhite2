@@ -28,7 +28,7 @@ typedef struct {
     BagCursor *bagCursor;      // 0x1c  the bag's saved cursor
     BOOL quit;                 // 0x20  1 leaves with the fade
     BOOL abort;                // 0x24  1 leaves at once
-    u8 ballError;              // 0x28  0, or 1-5: why a Poké Ball can't be thrown
+    u8 ballError;              // 0x28  0, or 1-5: why a Poké Ball can't be thrown (Paper White 2: 6 also)
     u8 isWild;                 // 0x29
     u8 pocket;                 // 0x2a  out, 4 on cancel
     u8 *usingKeys;             // 0x2c
@@ -96,5 +96,10 @@ struct BBagWork {
 }; // 0x5a4
 
 void BBagMain_Start(BBagParam *param);
+
+#ifdef PAPERWHITE2
+// Paper White 2: the ball error of three wild Pokémon up, a wild triple battle's (the new encounter data's)
+#define BALL_ERROR_THREE_WILD 6
+#endif
 
 #endif // POKEBW2_BATTLE_B_BAG_MAIN_H

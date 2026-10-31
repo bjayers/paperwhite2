@@ -5,6 +5,7 @@
 #include "field/enc_pokeset.h"
 #include "field/encounter.h"
 #include "gfl/arc.h"
+#include "paperwhite2/conditions.h"
 #include "struct_decls.h"
 
 // Paper White 2: the wild encounters (docs/paperwhite2/encounters.md). Each species' habitats, from
@@ -32,6 +33,8 @@
 #define ENCOUNTERS_SLOTS (ENCOUNTERS_SLOT_MAX + 2)
 // The most wild Pokémon of one encounter: a triple battle's
 #define ENCOUNTERS_WILD_MAX 3
+// A built slot's candidate when it isn't one of the area's (the rustling spots' species, an outbreak's)
+#define ENCOUNTERS_SLOT_SPECIAL 0xff
 
 // What a species' minimum level is compared with
 enum {
@@ -45,6 +48,18 @@ enum {
     ENCOUNTERS_SPOTS_DUST,
     ENCOUNTERS_SPOTS_SHADOW,
     ENCOUNTERS_SPOTS_COUNT,
+};
+
+// Where a built slot came from
+enum {
+    // The area's candidate for the method
+    ENCOUNTERS_FROM_CANDIDATE,
+    // The area's candidate of another method that the rustling spots draw from
+    ENCOUNTERS_FROM_POOL,
+    // Shaking grass's own species
+    ENCOUNTERS_FROM_SPOTS,
+    // The day's outbreak
+    ENCOUNTERS_FROM_OUTBREAK,
 };
 
 // Who joins a double battle
@@ -133,6 +148,18 @@ typedef struct {
     u8 partners;
 } EncountersCandidate;
 
+// What can appear by one method now: the slots with their weights, each one's candidate (an index into the area's, or
+// ENCOUNTERS_SLOT_SPECIAL) and where it came from (ENCOUNTERS_FROM_*). pool is the count of slots besides the fixed
+// ones, the area's Pokémon
+typedef struct {
+    WildEncSlot slots[ENCOUNTERS_SLOTS];
+    u32 weights[ENCOUNTERS_SLOTS];
+    u8 candidate[ENCOUNTERS_SLOTS];
+    u8 from[ENCOUNTERS_SLOTS];
+    u8 count;
+    u8 pool;
+} EncountersBuild;
+
 // After EncData_Load of the field's table (EventData_LoadZoneEncData, src/ov012/eventdata_system.c): reads the
 // zone's area into the block and gives encData the area's rates for the season. Without an area, the table stays as it
 // was and the new data is off until the next zone
@@ -141,6 +168,26 @@ void PaperWhite2_Encounters_Load(ArcTool *arc, u16 zoneId, u8 season, EncData *e
 BOOL PaperWhite2_Encounters_IsActive(void);
 // Whether the new data has been read (the first zone with a table read its header)
 BOOL PaperWhite2_Encounters_HasData(void);
+// What can appear in the current area by a method (an ENCTYPE_*) under a context: spots is the rustling spot's kind for
+// ENCTYPE_GRASS_SHAKING, outbreak the day's (PaperWhite2_Encounters_GetOutbreak, or -1), and rng the state that a
+// rule's chance clause rolls with. It reads the loaded data and writes only build, so a viewer (the Dexnav) can call it
+// with its own context and state without touching the next encounter. Returns the slot count
+u8 PaperWhite2_Encounters_Build(const ConditionContext *ctx, u32 encType, u32 spots, s32 outbreak, u32 *rng,
+                                EncountersBuild *build);
+// The day's outbreak's id, or -1 for none
+s32 PaperWhite2_Encounters_GetOutbreak(GameData *gameData, const ConditionContext *ctx);
+// The member's header once read, or NULL
+const EncountersHeader *PaperWhite2_Encounters_GetHeader(void);
+// The current area's block, or NULL when the zone isn't on the new data; its number; and one of its candidates
+const EncountersArea *PaperWhite2_Encounters_GetCurrentArea(void);
+u16 PaperWhite2_Encounters_GetCurrentAreaId(void);
+const EncountersCandidate *PaperWhite2_Encounters_GetCandidate(u32 index);
+// The next encounter's context with the field's part (the exterior, the player's tile), which the field's overlay
+// fills (PaperWhite2_EncountersField_SetContext, overlay 36) before it makes an encounter. Without it the encounter
+// has the game's part only. The next PrepareSlots uses it once
+void PaperWhite2_Encounters_SetFieldContext(const ConditionContext *ctx);
+// Fills the next encounter's context, the field's part with it (overlay 36, paperwhite2_encounters_field.c)
+void PaperWhite2_EncountersField_SetContext(Field *field);
 // FieldEncount_PrepareActiveSlots's replacement: the candidates that can appear now by the manager's method become the
 // slots, weighted; slotCount and slotFuncIndex are set. Returns the slot count, 0 for no encounter
 u8 PaperWhite2_Encounters_PrepareSlots(EncountManager *manager, WildEncSlot *slots);

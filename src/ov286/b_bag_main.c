@@ -477,6 +477,15 @@ static int BBagMain_CheckUse(BBagWork *work) {
             work->nextSeq = 0xd;
             return 0xe;
         }
+#ifdef PAPERWHITE2
+        // Paper White 2: three wild Pokémon up, in a wild triple battle
+        if (param->ballError == BALL_ERROR_THREE_WILD) {
+            GFL_MsgDataLoadStrbuf(work->msgData, BBagMain_Text_ItsNoGoodItsThree, work->strBuf);
+            BBagBmp_OpenMessage(work);
+            work->nextSeq = 0xd;
+            return 0xe;
+        }
+#endif
         if (param->ballError == 3) {
             GFL_MsgDataLoadStrbuf(work->msgData, BBagMain_Text_ItsImpossibleAimWithout, work->strBuf);
             BBagBmp_OpenMessage(work);

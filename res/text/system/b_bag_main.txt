@@ -51,3 +51,4 @@ BBagMain_Text_ItsNotChargedEnough = It's not charged enough.
 BBagMain_Text_JunipersWordsEchoedTheres = Juniper's words echoed...\nThere's a time and{be00}\nplace for everything! But not now.
 BBagMain_Text_ItsImpossibleAimWithout = It's impossible to aim\nwithout being focused!
 BBagMain_Text_ItsImpossibleUsePoke = It's impossible to use Poké Balls\nbecause of the device Ghetsis developed!
+BBagMain_Text_ItsNoGoodItsThree = It's no good! It's impossible to aim\nwhen there are three Pokémon!

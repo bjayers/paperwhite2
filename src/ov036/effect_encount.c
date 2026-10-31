@@ -267,6 +267,10 @@ GameEvent *CreateRandomPhenomenonEvent(EncountSystem *system) {
         return NULL;
     }
     roll = GFL_RandomLCAlt(1000);
+#ifdef PAPERWHITE2
+    // Paper White 2: the field's context for the spot's item chance (paperwhite2/encounters.h)
+    PaperWhite2_EncountersField_SetContext(system->field);
+#endif
     if (spot->kind == ENCOUNT_EFFECT_FLYING_SHADOW) {
 #ifdef PAPERWHITE2
         // Paper White 2: the new encounter data's share of items, or always an item where no Pokémon can appear

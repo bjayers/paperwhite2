@@ -348,6 +348,12 @@ DATA_PACKS = [
 HACK_ARCHIVE_MEMBERS = {"a/0/9/6": ("tools/paperwhite2/conditions.py", "res/paperwhite2/conditions"),
                         "a/1/2/7": ("tools/paperwhite2/encounters.py", "res/paperwhite2/encounters")}
 HACK_MEMBER_EXTRA_SOURCES = {"a/1/2/7": ["res/paperwhite2/conditions", "res/pokemon/*/data.json"]}
+# Paper White 2: data that the hack's build makes from other data before packing it: the data directory, and the tool,
+# its command (which writes the directory given) and what it reads. The Pokédex's Habitat List comes from the wild
+# encounters' data, with res/pokedex/habitats/ as its template (encounters.py habitats)
+HACK_GENERATED_DATA = {"res/pokedex/habitats": ("tools/paperwhite2/encounters.py", "habitats",
+                                                ["res/pokedex/habitats", "res/paperwhite2/encounters",
+                                                 "res/paperwhite2/conditions", "res/field/zones"])}
 # What the conditions' compiler reads besides its data: the zones' parents, and the kinds, tile classes and weathers
 HACK_MEMBER_SOURCES = ["res/field/zones", "include/paperwhite2/conditions.h", "include/field/field_map.h",
                        "include/system/zone_weather.h"]
@@ -776,8 +782,18 @@ def add_version(n: Writer, version: str, dsd: Path, bugfix: bool, shift: int,
         # (HACK_ARCHIVE_MEMBERS)
         packed = [build_dir / "paperwhite2" / "packed" / path if hack and path in HACK_ARCHIVE_MEMBERS else output
                   for path, output in zip(paths, outputs)]
+        # Paper White 2: data the hack's build makes first is packed from where it is made (HACK_GENERATED_DATA)
+        pack_dir = data_dir
+        if hack and data_dir in HACK_GENERATED_DATA:
+            tool, command, reads = HACK_GENERATED_DATA[data_dir]
+            pack_dir = str(build_dir / "paperwhite2" / "generated" / Path(data_dir).name)
+            stamp = Path(pack_dir) / ".stamp"
+            inputs = sorted(str(p.relative_to(ROOT)) for d in reads for p in (ROOT / d).rglob("*") if p.is_file())
+            n.build([stamp], "hack_generate", inputs, implicit=[tool, *script_imports(tool), *constant_sources],
+                    order_only=[files_ok], variables={"tool": tool, "subcommand": command, "dir": pack_dir})
+            sources = [str(stamp)]
         n.build(packed, "data_pack", sources, implicit=dependencies,
-                order_only=[files_ok], variables={"script": script, "dir": data_dir, "game": game})
+                order_only=[files_ok], variables={"script": script, "dir": pack_dir, "game": game})
         for path, source, output in zip(paths, packed, outputs):
             if source != output:
                 tool, member_dir = HACK_ARCHIVE_MEMBERS[path]
@@ -1005,6 +1021,7 @@ def main():
     n.rule("text_pack", "$python tools/text/text_data.py pack $dir $out", "Packing $out")
     n.rule("data_pack", "$python $script pack $dir $game $out", "Packing $dir")
     n.rule("hack_members", "$python $tool archive $in $out", "Adding the hack's members to $out")
+    n.rule("hack_generate", "$python $tool $subcommand $dir && touch $out", "Making $dir")
     n.rule("check_file", "cmp $in $original && mkdir -p $$(dirname $out) && touch $out", "Checking $in")
     n.rule("files_tree", "$python tools/build/files_tree.py $source $output $built --stamp $out",
            "Linking the files of $output")

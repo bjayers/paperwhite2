@@ -168,6 +168,10 @@ GameEvent *EventWildBattleCall_CreateRandom(EncountSystem *system, u32 mode) {
         int count;
 
         MI_CpuFill8(params, 0, sizeof(params));
+#ifdef PAPERWHITE2
+        // Paper White 2: the new encounter data's rules can test the player's tile and the indoors
+        PaperWhite2_EncountersField_SetContext(system->field);
+#endif
         count = FieldEncount_GenWilds(system->encData, &manager, Field_GetPlayerStateZoneID(system->field), params);
         if (count == 0) {
             return NULL;
@@ -294,6 +298,10 @@ BtlSetup *BtlSetup_CreateFishing(EncountSystem *system, BOOL rare) {
         }
     }
     MI_CpuFill8(params, 0, sizeof(params));
+#ifdef PAPERWHITE2
+    // Paper White 2: as CreateRandom's
+    PaperWhite2_EncountersField_SetContext(system->field);
+#endif
     if ((u32)FieldEncount_GenWilds(system->encData, &manager, Field_GetPlayerStateZoneID(system->field), params) <
         manager.pokeCount) {
         return NULL;

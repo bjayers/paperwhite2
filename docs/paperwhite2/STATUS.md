@@ -2,6 +2,22 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-30: triple battle fixes, the Dexnav's engine API, the generated Habitat List
+
+- **Triples (the user tested them; they work):**
+  - The intro message groups the same species ("Three wild X", "Two wild X and a wild Y").
+  - The ball message says three with three up.
+  - The editor notes that fishing is always single.
+- **Engine:**
+  - `PaperWhite2_Encounters_Build` is a side-effect-free core, with read-only getters, for the Dexnav.
+  - Encounters' extra conditions now see the field's part (the player's tile, indoors and outdoors).
+- **Habitat List:** the hack's build writes it from the encounter data (`encounters.py habitats`) and packs it. 16
+  areas have more than its 30 species, and their extra species are left out until the Habitat Dex overhaul. The area
+  map isn't regenerated yet.
+- **Dexnav decisions:** docs/paperwhite2/design/dexnav.md. The Poké Radar becomes the Dexnav.
+- **Checks:** `--hack` builds without warnings; DSi intact; the plain `modules.ok` passes; main's DS arena has 138 KB
+  left.
+
 ## 2026-10-30: wild triple battles, and the Dexnav design (not yet tested in game)
 
 - **Triples:** a species' triple chance now makes a wild triple battle (docs/paperwhite2/encounters.md, Wild

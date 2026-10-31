@@ -1255,6 +1255,30 @@ static BOOL BtlvScu_StepWildDoubleAppear(BtlvScu *scu, s32 *seq) {
 }
 
 #ifdef PAPERWHITE2
+// Paper White 2: the three wild mons' message, by how many of them are one species: "Three wild X", "Two wild X and a
+// wild Y", or each one's name
+static void BtlvScu_FormatWildTripleMsg(BtlvScu *scu, const BtlvScuWildTripleWork *work) {
+    u16 species0 = GetBattleMonSpecies(work->mons[0]);
+    u16 species1 = GetBattleMonSpecies(work->mons[1]);
+    u16 species2 = GetBattleMonSpecies(work->mons[2]);
+
+    if (species0 == species1 && species1 == species2) {
+        BtlString_FormatStdMsg(scu->strbuf, Bank0019_Text_OhThreeWildAppeared, 1, work->monIds[0]);
+    } else if (species0 == species1) {
+        BtlString_FormatStdMsg(scu->strbuf, Bank0019_Text_OhTwoWildAndWildAppeared, 2, work->monIds[0],
+                               work->monIds[2]);
+    } else if (species0 == species2) {
+        BtlString_FormatStdMsg(scu->strbuf, Bank0019_Text_OhTwoWildAndWildAppeared, 2, work->monIds[0],
+                               work->monIds[1]);
+    } else if (species1 == species2) {
+        BtlString_FormatStdMsg(scu->strbuf, Bank0019_Text_OhTwoWildAndWildAppeared, 2, work->monIds[1],
+                               work->monIds[0]);
+    } else {
+        BtlString_FormatStdMsg(scu->strbuf, Bank0019_Text_OhWildAppearedThree, 3, work->monIds[0], work->monIds[1],
+                               work->monIds[2]);
+    }
+}
+
 // Paper White 2: BtlvScu_StepWildDoubleAppear's appearance for three wild mons, with a message that names the three
 static BOOL BtlvScu_StepWildTripleAppear(BtlvScu *scu, s32 *seq) {
     BtlvScuWildTripleWork *work = (BtlvScuWildTripleWork *)scu->work;
@@ -1297,8 +1321,7 @@ static BOOL BtlvScu_StepWildTripleAppear(BtlvScu *scu, s32 *seq) {
         break;
     case 4:
         if (!BtlvEffect_IsBusy()) {
-            BtlString_FormatStdMsg(scu->strbuf, Bank0019_Text_OhWildAppearedThree, 3, work->monIds[0], work->monIds[1],
-                                   work->monIds[2]);
+            BtlvScu_FormatWildTripleMsg(scu, work);
             BtlvScu_StartMsg(scu, scu->strbuf, 80, NULL);
             (*seq)++;
         }

@@ -206,6 +206,7 @@ function SpeciesDetail({ state, info, ways, family, select }: {
             ))}
           </div>
           {battleTotal !== 100 && <p className="small enc-warn">These add up to {battleTotal}%, not 100%.</p>}
+          <p className="small muted">Fishing is always a single battle. A double needs two of the party's Pokémon that can fight, a triple three (with two, it's a double).</p>
           <div className="enc-row">
             <span className="small muted">Partners:</span>
             {(["family", "area"] as const).map((p) => (

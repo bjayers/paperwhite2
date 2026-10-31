@@ -126,7 +126,8 @@ export function SettingsPage({ settings, setSettings, reimport, species }: {
             </label>
           ))}
         </div>
-        <p className="small muted">For a species that sets none. A partner must meet its own level range and conditions.</p>
+        <p className="small muted">For a species that sets none. A partner must meet its own level range and conditions. Fishing is always a
+          single battle; a double needs two of the party's Pokémon that can fight, a triple three.</p>
       </div>
 
       <div className="enc-card">

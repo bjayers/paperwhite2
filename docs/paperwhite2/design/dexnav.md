@@ -1,5 +1,23 @@
 # Dexnav (design, not built)
 
+## The user's decisions (2026-10-30)
+
+- **What it shows:** only what can appear in the current area under the current conditions. No "not now", level-locked
+  or "what if" entries: the Habitat Dex will be the region-wide reference with conditional filters. Both stay.
+- **Unseen species:** the "?" sprite (the Pokédex's #0), so the player sees there are unseen Pokémon about.
+- **Methods' names:** Surf, Surf Ripple, Rod, Rod Ripple; Grass, Dark Grass, Rustling. The list scrolls.
+- **Shares:** percentages as the editor computes them.
+- **Entry:** the Poké Radar (`ITEM_POKE_RADAR`, 431) repurposed as the Dexnav: a key item usable from Y. It is unused:
+  only its icon and pocket tables name it (`src/system/pml_item.c:582`, `src/system/myitem_savedata.c:477`), it has no
+  field function, and no script gives it. Its data needs `important` and `registrable`. The debug menu gives it for
+  now; an NPC will later.
+- **Search and chains:** wanted if not too hard (Pokeweb's Pokenav has neither). A chain resets.
+- **Overlay:** the user prefers not to replace the Habitat Dex. Sharing overlay 303 means adding the Dexnav's code
+  to that overlay beside the Habitat List, not replacing it; both apps stay.
+- **Done since:** the engine API (`PaperWhite2_Encounters_Build`), the field context for encounters, and the Habitat
+  List generated from the encounter data at build time (docs/paperwhite2/encounters.md).
+
+
 Research and a proposal for Paper White 2's Dexnav, written 2026-10-30, for the user's approval before any code. Its
 base is Pokeweb's **Pokenav** (the user calls it Pokeweb's Dexnav, `bjayers/pokeweb-serverless`,
 `runtime/pokenav/`), rebuilt on the hack's encounter engine (`docs/paperwhite2/encounters.md`). The ROADMAP

@@ -842,6 +842,13 @@ void BattleClientCmd_StartItemSelect(BtlvCore *core, u32 mode, u8 arg2, u8 arg3,
         } else {
             switch (BtlSetup_GetBattleType(core->mainModule)) {
             case 0:
+#ifdef PAPERWHITE2
+                // Paper White 2: three wild Pokémon up have their own message
+                if (PokeCon_GetClientAliveCount(core->pokeCon, 1) > 2) {
+                    kind = BALL_ERROR_THREE_WILD;
+                    break;
+                }
+#endif
                 if (PokeCon_GetClientAliveCount(core->pokeCon, 1) > 1) {
                     kind = 2;
                     break;
