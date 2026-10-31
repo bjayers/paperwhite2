@@ -248,7 +248,7 @@ export function TextBox({ text, words = NO_WORDS, scale = 2, autoPlay = true }: 
   return (
     <div className="textbox">
       <canvas ref={canvas} width={CANVAS_W} height={CANVAS_H} className="textbox-canvas"
-              style={{ width: CANVAS_W * scale, height: CANVAS_H * scale }} onClick={press}
+              style={{ width: CANVAS_W * scale }} onClick={press}
               title="Click for the A button" />
       <div className="textbox-status muted">
         {p.state === "done" ? "The end: click to start again" : p.state === "typing" ? "Printing: click to finish" : "Waiting for A: click to go on"}

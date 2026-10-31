@@ -283,8 +283,32 @@ textarea.raw {
 .quick-open li.highlight { background: var(--selected); }
 
 /* The text box preview (src/modules/text/TextBox.tsx), shared by the editors that show messages */
-.textbox { display: inline-flex; flex-direction: column; gap: 4px; }
-.textbox-canvas { image-rendering: pixelated; cursor: pointer; border-radius: 4px; }
+.textbox { display: inline-flex; flex-direction: column; gap: 4px; max-width: 100%; }
+.textbox-canvas { image-rendering: pixelated; cursor: pointer; border-radius: 4px; max-width: 100%; height: auto; }
 .textbox-status { font-size: 12px; }
 .textbox-warn { color: var(--error); }
 .textbox-error { color: var(--muted); font-size: 13px; }
+
+/* The code editor (src/modules/scripts/CodeEditor.tsx), shared by the editors that show scripts */
+.code-editor { display: flex; flex: 1; min-width: 0; min-height: 0; font-family: var(--mono); font-size: 13px; line-height: 20px;
+  background: var(--panel); }
+.code-gutter { overflow: hidden; padding: 6px 8px 6px 6px; text-align: right; color: var(--muted); user-select: none; min-width: 44px;
+  border-right: 1px solid var(--border); background: var(--panel-2); }
+.code-stack { position: relative; flex: 1; min-width: 0; }
+.code-shown, .code-input { position: absolute; inset: 0; margin: 0; padding: 6px 10px; white-space: pre; font: inherit; line-height: inherit;
+  tab-size: 4; overflow: auto; border: none; border-radius: 0; }
+.code-shown { pointer-events: none; color: var(--text); overflow: hidden; }
+.code-input { background: transparent; color: transparent; caret-color: var(--text); resize: none; outline: none; }
+.code-input::selection { background: rgba(61, 111, 216, 0.3); color: transparent; }
+.code-line { min-height: 20px; }
+.code-pad { height: 40px; }
+.tok-comment { color: #6a8a5a; font-style: italic; }
+.tok-label { color: #b5651d; font-weight: 600; }
+.tok-directive { color: #8b5cb8; }
+.tok-command { color: #3d6fd8; }
+.tok-unknown { color: var(--error); text-decoration: wavy underline; }
+.tok-message { color: #8b5cb8; text-decoration: underline dotted; }
+.tok-constant { color: #1f7a72; }
+.tok-number { color: #b0306a; }
+.tok-ref { color: #b5651d; }
+.tok-string { color: #9a6700; }

@@ -1,0 +1,25 @@
+/* The Script Editor. Colours are the shell's tokens, so it follows the theme. */
+
+.scr-editor { display: flex; flex-direction: column; flex: 1; min-height: 0; background: var(--panel); }
+.scr-editor.embedded { min-height: 480px; border: 1px solid var(--border); border-radius: 8px; }
+.scr-header { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-bottom: 1px solid var(--border); }
+.scr-header h2 { margin: 0 6px 0 0; font-size: 16px; }
+.scr-header .spacer { flex: 1; }
+.scr-mono { font-family: var(--mono); font-size: 12px; }
+.scr-error { color: var(--error); }
+.scr-bar { margin: 6px 14px 0; }
+.scr-body { display: grid; grid-template-columns: 220px 200px 1fr 380px; flex: 1; min-height: 0; }
+.scr-body.embedded { grid-template-columns: 200px 1fr 360px; }
+.scr-files, .scr-scripts { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--border); overflow-y: auto; }
+.scr-files > .filter { margin: 8px 10px 6px; }
+.scr-file-list { flex: 1; overflow-y: auto; }
+.scr-file, .scr-script { display: block; width: 100%; border: none; border-radius: 0; background: none; text-align: left; padding: 2px 10px; }
+.scr-script { padding: 4px 10px; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scr-file:hover, .scr-script:hover { background: var(--hover); }
+.scr-file.selected, .scr-script.selected { background: var(--selected); box-shadow: inset 3px 0 var(--accent); }
+.scr-summary { font-size: 12px; }
+.scr-code { display: flex; min-width: 0; min-height: 0; }
+.scr-side { border-left: 1px solid var(--border); padding: 10px 12px 40px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.scr-note { font-size: 13px; margin: 0; }
+.scr-help { font-size: 13px; }
+.scr-empty { padding: 20px; grid-column: 2 / -1; max-width: 720px; }

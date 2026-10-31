@@ -21,7 +21,7 @@ If Edge can't reach it, WSL isn't forwarding the port: check that `localhostForw
 ## What it does
 
 - **Specialty editors** at the top of the sidebar, under **Editors**: everything about one subject in one place. The
-  first are the **Encounter Editor**, **Graphics & Palettes**, the **Follower Editor** and the **Text Editor** (below). The per-file editors are under **Data files**, which folds away. A page
+  first are the **Encounter Editor**, **Graphics & Palettes**, the **Follower Editor**, the **Text Editor** and the **Script Editor** (below). The per-file editors are under **Data files**, which folds away. A page
   of a tool can be linked to: `http://localhost:7420/#tool/encounters`.
 - **Every kind of data in `res/`, found by itself.** Each data file names its schema in `"$schema"`; the editor groups
   the files by schema, so a new kind of data, a new field or a new file shows up without changing the editor.
@@ -162,6 +162,19 @@ build's copy), and it is only shown. Without it, the preview says so.
 
 Other editors reuse it: `<TextBox text={...} />` is the window alone, `<MessageEditor path={...} line={...} />` (or
 `id={...}`) one message's editor with it, and `<TextEditor bank={...} line={...} />` the whole page.
+
+## The Script Editor
+
+The field scripts (`src/modules/scripts/`, `res/field/scripts/<file>.s`), a file whole or one of its scripts, by its
+number in the file's `ScriptEntry` table (the number the zones' events call it by): from its label to the next
+script's, with its own labels and movements. The text is highlighted: commands (in red when `field_script.inc` has no
+such macro), labels and the labels they jump to, constants, numbers, comments, and message IDs. Clicking a line shows
+its command's parameters, a **Go to** for a label it names, and a message ID's message from the text bank the file
+includes, editable, in the talk window. Save (Ctrl+S) writes the scripts and messages changed; the build assembles
+them, so a mistake shows in the build's log.
+
+Other editors reuse it: `<ScriptEditor file={...} script={...} embedded />` is one file (and script) without the file
+list, and `<CodeEditor value={...} onChange={...} commands={...} />` the highlighted text box alone.
 
 ## How it is built
 
