@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { globSync } from "node:fs";
-import { detectWidth, parseJson, pythonFloat } from "../shared/json.ts";
+import { detectLayout, parseJson, pythonFloat } from "../shared/json.ts";
 
 const ROOT = resolve(import.meta.dirname, "../..");
 
@@ -21,7 +21,7 @@ test("every res/ JSON file round-trips", () => {
   const unknown: string[] = [];
   for (const file of files) {
     const text = readFileSync(join(ROOT, file), "utf8");
-    if (detectWidth(text, parseJson(text)) === null) unknown.push(file);
+    if (detectLayout(text, parseJson(text)) === null) unknown.push(file);
   }
   // Schemas are written by hand, as are a few data files without one; the editor edits those as text.
   const data = unknown.filter((file) => !file.endsWith(".schema.json") && readFileSync(join(ROOT, file), "utf8").includes('"$schema"'));

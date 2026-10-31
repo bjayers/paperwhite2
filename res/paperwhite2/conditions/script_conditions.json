@@ -5,7 +5,10 @@
     { "name": "night", "when": { "time": [ "night", "late_night" ] } },
     { "name": "daytime", "when": { "time": [ "morning", "day", "evening" ] } },
     { "name": "raining", "when": { "weather": [ "WEATHER_RAIN", "WEATHER_THUNDERSTORM", "WEATHER_GUSTY_RAIN" ] } },
-    { "name": "snowing", "when": { "weather": [ "WEATHER_FLAKE", "WEATHER_BLIZZARD", "WEATHER_FLUTTER", "WEATHER_DIAMOND_DUST" ] } },
+    {
+      "name": "snowing",
+      "when": { "weather": [ "WEATHER_FLAKE", "WEATHER_BLIZZARD", "WEATHER_FLUTTER", "WEATHER_DIAMOND_DUST" ] }
+    },
     { "name": "outdoors", "when": { "exterior": true } },
     { "name": "in_grass", "when": { "terrain": [ "grass", "dark_grass", "tall_grass" ] } },
     { "name": "on_water", "when": { "terrain": [ "surf_water" ] } },

@@ -2,9 +2,7 @@
     "$schema": "../dialogue.schema.json",
     "description": "The rules every follower has. Sample content: terrain, night, rain and low-HP lines, the gift of a found item, and a pickup from the berries after about 100 steps.",
     "settings": { "talk_friendship": 1 },
-    "messages": {
-        "bag_full": "{nickname} wants to give you\n{item}, but your Bag is full.[L]{nickname} will keep it for now."
-    },
+    "messages": { "bag_full": "{nickname} wants to give you\n{item}, but your Bag is full.[L]{nickname} will keep it for now." },
     "rules": [
         {
             "name": "found item",
@@ -12,14 +10,24 @@
             "priority": 20,
             "steps": [
                 { "emote": "happy", "cry": "cry", "message": "{nickname} found something!", "box": "bubble" },
-                { "action": { "give_waiting": true }, "box": "event", "message": "{player} received\n{item} from {nickname}!" }
+                {
+                    "action": { "give_waiting": true },
+                    "box": "event",
+                    "message": "{player} received\n{item} from {nickname}!"
+                }
             ]
         },
         {
             "name": "low hp",
             "when": { "hp": { "max": 25 } },
             "priority": 10,
-            "steps": [ { "emote": "sad", "cry": "slow_cry", "message": "{nickname} is exhausted...[L]It looks like it needs some rest." } ]
+            "steps": [
+                {
+                    "emote": "sad",
+                    "cry": "slow_cry",
+                    "message": "{nickname} is exhausted...[L]It looks like it needs some rest."
+                }
+            ]
         },
         {
             "name": "rain",
@@ -31,7 +39,11 @@
             "name": "night",
             "when": { "time": [ "night", "late_night" ], "exterior": true },
             "priority": 4,
-            "steps": [ { "message": "{nickname} is gazing up at the\nnight sky.[C]The stars over {location}\nare shining brightly." } ]
+            "steps": [
+                {
+                    "message": "{nickname} is gazing up at the\nnight sky.[C]The stars over {location}\nare shining brightly."
+                }
+            ]
         },
         {
             "name": "grass",
@@ -53,25 +65,8 @@
         }
     ],
     "ambient": [
-        {
-            "name": "item waiting",
-            "when": { "item_waiting": true },
-            "priority": 1,
-            "emote": "note",
-            "cooldown": 20
-        },
-        {
-            "name": "long walk",
-            "when": { "steps": { "min": 50 }, "chance": 5 },
-            "emote": "happy",
-            "cooldown": 40
-        }
+        { "name": "item waiting", "when": { "item_waiting": true }, "priority": 1, "emote": "note", "cooldown": 20 },
+        { "name": "long walk", "when": { "steps": { "min": 50 }, "chance": 5 }, "emote": "happy", "cooldown": 40 }
     ],
-    "pickup": [
-        {
-            "name": "berries",
-            "when": { "steps": { "min": 100 }, "chance": 10 },
-            "pool": "berries"
-        }
-    ]
+    "pickup": [ { "name": "berries", "when": { "steps": { "min": 100 }, "chance": 10 }, "pool": "berries" } ]
 }

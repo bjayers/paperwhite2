@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { extname, join, resolve, sep } from "node:path";
 import { parseJson, JsonSyntaxError } from "../shared/json.ts";
+import { splitSchemaId } from "../shared/schema.ts";
 import { WRITE_HEADER, type DataFile, type ProjectInfo, type SaveRequest, type SaveResult, type ServerEvent } from "../shared/api.ts";
 import { Builder } from "./build.ts";
 import { Git } from "./git.ts";
@@ -212,14 +213,16 @@ const routes: Record<string, Handler> = {
       }
     }
     const schema = path.endsWith(".schema.json") ? null : project.schemaFor(path, body.text);
-    if (schema && !existsSync(project.abs(schema)))
+    const schemaFile = schema ? splitSchemaId(schema).file : null;
+    if (schema && !existsSync(project.abs(schemaFile!)))
       return json(res, { ok: false, reason: "invalid", message: `Its schema ${schema} doesn't exist` } satisfies SaveResult);
     let invalid: string | null = null;
     try {
       // The build's own check runs on the new text before it replaces the file.
       await project.writeAtomic(path, body.text, async (temp) => {
         if (!schema) return;
-        const checked = await python.validate(temp, project.abs(schema));
+        const { fragment } = splitSchemaId(schema);
+        const checked = await python.validate(temp, project.abs(schemaFile!) + (fragment ? `#${fragment}` : ""));
         if (!checked.ok) {
           invalid = (checked.error ?? "Invalid").replace(temp, path).replace(project.rel(temp), path);
           throw new Error(invalid);

@@ -158,37 +158,69 @@ function isScalar(v: JsonValue): boolean {
   return !(v instanceof Map) && !Array.isArray(v);
 }
 
-/** datajson.dumps(): four-space indents, an object with a field per line, and an array on one line when it only
- * holds numbers, strings and booleans and fits in the width. */
-export function dumpJson(data: JsonValue, width = 120, indent = 0): string {
-  if (Array.isArray(data) && data.length && data.every(isScalar)) {
-    const oneLine = "[ " + data.map(scalar).join(", ") + " ]";
-    if (indent + oneLine.length <= width) return oneLine;
+/** How a file is laid out: the line width, the indent of each level, and whether an object or an array that fits on
+ * one line is written there (the compact layout of hand-written files such as the follower's dialogue), where the data
+ * tools write an object with a field per line and only an array of scalars on one line. */
+export interface Layout {
+  width: number;
+  indent: number;
+  compact: boolean;
+}
+
+/** datajson.dumps()'s layout: four-space indents, 120 columns. */
+export const DATA_LAYOUT: Layout = { width: 120, indent: 4, compact: false };
+
+function oneLine(data: JsonValue): string {
+  if (isScalar(data)) return scalar(data);
+  if (data instanceof Map) {
+    return data.size ? "{ " + [...data].map(([k, v]) => `${JSON.stringify(k)}: ${oneLine(v)}`).join(", ") + " }" : "{}";
+  }
+  const list = data as JsonValue[];
+  return list.length ? "[ " + list.map(oneLine).join(", ") + " ]" : "[]";
+}
+
+/** datajson.dumps() in the data tools' layout (an object with a field per line, and an array on one line when it only
+ * holds numbers, strings and booleans and fits in the width), or in another layout. */
+export function dumpJson(data: JsonValue, layout: Layout | number = DATA_LAYOUT, indent = 0): string {
+  const { width, indent: step, compact } = typeof layout === "number" ? { ...DATA_LAYOUT, width: layout } : layout;
+  if (Array.isArray(data) && data.length && (compact ? indent > 0 : data.every(isScalar))) {
+    const line = oneLine(data);
+    if (indent + line.length <= width) return line;
+  }
+  if (compact && indent > 0 && data instanceof Map && data.size) {
+    const line = oneLine(data);
+    if (indent + line.length <= width) return line;
   }
   if (isScalar(data)) return scalar(data);
-  const inner = " ".repeat(indent + 4);
+  const inner = " ".repeat(indent + step);
   if (data instanceof Map) {
     if (!data.size) return "{}";
-    const items = [...data].map(([k, v]) => `${inner}${JSON.stringify(k)}: ${dumpJson(v, width, indent + 4)}`);
+    const items = [...data].map(([k, v]) => `${inner}${JSON.stringify(k)}: ${dumpJson(v, layout, indent + step)}`);
     return "{\n" + items.join(",\n") + "\n" + " ".repeat(indent) + "}";
   }
   const list = data as JsonValue[];
   if (!list.length) return "[]";
-  return "[\n" + list.map((v) => inner + dumpJson(v, width, indent + 4)).join(",\n") + "\n" + " ".repeat(indent) + "]";
+  return "[\n" + list.map((v) => inner + dumpJson(v, layout, indent + step)).join(",\n") + "\n" + " ".repeat(indent) + "]";
 }
 
-/** The widths the data tools write with: most use 120; map matrices are written on unlimited lines. */
-export const KNOWN_WIDTHS = [120, Number.MAX_SAFE_INTEGER];
+/** The layouts files are written in: the data tools' at 120 columns, map matrices on unlimited lines, and the compact
+ * layout of hand-written files, at four or two spaces. */
+export const KNOWN_LAYOUTS: Layout[] = [
+  DATA_LAYOUT,
+  { width: Number.MAX_SAFE_INTEGER, indent: 4, compact: false },
+  { width: 120, indent: 4, compact: true },
+  { width: 120, indent: 2, compact: true },
+];
 
-/** The width that writes this text back exactly, or null when none of the known layouts does. */
-export function detectWidth(text: string, data: JsonValue): number | null {
-  for (const width of KNOWN_WIDTHS) if (dumpJson(data, width) + "\n" === text) return width;
+/** The layout that writes this text back exactly, or null when none of the known layouts does. */
+export function detectLayout(text: string, data: JsonValue): Layout | null {
+  for (const layout of KNOWN_LAYOUTS) if (dumpJson(data, layout) + "\n" === text) return layout;
   return null;
 }
 
 /** File text for data: the layout plus the final newline that datajson.write() adds. */
-export function fileText(data: JsonValue, width: number): string {
-  return dumpJson(data, width) + "\n";
+export function fileText(data: JsonValue, layout: Layout | number = DATA_LAYOUT): string {
+  return dumpJson(data, layout) + "\n";
 }
 
 // ---------------------------------------------------------------- Immutable edits

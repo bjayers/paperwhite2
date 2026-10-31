@@ -1,20 +1,47 @@
 {
   "$schema": "condition.schema.json#/$defs/terrain_groups",
   "groups": [
-    { "name": "grass", "classes": [ "TILE_CLASS_GRASS", "TILE_CLASS_GRASS_B", "TILE_CLASS_GRASS_C", "TILE_CLASS_HIDDEN_GROTTO_GRASS" ] },
-    { "name": "dark_grass", "classes": [ "TILE_CLASS_GRASS_DOUBLE", "TILE_CLASS_GRASS_DOUBLE_B", "TILE_CLASS_GRASS_DOUBLE_C", "TILE_CLASS_REALLY_TALL_GRASS_DOUBLE" ] },
+    {
+      "name": "grass",
+      "classes": [ "TILE_CLASS_GRASS", "TILE_CLASS_GRASS_B", "TILE_CLASS_GRASS_C", "TILE_CLASS_HIDDEN_GROTTO_GRASS" ]
+    },
+    {
+      "name": "dark_grass",
+      "classes": [
+        "TILE_CLASS_GRASS_DOUBLE",
+        "TILE_CLASS_GRASS_DOUBLE_B",
+        "TILE_CLASS_GRASS_DOUBLE_C",
+        "TILE_CLASS_REALLY_TALL_GRASS_DOUBLE"
+      ]
+    },
     { "name": "tall_grass", "classes": [ "TILE_CLASS_REALLY_TALL_GRASS", "TILE_CLASS_REALLY_TALL_GRASS_DOUBLE" ] },
     {
       "name": "surf_water",
-      "classes": [ "TILE_CLASS_WATER_3D", "TILE_CLASS_WATER_3E", "TILE_CLASS_WATER", "TILE_CLASS_WATER_42", "TILE_CLASS_WATER_43", "TILE_CLASS_WATERFALL",
-                   "TILE_CLASS_WATER_CURRENT_RIGHT", "TILE_CLASS_WATER_CURRENT_LEFT", "TILE_CLASS_WATER_CURRENT_UP", "TILE_CLASS_WATER_CURRENT_DOWN" ],
+      "classes": [
+        "TILE_CLASS_WATER_3D",
+        "TILE_CLASS_WATER_3E",
+        "TILE_CLASS_WATER",
+        "TILE_CLASS_WATER_42",
+        "TILE_CLASS_WATER_43",
+        "TILE_CLASS_WATERFALL",
+        "TILE_CLASS_WATER_CURRENT_RIGHT",
+        "TILE_CLASS_WATER_CURRENT_LEFT",
+        "TILE_CLASS_WATER_CURRENT_UP",
+        "TILE_CLASS_WATER_CURRENT_DOWN"
+      ],
       "flags": [ "TILE_FLAG_WATER" ]
     },
     { "name": "shore", "classes": [ "TILE_CLASS_SURF_EDGE", "TILE_CLASS_SURF_EDGE_44" ] },
-    { "name": "shallow_water", "classes": [ "TILE_CLASS_SPLASH_WATER", "TILE_CLASS_RIPPLE_WATER", "TILE_CLASS_RIPPLE_WATER_15" ] },
+    {
+      "name": "shallow_water",
+      "classes": [ "TILE_CLASS_SPLASH_WATER", "TILE_CLASS_RIPPLE_WATER", "TILE_CLASS_RIPPLE_WATER_15" ]
+    },
     { "name": "puddle", "classes": [ "TILE_CLASS_PUDDLE" ] },
     { "name": "swamp", "classes": [ "TILE_CLASS_SWAMP", "TILE_CLASS_MUD" ] },
-    { "name": "sand", "classes": [ "TILE_CLASS_SAND", "TILE_CLASS_DEEP_SAND", "TILE_CLASS_SAND_19", "TILE_CLASS_SAND_23", "TILE_CLASS_QUICKSAND" ] },
+    {
+      "name": "sand",
+      "classes": [ "TILE_CLASS_SAND", "TILE_CLASS_DEEP_SAND", "TILE_CLASS_SAND_19", "TILE_CLASS_SAND_23", "TILE_CLASS_QUICKSAND" ]
+    },
     { "name": "snow", "classes": [ "TILE_CLASS_SNOW", "TILE_CLASS_SNOW_NO_CYCLING" ] },
     { "name": "ice", "classes": [ "TILE_CLASS_ICE", "TILE_CLASS_MIRROR_ICE" ] },
     { "name": "cave", "classes": [ "TILE_CLASS_CAVE", "TILE_CLASS_ELECTRIC_FIELD", "TILE_CLASS_ELECTRIC_ROCK" ] },
@@ -22,8 +49,16 @@
     { "name": "bridge", "classes": [ "TILE_CLASS_BRIDGE", "TILE_CLASS_CATWALK", "TILE_CLASS_CATWALK_ENTRY" ] },
     {
       "name": "ground",
-      "classes": [ "TILE_CLASS_NORMAL", "TILE_CLASS_MIRROR_FLOOR", "TILE_CLASS_03", "TILE_CLASS_11", "TILE_CLASS_13", "TILE_CLASS_16", "TILE_CLASS_1F",
-                   "TILE_CLASS_26" ]
+      "classes": [
+        "TILE_CLASS_NORMAL",
+        "TILE_CLASS_MIRROR_FLOOR",
+        "TILE_CLASS_03",
+        "TILE_CLASS_11",
+        "TILE_CLASS_13",
+        "TILE_CLASS_16",
+        "TILE_CLASS_1F",
+        "TILE_CLASS_26"
+      ]
     },
     { "name": "indoor", "exterior": false },
     { "name": "outdoor", "exterior": true },

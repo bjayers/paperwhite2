@@ -2,7 +2,7 @@
 
 import { WRITE_HEADER, type BuildState, type DataFile, type Entry, type ScanMatch, type FileContent, type GitState, type ProjectInfo,
   type SaveRequest, type SaveResult, type ServerEvent } from "../shared/api.ts";
-import type { Schema } from "../shared/schema.ts";
+import { schemaPart, splitSchemaId, type Schema } from "../shared/schema.ts";
 import type { ArtReport } from "../shared/api.ts";
 
 async function request<T>(method: string, url: string, body?: unknown): Promise<T> {
@@ -28,7 +28,9 @@ export const api = {
   file: (path: string) => request<FileContent>("GET", `/api/file?path=${encodeURIComponent(path)}`),
   /** A schema, read once per session; it is a file under res/ like any other. */
   schema(path: string): Promise<Schema> {
-    if (!schemas.has(path)) schemas.set(path, api.file(path).then((f) => JSON.parse(f.text) as Schema));
+    // A "#/$defs/name" fragment names one definition of the file
+    const { file, fragment } = splitSchemaId(path);
+    if (!schemas.has(path)) schemas.set(path, api.file(file).then((f) => schemaPart(JSON.parse(f.text) as Schema, fragment)));
     return schemas.get(path)!;
   },
   forgetSchema: (path: string) => schemas.delete(path),

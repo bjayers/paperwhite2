@@ -7,6 +7,7 @@ import { closeSync, existsSync, openSync, readFileSync, readSync, readdirSync, r
   writeFileSync } from "node:fs";
 import { dirname, join, posix, relative, resolve, sep } from "node:path";
 import type { DataType, Entry, FileContent } from "../shared/api.ts";
+import { schemaPart, splitSchemaId, type Schema } from "../shared/schema.ts";
 
 const SCHEMA_FIELD = /^\{\s*"\$schema"\s*:\s*"((?:[^"\\]|\\.)*)"/;
 
@@ -86,18 +87,29 @@ export class Project {
   types(): DataType[] {
     const types: DataType[] = [];
     for (const [schema, files] of this.bySchema) {
-      const info = this.schemas.get(schema) ?? { title: "", description: "" };
+      const { file, fragment } = splitSchemaId(schema);
+      const info = fragment ? this.definitionInfo(file, fragment) : this.schemas.get(schema) ?? { title: "", description: "" };
       const root = commonFolder([...files]);
       types.push({
         schema,
-        title: shortTitle(info.title) || posix.basename(schema, ".schema.json").replace(/_/g, " "),
+        title: shortTitle(info.title) || (fragment ? fragment.split("/").pop()! : posix.basename(file, ".schema.json")).replace(/_/g, " "),
         description: info.description,
-        category: posix.dirname(schema).split("/").slice(1),
+        category: posix.dirname(file).split("/").slice(1),
         root,
         count: files.size,
       });
     }
     return types.sort((a, b) => a.category.join("/").localeCompare(b.category.join("/")) || a.title.localeCompare(b.title));
+  }
+
+  /** A definition's title and description, for a kind of data whose files name one ("#/$defs/name"). */
+  private definitionInfo(file: string, fragment: string): { title: string; description: string } {
+    try {
+      const part = schemaPart(JSON.parse(readFileSync(this.abs(file), "utf8")) as Schema, fragment);
+      return { title: String(part.title ?? ""), description: String(part.description ?? "") };
+    } catch {
+      return { title: "", description: "" };
+    }
   }
 
   entries(schema: string): Entry[] {
@@ -139,16 +151,18 @@ export class Project {
   schemaFor(path: string, text: string): string | null {
     const match = SCHEMA_FIELD.exec(text.slice(0, 512));
     if (!match) return null;
-    const named = JSON.parse(`"${match[1]}"`) as string;
+    // A "#/$defs/name" fragment names one definition of the file, and stays on the schema's name
+    const { file: named, fragment } = splitSchemaId(JSON.parse(`"${match[1]}"`) as string);
+    const suffix = fragment ? `#${fragment}` : "";
     const direct = posix.normalize(posix.join(posix.dirname(path), named));
-    if (existsSync(this.abs(direct))) return direct;
+    if (existsSync(this.abs(direct))) return direct + suffix;
     // Some files name their schema relative to the wrong folder (field actors name "field_actor.schema.json" from a
     // folder below it); the nearest folder above that has it is the one meant.
     for (let folder = posix.dirname(path); folder.startsWith("res"); folder = posix.dirname(folder)) {
       const candidate = posix.join(folder, posix.basename(named));
-      if (existsSync(this.abs(candidate))) return candidate;
+      if (existsSync(this.abs(candidate))) return candidate + suffix;
     }
-    return direct;
+    return direct + suffix;
   }
 
   /** Writes beside the file, lets check look at that copy, then renames it over the file, so a crash or a failed

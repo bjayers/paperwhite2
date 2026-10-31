@@ -39,6 +39,23 @@ export type Constants = ReadonlyMap<string, number>;
 
 const HEX = /^0x[0-9a-fA-F]+$/;
 
+/** A schema as a file names it in "$schema": its file, and the fragment after "#" that names one of its definitions
+ * ("condition.schema.json#/$defs/level_scaling"), or "" for the whole file. */
+export function splitSchemaId(id: string): { file: string; fragment: string } {
+  const at = id.indexOf("#");
+  return at < 0 ? { file: id, fragment: "" } : { file: id.slice(0, at), fragment: id.slice(at + 1) };
+}
+
+/** The part of a schema file that a fragment names, as the build reads it (conditions.py's load_def): the definition,
+ * with the file's $defs, which its $refs name. */
+export function schemaPart(schema: Schema, fragment: string): Schema {
+  if (!fragment) return schema;
+  let at: unknown = schema;
+  for (const key of fragment.replace(/^\//, "").split("/")) at = (at as Record<string, unknown> | undefined)?.[key];
+  if (!at || typeof at !== "object") throw new Error(`The schema has no ${fragment}`);
+  return { ...(at as Schema), $defs: { ...schema.$defs, ...(at as Schema).$defs } };
+}
+
 /** Follows a $ref to the root's $defs, as the build does: the target replaces the referring schema. Keeps the
  * referring schema's description, which the build ignores but an editor shows. */
 export function resolve(schema: Schema, root: Schema): Schema {

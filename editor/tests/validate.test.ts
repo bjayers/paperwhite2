@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseJson, setIn } from "../shared/json.ts";
-import { validate, type Schema } from "../shared/schema.ts";
+import { schemaPart, splitSchemaId, validate, type Schema } from "../shared/schema.ts";
 import { Project } from "../server/project.ts";
 import { Python } from "../server/python.ts";
 
@@ -15,7 +15,8 @@ const constants = new Map(Object.entries(new Python(ROOT).constants()));
 test("every data file passes the editor's validator", () => {
   const failures: string[] = [];
   for (const type of project.types()) {
-    const schema = JSON.parse(readFileSync(project.abs(type.schema), "utf8")) as Schema;
+    const { file, fragment } = splitSchemaId(type.schema);
+    const schema = schemaPart(JSON.parse(readFileSync(project.abs(file), "utf8")) as Schema, fragment);
     for (const entry of project.entries(type.schema)) {
       const errors = validate(parseJson(readFileSync(project.abs(entry.path), "utf8")), schema, constants);
       if (errors.length) failures.push(`${entry.path}: ${errors[0].path.join(".")}: ${errors[0].message}`);

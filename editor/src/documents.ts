@@ -3,7 +3,7 @@
 
 import { useSyncExternalStore } from "react";
 import { api } from "./api.ts";
-import { detectWidth, fileText, parseJson, setIn, type JsonPath, type JsonValue } from "../shared/json.ts";
+import { detectLayout, fileText, parseJson, setIn, type JsonPath, type JsonValue, type Layout } from "../shared/json.ts";
 
 const HISTORY = 200;
 
@@ -15,8 +15,8 @@ export interface Document {
   version: string;
   /** Parsed data, or null for a file edited only as text (not JSON, or written in a layout the editor doesn't know). */
   data: JsonValue | null;
-  /** The layout width that writes the file back as it was, when there is one. */
-  width: number | null;
+  /** The layout that writes the file back as it was, when there is one. */
+  layout: Layout | null;
   /** The text, for a file edited as text. */
   text: string;
   /** Text typed in the raw view that doesn't parse yet; the data stays as it last parsed, and saving waits. */
@@ -190,17 +190,17 @@ class DocumentStore {
 
 function fromFile(path: string, schema: string | null, text: string, version: string): Document {
   let data: JsonValue | null = null;
-  let width: number | null = null;
+  let layout: Layout | null = null;
   if (path.endsWith(".json") && !path.endsWith(".schema.json")) {
     try {
       data = parseJson(text);
-      width = detectWidth(text, data);
-      if (width === null) data = null; // a layout only a person writes: edit it as text, so nothing is reformatted
+      layout = detectLayout(text, data);
+      if (layout === null) data = null; // a layout only a person writes: edit it as text, so nothing is reformatted
     } catch {
       data = null;
     }
   }
-  return { path, schema, savedText: text, version, data, width, text, draft: null, dirty: false, past: [], future: [],
+  return { path, schema, savedText: text, version, data, layout, text, draft: null, dirty: false, past: [], future: [],
            changedOnDisk: false, saving: false, saveError: null };
 }
 
@@ -209,9 +209,9 @@ function snapshotOf(doc: Document): Snapshot {
 }
 
 /** What saving would write: the data in the file's own layout, or the text for a file edited as text. */
-export function currentText(doc: Pick<Document, "data" | "width" | "text" | "draft">): string {
+export function currentText(doc: Pick<Document, "data" | "layout" | "text" | "draft">): string {
   if (doc.draft !== null) return doc.draft;
-  return doc.data !== null && doc.width !== null ? fileText(doc.data, doc.width) : doc.text;
+  return doc.data !== null && doc.layout !== null ? fileText(doc.data, doc.layout) : doc.text;
 }
 
 export const documents = new DocumentStore();
