@@ -6,7 +6,7 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
 The user's plan for the night: 1. the art converter in the editor, with the boot and title screens editable and one
 more boot screen after the copyright; 2. the Habitat Dex reworked; 3. a Follower Editor, fixing the editor's two old
-test failures; 4. shiny extras in the Palette Editor. Done so far:
+test failures; 4. shiny extras in the Palette Editor. All four are done:
 
 - **1. Art converter** (`docs/paperwhite2/art.md`): `tools/paperwhite2/screen_art.py` turns PNGs into a screen's
   tiles, screen resources and palette, for the targets of `res/paperwhite2/art/targets.json` (boot logos, copyright,
@@ -15,8 +15,10 @@ test failures; 4. shiny extras in the Palette Editor. Done so far:
   - **New boot screen** after the copyright (`src/paperwhite2/ov162/paperwhite2_boot_screen.c`, hooked in
     `boot_screens.c`): `ARCID_COPYRIGHT` members 9 to 13, blank, skipped while its palette is all black.
   - **Checked:** every target's screens export and convert back pixel for pixel; art converted and built packs as
-    16-color members with the same pixels; Playwright on a scratch copy (choose art, problems marked, Apply). Not yet
-    tested in game: the boot with the new screen blank (should be unchanged) or with art.
+    16-color members with the same pixels; every target written with --write, built and decoded from the ROM's
+    archives shows the same pixels as before (boot logos, copyright, title logo and streaks in 256 colors, the title's
+    other screen); Playwright on a scratch copy (choose art, problems marked, Apply). Not yet tested in game: the boot
+    with the new screen blank (should be unchanged) or with art.
 - **2. Habitat Dex** (`docs/paperwhite2/encounters.md`, "The Habitat Dex"): the Habitat List's screen lists every
   Pokémon of the area's kind of habitat from a new member of `a/2/9/6` (written by `encounters.py habitats`), in pages
   of 20 (L/R, the side arrows, or the cursor past the last row), with method tabs (Select or touch) and season, time
@@ -33,6 +35,9 @@ test failures; 4. shiny extras in the Palette Editor. Done so far:
   palettes, filtered to the five shinies identical to normal (the placeholder, the egg, Manaphy's egg, Castform's
   forms 1 and 3) or the rest; a click opens the shiny palette beside the normal.
   Checked with Playwright read-only on the real `res/`.
+- **To test in the morning:** the boot (unchanged while the new screen is blank); the Habitat Dex (pages, tabs,
+  filters, the cursor across pages, the stamps, the info button); the DexNav's tabs and cells; the editor's Graphics &
+  Palettes (Screens, Palettes, Shinies) and Follower Editor.
 - **Also:** I stopped the user's running editor by mistake while stopping my test servers, and restarted it detached
   (`setsid nohup editor/start.sh`, log in the session's scratchpad); it serves tonight's page.
 
