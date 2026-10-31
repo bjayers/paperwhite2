@@ -13,7 +13,7 @@ export function GraphicsEditor(_props: ToolProps) {
   const [requested, setRequested] = useState<{ path: string } | undefined>();
   return (
     <div className="gfx-editor">
-      <nav className="gfx-pages">
+      <nav className="gfx-pages view-switch">
         <button className={page === "screens" ? "active" : ""} onClick={() => setPage("screens")}>Screens</button>
         <button className={page === "palettes" ? "active" : ""} onClick={() => setPage("palettes")}>Palettes</button>
       </nav>

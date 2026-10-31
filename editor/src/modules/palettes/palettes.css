@@ -62,8 +62,7 @@
 
 /* Graphics & Palettes' pages */
 .gfx-editor { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-.gfx-pages { display: flex; gap: 4px; padding: 6px 14px; border-bottom: 1px solid var(--border); background: var(--panel-2); }
-.gfx-pages button.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+.gfx-pages { padding: 6px 14px; border-bottom: 1px solid var(--border); background: var(--panel-2); }
 .gfx-page { display: flex; flex: 1; min-height: 0; }
 .gfx-page.hidden { display: none; }
 .gfx-page > .pal-editor { flex: 1; }

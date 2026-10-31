@@ -22,6 +22,13 @@ test failures; 4. shiny extras in the Palette Editor. Done so far:
   of 20 (L/R, the side arrows, or the cursor past the last row), with method tabs (Select or touch) and season, time
   and weather filters (touch, "any" by default) in the text box. The map, areas and stamps are unchanged. **Not yet
   tested in game at all**; built without warnings, DSi intact.
+- **3. Follower Editor** (`editor/README.md`): species' followers (sprites, placement settings), their own dialogue
+  (or a button to start one), shared dialogue, item pools, interactions, emotes and balls, with message previews. The
+  editor's tests all pass again: the hand-written compact JSON layout (indent 4 or 2) is a known layout, five files
+  were rewritten in it with the same data, and `$schema` fragments (`#/$defs/name`) work in the index, forms and the
+  save check. Tools hold files without tabs (`documents.hold`, `documents.create`); schemas' cross-file `$ref`s are
+  merged as `datajson.load_schema` does. Checked with Playwright on a scratch copy (Snivy's page, a save that changed
+  one line, the shared page).
 
 ## 2026-10-30: DexNav polish, its art templates, and the editor's Palette Editor
 

@@ -52,7 +52,7 @@ function download(name: string, text: string) {
 
 // ---------------------------------------------------------------- The image
 
-function PalettePreview({ image, colors, offset, zoom, transparent, highlight, onPick }: {
+export function PalettePreview({ image, colors, offset, zoom, transparent, highlight, onPick }: {
   image: IndexedImage;
   colors: Rgb[];
   offset: number;

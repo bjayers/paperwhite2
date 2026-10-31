@@ -3,7 +3,7 @@
 
 import { useSyncExternalStore } from "react";
 import { api } from "./api.ts";
-import { detectLayout, fileText, parseJson, setIn, type JsonPath, type JsonValue, type Layout } from "../shared/json.ts";
+import { DATA_LAYOUT, detectLayout, fileText, parseJson, setIn, type JsonPath, type JsonValue, type Layout } from "../shared/json.ts";
 
 const HISTORY = 200;
 
@@ -70,10 +70,25 @@ class DocumentStore {
     if (!this.docs.has(path)) {
       const file = await api.file(path);
       this.docs.set(path, fromFile(file.path, file.schema, file.text, file.version));
-      this.order.push(path);
     }
+    if (!this.order.includes(path)) this.order.push(path);
     this.active = path;
     this.changed();
+  }
+
+  /** Reads a file for a tool without opening a tab for it: it is edited, saved, undone and reloaded as an open file,
+   * and the Build button asks to save it with the others. Opening it later gives it a tab. */
+  async hold(path: string): Promise<Document> {
+    if (!this.docs.has(path)) {
+      const file = await api.file(path);
+      if (!this.docs.has(path)) this.put(fromFile(file.path, file.schema, file.text, file.version));
+    }
+    return this.docs.get(path)!;
+  }
+
+  /** Starts a new file for a tool, held as hold() holds one, unsaved until the tool saves it. */
+  create(path: string, schema: string | null, data: JsonValue, layout: Layout = DATA_LAYOUT) {
+    this.put({ ...fromFile(path, schema, "", ""), data, layout, dirty: true });
   }
 
   activate(path: string | null) {

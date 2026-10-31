@@ -21,7 +21,7 @@ If Edge can't reach it, WSL isn't forwarding the port: check that `localhostForw
 ## What it does
 
 - **Specialty editors** at the top of the sidebar, under **Editors**: everything about one subject in one place. The
-  first are the **Encounter Editor** and **Graphics & Palettes** (below). The per-file editors are under **Data files**, which folds away. A page
+  first are the **Encounter Editor**, **Graphics & Palettes** and the **Follower Editor** (below). The per-file editors are under **Data files**, which folds away. A page
   of a tool can be linked to: `http://localhost:7420/#tool/encounters`.
 - **Every kind of data in `res/`, found by itself.** Each data file names its schema in `"$schema"`; the editor groups
   the files by schema, so a new kind of data, a new field or a new file shows up without changing the editor.
@@ -115,6 +115,29 @@ graphics archive's members, the hack's own.
   one from your computer, such as work in progress in Aseprite.
 - **Files:** **Download .pal** for Aseprite (its **Load Palette** reads JASC), **Import colors** from a .pal or an
   indexed PNG's palette, **Save as** and **New 16-color palette** for new files under `res/`.
+
+## The Follower Editor
+
+The Following Pokémon (`src/modules/followers/`, `docs/paperwhite2/following-pokemon.md`), in five pages. Every file
+is edited through the shell's documents without a tab of its own (`documents.hold`), so the page's **Save** (Ctrl+S)
+checks each with the build's validator, **Revert** throws the changes away, Ctrl+Z and Ctrl+Y undo and redo, and a
+file changed on disk reloads.
+
+- **Pokémon**: the species that have followers, by number (filtered by name, or to those with their own dialogue). A
+  species' page has each of its followers (form, sex, shininess) with its sprite in its palette, or the sprite it
+  shares, and its settings: the "follower" object of its field actor (`res/field/actors/followers/<name>/data.json`),
+  its animation profile, art offset, side gap and walking gaps. Then its own dialogue
+  (`res/paperwhite2/following/dialogue/species/<name>.json`), or a button that starts one, and the shared rules that
+  name it.
+- **Shared dialogue**: `dialogue/shared.json`, the rules every follower has (talk, ambient, pickup), the talk's
+  friendship and the library's messages. A rule's **when** is a condition of the conditions engine, as its schema
+  gives it.
+- **Item pools** and **Interactions**: `pools.json` and `interactions.json`.
+- **Emotes & balls**: the bubbles' and the balls' art, whose colors Graphics & Palettes edits.
+
+Under each dialogue file, **How its messages look** shows every message as the game breaks it: pages at `[C]`, lines
+at `[N]` and line breaks, a ▼ where `[L]` waits for A, the words filled with examples, and a line in red that is
+probably too long for the window.
 
 ## How it is built
 

@@ -21,6 +21,45 @@ async function request<T>(method: string, url: string, body?: unknown): Promise<
 
 const schemas = new Map<string, Promise<Schema>>();
 
+/** A schema file with the definitions it names in other files brought in, as datajson.load_schema() reads one: a
+ * $ref to "other.schema.json#/$defs/name" (relative to this file) becomes "#/$defs/name", and this file's $defs take
+ * the other file's definitions that they don't have themselves. */
+async function loadSchemaFile(path: string, seen = new Set<string>()): Promise<Schema> {
+  seen.add(path);
+  const schema = JSON.parse((await api.file(path)).text) as Schema;
+  const folder = path.slice(0, path.lastIndexOf("/") + 1);
+  const others = new Set<string>();
+  const rewrite = (node: unknown): void => {
+    if (Array.isArray(node)) return node.forEach(rewrite);
+    if (!node || typeof node !== "object") return;
+    const record = node as Record<string, unknown>;
+    const ref = record.$ref;
+    if (typeof ref === "string" && !ref.startsWith("#") && ref.includes("#/$defs/")) {
+      const [file, name] = ref.split("#/$defs/");
+      others.add(normalize(folder + file));
+      record.$ref = `#/$defs/${name}`;
+    }
+    Object.values(record).forEach(rewrite);
+  };
+  rewrite(schema);
+  const defs = { ...schema.$defs };
+  for (const other of others) {
+    if (seen.has(other)) continue;
+    const loaded = await loadSchemaFile(other, seen);
+    for (const [name, def] of Object.entries(loaded.$defs ?? {})) if (!(name in defs)) defs[name] = def;
+  }
+  return { ...schema, $defs: defs };
+}
+
+function normalize(path: string): string {
+  const parts: string[] = [];
+  for (const part of path.split("/")) {
+    if (part === "..") parts.pop();
+    else if (part !== "." && part !== "") parts.push(part);
+  }
+  return parts.join("/");
+}
+
 export const api = {
   project: () => request<ProjectInfo>("GET", "/api/project"),
   entries: (schema: string) => request<Entry[]>("GET", `/api/entries?schema=${encodeURIComponent(schema)}`),
@@ -30,7 +69,7 @@ export const api = {
   schema(path: string): Promise<Schema> {
     // A "#/$defs/name" fragment names one definition of the file
     const { file, fragment } = splitSchemaId(path);
-    if (!schemas.has(path)) schemas.set(path, api.file(file).then((f) => schemaPart(JSON.parse(f.text) as Schema, fragment)));
+    if (!schemas.has(path)) schemas.set(path, loadSchemaFile(file).then((schema) => schemaPart(schema, fragment)));
     return schemas.get(path)!;
   },
   forgetSchema: (path: string) => schemas.delete(path),
