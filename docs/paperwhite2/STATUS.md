@@ -2,6 +2,15 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-31: C-Gear research (nothing changed)
+
+The user's questions about redesigning the C-Gear are answered in `docs/paperwhite2/design/cgear.md`: the native
+markers can take new actions (one table and one `case` each), the right-hand top circle already has an unused touch
+circle for a skin button, the battery is one sprite coordinate, the survey button can go and bottom-left buttons be
+added as new sprites, more markers need arrays, palettes, cells and save bytes (0x25 are free), and the load-save
+question and networking can be skipped with four hooks plus a sweep of what assumes a connection. Waiting on the
+user's design before any change.
+
 ## 2026-10-31 (overnight, second batch): Text, Script, Pokémon and Trainer editors
 
 All in `editor/` (README sections for each); every editor test passes; each checked with Playwright on the real `res/`
