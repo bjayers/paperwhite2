@@ -2,6 +2,15 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-02 (late): dents by what's at the border; bridges
+
+- A rounded corner's gap next to a vanilla path's edge tile (michi01a) is grass, as that tile's outer side is.
+- A kept tile whose ground texture no terrain has (a bridge's deck, hashi01a, path by its tile type) counts by its
+  tile type for paths, so a road's grass edges run up to a bridge square, as vanilla's do, but water edges draw no
+  bank against it. A pond by Route 20's lower bridge and a road ending at the bridge look right on the scratch copy;
+  **not tried in game.** Plain Water tiles against the river's own bank tiles leave a drop to the bed: paint Water
+  edge where painted water meets a vanilla bank.
+
 ## 2026-11-02 (night): vanilla's riverbank; square-corner edges; paths edged against water
 
 - Water's profile is now Route 20's own bank: the land half a tile above the water's surface, the bank sloping down

@@ -290,9 +290,12 @@ def generate(project_path):
     by_texture = {}
     for k, t in terrains.items():
         by_texture.setdefault(t["ground"]["texture"], k)
+    edge_outside = {}
     for e in style.get("edges", []):
         for face in e["faces"]:
             by_texture.setdefault(face["texture"], e["to"])
+            if e.get("from") and face["texture"] not in {t["ground"]["texture"] for t in terrains.values()}:
+                edge_outside.setdefault(face["texture"], e["from"][0])
     kept_textures = {xz: tex for xz, (_, tex) in ground_faces(base, size, images_from=folder).items()} if keeps else {}
 
     def terrain_of(xz):
@@ -302,7 +305,13 @@ def generate(project_path):
             return None
         if v[0] != KEEP:
             return v
+        # By its ground's texture, else by its tile type
         return (by_texture.get(kept_textures.get(xz)) or by_type.get(kept_types.get(xz)), v[1])
+
+    def unsure(xz):
+        # A kept tile whose ground is drawn with a texture no terrain has (a bridge's deck, whose tile type is a path's)
+        v = grid.get(xz)
+        return v is not None and v[0] == KEEP and xz in kept_textures and kept_textures[xz] not in by_texture
 
     # Edge terrains (a path's edge, a riverbank) are painted where a border is wanted: each belongs to a family (the
     # path, the water), whose tiles and edge tiles make one region; the border is drawn in the edge tiles only, against
@@ -334,11 +343,14 @@ def generate(project_path):
         froms = edge.get("from")
 
         def banded(e, key=key, h=h, froms=froms):
-            # From an edge tile of the family to a terrain the edge draws against (any other, when it names none)
+            # From an edge tile of the family to a terrain the edge draws against (any other, when it names none, but
+            # not a tile it's unsure of: a bridge spans the water rather than banks it)
             if painted[e[3]][0] == key:
                 return False
             other = terrain_of(e[4])
-            if other is None or family.get(other[0], other[0]) == key:
+            if other is None or other[0] is None or family.get(other[0], other[0]) == key:
+                return False
+            if froms is None and unsure(e[4]):
                 return False
             return froms is None or (other[0] in froms and other[1] == h)
         result = map_edges.band(tiles, edge, banded, edge.get("points", False),
@@ -355,11 +367,14 @@ def generate(project_path):
         for _, _, poly in pieces:
             for p in poly:
                 corners[inner_y].add(p)
-        # A dent's ground is the outside's terrain (a kept tile's, by its tile type), else the first the edge names
+        # A dent's ground is what the outside's ground is at its border: a kept tile drawn with an edge's face (a path's
+        # edge, michi01a) is that edge's outside there (grass); else the outside's terrain, else the first the edge names
         dents = []
         for outside, poly in result["dents"]:
             other = terrain_of(outside)
-            dkey = other[0] if other and other[0] in terrains else (edge.get("from") or [key])[0]
+            texture = kept_textures.get(outside) if grid.get(outside, (None,))[0] == KEEP else None
+            dkey = edge_outside.get(texture) or (other[0] if other and other[0] in terrains else None) \
+                or (edge.get("from") or [key])[0]
             dents.append((dkey, [to_world(p, h) for p in poly]))
         bands.append((h, result["strips"], dents))
     # The ground: each terrain's tiles at a height merged into rectangles
