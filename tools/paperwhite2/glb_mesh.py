@@ -65,9 +65,10 @@ def material_of(doc, index, directory):
     return json.dumps(material, sort_keys=True), material
 
 
-def read_mesh(path):
+def read_mesh(path, images_from=None):
     """A GLB's triangles as (material key, [three Vertex]), its materials by key, in the order it draws them, and
-    each triangle's (draw call, number in it)."""
+    each triangle's (draw call, number in it). images_from is the folder its images' paths start from, where the GLB
+    is a copy kept elsewhere (its own folder otherwise)."""
     path = Path(path)
     doc, binary = read_glb(path)
     if len(doc["meshes"]) != 1:
@@ -84,7 +85,7 @@ def read_mesh(path):
     for number, primitive in enumerate(doc["meshes"][0]["primitives"]):
         if primitive.get("mode", 4) != 4:
             raise ValueError(f"{path}: only triangles are supported")
-        key, material = material_of(doc, primitive.get("material"), path.parent)
+        key, material = material_of(doc, primitive.get("material"), Path(images_from) if images_from else path.parent)
         materials[key] = material
         a = primitive["attributes"]
         positions = accessor_values(doc, binary, a["POSITION"])

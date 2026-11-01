@@ -98,10 +98,16 @@ export const api = {
   saveMapObject: (b: { name: string; category?: string; chunk: string; faces: GlbFaceSet[]; anchor: number[]; size: number[] }) =>
     request<{ id: string; path: string }>("POST", "/api/map-objects/save", b),
   deleteMapObject: (id: string) => request<{ removed: boolean }>("DELETE", `/api/map-objects?id=${encodeURIComponent(id)}`),
+  /** Starts a painted map of a chunk: every tile fill ("." keeps the chunk) at its collision's heights, or flat (tiles). */
+  startPainting: (model: string, style: string, fill: string, flat?: number) =>
+    request<{ path: string }>("POST", "/api/map-maker/start", { model, style, fill, flat }),
+  /** Puts a painted chunk back as it was before painting, and removes its painting. */
+  stopPainting: (model: string) => request<{ ok: boolean; output: string }>("POST", "/api/map-maker/stop", { model }),
   /** Generates a painted map's chunk from its project (tools/paperwhite2/map_maker.py). */
   generateMap: (model: string) => request<{ ok: boolean; output: string }>("POST", "/api/map-maker/generate", { model }),
   /** Puts a map chunk's model.glb back as it was (base64 bytes), and its data.json (text), for undo. */
-  glbRaw: (path: string, data: string, meta?: string) => request<{ ok: boolean }>("PUT", "/api/glb-raw", { path, data, meta }),
+  glbRaw: (path: string, data: string, meta?: string, files?: Record<string, string>) =>
+    request<{ ok: boolean }>("PUT", "/api/glb-raw", { path, data, meta, files }),
   /** The game's unused zones, which a new map can take. */
   unusedZones: () => request<{ zone: string; file: string; parent: string | null; place: string | null }[]>("GET", "/api/new-map/unused"),
   /** Makes an unused zone a new map (tools/paperwhite2/new_map.py create). */

@@ -376,6 +376,25 @@ const routes: Record<string, Handler> = {
     rmSync(folder, { recursive: true });
     json(res, { removed: true });
   },
+  "POST /api/map-maker/start": async (req, res) => {
+    // A painted map of a chunk started, with a copy of the chunk (tools/paperwhite2/map_maker.py start)
+    const b = (await readJson(req)) as { model: string; style: string; fill?: string; flat?: number };
+    if (!/^[a-z0-9_]+$/.test(b.model ?? "") || !/^[a-z0-9_]+$/.test(b.style ?? "") || (b.fill !== undefined && !/^[a-z.]$/.test(b.fill)))
+      return error(res, 400, "Name the chunk, the style and a terrain to fill with");
+    const args = ["start", b.model, b.style, "--fill", b.fill ?? "."];
+    if (typeof b.flat === "number" && Number.isFinite(b.flat)) args.push("--flat", String(b.flat));
+    const result = await runTool("tools/paperwhite2/map_maker.py", args);
+    if (!result.ok) return error(res, 500, result.output || "Starting failed");
+    json(res, { path: result.output.trim() });
+  },
+  "POST /api/map-maker/stop": async (req, res) => {
+    // A chunk put back as it was before painting, its painting removed (map_maker.py stop)
+    const { model } = (await readJson(req)) as { model: string };
+    if (!/^[a-z0-9_]+$/.test(model ?? "")) return error(res, 400, "Name the chunk");
+    const result = await runTool("tools/paperwhite2/map_maker.py", ["stop", model]);
+    if (!result.ok) return error(res, 500, result.output || "Stopping failed");
+    json(res, result);
+  },
   "POST /api/map-maker/generate": async (req, res) => {
     // A painted map's chunk generated from its project (tools/paperwhite2/map_maker.py)
     const { model } = (await readJson(req)) as { model: string };
@@ -387,7 +406,7 @@ const routes: Record<string, Handler> = {
   },
   "PUT /api/glb-raw": async (req, res) => {
     // A map model's GLB put back as it was, with its data.json (an edit may have marked it written), for undo
-    const body = (await readJson(req)) as { path: string; data: string; meta?: string };
+    const body = (await readJson(req)) as { path: string; data: string; meta?: string; files?: Record<string, string> };
     const path = mapModelGlb(body.path);
     if (!path || typeof body.data !== "string") return error(res, 400, "Name a map model's model.glb and its bytes");
     const glb = Buffer.from(body.data, "base64");
@@ -395,6 +414,11 @@ const routes: Record<string, Handler> = {
     if (typeof body.meta === "string") {
       try { JSON.parse(body.meta); } catch { return error(res, 400, "The data.json isn't JSON"); }
       await project.writeAtomic(path.replace(/model\.glb$/, "data.json"), body.meta);
+    }
+    // The collision too, where a generated chunk's step put it back
+    for (const [name, text] of Object.entries(body.files ?? {})) {
+      if (!/^terrain_\d(_splits)?\.csv$/.test(name) || typeof text !== "string") return error(res, 400, `Not a collision file: ${name}`);
+      await project.writeAtomic(path.replace(/model\.glb$/, name), text);
     }
     await project.writeAtomic(path, glb);
     json(res, { ok: true });

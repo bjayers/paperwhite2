@@ -307,9 +307,12 @@ map, to choose a chunk; the middle button orbits, the right pans and the wheel z
   bridges) choose their layer. Where a season replacement swaps a chunk (Route 20 in autumn), **Paint the season
   variants too** paints the same tile of the variants where it was the same. Ctrl+Z undoes a stroke; **Save** writes the
   collision files (and layouts), **Revert** drops what isn't saved.
-- **Paint:** the chosen chunk as a painted map (`res/paperwhite2/map_projects/<model>.json`): **Start painting** fills
-  it with a terrain of a style (`res/paperwhite2/map_styles/`, Route 20's to start) at the chunk's collision heights
-  or one height. Then paint each tile's terrain (grass, path, tall grass, water, blocked grass) and height (or raise
+- **Paint:** the chosen chunk as a painted map (`res/paperwhite2/map_projects/<model>.json`): **Start painting** from
+  the chunk as it is (every tile kept, to paint only what changes: a pond in a field) or with every tile a terrain of
+  a style (`res/paperwhite2/map_styles/`, Route 20's to start; a new map), at the chunk's collision heights or one
+  height. A copy of the chunk is kept beside the painting (`<model>.base/`): kept tiles draw from it (its faces with
+  the painted rectangles cut out, its collision), and **Stop painting and put the chunk back** restores it. The
+  **Keep the chunk** brush is the eraser. Ctrl+Z undoes a generate too. Then paint each tile's terrain (grass, path, tall grass, water, blocked grass) and height (or raise
   and lower them half a tile) with a pencil or a rectangle; place objects of the library on a tile, and select and
   drag them to others (Delete removes one). **Generate the chunk** writes its model and collision
   (`tools/paperwhite2/map_maker.py`): the ground merged into large rectangles textured from above, so textures run on

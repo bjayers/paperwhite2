@@ -2,12 +2,18 @@
 """Paper White 2's map maker: a map chunk generated from a painted grid (docs/paperwhite2/design/map-editor.md,
 Painting maps).
 
+    map_maker.py start MODEL STYLE [--fill KEY] [--flat HEIGHT]   # a project of a chunk, and a copy of the chunk
     map_maker.py generate PROJECT        # write the project's chunk's model.glb and collision
+    map_maker.py stop MODEL              # the chunk as it was before painting, and the project gone
 
 A project, res/paperwhite2/map_projects/<model>.json (map_project.schema.json), names the chunk it makes, its style,
 each tile's terrain (a letter of the style's terrains, a string a row) and height (in half tiles), and the objects of
 the library placed on it ([object, x, z]). A style, res/paperwhite2/map_styles/<style>.json (map_style.schema.json),
-gives each terrain its look and tile type, from a vanilla area's texture set.
+gives each terrain its look and tile type, from a vanilla area's texture set. The terrain "." keeps the chunk as it was
+on that tile: its faces there (the painted rectangles cut out of them) and its collision, from the copy of the chunk that start
+makes (res/paperwhite2/map_projects/<model>.base/), so a painting can change part of an existing map, a pond in a
+field. start fills a project with "." (or a terrain) at the chunk's collision heights (or one height); stop puts the
+chunk's files back from the copy and removes the project.
 
 generate writes:
 - the ground: each terrain's tiles at a height merged into rectangles (as large as the texture's reach in Nitro's
@@ -45,12 +51,15 @@ OBJECTS = ROOT / "res/paperwhite2/map_objects"
 PROJECTS = ROOT / "res/paperwhite2/map_projects"
 TILE = 16
 HALF_TILE = 8
+KEEP = "."
+BASE_FILES = ("model.glb", "data.json", "terrain_0.csv", "terrain_0_splits.csv")
 REPEAT, CLAMP = 10497, 33071
 UP = (0.0, 1.0, 0.0)
 
 
-def height_tables():
-    """The game's flat-tile heights: slope 0's normal and the height of each offset (src/ov036/field_map_chunk_height.c)."""
+def _tables():
+    """The game's slope normals (x, y, z, z negated as the game reads it) and plane offsets, in units
+    (src/ov036/field_map_chunk_height.c)."""
     text = (ROOT / "src/ov036/field_map_chunk_height.c").read_text()
 
     def numbers(name):
@@ -58,10 +67,34 @@ def height_tables():
         body = text[text.index("{", start) + 1:text.index("};", start)]
         return [int(v, 0) for v in re.findall(r"-?0x[0-9a-fA-F]+|-?\d+", body)]
 
-    slopes = numbers("MAP_HEIGHT_SLOPE_TABLE[]")
-    offsets = numbers("MAP_HEIGHT_OFFSET_TABLE[]")
-    ny = slopes[1] / 4096
-    return [-o / 4096 / ny for o in offsets]
+    raw = numbers("MAP_HEIGHT_SLOPE_TABLE[]")
+    slopes = [(raw[i] / 4096, raw[i + 1] / 4096, -raw[i + 2] / 4096) for i in range(0, len(raw) - 2, 3)]
+    return slopes, [o / 4096 for o in numbers("MAP_HEIGHT_OFFSET_TABLE[]")]
+
+
+def height_tables():
+    """The game's flat-tile heights: the height of each offset for slope 0."""
+    slopes, offsets = _tables()
+    return [-o / slopes[0][1] for o in offsets]
+
+
+def collision_heights(folder, size):
+    """Each tile's height at its middle, as a chunk's first collision layer gives it (a split tile's first plane)."""
+    slopes, offsets = _tables()
+    rows = list(csv.DictReader((folder / "terrain_0.csv").open()))
+    splits = list(csv.DictReader((folder / "terrain_0_splits.csv").open())) if (folder / "terrain_0_splits.csv").exists() else []
+    half = size * TILE / 2
+    out = {}
+    for r in rows:
+        x, z, shape = int(r["x"]), int(r["z"]), int(r["shape"])
+        slope, offset = int(r["slope"]), int(r["offset"])
+        if shape == 2 and offset < len(splits):
+            slope, offset = int(splits[offset]["slope0"]), int(splits[offset]["offset0"])
+        n = slopes[slope] if slope < len(slopes) else (0, 1, 0)
+        o = offsets[offset] if offset < len(offsets) else 0
+        px, pz = x * TILE + TILE / 2 - half, z * TILE + TILE / 2 - half
+        out[(x, z)] = -(o + n[0] * px + n[2] * pz) / n[1] if n[1] else 0.0
+    return out
 
 
 def flat_offset(heights, y):
@@ -173,12 +206,18 @@ def generate(project_path):
     size = project.get("size", 32)
     half = size * TILE / 2
     terrains = {t["key"]: t for t in style["terrains"]}
+    base = PROJECTS / f"{project['model']}.base"
+    keeps = any(KEEP in row for row in project["terrain"])
+    if keeps and not (base / "model.glb").exists():
+        raise DataError(f"{project_path}: tiles keep the chunk, but there's no copy of it in {base.relative_to(ROOT)}")
+    kept_heights = collision_heights(base, size) if keeps else {}
     grid = {}
     for z, row in enumerate(project["terrain"]):
         for x, key in enumerate(row):
-            if key not in terrains:
+            if key != KEEP and key not in terrains:
                 raise DataError(f"{project_path}: no terrain {key!r} in the style")
-            grid[(x, z)] = (key, project["height"][z][x] * HALF_TILE)
+            # A kept tile stands at the chunk's own height, which walls to painted tiles go down or up to
+            grid[(x, z)] = (key, round(kept_heights.get((x, z), 0)) if key == KEEP else project["height"][z][x] * HALF_TILE)
     if len(grid) != size * size:
         raise DataError(f"{project_path}: the grid isn't {size} by {size}")
     materials = Materials(style["texture_set"])
@@ -187,7 +226,8 @@ def generate(project_path):
 
     # The ground and the layers above it, as rectangles of a terrain at a height
     ground_keys = {k: materials.get(t["ground"]["texture"]) for k, t in terrains.items()}
-    rects = rectangles(grid, size, lambda v: materials.reach(ground_keys[v[0]]) * terrains[v[0]]["ground"]["repeat"])
+    painted = {xz: v for xz, v in grid.items() if v[0] != KEEP}
+    rects = rectangles(painted, size, lambda v: materials.reach(ground_keys[v[0]]) * terrains[v[0]]["ground"]["repeat"])
     # Every corner on each height's plane, which the rectangles' edges there are split at
     corners = defaultdict(set)
     for (key, y), x, z, w, d in rects:
@@ -235,6 +275,13 @@ def generate(project_path):
         points = corners[top] | corners[bottom]
         polygons += [(key, t) for t in fan(ring(outline, points), uv, normal)]
 
+    # The chunk's own faces over the tiles it keeps, clipped at their edges
+    if keeps:
+        cut = [(x, z, w, d) for _, x, z, w, d in rectangles({xz: 1 for xz, v in grid.items() if v[0] != KEEP}, size, lambda v: size)]
+        triangles, base_materials, _ = read_mesh(base / "model.glb", images_from=folder)
+        remap = {key: materials.add(material) for key, material in base_materials.items()}
+        polygons += [(remap[key], tri) for key, tri in kept_faces(triangles, cut, half)]
+
     # The objects, on the ground of their north-west tile
     collision_over = {}
     for name, x, z in project.get("objects", []):
@@ -258,13 +305,121 @@ def generate(project_path):
     name = old["meshes"][0].get("name") or folder.name
     props = [n for n in old["nodes"] if n.get("name", "").startswith("bw2_prop_")]
     write_mesh(folder / "model.glb", name, polygons, materials.by_key, props)
-    write_collision(folder, grid, size, terrains, collision_over)
+    write_collision(folder, grid, size, terrains, collision_over, base if keeps else None)
     data_path = folder / "data.json"
     data = json.loads(data_path.read_text())
     data["texture_set"] = style["texture_set"]
     data["written"] = True
     data_path.write_text(dumps(data) + "\n")
     return sum(len(p) - 2 for _, p in polygons)
+
+
+def _clip(polygon, axis, limit, keep_below):
+    out = []
+    for i, current in enumerate(polygon):
+        previous = polygon[i - 1]
+        inside = (lambda v: v.p[axis] <= limit + 1e-6) if keep_below else (lambda v: v.p[axis] >= limit - 1e-6)
+        if inside(current):
+            if not inside(previous):
+                out.append(_lerp(previous, current, (limit - previous.p[axis]) / (current.p[axis] - previous.p[axis])))
+            out.append(current)
+        elif inside(previous):
+            out.append(_lerp(previous, current, (limit - previous.p[axis]) / (current.p[axis] - previous.p[axis])))
+    return out
+
+
+def _lerp(a, b, t):
+    mix = lambda u, v: tuple(x + (y - x) * t for x, y in zip(u, v))  # noqa: E731
+    return Vertex(mix(a.p, b.p), mix(a.uv, b.uv), mix(a.color, b.color), mix(a.normal, b.normal))
+
+
+def _subtract(polygon, rect):
+    """A convex polygon without a rectangle (x0, z0, x1, z1) of the ground: up to four convex pieces, west, east, then
+    north and south of it between those (a face on the rectangle's west or east edge stays whole on that side)."""
+    x0, z0, x1, z1 = rect
+    out = []
+    west = _clip(polygon, 0, x0, True)
+    if len(west) >= 3:
+        out.append(west)
+    east = _clip(polygon, 0, x1, False)
+    if len(east) >= 3:
+        out.append(east)
+    middle = _clip(_clip(polygon, 0, x0 + 1e-4, False), 0, x1 - 1e-4, True)
+    if len(middle) >= 3:
+        for piece in (_clip(middle, 2, z0, True), _clip(middle, 2, z1, False)):
+            if len(piece) >= 3:
+                out.append(piece)
+    return out
+
+
+def kept_faces(triangles, painted, half):
+    """The chunk's triangles without the painted tiles: each triangle with the painted rectangles cut out of it, so it
+    keeps its own shape everywhere else (painted: rectangles of tiles, x, z, w, d)."""
+    rects = [(x * TILE - half, z * TILE - half, (x + w) * TILE - half, (z + d) * TILE - half) for x, z, w, d in painted]
+    out = []
+    for key, tri in triangles:
+        pieces = [tri]
+        xs, zs = [v.p[0] for v in tri], [v.p[2] for v in tri]
+        for r in rects:
+            if max(xs) <= r[0] or min(xs) >= r[2] or max(zs) <= r[1] or min(zs) >= r[3]:
+                continue
+            pieces = [part for piece in pieces for part in _subtract(piece, r)]
+        out += [(key, piece) for piece in pieces if _area(piece) > 1e-3]
+    return out
+
+
+def _area(polygon):
+    total = [0.0, 0.0, 0.0]
+    for i in range(1, len(polygon) - 1):
+        a, b, c = polygon[0].p, polygon[i].p, polygon[i + 1].p
+        u = [b[k] - a[k] for k in range(3)]
+        v = [c[k] - a[k] for k in range(3)]
+        total = [t + c_ for t, c_ in zip(total, (u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]))]
+    return math.sqrt(sum(t * t for t in total))
+
+
+def start(model, style, fill=KEEP, flat=None):
+    """A project of a chunk: every tile fill ("." keeps the chunk) at its collision's height, or at flat (half
+    tiles); and a copy of the chunk's files, which "." tiles draw from and stop puts back."""
+    folder = MODELS / model
+    if not (folder / "model.glb").exists():
+        raise DataError(f"no map model {model}")
+    path = PROJECTS / f"{model}.json"
+    if path.exists():
+        raise DataError(f"{model} is painted already")
+    if not (STYLES / f"{style}.json").exists():
+        raise DataError(f"no style {style}")
+    base = PROJECTS / f"{model}.base"
+    base.mkdir(parents=True, exist_ok=True)
+    for name in BASE_FILES:
+        if (folder / name).exists():
+            (base / name).write_bytes((folder / name).read_bytes())
+    rows = list(csv.DictReader((folder / "terrain_0.csv").open()))
+    size = max(int(r["x"]) for r in rows) + 1
+    heights = collision_heights(folder, size)
+    height = [[max(-40, min(80, round((flat * HALF_TILE if flat is not None else heights.get((x, z), 0)) / HALF_TILE)))
+               for x in range(size)] for z in range(size)]
+    project = {"$schema": "../map_project.schema.json", "model": model, "style": style, "size": size,
+               "terrain": [fill * size for _ in range(size)], "height": height, "objects": []}
+    path.write_text(dumps(project, width=1 << 20) + "\n")
+    return path
+
+
+def stop(model):
+    """The chunk's files as they were when painting started, and the project and its copy removed. A project started
+    before copies were kept has none: it goes, and the chunk stays as it is."""
+    base = PROJECTS / f"{model}.base"
+    if not (base / "model.glb").exists():
+        (PROJECTS / f"{model}.json").unlink(missing_ok=True)
+        return False
+    for name in BASE_FILES:
+        if (base / name).exists():
+            (MODELS / model / name).write_bytes((base / name).read_bytes())
+    for f in base.iterdir():
+        f.unlink()
+    base.rmdir()
+    (PROJECTS / f"{model}.json").unlink(missing_ok=True)
+    return True
 
 
 def materials_from(materials, material):
@@ -283,10 +438,10 @@ def materials_from(materials, material):
 def wall_runs(grid, size):
     """The ends of every wall segment, for the ground's corners: ((top, bottom), [(x, z), (x, z)]) per tile edge."""
     out = []
-    for (x, z), (_, h) in grid.items():
+    for (x, z), (key, h) in grid.items():
         for dx, dz in ((1, 0), (0, 1)):
             other = grid.get((x + dx, z + dz))
-            if other is None or other[1] == h:
+            if other is None or other[1] == h or (key == KEEP and other[0] == KEEP):
                 continue
             ends = [(x + 1, z), (x + 1, z + 1)] if dx else [(x, z + 1), (x + 1, z + 1)]
             out.append(((max(h, other[1]), min(h, other[1])), ends))
@@ -300,10 +455,10 @@ def wall_faces(grid, size, terrains, style):
     for (x, z), (key, h) in grid.items():
         for dx, dz in ((1, 0), (0, 1)):
             nb = grid.get((x + dx, z + dz))
-            if nb is None or nb[1] == h:
+            if nb is None or nb[1] == h or (key == KEEP and nb[0] == KEEP):
                 continue
             high, low = ((key, h), nb) if h > nb[1] else (nb, (key, h))
-            texture = terrains[low[0]].get("wall") or terrains[high[0]].get("wall") or style["wall"]
+            texture = (terrains.get(low[0], {}).get("wall") or terrains.get(high[0], {}).get("wall") or style["wall"])
             facing = h > nb[1]  # the lower side is east or south
             # A vertical edge (between x and x+1) runs along z; a horizontal one along x
             line = (x + 1, z) if dx else (x, z + 1)
@@ -325,12 +480,21 @@ def wall_faces(grid, size, terrains, style):
     return out
 
 
-def write_collision(folder, grid, size, terrains, over):
+def write_collision(folder, grid, size, terrains, over, base=None):
     heights = height_tables()
+    kept = {}
+    if base is not None:
+        kept = {(int(r["x"]), int(r["z"])): r for r in csv.DictReader((base / "terrain_0.csv").open())}
     rows = []
     for z in range(size):
         for x in range(size):
             key, y = grid[(x, z)]
+            if key == KEEP:
+                row = {k: int(v) for k, v in kept[(x, z)].items()}
+                if (x, z) in over:
+                    row["tile_type"] = over[(x, z)]
+                rows.append(row)
+                continue
             tile_type = over.get((x, z), terrains[key]["tile_type"])
             rows.append({"x": x, "z": z, "shape": 0, "slope": 0, "offset": flat_offset(heights, y),
                          "tile_type": tile_type, "diagonal": 0})
@@ -339,17 +503,33 @@ def write_collision(folder, grid, size, terrains, over):
                                 lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
-    with (folder / "terrain_0_splits.csv").open("w", newline="") as out:
-        out.write("index,unused,slope0,slope1,offset0,offset1\n")
+    # Kept tiles may name the chunk's split planes, which stay
+    if base is not None and (base / "terrain_0_splits.csv").exists():
+        (folder / "terrain_0_splits.csv").write_text((base / "terrain_0_splits.csv").read_text())
+    else:
+        with (folder / "terrain_0_splits.csv").open("w", newline="") as out:
+            out.write("index,unused,slope0,slope1,offset0,offset1\n")
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("generate", help="write a project's chunk").add_argument("project")
+    st = commands.add_parser("start", help="a project of a chunk, and a copy of the chunk")
+    st.add_argument("model")
+    st.add_argument("style")
+    st.add_argument("--fill", default=KEEP)
+    st.add_argument("--flat", type=float)
+    commands.add_parser("stop", help="the chunk as it was, the project gone").add_argument("model")
     args = parser.parse_args()
     try:
-        print(f"{args.project}: {generate(args.project)} triangles")
+        if args.command == "start":
+            print(start(args.model, args.style, args.fill, args.flat * 2 if args.flat is not None else None).relative_to(ROOT))
+        elif args.command == "stop":
+            print(f"{args.model}: put back as it was" if stop(args.model)
+                  else f"{args.model}: its painting is removed; it had no copy of the chunk, which stays as it is")
+        else:
+            print(f"{args.project}: {generate(args.project)} triangles")
     except DataError as error:
         sys.exit(f"error: {error}")
 

@@ -13,6 +13,10 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   the chunk's model and collision. A test chunk (grass, a path, a river, a plateau, tall grass, trees): 417 triangles,
   packed. **Not tried in game.**
 - The Map Editor's **Wireframe** toggle.
+- Painting part of an existing chunk: start from the chunk as it is (terrain "." keeps it: its faces with the
+  painted rectangles cut out, its collision); a copy of the chunk sits beside the painting, which Stop painting puts
+  back; Generate is undoable. A pond in Route 20: 1,176 triangles (vanilla 1,114), packed; undo and stop give vanilla
+  back byte for byte (scratch copy).
 - Next: smart edges between terrains, bulk tools (forest scatter, fence paths), and the user's in-game tests.
 
 ## 2026-11-01 (afternoon): the written models' box, moving faces, pasting at the right height

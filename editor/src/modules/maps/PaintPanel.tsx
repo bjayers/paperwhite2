@@ -2,10 +2,11 @@
 // tile's terrain and height painted on the map, the library's objects placed and dragged on it, and the chunk's model
 // and collision generated from it (tools/paperwhite2/map_maker.py).
 
+import { useState } from "react";
 import type { LibraryObject, MapStyle, PaintShape, PaintTool, Project } from "./painting.ts";
 
 export function PaintPanel({ model, project, dirty, styles, objects, tool, setTool, shape, setShape, terrain, setTerrain, height, setHeight,
-  placing, setPlacing, selected, onRemoveSelected, view, setView, onStart, onGenerate, busy }: {
+  placing, setPlacing, selected, onRemoveSelected, view, setView, onStart, onGenerate, onStop, busy }: {
   model: string | null;
   project: Project | null;
   dirty: boolean;
@@ -26,8 +27,10 @@ export function PaintPanel({ model, project, dirty, styles, objects, tool, setTo
   onRemoveSelected(): void;
   view: "painting" | "model";
   setView(v: "painting" | "model"): void;
-  onStart(style: string, from: "chunk" | "flat", terrain: string, height: number): void;
+  /** fill: a terrain, or "." to keep the chunk; flat: one height in tiles, else the chunk's collision's. */
+  onStart(style: string, fill: string, flat?: number): void;
   onGenerate(): void;
+  onStop(): void;
   busy: boolean;
 }) {
   if (!model) return <p className="muted ow-note">Choose a chunk (the Chunks tab, or click the map).</p>;
@@ -50,8 +53,13 @@ export function PaintPanel({ model, project, dirty, styles, objects, tool, setTo
             {busy ? "Generating…" : "Generate the chunk"}</button>
           {dirty && <span className="muted">unsaved</span>}
         </div>
-        <p className="muted ow-note">Generating writes the chunk's model.glb (the props stay) and its collision from the painting; edit the painting
-          and generate again whenever you like.</p>
+        <p className="muted ow-note">Generating writes the chunk's model.glb (the props stay) and its collision from the painting: painted tiles
+          generated, kept tiles (see-through on the painting) as the chunk had them. Edit the painting and generate again whenever you like;
+          Ctrl+Z undoes a generate.</p>
+        <div className="me-actions">
+          <button className="danger" onClick={onStop} disabled={busy}
+                  title="Puts the chunk's model and collision back as they were when painting started, and removes the painting">Stop painting and put the chunk back</button>
+        </div>
       </section>
       <section className="me-section">
         <h4>Brush</h4>
@@ -76,6 +84,10 @@ export function PaintPanel({ model, project, dirty, styles, objects, tool, setTo
         )}
         {(tool === "terrain" || tool === "both") && (
           <div className="me-terrains">
+            <button className={`me-terrain${terrain === "." ? " selected" : ""}`} onClick={() => setTerrain(".")}
+                    title="The chunk as it was on these tiles: an eraser for painted tiles">
+              <span className="me-swatch me-swatch-keep" />Keep the chunk
+            </button>
             {(style?.terrains ?? []).map((t) => (
               <button key={t.key} className={`me-terrain${terrain === t.key ? " selected" : ""}`} onClick={() => setTerrain(t.key)}>
                 <span className="me-swatch" style={{ background: t.color ?? "#888" }} />{t.name}
@@ -112,37 +124,44 @@ export function PaintPanel({ model, project, dirty, styles, objects, tool, setTo
 }
 
 function StartPainting({ model, styles, onStart, busy }: { model: string; styles: Map<string, MapStyle>;
-  onStart(style: string, from: "chunk" | "flat", terrain: string, height: number): void; busy: boolean }) {
+  onStart(style: string, fill: string, flat?: number): void; busy: boolean }) {
   const ids = [...styles.keys()];
-  const first = ids[0] ?? "";
+  const [style, setStyle] = useState(ids[0] ?? "");
+  const [from, setFrom] = useState<"keep" | "fill">("keep");
+  const [fill, setFill] = useState("");
+  const [flat, setFlat] = useState<number | null>(null);
+  const chosen = style || ids[0] || "";
+  const terrains = styles.get(chosen)?.terrains ?? [];
+  const fillKey = fill || terrains[0]?.key || "g";
   return (
     <section className="me-section">
       <h4>Paint this chunk</h4>
-      <p className="ow-note">{model} isn't a painted map yet. A painted map replaces the chunk's model and collision with ones generated from a
-        grid you paint: each tile's terrain and height, and objects from the library.</p>
-      <form onSubmit={(e) => {
-        e.preventDefault();
-        const f = new FormData(e.currentTarget);
-        onStart(String(f.get("style")), f.get("from") === "flat" ? "flat" : "chunk", String(f.get("terrain")), Math.round(Number(f.get("height")) * 2));
-      }}>
-        <div className="me-row"><label>Style</label>
-          <select name="style" defaultValue={first}>{ids.map((id) => <option key={id} value={id}>{styles.get(id)!.name}</option>)}</select>
-        </div>
-        <div className="me-row"><label>Fill with</label>
-          <select name="terrain" defaultValue={styles.get(first)?.terrains[0]?.key}>
-            {(styles.get(first)?.terrains ?? []).map((t) => <option key={t.key} value={t.key}>{t.name}</option>)}
-          </select>
-        </div>
-        <div className="me-row"><label>Heights</label>
-          <span className="me-inline">
-            <label className="ow-check"><input type="radio" name="from" value="chunk" defaultChecked /> the chunk's collision</label>
-            <label className="ow-check"><input type="radio" name="from" value="flat" /> flat at</label>
-            <input name="height" type="number" step={0.5} defaultValue={2} className="me-number" /> tiles
-          </span>
-        </div>
-        <div className="me-actions"><button className="primary" type="submit" disabled={busy || !first}>Start painting</button></div>
-      </form>
-      <p className="muted ow-note">Nothing changes in the chunk until you generate it.</p>
+      <p className="ow-note">Paint terrain and heights over {model}, place objects of the library, then generate its model and collision.</p>
+      <div className="me-row"><label>Style</label>
+        <select value={chosen} onChange={(e) => setStyle(e.target.value)}>{ids.map((id) => <option key={id} value={id}>{styles.get(id)!.name}</option>)}</select>
+      </div>
+      <div className="me-row"><label>Start from</label>
+        <span className="me-stack">
+          <label className="ow-check"><input type="radio" checked={from === "keep"} onChange={() => setFrom("keep")} /> the chunk as it is: paint only
+            what you change (a pond in a field)</label>
+          <label className="ow-check"><input type="radio" checked={from === "fill"} onChange={() => setFrom("fill")} /> every tile
+            <select value={fillKey} disabled={from !== "fill"} onChange={(e) => setFill(e.target.value)}>
+              {terrains.map((t) => <option key={t.key} value={t.key}>{t.name}</option>)}
+            </select>
+            (a new map)</label>
+        </span>
+      </div>
+      <div className="me-row"><label>Heights</label>
+        <span className="me-inline">
+          <label className="ow-check"><input type="radio" checked={flat === null} onChange={() => setFlat(null)} /> the chunk's collision</label>
+          <label className="ow-check"><input type="radio" checked={flat !== null} onChange={() => setFlat(2)} /> flat at</label>
+          <input type="number" step={0.5} value={flat ?? 2} disabled={flat === null} className="me-number" onChange={(e) => setFlat(Number(e.target.value))} /> tiles
+        </span>
+      </div>
+      <div className="me-actions">
+        <button className="primary" disabled={busy || !chosen} onClick={() => onStart(chosen, from === "keep" ? "." : fillKey, flat ?? undefined)}>Start painting</button>
+      </div>
+      <p className="muted ow-note">Nothing changes in the chunk until you generate it, and a copy of it is kept: Stop painting puts it back.</p>
     </section>
   );
 }

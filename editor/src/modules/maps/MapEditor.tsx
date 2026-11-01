@@ -25,7 +25,7 @@ import { ChunkScene, connectedFaces, faceKey, forgetObject, stackedFaces, type C
 import { seasonSets, seasonVariants, type SeasonSet } from "./seasons.ts";
 import { PaintPanel } from "./PaintPanel.tsx";
 import { ObjectsPanel } from "./ObjectsPanel.tsx";
-import { PROJECT_SCHEMA, loadLibrary, loadStyles, painted, projectPath, strokeCells, type LibraryObject, type MapStyle, type PaintShape,
+import { loadLibrary, loadStyles, painted, projectPath, strokeCells, type LibraryObject, type MapStyle, type PaintShape,
   type PaintTool, type Project } from "./painting.ts";
 
 type Tab = "chunks" | "faces" | "collision" | "paint" | "objects";
@@ -41,18 +41,25 @@ const MATERIAL_LIMIT = 255;
  * document's own history holds. */
 type Step = { kind: "faces"; path: string; before: Snapshot; after: Snapshot; what: string } | { kind: "docs"; paths: string[]; what: string };
 
-/** A chunk's model.glb, as base64, and its data.json, which an edit may mark written. */
-interface Snapshot { glb: string; data: string }
+/** A chunk's model.glb, as base64, and its data.json, which an edit may mark written; with its collision files where
+ * the step rewrote them (a generate). */
+interface Snapshot { glb: string; data: string; files?: Record<string, string> }
 
 
-async function glbBase64(path: string): Promise<Snapshot> {
+async function glbBase64(path: string, collision = false): Promise<Snapshot> {
   const response = await fetch(`/${path}?t=${Date.now()}`, { cache: "no-store" });
   if (!response.ok) throw new Error(`${path}: ${response.statusText}`);
   const bytes = new Uint8Array(await response.arrayBuffer());
   let text = "";
   for (let i = 0; i < bytes.length; i += 0x8000) text += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
   const data = (await api.file(path.replace(/model\.glb$/, "data.json"))).text;
-  return { glb: btoa(text), data };
+  if (!collision) return { glb: btoa(text), data };
+  const files: Record<string, string> = {};
+  for (const name of ["terrain_0.csv", "terrain_0_splits.csv"]) {
+    const file = await api.file(path.replace(/model\.glb$/, name)).catch(() => null);
+    if (file) files[name] = file.text;
+  }
+  return { glb: btoa(text), data, files };
 }
 
 export function MapEditor({ constants }: ToolProps) {
@@ -249,7 +256,13 @@ export function MapEditor({ constants }: ToolProps) {
     setBusy(true);
     try {
       const snapshot = back ? last.before : last.after;
-      await api.glbRaw(last.path, snapshot.glb, snapshot.data);
+      await api.glbRaw(last.path, snapshot.glb, snapshot.data, snapshot.files);
+      if (snapshot.files) {
+        const folder = last.path.replace(/\/model\.glb$/, "");
+        const paths = Object.keys(snapshot.files).map((n) => `${folder}/${n}`);
+        for (const p of paths) if (documents.get(p)) await documents.reload(p);
+        setMapVersion((v) => v + 1);
+      }
       moved();
       setFaces([]);
       reloadChunk(last.path.replace(/\/model\.glb$/, ""));
@@ -350,25 +363,46 @@ export function MapEditor({ constants }: ToolProps) {
     setSelectedObject(null);
   };
 
-  /** Starts a painted map of the chosen chunk: one terrain, and its collision's heights or one height. */
-  const startProject = async (style: string, from: "chunk" | "flat", fill: string, flat: number) => {
-    if (!projectFile || !modelName || !map || !current) return;
-    const size = map.chunkTiles;
-    const l = current.layers[0];
-    const height = Array.from({ length: size }, (_, z) => Array.from({ length: size }, (_, x) => {
-      const h = from === "chunk" && l ? l.heights[z * size + x] : flat * 8;
-      return Math.max(-40, Math.min(80, Math.round((Number.isFinite(h) ? h : flat * 8) / 8)));
-    }));
-    const data: Project = { model: modelName, style, size, terrain: Array.from({ length: size }, () => fill.repeat(size)), height, objects: [] };
-    documents.create(projectFile, PROJECT_SCHEMA, fromPlain({ $schema: "../map_project.schema.json", ...data }));
-    if (!(await documents.save(projectFile))) {
-      setMessage({ text: documents.get(projectFile)?.saveError ?? "The painting didn't save", error: true });
-      return;
+  /** Starts a painted map of the chosen chunk: every tile fill ("." keeps the chunk), at its collision's heights or
+   * one height; the server keeps a copy of the chunk, which kept tiles draw from and Stop puts back. */
+  const startProject = async (style: string, fill: string, flat?: number) => {
+    if (!projectFile || !modelName) return;
+    setBusy(true);
+    try {
+      await api.startPainting(modelName, style, fill, flat);
+      await documents.hold(projectFile);
+      setProjectExists((m) => ({ ...m, [projectFile]: true }));
+      setTerrainKey(fill === "." ? (styles.get(style)?.terrains[0]?.key ?? "g") : fill);
+      setPaintView("painting");
+      setMessage({ text: `Started ${projectFile}${fill === "." ? ", every tile kept as the chunk has it: paint only what you change" : ""}. Generate the chunk when it's ready.` });
+    } catch (e) {
+      setMessage({ text: (e as Error).message, error: true });
+    } finally {
+      setBusy(false);
     }
-    setProjectExists((m) => ({ ...m, [projectFile]: true }));
-    setTerrainKey(fill);
-    setPaintView("painting");
-    setMessage({ text: `Started ${projectFile}. Paint it, place objects, then Generate the chunk.` });
+  };
+
+  /** Puts the chunk back as it was before painting, and removes the painting. */
+  const stopProject = async () => {
+    if (!modelName || !projectFile || !current) return;
+    if (!window.confirm(`Put ${modelName} back as it was before painting? Its painting is removed.`)) return;
+    setBusy(true);
+    try {
+      const result = await api.stopPainting(modelName);
+      documents.close(projectFile);
+      setProjectExists((m) => ({ ...m, [projectFile]: false }));
+      setHistory((h) => ({ done: h.done.filter((st) => !(st.kind === "docs" && st.paths.includes(projectFile))),
+                           undone: h.undone.filter((st) => !(st.kind === "docs" && st.paths.includes(projectFile))) }));
+      for (const l of current.layers) if (documents.get(l.path)) await documents.reload(l.path);
+      reloadChunk(current.folder);
+      setMapVersion((v) => v + 1);
+      setMessage({ text: result.output.includes("no copy") ? `${modelName}'s painting is removed (it was started before copies of the chunk were kept, so the chunk stays as it is).`
+        : `${modelName} is back as it was before painting.` });
+    } catch (e) {
+      setMessage({ text: (e as Error).message, error: true });
+    } finally {
+      setBusy(false);
+    }
   };
 
   const generate = async () => {
@@ -378,7 +412,11 @@ export function MapEditor({ constants }: ToolProps) {
       if (projectDoc?.dirty && !(await documents.save(projectFile))) throw new Error(documents.get(projectFile)?.saveError ?? "The painting didn't save");
       // The collision the generator writes over must not be held unsaved
       for (const l of current.layers) if (documents.get(l.path)?.dirty) throw new Error(`${l.path} has unsaved edits: save or revert them first`);
+      const path = `${current.folder}/model.glb`;
+      const before = await glbBase64(path, true);
       const result = await api.generateMap(modelName);
+      const after = await glbBase64(path, true);
+      setHistory((h) => ({ done: [...h.done, { kind: "faces", path, before, after, what: "Generated the chunk" }], undone: [] }));
       for (const l of current.layers) if (documents.get(l.path)) await documents.reload(l.path);
       reloadChunk(current.folder);
       setMapVersion((v) => v + 1);
@@ -890,7 +928,7 @@ export function MapEditor({ constants }: ToolProps) {
               <PaintPanel model={modelName} project={project} dirty={!!projectDoc?.dirty} styles={styles} objects={library} tool={tool} setTool={setTool}
                           shape={shape} setShape={setShape} terrain={terrainKey} setTerrain={setTerrainKey} height={paintHeightHalf} setHeight={setPaintHeightHalf}
                           placing={placing} setPlacing={setPlacing} selected={selectedObject} onRemoveSelected={removeSelectedObject}
-                          view={paintView} setView={setPaintView} onStart={startProject} onGenerate={generate} busy={busy} />
+                          view={paintView} setView={setPaintView} onStart={startProject} onGenerate={generate} onStop={stopProject} busy={busy} />
             )}
             {tab === "objects" && (
               <ObjectsPanel objects={library} chosen={chosenObject} setChosen={setChosenObject} placing={placingOnChunk} setPlacing={setPlacingOnChunk}

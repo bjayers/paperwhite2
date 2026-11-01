@@ -237,7 +237,9 @@ export class ChunkScene {
     const map = this.map;
     this.paintChunk = painting ? index : null;
     this.painting_ = painting;
-    for (const o of this.chunks.children) o.visible = o.userData.chunk !== this.paintChunk;
+    // Where tiles keep the chunk, its model shows under the painting
+    const keeps = !!painting?.terrain.some((row) => row.includes("."));
+    for (const o of this.chunks.children) o.visible = keeps || o.userData.chunk !== this.paintChunk;
     if (!painting || index === null || !map) {
       this.paintGroup.clear();
       if (this.terrainPicks.some((p) => p.mesh.userData.painting)) this.showTerrain(null);
@@ -251,24 +253,32 @@ export class ChunkScene {
     this.terrain.clear();
     this.terrainPicks = [];
     const plane = new THREE.PlaneGeometry(TILE, TILE).rotateX(-Math.PI / 2);
-    const drawn = new THREE.InstancedMesh(plane, new THREE.MeshLambertMaterial(), size * size);
+    // Kept tiles are see-through, over the model, but still take strokes
+    const drawn = new THREE.InstancedMesh(plane, new THREE.MeshLambertMaterial({ transparent: true, depthWrite: false }), size * size);
+    const pick = new THREE.InstancedMesh(plane, new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false, transparent: true, opacity: 0 }), size * size);
     const tiles: { x: number; z: number }[] = [];
     const m = new THREE.Matrix4();
     for (let z = 0; z < size; z++) for (let x = 0; x < size; x++) {
       const i = z * size + x;
-      m.makeTranslation(x0 + x * TILE + TILE / 2, y(x, z), z0 + z * TILE + TILE / 2);
-      drawn.setMatrixAt(i, m);
+      const kept = painting.terrain[z][x] === ".";
+      m.makeTranslation(x0 + x * TILE + TILE / 2, y(x, z) + (keeps ? 1 : 0), z0 + z * TILE + TILE / 2);
+      pick.setMatrixAt(i, m);
+      // A kept tile isn't drawn: shrunk to nothing where it stands
+      drawn.setMatrixAt(i, kept ? new THREE.Matrix4().makeScale(0, 0, 0) : m);
       drawn.setColorAt(i, new THREE.Color(painting.colors[painting.terrain[z][x]] ?? "#888888"));
       tiles.push({ x: chunk.column * map.chunkTiles + x, z: chunk.row * map.chunkTiles + z });
     }
     drawn.userData.painting = true;
-    this.terrain.add(drawn);
-    this.terrainPicks.push({ mesh: drawn, drawn, tiles });
+    pick.userData.painting = true;
+    drawn.renderOrder = 2;
+    this.terrain.add(drawn, pick);
+    this.terrainPicks.push({ mesh: pick, drawn, tiles });
     // The walls between heights, grey
     const walls: number[] = [];
     for (let z = 0; z < size; z++) for (let x = 0; x < size; x++) {
       for (const [dx, dz] of [[1, 0], [0, 1]]) {
         if (x + dx >= size || z + dz >= size) continue;
+        if (painting.terrain[z][x] === "." && painting.terrain[z + dz][x + dx] === ".") continue;
         const a = y(x, z), b = y(x + dx, z + dz);
         if (a === b) continue;
         const [ax, az, bx, bz] = dx ? [x + 1, z, x + 1, z + 1] : [x, z + 1, x + 1, z + 1];
@@ -440,6 +450,14 @@ export class ChunkScene {
     this.stroke.set(key, hit.tile);
     hit.drawn.setColorAt(hit.index, new THREE.Color(0xffe060));
     if (hit.drawn.instanceColor) hit.drawn.instanceColor.needsUpdate = true;
+    // A tile drawn as nothing (a kept tile of a painting) shows while the stroke passes
+    const pick = this.terrainPicks.find((p) => p.drawn === hit.drawn);
+    if (pick && pick.mesh !== hit.drawn) {
+      const m = new THREE.Matrix4();
+      pick.mesh.getMatrixAt(hit.index, m);
+      hit.drawn.setMatrixAt(hit.index, m);
+      hit.drawn.instanceMatrix.needsUpdate = true;
+    }
   }
 
   private up = (ev: PointerEvent) => {

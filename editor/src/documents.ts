@@ -99,9 +99,10 @@ class DocumentStore {
   /** Closes a tab; the caller asks first when it has unsaved changes. */
   close(path: string) {
     this.docs.delete(path);
+    // A file held for a tool has no tab
     const i = this.order.indexOf(path);
-    this.order.splice(i, 1);
-    if (this.active === path) this.active = this.order[Math.min(i, this.order.length - 1)] ?? null;
+    if (i >= 0) this.order.splice(i, 1);
+    if (this.active === path) this.active = this.order[Math.min(Math.max(i, 0), this.order.length - 1)] ?? null;
     this.changed();
   }
 
