@@ -1,0 +1,14 @@
+{
+    "$schema": "../library.schema.json",
+    "name": "Route 20",
+    "sources": [
+        "overworld_2_map04_20",
+        "overworld_2_map05_20",
+        "overworld_2_map04_21",
+        "overworld_2_map05_21",
+        "autumn04_20",
+        "autumn05_20",
+        "autumn04_21",
+        "autumn05_21"
+    ]
+}
