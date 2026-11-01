@@ -84,3 +84,6 @@
 .ow-scrub { display: inline-flex; align-items: center; gap: 4px; }
 .ow-scrub-label { cursor: ew-resize; user-select: none; padding: 2px 4px; border-radius: 4px; color: var(--muted); }
 .ow-scrub-label:hover { background: var(--hover); color: inherit; }
+
+/* The camera preview's controls stay at the top of the side panel while it scrolls */
+.ow-sticky { position: sticky; top: 0; z-index: 2; background: var(--panel); }

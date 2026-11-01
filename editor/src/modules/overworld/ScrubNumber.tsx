@@ -22,6 +22,8 @@ export function ScrubNumber({ value, onChange, step = 1, label, digits = 2 }: {
       <span className="ow-scrub-label" title="Drag left or right to change it (Shift finer, Alt coarser)"
             onPointerDown={(e) => {
               e.preventDefault();
+              // Out of the box typed in last (the zone filter), so Ctrl+Z undoes the drag, not the typing
+              (document.activeElement as HTMLElement | null)?.blur?.();
               (e.target as HTMLElement).setPointerCapture(e.pointerId);
               drag.current = { x: e.clientX, start: value, moved: false };
             }}

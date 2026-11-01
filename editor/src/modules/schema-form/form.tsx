@@ -217,7 +217,7 @@ function NumberField({ schema, type, value, path, ctx }: {
     <span className="number">
       {draggable && (
         <span className="scrub" title="Drag left or right to change it (Shift finer, Alt coarser)"
-              onPointerDown={(e) => { e.preventDefault(); (e.target as HTMLElement).setPointerCapture(e.pointerId); drag.current = { x: e.clientX, start: n!, moved: false }; }}
+              onPointerDown={(e) => { e.preventDefault(); (document.activeElement as HTMLElement | null)?.blur?.(); (e.target as HTMLElement).setPointerCapture(e.pointerId); drag.current = { x: e.clientX, start: n!, moved: false }; }}
               onPointerMove={(e) => {
                 const d = drag.current;
                 if (!d) return;

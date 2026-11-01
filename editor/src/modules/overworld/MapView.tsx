@@ -869,6 +869,8 @@ class MapScene {
   }
 
   down = (ev: PointerEvent) => {
+    // A click on the map leaves the box typed in last, so the editor's keys (Ctrl+Z) are the map's again
+    (document.activeElement as HTMLElement | null)?.blur?.();
     if (ev.button !== 0) return;
     // Shift+click is the editor's (adding), not the page's text selection
     if (ev.shiftKey) ev.preventDefault();

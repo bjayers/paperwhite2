@@ -104,7 +104,7 @@ export function CameraPanel({ path, index, area, constants, onEdit, previewing, 
   };
   return (
     <div>
-      <div className="ow-panel-box">
+      <div className="ow-panel-box ow-sticky">
         <label className="ow-check"><input type="checkbox" checked={previewing} onChange={(e) => onPreview(e.target.checked)} /> Preview the game's camera</label>
         {previewing && r && (
           <label className="ow-inline" title="Where the player stands across the area: its first row to its last">
@@ -124,7 +124,15 @@ export function CameraPanel({ path, index, area, constants, onEdit, previewing, 
               <option value="x">left to right (west to east)</option>
             </select>
           </label>{" "}
-          <button onClick={swapEnds} title="The other way round: the last row's setting at the first row">Swap first and last</button>
+          {(() => {
+            const same = JSON.stringify([r.pitch[0], r.yaw[0], r.distance[0], r.target_offset[0], r.fov[0]]) ===
+              JSON.stringify([r.pitch[1], r.yaw[1], r.distance[1], r.target_offset[1], r.fov[1]]);
+            return (
+              <button onClick={swapEnds} disabled={same}
+                      title={same ? "Both rows have the same camera, so there's nothing to swap yet: change one row's values first"
+                        : "The other way round: the last row's camera at the first row and the first's at the last"}>Swap first and last</button>
+            );
+          })()}
           <p className="muted ow-note">On the map, the arrow runs from the first row (green edge) to the last (orange edge); drag the
             area to move it, or its edges and corners to resize it.</p>
         </div>
