@@ -841,13 +841,24 @@ class MapScene {
   pick(ev: PointerEvent): { tile: { x: number; z: number; h: number } | null; entity: Entity | null; rail: RailPick | null } {
     this.aim(ev);
     // A building's model is a group of meshes: a hit on any of them is the building's
-    const hitEntity = this.raycaster.intersectObjects(this.entityMeshes.map((m) => m.object), true)[0];
-    let hitObject: THREE.Object3D | null = hitEntity?.object ?? null;
-    let entity: Entity | null = null;
-    while (hitObject && !entity) {
-      entity = this.entityMeshes.find((m) => m.object === hitObject)?.entity ?? null;
-      hitObject = hitObject.parent;
+    // Every entity under the pointer, nearest first; a building's model is a group of meshes, a hit on any its own
+    const owner = (object: THREE.Object3D | null): Entity | null => {
+      for (let o = object; o; o = o.parent) {
+        const found = this.entityMeshes.find((m) => m.object === o)?.entity;
+        if (found) return found;
+      }
+      return null;
+    };
+    const under: Entity[] = [];
+    for (const hit of this.raycaster.intersectObjects(this.entityMeshes.map((m) => m.object), true)) {
+      const e = owner(hit.object);
+      if (e && !under.includes(e)) under.push(e);
     }
+    // An instance over its host is the one meant (the host's own fields are unused), and a host comes last
+    const rank = (e: Entity) => (e.kind === "instance" ? 0 : e.host ? 2 : 1);
+    const nearest = under[0];
+    const sameTile = under.filter((e) => nearest && e.x === nearest.x && e.z === nearest.z);
+    const entity: Entity | null = sameTile.sort((a, b) => rank(a) - rank(b))[0] ?? nearest ?? null;
     let tile: { x: number; z: number; h: number } | null = null;
     let tileDistance = Infinity;
     for (const { mesh, tiles } of this.tileMeshes) {

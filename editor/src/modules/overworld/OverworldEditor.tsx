@@ -12,7 +12,7 @@ import type { Schema } from "../../../shared/schema.ts";
 import type { ToolProps } from "../types.ts";
 import { navigate, useToolParams } from "../../navigation.ts";
 import { DocForm, schemaAt, useHeld } from "../followers/DocForm.tsx";
-import { defaultFor } from "../schema-form/form.tsx";
+import { defaultFor, type FormContext } from "../schema-form/form.tsx";
 import { ScriptEditor } from "../scripts/ScriptEditor.tsx";
 import { loadWorld, resolveScript, zoneLabel, type World } from "../world/world.ts";
 import { KIND_LISTS, KIND_NAMES, entitiesOf, positionEdits, railEdits, type Entity, type EntityKind } from "./entities.ts";
@@ -20,7 +20,7 @@ import { loadRails, oppositeRailDir, railDirOf, railEntities, railLevels, railTo
   type RailMap, type RailPlace } from "./rails.ts";
 import { RailPanel } from "./RailPanel.tsx";
 import { CameraPanel } from "./CameraPanel.tsx";
-import { SpawnSection, spawnRender } from "./SpawnPanel.tsx";
+import { InstancePanel, SpawnSection } from "./SpawnPanel.tsx";
 import { SEASON_NAMES, TIME_NAMES, instanceEntities, previewPicks, spawnPath, type PreviewWorld, type SpawnEntry } from "./spawns.ts";
 import { WEATHERS } from "../encounters/model.ts";
 import { cameraEntities, cameraFileOf, circleCamera, defaultCamera, newRectArea, rectCamera, type CameraArea, type DefaultCamera,
@@ -78,6 +78,9 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   const [previewing, setPreviewing] = useState(false);
   const [previewT, setPreviewT] = useState(0);
   const [previewDefault, setPreviewDefault] = useState(false);
+  /** An NPC with spawn data being removed, while the editor asks what becomes of its condition and instances. */
+  const [removing, setRemoving] = useState<{ index: number; npcId: number } | null>(null);
+  const [moveToId, setMoveToId] = useState<number | null>(null);
   /** Drawing the chosen entity's rectangle on the map. */
   const [drawing, setDrawing] = useState(false);
   useEffect(() => {
@@ -546,10 +549,31 @@ export function OverworldEditor({ constants, open }: ToolProps) {
       return;
     }
     if (!eventsPath || !chosen) return;
+    // An NPC with a condition or instances: asked what becomes of them first
+    if (chosen.kind === "npc" && spawnEntries.some((e) => e.id === chosen.npcId)) {
+      setRemoving({ index: chosen.index, npcId: chosen.npcId! });
+      return;
+    }
+    removeNpc(chosen.index, null);
+  };
+
+  /** Removes an NPC of the events; its spawn data goes with it, or to another NPC (moveTo), in the same step. */
+  const removeNpc = (index: number, moveTo: number | null | "delete") => {
+    if (!eventsPath || !chosen) return;
+    const paths = [eventsPath];
+    const npcId = chosen.npcId;
+    if (moveTo !== null && spawnFile && npcId !== undefined) {
+      const list = spawnEntries.flatMap((e) => (e.id !== npcId ? [e] : moveTo === "delete" ? [] : [{
+        ...e, id: moveTo, instances: e.instances?.map((inst) => ({ ...inst, npc: { ...inst.npc, id: moveTo } })),
+      }]));
+      documents.edit(spawnFile, ["npcs"], fromPlain(list));
+      paths.push(spawnFile);
+    }
     // The others keep their IDs (scripts name NPCs by ID); only the later ones' places in the list move up
-    documents.edit(eventsPath, [KIND_LISTS[chosen.kind], chosen.index], undefined);
-    record([eventsPath]);
+    documents.edit(eventsPath, [KIND_LISTS[chosen.kind], index], undefined);
+    record(paths);
     setSelected(null);
+    setRemoving(null);
   };
 
   /** Paints tiles' types or heights on the shown layer, in the chunks' collision CSVs: one undo step a stroke. */
@@ -676,8 +700,14 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     ? entities.filter((e) => e !== chosen && e.x !== null && e.z !== null && chosen.x! >= e.x && chosen.x! < e.x + e.width && chosen.z! >= e.z && chosen.z! < e.z + e.depth)
     : [];
   const fields = useMemo(() => (chosen ? entityFields(chosen.kind, () => setScriptOpen(true)) : undefined), [chosen?.kind]);
-  const instanceFields = useMemo(() => (chosen?.spawn ? spawnRender(entityFields("npc", () => setScriptOpen(true),
-    ["npcs", chosen.spawn.entry, "instances", chosen.spawn.instance, "npc"])) : undefined), [chosen?.spawn?.entry, chosen?.spawn?.instance]);
+  const instanceFields = useMemo<FormContext["render"]>(() => {
+    if (!chosen?.spawn) return undefined;
+    const base = ["npcs", chosen.spawn.entry, "instances", chosen.spawn.instance, "npc"];
+    const fields = entityFields("npc", () => setScriptOpen(true), base);
+    // Its id is always the host's: the game keeps the host's when it writes the instance in
+    return (path, value, schema, ctx) => (path.length === base.length + 1 && path[base.length] === "id"
+      ? <span className="muted">the host's, {String(value)}</span> : fields?.(path, value, schema, ctx));
+  }, [chosen?.spawn?.entry, chosen?.spawn?.instance]);
   const revert = async () => {
     for (const d of unsavedDocs) await documents.reload(d.path).catch(() => undefined);
     revertProps();
@@ -693,6 +723,33 @@ export function OverworldEditor({ constants, open }: ToolProps) {
 
   return (
     <div className="ow-editor">
+      {removing && (() => {
+        const entry = spawnEntries.find((e) => e.id === removing.npcId);
+        const others = entities.filter((e) => e.kind === "npc" && e.npcId !== removing.npcId && !spawnEntries.some((x) => x.id === e.npcId));
+        const target = moveToId ?? others[0]?.npcId ?? null;
+        return (
+          <div className="overlay" onMouseDown={() => setRemoving(null)}>
+            <div className="ow-dialog" onMouseDown={(e) => e.stopPropagation()}>
+              <h4>Remove NPC {removing.npcId}?</h4>
+              <p>It has {entry?.when ? "a condition" : ""}{entry?.when && entry?.instances?.length ? " and " : ""}
+                {entry?.instances?.length ? `${entry.instances.length} instance${entry.instances.length > 1 ? "s" : ""}` : ""}.</p>
+              <div className="ow-dialog-actions">
+                <button onClick={() => removeNpc(removing.index, "delete")}>Remove it and them</button>
+                {others.length > 0 && target !== null && (
+                  <span className="ow-inline">
+                    <button onClick={() => removeNpc(removing.index, target)}>Remove it, give them to NPC</button>
+                    <select value={target} onChange={(e) => setMoveToId(Number(e.target.value))}>
+                      {others.map((o) => <option key={o.npcId} value={o.npcId}>{o.npcId} {o.model?.replace(/^OBJ_CODE_/, "")}</option>)}
+                    </select>
+                  </span>
+                )}
+                <button className="primary" onClick={() => setRemoving(null)}>Cancel</button>
+              </div>
+              <p className="muted">The other NPCs keep their IDs either way. Ctrl+Z puts it all back.</p>
+            </div>
+          </div>
+        );
+      })()}
       <header className="ow-header">
         <h2>Overworld Editor</h2>
         {zone && <strong>{zoneLabel(zone)}</strong>}
@@ -899,9 +956,11 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                     const host = entities.find((e) => e.kind === "npc" && e.npcId === chosen.spawn!.host);
                     if (host) setSelected({ kind: "npc", index: host.index });
                   }}>Its host, NPC {chosen.spawn!.host}</button> <span className="muted">The field writes it into the host's record when it's picked; its id stays the host's.</span></p>
-                  <DocForm key={`${spawnFile}:${chosen.spawn!.entry}:${chosen.spawn!.instance}`} path={spawnFile}
-                           at={["npcs", chosen.spawn!.entry, "instances", chosen.spawn!.instance]} constants={constants}
-                           hideDescription flat render={instanceFields} onEdit={() => record([spawnFile])} />
+                  {spawnEntries[chosen.spawn!.entry]?.instances?.[chosen.spawn!.instance] && (
+                    <InstancePanel path={spawnFile} entry={chosen.spawn!.entry} instance={chosen.spawn!.instance}
+                                   inst={spawnEntries[chosen.spawn!.entry].instances![chosen.spawn!.instance]} constants={constants}
+                                   onEdit={() => record([spawnFile])} npcFields={instanceFields} />
+                  )}
                 </>
               ) : eventsPath && (
                 <>

@@ -87,3 +87,19 @@
 
 /* The camera preview's controls stay at the top of the side panel while it scrolls */
 .ow-sticky { position: sticky; top: 0; z-index: 2; background: var(--panel); }
+
+/* The spawn panels: a section each, headed, its settings a label column beside the controls */
+.ow-section { margin: 10px 0; padding: 10px 12px; }
+.ow-section h5 { margin: 0 0 8px; font-size: 13px; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.ow-section h5 .muted { font-weight: normal; }
+.ow-section-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 12px; }
+.ow-condition { display: grid; grid-template-columns: 72px 1fr; column-gap: 10px; row-gap: 12px; align-items: center; margin: 4px 0 8px; }
+.ow-condition-label { color: var(--muted); font-size: 12px; text-align: right; }
+.ow-condition-more { grid-column: 1 / -1; margin-top: 4px; }
+.ow-condition-more > summary { cursor: pointer; color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+.ow-instance-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; padding: 6px 0; border-top: 1px solid var(--border); font-size: 13px; }
+
+/* A question before a change (removing an NPC with spawn data) */
+.ow-dialog { margin-top: 20vh; width: min(520px, 92vw); background: var(--panel); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); padding: 16px 18px; }
+.ow-dialog h4 { margin: 0 0 8px; }
+.ow-dialog-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 12px 0; }
