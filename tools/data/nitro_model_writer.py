@@ -275,20 +275,83 @@ def decode_display_list(dl):
     return triangles
 
 
+def _cross(a, b, c):
+    u = [b[k] - a[k] for k in range(3)]
+    v = [c[k] - a[k] for k in range(3)]
+    return (u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0])
+
+
+def _flat_convex(a, b, c, d):
+    """Whether the quad a, b, c, d is flat and convex, so the GPU draws it as its two triangles would be drawn."""
+    n1, n2 = _cross(a, b, c), _cross(a, c, d)
+    l1, l2 = sum(x * x for x in n1) ** 0.5, sum(x * x for x in n2) ** 0.5
+    if not l1 or not l2 or sum(x * y for x, y in zip(n1, n2)) < 0.9999 * l1 * l2:
+        return False
+    # b and d lie either side of a-c by construction; a and c must lie either side of b-d
+    m1, m2 = _cross(b, d, a), _cross(b, d, c)
+    return sum(x * y for x, y in zip(m1, m2)) < 0
+
+
+def polygons(triangles):
+    """The triangles as the polygons a display list draws: two triangles (a, b, c) and (a, c, d) that make a flat,
+    convex quad are one quad."""
+    out = []
+    i = 0
+    while i < len(triangles):
+        t = triangles[i]
+        if i + 1 < len(triangles):
+            u = triangles[i + 1]
+            if (u[0] == t[0] and u[1] == t[2]
+                    and _flat_convex(t[0].position, t[1].position, t[2].position, u[2].position)):
+                out.append((t[0], t[1], t[2], u[2]))
+                i += 2
+                continue
+        out.append(t)
+        i += 1
+    return out
+
+
+def _vertex_command(position, last):
+    """The shortest command that sets a vertex at position after one at last."""
+    x, y, z = position
+    if last is not None:
+        if z == last[2]:
+            return 0x25, [(x & 0xffff) | (y & 0xffff) << 16]
+        if y == last[1]:
+            return 0x26, [(x & 0xffff) | (z & 0xffff) << 16]
+        if x == last[0]:
+            return 0x27, [(y & 0xffff) | (z & 0xffff) << 16]
+        delta = [position[k] - last[k] for k in range(3)]
+        if all(-512 <= d <= 511 for d in delta):
+            return 0x28, [sum((d & 0x3ff) << 10 * k for k, d in enumerate(delta))]
+    if all(c % 64 == 0 and -32768 <= c <= 32704 for c in position):
+        return 0x24, [sum(((c >> 6) & 0x3ff) << 10 * k for k, c in enumerate(position))]
+    return 0x23, [(x & 0xffff) | (y & 0xffff) << 16, z & 0xffff]
+
+
 def encode_display_list(triangles):
-    """A display list drawing triangles of Vertex, with packed commands: a color, normal or texture coordinate only
-    when it changes, and each vertex at full precision."""
-    commands = [(0x40, [0])]
+    """A display list drawing triangles of Vertex: quads where two triangles make one, runs of each kind under one
+    BEGIN, a color, normal or texture coordinate only when it changes, each vertex with the shortest command that
+    reaches it exactly, and the commands packed four to a word."""
+    commands = []
     last = {"texcoord": None, "color": None, "normal": None}
-    for triangle in triangles:
-        for vertex in triangle:
+    position = None
+    kind = None
+    for polygon in polygons(triangles):
+        wanted = 1 if len(polygon) == 4 else 0
+        if wanted != kind:
+            if kind is not None:
+                commands.append((0x41, []))
+            commands.append((0x40, [wanted]))
+            kind = wanted
+        for vertex in polygon:
             for op, name in ((0x20, "color"), (0x21, "normal"), (0x22, "texcoord")):
                 value = getattr(vertex, name)
                 if value is not None and value != last[name]:
                     commands.append((op, [value]))
                     last[name] = value
-            x, y, z = (c & 0xffff for c in vertex.position)
-            commands.append((0x23, [x | y << 16, z]))
+            commands.append(_vertex_command(vertex.position, position))
+            position = vertex.position
     commands.append((0x41, []))
     out = bytearray()
     for start in range(0, len(commands), 4):
@@ -325,7 +388,7 @@ def draw_model(name, materials, draws, pos_scale=64):
                 named.setdefault(material[index], []).append(number)
         target.extend((n, numbers, 0) for n, numbers in named.items())
     sbc = bytearray(bytes.fromhex("26000000000200010b"))
-    vertices = 0
+    vertices = quads = triangle_count = 0
     points = []
     for shape, (material, triangles) in enumerate(draws):
         if not triangles:
@@ -335,18 +398,20 @@ def draw_model(name, materials, draws, pos_scale=64):
                 | (SHAPE_TEXCOORD if first.texcoord is not None else 0))
         model.shapes.append((f"polygon{shape}", 0, flag, encode_display_list(triangles)))
         sbc += bytes((0x04, material, 0x05, shape))
-        vertices += 3 * len(triangles)
+        drawn = polygons(triangles)
+        vertices += sum(len(p) for p in drawn)
+        quads += sum(len(p) == 4 for p in drawn)
+        triangle_count += sum(len(p) == 3 for p in drawn)
         points += [v.position for t in triangles for v in t]
     sbc += b"\x2b\x01"
     model.sbc = bytes(sbc)
-    triangle_count = sum(len(t) for _, t in draws)
     if len(materials) > 255 or len(draws) > 255:
         raise ValueError(f"{name}: a model has at most 255 materials and 255 draw calls")
     if vertices > 0xffff:
         raise ValueError(f"{name}: too many vertices for one model")
     box_values, box_scale = box(points)
     model.info = [0, 0, 0, 1, len(materials), len(draws), 1, 0, pos_scale * 4096, 4096 // pos_scale,
-                  vertices, triangle_count, triangle_count, 0, *box_values, box_scale, 4096 * 4096 // box_scale]
+                  vertices, triangle_count + quads, triangle_count, quads, *box_values, box_scale, 4096 * 4096 // box_scale]
     return model
 
 

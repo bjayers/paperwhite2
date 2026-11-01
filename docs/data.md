@@ -891,8 +891,14 @@ packer resolves those by image name. Texture pixels are sourced from the shared 
 The packer accepts embedded pixel edits when the matching shared PNG is saved, and rejects unsaved
 embedded edits instead of silently ignoring them.
 Other Nitro material settings retain their original values.
-Adding material slots or draw calls is not yet supported. Every map model contains only an
-`MDL0` block; its textures come from the shared texture archive.
+To add materials or draw calls, set `"written": true` in the model's `data.json`: the packer then writes the whole
+model from the GLB (`tools/data/nitro_model_writer.py`), a material for each GLB material, named as it is and bound by
+its image to the texture set's texture, and a draw call for each primitive. A material the original has by name keeps
+its record (lights, flags, texture matrix); a new one starts from the writer's default. This needs the model's
+`texture_set` and the GLB's positions as the model draws them. The writer reads and writes back all 1,065 vanilla
+models byte for byte; written from their GLBs, every one with a confirmed set draws the same positions and UVs, its
+display lists about 7% larger than the original's at the median. Every map model contains only an `MDL0` block; its
+textures come from the shared texture archive.
 
 The exterior and interior field props use separate texture archives. Their PNGs live under
 `res/field/props/exterior/textures/` and `res/field/props/interior/textures/`, a directory per prop bundle,
