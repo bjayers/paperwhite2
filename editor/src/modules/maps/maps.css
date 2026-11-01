@@ -34,3 +34,5 @@
 .me-tile-blank { display: block; background: var(--hover); border-radius: 4px; }
 .me-tile-name { font-size: 11px; line-height: 1.2; text-align: center; overflow-wrap: anywhere; max-width: 100%; }
 .me-tile-uses { font-size: 10px; }
+.me-wrap { flex-wrap: wrap; gap: 4px 12px; }
+.me-number { width: 72px; }

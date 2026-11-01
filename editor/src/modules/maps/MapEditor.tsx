@@ -1,10 +1,11 @@
-// The Map Editor (docs/paperwhite2/design/map-editor.md): a zone's map chunks in 3D, in a season, with three tabs:
+// The Map Editor (docs/paperwhite2/design/map-editor.md): a zone's map chunks in 3D, in a season, with four tabs:
 // - Chunks: the matrix's cells and the chosen chunk's inspector (its polygons, vertices and materials against the
 //   game's limits, its textures against each season's set, and its season variants);
 // - Faces: faces picked on the map (Shift adds, Ctrl removes, Select connected takes a whole tree or ledge) deleted or
 //   drawn with another texture of the area's set, written to the chunk's model.glb at once, with undo;
-// - Tiles: the tile libraries cut from the game's chunks (tools/paperwhite2/map_tiles.py), to browse.
-// Collision is the Overworld Editor's permissions painter for now, which the header links to.
+// - Collision: the chunks' collision tiles of a layer, painted with a type, a height or a copied tile (collision.ts);
+// - Tiles: the tile libraries cut from the game's chunks (tools/paperwhite2/map_tiles.py), and the chosen chunk's
+//   layout, painted with them and composed into its model.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
@@ -14,13 +15,15 @@ import { fromPlain, toPlain } from "../../../shared/json.ts";
 import { navigate, useToolParams } from "../../navigation.ts";
 import type { ToolProps } from "../types.ts";
 import { loadWorld, type World } from "../world/world.ts";
-import { SEASONS, TILE, heightTables, loadZoneMap, type ZoneMap } from "../overworld/terrain.ts";
+import { SEASONS, TILE, heightTables, loadZoneMap, reloadLayers, type ZoneMap } from "../overworld/terrain.ts";
+import { CollisionPanel, type CollisionBrush } from "./CollisionPanel.tsx";
+import { paintTiles, tileRow } from "./collision.ts";
 import { ChunkScene, connectedFaces, faceKey, stackedFaces, type ChunkModel, type Face, type LayoutTiles } from "./ChunkScene.ts";
 import { seasonSets, seasonVariants, type SeasonSet } from "./seasons.ts";
 import { TilePanel, type PaintHeight, type PaintMode } from "./TilePanel.tsx";
 import type { Catalogue, Tile } from "./tiles.ts";
 
-type Tab = "chunks" | "faces" | "tiles";
+type Tab = "chunks" | "faces" | "collision" | "tiles";
 
 /** The busiest vanilla chunks (map04_20's spring chunk has 1,114 triangles): the DS draws 2,048 polygons and 6,144
  * vertices a frame, all chunks, props and actors together, and the game's own chunks reach these, so a chunk past them
@@ -71,6 +74,9 @@ export function MapEditor({ constants }: ToolProps) {
   const [layoutShown, setLayoutShown] = useState(true);
   const [layoutExists, setLayoutExists] = useState<Record<string, boolean>>({});
   const { docs } = useDocuments();
+  const [layer, setLayer] = useState(0);
+  const [brush, setBrush] = useState<CollisionBrush>({ kind: "type", tileClass: 0, flags: 0, heightTiles: 2, row: null, variants: true });
+  const [variantFolders, setVariantFolders] = useState<Map<string, string[]>>(new Map());
   const [retexture, setRetexture] = useState("");
   const host = useRef<HTMLDivElement>(null);
   const scene = useRef<ChunkScene | null>(null);
@@ -99,8 +105,14 @@ export function MapEditor({ constants }: ToolProps) {
   useEffect(() => { scene.current?.drawCells(chunk, grid); }, [chunk, grid, map]);
   useEffect(() => { scene.current?.showFaces(faces); }, [faces, loaded]);
 
-  const pickFace = useRef<(face: Face | null, chunk: number | null, ev: PointerEvent, point: THREE.Vector3 | null) => void>(() => {});
-  pickFace.current = (face, picked, ev, point) => {
+  const pickFace = useRef<(face: Face | null, chunk: number | null, ev: PointerEvent, point: THREE.Vector3 | null,
+                           tile: { x: number; z: number } | null) => void>(() => {});
+  pickFace.current = (face, picked, ev, point, tilePicked) => {
+    if (tab === "collision") {
+      if (picked !== null) setChunk(picked);
+      if (ev.altKey && tilePicked && map) eyedropper(tilePicked);
+      return;
+    }
     if (tab === "tiles" && paint !== "off" && layoutDoc && point && picked === chunk) {
       paintAt(point);
       return;
@@ -120,7 +132,7 @@ export function MapEditor({ constants }: ToolProps) {
     else setFaces([face]);
   };
   useEffect(() => {
-    if (scene.current) scene.current.onPick = (r, ev) => pickFace.current(r.face, r.chunk, ev, r.point);
+    if (scene.current) scene.current.onPick = (r, ev) => pickFace.current(r.face, r.chunk, ev, r.point, r.tile);
   }, []);
 
   const current = map && chunk !== null ? map.chunks[chunk] : null;
@@ -191,6 +203,7 @@ export function MapEditor({ constants }: ToolProps) {
     if (last.kind === "docs") {
       for (const path of last.paths) { if (back) documents.undo(path); else documents.redo(path); }
       moved();
+      await reloadTerrain(last.paths);
       setMessage({ text: `${back ? "Undid" : "Redid"}: ${last.what}.` });
       return;
     }
@@ -254,11 +267,11 @@ export function MapEditor({ constants }: ToolProps) {
     setMessage(terrain.note ? { text: terrain.note } : null);
   };
 
-  /** A painted tile's collision: its source's terrain rows under it, written into the chunk's first layer where it
+  /** A painted tile's collision: its source's terrain rows under it, written into the chunk's chosen layer where it
    * goes, each plane moved with the tile (its offset taken again from the game's table, which must have it). Split
    * tiles keep the chunk's rows, to paint in the Overworld Editor. */
   const paintCollision = async (t: Tile, x: number, z: number, y: number): Promise<{ path: string | null; note: string | null }> => {
-    const path = current?.layers[0]?.path;
+    const path = current?.layers[Math.min(layer, (current?.layers.length ?? 1) - 1)]?.path;
     const source = t.at[0];
     if (!path || !source || !map) return { path: null, note: "The chunk has no collision to paint." };
     const tb = await heightTables();
@@ -328,6 +341,79 @@ export function MapEditor({ constants }: ToolProps) {
     }
   };
 
+  // ---------------------------------------------------------------- Collision
+
+  // Each chunk's season variants, whose collision a stroke paints too where it was the same
+  useEffect(() => {
+    if (!map) return;
+    let live = true;
+    Promise.all(map.chunks.map(async (c) => {
+      const name = `MAP_MODEL_${c.folder.slice(c.folder.lastIndexOf("/") + 1).toUpperCase()}`;
+      const v = await seasonVariants(map.matrix, name, constants).catch(() => null);
+      return [c.folder, (v ?? []).map((m) => `res/field/maps/models/${m.replace(/^MAP_MODEL_/, "").toLowerCase()}`)] as const;
+    })).then((entries) => { if (live) setVariantFolders(new Map(entries)); });
+    return () => { live = false; };
+  }, [map, constants]);
+  const layers = map ? Math.max(1, ...map.chunks.map((c) => c.layers.length)) : 1;
+  useEffect(() => { if (layer >= layers) setLayer(0); }, [layers, layer]);
+
+  /** Reads the chunks' terrain again from the documents, after painting or undo. */
+  const reloadTerrain = async (paths: string[]) => {
+    if (!map || !paths.some((p) => p.endsWith(".csv"))) return;
+    for (const c of map.chunks) {
+      if (c.layers.some((l) => paths.includes(l.path))) await reloadLayers(c, (path) => documents.get(path)?.text ?? null, map.chunkSize);
+    }
+    setMap({ ...map });
+  };
+
+  useEffect(() => {
+    const s = scene.current;
+    if (!s) return;
+    s.painting = tab === "collision";
+    s.showTerrain(tab === "collision" ? layer : null, tab === "collision" && brush.kind === "type" ? brush.tileClass : null);
+  }, [tab, layer, map, brush.kind, brush.tileClass, loaded]);
+
+  const paintStroke = useRef<(tiles: { x: number; z: number }[]) => void>(() => {});
+  paintStroke.current = async (tiles) => {
+    if (!map) return;
+    const b = brush.kind === "type" ? { kind: "type" as const, tileType: ((brush.flags << 16) | brush.tileClass) >>> 0 }
+      : brush.kind === "height" ? { kind: "height" as const, tiles: brush.heightTiles }
+      : brush.row ? { kind: "copy" as const, row: brush.row } : null;
+    if (!b) { setMessage({ text: "Alt+click a tile to copy it first.", error: true }); return; }
+    const result = await paintTiles(map, tiles, layer, b, (folder) => (brush.variants ? variantFolders.get(folder) ?? [] : []));
+    if (result.paths.length) setHistory((h) => ({ done: [...h.done, { kind: "docs", paths: result.paths, what: `Painted ${tiles.length} tile(s)` }], undone: [] }));
+    await reloadTerrain(result.paths);
+    const others = result.paths.filter((p) => !map.chunks.some((c) => c.layers.some((l) => l.path === p))).length;
+    setMessage(result.note || others ? { text: [result.note, others ? `Also painted in ${others} season variant file(s) where the tile was the same.` : null].filter(Boolean).join(" ") } : null);
+  };
+  useEffect(() => { if (scene.current) scene.current.onPaint = (tiles) => paintStroke.current(tiles); }, []);
+
+  /** Alt+click: the brush takes the tile's type, height and whole row. */
+  const eyedropper = async (t: { x: number; z: number }) => {
+    if (!map) return;
+    const row = await tileRow(map, t.x, t.z, layer);
+    if (!row) return;
+    const chunkAt = map.chunks.find((c) => Math.floor(t.x / map.chunkTiles) === c.column && Math.floor(t.z / map.chunkTiles) === c.row);
+    const l = chunkAt?.layers[Math.min(layer, chunkAt.layers.length - 1)];
+    const index = (t.z % map.chunkTiles) * map.chunkTiles + (t.x % map.chunkTiles);
+    const height = l ? Math.round((l.heights[index] / TILE) * 2) / 2 : brush.heightTiles;
+    setBrush((b) => ({ ...b, tileClass: row.tile_type & 0xffff, flags: (row.tile_type >>> 16) & 0xffff, heightTiles: height, row }));
+    setMessage({ text: `Picked the tile at ${t.x}, ${t.z}: type 0x${(row.tile_type >>> 0).toString(16)}, height ${height} tiles.` });
+  };
+
+  /** The files the Map Editor edits as documents (collision and layouts), unsaved. */
+  const unsaved = [...docs.values()].filter((d) => d.dirty
+    && (/^res\/field\/maps\/models\/[^/]+\/terrain_\d+(_splits)?\.csv$/.test(d.path) || d.path.startsWith("res/paperwhite2/map_layouts/")));
+  const save = async () => {
+    for (const d of unsaved) await documents.save(d.path);
+  };
+  const revert = async () => {
+    const paths = unsaved.map((d) => d.path);
+    for (const path of paths) await documents.reload(path);
+    setHistory((h) => ({ done: h.done.filter((st) => st.kind !== "docs"), undone: h.undone.filter((st) => st.kind !== "docs") }));
+    await reloadTerrain(paths);
+  };
+
   const removeFaces = () => editFaces(`Deleted ${faces.length} face(s)`, { remove: faceSets(faces) });
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -352,7 +438,10 @@ export function MapEditor({ constants }: ToolProps) {
         <h2>Map Editor</h2>
         {zone && <strong>{zone}</strong>}
         <span className="spacer" />
-        {zone && <button onClick={() => navigate("overworld", { zone })} title="Collision and permissions are painted there for now">Open in the Overworld Editor</button>}
+        {zone && <button onClick={() => navigate("overworld", { zone })}>Open in the Overworld Editor</button>}
+        {unsaved.length > 0 && <span className="muted">{unsaved.length} unsaved</span>}
+        <button onClick={revert} disabled={!unsaved.length} title="Collision and layouts as they were last saved">Revert</button>
+        <button className="primary" onClick={save} disabled={!unsaved.length} title="Saves the painted collision and layouts (face edits are written as they're made)">Save</button>
       </header>
       {mapError && <div className="ow-error ow-bar">{mapError}</div>}
       {message && <div className={`ow-bar ${message.error ? "ow-error" : "muted"}`}>{message.text}</div>}
@@ -370,7 +459,7 @@ export function MapEditor({ constants }: ToolProps) {
         <div className="ow-center">
           <div className="ow-toolbar">
             <div className="view-switch">
-              {(["chunks", "faces", "tiles"] as Tab[]).map((t) => (
+              {(["chunks", "faces", "collision", "tiles"] as Tab[]).map((t) => (
                 <button key={t} className={tab === t ? "active" : ""} onClick={() => setTab(t)}>{t[0].toUpperCase() + t.slice(1)}</button>
               ))}
             </div>
@@ -381,12 +470,12 @@ export function MapEditor({ constants }: ToolProps) {
                 </select>
               </label>
             )}
-            <label className="ow-check"><input type="checkbox" checked={grid} onChange={(e) => setGrid(e.target.checked)} /> Tile grid on the chunk</label>
+            <label className="ow-check"><input type="checkbox" checked={grid} onChange={(e) => setGrid(e.target.checked)} /> Tile grid</label>
             <span className="spacer" />
             <button onClick={() => step(true)} disabled={!history.done.length || busy} title="Ctrl+Z">Undo</button>
             <button onClick={() => step(false)} disabled={!history.undone.length || busy} title="Ctrl+Y">Redo</button>
           </div>
-          <div className={`ow-map-wrap${tab === "faces" ? " me-picking" : ""}${tab === "tiles" && paint !== "off" && layoutDoc ? " painting" : ""}`}>
+          <div className={`ow-map-wrap${tab === "faces" ? " me-picking" : ""}${(tab === "tiles" && paint !== "off" && layoutDoc) || tab === "collision" ? " painting" : ""}`}>
             <div className="ow-map" ref={host} />
             {!zone && <div className="ow-empty me-empty muted">Choose a zone.</div>}
           </div>
@@ -405,6 +494,10 @@ export function MapEditor({ constants }: ToolProps) {
                   <ChunkInspector folder={current.folder} model={model} data={chunkData} variants={variants} season={season} sets={sets} />
                 )}
               </>
+            )}
+            {tab === "collision" && map && (
+              <CollisionPanel brush={brush} setBrush={setBrush} layer={layer} setLayer={setLayer} layers={layers}
+                              hasVariants={[...variantFolders.values()].some((v) => v.length > 0)} />
             )}
             {tab === "faces" && (
               <>
@@ -430,7 +523,7 @@ export function MapEditor({ constants }: ToolProps) {
                   <h4>Delete</h4>
                   <div className="me-actions"><button className="danger" disabled={!faces.length || busy} onClick={removeFaces} title="Delete">Delete the faces</button></div>
                   <p className="muted ow-note">Clearing a tree: click its leaves, Select the stack, then delete, and paint its tiles walkable in the
-                    Overworld Editor. Route 20's forests are layers over many tiles; clear part of one by Shift+clicking its faces.</p>
+                    Collision tab. Route 20's forests are layers over many tiles; clear part of one by Shift+clicking its faces.</p>
                 </section>
                 <section className="me-section">
                   <h4>Retexture</h4>

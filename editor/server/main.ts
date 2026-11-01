@@ -119,7 +119,7 @@ const routes: Record<string, Handler> = {
     } catch (e) {
       return error(res, 400, (e as Error).message);
     }
-    if (!/^(res|src|include\/asm)\//.test(glob) || glob.includes("..")) return error(res, 400, "Scan files under res/, src/ or include/asm/ only");
+    if (!/^(res|src|include)\//.test(glob) || glob.includes("..")) return error(res, 400, "Scan files under res/, src/ or include/ only");
     // ?flags=i matches without case
     if (url.searchParams.get("flags") === "i") pattern = new RegExp(pattern.source, "i");
     const limit = Number(url.searchParams.get("limit") ?? 0) || Infinity;

@@ -7,7 +7,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { chunkLoader } from "../overworld/MapView.tsx";
-import { TILE, type ZoneMap } from "../overworld/terrain.ts";
+import { TILE, TILE_FLAG_COLLISION, TILE_FLAG_ENCOUNT, TILE_FLAG_WATER, tileFlags, type ZoneMap } from "../overworld/terrain.ts";
 import { tileModels } from "./tiles.ts";
 
 /** A layout's tiles, as the scene draws them in place of their chunk: ground [x, z, key, height], objects [key, x, z,
@@ -26,7 +26,18 @@ export interface ChunkModel {
   triangles: number;
 }
 
-export interface PickResult { chunk: number | null; face: Face | null; point: THREE.Vector3 | null }
+export interface PickResult { chunk: number | null; face: Face | null; point: THREE.Vector3 | null; tile: { x: number; z: number } | null }
+
+/** A tile's color by its type: blocked red, water blue, encounters green, the rest grey; the chosen class yellow. */
+function tileColor(type: number, highlight: number | null): THREE.Color {
+  const flags = tileFlags(type);
+  // The ordinary class is most of a map: only another is worth picking out
+  if (highlight && (type & 0xffff) === highlight) return new THREE.Color(0xffd040);
+  if (flags & TILE_FLAG_COLLISION) return new THREE.Color(0xe04040);
+  if (flags & TILE_FLAG_WATER) return new THREE.Color(0x3a7ae0);
+  if (flags & TILE_FLAG_ENCOUNT) return new THREE.Color(0x9ad040);
+  return new THREE.Color(0xd8d8d8);
+}
 
 export class ChunkScene {
   renderer: THREE.WebGLRenderer;
@@ -37,6 +48,12 @@ export class ChunkScene {
   marks = new THREE.Group();
   highlight = new THREE.Group();
   layoutGroup = new THREE.Group();
+  terrain = new THREE.Group();
+  private terrainPicks: { mesh: THREE.InstancedMesh; drawn: THREE.InstancedMesh; tiles: { x: number; z: number }[] }[] = [];
+  /** While set, a drag paints tiles: onPaint gets the stroke's tiles when it ends. */
+  painting = false;
+  onPaint: (tiles: { x: number; z: number }[]) => void = () => {};
+  private stroke: Map<string, { x: number; z: number }> | null = null;
   /** The chunk drawn from its layout's tiles instead of its model, while that preview is on. */
   layoutChunk: number | null = null;
   private layoutKey = 0;
@@ -65,9 +82,10 @@ export class ChunkScene {
     this.scene.add(new THREE.AmbientLight(0xffffff, 1.6));
     const sun = new THREE.DirectionalLight(0xffffff, 1.4);
     sun.position.set(300, 800, 400);
-    this.scene.add(sun, this.chunks, this.marks, this.highlight, this.layoutGroup);
+    this.scene.add(sun, this.chunks, this.marks, this.highlight, this.layoutGroup, this.terrain);
     const dom = this.renderer.domElement;
     dom.addEventListener("pointerdown", this.down);
+    dom.addEventListener("pointermove", this.move);
     window.addEventListener("pointerup", this.up);
     dom.addEventListener("contextmenu", (e) => e.preventDefault());
     new ResizeObserver(() => this.resize()).observe(host);
@@ -204,6 +222,50 @@ export class ChunkScene {
     this.layoutGroup.add(group);
   }
 
+  /** Draws the chunks' collision tiles of a layer over the map, at their heights, colored by type; null hides them. */
+  showTerrain(layer: number | null, highlight: number | null = null) {
+    this.terrain.clear();
+    this.terrainPicks = [];
+    const map = this.map;
+    if (layer === null || !map) return;
+    const plane = new THREE.PlaneGeometry(TILE - 1.5, TILE - 1.5).rotateX(-Math.PI / 2);
+    const pickPlane = new THREE.PlaneGeometry(TILE, TILE).rotateX(-Math.PI / 2);
+    const pickMaterial = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false, transparent: true, opacity: 0 });
+    for (const chunk of map.chunks) {
+      const l = chunk.layers[Math.min(layer, chunk.layers.length - 1)];
+      if (!l) continue;
+      const material = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.5, depthWrite: false,
+                                                     polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -24 });
+      const drawn = new THREE.InstancedMesh(plane, material, l.tiles.length);
+      const pick = new THREE.InstancedMesh(pickPlane, pickMaterial, l.tiles.length);
+      const tiles: { x: number; z: number }[] = [];
+      const m = new THREE.Matrix4();
+      l.tiles.forEach((t, i) => {
+        const gx = chunk.column * map.chunkTiles + t.x, gz = chunk.row * map.chunkTiles + t.z;
+        m.makeTranslation(gx * TILE + TILE / 2, l.heights[i] + 0.8, gz * TILE + TILE / 2);
+        drawn.setMatrixAt(i, m);
+        pick.setMatrixAt(i, m);
+        drawn.setColorAt(i, tileColor(t.tileType, highlight));
+        tiles.push({ x: gx, z: gz });
+      });
+      drawn.renderOrder = 2;
+      this.terrain.add(drawn, pick);
+      this.terrainPicks.push({ mesh: pick, drawn, tiles });
+    }
+  }
+
+  /** The collision tile under the pointer. */
+  tileAt(ev: PointerEvent): { tile: { x: number; z: number }; drawn: THREE.InstancedMesh; index: number } | null {
+    if (!this.terrainPicks.length) return null;
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    const ray = new THREE.Raycaster();
+    ray.setFromCamera(new THREE.Vector2(((ev.clientX - rect.left) / rect.width) * 2 - 1, -((ev.clientY - rect.top) / rect.height) * 2 + 1), this.camera);
+    const hit = ray.intersectObjects(this.terrainPicks.map((p) => p.mesh), false)[0];
+    if (!hit || hit.instanceId === undefined) return null;
+    const pick = this.terrainPicks.find((p) => p.mesh === hit.object)!;
+    return { tile: pick.tiles[hit.instanceId], drawn: pick.drawn, index: hit.instanceId };
+  }
+
   /** Draws the selected faces over the model, in yellow. */
   showFaces(faces: Face[]) {
     this.highlight.clear();
@@ -244,9 +306,33 @@ export class ChunkScene {
     if (ev.button !== 0) return;
     (document.activeElement as HTMLElement | null)?.blur?.();
     this.downAt = { x: ev.clientX, y: ev.clientY };
+    if (this.painting && !ev.altKey) {
+      this.stroke = new Map();
+      this.strokeAt(ev);
+    }
   };
 
+  private move = (ev: PointerEvent) => { if (this.stroke) this.strokeAt(ev); };
+
+  /** Adds the tile under the pointer to the stroke, marked yellow until the stroke is painted. */
+  private strokeAt(ev: PointerEvent) {
+    const hit = this.tileAt(ev);
+    if (!hit || !this.stroke) return;
+    const key = `${hit.tile.x},${hit.tile.z}`;
+    if (this.stroke.has(key)) return;
+    this.stroke.set(key, hit.tile);
+    hit.drawn.setColorAt(hit.index, new THREE.Color(0xffe060));
+    if (hit.drawn.instanceColor) hit.drawn.instanceColor.needsUpdate = true;
+  }
+
   private up = (ev: PointerEvent) => {
+    if (this.stroke) {
+      const tiles = [...this.stroke.values()];
+      this.stroke = null;
+      this.downAt = null;
+      if (tiles.length) this.onPaint(tiles);
+      return;
+    }
     const at = this.downAt;
     this.downAt = null;
     if (!at || ev.button !== 0 || Math.hypot(ev.clientX - at.x, ev.clientY - at.y) > 4) return;
@@ -262,7 +348,7 @@ export class ChunkScene {
     if (this.layoutChunk !== null) {
       // On a layout, only where it was clicked counts: the cell under it
       const hit = ray.intersectObjects(this.layoutGroup.children, true)[0];
-      if (hit) return { chunk: this.layoutChunk, face: null, point: hit.point };
+      if (hit) return { chunk: this.layoutChunk, face: null, point: hit.point, tile: this.tileAt(ev)?.tile ?? null };
     }
     const hits = ray.intersectObjects(this.chunks.children.filter((c) => c.visible), true);
     for (const hit of hits) {
@@ -272,14 +358,14 @@ export class ChunkScene {
       if (chunk === undefined || hit.faceIndex == null) continue;
       const primitive = this.models.get(chunk)?.primitives.findIndex((p) => p.mesh === hit.object) ?? -1;
       if (primitive < 0) continue;
-      return { chunk, face: { chunk, primitive, triangle: hit.faceIndex }, point: hit.point };
+      return { chunk, face: { chunk, primitive, triangle: hit.faceIndex }, point: hit.point, tile: this.tileAt(ev)?.tile ?? null };
     }
     // No model under it: the cell the ray meets the ground in
     const ground = new THREE.Vector3();
-    if (!ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), ground) || !this.map) return { chunk: null, face: null, point: null };
+    if (!ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), ground) || !this.map) return { chunk: null, face: null, point: null, tile: null };
     const size = this.map.chunkSize;
     const index = this.map.chunks.findIndex((c) => Math.floor(ground.x / size) === c.column && Math.floor(ground.z / size) === c.row);
-    return { chunk: index < 0 ? null : index, face: null, point: ground };
+    return { chunk: index < 0 ? null : index, face: null, point: ground, tile: this.tileAt(ev)?.tile ?? null };
   }
 }
 

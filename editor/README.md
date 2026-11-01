@@ -277,7 +277,14 @@ map, to choose a chunk; the middle button orbits, the right pans and the wheel z
   `model.glb` at once, with Ctrl+Z and Ctrl+Y. A retexture gives the chunk a new material and draw call, so its
   `data.json` gains `"written": true` (and the area's texture set where it had none), which packs the whole model with
   `tools/data/nitro_model_writer.py`. Clearing a tree: click its leaves, Select the stack, Delete, then paint its tiles
-  walkable in the Overworld Editor (collision painting comes to the Map Editor later).
+  walkable in the Collision tab.
+- **Collision:** the chunks' collision tiles of a layer drawn over the map, colored by type (blocked red, water blue,
+  encounters green, the chosen class yellow). Click or drag to paint with the brush: a tile type (a class of the
+  game's `TILE_CLASS_` enum, read from `include/field/field_map.h`, and its flags), a flat height, or a whole tile
+  copied with Alt+click (Alt+click also gives the brush the tile's type and height). Two-layer chunks (Virbank Complex,
+  bridges) choose their layer. Where a season replacement swaps a chunk (Route 20 in autumn), **Paint the season
+  variants too** paints the same tile of the variants where it was the same. Ctrl+Z undoes a stroke; **Save** writes the
+  collision files (and layouts), **Revert** drops what isn't saved.
 - **Tiles:** the tile libraries (`res/paperwhite2/map_tiles/<library>/library.json`) cut from the game's chunks by
   `tools/paperwhite2/map_tiles.py`: **Cut the tiles** makes the catalogue in `build/map_tiles/`, and the palette shows
   each tile's picture, most used first, filtered by kind and material. A tile's details give its footprint, triangles,
