@@ -7,15 +7,16 @@ sloping away under it. The profile's lines are each an offset in from the border
 faces lie between two lines, textured along the border (u, the border's length over the repeat; v from one line's to
 the other's) or from above (planar, like the ground). The ground inside the last line is the terrain's own.
 
-The border is followed round each region of the terrain (its tiles at one height) as loops of tile edges, with a
-station at each tile corner. An edge whose other side is one of the edge's "from" terrains (any other terrain, when it
-names none) is banded; an edge to the same terrain at another height, past the chunk or to a terrain it doesn't name
-has no band: its lines all lie on the border, at the inside line's lift, and the inside ground runs to it. Where two
+The border is followed round each region of the terrain (its tiles and its edge tiles at one height) as loops of tile
+edges, with a station at each tile corner. The map maker says which edges are banded: those of an edge tile whose
+other side is one of the edge's "from" terrains (any other terrain, when it names none). An edge of a plain tile, to
+the same terrain at another height, past the chunk or to a terrain it doesn't name has no band: its lines all lie on the border, at the inside line's lift, and the inside ground runs to it. Where two
 edges turn, each line's point is where the two offset edges cross (a mitre). Two things move the lines further in, as
 the game's own do:
 
-- round: a convex corner of banded edges is pulled in, its lines' corner points that far along the diagonal (less for
-  lines further in) and the points a tile either side half that, so the corner is cut round over two tiles each way;
+- round: a convex corner of banded edges is cut round over two tiles each way, each line's points near it moved that
+  share of the way to the straight cut across the corner (0.5: the border's corner half a tile in along the
+  diagonal, as the game's);
 - points: a straight banded border bends half a tile in over three tiles, centred on a tile, every third tile on
   alternating sides, and always across from where another stretch of the terrain meets it (a path's T-junction).
 
@@ -187,26 +188,29 @@ def band(region, edge, banded, points):
                             for ln in lines])
             collapsed = not flags[i - 1] and not flags[i]
             lifts.append([lines[inner]["lift"] if collapsed else ln["lift"] for ln in lines])
-        disp = [[(0.0, 0.0)] * len(lines) for _ in range(n)]
+        # Each station's point of each line (x, z), which rounding and bends then move
+        pts = [[(e[0][0] + offsets[i][k][0], e[0][1] + offsets[i][k][1]) for k in range(len(lines))] for i, e in enumerate(loop)]
         moved = [False] * n
-
-        def move(i, vec, scale):
-            disp[i % n] = [(vec[0] * scale(k), vec[1] * scale(k)) for k in range(len(lines))]
-            moved[i % n] = True
-        # Round convex corners of banded edges with two straight banded tiles either side
+        # Round convex corners of banded edges with two straight banded tiles either side: each line's points a tile
+        # either side of the corner and at it go round_by of the way to the straight cut between its points two tiles
+        # either side (a line further in has its corner and the points beside it all at its mitre, so moving each
+        # along its own edge would fold it)
         if round_by:
             for i, e in enumerate(loop):
                 b = loop[i - 1]
                 if e[1] != b[2] or not all(flags[(i + k) % n] for k in (-2, -1, 0, 1)):
                     continue
-                if not (straight(i - 1) and straight(i + 1)) or any(moved[(i + k) % n] for k in (-1, 0, 1)):
+                if not (straight(i - 1) and straight(i + 1)) or any(moved[(i + k) % n] for k in (-2, -1, 0, 1, 2)):
                     continue
-
-                def amount(k):
-                    return round_by * (1 - 0.5 * lines[k]["offset"])
-                move(i, (b[2][0] + e[2][0], b[2][1] + e[2][1]), amount)
-                move(i - 1, b[2], lambda k: amount(k) / 2)
-                move(i + 1, e[2], lambda k: amount(k) / 2)
+                for k in range(len(lines)):
+                    a0, a1 = pts[(i - 2) % n][k], pts[(i + 2) % n][k]
+                    for j in (-1, 0, 1):
+                        f = (j + 2) / 4
+                        cut = (a0[0] + (a1[0] - a0[0]) * f, a0[1] + (a1[1] - a0[1]) * f)
+                        old = pts[(i + j) % n][k]
+                        pts[(i + j) % n][k] = (old[0] + (cut[0] - old[0]) * round_by, old[1] + (cut[1] - old[1]) * round_by)
+                for j in (-1, 0, 1):
+                    moved[(i + j) % n] = True
         # Bends: across from another stretch of the region first (a T), then every third tile on alternating sides
         mids = {}
 
@@ -226,8 +230,10 @@ def band(region, edge, banded, points):
             e = loop[i % n]
             mx, mz = e[0][0] + e[1][0] * 0.5, e[0][1] + e[1][1] * 0.5
             mids[i % n] = [(mx + e[2][0] * (ln["offset"] + 0.5), mz + e[2][1] * (ln["offset"] + 0.5)) for ln in lines]
-            move(i, e[2], lambda k: 0.5 / 3)
-            move(i + 1, e[2], lambda k: 0.5 / 3)
+            # Straight from the ends to the tip: a tile from an end, two thirds of the way in
+            for j in (i % n, (i + 1) % n):
+                pts[j] = [(p[0] + e[2][0] / 3, p[1] + e[2][1] / 3) for p in pts[j]]
+                moved[j] = True
         if points:
             across = [flags[i] and all((e[3][0] + k * e[2][0], e[3][1] + k * e[2][1]) in region for k in (1, 2, 3))
                       for i, e in enumerate(loop)]
@@ -245,9 +251,7 @@ def band(region, edge, banded, points):
         # The stations in order, bends' middles among them, with each line's point (x, z) and lift
         seq = []
         for i, e in enumerate(loop):
-            pts = [(e[0][0] + offsets[i][k][0] + disp[i][k][0], e[0][1] + offsets[i][k][1] + disp[i][k][1])
-                   for k in range(len(lines))]
-            seq.append({"s": float(i), "border": e[0], "pts": pts, "lift": lifts[i], "edge": i})
+            seq.append({"s": float(i), "border": e[0], "pts": pts[i], "lift": lifts[i], "edge": i})
             if i in mids:
                 seq.append({"s": i + 0.5, "border": (e[0][0] + e[1][0] * 0.5, e[0][1] + e[1][1] * 0.5), "pts": mids[i],
                             "lift": [ln["lift"] for ln in lines], "edge": i})

@@ -48,7 +48,7 @@
                 "properties": {
                     "to": {
                         "type": "string",
-                        "description": "The key of the terrain whose border this is: its band lies inside its tiles"
+                        "description": "The key of the terrain whose border this is: drawn in the tiles of its edge terrains (edge_of) that are painted along it"
                     },
                     "from": {
                         "type": "array",
@@ -138,12 +138,12 @@
                     "round": {
                         "type": "number",
                         "minimum": 0,
-                        "maximum": 0.5,
-                        "description": "Tiles a convex corner of the band is pulled in along its diagonal (the inside lines less), cutting it round over two tiles each way"
+                        "maximum": 1,
+                        "description": "The share of the way a convex corner of the band is moved to the straight cut across it, over two tiles each way (0.5: the border half a tile in along the diagonal, as the game rounds its paths)"
                     },
                     "tile_type": {
                         "type": "integer",
-                        "description": "The collision tile type of the band's tiles (a riverbank's); else the terrain's"
+                        "description": "Unused: an edge terrain has its own tile type"
                     }
                 }
             },
@@ -164,6 +164,10 @@
                     },
                     "name": {
                         "type": "string"
+                    },
+                    "edge_of": {
+                        "type": "string",
+                        "description": "Makes this an edge terrain of another (its key): painted where that terrain's border is drawn, against what lies outside (a path's edge, a riverbank)"
                     },
                     "color": {
                         "type": "string",

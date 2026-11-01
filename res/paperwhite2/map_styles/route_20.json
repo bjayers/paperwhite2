@@ -10,7 +10,7 @@
     "edges": [
         {
             "to": "p",
-            "from": [ "g", "t", "b" ],
+            "from": [ "g", "t", "b", "k" ],
             "lines": [
                 {
                     "offset": 0,
@@ -107,7 +107,6 @@
                     "alpha": "MASK"
                 }
             ],
-            "tile_type": 8585281,
             "round": 0.5
         }
     ],
@@ -126,6 +125,17 @@
             "key": "p",
             "name": "Path",
             "color": "#d8b878",
+            "ground": {
+                "texture": "michi01b",
+                "repeat": 1
+            },
+            "tile_type": 8388611
+        },
+        {
+            "key": "e",
+            "name": "Path edge",
+            "edge_of": "p",
+            "color": "#b08848",
             "ground": {
                 "texture": "michi01b",
                 "repeat": 1
@@ -169,6 +179,17 @@
                 "repeat": 2
             },
             "tile_type": 1441855
+        },
+        {
+            "key": "k",
+            "name": "Water edge",
+            "edge_of": "w",
+            "color": "#244f8c",
+            "ground": {
+                "texture": "kawa_soko",
+                "repeat": 2
+            },
+            "tile_type": 8585281
         },
         {
             "key": "b",

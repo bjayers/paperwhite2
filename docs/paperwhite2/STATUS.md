@@ -2,6 +2,14 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-02 (evening): edges are painted; straight bends; kept tiles read by their texture
+
+- The margin is gone (it overwrote a bridge and a bank). Borders are drawn where Path edge or Water edge tiles are
+  painted, against what's outside them, which is read but not changed: kept tiles by their ground's texture, else
+  their tile type. Water edge tiles are vanilla's bank type.
+- Bends' sides are straight, as vanilla's; rounded corners no longer fold on the lines further in (the spike at a
+  pond's corner). Test chunk with painted edges: 875 triangles; **not tried in game.**
+
 ## 2026-11-02 (later): paths' bends and corners as vanilla's; the margin round a painting
 
 - Bends are three tiles wide and half a tile deep, one is always across from a T's branch, convex corners are cut

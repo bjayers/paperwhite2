@@ -343,10 +343,13 @@ half a tile high (`54ochigake`, `gake1_1`, `gake01a2`, over grass), the water's 
 sloping half a tile down under it (`kawa_soko`), with rounded corners too. A border to the same terrain, past the chunk
 or to a terrain the edge doesn't name has no band.
 
-Painting over a chunk, the margin (kept tiles up to two tiles from painted ones, of a terrain an edge draws against:
-grass or a path, by their tile type) is drawn again too: only its ground faces go (opaque, facing up, at its height),
-so fences, trees, decals and bridges on it stay, and so does its collision. A painted path thus turns into a kept one
-and meets it where both run along the same tiles. Water isn't drawn again in the margin.
+Edges are painted (the user's call, 2026-11-02, after a margin that redrew the tiles round a painting overwrote a
+bridge): a style's edge terrains (`edge_of`: Route 20's Path edge and Water edge) are painted where a border is
+wanted, and make one region with their terrain's tiles. The border is drawn in the edge tiles only, against what lies
+outside them, which the generator reads but never changes: a kept tile is the terrain whose texture its ground is drawn
+with (a terrain's ground, or an edge's face), else the one with its tile type. Bends and rounded corners are placed
+along straight runs of edge tiles by themselves. An edge tile has its own tile type (Water edge: vanilla's bank,
+0x830041).
 
 Known limits of the map maker so far: walls are one texture stretched down their height, objects stand on their
 north-west tile's ground, it writes only a chunk's first collision layer, collision edits made after painting started

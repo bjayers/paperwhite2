@@ -59,7 +59,6 @@ BASE_FILES = ("model.glb", "data.json", "terrain_0.csv", "terrain_0_splits.csv")
 REPEAT, CLAMP = 10497, 33071
 UP = (0.0, 1.0, 0.0)
 EPS = 1e-6
-MARGIN = 2  # tiles round a painting whose ground the generator draws again
 
 
 def _tables():
@@ -88,8 +87,15 @@ def ground_heights(folder, size, images_from=None):
     (ground, ledges, bridges; not leaves, which are see-through, nor walls). Where the model has none there (a hole),
     the collision's height. The collision can't be used on its own, since a map's collision is sometimes raised to
     stand a bird in a tree."""
-    triangles, materials, _ = read_mesh(folder / "model.glb", images_from=images_from)
     collision = collision_heights(folder, size)
+    best = ground_faces(folder, size, images_from)
+    return {xz: best[xz][0] if xz in best else h for xz, h in collision.items()}
+
+
+def ground_faces(folder, size, images_from=None):
+    """Each tile's ground as ground_heights finds it: (height, the texture it's drawn with, without .png), for the
+    tiles the model has ground over."""
+    triangles, materials, _ = read_mesh(folder / "model.glb", images_from=images_from)
     half = size * TILE / 2
     best = {}
     for key, tri in triangles:
@@ -114,9 +120,10 @@ def ground_heights(folder, size, images_from=None):
                 if min(l1, l2, 1 - l1 - l2) < -1e-6:
                     continue
                 y = l1 * a[1] + l2 * b[1] + (1 - l1 - l2) * c[1]
-                if (x, z) not in best or y > best[(x, z)]:
-                    best[(x, z)] = y
-    return {xz: best.get(xz, h) for xz, h in collision.items()}
+                if (x, z) not in best or y > best[(x, z)][0]:
+                    image = materials[key].get("pbrMetallicRoughness", {}).get("baseColorTexture", {}).get("image", "")
+                    best[(x, z)] = (y, Path(image).stem)
+    return best
 
 
 def collision_heights(folder, size):
@@ -277,42 +284,39 @@ def generate(project_path):
         for tile_type in [t["tile_type"], *t.get("also_tile_types", [])]:
             by_type.setdefault(tile_type, k)
 
+    # A kept tile's terrain: the one whose texture its ground is drawn with (a terrain's ground, or an edge's face,
+    # which is its terrain's), else the one with its tile type
+    by_texture = {}
+    for k, t in terrains.items():
+        by_texture.setdefault(t["ground"]["texture"], k)
+    for e in style.get("edges", []):
+        for face in e["faces"]:
+            by_texture.setdefault(face["texture"], e["to"])
+    kept_textures = {xz: tex for xz, (_, tex) in ground_faces(base, size, images_from=folder).items()} if keeps else {}
+
     def terrain_of(xz):
-        # A tile's terrain and height; a kept tile's terrain is the one with its tile type, if any
+        # A tile's terrain and height
         v = grid.get(xz)
         if v is None:
             return None
-        return v if v[0] != KEEP else (by_type.get(kept_types.get(xz)), v[1])
+        if v[0] != KEEP:
+            return v
+        return (by_texture.get(kept_textures.get(xz)) or by_type.get(kept_types.get(xz)), v[1])
 
-    # The margin: kept tiles up to two from painted ones, of a terrain an edge draws against (grass, a path), are drawn
-    # again as that terrain, so a painted edge turns into the chunk's own and meets it where both run along the same
-    # tiles; only their ground faces go, so what stands on them (a fence, a tree) stays, and so does their collision
-    drawn_against = set()
-    for e in style.get("edges", []):
-        if e.get("from"):
-            drawn_against |= {e["to"], *e["from"]}
-    margin = set()
-    for (x, z), v in grid.items():
-        if v[0] == KEEP:
-            continue
-        for nb in ((x + dx, z + dz) for dx in range(-MARGIN, MARGIN + 1) for dz in range(-MARGIN, MARGIN + 1)):
-            if grid.get(nb, (None,))[0] == KEEP and terrain_of(nb)[0] in drawn_against:
-                margin.add(nb)
-    layered = painted
-    painted = dict(painted)
-    for xz in margin:
-        painted[xz] = terrain_of(xz)
-    wall_grid = {xz: (KEEP, v[1]) if xz in margin else v for xz, v in grid.items()}
+    # Edge terrains (a path's edge, a riverbank) are painted where a border is wanted: each belongs to a family (the
+    # path, the water), whose tiles and edge tiles make one region; the border is drawn in the edge tiles only, against
+    # what lies outside them, which nothing here changes
+    family = {k: t.get("edge_of", k) for k, t in terrains.items()}
+    wall_grid = grid
 
     to_world = lambda p, h: (p[0] * TILE - half, h + p[1] * TILE, p[2] * TILE - half)  # noqa: E731
     corners = defaultdict(set)
     ground = dict(painted)
-    edge_over = {}
     pieces = []
     bands = []
     regions = defaultdict(set)
     for xz, v in painted.items():
-        regions[v].add(xz)
+        regions[(family[v[0]], v[1])].add(xz)
     for (key, h), tiles in sorted(regions.items()):
         edge = next((e for e in style.get("edges", []) if e["to"] == key), None)
         if edge is None:
@@ -320,17 +324,17 @@ def generate(project_path):
         froms = edge.get("from")
 
         def banded(e, key=key, h=h, froms=froms):
+            # From an edge tile of the family to a terrain the edge draws against (any other, when it names none)
+            if painted[e[3]][0] == key:
+                return False
             other = terrain_of(e[4])
-            if other is None or other[0] == key:
+            if other is None or family.get(other[0], other[0]) == key:
                 return False
             return froms is None or (other[0] in froms and other[1] == h)
         result = map_edges.band(tiles, edge, banded, edge.get("points", False))
         inner_y = h + edge["lines"][edge.get("inner", len(edge["lines"]) - 1)]["lift"] * TILE
         for t in tiles - result["full"]:
             del ground[t]
-        for t in result["band_tiles"]:
-            if "tile_type" in edge:
-                edge_over[t] = edge["tile_type"]
         for t in result["full"]:
             ground[t] = (key, inner_y)
         for t, piece in result["pieces"]:
@@ -415,7 +419,7 @@ def generate(project_path):
         draw_polygon(key, poly)
 
     # The terrains' layers (tall grass's blades), over whole tiles
-    for (key, y), x, z, w, d in rectangles(layered, size, lambda v: size):
+    for (key, y), x, z, w, d in rectangles(painted, size, lambda v: size):
         for layer in terrains[key].get("layers", []):
             lift = layer["lift"]
             lkey = materials.get(layer["texture"], alpha=layer.get("alpha", "MASK"))
@@ -452,11 +456,10 @@ def generate(project_path):
         cut = [(x, z, w, d) for _, x, z, w, d in rectangles({xz: 1 for xz, v in grid.items() if v[0] != KEEP}, size, lambda v: size)]
         triangles, base_materials, _ = read_mesh(base / "model.glb", images_from=folder)
         remap = {key: materials.add(material) for key, material in base_materials.items()}
-        ground_cut = [(x, z, grid[(x, z)][1]) for x, z in margin]
-        polygons += [(remap[key], tri) for key, tri in kept_faces(triangles, cut, half, ground_cut, base_materials)]
+        polygons += [(remap[key], tri) for key, tri in kept_faces(triangles, cut, half)]
 
     # The objects, on the ground of their north-west tile
-    collision_over = dict(edge_over)
+    collision_over = {}
     for name, x, z in project.get("objects", []):
         obj_folder = OBJECTS / name
         if not (obj_folder / "object.json").exists():
@@ -531,34 +534,14 @@ def _subtract(polygon, rect):
     return out
 
 
-def _is_ground(material, tri, height):
-    """Whether a kept face is ground: opaque, facing up, and at the tile's ground height (a fence, a tree's leaves, a
-    decal or a bridge's deck isn't)."""
-    if material.get("alphaMode") in ("MASK", "BLEND"):
-        return False
-    e1 = [tri[1].p[k] - tri[0].p[k] for k in range(3)]
-    e2 = [tri[2].p[k] - tri[0].p[k] for k in range(3)]
-    n = (e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0])
-    length = math.sqrt(sum(c * c for c in n))
-    return length > 0 and abs(n[1]) / length >= 0.7 and all(abs(v.p[1] - height) <= 2 for v in tri)
-
-
-def kept_faces(triangles, painted, half, ground_cut=(), materials=None):
+def kept_faces(triangles, painted, half):
     """The chunk's triangles without the painted tiles: each triangle with the painted rectangles cut out of it, so it
-    keeps its own shape everywhere else (painted: rectangles of tiles, x, z, w, d); and its ground faces without the
-    margin's tiles (ground_cut: x, z, height)."""
+    keeps its own shape everywhere else (painted: rectangles of tiles, x, z, w, d)."""
     rects = [(x * TILE - half, z * TILE - half, (x + w) * TILE - half, (z + d) * TILE - half) for x, z, w, d in painted]
     out = []
     for key, tri in triangles:
         pieces = [tri]
         xs, zs = [v.p[0] for v in tri], [v.p[2] for v in tri]
-        for x, z, height in ground_cut:
-            r = (x * TILE - half, z * TILE - half, (x + 1) * TILE - half, (z + 1) * TILE - half)
-            if max(xs) <= r[0] or min(xs) >= r[2] or max(zs) <= r[1] or min(zs) >= r[3]:
-                continue
-            if not _is_ground(materials[key], tri, height):
-                continue
-            pieces = [part for piece in pieces for part in _subtract(piece, r)]
         for r in rects:
             if max(xs) <= r[0] or min(xs) >= r[2] or max(zs) <= r[1] or min(zs) >= r[3]:
                 continue
