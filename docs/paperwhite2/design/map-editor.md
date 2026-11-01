@@ -338,9 +338,11 @@ from grass at the border to path a tile in, the middle one plain path. Straight 
 tiles (centred on a tile, ending on tile corners), every third tile on alternating sides and always across from a
 T-junction's branch; convex corners are cut round (pulled half a tile in along the diagonal, over two tiles each way).
 The ground of the terrain outside fills the gap where the border's line moves in, so its texture isn't stretched, and
-the tiles the inside line crosses are clipped along it. Its riverbanks are the water's outer tiles: a ridge of dirt
-half a tile high (`54ochigake`, `gake1_1`, `gake01a2`, over grass), the water's edge (`kawa_fuchi.1`), and the bed
-sloping half a tile down under it (`kawa_soko`), with rounded corners too. A border to the same terrain, past the chunk
+the tiles the inside line crosses are clipped along it. Its riverbanks are the water's outer tiles: the land
+is half a tile above the water's surface, and the bank slopes down from its edge (`gake1_1`, `gake01a2`) to the water's
+edge (`kawa_fuchi.1`), the bed (`kawa_soko`) a tile below the land, with rounded corners too; water is painted level
+with the land, and its collision lies half a tile under that (`collision_lift`). Edge terrains marked `square` keep
+their corners square. A border to the same terrain, past the chunk
 or to a terrain the edge doesn't name has no band.
 
 Edges are painted (the user's call, 2026-11-02, after a margin that redrew the tiles round a painting overwrote a

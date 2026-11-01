@@ -2,6 +2,19 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-02 (night): vanilla's riverbank; square-corner edges; paths edged against water
+
+- Water's profile is now Route 20's own bank: the land half a tile above the water's surface, the bank sloping down
+  from its edge (gake1_1, gake01a2, the water's edge), the bed a tile below the land. Water and its edge tiles'
+  collision is half a tile under their painted height (collision_lift), so paint water level with the land. No wall
+  between painted tiles and the chunk's own of their family, and no lip where painted water meets the river: a pond
+  joined to Route 20's river looks like the river's own banks (scratch copy). The meadow west of that river, level
+  with the water under a ridge, is the game's other bank, not made yet.
+- Path edge and Water edge have square-corner variants, for corners the rounding shouldn't touch. Path edges draw
+  their grass against water and its edges too.
+- Discarding a painted map's project or its copy discards both; generate says what to do when the copy is gone.
+  Flat test chunk: 755 triangles; packs. **Not tried in game.**
+
 ## 2026-11-02 (evening): edges are painted; straight bends; kept tiles read by their texture
 
 - The margin is gone (it overwrote a bridge and a bank). Borders are drawn where Path edge or Water edge tiles are

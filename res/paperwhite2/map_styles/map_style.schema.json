@@ -169,6 +169,10 @@
                         "type": "string",
                         "description": "Makes this an edge terrain of another (its key): painted where that terrain's border is drawn, against what lies outside (a path's edge, a riverbank)"
                     },
+                    "square": {
+                        "type": "boolean",
+                        "description": "An edge terrain whose corners stay square, where the edge would round them"
+                    },
                     "color": {
                         "type": "string",
                         "description": "Its color in the editor's painting view"
@@ -246,6 +250,10 @@
                     "tile_type": {
                         "type": "integer",
                         "description": "Its collision's tile type: TILE_CLASS_ and flags (include/field/field_map.h)"
+                    },
+                    "collision_lift": {
+                        "type": "number",
+                        "description": "Tiles its collision lies above (below, negative) its painted height: water's surface, half a tile under the land it's painted level with"
                     },
                     "also_tile_types": {
                         "type": "array",

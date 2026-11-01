@@ -35,10 +35,10 @@ export function GitPanel({ state, commitEnabled, onOpen, onClose, onRefresh }: {
   const allChosen = changes.length > 0 && changes.every((c) => chosen.has(c.path));
   const discard = async () => {
     const paths = [...chosen];
-    if (!window.confirm(`Put ${paths.length} file(s) back as the last commit has them? Their changes are lost, and new files are deleted:\n\n${paths.slice(0, 20).join("\n")}${paths.length > 20 ? "\n…" : ""}`)) return;
+    if (!window.confirm(`Put ${paths.length} file(s) back as the last commit has them? Their changes are lost, and new files are deleted (a painted map's project and its copy of the chunk go together):\n\n${paths.slice(0, 20).join("\n")}${paths.length > 20 ? "\n…" : ""}`)) return;
     try {
-      await api.discard(paths);
-      setResult(`Put ${paths.length} file(s) back as last committed.`);
+      const { discarded } = await api.discard(paths);
+      setResult(`Put ${discarded} file(s) back as last committed${discarded > paths.length ? " (with the rest of their painted maps)" : ""}.`);
       setChosen(new Set());
       onRefresh();
     } catch (e) {

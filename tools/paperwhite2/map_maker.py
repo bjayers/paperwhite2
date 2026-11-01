@@ -257,7 +257,8 @@ def generate(project_path):
     base = PROJECTS / f"{project['model']}.base"
     keeps = any(KEEP in row for row in project["terrain"])
     if keeps and not (base / "model.glb").exists():
-        raise DataError(f"{project_path}: tiles keep the chunk, but there's no copy of it in {base.relative_to(ROOT)}")
+        raise DataError(f"{project_path}: tiles keep the chunk, but its copy ({base.relative_to(ROOT)}) is gone (discarded or "
+                        "deleted): Stop painting removes the painting and leaves the chunk as it is, then Start painting again")
     kept_heights = ground_heights(base, size, images_from=folder) if keeps else {}
     grid = {}
     for z, row in enumerate(project["terrain"]):
@@ -309,6 +310,15 @@ def generate(project_path):
     family = {k: t.get("edge_of", k) for k, t in terrains.items()}
     wall_grid = grid
 
+    def joined(a, b):
+        # No wall between a painted tile and a kept one of its family (painted water against the chunk's own river,
+        # whose ground is its bed): the band, or the lack of one, joins them
+        ta, tb = grid[a], grid.get(b)
+        if tb is None or (ta[0] == KEEP) == (tb[0] == KEEP):
+            return False
+        pa, pb = terrain_of(a), terrain_of(b)
+        return pa[0] is not None and pb[0] is not None and family.get(pa[0], pa[0]) == family.get(pb[0], pb[0])
+
     to_world = lambda p, h: (p[0] * TILE - half, h + p[1] * TILE, p[2] * TILE - half)  # noqa: E731
     corners = defaultdict(set)
     ground = dict(painted)
@@ -331,7 +341,8 @@ def generate(project_path):
             if other is None or family.get(other[0], other[0]) == key:
                 return False
             return froms is None or (other[0] in froms and other[1] == h)
-        result = map_edges.band(tiles, edge, banded, edge.get("points", False))
+        result = map_edges.band(tiles, edge, banded, edge.get("points", False),
+                                square=lambda t: terrains[painted[t][0]].get("square", False))
         inner_y = h + edge["lines"][edge.get("inner", len(edge["lines"]) - 1)]["lift"] * TILE
         for t in tiles - result["full"]:
             del ground[t]
@@ -357,7 +368,7 @@ def generate(project_path):
     for (key, y), x, z, w, d in rects:
         for cx, cz in ((x, z), (x + w, z), (x + w, z + d), (x, z + d)):
             corners[y].add((world(cx, cz)[0], y, world(cx, cz)[1]))
-    for (top, bottom), line in wall_runs(wall_grid, size):
+    for (top, bottom), line in wall_runs(wall_grid, size, joined):
         for (x, z) in line:
             for y in (top, bottom):
                 corners[y].add((x * TILE - half, y, z * TILE - half))
@@ -430,7 +441,7 @@ def generate(project_path):
             polygons += [(lkey, t) for t in fan(louter, luv, UP)]
 
     # The walls between heights, facing the lower side
-    for (top, bottom), line, facing, texture in wall_faces(wall_grid, size, terrains, style):
+    for (top, bottom), line, facing, texture in wall_faces(wall_grid, size, terrains, style, joined):
         key = materials.get(texture["texture"], alpha=texture.get("alpha", "MASK"), clamp_t=True, name=texture["texture"])
         (ax, az), (bx, bz) = line
         a, b = (ax * TILE - half, az * TILE - half), (bx * TILE - half, bz * TILE - half)
@@ -617,27 +628,28 @@ def materials_from(materials, material):
     return materials.add(copy)
 
 
-def wall_runs(grid, size):
-    """The ends of every wall segment, for the ground's corners: ((top, bottom), [(x, z), (x, z)]) per tile edge."""
+def wall_runs(grid, size, joined=lambda a, b: False):
+    """The ends of every wall segment, for the ground's corners: ((top, bottom), [(x, z), (x, z)]) per tile edge;
+    joined says which neighbours have none between them."""
     out = []
     for (x, z), (key, h) in grid.items():
         for dx, dz in ((1, 0), (0, 1)):
             other = grid.get((x + dx, z + dz))
-            if other is None or other[1] == h or (key == KEEP and other[0] == KEEP):
+            if other is None or other[1] == h or (key == KEEP and other[0] == KEEP) or joined((x, z), (x + dx, z + dz)):
                 continue
             ends = [(x + 1, z), (x + 1, z + 1)] if dx else [(x, z + 1), (x + 1, z + 1)]
             out.append(((max(h, other[1]), min(h, other[1])), ends))
     return out
 
 
-def wall_faces(grid, size, terrains, style):
+def wall_faces(grid, size, terrains, style, joined=lambda a, b: False):
     """The walls, merged along straight runs of the same heights and texture: ((top, bottom), (start, end), facing,
     texture). facing says the wall faces the second side (east or south) rather than the first."""
     segments = defaultdict(list)
     for (x, z), (key, h) in grid.items():
         for dx, dz in ((1, 0), (0, 1)):
             nb = grid.get((x + dx, z + dz))
-            if nb is None or nb[1] == h or (key == KEEP and nb[0] == KEEP):
+            if nb is None or nb[1] == h or (key == KEEP and nb[0] == KEEP) or joined((x, z), (x + dx, z + dz)):
                 continue
             high, low = ((key, h), nb) if h > nb[1] else (nb, (key, h))
             texture = (terrains.get(low[0], {}).get("wall") or terrains.get(high[0], {}).get("wall") or style["wall"])
@@ -678,6 +690,7 @@ def write_collision(folder, grid, size, terrains, over, base=None):
                 rows.append(row)
                 continue
             tile_type = over.get((x, z), terrains[key]["tile_type"])
+            y += terrains[key].get("collision_lift", 0) * TILE
             rows.append({"x": x, "z": z, "shape": 0, "slope": 0, "offset": flat_offset(heights, y),
                          "tile_type": tile_type, "diagonal": 0})
     with (folder / "terrain_0.csv").open("w", newline="") as out:

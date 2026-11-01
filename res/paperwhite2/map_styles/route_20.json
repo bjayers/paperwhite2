@@ -10,7 +10,7 @@
     "edges": [
         {
             "to": "p",
-            "from": [ "g", "t", "b", "k" ],
+            "from": [ "g", "t", "b", "w", "k" ],
             "lines": [
                 {
                     "offset": 0,
@@ -39,69 +39,43 @@
                     "lift": 0
                 },
                 {
-                    "offset": 0.25,
-                    "lift": 0.25
-                },
-                {
                     "offset": 0.5,
-                    "lift": 0.5
+                    "lift": -0.25
                 },
                 {
-                    "offset": 0.75,
-                    "lift": 0.25
-                },
-                {
-                    "offset": 0.8125,
-                    "lift": 0
-                },
-                {
-                    "offset": 1,
-                    "lift": 0
+                    "offset": 0.625,
+                    "lift": -0.5
                 },
                 {
                     "offset": 1,
                     "lift": -0.5
+                },
+                {
+                    "offset": 1,
+                    "lift": -1
                 }
             ],
             "faces": [
                 {
-                    "between": [ 0, 4 ],
-                    "texture": "grass01ax",
-                    "planar": true,
-                    "repeat": 4
-                },
-                {
                     "between": [ 0, 1 ],
-                    "texture": "54ochigake",
-                    "v": [ 1, 0 ],
-                    "alpha": "MASK"
-                },
-                {
-                    "between": [ 1, 2 ],
-                    "texture": "gake1_1",
-                    "v": [ 1, 0 ],
-                    "alpha": "MASK"
-                },
-                {
-                    "between": [ 2, 3 ],
                     "texture": "gake1_1",
                     "v": [ 0, 1 ],
                     "alpha": "MASK"
                 },
                 {
-                    "between": [ 3, 4 ],
+                    "between": [ 1, 2 ],
                     "texture": "gake01a2",
                     "v": [ 0, 0.5 ],
                     "alpha": "MASK"
                 },
                 {
-                    "between": [ 4, 6 ],
+                    "between": [ 2, 4 ],
                     "texture": "kawa_soko",
                     "planar": true,
                     "repeat": 2
                 },
                 {
-                    "between": [ 4, 5 ],
+                    "between": [ 2, 3 ],
                     "texture": "kawa_fuchi.1",
                     "v": [ 0, 1 ],
                     "alpha": "MASK"
@@ -136,6 +110,18 @@
             "name": "Path edge",
             "edge_of": "p",
             "color": "#b08848",
+            "ground": {
+                "texture": "michi01b",
+                "repeat": 1
+            },
+            "tile_type": 8388611
+        },
+        {
+            "key": "q",
+            "name": "Path edge, square corner",
+            "edge_of": "p",
+            "square": true,
+            "color": "#8a6a38",
             "ground": {
                 "texture": "michi01b",
                 "repeat": 1
@@ -178,7 +164,8 @@
                 "texture": "kawa_soko",
                 "repeat": 2
             },
-            "tile_type": 1441855
+            "tile_type": 1441855,
+            "collision_lift": -0.5
         },
         {
             "key": "k",
@@ -189,7 +176,21 @@
                 "texture": "kawa_soko",
                 "repeat": 2
             },
-            "tile_type": 8585281
+            "tile_type": 8585281,
+            "collision_lift": -0.5
+        },
+        {
+            "key": "j",
+            "name": "Water edge, square corner",
+            "edge_of": "w",
+            "square": true,
+            "color": "#1a3a6a",
+            "ground": {
+                "texture": "kawa_soko",
+                "repeat": 2
+            },
+            "tile_type": 8585281,
+            "collision_lift": -0.5
         },
         {
             "key": "b",

@@ -499,9 +499,14 @@ const routes: Record<string, Handler> = {
     const { paths } = (await readJson(req)) as { paths: string[] };
     const changed = new Set((await git.state()).changes.map((c) => c.path));
     if (!paths?.length || paths.some((p) => !changed.has(p))) return error(res, 400, "Choose changed files");
-    await git.discard(paths);
+    // A painted map's project and its copy of the chunk (map_maker.py) go together: one without the other can't
+    // generate
+    const painting = (p: string) => /^res\/paperwhite2\/map_projects\/([a-z0-9_]+)(\.json|\.base\/)/.exec(p)?.[1];
+    const models = new Set(paths.map(painting).filter(Boolean));
+    const all = [...new Set([...paths, ...[...changed].filter((p) => models.has(painting(p)))])];
+    await git.discard(all);
     send({ type: "git" });
-    json(res, { discarded: paths.length });
+    json(res, { discarded: all.length });
   },
   "GET /api/events": (req, res) => {
     res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" });

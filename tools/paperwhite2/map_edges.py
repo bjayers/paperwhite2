@@ -158,14 +158,15 @@ def _collinear(a, b, c):
     return all(abs((b[q] - a[q]) * (c[r] - a[r]) - (b[r] - a[r]) * (c[q] - a[q])) < EPS for q, r in ((0, 1), (0, 2), (1, 2)))
 
 
-def band(region, edge, banded, points):
+def band(region, edge, banded, points, square=lambda tile: False):
     """A region's edge band, in tiles, a point (x, lift, z), as a dict:
 
     strips: (face, (start, end) on its first line, (start, end) on its second, (u at the start, u at the end)), u
     along the border in tiles, one per straight run of the border and face;
     dents: (outside tile, [point]), the polygons between the border and a first line that has moved in;
     full: the tiles the terrain's own ground covers whole; pieces: (tile, [(x, z)]), the tiles the inside line
-    crosses, clipped to its inside; band_tiles: the region's tiles the band covers;
+    crosses, clipped to its inside; band_tiles: the region's tiles the band covers; square says which tiles' corners
+    aren't rounded;
     outer and inner: the points on the border and on the inside line that ground beside them must be split at."""
     lines = edge["lines"]
     inner = edge.get("inner", len(lines) - 1)
@@ -198,7 +199,7 @@ def band(region, edge, banded, points):
         if round_by:
             for i, e in enumerate(loop):
                 b = loop[i - 1]
-                if e[1] != b[2] or not all(flags[(i + k) % n] for k in (-2, -1, 0, 1)):
+                if e[1] != b[2] or square(e[3]) or not all(flags[(i + k) % n] for k in (-2, -1, 0, 1)):
                     continue
                 if not (straight(i - 1) and straight(i + 1)) or any(moved[(i + k) % n] for k in (-2, -1, 0, 1, 2)):
                     continue
