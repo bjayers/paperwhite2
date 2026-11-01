@@ -190,6 +190,7 @@ export class ChunkScene {
         gltf.scene.userData.chunk = index;
         if (index === this.paintChunk && this.painting_?.fade) fade(gltf.scene, true);
         this.models.set(index, modelOf(gltf));
+        this.applyHidden(index);
         if (this.wireframe) addWireframe(gltf.scene);
         this.chunks.add(gltf.scene);
         if (--pending === 0) this.onLoaded();
@@ -401,6 +402,63 @@ export class ChunkScene {
   }
 
   /** Draws the selected faces over the model, in yellow. */
+  /** Faces hidden from view and from clicks (Blender's H), by chunk folder: each triangle by its corners' positions,
+   * so it stays hidden when an edit of the chunk renumbers its triangles. The files never change. */
+  private hidden = new Map<string, Set<string>>();
+  hiddenCount() {
+    let n = 0;
+    for (const set of this.hidden.values()) n += set.size;
+    return n;
+  }
+  hideFaces(faces: Face[]) {
+    const map = this.map;
+    if (!map) return;
+    const touched = new Set<number>();
+    for (const f of faces) {
+      const mesh = this.models.get(f.chunk)?.primitives[f.primitive]?.mesh;
+      const folder = map.chunks[f.chunk]?.folder;
+      if (!mesh || !folder) continue;
+      if (!this.hidden.has(folder)) this.hidden.set(folder, new Set());
+      this.hidden.get(folder)!.add(triangleKey(mesh.geometry, f.triangle));
+      touched.add(f.chunk);
+    }
+    for (const index of touched) this.applyHidden(index);
+  }
+  /** Shows every hidden face again (the chunks load again, whole). */
+  showHidden() {
+    this.hidden.clear();
+    this.reload();
+  }
+  private applyHidden(index: number) {
+    const folder = this.map?.chunks[index]?.folder;
+    const keys = folder ? this.hidden.get(folder) : undefined;
+    const model = this.models.get(index);
+    if (!keys?.size || !model) return;
+    for (const { mesh } of model.primitives) {
+      const geometry = mesh.geometry;
+      const count = (geometry.index?.count ?? geometry.attributes.position.count) / 3;
+      let changed = false;
+      for (let t = 0; t < count; t++) {
+        if (!keys.has(triangleKey(geometry, t))) continue;
+        // Drawn as a point: no area to see or to click
+        if (geometry.index) {
+          geometry.index.setX(t * 3 + 1, geometry.index.getX(t * 3));
+          geometry.index.setX(t * 3 + 2, geometry.index.getX(t * 3));
+        } else {
+          const position = geometry.attributes.position as THREE.BufferAttribute;
+          for (const k of [1, 2]) position.setXYZ(t * 3 + k, position.getX(t * 3), position.getY(t * 3), position.getZ(t * 3));
+        }
+        changed = true;
+      }
+      if (!changed) continue;
+      if (geometry.index) geometry.index.needsUpdate = true;
+      else geometry.attributes.position.needsUpdate = true;
+      // Its wireframe drawn again without them
+      for (const child of [...mesh.children]) if (child.userData.wireframe) mesh.remove(child);
+      if (this.wireframe) addWireframe(mesh);
+    }
+  }
+
   /** Draws the chunks' triangles' edges over their models, to see what a click will pick. */
   wireframe = false;
   setWireframe(on: boolean) {
@@ -562,6 +620,18 @@ export class ChunkScene {
 const WIREFRAME = new THREE.LineBasicMaterial({ color: 0x101820, transparent: true, opacity: 0.45 });
 
 /** Adds each mesh's triangles' edges to it, once. */
+/** A triangle by its corners' positions (sorted, to a hundredth), which a renumbering of the triangles keeps. A
+ * hidden one's corners are all its first, which no visible triangle has. */
+function triangleKey(geometry: THREE.BufferGeometry, t: number): string {
+  const position = geometry.attributes.position as THREE.BufferAttribute;
+  const corners: string[] = [];
+  for (let k = 0; k < 3; k++) {
+    const v = geometry.index ? geometry.index.getX(t * 3 + k) : t * 3 + k;
+    corners.push([position.getX(v), position.getY(v), position.getZ(v)].map((c) => c.toFixed(2)).join(","));
+  }
+  return corners.sort().join(";");
+}
+
 function addWireframe(root: THREE.Object3D) {
   const meshes: THREE.Mesh[] = [];
   root.traverse((o) => { if ((o as THREE.Mesh).isMesh && !o.userData.wireframe) meshes.push(o as THREE.Mesh); });

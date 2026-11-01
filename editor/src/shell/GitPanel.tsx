@@ -32,6 +32,20 @@ export function GitPanel({ state, commitEnabled, onOpen, onClose, onRefresh }: {
     api.diff(selected).then(setDiff, (e: Error) => setDiff(e.message));
   }, [selected, state]);
 
+  const allChosen = changes.length > 0 && changes.every((c) => chosen.has(c.path));
+  const discard = async () => {
+    const paths = [...chosen];
+    if (!window.confirm(`Put ${paths.length} file(s) back as the last commit has them? Their changes are lost, and new files are deleted:\n\n${paths.slice(0, 20).join("\n")}${paths.length > 20 ? "\n…" : ""}`)) return;
+    try {
+      await api.discard(paths);
+      setResult(`Put ${paths.length} file(s) back as last committed.`);
+      setChosen(new Set());
+      onRefresh();
+    } catch (e) {
+      setResult(`Not put back: ${(e as Error).message}`);
+    }
+  };
+
   const commit = async () => {
     try {
       const { commit } = await api.commit([...chosen], message);
@@ -56,6 +70,10 @@ export function GitPanel({ state, commitEnabled, onOpen, onClose, onRefresh }: {
       {state && <p className="muted small pad">Last commit: {state.head}</p>}
       <label className="checkbox pad small">
         <input type="checkbox" checked={onlyRes} onChange={(e) => setOnlyRes(e.target.checked)} /> Only game data (res/)
+      </label>
+      <label className="checkbox pad small">
+        <input type="checkbox" disabled={!commitEnabled || !changes.length} checked={allChosen}
+               onChange={(e) => setChosen(e.target.checked ? new Set(changes.map((c) => c.path)) : new Set())} /> Check all shown
       </label>
       <ul className="changes">
         {changes.map((c) => (
@@ -85,6 +103,10 @@ export function GitPanel({ state, commitEnabled, onOpen, onClose, onRefresh }: {
                 title={commitEnabled ? "Commit the checked files" :
                   "Turned off while the Claude sessions are still adding features: set commitEnabled to true in editor/settings.local.json to use it"}>
           Commit {chosen.size ? `${chosen.size} file${chosen.size > 1 ? "s" : ""}` : ""}
+        </button>
+        <button className="danger" disabled={!commitEnabled || !chosen.size} onClick={discard}
+                title="Puts the checked files back as the last commit has them: their changes are lost, and new files are deleted">
+          Discard {chosen.size ? `${chosen.size} file${chosen.size > 1 ? "s" : ""}` : ""}
         </button>
         {!commitEnabled && <p className="muted small">Committing is turned off for now: the Claude sessions commit.</p>}
         {result && <p className="small">{result}</p>}

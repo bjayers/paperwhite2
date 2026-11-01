@@ -332,14 +332,18 @@ object library below replace it; the slicer and its library are gone.
   (`tools/paperwhite2/map_maker.py`, `res/paperwhite2/map_styles/`, `res/paperwhite2/map_projects/`), which share
   `tools/paperwhite2/glb_mesh.py`.
 
-Smart edges so far: a style's `edges` name pairs of terrains and the texture that blends one into the other down v
-(Route 20: grass, tall grass and blocked grass into path with `michi01a`, as vanilla draws its paths). The ground is
-generated in half tiles; the half tiles either side of such a border take the edge texture, each corner's v the share
-of the "to" terrain round it, so a straight border is the texture across one tile and a corner a blend round it.
-Riverbanks and cliff tops aren't edges yet.
+Smart edges so far (`tools/paperwhite2/map_edges.py`): a style's `edges` are profiles laid along a terrain's border,
+inside its outer tiles, as the game lays its own. Its paths are three tiles wide: the outer two drawn with `michi01a`
+from grass at the border to path a tile in, the middle one plain path, and every third tile the band bends half a tile
+in, alternating sides. Its riverbanks are the water's outer tiles: a ridge of dirt half a tile high (`54ochigake`,
+`gake1_1`, `gake01a2`), the water's edge (`kawa_fuchi.1`), and the bed sloping half a tile down under it (`kawa_soko`).
+Each line of a profile is an offset in and a lift; each face lies between two lines. A border to the same terrain (a
+vanilla path or river kept beside a painted one), past the chunk or to a terrain the edge doesn't name has no band.
+Corners are mitred, and straight runs are one strip, split where the ground beside them has a corner.
 
 Known limits of the map maker so far: walls are one texture stretched down their height, objects stand on their
 north-west tile's ground, it writes only a chunk's first collision layer, collision edits made after painting started
-are replaced by the generated collision, and painted water meets a chunk's own river with the river's curved bed.
+are replaced by the generated collision, and a painted path or river that meets a kept one joins it cleanly only
+where the painting covers the join (the kept one's own band stays as the game drew it).
 
 See `docs/paperwhite2/STATUS.md` for the latest, and what is still untested in game.

@@ -264,7 +264,7 @@ function accessorValues(json: FaceGltf, bin: Buffer, index: number): number[][] 
  * named and set up as there, its image the same PNG of the target's texture set (../../textures/<set>/<png>). Also
  * the source's materials' images, as <set>/<png>, for the caller to check against the target's sets. */
 export function pasteGlbFaces(target: Buffer, source: Buffer, chosen: FaceSet[] | "all", offset: [number, number, number],
-                              textureSet: string): { glb: Buffer; pngs: string[] } {
+                              textureSet: string): { glb: Buffer; pngs: string[]; faces: FaceSet[] } {
   const src = read(source);
   const sj = src.json as FaceGltf;
   const sbin = binChunk(src.rest);
@@ -298,6 +298,7 @@ export function pasteGlbFaces(target: Buffer, source: Buffer, chosen: FaceSet[] 
     json.accessors.push({ bufferView: json.bufferViews.length - 1, componentType, count: values.length, type, ...extra });
     return json.accessors.length - 1;
   };
+  const pasted: FaceSet[] = [];
   for (const set of faces) {
     const prim = sj.meshes[0].primitives[set.primitive];
     if (!prim || prim.indices === undefined) throw new Error(`The source has no primitive ${set.primitive}`);
@@ -327,6 +328,7 @@ export function pasteGlbFaces(target: Buffer, source: Buffer, chosen: FaceSet[] 
     const indicesOut = append(corners.map((_, i) => [i]), "SCALAR", 5125, 34963);
     const material = copyMaterial(json, sj, prim.material, textureSet, pngs);
     json.meshes[0].primitives.push({ attributes, indices: indicesOut, material });
+    pasted.push({ primitive: json.meshes[0].primitives.length - 1, triangles: Array.from({ length: corners.length / 3 }, (_, t) => t) });
   }
   const binary = Buffer.concat([bin, ...tail]);
   const padded = binary.length % 4 ? Buffer.concat([binary, Buffer.alloc(4 - (binary.length % 4))]) : binary;
@@ -334,7 +336,7 @@ export function pasteGlbFaces(target: Buffer, source: Buffer, chosen: FaceSet[] 
   const header = Buffer.alloc(8);
   header.writeUInt32LE(padded.length, 0);
   header.writeUInt32LE(0x004e4942, 4);
-  return { glb: write(json, Buffer.concat([header, padded])), pngs: [...pngs] };
+  return { glb: write(json, Buffer.concat([header, padded])), pngs: [...pngs], faces: pasted };
 }
 
 /** A source material in the target GLB: one it has the same already, or a copy, its image the target set's PNG. */

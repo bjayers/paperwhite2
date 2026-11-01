@@ -2,6 +2,19 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-02: vanilla-style paths and riverbanks; hiding faces; paste selects; discard in Changes
+
+- **Edges as profiles** (`tools/paperwhite2/map_edges.py`, the style's `edges`): paths' grass edges now lie inside
+  the path's outer tiles, as vanilla's do, with half-tile bends every third tile on alternating sides; painted water
+  gets vanilla's riverbank (a dirt ridge, the water's edge, the bed half a tile down) in its outer tiles, which take
+  the bank's tile type (0x830041, vanilla's). Straight runs are merged: a test chunk with three roads, a pond and tall
+  grass is 392 triangles; packs. **Not tried in game**, nor whether the bank's tile type lets the player surf from
+  it.
+- The Faces tab: H hides the selection (from view and clicks; the model doesn't change), Alt+H shows it again; a
+  paste selects what it pasted; Ctrl+Z now works while a checkbox has focus (it didn't after ticking Paste).
+- Put it back can keep the chunk's collision. The Changes panel can check every file shown and discard the checked
+  ones (back as last committed; new files deleted), after a confirm.
+
 ## 2026-11-01 (night): smart path edges, put back, faded painting, generate after each stroke
 
 - **Smart edges** (`map_maker.py`, a style's `edges`): grass, tall grass and blocked grass blend into path with

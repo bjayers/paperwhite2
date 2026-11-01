@@ -20,6 +20,8 @@ generate writes:
   coordinates allows), textured from above (u, v = x, z over the texture's repeat in tiles), so textures run on across
   tiles as the game's do; a rectangle's edges are split where another's corner lies on them, so no corner of one
   meets the middle of another's edge (a T-junction, which the DS draws with a gap);
+- the edges between terrains (map_edges.py): a style's profile along a terrain's border, inside its outer tiles (a
+  path's grass edge, a riverbank's ridge and bed), with the terrain's own ground inside it;
 - the terrains' layers (tall grass's blades, above the ground);
 - walls where neighbouring tiles' heights differ, facing the lower: the lower tile's terrain's wall (a riverbank),
   else the higher's, else the style's (a cliff), u along the wall, v down it;
@@ -43,6 +45,7 @@ sys.path.insert(0, str(ROOT / "tools/paperwhite2"))
 from tools.data.datajson import DataError, dumps, load, load_schema  # noqa: E402
 from glb_mesh import TEXEL_REACH, Vertex, png_size, read_mesh, write_mesh  # noqa: E402
 from map_model_data import read_glb  # noqa: E402
+import map_edges  # noqa: E402
 
 MODELS = ROOT / "res/field/maps/models"
 TEXTURES = ROOT / "res/field/maps/textures"
@@ -55,6 +58,7 @@ KEEP = "."
 BASE_FILES = ("model.glb", "data.json", "terrain_0.csv", "terrain_0_splits.csv")
 REPEAT, CLAMP = 10497, 33071
 UP = (0.0, 1.0, 0.0)
+EPS = 1e-6
 
 
 def _tables():
@@ -260,55 +264,130 @@ def generate(project_path):
     world = lambda x, z: (x * TILE - half, z * TILE - half)  # noqa: E731
     polygons = []
 
-    # The ground, in half tiles: the edges between terrains that have one (a path's border on grass) take the half
-    # tiles either side of their border, the rest are rectangles of a terrain at a height
+    # The edges between terrains (map_edges.py): each terrain with one, at each height, has its border's band, which
+    # takes its outer tiles; the ground inside it is the terrain's own, at the band's inside line's lift
     ground_keys = {k: materials.get(t["ground"]["texture"]) for k, t in terrains.items()}
     painted = {xz: v for xz, v in grid.items() if v[0] != KEEP}
-    sub = {(sx, sz): painted[(sx // 2, sz // 2)] for sx in range(2 * size) for sz in range(2 * size) if (sx // 2, sz // 2) in painted}
-    edges = edge_bands(sub, 2 * size, style)
-    flat_sub = {xy: v for xy, v in sub.items() if xy not in edges}
-    rects = rectangles(flat_sub, 2 * size,
-                       lambda v: 2 * materials.reach(ground_keys[v[0]]) * terrains[v[0]]["ground"]["repeat"])
-    sw = lambda x, z: (x * HALF_TILE - half, z * HALF_TILE - half)  # noqa: E731
-    # Every corner on each height's plane, which the ground's edges there are split at
+    kept_types = {}
+    if keeps:
+        kept_types = {(int(r["x"]), int(r["z"])): int(r["tile_type"]) for r in csv.DictReader((base / "terrain_0.csv").open())}
+    by_type = {t["tile_type"]: k for k, t in terrains.items()}
+
+    def terrain_of(xz):
+        # A tile's terrain and height; a kept tile's terrain is the one with its tile type, if any
+        v = grid.get(xz)
+        if v is None:
+            return None
+        return v if v[0] != KEEP else (by_type.get(kept_types.get(xz)), v[1])
+
+    to_world = lambda p, h: (p[0] * TILE - half, h + p[1] * TILE, p[2] * TILE - half)  # noqa: E731
     corners = defaultdict(set)
+    ground = dict(painted)
+    edge_over = {}
+    bent = []
+    bands = []
+    regions = defaultdict(set)
+    for xz, v in painted.items():
+        regions[v].add(xz)
+    for (key, h), tiles in sorted(regions.items()):
+        edge = next((e for e in style.get("edges", []) if e["to"] == key), None)
+        if edge is None:
+            continue
+        froms = edge.get("from")
+
+        def banded(e, key=key, h=h, froms=froms):
+            other = terrain_of(e[4])
+            if other is None or other[0] == key:
+                return False
+            return froms is None or (other[0] in froms and other[1] == h)
+        strips, dents, interior, band_tiles, bumps, outer, inner = map_edges.band(tiles, edge, banded, edge.get("points", False))
+        inner_y = h + edge["lines"][edge.get("inner", len(edge["lines"]) - 1)]["lift"] * TILE
+        for t in band_tiles:
+            del ground[t]
+            if "tile_type" in edge:
+                edge_over[t] = edge["tile_type"]
+        for t in interior:
+            ground[t] = (key, inner_y)
+        for t, (tip, normal) in bumps.items():
+            del ground[t]
+            bent.append((key, inner_y, t, to_world(tip, h), normal))
+            for cx, cz in ((t[0], t[1]), (t[0] + 1, t[1]), (t[0] + 1, t[1] + 1), (t[0], t[1] + 1)):
+                corners[inner_y].add(to_world((cx, 0, cz), inner_y))
+        for p in outer:
+            corners[h + p[1] * TILE].add(to_world(p, h))
+        for p in inner:
+            corners[h + p[1] * TILE].add(to_world(p, h))
+        bands.append((h, strips, dents))
+    # The ground: each terrain's tiles at a height merged into rectangles
+    rects = rectangles(ground, size, lambda v: materials.reach(ground_keys[v[0]]) * terrains[v[0]]["ground"]["repeat"])
+    # Every corner on each height's plane, which the ground's edges there are split at
     for (key, y), x, z, w, d in rects:
         for cx, cz in ((x, z), (x + w, z), (x + w, z + d), (x, z + d)):
-            corners[y].add((sw(cx, cz)[0], y, sw(cx, cz)[1]))
-    bands = merged_bands(edges)
-    for (y, _, _, _), x, z, w, d in bands:
-        for cx, cz in ((x, z), (x + w, z), (x + w, z + d), (x, z + d)):
-            corners[y].add((sw(cx, cz)[0], y, sw(cx, cz)[1]))
-    walls = wall_runs(grid, size)
-    for (top, bottom), line in walls:
+            corners[y].add((world(cx, cz)[0], y, world(cx, cz)[1]))
+    for (top, bottom), line in wall_runs(grid, size):
         for (x, z) in line:
             for y in (top, bottom):
                 corners[y].add((x * TILE - half, y, z * TILE - half))
-    for (key, y), x, z, w, d in rects:
-        terrain = terrains[key]
-        (x0, z0), (x1, z1) = sw(x, z), sw(x + w, z + d)
-        outline = [(x0, y, z0), (x0, y, z1), (x1, y, z1), (x1, y, z0)]
-        repeat = terrain["ground"]["repeat"] * TILE
-        uv = lambda p, r=repeat: ((p[0] + half) / r, (p[2] + half) / r)  # noqa: E731
-        polygons += [(ground_keys[key], t) for t in fan(ring(outline, corners[y]), uv, UP)]
-    # The edges: each half tile's corners take how much of the "to" terrain is round them (v), so a straight border is
-    # the texture across a tile and a corner a blend round it; u runs along the border
-    for (y, values, along_x, texture), x, z, w, d in bands:
-        key = materials.get(texture["texture"], alpha=texture.get("alpha"), clamp_t=True, name=texture["texture"])
-        repeat = texture.get("repeat", 1) * TILE
-        (x0, z0), (x1, z1) = sw(x, z), sw(x + w, z + d)
-        v00, v10, v11, v01 = values
-        corner_v = {(x0, z0): v00, (x1, z0): v10, (x1, z1): v11, (x0, z1): v01}
-        outline = [(x0, y, z0), (x0, y, z1), (x1, y, z1), (x1, y, z0)]
 
-        def uv(p, along_x=along_x, repeat=repeat, x0=x0, x1=x1, z0=z0, z1=z1, corner_v=corner_v):
-            # v between the corners, bilinear (a band's run keeps v across, which a ring's split points follow)
-            tx = (p[0] - x0) / (x1 - x0) if x1 != x0 else 0
-            tz = (p[2] - z0) / (z1 - z0) if z1 != z0 else 0
-            v = ((1 - tx) * (1 - tz) * corner_v[(x0, z0)] + tx * (1 - tz) * corner_v[(x1, z0)]
-                 + tx * tz * corner_v[(x1, z1)] + (1 - tx) * tz * corner_v[(x0, z1)])
-            return ((p[0] + half) / repeat if along_x else (p[2] + half) / repeat, v)
-        polygons += [(key, t) for t in fan(ring(outline, corners[y]), uv, UP)]
+    def ground_uv(key):
+        repeat = terrains[key]["ground"]["repeat"] * TILE
+        return lambda p: ((p[0] + half) / repeat, (p[2] + half) / repeat)
+    for (key, y), x, z, w, d in rects:
+        (x0, z0), (x1, z1) = world(x, z), world(x + w, z + d)
+        outline = [(x0, y, z0), (x0, y, z1), (x1, y, z1), (x1, y, z0)]
+        polygons += [(ground_keys[key], t) for t in fan(ring(outline, corners[y]), ground_uv(key), UP)]
+    # The bands, each strip split where the ground beside it has a corner on its lines
+    def face_key(face):
+        return materials.get(face["texture"], alpha=face.get("alpha"), clamp_t=not face.get("planar", False), name=face["texture"])
+
+    def face_uv(face, w, u, v):
+        repeat = face.get("repeat", 1)
+        if face.get("planar", False):
+            return ((w[0] + half) / (repeat * TILE), (w[2] + half) / (repeat * TILE))
+        return (u / repeat, v)
+    for h, strips, dents in bands:
+        for face, (a0, a1), (b0, b1), (ua, ub) in strips:
+            fv = face.get("v", [0, 0])
+            sides = []
+            for (p0, p1), v in (((a0, a1), fv[0]), ((b0, b1), fv[1])):
+                w0, w1 = to_world(p0, h), to_world(p1, h)
+                length2 = sum((w1[k] - w0[k]) ** 2 for k in range(3))
+                ts = [0.0, 1.0]
+                if length2 > EPS:
+                    for c in corners.get(w0[1], ()) if abs(w0[1] - w1[1]) < EPS else ():
+                        t = sum((c[k] - w0[k]) * (w1[k] - w0[k]) for k in range(3)) / length2
+                        off = sum((c[k] - w0[k] - t * (w1[k] - w0[k])) ** 2 for k in range(3))
+                        if EPS < t < 1 - EPS and off < 1e-4:
+                            ts.append(t)
+                side = []
+                for t in sorted(set(ts)):
+                    w = tuple(w0[k] + t * (w1[k] - w0[k]) for k in range(3))
+                    side.append((w, face_uv(face, w, ua + t * (ub - ua), v), t))
+                sides.append(side)
+            key = face_key(face)
+            for tri, normal in map_edges.strip_triangles(*sides):
+                polygons.append((key, [Vertex(p, uv, (1.0, 1.0, 1.0), normal) for p, uv in tri]))
+        for face, corners3 in dents:
+            v = face.get("v", [0, 0])[0]
+            made = map_edges.dent_triangle([(to_world(p, h), face_uv(face, to_world(p, h), u, v)) for p, u in corners3])
+            if made:
+                polygons.append((face_key(face), [Vertex(p, uv, (1.0, 1.0, 1.0), made[1]) for p, uv in made[0]]))
+
+    # A tile a path's bend pokes into: its ground round the bend's tip (its middle), less the side the band comes from
+    for key, y, (tx, tz), tip, (nx, nz) in bent:
+        (x0, z0), (x1, z1) = world(tx, tz), world(tx + 1, tz + 1)
+        outline = ring([(x0, y, z0), (x0, y, z1), (x1, y, z1), (x1, y, z0)], corners[y])
+        uv = ground_uv(key)
+        middle = Vertex(tip, uv(tip), (1.0, 1.0, 1.0), UP)
+        # The band's side is half a tile back from the tip, against the normal
+        sx, sz = tip[0] - nx * HALF_TILE, tip[2] - nz * HALF_TILE
+        on_side = lambda p: abs(p[0] - sx) < EPS if nx else abs(p[2] - sz) < EPS  # noqa: E731
+        for i, a in enumerate(outline):
+            b = outline[(i + 1) % len(outline)]
+            if not (on_side(a) and on_side(b)):
+                polygons.append((ground_keys[key], [middle, Vertex(a, uv(a), (1.0, 1.0, 1.0), UP),
+                                                    Vertex(b, uv(b), (1.0, 1.0, 1.0), UP)]))
+
     # The terrains' layers (tall grass's blades), over whole tiles
     for (key, y), x, z, w, d in rectangles(painted, size, lambda v: size):
         for layer in terrains[key].get("layers", []):
@@ -350,7 +429,7 @@ def generate(project_path):
         polygons += [(remap[key], tri) for key, tri in kept_faces(triangles, cut, half)]
 
     # The objects, on the ground of their north-west tile
-    collision_over = {}
+    collision_over = dict(edge_over)
     for name, x, z in project.get("objects", []):
         obj_folder = OBJECTS / name
         if not (obj_folder / "object.json").exists():
@@ -506,56 +585,6 @@ def materials_from(materials, material):
             raise DataError(f"the texture set {materials.folder} has no {png}: import it from the object's set first")
         texture["image"] = image.relative_to(ROOT).as_posix()
     return materials.add(copy)
-
-
-def edge_bands(sub, size, style):
-    """The half tiles an edge between two terrains takes (style "edges": the terrain on its v=0 side, "from", the one on
-    its v=1 side, "to", and its texture): those of either terrain next to a half tile of the other at the same height,
-    as (x, z) to (height, corner values, along x, texture). A corner's value is the share of the "to" terrain among
-    the half tiles round it."""
-    out = {}
-    for edge in style.get("edges", []):
-        a, b = edge["from"], edge["to"]
-        for (x, z), (key, y) in sub.items():
-            if key not in (a, b):
-                continue
-            other = b if key == a else a
-            if not any(sub.get((x + dx, z + dz)) == (other, y) for dx in (-1, 0, 1) for dz in (-1, 0, 1)):
-                continue
-
-            def share(cx, cz):
-                around = [sub.get((cx - i, cz - j)) for i in (0, 1) for j in (0, 1)]
-                pair = [t for t in around if t is not None and t[1] == y and t[0] in (a, b)]
-                return sum(t[0] == b for t in pair) / len(pair) if pair else 0.0
-            values = (share(x, z), share(x + 1, z), share(x + 1, z + 1), share(x, z + 1))
-            # Along x where v changes down z more than across x
-            along_x = abs(values[3] + values[2] - values[0] - values[1]) >= abs(values[1] + values[2] - values[0] - values[3])
-            out[(x, z)] = (y, values, along_x, edge)
-    return out
-
-
-def merged_bands(edges):
-    """Edge half tiles merged along their runs: neighbours in a row (along x) or a column with the same height,
-    texture and corner values, as ((height, values, along x, texture), x, z, w, d)."""
-    done = set()
-    out = []
-    for (x, z) in sorted(edges, key=lambda p: (p[1], p[0])):
-        if (x, z) in done:
-            continue
-        y, values, along_x, texture = edges[(x, z)]
-        same = lambda p: p not in done and p in edges and edges[p][0] == y and edges[p][1] == values and edges[p][3] is texture  # noqa: E731
-        w = d = 1
-        if along_x:
-            while same((x + w, z)):
-                w += 1
-        else:
-            while same((x, z + d)):
-                d += 1
-        for i in range(w):
-            for j in range(d):
-                done.add((x + i, z + j))
-        out.append(((y, values, along_x, texture), x, z, w, d))
-    return out
 
 
 def wall_runs(grid, size):

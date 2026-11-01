@@ -310,10 +310,10 @@ const routes: Record<string, Handler> = {
     if (!target || !source || !(Array.isArray(b.faces) || b.faces === "all") || !Array.isArray(b.offset) || b.offset.length !== 3 || !b.offset.every(Number.isFinite)
         || !/^[a-z0-9_]+$/.test(b.textureSet ?? ""))
       return error(res, 400, "Name the two map models, the faces, the offset and the target's texture set");
-    const { glb, pngs } = pasteGlbFaces(readFileSync(project.abs(target)), readFileSync(project.abs(source)), b.faces, b.offset, b.textureSet);
+    const { glb, pngs, faces } = pasteGlbFaces(readFileSync(project.abs(target)), readFileSync(project.abs(source)), b.faces, b.offset, b.textureSet);
     await markWritten(target, b.textureSet);
     await project.writeAtomic(target, glb);
-    json(res, { ok: true, pngs });
+    json(res, { ok: true, pngs, faces });
   },
   "POST /api/texture-imports": async (req, res) => {
     // Textures of one map texture set added to others (their imports.json, and a copy of the PNG beside theirs)
@@ -425,12 +425,13 @@ const routes: Record<string, Handler> = {
   },
   "POST /api/map-chunk/revert": async (req, res) => {
     // A map chunk's files put back as a revision has them: "vanilla" (the tag w2-original, the game as it shipped) or
-    // "commit" (the last commit); the working tree's files only, never git's index
-    const { model, to } = (await readJson(req)) as { model: string; to: string };
+    // "commit" (the last commit); the working tree's files only, never git's index. keepCollision leaves its
+    // terrain_*.csv as they are
+    const { model, to, keepCollision } = (await readJson(req)) as { model: string; to: string; keepCollision?: boolean };
     if (!/^[a-z0-9_]+$/.test(model ?? "") || (to !== "vanilla" && to !== "commit")) return error(res, 400, "Name the chunk, and vanilla or commit");
     const rev = to === "vanilla" ? "w2-original" : "HEAD";
     const folder = `res/field/maps/models/${model}`;
-    const files = await git.files(rev, folder);
+    const files = (await git.files(rev, folder)).filter((f) => !(keepCollision && /\/terrain_\d+(_splits)?\.csv$/.test(f)));
     if (!files.length) return error(res, 404, to === "vanilla" ? `${model} isn't in the original game (a new map's chunk)` : `${model} isn't committed yet`);
     for (const file of files) await project.writeAtomic(file, await git.show(rev, file));
     json(res, { files: files.map((f) => f.slice(folder.length + 1)) });
@@ -491,6 +492,16 @@ const routes: Record<string, Handler> = {
     const { paths, message } = (await readJson(req)) as { paths: string[]; message: string };
     if (!paths?.length || !message?.trim()) return error(res, 400, "Choose files and write a message");
     json(res, { commit: await git.commit(paths, message.trim()) });
+  },
+  "POST /api/git/discard": async (req, res) => {
+    // Changed files put back as the last commit has them, new ones removed: only files git lists as changed
+    if (!settings.commitEnabled) return error(res, 403, "Committing is turned off in settings.local.json");
+    const { paths } = (await readJson(req)) as { paths: string[] };
+    const changed = new Set((await git.state()).changes.map((c) => c.path));
+    if (!paths?.length || paths.some((p) => !changed.has(p))) return error(res, 400, "Choose changed files");
+    await git.discard(paths);
+    send({ type: "git" });
+    json(res, { discarded: paths.length });
   },
   "GET /api/events": (req, res) => {
     res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" });

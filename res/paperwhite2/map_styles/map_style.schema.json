@@ -44,32 +44,104 @@
             "items": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": [ "from", "to", "texture" ],
+                "required": [ "to", "lines", "faces" ],
                 "properties": {
-                    "from": {
-                        "type": "string",
-                        "description": "The key of the terrain on the texture's v=0 side"
-                    },
                     "to": {
                         "type": "string",
-                        "description": "The key of the terrain on its v=1 side"
+                        "description": "The key of the terrain whose border this is: its band lies inside its tiles"
                     },
-                    "texture": {
-                        "type": "string",
-                        "description": "A PNG of the style's texture set, without .png: one terrain blending into the other down v"
+                    "from": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "The terrains across the border, at the same height, that the band is drawn against; without it, any other terrain at any height (a riverbank)"
                     },
-                    "repeat": {
-                        "type": "number",
-                        "exclusiveMinimum": 0,
-                        "description": "Tiles a repeat of the texture spans along the border"
+                    "lines": {
+                        "type": "array",
+                        "minItems": 2,
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [ "offset", "lift" ],
+                            "properties": {
+                                "offset": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 1,
+                                    "description": "Tiles in from the border"
+                                },
+                                "lift": {
+                                    "type": "number",
+                                    "description": "Tiles above the terrain's height"
+                                }
+                            }
+                        },
+                        "description": "The profile's lines, from the border in"
                     },
-                    "alpha": {
-                        "enum": [ "MASK", "BLEND" ],
-                        "description": "How its transparent pixels draw"
+                    "inner": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "The line the terrain's own ground starts at, at its lift (else the last)"
+                    },
+                    "faces": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [ "between", "texture" ],
+                            "properties": {
+                                "between": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    },
+                                    "minItems": 2,
+                                    "maxItems": 2,
+                                    "description": "The two lines the face lies between"
+                                },
+                                "texture": {
+                                    "type": "string",
+                                    "description": "A PNG of the style's texture set, without .png"
+                                },
+                                "v": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "number"
+                                    },
+                                    "minItems": 2,
+                                    "maxItems": 2,
+                                    "description": "v at the first line and at the second; u runs along the border"
+                                },
+                                "planar": {
+                                    "type": "boolean",
+                                    "description": "Textured from above like the ground instead (u, v = x, z over the repeat)"
+                                },
+                                "repeat": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0,
+                                    "description": "Tiles a repeat of the texture spans"
+                                },
+                                "alpha": {
+                                    "enum": [ "MASK", "BLEND" ],
+                                    "description": "How its transparent pixels draw"
+                                }
+                            }
+                        },
+                        "description": "The faces between the lines, drawn in this order"
+                    },
+                    "points": {
+                        "type": "boolean",
+                        "description": "Bend straight borders half a tile in at every third tile, alternating sides, as the game's paths do"
+                    },
+                    "tile_type": {
+                        "type": "integer",
+                        "description": "The collision tile type of the band's tiles (a riverbank's); else the terrain's"
                     }
                 }
             },
-            "description": "Borders drawn between two terrains at one height, a tile wide (half on each side): a path's edge on grass"
+            "description": "Borders drawn inside a terrain's outer tiles, as profiles along them (tools/paperwhite2/map_edges.py): a path's grass edge, a riverbank"
         },
         "terrains": {
             "type": "array",

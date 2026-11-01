@@ -1,7 +1,10 @@
 // What git says about the checkout, and the one write the editor makes to it: a commit the user asks for, when
-// settings.local.json allows it. It also reads files as a revision had them (a chunk put back as it was).
+// settings.local.json allows it, and the files it puts back as the last commit has them (discard). It also reads files
+// as a revision had them (a chunk put back as it was).
 
 import { execFile } from "node:child_process";
+import { rmSync } from "node:fs";
+import { join } from "node:path";
 import { promisify } from "node:util";
 import type { GitState } from "../shared/api.ts";
 
@@ -52,6 +55,19 @@ export class Git {
   async show(rev: string, path: string): Promise<Buffer> {
     const { stdout } = await run("git", ["show", `${rev}:${path}`], { cwd: this.root, maxBuffer: 64 << 20, encoding: "buffer" });
     return stdout;
+  }
+
+  /** Files put back as the last commit has them (in the working tree and the index); a file the last commit doesn't
+   * have is removed. */
+  async discard(paths: string[]): Promise<void> {
+    for (const path of paths) {
+      const tracked = (await this.git("ls-tree", "--name-only", "HEAD", "--", path)).trim();
+      if (tracked) await this.git("restore", "--source=HEAD", "--staged", "--worktree", "--", path);
+      else {
+        await this.git("rm", "--cached", "--quiet", "--ignore-unmatch", "--", path);
+        rmSync(join(this.root, path), { force: true });
+      }
+    }
   }
 
   async commit(paths: string[], message: string): Promise<string> {

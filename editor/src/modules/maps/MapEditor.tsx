@@ -431,16 +431,16 @@ export function MapEditor({ constants }: ToolProps) {
   };
 
   /** Puts the chunk's model, data.json and collision back as the original game or the last commit has them. */
-  const revertChunk = async (to: "vanilla" | "commit") => {
+  const revertChunk = async (to: "vanilla" | "commit", keepCollision: boolean) => {
     if (!modelName || !current) return;
-    const as = to === "vanilla" ? "as it is in the original game" : "as it was last committed";
-    if (!window.confirm(`Put ${modelName} back ${as}? Its model and collision are replaced (Ctrl+Z undoes this).`)) return;
+    const as = `${to === "vanilla" ? "as it is in the original game" : "as it was last committed"}${keepCollision ? ", keeping its collision" : ""}`;
+    if (!window.confirm(`Put ${modelName} back ${as}? Its model${keepCollision ? "" : " and collision"} are replaced (Ctrl+Z undoes this).`)) return;
     setBusy(true);
     try {
       for (const l of current.layers) if (documents.get(l.path)?.dirty) throw new Error(`${l.path} has unsaved edits: save or revert them first`);
       const path = `${current.folder}/model.glb`;
       const before = await glbBase64(path, true);
-      await api.revertChunk(modelName, to);
+      await api.revertChunk(modelName, to, keepCollision);
       const after = await glbBase64(path, true);
       setHistory((h) => ({ done: [...h.done, { kind: "faces", path, before, after, what: `Put the chunk back ${as}` }], undone: [] }));
       for (const l of current.layers) if (documents.get(l.path)) await documents.reload(l.path);
@@ -540,6 +540,9 @@ export function MapEditor({ constants }: ToolProps) {
       setHistory((h) => ({ done: [...h.done, { kind: "faces", path, before, after, what }], undone: [] }));
       setChunk(index);
       reloadChunk(target.folder);
+      // Selected, so the move buttons can put them right where the click missed
+      setFaces(result.faces.flatMap((f) => f.triangles.map((triangle) => ({ chunk: index, primitive: f.primitive, triangle }))));
+      setPasting(false);
       // Its collision, tile by tile
       const painted: string[] = [];
       for (const [dz, row] of (object.collision ?? []).entries()) for (const [dx, type] of row.entries()) {
@@ -706,6 +709,9 @@ export function MapEditor({ constants }: ToolProps) {
       setHistory((h) => ({ done: [...h.done, { kind: "faces", path, before, after, what }], undone: [] }));
       setChunk(index);
       reloadChunk(target.folder);
+      // Selected, so the move buttons can put them right where the click missed
+      setFaces(result.faces.flatMap((f) => f.triangles.map((triangle) => ({ chunk: index, primitive: f.primitive, triangle }))));
+      setPasting(false);
       // The images every season's set must have, by name
       const lacking = result.pngs.filter((p) => sets.some((s) => !s.textures.has(p.slice(p.indexOf("/") + 1))));
       setMissing(lacking);
@@ -758,14 +764,31 @@ export function MapEditor({ constants }: ToolProps) {
     }
   };
 
+  /** Hides the selected faces from view and clicks (the model stays as it is), to reach the faces behind them. */
+  const [hiddenCount, setHiddenCount] = useState(0);
+  const hideSelected = () => {
+    scene.current?.hideFaces(faces);
+    setFaces([]);
+    setHiddenCount(scene.current?.hiddenCount() ?? 0);
+  };
+  const showHidden = () => {
+    scene.current?.showHidden();
+    setHiddenCount(0);
+  };
+
   const removeFaces = () => editFaces(`Deleted ${faces.length} face(s)`, { remove: faceSets(faces) });
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const typing = (e.target as HTMLElement)?.closest?.("input, textarea, select, [contenteditable]");
+      // Typing in a box keeps its own undo; a checkbox or radio button that has focus doesn't
+      const typing = (e.target as HTMLElement)?.closest?.("input:not([type=checkbox]):not([type=radio]), textarea, select, [contenteditable]");
       if (typing) return;
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); step(!e.shiftKey); }
       else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") { e.preventDefault(); step(false); }
       else if (tab === "faces" && (e.key === "Delete" || e.key === "Backspace") && faces.length) { e.preventDefault(); removeFaces(); }
+      else if (tab === "faces" && e.key.toLowerCase() === "h" && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        if (e.altKey) showHidden(); else if (faces.length) hideSelected();
+      }
       else if (tab === "paint" && (e.key === "Delete" || e.key === "Backspace") && selectedObject !== null) { e.preventDefault(); removeSelectedObject(); }
       else if (tab === "faces" && faces.length && e.altKey && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "PageUp", "PageDown"].includes(e.key)) {
         // Alt+arrows move the selection a tile (the arrows alone pan the view); Alt+Page Up and Down, a unit up or down
@@ -894,8 +917,12 @@ export function MapEditor({ constants }: ToolProps) {
                             })}>Select same material</button>
                     <button disabled={!faces.length} onClick={() => setFaces([])}>Clear</button>
                   </div>
-                  <p className="muted ow-note">Click a face; Shift+click adds one, Ctrl+click takes one away. Edits are written to the chunk's
-                    model.glb as you make them; Ctrl+Z undoes them.</p>
+                  <div className="me-actions">
+                    <button disabled={!faces.length} onClick={hideSelected} title="H: hidden from view and from clicks until shown again; the model doesn't change">Hide them</button>
+                    <button disabled={!hiddenCount} onClick={showHidden} title="Alt+H">Show hidden{hiddenCount ? ` (${hiddenCount})` : ""}</button>
+                  </div>
+                  <p className="muted ow-note">Click a face; Shift+click adds one, Ctrl+click takes one away; H hides the selection, to reach faces
+                    behind it, and Alt+H shows them again. Edits are written to the chunk's model.glb as you make them; Ctrl+Z undoes them.</p>
                 </section>
                 <section className="me-section">
                   <h4>Delete</h4>
@@ -1037,8 +1064,10 @@ function Budget({ used, limit, unit, title }: { used: number; limit: number; uni
 
 function ChunkInspector({ folder, model, data, variants, season, sets, onRevert, busy, painting }: {
   folder: string; model: ChunkModel | undefined; data: { texture_set: string | null; written?: boolean; texture_preview?: string } | null;
-  variants: string[] | null; season: number; sets: SeasonSet[]; onRevert(to: "vanilla" | "commit"): void; busy: boolean; painting: boolean;
+  variants: string[] | null; season: number; sets: SeasonSet[]; onRevert(to: "vanilla" | "commit", keepCollision: boolean): void; busy: boolean;
+  painting: boolean;
 }) {
+  const [keepCollision, setKeepCollision] = useState(false);
   const name = folder.slice(folder.lastIndexOf("/") + 1);
   const textures = useMemo(() => {
     const by = new Map<string, number>();
@@ -1056,11 +1085,15 @@ function ChunkInspector({ folder, model, data, variants, season, sets, onRevert,
         <div className="me-row"><label>Packed</label><span>{data?.written ? "as a whole model (written)" : "as edits of the original model"}</span></div>
         <div className="me-row"><label>Put it back</label>
           <span className="me-inline">
-            <button className="danger" disabled={busy} onClick={() => onRevert("vanilla")}
+            <button className="danger" disabled={busy} onClick={() => onRevert("vanilla", keepCollision)}
                     title="Its model, data.json and collision as the original game has them (the tag w2-original)">as in the original game</button>
-            <button disabled={busy} onClick={() => onRevert("commit")}
+            <button disabled={busy} onClick={() => onRevert("commit", keepCollision)}
                     title="Its model, data.json and collision as the last commit has them">as last committed</button>
           </span>
+        </div>
+        <div className="me-row"><label />
+          <label className="ow-check"><input type="checkbox" checked={keepCollision} onChange={(e) => setKeepCollision(e.target.checked)} />
+            keep its collision as it is now (put back only the model)</label>
         </div>
         <p className="muted ow-note">Ctrl+Z undoes it.{painting ? " Its painting stays: Stop painting in the Paint tab removes it." : ""}</p>
       </section>

@@ -9,22 +9,104 @@
     },
     "edges": [
         {
-            "from": "g",
             "to": "p",
-            "texture": "michi01a",
-            "repeat": 1
+            "from": [ "g", "t", "b" ],
+            "lines": [
+                {
+                    "offset": 0,
+                    "lift": 0
+                },
+                {
+                    "offset": 1,
+                    "lift": 0
+                }
+            ],
+            "faces": [
+                {
+                    "between": [ 0, 1 ],
+                    "texture": "michi01a",
+                    "v": [ 0, 1 ]
+                }
+            ],
+            "points": true
         },
         {
-            "from": "t",
-            "to": "p",
-            "texture": "michi01a",
-            "repeat": 1
-        },
-        {
-            "from": "b",
-            "to": "p",
-            "texture": "michi01a",
-            "repeat": 1
+            "to": "w",
+            "lines": [
+                {
+                    "offset": 0,
+                    "lift": 0
+                },
+                {
+                    "offset": 0.25,
+                    "lift": 0.25
+                },
+                {
+                    "offset": 0.5,
+                    "lift": 0.5
+                },
+                {
+                    "offset": 0.75,
+                    "lift": 0.25
+                },
+                {
+                    "offset": 0.8125,
+                    "lift": 0
+                },
+                {
+                    "offset": 1,
+                    "lift": 0
+                },
+                {
+                    "offset": 1,
+                    "lift": -0.5
+                }
+            ],
+            "faces": [
+                {
+                    "between": [ 0, 4 ],
+                    "texture": "grass01ax",
+                    "planar": true,
+                    "repeat": 4
+                },
+                {
+                    "between": [ 0, 1 ],
+                    "texture": "54ochigake",
+                    "v": [ 1, 0 ],
+                    "alpha": "MASK"
+                },
+                {
+                    "between": [ 1, 2 ],
+                    "texture": "gake1_1",
+                    "v": [ 1, 0 ],
+                    "alpha": "MASK"
+                },
+                {
+                    "between": [ 2, 3 ],
+                    "texture": "gake1_1",
+                    "v": [ 0, 1 ],
+                    "alpha": "MASK"
+                },
+                {
+                    "between": [ 3, 4 ],
+                    "texture": "gake01a2",
+                    "v": [ 0, 0.5 ],
+                    "alpha": "MASK"
+                },
+                {
+                    "between": [ 4, 6 ],
+                    "texture": "kawa_soko",
+                    "planar": true,
+                    "repeat": 2
+                },
+                {
+                    "between": [ 4, 5 ],
+                    "texture": "kawa_fuchi.1",
+                    "v": [ 0, 1 ],
+                    "alpha": "MASK"
+                }
+            ],
+            "tile_type": 8585281
         }
     ],
     "terrains": [
@@ -83,11 +165,6 @@
             "ground": {
                 "texture": "kawa_soko",
                 "repeat": 2
-            },
-            "wall": {
-                "texture": "kawa_fuchi.1",
-                "repeat": 1,
-                "alpha": "MASK"
             },
             "tile_type": 1441855
         },

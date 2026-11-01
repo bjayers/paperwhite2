@@ -86,9 +86,10 @@ export const api = {
   /** Deletes or retextures faces of a map chunk's model.glb; written says its data.json now has the whole model written. */
   glbFaces: (path: string, edits: GlbFaceEdits, textureSet?: string) =>
     request<{ ok: boolean; written: boolean }>("PUT", "/api/glb-faces", { path, edits, textureSet }),
-  /** Copies faces of one map chunk's model.glb into another's, moved by offset; the images the faces use, <set>/<png>. */
+  /** Copies faces of one map chunk's model.glb into another's, moved by offset; the images the faces use, <set>/<png>,
+   * and the pasted faces, by their new draw calls. */
   glbPaste: (target: string, source: string, faces: GlbFaceSet[] | "all", offset: [number, number, number], textureSet: string) =>
-    request<{ ok: boolean; pngs: string[] }>("PUT", "/api/glb-paste", { target, source, faces, offset, textureSet }),
+    request<{ ok: boolean; pngs: string[]; faces: GlbFaceSet[] }>("PUT", "/api/glb-paste", { target, source, faces, offset, textureSet }),
   /** Moves faces of a map chunk's model.glb by offset; the moved faces, by their new draw calls. */
   glbMove: (path: string, faces: GlbFaceSet[], offset: [number, number, number], textureSet: string) =>
     request<{ ok: boolean; faces: GlbFaceSet[] }>("PUT", "/api/glb-move", { path, faces, offset, textureSet }),
@@ -108,8 +109,10 @@ export const api = {
   /** Puts a map chunk's model.glb back as it was (base64 bytes), and its data.json (text), for undo. */
   glbRaw: (path: string, data: string, meta?: string, files?: Record<string, string>) =>
     request<{ ok: boolean }>("PUT", "/api/glb-raw", { path, data, meta, files }),
-  /** Puts a map chunk's files back as the original game (vanilla) or the last commit has them. */
-  revertChunk: (model: string, to: "vanilla" | "commit") => request<{ files: string[] }>("POST", "/api/map-chunk/revert", { model, to }),
+  /** Puts a map chunk's files back as the original game (vanilla) or the last commit has them; keepCollision leaves its
+   * collision as it is. */
+  revertChunk: (model: string, to: "vanilla" | "commit", keepCollision = false) =>
+    request<{ files: string[] }>("POST", "/api/map-chunk/revert", { model, to, keepCollision }),
   /** The game's unused zones, which a new map can take. */
   unusedZones: () => request<{ zone: string; file: string; parent: string | null; place: string | null }[]>("GET", "/api/new-map/unused"),
   /** Makes an unused zone a new map (tools/paperwhite2/new_map.py create). */
@@ -152,6 +155,8 @@ export const api = {
   stopBuild: () => request("POST", "/api/build/stop"),
   git: () => request<GitState>("GET", "/api/git"),
   diff: (path: string) => request<string>("GET", `/api/git/diff?path=${encodeURIComponent(path)}`),
+  /** Puts changed files back as the last commit has them; new files are removed. */
+  discard: (paths: string[]) => request<{ discarded: number }>("POST", "/api/git/discard", { paths }),
   commit: (paths: string[], message: string) => request<{ commit: string }>("POST", "/api/git/commit", { paths, message }),
 };
 
