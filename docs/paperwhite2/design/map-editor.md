@@ -334,16 +334,23 @@ object library below replace it; the slicer and its library are gone.
 
 Smart edges so far (`tools/paperwhite2/map_edges.py`): a style's `edges` are profiles laid along a terrain's border,
 inside its outer tiles, as the game lays its own. Its paths are three tiles wide: the outer two drawn with `michi01a`
-from grass at the border to path a tile in, the middle one plain path, and every third tile the band bends half a tile
-in, alternating sides. Its riverbanks are the water's outer tiles: a ridge of dirt half a tile high (`54ochigake`,
-`gake1_1`, `gake01a2`), the water's edge (`kawa_fuchi.1`), and the bed sloping half a tile down under it (`kawa_soko`).
-Each line of a profile is an offset in and a lift; each face lies between two lines. A border to the same terrain (a
-vanilla path or river kept beside a painted one), past the chunk or to a terrain the edge doesn't name has no band.
-Corners are mitred, and straight runs are one strip, split where the ground beside them has a corner.
+from grass at the border to path a tile in, the middle one plain path. Straight borders bend half a tile in over three
+tiles (centred on a tile, ending on tile corners), every third tile on alternating sides and always across from a
+T-junction's branch; convex corners are cut round (pulled half a tile in along the diagonal, over two tiles each way).
+The ground of the terrain outside fills the gap where the border's line moves in, so its texture isn't stretched, and
+the tiles the inside line crosses are clipped along it. Its riverbanks are the water's outer tiles: a ridge of dirt
+half a tile high (`54ochigake`, `gake1_1`, `gake01a2`, over grass), the water's edge (`kawa_fuchi.1`), and the bed
+sloping half a tile down under it (`kawa_soko`), with rounded corners too. A border to the same terrain, past the chunk
+or to a terrain the edge doesn't name has no band.
+
+Painting over a chunk, the margin (kept tiles up to two tiles from painted ones, of a terrain an edge draws against:
+grass or a path, by their tile type) is drawn again too: only its ground faces go (opaque, facing up, at its height),
+so fences, trees, decals and bridges on it stay, and so does its collision. A painted path thus turns into a kept one
+and meets it where both run along the same tiles. Water isn't drawn again in the margin.
 
 Known limits of the map maker so far: walls are one texture stretched down their height, objects stand on their
 north-west tile's ground, it writes only a chunk's first collision layer, collision edits made after painting started
-are replaced by the generated collision, and a painted path or river that meets a kept one joins it cleanly only
-where the painting covers the join (the kept one's own band stays as the game drew it).
+are replaced by the generated collision, painted water meets kept water without a bank but with the kept water's own,
+and paths narrower than three tiles have no plain middle.
 
 See `docs/paperwhite2/STATUS.md` for the latest, and what is still untested in game.

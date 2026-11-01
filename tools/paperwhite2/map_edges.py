@@ -7,12 +7,20 @@ sloping away under it. The profile's lines are each an offset in from the border
 faces lie between two lines, textured along the border (u, the border's length over the repeat; v from one line's to
 the other's) or from above (planar, like the ground). The ground inside the last line is the terrain's own.
 
-The border is followed round each region of the terrain (its tiles at one height) as loops of tile edges. An edge
-whose other side is one of the edge's "from" terrains (any other terrain, when it names none) is banded; an edge to
-the same terrain at another height, past the chunk or to a terrain it doesn't name has no band: its lines all lie on
-the border, and the inside ground runs to it. Where two edges turn, each line's point is where the two offset edges
-cross (a mitre). With points, a straight border bends half a tile inward at every third tile, alternating sides, as
-the game's paths do.
+The border is followed round each region of the terrain (its tiles at one height) as loops of tile edges, with a
+station at each tile corner. An edge whose other side is one of the edge's "from" terrains (any other terrain, when it
+names none) is banded; an edge to the same terrain at another height, past the chunk or to a terrain it doesn't name
+has no band: its lines all lie on the border, at the inside line's lift, and the inside ground runs to it. Where two
+edges turn, each line's point is where the two offset edges cross (a mitre). Two things move the lines further in, as
+the game's own do:
+
+- round: a convex corner of banded edges is pulled in, its lines' corner points that far along the diagonal (less for
+  lines further in) and the points a tile either side half that, so the corner is cut round over two tiles each way;
+- points: a straight banded border bends half a tile in over three tiles, centred on a tile, every third tile on
+  alternating sides, and always across from where another stretch of the terrain meets it (a path's T-junction).
+
+Where the first line leaves the border, the gap between them (a dent) is the ground of the terrain outside, so its
+texture runs on unstretched; where the inside line moves in, the tiles it crosses are clipped along it.
 """
 import math
 
@@ -30,9 +38,8 @@ def loops(region):
                 edges.setdefault(start, []).append((start, d, (-d[1], d[0]), (x, z), (ox, oz)))
     out = []
     while edges:
-        start = next(iter(edges))
+        at = next(iter(edges))
         loop = []
-        at = start
         previous = None
         while at in edges:
             choices = edges[at]
@@ -49,9 +56,9 @@ def loops(region):
     return out
 
 
-def _corner_offset(before, after, db, da):
-    """Where a line at offsets db (the edge before the corner) and da (the edge after) lies at the corner between."""
-    (nb, na) = before[2], after[2]
+def _mitre(before, after, db, da):
+    """Where a line at offsets db (the edge before a corner) and da (the edge after) lies at the corner, from it."""
+    nb, na = before[2], after[2]
     if nb == na:  # straight on: the larger offset, so the inside ground keeps to tiles
         d = max(db, da)
         return (nb[0] * d, nb[1] * d)
@@ -60,11 +67,11 @@ def _corner_offset(before, after, db, da):
     return (nb[0] * db + na[0] * da, nb[1] * db + na[1] * da)
 
 
-def _inside(point, polylines):
-    """Whether a point is inside polygons (even-odd), given as lists of (x, z)."""
+def _inside(point, polygons):
+    """Whether a point is inside polygons (even-odd), lists of (x, z)."""
     x, z = point
     inside = False
-    for poly in polylines:
+    for poly in polygons:
         for i, (ax, az) in enumerate(poly):
             bx, bz = poly[(i + 1) % len(poly)]
             if (az > z) != (bz > z) and x < ax + (z - az) * (bx - ax) / (bz - az):
@@ -72,7 +79,245 @@ def _inside(point, polylines):
     return inside
 
 
-def _triangle(a, b, c):
+def _area(poly):
+    return sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(poly, poly[1:] + poly[:1])) / 2
+
+
+def _clean(poly):
+    """A polygon without repeated points, or points on a straight line between their neighbours."""
+    out = []
+    for p in poly:
+        if not out or abs(p[0] - out[-1][0]) > EPS or abs(p[1] - out[-1][1]) > EPS:
+            out.append(p)
+    while len(out) > 1 and abs(out[0][0] - out[-1][0]) < EPS and abs(out[0][1] - out[-1][1]) < EPS:
+        out.pop()
+    changed = True
+    while changed and len(out) > 3:
+        changed = False
+        for i in range(len(out)):
+            a, b, c = out[i - 1], out[i], out[(i + 1) % len(out)]
+            if abs((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])) < EPS:
+                out.pop(i)
+                changed = True
+                break
+    return out
+
+
+def clip_to_tile(poly, tx, tz):
+    """A polygon (x, z) clipped to a tile's square (Sutherland-Hodgman, the square being convex)."""
+    out = list(poly)
+    for axis, limit, keep_below in ((0, tx, False), (0, tx + 1, True), (1, tz, False), (1, tz + 1, True)):
+        if not out:
+            break
+        src, out = out, []
+        for i, cur in enumerate(src):
+            prev = src[i - 1]
+            inside_cur = cur[axis] <= limit + EPS if keep_below else cur[axis] >= limit - EPS
+            inside_prev = prev[axis] <= limit + EPS if keep_below else prev[axis] >= limit - EPS
+            if inside_cur != inside_prev:
+                t = (limit - prev[axis]) / (cur[axis] - prev[axis])
+                p = [prev[0] + t * (cur[0] - prev[0]), prev[1] + t * (cur[1] - prev[1])]
+                p[axis] = limit
+                out.append(tuple(p))
+            if inside_cur:
+                out.append(cur)
+    return _clean(out)
+
+
+def ear_clip(poly):
+    """A simple polygon's (x, z) triangles, as index triples (ear clipping)."""
+    n = len(poly)
+    if n < 3:
+        return []
+    order = list(range(n)) if _area(poly) > 0 else list(range(n))[::-1]
+
+    def cross(a, b, c):
+        return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+    out = []
+    while len(order) > 3:
+        for k in range(len(order)):
+            i, j, l = order[k - 1], order[k], order[(k + 1) % len(order)]
+            a, b, c = poly[i], poly[j], poly[l]
+            if cross(a, b, c) <= EPS:
+                continue
+            if any(m not in (i, j, l) and cross(a, b, poly[m]) > -EPS and cross(b, c, poly[m]) > -EPS
+                   and cross(c, a, poly[m]) > -EPS for m in order):
+                continue
+            out.append((i, j, l))
+            order.pop(k)
+            break
+        else:
+            break  # no ear: a polygon that crosses itself; what is left goes undrawn
+    if len(order) == 3:
+        out.append(tuple(order))
+    return out
+
+
+def _collinear(a, b, c):
+    return all(abs((b[q] - a[q]) * (c[r] - a[r]) - (b[r] - a[r]) * (c[q] - a[q])) < EPS for q, r in ((0, 1), (0, 2), (1, 2)))
+
+
+def band(region, edge, banded, points):
+    """A region's edge band, in tiles, a point (x, lift, z), as a dict:
+
+    strips: (face, (start, end) on its first line, (start, end) on its second, (u at the start, u at the end)), u
+    along the border in tiles, one per straight run of the border and face;
+    dents: (outside tile, [point]), the polygons between the border and a first line that has moved in;
+    full: the tiles the terrain's own ground covers whole; pieces: (tile, [(x, z)]), the tiles the inside line
+    crosses, clipped to its inside; band_tiles: the region's tiles the band covers;
+    outer and inner: the points on the border and on the inside line that ground beside them must be split at."""
+    lines = edge["lines"]
+    inner = edge.get("inner", len(lines) - 1)
+    round_by = edge.get("round", 0.0)
+    strips, dents, inner_polys, crossing = [], [], [], []
+    outer_points, inner_points = set(), set()
+    beside = set()
+    for loop in loops(region):
+        n = len(loop)
+        flags = [banded(e) for e in loop]
+        for e, f in zip(loop, flags):
+            if f:
+                beside.add(e[3])
+        straight = lambda i: loop[(i - 1) % n][1] == loop[i % n][1]  # noqa: E731
+        # Stations at the loop's corners: each line's offset from the border point there, and its lift
+        offsets, lifts = [], []
+        for i, e in enumerate(loop):
+            before = loop[i - 1]
+            offsets.append([_mitre(before, e, ln["offset"] if flags[i - 1] else 0.0, ln["offset"] if flags[i] else 0.0)
+                            for ln in lines])
+            collapsed = not flags[i - 1] and not flags[i]
+            lifts.append([lines[inner]["lift"] if collapsed else ln["lift"] for ln in lines])
+        disp = [[(0.0, 0.0)] * len(lines) for _ in range(n)]
+        moved = [False] * n
+
+        def move(i, vec, scale):
+            disp[i % n] = [(vec[0] * scale(k), vec[1] * scale(k)) for k in range(len(lines))]
+            moved[i % n] = True
+        # Round convex corners of banded edges with two straight banded tiles either side
+        if round_by:
+            for i, e in enumerate(loop):
+                b = loop[i - 1]
+                if e[1] != b[2] or not all(flags[(i + k) % n] for k in (-2, -1, 0, 1)):
+                    continue
+                if not (straight(i - 1) and straight(i + 1)) or any(moved[(i + k) % n] for k in (-1, 0, 1)):
+                    continue
+
+                def amount(k):
+                    return round_by * (1 - 0.5 * lines[k]["offset"])
+                move(i, (b[2][0] + e[2][0], b[2][1] + e[2][1]), amount)
+                move(i - 1, b[2], lambda k: amount(k) / 2)
+                move(i + 1, e[2], lambda k: amount(k) / 2)
+        # Bends: across from another stretch of the region first (a T), then every third tile on alternating sides
+        mids = {}
+
+        def can_bend(i, gap):
+            if not all(flags[(i + k) % n] for k in (-1, 0, 1)) or not (straight(i) and straight(i + 1)):
+                return False
+            if any(moved[(i + k) % n] for k in range(-gap, gap + 2)) or any((i + k) % n in mids for k in range(-gap - 2, gap + 3)):
+                return False
+            # Over three tiles of the region, two tiles deep at least
+            for k in (-1, 0, 1):
+                t, nn = loop[(i + k) % n][3], loop[(i + k) % n][2]
+                if (t[0] + nn[0], t[1] + nn[1]) not in region or (t[0] + 2 * nn[0], t[1] + 2 * nn[1]) not in region:
+                    return False
+            return True
+
+        def bend(i):
+            e = loop[i % n]
+            mx, mz = e[0][0] + e[1][0] * 0.5, e[0][1] + e[1][1] * 0.5
+            mids[i % n] = [(mx + e[2][0] * (ln["offset"] + 0.5), mz + e[2][1] * (ln["offset"] + 0.5)) for ln in lines]
+            move(i, e[2], lambda k: 0.5 / 3)
+            move(i + 1, e[2], lambda k: 0.5 / 3)
+        if points:
+            across = [flags[i] and all((e[3][0] + k * e[2][0], e[3][1] + k * e[2][1]) in region for k in (1, 2, 3))
+                      for i, e in enumerate(loop)]
+            for i in range(n):
+                if across[i] and not (across[i - 1] and loop[i - 1][1] == loop[i][1]):
+                    j = i
+                    while across[(j + 1) % n] and loop[(j + 1) % n][1] == loop[i][1] and j - i < n:
+                        j += 1
+                    if (j - i) % 2 == 0 and can_bend((i + j) // 2, 0):
+                        bend((i + j) // 2)
+            for i, e in enumerate(loop):
+                along = e[3][0] if e[1][0] else e[3][1]
+                if (along + (0 if e[2][0] + e[2][1] > 0 else 3)) % 6 == 1 and can_bend(i, 2):
+                    bend(i)
+        # The stations in order, bends' middles among them, with each line's point (x, z) and lift
+        seq = []
+        for i, e in enumerate(loop):
+            pts = [(e[0][0] + offsets[i][k][0] + disp[i][k][0], e[0][1] + offsets[i][k][1] + disp[i][k][1])
+                   for k in range(len(lines))]
+            seq.append({"s": float(i), "border": e[0], "pts": pts, "lift": lifts[i], "edge": i})
+            if i in mids:
+                seq.append({"s": i + 0.5, "border": (e[0][0] + e[1][0] * 0.5, e[0][1] + e[1][1] * 0.5), "pts": mids[i],
+                            "lift": [ln["lift"] for ln in lines], "edge": i})
+        m = len(seq)
+
+        def p3(st, k):
+            return (st["pts"][k][0], st["lift"][k], st["pts"][k][1])
+        inner_polys.append([st["pts"][inner] for st in seq])
+        # Strips: runs along which every line goes straight on, banded or not alike
+        starts = [j for j in range(m) if flags[seq[j - 1]["edge"]] != flags[seq[j]["edge"]]
+                  or not all(_collinear(p3(seq[j - 1], k), p3(seq[j], k), p3(seq[(j + 1) % m], k)) for k in range(len(lines)))]
+        if not starts:
+            starts = [0]
+        for r, j in enumerate(starts):
+            a, b = seq[j], seq[starts[(r + 1) % len(starts)]]
+            ua, ub = a["s"], b["s"] if b["s"] > a["s"] else b["s"] + n
+            outer_points.add(p3(a, 0))
+            inner_points.add(p3(a, inner))
+            for face in edge["faces"]:
+                k0, k1 = face["between"]
+                strips.append((face, (p3(a, k0), p3(b, k0)), (p3(a, k1), p3(b, k1)), (ua, ub)))
+        # Dents: where the first line has moved off the border, the outside's ground fills the gap
+        off = [abs(st["pts"][0][0] - st["border"][0]) > EPS or abs(st["pts"][0][1] - st["border"][1]) > EPS for st in seq]
+        lift0 = lines[0]["lift"]
+        for j in range(m):
+            if not off[j] or off[j - 1]:
+                continue
+            span = [seq[j - 1]]
+            k = j
+            while off[k % m] and len(span) <= m:
+                span.append(seq[k % m])
+                k += 1
+            span.append(seq[k % m])
+            poly = [(st["border"][0], lift0, st["border"][1]) for st in span]
+            poly += [(st["pts"][0][0], lift0, st["pts"][0][1]) for st in reversed(span[1:-1])]
+            outer_points.update(poly)
+            dents.append((loop[span[1]["edge"]][4], poly))
+        # The inside line's segments off the tile grid (bends, rounded corners): their tiles are clipped
+        for j in range(m):
+            a, b = seq[j]["pts"][inner], seq[(j + 1) % m]["pts"][inner]
+            on_grid = ((abs(a[0] - b[0]) < EPS and abs(a[0] - round(a[0])) < EPS)
+                       or (abs(a[1] - b[1]) < EPS and abs(a[1] - round(a[1])) < EPS))
+            if not on_grid:
+                crossing.append((a, b, len(inner_polys) - 1))
+    # The tiles inside: whole where their middle is inside the inside line and no off-grid segment touches them, else
+    # clipped to it; never one beside a banded edge
+    touched = {}
+    for a, b, poly_index in crossing:
+        for tx in range(math.floor(min(a[0], b[0]) + EPS), math.ceil(max(a[0], b[0]) - EPS)):
+            for tz in range(math.floor(min(a[1], b[1]) + EPS), math.ceil(max(a[1], b[1]) - EPS)):
+                touched.setdefault((tx, tz), poly_index)
+    full, pieces = set(), []
+    for t in region:
+        if t in beside:
+            continue
+        if t in touched:
+            piece = clip_to_tile(inner_polys[touched[t]], t[0], t[1])
+            area = abs(_area(piece)) if len(piece) >= 3 else 0.0
+            if area > 1 - 1e-4:
+                full.add(t)
+            elif area > 1e-4:
+                pieces.append((t, piece))
+        elif _inside((t[0] + 0.5, t[1] + 0.5), inner_polys):
+            full.add(t)
+    covered = full | {t for t, _ in pieces}
+    return {"strips": strips, "dents": dents, "full": full, "pieces": pieces, "band_tiles": region - covered,
+            "outer": outer_points, "inner": inner_points}
+
+
+def triangle(a, b, c):
     """A triangle of (point, uv) as (corners, normal), its normal up, or None where it has no area."""
     e1 = [b[0][k] - a[0][k] for k in range(3)]
     e2 = [c[0][k] - a[0][k] for k in range(3)]
@@ -86,91 +331,9 @@ def _triangle(a, b, c):
     return [a, b, c], tuple(v / length for v in n)
 
 
-def band(region, edge, banded, bumps_on):
-    """A region's edge band: (strips, dents, interior, band tiles, bump tiles, outer points, inner points), all in
-    tiles, a point (x, lift, z).
-
-    strips: (face, (start, end) on its first line, (start, end) on its second, (u at the start, u at the end)), u along
-    the border in tiles, one per straight run of the border and face; dents: (face, [(point, u)] * 3), the triangle
-    between the border and a bend, at the face's first v; interior: the tiles the terrain's own ground covers; bump_tiles: interior tiles a bend pokes into, each with its tip, which the ground draws round; outer
-    and inner: the points on the border and on the inside line, which the ground's edges there are split at."""
-    lines = edge["lines"]
-    inner = edge.get("inner", len(lines) - 1)
-    all_loops = loops(region)
-    faces = []
-    outer_points, inner_points = set(), set()
-    inner_polys = []
-    bands_drawn = []
-    for loop in all_loops:
-        flags = [banded(e) for e in loop]
-        n = len(loop)
-        # Each loop vertex: its corner and, per line, its offset (the vertex before edge i)
-        vertices = []
-        for i, e in enumerate(loop):
-            before = loop[i - 1]
-            offsets = []
-            for line in lines:
-                db = line["offset"] if flags[i - 1] else 0.0
-                da = line["offset"] if flags[i] else 0.0
-                offsets.append(_corner_offset(before, e, db, da))
-            vertices.append((e[0], offsets))
-        inner_polys.append([(c[0] + o[inner][0], c[1] + o[inner][1]) for c, o in vertices])
-        bands_drawn.append((loop, flags, vertices))
-    interior = {t for t in region if _inside((t[0] + 0.5, t[1] + 0.5), inner_polys)}
-    # Never across a banded edge: a region too narrow for its band has none inside
-    for loop, flags, _ in bands_drawn:
-        for e, f in zip(loop, flags):
-            if f:
-                interior.discard(e[3])
-    bump_tiles = {}
-    strips, dents = [], []
-    for loop, flags, vertices in bands_drawn:
-        n = len(loop)
-        point = lambda i, k: (vertices[i % n][0][0] + vertices[i % n][1][k][0], lines[k]["lift"],  # noqa: E731
-                              vertices[i % n][0][1] + vertices[i % n][1][k][1])
-        # Bends first: halfway along a straight banded edge, every third tile, alternating sides
-        bumps = {}
-        for i, e in enumerate(loop):
-            nx, nz = e[2]
-            if bumps_on and flags[i] and flags[i - 1] and flags[(i + 1) % n] and loop[i - 1][1] == e[1] == loop[(i + 1) % n][1]:
-                along = e[3][0] if e[1][0] else e[3][1]
-                behind = (e[3][0] + nx, e[3][1] + nz)
-                if (along + (0 if nx + nz > 0 else 3)) % 6 == 1 and behind in interior and behind not in bump_tiles:
-                    mx, mz = e[0][0] + e[1][0] * 0.5, e[0][1] + e[1][1] * 0.5
-                    bumps[i] = [(mx + nx * (line["offset"] + 0.5), line["lift"], mz + nz * (line["offset"] + 0.5)) for line in lines]
-                    bump_tiles[behind] = (bumps[i][inner], (nx, nz))
-        # Runs of edges that go straight on, banded or not alike, with no bend: one strip per face each
-        starts = [i for i in range(n) if i in bumps or (i - 1) % n in bumps or loop[i - 1][1] != loop[i][1] or flags[i - 1] != flags[i]]
-        if not starts:
-            starts = [0]
-        u = [0.0] * (n + 1)
-        for i in range(n):
-            u[i + 1] = u[i] + 1.0
-        for r, i in enumerate(starts):
-            j = starts[(r + 1) % len(starts)]
-            if j <= i:
-                j += n
-            outer_points.add(point(i, 0))
-            inner_points.add(point(i, inner))
-            if i in bumps:
-                mid = bumps[i]
-                halves = [(lambda k, i=i: point(i, k), u[i], lambda k, mid=mid: mid[k], u[i] + 0.5),
-                          (lambda k, mid=mid: mid[k], u[i] + 0.5, lambda k, i=i: point(i + 1, k), u[i] + 1.0)]
-                dents.append((edge["faces"][0], [(point(i, 0), u[i]), (point(i + 1, 0), u[i] + 1.0), (mid[0], u[i] + 0.5)]))
-            else:
-                end_u = u[i] + (j - i)
-                halves = [(lambda k, i=i: point(i, k), u[i], lambda k, j=j: point(j, k), end_u)]
-            for a, ua, b, ub in halves:
-                for face in edge["faces"]:
-                    k0, k1 = face["between"]
-                    strips.append((face, (a(k0), b(k0)), (a(k1), b(k1)), (ua, ub)))
-    return strips, dents, interior, region - interior, bump_tiles, outer_points, inner_points
-
-
 def strip_triangles(side_a, side_b):
     """The triangles between two lines, each a list of (point, uv, t) in order along them (t from 0 to 1): a zigzag that
-    takes every point of both, so the strip meets what lies beside it at each. Each is (corners, normal), as
-    _triangle gives."""
+    takes every point of both, so the strip meets what lies beside it at each. Each is (corners, normal)."""
     out = []
     i = j = 0
     while i < len(side_a) - 1 or j < len(side_b) - 1:
@@ -180,12 +343,7 @@ def strip_triangles(side_a, side_b):
         else:
             tri = (side_a[i], side_b[j + 1], side_b[j])
             j += 1
-        made = _triangle(*[(p, uv) for p, uv, _ in tri])
+        made = triangle(*[(p, uv) for p, uv, _ in tri])
         if made:
             out.append(made)
     return out
-
-
-def dent_triangle(corners):
-    """A bend's dent, (point, uv) three times, as (corners, normal), or None."""
-    return _triangle(*corners)

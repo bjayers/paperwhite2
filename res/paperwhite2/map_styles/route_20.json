@@ -28,7 +28,8 @@
                     "v": [ 0, 1 ]
                 }
             ],
-            "points": true
+            "points": true,
+            "round": 0.5
         },
         {
             "to": "w",
@@ -106,7 +107,8 @@
                     "alpha": "MASK"
                 }
             ],
-            "tile_type": 8585281
+            "tile_type": 8585281,
+            "round": 0.5
         }
     ],
     "terrains": [
@@ -176,7 +178,8 @@
                 "texture": "grass01ax",
                 "repeat": 4
             },
-            "tile_type": 8454145
+            "tile_type": 8454145,
+            "also_tile_types": [ 8585281 ]
         }
     ]
 }

@@ -2,6 +2,15 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-02 (later): paths' bends and corners as vanilla's; the margin round a painting
+
+- Bends are three tiles wide and half a tile deep, one is always across from a T's branch, convex corners are cut
+  round (paths and banks), and the gap a bend or corner leaves at the border is the outside's ground (no stretched
+  grass). Kept riverbank tiles count as blocked grass, so a path beside them gets its border.
+- Painting over a chunk draws its margin again (kept grass and path tiles up to two from the painting): their ground
+  faces only, so fences and trees stay; a painted path joining a vanilla one turns into it. Test chunk: 904 triangles
+  flat, 1,274 joined onto Route 20 (vanilla 1,114); packs. **Not tried in game.**
+
 ## 2026-11-02: vanilla-style paths and riverbanks; hiding faces; paste selects; discard in Changes
 
 - **Edges as profiles** (`tools/paperwhite2/map_edges.py`, the style's `edges`): paths' grass edges now lie inside

@@ -59,6 +59,7 @@ BASE_FILES = ("model.glb", "data.json", "terrain_0.csv", "terrain_0_splits.csv")
 REPEAT, CLAMP = 10497, 33071
 UP = (0.0, 1.0, 0.0)
 EPS = 1e-6
+MARGIN = 2  # tiles round a painting whose ground the generator draws again
 
 
 def _tables():
@@ -271,7 +272,10 @@ def generate(project_path):
     kept_types = {}
     if keeps:
         kept_types = {(int(r["x"]), int(r["z"])): int(r["tile_type"]) for r in csv.DictReader((base / "terrain_0.csv").open())}
-    by_type = {t["tile_type"]: k for k, t in terrains.items()}
+    by_type = {}
+    for k, t in terrains.items():
+        for tile_type in [t["tile_type"], *t.get("also_tile_types", [])]:
+            by_type.setdefault(tile_type, k)
 
     def terrain_of(xz):
         # A tile's terrain and height; a kept tile's terrain is the one with its tile type, if any
@@ -280,11 +284,31 @@ def generate(project_path):
             return None
         return v if v[0] != KEEP else (by_type.get(kept_types.get(xz)), v[1])
 
+    # The margin: kept tiles up to two from painted ones, of a terrain an edge draws against (grass, a path), are drawn
+    # again as that terrain, so a painted edge turns into the chunk's own and meets it where both run along the same
+    # tiles; only their ground faces go, so what stands on them (a fence, a tree) stays, and so does their collision
+    drawn_against = set()
+    for e in style.get("edges", []):
+        if e.get("from"):
+            drawn_against |= {e["to"], *e["from"]}
+    margin = set()
+    for (x, z), v in grid.items():
+        if v[0] == KEEP:
+            continue
+        for nb in ((x + dx, z + dz) for dx in range(-MARGIN, MARGIN + 1) for dz in range(-MARGIN, MARGIN + 1)):
+            if grid.get(nb, (None,))[0] == KEEP and terrain_of(nb)[0] in drawn_against:
+                margin.add(nb)
+    layered = painted
+    painted = dict(painted)
+    for xz in margin:
+        painted[xz] = terrain_of(xz)
+    wall_grid = {xz: (KEEP, v[1]) if xz in margin else v for xz, v in grid.items()}
+
     to_world = lambda p, h: (p[0] * TILE - half, h + p[1] * TILE, p[2] * TILE - half)  # noqa: E731
     corners = defaultdict(set)
     ground = dict(painted)
     edge_over = {}
-    bent = []
+    pieces = []
     bands = []
     regions = defaultdict(set)
     for xz, v in painted.items():
@@ -300,31 +324,36 @@ def generate(project_path):
             if other is None or other[0] == key:
                 return False
             return froms is None or (other[0] in froms and other[1] == h)
-        strips, dents, interior, band_tiles, bumps, outer, inner = map_edges.band(tiles, edge, banded, edge.get("points", False))
+        result = map_edges.band(tiles, edge, banded, edge.get("points", False))
         inner_y = h + edge["lines"][edge.get("inner", len(edge["lines"]) - 1)]["lift"] * TILE
-        for t in band_tiles:
+        for t in tiles - result["full"]:
             del ground[t]
+        for t in result["band_tiles"]:
             if "tile_type" in edge:
                 edge_over[t] = edge["tile_type"]
-        for t in interior:
+        for t in result["full"]:
             ground[t] = (key, inner_y)
-        for t, (tip, normal) in bumps.items():
-            del ground[t]
-            bent.append((key, inner_y, t, to_world(tip, h), normal))
-            for cx, cz in ((t[0], t[1]), (t[0] + 1, t[1]), (t[0] + 1, t[1] + 1), (t[0], t[1] + 1)):
-                corners[inner_y].add(to_world((cx, 0, cz), inner_y))
-        for p in outer:
+        for t, piece in result["pieces"]:
+            pieces.append((key, inner_y, [(x * TILE - half, inner_y, z * TILE - half) for x, z in piece]))
+        for p in result["outer"] | result["inner"]:
             corners[h + p[1] * TILE].add(to_world(p, h))
-        for p in inner:
-            corners[h + p[1] * TILE].add(to_world(p, h))
-        bands.append((h, strips, dents))
+        for _, _, poly in pieces:
+            for p in poly:
+                corners[inner_y].add(p)
+        # A dent's ground is the outside's terrain (a kept tile's, by its tile type), else the first the edge names
+        dents = []
+        for outside, poly in result["dents"]:
+            other = terrain_of(outside)
+            dkey = other[0] if other and other[0] in terrains else (edge.get("from") or [key])[0]
+            dents.append((dkey, [to_world(p, h) for p in poly]))
+        bands.append((h, result["strips"], dents))
     # The ground: each terrain's tiles at a height merged into rectangles
     rects = rectangles(ground, size, lambda v: materials.reach(ground_keys[v[0]]) * terrains[v[0]]["ground"]["repeat"])
     # Every corner on each height's plane, which the ground's edges there are split at
     for (key, y), x, z, w, d in rects:
         for cx, cz in ((x, z), (x + w, z), (x + w, z + d), (x, z + d)):
             corners[y].add((world(cx, cz)[0], y, world(cx, cz)[1]))
-    for (top, bottom), line in wall_runs(grid, size):
+    for (top, bottom), line in wall_runs(wall_grid, size):
         for (x, z) in line:
             for y in (top, bottom):
                 corners[y].add((x * TILE - half, y, z * TILE - half))
@@ -336,6 +365,17 @@ def generate(project_path):
         (x0, z0), (x1, z1) = world(x, z), world(x + w, z + d)
         outline = [(x0, y, z0), (x0, y, z1), (x1, y, z1), (x1, y, z0)]
         polygons += [(ground_keys[key], t) for t in fan(ring(outline, corners[y]), ground_uv(key), UP)]
+    def draw_polygon(key, poly):
+        # A flat polygon of a terrain's ground, its edges split at the corners on its plane, in triangles
+        y = poly[0][1]
+        outline = ring(poly, corners[y])
+        flat = [(p[0], p[2]) for p in outline]
+        uv = ground_uv(key)
+        for i, j, k in map_edges.ear_clip(flat):
+            made = map_edges.triangle(*[(outline[q], uv(outline[q])) for q in (i, j, k)])
+            if made:
+                polygons.append((ground_keys[key], [Vertex(p, t, (1.0, 1.0, 1.0), made[1]) for p, t in made[0]]))
+
     # The bands, each strip split where the ground beside it has a corner on its lines
     def face_key(face):
         return materials.get(face["texture"], alpha=face.get("alpha"), clamp_t=not face.get("planar", False), name=face["texture"])
@@ -367,29 +407,15 @@ def generate(project_path):
             key = face_key(face)
             for tri, normal in map_edges.strip_triangles(*sides):
                 polygons.append((key, [Vertex(p, uv, (1.0, 1.0, 1.0), normal) for p, uv in tri]))
-        for face, corners3 in dents:
-            v = face.get("v", [0, 0])[0]
-            made = map_edges.dent_triangle([(to_world(p, h), face_uv(face, to_world(p, h), u, v)) for p, u in corners3])
-            if made:
-                polygons.append((face_key(face), [Vertex(p, uv, (1.0, 1.0, 1.0), made[1]) for p, uv in made[0]]))
+        for dkey, poly in dents:
+            draw_polygon(dkey, poly)
 
-    # A tile a path's bend pokes into: its ground round the bend's tip (its middle), less the side the band comes from
-    for key, y, (tx, tz), tip, (nx, nz) in bent:
-        (x0, z0), (x1, z1) = world(tx, tz), world(tx + 1, tz + 1)
-        outline = ring([(x0, y, z0), (x0, y, z1), (x1, y, z1), (x1, y, z0)], corners[y])
-        uv = ground_uv(key)
-        middle = Vertex(tip, uv(tip), (1.0, 1.0, 1.0), UP)
-        # The band's side is half a tile back from the tip, against the normal
-        sx, sz = tip[0] - nx * HALF_TILE, tip[2] - nz * HALF_TILE
-        on_side = lambda p: abs(p[0] - sx) < EPS if nx else abs(p[2] - sz) < EPS  # noqa: E731
-        for i, a in enumerate(outline):
-            b = outline[(i + 1) % len(outline)]
-            if not (on_side(a) and on_side(b)):
-                polygons.append((ground_keys[key], [middle, Vertex(a, uv(a), (1.0, 1.0, 1.0), UP),
-                                                    Vertex(b, uv(b), (1.0, 1.0, 1.0), UP)]))
+    # The tiles the inside line crosses, clipped to it
+    for key, y, poly in pieces:
+        draw_polygon(key, poly)
 
     # The terrains' layers (tall grass's blades), over whole tiles
-    for (key, y), x, z, w, d in rectangles(painted, size, lambda v: size):
+    for (key, y), x, z, w, d in rectangles(layered, size, lambda v: size):
         for layer in terrains[key].get("layers", []):
             lift = layer["lift"]
             lkey = materials.get(layer["texture"], alpha=layer.get("alpha", "MASK"))
@@ -400,7 +426,7 @@ def generate(project_path):
             polygons += [(lkey, t) for t in fan(louter, luv, UP)]
 
     # The walls between heights, facing the lower side
-    for (top, bottom), line, facing, texture in wall_faces(grid, size, terrains, style):
+    for (top, bottom), line, facing, texture in wall_faces(wall_grid, size, terrains, style):
         key = materials.get(texture["texture"], alpha=texture.get("alpha", "MASK"), clamp_t=True, name=texture["texture"])
         (ax, az), (bx, bz) = line
         a, b = (ax * TILE - half, az * TILE - half), (bx * TILE - half, bz * TILE - half)
@@ -426,7 +452,8 @@ def generate(project_path):
         cut = [(x, z, w, d) for _, x, z, w, d in rectangles({xz: 1 for xz, v in grid.items() if v[0] != KEEP}, size, lambda v: size)]
         triangles, base_materials, _ = read_mesh(base / "model.glb", images_from=folder)
         remap = {key: materials.add(material) for key, material in base_materials.items()}
-        polygons += [(remap[key], tri) for key, tri in kept_faces(triangles, cut, half)]
+        ground_cut = [(x, z, grid[(x, z)][1]) for x, z in margin]
+        polygons += [(remap[key], tri) for key, tri in kept_faces(triangles, cut, half, ground_cut, base_materials)]
 
     # The objects, on the ground of their north-west tile
     collision_over = dict(edge_over)
@@ -504,14 +531,34 @@ def _subtract(polygon, rect):
     return out
 
 
-def kept_faces(triangles, painted, half):
+def _is_ground(material, tri, height):
+    """Whether a kept face is ground: opaque, facing up, and at the tile's ground height (a fence, a tree's leaves, a
+    decal or a bridge's deck isn't)."""
+    if material.get("alphaMode") in ("MASK", "BLEND"):
+        return False
+    e1 = [tri[1].p[k] - tri[0].p[k] for k in range(3)]
+    e2 = [tri[2].p[k] - tri[0].p[k] for k in range(3)]
+    n = (e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0])
+    length = math.sqrt(sum(c * c for c in n))
+    return length > 0 and abs(n[1]) / length >= 0.7 and all(abs(v.p[1] - height) <= 2 for v in tri)
+
+
+def kept_faces(triangles, painted, half, ground_cut=(), materials=None):
     """The chunk's triangles without the painted tiles: each triangle with the painted rectangles cut out of it, so it
-    keeps its own shape everywhere else (painted: rectangles of tiles, x, z, w, d)."""
+    keeps its own shape everywhere else (painted: rectangles of tiles, x, z, w, d); and its ground faces without the
+    margin's tiles (ground_cut: x, z, height)."""
     rects = [(x * TILE - half, z * TILE - half, (x + w) * TILE - half, (z + d) * TILE - half) for x, z, w, d in painted]
     out = []
     for key, tri in triangles:
         pieces = [tri]
         xs, zs = [v.p[0] for v in tri], [v.p[2] for v in tri]
+        for x, z, height in ground_cut:
+            r = (x * TILE - half, z * TILE - half, (x + 1) * TILE - half, (z + 1) * TILE - half)
+            if max(xs) <= r[0] or min(xs) >= r[2] or max(zs) <= r[1] or min(zs) >= r[3]:
+                continue
+            if not _is_ground(materials[key], tri, height):
+                continue
+            pieces = [part for piece in pieces for part in _subtract(piece, r)]
         for r in rects:
             if max(xs) <= r[0] or min(xs) >= r[2] or max(zs) <= r[1] or min(zs) >= r[3]:
                 continue

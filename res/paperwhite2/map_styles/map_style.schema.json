@@ -135,6 +135,12 @@
                         "type": "boolean",
                         "description": "Bend straight borders half a tile in at every third tile, alternating sides, as the game's paths do"
                     },
+                    "round": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 0.5,
+                        "description": "Tiles a convex corner of the band is pulled in along its diagonal (the inside lines less), cutting it round over two tiles each way"
+                    },
                     "tile_type": {
                         "type": "integer",
                         "description": "The collision tile type of the band's tiles (a riverbank's); else the terrain's"
@@ -236,6 +242,13 @@
                     "tile_type": {
                         "type": "integer",
                         "description": "Its collision's tile type: TILE_CLASS_ and flags (include/field/field_map.h)"
+                    },
+                    "also_tile_types": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "description": "Other tile types a kept tile is this terrain by, for the edges beside it (a vanilla riverbank's, as blocked grass)"
                     }
                 }
             }
