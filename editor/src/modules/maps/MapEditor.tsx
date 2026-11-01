@@ -17,6 +17,7 @@ import type { ToolProps } from "../types.ts";
 import { loadWorld, type World } from "../world/world.ts";
 import { SEASONS, TILE, heightTables, loadZoneMap, reloadLayers, type ZoneMap } from "../overworld/terrain.ts";
 import { CollisionPanel, type CollisionBrush } from "./CollisionPanel.tsx";
+import { NewMapDialog } from "./NewMapDialog.tsx";
 import { paintTiles, tileRow } from "./collision.ts";
 import { ChunkScene, connectedFaces, faceKey, stackedFaces, type ChunkModel, type Face, type LayoutTiles } from "./ChunkScene.ts";
 import { seasonSets, seasonVariants, type SeasonSet } from "./seasons.ts";
@@ -75,6 +76,7 @@ export function MapEditor({ constants }: ToolProps) {
   const [layoutExists, setLayoutExists] = useState<Record<string, boolean>>({});
   const { docs } = useDocuments();
   const [layer, setLayer] = useState(0);
+  const [newMap, setNewMap] = useState(false);
   const [brush, setBrush] = useState<CollisionBrush>({ kind: "type", tileClass: 0, flags: 0, heightTiles: 2, row: null, variants: true });
   const [variantFolders, setVariantFolders] = useState<Map<string, string[]>>(new Map());
   const [retexture, setRetexture] = useState("");
@@ -434,10 +436,20 @@ export function MapEditor({ constants }: ToolProps) {
 
   return (
     <div className="ow-editor me-editor">
+      {newMap && (
+        <NewMapDialog template={modelName ? `MAP_MODEL_${modelName.toUpperCase()}` : null} constants={constants} onClose={() => setNewMap(false)}
+                      onCreated={(file, models) => {
+                        setNewMap(false);
+                        setMessage({ text: `Made ${file}: ${models.length} chunk(s) copied from the template. Give it warps in the Overworld Editor, and its look in the Faces, Collision and Tiles tabs.` });
+                        // The world's zone list follows the constants, which the server reads again
+                        setTimeout(() => setZone(file), 1500);
+                      }} />
+      )}
       <header className="ow-header">
         <h2>Map Editor</h2>
         {zone && <strong>{zone}</strong>}
         <span className="spacer" />
+        <button onClick={() => setNewMap(true)} title="Make one of the game's unused zones a new map, from the chosen chunk">New map…</button>
         {zone && <button onClick={() => navigate("overworld", { zone })}>Open in the Overworld Editor</button>}
         {unsaved.length > 0 && <span className="muted">{unsaved.length} unsaved</span>}
         <button onClick={revert} disabled={!unsaved.length} title="Collision and layouts as they were last saved">Revert</button>

@@ -264,6 +264,19 @@ trainer's line of sight), Proxies (background events), Triggers, Warps and Level
 A zone's map chunks in 3D, in a season (`docs/paperwhite2/design/map-editor.md`). Click a cell of the matrix, or the
 map, to choose a chunk; the middle button orbits, the right pans and the wheel zooms.
 
+- **New map…** (the header) takes one of the game's unused zones (about 60 empty leftovers: no events, no warp leads
+  there, the code doesn't name them, not on the town map) and makes it a map, from the chunk chosen on the map as a
+  template (`tools/paperwhite2/new_map.py`). The zone, its scripts and text bank are renamed after the map, and its
+  chunks are new map models after the game's, each a copy of the template (props too, if asked), packed whole. Either:
+  - **a map of its own**, which warps lead into: a matrix of width by height chunks, the area and parent chosen (or
+    the template's zone's area, and itself);
+  - **a route on the overworld**, beside the others and walked onto without a loading screen: pick the overworld's
+    cells (empty, or filler with no zone) on the grid; the zone is written into them, the chunks go in both overworld
+    matrices, and the empty cells around get a filler (trees or sea), as the game rings its areas. Use the neighbours'
+    area: the field keeps the area it warped in with as the player walks across. The neighbour's edge chunk may need a
+    path cut through it.
+
+  Then give the map warps (Overworld Editor), and its look in the Faces, Collision and Tiles tabs.
 - **Chunks:** the zone's cells of its matrix, and the chosen chunk's inspector: its model and texture set, whether it
   packs as edits of the original model or as a whole model (`"written"` in its `data.json`), its triangles, vertices
   and materials against the busiest vanilla chunk's, its season variants (the chunks a season replacement swaps in,

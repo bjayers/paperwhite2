@@ -165,6 +165,41 @@ their town; a map of its own names itself.
 The editor's **New Map** dialog will do these steps: pick an unused zone (or append one), name it, choose a map type,
 an area (its look and seasons), a parent, the matrix's size, and a warp from an existing map.
 
+## Seamless routes on the overworld (researched 2026-11-01)
+
+Route 20 and Floccesy Town join without a loading screen because both zones live in the overworld matrix
+(`MAP_MATRIX_OVERWORLD`, map type 0): every frame, `Field_ShouldSwapZone` (`src/ov036/fieldmap.c:1138`) reads the zone
+of the player's cell (32 tiles), and when it differs, `Field_SwapZoneByMatrix` swaps zones in place. A cell with no zone
+keeps the one before.
+
+- **What swaps** at the boundary: the events (NPCs, warps, triggers), encounters, BGM (not while surfing), weather,
+  the fog and lights' index, the camera boundary and camera areas, the place-name popup, the zone's init scripts.
+- **What doesn't:** the map type, the area (texture set, props, animations, lights), the matrix. These are set when
+  the player warps or flies in. So a new route's chunks must use textures and props that the neighbours' areas have
+  (simplest: the neighbouring route's area), and the zone has map type 0 and the overworld's matrix.
+- **The two overworld matrices:** `overworld_2` has the same chunks, and only the gates' zones (and Cold Storage) use
+  it. A new route's chunks go in both; its zone goes in `overworld`'s zones only.
+- **The edges:** map type 0 draws the 2×2 chunks around the player, and nothing at an empty cell. The game rings its
+  playable areas with filler chunks with no zone (`OUTTREE` 45 cells, `OUTSEA` 30, `OUTTREE1` 15), and a new route
+  needs the same.
+- **Room:** the matrix is 29×27 (783 cells) of the 900 `struct MapMatrix` holds (`include/field/field_map.h:19`). About
+  55 empty cells touch a zoned one: by the start, (5,19) and (4–5,22) border Route 20, (3,19) borders Floccesy, and
+  (1–2,20) and (0,21) border Route 19. A larger matrix needs a hack change to that struct. Grow it only to the right or
+  bottom, since a new top row or left column moves every world position.
+- **What follows a zone, not a cell:** the town map and fly points (`res/town_map/<zone>.json`, in pixels), the fly
+  landing point (the header, in tiles), camera areas, hidden items (`src/ov012/hidden_item.c`), the Pokédex's habitat.
+  The town map and habitat images need the route drawn on them.
+
+`tools/paperwhite2/new_map.py route` does the map's side, from an unused zone:
+- it renames the zone and its scripts and text after the route;
+- it makes a new chunk, copied from a template, for each overworld cell given;
+- it names the zone in those cells and puts the chunks in both matrices;
+- optionally, it rings the route with a filler model;
+- it gives the header map type 0 and the overworld's matrix.
+
+What's left to do by hand: warps to any houses, events (at world positions: cell × 32 + the tile), encounters, the
+place name, the town map, and testing the walk across in game (BGM, popup, NPCs, encounters, no void at the edges).
+
 ## The model writer
 
 A model writer that lays out a model from scratch, as vanilla does, closes both gaps. Its input is what a GLB holds:

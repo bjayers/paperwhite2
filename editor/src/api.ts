@@ -97,6 +97,16 @@ export const api = {
   startLayout: (library: string, model: string) => request<{ path: string }>("POST", "/api/map-layouts/start", { library, model }),
   /** Writes a layout's chunk's model.glb from its tiles. */
   composeLayout: (model: string) => request<{ ok: boolean; output: string }>("POST", "/api/map-layouts/compose", { model }),
+  /** The game's unused zones, which a new map can take. */
+  unusedZones: () => request<{ zone: string; file: string; parent: string | null; place: string | null }[]>("GET", "/api/new-map/unused"),
+  /** Makes an unused zone a new map (tools/paperwhite2/new_map.py create). */
+  createMap: (b: { zone: string; name: string; template: string; width: number; height: number; area?: string; mapType?: number;
+    parent?: string; place?: string; copyProps?: boolean }) =>
+    request<{ zone: string; matrix: string; file: string; models: string[] }>("POST", "/api/new-map/create", b),
+  /** Makes an unused zone a route of the overworld in the cells given (tools/paperwhite2/new_map.py route). */
+  createRoute: (b: { zone: string; name: string; template: string; cells: [number, number][]; filler?: string; area?: string;
+    place?: string; copyProps?: boolean }) =>
+    request<{ zone: string; file: string; models: string[]; fillers: [number, number][] }>("POST", "/api/new-map/route", b),
   /** The lines of the files under res/ that a glob names which match a regular expression. */
   scan: (glob: string, pattern: string, options: { ignoreCase?: boolean; limit?: number } = {}) =>
     request<ScanMatch[]>("GET", `/api/scan?glob=${encodeURIComponent(glob)}&pattern=${encodeURIComponent(pattern)}` +

@@ -2,6 +2,22 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-01 (day): new maps, new routes, collision painting
+
+- **New maps from unused zones** (`tools/paperwhite2/new_map.py`, the Map Editor's **New map…**): about 60 leftover
+  zones (no events, no warp in, not named by the code, not on the town map) can become maps. The zone, its scripts and
+  text bank are renamed, and new chunks copied from a template are appended after the game's (`map_models.txt`; the
+  packer copies the template's container, `"template"` in data.json, and writes the model whole). A map of its own gets
+  a matrix of its own; **a route** goes into the overworld's cells, seamless with its neighbours (the field swaps zones
+  by the cell, fieldmap.c `Field_ShouldSwapZone`), ringed with a filler. Built in a scratch worktree, hack build with
+  DSi intact, for both (a 2-chunk map, and a 2-cell route south of Route 20); **not tried in game**.
+- The Map Editor's **Collision** tab: paint tile types (the game's classes from field_map.h, and flags), flat heights,
+  or copied tiles, by drag, on either layer of two-layer chunks (Virbank Complex), with season variants painted too where
+  their tile matched. Checked in the browser.
+- Design doc: the seamless overworld research (what swaps at a cell boundary, what doesn't, the two overworld
+  matrices, fillers, room in the matrix).
+- Next: in-game tests; the Map Editor showing a route's neighbours; warps between maps from the editor.
+
 ## 2026-11-01: the Map Editor's research, framework, model writer and Route 20's tiles
 
 - `docs/paperwhite2/design/map-editor.md` (new): the research and plan: the chunk and model layout, the limits, the

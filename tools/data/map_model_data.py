@@ -59,7 +59,7 @@ def u32(data, offset):
 def models(directory, count):
     """Returns the map models' directories, in archive order, and their data, which name their texture sets."""
     folders = directories("a/0/0/8", directory)
-    if len(folders) != count:
+    if len(folders) < count:
         raise ValueError(f"a/0/0/8 has {count} map models and map_models.txt {len(folders)}")
     schema = load_schema(ROOT / "res/field/maps/models/map_model.schema.json")
     return [(folder, load(folder / "data.json", schema)) for folder in folders]
@@ -1318,7 +1318,19 @@ def pack(directory, game, output):
     archive = read_narc(source.read_bytes())
     texture_archive = read_narc((ROOT / "extract" / version / "files/a/0/1/4").read_bytes())
     texture_dirs = directories("a/0/1/4")
-    for chunk_id, (model_dir, data) in enumerate(models(directory, len(archive))):
+    vanilla = len(archive)
+    for chunk_id, (model_dir, data) in enumerate(models(directory, vanilla)):
+        if chunk_id >= vanilla:
+            # A map model the hack adds (after the game's in map_models.txt) copies its template's container: its
+            # type, its collision's size and layers, its props' section; its model is written whole from the GLB
+            if "template" not in data or not data.get("written"):
+                raise ValueError(f"{model_dir}: a new map model needs a template and \"written\": true")
+            template = value(data["template"], str(model_dir))
+            if template >= vanilla:
+                raise ValueError(f"{model_dir}: its template must be one of the game's map models")
+            archive.append(archive[template])
+        elif "template" in data:
+            raise ValueError(f"{model_dir}: only a new map model has a template")
         original = archive[chunk_id]
         name = model_name(model_bytes(original))
         mapping = {"direct": not data.get("transformed", False)}

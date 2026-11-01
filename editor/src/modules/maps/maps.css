@@ -36,3 +36,9 @@
 .me-tile-uses { font-size: 10px; }
 .me-wrap { flex-wrap: wrap; gap: 4px 12px; }
 .me-number { width: 72px; }
+.me-dialog { width: min(620px, 94vw); max-height: 80vh; overflow-y: auto; margin-top: 8vh; }
+.me-overworld { display: grid; gap: 1px; margin: 8px 0 4px; background: var(--border); border: 1px solid var(--border); }
+.me-ow-cell { aspect-ratio: 1; padding: 0; border: none; border-radius: 0; background: var(--panel); min-width: 0; }
+.me-ow-cell.filler { background: var(--hover); }
+.me-ow-cell:disabled { cursor: default; opacity: 1; }
+.me-ow-cell.picked { background: #ffd040; }

@@ -348,6 +348,49 @@ const routes: Record<string, Handler> = {
     if (!result.ok) return error(res, 500, result.output || "Composing failed");
     json(res, result);
   },
+  "GET /api/new-map/unused": async (_req, res) => {
+    // The game's unused zones, which a new map can take (tools/paperwhite2/new_map.py)
+    const result = await runTool("tools/paperwhite2/new_map.py", ["unused"]);
+    if (!result.ok) return error(res, 500, result.output || "Listing the unused zones failed");
+    res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+    res.end(result.output);
+  },
+  "POST /api/new-map/create": async (req, res) => {
+    // An unused zone made a new map: renamed, a matrix of new chunks copied from a template (new_map.py create)
+    const b = (await readJson(req)) as { zone: string; name: string; template: string; width?: number; height?: number;
+      area?: string; mapType?: number; parent?: string; place?: string; copyProps?: boolean };
+    const constant = /^[A-Z][A-Z0-9_]*$/;
+    if (!constant.test(b.zone ?? "") || !/^[a-z][a-z0-9_]*$/.test(b.name ?? "") || !constant.test(b.template ?? ""))
+      return error(res, 400, "Name an unused zone, the map (lower case letters, numbers and underscores) and a template chunk");
+    const args = ["create", b.zone, b.name, "--template", b.template, "--width", String(b.width ?? 1), "--height", String(b.height ?? 1)];
+    if (b.area && constant.test(b.area)) args.push("--area", b.area);
+    if (Number.isInteger(b.mapType)) args.push("--map-type", String(b.mapType));
+    if (b.parent && constant.test(b.parent)) args.push("--parent", b.parent);
+    if (b.place && constant.test(b.place)) args.push("--place", b.place);
+    if (b.copyProps) args.push("--copy-props");
+    const result = await runTool("tools/paperwhite2/new_map.py", args);
+    if (!result.ok) return error(res, 500, result.output || "Making the map failed");
+    res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+    res.end(result.output.split("\n").pop());
+  },
+  "POST /api/new-map/route": async (req, res) => {
+    // An unused zone made a route of the overworld, in the cells given (new_map.py route)
+    const b = (await readJson(req)) as { zone: string; name: string; template: string; cells: [number, number][];
+      filler?: string; area?: string; place?: string; copyProps?: boolean };
+    const constant = /^[A-Z][A-Z0-9_]*$/;
+    if (!constant.test(b.zone ?? "") || !/^[a-z][a-z0-9_]*$/.test(b.name ?? "") || !constant.test(b.template ?? "")
+        || !Array.isArray(b.cells) || !b.cells.length || !b.cells.every((c) => Array.isArray(c) && c.length === 2 && c.every(Number.isInteger)))
+      return error(res, 400, "Name an unused zone, the route, a template chunk and its cells");
+    const args = ["route", b.zone, b.name, "--template", b.template, "--cells", ...b.cells.map(([c, r]) => `${c},${r}`)];
+    if (b.filler && constant.test(b.filler)) args.push("--filler", b.filler);
+    if (b.area && constant.test(b.area)) args.push("--area", b.area);
+    if (b.place && constant.test(b.place)) args.push("--place", b.place);
+    if (b.copyProps) args.push("--copy-props");
+    const result = await runTool("tools/paperwhite2/new_map.py", args);
+    if (!result.ok) return error(res, 500, result.output || "Making the route failed");
+    res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+    res.end(result.output.split("\n").pop());
+  },
   "GET /api/map-tiles/catalogue": (_req, res, url) => {
     const library = url.searchParams.get("library") ?? "";
     const file = join(ROOT, "build/map_tiles", library, "tiles.json");
@@ -421,13 +464,15 @@ function serveResFile(res: ServerResponse, pathname: string) {
   createReadStream(project.abs(path)).pipe(res);
 }
 
-/** Runs tools/paperwhite2/map_tiles.py with the build's Python. */
-function mapTiles(args: string[]): Promise<{ ok: boolean; output: string }> {
+/** Runs a tool of the checkout with the build's Python. */
+function runTool(script: string, args: string[]): Promise<{ ok: boolean; output: string }> {
   return new Promise((done) => {
-    execFile(pythonFor(ROOT), ["tools/paperwhite2/map_tiles.py", ...args], { cwd: ROOT, maxBuffer: 16 << 20 },
-      (e, stdout, stderr) => done({ ok: !e, output: `${stdout}${stderr}`.trim() }));
+    execFile(pythonFor(ROOT), [script, ...args], { cwd: ROOT, maxBuffer: 16 << 20 },
+      (e, stdout, stderr) => done({ ok: !e, output: e ? `${stdout}${stderr}`.trim() : stdout.trim() }));
   });
 }
+
+const mapTiles = (args: string[]) => runTool("tools/paperwhite2/map_tiles.py", args);
 
 // A tile library's catalogue GLB, which names its textures under /res/ by relative paths
 function serveTiles(res: ServerResponse, pathname: string) {

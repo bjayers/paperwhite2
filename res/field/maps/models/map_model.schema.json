@@ -19,6 +19,10 @@
             "enum": [ true ],
             "description": "Set when the packer writes the whole model from the GLB (tools/data/nitro_model_writer.py) instead of editing the original's: a material for each GLB material, bound by its image to the texture_set's texture, and a draw call for each primitive, so the GLB can add materials and draw calls. The model needs its texture_set, and the GLB's positions as the model draws them"
         },
+        "template": {
+            "type": "string", "x-constant": "MAP_MODEL_",
+            "description": "For a map model the hack adds (after the game's in generated/map_models.txt): the game's map model whose container it copies (its type, its collision's size and layers), whose model name its GLB's mesh has. The model is written whole (\"written\": true)"
+        },
         "transformed": {
             "enum": [ true ],
             "description": "Set when the GLB's positions went through the model's node transforms on export, which the packer reverses"
