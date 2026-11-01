@@ -17,9 +17,9 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   `res/field/actors/pokemon/<species>/`, 8 frames, sprite_controller_type 14), the table's rows after the followers'
   (`GetIndexOfObjID`, src/system/field_actor_savedata.c); Unown's sprites are the original's again (w2-original), and
   the 18 NPCs that used them (9 zones; no original NPC or script used Unown) use the new codes. The follower's forced
-  forms (Unown '?', Arceus Normal) are gone, so an Unown or Arceus follower shows its own form. Five species are still
-  to be named by the user: `CUSTOM_3`, `CUSTOM_13`, `CUSTOM_15`, `CUSTOM_16`, `CUSTOM_21` (rename with
-  `tools/data/rename_constant.py`). Built (hack, DSi intact); **not tested in game**: check an NPC with a new code
+  forms (Unown '?', Arceus Normal) are gone, so an Unown or Arceus follower shows its own form. Five the user named after:
+  Applin, Hydrapple, Rufflet, Vullaby and Dipplin (the Applin line isn't in the game: the user's favorite, for an
+  easter egg, perhaps a trainer saying it can't be found around here, with a nod to the Big Apple). Built (hack, DSi intact); **not tested in game**: check an NPC with a new code
   (Castelia's Trubbish), an Unown follower's letter and an Arceus follower's form.
 
 ## 2026-10-31: the Funfest mission spots removed from every zone
