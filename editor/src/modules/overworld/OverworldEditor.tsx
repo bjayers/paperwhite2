@@ -26,7 +26,7 @@ import { api } from "../../api.ts";
 import { entityFields } from "./fields.tsx";
 import { BuildingPanel } from "./BuildingPanel.tsx";
 import { MapView, hasRect, type OverlayMode, type TileRect } from "./MapView.tsx";
-import { bundleModels, buildingEntities, dirtyPropChunks, loadProps, propsOf, propsSaveError, redoProps, revertProps, saveProps, setProps,
+import { amendProps, bundleModels, buildingEntities, dirtyPropChunks, loadProps, propsOf, propsSaveError, redoProps, revertProps, saveProps, setProps,
   undoProps, usePropsVersion } from "./props.ts";
 import { SEASONS, TILE, flatTileFor, paintOver, loadZoneMap, reloadLayers, tileAt, type ZoneMap } from "./terrain.ts";
 
@@ -792,8 +792,16 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                            onFitLength={(length) => fitLength(chosen.railPart!.index, length)} />
               ) : chosen.building ? (
                 <BuildingPanel key={`${chosen.building.chunk}:${chosen.building.index}`} entity={chosen} models={models} chunkSize={map?.chunkSize ?? 512}
-                               onChange={(p) => { setProps(chosen.building!.chunk, propsOf(chosen.building!.chunk).map((q, i) => (i === chosen.building!.index ? p : q)));
-                                                  record([PROPS + chosen.building!.chunk]); setLastProp(p.id); }} />
+                               onChange={(p, phase) => {
+                                 const b = chosen.building!;
+                                 const list = propsOf(b.chunk).map((q, i) => (i === b.index ? p : q));
+                                 // A drag is one step: its first change, then amended
+                                 if (phase === "end") return;
+                                 if (phase === "move") { amendProps(b.chunk, list); return; }
+                                 setProps(b.chunk, list);
+                                 record([PROPS + b.chunk]);
+                                 setLastProp(p.id);
+                               }} />
               ) : eventsPath && <DocForm key={`${chosen.kind}:${chosen.index}`} path={eventsPath} at={[KIND_LISTS[chosen.kind], chosen.index]} constants={constants}
                                       hideDescription flat render={fields} onEdit={() => record([eventsPath])} />}
             </div>

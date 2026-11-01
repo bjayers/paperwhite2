@@ -27,6 +27,8 @@ export interface DataViewProps {
   errors: SchemaError[];
   /** Changes one value (undefined removes it); each call is one undo step. */
   edit(path: JsonPath, value: JsonValue | undefined): void;
+  /** Changes one value as part of the last step (a value being dragged). */
+  amend?(path: JsonPath, value: JsonValue | undefined): void;
   /** Replaces the whole data in one undo step. */
   replace(data: JsonValue): void;
   /** Opens another file in a tab, for links between data. */

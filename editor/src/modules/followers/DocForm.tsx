@@ -54,6 +54,8 @@ export function DocForm({ path, at = [], constants, hideDescription, render, fla
   const ctx: FormContext | null = useMemo(() => schema ? {
     root: schema, constants, errors,
     edit: (p: JsonPath, v: JsonValue | undefined) => { documents.edit(path, p, v); onEdit?.(p); },
+    // A drag's first change is an edit, which onEdit hears; the rest amend it
+    amend: (p: JsonPath, v: JsonValue | undefined) => documents.amend(path, p, v),
     render, flat,
   } : null, [schema, constants, errors, path, render, flat, onEdit]);
   if (error) return <p className="flw-error">{path}: {error}</p>;

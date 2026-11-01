@@ -231,6 +231,15 @@ static void FieldCameraAreaCalc_RECT_PitchYawTZ(FieldSceneArea *area, const Came
     pitch = pitch * progress / FX32_ONE;
     pitch += cameraArea->rect.pitch1;
     yaw = cameraArea->rect.yaw2 - cameraArea->rect.yaw1;
+#ifdef PAPERWHITE2
+    // Paper White 2: the short way round, so 0 to 300 degrees turns 60 back rather than 300 on (no original area
+    // turns at all, so none changes)
+    if (yaw > 0x8000) {
+        yaw -= 0x10000;
+    } else if (yaw < -0x8000) {
+        yaw += 0x10000;
+    }
+#endif
     yaw = yaw * progress / FX32_ONE;
     yaw += cameraArea->rect.yaw1;
     tz = FX_Mul(cameraArea->rect.tz2 - cameraArea->rect.tz1, progress);

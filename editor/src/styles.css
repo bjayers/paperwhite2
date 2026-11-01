@@ -327,3 +327,7 @@ textarea.raw {
 /* A message field (x-message): its text over the talk window's preview */
 .message-field { display: flex; flex-direction: column; gap: 4px; max-width: 540px; }
 .message-field textarea { font-family: var(--mono); font-size: 13px; }
+
+/* A number field's drag grip (schema-form NumberField) */
+.number .scrub { cursor: ew-resize; user-select: none; color: var(--muted); padding: 0 4px; border-radius: 4px; }
+.number .scrub:hover { background: var(--hover); color: inherit; }

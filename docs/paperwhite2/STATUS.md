@@ -2,6 +2,14 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-31: camera yaw the short way round, values to drag everywhere
+
+- `src/ov036/fld_scenearea_loader.c` (`#ifdef PAPERWHITE2`): a camera rect's yaw blends the short way round between
+  its two values (the original took the plain difference, so 0 to 300 degrees turned 300 on; no original area turns
+  its yaw). The editor's preview does the same. Built; **not tested in game**.
+- The forms' number fields drag (a ⇔ grip, clamped to the schema's range, not on IDs, flags and the like), and so do
+  the Overworld Editor's heights, buildings' place and turn, and rail points and arc centers; a drag is one undo step.
+
 ## 2026-10-31: rectangles on the map, values to drag, chunk sizes (editor only)
 
 - Triggers', warps' and camera rects' rectangles move, resize by their edges and corners, and draw on the map; the

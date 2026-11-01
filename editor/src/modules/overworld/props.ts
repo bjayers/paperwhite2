@@ -85,6 +85,14 @@ export function setProps(folder: string, props: Prop[]) {
   changed();
 }
 
+/** Replaces a chunk's props as part of the last step (a value being dragged). */
+export function amendProps(folder: string, props: Prop[]) {
+  const c = chunks.get(folder);
+  if (!c) return;
+  c.current = props;
+  changed();
+}
+
 export function undoProps(folder: string) {
   const c = chunks.get(folder);
   const last = c?.undo.pop();

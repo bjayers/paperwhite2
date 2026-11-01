@@ -6,7 +6,8 @@
 //   camera_areas numbers (rail_areas/, by order.json).
 // - A rect area is tiles x to x + width - 1 by z to z + height - 1; its camera blends from its first setting to its
 //   second as the player goes from its first row to its last (t = progress along z / (height * 16)): pitch, yaw and
-//   distance, and with stay functions 5 to 7 the target offset and field of view too.
+//   distance, and with stay functions 5 to 7 the target offset and field of view too. Paper White 2 turns the yaw the
+//   short way round (0 to 300 degrees is 60 back); the original game turned by the plain difference.
 // - A circle area is the ring between its radii and its angles (atan2 of x and z from its center); with stay function
 //   0 the camera looks at the center from beyond the player, with 1 from a fixed position at a fixed target.
 // - The camera: eye = target + distance (sin yaw cos pitch, sin pitch, cos yaw cos pitch), looking at target plus its
@@ -73,7 +74,11 @@ export function rectCamera(r: RectArea, t: number, height: number): ViewCamera {
     ? [r.x * 16 + 8 + t * span, height, r.z * 16 + 8 + (r.unk06 * 16) / 2]
     : [r.x * 16 + (r.width * 16) / 2, height, r.z * 16 + 8 + t * span];
   const offset = [0, 1, 2].map((i) => lerp(r.target_offset[0][i], r.target_offset[1][i], t) / FX);
-  return camera(player, lerp(r.pitch[0], r.pitch[1], t), lerp(r.yaw[0], r.yaw[1], t), lerp(r.distance[0], r.distance[1], t) / FX,
+  // Paper White 2's game turns the short way round between the two yaws (fld_scenearea_loader.c)
+  let turn = r.yaw[1] - r.yaw[0];
+  if (turn > 0x8000) turn -= 0x10000;
+  else if (turn < -0x8000) turn += 0x10000;
+  return camera(player, lerp(r.pitch[0], r.pitch[1], t), r.yaw[0] + turn * t, lerp(r.distance[0], r.distance[1], t) / FX,
                 offset, lerp(r.fov[0], r.fov[1], t));
 }
 

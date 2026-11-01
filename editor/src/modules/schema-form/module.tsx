@@ -5,8 +5,8 @@ import { useMemo } from "react";
 import type { DataViewModule, DataViewProps } from "../types.ts";
 import { Field, type FormContext } from "./form.tsx";
 
-function SchemaFormView({ data, schema, constants, errors, edit }: DataViewProps) {
-  const ctx: FormContext = useMemo(() => ({ root: schema, constants, errors, edit }), [schema, constants, errors, edit]);
+function SchemaFormView({ data, schema, constants, errors, edit, amend }: DataViewProps) {
+  const ctx: FormContext = useMemo(() => ({ root: schema, constants, errors, edit, amend }), [schema, constants, errors, edit, amend]);
   return (
     <div className="schema-form">
       {schema.description && <p className="schema-description">{schema.description}</p>}

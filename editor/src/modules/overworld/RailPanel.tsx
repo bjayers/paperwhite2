@@ -2,7 +2,7 @@
 // at the point or line, a place in tiles for a point's position, and for a line its curve (straight, an arc in x and
 // z, or in three dimensions, and the arc's center) and its length against what its shape measures.
 
-import { useState } from "react";
+import { ScrubNumber, type ScrubPhase } from "./ScrubNumber.tsx";
 import { documents } from "../../documents.ts";
 import type { JsonPath, JsonValue } from "../../../shared/json.ts";
 import type { Constants } from "../../../shared/schema.ts";
@@ -13,26 +13,13 @@ import { RAIL_DIR_NAMES, measuredLength, type RailMap } from "./rails.ts";
 const FX = 4096;
 const TILE_FX = 16 * FX;
 
-function TilesBox({ value, onChange }: { value: number; onChange(v: number): void }) {
-  const [typed, setTyped] = useState<string | null>(null);
-  return (
-    <input inputMode="decimal" className="ow-number-box" value={typed ?? String(Math.round(value * 1000) / 1000)}
-           onChange={(e) => {
-             const n = Number(e.target.value.trim());
-             const ok = e.target.value.trim() !== "" && Number.isFinite(n);
-             setTyped(ok ? null : e.target.value);
-             if (ok) onChange(n);
-           }}
-           onBlur={() => setTyped(null)} />
-  );
-}
-
 /** x, y and z in fx32 as tiles. */
-function VecTiles({ value, onChange }: { value: number[]; onChange(v: number[]): void }) {
+function VecTiles({ value, onChange }: { value: number[]; onChange(v: number[], phase: ScrubPhase): void }) {
   return (
     <div className="row-control ow-xyz">
       {["X", "Height", "Z"].map((label, i) => (
-        <label key={label}>{label} <TilesBox value={(value[i] ?? 0) / TILE_FX} onChange={(v) => { const out = [...value]; out[i] = Math.round(v * TILE_FX); onChange(out); }} /></label>
+        <ScrubNumber key={label} label={label} value={(value[i] ?? 0) / TILE_FX} step={0.05} digits={3}
+                     onChange={(v, phase) => { const out = [...value]; out[i] = Math.round(v * TILE_FX); onChange(out, phase); }} />
       ))}
       <div className="hint">In tiles (the file keeps fx32, 65536 a tile).</div>
     </div>
@@ -52,10 +39,17 @@ export function RailPanel({ rails, path, part, constants, onEdit, onConnect, con
   onFitLength(length: number): void;
 }) {
   const list = part.type === "point" ? "points" : "lines";
+  // A drag's first change is a step for undo, the others amend it
+  const change = (at: JsonPath, v: JsonValue, phase: ScrubPhase) => {
+    if (phase === "end") return;
+    if (phase === "move") { documents.amend(path, at, v); return; }
+    documents.edit(path, at, v);
+    onEdit();
+  };
   const render: FormContext["render"] = (at: JsonPath, value: JsonValue) => {
     if (at[0] !== list || at[1] !== part.index) return undefined;
     if (part.type === "point" && at.length === 3 && at[2] === "pos" && Array.isArray(value))
-      return <VecTiles value={value as number[]} onChange={(v) => { documents.edit(path, at, v); onEdit(); }} />;
+      return <VecTiles value={value as number[]} onChange={(v, phase) => change(at, v, phase)} />;
     if (at.length === 3 && at[2] === "dir" && typeof value === "number")
       return (
         <select value={value} onChange={(e) => { documents.edit(path, at, Number(e.target.value)); onEdit(); }}>
@@ -67,7 +61,7 @@ export function RailPanel({ rails, path, part, constants, onEdit, onConnect, con
   const line = part.type === "line" ? rails.lines[part.index] : null;
   const curve = line ? rails.curves[line.curve] : null;
   const measured = line ? measuredLength(rails, part.index) : 0;
-  const editCurve = (field: string, v: JsonValue) => { if (line) { documents.edit(path, ["curves", line.curve, field], v); onEdit(); } };
+  const editCurve = (field: string, v: JsonValue, phase: ScrubPhase = "typed") => { if (line) change(["curves", line.curve, field], v, phase); };
   return (
     <div>
       {part.type === "point" && (
@@ -96,7 +90,7 @@ export function RailPanel({ rails, path, part, constants, onEdit, onConnect, con
               </label>
               {curve.handler !== 0 && <>
                 <span className="muted">Center</span>
-                <VecTiles value={curve.center} onChange={(v) => editCurve("center", v)} />
+                <VecTiles value={curve.center} onChange={(v, phase) => editCurve("center", v, phase)} />
               </>}
             </div>
           )}

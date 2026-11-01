@@ -1,7 +1,7 @@
 // A form for any data from its schema: every field the schema names, with its description, the right control for
 // its type, dropdowns of constants for x-constant fields, and the errors the build would report, where they are.
 
-import { memo, useMemo, useState, type ReactNode } from "react";
+import { memo, useMemo, useRef, useState, type ReactNode } from "react";
 import { JsonFloat, fromPlain, numberOf, typeOf, type JsonMap, type JsonPath, type JsonValue } from "../../../shared/json.ts";
 import { resolve, validate, type Constants, type Schema, type SchemaError } from "../../../shared/schema.ts";
 import { SearchSelect, type Option } from "../../shell/SearchSelect.tsx";
@@ -13,6 +13,10 @@ export interface FormContext {
   constants: Constants;
   errors: SchemaError[];
   edit(path: JsonPath, value: JsonValue | undefined): void;
+  /** Changes one value as part of the last step, for a value being dragged, and is told when the drag ends; without
+   * it, each change of a drag is a step. */
+  amend?(path: JsonPath, value: JsonValue | undefined): void;
+  amended?(path: JsonPath): void;
   /** An editor's own control for a field, or undefined for the form's; it may wrap <BaseField> (the form's). */
   render?(path: JsonPath, value: JsonValue, schema: Schema, ctx: FormContext): ReactNode | undefined;
   /** Nested objects as plain groups of fields, without folding. */
@@ -199,8 +203,33 @@ function NumberField({ schema, type, value, path, ctx }: {
   const [typed, setTyped] = useState<string | null>(null);
   const invalid = ctx.errors.some((e) => samePath(e.path, path)) || typed !== null;
   const hex = schema["x-hex"] && typeof value === "number" && value > 255;
+  const key = String(path[path.length - 1] ?? "");
+  // Dragging suits amounts, not numbers that name something (IDs, flags, scripts, an index into a list)
+  const draggable = !schema["x-hex"] && !NAMING_KEYS.test(key) && n !== undefined;
+  const drag = useRef<{ x: number; start: number; moved: boolean } | null>(null);
+  const store = (v: number) => {
+    let c = v;
+    if (schema.minimum !== undefined) c = Math.max(schema.minimum, c);
+    if (schema.maximum !== undefined) c = Math.min(schema.maximum, c);
+    return type === "number" || value instanceof JsonFloat ? new JsonFloat(Math.round(c * 1000) / 1000) : Math.round(c);
+  };
   return (
     <span className="number">
+      {draggable && (
+        <span className="scrub" title="Drag left or right to change it (Shift finer, Alt coarser)"
+              onPointerDown={(e) => { e.preventDefault(); (e.target as HTMLElement).setPointerCapture(e.pointerId); drag.current = { x: e.clientX, start: n!, moved: false }; }}
+              onPointerMove={(e) => {
+                const d = drag.current;
+                if (!d) return;
+                const scale = e.shiftKey ? 0.1 : e.altKey ? 10 : 1;
+                const next = store(d.start + (e.clientX - d.x) * (type === "number" ? 0.05 : 0.25) * scale);
+                if (numberOf(next) === n) return;
+                if (d.moved && ctx.amend) ctx.amend(path, next);
+                else ctx.edit(path, next);
+                d.moved = true;
+              }}
+              onPointerUp={() => { if (drag.current?.moved) ctx.amended?.(path); drag.current = null; }}>⇔</span>
+      )}
       <input className={invalid ? "invalid" : ""} inputMode="decimal"
              value={typed ?? (n === undefined ? "" : String(n))}
              min={schema.minimum} max={schema.maximum}
@@ -221,6 +250,9 @@ function NumberField({ schema, type, value, path, ctx }: {
     </span>
   );
 }
+
+/** Number fields that name something rather than measure it, which don't drag. */
+const NAMING_KEYS = /(^|_)(id|ids|script|flag|var|work|species|item|move|model|zone|warp|curve|camera|point_a|point_b|component|index|trainer|text|message|sound|bgm|se)$/i;
 
 function EnumField({ schema, value, path, ctx }: { schema: Schema; value: JsonValue; path: JsonPath; ctx: FormContext }) {
   const options = schema.enum ?? [];

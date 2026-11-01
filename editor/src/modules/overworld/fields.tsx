@@ -8,6 +8,7 @@ import type { Constants, Schema } from "../../../shared/schema.ts";
 import { BaseField, constantLabel, type FormContext } from "../schema-form/form.tsx";
 import { HEIGHT_FIELDS, KIND_LISTS, heightInTiles, storedHeight, type EntityKind } from "./entities.ts";
 import { spriteUrl } from "./sprites.ts";
+import { ScrubNumber } from "./ScrubNumber.tsx";
 
 const MODEL_PREFIX = "OBJ_CODE_";
 
@@ -107,23 +108,19 @@ function ModelField({ schema, value, path, ctx }: { schema: Schema; value: JsonV
   );
 }
 
-/** A height in tiles (half a tile is 0.5), stored in the kind's own units. */
+/** A height in tiles (half a tile is 0.5), stored in the kind's own units; its label drags it. */
 function HeightField({ kind, value, path, ctx }: { kind: EntityKind; value: JsonValue; path: JsonPath; ctx: FormContext }) {
   const stored = typeof value === "number" ? value : 0;
-  const tiles = heightInTiles(kind, stored);
-  const [typed, setTyped] = useState<string | null>(null);
   const units = HEIGHT_FIELDS[kind]!.perTile;
   return (
-    <span className="number-field">
-      <input inputMode="decimal" value={typed ?? String(Math.round(tiles * 1000) / 1000)}
-             onChange={(e) => {
-               const n = Number(e.target.value.trim());
-               const ok = e.target.value.trim() !== "" && Number.isFinite(n);
-               setTyped(ok ? null : e.target.value);
-               if (ok) ctx.edit(path, storedHeight(kind, n));
-             }}
-             onBlur={() => setTyped(null)} />
-      <span className="muted range" title={`The file stores ${units} a tile`}>tiles · stored {stored}</span>
+    <span className="ow-xyz">
+      <ScrubNumber label="tiles" value={heightInTiles(kind, stored)} step={0.05} digits={3}
+                   onChange={(n, phase) => {
+                     if (phase === "end") return;
+                     if (phase === "move" && ctx.amend) ctx.amend(path, storedHeight(kind, n));
+                     else ctx.edit(path, storedHeight(kind, n));
+                   }} />
+      <span className="muted range" title={`The file stores ${units} a tile`}>stored {stored}</span>
     </span>
   );
 }

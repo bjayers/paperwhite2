@@ -224,7 +224,8 @@ trainer's line of sight), Proxies (background events), Triggers, Warps and Level
   editor's marks), with a slider from the area's first row to its last; the list can preview the zone's own default
   camera at a clicked tile. Every camera value's label drags to change it (Figma-style; Shift finer, Alt coarser),
   one undo step a drag, while the preview follows. A rect shows its first row green and its last orange; **Blends**
-  turns it front to back or left to right (the game's width of 1), **Swap first and last** reverses it. Shift+click adds a rect, making the zone's file if it has none (the hack's build reads a
+  turns it front to back or left to right (the game's width of 1), **Swap first and last** reverses it. The yaw turns the short way round between its two values (0° to 300° turns
+  60° back), as Paper White 2's game does. Shift+click adds a rect, making the zone's file if it has none (the hack's build reads a
   file's "zones", so any zone can have camera areas). The preview draws only the zone's own chunks, so what the game
   shows of the zones around it is missing.
 - **Buildings:** the chunks' props, as CTRMap edits them: each a model of the area's prop bundle
@@ -269,6 +270,13 @@ trainer's settings (name, class, battle style, money, reward, healing, items, AI
 party is cards: species with its icon, level, form, difficulty, ability and gender slots, and, as the whole party has
 them or not, held items and its own moves (else the moves of their levels). Each of the trainer's lines is edited with
 its talk window preview. Save (Ctrl+S) checks each file with the build's validator.
+
+## Dragging values
+
+Number fields that measure something have a ⇔ grip (in the forms) or a label (in the Overworld Editor's panels) that
+drags left and right to change the value, Shift finer and Alt coarser, clamped to the schema's minimum and maximum; a
+drag is one undo step. Numbers that name something (IDs, flags, scripts, an index into a list, values shown in hex)
+don't drag.
 
 ## How it is built
 

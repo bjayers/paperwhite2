@@ -34,6 +34,7 @@ export function DocumentView({ doc, type, constants, onOpen }: {
   );
   const edit = useCallback((path: JsonPath, value: JsonValue | undefined) => documents.edit(doc.path, path, value), [doc.path]);
   const replace = useCallback((data: JsonValue) => documents.replace(doc.path, data), [doc.path]);
+  const amend = useCallback((path: JsonPath, value: JsonValue | undefined) => documents.amend(doc.path, path, value), [doc.path]);
 
   const jump = (path: JsonPath) => {
     setViewId(view?.id ?? "");
@@ -100,7 +101,7 @@ export function DocumentView({ doc, type, constants, onOpen }: {
           )
         ) : (
           <view.View doc={doc} data={doc.data} type={type} schema={schema} constants={constants} errors={errors}
-                     edit={edit} replace={replace} open={onOpen} />
+                     edit={edit} amend={amend} replace={replace} open={onOpen} />
         )}
       </div>
     </div>
