@@ -1,0 +1,116 @@
+{
+    "$schema": "overworld.schema.json",
+    "npcs": [
+        {
+            "id": 46,
+            "instances": [
+                {
+                    "name": "Instance 1",
+                    "when": {
+                        "season": [ "summer" ]
+                    },
+                    "weight": 1,
+                    "npc": {
+                        "id": 46,
+                        "model": "OBJ_CODE_ACE_TRAINER_F",
+                        "movement": "MOVE_CODE_WALK_RANDOM",
+                        "type": "ACTOR_EVENT_TYPE_NONE",
+                        "flag": 0,
+                        "script": 22,
+                        "direction": "DIR_DOWN",
+                        "params": [ 0, 0, 0 ],
+                        "area": {
+                            "width": 1,
+                            "height": 1
+                        },
+                        "grid": {
+                            "x": 217,
+                            "z": 648,
+                            "y": 0
+                        }
+                    }
+                },
+                {
+                    "name": "Instance 2",
+                    "when": {
+                        "season": [ "autumn" ]
+                    },
+                    "weight": 1,
+                    "npc": {
+                        "id": 46,
+                        "model": "OBJ_CODE_96",
+                        "movement": "MOVE_CODE_NONE",
+                        "type": "ACTOR_EVENT_TYPE_NONE",
+                        "flag": 0,
+                        "script": 3,
+                        "direction": "DIR_LEFT",
+                        "params": [ 0, 0, 0 ],
+                        "area": {
+                            "width": 0,
+                            "height": 0
+                        },
+                        "grid": {
+                            "x": 221,
+                            "z": 650,
+                            "y": 0
+                        }
+                    }
+                },
+                {
+                    "name": "Instance 3",
+                    "when": {
+                        "weather": [ "WEATHER_RAIN" ],
+                        "season": [ "summer" ]
+                    },
+                    "weight": 1000,
+                    "npc": {
+                        "id": 46,
+                        "model": "OBJ_CODE_281",
+                        "movement": "MOVE_CODE_TURN_RANDOM_DOWN_RIGHT",
+                        "type": "ACTOR_EVENT_TYPE_NONE",
+                        "flag": 0,
+                        "script": 28,
+                        "direction": "DIR_DOWN",
+                        "params": [ 0, 0, 0 ],
+                        "area": {
+                            "width": 0,
+                            "height": 0
+                        },
+                        "grid": {
+                            "x": 213,
+                            "z": 648,
+                            "y": 0
+                        }
+                    }
+                },
+                {
+                    "name": "Instance 4",
+                    "when": {
+                        "season": [ "winter" ],
+                        "time": [ "night", "late_night" ]
+                    },
+                    "weight": 1,
+                    "npc": {
+                        "id": 46,
+                        "model": "OBJ_CODE_LINEBACKER",
+                        "movement": "MOVE_CODE_WALK_BACK_AND_FORTH",
+                        "type": "ACTOR_EVENT_TYPE_NONE",
+                        "flag": 0,
+                        "script": 2,
+                        "direction": "DIR_LEFT",
+                        "params": [ 0, 0, 0 ],
+                        "area": {
+                            "width": 4,
+                            "height": 0
+                        },
+                        "grid": {
+                            "x": 219,
+                            "z": 646,
+                            "y": 0
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

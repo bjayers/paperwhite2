@@ -115,7 +115,7 @@
             },
             "grid": {
                 "x": 211,
-                "z": 658,
+                "z": 659,
                 "y": 0
             }
         },
@@ -399,7 +399,7 @@
                 "height": 0
             },
             "grid": {
-                "x": 218,
+                "x": 216,
                 "z": 652,
                 "y": 0
             }
@@ -572,7 +572,7 @@
             "grid": {
                 "x": 209,
                 "z": 642,
-                "y": 0
+                "y": 196608
             }
         },
         {
@@ -914,6 +914,25 @@
             "grid": {
                 "x": 219,
                 "z": 655,
+                "y": 0
+            }
+        },
+        {
+            "id": 46,
+            "model": "OBJ_CODE_0",
+            "movement": "MOVE_CODE_NONE",
+            "type": "ACTOR_EVENT_TYPE_NONE",
+            "flag": 0,
+            "script": 0,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 220,
+                "z": 644,
                 "y": 0
             }
         }

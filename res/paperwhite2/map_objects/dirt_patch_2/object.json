@@ -1,0 +1,18 @@
+{
+    "$schema": "../map_object.schema.json",
+    "name": "Dirt Patch 2",
+    "category": "grass",
+    "size": [ 2, 3 ],
+    "collision": [
+        [ 8454145, 8454145 ],
+        [ 8388611, 8388611 ],
+        [ 8454145, 8454145 ]
+    ],
+    "textures": [ "shared_dansa01a_183/michi_hage.png" ],
+    "source": {
+        "model": "overworld_2_map04_20",
+        "x": 15,
+        "z": 7
+    },
+    "triangles": 2
+}

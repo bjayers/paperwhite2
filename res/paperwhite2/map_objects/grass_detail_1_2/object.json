@@ -1,0 +1,17 @@
+{
+    "$schema": "../map_object.schema.json",
+    "name": "Grass Detail 1",
+    "category": "grass",
+    "size": [ 2, 2 ],
+    "collision": [
+        [ 8388639, 8388639 ],
+        [ 8388639, 8388639 ]
+    ],
+    "textures": [ "shared_dansa01a_183/ue_grass01.png" ],
+    "source": {
+        "model": "overworld_2_map05_20",
+        "x": 14,
+        "z": 24
+    },
+    "triangles": 4
+}

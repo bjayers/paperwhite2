@@ -1,0 +1,19 @@
+{
+    "$schema": "../map_object.schema.json",
+    "name": "Water Rapids",
+    "category": "water",
+    "size": [ 5, 4 ],
+    "collision": [
+        [ 8585281, 1441855, 1441855, 1441855, 8585281 ],
+        [ 8585281, 1441855, 1441855, 1441855, 8585281 ],
+        [ 8585281, 1441855, 1441855, 1441855, 8585281 ],
+        [ 8454145, 1441855, 1441855, 1441855, 8585281 ]
+    ],
+    "textures": [ "shared_dansa01a_183/kawa_kage.png", "shared_dansa01a_183/kawa_nose.1.png" ],
+    "source": {
+        "model": "overworld_2_map04_20",
+        "x": 19,
+        "z": 14
+    },
+    "triangles": 10
+}
