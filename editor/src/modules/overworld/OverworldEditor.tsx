@@ -89,8 +89,12 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     setPreviewing(false);
     setPreviewDefault(false);
     if (!zone) return;
-    cameraFileOf(zone, railsName).then(setCameraFile, () => setCameraFile(null));
-    api.file(`res/field/zones/${zone}.json`).then((f) => setZoneCamera(Number((JSON.parse(f.text) as { camera?: number }).camera ?? 0)), () => setZoneCamera(0));
+    // Only the latest lookup counts: a zone change asks once with the last zone's rails still loaded, then again
+    let live = true;
+    cameraFileOf(zone, railsName).then((f) => { if (live) setCameraFile(f); }, () => { if (live) setCameraFile(null); });
+    api.file(`res/field/zones/${zone}.json`).then((f) => { if (live) setZoneCamera(Number((JSON.parse(f.text) as { camera?: number }).camera ?? 0)); },
+                                                   () => { if (live) setZoneCamera(0); });
+    return () => { live = false; };
   }, [zone, railsName]);
   const { data: cameraData } = useHeld(cameraFile?.exists || (cameraFile && documents.get(cameraFile.path)) ? cameraFile.path : null);
   const cameraAreas = useMemo(() => (cameraData instanceof Map ? ((toPlain(cameraData) as { areas?: CameraArea[] }).areas ?? []) : null), [cameraData]);
