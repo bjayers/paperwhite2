@@ -42,3 +42,4 @@
 .me-ow-cell.filler { background: var(--hover); }
 .me-ow-cell:disabled { cursor: default; opacity: 1; }
 .me-ow-cell.picked { background: #ffd040; }
+.me-move { display: grid; grid-template-columns: repeat(4, 56px); gap: 4px; margin: 8px 0; }

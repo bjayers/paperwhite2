@@ -2,6 +2,15 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-01 (afternoon): the written models' box, moving faces, pasting at the right height
+
+- **Fixed: a chunk packed whole vanished** unless the camera was over its middle (the user's test on Route 20). The
+  model writer stored the model box's scale without the position scale, so the game read the box 64 times too small
+  and skipped drawing the chunk. `nitro_model_writer.py check` now builds every vanilla model's box and checks it
+  holds every vertex. Route 20's chunk is back to vanilla (its data.json said "written" after the undo).
+- Faces: **Move** (a tile, or a unit up and down; Alt+arrows), and a paste keeps the copy's height above its own ground
+  (vanilla trees' shadows sit just over the grass). Both pack (scratch copy).
+
 ## 2026-11-01 (day): new maps, new routes, collision painting
 
 - **New maps from unused zones** (`tools/paperwhite2/new_map.py`, the Map Editor's **New map…**): about 60 leftover

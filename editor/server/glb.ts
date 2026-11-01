@@ -373,3 +373,18 @@ function copyMaterial(json: FaceGltf, src: FaceGltf, index: number | undefined, 
   materials.push({ ...base, name });
   return materials.length - 1;
 }
+
+/** The GLB with faces moved by offset: copied where they go (as pasteGlbFaces copies them, in draw calls of their
+ * own) and deleted where they were. Also the moved faces, by their new draw calls, to keep them selected. */
+export function moveGlbFaces(glb: Buffer, faces: FaceSet[], offset: [number, number, number], textureSet: string):
+    { glb: Buffer; faces: FaceSet[] } {
+  const before = (read(glb).json as FaceGltf).meshes[0].primitives.length;
+  const pasted = pasteGlbFaces(glb, glb, faces, offset, textureSet).glb;
+  const added = (read(pasted).json as FaceGltf).meshes[0].primitives.length - before;
+  const sizes = faces.filter((f) => f.triangles.length).map((f) => f.triangles.length);
+  const { glb: moved } = editGlbFaces(pasted, { remove: faces });
+  // Deleting faces drops the draw calls they emptied, so the pasted ones move up by as many
+  const after = (read(moved).json as FaceGltf).meshes[0].primitives.length;
+  const first = after - added;
+  return { glb: moved, faces: sizes.map((n, i) => ({ primitive: first + i, triangles: Array.from({ length: n }, (_, t) => t) })) };
+}

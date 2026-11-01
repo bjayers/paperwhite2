@@ -12,7 +12,7 @@ import { WRITE_HEADER, type DataFile, type ProjectInfo, type SaveRequest, type S
 import { Builder } from "./build.ts";
 import { narcMember } from "./narc.ts";
 import { Git } from "./git.ts";
-import { editGlbFaces, pasteGlbFaces, setGlbProps, type FaceEdits, type FaceSet, type GlbProp } from "./glb.ts";
+import { editGlbFaces, moveGlbFaces, pasteGlbFaces, setGlbProps, type FaceEdits, type FaceSet, type GlbProp } from "./glb.ts";
 import { Project, versionOf } from "./project.ts";
 import { Python, pythonFor } from "./python.ts";
 import { loadSettings } from "./settings.ts";
@@ -311,12 +311,7 @@ const routes: Record<string, Handler> = {
         || !/^[a-z0-9_]+$/.test(b.textureSet ?? ""))
       return error(res, 400, "Name the two map models, the faces, the offset and the target's texture set");
     const { glb, pngs } = pasteGlbFaces(readFileSync(project.abs(target)), readFileSync(project.abs(source)), b.faces, b.offset, b.textureSet);
-    const dataPath = target.replace(/model\.glb$/, "data.json");
-    let data = parseJson(readFileSync(project.abs(dataPath), "utf8"));
-    const plain = data as Map<string, unknown>;
-    if (plain.get("texture_set") === null) data = setIn(data, ["texture_set"], `MAP_TEXTURE_SET_${b.textureSet.toUpperCase()}`);
-    if (plain.get("written") !== true) data = setIn(data, ["written"], true);
-    if (data !== plain) await project.writeAtomic(dataPath, fileText(data));
+    await markWritten(target, b.textureSet);
     await project.writeAtomic(target, glb);
     json(res, { ok: true, pngs });
   },
@@ -348,6 +343,18 @@ const routes: Record<string, Handler> = {
       }
     }
     json(res, { added });
+  },
+  "PUT /api/glb-move": async (req, res) => {
+    // Faces of a map model's GLB moved by an offset; the model is then written whole
+    const b = (await readJson(req)) as { path: string; faces: FaceSet[]; offset: [number, number, number]; textureSet: string };
+    const path = mapModelGlb(b.path);
+    if (!path || !Array.isArray(b.faces) || !Array.isArray(b.offset) || b.offset.length !== 3 || !b.offset.every(Number.isFinite)
+        || !/^[a-z0-9_]+$/.test(b.textureSet ?? ""))
+      return error(res, 400, "Name a map model, the faces, the offset and its texture set");
+    const { glb, faces } = moveGlbFaces(readFileSync(project.abs(path)), b.faces, b.offset, b.textureSet);
+    await markWritten(path, b.textureSet);
+    await project.writeAtomic(path, glb);
+    json(res, { ok: true, faces });
   },
   "PUT /api/glb-raw": async (req, res) => {
     // A map model's GLB put back as it was, for the Map Editor's undo
@@ -526,6 +533,16 @@ function serveTiles(res: ServerResponse, pathname: string) {
   if (!existsSync(file)) return error(res, 404, "The library isn't sliced yet");
   res.writeHead(200, { "Content-Type": "model/gltf-binary", "Cache-Control": "no-cache" });
   createReadStream(file).pipe(res);
+}
+
+/** Marks a map model's data.json written whole, with its texture set where it had none. */
+async function markWritten(glbPath: string, textureSet: string) {
+  const dataPath = glbPath.replace(/model\.glb$/, "data.json");
+  let data = parseJson(readFileSync(project.abs(dataPath), "utf8"));
+  const plain = data as Map<string, unknown>;
+  if (plain.get("texture_set") === null) data = setIn(data, ["texture_set"], `MAP_TEXTURE_SET_${textureSet.toUpperCase()}`);
+  if (plain.get("written") !== true) data = setIn(data, ["written"], true);
+  if (data !== plain) await project.writeAtomic(dataPath, fileText(data));
 }
 
 /** A map model's model.glb under res/, or null. */

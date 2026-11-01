@@ -430,7 +430,8 @@ def _counts(dl):
 
 
 def box(points, scale=4096):
-    """The model box of points (display-list units), and its scale: the smallest power of two that fits."""
+    """The model box of points (display-list units), in those units divided by scale / 4096, the smallest power of
+    two that fits, and that scale."""
     while True:
         low = [min(p[k] for p in points) * 4096 // scale for k in range(3)]
         size = [-(-max(p[k] for p in points) * 4096 // scale) - low[k] for k in range(3)]
@@ -477,8 +478,13 @@ def draw_model(name, materials, draws, pos_scale=64):
     if vertices > 0xffff:
         raise ValueError(f"{name}: too many vertices for one model")
     box_values, box_scale = box(points)
+    # The box is in the display list's units, halved while it doesn't fit, so its scale is the model's position scale
+    # times that; the game tests the box before drawing the chunk, and one too small hides it (fixed 2026-11-01: the
+    # position scale was left out, so a written chunk vanished unless the camera was over its middle)
+    box_pos_scale = pos_scale * box_scale
     model.info = [0, 0, 0, 1, len(materials), len(draws), 1, 0, pos_scale * 4096, 4096 // pos_scale,
-                  vertices, triangle_count + quads_total, triangle_count, quads_total, *box_values, box_scale, 4096 * 4096 // box_scale]
+                  vertices, triangle_count + quads_total, triangle_count, quads_total, *box_values, box_pos_scale,
+                  4096 * 4096 // box_pos_scale]
     return model
 
 
@@ -514,7 +520,26 @@ def check_drawing(archive_path):
                 if failures <= 5:
                     print(f"model {index} ({model.name}) {name}: draws differently")
     print(f"{shapes} shapes drawn again, {shapes - failures} the same; {skipped} with matrix commands skipped")
-    return failures == 0
+    # The model box draw_model gives a vanilla model's own triangles must hold every vertex, as the game reads it with
+    # its scale; the game's own boxes are much the same (made from the models' floats, a few at a coarser scale, a few
+    # holding other things)
+    boxes = differ = 0
+    for index, chunk in enumerate(archive):
+        model = read_model(model_bytes(chunk))
+        draws = [(0, decode_display_list(dl)) for _, _, _, dl in model.shapes]
+        drawn = draw_model(model.name, [("m", None, None, DEFAULT_MATERIAL)], draws, model.info[8] // 4096)
+        x, y, z, w, h, d, scale, _ = drawn.info[14:22]
+        step = scale / model.info[8]
+        holds = all(x * step <= p[0] <= (x + w) * step and y * step <= p[1] <= (y + h) * step
+                    and z * step <= p[2] <= (z + d) * step for _, t in draws for tri in t for v in tri for p in [v.position])
+        if not holds:
+            boxes += 1
+            if boxes <= 5:
+                print(f"model {index} ({model.name}): box {drawn.info[14:22]}, the game's {model.info[14:22]}")
+        differ += drawn.info[14:20] != model.info[14:20]
+    print(f"{len(archive)} models: {len(archive) - boxes} boxes holding every vertex "
+          f"({differ} written a little differently from the game's)")
+    return failures == 0 and boxes == 0
 
 
 def check(archive_path):

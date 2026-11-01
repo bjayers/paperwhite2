@@ -289,8 +289,10 @@ map, to choose a chunk; the middle button orbits, the right pans and the wheel z
   texture of the area's set (those missing from another season's set are marked). Edits are written to the chunk's
   `model.glb` at once, with Ctrl+Z and Ctrl+Y. A retexture gives the chunk a new material and draw call, so its
   `data.json` gains `"written": true` (and the area's texture set where it had none), which packs the whole model with
-  `tools/data/nitro_model_writer.py`. **Copy the faces** copies the selection, to paste in any chunk of any zone with
-  **Paste where I click**: the faces' north-west corner goes on the tile clicked, their foot at the height clicked, and
+  `tools/data/nitro_model_writer.py`. **Move** moves the selection a tile at a time (the arrows, or Alt+arrow keys) or a
+  unit up and down (Alt+Page Up and Down; with Shift, half a tile), keeping it selected. **Copy the faces** copies the selection, to paste in any chunk of any zone with
+  **Paste where I click**: the faces' north-west corner goes on the tile clicked, as high above its ground as they stood
+  above their own (a tree's shadow stays just over the grass, as vanilla's do), and
   the chunk is then packed as a whole model. Where the pasted faces use textures that the area's season sets lack,
   **Import the textures** adds them to every season's set (`imports.json`), copied from the faces' own set. Clearing a tree: click its leaves, Select the stack, Delete, then paint its tiles
   walkable in the Collision tab.

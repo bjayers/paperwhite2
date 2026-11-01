@@ -90,6 +90,9 @@ export const api = {
   /** Copies faces of one map chunk's model.glb into another's, moved by offset; the images the faces use, <set>/<png>. */
   glbPaste: (target: string, source: string, faces: GlbFaceSet[], offset: [number, number, number], textureSet: string) =>
     request<{ ok: boolean; pngs: string[] }>("PUT", "/api/glb-paste", { target, source, faces, offset, textureSet }),
+  /** Moves faces of a map chunk's model.glb by offset; the moved faces, by their new draw calls. */
+  glbMove: (path: string, faces: GlbFaceSet[], offset: [number, number, number], textureSet: string) =>
+    request<{ ok: boolean; faces: GlbFaceSet[] }>("PUT", "/api/glb-move", { path, faces, offset, textureSet }),
   /** Adds textures (<set>/<png>) of other map texture sets to sets, by their imports.json. */
   importTextures: (sets: string[], textures: string[]) => request<{ added: string[] }>("POST", "/api/texture-imports", { sets, textures }),
   /** Puts a map chunk's model.glb back as it was (base64 bytes), for undo. */

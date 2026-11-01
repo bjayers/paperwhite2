@@ -430,22 +430,35 @@ export function MapEditor({ constants }: ToolProps) {
 
   // ---------------------------------------------------------------- Copy and paste
 
-  /** Copies the selected faces: their chunk's GLB and where they start. */
+  /** The height of a chunk's ground (its collision, on the chosen layer) under a point in its own coordinates. */
+  const groundUnder = (index: number, x: number, z: number): number | null => {
+    if (!map) return null;
+    const l = map.chunks[index]?.layers[Math.min(layer, (map.chunks[index]?.layers.length ?? 1) - 1)];
+    const half = map.chunkSize / 2;
+    const tx = Math.floor((x + half) / TILE), tz = Math.floor((z + half) / TILE);
+    if (!l || tx < 0 || tz < 0 || tx >= map.chunkTiles || tz >= map.chunkTiles) return null;
+    const h = l.heights[tz * map.chunkTiles + tx];
+    return Number.isFinite(h) ? h : null;
+  };
+
+  /** Copies the selected faces: their chunk's GLB and where they start: their north-west tile corner, and the height
+   * of the ground under their middle, so that a paste keeps how far they stand above it (a tree's shadow does). */
   const copyFaces = () => {
-    if (!current || !model || !faces.length || !map) return;
+    if (!current || !model || !faces.length || !map || chunk === null) return;
     const half = map.chunkSize / 2;
     const p = new THREE.Vector3();
-    let x0 = Infinity, y0 = Infinity, z0 = Infinity;
+    let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
     for (const f of faces) {
       const geometry = model.primitives[f.primitive].mesh.geometry;
       for (let k = 0; k < 3; k++) {
         const v = geometry.index ? geometry.index.getX(f.triangle * 3 + k) : f.triangle * 3 + k;
         p.fromBufferAttribute(geometry.attributes.position as THREE.BufferAttribute, v);
-        x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y); z0 = Math.min(z0, p.z);
+        x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y); z0 = Math.min(z0, p.z); x1 = Math.max(x1, p.x); z1 = Math.max(z1, p.z);
       }
     }
     const snap = (v: number) => Math.floor((v + half) / TILE) * TILE - half;
-    setClipboard({ source: `${current.folder}/model.glb`, faces: faceSets(faces), anchor: [snap(x0), Math.round(y0), snap(z0)],
+    const ground = groundUnder(chunk, (x0 + x1) / 2, (z0 + z1) / 2) ?? y0;
+    setClipboard({ source: `${current.folder}/model.glb`, faces: faceSets(faces), anchor: [snap(x0), Math.round(ground), snap(z0)],
                    label: `${faces.length} face(s) of ${current.folder.slice(current.folder.lastIndexOf("/") + 1)}` });
     setMessage({ text: `Copied ${faces.length} face(s). Turn on Paste where I click, and click the tile their north-west corner goes on, in any zone.` });
   };
@@ -459,7 +472,9 @@ export function MapEditor({ constants }: ToolProps) {
     const half = map.chunkSize / 2;
     const lx = point.x - (target.column * map.chunkSize + half), lz = point.z - (target.row * map.chunkSize + half);
     const snap = (v: number) => Math.floor((v + half) / TILE) * TILE - half;
-    const offset: [number, number, number] = [snap(lx) - clipboard.anchor[0], Math.round(point.y) - clipboard.anchor[1], snap(lz) - clipboard.anchor[2]];
+    // On the ground the tile clicked has, as the copy stood on its own (the point clicked may be a treetop)
+    const ground = groundUnder(index, lx + TILE / 2, lz + TILE / 2) ?? point.y;
+    const offset: [number, number, number] = [snap(lx) - clipboard.anchor[0], Math.round(ground) - clipboard.anchor[1], snap(lz) - clipboard.anchor[2]];
     const path = `${target.folder}/model.glb`;
     setBusy(true);
     try {
@@ -475,6 +490,30 @@ export function MapEditor({ constants }: ToolProps) {
       setMissing(lacking);
       setMessage({ text: `${what} onto ${target.folder.slice(target.folder.lastIndexOf("/") + 1)}.${lacking.length
         ? ` ${lacking.length} texture(s) aren't in every season's set of this area: ${lacking.map((p) => p.slice(p.indexOf("/") + 1, -4)).join(", ")}; import them in the Faces tab.` : ""}` });
+    } catch (e) {
+      setMessage({ text: (e as Error).message, error: true });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /** Moves the selected faces by whole tiles across, or units up and down; they stay selected. */
+  const moveFaces = async (dx: number, dy: number, dz: number) => {
+    if (!current || !faces.length || busy || chunk === null) return;
+    const set = sets[Math.min(season, Math.max(0, sets.length - 1))];
+    if (!set?.set) return;
+    const path = `${current.folder}/model.glb`;
+    setBusy(true);
+    try {
+      const before = await glbBase64(path);
+      const result = await api.glbMove(path, faceSets(faces), [dx * TILE, dy, dz * TILE], set.set);
+      const after = await glbBase64(path);
+      const what = `Moved ${faces.length} face(s) ${dx || dz ? `${dx}, ${dz} tile(s)` : ""}${dy ? ` ${dy > 0 ? "up" : "down"} ${Math.abs(dy)}` : ""}`;
+      setHistory((h) => ({ done: [...h.done, { kind: "faces", path, before, after, what }], undone: [] }));
+      reloadChunk(current.folder);
+      const at = chunk;
+      setFaces(result.faces.flatMap((f) => f.triangles.map((triangle) => ({ chunk: at, primitive: f.primitive, triangle }))));
+      setMessage({ text: `${what}.` });
     } catch (e) {
       setMessage({ text: (e as Error).message, error: true });
     } finally {
@@ -506,6 +545,16 @@ export function MapEditor({ constants }: ToolProps) {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); step(!e.shiftKey); }
       else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") { e.preventDefault(); step(false); }
       else if (tab === "faces" && (e.key === "Delete" || e.key === "Backspace") && faces.length) { e.preventDefault(); removeFaces(); }
+      else if (tab === "faces" && faces.length && e.altKey && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "PageUp", "PageDown"].includes(e.key)) {
+        // Alt+arrows move the selection a tile (the arrows alone pan the view); Alt+Page Up and Down, a unit up or down
+        e.preventDefault();
+        const step = e.shiftKey ? 8 : 1;
+        if (e.key === "ArrowLeft") moveFaces(-1, 0, 0);
+        else if (e.key === "ArrowRight") moveFaces(1, 0, 0);
+        else if (e.key === "ArrowUp") moveFaces(0, 0, -1);
+        else if (e.key === "ArrowDown") moveFaces(0, 0, 1);
+        else moveFaces(0, e.key === "PageUp" ? step : -step, 0);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -620,6 +669,21 @@ export function MapEditor({ constants }: ToolProps) {
                     Collision tab. Route 20's forests are layers over many tiles; clear part of one by Shift+clicking its faces.</p>
                 </section>
                 <section className="me-section">
+                  <h4>Move</h4>
+                  <div className="me-move">
+                    <span />
+                    <button disabled={!faces.length || busy} onClick={() => moveFaces(0, 0, -1)} title="A tile north (Alt+↑)">↑</button>
+                    <span />
+                    <button disabled={!faces.length || busy} onClick={() => moveFaces(0, 1, 0)} title="A unit up (Alt+Page Up; with Shift, half a tile)">Up</button>
+                    <button disabled={!faces.length || busy} onClick={() => moveFaces(-1, 0, 0)} title="A tile west (Alt+←)">←</button>
+                    <button disabled={!faces.length || busy} onClick={() => moveFaces(0, 0, 1)} title="A tile south (Alt+↓)">↓</button>
+                    <button disabled={!faces.length || busy} onClick={() => moveFaces(1, 0, 0)} title="A tile east (Alt+→)">→</button>
+                    <button disabled={!faces.length || busy} onClick={() => moveFaces(0, -1, 0)} title="A unit down (Alt+Page Down; with Shift, half a tile)">Down</button>
+                  </div>
+                  <p className="muted ow-note">Moves the selection a tile at a time (Alt+arrows) or a unit up and down (Alt+Page Up and Down; with
+                    Shift, half a tile); it stays selected. Its collision stays where it was: repaint it in the Collision tab.</p>
+                </section>
+                <section className="me-section">
                   <h4>Copy and paste</h4>
                   <div className="me-actions">
                     <button disabled={!faces.length} onClick={copyFaces} title="Copies the selected faces, to paste in any chunk of any zone">Copy the faces</button>
@@ -634,7 +698,8 @@ export function MapEditor({ constants }: ToolProps) {
                         Import {missing.length} texture(s) into the area's sets</button>
                     </div>
                   )}
-                  <p className="muted ow-note">Click the tile the faces' north-west corner goes on; their foot goes at the height clicked. A paste adds
+                  <p className="muted ow-note">Click the tile the faces' north-west corner goes on; they stand as high above its ground as they stood
+                    above their own. A paste adds
                     draw calls, so the chunk is packed as a whole model. Textures the area's sets lack can be imported from the faces' own set.</p>
                 </section>
                 <section className="me-section">
