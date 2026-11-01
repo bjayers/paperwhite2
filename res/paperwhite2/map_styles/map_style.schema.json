@@ -1,0 +1,140 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "A map style: res/paperwhite2/map_styles/<style>.json",
+    "description": "The terrains the Map Editor's map maker paints with, each its look from a vanilla area's texture set and its tile type (tools/paperwhite2/map_maker.py).",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "name", "texture_set", "terrains", "wall" ],
+    "properties": {
+        "$schema": {
+            "type": "string",
+            "description": "This schema, for editors"
+        },
+        "name": {
+            "type": "string"
+        },
+        "texture_set": {
+            "type": "string",
+            "x-constant": "MAP_TEXTURE_SET_",
+            "description": "The set its textures come from, which the generated chunk binds to"
+        },
+        "wall": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [ "texture" ],
+            "properties": {
+                "texture": {
+                    "type": "string",
+                    "description": "A PNG of the style's texture set, without .png"
+                },
+                "repeat": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "description": "Tiles a repeat of the texture spans"
+                },
+                "alpha": {
+                    "enum": [ "MASK", "BLEND" ],
+                    "description": "How its transparent pixels draw"
+                }
+            },
+            "description": "The wall between heights where neither terrain has one: a cliff, v down it"
+        },
+        "terrains": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [ "key", "name", "ground", "tile_type" ],
+                "properties": {
+                    "key": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 1,
+                        "description": "Its letter in a project's terrain rows"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "color": {
+                        "type": "string",
+                        "description": "Its color in the editor's painting view"
+                    },
+                    "ground": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [ "texture" ],
+                        "properties": {
+                            "texture": {
+                                "type": "string",
+                                "description": "A PNG of the style's texture set, without .png"
+                            },
+                            "repeat": {
+                                "type": "number",
+                                "exclusiveMinimum": 0,
+                                "description": "Tiles a repeat of the texture spans"
+                            },
+                            "alpha": {
+                                "enum": [ "MASK", "BLEND" ],
+                                "description": "How its transparent pixels draw"
+                            }
+                        },
+                        "description": "The ground, textured from above"
+                    },
+                    "layers": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [ "texture", "lift" ],
+                            "properties": {
+                                "texture": {
+                                    "type": "string",
+                                    "description": "A PNG of the style's texture set, without .png"
+                                },
+                                "repeat": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0,
+                                    "description": "Tiles a repeat of the texture spans"
+                                },
+                                "alpha": {
+                                    "enum": [ "MASK", "BLEND" ],
+                                    "description": "How its transparent pixels draw"
+                                },
+                                "lift": {
+                                    "type": "number",
+                                    "description": "Units above the ground (a tile is 16)"
+                                }
+                            }
+                        },
+                        "description": "Planes above the ground: tall grass's blades"
+                    },
+                    "wall": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [ "texture" ],
+                        "properties": {
+                            "texture": {
+                                "type": "string",
+                                "description": "A PNG of the style's texture set, without .png"
+                            },
+                            "repeat": {
+                                "type": "number",
+                                "exclusiveMinimum": 0,
+                                "description": "Tiles a repeat of the texture spans"
+                            },
+                            "alpha": {
+                                "enum": [ "MASK", "BLEND" ],
+                                "description": "How its transparent pixels draw"
+                            }
+                        },
+                        "description": "The wall down to it from a higher tile (a riverbank), before the style's"
+                    },
+                    "tile_type": {
+                        "type": "integer",
+                        "description": "Its collision's tile type: TILE_CLASS_ and flags (include/field/field_map.h)"
+                    }
+                }
+            }
+        }
+    }
+}

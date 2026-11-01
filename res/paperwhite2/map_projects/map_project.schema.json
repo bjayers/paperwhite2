@@ -1,0 +1,67 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "A generated map: res/paperwhite2/map_projects/<model>.json",
+    "description": "A map chunk as the Map Editor paints it: each tile's terrain and height, and the library's objects on it, from which tools/paperwhite2/map_maker.py generates the chunk's model and collision.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "model", "style", "terrain", "height" ],
+    "properties": {
+        "$schema": {
+            "type": "string",
+            "description": "This schema, for editors"
+        },
+        "model": {
+            "type": "string",
+            "description": "The map model folder it makes (res/field/maps/models/<model>/)"
+        },
+        "style": {
+            "type": "string",
+            "description": "Its style (res/paperwhite2/map_styles/<style>.json)"
+        },
+        "size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 64,
+            "description": "Tiles across: 32 for most map types"
+        },
+        "terrain": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "Each row's tiles' terrains, north to south, a letter of the style's a tile"
+        },
+        "height": {
+            "type": "array",
+            "items": {
+                "type": "array",
+                "items": {
+                    "type": "integer",
+                    "minimum": -40,
+                    "maximum": 80
+                }
+            },
+            "description": "Each row's tiles' heights, in half tiles"
+        },
+        "objects": {
+            "type": "array",
+            "items": {
+                "type": "array",
+                "prefixItems": [
+                    {
+                        "type": "string"
+                    },
+                    {
+                        "type": "integer"
+                    },
+                    {
+                        "type": "integer"
+                    }
+                ],
+                "items": false,
+                "minItems": 3
+            },
+            "description": "Objects of the library: its name, and the x and z of its north-west tile"
+        }
+    }
+}

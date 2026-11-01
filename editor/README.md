@@ -276,7 +276,7 @@ map, to choose a chunk; the middle button orbits, the right pans and the wheel z
     area: the field keeps the area it warped in with as the player walks across. The neighbour's edge chunk may need a
     path cut through it.
 
-  Then give the map warps (Overworld Editor), and its look in the Faces, Collision and Tiles tabs.
+  Then give the map warps (Overworld Editor), and its look in the Faces, Collision and Paint tabs.
 - **Chunks:** the zone's cells of its matrix, and the chosen chunk's inspector: its model and texture set, whether it
   packs as edits of the original model or as a whole model (`"written"` in its `data.json`), its triangles, vertices
   and materials against the busiest vanilla chunk's, its season variants (the chunks a season replacement swaps in,
@@ -303,17 +303,21 @@ map, to choose a chunk; the middle button orbits, the right pans and the wheel z
   bridges) choose their layer. Where a season replacement swaps a chunk (Route 20 in autumn), **Paint the season
   variants too** paints the same tile of the variants where it was the same. Ctrl+Z undoes a stroke; **Save** writes the
   collision files (and layouts), **Revert** drops what isn't saved.
-- **Tiles:** the tile libraries (`res/paperwhite2/map_tiles/<library>/library.json`) cut from the game's chunks by
-  `tools/paperwhite2/map_tiles.py`: **Cut the tiles** makes the catalogue in `build/map_tiles/`, and the palette shows
-  each tile's picture, most used first, filtered by kind and material. A tile's details give its footprint, triangles,
-  materials, collision and where the chunks use it (**show** goes there on the map).
-  - **Layout of the chunk:** a chunk as tiles (`res/paperwhite2/map_layouts/<model>.json`). **Start a layout from the
-    chunk** makes one of a chunk the library is cut from, as it is; the map then shows the layout's tiles in place of
-    the chunk's model. With **Click paints** on the chosen tile, a click puts it on that tile of the chunk: a ground
-    tile replaces the cell's, an object goes on top, at the height of the ground there or where the tile came from,
-    each bringing its collision (its source's terrain rows, moved to its height; a split tile keeps the chunk's); or
-    it takes away the objects on a tile. Ctrl+Z undoes painting. **Compose into the chunk** saves the layout and
-    the collision and writes the chunk's `model.glb` from it (its props kept), marked written.
+- **Paint:** the chosen chunk as a painted map (`res/paperwhite2/map_projects/<model>.json`): **Start painting** fills
+  it with a terrain of a style (`res/paperwhite2/map_styles/`, Route 20's to start) at the chunk's collision heights
+  or one height. Then paint each tile's terrain (grass, path, tall grass, water, blocked grass) and height (or raise
+  and lower them half a tile) with a pencil or a rectangle; place objects of the library on a tile, and select and
+  drag them to others (Delete removes one). **Generate the chunk** writes its model and collision
+  (`tools/paperwhite2/map_maker.py`): the ground merged into large rectangles textured from above, so textures run on
+  across tiles, walls (cliffs, riverbanks) where heights differ, tall grass's blades, the objects on their ground, and
+  each tile's collision from its terrain and height (objects' footprints over it). The painting stays, to change and
+  generate again. **Map shows** switches between the painting and the generated model.
+- **Objects:** the library of whole objects (`res/paperwhite2/map_objects/<object>/`). In the Faces tab, **Save the
+  faces as an object…** keeps a selection (Select the stack takes a whole tree) with its footprint, the collision
+  under it, its textures and how high it stands over the ground. Here, **Place it where I click** puts one on an
+  existing chunk (its faces join the model, its collision is painted, textures the area lacks can be imported); on
+  painted maps it's placed in the Paint tab, where it stays an object to drag.
+- **Wireframe** (the toolbar) draws the models' triangles' edges, to see what a click picks.
 
 ## The Pokémon Editor
 

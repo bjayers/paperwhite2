@@ -43,3 +43,11 @@
 .me-ow-cell:disabled { cursor: default; opacity: 1; }
 .me-ow-cell.picked { background: #ffd040; }
 .me-move { display: grid; grid-template-columns: repeat(4, 56px); gap: 4px; margin: 8px 0; }
+.me-terrains { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.me-terrain { display: inline-flex; align-items: center; gap: 6px; }
+.me-terrain.selected { border-color: var(--accent); background: var(--selected); }
+.me-swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--border); }
+.me-category { margin: 6px 0 10px; }
+.me-category-name { font-size: 12px; margin-bottom: 4px; text-transform: capitalize; }
+.me-object { display: block; width: 100%; text-align: left; margin: 2px 0; }
+.me-object.selected { border-color: var(--accent); background: var(--selected); }

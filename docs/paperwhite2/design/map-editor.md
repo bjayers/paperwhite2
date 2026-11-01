@@ -215,6 +215,24 @@ pieces, textures that don't join, twice the polygons. The plan instead, in three
 3. **Smart edges** between terrains (path borders, riverbanks, cliff tops), picked from vanilla pieces by the
    neighbours, with a manual override per tile.
 
+### Built so far (2026-11-01)
+
+- **Objects:** saved from a Faces selection (`map_objects.py save`): `model.glb` (x east and z south from the
+  footprint's north-west corner, y up from the ground under it, each image the PNG of the set it came from) and
+  `object.json` (`map_object.schema.json`: name, category, footprint, the tile types under it, its textures, where it
+  came from). Placed on existing chunks by pasting all its faces; on painted maps by the generator.
+- **Painted maps:** a project (`map_project.schema.json`) names its chunk, its style, each tile's terrain (a letter a
+  tile, a string a row) and height (half tiles), and its objects ([object, x, z]). A style (`map_style.schema.json`)
+  gives each terrain its ground texture and repeat, layers above it (tall grass's blades), a wall (riverbanks) and its
+  tile type; Route 20's is measured from its chunks (grass repeats every 4 tiles, paths every tile, the river bed
+  every 2; tall grass's blades 2, 6 and 8 units up).
+- **The generator** (`map_maker.py generate`): ground rectangles per terrain and height as large as the texture's
+  reach, UVs from above; each rectangle's edges split where another's corner or a wall's end lies on them, and
+  fanned around its middle there, so no T-junction; walls along straight runs, facing the lower side (the lower
+  terrain's wall, else the higher's, else the style's); objects on their tile's ground; collision flat at each height
+  from the game's table, the terrain's type, the objects' footprints over it. Route 20's chunk painted with grass, a
+  path, a river, a plateau, tall grass and three trees: 417 triangles (vanilla's median), packed.
+
 ### What PDSMS does, and what to take from it
 
 Trifindo's Pokémon DS Map Studio (github.com/Trifindo/Pokemon-DS-Map-Studio), read 2026-11-01:
@@ -279,40 +297,12 @@ each way. Its modes, each with its own side panel in the Overworld Editor's layo
 | **Tiles** | building from the tile library: a palette of tiles; paint them onto the grid, each with its height and collision; stamps (a rectangle of tiles copied from a vanilla map, such as a house front, a gate or a forest edge) |
 | **Props** | the chunk's props, as the Overworld Editor's Buildings do |
 
-### The tile library
+### The tile library (retired 2026-11-01)
 
-PDSMS builds a map from tiles; this editor takes its tiles from the game's own chunks. A library
-(`res/paperwhite2/map_tiles/<library>/library.json`) names its source chunks; `tools/paperwhite2/map_tiles.py slice`
-cuts them on the tile grid:
-
-- **Ground:** each chunk's large connected meshes (paths, grass, cliffs, water, ledges, forest canopies), clipped to
-  each tile's square, so a tile is what the chunk draws over one grid cell.
-- **Objects:** small meshes kept whole (a sign, a fence post), with any others overlapping their footprint, and a
-  footprint of whole tiles.
-- The same piece wherever it stands is one tile: the same polygons, UVs (up to whole repeats of the texture) and
-  materials. An earlier try keyed ground by its look (materials and heights over a 4×4 grid of points), which made
-  fewer tiles but let pieces whose edges differ slightly count as one, so a rebuilt chunk had gaps and overlaps; and
-  moving a tile's UVs by the texture's run across the map fails where a texture starts at an object's corner (a forest
-  block's leaves), so where a texture starts is part of a tile.
-- Each tile keeps its first source's collision row, which the editor adapts to the height it's placed at.
-- Slicing reads the clean data (the git tag `w2-original`), so editing a source chunk doesn't change its tiles.
-
-The library's catalogue and its GLB of tiles are generated (`build/map_tiles/<library>/`); `library.json` keeps the
-sources and the user's names, categories and hidden tiles.
-
-Route 20's library (its four chunks and their four autumn variants) has 5,554 tiles. The most used are river bed and
-grass tiles; many appear once (the edges of cliffs, paths and riverbanks, which follow curves that don't fit the
-grid). The palette sorts by use and filters by material.
-
-**Layouts and building a chunk:** a layout (`res/paperwhite2/map_layouts/<model>.json`) is a chunk as tiles: a ground
-tile and height for each cell, and objects. `map_tiles.py start` makes one from a source chunk as it is, and `compose`
-writes the chunk's `model.glb` from it: the tiles' polygons in place, stitched back where cutting split them (coplanar
-pieces of one material and texture run merge into the regions they make, which are triangulated again, checked by
-their area), a draw call per material in the sources' order, the props kept, and the model marked written. Route 20's
-map04_20 rebuilt from its own layout looks the same as the original, with 2,085 triangles where the original has
-1,114 (some of the original's pieces overlap, and those stay apart), and packs to 71 KB of the 86 KB buffer. Fewer
-triangles (strips in the writer, merging overlapping pieces) is later work. The editor paints a layout: a tile for a
-cell, objects added and removed, then compose.
+The first try cut vanilla chunks into tiles (`map_tiles.py`, Route 20's 5,554 tiles) and composed chunks back from them.
+It worked (a chunk rebuilt from its own tiles looked the same) but made twice the triangles and thousands of
+near-duplicate pieces, and its textures didn't join where tiles from different places met. The painted maps and the
+object library below replace it; the slicer and its library are gone.
 
 ### Pitfalls
 
@@ -336,12 +326,14 @@ cell, objects added and removed, then compose.
 ## What is built so far
 
 - The model writer (`tools/data/nitro_model_writer.py`) and the packer's `"written"` models.
-- The tile slicer (`tools/paperwhite2/map_tiles.py`) and Route 20's library.
-- The Map Editor's Chunks, Faces and Tiles tabs (`editor/src/modules/maps/`, `editor/README.md`), with layouts
-  painted with tiles (and their collision) and composed into a chunk.
+- The Map Editor's tabs (`editor/src/modules/maps/`, `editor/README.md`): Chunks, Faces (select, delete, retexture,
+  move, copy and paste, save as an object), Collision, Paint (painted maps) and Objects (the library).
+- The object library (`tools/paperwhite2/map_objects.py`, `res/paperwhite2/map_objects/`) and the map maker
+  (`tools/paperwhite2/map_maker.py`, `res/paperwhite2/map_styles/`, `res/paperwhite2/map_projects/`), which share
+  `tools/paperwhite2/glb_mesh.py`.
 
-Known limits: a composed chunk has about twice its source's triangles (pieces that overlap in the source don't
-stitch), and the writer's strips stay short over ear-clipped regions (fans), so its file is about 1.8 times the
-original's; two-layer chunks paint only their first layer; split tiles keep the chunk's collision.
+Known limits of the map maker so far: no smart edges yet (a path meets grass in a straight line), walls are one
+texture stretched down their height, objects stand on their north-west tile's ground, and it writes only a chunk's
+first collision layer.
 
 See `docs/paperwhite2/STATUS.md` for the latest, and what is still untested in game.

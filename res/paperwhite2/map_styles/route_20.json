@@ -1,0 +1,85 @@
+{
+    "$schema": "../map_style.schema.json",
+    "name": "Route 20",
+    "texture_set": "MAP_TEXTURE_SET_SHARED_DANSA01A_183",
+    "wall": {
+        "texture": "gake1_1",
+        "repeat": 1,
+        "alpha": "MASK"
+    },
+    "terrains": [
+        {
+            "key": "g",
+            "name": "Grass",
+            "color": "#7cc860",
+            "ground": {
+                "texture": "grass01ax",
+                "repeat": 4
+            },
+            "tile_type": 8388639
+        },
+        {
+            "key": "p",
+            "name": "Path",
+            "color": "#d8b878",
+            "ground": {
+                "texture": "michi01b",
+                "repeat": 1
+            },
+            "tile_type": 8388611
+        },
+        {
+            "key": "t",
+            "name": "Tall grass",
+            "color": "#2f8a3a",
+            "ground": {
+                "texture": "grass01ax",
+                "repeat": 4
+            },
+            "layers": [
+                {
+                    "texture": "kusa_ec3",
+                    "lift": 2,
+                    "repeat": 1,
+                    "alpha": "BLEND"
+                },
+                {
+                    "texture": "kusa_ec2",
+                    "lift": 6,
+                    "repeat": 1
+                },
+                {
+                    "texture": "kusa_ec1",
+                    "lift": 8,
+                    "repeat": 1
+                }
+            ],
+            "tile_type": 2359300
+        },
+        {
+            "key": "w",
+            "name": "Water",
+            "color": "#3a7ae0",
+            "ground": {
+                "texture": "kawa_soko",
+                "repeat": 2
+            },
+            "wall": {
+                "texture": "kawa_fuchi.1",
+                "repeat": 1,
+                "alpha": "MASK"
+            },
+            "tile_type": 1441855
+        },
+        {
+            "key": "b",
+            "name": "Grass, blocked",
+            "color": "#5a8a48",
+            "ground": {
+                "texture": "grass01ax",
+                "repeat": 4
+            },
+            "tile_type": 8454145
+        }
+    ]
+}

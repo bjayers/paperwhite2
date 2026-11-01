@@ -263,11 +263,15 @@ function accessorValues(json: FaceGltf, bin: Buffer, index: number): number[][] 
 /** The target GLB with faces of the source GLB added, moved by offset: a draw call for each of the source's materials,
  * named and set up as there, its image the same PNG of the target's texture set (../../textures/<set>/<png>). Also
  * the source's materials' images, as <set>/<png>, for the caller to check against the target's sets. */
-export function pasteGlbFaces(target: Buffer, source: Buffer, faces: FaceSet[], offset: [number, number, number],
+export function pasteGlbFaces(target: Buffer, source: Buffer, chosen: FaceSet[] | "all", offset: [number, number, number],
                               textureSet: string): { glb: Buffer; pngs: string[] } {
   const src = read(source);
   const sj = src.json as FaceGltf;
   const sbin = binChunk(src.rest);
+  // "all": every triangle of the source (a library object)
+  const faces = chosen === "all"
+    ? sj.meshes[0].primitives.map((p, primitive) => ({ primitive, triangles: Array.from({ length: (p.indices !== undefined ? sj.accessors[p.indices].count : 0) / 3 }, (_, t) => t) }))
+    : chosen;
   const { json: raw, rest } = read(target);
   const json = raw as FaceGltf;
   if (json.meshes?.length !== 1 || sj.meshes?.length !== 1) throw new Error("Expected one mesh in each GLB");

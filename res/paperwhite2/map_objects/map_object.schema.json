@@ -1,0 +1,31 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "A map object: res/paperwhite2/map_objects/<object>/object.json",
+    "description": "A whole object of the Map Editor's library (a tree, a ledge, a doorway), saved from a map chunk by tools/paperwhite2/map_objects.py; its model.glb beside this file holds its faces, x east and z south from its footprint's north-west corner, y up from the ground under it.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "name", "size" ],
+    "properties": {
+        "$schema": { "type": "string", "description": "This schema, for editors" },
+        "name": { "type": "string", "description": "Its name in the library" },
+        "category": { "type": "string", "description": "A group of the library to list it in (trees, ledges, fences)" },
+        "size": {
+            "type": "array", "items": { "type": "integer", "minimum": 1, "maximum": 16 }, "minItems": 2, "maxItems": 2,
+            "description": "Its footprint in tiles, east-west and north-south"
+        },
+        "collision": {
+            "type": "array", "items": { "type": "array", "items": { "type": [ "integer", "null" ] } },
+            "description": "The tile type of each footprint tile, rows north to south, which placing it paints (null leaves a tile as it is)"
+        },
+        "textures": {
+            "type": "array", "items": { "type": "string" },
+            "description": "The textures it draws with, as <set>/<png> under res/field/maps/textures/, which a map's area's sets need"
+        },
+        "source": {
+            "type": "object", "additionalProperties": false,
+            "properties": { "model": { "type": "string" }, "x": { "type": "integer" }, "z": { "type": "integer" } },
+            "description": "The map model and tile it was saved from"
+        },
+        "triangles": { "type": "integer", "description": "Its triangles, for the map's polygon budget" }
+    }
+}

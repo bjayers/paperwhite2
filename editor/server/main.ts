@@ -305,9 +305,9 @@ const routes: Record<string, Handler> = {
   },
   "PUT /api/glb-paste": async (req, res) => {
     // Faces of one map model's GLB copied into another's, moved by an offset; the target is then written whole
-    const b = (await readJson(req)) as { target: string; source: string; faces: FaceSet[]; offset: [number, number, number]; textureSet: string };
-    const target = mapModelGlb(b.target), source = mapModelGlb(b.source);
-    if (!target || !source || !Array.isArray(b.faces) || !Array.isArray(b.offset) || b.offset.length !== 3 || !b.offset.every(Number.isFinite)
+    const b = (await readJson(req)) as { target: string; source: string; faces: FaceSet[] | "all"; offset: [number, number, number]; textureSet: string };
+    const target = mapModelGlb(b.target), source = mapModelGlb(b.source) ?? libraryObjectGlb(b.source);
+    if (!target || !source || !(Array.isArray(b.faces) || b.faces === "all") || !Array.isArray(b.offset) || b.offset.length !== 3 || !b.offset.every(Number.isFinite)
         || !/^[a-z0-9_]+$/.test(b.textureSet ?? ""))
       return error(res, 400, "Name the two map models, the faces, the offset and the target's texture set");
     const { glb, pngs } = pasteGlbFaces(readFileSync(project.abs(target)), readFileSync(project.abs(source)), b.faces, b.offset, b.textureSet);
@@ -356,50 +356,48 @@ const routes: Record<string, Handler> = {
     await project.writeAtomic(path, glb);
     json(res, { ok: true, faces });
   },
+  "POST /api/map-objects/save": async (req, res) => {
+    // A chunk's faces saved as an object of the library (tools/paperwhite2/map_objects.py)
+    const b = (await readJson(req)) as { name: string; category?: string; chunk: string; faces: FaceSet[]; anchor: number[]; size: number[] };
+    if (!b.name?.trim() || !/^[a-z0-9_]+$/.test(b.chunk ?? "") || !Array.isArray(b.faces) || b.anchor?.length !== 3 || b.size?.length !== 2)
+      return error(res, 400, "Name the object, its chunk, faces, anchor and size");
+    const args = ["save", b.name.trim(), b.chunk, JSON.stringify(b.faces), b.anchor.join(","), b.size.join(",")];
+    if (b.category?.trim()) args.push("--category", b.category.trim());
+    const result = await runTool("tools/paperwhite2/map_objects.py", args);
+    if (!result.ok) return error(res, 500, result.output || "Saving the object failed");
+    res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+    res.end(result.output.split("\n").pop());
+  },
+  "DELETE /api/map-objects": (_req, res, url) => {
+    // An object of the library deleted, its folder and all
+    const id = url.searchParams.get("id") ?? "";
+    const folder = join(ROOT, "res/paperwhite2/map_objects", id);
+    if (!/^[a-z0-9_]+$/.test(id) || !existsSync(join(folder, "object.json"))) return error(res, 400, "No such object");
+    rmSync(folder, { recursive: true });
+    json(res, { removed: true });
+  },
+  "POST /api/map-maker/generate": async (req, res) => {
+    // A painted map's chunk generated from its project (tools/paperwhite2/map_maker.py)
+    const { model } = (await readJson(req)) as { model: string };
+    const project = `res/paperwhite2/map_projects/${model}.json`;
+    if (!/^[a-z0-9_]+$/.test(model ?? "") || !existsSync(join(ROOT, project))) return error(res, 400, "The chunk has no painted map");
+    const result = await runTool("tools/paperwhite2/map_maker.py", ["generate", project]);
+    if (!result.ok) return error(res, 500, result.output || "Generating failed");
+    json(res, result);
+  },
   "PUT /api/glb-raw": async (req, res) => {
-    // A map model's GLB put back as it was, for the Map Editor's undo
-    const body = (await readJson(req)) as { path: string; data: string };
+    // A map model's GLB put back as it was, with its data.json (an edit may have marked it written), for undo
+    const body = (await readJson(req)) as { path: string; data: string; meta?: string };
     const path = mapModelGlb(body.path);
     if (!path || typeof body.data !== "string") return error(res, 400, "Name a map model's model.glb and its bytes");
     const glb = Buffer.from(body.data, "base64");
     if (glb.readUInt32LE(0) !== 0x46546c67) return error(res, 400, "Not a GLB");
+    if (typeof body.meta === "string") {
+      try { JSON.parse(body.meta); } catch { return error(res, 400, "The data.json isn't JSON"); }
+      await project.writeAtomic(path.replace(/model\.glb$/, "data.json"), body.meta);
+    }
     await project.writeAtomic(path, glb);
     json(res, { ok: true });
-  },
-  "GET /api/map-tiles": (_req, res) => {
-    // The tile libraries (res/paperwhite2/map_tiles/<library>/library.json) and whether each has its catalogue yet
-    const libraries = globSync("res/paperwhite2/map_tiles/*/library.json", { cwd: ROOT }).sort().map((file) => {
-      const id = file.split("/")[3];
-      const library = JSON.parse(readFileSync(join(ROOT, file), "utf8")) as { name: string; sources: string[] };
-      return { id, name: library.name, sources: library.sources, sliced: existsSync(join(ROOT, "build/map_tiles", id, "tiles.json")) };
-    });
-    json(res, libraries);
-  },
-  "POST /api/map-tiles/slice": async (req, res) => {
-    // Cuts a library's chunks into its catalogue, build/map_tiles/<library>/ (tools/paperwhite2/map_tiles.py)
-    const { library } = (await readJson(req)) as { library: string };
-    if (!/^[a-z0-9_]+$/.test(library ?? "") || !existsSync(join(ROOT, "res/paperwhite2/map_tiles", library, "library.json")))
-      return error(res, 400, "No such tile library");
-    const result = await mapTiles(["slice", library]);
-    if (!result.ok) return error(res, 500, result.output || "Slicing failed");
-    json(res, result);
-  },
-  "POST /api/map-layouts/start": async (req, res) => {
-    // A layout of a chunk as it is, from a tile library that cuts it (map_tiles.py start)
-    const { library, model } = (await readJson(req)) as { library: string; model: string };
-    if (!/^[a-z0-9_]+$/.test(library ?? "") || !/^[a-z0-9_]+$/.test(model ?? "")) return error(res, 400, "Name a library and a model");
-    const result = await mapTiles(["start", library, model]);
-    if (!result.ok) return error(res, 500, result.output || "Starting the layout failed");
-    json(res, { path: `res/paperwhite2/map_layouts/${model}.json` });
-  },
-  "POST /api/map-layouts/compose": async (req, res) => {
-    // A layout's chunk's model.glb written from its tiles (map_tiles.py compose)
-    const { model } = (await readJson(req)) as { model: string };
-    const layout = `res/paperwhite2/map_layouts/${model}.json`;
-    if (!/^[a-z0-9_]+$/.test(model ?? "") || !existsSync(join(ROOT, layout))) return error(res, 400, "The chunk has no layout");
-    const result = await mapTiles(["compose", layout]);
-    if (!result.ok) return error(res, 500, result.output || "Composing failed");
-    json(res, result);
   },
   "GET /api/new-map/unused": async (_req, res) => {
     // The game's unused zones, which a new map can take (tools/paperwhite2/new_map.py)
@@ -443,13 +441,6 @@ const routes: Record<string, Handler> = {
     if (!result.ok) return error(res, 500, result.output || "Making the route failed");
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(result.output.split("\n").pop());
-  },
-  "GET /api/map-tiles/catalogue": (_req, res, url) => {
-    const library = url.searchParams.get("library") ?? "";
-    const file = join(ROOT, "build/map_tiles", library, "tiles.json");
-    if (!/^[a-z0-9_]+$/.test(library) || !existsSync(file)) return error(res, 404, "The library isn't sliced yet");
-    res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
-    createReadStream(file).pipe(res);
   },
   "GET /api/build": (_req, res) => json(res, builder.state),
   "POST /api/build": (_req, res) => json(res, { started: builder.start(settings.buildCommand) }),
@@ -525,15 +516,6 @@ function runTool(script: string, args: string[]): Promise<{ ok: boolean; output:
   });
 }
 
-const mapTiles = (args: string[]) => runTool("tools/paperwhite2/map_tiles.py", args);
-
-// A tile library's catalogue GLB, which names its textures under /res/ by relative paths
-function serveTiles(res: ServerResponse, pathname: string) {
-  const file = join(ROOT, pathname.slice(1));
-  if (!existsSync(file)) return error(res, 404, "The library isn't sliced yet");
-  res.writeHead(200, { "Content-Type": "model/gltf-binary", "Cache-Control": "no-cache" });
-  createReadStream(file).pipe(res);
-}
 
 /** Marks a map model's data.json written whole, with its texture set where it had none. */
 async function markWritten(glbPath: string, textureSet: string) {
@@ -543,6 +525,12 @@ async function markWritten(glbPath: string, textureSet: string) {
   if (plain.get("texture_set") === null) data = setIn(data, ["texture_set"], `MAP_TEXTURE_SET_${textureSet.toUpperCase()}`);
   if (plain.get("written") !== true) data = setIn(data, ["written"], true);
   if (data !== plain) await project.writeAtomic(dataPath, fileText(data));
+}
+
+/** A library object's model.glb under res/paperwhite2/map_objects/, or null. */
+function libraryObjectGlb(path: string | undefined): string | null {
+  const checked = project.checkPath(path ?? "");
+  return checked && /^res\/paperwhite2\/map_objects\/[a-z0-9_]+\/model\.glb$/.test(checked) && existsSync(project.abs(checked)) ? checked : null;
 }
 
 /** A map model's model.glb under res/, or null. */
@@ -575,7 +563,6 @@ createServer(async (req, res) => {
   try {
     if (route) await route(req, res, url);
     else if (method === "GET" && url.pathname.startsWith("/res/")) serveResFile(res, url.pathname);
-    else if (method === "GET" && /^\/build\/map_tiles\/[a-z0-9_]+\/tiles\.glb$/.test(url.pathname)) serveTiles(res, url.pathname);
     else if (url.pathname.startsWith("/api/")) error(res, 404, "No such request");
     else serveStatic(res, url.pathname);
   } catch (e) {

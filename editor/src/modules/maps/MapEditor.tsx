@@ -4,27 +4,30 @@
 // - Faces: faces picked on the map (Shift adds, Ctrl removes, Select connected takes a whole tree or ledge) deleted or
 //   drawn with another texture of the area's set, written to the chunk's model.glb at once, with undo;
 // - Collision: the chunks' collision tiles of a layer, painted with a type, a height or a copied tile (collision.ts);
-// - Tiles: the tile libraries cut from the game's chunks (tools/paperwhite2/map_tiles.py), and the chosen chunk's
-//   layout, painted with them and composed into its model.
+// - Paint: the chosen chunk as a painted map (each tile's terrain and height, and objects of the library), from which
+//   its model and collision are generated (painting.ts, tools/paperwhite2/map_maker.py);
+// - Objects: the library of whole objects saved from maps' faces, placed on existing chunks.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { api } from "../../api.ts";
-import { currentText, documents, useDocuments } from "../../documents.ts";
+import { documents, useDocuments } from "../../documents.ts";
 import { fromPlain, toPlain } from "../../../shared/json.ts";
 import { navigate, useToolParams } from "../../navigation.ts";
 import type { ToolProps } from "../types.ts";
 import { loadWorld, type World } from "../world/world.ts";
-import { SEASONS, TILE, heightTables, loadZoneMap, reloadLayers, type ZoneMap } from "../overworld/terrain.ts";
+import { SEASONS, TILE, loadZoneMap, reloadLayers, type ZoneMap } from "../overworld/terrain.ts";
 import { CollisionPanel, type CollisionBrush } from "./CollisionPanel.tsx";
 import { NewMapDialog } from "./NewMapDialog.tsx";
 import { paintTiles, tileRow } from "./collision.ts";
-import { ChunkScene, connectedFaces, faceKey, stackedFaces, type ChunkModel, type Face, type LayoutTiles } from "./ChunkScene.ts";
+import { ChunkScene, connectedFaces, faceKey, forgetObject, stackedFaces, type ChunkModel, type Face } from "./ChunkScene.ts";
 import { seasonSets, seasonVariants, type SeasonSet } from "./seasons.ts";
-import { TilePanel, type PaintHeight, type PaintMode } from "./TilePanel.tsx";
-import type { Catalogue, Tile } from "./tiles.ts";
+import { PaintPanel } from "./PaintPanel.tsx";
+import { ObjectsPanel } from "./ObjectsPanel.tsx";
+import { PROJECT_SCHEMA, loadLibrary, loadStyles, painted, projectPath, strokeCells, type LibraryObject, type MapStyle, type PaintShape,
+  type PaintTool, type Project } from "./painting.ts";
 
-type Tab = "chunks" | "faces" | "collision" | "tiles";
+type Tab = "chunks" | "faces" | "collision" | "paint" | "objects";
 
 /** The busiest vanilla chunks (map04_20's spring chunk has 1,114 triangles): the DS draws 2,048 polygons and 6,144
  * vertices a frame, all chunks, props and actors together, and the game's own chunks reach these, so a chunk past them
@@ -33,19 +36,22 @@ const POLYGON_BUDGET = 2133;
 const VERTEX_BUDGET = 6677;
 const MATERIAL_LIMIT = 255;
 
-/** One step of the history: a chunk's GLB before and after a face edit, as base64; or an edit of a layout, which its
+/** One step of the history: a chunk's GLB before and after a face edit, as base64; or edits of documents (collision,
  * document's own history holds. */
-type Step = { kind: "faces"; path: string; before: string; after: string; what: string } | { kind: "docs"; paths: string[]; what: string };
+type Step = { kind: "faces"; path: string; before: Snapshot; after: Snapshot; what: string } | { kind: "docs"; paths: string[]; what: string };
 
-const layoutPath = (model: string) => `res/paperwhite2/map_layouts/${model}.json`;
+/** A chunk's model.glb, as base64, and its data.json, which an edit may mark written. */
+interface Snapshot { glb: string; data: string }
 
-async function glbBase64(path: string): Promise<string> {
+
+async function glbBase64(path: string): Promise<Snapshot> {
   const response = await fetch(`/${path}?t=${Date.now()}`, { cache: "no-store" });
   if (!response.ok) throw new Error(`${path}: ${response.statusText}`);
   const bytes = new Uint8Array(await response.arrayBuffer());
   let text = "";
   for (let i = 0; i < bytes.length; i += 0x8000) text += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  return btoa(text);
+  const data = (await api.file(path.replace(/model\.glb$/, "data.json"))).text;
+  return { glb: btoa(text), data };
 }
 
 export function MapEditor({ constants }: ToolProps) {
@@ -60,6 +66,7 @@ export function MapEditor({ constants }: ToolProps) {
   const [chunk, setChunk] = useState<number | null>(null);
   const [faces, setFaces] = useState<Face[]>([]);
   const [grid, setGrid] = useState(true);
+  const [wireframe, setWireframe] = useState(false);
   const [loaded, setLoaded] = useState(0);
   const [sets, setSets] = useState<SeasonSet[]>([]);
   const [variants, setVariants] = useState<string[] | null>(null);
@@ -67,13 +74,20 @@ export function MapEditor({ constants }: ToolProps) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
   const [history, setHistory] = useState<{ done: Step[]; undone: Step[] }>({ done: [], undone: [] });
-  const [library, setLibrary] = useState("");
-  const [catalogue, setCatalogue] = useState<Catalogue | null>(null);
-  const [tile, setTile] = useState<Tile | null>(null);
-  const [paint, setPaint] = useState<PaintMode>("off");
-  const [paintHeight, setPaintHeight] = useState<PaintHeight>("cell");
-  const [layoutShown, setLayoutShown] = useState(true);
-  const [layoutExists, setLayoutExists] = useState<Record<string, boolean>>({});
+  const [styles, setStyles] = useState<Map<string, MapStyle>>(new Map());
+  const [library, setLibrary] = useState<LibraryObject[]>([]);
+  const [libraryVersion, setLibraryVersion] = useState(0);
+  const [projectExists, setProjectExists] = useState<Record<string, boolean>>({});
+  const [tool, setTool] = useState<PaintTool>("terrain");
+  const [shape, setShape] = useState<PaintShape>("pencil");
+  const [terrainKey, setTerrainKey] = useState("g");
+  const [paintHeightHalf, setPaintHeightHalf] = useState(4);
+  const [placing, setPlacing] = useState("");
+  const [selectedObject, setSelectedObject] = useState<number | null>(null);
+  const [paintView, setPaintView] = useState<"painting" | "model">("painting");
+  const [chosenObject, setChosenObject] = useState("");
+  const [placingOnChunk, setPlacingOnChunk] = useState(false);
+  const [saveAs, setSaveAs] = useState<{ name: string; category: string } | null>(null);
   const { docs } = useDocuments();
   const [layer, setLayer] = useState(0);
   const [newMap, setNewMap] = useState(false);
@@ -113,6 +127,7 @@ export function MapEditor({ constants }: ToolProps) {
   }, []);
   useEffect(() => { if (map) scene.current?.setMap(map); }, [map]);
   useEffect(() => { scene.current?.drawCells(chunk, grid); }, [chunk, grid, map]);
+  useEffect(() => { scene.current?.setWireframe(wireframe); }, [wireframe, loaded]);
   useEffect(() => { scene.current?.showFaces(faces); }, [faces, loaded]);
 
   const pickFace = useRef<(face: Face | null, chunk: number | null, ev: PointerEvent, point: THREE.Vector3 | null,
@@ -123,8 +138,14 @@ export function MapEditor({ constants }: ToolProps) {
       if (ev.altKey && tilePicked && map) eyedropper(tilePicked);
       return;
     }
-    if (tab === "tiles" && paint !== "off" && layoutDoc && point && picked === chunk) {
-      paintAt(point);
+    if (tab === "paint" && project && paintView === "painting") {
+      // Strokes paint; a click elsewhere chooses another chunk
+      if (picked !== chunk && picked !== null) setChunk(picked);
+      return;
+    }
+    if (tab === "objects" && placingOnChunk && chosenObject && picked !== null && (tilePicked || point)) {
+      // The tile under the point clicked (on the model, or the ground under it)
+      placeOnChunk(picked, tilePicked ?? { x: Math.floor(point!.x / TILE), z: Math.floor(point!.z / TILE) });
       return;
     }
     if (tab !== "faces") {
@@ -223,7 +244,8 @@ export function MapEditor({ constants }: ToolProps) {
     }
     setBusy(true);
     try {
-      await api.glbRaw(last.path, back ? last.before : last.after);
+      const snapshot = back ? last.before : last.after;
+      await api.glbRaw(last.path, snapshot.glb, snapshot.data);
       moved();
       setFaces([]);
       reloadChunk(last.path.replace(/\/model\.glb$/, ""));
@@ -235,100 +257,106 @@ export function MapEditor({ constants }: ToolProps) {
     }
   }, [history, busy]);
 
-  // The chosen chunk's layout, held as a document so it saves, undoes and reloads as files do
-  const modelName = current ? current.folder.slice(current.folder.lastIndexOf("/") + 1) : null;
-  const layoutFile = modelName ? layoutPath(modelName) : null;
-  useEffect(() => {
-    if (!layoutFile || layoutExists[layoutFile] !== undefined) return;
-    api.list(layoutFile).then((found) => {
-      const exists = found.includes(layoutFile);
-      setLayoutExists((m) => ({ ...m, [layoutFile]: exists }));
-      if (exists) documents.hold(layoutFile).catch(() => {});
-    }, () => {});
-  }, [layoutFile, layoutExists]);
-  const layoutDoc = layoutFile && layoutExists[layoutFile] ? docs.get(layoutFile) : undefined;
-  const layoutData = useMemo(() => (layoutDoc?.data ? toPlain(layoutDoc.data) as LayoutTiles & { size?: number } : null), [layoutDoc?.data]);
-  useEffect(() => {
-    const show = tab === "tiles" && layoutShown && layoutData && chunk !== null;
-    scene.current?.showLayout(show ? chunk : null, show ? layoutData : null);
-  }, [tab, layoutShown, layoutData, chunk, loaded]);
+  // ---------------------------------------------------------------- Painted maps
 
-  /** Paints the chosen tile, or erases objects, at a point on the chosen chunk's layout; a tile brings its collision. */
-  const paintAt = async (point: THREE.Vector3) => {
-    if (!map || !current || !layoutFile || !layoutData) return;
-    const x = Math.floor((point.x - current.column * map.chunkSize) / TILE), z = Math.floor((point.z - current.row * map.chunkSize) / TILE);
-    if (x < 0 || z < 0 || x >= map.chunkTiles || z >= map.chunkTiles) return;
-    const cell = layoutData.ground.findIndex((g) => g[0] === x && g[1] === z);
-    const groundY = cell >= 0 ? layoutData.ground[cell][3] : Math.round(point.y);
-    const record = (what: string, paths: string[]) => setHistory((h) => ({ done: [...h.done, { kind: "docs", paths, what }], undone: [] }));
-    if (paint === "erase") {
-      const keys = new Map((catalogue?.tiles ?? []).map((t) => [t.key, t]));
-      const kept = layoutData.objects.filter(([key, ox, oz]) => {
-        const size = keys.get(key)?.size ?? [1, 1];
-        return !(x >= ox && x < ox + size[0] && z >= oz && z < oz + size[1]);
-      });
-      if (kept.length === layoutData.objects.length) return;
-      documents.edit(layoutFile, ["objects"], fromPlain(kept));
-      record(`Removed ${layoutData.objects.length - kept.length} object(s) at ${x}, ${z}`, [layoutFile]);
+  const modelName = current ? current.folder.slice(current.folder.lastIndexOf("/") + 1) : null;
+  const projectFile = modelName ? projectPath(modelName) : null;
+  useEffect(() => { loadStyles().then(setStyles, () => setStyles(new Map())); }, []);
+  useEffect(() => { loadLibrary().then(setLibrary, () => setLibrary([])); }, [libraryVersion]);
+  useEffect(() => {
+    if (!projectFile || projectExists[projectFile] !== undefined) return;
+    api.list(projectFile).then((found) => {
+      const exists = found.includes(projectFile);
+      setProjectExists((m) => ({ ...m, [projectFile]: exists }));
+      if (exists) documents.hold(projectFile).catch(() => {});
+    }, () => {});
+  }, [projectFile, projectExists]);
+  const projectDoc = projectFile && projectExists[projectFile] ? docs.get(projectFile) : undefined;
+  const project = useMemo(() => (projectDoc?.data ? toPlain(projectDoc.data) as Project : null), [projectDoc?.data]);
+  const projectStyle = project ? styles.get(project.style) : undefined;
+  useEffect(() => { setSelectedObject(null); }, [modelName]);
+  useEffect(() => {
+    const show = tab === "paint" && paintView === "painting" && project && chunk !== null;
+    const colors = Object.fromEntries((projectStyle?.terrains ?? []).map((t) => [t.key, t.color ?? "#888888"]));
+    scene.current?.showPainting(show ? chunk : null, show ? { terrain: project.terrain, height: project.height, objects: project.objects ?? [], colors } : null,
+                                selectedObject);
+  }, [tab, paintView, project, projectStyle, chunk, loaded, selectedObject]);
+
+  /** A painting's change, as one step. */
+  const changeProject = (next: Project, what: string) => {
+    if (!projectFile) return;
+    documents.replace(projectFile, fromPlain(next));
+    setHistory((h) => ({ done: [...h.done, { kind: "docs", paths: [projectFile], what }], undone: [] }));
+  };
+
+  /** A stroke on the painting: its tiles (global) painted, or an object placed on its first. */
+  const paintProject = (tiles: { x: number; z: number }[]) => {
+    if (!project || !map || !current) return;
+    const local = tiles.map((t) => ({ x: t.x - current.column * map.chunkTiles, z: t.z - current.row * map.chunkTiles }));
+    if (tool === "place") {
+      if (!placing) { setMessage({ text: "Choose an object to place.", error: true }); return; }
+      const at = local[local.length - 1];
+      changeProject({ ...project, objects: [...(project.objects ?? []), [placing, at.x, at.z]] }, `Placed ${placing} at ${at.x}, ${at.z}`);
+      setSelectedObject((project.objects ?? []).length);
       return;
     }
-    if (!tile) return;
-    const y = paintHeight === "tile" ? tile.at[0]?.y ?? groundY : groundY;
-    if (tile.kind === "ground") documents.edit(layoutFile, ["ground", cell >= 0 ? cell : layoutData.ground.length], fromPlain([x, z, tile.key, y]));
-    else documents.edit(layoutFile, ["objects", layoutData.objects.length], fromPlain([tile.key, x, z, y]));
-    const terrain = await paintCollision(tile, x, z, y);
-    record(`${tile.kind === "ground" ? "Painted" : "Placed an object at"} ${x}, ${z}`, terrain.path ? [layoutFile, terrain.path] : [layoutFile]);
-    setMessage(terrain.note ? { text: terrain.note } : null);
+    if (tool === "select") return;
+    const cells = strokeCells(local, shape);
+    changeProject(painted(project, cells, tool, terrainKey, paintHeightHalf), `Painted ${cells.length} tile(s)`);
   };
 
-  /** A painted tile's collision: its source's terrain rows under it, written into the chunk's chosen layer where it
-   * goes, each plane moved with the tile (its offset taken again from the game's table, which must have it). Split
-   * tiles keep the chunk's rows, to paint in the Overworld Editor. */
-  const paintCollision = async (t: Tile, x: number, z: number, y: number): Promise<{ path: string | null; note: string | null }> => {
-    const path = current?.layers[Math.min(layer, (current?.layers.length ?? 1) - 1)]?.path;
-    const source = t.at[0];
-    if (!path || !source || !map) return { path: null, note: "The chunk has no collision to paint." };
-    const tb = await heightTables();
-    const doc = await documents.hold(path);
-    const lines = currentText(doc).split("\n");
-    const head = lines[0].split(",");
-    const col = (name: string) => head.indexOf(name);
-    const skipped: string[] = [];
-    let changed = false;
-    t.collision.forEach((row, dz) => row.forEach((rowTerrain, dx) => {
-      const cx = x + dx, cz = z + dz;
-      if (!rowTerrain || cx >= map.chunkTiles || cz >= map.chunkTiles) return;
-      const i = 1 + cz * map.chunkTiles + cx;
-      const parts = lines[i]?.split(",");
-      if (!parts) return;
-      if (rowTerrain.shape !== 0) { skipped.push(`${cx}, ${cz} (a split tile)`); return; }
-      // The plane at the source, moved by the tile's step across and up: offset' = offset - n.x dx - n.z dz - n.y dy
-      const n = tb.slopes[rowTerrain.slope] ?? [0, 1, 0];
-      const want = tb.offsets[rowTerrain.offset] - n[0] * (x - source.x) * TILE - n[2] * (z - source.z) * TILE - n[1] * (y - source.y);
-      let best = 0;
-      tb.offsets.forEach((o, k) => { if (Math.abs(o - want) < Math.abs(tb.offsets[best] - want)) best = k; });
-      if (Math.abs(tb.offsets[best] - want) > 0.05) { skipped.push(`${cx}, ${cz} (no height there in the game's table)`); return; }
-      parts[col("shape")] = "0";
-      parts[col("slope")] = String(rowTerrain.slope);
-      parts[col("offset")] = String(best);
-      parts[col("tile_type")] = String(rowTerrain.tile_type >>> 0);
-      parts[col("diagonal")] = String(rowTerrain.diagonal);
-      lines[i] = parts.join(",");
-      changed = true;
+  /** An object dragged to another tile, or clicked. */
+  const objectMoved = (index: number, tile: { x: number; z: number } | null) => {
+    setSelectedObject(index);
+    if (!project || !tile) return;
+    const objects = [...(project.objects ?? [])];
+    const [name, x, z] = objects[index];
+    if (x === tile.x && z === tile.z) return;
+    objects[index] = [name, tile.x, tile.z];
+    changeProject({ ...project, objects }, `Moved ${name} to ${tile.x}, ${tile.z}`);
+  };
+
+  const removeSelectedObject = () => {
+    if (!project || selectedObject === null) return;
+    const objects = (project.objects ?? []).filter((_, i) => i !== selectedObject);
+    changeProject({ ...project, objects }, "Removed an object");
+    setSelectedObject(null);
+  };
+
+  /** Starts a painted map of the chosen chunk: one terrain, and its collision's heights or one height. */
+  const startProject = async (style: string, from: "chunk" | "flat", fill: string, flat: number) => {
+    if (!projectFile || !modelName || !map || !current) return;
+    const size = map.chunkTiles;
+    const l = current.layers[0];
+    const height = Array.from({ length: size }, (_, z) => Array.from({ length: size }, (_, x) => {
+      const h = from === "chunk" && l ? l.heights[z * size + x] : flat * 8;
+      return Math.max(-40, Math.min(80, Math.round((Number.isFinite(h) ? h : flat * 8) / 8)));
     }));
-    if (changed) documents.editText(path, lines.join("\n"));
-    return { path: changed ? path : null, note: skipped.length ? `Collision left as it was at ${skipped.join("; ")}.` : null };
+    const data: Project = { model: modelName, style, size, terrain: Array.from({ length: size }, () => fill.repeat(size)), height, objects: [] };
+    documents.create(projectFile, PROJECT_SCHEMA, fromPlain({ $schema: "../map_project.schema.json", ...data }));
+    if (!(await documents.save(projectFile))) {
+      setMessage({ text: documents.get(projectFile)?.saveError ?? "The painting didn't save", error: true });
+      return;
+    }
+    setProjectExists((m) => ({ ...m, [projectFile]: true }));
+    setTerrainKey(fill);
+    setPaintView("painting");
+    setMessage({ text: `Started ${projectFile}. Paint it, place objects, then Generate the chunk.` });
   };
 
-  const startLayout = async () => {
-    if (!modelName || !library) return;
+  const generate = async () => {
+    if (!modelName || !projectFile || !current) return;
     setBusy(true);
     try {
-      const { path } = await api.startLayout(library, modelName);
-      await documents.hold(path);
-      setLayoutExists((m) => ({ ...m, [path]: true }));
-      setLayoutShown(true);
-      setMessage({ text: `Started ${path} from the chunk as it is.` });
+      if (projectDoc?.dirty && !(await documents.save(projectFile))) throw new Error(documents.get(projectFile)?.saveError ?? "The painting didn't save");
+      // The collision the generator writes over must not be held unsaved
+      for (const l of current.layers) if (documents.get(l.path)?.dirty) throw new Error(`${l.path} has unsaved edits: save or revert them first`);
+      const result = await api.generateMap(modelName);
+      for (const l of current.layers) if (documents.get(l.path)) await documents.reload(l.path);
+      reloadChunk(current.folder);
+      setMapVersion((v) => v + 1);
+      setPaintView("model");
+      setMessage({ text: `${result.output}. The chunk's model and collision are generated; the map shows the model.` });
     } catch (e) {
       setMessage({ text: (e as Error).message, error: true });
     } finally {
@@ -336,22 +364,89 @@ export function MapEditor({ constants }: ToolProps) {
     }
   };
 
-  const composeLayout = async () => {
-    if (!modelName || !layoutFile || !current) return;
+  // ---------------------------------------------------------------- The object library
+
+  /** Saves the selected faces as an object of the library: their footprint and the ground under them, as Copy does. */
+  const saveObject = async (name: string, category: string) => {
+    if (!current || !model || !faces.length || !map || chunk === null || !modelName) return;
+    const half = map.chunkSize / 2;
+    const p = new THREE.Vector3();
+    let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity, y0 = Infinity;
+    for (const f of faces) {
+      const geometry = model.primitives[f.primitive].mesh.geometry;
+      for (let k = 0; k < 3; k++) {
+        const v = geometry.index ? geometry.index.getX(f.triangle * 3 + k) : f.triangle * 3 + k;
+        p.fromBufferAttribute(geometry.attributes.position as THREE.BufferAttribute, v);
+        x0 = Math.min(x0, p.x); z0 = Math.min(z0, p.z); x1 = Math.max(x1, p.x); z1 = Math.max(z1, p.z); y0 = Math.min(y0, p.y);
+      }
+    }
+    const snap = (v: number) => Math.floor((v + half) / TILE) * TILE - half;
+    const ax = snap(x0 + 0.01), az = snap(z0 + 0.01);
+    const size = [Math.max(1, Math.ceil((x1 - 0.01 - ax) / TILE)), Math.max(1, Math.ceil((z1 - 0.01 - az) / TILE))];
+    const ground = groundUnder(chunk, (x0 + x1) / 2, (z0 + z1) / 2) ?? y0;
     setBusy(true);
     try {
-      // The layout and the collision painted with it
-      for (const path of [layoutFile, ...current.layers.map((l) => l.path)]) {
-        if (documents.get(path)?.dirty && !(await documents.save(path))) throw new Error(`${path}: ${documents.get(path)?.saveError ?? "didn't save"}`);
-      }
-      const result = await api.composeLayout(modelName);
-      reloadChunk(current.folder);
-      setLayoutShown(false);
-      setMessage({ text: `${result.output}. The chunk's model.glb is written from its layout; the map shows it now.` });
+      const saved = await api.saveMapObject({ name, category: category || undefined, chunk: modelName, faces: faceSets(faces),
+                                              anchor: [ax, Math.round(ground), az], size });
+      setLibraryVersion((v) => v + 1);
+      setChosenObject(saved.id);
+      setSaveAs(null);
+      setMessage({ text: `Saved ${name} to the library (${size[0]}×${size[1]} tiles), res/paperwhite2/map_objects/${saved.id}/.` });
     } catch (e) {
       setMessage({ text: (e as Error).message, error: true });
     } finally {
       setBusy(false);
+    }
+  };
+
+  /** Places the chosen object on an existing chunk: its faces pasted into the model on the tile's ground, and its
+   * collision painted under it. */
+  const placeOnChunk = async (index: number, tile: { x: number; z: number }) => {
+    const object = library.find((o) => o.id === chosenObject);
+    if (!object || !map || busy) return;
+    const target = map.chunks[index];
+    const set = sets[Math.min(season, Math.max(0, sets.length - 1))];
+    if (!set?.set) return;
+    const half = map.chunkSize / 2;
+    const tx = tile.x - target.column * map.chunkTiles, tz = tile.z - target.row * map.chunkTiles;
+    const ground = groundUnder(index, tx * TILE - half + TILE / 2, tz * TILE - half + TILE / 2) ?? 0;
+    const path = `${target.folder}/model.glb`;
+    setBusy(true);
+    try {
+      const before = await glbBase64(path);
+      const result = await api.glbPaste(path, `res/paperwhite2/map_objects/${object.id}/model.glb`, "all", [tx * TILE - half, Math.round(ground), tz * TILE - half], set.set);
+      const after = await glbBase64(path);
+      const what = `Placed ${object.name} at ${tx}, ${tz}`;
+      setHistory((h) => ({ done: [...h.done, { kind: "faces", path, before, after, what }], undone: [] }));
+      setChunk(index);
+      reloadChunk(target.folder);
+      // Its collision, tile by tile
+      const painted: string[] = [];
+      for (const [dz, row] of (object.collision ?? []).entries()) for (const [dx, type] of row.entries()) {
+        if (type === null) continue;
+        const r = await paintTiles(map, [{ x: tile.x + dx, z: tile.z + dz }], layer, { kind: "type", tileType: type }, () => []);
+        painted.push(...r.paths);
+      }
+      await reloadTerrain(painted);
+      const lacking = result.pngs.filter((p) => sets.some((s) => !s.textures.has(p.slice(p.indexOf("/") + 1))));
+      setMissing(lacking);
+      setMessage({ text: `${what}${painted.length ? "; its collision painted (save it in the header)" : ""}.${lacking.length ? ` Import ${lacking.length} texture(s) below.` : ""}` });
+    } catch (e) {
+      setMessage({ text: (e as Error).message, error: true });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const deleteObject = async (id: string) => {
+    if (!window.confirm(`Delete ${id} from the library? Painted maps that place it won't generate until it's removed from them.`)) return;
+    try {
+      await api.deleteMapObject(id);
+      forgetObject(id);
+      setLibraryVersion((v) => v + 1);
+      setChosenObject("");
+    } catch (e) {
+      setMessage({ text: (e as Error).message, error: true });
     }
   };
 
@@ -383,13 +478,16 @@ export function MapEditor({ constants }: ToolProps) {
   useEffect(() => {
     const s = scene.current;
     if (!s) return;
-    s.painting = tab === "collision";
-    s.showTerrain(tab === "collision" ? layer : null, tab === "collision" && brush.kind === "type" ? brush.tileClass : null);
-  }, [tab, layer, map, brush.kind, brush.tileClass, loaded]);
+    const painting = tab === "paint" && paintView === "painting" && !!project;
+    s.painting = tab === "collision" || (painting && tool !== "select");
+    s.dragObjects = painting && tool === "select";
+    if (!painting) s.showTerrain(tab === "collision" ? layer : null, tab === "collision" && brush.kind === "type" ? brush.tileClass : null);
+  }, [tab, layer, map, brush.kind, brush.tileClass, loaded, paintView, project, tool]);
 
   const paintStroke = useRef<(tiles: { x: number; z: number }[]) => void>(() => {});
   paintStroke.current = async (tiles) => {
     if (!map) return;
+    if (tab === "paint") { paintProject(tiles); return; }
     const b = brush.kind === "type" ? { kind: "type" as const, tileType: ((brush.flags << 16) | brush.tileClass) >>> 0 }
       : brush.kind === "height" ? { kind: "height" as const, tiles: brush.heightTiles }
       : brush.row ? { kind: "copy" as const, row: brush.row } : null;
@@ -401,6 +499,9 @@ export function MapEditor({ constants }: ToolProps) {
     setMessage(result.note || others ? { text: [result.note, others ? `Also painted in ${others} season variant file(s) where the tile was the same.` : null].filter(Boolean).join(" ") } : null);
   };
   useEffect(() => { if (scene.current) scene.current.onPaint = (tiles) => paintStroke.current(tiles); }, []);
+  const objectDrag = useRef<(index: number, tile: { x: number; z: number } | null) => void>(() => {});
+  objectDrag.current = (index, tile) => objectMoved(index, tile);
+  useEffect(() => { if (scene.current) scene.current.onObject = (i, t) => objectDrag.current(i, t); }, []);
 
   /** Alt+click: the brush takes the tile's type, height and whole row. */
   const eyedropper = async (t: { x: number; z: number }) => {
@@ -417,7 +518,7 @@ export function MapEditor({ constants }: ToolProps) {
 
   /** The files the Map Editor edits as documents (collision and layouts), unsaved. */
   const unsaved = [...docs.values()].filter((d) => d.dirty
-    && (/^res\/field\/maps\/models\/[^/]+\/terrain_\d+(_splits)?\.csv$/.test(d.path) || d.path.startsWith("res/paperwhite2/map_layouts/")));
+    && (/^res\/field\/maps\/models\/[^/]+\/terrain_\d+(_splits)?\.csv$/.test(d.path) || d.path.startsWith("res/paperwhite2/map_projects/")));
   const save = async () => {
     for (const d of unsaved) await documents.save(d.path);
   };
@@ -545,6 +646,7 @@ export function MapEditor({ constants }: ToolProps) {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); step(!e.shiftKey); }
       else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") { e.preventDefault(); step(false); }
       else if (tab === "faces" && (e.key === "Delete" || e.key === "Backspace") && faces.length) { e.preventDefault(); removeFaces(); }
+      else if (tab === "paint" && (e.key === "Delete" || e.key === "Backspace") && selectedObject !== null) { e.preventDefault(); removeSelectedObject(); }
       else if (tab === "faces" && faces.length && e.altKey && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "PageUp", "PageDown"].includes(e.key)) {
         // Alt+arrows move the selection a tile (the arrows alone pan the view); Alt+Page Up and Down, a unit up or down
         e.preventDefault();
@@ -602,7 +704,7 @@ export function MapEditor({ constants }: ToolProps) {
         <div className="ow-center">
           <div className="ow-toolbar">
             <div className="view-switch">
-              {(["chunks", "faces", "collision", "tiles"] as Tab[]).map((t) => (
+              {(["chunks", "faces", "collision", "paint", "objects"] as Tab[]).map((t) => (
                 <button key={t} className={tab === t ? "active" : ""} onClick={() => setTab(t)}>{t[0].toUpperCase() + t.slice(1)}</button>
               ))}
             </div>
@@ -614,11 +716,13 @@ export function MapEditor({ constants }: ToolProps) {
               </label>
             )}
             <label className="ow-check"><input type="checkbox" checked={grid} onChange={(e) => setGrid(e.target.checked)} /> Tile grid</label>
+            <label className="ow-check" title="The models' triangles' edges, to see what a click picks"><input type="checkbox" checked={wireframe}
+              onChange={(e) => setWireframe(e.target.checked)} /> Wireframe</label>
             <span className="spacer" />
             <button onClick={() => step(true)} disabled={!history.done.length || busy} title="Ctrl+Z">Undo</button>
             <button onClick={() => step(false)} disabled={!history.undone.length || busy} title="Ctrl+Y">Redo</button>
           </div>
-          <div className={`ow-map-wrap${tab === "faces" ? " me-picking" : ""}${(tab === "tiles" && paint !== "off" && layoutDoc) || tab === "collision" ? " painting" : ""}`}>
+          <div className={`ow-map-wrap${tab === "faces" ? " me-picking" : ""}${tab === "collision" || (tab === "paint" && paintView === "painting" && project && tool !== "select") ? " painting" : ""}`}>
             <div className="ow-map" ref={host} />
             {!zone && <div className="ow-empty me-empty muted">Choose a zone.</div>}
           </div>
@@ -684,6 +788,28 @@ export function MapEditor({ constants }: ToolProps) {
                     Shift, half a tile); it stays selected. Its collision stays where it was: repaint it in the Collision tab.</p>
                 </section>
                 <section className="me-section">
+                  <h4>Save as an object</h4>
+                  {saveAs ? (
+                    <form onSubmit={(e) => { e.preventDefault(); if (saveAs.name.trim()) saveObject(saveAs.name.trim(), saveAs.category.trim()); }}>
+                      <div className="me-row"><label>Name</label>
+                        <input autoFocus value={saveAs.name} onChange={(e) => setSaveAs({ ...saveAs, name: e.target.value })} placeholder="Route 20 tree" /></div>
+                      <div className="me-row"><label>Category</label>
+                        <input value={saveAs.category} onChange={(e) => setSaveAs({ ...saveAs, category: e.target.value })} placeholder="trees" /></div>
+                      <div className="me-actions">
+                        <button className="primary" type="submit" disabled={busy || !saveAs.name.trim()}>Save to the library</button>
+                        <button type="button" onClick={() => setSaveAs(null)}>Cancel</button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="me-actions">
+                      <button disabled={!faces.length} onClick={() => setSaveAs({ name: "", category: "" })}
+                              title="Saves the selected faces as a whole object of the library, to place on any map">Save the faces as an object…</button>
+                    </div>
+                  )}
+                  <p className="muted ow-note">Keeps the faces, their footprint, the collision under them and how high they stand over the ground, to
+                    place whole from the Objects and Paint tabs.</p>
+                </section>
+                <section className="me-section">
                   <h4>Copy and paste</h4>
                   <div className="me-actions">
                     <button disabled={!faces.length} onClick={copyFaces} title="Copies the selected faces, to paste in any chunk of any zone">Copy the faces</button>
@@ -723,14 +849,16 @@ export function MapEditor({ constants }: ToolProps) {
                 </section>
               </>
             )}
-            {tab === "tiles" && <TilePanel map={map} onShow={(m) => {
-              const i = map?.chunks.findIndex((c) => c.folder.endsWith(`/${m}`)) ?? -1;
-              if (i >= 0) { setChunk(i); scene.current?.frameChunk(i); }
-              return i >= 0;
-            }} library={library} setLibrary={setLibrary} catalogue={catalogue} setCatalogue={setCatalogue} chosen={tile} setChosen={setTile}
-              layout={{ model: modelName, path: layoutDoc ? layoutFile : null, dirty: !!layoutDoc?.dirty, shown: layoutShown }}
-              onStart={startLayout} onCompose={composeLayout} onShowLayout={setLayoutShown}
-              paint={paint} setPaint={setPaint} height={paintHeight} setHeight={setPaintHeight} busy={busy} />}
+            {tab === "paint" && (
+              <PaintPanel model={modelName} project={project} dirty={!!projectDoc?.dirty} styles={styles} objects={library} tool={tool} setTool={setTool}
+                          shape={shape} setShape={setShape} terrain={terrainKey} setTerrain={setTerrainKey} height={paintHeightHalf} setHeight={setPaintHeightHalf}
+                          placing={placing} setPlacing={setPlacing} selected={selectedObject} onRemoveSelected={removeSelectedObject}
+                          view={paintView} setView={setPaintView} onStart={startProject} onGenerate={generate} busy={busy} />
+            )}
+            {tab === "objects" && (
+              <ObjectsPanel objects={library} chosen={chosenObject} setChosen={setChosenObject} placing={placingOnChunk} setPlacing={setPlacingOnChunk}
+                            missing={missing} onImport={importMissing} onDelete={deleteObject} busy={busy} />
+            )}
           </div>
         </div>
       </div>

@@ -8,11 +8,37 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { chunkLoader } from "../overworld/MapView.tsx";
 import { TILE, TILE_FLAG_COLLISION, TILE_FLAG_ENCOUNT, TILE_FLAG_WATER, tileFlags, type ZoneMap } from "../overworld/terrain.ts";
-import { tileModels } from "./tiles.ts";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
-/** A layout's tiles, as the scene draws them in place of their chunk: ground [x, z, key, height], objects [key, x, z,
- * height]. */
-export interface LayoutTiles { library: string; ground: [number, number, string, number][]; objects: [string, number, number, number][] }
+/** A painted map as the scene draws it in place of its chunk (map_project.schema.json): each tile's terrain (a letter
+ * a tile, a row a string) and height in half tiles, the library's objects on it, and each terrain's color. */
+export interface Painting {
+  terrain: string[];
+  height: number[][];
+  objects: [string, number, number][];
+  colors: Record<string, string>;
+}
+
+const objectLoader = new GLTFLoader();
+const objectScenes = new Map<string, Promise<THREE.Object3D | null>>();
+/** A library object's model, read once (res/paperwhite2/map_objects/<object>/model.glb). */
+export function objectModel(name: string): Promise<THREE.Object3D | null> {
+  if (!objectScenes.has(name)) {
+    objectScenes.set(name, objectLoader.loadAsync(`/res/paperwhite2/map_objects/${name}/model.glb?t=${Date.now()}`).then((gltf) => {
+      gltf.scene.traverse((o) => {
+        const mesh = o as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
+          (m as THREE.MeshStandardMaterial).alphaTest = 0.5;
+          m.side = THREE.DoubleSide;
+        }
+      });
+      return gltf.scene;
+    }, () => null));
+  }
+  return objectScenes.get(name)!;
+}
+export const forgetObject = (name: string) => objectScenes.delete(name);
 
 /** A face of a chunk: its chunk (by its index in the map's list), the primitive (a draw call) and the triangle. */
 export interface Face { chunk: number; primitive: number; triangle: number }
@@ -47,16 +73,21 @@ export class ChunkScene {
   chunks = new THREE.Group();
   marks = new THREE.Group();
   highlight = new THREE.Group();
-  layoutGroup = new THREE.Group();
+  paintGroup = new THREE.Group();
   terrain = new THREE.Group();
   private terrainPicks: { mesh: THREE.InstancedMesh; drawn: THREE.InstancedMesh; tiles: { x: number; z: number }[] }[] = [];
   /** While set, a drag paints tiles: onPaint gets the stroke's tiles when it ends. */
   painting = false;
   onPaint: (tiles: { x: number; z: number }[]) => void = () => {};
   private stroke: Map<string, { x: number; z: number }> | null = null;
-  /** The chunk drawn from its layout's tiles instead of its model, while that preview is on. */
-  layoutChunk: number | null = null;
-  private layoutKey = 0;
+  /** The chunk drawn from its painting instead of its model, while that view is on, and the painting. */
+  paintChunk: number | null = null;
+  private painting_: Painting | null = null;
+  private paintKey = 0;
+  /** While set, the painting's objects drag to other tiles; onObject gets one's new tile, or its click. */
+  dragObjects = false;
+  onObject: (index: number, tile: { x: number; z: number } | null) => void = () => {};
+  private drag: { index: number; object: THREE.Object3D; tile: { x: number; z: number } | null } | null = null;
   models = new Map<number, ChunkModel>();
   map: ZoneMap | null = null;
   /** Bumped when a chunk's GLB changes on disk, so it loads again. */
@@ -82,7 +113,7 @@ export class ChunkScene {
     this.scene.add(new THREE.AmbientLight(0xffffff, 1.6));
     const sun = new THREE.DirectionalLight(0xffffff, 1.4);
     sun.position.set(300, 800, 400);
-    this.scene.add(sun, this.chunks, this.marks, this.highlight, this.layoutGroup, this.terrain);
+    this.scene.add(sun, this.chunks, this.marks, this.highlight, this.paintGroup, this.terrain);
     const dom = this.renderer.domElement;
     dom.addEventListener("pointerdown", this.down);
     dom.addEventListener("pointermove", this.move);
@@ -138,8 +169,9 @@ export class ChunkScene {
         if (this.loadKey !== key) return;
         gltf.scene.position.set(chunk.column * map.chunkSize + map.chunkSize / 2, 0, chunk.row * map.chunkSize + map.chunkSize / 2);
         gltf.scene.userData.chunk = index;
-        gltf.scene.visible = index !== this.layoutChunk;
+        gltf.scene.visible = index !== this.paintChunk;
         this.models.set(index, modelOf(gltf));
+        if (this.wireframe) addWireframe(gltf.scene);
         this.chunks.add(gltf.scene);
         if (--pending === 0) this.onLoaded();
       }, undefined, () => { if (--pending === 0) this.onLoaded(); });
@@ -197,29 +229,74 @@ export class ChunkScene {
     });
   }
 
-  /** Draws a chunk from its layout's tiles, in place of its model; null puts the model back. */
-  async showLayout(index: number | null, layout: LayoutTiles | null) {
-    const key = ++this.layoutKey;
+  /** Draws a chunk from its painting, in place of its model: each tile a square of its terrain's color at its height,
+   * walls where heights differ, and the objects, the selected one boxed; null puts the model back. Strokes paint its
+   * tiles. */
+  async showPainting(index: number | null, painting: Painting | null, selected: number | null = null) {
+    const key = ++this.paintKey;
     const map = this.map;
-    this.layoutChunk = layout ? index : null;
-    for (const o of this.chunks.children) o.visible = o.userData.chunk !== this.layoutChunk;
-    if (!layout || index === null || !map) { this.layoutGroup.clear(); return; }
+    this.paintChunk = painting ? index : null;
+    this.painting_ = painting;
+    for (const o of this.chunks.children) o.visible = o.userData.chunk !== this.paintChunk;
+    if (!painting || index === null || !map) {
+      this.paintGroup.clear();
+      if (this.terrainPicks.some((p) => p.mesh.userData.painting)) this.showTerrain(null);
+      return;
+    }
     const chunk = map.chunks[index];
-    const models = await tileModels(layout.library);
-    if (key !== this.layoutKey) return;
+    const size = painting.terrain.length;
+    const x0 = chunk.column * map.chunkSize, z0 = chunk.row * map.chunkSize;
+    const y = (x: number, z: number) => (painting.height[z]?.[x] ?? 0) * (TILE / 2);
+    // The tiles, as squares that strokes pick
+    this.terrain.clear();
+    this.terrainPicks = [];
+    const plane = new THREE.PlaneGeometry(TILE, TILE).rotateX(-Math.PI / 2);
+    const drawn = new THREE.InstancedMesh(plane, new THREE.MeshLambertMaterial(), size * size);
+    const tiles: { x: number; z: number }[] = [];
+    const m = new THREE.Matrix4();
+    for (let z = 0; z < size; z++) for (let x = 0; x < size; x++) {
+      const i = z * size + x;
+      m.makeTranslation(x0 + x * TILE + TILE / 2, y(x, z), z0 + z * TILE + TILE / 2);
+      drawn.setMatrixAt(i, m);
+      drawn.setColorAt(i, new THREE.Color(painting.colors[painting.terrain[z][x]] ?? "#888888"));
+      tiles.push({ x: chunk.column * map.chunkTiles + x, z: chunk.row * map.chunkTiles + z });
+    }
+    drawn.userData.painting = true;
+    this.terrain.add(drawn);
+    this.terrainPicks.push({ mesh: drawn, drawn, tiles });
+    // The walls between heights, grey
+    const walls: number[] = [];
+    for (let z = 0; z < size; z++) for (let x = 0; x < size; x++) {
+      for (const [dx, dz] of [[1, 0], [0, 1]]) {
+        if (x + dx >= size || z + dz >= size) continue;
+        const a = y(x, z), b = y(x + dx, z + dz);
+        if (a === b) continue;
+        const [ax, az, bx, bz] = dx ? [x + 1, z, x + 1, z + 1] : [x, z + 1, x + 1, z + 1];
+        const p = (gx: number, gz: number, h: number) => [x0 + gx * TILE, h, z0 + gz * TILE];
+        walls.push(...p(ax, az, a), ...p(bx, bz, a), ...p(bx, bz, b), ...p(ax, az, a), ...p(bx, bz, b), ...p(ax, az, b));
+      }
+    }
     const group = new THREE.Group();
-    group.position.set(chunk.column * map.chunkSize, 0, chunk.row * map.chunkSize);
-    const place = (tile: string, x: number, z: number, y: number) => {
-      const node = models.getObjectByName(tile);
-      if (!node) return;
-      const copy = node.clone();
-      copy.position.set(x * TILE, y, z * TILE);
+    if (walls.length) {
+      const g = new THREE.BufferGeometry();
+      g.setAttribute("position", new THREE.Float32BufferAttribute(walls, 3));
+      g.computeVertexNormals();
+      group.add(new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color: 0x8a8070, side: THREE.DoubleSide })));
+    }
+    // The objects, on the ground of their north-west tile
+    const placed = await Promise.all(painting.objects.map(([name]) => objectModel(name)));
+    if (key !== this.paintKey) return;
+    painting.objects.forEach(([, x, z], i) => {
+      const model = placed[i];
+      if (!model) return;
+      const copy = model.clone();
+      copy.position.set(x0 + x * TILE, y(x, z), z0 + z * TILE);
+      copy.userData.objectIndex = i;
       group.add(copy);
-    };
-    for (const [x, z, tile, y] of layout.ground) place(tile, x, z, y);
-    for (const [tile, x, z, y] of layout.objects) place(tile, x, z, y);
-    this.layoutGroup.clear();
-    this.layoutGroup.add(group);
+      if (i === selected) group.add(new THREE.BoxHelper(copy, 0xffd040));
+    });
+    this.paintGroup.clear();
+    this.paintGroup.add(group);
   }
 
   /** Draws the chunks' collision tiles of a layer over the map, at their heights, colored by type; null hides them. */
@@ -267,6 +344,16 @@ export class ChunkScene {
   }
 
   /** Draws the selected faces over the model, in yellow. */
+  /** Draws the chunks' triangles' edges over their models, to see what a click will pick. */
+  wireframe = false;
+  setWireframe(on: boolean) {
+    this.wireframe = on;
+    for (const chunk of this.chunks.children) {
+      if (on) addWireframe(chunk);
+      else chunk.traverse((o) => { if (o.userData.wireframe) o.parent?.remove(o); });
+    }
+  }
+
   showFaces(faces: Face[]) {
     this.highlight.clear();
     const byMesh = new Map<THREE.Mesh, number[]>();
@@ -306,13 +393,43 @@ export class ChunkScene {
     if (ev.button !== 0) return;
     (document.activeElement as HTMLElement | null)?.blur?.();
     this.downAt = { x: ev.clientX, y: ev.clientY };
+    if (this.dragObjects && this.paintChunk !== null) {
+      const hit = this.raycaster(ev).intersectObjects(this.paintGroup.children, true)[0];
+      let o: THREE.Object3D | null = hit?.object ?? null;
+      while (o && o.userData.objectIndex === undefined) o = o.parent;
+      if (o) {
+        this.drag = { index: o.userData.objectIndex as number, object: o, tile: null };
+        this.controls.enabled = false;
+        return;
+      }
+    }
     if (this.painting && !ev.altKey) {
       this.stroke = new Map();
       this.strokeAt(ev);
     }
   };
 
-  private move = (ev: PointerEvent) => { if (this.stroke) this.strokeAt(ev); };
+  private move = (ev: PointerEvent) => {
+    if (this.drag) {
+      // The object follows the pointer from tile to tile, standing on each tile's ground
+      const hit = this.tileAt(ev);
+      const map = this.map, painting = this.painting_, chunk = map && this.paintChunk !== null ? map.chunks[this.paintChunk] : null;
+      if (!hit || !map || !painting || !chunk) return;
+      const x = hit.tile.x - chunk.column * map.chunkTiles, z = hit.tile.z - chunk.row * map.chunkTiles;
+      this.drag.tile = { x, z };
+      this.drag.object.position.set(chunk.column * map.chunkSize + x * TILE, (painting.height[z]?.[x] ?? 0) * (TILE / 2),
+                                    chunk.row * map.chunkSize + z * TILE);
+      return;
+    }
+    if (this.stroke) this.strokeAt(ev);
+  };
+
+  private raycaster(ev: PointerEvent): THREE.Raycaster {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    const ray = new THREE.Raycaster();
+    ray.setFromCamera(new THREE.Vector2(((ev.clientX - rect.left) / rect.width) * 2 - 1, -((ev.clientY - rect.top) / rect.height) * 2 + 1), this.camera);
+    return ray;
+  }
 
   /** Adds the tile under the pointer to the stroke, marked yellow until the stroke is painted. */
   private strokeAt(ev: PointerEvent) {
@@ -326,6 +443,14 @@ export class ChunkScene {
   }
 
   private up = (ev: PointerEvent) => {
+    if (this.drag) {
+      const { index, tile } = this.drag;
+      this.drag = null;
+      this.downAt = null;
+      this.controls.enabled = true;
+      this.onObject(index, tile);
+      return;
+    }
     if (this.stroke) {
       const tiles = [...this.stroke.values()];
       this.stroke = null;
@@ -345,10 +470,10 @@ export class ChunkScene {
     const ndc = new THREE.Vector2(((ev.clientX - rect.left) / rect.width) * 2 - 1, -((ev.clientY - rect.top) / rect.height) * 2 + 1);
     const ray = new THREE.Raycaster();
     ray.setFromCamera(ndc, this.camera);
-    if (this.layoutChunk !== null) {
-      // On a layout, only where it was clicked counts: the cell under it
-      const hit = ray.intersectObjects(this.layoutGroup.children, true)[0];
-      if (hit) return { chunk: this.layoutChunk, face: null, point: hit.point, tile: this.tileAt(ev)?.tile ?? null };
+    if (this.paintChunk !== null) {
+      // On a painting, the tile clicked
+      const hit = this.tileAt(ev);
+      if (hit) return { chunk: this.paintChunk, face: null, point: null, tile: hit.tile };
     }
     const hits = ray.intersectObjects(this.chunks.children.filter((c) => c.visible), true);
     for (const hit of hits) {
@@ -366,6 +491,22 @@ export class ChunkScene {
     const size = this.map.chunkSize;
     const index = this.map.chunks.findIndex((c) => Math.floor(ground.x / size) === c.column && Math.floor(ground.z / size) === c.row);
     return { chunk: index < 0 ? null : index, face: null, point: ground, tile: this.tileAt(ev)?.tile ?? null };
+  }
+}
+
+const WIREFRAME = new THREE.LineBasicMaterial({ color: 0x101820, transparent: true, opacity: 0.45 });
+
+/** Adds each mesh's triangles' edges to it, once. */
+function addWireframe(root: THREE.Object3D) {
+  const meshes: THREE.Mesh[] = [];
+  root.traverse((o) => { if ((o as THREE.Mesh).isMesh && !o.userData.wireframe) meshes.push(o as THREE.Mesh); });
+  for (const mesh of meshes) {
+    if (mesh.children.some((c) => c.userData.wireframe)) continue;
+    const lines = new THREE.LineSegments(new THREE.WireframeGeometry(mesh.geometry), WIREFRAME);
+    lines.userData.wireframe = true;
+    lines.renderOrder = 3;
+    lines.raycast = () => {};
+    mesh.add(lines);
   }
 }
 

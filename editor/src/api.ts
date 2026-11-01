@@ -63,7 +63,6 @@ function normalize(path: string): string {
 /** Faces of a GLB by primitive and triangle number, deleted or drawn with another texture (server/glb.ts). */
 export interface GlbFaceSet { primitive: number; triangles: number[] }
 export interface GlbFaceEdits { remove?: GlbFaceSet[]; retexture?: { faces: GlbFaceSet[]; image: string }[] }
-export interface TileLibraryInfo { id: string; name: string; sources: string[]; sliced: boolean }
 
 export const api = {
   project: () => request<ProjectInfo>("GET", "/api/project"),
@@ -88,23 +87,21 @@ export const api = {
   glbFaces: (path: string, edits: GlbFaceEdits, textureSet?: string) =>
     request<{ ok: boolean; written: boolean }>("PUT", "/api/glb-faces", { path, edits, textureSet }),
   /** Copies faces of one map chunk's model.glb into another's, moved by offset; the images the faces use, <set>/<png>. */
-  glbPaste: (target: string, source: string, faces: GlbFaceSet[], offset: [number, number, number], textureSet: string) =>
+  glbPaste: (target: string, source: string, faces: GlbFaceSet[] | "all", offset: [number, number, number], textureSet: string) =>
     request<{ ok: boolean; pngs: string[] }>("PUT", "/api/glb-paste", { target, source, faces, offset, textureSet }),
   /** Moves faces of a map chunk's model.glb by offset; the moved faces, by their new draw calls. */
   glbMove: (path: string, faces: GlbFaceSet[], offset: [number, number, number], textureSet: string) =>
     request<{ ok: boolean; faces: GlbFaceSet[] }>("PUT", "/api/glb-move", { path, faces, offset, textureSet }),
   /** Adds textures (<set>/<png>) of other map texture sets to sets, by their imports.json. */
   importTextures: (sets: string[], textures: string[]) => request<{ added: string[] }>("POST", "/api/texture-imports", { sets, textures }),
-  /** Puts a map chunk's model.glb back as it was (base64 bytes), for undo. */
-  glbRaw: (path: string, data: string) => request<{ ok: boolean }>("PUT", "/api/glb-raw", { path, data }),
-  /** The map tile libraries, and whether each is sliced. */
-  tileLibraries: () => request<TileLibraryInfo[]>("GET", "/api/map-tiles"),
-  sliceTiles: (library: string) => request<{ ok: boolean; output: string }>("POST", "/api/map-tiles/slice", { library }),
-  tileCatalogue: (library: string) => request<unknown>("GET", `/api/map-tiles/catalogue?library=${encodeURIComponent(library)}`),
-  /** A layout of a chunk as it is, from a tile library that cuts it; its path. */
-  startLayout: (library: string, model: string) => request<{ path: string }>("POST", "/api/map-layouts/start", { library, model }),
-  /** Writes a layout's chunk's model.glb from its tiles. */
-  composeLayout: (model: string) => request<{ ok: boolean; output: string }>("POST", "/api/map-layouts/compose", { model }),
+  /** Saves faces of a map chunk as an object of the library (tools/paperwhite2/map_objects.py). */
+  saveMapObject: (b: { name: string; category?: string; chunk: string; faces: GlbFaceSet[]; anchor: number[]; size: number[] }) =>
+    request<{ id: string; path: string }>("POST", "/api/map-objects/save", b),
+  deleteMapObject: (id: string) => request<{ removed: boolean }>("DELETE", `/api/map-objects?id=${encodeURIComponent(id)}`),
+  /** Generates a painted map's chunk from its project (tools/paperwhite2/map_maker.py). */
+  generateMap: (model: string) => request<{ ok: boolean; output: string }>("POST", "/api/map-maker/generate", { model }),
+  /** Puts a map chunk's model.glb back as it was (base64 bytes), and its data.json (text), for undo. */
+  glbRaw: (path: string, data: string, meta?: string) => request<{ ok: boolean }>("PUT", "/api/glb-raw", { path, data, meta }),
   /** The game's unused zones, which a new map can take. */
   unusedZones: () => request<{ zone: string; file: string; parent: string | null; place: string | null }[]>("GET", "/api/new-map/unused"),
   /** Makes an unused zone a new map (tools/paperwhite2/new_map.py create). */

@@ -2,6 +2,19 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-01 (evening): the object library and painted maps
+
+- The tile slicer and its Route 20 library are gone (the user's call): too many triangles, near-duplicate pieces,
+  textures that didn't join.
+- **Object library** (`tools/paperwhite2/map_objects.py`, `res/paperwhite2/map_objects/`): the Faces tab saves a
+  selection as an object; the Objects tab places one on an existing chunk (faces pasted, collision painted).
+- **Painted maps** (`tools/paperwhite2/map_maker.py`, `res/paperwhite2/map_styles/route_20.json`, projects in
+  `res/paperwhite2/map_projects/`): the Paint tab paints terrain and heights, places and drags objects, and generates
+  the chunk's model and collision. A test chunk (grass, a path, a river, a plateau, tall grass, trees): 417 triangles,
+  packed. **Not tried in game.**
+- The Map Editor's **Wireframe** toggle.
+- Next: smart edges between terrains, bulk tools (forest scatter, fence paths), and the user's in-game tests.
+
 ## 2026-11-01 (afternoon): the written models' box, moving faces, pasting at the right height
 
 - **Fixed: a chunk packed whole vanished** unless the camera was over its middle (the user's test on Route 20). The
