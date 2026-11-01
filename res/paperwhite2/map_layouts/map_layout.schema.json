@@ -1,0 +1,73 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Map layout",
+    "description": "A map chunk as tiles of a tile library, for the Map Editor (tools/paperwhite2/map_tiles.py compose writes the chunk's model.glb from it; docs/paperwhite2/design/map-editor.md).",
+    "type": "object",
+    "required": [ "library", "model", "ground" ],
+    "additionalProperties": false,
+    "properties": {
+        "$schema": {
+            "type": "string"
+        },
+        "library": {
+            "type": "string",
+            "description": "The tile library (res/paperwhite2/map_tiles/<library>/)."
+        },
+        "model": {
+            "type": "string",
+            "description": "The map model folder whose model.glb it composes (res/field/maps/models/<model>/)."
+        },
+        "size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 128,
+            "description": "The chunk's width in tiles: 32 for most map types."
+        },
+        "ground": {
+            "type": "array",
+            "description": "A ground tile for each cell: x, z, the tile's key and the height its lowest point stands at.",
+            "items": {
+                "type": "array",
+                "prefixItems": [
+                    {
+                        "type": "integer"
+                    },
+                    {
+                        "type": "integer"
+                    },
+                    {
+                        "type": "string"
+                    },
+                    {
+                        "type": "integer"
+                    }
+                ],
+                "items": false,
+                "minItems": 4
+            }
+        },
+        "objects": {
+            "type": "array",
+            "description": "Objects: the tile's key, the x and z of its footprint's north-west corner and its height.",
+            "items": {
+                "type": "array",
+                "prefixItems": [
+                    {
+                        "type": "string"
+                    },
+                    {
+                        "type": "integer"
+                    },
+                    {
+                        "type": "integer"
+                    },
+                    {
+                        "type": "integer"
+                    }
+                ],
+                "items": false,
+                "minItems": 4
+            }
+        }
+    }
+}

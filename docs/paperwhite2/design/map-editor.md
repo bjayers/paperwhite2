@@ -215,22 +215,30 @@ cuts them on the tile grid:
   each tile's square, so a tile is what the chunk draws over one grid cell.
 - **Objects:** small meshes kept whole (a sign, a fence post), with any others overlapping their footprint, and a
   footprint of whole tiles.
-- The same piece wherever it stands is one tile. Two ground pieces are the same when they look the same: their
-  materials and heights over a 4×4 grid of points, their walls, and how their textures run across them. Where the
-  texture starts isn't part of it: a placed tile's UVs move by the texture's run across the distance from where the
-  tile came from, so painted textures join up as the chunk's do.
+- The same piece wherever it stands is one tile: the same polygons, UVs (up to whole repeats of the texture) and
+  materials. An earlier try keyed ground by its look (materials and heights over a 4×4 grid of points), which made
+  fewer tiles but let pieces whose edges differ slightly count as one, so a rebuilt chunk had gaps and overlaps; and
+  moving a tile's UVs by the texture's run across the map fails where a texture starts at an object's corner (a forest
+  block's leaves), so where a texture starts is part of a tile.
 - Each tile keeps its first source's collision row, which the editor adapts to the height it's placed at.
+- Slicing reads the clean data (the git tag `w2-original`), so editing a source chunk doesn't change its tiles.
 
 The library's catalogue and its GLB of tiles are generated (`build/map_tiles/<library>/`); `library.json` keeps the
 sources and the user's names, categories and hidden tiles.
 
-Route 20's library (its four chunks and their four autumn variants) has 3,274 tiles: 3,167 ground and 107 objects.
-The most used are a river bed tile (691 times) and a grass tile (680); about a thousand appear once (the edges of
-cliffs, paths and riverbanks, which follow curves that don't fit the grid). The palette sorts by use and by material,
-and stamps carry the one-offs.
+Route 20's library (its four chunks and their four autumn variants) has 5,554 tiles. The most used are river bed and
+grass tiles; many appear once (the edges of cliffs, paths and riverbanks, which follow curves that don't fit the
+grid). The palette sorts by use and filters by material.
 
-**Building a chunk:** the editor composes the placed tiles into a `model.glb` and the collision CSVs, and the model
-writer packs it. The budget bar shows the polygons as tiles go down.
+**Layouts and building a chunk:** a layout (`res/paperwhite2/map_layouts/<model>.json`) is a chunk as tiles: a ground
+tile and height for each cell, and objects. `map_tiles.py start` makes one from a source chunk as it is, and `compose`
+writes the chunk's `model.glb` from it: the tiles' polygons in place, stitched back where cutting split them (coplanar
+pieces of one material and texture run merge into the regions they make, which are triangulated again, checked by
+their area), a draw call per material in the sources' order, the props kept, and the model marked written. Route 20's
+map04_20 rebuilt from its own layout looks the same as the original, with 2,085 triangles where the original has
+1,114 (some of the original's pieces overlap, and those stay apart), and packs to 71 KB of the 86 KB buffer. Fewer
+triangles (strips in the writer, merging overlapping pieces) is later work. The editor paints a layout: a tile for a
+cell, objects added and removed, then compose.
 
 ### Pitfalls
 
