@@ -95,7 +95,7 @@ function quadMesh(quads: THREE.Vector3[][], colors: THREE.Color[], material: THR
   return new THREE.Mesh(g, material);
 }
 
-const KIND_COLORS: Record<string, number> = { npc: 0x3ac7e0, proxy: 0xf0c330, building: 0x50d070, trigger: 0xf08a30, warp: 0xd040d0, level: 0x888888, rail: 0x7fe0ff, camera: 0xb070ff };
+const KIND_COLORS: Record<string, number> = { npc: 0x3ac7e0, proxy: 0xf0c330, building: 0x50d070, trigger: 0xf08a30, warp: 0xd040d0, level: 0x888888, rail: 0x7fe0ff, camera: 0xb070ff, instance: 0xb050ff };
 
 /** A prop model's scene, read once and cloned for each placement. */
 const propModels = new Map<string, Promise<THREE.Object3D | null>>();
@@ -554,7 +554,8 @@ class MapScene {
       const stands = standingOn(map, e.x, e.z, e.y);
       const ground = stands?.height ?? e.y;
       // On the other layer: faded, still to be clicked
-      const fade = stands !== null && stands.layer !== Math.min(layer, this.layersAt(e.x, e.z) - 1) ? 0.35 : 1;
+      // On the other layer, or a host (whose instances are what appears): faded, still to be clicked
+      const fade = (stands !== null && stands.layer !== Math.min(layer, this.layersAt(e.x, e.z) - 1)) || e.host ? 0.35 : 1;
       const color = KIND_COLORS[e.kind];
       if (e.building) {
         this.addBuilding(e, isSelected);
@@ -563,13 +564,13 @@ class MapScene {
       // Its tiles: a box the size of its area
       const box = new THREE.Mesh(
         new THREE.BoxGeometry(e.width * TILE - 1, isSelected ? 4 : 2, e.depth * TILE - 1),
-        new THREE.MeshBasicMaterial({ color: isSelected ? 0xffffff : color, transparent: true, opacity: (isSelected ? 0.85 : 0.6) * fade, depthTest: false }),
+        new THREE.MeshBasicMaterial({ color: isSelected ? 0xffffff : color, transparent: true, opacity: (isSelected ? 0.85 : e.kind === "instance" ? 0.35 : 0.6) * fade, depthTest: false }),
       );
       box.position.set((e.x + e.width / 2) * TILE, ground + 1.5, (e.z + e.depth / 2) * TILE);
       box.renderOrder = 3;
       this.marks.add(box);
       this.entityMeshes.push({ object: box, entity: e });
-      if (e.kind === "npc") {
+      if (e.kind === "npc" || e.kind === "instance") {
         // Over its tile's marks and the models, so an NPC behind a building still shows
         const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xffffff, transparent: true, opacity: fade, alphaTest: 0.5 * fade, depthTest: false }));
         sprite.renderOrder = 5;
@@ -749,7 +750,7 @@ class MapScene {
     box.userData.base = box.position.clone();
     this.marks.add(box);
     this.entityMeshes.push({ object: box, entity: e });
-    if (e.kind !== "npc") return;
+    if (e.kind !== "npc" && e.kind !== "instance") return;
     const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xffffff, transparent: true, alphaTest: 0.5, depthTest: false }));
     sprite.renderOrder = 5;
     sprite.scale.set(24, 24, 1);

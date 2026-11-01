@@ -186,17 +186,22 @@ def init_scripts_bytes(scripts: list, where: str) -> bytes:
     return data + bytes(-len(data) % 4)
 
 
+def npc_bytes(npc: dict, where: str) -> bytes:
+    """An NPC's record (ZoneNPC), as the zones' events and Paper White 2's instances (tools/paperwhite2/overworld.py)
+    write it."""
+    is_rail, union = position_bytes(npc, NPC_POSITION, 8, where)
+    return NPC.pack(npc["id"], value(npc["model"], where), value(npc["movement"], where), value(npc["type"], where),
+                    value(npc["flag"], where), npc["script"], value(npc["direction"], where), *npc["params"],
+                    npc["area"]["width"], npc["area"]["height"], is_rail, union)
+
+
 def events_bytes(events: dict, where: str) -> bytes:
     records = b""
     for event in events["bg_events"]:
         is_rail, union = position_bytes(event, BG_POSITION, 12, where)
         records += BG.pack(event["script"], event["condition"], event["direction"], is_rail, union)
     for npc in events["npcs"]:
-        is_rail, union = position_bytes(npc, NPC_POSITION, 8, where)
-        records += NPC.pack(npc["id"], value(npc["model"], where), value(npc["movement"], where),
-                            value(npc["type"], where), value(npc["flag"], where), npc["script"],
-                            value(npc["direction"], where), *npc["params"], npc["area"]["width"], npc["area"]["height"],
-                            is_rail, union)
+        records += npc_bytes(npc, where)
     for warp in events["warps"]:
         is_rail, union = position_bytes(warp, WARP_POSITION, 12, where)
         records += WARP.pack(value(warp["zone"], where), warp["warp"], warp["unk4"], warp["transition"], is_rail, union)

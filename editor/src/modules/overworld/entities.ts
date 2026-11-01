@@ -8,7 +8,7 @@
 import { toPlain, type JsonValue } from "../../../shared/json.ts";
 import { TILE } from "./terrain.ts";
 
-export type EntityKind = "npc" | "proxy" | "building" | "trigger" | "warp" | "level" | "rail" | "camera";
+export type EntityKind = "npc" | "proxy" | "building" | "trigger" | "warp" | "level" | "rail" | "camera" | "instance";
 
 /** The events file's list of each kind, and the field each module edits. */
 export const KIND_LISTS: Record<EntityKind, string> = {
@@ -20,6 +20,8 @@ export const KIND_LISTS: Record<EntityKind, string> = {
   rail: "rails",
   // Not the events': the zone's camera area file (cameras.ts)
   camera: "areas",
+  // Not the events': the instances in the zone's spawn file (spawns.ts)
+  instance: "instances",
   trigger: "triggers",
   warp: "warps",
   level: "init_scripts",
@@ -31,6 +33,7 @@ export const KIND_NAMES: Record<EntityKind, string> = {
   building: "Buildings",
   rail: "Rails",
   camera: "Cameras",
+  instance: "Instances",
   trigger: "Triggers",
   warp: "Warps",
   level: "Level scripts",
@@ -64,6 +67,12 @@ export interface Entity {
    * bundle has none of that ID), its exact place in global units and its turn in degrees. */
   /** Its place on the rails, in a zone without a grid: the line, front and side, and a warp's or trigger's spans. */
   rail?: { line: number; front: number; side: number; frontSpan: number; sideSpan: number };
+  /** An NPC's id in the zone (the events' "id"). */
+  npcId?: number;
+  /** An NPC with instances: its record is their host, its own fields unused. */
+  host?: boolean;
+  /** An instance: its place in the zone's spawn file (its entry and its index there) and its host NPC's id. */
+  spawn?: { entry: number; instance: number; host: number };
   /** A rail's point or line, by its index in the rail file. */
   railPart?: { type: "point" | "line"; index: number };
   building?: { chunk: string; index: number; id: number; model: string | null; ux: number; uy: number; uz: number; angle: number };
@@ -108,7 +117,7 @@ export function entitiesOf(data: JsonValue | null): Entity[] {
     const type = String(n.type ?? "");
     out.push({
       kind: "npc", index, x: g ? num(g.x) : null, z: g ? num(g.z) : null, y: g ? num(g.y) / 4096 : 0, width: 1, depth: 1,
-      label: `NPC ${num(n.id, index)}`, model: String(n.model ?? ""), direction: String(n.direction ?? "DIR_DOWN"),
+      label: `NPC ${num(n.id, index)}`, npcId: num(n.id, index), model: String(n.model ?? ""), direction: String(n.direction ?? "DIR_DOWN"),
       movement: typeof n.movement === "string" ? n.movement : undefined,
       leash: area ? { x: num(area.width), z: num(area.height) } : undefined,
       sight: /TRAINER/.test(type) ? num(params[0]) : undefined, script: num(n.script), rail: railOf(n.rail as Rec | undefined),

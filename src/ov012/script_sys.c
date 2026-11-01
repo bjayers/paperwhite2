@@ -26,6 +26,7 @@
 #include "system/vm.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/conditions.h"
+#include "paperwhite2/spawns.h"
 #endif
 
 // A range of global script IDs, with its script file and text bank
@@ -466,6 +467,9 @@ void FieldScript_CallOnZoneInit(GameSystem *gsys, u32 arg1) {
     // Paper White 2: counts the zone load for the conditions' load seed, before the zone's init scripts, which can
     // then read the new zone's picks; a battle or a menu reopens the field without a zone init, so the picks hold
     Conditions_OnZoneInit(gameData);
+    // Paper White 2: the zone's NPCs' conditions and instances, on the records the init scripts and SpawnAllZoneNPCs
+    // then use (paperwhite2_spawns.c)
+    Spawns_OnZoneInit(gsys, GameData_GetEventData(gameData)->zoneId, HEAPID_TAIL(HEAPID_GAMEEVENT));
 #endif
     FieldScript_CallZoneInitCore(gsys, arg1, 2, 2);
 }

@@ -2351,7 +2351,8 @@ EVENT_FLAG_0x092d
 EVENT_FLAG_0x092e
 # Paper White 2: set when the player turns the Exp. Share off, in the hack's block 0x92f-0x95f (docs/paperwhite2/plugins.md)
 EVENT_FLAG_EXP_SHARE_OFF
-EVENT_FLAG_0x0930
+# Paper White 2: always set, the spawn flag of the NPCs whose conditions fail at zone entry (paperwhite2_spawns.c)
+EVENT_FLAG_SPAWN_HIDDEN
 EVENT_FLAG_0x0931
 EVENT_FLAG_0x0932
 EVENT_FLAG_0x0933

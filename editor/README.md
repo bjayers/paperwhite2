@@ -228,6 +228,12 @@ trainer's line of sight), Proxies (background events), Triggers, Warps and Level
   60° back), as Paper White 2's game does. Shift+click adds a rect, making the zone's file if it has none (the hack's build reads a
   file's "zones", so any zone can have camera areas). The preview draws only the zone's own chunks, so what the game
   shows of the zones around it is missing.
+- **NPC spawns** (`res/paperwhite2/overworld/<zone>.json`, `spawns.ts`): an NPC's panel adds a **condition** (the
+  season, time and weather chips, a chance a day, and every field of the conditions' format) and **instances**,
+  copies of it that the game picks one of at zone entry (by weight, among those whose conditions hold), which makes it
+  their host (drawn faded). Instances show with a purple box, move like NPCs and open in the panel with their own
+  condition and weight. **▶ Conditions** previews what the game would show for the Season choice, a time, a weather
+  and set flags; Reload rolls another day.
 - **Buildings:** the chunks' props, as CTRMap edits them: each a model of the area's prop bundle
   (`res/field/props/`) placed in its chunk's GLB (`bw2_prop_<n>_id_<prop ID>` nodes, which the build packs). Click
   to choose (it turns half seen through), drag to move by whole tiles, Shift+click to add the last model chosen; a

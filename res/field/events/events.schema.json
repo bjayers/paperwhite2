@@ -24,47 +24,7 @@
         "npcs": {
             "type": "array", "maxItems": 255,
             "description": "The zone's actors (ZoneNPC), from which the field creates them",
-            "items": {
-                "type": "object", "additionalProperties": false,
-                "required": [ "id", "model", "movement", "type", "flag", "script", "direction", "params", "area" ],
-                "properties": {
-                    "id": { "$ref": "#/$defs/u16", "description": "The NPC's ID in the zone, which scripts use" },
-                    "model": {
-                        "type": [ "string", "integer" ], "x-constant": "OBJ_CODE_", "minimum": 0, "maximum": 65535,
-                        "description": "Its model, an OBJ_CODE_* constant (res/field/actors/)"
-                    },
-                    "movement": {
-                        "type": [ "string", "integer" ], "x-constant": "MOVE_CODE_", "minimum": 0, "maximum": 65535,
-                        "description": "How it moves, its move code, a MOVE_CODE_* constant"
-                    },
-                    "type": {
-                        "type": [ "string", "integer" ], "x-constant": "ACTOR_EVENT_TYPE_", "minimum": 0, "maximum": 65535,
-                        "description": "What kind of event it is, such as a Trainer, an ACTOR_EVENT_TYPE_* constant"
-                    },
-                    "flag": {
-                        "type": [ "string", "integer" ], "x-constant": "EVENT_FLAG_", "x-hex": true, "minimum": 0, "maximum": 65535,
-                        "description": "Its spawn flag (swan's spawnFlag): an EVENT_FLAG_* constant, or the flag's ID in hex, as \"0x03d0\", or 0 for none"
-                    },
-                    "script": { "$ref": "#/$defs/u16", "description": "The script it runs" },
-                    "direction": {
-                        "type": [ "string", "integer" ], "x-constant": "DIR_", "minimum": 0, "maximum": 65535,
-                        "description": "The direction it faces, a DIR_* constant"
-                    },
-                    "params": { "type": "array", "minItems": 3, "maxItems": 3, "items": { "$ref": "#/$defs/u16" } },
-                    "area": {
-                        "type": "object", "additionalProperties": false, "required": [ "width", "height" ],
-                        "description": "Where it can move",
-                        "properties": { "width": { "$ref": "#/$defs/u16" }, "height": { "$ref": "#/$defs/u16" } }
-                    },
-                    "grid": {
-                        "type": "object", "additionalProperties": false, "required": [ "x", "z", "y" ],
-                        "properties": {
-                            "x": { "$ref": "#/$defs/u16" }, "z": { "$ref": "#/$defs/u16" }, "y": { "$ref": "#/$defs/s32" }
-                        }
-                    },
-                    "rail": { "$ref": "#/$defs/rail" }
-                }
-            }
+            "items": { "$ref": "#/$defs/npc" }
         },
         "warps": {
             "type": "array", "maxItems": 255,
@@ -159,6 +119,47 @@
         }
     },
     "$defs": {
+        "npc": {
+            "type": "object", "additionalProperties": false,
+            "required": [ "id", "model", "movement", "type", "flag", "script", "direction", "params", "area" ],
+            "properties": {
+                "id": { "$ref": "#/$defs/u16", "description": "The NPC's ID in the zone, which scripts use" },
+                "model": {
+                    "type": [ "string", "integer" ], "x-constant": "OBJ_CODE_", "minimum": 0, "maximum": 65535,
+                    "description": "Its model, an OBJ_CODE_* constant (res/field/actors/)"
+                },
+                "movement": {
+                    "type": [ "string", "integer" ], "x-constant": "MOVE_CODE_", "minimum": 0, "maximum": 65535,
+                    "description": "How it moves, its move code, a MOVE_CODE_* constant"
+                },
+                "type": {
+                    "type": [ "string", "integer" ], "x-constant": "ACTOR_EVENT_TYPE_", "minimum": 0, "maximum": 65535,
+                    "description": "What kind of event it is, such as a Trainer, an ACTOR_EVENT_TYPE_* constant"
+                },
+                "flag": {
+                    "type": [ "string", "integer" ], "x-constant": "EVENT_FLAG_", "x-hex": true, "minimum": 0, "maximum": 65535,
+                    "description": "Its spawn flag (swan's spawnFlag): an EVENT_FLAG_* constant, or the flag's ID in hex, as \"0x03d0\", or 0 for none"
+                },
+                "script": { "$ref": "#/$defs/u16", "description": "The script it runs" },
+                "direction": {
+                    "type": [ "string", "integer" ], "x-constant": "DIR_", "minimum": 0, "maximum": 65535,
+                    "description": "The direction it faces, a DIR_* constant"
+                },
+                "params": { "type": "array", "minItems": 3, "maxItems": 3, "items": { "$ref": "#/$defs/u16" } },
+                "area": {
+                    "type": "object", "additionalProperties": false, "required": [ "width", "height" ],
+                    "description": "Where it can move",
+                    "properties": { "width": { "$ref": "#/$defs/u16" }, "height": { "$ref": "#/$defs/u16" } }
+                },
+                "grid": {
+                    "type": "object", "additionalProperties": false, "required": [ "x", "z", "y" ],
+                    "properties": {
+                        "x": { "$ref": "#/$defs/u16" }, "z": { "$ref": "#/$defs/u16" }, "y": { "$ref": "#/$defs/s32" }
+                    }
+                },
+                "rail": { "$ref": "#/$defs/rail" }
+            }
+        },
         "u8": { "type": "integer", "minimum": 0, "maximum": 255 },
         "u16": { "type": "integer", "minimum": 0, "maximum": 65535 },
         "s16": { "type": "integer", "minimum": -32768, "maximum": 32767 },

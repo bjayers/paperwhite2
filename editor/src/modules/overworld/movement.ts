@@ -400,11 +400,12 @@ export class World {
 export function movers(map: ZoneMap, entities: Entity[], rails: RailMap | null): World {
   const world = new World(map);
   for (const e of entities) {
-    if (e.kind === "npc" && e.rail && rails) {
+    // An instance moves as the NPC it is
+    if ((e.kind === "npc" || e.kind === "instance") && e.rail && rails) {
       world.railMovers.push(new RailMover(e, rails));
       continue;
     }
-    if (e.kind !== "npc" || e.x === null || e.z === null) continue;
+    if ((e.kind !== "npc" && e.kind !== "instance") || e.x === null || e.z === null) continue;
     world.movers.push(new Mover(e, standingOn(map, e.x, e.z, e.y)?.height ?? e.y));
   }
   return world;

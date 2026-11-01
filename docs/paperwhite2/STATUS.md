@@ -2,6 +2,18 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-31: NPC conditions and instances (phase 2)
+
+- `res/paperwhite2/overworld/<zone>.json` (new, `tools/paperwhite2/overworld.py`, a member after a/1/2/6's files in
+  the hack's build) and `Spawns_OnZoneInit` (`src/paperwhite2/ov012/paperwhite2_spawns.c`, filling the placeholder):
+  NPCs hidden by their conditions (`EVENT_FLAG_SPAWN_HIDDEN`, 0x930) and hosts given an instance at zone entry
+  (plugins.md, NPC spawns). The events' schema has its NPC record as `$defs/npc` now; the events pack the same.
+- The Overworld Editor: conditions, instances and the conditions preview. Checked in the browser on a scratch copy
+  (a night NPC and a host with two instances saved, packed and dumped; the preview shows the night NPC only at night).
+  Built (hack, DSi intact). **Not tested in game:** an NPC with a time condition, and a host with day and night
+  instances, at the two times.
+- Next: picking again on a time-of-day change, then ambients, then groups.
+
 ## 2026-10-31: camera yaw the short way round, values to drag everywhere
 
 - `src/ov036/fld_scenearea_loader.c` (`#ifdef PAPERWHITE2`): a camera rect's yaw blends the short way round between

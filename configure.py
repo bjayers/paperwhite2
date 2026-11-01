@@ -350,10 +350,13 @@ DATA_PACKS = [
 # encounters' data follows their tables (tools/paperwhite2/encounters.py, docs/paperwhite2/encounters.md), and reads
 # the species' families too
 HACK_ARCHIVE_MEMBERS = {"a/0/9/6": ("tools/paperwhite2/conditions.py", "res/paperwhite2/conditions"),
+                        # The zones' NPC conditions and instances (paperwhite2_spawns.c)
+                        "a/1/2/6": ("tools/paperwhite2/overworld.py", "res/paperwhite2/overworld"),
                         # The zones' camera area files, read from the files' zones (paperwhite2_camera_areas.c)
                         "a/1/5/6": ("tools/data/camera_data.py", "res/field/cameras"),
                         "a/1/2/7": ("tools/paperwhite2/encounters.py", "res/paperwhite2/encounters")}
-HACK_MEMBER_EXTRA_SOURCES = {"a/1/2/7": ["res/paperwhite2/conditions", "res/pokemon/*/data.json"]}
+HACK_MEMBER_EXTRA_SOURCES = {"a/1/2/7": ["res/paperwhite2/conditions", "res/pokemon/*/data.json"],
+                             "a/1/2/6": ["res/paperwhite2/conditions", "res/field/events"]}
 # Paper White 2: data that the hack's build makes from other data before packing it: the data directory, and the tool,
 # its command (which writes the directory given) and what it reads. The Pokédex's Habitat List comes from the wild
 # encounters' data, with res/pokedex/habitats/ as its template (encounters.py habitats)

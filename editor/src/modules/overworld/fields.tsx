@@ -126,12 +126,15 @@ function HeightField({ kind, value, path, ctx }: { kind: EntityKind; value: Json
 }
 
 /** The panel's field controls for an entity at [list, index]: its height, model and script. */
-export function entityFields(kind: EntityKind, onOpenScript: () => void): FormContext["render"] {
+export function entityFields(kind: EntityKind, onOpenScript: () => void, base?: JsonPath): FormContext["render"] {
   const list = KIND_LISTS[kind];
   const height = HEIGHT_FIELDS[kind];
+  // The record's path: [list, index] in the events, or an instance's in the spawn file
+  const depth = base ? base.length : 2;
   return (path, value, schema, ctx) => {
-    if (path[0] !== list || path.length < 3) return undefined;
-    const rest = path.slice(2).join(".");
+    if (path.length <= depth) return undefined;
+    if (base ? base.some((k, i) => path[i] !== k) : path[0] !== list) return undefined;
+    const rest = path.slice(depth).join(".");
     if (height && rest === `grid.${height.field}`) return <HeightField kind={kind} value={value} path={path} ctx={ctx} />;
     if (kind === "npc" && rest === "model") return <ModelField schema={schema} value={value} path={path} ctx={ctx} />;
     if (rest === "script") return <ScriptField schema={schema} value={value} path={path} ctx={ctx} onOpen={onOpenScript} />;

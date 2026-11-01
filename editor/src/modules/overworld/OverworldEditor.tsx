@@ -20,6 +20,9 @@ import { loadRails, oppositeRailDir, railDirOf, railEntities, railLevels, railTo
   type RailMap, type RailPlace } from "./rails.ts";
 import { RailPanel } from "./RailPanel.tsx";
 import { CameraPanel } from "./CameraPanel.tsx";
+import { SpawnSection, spawnRender } from "./SpawnPanel.tsx";
+import { SEASON_NAMES, TIME_NAMES, instanceEntities, previewPicks, spawnPath, type PreviewWorld, type SpawnEntry } from "./spawns.ts";
+import { WEATHERS } from "../encounters/model.ts";
 import { cameraEntities, cameraFileOf, circleCamera, defaultCamera, newRectArea, rectCamera, type CameraArea, type DefaultCamera,
   type ViewCamera } from "./cameras.ts";
 import { api } from "../../api.ts";
@@ -145,12 +148,48 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     for (const c of map.chunks) loadProps(c.folder);
     if (map.propBundle) bundleModels(map.propBundle).then(setModels, () => setModels(new Map()));
   }, [map]);
-  const entities = useMemo(() => [...entitiesOf(data), ...(map ? buildingEntities(map, models) : []), ...(rails ? railEntities(rails) : []),
-                                   ...(cameraAreas ? cameraEntities(cameraAreas) : [])],
+  // The zone's spawn file: its NPCs' conditions and instances (spawns.ts), held once it exists or is made
+  const spawnFile = zone ? spawnPath(zone) : null;
+  const [spawnExists, setSpawnExists] = useState(false);
+  useEffect(() => {
+    setSpawnExists(false);
+    if (!spawnFile) return;
+    let live = true;
+    api.list(spawnFile).then((found) => { if (live) setSpawnExists(found.length > 0); }, () => undefined);
+    return () => { live = false; };
+  }, [spawnFile]);
+  const { data: spawnData } = useHeld(spawnFile && (spawnExists || docs.get(spawnFile)) ? spawnFile : null);
+  const spawnEntries = useMemo(() => (spawnData instanceof Map ? ((toPlain(spawnData) as { npcs?: SpawnEntry[] }).npcs ?? []) : []), [spawnData]);
+  const entities = useMemo(() => {
+    // A host (an NPC with instances) is drawn faded: its own fields are unused
+    const hosts = new Set(spawnEntries.filter((e) => e.instances?.length).map((e) => e.id));
+    const npcs = entitiesOf(data).map((e) => (e.kind === "npc" && hosts.has(e.npcId!) ? { ...e, host: true } : e));
+    return [...npcs, ...instanceEntities(spawnEntries), ...(map ? buildingEntities(map, models) : []), ...(rails ? railEntities(rails) : []),
+            ...(cameraAreas ? cameraEntities(cameraAreas) : [])];
+  },
     // propsVersion: the chunks' props changed
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [data, map, models, propsVersion, rails, cameraAreas]);
-  const visible = useMemo(() => entities.filter((e) => shown.has(e.kind)), [entities, shown]);
+    [data, map, models, propsVersion, rails, cameraAreas, spawnEntries]);
+  // The conditions preview: the world it checks against, and what it shows
+  const [conditionsPreview, setConditionsPreview] = useState(false);
+  const [previewTime, setPreviewTime] = useState<string>("day");
+  const [previewWeather, setPreviewWeather] = useState("WEATHER_SUNNY");
+  const [previewFlags, setPreviewFlags] = useState("");
+  const [previewSeed, setPreviewSeed] = useState(1);
+  const picks = useMemo(() => {
+    if (!conditionsPreview || !zone) return null;
+    const world: PreviewWorld = { season: SEASON_NAMES[season], time: previewTime, weather: previewWeather, zone, exterior: null, seed: previewSeed,
+                                  flags: new Set(previewFlags.split(/[\s,]+/).filter(Boolean)) };
+    return previewPicks(spawnEntries, world);
+  }, [conditionsPreview, zone, season, previewTime, previewWeather, previewFlags, previewSeed, spawnEntries]);
+  const visible = useMemo(() => entities.filter((e) => {
+    if (!shown.has(e.kind === "instance" ? "npc" : e.kind)) return false;
+    if (!picks) return true;
+    // The preview shows what the game would: no NPC whose condition fails, a host as its pick
+    if (e.kind === "npc") { const p = picks.get(e.npcId!); return !p || (p.shown && p.instance === null && !e.host); }
+    if (e.kind === "instance") { const p = picks.get(e.spawn!.host); return !!p && p.shown && p.instance === e.spawn!.instance; }
+    return true;
+  }), [entities, shown, picks]);
   const chosen = selected ? entities.find((e) => e.kind === selected.kind && e.index === selected.index) ?? null : null;
   const size = eventsSize(data);
 
@@ -290,6 +329,14 @@ export function OverworldEditor({ constants, open }: ToolProps) {
 
   /** An entity moved along the rails: its line, front and side, one step for undo. */
   const moveRail = useCallback((e: Entity, place: RailPlace) => {
+    if (e.kind === "instance" && spawnFile) {
+      const s = e.spawn!;
+      const at = ["npcs", s.entry, "instances", s.instance, "npc", "rail"];
+      const rail = new Map<string, JsonValue>([["component", place.line], ["front", place.front], ["side", place.side]]);
+      documents.edit(spawnFile, at, rail);
+      record([spawnFile]);
+      return;
+    }
     const doc = eventsPath ? documents.get(eventsPath) : undefined;
     if (!eventsPath || !(doc?.data instanceof Map)) return;
     const item = (doc.data.get(KIND_LISTS[e.kind]) as JsonValue[])[e.index] as Map<string, JsonValue>;
@@ -300,6 +347,21 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   }, [eventsPath, record]);
 
   const move = useCallback((e: Entity, x: number, z: number, height: number) => {
+    if (e.kind === "instance" && spawnFile) {
+      // An instance's record, in the spawn file
+      const s = e.spawn!;
+      const at = ["npcs", s.entry, "instances", s.instance, "npc"];
+      const doc = documents.get(spawnFile);
+      if (!(doc?.data instanceof Map)) return;
+      let item: JsonValue | undefined = doc.data;
+      for (const k of at) item = item instanceof Map ? item.get(String(k)) : Array.isArray(item) ? item[k as number] : undefined;
+      if (!(item instanceof Map)) return;
+      const grid = new Map(item.get("grid") as Map<string, JsonValue>);
+      for (const edit of positionEdits({ ...e, kind: "npc" }, x, z, height)) grid.set(String(edit.path[edit.path.length - 1]), edit.value);
+      documents.edit(spawnFile, [...at, "grid"], grid);
+      record([spawnFile]);
+      return;
+    }
     if (e.building) {
       // By whole tiles, keeping its place in the tile and its height
       const b = e.building;
@@ -317,7 +379,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     for (const edit of positionEdits(e, x, z, height)) grid.set(String(edit.path[edit.path.length - 1]), edit.value);
     documents.edit(eventsPath, [KIND_LISTS[e.kind], e.index, "grid"], grid);
     record([eventsPath]);
-  }, [eventsPath, record]);
+  }, [eventsPath, record, spawnFile]);
 
   /** A new entity of the module's kind on a tile: the schema's defaults, then its place. */
   const [lastProp, setLastProp] = useState<number | null>(null);
@@ -437,6 +499,16 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   }, [eventsPath, schema, data, module, constants, record, map, layer, lastProp, models, rails, railsPath, cameraFile, defaults, zoneCamera, zone]);
 
   const remove = () => {
+    if (chosen?.kind === "instance" && spawnFile) {
+      const s = chosen.spawn!;
+      const list = spawnEntries.map((e) => ({ ...e }));
+      list[s.entry] = { ...list[s.entry], instances: (list[s.entry].instances ?? []).filter((_, k) => k !== s.instance) };
+      if (!list[s.entry].instances!.length) delete list[s.entry].instances;
+      documents.edit(spawnFile, ["npcs"], fromPlain(list.filter((e) => e.when || e.instances?.length)));
+      record([spawnFile]);
+      setSelected(null);
+      return;
+    }
     if (chosen?.kind === "camera" && cameraFile?.path) {
       documents.edit(cameraFile.path, ["areas", chosen.index], undefined);
       record([cameraFile.path]);
@@ -561,7 +633,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   }, [eventsPath, map, rails, zone]);
 
   const save = useCallback(async () => {
-    for (const p of documents.dirtyPaths().filter((p) => p.startsWith("res/field/"))) await documents.save(p);
+    for (const p of documents.dirtyPaths().filter(ownFile)) await documents.save(p);
     for (const chunk of dirtyPropChunks()) await saveProps(chunk);
   }, []);
   useEffect(() => {
@@ -594,7 +666,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     return null;
   }, [chosen, cameraAreas, previewing, previewT, previewDefault, tile, defaults, zoneCamera, map, layer]);
 
-  const unsavedDocs = [...docs.values()].filter((d) => d.dirty && d.path.startsWith("res/field/"));
+  const unsavedDocs = [...docs.values()].filter((d) => d.dirty && ownFile(d.path));
   const unsavedProps = dirtyPropChunks();
   const unsaved = [...unsavedDocs.map((d) => ({ path: d.path, saveError: d.saveError })),
                    ...unsavedProps.map((c) => ({ path: `${c}/model.glb`, saveError: propsSaveError(c) }))];
@@ -604,6 +676,8 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     ? entities.filter((e) => e !== chosen && e.x !== null && e.z !== null && chosen.x! >= e.x && chosen.x! < e.x + e.width && chosen.z! >= e.z && chosen.z! < e.z + e.depth)
     : [];
   const fields = useMemo(() => (chosen ? entityFields(chosen.kind, () => setScriptOpen(true)) : undefined), [chosen?.kind]);
+  const instanceFields = useMemo(() => (chosen?.spawn ? spawnRender(entityFields("npc", () => setScriptOpen(true),
+    ["npcs", chosen.spawn.entry, "instances", chosen.spawn.instance, "npc"])) : undefined), [chosen?.spawn?.entry, chosen?.spawn?.instance]);
   const revert = async () => {
     for (const d of unsavedDocs) await documents.reload(d.path).catch(() => undefined);
     revertProps();
@@ -692,6 +766,9 @@ export function OverworldEditor({ constants, open }: ToolProps) {
               <label className="ow-check" title="Straight down, without perspective, north up: the right or middle button pans, the wheel zooms">
                 <input type="checkbox" checked={overhead} onChange={(e) => setOverhead(e.target.checked)} /> Overhead</label>
               <label className="ow-check"><input type="checkbox" checked={showModels} onChange={(e) => setShowModels(e.target.checked)} /> Models</label>
+              <button className={conditionsPreview ? "active" : ""} onClick={() => setConditionsPreview(!conditionsPreview)}
+                      title="Shows what the game would for a season (the Season choice), a time, a weather and set flags: no NPC whose condition fails, each host as its instance">
+                {conditionsPreview ? "■ Conditions" : "▶ Conditions"}</button>
               <button className={preview ? "active" : ""} onClick={() => setPreview(!preview)}
                       title="The NPCs move as their move codes move them in game (at 30 frames a second, blocked as the game blocks them, without the player); their tiles stay marked">
                 {preview ? "■ Stop" : "▶ Movement"}</button>
@@ -715,6 +792,20 @@ export function OverworldEditor({ constants, open }: ToolProps) {
             </div>
           )}
           {painting && paintNote && <div className="ow-bar muted">{paintNote}</div>}
+          {conditionsPreview && (
+            <div className="ow-toolbar ow-preview-bar">
+              <strong>Conditions preview</strong>
+              <span className="muted">{SEASON_NAMES[season]} (the Season choice)</span>
+              <label className="ow-inline">Time <select value={previewTime} onChange={(e) => setPreviewTime(e.target.value)}>
+                {TIME_NAMES.map((t) => <option key={t} value={t}>{t.replace("_", " ")}</option>)}</select></label>
+              <label className="ow-inline">Weather <select value={previewWeather} onChange={(e) => setPreviewWeather(e.target.value)}>
+                {WEATHERS.map((w) => <option key={w.id} value={w.id}>{w.label}</option>)}</select></label>
+              <label className="ow-inline" title="Flags set, by name, separated by spaces or commas">Flags set
+                <input className="ow-flags" value={previewFlags} onChange={(e) => setPreviewFlags(e.target.value)} placeholder="EVENT_FLAG_…" /></label>
+              <button onClick={() => setPreviewSeed(previewSeed + 1)} title="Another day: chances and instances rolled again">Reload</button>
+              <span className="muted">The party, the lead, variables and the terrain count as holding.</span>
+            </div>
+          )}
           <div className={`ow-map-wrap${painting ? " painting" : ""}`}>
             {!zone ? <p className="muted ow-empty">Choose a zone.</p>
               : mapError ? <p className="ow-error ow-empty">{mapError}</p>
@@ -802,8 +893,31 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                                  record([PROPS + b.chunk]);
                                  setLastProp(p.id);
                                }} />
-              ) : eventsPath && <DocForm key={`${chosen.kind}:${chosen.index}`} path={eventsPath} at={[KIND_LISTS[chosen.kind], chosen.index]} constants={constants}
-                                      hideDescription flat render={fields} onEdit={() => record([eventsPath])} />}
+              ) : chosen.kind === "instance" && spawnFile ? (
+                <>
+                  <p className="ow-note"><button className="link" onClick={() => {
+                    const host = entities.find((e) => e.kind === "npc" && e.npcId === chosen.spawn!.host);
+                    if (host) setSelected({ kind: "npc", index: host.index });
+                  }}>Its host, NPC {chosen.spawn!.host}</button> <span className="muted">The field writes it into the host's record when it's picked; its id stays the host's.</span></p>
+                  <DocForm key={`${spawnFile}:${chosen.spawn!.entry}:${chosen.spawn!.instance}`} path={spawnFile}
+                           at={["npcs", chosen.spawn!.entry, "instances", chosen.spawn!.instance]} constants={constants}
+                           hideDescription flat render={instanceFields} onEdit={() => record([spawnFile])} />
+                </>
+              ) : eventsPath && (
+                <>
+                  {chosen.kind === "npc" && spawnFile && data instanceof Map && (
+                    <SpawnSection path={spawnFile} entries={spawnEntries} npcId={chosen.npcId!} constants={constants}
+                                  npcRecord={toPlain((data.get("npcs") as JsonValue[])[chosen.index]) as Record<string, unknown>}
+                                  onEdit={(paths) => { record(paths); setSpawnExists(true); }}
+                                  onOpenInstance={(entry, k) => {
+                                    const inst = entities.find((e) => e.spawn?.entry === entry && e.spawn.instance === k);
+                                    if (inst) setSelected({ kind: "instance", index: inst.index });
+                                  }} />
+                  )}
+                  <DocForm key={`${chosen.kind}:${chosen.index}`} path={eventsPath} at={[KIND_LISTS[chosen.kind], chosen.index]} constants={constants}
+                           hideDescription flat render={fields} onEdit={() => record([eventsPath])} />
+                </>
+              )}
             </div>
           ) : (
             <div className="ow-panel">
@@ -842,6 +956,9 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     </div>
   );
 }
+
+/** The files the Overworld Editor edits, which its Save and Revert cover: the field's data and the zones' spawn files. */
+const ownFile = (path: string) => path.startsWith("res/field/") || path.startsWith("res/paperwhite2/overworld/");
 
 /** The rails' attributes from the document store, where the painter left them unsaved. */
 const railSource = (path: string) => { const doc = documents.get(path); return doc ? currentText(doc) : null; };

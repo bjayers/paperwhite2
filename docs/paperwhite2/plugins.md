@@ -377,7 +377,7 @@ used one is named with a `# Paper White 2:` comment). New features take theirs f
 | 0x41c-0x44b | free | |
 | 0x754 | free (was the old season NPC's) | |
 | 0x755-0x757 | free | |
-| 0x92f-0x95f | the hack's features | 0x92f `EVENT_FLAG_EXP_SHARE_OFF` |
+| 0x92f-0x95f | the hack's features | 0x92f `EVENT_FLAG_EXP_SHARE_OFF`, 0x930 `EVENT_FLAG_SPAWN_HIDDEN` |
 | 0xaef | the user's: the Wurmple daily-feeding mini-event (`route_20.s`), a daily flag | `EVENT_FLAG_DAILY_0x0aef`; don't touch |
 | 0xaf0 | the user's: the Pokémon Center lottery girl (`global_10850.s`, set in `aspertia_city.s` too), a daily flag | `EVENT_FLAG_DAILY_0x0af0`; don't touch |
 | 0xbd9-0xbf7 | the debug menu's toggles | 0xbd9 `EVENT_FLAG_DEBUG_ALWAYS_SHINY`, 0xbda `EVENT_FLAG_DEBUG_NO_WILD_ENCOUNTERS`, 0xbdb `EVENT_FLAG_DEBUG_WALK_THROUGH_WALLS` |
@@ -820,10 +820,27 @@ selection 1.6 KB, the fills and loading 0.7 KB), overlay 12 0x720 (the commands 
 are read into the script's heap for each check and freed: 332 and 268 bytes now. `Conditions_Select` keeps 32 bytes
 of match bits on the stack.
 
-**The spawn system's placeholder.** `include/paperwhite2/spawns.h` declares the API the spawn system will have, and
-`src/paperwhite2/ov012/paperwhite2_spawns.c` stubs it, empty; nothing calls it. Per the decisions (design §10), the
-research into how NPCs are loaded and moved comes first, then either a new method or the flag method of script 10852
-ported onto the engine.
+### NPC spawns
+
+The zones' NPCs' conditions and instances (`docs/paperwhite2/design/overworld-editor.md`, the research's option C),
+edited in the Overworld Editor.
+
+- **Data:** `res/paperwhite2/overworld/<zone>.json` (`overworld.schema.json`): for an NPC of the zone's events, by
+  its id, a `when` (the conditions' format) under which it appears, and `instances`, the NPCs its record can be, each
+  with a `when`, a `weight` and a whole NPC record (`res/field/events/events.schema.json#/$defs/npc`). An NPC with
+  instances is their host: its own fields are unused.
+- **Packing:** `tools/paperwhite2/overworld.py archive` (`HACK_ARCHIVE_MEMBERS`) adds a member after the events'
+  archive's own files (a/1/2/6): a header, a zone's entry each, then a conditions table a zone, whose rules' payloads
+  name the NPC (a condition) or the host and carry the instance's 36-byte record. `overworld.py dump MEMBER` lists one.
+- **At zone entry,** `Spawns_OnZoneInit` (`src/paperwhite2/ov012/paperwhite2_spawns.c`, from
+  `FieldScript_CallOnZoneInit` after the zone-load counter and before the init scripts and `SpawnAllZoneNPCs`) reads
+  the zone's table into the game event heap's tail, fills a context (the world, the lead, the party), and:
+  - an NPC whose condition fails gets `EVENT_FLAG_SPAWN_HIDDEN` (0x930, set at every zone entry) as its spawn flag;
+  - a host gets an instance written into its record (its id kept), picked by weight among those whose conditions hold
+    and whose own spawn flags aren't set, from `CONDITION_SEED_DAY` keyed by the host's id; with none, it is hidden.
+  A chance in a condition is rolled from the same day's seed, so it holds all day. The field then creates, talks to and
+  saves the NPCs as its own; a continued game takes them from the save, and a battle or a menu keeps them.
+- **Not yet:** picking again on a time-of-day change (`Spawns_OnPeriodChange`, empty), ambients and groups.
 
 ### Wild encounters
 
