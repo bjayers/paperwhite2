@@ -1085,12 +1085,18 @@ def write_chunk_glb(directory, polygons, materials, texture_set):
 
 
 def start_layout(library, model):
-    """A layout of a chunk as it is: its pieces from the library's catalogue, which must have the chunk as a source."""
+    """A layout of a chunk as it is: its pieces from the library's catalogue, which must have the chunk as a source, or,
+    for a new map's chunk, its template."""
     _, _, _, placements = cut(library)
+    source = model
     if model not in placements:
-        raise DataError(f"the library {library} doesn't cut {model}")
+        # A new map's chunk starts as a copy of its template, so a layout of it starts as the template's
+        data = json.loads((MODELS / model / "data.json").read_text())
+        source = data.get("template", "").removeprefix("MAP_MODEL_").lower()
+        if source not in placements:
+            raise DataError(f"the library {library} doesn't cut {model}" + (f" or its template, {source}" if source else ""))
     layout = {"$schema": "../map_layout.schema.json", "library": library, "model": model, "size": 32,
-              "ground": placements[model]["ground"], "objects": placements[model]["objects"]}
+              "ground": placements[source]["ground"], "objects": placements[source]["objects"]}
     LAYOUTS.mkdir(parents=True, exist_ok=True)
     path = LAYOUTS / f"{model}.json"
     path.write_text(dumps(layout) + "\n")

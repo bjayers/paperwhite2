@@ -81,7 +81,8 @@ export function TilePanel({ map, onShow, library, setLibrary, catalogue, setCata
       && (!f || tileLabel(t).toLowerCase().includes(f) || t.materials.some((m) => m.toLowerCase().includes(f)) || t.category?.toLowerCase().includes(f)));
   }, [catalogue, filter, kind]);
   useEffect(() => setShown(PAGE), [filter, kind, library]);
-  const cuts = !!layout.model && !!info?.sources.includes(layout.model);
+  // A new map's chunk (named after its map) starts from its template's tiles, which the server checks
+  const cuts = !!layout.model && (!!info?.sources.includes(layout.model) || !layout.model.startsWith("overworld") && !/_m_/.test(layout.model));
 
   return (
     <>
@@ -140,9 +141,11 @@ export function TilePanel({ map, onShow, library, setLibrary, catalogue, setCata
             <p className="ow-note">{layout.model} has no layout.</p>
             <div className="me-actions">
               <button onClick={onStart} disabled={!cuts || busy}
-                      title={cuts ? "A layout of the chunk as it is, from this library's tiles" : "This library isn't cut from this chunk"}>Start a layout from the chunk</button>
+                      title={cuts ? "A layout of the chunk as it is (a new map's chunk: as its template is), from this library's tiles" : "This library isn't cut from this chunk"}>Start a layout from the chunk</button>
             </div>
             {!cuts && <p className="muted ow-note">The library isn't cut from this chunk; add it to the library's sources first.</p>}
+            {cuts && !info?.sources.includes(layout.model) && <p className="muted ow-note">A new map's chunk starts from its template's tiles,
+              which the library must be cut from.</p>}
           </>
         )}
       </section>
