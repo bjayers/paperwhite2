@@ -423,6 +423,18 @@ const routes: Record<string, Handler> = {
     await project.writeAtomic(path, glb);
     json(res, { ok: true });
   },
+  "POST /api/map-chunk/revert": async (req, res) => {
+    // A map chunk's files put back as a revision has them: "vanilla" (the tag w2-original, the game as it shipped) or
+    // "commit" (the last commit); the working tree's files only, never git's index
+    const { model, to } = (await readJson(req)) as { model: string; to: string };
+    if (!/^[a-z0-9_]+$/.test(model ?? "") || (to !== "vanilla" && to !== "commit")) return error(res, 400, "Name the chunk, and vanilla or commit");
+    const rev = to === "vanilla" ? "w2-original" : "HEAD";
+    const folder = `res/field/maps/models/${model}`;
+    const files = await git.files(rev, folder);
+    if (!files.length) return error(res, 404, to === "vanilla" ? `${model} isn't in the original game (a new map's chunk)` : `${model} isn't committed yet`);
+    for (const file of files) await project.writeAtomic(file, await git.show(rev, file));
+    json(res, { files: files.map((f) => f.slice(folder.length + 1)) });
+  },
   "GET /api/new-map/unused": async (_req, res) => {
     // The game's unused zones, which a new map can take (tools/paperwhite2/new_map.py)
     const result = await runTool("tools/paperwhite2/new_map.py", ["unused"]);

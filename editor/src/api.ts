@@ -108,6 +108,8 @@ export const api = {
   /** Puts a map chunk's model.glb back as it was (base64 bytes), and its data.json (text), for undo. */
   glbRaw: (path: string, data: string, meta?: string, files?: Record<string, string>) =>
     request<{ ok: boolean }>("PUT", "/api/glb-raw", { path, data, meta, files }),
+  /** Puts a map chunk's files back as the original game (vanilla) or the last commit has them. */
+  revertChunk: (model: string, to: "vanilla" | "commit") => request<{ files: string[] }>("POST", "/api/map-chunk/revert", { model, to }),
   /** The game's unused zones, which a new map can take. */
   unusedZones: () => request<{ zone: string; file: string; parent: string | null; place: string | null }[]>("GET", "/api/new-map/unused"),
   /** Makes an unused zone a new map (tools/paperwhite2/new_map.py create). */

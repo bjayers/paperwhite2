@@ -1,5 +1,5 @@
 // What git says about the checkout, and the one write the editor makes to it: a commit the user asks for, when
-// settings.local.json allows it.
+// settings.local.json allows it. It also reads files as a revision had them (a chunk put back as it was).
 
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -40,6 +40,18 @@ export class Git {
     const tracked = await this.git("ls-files", "--", path);
     if (!tracked.trim()) return "(a new file)";
     return this.git("diff", "HEAD", "--", path);
+  }
+
+  /** The files under a folder at a revision (a commit or a tag), or none where it has no such folder. */
+  async files(rev: string, folder: string): Promise<string[]> {
+    const out = await this.git("ls-tree", "-r", "--name-only", rev, "--", folder.replace(/\/?$/, "/")).catch(() => "");
+    return out.split("\n").filter(Boolean);
+  }
+
+  /** A file's bytes at a revision. */
+  async show(rev: string, path: string): Promise<Buffer> {
+    const { stdout } = await run("git", ["show", `${rev}:${path}`], { cwd: this.root, maxBuffer: 64 << 20, encoding: "buffer" });
+    return stdout;
   }
 
   async commit(paths: string[], message: string): Promise<string> {

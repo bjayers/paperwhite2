@@ -39,6 +39,38 @@
             },
             "description": "The wall between heights where neither terrain has one: a cliff, v down it"
         },
+        "edges": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [ "from", "to", "texture" ],
+                "properties": {
+                    "from": {
+                        "type": "string",
+                        "description": "The key of the terrain on the texture's v=0 side"
+                    },
+                    "to": {
+                        "type": "string",
+                        "description": "The key of the terrain on its v=1 side"
+                    },
+                    "texture": {
+                        "type": "string",
+                        "description": "A PNG of the style's texture set, without .png: one terrain blending into the other down v"
+                    },
+                    "repeat": {
+                        "type": "number",
+                        "exclusiveMinimum": 0,
+                        "description": "Tiles a repeat of the texture spans along the border"
+                    },
+                    "alpha": {
+                        "enum": [ "MASK", "BLEND" ],
+                        "description": "How its transparent pixels draw"
+                    }
+                }
+            },
+            "description": "Borders drawn between two terrains at one height, a tile wide (half on each side): a path's edge on grass"
+        },
         "terrains": {
             "type": "array",
             "items": {

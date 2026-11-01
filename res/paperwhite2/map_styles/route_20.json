@@ -7,6 +7,26 @@
         "repeat": 1,
         "alpha": "MASK"
     },
+    "edges": [
+        {
+            "from": "g",
+            "to": "p",
+            "texture": "michi01a",
+            "repeat": 1
+        },
+        {
+            "from": "t",
+            "to": "p",
+            "texture": "michi01a",
+            "repeat": 1
+        },
+        {
+            "from": "b",
+            "to": "p",
+            "texture": "michi01a",
+            "repeat": 1
+        }
+    ],
     "terrains": [
         {
             "key": "g",

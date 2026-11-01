@@ -3,10 +3,12 @@
 // and collision generated from it (tools/paperwhite2/map_maker.py).
 
 import { useState } from "react";
+import { ScrubNumber } from "../overworld/ScrubNumber.tsx";
 import type { LibraryObject, MapStyle, PaintShape, PaintTool, Project } from "./painting.ts";
 
 export function PaintPanel({ model, project, dirty, styles, objects, tool, setTool, shape, setShape, terrain, setTerrain, height, setHeight,
-  placing, setPlacing, selected, onRemoveSelected, view, setView, onStart, onGenerate, onStop, busy }: {
+  placing, setPlacing, selected, onRemoveSelected, showPaint, setShowPaint, fadeModel, setFadeModel, onStart, onGenerate,
+  autoGenerate, setAutoGenerate, onStop, busy }: {
   model: string | null;
   project: Project | null;
   dirty: boolean;
@@ -25,8 +27,12 @@ export function PaintPanel({ model, project, dirty, styles, objects, tool, setTo
   setPlacing(id: string): void;
   selected: number | null;
   onRemoveSelected(): void;
-  view: "painting" | "model";
-  setView(v: "painting" | "model"): void;
+  showPaint: boolean;
+  setShowPaint(on: boolean): void;
+  fadeModel: boolean;
+  setFadeModel(on: boolean): void;
+  autoGenerate: boolean;
+  setAutoGenerate(on: boolean): void;
   /** fill: a terrain, or "." to keep the chunk; flat: one height in tiles, else the chunk's collision's. */
   onStart(style: string, fill: string, flat?: number): void;
   onGenerate(): void;
@@ -43,9 +49,18 @@ export function PaintPanel({ model, project, dirty, styles, objects, tool, setTo
         <h4>Painted map</h4>
         <div className="me-row"><label>Style</label><span>{style?.name ?? project.style}</span></div>
         <div className="me-row"><label>Map shows</label>
-          <span className="me-inline">
-            <label className="ow-check"><input type="radio" checked={view === "painting"} onChange={() => setView("painting")} /> the painting</label>
-            <label className="ow-check"><input type="radio" checked={view === "model"} onChange={() => setView("model")} /> the model</label>
+          <span className="me-stack">
+            <label className="ow-check"><input type="checkbox" checked={showPaint} onChange={(e) => setShowPaint(e.target.checked)} /> the painting's colors</label>
+            <label className="ow-check"><input type="checkbox" checked={fadeModel} onChange={(e) => setFadeModel(e.target.checked)} /> the model faded to half</label>
+          </span>
+        </div>
+      </section>
+      <section className="me-section">
+        <h4>Generating</h4>
+        <div className="me-row"><label>When</label>
+          <span className="me-stack">
+            <label className="ow-check"><input type="radio" checked={!autoGenerate} onChange={() => setAutoGenerate(false)} /> when I click Generate</label>
+            <label className="ow-check"><input type="radio" checked={autoGenerate} onChange={() => setAutoGenerate(true)} /> after each stroke</label>
           </span>
         </div>
         <div className="me-actions">
@@ -54,12 +69,17 @@ export function PaintPanel({ model, project, dirty, styles, objects, tool, setTo
           {dirty && <span className="muted">unsaved</span>}
         </div>
         <p className="muted ow-note">Generating writes the chunk's model.glb (the props stay) and its collision from the painting: painted tiles
-          generated, kept tiles (see-through on the painting) as the chunk had them. Edit the painting and generate again whenever you like;
-          Ctrl+Z undoes a generate.</p>
+          generated, kept tiles as the chunk had them. Edit the painting and generate again whenever you like. Ctrl+Z undoes a generate;
+          after each stroke, it undoes the stroke and its generate together.</p>
+      </section>
+      <section className="me-section">
+        <h4>Put the chunk back</h4>
         <div className="me-actions">
           <button className="danger" onClick={onStop} disabled={busy}
                   title="Puts the chunk's model and collision back as they were when painting started, and removes the painting">Stop painting and put the chunk back</button>
         </div>
+        <p className="muted ow-note">Stop painting puts the chunk back as it was when painting started, with any edits made before it. To put it back
+          as the original game or the last commit has it, use Put it back in the Chunks tab (the painting stays).</p>
       </section>
       <section className="me-section">
         <h4>Brush</h4>
@@ -82,8 +102,9 @@ export function PaintPanel({ model, project, dirty, styles, objects, tool, setTo
             </span>
           </div>
         )}
-        {(tool === "terrain" || tool === "both") && (
+        {["terrain", "both", "height", "raise", "lower"].includes(tool) && (
           <div className="me-terrains">
+            {(tool === "height" || tool === "raise" || tool === "lower") && <div className="muted me-category-name">Kept tiles a height is painted on become</div>}
             <button className={`me-terrain${terrain === "." ? " selected" : ""}`} onClick={() => setTerrain(".")}
                     title="The chunk as it was on these tiles: an eraser for painted tiles">
               <span className="me-swatch me-swatch-keep" />Keep the chunk
@@ -97,8 +118,8 @@ export function PaintPanel({ model, project, dirty, styles, objects, tool, setTo
         )}
         {(tool === "height" || tool === "both") && (
           <div className="me-row"><label>Height</label>
-            <span className="me-inline"><input type="number" step={0.5} value={height / 2} className="me-number"
-                                                onChange={(e) => setHeight(Math.round(Number(e.target.value) * 2))} /> tiles</span>
+            <span className="me-inline"><ScrubNumber label="tiles" value={height / 2} step={0.05} digits={1}
+                                                     onChange={(v) => setHeight(Math.max(-40, Math.min(80, Math.round(v * 2))))} /></span>
           </div>
         )}
         {tool === "place" && (
@@ -117,6 +138,7 @@ export function PaintPanel({ model, project, dirty, styles, objects, tool, setTo
         )}
         <p className="muted ow-note">{tool === "place" ? "Click the tile the object's north-west corner goes on." : tool === "select"
           ? "Drag an object to another tile; it stands on that tile's ground." : "Click or drag on the map; a rectangle fills from where the drag starts to where it ends."}
+          {tool === "height" || tool === "raise" || tool === "lower" ? " A height painted on a kept tile paints it the terrain chosen above (Keep the chunk: the first terrain)." : ""}
           {" "}Ctrl+Z undoes.</p>
       </section>
     </>

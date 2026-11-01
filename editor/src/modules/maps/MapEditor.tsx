@@ -39,10 +39,15 @@ const MATERIAL_LIMIT = 255;
 
 /** One step of the history: a chunk's GLB before and after a face edit, as base64; or edits of documents (collision,
  * document's own history holds. */
-type Step = { kind: "faces"; path: string; before: Snapshot; after: Snapshot; what: string } | { kind: "docs"; paths: string[]; what: string };
+type Step = { kind: "faces"; path: string; before: Snapshot; after: Snapshot; what: string } | { kind: "docs"; paths: string[]; what: string }
+  | { kind: "group"; steps: Step[]; what: string };
 
 /** A chunk's model.glb, as base64, and its data.json, which an edit may mark written; with its collision files where
  * the step rewrote them (a generate). */
+/** Whether a step edits documents (path: that one), so it goes when they are reverted. */
+const editsDocs = (st: Step, path?: string): boolean =>
+  st.kind === "docs" ? !path || st.paths.includes(path) : st.kind === "group" && st.steps.some((inner) => editsDocs(inner, path));
+
 interface Snapshot { glb: string; data: string; files?: Record<string, string> }
 
 
@@ -55,7 +60,7 @@ async function glbBase64(path: string, collision = false): Promise<Snapshot> {
   const data = (await api.file(path.replace(/model\.glb$/, "data.json"))).text;
   if (!collision) return { glb: btoa(text), data };
   const files: Record<string, string> = {};
-  for (const name of ["terrain_0.csv", "terrain_0_splits.csv"]) {
+  for (const name of ["terrain_0.csv", "terrain_0_splits.csv", "terrain_1.csv", "terrain_1_splits.csv"]) {
     const file = await api.file(path.replace(/model\.glb$/, name)).catch(() => null);
     if (file) files[name] = file.text;
   }
@@ -92,7 +97,11 @@ export function MapEditor({ constants }: ToolProps) {
   const [paintHeightHalf, setPaintHeightHalf] = useState(4);
   const [placing, setPlacing] = useState("");
   const [selectedObject, setSelectedObject] = useState<number | null>(null);
-  const [paintView, setPaintView] = useState<"painting" | "model">("painting");
+  const [showPaint, setShowPaint] = useState(true);
+  const [fadeModel, setFadeModel] = useState(true);
+  const [autoGenerate, setAutoGenerate] = useState(() => { try { return localStorage.getItem("maps.autoGenerate") === "1"; } catch { return false; } });
+  const [pendingGenerate, setPendingGenerate] = useState(0);
+  useEffect(() => { try { localStorage.setItem("maps.autoGenerate", autoGenerate ? "1" : "0"); } catch { /* not kept */ } }, [autoGenerate]);
   const [chosenObject, setChosenObject] = useState("");
   const [placingOnChunk, setPlacingOnChunk] = useState(false);
   const [saveAs, setSaveAs] = useState<{ name: string; category: string } | null>(null);
@@ -149,7 +158,7 @@ export function MapEditor({ constants }: ToolProps) {
       if (ev.altKey && tilePicked && map) eyedropper(tilePicked);
       return;
     }
-    if (tab === "paint" && project && paintView === "painting") {
+    if (tab === "paint" && project) {
       // Strokes paint; a click elsewhere chooses another chunk
       if (picked !== chunk && picked !== null) setChunk(picked);
       return;
@@ -240,32 +249,38 @@ export function MapEditor({ constants }: ToolProps) {
     s.reload();
   };
 
+  /** Puts one step's files back (back) or forward again; a group's steps in turn. */
+  const apply = async (st: Step, back: boolean): Promise<void> => {
+    if (st.kind === "group") {
+      for (const inner of back ? [...st.steps].reverse() : st.steps) await apply(inner, back);
+      return;
+    }
+    if (st.kind === "docs") {
+      for (const path of st.paths) { if (back) documents.undo(path); else documents.redo(path); }
+      await reloadTerrain(st.paths);
+      return;
+    }
+    const snapshot = back ? st.before : st.after;
+    await api.glbRaw(st.path, snapshot.glb, snapshot.data, snapshot.files);
+    if (snapshot.files) {
+      const folder = st.path.replace(/\/model\.glb$/, "");
+      const paths = Object.keys(snapshot.files).map((n) => `${folder}/${n}`);
+      for (const p of paths) if (documents.get(p)) await documents.reload(p);
+      setMapVersion((v) => v + 1);
+    }
+    setFaces([]);
+    reloadChunk(st.path.replace(/\/model\.glb$/, ""));
+  };
+
   const step = useCallback(async (back: boolean) => {
     const list = back ? history.done : history.undone;
     const last = list[list.length - 1];
     if (!last || busy) return;
-    const moved = () => setHistory((h) => back ? { done: h.done.slice(0, -1), undone: [...h.undone, last] }
-      : { done: [...h.done, last], undone: h.undone.slice(0, -1) });
-    if (last.kind === "docs") {
-      for (const path of last.paths) { if (back) documents.undo(path); else documents.redo(path); }
-      moved();
-      await reloadTerrain(last.paths);
-      setMessage({ text: `${back ? "Undid" : "Redid"}: ${last.what}.` });
-      return;
-    }
     setBusy(true);
     try {
-      const snapshot = back ? last.before : last.after;
-      await api.glbRaw(last.path, snapshot.glb, snapshot.data, snapshot.files);
-      if (snapshot.files) {
-        const folder = last.path.replace(/\/model\.glb$/, "");
-        const paths = Object.keys(snapshot.files).map((n) => `${folder}/${n}`);
-        for (const p of paths) if (documents.get(p)) await documents.reload(p);
-        setMapVersion((v) => v + 1);
-      }
-      moved();
-      setFaces([]);
-      reloadChunk(last.path.replace(/\/model\.glb$/, ""));
+      await apply(last, back);
+      setHistory((h) => back ? { done: h.done.slice(0, -1), undone: [...h.undone, last] }
+        : { done: [...h.done, last], undone: h.undone.slice(0, -1) });
       setMessage({ text: `${back ? "Undid" : "Redid"}: ${last.what}.` });
     } catch (e) {
       setMessage({ text: (e as Error).message, error: true });
@@ -316,18 +331,28 @@ export function MapEditor({ constants }: ToolProps) {
   const projectStyle = project ? styles.get(project.style) : undefined;
   useEffect(() => { setSelectedObject(null); }, [modelName]);
   useEffect(() => {
-    const show = tab === "paint" && paintView === "painting" && project && chunk !== null;
+    const show = tab === "paint" && project && chunk !== null;
     const colors = Object.fromEntries((projectStyle?.terrains ?? []).map((t) => [t.key, t.color ?? "#888888"]));
-    scene.current?.showPainting(show ? chunk : null, show ? { terrain: project.terrain, height: project.height, objects: project.objects ?? [], colors } : null,
-                                selectedObject);
-  }, [tab, paintView, project, projectStyle, chunk, loaded, selectedObject]);
+    scene.current?.showPainting(show ? chunk : null, show ? { terrain: project.terrain, height: project.height, objects: project.objects ?? [], colors,
+                                                             show: showPaint, fade: fadeModel } : null, selectedObject);
+  }, [tab, showPaint, fadeModel, project, projectStyle, chunk, loaded, selectedObject]);
 
-  /** A painting's change, as one step. */
+  /** A painting's change, as one step; generated after it, as part of that step, where that is chosen. */
   const changeProject = (next: Project, what: string) => {
     if (!projectFile) return;
     documents.replace(projectFile, fromPlain(next));
     setHistory((h) => ({ done: [...h.done, { kind: "docs", paths: [projectFile], what }], undone: [] }));
+    if (autoGenerate) setPendingGenerate((n) => n + 1);
   };
+  // After the render that has the change, so the generate saves the painting as changed; strokes made while one runs
+  // wait for it
+  const generatedFor = useRef(0);
+  useEffect(() => {
+    if (pendingGenerate > generatedFor.current && !busy) {
+      generatedFor.current = pendingGenerate;
+      void generate(true);
+    }
+  }, [pendingGenerate, busy]);
 
   /** A stroke on the painting: its tiles (global) painted, or an object placed on its first. */
   const paintProject = (tiles: { x: number; z: number }[]) => {
@@ -342,7 +367,8 @@ export function MapEditor({ constants }: ToolProps) {
     }
     if (tool === "select") return;
     const cells = strokeCells(local, shape);
-    changeProject(painted(project, cells, tool, terrainKey, paintHeightHalf), `Painted ${cells.length} tile(s)`);
+    const fallback = terrainKey !== "." ? terrainKey : projectStyle?.terrains[0]?.key ?? "g";
+    changeProject(painted(project, cells, tool, terrainKey, paintHeightHalf, fallback), `Painted ${cells.length} tile(s)`);
   };
 
   /** An object dragged to another tile, or clicked. */
@@ -373,7 +399,7 @@ export function MapEditor({ constants }: ToolProps) {
       await documents.hold(projectFile);
       setProjectExists((m) => ({ ...m, [projectFile]: true }));
       setTerrainKey(fill === "." ? (styles.get(style)?.terrains[0]?.key ?? "g") : fill);
-      setPaintView("painting");
+      setShowPaint(true);
       setMessage({ text: `Started ${projectFile}${fill === "." ? ", every tile kept as the chunk has it: paint only what you change" : ""}. Generate the chunk when it's ready.` });
     } catch (e) {
       setMessage({ text: (e as Error).message, error: true });
@@ -391,8 +417,7 @@ export function MapEditor({ constants }: ToolProps) {
       const result = await api.stopPainting(modelName);
       documents.close(projectFile);
       setProjectExists((m) => ({ ...m, [projectFile]: false }));
-      setHistory((h) => ({ done: h.done.filter((st) => !(st.kind === "docs" && st.paths.includes(projectFile))),
-                           undone: h.undone.filter((st) => !(st.kind === "docs" && st.paths.includes(projectFile))) }));
+      setHistory((h) => ({ done: h.done.filter((st) => !editsDocs(st, projectFile)), undone: h.undone.filter((st) => !editsDocs(st, projectFile)) }));
       for (const l of current.layers) if (documents.get(l.path)) await documents.reload(l.path);
       reloadChunk(current.folder);
       setMapVersion((v) => v + 1);
@@ -405,23 +430,53 @@ export function MapEditor({ constants }: ToolProps) {
     }
   };
 
-  const generate = async () => {
+  /** Puts the chunk's model, data.json and collision back as the original game or the last commit has them. */
+  const revertChunk = async (to: "vanilla" | "commit") => {
+    if (!modelName || !current) return;
+    const as = to === "vanilla" ? "as it is in the original game" : "as it was last committed";
+    if (!window.confirm(`Put ${modelName} back ${as}? Its model and collision are replaced (Ctrl+Z undoes this).`)) return;
+    setBusy(true);
+    try {
+      for (const l of current.layers) if (documents.get(l.path)?.dirty) throw new Error(`${l.path} has unsaved edits: save or revert them first`);
+      const path = `${current.folder}/model.glb`;
+      const before = await glbBase64(path, true);
+      await api.revertChunk(modelName, to);
+      const after = await glbBase64(path, true);
+      setHistory((h) => ({ done: [...h.done, { kind: "faces", path, before, after, what: `Put the chunk back ${as}` }], undone: [] }));
+      for (const l of current.layers) if (documents.get(l.path)) await documents.reload(l.path);
+      reloadChunk(current.folder);
+      setMapVersion((v) => v + 1);
+      setMessage({ text: `${modelName} is back ${as}.` });
+    } catch (e) {
+      setMessage({ text: (e as Error).message, error: true });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /** Generates the chunk from its painting; join makes it one step with the stroke before it (generating after
+   * each stroke). */
+  const generate = async (join = false) => {
     if (!modelName || !projectFile || !current) return;
     setBusy(true);
     try {
-      if (projectDoc?.dirty && !(await documents.save(projectFile))) throw new Error(documents.get(projectFile)?.saveError ?? "The painting didn't save");
+      if (documents.get(projectFile)?.dirty && !(await documents.save(projectFile))) throw new Error(documents.get(projectFile)?.saveError ?? "The painting didn't save");
       // The collision the generator writes over must not be held unsaved
       for (const l of current.layers) if (documents.get(l.path)?.dirty) throw new Error(`${l.path} has unsaved edits: save or revert them first`);
       const path = `${current.folder}/model.glb`;
       const before = await glbBase64(path, true);
       const result = await api.generateMap(modelName);
       const after = await glbBase64(path, true);
-      setHistory((h) => ({ done: [...h.done, { kind: "faces", path, before, after, what: "Generated the chunk" }], undone: [] }));
+      const generated: Step = { kind: "faces", path, before, after, what: "Generated the chunk" };
+      setHistory((h) => {
+        const stroke = h.done[h.done.length - 1];
+        if (!join || !stroke || !editsDocs(stroke, projectFile)) return { done: [...h.done, generated], undone: [] };
+        return { done: [...h.done.slice(0, -1), { kind: "group", steps: [stroke, generated], what: `${stroke.what}, and generated the chunk` }], undone: [] };
+      });
       for (const l of current.layers) if (documents.get(l.path)) await documents.reload(l.path);
       reloadChunk(current.folder);
       setMapVersion((v) => v + 1);
-      setPaintView("model");
-      setMessage({ text: `${result.output}. The chunk's model and collision are generated; the map shows the model.` });
+      setMessage({ text: `${result.output}. The chunk's model and collision are generated.` });
     } catch (e) {
       setMessage({ text: (e as Error).message, error: true });
     } finally {
@@ -543,11 +598,11 @@ export function MapEditor({ constants }: ToolProps) {
   useEffect(() => {
     const s = scene.current;
     if (!s) return;
-    const painting = tab === "paint" && paintView === "painting" && !!project;
+    const painting = tab === "paint" && !!project;
     s.painting = tab === "collision" || (painting && tool !== "select");
     s.dragObjects = painting && tool === "select";
     if (!painting) s.showTerrain(tab === "collision" ? layer : null, tab === "collision" && brush.kind === "type" ? brush.tileClass : null);
-  }, [tab, layer, map, brush.kind, brush.tileClass, loaded, paintView, project, tool]);
+  }, [tab, layer, map, brush.kind, brush.tileClass, loaded, project, tool]);
 
   const paintStroke = useRef<(tiles: { x: number; z: number }[]) => void>(() => {});
   paintStroke.current = async (tiles) => {
@@ -590,7 +645,7 @@ export function MapEditor({ constants }: ToolProps) {
   const revert = async () => {
     const paths = unsaved.map((d) => d.path);
     for (const path of paths) await documents.reload(path);
-    setHistory((h) => ({ done: h.done.filter((st) => st.kind !== "docs"), undone: h.undone.filter((st) => st.kind !== "docs") }));
+    setHistory((h) => ({ done: h.done.filter((st) => !editsDocs(st)), undone: h.undone.filter((st) => !editsDocs(st)) }));
     await reloadTerrain(paths);
   };
 
@@ -790,7 +845,7 @@ export function MapEditor({ constants }: ToolProps) {
             <button onClick={() => step(true)} disabled={!history.done.length || busy} title="Ctrl+Z">Undo</button>
             <button onClick={() => step(false)} disabled={!history.undone.length || busy} title="Ctrl+Y">Redo</button>
           </div>
-          <div className={`ow-map-wrap${tab === "faces" ? " me-picking" : ""}${tab === "collision" || (tab === "paint" && paintView === "painting" && project && tool !== "select") ? " painting" : ""}`}>
+          <div className={`ow-map-wrap${tab === "faces" ? " me-picking" : ""}${tab === "collision" || (tab === "paint" && project && tool !== "select") ? " painting" : ""}`}>
             <div className="ow-map" ref={host} />
             {overworld && (
               <div className="me-overworld-panel">
@@ -813,7 +868,8 @@ export function MapEditor({ constants }: ToolProps) {
                   <p className="muted ow-note">The zone's cells of its matrix ({map?.matrix.replace(/^MAP_MATRIX_/, "").toLowerCase()}). Click one, or click the map.</p>
                 </section>
                 {current && (
-                  <ChunkInspector folder={current.folder} model={model} data={chunkData} variants={variants} season={season} sets={sets} />
+                  <ChunkInspector folder={current.folder} model={model} data={chunkData} variants={variants} season={season} sets={sets}
+                                  onRevert={revertChunk} busy={busy} painting={!!project} />
                 )}
               </>
             )}
@@ -928,7 +984,7 @@ export function MapEditor({ constants }: ToolProps) {
               <PaintPanel model={modelName} project={project} dirty={!!projectDoc?.dirty} styles={styles} objects={library} tool={tool} setTool={setTool}
                           shape={shape} setShape={setShape} terrain={terrainKey} setTerrain={setTerrainKey} height={paintHeightHalf} setHeight={setPaintHeightHalf}
                           placing={placing} setPlacing={setPlacing} selected={selectedObject} onRemoveSelected={removeSelectedObject}
-                          view={paintView} setView={setPaintView} onStart={startProject} onGenerate={generate} onStop={stopProject} busy={busy} />
+                          showPaint={showPaint} setShowPaint={setShowPaint} fadeModel={fadeModel} setFadeModel={setFadeModel} onStart={startProject} onGenerate={() => void generate()} autoGenerate={autoGenerate} setAutoGenerate={setAutoGenerate} onStop={stopProject} busy={busy} />
             )}
             {tab === "objects" && (
               <ObjectsPanel objects={library} chosen={chosenObject} setChosen={setChosenObject} placing={placingOnChunk} setPlacing={setPlacingOnChunk}
@@ -979,9 +1035,9 @@ function Budget({ used, limit, unit, title }: { used: number; limit: number; uni
   );
 }
 
-function ChunkInspector({ folder, model, data, variants, season, sets }: {
+function ChunkInspector({ folder, model, data, variants, season, sets, onRevert, busy, painting }: {
   folder: string; model: ChunkModel | undefined; data: { texture_set: string | null; written?: boolean; texture_preview?: string } | null;
-  variants: string[] | null; season: number; sets: SeasonSet[];
+  variants: string[] | null; season: number; sets: SeasonSet[]; onRevert(to: "vanilla" | "commit"): void; busy: boolean; painting: boolean;
 }) {
   const name = folder.slice(folder.lastIndexOf("/") + 1);
   const textures = useMemo(() => {
@@ -998,6 +1054,15 @@ function ChunkInspector({ folder, model, data, variants, season, sets }: {
         <div className="me-row"><label>Texture set</label><span>{data?.texture_set ? data.texture_set.replace(/^MAP_TEXTURE_SET_/, "").toLowerCase()
           : <span className="muted">none confirmed{data?.texture_preview ? ` (shown with ${data.texture_preview.replace(/^MAP_TEXTURE_SET_/, "").toLowerCase()})` : ""}</span>}</span></div>
         <div className="me-row"><label>Packed</label><span>{data?.written ? "as a whole model (written)" : "as edits of the original model"}</span></div>
+        <div className="me-row"><label>Put it back</label>
+          <span className="me-inline">
+            <button className="danger" disabled={busy} onClick={() => onRevert("vanilla")}
+                    title="Its model, data.json and collision as the original game has them (the tag w2-original)">as in the original game</button>
+            <button disabled={busy} onClick={() => onRevert("commit")}
+                    title="Its model, data.json and collision as the last commit has them">as last committed</button>
+          </span>
+        </div>
+        <p className="muted ow-note">Ctrl+Z undoes it.{painting ? " Its painting stays: Stop painting in the Paint tab removes it." : ""}</p>
       </section>
       <section className="me-section">
         <h4>Against the busiest vanilla chunk</h4>

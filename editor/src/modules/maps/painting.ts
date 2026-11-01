@@ -53,13 +53,16 @@ export async function loadLibrary(): Promise<LibraryObject[]> {
   return out.sort((a, b) => `${a.category ?? ""}${a.name}`.localeCompare(`${b.category ?? ""}${b.name}`));
 }
 
-/** A project with a stroke painted: the cells (chunk tiles) given the brush's terrain and height. */
-export function painted(project: Project, cells: { x: number; z: number }[], tool: PaintTool, terrain: string, height: number): Project {
+/** A project with a stroke painted: the cells (chunk tiles) given the brush's terrain and height. A height painted on a
+ * tile that keeps the chunk paints it fallback too, since the generator gives kept tiles the chunk's own heights. */
+export function painted(project: Project, cells: { x: number; z: number }[], tool: PaintTool, terrain: string, height: number,
+                        fallback: string): Project {
   const rows = project.terrain.map((r) => [...r]);
   const heights = project.height.map((r) => [...r]);
   for (const { x, z } of cells) {
     if (!rows[z] || rows[z][x] === undefined) continue;
     if (tool === "terrain" || tool === "both") rows[z][x] = terrain;
+    if ((tool === "height" || tool === "raise" || tool === "lower") && rows[z][x] === ".") rows[z][x] = fallback;
     if (tool === "height" || tool === "both") heights[z][x] = height;
     if (tool === "raise") heights[z][x] = Math.min(80, heights[z][x] + 1);
     if (tool === "lower") heights[z][x] = Math.max(-40, heights[z][x] - 1);

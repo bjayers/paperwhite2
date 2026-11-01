@@ -78,6 +78,42 @@ def height_tables():
     return [-o / slopes[0][1] for o in offsets]
 
 
+def ground_heights(folder, size, images_from=None):
+    """Each tile's ground height as a chunk's model draws it: the highest opaque, flat-enough face over the tile's middle
+    (ground, ledges, bridges; not leaves, which are see-through, nor walls). Where the model has none there (a hole),
+    the collision's height. The collision can't be used on its own, since a map's collision is sometimes raised to
+    stand a bird in a tree."""
+    triangles, materials, _ = read_mesh(folder / "model.glb", images_from=images_from)
+    collision = collision_heights(folder, size)
+    half = size * TILE / 2
+    best = {}
+    for key, tri in triangles:
+        if materials[key].get("alphaMode") in ("MASK", "BLEND"):
+            continue
+        a, b, c = (v.p for v in tri)
+        n = ((b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1]),
+             (b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2]),
+             (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]))
+        length = math.sqrt(sum(x * x for x in n)) or 1
+        if abs(n[1]) / length < 0.7:
+            continue
+        xs, zs = [p[0] for p in (a, b, c)], [p[2] for p in (a, b, c)]
+        for x in range(max(0, math.floor((min(xs) + half) / TILE)), min(size, math.ceil((max(xs) + half) / TILE))):
+            for z in range(max(0, math.floor((min(zs) + half) / TILE)), min(size, math.ceil((max(zs) + half) / TILE))):
+                px, pz = x * TILE + TILE / 2 - half, z * TILE + TILE / 2 - half
+                d = (b[2] - c[2]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[2] - c[2])
+                if abs(d) < 1e-9:
+                    continue
+                l1 = ((b[2] - c[2]) * (px - c[0]) + (c[0] - b[0]) * (pz - c[2])) / d
+                l2 = ((c[2] - a[2]) * (px - c[0]) + (a[0] - c[0]) * (pz - c[2])) / d
+                if min(l1, l2, 1 - l1 - l2) < -1e-6:
+                    continue
+                y = l1 * a[1] + l2 * b[1] + (1 - l1 - l2) * c[1]
+                if (x, z) not in best or y > best[(x, z)]:
+                    best[(x, z)] = y
+    return {xz: best.get(xz, h) for xz, h in collision.items()}
+
+
 def collision_heights(folder, size):
     """Each tile's height at its middle, as a chunk's first collision layer gives it (a split tile's first plane)."""
     slopes, offsets = _tables()
@@ -210,7 +246,7 @@ def generate(project_path):
     keeps = any(KEEP in row for row in project["terrain"])
     if keeps and not (base / "model.glb").exists():
         raise DataError(f"{project_path}: tiles keep the chunk, but there's no copy of it in {base.relative_to(ROOT)}")
-    kept_heights = collision_heights(base, size) if keeps else {}
+    kept_heights = ground_heights(base, size, images_from=folder) if keeps else {}
     grid = {}
     for z, row in enumerate(project["terrain"]):
         for x, key in enumerate(row):
@@ -224,15 +260,25 @@ def generate(project_path):
     world = lambda x, z: (x * TILE - half, z * TILE - half)  # noqa: E731
     polygons = []
 
-    # The ground and the layers above it, as rectangles of a terrain at a height
+    # The ground, in half tiles: the edges between terrains that have one (a path's border on grass) take the half
+    # tiles either side of their border, the rest are rectangles of a terrain at a height
     ground_keys = {k: materials.get(t["ground"]["texture"]) for k, t in terrains.items()}
     painted = {xz: v for xz, v in grid.items() if v[0] != KEEP}
-    rects = rectangles(painted, size, lambda v: materials.reach(ground_keys[v[0]]) * terrains[v[0]]["ground"]["repeat"])
-    # Every corner on each height's plane, which the rectangles' edges there are split at
+    sub = {(sx, sz): painted[(sx // 2, sz // 2)] for sx in range(2 * size) for sz in range(2 * size) if (sx // 2, sz // 2) in painted}
+    edges = edge_bands(sub, 2 * size, style)
+    flat_sub = {xy: v for xy, v in sub.items() if xy not in edges}
+    rects = rectangles(flat_sub, 2 * size,
+                       lambda v: 2 * materials.reach(ground_keys[v[0]]) * terrains[v[0]]["ground"]["repeat"])
+    sw = lambda x, z: (x * HALF_TILE - half, z * HALF_TILE - half)  # noqa: E731
+    # Every corner on each height's plane, which the ground's edges there are split at
     corners = defaultdict(set)
     for (key, y), x, z, w, d in rects:
         for cx, cz in ((x, z), (x + w, z), (x + w, z + d), (x, z + d)):
-            corners[y].add((*world(cx, cz)[:1], y, world(cx, cz)[1]))
+            corners[y].add((sw(cx, cz)[0], y, sw(cx, cz)[1]))
+    bands = merged_bands(edges)
+    for (y, _, _, _), x, z, w, d in bands:
+        for cx, cz in ((x, z), (x + w, z), (x + w, z + d), (x, z + d)):
+            corners[y].add((sw(cx, cz)[0], y, sw(cx, cz)[1]))
     walls = wall_runs(grid, size)
     for (top, bottom), line in walls:
         for (x, z) in line:
@@ -240,16 +286,37 @@ def generate(project_path):
                 corners[y].add((x * TILE - half, y, z * TILE - half))
     for (key, y), x, z, w, d in rects:
         terrain = terrains[key]
-        (x0, z0), (x1, z1) = world(x, z), world(x + w, z + d)
+        (x0, z0), (x1, z1) = sw(x, z), sw(x + w, z + d)
         outline = [(x0, y, z0), (x0, y, z1), (x1, y, z1), (x1, y, z0)]
         repeat = terrain["ground"]["repeat"] * TILE
         uv = lambda p, r=repeat: ((p[0] + half) / r, (p[2] + half) / r)  # noqa: E731
         polygons += [(ground_keys[key], t) for t in fan(ring(outline, corners[y]), uv, UP)]
-        for layer in terrain.get("layers", []):
+    # The edges: each half tile's corners take how much of the "to" terrain is round them (v), so a straight border is
+    # the texture across a tile and a corner a blend round it; u runs along the border
+    for (y, values, along_x, texture), x, z, w, d in bands:
+        key = materials.get(texture["texture"], alpha=texture.get("alpha"), clamp_t=True, name=texture["texture"])
+        repeat = texture.get("repeat", 1) * TILE
+        (x0, z0), (x1, z1) = sw(x, z), sw(x + w, z + d)
+        v00, v10, v11, v01 = values
+        corner_v = {(x0, z0): v00, (x1, z0): v10, (x1, z1): v11, (x0, z1): v01}
+        outline = [(x0, y, z0), (x0, y, z1), (x1, y, z1), (x1, y, z0)]
+
+        def uv(p, along_x=along_x, repeat=repeat, x0=x0, x1=x1, z0=z0, z1=z1, corner_v=corner_v):
+            # v between the corners, bilinear (a band's run keeps v across, which a ring's split points follow)
+            tx = (p[0] - x0) / (x1 - x0) if x1 != x0 else 0
+            tz = (p[2] - z0) / (z1 - z0) if z1 != z0 else 0
+            v = ((1 - tx) * (1 - tz) * corner_v[(x0, z0)] + tx * (1 - tz) * corner_v[(x1, z0)]
+                 + tx * tz * corner_v[(x1, z1)] + (1 - tx) * tz * corner_v[(x0, z1)])
+            return ((p[0] + half) / repeat if along_x else (p[2] + half) / repeat, v)
+        polygons += [(key, t) for t in fan(ring(outline, corners[y]), uv, UP)]
+    # The terrains' layers (tall grass's blades), over whole tiles
+    for (key, y), x, z, w, d in rectangles(painted, size, lambda v: size):
+        for layer in terrains[key].get("layers", []):
             lift = layer["lift"]
             lkey = materials.get(layer["texture"], alpha=layer.get("alpha", "MASK"))
             lrepeat = layer.get("repeat", 1) * TILE
-            louter = [(p[0], y + lift, p[2]) for p in outline]
+            (x0, z0), (x1, z1) = world(x, z), world(x + w, z + d)
+            louter = [(x0, y + lift, z0), (x0, y + lift, z1), (x1, y + lift, z1), (x1, y + lift, z0)]
             luv = lambda p, r=lrepeat: ((p[0] + half) / r, (p[2] + half) / r)  # noqa: E731
             polygons += [(lkey, t) for t in fan(louter, luv, UP)]
 
@@ -337,6 +404,12 @@ def _subtract(polygon, rect):
     """A convex polygon without a rectangle (x0, z0, x1, z1) of the ground: up to four convex pieces, west, east, then
     north and south of it between those (a face on the rectangle's west or east edge stays whole on that side)."""
     x0, z0, x1, z1 = rect
+    # A face standing on the rectangle's edge (a vanilla wall along it) goes with the rectangle: the generated walls
+    # take its place, and two faces in one plane flicker
+    xs, zs = [v.p[0] for v in polygon], [v.p[2] for v in polygon]
+    if ((max(xs) - min(xs) < 1e-3 and x0 - 1e-3 <= xs[0] <= x1 + 1e-3 and min(zs) >= z0 - 1e-3 and max(zs) <= z1 + 1e-3)
+            or (max(zs) - min(zs) < 1e-3 and z0 - 1e-3 <= zs[0] <= z1 + 1e-3 and min(xs) >= x0 - 1e-3 and max(xs) <= x1 + 1e-3)):
+        return []
     out = []
     west = _clip(polygon, 0, x0, True)
     if len(west) >= 3:
@@ -396,7 +469,7 @@ def start(model, style, fill=KEEP, flat=None):
             (base / name).write_bytes((folder / name).read_bytes())
     rows = list(csv.DictReader((folder / "terrain_0.csv").open()))
     size = max(int(r["x"]) for r in rows) + 1
-    heights = collision_heights(folder, size)
+    heights = ground_heights(folder, size)
     height = [[max(-40, min(80, round((flat * HALF_TILE if flat is not None else heights.get((x, z), 0)) / HALF_TILE)))
                for x in range(size)] for z in range(size)]
     project = {"$schema": "../map_project.schema.json", "model": model, "style": style, "size": size,
@@ -433,6 +506,56 @@ def materials_from(materials, material):
             raise DataError(f"the texture set {materials.folder} has no {png}: import it from the object's set first")
         texture["image"] = image.relative_to(ROOT).as_posix()
     return materials.add(copy)
+
+
+def edge_bands(sub, size, style):
+    """The half tiles an edge between two terrains takes (style "edges": the terrain on its v=0 side, "from", the one on
+    its v=1 side, "to", and its texture): those of either terrain next to a half tile of the other at the same height,
+    as (x, z) to (height, corner values, along x, texture). A corner's value is the share of the "to" terrain among
+    the half tiles round it."""
+    out = {}
+    for edge in style.get("edges", []):
+        a, b = edge["from"], edge["to"]
+        for (x, z), (key, y) in sub.items():
+            if key not in (a, b):
+                continue
+            other = b if key == a else a
+            if not any(sub.get((x + dx, z + dz)) == (other, y) for dx in (-1, 0, 1) for dz in (-1, 0, 1)):
+                continue
+
+            def share(cx, cz):
+                around = [sub.get((cx - i, cz - j)) for i in (0, 1) for j in (0, 1)]
+                pair = [t for t in around if t is not None and t[1] == y and t[0] in (a, b)]
+                return sum(t[0] == b for t in pair) / len(pair) if pair else 0.0
+            values = (share(x, z), share(x + 1, z), share(x + 1, z + 1), share(x, z + 1))
+            # Along x where v changes down z more than across x
+            along_x = abs(values[3] + values[2] - values[0] - values[1]) >= abs(values[1] + values[2] - values[0] - values[3])
+            out[(x, z)] = (y, values, along_x, edge)
+    return out
+
+
+def merged_bands(edges):
+    """Edge half tiles merged along their runs: neighbours in a row (along x) or a column with the same height,
+    texture and corner values, as ((height, values, along x, texture), x, z, w, d)."""
+    done = set()
+    out = []
+    for (x, z) in sorted(edges, key=lambda p: (p[1], p[0])):
+        if (x, z) in done:
+            continue
+        y, values, along_x, texture = edges[(x, z)]
+        same = lambda p: p not in done and p in edges and edges[p][0] == y and edges[p][1] == values and edges[p][3] is texture  # noqa: E731
+        w = d = 1
+        if along_x:
+            while same((x + w, z)):
+                w += 1
+        else:
+            while same((x, z + d)):
+                d += 1
+        for i in range(w):
+            for j in range(d):
+                done.add((x + i, z + j))
+        out.append(((y, values, along_x, texture), x, z, w, d))
+    return out
 
 
 def wall_runs(grid, size):

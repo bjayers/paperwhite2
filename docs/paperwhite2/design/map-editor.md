@@ -332,8 +332,14 @@ object library below replace it; the slicer and its library are gone.
   (`tools/paperwhite2/map_maker.py`, `res/paperwhite2/map_styles/`, `res/paperwhite2/map_projects/`), which share
   `tools/paperwhite2/glb_mesh.py`.
 
-Known limits of the map maker so far: no smart edges yet (a path meets grass in a straight line), walls are one
-texture stretched down their height, objects stand on their north-west tile's ground, and it writes only a chunk's
-first collision layer.
+Smart edges so far: a style's `edges` name pairs of terrains and the texture that blends one into the other down v
+(Route 20: grass, tall grass and blocked grass into path with `michi01a`, as vanilla draws its paths). The ground is
+generated in half tiles; the half tiles either side of such a border take the edge texture, each corner's v the share
+of the "to" terrain round it, so a straight border is the texture across one tile and a corner a blend round it.
+Riverbanks and cliff tops aren't edges yet.
+
+Known limits of the map maker so far: walls are one texture stretched down their height, objects stand on their
+north-west tile's ground, it writes only a chunk's first collision layer, collision edits made after painting started
+are replaced by the generated collision, and painted water meets a chunk's own river with the river's curved bed.
 
 See `docs/paperwhite2/STATUS.md` for the latest, and what is still untested in game.

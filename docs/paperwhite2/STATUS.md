@@ -2,6 +2,20 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-01 (night): smart path edges, put back, faded painting, generate after each stroke
+
+- **Smart edges** (`map_maker.py`, a style's `edges`): grass, tall grass and blocked grass blend into path with
+  `michi01a` across a tile, corners rounded, as vanilla's paths are. A test chunk with a path, a branch and a square:
+  171 triangles; packs. **Not tried in game.**
+- Kept tiles take their heights from the chunk's model (its highest opaque ground face), not its collision, so
+  collision raised for perches no longer makes pillars when painting starts. A height painted on a kept tile makes it
+  a painted tile, so a generated area can be repainted.
+- The Chunks tab's **Put it back** (as the original game, the tag `w2-original`, or as last committed): the chunk's
+  folder as git has it, written to the working tree only; undoable. Checked byte for byte on a scratch copy.
+- The Paint tab: the painting's colors and the model faded to half are two toggles; Generate can run after each
+  stroke (one undo step with the stroke); the height drags; the tile grid lies at the tiles' heights.
+- Painted water meeting a chunk's own river keeps the river's curved bed; no fix yet.
+
 ## 2026-11-01 (evening): the object library and painted maps
 
 - The tile slicer and its Route 20 library are gone (the user's call): too many triangles, near-duplicate pieces,

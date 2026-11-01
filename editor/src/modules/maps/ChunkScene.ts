@@ -17,6 +17,25 @@ export interface Painting {
   height: number[][];
   objects: [string, number, number][];
   colors: Record<string, string>;
+  /** Whether its tiles' colors and walls are drawn (strokes paint either way). */
+  show?: boolean;
+  /** Whether the chunk's model is drawn at half its opacity, to see the painting through it. */
+  fade?: boolean;
+}
+
+/** A model drawn at half its opacity, or as it was. */
+function fade(model: THREE.Object3D, on: boolean) {
+  model.traverse((child) => {
+    const mesh = child as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    for (const material of [mesh.material].flat()) {
+      material.userData.unfaded ??= { opacity: material.opacity, transparent: material.transparent };
+      const was = material.userData.unfaded as { opacity: number; transparent: boolean };
+      material.opacity = on ? was.opacity * 0.5 : was.opacity;
+      material.transparent = on || was.transparent;
+      material.needsUpdate = true;
+    }
+  });
 }
 
 const objectLoader = new GLTFLoader();
@@ -169,7 +188,7 @@ export class ChunkScene {
         if (this.loadKey !== key) return;
         gltf.scene.position.set(chunk.column * map.chunkSize + map.chunkSize / 2, 0, chunk.row * map.chunkSize + map.chunkSize / 2);
         gltf.scene.userData.chunk = index;
-        gltf.scene.visible = index !== this.paintChunk;
+        if (index === this.paintChunk && this.painting_?.fade) fade(gltf.scene, true);
         this.models.set(index, modelOf(gltf));
         if (this.wireframe) addWireframe(gltf.scene);
         this.chunks.add(gltf.scene);
@@ -201,8 +220,11 @@ export class ChunkScene {
     this.controls.update();
   }
 
-  /** Outlines every cell, the chosen one brighter, and with grid, its tiles. */
+  /** Outlines every cell, the chosen one brighter, and with grid, its tiles, each outlined at its height (the
+   * painting's while one is shown, else its first collision layer's). */
+  private cells: { selected: number | null; grid: boolean } = { selected: null, grid: false };
   drawCells(selected: number | null, grid = false) {
+    this.cells = { selected, grid };
     const map = this.map;
     this.marks.clear();
     if (!map) return;
@@ -217,13 +239,29 @@ export class ChunkScene {
       line.renderOrder = chosen ? 3 : 2;
       this.marks.add(line);
       if (chosen && grid) {
+        const n = map.chunkTiles;
+        const heights: number[][] = Array.from({ length: n }, () => new Array<number>(n).fill(0));
+        if (this.painting_ && this.paintChunk === index) {
+          this.painting_.height.forEach((row, z) => row.forEach((h, x) => { if (z < n && x < n) heights[z][x] = h * TILE / 2; }));
+        } else {
+          const l = chunk.layers[0];
+          l?.tiles.forEach((t, i) => { if (t.z < n && t.x < n) heights[t.z][t.x] = l.heights[i]; });
+        }
         const lines: THREE.Vector3[] = [];
-        for (let i = 1; i < size / TILE; i++) {
-          lines.push(new THREE.Vector3(x0 + i * TILE, 0.3, z0), new THREE.Vector3(x0 + i * TILE, 0.3, z0 + size));
-          lines.push(new THREE.Vector3(x0, 0.3, z0 + i * TILE), new THREE.Vector3(x0 + size, 0.3, z0 + i * TILE));
+        const lift = 0.4;
+        for (let z = 0; z < n; z++) {
+          for (let x = 0; x < n; x++) {
+            const y = heights[z][x] + lift;
+            const ax = x0 + x * TILE, az = z0 + z * TILE;
+            // Its north and west edges, and the south and east ones where the chunk ends or the neighbour's height differs
+            lines.push(new THREE.Vector3(ax, y, az), new THREE.Vector3(ax + TILE, y, az));
+            lines.push(new THREE.Vector3(ax, y, az), new THREE.Vector3(ax, y, az + TILE));
+            if (z === n - 1 || heights[z + 1][x] !== heights[z][x]) lines.push(new THREE.Vector3(ax, y, az + TILE), new THREE.Vector3(ax + TILE, y, az + TILE));
+            if (x === n - 1 || heights[z][x + 1] !== heights[z][x]) lines.push(new THREE.Vector3(ax + TILE, y, az), new THREE.Vector3(ax + TILE, y, az + TILE));
+          }
         }
         const segments = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(lines),
-          new THREE.LineBasicMaterial({ color: 0xffd040, transparent: true, opacity: 0.25 }));
+          new THREE.LineBasicMaterial({ color: 0xffd040, transparent: true, opacity: 0.35 }));
         this.marks.add(segments);
       }
     });
@@ -237,12 +275,11 @@ export class ChunkScene {
     const map = this.map;
     this.paintChunk = painting ? index : null;
     this.painting_ = painting;
-    // Where tiles keep the chunk, its model shows under the painting
-    const keeps = !!painting?.terrain.some((row) => row.includes("."));
-    for (const o of this.chunks.children) o.visible = keeps || o.userData.chunk !== this.paintChunk;
+    this.fadeChunk(painting?.fade ? index : null);
     if (!painting || index === null || !map) {
       this.paintGroup.clear();
       if (this.terrainPicks.some((p) => p.mesh.userData.painting)) this.showTerrain(null);
+      this.drawCells(this.cells.selected, this.cells.grid);
       return;
     }
     const chunk = map.chunks[index];
@@ -253,15 +290,17 @@ export class ChunkScene {
     this.terrain.clear();
     this.terrainPicks = [];
     const plane = new THREE.PlaneGeometry(TILE, TILE).rotateX(-Math.PI / 2);
-    // Kept tiles are see-through, over the model, but still take strokes
-    const drawn = new THREE.InstancedMesh(plane, new THREE.MeshLambertMaterial({ transparent: true, depthWrite: false }), size * size);
+    // Over the model, which shows through them; kept tiles aren't drawn, but still take strokes
+    const drawn = new THREE.InstancedMesh(plane, new THREE.MeshLambertMaterial({ transparent: true, opacity: 0.5, depthWrite: false,
+      polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -24 }), size * size);
+    drawn.visible = painting.show !== false;
     const pick = new THREE.InstancedMesh(plane, new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false, transparent: true, opacity: 0 }), size * size);
     const tiles: { x: number; z: number }[] = [];
     const m = new THREE.Matrix4();
     for (let z = 0; z < size; z++) for (let x = 0; x < size; x++) {
       const i = z * size + x;
       const kept = painting.terrain[z][x] === ".";
-      m.makeTranslation(x0 + x * TILE + TILE / 2, y(x, z) + (keeps ? 1 : 0), z0 + z * TILE + TILE / 2);
+      m.makeTranslation(x0 + x * TILE + TILE / 2, y(x, z) + 0.8, z0 + z * TILE + TILE / 2);
       pick.setMatrixAt(i, m);
       // A kept tile isn't drawn: shrunk to nothing where it stands
       drawn.setMatrixAt(i, kept ? new THREE.Matrix4().makeScale(0, 0, 0) : m);
@@ -291,7 +330,9 @@ export class ChunkScene {
       const g = new THREE.BufferGeometry();
       g.setAttribute("position", new THREE.Float32BufferAttribute(walls, 3));
       g.computeVertexNormals();
-      group.add(new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color: 0x8a8070, side: THREE.DoubleSide })));
+      const mesh = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color: 0x8a8070, side: THREE.DoubleSide, transparent: true, opacity: 0.7 }));
+      mesh.visible = painting.show !== false;
+      group.add(mesh);
     }
     // The objects, on the ground of their north-west tile
     const placed = await Promise.all(painting.objects.map(([name]) => objectModel(name)));
@@ -307,6 +348,12 @@ export class ChunkScene {
     });
     this.paintGroup.clear();
     this.paintGroup.add(group);
+    this.drawCells(this.cells.selected, this.cells.grid);
+  }
+
+  /** Draws a chunk's model at half its opacity (null: every chunk as it is). */
+  private fadeChunk(index: number | null) {
+    for (const o of this.chunks.children) fade(o, index !== null && o.userData.chunk === index);
   }
 
   /** Draws the chunks' collision tiles of a layer over the map, at their heights, colored by type; null hides them. */
