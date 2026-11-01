@@ -200,6 +200,45 @@ keeps the one before.
 What's left to do by hand: warps to any houses, events (at world positions: cell × 32 + the tile), encounters, the
 place name, the town map, and testing the walk across in game (BGM, popup, NPCs, encounters, no void at the edges).
 
+## Painting maps: objects, generated terrain, smart edges (decided 2026-11-01)
+
+The user's test of the tile library showed that cutting maps into tiles is the wrong base: thousands of near-duplicate
+pieces, textures that don't join, twice the polygons. The plan instead, in three layers:
+
+1. **An object library**, curated by hand: a whole object (a tree, a ledge, the Pinwheel doorway) saved from a Faces
+   selection in a vanilla map, with its textures, footprint, collision and height above the ground; placed and moved
+   whole on existing and new maps. Later: importing custom models into it. Bulk tools: forest scatter (density, a set
+   to pick from, footprints that don't overlap), and a fence path (start, middle and end pieces repeated to a length).
+2. **Generated terrain**: a 2D grid painted with what each tile is (grass, road, sand, water, cliff, pond, tall
+   grass) and its height; the editor generates the ground itself, so heights, UVs and textures line up and the
+   polygon count stays low, then the objects stand on it. Collision comes from the same grid.
+3. **Smart edges** between terrains (path borders, riverbanks, cliff tops), picked from vanilla pieces by the
+   neighbours, with a manual override per tile.
+
+### What PDSMS does, and what to take from it
+
+Trifindo's Pokémon DS Map Studio (github.com/Trifindo/Pokemon-DS-Map-Studio), read 2026-11-01:
+- A tile is one OBJ model with a footprint of up to 6×6 cells and flags for tiling; a map is 32×32 cells in 8 layers,
+  each with a tile and an integer height per cell; a rotated tile is another tile. Export goes map → OBJ → IMD →
+  Nintendo's g3dcvtr (not shipped) → NSBMD, with textures in one NSBTX per area.
+- Its only polygon reduction: a greedy rectangle of cells with the same tile and height becomes one stretched tile,
+  capped at 16 cells for Gen 5 (the DS's UV range). Global texture mapping (u = (x + column) · scale) makes textures
+  line up across tiles and lets quad strips form; each polygon's UVs move by whole repeats, clamped to the DS's range.
+  It warns above 1,200 triangles or 1,300 polygons a model.
+- Its smart drawing is a flood fill of one terrain with a 3×3 template plus inner corners: no transitions between two
+  terrains, no updates when a neighbour changes.
+- Its Gen 5 collision is edited by hand, apart from the model, in the same slope and height tables as ours.
+
+**Take:** greedy merging by (terrain, height, material), capped by the texture's UV reach rather than a count (our
+writer's composer already does this); planar world UVs moved by whole repeats per polygon; texture sets per area;
+polygon warnings (we show the busiest vanilla chunk's).
+**Avoid:** T-junctions where stretched quads meet unstretched ones (they gap on the DS; split shared edges or merge
+only where both sides match), unwelded vertices, collision kept apart from the ground (ours comes from the painted
+grid, snapped to the game's plane tables, with the ground generated on the same planes), a one-terrain autotile, and
+stacking a path over the grass at the same height (z-fighting): paths are cut into the generated ground.
+**Our autotile:** corner-based (16 cases per pair of terrains, or the 47-case blob), a stored auto or manual flag per
+tile, neighbours updated live, and a chunk's edge read from the neighbouring chunk.
+
 ## The model writer
 
 A model writer that lays out a model from scratch, as vanilla does, closes both gaps. Its input is what a GLB holds:
