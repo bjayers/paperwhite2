@@ -2,6 +2,21 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-31: the camera areas in res/ and the Cameras tab
+
+- `tools/data/camera_data.py` (new): `res/field/cameras/` holds the grid zones' camera areas (a/1/5/6, a file a zone
+  group, `areas/<zone>.json`), the rail maps' (a/0/7/9, `rail_areas/`) and the default cameras (a/0/5/9,
+  `defaults.json`); all three pack byte for byte as the original. The boundaries (`cam_bound`, a/1/0/9) aren't in res/
+  yet.
+- The hack's build reads which zones have which file from the files' "zones" (`camera_data.py archive` appends a table
+  to a/1/5/6; `PaperWhite2_GetCameraIDForZone`, src/paperwhite2/ov036/paperwhite2_camera_areas.c, in
+  `Field_LoadSceneArea` in place of `ZONE_CAMERA_ASSIGNMENTS`), so any zone can be given camera areas. Built (hack,
+  DSi intact); **not tested in game**: check the Aspertia overlook's camera still works (the same data, read through
+  the new table), then a new area.
+- The Overworld Editor's Cameras tab: areas drawn, edited in degrees and units, previewed through the game's camera
+  (checked in the browser on Aspertia's overlook, first row and last), added (a zone's file made if it has none) and
+  removed. The preview shows only the zone's own chunks.
+
 ## 2026-10-31: the Rails tab (editor only)
 
 - The Overworld Editor edits rail files: move points (also by their fields, in tiles), add points and lines (slots,

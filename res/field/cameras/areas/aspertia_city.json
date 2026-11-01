@@ -1,0 +1,29 @@
+{
+    "$schema": "../cameras.schema.json",
+    "zones": [ "ZONE_ASPERTIA_CITY" ],
+    "areas": [
+        {
+            "check": "rect",
+            "stay": 5,
+            "enter": 6,
+            "exit": 7,
+            "rect": {
+                "x": 32,
+                "z": 709,
+                "width": 7,
+                "unk06": 1,
+                "height": 7,
+                "unk0a": 0,
+                "pitch": [ 6542, 9688 ],
+                "yaw": [ 0, 0 ],
+                "distance": [ 913408, 970752 ],
+                "forbid_delay": false,
+                "target_offset": [
+                    [ 0, 307200, 0 ],
+                    [ 0, 16384, 0 ]
+                ],
+                "fov": [ 3640, 3640 ]
+            }
+        }
+    ]
+}

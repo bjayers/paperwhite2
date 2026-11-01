@@ -91,6 +91,7 @@
 #include "system/season.h"
 #include "system/zone_weather.h"
 #ifdef PAPERWHITE2
+#include "paperwhite2/camera_areas.h"
 #include "paperwhite2/field.h"
 #include "paperwhite2/following_field.h"
 #ifdef PAPERWHITE2_DEBUG_MENU
@@ -1290,7 +1291,12 @@ void Field_LoadJoinAvenue(GameData *gameData, Field *field, u32 zoneId) {
 }
 
 void Field_LoadSceneArea(Field *field, u32 zoneId) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the zones' camera area files from data, so new zones can have them (paperwhite2_camera_areas.c)
+    u16 cameraId = PaperWhite2_GetCameraIDForZone(zoneId, HEAPID_FIELD_SCENEAREA);
+#else
     u16 cameraId = GetCameraIDForZone(zoneId);
+#endif
 
     if (cameraId != ZONE_CAMERA_NONE) {
         CameraArea *cameraData;

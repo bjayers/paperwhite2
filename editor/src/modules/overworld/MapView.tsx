@@ -12,6 +12,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { directionStep, type Entity } from "./entities.ts";
 import { FRAME_SECONDS, movers, type World } from "./movement.ts";
+import { angle as turnAngle, FX, type CameraArea, type ViewCamera } from "./cameras.ts";
 import { lineAtLevel, railTile, railToWorld, sidesAt, type RailMap, type RailPlace } from "./rails.ts";
 import { spriteFrame } from "./sprites.ts";
 import { CHUNK, CHUNK_TILES, TILE, TILE_FLAG_COLLISION, TILE_FLAG_ENCOUNT, TILE_FLAG_WATER, standingOn, tileFlags, type ZoneMap } from "./terrain.ts";
@@ -47,6 +48,9 @@ export interface MapViewProps {
   onMoveRail(entity: Entity, place: RailPlace): void;
   onAddRail(place: RailPlace, height: number): void;
   onPaintRail(places: RailPlace[]): void;
+  /** The zone's camera areas, drawn for the Cameras tab, and a camera to look through in place of the editor's. */
+  cameraAreas: CameraArea[] | null;
+  viewCamera: ViewCamera | null;
   /** A rail point dragged to a spot, in units, at its own height. */
   onMoveRailPoint(index: number, x: number, z: number): void;
 }
@@ -77,7 +81,7 @@ function quadMesh(quads: THREE.Vector3[][], colors: THREE.Color[], material: THR
   return new THREE.Mesh(g, material);
 }
 
-const KIND_COLORS: Record<string, number> = { npc: 0x3ac7e0, proxy: 0xf0c330, building: 0x50d070, trigger: 0xf08a30, warp: 0xd040d0, level: 0x888888, rail: 0x7fe0ff };
+const KIND_COLORS: Record<string, number> = { npc: 0x3ac7e0, proxy: 0xf0c330, building: 0x50d070, trigger: 0xf08a30, warp: 0xd040d0, level: 0x888888, rail: 0x7fe0ff, camera: 0xb070ff };
 
 /** A prop model's scene, read once and cloned for each placement. */
 const propModels = new Map<string, Promise<THREE.Object3D | null>>();
@@ -207,7 +211,7 @@ class MapScene {
       this.controls.update();
       this.liftOverlay();
       this.stepPreview();
-      this.renderer.render(this.scene, this.camera);
+      this.render();
     };
     loop();
   }
@@ -217,6 +221,38 @@ class MapScene {
     window.removeEventListener("pointerup", this.up);
     this.renderer.dispose();
     this.renderer.domElement.remove();
+  }
+
+  /** The game's camera, for a camera preview: 4:3, as the DS's screen. */
+  gameCamera = new THREE.PerspectiveCamera(40, 4 / 3, 1, 4096);
+
+  /** The view through the editor's camera, or through the game's in the DS's 4:3 frame. */
+  render() {
+    const view = this.props.viewCamera;
+    const size = this.renderer.getSize(new THREE.Vector2());
+    // A preview shows the map as the game draws it, without the editor's tiles and marks
+    this.overlay.visible = this.marks.visible = !view;
+    if (!view) {
+      this.renderer.setScissorTest(false);
+      this.renderer.setViewport(0, 0, size.x, size.y);
+      this.renderer.render(this.scene, this.camera);
+      return;
+    }
+    const h = Math.min(size.y, (size.x * 3) / 4), w = (h * 4) / 3;
+    const x = (size.x - w) / 2, y = (size.y - h) / 2;
+    this.renderer.setScissorTest(false);
+    this.renderer.setClearColor(0x000000);
+    this.renderer.clear();
+    this.renderer.setScissorTest(true);
+    this.renderer.setScissor(x, y, w, h);
+    this.renderer.setViewport(x, y, w, h);
+    this.gameCamera.fov = view.fov;
+    this.gameCamera.position.set(...view.eye);
+    this.gameCamera.up.set(0, 1, 0);
+    this.gameCamera.lookAt(...view.target);
+    this.gameCamera.updateProjectionMatrix();
+    this.renderer.render(this.scene, this.gameCamera);
+    this.renderer.setScissorTest(false);
   }
 
   /** The camera's controls, about a target: the left button is the editor's (selecting, dragging and painting); the
@@ -299,7 +335,7 @@ class MapScene {
     // Only what changed: the overlay with the terrain or its look, the marks with the entities or the selection
     const overlayKey = [props.map, props.layer, props.overlay, props.rails, props.railLevel, props.ground];
     if (!same(overlayKey, this.overlayKey)) this.buildOverlay();
-    const marksKey = [props.map, props.entities, props.selected, props.layer, props.showModels, props.rails, props.railLevel];
+    const marksKey = [props.map, props.entities, props.selected, props.layer, props.showModels, props.rails, props.railLevel, props.cameraAreas];
     if (!same(marksKey, this.marksKey)) this.buildMarks();
     this.overlayKey = overlayKey;
     this.marksKey = marksKey;
@@ -483,6 +519,10 @@ class MapScene {
         this.addRailPart(e, isSelected);
         continue;
       }
+      if (e.kind === "camera") {
+        this.addCameraArea(e, isSelected);
+        continue;
+      }
       if (e.rail) {
         this.addRailEntity(e, isSelected);
         continue;
@@ -543,6 +583,60 @@ class MapScene {
         }
       }
     }
+  }
+
+  /** A camera area: a rect's tiles with an arrow the way its camera blends, or a circle's ring between its angles. */
+  addCameraArea(e: Entity, isSelected: boolean) {
+    const area = this.props.cameraAreas?.[e.index];
+    if (!area) return;
+    const color = isSelected ? 0xffffff : KIND_COLORS.camera;
+    const material = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: isSelected ? 0.35 : 0.22, depthTest: false, side: THREE.DoubleSide });
+    const edge = new THREE.LineBasicMaterial({ color, depthTest: false });
+    const group = new THREE.Group();
+    group.renderOrder = 2;
+    if (area.rect) {
+      const r = area.rect;
+      const alongX = r.width === 1;
+      const w = (alongX ? r.height : r.width) * TILE, d = (alongX ? r.unk06 : r.height) * TILE;
+      const x0 = r.x * TILE, z0 = r.z * TILE;
+      const y = this.groundAt(r.x + Math.floor((alongX ? r.height : r.width) / 2), r.z + Math.floor((alongX ? r.unk06 : r.height) / 2)) + 3;
+      const quad = new THREE.Mesh(new THREE.PlaneGeometry(w, d).rotateX(-Math.PI / 2), material);
+      quad.position.set(x0 + w / 2, y, z0 + d / 2);
+      group.add(quad);
+      group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+        [[x0, z0], [x0 + w, z0], [x0 + w, z0 + d], [x0, z0 + d], [x0, z0]].map(([x, z]) => new THREE.Vector3(x, y, z))), edge));
+      const from = new THREE.Vector3(x0 + w / 2, y, z0 + d / 2).add(alongX ? new THREE.Vector3(-w / 2 + 6, 0, 0) : new THREE.Vector3(0, 0, -d / 2 + 6));
+      const length = (alongX ? w : d) - 12;
+      if (length > 4) group.add(new THREE.ArrowHelper(alongX ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 0, 1), from, length, color, 8, 6));
+    } else if (area.circle) {
+      const c = area.circle;
+      const center = c.center.map((v) => v / FX);
+      const r0 = c.radius[0] / FX, r1 = c.radius[1] / FX;
+      let a0 = turnAngle(c.angle[0]), a1 = turnAngle(c.angle[1]);
+      if (a1 <= a0) a1 += Math.PI * 2;
+      // The game's angle is atan2(dx, dz): from +z toward +x
+      const points: THREE.Vector3[] = [];
+      const steps = 48;
+      for (let i = 0; i <= steps; i++) { const a = a0 + ((a1 - a0) * i) / steps; points.push(new THREE.Vector3(center[0] + Math.sin(a) * r1, center[1] + 3, center[2] + Math.cos(a) * r1)); }
+      for (let i = steps; i >= 0; i--) { const a = a0 + ((a1 - a0) * i) / steps; points.push(new THREE.Vector3(center[0] + Math.sin(a) * r0, center[1] + 3, center[2] + Math.cos(a) * r0)); }
+      points.push(points[0].clone());
+      group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), edge));
+      const ball = new THREE.Mesh(new THREE.SphereGeometry(4, 10, 6), material);
+      ball.position.set(center[0], center[1] + 3, center[2]);
+      group.add(ball);
+    }
+    group.traverse((o) => { o.renderOrder = 2; });
+    this.marks.add(group);
+    this.entityMeshes.push({ object: group, entity: e });
+  }
+
+  /** The height of the ground at a tile, on the layer shown. */
+  groundAt(x: number, z: number): number {
+    for (const { tiles } of this.tileMeshes) {
+      const t = tiles.find((t) => t.x === x && t.z === z);
+      if (t) return t.h;
+    }
+    return 0;
   }
 
   /** A rail's point (a ball at its spot) or line (a tube along its middle). */

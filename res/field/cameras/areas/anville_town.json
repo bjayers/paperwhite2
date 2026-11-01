@@ -1,0 +1,52 @@
+{
+    "$schema": "../cameras.schema.json",
+    "zones": [ "ZONE_ANVILLE_TOWN" ],
+    "areas": [
+        {
+            "check": "rect",
+            "stay": 2,
+            "enter": 3,
+            "exit": 4,
+            "rect": {
+                "x": 408,
+                "z": 441,
+                "width": 5,
+                "unk06": 1,
+                "height": 1,
+                "unk0a": 0,
+                "pitch": [ 9688, 3288 ],
+                "yaw": [ 0, 0 ],
+                "distance": [ 970752, 970752 ],
+                "forbid_delay": true,
+                "target_offset": [
+                    [ 0, 0, 0 ],
+                    [ 0, 0, 0 ]
+                ],
+                "fov": [ 0, 0 ]
+            }
+        },
+        {
+            "check": "rect",
+            "stay": 2,
+            "enter": 3,
+            "exit": 4,
+            "rect": {
+                "x": 408,
+                "z": 442,
+                "width": 5,
+                "unk06": 1,
+                "height": 1,
+                "unk0a": 0,
+                "pitch": [ 3288, 1496 ],
+                "yaw": [ 0, 0 ],
+                "distance": [ 970752, 970752 ],
+                "forbid_delay": true,
+                "target_offset": [
+                    [ 0, 0, 0 ],
+                    [ 0, 0, 0 ]
+                ],
+                "fov": [ 0, 0 ]
+            }
+        }
+    ]
+}

@@ -19,6 +19,10 @@ import { KIND_LISTS, KIND_NAMES, entitiesOf, positionEdits, railEdits, type Enti
 import { loadRails, oppositeRailDir, railDirOf, railEntities, railLevels, railToWorld, resizeAttributes, setRailTile, sidesAt,
   type RailMap, type RailPlace } from "./rails.ts";
 import { RailPanel } from "./RailPanel.tsx";
+import { CameraPanel } from "./CameraPanel.tsx";
+import { cameraEntities, cameraFileOf, circleCamera, defaultCamera, newRectArea, rectCamera, type CameraArea, type DefaultCamera,
+  type ViewCamera } from "./cameras.ts";
+import { api } from "../../api.ts";
 import { entityFields } from "./fields.tsx";
 import { BuildingPanel } from "./BuildingPanel.tsx";
 import { MapView, type OverlayMode } from "./MapView.tsx";
@@ -27,7 +31,7 @@ import { bundleModels, buildingEntities, dirtyPropChunks, loadProps, propsOf, pr
 import { CHUNK, CHUNK_TILES, SEASONS, TILE, flatTileFor, paintOver, loadZoneMap, reloadLayers, tileAt, type ZoneMap } from "./terrain.ts";
 
 const EVENTS_BUDGET = 2436;
-const KINDS: EntityKind[] = ["npc", "proxy", "building", "rail", "trigger", "warp", "level"];
+const KINDS: EntityKind[] = ["npc", "proxy", "building", "rail", "trigger", "warp", "level", "camera"];
 /** The undo history's name for a chunk's props, which aren't a document of the store. */
 const PROPS = "props:";
 
@@ -64,9 +68,30 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   const [rails, setRails] = useState<RailMap | null>(null);
   const [railLevel, setRailLevel] = useState<number | null>(null);
   const [ground, setGround] = useState<"both" | "grid" | "rails">("both");
+  /** The zone's camera area file (or where a new one goes), its areas, the default cameras and the preview. */
+  const [cameraFile, setCameraFile] = useState<{ path: string; exists: boolean } | null>(null);
+  const [defaults, setDefaults] = useState<DefaultCamera[]>([]);
+  const [zoneCamera, setZoneCamera] = useState(0);
+  const [previewing, setPreviewing] = useState(false);
+  const [previewT, setPreviewT] = useState(0);
+  const [previewDefault, setPreviewDefault] = useState(false);
+  useEffect(() => {
+    api.file("res/field/cameras/defaults.json").then((f) => setDefaults((JSON.parse(f.text) as { cameras: DefaultCamera[] }).cameras), () => setDefaults([]));
+  }, []);
   /** The point a new line starts from, while the next point clicked ends it. */
   const [connecting, setConnecting] = useState<number | null>(null);
   const railsPath = rails ? `${rails.folder}/rails.json` : null;
+  const railsName = rails ? rails.folder.slice(rails.folder.lastIndexOf("/") + 1) : null;
+  useEffect(() => {
+    setCameraFile(null);
+    setPreviewing(false);
+    setPreviewDefault(false);
+    if (!zone) return;
+    cameraFileOf(zone, railsName).then(setCameraFile, () => setCameraFile(null));
+    api.file(`res/field/zones/${zone}.json`).then((f) => setZoneCamera(Number((JSON.parse(f.text) as { camera?: number }).camera ?? 0)), () => setZoneCamera(0));
+  }, [zone, railsName]);
+  const { data: cameraData } = useHeld(cameraFile?.exists || (cameraFile && documents.get(cameraFile.path)) ? cameraFile.path : null);
+  const cameraAreas = useMemo(() => (cameraData instanceof Map ? ((toPlain(cameraData) as { areas?: CameraArea[] }).areas ?? []) : null), [cameraData]);
   const { data: railsData } = useHeld(railsPath);
   // The rail file as the editor holds it, read again after each edit
   useEffect(() => {
@@ -114,10 +139,11 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     for (const c of map.chunks) loadProps(c.folder);
     if (map.propBundle) bundleModels(map.propBundle).then(setModels, () => setModels(new Map()));
   }, [map]);
-  const entities = useMemo(() => [...entitiesOf(data), ...(map ? buildingEntities(map, models) : []), ...(rails ? railEntities(rails) : [])],
+  const entities = useMemo(() => [...entitiesOf(data), ...(map ? buildingEntities(map, models) : []), ...(rails ? railEntities(rails) : []),
+                                   ...(cameraAreas ? cameraEntities(cameraAreas) : [])],
     // propsVersion: the chunks' props changed
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [data, map, models, propsVersion, rails]);
+    [data, map, models, propsVersion, rails, cameraAreas]);
   const visible = useMemo(() => entities.filter((e) => shown.has(e.kind)), [entities, shown]);
   const chosen = selected ? entities.find((e) => e.kind === selected.kind && e.index === selected.index) ?? null : null;
   const size = eventsSize(data);
@@ -262,6 +288,31 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   /** A new entity of the module's kind on a tile: the schema's defaults, then its place. */
   const [lastProp, setLastProp] = useState<number | null>(null);
   const add = useCallback((x: number, z: number, height: number, onRail?: RailPlace) => {
+    if (module === "camera") {
+      // A rect of 4 by 4 tiles from the tile, the zone's default camera at both ends; the zone's file is made if it has none
+      if (!cameraFile?.path || rails) { setNote(rails ? "Camera areas on rails are circles: edit the rail map's area, or ask for new ones to be added." : "No camera file for this zone."); return; }
+      const area = newRectArea(x, z, defaults[zoneCamera]);
+      const existing = documents.get(cameraFile.path);
+      if (!existing) {
+        void (async () => {
+          const ref = await api.file("res/field/cameras/areas/aspertia_city.json");
+          documents.create(cameraFile.path, ref.schema, fromPlain({ $schema: "../cameras.schema.json", zones: [`ZONE_${zone!.toUpperCase()}`], areas: [area] }));
+          const order = "res/field/cameras/order.json";
+          const doc = await documents.hold(order);
+          const areas = (doc.data instanceof Map ? (doc.data.get("areas") as JsonValue[]) : []) ?? [];
+          documents.edit(order, ["areas", areas.length], zone!);
+          record([cameraFile.path, order]);
+          setCameraFile({ ...cameraFile, exists: true });
+          setSelected({ kind: "camera", index: 0 });
+        })();
+        return;
+      }
+      const list = existing.data instanceof Map ? ((existing.data.get("areas") as JsonValue[] | undefined) ?? []) : [];
+      documents.edit(cameraFile.path, ["areas", list.length], fromPlain(area));
+      record([cameraFile.path]);
+      setSelected({ kind: "camera", index: list.length });
+      return;
+    }
     if (module === "rail") {
       // A point where the tile (or rail tile) is, its lines and camera to come
       if (!railsPath || !rails) return;
@@ -348,9 +399,16 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     documents.edit(eventsPath, [list, items.length], value);
     record([eventsPath]);
     setSelected({ kind: module, index: items.length });
-  }, [eventsPath, schema, data, module, constants, record, map, layer, lastProp, models, rails, railsPath]);
+  }, [eventsPath, schema, data, module, constants, record, map, layer, lastProp, models, rails, railsPath, cameraFile, defaults, zoneCamera, zone]);
 
   const remove = () => {
+    if (chosen?.kind === "camera" && cameraFile?.path) {
+      documents.edit(cameraFile.path, ["areas", chosen.index], undefined);
+      record([cameraFile.path]);
+      setSelected(null);
+      setPreviewing(false);
+      return;
+    }
     if (chosen?.railPart && railsPath && rails) {
       const { type, index } = chosen.railPart;
       const doc = documents.get(railsPath);
@@ -485,6 +543,22 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     return () => window.removeEventListener("keydown", onKey, true);
   }, [save, eventsPath, step]);
 
+  /** The game's camera to look through: the chosen area's at the preview's point, or the zone's default at the tile. */
+  const viewCamera = useMemo<ViewCamera | null>(() => {
+    const area = chosen?.kind === "camera" ? cameraAreas?.[chosen.index] : undefined;
+    const ground = (x: number, z: number) => (map ? tileAt(map, x, z, layer)?.height ?? 0 : 0);
+    if (previewing && area?.rect) {
+      const r = area.rect;
+      const alongX = r.width === 1;
+      const step = Math.min(r.height - 1, Math.floor(previewT * r.height));
+      const x = alongX ? r.x + step : r.x + Math.floor(r.width / 2), z = alongX ? r.z + Math.floor(r.unk06 / 2) : r.z + step;
+      return rectCamera(r, previewT, ground(x, z));
+    }
+    if (previewing && area?.circle) return circleCamera(area.circle, area.stay);
+    if (previewDefault && tile && defaults[zoneCamera]) return defaultCamera(defaults[zoneCamera], [tile.x * TILE + 8, ground(tile.x, tile.z), tile.z * TILE + 8]);
+    return null;
+  }, [chosen, cameraAreas, previewing, previewT, previewDefault, tile, defaults, zoneCamera, map, layer]);
+
   const unsavedDocs = [...docs.values()].filter((d) => d.dirty && d.path.startsWith("res/field/"));
   const unsavedProps = dirtyPropChunks();
   const unsaved = [...unsavedDocs.map((d) => ({ path: d.path, saveError: d.saveError })),
@@ -537,7 +611,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
           {zone && (
             <div className="ow-toolbar">
               <div className="view-switch">
-                {KINDS.filter((k) => k !== "rail" || rails).map((k) => (
+                {KINDS.filter((k) => (k !== "rail" || rails) && (k !== "camera" || cameraFile)).map((k) => (
                   <button key={k} className={module === k ? "active" : ""} onClick={() => setModule(k)}
                           title={k === "level" ? "Level scripts have no place on the map" : `Shift+click a tile to add one`}>{KIND_NAMES[k]}</button>
                 ))}
@@ -611,6 +685,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
               : <MapView map={map} entities={visible} selected={chosen} layer={layer} overlay={overlay} showModels={showModels}
                          painting={painting} preview={preview} overhead={overhead} paintType={paintMode === "type" ? PAINTS[paint].type : null}
                          onSelect={select} onMove={move} onAdd={add} onPaint={onPaint}
+                         cameraAreas={cameraAreas} viewCamera={viewCamera}
                          rails={rails} railLevel={railLevel} ground={ground} onMoveRailPoint={moveRailPoint} onMoveRail={moveRail} onAddRail={(place, h) => add(0, 0, h, place)} onPaintRail={onPaintRail} />}
             {/* Over the map, so the map's view doesn't change when it opens */}
             {scriptOpen && chosen?.script !== undefined && (
@@ -666,7 +741,10 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                   <button key={`${e.kind}${e.index}`} className="link" onClick={() => setSelected({ kind: e.kind, index: e.index })}>{e.label}{e.model ? ` (${e.model.replace(/^OBJ_CODE_/, "")})` : ""}</button>
                 )).reduce<ReactNode[]>((a, b, i) => (i ? [...a, ", ", b] : [b]), [])}</p>
               )}
-              {chosen.railPart && rails && railsPath ? (
+              {chosen.kind === "camera" && cameraFile && cameraAreas?.[chosen.index] ? (
+                <CameraPanel path={cameraFile.path} index={chosen.index} area={cameraAreas[chosen.index]} constants={constants} onEdit={() => record([cameraFile.path])}
+                             previewing={previewing} onPreview={setPreviewing} t={previewT} onT={setPreviewT} />
+              ) : chosen.railPart && rails && railsPath ? (
                 <RailPanel rails={rails} path={railsPath} part={chosen.railPart} constants={constants} onEdit={() => record([railsPath])}
                            connecting={connecting !== null} onConnect={() => setConnecting(connecting === null ? chosen.railPart!.index : null)}
                            onFitLength={(length) => fitLength(chosen.railPart!.index, length)} />
@@ -683,6 +761,14 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                 Click an entity to edit it, drag it to another tile, or Shift+click a tile to add {module === "level" ? "one (not level scripts, which have no place)" : `a ${KIND_NAMES[module].toLowerCase().replace(/ies$/, "y").replace(/s$/, "")}`}.
                 {tile && <> Tile {tile.x}, {tile.z}.</>}
               </p>
+              {module === "camera" && (
+                <div className="ow-panel-box">
+                  <p className="ow-note">{cameraFile?.exists ? `Camera areas: ${cameraFile.path.replace("res/field/cameras/", "")}.` : "This zone has no camera areas yet: Shift+click a tile to add one (it makes the zone's file)."}
+                    {" "}The zone's own camera is default camera {zoneCamera}.</p>
+                  <label className="ow-check" title="Click a tile first: the player stands there">
+                    <input type="checkbox" checked={previewDefault} onChange={(e) => setPreviewDefault(e.target.checked)} disabled={!tile} /> Preview the zone's camera at the tile</label>
+                </div>
+              )}
               <p className="muted ow-note">A save made on a map keeps its NPCs as they were: after a build, leave the map and come back to see the changes.</p>
               {onTile.length > 1 && <p className="ow-note">On this tile: {onTile.map((e) => (
                 <button key={`${e.kind}${e.index}`} className="link" onClick={() => setSelected({ kind: e.kind, index: e.index })}>{e.label} </button>

@@ -1,0 +1,52 @@
+{
+    "$schema": "../cameras.schema.json",
+    "zones": [ "ZONE_PLASMA_FRIGATE_10", "ZONE_PLASMA_FRIGATE_13" ],
+    "areas": [
+        {
+            "check": "rect",
+            "stay": 2,
+            "enter": 3,
+            "exit": 4,
+            "rect": {
+                "x": 1,
+                "z": 34,
+                "width": 30,
+                "unk06": 1,
+                "height": 5,
+                "unk0a": 0,
+                "pitch": [ 9690, 11763 ],
+                "yaw": [ 0, 0 ],
+                "distance": [ 966656, 970752 ],
+                "forbid_delay": true,
+                "target_offset": [
+                    [ 0, 0, 0 ],
+                    [ 0, 0, 0 ]
+                ],
+                "fov": [ 0, 0 ]
+            }
+        },
+        {
+            "check": "rect",
+            "stay": 2,
+            "enter": 3,
+            "exit": 4,
+            "rect": {
+                "x": 1,
+                "z": 39,
+                "width": 30,
+                "unk06": 1,
+                "height": 25,
+                "unk0a": 0,
+                "pitch": [ 11763, 11763 ],
+                "yaw": [ 0, 0 ],
+                "distance": [ 970752, 970752 ],
+                "forbid_delay": true,
+                "target_offset": [
+                    [ 0, 0, 0 ],
+                    [ 0, 0, 0 ]
+                ],
+                "fov": [ 0, 0 ]
+            }
+        }
+    ]
+}

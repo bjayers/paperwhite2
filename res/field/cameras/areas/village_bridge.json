@@ -1,0 +1,75 @@
+{
+    "$schema": "../cameras.schema.json",
+    "zones": [ "ZONE_VILLAGE_BRIDGE" ],
+    "areas": [
+        {
+            "check": "rect",
+            "stay": 2,
+            "enter": 3,
+            "exit": 4,
+            "rect": {
+                "x": 28,
+                "z": 18,
+                "width": 40,
+                "unk06": 1,
+                "height": 6,
+                "unk0a": 0,
+                "pitch": [ 9688, 11096 ],
+                "yaw": [ 0, 0 ],
+                "distance": [ 970752, 1527808 ],
+                "forbid_delay": true,
+                "target_offset": [
+                    [ 0, 0, 0 ],
+                    [ 0, 0, 0 ]
+                ],
+                "fov": [ 0, 0 ]
+            }
+        },
+        {
+            "check": "rect",
+            "stay": 2,
+            "enter": 3,
+            "exit": 4,
+            "rect": {
+                "x": 28,
+                "z": 24,
+                "width": 40,
+                "unk06": 1,
+                "height": 10,
+                "unk0a": 0,
+                "pitch": [ 11096, 11096 ],
+                "yaw": [ 1, 1 ],
+                "distance": [ 1527808, 1527808 ],
+                "forbid_delay": true,
+                "target_offset": [
+                    [ 0, 0, 0 ],
+                    [ 0, 0, 0 ]
+                ],
+                "fov": [ 0, 0 ]
+            }
+        },
+        {
+            "check": "rect",
+            "stay": 2,
+            "enter": 3,
+            "exit": 4,
+            "rect": {
+                "x": 28,
+                "z": 34,
+                "width": 40,
+                "unk06": 1,
+                "height": 6,
+                "unk0a": 0,
+                "pitch": [ 11096, 9688 ],
+                "yaw": [ 0, 0 ],
+                "distance": [ 1527808, 970752 ],
+                "forbid_delay": true,
+                "target_offset": [
+                    [ 0, 0, 0 ],
+                    [ 0, 0, 0 ]
+                ],
+                "fov": [ 0, 0 ]
+            }
+        }
+    ]
+}

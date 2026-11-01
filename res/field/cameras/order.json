@@ -1,0 +1,13 @@
+{
+    "areas": [
+        "pokemon_league_3",
+        "aspertia_city",
+        "pokestar_studios",
+        "village_bridge",
+        "route_4",
+        "route_4_16",
+        "anville_town",
+        "plasma_frigate_10"
+    ],
+    "rail_areas": [ "castelia_city" ]
+}

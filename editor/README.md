@@ -213,6 +213,14 @@ trainer's line of sight), Proxies (background events), Triggers, Warps and Level
   be removed, since the events and the attribute files name them by number. The rail cameras are edited by number for
   now.
 - Painting keeps the flags it doesn't set (a tile's 0x80, which every rail tile has and no code names yet).
+- **The Cameras tab** edits the zone's camera areas (`res/field/cameras/`, `cameras.ts`), the parts of the map where
+  the camera changes as the player walks in: a rect of tiles whose camera blends across it (the arrow) or a rail map's
+  ring. The panel shows angles in degrees, distances in units and the field of view as the whole vertical angle;
+  **Preview the game's camera** puts the view where the game's camera would be (in the DS's 4:3 frame, without the
+  editor's marks), with a slider from the area's first row to its last; the list can preview the zone's own default
+  camera at a clicked tile. Shift+click adds a rect, making the zone's file if it has none (the hack's build reads a
+  file's "zones", so any zone can have camera areas). The preview draws only the zone's own chunks, so what the game
+  shows of the zones around it is missing.
 - **Buildings:** the chunks' props, as CTRMap edits them: each a model of the area's prop bundle
   (`res/field/props/`) placed in its chunk's GLB (`bw2_prop_<n>_id_<prop ID>` nodes, which the build packs). Click
   to choose (it turns half seen through), drag to move by whole tiles, Shift+click to add the last model chosen; a

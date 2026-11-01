@@ -1,0 +1,144 @@
+{
+    "$schema": "../cameras.schema.json",
+    "zones": [ "ZONE_ROUTE_4" ],
+    "areas": [
+        {
+            "check": "rect",
+            "stay": 2,
+            "enter": 3,
+            "exit": 4,
+            "rect": {
+                "x": 424,
+                "z": 514,
+                "width": 10,
+                "unk06": 1,
+                "height": 4,
+                "unk0a": 0,
+                "pitch": [ 9688, 9688 ],
+                "yaw": [ 0, 0 ],
+                "distance": [ 970752, 1626112 ],
+                "forbid_delay": true,
+                "target_offset": [
+                    [ 0, 0, 0 ],
+                    [ 0, 0, 0 ]
+                ],
+                "fov": [ 0, 0 ]
+            }
+        },
+        {
+            "check": "rect",
+            "stay": 2,
+            "enter": 3,
+            "exit": 4,
+            "rect": {
+                "x": 424,
+                "z": 518,
+                "width": 10,
+                "unk06": 1,
+                "height": 10,
+                "unk0a": 0,
+                "pitch": [ 9688, 9688 ],
+                "yaw": [ 0, 0 ],
+                "distance": [ 1626112, 1626112 ],
+                "forbid_delay": true,
+                "target_offset": [
+                    [ 0, 0, 0 ],
+                    [ 0, 0, 0 ]
+                ],
+                "fov": [ 0, 0 ]
+            }
+        },
+        {
+            "check": "rect",
+            "stay": 2,
+            "enter": 3,
+            "exit": 4,
+            "rect": {
+                "x": 424,
+                "z": 528,
+                "width": 10,
+                "unk06": 1,
+                "height": 4,
+                "unk0a": 0,
+                "pitch": [ 9688, 9688 ],
+                "yaw": [ 0, 0 ],
+                "distance": [ 1626112, 970752 ],
+                "forbid_delay": true,
+                "target_offset": [
+                    [ 0, 0, 0 ],
+                    [ 0, 0, 0 ]
+                ],
+                "fov": [ 0, 0 ]
+            }
+        },
+        {
+            "check": "rect",
+            "stay": 2,
+            "enter": 3,
+            "exit": 4,
+            "rect": {
+                "x": 399,
+                "z": 514,
+                "width": 5,
+                "unk06": 1,
+                "height": 4,
+                "unk0a": 0,
+                "pitch": [ 9688, 9688 ],
+                "yaw": [ 0, 0 ],
+                "distance": [ 970752, 1626112 ],
+                "forbid_delay": true,
+                "target_offset": [
+                    [ 0, 0, 0 ],
+                    [ 0, 0, 0 ]
+                ],
+                "fov": [ 0, 0 ]
+            }
+        },
+        {
+            "check": "rect",
+            "stay": 2,
+            "enter": 3,
+            "exit": 4,
+            "rect": {
+                "x": 399,
+                "z": 518,
+                "width": 5,
+                "unk06": 1,
+                "height": 10,
+                "unk0a": 0,
+                "pitch": [ 9688, 9688 ],
+                "yaw": [ 0, 0 ],
+                "distance": [ 1626112, 1626112 ],
+                "forbid_delay": true,
+                "target_offset": [
+                    [ 0, 0, 0 ],
+                    [ 0, 0, 0 ]
+                ],
+                "fov": [ 0, 0 ]
+            }
+        },
+        {
+            "check": "rect",
+            "stay": 2,
+            "enter": 3,
+            "exit": 4,
+            "rect": {
+                "x": 399,
+                "z": 528,
+                "width": 5,
+                "unk06": 1,
+                "height": 4,
+                "unk0a": 0,
+                "pitch": [ 9688, 9688 ],
+                "yaw": [ 0, 0 ],
+                "distance": [ 1626112, 970752 ],
+                "forbid_delay": true,
+                "target_offset": [
+                    [ 0, 0, 0 ],
+                    [ 0, 0, 0 ]
+                ],
+                "fov": [ 0, 0 ]
+            }
+        }
+    ]
+}

@@ -1,0 +1,52 @@
+{
+    "$schema": "../cameras.schema.json",
+    "zones": [ "ZONE_POKEMON_LEAGUE_3" ],
+    "areas": [
+        {
+            "check": "rect",
+            "stay": 5,
+            "enter": 6,
+            "exit": 7,
+            "rect": {
+                "x": 5,
+                "z": 25,
+                "width": 55,
+                "unk06": 1,
+                "height": 18,
+                "unk0a": 0,
+                "pitch": [ 1999, 11237 ],
+                "yaw": [ 0, 0 ],
+                "distance": [ 1310720, 1331200 ],
+                "forbid_delay": false,
+                "target_offset": [
+                    [ 0, 270336, 110592 ],
+                    [ 0, 389120, 86016 ]
+                ],
+                "fov": [ 3640, 3640 ]
+            }
+        },
+        {
+            "check": "rect",
+            "stay": 5,
+            "enter": 6,
+            "exit": 7,
+            "rect": {
+                "x": 5,
+                "z": 0,
+                "width": 55,
+                "unk06": 1,
+                "height": 25,
+                "unk0a": 0,
+                "pitch": [ 1999, 1999 ],
+                "yaw": [ 0, 0 ],
+                "distance": [ 1581056, 1310720 ],
+                "forbid_delay": false,
+                "target_offset": [
+                    [ 0, 401408, 57344 ],
+                    [ 0, 270336, 110592 ]
+                ],
+                "fov": [ 2690, 3640 ]
+            }
+        }
+    ]
+}

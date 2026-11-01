@@ -1,0 +1,97 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "A zone's camera areas: res/field/cameras/areas/<zone>.json or rail_areas/<rails>.json",
+    "description": "The parts of the map where the camera changes as the player walks in (CameraArea, include/field/field_scene_area.h; archives a/1/5/6 for zones on a grid, which ZONE_CAMERA_ASSIGNMENTS in src/system/zonedata.c gives their file, and a/0/7/9 for rail maps, which res/field/rails/maps.json's camera_areas numbers). The last area the player is in wins. Angles are in 65536ths of a turn; positions and distances fx32, 4096 a unit, 16 units a tile. tools/data/camera_data.py packs them.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "areas" ],
+    "properties": {
+        "$schema": { "type": "string", "description": "This schema, for editors" },
+        "zones": { "type": "array", "items": { "type": "string", "x-constant": "ZONE_" }, "description": "A grid file's zones, which have these areas (ZONE_CAMERA_ASSIGNMENTS; Paper White 2's build reads them from here, so a new zone can be added). Rail files leave it out: res/field/rails/maps.json numbers them" },
+        "areas": { "type": "array", "description": "The areas, in the order the game checks them", "items": { "$ref": "#/$defs/area" } }
+    },
+    "$defs": {
+        "u16": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "s32": { "type": "integer", "minimum": -2147483648, "maximum": 2147483647 },
+        "u32": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+        "vec": { "type": "array", "minItems": 3, "maxItems": 3, "items": { "$ref": "#/$defs/s32" }, "description": "x, y and z, fx32" },
+        "area": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [ "check", "stay", "enter", "exit" ],
+            "properties": {
+                "check": { "enum": [ "rect", "circle" ], "description": "rect: a rectangle of tiles (grid zones only); circle: a ring around a point, between two radii and two angles" },
+                "stay": { "$ref": "#/$defs/u16", "description": "What the camera does while the player is in it, CAM_CALC_FUNCS's number: 0 aims from the circle's center, 1 looks from a fixed position at a fixed target, 2 blends pitch, yaw and distance across the rect, 3 and 4 the same turning the delay off or on, 5 to 7 as 2 to 4 also blending the target offset and the field of view" },
+                "enter": { "$ref": "#/$defs/u16", "description": "What it does as the player enters, the same numbers" },
+                "exit": { "$ref": "#/$defs/u16", "description": "What it does as the player leaves, the same numbers" },
+                "rect": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [ "x", "z", "width", "unk06", "height", "unk0a", "pitch", "yaw", "distance", "forbid_delay", "target_offset", "fov" ],
+                    "description": "The rectangle and its two camera settings, which the camera blends between from its first row to its last (along x where width is 1: then height is its width in x and unk06 its depth)",
+                    "properties": {
+                        "x": { "$ref": "#/$defs/u16", "description": "Its first tile's x" },
+                        "z": { "$ref": "#/$defs/u16", "description": "Its first tile's z" },
+                        "width": { "$ref": "#/$defs/u16", "description": "Its width in tiles" },
+                        "unk06": { "$ref": "#/$defs/u16" },
+                        "height": { "$ref": "#/$defs/u16", "description": "Its depth in tiles, along which the camera blends" },
+                        "unk0a": { "$ref": "#/$defs/u16" },
+                        "pitch": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/u16" }, "description": "The camera's pitch at the first row and the last" },
+                        "yaw": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/u16" }, "description": "Its yaw at the first row and the last" },
+                        "distance": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/s32" }, "description": "Its distance from the target, fx32" },
+                        "forbid_delay": { "type": "boolean", "description": "Whether the stay functions 3, 4, 6 and 7 turn the camera's delay off and on" },
+                        "target_offset": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/vec" }, "description": "What it looks at, from the player, at the first row and the last" },
+                        "fov": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/u16" }, "description": "Half its field of view, in 65536ths of a turn" }
+                    }
+                },
+                "circle": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [ "angle", "radius", "center", "pitch", "distance", "target", "position" ],
+                    "description": "The ring and its camera",
+                    "properties": {
+                        "angle": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/u32" }, "description": "The angles it runs between, around its center" },
+                        "radius": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/s32" }, "description": "The radii it runs between, fx32" },
+                        "center": { "$ref": "#/$defs/vec", "description": "Its center" },
+                        "pitch": { "$ref": "#/$defs/s32", "description": "The camera's pitch" },
+                        "distance": { "$ref": "#/$defs/s32", "description": "Its distance from the center, in units" },
+                        "target": { "$ref": "#/$defs/vec", "description": "The fixed target of stay function 1" },
+                        "position": { "$ref": "#/$defs/vec", "description": "The fixed position of stay function 1" }
+                    }
+                },
+                "unk3c": { "$ref": "#/$defs/s32", "description": "0 in every file, left out when 0" }
+            }
+        },
+        "defaults": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [ "cameras" ],
+            "title": "The default cameras: res/field/cameras/defaults.json",
+            "description": "The cameras that a zone's camera numbers (FieldCameraDefaults, a/0/5/9): the camera follows the player (bind) at target from them, or looks at target",
+            "properties": {
+                "$schema": { "type": "string", "description": "This schema, for editors" },
+                "cameras": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [ "zoom", "pitch", "yaw", "unkc", "unk10", "swap_mode", "fov", "near", "far", "bind", "target" ],
+                        "properties": {
+                            "zoom": { "$ref": "#/$defs/s32", "description": "Its distance from the target, in units" },
+                            "pitch": { "$ref": "#/$defs/u32", "description": "Its pitch" },
+                            "yaw": { "$ref": "#/$defs/u32", "description": "Its yaw" },
+                            "unkc": { "$ref": "#/$defs/u32" },
+                            "unk10": { "type": "integer", "minimum": 0, "maximum": 255 },
+                            "swap_mode": { "type": "integer", "minimum": 0, "maximum": 255, "description": "The 3D buffer's mode, Z or W" },
+                            "fov": { "$ref": "#/$defs/u16", "description": "Half its field of view" },
+                            "near": { "$ref": "#/$defs/s32", "description": "The near plane, fx32" },
+                            "far": { "$ref": "#/$defs/s32", "description": "The far plane, fx32" },
+                            "bind": { "type": "boolean", "description": "Whether it follows the player" },
+                            "target": { "$ref": "#/$defs/vec", "description": "What it looks at, from the player with bind" }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,20 @@
+{
+    "$schema": "../cameras.schema.json",
+    "areas": [
+        {
+            "check": "circle",
+            "stay": 0,
+            "enter": 0,
+            "exit": 0,
+            "circle": {
+                "angle": [ 41880, 19800 ],
+                "radius": [ 1999885, 3145728 ],
+                "center": [ 3145728, 12288, 3112960 ],
+                "pitch": 2048,
+                "distance": 3723264,
+                "target": [ 0, 0, 0 ],
+                "position": [ 0, 0, 0 ]
+            }
+        }
+    ]
+}

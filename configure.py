@@ -302,6 +302,8 @@ DATA_PACKS = [
     ("tools/data/zone_data.py", "res/field/zones", ["a/0/1/2"], False, ["res/field/events"]),
     ("tools/data/trade_data.py", "res/field/trades", ["a/1/6/3"], False),  # In-game trades
     ("tools/data/map_matrix_data.py", "res/field/matrices", ["a/0/0/9"], False),  # Map matrices
+    # The camera areas of the grid zones and of the rail maps, and the default cameras
+    ("tools/data/camera_data.py", "res/field/cameras", ["a/1/5/6", "a/0/7/9", "a/0/5/9"], False),
     # The chunks and matrices that the season, the version or an event replace
     ("tools/data/map_replace_data.py", "res/field/map_replacements", ["a/0/1/0"], False),
     # Map models, whose GLBs show the map texture sets' PNGs, which name the textures they bind
@@ -348,6 +350,8 @@ DATA_PACKS = [
 # encounters' data follows their tables (tools/paperwhite2/encounters.py, docs/paperwhite2/encounters.md), and reads
 # the species' families too
 HACK_ARCHIVE_MEMBERS = {"a/0/9/6": ("tools/paperwhite2/conditions.py", "res/paperwhite2/conditions"),
+                        # The zones' camera area files, read from the files' zones (paperwhite2_camera_areas.c)
+                        "a/1/5/6": ("tools/data/camera_data.py", "res/field/cameras"),
                         "a/1/2/7": ("tools/paperwhite2/encounters.py", "res/paperwhite2/encounters")}
 HACK_MEMBER_EXTRA_SOURCES = {"a/1/2/7": ["res/paperwhite2/conditions", "res/pokemon/*/data.json"]}
 # Paper White 2: data that the hack's build makes from other data before packing it: the data directory, and the tool,
