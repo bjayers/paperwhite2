@@ -897,7 +897,7 @@ its image to the texture set's texture, and a draw call for each primitive. A ma
 its record (lights, flags, texture matrix); a new one starts from the writer's default. This needs the model's
 `texture_set` and the GLB's positions as the model draws them. The writer reads and writes back all 1,065 vanilla
 models byte for byte; written from their GLBs, every one with a confirmed set draws the same positions and UVs, its
-display lists about 7% larger than the original's at the median. Every map model contains only an `MDL0` block; its
+display lists about 5% larger than the original's at the median (strips or quads, whichever is shorter). Every map model contains only an `MDL0` block; its
 textures come from the shared texture archive.
 
 The exterior and interior field props use separate texture archives. Their PNGs live under

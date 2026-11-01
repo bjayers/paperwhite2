@@ -292,23 +292,25 @@ def _flat_convex(a, b, c, d):
     return sum(x * y for x, y in zip(m1, m2)) < 0
 
 
-def polygons(triangles):
-    """The triangles as the polygons a display list draws: two triangles (a, b, c) and (a, c, d) that make a flat,
-    convex quad are one quad."""
-    out = []
+def quads(triangles):
+    """The triangles as runs of quads and of triangles: two triangles (a, b, c) and (a, c, d) one after the other
+    that make a flat, convex quad are one quad. Each run is (kind, vertices): kind 1 quads, 0 triangles."""
+    runs = []
     i = 0
     while i < len(triangles):
         t = triangles[i]
+        polygon = t
         if i + 1 < len(triangles):
             u = triangles[i + 1]
-            if (u[0] == t[0] and u[1] == t[2]
-                    and _flat_convex(t[0].position, t[1].position, t[2].position, u[2].position)):
-                out.append((t[0], t[1], t[2], u[2]))
-                i += 2
-                continue
-        out.append(t)
-        i += 1
-    return out
+            if u[0] == t[0] and u[1] == t[2] and _flat_convex(t[0].position, t[1].position, t[2].position, u[2].position):
+                polygon = (t[0], t[1], t[2], u[2])
+        i += 2 if len(polygon) == 4 else 1
+        kind = 1 if len(polygon) == 4 else 0
+        if runs and runs[-1][0] == kind:
+            runs[-1][1].extend(polygon)
+        else:
+            runs.append((kind, list(polygon)))
+    return runs
 
 
 def _vertex_command(position, last):
@@ -329,22 +331,64 @@ def _vertex_command(position, last):
     return 0x23, [(x & 0xffff) | (y & 0xffff) << 16, z & 0xffff]
 
 
+def _vertex_key(v):
+    return (v.position, v.texcoord, v.color, v.normal)
+
+
+def strips(triangles):
+    """The triangles as the runs a display list draws: strips, each triangle sharing an edge (and its two vertices'
+    every attribute) with the one before, as the GPU winds them (a strip's odd triangles turn its first two corners
+    round), and the triangles that join none, as one run of separate triangles. Each run is (kind, vertices): kind 2
+    a strip, 0 separate triangles."""
+    by_edge = {}
+    for t, triangle in enumerate(triangles):
+        keys = [_vertex_key(v) for v in triangle]
+        for i in range(3):
+            by_edge.setdefault((keys[i], keys[(i + 1) % 3]), []).append((t, i))
+    used = [False] * len(triangles)
+    runs = []
+    singles = []
+    for t, triangle in enumerate(triangles):
+        if used[t]:
+            continue
+        used[t] = True
+        strip = list(triangle)
+        while True:
+            k = len(strip) - 2
+            first, second = (strip[-2], strip[-1]) if k % 2 == 0 else (strip[-1], strip[-2])
+            found = None
+            for u, i in by_edge.get((_vertex_key(first), _vertex_key(second)), []):
+                if not used[u]:
+                    found = (u, i)
+                    break
+            if found is None:
+                break
+            u, i = found
+            used[u] = True
+            strip.append(triangles[u][(i + 2) % 3])
+        if len(strip) == 3:
+            singles += strip
+        else:
+            runs.append((2, strip))
+    if singles:
+        runs.append((0, singles))
+    return runs
+
+
 def encode_display_list(triangles):
-    """A display list drawing triangles of Vertex: quads where two triangles make one, runs of each kind under one
-    BEGIN, a color, normal or texture coordinate only when it changes, each vertex with the shortest command that
-    reaches it exactly, and the commands packed four to a word."""
+    """A display list drawing triangles of Vertex: as strips (where triangles share edges) or as quads (where two
+    triangles in a row make one), whichever is shorter, with a color, normal or texture coordinate only when it
+    changes, each vertex with the shortest command that reaches it exactly, and the commands packed four to a word."""
+    return min((_encode_runs(strips(triangles)), _encode_runs(quads(triangles))), key=len)
+
+
+def _encode_runs(runs):
     commands = []
     last = {"texcoord": None, "color": None, "normal": None}
     position = None
-    kind = None
-    for polygon in polygons(triangles):
-        wanted = 1 if len(polygon) == 4 else 0
-        if wanted != kind:
-            if kind is not None:
-                commands.append((0x41, []))
-            commands.append((0x40, [wanted]))
-            kind = wanted
-        for vertex in polygon:
+    for kind, vertices in runs:
+        commands.append((0x40, [kind]))
+        for vertex in vertices:
             for op, name in ((0x20, "color"), (0x21, "normal"), (0x22, "texcoord")):
                 value = getattr(vertex, name)
                 if value is not None and value != last[name]:
@@ -352,7 +396,7 @@ def encode_display_list(triangles):
                     last[name] = value
             commands.append(_vertex_command(vertex.position, position))
             position = vertex.position
-    commands.append((0x41, []))
+        commands.append((0x41, []))
     out = bytearray()
     for start in range(0, len(commands), 4):
         group = commands[start:start + 4]
@@ -361,6 +405,28 @@ def encode_display_list(triangles):
         for _, params in group:
             out += struct.pack(f"<{len(params)}I", *params)
     return bytes(out)
+
+
+def _counts(dl):
+    """A display list's vertex commands and quads, for the model's info."""
+    words = struct.unpack(f"<{len(dl) // 4}I", dl)
+    i = vertex_ops = quads_drawn = 0
+    kind = None
+    run = 0
+    while i < len(words):
+        ops = [(words[i] >> shift) & 0xff for shift in (0, 8, 16, 24)]
+        i += 1
+        for op in ops:
+            params = words[i:i + GPU_PARAMS[op]]
+            i += GPU_PARAMS[op]
+            if op == 0x40:
+                kind, run = params[0] & 3, 0
+            elif op == 0x41 and kind == 1:
+                quads_drawn += run // 4
+            elif 0x23 <= op <= 0x28:
+                vertex_ops += 1
+                run += 1
+    return vertex_ops, quads_drawn
 
 
 def box(points, scale=4096):
@@ -388,7 +454,7 @@ def draw_model(name, materials, draws, pos_scale=64):
                 named.setdefault(material[index], []).append(number)
         target.extend((n, numbers, 0) for n, numbers in named.items())
     sbc = bytearray(bytes.fromhex("26000000000200010b"))
-    vertices = quads = triangle_count = 0
+    vertices = triangle_count = quads_total = 0
     points = []
     for shape, (material, triangles) in enumerate(draws):
         if not triangles:
@@ -398,10 +464,11 @@ def draw_model(name, materials, draws, pos_scale=64):
                 | (SHAPE_TEXCOORD if first.texcoord is not None else 0))
         model.shapes.append((f"polygon{shape}", 0, flag, encode_display_list(triangles)))
         sbc += bytes((0x04, material, 0x05, shape))
-        drawn = polygons(triangles)
-        vertices += sum(len(p) for p in drawn)
-        quads += sum(len(p) == 4 for p in drawn)
-        triangle_count += sum(len(p) == 3 for p in drawn)
+        dl = model.shapes[-1][3]
+        vertex_ops, quad_count = _counts(dl)
+        vertices += vertex_ops
+        quads_total += quad_count
+        triangle_count += len(triangles) - 2 * quad_count
         points += [v.position for t in triangles for v in t]
     sbc += b"\x2b\x01"
     model.sbc = bytes(sbc)
@@ -411,8 +478,18 @@ def draw_model(name, materials, draws, pos_scale=64):
         raise ValueError(f"{name}: too many vertices for one model")
     box_values, box_scale = box(points)
     model.info = [0, 0, 0, 1, len(materials), len(draws), 1, 0, pos_scale * 4096, 4096 // pos_scale,
-                  vertices, triangle_count + quads, triangle_count, quads, *box_values, box_scale, 4096 * 4096 // box_scale]
+                  vertices, triangle_count + quads_total, triangle_count, quads_total, *box_values, box_scale, 4096 * 4096 // box_scale]
     return model
+
+
+def canonical(triangles):
+    """Triangles as a sorted list, each from its least corner, so that the same triangles wound the same way compare
+    equal whatever order and corner they start from."""
+    out = []
+    for t in triangles:
+        keys = [_vertex_key(v) for v in t]
+        out.append(min(tuple(keys[i:] + keys[:i]) for i in range(3)))
+    return sorted(out, key=repr)
 
 
 def check_drawing(archive_path):
@@ -431,7 +508,8 @@ def check_drawing(archive_path):
                 continue
             shapes += 1
             again = decode_display_list(encode_display_list(triangles))
-            if again != triangles:
+            # Strips may start a triangle from another corner; the triangles and their winding are what must stay
+            if canonical(again) != canonical(triangles):
                 failures += 1
                 if failures <= 5:
                     print(f"model {index} ({model.name}) {name}: draws differently")

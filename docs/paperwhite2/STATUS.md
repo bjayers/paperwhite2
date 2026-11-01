@@ -12,7 +12,7 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   vanilla models write back byte for byte, and all 17,129 shapes draw again the same (`nitro_model_writer.py check`).
   The packer writes a whole model from the GLB when a model's `data.json` has `"written": true`, so a GLB can add
   materials and draw calls: every vanilla model with a confirmed set, written from its GLB, draws the same positions
-  and UVs (lists about 7% larger at the median). **Not tried in game:** a written chunk.
+  and UVs (lists about 5% larger at the median: strips or quads, whichever is shorter). **Not tried in game:** a written chunk.
 - `tools/paperwhite2/map_tiles.py` (new): tile libraries, `res/paperwhite2/map_tiles/<library>/library.json`, cut into
   ground pieces and whole objects into `build/map_tiles/`. Route 20 (four chunks and their autumn variants): 3,274
   tiles.
@@ -25,8 +25,8 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   layout looks the same in the editor (2,085 triangles against 1,114; 71 KB of the 86 KB buffer). A painted tile
   brings its source's terrain rows into the chunk's first layer, its planes moved to its height (refused where the
   game's height table lacks the height; split tiles keep the chunk's rows). **Not tried in game.**
-- Next: fewer triangles (strips in the writer), New Map with an unused zone, collision painting in the Map Editor,
-  two-layer chunks.
+- Next: smaller composed chunks (the composer moves each triangle's UVs on its own, so neighbours share no vertices
+  for strips), New Map with an unused zone, collision painting in the Map Editor, two-layer chunks.
 
 ## 2026-10-31: NPC conditions and instances (phase 2)
 
