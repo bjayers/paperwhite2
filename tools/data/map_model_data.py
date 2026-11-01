@@ -24,7 +24,7 @@ import tempfile
 from pathlib import Path
 
 from narc import read_narc, write_narc
-from map_texture_data import decode, decode_png, palette_for, read_png, resources
+from map_texture_data import decode, decode_png, palette_for, read_png, resources, with_imports
 from map_terrain_data import export_terrains, patch_terrains
 from nitro_dictionary import build_dictionary, replace_names
 import nitro_model_writer
@@ -1316,8 +1316,9 @@ def pack(directory, game, output):
     version = {"black2": "b2_us", "white2": "w2_us"}[game]
     source = ROOT / "extract" / version / "files/a/0/0/8"
     archive = read_narc(source.read_bytes())
-    texture_archive = read_narc((ROOT / "extract" / version / "files/a/0/1/4").read_bytes())
     texture_dirs = directories("a/0/1/4")
+    # With the textures the sets import from others (imports.json), which models bind to by name like their own
+    texture_archive = with_imports(read_narc((ROOT / "extract" / version / "files/a/0/1/4").read_bytes()), texture_dirs)
     vanilla = len(archive)
     for chunk_id, (model_dir, data) in enumerate(models(directory, vanilla)):
         if chunk_id >= vanilla:

@@ -77,6 +77,14 @@ export function MapEditor({ constants }: ToolProps) {
   const { docs } = useDocuments();
   const [layer, setLayer] = useState(0);
   const [newMap, setNewMap] = useState(false);
+  /** Bumped to read the zone's map and sets again (after textures are imported). */
+  const [mapVersion, setMapVersion] = useState(0);
+  /** Faces copied, from any zone: their GLB, the faces, where they start (their north-west tile corner and lowest
+   * point, in their chunk's own coordinates) and what they are, for the message. */
+  const [clipboard, setClipboard] = useState<{ source: string; faces: { primitive: number; triangles: number[] }[];
+    anchor: [number, number, number]; label: string } | null>(null);
+  const [pasting, setPasting] = useState(false);
+  const [missing, setMissing] = useState<string[]>([]);
   const [brush, setBrush] = useState<CollisionBrush>({ kind: "type", tileClass: 0, flags: 0, heightTiles: 2, row: null, variants: true });
   const [variantFolders, setVariantFolders] = useState<Map<string, string[]>>(new Map());
   const [retexture, setRetexture] = useState("");
@@ -92,7 +100,7 @@ export function MapEditor({ constants }: ToolProps) {
     loadZoneMap(zone, season, constants).then((m) => { if (live) setMap(m); }, (e: Error) => { if (live) setMapError(e.message); });
     seasonSets(zone, constants).then((s) => { if (live) setSets(s); }, () => setSets([]));
     return () => { live = false; };
-  }, [zone, season, constants]);
+  }, [zone, season, constants, mapVersion]);
   useEffect(() => { setChunk(null); setFaces([]); }, [zone]);
 
   // The scene lives as long as the page
@@ -121,6 +129,10 @@ export function MapEditor({ constants }: ToolProps) {
     }
     if (tab !== "faces") {
       setChunk(picked);
+      return;
+    }
+    if (pasting && clipboard && picked !== null && point) {
+      pasteAt(picked, point);
       return;
     }
     if (!face) {
@@ -416,6 +428,76 @@ export function MapEditor({ constants }: ToolProps) {
     await reloadTerrain(paths);
   };
 
+  // ---------------------------------------------------------------- Copy and paste
+
+  /** Copies the selected faces: their chunk's GLB and where they start. */
+  const copyFaces = () => {
+    if (!current || !model || !faces.length || !map) return;
+    const half = map.chunkSize / 2;
+    const p = new THREE.Vector3();
+    let x0 = Infinity, y0 = Infinity, z0 = Infinity;
+    for (const f of faces) {
+      const geometry = model.primitives[f.primitive].mesh.geometry;
+      for (let k = 0; k < 3; k++) {
+        const v = geometry.index ? geometry.index.getX(f.triangle * 3 + k) : f.triangle * 3 + k;
+        p.fromBufferAttribute(geometry.attributes.position as THREE.BufferAttribute, v);
+        x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y); z0 = Math.min(z0, p.z);
+      }
+    }
+    const snap = (v: number) => Math.floor((v + half) / TILE) * TILE - half;
+    setClipboard({ source: `${current.folder}/model.glb`, faces: faceSets(faces), anchor: [snap(x0), Math.round(y0), snap(z0)],
+                   label: `${faces.length} face(s) of ${current.folder.slice(current.folder.lastIndexOf("/") + 1)}` });
+    setMessage({ text: `Copied ${faces.length} face(s). Turn on Paste where I click, and click the tile their north-west corner goes on, in any zone.` });
+  };
+
+  /** Pastes the copied faces with their north-west corner on the tile clicked and their foot at its height. */
+  const pasteAt = async (index: number, point: THREE.Vector3) => {
+    if (!clipboard || !map || busy) return;
+    const target = map.chunks[index];
+    const set = sets[Math.min(season, Math.max(0, sets.length - 1))];
+    if (!set?.set) { setMessage({ text: "The zone's area has no texture set to bind the faces to.", error: true }); return; }
+    const half = map.chunkSize / 2;
+    const lx = point.x - (target.column * map.chunkSize + half), lz = point.z - (target.row * map.chunkSize + half);
+    const snap = (v: number) => Math.floor((v + half) / TILE) * TILE - half;
+    const offset: [number, number, number] = [snap(lx) - clipboard.anchor[0], Math.round(point.y) - clipboard.anchor[1], snap(lz) - clipboard.anchor[2]];
+    const path = `${target.folder}/model.glb`;
+    setBusy(true);
+    try {
+      const before = await glbBase64(path);
+      const result = await api.glbPaste(path, clipboard.source, clipboard.faces, offset, set.set);
+      const after = await glbBase64(path);
+      const what = `Pasted ${clipboard.label}`;
+      setHistory((h) => ({ done: [...h.done, { kind: "faces", path, before, after, what }], undone: [] }));
+      setChunk(index);
+      reloadChunk(target.folder);
+      // The images every season's set must have, by name
+      const lacking = result.pngs.filter((p) => sets.some((s) => !s.textures.has(p.slice(p.indexOf("/") + 1))));
+      setMissing(lacking);
+      setMessage({ text: `${what} onto ${target.folder.slice(target.folder.lastIndexOf("/") + 1)}.${lacking.length
+        ? ` ${lacking.length} texture(s) aren't in every season's set of this area: ${lacking.map((p) => p.slice(p.indexOf("/") + 1, -4)).join(", ")}; import them in the Faces tab.` : ""}` });
+    } catch (e) {
+      setMessage({ text: (e as Error).message, error: true });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /** Adds the textures the pasted faces need to every season's set of the zone's area. */
+  const importMissing = async () => {
+    const targets = sets.map((s) => s.set).filter((s): s is string => !!s);
+    setBusy(true);
+    try {
+      const result = await api.importTextures(targets, missing);
+      setMissing([]);
+      setMapVersion((v) => v + 1);
+      setMessage({ text: `Imported into ${targets.length} set(s): ${result.added.length} file(s). The texture packer copies them from their sets as encoded there (imports.json).` });
+    } catch (e) {
+      setMessage({ text: (e as Error).message, error: true });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const removeFaces = () => editFaces(`Deleted ${faces.length} face(s)`, { remove: faceSets(faces) });
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -536,6 +618,24 @@ export function MapEditor({ constants }: ToolProps) {
                   <div className="me-actions"><button className="danger" disabled={!faces.length || busy} onClick={removeFaces} title="Delete">Delete the faces</button></div>
                   <p className="muted ow-note">Clearing a tree: click its leaves, Select the stack, then delete, and paint its tiles walkable in the
                     Collision tab. Route 20's forests are layers over many tiles; clear part of one by Shift+clicking its faces.</p>
+                </section>
+                <section className="me-section">
+                  <h4>Copy and paste</h4>
+                  <div className="me-actions">
+                    <button disabled={!faces.length} onClick={copyFaces} title="Copies the selected faces, to paste in any chunk of any zone">Copy the faces</button>
+                    <label className="ow-check"><input type="checkbox" checked={pasting} disabled={!clipboard} onChange={(e) => setPasting(e.target.checked)} />
+                      Paste where I click</label>
+                  </div>
+                  {clipboard && <p className="ow-note">Copied: {clipboard.label}.</p>}
+                  {missing.length > 0 && (
+                    <div className="me-actions">
+                      <button className="primary" disabled={busy} onClick={importMissing}
+                              title="Adds them to every season's texture set of this zone's area (imports.json), as their own set encodes them">
+                        Import {missing.length} texture(s) into the area's sets</button>
+                    </div>
+                  )}
+                  <p className="muted ow-note">Click the tile the faces' north-west corner goes on; their foot goes at the height clicked. A paste adds
+                    draw calls, so the chunk is packed as a whole model. Textures the area's sets lack can be imported from the faces' own set.</p>
                 </section>
                 <section className="me-section">
                   <h4>Retexture</h4>

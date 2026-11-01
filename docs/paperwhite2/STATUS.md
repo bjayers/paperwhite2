@@ -16,6 +16,10 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   their tile matched. Checked in the browser.
 - Design doc: the seamless overworld research (what swaps at a cell boundary, what doesn't, the two overworld
   matrices, fillers, room in the matrix).
+- **Copy and paste faces between chunks and zones**, and **textures imported between sets**
+  (`tools/data/nitro_texture_writer.py`, all 409 vanilla sets written back byte for byte; a set's `imports.json`). Pinwheel
+  Forest 2's doorway (the tree block with `d2mori01s` and `d2_hika02` at its east exit) pasted onto Route 20 and its two
+  textures imported into Route 19's four season sets: both pack (scratch copy). **Not tried in game.**
 - Next: in-game tests; the Map Editor showing a route's neighbours; warps between maps from the editor.
 
 ## 2026-11-01: the Map Editor's research, framework, model writer and Route 20's tiles

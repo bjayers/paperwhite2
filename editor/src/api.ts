@@ -87,6 +87,11 @@ export const api = {
   /** Deletes or retextures faces of a map chunk's model.glb; written says its data.json now has the whole model written. */
   glbFaces: (path: string, edits: GlbFaceEdits, textureSet?: string) =>
     request<{ ok: boolean; written: boolean }>("PUT", "/api/glb-faces", { path, edits, textureSet }),
+  /** Copies faces of one map chunk's model.glb into another's, moved by offset; the images the faces use, <set>/<png>. */
+  glbPaste: (target: string, source: string, faces: GlbFaceSet[], offset: [number, number, number], textureSet: string) =>
+    request<{ ok: boolean; pngs: string[] }>("PUT", "/api/glb-paste", { target, source, faces, offset, textureSet }),
+  /** Adds textures (<set>/<png>) of other map texture sets to sets, by their imports.json. */
+  importTextures: (sets: string[], textures: string[]) => request<{ added: string[] }>("POST", "/api/texture-imports", { sets, textures }),
   /** Puts a map chunk's model.glb back as it was (base64 bytes), for undo. */
   glbRaw: (path: string, data: string) => request<{ ok: boolean }>("PUT", "/api/glb-raw", { path, data }),
   /** The map tile libraries, and whether each is sliced. */

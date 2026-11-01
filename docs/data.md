@@ -900,6 +900,12 @@ models byte for byte; written from their GLBs, every one with a confirmed set dr
 display lists about 5% larger than the original's at the median (strips or quads, whichever is shorter). Every map
 model contains only an `MDL0` block; its textures come from the shared texture archive.
 
+A map texture set's directory may hold `imports.json` (`texture_imports.schema.json`): textures of other sets that the
+set gains after its own, each its image and palette copied as the other set encodes them
+(`tools/data/nitro_texture_writer.py`, which writes all 409 vanilla sets back byte for byte), with a copy of the PNG
+beside the set's own for the editors. The map model packer binds to them by name like the set's own. Paper White 2's
+Map Editor adds them when it pastes faces into an area whose sets lack their textures.
+
 The exterior and interior field props use separate texture archives. Their PNGs live under
 `res/field/props/exterior/textures/` and `res/field/props/interior/textures/`, a directory per prop bundle,
 named as the bundle is. Editing a PNG repacks its original Nitro texture and shared palette;

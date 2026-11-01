@@ -12,7 +12,7 @@ import { WRITE_HEADER, type DataFile, type ProjectInfo, type SaveRequest, type S
 import { Builder } from "./build.ts";
 import { narcMember } from "./narc.ts";
 import { Git } from "./git.ts";
-import { editGlbFaces, setGlbProps, type FaceEdits, type GlbProp } from "./glb.ts";
+import { editGlbFaces, pasteGlbFaces, setGlbProps, type FaceEdits, type FaceSet, type GlbProp } from "./glb.ts";
 import { Project, versionOf } from "./project.ts";
 import { Python, pythonFor } from "./python.ts";
 import { loadSettings } from "./settings.ts";
@@ -302,6 +302,52 @@ const routes: Record<string, Handler> = {
     }
     await project.writeAtomic(path, glb);
     json(res, { ok: true, written });
+  },
+  "PUT /api/glb-paste": async (req, res) => {
+    // Faces of one map model's GLB copied into another's, moved by an offset; the target is then written whole
+    const b = (await readJson(req)) as { target: string; source: string; faces: FaceSet[]; offset: [number, number, number]; textureSet: string };
+    const target = mapModelGlb(b.target), source = mapModelGlb(b.source);
+    if (!target || !source || !Array.isArray(b.faces) || !Array.isArray(b.offset) || b.offset.length !== 3 || !b.offset.every(Number.isFinite)
+        || !/^[a-z0-9_]+$/.test(b.textureSet ?? ""))
+      return error(res, 400, "Name the two map models, the faces, the offset and the target's texture set");
+    const { glb, pngs } = pasteGlbFaces(readFileSync(project.abs(target)), readFileSync(project.abs(source)), b.faces, b.offset, b.textureSet);
+    const dataPath = target.replace(/model\.glb$/, "data.json");
+    let data = parseJson(readFileSync(project.abs(dataPath), "utf8"));
+    const plain = data as Map<string, unknown>;
+    if (plain.get("texture_set") === null) data = setIn(data, ["texture_set"], `MAP_TEXTURE_SET_${b.textureSet.toUpperCase()}`);
+    if (plain.get("written") !== true) data = setIn(data, ["written"], true);
+    if (data !== plain) await project.writeAtomic(dataPath, fileText(data));
+    await project.writeAtomic(target, glb);
+    json(res, { ok: true, pngs });
+  },
+  "POST /api/texture-imports": async (req, res) => {
+    // Textures of one map texture set added to others (their imports.json, and a copy of the PNG beside theirs)
+    const b = (await readJson(req)) as { sets: string[]; textures: string[] };
+    const folder = /^[a-z0-9_]+$/;
+    if (!Array.isArray(b.sets) || !b.sets.every((x) => folder.test(x)) || !Array.isArray(b.textures)
+        || !b.textures.every((t) => /^[a-z0-9_]+\/[a-z0-9_.]+\.png$/i.test(t)))
+      return error(res, 400, "Name the sets and the textures, as <set>/<png>");
+    const added: string[] = [];
+    for (const set of b.sets) {
+      const base = `res/field/maps/textures/${set}`;
+      if (!existsSync(project.abs(base))) return error(res, 400, `No texture set ${set}`);
+      const path = `${base}/imports.json`;
+      const current = existsSync(project.abs(path)) ? JSON.parse(readFileSync(project.abs(path), "utf8")) as { textures: { texture: string; from: string }[] }
+        : { textures: [] };
+      for (const t of b.textures) {
+        const [from, png] = t.split("/");
+        const name = png.replace(/\.png$/i, "");
+        if (from === set || existsSync(project.abs(`${base}/${png}`))) continue;
+        if (!existsSync(project.abs(`res/field/maps/textures/${from}/${png}`))) return error(res, 400, `No ${t}`);
+        current.textures.push({ texture: name, from: `MAP_TEXTURE_SET_${from.toUpperCase()}` });
+        await project.writeAtomic(`${base}/${png}`, readFileSync(project.abs(`res/field/maps/textures/${from}/${png}`)));
+        added.push(`${set}/${png}`);
+      }
+      if (current.textures.length) {
+        await project.writeAtomic(path, fileText(parseJson(JSON.stringify({ $schema: "../texture_imports.schema.json", textures: current.textures }))));
+      }
+    }
+    json(res, { added });
   },
   "PUT /api/glb-raw": async (req, res) => {
     // A map model's GLB put back as it was, for the Map Editor's undo

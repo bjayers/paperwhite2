@@ -6,7 +6,13 @@ Usage: map_texture_data.py extract OUTPUT_DIR [ARCHIVE]
 
 ARCHIVE is a/0/1/4, the map texture sets (the default), or a/1/7/4 or a/1/7/5, the exterior or interior field props'
 textures. Each texture set is a directory of PNGs named after its constant in the archive's list (graphics_paths.py).
+
+A map texture set's directory may hold imports.json (texture_imports.schema.json): textures of other sets that the
+set gains, each its image and palette as the other set encodes them (with that set's edits), after the set's own
+(nitro_texture_writer.py). Paper White 2's Map Editor adds them, with a copy of the PNG beside the set's own, when a
+model moves to an area whose set lacks some of its textures.
 """
+import json
 
 import struct
 import sys
@@ -15,6 +21,7 @@ from pathlib import Path
 
 from narc import read_narc, write_narc
 from graphics_paths import directories
+import nitro_texture_writer
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -374,10 +381,42 @@ def pack(directory, game, output):
                     raise ValueError(f"texture set {set_id}/{texture['name']}: "
                                      "shared Nitro data cannot represent the edited PNGs together")
         result.append(bytes(blob))
+    if archive_name == "a/0/1/4":
+        result = with_imports(result, folders)
     destination = Path(output)
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.unlink(missing_ok=True)
     destination.write_bytes(write_narc(result))
+
+
+def with_imports(sets, folders):
+    """The sets with the textures their imports.json names, copied from the other sets as packed."""
+    sys.path.insert(0, str(ROOT))
+    from tools.data.datajson import DataError, load, load_schema, value
+    schema = load_schema(ROOT / "res/field/maps/textures/texture_imports.schema.json")
+    out = list(sets)
+    for index, folder in enumerate(folders):
+        path = folder / "imports.json"
+        if not path.exists():
+            continue
+        imports = load(path, schema)
+        target = nitro_texture_writer.read_set(out[index])
+        for entry in imports["textures"]:
+            source_id = value(entry["from"], str(path))
+            if source_id == index or source_id >= len(sets):
+                raise DataError(f"{path}: {entry['from']} isn't another of the map texture sets")
+            blob = sets[source_id]
+            textures, palettes = resources(blob)
+            found = [(i, t) for i, t in enumerate(textures) if t["name"] == entry["texture"]]
+            if not found:
+                raise DataError(f"{path}: {entry['from']} has no texture {entry['texture']}")
+            palette = palette_for(found[0][1], palettes, found[0][0])["name"]
+            try:
+                nitro_texture_writer.add_texture(target, nitro_texture_writer.read_set(blob), entry["texture"], palette)
+            except ValueError as error:
+                raise DataError(f"{path}: {entry['texture']}: {error}") from error
+        out[index] = nitro_texture_writer.write_set(target)
+    return out
 
 
 def main():
