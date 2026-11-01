@@ -259,6 +259,31 @@ trainer's line of sight), Proxies (background events), Triggers, Warps and Level
   a stroke) in order. The server gives the models and their textures at `/res/...`.
 - A save made on a map keeps its NPCs as they were, so after a build leave the map and come back to see the changes.
 
+## The Map Editor
+
+A zone's map chunks in 3D, in a season (`docs/paperwhite2/design/map-editor.md`). Click a cell of the matrix, or the
+map, to choose a chunk; the middle button orbits, the right pans and the wheel zooms.
+
+- **Chunks:** the zone's cells of its matrix, and the chosen chunk's inspector: its model and texture set, whether it
+  packs as edits of the original model or as a whole model (`"written"` in its `data.json`), its triangles, vertices
+  and materials against the busiest vanilla chunk's, its season variants (the chunks a season replacement swaps in,
+  each a model of its own), and its textures against each season's set: a texture a season's set lacks draws wrong in
+  that season.
+- **Faces:** click a face to select it, Shift+click to add one, Ctrl+click to take one away. **Select connected** adds
+  the faces sharing corners with the selection; **Select the stack** adds what stands with it, seen from above (a
+  tree's trunk, its crossed cards and its layers of leaves, without the ground under it); **Select same material**
+  takes every face of the selection's draw calls. **Delete** removes them; **Retexture** draws them with another
+  texture of the area's set (those missing from another season's set are marked). Edits are written to the chunk's
+  `model.glb` at once, with Ctrl+Z and Ctrl+Y. A retexture gives the chunk a new material and draw call, so its
+  `data.json` gains `"written": true` (and the area's texture set where it had none), which packs the whole model with
+  `tools/data/nitro_model_writer.py`. Clearing a tree: click its leaves, Select the stack, Delete, then paint its tiles
+  walkable in the Overworld Editor (collision painting comes to the Map Editor later).
+- **Tiles:** the tile libraries (`res/paperwhite2/map_tiles/<library>/library.json`) cut from the game's chunks by
+  `tools/paperwhite2/map_tiles.py`: **Cut the tiles** makes the catalogue in `build/map_tiles/`, and the palette shows
+  each tile's picture, most used first, filtered by kind and material. A tile's details give its footprint, triangles,
+  materials, collision and where the chunks use it (**show** goes there on the map). Painting tiles into a chunk comes
+  next.
+
 ## The Pokémon Editor
 
 Every species and form (`src/modules/pokemon/`, `res/pokemon/<species>/data.json` and `form_<n>/data.json`), by number

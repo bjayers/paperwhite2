@@ -1,19 +1,20 @@
 // The editor's server: serves the page and an API over the checkout this folder sits in. It listens on this computer
 // only. Start it with `npm start` in editor/ (or ./start.sh), then open the address it prints in Edge.
 
+import { execFile } from "node:child_process";
 import { createReadStream, existsSync, globSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { extname, join, resolve, sep } from "node:path";
-import { parseJson, JsonSyntaxError } from "../shared/json.ts";
+import { fileText, parseJson, setIn, JsonSyntaxError } from "../shared/json.ts";
 import { splitSchemaId } from "../shared/schema.ts";
 import { WRITE_HEADER, type DataFile, type ProjectInfo, type SaveRequest, type SaveResult, type ServerEvent } from "../shared/api.ts";
 import { Builder } from "./build.ts";
 import { narcMember } from "./narc.ts";
 import { Git } from "./git.ts";
-import { setGlbProps, type GlbProp } from "./glb.ts";
+import { editGlbFaces, setGlbProps, type FaceEdits, type GlbProp } from "./glb.ts";
 import { Project, versionOf } from "./project.ts";
-import { Python } from "./python.ts";
+import { Python, pythonFor } from "./python.ts";
 import { loadSettings } from "./settings.ts";
 
 // The checkout this folder is in; PAPERWHITE_ROOT points it at another, as the tests do with a scratch copy.
@@ -277,6 +278,69 @@ const routes: Record<string, Handler> = {
     if (existsSync(project.abs(path))) rmSync(project.abs(path));
     json(res, { removed: true });
   },
+  "PUT /api/glb-faces": async (req, res) => {
+    // Faces deleted or retextured in a map model's GLB; where the draw calls change, its data.json gains "written" (and
+    // the area's texture set where it had none), since only the whole-model writer can pack those
+    const body = (await readJson(req)) as { path: string; edits: FaceEdits; textureSet?: string };
+    const path = mapModelGlb(body.path);
+    if (!path) return error(res, 400, "Name a map model's model.glb");
+    const { glb, drawCallsChanged } = editGlbFaces(readFileSync(project.abs(path)), body.edits ?? {});
+    let written = false;
+    if (drawCallsChanged) {
+      const dataPath = path.replace(/model\.glb$/, "data.json");
+      let data = parseJson(readFileSync(project.abs(dataPath), "utf8"));
+      const plain = data as Map<string, unknown>;
+      if (plain.get("texture_set") === null) {
+        if (!body.textureSet) return error(res, 400, "The model has no texture set: choose the zone's area first");
+        data = setIn(data, ["texture_set"], body.textureSet);
+      }
+      if (plain.get("written") !== true) {
+        data = setIn(data, ["written"], true);
+        await project.writeAtomic(dataPath, fileText(data));
+      } else if (plain.get("texture_set") === null) await project.writeAtomic(dataPath, fileText(data));
+      written = true;
+    }
+    await project.writeAtomic(path, glb);
+    json(res, { ok: true, written });
+  },
+  "PUT /api/glb-raw": async (req, res) => {
+    // A map model's GLB put back as it was, for the Map Editor's undo
+    const body = (await readJson(req)) as { path: string; data: string };
+    const path = mapModelGlb(body.path);
+    if (!path || typeof body.data !== "string") return error(res, 400, "Name a map model's model.glb and its bytes");
+    const glb = Buffer.from(body.data, "base64");
+    if (glb.readUInt32LE(0) !== 0x46546c67) return error(res, 400, "Not a GLB");
+    await project.writeAtomic(path, glb);
+    json(res, { ok: true });
+  },
+  "GET /api/map-tiles": (_req, res) => {
+    // The tile libraries (res/paperwhite2/map_tiles/<library>/library.json) and whether each has its catalogue yet
+    const libraries = globSync("res/paperwhite2/map_tiles/*/library.json", { cwd: ROOT }).sort().map((file) => {
+      const id = file.split("/")[3];
+      const library = JSON.parse(readFileSync(join(ROOT, file), "utf8")) as { name: string; sources: string[] };
+      return { id, name: library.name, sources: library.sources, sliced: existsSync(join(ROOT, "build/map_tiles", id, "tiles.json")) };
+    });
+    json(res, libraries);
+  },
+  "POST /api/map-tiles/slice": async (req, res) => {
+    // Cuts a library's chunks into its catalogue, build/map_tiles/<library>/ (tools/paperwhite2/map_tiles.py)
+    const { library } = (await readJson(req)) as { library: string };
+    if (!/^[a-z0-9_]+$/.test(library ?? "") || !existsSync(join(ROOT, "res/paperwhite2/map_tiles", library, "library.json")))
+      return error(res, 400, "No such tile library");
+    const result = await new Promise<{ ok: boolean; output: string }>((done) => {
+      execFile(pythonFor(ROOT), ["tools/paperwhite2/map_tiles.py", "slice", library], { cwd: ROOT, maxBuffer: 16 << 20 },
+        (e, stdout, stderr) => done({ ok: !e, output: `${stdout}${stderr}`.trim() }));
+    });
+    if (!result.ok) return error(res, 500, result.output || "Slicing failed");
+    json(res, result);
+  },
+  "GET /api/map-tiles/catalogue": (_req, res, url) => {
+    const library = url.searchParams.get("library") ?? "";
+    const file = join(ROOT, "build/map_tiles", library, "tiles.json");
+    if (!/^[a-z0-9_]+$/.test(library) || !existsSync(file)) return error(res, 404, "The library isn't sliced yet");
+    res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+    createReadStream(file).pipe(res);
+  },
   "GET /api/build": (_req, res) => json(res, builder.state),
   "POST /api/build": (_req, res) => json(res, { started: builder.start(settings.buildCommand) }),
   "POST /api/build/stop": (_req, res) => {
@@ -343,6 +407,20 @@ function serveResFile(res: ServerResponse, pathname: string) {
   createReadStream(project.abs(path)).pipe(res);
 }
 
+// A tile library's catalogue GLB, which names its textures under /res/ by relative paths
+function serveTiles(res: ServerResponse, pathname: string) {
+  const file = join(ROOT, pathname.slice(1));
+  if (!existsSync(file)) return error(res, 404, "The library isn't sliced yet");
+  res.writeHead(200, { "Content-Type": "model/gltf-binary", "Cache-Control": "no-cache" });
+  createReadStream(file).pipe(res);
+}
+
+/** A map model's model.glb under res/, or null. */
+function mapModelGlb(path: string | undefined): string | null {
+  const checked = project.checkPath(path ?? "");
+  return checked && /^res\/field\/maps\/models\/[a-z0-9_]+\/model\.glb$/.test(checked) && existsSync(project.abs(checked)) ? checked : null;
+}
+
 function serveStatic(res: ServerResponse, pathname: string) {
   let file = join(DIST, decodeURIComponent(pathname));
   if (!file.startsWith(DIST) || !existsSync(file) || statSync(file).isDirectory()) file = join(DIST, "index.html");
@@ -367,6 +445,7 @@ createServer(async (req, res) => {
   try {
     if (route) await route(req, res, url);
     else if (method === "GET" && url.pathname.startsWith("/res/")) serveResFile(res, url.pathname);
+    else if (method === "GET" && /^\/build\/map_tiles\/[a-z0-9_]+\/tiles\.glb$/.test(url.pathname)) serveTiles(res, url.pathname);
     else if (url.pathname.startsWith("/api/")) error(res, 404, "No such request");
     else serveStatic(res, url.pathname);
   } catch (e) {

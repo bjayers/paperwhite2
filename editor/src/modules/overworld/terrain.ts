@@ -163,24 +163,24 @@ export async function reloadLayers(chunk: Chunk, source?: TextSource, chunkSize 
   chunk.layers = layers;
 }
 
-interface Replacement {
+export interface Replacement {
   matrix: string | number;
   kind: "chunk" | "matrix";
   condition: string | number;
   values: (string | number)[];
 }
 
-const AREA_SEASONS_FIRST = 2;
-const AREA_SEASONS_END = 0x11a;
+export const AREA_SEASONS_FIRST = 2;
+export const AREA_SEASONS_END = 0x11a;
 
 /** A constant's name for a value, of a prefix. */
-function nameOf(constants: Constants, prefix: string, value: number): string | null {
+export function nameOf(constants: Constants, prefix: string, value: number): string | null {
   for (const [k, v] of constants) if (v === value && k.startsWith(prefix)) return k;
   return null;
 }
 
 /** The value a replacement gives in White 2 in a season, or null for one an event or the version decides by default. */
-function replacementValue(r: Replacement, season: number): string | number | null {
+export function replacementValue(r: Replacement, season: number): string | number | null {
   switch (r.condition) {
     case "season": return r.values[season] ?? null;
     case "version_season": return r.values[season + 1] ?? null;

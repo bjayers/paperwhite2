@@ -115,7 +115,7 @@ function propModel(folder: string): Promise<THREE.Object3D | null> {
 
 /** A loader that draws a chunk with the zone's texture set in its season: each texture the set has (by its file's
  * name) from there, the others as the model names them. */
-function chunkLoader(map: ZoneMap): GLTFLoader {
+export function chunkLoader(map: ZoneMap): GLTFLoader {
   const manager = new THREE.LoadingManager();
   manager.setURLModifier((url) => {
     const m = /\/textures\/[^/]+\/([^/]+\.png)$/.exec(url);

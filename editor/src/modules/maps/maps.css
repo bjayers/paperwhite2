@@ -1,0 +1,36 @@
+/* The Map Editor, beside the Overworld Editor's layout (overworld.css), whose classes it shares. */
+
+.me-section { margin-bottom: 18px; }
+.me-section h4 { margin: 0 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+.me-row { display: grid; grid-template-columns: 96px 1fr; align-items: center; column-gap: 12px; margin: 6px 0; font-size: 13px; }
+.me-row > label { color: var(--muted); }
+.me-inline { display: flex; gap: 6px; min-width: 0; }
+.me-inline .filter { flex: 1; min-width: 0; }
+.me-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.me-mono { font-family: var(--mono); font-size: 12px; overflow-wrap: anywhere; }
+.me-list { margin: 4px 0; padding-left: 18px; font-size: 13px; }
+.me-list li { margin: 2px 0; }
+.me-current { font-weight: 600; }
+.me-empty { position: absolute; top: 0; left: 0; }
+.me-picking .ow-map { cursor: crosshair; }
+.me-texture { display: block; max-width: 128px; max-height: 128px; image-rendering: pixelated; margin: 6px 0 0 108px;
+  border: 1px solid var(--border); }
+
+.me-matrix { display: grid; gap: 3px; }
+.me-cell { min-height: 34px; padding: 2px; font-size: 11px; font-family: var(--mono); overflow-wrap: anywhere; border-radius: 4px; }
+.me-cell.selected { border-color: #ffd040; box-shadow: inset 0 0 0 1px #ffd040; background: var(--selected); }
+.me-cell.empty { border: 1px dashed var(--border); border-radius: 4px; min-height: 34px; }
+
+.me-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.me-table th, .me-table td { text-align: left; padding: 2px 6px; border-bottom: 1px solid var(--border); }
+.me-table th { color: var(--muted); font-weight: 500; }
+
+.me-palette { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 6px; margin-top: 8px; }
+.me-tile { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px; border: 1px solid transparent;
+  border-radius: 6px; background: none; min-width: 0; }
+.me-tile:hover { background: var(--hover); }
+.me-tile.selected { border-color: var(--accent); background: var(--selected); }
+.me-tile img, .me-tile-blank { width: 72px; height: 72px; image-rendering: pixelated; }
+.me-tile-blank { display: block; background: var(--hover); border-radius: 4px; }
+.me-tile-name { font-size: 11px; line-height: 1.2; text-align: center; overflow-wrap: anywhere; max-width: 100%; }
+.me-tile-uses { font-size: 10px; }

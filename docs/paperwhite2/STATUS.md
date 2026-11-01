@@ -2,6 +2,27 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-01: the Map Editor's research, framework, model writer and Route 20's tiles
+
+- `docs/paperwhite2/design/map-editor.md` (new): the research and plan: the chunk and model layout, the limits, the
+  seasons (texture sets by name in 66 of the 70 seasonal areas; Route 20's autumn chunks, a different layout), unused
+  zones (about 75 empty leftovers, no code needed) against new ones (possible, with three fixes), what a new map
+  needs, the model writer and the tile library.
+- `tools/data/nitro_model_writer.py` (new): reads a map model into its parts and writes one from them; all 1,065
+  vanilla models write back byte for byte, and all 17,129 shapes draw again the same (`nitro_model_writer.py check`).
+  The packer writes a whole model from the GLB when a model's `data.json` has `"written": true`, so a GLB can add
+  materials and draw calls: every vanilla model with a confirmed set, written from its GLB, draws the same positions
+  and UVs (lists about 7% larger at the median). **Not tried in game:** a written chunk.
+- `tools/paperwhite2/map_tiles.py` (new): tile libraries, `res/paperwhite2/map_tiles/<library>/library.json`, cut into
+  ground pieces and whole objects into `build/map_tiles/`. Route 20 (four chunks and their autumn variants): 3,274
+  tiles.
+- The editor's Map Editor (new): Chunks (the matrix, the inspector against the limits and each season's set, season
+  variants), Faces (select, connected, the stack of a tree, delete, retexture, undo; written to model.glb at once) and
+  Tiles (the palette). Checked in the browser on a scratch copy: a tree deleted and a face retextured, then packed (34
+  materials and draw calls where vanilla has 33). **Not tested in game.**
+- Next: painting tiles into a chunk (composing the GLB and collision), collision painting in the Map Editor, New Map
+  with an unused zone.
+
 ## 2026-10-31: NPC conditions and instances (phase 2)
 
 - `res/paperwhite2/overworld/<zone>.json` (new, `tools/paperwhite2/overworld.py`, a member after a/1/2/6's files in

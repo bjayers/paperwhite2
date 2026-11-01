@@ -253,4 +253,8 @@ writer packs it. The budget bar shows the polygons as tiles go down.
 
 ## What is built so far
 
-See `docs/paperwhite2/STATUS.md` for the latest.
+- The model writer (`tools/data/nitro_model_writer.py`) and the packer's `"written"` models.
+- The tile slicer (`tools/paperwhite2/map_tiles.py`) and Route 20's library.
+- The Map Editor's Chunks, Faces and Tiles tabs (`editor/src/modules/maps/`, `editor/README.md`).
+
+See `docs/paperwhite2/STATUS.md` for the latest, and what is still untested in game.

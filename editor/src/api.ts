@@ -60,6 +60,11 @@ function normalize(path: string): string {
   return parts.join("/");
 }
 
+/** Faces of a GLB by primitive and triangle number, deleted or drawn with another texture (server/glb.ts). */
+export interface GlbFaceSet { primitive: number; triangles: number[] }
+export interface GlbFaceEdits { remove?: GlbFaceSet[]; retexture?: { faces: GlbFaceSet[]; image: string }[] }
+export interface TileLibraryInfo { id: string; name: string; sources: string[]; sliced: boolean }
+
 export const api = {
   project: () => request<ProjectInfo>("GET", "/api/project"),
   entries: (schema: string) => request<Entry[]>("GET", `/api/entries?schema=${encodeURIComponent(schema)}`),
@@ -79,6 +84,15 @@ export const api = {
   /** Writes a map chunk's props (nodes bw2_prop_*) into its model.glb. */
   glbProps: (path: string, props: { id: number; translation: number[]; rotation: number[] }[]) =>
     request<{ ok: boolean }>("PUT", "/api/glb-props", { path, props }),
+  /** Deletes or retextures faces of a map chunk's model.glb; written says its data.json now has the whole model written. */
+  glbFaces: (path: string, edits: GlbFaceEdits, textureSet?: string) =>
+    request<{ ok: boolean; written: boolean }>("PUT", "/api/glb-faces", { path, edits, textureSet }),
+  /** Puts a map chunk's model.glb back as it was (base64 bytes), for undo. */
+  glbRaw: (path: string, data: string) => request<{ ok: boolean }>("PUT", "/api/glb-raw", { path, data }),
+  /** The map tile libraries, and whether each is sliced. */
+  tileLibraries: () => request<TileLibraryInfo[]>("GET", "/api/map-tiles"),
+  sliceTiles: (library: string) => request<{ ok: boolean; output: string }>("POST", "/api/map-tiles/slice", { library }),
+  tileCatalogue: (library: string) => request<unknown>("GET", `/api/map-tiles/catalogue?library=${encodeURIComponent(library)}`),
   /** The lines of the files under res/ that a glob names which match a regular expression. */
   scan: (glob: string, pattern: string, options: { ignoreCase?: boolean; limit?: number } = {}) =>
     request<ScanMatch[]>("GET", `/api/scan?glob=${encodeURIComponent(glob)}&pattern=${encodeURIComponent(pattern)}` +
