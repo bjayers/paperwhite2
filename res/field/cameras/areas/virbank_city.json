@@ -1,0 +1,98 @@
+{
+    "$schema": "../cameras.schema.json",
+    "zones": [ "ZONE_VIRBANK_CITY" ],
+    "areas": [
+        {
+            "check": "rect",
+            "stay": 5,
+            "enter": 6,
+            "exit": 7,
+            "rect": {
+                "x": 231,
+                "z": 661,
+                "width": 1,
+                "unk06": 1,
+                "height": 5,
+                "unk0a": 0,
+                "pitch": [ 12743, 9688 ],
+                "yaw": [ 0, 0 ],
+                "distance": [ 970752, 970752 ],
+                "forbid_delay": false,
+                "target_offset": [
+                    [ 0, 16384, 0 ],
+                    [ 0, 16384, 0 ]
+                ],
+                "fov": [ 3640, 3640 ]
+            }
+        },
+        {
+            "check": "rect",
+            "stay": 5,
+            "enter": 6,
+            "exit": 7,
+            "rect": {
+                "x": 220,
+                "z": 661,
+                "width": 1,
+                "unk06": 1,
+                "height": 5,
+                "unk0a": 0,
+                "pitch": [ 9688, 12743 ],
+                "yaw": [ 0, 0 ],
+                "distance": [ 970752, 970752 ],
+                "forbid_delay": false,
+                "target_offset": [
+                    [ 0, 16384, 0 ],
+                    [ 0, 16384, 0 ]
+                ],
+                "fov": [ 3640, 3640 ]
+            }
+        },
+        {
+            "check": "rect",
+            "stay": 5,
+            "enter": 6,
+            "exit": 7,
+            "rect": {
+                "x": 225,
+                "z": 661,
+                "width": 1,
+                "unk06": 1,
+                "height": 6,
+                "unk0a": 0,
+                "pitch": [ 12743, 12743 ],
+                "yaw": [ 0, 0 ],
+                "distance": [ 970752, 970752 ],
+                "forbid_delay": false,
+                "target_offset": [
+                    [ 0, 16384, 0 ],
+                    [ 0, 16384, 0 ]
+                ],
+                "fov": [ 3640, 3640 ]
+            }
+        },
+        {
+            "check": "rect",
+            "stay": 5,
+            "enter": 6,
+            "exit": 7,
+            "rect": {
+                "x": 250,
+                "z": 669,
+                "width": 1,
+                "unk06": 3,
+                "height": 6,
+                "unk0a": 0,
+                "pitch": [ 9688, 6120 ],
+                "yaw": [ 0, 62296 ],
+                "distance": [ 970752, 970752 ],
+                "forbid_delay": false,
+                "target_offset": [
+                    [ 0, 16384, 0 ],
+                    [ 98304, 18022, 0 ]
+                ],
+                "fov": [ 3640, 3640 ]
+            }
+        }
+    ]
+}
