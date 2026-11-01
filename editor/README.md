@@ -264,6 +264,10 @@ trainer's line of sight), Proxies (background events), Triggers, Warps and Level
 A zone's map chunks in 3D, in a season (`docs/paperwhite2/design/map-editor.md`). Click a cell of the matrix, or the
 map, to choose a chunk; the middle button orbits, the right pans and the wheel zooms.
 
+- **Overworld map** (under the zone filter) opens the overworld's grid over the map: each area's cells in its own
+  color, the current zone's outlined, filler cells (the trees and sea around the areas) grey. Click an area's cell to
+  open its zone at that chunk, or a filler or empty cell to start a new route there (New map, as a route, with that
+  cell picked).
 - **New map…** (the header) takes one of the game's unused zones (about 60 empty leftovers: no events, no warp leads
   there, the code doesn't name them, not on the town map) and makes it a map, from the chunk chosen on the map as a
   template (`tools/paperwhite2/new_map.py`). The zone, its scripts and text bank are renamed after the map, and its

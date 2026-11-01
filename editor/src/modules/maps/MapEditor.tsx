@@ -19,6 +19,7 @@ import { loadWorld, type World } from "../world/world.ts";
 import { SEASONS, TILE, loadZoneMap, reloadLayers, type ZoneMap } from "../overworld/terrain.ts";
 import { CollisionPanel, type CollisionBrush } from "./CollisionPanel.tsx";
 import { NewMapDialog } from "./NewMapDialog.tsx";
+import { OverworldGrid, type OverworldCell } from "./OverworldGrid.tsx";
 import { paintTiles, tileRow } from "./collision.ts";
 import { ChunkScene, connectedFaces, faceKey, forgetObject, stackedFaces, type ChunkModel, type Face } from "./ChunkScene.ts";
 import { seasonSets, seasonVariants, type SeasonSet } from "./seasons.ts";
@@ -90,7 +91,10 @@ export function MapEditor({ constants }: ToolProps) {
   const [saveAs, setSaveAs] = useState<{ name: string; category: string } | null>(null);
   const { docs } = useDocuments();
   const [layer, setLayer] = useState(0);
-  const [newMap, setNewMap] = useState(false);
+  const [newMap, setNewMap] = useState<false | { route?: [number, number][] }>(false);
+  const [overworld, setOverworld] = useState(false);
+  /** A chunk to choose once its zone's map has loaded, by its matrix cell. */
+  const [pendingCell, setPendingCell] = useState<{ column: number; row: number } | null>(null);
   /** Bumped to read the zone's map and sets again (after textures are imported). */
   const [mapVersion, setMapVersion] = useState(0);
   /** Faces copied, from any zone: their GLB, the faces, where they start (their north-west tile corner and lowest
@@ -115,7 +119,7 @@ export function MapEditor({ constants }: ToolProps) {
     seasonSets(zone, constants).then((s) => { if (live) setSets(s); }, () => setSets([]));
     return () => { live = false; };
   }, [zone, season, constants, mapVersion]);
-  useEffect(() => { setChunk(null); setFaces([]); }, [zone]);
+  useEffect(() => { setFaces([]); if (!pendingCell) setChunk(null); }, [zone]);
 
   // The scene lives as long as the page
   useEffect(() => {
@@ -256,6 +260,29 @@ export function MapEditor({ constants }: ToolProps) {
       setBusy(false);
     }
   }, [history, busy]);
+
+  // ---------------------------------------------------------------- The overworld's grid
+
+  /** A cell of the overworld clicked: its zone's chunk chosen, or a new route offered on a filler or empty cell. */
+  const overworldCell = (cell: OverworldCell) => {
+    if (!cell.zone) {
+      setNewMap({ route: [[cell.column, cell.row]] });
+      return;
+    }
+    const file = cell.zone.replace(/^ZONE_/, "").toLowerCase();
+    setPendingCell({ column: cell.column, row: cell.row });
+    if (file !== zone) setZone(file);
+    setOverworld(false);
+  };
+  useEffect(() => {
+    if (!pendingCell || !map) return;
+    const index = map.chunks.findIndex((c) => c.column === pendingCell.column && c.row === pendingCell.row);
+    if (index < 0) return;
+    setPendingCell(null);
+    setChunk(index);
+    // After the zone's frame, when it has just loaded
+    setTimeout(() => scene.current?.frameChunk(index), 50);
+  }, [pendingCell, map]);
 
   // ---------------------------------------------------------------- Painted maps
 
@@ -671,6 +698,7 @@ export function MapEditor({ constants }: ToolProps) {
     <div className="ow-editor me-editor">
       {newMap && (
         <NewMapDialog template={modelName ? `MAP_MODEL_${modelName.toUpperCase()}` : null} constants={constants} onClose={() => setNewMap(false)}
+                      route={newMap.route}
                       onCreated={(file, models) => {
                         setNewMap(false);
                         setMessage({ text: `Made ${file}: ${models.length} chunk(s) copied from the template. Give it warps in the Overworld Editor, and its look in the Faces, Collision and Tiles tabs.` });
@@ -682,7 +710,7 @@ export function MapEditor({ constants }: ToolProps) {
         <h2>Map Editor</h2>
         {zone && <strong>{zone}</strong>}
         <span className="spacer" />
-        <button onClick={() => setNewMap(true)} title="Make one of the game's unused zones a new map, from the chosen chunk">New map…</button>
+        <button onClick={() => setNewMap({})} title="Make one of the game's unused zones a new map, from the chosen chunk">New map…</button>
         {zone && <button onClick={() => navigate("overworld", { zone })}>Open in the Overworld Editor</button>}
         {unsaved.length > 0 && <span className="muted">{unsaved.length} unsaved</span>}
         <button onClick={revert} disabled={!unsaved.length} title="Collision and layouts as they were last saved">Revert</button>
@@ -693,6 +721,8 @@ export function MapEditor({ constants }: ToolProps) {
       <div className="ow-body">
         <div className="ow-zones">
           <input className="filter" placeholder={`Filter ${world?.zones.length ?? 0} zones…`} value={filter} onChange={(e) => setFilter(e.target.value)} />
+          <button className={`me-overworld-button${overworld ? " active" : ""}`} onClick={() => setOverworld(!overworld)}
+                  title="The overworld's grid: click an area's cell to open its chunk, or a filler or empty cell to add a route there">🗺 Overworld map</button>
           <div className="ow-zone-list">
             {zones.map((z) => (
               <button key={z.name} className={`ow-zone${z.name === zone ? " selected" : ""}`} onClick={() => setZone(z.name)}>
@@ -724,6 +754,13 @@ export function MapEditor({ constants }: ToolProps) {
           </div>
           <div className={`ow-map-wrap${tab === "faces" ? " me-picking" : ""}${tab === "collision" || (tab === "paint" && paintView === "painting" && project && tool !== "select") ? " painting" : ""}`}>
             <div className="ow-map" ref={host} />
+            {overworld && (
+              <div className="me-overworld-panel">
+                <div className="me-overworld-head"><strong>Overworld</strong><span className="spacer" /><button onClick={() => setOverworld(false)}>Close</button></div>
+                <OverworldGrid current={zone ? `ZONE_${zone.toUpperCase()}` : null} onCell={overworldCell}
+                               hint="Click an area's cell to open its chunk; a grey (filler) or empty cell, to add a route there." />
+              </div>
+            )}
             {!zone && <div className="ow-empty me-empty muted">Choose a zone.</div>}
           </div>
         </div>

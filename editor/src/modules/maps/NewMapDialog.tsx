@@ -5,15 +5,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../api.ts";
 import type { Constants } from "../../../shared/schema.ts";
+import { OverworldGrid } from "./OverworldGrid.tsx";
 
 type Unused = Awaited<ReturnType<typeof api.unusedZones>>[number];
 
-export function NewMapDialog({ template, constants, onClose, onCreated }: {
+export function NewMapDialog({ template, constants, onClose, onCreated, route }: {
   /** The chosen chunk's model constant, or null. */
   template: string | null;
   constants: Constants;
   onClose(): void;
   onCreated(file: string, models: string[]): void;
+  /** Opens as a route of the overworld, with these cells picked. */
+  route?: [number, number][];
 }) {
   const [unused, setUnused] = useState<Unused[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -25,8 +28,8 @@ export function NewMapDialog({ template, constants, onClose, onCreated }: {
   const [parent, setParent] = useState("");
   const [copyProps, setCopyProps] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [kind, setKind] = useState<"map" | "route">("map");
-  const [cells, setCells] = useState<[number, number][]>([]);
+  const [kind, setKind] = useState<"map" | "route">(route ? "route" : "map");
+  const [cells, setCells] = useState<[number, number][]>(route ?? []);
   const [filler, setFiller] = useState("MAP_MODEL_OVERWORLD_2_MAP_OUTTREE");
   useEffect(() => {
     api.unusedZones().then((u) => { setUnused(u); if (u.length) setZone(u[0].zone); }, (e: Error) => setError(e.message));
@@ -81,7 +84,9 @@ export function NewMapDialog({ template, constants, onClose, onCreated }: {
             overworld, beside the others, walked onto without a loading screen</label>
           {kind === "route" && (
             <>
-              <OverworldPicker cells={cells} setCells={setCells} />
+              <OverworldGrid picked={cells} freeOnly onCell={({ column: c, row: r }) => setCells(
+                cells.some(([x, y]) => x === c && y === r) ? cells.filter(([x, y]) => x !== c || y !== r) : [...cells, [c, r]])}
+                hint={cells.length ? `Picked: ${cells.map(([c, r]) => `${c},${r}`).join(" ")}.` : undefined} />
               <div className="me-row"><label>Ring it with</label>
                 <select value={filler} onChange={(e) => setFiller(e.target.value)}>
                   <option value="MAP_MODEL_OVERWORLD_2_MAP_OUTTREE">trees (outtree)</option>
@@ -139,37 +144,5 @@ export function NewMapDialog({ template, constants, onClose, onCreated }: {
         </div>
       </div>
     </div>
-  );
-}
-
-/** The overworld's cells, to pick a route's: zoned cells by their zone, filler cells (a chunk, no zone) light, empty
- * cells blank; the picked ones yellow. */
-function OverworldPicker({ cells, setCells }: { cells: [number, number][]; setCells(c: [number, number][]): void }) {
-  const [matrix, setMatrix] = useState<{ maps: (string | null)[][]; zones: (string | null)[][] } | null>(null);
-  const [hover, setHover] = useState("");
-  useEffect(() => {
-    api.file("res/field/matrices/overworld.json").then((f) => setMatrix(JSON.parse(f.text)), () => setMatrix(null));
-  }, []);
-  if (!matrix) return <p className="muted ow-note">Reading the overworld…</p>;
-  const picked = (c: number, r: number) => cells.some(([x, y]) => x === c && y === r);
-  const toggle = (c: number, r: number) => setCells(picked(c, r) ? cells.filter(([x, y]) => x !== c || y !== r) : [...cells, [c, r]]);
-  const hue = (zone: string) => [...zone].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 360, 0);
-  return (
-    <>
-      <div className="me-overworld" style={{ gridTemplateColumns: `repeat(${matrix.maps[0].length}, 1fr)` }} onMouseLeave={() => setHover("")}>
-        {matrix.maps.map((row, r) => row.map((map, c) => {
-          const zone = matrix.zones[r][c];
-          const free = !zone;
-          return (
-            <button key={`${c},${r}`} disabled={!free}
-                    className={`me-ow-cell${picked(c, r) ? " picked" : ""}${map && free ? " filler" : ""}`}
-                    style={zone ? { background: `hsl(${hue(zone)} 45% 55%)` } : undefined}
-                    onMouseEnter={() => setHover(`${c},${r}: ${zone ? zone.replace(/^ZONE_/, "").toLowerCase() : map ? "filler (no zone)" : "empty"}`)}
-                    onClick={() => toggle(c, r)} />
-          );
-        }))}
-      </div>
-      <p className="muted ow-note">{hover || "Hover a cell to see what's there."} {cells.length ? `Picked: ${cells.map(([c, r]) => `${c},${r}`).join(" ")}.` : ""}</p>
-    </>
   );
 }
