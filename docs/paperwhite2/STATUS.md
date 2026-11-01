@@ -2,6 +2,17 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-02 (design): reading vanilla maps
+
+- The user agreed to step back from per-case fixes: `docs/paperwhite2/design/map-reader.md` designs a reader of
+  vanilla chunks (every face over each tile, read into the painting's own terms, shown as a layer in the Paint tab),
+  a round-trip test (read, paint, generate, compare with vanilla), an atlas of every vanilla overworld chunk (SQLite,
+  out of git, built only after the round trip passes on a few chunks of different terrain), an eyedropper (copy a
+  tile's reading; stamp its faces as the exception), textures from other areas, seams matched to vanilla's side
+  cross-sections, and rules as tables. Next: the reader.
+- Open from the last test: the bridge's underside, a sliver where painted water meets a vanilla bank, road corners
+  at a bridge (image 5 of the user's last test), the grid drawn at the painted height over water.
+
 ## 2026-11-02 (late): dents by what's at the border; bridges
 
 - A rounded corner's gap next to a vanilla path's edge tile (michi01a) is grass, as that tile's outer side is.

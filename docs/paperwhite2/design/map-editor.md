@@ -257,6 +257,9 @@ stacking a path over the grass at the same height (z-fighting): paths are cut in
 **Our autotile:** corner-based (16 cases per pair of terrains, or the 47-case blob), a stored auto or manual flag per
 tile, neighbours updated live, and a chunk's edge read from the neighbouring chunk.
 
+Next (decided 2026-11-02): a reader of vanilla chunks, a round-trip test, an atlas of every vanilla overworld chunk,
+seams matched to vanilla and rules as data: [map-reader.md](map-reader.md).
+
 ## The model writer
 
 A model writer that lays out a model from scratch, as vanilla does, closes both gaps. Its input is what a GLB holds:
