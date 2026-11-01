@@ -4,7 +4,7 @@
 import { useState } from "react";
 import type { Entity } from "./entities.ts";
 import { propsOf, type Prop } from "./props.ts";
-import { CHUNK, TILE } from "./terrain.ts";
+import { TILE } from "./terrain.ts";
 
 function NumberBox({ value, onChange, step = 0.5 }: { value: number; onChange(v: number): void; step?: number }) {
   const [typed, setTyped] = useState<string | null>(null);
@@ -20,8 +20,10 @@ function NumberBox({ value, onChange, step = 0.5 }: { value: number; onChange(v:
   );
 }
 
-export function BuildingPanel({ entity, models, onChange }: {
+export function BuildingPanel({ entity, models, onChange, chunkSize }: {
   entity: Entity;
+  /** The chunks' size in units (the map type's). */
+  chunkSize: number;
   /** The area's bundle's models by prop ID: their folders. */
   models: Map<number, string>;
   onChange(prop: Prop): void;
@@ -60,7 +62,7 @@ export function BuildingPanel({ entity, models, onChange }: {
           <label>Z <NumberBox value={b.uz / TILE} onChange={(v) => set({ z: v * TILE - cz })} /></label>
           <label>Height <NumberBox value={prop.y / TILE} onChange={(v) => set({ y: v * TILE })} /></label>
           <div className="hint">In tiles, X and Z on the zone's grid (half a tile is 0.5). The game draws a prop with its chunk, so keep it within
-            the chunk: {(cx - CHUNK / 2) / TILE} to {(cx + CHUNK / 2) / TILE} by {(cz - CHUNK / 2) / TILE} to {(cz + CHUNK / 2) / TILE}.</div>
+            the chunk: {(cx - chunkSize / 2) / TILE} to {(cx + chunkSize / 2) / TILE} by {(cz - chunkSize / 2) / TILE} to {(cz + chunkSize / 2) / TILE}.</div>
         </div>
       </div>
       <div className="row">

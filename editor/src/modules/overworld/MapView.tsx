@@ -15,7 +15,7 @@ import { FRAME_SECONDS, movers, type World } from "./movement.ts";
 import { angle as turnAngle, FX, type CameraArea, type ViewCamera } from "./cameras.ts";
 import { lineAtLevel, railTile, railToWorld, sidesAt, type RailMap, type RailPlace } from "./rails.ts";
 import { spriteFrame } from "./sprites.ts";
-import { CHUNK, CHUNK_TILES, TILE, TILE_FLAG_COLLISION, TILE_FLAG_ENCOUNT, TILE_FLAG_WATER, standingOn, tileFlags, type ZoneMap } from "./terrain.ts";
+import { TILE, TILE_FLAG_COLLISION, TILE_FLAG_ENCOUNT, TILE_FLAG_WATER, standingOn, tileFlags, type ZoneMap } from "./terrain.ts";
 
 export type OverlayMode = "off" | "walk" | "type";
 
@@ -51,9 +51,23 @@ export interface MapViewProps {
   /** The zone's camera areas, drawn for the Cameras tab, and a camera to look through in place of the editor's. */
   cameraAreas: CameraArea[] | null;
   viewCamera: ViewCamera | null;
+  /** A rectangle of tiles an entity covers (a trigger, a warp, a camera rect), moved, resized or drawn: its first tile and
+   * its size in tiles. */
+  onRect(entity: Entity, rect: TileRect): void;
+  /** The entity whose rectangle is being drawn: a drag on the map draws it. */
+  drawRect: Entity | null;
   /** A rail point dragged to a spot, in units, at its own height. */
   onMoveRailPoint(index: number, x: number, z: number): void;
 }
+
+export interface TileRect { x: number; z: number; width: number; depth: number }
+
+/** Whether an entity covers a rectangle the map can move and resize: a trigger, a warp or a camera rect on the grid. */
+export const hasRect = (e: Entity, areas: CameraArea[] | null) =>
+  e.x !== null && e.z !== null && !e.rail && (e.kind === "trigger" || e.kind === "warp" || (e.kind === "camera" && !!areas?.[e.index]?.rect));
+
+/** A handle's edges: which of the rectangle's sides it moves. */
+type Handle = { w?: boolean; e?: boolean; n?: boolean; s?: boolean };
 
 /** A tile of a rail, as picked: its place and its spot in the world. */
 type RailPick = RailPlace & { pos: [number, number, number] };
@@ -171,6 +185,11 @@ class MapScene {
   entityMeshes: { object: THREE.Object3D; entity: Entity }[] = [];
   props: MapViewProps;
   dragging: Entity | null = null;
+  /** The selected rectangle's handles, and the rectangle being moved, resized or drawn. */
+  handles: { object: THREE.Object3D; handle: Handle }[] = [];
+  rectEdit: { entity: Entity; mode: "move" | "resize" | "draw"; handle?: Handle; grab?: { x: number; z: number };
+              rect: TileRect; next: TileRect } | null = null;
+  rectPreview: THREE.Line | null = null;
   paintingNow = false;
   painted = new Map<string, { x: number; z: number }>();
   frame = 0;
@@ -358,7 +377,7 @@ class MapScene {
       for (const chunk of map.chunks) {
         loader.load(`/${chunk.folder}/model.glb`, (gltf) => {
           if (this.loadedKey !== key || !this.loadedModels) return;
-          gltf.scene.position.set(chunk.column * CHUNK + CHUNK / 2, 0, chunk.row * CHUNK + CHUNK / 2);
+          gltf.scene.position.set(chunk.column * map.chunkSize + map.chunkSize / 2, 0, chunk.row * map.chunkSize + map.chunkSize / 2);
           gltf.scene.traverse((o) => {
             const mesh = o as THREE.Mesh;
             if (mesh.isMesh) {
@@ -372,8 +391,9 @@ class MapScene {
     }
     if (frame && map.chunks.length) {
       const xs = map.chunks.map((c) => c.column), zs = map.chunks.map((c) => c.row);
-      const cx = ((Math.min(...xs) + Math.max(...xs) + 1) / 2) * CHUNK, cz = ((Math.min(...zs) + Math.max(...zs) + 1) / 2) * CHUNK;
-      const span = Math.max(Math.max(...xs) - Math.min(...xs) + 1, Math.max(...zs) - Math.min(...zs) + 1) * CHUNK;
+      const size = map.chunkSize;
+      const cx = ((Math.min(...xs) + Math.max(...xs) + 1) / 2) * size, cz = ((Math.min(...zs) + Math.max(...zs) + 1) / 2) * size;
+      const span = Math.max(Math.max(...xs) - Math.min(...xs) + 1, Math.max(...zs) - Math.min(...zs) + 1) * size;
       this.controls.target.set(cx, 0, cz);
       this.perspective.position.set(cx, span * 0.9, cz + span * 0.6);
       this.orthoHeight = span * 1.1;
@@ -401,7 +421,7 @@ class MapScene {
       const tiles: { x: number; z: number; h: number }[] = [];
       const m = new THREE.Matrix4();
       l.tiles.forEach((t, i) => {
-        const gx = chunk.column * CHUNK_TILES + t.x, gz = chunk.row * CHUNK_TILES + t.z;
+        const gx = chunk.column * map.chunkTiles + t.x, gz = chunk.row * map.chunkTiles + t.z;
         m.makeTranslation(gx * TILE + TILE / 2, l.heights[i] + 0.6, gz * TILE + TILE / 2);
         mesh.setMatrixAt(i, m);
         mesh.setColorAt(i, tileColor(t.tileType, overlay));
@@ -513,6 +533,9 @@ class MapScene {
     this.marks.clear();
     this.entityMeshes = [];
     this.npcSprites.clear();
+    this.handles = [];
+    this.rectPreview = null;
+    if (selected && hasRect(selected, this.props.cameraAreas)) this.addHandles(selected);
     for (const e of entities) {
       const isSelected = selected?.kind === e.kind && selected.index === e.index;
       if (e.railPart) {
@@ -605,6 +628,12 @@ class MapScene {
       group.add(quad);
       group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(
         [[x0, z0], [x0 + w, z0], [x0 + w, z0 + d], [x0, z0 + d], [x0, z0]].map(([x, z]) => new THREE.Vector3(x, y, z))), edge));
+      // The first row's edge green and the last's orange
+      const side = (a: [number, number], b: [number, number], c: number) => group.add(new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(a[0], y + 0.5, a[1]), new THREE.Vector3(b[0], y + 0.5, b[1])]),
+        new THREE.LineBasicMaterial({ color: c, depthTest: false })));
+      if (alongX) { side([x0 + 1, z0], [x0 + 1, z0 + d], 0x40e070); side([x0 + w - 1, z0], [x0 + w - 1, z0 + d], 0xffa030); }
+      else { side([x0, z0 + 1], [x0 + w, z0 + 1], 0x40e070); side([x0, z0 + d - 1], [x0 + w, z0 + d - 1], 0xffa030); }
       const from = new THREE.Vector3(x0 + w / 2, y, z0 + d / 2).add(alongX ? new THREE.Vector3(-w / 2 + 6, 0, 0) : new THREE.Vector3(0, 0, -d / 2 + 6));
       const length = (alongX ? w : d) - 12;
       if (length > 4) group.add(new THREE.ArrowHelper(alongX ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 0, 1), from, length, color, 8, 6));
@@ -628,6 +657,38 @@ class MapScene {
     group.traverse((o) => { o.renderOrder = 2; });
     this.marks.add(group);
     this.entityMeshes.push({ object: group, entity: e });
+  }
+
+  /** The selected rectangle's handles: a ball at each corner and a bar on each side. */
+  addHandles(e: Entity) {
+    const x0 = e.x! * TILE, z0 = e.z! * TILE, x1 = (e.x! + e.width) * TILE, z1 = (e.z! + e.depth) * TILE;
+    const y = this.groundAt(e.x!, e.z!) + 4;
+    const material = new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false });
+    const add = (object: THREE.Mesh, x: number, z: number, handle: Handle) => {
+      object.position.set(x, y, z);
+      object.renderOrder = 7;
+      this.marks.add(object);
+      this.handles.push({ object, handle });
+    };
+    for (const [x, z, handle] of [[x0, z0, { w: true, n: true }], [x1, z0, { e: true, n: true }], [x1, z1, { e: true, s: true }],
+                                  [x0, z1, { w: true, s: true }]] as [number, number, Handle][]) add(new THREE.Mesh(new THREE.SphereGeometry(3.5, 10, 6), material), x, z, handle);
+    const bar = (w: number, d: number) => new THREE.Mesh(new THREE.BoxGeometry(w, 2, d), material);
+    add(bar(Math.max(4, x1 - x0 - 12), 3), (x0 + x1) / 2, z0, { n: true });
+    add(bar(Math.max(4, x1 - x0 - 12), 3), (x0 + x1) / 2, z1, { s: true });
+    add(bar(3, Math.max(4, z1 - z0 - 12)), x0, (z0 + z1) / 2, { w: true });
+    add(bar(3, Math.max(4, z1 - z0 - 12)), x1, (z0 + z1) / 2, { e: true });
+  }
+
+  /** The rectangle being moved, resized or drawn, outlined where it would go. */
+  showRect(r: TileRect) {
+    if (this.rectPreview) this.marks.remove(this.rectPreview);
+    const y = this.groundAt(r.x, r.z) + 5;
+    const x0 = r.x * TILE, z0 = r.z * TILE, x1 = (r.x + r.width) * TILE, z1 = (r.z + r.depth) * TILE;
+    this.rectPreview = new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+      [[x0, z0], [x1, z0], [x1, z1], [x0, z1], [x0, z0]].map(([x, z]) => new THREE.Vector3(x, y, z))),
+      new THREE.LineBasicMaterial({ color: 0xffffff, depthTest: false }));
+    this.rectPreview.renderOrder = 8;
+    this.marks.add(this.rectPreview);
   }
 
   /** The height of the ground at a tile, on the layer shown. */
@@ -751,7 +812,8 @@ class MapScene {
 
   /** How many layers the chunk under a tile has. */
   layersAt(x: number, z: number): number {
-    const chunk = this.props.map.chunks.find((c) => c.column === Math.floor(x / CHUNK_TILES) && c.row === Math.floor(z / CHUNK_TILES));
+    const n = this.props.map.chunkTiles;
+    const chunk = this.props.map.chunks.find((c) => c.column === Math.floor(x / n) && c.row === Math.floor(z / n));
     return Math.max(1, chunk?.layers.length ?? 1);
   }
 
@@ -811,6 +873,32 @@ class MapScene {
     // Shift+click is the editor's (adding), not the page's text selection
     if (ev.shiftKey) ev.preventDefault();
     const { tile, entity, rail } = this.pick(ev);
+    // Drawing a rectangle: from the tile pressed to the tile let go on
+    if (this.props.drawRect) {
+      if (!tile) return;
+      const rect = { x: tile.x, z: tile.z, width: 1, depth: 1 };
+      this.rectEdit = { entity: this.props.drawRect, mode: "draw", grab: { x: tile.x, z: tile.z }, rect, next: rect };
+      this.controls.enabled = false;
+      this.showRect(rect);
+      return;
+    }
+    // The selected rectangle's handles, then the rectangle itself
+    const chosen = this.props.selected;
+    if (chosen && hasRect(chosen, this.props.cameraAreas) && !this.props.painting && !ev.shiftKey) {
+      const sel = chosen;
+      const rect = { x: sel.x!, z: sel.z!, width: sel.width, depth: sel.depth };
+      const handle = this.raycaster.intersectObjects(this.handles.map((h) => h.object), false)[0];
+      if (handle) {
+        this.rectEdit = { entity: sel, mode: "resize", handle: this.handles.find((h) => h.object === handle.object)!.handle, rect, next: rect };
+        this.controls.enabled = false;
+        return;
+      }
+      if (entity === sel && tile) {
+        this.rectEdit = { entity: sel, mode: "move", grab: { x: tile.x, z: tile.z }, rect, next: rect };
+        this.controls.enabled = false;
+        return;
+      }
+    }
     if (this.props.painting && rail) {
       this.paintingNow = true;
       this.controls.enabled = false;
@@ -840,6 +928,8 @@ class MapScene {
     const onSelected = sel && entity && sel.x === entity.x && sel.z === entity.z ? sel : entity;
     this.props.onSelect(onSelected, tile);
     if (onSelected?.railPart && onSelected.railPart.type === "line") return;
+    // A camera area moves by its rectangle once chosen (rectEdit), never as an event
+    if (onSelected?.kind === "camera") return;
     if (onSelected && (onSelected.x !== null || onSelected.rail)) {
       this.dragging = onSelected;
       this.controls.enabled = false;
@@ -847,6 +937,26 @@ class MapScene {
   };
 
   move = (ev: PointerEvent) => {
+    if (this.rectEdit) {
+      const { tile } = this.pick(ev);
+      if (!tile) return;
+      const { mode, rect, handle, grab } = this.rectEdit;
+      let next = rect;
+      if (mode === "move") next = { ...rect, x: rect.x + tile.x - grab!.x, z: rect.z + tile.z - grab!.z };
+      else if (mode === "draw") {
+        next = { x: Math.min(grab!.x, tile.x), z: Math.min(grab!.z, tile.z), width: Math.abs(tile.x - grab!.x) + 1, depth: Math.abs(tile.z - grab!.z) + 1 };
+      } else {
+        let x0 = rect.x, z0 = rect.z, x1 = rect.x + rect.width - 1, z1 = rect.z + rect.depth - 1;
+        if (handle!.w) x0 = Math.min(tile.x, x1);
+        if (handle!.e) x1 = Math.max(tile.x, x0);
+        if (handle!.n) z0 = Math.min(tile.z, z1);
+        if (handle!.s) z1 = Math.max(tile.z, z0);
+        next = { x: x0, z: z0, width: x1 - x0 + 1, depth: z1 - z0 + 1 };
+      }
+      this.rectEdit.next = next;
+      this.showRect(next);
+      return;
+    }
     if (!this.dragging && !this.paintingNow) return;
     // A rail point moves on the level of its own height
     if (this.dragging?.railPart) {
@@ -905,6 +1015,14 @@ class MapScene {
   };
 
   up = () => {
+    if (this.rectEdit) {
+      const { entity, rect, next, mode } = this.rectEdit;
+      this.rectEdit = null;
+      this.controls.enabled = true;
+      if (mode === "draw" || next.x !== rect.x || next.z !== rect.z || next.width !== rect.width || next.depth !== rect.depth) this.props.onRect(entity, next);
+      else if (this.rectPreview) { this.marks.remove(this.rectPreview); this.rectPreview = null; }
+      return;
+    }
     if (this.paintingNow) {
       this.paintingNow = false;
       this.controls.enabled = true;

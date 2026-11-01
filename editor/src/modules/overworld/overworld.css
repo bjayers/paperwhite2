@@ -79,3 +79,8 @@
 /* The Rails tab's panel */
 .ow-panel-box { border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; margin: 6px 0; }
 .ow-side-note { margin: 8px 12px 0; cursor: pointer; }
+
+/* Number boxes whose labels drag (ScrubNumber) */
+.ow-scrub { display: inline-flex; align-items: center; gap: 4px; }
+.ow-scrub-label { cursor: ew-resize; user-select: none; padding: 2px 4px; border-radius: 4px; color: var(--muted); }
+.ow-scrub-label:hover { background: var(--hover); color: inherit; }

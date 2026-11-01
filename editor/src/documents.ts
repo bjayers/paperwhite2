@@ -112,6 +112,15 @@ class DocumentStore {
     this.update(doc, { data: setIn(doc.data, at, value), text: doc.text, draft: null });
   }
 
+  /** Changes one value as part of the last step, without a step of its own: a value dragged changes many times and
+   * undoes at once (the drag's first change is an edit, the rest amend it). */
+  amend(path: string, at: JsonPath, value: JsonValue | undefined) {
+    const doc = this.docs.get(path);
+    if (!doc || doc.data === null) return;
+    const next = { ...doc, data: setIn(doc.data, at, value), draft: null };
+    this.put({ ...next, dirty: currentText(next) !== doc.savedText });
+  }
+
   /** Replaces the whole data, for modules that change several values at once. */
   replace(path: string, data: JsonValue) {
     const doc = this.docs.get(path);
@@ -193,8 +202,23 @@ class DocumentStore {
     else this.put({ ...doc, changedOnDisk: true });
   }
 
+  /** Reads a file again, dropping its changes; a file a tool made and never saved is dropped altogether. */
   async reload(path: string) {
-    const file = await api.file(path);
+    const doc = this.docs.get(path);
+    let file;
+    try {
+      file = await api.file(path);
+    } catch (e) {
+      if (doc && doc.version === "") {
+        this.docs.delete(path);
+        const i = this.order.indexOf(path);
+        if (i >= 0) this.order.splice(i, 1);
+        if (this.active === path) this.active = this.order[0] ?? null;
+        this.changed();
+        return;
+      }
+      throw e;
+    }
     this.put(fromFile(file.path, file.schema, file.text, file.version));
   }
 

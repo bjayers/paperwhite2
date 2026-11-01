@@ -193,6 +193,10 @@ trainer's line of sight), Proxies (background events), Triggers, Warps and Level
   **Browse…**, a grid of every model's sprite filtered by name and by bank (the code's high digit: 0 people and
   objects, 1 walking Pokémon, 2 3D models, 3 followers); **Show script** beside the script; the others on its tile;
   **←** back to the list. Remove leaves the other NPCs' IDs as they are.
+- **Rectangles** (triggers, warps, camera rects): the chosen one has handles; drag it to move it, its edges and
+  corners to resize it, or **Draw** and drag on the map. Each is one undo step.
+- **Chunk sizes** follow the zone's map type (`MAP_CONFIGS` in `src/ov036/fieldmap.c`): 512 units and 32 tiles for most,
+  1024 and 64 for the Pokémon League, 2048 for Skyarrow Bridge.
 - **Overhead** looks straight down without perspective, north up; the camera only pans (right or middle button) and
   zooms. The tiles are drawn a few units nearer the camera along its lines of sight (the same on screen), over what
   lies just above the ground (autumn's fallen leaves) but behind walls and trees.
@@ -218,7 +222,9 @@ trainer's line of sight), Proxies (background events), Triggers, Warps and Level
   ring. The panel shows angles in degrees, distances in units and the field of view as the whole vertical angle;
   **Preview the game's camera** puts the view where the game's camera would be (in the DS's 4:3 frame, without the
   editor's marks), with a slider from the area's first row to its last; the list can preview the zone's own default
-  camera at a clicked tile. Shift+click adds a rect, making the zone's file if it has none (the hack's build reads a
+  camera at a clicked tile. Every camera value's label drags to change it (Figma-style; Shift finer, Alt coarser),
+  one undo step a drag, while the preview follows. A rect shows its first row green and its last orange; **Blends**
+  turns it front to back or left to right (the game's width of 1), **Swap first and last** reverses it. Shift+click adds a rect, making the zone's file if it has none (the hack's build reads a
   file's "zones", so any zone can have camera areas). The preview draws only the zone's own chunks, so what the game
   shows of the zones around it is missing.
 - **Buildings:** the chunks' props, as CTRMap edits them: each a model of the area's prop bundle

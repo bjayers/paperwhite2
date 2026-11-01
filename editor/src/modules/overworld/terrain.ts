@@ -55,6 +55,10 @@ export const SEASONS = ["Spring", "Summer", "Autumn", "Winter"];
 
 export interface ZoneMap {
   zone: string;
+  /** Its chunks' size, in units, and in tiles, by the zone's map type (MAP_CONFIGS' chunkSpan, src/ov036/fieldmap.c):
+   * 512 and 32 for most, 1024 for the Pokémon League's, 2048 for Skyarrow Bridge's. */
+  chunkSize: number;
+  chunkTiles: number;
   /** The season it is shown in, 0 to 3, and whether the zone's area has seasons. */
   season: number;
   seasonal: boolean;
@@ -128,7 +132,7 @@ function heightAt(t: TerrainTile, splits: number[][], tb: HeightTables, px: numb
 /** Where a layer's text comes from: the file, or an unsaved copy (the painter's). */
 type TextSource = (path: string) => string | null;
 
-async function loadLayer(path: string, splitsPath: string, tb: HeightTables, source?: TextSource): Promise<TerrainLayer | null> {
+async function loadLayer(path: string, splitsPath: string, tb: HeightTables, source?: TextSource, chunkSize = CHUNK): Promise<TerrainLayer | null> {
   let text: string;
   const own = source?.(path);
   if (own !== null && own !== undefined) text = own;
@@ -143,17 +147,17 @@ async function loadLayer(path: string, splitsPath: string, tb: HeightTables, sou
   const splits = splitsText.trim() ? parseCsv(splitsText).map((r) => [r.slope0 ?? 0, r.slope1 ?? 0, r.offset0 ?? 0, r.offset1 ?? 0]) : [];
   const tiles = parseCsv(text) as unknown as TerrainTile[];
   tiles.forEach((t) => (t.tileType = Number((t as unknown as Record<string, number>).tile_type)));
-  const heights = tiles.map((t) => heightAt(t, splits, tb, t.x * TILE + TILE / 2 - CHUNK / 2, t.z * TILE + TILE / 2 - CHUNK / 2, TILE / 2, TILE / 2));
+  const heights = tiles.map((t) => heightAt(t, splits, tb, t.x * TILE + TILE / 2 - chunkSize / 2, t.z * TILE + TILE / 2 - chunkSize / 2, TILE / 2, TILE / 2));
   return { path, tiles, heights, splits };
 }
 
 /** A chunk's terrain layers again, after the painter changed one. */
-export async function reloadLayers(chunk: Chunk, source?: TextSource): Promise<void> {
+export async function reloadLayers(chunk: Chunk, source?: TextSource, chunkSize = CHUNK): Promise<void> {
   const tb = await heightTables();
   const layers: TerrainLayer[] = [];
   // The layers it has, in their files: terrain_<layer>.csv and its splits
   for (const old of chunk.layers) {
-    const l = await loadLayer(old.path, old.path.replace(/\.csv$/, "_splits.csv"), tb, source);
+    const l = await loadLayer(old.path, old.path.replace(/\.csv$/, "_splits.csv"), tb, source, chunkSize);
     if (l) layers.push(l);
   }
   chunk.layers = layers;
@@ -188,7 +192,8 @@ function replacementValue(r: Replacement, season: number): string | number | nul
 /** The zone's chunks in a season: the matrix's cells that are the zone's (the overworld's name their zones), or all of
  * a small matrix's, after the season's replacements. */
 export async function loadZoneMap(zone: string, season: number, constants: Constants): Promise<ZoneMap> {
-  const zoneData = JSON.parse((await api.file(`res/field/zones/${zone}.json`)).text) as { matrix: string; area?: string };
+  const zoneData = JSON.parse((await api.file(`res/field/zones/${zone}.json`)).text) as { matrix: string; area?: string; map_type?: number };
+  const chunkSize = (await chunkSpans())[zoneData.map_type ?? 0] ?? CHUNK;
   const same = (a: string | number, b: string | number) => a === b || (constants.get(String(a)) ?? a) === (constants.get(String(b)) ?? b);
   const replacements = await api.file("res/field/map_replacements/replacements.json")
     .then((f) => (JSON.parse(f.text) as { replacements: Replacement[] }).replacements, () => [] as Replacement[]);
@@ -243,23 +248,36 @@ export async function loadZoneMap(zone: string, season: number, constants: Const
     const files = await api.list(`${folder}/terrain_*.csv`);
     for (let layer = 0; layer < 2; layer++) {
       if (!files.includes(`${folder}/terrain_${layer}.csv`)) continue;
-      const l = await loadLayer(`${folder}/terrain_${layer}.csv`, `${folder}/terrain_${layer}_splits.csv`, tb);
+      const l = await loadLayer(`${folder}/terrain_${layer}.csv`, `${folder}/terrain_${layer}_splits.csv`, tb, undefined, chunkSize);
       if (l) layers.push(l);
     }
     chunk.layers = layers;
     return chunk;
   }));
-  return { zone, season, seasonal, textureSet, textures, propBundle, matrix: matrixName, columns: matrix.maps[0]?.length ?? 0, rows: matrix.maps.length, chunks };
+  return { zone, chunkSize, chunkTiles: chunkSize / TILE, season, seasonal, textureSet, textures, propBundle, matrix: matrixName, columns: matrix.maps[0]?.length ?? 0, rows: matrix.maps.length, chunks };
 }
 
 /** The tile at a global tile position, and its height, on a layer. */
 export function tileAt(map: ZoneMap, gx: number, gz: number, layer = 0): { chunk: Chunk; tile: TerrainTile; height: number } | null {
-  const column = Math.floor(gx / CHUNK_TILES), row = Math.floor(gz / CHUNK_TILES);
+  const n = map.chunkTiles;
+  const column = Math.floor(gx / n), row = Math.floor(gz / n);
   const chunk = map.chunks.find((c) => c.column === column && c.row === row);
   const l = chunk?.layers[Math.min(layer, (chunk?.layers.length ?? 1) - 1)];
   if (!chunk || !l) return null;
-  const i = (gz - row * CHUNK_TILES) * CHUNK_TILES + (gx - column * CHUNK_TILES);
+  const i = (gz - row * n) * n + (gx - column * n);
   return l.tiles[i] ? { chunk, tile: l.tiles[i], height: l.heights[i] } : null;
+}
+
+let spans: Promise<number[]> | null = null;
+
+/** Each map type's chunk size in units, from MAP_CONFIGS (src/ov036/fieldmap.c): its rows' first value, chunkSpan. */
+function chunkSpans(): Promise<number[]> {
+  if (!spans) {
+    spans = api.scan("src/ov036/fieldmap.c", "^\\s*\\{ \\{ 0x[0-9a-f]+,").then((lines) =>
+      lines.map((l) => parseInt(/0x[0-9a-f]+/.exec(l.text)![0], 16) / 4096));
+    spans.catch(() => { spans = null; });
+  }
+  return spans;
 }
 
 /** A tile type the game counts as a tile (MapTile_IsValid): not TILE_TYPE_NONE, nor of TILE_CLASS_NONE. */
@@ -268,10 +286,11 @@ export const tileIsValid = (t: number) => t >>> 0 !== 0xffffffff && (t & 0xffff)
 /** The layer an entity at a height stands on, and its height there: of the layers with a tile here, the one nearest
  * the height (FieldG3DMapper_GetTerrain), as the game places an actor. Null off the map. */
 export function standingOn(map: ZoneMap, gx: number, gz: number, y: number): { layer: number; height: number } | null {
-  const column = Math.floor(gx / CHUNK_TILES), row = Math.floor(gz / CHUNK_TILES);
+  const n = map.chunkTiles;
+  const column = Math.floor(gx / n), row = Math.floor(gz / n);
   const chunk = map.chunks.find((c) => c.column === column && c.row === row);
   if (!chunk?.layers.length) return null;
-  const i = (gz - row * CHUNK_TILES) * CHUNK_TILES + (gx - column * CHUNK_TILES);
+  const i = (gz - row * n) * n + (gx - column * n);
   if (chunk.layers.length === 1) return chunk.layers[0].tiles[i] ? { layer: 0, height: chunk.layers[0].heights[i] } : null;
   let best: { layer: number; height: number } | null = null;
   chunk.layers.forEach((l, layer) => {

@@ -2,6 +2,14 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-10-31: rectangles on the map, values to drag, chunk sizes (editor only)
+
+- Triggers', warps' and camera rects' rectangles move, resize by their edges and corners, and draw on the map; the
+  camera values drag (one undo step a drag); a rect's blend direction and ends are set in the panel. Revert drops a
+  file the editor made and never saved (a new camera file stayed unsaved before).
+- The map placed every chunk 512 units apart; the map type gives the size (Skyarrow Bridge's are 2048, the Pokémon
+  League's 1024 with 64 by 64 tiles), which fixes Skyarrow Bridge's overlapping models. Checked in the browser.
+
 ## 2026-10-31: the camera areas in res/ and the Cameras tab
 
 - `tools/data/camera_data.py` (new): `res/field/cameras/` holds the grid zones' camera areas (a/1/5/6, a file a zone

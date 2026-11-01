@@ -24,7 +24,7 @@
 
 import type { Entity } from "./entities.ts";
 import { railTile, sidesAt, type RailMap } from "./rails.ts";
-import { CHUNK_TILES, standingOn, tileClass, tileFlags, tileIsValid, type ZoneMap } from "./terrain.ts";
+import { standingOn, tileClass, tileFlags, tileIsValid, type ZoneMap } from "./terrain.ts";
 
 export type Dir = "DIR_UP" | "DIR_DOWN" | "DIR_LEFT" | "DIR_RIGHT";
 export const FRAME_SECONDS = 1 / 30;
@@ -371,9 +371,10 @@ export class World {
   tile(gx: number, gz: number, y: number): { type: number; height: number } | null {
     const stands = standingOn(this.map, gx, gz, y);
     if (!stands) return null;
-    const column = Math.floor(gx / CHUNK_TILES), row = Math.floor(gz / CHUNK_TILES);
+    const n = this.map.chunkTiles;
+    const column = Math.floor(gx / n), row = Math.floor(gz / n);
     const chunk = this.map.chunks.find((c) => c.column === column && c.row === row)!;
-    const t = chunk.layers[stands.layer].tiles[(gz - row * CHUNK_TILES) * CHUNK_TILES + (gx - column * CHUNK_TILES)];
+    const t = chunk.layers[stands.layer].tiles[(gz - row * n) * n + (gx - column * n)];
     return t ? { type: t.tileType, height: stands.height } : null;
   }
 

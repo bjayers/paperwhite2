@@ -25,10 +25,10 @@ import { cameraEntities, cameraFileOf, circleCamera, defaultCamera, newRectArea,
 import { api } from "../../api.ts";
 import { entityFields } from "./fields.tsx";
 import { BuildingPanel } from "./BuildingPanel.tsx";
-import { MapView, type OverlayMode } from "./MapView.tsx";
+import { MapView, hasRect, type OverlayMode, type TileRect } from "./MapView.tsx";
 import { bundleModels, buildingEntities, dirtyPropChunks, loadProps, propsOf, propsSaveError, redoProps, revertProps, saveProps, setProps,
   undoProps, usePropsVersion } from "./props.ts";
-import { CHUNK, CHUNK_TILES, SEASONS, TILE, flatTileFor, paintOver, loadZoneMap, reloadLayers, tileAt, type ZoneMap } from "./terrain.ts";
+import { SEASONS, TILE, flatTileFor, paintOver, loadZoneMap, reloadLayers, tileAt, type ZoneMap } from "./terrain.ts";
 
 const EVENTS_BUDGET = 2436;
 const KINDS: EntityKind[] = ["npc", "proxy", "building", "rail", "trigger", "warp", "level", "camera"];
@@ -75,6 +75,8 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   const [previewing, setPreviewing] = useState(false);
   const [previewT, setPreviewT] = useState(0);
   const [previewDefault, setPreviewDefault] = useState(false);
+  /** Drawing the chosen entity's rectangle on the map. */
+  const [drawing, setDrawing] = useState(false);
   useEffect(() => {
     api.file("res/field/cameras/defaults.json").then((f) => setDefaults((JSON.parse(f.text) as { cameras: DefaultCamera[] }).cameras), () => setDefaults([]));
   }, []);
@@ -186,6 +188,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   const layers = Math.max(1, ...(map?.chunks.map((c) => c.layers.length) ?? [1]));
 
   const select = useCallback((e: Entity | null, t: { x: number; z: number } | null) => {
+    setDrawing(false);
     if (connecting !== null && e?.railPart?.type === "point" && e.railPart.index !== connecting) {
       connect(connecting, e.railPart.index);
       setConnecting(null);
@@ -196,6 +199,33 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     setTile(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connecting, rails, railsPath]);
+
+  /** An entity's rectangle of tiles moved, resized or drawn: a trigger's or a warp's grid (its height the first tile's),
+   * a camera rect's tiles in the way it blends. One step for undo. */
+  const onRect = useCallback((e: Entity, r: TileRect) => {
+    setDrawing(false);
+    const height = map ? tileAt(map, r.x, r.z, layer)?.height ?? 0 : 0;
+    if (e.kind === "camera" && cameraFile?.path) {
+      const area = cameraAreas?.[e.index]?.rect;
+      if (!area) return;
+      const alongX = area.width === 1;
+      const next = alongX ? { ...area, x: r.x, z: r.z, width: 1, height: r.width, unk06: r.depth }
+        : { ...area, x: r.x, z: r.z, width: Math.max(2, r.width), height: r.depth, unk06: area.unk06 };
+      documents.edit(cameraFile.path, ["areas", e.index, "rect"], fromPlain(next));
+      record([cameraFile.path]);
+      return;
+    }
+    if (!eventsPath || (e.kind !== "trigger" && e.kind !== "warp")) return;
+    const doc = documents.get(eventsPath);
+    if (!(doc?.data instanceof Map)) return;
+    const item = (doc.data.get(KIND_LISTS[e.kind]) as JsonValue[])[e.index] as Map<string, JsonValue>;
+    const grid = new Map(item.get("grid") as Map<string, JsonValue>);
+    for (const edit of positionEdits(e, r.x, r.z, height)) grid.set(String(edit.path[edit.path.length - 1]), edit.value);
+    grid.set("width", r.width);
+    grid.set("height", r.depth);
+    documents.edit(eventsPath, [KIND_LISTS[e.kind], e.index, "grid"], grid);
+    record([eventsPath]);
+  }, [map, layer, cameraFile, cameraAreas, eventsPath, record]);
 
   /** A rail point moved to a spot at its height, in units. */
   const moveRailPoint = useCallback((index: number, x: number, z: number) => {
@@ -335,8 +365,9 @@ export function OverworldEditor({ constants, open }: ToolProps) {
       const id = lastProp ?? [...models.keys()].sort((a, b) => a - b)[0];
       if (!found || id === undefined) return;
       const c = found.chunk;
-      const list = [...propsOf(c.folder), { id, x: (x - c.column * CHUNK_TILES) * TILE + TILE / 2 - CHUNK / 2, y: height,
-                                              z: (z - c.row * CHUNK_TILES) * TILE + TILE / 2 - CHUNK / 2, angle: 0 }];
+      const n = map!.chunkTiles, half = map!.chunkSize / 2;
+      const list = [...propsOf(c.folder), { id, x: (x - c.column * n) * TILE + TILE / 2 - half, y: height,
+                                              z: (z - c.row * n) * TILE + TILE / 2 - half, angle: 0 }];
       setProps(c.folder, list);
       record([PROPS + c.folder]);
       // Buildings are numbered through the chunks in the map's order
@@ -457,7 +488,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
       if (!found) continue;
       const l = found.chunk.layers[Math.min(layer, found.chunk.layers.length - 1)];
       const entry = byFile.get(l.path) ?? { chunk: found.chunk, cells: [] };
-      entry.cells.push({ x: t.x - found.chunk.column * 32, z: t.z - found.chunk.row * 32 });
+      entry.cells.push({ x: t.x - found.chunk.column * map.chunkTiles, z: t.z - found.chunk.row * map.chunkTiles });
       byFile.set(l.path, entry);
     }
     for (const [path, { chunk, cells }] of byFile) {
@@ -466,7 +497,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
       const head = lines[0].split(",");
       const col = (name: string) => head.indexOf(name);
       for (const c of cells) {
-        const i = 1 + c.z * 32 + c.x;
+        const i = 1 + c.z * map.chunkTiles + c.x;
         const parts = lines[i]?.split(",");
         if (!parts) continue;
         if (flat) {
@@ -480,7 +511,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
       }
       documents.editText(path, lines.join("\n"));
       // The view reads the edited text back
-      await reloadLayersFromDocs(chunk);
+      await reloadLayersFromDocs(chunk, map.chunkSize);
     }
     if (byFile.size) record([...byFile.keys()]);
     setMap({ ...map });
@@ -520,7 +551,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     }
     if (zone && rails && paths.some((p) => p.startsWith(rails.folder))) setRails(await loadRails(zone, railSource));
     if (map && paths.some((p) => p.endsWith(".csv"))) {
-      for (const chunk of map.chunks) if (chunk.layers.some((l) => paths.includes(l.path))) await reloadLayersFromDocs(chunk);
+      for (const chunk of map.chunks) if (chunk.layers.some((l) => paths.includes(l.path))) await reloadLayersFromDocs(chunk, map.chunkSize);
       setMap({ ...map });
     }
   }, [eventsPath, map, rails, zone]);
@@ -570,11 +601,13 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     : [];
   const fields = useMemo(() => (chosen ? entityFields(chosen.kind, () => setScriptOpen(true)) : undefined), [chosen?.kind]);
   const revert = async () => {
-    for (const d of unsavedDocs) await documents.reload(d.path);
+    for (const d of unsavedDocs) await documents.reload(d.path).catch(() => undefined);
     revertProps();
+    // A camera file made and never saved is gone again
+    if (zone) cameraFileOf(zone, railsName).then(setCameraFile, () => setCameraFile(null));
     for (const h of histories.current.values()) { h.undo = []; h.redo = []; }
     if (map) {
-      for (const chunk of map.chunks) await reloadLayersFromDocs(chunk);
+      for (const chunk of map.chunks) await reloadLayersFromDocs(chunk, map.chunkSize);
       setMap({ ...map });
     }
     if (zone && rails) setRails(await loadRails(zone, railSource));
@@ -685,7 +718,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
               : <MapView map={map} entities={visible} selected={chosen} layer={layer} overlay={overlay} showModels={showModels}
                          painting={painting} preview={preview} overhead={overhead} paintType={paintMode === "type" ? PAINTS[paint].type : null}
                          onSelect={select} onMove={move} onAdd={add} onPaint={onPaint}
-                         cameraAreas={cameraAreas} viewCamera={viewCamera}
+                         cameraAreas={cameraAreas} viewCamera={viewCamera} onRect={onRect} drawRect={drawing ? chosen : null}
                          rails={rails} railLevel={railLevel} ground={ground} onMoveRailPoint={moveRailPoint} onMoveRail={moveRail} onAddRail={(place, h) => add(0, 0, h, place)} onPaintRail={onPaintRail} />}
             {/* Over the map, so the map's view doesn't change when it opens */}
             {scriptOpen && chosen?.script !== undefined && (
@@ -717,6 +750,10 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                 {chosen.rail && <span className="muted" title="Its place on the rails: the line, the tiles along it from its first point, and across it from its middle">
                   {" "}on line {chosen.rail.line}, front {chosen.rail.front}, side {chosen.rail.side}</span>}
                 <span className="spacer" />
+                {(chosen.kind === "trigger" || chosen.kind === "warp") && hasRect(chosen, cameraAreas) && (
+                  <button className={drawing ? "active" : ""} onClick={() => setDrawing(!drawing)}
+                          title="Drag on the map to draw its tiles; or drag it to move it, and its edges and corners to resize it">{drawing ? "Drag on the map…" : "Draw"}</button>
+                )}
                 <button onClick={remove} title="Remove it (the others keep their IDs)">Remove</button>
               </div>
               {chosen.rail && rails && (() => {
@@ -743,13 +780,14 @@ export function OverworldEditor({ constants, open }: ToolProps) {
               )}
               {chosen.kind === "camera" && cameraFile && cameraAreas?.[chosen.index] ? (
                 <CameraPanel path={cameraFile.path} index={chosen.index} area={cameraAreas[chosen.index]} constants={constants} onEdit={() => record([cameraFile.path])}
-                             previewing={previewing} onPreview={setPreviewing} t={previewT} onT={setPreviewT} />
+                             previewing={previewing} onPreview={setPreviewing} t={previewT} onT={setPreviewT}
+                             drawing={drawing} onDraw={() => setDrawing(!drawing)} />
               ) : chosen.railPart && rails && railsPath ? (
                 <RailPanel rails={rails} path={railsPath} part={chosen.railPart} constants={constants} onEdit={() => record([railsPath])}
                            connecting={connecting !== null} onConnect={() => setConnecting(connecting === null ? chosen.railPart!.index : null)}
                            onFitLength={(length) => fitLength(chosen.railPart!.index, length)} />
               ) : chosen.building ? (
-                <BuildingPanel key={`${chosen.building.chunk}:${chosen.building.index}`} entity={chosen} models={models}
+                <BuildingPanel key={`${chosen.building.chunk}:${chosen.building.index}`} entity={chosen} models={models} chunkSize={map?.chunkSize ?? 512}
                                onChange={(p) => { setProps(chosen.building!.chunk, propsOf(chosen.building!.chunk).map((q, i) => (i === chosen.building!.index ? p : q)));
                                                   record([PROPS + chosen.building!.chunk]); setLastProp(p.id); }} />
               ) : eventsPath && <DocForm key={`${chosen.kind}:${chosen.index}`} path={eventsPath} at={[KIND_LISTS[chosen.kind], chosen.index]} constants={constants}
@@ -797,8 +835,8 @@ export function OverworldEditor({ constants, open }: ToolProps) {
 const railSource = (path: string) => { const doc = documents.get(path); return doc ? currentText(doc) : null; };
 
 /** A chunk's layers again from the painter's edited text (still unsaved, so from the document store). */
-async function reloadLayersFromDocs(chunk: Parameters<typeof reloadLayers>[0]) {
-  await reloadLayers(chunk, (path) => documents.get(path)?.text ?? null);
+async function reloadLayersFromDocs(chunk: Parameters<typeof reloadLayers>[0], chunkSize: number) {
+  await reloadLayers(chunk, (path) => documents.get(path)?.text ?? null, chunkSize);
 }
 
 /** A number box that the mouse wheel steps while the pointer is over it (only here: the painter's height, in a bar

@@ -8,7 +8,7 @@
 import { useSyncExternalStore } from "react";
 import { api } from "../../api.ts";
 import type { Entity } from "./entities.ts";
-import { CHUNK, TILE, type ZoneMap } from "./terrain.ts";
+import { TILE, type ZoneMap } from "./terrain.ts";
 
 export interface Prop {
   id: number;
@@ -165,7 +165,7 @@ export function buildingEntities(map: ZoneMap, models: Map<number, string>): Ent
   const out: Entity[] = [];
   for (const chunk of map.chunks) {
     propsOf(chunk.folder).forEach((p, index) => {
-      const ux = chunk.column * CHUNK + CHUNK / 2 + p.x, uz = chunk.row * CHUNK + CHUNK / 2 + p.z;
+      const ux = chunk.column * map.chunkSize + map.chunkSize / 2 + p.x, uz = chunk.row * map.chunkSize + map.chunkSize / 2 + p.z;
       const model = models.get(p.id) ?? null;
       out.push({
         kind: "building", index: out.length, x: Math.floor(ux / TILE), z: Math.floor(uz / TILE), y: p.y, width: 1, depth: 1,
