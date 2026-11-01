@@ -327,11 +327,25 @@ const routes: Record<string, Handler> = {
     const { library } = (await readJson(req)) as { library: string };
     if (!/^[a-z0-9_]+$/.test(library ?? "") || !existsSync(join(ROOT, "res/paperwhite2/map_tiles", library, "library.json")))
       return error(res, 400, "No such tile library");
-    const result = await new Promise<{ ok: boolean; output: string }>((done) => {
-      execFile(pythonFor(ROOT), ["tools/paperwhite2/map_tiles.py", "slice", library], { cwd: ROOT, maxBuffer: 16 << 20 },
-        (e, stdout, stderr) => done({ ok: !e, output: `${stdout}${stderr}`.trim() }));
-    });
+    const result = await mapTiles(["slice", library]);
     if (!result.ok) return error(res, 500, result.output || "Slicing failed");
+    json(res, result);
+  },
+  "POST /api/map-layouts/start": async (req, res) => {
+    // A layout of a chunk as it is, from a tile library that cuts it (map_tiles.py start)
+    const { library, model } = (await readJson(req)) as { library: string; model: string };
+    if (!/^[a-z0-9_]+$/.test(library ?? "") || !/^[a-z0-9_]+$/.test(model ?? "")) return error(res, 400, "Name a library and a model");
+    const result = await mapTiles(["start", library, model]);
+    if (!result.ok) return error(res, 500, result.output || "Starting the layout failed");
+    json(res, { path: `res/paperwhite2/map_layouts/${model}.json` });
+  },
+  "POST /api/map-layouts/compose": async (req, res) => {
+    // A layout's chunk's model.glb written from its tiles (map_tiles.py compose)
+    const { model } = (await readJson(req)) as { model: string };
+    const layout = `res/paperwhite2/map_layouts/${model}.json`;
+    if (!/^[a-z0-9_]+$/.test(model ?? "") || !existsSync(join(ROOT, layout))) return error(res, 400, "The chunk has no layout");
+    const result = await mapTiles(["compose", layout]);
+    if (!result.ok) return error(res, 500, result.output || "Composing failed");
     json(res, result);
   },
   "GET /api/map-tiles/catalogue": (_req, res, url) => {
@@ -405,6 +419,14 @@ function serveResFile(res: ServerResponse, pathname: string) {
   if (!path || !type || !existsSync(project.abs(path))) return error(res, 404, "No such model or image under res/");
   res.writeHead(200, { "Content-Type": type, "Cache-Control": "no-cache" });
   createReadStream(project.abs(path)).pipe(res);
+}
+
+/** Runs tools/paperwhite2/map_tiles.py with the build's Python. */
+function mapTiles(args: string[]): Promise<{ ok: boolean; output: string }> {
+  return new Promise((done) => {
+    execFile(pythonFor(ROOT), ["tools/paperwhite2/map_tiles.py", ...args], { cwd: ROOT, maxBuffer: 16 << 20 },
+      (e, stdout, stderr) => done({ ok: !e, output: `${stdout}${stderr}`.trim() }));
+  });
 }
 
 // A tile library's catalogue GLB, which names its textures under /res/ by relative paths

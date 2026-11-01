@@ -7,14 +7,18 @@
 // Collision is the Overworld Editor's permissions painter for now, which the header links to.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import * as THREE from "three";
 import { api } from "../../api.ts";
+import { documents, useDocuments } from "../../documents.ts";
+import { fromPlain, toPlain } from "../../../shared/json.ts";
 import { navigate, useToolParams } from "../../navigation.ts";
 import type { ToolProps } from "../types.ts";
 import { loadWorld, type World } from "../world/world.ts";
-import { SEASONS, loadZoneMap, type ZoneMap } from "../overworld/terrain.ts";
-import { ChunkScene, connectedFaces, faceKey, stackedFaces, type ChunkModel, type Face } from "./ChunkScene.ts";
+import { SEASONS, TILE, loadZoneMap, type ZoneMap } from "../overworld/terrain.ts";
+import { ChunkScene, connectedFaces, faceKey, stackedFaces, type ChunkModel, type Face, type LayoutTiles } from "./ChunkScene.ts";
 import { seasonSets, seasonVariants, type SeasonSet } from "./seasons.ts";
-import { TilePanel } from "./TilePanel.tsx";
+import { TilePanel, type PaintHeight, type PaintMode } from "./TilePanel.tsx";
+import type { Catalogue, Tile } from "./tiles.ts";
 
 type Tab = "chunks" | "faces" | "tiles";
 
@@ -25,8 +29,11 @@ const POLYGON_BUDGET = 2133;
 const VERTEX_BUDGET = 6677;
 const MATERIAL_LIMIT = 255;
 
-/** One step of the faces' history: a chunk's GLB before and after, as base64. */
-interface FaceStep { path: string; before: string; after: string; what: string }
+/** One step of the history: a chunk's GLB before and after a face edit, as base64; or an edit of a layout, which its
+ * document's own history holds. */
+type Step = { kind: "faces"; path: string; before: string; after: string; what: string } | { kind: "layout"; path: string; what: string };
+
+const layoutPath = (model: string) => `res/paperwhite2/map_layouts/${model}.json`;
 
 async function glbBase64(path: string): Promise<string> {
   const response = await fetch(`/${path}?t=${Date.now()}`, { cache: "no-store" });
@@ -55,7 +62,15 @@ export function MapEditor({ constants }: ToolProps) {
   const [chunkData, setChunkData] = useState<{ texture_set: string | null; written?: boolean; texture_preview?: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
-  const [history, setHistory] = useState<{ done: FaceStep[]; undone: FaceStep[] }>({ done: [], undone: [] });
+  const [history, setHistory] = useState<{ done: Step[]; undone: Step[] }>({ done: [], undone: [] });
+  const [library, setLibrary] = useState("");
+  const [catalogue, setCatalogue] = useState<Catalogue | null>(null);
+  const [tile, setTile] = useState<Tile | null>(null);
+  const [paint, setPaint] = useState<PaintMode>("off");
+  const [paintHeight, setPaintHeight] = useState<PaintHeight>("cell");
+  const [layoutShown, setLayoutShown] = useState(true);
+  const [layoutExists, setLayoutExists] = useState<Record<string, boolean>>({});
+  const { docs } = useDocuments();
   const [retexture, setRetexture] = useState("");
   const host = useRef<HTMLDivElement>(null);
   const scene = useRef<ChunkScene | null>(null);
@@ -84,8 +99,12 @@ export function MapEditor({ constants }: ToolProps) {
   useEffect(() => { scene.current?.drawCells(chunk, grid); }, [chunk, grid, map]);
   useEffect(() => { scene.current?.showFaces(faces); }, [faces, loaded]);
 
-  const pickFace = useRef<(face: Face | null, chunk: number | null, ev: PointerEvent) => void>(() => {});
-  pickFace.current = (face, picked, ev) => {
+  const pickFace = useRef<(face: Face | null, chunk: number | null, ev: PointerEvent, point: THREE.Vector3 | null) => void>(() => {});
+  pickFace.current = (face, picked, ev, point) => {
+    if (tab === "tiles" && paint !== "off" && layoutDoc && point && picked === chunk) {
+      paintAt(point);
+      return;
+    }
     if (tab !== "faces") {
       setChunk(picked);
       return;
@@ -101,7 +120,7 @@ export function MapEditor({ constants }: ToolProps) {
     else setFaces([face]);
   };
   useEffect(() => {
-    if (scene.current) scene.current.onPick = (r, ev) => pickFace.current(r.face, r.chunk, ev);
+    if (scene.current) scene.current.onPick = (r, ev) => pickFace.current(r.face, r.chunk, ev, r.point);
   }, []);
 
   const current = map && chunk !== null ? map.chunks[chunk] : null;
@@ -145,7 +164,7 @@ export function MapEditor({ constants }: ToolProps) {
       const set = sets[Math.min(season, sets.length - 1)];
       const result = await api.glbFaces(path, edits, set?.constant ?? undefined);
       const after = await glbBase64(path);
-      setHistory((h) => ({ done: [...h.done, { path, before, after, what }], undone: [] }));
+      setHistory((h) => ({ done: [...h.done, { kind: "faces", path, before, after, what }], undone: [] }));
       setFaces([]);
       reloadChunk(current.folder);
       setMessage({ text: `${what}.${result.written ? " The chunk's data.json now has the whole model written (\"written\"), since its draw calls changed." : ""}` });
@@ -167,10 +186,18 @@ export function MapEditor({ constants }: ToolProps) {
     const list = back ? history.done : history.undone;
     const last = list[list.length - 1];
     if (!last || busy) return;
+    const moved = () => setHistory((h) => back ? { done: h.done.slice(0, -1), undone: [...h.undone, last] }
+      : { done: [...h.done, last], undone: h.undone.slice(0, -1) });
+    if (last.kind === "layout") {
+      if (back) documents.undo(last.path); else documents.redo(last.path);
+      moved();
+      setMessage({ text: `${back ? "Undid" : "Redid"}: ${last.what}.` });
+      return;
+    }
     setBusy(true);
     try {
       await api.glbRaw(last.path, back ? last.before : last.after);
-      setHistory((h) => back ? { done: h.done.slice(0, -1), undone: [...h.undone, last] } : { done: [...h.done, last], undone: h.undone.slice(0, -1) });
+      moved();
       setFaces([]);
       reloadChunk(last.path.replace(/\/model\.glb$/, ""));
       setMessage({ text: `${back ? "Undid" : "Redid"}: ${last.what}.` });
@@ -180,6 +207,86 @@ export function MapEditor({ constants }: ToolProps) {
       setBusy(false);
     }
   }, [history, busy]);
+
+  // The chosen chunk's layout, held as a document so it saves, undoes and reloads as files do
+  const modelName = current ? current.folder.slice(current.folder.lastIndexOf("/") + 1) : null;
+  const layoutFile = modelName ? layoutPath(modelName) : null;
+  useEffect(() => {
+    if (!layoutFile || layoutExists[layoutFile] !== undefined) return;
+    api.list(layoutFile).then((found) => {
+      const exists = found.includes(layoutFile);
+      setLayoutExists((m) => ({ ...m, [layoutFile]: exists }));
+      if (exists) documents.hold(layoutFile).catch(() => {});
+    }, () => {});
+  }, [layoutFile, layoutExists]);
+  const layoutDoc = layoutFile && layoutExists[layoutFile] ? docs.get(layoutFile) : undefined;
+  const layoutData = useMemo(() => (layoutDoc?.data ? toPlain(layoutDoc.data) as LayoutTiles & { size?: number } : null), [layoutDoc?.data]);
+  useEffect(() => {
+    const show = tab === "tiles" && layoutShown && layoutData && chunk !== null;
+    scene.current?.showLayout(show ? chunk : null, show ? layoutData : null);
+  }, [tab, layoutShown, layoutData, chunk, loaded]);
+
+  /** Paints the chosen tile, or erases objects, at a point on the chosen chunk's layout. */
+  const paintAt = (point: THREE.Vector3) => {
+    if (!map || !current || !layoutFile || !layoutData) return;
+    const x = Math.floor((point.x - current.column * map.chunkSize) / TILE), z = Math.floor((point.z - current.row * map.chunkSize) / TILE);
+    if (x < 0 || z < 0 || x >= map.chunkTiles || z >= map.chunkTiles) return;
+    const cell = layoutData.ground.findIndex((g) => g[0] === x && g[1] === z);
+    const groundY = cell >= 0 ? layoutData.ground[cell][3] : Math.round(point.y);
+    const record = (what: string) => setHistory((h) => ({ done: [...h.done, { kind: "layout", path: layoutFile, what }], undone: [] }));
+    if (paint === "erase") {
+      const keys = new Map((catalogue?.tiles ?? []).map((t) => [t.key, t]));
+      const kept = layoutData.objects.filter(([key, ox, oz]) => {
+        const size = keys.get(key)?.size ?? [1, 1];
+        return !(x >= ox && x < ox + size[0] && z >= oz && z < oz + size[1]);
+      });
+      if (kept.length === layoutData.objects.length) return;
+      documents.edit(layoutFile, ["objects"], fromPlain(kept));
+      record(`Removed ${layoutData.objects.length - kept.length} object(s) at ${x}, ${z}`);
+      return;
+    }
+    if (!tile) return;
+    const y = paintHeight === "tile" ? tile.at[0]?.y ?? groundY : groundY;
+    if (tile.kind === "ground") {
+      documents.edit(layoutFile, ["ground", cell >= 0 ? cell : layoutData.ground.length], fromPlain([x, z, tile.key, y]));
+      record(`Painted ${x}, ${z}`);
+    } else {
+      documents.edit(layoutFile, ["objects", layoutData.objects.length], fromPlain([tile.key, x, z, y]));
+      record(`Placed an object at ${x}, ${z}`);
+    }
+  };
+
+  const startLayout = async () => {
+    if (!modelName || !library) return;
+    setBusy(true);
+    try {
+      const { path } = await api.startLayout(library, modelName);
+      await documents.hold(path);
+      setLayoutExists((m) => ({ ...m, [path]: true }));
+      setLayoutShown(true);
+      setMessage({ text: `Started ${path} from the chunk as it is.` });
+    } catch (e) {
+      setMessage({ text: (e as Error).message, error: true });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const composeLayout = async () => {
+    if (!modelName || !layoutFile || !current) return;
+    setBusy(true);
+    try {
+      if (layoutDoc?.dirty && !(await documents.save(layoutFile))) throw new Error(documents.get(layoutFile)?.saveError ?? "The layout didn't save");
+      const result = await api.composeLayout(modelName);
+      reloadChunk(current.folder);
+      setLayoutShown(false);
+      setMessage({ text: `${result.output}. The chunk's model.glb is written from its layout; the map shows it now.` });
+    } catch (e) {
+      setMessage({ text: (e as Error).message, error: true });
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const removeFaces = () => editFaces(`Deleted ${faces.length} face(s)`, { remove: faceSets(faces) });
   useEffect(() => {
@@ -239,7 +346,7 @@ export function MapEditor({ constants }: ToolProps) {
             <button onClick={() => step(true)} disabled={!history.done.length || busy} title="Ctrl+Z">Undo</button>
             <button onClick={() => step(false)} disabled={!history.undone.length || busy} title="Ctrl+Y">Redo</button>
           </div>
-          <div className={`ow-map-wrap${tab === "faces" ? " me-picking" : ""}`}>
+          <div className={`ow-map-wrap${tab === "faces" ? " me-picking" : ""}${tab === "tiles" && paint !== "off" && layoutDoc ? " painting" : ""}`}>
             <div className="ow-map" ref={host} />
             {!zone && <div className="ow-empty me-empty muted">Choose a zone.</div>}
           </div>
@@ -306,11 +413,14 @@ export function MapEditor({ constants }: ToolProps) {
                 </section>
               </>
             )}
-            {tab === "tiles" && <TilePanel map={map} onShow={(model) => {
-              const i = map?.chunks.findIndex((c) => c.folder.endsWith(`/${model}`)) ?? -1;
+            {tab === "tiles" && <TilePanel map={map} onShow={(m) => {
+              const i = map?.chunks.findIndex((c) => c.folder.endsWith(`/${m}`)) ?? -1;
               if (i >= 0) { setChunk(i); scene.current?.frameChunk(i); }
               return i >= 0;
-            }} />}
+            }} library={library} setLibrary={setLibrary} catalogue={catalogue} setCatalogue={setCatalogue} chosen={tile} setChosen={setTile}
+              layout={{ model: modelName, path: layoutDoc ? layoutFile : null, dirty: !!layoutDoc?.dirty, shown: layoutShown }}
+              onStart={startLayout} onCompose={composeLayout} onShowLayout={setLayoutShown}
+              paint={paint} setPaint={setPaint} height={paintHeight} setHeight={setPaintHeight} busy={busy} />}
           </div>
         </div>
       </div>

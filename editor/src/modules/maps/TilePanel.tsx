@@ -1,5 +1,7 @@
-// The Map Editor's Tiles tab: a tile library's palette, most used first, each tile's picture drawn from its model, and
-// the chosen tile's details: its footprint, materials, uses and where the chunks use it, and its collision.
+// The Map Editor's Tiles tab: a tile library's palette, most used first, each tile's picture drawn from its model; the
+// chosen tile's details (its footprint, materials, uses and where the chunks use it, its collision); and the chosen
+// chunk's layout (res/paperwhite2/map_layouts/<model>.json): started from the chunk as it is, painted with tiles on the
+// map, and composed into the chunk's model.glb.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api, type TileLibraryInfo } from "../../api.ts";
@@ -8,22 +10,50 @@ import { forgetTiles, loadCatalogue, tileLabel, tileThumbnail, type Catalogue, t
 
 const PAGE = 120;
 
-export function TilePanel({ map, onShow }: { map: ZoneMap | null; onShow(model: string): boolean }) {
+export type PaintMode = "off" | "tile" | "erase";
+export type PaintHeight = "cell" | "tile";
+
+export interface LayoutState {
+  /** The chosen chunk's model folder's name, and its layout's path when it has one. */
+  model: string | null;
+  path: string | null;
+  dirty: boolean;
+  shown: boolean;
+}
+
+export function TilePanel({ map, onShow, library, setLibrary, catalogue, setCatalogue, chosen, setChosen, layout, onStart,
+  onCompose, onShowLayout, paint, setPaint, height, setHeight, busy }: {
+  map: ZoneMap | null;
+  onShow(model: string): boolean;
+  library: string;
+  setLibrary(id: string): void;
+  catalogue: Catalogue | null;
+  setCatalogue(c: Catalogue | null): void;
+  chosen: Tile | null;
+  setChosen(t: Tile | null): void;
+  layout: LayoutState;
+  onStart(): void;
+  onCompose(): void;
+  onShowLayout(on: boolean): void;
+  paint: PaintMode;
+  setPaint(mode: PaintMode): void;
+  height: PaintHeight;
+  setHeight(h: PaintHeight): void;
+  busy: boolean;
+}) {
   const [libraries, setLibraries] = useState<TileLibraryInfo[] | null>(null);
-  const [library, setLibrary] = useState("");
-  const [catalogue, setCatalogue] = useState<Catalogue | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [slicing, setSlicing] = useState(false);
   const [filter, setFilter] = useState("");
   const [kind, setKind] = useState<"all" | "ground" | "object">("all");
   const [shown, setShown] = useState(PAGE);
-  const [chosen, setChosen] = useState<Tile | null>(null);
 
   useEffect(() => {
     api.tileLibraries().then((l) => { setLibraries(l); if (l.length && !library) setLibrary(l[0].id); }, (e: Error) => setError(e.message));
   }, []);
   const info = libraries?.find((l) => l.id === library);
   useEffect(() => {
+    if (catalogue?.library && info && catalogue.library === info.name) return;
     setCatalogue(null);
     setChosen(null);
     if (!info?.sliced) return;
@@ -51,6 +81,7 @@ export function TilePanel({ map, onShow }: { map: ZoneMap | null; onShow(model: 
       && (!f || tileLabel(t).toLowerCase().includes(f) || t.materials.some((m) => m.toLowerCase().includes(f)) || t.category?.toLowerCase().includes(f)));
   }, [catalogue, filter, kind]);
   useEffect(() => setShown(PAGE), [filter, kind, library]);
+  const cuts = !!layout.model && !!info?.sources.includes(layout.model);
 
   return (
     <>
@@ -70,6 +101,48 @@ export function TilePanel({ map, onShow }: { map: ZoneMap | null; onShow(model: 
         {catalogue && (
           <p className="muted ow-note">{catalogue.tiles.length} tiles: {catalogue.tiles.filter((t) => t.kind === "ground").length} ground pieces
             (what a chunk draws over one tile) and {catalogue.tiles.filter((t) => t.kind === "object").length} objects (kept whole).</p>
+        )}
+      </section>
+      <section className="me-section">
+        <h4>Layout of the chunk</h4>
+        {!layout.model ? <p className="muted ow-note">Choose a chunk (the Chunks tab, or click the map).</p> : layout.path ? (
+          <>
+            <div className="me-row"><label>Layout</label><span className="me-mono">{layout.path.slice(layout.path.lastIndexOf("/") + 1)}{layout.dirty ? " •" : ""}</span></div>
+            <div className="me-row"><label>Map shows</label>
+              <span className="me-inline">
+                <label className="ow-check"><input type="radio" checked={layout.shown} onChange={() => onShowLayout(true)} /> the layout</label>
+                <label className="ow-check"><input type="radio" checked={!layout.shown} onChange={() => onShowLayout(false)} /> the chunk's model</label>
+              </span>
+            </div>
+            <div className="me-row"><label>Click paints</label>
+              <select value={paint} onChange={(e) => setPaint(e.target.value as PaintMode)}>
+                <option value="off">nothing (off)</option>
+                <option value="tile" disabled={!chosen}>the chosen tile{chosen ? "" : " (choose one below)"}</option>
+                <option value="erase">away the objects on a tile</option>
+              </select>
+            </div>
+            <div className="me-row"><label>Height</label>
+              <select value={height} onChange={(e) => setHeight(e.target.value as PaintHeight)}>
+                <option value="cell">the ground the tile goes on</option>
+                <option value="tile">where the tile came from</option>
+              </select>
+            </div>
+            <div className="me-actions">
+              <button className="primary" onClick={onCompose} disabled={busy} title="Saves the layout, then writes the chunk's model.glb from its tiles">
+                {busy ? "Composing…" : "Compose into the chunk"}</button>
+            </div>
+            <p className="muted ow-note">A ground tile replaces the cell's; an object goes on top. Compose writes the chunk's model from the
+              layout (the props stay) and marks it written. Ctrl+Z undoes painting.</p>
+          </>
+        ) : (
+          <>
+            <p className="ow-note">{layout.model} has no layout.</p>
+            <div className="me-actions">
+              <button onClick={onStart} disabled={!cuts || busy}
+                      title={cuts ? "A layout of the chunk as it is, from this library's tiles" : "This library isn't cut from this chunk"}>Start a layout from the chunk</button>
+            </div>
+            {!cuts && <p className="muted ow-note">The library isn't cut from this chunk; add it to the library's sources first.</p>}
+          </>
         )}
       </section>
       {catalogue && (
@@ -107,7 +180,6 @@ export function TilePanel({ map, onShow }: { map: ZoneMap | null; onShow(model: 
                 {map?.chunks.some((c) => c.folder.endsWith(`/${a.model}`)) && <button className="link" onClick={() => onShow(a.model)}>show</button>}</li>
             ))}
           </ul>
-          <p className="muted ow-note">Painting tiles into a chunk comes next (design: Tiles mode).</p>
         </section>
       )}
     </>

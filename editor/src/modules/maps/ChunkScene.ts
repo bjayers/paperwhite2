@@ -8,6 +8,11 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { chunkLoader } from "../overworld/MapView.tsx";
 import { TILE, type ZoneMap } from "../overworld/terrain.ts";
+import { tileModels } from "./tiles.ts";
+
+/** A layout's tiles, as the scene draws them in place of their chunk: ground [x, z, key, height], objects [key, x, z,
+ * height]. */
+export interface LayoutTiles { library: string; ground: [number, number, string, number][]; objects: [string, number, number, number][] }
 
 /** A face of a chunk: its chunk (by its index in the map's list), the primitive (a draw call) and the triangle. */
 export interface Face { chunk: number; primitive: number; triangle: number }
@@ -31,6 +36,10 @@ export class ChunkScene {
   chunks = new THREE.Group();
   marks = new THREE.Group();
   highlight = new THREE.Group();
+  layoutGroup = new THREE.Group();
+  /** The chunk drawn from its layout's tiles instead of its model, while that preview is on. */
+  layoutChunk: number | null = null;
+  private layoutKey = 0;
   models = new Map<number, ChunkModel>();
   map: ZoneMap | null = null;
   /** Bumped when a chunk's GLB changes on disk, so it loads again. */
@@ -56,7 +65,7 @@ export class ChunkScene {
     this.scene.add(new THREE.AmbientLight(0xffffff, 1.6));
     const sun = new THREE.DirectionalLight(0xffffff, 1.4);
     sun.position.set(300, 800, 400);
-    this.scene.add(sun, this.chunks, this.marks, this.highlight);
+    this.scene.add(sun, this.chunks, this.marks, this.highlight, this.layoutGroup);
     const dom = this.renderer.domElement;
     dom.addEventListener("pointerdown", this.down);
     window.addEventListener("pointerup", this.up);
@@ -111,6 +120,7 @@ export class ChunkScene {
         if (this.loadKey !== key) return;
         gltf.scene.position.set(chunk.column * map.chunkSize + map.chunkSize / 2, 0, chunk.row * map.chunkSize + map.chunkSize / 2);
         gltf.scene.userData.chunk = index;
+        gltf.scene.visible = index !== this.layoutChunk;
         this.models.set(index, modelOf(gltf));
         this.chunks.add(gltf.scene);
         if (--pending === 0) this.onLoaded();
@@ -169,6 +179,31 @@ export class ChunkScene {
     });
   }
 
+  /** Draws a chunk from its layout's tiles, in place of its model; null puts the model back. */
+  async showLayout(index: number | null, layout: LayoutTiles | null) {
+    const key = ++this.layoutKey;
+    const map = this.map;
+    this.layoutChunk = layout ? index : null;
+    for (const o of this.chunks.children) o.visible = o.userData.chunk !== this.layoutChunk;
+    if (!layout || index === null || !map) { this.layoutGroup.clear(); return; }
+    const chunk = map.chunks[index];
+    const models = await tileModels(layout.library);
+    if (key !== this.layoutKey) return;
+    const group = new THREE.Group();
+    group.position.set(chunk.column * map.chunkSize, 0, chunk.row * map.chunkSize);
+    const place = (tile: string, x: number, z: number, y: number) => {
+      const node = models.getObjectByName(tile);
+      if (!node) return;
+      const copy = node.clone();
+      copy.position.set(x * TILE, y, z * TILE);
+      group.add(copy);
+    };
+    for (const [x, z, tile, y] of layout.ground) place(tile, x, z, y);
+    for (const [tile, x, z, y] of layout.objects) place(tile, x, z, y);
+    this.layoutGroup.clear();
+    this.layoutGroup.add(group);
+  }
+
   /** Draws the selected faces over the model, in yellow. */
   showFaces(faces: Face[]) {
     this.highlight.clear();
@@ -224,7 +259,12 @@ export class ChunkScene {
     const ndc = new THREE.Vector2(((ev.clientX - rect.left) / rect.width) * 2 - 1, -((ev.clientY - rect.top) / rect.height) * 2 + 1);
     const ray = new THREE.Raycaster();
     ray.setFromCamera(ndc, this.camera);
-    const hits = ray.intersectObjects(this.chunks.children, true);
+    if (this.layoutChunk !== null) {
+      // On a layout, only where it was clicked counts: the cell under it
+      const hit = ray.intersectObjects(this.layoutGroup.children, true)[0];
+      if (hit) return { chunk: this.layoutChunk, face: null, point: hit.point };
+    }
+    const hits = ray.intersectObjects(this.chunks.children.filter((c) => c.visible), true);
     for (const hit of hits) {
       let o: THREE.Object3D | null = hit.object;
       while (o && o.userData.chunk === undefined) o = o.parent;

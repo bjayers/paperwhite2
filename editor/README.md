@@ -281,8 +281,13 @@ map, to choose a chunk; the middle button orbits, the right pans and the wheel z
 - **Tiles:** the tile libraries (`res/paperwhite2/map_tiles/<library>/library.json`) cut from the game's chunks by
   `tools/paperwhite2/map_tiles.py`: **Cut the tiles** makes the catalogue in `build/map_tiles/`, and the palette shows
   each tile's picture, most used first, filtered by kind and material. A tile's details give its footprint, triangles,
-  materials, collision and where the chunks use it (**show** goes there on the map). Painting tiles into a chunk comes
-  next.
+  materials, collision and where the chunks use it (**show** goes there on the map).
+  - **Layout of the chunk:** a chunk as tiles (`res/paperwhite2/map_layouts/<model>.json`). **Start a layout from the
+    chunk** makes one of a chunk the library is cut from, as it is; the map then shows the layout's tiles in place of
+    the chunk's model. With **Click paints** on the chosen tile, a click puts it on that tile of the chunk: a ground
+    tile replaces the cell's, an object goes on top, at the height of the ground there or where the tile came from;
+    or it takes away the objects on a tile. Ctrl+Z undoes painting. **Compose into the chunk** saves the layout and
+    writes the chunk's `model.glb` from it (its props kept), marked written.
 
 ## The Pokémon Editor
 

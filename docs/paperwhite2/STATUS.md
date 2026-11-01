@@ -20,8 +20,12 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   variants), Faces (select, connected, the stack of a tree, delete, retexture, undo; written to model.glb at once) and
   Tiles (the palette). Checked in the browser on a scratch copy: a tree deleted and a face retextured, then packed (34
   materials and draw calls where vanilla has 33). **Not tested in game.**
-- Next: painting tiles into a chunk (composing the GLB and collision), collision painting in the Map Editor, New Map
-  with an unused zone.
+- Layouts (`res/paperwhite2/map_layouts/<model>.json`): a chunk as tiles, started from a chunk as it is, painted in
+  the Tiles tab, composed into the chunk's model.glb (`map_tiles.py compose`). Route 20's map04_20 rebuilt from its own
+  layout looks the same in the editor (2,085 triangles against 1,114; 71 KB of the 86 KB buffer). Painting changes
+  only the model: the collision stays the chunk's, to paint in the Overworld Editor. **Not tried in game.**
+- Next: collision with the tiles (a painted tile's terrain rows, at its height), fewer triangles (strips), New Map
+  with an unused zone, collision painting in the Map Editor.
 
 ## 2026-10-31: NPC conditions and instances (phase 2)
 

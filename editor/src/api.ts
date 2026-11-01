@@ -93,6 +93,10 @@ export const api = {
   tileLibraries: () => request<TileLibraryInfo[]>("GET", "/api/map-tiles"),
   sliceTiles: (library: string) => request<{ ok: boolean; output: string }>("POST", "/api/map-tiles/slice", { library }),
   tileCatalogue: (library: string) => request<unknown>("GET", `/api/map-tiles/catalogue?library=${encodeURIComponent(library)}`),
+  /** A layout of a chunk as it is, from a tile library that cuts it; its path. */
+  startLayout: (library: string, model: string) => request<{ path: string }>("POST", "/api/map-layouts/start", { library, model }),
+  /** Writes a layout's chunk's model.glb from its tiles. */
+  composeLayout: (model: string) => request<{ ok: boolean; output: string }>("POST", "/api/map-layouts/compose", { model }),
   /** The lines of the files under res/ that a glob names which match a regular expression. */
   scan: (glob: string, pattern: string, options: { ignoreCase?: boolean; limit?: number } = {}) =>
     request<ScanMatch[]>("GET", `/api/scan?glob=${encodeURIComponent(glob)}&pattern=${encodeURIComponent(pattern)}` +
