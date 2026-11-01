@@ -1,0 +1,16 @@
+{
+    "$schema": "../map_object.schema.json",
+    "name": "Ledge",
+    "category": "features",
+    "size": [ 5, 1 ],
+    "collision": [
+        [ 65653, 65653, 65653, 65653, 65653 ]
+    ],
+    "textures": [ "shared_dansa01a_183/dansa01a.png" ],
+    "source": {
+        "model": "overworld_2_map04_20",
+        "x": 6,
+        "z": 14
+    },
+    "triangles": 14
+}

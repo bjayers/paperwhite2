@@ -1,0 +1,23 @@
+{
+    "$schema": "../map_object.schema.json",
+    "name": "Tree Large 3x3",
+    "category": "trees",
+    "size": [ 3, 3 ],
+    "collision": [
+        [ 8454145, 8454145, 8454145 ],
+        [ 8454145, 8454145, 8454145 ],
+        [ 8454145, 8454145, 8454145 ]
+    ],
+    "textures": [
+        "shared_dansa01a_183/54ki02ax.png",
+        "shared_dansa01a_183/54ki02bx.png",
+        "shared_dansa01a_183/54ki02c.png",
+        "shared_dansa01a_183/54ki02dx.png"
+    ],
+    "source": {
+        "model": "overworld_2_map04_20",
+        "x": 16,
+        "z": 14
+    },
+    "triangles": 10
+}

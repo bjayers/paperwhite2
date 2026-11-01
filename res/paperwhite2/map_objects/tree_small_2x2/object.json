@@ -1,0 +1,22 @@
+{
+    "$schema": "../map_object.schema.json",
+    "name": "Tree Small 2x2",
+    "category": "trees",
+    "size": [ 2, 2 ],
+    "collision": [
+        [ 8454145, 8454145 ],
+        [ 8454145, 8454145 ]
+    ],
+    "textures": [
+        "shared_dansa01a_183/ki02c.png",
+        "shared_dansa01a_183/ki03ax.png",
+        "shared_dansa01a_183/ki03bx.png",
+        "shared_dansa01a_183/ki03dx.png"
+    ],
+    "source": {
+        "model": "overworld_2_map04_20",
+        "x": 14,
+        "z": 15
+    },
+    "triangles": 10
+}
