@@ -285,9 +285,10 @@ map, to choose a chunk; the middle button orbits, the right pans and the wheel z
   - **Layout of the chunk:** a chunk as tiles (`res/paperwhite2/map_layouts/<model>.json`). **Start a layout from the
     chunk** makes one of a chunk the library is cut from, as it is; the map then shows the layout's tiles in place of
     the chunk's model. With **Click paints** on the chosen tile, a click puts it on that tile of the chunk: a ground
-    tile replaces the cell's, an object goes on top, at the height of the ground there or where the tile came from;
-    or it takes away the objects on a tile. Ctrl+Z undoes painting. **Compose into the chunk** saves the layout and
-    writes the chunk's `model.glb` from it (its props kept), marked written.
+    tile replaces the cell's, an object goes on top, at the height of the ground there or where the tile came from,
+    each bringing its collision (its source's terrain rows, moved to its height; a split tile keeps the chunk's); or
+    it takes away the objects on a tile. Ctrl+Z undoes painting. **Compose into the chunk** saves the layout and
+    the collision and writes the chunk's `model.glb` from it (its props kept), marked written.
 
 ## The Pokémon Editor
 

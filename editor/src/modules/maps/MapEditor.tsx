@@ -9,12 +9,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { api } from "../../api.ts";
-import { documents, useDocuments } from "../../documents.ts";
+import { currentText, documents, useDocuments } from "../../documents.ts";
 import { fromPlain, toPlain } from "../../../shared/json.ts";
 import { navigate, useToolParams } from "../../navigation.ts";
 import type { ToolProps } from "../types.ts";
 import { loadWorld, type World } from "../world/world.ts";
-import { SEASONS, TILE, loadZoneMap, type ZoneMap } from "../overworld/terrain.ts";
+import { SEASONS, TILE, heightTables, loadZoneMap, type ZoneMap } from "../overworld/terrain.ts";
 import { ChunkScene, connectedFaces, faceKey, stackedFaces, type ChunkModel, type Face, type LayoutTiles } from "./ChunkScene.ts";
 import { seasonSets, seasonVariants, type SeasonSet } from "./seasons.ts";
 import { TilePanel, type PaintHeight, type PaintMode } from "./TilePanel.tsx";
@@ -31,7 +31,7 @@ const MATERIAL_LIMIT = 255;
 
 /** One step of the history: a chunk's GLB before and after a face edit, as base64; or an edit of a layout, which its
  * document's own history holds. */
-type Step = { kind: "faces"; path: string; before: string; after: string; what: string } | { kind: "layout"; path: string; what: string };
+type Step = { kind: "faces"; path: string; before: string; after: string; what: string } | { kind: "docs"; paths: string[]; what: string };
 
 const layoutPath = (model: string) => `res/paperwhite2/map_layouts/${model}.json`;
 
@@ -188,8 +188,8 @@ export function MapEditor({ constants }: ToolProps) {
     if (!last || busy) return;
     const moved = () => setHistory((h) => back ? { done: h.done.slice(0, -1), undone: [...h.undone, last] }
       : { done: [...h.done, last], undone: h.undone.slice(0, -1) });
-    if (last.kind === "layout") {
-      if (back) documents.undo(last.path); else documents.redo(last.path);
+    if (last.kind === "docs") {
+      for (const path of last.paths) { if (back) documents.undo(path); else documents.redo(path); }
       moved();
       setMessage({ text: `${back ? "Undid" : "Redid"}: ${last.what}.` });
       return;
@@ -226,14 +226,14 @@ export function MapEditor({ constants }: ToolProps) {
     scene.current?.showLayout(show ? chunk : null, show ? layoutData : null);
   }, [tab, layoutShown, layoutData, chunk, loaded]);
 
-  /** Paints the chosen tile, or erases objects, at a point on the chosen chunk's layout. */
-  const paintAt = (point: THREE.Vector3) => {
+  /** Paints the chosen tile, or erases objects, at a point on the chosen chunk's layout; a tile brings its collision. */
+  const paintAt = async (point: THREE.Vector3) => {
     if (!map || !current || !layoutFile || !layoutData) return;
     const x = Math.floor((point.x - current.column * map.chunkSize) / TILE), z = Math.floor((point.z - current.row * map.chunkSize) / TILE);
     if (x < 0 || z < 0 || x >= map.chunkTiles || z >= map.chunkTiles) return;
     const cell = layoutData.ground.findIndex((g) => g[0] === x && g[1] === z);
     const groundY = cell >= 0 ? layoutData.ground[cell][3] : Math.round(point.y);
-    const record = (what: string) => setHistory((h) => ({ done: [...h.done, { kind: "layout", path: layoutFile, what }], undone: [] }));
+    const record = (what: string, paths: string[]) => setHistory((h) => ({ done: [...h.done, { kind: "docs", paths, what }], undone: [] }));
     if (paint === "erase") {
       const keys = new Map((catalogue?.tiles ?? []).map((t) => [t.key, t]));
       const kept = layoutData.objects.filter(([key, ox, oz]) => {
@@ -242,18 +242,55 @@ export function MapEditor({ constants }: ToolProps) {
       });
       if (kept.length === layoutData.objects.length) return;
       documents.edit(layoutFile, ["objects"], fromPlain(kept));
-      record(`Removed ${layoutData.objects.length - kept.length} object(s) at ${x}, ${z}`);
+      record(`Removed ${layoutData.objects.length - kept.length} object(s) at ${x}, ${z}`, [layoutFile]);
       return;
     }
     if (!tile) return;
     const y = paintHeight === "tile" ? tile.at[0]?.y ?? groundY : groundY;
-    if (tile.kind === "ground") {
-      documents.edit(layoutFile, ["ground", cell >= 0 ? cell : layoutData.ground.length], fromPlain([x, z, tile.key, y]));
-      record(`Painted ${x}, ${z}`);
-    } else {
-      documents.edit(layoutFile, ["objects", layoutData.objects.length], fromPlain([tile.key, x, z, y]));
-      record(`Placed an object at ${x}, ${z}`);
-    }
+    if (tile.kind === "ground") documents.edit(layoutFile, ["ground", cell >= 0 ? cell : layoutData.ground.length], fromPlain([x, z, tile.key, y]));
+    else documents.edit(layoutFile, ["objects", layoutData.objects.length], fromPlain([tile.key, x, z, y]));
+    const terrain = await paintCollision(tile, x, z, y);
+    record(`${tile.kind === "ground" ? "Painted" : "Placed an object at"} ${x}, ${z}`, terrain.path ? [layoutFile, terrain.path] : [layoutFile]);
+    setMessage(terrain.note ? { text: terrain.note } : null);
+  };
+
+  /** A painted tile's collision: its source's terrain rows under it, written into the chunk's first layer where it
+   * goes, each plane moved with the tile (its offset taken again from the game's table, which must have it). Split
+   * tiles keep the chunk's rows, to paint in the Overworld Editor. */
+  const paintCollision = async (t: Tile, x: number, z: number, y: number): Promise<{ path: string | null; note: string | null }> => {
+    const path = current?.layers[0]?.path;
+    const source = t.at[0];
+    if (!path || !source || !map) return { path: null, note: "The chunk has no collision to paint." };
+    const tb = await heightTables();
+    const doc = await documents.hold(path);
+    const lines = currentText(doc).split("\n");
+    const head = lines[0].split(",");
+    const col = (name: string) => head.indexOf(name);
+    const skipped: string[] = [];
+    let changed = false;
+    t.collision.forEach((row, dz) => row.forEach((rowTerrain, dx) => {
+      const cx = x + dx, cz = z + dz;
+      if (!rowTerrain || cx >= map.chunkTiles || cz >= map.chunkTiles) return;
+      const i = 1 + cz * map.chunkTiles + cx;
+      const parts = lines[i]?.split(",");
+      if (!parts) return;
+      if (rowTerrain.shape !== 0) { skipped.push(`${cx}, ${cz} (a split tile)`); return; }
+      // The plane at the source, moved by the tile's step across and up: offset' = offset - n.x dx - n.z dz - n.y dy
+      const n = tb.slopes[rowTerrain.slope] ?? [0, 1, 0];
+      const want = tb.offsets[rowTerrain.offset] - n[0] * (x - source.x) * TILE - n[2] * (z - source.z) * TILE - n[1] * (y - source.y);
+      let best = 0;
+      tb.offsets.forEach((o, k) => { if (Math.abs(o - want) < Math.abs(tb.offsets[best] - want)) best = k; });
+      if (Math.abs(tb.offsets[best] - want) > 0.05) { skipped.push(`${cx}, ${cz} (no height there in the game's table)`); return; }
+      parts[col("shape")] = "0";
+      parts[col("slope")] = String(rowTerrain.slope);
+      parts[col("offset")] = String(best);
+      parts[col("tile_type")] = String(rowTerrain.tile_type >>> 0);
+      parts[col("diagonal")] = String(rowTerrain.diagonal);
+      lines[i] = parts.join(",");
+      changed = true;
+    }));
+    if (changed) documents.editText(path, lines.join("\n"));
+    return { path: changed ? path : null, note: skipped.length ? `Collision left as it was at ${skipped.join("; ")}.` : null };
   };
 
   const startLayout = async () => {
@@ -276,7 +313,10 @@ export function MapEditor({ constants }: ToolProps) {
     if (!modelName || !layoutFile || !current) return;
     setBusy(true);
     try {
-      if (layoutDoc?.dirty && !(await documents.save(layoutFile))) throw new Error(documents.get(layoutFile)?.saveError ?? "The layout didn't save");
+      // The layout and the collision painted with it
+      for (const path of [layoutFile, ...current.layers.map((l) => l.path)]) {
+        if (documents.get(path)?.dirty && !(await documents.save(path))) throw new Error(`${path}: ${documents.get(path)?.saveError ?? "didn't save"}`);
+      }
       const result = await api.composeLayout(modelName);
       reloadChunk(current.folder);
       setLayoutShown(false);

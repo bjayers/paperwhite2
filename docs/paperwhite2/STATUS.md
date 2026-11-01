@@ -22,10 +22,11 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   materials and draw calls where vanilla has 33). **Not tested in game.**
 - Layouts (`res/paperwhite2/map_layouts/<model>.json`): a chunk as tiles, started from a chunk as it is, painted in
   the Tiles tab, composed into the chunk's model.glb (`map_tiles.py compose`). Route 20's map04_20 rebuilt from its own
-  layout looks the same in the editor (2,085 triangles against 1,114; 71 KB of the 86 KB buffer). Painting changes
-  only the model: the collision stays the chunk's, to paint in the Overworld Editor. **Not tried in game.**
-- Next: collision with the tiles (a painted tile's terrain rows, at its height), fewer triangles (strips), New Map
-  with an unused zone, collision painting in the Map Editor.
+  layout looks the same in the editor (2,085 triangles against 1,114; 71 KB of the 86 KB buffer). A painted tile
+  brings its source's terrain rows into the chunk's first layer, its planes moved to its height (refused where the
+  game's height table lacks the height; split tiles keep the chunk's rows). **Not tried in game.**
+- Next: fewer triangles (strips in the writer), New Map with an unused zone, collision painting in the Map Editor,
+  two-layer chunks.
 
 ## 2026-10-31: NPC conditions and instances (phase 2)
 

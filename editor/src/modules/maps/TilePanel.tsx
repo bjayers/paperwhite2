@@ -128,11 +128,12 @@ export function TilePanel({ map, onShow, library, setLibrary, catalogue, setCata
               </select>
             </div>
             <div className="me-actions">
-              <button className="primary" onClick={onCompose} disabled={busy} title="Saves the layout, then writes the chunk's model.glb from its tiles">
+              <button className="primary" onClick={onCompose} disabled={busy} title="Saves the layout and the collision painted with it, then writes the chunk's model.glb from its tiles">
                 {busy ? "Composing…" : "Compose into the chunk"}</button>
             </div>
-            <p className="muted ow-note">A ground tile replaces the cell's; an object goes on top. Compose writes the chunk's model from the
-              layout (the props stay) and marks it written. Ctrl+Z undoes painting.</p>
+            <p className="muted ow-note">A ground tile replaces the cell's; an object goes on top; each brings its collision (moved to its
+              height; a split tile keeps the chunk's). Compose saves the layout and the collision and writes the chunk's model from the
+              layout (the props stay), marked written. Ctrl+Z undoes painting.</p>
           </>
         ) : (
           <>
