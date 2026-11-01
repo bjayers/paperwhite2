@@ -522,6 +522,8 @@ def write_library(folder, library, tiles, materials, previous, placements):
 # ---------------------------------------------------------------- Composing a chunk from tiles
 
 LAYOUTS = ROOT / "res/paperwhite2/map_layouts"
+# Nitro's texture coordinates reach 2,048 texels either way
+TEXEL_REACH = 2047
 
 
 def plane_gradient(polygon):
@@ -1020,6 +1022,7 @@ def write_chunk_glb(directory, polygons, materials, texture_set):
         material = json.loads(json.dumps(materials[key]))
         pbr = material["pbrMetallicRoughness"]
         texture = pbr.get("baseColorTexture")
+        span = [0.0, 0.0]
         if texture:
             png = Path(texture["image"]).name
             uri = f"../../textures/{texture_set}/{png}"
@@ -1028,6 +1031,8 @@ def write_chunk_glb(directory, polygons, materials, texture_set):
             if texture["sampler"] not in samplers:
                 samplers.append(texture["sampler"])
             images.append({"uri": uri})
+            width, height = struct.unpack(">II", (MODELS.parent / "textures" / texture_set / png).read_bytes()[16:24])
+            span = [TEXEL_REACH / width - 1, TEXEL_REACH / height - 1]
             textures.append({"source": len(images) - 1, "sampler": samplers.index(texture["sampler"])})
             pbr["baseColorTexture"] = {"index": len(textures) - 1}
         doc_materials.append(material)
@@ -1037,9 +1042,13 @@ def write_chunk_glb(directory, polygons, materials, texture_set):
         steps = [{REPEAT: 1, MIRRORED_REPEAT: 2}.get(sampler.get(wrap, REPEAT)) for wrap in ("wrapS", "wrapT")]
         vertices = []
         indices = []
+        # One shift for the whole draw call where its UVs span few enough repeats, so that neighbouring triangles keep
+        # the same corners, which the writer's strips share; else a shift for each polygon
+        whole = [[v.uv[k] for polygon in group for v in polygon] for k in range(2)]
+        shared = all(max(values) - min(values) <= span[k] for k, values in enumerate(whole))
         for polygon in group:
-            low = [math.floor(min(v.uv[k] for v in polygon) / steps[k] + 1e-6) * steps[k] if steps[k] else 0
-                   for k in range(2)]
+            values = whole if shared else [[v.uv[k] for v in polygon] for k in range(2)]
+            low = [math.floor(min(values[k]) / steps[k] + 1e-6) * steps[k] if steps[k] else 0 for k in range(2)]
             start = len(vertices)
             vertices += [Vertex(v.p, (v.uv[0] - low[0], v.uv[1] - low[1]), v.color, v.normal) for v in polygon]
             for i in range(1, len(polygon) - 1):

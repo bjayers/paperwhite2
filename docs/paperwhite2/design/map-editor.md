@@ -263,6 +263,11 @@ cell, objects added and removed, then compose.
 
 - The model writer (`tools/data/nitro_model_writer.py`) and the packer's `"written"` models.
 - The tile slicer (`tools/paperwhite2/map_tiles.py`) and Route 20's library.
-- The Map Editor's Chunks, Faces and Tiles tabs (`editor/src/modules/maps/`, `editor/README.md`).
+- The Map Editor's Chunks, Faces and Tiles tabs (`editor/src/modules/maps/`, `editor/README.md`), with layouts
+  painted with tiles (and their collision) and composed into a chunk.
+
+Known limits: a composed chunk has about twice its source's triangles (pieces that overlap in the source don't
+stitch), and the writer's strips stay short over ear-clipped regions (fans), so its file is about 1.8 times the
+original's; two-layer chunks paint only their first layer; split tiles keep the chunk's collision.
 
 See `docs/paperwhite2/STATUS.md` for the latest, and what is still untested in game.
