@@ -297,6 +297,23 @@ def page(model, vanilla, generated, results, scores):
 <p>{legend}</p><p>Ground, edges and slopes only: trees, grass and fences are objects to place, and bridges structures.</p>"""
 
 
+def trip(vanilla, style):
+    """A round trip of a chunk already read (without a style) with a style given as data: its scores, the
+    generated chunk's triangles. For checking a learned style's parts (map_profiles.py draft)."""
+    work = Path(tempfile.mkdtemp(prefix="map_roundtrip_"))
+    try:
+        styles = work / "styles"
+        styles.mkdir()
+        shutil.copy(map_maker.STYLES / "map_style.schema.json", styles / "map_style.schema.json")
+        (styles / "trip.json").write_text(json.dumps(style))
+        keys, heights, kinds = painting_of(vanilla, style)
+        folder, triangles = generate(vanilla, "trip", keys, heights, work, styles)
+        generated = map_reader.Chunk(vanilla.model, folder, None)
+        return score(compare(vanilla, generated, kinds)), triangles
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("model")
@@ -322,7 +339,7 @@ def main():
         style = None
         if texture_set and map_profiles.DB.exists():
             import sqlite3
-            style = map_profiles.draft(sqlite3.connect(map_profiles.DB), texture_set, "drafted")
+            style = map_profiles.draft(sqlite3.connect(map_profiles.DB), texture_set, "drafted", verify=True, focus=args.model)
             if not style["terrains"]:
                 style = None
         style = style or draft_style(vanilla, texture_set)

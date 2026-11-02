@@ -139,11 +139,27 @@ def learn_profile(db, texture, models, chunks, limit=60):
         else:
             face["v"] = [round(min(1, max(0, a["v"])), 2), round(min(1, max(0, b["v"])), 2)]
         faces.append(face)
+    # The underlay: ground drawn flat at the tile's own height under see-through faces across most of the tile (the
+    # lower grass under a ledge, which leaves a seam at its foot without it)
+    if step:
+        under = Counter()
+        for st in sections:
+            for i in range(STEPS):
+                below = [layer for layer in st[i][1:] if abs(layer[1]) <= 1]
+                if below:
+                    under[below[0][0]] += 1
+        if under:
+            texture, n = under.most_common(1)[0]
+            role = chunks[next(iter(chunks))].facts["textures"].get(texture, {}).get("role")
+            if role == "ground" and n > len(sections) * STEPS / 2:
+                lines.append({"offset": 0, "lift": 0})
+                faces.insert(0, {"between": [len(lines) - 1, len(lines) - 2], "texture": texture, "planar": True, "repeat": 4})
     return drop, lines, faces
 
 
-def draft(db, texture_set, name):
-    """A map style drafted from the atlas for a texture set: its ground textures as terrains (each with the tile type
+def draft(db, texture_set, name, verify=False, log=None, focus=None):
+    """A map style drafted from the atlas for a texture set (verify: each learned edge checked by round trips on the
+    chunks with most of it, and focus, the chunk it's for): its ground textures as terrains (each with the tile type
     most of its tiles have), and its edge and slope textures as edges, each with its learned profile, a terrain of
     its own, and its family: the ground inside an edge, the ground under a step."""
     models = {m for (m,) in db.execute("SELECT model FROM chunks WHERE texture_set = ? AND kind = 'overworld'", (texture_set,))}
@@ -186,11 +202,11 @@ def draft(db, texture_set, name):
             continue
         drop, lines, faces = learned
         if drop > 2:
-            # The ground of its slope tiles (a step's lower ground). Tiles drawn as edges too (a bank's bed) were tried:
-            # they learn water banks for Route 20's set, but caves' walls with them, which made Wellspring Cave's round
-            # trip much worse (heights within 2 units 76% to 36%); learned edges need checking one by one first
-            under = Counter(g for (g,) in db.execute(f"SELECT ground FROM tiles WHERE model IN ({marks}) AND slope = ?", [*models, texture]))
-            family = next((key_of[g] for g, _ in under.most_common() if g in key_of), None)
+            # The ground of its tiles (a step's lower ground, a bank's bed: drawn as a slope or an edge), else what's
+            # inside it (checked below, where verify is on: a guess for caves' walls made their round trip worse)
+            under = Counter(g for (g,) in db.execute(f"SELECT ground FROM tiles WHERE model IN ({marks}) AND (slope = ? OR edge = ?)",
+                                                     [*models, texture, texture]))
+            family = next((key_of[g] for g, _ in under.most_common() if g in key_of), None) or key_of.get(insides.get(texture))
         else:
             family = key_of.get(insides.get(texture))
         if family is None:
@@ -212,16 +228,51 @@ def draft(db, texture_set, name):
         else:
             edge["from"] = [t["key"] for t in terrains if t["key"] != family]
         edges.append(edge)
-    for e in edges:
-        e["from"] = sorted(set(e["from"]) | {k for k in KEYS[len(terrains):len(terrains) + len(edges)]})
-    for i, e in enumerate(edges):
-        key = KEYS[len(terrains)]
-        base = next(t for t in terrains if t["key"] == e["to"])
-        terrains.append({"key": key, "name": f"{e['name']} edge", "edge_of": e["to"], "edge": e["name"], "color": "#806040",
-                         "ground": base["ground"], "tile_type": base["tile_type"]})
     wall = next((t for t, c in roles.items() if role.get(t) == "wall"), None) or next(iter(key_of))
-    return {"$schema": "../map_style.schema.json", "name": name, "texture_set": texture_set,
-            "wall": {"texture": wall, "repeat": 1, "alpha": "MASK"}, "edges": edges, "terrains": terrains}
+
+    def assemble(chosen):
+        out_terrains = [dict(t) for t in terrains]
+        out_edges = [dict(e) for e in chosen]
+        extra = KEYS[len(out_terrains):len(out_terrains) + len(out_edges)]
+        for e in out_edges:
+            e["from"] = sorted(set(e["from"]) | set(extra))
+        for e in out_edges:
+            base = next(t for t in out_terrains if t["key"] == e["to"])
+            out_terrains.append({"key": KEYS[len(out_terrains)], "name": f"{e['name']} edge", "edge_of": e["to"], "edge": e["name"],
+                                 "color": "#806040", "ground": base["ground"], "tile_type": base["tile_type"]})
+        return {"$schema": "../map_style.schema.json", "name": name, "texture_set": texture_set,
+                "wall": {"texture": wall, "repeat": 1, "alpha": "MASK"}, "edges": out_edges, "terrains": out_terrains}
+    if not verify:
+        return assemble(edges)
+    # Each learned edge kept only if the round trip on the three chunks with most of it is no worse with it than without
+    import map_roundtrip
+    kept = []
+    read = {}
+    for e in edges:
+        tops = [m for (m, _) in db.execute(f"""SELECT model, COUNT(*) n FROM tiles WHERE model IN ({marks}) AND (edge = ? OR slope = ?)
+                                                GROUP BY model ORDER BY n DESC LIMIT 3""", [*models, e["name"], e["name"]])]
+        if focus and focus not in tops:
+            tops.append(focus)  # (the chunk being painted: a set shared by many places fits each differently)
+        if not tops:
+            continue
+        for m in tops:
+            if m not in read:
+                read[m] = map_reader.load_chunk(m, "w2-original", None)
+
+        def values(style):
+            out = {}
+            for m in tops:
+                made = map_roundtrip.trip(read[m], style)[0].get("made", {})
+                out[m] = sum(made.get(k) or 0 for k in ("terrain", "edge", "height within 2")) - (made.get("textures differ") or 0)
+            return out
+        before, after = values(assemble(kept)), values(assemble(kept + [e]))
+        without, with_ = sum(before.values()), sum(after.values())
+        # Clearly better over them (a tie may still hurt chunks outside these), and no worse for the chunk it's for
+        if with_ > without + 0.005 * len(tops) and (not focus or after[focus] >= before[focus] - 0.005):
+            kept.append(e)
+        if log:
+            log(f"{e['name']}: {'kept' if e in kept else 'left out'} ({', '.join(tops)}: {without:.3f} without, {with_:.3f} with)")
+    return assemble(kept)
 
 
 def main():
@@ -235,10 +286,11 @@ def main():
     d.add_argument("texture_set")
     d.add_argument("--name")
     d.add_argument("--out")
+    d.add_argument("--verify", action="store_true", help="keep each learned edge only if the round trip is no worse with it")
     args = parser.parse_args()
     db = sqlite3.connect(DB)
     if args.command == "draft":
-        style = draft(db, args.texture_set, args.name or args.texture_set)
+        style = draft(db, args.texture_set, args.name or args.texture_set, args.verify, log=print)
         text = json.dumps(style, indent=1)
         if args.out:
             Path(args.out).write_text(text + "\n")

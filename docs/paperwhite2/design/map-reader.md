@@ -260,6 +260,14 @@ above, by height with v_units, or across), each edge's family (the ground inside
 draft: desert textures 51.9→45.9% differing, Desert Resort 2 edges 83→89%, Wellspring Cave terrain 87.2→94.5%;
 Route 13 heights 89.6→86.1% and the cave's edges 59→55% are worse.
 
+Verified learned styles (2026-11-05, `draft --verify`, which the round trip uses with the chunk as its focus): a
+learned step takes the ground under it as its family and an underlay where the atlas shows one; it's a ramp where the
+game's own tiles of it have sloped collision; and each learned edge is kept only if round trips on the three chunks
+with most of it are clearly better with it, and the chunk being painted no worse (a texture set shared by many caves
+fits each differently). Against the unverified learned styles: Desert Resort 2 terrain 72.4→96.3%, Route 13 heights
+86.6→96.4%, Wellspring Cave edges 55→60.5% and heights 75.5→77.4% (its terrain 94.5→91.8% and Route 13's edges
+94.5→91.4% are a little worse). Learned water banks and cliff tiers still fail verification.
+
 Tall cliffs, stairs and hills (2026-11-05): tall cliffs are tiers of 16 units, each the cliff profile with a rock
 rim (gake1_0) under the tier above (faces' `by_outside`); stairs and hills are ramps (`ramp`): one face down the
 whole tile, sloped collision at the game's nearest plane (stairs: slope 8, as vanilla's). Route 20's style has
