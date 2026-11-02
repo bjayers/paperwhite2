@@ -387,17 +387,24 @@ def walls(tile):
 @tile_fact("ground")
 def ground(tile):
     """The ground, where one walks: at the tile's middle and four points round it, the drawn surface at the first
-    collision layer's height (within half a tile; a bridge's deck, a town's raised road), else the topmost opaque
-    surface that isn't a wall's or a structure's; the texture most of them have, at their middle height, how many of
+    collision layer's height (within half a tile; a bridge's deck, a town's raised road), else (and on blocked tiles)
+    the topmost opaque surface that isn't a wall's or a structure's; the texture most of them have, at their middle height, how many of
     the five found ground and how many agree, and what lies under a structure's deck."""
     roles = tile.chunk.facts["textures"]
-    height = next((c["height"] for c in tile.facts["collision"] if c["layer"] == 0 and c["height"] is not None), None)
+    first = next((c for c in tile.facts["collision"] if c["layer"] == 0 and c["height"] is not None), None)
+    height = first["height"] if first else None
+    # A blocked tile's collision height says nothing of what's seen (a desert cliff's cap stands over sand at the
+    # collision's height): it's the top that counts
+    blocked = bool(first and (first["tile_type"] >> 16) & 1)
     found, under = [], []
     for u, w in ((0.5, 0.5), (0.25, 0.25), (0.75, 0.25), (0.25, 0.75), (0.75, 0.75)):
         hits = [h for h in tile.surfaces_at(u, w, opaque=True) if roles.get(h[1].texture, {}).get("role") != "wall"]
         at = [h for h in hits if height is not None and abs(h[0] - height) <= TILE / 2] if height is not None else []
-        pick = min(at, key=lambda h: abs(h[0] - height)) if at else next(
-            (h for h in hits if roles.get(h[1].texture, {}).get("role") != "structure"), None)
+        if blocked:
+            pick = hits[0] if hits else None
+        else:
+            pick = min(at, key=lambda h: abs(h[0] - height)) if at else next(
+                (h for h in hits if roles.get(h[1].texture, {}).get("role") != "structure"), None)
         if pick is None:
             continue
         found.append((pick[1].texture, pick[0], pick[2][1]))
@@ -574,7 +581,7 @@ def layers(tile):
             continue
         best = None
         for y, piece, _ in tile.surfaces_at(0.5, 0.5):
-            if roles.get(piece.texture, {}).get("role") == "wall" or piece.alpha == "BLEND":
+            if roles.get(piece.texture, {}).get("role") == "wall":
                 continue
             if abs(y - c["height"]) <= TILE / 2 and (best is None or abs(y - c["height"]) < abs(best[0] - c["height"])):
                 best = (y, piece.texture)

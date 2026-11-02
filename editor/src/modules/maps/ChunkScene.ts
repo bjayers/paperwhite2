@@ -71,7 +71,9 @@ export interface ChunkModel {
   triangles: number;
 }
 
-export interface PickResult { chunk: number | null; face: Face | null; point: THREE.Vector3 | null; tile: { x: number; z: number } | null }
+export interface PickResult { chunk: number | null; face: Face | null; point: THREE.Vector3 | null; tile: { x: number; z: number } | null;
+  /** The Reading layer's tile clicked, in its chunk. */
+  readingTile?: { x: number; z: number } }
 
 /** A tile's color by its type: blocked red, water blue, encounters green, the rest grey; the chosen class yellow. */
 function tileColor(type: number, highlight: number | null): THREE.Color {
@@ -405,11 +407,15 @@ export class ChunkScene {
   /** The map reader's layer over a chunk: each tile a square of its colour at its ground's height, an arrow toward an
    * edge's outside, a dashed outline where the reading is unsure, a box where a structure stands; null hides it. */
   private readingGroup = new THREE.Group();
+  private readingChunk: number | null = null;
+  private readingTiles: { x: number; z: number }[] = [];
   showReading(index: number | null, tiles: { x: number; z: number; y: number; color: string; outside: string | null; unsure: boolean;
     structure: boolean; selected: boolean }[] | null) {
     this.readingGroup.clear();
     if (!this.readingGroup.parent) this.scene.add(this.readingGroup);
     const map = this.map;
+    this.readingChunk = tiles ? index : null;
+    this.readingTiles = tiles ? tiles.map((t) => ({ x: t.x, z: t.z })) : [];
     if (index === null || !tiles || !map) return;
     const chunk = map.chunks[index];
     const x0 = chunk.column * map.chunkSize, z0 = chunk.row * map.chunkSize;
@@ -644,6 +650,14 @@ export class ChunkScene {
     const ndc = new THREE.Vector2(((ev.clientX - rect.left) / rect.width) * 2 - 1, -((ev.clientY - rect.top) / rect.height) * 2 + 1);
     const ray = new THREE.Raycaster();
     ray.setFromCamera(ndc, this.camera);
+    if (this.readingChunk !== null && this.readingGroup.children.length) {
+      // On the Reading layer, its square clicked first (one under a walkway, or floating where nothing else is)
+      const hit = ray.intersectObject(this.readingGroup.children[0], false)[0];
+      if (hit && hit.instanceId !== undefined) {
+        const t = this.readingTiles[hit.instanceId];
+        return { chunk: this.readingChunk, face: null, point: hit.point, tile: null, readingTile: t };
+      }
+    }
     if (this.paintChunk !== null) {
       // On a painting, the tile clicked
       const hit = this.tileAt(ev);

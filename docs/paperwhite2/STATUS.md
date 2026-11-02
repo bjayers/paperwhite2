@@ -2,6 +2,15 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-03 (later): the reader on Virbank, the Desert Resort, Routes 12 and 13
+
+- The Reading layer names textures by a style only where the style's texture set is the chunk's (no more "not in the
+  style" against Route 20 everywhere); the atlas will learn texture roles from every area instead.
+- A blocked tile's ground is its top surface (the desert's cliff caps, ga_s_futa at 48, over sand at the collision's
+  0). A layer's surface may be blended (a canal's water). Layers with nothing drawn at their height (Route 13's
+  invisible blockers in the air) aren't drawn on the layer; the Reading squares take clicks first (squares under a
+  walkway, floating ones). Routes 12 and 13 and the Desert Resort otherwise read well by the user's check.
+
 ## 2026-11-03: the map reader, after the user's checks of Route 20 and Virbank
 
 - Fixed: clipped slivers faced wrong (road tiles by the bridge, fence tiles), arrows in paths' middles (now bends),

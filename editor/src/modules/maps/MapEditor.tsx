@@ -201,7 +201,10 @@ export function MapEditor({ constants }: ToolProps) {
     else setFaces([face]);
   };
   useEffect(() => {
-    if (scene.current) scene.current.onPick = (r, ev) => pickFace.current(r.face, r.chunk, ev, r.point, r.tile);
+    if (scene.current) scene.current.onPick = (r, ev) => {
+      if (r.readingTile && r.chunk !== null) { setChunk(r.chunk); setReadingTile(r.readingTile); return; }
+      pickFace.current(r.face, r.chunk, ev, r.point, r.tile);
+    };
   }, []);
 
   const current = map && chunk !== null ? map.chunks[chunk] : null;
@@ -344,7 +347,9 @@ export function MapEditor({ constants }: ToolProps) {
   const project = useMemo(() => (projectDoc?.data ? toPlain(projectDoc.data) as Project : null), [projectDoc?.data]);
   const projectStyle = project ? styles.get(project.style) : undefined;
   // The reading of the chosen chunk, by the painting's style (else the first), read again after each change to it
-  const readingStyleName = project?.style ?? [...styles.keys()][0] ?? null;
+  // (a style only names the textures of its own texture set: elsewhere, textures are shown by their names)
+  const chunkSet = chunkData?.texture_set ?? chunkData?.texture_preview ?? null;
+  const readingStyleName = project?.style ?? [...styles.entries()].find(([, st]) => st.texture_set === chunkSet)?.[0] ?? null;
   const readingStyle = readingStyleName ? styles.get(readingStyleName) : undefined;
   useEffect(() => {
     setReading(null);
@@ -378,7 +383,8 @@ export function MapEditor({ constants }: ToolProps) {
         outside: t.reading.edge?.outside ?? t.reading.slope?.down ?? null, unsure: t.reading.confidence === "low", structure: t.reading.structure,
         selected: !!readingTile && readingTile.x === t.x && readingTile.z === t.z });
       for (const l of layers) {
-        if (l.layer === 0 || l.height === null || Math.abs(l.height - y) < 8) continue;
+        // A layer with nothing drawn at its height (an invisible blocker high up) stays in the record only
+        if (l.layer === 0 || l.height === null || !l.terrain || Math.abs(l.height - y) < 8) continue;
         squares!.push({ x: t.x, z: t.z, y: l.height, color: readingColor(l.terrain), outside: null, unsure: !l.terrain, structure: false, selected: false });
       }
     }
