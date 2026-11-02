@@ -21,9 +21,16 @@ round path corners now look like vanilla. Tasks, atlas first (map-maker-atlas-fi
 6. Still open: ledges back to back with river banks; paths meeting bridges (their square corners there); cliffs
    (a ridge texture at the bottom, the face above, separate points along the top, per the user's 2026-11-02 notes);
    banks under cliffs.
-7. **The user's idea, to decide with them:** cut vanilla's chunks into tiles again, heights normalized, as a library
-   of real mesh examples keyed by neighbourhood, to compare generated tiles against and draw from (see the reply of
-   2026-11-02 evening).
+7. **Real examples to check and match against (agreed in outline; to think on, maybe tried tonight):**
+   - automatic: vanilla's tiles cut with a 5x5 neighbourhood key, heights normalized, beside the atlas, to score
+     generated tiles against vanilla's in the same situation and fit the profiles (corner sizes, points, ledges);
+   - manual **snippets**, the user's idea: the user selects tiles in an area and saves them to a snippet library
+     (apart from the objects): the mesh cut at tile edges, its height normalized, with a reading of its tiles and a
+     ring round them. The generator uses a snippet's mesh where a painting matches its pattern, ring included. A
+     snippet's border must lie on plain ground so its seams can't show (the editor warns otherwise); no turning or
+     mirroring unless the snippet is marked symmetric. Snippets double as test cases (generate their pattern, compare).
+     Made per area as the user reaches it; for what doesn't follow patterns (paths at bridges, ledges at banks).
+   - Order: the reading fixes and tonight's list first, the automatic checking with them, snippets after.
 
 ## 2026-11-02 (later): the user's first round of testing, fixed
 
