@@ -242,6 +242,15 @@ corners the same), so it isn't stretched; only the path's bends are mitred and s
 uses stretches the texture round every corner. The profile learner should take each corner's shape and mapping
 from the atlas's corner cases rather than mitring.
 
+Corners now (2026-11-05): a sharp outward corner banded on both sides is chamfered (its lines half as far in as a
+mitre, vanilla's corner triangle); a rounded one keeps a constant width; an inward corner is chamfered out into the
+diagonal tile, which is carved (the border's corner half a tile out along both normals, the lines 0.75 of their
+offsets in from it, starting half a tile before the corner: Route 20's banks and paths both fit), where that tile is
+painted and the previous corner isn't chamfered on a one-tile side. u runs by length round corners, by tile along
+bends. Tiles whose inside line belongs to a region's hole (an island) are clipped to the hole's outside. Round trip
+on Route 20 (all four chunks hole-free): terrain 89–97%, edges 96–98%. Triangles: 1,597–2,415, against vanilla's
+952–1,426; map04_21's 2,415 is past the busiest vanilla overworld chunk (2,367): the triangle work matters.
+
 Still to do for steps: vanilla's tall cliffs are tiers (gake1_0 faces between gake1_1 rims), not one face; corners
 (the plateau's convex corners are the lower region's concave ones, not rounded yet); stairs (kaidan01a); slopes one
 walks on (yamagrs01 hills, dunes).

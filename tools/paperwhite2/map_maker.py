@@ -348,6 +348,7 @@ def generate(project_path):
     regions = defaultdict(set)
     for xz, v in painted.items():
         regions[(family[v[0]], v[1])].add(xz)
+    carved_tiles = {}  # outside tiles inward corners reach into: what's left of each, drawn as a piece
     edges_of = defaultdict(list)
     for e in style.get("edges", []):
         edges_of[e["to"]].append(e)
@@ -390,7 +391,10 @@ def generate(project_path):
                 other = terrain_of(e[4])
                 return (other[1] - h) / TILE if other and other[1] is not None else 0.0
             result = map_edges.band(tiles, edge, banded, edge.get("points", False),
-                                    square=lambda t: terrains[painted[t][0]].get("square", False), drop=drop)
+                                    square=lambda t: terrains[painted[t][0]].get("square", False), drop=drop,
+                                    carvable=lambda t, tiles=tiles: t in painted and t not in tiles and t not in carved_tiles)
+            for t, poly in result["carved"]:
+                carved_tiles[t] = [(x * TILE - half, None, z * TILE - half) for x, z in poly]
             inner_y = h + edge["lines"][edge.get("inner", len(edge["lines"]) - 1)]["lift"] * TILE
             inner_ys.append(inner_y)
             # A tile is the family's own ground only where every edge drawn here leaves it whole
@@ -420,6 +424,14 @@ def generate(project_path):
                 pieces.append(piece)
                 for p in piece[2]:
                     corners[piece[1]].add(p)
+    # Tiles an inward corner reached into: their ground is what's left of them
+    for t, poly in carved_tiles.items():
+        if t in ground:
+            key, y = ground.pop(t)
+            pieces.append((key, y, [(p[0], y, p[2]) for p in poly]))
+            for p in poly:
+                corners[y].add((p[0], y, p[2]))
+
     # The ground: each terrain's tiles at a height merged into rectangles
     rects = rectangles(ground, size, lambda v: materials.reach(ground_keys[v[0]]) * terrains[v[0]]["ground"]["repeat"])
     # Every corner on each height's plane, which the ground's edges there are split at
