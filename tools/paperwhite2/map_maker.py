@@ -56,6 +56,9 @@ TILE = 16
 HALF_TILE = 8
 KEEP = "."
 BASE_FILES = ("model.glb", "data.json", "terrain_0.csv", "terrain_0_splits.csv")
+# The copy's name of each file: data.json is kept as data.json.copy, which isn't data of res/ (its $schema, relative to
+# the chunk's folder, doesn't hold beside the painting)
+BASE_NAMES = {"data.json": "data.json.copy"}
 REPEAT, CLAMP = 10497, 33071
 UP = (0.0, 1.0, 0.0)
 EPS = 1e-6
@@ -601,7 +604,7 @@ def start(model, style, fill=KEEP, flat=None):
     base.mkdir(parents=True, exist_ok=True)
     for name in BASE_FILES:
         if (folder / name).exists():
-            (base / name).write_bytes((folder / name).read_bytes())
+            (base / BASE_NAMES.get(name, name)).write_bytes((folder / name).read_bytes())
     rows = list(csv.DictReader((folder / "terrain_0.csv").open()))
     size = max(int(r["x"]) for r in rows) + 1
     heights = ground_heights(folder, size)
@@ -621,8 +624,11 @@ def stop(model):
         (PROJECTS / f"{model}.json").unlink(missing_ok=True)
         return False
     for name in BASE_FILES:
-        if (base / name).exists():
-            (MODELS / model / name).write_bytes((base / name).read_bytes())
+        # A copy made before data.json was kept as data.json.copy has it under its own name
+        for kept in (BASE_NAMES.get(name, name), name):
+            if (base / kept).exists():
+                (MODELS / model / name).write_bytes((base / kept).read_bytes())
+                break
     for f in base.iterdir():
         f.unlink()
     base.rmdir()
