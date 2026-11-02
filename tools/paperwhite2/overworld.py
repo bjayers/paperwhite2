@@ -13,6 +13,10 @@ is a conditions table (tools/paperwhite2/conditions.py) whose rules' payloads sa
 - an instance: u8 1, u8 the seed, u16 its host's id, then the instance's 36-byte NPC record (ZoneNPC, as event_data.py
   packs it, its id the host's); a host's instances are one after another, after its condition if it has one, and the
   field picks among those that hold, by weight.
+- an ambient: u8 2, u8 the seed, u16 its index among the zone's ambients, then its 28-byte record (SpawnAmbient,
+  include/paperwhite2/spawns.h): u16 object code, u8 path, u8 shadow, u8 facing, u8 flags, u16 0, s32 x, y and z
+  (fx32 world units: a tile's middle plus its offset, and its height), u16 its path's width and depth (units), speed
+  and start; it shows while its rule holds (paperwhite2_ambients.c).
 The seed is the CONDITION_SEED_* the NPC's rolls start from, keyed by its id (its "rolls": the hour's by default, the
 day's, the time of day's or each entry's); the field picks again when the hour or the time of day changes.
 """
@@ -34,7 +38,11 @@ MAGIC = 0x574F5750
 HEADER = struct.Struct("<IHH")
 ENTRY = struct.Struct("<HHII")
 PAYLOAD = struct.Struct("<BBH")
-KIND_CONDITION, KIND_INSTANCE = 0, 1
+KIND_CONDITION, KIND_INSTANCE, KIND_AMBIENT = 0, 1, 2
+AMBIENT = struct.Struct("<HBBBBHiiiHHHH")
+PATHS = {"perch": 0, "hover": 1, "ellipse": 2, "line": 3, "eight": 4}
+SHADOWS = {"none": 0, "feet": 1, "ground": 2}
+FLAG_TURNS, FLAG_HOPS = 0x1, 0x2
 # An NPC's "rolls" as the CONDITION_SEED_* its picks start from (include/paperwhite2/conditions.h)
 SEEDS = {"entry": 0, "day": 1, "hour": 3, "period": 4}
 
@@ -47,7 +55,7 @@ def zone_table(path: Path, schema: dict) -> bytes | None:
     compiler = Compiler()
     rules = []
     seen = set()
-    for i, entry in enumerate(source["npcs"]):
+    for i, entry in enumerate(source.get("npcs", [])):
         where = f"{label(path)}: npcs[{i}]"
         npc_id = entry["id"]
         if npc_id not in ids:
@@ -63,7 +71,25 @@ def zone_table(path: Path, schema: dict) -> bytes | None:
             record = npc_bytes({**instance["npc"], "id": npc_id}, at)
             rules.append((compiler.compile(instance.get("when", {}), f"{at}.when"), 0, instance.get("weight", 1),
                           PAYLOAD.pack(KIND_INSTANCE, seed, npc_id) + record))
+    for i, ambient in enumerate(source.get("ambients", [])):
+        rules.append((compiler.compile(ambient.get("when", {}), f"{label(path)}: ambients[{i}].when"), 0, 1,
+                      PAYLOAD.pack(KIND_AMBIENT, SEEDS[ambient.get("rolls", "hour")], i) + ambient_bytes(ambient, f"{label(path)}: ambients[{i}]")))
     return pack_table(rules, compiler.lists) if rules else None
+
+
+def ambient_bytes(ambient: dict, where: str) -> bytes:
+    """An ambient's record (SpawnAmbient)."""
+    p = ambient.get("path", {"kind": "perch"})
+    flags = (FLAG_TURNS if p.get("turns", True) else 0) | (FLAG_HOPS if p.get("hops", True) else 0)
+    offset = ambient.get("offset", {})
+    # (fx32 world units: 16 a tile, from the tile's middle)
+    x = round((ambient["x"] * 16 + 8 + offset.get("x", 0)) * 4096)
+    z = round((ambient["z"] * 16 + 8 + offset.get("z", 0)) * 4096)
+    y = round(ambient["y"] * 4096)
+    speed = p.get("every", 0) if p["kind"] == "perch" else p.get("speed", 45)
+    return AMBIENT.pack(value(ambient["sprite"], where), PATHS[p["kind"]], SHADOWS[ambient.get("shadow", "none")],
+                        value(ambient.get("facing", "DIR_DOWN"), where), flags, 0, x, y, z, p.get("width", 0),
+                        p.get("depth", 0), speed, p.get("start", 0) % 360)
 
 
 def member(sources: Path = SOURCES) -> bytes:

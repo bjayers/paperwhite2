@@ -50,6 +50,8 @@ typedef struct {
 enum {
     SPAWN_KIND_CONDITION,
     SPAWN_KIND_INSTANCE,
+    // An ambient (paperwhite2_ambients.c): its npcId is its index in the zone's ambients
+    SPAWN_KIND_AMBIENT,
 };
 
 // A zone's entity file: the offset of its init script, the counts of its entities, NPCs, warps and triggers, then the
@@ -170,12 +172,16 @@ static void Spawns_Want(const ConditionTable *table, u32 first, u32 end, const Z
     }
 }
 
-// The end of an NPC's rules that start at first: the rules after it for the same NPC
+// The end of an NPC's rules that start at first: the rules after it for the same NPC (an ambient's is its one)
 static u32 Spawns_RulesEnd(const ConditionTable *table, u32 first) {
     u16 npcId = Spawns_Payload(table, first)->npcId;
     u32 end = first + 1;
 
-    while (end < table->ruleCount && Spawns_Payload(table, end)->npcId == npcId) {
+    if (Spawns_Payload(table, first)->kind == SPAWN_KIND_AMBIENT) {
+        return end;
+    }
+    while (end < table->ruleCount && Spawns_Payload(table, end)->kind != SPAWN_KIND_AMBIENT &&
+           Spawns_Payload(table, end)->npcId == npcId) {
         end++;
     }
     return end;
@@ -210,7 +216,7 @@ void Spawns_OnZoneInit(GameSystem *gsys, u16 zoneId, HeapID heapId) {
         ZoneNPC *npc = Spawns_FindNPC(events, Spawns_Payload(table, i)->npcId);
         ZoneNPC original;
 
-        if (npc != NULL) {
+        if (npc != NULL && Spawns_Payload(table, i)->kind != SPAWN_KIND_AMBIENT) {
             // (the record as just read is the original)
             original = *npc;
             Spawns_Want(table, i, Spawns_RulesEnd(table, i), &original, npc, &ctx, eventWork);
@@ -243,7 +249,8 @@ BOOL Spawns_Repick(GameSystem *gsys, MMSys *actorSystem, HeapID heapId, SpawnsIn
         u32 end;
         u16 spawnFlag;
 
-        if (npc == NULL || !Spawns_ReadOriginal(events, zoneId, npcId, &original)) {
+        if (Spawns_Payload(table, i)->kind == SPAWN_KIND_AMBIENT || npc == NULL ||
+            !Spawns_ReadOriginal(events, zoneId, npcId, &original)) {
             continue;
         }
         end = Spawns_RulesEnd(table, i);
@@ -277,6 +284,35 @@ BOOL Spawns_Repick(GameSystem *gsys, MMSys *actorSystem, HeapID heapId, SpawnsIn
     }
     GFL_HeapFree(table);
     return done;
+}
+
+u32 Spawns_GetAmbients(GameSystem *gsys, HeapID heapId, SpawnAmbient *out, u32 max) {
+    GameData *gameData = GSYS_GetGameData(gsys);
+    EventData *events = GameData_GetEventData(gameData);
+    ConditionTable *table = Spawns_LoadTable(events, events->zoneId, heapId);
+    ConditionContext ctx;
+    u32 count = 0;
+    u32 i;
+
+    if (table == NULL) {
+        return 0;
+    }
+    ConditionContext_Init(&ctx);
+    ConditionContext_FillGame(&ctx, gameData);
+    for (i = 0; i < table->ruleCount && count < max; i++) {
+        const SpawnPayload *payload = Spawns_Payload(table, i);
+        u32 rng;
+
+        if (payload->kind != SPAWN_KIND_AMBIENT) {
+            continue;
+        }
+        rng = Conditions_Seed(&ctx, payload->seed, SPAWNS_AMBIENT_KEY + payload->npcId);
+        if (Conditions_MatchRule(table, i, &ctx, &rng)) {
+            out[count++] = *(const SpawnAmbient *)(payload + 1);
+        }
+    }
+    GFL_HeapFree(table);
+    return count;
 }
 
 void Spawns_Refresh(GameSystem *gsys) {

@@ -2,6 +2,17 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-02 (night, later): ambients, first version
+
+- Ambients (plugins.md, Ambients): `ambients` in the zones' overworld files, packed with the NPC rules; drawn as
+  billboards from the actor system's sprite cache by `paperwhite2_ambients.c`, on perch, hover, ellipse, line and
+  figure-eight paths. The Overworld Editor's Ambients tab: a list, Shift+click to add, drag to move (keeping the height
+  over the ground), a panel of every field, and each drawn at its height on a line down to its tile.
+- The first test, at the user's tile: `res/paperwhite2/overworld/route_20.json`, Pidove (`OBJ_CODE_POKEMON_PIDOVE`)
+  perched on the tree at 183, 647, at height 46 (the canopy's top layer there, over ground at 0), turning and hopping.
+- Built (hack, no warnings, DSi intact). **Not tested in game.** Not yet: shadows, flying off, the paths drawn in the
+  editor, picking again in the zone, sprites from a set or the encounters.
+
 ## 2026-11-02 (night): NPCs picked again in the zone, rolls by the hour
 
 - `Spawns_Repick` and `PaperWhite2_SpawnsUpdate` (plugins.md, NPC spawns): once a second while no event runs, a

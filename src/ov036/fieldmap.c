@@ -92,6 +92,7 @@
 #include "system/zone_weather.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/camera_areas.h"
+#include "paperwhite2/ambients.h"
 #include "paperwhite2/field.h"
 #include "paperwhite2/following_field.h"
 #ifdef PAPERWHITE2_DEBUG_MENU
@@ -538,6 +539,8 @@ u32 FieldRoutine_Run(GameSystem *gsys, Field *field) {
         PaperWhite2_FollowingUpdate(field->actorSystem);
         // Paper White 2: the NPCs picked again when the hour or the time of day changes (paperwhite2_spawns_field.c)
         PaperWhite2_SpawnsUpdate(field);
+        // Paper White 2: the ambients, sprites drawn without an actor (paperwhite2_ambients.c)
+        PaperWhite2_AmbientsUpdate(field);
 #else
         FldActSys_Update(field->actorSystem);
 #endif

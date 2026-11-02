@@ -30,6 +30,35 @@ export interface Instance { name?: string; when?: Condition; weight?: number; np
  * of day changes, and changes the NPC while it's out of view. */
 export type Rolls = "hour" | "day" | "period" | "entry";
 export interface SpawnEntry { id: number; when?: Condition; instances?: Instance[]; rolls?: Rolls }
+/** An ambient (overworld.schema.json): a sprite drawn without an actor on a path round its place, which the game draws
+ * (src/paperwhite2/ov036/paperwhite2_ambients.c). Its tile, its place in it in units from the middle, and its height
+ * in units. */
+export interface Ambient {
+  name?: string;
+  sprite: string | number;
+  x: number;
+  z: number;
+  offset?: { x?: number; z?: number };
+  y: number;
+  facing?: string | number;
+  path?: { kind: "perch" | "hover" | "ellipse" | "line" | "eight"; width?: number; depth?: number; speed?: number; start?: number;
+           every?: number; turns?: boolean; hops?: boolean };
+  shadow?: "none" | "feet" | "ground";
+  when?: Condition;
+  rolls?: Rolls;
+}
+
+/** The ambients as the map's entities, of kind "ambient", at their height. */
+export function ambientEntities(ambients: Ambient[]): Entity[] {
+  return ambients.map((a, i) => ({
+    kind: "ambient", index: i, x: a.x, z: a.z, y: a.y, width: 1, depth: 1, label: a.name || `Ambient ${i + 1}`,
+    model: typeof a.sprite === "string" ? a.sprite : undefined, direction: typeof a.facing === "string" ? a.facing : "DIR_DOWN",
+  }));
+}
+
+/** A new ambient at a tile: a perch at its standing height and a tile over it. */
+export const newAmbient = (x: number, z: number, height: number, n: number): Ambient =>
+  ({ name: `Ambient ${n + 1}`, sprite: "OBJ_CODE_POKEMON_PIDOVE", x, z, y: Math.round(height + 16), facing: "DIR_DOWN", path: { kind: "perch" } });
 
 /** The world the preview checks conditions against. */
 export interface PreviewWorld {

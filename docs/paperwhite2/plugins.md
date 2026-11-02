@@ -857,6 +857,28 @@ edited in the Overworld Editor.
   again each second.
 - **Not yet:** a script's `SpawnRefresh`, ambients, groups (on hold), and NPCs walking off when their time is over.
 
+### Ambients
+
+Sprites drawn without an actor on paths round their places (`docs/paperwhite2/design/overworld-editor.md`, Ambients),
+edited in the Overworld Editor's Ambients tab.
+
+- **Data:** `ambients` in `res/paperwhite2/overworld/<zone>.json` (`overworld.schema.json`): each a sprite (an
+  `OBJ_CODE_*`), a tile, an offset in it and a height in the world in units, a facing, a path (`perch`, `hover`,
+  `ellipse`, `line`, `eight`, with its width, depth, speed and start, or a perch's turns, hops and how often), a shadow
+  (not drawn yet), a `when` and `rolls`. A zone shows at most 8.
+- **Packing:** `overworld.py` adds each as a rule of the zone's table: payload kind 2, its seed, its index, then its
+  28-byte record (`SpawnAmbient`, `include/paperwhite2/spawns.h`).
+- **In the field,** `PaperWhite2_AmbientsUpdate` (`src/paperwhite2/ov036/paperwhite2_ambients.c`, from the field's
+  update after the actors'): when the zone, or the field's billboard system (made again after a battle or a menu), is
+  new, the zone's ambients whose rules hold (`Spawns_GetAmbients`, keyed past every NPC's id) each get a billboard of
+  their sprite from the actor system's cache, as reflections do (`FldBillboardActor_AddActorPosOrReserve`, with the
+  object code's config from `GetNPCMdlInfoForOBJCODE`). Every frame each is placed on its path, at the field's actor
+  height offset, and given its animation (standing or walking, by its facing turned by the camera's angle, set only
+  when it changes). A zone change waits for sprites still loading (the cache writes a billboard's index into its slot
+  when it loads), at most 5 seconds. No actor, task, event or save entry; nothing collides with them.
+- **Not yet:** shadows, flying off when the player comes near, picking again in the zone, the editor's path drawing
+  and preview, sprites from a set or from the encounters, and the budget's 4 distinct sprites.
+
 ### Wild encounters
 
 The slot tables are replaced by per-species data packed by area: `docs/paperwhite2/encounters.md`.

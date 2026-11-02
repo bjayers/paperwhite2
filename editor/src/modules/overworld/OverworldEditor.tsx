@@ -21,7 +21,8 @@ import { loadRails, oppositeRailDir, railDirOf, railEntities, railLevels, railTo
 import { RailPanel } from "./RailPanel.tsx";
 import { CameraPanel } from "./CameraPanel.tsx";
 import { InstancePanel, SpawnSection } from "./SpawnPanel.tsx";
-import { SEASON_NAMES, TIME_NAMES, instanceEntities, previewPicks, spawnPath, type PreviewWorld, type SpawnEntry } from "./spawns.ts";
+import { SEASON_NAMES, TIME_NAMES, ambientEntities, instanceEntities, newAmbient, previewPicks, spawnPath, type Ambient, type PreviewWorld,
+  type SpawnEntry } from "./spawns.ts";
 import { WEATHERS } from "../encounters/model.ts";
 import { cameraEntities, cameraFileOf, circleCamera, defaultCamera, newRectArea, rectCamera, type CameraArea, type DefaultCamera,
   type ViewCamera } from "./cameras.ts";
@@ -31,10 +32,10 @@ import { BuildingPanel } from "./BuildingPanel.tsx";
 import { MapView, hasRect, type OverlayMode, type TileRect } from "./MapView.tsx";
 import { amendProps, bundleModels, buildingEntities, dirtyPropChunks, loadProps, propsOf, propsSaveError, redoProps, revertProps, saveProps, setProps,
   undoProps, usePropsVersion } from "./props.ts";
-import { SEASONS, TILE, flatTileFor, paintOver, loadZoneMap, reloadLayers, tileAt, type ZoneMap } from "./terrain.ts";
+import { SEASONS, TILE, flatTileFor, paintOver, loadZoneMap, reloadLayers, standingOn, tileAt, type ZoneMap } from "./terrain.ts";
 
 const EVENTS_BUDGET = 2436;
-const KINDS: EntityKind[] = ["npc", "proxy", "building", "rail", "trigger", "warp", "level", "camera"];
+const KINDS: EntityKind[] = ["npc", "proxy", "building", "rail", "trigger", "warp", "level", "camera", "ambient"];
 /** The undo history's name for a chunk's props, which aren't a document of the store. */
 const PROPS = "props:";
 
@@ -163,16 +164,25 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   }, [spawnFile]);
   const { data: spawnData } = useHeld(spawnFile && (spawnExists || docs.get(spawnFile)) ? spawnFile : null);
   const spawnEntries = useMemo(() => (spawnData instanceof Map ? ((toPlain(spawnData) as { npcs?: SpawnEntry[] }).npcs ?? []) : []), [spawnData]);
+  const ambients = useMemo(() => (spawnData instanceof Map ? ((toPlain(spawnData) as { ambients?: Ambient[] }).ambients ?? []) : []), [spawnData]);
+  /** The zone's spawn file, made with the list at key if it has none yet. */
+  const holdSpawnFile = useCallback((key: "npcs" | "ambients") => {
+    if (!spawnFile) return;
+    if (!documents.get(spawnFile)) {
+      documents.create(spawnFile, "res/paperwhite2/overworld/overworld.schema.json", fromPlain({ $schema: "overworld.schema.json", [key]: [] }));
+      setSpawnExists(true);
+    }
+  }, [spawnFile]);
   const entities = useMemo(() => {
     // A host (an NPC with instances) is drawn faded: its own fields are unused
     const hosts = new Set(spawnEntries.filter((e) => e.instances?.length).map((e) => e.id));
     const npcs = entitiesOf(data).map((e) => (e.kind === "npc" && hosts.has(e.npcId!) ? { ...e, host: true } : e));
-    return [...npcs, ...instanceEntities(spawnEntries), ...(map ? buildingEntities(map, models) : []), ...(rails ? railEntities(rails) : []),
-            ...(cameraAreas ? cameraEntities(cameraAreas) : [])];
+    return [...npcs, ...instanceEntities(spawnEntries), ...ambientEntities(ambients), ...(map ? buildingEntities(map, models) : []),
+            ...(rails ? railEntities(rails) : []), ...(cameraAreas ? cameraEntities(cameraAreas) : [])];
   },
     // propsVersion: the chunks' props changed
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [data, map, models, propsVersion, rails, cameraAreas, spawnEntries]);
+    [data, map, models, propsVersion, rails, cameraAreas, spawnEntries, ambients]);
   // The conditions preview: the world it checks against, and what it shows
   const [conditionsPreview, setConditionsPreview] = useState(false);
   const [previewTime, setPreviewTime] = useState<string>("day");
@@ -350,6 +360,16 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   }, [eventsPath, record]);
 
   const move = useCallback((e: Entity, x: number, z: number, height: number) => {
+    if (e.kind === "ambient" && spawnFile) {
+      // To another tile, keeping its height over the ground it stood on
+      const a = ambients[e.index];
+      if (!a) return;
+      const ground = map ? standingOn(map, a.x, a.z, a.y)?.height : undefined;
+      const over = ground !== undefined ? a.y - ground : 16;
+      documents.edit(spawnFile, ["ambients", e.index], fromPlain({ ...a, x, z, y: Math.round(height + over) }));
+      record([spawnFile]);
+      return;
+    }
     if (e.kind === "instance" && spawnFile) {
       // An instance's record, in the spawn file
       const s = e.spawn!;
@@ -382,11 +402,20 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     for (const edit of positionEdits(e, x, z, height)) grid.set(String(edit.path[edit.path.length - 1]), edit.value);
     documents.edit(eventsPath, [KIND_LISTS[e.kind], e.index, "grid"], grid);
     record([eventsPath]);
-  }, [eventsPath, record, spawnFile]);
+  }, [eventsPath, record, spawnFile, ambients, map]);
 
   /** A new entity of the module's kind on a tile: the schema's defaults, then its place. */
   const [lastProp, setLastProp] = useState<number | null>(null);
   const add = useCallback((x: number, z: number, height: number, onRail?: RailPlace) => {
+    if (module === "ambient") {
+      if (!spawnFile) return;
+      if (ambients.length >= 8) { setNote("A zone shows at most 8 ambients."); return; }
+      holdSpawnFile("ambients");
+      documents.edit(spawnFile, ["ambients"], fromPlain([...ambients, newAmbient(x, z, height, ambients.length)]));
+      record([spawnFile]);
+      setSelected({ kind: "ambient", index: ambients.length });
+      return;
+    }
     if (module === "camera") {
       // A rect of 4 by 4 tiles from the tile, the zone's default camera at both ends; the zone's file is made if it has none
       if (!cameraFile?.path || rails) { setNote(rails ? "Camera areas on rails are circles: edit the rail map's area, or ask for new ones to be added." : "No camera file for this zone."); return; }
@@ -499,9 +528,16 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     documents.edit(eventsPath, [list, items.length], value);
     record([eventsPath]);
     setSelected({ kind: module, index: items.length });
-  }, [eventsPath, schema, data, module, constants, record, map, layer, lastProp, models, rails, railsPath, cameraFile, defaults, zoneCamera, zone]);
+  }, [eventsPath, schema, data, module, constants, record, map, layer, lastProp, models, rails, railsPath, cameraFile, defaults, zoneCamera, zone,
+      ambients, spawnFile, holdSpawnFile]);
 
   const remove = () => {
+    if (chosen?.kind === "ambient" && spawnFile) {
+      documents.edit(spawnFile, ["ambients"], fromPlain(ambients.filter((_, i) => i !== chosen.index)));
+      record([spawnFile]);
+      setSelected(null);
+      return;
+    }
     if (chosen?.kind === "instance" && spawnFile) {
       const s = chosen.spawn!;
       const list = spawnEntries.map((e) => ({ ...e }));
@@ -950,6 +986,14 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                                  record([PROPS + b.chunk]);
                                  setLastProp(p.id);
                                }} />
+              ) : chosen.kind === "ambient" && spawnFile ? (
+                <>
+                  <p className="ow-note muted">A sprite the game draws without an actor, on its path round its place: nothing collides with it and it
+                    isn't talked to. Its height is in units (16 a tile) in the world: its tile's ground plus how far over it it is. Drag it to
+                    another tile to move it, keeping its height over the ground.</p>
+                  <DocForm key={`ambient:${chosen.index}`} path={spawnFile} at={["ambients", chosen.index]} constants={constants}
+                           hideDescription flat onEdit={() => record([spawnFile])} />
+                </>
               ) : chosen.kind === "instance" && spawnFile ? (
                 <>
                   <p className="ow-note"><button className="link" onClick={() => {

@@ -1,13 +1,29 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "title": "A zone's NPC conditions and instances: res/paperwhite2/overworld/<zone>.json",
-    "description": "Paper White 2's spawn data for a zone's NPCs (res/field/events/<zone>.json, by their ids): a condition under which an NPC appears, and an NPC's instances, the NPCs its record can be, one of which the field writes into it at zone entry and again when the hour or the time of day changes (Spawns_OnZoneInit, Spawns_Repick, src/paperwhite2/ov012/paperwhite2_spawns.c). The file is named after the zone. tools/paperwhite2/overworld.py packs the files into a member after the events' archive's own (a/1/2/6). docs/paperwhite2/plugins.md, NPC spawns.",
+    "description": "Paper White 2's spawn data for a zone's NPCs (res/field/events/<zone>.json, by their ids): a condition under which an NPC appears, and an NPC's instances, the NPCs its record can be, one of which the field writes into it at zone entry and again when the hour or the time of day changes (Spawns_OnZoneInit, Spawns_Repick, src/paperwhite2/ov012/paperwhite2_spawns.c). And the zone's ambients, sprites drawn without an actor on paths round their places (paperwhite2_ambients.c). The file is named after the zone. tools/paperwhite2/overworld.py packs the files into a member after the events' archive's own (a/1/2/6). docs/paperwhite2/plugins.md, NPC spawns.",
     "type": "object",
     "additionalProperties": false,
-    "required": [ "npcs" ],
     "properties": {
-        "$schema": { "type": "string", "description": "This schema, for editors" },
-        "npcs": { "type": "array", "description": "The zone's NPCs that have a condition or instances", "items": { "$ref": "#/$defs/entry" } }
+        "$schema": {
+            "type": "string",
+            "description": "This schema, for editors"
+        },
+        "npcs": {
+            "type": "array",
+            "description": "The zone's NPCs that have a condition or instances",
+            "items": {
+                "$ref": "#/$defs/entry"
+            }
+        },
+        "ambients": {
+            "type": "array",
+            "maxItems": 8,
+            "description": "Sprites drawn without an actor, on paths round their places: no actor, event or save entry, nothing collides with them, and they aren't talked to. A zone shows at most 8, and the editor warns past 4 distinct sprites",
+            "items": {
+                "$ref": "#/$defs/ambient"
+            }
+        }
     },
     "$defs": {
         "entry": {
@@ -15,14 +31,27 @@
             "additionalProperties": false,
             "required": [ "id" ],
             "properties": {
-                "id": { "type": "integer", "minimum": 0, "maximum": 65535, "description": "The NPC's id in the zone's events" },
-                "when": { "$ref": "../conditions/condition.schema.json#/$defs/condition", "description": "When it appears: without it it always does. A chance is rolled from the seed its rolls name (the hour's by default), so leaving and coming back doesn't roll it again" },
-                "rolls": { "enum": [ "hour", "day", "period", "entry" ], "description": "How long a roll holds, its chance's and its instance's pick: the hour (by default), the day, the time of day, or each zone entry. The field picks again when the hour or the time of day changes, and changes the NPC while it's out of view" },
+                "id": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 65535,
+                    "description": "The NPC's id in the zone's events"
+                },
+                "when": {
+                    "$ref": "../conditions/condition.schema.json#/$defs/condition",
+                    "description": "When it appears: without it it always does. A chance is rolled from the seed its rolls name (the hour's by default), so leaving and coming back doesn't roll it again"
+                },
+                "rolls": {
+                    "enum": [ "hour", "day", "period", "entry" ],
+                    "description": "How long a roll holds, its chance's and its instance's pick: the hour (by default), the day, the time of day, or each zone entry. The field picks again when the hour or the time of day changes, and changes the NPC while it's out of view"
+                },
                 "instances": {
                     "type": "array",
                     "minItems": 1,
                     "description": "What the NPC can be: at zone entry, and again when the hour or the time of day changes, the field picks one whose condition holds and whose flag isn't set, by weight from the seed its rolls name, and writes it into the NPC's record; with none, the NPC doesn't appear. The record in the events is the host, and its own fields are unused",
-                    "items": { "$ref": "#/$defs/instance" }
+                    "items": {
+                        "$ref": "#/$defs/instance"
+                    }
                 }
             }
         },
@@ -31,10 +60,146 @@
             "additionalProperties": false,
             "required": [ "npc" ],
             "properties": {
-                "name": { "type": "string", "description": "A name for the editor" },
-                "when": { "$ref": "../conditions/condition.schema.json#/$defs/condition", "description": "When it can be picked; without it, always" },
-                "weight": { "type": "integer", "minimum": 1, "maximum": 65535, "description": "Its share of the picks among the instances whose conditions hold; 1 by default" },
-                "npc": { "$ref": "../../field/events/events.schema.json#/$defs/npc", "description": "The NPC it is, every field of an events record; its id is the host's" }
+                "name": {
+                    "type": "string",
+                    "description": "A name for the editor"
+                },
+                "when": {
+                    "$ref": "../conditions/condition.schema.json#/$defs/condition",
+                    "description": "When it can be picked; without it, always"
+                },
+                "weight": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535,
+                    "description": "Its share of the picks among the instances whose conditions hold; 1 by default"
+                },
+                "npc": {
+                    "$ref": "../../field/events/events.schema.json#/$defs/npc",
+                    "description": "The NPC it is, every field of an events record; its id is the host's"
+                }
+            }
+        },
+        "ambient": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [ "sprite", "x", "z", "y" ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "A name for the editor"
+                },
+                "sprite": {
+                    "type": [ "string", "integer" ],
+                    "x-constant": "OBJ_CODE_",
+                    "minimum": 0,
+                    "maximum": 65535,
+                    "description": "Its sprite, an OBJ_CODE_* constant"
+                },
+                "x": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 65535,
+                    "description": "Its tile, east"
+                },
+                "z": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 65535,
+                    "description": "Its tile, south"
+                },
+                "offset": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "x": {
+                            "type": "number",
+                            "minimum": -8,
+                            "maximum": 8
+                        },
+                        "z": {
+                            "type": "number",
+                            "minimum": -8,
+                            "maximum": 8
+                        }
+                    },
+                    "description": "Where in the tile, in units from its middle (16 a tile)"
+                },
+                "y": {
+                    "type": "number",
+                    "minimum": -2048,
+                    "maximum": 2048,
+                    "description": "Its height in the world, in units (16 a tile): a tile's collision height plus how far over it it stands"
+                },
+                "facing": {
+                    "type": [ "string", "integer" ],
+                    "x-constant": "DIR_",
+                    "minimum": 0,
+                    "maximum": 3,
+                    "description": "Where it faces where its path doesn't turn it, a DIR_* constant; DIR_DOWN by default"
+                },
+                "path": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [ "kind" ],
+                    "description": "How it moves; a perch that turns and hops by default",
+                    "properties": {
+                        "kind": {
+                            "enum": [ "perch", "hover", "ellipse", "line", "eight" ],
+                            "description": "perch: sitting, turning and hopping now and then; hover: bobbing in place; ellipse: round an ellipse of width by depth (a circle where they're the same); line: to a point width east and depth south and back; eight: a figure eight width wide and depth deep"
+                        },
+                        "width": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 1024,
+                            "description": "Its size east and west, in units"
+                        },
+                        "depth": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 1024,
+                            "description": "Its size north and south, in units"
+                        },
+                        "speed": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 3600,
+                            "description": "Degrees round its path a second (45 by default: 8 seconds a lap)"
+                        },
+                        "start": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 359,
+                            "description": "Where on its path it starts, in degrees"
+                        },
+                        "every": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 600,
+                            "description": "A perch's: about how many seconds between its turns and hops (4 by default)"
+                        },
+                        "turns": {
+                            "type": "boolean",
+                            "description": "A perch's: whether it turns now and then (by default)"
+                        },
+                        "hops": {
+                            "type": "boolean",
+                            "description": "A perch's: whether it hops now and then (by default)"
+                        }
+                    }
+                },
+                "shadow": {
+                    "enum": [ "none", "feet", "ground" ],
+                    "description": "Its shadow: none (by default), under its feet at its height, or on the ground below it. Not drawn yet"
+                },
+                "when": {
+                    "$ref": "../conditions/condition.schema.json#/$defs/condition",
+                    "description": "When it appears; without it, always"
+                },
+                "rolls": {
+                    "enum": [ "hour", "day", "period", "entry" ],
+                    "description": "How long a chance in its condition holds: the hour (by default), the day, the time of day, or each zone entry"
+                }
             }
         }
     }

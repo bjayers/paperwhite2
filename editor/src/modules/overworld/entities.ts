@@ -8,7 +8,7 @@
 import { toPlain, type JsonValue } from "../../../shared/json.ts";
 import { TILE } from "./terrain.ts";
 
-export type EntityKind = "npc" | "proxy" | "building" | "trigger" | "warp" | "level" | "rail" | "camera" | "instance";
+export type EntityKind = "npc" | "proxy" | "building" | "trigger" | "warp" | "level" | "rail" | "camera" | "instance" | "ambient";
 
 /** The events file's list of each kind, and the field each module edits. */
 export const KIND_LISTS: Record<EntityKind, string> = {
@@ -22,6 +22,8 @@ export const KIND_LISTS: Record<EntityKind, string> = {
   camera: "areas",
   // Not the events': the instances in the zone's spawn file (spawns.ts)
   instance: "instances",
+  // Not the events': the ambients in the zone's spawn file (spawns.ts)
+  ambient: "ambients",
   trigger: "triggers",
   warp: "warps",
   level: "init_scripts",
@@ -34,6 +36,7 @@ export const KIND_NAMES: Record<EntityKind, string> = {
   rail: "Rails",
   camera: "Cameras",
   instance: "Instances",
+  ambient: "Ambients",
   trigger: "Triggers",
   warp: "Warps",
   level: "Level scripts",

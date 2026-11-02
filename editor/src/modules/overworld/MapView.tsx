@@ -95,7 +95,7 @@ function quadMesh(quads: THREE.Vector3[][], colors: THREE.Color[], material: THR
   return new THREE.Mesh(g, material);
 }
 
-const KIND_COLORS: Record<string, number> = { npc: 0x3ac7e0, proxy: 0xf0c330, building: 0x50d070, trigger: 0xf08a30, warp: 0xd040d0, level: 0x888888, rail: 0x7fe0ff, camera: 0xb070ff, instance: 0xb050ff };
+const KIND_COLORS: Record<string, number> = { npc: 0x3ac7e0, proxy: 0xf0c330, building: 0x50d070, trigger: 0xf08a30, warp: 0xd040d0, level: 0x888888, rail: 0x7fe0ff, camera: 0xb070ff, instance: 0xb050ff, ambient: 0x60e0a0 };
 
 /** A prop model's scene, read once and cloned for each placement. */
 const propModels = new Map<string, Promise<THREE.Object3D | null>>();
@@ -570,6 +570,24 @@ class MapScene {
       box.renderOrder = 3;
       this.marks.add(box);
       this.entityMeshes.push({ object: box, entity: e });
+      if (e.kind === "ambient") {
+        // Its sprite at its own height (in the world, not over the ground), on a line down to its tile
+        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xffffff, transparent: true, opacity: fade, alphaTest: 0.5 * fade, depthTest: false }));
+        sprite.renderOrder = 5;
+        sprite.scale.set(24, 24, 1);
+        sprite.visible = false;
+        sprite.position.set((e.x + 0.5) * TILE, e.y + 12, (e.z + 0.5) * TILE);
+        if (e.model) spriteTexture(e.model, e.direction).then((t) => { if (t) { sprite.material.map = t; sprite.material.needsUpdate = true; sprite.visible = true; } });
+        this.marks.add(sprite);
+        this.entityMeshes.push({ object: sprite, entity: e });
+        const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3((e.x + 0.5) * TILE, ground + 2, (e.z + 0.5) * TILE),
+                                                            new THREE.Vector3((e.x + 0.5) * TILE, e.y, (e.z + 0.5) * TILE)]);
+        const stem = new THREE.Line(g, new THREE.LineDashedMaterial({ color: isSelected ? 0xffffff : color, dashSize: 3, gapSize: 2, depthTest: false }));
+        stem.computeLineDistances();
+        stem.renderOrder = 4;
+        this.marks.add(stem);
+        continue;
+      }
       if (e.kind === "npc" || e.kind === "instance") {
         // Over its tile's marks and the models, so an NPC behind a building still shows
         const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xffffff, transparent: true, opacity: fade, alphaTest: 0.5 * fade, depthTest: false }));
