@@ -199,8 +199,8 @@ CHAMFER_IN = 0.75
 def band(region, edge, banded, points, square=lambda tile: False, drop=lambda e: 0.0, carvable=lambda tile: False):
     """A region's edge band, in tiles, a point (x, lift, z), as a dict:
 
-    strips: (face, (start, end) on its first line, (start, end) on its second, (u at the start, u at the end)), u
-    along the border in tiles, one per straight run of the border and face;
+    strips: (face, (start, end) on its first line, (start, end) on its second, (u at the start, u at the end), the
+    tile outside the run), u along the border in tiles, one per straight run of the border and face;
     dents: (outside tile, [point]), the polygons between the border and a first line that has moved in;
     full: the tiles the terrain's own ground covers whole; pieces: (tile, [(x, z)]), the tiles the inside line
     crosses, clipped to its inside; band_tiles: the region's tiles the band covers; square says which tiles' corners
@@ -378,7 +378,7 @@ def band(region, edge, banded, points, square=lambda tile: False, drop=lambda e:
                 # standing up)
                 if not flags[a["edge"]] and abs(_area([a["pts"][k0], b["pts"][k0], b["pts"][k1], a["pts"][k1]])) < 1e-3:
                     continue
-                strips.append((face, (p3(a, k0), p3(b, k0)), (p3(a, k1), p3(b, k1)), (ua, ub)))
+                strips.append((face, (p3(a, k0), p3(b, k0)), (p3(a, k1), p3(b, k1)), (ua, ub), loop[a["edge"]][4]))
         # Dents: where the first line has moved off the border, the outside's ground fills the gap
         off = [not st.get("outward") and (abs(st["pts"][0][0] - st["border"][0]) > EPS or abs(st["pts"][0][1] - st["border"][1]) > EPS)
                for st in seq]

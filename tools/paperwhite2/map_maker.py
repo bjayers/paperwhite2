@@ -534,7 +534,12 @@ def generate(project_path):
             return ((w[0] + half) / (repeat * TILE), (w[2] + half) / (repeat * TILE))
         return (u / repeat, v)
     for h, strips, dents in bands:
-        for face, (a0, a1), (b0, b1), (ua, ub) in strips:
+        for face, (a0, a1), (b0, b1), (ua, ub), outside in strips:
+            # A face drawn with another texture against some terrains outside (a cliff's rim: grassy under grass,
+            # rock under the tier above)
+            other = terrain_of(outside)
+            if other and other[0] in face.get("by_outside", {}):
+                face = dict(face, texture=face["by_outside"][other[0]])
             fv = face.get("v", [0, 0])
             sides = []
             top0, top1 = to_world(a0, h), to_world(a1, h)

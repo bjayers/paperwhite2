@@ -139,6 +139,13 @@
                                     "type": "number",
                                     "exclusiveMinimum": 0,
                                     "description": "Units of height one repeat of the texture covers down the face, from its first line (a cliff's face repeats rather than stretches over a tall drop); v starts at the face's first v"
+                                },
+                                "by_outside": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "string"
+                                    },
+                                    "description": "Another texture where the terrain outside is one of these keys (a cliff's rim: rock under the tier above, gake1_0, where under grass it's grassy)"
                                 }
                             }
                         },

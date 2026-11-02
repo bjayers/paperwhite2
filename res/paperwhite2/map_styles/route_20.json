@@ -141,7 +141,7 @@
             "name": "cliff",
             "to": "g",
             "step": true,
-            "from": [ "g", "t", "b", "p", "e" ],
+            "from": [ "g", "t", "b", "p", "e", "c", "l" ],
             "lines": [
                 {
                     "offset": 0,
@@ -173,7 +173,11 @@
                     "between": [ 0, 1 ],
                     "texture": "gake1_1",
                     "v": [ 0, 1 ],
-                    "alpha": "MASK"
+                    "alpha": "MASK",
+                    "by_outside": {
+                        "c": "gake1_0",
+                        "l": "gake1_0"
+                    }
                 },
                 {
                     "between": [ 1, 2 ],
