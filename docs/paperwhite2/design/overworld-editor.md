@@ -100,7 +100,42 @@ entry, an NPC whose condition fails isn't created, without a flag. A flag is sti
   - the engine skips any that don't fit, rather than failing.
 - **Cost each frame:** a path's position per ambient, which is tiny.
 
-### Groups: sets where only one can appear (the user's idea, 2026-10-31)
+### Picking again while in the zone (decided 2026-11-02)
+
+- **When:** once a second the field compares the time of day and the hour with their last values; on a change,
+  every NPC with a condition or instances is checked again: shown, hidden, or given another instance.
+- **Only out of view:** a change is applied to an NPC only while it's outside the camera's view (its box tested
+  against the field camera's frustum, with a margin, so custom camera areas and the vanilla camera's angle are the
+  same case), and never while it's talking, in a script or cutscene, has spotted the player, or a menu is open. One in
+  view keeps its state and is checked again each second. One that should appear is created only if its spot is out
+  of view too.
+- **Rolls by the hour:** a chance (10%) is rolled from the hour's seed by default (`Conditions_Hash(day, hour,
+  zone, id)`), so people come and go during the day and a reroll happens at most once an hour, out of view; a
+  member can choose the day's, the period's or each entry's seed instead. Weather keeps the day's.
+- **Walking off (later, the user's backburner):** an NPC whose time is over walks off to a door or out of view
+  instead of waiting until it's looked away from. Not with the scripts' path command (fragile, and it freezes the
+  game on a far target): a few steps at a time toward the way out, giving up and waiting out of view when blocked,
+  and only while the player is free to move.
+
+### Overworld encounters (the user's idea, 2026-11-02; after ambients)
+
+Pokémon seen walking in tall and dark grass, drawn as ambients are (no actor), up to 3 on screen:
+- **Spawning:** every few seconds while fewer than 3 are on screen, one rises out of a random grass tile of the
+  right kind near the screen's edges and never within a few tiles of the player: the sprite comes up out of the
+  grass over a few frames with the grass's rustle, so it looks as if it pops out of it. Its species and level are
+  picked as a step in that grass picks them (the same tables, conditions and rates), and its personality then, so a
+  shiny one looks shiny.
+- **Wandering:** tile to tile within grass of the same kind, with pauses, facing its way, never into another's tile.
+  Each species wanders randomly by default; an option per Pokémon makes it aggressive (toward the player, faster) or
+  passive (away from the player). Under a Repel, every one wanders away from the player.
+- **Despawning:** after its time on screen (20 to 40 seconds), when far out of view, or when the time or weather
+  changes so its table no longer has it; it sinks back into the grass with a rustle, never vanishing in view.
+- **Battle:** the player stepping onto its tile, or it walking into the player, starts a single battle with that
+  Pokémon at that level (always single, whatever the grass).
+- **Undecided (the user will playtest first):** whether random grass encounters stay, get rarer or go where
+  wanderers are; a debug switch for the three while testing.
+
+### Groups: sets where only one can appear (the user's idea, 2026-10-31; on hold, 2026-11-02)
 
 A group is a set of **mutually exclusive** members, as the old seasonal flag script used flags for: NPCs, instances
 and ambients each keep their own condition, and the group only says that at most one of them appears at a time. A group
@@ -155,8 +190,13 @@ highest. Built with instances and ambients (phases 2 and 3), when the limit's re
      encounter sprites;
    - the editor's instance panels and purple boxes;
    - the preview mode.
-3. **Ambients:** the billboard renderer, paths, budget, and the editor's paths drawn on the map.
-4. **Groups** (mutually exclusive sets).
+3. **Ambients** (order of 2026-11-02): picking again in the zone (above) and a game test of phase 2; the ambients'
+   format and the editor (a list, placing, paths drawn, the sprite moving along them in the preview); the engine's
+   first test (Pidove perched on a Route 20 tree the user hasn't edited); then every path, conditions and chances,
+   shadows (none, under its feet, or on the ground below), flying off when the player comes near, the budget,
+   sprites from the encounters, and the editor's warnings.
+4. **Overworld encounters** (above), on the ambients' framework.
+5. **Groups** (mutually exclusive sets), on hold until the user decides.
 
 Phase 0 and 1 of `npc-research.md` (the freeze test and the size guard) come with phase 1 here.
 
