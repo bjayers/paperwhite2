@@ -399,9 +399,10 @@ const routes: Record<string, Handler> = {
     // started if it has none; the first time for an area learns its style from the atlas (a couple of minutes)
     const { model } = (await readJson(req)) as { model: string };
     if (!/^[a-z0-9_]+$/.test(model ?? "")) return error(res, 400, "Name the chunk");
-    const result = await runTool("tools/paperwhite2/map_roundtrip.py", ["paint", model]);
+    // The painting comes back to apply as an edit (undone with its generate); the project is started if there was none
+    const result = await runTool("tools/paperwhite2/map_roundtrip.py", ["paint", model, "--print"]);
     if (!result.ok) return error(res, 500, result.output || "Painting from the reading failed");
-    json(res, { path: result.output.trim().split("\n").pop() });
+    json(res, { painting: JSON.parse(result.output.trim().split("\n").pop() ?? "{}") });
   },
   "POST /api/map-maker/stop": async (req, res) => {
     // A chunk put back as it was before painting, its painting removed (map_maker.py stop)
@@ -451,6 +452,16 @@ const routes: Record<string, Handler> = {
     if (!files.length) return error(res, 404, to === "vanilla" ? `${model} isn't in the original game (a new map's chunk)` : `${model} isn't committed yet`);
     for (const file of files) await project.writeAtomic(file, await git.show(rev, file));
     json(res, { files: files.map((f) => f.slice(folder.length + 1)) });
+  },
+  "GET /api/map-cost": async (_req, res, url) => {
+    // What a chunk costs the DS: its model packed as the build packs it, its vertex commands and polygons
+    // (tools/paperwhite2/map_cost.py)
+    const model = url.searchParams.get("model") ?? "";
+    if (!/^[a-z0-9_]+$/.test(model)) return error(res, 400, "Name the chunk");
+    const result = await runTool("tools/paperwhite2/map_cost.py", [model]);
+    if (!result.ok) return error(res, 500, result.output || "Counting failed");
+    res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+    res.end(result.output);
   },
   "GET /api/map-reader": async (_req, res, url) => {
     // A chunk as the map reader reads it, tile by tile (tools/paperwhite2/map_reader.py read), as it is now or as the

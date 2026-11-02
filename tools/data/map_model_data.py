@@ -1154,6 +1154,10 @@ def written_model(original, doc, primitives, binary, texture_blob, name):
             material_name = material.get("name") or f"material{current}"
             texture_name = glb_texture_name(doc, material, by_name, name)
             record = bytearray(kept.get(material_name, nitro_model_writer.DEFAULT_MATERIAL))
+            if material_name not in kept and "NORMAL" in primitive.get("attributes", {}):
+                # A new material whose vertices have normals is lit by light 0, as vanilla's are: with no light on,
+                # the GPU colors a vertex that has a normal with the material's emission alone, which is black
+                record[12] |= nitro_model_writer.POLYGON_LIGHT0
             palette = None
             if texture_name is not None:
                 index, texture = by_name[texture_name]

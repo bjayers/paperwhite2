@@ -117,8 +117,14 @@ def painting_of(chunk, style):
         terrain = r["terrain"] if r["terrain"] in terrains or r["terrain"] == "cliff" else by_name.get(r["terrain"], r["terrain"])
         first = next((c for c in f["collision"] if c["layer"] == 0 and c["height"] is not None), None)
         walk = first["height"] if first else (f["ground"] or {}).get("y", 0.0)
-        if first and (first["tile_type"] >> 16) & 1 and f["ground"] and f["ground"]["y"] > walk + 2:
-            walk = f["ground"]["y"]  # blocked and drawn higher: a plateau's top over the beach its collision is at
+        if first and (first["tile_type"] >> 16) & 1 and f["ground"]:
+            # Blocked: its drawn ground counts where it's higher (a plateau's top over the beach its collision is at),
+            # or where the collision stands over a tile above all round it (raised to stand an NPC in a tree, which the
+            # generated collision keeps)
+            around = [c["height"] for n in (tile.neighbour(1, 0), tile.neighbour(-1, 0), tile.neighbour(0, 1), tile.neighbour(0, -1))
+                      if n for c in n.facts["collision"][:1] if c["height"] is not None]
+            if f["ground"]["y"] > walk + 2 or (around and f["ground"]["y"] < walk - 2 and walk > max(around) + TILE):
+                walk = f["ground"]["y"]
         if r.get("empty"):
             kind = "nothing drawn"
         elif r.get("deck"):
@@ -154,6 +160,38 @@ def painting_of(chunk, style):
         keys[z][x] = terrain
         heights[z][x] = max(-40, min(80, round((walk - lift) / HALF)))
         kinds[(x, z)] = kind
+    # Water's edge tiles (a bank) are painted level with the water they border, which is painted level with the land:
+    # the bank's collision slopes lower than the water's, which would split the body and leave its middle without the
+    # bank's drop to the bed. Each takes the highest of the water tiles beside it (water at another level, under a
+    # waterfall, keeps its own)
+    family = {t["key"]: t.get("edge_of", t["key"]) for t in style["terrains"]}
+    sunk = {k for k, t in terrains.items() if t.get("collision_lift", 0) < 0}
+    for z in range(size):
+        for x in range(size):
+            key = keys[z][x]
+            if key not in sunk or family[key] == key or kinds.get((x, z)) == "deck":
+                continue
+            beside = [heights[nz][nx] for nx, nz in ((x + 1, z), (x - 1, z), (x, z + 1), (x, z - 1))
+                      if 0 <= nx < size and 0 <= nz < size and keys[nz][nx] == family[key] and kinds.get((nx, nz)) != "deck"]
+            if beside:
+                heights[z][x] = max(beside)
+    # A deck (a bridge) is painted as what's under it at that terrain's own height, where the walkway's collision is
+    # higher: the height of the nearest tiles of that terrain along its row and column that aren't decks
+    for (x, z), kind in kinds.items():
+        if kind != "deck":
+            continue
+        found = []
+        for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            for step in range(1, 8):
+                nx, nz = x + dx * step, z + dz * step
+                if not (0 <= nx < size and 0 <= nz < size):
+                    break
+                if kinds.get((nx, nz)) != "deck":
+                    if keys[nz][nx] == keys[z][x]:
+                        found.append(heights[nz][nx])
+                    break
+        if found:
+            heights[z][x] = sorted(found)[len(found) // 2]
     # A ramp (stairs) is painted at its bottom, the far side from its higher neighbour, where the reading gives its
     # middle: bottom = 2 middle - top, the top being the higher neighbour's painted height; down each flight from its
     # top
@@ -341,7 +379,7 @@ def style_for(model, chunk):
     return name, style
 
 
-def paint(model, style_name=None):
+def paint(model, style_name=None, write=True):
     """A chunk painted whole from its reading as it is now (a debug view of what painting makes of it): its painted
     map started if it has none (a copy of the chunk kept, which Stop painting puts back), then every tile painted as
     the round trip paints it. The project's path; generating it is the caller's."""
@@ -357,9 +395,18 @@ def paint(model, style_name=None):
     else:
         map_maker.start(model, style_name, map_maker.KEEP)
         chunk = map_reader.load_chunk(model, None, style_name)
-    keys, heights, _ = painting_of(chunk, style)
+    keys, heights, kinds = painting_of(chunk, style)
+    # Under a bridge the chunk is kept as it is: its deck's collision is the walkway's, over the water's
+    rows = [list(row) for row in keys]
+    for (x, z), kind in kinds.items():
+        if kind == "deck":
+            rows[z][x] = map_maker.KEEP
+    keys = ["".join(row) for row in rows]
+    painting = {"style": style_name, "terrain": keys, "height": heights, "grass": grass_of(chunk)}
+    if not write:
+        return painting
     project = json.loads(project_path.read_text())
-    project.update({"style": style_name, "terrain": keys, "height": heights, "grass": grass_of(chunk)})
+    project.update(painting)
     project_path.write_text(dumps(project, width=1 << 20) + "\n")
     return project_path
 
@@ -370,8 +417,14 @@ def main():
         print(style_for(sys.argv[2], None)[0])
         return
     if len(sys.argv) > 1 and sys.argv[1] == "paint":
-        # map_roundtrip.py paint MODEL [STYLE]: the chunk painted whole from its reading (see paint)
-        print(paint(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else None).relative_to(ROOT))
+        # map_roundtrip.py paint MODEL [STYLE] [--print]: the chunk painted whole from its reading (see paint); with
+        # --print, the painting printed as JSON (its style, terrain, heights and grass) for the editor to apply as an
+        # edit it can undo, the project left as it is (started if there was none)
+        args = [a for a in sys.argv[2:] if a != "--print"]
+        if "--print" in sys.argv:
+            print(json.dumps(paint(args[0], args[1] if len(args) > 1 else None, write=False)))
+        else:
+            print(paint(args[0], args[1] if len(args) > 1 else None).relative_to(ROOT))
         return
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("model")

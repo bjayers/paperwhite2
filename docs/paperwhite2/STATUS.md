@@ -2,6 +2,29 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-02 (later): the user's first round of testing, fixed
+
+- **Dark grass drawn black in game:** materials new to a chunk (kusa_ec1s and kusa_ec2s had never been in Route 20's
+  map04_20) took the model writer's default record, which had no light on; the GPU colors a vertex with a normal by
+  the lights on plus emission, so they drew black. A new material whose shapes have normals now has light 0 on, as
+  98% of vanilla's do (map_model_data.py written_model). Rebuild to see it in game.
+- **The debug button** (Paint the whole chunk from its reading) dropped trees, fences and bridges: the chunk's own
+  structures and standing decorations are now kept wherever its copy exists, every tile painted or not. It raised the
+  river to the land's height (banks read half a tile lower than the water, splitting each body from its banks): a
+  bank now takes the height of the water beside it. Bridges keep the chunk under them (their walkway's collision).
+  Pillars came from blocked tiles whose collision the hack raised (perches): such a tile is painted at its drawn
+  ground, and the generated collision keeps a blocked tile's height where the chunk's was blocked too. It is now one
+  painting edit with its generate, so Ctrl+Z undoes both (before, putting the chunk back left the painting fully
+  painted, so the next stroke regenerated it all).
+- **Vertices:** the editor counted the GLB's vertices, which say little of the DS's cost; the Chunks tab now shows the
+  model packed as the build packs it (tools/paperwhite2/map_cost.py: vertex commands, polygons with a quad one),
+  against vanilla's busiest by the same count (overworld 3,933 vertices, 1,873 polygons). The user's chunk with a
+  little dark grass painted: 2,296 vertices to vanilla's 2,178. The writer packs a vanilla chunk about 10% heavier
+  than Game Freak's lists. The user saw no slowdown on a 3DS with the debug-painted chunk (about 5,400 vertices).
+- **Still to do (tiles):** the reading doesn't pick square path or water corners; path corners' chamfer cuts into the
+  grass tile beside it instead of being a small corner of grass inside the path tile; the corner by the bridge; small
+  dark holes at a few path and water corners; banks under cliffs (the water below a cliff face), not made yet.
+
 ## 2026-11-02: grass painted apart from terrain (the Decorations tab)
 
 **Done:** grass is its own layer of a painting (`grass` rows), painted in the Map Editor's new Decorations tab

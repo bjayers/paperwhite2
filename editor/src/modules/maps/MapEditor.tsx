@@ -41,9 +41,11 @@ type Tab = "chunks" | "faces" | "collision" | "paint" | "decorations" | "objects
  * alone; vertices from the busiest by vertices. The DS draws 2,048 polygons and 6,144 vertices a frame, all chunks,
  * props and actors together; a chunk past these is busier than anything of its kind the game draws. The medians are
  * 449 and 423 polygons. */
+// The busiest vanilla chunks as the DS draws them (their packed display lists: vertex commands, polygons with a quad
+// one; tools/paperwhite2/map_cost.py counts a chunk the same way)
 const BUDGETS = {
-  overworld: { polygons: 1345, vertices: 3933, of: "overworld_2_map01_22", verticesOf: "overworld_2_map01_22" },
-  other: { polygons: 2457, vertices: 6677, of: "giant_chasm_3_m_dun1002_01_01", verticesOf: "striaton_city_2_m_dining01_00_00" },
+  overworld: { polygons: 1873, vertices: 3933, of: "overworld_2_map01_22", verticesOf: "overworld_2_map01_22" },
+  other: { polygons: 3116, vertices: 6677, of: "striaton_city_2_m_dining01_00_00", verticesOf: "striaton_city_2_m_dining01_00_00" },
 };
 const MATERIAL_LIMIT = 255;
 
@@ -600,16 +602,16 @@ export function MapEditor({ constants }: ToolProps) {
    * what the map maker makes of it and its polygons. Stop painting puts the chunk back. */
   const paintFromReading = async () => {
     if (!projectFile || !modelName) return;
-    if (!window.confirm(`Paint all of ${modelName} from its reading and generate it? Every tile becomes painted terrain (trees and other objects stay as the chunk has them). Ctrl+Z undoes the generate; Stop painting puts the chunk back. The first time for an area, its style is learned from the atlas, which takes a couple of minutes.`)) return;
+    if (!window.confirm(`Paint all of ${modelName} from its reading and generate it? Every tile becomes painted terrain (trees, bridges and other structures stay as the chunk has them). Ctrl+Z undoes the painting and the generate together; Stop painting puts the chunk back. The first time for an area, its style is learned from the atlas, which takes a minute or two.`)) return;
     setBusy(true);
     try {
-      await api.paintFromReading(modelName);
+      const { painting } = await api.paintFromReading(modelName);
       setStyles(await loadStyles());
-      if (projectExists[projectFile]) await documents.reload(projectFile);
-      else {
-        await documents.hold(projectFile);
-        setProjectExists((m) => ({ ...m, [projectFile]: true }));
-      }
+      if (!projectExists[projectFile]) setProjectExists((m) => ({ ...m, [projectFile]: true }));
+      // As an edit of the painting, so that Ctrl+Z puts the painting back with the chunk
+      const doc = await documents.hold(projectFile);
+      const before = toPlain(doc.data) as Project;
+      changeProject({ ...before, ...painting }, "Painted the whole chunk from its reading");
       setShowPaint(false);
     } catch (e) {
       setMessage({ text: (e as Error).message, error: true });
@@ -617,7 +619,7 @@ export function MapEditor({ constants }: ToolProps) {
       return;
     }
     setBusy(false);
-    setPendingGenerate((n) => n + 1);
+    if (!autoGenerate) setPendingGenerate((n) => n + 1);
   };
 
   /** Puts the chunk back as it was before painting, and removes the painting. */
@@ -1324,6 +1326,15 @@ function ChunkInspector({ folder, model, data, variants, season, sets, onRevert,
   overworld: boolean;
 }) {
   const [keepCollision, setKeepCollision] = useState(false);
+  // What the chunk costs the DS, packed as the build packs it (the GLB's own counts say little of it)
+  const [cost, setCost] = useState<{ vertices: number; polygons: number; triangles: number } | null>(null);
+  const modelId = folder.slice(folder.lastIndexOf("/") + 1);
+  useEffect(() => {
+    let live = true;
+    setCost(null);
+    api.mapCost(modelId).then((c) => { if (live) setCost(c); }, () => {});
+    return () => { live = false; };
+  }, [modelId, model]);
   const budget = overworld ? BUDGETS.overworld : BUDGETS.other;
   const name = folder.slice(folder.lastIndexOf("/") + 1);
   const textures = useMemo(() => {
@@ -1358,10 +1369,10 @@ function ChunkInspector({ folder, model, data, variants, season, sets, onRevert,
         <h4>Against the busiest vanilla {overworld ? "overworld chunk" : "chunk of a cave, building or other map"}</h4>
         {model ? (
           <>
-            <div className="me-row"><label>Polygons</label><Budget used={model.polygons} limit={budget.polygons} unit="polygons"
-              title={`Against ${budget.of}'s ${budget.polygons.toLocaleString()} polygons, the busiest of its kind in the original game, counted as the DS counts them: a quad once (two triangles the model writer draws as one). ${model.triangles.toLocaleString()} triangles. The DS draws 2,048 polygons a frame, all chunks, props and actors together.`} /></div>
-            <div className="me-row"><label>Vertices</label><Budget used={model.vertices} limit={budget.vertices} unit="vertices"
-              title={`Against ${budget.verticesOf}'s ${budget.vertices.toLocaleString()} vertices. The DS draws 6,144 vertices a frame; the game's lists share vertices differently, so this is a guide.`} /></div>
+            <div className="me-row"><label>Polygons</label><Budget used={cost?.polygons ?? model.polygons} limit={budget.polygons} unit="polygons"
+              title={`Against ${budget.of}'s ${budget.polygons.toLocaleString()} polygons, the busiest of its kind in the original game, as the DS draws them: the model packed as the build packs it, a quad one polygon. ${(cost?.triangles ?? model.triangles).toLocaleString()} triangles.${cost ? "" : " (Counting: the model's own count until then.)"} The DS draws 2,048 polygons a frame, all chunks, props and actors together.`} /></div>
+            <div className="me-row"><label>Vertices</label><Budget used={cost?.vertices ?? model.vertices} limit={budget.vertices} unit="vertices"
+              title={`Against ${budget.verticesOf}'s ${budget.vertices.toLocaleString()} vertices, as the DS takes them: the vertex commands of the packed model's strips and quads.${cost ? "" : " (Counting: the GLB's vertices until then, which say little of it.)"} The DS draws 6,144 vertices a frame. The model writer packs a vanilla chunk about 10% heavier than the game's own lists.`} /></div>
             <div className="me-row"><label>Materials</label><Budget used={materials} limit={MATERIAL_LIMIT} unit="materials" title="A model holds at most 255 materials and draw calls." /></div>
             <div className="me-row"><label>Draw calls</label><span>{model.primitives.length}</span></div>
           </>

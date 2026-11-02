@@ -339,7 +339,10 @@ def generate(project_path):
     if keeps and not (base / "model.glb").exists():
         raise DataError(f"{project_path}: tiles keep the chunk, but its copy ({base.relative_to(ROOT)}) is gone (discarded or "
                         "deleted): Stop painting removes the painting and leaves the chunk as it is, then Start painting again")
-    kept_heights = ground_heights(base, size, images_from=folder) if keeps else {}
+    # The copy of the chunk, where there is one: its kept tiles, and over painted ones its structures and the
+    # decorations standing over the ground (trees, bridges), which stay even where every tile is painted
+    has_base = (base / "model.glb").exists()
+    kept_heights = ground_heights(base, size, images_from=folder) if has_base else {}
     grid = {}
     for z, row in enumerate(project["terrain"]):
         for x, key in enumerate(row):
@@ -359,7 +362,7 @@ def generate(project_path):
     painted = {xz: v for xz, v in grid.items() if v[0] != KEEP}
     kept_types = {}
     kept_slopes = {}
-    if keeps:
+    if has_base:
         for r in csv.DictReader((base / "terrain_0.csv").open()):
             kept_types[(int(r["x"]), int(r["z"]))] = int(r["tile_type"])
             kept_slopes[(int(r["x"]), int(r["z"]))] = int(r["slope"])
@@ -651,8 +654,8 @@ def generate(project_path):
         points = corners[top] | corners[bottom]
         polygons += [(key, t) for t in fan(ring(outline, points), uv, normal)]
 
-    # The chunk's own faces over the tiles it keeps, clipped at their edges
-    if keeps:
+    # The chunk's own faces over the tiles it keeps, clipped at their edges, and those that stay whole over painted ones
+    if has_base:
         cut = [(x, z, w, d) for _, x, z, w, d in rectangles({xz: 1 for xz, v in grid.items() if v[0] != KEEP}, size, lambda v: size)]
         triangles, base_materials, _ = read_mesh(base / "model.glb", images_from=folder)
         remap = {key: materials.add(material) for key, material in base_materials.items()}
@@ -774,7 +777,7 @@ def generate(project_path):
                 best = (d, other[1])
         if best:
             ramps[(x, z)] = (best[0], best[1] - h)
-    write_collision(folder, grid, size, terrains, collision_over, base if keeps else None, ramps)
+    write_collision(folder, grid, size, terrains, collision_over, base if has_base else None, ramps)
     data_path = folder / "data.json"
     data = json.loads(data_path.read_text())
     data["texture_set"] = style["texture_set"]
@@ -986,7 +989,7 @@ def ramp_plane(x, z, y, direction, drop, half):
 
 def write_collision(folder, grid, size, terrains, over, base=None, ramps=None):
     """The chunk's first collision layer: painted tiles flat at their heights (ramps, xz to (direction, drop), sloped),
-    kept ones as the copy has them."""
+    kept ones as the copy has them, and painted blocked ones over the copy's blocked ones at the copy's height."""
     heights = height_tables()
     ramps = ramps or {}
     kept = {}
@@ -1003,6 +1006,11 @@ def write_collision(folder, grid, size, terrains, over, base=None, ramps=None):
                 rows.append(row)
                 continue
             tile_type = over.get((x, z), terrains[key]["tile_type"])
+            old = kept.get((x, z))
+            if old is not None and (tile_type >> 16) & 1 and (int(old["tile_type"]) >> 16) & 1:
+                # Blocked where the chunk was blocked: its collision's height stays (raised to stand an NPC in a tree)
+                rows.append({**{k: int(v) for k, v in old.items()}, "tile_type": tile_type})
+                continue
             y += terrains[key].get("collision_lift", 0) * TILE
             if (x, z) in ramps:
                 slope, offset = ramp_plane(x, z, y, *ramps[(x, z)], size * TILE / 2)

@@ -192,8 +192,10 @@ def write_model(model):
 GPU_PARAMS = {0x00: 0, 0x14: 1, 0x1b: 3, 0x20: 1, 0x21: 1, 0x22: 1, 0x23: 2, 0x24: 1, 0x25: 1, 0x26: 1, 0x27: 1,
               0x28: 1, 0x40: 1, 0x41: 0}
 SHAPE_NORMAL, SHAPE_COLOR, SHAPE_TEXCOORD = 1, 2, 4
-# The material most vanilla map materials are: lit by the diffuse and ambient colors, front faces, fog, opaque,
-# repeating its texture both ways, without a texture matrix
+# The material most vanilla map materials are: front faces, fog, opaque, repeating its texture both ways, without a
+# texture matrix; no light on (byte 12, the polygon attributes' low byte: lights 0 to 3 in bits 0 to 3), which a
+# material whose shapes have normals turns on (POLYGON_LIGHT0), as vanilla's are lit by light 0's diffuse and ambient
+POLYGON_LIGHT0 = 0x01
 DEFAULT_MATERIAL = bytes.fromhex("00002c0039e7ff7f0000000080801f00fff81f3f00000300ffffffff0000ce1f0800080000100000"
                                  "00100000")
 
