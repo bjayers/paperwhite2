@@ -159,7 +159,7 @@
                         "type": "number",
                         "minimum": 0,
                         "maximum": 1,
-                        "description": "The share of the way a convex corner of the band is moved to the straight cut across it, over two tiles each way (0.5: the border half a tile in along the diagonal, as the game rounds its paths)"
+                        "description": "No longer used: every edge's corners are built as the game's (tools/paperwhite2/map_edges.py; docs/paperwhite2/design/map-reader.md, Corners). Kept so styles that have it still load"
                     },
                     "tile_type": {
                         "type": "integer",

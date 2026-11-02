@@ -160,6 +160,30 @@ def painting_of(chunk, style):
         keys[z][x] = terrain
         heights[z][x] = max(-40, min(80, round((walk - lift) / HALF)))
         kinds[(x, z)] = kind
+    # Convex corners the reading left out: where the region turns round a tile outside it (a reflex corner) and the
+    # game's edge faces still cover part of that tile, the game's corner is convex there (the edge turning, pulled
+    # half a tile in), and the tile is the family's edge; where they cover none of it, the corner is a T's, as painted
+    import map_edges
+    for t in style["terrains"]:
+        fam = t.get("edge_of")
+        if not fam or t.get("square") or t.get("edge") or any(u.get("edge_of") == fam and not u.get("square") and not u.get("edge")
+                                                               and u["key"] < t["key"] for u in style["terrains"]):
+            continue
+        members = {k for k, u in terrains.items() if u.get("edge_of", k) == fam}
+        faces = {f["texture"] for e in style.get("edges", []) if e.get("to") == fam for f in e["faces"]}
+        region = {(x, z) for z in range(size) for x in range(size) if keys[z][x] in members}
+        for loop in map_edges.loops(region):
+            for i, e in enumerate(loop):
+                b = loop[i - 1]
+                if e[1] != (-b[2][0], -b[2][1]):
+                    continue
+                nsum = (b[2][0] + e[2][0], b[2][1] + e[2][1])
+                x, z = math.floor(e[0][0] - nsum[0] * 0.5), math.floor(e[0][1] - nsum[1] * 0.5)
+                tile = chunk.tiles.get((x, z))
+                if tile is None or kinds.get((x, z)) not in ("plain", None) or keys[z][x] in members:
+                    continue
+                if sum(s_["cover"] for s_ in tile.facts["surfaces"] if s_["texture"] in faces) >= 0.05:
+                    keys[z][x] = t["key"]
     # Water's edge tiles (a bank) are painted level with the water they border, which is painted level with the land:
     # the bank's collision slopes lower than the water's, which would split the body and leave its middle without the
     # bank's drop to the bed. Each takes the highest of the water tiles beside it (water at another level, under a

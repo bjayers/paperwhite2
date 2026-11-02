@@ -293,20 +293,23 @@ terrains, the rounding and the strips. The rewrite is in the reading, the seams 
 ## Corners as the game builds them (2026-11-02)
 
 The user pointed out that vanilla's corners aren't chamfered in their geometry: the texture's own shape rounds them.
-From Route 20's faces (map04_20 at w2-original):
-- **Inward corners** (the border turning round the band, a path's corner round grass): each line turns at one
-  point, the border half a tile out along the diagonal (CHAMFER_OUT) and each line further in CHAMFER_IN of its
-  offset from it, straight from the stations a tile either side; no stations half a tile off the corner. u mirrors
-  at the corner (the run turns back there). The diagonal tile is carved where the border line leaves it. The old
-  half-tile stations and their carve didn't meet, which left the small black holes the user found.
-- **Rounded corners** (the edge's round: the border turning away from the band, a T's corners): the border's corner
-  stays square, and each other line cuts straight across it, from its offset in on one side to the same on the
-  other; one triangle fills the corner, its texture fanning across it (u -0.5 to 0.5 in the game's). They had been
-  cut round over two tiles each way, the long diagonals the user saw.
-- A path's slant into a corner over two tiles or so is its point, not the corner's.
+From Route 20's faces (map04_20 and its banks at w2-original), one rule for paths and banks alike:
+- **Convex corners** (the region's own corner, a path turning): each line turns at one point, pulled in along the
+  diagonal by CORNER_IN plus CORNER_SCALE of its offset (0.5 + 0.75 x offset: the border half a tile in, a line a
+  tile in 1.25; the bank's lines at 0.5, 0.625 and 1 come out at 0.875, 0.97 and 1.25, as vanilla's), straight to it
+  from the station two tiles back (the one a tile back moves onto that line; along a side of three tiles or less to
+  another convex corner, a path's end, straight between the two). u mirrors at the corner.
+- **Reflex corners** (the region round a corner of the outside, a T's corners): the border's corner stays square,
+  and each other line cuts straight across it, from its offset in on one side to the same on the other; one triangle
+  fills the corner, its texture fanning across it (u -0.5 to 0.5 in the game's).
+- A path's longer slant into a corner is its point, not the corner's.
+- The reading's paintings: where the region turns round a tile outside it that the game's edge faces still cover
+  part of, the game's corner is convex there and the tile is painted as edge (the reading had called it grass, and the
+  old generator pushed its chamfers out into it, carving the tile; those carves and half-tile stations didn't meet,
+  the small black holes the user found).
 
 Holes (points of a 1-unit grid that vanilla's opaque faces cover and the generated chunk's don't), round trips with
-Route 20's style: map04_20 8 holed tiles to 0, map05_20 13 to 0, map04_21 19 to 0, map05_21 17 to 0; triangles
-down about 10%. The debug-painted map04_20 (with its HEAD edits): 1,400 polygons and 3,899 vertices as the DS draws
-them, from 1,870 and 5,493.
-
+Route 20's style, before and after: map04_20 8 holed tiles to 0, map05_20 13 to 0, map04_21 19 to 4 (a two-tile
+water notch between half-tile ledges, which the style has no profile for), map05_21 17 to 0. The debug-painted
+map04_20 (its HEAD edits): 1,248 polygons and 3,733 vertices as the DS draws them, from 1,870 and 5,493, under
+vanilla's busiest overworld chunk.
