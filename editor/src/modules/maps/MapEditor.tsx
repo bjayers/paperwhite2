@@ -31,11 +31,14 @@ import { loadLibrary, loadStyles, painted, projectPath, strokeCells, type Librar
 
 type Tab = "chunks" | "faces" | "collision" | "paint" | "objects";
 
-/** The busiest vanilla chunks (map04_20's spring chunk has 1,114 triangles): the DS draws 2,048 polygons and 6,144
- * vertices a frame, all chunks, props and actors together, and the game's own chunks reach these, so a chunk past them
- * is busier than anything the game draws. */
-const POLYGON_BUDGET = 2133;
-const VERTEX_BUDGET = 6677;
+/** The busiest vanilla chunks of each kind, counted from every model of the original game (2026-11-04): the
+ * overworld's (overworld_2_map01_22), drawn beside its neighbours, and the rest's (a Striaton dining room; caves,
+ * interiors), drawn alone. The DS draws 2,048 polygons and 6,144 vertices a frame, all chunks, props and actors
+ * together; a chunk past these is busier than anything of its kind the game draws. The medians are 792 and 731. */
+const BUDGETS = {
+  overworld: { polygons: 2367, vertices: 3933, of: "overworld_2_map01_22" },
+  other: { polygons: 3821, vertices: 6677, of: "striaton_city_2_m_dining01_00_00" },
+};
 const MATERIAL_LIMIT = 255;
 
 /** One step of the history: a chunk's GLB before and after a face edit, as base64; or edits of documents (collision,
@@ -963,7 +966,7 @@ export function MapEditor({ constants }: ToolProps) {
                 </section>
                 {current && (
                   <ChunkInspector folder={current.folder} model={model} data={chunkData} variants={variants} season={season} sets={sets}
-                                  onRevert={revertChunk} busy={busy} painting={!!project} />
+                                  onRevert={revertChunk} busy={busy} painting={!!project} overworld={!!map?.matrix.startsWith("MAP_MATRIX_OVERWORLD")} />
                 )}
               </>
             )}
@@ -1133,12 +1136,15 @@ function Budget({ used, limit, unit, title }: { used: number; limit: number; uni
   );
 }
 
-function ChunkInspector({ folder, model, data, variants, season, sets, onRevert, busy, painting }: {
+function ChunkInspector({ folder, model, data, variants, season, sets, onRevert, busy, painting, overworld }: {
   folder: string; model: ChunkModel | undefined; data: { texture_set: string | null; written?: boolean; texture_preview?: string } | null;
   variants: string[] | null; season: number; sets: SeasonSet[]; onRevert(to: "vanilla" | "commit", keepCollision: boolean): void; busy: boolean;
   painting: boolean;
+  /** Whether the chunk is the overworld's, drawn beside its neighbours (else a cave's, a building's: drawn alone). */
+  overworld: boolean;
 }) {
   const [keepCollision, setKeepCollision] = useState(false);
+  const budget = overworld ? BUDGETS.overworld : BUDGETS.other;
   const name = folder.slice(folder.lastIndexOf("/") + 1);
   const textures = useMemo(() => {
     const by = new Map<string, number>();
@@ -1169,13 +1175,13 @@ function ChunkInspector({ folder, model, data, variants, season, sets, onRevert,
         <p className="muted ow-note">Ctrl+Z undoes it.{painting ? " Its painting stays: Stop painting in the Paint tab removes it." : ""}</p>
       </section>
       <section className="me-section">
-        <h4>Against the busiest vanilla chunk</h4>
+        <h4>Against the busiest vanilla {overworld ? "overworld chunk" : "chunk of a cave, building or other map"}</h4>
         {model ? (
           <>
-            <div className="me-row"><label>Polygons</label><Budget used={model.triangles} limit={POLYGON_BUDGET} unit="triangles"
-              title="Against the busiest vanilla chunk's 2,133 polygons (the median is 417). The DS draws 2,048 polygons a frame, all chunks, props and actors together; quads count once, so the game's count is lower than the triangles here." /></div>
-            <div className="me-row"><label>Vertices</label><Budget used={model.vertices} limit={VERTEX_BUDGET} unit="vertices"
-              title="Against the busiest vanilla chunk's 6,677 vertices. The DS draws 6,144 vertices a frame; the game's lists share vertices differently, so this is a guide." /></div>
+            <div className="me-row"><label>Polygons</label><Budget used={model.triangles} limit={budget.polygons} unit="triangles"
+              title={`Against ${budget.of}'s ${budget.polygons.toLocaleString()} triangles, the busiest of its kind in the original game. The DS draws 2,048 polygons a frame, all chunks, props and actors together; quads count once, so the game's count is lower than the triangles here.`} /></div>
+            <div className="me-row"><label>Vertices</label><Budget used={model.vertices} limit={budget.vertices} unit="vertices"
+              title={`Against ${budget.of}'s ${budget.vertices.toLocaleString()} vertices. The DS draws 6,144 vertices a frame; the game's lists share vertices differently, so this is a guide.`} /></div>
             <div className="me-row"><label>Materials</label><Budget used={materials} limit={MATERIAL_LIMIT} unit="materials" title="A model holds at most 255 materials and draw calls." /></div>
             <div className="me-row"><label>Draw calls</label><span>{model.primitives.length}</span></div>
           </>
