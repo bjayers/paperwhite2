@@ -4,6 +4,12 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
 ## 2026-11-05 (morning): next — editor controls and the object library; tiles still needed
 
+**Done (2026-11-05):** the object library's browser and viewer (Browse... in the Objects and Paint tabs; rename
+changes the name shown, the folder stays); the faded model off by default; the painted overlay drawn over the map
+(tops only, outlines drawn normally); the toolbar's Overhead view; the Paint tab's fill tool. **Next: the gizmo**
+(three.js TransformControls on the selected object or faces; translate by grid, step or smooth; clicking an arrow
+steps; 90° turns about the vertical for library objects on paintings, which needs a rotation field in projects).
+
 **Next (the user's order: these before more tiles):**
 - Object library browser, like the NPC sprite-bank browser: a window of every library object with a preview, its
   name and category; per object, open a viewer, see its data, rename it, change its category; group or filter by the
