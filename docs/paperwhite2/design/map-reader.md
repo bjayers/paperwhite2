@@ -159,7 +159,14 @@ then a family, its profile and its table.
   budget, reading, filled and neighbourhood; the chunk's texture roles. The reading has an edge (an edge texture over
   half the tile or more, or with a bank's slopes), a bend (an edge texture reaching a little into a plain tile of its
   terrain, as a path's middle at a point), a slope (cliffs and banks: downhill from the faces' normals), and when no
-  ground is drawn, the terrain of its neighbours (filled). Not yet told apart: stairs (read as a cliff). A fact is one function registered with
+  ground is drawn, the terrain of its neighbours (filled). Not yet told apart: stairs (read as a cliff), Virbank's
+  diagonal pipes (a slope). The ground is where one walks: the surface at the first collision layer's height, so a
+  bridge or a town's raised road is a deck (with what lies under it) rather than a hole to the floor below; each
+  collision layer has its own reading (layers); confidence is how many of the ground's five points agree, and
+  whether the style knows the texture is apart (known).
+- **Vanilla's own holes**: the game leaves some drops without walls where the camera never looks (behind Route 20's
+  forest, under some banks). The fact open_sides records them; the round trip and the atlas skip them rather than
+  learn or copy them. A fact is one function registered with
   `@tile_fact` (or `@chunk_fact`): adding a record is adding one. Not yet: events (warps, doors), the atlas, the
   round trip.
 - The Map Editor's **Reading** toggle: the chosen chunk's tiles coloured by their reading, arrows at edges' outsides,

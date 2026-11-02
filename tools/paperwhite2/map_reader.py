@@ -386,24 +386,35 @@ def walls(tile):
 
 @tile_fact("ground")
 def ground(tile):
-    """The ground: at the tile's middle and four points round it, the topmost opaque surface whose texture isn't a
-    structure's or a wall's (a bridge's deck is over the ground, not the ground); the texture most of them have, at
-    their middle height, and how many of the five found ground."""
+    """The ground, where one walks: at the tile's middle and four points round it, the drawn surface at the first
+    collision layer's height (within half a tile; a bridge's deck, a town's raised road), else the topmost opaque
+    surface that isn't a wall's or a structure's; the texture most of them have, at their middle height, how many of
+    the five found ground and how many agree, and what lies under a structure's deck."""
     roles = tile.chunk.facts["textures"]
-    found = []
+    height = next((c["height"] for c in tile.facts["collision"] if c["layer"] == 0 and c["height"] is not None), None)
+    found, under = [], []
     for u, w in ((0.5, 0.5), (0.25, 0.25), (0.75, 0.25), (0.25, 0.75), (0.75, 0.75)):
-        for y, piece, uv in tile.surfaces_at(u, w, opaque=True):
-            if roles.get(piece.texture, {}).get("role") in ("structure", "wall"):
-                continue
-            found.append((piece.texture, y, uv[1]))
-            break
+        hits = [h for h in tile.surfaces_at(u, w, opaque=True) if roles.get(h[1].texture, {}).get("role") != "wall"]
+        at = [h for h in hits if height is not None and abs(h[0] - height) <= TILE / 2] if height is not None else []
+        pick = min(at, key=lambda h: abs(h[0] - height)) if at else next(
+            (h for h in hits if roles.get(h[1].texture, {}).get("role") != "structure"), None)
+        if pick is None:
+            continue
+        found.append((pick[1].texture, pick[0], pick[2][1]))
+        if roles.get(pick[1].texture, {}).get("role") == "structure":
+            below = next((h for h in hits if h[0] < pick[0] - TILE / 4 and roles.get(h[1].texture, {}).get("role") != "structure"), None)
+            if below:
+                under.append(below[1].texture)
     if not found:
         return None
-    texture = Counter(t for t, _, _ in found).most_common(1)[0][0]
+    texture, agree = Counter(t for t, _, _ in found).most_common(1)[0]
     ys = sorted(y for t, y, _ in found if t == texture)
     v = next(v for t, _, v in found if t == texture)
-    return {"y": round(ys[len(ys) // 2], 2), "texture": texture, "role": roles.get(texture, {}).get("role"),
-            "v": round(v, 2), "samples": len(found)}
+    out = {"y": round(ys[len(ys) // 2], 2), "texture": texture, "role": roles.get(texture, {}).get("role"),
+           "v": round(v, 2), "samples": len(found), "agree": agree}
+    if under:
+        out["under"] = Counter(under).most_common(1)[0][0]
+    return out
 
 
 @tile_fact("standing")
@@ -449,8 +460,8 @@ def reading(tile):
     its levels (ground, water, structure), and how sure the reading is."""
     roles = tile.chunk.facts["textures"]
     g = tile.facts["ground"]
-    out = {"terrain": None, "edge": None, "bend": None, "slope": None, "structure": False, "decoration": False,
-           "confidence": "low"}
+    out = {"terrain": None, "edge": None, "bend": None, "slope": None, "structure": False, "deck": None, "under": None,
+           "decoration": False, "confidence": "low", "known": False}
     by_texture = {}
     style = tile.chunk.style
     if style:
@@ -462,7 +473,14 @@ def reading(tile):
                 by_texture.setdefault(face["texture"], e["to"])
     if g:
         out["terrain"] = by_texture.get(g["texture"], g["texture"]) if style else g["texture"]
-        out["confidence"] = "high" if (not style or g["texture"] in by_texture) else "low"
+        if g.get("role") == "structure":
+            # A deck: the tile is the deck's, over what's under it (a bridge over the river)
+            out["deck"] = g["texture"]
+            out["under"] = by_texture.get(g.get("under"), g.get("under")) if style else g.get("under")
+        # How sure: how many of the ground's five points agree; whether the style knows it is apart from that
+        agree = g.get("agree", g.get("samples", 0))
+        out["confidence"] = "high" if agree >= 4 else "medium" if agree >= 3 else "low"
+        out["known"] = (not style) or g["texture"] in by_texture
     elif style and tile.facts["collision"]:
         # No ground drawn (under a forest's canopy): the terrain with its tile type, unsure
         tile_type = tile.facts["collision"][0]["tile_type"]
@@ -472,7 +490,10 @@ def reading(tile):
     compass_back = {"N": "S", "NE": "SW", "E": "W", "SE": "NW", "S": "N", "SW": "NE", "W": "E", "NW": "SE"}
     edge_surface = next((x for x in tile.facts["surfaces"] if roles.get(x["texture"], {}).get("role") == "edge"
                          and x.get("mapping", {}).get("kind") == "border"), None)
-    slope_cover = sum(x["cover"] for x in tile.facts["surfaces"] if roles.get(x["texture"], {}).get("role") == "slope")
+    # Slopes at or near the ground count, not ones far under it (a staircase below a cliff's top)
+    floor = (g["y"] - TILE / 2) if g else -1e9
+    slope_cover = sum(x["cover"] for x in tile.facts["surfaces"]
+                      if roles.get(x["texture"], {}).get("role") == "slope" and x["y"][1] >= floor)
     if edge_surface:
         grows = edge_surface["mapping"]["v_grows"]
         outside = compass_back.get(grows)
@@ -489,10 +510,12 @@ def reading(tile):
     if (slope_cover >= 0.5 or (g and g.get("role") == "slope")) and not out["edge"]:
         nx = nz = 0.0
         for piece in tile.pieces:
-            if roles.get(piece.texture, {}).get("role") == "slope" and piece.facing == "slope":
+            if roles.get(piece.texture, {}).get("role") == "slope" and piece.facing == "slope" \
+                    and max(v.p[1] for v in piece.polygon) >= floor:
                 sign = 1 if piece.normal[1] > 0 else -1
                 nx, nz = nx + sign * piece.normal[0] * piece.area, nz + sign * piece.normal[2] * piece.area
-        out["slope"] = {"texture": max((x for x in tile.facts["surfaces"] if roles.get(x["texture"], {}).get("role") == "slope"),
+        out["slope"] = {"texture": max((x for x in tile.facts["surfaces"] if roles.get(x["texture"], {}).get("role") == "slope"
+                                        and x["y"][1] >= floor),
                                        key=lambda x: x["cover"])["texture"] if slope_cover else g["texture"],
                         "down": _compass(nx, nz), "cover": round(slope_cover, 3)}
         out["terrain"] = "cliff"
@@ -504,7 +527,7 @@ def reading(tile):
             if t.get("layers") and standing_textures & {layer["texture"] for layer in t["layers"]}:
                 out["terrain"] = t["key"]
                 break
-    out["structure"] = any(x["kind"] == "structure" for x in tile.facts["standing"])
+    out["structure"] = bool(out.get("deck")) or any(x["kind"] == "structure" for x in tile.facts["standing"])
     out["decoration"] = any(x["kind"] == "decoration" for x in tile.facts["standing"])
     levels_ = [lv for lv in tile.facts["levels"] if lv["alpha"] == "OPAQUE"]
     out["levels"] = len({round(lv["y"] / 4) for lv in levels_})
@@ -531,6 +554,55 @@ def filled(tile):
         r["confidence"] = "medium"
         return "neighbours"
     return "tile type"
+
+
+@tile_fact("layers")
+def layers(tile):
+    """Each collision layer's surface: the drawn surface (not a wall) nearest the layer's height at the tile's
+    middle, within half a tile, its texture and terrain. A town on two levels (walkways over a canal) has a reading
+    per level."""
+    style = tile.chunk.style
+    by_texture = {}
+    if style:
+        for t in style["terrains"]:
+            if not t.get("edge_of"):
+                by_texture.setdefault(t["ground"]["texture"], t["key"])
+    roles = tile.chunk.facts["textures"]
+    out = []
+    for c in tile.facts["collision"]:
+        if c["height"] is None:
+            continue
+        best = None
+        for y, piece, _ in tile.surfaces_at(0.5, 0.5):
+            if roles.get(piece.texture, {}).get("role") == "wall" or piece.alpha == "BLEND":
+                continue
+            if abs(y - c["height"]) <= TILE / 2 and (best is None or abs(y - c["height"]) < abs(best[0] - c["height"])):
+                best = (y, piece.texture)
+        out.append({"layer": c["layer"], "height": c["height"], "tile_type": c["tile_type"],
+                    "y": round(best[0], 2) if best else None, "texture": best[1] if best else None,
+                    "terrain": (by_texture.get(best[1], best[1]) if style else best[1]) if best else None})
+    return out
+
+
+@tile_fact("open_sides")
+def open_sides(tile):
+    """Sides where the ground drops to the neighbour's by more than a quarter tile with no wall closing the drop on
+    either tile: holes the game leaves where the camera never looks (behind a forest), which the round trip and
+    the atlas skip rather than copy."""
+    out = []
+    g = tile.facts["ground"]
+    if not g:
+        return out
+    for side, (dx, dz), opposite in (("N", (0, -1), "S"), ("E", (1, 0), "W"), ("S", (0, 1), "N"), ("W", (-1, 0), "E")):
+        n = tile.neighbour(dx, dz)
+        if not n or not n.facts.get("ground"):
+            continue
+        if g["y"] - n.facts["ground"]["y"] > TILE / 4:
+            walled = any(w["side"] == side for w in tile.facts["walls"]) or any(w["side"] == opposite for w in n.facts["walls"])
+            slopes = any(x["facing"] != ["flat"] and "slope" in x["facing"] for x in tile.facts["surfaces"] + n.facts["surfaces"])
+            if not walled and not slopes:
+                out.append(side)
+    return out
 
 
 @tile_fact("neighbourhood")

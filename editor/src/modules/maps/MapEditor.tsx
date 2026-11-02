@@ -367,13 +367,22 @@ export function MapEditor({ constants }: ToolProps) {
     .filter(Boolean).sort().map((k) => [k, readingColor(k)]), [reading, readingStyle]);
   useEffect(() => {
     if (!readingOn || !reading || chunk === null) { scene.current?.showReading(null, null); return; }
-    scene.current?.showReading(chunk, reading.tiles.map((t) => ({
-      x: t.x, z: t.z,
-      y: t.ground?.y ?? ((t.collision as { height: number | null }[] | undefined)?.[0]?.height ?? 0),
-      color: readingColor(t.reading.terrain),
-      outside: t.reading.edge?.outside ?? t.reading.slope?.down ?? null, unsure: t.reading.confidence === "low", structure: t.reading.structure,
-      selected: !!readingTile && readingTile.x === t.x && readingTile.z === t.z,
-    })));
+    // Each tile at where one walks (the higher of its ground and its first collision layer: water's surface over
+    // its bed), and a square more for each other collision layer at another height (a canal under a walkway)
+    const squares: Parameters<ChunkScene["showReading"]>[1] = [];
+    for (const t of reading.tiles) {
+      const layers = (t.layers as { layer: number; height: number | null; y: number | null; terrain: string | null }[] | undefined) ?? [];
+      const first = layers.find((l) => l.layer === 0)?.height ?? null;
+      const y = Math.max(t.ground?.y ?? -1e9, first ?? -1e9);
+      squares!.push({ x: t.x, z: t.z, y: y > -1e8 ? y : 0, color: readingColor(t.reading.terrain),
+        outside: t.reading.edge?.outside ?? t.reading.slope?.down ?? null, unsure: t.reading.confidence === "low", structure: t.reading.structure,
+        selected: !!readingTile && readingTile.x === t.x && readingTile.z === t.z });
+      for (const l of layers) {
+        if (l.layer === 0 || l.height === null || Math.abs(l.height - y) < 8) continue;
+        squares!.push({ x: t.x, z: t.z, y: l.height, color: readingColor(l.terrain), outside: null, unsure: !l.terrain, structure: false, selected: false });
+      }
+    }
+    scene.current?.showReading(chunk, squares);
   }, [readingOn, reading, chunk, readingTile, readingStyle, loaded]);
   useEffect(() => { setSelectedObject(null); }, [modelName]);
   useEffect(() => {

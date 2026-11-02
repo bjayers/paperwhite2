@@ -2,6 +2,15 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-03: the map reader, after the user's checks of Route 20 and Virbank
+
+- Fixed: clipped slivers faced wrong (road tiles by the bridge, fence tiles), arrows in paths' middles (now bends),
+  rapids as edges, cliffs as unsure, stairs far below a tile counted as its slope, ground under a canopy (from the
+  neighbours), Virbank's roads read at the canal floor (the ground is now where the collision walks), red squares
+  for textures the style doesn't know (confidence is now the geometry's agreement). New: decks and what's under
+  them, a reading per collision layer, open sides (vanilla's unwalled holes). Next: the user's checks of Route 12,
+  Route 13 and the Desert Resort.
+
 ## 2026-11-02 (night): the map reader
 
 - `tools/paperwhite2/map_reader.py` reads a chunk tile by tile (map-reader.md, Built so far); the Map Editor's

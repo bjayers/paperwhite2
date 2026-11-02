@@ -6,7 +6,9 @@ export interface TileRecord {
   z: number;
   reading: { terrain: string | null; edge: { texture: string; outside: string | null; of: string | null; cover: number } | null;
     bend: { texture: string; from: string | null; cover: number } | null; slope: { texture: string; down: string | null; cover: number } | null;
-    structure: boolean; decoration: boolean; confidence: string; levels: number };
+    structure: boolean; deck: string | null; under: string | null; decoration: boolean; confidence: string; known?: boolean; levels: number };
+  layers?: { layer: number; height: number | null; y: number | null; texture: string | null; terrain: string | null; tile_type: number }[];
+  open_sides?: string[];
   filled?: string;
   ground: { y: number; texture: string; role: string | null; v: number } | null;
   [fact: string]: unknown;
@@ -43,7 +45,8 @@ export function ReadingPanel({ reading, tile, rev, setRev, loading, error, terra
       {loading && <p className="muted ow-note">Reading…</p>}
       {error && <p className="ow-note">{error}</p>}
       {!tile && reading && <p className="muted ow-note">Each tile is coloured by its terrain; an edge's arrow points at its outside, a slope's downhill; a
-        dashed tile is unsure, a boxed one has a structure on it. Click a tile for its whole record.</p>}
+        dashed tile is unsure, a boxed one has a structure on it (a deck: what lies under it is in its record). A tile on two levels has a square
+        at each. Click a tile for its whole record.</p>}
       {reading && (
         <div className="me-legend">
           {legend.map(([key, color]) => <span key={key} className="me-legend-item"><span className="me-swatch" style={{ background: color }} />{terrainName(key)}</span>)}
@@ -52,7 +55,11 @@ export function ReadingPanel({ reading, tile, rev, setRev, loading, error, terra
       {tile && (
         <>
           <div className="me-row"><label>Tile</label><span>{tile.x}, {tile.z}</span></div>
-          <div className="me-row"><label>Terrain</label><span>{terrainName(tile.reading.terrain)} <span className="muted">({tile.reading.confidence})</span></span></div>
+          <div className="me-row"><label>Terrain</label><span>{terrainName(tile.reading.terrain)} <span className="muted">({tile.reading.confidence}{tile.reading.known === false ? ", not in the style" : ""})</span></span></div>
+          {tile.reading.deck && <div className="me-row"><label>Deck</label><span>{tile.reading.deck}{tile.reading.under ? <>, over {terrainName(tile.reading.under)}</> : ""}</span></div>}
+          {(tile.layers?.length ?? 0) > 1 && <div className="me-row"><label>Layers</label><span>{tile.layers!.map((l) =>
+            `${l.layer}: ${l.height ?? "?"}${l.terrain ? ` ${terrainName(l.terrain)}` : " (nothing drawn there)"}`).join("; ")}</span></div>}
+          {(tile.open_sides?.length ?? 0) > 0 && <div className="me-row"><label>Open sides</label><span>{tile.open_sides!.join(", ")} <span className="muted">(no wall drawn: not copied)</span></span></div>}
           <div className="me-row"><label>Edge</label><span>{tile.reading.edge
             ? <>{tile.reading.edge.texture}, its outside {tile.reading.edge.outside ?? "?"}</>
             : tile.reading.bend ? <>a bend of {tile.reading.bend.texture} reaching in from {tile.reading.bend.from ?? "?"}</>
