@@ -18,6 +18,7 @@ import argparse
 import csv
 import json
 import math
+import os
 import subprocess
 import sys
 import tempfile
@@ -38,6 +39,11 @@ SAMPLES = 8
 
 TILE_FACTS = []
 CHUNK_FACTS = []
+
+# The atlas's consensus on texture roles (build/map_atlas_roles.json, map_atlas.py build): a texture to the role at
+# least three quarters of five or more chunks gave it. MAP_READER_NO_ATLAS=1, or its absence, reads each chunk alone.
+ATLAS_ROLES = ROOT / "build/map_atlas_roles.json"
+CONSENSUS = {} if os.environ.get("MAP_READER_NO_ATLAS") or not ATLAS_ROLES.exists() else json.loads(ATLAS_ROLES.read_text())
 
 
 def tile_fact(name):
@@ -242,9 +248,9 @@ def textures(chunk):
     lowest = Counter()
     for (tx, tz), pieces in chunk.pieces.items():
         x, z = (tx + 0.5) * TILE - chunk.half, (tz + 0.5) * TILE - chunk.half
-        flats = [(p.height_at(x, z)[0], p.texture) for p in pieces if p.facing == "flat" and p.height_at(x, z)]
+        flats = [(p.height_at(x, z)[0], p.texture or "") for p in pieces if p.facing == "flat" and p.height_at(x, z)]
         if flats:
-            lowest[min(flats)[1]] += 1
+            lowest[min(flats)[1] or None] += 1
         hits = sorted(((p.height_at(x, z)[0], p) for p in pieces
                        if p.alpha == "OPAQUE" and p.facing == "flat" and p.height_at(x, z)), key=lambda h: h[0])
         if hits:
@@ -309,6 +315,13 @@ def textures(chunk):
         else:
             role = "ground"
         out[texture] = {"role": role, "alpha": s["alpha"], "tiles": len(s["tiles"]), "pieces": total}
+    # Where the atlas (map_atlas.py) found the game agreeing on a texture's role, that role, the chunk's own kept
+    # for a texture the game doesn't agree on (a bridge's deck is ground where it's the only floor)
+    for texture, r in out.items():
+        agreed = CONSENSUS.get(texture)
+        if agreed and agreed["role"] != r["role"]:
+            r["learned"] = r["role"]
+            r["role"] = agreed["role"]
     # Each edge texture's inside: the ground most often found a tile toward where its v grows (a road's edge, its
     # road; a shore's wet sand, its water), which a tile of the edge or a bend of it is read as when no style says
     toward = {"N": (0, -1), "E": (1, 0), "S": (0, 1), "W": (-1, 0), "NE": (1, -1), "SE": (1, 1), "SW": (-1, 1), "NW": (-1, -1)}
@@ -334,12 +347,21 @@ def textures(chunk):
 
 @tile_fact("collision")
 def collision(tile):
-    """Each collision layer's tile type, shape, slope and offset, and layer 0's height at the tile's middle."""
+    """Each collision layer's tile type, shape, slope and offset (or its plane, for chunks that store one per tile),
+    and its height at the tile's middle."""
     slopes, offsets = _tables()
     out = []
     for n, layer in enumerate(tile.chunk.layers):
         r = layer.get((tile.x, tile.z))
         if not r:
+            continue
+        x, z = tile.point(0.5, 0.5)
+        if "shape" not in r:
+            # A plane per tile (RD chunks, Join Avenue's): its normal and offset in 4096ths
+            nx, ny, nz = (int(r[f"normal0_{a}"]) / 4096 for a in "xyz")
+            o = int(r["offset0"]) / 4096
+            out.append({"layer": n, "tile_type": int(r["tile_type"]), "plane": [nx, ny, nz, o],
+                        "height": round(-(o + nx * x + nz * z) / ny, 2) if ny else None})
             continue
         entry = {"layer": n, "tile_type": int(r["tile_type"]), "shape": int(r["shape"]), "slope": int(r["slope"]),
                  "offset": int(r["offset"])}
@@ -348,7 +370,6 @@ def collision(tile):
             slope, offset = int(tile.chunk.splits[offset]["slope0"]), int(tile.chunk.splits[offset]["offset0"])
         nrm = slopes[slope] if slope < len(slopes) else (0, 1, 0)
         o = offsets[offset] if offset < len(offsets) else 0
-        x, z = tile.point(0.5, 0.5)
         entry["height"] = round(-(o + nrm[0] * x + nrm[2] * z) / nrm[1], 2) if nrm[1] else None
         out.append(entry)
     return out

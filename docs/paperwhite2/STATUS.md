@@ -2,6 +2,13 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-04 (evening): the atlas
+
+- `tools/paperwhite2/map_atlas.py build` (under two minutes; build/, out of git): every chunk of the original game
+  read into SQLite, twice, the second time with the texture roles the game agrees on. 0 chunks fail. Next, by the
+  user's order: the terrain types the round trip found missing (ledges and cliffs: edges at height changes; slopes),
+  then chunk borders, then triangle counts.
+
 ## 2026-11-04 (later): the round trip, and what it found
 
 - `tools/paperwhite2/map_roundtrip.py` reads a vanilla chunk, paints it from the reading, generates it in a

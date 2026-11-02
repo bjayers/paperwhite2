@@ -34,21 +34,37 @@ class Vertex:
 
 
 def _identity(matrix):
-    return all(abs(v - (1 if i % 5 == 0 else 0)) < 1e-5 for i, v in enumerate(matrix))
+    # Within a hundredth: binds are stored as floats, and a turned joint's undo rounds (a unit in the translation)
+    return all(abs(v - (1 if i % 5 == 0 else 0)) < (1e-2 if i >= 12 else 1e-3) for i, v in enumerate(matrix))
 
 
-def _joint_translation(doc, index):
-    """Where a joint stands, by the translations of it and its parents, or None if any of them rotates or scales."""
+def _multiply(a, b):
+    """Two 4x4 matrices as glTF stores them (column by column), multiplied."""
+    return [sum(a[k * 4 + r] * b[c * 4 + k] for k in range(4)) for c in range(4) for r in range(4)]
+
+
+def _trs(node):
+    """A node's matrix (column by column) from its matrix or its translation, rotation and scale."""
+    if "matrix" in node:
+        return list(node["matrix"])
+    tx, ty, tz = node.get("translation", [0, 0, 0])
+    x, y, z, w = node.get("rotation", [0, 0, 0, 1])
+    sx, sy, sz = node.get("scale", [1, 1, 1])
+    r = [1 - 2 * (y * y + z * z), 2 * (x * y + z * w), 2 * (x * z - y * w),
+         2 * (x * y - z * w), 1 - 2 * (x * x + z * z), 2 * (y * z + x * w),
+         2 * (x * z + y * w), 2 * (y * z - x * w), 1 - 2 * (x * x + y * y)]
+    return [r[0] * sx, r[1] * sx, r[2] * sx, 0, r[3] * sy, r[4] * sy, r[5] * sy, 0,
+            r[6] * sz, r[7] * sz, r[8] * sz, 0, tx, ty, tz, 1]
+
+
+def _joint_world(doc, index):
+    """Where a joint stands in the mesh's space: its matrix and its parents' up to the mesh's node (not included)."""
     parents = {child: i for i, node in enumerate(doc["nodes"]) for child in node.get("children", [])}
-    total = [0.0, 0.0, 0.0]
-    while index is not None:
-        node = doc["nodes"][index]
-        if "matrix" in node or "rotation" in node or "scale" in node:
-            return None
-        if "mesh" not in node:
-            total = [a + b for a, b in zip(total, node.get("translation", [0, 0, 0]))]
+    world = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+    while index is not None and "mesh" not in doc["nodes"][index]:
+        world = _multiply(_trs(doc["nodes"][index]), world)
         index = parents.get(index)
-    return total
+    return world
 
 
 def _matrices(doc, binary, index):
@@ -91,15 +107,11 @@ def read_mesh(path, images_from=None):
         if "mesh" in node and any(k in node for k in ("matrix", "translation", "rotation", "scale")):
             raise ValueError(f"{path}: the mesh's node is moved")
     for skin in doc.get("skins", []):
-        # Each joint's inverse bind matrix must undo where the joint stands (a joint moved, its vertices bound as
-        # they lie), so the positions are as stored
+        # Each joint's inverse bind matrix must undo where the joint stands (a joint moved, turned or scaled, its
+        # vertices bound as they lie), so the positions are as stored
         for joint, matrix in zip(skin["joints"], _matrices(doc, binary, skin["inverseBindMatrices"])):
-            at = _joint_translation(doc, joint)
-            undone = list(matrix)
-            for k in range(3):
-                undone[12 + k] += at[k] if at is not None else 0
-            if at is None or not _identity(undone):
-                raise ValueError(f"{path}: a joint isn't at the origin, or its bind doesn't undo where it stands")
+            if not _identity(_multiply(_joint_world(doc, joint), matrix)):
+                raise ValueError(f"{path}: a joint's bind doesn't undo where it stands")
     materials = {}
     triangles = []
     ids = []

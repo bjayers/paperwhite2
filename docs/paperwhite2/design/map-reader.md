@@ -172,6 +172,16 @@ then a family, its profile and its table.
 - The Map Editor's **Reading** toggle: the chosen chunk's tiles coloured by their reading, arrows at edges' outsides,
   structures boxed, unsure tiles dashed; a click shows the tile's record; read as it is now or as the original game.
 
+## The atlas, built (2026-11-04)
+
+`tools/paperwhite2/map_atlas.py build` reads all 1,065 map chunks of w2-original (overworld 187, caves and buildings
+878) in under two minutes into `build/map_atlas.db` (0.9 GB, out of git), twice: alone, then with the roles the game
+agrees on (`build/map_atlas_roles.json`: 538 textures whose role three quarters of five or more chunks share, and
+edges' insides). Unsure tiles: 0.25% of the overworld's drawn tiles, 2.4% of the rest's. `roles`, `cases`, `record`
+and `sql` query it. The reader takes the consensus when the roles file exists (MAP_READER_NO_ATLAS=1 reads alone).
+Also made readable for it: chunks with a collision plane per tile (Join Avenue), skins whose joints are turned and
+scaled and bound back.
+
 ## Round-trip findings (2026-11-04)
 
 `tools/paperwhite2/map_roundtrip.py MODEL [--style STYLE] --out DIR` (a style is drafted from the chunk's reading
