@@ -68,7 +68,18 @@ def _mitre(before, after, db, da):
         return (nb[0] * d, nb[1] * d)
     if nb == (-na[0], -na[1]):  # back on itself (a one-tile spike)
         return (nb[0] * db, nb[1] * db)
+    if after[1] == before[2]:
+        # An outward corner is chamfered, as the game's are: each line cuts across the corner tile half as far in as
+        # the mitre would reach (the band's inside runs corner to corner of the tile), so the band keeps its width
+        return ((nb[0] * db + na[0] * da) / 2, (nb[1] * db + na[1] * da) / 2)
     return (nb[0] * db + na[0] * da, nb[1] * db + na[1] * da)
+
+
+def _inward(a, b):
+    """The inward normal of a border segment from a to b (the direction turned a quarter, as loops run)."""
+    dx, dz = b[0] - a[0], b[1] - a[1]
+    length = math.hypot(dx, dz) or 1.0
+    return (-dz / length, dx / length)
 
 
 def _inside(point, polygons):
@@ -209,15 +220,27 @@ def band(region, edge, banded, points, square=lambda tile: False, drop=lambda e:
                     continue
                 if not (straight(i - 1) and straight(i + 1)) or any(moved[(i + k) % n] for k in (-2, -1, 0, 1, 2)):
                     continue
-                for k in range(len(lines)):
-                    a0, a1 = pts[(i - 2) % n][k], pts[(i + 2) % n][k]
-                    for j in (-1, 0, 1):
-                        f = (j + 2) / 4
-                        cut = (a0[0] + (a1[0] - a0[0]) * f, a0[1] + (a1[1] - a0[1]) * f)
-                        old = pts[(i + j) % n][k]
-                        pts[(i + j) % n][k] = (old[0] + (cut[0] - old[0]) * round_by, old[1] + (cut[1] - old[1]) * round_by)
-                for j in (-1, 0, 1):
-                    moved[(i + j) % n] = True
+                # The border is cut round (round_by of the way to the straight cut between its points two tiles either
+                # side); every other line follows it at its own offset, a constant width from it, so the band is as
+                # wide across the corner as along its sides and its texture isn't stretched (a chamfer, the game's)
+                border = [pts[(i + j) % n][0] for j in range(-2, 3)]
+                a0, a1 = border[0], border[4]
+                for j in (1, 2, 3):
+                    f = j / 4
+                    cut = (a0[0] + (a1[0] - a0[0]) * f, a0[1] + (a1[1] - a0[1]) * f)
+                    old = border[j]
+                    border[j] = (old[0] + (cut[0] - old[0]) * round_by, old[1] + (cut[1] - old[1]) * round_by)
+                base = lines[0]["offset"]
+                for j in (1, 2, 3):
+                    prev, at, nxt = border[j - 1], border[j], border[j + 1]
+                    n1, n2 = _inward(prev, at), _inward(at, nxt)
+                    scale = 1 + n1[0] * n2[0] + n1[1] * n2[1]
+                    miter = ((n1[0] + n2[0]) / scale, (n1[1] + n2[1]) / scale) if scale > EPS else n1
+                    station = (i + j - 2) % n
+                    for k, ln in enumerate(lines):
+                        d = ln["offset"] - base
+                        pts[station][k] = (at[0] + miter[0] * d, at[1] + miter[1] * d)
+                    moved[station] = True
         # Bends: across from another stretch of the region first (a T), then every third tile on alternating sides
         mids = {}
 
@@ -260,9 +283,24 @@ def band(region, edge, banded, points, square=lambda tile: False, drop=lambda e:
         for i, e in enumerate(loop):
             seq.append({"s": float(i), "border": e[0], "pts": pts[i], "lift": lifts[i], "edge": i})
             if i in mids:
-                seq.append({"s": i + 0.5, "border": (e[0][0] + e[1][0] * 0.5, e[0][1] + e[1][1] * 0.5), "pts": mids[i],
+                seq.append({"s": i + 0.5, "mid": True, "border": (e[0][0] + e[1][0] * 0.5, e[0][1] + e[1][1] * 0.5), "pts": mids[i],
                             "lift": [ln["lift"] + (drop(e) if ln.get("from") == "outside" else 0.0) for ln in lines], "edge": i})
         m = len(seq)
+        # u by length along the border line (line 0), so a chamfered corner's diagonal isn't stretched (the game's
+        # edge textures run at one repeat a tile round corners too)
+        # (a bend's sides keep a repeat a tile, stretched along them, as the game's points do)
+        run = [0.0]
+        for j in range(1, m + 1):
+            sa, sb = seq[j - 1], seq[j % m]
+            step = (sb["s"] - sa["s"]) % n or n
+            if sa.get("mid") or sb.get("mid"):
+                run.append(run[-1] + step)
+            else:
+                a, b = sa["pts"][0], sb["pts"][0]
+                run.append(run[-1] + math.hypot(b[0] - a[0], b[1] - a[1]))
+        for j, st in enumerate(seq):
+            st["u"] = run[j]
+        loop_length = run[m]
 
         def p3(st, k):
             return (st["pts"][k][0], st["lift"][k], st["pts"][k][1])
@@ -274,7 +312,8 @@ def band(region, edge, banded, points, square=lambda tile: False, drop=lambda e:
             starts = [0]
         for r, j in enumerate(starts):
             a, b = seq[j], seq[starts[(r + 1) % len(starts)]]
-            ua, ub = a["s"], b["s"] if b["s"] > a["s"] else b["s"] + n
+            end = starts[(r + 1) % len(starts)]
+            ua, ub = a["u"], b["u"] if end > j else b["u"] + loop_length
             outer_points.add(p3(a, 0))
             inner_points.add(p3(a, inner))
             for face in edge["faces"]:
