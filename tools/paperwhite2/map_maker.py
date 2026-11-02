@@ -295,12 +295,27 @@ def ring(corners, splits):
 
 
 def fan(outline, uv, normal):
-    """A polygon as triangles: two for a plain quad, else a fan around its middle (its outline has split points, where a
-    fan from a corner would make triangles with no area)."""
+    """A polygon as triangles: two for a plain quad; else a fan from a corner whose edges have no split points, else a
+    fan around its middle (a fan from a corner beside split points would make triangles with no area)."""
     vertex = lambda p: Vertex(p, uv(p), (1.0, 1.0, 1.0), normal)  # noqa: E731
     if len(outline) == 4:
         a, b, c, d = (vertex(p) for p in outline)
         return [[a, b, c], [a, c, d]]
+    # From a corner whose two edges carry no split points: a fan from it has no triangle without area, and every split
+    # point (on the other edges) is a corner of the triangles beside it, so n - 2 triangles, not n
+    n = len(outline)
+
+    def turns(i):
+        a, b, c = outline[i - 1], outline[i], outline[(i + 1) % n]
+        u = [b[k] - a[k] for k in range(3)]
+        w = [c[k] - b[k] for k in range(3)]
+        cross = (u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0])
+        return sum(x * x for x in cross) > 1e-9
+    corner = [turns(i) for i in range(n)]
+    for i in range(n):
+        if corner[i] and corner[i - 1] and corner[(i + 1) % n]:
+            ring_ = outline[i:] + outline[:i]
+            return [[vertex(ring_[0]), vertex(ring_[j]), vertex(ring_[j + 1])] for j in range(1, n - 1)]
     middle = tuple(sum(p[k] for p in outline) / len(outline) for k in range(3))
     m = vertex(middle)
     return [[m, vertex(outline[i]), vertex(outline[(i + 1) % len(outline)])] for i in range(len(outline))]
@@ -458,6 +473,18 @@ def generate(project_path):
                 carved_tiles[t] = [(x * TILE - half, None, z * TILE - half) for x, z in poly]
             inner_y = h + edge["lines"][edge.get("inner", len(edge["lines"]) - 1)]["lift"] * TILE
             inner_ys.append(inner_y)
+            # An underlay (the family's ground flat at the tile's height across the whole band, under see-through
+            # faces: a ledge's) is drawn as ground with the tiles round it, merged into their rectangles, not as a strip
+            # a run; the band's tiles are then the family's ground whole
+            lines_ = edge["lines"]
+            underlay = [f for f in edge["faces"] if f.get("planar") and all(
+                not lines_[k].get("from") and lines_[k]["lift"] == 0 for k in f["between"])
+                and {lines_[k]["offset"] for k in f["between"]} == {0, 1}
+                and f["texture"] == terrains[key]["ground"]["texture"]]
+            if underlay:
+                result["strips"] = [st for st in result["strips"] if st[0] not in underlay]
+                result["full"] = set(tiles)
+                result["pieces"] = []
             # A tile is the family's own ground only where every edge drawn here leaves it whole
             full = set(result["full"]) if full is None else full & result["full"]
             for t, piece in result["pieces"]:
