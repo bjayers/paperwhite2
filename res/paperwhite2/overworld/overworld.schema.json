@@ -83,7 +83,7 @@
         "ambient": {
             "type": "object",
             "additionalProperties": false,
-            "required": [ "sprite", "x", "z", "y" ],
+            "required": [ "x", "z", "y" ],
             "properties": {
                 "name": {
                     "type": "string",
@@ -94,7 +94,19 @@
                     "x-constant": "OBJ_CODE_",
                     "minimum": 0,
                     "maximum": 65535,
-                    "description": "Its sprite, an OBJ_CODE_* constant"
+                    "description": "Its sprite, an OBJ_CODE_* constant (or sprites, a set)"
+                },
+                "sprites": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "items": {
+                        "type": [ "string", "integer" ],
+                        "x-constant": "OBJ_CODE_",
+                        "minimum": 0,
+                        "maximum": 65535
+                    },
+                    "description": "A set of sprites (OBJ_CODE_* constants, up to 4) it shows one of, picked by its roll, so the pick holds as long as its chance does (see rolls); in place of sprite"
                 },
                 "x": {
                     "type": "integer",
@@ -190,7 +202,7 @@
                 },
                 "shadow": {
                     "enum": [ "none", "feet", "ground" ],
-                    "description": "Its shadow: none (by default), under its feet at its height, or on the ground below it. Not drawn yet"
+                    "description": "Its shadow, the actors' oval: none (by default), under its feet at its height (on a branch it sits on), or on the highest ground below it"
                 },
                 "when": {
                     "$ref": "../conditions/condition.schema.json#/$defs/condition",
@@ -198,9 +210,19 @@
                 },
                 "rolls": {
                     "enum": [ "hour", "day", "period", "entry" ],
-                    "description": "How long a chance in its condition holds: the hour (by default), the day, the time of day, or each zone entry"
+                    "description": "How long a chance in its condition, and its pick from a set of sprites, hold: the hour (by default), the day, the time of day, or each zone entry"
                 }
-            }
+            },
+            "anyOf": [
+                {
+                    "type": "object",
+                    "required": [ "sprite" ]
+                },
+                {
+                    "type": "object",
+                    "required": [ "sprites" ]
+                }
+            ]
         }
     }
 }

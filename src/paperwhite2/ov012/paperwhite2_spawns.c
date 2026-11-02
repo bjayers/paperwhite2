@@ -308,7 +308,14 @@ u32 Spawns_GetAmbients(GameSystem *gsys, HeapID heapId, SpawnAmbient *out, u32 m
         }
         rng = Conditions_Seed(&ctx, payload->seed, SPAWNS_AMBIENT_KEY + payload->npcId);
         if (Conditions_MatchRule(table, i, &ctx, &rng)) {
-            out[count++] = *(const SpawnAmbient *)(payload + 1);
+            SpawnAmbient *ambient = &out[count++];
+
+            *ambient = *(const SpawnAmbient *)(payload + 1);
+            // Its sprite, from its set by the same roll, so the pick holds as long as its chance does
+            if (ambient->objCodeCount > 1) {
+                ambient->objCodes[0] = ambient->objCodes[Conditions_Random(&rng, ambient->objCodeCount)];
+            }
+            ambient->objCodeCount = 1;
         }
     }
     GFL_HeapFree(table);

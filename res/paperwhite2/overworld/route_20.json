@@ -2,15 +2,16 @@
     "$schema": "overworld.schema.json",
     "ambients": [
         {
-            "name": "Pidove on the tree",
-            "sprite": "OBJ_CODE_POKEMON_PIDOVE",
+            "name": "Bird on the tree",
+            "sprites": [ "OBJ_CODE_POKEMON_PIDOVE", "OBJ_CODE_POKEMON_SWELLOW" ],
             "x": 183,
             "z": 647,
             "y": 46,
             "facing": "DIR_DOWN",
             "path": {
                 "kind": "perch"
-            }
+            },
+            "shadow": "feet"
         }
     ]
 }

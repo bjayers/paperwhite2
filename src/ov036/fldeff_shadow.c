@@ -91,6 +91,20 @@ static void FldeffShadow_DeleteSlot(FieldEffectShadow *shadow) {
     BillboardActorSys_FreeMaterials(shadow->billboardActor, shadow->matIndex, 1);
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: the shadows' billboard system and material, for the ambients' shadows (paperwhite2_ambients.c)
+BOOL FldeffShadow_GetMaterial(FieldEffects *effects, BillboardActorSys **sys, u32 *material) {
+    FieldEffectShadow *shadow = FieldEffects_GetHandleData(effects, FLDEFF_SHADOW);
+
+    if (shadow == NULL) {
+        return FALSE;
+    }
+    *sys = shadow->billboardActor;
+    *material = shadow->matIndex;
+    return TRUE;
+}
+#endif
+
 // Give the actor a shadow
 void FldeffShadow_Start(FieldActor *actor, FieldEffects *effects) {
     ShadowTaskParams params;

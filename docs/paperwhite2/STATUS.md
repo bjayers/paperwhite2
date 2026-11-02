@@ -2,6 +2,12 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-02 (night, later still): ambients' shadows and sprite sets
+
+- Shadows (none, under its feet, on the ground below), the actors' oval drawn for each ambient (plugins.md, Ambients),
+  and `sprites`, a set of up to 4 an ambient shows one of, picked by its roll. Route 20's bird at 183, 647 is now
+  Pidove or Swellow, with its shadow under its feet. Built (hack, no warnings, DSi intact). **Not tested in game.**
+
 ## 2026-11-02 (night, later): ambients, first version
 
 - Ambients (plugins.md, Ambients): `ambients` in the zones' overworld files, packed with the NPC rules; drawn as

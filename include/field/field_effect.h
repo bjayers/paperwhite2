@@ -60,6 +60,11 @@ void EncountTask_SetPaused(FieldEffectTask *task, BOOL paused);
 void EncountTask_SetDrawHidden(FieldEffectTask *task, BOOL hidden);
 // The effects that actors make on the terrain
 void FldeffShadow_Start(FieldActor *actor, FieldEffects *effects);
+#ifdef PAPERWHITE2
+// Paper White 2: the shadows' billboard system and material, for shadows without an actor (the ambients'); FALSE when
+// the field has no shadow effect
+BOOL FldeffShadow_GetMaterial(FieldEffects *effects, BillboardActorSys **sys, u32 *material);
+#endif
 // The dust of an actor landing
 void FldeffDust_Start(FieldActor *actor, FieldEffects *effects);
 // The dust in front of an actor

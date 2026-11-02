@@ -35,7 +35,9 @@ export interface SpawnEntry { id: number; when?: Condition; instances?: Instance
  * in units. */
 export interface Ambient {
   name?: string;
-  sprite: string | number;
+  /** Its sprite, or sprites, a set it shows one of (picked by its roll). */
+  sprite?: string | number;
+  sprites?: (string | number)[];
   x: number;
   z: number;
   offset?: { x?: number; z?: number };
@@ -52,7 +54,7 @@ export interface Ambient {
 export function ambientEntities(ambients: Ambient[]): Entity[] {
   return ambients.map((a, i) => ({
     kind: "ambient", index: i, x: a.x, z: a.z, y: a.y, width: 1, depth: 1, label: a.name || `Ambient ${i + 1}`,
-    model: typeof a.sprite === "string" ? a.sprite : undefined, direction: typeof a.facing === "string" ? a.facing : "DIR_DOWN",
+    model: [a.sprite ?? a.sprites?.[0]].find((m): m is string => typeof m === "string"), direction: typeof a.facing === "string" ? a.facing : "DIR_DOWN",
   }));
 }
 

@@ -25,17 +25,23 @@ u16 Spawns_PickKey(GameData *gameData);
 // appear are out of view, its actor removed and made again if it shows. TRUE when every NPC has its record for now,
 // FALSE while some wait to leave the view
 BOOL Spawns_Repick(GameSystem *gsys, MMSys *actorSystem, HeapID heapId, SpawnsInView inView, void *arg);
+// The most sprites an ambient picks from
+#define SPAWNS_AMBIENT_SPRITES 4
+
 // An ambient's record, packed by tools/paperwhite2/overworld.py after its rule's payload: a sprite drawn without an
 // actor (src/paperwhite2/ov036/paperwhite2_ambients.c), on its path round its place
 typedef struct {
-    u16 objCode;
+    // The sprites it shows one of, picked by its roll (Spawns_GetAmbients gives the one picked first, with a count of
+    // 1), and how many
+    u16 objCodes[SPAWNS_AMBIENT_SPRITES];
+    u8 objCodeCount;
     // An AMBIENT_PATH_* and an AMBIENT_SHADOW_*
     u8 path;
     u8 shadow;
     // The DIR_* it faces where its path doesn't turn it, and AMBIENT_FLAG_*s
     u8 facing;
     u8 flags;
-    u16 pad;
+    u8 pad[3];
     // Its place, in the world's units (16 a tile), and its path's sizes in units, its speed in degrees a second round
     // it (a perch's: how often it turns, in seconds) and where on its path it starts, in degrees
     VecFx32 at;

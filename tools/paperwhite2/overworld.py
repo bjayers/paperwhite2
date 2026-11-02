@@ -13,8 +13,9 @@ is a conditions table (tools/paperwhite2/conditions.py) whose rules' payloads sa
 - an instance: u8 1, u8 the seed, u16 its host's id, then the instance's 36-byte NPC record (ZoneNPC, as event_data.py
   packs it, its id the host's); a host's instances are one after another, after its condition if it has one, and the
   field picks among those that hold, by weight.
-- an ambient: u8 2, u8 the seed, u16 its index among the zone's ambients, then its 28-byte record (SpawnAmbient,
-  include/paperwhite2/spawns.h): u16 object code, u8 path, u8 shadow, u8 facing, u8 flags, u16 0, s32 x, y and z
+- an ambient: u8 2, u8 the seed, u16 its index among the zone's ambients, then its 36-byte record (SpawnAmbient,
+  include/paperwhite2/spawns.h): u16 its sprites' object codes (4, the unused 0), u8 how many, u8 path, u8 shadow, u8
+  facing, u8 flags, 3 bytes 0, s32 x, y and z
   (fx32 world units: a tile's middle plus its offset, and its height), u16 its path's width and depth (units), speed
   and start; it shows while its rule holds (paperwhite2_ambients.c).
 The seed is the CONDITION_SEED_* the NPC's rolls start from, keyed by its id (its "rolls": the hour's by default, the
@@ -39,7 +40,8 @@ HEADER = struct.Struct("<IHH")
 ENTRY = struct.Struct("<HHII")
 PAYLOAD = struct.Struct("<BBH")
 KIND_CONDITION, KIND_INSTANCE, KIND_AMBIENT = 0, 1, 2
-AMBIENT = struct.Struct("<HBBBBHiiiHHHH")
+AMBIENT = struct.Struct("<4H5B3xiii4H")
+AMBIENT_SPRITES = 4
 PATHS = {"perch": 0, "hover": 1, "ellipse": 2, "line": 3, "eight": 4}
 SHADOWS = {"none": 0, "feet": 1, "ground": 2}
 FLAG_TURNS, FLAG_HOPS = 0x1, 0x2
@@ -87,9 +89,12 @@ def ambient_bytes(ambient: dict, where: str) -> bytes:
     z = round((ambient["z"] * 16 + 8 + offset.get("z", 0)) * 4096)
     y = round(ambient["y"] * 4096)
     speed = p.get("every", 0) if p["kind"] == "perch" else p.get("speed", 45)
-    return AMBIENT.pack(value(ambient["sprite"], where), PATHS[p["kind"]], SHADOWS[ambient.get("shadow", "none")],
-                        value(ambient.get("facing", "DIR_DOWN"), where), flags, 0, x, y, z, p.get("width", 0),
-                        p.get("depth", 0), speed, p.get("start", 0) % 360)
+    sprites = [value(s, where) for s in ambient.get("sprites", [ambient["sprite"]] if "sprite" in ambient else [])]
+    if not 1 <= len(sprites) <= AMBIENT_SPRITES:
+        raise DataError(f"{where}: an ambient needs a sprite, or a set of 1 to {AMBIENT_SPRITES}")
+    return AMBIENT.pack(*sprites, *[0] * (AMBIENT_SPRITES - len(sprites)), len(sprites), PATHS[p["kind"]],
+                        SHADOWS[ambient.get("shadow", "none")], value(ambient.get("facing", "DIR_DOWN"), where), flags,
+                        x, y, z, p.get("width", 0), p.get("depth", 0), speed, p.get("start", 0) % 360)
 
 
 def member(sources: Path = SOURCES) -> bytes:

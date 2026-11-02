@@ -863,21 +863,25 @@ Sprites drawn without an actor on paths round their places (`docs/paperwhite2/de
 edited in the Overworld Editor's Ambients tab.
 
 - **Data:** `ambients` in `res/paperwhite2/overworld/<zone>.json` (`overworld.schema.json`): each a sprite (an
-  `OBJ_CODE_*`), a tile, an offset in it and a height in the world in units, a facing, a path (`perch`, `hover`,
+  `OBJ_CODE_*`) or a set of up to 4, a tile, an offset in it and a height in the world in units, a facing, a path (`perch`, `hover`,
   `ellipse`, `line`, `eight`, with its width, depth, speed and start, or a perch's turns, hops and how often), a shadow
-  (not drawn yet), a `when` and `rolls`. A zone shows at most 8.
+  (none, under its feet, or on the ground below), a `when` and `rolls`. A zone shows at most 8.
 - **Packing:** `overworld.py` adds each as a rule of the zone's table: payload kind 2, its seed, its index, then its
-  28-byte record (`SpawnAmbient`, `include/paperwhite2/spawns.h`).
+  36-byte record (`SpawnAmbient`, `include/paperwhite2/spawns.h`). `Spawns_GetAmbients` picks a set's sprite with the
+  roll its chance was rolled with, so the pick holds as long as the chance does.
 - **In the field,** `PaperWhite2_AmbientsUpdate` (`src/paperwhite2/ov036/paperwhite2_ambients.c`, from the field's
   update after the actors'): when the zone, or the field's billboard system (made again after a battle or a menu), is
   new, the zone's ambients whose rules hold (`Spawns_GetAmbients`, keyed past every NPC's id) each get a billboard of
   their sprite from the actor system's cache, as reflections do (`FldBillboardActor_AddActorPosOrReserve`, with the
   object code's config from `GetNPCMdlInfoForOBJCODE`). Every frame each is placed on its path, at the field's actor
   height offset, and given its animation (standing or walking, by its facing turned by the camera's angle, set only
-  when it changes). A zone change waits for sprites still loading (the cache writes a billboard's index into its slot
+  when it changes). A shadow is the actors' oval (`FldeffShadow_GetMaterial`, an `#ifdef PAPERWHITE2` accessor in
+  `fldeff_shadow.c`, gives the effects' billboard system and the shadow material), made as `FldeffShadow_Init` makes
+  one and placed each frame: at its place's height (under its feet, a hop leaving it), or on the highest collision
+  layer at or below it (`FieldG3DMapper_GetTerrainAll`), hidden where there's none. A zone change waits for sprites still loading (the cache writes a billboard's index into its slot
   when it loads), at most 5 seconds. No actor, task, event or save entry; nothing collides with them.
-- **Not yet:** shadows, flying off when the player comes near, picking again in the zone, the editor's path drawing
-  and preview, sprites from a set or from the encounters, and the budget's 4 distinct sprites.
+- **Not yet:** flying off when the player comes near, picking again in the zone, the editor's path drawing and preview,
+  sprites from the encounters, and the budget's 4 distinct sprites.
 
 ### Wild encounters
 
