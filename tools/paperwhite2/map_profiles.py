@@ -17,6 +17,7 @@ import json
 import sqlite3
 import statistics
 import sys
+import zlib
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -185,6 +186,9 @@ def draft(db, texture_set, name):
             continue
         drop, lines, faces = learned
         if drop > 2:
+            # The ground of its slope tiles (a step's lower ground). Tiles drawn as edges too (a bank's bed) were tried:
+            # they learn water banks for Route 20's set, but caves' walls with them, which made Wellspring Cave's round
+            # trip much worse (heights within 2 units 76% to 36%); learned edges need checking one by one first
             under = Counter(g for (g,) in db.execute(f"SELECT ground FROM tiles WHERE model IN ({marks}) AND slope = ?", [*models, texture]))
             family = next((key_of[g] for g, _ in under.most_common() if g in key_of), None)
         else:
@@ -195,7 +199,15 @@ def draft(db, texture_set, name):
         if drop > 2:
             edge["step"] = True
             edge["from"] = [t["key"] for t in terrains]
-            if all(not f.get("v_units") and f.get("planar") for f in faces) or texture.startswith(("kaidan", "yamagrs")):
+            # A ramp where the game's own tiles of it mostly have sloped collision (stairs, hills): one walks it
+            sloped = total = 0
+            for (rec,) in db.execute(f"SELECT record FROM tiles WHERE model IN ({marks}) AND slope = ? AND record IS NOT NULL LIMIT 60",
+                                     [*models, texture]):
+                first = next((c for c in json.loads(zlib.decompress(rec))["collision"] if c["layer"] == 0), None)
+                if first:
+                    total += 1
+                    sloped += bool(first.get("slope")) and not (first["tile_type"] >> 16) & 1
+            if total and sloped > total / 2:
                 edge["ramp"] = True
         else:
             edge["from"] = [t["key"] for t in terrains if t["key"] != family]
