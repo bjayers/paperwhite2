@@ -3,6 +3,7 @@
 run of it in the atlas (docs/paperwhite2/design/map-reader.md, Profiles learned).
 
     map_profiles.py cross TEXTURE [--drop UNITS] [--limit N]   # the cross-section of tiles edged with TEXTURE
+    map_profiles.py draft TEXTURE_SET [--name N] [--out FILE]  # a map style for a texture set, learned from the atlas
 
 A tile is in a straight run when the reader found it an edge (or a step: a cliff tile against higher ground) whose
 outside is a cardinal direction, and its two neighbours along the run are the same. The cross-section is sampled
@@ -28,11 +29,13 @@ STEPS = 17
 DIRS = {"N": (0, -1), "E": (1, 0), "S": (0, 1), "W": (-1, 0)}
 
 
-def straight_tiles(db, texture, drop=None, limit=200):
-    """Tiles of straight runs edged with texture (as an edge, or a step whose faces it draws): (model, x, z, outside,
-    drop to the outside)."""
+def straight_tiles(db, texture, drop=None, limit=200, models=None):
+    """Tiles of straight runs edged with texture (as an edge, or a step whose faces it draws), in models if given:
+    (model, x, z, outside, drop to the outside, own ground's height, outside's)."""
     rows = db.execute("""SELECT model, x, z, outside, ground_y, terrain, slope, downhill FROM tiles
                          WHERE (edge = ? OR slope = ?) AND ground_y IS NOT NULL""", (texture, texture)).fetchall()
+    if models is not None:
+        rows = [r for r in rows if r[0] in models]
     grid = {(m, x, z): (o, y, ter, d) for m, x, z, o, y, ter, sl, d in rows}
     ys = {}
     out = []
@@ -82,6 +85,133 @@ def cross(chunk, x, z, side, own_y, outside_y):
     return out
 
 
+KEYS = "abcdefghijkmnopqrsuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+
+def median(values):
+    values = [v for v in values if v is not None]
+    return statistics.median(values) if values else None
+
+
+def learn_profile(db, texture, models, chunks, limit=60):
+    """An edge's or step's profile from its straight runs in models: (drop, lines, faces) for its commonest drop and
+    cross-section, or None. Lines are where the top texture changes across the tile; a step's lines (the outside
+    higher) are measured from the outside, its last from the tile's own ground."""
+    tiles = straight_tiles(db, texture, None, limit, models)
+    groups = defaultdict(list)
+    for m, x, z, side, d, y, oy in tiles:
+        if m not in chunks:
+            chunks[m] = map_reader.load_chunk(m, "w2-original", None)
+        section = cross(chunks[m], x, z, side, y, oy)
+        drop = 0 if abs(d) <= 2 else d
+        groups[(drop, tuple(st[0][0] if st else None for st in section))].append(section)
+    if not groups:
+        return None
+    (drop, tops), sections = max(groups.items(), key=lambda kv: len(kv[1]))
+    if len(sections) < 3 or None in tops:
+        return None
+    step = drop > 2
+    points = []
+    for i in range(STEPS):
+        tops_i = [st[i][0] for st in sections if st[i]]
+        points.append({"t": i / (STEPS - 1), "texture": tops_i[0][0], "above": median(p[1] for p in tops_i),
+                       "below": median(p[2] for p in tops_i), "v": median(p[3] for p in tops_i)})
+    breaks = [0] + [i for i in range(1, STEPS) if points[i]["texture"] != points[i - 1]["texture"]] + [STEPS - 1]
+    lines, faces = [], []
+    for j, i in enumerate(breaks):
+        p = points[i]
+        last = j == len(breaks) - 1
+        if step and not last:
+            lines.append({"offset": round(p["t"], 3), "lift": round(p["below"] / 16, 3), "from": "outside"})
+        else:
+            lines.append({"offset": round(p["t"], 3), "lift": round(p["above"] / 16, 3)})
+    for j in range(len(breaks) - 1):
+        a, b = points[breaks[j]], points[breaks[j + 1] - 1] if breaks[j + 1] - 1 > breaks[j] else points[breaks[j + 1]]
+        face = {"between": [j, j + 1], "texture": a["texture"]}
+        role = chunks[next(iter(chunks))].facts["textures"].get(a["texture"], {}).get("role")
+        dy = abs((a["above"] or 0) - (b["above"] or 0))
+        dv = (b["v"] or 0) - (a["v"] or 0)
+        if role == "ground":
+            face.update({"planar": True, "repeat": 1})
+        elif dy > 3 and abs(dv) > 0.05:
+            face.update({"v": [round(a["v"] % 1, 2), round(a["v"] % 1 + dv, 2)], "v_units": round(dy / abs(dv), 1)})
+        else:
+            face["v"] = [round(min(1, max(0, a["v"])), 2), round(min(1, max(0, b["v"])), 2)]
+        faces.append(face)
+    return drop, lines, faces
+
+
+def draft(db, texture_set, name):
+    """A map style drafted from the atlas for a texture set: its ground textures as terrains (each with the tile type
+    most of its tiles have), and its edge and slope textures as edges, each with its learned profile, a terrain of
+    its own, and its family: the ground inside an edge, the ground under a step."""
+    models = {m for (m,) in db.execute("SELECT model FROM chunks WHERE texture_set = ? AND kind = 'overworld'", (texture_set,))}
+    if not models:
+        models = {m for (m,) in db.execute("SELECT model FROM chunks WHERE texture_set = ?", (texture_set,))}
+    marks = ",".join("?" * len(models))
+    roles = defaultdict(Counter)
+    for t, role, n in db.execute(f"SELECT texture, role, SUM(tiles) FROM textures WHERE model IN ({marks}) GROUP BY texture, role", list(models)):
+        roles[t][role] += n
+    role = {t: c.most_common(1)[0][0] for t, c in roles.items()}
+    grounds = Counter()
+    types = defaultdict(Counter)
+    for g, tt, n in db.execute(f"""SELECT ground, tile_type, COUNT(*) FROM tiles WHERE model IN ({marks}) AND edge IS NULL
+                                   AND slope IS NULL AND ground IS NOT NULL GROUP BY ground, tile_type""", list(models)):
+        if role.get(g) == "ground":
+            grounds[g] += n
+            types[g][tt] += n
+    terrains, key_of = [], {}
+    for g, n in grounds.most_common(10):
+        if n < 20:
+            break
+        key = KEYS[len(terrains)]
+        key_of[g] = key
+        terrains.append({"key": key, "name": g, "color": f"hsl({sum(map(ord, g)) * 37 % 360}, 50%, 55%)",
+                         "ground": {"texture": g, "repeat": 4}, "tile_type": types[g].most_common(1)[0][0]})
+    insides = {t: i for t, i in db.execute(f"""SELECT texture, inside FROM textures WHERE model IN ({marks}) AND inside IS NOT NULL
+                                               GROUP BY texture, inside ORDER BY COUNT(*)""", list(models))}
+    chunks = {}
+    edges = []
+    candidates = Counter()
+    for t, n in db.execute(f"SELECT edge, COUNT(*) FROM tiles WHERE model IN ({marks}) AND edge IS NOT NULL GROUP BY edge", list(models)):
+        candidates[t] += n
+    for t, n in db.execute(f"SELECT slope, COUNT(*) FROM tiles WHERE model IN ({marks}) AND slope IS NOT NULL GROUP BY slope", list(models)):
+        candidates[t] += n
+    for texture, n in candidates.most_common(12):
+        if n < 20:
+            break
+        learned = learn_profile(db, texture, models, chunks)
+        if not learned:
+            continue
+        drop, lines, faces = learned
+        if drop > 2:
+            under = Counter(g for (g,) in db.execute(f"SELECT ground FROM tiles WHERE model IN ({marks}) AND slope = ?", [*models, texture]))
+            family = next((key_of[g] for g, _ in under.most_common() if g in key_of), None)
+        else:
+            family = key_of.get(insides.get(texture))
+        if family is None:
+            continue
+        edge = {"name": texture, "to": family, "lines": lines, "faces": faces}
+        if drop > 2:
+            edge["step"] = True
+            edge["from"] = [t["key"] for t in terrains]
+            if all(not f.get("v_units") and f.get("planar") for f in faces) or texture.startswith(("kaidan", "yamagrs")):
+                edge["ramp"] = True
+        else:
+            edge["from"] = [t["key"] for t in terrains if t["key"] != family]
+        edges.append(edge)
+    for e in edges:
+        e["from"] = sorted(set(e["from"]) | {k for k in KEYS[len(terrains):len(terrains) + len(edges)]})
+    for i, e in enumerate(edges):
+        key = KEYS[len(terrains)]
+        base = next(t for t in terrains if t["key"] == e["to"])
+        terrains.append({"key": key, "name": f"{e['name']} edge", "edge_of": e["to"], "edge": e["name"], "color": "#806040",
+                         "ground": base["ground"], "tile_type": base["tile_type"]})
+    wall = next((t for t, c in roles.items() if role.get(t) == "wall"), None) or next(iter(key_of))
+    return {"$schema": "../map_style.schema.json", "name": name, "texture_set": texture_set,
+            "wall": {"texture": wall, "repeat": 1, "alpha": "MASK"}, "edges": edges, "terrains": terrains}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -89,8 +219,19 @@ def main():
     c.add_argument("texture")
     c.add_argument("--drop", type=int)
     c.add_argument("--limit", type=int, default=120)
+    d = commands.add_parser("draft")
+    d.add_argument("texture_set")
+    d.add_argument("--name")
+    d.add_argument("--out")
     args = parser.parse_args()
     db = sqlite3.connect(DB)
+    if args.command == "draft":
+        style = draft(db, args.texture_set, args.name or args.texture_set)
+        text = json.dumps(style, indent=1)
+        if args.out:
+            Path(args.out).write_text(text + "\n")
+        print(text if not args.out else f"{args.out}: {len(style['terrains'])} terrains, {len(style['edges'])} edges")
+        return
     tiles = straight_tiles(db, args.texture, args.drop, args.limit)
     chunks = {}
     groups = defaultdict(list)

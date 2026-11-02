@@ -251,6 +251,20 @@ bends. Tiles whose inside line belongs to a region's hole (an island) are clippe
 on Route 20 (all four chunks hole-free): terrain 89–97%, edges 96–98%. Triangles: 1,597–2,415, against vanilla's
 952–1,426; map04_21's 2,415 is past the busiest vanilla overworld chunk (2,367): the triangle work matters.
 
+Styles learned (2026-11-05, `map_profiles.py draft TEXTURE_SET`): a texture set's ground textures as terrains
+(with their commonest tile types), its edge and slope textures as edges with profiles learned from their straight
+runs (where the top texture changes across the tile; a step's lines measured from the higher side; faces mapped from
+above, by height with v_units, or across), each edge's family (the ground inside an edge, under a step). For Route
+20's set it learns, unaided, the ledge, cliff, tiers and path edges measured by hand; water banks don't come out yet
+(their cross-sections vary). The round trip uses a learned style where none is given; against its earlier crude
+draft: desert textures 51.9→45.9% differing, Desert Resort 2 edges 83→89%, Wellspring Cave terrain 87.2→94.5%;
+Route 13 heights 89.6→86.1% and the cave's edges 59→55% are worse.
+
+Tall cliffs, stairs and hills (2026-11-05): tall cliffs are tiers of 16 units, each the cliff profile with a rock
+rim (gake1_0) under the tier above (faces' `by_outside`); stairs and hills are ramps (`ramp`): one face down the
+whole tile, sloped collision at the game's nearest plane (stairs: slope 8, as vanilla's). Route 20's style has
+Stairs and Grass slope; Floccesy Ranch's hills: textures differ 13.6% → 6.0%.
+
 Still to do for steps: vanilla's tall cliffs are tiers (gake1_0 faces between gake1_1 rims), not one face; corners
 (the plateau's convex corners are the lower region's concave ones, not rounded yet); stairs (kaidan01a); slopes one
 walks on (yamagrs01 hills, dunes).

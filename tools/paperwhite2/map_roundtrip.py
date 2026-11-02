@@ -33,6 +33,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tools/paperwhite2"))
 import map_maker  # noqa: E402
+import map_profiles  # noqa: E402
 import map_reader  # noqa: E402
 from tools.data.datajson import dumps  # noqa: E402
 
@@ -317,7 +318,14 @@ def main():
             shown = json.loads((map_maker.MODELS / args.model / "data.json").read_text())
             texture_set = shown.get("texture_set") or shown.get("texture_preview")
         style_name = "drafted"
-        style = draft_style(vanilla, texture_set)
+        # A style learned from the atlas for the chunk's texture set (map_profiles.py), else drafted from its reading
+        style = None
+        if texture_set and map_profiles.DB.exists():
+            import sqlite3
+            style = map_profiles.draft(sqlite3.connect(map_profiles.DB), texture_set, "drafted")
+            if not style["terrains"]:
+                style = None
+        style = style or draft_style(vanilla, texture_set)
         styles = work / "styles"
         styles.mkdir()
         shutil.copy(map_maker.STYLES / "map_style.schema.json", styles / "map_style.schema.json")
