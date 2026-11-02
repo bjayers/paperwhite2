@@ -230,6 +230,12 @@ edges (grass: ledges and cliffs), each drawn where its own edge terrain is paint
 paints vanilla's cliff tiles with the step that fits the drop: on Route 20 cliff tiles went from 0% to 53–77%
 matching, all tiles from 76–90% to 88–96%, and triangles closer to vanilla's (map04_20 1,464 against 1,114).
 
+The user's observation (2026-11-04): vanilla's corners are chamfered, not mitred. At a corner the edge texture
+runs on along the diagonal cut (michi01a's grass and its shadow lie diagonal across the corner tile; water's inward
+corners the same), so it isn't stretched; only the path's bends are mitred and stretched. The mitre the map maker
+uses stretches the texture round every corner. The profile learner should take each corner's shape and mapping
+from the atlas's corner cases rather than mitring.
+
 Still to do for steps: vanilla's tall cliffs are tiers (gake1_0 faces between gake1_1 rims), not one face; corners
 (the plateau's convex corners are the lower region's concave ones, not rounded yet); stairs (kaidan01a); slopes one
 walks on (yamagrs01 hills, dunes).
