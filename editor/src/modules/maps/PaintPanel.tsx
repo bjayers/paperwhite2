@@ -8,7 +8,7 @@ import { ObjectBrowser } from "./ObjectBrowser.tsx";
 import type { LibraryObject, MapStyle, PaintShape, PaintTool, Project } from "./painting.ts";
 
 export function PaintPanel({ model, project, dirty, styles, objects, tool, setTool, shape, setShape, terrain, setTerrain, height, setHeight,
-  placing, setPlacing, selected, onRemoveSelected, showPaint, setShowPaint, fadeModel, setFadeModel, onStart, onGenerate,
+  placing, setPlacing, selected, onRemoveSelected, onTurnSelected, showPaint, setShowPaint, fadeModel, setFadeModel, onStart, onGenerate,
   autoGenerate, setAutoGenerate, onStop, onPaintFromReading, onLibraryChanged, busy }: {
   model: string | null;
   project: Project | null;
@@ -28,6 +28,8 @@ export function PaintPanel({ model, project, dirty, styles, objects, tool, setTo
   setPlacing(id: string): void;
   selected: number | null;
   onRemoveSelected(): void;
+  /** A quarter turn clockwise seen from above (back: anticlockwise). */
+  onTurnSelected(back?: boolean): void;
   showPaint: boolean;
   setShowPaint(on: boolean): void;
   fadeModel: boolean;
@@ -147,12 +149,17 @@ export function PaintPanel({ model, project, dirty, styles, objects, tool, setTo
                                     onChoose={(id) => { setPlacing(id); setBrowsing(false); }} />}
         {tool === "select" && (
           <>
-            <p className="ow-note">{selectedObject ? <>Selected: <strong>{selectedObject[0]}</strong> at {selectedObject[1]}, {selectedObject[2]}</> : "Click an object to select it; drag it to move it."}</p>
-            <div className="me-actions"><button disabled={selected === null} onClick={onRemoveSelected} title="Delete">Remove it</button></div>
+            <p className="ow-note">{selectedObject ? <>Selected: <strong>{selectedObject[0]}</strong> at {selectedObject[1]}, {selectedObject[2]}
+              {selectedObject[3] ? `, turned ${selectedObject[3] * 90}° clockwise` : ""}</> : "Click an object to select it; drag it to move it."}</p>
+            <div className="me-actions">
+              <button disabled={selected === null} onClick={() => onTurnSelected(true)} title="Shift+R">⟲ Turn left</button>
+              <button disabled={selected === null} onClick={() => onTurnSelected()} title="R">⟳ Turn right</button>
+              <button disabled={selected === null} onClick={onRemoveSelected} title="Delete">Remove it</button>
+            </div>
           </>
         )}
         <p className="muted ow-note">{tool === "place" ? "Click the tile the object's north-west corner goes on." : tool === "select"
-          ? "Drag an object to another tile; it stands on that tile's ground." : tool === "fill"
+          ? "Drag an object to another tile, or drag the gizmo's arrows (click one: a tile along it, Shift+click: back); it stands on that tile's ground. R turns it a quarter clockwise about its north-west tile, Shift+R back; its collision turns with it." : tool === "fill"
           ? "Click a tile: it and every tile joined to it of the same terrain at the same height take the terrain chosen."
           : "Click or drag on the map; a rectangle fills from where the drag starts to where it ends."}
           {tool === "height" || tool === "raise" || tool === "lower" ? " A height painted on a kept tile paints it the terrain chosen above (Keep the chunk: the first terrain)." : ""}

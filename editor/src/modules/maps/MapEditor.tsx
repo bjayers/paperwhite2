@@ -25,8 +25,9 @@ import { ChunkScene, connectedFaces, faceKey, forgetObject, stackedFaces, type C
 import { seasonSets, seasonVariants, type SeasonSet } from "./seasons.ts";
 import { ReadingPanel, type ChunkReading } from "./ReadingPanel.tsx";
 import { PaintPanel } from "./PaintPanel.tsx";
+import { ScrubNumber } from "../overworld/ScrubNumber.tsx";
 import { ObjectsPanel } from "./ObjectsPanel.tsx";
-import { fillCells, loadLibrary, loadStyles, painted, projectPath, strokeCells, type LibraryObject, type MapStyle, type PaintShape,
+import { fillCells, footprint, loadLibrary, loadStyles, painted, projectPath, strokeCells, type LibraryObject, type MapStyle, type PaintShape,
   type PaintTool, type Project } from "./painting.ts";
 
 type Tab = "chunks" | "faces" | "collision" | "paint" | "objects";
@@ -165,6 +166,42 @@ export function MapEditor({ constants }: ToolProps) {
   useEffect(() => { scene.current?.setWireframe(wireframe); }, [wireframe, loaded]);
   useEffect(() => { scene.current?.setOverhead(overhead); }, [overhead]);
   useEffect(() => { scene.current?.showFaces(faces); }, [faces, loaded]);
+
+  // The gizmo: on the Faces tab's selection, or the Paint tab's selected object
+  const [gizmoMode, setGizmoMode] = useState<"grid" | "step" | "smooth">("grid");
+  const [gizmoStep, setGizmoStep] = useState(4);
+  const [gizmoOn, setGizmoOn] = useState(true);
+  const gizmoMove = useRef<(offset: THREE.Vector3) => void>(() => {});
+  gizmoMove.current = (offset) => {
+    if (tab === "faces") moveFacesBy(offset.x, offset.y, offset.z);
+    else if (tab === "paint" && project && selectedObject !== null) {
+      const placed = project.objects?.[selectedObject];
+      if (!placed) return;
+      // By whole tiles, its footprint kept on the chunk
+      const [, x, z] = placed, [w, d] = footprint(placed, library);
+      const tx = Math.round(offset.x / TILE), tz = Math.round(offset.z / TILE);
+      const size = project.size ?? map?.chunkTiles ?? 32;
+      if (tx || tz) objectMoved(selectedObject, { x: Math.max(0, Math.min(size - w, x + tx)), z: Math.max(0, Math.min(size - d, z + tz)) });
+    }
+  };
+  const [, setRedrawn] = useState(0);
+  useEffect(() => {
+    if (!scene.current) return;
+    scene.current.onGizmoMove = (o) => gizmoMove.current(o);
+    scene.current.onRedrawn = () => setRedrawn((n) => n + 1);
+  }, []);
+  useEffect(() => {
+    const s = scene.current;
+    if (!s) return;
+    if (!gizmoOn || busy) { s.showGizmo(null, null); return; }
+    if (tab === "faces" && faces.length) {
+      s.showGizmo(s.selectionMiddle(), gizmoMode === "grid" ? TILE : gizmoMode === "step" ? gizmoStep : null);
+    } else if (tab === "paint" && tool === "select" && selectedObject !== null) {
+      // Placed objects go by whole tiles, standing on the ground
+      const o = s.paintedObject(selectedObject);
+      s.showGizmo(o ? new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()) : null, TILE, { y: false }, o);
+    } else s.showGizmo(null, null);
+  });
 
   const pickFace = useRef<(face: Face | null, chunk: number | null, ev: PointerEvent, point: THREE.Vector3 | null,
                            tile: { x: number; z: number } | null) => void>(() => {});
@@ -403,9 +440,9 @@ export function MapEditor({ constants }: ToolProps) {
   useEffect(() => {
     const show = tab === "paint" && project && chunk !== null;
     const colors = Object.fromEntries((projectStyle?.terrains ?? []).map((t) => [t.key, t.color ?? "#888888"]));
-    scene.current?.showPainting(show ? chunk : null, show ? { terrain: project.terrain, height: project.height, objects: project.objects ?? [], colors,
-                                                             show: showPaint, fade: fadeModel } : null, selectedObject);
-  }, [tab, showPaint, fadeModel, project, projectStyle, chunk, loaded, selectedObject]);
+    scene.current?.showPainting(show ? chunk : null, show ? { terrain: project.terrain, height: project.height, objects: project.objects ?? [],
+                                                             sizes: Object.fromEntries(library.map((o) => [o.id, o.size])), colors, show: showPaint, fade: fadeModel } : null, selectedObject);
+  }, [tab, showPaint, fadeModel, project, projectStyle, chunk, loaded, selectedObject, library]);
 
   /** A painting's change, as one step; generated after it, as part of that step, where that is chosen. */
   const changeProject = (next: Project, what: string) => {
@@ -452,10 +489,20 @@ export function MapEditor({ constants }: ToolProps) {
     setSelectedObject(index);
     if (!project || !tile) return;
     const objects = [...(project.objects ?? [])];
-    const [name, x, z] = objects[index];
+    const [name, x, z, turns] = objects[index];
     if (x === tile.x && z === tile.z) return;
-    objects[index] = [name, tile.x, tile.z];
+    objects[index] = turns ? [name, tile.x, tile.z, turns] : [name, tile.x, tile.z];
     changeProject({ ...project, objects }, `Moved ${name} to ${tile.x}, ${tile.z}`);
+  };
+
+  /** Turns the selected object a quarter clockwise seen from above (back: anticlockwise), about its north-west tile. */
+  const turnSelectedObject = (back = false) => {
+    if (!project || selectedObject === null) return;
+    const objects = [...(project.objects ?? [])];
+    const [name, x, z, turns] = objects[selectedObject];
+    const next = ((turns ?? 0) + (back ? 3 : 1)) % 4;
+    objects[selectedObject] = next ? [name, x, z, next] : [name, x, z];
+    changeProject({ ...project, objects }, `Turned ${name} ${back ? "anticlockwise" : "clockwise"} (${next * 90}°)`);
   };
 
   const removeSelectedObject = () => {
@@ -825,7 +872,9 @@ export function MapEditor({ constants }: ToolProps) {
   };
 
   /** Moves the selected faces by whole tiles across, or units up and down; they stay selected. */
-  const moveFaces = async (dx: number, dy: number, dz: number) => {
+  const moveFaces = (dx: number, dy: number, dz: number) => moveFacesBy(dx * TILE, dy, dz * TILE);
+  /** Moves the selected faces by an offset in units. */
+  const moveFacesBy = async (dx: number, dy: number, dz: number) => {
     if (!current || !faces.length || busy || chunk === null) return;
     const set = sets[Math.min(season, Math.max(0, sets.length - 1))];
     if (!set?.set) return;
@@ -833,9 +882,10 @@ export function MapEditor({ constants }: ToolProps) {
     setBusy(true);
     try {
       const before = await glbBase64(path);
-      const result = await api.glbMove(path, faceSets(faces), [dx * TILE, dy, dz * TILE], set.set);
+      const result = await api.glbMove(path, faceSets(faces), [dx, dy, dz], set.set);
       const after = await glbBase64(path);
-      const what = `Moved ${faces.length} face(s) ${dx || dz ? `${dx}, ${dz} tile(s)` : ""}${dy ? ` ${dy > 0 ? "up" : "down"} ${Math.abs(dy)}` : ""}`;
+      const across = (v: number) => (v % TILE === 0 ? `${v / TILE}` : `${+(v / TILE).toFixed(3)}`);
+      const what = `Moved ${faces.length} face(s) ${dx || dz ? `${across(dx)}, ${across(dz)} tile(s)` : ""}${dy ? ` ${dy > 0 ? "up" : "down"} ${+Math.abs(dy).toFixed(3)}` : ""}`;
       setHistory((h) => ({ done: [...h.done, { kind: "faces", path, before, after, what }], undone: [] }));
       reloadChunk(current.folder);
       const at = chunk;
@@ -890,6 +940,7 @@ export function MapEditor({ constants }: ToolProps) {
         if (e.altKey) showHidden(); else if (faces.length) hideSelected();
       }
       else if (tab === "paint" && (e.key === "Delete" || e.key === "Backspace") && selectedObject !== null) { e.preventDefault(); removeSelectedObject(); }
+      else if (tab === "paint" && (e.key === "r" || e.key === "R") && !e.ctrlKey && !e.metaKey && !e.altKey && selectedObject !== null) { e.preventDefault(); turnSelectedObject(e.shiftKey); }
       else if (tab === "faces" && faces.length && e.altKey && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "PageUp", "PageDown"].includes(e.key)) {
         // Alt+arrows move the selection a tile (the arrows alone pan the view); Alt+Page Up and Down, a unit up or down
         e.preventDefault();
@@ -1052,8 +1103,24 @@ export function MapEditor({ constants }: ToolProps) {
                     <button disabled={!faces.length || busy} onClick={() => moveFaces(1, 0, 0)} title="A tile east (Alt+→)">→</button>
                     <button disabled={!faces.length || busy} onClick={() => moveFaces(0, -1, 0)} title="A unit down (Alt+Page Down; with Shift, half a tile)">Down</button>
                   </div>
+                  <div className="me-row"><label>Gizmo</label>
+                    <label className="ow-check"><input type="checkbox" checked={gizmoOn} onChange={(e) => setGizmoOn(e.target.checked)} /> arrows on the selection</label>
+                  </div>
+                  <div className="me-row"><label>Steps</label>
+                    <span className="me-stack">
+                      <label className="ow-check"><input type="radio" checked={gizmoMode === "grid"} onChange={() => setGizmoMode("grid")} /> the game's grid: whole tiles</label>
+                      <span className="me-inline">
+                        <label className="ow-check"><input type="radio" checked={gizmoMode === "step"} onChange={() => setGizmoMode("step")} /> a step of</label>
+                        <ScrubNumber label="units" value={gizmoStep} step={0.25} digits={2}
+                                     onChange={(v) => { setGizmoMode("step"); setGizmoStep(Math.max(0.0625, Math.min(64, Math.round(v * 16) / 16))); }} />
+                      </span>
+                      <label className="ow-check"><input type="radio" checked={gizmoMode === "smooth"} onChange={() => setGizmoMode("smooth")} /> smooth</label>
+                    </span>
+                  </div>
                   <p className="muted ow-note">Moves the selection a tile at a time (Alt+arrows) or a unit up and down (Alt+Page Up and Down; with
-                    Shift, half a tile); it stays selected. Its collision stays where it was: repaint it in the Collision tab.</p>
+                    Shift, half a tile); it stays selected. Or drag an arrow of the gizmo, or a square between two for both; clicking an arrow
+                    moves one step along it (Shift+click: back; smooth: a unit). A tile is 16 units. Its collision stays where it was: repaint
+                    it in the Collision tab.</p>
                 </section>
                 <section className="me-section">
                   <h4>Save as an object</h4>
@@ -1120,7 +1187,7 @@ export function MapEditor({ constants }: ToolProps) {
             {tab === "paint" && (
               <PaintPanel model={modelName} project={project} dirty={!!projectDoc?.dirty} styles={styles} objects={library} tool={tool} setTool={setTool}
                           shape={shape} setShape={setShape} terrain={terrainKey} setTerrain={setTerrainKey} height={paintHeightHalf} setHeight={setPaintHeightHalf}
-                          placing={placing} setPlacing={setPlacing} selected={selectedObject} onRemoveSelected={removeSelectedObject}
+                          placing={placing} setPlacing={setPlacing} selected={selectedObject} onRemoveSelected={removeSelectedObject} onTurnSelected={turnSelectedObject}
                           showPaint={showPaint} setShowPaint={setShowPaint} fadeModel={fadeModel} setFadeModel={setFadeModel} onStart={startProject} onPaintFromReading={paintFromReading} onLibraryChanged={() => setLibraryVersion((v) => v + 1)} onGenerate={() => void generate()} autoGenerate={autoGenerate} setAutoGenerate={setAutoGenerate} onStop={stopProject} busy={busy} />
             )}
             {tab === "objects" && (

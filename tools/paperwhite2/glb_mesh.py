@@ -32,6 +32,12 @@ class Vertex:
     def moved(self, dx, dy, dz):
         return Vertex((self.p[0] + dx, self.p[1] + dy, self.p[2] + dz), self.uv, self.color, self.normal)
 
+    def turned(self, depth):
+        """The vertex turned a quarter clockwise seen from above (north to east) about the vertical through (0, 0),
+        then moved east by depth: what was north-west of a footprint depth deep is north-west again."""
+        (x, y, z), (nx, ny, nz) = self.p, self.normal
+        return Vertex((depth - z, y, x), self.uv, self.color, (-nz, ny, nx))
+
 
 def _identity(matrix):
     # Within a hundredth: binds are stored as floats, and a turned joint's undo rounds (a unit in the translation)

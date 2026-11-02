@@ -4,10 +4,12 @@
 // zooms toward the cursor. The editor keeps what is selected; this draws it.
 
 import * as THREE from "three";
+import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { chunkLoader } from "../overworld/MapView.tsx";
 import { TILE, TILE_FLAG_COLLISION, TILE_FLAG_ENCOUNT, TILE_FLAG_WATER, tileFlags, type ZoneMap } from "../overworld/terrain.ts";
+import type { PlacedObject } from "./painting.ts";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 /** A painted map as the scene draws it in place of its chunk (map_project.schema.json): each tile's terrain (a letter
@@ -15,7 +17,10 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 export interface Painting {
   terrain: string[];
   height: number[][];
-  objects: [string, number, number][];
+  /** Each object's name, north-west tile and quarter turns clockwise, as the painting has them. */
+  objects: PlacedObject[];
+  /** The objects' footprints in tiles, east by south, unturned. */
+  sizes: Record<string, [number, number]>;
   colors: Record<string, string>;
   /** Whether its tiles' colors and walls are drawn (strokes paint either way). */
   show?: boolean;
@@ -136,6 +141,33 @@ export class ChunkScene {
     this.perspective = new THREE.PerspectiveCamera(45, 1, 1, 20000);
     this.camera = this.perspective;
     this.controls = this.makeControls(new THREE.Vector3());
+    this.gizmo = new TransformControls(this.camera, this.renderer.domElement);
+    this.gizmo.setMode("translate");
+    this.gizmo.size = 0.8;
+    this.gizmo.addEventListener("dragging-changed", (e) => { this.controls.enabled = !(e as unknown as { value: boolean }).value; });
+    this.gizmo.addEventListener("mouseDown", () => { this.gizmoStart = this.gizmoAnchor.position.clone(); });
+    this.gizmo.addEventListener("objectChange", () => {
+      // The selection's highlight (or the object) follows the gizmo while it's dragged, by the step chosen
+      const offset = this.gizmoOffset();
+      this.highlight.position.copy(offset);
+      if (this.gizmoFollower) this.gizmoFollower.object.position.copy(this.gizmoFollower.from).add(offset);
+    });
+    this.gizmo.addEventListener("mouseUp", () => {
+      const axis = this.gizmo.axis;
+      const dragged = this.gizmoAnchor.position.distanceTo(this.gizmoStart);
+      let offset = this.gizmoOffset();
+      if (dragged < 0.5 && axis && axis.length === 1) {
+        // A click on an arrow, not a drag: one step the way it points (each axis has an arrow either way; Shift: back)
+        const along = new THREE.Vector3(axis === "X" ? 1 : 0, axis === "Y" ? 1 : 0, axis === "Z" ? 1 : 0);
+        const grabbed = (this.gizmo as unknown as { pointStart: THREE.Vector3 }).pointStart;
+        const way = (grabbed.dot(along) < 0 ? -1 : 1) * (this.lastShift ? -1 : 1);
+        offset = along.multiplyScalar((this.gizmoStep ?? 1) * way);
+      }
+      this.gizmoAnchor.position.copy(this.gizmoStart);
+      this.highlight.position.set(0, 0, 0);
+      if (this.gizmoFollower) this.gizmoFollower.object.position.copy(this.gizmoFollower.from);
+      if (offset.lengthSq() > 1e-9) this.onGizmoMove?.(offset);
+    });
     this.scene.background = new THREE.Color(0x1e2129);
     this.scene.add(new THREE.AmbientLight(0xffffff, 1.6));
     const sun = new THREE.DirectionalLight(0xffffff, 1.4);
@@ -169,6 +201,55 @@ export class ChunkScene {
     return controls;
   }
 
+  /** The gizmo: arrows to move the selection along each axis, drawn at an anchor (the selection's middle), with the
+   * step its drags snap to (null: smooth) and clicks step by; onGizmoMove takes the move when a drag or click ends. */
+  gizmo: TransformControls;
+  private gizmoAnchor = new THREE.Object3D();
+  private gizmoStart = new THREE.Vector3();
+  private gizmoStep: number | null = 16;
+  /** A placed object that moves with the gizmo while it's dragged, and where it stood. */
+  private gizmoFollower: { object: THREE.Object3D; from: THREE.Vector3 } | null = null;
+  private lastShift = false;
+  onGizmoMove: ((offset: THREE.Vector3) => void) | null = null;
+  /** The painting was drawn again (its objects are new): where the gizmo goes may have changed. */
+  onRedrawn: (() => void) | null = null;
+  showGizmo(at: THREE.Vector3 | null, step: number | null, axes: { y: boolean } = { y: true }, follower: THREE.Object3D | null = null) {
+    if (this.gizmo.dragging) return;
+    this.gizmoFollower = follower ? { object: follower, from: follower.position.clone() } : null;
+    if (!at) {
+      this.gizmo.detach();
+      this.gizmo.getHelper().removeFromParent();
+      return;
+    }
+    if (!this.gizmoAnchor.parent) this.scene.add(this.gizmoAnchor);
+    if (!this.gizmo.getHelper().parent) this.scene.add(this.gizmo.getHelper());
+    this.gizmoAnchor.position.copy(at);
+    this.gizmoStep = step;
+    this.gizmo.showY = axes.y;
+    this.gizmo.attach(this.gizmoAnchor);
+  }
+
+  /** How far the gizmo has been dragged, each axis rounded to the step (the drag, not the position, snaps). */
+  private gizmoOffset(): THREE.Vector3 {
+    const offset = this.gizmoAnchor.position.clone().sub(this.gizmoStart);
+    const step = this.gizmoStep;
+    if (step) offset.set(Math.round(offset.x / step) * step, Math.round(offset.y / step) * step, Math.round(offset.z / step) * step);
+    return offset;
+  }
+
+  /** A placed object of the painting drawn in the scene, by its index. */
+  paintedObject(index: number): THREE.Object3D | null {
+    let found: THREE.Object3D | null = null;
+    this.paintGroup.traverse((o) => { if (!found && o.userData.objectIndex === index) found = o; });
+    return found;
+  }
+
+  /** Where the selection's highlight lies: its middle, or null when nothing is selected. */
+  selectionMiddle(): THREE.Vector3 | null {
+    const box = new THREE.Box3().setFromObject(this.highlight);
+    return box.isEmpty() ? null : box.getCenter(new THREE.Vector3());
+  }
+
   /** Switches between the perspective view and the overhead one (straight down, no perspective), over the same spot. */
   setOverhead(on: boolean) {
     if (on === this.overhead) return;
@@ -187,6 +268,7 @@ export class ChunkScene {
     }
     this.resize();
     this.controls = this.makeControls(target);
+    this.gizmo.camera = this.camera;
   }
 
   private placeOrtho(target: THREE.Vector3) {
@@ -199,6 +281,7 @@ export class ChunkScene {
     cancelAnimationFrame(this.frame);
     window.removeEventListener("pointerup", this.up);
     this.controls.dispose();
+    this.gizmo.dispose();
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }
@@ -385,11 +468,15 @@ export class ChunkScene {
     // The objects, on the ground of their north-west tile
     const placed = await Promise.all(painting.objects.map(([name]) => objectModel(name)));
     if (key !== this.paintKey) return;
-    painting.objects.forEach(([, x, z], i) => {
+    painting.objects.forEach(([name, x, z, turns], i) => {
       const model = placed[i];
       if (!model) return;
       const copy = model.clone();
-      copy.position.set(x0 + x * TILE, y(x, z), z0 + z * TILE);
+      // Turned clockwise seen from above about its north-west corner, then moved back onto its footprint
+      const k = (turns ?? 0) % 4, [w, d] = painting.sizes[name] ?? [1, 1];
+      const shift = [[0, 0], [d, 0], [w, d], [0, w]][k];
+      copy.rotation.y = -k * Math.PI / 2;
+      copy.position.set(x0 + (x + shift[0]) * TILE, y(x, z), z0 + (z + shift[1]) * TILE);
       copy.userData.objectIndex = i;
       group.add(copy);
       if (i === selected) group.add(new THREE.BoxHelper(copy, 0xffd040));
@@ -397,6 +484,7 @@ export class ChunkScene {
     this.paintGroup.clear();
     this.paintGroup.add(group);
     this.drawCells(this.cells.selected, this.cells.grid);
+    this.onRedrawn?.();
   }
 
   /** Draws a chunk's model at half its opacity (null: every chunk as it is). */
@@ -612,7 +700,10 @@ export class ChunkScene {
   }
 
   private down = (ev: PointerEvent) => {
+    this.lastShift = ev.shiftKey;
     if (ev.button !== 0) return;
+    // (the gizmo takes a click on its arrows)
+    if (this.gizmo.object && this.gizmo.axis) return;
     (document.activeElement as HTMLElement | null)?.blur?.();
     this.downAt = { x: ev.clientX, y: ev.clientY };
     if (this.dragObjects && this.paintChunk !== null) {

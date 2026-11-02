@@ -11,7 +11,16 @@ export interface Project {
   terrain: string[];
   /** In half tiles. */
   height: number[][];
-  objects?: [string, number, number][];
+  /** Its name, the x and z of its north-west tile, and how many quarter turns clockwise it's turned (none: 0). */
+  objects?: PlacedObject[];
+}
+
+export type PlacedObject = [string, number, number] | [string, number, number, number];
+
+/** A placed object's footprint in tiles, east by south, as it's turned. */
+export function footprint(object: PlacedObject, library: LibraryObject[]): [number, number] {
+  const size = library.find((o) => o.id === object[0])?.size ?? [1, 1];
+  return (object[3] ?? 0) % 2 ? [size[1], size[0]] : [size[0], size[1]];
 }
 
 export interface MapStyle {

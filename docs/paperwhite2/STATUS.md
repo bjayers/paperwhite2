@@ -4,22 +4,20 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
 ## 2026-11-05 (morning): next — editor controls and the object library; tiles still needed
 
-**Done (2026-11-05):** the object library's browser and viewer (Browse... in the Objects and Paint tabs; rename
-changes the name shown, the folder stays); the faded model off by default; the painted overlay drawn over the map
-(tops only, outlines drawn normally); the toolbar's Overhead view; the Paint tab's fill tool. **Next: the gizmo**
-(three.js TransformControls on the selected object or faces; translate by grid, step or smooth; clicking an arrow
-steps; 90° turns about the vertical for library objects on paintings, which needs a rotation field in projects).
-
-**Next (the user's order: these before more tiles):**
-- Object library browser, like the NPC sprite-bank browser: a window of every library object with a preview, its
-  name and category; per object, open a viewer, see its data, rename it, change its category; group or filter by the
-  user's categories.
-- Paint controls: the half-opacity model toggle stays but is off by default; rework the painted-tile overlay (it
-  z-fights with the map and is hidden under geometry after painting): tops of tiles only, no sides, drawn so it stays
-  visible; add a fill tool.
-- A gizmo in the 3D view for moving objects (Blender-like): translate along each axis, by the game's grid, by a set
-  step, or smooth; drag it or click its parts to step; rotation only if feasible; no scaling.
-- Debug button (done): the Paint tab's "Paint the whole chunk from its reading".
+**Done (2026-11-05):** the editor controls the user asked for before more tiles:
+- the object library's browser and viewer (Browse... in the Objects and Paint tabs; rename changes the name shown, the
+  folder stays);
+- the faded model off by default; the painted overlay drawn over the map (tops only, outlines drawn normally); the
+  toolbar's Overhead view; the Paint tab's fill tool;
+- the gizmo (three.js TransformControls): on the Faces tab's selection, arrows on each axis, stepping by the game's
+  grid, a step in units, or smooth (Move section); drag an arrow or a plane square, or click an arrow for one step
+  the way it points (Shift+click: back); on the Paint tab's selected object, by whole tiles across only. Each move is
+  one undo step;
+- quarter turns of placed objects (R, Shift+R, or the Turn buttons): projects' objects take an optional fourth value,
+  quarter turns clockwise from above (schema updated); map_maker turns the model, normals, footprint and collision
+  about the north-west tile. Tested in the browser: drawn, generated and collision tiles line up.
+  **Untested on hardware.** Directional tile types (a ledge's jump direction) don't turn with the object; a turned
+  ledge still jumps the way the original did.
 
 **Tiles still needed** (atlas, overworld edge and slope textures by tile count; done: paths, Route 20's banks,
 ledges, cliffs and tiers, stairs, grass hills):

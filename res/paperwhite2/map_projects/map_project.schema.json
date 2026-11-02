@@ -56,12 +56,17 @@
                     },
                     {
                         "type": "integer"
+                    },
+                    {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 3
                     }
                 ],
                 "items": false,
                 "minItems": 3
             },
-            "description": "Objects of the library: its name, and the x and z of its north-west tile"
+            "description": "Objects of the library: its name, the x and z of its north-west tile, and how many quarter turns clockwise (seen from above) it's turned, if any"
         }
     }
 }

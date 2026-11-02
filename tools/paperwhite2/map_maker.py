@@ -25,7 +25,7 @@ generate writes:
 - the terrains' layers (tall grass's blades, above the ground);
 - walls where neighbouring tiles' heights differ, facing the lower: the lower tile's terrain's wall (a riverbank),
   else the higher's, else the style's (a cliff), u along the wall, v down it;
-- the objects, each standing on the ground of its north-west tile;
+- the objects, each standing on the ground of its north-west tile, turned by quarter turns if it says so;
 - the collision: each tile flat at its height (the game's height table's nearest), its terrain's tile type, and the
   objects' footprints' types over it; the chunk's other layer, if it has one, stays as it is.
 The model is written whole (data.json "written", the style's texture set); the chunk's props stay.
@@ -667,21 +667,27 @@ def generate(project_path):
             return False
         polygons += [(remap[key], tri) for key, tri in kept_faces(triangles, cut, half, whole)]
 
-    # The objects, on the ground of their north-west tile
+    # The objects, on the ground of their north-west tile, each turned a quarter clockwise as many times as it says
     collision_over = {}
-    for name, x, z in project.get("objects", []):
+    for name, x, z, *turns in project.get("objects", []):
         obj_folder = OBJECTS / name
         if not (obj_folder / "object.json").exists():
             raise DataError(f"{project_path}: no object {name} in the library")
         info = json.loads((obj_folder / "object.json").read_text())
         triangles, obj_materials, _ = read_mesh(obj_folder / "model.glb")
+        collision = info.get("collision") or []
+        width, depth = info["size"]
+        for _ in range((turns[0] if turns else 0) % 4):
+            triangles = [(key, [v.turned(depth * TILE) for v in tri]) for key, tri in triangles]
+            collision = [[row[i] if i < len(row) else None for row in reversed(collision)] for i in range(width)]
+            width, depth = depth, width
         y = grid.get((x, z), (None, 0))[1]
         ox, oz = world(x, z)
         remap = {}
         for key, material in obj_materials.items():
             remap[key] = materials_from(materials, material)
         polygons += [(remap[key], [v.moved(ox, y, oz) for v in tri]) for key, tri in triangles]
-        for dz, row in enumerate(info.get("collision") or []):
+        for dz, row in enumerate(collision):
             for dx, tile_type in enumerate(row):
                 if tile_type is not None:
                     collision_over[(x + dx, z + dz)] = tile_type
