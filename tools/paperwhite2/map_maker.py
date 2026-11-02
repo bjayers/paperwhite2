@@ -85,6 +85,63 @@ def height_tables():
     return [-o / slopes[0][1] for o in offsets]
 
 
+class Across:
+    """The tiles past a chunk's borders: its neighbours on its zone matrix, read when first asked for (map_reader.py,
+    with the painting's style), as they are now. A tile past the chunk is (terrain, height where one walks), or None
+    where no chunk is there."""
+
+    def __init__(self, model, size, style_name=None, grid=None):
+        self.model, self.size, self.style_name = model, size, style_name
+        self.chunks = {}
+        self.place = None
+        for path in sorted((ROOT / "res/field/matrices").glob("*.json")):
+            maps = json.loads(path.read_text()).get("maps") or []
+            for row, line in enumerate(maps):
+                for column, name in enumerate(line):
+                    if name and name.replace("MAP_MODEL_", "").lower() == model:
+                        self.place = (maps, column, row)
+                        break
+                if self.place:
+                    break
+            if self.place:
+                break
+
+    def neighbour(self, dx, dz):
+        if not self.place:
+            return None
+        maps, column, row = self.place
+        r, c = row + dz, column + dx
+        if not (0 <= r < len(maps) and 0 <= c < len(maps[r])) or not maps[r][c]:
+            return None
+        name = maps[r][c].replace("MAP_MODEL_", "").lower()
+        if (dx, dz) not in self.chunks:
+            import map_reader
+            style = json.loads((STYLES / f"{self.style_name}.json").read_text()) if self.style_name else None
+            try:
+                self.chunks[(dx, dz)] = map_reader.Chunk(name, ROOT / "res/field/maps/models" / name, style)
+            except (OSError, ValueError, KeyError):
+                self.chunks[(dx, dz)] = None
+        return self.chunks[(dx, dz)]
+
+    def terrain(self, xz):
+        x, z = xz
+        dx = -1 if x < 0 else 1 if x >= self.size else 0
+        dz = -1 if z < 0 else 1 if z >= self.size else 0
+        chunk = self.neighbour(dx, dz)
+        if chunk is None:
+            return None
+        tile = chunk.tiles.get((x - dx * self.size, z - dz * self.size))
+        if tile is None:
+            return None
+        f = tile.facts
+        first = next((c for c in f["collision"] if c["layer"] == 0 and c["height"] is not None), None)
+        y = first["height"] if first else (f["ground"] or {}).get("y")
+        if first and (first["tile_type"] >> 16) & 1 and f["ground"] and f["ground"]["y"] > y + 2:
+            y = f["ground"]["y"]
+        terrain = f["reading"]["terrain"]
+        return (None if terrain == "cliff" else terrain, round(y) if y is not None else None)
+
+
 def ground_heights(folder, size, images_from=None):
     """Each tile's ground height as a chunk's model draws it: the highest opaque, flat-enough face over the tile's middle
     (ground, ledges, bridges; not leaves, which are see-through, nor walls). Where the model has none there (a hole),
@@ -301,11 +358,13 @@ def generate(project_path):
                 edge_outside.setdefault(face["texture"], e["from"][0])
     kept_textures = {xz: tex for xz, (_, tex) in ground_faces(base, size, images_from=folder).items()} if keeps else {}
 
+    across = Across(project["model"], size, style_name=project["style"], grid=grid)
+
     def terrain_of(xz):
-        # A tile's terrain and height
+        # A tile's terrain and height; past the chunk, the neighbouring chunk's tile as the reader reads it
         v = grid.get(xz)
         if v is None:
-            return None
+            return across.terrain(xz)
         if v[0] != KEEP:
             return v
         # By its ground's texture, else by its tile type
