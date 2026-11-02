@@ -2,9 +2,11 @@
 // the Faces tab, placed on the chosen chunk where a click says (its faces pasted into the model, its collision
 // painted), and on painted maps in the Paint tab.
 
+import { useState } from "react";
+import { ObjectBrowser } from "./ObjectBrowser.tsx";
 import type { LibraryObject } from "./painting.ts";
 
-export function ObjectsPanel({ objects, chosen, setChosen, placing, setPlacing, missing, onImport, onDelete, busy }: {
+export function ObjectsPanel({ objects, chosen, setChosen, placing, setPlacing, missing, onImport, onDelete, onLibraryChanged, busy }: {
   objects: LibraryObject[];
   chosen: string;
   setChosen(id: string): void;
@@ -13,14 +15,19 @@ export function ObjectsPanel({ objects, chosen, setChosen, placing, setPlacing, 
   missing: string[];
   onImport(): void;
   onDelete(id: string): void;
+  onLibraryChanged(): void;
   busy: boolean;
 }) {
+  const [browsing, setBrowsing] = useState(false);
   const object = objects.find((o) => o.id === chosen);
   const categories = [...new Set(objects.map((o) => o.category ?? ""))].sort();
   return (
     <>
       <section className="me-section">
         <h4>Library</h4>
+        <div className="me-actions"><button onClick={() => setBrowsing(true)} title="Every object with a preview: view, rename, change its category">Browse…</button></div>
+        {browsing && <ObjectBrowser objects={objects} chosen={chosen} onClose={() => setBrowsing(false)} onChanged={onLibraryChanged}
+                                    onChoose={(id) => { setChosen(id); setBrowsing(false); }} />}
         {objects.length === 0 ? (
           <p className="muted ow-note">The library is empty. Select an object's faces in the Faces tab (Select the stack takes a whole tree),
             then Save as an object.</p>

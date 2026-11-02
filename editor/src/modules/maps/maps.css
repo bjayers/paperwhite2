@@ -67,3 +67,18 @@
 .me-record pre { max-height: 360px; overflow: auto; font-size: 11px; white-space: pre-wrap; word-break: break-word; margin: 0; }
 .me-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 6px 0; font-size: 12px; }
 .me-legend-item { display: inline-flex; align-items: center; gap: 4px; }
+
+/* The object library's browser and viewer */
+.me-browser-body { flex: 1; overflow-y: auto; padding: 0 4px 8px; }
+.me-browser-group { margin: 10px 8px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.me-object-card { gap: 4px; }
+.me-card-pick { display: flex; flex-direction: column; align-items: center; gap: 2px; background: none; border: none; padding: 0; width: 100%; }
+.me-card-actions { display: flex; gap: 2px; flex-wrap: wrap; justify-content: center; }
+.me-card-actions button { font-size: 11px; padding: 1px 6px; }
+.me-thumb { width: 96px; height: 96px; object-fit: contain; border-radius: 4px; background: var(--hover); }
+.me-thumb-empty { display: inline-block; }
+.me-viewer { height: 76vh; }
+.me-viewer-body { flex: 1; display: flex; min-height: 0; }
+.me-viewer-view { flex: 1; min-width: 0; }
+.me-viewer-data { width: 300px; overflow-y: auto; padding: 10px 12px; }
+.me-viewer-data pre { margin: 0; white-space: pre-wrap; font-size: 11px; }

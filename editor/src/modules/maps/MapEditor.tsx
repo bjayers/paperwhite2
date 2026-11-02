@@ -1111,11 +1111,12 @@ export function MapEditor({ constants }: ToolProps) {
               <PaintPanel model={modelName} project={project} dirty={!!projectDoc?.dirty} styles={styles} objects={library} tool={tool} setTool={setTool}
                           shape={shape} setShape={setShape} terrain={terrainKey} setTerrain={setTerrainKey} height={paintHeightHalf} setHeight={setPaintHeightHalf}
                           placing={placing} setPlacing={setPlacing} selected={selectedObject} onRemoveSelected={removeSelectedObject}
-                          showPaint={showPaint} setShowPaint={setShowPaint} fadeModel={fadeModel} setFadeModel={setFadeModel} onStart={startProject} onPaintFromReading={paintFromReading} onGenerate={() => void generate()} autoGenerate={autoGenerate} setAutoGenerate={setAutoGenerate} onStop={stopProject} busy={busy} />
+                          showPaint={showPaint} setShowPaint={setShowPaint} fadeModel={fadeModel} setFadeModel={setFadeModel} onStart={startProject} onPaintFromReading={paintFromReading} onLibraryChanged={() => setLibraryVersion((v) => v + 1)} onGenerate={() => void generate()} autoGenerate={autoGenerate} setAutoGenerate={setAutoGenerate} onStop={stopProject} busy={busy} />
             )}
             {tab === "objects" && (
               <ObjectsPanel objects={library} chosen={chosenObject} setChosen={setChosenObject} placing={placingOnChunk} setPlacing={setPlacingOnChunk}
-                            missing={missing} onImport={importMissing} onDelete={deleteObject} busy={busy} />
+                            missing={missing} onImport={importMissing} onDelete={deleteObject} busy={busy}
+                            onLibraryChanged={() => setLibraryVersion((v) => v + 1)} />
             )}
           </div>
         </div>

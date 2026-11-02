@@ -4,11 +4,12 @@
 
 import { useState } from "react";
 import { ScrubNumber } from "../overworld/ScrubNumber.tsx";
+import { ObjectBrowser } from "./ObjectBrowser.tsx";
 import type { LibraryObject, MapStyle, PaintShape, PaintTool, Project } from "./painting.ts";
 
 export function PaintPanel({ model, project, dirty, styles, objects, tool, setTool, shape, setShape, terrain, setTerrain, height, setHeight,
   placing, setPlacing, selected, onRemoveSelected, showPaint, setShowPaint, fadeModel, setFadeModel, onStart, onGenerate,
-  autoGenerate, setAutoGenerate, onStop, onPaintFromReading, busy }: {
+  autoGenerate, setAutoGenerate, onStop, onPaintFromReading, onLibraryChanged, busy }: {
   model: string | null;
   project: Project | null;
   dirty: boolean;
@@ -39,8 +40,10 @@ export function PaintPanel({ model, project, dirty, styles, objects, tool, setTo
   onStop(): void;
   /** Debug: the whole chunk painted from its reading and generated. */
   onPaintFromReading(): void;
+  onLibraryChanged(): void;
   busy: boolean;
 }) {
+  const [browsing, setBrowsing] = useState(false);
   if (!model) return <p className="muted ow-note">Choose a chunk (the Chunks tab, or click the map).</p>;
   if (!project) return (
     <>
@@ -136,8 +139,11 @@ export function PaintPanel({ model, project, dirty, styles, objects, tool, setTo
               <option value="">Choose…</option>
               {objects.map((o) => <option key={o.id} value={o.id}>{o.category ? `${o.category}: ` : ""}{o.name} ({o.size[0]}×{o.size[1]})</option>)}
             </select>
+            <button onClick={() => setBrowsing(true)} title="Choose from previews">Browse…</button>
           </div>
         )}
+        {browsing && <ObjectBrowser objects={objects} chosen={placing} onClose={() => setBrowsing(false)} onChanged={onLibraryChanged}
+                                    onChoose={(id) => { setPlacing(id); setBrowsing(false); }} />}
         {tool === "select" && (
           <>
             <p className="ow-note">{selectedObject ? <>Selected: <strong>{selectedObject[0]}</strong> at {selectedObject[1]}, {selectedObject[2]}</> : "Click an object to select it; drag it to move it."}</p>
