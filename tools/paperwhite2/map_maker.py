@@ -292,6 +292,8 @@ def ring(corners, splits):
             ab = [b[k] - a[k] for k in range(3)]
             ap = [p[k] - a[k] for k in range(3)]
             length = sum(c * c for c in ab)
+            if length < 1e-12:
+                continue  # (a repeated corner)
             t = sum(ab[k] * ap[k] for k in range(3)) / length
             if 1e-6 < t < 1 - 1e-6 and sum((ap[k] - t * ab[k]) ** 2 for k in range(3)) < 1e-6:
                 inside.append((t, p))

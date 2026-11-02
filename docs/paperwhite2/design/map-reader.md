@@ -289,3 +289,24 @@ walks on (yamagrs01 hills, dunes).
 
 What stays from the current map maker: the profiles, the bends (which land where vanilla's do), the painted edge
 terrains, the rounding and the strips. The rewrite is in the reading, the seams and the rules.
+
+## Corners as the game builds them (2026-11-02)
+
+The user pointed out that vanilla's corners aren't chamfered in their geometry: the texture's own shape rounds them.
+From Route 20's faces (map04_20 at w2-original):
+- **Inward corners** (the border turning round the band, a path's corner round grass): each line turns at one
+  point, the border half a tile out along the diagonal (CHAMFER_OUT) and each line further in CHAMFER_IN of its
+  offset from it, straight from the stations a tile either side; no stations half a tile off the corner. u mirrors
+  at the corner (the run turns back there). The diagonal tile is carved where the border line leaves it. The old
+  half-tile stations and their carve didn't meet, which left the small black holes the user found.
+- **Rounded corners** (the edge's round: the border turning away from the band, a T's corners): the border's corner
+  stays square, and each other line cuts straight across it, from its offset in on one side to the same on the
+  other; one triangle fills the corner, its texture fanning across it (u -0.5 to 0.5 in the game's). They had been
+  cut round over two tiles each way, the long diagonals the user saw.
+- A path's slant into a corner over two tiles or so is its point, not the corner's.
+
+Holes (points of a 1-unit grid that vanilla's opaque faces cover and the generated chunk's don't), round trips with
+Route 20's style: map04_20 8 holed tiles to 0, map05_20 13 to 0, map04_21 19 to 0, map05_21 17 to 0; triangles
+down about 10%. The debug-painted map04_20 (with its HEAD edits): 1,400 polygons and 3,899 vertices as the DS draws
+them, from 1,870 and 5,493.
+

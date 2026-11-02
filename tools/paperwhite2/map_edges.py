@@ -76,6 +76,27 @@ def _mitre(before, after, db, da):
     return (nb[0] * db + na[0] * da, nb[1] * db + na[1] * da)
 
 
+def _crossing(a, b, c, d):
+    """Where segment a-b crosses segment c-d (points (x, z)), or None."""
+    r = (b[0] - a[0], b[1] - a[1])
+    q = (d[0] - c[0], d[1] - c[1])
+    den = r[0] * q[1] - r[1] * q[0]
+    if abs(den) < 1e-12:
+        return None
+    t = ((c[0] - a[0]) * q[1] - (c[1] - a[1]) * q[0]) / den
+    u = ((c[0] - a[0]) * r[1] - (c[1] - a[1]) * r[0]) / den
+    if -EPS <= t <= 1 + EPS and -EPS <= u <= 1 + EPS:
+        return (a[0] + r[0] * t, a[1] + r[1] * t)
+    return None
+
+
+def _side(corner, point, end):
+    """Whether point lies on the side from corner to end (within it)."""
+    return (abs((point[0] - corner[0]) * (end[1] - corner[1]) - (point[1] - corner[1]) * (end[0] - corner[0])) < 1e-6
+            and min(corner[0], end[0]) - EPS <= point[0] <= max(corner[0], end[0]) + EPS
+            and min(corner[1], end[1]) - EPS <= point[1] <= max(corner[1], end[1]) + EPS)
+
+
 def _outside_of(poly, tile):
     """A simple polygon covering what lies outside poly near a tile: a box far round it, joined to poly by a bridge of
     no width from poly's vertex farthest from the tile (so the bridge never crosses the tile) and back."""
@@ -190,8 +211,10 @@ def _collinear(a, b, c):
     return all(abs((b[q] - a[q]) * (c[r] - a[r]) - (b[r] - a[r]) * (c[q] - a[q])) < EPS for q, r in ((0, 1), (0, 2), (1, 2)))
 
 
-# An inward corner's chamfer, as the game's (Route 20's river banks and paths, the atlas): the border's corner moves
-# CHAMFER_OUT along both normals out into the diagonal tile, and each line follows CHAMFER_IN of its offset in from it
+# An inward corner, as the game's (Route 20's paths and river banks, the atlas): each line turns at one point, the
+# border's CHAMFER_OUT along both normals out into the diagonal tile and each line CHAMFER_IN of its offset in from
+# it, straight from the stations a tile either side, so the band is a quad each side meeting on the diagonal; u
+# mirrors there, so the texture's own shape rounds the corner and nothing is stretched
 CHAMFER_OUT = 0.5
 CHAMFER_IN = 0.75
 
@@ -250,38 +273,20 @@ def band(region, edge, banded, points, square=lambda tile: False, drop=lambda e:
         # Each station's point of each line (x, z), which rounding and bends then move
         pts = [[(e[0][0] + offsets[i][k][0], e[0][1] + offsets[i][k][1]) for k in range(len(lines))] for i, e in enumerate(loop)]
         moved = [i in outward for i in range(n)]  # (an inward corner chamfered: no bend or rounding beside it)
-        # Round convex corners of banded edges with two straight banded tiles either side: each line's points a tile
-        # either side of the corner and at it go round_by of the way to the straight cut between its points two tiles
-        # either side (a line further in has its corner and the points beside it all at its mitre, so moving each
-        # along its own edge would fold it)
+        # Rounded corners (the edge's round): where the border turns away from the band (the inside of a turn, a T's
+        # corners), the game keeps the border's corner square and cuts each other line straight across it, from the
+        # point a side's offset in from the corner on one side to the same on the other: the corner becomes two
+        # stations on the one border point, and the band between them a triangle whose texture fans round it
+        splits = {}
         if round_by:
             for i, e in enumerate(loop):
                 b = loop[i - 1]
-                if e[1] != b[2] or square(e[3]) or not all(flags[(i + k) % n] for k in (-2, -1, 0, 1)):
+                if e[1] != b[2] or square(e[3]) or not (flags[i - 1] and flags[i]) or moved[i]:
                     continue
-                if not (straight(i - 1) and straight(i + 1)) or any(moved[(i + k) % n] for k in (-2, -1, 0, 1, 2)):
-                    continue
-                # The border is cut round (round_by of the way to the straight cut between its points two tiles either
-                # side); every other line follows it at its own offset, a constant width from it, so the band is as
-                # wide across the corner as along its sides and its texture isn't stretched (a chamfer, the game's)
-                border = [pts[(i + j) % n][0] for j in range(-2, 3)]
-                a0, a1 = border[0], border[4]
-                for j in (1, 2, 3):
-                    f = j / 4
-                    cut = (a0[0] + (a1[0] - a0[0]) * f, a0[1] + (a1[1] - a0[1]) * f)
-                    old = border[j]
-                    border[j] = (old[0] + (cut[0] - old[0]) * round_by, old[1] + (cut[1] - old[1]) * round_by)
-                base = lines[0]["offset"]
-                for j in (1, 2, 3):
-                    prev, at, nxt = border[j - 1], border[j], border[j + 1]
-                    n1, n2 = _inward(prev, at), _inward(at, nxt)
-                    scale = 1 + n1[0] * n2[0] + n1[1] * n2[1]
-                    miter = ((n1[0] + n2[0]) / scale, (n1[1] + n2[1]) / scale) if scale > EPS else n1
-                    station = (i + j - 2) % n
-                    for k, ln in enumerate(lines):
-                        d = ln["offset"] - base
-                        pts[station][k] = (at[0] + miter[0] * d, at[1] + miter[1] * d)
-                    moved[station] = True
+                nb, na = b[2], e[2]
+                splits[i] = ([(e[0][0] + nb[0] * ln["offset"], e[0][1] + nb[1] * ln["offset"]) for ln in lines],
+                             [(e[0][0] + na[0] * ln["offset"], e[0][1] + na[1] * ln["offset"]) for ln in lines])
+                moved[i] = True
         # Bends: across from another stretch of the region first (a T), then every third tile on alternating sides
         mids = {}
 
@@ -322,18 +327,12 @@ def band(region, edge, banded, points, square=lambda tile: False, drop=lambda e:
         # The stations in order, bends' middles among them, with each line's point (x, z) and lift
         seq = []
         for i, e in enumerate(loop):
-            if i in outward:
-                # The chamfer starts half a tile before the corner, as the game's does: a station at the middle of
-                # the edge before, straight on
-                b = loop[i - 1]
-                at = (b[0][0] + b[1][0] * 0.5, b[0][1] + b[1][1] * 0.5)
-                seq.append({"s": i - 0.5, "border": at, "lift": lifts[i], "edge": (i - 1) % n,
-                            "pts": [(at[0] + b[2][0] * ln["offset"], at[1] + b[2][1] * ln["offset"]) for ln in lines]})
-            seq.append({"s": float(i), "border": e[0], "pts": pts[i], "lift": lifts[i], "edge": i, "outward": i in outward})
-            if i in outward:
-                at = (e[0][0] + e[1][0] * 0.5, e[0][1] + e[1][1] * 0.5)
-                seq.append({"s": i + 0.5, "border": at, "lift": lifts[i], "edge": i,
-                            "pts": [(at[0] + e[2][0] * ln["offset"], at[1] + e[2][1] * ln["offset"]) for ln in lines]})
+            if i in splits:
+                before, after = splits[i]
+                seq.append({"s": i - 0.01, "border": e[0], "pts": before, "lift": lifts[i], "edge": (i - 1) % n, "split": True})
+                seq.append({"s": float(i), "border": e[0], "pts": after, "lift": lifts[i], "edge": i})
+            else:
+                seq.append({"s": float(i), "border": e[0], "pts": pts[i], "lift": lifts[i], "edge": i, "outward": i in outward})
             if i in mids:
                 seq.append({"s": i + 0.5, "mid": True, "border": (e[0][0] + e[1][0] * 0.5, e[0][1] + e[1][1] * 0.5), "pts": mids[i],
                             "lift": [ln["lift"] + (drop(e) if ln.get("from") == "outside" else 0.0) for ln in lines], "edge": i})
@@ -341,15 +340,21 @@ def band(region, edge, banded, points, square=lambda tile: False, drop=lambda e:
         # u by length along the border line (line 0), so a chamfered corner's diagonal isn't stretched (the game's
         # edge textures run at one repeat a tile round corners too)
         # (a bend's sides keep a repeat a tile, stretched along them, as the game's points do)
+        # (and turning back at each inward corner: the texture mirrors there, as the game's does)
         run = [0.0]
+        way = 1.0
         for j in range(1, m + 1):
             sa, sb = seq[j - 1], seq[j % m]
+            if sa.get("outward"):
+                way = -way
             step = (sb["s"] - sa["s"]) % n or n
-            if sa.get("mid") or sb.get("mid"):
-                run.append(run[-1] + step)
+            if sa.get("split"):
+                run.append(run[-1] + way)  # (a rounded corner's fan: a repeat across it, as the game's)
+            elif sa.get("mid") or sb.get("mid"):
+                run.append(run[-1] + way * step)
             else:
                 a, b = sa["pts"][0], sb["pts"][0]
-                run.append(run[-1] + math.hypot(b[0] - a[0], b[1] - a[1]))
+                run.append(run[-1] + way * math.hypot(b[0] - a[0], b[1] - a[1]))
         for j, st in enumerate(seq):
             st["u"] = run[j]
         loop_length = run[m]
@@ -368,7 +373,7 @@ def band(region, edge, banded, points, square=lambda tile: False, drop=lambda e:
         for r, j in enumerate(starts):
             a, b = seq[j], seq[starts[(r + 1) % len(starts)]]
             end = starts[(r + 1) % len(starts)]
-            ua, ub = a["u"], b["u"] if end > j else b["u"] + loop_length
+            ua, ub = a["u"], b["u"] if end > j else loop_length
             outer_points.add(p3(a, 0))
             inner_points.add(p3(a, inner))
             for face in edge["faces"]:
@@ -388,8 +393,15 @@ def band(region, edge, banded, points, square=lambda tile: False, drop=lambda e:
             square_ = [(tile[0], tile[1]), (tile[0] + 1, tile[1]), (tile[0] + 1, tile[1] + 1), (tile[0], tile[1] + 1)]
             j = next(j for j, c in enumerate(square_) if abs(c[0] - corner[0]) < EPS and abs(c[1] - corner[1]) < EPS)
             prev, nxt = square_[j - 1], square_[(j + 1) % 4]
-            cut = [((corner[0] + prev[0]) / 2, (corner[1] + prev[1]) / 2), v, ((corner[0] + nxt[0]) / 2, (corner[1] + nxt[1]) / 2)]
-            carved.append((tile, square_[:j] + cut + square_[j + 1:]))
+            # Where the border line leaves the tile through each of the corner's two sides, towards its neighbouring
+            # stations (half way along, where it doesn't)
+            legs = [(v, pts[(i - 1) % n][0]), (v, pts[(i + 1) % n][0])]
+
+            def leaving(end):
+                hit = next((x for a, b in legs for x in [_crossing(a, b, corner, end)] if x and _side(corner, x, end)), None)
+                return hit or ((corner[0] + end[0]) / 2, (corner[1] + end[1]) / 2)
+            cut = [leaving(prev), v, leaving(nxt)]
+            carved.append((tile, _clean(square_[:j] + cut + square_[j + 1:])))
         carves.clear()
         for j in range(m):
             if not off[j] or off[j - 1]:
