@@ -2,6 +2,17 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-03 (night): stairs, rivers, dunes; the grid hidden over the original game
+
+- Tall grass needs its blades over half the tile (not stairs beside it); a tile's own texture rising over its middle
+  (a stair's upper steps) isn't a structure on it. Under water the ground is the bed within two tiles under the
+  surface, else a see-through surface over the whole tile (the sea), never a shadow or the rapids. An edge needs a
+  fifth of the tile (not a sliver of sand edge on a dune). The Tile grid is hidden while the Reading layer shows the
+  original game (it's drawn from the current collision, with the hack's height edits: Virbank's pipes are walkable
+  only in the hack).
+- Known: shoreline tiles (Route 13) read as wet sand or water by whichever has more of the tile; the atlas should
+  learn that both are one shore.
+
 ## 2026-11-03 (evening): structures by their open sides; see-through water; empty tiles
 
 - A texture is a structure (a deck) only where its sides are open: Route 20's bridges and Virbank's walkways over its

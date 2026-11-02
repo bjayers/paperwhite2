@@ -421,11 +421,17 @@ def ground(tile):
         hits = [h for h in tile.surfaces_at(u, w, opaque=True) if roles.get(h[1].texture, {}).get("role") != "wall"]
         at = [h for h in hits if height is not None and abs(h[0] - height) <= TILE / 2] if height is not None else []
         if not at and height is not None and not blocked:
-            # Water drawn see-through at the collision's height (a canal, the sea), when nothing opaque is there
-            at = [h for h in tile.surfaces_at(u, w) if abs(h[0] - height) <= TILE / 2
-                  and roles.get(h[1].texture, {}).get("role") != "wall"]
+            # Under water: the bed under the collision's surface, within two tiles (a river's, a canal's floor), else
+            # water drawn see-through at the surface (the sea), never a shadow or a stamp over it
+            at = [h for h in hits if height - 2 * TILE <= h[0] < height]
             if at:
-                hits = at
+                at = [max(at, key=lambda h: h[0])]
+            else:
+                whole = {x["texture"] for x in tile.facts["surfaces"] if x["cover"] >= 0.9}
+                at = [h for h in tile.surfaces_at(u, w) if h[1].alpha == "BLEND" and abs(h[0] - height) <= TILE / 2
+                      and h[1].texture in whole and roles.get(h[1].texture, {}).get("role") != "wall"]
+                if at:
+                    hits = at
         if blocked:
             pick = hits[0] if hits else None
         else:
@@ -464,6 +470,7 @@ def standing(tile):
         # Anything opaque (not a wall) wholly over the ground of a tile one passes (not blocked) spans it: a pipe over
         # a canal one surfs under
         if role not in ("structure", "decoration", "wall") and p.alpha == "OPAQUE" and tile.facts["ground"] and passable \
+                and p.texture != tile.facts["ground"]["texture"] \
                 and min(v.p[1] for v in p.polygon) > base + TILE / 2:
             role = "structure"
         if role not in ("structure", "decoration"):
@@ -544,7 +551,7 @@ def reading(tile):
         # A bend: an edge reaching a little into a plain tile of its own terrain (a path's middle at a point)
         if edge_surface["cover"] < 0.5 and family is not None and family == ground_family and not slope_cover:
             out["bend"] = {"texture": edge_surface["texture"], "from": outside, "cover": edge_surface["cover"]}
-        elif edge_surface["cover"] >= 0.5 or slope_cover:
+        elif edge_surface["cover"] >= 0.5 or (slope_cover and edge_surface["cover"] >= 0.2):
             out["edge"] = {"texture": edge_surface["texture"], "outside": outside, "of": family, "cover": edge_surface["cover"]}
             if family:
                 out["terrain"] = family
@@ -563,8 +570,8 @@ def reading(tile):
         out["terrain"] = "cliff"
         out["confidence"] = "high"
     # A terrain drawn with layers over its ground (tall grass's blades) is the one whose layers stand on the tile
-    if style and not out["edge"]:
-        standing_textures = {x["texture"] for x in tile.facts["standing"]}
+    if style and not out["edge"] and not out["slope"]:
+        standing_textures = {x["texture"] for x in tile.facts["standing"] if x["cover"] >= 0.5}
         for t in style["terrains"]:
             if t.get("layers") and standing_textures & {layer["texture"] for layer in t["layers"]}:
                 out["terrain"] = t["key"]

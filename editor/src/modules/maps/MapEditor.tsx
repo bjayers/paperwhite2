@@ -153,7 +153,9 @@ export function MapEditor({ constants }: ToolProps) {
     return () => { s.dispose(); scene.current = null; };
   }, []);
   useEffect(() => { if (map) scene.current?.setMap(map); }, [map]);
-  useEffect(() => { scene.current?.drawCells(chunk, grid); }, [chunk, grid, map]);
+  // The tile grid is drawn at the chunk's current collision: not while the Reading layer shows the original game,
+  // where it would show this hack's height edits over the original's reading
+  useEffect(() => { scene.current?.drawCells(chunk, grid && !(readingOn && readingRev === "original")); }, [chunk, grid, map, readingOn, readingRev]);
   useEffect(() => { scene.current?.setWireframe(wireframe); }, [wireframe, loaded]);
   useEffect(() => { scene.current?.showFaces(faces); }, [faces, loaded]);
 
