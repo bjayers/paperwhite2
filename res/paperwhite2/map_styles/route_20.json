@@ -315,6 +315,34 @@
             "tile_type": 2359300
         },
         {
+            "key": "d",
+            "name": "Dark grass",
+            "color": "#1c5a26",
+            "ground": {
+                "texture": "grass01ax",
+                "repeat": 4
+            },
+            "layers": [
+                {
+                    "texture": "kusa_ec3",
+                    "lift": 2,
+                    "repeat": 1,
+                    "alpha": "BLEND"
+                },
+                {
+                    "texture": "kusa_ec2s",
+                    "lift": 6,
+                    "repeat": 1
+                },
+                {
+                    "texture": "kusa_ec1s",
+                    "lift": 10,
+                    "repeat": 1
+                }
+            ],
+            "tile_type": 2359302
+        },
+        {
             "key": "w",
             "name": "Water",
             "color": "#3a7ae0",

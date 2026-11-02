@@ -641,13 +641,15 @@ def reading(tile):
                         "down": _compass(nx, nz), "cover": round(slope_cover, 3)}
         out["terrain"] = "cliff"
         out["confidence"] = "high"
-    # A terrain drawn with layers over its ground (tall grass's blades) is the one whose layers stand on the tile
+    # A terrain drawn with layers over its ground (tall grass's blades) is the one with the most of its layers standing
+    # on the tile (tall and dark grass share their lowest layer)
     if style and not out["edge"] and not out["slope"]:
         standing_textures = {x["texture"] for x in tile.facts["standing"] if x["cover"] >= 0.5}
-        for t in style["terrains"]:
-            if t.get("layers") and standing_textures & {layer["texture"] for layer in t["layers"]}:
-                out["terrain"] = t["key"]
-                break
+        layered = [(len(standing_textures & {layer["texture"] for layer in t["layers"]}), -i, t["key"])
+                   for i, t in enumerate(style["terrains"]) if t.get("layers")]
+        best = max(layered, default=None)
+        if best and best[0]:
+            out["terrain"] = best[2]
     out["empty"] = not tile.pieces
     out["structure"] = bool(out.get("deck")) or any(x["kind"] == "structure" for x in tile.facts["standing"])
     out["decoration"] = any(x["kind"] == "decoration" for x in tile.facts["standing"])

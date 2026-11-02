@@ -19,6 +19,11 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   **Untested on hardware.** Directional tile types (a ledge's jump direction) don't turn with the object; a turned
   ledge still jumps the way the original did.
 
+**Dark grass (done):** Route 20's style has a Dark grass terrain (key d): tile type 0x240006 (the double-battle
+grass class), blades kusa_ec3 / kusa_ec2s / kusa_ec1s at lifts 2, 6 and 10 as vanilla's dark grass has them. The
+reader now takes the layered terrain with the most of its layers standing on a tile (tall and dark grass share
+kusa_ec3); it reads Route 20's dark grass exactly (54 and 28 tiles in map05_20 and map04_21). Untested in game.
+
 **Tiles still needed** (atlas, overworld edge and slope textures by tile count; done: paths, Route 20's banks,
 ledges, cliffs and tiers, stairs, grass hills):
 1. Sea shores and beaches: sea cliffs (sea_gake01, 2,227 tiles, 9 sets), wave foam (sea_zanami2), wet sand
