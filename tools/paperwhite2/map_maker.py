@@ -440,6 +440,8 @@ def generate(project_path):
                     return False
                 if step:
                     return other[1] > h + 2 and (froms is None or other[0] in froms)
+                if froms is not None and unsure(e[4]):
+                    return True  # a bridge's end: the game's path edges always face it (23 of 23 in the atlas)
                 if family.get(other[0], other[0]) == key:
                     return False
                 if froms is None and unsure(e[4]):
