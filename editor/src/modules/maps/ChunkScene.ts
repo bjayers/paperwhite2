@@ -409,8 +409,9 @@ export class ChunkScene {
   private readingGroup = new THREE.Group();
   private readingChunk: number | null = null;
   private readingTiles: { x: number; z: number }[] = [];
+  private lastReadingClick: { x: number; y: number; n: number } | null = null;
   showReading(index: number | null, tiles: { x: number; z: number; y: number; color: string; outside: string | null; unsure: boolean;
-    structure: boolean; selected: boolean }[] | null) {
+    structure: boolean; selected: boolean; empty?: boolean }[] | null) {
     this.readingGroup.clear();
     if (!this.readingGroup.parent) this.scene.add(this.readingGroup);
     const map = this.map;
@@ -423,12 +424,14 @@ export class ChunkScene {
     const squares = new THREE.InstancedMesh(plane, new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.55, depthWrite: false,
       polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -24 }), tiles.length);
     const m = new THREE.Matrix4();
-    const arrows: THREE.Vector3[] = [], unsure: THREE.Vector3[] = [], boxes: THREE.Vector3[] = [], picked: THREE.Vector3[] = [];
+    const arrows: THREE.Vector3[] = [], unsure: THREE.Vector3[] = [], boxes: THREE.Vector3[] = [], picked: THREE.Vector3[] = [],
+      hollow: THREE.Vector3[] = [];
     const dirs: Record<string, [number, number]> = { N: [0, -1], NE: [0.7, -0.7], E: [1, 0], SE: [0.7, 0.7], S: [0, 1], SW: [-0.7, 0.7], W: [-1, 0], NW: [-0.7, -0.7] };
     tiles.forEach((t, i) => {
       const cx = x0 + t.x * TILE + TILE / 2, cz = z0 + t.z * TILE + TILE / 2, y = t.y + 1.2;
       m.makeTranslation(cx, y, cz);
-      squares.setMatrixAt(i, m);
+      // A tile with nothing drawn on it at all: an outline only
+      squares.setMatrixAt(i, t.empty ? new THREE.Matrix4().makeScale(0, 0, 0).setPosition(cx, y, cz) : m);
       squares.setColorAt(i, new THREE.Color(t.color));
       const square = (out: THREE.Vector3[], r: number) => {
         const c = [[-r, -r], [r, -r], [r, r], [-r, r]].map(([dx, dz]) => new THREE.Vector3(cx + dx, y + 0.2, cz + dz));
@@ -441,7 +444,8 @@ export class ChunkScene {
         const back = tip.clone().add(new THREE.Vector3(-dx * 3, 0, -dz * 3));
         arrows.push(tail, tip, tip, back.clone().add(side), tip, back.clone().sub(side));
       }
-      if (t.unsure) square(unsure, 5);
+      if (t.empty) square(hollow, 7);
+      else if (t.unsure) square(unsure, 5);
       if (t.structure) square(boxes, 7);
       if (t.selected) square(picked, 7.8);
     });
@@ -457,6 +461,7 @@ export class ChunkScene {
     lines(unsure, 0xff3030);
     lines(boxes, 0x8040ff);
     lines(picked, 0xffff40);
+    lines(hollow, 0x9098a8);
   }
 
   /** Faces hidden from view and from clicks (Blender's H), by chunk folder: each triangle by its corners' positions,
@@ -652,10 +657,14 @@ export class ChunkScene {
     ray.setFromCamera(ndc, this.camera);
     if (this.readingChunk !== null && this.readingGroup.children.length) {
       // On the Reading layer, its square clicked first (one under a walkway, or floating where nothing else is)
-      const hit = ray.intersectObject(this.readingGroup.children[0], false)[0];
-      if (hit && hit.instanceId !== undefined) {
-        const t = this.readingTiles[hit.instanceId];
-        return { chunk: this.readingChunk, face: null, point: hit.point, tile: null, readingTile: t };
+      // Clicking the same place again takes the next square down (one under a bridge, a canal under a walkway)
+      const hits = ray.intersectObject(this.readingGroup.children[0], false).filter((h) => h.instanceId !== undefined);
+      if (hits.length) {
+        const again = this.lastReadingClick && Math.hypot(ev.clientX - this.lastReadingClick.x, ev.clientY - this.lastReadingClick.y) < 4;
+        const n = again ? (this.lastReadingClick!.n + 1) % hits.length : 0;
+        this.lastReadingClick = { x: ev.clientX, y: ev.clientY, n };
+        const t = this.readingTiles[hits[n].instanceId!];
+        return { chunk: this.readingChunk, face: null, point: hits[n].point, tile: null, readingTile: t };
       }
     }
     if (this.paintChunk !== null) {

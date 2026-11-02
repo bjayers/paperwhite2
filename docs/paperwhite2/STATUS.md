@@ -2,6 +2,15 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-03 (evening): structures by their open sides; see-through water; empty tiles
+
+- A texture is a structure (a deck) only where its sides are open: Route 20's bridges and Virbank's walkways over its
+  canal (a second collision layer of water under them), not the desert's plateaus and cliff caps over the sand the
+  game draws beneath. Water drawn see-through at the collision's height is a tile's ground (Virbank's canal under its
+  pipe, which now reads as water with the pipe over it; the sea). Edges count only near the ground (not the desert's
+  sand edge under a cliff's cap). A texture drawn by two materials takes its most common alpha. Tiles with no faces
+  at all (Desert Resort 2's last row) are outlined grey; clicking a place again takes the next square down.
+
 ## 2026-11-03 (later): the reader on Virbank, the Desert Resort, Routes 12 and 13
 
 - The Reading layer names textures by a style only where the style's texture set is the chunk's (no more "not in the

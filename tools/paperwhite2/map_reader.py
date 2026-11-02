@@ -221,25 +221,43 @@ def textures(chunk):
     """Each texture's role, learned from how the chunk uses it: wall (mostly vertical); decoration (blended: a
     season's overlay, a shadow); slope (mostly sloped: a cliff's or a bank's face, clamped or not); edge (flat, v
     clamped, mapped along a border, u running on past one repeat: a path's edge, the water's edge); decoration
-    (otherwise see-through or stamped once: grass, trees, fences, the water's sparkles); structure (opaque and flat, but nearly always over other ground: a bridge's deck); ground
+    (otherwise see-through or stamped once: grass, trees, fences, the water's sparkles); structure (opaque and flat,
+    nearly always over other ground, with open sides: a bridge's deck); ground
     (opaque, flat, planar: the terrains)."""
-    stats = defaultdict(lambda: {"area": 0.0, "facing": Counter(), "alpha": None, "clamp_v": False, "tiles": set(),
+    stats = defaultdict(lambda: {"area": 0.0, "facing": Counter(), "alphas": Counter(), "clamp_v": False, "tiles": set(),
                                  "over_ground": 0})
     for (tx, tz), pieces in chunk.pieces.items():
         for p in pieces:
             s = stats[p.texture]
             s["area"] += p.area if p.facing != "vertical" else 0.0
             s["facing"][p.facing] += 1
-            s["alpha"] = p.alpha
+            s["alphas"][p.alpha] += 1
             s["clamp_v"] = s["clamp_v"] or p.clamp_v
             s["tiles"].add((tx, tz))
-    # A flat opaque texture with another flat opaque face under it at the tile's middle, on most of its tiles
+    # A flat opaque texture with another flat opaque face under it at the tile's middle, on most of its tiles, and
+    # open sides: where its tiles drop to a lower neighbour, no face stands in the drop (one sees under a bridge's
+    # edge; a plateau over the same lower ground has a cliff down to it)
+    tops = {}
     for (tx, tz), pieces in chunk.pieces.items():
         x, z = (tx + 0.5) * TILE - chunk.half, (tz + 0.5) * TILE - chunk.half
         hits = sorted(((p.height_at(x, z)[0], p) for p in pieces
                        if p.alpha == "OPAQUE" and p.facing == "flat" and p.height_at(x, z)), key=lambda h: h[0])
+        if hits:
+            tops[(tx, tz)] = (hits[-1][0], hits[-1][1].texture)
         if len(hits) >= 2 and hits[-1][0] - hits[0][0] > TILE / 4:
             stats[hits[-1][1].texture]["over_ground"] += 1
+    drops = defaultdict(lambda: [0, 0])  # texture: [drops, walled]
+    for (tx, tz), (y, texture) in tops.items():
+        for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            n = tops.get((tx + dx, tz + dz))
+            if not n or n[1] == texture or y - n[0] <= TILE / 4:
+                continue
+            drops[texture][0] += 1
+            low, high = n[0] + 1, y - 1
+            walled = any(p.facing != "flat" and p.texture != texture and max(v.p[1] for v in p.polygon) >= low
+                         and min(v.p[1] for v in p.polygon) <= high
+                         for t in ((tx, tz), (tx + dx, tz + dz)) for p in chunk.pieces.get(t, []))
+            drops[texture][1] += walled
     # How far u runs across one triangle: a border's texture runs along it (a path's edge, the water's edge), a
     # stamp's covers its quad once (the water's sparkles)
     u_run = defaultdict(float)
@@ -250,6 +268,8 @@ def textures(chunk):
     out = {}
     for texture, s in stats.items():
         total = sum(s["facing"].values())
+        # A texture drawn by more than one material (the sea, both blended and opaque) takes its most common alpha
+        s["alpha"] = s["alphas"].most_common(1)[0][0]
         if s["facing"]["vertical"] > total / 2:
             role = "wall"
         elif s["alpha"] == "BLEND":
@@ -260,7 +280,7 @@ def textures(chunk):
             role = "edge"
         elif s["alpha"] != "OPAQUE" or s["clamp_v"]:
             role = "decoration"
-        elif s["over_ground"] > len(s["tiles"]) / 2:
+        elif s["over_ground"] > len(s["tiles"]) / 2 and drops[texture][1] < drops[texture][0] / 2:
             role = "structure"
         else:
             role = "ground"
@@ -400,6 +420,12 @@ def ground(tile):
     for u, w in ((0.5, 0.5), (0.25, 0.25), (0.75, 0.25), (0.25, 0.75), (0.75, 0.75)):
         hits = [h for h in tile.surfaces_at(u, w, opaque=True) if roles.get(h[1].texture, {}).get("role") != "wall"]
         at = [h for h in hits if height is not None and abs(h[0] - height) <= TILE / 2] if height is not None else []
+        if not at and height is not None and not blocked:
+            # Water drawn see-through at the collision's height (a canal, the sea), when nothing opaque is there
+            at = [h for h in tile.surfaces_at(u, w) if abs(h[0] - height) <= TILE / 2
+                  and roles.get(h[1].texture, {}).get("role") != "wall"]
+            if at:
+                hits = at
         if blocked:
             pick = hits[0] if hits else None
         else:
@@ -430,9 +456,16 @@ def standing(tile):
     with how high above the ground it reaches and how much of the tile it covers."""
     roles = tile.chunk.facts["textures"]
     base = (tile.facts["ground"] or {}).get("y", 0.0)
+    first = next((c for c in tile.facts["collision"] if c["layer"] == 0), None)
+    passable = bool(first) and not (first["tile_type"] >> 16) & 1
     out = defaultdict(lambda: {"cover": 0.0, "top": -1e9, "bottom": 1e9})
     for p in tile.pieces:
         role = roles.get(p.texture, {}).get("role")
+        # Anything opaque (not a wall) wholly over the ground of a tile one passes (not blocked) spans it: a pipe over
+        # a canal one surfs under
+        if role not in ("structure", "decoration", "wall") and p.alpha == "OPAQUE" and tile.facts["ground"] and passable \
+                and min(v.p[1] for v in p.polygon) > base + TILE / 2:
+            role = "structure"
         if role not in ("structure", "decoration"):
             continue
         e = out[(role, p.texture)]
@@ -495,8 +528,10 @@ def reading(tile):
                                and tile_type in (t["tile_type"], *t.get("also_tile_types", []))), None)
     # An edge texture's share of the tile, and the way its v grows (over all its pieces)
     compass_back = {"N": "S", "NE": "SW", "E": "W", "SE": "NW", "S": "N", "SW": "NE", "W": "E", "NW": "SE"}
+    # Edges at or near the ground count, not ones under a cliff's cap (a desert's sand edge at its foot)
+    near = (g["y"] - TILE / 2) if g else -1e9
     edge_surface = next((x for x in tile.facts["surfaces"] if roles.get(x["texture"], {}).get("role") == "edge"
-                         and x.get("mapping", {}).get("kind") == "border"), None)
+                         and x.get("mapping", {}).get("kind") == "border" and x["y"][1] >= near), None)
     # Slopes at or near the ground count, not ones far under it (a staircase below a cliff's top)
     floor = (g["y"] - TILE / 2) if g else -1e9
     slope_cover = sum(x["cover"] for x in tile.facts["surfaces"]
@@ -534,6 +569,7 @@ def reading(tile):
             if t.get("layers") and standing_textures & {layer["texture"] for layer in t["layers"]}:
                 out["terrain"] = t["key"]
                 break
+    out["empty"] = not tile.pieces
     out["structure"] = bool(out.get("deck")) or any(x["kind"] == "structure" for x in tile.facts["standing"])
     out["decoration"] = any(x["kind"] == "decoration" for x in tile.facts["standing"])
     levels_ = [lv for lv in tile.facts["levels"] if lv["alpha"] == "OPAQUE"]

@@ -381,7 +381,7 @@ export function MapEditor({ constants }: ToolProps) {
       const y = Math.max(t.ground?.y ?? -1e9, first ?? -1e9);
       squares!.push({ x: t.x, z: t.z, y: y > -1e8 ? y : 0, color: readingColor(t.reading.terrain),
         outside: t.reading.edge?.outside ?? t.reading.slope?.down ?? null, unsure: t.reading.confidence === "low", structure: t.reading.structure,
-        selected: !!readingTile && readingTile.x === t.x && readingTile.z === t.z });
+        selected: !!readingTile && readingTile.x === t.x && readingTile.z === t.z, empty: !!(t.reading as { empty?: boolean }).empty });
       for (const l of layers) {
         // A layer with nothing drawn at its height (an invisible blocker high up) stays in the record only
         if (l.layer === 0 || l.height === null || !l.terrain || Math.abs(l.height - y) < 8) continue;

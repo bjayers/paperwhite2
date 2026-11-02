@@ -45,8 +45,8 @@ export function ReadingPanel({ reading, tile, rev, setRev, loading, error, terra
       {loading && <p className="muted ow-note">Reading…</p>}
       {error && <p className="ow-note">{error}</p>}
       {!tile && reading && <p className="muted ow-note">Each tile is coloured by its terrain; an edge's arrow points at its outside, a slope's downhill; a
-        dashed tile is unsure, a boxed one has a structure on it (a deck: what lies under it is in its record). A tile on two levels has a square
-        at each. Click a tile for its whole record.</p>}
+        dashed tile is unsure, a boxed one has a structure on it (a deck: what lies under it is in its record); a grey outline has nothing drawn on
+        it at all. A tile on two levels has a square at each: click the same place again for the one under. Click a tile for its whole record.</p>}
       {reading && (
         <div className="me-legend">
           {legend.map(([key, color]) => <span key={key} className="me-legend-item"><span className="me-swatch" style={{ background: color }} />{terrainName(key)}</span>)}
@@ -66,6 +66,7 @@ export function ReadingPanel({ reading, tile, rev, setRev, loading, error, terra
             : <span className="muted">none</span>}</span></div>
           {tile.reading.slope && <div className="me-row"><label>Slope</label><span>{tile.reading.slope.texture}, down to the {tile.reading.slope.down ?? "?"}</span></div>}
           {tile.filled && tile.filled !== "model" && <div className="me-row"><label>Read from</label><span>its {tile.filled} (no ground drawn)</span></div>}
+          {(tile.reading as { empty?: boolean }).empty && <div className="me-row"><label>Model</label><span>nothing drawn on this tile at all</span></div>}
           <div className="me-row"><label>Ground</label><span>{tile.ground ? <>{tile.ground.texture} at {tile.ground.y}</> : <span className="muted">none drawn</span>}</span></div>
           <div className="me-row"><label>On it</label><span>{[tile.reading.structure && "a structure", tile.reading.decoration && "decorations"]
             .filter(Boolean).join(", ") || <span className="muted">nothing</span>}</span></div>
