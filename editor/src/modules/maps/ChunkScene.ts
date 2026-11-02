@@ -69,6 +69,9 @@ export interface ChunkModel {
   primitives: { mesh: THREE.Mesh; material: string; image: string | null; triangles: number }[];
   vertices: number;
   triangles: number;
+  /** Polygons as the DS counts them: two triangles (a, b, c), (a, c, d) in a row that make a flat, convex quad are one,
+   * as the model writer draws them (tools/data/nitro_model_writer.py, quads). */
+  polygons: number;
 }
 
 export interface PickResult { chunk: number | null; face: Face | null; point: THREE.Vector3 | null; tile: { x: number; z: number } | null;
@@ -719,12 +722,41 @@ function addWireframe(root: THREE.Object3D) {
   }
 }
 
+/** A primitive's polygons as the DS counts them: its triangles in order, a pair (a, b, c), (a, c, d) sharing those
+ * corners and making a flat, convex quad counted once (as nitro_model_writer.py's quads). */
+function countPolygons(geometry: THREE.BufferGeometry): number {
+  const index = geometry.index;
+  const position = geometry.attributes.position as THREE.BufferAttribute;
+  const count = (index?.count ?? position.count) / 3;
+  const at = (t: number, k: number) => (index ? index.getX(t * 3 + k) : t * 3 + k);
+  const p = (i: number) => new THREE.Vector3().fromBufferAttribute(position, i);
+  let polygons = 0;
+  for (let t = 0; t < count; t++) {
+    polygons++;
+    if (t + 1 >= count) break;
+    const [a, b, c] = [at(t, 0), at(t, 1), at(t, 2)];
+    if (at(t + 1, 0) !== a || at(t + 1, 1) !== c) continue;
+    const d = at(t + 1, 2);
+    const [pa, pb, pc, pd] = [p(a), p(b), p(c), p(d)];
+    const n1 = new THREE.Vector3().subVectors(pb, pa).cross(new THREE.Vector3().subVectors(pc, pa));
+    const n2 = new THREE.Vector3().subVectors(pc, pa).cross(new THREE.Vector3().subVectors(pd, pa));
+    if (n1.lengthSq() === 0 || n2.lengthSq() === 0 || n1.dot(n2) < 0.9999 * n1.length() * n2.length()) continue;
+    const bd = new THREE.Vector3().subVectors(pd, pb);
+    const m1 = bd.clone().cross(new THREE.Vector3().subVectors(pa, pb));
+    const m2 = bd.clone().cross(new THREE.Vector3().subVectors(pc, pb));
+    if (m1.dot(m2) >= 0) continue;
+    t++; // the pair is one quad
+  }
+  return polygons;
+}
+
 /** The primitives of a chunk's GLB, in order: GLTFLoader makes a mesh of each, as children of the mesh's group, or the
  * mesh itself when it has one. */
 function modelOf(gltf: GLTF): ChunkModel {
   const primitives: ChunkModel["primitives"] = [];
   let vertices = 0;
   let triangles = 0;
+  let polygons = 0;
   gltf.scene.traverse((o) => {
     const mesh = o as THREE.Mesh;
     if (!mesh.isMesh) return;
@@ -745,8 +777,9 @@ function modelOf(gltf: GLTF): ChunkModel {
       vertices += used.size;
     } else vertices += mesh.geometry.attributes.position.count;
     triangles += count;
+    polygons += countPolygons(mesh.geometry);
   });
-  return { primitives, vertices, triangles };
+  return { primitives, vertices, triangles, polygons };
 }
 
 /** The faces connected to a face across the chunk's draw calls: those sharing a vertex's position with it, and so on
