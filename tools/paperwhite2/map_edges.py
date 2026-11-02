@@ -373,6 +373,11 @@ def band(region, edge, banded, points, square=lambda tile: False, drop=lambda e:
             inner_points.add(p3(a, inner))
             for face in edge["faces"]:
                 k0, k1 = face["between"]
+                # Not a face along a border that isn't banded which covers nothing from above (the end of a bank
+                # against the game's own: its lines join a banded run's full profile to collapsed ones, a wedge
+                # standing up)
+                if not flags[a["edge"]] and abs(_area([a["pts"][k0], b["pts"][k0], b["pts"][k1], a["pts"][k1]])) < 1e-3:
+                    continue
                 strips.append((face, (p3(a, k0), p3(b, k0)), (p3(a, k1), p3(b, k1)), (ua, ub)))
         # Dents: where the first line has moved off the border, the outside's ground fills the gap
         off = [not st.get("outward") and (abs(st["pts"][0][0] - st["border"][0]) > EPS or abs(st["pts"][0][1] - st["border"][1]) > EPS)
