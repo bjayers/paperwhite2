@@ -2,6 +2,20 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-04 (night): terrain-only cutting; the user's ledge and cliff test
+
+- Painting over a chunk cuts only its terrain (ground, edges, slopes, walls that top out at a neighbour's ground,
+  a terrain's own layers like tall grass, decals on the ground), by the textures' roles: trees (canopy, shadow,
+  trunk), fences above the ground and bridges stay whole.
+- The user's test of ledges and cliffs (2026-11-04): ledges look right but leave a seam at their foot (vanilla draws
+  the lower ground across the whole tile under the see-through face) and meet water edges oddly; cliffs' textures
+  stretch (v over the whole drop) and their corners are off; water edges' inward corners are square (never rounded:
+  not a regression, checked); the sliver at vanilla banks and the bridge corner remain. The user's rule from now on:
+  fix tile-building issues by what's learned from the atlas before any pinpointed fix. Plan: learn edge and step
+  profiles from the atlas (faces, widths by drop, v per height, what's under see-through faces, corners), then seams
+  matched to vanilla's side cross-sections (which also gives chunk borders), then stairs and walkable slopes, then
+  triangles.
+
 ## 2026-11-04 (evening): the atlas
 
 - `tools/paperwhite2/map_atlas.py build` (under two minutes; build/, out of git): every chunk of the original game

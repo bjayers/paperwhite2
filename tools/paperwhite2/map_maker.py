@@ -525,7 +525,34 @@ def generate(project_path):
         cut = [(x, z, w, d) for _, x, z, w, d in rectangles({xz: 1 for xz, v in grid.items() if v[0] != KEEP}, size, lambda v: size)]
         triangles, base_materials, _ = read_mesh(base / "model.glb", images_from=folder)
         remap = {key: materials.add(material) for key, material in base_materials.items()}
-        polygons += [(remap[key], tri) for key, tri in kept_faces(triangles, cut, half)]
+        # Only the chunk's terrain is cut (its textures' roles, map_reader.py with the atlas's consensus): trees,
+        # shadows, fences and bridges over painted tiles stay whole, decorations lying on the ground go with it
+        import map_reader
+        roles = map_reader.Chunk(project["model"], base, None, images_from=folder, tiles=False).facts["textures"]
+        role_of = {key: roles.get(Path(m.get("pbrMetallicRoughness", {}).get("baseColorTexture", {}).get("image", "")).stem, {}).get("role")
+                   for key, m in base_materials.items()}
+
+        layer_textures = {layer["texture"].replace(".", "_") for t in terrains.values() for layer in t.get("layers", [])}
+        names = {key: m.get("name") for key, m in base_materials.items()}
+
+        def whole(key, tri):
+            # Kept whole over the painting: structures; decorations standing over the ground (a tree's canopy and
+            # shadow; not a terrain's own layers, tall grass's blades, nor decals lying on the ground); and walls
+            # rising above every ground round them (a trunk; a cliff's wall tops out at a neighbour's ground)
+            role = role_of.get(key)
+            if role == "structure":
+                return True
+            x = sum(v.p[0] for v in tri) / 3
+            z = sum(v.p[2] for v in tri) / 3
+            tx, tz = int((x + half) // TILE), int((z + half) // TILE)
+            g = kept_heights.get((tx, tz), 0)
+            if role == "decoration":
+                return names.get(key) not in layer_textures and min(v.p[1] for v in tri) > g + 2
+            if role in ("wall", None):  # (a face no tile's clipping keeps has no role: a trunk standing edge-on)
+                around = [kept_heights[(tx + dx, tz + dz)] for dx in (-1, 0, 1) for dz in (-1, 0, 1) if (tx + dx, tz + dz) in kept_heights]
+                return max(v.p[1] for v in tri) > max(around, default=g) + 4
+            return False
+        polygons += [(remap[key], tri) for key, tri in kept_faces(triangles, cut, half, whole)]
 
     # The objects, on the ground of their north-west tile
     collision_over = {}
@@ -603,12 +630,16 @@ def _subtract(polygon, rect):
     return out
 
 
-def kept_faces(triangles, painted, half):
+def kept_faces(triangles, painted, half, whole=lambda key, tri: False):
     """The chunk's triangles without the painted tiles: each triangle with the painted rectangles cut out of it, so it
-    keeps its own shape everywhere else (painted: rectangles of tiles, x, z, w, d)."""
+    keeps its own shape everywhere else (painted: rectangles of tiles, x, z, w, d); those whole says stand over the
+    painting (a tree, a bridge) are kept as they are."""
     rects = [(x * TILE - half, z * TILE - half, (x + w) * TILE - half, (z + d) * TILE - half) for x, z, w, d in painted]
     out = []
     for key, tri in triangles:
+        if whole(key, tri):
+            out.append((key, tri))
+            continue
         pieces = [tri]
         xs, zs = [v.p[0] for v in tri], [v.p[2] for v in tri]
         for r in rects:

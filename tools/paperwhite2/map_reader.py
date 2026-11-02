@@ -148,7 +148,8 @@ def _compass(dx, dz):
 
 
 class Chunk:
-    def __init__(self, model, folder, style=None, images_from=None):
+    def __init__(self, model, folder, style=None, images_from=None, tiles=True):
+        # tiles=False reads only the chunk's own facts (its textures' roles), not each tile's
         self.model = model
         self.folder = Path(folder)
         self.size = 32
@@ -181,6 +182,8 @@ class Chunk:
         for name, function in CHUNK_FACTS:
             self.facts[name] = function(self)
         self.tiles = {}
+        if not tiles:
+            return
         for tz in range(self.size):
             for tx in range(self.size):
                 self.tiles[(tx, tz)] = Tile(self, tx, tz)
