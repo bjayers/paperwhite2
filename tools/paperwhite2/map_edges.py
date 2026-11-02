@@ -455,10 +455,20 @@ def triangle(a, b, c):
 
 def strip_triangles(side_a, side_b):
     """The triangles between two lines, each a list of (point, uv, t) in order along them (t from 0 to 1): a zigzag that
-    takes every point of both, so the strip meets what lies beside it at each. Each is (corners, normal)."""
+    takes every point of both, so the strip meets what lies beside it at each. Where both lines step together, each
+    step's two triangles are written (a, b, c) then (a, c, d), facing up, which the model writer draws as one quad (the
+    DS counts a quad as one polygon). Each is (corners, normal)."""
     out = []
     i = j = 0
     while i < len(side_a) - 1 or j < len(side_b) - 1:
+        if i < len(side_a) - 1 and j < len(side_b) - 1 and abs(side_a[i + 1][2] - side_b[j + 1][2]) < 1e-6:
+            a, b, c, d = side_a[i], side_a[i + 1], side_b[j + 1], side_b[j]
+            quad = _quad(a, b, c, d)
+            if quad:
+                out += quad
+                i += 1
+                j += 1
+                continue
         if j == len(side_b) - 1 or (i < len(side_a) - 1 and side_a[i + 1][2] <= side_b[j + 1][2]):
             tri = (side_a[i], side_a[i + 1], side_b[j])
             i += 1
@@ -469,3 +479,18 @@ def strip_triangles(side_a, side_b):
         if made:
             out.append(made)
     return out
+
+
+def _quad(a, b, c, d):
+    """Two triangles (a, b, c) and (a, c, d), turned so they face up, or None where either has no area."""
+    first = triangle((a[0], a[1]), (b[0], b[1]), (c[0], c[1]))
+    second = triangle((a[0], a[1]), (c[0], c[1]), (d[0], d[1]))
+    if not first or not second:
+        return None
+    if first[0][1][0] != b[0]:
+        # (it was turned: the other way round, so the shared diagonal still runs a-c)
+        first = triangle((a[0], a[1]), (d[0], d[1]), (c[0], c[1]))
+        second = triangle((a[0], a[1]), (c[0], c[1]), (b[0], b[1]))
+        if not first or not second:
+            return None
+    return [first, second]
