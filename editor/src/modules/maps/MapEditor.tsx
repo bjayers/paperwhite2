@@ -23,6 +23,7 @@ import { OverworldGrid, type OverworldCell } from "./OverworldGrid.tsx";
 import { paintTiles, tileRow } from "./collision.ts";
 import { ChunkScene, connectedFaces, faceKey, forgetObject, stackedFaces, type ChunkModel, type Face } from "./ChunkScene.ts";
 import { seasonSets, seasonVariants, type SeasonSet } from "./seasons.ts";
+import { ReadingPanel, type ChunkReading } from "./ReadingPanel.tsx";
 import { PaintPanel } from "./PaintPanel.tsx";
 import { ObjectsPanel } from "./ObjectsPanel.tsx";
 import { loadLibrary, loadStyles, painted, projectPath, strokeCells, type LibraryObject, type MapStyle, type PaintShape,
@@ -80,6 +81,12 @@ export function MapEditor({ constants }: ToolProps) {
   const [faces, setFaces] = useState<Face[]>([]);
   const [grid, setGrid] = useState(true);
   const [wireframe, setWireframe] = useState(false);
+  // The map reader's layer: the chunk's tiles as it reads them, and the tile whose record is shown
+  const [readingOn, setReadingOn] = useState(false);
+  const [readingRev, setReadingRev] = useState<"now" | "original">("now");
+  const [reading, setReading] = useState<ChunkReading | null>(null);
+  const [readingState, setReadingState] = useState<{ loading: boolean; error: string | null }>({ loading: false, error: null });
+  const [readingTile, setReadingTile] = useState<{ x: number; z: number } | null>(null);
   const [loaded, setLoaded] = useState(0);
   const [sets, setSets] = useState<SeasonSet[]>([]);
   const [variants, setVariants] = useState<string[] | null>(null);
@@ -153,6 +160,13 @@ export function MapEditor({ constants }: ToolProps) {
   const pickFace = useRef<(face: Face | null, chunk: number | null, ev: PointerEvent, point: THREE.Vector3 | null,
                            tile: { x: number; z: number } | null) => void>(() => {});
   pickFace.current = (face, picked, ev, point, tilePicked) => {
+    if (readingOn && picked !== null && point && map) {
+      // The Reading layer: a click shows the tile's record
+      const c = map.chunks[picked];
+      setChunk(picked);
+      setReadingTile({ x: Math.floor((point.x - c.column * map.chunkSize) / TILE), z: Math.floor((point.z - c.row * map.chunkSize) / TILE) });
+      return;
+    }
     if (tab === "collision") {
       if (picked !== null) setChunk(picked);
       if (ev.altKey && tilePicked && map) eyedropper(tilePicked);
@@ -329,6 +343,31 @@ export function MapEditor({ constants }: ToolProps) {
   const projectDoc = projectFile && projectExists[projectFile] ? docs.get(projectFile) : undefined;
   const project = useMemo(() => (projectDoc?.data ? toPlain(projectDoc.data) as Project : null), [projectDoc?.data]);
   const projectStyle = project ? styles.get(project.style) : undefined;
+  // The reading of the chosen chunk, by the painting's style (else the first), read again after each change to it
+  const readingStyleName = project?.style ?? [...styles.keys()][0] ?? null;
+  const readingStyle = readingStyleName ? styles.get(readingStyleName) : undefined;
+  useEffect(() => {
+    setReading(null);
+    if (!readingOn || !modelName) return;
+    let live = true;
+    setReadingState({ loading: true, error: null });
+    api.readChunk<ChunkReading>(modelName, readingStyleName, readingRev === "original").then(
+      (r) => { if (live) { setReading(r); setReadingState({ loading: false, error: null }); } },
+      (e: Error) => { if (live) setReadingState({ loading: false, error: e.message }); });
+    return () => { live = false; };
+  }, [readingOn, modelName, readingRev, readingStyleName, mapVersion]);
+  useEffect(() => {
+    if (!readingOn || !reading || chunk === null) { scene.current?.showReading(null, null); return; }
+    const colors = new Map((readingStyle?.terrains ?? []).map((t) => [t.key, t.color ?? "#888888"]));
+    const hash = (s: string) => `hsl(${[...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7)}, 60%, 55%)`;
+    scene.current?.showReading(chunk, reading.tiles.map((t) => ({
+      x: t.x, z: t.z,
+      y: t.ground?.y ?? ((t.collision as { height: number | null }[] | undefined)?.[0]?.height ?? 0),
+      color: t.reading.terrain ? colors.get(t.reading.terrain) ?? hash(t.reading.terrain) : "#202020",
+      outside: t.reading.edge?.outside ?? null, unsure: t.reading.confidence !== "high", structure: t.reading.structure,
+      selected: !!readingTile && readingTile.x === t.x && readingTile.z === t.z,
+    })));
+  }, [readingOn, reading, chunk, readingTile, readingStyle, loaded]);
   useEffect(() => { setSelectedObject(null); }, [modelName]);
   useEffect(() => {
     const show = tab === "paint" && project && chunk !== null;
@@ -864,6 +903,8 @@ export function MapEditor({ constants }: ToolProps) {
             <label className="ow-check"><input type="checkbox" checked={grid} onChange={(e) => setGrid(e.target.checked)} /> Tile grid</label>
             <label className="ow-check" title="The models' triangles' edges, to see what a click picks"><input type="checkbox" checked={wireframe}
               onChange={(e) => setWireframe(e.target.checked)} /> Wireframe</label>
+            <label className="ow-check" title="What the map reader makes of the chunk's tiles; a click shows a tile's record"><input type="checkbox"
+              checked={readingOn} onChange={(e) => setReadingOn(e.target.checked)} /> Reading</label>
             <span className="spacer" />
             <button onClick={() => step(true)} disabled={!history.done.length || busy} title="Ctrl+Z">Undo</button>
             <button onClick={() => step(false)} disabled={!history.undone.length || busy} title="Ctrl+Y">Redo</button>
@@ -882,6 +923,11 @@ export function MapEditor({ constants }: ToolProps) {
         </div>
         <div className="ow-side">
           <div className="ow-panel">
+            {readingOn && (
+              <ReadingPanel reading={reading} rev={readingRev} setRev={setReadingRev} loading={readingState.loading} error={readingState.error}
+                            tile={reading && readingTile ? reading.tiles.find((t) => t.x === readingTile.x && t.z === readingTile.z) ?? null : null}
+                            terrainName={(key) => readingStyle?.terrains.find((t) => t.key === key)?.name ?? key ?? "none"} />
+            )}
             {tab === "chunks" && (
               <>
                 <section className="me-section">

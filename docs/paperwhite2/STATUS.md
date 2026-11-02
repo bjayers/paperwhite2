@@ -2,6 +2,14 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-02 (night): the map reader
+
+- `tools/paperwhite2/map_reader.py` reads a chunk tile by tile (map-reader.md, Built so far); the Map Editor's
+  Reading toggle shows it, and a click a tile's record. On Route 20 (vanilla) it reads the paths with their edges'
+  outsides, the river and its banks, the bridges as structures over water, tall grass by its blades, and forests by
+  their tile type (unsure, no ground drawn under the canopy). Next: the user checks it on chunks of different
+  terrain; then the round trip, then the atlas.
+
 ## 2026-11-02 (design): reading vanilla maps
 
 - The user agreed to step back from per-case fixes: `docs/paperwhite2/design/map-reader.md` designs a reader of

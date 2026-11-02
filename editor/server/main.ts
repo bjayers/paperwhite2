@@ -436,6 +436,18 @@ const routes: Record<string, Handler> = {
     for (const file of files) await project.writeAtomic(file, await git.show(rev, file));
     json(res, { files: files.map((f) => f.slice(folder.length + 1)) });
   },
+  "GET /api/map-reader": async (_req, res, url) => {
+    // A chunk as the map reader reads it, tile by tile (tools/paperwhite2/map_reader.py read), as it is now or as the
+    // original game has it
+    const model = url.searchParams.get("model") ?? "", style = url.searchParams.get("style") ?? "";
+    const original = url.searchParams.get("rev") === "original";
+    if (!/^[a-z0-9_]+$/.test(model) || (style && !/^[a-z0-9_]+$/.test(style))) return error(res, 400, "Name the chunk (and the style)");
+    const args = ["read", model, ...(style ? ["--style", style] : []), ...(original ? ["--rev", "w2-original"] : [])];
+    const result = await runTool("tools/paperwhite2/map_reader.py", args);
+    if (!result.ok) return error(res, 500, result.output || "Reading failed");
+    res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+    res.end(result.output);
+  },
   "GET /api/new-map/unused": async (_req, res) => {
     // The game's unused zones, which a new map can take (tools/paperwhite2/new_map.py)
     const result = await runTool("tools/paperwhite2/new_map.py", ["unused"]);

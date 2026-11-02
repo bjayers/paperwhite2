@@ -402,6 +402,57 @@ export class ChunkScene {
   }
 
   /** Draws the selected faces over the model, in yellow. */
+  /** The map reader's layer over a chunk: each tile a square of its colour at its ground's height, an arrow toward an
+   * edge's outside, a dashed outline where the reading is unsure, a box where a structure stands; null hides it. */
+  private readingGroup = new THREE.Group();
+  showReading(index: number | null, tiles: { x: number; z: number; y: number; color: string; outside: string | null; unsure: boolean;
+    structure: boolean; selected: boolean }[] | null) {
+    this.readingGroup.clear();
+    if (!this.readingGroup.parent) this.scene.add(this.readingGroup);
+    const map = this.map;
+    if (index === null || !tiles || !map) return;
+    const chunk = map.chunks[index];
+    const x0 = chunk.column * map.chunkSize, z0 = chunk.row * map.chunkSize;
+    const plane = new THREE.PlaneGeometry(TILE - 2, TILE - 2).rotateX(-Math.PI / 2);
+    const squares = new THREE.InstancedMesh(plane, new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.55, depthWrite: false,
+      polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -24 }), tiles.length);
+    const m = new THREE.Matrix4();
+    const arrows: THREE.Vector3[] = [], unsure: THREE.Vector3[] = [], boxes: THREE.Vector3[] = [], picked: THREE.Vector3[] = [];
+    const dirs: Record<string, [number, number]> = { N: [0, -1], NE: [0.7, -0.7], E: [1, 0], SE: [0.7, 0.7], S: [0, 1], SW: [-0.7, 0.7], W: [-1, 0], NW: [-0.7, -0.7] };
+    tiles.forEach((t, i) => {
+      const cx = x0 + t.x * TILE + TILE / 2, cz = z0 + t.z * TILE + TILE / 2, y = t.y + 1.2;
+      m.makeTranslation(cx, y, cz);
+      squares.setMatrixAt(i, m);
+      squares.setColorAt(i, new THREE.Color(t.color));
+      const square = (out: THREE.Vector3[], r: number) => {
+        const c = [[-r, -r], [r, -r], [r, r], [-r, r]].map(([dx, dz]) => new THREE.Vector3(cx + dx, y + 0.2, cz + dz));
+        for (let k = 0; k < 4; k++) out.push(c[k], c[(k + 1) % 4]);
+      };
+      if (t.outside && dirs[t.outside]) {
+        const [dx, dz] = dirs[t.outside];
+        const tip = new THREE.Vector3(cx + dx * 6, y + 0.3, cz + dz * 6), tail = new THREE.Vector3(cx - dx * 4, y + 0.3, cz - dz * 4);
+        const side = new THREE.Vector3(-dz * 2.5, 0, dx * 2.5);
+        const back = tip.clone().add(new THREE.Vector3(-dx * 3, 0, -dz * 3));
+        arrows.push(tail, tip, tip, back.clone().add(side), tip, back.clone().sub(side));
+      }
+      if (t.unsure) square(unsure, 5);
+      if (t.structure) square(boxes, 7);
+      if (t.selected) square(picked, 7.8);
+    });
+    squares.renderOrder = 3;
+    this.readingGroup.add(squares);
+    const lines = (points: THREE.Vector3[], color: number) => {
+      if (!points.length) return;
+      const l = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(points), new THREE.LineBasicMaterial({ color, depthTest: false }));
+      l.renderOrder = 4;
+      this.readingGroup.add(l);
+    };
+    lines(arrows, 0x202020);
+    lines(unsure, 0xff3030);
+    lines(boxes, 0x8040ff);
+    lines(picked, 0xffff40);
+  }
+
   /** Faces hidden from view and from clicks (Blender's H), by chunk folder: each triangle by its corners' positions,
    * so it stays hidden when an edit of the chunk renumbers its triangles. The files never change. */
   private hidden = new Map<string, Set<string>>();

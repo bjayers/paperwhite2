@@ -152,6 +152,16 @@ game has that the table lacks. The square-corner brushes become a per-tile flag 
 (half-tile grass ledges with their round convex corners, cliffs with their jutting pieces like the paths' bends) is
 then a family, its profile and its table.
 
+## Built so far (2026-11-02)
+
+- `tools/paperwhite2/map_reader.py` (`read`, `show`; `--rev w2-original` reads the game as it shipped): every face of
+  the chunk clipped to each tile, and the facts collision, surfaces, levels, sides, walls, ground, standing, props,
+  budget, reading and neighbourhood; the chunk's texture roles. A fact is one function registered with
+  `@tile_fact` (or `@chunk_fact`): adding a record is adding one. Not yet: events (warps, doors), the atlas, the
+  round trip.
+- The Map Editor's **Reading** toggle: the chosen chunk's tiles coloured by their reading, arrows at edges' outsides,
+  structures boxed, unsure tiles dashed; a click shows the tile's record; read as it is now or as the original game.
+
 ## Order
 
 1. The reader, per chunk, and its layer in the Paint tab.

@@ -113,6 +113,9 @@ export const api = {
    * collision as it is. */
   revertChunk: (model: string, to: "vanilla" | "commit", keepCollision = false) =>
     request<{ files: string[] }>("POST", "/api/map-chunk/revert", { model, to, keepCollision }),
+  /** A chunk as the map reader reads it (tools/paperwhite2/map_reader.py), now or as the original game has it. */
+  readChunk: <T>(model: string, style: string | null, original: boolean) =>
+    request<T>("GET", `/api/map-reader?model=${encodeURIComponent(model)}${style ? `&style=${encodeURIComponent(style)}` : ""}${original ? "&rev=original" : ""}`),
   /** The game's unused zones, which a new map can take. */
   unusedZones: () => request<{ zone: string; file: string; parent: string | null; place: string | null }[]>("GET", "/api/new-map/unused"),
   /** Makes an unused zone a new map (tools/paperwhite2/new_map.py create). */
