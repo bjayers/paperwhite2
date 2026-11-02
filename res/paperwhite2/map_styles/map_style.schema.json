@@ -46,6 +46,10 @@
                 "additionalProperties": false,
                 "required": [ "to", "lines", "faces" ],
                 "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "The edge's name, which an edge terrain's edge names (where its family has more than one)"
+                    },
                     "to": {
                         "type": "string",
                         "description": "The key of the terrain whose border this is: drawn in the tiles of its edge terrains (edge_of) that are painted along it"
@@ -74,6 +78,10 @@
                                 "lift": {
                                     "type": "number",
                                     "description": "Tiles above the terrain's height"
+                                },
+                                "from": {
+                                    "enum": [ "outside" ],
+                                    "description": "Measured from the outside's height (a step's rim), not the terrain's"
                                 }
                             }
                         },
@@ -144,6 +152,10 @@
                     "tile_type": {
                         "type": "integer",
                         "description": "Unused: an edge terrain has its own tile type"
+                    },
+                    "step": {
+                        "type": "boolean",
+                        "description": "A step down: painted on the lower tiles, drawn against higher ground (a ledge, a cliff), its lines marked from the outside measured from the higher side's height"
                     }
                 }
             },
@@ -168,6 +180,10 @@
                     "edge_of": {
                         "type": "string",
                         "description": "Makes this an edge terrain of another (its key): painted where that terrain's border is drawn, against what lies outside (a path's edge, a riverbank)"
+                    },
+                    "edge": {
+                        "type": "string",
+                        "description": "The name of the edge it draws, where its family has more than one (else the family's first)"
                     },
                     "square": {
                         "type": "boolean",

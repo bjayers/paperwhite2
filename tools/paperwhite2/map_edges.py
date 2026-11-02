@@ -7,6 +7,9 @@ sloping away under it. The profile's lines are each an offset in from the border
 faces lie between two lines, textured along the border (u, the border's length over the repeat; v from one line's to
 the other's) or from above (planar, like the ground). The ground inside the last line is the terrain's own.
 
+A step edge (a ledge, a cliff) is painted on the lower tiles along higher ground: its lines marked "from": "outside"
+are measured from the higher side's height (drop gives it, in tiles, per border edge), so one profile fits any drop.
+
 The border is followed round each region of the terrain (its tiles and its edge tiles at one height) as loops of tile
 edges, with a station at each tile corner. The map maker says which edges are banded: those of an edge tile whose
 other side is one of the edge's "from" terrains (any other terrain, when it names none). An edge of a plain tile, to
@@ -158,7 +161,7 @@ def _collinear(a, b, c):
     return all(abs((b[q] - a[q]) * (c[r] - a[r]) - (b[r] - a[r]) * (c[q] - a[q])) < EPS for q, r in ((0, 1), (0, 2), (1, 2)))
 
 
-def band(region, edge, banded, points, square=lambda tile: False):
+def band(region, edge, banded, points, square=lambda tile: False, drop=lambda e: 0.0):
     """A region's edge band, in tiles, a point (x, lift, z), as a dict:
 
     strips: (face, (start, end) on its first line, (start, end) on its second, (u at the start, u at the end)), u
@@ -188,7 +191,10 @@ def band(region, edge, banded, points, square=lambda tile: False):
             offsets.append([_mitre(before, e, ln["offset"] if flags[i - 1] else 0.0, ln["offset"] if flags[i] else 0.0)
                             for ln in lines])
             collapsed = not flags[i - 1] and not flags[i]
-            lifts.append([lines[inner]["lift"] if collapsed else ln["lift"] for ln in lines])
+            # A line measured from the outside (a ledge's rim) rises with the drop to the higher side there
+            rise = max([drop(x) for x, f in ((before, flags[i - 1]), (e, flags[i])) if f] or [0.0])
+            lifts.append([lines[inner]["lift"] if collapsed else ln["lift"] + (rise if ln.get("from") == "outside" else 0.0)
+                          for ln in lines])
         # Each station's point of each line (x, z), which rounding and bends then move
         pts = [[(e[0][0] + offsets[i][k][0], e[0][1] + offsets[i][k][1]) for k in range(len(lines))] for i, e in enumerate(loop)]
         moved = [False] * n
@@ -255,7 +261,7 @@ def band(region, edge, banded, points, square=lambda tile: False):
             seq.append({"s": float(i), "border": e[0], "pts": pts[i], "lift": lifts[i], "edge": i})
             if i in mids:
                 seq.append({"s": i + 0.5, "border": (e[0][0] + e[1][0] * 0.5, e[0][1] + e[1][1] * 0.5), "pts": mids[i],
-                            "lift": [ln["lift"] for ln in lines], "edge": i})
+                            "lift": [ln["lift"] + (drop(e) if ln.get("from") == "outside" else 0.0) for ln in lines], "edge": i})
         m = len(seq)
 
         def p3(st, k):
@@ -276,7 +282,6 @@ def band(region, edge, banded, points, square=lambda tile: False):
                 strips.append((face, (p3(a, k0), p3(b, k0)), (p3(a, k1), p3(b, k1)), (ua, ub)))
         # Dents: where the first line has moved off the border, the outside's ground fills the gap
         off = [abs(st["pts"][0][0] - st["border"][0]) > EPS or abs(st["pts"][0][1] - st["border"][1]) > EPS for st in seq]
-        lift0 = lines[0]["lift"]
         for j in range(m):
             if not off[j] or off[j - 1]:
                 continue
@@ -286,6 +291,7 @@ def band(region, edge, banded, points, square=lambda tile: False):
                 span.append(seq[k % m])
                 k += 1
             span.append(seq[k % m])
+            lift0 = max(st["lift"][0] for st in span)
             poly = [(st["border"][0], lift0, st["border"][1]) for st in span]
             poly += [(st["pts"][0][0], lift0, st["pts"][0][1]) for st in reversed(span[1:-1])]
             outer_points.update(poly)

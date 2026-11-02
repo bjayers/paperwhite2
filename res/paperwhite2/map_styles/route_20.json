@@ -9,6 +9,7 @@
     },
     "edges": [
         {
+            "name": "path",
             "to": "p",
             "from": [ "g", "t", "b", "w", "k" ],
             "lines": [
@@ -32,6 +33,7 @@
             "round": 0.5
         },
         {
+            "name": "bank",
             "to": "w",
             "lines": [
                 {
@@ -82,6 +84,89 @@
                 }
             ],
             "round": 0.5
+        },
+        {
+            "name": "ledge",
+            "to": "g",
+            "step": true,
+            "from": [ "g", "t", "b", "p", "e" ],
+            "lines": [
+                {
+                    "offset": 0,
+                    "lift": 0,
+                    "from": "outside"
+                },
+                {
+                    "offset": 0.5,
+                    "lift": -0.25,
+                    "from": "outside"
+                },
+                {
+                    "offset": 0.75,
+                    "lift": 0
+                },
+                {
+                    "offset": 1,
+                    "lift": 0
+                }
+            ],
+            "faces": [
+                {
+                    "between": [ 0, 1 ],
+                    "texture": "gake1_1",
+                    "v": [ 0, 1 ],
+                    "alpha": "MASK"
+                },
+                {
+                    "between": [ 1, 2 ],
+                    "texture": "54ochigake",
+                    "v": [ 0, 1 ],
+                    "alpha": "MASK"
+                },
+                {
+                    "between": [ 2, 3 ],
+                    "texture": "grass01ax",
+                    "planar": true,
+                    "repeat": 4
+                }
+            ],
+            "round": 0.5
+        },
+        {
+            "name": "cliff",
+            "to": "g",
+            "step": true,
+            "from": [ "g", "t", "b", "p", "e" ],
+            "lines": [
+                {
+                    "offset": 0,
+                    "lift": 0,
+                    "from": "outside"
+                },
+                {
+                    "offset": 0.5,
+                    "lift": -0.25,
+                    "from": "outside"
+                },
+                {
+                    "offset": 1,
+                    "lift": 0
+                }
+            ],
+            "faces": [
+                {
+                    "between": [ 0, 1 ],
+                    "texture": "gake1_1",
+                    "v": [ 0, 1 ],
+                    "alpha": "MASK"
+                },
+                {
+                    "between": [ 1, 2 ],
+                    "texture": "gake01a",
+                    "v": [ 0, 1 ],
+                    "alpha": "MASK"
+                }
+            ]
         }
     ],
     "terrains": [
@@ -202,6 +287,30 @@
             },
             "tile_type": 8454145,
             "also_tile_types": [ 8585281 ]
+        },
+        {
+            "key": "l",
+            "name": "Ledge, half a tile",
+            "edge_of": "g",
+            "edge": "ledge",
+            "color": "#b89a5a",
+            "ground": {
+                "texture": "grass01ax",
+                "repeat": 4
+            },
+            "tile_type": 8454145
+        },
+        {
+            "key": "c",
+            "name": "Cliff",
+            "edge_of": "g",
+            "edge": "cliff",
+            "color": "#8a6038",
+            "ground": {
+                "texture": "grass01ax",
+                "repeat": 4
+            },
+            "tile_type": 8454145
         }
     ]
 }

@@ -94,6 +94,15 @@ def painting_of(chunk, style):
     blocked = next((t["key"] for t in style["terrains"] if not t.get("edge_of") and (t["tile_type"] >> 16) & 1), None)
     # A drafted style names its terrains by their textures, which the reading without a style uses
     by_name = {t["name"]: t["key"] for t in style["terrains"] if not t.get("edge_of")}
+    # The style's steps (ledges, cliffs): each edge terrain of a step edge, with the deepest drop it's for (a ledge's
+    # half tile, else any), shallowest first
+    step_edges = {e.get("name"): e for e in style.get("edges", []) if e.get("step")}
+    steps = {}
+    for t in style["terrains"]:
+        e = step_edges.get(t.get("edge"))
+        if e and not t.get("square"):
+            steps[t["key"]] = (e["name"], HALF + 2 if e["name"] == "ledge" else 1e9)
+    steps = dict(sorted(steps.items(), key=lambda kv: kv[1][1]))
     plain = style["terrains"][0]["key"]
     size = chunk.size
     keys = [[plain] * size for _ in range(size)]
@@ -105,8 +114,8 @@ def painting_of(chunk, style):
         terrain = r["terrain"] if r["terrain"] in terrains or r["terrain"] == "cliff" else by_name.get(r["terrain"], r["terrain"])
         first = next((c for c in f["collision"] if c["layer"] == 0 and c["height"] is not None), None)
         walk = first["height"] if first else (f["ground"] or {}).get("y", 0.0)
-        if first and (first["tile_type"] >> 16) & 1 and f["ground"]:
-            walk = f["ground"]["y"]  # blocked: where it's drawn (a plateau's top over the beach its collision is at)
+        if first and (first["tile_type"] >> 16) & 1 and f["ground"] and f["ground"]["y"] > walk + 2:
+            walk = f["ground"]["y"]  # blocked and drawn higher: a plateau's top over the beach its collision is at
         if r.get("empty"):
             kind = "nothing drawn"
         elif r.get("deck"):
@@ -115,8 +124,13 @@ def painting_of(chunk, style):
             terrain = under or terrain
         elif terrain == "cliff":
             kind = "cliff"
-            terrain = blocked or plain
             walk = (f["ground"] or {}).get("y", walk)
+            # The step that fits the drop to the highest neighbour (a ledge for half a tile, else a cliff)
+            drop = max([(n.facts["ground"] or {}).get("y", -1e9) - walk for n in
+                        (tile.neighbour(1, 0), tile.neighbour(-1, 0), tile.neighbour(0, 1), tile.neighbour(0, -1)) if n] or [0])
+            fits = [k for k, (name, depth) in steps.items() if drop >= 2 and drop <= depth] or \
+                   [k for k, (name, depth) in sorted(steps.items(), key=lambda kv: -kv[1][1])][:1]
+            terrain = fits[0] if fits and drop >= 2 else (blocked or plain)
         elif r["edge"] and terrain in edge_terrain:
             kind = "edge"
             terrain = edge_terrain[terrain]

@@ -216,6 +216,24 @@ Plain tiles come back nearly exact everywhere (terrain 100%, textures within 1�
 6. Water edges: vanilla keeps a flat bed under its banks, ours slopes it (the ground's height differs by 5 units,
    the sides agree).
 
+## Steps: ledges and cliffs (2026-11-04)
+
+The atlas showed how the game draws a step: inside whole tiles on the lower side (they read as cliff), from the
+higher side's border down. Route 20's half-tile grass ledge: a rim of gake1_1 down 4 units over half a tile, then
+54ochigake to the bottom three quarters in, then the lower grass; its full cliffs: the same rim, then gake01a to the
+bottom at the tile's far side. Most such tiles are blocked (0x810001); some half-tile ledges are walkable grass.
+
+The map maker draws them as step edges: edge terrains painted on the lower tiles (Route 20's "Ledge, half a tile" and
+"Cliff"), banded against higher neighbours, their rim lines measured from the higher side's height (`"from":
+"outside"`), so one profile fits any drop, and no plain wall where they draw the drop. A family can now have several
+edges (grass: ledges and cliffs), each drawn where its own edge terrain is painted (`edge`, `name`). The round trip
+paints vanilla's cliff tiles with the step that fits the drop: on Route 20 cliff tiles went from 0% to 53–77%
+matching, all tiles from 76–90% to 88–96%, and triangles closer to vanilla's (map04_20 1,464 against 1,114).
+
+Still to do for steps: vanilla's tall cliffs are tiers (gake1_0 faces between gake1_1 rims), not one face; corners
+(the plateau's convex corners are the lower region's concave ones, not rounded yet); stairs (kaidan01a); slopes one
+walks on (yamagrs01 hills, dunes).
+
 ## Order
 
 1. The reader, per chunk, and its layer in the Paint tab.

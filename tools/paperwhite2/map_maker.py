@@ -323,6 +323,15 @@ def generate(project_path):
     wall_grid = grid
 
     def joined(a, b):
+        # No wall where a step edge (a ledge, a cliff) on the lower tile draws the drop itself
+        for low, high in ((a, b), (b, a)):
+            pl, ph = painted.get(low), grid.get(high)
+            if pl and ph and ph[1] > pl[1] and terrains[pl[0]].get("edge_of") and \
+                    next((e for e in style.get("edges", []) if e.get("name") == terrains[pl[0]].get("edge")), {}).get("step"):
+                return True
+        return _joined(a, b)
+
+    def _joined(a, b):
         # No wall between a painted tile and a kept one of its family (painted water against the chunk's own river,
         # whose ground is its bed): the band, or the lack of one, joins them
         ta, tb = grid[a], grid.get(b)
@@ -339,47 +348,78 @@ def generate(project_path):
     regions = defaultdict(set)
     for xz, v in painted.items():
         regions[(family[v[0]], v[1])].add(xz)
-    for (key, h), tiles in sorted(regions.items()):
-        edge = next((e for e in style.get("edges", []) if e["to"] == key), None)
-        if edge is None:
-            continue
-        froms = edge.get("from")
+    edges_of = defaultdict(list)
+    for e in style.get("edges", []):
+        edges_of[e["to"]].append(e)
 
-        def banded(e, key=key, h=h, froms=froms):
-            # From an edge tile of the family to a terrain the edge draws against (any other, when it names none, but
-            # not a tile it's unsure of: a bridge spans the water rather than banks it)
-            if painted[e[3]][0] == key:
-                return False
-            other = terrain_of(e[4])
-            if other is None or other[0] is None or family.get(other[0], other[0]) == key:
-                return False
-            if froms is None and unsure(e[4]):
-                return False
-            return froms is None or (other[0] in froms and other[1] == h)
-        result = map_edges.band(tiles, edge, banded, edge.get("points", False),
-                                square=lambda t: terrains[painted[t][0]].get("square", False))
-        inner_y = h + edge["lines"][edge.get("inner", len(edge["lines"]) - 1)]["lift"] * TILE
-        for t in tiles - result["full"]:
+    def edge_of_terrain(t):
+        # The edge an edge terrain draws: the one it names, else its family's first
+        named = terrains[t].get("edge")
+        family_edges = edges_of.get(family[t], [])
+        return next((e for e in family_edges if e.get("name") == named), None) if named else (family_edges[0] if family_edges else None)
+    for (key, h), tiles in sorted(regions.items()):
+        drawn = {id(edge_of_terrain(painted[t][0])): edge_of_terrain(painted[t][0]) for t in tiles
+                 if painted[t][0] != key and edge_of_terrain(painted[t][0])}
+        if not drawn:
+            continue
+        full = None
+        region_pieces = []
+        inner_ys = []
+        for edge in drawn.values():
+            froms = edge.get("from")
+            step = edge.get("step", False)
+
+            def banded(e, key=key, h=h, froms=froms, edge=edge, step=step):
+                # From a tile of this edge's terrain to a terrain the edge draws against (any other, when it names
+                # none, but not a tile it's unsure of: a bridge spans the water rather than banks it), at the same
+                # height, or for a step (a ledge, a cliff) higher
+                if painted[e[3]][0] == key or edge_of_terrain(painted[e[3]][0]) is not edge:
+                    return False
+                other = terrain_of(e[4])
+                if other is None or other[0] is None:
+                    return False
+                if step:
+                    return other[1] > h + 2 and (froms is None or other[0] in froms)
+                if family.get(other[0], other[0]) == key:
+                    return False
+                if froms is None and unsure(e[4]):
+                    return False
+                return froms is None or (other[0] in froms and other[1] == h)
+
+            def drop(e, h=h):
+                other = terrain_of(e[4])
+                return (other[1] - h) / TILE if other and other[1] is not None else 0.0
+            result = map_edges.band(tiles, edge, banded, edge.get("points", False),
+                                    square=lambda t: terrains[painted[t][0]].get("square", False), drop=drop)
+            inner_y = h + edge["lines"][edge.get("inner", len(edge["lines"]) - 1)]["lift"] * TILE
+            inner_ys.append(inner_y)
+            # A tile is the family's own ground only where every edge drawn here leaves it whole
+            full = set(result["full"]) if full is None else full & result["full"]
+            for t, piece in result["pieces"]:
+                region_pieces.append((t, (key, inner_y, [(x * TILE - half, inner_y, z * TILE - half) for x, z in piece])))
+            for p in result["outer"] | result["inner"]:
+                corners[h + p[1] * TILE].add(to_world(p, h))
+            # A dent's ground is what the outside's ground is at its border: a kept tile drawn with an edge's face (a
+            # path's edge, michi01a) is that edge's outside there (grass); else the outside's terrain, else the first
+            # the edge names
+            dents = []
+            for outside, poly in result["dents"]:
+                other = terrain_of(outside)
+                texture = kept_textures.get(outside) if grid.get(outside, (None,))[0] == KEEP else None
+                dkey = edge_outside.get(texture) or (other[0] if other and other[0] in terrains else None) \
+                    or (edge.get("from") or [key])[0]
+                dents.append((dkey, [to_world(p, h) for p in poly]))
+            bands.append((h, result["strips"], dents))
+        for t in tiles - full:
             del ground[t]
-        for t in result["full"]:
-            ground[t] = (key, inner_y)
-        for t, piece in result["pieces"]:
-            pieces.append((key, inner_y, [(x * TILE - half, inner_y, z * TILE - half) for x, z in piece]))
-        for p in result["outer"] | result["inner"]:
-            corners[h + p[1] * TILE].add(to_world(p, h))
-        for _, _, poly in pieces:
-            for p in poly:
-                corners[inner_y].add(p)
-        # A dent's ground is what the outside's ground is at its border: a kept tile drawn with an edge's face (a path's
-        # edge, michi01a) is that edge's outside there (grass); else the outside's terrain, else the first the edge names
-        dents = []
-        for outside, poly in result["dents"]:
-            other = terrain_of(outside)
-            texture = kept_textures.get(outside) if grid.get(outside, (None,))[0] == KEEP else None
-            dkey = edge_outside.get(texture) or (other[0] if other and other[0] in terrains else None) \
-                or (edge.get("from") or [key])[0]
-            dents.append((dkey, [to_world(p, h) for p in poly]))
-        bands.append((h, result["strips"], dents))
+        for t in full:
+            ground[t] = (key, min(inner_ys))
+        # A piece of a tile another edge drew in full stays out
+        for t, piece in region_pieces:
+            if t not in full:
+                pieces.append(piece)
+                for p in piece[2]:
+                    corners[piece[1]].add(p)
     # The ground: each terrain's tiles at a height merged into rectangles
     rects = rectangles(ground, size, lambda v: materials.reach(ground_keys[v[0]]) * terrains[v[0]]["ground"]["repeat"])
     # Every corner on each height's plane, which the ground's edges there are split at
