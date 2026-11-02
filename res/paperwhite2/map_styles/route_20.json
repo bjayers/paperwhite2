@@ -214,6 +214,32 @@
                     "v_units": 4.6
                 }
             ]
+        },
+        {
+            "name": "hill",
+            "to": "g",
+            "step": true,
+            "ramp": true,
+            "from": [ "g", "t", "b", "p", "e", "h" ],
+            "lines": [
+                {
+                    "offset": 0,
+                    "lift": 0,
+                    "from": "outside"
+                },
+                {
+                    "offset": 1,
+                    "lift": 0
+                }
+            ],
+            "faces": [
+                {
+                    "between": [ 0, 1 ],
+                    "texture": "yamagrs01",
+                    "planar": true,
+                    "repeat": 1
+                }
+            ]
         }
     ],
     "terrains": [
@@ -371,6 +397,19 @@
                 "repeat": 4
             },
             "tile_type": 8388608
+        },
+        {
+            "key": "h",
+            "name": "Grass slope",
+            "edge_of": "g",
+            "edge": "hill",
+            "square": true,
+            "color": "#9ad070",
+            "ground": {
+                "texture": "grass01ax",
+                "repeat": 4
+            },
+            "tile_type": 8388639
         }
     ]
 }
