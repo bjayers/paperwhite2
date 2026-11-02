@@ -2,6 +2,23 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-05 (overnight, later): tiers, stairs, hills, learned styles; polygons are the open problem
+
+- Tall cliffs as 16-unit tiers (rock rim under the tier above), stairs and grass slopes as ramps with sloped collision
+  (vanilla's slope indices), styles learned for any texture set and verified by round trips (`map_profiles.py draft
+  --verify`), learned underlays. Route 20 round trip: terrain 93–97%, edges 96–98%; Desert Resort 2 72→96% terrain
+  with a learned style.
+- **Polygons, for the user's decision.** The editor's bar now counts polygons as the DS does (a quad once, as the
+  writer pairs triangles): the busiest vanilla overworld chunk has 1,345 (its 2,367 triangles are mostly quads),
+  caves and buildings up to 2,457. Regenerated Route 20 chunks have 1,443–2,044 against vanilla's 519–790, so a
+  fully painted chunk can pass the overworld's ceiling (map04_21 does). Measured on Route 20's four chunks:
+  - not splitting the ground's edges at every corner on them (vanilla doesn't; we do to avoid T-junctions, which the
+    user's tests have shown no cracks with) saves 20–27%; not splitting strips either, a further 5–10%. Whether the
+    DS shows cracks without the splits needs an in-game test;
+  - the rest is the bands: a strip per face per straight run, and runs break at every bend, chamfer and rounded
+    corner (map04_21: 801 strips). Fewer runs means simpler corners, a trade against the look the user asked for.
+  Quad-friendly strips and clean-corner fans are in (about 10–17% fewer triangles, 7% fewer polygons).
+
 ## 2026-11-05 (overnight): profiles from the atlas, chamfered corners, seams, borders
 
 Working through the user's tile list on their go-ahead; each change checked with the round trip on Route 20's four
