@@ -230,6 +230,12 @@ edges (grass: ledges and cliffs), each drawn where its own edge terrain is paint
 paints vanilla's cliff tiles with the step that fits the drop: on Route 20 cliff tiles went from 0% to 53–77%
 matching, all tiles from 76–90% to 88–96%, and triangles closer to vanilla's (map04_20 1,464 against 1,114).
 
+Profiles learned (2026-11-04, `tools/paperwhite2/map_profiles.py cross TEXTURE --drop UNITS`, the cross-section
+across every straight run in the atlas): Route 20's ledge as measured (58 runs), with the lower grass flat under the
+whole tile beneath its see-through faces (the seam at a ledge's foot); faces repeat by height, gake01a every 12
+units, the rims and 54ochigake every 4. The style's faces take `v_units` (v by height down from the face's top line,
+repeating) and the steps an underlay face. Round trip on Route 20: textures differ 1–4 points less.
+
 The user's observation (2026-11-04): vanilla's corners are chamfered, not mitred. At a corner the edge texture
 runs on along the diagonal cut (michi01a's grass and its shadow lie diagonal across the corner tile; water's inward
 corners the same), so it isn't stretched; only the path's bends are mitred and stretched. The mitre the map maker

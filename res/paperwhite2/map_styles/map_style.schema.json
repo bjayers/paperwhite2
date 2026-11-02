@@ -134,6 +134,11 @@
                                 "alpha": {
                                     "enum": [ "MASK", "BLEND" ],
                                     "description": "How its transparent pixels draw"
+                                },
+                                "v_units": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0,
+                                    "description": "Units of height one repeat of the texture covers down the face, from its first line (a cliff's face repeats rather than stretches over a tall drop); v starts at the face's first v"
                                 }
                             }
                         },

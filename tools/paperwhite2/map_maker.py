@@ -451,7 +451,9 @@ def generate(project_path):
 
     # The bands, each strip split where the ground beside it has a corner on its lines
     def face_key(face):
-        return materials.get(face["texture"], alpha=face.get("alpha"), clamp_t=not face.get("planar", False), name=face["texture"])
+        # v clamped across an edge, but repeating down a face measured by height (a cliff's v_units)
+        clamp = not face.get("planar", False) and "v_units" not in face
+        return materials.get(face["texture"], alpha=face.get("alpha"), clamp_t=clamp, name=face["texture"])
 
     def face_uv(face, w, u, v):
         repeat = face.get("repeat", 1)
@@ -462,6 +464,7 @@ def generate(project_path):
         for face, (a0, a1), (b0, b1), (ua, ub) in strips:
             fv = face.get("v", [0, 0])
             sides = []
+            top0, top1 = to_world(a0, h), to_world(a1, h)
             for (p0, p1), v in (((a0, a1), fv[0]), ((b0, b1), fv[1])):
                 w0, w1 = to_world(p0, h), to_world(p1, h)
                 length2 = sum((w1[k] - w0[k]) ** 2 for k in range(3))
@@ -475,6 +478,11 @@ def generate(project_path):
                 side = []
                 for t in sorted(set(ts)):
                     w = tuple(w0[k] + t * (w1[k] - w0[k]) for k in range(3))
+                    if "v_units" in face:
+                        # v by the height down from the face's top line there, a repeat each v_units (a tall cliff's
+                        # face repeats, not stretches)
+                        top = top0[1] + t * (top1[1] - top0[1])
+                        v = fv[0] + (top - w[1]) / face["v_units"]
                     side.append((w, face_uv(face, w, ua + t * (ub - ua), v), t))
                 sides.append(side)
             key = face_key(face)

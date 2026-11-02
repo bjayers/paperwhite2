@@ -108,9 +108,19 @@
                 {
                     "offset": 1,
                     "lift": 0
+                },
+                {
+                    "offset": 0,
+                    "lift": 0
                 }
             ],
             "faces": [
+                {
+                    "between": [ 4, 3 ],
+                    "texture": "grass01ax",
+                    "planar": true,
+                    "repeat": 4
+                },
                 {
                     "between": [ 0, 1 ],
                     "texture": "gake1_1",
@@ -122,15 +132,10 @@
                     "texture": "54ochigake",
                     "v": [ 0, 1 ],
                     "alpha": "MASK"
-                },
-                {
-                    "between": [ 2, 3 ],
-                    "texture": "grass01ax",
-                    "planar": true,
-                    "repeat": 4
                 }
             ],
-            "round": 0.5
+            "round": 0.5,
+            "inner": 3
         },
         {
             "name": "cliff",
@@ -151,9 +156,19 @@
                 {
                     "offset": 1,
                     "lift": 0
+                },
+                {
+                    "offset": 0,
+                    "lift": 0
                 }
             ],
             "faces": [
+                {
+                    "between": [ 3, 2 ],
+                    "texture": "grass01ax",
+                    "planar": true,
+                    "repeat": 4
+                },
                 {
                     "between": [ 0, 1 ],
                     "texture": "gake1_1",
@@ -164,9 +179,11 @@
                     "between": [ 1, 2 ],
                     "texture": "gake01a",
                     "v": [ 0, 1 ],
+                    "v_units": 12,
                     "alpha": "MASK"
                 }
-            ]
+            ],
+            "inner": 2
         }
     ],
     "terrains": [
