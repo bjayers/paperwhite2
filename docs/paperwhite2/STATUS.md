@@ -2,6 +2,28 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-02: grass painted apart from terrain (the Decorations tab)
+
+**Done:** grass is its own layer of a painting (`grass` rows), painted in the Map Editor's new Decorations tab
+(pencil, rectangle, fill, eraser) and built by the map maker over whatever ground each tile has; repainting terrain
+under it keeps it. Eight kinds learned from the atlas (`res/paperwhite2/map_grass/grass.json`,
+`tools/paperwhite2/map_grass.py survey`): tall and dark grass, their "snowy rustle" (B) and "other rustle" (C) kinds,
+and very tall grass and very tall dark grass (Route 7's textures only). Hidden Grotto "grass" is the entrance's trees,
+left out. Route 20's Tall grass and Dark grass terrains are gone from its style (the grass tab replaces them). Details
+in docs/paperwhite2/design/map-editor.md, "Grass, painted apart from the terrain".
+
+Also: Start painting defaults to a style made for the chunk's texture set, or learns one ("auto", a minute for
+Route 7); learned styles take a ground's commonest walkable tile type (Route 7's grass had come out blocked), which
+also lifted its round trip's heights within 2 units from 93% to 99.5%.
+
+**Tested:** browser runs on Route 20 (dark grass painted, a field of tall grass erased to the ground, path painted
+under grass, collision checked) and Route 7 (very tall grass regenerated with no edits: vanilla's collision exactly,
+looking the same, boardwalks over it); typecheck, tests, round trips. **Untested in game**, in particular the
+encounters, the rustles and very tall grass's no-cycling.
+
+**For the user:** paintings started before today have no grass rows; the Decorations tab offers "Take the chunk's
+grass" for them. Grass painted over blocked tiles or boardwalks (orange) is drawn but keeps that collision.
+
 ## 2026-11-05 (morning): next — editor controls and the object library; tiles still needed
 
 **Done (2026-11-05):** the editor controls the user asked for before more tiles:

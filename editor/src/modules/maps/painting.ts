@@ -11,6 +11,9 @@ export interface Project {
   terrain: string[];
   /** In half tiles. */
   height: number[][];
+  /** Each row's tiles' grass, over the terrain: a kind's letter (res/paperwhite2/map_grass/grass.json), or . for none.
+   * Without it, the chunk's grass stays as it is. */
+  grass?: string[];
   /** Its name, the x and z of its north-west tile, and how many quarter turns clockwise it's turned (none: 0). */
   objects?: PlacedObject[];
 }
@@ -26,7 +29,80 @@ export function footprint(object: PlacedObject, library: LibraryObject[]): [numb
 export interface MapStyle {
   name: string;
   texture_set: string;
-  terrains: { key: string; name: string; color?: string; tile_type: number }[];
+  terrains: { key: string; name: string; color?: string; tile_type: number; edge_of?: string; edge?: string }[];
+}
+
+/** A kind of grass the Decorations tab paints (map_grass.schema.json). */
+export interface GrassKind {
+  key: string;
+  name: string;
+  description?: string;
+  tile_type: number;
+  color: string;
+  blades?: { texture: string; lift: number; alpha?: string }[];
+  volume?: { top: string; side: string };
+}
+
+export const GRASS_FILE = "res/paperwhite2/map_grass/grass.json";
+export const NO_GRASS = ".";
+
+export async function loadGrass(): Promise<GrassKind[]> {
+  return JSON.parse((await api.file(GRASS_FILE)).text).kinds;
+}
+
+export const grassTextures = (k: GrassKind) => (k.blades ? k.blades.map((b) => b.texture) : k.volume ? [k.volume.top, k.volume.side] : []);
+
+/** The PNGs a texture set has, by name without .png: which grass kinds it can draw. */
+export async function textureNames(textureSet: string): Promise<Set<string>> {
+  const folder = textureSet.replace(/^MAP_TEXTURE_SET_/, "").toLowerCase();
+  const files = await api.list(`res/field/maps/textures/${folder}/*.png`);
+  return new Set(files.map((f) => f.slice(f.lastIndexOf("/") + 1, -4)));
+}
+
+/** The grass kind a collision tile type is, by its tile class. */
+export const grassOf = (kinds: GrassKind[], tileType: number) => kinds.find((k) => (k.tile_type & 0xffff) === (tileType & 0xffff)) ?? null;
+
+/** Whether grass is built on a tile of this type: not water (map_grass.py can_hold, with the slope checked apart). */
+export const holdsGrass = (tileType: number) => ((tileType >>> 16) & 0x2) === 0;
+
+/** Whether a grass tile of this type takes the grass's tile type: not blocked, its class a ground's (map_grass.py
+ * takes_type); else it keeps its own collision (a boardwalk over the grass, a tree in it). */
+export const takesGrassType = (tileType: number) => ((tileType >>> 16) & 0x1) === 0 && (tileType & 0xffff) < 0x40 && (tileType & 0xffff) !== 0x20;
+
+/** The project's grass rows, or the chunk's own grass (by its collision, for the tiles the painting keeps) where the
+ * project has none yet. */
+export function grassRows(project: Project, kinds: GrassKind[], tileTypes: (x: number, z: number) => number | null): string[] {
+  if (project.grass) return project.grass;
+  return project.terrain.map((row, z) => [...row].map((key, x) => {
+    const t = key === "." ? tileTypes(x, z) : null;
+    return (t !== null && grassOf(kinds, t)?.key) || NO_GRASS;
+  }).join(""));
+}
+
+/** The project with grass (a kind's letter, or . to erase) on the cells. */
+export function grassPainted(project: Project, rows: string[], cells: { x: number; z: number }[], key: string): Project {
+  const out = rows.map((r) => [...r]);
+  for (const { x, z } of cells) if (out[z]?.[x] !== undefined) out[z][x] = key;
+  return { ...project, grass: out.map((r) => r.join("")) };
+}
+
+/** A grass fill's cells: the tile clicked and every tile joined to it with the same grass (or none). */
+export function grassFillCells(rows: string[], start: { x: number; z: number }): { x: number; z: number }[] {
+  const want = rows[start.z]?.[start.x];
+  if (want === undefined) return [];
+  const seen = new Set<string>([`${start.x},${start.z}`]);
+  const out: { x: number; z: number }[] = [];
+  const queue = [start];
+  while (queue.length) {
+    const c = queue.pop()!;
+    out.push(c);
+    for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const n = { x: c.x + dx, z: c.z + dz };
+      const key = `${n.x},${n.z}`;
+      if (!seen.has(key) && rows[n.z]?.[n.x] === want) { seen.add(key); queue.push(n); }
+    }
+  }
+  return out;
 }
 
 export interface LibraryObject {

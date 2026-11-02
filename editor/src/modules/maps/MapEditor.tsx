@@ -25,12 +25,15 @@ import { ChunkScene, connectedFaces, faceKey, forgetObject, stackedFaces, type C
 import { seasonSets, seasonVariants, type SeasonSet } from "./seasons.ts";
 import { ReadingPanel, type ChunkReading } from "./ReadingPanel.tsx";
 import { PaintPanel } from "./PaintPanel.tsx";
+import { DecorationsPanel, type GrassShape } from "./DecorationsPanel.tsx";
 import { ScrubNumber } from "../overworld/ScrubNumber.tsx";
 import { ObjectsPanel } from "./ObjectsPanel.tsx";
-import { fillCells, footprint, loadLibrary, loadStyles, painted, projectPath, strokeCells, type LibraryObject, type MapStyle, type PaintShape,
+import { NO_GRASS, fillCells, footprint, grassFillCells, grassPainted, grassRows, holdsGrass, loadGrass, takesGrassType, textureNames,
+  type GrassKind,
+  loadLibrary, loadStyles, painted, projectPath, strokeCells, type LibraryObject, type MapStyle, type PaintShape,
   type PaintTool, type Project } from "./painting.ts";
 
-type Tab = "chunks" | "faces" | "collision" | "paint" | "objects";
+type Tab = "chunks" | "faces" | "collision" | "paint" | "decorations" | "objects";
 
 /** The busiest vanilla chunks of each kind, counted from every model of the original game as the DS counts polygons
  * (quads once, as the model writer pairs them; 2026-11-05): the overworld's (overworld_2_map01_22: 1,345 polygons,
@@ -392,6 +395,48 @@ export function MapEditor({ constants }: ToolProps) {
   const projectDoc = projectFile && projectExists[projectFile] ? docs.get(projectFile) : undefined;
   const project = useMemo(() => (projectDoc?.data ? toPlain(projectDoc.data) as Project : null), [projectDoc?.data]);
   const projectStyle = project ? styles.get(project.style) : undefined;
+
+  // The Decorations tab's grass: the kinds, the textures the painting's set has, the brush, and each tile's grass
+  // (the project's rows, else the chunk's own by its collision) and whether it can hold it
+  const [grassKinds, setGrassKinds] = useState<GrassKind[]>([]);
+  useEffect(() => { loadGrass().then(setGrassKinds, () => setGrassKinds([])); }, []);
+  const [grassKey, setGrassKey] = useState("t");
+  const [grassShape, setGrassShape] = useState<GrassShape>("pencil");
+  const [setTextures, setSetTextures] = useState<{ set: string; names: Set<string> } | null>(null);
+  useEffect(() => {
+    const set = projectStyle?.texture_set;
+    if (!set || setTextures?.set === set) return;
+    textureNames(set).then((names) => setSetTextures({ set, names }), () => {});
+  }, [projectStyle?.texture_set, setTextures?.set]);
+  const keptType = (x: number, z: number) => current?.layers[0]?.tiles[z * (project?.size ?? 32) + x]?.tileType ?? null;
+  const grass = project ? grassRows(project, grassKinds, keptType) : null;
+  /** How grass stands on a tile of the painting: "no" where it isn't built (water, an edge, a slope), "keeps" where it's
+   * drawn but the tile keeps its own collision (blocked, a boardwalk), else "yes". By its painted terrain, else the kept
+   * collision. */
+  const holds = (x: number, z: number): "yes" | "keeps" | "no" => {
+    const key = project?.terrain[z]?.[x];
+    if (key === undefined) return "no";
+    let tileType: number;
+    if (key !== ".") {
+      const t = projectStyle?.terrains.find((t) => t.key === key);
+      if (!t || !holdsGrass(t.tile_type) || t.edge_of || t.edge) return "no";
+      tileType = t.tile_type;
+    } else {
+      const tile = current?.layers[0]?.tiles[z * (project?.size ?? 32) + x];
+      if (!tile || !holdsGrass(tile.tileType) || tile.slope !== 0) return "no";
+      tileType = tile.tileType;
+    }
+    return takesGrassType(tileType) || grassKinds.some((k) => (k.tile_type & 0xffff) === (tileType & 0xffff)) ? "yes" : "keeps";
+  };
+  const grassCounts = new Map<string, number>();
+  let grassBlocked = 0, grassKeeps = 0;
+  grass?.forEach((row, z) => [...row].forEach((k, x) => {
+    if (k === NO_GRASS) return;
+    grassCounts.set(k, (grassCounts.get(k) ?? 0) + 1);
+    const h = holds(x, z);
+    if (h === "no") grassBlocked++;
+    if (h === "keeps") grassKeeps++;
+  }));
   // The reading of the chosen chunk, by the painting's style (else the first), read again after each change to it
   // (a style only names the textures of its own texture set: elsewhere, textures are shown by their names)
   const chunkSet = chunkData?.texture_set ?? chunkData?.texture_preview ?? null;
@@ -438,11 +483,21 @@ export function MapEditor({ constants }: ToolProps) {
   }, [readingOn, reading, chunk, readingTile, readingStyle, loaded]);
   useEffect(() => { setSelectedObject(null); }, [modelName]);
   useEffect(() => {
+    if (tab === "decorations" && project && chunk !== null && grass) {
+      // The grass's colors over its tiles (red where it can't stand); the model as it is under them
+      const rows = grass.map((row, z) => [...row].map((k, x) => {
+        const h = k === NO_GRASS ? null : holds(x, z);
+        return h === null ? "." : h === "no" ? "!" : h === "keeps" ? "?" : k;
+      }).join(""));
+      const colors = { ...Object.fromEntries(grassKinds.map((k) => [k.key, k.color])), "!": "#e03030", "?": "#f08c20" };
+      scene.current?.showPainting(chunk, { terrain: rows, height: project.height, objects: [], sizes: {}, colors, show: true, fade: false }, null);
+      return;
+    }
     const show = tab === "paint" && project && chunk !== null;
     const colors = Object.fromEntries((projectStyle?.terrains ?? []).map((t) => [t.key, t.color ?? "#888888"]));
     scene.current?.showPainting(show ? chunk : null, show ? { terrain: project.terrain, height: project.height, objects: project.objects ?? [],
                                                              sizes: Object.fromEntries(library.map((o) => [o.id, o.size])), colors, show: showPaint, fade: fadeModel } : null, selectedObject);
-  }, [tab, showPaint, fadeModel, project, projectStyle, chunk, loaded, selectedObject, library]);
+  }, [tab, showPaint, fadeModel, project, projectStyle, chunk, loaded, selectedObject, library, grassKinds, grass?.join("\n"), map]);
 
   /** A painting's change, as one step; generated after it, as part of that step, where that is chosen. */
   const changeProject = (next: Project, what: string) => {
@@ -484,6 +539,15 @@ export function MapEditor({ constants }: ToolProps) {
     changeProject(painted(project, cells, tool, terrainKey, paintHeightHalf, fallback), `Painted ${cells.length} tile(s)`);
   };
 
+  /** A stroke of grass (or the eraser) on the painting's tiles. */
+  const paintGrass = (tiles: { x: number; z: number }[]) => {
+    if (!project || !map || !current || !grass) return;
+    const local = tiles.map((t) => ({ x: t.x - current.column * map.chunkTiles, z: t.z - current.row * map.chunkTiles }));
+    const cells = grassShape === "fill" ? grassFillCells(grass, local[0]) : strokeCells(local, grassShape);
+    const kind = grassKinds.find((k) => k.key === grassKey);
+    changeProject(grassPainted(project, grass, cells, grassKey), grassKey === NO_GRASS ? `Erased grass on ${cells.length} tile(s)` : `Painted ${kind?.name ?? grassKey} on ${cells.length} tile(s)`);
+  };
+
   /** An object dragged to another tile, or clicked. */
   const objectMoved = (index: number, tile: { x: number; z: number } | null) => {
     setSelectedObject(index);
@@ -519,6 +583,7 @@ export function MapEditor({ constants }: ToolProps) {
     setBusy(true);
     try {
       await api.startPainting(modelName, style, fill, flat);
+      if (style === "auto") setStyles(await loadStyles());
       await documents.hold(projectFile);
       setProjectExists((m) => ({ ...m, [projectFile]: true }));
       setTerrainKey(fill === "." ? (styles.get(style)?.terrains[0]?.key ?? "g") : fill);
@@ -749,15 +814,18 @@ export function MapEditor({ constants }: ToolProps) {
     const s = scene.current;
     if (!s) return;
     const painting = tab === "paint" && !!project;
-    s.painting = tab === "collision" || (painting && tool !== "select");
+    const decorating = tab === "decorations" && !!project;
+    s.painting = tab === "collision" || (painting && tool !== "select") || decorating;
     s.dragObjects = painting && tool === "select";
-    if (!painting) s.showTerrain(tab === "collision" ? layer : null, tab === "collision" && brush.kind === "type" ? brush.tileClass : null);
+    // (a painting's overlay takes strokes in the Paint and Decorations tabs; elsewhere the collision layer's squares)
+    if (!painting && !decorating) s.showTerrain(tab === "collision" ? layer : null, tab === "collision" && brush.kind === "type" ? brush.tileClass : null);
   }, [tab, layer, map, brush.kind, brush.tileClass, loaded, project, tool]);
 
   const paintStroke = useRef<(tiles: { x: number; z: number }[]) => void>(() => {});
   paintStroke.current = async (tiles) => {
     if (!map) return;
     if (tab === "paint") { paintProject(tiles); return; }
+    if (tab === "decorations") { paintGrass(tiles); return; }
     const b = brush.kind === "type" ? { kind: "type" as const, tileType: ((brush.flags << 16) | brush.tileClass) >>> 0 }
       : brush.kind === "height" ? { kind: "height" as const, tiles: brush.heightTiles }
       : brush.row ? { kind: "copy" as const, row: brush.row } : null;
@@ -1001,7 +1069,7 @@ export function MapEditor({ constants }: ToolProps) {
         <div className="ow-center">
           <div className="ow-toolbar">
             <div className="view-switch">
-              {(["chunks", "faces", "collision", "paint", "objects"] as Tab[]).map((t) => (
+              {(["chunks", "faces", "collision", "paint", "decorations", "objects"] as Tab[]).map((t) => (
                 <button key={t} className={tab === t ? "active" : ""} onClick={() => setTab(t)}>{t[0].toUpperCase() + t.slice(1)}</button>
               ))}
             </div>
@@ -1185,10 +1253,18 @@ export function MapEditor({ constants }: ToolProps) {
               </>
             )}
             {tab === "paint" && (
-              <PaintPanel model={modelName} project={project} dirty={!!projectDoc?.dirty} styles={styles} objects={library} tool={tool} setTool={setTool}
+              <PaintPanel model={modelName} textureSet={chunkSet} project={project} dirty={!!projectDoc?.dirty} styles={styles} objects={library} tool={tool} setTool={setTool}
                           shape={shape} setShape={setShape} terrain={terrainKey} setTerrain={setTerrainKey} height={paintHeightHalf} setHeight={setPaintHeightHalf}
                           placing={placing} setPlacing={setPlacing} selected={selectedObject} onRemoveSelected={removeSelectedObject} onTurnSelected={turnSelectedObject}
                           showPaint={showPaint} setShowPaint={setShowPaint} fadeModel={fadeModel} setFadeModel={setFadeModel} onStart={startProject} onPaintFromReading={paintFromReading} onLibraryChanged={() => setLibraryVersion((v) => v + 1)} onGenerate={() => void generate()} autoGenerate={autoGenerate} setAutoGenerate={setAutoGenerate} onStop={stopProject} busy={busy} />
+            )}
+            {tab === "decorations" && (
+              <DecorationsPanel model={modelName} textureSet={chunkSet} project={project} dirty={!!projectDoc?.dirty} styles={styles} kinds={grassKinds}
+                                textures={setTextures && setTextures.set === projectStyle?.texture_set ? setTextures.names : null}
+                                grassKey={grassKey} setGrassKey={setGrassKey} shape={grassShape} setShape={setGrassShape} counts={grassCounts}
+                                blocked={grassBlocked} keeps={grassKeeps} autoGenerate={autoGenerate} setAutoGenerate={setAutoGenerate} onStart={startProject}
+                                onGenerate={() => void generate()} busy={busy}
+                                onTakeGrass={() => project && grass && changeProject({ ...project, grass }, "Took the chunk's grass into grass rows")} />
             )}
             {tab === "objects" && (
               <ObjectsPanel objects={library} chosen={chosenObject} setChosen={setChosenObject} placing={placingOnChunk} setPlacing={setPlacingOnChunk}

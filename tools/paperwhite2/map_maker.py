@@ -22,7 +22,9 @@ generate writes:
   meets the middle of another's edge (a T-junction, which the DS draws with a gap);
 - the edges between terrains (map_edges.py): a style's profile along a terrain's border, inside its outer tiles (a
   path's grass edge, a riverbank's ridge and bed), with the terrain's own ground inside it;
-- the terrains' layers (tall grass's blades, above the ground);
+- the terrains' layers (blades above the ground), if a style's terrains have them;
+- the grass painted over the terrain (map_grass.py), when the painting has grass rows: they own every tile's grass,
+  the chunk's own included;
 - walls where neighbouring tiles' heights differ, facing the lower: the lower tile's terrain's wall (a riverbank),
   else the higher's, else the style's (a cliff), u along the wall, v down it;
 - the objects, each standing on the ground of its north-west tile, turned by quarter turns if it says so;
@@ -46,6 +48,7 @@ from tools.data.datajson import DataError, dumps, load, load_schema  # noqa: E40
 from glb_mesh import TEXEL_REACH, Vertex, png_size, read_mesh, write_mesh  # noqa: E402
 from map_model_data import read_glb  # noqa: E402
 import map_edges  # noqa: E402
+import map_grass  # noqa: E402
 
 MODELS = ROOT / "res/field/maps/models"
 TEXTURES = ROOT / "res/field/maps/textures"
@@ -144,7 +147,7 @@ class Across:
 
 def ground_heights(folder, size, images_from=None):
     """Each tile's ground height as a chunk's model draws it: the highest opaque, flat-enough face over the tile's middle
-    (ground, ledges, bridges; not leaves, which are see-through, nor walls). Where the model has none there (a hole),
+    (ground, ledges, bridges; not leaves, which are see-through, nor walls, nor grass). Where the model has none there (a hole),
     the collision's height. The collision can't be used on its own, since a map's collision is sometimes raised to
     stand a bird in a tree."""
     collision = collision_heights(folder, size)
@@ -158,8 +161,10 @@ def ground_faces(folder, size, images_from=None):
     triangles, materials, _ = read_mesh(folder / "model.glb", images_from=images_from)
     half = size * TILE / 2
     best = {}
+    grass = map_grass.all_textures()  # (very tall grass's top is opaque and flat, but it stands over the ground)
+    stems = {key: Path(m.get("pbrMetallicRoughness", {}).get("baseColorTexture", {}).get("image", "")).stem for key, m in materials.items()}
     for key, tri in triangles:
-        if materials[key].get("alphaMode") in ("MASK", "BLEND"):
+        if materials[key].get("alphaMode") in ("MASK", "BLEND") or stems[key] in grass:
             continue
         a, b, c = (v.p for v in tri)
         n = ((b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1]),
@@ -353,8 +358,21 @@ def generate(project_path):
     ground_keys = {k: materials.get(t["ground"]["texture"]) for k, t in terrains.items()}
     painted = {xz: v for xz, v in grid.items() if v[0] != KEEP}
     kept_types = {}
+    kept_slopes = {}
     if keeps:
-        kept_types = {(int(r["x"]), int(r["z"])): int(r["tile_type"]) for r in csv.DictReader((base / "terrain_0.csv").open())}
+        for r in csv.DictReader((base / "terrain_0.csv").open()):
+            kept_types[(int(r["x"]), int(r["z"]))] = int(r["tile_type"])
+            kept_slopes[(int(r["x"]), int(r["z"]))] = int(r["slope"])
+    # The grass painted over the terrain (map_grass.py), when the painting has its rows: then it owns every tile's grass
+    grass_data = map_grass.kinds_file() if "grass" in project else None
+    grass_rows = project.get("grass") or []
+    if grass_data and (len(grass_rows) != size or any(len(row) != size for row in grass_rows)):
+        raise DataError(f"{project_path}: the grass rows aren't {size} by {size}")
+    grass_keys = {k["key"]: k for k in grass_data["kinds"]} if grass_data else {}
+    grass_painted = {(x, z): key for z, row in enumerate(grass_rows) for x, key in enumerate(row) if key != map_grass.NONE}
+    for xz, key in grass_painted.items():
+        if key not in grass_keys:
+            raise DataError(f"{project_path}: no grass kind {key!r} at {xz} (res/paperwhite2/map_grass/grass.json)")
     by_type = {}
     for k, t in terrains.items():
         for tile_type in [t["tile_type"], *t.get("also_tile_types", [])]:
@@ -638,6 +656,22 @@ def generate(project_path):
         cut = [(x, z, w, d) for _, x, z, w, d in rectangles({xz: 1 for xz, v in grid.items() if v[0] != KEEP}, size, lambda v: size)]
         triangles, base_materials, _ = read_mesh(base / "model.glb", images_from=folder)
         remap = {key: materials.add(material) for key, material in base_materials.items()}
+        if grass_data:
+            # The chunk's own grass goes where the grass rows own it (over its grass tiles and the painted ones), and
+            # is built again from the rows; grass textures elsewhere (blades drawn as decoration) stay
+            old_grass = map_grass.all_textures(grass_data)
+            stem = {key: Path(m.get("pbrMetallicRoughness", {}).get("baseColorTexture", {}).get("image", "")).stem
+                    for key, m in base_materials.items()}
+
+            import map_reader
+            base_rows = map_grass.rows_of(map_reader.Chunk(project["model"], base, None, images_from=folder), grass_data)
+
+            def owned(tri):
+                # (over a tile with grass now, or with grass drawn in the chunk as it was)
+                tx = int((sum(v.p[0] for v in tri) / 3 + half) // TILE)
+                tz = int((sum(v.p[2] for v in tri) / 3 + half) // TILE)
+                return (tx, tz) in grass_painted or (0 <= tz < size and 0 <= tx < size and base_rows[tz][tx] != map_grass.NONE)
+            triangles = [(key, tri) for key, tri in triangles if not (stem[key] in old_grass and owned(tri))]
         # Only the chunk's terrain is cut (its textures' roles, map_reader.py with the atlas's consensus): trees,
         # shadows, fences and bridges over painted tiles stay whole, decorations lying on the ground go with it
         import map_reader
@@ -667,8 +701,39 @@ def generate(project_path):
             return False
         polygons += [(remap[key], tri) for key, tri in kept_faces(triangles, cut, half, whole)]
 
-    # The objects, on the ground of their north-west tile, each turned a quarter clockwise as many times as it says
+    # The grass, over the ground: not on water, edges or sloped collision (the editor marks those); its tile type where
+    # the tile's own collision isn't blocked or of a class of its own (a boardwalk over it keeps its collision)
     collision_over = {}
+    grass_cells, grass_skipped = {}, []
+    for (x, z), key in grass_painted.items():
+        tkey, y = grid[(x, z)]
+        if tkey == KEEP:
+            tile_type = kept_types.get((x, z), 0)
+            ok = map_grass.can_hold(tile_type, kept_slopes.get((x, z), 0))
+            y = kept_heights.get((x, z), y)
+        else:
+            t = terrains[tkey]
+            tile_type = t["tile_type"]
+            ok = map_grass.can_hold(tile_type) and not t.get("edge_of") and not t.get("edge")
+        if not ok:
+            grass_skipped.append((x, z))
+            continue
+        grass_cells[(x, z)] = (key, y)
+        if map_grass.takes_type(tile_type) or map_grass.kind_of(tile_type, grass_data) is not None:
+            collision_over[(x, z)] = grass_keys[key]["tile_type"]
+    if grass_data:
+        # A kept tile whose grass is gone takes its ground's terrain's tile type (else the style's first terrain's)
+        for xz, tile_type in kept_types.items():
+            if xz not in grass_painted and grid[xz][0] == KEEP and map_grass.kind_of(tile_type, grass_data) is not None:
+                under = terrain_of(xz)[0]
+                collision_over[xz] = terrains[under if under in terrains else style["terrains"][0]["key"]]["tile_type"]
+    if grass_skipped:
+        print(f"{project_path.name}: no grass on {len(grass_skipped)} tile(s) that can't hold it (water, blocked, edges, "
+              f"slopes): {', '.join(f'{x},{z}' for x, z in grass_skipped[:12])}{' ...' if len(grass_skipped) > 12 else ''}",
+              file=sys.stderr)
+    polygons += map_grass.build(grass_cells, materials, half, grass_data)
+
+    # The objects, on the ground of their north-west tile, each turned a quarter clockwise as many times as it says
     for name, x, z, *turns in project.get("objects", []):
         obj_folder = OBJECTS / name
         if not (obj_folder / "object.json").exists():
@@ -813,8 +878,14 @@ def start(model, style, fill=KEEP, flat=None):
     heights = ground_heights(folder, size)
     height = [[max(-40, min(80, round((flat * HALF_TILE if flat is not None else heights.get((x, z), 0)) / HALF_TILE)))
                for x in range(size)] for z in range(size)]
+    # The chunk's grass, as it's drawn, when it's kept (a new map starts without)
+    if fill == KEEP:
+        import map_reader
+        grass = map_grass.rows_of(map_reader.Chunk(model, folder, None))
+    else:
+        grass = [map_grass.NONE * size for _ in range(size)]
     project = {"$schema": "../map_project.schema.json", "model": model, "style": style, "size": size,
-               "terrain": [fill * size for _ in range(size)], "height": height, "objects": []}
+               "terrain": [fill * size for _ in range(size)], "height": height, "grass": grass, "objects": []}
     path.write_text(dumps(project, width=1 << 20) + "\n")
     return path
 

@@ -33,6 +33,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tools/paperwhite2"))
+import map_grass  # noqa: E402
 import map_maker  # noqa: E402
 import map_profiles  # noqa: E402
 import map_reader  # noqa: E402
@@ -62,7 +63,7 @@ def draft_style(chunk, texture_set):
     for i, tex in enumerate(grounds[:len(KEYS) - 8]):
         key_of[tex] = KEYS[i]
         terrains.append({"key": KEYS[i], "name": tex, "ground": {"texture": tex, "repeat": 1},
-                         "tile_type": types[tex].most_common(1)[0][0]})
+                         "tile_type": map_profiles.ground_type(types[tex])})
     terrains.append({"key": "t", "name": "blocked", "ground": {"texture": grounds[0], "repeat": 1}, "tile_type": 0x810001})
     edges = []
     for tex, r in roles.items():
@@ -167,7 +168,12 @@ def painting_of(chunk, style):
     return ["".join(row) for row in keys], heights, kinds
 
 
-def generate(chunk, style_name, keys, heights, work, styles=None):
+def grass_of(chunk):
+    """The grass rows of a chunk's reading: each tile's kind as drawn (map_grass.py rows_of)."""
+    return map_grass.rows_of(chunk)
+
+
+def generate(chunk, style_name, keys, heights, work, styles=None, grass=None):
     """Generates the painting into work/<model>, a copy of the chunk's folder; the folder."""
     model = chunk.model
     folder = work / "models" / model
@@ -182,6 +188,8 @@ def generate(chunk, style_name, keys, heights, work, styles=None):
     shutil.copy(map_maker.PROJECTS / "map_project.schema.json", projects / "map_project.schema.json")
     project = {"$schema": "../map_project.schema.json", "model": model, "style": style_name, "size": chunk.size,
                "terrain": keys, "height": heights, "objects": []}
+    if grass is not None:
+        project["grass"] = grass
     path = projects / f"{model}.json"
     path.write_text(dumps(project, width=1 << 20) + "\n")
     saved = map_maker.MODELS, map_maker.PROJECTS, map_maker.STYLES
@@ -351,12 +359,16 @@ def paint(model, style_name=None):
         chunk = map_reader.load_chunk(model, None, style_name)
     keys, heights, _ = painting_of(chunk, style)
     project = json.loads(project_path.read_text())
-    project.update({"style": style_name, "terrain": keys, "height": heights})
+    project.update({"style": style_name, "terrain": keys, "height": heights, "grass": grass_of(chunk)})
     project_path.write_text(dumps(project, width=1 << 20) + "\n")
     return project_path
 
 
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] == "style":
+        # map_roundtrip.py style MODEL: the style for the chunk's texture set, learned from the atlas the first time
+        print(style_for(sys.argv[2], None)[0])
+        return
     if len(sys.argv) > 1 and sys.argv[1] == "paint":
         # map_roundtrip.py paint MODEL [STYLE]: the chunk painted whole from its reading (see paint)
         print(paint(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else None).relative_to(ROOT))
@@ -395,7 +407,7 @@ def main():
         (styles / "drafted.json").write_text(json.dumps(style))
     keys, heights, kinds = painting_of(vanilla, style)
     try:
-        folder, triangles = generate(vanilla, style_name, keys, heights, work, styles)
+        folder, triangles = generate(vanilla, style_name, keys, heights, work, styles, grass_of(vanilla))
         generated = map_reader.Chunk(args.model, folder, style if args.style else None)
         results = compare(vanilla, generated, kinds)
         scores = score(results)

@@ -1,0 +1,141 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "The grass kinds: res/paperwhite2/map_grass/grass.json",
+    "description": "The kinds of grass the Map Editor's Decorations tab paints over a chunk's terrain, each as vanilla builds it (learned from the map atlas, tools/paperwhite2/map_grass.py survey): its tile type, and either flat blades over the ground or a raised volume. A kind is offered where the chunk's texture set has its textures.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "kinds", "blades_north_inset", "volume" ],
+    "properties": {
+        "$schema": {
+            "type": "string",
+            "description": "This schema, for editors"
+        },
+        "kinds": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [ "key", "name", "tile_type", "color" ],
+                "properties": {
+                    "key": {
+                        "type": "string",
+                        "pattern": "^[^.]$",
+                        "description": "Its letter in a painting's grass rows (. is none)"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "What sets it apart in the game"
+                    },
+                    "tile_type": {
+                        "type": "integer",
+                        "description": "The collision tile type its tiles take (its class and flags)"
+                    },
+                    "color": {
+                        "type": "string",
+                        "description": "Its color in the editor"
+                    },
+                    "blades": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [ "texture", "lift" ],
+                            "properties": {
+                                "texture": {
+                                    "type": "string",
+                                    "description": "A PNG of the chunk's texture set, without .png"
+                                },
+                                "lift": {
+                                    "type": "number",
+                                    "description": "How far over the tile's ground, in units (16 a tile)"
+                                },
+                                "alpha": {
+                                    "enum": [ "MASK", "BLEND" ],
+                                    "description": "How its see-through texels draw (default MASK)"
+                                }
+                            }
+                        },
+                        "description": "Flat sheets of blades over the ground, each over the whole tile"
+                    },
+                    "volume": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [ "top", "side" ],
+                        "properties": {
+                            "top": {
+                                "type": "string",
+                                "description": "The top's texture"
+                            },
+                            "side": {
+                                "type": "string",
+                                "description": "The skirt's and fringe's texture"
+                            }
+                        },
+                        "description": "A raised volume (very tall grass), shaped as the file's volume says"
+                    }
+                },
+                "anyOf": [
+                    {
+                        "type": "object",
+                        "required": [ "blades" ]
+                    },
+                    {
+                        "type": "object",
+                        "required": [ "volume" ]
+                    }
+                ]
+            }
+        },
+        "blades_north_inset": {
+            "type": "number",
+            "description": "How far in from a patch's north border its blades start, in units"
+        },
+        "volume": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [ "top_lift", "skirt_lift", "fringe_lift", "top_inset", "fringe_inset" ],
+            "description": "The shape of a raised volume: a top over the ground, and at the patch's border a skirt from near the ground up to the top's edge and a fringe from there up and out",
+            "properties": {
+                "top_lift": {
+                    "type": "number",
+                    "description": "The top, over the ground, in units"
+                },
+                "skirt_lift": {
+                    "type": "number",
+                    "description": "The skirt's foot at the border, over the ground"
+                },
+                "fringe_lift": {
+                    "type": "number",
+                    "description": "The fringe's tip, over the ground"
+                },
+                "top_inset": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [ "north", "south", "west", "east" ],
+                    "properties": {
+                        "north": {
+                            "type": "number"
+                        },
+                        "south": {
+                            "type": "number"
+                        },
+                        "west": {
+                            "type": "number"
+                        },
+                        "east": {
+                            "type": "number"
+                        }
+                    },
+                    "description": "How far in from the border the top's edge is on each side, in units"
+                },
+                "fringe_inset": {
+                    "type": "number",
+                    "description": "How far in from the border the fringe's tip is, in units"
+                }
+            }
+        }
+    }
+}

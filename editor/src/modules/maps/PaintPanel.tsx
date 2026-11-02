@@ -9,8 +9,10 @@ import type { LibraryObject, MapStyle, PaintShape, PaintTool, Project } from "./
 
 export function PaintPanel({ model, project, dirty, styles, objects, tool, setTool, shape, setShape, terrain, setTerrain, height, setHeight,
   placing, setPlacing, selected, onRemoveSelected, onTurnSelected, showPaint, setShowPaint, fadeModel, setFadeModel, onStart, onGenerate,
-  autoGenerate, setAutoGenerate, onStop, onPaintFromReading, onLibraryChanged, busy }: {
+  autoGenerate, setAutoGenerate, onStop, onPaintFromReading, onLibraryChanged, textureSet, busy }: {
   model: string | null;
+  /** The chunk's texture set. */
+  textureSet: string | null;
   project: Project | null;
   dirty: boolean;
   styles: Map<string, MapStyle>;
@@ -49,7 +51,7 @@ export function PaintPanel({ model, project, dirty, styles, objects, tool, setTo
   if (!model) return <p className="muted ow-note">Choose a chunk (the Chunks tab, or click the map).</p>;
   if (!project) return (
     <>
-      <StartPainting model={model} styles={styles} onStart={onStart} busy={busy} />
+      <StartPainting model={model} styles={styles} textureSet={textureSet} onStart={onStart} busy={busy} />
       <Debug onPaintFromReading={onPaintFromReading} busy={busy} />
     </>
   );
@@ -185,14 +187,21 @@ function Debug({ onPaintFromReading, busy }: { onPaintFromReading(): void; busy:
   );
 }
 
-function StartPainting({ model, styles, onStart, busy }: { model: string; styles: Map<string, MapStyle>;
+/** Starting a painting: its style (one made for the chunk's texture set first; where none is, "auto" learns one from
+ * the atlas; another area's style binds the chunk to that area's textures), where it starts from, and its heights. */
+export function StartPainting({ model, styles, textureSet, onStart, busy }: { model: string; styles: Map<string, MapStyle>;
+  /** The chunk's texture set. */
+  textureSet: string | null;
   onStart(style: string, fill: string, flat?: number): void; busy: boolean }) {
   const ids = [...styles.keys()];
-  const [style, setStyle] = useState(ids[0] ?? "");
+  const own = ids.filter((id) => styles.get(id)!.texture_set === textureSet);
+  const others = ids.filter((id) => !own.includes(id));
+  const [style, setStyle] = useState("");
   const [from, setFrom] = useState<"keep" | "fill">("keep");
   const [fill, setFill] = useState("");
   const [flat, setFlat] = useState<number | null>(null);
-  const chosen = style || ids[0] || "";
+  const chosen = style || own[0] || "auto";
+  const learning = chosen === "auto";
   const terrains = styles.get(chosen)?.terrains ?? [];
   const fillKey = fill || terrains[0]?.key || "g";
   return (
@@ -200,14 +209,22 @@ function StartPainting({ model, styles, onStart, busy }: { model: string; styles
       <h4>Paint this chunk</h4>
       <p className="ow-note">Paint terrain and heights over {model}, place objects of the library, then generate its model and collision.</p>
       <div className="me-row"><label>Style</label>
-        <select value={chosen} onChange={(e) => setStyle(e.target.value)}>{ids.map((id) => <option key={id} value={id}>{styles.get(id)!.name}</option>)}</select>
+        <select value={chosen} onChange={(e) => setStyle(e.target.value)}>
+          {own.map((id) => <option key={id} value={id}>{styles.get(id)!.name}</option>)}
+          {!own.length && <option value="auto">Learn this area's style from the atlas</option>}
+          {others.length > 0 && <optgroup label="Other areas' textures (binds the chunk to them)">
+            {others.map((id) => <option key={id} value={id}>{styles.get(id)!.name}</option>)}
+          </optgroup>}
+        </select>
       </div>
+      {learning && <p className="muted ow-note">No style is made for this chunk's textures ({textureSet ?? "unknown"}) yet: starting learns one from the
+        atlas (a couple of minutes, once), saved in res/paperwhite2/map_styles/.</p>}
       <div className="me-row"><label>Start from</label>
         <span className="me-stack">
           <label className="ow-check"><input type="radio" checked={from === "keep"} onChange={() => setFrom("keep")} /> the chunk as it is: paint only
             what you change (a pond in a field)</label>
-          <label className="ow-check"><input type="radio" checked={from === "fill"} onChange={() => setFrom("fill")} /> every tile
-            <select value={fillKey} disabled={from !== "fill"} onChange={(e) => setFill(e.target.value)}>
+          <label className="ow-check"><input type="radio" checked={from === "fill"} disabled={learning} onChange={() => setFrom("fill")} /> every tile
+            <select value={fillKey} disabled={from !== "fill" || learning} onChange={(e) => setFill(e.target.value)}>
               {terrains.map((t) => <option key={t.key} value={t.key}>{t.name}</option>)}
             </select>
             (a new map)</label>
@@ -221,7 +238,8 @@ function StartPainting({ model, styles, onStart, busy }: { model: string; styles
         </span>
       </div>
       <div className="me-actions">
-        <button className="primary" disabled={busy || !chosen} onClick={() => onStart(chosen, from === "keep" ? "." : fillKey, flat ?? undefined)}>Start painting</button>
+        <button className="primary" disabled={busy || !chosen} onClick={() => onStart(chosen, from === "keep" || learning ? "." : fillKey, flat ?? undefined)}>
+          {busy && learning ? "Learning the style…" : "Start painting"}</button>
       </div>
       <p className="muted ow-note">Nothing changes in the chunk until you generate it, and a copy of it is kept: Stop painting puts it back.</p>
     </section>

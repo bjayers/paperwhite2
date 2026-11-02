@@ -173,6 +173,15 @@ def learn_profile(db, texture, models, chunks, limit=60):
     return drop, lines, faces
 
 
+def ground_type(types):
+    """A ground terrain's tile type: its tiles' commonest walkable one (blocked ones are the trees and rocks standing
+    on it), grass classes left out (grass is painted over terrain, map_grass.py); else its commonest."""
+    import map_grass
+
+    walkable = Counter({tt: n for tt, n in types.items() if map_grass.can_hold(tt) and map_grass.kind_of(tt) is None})
+    return (walkable or types).most_common(1)[0][0]
+
+
 def draft(db, texture_set, name, verify=False, log=None, focus=None):
     """A map style drafted from the atlas for a texture set (verify: each learned edge checked by round trips on the
     chunks with most of it, and focus, the chunk it's for): its ground textures as terrains (each with the tile type
@@ -200,7 +209,7 @@ def draft(db, texture_set, name, verify=False, log=None, focus=None):
         key = KEYS[len(terrains)]
         key_of[g] = key
         terrains.append({"key": key, "name": g, "color": f"hsl({sum(map(ord, g)) * 37 % 360}, 50%, 55%)",
-                         "ground": {"texture": g, "repeat": 4}, "tile_type": types[g].most_common(1)[0][0]})
+                         "ground": {"texture": g, "repeat": 4}, "tile_type": ground_type(types[g])})
     insides = {t: i for t, i in db.execute(f"""SELECT texture, inside FROM textures WHERE model IN ({marks}) AND inside IS NOT NULL
                                                GROUP BY texture, inside ORDER BY COUNT(*)""", list(models))}
     chunks = {}

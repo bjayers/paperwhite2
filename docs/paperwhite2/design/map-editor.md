@@ -233,6 +233,48 @@ pieces, textures that don't join, twice the polygons. The plan instead, in three
   from the game's table, the terrain's type, the objects' footprints over it. Route 20's chunk painted with grass, a
   path, a river, a plateau, tall grass and three trees: 417 triangles (vanilla's median), packed.
 
+### Grass, painted apart from the terrain (decided 2026-11-02)
+
+Grass is a decoration over the terrain, not a terrain: a painting's `grass` rows (a kind's letter a tile, `.` for
+none) sit beside its terrain rows, and the Decorations tab paints them (pencil, rectangle, fill, eraser). Repainting
+the terrain under grass leaves the grass; the generator builds it over whatever ground each tile ends up with, and the
+grass's tile type replaces the terrain's on those tiles (objects' collision still wins), except where the tile's own
+collision is blocked or has a class of its own (a boardwalk's, 0xbe; a bridge's, 0x20): there the grass is drawn and the
+tile keeps its collision, as vanilla does under Route 7's boardwalks and its trees (50 such tiles there). Started
+paintings take the chunk's grass from its collision's tile classes, and where those aren't grass's, from what's drawn
+(a kind's look over most of the tile); with grass rows, a painting owns every tile's grass: the chunk's own grass faces
+over the tiles with grass now or drawn before are dropped and built again from the rows, so erasing grass leaves the
+ground under it and the terrain's tile type. A kept tile's ground height leaves grass textures out (very tall grass's
+top is opaque and flat, and had read as the ground, lifting the rebuilt grass a tile over the boardwalks). Paintings started before grass rows keep the chunk's grass
+until "Take the chunk's grass".
+
+The kinds (`res/paperwhite2/map_grass/grass.json`, `map_grass.schema.json`; `tools/paperwhite2/map_grass.py`) are
+learned from the atlas's grass tiles (`map_grass.py survey`):
+- **Tall and dark grass** (classes 0x04 and 0x06): three flat blade sheets over the ground, kusa_ec3 (blended) at
+  2 units, kusa_ec2 or kusa_ec2s at 6, kusa_ec1 at 8 or kusa_ec1s at 9 (dark grass's tip is 9 or 10 by chunk), inset
+  2 units from a patch's north border (vanilla's cover 14/16 there, full on the other sides). The same in every
+  texture set that has them (284 of 410).
+- **The B and C kinds** (0x05, 0x07; 0x21, 0x22) look the same; ov012's ActorTerrainEffect_GetGrassKind gives B a
+  snowy rustle in winter and C a rustle of its own. Offered as "snowy rustle" and "other rustle".
+- **Very tall grass** (0x08, 0x09; Route 7, the texture sets shared_dansa01a_31 to _34 only): a top (nagakusa01a or
+  02a, opaque) 16 units over the ground, and on each open side a skirt from 2 units up at the border to the top's edge,
+  and a fringe of blades (nagakusa01b or 02b) from there to 24 units up, 4 units in. The top's edge is 7.5 units in on
+  the north, 4 on the west and east, none on the south (the camera's side); two sides meet at an outer corner on shared
+  edges, so the corner closes as vanilla's do. Blocks cycling.
+- **Hidden Grotto grass** (0x24) is the grotto entrance's blocked trees, not grass to paint: left out.
+
+A kind is offered where the painting's texture set has its images. Grass isn't built on water, edges or sloped
+collision: the editor marks those tiles red and the generator skips them; tiles that keep their own collision are
+marked orange. Route 7's map04_07 regenerated from its painting with no edits has vanilla's collision exactly (201
+very tall grass tiles) and looks the same, at 1,420 triangles to vanilla's 1,203. Blades and very tall grass's tops are
+merged into rectangles; Route 20's dark-grass chunk regenerated with its grass costs 1,644 triangles, as with grass as
+a terrain layer.
+
+Starting a painting now defaults to a style made for the chunk's texture set, and where none is, learns one from the
+atlas (`map_roundtrip.py style MODEL`, the server's `"auto"` style); a style from another area binds the chunk to that
+area's textures, which the start form says. Learned styles give a ground terrain its tiles' commonest walkable tile
+type, grass classes left out (Route 7's grass had come out blocked, from the trees standing on it).
+
 ### What PDSMS does, and what to take from it
 
 Trifindo's Pokémon DS Map Studio (github.com/Trifindo/Pokemon-DS-Map-Studio), read 2026-11-01:

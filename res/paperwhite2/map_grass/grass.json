@@ -1,0 +1,171 @@
+{
+    "$schema": "map_grass.schema.json",
+    "kinds": [
+        {
+            "key": "t",
+            "name": "Tall grass",
+            "tile_type": 2359300,
+            "color": "#f0d040",
+            "blades": [
+                {
+                    "texture": "kusa_ec3",
+                    "lift": 2,
+                    "alpha": "BLEND"
+                },
+                {
+                    "texture": "kusa_ec2",
+                    "lift": 6
+                },
+                {
+                    "texture": "kusa_ec1",
+                    "lift": 8
+                }
+            ]
+        },
+        {
+            "key": "d",
+            "name": "Dark grass",
+            "description": "Double battles",
+            "tile_type": 2359302,
+            "color": "#b050e0",
+            "blades": [
+                {
+                    "texture": "kusa_ec3",
+                    "lift": 2,
+                    "alpha": "BLEND"
+                },
+                {
+                    "texture": "kusa_ec2s",
+                    "lift": 6
+                },
+                {
+                    "texture": "kusa_ec1s",
+                    "lift": 9
+                }
+            ]
+        },
+        {
+            "key": "s",
+            "name": "Tall grass, snowy rustle",
+            "description": "Its rustle is snowy in winter (tile class B)",
+            "tile_type": 2359301,
+            "color": "#60d0f0",
+            "blades": [
+                {
+                    "texture": "kusa_ec3",
+                    "lift": 2,
+                    "alpha": "BLEND"
+                },
+                {
+                    "texture": "kusa_ec2",
+                    "lift": 6
+                },
+                {
+                    "texture": "kusa_ec1",
+                    "lift": 8
+                }
+            ]
+        },
+        {
+            "key": "S",
+            "name": "Dark grass, snowy rustle",
+            "description": "Double battles; its rustle is snowy in winter (tile class B)",
+            "tile_type": 2359303,
+            "color": "#3060e0",
+            "blades": [
+                {
+                    "texture": "kusa_ec3",
+                    "lift": 2,
+                    "alpha": "BLEND"
+                },
+                {
+                    "texture": "kusa_ec2s",
+                    "lift": 6
+                },
+                {
+                    "texture": "kusa_ec1s",
+                    "lift": 9
+                }
+            ]
+        },
+        {
+            "key": "c",
+            "name": "Tall grass, other rustle",
+            "description": "A rustle of its own (tile class C: Black City's gate, the Dreamyard)",
+            "tile_type": 2359329,
+            "color": "#f08030",
+            "blades": [
+                {
+                    "texture": "kusa_ec3",
+                    "lift": 2,
+                    "alpha": "BLEND"
+                },
+                {
+                    "texture": "kusa_ec2",
+                    "lift": 6
+                },
+                {
+                    "texture": "kusa_ec1",
+                    "lift": 8
+                }
+            ]
+        },
+        {
+            "key": "C",
+            "name": "Dark grass, other rustle",
+            "description": "Double battles; a rustle of its own (tile class C)",
+            "tile_type": 2359330,
+            "color": "#c03070",
+            "blades": [
+                {
+                    "texture": "kusa_ec3",
+                    "lift": 2,
+                    "alpha": "BLEND"
+                },
+                {
+                    "texture": "kusa_ec2s",
+                    "lift": 6
+                },
+                {
+                    "texture": "kusa_ec1s",
+                    "lift": 9
+                }
+            ]
+        },
+        {
+            "key": "v",
+            "name": "Very tall grass",
+            "description": "No cycling; its own encounter rustle",
+            "tile_type": 2359304,
+            "color": "#40f0a0",
+            "volume": {
+                "top": "nagakusa01a",
+                "side": "nagakusa01b"
+            }
+        },
+        {
+            "key": "V",
+            "name": "Very tall dark grass",
+            "description": "Double battles; no cycling",
+            "tile_type": 2359305,
+            "color": "#208060",
+            "volume": {
+                "top": "nagakusa02a",
+                "side": "nagakusa02b"
+            }
+        }
+    ],
+    "blades_north_inset": 2,
+    "volume": {
+        "top_lift": 16,
+        "skirt_lift": 2,
+        "fringe_lift": 24,
+        "top_inset": {
+            "north": 7.5,
+            "south": 0,
+            "west": 4,
+            "east": 4
+        },
+        "fringe_inset": 4
+    }
+}

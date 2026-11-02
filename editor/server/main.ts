@@ -381,7 +381,14 @@ const routes: Record<string, Handler> = {
     const b = (await readJson(req)) as { model: string; style: string; fill?: string; flat?: number };
     if (!/^[a-z0-9_]+$/.test(b.model ?? "") || !/^[a-z0-9_]+$/.test(b.style ?? "") || (b.fill !== undefined && !/^[a-z.]$/.test(b.fill)))
       return error(res, 400, "Name the chunk, the style and a terrain to fill with");
-    const args = ["start", b.model, b.style, "--fill", b.fill ?? "."];
+    // "auto": the style made for the chunk's texture set, learned from the atlas the first time (a couple of minutes)
+    let style = b.style;
+    if (style === "auto") {
+      const found = await runTool("tools/paperwhite2/map_roundtrip.py", ["style", b.model]);
+      if (!found.ok) return error(res, 500, found.output || "Learning the area's style failed");
+      style = found.output.trim().split("\n").pop() ?? "";
+    }
+    const args = ["start", b.model, style, "--fill", b.fill ?? "."];
     if (typeof b.flat === "number" && Number.isFinite(b.flat)) args.push("--flat", String(b.flat));
     const result = await runTool("tools/paperwhite2/map_maker.py", args);
     if (!result.ok) return error(res, 500, result.output || "Starting failed");
