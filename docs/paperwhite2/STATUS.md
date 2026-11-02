@@ -2,6 +2,29 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-02 (evening): tile tasks for tonight (the user's notes on the debug paint; not started)
+
+The user compared Route 20's map04_20 vanilla, debug-painted and hand-corrected overhead. River corners and the
+round path corners now look like vanilla. Tasks, atlas first (map-maker-atlas-first):
+1. **Reading mislabels some tiles:** the river corner by the large tree in the middle: the bottom-right tile of the
+   tree's 3x3 footprint was read as water edge, not grass; painted as grass by hand, the corner matches vanilla. A
+   reading fault, likely blocked tree tiles beside water.
+2. **Path corners are too small:** vanilla's path corners span about 2.5 tiles and ours 1.5 (the user's markup:
+   the corner's angle starts further back). River corners are right at 1.5. So the corner's size belongs to each
+   edge's profile, measured from the atlas (CORNER_IN and CORNER_SCALE per edge, or a taper per edge). Path points
+   (1.5 tiles each side, 3 in all) are right.
+3. **Half-tile ledges' corners:** vanilla draws them square; ours come out rounded (they look good, but aren't the
+   game's). The square corners the reading paints don't reach ledges.
+4. **One-way ledges on paths are dropped:** the little jump-down ledges across the path on the left of map04_20
+   aren't generated.
+5. **Paths beside a half-tile ledge** go wrong (by the upper bridge).
+6. Still open: ledges back to back with river banks; paths meeting bridges (their square corners there); cliffs
+   (a ridge texture at the bottom, the face above, separate points along the top, per the user's 2026-11-02 notes);
+   banks under cliffs.
+7. **The user's idea, to decide with them:** cut vanilla's chunks into tiles again, heights normalized, as a library
+   of real mesh examples keyed by neighbourhood, to compare generated tiles against and draw from (see the reply of
+   2026-11-02 evening).
+
 ## 2026-11-02 (later): the user's first round of testing, fixed
 
 - **Dark grass drawn black in game:** materials new to a chunk (kusa_ec1s and kusa_ec2s had never been in Route 20's
