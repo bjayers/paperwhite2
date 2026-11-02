@@ -101,6 +101,7 @@ export function PaintPanel({ model, project, dirty, styles, objects, tool, setTo
             <option value="both">the terrain and the height</option>
             <option value="raise">raise half a tile</option>
             <option value="lower">lower half a tile</option>
+            <option value="fill">fill: the tile and the same tiles joined to it</option>
             <option value="place">objects: place</option>
             <option value="select">objects: select and drag</option>
           </select>
@@ -113,7 +114,7 @@ export function PaintPanel({ model, project, dirty, styles, objects, tool, setTo
             </span>
           </div>
         )}
-        {["terrain", "both", "height", "raise", "lower"].includes(tool) && (
+        {["terrain", "both", "height", "raise", "lower", "fill"].includes(tool) && (
           <div className="me-terrains">
             {(tool === "height" || tool === "raise" || tool === "lower") && <div className="muted me-category-name">Kept tiles a height is painted on become</div>}
             <button className={`me-terrain${terrain === "." ? " selected" : ""}`} onClick={() => setTerrain(".")}
@@ -151,7 +152,9 @@ export function PaintPanel({ model, project, dirty, styles, objects, tool, setTo
           </>
         )}
         <p className="muted ow-note">{tool === "place" ? "Click the tile the object's north-west corner goes on." : tool === "select"
-          ? "Drag an object to another tile; it stands on that tile's ground." : "Click or drag on the map; a rectangle fills from where the drag starts to where it ends."}
+          ? "Drag an object to another tile; it stands on that tile's ground." : tool === "fill"
+          ? "Click a tile: it and every tile joined to it of the same terrain at the same height take the terrain chosen."
+          : "Click or drag on the map; a rectangle fills from where the drag starts to where it ends."}
           {tool === "height" || tool === "raise" || tool === "lower" ? " A height painted on a kept tile paints it the terrain chosen above (Keep the chunk: the first terrain)." : ""}
           {" "}Ctrl+Z undoes.</p>
       </section>

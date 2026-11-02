@@ -92,7 +92,13 @@ function tileColor(type: number, highlight: number | null): THREE.Color {
 export class ChunkScene {
   renderer: THREE.WebGLRenderer;
   scene = new THREE.Scene();
-  camera: THREE.PerspectiveCamera;
+  camera: THREE.PerspectiveCamera | THREE.OrthographicCamera;
+  /** The perspective view's camera, and the overhead view's (orthographic, straight down), with the height of the map
+   * it shows at zoom 1, in units, as the Overworld Editor's. */
+  perspective: THREE.PerspectiveCamera;
+  ortho = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 20000);
+  orthoHeight = 512;
+  overhead = false;
   controls: OrbitControls;
   chunks = new THREE.Group();
   marks = new THREE.Group();
@@ -127,12 +133,9 @@ export class ChunkScene {
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     host.appendChild(this.renderer.domElement);
-    this.camera = new THREE.PerspectiveCamera(45, 1, 1, 20000);
-    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-    this.controls.enableDamping = true;
-    this.controls.screenSpacePanning = true;
-    this.controls.zoomToCursor = true;
-    this.controls.mouseButtons = { LEFT: null, MIDDLE: THREE.MOUSE.ROTATE, RIGHT: THREE.MOUSE.PAN };
+    this.perspective = new THREE.PerspectiveCamera(45, 1, 1, 20000);
+    this.camera = this.perspective;
+    this.controls = this.makeControls(new THREE.Vector3());
     this.scene.background = new THREE.Color(0x1e2129);
     this.scene.add(new THREE.AmbientLight(0xffffff, 1.6));
     const sun = new THREE.DirectionalLight(0xffffff, 1.4);
@@ -153,6 +156,45 @@ export class ChunkScene {
     loop();
   }
 
+  /** The view's controls: the middle button orbits (pans, overhead), the right pans, the wheel zooms to the cursor. */
+  private makeControls(target: THREE.Vector3) {
+    const controls = new OrbitControls(this.camera, this.renderer.domElement);
+    controls.enableDamping = true;
+    controls.screenSpacePanning = true;
+    controls.zoomToCursor = true;
+    controls.enableRotate = !this.overhead;
+    controls.mouseButtons = { LEFT: null, MIDDLE: this.overhead ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE, RIGHT: THREE.MOUSE.PAN };
+    controls.target.copy(target);
+    controls.update();
+    return controls;
+  }
+
+  /** Switches between the perspective view and the overhead one (straight down, no perspective), over the same spot. */
+  setOverhead(on: boolean) {
+    if (on === this.overhead) return;
+    const target = this.controls.target.clone();
+    this.controls.dispose();
+    this.overhead = on;
+    if (on) {
+      const distance = this.perspective.position.distanceTo(target);
+      this.orthoHeight = 2 * distance * Math.tan(THREE.MathUtils.degToRad(this.perspective.fov / 2));
+      this.ortho.zoom = 1;
+      this.placeOrtho(target);
+      this.camera = this.ortho;
+    } else {
+      this.perspective.position.set(target.x, target.y + this.orthoHeight * 0.9 / this.ortho.zoom, target.z + this.orthoHeight * 0.6 / this.ortho.zoom);
+      this.camera = this.perspective;
+    }
+    this.resize();
+    this.controls = this.makeControls(target);
+  }
+
+  private placeOrtho(target: THREE.Vector3) {
+    this.ortho.position.set(target.x, target.y + 4000, target.z);
+    this.ortho.up.set(0, 0, -1);
+    this.ortho.lookAt(target);
+  }
+
   dispose() {
     cancelAnimationFrame(this.frame);
     window.removeEventListener("pointerup", this.up);
@@ -165,8 +207,11 @@ export class ChunkScene {
     const { clientWidth: w, clientHeight: h } = this.host;
     if (!w || !h) return;
     this.renderer.setSize(w, h);
-    this.camera.aspect = w / h;
-    this.camera.updateProjectionMatrix();
+    this.perspective.aspect = w / h;
+    this.perspective.updateProjectionMatrix();
+    const half = this.orthoHeight / 2;
+    Object.assign(this.ortho, { left: -half * (w / h), right: half * (w / h), top: half, bottom: -half });
+    this.ortho.updateProjectionMatrix();
   }
 
   /** Loads the map's chunks, framing the camera on a new zone. */
@@ -211,7 +256,8 @@ export class ChunkScene {
     const cx = ((Math.min(...xs) + Math.max(...xs) + 1) / 2) * size, cz = ((Math.min(...zs) + Math.max(...zs) + 1) / 2) * size;
     const span = Math.max(Math.max(...xs) - Math.min(...xs) + 1, Math.max(...zs) - Math.min(...zs) + 1) * size;
     this.controls.target.set(cx, 0, cz);
-    this.camera.position.set(cx, span * 0.9, cz + span * 0.6);
+    this.perspective.position.set(cx, span * 0.9, cz + span * 0.6);
+    if (this.overhead) { this.orthoHeight = span * 1.1; this.ortho.zoom = 1; this.resize(); this.placeOrtho(this.controls.target); }
     this.controls.update();
   }
 
@@ -222,7 +268,8 @@ export class ChunkScene {
     if (!map || !chunk) return;
     const cx = chunk.column * map.chunkSize + map.chunkSize / 2, cz = chunk.row * map.chunkSize + map.chunkSize / 2;
     this.controls.target.set(cx, 0, cz);
-    this.camera.position.set(cx, map.chunkSize * 0.9, cz + map.chunkSize * 0.7);
+    this.perspective.position.set(cx, map.chunkSize * 0.9, cz + map.chunkSize * 0.7);
+    if (this.overhead) { this.orthoHeight = map.chunkSize * 1.1; this.ortho.zoom = 1; this.resize(); this.placeOrtho(this.controls.target); }
     this.controls.update();
   }
 
@@ -296,9 +343,11 @@ export class ChunkScene {
     this.terrain.clear();
     this.terrainPicks = [];
     const plane = new THREE.PlaneGeometry(TILE, TILE).rotateX(-Math.PI / 2);
-    // Over the model, which shows through them; kept tiles aren't drawn, but still take strokes
-    const drawn = new THREE.InstancedMesh(plane, new THREE.MeshLambertMaterial({ transparent: true, opacity: 0.5, depthWrite: false,
-      polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -24 }), size * size);
+    // The tops of the painted tiles, drawn over everything (never hidden under the model nor fighting it), the model
+    // showing through them; kept tiles aren't drawn, but still take strokes. Each tile's outline is drawn as the rest
+    // of the scene is, to show where it lies behind a hill
+    const drawn = new THREE.InstancedMesh(plane, new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.5, depthWrite: false,
+      depthTest: false }), size * size);
     drawn.visible = painting.show !== false;
     const pick = new THREE.InstancedMesh(plane, new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false, transparent: true, opacity: 0 }), size * size);
     const tiles: { x: number; z: number }[] = [];
@@ -315,30 +364,23 @@ export class ChunkScene {
     }
     drawn.userData.painting = true;
     pick.userData.painting = true;
-    drawn.renderOrder = 2;
+    drawn.renderOrder = 10;
     this.terrain.add(drawn, pick);
     this.terrainPicks.push({ mesh: pick, drawn, tiles });
-    // The walls between heights, grey
-    const walls: number[] = [];
-    for (let z = 0; z < size; z++) for (let x = 0; x < size; x++) {
-      for (const [dx, dz] of [[1, 0], [0, 1]]) {
-        if (x + dx >= size || z + dz >= size) continue;
-        if (painting.terrain[z][x] === "." && painting.terrain[z + dz][x + dx] === ".") continue;
-        const a = y(x, z), b = y(x + dx, z + dz);
-        if (a === b) continue;
-        const [ax, az, bx, bz] = dx ? [x + 1, z, x + 1, z + 1] : [x, z + 1, x + 1, z + 1];
-        const p = (gx: number, gz: number, h: number) => [x0 + gx * TILE, h, z0 + gz * TILE];
-        walls.push(...p(ax, az, a), ...p(bx, bz, a), ...p(bx, bz, b), ...p(ax, az, a), ...p(bx, bz, b), ...p(ax, az, b));
-      }
-    }
+    // Each painted tile's outline, at its height
     const group = new THREE.Group();
-    if (walls.length) {
-      const g = new THREE.BufferGeometry();
-      g.setAttribute("position", new THREE.Float32BufferAttribute(walls, 3));
-      g.computeVertexNormals();
-      const mesh = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color: 0x8a8070, side: THREE.DoubleSide, transparent: true, opacity: 0.7 }));
-      mesh.visible = painting.show !== false;
-      group.add(mesh);
+    const outline: THREE.Vector3[] = [];
+    for (let z = 0; z < size; z++) for (let x = 0; x < size; x++) {
+      if (painting.terrain[z][x] === ".") continue;
+      const h = y(x, z) + 0.6;
+      const c = [[0, 0], [1, 0], [1, 1], [0, 1]].map(([dx, dz]) => new THREE.Vector3(x0 + (x + dx) * TILE, h, z0 + (z + dz) * TILE));
+      for (let k = 0; k < 4; k++) outline.push(c[k], c[(k + 1) % 4]);
+    }
+    if (outline.length && painting.show !== false) {
+      const lines = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(outline),
+        new THREE.LineBasicMaterial({ color: 0x101418, transparent: true, opacity: 0.45 }));
+      lines.renderOrder = 11;
+      group.add(lines);
     }
     // The objects, on the ground of their north-west tile
     const placed = await Promise.all(painting.objects.map(([name]) => objectModel(name)));

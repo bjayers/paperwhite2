@@ -26,7 +26,7 @@ import { seasonSets, seasonVariants, type SeasonSet } from "./seasons.ts";
 import { ReadingPanel, type ChunkReading } from "./ReadingPanel.tsx";
 import { PaintPanel } from "./PaintPanel.tsx";
 import { ObjectsPanel } from "./ObjectsPanel.tsx";
-import { loadLibrary, loadStyles, painted, projectPath, strokeCells, type LibraryObject, type MapStyle, type PaintShape,
+import { fillCells, loadLibrary, loadStyles, painted, projectPath, strokeCells, type LibraryObject, type MapStyle, type PaintShape,
   type PaintTool, type Project } from "./painting.ts";
 
 type Tab = "chunks" | "faces" | "collision" | "paint" | "objects";
@@ -86,6 +86,7 @@ export function MapEditor({ constants }: ToolProps) {
   const [faces, setFaces] = useState<Face[]>([]);
   const [grid, setGrid] = useState(true);
   const [wireframe, setWireframe] = useState(false);
+  const [overhead, setOverhead] = useState(false);
   // The map reader's layer: the chunk's tiles as it reads them, and the tile whose record is shown
   const [readingOn, setReadingOn] = useState(false);
   const [readingRev, setReadingRev] = useState<"now" | "original">("now");
@@ -162,6 +163,7 @@ export function MapEditor({ constants }: ToolProps) {
   // where it would show this hack's height edits over the original's reading
   useEffect(() => { scene.current?.drawCells(chunk, grid && !(readingOn && readingRev === "original")); }, [chunk, grid, map, readingOn, readingRev]);
   useEffect(() => { scene.current?.setWireframe(wireframe); }, [wireframe, loaded]);
+  useEffect(() => { scene.current?.setOverhead(overhead); }, [overhead]);
   useEffect(() => { scene.current?.showFaces(faces); }, [faces, loaded]);
 
   const pickFace = useRef<(face: Face | null, chunk: number | null, ev: PointerEvent, point: THREE.Vector3 | null,
@@ -434,6 +436,12 @@ export function MapEditor({ constants }: ToolProps) {
       return;
     }
     if (tool === "select") return;
+    if (tool === "fill") {
+      // The tile clicked and every joined tile of its terrain and height, given the brush's terrain
+      const cells = fillCells(project, local[0]);
+      changeProject(painted(project, cells, "terrain", terrainKey, paintHeightHalf, terrainKey), `Filled ${cells.length} tile(s)`);
+      return;
+    }
     const cells = strokeCells(local, shape);
     const fallback = terrainKey !== "." ? terrainKey : projectStyle?.terrains[0]?.key ?? "g";
     changeProject(painted(project, cells, tool, terrainKey, paintHeightHalf, fallback), `Painted ${cells.length} tile(s)`);
@@ -956,6 +964,8 @@ export function MapEditor({ constants }: ToolProps) {
             <label className="ow-check"><input type="checkbox" checked={grid} onChange={(e) => setGrid(e.target.checked)} /> Tile grid</label>
             <label className="ow-check" title="The models' triangles' edges, to see what a click picks"><input type="checkbox" checked={wireframe}
               onChange={(e) => setWireframe(e.target.checked)} /> Wireframe</label>
+            <label className="ow-check" title="Straight down, without perspective, so painted tiles and the map line up"><input type="checkbox"
+              checked={overhead} onChange={(e) => setOverhead(e.target.checked)} /> Overhead</label>
             <label className="ow-check" title="What the map reader makes of the chunk's tiles; a click shows a tile's record"><input type="checkbox"
               checked={readingOn} onChange={(e) => setReadingOn(e.target.checked)} /> Reading</label>
             <span className="spacer" />

@@ -30,7 +30,7 @@ export interface LibraryObject {
   triangles?: number;
 }
 
-export type PaintTool = "terrain" | "height" | "both" | "raise" | "lower" | "place" | "select";
+export type PaintTool = "terrain" | "height" | "both" | "raise" | "lower" | "fill" | "place" | "select";
 export type PaintShape = "pencil" | "rect";
 
 export const PROJECT_SCHEMA = "res/paperwhite2/map_projects/map_project.schema.json";
@@ -68,6 +68,26 @@ export function painted(project: Project, cells: { x: number; z: number }[], too
     if (tool === "lower") heights[z][x] = Math.max(-40, heights[z][x] - 1);
   }
   return { ...project, terrain: rows.map((r) => r.join("")), height: heights };
+}
+
+/** A fill's cells: the tile clicked and every tile joined to it, side by side, of the same terrain at the same height. */
+export function fillCells(project: Project, start: { x: number; z: number }): { x: number; z: number }[] {
+  const at = (x: number, z: number) => project.terrain[z]?.[x] === undefined ? null : `${project.terrain[z][x]}:${project.height[z][x]}`;
+  const want = at(start.x, start.z);
+  if (want === null) return [];
+  const seen = new Set<string>([`${start.x},${start.z}`]);
+  const out: { x: number; z: number }[] = [];
+  const queue = [start];
+  while (queue.length) {
+    const c = queue.pop()!;
+    out.push(c);
+    for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const n = { x: c.x + dx, z: c.z + dz };
+      const key = `${n.x},${n.z}`;
+      if (!seen.has(key) && at(n.x, n.z) === want) { seen.add(key); queue.push(n); }
+    }
+  }
+  return out;
 }
 
 /** The cells of a stroke: as painted, or the rectangle from its first tile to its last. */
