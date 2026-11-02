@@ -2,6 +2,14 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-04 (later): the round trip, and what it found
+
+- `tools/paperwhite2/map_roundtrip.py` reads a vanilla chunk, paints it from the reading, generates it in a
+  temporary folder and compares tile by tile, with a page of the two from above. Findings in map-reader.md, Round-trip
+  findings: plain ground comes back nearly exact; edges at height changes (cliff and ledge tops, cave rims, desert
+  sand), cliffs, chunk borders and triangle counts are what's missing. The budget bars measure against the busiest
+  vanilla chunk of the chunk's kind (overworld 2,367 triangles; caves and buildings 3,821).
+
 ## 2026-11-04: edge families learned per chunk; snow ground, billboards, moved joints
 
 - Each edge texture's inside (the ground a tile toward where its v grows) is learned per chunk, and with no style a

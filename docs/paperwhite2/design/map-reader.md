@@ -172,6 +172,40 @@ then a family, its profile and its table.
 - The Map Editor's **Reading** toggle: the chosen chunk's tiles coloured by their reading, arrows at edges' outsides,
   structures boxed, unsure tiles dashed; a click shows the tile's record; read as it is now or as the original game.
 
+## Round-trip findings (2026-11-04)
+
+`tools/paperwhite2/map_roundtrip.py MODEL [--style STYLE] --out DIR` (a style is drafted from the chunk's reading
+where none is given: its ground textures as terrains, its edge textures as plain one-tile edges). Scores over the
+tiles the map maker can make (terrain, edge, height within 2 units, side cross-sections, texture cover):
+
+| Chunk | Style | Triangles (vanilla → generated) | Terrain | Edge | Height | Textures differ |
+| --- | --- | --- | --- | --- | --- | --- |
+| Route 20, map04_20 | route_20 | 1,114 → 1,686 | 90% | 97% | 95% | 14% |
+| Route 20, map05_20 | route_20 | 1,073 → 1,986 | 76% | 96% | 97% | 28% |
+| Route 13, map22_08 | drafted | 619 → 649 | 91% | 95% | 90% | 35% |
+| Virbank, map06_20 | drafted | 999 → 1,380 | 74% | 60% | 74% | 52% |
+| Desert Resort, map11_15 | drafted | 267 → 498 | 91% | 98% | 100% | 52% |
+| Desert Resort 2, 01_01 | drafted | 579 → 1,687 | 72% | 83% | 88% | 43% |
+| Wellspring Cave, 00_00 | drafted | 2,245 → 2,533 | 82% | 60% | 82% | 49% |
+| Nuvema Town, map24_23 | drafted | 955 → 410 | 97% | 95% | 82% | 61% |
+
+Plain tiles come back nearly exact everywhere (terrain 100%, textures within 1–13%). What fails, in order of reach:
+
+1. **Edges at height changes.** The game draws its edge textures where the ground steps: a cliff's or ledge's top,
+   a cave floor's rim, the desert's sand over its cliffs, half-tile grass ledges. The map maker bands an edge only
+   against a neighbour at the same height, so all of these come back as bare ground (the desert's and the cave's
+   edges score 11–14%). This is the ledge and cliff family (with Route 20's half-tile ledges and the east cliff).
+2. **Cliffs and slopes.** No cliff family: cliffs come back as flat blocked ground, dunes (yamasaba01) as flat
+   sand.
+3. **Chunk borders.** The map maker draws no band against tiles past the chunk; vanilla's edges run on into the
+   neighbouring chunk (map05_20's path along its west border). Seams need the neighbour chunk's reading.
+4. **Triangles.** Generated chunks have 1.1–2.9 times vanilla's triangles on simple ground (the ground rectangles
+   split to meet every edge's corners); merging and the budget need work before large paintings.
+5. **Towns** are decks, walls and props over a floor (Virbank's walkways over its canal): outside what painting
+   makes, and best edited as objects.
+6. Water edges: vanilla keeps a flat bed under its banks, ours slopes it (the ground's height differs by 5 units,
+   the sides agree).
+
 ## Order
 
 1. The reader, per chunk, and its layer in the Paint tab.
