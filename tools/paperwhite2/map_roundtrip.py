@@ -100,8 +100,8 @@ def painting_of(chunk, style):
     steps = {}
     for t in style["terrains"]:
         e = step_edges.get(t.get("edge"))
-        if e and not t.get("square"):
-            steps[t["key"]] = (e["name"], HALF + 2 if e["name"] == "ledge" else 1e9)
+        if e and (not t.get("square") or e.get("ramp")):
+            steps[t["key"]] = (e["name"], HALF + 2 if e["name"] == "ledge" else 1e9 if not e.get("ramp") else -1)
     steps = dict(sorted(steps.items(), key=lambda kv: kv[1][1]))
     plain = style["terrains"][0]["key"]
     size = chunk.size
@@ -130,7 +130,13 @@ def painting_of(chunk, style):
                         (tile.neighbour(1, 0), tile.neighbour(-1, 0), tile.neighbour(0, 1), tile.neighbour(0, -1)) if n] or [0])
             fits = [k for k, (name, depth) in steps.items() if drop >= 2 and drop <= depth] or \
                    [k for k, (name, depth) in sorted(steps.items(), key=lambda kv: -kv[1][1])][:1]
+            # (a ramp, depth -1, is never chosen by its drop, only by its face)
             terrain = fits[0] if fits and drop >= 2 else (blocked or plain)
+            # The step whose faces draw the slope the reader found (stairs' kaidan01a), before the drop's
+            seen = (r.get("slope") or {}).get("texture")
+            by_face = [k for k, (name, _) in steps.items() if seen in {f["texture"] for f in step_edges[name]["faces"]}]
+            if by_face and drop >= 2:
+                terrain = by_face[0]
         elif r["edge"] and terrain in edge_terrain:
             kind = "edge"
             terrain = edge_terrain[terrain]
@@ -145,6 +151,17 @@ def painting_of(chunk, style):
         keys[z][x] = terrain
         heights[z][x] = max(-40, min(80, round((walk - lift) / HALF)))
         kinds[(x, z)] = kind
+    # A ramp (stairs) is painted at its bottom, the far side from its higher neighbour, where the reading gives its
+    # middle: bottom = 2 middle - top, the top being the higher neighbour's painted height; down each flight from its
+    # top
+    ramp_keys = {k for k, (name, _) in steps.items() if step_edges[name].get("ramp")}
+    ramps = sorted(((x, z) for (x, z) in chunk.tiles if keys[z][x] in ramp_keys), key=lambda xz: -heights[xz[1]][xz[0]])
+    for x, z in ramps:
+        middle = heights[z][x] * HALF
+        tops = [heights[z + dz][x + dx] * HALF for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1))
+                if 0 <= x + dx < size and 0 <= z + dz < size and heights[z + dz][x + dx] * HALF > middle + 2]
+        if tops:
+            heights[z][x] = max(-40, min(80, round((2 * middle - max(tops)) / HALF)))
     return ["".join(row) for row in keys], heights, kinds
 
 

@@ -663,7 +663,20 @@ def generate(project_path):
     name = old["meshes"][0].get("name") or folder.name
     props = [n for n in old["nodes"] if n.get("name", "").startswith("bw2_prop_")]
     write_mesh(folder / "model.glb", name, polygons, materials.by_key, props)
-    write_collision(folder, grid, size, terrains, collision_over, base if keeps else None)
+    # Ramps (stairs): each tile of an edge marked ramp slopes up to its highest higher neighbour
+    ramps = {}
+    ramp_edges = {e.get("name") for e in style.get("edges", []) if e.get("ramp")}
+    for (x, z), (key, h) in painted.items():
+        if terrains[key].get("edge") not in ramp_edges:
+            continue
+        best = None
+        for d in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            other = terrain_of((x + d[0], z + d[1]))
+            if other and other[1] is not None and other[1] > h + 2 and (best is None or other[1] > best[1]):
+                best = (d, other[1])
+        if best:
+            ramps[(x, z)] = (best[0], best[1] - h)
+    write_collision(folder, grid, size, terrains, collision_over, base if keeps else None, ramps)
     data_path = folder / "data.json"
     data = json.loads(data_path.read_text())
     data["texture_set"] = style["texture_set"]
@@ -852,8 +865,26 @@ def wall_faces(grid, size, terrains, style, joined=lambda a, b: False):
     return out
 
 
-def write_collision(folder, grid, size, terrains, over, base=None):
+def ramp_plane(x, z, y, direction, drop, half):
+    """A ramp tile's collision as the game's tables give it: (slope, offset) indices nearest the plane rising drop
+    units across the tile toward direction (dx, dz), through its middle at y + drop / 2."""
+    slopes, offsets = _tables()
+    g = drop / TILE
+    n = (-g * direction[0], 1.0, -g * direction[1])
+    length = math.sqrt(sum(c * c for c in n))
+    n = tuple(c / length for c in n)
+    slope = min(range(len(slopes)), key=lambda i: sum((slopes[i][k] - n[k]) ** 2 for k in range(3)))
+    nx, ny, nz = slopes[slope]
+    px, pz = x * TILE + TILE / 2 - half, z * TILE + TILE / 2 - half
+    o = -(nx * px + ny * (y + drop / 2) + nz * pz)
+    return slope, min(range(len(offsets)), key=lambda i: abs(offsets[i] - o))
+
+
+def write_collision(folder, grid, size, terrains, over, base=None, ramps=None):
+    """The chunk's first collision layer: painted tiles flat at their heights (ramps, xz to (direction, drop), sloped),
+    kept ones as the copy has them."""
     heights = height_tables()
+    ramps = ramps or {}
     kept = {}
     if base is not None:
         kept = {(int(r["x"]), int(r["z"])): r for r in csv.DictReader((base / "terrain_0.csv").open())}
@@ -869,6 +900,10 @@ def write_collision(folder, grid, size, terrains, over, base=None):
                 continue
             tile_type = over.get((x, z), terrains[key]["tile_type"])
             y += terrains[key].get("collision_lift", 0) * TILE
+            if (x, z) in ramps:
+                slope, offset = ramp_plane(x, z, y, *ramps[(x, z)], size * TILE / 2)
+                rows.append({"x": x, "z": z, "shape": 0, "slope": slope, "offset": offset, "tile_type": tile_type, "diagonal": 0})
+                continue
             rows.append({"x": x, "z": z, "shape": 0, "slope": 0, "offset": flat_offset(heights, y),
                          "tile_type": tile_type, "diagonal": 0})
     with (folder / "terrain_0.csv").open("w", newline="") as out:

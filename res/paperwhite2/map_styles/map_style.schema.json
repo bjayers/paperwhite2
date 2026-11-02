@@ -168,6 +168,10 @@
                     "step": {
                         "type": "boolean",
                         "description": "A step down: painted on the lower tiles, drawn against higher ground (a ledge, a cliff), its lines marked from the outside measured from the higher side's height"
+                    },
+                    "ramp": {
+                        "type": "boolean",
+                        "description": "A ramp one walks (stairs): its tiles' collision slopes up to their highest higher neighbour, at the game's nearest slope"
                     }
                 }
             },

@@ -188,6 +188,32 @@
                 }
             ],
             "inner": 2
+        },
+        {
+            "name": "stairs",
+            "to": "g",
+            "step": true,
+            "ramp": true,
+            "from": [ "g", "t", "b", "p", "e", "c", "l", "s" ],
+            "lines": [
+                {
+                    "offset": 0,
+                    "lift": 0,
+                    "from": "outside"
+                },
+                {
+                    "offset": 1,
+                    "lift": 0
+                }
+            ],
+            "faces": [
+                {
+                    "between": [ 0, 1 ],
+                    "texture": "kaidan01a",
+                    "v": [ 0, 1 ],
+                    "v_units": 4.6
+                }
+            ]
         }
     ],
     "terrains": [
@@ -332,6 +358,19 @@
                 "repeat": 4
             },
             "tile_type": 8454145
+        },
+        {
+            "key": "s",
+            "name": "Stairs",
+            "edge_of": "g",
+            "edge": "stairs",
+            "square": true,
+            "color": "#c8b8a8",
+            "ground": {
+                "texture": "grass01ax",
+                "repeat": 4
+            },
+            "tile_type": 8388608
         }
     ]
 }
