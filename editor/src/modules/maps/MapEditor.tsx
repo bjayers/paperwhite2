@@ -110,7 +110,7 @@ export function MapEditor({ constants }: ToolProps) {
   const [placing, setPlacing] = useState("");
   const [selectedObject, setSelectedObject] = useState<number | null>(null);
   const [showPaint, setShowPaint] = useState(true);
-  const [fadeModel, setFadeModel] = useState(true);
+  const [fadeModel, setFadeModel] = useState(false);
   const [autoGenerate, setAutoGenerate] = useState(() => { try { return localStorage.getItem("maps.autoGenerate") === "1"; } catch { return false; } });
   const [pendingGenerate, setPendingGenerate] = useState(0);
   useEffect(() => { try { localStorage.setItem("maps.autoGenerate", autoGenerate ? "1" : "0"); } catch { /* not kept */ } }, [autoGenerate]);
