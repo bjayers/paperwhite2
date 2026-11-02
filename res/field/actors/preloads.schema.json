@@ -1,0 +1,27 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "The zones' sprite preloads: res/field/actors/preloads.json",
+    "description": "The lists of object codes whose sprites the field loads at a zone's field init, beside the hero's, into the 32-entry sprite material cache that every shown NPC's sprite needs an entry of (a/0/5/7, tools/data/npc_cache_data.py; docs/paperwhite2/design/npc-research.md, the limits). A zone's header names its list (res/field/zones/<zone>.json's npc_cache); a number past the last loads none. Dumped from the ROM for the Overworld Editor's sprite bar; the build still packs the ROM's own a/0/5/7, so editing this file changes nothing in game yet.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "lists" ],
+    "properties": {
+        "$schema": {
+            "type": "string",
+            "description": "This schema, for editors"
+        },
+        "lists": {
+            "type": "array",
+            "description": "The lists, by number",
+            "items": {
+                "type": "array",
+                "items": {
+                    "type": [ "string", "integer" ],
+                    "x-constant": "OBJ_CODE_",
+                    "minimum": 0,
+                    "maximum": 65535
+                }
+            }
+        }
+    }
+}

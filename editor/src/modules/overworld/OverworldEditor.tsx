@@ -21,6 +21,7 @@ import { loadRails, oppositeRailDir, railDirOf, railEntities, railLevels, railTo
 import { RailPanel } from "./RailPanel.tsx";
 import { CameraPanel } from "./CameraPanel.tsx";
 import { InstancePanel, SpawnSection } from "./SpawnPanel.tsx";
+import { SPRITE_CACHE, preloadLists, spriteLoad, type SpriteLoad } from "./spriteLoad.ts";
 import { SEASON_NAMES, TIME_NAMES, ambientEntities, instanceEntities, newAmbient, previewPicks, spawnPath, type Ambient, type PreviewWorld,
   type SpawnEntry } from "./spawns.ts";
 import { WEATHERS } from "../encounters/model.ts";
@@ -205,6 +206,24 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   }), [entities, shown, picks]);
   const chosen = selected ? entities.find((e) => e.kind === selected.kind && e.index === selected.index) ?? null : null;
   const size = eventsSize(data);
+  // The sprites the zone can have loaded at once, in the worst case, against the sprite cache (spriteLoad.ts)
+  const [npcCache, setNpcCache] = useState<number | null>(null);
+  useEffect(() => {
+    if (!zone) return;
+    let live = true;
+    api.file(`res/field/zones/${zone}.json`).then((f) => { if (live) setNpcCache(Number((JSON.parse(f.text) as { npc_cache?: number }).npc_cache ?? 255)); },
+                                                   () => { if (live) setNpcCache(null); });
+    return () => { live = false; };
+  }, [zone]);
+  const [sprites, setSprites] = useState<SpriteLoad | null>(null);
+  useEffect(() => {
+    if (!zone || npcCache === null) return;
+    let live = true;
+    const npcs = entities.filter((e) => e.kind === "npc");
+    preloadLists().then((lists) => spriteLoad(npcs, spawnEntries, ambients, lists[npcCache] ?? []))
+      .then((load) => { if (live) setSprites(load); }, () => { if (live) setSprites(null); });
+    return () => { live = false; };
+  }, [zone, npcCache, entities, spawnEntries, ambients]);
 
   useEffect(() => { if (constants.size) loadWorld(constants).then(setWorld, () => setWorld(null)); }, [constants]);
   useEffect(() => { const z = params.get("zone"); if (z) setZone(z); }, [params]);
@@ -790,6 +809,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
         <h2>Overworld Editor</h2>
         {zone && <strong>{zoneLabel(zone)}</strong>}
         {zone && <LoadBar used={size} limit={EVENTS_BUDGET} />}
+        {zone && sprites && <SpriteBar load={sprites} cacheList={npcCache} />}
         <span className="spacer" />
         {unsaved.length > 0 && <span className="muted">{unsaved.length} unsaved</span>}
         <button onClick={revert} disabled={!unsaved.length}>Revert</button>
@@ -1090,6 +1110,29 @@ function WheelNumber({ value, step, onChange }: { value: number; step: number; o
   }, [step, onChange]);
   return <input ref={ref} type="number" step={step} className="ow-height" value={value} title="Scroll over it to step by half a tile"
                 onChange={(e) => onChange(Number(e.target.value))} />;
+}
+
+const short = (code: string) => code.replace(/^OBJ_CODE_/, "").toLowerCase();
+
+/** How many sprites the zone can have loaded at once, in the worst case, against the sprite cache's 32 entries: green
+ * under 80%, yellow from 80%, red past it. */
+function SpriteBar({ load, cacheList }: { load: SpriteLoad; cacheList: number | null }) {
+  const share = load.total / SPRITE_CACHE;
+  const level = share > 1 ? "over" : share >= 0.8 ? "near" : "ok";
+  const title = [
+    `Sprites the zone can have loaded at once, in the worst case: ${load.total} of the ${SPRITE_CACHE} the game's sprite cache holds. Past it, a sprite gets no entry and isn't shown.`,
+    `${load.preloaded} preloaded by the zone (list ${cacheList ?? "none"}, res/field/actors/preloads.json); an NPC of one of those costs nothing more.`,
+    `${load.player} for the player (walking, and cycling or surfing) and ${load.follower} for the Following Pokémon.`,
+    `${load.npcs} more for NPCs and instances, and ${load.ambients} for ambients${load.worst ? `, at worst in ${load.worst}` : ""} (every chance coming up; an NPC without spawn data counts as shown, its story flag unknown here: script 10852's seasonal NPCs, flags 0x1f4 to 0x257, all count).`,
+    `Past the preloads: ${load.extraCodes.map(short).join(", ") || "none"}.`,
+    `Preloaded: ${load.preloadedCodes.map(short).join(", ") || "none"}.`,
+  ].join("\n");
+  return (
+    <span className={`ow-load ${level}`} title={title}>
+      <span className="ow-load-bar"><span className="ow-load-fill" style={{ width: `${Math.min(100, share * 100)}%` }} /></span>
+      <span className="ow-load-text">{load.total} / {SPRITE_CACHE} sprites · {Math.round(share * 100)}%</span>
+    </span>
+  );
 }
 
 /** How full the zone's events buffer is: green under 80%, yellow from 80%, red past it. */

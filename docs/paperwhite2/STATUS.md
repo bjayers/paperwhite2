@@ -2,6 +2,16 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-03 (early): the Overworld Editor's sprite bar
+
+- The header's second bar: the sprites a zone can have loaded at once, in the worst case, against the sprite cache's 32
+  (overworld-editor.md, The sprite load bar). The zones' preload lists are in `res/field/actors/preloads.json` now
+  (dumped; `npc_cache_data.py check` matches the ROM's 25), read-only so far: the build packs the ROM's a/0/5/7.
+- Route 20: 46 of 32. 23 are its preloads (vanilla's people), 3 the player and follower, and 20 the seasonal walking
+  Pokémon of script 10852 and the ambient, all counted as shown. Virbank City 29, Castelia City 15.
+- **For the user:** packing the preload lists from res/ (hack builds) would let a zone drop vanilla preloads it no
+  longer uses, freeing cache slots; moving 10852's NPCs to conditions would make the bar exact for them.
+
 ## 2026-11-02 (night, later still): ambients' shadows and sprite sets
 
 - Shadows (none, under its feet, on the ground below), the actors' oval drawn for each ambient (plugins.md, Ambients),

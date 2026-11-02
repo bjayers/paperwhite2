@@ -179,6 +179,17 @@ use (season, time, weather, flags and vars as they appear), the NPCs and instanc
 group, the most a group's members need), the ambients' budget and the overworld encounters' sprites, and takes the
 highest. Built with instances and ambients (phases 2 and 3), when the limit's real numbers are measured.
 
+**Built (2026-11-02, `editor/src/modules/overworld/spriteLoad.ts`):** the limit that makes sprites vanish is the sprite
+material cache, 32 object codes. It holds the zone's preloads first: the list its header's `npc_cache` names
+(`res/field/actors/preloads.json`, dumped from a/0/5/7 by `tools/data/npc_cache_data.py`, which `check` confirms
+matches the ROM; the build still packs the ROM's), which Route 20's takes 23 of. Then the player (counted 2: walking,
+and cycling or surfing), the Following Pokémon (1), and the NPCs', instances' and ambients' sprites past those, in the
+worst case over every combination of the seasons, times, weathers and flags the zone's conditions name, every chance
+coming up, each host and ambient counting whichever of its choices adds one more. 3D models don't count. An NPC
+without spawn data counts as shown, since its story flag isn't known: script 10852's seasonal NPCs (flags 0x1f4 to
+0x257) all count, so a zone of them reads high until they move to conditions. The bar's tooltip lists the sprites.
+The research's 24 codes on Route 20 (§4) left the preloads out.
+
 ## Phases
 
 1. **The editor over the existing data.** The map view with tiles and layers; NPCs, proxies, triggers, warps and level
