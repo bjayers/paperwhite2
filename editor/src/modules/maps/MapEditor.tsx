@@ -356,15 +356,22 @@ export function MapEditor({ constants }: ToolProps) {
       (e: Error) => { if (live) setReadingState({ loading: false, error: e.message }); });
     return () => { live = false; };
   }, [readingOn, modelName, readingRev, readingStyleName, mapVersion]);
+  const readingColor = (terrain: string | null) => {
+    const color = readingStyle?.terrains.find((t) => t.key === terrain)?.color;
+    if (color) return color;
+    if (!terrain) return "#202020";
+    if (terrain === "cliff") return "#a07850";
+    return `hsl(${[...terrain].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7)}, 60%, 55%)`;
+  };
+  const readingLegend = useMemo((): [string, string][] => [...new Set((reading?.tiles ?? []).map((t) => t.reading.terrain ?? ""))]
+    .filter(Boolean).sort().map((k) => [k, readingColor(k)]), [reading, readingStyle]);
   useEffect(() => {
     if (!readingOn || !reading || chunk === null) { scene.current?.showReading(null, null); return; }
-    const colors = new Map((readingStyle?.terrains ?? []).map((t) => [t.key, t.color ?? "#888888"]));
-    const hash = (s: string) => `hsl(${[...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7)}, 60%, 55%)`;
     scene.current?.showReading(chunk, reading.tiles.map((t) => ({
       x: t.x, z: t.z,
       y: t.ground?.y ?? ((t.collision as { height: number | null }[] | undefined)?.[0]?.height ?? 0),
-      color: t.reading.terrain ? colors.get(t.reading.terrain) ?? hash(t.reading.terrain) : "#202020",
-      outside: t.reading.edge?.outside ?? null, unsure: t.reading.confidence !== "high", structure: t.reading.structure,
+      color: readingColor(t.reading.terrain),
+      outside: t.reading.edge?.outside ?? t.reading.slope?.down ?? null, unsure: t.reading.confidence === "low", structure: t.reading.structure,
       selected: !!readingTile && readingTile.x === t.x && readingTile.z === t.z,
     })));
   }, [readingOn, reading, chunk, readingTile, readingStyle, loaded]);
@@ -926,7 +933,8 @@ export function MapEditor({ constants }: ToolProps) {
             {readingOn && (
               <ReadingPanel reading={reading} rev={readingRev} setRev={setReadingRev} loading={readingState.loading} error={readingState.error}
                             tile={reading && readingTile ? reading.tiles.find((t) => t.x === readingTile.x && t.z === readingTile.z) ?? null : null}
-                            terrainName={(key) => readingStyle?.terrains.find((t) => t.key === key)?.name ?? key ?? "none"} />
+                            terrainName={(key) => readingStyle?.terrains.find((t) => t.key === key)?.name ?? key ?? "none"}
+                            legend={readingLegend} />
             )}
             {tab === "chunks" && (
               <>

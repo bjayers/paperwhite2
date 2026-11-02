@@ -156,7 +156,10 @@ then a family, its profile and its table.
 
 - `tools/paperwhite2/map_reader.py` (`read`, `show`; `--rev w2-original` reads the game as it shipped): every face of
   the chunk clipped to each tile, and the facts collision, surfaces, levels, sides, walls, ground, standing, props,
-  budget, reading and neighbourhood; the chunk's texture roles. A fact is one function registered with
+  budget, reading, filled and neighbourhood; the chunk's texture roles. The reading has an edge (an edge texture over
+  half the tile or more, or with a bank's slopes), a bend (an edge texture reaching a little into a plain tile of its
+  terrain, as a path's middle at a point), a slope (cliffs and banks: downhill from the faces' normals), and when no
+  ground is drawn, the terrain of its neighbours (filled). Not yet told apart: stairs (read as a cliff). A fact is one function registered with
   `@tile_fact` (or `@chunk_fact`): adding a record is adding one. Not yet: events (warps, doors), the atlas, the
   round trip.
 - The Map Editor's **Reading** toggle: the chosen chunk's tiles coloured by their reading, arrows at edges' outsides,

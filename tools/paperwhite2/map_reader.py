@@ -63,15 +63,19 @@ class Piece:
     """The part of one of the model's triangles over one tile: its corners (Vertex, in the model's units), material,
     and what can be said of it alone."""
 
-    def __init__(self, triangle, polygon, material):
+    def __init__(self, triangle, polygon, material, corners):
         self.triangle = triangle
-        self.polygon = polygon
+        # Clipping can leave two corners on one point; a polygon without them
+        self.polygon = [v for i, v in enumerate(polygon) if i == 0 or max(abs(v.p[k] - polygon[i - 1].p[k]) for k in range(3)) > 1e-6]
+        if len(self.polygon) > 1 and max(abs(self.polygon[0].p[k] - self.polygon[-1].p[k]) for k in range(3)) <= 1e-6:
+            self.polygon.pop()
         self.material = material
         texture = material.get("pbrMetallicRoughness", {}).get("baseColorTexture", {})
         self.texture = Path(texture.get("image", "")).stem or None
         self.alpha = material.get("alphaMode", "OPAQUE")
         self.clamp_v = texture.get("sampler", {}).get("wrapT") == CLAMP
-        a, b, c = (v.p for v in polygon[:3])
+        # Its facing and normal are its whole triangle's (a clipped sliver's own corners may be too close to tell)
+        a, b, c = (v.p for v in corners)
         n = ((b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1]),
              (b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2]),
              (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]))
@@ -79,8 +83,8 @@ class Piece:
         self.normal = tuple(x / length for x in n)
         ny = abs(self.normal[1])
         self.facing = "flat" if ny >= 0.9 else "slope" if ny >= 0.3 else "vertical"
-        self.area = abs(_area_xz(polygon)) / (TILE * TILE)
-        self.gradient = _uv_gradient(polygon)
+        self.area = abs(_area_xz(self.polygon)) / (TILE * TILE)
+        self.gradient = _uv_gradient(corners)
 
     def height_at(self, x, z):
         """The piece's height and uv over a point (model units), or None where it isn't over it."""
@@ -163,7 +167,9 @@ class Chunk:
                     x0, z0 = tx * TILE - self.half, tz * TILE - self.half
                     poly = _clip(_clip(_clip(_clip(tri, 0, x0, False), 0, x0 + TILE, True), 2, z0, False), 2, z0 + TILE, True)
                     if len(poly) >= 3:
-                        self.pieces[(tx, tz)].append(Piece(number, poly, self.materials[key]))
+                        piece = Piece(number, poly, self.materials[key], tri)
+                        if len(piece.polygon) >= 3:
+                            self.pieces[(tx, tz)].append(piece)
         # Walls on a tile's edge are clipped into both tiles beside it, which is what a tile's walls should list
         self.facts = {}
         for name, function in CHUNK_FACTS:
@@ -214,8 +220,8 @@ class Tile:
 def textures(chunk):
     """Each texture's role, learned from how the chunk uses it: wall (mostly vertical); decoration (blended: a
     season's overlay, a shadow); slope (mostly sloped: a cliff's or a bank's face, clamped or not); edge (flat, v
-    clamped, mapped along a border: a path's edge, the water's edge); decoration (otherwise see-through: grass,
-    trees, fences); structure (opaque and flat, but nearly always over other ground: a bridge's deck); ground
+    clamped, mapped along a border, u running on past one repeat: a path's edge, the water's edge); decoration
+    (otherwise see-through or stamped once: grass, trees, fences, the water's sparkles); structure (opaque and flat, but nearly always over other ground: a bridge's deck); ground
     (opaque, flat, planar: the terrains)."""
     stats = defaultdict(lambda: {"area": 0.0, "facing": Counter(), "alpha": None, "clamp_v": False, "tiles": set(),
                                  "over_ground": 0})
@@ -234,6 +240,13 @@ def textures(chunk):
                        if p.alpha == "OPAQUE" and p.facing == "flat" and p.height_at(x, z)), key=lambda h: h[0])
         if len(hits) >= 2 and hits[-1][0] - hits[0][0] > TILE / 4:
             stats[hits[-1][1].texture]["over_ground"] += 1
+    # How far u runs across one triangle: a border's texture runs along it (a path's edge, the water's edge), a
+    # stamp's covers its quad once (the water's sparkles)
+    u_run = defaultdict(float)
+    for key, tri in chunk.triangles:
+        image = chunk.materials[key].get("pbrMetallicRoughness", {}).get("baseColorTexture", {}).get("image", "")
+        us = [v.uv[0] for v in tri]
+        u_run[Path(image).stem or None] = max(u_run[Path(image).stem or None], max(us) - min(us))
     out = {}
     for texture, s in stats.items():
         total = sum(s["facing"].values())
@@ -243,9 +256,9 @@ def textures(chunk):
             role = "decoration"
         elif s["facing"]["slope"] > s["facing"]["flat"]:
             role = "slope"
-        elif s["clamp_v"]:
+        elif s["clamp_v"] and u_run[texture] > 1.05:
             role = "edge"
-        elif s["alpha"] != "OPAQUE":
+        elif s["alpha"] != "OPAQUE" or s["clamp_v"]:
             role = "decoration"
         elif s["over_ground"] > len(s["tiles"]) / 2:
             role = "structure"
@@ -296,7 +309,9 @@ def surfaces(tile):
                  "triangles": len({p.triangle for p in pieces})}
         flat = [p for p in pieces if p.gradient and p.facing != "vertical"]
         if flat:
-            (dux, duz), (dvx, dvz) = flat[0].gradient
+            # Over all its pieces, weighted by their area (a corner's pieces turn)
+            weight = sum(p.area for p in flat) or 1.0
+            dux, duz, dvx, dvz = (sum(p.gradient[a][b] * p.area for p in flat) / weight for a, b in ((0, 0), (0, 1), (1, 0), (1, 1)))
             if pieces[0].clamp_v and math.hypot(dvx, dvz) > 1e-3:
                 entry["mapping"] = {"kind": "border", "v_grows": _compass(dvx, dvz)}
                 sides = {}
@@ -371,15 +386,24 @@ def walls(tile):
 
 @tile_fact("ground")
 def ground(tile):
-    """The ground at the tile's middle: the topmost opaque flat or sloped surface whose texture isn't a structure's
-    (a bridge's deck is over the ground, not the ground)."""
+    """The ground: at the tile's middle and four points round it, the topmost opaque surface whose texture isn't a
+    structure's or a wall's (a bridge's deck is over the ground, not the ground); the texture most of them have, at
+    their middle height, and how many of the five found ground."""
     roles = tile.chunk.facts["textures"]
-    for y, piece, uv in tile.surfaces_at(0.5, 0.5, opaque=True):
-        if roles.get(piece.texture, {}).get("role") in ("structure", "wall"):
-            continue
-        return {"y": round(y, 2), "texture": piece.texture, "role": roles.get(piece.texture, {}).get("role"),
-                "v": round(uv[1], 2)}
-    return None
+    found = []
+    for u, w in ((0.5, 0.5), (0.25, 0.25), (0.75, 0.25), (0.25, 0.75), (0.75, 0.75)):
+        for y, piece, uv in tile.surfaces_at(u, w, opaque=True):
+            if roles.get(piece.texture, {}).get("role") in ("structure", "wall"):
+                continue
+            found.append((piece.texture, y, uv[1]))
+            break
+    if not found:
+        return None
+    texture = Counter(t for t, _, _ in found).most_common(1)[0][0]
+    ys = sorted(y for t, y, _ in found if t == texture)
+    v = next(v for t, _, v in found if t == texture)
+    return {"y": round(ys[len(ys) // 2], 2), "texture": texture, "role": roles.get(texture, {}).get("role"),
+            "v": round(v, 2), "samples": len(found)}
 
 
 @tile_fact("standing")
@@ -425,7 +449,8 @@ def reading(tile):
     its levels (ground, water, structure), and how sure the reading is."""
     roles = tile.chunk.facts["textures"]
     g = tile.facts["ground"]
-    out = {"terrain": None, "edge": None, "structure": False, "decoration": False, "confidence": "low"}
+    out = {"terrain": None, "edge": None, "bend": None, "slope": None, "structure": False, "decoration": False,
+           "confidence": "low"}
     by_texture = {}
     style = tile.chunk.style
     if style:
@@ -443,17 +468,35 @@ def reading(tile):
         tile_type = tile.facts["collision"][0]["tile_type"]
         out["terrain"] = next((t["key"] for t in style["terrains"] if not t.get("edge_of")
                                and tile_type in (t["tile_type"], *t.get("also_tile_types", []))), None)
-    # An edge: a border-mapped texture over much of the tile, its outside where v falls
-    for s in tile.facts["surfaces"]:
-        m = s.get("mapping", {})
-        if m.get("kind") == "border" and s["cover"] >= 0.25 and roles.get(s["texture"], {}).get("role") == "edge":
-            grows = m["v_grows"]
-            outside = {"N": "S", "NE": "SW", "E": "W", "SE": "NW", "S": "N", "SW": "NE", "W": "E", "NW": "SE"}[grows] if grows else None
-            out["edge"] = {"texture": s["texture"], "outside": outside, "of": by_texture.get(s["texture"]) if style else None,
-                           "cover": s["cover"]}
-            if style and s["texture"] in by_texture:
-                out["terrain"] = by_texture[s["texture"]]
-            break
+    # An edge texture's share of the tile, and the way its v grows (over all its pieces)
+    compass_back = {"N": "S", "NE": "SW", "E": "W", "SE": "NW", "S": "N", "SW": "NE", "W": "E", "NW": "SE"}
+    edge_surface = next((x for x in tile.facts["surfaces"] if roles.get(x["texture"], {}).get("role") == "edge"
+                         and x.get("mapping", {}).get("kind") == "border"), None)
+    slope_cover = sum(x["cover"] for x in tile.facts["surfaces"] if roles.get(x["texture"], {}).get("role") == "slope")
+    if edge_surface:
+        grows = edge_surface["mapping"]["v_grows"]
+        outside = compass_back.get(grows)
+        family = by_texture.get(edge_surface["texture"]) if style else None
+        ground_family = out["terrain"]
+        # A bend: an edge reaching a little into a plain tile of its own terrain (a path's middle at a point)
+        if edge_surface["cover"] < 0.5 and family is not None and family == ground_family and not slope_cover:
+            out["bend"] = {"texture": edge_surface["texture"], "from": outside, "cover": edge_surface["cover"]}
+        elif edge_surface["cover"] >= 0.5 or slope_cover:
+            out["edge"] = {"texture": edge_surface["texture"], "outside": outside, "of": family, "cover": edge_surface["cover"]}
+            if family:
+                out["terrain"] = family
+    # A cliff or a slope: sloped faces over most of the tile, or its ground sloped; downhill is where their normals lean
+    if (slope_cover >= 0.5 or (g and g.get("role") == "slope")) and not out["edge"]:
+        nx = nz = 0.0
+        for piece in tile.pieces:
+            if roles.get(piece.texture, {}).get("role") == "slope" and piece.facing == "slope":
+                sign = 1 if piece.normal[1] > 0 else -1
+                nx, nz = nx + sign * piece.normal[0] * piece.area, nz + sign * piece.normal[2] * piece.area
+        out["slope"] = {"texture": max((x for x in tile.facts["surfaces"] if roles.get(x["texture"], {}).get("role") == "slope"),
+                                       key=lambda x: x["cover"])["texture"] if slope_cover else g["texture"],
+                        "down": _compass(nx, nz), "cover": round(slope_cover, 3)}
+        out["terrain"] = "cliff"
+        out["confidence"] = "high"
     # A terrain drawn with layers over its ground (tall grass's blades) is the one whose layers stand on the tile
     if style and not out["edge"]:
         standing_textures = {x["texture"] for x in tile.facts["standing"]}
@@ -462,10 +505,32 @@ def reading(tile):
                 out["terrain"] = t["key"]
                 break
     out["structure"] = any(x["kind"] == "structure" for x in tile.facts["standing"])
-    out["decoration"] = any(x["kind"] == "decoration" and x["cover"] > 0.1 for x in tile.facts["standing"])
+    out["decoration"] = any(x["kind"] == "decoration" for x in tile.facts["standing"])
     levels_ = [lv for lv in tile.facts["levels"] if lv["alpha"] == "OPAQUE"]
     out["levels"] = len({round(lv["y"] / 4) for lv in levels_})
     return out
+
+
+@tile_fact("filled")
+def filled(tile):
+    """A tile with no ground drawn (under a fence or a forest's canopy) is most likely what the tiles round it are:
+    its reading takes the terrain most of its four neighbours with ground have, at its own collision height. Returns
+    where the reading came from: the model, the neighbours, or the tile type."""
+    r = tile.facts["reading"]
+    if tile.facts["ground"] or r["slope"]:
+        return "model"
+    height = (tile.facts["collision"] or [{}])[0].get("height")
+    votes = Counter()
+    for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        n = tile.neighbour(dx, dz)
+        if n and n.facts["ground"] and n.facts["reading"]["terrain"] and not n.facts["reading"]["edge"] \
+                and (height is None or abs(n.facts["ground"]["y"] - height) < TILE / 2):
+            votes[n.facts["reading"]["terrain"]] += 1
+    if votes:
+        r["terrain"] = votes.most_common(1)[0][0]
+        r["confidence"] = "medium"
+        return "neighbours"
+    return "tile type"
 
 
 @tile_fact("neighbourhood")

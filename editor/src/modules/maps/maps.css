@@ -65,3 +65,5 @@
 /* The Reading panel's records */
 .me-record summary { cursor: pointer; margin: 6px 0; }
 .me-record pre { max-height: 360px; overflow: auto; font-size: 11px; white-space: pre-wrap; word-break: break-word; margin: 0; }
+.me-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 6px 0; font-size: 12px; }
+.me-legend-item { display: inline-flex; align-items: center; gap: 4px; }

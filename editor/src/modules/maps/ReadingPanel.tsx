@@ -5,7 +5,9 @@ export interface TileRecord {
   x: number;
   z: number;
   reading: { terrain: string | null; edge: { texture: string; outside: string | null; of: string | null; cover: number } | null;
+    bend: { texture: string; from: string | null; cover: number } | null; slope: { texture: string; down: string | null; cover: number } | null;
     structure: boolean; decoration: boolean; confidence: string; levels: number };
+  filled?: string;
   ground: { y: number; texture: string; role: string | null; v: number } | null;
   [fact: string]: unknown;
 }
@@ -17,7 +19,7 @@ export interface ChunkReading {
   tiles: TileRecord[];
 }
 
-export function ReadingPanel({ reading, tile, rev, setRev, loading, error, terrainName }: {
+export function ReadingPanel({ reading, tile, rev, setRev, loading, error, terrainName, legend }: {
   reading: ChunkReading | null;
   tile: TileRecord | null;
   rev: "now" | "original";
@@ -25,6 +27,8 @@ export function ReadingPanel({ reading, tile, rev, setRev, loading, error, terra
   loading: boolean;
   error: string | null;
   terrainName(key: string | null): string;
+  /** The layer's colours, by terrain. */
+  legend: [string, string][];
 }) {
   const roles = reading?.chunk.textures ?? {};
   return (
@@ -38,14 +42,23 @@ export function ReadingPanel({ reading, tile, rev, setRev, loading, error, terra
       </div>
       {loading && <p className="muted ow-note">Reading…</p>}
       {error && <p className="ow-note">{error}</p>}
-      {!tile && reading && <p className="muted ow-note">Each tile is coloured by its terrain; an edge's arrow points at its outside; a dashed tile is unsure, a
-        boxed one has a structure on it. Click a tile for its whole record.</p>}
+      {!tile && reading && <p className="muted ow-note">Each tile is coloured by its terrain; an edge's arrow points at its outside, a slope's downhill; a
+        dashed tile is unsure, a boxed one has a structure on it. Click a tile for its whole record.</p>}
+      {reading && (
+        <div className="me-legend">
+          {legend.map(([key, color]) => <span key={key} className="me-legend-item"><span className="me-swatch" style={{ background: color }} />{terrainName(key)}</span>)}
+        </div>
+      )}
       {tile && (
         <>
           <div className="me-row"><label>Tile</label><span>{tile.x}, {tile.z}</span></div>
           <div className="me-row"><label>Terrain</label><span>{terrainName(tile.reading.terrain)} <span className="muted">({tile.reading.confidence})</span></span></div>
           <div className="me-row"><label>Edge</label><span>{tile.reading.edge
-            ? <>{tile.reading.edge.texture}, its outside {tile.reading.edge.outside ?? "?"}</> : <span className="muted">none</span>}</span></div>
+            ? <>{tile.reading.edge.texture}, its outside {tile.reading.edge.outside ?? "?"}</>
+            : tile.reading.bend ? <>a bend of {tile.reading.bend.texture} reaching in from {tile.reading.bend.from ?? "?"}</>
+            : <span className="muted">none</span>}</span></div>
+          {tile.reading.slope && <div className="me-row"><label>Slope</label><span>{tile.reading.slope.texture}, down to the {tile.reading.slope.down ?? "?"}</span></div>}
+          {tile.filled && tile.filled !== "model" && <div className="me-row"><label>Read from</label><span>its {tile.filled} (no ground drawn)</span></div>}
           <div className="me-row"><label>Ground</label><span>{tile.ground ? <>{tile.ground.texture} at {tile.ground.y}</> : <span className="muted">none drawn</span>}</span></div>
           <div className="me-row"><label>On it</label><span>{[tile.reading.structure && "a structure", tile.reading.decoration && "decorations"]
             .filter(Boolean).join(", ") || <span className="muted">nothing</span>}</span></div>
