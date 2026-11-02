@@ -139,21 +139,37 @@ def learn_profile(db, texture, models, chunks, limit=60):
         else:
             face["v"] = [round(min(1, max(0, a["v"])), 2), round(min(1, max(0, b["v"])), 2)]
         faces.append(face)
-    # The underlay: ground drawn flat at the tile's own height under see-through faces across most of the tile (the
-    # lower grass under a ledge, which leaves a seam at its foot without it)
+    # The underlay: ground drawn under see-through faces across most of the tile, following its own heights at the
+    # profile's breakpoints (flat at the tile's height under a ledge, which leaves a seam at its foot without it; a
+    # river's bed sloping away under its bank)
     if step:
         under = Counter()
+        heights = defaultdict(list)
         for st in sections:
             for i in range(STEPS):
-                below = [layer for layer in st[i][1:] if abs(layer[1]) <= 1]
+                # (the top itself where it's the ground: past a ledge's foot)
+                below = [layer for layer in st[i][1:] if layer[1] <= 1] or \
+                    [layer for layer in st[i][:1] if chunks[next(iter(chunks))].facts["textures"].get(layer[0], {}).get("role") == "ground"]
                 if below:
                     under[below[0][0]] += 1
+                    heights[i].append((below[0][0], below[0][1]))
         if under:
             texture, n = under.most_common(1)[0]
             role = chunks[next(iter(chunks))].facts["textures"].get(texture, {}).get("role")
-            if role == "ground" and n > len(sections) * STEPS / 2:
-                lines.append({"offset": 0, "lift": 0})
-                faces.insert(0, {"between": [len(lines) - 1, len(lines) - 2], "texture": texture, "planar": True, "repeat": 4})
+            if role == "ground" and n > len(sections) * STEPS / 4:  # (a bank's bed lies under its last third)
+                at = [i for i in breaks if any(t == texture for t, _ in heights.get(i, []))]
+                if at and at[0] != 0 and heights.get(0):
+                    at.insert(0, 0)
+                level = {i: median(y for t, y in heights.get(i, []) if t == texture) or 0 for i in at}
+                # (points on a straight line between their neighbours dropped: one face where the ground runs on)
+                at = [i for k, i in enumerate(at) if k in (0, len(at) - 1) or abs(
+                    (level[at[k + 1]] - level[at[k - 1]]) * (points[i]["t"] - points[at[k - 1]]["t"])
+                    / ((points[at[k + 1]]["t"] - points[at[k - 1]]["t"]) or 1) + level[at[k - 1]] - level[i]) > 0.5]
+                first = len(lines)
+                for i in at:
+                    lines.append({"offset": round(points[i]["t"], 3), "lift": round(level[i] / 16, 3)})
+                for j in range(len(at) - 1):
+                    faces.insert(0, {"between": [first + j, first + j + 1], "texture": texture, "planar": True, "repeat": 4})
     return drop, lines, faces
 
 
