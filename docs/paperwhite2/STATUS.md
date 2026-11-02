@@ -2,6 +2,31 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-05 (morning): next — editor controls and the object library; tiles still needed
+
+**Next (the user's order: these before more tiles):**
+- Object library browser, like the NPC sprite-bank browser: a window of every library object with a preview, its
+  name and category; per object, open a viewer, see its data, rename it, change its category; group or filter by the
+  user's categories.
+- Paint controls: the half-opacity model toggle stays but is off by default; rework the painted-tile overlay (it
+  z-fights with the map and is hidden under geometry after painting): tops of tiles only, no sides, drawn so it stays
+  visible; add a fill tool.
+- A gizmo in the 3D view for moving objects (Blender-like): translate along each axis, by the game's grid, by a set
+  step, or smooth; drag it or click its parts to step; rotation only if feasible; no scaling.
+- Debug button (done): the Paint tab's "Paint the whole chunk from its reading".
+
+**Tiles still needed** (atlas, overworld edge and slope textures by tile count; done: paths, Route 20's banks,
+ledges, cliffs and tiers, stairs, grass hills):
+1. Sea shores and beaches: sea cliffs (sea_gake01, 2,227 tiles, 9 sets), wave foam (sea_zanami2), wet sand
+   (sea_simi.1). The biggest left; Route 13, Humilau.
+2. Area cliffs and paths: out57_gake*, out07_gake*, the desert's sabaku_el and ga_s1_0, Icirrus's c8_michi03b; learned
+   banks and tiers (they fail verification).
+3. Water: rapids and currents, deep and shallow sea (sea_asase), waterfalls.
+4. Hedges, flower beds, rock edges, tree lines (plant01, iwa01, ki04bx): maybe library objects.
+5. Towns' curbs and pavements (mostly structures and walls); caves' walls and water edges (Wellspring's edges 60%).
+6. Winter chunks (Icirrus's winter05_05): a painted chunk with a winter counterpart needs it painted too.
+7. Polygons (the user's decision after testing): T-junction splits and run counts; see below.
+
 ## 2026-11-05 (overnight, later): tiers, stairs, hills, learned styles; polygons are the open problem
 
 - Tall cliffs as 16-unit tiers (rock rim under the tier above), stairs and grass slopes as ramps with sloped collision
