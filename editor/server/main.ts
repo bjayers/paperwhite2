@@ -387,6 +387,15 @@ const routes: Record<string, Handler> = {
     if (!result.ok) return error(res, 500, result.output || "Starting failed");
     json(res, { path: result.output.trim() });
   },
+  "POST /api/map-maker/from-reading": async (req, res) => {
+    // A debug view: the chunk painted whole from its reading as it is now (map_roundtrip.py paint), its painting
+    // started if it has none; the first time for an area learns its style from the atlas (a couple of minutes)
+    const { model } = (await readJson(req)) as { model: string };
+    if (!/^[a-z0-9_]+$/.test(model ?? "")) return error(res, 400, "Name the chunk");
+    const result = await runTool("tools/paperwhite2/map_roundtrip.py", ["paint", model]);
+    if (!result.ok) return error(res, 500, result.output || "Painting from the reading failed");
+    json(res, { path: result.output.trim().split("\n").pop() });
+  },
   "POST /api/map-maker/stop": async (req, res) => {
     // A chunk put back as it was before painting, its painting removed (map_maker.py stop)
     const { model } = (await readJson(req)) as { model: string };

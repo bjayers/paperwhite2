@@ -723,19 +723,23 @@ function addWireframe(root: THREE.Object3D) {
 }
 
 /** A primitive's polygons as the DS counts them: its triangles in order, a pair (a, b, c), (a, c, d) sharing those
- * corners and making a flat, convex quad counted once (as nitro_model_writer.py's quads). */
+ * corners (by value) and making a flat, convex quad counted once (as nitro_model_writer.py's quads). */
 function countPolygons(geometry: THREE.BufferGeometry): number {
   const index = geometry.index;
   const position = geometry.attributes.position as THREE.BufferAttribute;
   const count = (index?.count ?? position.count) / 3;
   const at = (t: number, k: number) => (index ? index.getX(t * 3 + k) : t * 3 + k);
   const p = (i: number) => new THREE.Vector3().fromBufferAttribute(position, i);
+  const uv = geometry.attributes.uv as THREE.BufferAttribute | undefined;
+  const same = (i: number, j: number) => i === j || (p(i).distanceToSquared(p(j)) < 1e-6
+    && (!uv || (Math.abs(uv.getX(i) - uv.getX(j)) < 1e-4 && Math.abs(uv.getY(i) - uv.getY(j)) < 1e-4)));
   let polygons = 0;
   for (let t = 0; t < count; t++) {
     polygons++;
     if (t + 1 >= count) break;
     const [a, b, c] = [at(t, 0), at(t, 1), at(t, 2)];
-    if (at(t + 1, 0) !== a || at(t + 1, 1) !== c) continue;
+    // (corners the same by value, as the writer compares them: a GLB may give each triangle corners of its own)
+    if (!same(at(t + 1, 0), a) || !same(at(t + 1, 1), c)) continue;
     const d = at(t + 1, 2);
     const [pa, pb, pc, pd] = [p(a), p(b), p(c), p(d)];
     const n1 = new THREE.Vector3().subVectors(pb, pa).cross(new THREE.Vector3().subVectors(pc, pa));

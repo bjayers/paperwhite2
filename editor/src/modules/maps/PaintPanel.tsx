@@ -8,7 +8,7 @@ import type { LibraryObject, MapStyle, PaintShape, PaintTool, Project } from "./
 
 export function PaintPanel({ model, project, dirty, styles, objects, tool, setTool, shape, setShape, terrain, setTerrain, height, setHeight,
   placing, setPlacing, selected, onRemoveSelected, showPaint, setShowPaint, fadeModel, setFadeModel, onStart, onGenerate,
-  autoGenerate, setAutoGenerate, onStop, busy }: {
+  autoGenerate, setAutoGenerate, onStop, onPaintFromReading, busy }: {
   model: string | null;
   project: Project | null;
   dirty: boolean;
@@ -37,10 +37,17 @@ export function PaintPanel({ model, project, dirty, styles, objects, tool, setTo
   onStart(style: string, fill: string, flat?: number): void;
   onGenerate(): void;
   onStop(): void;
+  /** Debug: the whole chunk painted from its reading and generated. */
+  onPaintFromReading(): void;
   busy: boolean;
 }) {
   if (!model) return <p className="muted ow-note">Choose a chunk (the Chunks tab, or click the map).</p>;
-  if (!project) return <StartPainting model={model} styles={styles} onStart={onStart} busy={busy} />;
+  if (!project) return (
+    <>
+      <StartPainting model={model} styles={styles} onStart={onStart} busy={busy} />
+      <Debug onPaintFromReading={onPaintFromReading} busy={busy} />
+    </>
+  );
   const style = styles.get(project.style);
   const selectedObject = selected !== null ? project.objects?.[selected] : null;
   return (
@@ -81,6 +88,7 @@ export function PaintPanel({ model, project, dirty, styles, objects, tool, setTo
         <p className="muted ow-note">Stop painting puts the chunk back as it was when painting started, with any edits made before it. To put it back
           as the original game or the last commit has it, use Put it back in the Chunks tab (the painting stays).</p>
       </section>
+      <Debug onPaintFromReading={onPaintFromReading} busy={busy} />
       <section className="me-section">
         <h4>Brush</h4>
         <div className="me-row"><label>Paints</label>
@@ -142,6 +150,22 @@ export function PaintPanel({ model, project, dirty, styles, objects, tool, setTo
           {" "}Ctrl+Z undoes.</p>
       </section>
     </>
+  );
+}
+
+function Debug({ onPaintFromReading, busy }: { onPaintFromReading(): void; busy: boolean }) {
+  return (
+    <section className="me-section">
+      <h4>Debug</h4>
+      <div className="me-actions">
+        <button disabled={busy} onClick={onPaintFromReading}
+                title="Every tile painted as the map reader reads it, then generated: what the map maker makes of this chunk, and its polygons">
+          Paint the whole chunk from its reading</button>
+      </div>
+      <p className="muted ow-note">Repaints every tile as the chunk reads now and generates it, to compare the generated terrain and its polygons with
+        the original (Wireframe, and the Chunks tab's Polygons bar). Stop painting puts the chunk back. The first time for an area without a style,
+        one is learned from the atlas (a couple of minutes), saved in res/paperwhite2/map_styles/.</p>
+    </section>
   );
 }
 

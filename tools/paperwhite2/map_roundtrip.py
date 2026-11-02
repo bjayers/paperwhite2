@@ -3,6 +3,7 @@
 two readings compared tile by tile (docs/paperwhite2/design/map-reader.md, The round-trip test).
 
     map_roundtrip.py MODEL --style STYLE [--rev REV] [--out DIR]
+    map_roundtrip.py paint MODEL [STYLE]   # the chunk as it is now painted whole from its reading (a debug view)
 
 The chunk is read as the original game has it (--rev, w2-original by default). Each tile becomes a painted tile:
 its terrain (an edge tile its family's edge terrain, a cliff the style's blocked ground), its height where one walks
@@ -314,7 +315,52 @@ def trip(vanilla, style):
         shutil.rmtree(work, ignore_errors=True)
 
 
+def style_for(model, chunk):
+    """The style for a chunk: the one made for its texture set, else one learned from the atlas (verified, with the
+    chunk as its focus), saved as map_styles/drafted_<set>.json so the next time is quick. (name, style)."""
+    data = json.loads((map_maker.MODELS / model / "data.json").read_text())
+    texture_set = data.get("texture_set") or data.get("texture_preview")
+    for path in sorted(map_maker.STYLES.glob("*.json")):
+        if path.name.endswith(".schema.json"):
+            continue
+        style = json.loads(path.read_text())
+        if style.get("texture_set") == texture_set:
+            return path.stem, style
+    import sqlite3
+    style = map_profiles.draft(sqlite3.connect(map_profiles.DB), texture_set, f"{texture_set} (learned)", verify=True, focus=model)
+    name = "drafted_" + texture_set.removeprefix("MAP_TEXTURE_SET_").lower()
+    (map_maker.STYLES / f"{name}.json").write_text(dumps(style) + "\n")
+    return name, style
+
+
+def paint(model, style_name=None):
+    """A chunk painted whole from its reading as it is now (a debug view of what painting makes of it): its painted
+    map started if it has none (a copy of the chunk kept, which Stop painting puts back), then every tile painted as
+    the round trip paints it. The project's path; generating it is the caller's."""
+    if style_name:
+        style = json.loads((map_maker.STYLES / f"{style_name}.json").read_text())
+    else:
+        style_name, style = style_for(model, map_reader.load_chunk(model, None, None))
+    project_path = map_maker.PROJECTS / f"{model}.json"
+    if project_path.exists():
+        # (read from the copy kept when painting started: the chunk as it was, not as a painting made it)
+        base = map_maker.PROJECTS / f"{model}.base"
+        chunk = map_reader.Chunk(model, base, style, images_from=map_maker.MODELS / model)
+    else:
+        map_maker.start(model, style_name, map_maker.KEEP)
+        chunk = map_reader.load_chunk(model, None, style_name)
+    keys, heights, _ = painting_of(chunk, style)
+    project = json.loads(project_path.read_text())
+    project.update({"style": style_name, "terrain": keys, "height": heights})
+    project_path.write_text(dumps(project, width=1 << 20) + "\n")
+    return project_path
+
+
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] == "paint":
+        # map_roundtrip.py paint MODEL [STYLE]: the chunk painted whole from its reading (see paint)
+        print(paint(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else None).relative_to(ROOT))
+        return
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("model")
     parser.add_argument("--style", help="a map style; without one, a style is drafted from the chunk's reading")

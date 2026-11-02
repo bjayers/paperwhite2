@@ -102,6 +102,8 @@ export const api = {
   /** Starts a painted map of a chunk: every tile fill ("." keeps the chunk) at its collision's heights, or flat (tiles). */
   startPainting: (model: string, style: string, fill: string, flat?: number) =>
     request<{ path: string }>("POST", "/api/map-maker/start", { model, style, fill, flat }),
+  /** Paints the whole chunk from its reading as it is now (a debug view; map_roundtrip.py paint). */
+  paintFromReading: (model: string) => request<{ path: string }>("POST", "/api/map-maker/from-reading", { model }),
   /** Puts a painted chunk back as it was before painting, and removes its painting. */
   stopPainting: (model: string) => request<{ ok: boolean; output: string }>("POST", "/api/map-maker/stop", { model }),
   /** Generates a painted map's chunk from its project (tools/paperwhite2/map_maker.py). */

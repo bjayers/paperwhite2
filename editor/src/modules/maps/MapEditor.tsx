@@ -476,6 +476,30 @@ export function MapEditor({ constants }: ToolProps) {
     }
   };
 
+  /** A debug view: the whole chunk painted from its reading (as the round trip paints it), then generated, to see
+   * what the map maker makes of it and its polygons. Stop painting puts the chunk back. */
+  const paintFromReading = async () => {
+    if (!projectFile || !modelName) return;
+    if (!window.confirm(`Paint all of ${modelName} from its reading and generate it? Every tile becomes painted terrain (trees and other objects stay as the chunk has them). Ctrl+Z undoes the generate; Stop painting puts the chunk back. The first time for an area, its style is learned from the atlas, which takes a couple of minutes.`)) return;
+    setBusy(true);
+    try {
+      await api.paintFromReading(modelName);
+      setStyles(await loadStyles());
+      if (projectExists[projectFile]) await documents.reload(projectFile);
+      else {
+        await documents.hold(projectFile);
+        setProjectExists((m) => ({ ...m, [projectFile]: true }));
+      }
+      setShowPaint(false);
+    } catch (e) {
+      setMessage({ text: (e as Error).message, error: true });
+      setBusy(false);
+      return;
+    }
+    setBusy(false);
+    setPendingGenerate((n) => n + 1);
+  };
+
   /** Puts the chunk back as it was before painting, and removes the painting. */
   const stopProject = async () => {
     if (!modelName || !projectFile || !current) return;
@@ -1087,7 +1111,7 @@ export function MapEditor({ constants }: ToolProps) {
               <PaintPanel model={modelName} project={project} dirty={!!projectDoc?.dirty} styles={styles} objects={library} tool={tool} setTool={setTool}
                           shape={shape} setShape={setShape} terrain={terrainKey} setTerrain={setTerrainKey} height={paintHeightHalf} setHeight={setPaintHeightHalf}
                           placing={placing} setPlacing={setPlacing} selected={selectedObject} onRemoveSelected={removeSelectedObject}
-                          showPaint={showPaint} setShowPaint={setShowPaint} fadeModel={fadeModel} setFadeModel={setFadeModel} onStart={startProject} onGenerate={() => void generate()} autoGenerate={autoGenerate} setAutoGenerate={setAutoGenerate} onStop={stopProject} busy={busy} />
+                          showPaint={showPaint} setShowPaint={setShowPaint} fadeModel={fadeModel} setFadeModel={setFadeModel} onStart={startProject} onPaintFromReading={paintFromReading} onGenerate={() => void generate()} autoGenerate={autoGenerate} setAutoGenerate={setAutoGenerate} onStop={stopProject} busy={busy} />
             )}
             {tab === "objects" && (
               <ObjectsPanel objects={library} chosen={chosenObject} setChosen={setChosenObject} placing={placingOnChunk} setPlacing={setPlacingOnChunk}
