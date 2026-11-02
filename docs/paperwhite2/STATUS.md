@@ -2,6 +2,24 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-05 (overnight): profiles from the atlas, chamfered corners, seams, borders
+
+Working through the user's tile list on their go-ahead; each change checked with the round trip on Route 20's four
+chunks (map_roundtrip.py; numbers in each commit) and the scratch-copy paintings, none tried in game.
+- Ledges and cliffs: profiles measured across every straight run in the atlas (map_profiles.py); the lower ground
+  drawn under the whole step tile (the seam at a ledge's foot); cliff faces repeat by height (v_units) instead of
+  stretching.
+- Corners as the game draws them (the user's chamfer observation, checked in the atlas): outward corners chamfered,
+  rounded ones at a constant width, inward corners chamfered out into the diagonal tile (which is carved), u by
+  length round corners. Tiles beside an island are clipped right (they had holes).
+- The sliver where painted water ends against a vanilla bank is gone (a wedge strip along the end of the band).
+- Path edges face a bridge's end (all 23 in the game do); tiles past the chunk's border are read from the
+  neighbouring chunk.
+- Round trip now (Route 20): terrain 89–97%, edges 96–98%, no holes. **For the morning:** triangles are up
+  (1,606–2,339 against vanilla's 952–1,426; map04_21 is near the busiest vanilla overworld chunk, 2,367), so the
+  triangle work matters before big paintings; generating near a chunk's border reads its neighbour (about a second
+  each).
+
 ## 2026-11-04 (night): terrain-only cutting; the user's ledge and cliff test
 
 - Painting over a chunk cuts only its terrain (ground, edges, slopes, walls that top out at a neighbour's ground,
