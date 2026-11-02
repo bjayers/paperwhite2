@@ -94,6 +94,7 @@ export const api = {
   glbMove: (path: string, faces: GlbFaceSet[], offset: [number, number, number], textureSet: string) =>
     request<{ ok: boolean; faces: GlbFaceSet[] }>("PUT", "/api/glb-move", { path, faces, offset, textureSet }),
   /** Adds textures (<set>/<png>) of other map texture sets to sets, by their imports.json. */
+  importGrass: (kind: string, sets: string[]) => request<{ added: string[]; donors: Record<string, string> }>("POST", "/api/grass-import", { kind, sets }),
   importTextures: (sets: string[], textures: string[]) => request<{ added: string[] }>("POST", "/api/texture-imports", { sets, textures }),
   /** Saves faces of a map chunk as an object of the library (tools/paperwhite2/map_objects.py). */
   saveMapObject: (b: { name: string; category?: string; chunk: string; faces: GlbFaceSet[]; anchor: number[]; size: number[] }) =>

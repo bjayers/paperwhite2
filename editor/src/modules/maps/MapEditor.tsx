@@ -541,6 +541,26 @@ export function MapEditor({ constants }: ToolProps) {
     changeProject(painted(project, cells, tool, terrainKey, paintHeightHalf, fallback), `Painted ${cells.length} tile(s)`);
   };
 
+  /** A grass kind made paintable in an area whose texture sets lack its images: each season's set gains them. */
+  const addGrassKind = async (key: string) => {
+    const kind = grassKinds.find((k) => k.key === key);
+    const own = projectStyle?.texture_set.replace(/^MAP_TEXTURE_SET_/, "").toLowerCase();
+    const targets = [...new Set([...sets.map((x) => x.set).filter((x): x is string => !!x), ...(own ? [own] : [])])];
+    if (!kind || !targets.length) return;
+    setBusy(true);
+    try {
+      const result = await api.importGrass(key, targets);
+      setSetTextures(null);
+      const from = [...new Set(Object.values(result.donors))].join(", ");
+      setMessage({ text: result.added.length ? `Added ${kind.name} to ${Object.keys(result.donors).join(", ")} (from ${from}): ${result.added.length} image(s), listed in each set's imports.json. Rebuild the ROM to see it in game.`
+        : `${kind.name} is in this area's texture sets already.` });
+    } catch (e) {
+      setMessage({ text: (e as Error).message, error: true });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   /** A stroke of grass (or the eraser) on the painting's tiles. */
   const paintGrass = (tiles: { x: number; z: number }[]) => {
     if (!project || !map || !current || !grass) return;
@@ -1264,7 +1284,7 @@ export function MapEditor({ constants }: ToolProps) {
               <DecorationsPanel model={modelName} textureSet={chunkSet} project={project} dirty={!!projectDoc?.dirty} styles={styles} kinds={grassKinds}
                                 textures={setTextures && setTextures.set === projectStyle?.texture_set ? setTextures.names : null}
                                 grassKey={grassKey} setGrassKey={setGrassKey} shape={grassShape} setShape={setGrassShape} counts={grassCounts}
-                                blocked={grassBlocked} keeps={grassKeeps} autoGenerate={autoGenerate} setAutoGenerate={setAutoGenerate} onStart={startProject}
+                                blocked={grassBlocked} keeps={grassKeeps} onAddKind={addGrassKind} autoGenerate={autoGenerate} setAutoGenerate={setAutoGenerate} onStart={startProject}
                                 onGenerate={() => void generate()} busy={busy}
                                 onTakeGrass={() => project && grass && changeProject({ ...project, grass }, "Took the chunk's grass into grass rows")} />
             )}

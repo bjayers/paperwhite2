@@ -322,27 +322,31 @@ const routes: Record<string, Handler> = {
     if (!Array.isArray(b.sets) || !b.sets.every((x) => folder.test(x)) || !Array.isArray(b.textures)
         || !b.textures.every((t) => /^[a-z0-9_]+\/[a-z0-9_.]+\.png$/i.test(t)))
       return error(res, 400, "Name the sets and the textures, as <set>/<png>");
+    const result = await importTextures(b.sets, b.textures);
+    if ("error" in result) return error(res, 400, result.error);
+    json(res, { added: result.added });
+  },
+  "POST /api/grass-import": async (req, res) => {
+    // A grass kind's textures added to the texture sets that lack them, each from a set of its season
+    // (tools/paperwhite2/map_grass.py donors), so the kind can be painted in an area vanilla has none of it in
+    const b = (await readJson(req)) as { kind: string; sets: string[] };
+    if (!/^[A-Za-z]$/.test(b.kind ?? "") || !Array.isArray(b.sets) || !b.sets.every((x) => /^[a-z0-9_]+$/.test(x)))
+      return error(res, 400, "Name the grass kind and the sets");
+    const found = await runTool("tools/paperwhite2/map_grass.py", ["donors", b.kind, ...b.sets]);
+    if (!found.ok) return error(res, 500, found.output || "Finding the textures failed");
+    const donors = JSON.parse(found.output.trim().split("\n").pop() ?? "{}") as Record<string, string>;
+    const kinds = (JSON.parse(readFileSync(project.abs("res/paperwhite2/map_grass/grass.json"), "utf8")) as { kinds: {
+      key: string; blades?: { texture: string }[]; volume?: { top: string; side: string } }[] }).kinds;
+    const kind = kinds.find((k) => k.key === b.kind);
+    if (!kind) return error(res, 400, `No grass kind ${b.kind}`);
+    const names = kind.blades ? kind.blades.map((x) => x.texture) : kind.volume ? [kind.volume.top, kind.volume.side] : [];
     const added: string[] = [];
-    for (const set of b.sets) {
-      const base = `res/field/maps/textures/${set}`;
-      if (!existsSync(project.abs(base))) return error(res, 400, `No texture set ${set}`);
-      const path = `${base}/imports.json`;
-      const current = existsSync(project.abs(path)) ? JSON.parse(readFileSync(project.abs(path), "utf8")) as { textures: { texture: string; from: string }[] }
-        : { textures: [] };
-      for (const t of b.textures) {
-        const [from, png] = t.split("/");
-        const name = png.replace(/\.png$/i, "");
-        if (from === set || existsSync(project.abs(`${base}/${png}`))) continue;
-        if (!existsSync(project.abs(`res/field/maps/textures/${from}/${png}`))) return error(res, 400, `No ${t}`);
-        current.textures.push({ texture: name, from: `MAP_TEXTURE_SET_${from.toUpperCase()}` });
-        await project.writeAtomic(`${base}/${png}`, readFileSync(project.abs(`res/field/maps/textures/${from}/${png}`)));
-        added.push(`${set}/${png}`);
-      }
-      if (current.textures.length) {
-        await project.writeAtomic(path, fileText(parseJson(JSON.stringify({ $schema: "../texture_imports.schema.json", textures: current.textures }))));
-      }
+    for (const [target, donor] of Object.entries(donors)) {
+      const result = await importTextures([target], names.map((n) => `${donor}/${n}.png`));
+      if ("error" in result) return error(res, 400, result.error);
+      added.push(...result.added);
     }
-    json(res, { added });
+    json(res, { added, donors });
   },
   "PUT /api/glb-move": async (req, res) => {
     // Faces of a map model's GLB moved by an offset; the model is then written whole
@@ -600,6 +604,32 @@ function serveResFile(res: ServerResponse, pathname: string) {
 }
 
 /** Runs a tool of the checkout with the build's Python. */
+/** Textures of other map texture sets added to sets (their imports.json, and a copy of each PNG beside theirs), each
+ * given as <set>/<png>; those a set has already are left. */
+async function importTextures(sets: string[], textures: string[]): Promise<{ added: string[] } | { error: string }> {
+  const added: string[] = [];
+  for (const set of sets) {
+    const base = `res/field/maps/textures/${set}`;
+    if (!existsSync(project.abs(base))) return { error: `No texture set ${set}` };
+    const path = `${base}/imports.json`;
+    const current = existsSync(project.abs(path)) ? JSON.parse(readFileSync(project.abs(path), "utf8")) as { textures: { texture: string; from: string }[] }
+      : { textures: [] };
+    for (const t of textures) {
+      const [from, png] = t.split("/");
+      const name = png.replace(/\.png$/i, "");
+      if (from === set || existsSync(project.abs(`${base}/${png}`))) continue;
+      if (!existsSync(project.abs(`res/field/maps/textures/${from}/${png}`))) return { error: `No ${t}` };
+      current.textures.push({ texture: name, from: `MAP_TEXTURE_SET_${from.toUpperCase()}` });
+      await project.writeAtomic(`${base}/${png}`, readFileSync(project.abs(`res/field/maps/textures/${from}/${png}`)));
+      added.push(`${set}/${png}`);
+    }
+    if (current.textures.length) {
+      await project.writeAtomic(path, fileText(parseJson(JSON.stringify({ $schema: "../texture_imports.schema.json", textures: current.textures }))));
+    }
+  }
+  return { added };
+}
+
 function runTool(script: string, args: string[]): Promise<{ ok: boolean; output: string }> {
   return new Promise((done) => {
     execFile(pythonFor(ROOT), [script, ...args], { cwd: ROOT, maxBuffer: 16 << 20 },

@@ -270,6 +270,13 @@ very tall grass tiles) and looks the same, at 1,420 triangles to vanilla's 1,203
 merged into rectangles; Route 20's dark-grass chunk regenerated with its grass costs 1,644 triangles, as with grass as
 a terrain layer.
 
+**Grass where vanilla has none:** a kind whose images an area's texture sets lack can be added from the
+Decorations tab: each of the area's sets (one a season) imports them (its `imports.json`, built by
+map_texture_data.py with their own palettes) from a set of the same season (`map_grass.py donors`: a set's seasons are
+the areas that use it, `route_19_winter.json` and so on; of the sets of that season that have the images, those with
+the season's commonest look, since grass is drawn differently each season). Each image is 16 by 16, 128 or 256 bytes:
+under 1 KB a set, against Route 20's 48 KB and the largest set's 168 KB.
+
 Starting a painting now defaults to a style made for the chunk's texture set, and where none is, learns one from the
 atlas (`map_roundtrip.py style MODEL`, the server's `"auto"` style); a style from another area binds the chunk to that
 area's textures, which the start form says. Learned styles give a ground terrain its tiles' commonest walkable tile

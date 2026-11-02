@@ -4,6 +4,7 @@
 
     map_grass.py survey            # the atlas's grass tiles by texture set and tile class: what grass.json is learned from
     map_grass.py available SET     # the kinds a texture set has the textures of
+    map_grass.py donors KIND SET...  # JSON: for each set lacking a kind's textures, the set to import them from
 
 A painting's grass rows (map_project.schema.json) give each tile a kind's letter or none. The map maker
 (map_maker.py) builds them over the generated ground:
@@ -221,6 +222,52 @@ def _facing(points, uvs, normal):
     return points, uvs
 
 
+AREAS = ROOT / "res/field/areas"
+SEASONS = ("spring", "summer", "autumn", "winter")
+
+
+def set_seasons():
+    """Each texture set's seasons, as the areas that use it name them (route_19_winter.json: winter; no suffix: spring,
+    or every season for an area without variants)."""
+    out = collections.defaultdict(set)
+    for path in AREAS.glob("*.json"):
+        if path.name.endswith(".schema.json"):
+            continue
+        texture_set = json.loads(path.read_text()).get("texture_set")
+        if not texture_set:
+            continue
+        season = next((x for x in SEASONS[1:] if path.stem.endswith("_" + x)), "spring")
+        out[texture_set.removeprefix("MAP_TEXTURE_SET_").lower()].add(season)
+    return out
+
+
+def donors(key, targets, data=None):
+    """For each target set (a folder name) lacking the kind's textures, the set to import them from: one used in the
+    same season whose images of them are that season's commonest (grass is drawn differently each season), else the
+    commonest anywhere. {target: donor}; a target that has them is left out."""
+    import hashlib
+
+    data = data or kinds_file()
+    kind = next(k for k in data["kinds"] if k["key"] == key)
+    names = kind_textures(kind)
+    seasons = set_seasons()
+    have = {}
+    for folder in TEXTURES.iterdir():
+        if folder.is_dir() and all((folder / f"{t}.png").exists() for t in names):
+            have[folder.name] = hashlib.md5(b"".join((folder / f"{t}.png").read_bytes() for t in names)).hexdigest()
+    out = {}
+    for target in targets:
+        if target in have:
+            continue
+        wanted = seasons.get(target) or {"spring"}
+        pool = [s for s in have if seasons.get(s, set()) & wanted] or list(have)
+        if not pool:
+            raise SystemExit(f"no texture set has {kind['name']}'s textures")
+        common = collections.Counter(have[s] for s in pool).most_common(1)[0][0]
+        out[target] = sorted(s for s in pool if have[s] == common)[0]
+    return out
+
+
 def survey():
     db = sqlite3.connect(ROOT / "build/map_atlas.db")
     data = kinds_file()
@@ -246,9 +293,14 @@ def main():
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("survey")
     commands.add_parser("available").add_argument("texture_set")
+    d = commands.add_parser("donors")
+    d.add_argument("kind")
+    d.add_argument("sets", nargs="+")
     args = parser.parse_args()
     if args.command == "survey":
         survey()
+    elif args.command == "donors":
+        print(json.dumps(donors(args.kind, args.sets)))
     else:
         for k in available(args.texture_set):
             print(k["key"], k["name"])

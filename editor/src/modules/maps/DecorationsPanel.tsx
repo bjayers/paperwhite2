@@ -8,7 +8,7 @@ import { NO_GRASS, grassTextures, type GrassKind, type MapStyle, type Project } 
 export type GrassShape = "pencil" | "rect" | "fill";
 
 export function DecorationsPanel({ model, textureSet, project, dirty, styles, kinds, textures, grassKey, setGrassKey, shape, setShape, counts,
-  blocked, keeps, autoGenerate, setAutoGenerate, onStart, onGenerate, onTakeGrass, busy }: {
+  blocked, keeps, onAddKind, autoGenerate, setAutoGenerate, onStart, onGenerate, onTakeGrass, busy }: {
   model: string | null;
   /** The chunk's texture set. */
   textureSet: string | null;
@@ -29,6 +29,8 @@ export function DecorationsPanel({ model, textureSet, project, dirty, styles, ki
   blocked: number;
   /** Grass tiles drawn over a tile that keeps its own collision (blocked, a boardwalk). */
   keeps: number;
+  /** Adds a kind's textures to the area's texture sets (each season's), from sets of the same season that have them. */
+  onAddKind(key: string): void;
   autoGenerate: boolean;
   setAutoGenerate(on: boolean): void;
   onStart(style: string, fill: string, flat?: number): void;
@@ -72,8 +74,17 @@ export function DecorationsPanel({ model, textureSet, project, dirty, styles, ki
           ))}
         </div>
         {missing.length > 0 && (
-          <p className="muted ow-note">Not in this area's textures: {missing.map((k) => k.name).join(", ")}. Vanilla draws
-            {missing.length > 1 ? " them" : " it"} only where its texture set has the images (very tall grass: Route 6's).</p>
+          <>
+            <div className="muted me-category-name">Not in this area's textures</div>
+            <div className="me-terrains">
+              {missing.map((k) => (
+                <button key={k.key} className="me-terrain" disabled={busy} onClick={() => onAddKind(k.key)}
+                        title={`Adds ${k.name}'s images to this area's texture set in each season, copied from an area of that season that has them (under 1 KB of texture memory a set)`}>
+                  <span className="me-swatch" style={{ background: k.color }} />Add {k.name}
+                </button>
+              ))}
+            </div>
+          </>
         )}
         {(() => { const k = kinds.find((x) => x.key === grassKey); return k?.description ? <p className="muted ow-note">{k.name}: {k.description}.</p> : null; })()}
       </section>
