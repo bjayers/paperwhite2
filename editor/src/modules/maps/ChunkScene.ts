@@ -430,9 +430,9 @@ export class ChunkScene {
     tiles.forEach((t, i) => {
       const cx = x0 + t.x * TILE + TILE / 2, cz = z0 + t.z * TILE + TILE / 2, y = t.y + 1.2;
       m.makeTranslation(cx, y, cz);
-      // A tile with nothing drawn on it at all: an outline only
-      squares.setMatrixAt(i, t.empty ? new THREE.Matrix4().makeScale(0, 0, 0).setPosition(cx, y, cz) : m);
-      squares.setColorAt(i, new THREE.Color(t.color));
+      // A tile with nothing drawn on it at all: dark, outlined grey (still a square, to click)
+      squares.setMatrixAt(i, m);
+      squares.setColorAt(i, new THREE.Color(t.empty ? "#2a2e36" : t.color));
       const square = (out: THREE.Vector3[], r: number) => {
         const c = [[-r, -r], [r, -r], [r, r], [-r, r]].map(([dx, dz]) => new THREE.Vector3(cx + dx, y + 0.2, cz + dz));
         for (let k = 0; k < 4; k++) out.push(c[k], c[(k + 1) % 4]);

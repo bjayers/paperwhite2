@@ -37,6 +37,20 @@ def _identity(matrix):
     return all(abs(v - (1 if i % 5 == 0 else 0)) < 1e-5 for i, v in enumerate(matrix))
 
 
+def _joint_translation(doc, index):
+    """Where a joint stands, by the translations of it and its parents, or None if any of them rotates or scales."""
+    parents = {child: i for i, node in enumerate(doc["nodes"]) for child in node.get("children", [])}
+    total = [0.0, 0.0, 0.0]
+    while index is not None:
+        node = doc["nodes"][index]
+        if "matrix" in node or "rotation" in node or "scale" in node:
+            return None
+        if "mesh" not in node:
+            total = [a + b for a, b in zip(total, node.get("translation", [0, 0, 0]))]
+        index = parents.get(index)
+    return total
+
+
 def _matrices(doc, binary, index):
     accessor = doc["accessors"][index]
     view = doc["bufferViews"][accessor["bufferView"]]
@@ -77,8 +91,15 @@ def read_mesh(path, images_from=None):
         if "mesh" in node and any(k in node for k in ("matrix", "translation", "rotation", "scale")):
             raise ValueError(f"{path}: the mesh's node is moved")
     for skin in doc.get("skins", []):
-        if not all(_identity(m) for m in _matrices(doc, binary, skin["inverseBindMatrices"])):
-            raise ValueError(f"{path}: a joint isn't at the origin")
+        # Each joint's inverse bind matrix must undo where the joint stands (a joint moved, its vertices bound as
+        # they lie), so the positions are as stored
+        for joint, matrix in zip(skin["joints"], _matrices(doc, binary, skin["inverseBindMatrices"])):
+            at = _joint_translation(doc, joint)
+            undone = list(matrix)
+            for k in range(3):
+                undone[12 + k] += at[k] if at is not None else 0
+            if at is None or not _identity(undone):
+                raise ValueError(f"{path}: a joint isn't at the origin, or its bind doesn't undo where it stands")
     materials = {}
     triangles = []
     ids = []

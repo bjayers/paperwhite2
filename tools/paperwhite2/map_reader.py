@@ -201,8 +201,9 @@ class Tile:
         """The pieces over a point of the tile, top first: (height, piece, uv)."""
         x, z = self.point(min(max(u, 0.001), 0.999), min(max(w, 0.001), 0.999))
         out = []
+        roles = self.chunk.facts.get("textures", {})
         for piece in self.pieces:
-            if opaque and piece.alpha != "OPAQUE":
+            if opaque and piece.alpha != "OPAQUE" and roles.get(piece.texture, {}).get("role") != "ground":
                 continue
             hit = piece.height_at(x, z)
             if hit:
@@ -238,8 +239,12 @@ def textures(chunk):
     # open sides: where its tiles drop to a lower neighbour, no face stands in the drop (one sees under a bridge's
     # edge; a plateau over the same lower ground has a cliff down to it)
     tops = {}
+    lowest = Counter()
     for (tx, tz), pieces in chunk.pieces.items():
         x, z = (tx + 0.5) * TILE - chunk.half, (tz + 0.5) * TILE - chunk.half
+        flats = [(p.height_at(x, z)[0], p.texture) for p in pieces if p.facing == "flat" and p.height_at(x, z)]
+        if flats:
+            lowest[min(flats)[1]] += 1
         hits = sorted(((p.height_at(x, z)[0], p) for p in pieces
                        if p.alpha == "OPAQUE" and p.facing == "flat" and p.height_at(x, z)), key=lambda h: h[0])
         if hits:
@@ -265,6 +270,20 @@ def textures(chunk):
         image = chunk.materials[key].get("pbrMetallicRoughness", {}).get("baseColorTexture", {}).get("image", "")
         us = [v.uv[0] for v in tri]
         u_run[Path(image).stem or None] = max(u_run[Path(image).stem or None], max(us) - min(us))
+    # Billboards: sloped faces that nearly all lean the same way (cliffs and banks turn with their borders)
+    leans = defaultdict(list)
+    for pieces in chunk.pieces.values():
+        for p in pieces:
+            if p.facing == "slope":
+                sign = 1 if p.normal[1] > 0 else -1
+                leans[p.texture].append((sign * p.normal[0], sign * p.normal[2]))
+    billboard = defaultdict(bool)
+    for texture, ns in leans.items():
+        mx, mz = sum(n[0] for n in ns) / len(ns), sum(n[1] for n in ns) / len(ns)
+        length = math.hypot(mx, mz)
+        if length > 1e-6 and len(ns) >= 8:
+            same = sum(1 for n in ns if (n[0] * mx + n[1] * mz) / (math.hypot(*n) * length or 1) > 0.97)
+            billboard[texture] = same > 0.9 * len(ns)
     out = {}
     for texture, s in stats.items():
         total = sum(s["facing"].values())
@@ -274,10 +293,15 @@ def textures(chunk):
             role = "wall"
         elif s["alpha"] == "BLEND":
             role = "decoration"
+        elif s["facing"]["slope"] > s["facing"]["flat"] and s["alpha"] != "OPAQUE" and billboard[texture]:
+            role = "decoration"  # sprites tilted toward the camera, all one way (a ranch's flowers)
         elif s["facing"]["slope"] > s["facing"]["flat"]:
             role = "slope"
         elif s["clamp_v"] and u_run[texture] > 1.05:
             role = "edge"
+        elif s["alpha"] == "MASK" and not s["clamp_v"] and s["facing"]["flat"] > total / 2 and len(s["tiles"]) > len(chunk.pieces) / 4 \
+                and lowest[texture] > len(s["tiles"]) / 2:
+            role = "ground"  # ground drawn with see-through specks (snow over Icirrus's grass), lowest on its tiles
         elif s["alpha"] != "OPAQUE" or s["clamp_v"]:
             role = "decoration"
         elif s["over_ground"] > len(s["tiles"]) / 2 and drops[texture][1] < drops[texture][0] / 2:
@@ -285,6 +309,23 @@ def textures(chunk):
         else:
             role = "ground"
         out[texture] = {"role": role, "alpha": s["alpha"], "tiles": len(s["tiles"]), "pieces": total}
+    # Each edge texture's inside: the ground most often found a tile toward where its v grows (a road's edge, its
+    # road; a shore's wet sand, its water), which a tile of the edge or a bend of it is read as when no style says
+    toward = {"N": (0, -1), "E": (1, 0), "S": (0, 1), "W": (-1, 0), "NE": (1, -1), "SE": (1, 1), "SW": (-1, 1), "NW": (-1, -1)}
+    insides = defaultdict(Counter)
+    for (tx, tz), pieces in chunk.pieces.items():
+        for p in pieces:
+            if out.get(p.texture, {}).get("role") != "edge" or not p.gradient or p.facing == "vertical":
+                continue
+            d = _compass(p.gradient[1][0], p.gradient[1][1])
+            if not d:
+                continue
+            dx, dz = toward[d]
+            top = tops.get((tx + dx, tz + dz))
+            if top and out.get(top[1], {}).get("role") == "ground":
+                insides[p.texture][top[1]] += p.area
+    for texture, c in insides.items():
+        out[texture]["inside"] = c.most_common(1)[0][0]
     return out
 
 
@@ -518,15 +559,22 @@ def reading(tile):
         for e in style.get("edges", []):
             for face in e["faces"]:
                 by_texture.setdefault(face["texture"], e["to"])
+    def name(texture):
+        # A texture's terrain: the style's, else its own, an edge texture's being its inside's
+        if style:
+            return by_texture.get(texture, texture)
+        return roles.get(texture, {}).get("inside", texture)
     if g:
-        out["terrain"] = by_texture.get(g["texture"], g["texture"]) if style else g["texture"]
+        out["terrain"] = name(g["texture"])
         if g.get("role") == "structure":
             # A deck: the tile is the deck's, over what's under it (a bridge over the river)
             out["deck"] = g["texture"]
             out["under"] = by_texture.get(g.get("under"), g.get("under")) if style else g.get("under")
-        # How sure: how many of the ground's five points agree; whether the style knows it is apart from that
-        agree = g.get("agree", g.get("samples", 0))
-        out["confidence"] = "high" if agree >= 4 else "medium" if agree >= 3 else "low"
+        # How sure: how many of the points that found ground agree (two at least); whether the style knows it is
+        # apart from that
+        agree, found = g.get("agree", 0), g.get("samples", 0)
+        share = agree / found if found else 0
+        out["confidence"] = "high" if found >= 2 and share >= 0.8 else "medium" if found >= 2 and share >= 0.6 else "low"
         out["known"] = (not style) or g["texture"] in by_texture
     elif style and tile.facts["collision"]:
         # No ground drawn (under a forest's canopy): the terrain with its tile type, unsure
@@ -546,7 +594,7 @@ def reading(tile):
     if edge_surface:
         grows = edge_surface["mapping"]["v_grows"]
         outside = compass_back.get(grows)
-        family = by_texture.get(edge_surface["texture"]) if style else None
+        family = by_texture.get(edge_surface["texture"]) if style else roles.get(edge_surface["texture"], {}).get("inside")
         ground_family = out["terrain"]
         # A bend: an edge reaching a little into a plain tile of its own terrain (a path's middle at a point)
         if edge_surface["cover"] < 0.5 and family is not None and family == ground_family and not slope_cover:

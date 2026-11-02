@@ -45,8 +45,8 @@ export function ReadingPanel({ reading, tile, rev, setRev, loading, error, terra
       {loading && <p className="muted ow-note">Reading…</p>}
       {error && <p className="ow-note">{error}</p>}
       {!tile && reading && <p className="muted ow-note">Each tile is coloured by its terrain; an edge's arrow points at its outside, a slope's downhill; a
-        dashed tile is unsure, a boxed one has a structure on it (a deck: what lies under it is in its record); a grey outline has nothing drawn on
-        it at all. A tile on two levels has a square at each: click the same place again for the one under. Click a tile for its whole record.</p>}
+        dashed tile is unsure, a boxed one has a structure on it (a deck: what lies under it is in its record); a dark square outlined grey has
+        nothing drawn on it at all. A tile on two levels has a square at each: click the same place again for the one under. Click a tile for its whole record.</p>}
       {reading && (
         <div className="me-legend">
           {legend.map(([key, color]) => <span key={key} className="me-legend-item"><span className="me-swatch" style={{ background: color }} />{terrainName(key)}</span>)}

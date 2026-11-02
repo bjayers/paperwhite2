@@ -2,6 +2,16 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-04: edge families learned per chunk; snow ground, billboards, moved joints
+
+- Each edge texture's inside (the ground a tile toward where its v grows) is learned per chunk, and with no style a
+  tile of the edge or a bend of it reads as that ground: Route 13's grassy road, the desert's sand edges and
+  shorelines no longer flip colour tile to tile, and bends are found without a style. See-through flat ground lowest
+  on its tiles is ground (Icirrus's snow over grass; not tree canopies). Sloped see-through faces that all lean one
+  way are billboards (Floccesy's flowers), not slopes. Confidence is agreement among the points that found ground
+  (a riverbank's bed showing at two points is sure). glb_mesh reads skins whose joints are moved and bound back
+  (Nuvema Town). Humilau's door planks over its piers are honestly unsure (two surfaces share those tiles).
+
 ## 2026-11-03 (night): stairs, rivers, dunes; the grid hidden over the original game
 
 - Tall grass needs its blades over half the tile (not stairs beside it); a tile's own texture rising over its middle
