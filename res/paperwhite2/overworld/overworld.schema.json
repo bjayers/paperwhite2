@@ -1,7 +1,7 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "title": "A zone's NPC conditions and instances: res/paperwhite2/overworld/<zone>.json",
-    "description": "Paper White 2's spawn data for a zone's NPCs (res/field/events/<zone>.json, by their ids): a condition under which an NPC appears, and an NPC's instances, the NPCs its record can be, one of which the field writes into it at zone entry (Spawns_OnZoneInit, src/paperwhite2/ov012/paperwhite2_spawns.c). The file is named after the zone. tools/paperwhite2/overworld.py packs the files into a member after the events' archive's own (a/1/2/6). docs/paperwhite2/plugins.md, NPC spawns.",
+    "description": "Paper White 2's spawn data for a zone's NPCs (res/field/events/<zone>.json, by their ids): a condition under which an NPC appears, and an NPC's instances, the NPCs its record can be, one of which the field writes into it at zone entry and again when the hour or the time of day changes (Spawns_OnZoneInit, Spawns_Repick, src/paperwhite2/ov012/paperwhite2_spawns.c). The file is named after the zone. tools/paperwhite2/overworld.py packs the files into a member after the events' archive's own (a/1/2/6). docs/paperwhite2/plugins.md, NPC spawns.",
     "type": "object",
     "additionalProperties": false,
     "required": [ "npcs" ],
@@ -16,11 +16,12 @@
             "required": [ "id" ],
             "properties": {
                 "id": { "type": "integer", "minimum": 0, "maximum": 65535, "description": "The NPC's id in the zone's events" },
-                "when": { "$ref": "../conditions/condition.schema.json#/$defs/condition", "description": "When it appears: without it it always does. A chance holds all day (the day's seed), so leaving and coming back doesn't roll it again" },
+                "when": { "$ref": "../conditions/condition.schema.json#/$defs/condition", "description": "When it appears: without it it always does. A chance is rolled from the seed its rolls name (the hour's by default), so leaving and coming back doesn't roll it again" },
+                "rolls": { "enum": [ "hour", "day", "period", "entry" ], "description": "How long a roll holds, its chance's and its instance's pick: the hour (by default), the day, the time of day, or each zone entry. The field picks again when the hour or the time of day changes, and changes the NPC while it's out of view" },
                 "instances": {
                     "type": "array",
                     "minItems": 1,
-                    "description": "What the NPC can be: at zone entry the field picks one whose condition holds and whose flag isn't set, by weight from the day's seed, and writes it into the NPC's record; with none, the NPC doesn't appear. The record in the events is the host, and its own fields are unused",
+                    "description": "What the NPC can be: at zone entry, and again when the hour or the time of day changes, the field picks one whose condition holds and whose flag isn't set, by weight from the seed its rolls name, and writes it into the NPC's record; with none, the NPC doesn't appear. The record in the events is the host, and its own fields are unused",
                     "items": { "$ref": "#/$defs/instance" }
                 }
             }

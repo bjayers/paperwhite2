@@ -26,7 +26,10 @@ export interface Condition {
   [field: string]: unknown;
 }
 export interface Instance { name?: string; when?: Condition; weight?: number; npc: Record<string, unknown> }
-export interface SpawnEntry { id: number; when?: Condition; instances?: Instance[] }
+/** How long an NPC's rolls hold (its chance's and its instance's pick): the game picks again when the hour or the time
+ * of day changes, and changes the NPC while it's out of view. */
+export type Rolls = "hour" | "day" | "period" | "entry";
+export interface SpawnEntry { id: number; when?: Condition; instances?: Instance[]; rolls?: Rolls }
 
 /** The world the preview checks conditions against. */
 export interface PreviewWorld {

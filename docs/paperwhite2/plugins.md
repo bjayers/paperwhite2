@@ -834,13 +834,28 @@ edited in the Overworld Editor.
   name the NPC (a condition) or the host and carry the instance's 36-byte record. `overworld.py dump MEMBER` lists one.
 - **At zone entry,** `Spawns_OnZoneInit` (`src/paperwhite2/ov012/paperwhite2_spawns.c`, from
   `FieldScript_CallOnZoneInit` after the zone-load counter and before the init scripts and `SpawnAllZoneNPCs`) reads
-  the zone's table into the game event heap's tail, fills a context (the world, the lead, the party), and:
-  - an NPC whose condition fails gets `EVENT_FLAG_SPAWN_HIDDEN` (0x930, set at every zone entry) as its spawn flag;
-  - a host gets an instance written into its record (its id kept), picked by weight among those whose conditions hold
-    and whose own spawn flags aren't set, from `CONDITION_SEED_DAY` keyed by the host's id; with none, it is hidden.
-  A chance in a condition is rolled from the same day's seed, so it holds all day. The field then creates, talks to and
-  saves the NPCs as its own; a continued game takes them from the save, and a battle or a menu keeps them.
-- **Not yet:** picking again on a time-of-day change (`Spawns_OnPeriodChange`, empty), ambients and groups.
+  the zone's table into the game event heap's tail, fills a context (the world, the lead, the party), and gives each
+  NPC with rules (its condition, then its instances, one after another) the record it should have now:
+  - hidden, with `EVENT_FLAG_SPAWN_HIDDEN` (0x930, set at every zone entry) as its spawn flag, where its condition
+    fails, or for a host where no instance holds;
+  - for a host, an instance written into its record (its id kept), picked by weight among those whose conditions hold
+    and whose own spawn flags aren't set.
+  Its rolls (a chance's and the pick) start from the seed its `rolls` names, keyed by its id, a byte of each payload:
+  the hour's (`CONDITION_SEED_HOUR`, the default), the day's, the time of day's or each entry's (the load seed). The
+  hour's and the time of day's seeds mix in the day. It stores the picks' key, `Spawns_PickKey` (the day, the hour
+  and the time of day, hashed), in `EVENT_WORK_SPAWN_PICK` (0x4058). The field then creates, talks to and saves the
+  NPCs as its own; a continued game takes them from the save, and a battle or a menu keeps them.
+- **In the zone,** `PaperWhite2_SpawnsUpdate` (`src/paperwhite2/ov036/paperwhite2_spawns_field.c`, from the field's
+  update after the actors') compares the key for now with the stored one once a second while no event runs (a script,
+  a talk, a trainer's sight, a menu). On a change, `Spawns_Repick` reads the table again and works out each NPC's record
+  for now. An NPC whose record should change is changed only while it, and where it would appear, are out of the
+  camera's view: its box's middle tested against the field camera's perspective, two tiles past its edges, so camera
+  areas and the vanilla camera alike; a rail NPC without an actor counts as in view. Its actor is removed
+  (`DeleteActor`), its record written, and its actor made again if it shows (`SpawnZoneNPCByUID`). An NPC with only a
+  condition has only its spawn flag changed, its original one read back from the zone's entity file, so an init
+  script's changes to its record stay. The key is stored once every NPC has its record; until then the rest are tried
+  again each second.
+- **Not yet:** a script's `SpawnRefresh`, ambients, groups (on hold), and NPCs walking off when their time is over.
 
 ### Wild encounters
 

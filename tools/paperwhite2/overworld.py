@@ -9,10 +9,12 @@ own (a/1/2/6), which Spawns_OnZoneInit (src/paperwhite2/ov012/paperwhite2_spawns
 The member (little-endian): u32 magic "PWOW", u16 zone count, u16 0, then for each zone, by zone number, u16 zone,
 u16 0, u32 offset and u32 size of its table from the member's start; then the tables, each on 4 bytes. A zone's table
 is a conditions table (tools/paperwhite2/conditions.py) whose rules' payloads say what each is:
-- an NPC's condition: u8 0, u8 0, u16 the NPC's id; the NPC appears while its rule holds;
-- an instance: u8 1, u8 0, u16 its host's id, then the instance's 36-byte NPC record (ZoneNPC, as event_data.py packs
-  it, its id the host's); a host's instances are one after another, and the field picks among those that hold, by
-  weight, from the day's seed keyed by the host's id.
+- an NPC's condition: u8 0, u8 the seed, u16 the NPC's id; the NPC appears while its rule holds;
+- an instance: u8 1, u8 the seed, u16 its host's id, then the instance's 36-byte NPC record (ZoneNPC, as event_data.py
+  packs it, its id the host's); a host's instances are one after another, after its condition if it has one, and the
+  field picks among those that hold, by weight.
+The seed is the CONDITION_SEED_* the NPC's rolls start from, keyed by its id (its "rolls": the hour's by default, the
+day's, the time of day's or each entry's); the field picks again when the hour or the time of day changes.
 """
 import argparse
 import json
@@ -33,6 +35,8 @@ HEADER = struct.Struct("<IHH")
 ENTRY = struct.Struct("<HHII")
 PAYLOAD = struct.Struct("<BBH")
 KIND_CONDITION, KIND_INSTANCE = 0, 1
+# An NPC's "rolls" as the CONDITION_SEED_* its picks start from (include/paperwhite2/conditions.h)
+SEEDS = {"entry": 0, "day": 1, "hour": 3, "period": 4}
 
 
 def zone_table(path: Path, schema: dict) -> bytes | None:
@@ -51,13 +55,14 @@ def zone_table(path: Path, schema: dict) -> bytes | None:
         if npc_id in seen:
             raise DataError(f"{where}: NPC {npc_id} is listed twice")
         seen.add(npc_id)
+        seed = SEEDS[entry.get("rolls", "hour")]
         if "when" in entry:
-            rules.append((compiler.compile(entry["when"], f"{where}.when"), 0, 1, PAYLOAD.pack(KIND_CONDITION, 0, npc_id)))
+            rules.append((compiler.compile(entry["when"], f"{where}.when"), 0, 1, PAYLOAD.pack(KIND_CONDITION, seed, npc_id)))
         for j, instance in enumerate(entry.get("instances", [])):
             at = f"{where}.instances[{j}]"
             record = npc_bytes({**instance["npc"], "id": npc_id}, at)
             rules.append((compiler.compile(instance.get("when", {}), f"{at}.when"), 0, instance.get("weight", 1),
-                          PAYLOAD.pack(KIND_INSTANCE, 0, npc_id) + record))
+                          PAYLOAD.pack(KIND_INSTANCE, seed, npc_id) + record))
     return pack_table(rules, compiler.lists) if rules else None
 
 
@@ -97,8 +102,9 @@ def dump(path: Path):
         table = unpack_table(data[offset:offset + size])
         print(f"zone {zone}: {len(table['rules'])} rules")
         for clauses, _, weight, payload in table["rules"]:
-            kind, _, npc_id = PAYLOAD.unpack_from(payload)
-            print(f"  {'instance of' if kind else 'condition of'} NPC {npc_id}, weight {weight}, {len(clauses)} clauses")
+            kind, seed, npc_id = PAYLOAD.unpack_from(payload)
+            rolls = next((k for k, v in SEEDS.items() if v == seed), seed)
+            print(f"  {'instance of' if kind else 'condition of'} NPC {npc_id}, weight {weight}, {len(clauses)} clauses, rolls {rolls}")
 
 
 def main():

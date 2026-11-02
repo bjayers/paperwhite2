@@ -39,6 +39,7 @@ void ConditionContext_Init(ConditionContext *ctx) {
 void ConditionContext_FillWorld(ConditionContext *ctx, GameData *gameData) {
     EventWork *eventWork = GameData_GetEventWork(gameData);
     AdventureTime *time = getSaveAdventureTimeBlock(GameData_GetSaveControl(gameData));
+    RTCTime now;
 
     ctx->eventWork = eventWork;
     ctx->season = GameData_GetSeason(gameData);
@@ -49,8 +50,13 @@ void ConditionContext_FillWorld(ConditionContext *ctx, GameData *gameData) {
     ctx->zoneLoadCounter = *EventWork_GetWkPtr(eventWork, EVENT_WORK_ZONE_LOAD_COUNTER);
     // The save clock's day, as the weather's date takes it: stable all day and after a reload
     ctx->dayNumber = RTC_ConvertDateToDay(&time->date);
+    RTC_GetCachedTime(&now);
+    ctx->hour = now.hour;
     ctx->loadSeed = Conditions_Hash(ctx->zoneLoadCounter, ctx->zone);
     ctx->daySeed = Conditions_Hash(ctx->dayNumber, ctx->zone);
+    // The hour's and the time of day's: the day's mixed with them, so each is new the next day too
+    ctx->hourSeed = Conditions_Hash(Conditions_Hash(ctx->dayNumber, ctx->hour), ctx->zone);
+    ctx->periodSeed = Conditions_Hash(Conditions_Hash(ctx->dayNumber, 0x100 + ctx->period), ctx->zone);
     ctx->filled |= CONDITION_CONTEXT_WORLD;
 }
 

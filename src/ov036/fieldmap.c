@@ -536,6 +536,8 @@ u32 FieldRoutine_Run(GameSystem *gsys, Field *field) {
 #ifdef PAPERWHITE2
         // Paper White 2: the Following Pokémon's frame, which updates the actors itself (field-actor-update)
         PaperWhite2_FollowingUpdate(field->actorSystem);
+        // Paper White 2: the NPCs picked again when the hour or the time of day changes (paperwhite2_spawns_field.c)
+        PaperWhite2_SpawnsUpdate(field);
 #else
         FldActSys_Update(field->actorSystem);
 #endif

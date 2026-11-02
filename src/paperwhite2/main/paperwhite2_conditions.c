@@ -59,6 +59,10 @@ u32 Conditions_Seed(const ConditionContext *ctx, u32 seed, u32 key) {
         return Conditions_Hash(ctx->loadSeed, key);
     case CONDITION_SEED_DAY:
         return Conditions_Hash(ctx->daySeed, key);
+    case CONDITION_SEED_HOUR:
+        return Conditions_Hash(ctx->hourSeed, key);
+    case CONDITION_SEED_PERIOD:
+        return Conditions_Hash(ctx->periodSeed, key);
     }
     return GFL_RandomLC(0);
 }

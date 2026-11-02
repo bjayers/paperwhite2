@@ -2,6 +2,17 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-02 (night): NPCs picked again in the zone, rolls by the hour
+
+- `Spawns_Repick` and `PaperWhite2_SpawnsUpdate` (plugins.md, NPC spawns): once a second while no event runs, a
+  change of the hour or the time of day picks the zone's NPCs again; an NPC whose record should change is changed only
+  while it, and where it would appear, are out of the field camera's view (a frustum test, two tiles of margin), its
+  actor removed and made again if it shows. `EVENT_WORK_SPAWN_PICK` (0x4058) holds the key the picks were made for.
+- Each NPC's `rolls` (overworld.schema.json; the Overworld Editor's Rolls box): the hour's seed by default, or the
+  day's, the time of day's or each entry's. The conditions engine gained the hour's and the time of day's seeds.
+- Built (hack, no warnings, DSi intact). **Not tested in game**; the test list is in the reply of 2026-11-02 night,
+  with phase 2's (a night NPC at zone entry, a host with day and night instances).
+
 ## 2026-11-02 (evening): tile tasks for tonight (the user's notes on the debug paint; not started)
 
 The user compared Route 20's map04_20 vanilla, debug-painted and hand-corrected overhead. River corners and the

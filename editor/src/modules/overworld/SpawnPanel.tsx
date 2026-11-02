@@ -9,7 +9,7 @@ import { DocForm } from "../followers/DocForm.tsx";
 import { BaseField, type FormContext } from "../schema-form/form.tsx";
 import { Chips, WeatherPicker } from "../encounters/ui.tsx";
 import { ScrubNumber, type ScrubPhase } from "./ScrubNumber.tsx";
-import { SEASON_NAMES, TIME_NAMES, conditionSummary, type Condition, type Instance, type SpawnEntry } from "./spawns.ts";
+import { SEASON_NAMES, TIME_NAMES, conditionSummary, type Condition, type Instance, type Rolls, type SpawnEntry } from "./spawns.ts";
 
 const label = (v: string) => v.replace("_", " ");
 
@@ -103,12 +103,28 @@ export function SpawnSection({ path, entries, npcId, npcRecord, constants, onEdi
                    render={spawnRender(undefined)} onEdit={() => onEdit([path])} />
         )}
       </section>
+      {(entry?.when || entry?.instances?.length) && (
+        <section className="ow-panel-box ow-section">
+          <h5>Rolls</h5>
+          <div className="ow-condition">
+            <span className="ow-condition-label">Hold for</span>
+            <select value={entry.rolls ?? "hour"} onChange={(e) => write({ ...entry, rolls: e.target.value === "hour" ? undefined : e.target.value as Rolls })}>
+              <option value="hour">the hour</option>
+              <option value="period">the time of day</option>
+              <option value="day">the day</option>
+              <option value="entry">each zone entry</option>
+            </select>
+          </div>
+          <p className="muted ow-note">How long a chance in its condition and its instance's pick hold before they're rolled again. The game
+            checks again when the hour or the time of day changes, and changes the NPC only while it's out of the camera's view.</p>
+        </section>
+      )}
       <section className="ow-panel-box ow-section">
         <h5>Instances <span className="muted">{entry?.instances?.length ?? 0}</span></h5>
         <div className="ow-section-actions">
           <button onClick={addInstance}>Add an instance</button>
           <span className="muted">{entry?.instances?.length
-            ? "At zone entry the game writes one into this NPC, by weight among those that hold; this NPC's own fields are unused."
+            ? "At zone entry, and when the hour or the time of day changes, the game writes one into this NPC, by weight among those that hold; this NPC's own fields are unused."
             : "A copy of this NPC, which then becomes its host: the game shows one of its instances instead of it."}</span>
         </div>
         {entry?.instances?.map((inst, k) => (

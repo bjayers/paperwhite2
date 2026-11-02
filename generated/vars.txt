@@ -91,7 +91,10 @@ EVENT_WORK_FOLLOWER_TALK_DAY_2
 EVENT_WORK_FOLLOWER_TALK_DAY_3
 EVENT_WORK_FOLLOWER_TALK_DAY_4
 EVENT_WORK_FOLLOWER_TALK_DAY_5
-EVENT_WORK_0x4058
+# Paper White 2: the key of the day, hour and time of day the zone's NPC spawns were picked for (Spawns_PickKey),
+# which a change of picks them again in the field (0x4058 was unused, tools/paperwhite2/var_usage.py;
+# docs/paperwhite2/plugins.md, NPC spawns)
+EVENT_WORK_SPAWN_PICK
 EVENT_WORK_0x4059
 EVENT_WORK_0x405a
 EVENT_WORK_0x405b

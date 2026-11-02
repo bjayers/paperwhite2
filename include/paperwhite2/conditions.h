@@ -112,11 +112,13 @@ enum {
 #define CONDITION_CONTEXT_POSITION 0x20
 
 // The seeds a pick starts its random state from (Conditions_Seed): stable while the player stays in the zone and new on
-// the next zone load; stable for the day; or new for each check
+// the next zone load; stable for the day; new for each check; stable for the hour; or stable for the time of day
 enum {
     CONDITION_SEED_LOAD = 0,
     CONDITION_SEED_DAY = 1,
     CONDITION_SEED_CHECK = 2,
+    CONDITION_SEED_HOUR = 3,
+    CONDITION_SEED_PERIOD = 4,
 };
 
 // A species entry of a CONDITION_KIND_SPECIES clause or list: the species, and in the bits above it the form plus one,
@@ -182,8 +184,12 @@ typedef struct {
     u16 zoneParent;
     u16 zoneLoadCounter;
     s32 dayNumber;
+    // The clock's hour (the real-time clock's, which the time of day comes from)
+    u8 hour;
     u32 loadSeed;
     u32 daySeed;
+    u32 hourSeed;
+    u32 periodSeed;
     // Field (ConditionContext_FillField, overlay 36)
     u8 exterior;
     u32 terrain;
