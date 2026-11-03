@@ -31,6 +31,7 @@ import { api } from "../../api.ts";
 import { entityFields } from "./fields.tsx";
 import { AmbientPanel } from "./AmbientPanel.tsx";
 import { OverworldGrid } from "../maps/OverworldGrid.tsx";
+import { WildPanel } from "./WildPanel.tsx";
 import { BuildingPanel } from "./BuildingPanel.tsx";
 import { MapView, hasRect, type OverlayMode, type TileRect } from "./MapView.tsx";
 import { amendProps, bundleModels, buildingEntities, dirtyPropChunks, loadProps, propsOf, propsSaveError, redoProps, revertProps, saveProps, setProps,
@@ -215,6 +216,8 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   const [cacheSize, setCacheSize] = useState(SPRITE_CACHE_ORIGINAL);
   // The overworld's chunk map over the map view, as the Map Editor has it
   const [overworld, setOverworld] = useState(false);
+  // The zone's wild Pokémon, for reference, over the map view
+  const [wild, setWild] = useState(false);
   useEffect(() => { void spriteCacheSize().then(setCacheSize); }, []);
   // Whether the zone's scripts run 10852, the seasonal spawns, which the count works out (spriteLoad.ts)
   const [seasonal, setSeasonal] = useState<Seasonal>({ runs: false, night: false });
@@ -913,6 +916,8 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                       title="The NPCs move as their move codes move them in game (at 30 frames a second, blocked as the game blocks them, without the player), and the ambients along their paths as the game moves them; their tiles stay marked">
                 {preview ? "■ Stop" : "▶ Movement"}</button>
               <label className="ow-check" title="Drag over tiles to paint them"><input type="checkbox" checked={painting} onChange={(e) => setPainting(e.target.checked)} /> Paint</label>
+              <button className={wild ? "active" : ""} onClick={() => setWild(!wild)} disabled={!zone}
+                      title="The Pokémon of this zone's encounter area: their methods, seasons, times, rarity and levels, sortable">🐾 Wild Pokémon</button>
               {painting && (
                 <>
                   <select value={paintMode} onChange={(e) => setPaintMode(e.target.value as "type" | "height")}>
@@ -947,6 +952,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
             </div>
           )}
           <div className={`ow-map-wrap${painting ? " painting" : ""}`}>
+            {wild && zone && <WildPanel zone={zone} onClose={() => setWild(false)} />}
             {overworld && (
               <div className="me-overworld-panel">
                 <div className="me-overworld-head"><strong>Overworld</strong><span className="spacer" /><button onClick={() => setOverworld(false)}>Close</button></div>

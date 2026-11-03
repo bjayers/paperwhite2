@@ -124,3 +124,15 @@
 .ow-point { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .ow-path-group { width: 48px; text-align: right; }
 .ow-section .ow-section-actions + .ow-section-actions { margin-top: -4px; }
+
+/* The zone's wild Pokémon over the map: its filters, then its table, sortable by its headers */
+.ow-wild-panel { position: absolute; top: 10px; left: 10px; width: min(860px, calc(100% - 20px)); max-height: calc(100% - 20px); z-index: 3;
+  display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px; box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35); }
+.ow-wild-filters { margin: 2px 0; }
+.ow-wild-table-wrap { overflow: auto; min-height: 0; }
+.ow-wild-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ow-wild-table th { position: sticky; top: 0; background: var(--panel); text-align: left; cursor: pointer; padding: 4px 6px;
+  border-bottom: 1px solid var(--border); white-space: nowrap; }
+.ow-wild-table td { padding: 3px 6px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.ow-wild-name { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
