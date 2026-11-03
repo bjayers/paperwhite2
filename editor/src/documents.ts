@@ -1,8 +1,8 @@
 // The files open in the editor: their data, unsaved changes, undo and redo, and what happens when a file changes on
 // disk while it is open. Modules edit data through here and never write files themselves.
 
-import { useSyncExternalStore } from "react";
-import { api } from "./api.ts";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { api, isNotFound } from "./api.ts";
 import { DATA_LAYOUT, detectLayout, fileText, parseJson, setIn, type JsonPath, type JsonValue, type Layout } from "../shared/json.ts";
 
 const HISTORY = 200;
@@ -43,7 +43,20 @@ class DocumentStore {
   private order: string[] = [];
   private active: string | null = null;
   private listeners = new Set<Listener>();
+  private fileListeners = new Set<(paths: string[]) => void>();
   private snapshot = { docs: this.docs, order: this.order, active: this.active };
+
+  /** Files changed on disk (the server's poll): each open one is looked at again (changedOnDisk), and the listeners
+   * are told, so a view can find a file that is new, or back (a commit undone), that it holds no document of. */
+  filesChanged(paths: string[]) {
+    for (const path of paths) if (this.docs.get(path)) void this.changedOnDisk(path);
+    for (const listener of this.fileListeners) listener(paths);
+  }
+
+  onFiles(listener: (paths: string[]) => void) {
+    this.fileListeners.add(listener);
+    return () => { this.fileListeners.delete(listener); };
+  }
 
   subscribe = (listener: Listener) => {
     this.listeners.add(listener);
@@ -187,15 +200,20 @@ class DocumentStore {
     return false;
   }
 
-  /** A file changed on disk: reload it if it has no unsaved changes, otherwise mark it so the user decides. */
+  /** A file changed on disk: reload it if it has no unsaved changes, otherwise mark it so the user decides. A file
+   * gone from disk (deleted, or a commit undone) is dropped if it has none, as the disk has it; with some, Save
+   * writes it again and Revert drops it. */
   async changedOnDisk(path: string) {
     const doc = this.docs.get(path);
     if (!doc) return;
     let file;
     try {
       file = await api.file(path);
-    } catch {
-      this.put({ ...doc, changedOnDisk: true, saveError: "This file was deleted or moved on disk." });
+    } catch (e) {
+      if (!isNotFound(e)) return; // (the server didn't answer: it's looked at again on its next change)
+      if (!doc.dirty) this.drop(path);
+      else this.put({ ...doc, changedOnDisk: true, saveError:
+        "This file was deleted or moved on disk. Save writes it again with your changes; Revert drops them, and the file." });
       return;
     }
     if (file.version === doc.version) return; // our own save
@@ -203,24 +221,27 @@ class DocumentStore {
     else this.put({ ...doc, changedOnDisk: true });
   }
 
-  /** Reads a file again, dropping its changes; a file a tool made and never saved is dropped altogether. */
+  /** Reads a file again, dropping its changes; a file not on disk (one a tool made and never saved, or one deleted
+   * since) is dropped altogether, as the disk has it. */
   async reload(path: string) {
-    const doc = this.docs.get(path);
     let file;
     try {
       file = await api.file(path);
     } catch (e) {
-      if (doc && doc.version === "") {
-        this.docs.delete(path);
-        const i = this.order.indexOf(path);
-        if (i >= 0) this.order.splice(i, 1);
-        if (this.active === path) this.active = this.order[0] ?? null;
-        this.changed();
-        return;
-      }
-      throw e;
+      if (!isNotFound(e)) throw e;
+      this.drop(path);
+      return;
     }
     this.put(fromFile(file.path, file.schema, file.text, file.version));
+  }
+
+  /** A document closed, with its changes. */
+  private drop(path: string) {
+    if (!this.docs.delete(path)) return;
+    const i = this.order.indexOf(path);
+    if (i >= 0) this.order.splice(i, 1);
+    if (this.active === path) this.active = this.order[0] ?? null;
+    this.changed();
   }
 
   dirtyPaths(): string[] {
@@ -255,6 +276,13 @@ export function currentText(doc: Pick<Document, "data" | "layout" | "text" | "dr
 }
 
 export const documents = new DocumentStore();
+
+/** A count that goes up each time a file changes on disk, for an effect that should look at it again. */
+export function useFileEpoch(path: string | null): number {
+  const [epoch, setEpoch] = useState(0);
+  useEffect(() => (path ? documents.onFiles((paths) => { if (paths.includes(path)) setEpoch((n) => n + 1); }) : undefined), [path]);
+  return epoch;
+}
 
 export function useDocuments() {
   return useSyncExternalStore(documents.subscribe, documents.getSnapshot);

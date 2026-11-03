@@ -6,7 +6,7 @@
 // bytes, docs/paperwhite2/design/npc-research.md). Instances, ambients and groups come with the engine's next phase.
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { currentText, documents, useDocuments } from "../../documents.ts";
+import { currentText, documents, useDocuments, useFileEpoch } from "../../documents.ts";
 import { fromPlain, toPlain, type JsonValue } from "../../../shared/json.ts";
 import type { Schema } from "../../../shared/schema.ts";
 import type { ToolProps } from "../types.ts";
@@ -156,6 +156,8 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   }, [map]);
   // The zone's spawn file: its NPCs' conditions and instances (spawns.ts), held once it exists or is made
   const spawnFile = zone ? spawnPath(zone) : null;
+  // (looked at again when it changes on disk: deleted, or back)
+  const spawnEpoch = useFileEpoch(spawnFile);
   const [spawnExists, setSpawnExists] = useState(false);
   useEffect(() => {
     setSpawnExists(false);
@@ -163,7 +165,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     let live = true;
     api.list(spawnFile).then((found) => { if (live) setSpawnExists(found.length > 0); }, () => undefined);
     return () => { live = false; };
-  }, [spawnFile]);
+  }, [spawnFile, spawnEpoch]);
   const { data: spawnData } = useHeld(spawnFile && (spawnExists || docs.get(spawnFile)) ? spawnFile : null);
   const spawnEntries = useMemo(() => (spawnData instanceof Map ? ((toPlain(spawnData) as { npcs?: SpawnEntry[] }).npcs ?? []) : []), [spawnData]);
   const ambients = useMemo(() => (spawnData instanceof Map ? ((toPlain(spawnData) as { ambients?: Ambient[] }).ambients ?? []) : []), [spawnData]);

@@ -5,6 +5,11 @@ import { WRITE_HEADER, type BuildState, type DataFile, type Entry, type ScanMatc
 import { schemaPart, splitSchemaId, type Schema } from "../shared/schema.ts";
 import type { ArtReport } from "../shared/api.ts";
 
+/** Whether a request failed because what it asked for isn't there (the server's 404: a file deleted on disk). */
+export function isNotFound(e: unknown): boolean {
+  return (e as { status?: number } | null)?.status === 404;
+}
+
 async function request<T>(method: string, url: string, body?: unknown): Promise<T> {
   const response = await fetch(url, {
     method,
@@ -13,7 +18,7 @@ async function request<T>(method: string, url: string, body?: unknown): Promise<
   });
   if (!response.ok) {
     const problem = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(problem.error ?? response.statusText);
+    throw Object.assign(new Error(problem.error ?? response.statusText), { status: response.status });
   }
   const type = response.headers.get("Content-Type") ?? "";
   return (type.includes("json") ? response.json() : response.text()) as Promise<T>;

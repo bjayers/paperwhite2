@@ -79,8 +79,8 @@ export function App() {
             api.forgetSchema(path);
             setSchemaEpoch((n) => n + 1);
           }
-          if (documents.get(path)) documents.changedOnDisk(path);
         }
+        documents.filesChanged(event.paths);
         setRefresh((n) => n + 1);
         break;
       case "types":

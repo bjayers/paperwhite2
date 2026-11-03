@@ -3,8 +3,8 @@
 // disk work as for an open file.
 
 import { useEffect, useMemo, useState } from "react";
-import { api } from "../../api.ts";
-import { documents, useDocuments } from "../../documents.ts";
+import { api, isNotFound } from "../../api.ts";
+import { documents, useDocuments, useFileEpoch } from "../../documents.ts";
 import { getIn, type JsonPath, type JsonValue } from "../../../shared/json.ts";
 import { resolve, validate, type Constants, type Schema } from "../../../shared/schema.ts";
 import { Field, type FormContext } from "../schema-form/form.tsx";
@@ -15,9 +15,15 @@ export function useHeld(path: string | null): { data: JsonValue | null; schema: 
   const [schema, setSchema] = useState<Schema | null>(null);
   const [error, setError] = useState<string | null>(null);
   const doc = path ? docs.get(path) : undefined;
+  // Held again when its document is gone (dropped as its file was deleted on disk) or its file changes (back again)
+  const epoch = useFileEpoch(path);
+  const held = doc !== undefined;
   useEffect(() => {
-    if (path && !documents.get(path)) documents.hold(path).catch((e: Error) => setError(e.message));
-  }, [path]);
+    if (!path || documents.get(path)) return;
+    let live = true;
+    documents.hold(path).then(() => { if (live) setError(null); }, (e: Error) => { if (live) setError(isNotFound(e) ? null : e.message); });
+    return () => { live = false; };
+  }, [path, held, epoch]);
   useEffect(() => {
     setSchema(null);
     if (doc?.schema) api.schema(doc.schema).then(setSchema, (e: Error) => setError(e.message));

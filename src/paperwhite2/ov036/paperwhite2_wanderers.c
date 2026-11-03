@@ -70,8 +70,12 @@
 // picked among all of them, those ahead of the player (the way it faces) WANDERER_SPAWN_AHEAD times as likely
 #define WANDERER_SPAWN_RANGE_X 8
 #define WANDERER_SPAWN_RANGE_Z 6
-#define WANDERER_SPAWN_NEAR 4
+#define WANDERER_SPAWN_NEAR 3
 #define WANDERER_SPAWN_AHEAD 3
+// And spread out: never beside another wanderer, and more likely the farther from the nearest one (by tiles, the
+// larger axis): at 2 tiles once, from WANDERER_SPREAD_FAR twice, from WANDERER_SPREAD_FARTHER four times
+#define WANDERER_SPREAD_FAR 3
+#define WANDERER_SPREAD_FARTHER 5
 // Past this many tiles from the player it goes at once, out of view; and one off the screen (past its tiles round the
 // player, and a tile more) goes after a while there, so that the ones the player left behind make room
 #define WANDERER_FAR 11
@@ -335,6 +339,35 @@ static void Wanderers_Clear(MMSys *actorSystem) {
     sWanderers.touch = WANDERER_NONE;
 }
 
+// How far a tile is from the nearest other wanderer (on its tile, or the one it walks to), in tiles by the larger
+// axis; far past any when there's none
+static s32 Wanderers_NearestOther(const Wanderer *self, s16 x, s16 z) {
+    s32 nearest = 0x7fff;
+    u32 i;
+
+    for (i = 0; i < WANDERERS_MAX; i++) {
+        const Wanderer *other = &sWanderers.list[i];
+        s32 d;
+
+        if (other == self || other->state == WANDERER_FREE) {
+            continue;
+        }
+        d = Wanderers_Abs(other->x - x) > Wanderers_Abs(other->z - z) ? Wanderers_Abs(other->x - x)
+                                                                      : Wanderers_Abs(other->z - z);
+        if (d < nearest) {
+            nearest = d;
+        }
+        if (other->state == WANDERER_WALKING) {
+            d = Wanderers_Abs(other->toX - x) > Wanderers_Abs(other->toZ - z) ? Wanderers_Abs(other->toX - x)
+                                                                              : Wanderers_Abs(other->toZ - z);
+            if (d < nearest) {
+                nearest = d;
+            }
+        }
+    }
+    return nearest;
+}
+
 // One more, on a grass tile near the screen's edge that a step there would bring one from, if its sprite can load;
 // FALSE where no grass tile in view would do
 static BOOL Wanderers_Spawn(Field *field, Wanderer *wanderer) {
@@ -361,6 +394,7 @@ static BOOL Wanderers_Spawn(Field *field, Wanderer *wanderer) {
             fx32 ground;
             u32 encType;
             u32 weight;
+            s32 spread;
 
             if (Wanderers_Abs(dx) < WANDERER_SPAWN_NEAR && Wanderers_Abs(dz) < WANDERER_SPAWN_NEAR) {
                 continue;
@@ -370,7 +404,12 @@ static BOOL Wanderers_Spawn(Field *field, Wanderer *wanderer) {
                 Wanderers_IsTaken(field, wanderer, px + dx, pz + dz)) {
                 continue;
             }
+            spread = Wanderers_NearestOther(wanderer, px + dx, pz + dz);
+            if (spread <= 1) {
+                continue;
+            }
             weight = DIR_DX[facing] * dx + DIR_DZ[facing] * dz > 0 ? WANDERER_SPAWN_AHEAD : 1;
+            weight *= spread >= WANDERER_SPREAD_FARTHER ? 4 : spread >= WANDERER_SPREAD_FAR ? 2 : 1;
             total += weight;
             if (GFL_RandomLC(total) < weight) {
                 x = px + dx;

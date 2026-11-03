@@ -382,6 +382,18 @@ DATA_PACK_SOURCES = {"tools/data/pokemon_graphics.py": ["src/system/poke_icon.c"
                      "tools/data/weather_calendar_data.py": ["include/system/zone_weather.h"]}
 
 
+def source_list(build_dir: Path, name: str, files: list[str]) -> str:
+    """A file listing a build step's globbed sources, rewritten only when the list changes, for the step to depend on:
+    ninja rebuilds for an input newer than the output, not for one gone, so without it a deleted source (a zone's
+    overworld file the user removed) would leave the old pack in place."""
+    path = build_dir / "sources" / f"{name}.txt"
+    text = "".join(f"{f}\n" for f in files)
+    if not path.is_file() or path.read_text() != text:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text)
+    return str(path)
+
+
 def script_imports(script: str) -> list[str]:
     """Returns the modules of tools/ that a script imports, and theirs: as tools.data.narc, or as narc from the
     script's own directory. Imports inside functions are left out, since those are the one-off commands'."""
@@ -786,7 +798,7 @@ def add_version(n: Writer, version: str, dsd: Path, bugfix: bool, shift: int,
                          for p in ([ROOT / d] if (ROOT / d).is_file() else (ROOT / d).rglob("*")) if p.is_file())
         game = VERSIONS[version]["defines"][0].lower() if per_version else ""
         dependencies = sorted({script, *DATA_PACK_TOOLS, *script_imports(script), *DATA_PACK_SOURCES.get(script, []),
-                               *constant_sources})
+                               *constant_sources, source_list(build_dir, f"pack_{paths[0].replace('/', '_')}", sources)})
         # Paper White 2: an archive that the hack adds members to is packed apart first, then given them
         # (HACK_ARCHIVE_MEMBERS)
         packed = [build_dir / "paperwhite2" / "packed" / path if hack and path in HACK_ARCHIVE_MEMBERS else output
@@ -798,7 +810,9 @@ def add_version(n: Writer, version: str, dsd: Path, bugfix: bool, shift: int,
             pack_dir = str(build_dir / "paperwhite2" / "generated" / Path(data_dir).name)
             stamp = Path(pack_dir) / ".stamp"
             inputs = sorted(str(p.relative_to(ROOT)) for d in reads for p in (ROOT / d).rglob("*") if p.is_file())
-            n.build([stamp], "hack_generate", inputs, implicit=[tool, *script_imports(tool), *constant_sources],
+            n.build([stamp], "hack_generate", inputs, implicit=[tool, *script_imports(tool), *constant_sources,
+                                                                source_list(build_dir, f"generate_{Path(data_dir).name}",
+                                                                            inputs)],
                     order_only=[files_ok], variables={"tool": tool, "subcommand": command, "dir": pack_dir})
             sources = [str(stamp)]
         n.build(packed, "data_pack", sources, implicit=dependencies,
@@ -812,8 +826,9 @@ def add_version(n: Writer, version: str, dsd: Path, bugfix: bool, shift: int,
                 members += sorted(str(p.relative_to(ROOT)) for pattern in HACK_MEMBER_EXTRA_SOURCES.get(path, [])
                                   for p in (ROOT.glob(pattern) if "*" in pattern else (ROOT / pattern).rglob("*"))
                                   if p.is_file())
-                n.build([output], "hack_members", [source], implicit=[tool, *members, *script_imports(tool),
-                                                                       *constant_sources],
+                n.build([output], "hack_members", [source],
+                        implicit=[tool, *members, *script_imports(tool), *constant_sources,
+                                  source_list(build_dir, f"members_{path.replace('/', '_')}", members)],
                         order_only=[files_ok], variables={"tool": tool})
         for path, archive in zip(paths, outputs):
             archive_ok = stamp_dir / "files" / f"{path.replace('/', '_')}.ok"

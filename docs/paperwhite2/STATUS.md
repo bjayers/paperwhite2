@@ -2,6 +2,23 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-03 (late night): wanderers spread out; deleted files no longer go stale
+
+- **Spawns** (the user's): at least 3 tiles from the player (was 4), never beside another wanderer, and more likely the
+  farther from the nearest one (plugins.md, Wanderers). The per-species settings tested by the user: they work.
+- **A deleted source kept its old pack:** the user undid the commit of Route 20's test ambient, and the build still
+  had it. Ninja rebuilds for an input newer than its output, not one gone, so `configure.py` now writes each pack
+  step's globbed sources to `build/<version>/sources/*.txt` (rewritten only when the list changes) and the step
+  depends on it (`source_list`): the data packs, the hack's generated data and its archive members. Checked: adding
+  and deleting a file in `res/paperwhite2/overworld/` each repack a/1/2/6; nothing else rebuilds on an unchanged
+  configure.
+- **The editor and a file deleted under it:** it couldn't save (nothing unsaved) or revert (the reload threw). Now a
+  document whose file is gone is dropped when it has no unsaved changes; with some, a notice says Save writes it again
+  and Revert drops it; Revert of a gone file drops it; only a 404 counts as gone (`isNotFound`). The document store
+  tells views of files changed on disk (`filesChanged`, `useFileEpoch`), so a file that comes back (a commit
+  redone) is held again (`useHeld`) and the Overworld Editor looks for its zone's file again. Checked in the browser on
+  a scratch copy: delete and restore with no changes, and delete then Save with changes.
+
 ## 2026-11-03 (night): wanderers spawn more readily; their per-species settings
 
 - **Spawns:** the user found new ones hard to come by on the move. Now every grass tile in view is a candidate (those

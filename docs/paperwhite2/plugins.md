@@ -929,8 +929,9 @@ Wild Pokémon seen in tall and dark grass (`docs/paperwhite2/design/overworld-ed
 sinking, random wandering, the touch and the battle.
 
 - **Spawning:** every 2 to 4 seconds while fewer than 3 are out (a second after a try that found no grass), a grass
-  tile within the screen's 8 by 6 tiles round the player and not within 4 of it, picked among every such tile (those
-  ahead of the player, the way it faces, 3 times as likely), whose encounter type is `ENCTYPE_GRASS` or `ENCTYPE_GRASS_RARE`
+  tile within the screen's 8 by 6 tiles round the player and at least 3 tiles from it, not beside another wanderer, picked
+  among every such tile (those ahead of the player, the way it faces, 3 times as likely; those 3 or 4 tiles from the
+  nearest other wanderer twice as likely, 5 or more four times), whose encounter type is `ENCTYPE_GRASS` or `ENCTYPE_GRASS_RARE`
   (`EncSys_GetTileEncType`, the step's `FieldEncount_DecideTypeByTerrain`). Its Pokémon is the one a step there would
   bring (`EventWildBattleCall_PickWanderer` in `field_encount.c`: `FieldEncount_GenWilds` with one Pokémon, no
   partner and through a Repel, the new encounter data's context and the debug overrides). Its shininess is rolled
