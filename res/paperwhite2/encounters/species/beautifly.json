@@ -32,5 +32,8 @@
                 }
             }
         }
-    ]
+    ],
+    "overworld": {
+        "grass": false
+    }
 }

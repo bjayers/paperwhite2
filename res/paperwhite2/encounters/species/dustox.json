@@ -19,5 +19,8 @@
             "rarity": "uncommon",
             "times": [ "morning", "day", "evening", "night", "late_night" ]
         }
-    ]
+    ],
+    "overworld": {
+        "grass": false
+    }
 }
