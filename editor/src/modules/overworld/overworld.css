@@ -136,3 +136,10 @@
   border-bottom: 1px solid var(--border); white-space: nowrap; }
 .ow-wild-table td { padding: 3px 6px; border-bottom: 1px solid var(--border); vertical-align: middle; }
 .ow-wild-name { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+
+/* An ambient's sprite with a condition: the condition under it, indented */
+.ow-ambient-sprite-block { display: flex; flex-direction: column; gap: 4px; }
+.ow-ambient-sprite-when { margin-left: 48px; padding-left: 8px; border-left: 2px solid var(--border); }
+.ow-ambient-sprite-block .ow-ambient-sprite { grid-template-columns: 40px 1fr; row-gap: 4px; }
+.ow-ambient-sprite-block .ow-ambient-sprite-name { white-space: normal; }
+.ow-ambient-sprite-block .ow-ambient-sprite-actions { grid-column: 2; }

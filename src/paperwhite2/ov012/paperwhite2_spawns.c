@@ -52,7 +52,13 @@ enum {
     SPAWN_KIND_INSTANCE,
     // An ambient (paperwhite2_ambients.c): its npcId is its index in the zone's ambients
     SPAWN_KIND_AMBIENT,
+    // A sprite of an ambient's that shows only while its condition holds, after the ambient's rule: its npcId is the
+    // ambient's index, and its payload the object code (u16)
+    SPAWN_KIND_AMBIENT_SPRITE,
 };
+
+// An ambient's rule, or one of its sprites'
+#define SPAWN_IS_AMBIENT(kind) ((kind) == SPAWN_KIND_AMBIENT || (kind) == SPAWN_KIND_AMBIENT_SPRITE)
 
 // A zone's entity file: the offset of its init script, the counts of its entities, NPCs, warps and triggers, then the
 // entities and the NPCs (LoadZoneEntities)
@@ -177,10 +183,10 @@ static u32 Spawns_RulesEnd(const ConditionTable *table, u32 first) {
     u16 npcId = Spawns_Payload(table, first)->npcId;
     u32 end = first + 1;
 
-    if (Spawns_Payload(table, first)->kind == SPAWN_KIND_AMBIENT) {
+    if (SPAWN_IS_AMBIENT(Spawns_Payload(table, first)->kind)) {
         return end;
     }
-    while (end < table->ruleCount && Spawns_Payload(table, end)->kind != SPAWN_KIND_AMBIENT &&
+    while (end < table->ruleCount && !SPAWN_IS_AMBIENT(Spawns_Payload(table, end)->kind) &&
            Spawns_Payload(table, end)->npcId == npcId) {
         end++;
     }
@@ -216,7 +222,7 @@ void Spawns_OnZoneInit(GameSystem *gsys, u16 zoneId, HeapID heapId) {
         ZoneNPC *npc = Spawns_FindNPC(events, Spawns_Payload(table, i)->npcId);
         ZoneNPC original;
 
-        if (npc != NULL && Spawns_Payload(table, i)->kind != SPAWN_KIND_AMBIENT) {
+        if (npc != NULL && !SPAWN_IS_AMBIENT(Spawns_Payload(table, i)->kind)) {
             // (the record as just read is the original)
             original = *npc;
             Spawns_Want(table, i, Spawns_RulesEnd(table, i), &original, npc, &ctx, eventWork);
@@ -249,7 +255,7 @@ BOOL Spawns_Repick(GameSystem *gsys, MMSys *actorSystem, HeapID heapId, SpawnsIn
         u32 end;
         u16 spawnFlag;
 
-        if (Spawns_Payload(table, i)->kind == SPAWN_KIND_AMBIENT || npc == NULL ||
+        if (SPAWN_IS_AMBIENT(Spawns_Payload(table, i)->kind) || npc == NULL ||
             !Spawns_ReadOriginal(events, zoneId, npcId, &original)) {
             continue;
         }
@@ -308,14 +314,34 @@ u32 Spawns_GetAmbients(GameSystem *gsys, HeapID heapId, SpawnAmbient *out, u32 m
         }
         rng = Conditions_Seed(&ctx, payload->seed, SPAWNS_AMBIENT_KEY + payload->npcId);
         if (Conditions_MatchRule(table, i, &ctx, &rng)) {
-            SpawnAmbient *ambient = &out[count++];
+            SpawnAmbient *ambient = &out[count];
+            u16 held[SPAWNS_AMBIENT_SPRITES];
+            u32 heldCount = 0;
+            u32 j;
 
             *ambient = *(const SpawnAmbient *)(payload + 1);
-            // Its sprite, from its set by the same roll, so the pick holds as long as its chance does
-            if (ambient->objCodeCount > 1) {
+            // Its sprites with conditions, the rules after its own: those that hold now are picked from first
+            for (j = i + 1; j < table->ruleCount; j++) {
+                const SpawnPayload *sprite = Spawns_Payload(table, j);
+
+                if (sprite->kind != SPAWN_KIND_AMBIENT_SPRITE || sprite->npcId != payload->npcId) {
+                    break;
+                }
+                if (heldCount < SPAWNS_AMBIENT_SPRITES && Conditions_MatchRule(table, j, &ctx, &rng)) {
+                    held[heldCount++] = *(const u16 *)(sprite + 1);
+                }
+            }
+            // Its sprite, from those or else its set, by the same roll, so the pick holds as long as its chance does;
+            // with none (every one has a condition and none holds) it doesn't show
+            if (heldCount != 0) {
+                ambient->objCodes[0] = held[heldCount > 1 ? Conditions_Random(&rng, heldCount) : 0];
+            } else if (ambient->objCodeCount > 1) {
                 ambient->objCodes[0] = ambient->objCodes[Conditions_Random(&rng, ambient->objCodeCount)];
+            } else if (ambient->objCodeCount == 0) {
+                continue;
             }
             ambient->objCodeCount = 1;
+            count++;
         }
     }
     GFL_HeapFree(table);

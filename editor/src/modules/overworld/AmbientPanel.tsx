@@ -11,7 +11,7 @@ import { constantLabel } from "../schema-form/form.tsx";
 import { ModelPicker, SpriteImage } from "./fields.tsx";
 import { ScrubNumber, type ScrubPhase } from "./ScrubNumber.tsx";
 import { spawnRender } from "./SpawnPanel.tsx";
-import { REACT_DEFAULTS, conditionSummary, type Ambient, type Reaction, type Rolls } from "./spawns.ts";
+import { REACT_DEFAULTS, conditionSummary, spriteCodeOf, type Ambient, type AmbientSprite, type Reaction, type Rolls } from "./spawns.ts";
 
 type Path = NonNullable<Ambient["path"]>;
 type PathKind = Path["kind"];
@@ -105,10 +105,12 @@ export function AmbientPanel({ path, index, ambient, constants, ground, used, on
   const p: Path = ambient.path ?? { kind: "perch" };
   const setPath = (next: Path, phase?: ScrubPhase) => set("path", next, phase);
 
-  // One sprite is stored as sprite, a set as sprites
-  const sprites = (ambient.sprites ?? (ambient.sprite !== undefined ? [ambient.sprite] : [])).map(String);
-  const setSprites = (list: string[]) =>
-    write(list.length === 1 ? withKey(ambient, "sprite", list[0], ["sprites"]) : withKey(ambient, "sprites", list, ["sprite"]));
+  // One sprite is stored as sprite, a set (or one with a condition) as sprites
+  const items: AmbientSprite[] = ambient.sprites ?? (ambient.sprite !== undefined ? [ambient.sprite] : []);
+  const sprites = items.map((s) => String(spriteCodeOf(s)));
+  const setItems = (list: AmbientSprite[]) =>
+    write(list.length === 1 && typeof list[0] !== "object" ? withKey(ambient, "sprite", list[0], ["sprites"]) : withKey(ambient, "sprites", list, ["sprite"]));
+  const conditioned = items.some((s) => typeof s === "object");
 
   const over = ground !== null ? ambient.y - ground : null;
   const facing = typeof ambient.facing === "string" ? ambient.facing : "DIR_DOWN";
@@ -142,22 +144,43 @@ export function AmbientPanel({ path, index, ambient, constants, ground, used, on
           <input value={ambient.name ?? ""} placeholder={`Ambient ${index + 1}`} onChange={(e) => set("name", e.target.value || undefined)} />
           <span className="ow-condition-label">Sprites</span>
           <div className="ow-ambient-sprites">
-            {sprites.map((m, i) => (
-              <div key={i} className="ow-ambient-sprite">
-                <SpriteImage model={m} direction={facing} size={40} />
-                <span className="ow-ambient-sprite-name" title={m}>{constantLabel(m, "OBJ_CODE_").replace(/^Pokemon /, "")}</span>
-                <span className="ow-ambient-sprite-actions">
-                  <button onClick={() => setPicking(i)} title="Choose by sprite">Browse…</button>
-                  {sprites.length > 1 && <button className="icon" title="Remove from the set" onClick={() => setSprites(sprites.filter((_, k) => k !== i))}>×</button>}
-                </span>
-              </div>
-            ))}
+            {sprites.map((m, i) => {
+              const item = items[i];
+              const when = typeof item === "object" ? item.when ?? {} : null;
+              return (
+                <div key={i} className="ow-ambient-sprite-block">
+                  <div className="ow-ambient-sprite">
+                    <SpriteImage model={m} direction={facing} size={40} />
+                    <span className="ow-ambient-sprite-name" title={m}>
+                      {constantLabel(m, "OBJ_CODE_").replace(/^(Pokemon|Follower) /, "")}
+                      <span className="muted small"> {when ? conditionSummary(when) : conditioned ? "otherwise" : ""}</span>
+                    </span>
+                    <span className="ow-ambient-sprite-actions">
+                      <button onClick={() => setPicking(i)} title="Choose by sprite">Browse…</button>
+                      <button className={when ? "active" : ""} title={when ? "Drop its condition" : "Show it only while a condition holds, before the others"}
+                              onClick={() => setItems(items.map((s, k) => (k !== i ? s : when ? spriteCodeOf(s)! : { sprite: spriteCodeOf(s)!, when: {} })))}>
+                        {when ? "No condition" : "+ Condition"}
+                      </button>
+                      {sprites.length > 1 && <button className="icon" title="Remove from the set" onClick={() => setItems(items.filter((_, k) => k !== i))}>×</button>}
+                    </span>
+                  </div>
+                  {when && (
+                    <div className="ow-ambient-sprite-when">
+                      <DocForm key={`${path}:ambient:${index}:sprite:${i}`} path={path} at={[...base, "sprites", i, "when"]} constants={constants}
+                               hideDescription flat render={spawnRender(undefined)} onEdit={onEdit} />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
             {sprites.length < MAX_SPRITES && (
               <button className="ow-ambient-add" onClick={() => setPicking(sprites.length)} title="Add a sprite to the set">+ Add a sprite</button>
             )}
           </div>
           {sprites.length > 1 && (
-            <><span /><span className="muted ow-note">It shows one of these, picked by its roll (Rolls, below), so the pick holds as long as the roll does.</span></>
+            <><span /><span className="muted ow-note">{conditioned
+              ? "While any sprite's condition holds, it shows one of those; otherwise one of the rest. The pick is by its roll (Rolls, below)."
+              : "It shows one of these, picked by its roll (Rolls, below), so the pick holds as long as the roll does."}</span></>
           )}
           <span className="ow-condition-label">Facing</span>
           <span className="ow-xyz">
@@ -463,9 +486,10 @@ export function AmbientPanel({ path, index, ambient, constants, ground, used, on
       {picking !== null && (
         <ModelPicker constants={constants} value={sprites[picking] ?? ""} used={used} onClose={() => setPicking(null)}
                      onPick={(m) => {
-                       const list = [...sprites];
-                       list[picking] = m;
-                       setSprites(list);
+                       const list = [...items];
+                       const old = list[picking];
+                       list[picking] = old !== undefined && typeof old === "object" ? { ...old, sprite: m } : m;
+                       setItems(list);
                        setPicking(null);
                      }} />
       )}

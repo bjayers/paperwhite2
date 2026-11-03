@@ -14,7 +14,7 @@
 
 import { api } from "../../api.ts";
 import { actorFolder, type Entity } from "./entities.ts";
-import { SEASON_NAMES, TIME_NAMES, type Ambient, type Condition, type SpawnEntry } from "./spawns.ts";
+import { SEASON_NAMES, TIME_NAMES, spriteCodeOf, type Ambient, type Condition, type SpawnEntry } from "./spawns.ts";
 
 // The original's sprite cache, 32 object codes; the hack's build sets its own (spriteCacheSize)
 export const SPRITE_CACHE_ORIGINAL = 32;
@@ -166,13 +166,16 @@ export async function spriteLoad(npcs: Entity[], entries: SpawnEntry[], ambients
     if (e.when) conditions.push(e.when);
     e.instances?.forEach((i) => i.when && conditions.push(i.when));
   }
-  ambients.forEach((a) => a.when && conditions.push(a.when));
+  ambients.forEach((a) => {
+    if (a.when) conditions.push(a.when);
+    a.sprites?.forEach((s) => { if (s !== null && typeof s === "object" && s.when) conditions.push(s.when); });
+  });
   // Every code any of them can show, and which of those are sprites
   const all = new Set<string>();
   const add = (v: unknown) => { const c = codeOf(v); if (c) all.add(c); };
   npcs.forEach((n) => add(n.model));
   entries.forEach((e) => e.instances?.forEach((i) => add(i.npc.model)));
-  ambients.forEach((a) => { (a.sprites ?? [a.sprite]).forEach(add); add(a.react?.sprite); });
+  ambients.forEach((a) => { (a.sprites ?? [a.sprite]).forEach((s) => add(spriteCodeOf(s))); add(a.react?.sprite); });
   preload.forEach(add);
   const sprite = new Map<string, boolean>();
   // (a code with no actor data counts: a work code's sprite, which a variable chooses, is one)
@@ -222,7 +225,11 @@ export async function spriteLoad(npcs: Entity[], entries: SpawnEntry[], ambients
     const npcCount = shown.size - base.size;
     // (the game shows the first AMBIENTS_SHOWN whose conditions hold)
     for (const a of ambients.filter((x) => holds(x.when, w)).slice(0, AMBIENTS_SHOWN)) {
-      const choices = (a.sprites ?? [a.sprite]).map(codeOf).filter((c): c is string => !!c && !!sprite.get(c));
+      // (its sprites with conditions that hold are picked from first, else those without)
+      const listed = a.sprites ?? [a.sprite];
+      const held = listed.filter((s) => s !== null && typeof s === "object" && holds(s.when, w));
+      const pool = held.length ? held : listed.filter((s) => s === undefined || typeof s !== "object");
+      const choices = pool.map((s) => codeOf(spriteCodeOf(s))).filter((c): c is string => !!c && !!sprite.get(c));
       const fresh = choices.find((c) => !shown.has(c));
       if (fresh) shown.add(fresh);
       // (its reaction sprite is loaded with it, hidden until it reacts)

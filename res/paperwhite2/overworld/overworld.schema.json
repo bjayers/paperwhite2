@@ -101,12 +101,33 @@
                     "minItems": 1,
                     "maxItems": 4,
                     "items": {
-                        "type": [ "string", "integer" ],
-                        "x-constant": "OBJ_CODE_",
-                        "minimum": 0,
-                        "maximum": 65535
+                        "anyOf": [
+                            {
+                                "type": [ "string", "integer" ],
+                                "x-constant": "OBJ_CODE_",
+                                "minimum": 0,
+                                "maximum": 65535
+                            },
+                            {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [ "sprite" ],
+                                "properties": {
+                                    "sprite": {
+                                        "type": [ "string", "integer" ],
+                                        "x-constant": "OBJ_CODE_",
+                                        "minimum": 0,
+                                        "maximum": 65535
+                                    },
+                                    "when": {
+                                        "$ref": "../conditions/condition.schema.json#/$defs/condition",
+                                        "description": "When this sprite is the one: while it holds, it and the others whose conditions hold are picked from, before those without one"
+                                    }
+                                }
+                            }
+                        ]
                     },
-                    "description": "A set of sprites (OBJ_CODE_* constants, up to 4) it shows one of, picked by its roll, so the pick holds as long as its chance does (see rolls); in place of sprite"
+                    "description": "A set of sprites (OBJ_CODE_* constants, up to 4) it shows one of, picked by its roll, so the pick holds as long as its chance does (see rolls); in place of sprite. A sprite can have a condition ({ \"sprite\", \"when\" }): while any such holds, the pick is among those, and else among the others (with none of those, it doesn't show)"
                 },
                 "x": {
                     "type": "integer",

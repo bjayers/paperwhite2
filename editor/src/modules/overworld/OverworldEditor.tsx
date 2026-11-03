@@ -22,7 +22,7 @@ import { RailPanel } from "./RailPanel.tsx";
 import { CameraPanel } from "./CameraPanel.tsx";
 import { InstancePanel, SpawnSection } from "./SpawnPanel.tsx";
 import { AMBIENTS_MAX, AMBIENTS_SHOWN, RARE_LIKELY, SPRITE_CACHE_ORIGINAL, flagNumber, spriteCacheSize, preloadLists, seasonalOf, spriteLoad, type Seasonal, type SpriteLoad } from "./spriteLoad.ts";
-import { SEASON_NAMES, TIME_NAMES, ambientEntities, instanceEntities, newAmbient, previewPicks, spawnPath, type Ambient, type PreviewWorld,
+import { SEASON_NAMES, TIME_NAMES, ambientEntities, spriteCodeOf, instanceEntities, newAmbient, previewPicks, spawnPath, type Ambient, type PreviewWorld,
   type SpawnEntry } from "./spawns.ts";
 import { WEATHERS } from "../encounters/model.ts";
 import { cameraEntities, cameraFileOf, circleCamera, defaultCamera, newRectArea, rectCamera, type CameraArea, type DefaultCamera,
@@ -250,7 +250,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     ...(sprites?.preloadedCodes ?? []),
     ...entities.filter((e) => e.kind === "npc").map((e) => e.model ?? ""),
     ...spawnEntries.flatMap((e) => e.instances?.map((i) => String(i.npc.model ?? "")) ?? []),
-    ...ambients.flatMap((a) => (a.sprites ?? [a.sprite]).map(String)),
+    ...ambients.flatMap((a) => (a.sprites ?? [a.sprite]).map((s) => String(spriteCodeOf(s)))),
   ].filter((m) => m.startsWith("OBJ_CODE_"))), [sprites, entities, spawnEntries, ambients]);
 
   useEffect(() => { if (constants.size) loadWorld(constants).then(setWorld, () => setWorld(null)); }, [constants]);

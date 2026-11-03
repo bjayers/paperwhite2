@@ -2,6 +2,14 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-03 (morning): Overworld Editor conveniences
+
+- The overworld's chunk map (the Map Editor's, under the zone filter), a zone's wild Pokémon for reference (a
+  table over the map from the encounter species files that name its area: methods, seasons, times, rarity, levels,
+  weather and conditions, filtered by season, time and method, sorted by any column), and ambients' sprites by
+  condition (plugins.md, Ambients). Built (hack, no warnings, DSi intact); each checked in the browser. **Not tested
+  in game** (the sprites by condition). Next: the other sidebars restyled after the Ambients panel.
+
 ## 2026-11-03 (towards morning): five new ambient paths; a condition's default
 
 - **The new paths** (plugins.md, Ambients: Traveling paths): wander, waypoints, peek, surface, fly-over; the record is

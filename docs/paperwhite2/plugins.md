@@ -913,6 +913,10 @@ edited in the Overworld Editor's Ambients tab.
   ambient uses (`PaperWhite2_AmbientsUseObjCode`, checked in `FieldBillboardActor_UnbindActorObjCode`), and a zone
   change cancels an ambient's load still waiting (`FldBillboardActor_CancelPendingPos`) and unloads a sprite loaded on
   demand that no actor, ambient or waiting actor uses (`FldBillboardActor_ReleaseObjCode`).
+- **Sprites by condition:** a sprite of its set can have a condition (`{ "sprite", "when" }`), packed as a rule of its
+  own straight after the ambient's (`SPAWN_KIND_AMBIENT_SPRITE`, its payload the object code): while any of those
+  holds, `Spawns_GetAmbients` picks among them by its roll, otherwise among the plain ones (none: it doesn't show). A
+  Taillow in spring and a Pidove otherwise is a Taillow with a spring condition and a plain Pidove.
 - **Traveling paths** (`Ambients_Travel`): `wander`, tile to tile on the ground (its height over the ground kept)
   within `width` and `depth` of its place, a pause of about `every` seconds (3); `waypoints`, from its place to each
   of up to 6 `points` (units from it) and round, or `back` the way it came, at its `pace` (tiles a second, 2), waiting

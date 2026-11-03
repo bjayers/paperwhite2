@@ -46,7 +46,7 @@ MAGIC = 0x574F5750
 HEADER = struct.Struct("<IHH")
 ENTRY = struct.Struct("<HHII")
 PAYLOAD = struct.Struct("<BBH")
-KIND_CONDITION, KIND_INSTANCE, KIND_AMBIENT = 0, 1, 2
+KIND_CONDITION, KIND_INSTANCE, KIND_AMBIENT, KIND_AMBIENT_SPRITE = 0, 1, 2, 3
 AMBIENT = struct.Struct("<4H5B3xiii4H7H6B4H2B2x18h")
 AMBIENT_POINTS = 6
 AMBIENT_SPRITES = 4
@@ -96,6 +96,13 @@ def zone_table(path: Path, schema: dict) -> bytes | None:
     for i, ambient in enumerate(source.get("ambients", [])):
         rules.append((compiler.compile(ambient.get("when", {}), f"{label(path)}: ambients[{i}].when"), 0, 1,
                       PAYLOAD.pack(KIND_AMBIENT, SEEDS[ambient.get("rolls", "hour")], i) + ambient_bytes(ambient, f"{label(path)}: ambients[{i}]")))
+        # Its sprites with conditions, each a rule of its own straight after it: those that hold are picked from first
+        for k, sprite in enumerate(ambient.get("sprites", [])):
+            if isinstance(sprite, dict):
+                where = f"{label(path)}: ambients[{i}].sprites[{k}]"
+                rules.append((compiler.compile(sprite.get("when", {}), f"{where}.when"), 0, 1,
+                              PAYLOAD.pack(KIND_AMBIENT_SPRITE, SEEDS[ambient.get("rolls", "hour")], i)
+                              + struct.pack("<Hxx", value(sprite["sprite"], where))))
     return pack_table(rules, compiler.lists) if rules else None
 
 
@@ -123,9 +130,11 @@ def ambient_bytes(ambient: dict, where: str) -> bytes:
               p.get("heading", REACT_AWAY), len(points), FLAG_BACK if p.get("back") else 0,
               *[c for point in points for c in (point.get("x", 0), point.get("y", 0), point.get("z", 0))],
               *[0] * (3 * (AMBIENT_POINTS - len(points))))
-    sprites = [value(s, where) for s in ambient.get("sprites", [ambient["sprite"]] if "sprite" in ambient else [])]
-    if not 1 <= len(sprites) <= AMBIENT_SPRITES:
+    listed = ambient.get("sprites", [ambient["sprite"]] if "sprite" in ambient else [])
+    if not 1 <= len(listed) <= AMBIENT_SPRITES:
         raise DataError(f"{where}: an ambient needs a sprite, or a set of 1 to {AMBIENT_SPRITES}")
+    # (those with conditions are rules of their own, after the ambient's)
+    sprites = [value(s, where) for s in listed if not isinstance(s, dict)]
     react = ambient.get("react")
     if react:
         near = react.get("near", REACT_NEAR)

@@ -33,11 +33,17 @@ export interface SpawnEntry { id: number; when?: Condition; instances?: Instance
 /** An ambient (overworld.schema.json): a sprite drawn without an actor on a path round its place, which the game draws
  * (src/paperwhite2/ov036/paperwhite2_ambients.c). Its tile, its place in it in units from the middle, and its height
  * in units. */
+/** One of an ambient's sprites: an object code, or one with a condition, picked from first while it holds. */
+export type AmbientSprite = string | number | { sprite: string | number; when?: Condition };
+
+/** The object code of one of an ambient's sprites. */
+export const spriteCodeOf = (s: AmbientSprite | undefined): string | number | undefined => (s !== null && typeof s === "object" ? s.sprite : s);
+
 export interface Ambient {
   name?: string;
   /** Its sprite, or sprites, a set it shows one of (picked by its roll). */
   sprite?: string | number;
-  sprites?: (string | number)[];
+  sprites?: AmbientSprite[];
   x: number;
   z: number;
   offset?: { x?: number; z?: number };
@@ -76,7 +82,7 @@ export const REACT_DEFAULTS = { near: 3, startleMore: 2, spread: 20, climb: 30, 
 export function ambientEntities(ambients: Ambient[]): Entity[] {
   return ambients.map((a, i) => ({
     kind: "ambient", index: i, x: a.x, z: a.z, y: a.y, width: 1, depth: 1, label: a.name || `Ambient ${i + 1}`,
-    model: [a.sprite ?? a.sprites?.[0]].find((m): m is string => typeof m === "string"), direction: typeof a.facing === "string" ? a.facing : "DIR_DOWN",
+    model: [a.sprite ?? spriteCodeOf(a.sprites?.[0])].find((m): m is string => typeof m === "string"), direction: typeof a.facing === "string" ? a.facing : "DIR_DOWN",
     ambient: a,
   }));
 }
