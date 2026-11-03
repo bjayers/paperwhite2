@@ -1,6 +1,7 @@
 #include "types.h"
 #include "constants/directions.h"
 #include "constants/flags.h"
+#include "constants/pokemon.h"
 #include "constants/sound.h"
 #include "field/enc_pokeset.h"
 #include "field/event_wild_battle.h"
@@ -18,9 +19,13 @@
 #include "gfl/sound.h"
 #include "nitro/fx.h"
 #include "nitro/mi.h"
+#include "paperwhite2/encounters.h"
 #include "paperwhite2/following_field.h"
 #include "paperwhite2/wanderers.h"
+#include "pml/poke_party.h"
+#include "save/encounter.h"
 #include "save/event_work.h"
+#include "save/save_control.h"
 #include "system/game_data.h"
 #include "system/game_event.h"
 #include "system/game_system.h"
@@ -45,6 +50,13 @@
 #define WANDERER_WALK_FRAMES 12
 #define WANDERER_PAUSE_MIN 20
 #define WANDERER_PAUSE_SPAN 60
+// An aggressive one's: how near the player it notices it, in tiles (and goes toward it), its tile's walk and its pauses
+// (from MIN, up to MIN + SPAN); and how near the player a passive one keeps away from it
+#define WANDERER_NOTICE 5
+#define WANDERER_FAST_WALK_FRAMES 8
+#define WANDERER_FAST_PAUSE_MIN 6
+#define WANDERER_FAST_PAUSE_SPAN 14
+#define WANDERER_FLEE 4
 // Its time out, from 20 to 40 seconds
 #define WANDERER_LIFE_MIN (20 * WANDERER_FRAMES_A_SECOND)
 #define WANDERER_LIFE_SPAN (20 * WANDERER_FRAMES_A_SECOND)
@@ -110,7 +122,11 @@ typedef struct {
     u8 encType;
     u8 shiny;
     u8 byDirection;
-    u8 pad[3];
+    // How it wanders (ENCOUNTERS_WANDERS_*), whether it floats over its grass, and whether it walks fast now (an
+    // aggressive one going for the player)
+    u8 wanders;
+    u8 noGrass;
+    u8 fast;
     // The animation it was last given
     u16 anim;
     // The grass it stands in, as an actor does (FLDEFF_GRASS); its sparkle's frames left, and the frames to its next
@@ -248,12 +264,17 @@ static BOOL Wanderers_IsNearPlayer(Field *field, s16 x, s16 z) {
            (Wanderers_Abs(x - FldAct_GetInitGPosX(player)) <= 1 && Wanderers_Abs(z - FldAct_GetInitGPosZ(player)) <= 1);
 }
 
-// The grass an actor stands in at a tile, where the tile has it (its kind by the tile and the season, as an actor's
-// is), shaking first when animate; NULL where it has none
-static FieldEffectTask *Wanderers_Grass(Field *field, s16 x, s16 z, fx32 ground, BOOL animate) {
+// The grass an actor stands in at a tile, where the tile has it and the wanderer stands in grass (its kind by the tile
+// and the season, as an actor's is), shaking first when animate; NULL where it has none
+static FieldEffectTask *Wanderers_Grass(Field *field, const Wanderer *wanderer, s16 x, s16 z, fx32 ground,
+                                        BOOL animate) {
     VecFx32 pos;
     u32 tile;
 
+    // (none under one that flies or hovers)
+    if (wanderer->noGrass) {
+        return NULL;
+    }
     ConvGXZToVector(x, z, &pos);
     pos.y = ground;
     tile = GetTileTypeAtPos(field->g3DMapper, &pos);
@@ -380,6 +401,11 @@ static BOOL Wanderers_Spawn(Field *field, Wanderer *wanderer) {
     wanderer->y = y;
     wanderer->encType = (u8)type;
     wanderer->shiny = (u8)shiny;
+    wanderer->wanders =
+        (PaperWhite2_Encounters_GetSpeciesOverworld(wanderer->param.species) >> ENCOUNTERS_WANDERS_SHIFT) &
+        ENCOUNTERS_WANDERS_MASK;
+    wanderer->noGrass =
+        (PaperWhite2_Encounters_GetSpeciesOverworld(wanderer->param.species) & ENCOUNTERS_NO_GRASS) != 0;
     wanderer->facing = (u8)GFL_RandomLC(4);
     wanderer->life = WANDERER_LIFE_MIN + GFL_RandomLC(WANDERER_LIFE_SPAN);
     wanderer->anim = 0xffff;
@@ -394,19 +420,88 @@ static BOOL Wanderers_Spawn(Field *field, Wanderer *wanderer) {
     return TRUE;
 }
 
-// A step tried, in a random direction first: onto a free tile of its grass, or into the player, which touches it
-static void Wanderers_Step(Field *field, Wanderer *wanderer, s32 index) {
-    u32 first = GFL_RandomLC(4);
-    u32 i;
+// A tile's walk and a pause between steps, faster for one going for the player
+static u16 Wanderers_WalkFrames(const Wanderer *wanderer) {
+    return wanderer->fast ? WANDERER_FAST_WALK_FRAMES : WANDERER_WALK_FRAMES;
+}
 
+static u16 Wanderers_Pause(const Wanderer *wanderer) {
+    return wanderer->fast ? WANDERER_FAST_PAUSE_MIN + GFL_RandomLC(WANDERER_FAST_PAUSE_SPAN)
+                          : WANDERER_PAUSE_MIN + GFL_RandomLC(WANDERER_PAUSE_SPAN);
+}
+
+// Whether a Repel keeps a wanderer away: one is on, and it's weaker than the first Pokémon that can battle, as a
+// Repel keeps a step's away (enc_pokeset.c)
+static BOOL Wanderers_IsRepelled(Field *field, const Wanderer *wanderer) {
+    PokeParty *party = GameData_GetParty(field->gameData);
+
+    if (EncountSave_IsRepelDepleted(SaveControl_GetEncountSave(GameData_GetSaveControl(field->gameData)))) {
+        return FALSE;
+    }
+    return wanderer->param.level <
+           PokeParty_GetParam(PokeParty_GetPkm(party, PokeParty_GetFirstBattleReady(party)), PKM_PARAM_LEVEL, NULL);
+}
+
+// A step tried, in an order by how it wanders: at random; toward the player when it's an aggressive one near enough
+// (faster); away from it when it's a passive one near, or one a Repel keeps away. Onto a free tile of its grass, or
+// into the player, which touches it (not one that keeps away)
+static void Wanderers_Step(Field *field, Wanderer *wanderer, s32 index) {
+    FieldActor *player = FieldPlayer_GetActor(field->player);
+    s32 px = GetGPosX(player);
+    s32 pz = GetGPosZ(player);
+    s32 distance = Wanderers_Abs(wanderer->x - px) + Wanderers_Abs(wanderer->z - pz);
+    u8 behind = (u8)(GetActorFaceDir(player) ^ 1);
+    BOOL repelled = Wanderers_IsRepelled(field, wanderer);
+    u32 wanders = repelled ? ENCOUNTERS_WANDERS_PASSIVE : wanderer->wanders;
+    u32 first = GFL_RandomLC(4);
+    u8 order[4];
+    s32 after[4];
+    u32 i;
+    u32 j;
+
+    if ((wanders == ENCOUNTERS_WANDERS_AGGRESSIVE && distance > WANDERER_NOTICE) ||
+        (wanders == ENCOUNTERS_WANDERS_PASSIVE && distance > WANDERER_FLEE)) {
+        wanders = ENCOUNTERS_WANDERS_RANDOM;
+    }
+    wanderer->fast = wanders == ENCOUNTERS_WANDERS_AGGRESSIVE;
+    // The directions from a random one, sorted for a chase or a flight by the distance each leaves (nearest first, or
+    // farthest)
     for (i = 0; i < 4; i++) {
-        u8 dir = (u8)((first + i) & 3);
+        order[i] = (u8)((first + i) & 3);
+        after[i] =
+            Wanderers_Abs(wanderer->x + DIR_DX[order[i]] - px) + Wanderers_Abs(wanderer->z + DIR_DZ[order[i]] - pz);
+    }
+    if (wanders != ENCOUNTERS_WANDERS_RANDOM) {
+        for (i = 1; i < 4; i++) {
+            for (j = i; j > 0 &&
+                        (wanders == ENCOUNTERS_WANDERS_AGGRESSIVE ? after[j] < after[j - 1] : after[j] > after[j - 1]);
+                 j--) {
+                u8 dir = order[j];
+                s32 d = after[j];
+
+                order[j] = order[j - 1];
+                after[j] = after[j - 1];
+                order[j - 1] = dir;
+                after[j - 1] = d;
+            }
+        }
+    }
+    for (i = 0; i < 4; i++) {
+        u8 dir = order[i];
         s16 x = wanderer->x + DIR_DX[dir];
         s16 z = wanderer->z + DIR_DZ[dir];
         fx32 ground;
         u32 encType;
 
+        // A chase doesn't step away, and a flight doesn't step closer
+        if ((wanders == ENCOUNTERS_WANDERS_AGGRESSIVE && after[i] > distance) ||
+            (wanders == ENCOUNTERS_WANDERS_PASSIVE && after[i] < distance)) {
+            break;
+        }
         if (Wanderers_IsPlayer(field, x, z)) {
+            if (wanders == ENCOUNTERS_WANDERS_PASSIVE) {
+                continue;
+            }
             wanderer->facing = dir;
             wanderer->state = WANDERER_TOUCHED;
             sWanderers.touch = (s8)index;
@@ -414,8 +509,9 @@ static void Wanderers_Step(Field *field, Wanderer *wanderer, s32 index) {
             sWanderers.touchedPlayer = TRUE;
             return;
         }
-        // Never beside the player otherwise: the follower walks into the tile the player leaves
-        if (Wanderers_IsNearPlayer(field, x, z)) {
+        // Never onto the tile behind the player, where the follower walks; and, but for a chase, never beside it
+        if ((x == px + DIR_DX[behind] && z == pz + DIR_DZ[behind]) ||
+            (wanders != ENCOUNTERS_WANDERS_AGGRESSIVE && Wanderers_IsNearPlayer(field, x, z))) {
             continue;
         }
         if (!Wanderers_TileAt(field, x, z, wanderer->y, &ground, &encType) || encType != wanderer->encType ||
@@ -427,16 +523,16 @@ static void Wanderers_Step(Field *field, Wanderer *wanderer, s32 index) {
         wanderer->toZ = z;
         wanderer->toY = ground;
         wanderer->state = WANDERER_WALKING;
-        wanderer->timer = WANDERER_WALK_FRAMES;
+        wanderer->timer = Wanderers_WalkFrames(wanderer);
         // Its grass as an actor's is, on one tile only: going down or sideways it leaves the tile it starts from at
         // once for the one it walks to; going up it keeps it until it arrives (Wanderers_Tick)
         if (dir != DIR_UP) {
             Wanderers_DeleteGrass(&wanderer->grass);
-            wanderer->grass = Wanderers_Grass(field, x, z, ground, TRUE);
+            wanderer->grass = Wanderers_Grass(field, wanderer, x, z, ground, TRUE);
         }
         return;
     }
-    wanderer->timer = WANDERER_PAUSE_MIN + GFL_RandomLC(WANDERER_PAUSE_SPAN);
+    wanderer->timer = Wanderers_Pause(wanderer);
 }
 
 // A wanderer a frame on: its state's time, its steps, its going
@@ -447,7 +543,7 @@ static void Wanderers_Tick(Field *field, Wanderer *wanderer, s32 index) {
         if (wanderer->billboard[1] != BILLBOARD_ACTOR_NONE) {
             wanderer->state = WANDERER_RISING;
             wanderer->timer = WANDERER_RISE_FRAMES;
-            wanderer->grass = Wanderers_Grass(field, wanderer->x, wanderer->z, wanderer->y, TRUE);
+            wanderer->grass = Wanderers_Grass(field, wanderer, wanderer->x, wanderer->z, wanderer->y, TRUE);
             GFL_SndSEPlay(WANDERER_RUSTLE_SE);
             Wanderers_Sparkle(field, wanderer);
         } else if (--wanderer->timer == 0) {
@@ -495,7 +591,7 @@ static void Wanderers_Tick(Field *field, Wanderer *wanderer, s32 index) {
             wanderer->timer = WANDERER_RISE_FRAMES;
             // (its grass shakes again as it goes)
             Wanderers_DeleteGrass(&wanderer->grass);
-            wanderer->grass = Wanderers_Grass(field, wanderer->x, wanderer->z, wanderer->y, TRUE);
+            wanderer->grass = Wanderers_Grass(field, wanderer, wanderer->x, wanderer->z, wanderer->y, TRUE);
             GFL_SndSEPlay(WANDERER_RUSTLE_SE);
         } else if (--wanderer->timer == 0) {
             Wanderers_Step(field, wanderer, index);
@@ -509,10 +605,10 @@ static void Wanderers_Tick(Field *field, Wanderer *wanderer, s32 index) {
             // (going up, its grass moves to the tile it came to once it's there)
             if (wanderer->facing == DIR_UP) {
                 Wanderers_DeleteGrass(&wanderer->grass);
-                wanderer->grass = Wanderers_Grass(field, wanderer->x, wanderer->z, wanderer->y, TRUE);
+                wanderer->grass = Wanderers_Grass(field, wanderer, wanderer->x, wanderer->z, wanderer->y, TRUE);
             }
             wanderer->state = WANDERER_IDLE;
-            wanderer->timer = WANDERER_PAUSE_MIN + GFL_RandomLC(WANDERER_PAUSE_SPAN);
+            wanderer->timer = Wanderers_Pause(wanderer);
         }
         break;
     case WANDERER_SINKING:
@@ -535,7 +631,7 @@ static void Wanderers_Draw(Field *field, BillboardActorSys *sys, Wanderer *wande
     pos.y = wanderer->y;
     if (wanderer->state == WANDERER_WALKING) {
         VecFx32 to;
-        fx32 t = FX32_ONE * (WANDERER_WALK_FRAMES - wanderer->timer) / WANDERER_WALK_FRAMES;
+        fx32 t = FX32_ONE * (Wanderers_WalkFrames(wanderer) - wanderer->timer) / Wanderers_WalkFrames(wanderer);
 
         ConvGXZToVector(wanderer->toX, wanderer->toZ, &to);
         pos.x += FX_Mul(to.x - pos.x, t);

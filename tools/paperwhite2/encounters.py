@@ -13,14 +13,17 @@ res/paperwhite2/level_scaling.json (the conditions engine's). The member follows
 headers' ENCOUNTERS_* numbers still name the areas, and src/paperwhite2/main/paperwhite2_encounters.c reads the
 current area's block when the field loads its table. Its layout (include/paperwhite2/encounters.h):
 
-- a 48-byte header (HEADER): the magic "PENC", the version, the area count, the outbreak entry count and the number
-  of outbreaks, the tier count and each tier's share in tenths of a percent, the level gate, the hidden ability's
-  chance, the outbreak share, the rustling spots' tiers (a bit each) and species with its levels, the three kinds of
-  spots' fixed shares, the methods the spots draw from (a bit each), and the offsets of the outbreaks and the index;
+- a 56-byte header (HEADER, then HEADER_SPECIES): the magic "PENC", the version, the area count, the outbreak entry
+  count and the number of outbreaks, the tier count and each tier's share in tenths of a percent, the level gate, the
+  hidden ability's chance, the outbreak share, the rustling spots' tiers (a bit each) and species with its levels, the
+  three kinds of spots' fixed shares, the methods the spots draw from (a bit each), the offsets of the outbreaks and
+  the index, and the species table's offset and count;
 - the outbreaks (OUTBREAK), one entry for each area of each outbreak, with the outbreak's number;
 - the index: each area's block offset and size (0 for an area without a file);
 - each area's block: its rates (AREA: four seasons of seven methods), its kind of spots, its candidate count and the
-  offset of its ConditionTable, then the candidates (CANDIDATE), then the table of their extra conditions.
+  offset of its ConditionTable, then the candidates (CANDIDATE), then the table of their extra conditions;
+- the species table: a byte for each species by its number, its wanderer settings (species/<species>.json's
+  overworld block): where it's met (APPEARS), how it wanders (WANDERS, from bit 2) and NO_GRASS.
 
 A candidate is one habitat in one area for one season or for all of its seasons: the species and its family's base
 species, the weathers (a bit each, 0 for any), its rule in the area's table (0xffff for none), the form, the tier, the
@@ -46,8 +49,18 @@ SPECIES = ROOT / "res" / "pokemon"
 ZONES = ROOT / "res" / "field" / "zones"
 
 MAGIC = b"PENC"
-VERSION = 1
+VERSION = 2
 HEADER = struct.Struct("<4sHHHBB8HBBBBHBB3BBII")
+# The header's tail since version 2: the species table's offset and count
+HEADER_SPECIES = struct.Struct("<IHxx")
+# A species' wanderer settings (SPECIES_OVERWORLD's byte, include/paperwhite2/encounters.h): where it's met, how it
+# wanders, and a bit for no grass
+APPEARS = {"both": 0, "steps": 1, "overworld": 2}
+WANDERS = {"random": 0, "aggressive": 1, "passive": 2}
+WANDERS_SHIFT = 2
+NO_GRASS = 0x10
+# The runtime's species table's most entries
+SPECIES_MAX = 1024
 OUTBREAK = struct.Struct("<HHHBBBBBBBx")
 INDEX = struct.Struct("<II")
 AREA = struct.Struct("<28BBxHHxx")
@@ -279,7 +292,7 @@ def member(source: Path = SOURCE) -> bytes:
     special = rustling["grass"]["species"]
     special_file = data.species.get(special.removeprefix("SPECIES_").lower(), {"levels": {"min": 1, "max": 100}})
     shares = [round(t["share"] * 10) for t in settings["tiers"]] + [0] * (TIER_MAX - len(data.tiers))
-    outbreak_offset = HEADER.size
+    outbreak_offset = HEADER.size + HEADER_SPECIES.size
     index_offset = outbreak_offset + len(conditions.align(b"".join(outbreak_entries)))
     body_offset = index_offset + INDEX.size * count
     index, body = [], bytearray()
@@ -293,7 +306,24 @@ def member(source: Path = SOURCE) -> bytes:
                          special_file["levels"]["min"], special_file["levels"]["max"],
                          rustling["grass"]["share"], rustling["dust"]["share"], rustling["shadow"]["share"],
                          bits(rustling["from"], METHODS, "rustling from"), outbreak_offset, index_offset)
-    return header + conditions.align(b"".join(outbreak_entries)) + b"".join(index) + bytes(body)
+    species = species_table(data)
+    species_offset = body_offset + len(conditions.align(bytes(body)))
+    header += HEADER_SPECIES.pack(species_offset, len(species))
+    return (header + conditions.align(b"".join(outbreak_entries)) + b"".join(index) + conditions.align(bytes(body))
+            + species)
+
+
+def species_table(data: Data) -> bytes:
+    """Each species' wanderer settings, a byte by its number: its overworld block's appears, wanders and grass."""
+    table = bytearray(max(species_numbers().values()) + 1)
+    if len(table) > SPECIES_MAX:
+        raise DataError(f"{len(table)} species, past the runtime's {SPECIES_MAX}")
+    for folder, species in data.species.items():
+        overworld = species.get("overworld", {})
+        table[data.species_number(folder)] = (APPEARS[overworld.get("appears", "both")]
+                                              | WANDERS[overworld.get("wanders", "random")] << WANDERS_SHIFT
+                                              | (0 if overworld.get("grass", True) else NO_GRASS))
+    return bytes(table)
 
 
 def archive(source: Path, output: Path):

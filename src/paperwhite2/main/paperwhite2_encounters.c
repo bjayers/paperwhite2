@@ -49,6 +49,18 @@ static const EncountersArea *GetArea(void) {
     return (const EncountersArea *)sBlock;
 }
 
+// Each species' wanderer settings (the species table), and whether the slots being made are a wanderer's
+static u8 sSpeciesOverworld[ENCOUNTERS_SPECIES_MAX];
+static BOOL sForWanderer;
+
+u8 PaperWhite2_Encounters_GetSpeciesOverworld(u16 species) {
+    return sHeaderRead && species < sHeader.speciesCount ? sSpeciesOverworld[species] : 0;
+}
+
+void PaperWhite2_Encounters_SetForWanderer(BOOL forWanderer) {
+    sForWanderer = forWanderer;
+}
+
 static const EncountersCandidate *GetCandidates(void) {
     return (const EncountersCandidate *)(GetArea() + 1);
 }
@@ -74,6 +86,10 @@ void PaperWhite2_Encounters_Load(ArcTool *arc, u16 zoneId, u8 season, EncData *e
         }
         GFL_ArcToolReadRange(arc, member, sHeader.outbreaks, sHeader.outbreakCount * sizeof(EncountersOutbreak),
                              sOutbreaks);
+        if (sHeader.speciesCount > ENCOUNTERS_SPECIES_MAX) {
+            return;
+        }
+        GFL_ArcToolReadRange(arc, member, sHeader.species, sHeader.speciesCount, sSpeciesOverworld);
         sHeaderRead = TRUE;
     }
     if (fileId >= sHeader.areaCount) {
@@ -142,6 +158,12 @@ const EncountersCandidate *PaperWhite2_Encounters_GetCandidate(u32 index) {
 static BOOL IsCandidateNow(const EncountersCandidate *c, const ConditionContext *ctx, u32 level, u32 encType,
                            BOOL *pooled) {
     BOOL own = (c->methods & (1 << encType)) != 0;
+    u32 appears = PaperWhite2_Encounters_GetSpeciesOverworld(c->species) & ENCOUNTERS_APPEARS_MASK;
+
+    // A wanderer's slots leave out the species met by steps only, and a step's those met as wanderers only
+    if (appears == (sForWanderer ? ENCOUNTERS_APPEARS_STEPS : ENCOUNTERS_APPEARS_OVERWORLD)) {
+        return FALSE;
+    }
 
     *pooled = encType == ENCTYPE_GRASS_SHAKING && !own && (c->methods & sHeader.rustlingFrom) != 0 &&
               (sHeader.rustlingTiers & (1 << c->tier)) != 0;

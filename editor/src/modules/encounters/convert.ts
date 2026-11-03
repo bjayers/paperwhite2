@@ -233,7 +233,7 @@ export function convert(tables: OldTable[], zones: OldZone[], info: Map<string, 
   const methodOrder = (m: Method) => METHODS.findIndex((x) => x.id === m);
   for (const c of candidates.values()) {
     const entry = species.get(c.species) ?? { species: c.species, levels: importLevels(c.species, slotLevels.get(c.species)!, info, settings),
-      battles: null, hiddenAbility: null, habitats: [], outbreaks: [] };
+      battles: null, hiddenAbility: null, habitats: [], overworld: null, outbreaks: [] };
     species.set(c.species, entry);
     const group = groups.find((g) => g.id === groupOf.get(c.areas[0]));
     const places = group && group.areas.every((a) => c.areas.includes(a)) ? [group.id] :
@@ -258,7 +258,7 @@ export function convert(tables: OldTable[], zones: OldZone[], info: Map<string, 
     const area = areaOfZone.get(o.zone);
     if (!area) continue;
     const entry = species.get(o.species) ?? { species: o.species, levels: importLevels(o.species, { min: o.min, max: o.max }, info, settings),
-      battles: null, hiddenAbility: null, habitats: [], outbreaks: [] };
+      battles: null, hiddenAbility: null, habitats: [], overworld: null, outbreaks: [] };
     entry.outbreaks.push({ key: newKey(), places: [area], form: o.form, methods: ["grass"], seasons: [...SEASONS], times: [...ALL_TIMES] });
     species.set(o.species, entry);
   }

@@ -15,6 +15,15 @@
         "battles": { "$ref": "#/$defs/battles", "description": "Its battle styles; the settings' when absent" },
         "hidden_ability": { "type": "integer", "minimum": 0, "maximum": 100, "description": "The chance in percent of its hidden ability; the settings' when absent" },
         "habitats": { "type": "array", "items": { "$ref": "#/$defs/habitat" } },
+        "overworld": {
+            "type": "object", "additionalProperties": false,
+            "description": "As a wanderer, a wild Pokémon seen walking in grass (docs/paperwhite2/plugins.md, Wanderers); each setting its default when absent",
+            "properties": {
+                "appears": { "enum": [ "both", "steps", "overworld" ], "description": "Where it's met: as a wanderer and by a step in grass (both, by default), by a step only, or as a wanderer only. The others' odds grow to fill its share" },
+                "wanders": { "enum": [ "random", "aggressive", "passive" ], "description": "How a wanderer moves: at random (by default), toward the player when it's near, or away from the player" },
+                "grass": { "type": "boolean", "description": "Whether a wanderer stands in its grass (by default) or floats over it, for one that flies or hovers" }
+            }
+        },
         "outbreaks": {
             "type": "array",
             "description": "Its outbreaks: on the day one is on, it takes the settings' outbreak share of its places' encounters by its methods",

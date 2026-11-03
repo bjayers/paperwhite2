@@ -18,13 +18,29 @@
 
 // The member's magic, "PENC", and its version
 #define ENCOUNTERS_MAGIC 0x434e4550
-#define ENCOUNTERS_VERSION 1
+#define ENCOUNTERS_VERSION 2
 // The runtime's limits, which the packer checks: the tiers, an area's block, the slots of one encounter (the
 // candidates, the rustling spots' species and the outbreaks) and the outbreak entries
 #define ENCOUNTERS_TIER_MAX 8
 #define ENCOUNTERS_BLOCK_MAX 0x1000
 #define ENCOUNTERS_SLOT_MAX 64
 #define ENCOUNTERS_OUTBREAK_MAX 128
+// The species table's most entries (the packer's SPECIES_MAX)
+#define ENCOUNTERS_SPECIES_MAX 1024
+
+// A species' wanderer settings, its byte in the species table (species/<species>.json's overworld block): where it's
+// met (ENCOUNTERS_APPEARS_*), how it wanders (ENCOUNTERS_WANDERS_*, from ENCOUNTERS_WANDERS_SHIFT) and whether it
+// floats over its grass (ENCOUNTERS_NO_GRASS)
+#define ENCOUNTERS_APPEARS_MASK 0x3
+#define ENCOUNTERS_APPEARS_BOTH 0
+#define ENCOUNTERS_APPEARS_STEPS 1
+#define ENCOUNTERS_APPEARS_OVERWORLD 2
+#define ENCOUNTERS_WANDERS_SHIFT 2
+#define ENCOUNTERS_WANDERS_MASK 0x3
+#define ENCOUNTERS_WANDERS_RANDOM 0
+#define ENCOUNTERS_WANDERS_AGGRESSIVE 1
+#define ENCOUNTERS_WANDERS_PASSIVE 2
+#define ENCOUNTERS_NO_GRASS 0x10
 // A candidate's rule when it has no extra conditions
 #define ENCOUNTERS_NO_RULE 0xffff
 // The slot function index (enc_pokeset.c's ENCOUNT_SLOT_RANDOMIZE_FUNCS) of PaperWhite2_Encounters_PickSlot
@@ -92,6 +108,10 @@ typedef struct {
     u8 rustlingFrom;
     u32 outbreaks;
     u32 index;
+    // The species table's offset and count (version 2)
+    u32 species;
+    u16 speciesCount;
+    u16 pad;
 } EncountersHeader;
 
 // One area of one outbreak; an outbreak of several areas has an entry for each, with the same id
@@ -198,6 +218,11 @@ void PaperWhite2_EncountersField_SaveViewContext(Field *field);
 u8 PaperWhite2_Encounters_PrepareSlots(EncountManager *manager, WildEncSlot *slots);
 // ENCOUNT_SLOT_RANDOMIZE_FUNCS's weighted pick of the slots that PrepareSlots made (or of a partner's)
 int PaperWhite2_Encounters_PickSlot(int count);
+// A species' wanderer settings (ENCOUNTERS_APPEARS_* and the rest), 0 (the defaults) without the data; and whether the
+// slots being made are a wanderer's, which leave out the species met by steps only, as a step's leave out those met as
+// wanderers only
+u8 PaperWhite2_Encounters_GetSpeciesOverworld(u16 species);
+void PaperWhite2_Encounters_SetForWanderer(BOOL forWanderer);
 // After FieldEncount_SetupFromData made a param from a slot: notes the slot and rolls its hidden ability
 void PaperWhite2_Encounters_SetupParam(const WildEncSlot *slot, WildPkmParam *param);
 // After the first wild Pokémon is made: its battle styles may make it a double or a triple battle, with partners from

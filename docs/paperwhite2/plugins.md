@@ -968,8 +968,18 @@ sinking, random wandering, the touch and the battle.
   while it's out; silent for now.
 - **Shiny sprites:** 975 of the followers' shiny rows are placeholders (`"placeholder": true`), the normal sprite in
   the registry, from the imported pack; a shiny wanderer (or follower) of such a species looks normal but sparkles.
-- **Not yet:** aggressive and passive species, Repel, the per-species "appears in" and "wanders" settings, the
-  zone's switch and the editor's settings, a sparkle sound (stages 2 to 4).
+- **Per species** (`res/paperwhite2/encounters/species/<species>.json`'s `overworld`, the Encounter Editor's
+  Overworld card; packed as a byte a species in the encounter member's species table,
+  `PaperWhite2_Encounters_GetSpeciesOverworld`): `appears` both (by default), steps (a wanderer's slots leave it out,
+  `PaperWhite2_Encounters_SetForWanderer` around the pick) or overworld (a step's leave it out), the others' weights
+  filling its share; `wanders` random (by default), aggressive (within 5 tiles of the player, steps that bring it
+  nearer, at 8 frames a tile with pauses of 6 to 20, and may come beside the player to walk into it) or passive
+  (within 4 tiles, steps that take it away, never into the player); `grass` false for no grass under it.
+- **Repel:** while one is on, a wanderer weaker than the first Pokémon that can battle wanders as a passive one does
+  and never walks into the player (who can still walk into it), as a Repel keeps a step's away. None goes onto the
+  tile behind the player, where the follower walks.
+- **Not yet:** the zone's switch, a "!" for an aggressive one noticing the player, a sparkle sound, the sparkle's
+  height by the sprite.
 
 ### Wild encounters
 

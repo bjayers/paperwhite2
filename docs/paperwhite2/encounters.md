@@ -13,7 +13,7 @@ All files are in `res/paperwhite2/encounters/`, each with its schema beside it.
 | `settings.json` | The rarity tiers and their shares, and the level gate (`scaled` or `party`). The hidden ability's default chance (10%). Default battle styles. The rustling spots' rule. The outbreaks' share (40%). The editor's import settings. |
 | `groups.json` | Groups of areas that a habitat names as `group:<id>`. The import makes one per parent zone with several areas, and the user adds their own. |
 | `areas/<area>.json` | An area is an original table, `ENCOUNTERS_<AREA>`, shared by the zones whose header names it. The file has its per-step rates per method (`all_year` or per season, the original tables' values) and its kind of rustling spots (`grass`, `dust`, `shadow`). |
-| `species/<species>.json` | A species' levels (min gates it, max caps it), battles, hidden ability chance, habitats and outbreaks. A habitat names areas or groups. It has one slot for its listed seasons, or `by_season`, giving each season its own methods, rarity, times and weather, plus extra conditions-engine clauses (`when`). A species without a file isn't found in the wild. |
+| `species/<species>.json` | A species' levels (min gates it, max caps it), battles, hidden ability chance, habitats and outbreaks, and as a wanderer (`overworld`: where it's met, `appears` both, steps or overworld; how it wanders, `wanders` random, aggressive or passive; and `grass`, false for one that floats over it; plugins.md, Wanderers). A habitat names areas or groups. It has one slot for its listed seasons, or `by_season`, giving each season its own methods, rarity, times and weather, plus extra conditions-engine clauses (`when`). A species without a file isn't found in the wild. |
 
 The scaled level's percent and spread are the conditions engine's, in `res/paperwhite2/level_scaling.json`: 80% of the
 party's median, ±3.
@@ -131,7 +131,8 @@ its number, a candidate and the day's outbreak.
 | `CreateRandomPhenomenonEvent` (`src/ov036/effect_encount.c`) | The field's context; dust clouds' and shadows' item chance; shaking grass's kind for the slots. |
 | `BtlvCore` (`src/ov167/btlv_core.c`), `b_bag_main.c` (ov286) | With three wild Pokémon up, the ball's message says three. |
 
-Main's BSS holds a 4 KB block, the outbreaks and the slots' weights, about 7 KB in all.
+Main's BSS holds a 4 KB block, the outbreaks and the slots' weights, about 7 KB in all, and the species table (a byte a
+species, 1 KB at most), which the member's version 2 adds after the area blocks.
 
 ## Wild triples
 

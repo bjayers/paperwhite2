@@ -13,7 +13,7 @@ import { ALL_TIMES, SEASONS, emptySeasons, newKey, presentSeasons, type Battles,
   type SpeciesEncounters, type SpeciesInfo } from "./model.ts";
 import { battlesOf, isLevelMet, levelRange, placeAreas, placeOdds } from "./resolve.ts";
 import { SpeciesHabitatMap } from "./SpeciesHabitatMap.tsx";
-import { GrottoesCard, OutbreaksCard } from "./WildExtras.tsx";
+import { GrottoesCard, OutbreaksCard, OverworldCard } from "./WildExtras.tsx";
 import { Chips, Icon, PlacesPicker, SlotEditor, TypeChips, label, percent, placeLabel } from "./ui.tsx";
 
 type Sort = "dex" | "family" | "generation" | "name";
@@ -154,7 +154,7 @@ function SpeciesDetail({ state, info, ways, family, select }: {
         <SpeciesHeader state={state} info={info} ways={ways} />
         <p className="muted">{info.name} isn't found in the wild.</p>
         <button className="primary" onClick={() => state.setSpecies(info.species, {
-          species: info.species, levels: { min: 5, max: 50 }, battles: null, hiddenAbility: null, habitats: [], outbreaks: [],
+          species: info.species, levels: { min: 5, max: 50 }, battles: null, hiddenAbility: null, habitats: [], overworld: null, outbreaks: [],
         })}>Add it to the wild</button>
         <GrottoesCard state={state} info={info} />
       </div>
@@ -233,6 +233,7 @@ function SpeciesDetail({ state, info, ways, family, select }: {
         </div>
       </div>
 
+      <OverworldCard entry={entry} update={update} />
       <Habitats state={state} info={info} entry={entry} update={update} />
       <OutbreaksCard state={state} info={info} entry={entry} update={update} />
       <GrottoesCard state={state} info={info} />

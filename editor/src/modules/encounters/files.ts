@@ -90,6 +90,7 @@ export function speciesFile(entry: SpeciesEncounters): Json {
         ...(when ? { when } : {}),
       };
     }),
+    ...(entry.overworld && Object.keys(entry.overworld).length ? { overworld: { ...entry.overworld } } : {}),
     ...(entry.outbreaks.length ? {
       outbreaks: entry.outbreaks.map((o) => ({ places: [...o.places], ...(o.form ? { form: o.form } : {}), methods: [...o.methods],
         seasons: [...o.seasons], times: [...o.times] })),
@@ -187,6 +188,7 @@ export function readSpecies(id: string, data: Record<string, any>): SpeciesEncou
     battles: data.battles ? { ...data.battles } : null,
     hiddenAbility: data.hidden_ability ?? null,
     habitats,
+    overworld: data.overworld ? { ...data.overworld } : null,
     outbreaks: (data.outbreaks ?? []).map((o: Record<string, any>) => ({ key: newKey(), places: [...o.places], form: o.form ?? 0,
       methods: [...o.methods], seasons: [...o.seasons], times: [...(o.times ?? ALL_TIMES)] })),
   };

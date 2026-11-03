@@ -15,7 +15,7 @@ import { Icon, label } from "./ui.tsx";
 
 function newEntry(state: EditorState, info: SpeciesInfo): SpeciesEncounters {
   return { species: info.species, levels: importLevels(info.species, { min: 1, max: 100 }, state.loaded.species, state.settings),
-    battles: null, hiddenAbility: null, habitats: [], outbreaks: [] };
+    battles: null, hiddenAbility: null, habitats: [], overworld: null, outbreaks: [] };
 }
 
 /** A copy of a habitat for a member, with the member's own tier where it already had the place and method. */

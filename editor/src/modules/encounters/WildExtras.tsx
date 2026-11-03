@@ -1,12 +1,71 @@
-// A species' outbreaks and Hidden Grotto entries, on its page beside its habitats. Outbreaks are part of the new
+// A species' wanderer settings, outbreaks and Hidden Grotto entries, on its page beside its habitats. Outbreaks are part of the new
 // encounter data (its file's "outbreaks"); the grottoes keep their own files (res/field/grottoes/), so adding a species
 // to one replaces the entry it is put in.
 
 import { useState } from "react";
 import type { EditorState } from "./EncounterEditor.tsx";
-import { ALL_TIMES, METHODS, SEASONS, newKey, type Method, type Outbreak, type Season, type SpeciesEncounters,
+import { ALL_TIMES, METHODS, SEASONS, newKey, type Method, type Outbreak, type Overworld, type Season, type SpeciesEncounters,
   type SpeciesInfo } from "./model.ts";
 import { Chips, PlacesPicker, TimePicker, label } from "./ui.tsx";
+
+const APPEARS: { value: NonNullable<Overworld["appears"]>; label: string; note: string }[] = [
+  { value: "both", label: "Both", note: "Seen walking in grass, and met by a step in grass." },
+  { value: "steps", label: "Steps only", note: "Only met by a step in grass, never seen walking in it. The wanderers' odds of the others grow to fill its share." },
+  { value: "overworld", label: "Overworld only", note: "Only seen walking in grass, never met by a step. The steps' odds of the others grow to fill its share." },
+];
+const WANDERS: { value: NonNullable<Overworld["wanders"]>; label: string; note: string }[] = [
+  { value: "random", label: "Random", note: "Wanders tile to tile at random, with pauses." },
+  { value: "aggressive", label: "Aggressive", note: "Within 5 tiles of the player, comes toward it, a little faster, and walks into it. Never leaves its grass." },
+  { value: "passive", label: "Passive", note: "Within 4 tiles of the player, keeps away from it, and never walks into it." },
+];
+
+/** A species as a wanderer: where it's met, how it wanders and whether it stands in grass (its file's "overworld"). */
+export function OverworldCard({ entry, update }: { entry: SpeciesEncounters; update(change: Partial<SpeciesEncounters>): void }) {
+  const o = entry.overworld ?? {};
+  const appears = o.appears ?? "both";
+  const wanders = o.wanders ?? "random";
+  const grass = o.grass ?? true;
+  /** One setting changed; its default is left out of the file. */
+  const set = (key: keyof Overworld, value: unknown, fallback: unknown) => {
+    const next: Overworld = { ...o };
+    if (value === fallback) delete next[key];
+    else (next as Record<string, unknown>)[key] = value;
+    update({ overworld: Object.keys(next).length ? next : null });
+  };
+  return (
+    <div className="enc-card">
+      <div className="enc-row">
+        <h3>Overworld</h3>
+        <span className="muted small">As a wanderer, a wild Pokémon seen walking in tall and dark grass. Under a Repel, one weaker than the lead keeps away and doesn't walk into the player.</span>
+      </div>
+      <div className="enc-overworld">
+        <span className="enc-overworld-label">Appears</span>
+        <div>
+          <span className="view-switch">
+            {APPEARS.map((a) => <button key={a.value} className={appears === a.value ? "active" : ""} onClick={() => set("appears", a.value, "both")}>{a.label}</button>)}
+          </span>
+          <p className="small muted">{APPEARS.find((a) => a.value === appears)?.note}</p>
+        </div>
+        <span className="enc-overworld-label">Wanders</span>
+        <div>
+          <span className="view-switch">
+            {WANDERS.map((w) => <button key={w.value} className={wanders === w.value ? "active" : ""} disabled={appears === "steps"}
+                                        onClick={() => set("wanders", w.value, "random")}>{w.label}</button>)}
+          </span>
+          <p className="small muted">{appears === "steps" ? "It's never seen walking." : WANDERS.find((w) => w.value === wanders)?.note}</p>
+        </div>
+        <span className="enc-overworld-label">Grass</span>
+        <div>
+          <span className="view-switch">
+            <button className={grass ? "active" : ""} disabled={appears === "steps"} onClick={() => set("grass", true, true)}>Stands in it</button>
+            <button className={!grass ? "active" : ""} disabled={appears === "steps"} onClick={() => set("grass", false, true)}>Floats over it</button>
+          </span>
+          <p className="small muted">{grass ? "Drawn standing in its grass, as an NPC is." : "Drawn over its grass without it, for one that flies or hovers."}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function OutbreaksCard({ state, info, entry, update }: {
   state: EditorState;

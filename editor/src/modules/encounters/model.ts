@@ -176,7 +176,16 @@ export interface SpeciesEncounters {
   /** null: the settings' default chance. */
   hiddenAbility: number | null;
   habitats: Habitat[];
+  /** null: every setting its default (species.schema.json's appears both, wanders random, stands in grass). */
+  overworld: Overworld | null;
   outbreaks: Outbreak[];
+}
+
+/** A species as a wanderer, a wild Pokémon seen walking in grass (its file's "overworld"): each absent is the default. */
+export interface Overworld {
+  appears?: "both" | "steps" | "overworld";
+  wanders?: "random" | "aggressive" | "passive";
+  grass?: boolean;
 }
 
 export interface Area {

@@ -615,6 +615,7 @@ BOOL EventWildBattleCall_PickWanderer(EncountSystem *system, u32 encType, WildPk
     u32 rolls = 1;
     u32 i;
     u32 ratio;
+    int count;
 
     if (!EncSys_IsActive(system, 1) || encType >= ENCTYPE_MAX || system->encData->userData[encType] == 0) {
         return FALSE;
@@ -622,7 +623,10 @@ BOOL EventWildBattleCall_PickWanderer(EncountSystem *system, u32 encType, WildPk
     Wanderer_CreateManager(system, &manager, encType);
     MI_CpuFill8(params, 0, sizeof(params));
     PaperWhite2_EncountersField_SetContext(system->field);
-    if (FieldEncount_GenWilds(system->encData, &manager, Field_GetPlayerStateZoneID(system->field), params) == 0) {
+    PaperWhite2_Encounters_SetForWanderer(TRUE);
+    count = FieldEncount_GenWilds(system->encData, &manager, Field_GetPlayerStateZoneID(system->field), params);
+    PaperWhite2_Encounters_SetForWanderer(FALSE);
+    if (count == 0) {
         return FALSE;
     }
 #ifdef PAPERWHITE2_DEBUG_MENU

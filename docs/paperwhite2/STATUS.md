@@ -2,6 +2,18 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-03 (night): wanderers spawn more readily; their per-species settings
+
+- **Spawns:** the user found new ones hard to come by on the move. Now every grass tile in view is a candidate (those
+  ahead of the player 3 times as likely), tries come every 2 to 4 seconds (1 after a try without grass), and one off
+  the screen for 2 seconds goes, so the ones left behind make room (plugins.md, Wanderers).
+- **Per species** (plugins.md, Wanderers: Per species and Repel): `overworld` in the encounter species files, appears
+  (both, steps, overworld), wanders (random, aggressive, passive) and grass; packed in the encounter member (version
+  2, a species table); the Encounter Editor's species page has an Overworld card (in the Encounter Editor, which already
+  writes these files, rather than the Pokémon Editor). Repel keeps weaker ones away. Built (hack, no warnings, DSi
+  intact); the packer's byte checked; the card screenshotted. **Not tested in game.** **For the user:** the zone's
+  switch is next.
+
 ## 2026-11-03 (late): overworld encounters, stage 1 (wanderers)
 
 - **The design agreed with the user** (design/overworld-editor.md, Overworld encounters): up to 3 wild Pokémon in tall
