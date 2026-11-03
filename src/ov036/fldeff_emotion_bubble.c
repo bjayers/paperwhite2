@@ -37,6 +37,10 @@ typedef struct {
     FieldActor *actor;
     FieldActorIdentity identity;
     Field *field;
+#ifdef PAPERWHITE2
+    // Paper White 2: where a bubble without an actor stands (FldeffEmotionBubble_SetPos)
+    VecFx32 pos;
+#endif
 } EmotionBubbleTaskParams;
 
 typedef struct {
@@ -143,6 +147,26 @@ FieldEffectTask *FldeffEmotionBubble_SetActor(FieldEffects *effects, FieldActor 
     return FieldEffects_TCBCreate(effects, &EMOTION_BUBBLE_TASK_VTABLE, NULL, 0, &params, 0);
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: a bubble over a place rather than an actor, for what is drawn without one (a wanderer,
+// paperwhite2_wanderers.c)
+FieldEffectTask *FldeffEmotionBubble_SetPos(FieldEffects *effects, const VecFx32 *pos, u32 kind, BOOL playSE) {
+    EmotionBubbleTaskParams params;
+
+    MI_CpuFill8(&params, 0, sizeof(params));
+    params.kind = kind;
+    params.playSE = playSE;
+    params.emotionBubble = FieldEffects_GetHandleData(effects, FLDEFF_EMOTION_BUBBLE);
+    params.actor = NULL;
+    params.pos = *pos;
+    params.field = FieldEffects_GetField(effects);
+    if (playSE == TRUE) {
+        FldeffEmotionBubble_PlaySe(kind);
+    }
+    return FieldEffects_TCBCreate(effects, &EMOTION_BUBBLE_TASK_VTABLE, NULL, 0, &params, 0);
+}
+#endif
+
 FieldEffectTask *FldeffEmotionBubble_StartHeld(FieldEffects *effects, FieldActor *actor, u32 kind, BOOL playSE) {
     EmotionBubbleTaskParams params;
 
@@ -198,6 +222,19 @@ static void FldeffEmotionBubble_UpdateTask(FieldEffectTask *task, void *work) {
     EmotionBubbleTask *emotionBubbleTask = work;
     VecFx32 pos;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: a bubble without an actor stays at its place (FldeffEmotionBubble_SetPos)
+    if (emotionBubbleTask->params.actor == NULL) {
+        if (emotionBubbleTask->done == TRUE) {
+            FieldEffects_DeleteObject(task);
+            return;
+        }
+        pos = emotionBubbleTask->params.pos;
+        FldeffEmotionBubble_StepAnimation(emotionBubbleTask, &pos);
+        FieldEffects_SetObjectPos(task, &pos);
+        return;
+    }
+#endif
     if (emotionBubbleTask->done == TRUE ||
         !FldAct_CheckIdentity(emotionBubbleTask->params.actor, &emotionBubbleTask->params.identity)) {
         FieldEffects_DeleteObject(task);

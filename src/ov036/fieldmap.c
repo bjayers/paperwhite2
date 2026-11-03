@@ -644,6 +644,10 @@ u32 FieldRoutine_MapUnload(GameSystem *gsys, Field *field) {
     EncSys_Free(field->encountSystem);
     gameData = GSYS_GetGameData(gsys);
     GameData_SetLastSubscreen(gameData, FieldSubscreen_Free(field->subscreen));
+#ifdef PAPERWHITE2
+    // Paper White 2: the wanderers' billboards and effects go with the field (paperwhite2_wanderers.c)
+    PaperWhite2_WanderersReset();
+#endif
     FieldEffects_Free(field->fieldEffects);
     if (field->unionEffect != NULL) {
         UnionEff_Free(field->unionEffect);

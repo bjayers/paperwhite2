@@ -14,6 +14,11 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   debug menu's Fewer step encounters (a quarter of the rate), No wanderers and Wanderers now. Built (hack, no warnings,
   DSi intact). **Not tested in game.** **For the user:** Route 20's grass; a touch both ways, a shiny (Always shiny),
   dark grass (always single), after a battle, cycling into one, and the follower walking behind.
+- **Tested by the user:** working. Changed after: it stays visible until the battle starts; a "!" over it on a touch
+  (to try; perhaps aggressive ones only later); the grass rustle as it rises, sinks and steps; a shiny's sparkle
+  (silent: no shiny sound found by name yet). The non-shiny Wurmple, Silcoon and Swinub on Route 20 in winter are
+  likely script 10852's seasonal NPCs (walking-Pokémon sprites, never shiny), not wanderers: to check with Wanderers
+  now, or No wanderers on. Built (hack, no warnings, DSi intact). **Not tested in game.**
 
 ## 2026-11-03 (later still): ambients' turn directions, a new one's height, their paths in the editor
 

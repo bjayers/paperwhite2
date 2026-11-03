@@ -1,11 +1,13 @@
 #include "types.h"
 #include "constants/directions.h"
 #include "constants/flags.h"
+#include "constants/sound.h"
 #include "field/enc_pokeset.h"
 #include "field/event_wild_battle.h"
 #include "field/field.h"
 #include "field/field_actor.h"
 #include "field/field_actor_drawdata.h"
+#include "field/field_effect.h"
 #include "field/field_g3d_mapper.h"
 #include "field/field_internal.h"
 #include "field/field_map.h"
@@ -60,8 +62,9 @@
 #define WANDERER_FAR 11
 // The most a step's ground may rise or drop, in units
 #define WANDERER_STEP_HEIGHT FX32_CONST(8)
-// How long a touch waits before the battle, and how long a waiting touch is kept while the player isn't free
-#define WANDERER_TOUCH_FRAMES 18
+// How long a touch waits before the battle (as long as its "!" takes: FldeffEmotionBubble_StepAnimation's hop and 30
+// frames), and how long a waiting touch is kept while the player isn't free
+#define WANDERER_TOUCH_FRAMES 36
 #define WANDERER_TOUCH_KEEP 60
 // How long a sprite may take to load before the spawn is given up
 #define WANDERER_LOAD_FRAMES (5 * WANDERER_FRAMES_A_SECOND)
@@ -70,6 +73,15 @@
 // A cry's pan: the middle
 #define WANDERER_CRY_PAN 64
 #define WANDERER_NONE (-1)
+// The grass's shake as one rises or sinks (with the rustle's sound) and under each step (without), in frames
+#define WANDERER_RUSTLE_FRAMES 24
+#define WANDERER_STEP_RUSTLE_FRAMES 12
+#define WANDERER_RUSTLE_SE SEQ_SE_FLD_70
+// A shiny one's sparkle (the Join Avenue's, FLDEFF_FES_SPARKLE): as it rises, and again every few seconds while it's
+// out, a little over its feet
+#define WANDERER_SPARKLE_FRAMES 30
+#define WANDERER_SPARKLE_EVERY (5 * WANDERER_FRAMES_A_SECOND)
+#define WANDERER_SPARKLE_LIFT FX32_CONST(10)
 
 typedef struct {
     WildPkmParam param;
@@ -95,6 +107,11 @@ typedef struct {
     u8 pad[3];
     // The animation it was last given
     u16 anim;
+    // Its grass's shake and its frames left; its sparkle's frames left, and the frames to its next
+    FieldEffectTask *rustle;
+    u16 rustleTimer;
+    u16 sparkleTimer;
+    u16 sparkleNext;
 } Wanderer;
 
 typedef struct {
@@ -106,6 +123,8 @@ typedef struct {
     // The wanderer the player touched, or that touched the player, and how long its touch has waited
     s8 touch;
     u8 touchWait;
+    // The shiny ones' sparkles, one a wanderer, made when the first is needed
+    FieldEffectTask *sparkles;
     Wanderer list[WANDERERS_MAX];
 } WandererState;
 
@@ -219,12 +238,53 @@ static BOOL Wanderers_IsNearPlayer(Field *field, s16 x, s16 z) {
            (Wanderers_Abs(x - FldAct_GetInitGPosX(player)) <= 1 && Wanderers_Abs(z - FldAct_GetInitGPosZ(player)) <= 1);
 }
 
+// The grass shaken at a tile, as a rustling spot's is (its kind by the tile), for frames; with its sound, or quietly
+static void Wanderers_Rustle(Field *field, Wanderer *wanderer, s16 x, s16 z, fx32 ground, u16 frames, BOOL sound) {
+    VecFx32 pos;
+    u32 tile;
+
+    if (wanderer->rustle != NULL) {
+        FieldEffects_DeleteObject(wanderer->rustle);
+        wanderer->rustle = NULL;
+    }
+    ConvGXZToVector(x, z, &pos);
+    pos.y = ground;
+    tile = GetTileTypeAtPos(field->g3DMapper, &pos);
+    if (tile != TILE_TYPE_NONE && MapTile_GetEncounterEffectKind(tile) != ENCOUNT_EFFECT_NONE) {
+        wanderer->rustle = EncountTask_Start(Field_GetEncountSystem(field), field->fieldEffects, (u16)x, (u16)z, ground,
+                                             MapTile_GetEncounterEffectKind(tile));
+        wanderer->rustleTimer = frames;
+    }
+    if (sound) {
+        GFL_SndSEPlay(WANDERER_RUSTLE_SE);
+    }
+}
+
+// A shiny one's sparkle shown for its frames (where the field has the sparkles' effect)
+static void Wanderers_Sparkle(Field *field, Wanderer *wanderer) {
+    if (!wanderer->shiny) {
+        return;
+    }
+    if (sWanderers.sparkles == NULL && FieldEffects_IsLoaded(field->fieldEffects, FLDEFF_FES_SPARKLE)) {
+        sWanderers.sparkles = FldeffFesSparkle_Start(field->fieldEffects);
+    }
+    wanderer->sparkleTimer = WANDERER_SPARKLE_FRAMES;
+    wanderer->sparkleNext = WANDERER_SPARKLE_EVERY;
+}
+
 // A wanderer's billboard deleted (or its load cancelled) and its sprite released
 static void Wanderers_Remove(MMSys *actorSystem, Wanderer *wanderer) {
     u16 objCode = wanderer->objCode;
 
     if (wanderer->state == WANDERER_FREE) {
         return;
+    }
+    if (wanderer->rustle != NULL) {
+        FieldEffects_DeleteObject(wanderer->rustle);
+        wanderer->rustle = NULL;
+    }
+    if (sWanderers.sparkles != NULL) {
+        FldeffFesSparkle_Hide(sWanderers.sparkles, (u8)(wanderer - sWanderers.list));
     }
     if (wanderer->billboard[1] == BILLBOARD_ACTOR_NONE) {
         FldBillboardActor_CancelPendingPos(actorSystem, wanderer->billboard);
@@ -339,6 +399,7 @@ static void Wanderers_Step(Field *field, Wanderer *wanderer, s32 index) {
         wanderer->toY = ground;
         wanderer->state = WANDERER_WALKING;
         wanderer->timer = WANDERER_WALK_FRAMES;
+        Wanderers_Rustle(field, wanderer, x, z, ground, WANDERER_STEP_RUSTLE_FRAMES, FALSE);
         return;
     }
     wanderer->timer = WANDERER_PAUSE_MIN + GFL_RandomLC(WANDERER_PAUSE_SPAN);
@@ -352,6 +413,8 @@ static void Wanderers_Tick(Field *field, Wanderer *wanderer, s32 index) {
         if (wanderer->billboard[1] != BILLBOARD_ACTOR_NONE) {
             wanderer->state = WANDERER_RISING;
             wanderer->timer = WANDERER_RISE_FRAMES;
+            Wanderers_Rustle(field, wanderer, wanderer->x, wanderer->z, wanderer->y, WANDERER_RUSTLE_FRAMES, TRUE);
+            Wanderers_Sparkle(field, wanderer);
         } else if (--wanderer->timer == 0) {
             Wanderers_Remove(field->actorSystem, wanderer);
         }
@@ -369,6 +432,16 @@ static void Wanderers_Tick(Field *field, Wanderer *wanderer, s32 index) {
     if (wanderer->life != 0) {
         wanderer->life--;
     }
+    if (wanderer->rustle != NULL && --wanderer->rustleTimer == 0) {
+        FieldEffects_DeleteObject(wanderer->rustle);
+        wanderer->rustle = NULL;
+    }
+    if (wanderer->sparkleTimer != 0 && --wanderer->sparkleTimer == 0 && sWanderers.sparkles != NULL) {
+        FldeffFesSparkle_Hide(sWanderers.sparkles, (u8)index);
+    }
+    if (wanderer->shiny && wanderer->state != WANDERER_SINKING && --wanderer->sparkleNext == 0) {
+        Wanderers_Sparkle(field, wanderer);
+    }
     switch (wanderer->state) {
     case WANDERER_RISING:
         if (--wanderer->timer == 0) {
@@ -380,6 +453,7 @@ static void Wanderers_Tick(Field *field, Wanderer *wanderer, s32 index) {
         if (wanderer->life == 0) {
             wanderer->state = WANDERER_SINKING;
             wanderer->timer = WANDERER_RISE_FRAMES;
+            Wanderers_Rustle(field, wanderer, wanderer->x, wanderer->z, wanderer->y, WANDERER_RUSTLE_FRAMES, TRUE);
         } else if (--wanderer->timer == 0) {
             Wanderers_Step(field, wanderer, index);
         }
@@ -423,6 +497,12 @@ static void Wanderers_Draw(Field *field, BillboardActorSys *sys, Wanderer *wande
         pos.y -= WANDERER_RISE_DEPTH * wanderer->timer / WANDERER_RISE_FRAMES;
     } else if (wanderer->state == WANDERER_SINKING) {
         pos.y -= WANDERER_RISE_DEPTH * (WANDERER_RISE_FRAMES - wanderer->timer) / WANDERER_RISE_FRAMES;
+    }
+    if (wanderer->sparkleTimer != 0 && sWanderers.sparkles != NULL) {
+        VecFx32 at = pos;
+
+        at.y += WANDERER_SPARKLE_LIFT;
+        FldeffFesSparkle_Show(sWanderers.sparkles, (u8)(wanderer - sWanderers.list), 0, &at);
     }
     pos.y += Field_GetActorYOffset(field);
     BillboardActorScene_SetActorPos(BillboardActorSys_GetScene(sys), wanderer->billboard[1], &pos);
@@ -539,10 +619,15 @@ static GameEventReturnCode Wanderers_TouchEvent(GameEvent *event, u32 *state, vo
     switch (*state) {
     case 0: {
         u8 dir = Wanderers_DirTo(wanderer->x - GetGPosX(player), wanderer->z - GetGPosZ(player));
+        VecFx32 at;
 
         SetActorFaceDir(player, dir);
         // (DIR_UP and DIR_DOWN, DIR_LEFT and DIR_RIGHT are each other's)
         wanderer->facing = (u8)(dir ^ 1);
+        // Its "!", over it, with the bubble's sound
+        ConvGXZToVector(wanderer->x, wanderer->z, &at);
+        at.y = wanderer->y;
+        FldeffEmotionBubble_SetPos(field->fieldEffects, &at, EMOTION_BUBBLE_EXCLAMATION, TRUE);
         if (!GFL_SndIsLoadThreadRunning()) {
             PokeVoice_Play(touch->param.species, touch->param.form, WANDERER_CRY_PAN, 0, 0, 0, 0, NULL);
         }
@@ -554,7 +639,7 @@ static GameEventReturnCode Wanderers_TouchEvent(GameEvent *event, u32 *state, vo
         if (touch->wait-- != 0) {
             break;
         }
-        Wanderers_Remove(field->actorSystem, wanderer);
+        // (it stays on the field through the battle's transition; the field's closing clears it)
         GameEvent_ChainNext(
             event, EventWildBattleCall_CreateWanderer(Field_GetEncountSystem(field), &touch->param, touch->encType));
         (*state)++;

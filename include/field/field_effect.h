@@ -31,6 +31,10 @@ enum {
 // playSE plays the bubble's sound. The first function's bubble stays when it is done, until its owner ends it, and
 // the second's ends itself. Then whether a bubble is done, which a NULL one is
 FieldEffectTask *FldeffEmotionBubble_SetActor(FieldEffects *effects, FieldActor *actor, u32 kind, BOOL playSE);
+#ifdef PAPERWHITE2
+// Paper White 2: a bubble over a place, for what is drawn without an actor
+FieldEffectTask *FldeffEmotionBubble_SetPos(FieldEffects *effects, const VecFx32 *pos, u32 kind, BOOL playSE);
+#endif
 FieldEffectTask *FldeffEmotionBubble_StartHeld(FieldEffects *effects, FieldActor *actor, u32 kind, BOOL playSE);
 BOOL FldeffEmotionBubble_IsFinished(FieldEffectTask *task);
 // Chargestone Cave's stones (field_gimmick_d06.c): the effect over a stone at pos for actor, and the one at a mark
