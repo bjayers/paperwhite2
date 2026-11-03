@@ -36,7 +36,7 @@
 // are out, one rises out of a grass tile near the screen's edge, away from the player: the Pokémon a step in that grass
 // would bring (EventWildBattleCall_PickWanderer), drawn with its follower sprite, shiny or of its gender as it was
 // rolled. It wanders tile to tile in grass of the same kind with pauses, and sinks back into it after its time, or goes
-// once it's far out of view. Where its tile has no grass (a cave's floor, sand) it appears and goes in a puff of dust
+// once it's far out of view. Where its tile has no grass (a cave's floor, sand) it appears and goes in a dust cloud
 // instead; in deep sand it stands sunk in as actors do and leaves tracks, and in sand or snow footprints. A wanderer is
 // solid: an actor's step onto its tile, or the one it walks to, is blocked (PaperWhite2_WanderersCheckGridCollision),
 // and the player's touches it, as one stepping into the player does. A touch, once the player is free, faces the two to
@@ -105,8 +105,11 @@
 #define WANDERER_TILE_FLAG_FOOTMARK 0x08
 // How far one sinks into deep sand, as an actor does (ActorTerrainEffect_DeepSand)
 #define WANDERER_DEEP_SAND_SINK FX32_CONST(7)
-// One that appears in a puff of dust shows this many frames into it, and one that goes in a puff is hidden this many
-// frames into it, while the dust covers it
+// One that appears in a dust cloud (the rustling spots', ENCOUNT_EFFECT_DUST_CLOUD, played once) shows a third of the
+// way into it, and one that goes in one is gone a third of the way in, while the dust covers it; with its sound
+#define WANDERER_CLOUD_COVERED 3
+#define WANDERER_CLOUD_SE SEQ_SE_FLD_73
+// Where the field has no dust cloud, the landing puff, and how many frames into it
 #define WANDERER_PUFF_HIDE 4
 // A model's footprint type whose marks are tracks (FieldActorConfig's footprintType)
 #define WANDERER_FOOTPRINT_TRACKS 2
@@ -352,13 +355,21 @@ static void Wanderers_SetHidden(BillboardActorSys *sys, Wanderer *wanderer, BOOL
     }
 }
 
-// Its puff of dust, at its feet
-static void Wanderers_Puff(Field *field, const Wanderer *wanderer) {
+// Its dust cloud at its feet, with its sound (or the landing puff where the field has none); the frames until the dust
+// covers it
+static u16 Wanderers_Puff(Field *field, const Wanderer *wanderer) {
     VecFx32 feet;
+    u32 frames;
 
     ConvGXZToVector(wanderer->x, wanderer->z, &feet);
     feet.y = wanderer->y;
-    FldeffDust_StartAt(field->fieldEffects, &feet);
+    frames = EncountTask_PlayOnceAt(field->fieldEffects, ENCOUNT_EFFECT_DUST_CLOUD, &feet);
+    if (frames == 0) {
+        FldeffDust_StartAt(field->fieldEffects, &feet);
+        return WANDERER_PUFF_HIDE;
+    }
+    GFL_SndSEPlay(WANDERER_CLOUD_SE);
+    return frames / WANDERER_CLOUD_COVERED > WANDERER_PUFF_HIDE ? frames / WANDERER_CLOUD_COVERED : WANDERER_PUFF_HIDE;
 }
 
 static void Wanderers_DeleteGrass(FieldEffectTask **grass) {
@@ -668,7 +679,7 @@ static void Wanderers_Tick(Field *field, Wanderer *wanderer, s32 index) {
             wanderer->state = WANDERER_RISING;
             wanderer->timer = WANDERER_RISE_FRAMES;
             if (wanderer->puff) {
-                Wanderers_Puff(field, wanderer);
+                wanderer->timer = Wanderers_Puff(field, wanderer);
             } else {
                 wanderer->grass = Wanderers_Grass(field, wanderer, wanderer->x, wanderer->z, wanderer->y, TRUE);
                 GFL_SndSEPlay(WANDERER_RUSTLE_SE);
@@ -722,7 +733,7 @@ static void Wanderers_Tick(Field *field, Wanderer *wanderer, s32 index) {
             // (by the tile it's on now, which may not be the one it came out of)
             wanderer->puff = tile == TILE_TYPE_NONE || !(GetTileFlags(tile) & WANDERER_TILE_FLAG_GRASS);
             if (wanderer->puff) {
-                Wanderers_Puff(field, wanderer);
+                wanderer->timer = Wanderers_Puff(field, wanderer);
             } else {
                 // (its grass shakes again as it goes)
                 Wanderers_DeleteGrass(&wanderer->grass);
@@ -755,8 +766,8 @@ static void Wanderers_Tick(Field *field, Wanderer *wanderer, s32 index) {
     }
 }
 
-// Its billboard placed and animated: risen as far as its rise or sink has come (or shown once its puff covers it, and
-// hidden once its puff does), part way along its step, sunk into deep sand
+// Its billboard placed and animated: risen as far as its rise or sink has come (or, in a dust cloud, shown and gone
+// once the dust covers it), part way along its step, sunk into deep sand
 static void Wanderers_Draw(Field *field, BillboardActorSys *sys, Wanderer *wanderer) {
     VecFx32 pos;
     u16 anim;
@@ -775,11 +786,8 @@ static void Wanderers_Draw(Field *field, BillboardActorSys *sys, Wanderer *wande
         pos.z += FX_Mul(to.z - pos.z, t);
         pos.y += FX_Mul(wanderer->toY - wanderer->y, t);
     } else if (wanderer->puff) {
-        Wanderers_SetHidden(
-            sys, wanderer,
-            wanderer->state == WANDERER_LOADING ||
-                (wanderer->state == WANDERER_RISING && wanderer->timer > WANDERER_RISE_FRAMES - WANDERER_PUFF_HIDE) ||
-                (wanderer->state == WANDERER_SINKING && wanderer->timer <= WANDERER_RISE_FRAMES - WANDERER_PUFF_HIDE));
+        // (hidden until its rise's time is up, and shown until its sink's is, when it goes)
+        Wanderers_SetHidden(sys, wanderer, wanderer->state == WANDERER_LOADING || wanderer->state == WANDERER_RISING);
     } else if (wanderer->state == WANDERER_RISING || wanderer->state == WANDERER_LOADING) {
         pos.y -= WANDERER_RISE_DEPTH * wanderer->timer / WANDERER_RISE_FRAMES;
     } else if (wanderer->state == WANDERER_SINKING) {

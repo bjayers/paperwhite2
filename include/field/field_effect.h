@@ -62,6 +62,11 @@ FieldEffectTask *EncountTask_Start(EncountSystem *system, FieldEffects *effects,
 // Pause and hide a phenomenon
 void EncountTask_SetPaused(FieldEffectTask *task, BOOL paused);
 void EncountTask_SetDrawHidden(FieldEffectTask *task, BOOL hidden);
+#ifdef PAPERWHITE2
+// Paper White 2: a phenomenon's animation (an ENCOUNT_EFFECT_*) played once at a place, for what appears or goes
+// without an actor (the wanderers); the frames it plays for, 0 where the field has none
+u32 EncountTask_PlayOnceAt(FieldEffects *effects, u32 kind, const VecFx32 *pos);
+#endif
 // The effects that actors make on the terrain
 void FldeffShadow_Start(FieldActor *actor, FieldEffects *effects);
 #ifdef PAPERWHITE2

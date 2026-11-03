@@ -2,6 +2,13 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-03 (evening): wanderers appear and go in the dust cloud
+
+- Tested: the puff showed as one went, but was too small to hide it, and wasn't seen as one appeared. Now the
+  rustling spots' dust cloud plays once where it appears or goes (with its sound), and it shows, or is gone, a third
+  of the way in, once the dust covers it (plugins.md, Wanderers). Built (hack, no warnings, DSi intact). **Not
+  tested in game.**
+
 ## 2026-11-03 (afternoon): wanderers on sand and in caves
 
 - Where a wanderer's tile has no grass (cave floors, sand), it appears and goes in a puff of dust (the landing

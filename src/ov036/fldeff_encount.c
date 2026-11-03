@@ -362,3 +362,96 @@ static void EncountTask_Draw(FieldEffectTask *task, void *work) {
         GFL_G3DSysDrawObjBBoxCull(effect->objs[encountTask->params.variant].actor, &srt);
     }
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: a phenomenon's animation played once at a place, for what appears or goes without an actor (the
+// wanderers, paperwhite2_wanderers.c). It draws the phenomenon's model at its own frames, putting back the model's
+// after, so a phenomenon of the same kind on the field plays on as it was
+typedef struct {
+    FieldEffectEncount *effect;
+    u8 variant;
+} EncountOnceParams;
+
+typedef struct {
+    EncountOnceParams params;
+    fx32 frame;
+    fx32 counts[4];
+} EncountOnceTask;
+
+static void EncountOnceTask_Init(FieldEffectTask *task, void *work) {
+    EncountOnceTask *once = work;
+    G3DActor *actor;
+    int i;
+
+    once->params = *(EncountOnceParams *)FieldEffects_GetObjectParam(task);
+    actor = once->params.effect->objs[once->params.variant].actor;
+    for (i = 0; i < once->params.effect->spec.anmCount; i++) {
+        GFL_G3DActorGetAnmFrameCount(actor, i, &once->counts[i]);
+    }
+}
+
+static void EncountOnceTask_Exit(FieldEffectTask *task, void *work) {
+}
+
+static void EncountOnceTask_Update(FieldEffectTask *task, void *work) {
+    EncountOnceTask *once = work;
+
+    once->frame += FX32_ONE;
+    if (once->frame >= once->counts[0]) {
+        FieldEffects_DeleteObject(task);
+    }
+}
+
+static void EncountOnceTask_Draw(FieldEffectTask *task, void *work) {
+    SRTMatrix srt = { { 0, 0, 0 }, { FX32_ONE, FX32_ONE, FX32_ONE } };
+    EncountOnceTask *once = work;
+    G3DActor *actor = once->params.effect->objs[once->params.variant].actor;
+    fx32 saved[4];
+    fx32 frame;
+    int i;
+
+    for (i = 0; i < once->params.effect->spec.anmCount; i++) {
+        GFL_G3DActorGetAnmFrame(actor, i, &saved[i]);
+        frame = once->counts[i] > 0 ? once->frame % once->counts[i] : 0;
+        GFL_G3DActorSetAnmFrame(actor, i, &frame);
+    }
+    MTX_Identity33_(&srt.rotation);
+    FieldEffects_GetObjectPos(task, &srt.translation);
+    GFL_G3DSysDrawObjBBoxCull(actor, &srt);
+    for (i = 0; i < once->params.effect->spec.anmCount; i++) {
+        GFL_G3DActorSetAnmFrame(actor, i, &saved[i]);
+    }
+}
+
+// clang-format off
+static const FieldEffectTaskVTable ENCOUNT_ONCE_TASK_VTABLE = {
+    sizeof(EncountOnceTask),
+    EncountOnceTask_Init,
+    EncountOnceTask_Exit,
+    EncountOnceTask_Update,
+    EncountOnceTask_Draw,
+};
+
+// clang-format on
+
+u32 EncountTask_PlayOnceAt(FieldEffects *effects, u32 kind, const VecFx32 *pos) {
+    EncountOnceParams params;
+    u32 effectIndex;
+    fx32 count;
+
+    if (kind >= ENCOUNT_EFFECT_NONE) {
+        return 0;
+    }
+    effectIndex = ENCOUNT_EFFECT_INDICES[kind];
+    params.effect = FieldEffects_GetHandleData(effects, FLDEFF_ENCOUNT_GRASS + effectIndex);
+    if (params.effect == NULL) {
+        return 0;
+    }
+    params.variant = effectIndex == ENCOUNT_SPEC_GRASS ? kind : 0;
+    if (!GFL_G3DActorGetAnmFrameCount(params.effect->objs[params.variant].actor, 0, &count) || count <= 0) {
+        return 0;
+    }
+    FieldEffects_TCBCreate(effects, &ENCOUNT_ONCE_TASK_VTABLE, pos, 0, &params, 0);
+    return FX_Whole(count);
+}
+#endif
