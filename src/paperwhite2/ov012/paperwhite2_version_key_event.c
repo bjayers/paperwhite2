@@ -16,9 +16,9 @@
 #include "system/game_system.h"
 
 // Paper White 2: the field's event of the Version Key (paperwhite2/version_key.h), which the bag and the Y button's
-// shortcut start. It switches Unova and says so, then fades out and loads the map again where the player stands, as the
-// other version's, in the zone that the place is now. Only where a map change keeps the player as they are: walking on
-// the grid, in a normal zone; anywhere else it says it can't be used, and switches nothing
+// shortcut start. It switches Unova and says so, then fades out, loads the map again where the player stands and fades
+// back in, as the other version's, in the zone that the place is now. Only where a map change keeps the player as they
+// are: walking on the grid, in a normal zone; anywhere else it says it can't be used, and switches nothing
 
 typedef struct {
     GameSystem *gsys;
@@ -73,6 +73,12 @@ static GameEventReturnCode VersionKey_Callback(GameEvent *event, u32 *state, voi
         (*state)++;
         break;
     case 3:
+        // (the map change leaves the screen black, for the caller's own way in)
+        GameEvent_ChainNext(event, CallFieldMapEntranceInTransition(work->gsys, GSYS_GetField(work->gsys),
+                                                                    FIELD_TRANSITION_FADE_BLACK, 0, 1, 0, 0));
+        (*state)++;
+        break;
+    case 4:
         return GAMEEVENT_DONE;
     }
     return GAMEEVENT_CONTINUE;
