@@ -234,10 +234,14 @@ export async function loadZoneMap(zone: string, season: number, constants: Const
   }
   const tb = await heightTables();
   const constant = `ZONE_${zone.toUpperCase()}`;
+  // White 2 plays some of the overworld's cells as another zone (VERSION_SPECIFIC_ZONES): Route 4's are route_4_16's,
+  // which shows them, as Route 4 (Black 2's) still does
+  const versioned = await versionZones();
   const cells: { model: string; column: number; row: number }[] = [];
   matrix.maps.forEach((row, r) => row.forEach((model, c) => {
     if (!model) return;
-    if (matrix.zones && matrix.zones[r]?.[c] !== constant) return;
+    const cellZone = matrix.zones?.[r]?.[c];
+    if (matrix.zones && cellZone !== constant && (!cellZone || versioned.get(cellZone) !== constant)) return;
     cells.push({ model: swapped(model), column: c, row: r });
   }));
   const chunks = await Promise.all(cells.map(async (cell) => {
@@ -271,6 +275,18 @@ export function tileAt(map: ZoneMap, gx: number, gz: number, layer = 0): { chunk
 let spans: Promise<number[]> | null = null;
 
 /** Each map type's chunk size in units, from MAP_CONFIGS (src/ov036/fieldmap.c): its rows' first value, chunkSpan. */
+let versionPairs: Promise<Map<string, string>> | null = null;
+/** The zones White 2 plays in place of others, as GetVersionedMapChangeZoneNum swaps them (src/system/zonedata.c,
+ * VERSION_SPECIFIC_ZONES): Black City's cells are White Forest's, Route 4's are route_4_16's. */
+export function versionZones(): Promise<Map<string, string>> {
+  if (!versionPairs) {
+    versionPairs = api.scan("src/system/zonedata.c", "^\\s*\\{ ZONE_\\w+, ZONE_\\w+ \\},$").then((lines) =>
+      new Map(lines.map((l) => { const [, from, to] = /(ZONE_\w+), (ZONE_\w+)/.exec(l.text)!; return [from, to] as [string, string]; })));
+    versionPairs.catch(() => { versionPairs = null; });
+  }
+  return versionPairs;
+}
+
 function chunkSpans(): Promise<number[]> {
   if (!spans) {
     spans = api.scan("src/ov036/fieldmap.c", "^\\s*\\{ \\{ 0x[0-9a-f]+,").then((lines) =>

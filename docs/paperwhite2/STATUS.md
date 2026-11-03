@@ -2,6 +2,19 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-03 (midday): Route 4 in the Overworld Editor; no area empty under the level gate
+
+- **Route 4 is zone 551 (route_4_16) in White 2.** The game plays the overworld's ZONE_ROUTE_4 cells as
+  ZONE_ROUTE_4_16, as it plays Black City's as White Forest's (`VERSION_SPECIFIC_ZONES`, `src/system/zonedata.c`):
+  its own events (NPCs), scripts, text and encounters (`ENCOUNTERS_ROUTE_4_2`). The editor now reads that table and
+  shows the cells under route_4_16, with the map, White 2's NPCs and the buildings, in the chunk map too; route_4,
+  black_city and black_city_gate are marked "(Black 2)" in the zone list. Screenshotted.
+- **No encounters on Route 4's sand or in Desert Resort 2** was the scaled level gate: nothing there has a minimum
+  under 14 (Route 4) or 17 (Desert Resort 2), so a party scaled below that met no species at all. Now, where the
+  gate would leave a method empty, the lowest minimum among its own candidates is the gate (`LevelForGate` in
+  paperwhite2_encounters.c; encounters.py's `odds` and the editor's preview do the same). Built (hack, DSi intact).
+  **Not tested in game.**
+
 ## 2026-11-03 (morning): Overworld Editor conveniences
 
 - The overworld's chunk map (the Map Editor's, under the zone filter), a zone's wild Pokémon for reference (a

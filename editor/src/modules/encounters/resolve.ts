@@ -2,7 +2,8 @@
 // the measures the map shows. This is the rule the game's code and the build's tools will follow, so it stays small:
 // - a habitat matches when it names the area (or the area's group), has a slot in the season whose methods, periods
 //   and weather match (no weather listed: any), and the species' minimum level is met (by the party's level or the
-//   scaled level, as the settings say);
+//   scaled level, as the settings say), or, where none of the method's own would be met, the lowest minimum among
+//   them (the party below every one: their lowest-gated Pokémon still appear, at their minimum level);
 // - each tier present takes its share, rescaled so the present tiers make 100%, split evenly among its Pokémon;
 // - rustling spots give their fixed thing first (shaking grass Audino, dust clouds and bridge shadows the game's items),
 //   and the rest to their own habitats and the area's habitats of the settings' tiers and methods (the rare ones of
@@ -48,9 +49,13 @@ export function levelRange(levels: { min: number; max: number }, partyLevel: num
   return [clamp(scaled - settings.levels.spread), clamp(scaled + settings.levels.spread)];
 }
 
+/** The level the minimums are checked against: the party's or the scaled level, as the settings say. */
+export function gateLevel(partyLevel: number, settings: EncounterSettings): number {
+  return settings.levels.gate === "party" ? partyLevel : scaledLevel(partyLevel, settings);
+}
+
 export function isLevelMet(levels: { min: number }, partyLevel: number, settings: EncounterSettings): boolean {
-  const level = settings.levels.gate === "party" ? partyLevel : scaledLevel(partyLevel, settings);
-  return level >= levels.min;
+  return gateLevel(partyLevel, settings) >= levels.min;
 }
 
 export function battlesOf(entry: SpeciesEncounters, settings: EncounterSettings): Battles {
@@ -73,10 +78,10 @@ export function slotMatches(slot: Slot | null, method: Method, ctx: Context): sl
 type Match = Omit<Odds, "share">;
 
 function matches(species: Iterable<SpeciesEncounters>, settings: EncounterSettings, groups: AreaGroup[], ctx: Context, area: string,
-                 methods: Method[], tiers: string[] | null): Match[] {
+                 methods: Method[], tiers: string[] | null, gate: number | null = gateLevel(ctx.partyLevel, settings)): Match[] {
   const found: Match[] = [];
   for (const entry of species) {
-    if (!isLevelMet(entry.levels, ctx.partyLevel, settings)) continue;
+    if (gate !== null && gate < entry.levels.min) continue;
     for (const h of entry.habitats) {
       const slot = h.seasons[ctx.season];
       if (!namesArea(h, area, groups) || !methods.some((m) => slotMatches(slot, m, ctx))) continue;
@@ -86,6 +91,15 @@ function matches(species: Iterable<SpeciesEncounters>, settings: EncounterSettin
     }
   }
   return found;
+}
+
+/** The gate for a place's method (the game's LevelForGate): the party's level, or where it meets none of the method's
+ * own Pokémon, the lowest of their minimums. */
+export function placeGate(data: EncounterData, settings: EncounterSettings, ctx: Context, area: string, method: Method): number {
+  const level = gateLevel(ctx.partyLevel, settings);
+  const minimums = matches(data.species.values(), settings, data.groups, ctx, area, [method], null, null)
+    .map((m) => data.species.get(m.species)!.levels.min);
+  return minimums.length && minimums.every((m) => level < m) ? Math.min(...minimums) : level;
 }
 
 /** Splits total percent among the matches by tier (see the file's comment). */
@@ -108,8 +122,9 @@ export function placeOdds(data: EncounterData, settings: EncounterSettings, ctx:
     const spots = place.spots;
     const rule = settings.rustling;
     const fixedSpecies = spots === "grass" ? rule.grass.species : null;
-    const own = matches(all, settings, groups, ctx, area, ["rustling"], null).filter((m) => m.species !== fixedSpecies);
-    const pool = matches(all, settings, groups, ctx, area, rule.from, rule.tiers);
+    const gate = placeGate(data, settings, ctx, area, "rustling");
+    const own = matches(all, settings, groups, ctx, area, ["rustling"], null, gate).filter((m) => m.species !== fixedSpecies);
+    const pool = matches(all, settings, groups, ctx, area, rule.from, rule.tiers, gate);
     const seen = new Set(own.map((m) => `${m.species}:${m.form}`));
     const rest = [...own, ...pool.filter((m) => !seen.has(`${m.species}:${m.form}`))];
     const share = rest.length ? (spots === "grass" ? rule.grass.share : rule[spots].share) : 100;
@@ -124,18 +139,18 @@ export function placeOdds(data: EncounterData, settings: EncounterSettings, ctx:
     }
     odds = [fixed, ...byTier(rest, settings, 100 - share)];
   } else {
-    odds = byTier(matches(all, settings, groups, ctx, area, [method], null), settings, 100);
+    odds = byTier(matches(all, settings, groups, ctx, area, [method], null, placeGate(data, settings, ctx, area, method)), settings, 100);
   }
-  if (ctx.outbreak) odds = withOutbreaks(all, settings, groups, ctx, area, method, odds);
+  if (ctx.outbreak) odds = withOutbreaks(all, settings, groups, ctx, area, method, odds, placeGate(data, settings, ctx, area, method));
   return odds.sort((a, b) => b.share - a.share || a.species.localeCompare(b.species));
 }
 
 /** The place's outbreaks on their day: they take the outbreak share, split evenly, and the rest is scaled down. */
 function withOutbreaks(all: SpeciesEncounters[], settings: EncounterSettings, groups: AreaGroup[], ctx: Context, area: string, method: Method,
-                       odds: Odds[]): Odds[] {
+                       odds: Odds[], gate: number): Odds[] {
   const found: Odds[] = [];
   for (const entry of all) {
-    if (!isLevelMet(entry.levels, ctx.partyLevel, settings)) continue;
+    if (gate < entry.levels.min) continue;
     for (const o of entry.outbreaks) {
       const named = o.places.includes(area) || o.places.some((p) => groups.find((g) => g.id === p)?.areas.includes(area));
       if (!named || !o.methods.includes(method) || !o.seasons.includes(ctx.season) || !o.times.includes(ctx.time)) continue;

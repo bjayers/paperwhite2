@@ -179,6 +179,31 @@ static BOOL IsCandidateNow(const EncountersCandidate *c, const ConditionContext 
     return level >= c->minLevel;
 }
 
+// The level the candidates' gates are checked against: the party's, or where the gate would leave the method with no
+// candidate at all (a party below every species' minimum, as on Route 4 or in Desert Resort 2 early on), the lowest
+// minimum of those it would have, so their lowest-gated Pokémon still appear, at their own minimum level
+static u32 LevelForGate(const EncountersArea *area, const EncountersCandidate *candidates, const ConditionContext *ctx,
+                        u32 level, u32 encType) {
+    u32 lowest = 0xff;
+    BOOL pooled;
+    u32 i;
+
+    for (i = 0; i < area->count; i++) {
+        const EncountersCandidate *c = &candidates[i];
+
+        if (!IsCandidateNow(c, ctx, 0xff, encType, &pooled) || pooled || c->tier >= sHeader.tierCount) {
+            continue;
+        }
+        if (level >= c->minLevel) {
+            return level;
+        }
+        if (c->minLevel < lowest) {
+            lowest = c->minLevel;
+        }
+    }
+    return lowest != 0xff ? lowest : level;
+}
+
 static BOOL HasSlot(const EncountersBuild *build, u16 species, u8 form) {
     u32 i;
 
@@ -226,6 +251,7 @@ u8 PaperWhite2_Encounters_Build(const ConditionContext *ctx, u32 encType, u32 sp
     level = sHeader.gate == ENCOUNTERS_GATE_SCALED ? ctx->scaledLevel : ctx->medianLevel;
     low = Conditions_ScaledLevelMin(ctx->scaledLevel);
     high = Conditions_ScaledLevelMax(ctx->scaledLevel);
+    level = LevelForGate(area, candidates, ctx, level, encType);
     MI_CpuClear32(tierCounts, sizeof(tierCounts));
     // The candidates of the method first, then for rustling spots the area's Pokémon they draw from that aren't
     // among them yet

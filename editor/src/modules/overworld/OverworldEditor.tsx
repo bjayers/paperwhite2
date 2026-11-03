@@ -37,7 +37,7 @@ import { BuildingPanel } from "./BuildingPanel.tsx";
 import { MapView, hasRect, type OverlayMode, type TileRect } from "./MapView.tsx";
 import { amendProps, bundleModels, buildingEntities, dirtyPropChunks, loadProps, propsOf, propsSaveError, redoProps, revertProps, saveProps, setProps,
   undoProps, usePropsVersion } from "./props.ts";
-import { SEASONS, TILE, flatTileFor, paintOver, loadZoneMap, reloadLayers, standingOn, tileAt, type ZoneMap } from "./terrain.ts";
+import { SEASONS, TILE, flatTileFor, paintOver, loadZoneMap, reloadLayers, standingOn, tileAt, versionZones, type ZoneMap } from "./terrain.ts";
 
 const EVENTS_BUDGET = 2436;
 const KINDS: EntityKind[] = ["npc", "proxy", "building", "rail", "trigger", "warp", "level", "camera", "ambient"];
@@ -284,6 +284,8 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     }
   }, [pending, entities]);
 
+  const [versioned, setVersioned] = useState<Map<string, string>>(new Map());
+  useEffect(() => { versionZones().then(setVersioned, () => {}); }, []);
   const zones = useMemo(() => {
     const q = filter.trim().toLowerCase();
     return (world?.zones ?? []).filter((z) => !q || z.name.includes(q.replace(/ /g, "_")) || String(z.number) === q);
@@ -856,8 +858,10 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                   title="The overworld's grid: click an area's cell to open its zone">🗺 Overworld map</button>
           <div className="ow-zone-list">
             {zones.map((z) => (
-              <button key={z.name} className={`ow-zone${z.name === zone ? " selected" : ""}`} onClick={() => setZone(z.name)}>
+              <button key={z.name} className={`ow-zone${z.name === zone ? " selected" : ""}`} onClick={() => setZone(z.name)}
+                      title={versioned.has(`ZONE_${z.name.toUpperCase()}`) ? `Black 2's: White 2 plays ${versioned.get(`ZONE_${z.name.toUpperCase()}`)!.replace(/^ZONE_/, "").toLowerCase()} here` : undefined}>
                 <span className="ow-number">{z.number}</span> {z.name}{docs.get(`res/field/events/${z.name}.json`)?.dirty ? " •" : ""}
+                {versioned.has(`ZONE_${z.name.toUpperCase()}`) && <span className="muted small"> (Black 2)</span>}
               </button>
             ))}
           </div>

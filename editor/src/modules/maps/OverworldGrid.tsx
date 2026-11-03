@@ -1,9 +1,10 @@
 // The overworld's matrix as a grid (res/field/matrices/overworld.json): each zone's cells in a color of its own, filler
 // cells (a chunk, no zone: the trees and sea around the areas) grey, empty cells blank; the picked cells yellow, the
-// current zone's outlined. Hovering names a cell's zone.
+// current zone's outlined. Hovering names a cell's zone, as White 2 plays it (Route 4's cells are route_4_16's).
 
 import { useEffect, useState } from "react";
 import { api } from "../../api.ts";
+import { versionZones } from "../overworld/terrain.ts";
 
 export interface OverworldCell { column: number; row: number; zone: string | null; map: string | null }
 
@@ -21,7 +22,10 @@ export function OverworldGrid({ picked = [], current, freeOnly = false, onCell, 
   const [matrix, setMatrix] = useState<{ maps: (string | null)[][]; zones: (string | null)[][] } | null>(null);
   const [hover, setHover] = useState("");
   useEffect(() => {
-    api.file("res/field/matrices/overworld.json").then((f) => setMatrix(JSON.parse(f.text)), () => setMatrix(null));
+    Promise.all([api.file("res/field/matrices/overworld.json"), versionZones().catch(() => new Map<string, string>())]).then(([f, versioned]) => {
+      const m = JSON.parse(f.text) as { maps: (string | null)[][]; zones: (string | null)[][] };
+      setMatrix({ ...m, zones: m.zones.map((row) => row.map((z) => (z ? versioned.get(z) ?? z : z))) });
+    }, () => setMatrix(null));
   }, []);
   if (!matrix) return <p className="muted ow-note">Reading the overworld…</p>;
   const isPicked = (c: number, r: number) => picked.some(([x, y]) => x === c && y === r);

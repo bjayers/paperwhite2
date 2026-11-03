@@ -365,7 +365,7 @@ def odds(area: str, method: str, season: str, period: str, weather: str, scaled:
     level = scaled if gate == GATES.index("scaled") else median
     spread = json.loads(LEVEL_SCALING.read_text())["spread"]
     low, high = max(1, scaled - spread), min(100, scaled + spread)
-    slots = []
+    candidates = []
     for wanted in (False, True):
         for i in range(count):
             c = CANDIDATE.unpack_from(data, offset + AREA.size + CANDIDATE.size * i)
@@ -376,13 +376,22 @@ def odds(area: str, method: str, season: str, period: str, weather: str, scaled:
                 continue
             if weathers and not weathers & (1 << conditions.weathers()[weather]):
                 continue
-            if level < minimum or tier >= tier_count:
-                continue
-            if method == "rustling" and spots == 0 and number == special:
-                continue
-            if pooled and any(s[0] == number and s[1] == form for s in slots):
-                continue
-            slots.append([number, form, tier, min(max(low, minimum), maximum), min(max(high, minimum), maximum)])
+            if tier < tier_count:
+                candidates.append((pooled, number, form, tier, minimum, maximum))
+    # Where the gate would leave the method with none, the lowest minimum of its own candidates lets theirs in
+    # (LevelForGate)
+    own_minimums = [c[4] for c in candidates if not c[0]]
+    if own_minimums and all(level < m for m in own_minimums):
+        level = min(own_minimums)
+    slots = []
+    for pooled, number, form, tier, minimum, maximum in candidates:
+        if level < minimum:
+            continue
+        if method == "rustling" and spots == 0 and number == special:
+            continue
+        if pooled and any(s[0] == number and s[1] == form for s in slots):
+            continue
+        slots.append([number, form, tier, min(max(low, minimum), maximum), min(max(high, minimum), maximum)])
     counts = {t: sum(1 for s in slots if s[2] == t) for t in range(tier_count)}
     total_share = sum(shares[t] for t, n in counts.items() if n)
     weights = [shares[s[2]] * 1024 // counts[s[2]] if total_share else 0 for s in slots]

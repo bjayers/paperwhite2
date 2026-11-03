@@ -34,6 +34,10 @@ can appear by a method when all of these hold:
 - the level gate reaches its minimum;
 - its extra conditions hold.
 
+Where the party is below every minimum among a method's own candidates in the area (Route 4's 14, Desert Resort 2's
+17, early on), the gate is that lowest minimum instead, so the lowest-gated Pokémon still appear, at their minimum
+level, and the area never goes empty (`LevelForGate`).
+
 **Shares and levels.**
 - Each tier present takes its share, split evenly among its Pokémon there. The tiers present are rescaled to 100%.
 - The level is the scaled level ±3, kept within the species' minimum and maximum.
