@@ -2,7 +2,7 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
-## 2026-11-05: overworld encounters, stage 1 (wanderers)
+## 2026-11-03 (late): overworld encounters, stage 1 (wanderers)
 
 - **The design agreed with the user** (design/overworld-editor.md, Overworld encounters): up to 3 wild Pokémon in tall
   and dark grass, picked as a step would pick them, solid; a touch (either way, never sharing a tile) faces the two,
@@ -15,7 +15,7 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   DSi intact). **Not tested in game.** **For the user:** Route 20's grass; a touch both ways, a shiny (Always shiny),
   dark grass (always single), after a battle, cycling into one, and the follower walking behind.
 
-## 2026-11-04 (evening): ambients' turn directions, a new one's height, their paths in the editor
+## 2026-11-03 (later still): ambients' turn directions, a new one's height, their paths in the editor
 
 - **Turns to:** a perch can turn to only some directions (`path.faces`, the panel's Turns to buttons; plugins.md,
   Ambients). Packed in the flags' top bits; the game picks among them. Built (hack, no warnings, DSi intact). **Not
@@ -24,7 +24,7 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
 - **Paths in the editor:** drawn on the map, and moving in the Movement preview as the game moves them (the user's
   paths: perch, hover, circle, line, figure eight). Checked in the browser on a scratch copy; tests for the formulas.
 
-## 2026-11-04 (later): the sprite cache tested; the Ambients panel; more than 8 ambients placed
+## 2026-11-03 (later): the sprite cache tested; the Ambients panel; more than 8 ambients placed
 
 - **Tested by the user, emulator and 3DS:** Route 20 at autumn night with 7 more ambients of new sprites: 39 of 48
   cached (14 on demand), none uncached, textures 303 KB (peak 304), largest free 80 KB, no failures; no missing NPCs,
@@ -36,7 +36,7 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
 - **More than 8 ambients:** a zone can have 32 (the schema); the game already showed the first 8 whose conditions hold.
   The editor warns where more than 8 can hold at once, and the sprite bar counts only the 8 shown.
 
-## 2026-11-04: the sprite cache raised to 48, with a VRAM reserve (trial)
+## 2026-11-03: the sprite cache raised to 48, with a VRAM reserve (trial)
 
 - **More measurements (the user's):** Castelia's Mode Street (zone 33) 8 of 32 sprites, textures 252 KB, largest free
   131 KB, palettes 7,792; Pokéstar Studios 15 (13 on demand), 230 KB, largest free 153 KB. An estimate of every
