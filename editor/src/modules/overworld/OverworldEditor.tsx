@@ -30,6 +30,7 @@ import { cameraEntities, cameraFileOf, circleCamera, defaultCamera, newRectArea,
 import { api } from "../../api.ts";
 import { entityFields } from "./fields.tsx";
 import { AmbientPanel } from "./AmbientPanel.tsx";
+import { OverworldGrid } from "../maps/OverworldGrid.tsx";
 import { BuildingPanel } from "./BuildingPanel.tsx";
 import { MapView, hasRect, type OverlayMode, type TileRect } from "./MapView.tsx";
 import { amendProps, bundleModels, buildingEntities, dirtyPropChunks, loadProps, propsOf, propsSaveError, redoProps, revertProps, saveProps, setProps,
@@ -212,6 +213,8 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   // The sprites the zone can have loaded at once, in the worst case, against the sprite cache (spriteLoad.ts)
   const [npcCache, setNpcCache] = useState<number | null>(null);
   const [cacheSize, setCacheSize] = useState(SPRITE_CACHE_ORIGINAL);
+  // The overworld's chunk map over the map view, as the Map Editor has it
+  const [overworld, setOverworld] = useState(false);
   useEffect(() => { void spriteCacheSize().then(setCacheSize); }, []);
   // Whether the zone's scripts run 10852, the seasonal spawns, which the count works out (spriteLoad.ts)
   const [seasonal, setSeasonal] = useState<Seasonal>({ runs: false, night: false });
@@ -845,6 +848,8 @@ export function OverworldEditor({ constants, open }: ToolProps) {
       <div className="ow-body">
         <div className="ow-zones">
           <input className="filter" placeholder={`Filter ${world?.zones.length ?? 0} zones…`} value={filter} onChange={(e) => setFilter(e.target.value)} />
+          <button className={`me-overworld-button${overworld ? " active" : ""}`} onClick={() => setOverworld(!overworld)}
+                  title="The overworld's grid: click an area's cell to open its zone">🗺 Overworld map</button>
           <div className="ow-zone-list">
             {zones.map((z) => (
               <button key={z.name} className={`ow-zone${z.name === zone ? " selected" : ""}`} onClick={() => setZone(z.name)}>
@@ -942,6 +947,14 @@ export function OverworldEditor({ constants, open }: ToolProps) {
             </div>
           )}
           <div className={`ow-map-wrap${painting ? " painting" : ""}`}>
+            {overworld && (
+              <div className="me-overworld-panel">
+                <div className="me-overworld-head"><strong>Overworld</strong><span className="spacer" /><button onClick={() => setOverworld(false)}>Close</button></div>
+                <OverworldGrid current={zone ? `ZONE_${zone.toUpperCase()}` : null}
+                               onCell={(cell) => { if (cell.zone) { setZone(cell.zone.replace(/^ZONE_/, "").toLowerCase()); setOverworld(false); } }}
+                               hint="Click an area's cell to open its zone (the Map Editor adds routes on grey or empty cells)." />
+              </div>
+            )}
             {!zone ? <p className="muted ow-empty">Choose a zone.</p>
               : mapError ? <p className="ow-error ow-empty">{mapError}</p>
               : !map ? <p className="muted ow-empty">Reading the map…</p>
