@@ -8,7 +8,8 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   Pokémon sprites (animation set 13) have 4 animations, one a direction, always playing (`RailActorAnim_DrawWalking`);
   the ambients used a person's layout (status times 4 plus direction), so a hop asked for animation 8 or more, past the
   set's end, and standing stopped the animation. An ambient whose set has fewer than 12 now plays its facing's
-  animation, always (`byDirection`). Built (hack, no warnings, DSi intact). **Not tested in game.**
+  animation, always (`byDirection`). **Tested in game by the user (2026-11-03):** Swellow sits on the railing at
+  205, 649 with its shadow, flaps, turns and hops, and stays shown the whole time.
 
 - **The user's test (Route 20):** the bird was invisible with its shadow showing, then drew a trainer's sprite. Cause:
   Pidove wasn't loaded (not preloaded, and the cache full), and the reflections' call it used drew a billboard with no
