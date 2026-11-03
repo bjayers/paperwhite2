@@ -163,7 +163,8 @@ FieldEffectTask *FldeffEmotionBubble_SetPos(FieldEffects *effects, const VecFx32
     if (playSE == TRUE) {
         FldeffEmotionBubble_PlaySe(kind);
     }
-    return FieldEffects_TCBCreate(effects, &EMOTION_BUBBLE_TASK_VTABLE, NULL, 0, &params, 0);
+    // (the bubble that ends itself, whose update knows a bubble without an actor)
+    return FieldEffects_TCBCreate(effects, &EMOTION_BUBBLE_AUTO_END_TASK_VTABLE, NULL, 0, &params, 0);
 }
 #endif
 

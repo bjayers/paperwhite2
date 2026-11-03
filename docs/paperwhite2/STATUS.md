@@ -19,6 +19,13 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   (silent: no shiny sound found by name yet). The non-shiny Wurmple, Silcoon and Swinub on Route 20 in winter are
   likely script 10852's seasonal NPCs (walking-Pokémon sprites, never shiny), not wanderers: to check with Wanderers
   now, or No wanderers on. Built (hack, no warnings, DSi intact). **Not tested in game.**
+- **The user's second test:** the shake was the wrong grass; the wanted one is the actors' standing grass (now, at
+  its tile, plugins.md, Wanderers: Effects). The sparkle is lower (3 units) and half as long. The "!" never showed: its
+  bubble had the held task's update, which ends one without an actor at once; now it's the one that ends itself, over
+  the one walked into. The non-shiny Swinub with a sparkle: Swinub's, Wurmple's and Silcoon's shiny follower rows are
+  placeholders (975 in all). **For the user:** a palette tool could make the missing shiny follower sprites (the
+  battle sprites' normal-to-shiny colors mapped onto the follower's), for followers and wanderers both. Built (hack,
+  no warnings, DSi intact). **Not tested in game.**
 
 ## 2026-11-03 (later still): ambients' turn directions, a new one's height, their paths in the editor
 

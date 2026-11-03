@@ -73,15 +73,15 @@
 // A cry's pan: the middle
 #define WANDERER_CRY_PAN 64
 #define WANDERER_NONE (-1)
-// The grass's shake as one rises or sinks (with the rustle's sound) and under each step (without), in frames
-#define WANDERER_RUSTLE_FRAMES 24
-#define WANDERER_STEP_RUSTLE_FRAMES 12
+// The rustle's sound as one rises out of its grass or sinks into it
 #define WANDERER_RUSTLE_SE SEQ_SE_FLD_70
+// A tile's flag of the grass an actor stands in (ActorTerrainEffect_GrassStill's)
+#define WANDERER_TILE_FLAG_GRASS 0x20
 // A shiny one's sparkle (the Join Avenue's, FLDEFF_FES_SPARKLE): as it rises, and again every few seconds while it's
 // out, a little over its feet
-#define WANDERER_SPARKLE_FRAMES 30
+#define WANDERER_SPARKLE_FRAMES 15
 #define WANDERER_SPARKLE_EVERY (5 * WANDERER_FRAMES_A_SECOND)
-#define WANDERER_SPARKLE_LIFT FX32_CONST(10)
+#define WANDERER_SPARKLE_LIFT FX32_CONST(3)
 
 typedef struct {
     WildPkmParam param;
@@ -107,9 +107,10 @@ typedef struct {
     u8 pad[3];
     // The animation it was last given
     u16 anim;
-    // Its grass's shake and its frames left; its sparkle's frames left, and the frames to its next
-    FieldEffectTask *rustle;
-    u16 rustleTimer;
+    // The grass it stands in, as an actor does (FLDEFF_GRASS), and the grass of the tile it walks to; its sparkle's
+    // frames left, and the frames to its next
+    FieldEffectTask *grass;
+    FieldEffectTask *grassTo;
     u16 sparkleTimer;
     u16 sparkleNext;
 } Wanderer;
@@ -120,9 +121,10 @@ typedef struct {
     Field *field;
     u16 zone;
     u16 spawnTimer;
-    // The wanderer the player touched, or that touched the player, and how long its touch has waited
+    // The wanderer the player touched, or that touched the player (touchedPlayer), and how long its touch has waited
     s8 touch;
     u8 touchWait;
+    u8 touchedPlayer;
     // The shiny ones' sparkles, one a wanderer, made when the first is needed
     FieldEffectTask *sparkles;
     Wanderer list[WANDERERS_MAX];
@@ -134,6 +136,8 @@ typedef struct {
     u32 encType;
     u16 wait;
     s8 index;
+    // Whether the wanderer walked into the player (who is surprised), rather than the player into it
+    u8 touchedPlayer;
 } WandererTouch;
 
 static WandererState sWanderers;
@@ -238,25 +242,26 @@ static BOOL Wanderers_IsNearPlayer(Field *field, s16 x, s16 z) {
            (Wanderers_Abs(x - FldAct_GetInitGPosX(player)) <= 1 && Wanderers_Abs(z - FldAct_GetInitGPosZ(player)) <= 1);
 }
 
-// The grass shaken at a tile, as a rustling spot's is (its kind by the tile), for frames; with its sound, or quietly
-static void Wanderers_Rustle(Field *field, Wanderer *wanderer, s16 x, s16 z, fx32 ground, u16 frames, BOOL sound) {
+// The grass an actor stands in at a tile, where the tile has it (its kind by the tile and the season, as an actor's
+// is), shaking first when animate; NULL where it has none
+static FieldEffectTask *Wanderers_Grass(Field *field, s16 x, s16 z, fx32 ground, BOOL animate) {
     VecFx32 pos;
     u32 tile;
 
-    if (wanderer->rustle != NULL) {
-        FieldEffects_DeleteObject(wanderer->rustle);
-        wanderer->rustle = NULL;
-    }
     ConvGXZToVector(x, z, &pos);
     pos.y = ground;
     tile = GetTileTypeAtPos(field->g3DMapper, &pos);
-    if (tile != TILE_TYPE_NONE && MapTile_GetEncounterEffectKind(tile) != ENCOUNT_EFFECT_NONE) {
-        wanderer->rustle = EncountTask_Start(Field_GetEncountSystem(field), field->fieldEffects, (u16)x, (u16)z, ground,
-                                             MapTile_GetEncounterEffectKind(tile));
-        wanderer->rustleTimer = frames;
+    if (tile == TILE_TYPE_NONE || !(GetTileFlags(tile) & WANDERER_TILE_FLAG_GRASS)) {
+        return NULL;
     }
-    if (sound) {
-        GFL_SndSEPlay(WANDERER_RUSTLE_SE);
+    return GrassTask_StartAt(field->fieldEffects, x, z, ground, animate,
+                             ActorTerrainEffect_GetGrassKind(GetTileClass(tile), GameData_GetSeason(field->gameData)));
+}
+
+static void Wanderers_DeleteGrass(FieldEffectTask **grass) {
+    if (*grass != NULL) {
+        FieldEffects_DeleteObject(*grass);
+        *grass = NULL;
     }
 }
 
@@ -279,10 +284,8 @@ static void Wanderers_Remove(MMSys *actorSystem, Wanderer *wanderer) {
     if (wanderer->state == WANDERER_FREE) {
         return;
     }
-    if (wanderer->rustle != NULL) {
-        FieldEffects_DeleteObject(wanderer->rustle);
-        wanderer->rustle = NULL;
-    }
+    Wanderers_DeleteGrass(&wanderer->grass);
+    Wanderers_DeleteGrass(&wanderer->grassTo);
     if (sWanderers.sparkles != NULL) {
         FldeffFesSparkle_Hide(sWanderers.sparkles, (u8)(wanderer - sWanderers.list));
     }
@@ -383,6 +386,7 @@ static void Wanderers_Step(Field *field, Wanderer *wanderer, s32 index) {
             wanderer->state = WANDERER_TOUCHED;
             sWanderers.touch = (s8)index;
             sWanderers.touchWait = 0;
+            sWanderers.touchedPlayer = TRUE;
             return;
         }
         // Never beside the player otherwise: the follower walks into the tile the player leaves
@@ -399,7 +403,7 @@ static void Wanderers_Step(Field *field, Wanderer *wanderer, s32 index) {
         wanderer->toY = ground;
         wanderer->state = WANDERER_WALKING;
         wanderer->timer = WANDERER_WALK_FRAMES;
-        Wanderers_Rustle(field, wanderer, x, z, ground, WANDERER_STEP_RUSTLE_FRAMES, FALSE);
+        wanderer->grassTo = Wanderers_Grass(field, x, z, ground, TRUE);
         return;
     }
     wanderer->timer = WANDERER_PAUSE_MIN + GFL_RandomLC(WANDERER_PAUSE_SPAN);
@@ -413,7 +417,8 @@ static void Wanderers_Tick(Field *field, Wanderer *wanderer, s32 index) {
         if (wanderer->billboard[1] != BILLBOARD_ACTOR_NONE) {
             wanderer->state = WANDERER_RISING;
             wanderer->timer = WANDERER_RISE_FRAMES;
-            Wanderers_Rustle(field, wanderer, wanderer->x, wanderer->z, wanderer->y, WANDERER_RUSTLE_FRAMES, TRUE);
+            wanderer->grass = Wanderers_Grass(field, wanderer->x, wanderer->z, wanderer->y, TRUE);
+            GFL_SndSEPlay(WANDERER_RUSTLE_SE);
             Wanderers_Sparkle(field, wanderer);
         } else if (--wanderer->timer == 0) {
             Wanderers_Remove(field->actorSystem, wanderer);
@@ -432,10 +437,6 @@ static void Wanderers_Tick(Field *field, Wanderer *wanderer, s32 index) {
     if (wanderer->life != 0) {
         wanderer->life--;
     }
-    if (wanderer->rustle != NULL && --wanderer->rustleTimer == 0) {
-        FieldEffects_DeleteObject(wanderer->rustle);
-        wanderer->rustle = NULL;
-    }
     if (wanderer->sparkleTimer != 0 && --wanderer->sparkleTimer == 0 && sWanderers.sparkles != NULL) {
         FldeffFesSparkle_Hide(sWanderers.sparkles, (u8)index);
     }
@@ -453,7 +454,10 @@ static void Wanderers_Tick(Field *field, Wanderer *wanderer, s32 index) {
         if (wanderer->life == 0) {
             wanderer->state = WANDERER_SINKING;
             wanderer->timer = WANDERER_RISE_FRAMES;
-            Wanderers_Rustle(field, wanderer, wanderer->x, wanderer->z, wanderer->y, WANDERER_RUSTLE_FRAMES, TRUE);
+            // (its grass shakes again as it goes)
+            Wanderers_DeleteGrass(&wanderer->grass);
+            wanderer->grass = Wanderers_Grass(field, wanderer->x, wanderer->z, wanderer->y, TRUE);
+            GFL_SndSEPlay(WANDERER_RUSTLE_SE);
         } else if (--wanderer->timer == 0) {
             Wanderers_Step(field, wanderer, index);
         }
@@ -463,6 +467,10 @@ static void Wanderers_Tick(Field *field, Wanderer *wanderer, s32 index) {
             wanderer->x = wanderer->toX;
             wanderer->z = wanderer->toZ;
             wanderer->y = wanderer->toY;
+            // (the grass it left goes, and the one it came to is its own)
+            Wanderers_DeleteGrass(&wanderer->grass);
+            wanderer->grass = wanderer->grassTo;
+            wanderer->grassTo = NULL;
             wanderer->state = WANDERER_IDLE;
             wanderer->timer = WANDERER_PAUSE_MIN + GFL_RandomLC(WANDERER_PAUSE_SPAN);
         }
@@ -603,6 +611,7 @@ BOOL PaperWhite2_WanderersCheckGridCollision(const FieldActor *actor, s16 x, s16
             wanderer->state = WANDERER_TOUCHED;
             sWanderers.touch = (s8)i;
             sWanderers.touchWait = 0;
+            sWanderers.touchedPlayer = FALSE;
         }
         return TRUE;
     }
@@ -624,10 +633,14 @@ static GameEventReturnCode Wanderers_TouchEvent(GameEvent *event, u32 *state, vo
         SetActorFaceDir(player, dir);
         // (DIR_UP and DIR_DOWN, DIR_LEFT and DIR_RIGHT are each other's)
         wanderer->facing = (u8)(dir ^ 1);
-        // Its "!", over it, with the bubble's sound
-        ConvGXZToVector(wanderer->x, wanderer->z, &at);
-        at.y = wanderer->y;
-        FldeffEmotionBubble_SetPos(field->fieldEffects, &at, EMOTION_BUBBLE_EXCLAMATION, TRUE);
+        // A "!" over the one walked into, the surprised one, with the bubble's sound
+        if (touch->touchedPlayer) {
+            FldeffEmotionBubble_SetActor(field->fieldEffects, player, EMOTION_BUBBLE_EXCLAMATION, TRUE);
+        } else {
+            ConvGXZToVector(wanderer->x, wanderer->z, &at);
+            at.y = wanderer->y;
+            FldeffEmotionBubble_SetPos(field->fieldEffects, &at, EMOTION_BUBBLE_EXCLAMATION, TRUE);
+        }
         if (!GFL_SndIsLoadThreadRunning()) {
             PokeVoice_Play(touch->param.species, touch->param.form, WANDERER_CRY_PAN, 0, 0, 0, 0, NULL);
         }
@@ -671,6 +684,7 @@ GameEvent *PaperWhite2_WanderersGridEvent(GameSystem *gsys, Field *field, GameEv
     touch->param = wanderer->param;
     touch->encType = wanderer->encType;
     touch->index = sWanderers.touch;
+    touch->touchedPlayer = sWanderers.touchedPlayer;
     return touchEvent;
 }
 

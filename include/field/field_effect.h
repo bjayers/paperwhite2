@@ -104,6 +104,10 @@ typedef struct {
 
 void GrassTask_Start(FieldEffects *effects, FieldActor *actor, BOOL animate, int kind);
 #ifdef PAPERWHITE2
+// Paper White 2: grass at a tile, for what is drawn without an actor, until its owner deletes it
+FieldEffectTask *GrassTask_StartAt(FieldEffects *effects, s16 gx, s16 gz, fx32 ground, BOOL animate, int kind);
+#endif
+#ifdef PAPERWHITE2
 // Paper White 2: for the Following Pokémon's grass pass
 BOOL PaperWhite2_IsShakingGrassTask(const GrassTask *grassTask);
 #endif

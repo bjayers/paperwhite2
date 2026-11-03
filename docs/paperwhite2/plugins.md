@@ -947,18 +947,24 @@ sinking, random wandering, the touch and the battle.
   step onto a wanderer's tile or the one it walks to (`PaperWhite2_WanderersCheckGridCollision`); the player's step
   onto one touches it, as one stepping into the player does. The touch waits for the player to be free (no event, not
   mid-step; given up after 2 seconds), then the grid's event check (`fieldmap_event.c`, after the follower's) starts
-  its event: the two face each other, its cry plays with a "!" over it (`FldeffEmotionBubble_SetPos`, an
-  `#ifdef PAPERWHITE2` bubble over a place in `fldeff_emotion_bubble.c`), and as the "!" ends (36 frames) the single
+  its event: the two face each other, its cry plays with a "!" over the one walked into, the surprised one (over the
+  wanderer `FldeffEmotionBubble_SetPos`, an `#ifdef PAPERWHITE2` bubble over a place in `fldeff_emotion_bubble.c` that
+  ends itself; over the player the actor's bubble), and as the "!" ends (36 frames) the single
   battle with it. It stays on the field through the battle's transition; the field's closing
   (`PaperWhite2_WanderersReset` before `FieldEffects_Free`) clears them
   (`EventWildBattleCall_CreateWanderer`: `FieldEncount_SetupNormal` with one Pokémon, then
   `EventWildBattleCall_CreateCore`).
 - **None** on rails, with a partner, or with the debug menu's No wanderers; all go at a zone change, and the field's
   making (`FieldRoutine_Open`, `PaperWhite2_WanderersReset`) starts from none, as after a battle or a menu.
-- **Effects:** the grass shakes as a rustling spot's does (`EncountTask_Start`, the kind by the tile,
-  `MapTile_GetEncounterEffectKind`) for 24 frames with the rustle's sound (`SEQ_SE_FLD_70`) as one rises and sinks,
-  and quietly for 12 under each step. A shiny one sparkles (the Join Avenue's sparkle, `FldeffFesSparkle_Start` and
-  `_Show`, which every field loads) for a second as it rises and every 5 seconds while it's out; silent for now.
+- **Effects:** it stands in its grass as an actor does: the actors' grass (`FLDEFF_GRASS`) at its tile
+  (`GrassTask_StartAt`, an `#ifdef PAPERWHITE2` grass without an actor in `fldeff_grass.c` that stays until its owner
+  deletes it), its kind by the tile and the season (`ActorTerrainEffect_GetGrassKind`: dark, the C grasses, snowy).
+  It shakes as one rises (with the rustle's sound, `SEQ_SE_FLD_70`), as it sinks (again with the sound) and on each
+  tile it steps onto, and the one it left goes when it arrives. A shiny one sparkles (the Join Avenue's sparkle,
+  `FldeffFesSparkle_Start` and `_Show`, which every field loads) for half a second as it rises and every 5 seconds
+  while it's out; silent for now.
+- **Shiny sprites:** 975 of the followers' shiny rows are placeholders (`"placeholder": true`), the normal sprite in
+  the registry, from the imported pack; a shiny wanderer (or follower) of such a species looks normal but sparkles.
 - **Not yet:** aggressive and passive species, Repel, the per-species "appears in" and "wanders" settings, the
   zone's switch and the editor's settings, a sparkle sound (stages 2 to 4).
 

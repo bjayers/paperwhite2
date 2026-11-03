@@ -12,6 +12,7 @@
 #include "nitro/fx.h"
 
 #ifdef PAPERWHITE2
+#include "nitro/mi.h"
 #include "stddef.h"
 #endif
 
@@ -156,6 +157,29 @@ void GrassTask_Start(FieldEffects *effects, FieldActor *actor, BOOL animate, int
     }
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: grass at a tile rather than under an actor, for what is drawn without one (a wanderer,
+// paperwhite2_wanderers.c): placed as an actor's is on its ground, it shakes when animate and stays settled until its
+// owner deletes it
+FieldEffectTask *GrassTask_StartAt(FieldEffects *effects, s16 gx, s16 gz, fx32 ground, BOOL animate, int kind) {
+    GrassTaskParams params;
+
+    if (kind >= GRASS_KIND_COUNT) {
+        return NULL;
+    }
+    MI_CpuFill8(&params, 0, sizeof(params));
+    params.grass = FieldEffects_GetHandleData(effects, FLDEFF_GRASS);
+    params.actor = NULL;
+    params.kind = kind;
+    params.gx = gx;
+    params.gz = gz;
+    ConvGXZToVector(gx, gz, &params.pos);
+    params.pos.y = ground + FX32_CONST(9);
+    params.pos.z -= FX32_CONST(2);
+    return FieldEffects_TCBCreate(effects, &GRASS_TASK_VTABLE, NULL, animate, &params, 0);
+}
+#endif
+
 static void GrassTask_Init(FieldEffectTask *task, void *work) {
     GrassTask *grassTask = work;
     GrassTaskParams *params = FieldEffects_GetObjectParam(task);
@@ -165,7 +189,15 @@ static void GrassTask_Init(FieldEffectTask *task, void *work) {
     u16 actorIndex;
 
     grassTask->params = *params;
+#ifdef PAPERWHITE2
+    // Paper White 2: grass without an actor (GrassTask_StartAt) has no identity, and stays even without a billboard,
+    // so its owner's task stays its own
+    if (params->actor != NULL) {
+        FldAct_GetIdentity(params->actor, &grassTask->identity);
+    }
+#else
     FldAct_GetIdentity(params->actor, &grassTask->identity);
+#endif
     FieldEffects_SetObjectPos(task, &params->pos);
     kind = grassTask->params.kind;
     request.texMat = grassTask->params.grass->matIndices[kind];
@@ -179,6 +211,11 @@ static void GrassTask_Init(FieldEffectTask *task, void *work) {
     request.callbackData = grassTask;
     billboardActor = grassTask->params.grass->billboardActor;
     grassTask->actorIndex = BillboardActorSys_ExecActorRequests(billboardActor, 0, &request, 1, 0);
+#ifdef PAPERWHITE2
+    if (grassTask->actorIndex == BILLBOARD_ACTOR_NONE && params->actor == NULL) {
+        return;
+    }
+#endif
     if (grassTask->actorIndex == BILLBOARD_ACTOR_NONE) {
         FieldEffects_DeleteObject(task);
         return;
@@ -207,6 +244,21 @@ static void GrassTask_Update(FieldEffectTask *task, void *work) {
     GrassTask *grassTask = work;
     BillboardActorSys *billboardActor = grassTask->params.grass->billboardActor;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: grass without an actor shakes, settles on its rest step and stays (GrassTask_StartAt)
+    if (grassTask->params.actor == NULL) {
+        if (grassTask->actorIndex == BILLBOARD_ACTOR_NONE || grassTask->state > GRASS_STATE_SETTLE) {
+            return;
+        }
+        if (grassTask->state == GRASS_STATE_SETTLE ||
+            BillboardActorSys_GetActorLastCmd(billboardActor, grassTask->actorIndex, &cmd)) {
+            BillboardActorSys_SetActorStep(billboardActor, grassTask->actorIndex,
+                                           GRASS_REST_STEPS[grassTask->params.kind]);
+            grassTask->state = GRASS_STATE_SETTLED;
+        }
+        return;
+    }
+#endif
     switch (grassTask->state) {
     case GRASS_STATE_SHAKE:
         if (GRASS_ENDS_ON_LEAVE[grassTask->params.kind] == TRUE) {
