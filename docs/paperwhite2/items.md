@@ -91,6 +91,9 @@ Switches Unova between the way it is in Black 2 and in White 2, without Unova Li
     Opelucid's textures are sure to be wrong too until it follows the key.
   - A Black 2 Route 4 trainer (the one by the road, script 5220, an ID of `GLOBAL_SCRIPT_TABLE`'s 5000-6999 row)
     battles again each time the player comes back: its defeat isn't kept. Not yet looked into.
+  - Where it can be used needs limiting: the reload keeps the player's tile, and the other version can have a
+    building or a wall there (tested on Route 4: the player ends up inside a building). It should be used only where
+    both versions' tiles are free, or move the player to a free tile, or warp to a fixed spot.
   - Not yet checked: Black 2's story flags and events in the zones it switches, and Black City's and White Forest's
     own data the first time it's switched.
 - **Scripts:** 2820-2822 are past `global_2800.s`'s original last ID, so its row of `GLOBAL_SCRIPT_TABLE`
