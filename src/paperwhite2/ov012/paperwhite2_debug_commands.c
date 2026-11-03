@@ -204,6 +204,7 @@ static u32 DebugCommands_GivePokemon(FieldScriptEnv *env, u16 species, u16 level
 static void DebugCommands_SetSeason(GameData *gameData, u16 season);
 static void DebugCommands_SetWeather(GameSystem *gsys, u16 weather);
 static void DebugCommands_SetMoney(GameData *gameData, u32 money);
+static BOOL DebugCommands_HasFlySpot(u16 zoneId);
 static BOOL DebugCommands_Warp(GameSystem *gsys, u16 zoneId);
 static BOOL DebugCommands_Info(FieldScriptEnv *env);
 static void DebugCommands_FillConditions(FieldScriptEnv *env, ConditionContext *ctx);
@@ -346,6 +347,9 @@ static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2
         return TRUE;
     case DEBUG_ACTION_WARP_ZONE:
         DebugCommands_SetWordNumber(env, 0, sDebugNumber.value);
+        if (arg1 == 0) {
+            return DebugCommands_HasFlySpot(sDebugNumber.value);
+        }
         *wait = DebugCommands_Warp(gsys, sDebugNumber.value);
         return *wait;
     case DEBUG_ACTION_MONEY_SET:
@@ -756,8 +760,7 @@ static void DebugCommands_SetMoney(GameData *gameData, u32 money) {
 
 // The zone's fly spot, where Fly, Teleport and a blackout put the player (LoadZoneSpawnInfoCheckRail): a zone whose
 // spot is 0, 0, 0 has none, and isn't warped to
-static BOOL DebugCommands_Warp(GameSystem *gsys, u16 zoneId) {
-    ZoneSpawnInfo spawn;
+static BOOL DebugCommands_HasFlySpot(u16 zoneId) {
     VecFx32 pos;
 
     if (IsZonesWithRailsArrayHasZoneID(zoneId)) {
@@ -765,12 +768,21 @@ static BOOL DebugCommands_Warp(GameSystem *gsys, u16 zoneId) {
     } else {
         LoadZoneFlyPosToVecFx32(zoneId, &pos);
     }
-    if (pos.x == 0 && pos.y == 0 && pos.z == 0) {
+    return pos.x != 0 || pos.y != 0 || pos.z != 0;
+}
+
+// The warp to the zone's fly spot, as MapChangeFlyWarp makes it (Scrcmd_Mapchange_MapChangeFlyWarp), with a door's
+// fades; FALSE for a zone without one. (A map change of Fly's, EventMapChange_CreateForFly, needs the screen faded out
+// first, as Fly's event does)
+static BOOL DebugCommands_Warp(GameSystem *gsys, u16 zoneId) {
+    ZoneSpawnInfo spawn;
+
+    if (!DebugCommands_HasFlySpot(zoneId)) {
         return FALSE;
     }
     LoadZoneSpawnInfoCheckRail(&spawn, zoneId);
-    GameEvent_ChainNext(GSYS_GetNowEvent(gsys),
-                        EventMapChange_CreateForFly(gsys, GSYS_GetField(gsys), 0, &spawn, WARP_DIR_DOWN));
+    GameEvent_ChainNext(GSYS_GetNowEvent(gsys), EventMapChangeWarp_CreateGrid(gsys, GSYS_GetField(gsys), zoneId,
+                                                                              &spawn.pos.vec, DIR_DOWN, FALSE));
     return TRUE;
 }
 

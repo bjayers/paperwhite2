@@ -587,7 +587,9 @@ L_DebugWarpZone:
     Debug DEBUG_ACTION_WARP_ZONE, 0, 0, 0x8025
     WorkCmpConst 0x8025, 0
     VMJumpIf CMP_EQ, L_DebugNoFlySpot
+    // (the window closed before the warp, which the script outlives)
     SystemMsgClose
+    Debug DEBUG_ACTION_WARP_ZONE, 1, 0, 0x8025
     ActorsUnpauseAll
     VMHalt
 

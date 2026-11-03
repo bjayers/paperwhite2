@@ -19,6 +19,15 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   entry; billboards and materials; texture and palette VRAM used, peak, largest free block and failures. Built (hack, no
   warnings, DSi intact). **Not tested in game.** **For the user:** open it in busy places (Route 20, Virbank City,
   Castelia City, a zone after a battle) and note the numbers, with Reset peaks before walking around.
+- **The user's numbers (tested in game):** Virbank City 21 of 32 sprites (4 on demand), textures 247 of 384 KB, largest
+  free 136 KB, palettes 6,576 of 16,384 bytes; Route 20 28 of 32 (3 on demand), textures 241 KB, largest free 142 KB,
+  palettes 6,128; Castelia City's outer ring 11 of 32 (9 on demand), textures 271 KB (peak 272), largest free 112 KB,
+  palettes 4,032. No sprite went uncached and no allocation failed; the largest free block is nearly all that's free,
+  so the texture VRAM isn't fragmented. Billboards at most 24 of 128, materials 28 of 64.
+- **Debug warp froze the game** (Warp to zone...): the warp's map change ran with the number entry's window open, and
+  the script, which outlives the warp, then closed a window of the old field. Now the script checks the fly spot,
+  closes the window, then warps as `MapChangeFlyWarp` does (`EventMapChangeWarp_CreateGrid`, a door's fades; Fly's map
+  change needs the screen faded first). Built (hack, no warnings, DSi intact). **Not tested in game.**
 
 ## 2026-11-03 (evening): ambients' sprites loaded on demand; the bird moved to Virbank City
 

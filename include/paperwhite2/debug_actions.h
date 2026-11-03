@@ -68,8 +68,9 @@
 // Warps to the town of the last Pokémon Center the player used, at its fly spot, as Teleport does. The script ends
 // after it
 #define DEBUG_ACTION_WARP_LAST_CENTER 25
-// Warps to the number's zone, at its fly spot. Returns FALSE, and doesn't warp, for a zone without one; otherwise the
-// script ends after it
+// With arg1 0, returns whether the number's zone has a fly spot; with 1, warps there as the script command
+// MapChangeFlyWarp does (a door's fades out and in), and the script goes on after it in the new field, so its message
+// window must be closed first
 #define DEBUG_ACTION_WARP_ZONE 26
 // Sets the money to the number, and puts it in word 0
 #define DEBUG_ACTION_MONEY_SET 27
