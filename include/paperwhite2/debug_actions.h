@@ -131,6 +131,10 @@
 // Starts the peaks and the failure counts over from now
 #define DEBUG_ACTION_MEMORY_RESET_PEAKS 44
 
+// The wanderers (include/paperwhite2/wanderers.h): puts how many are out (0), and each one's species (1, 3, 5) and its
+// level, shininess and state (2, 4, 6), or none
+#define DEBUG_ACTION_WANDERER_WORDS 45
+
 // The kinds of number entry: their ranges and messages are sDebugNumberKinds (paperwhite2_debug_commands.c)
 #define DEBUG_NUMBER_LEVEL 0
 #define DEBUG_NUMBER_NATURE 1

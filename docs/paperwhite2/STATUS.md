@@ -2,6 +2,19 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-05: overworld encounters, stage 1 (wanderers)
+
+- **The design agreed with the user** (design/overworld-editor.md, Overworld encounters): up to 3 wild Pokémon in tall
+  and dark grass, picked as a step would pick them, solid; a touch (either way, never sharing a tile) faces the two,
+  plays the cry and starts a single battle. Per species later: appears in both / steps only / overworld only, and
+  random / aggressive / passive. Repel: only those weaker than the lead keep away. Aggressive ones stay in their grass.
+  Grass now; caves and sand later. A zone switch, on by default. Extras: "!", shiny sparkle, grass rustle; a DexNav
+  search later.
+- **Built, stage 1** (plugins.md, Wanderers): spawning, rising and sinking, wandering, the touch and the battle; the
+  debug menu's Fewer step encounters (a quarter of the rate), No wanderers and Wanderers now. Built (hack, no warnings,
+  DSi intact). **Not tested in game.** **For the user:** Route 20's grass; a touch both ways, a shiny (Always shiny),
+  dark grass (always single), after a battle, cycling into one, and the follower walking behind.
+
 ## 2026-11-04 (evening): ambients' turn directions, a new one's height, their paths in the editor
 
 - **Turns to:** a perch can turn to only some directions (`path.faces`, the panel's Turns to buttons; plugins.md,

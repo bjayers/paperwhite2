@@ -58,6 +58,10 @@ BOOL PaperWhite2_FollowingHoldsPlayer(void);
 GameEvent *PaperWhite2_FollowingGridEvent(GameSystem *gsys, Field *field, GameEvent *event, BOOL *scriptCalled,
                                           BOOL menuOpened);
 GameEvent *PaperWhite2_FollowingRailEvent(GameSystem *gsys, Field *field, GameEvent *event);
+// The follower sprite's object code of a Pokémon by its species, form, gender (GENDER_*, or 2 for unknown) and
+// shininess, the best match of the registry's rows; 0 where the species has none or the registry can't be read. For the
+// wanderers (paperwhite2_wanderers.c)
+u16 PaperWhite2_FollowingCodeFor(MMSys *system, u16 species, u8 form, u8 gender, u8 shiny);
 
 // Whether the follower's tile is in the shade, for its light
 BOOL FollowingField_IsShaded(void);

@@ -31,6 +31,7 @@
 #include "paperwhite2/shiny_candy.h"
 #include "paperwhite2/terrain_groups.h"
 #include "paperwhite2/vram_stats.h"
+#include "paperwhite2/wanderers.h"
 #include "pml/poke_party.h"
 #include "save/bag.h"
 #include "save/event_work.h"
@@ -212,6 +213,7 @@ static void DebugCommands_SetWordRule(FieldScriptEnv *env, u32 index, const Cond
 static BOOL DebugCommands_FollowerWords(FieldScriptEnv *env, Field *field);
 static BOOL DebugCommands_FollowerRules(FieldScriptEnv *env, Field *field);
 static void DebugCommands_MemoryWords(FieldScriptEnv *env, Field *field);
+static void DebugCommands_WandererWords(FieldScriptEnv *env);
 static void DebugCommands_ConditionsWorld(FieldScriptEnv *env);
 static BOOL DebugCommands_ConditionsParty(FieldScriptEnv *env);
 static u32 DebugCommands_ConditionsRules(FieldScriptEnv *env, u32 first);
@@ -409,6 +411,9 @@ static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2
         return DebugCommands_FollowerRules(env, GSYS_GetField(gsys));
     case DEBUG_ACTION_MEMORY_WORDS:
         DebugCommands_MemoryWords(env, GSYS_GetField(gsys));
+        return 0;
+    case DEBUG_ACTION_WANDERER_WORDS:
+        DebugCommands_WandererWords(env);
         return 0;
     case DEBUG_ACTION_MEMORY_RESET_PEAKS:
         PaperWhite2_VramStats_ResetPeaks();
@@ -970,6 +975,63 @@ static BOOL DebugCommands_FollowerWords(FieldScriptEnv *env, Field *field) {
 }
 
 // The rules that would be chosen now: a rule's name, or "none"
+// The wanderers' states' names, by WANDERER_* (idle says nothing)
+static const char *const sDebugWandererStates[] = { "",          ", loading", ", rising", "",
+                                                    ", walking", ", sinking", ", touched" };
+
+// A number's digits after text, in ASCII; where it ends
+static char *DebugCommands_AppendNumber(char *text, u32 number) {
+    char digits[10];
+    u32 count = 0;
+
+    do {
+        digits[count++] = (char)('0' + number % 10);
+        number /= 10;
+    } while (number != 0);
+    while (count != 0) {
+        *text++ = digits[--count];
+    }
+    *text = '\0';
+    return text;
+}
+
+static char *DebugCommands_AppendText(char *text, const char *more) {
+    while (*more != '\0') {
+        *text++ = *more++;
+    }
+    *text = '\0';
+    return text;
+}
+
+// The wanderers' words (DEBUG_ACTION_WANDERER_WORDS)
+static void DebugCommands_WandererWords(FieldScriptEnv *env) {
+    WordSet *wordSet = ScriptWork_GetWordSet(FieldScriptEnv_GetScriptWork(env));
+    u32 count = 0;
+    u32 i;
+
+    for (i = 0; i < WANDERERS_MAX; i++) {
+        WandererInfo info;
+        char details[ASCII_WORD_LENGTH];
+        char *end = details;
+
+        details[0] = '\0';
+        if (PaperWhite2_WanderersGetInfo(i, &info)) {
+            count++;
+            WordSet_LoadSpeciesName(wordSet, 1 + 2 * i, info.species);
+            end = DebugCommands_AppendText(end, "Lv. ");
+            end = DebugCommands_AppendNumber(end, info.level);
+            if (info.shiny) {
+                end = DebugCommands_AppendText(end, ", shiny");
+            }
+            DebugCommands_AppendText(end, sDebugWandererStates[info.state]);
+        } else {
+            DebugCommands_SetWordText(env, 1 + 2 * i, Global10200_Text_DebugNone);
+        }
+        DebugCommands_SetWordAscii(env, 2 + 2 * i, details);
+    }
+    DebugCommands_SetWordNumber(env, 0, count);
+}
+
 // The Memory page's words (DEBUG_ACTION_MEMORY_WORDS)
 static void DebugCommands_MemoryWords(FieldScriptEnv *env, Field *field) {
     FldBillboardCacheStats cache;

@@ -96,6 +96,7 @@
 #include "paperwhite2/field.h"
 #include "paperwhite2/following_field.h"
 #include "paperwhite2/sprites.h"
+#include "paperwhite2/wanderers.h"
 #ifdef PAPERWHITE2_DEBUG_MENU
 #include "paperwhite2/debug.h"
 #include "paperwhite2/vram_stats.h"
@@ -298,6 +299,10 @@ u32 FieldRoutine_Open(GameSystem *gsys, Field *field) {
     BmpWin_InitAllocator(heapId);
     GFL_TextRndInitColorIndexLUT();
     GFL_G3DSysCreate(0, 3, 0, 1, FX32_ONE, field->heapId, FieldG3D_InitCallback);
+#ifdef PAPERWHITE2
+    // Paper White 2: the field's new billboards have no wanderers yet (paperwhite2_wanderers.c)
+    PaperWhite2_WanderersReset();
+#endif
 #ifdef PAPERWHITE2_DEBUG_MENU
     // Paper White 2: the debug menu's Memory page counts the field's VRAM from here: 3 slots of 128 KB of textures and
     // 1 of 16 KB of palettes, as made just above
@@ -548,6 +553,8 @@ u32 FieldRoutine_Run(GameSystem *gsys, Field *field) {
         PaperWhite2_SpawnsUpdate(field);
         // Paper White 2: the ambients, sprites drawn without an actor (paperwhite2_ambients.c)
         PaperWhite2_AmbientsUpdate(field);
+        // Paper White 2: the wanderers, wild Pokémon seen in grass (paperwhite2_wanderers.c)
+        PaperWhite2_WanderersUpdate(field);
 #else
         FldActSys_Update(field->actorSystem);
 #endif

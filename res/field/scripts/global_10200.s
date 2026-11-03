@@ -504,11 +504,16 @@ L_DebugVarState:
 L_DebugEncounters:
     Debug DEBUG_ACTION_FLAG_WORD, 0, EVENT_FLAG_DEBUG_ALWAYS_SHINY, 0x8025
     Debug DEBUG_ACTION_FLAG_WORD, 1, EVENT_FLAG_DEBUG_NO_WILD_ENCOUNTERS, 0x8025
+    Debug DEBUG_ACTION_FLAG_WORD, 4, EVENT_FLAG_DEBUG_FEWER_WILD_ENCOUNTERS, 0x8025
+    Debug DEBUG_ACTION_FLAG_WORD, 5, EVENT_FLAG_DEBUG_NO_WANDERERS, 0x8025
     Debug DEBUG_ACTION_ENCOUNTER_WORDS, 0, 0, 0x8025
     SystemMsg Global10200_Text_DebugEncountersTitle, 2
     ListMenuAnchorTopRight 31, 1, 0, 1, 0x8020
     ListMenuAdd Global10200_Text_DebugAlwaysShiny, 65535, 0
     ListMenuAdd Global10200_Text_DebugNoWildEncounters, 65535, 1
+    ListMenuAdd Global10200_Text_DebugFewerWildEncounters, 65535, 4
+    ListMenuAdd Global10200_Text_DebugNoWanderers, 65535, 5
+    ListMenuAdd Global10200_Text_DebugWanderersNow, 65535, 6
     ListMenuAdd Global10200_Text_DebugForceSpecies, 65535, 2
     ListMenuAdd Global10200_Text_DebugWildLevel, 65535, 3
     ListMenuAdd Global10200_Text_DebugBack, 65535, DEBUG_LIST_BACK
@@ -521,6 +526,12 @@ L_DebugEncounters:
     VMJumpIf CMP_EQ, L_DebugForceSpecies
     WorkCmpConst 0x8020, 3
     VMJumpIf CMP_EQ, L_DebugWildLevel
+    WorkCmpConst 0x8020, 4
+    VMJumpIf CMP_EQ, L_DebugToggleFewerWild
+    WorkCmpConst 0x8020, 5
+    VMJumpIf CMP_EQ, L_DebugToggleNoWanderers
+    WorkCmpConst 0x8020, 6
+    VMJumpIf CMP_EQ, L_DebugWanderersNow
     VMJump L_DebugMenu
 
 L_DebugToggleAlwaysShiny:
@@ -531,6 +542,23 @@ L_DebugToggleAlwaysShiny:
 L_DebugToggleNoWild:
     Debug DEBUG_ACTION_FLAG_TOGGLE, EVENT_FLAG_DEBUG_NO_WILD_ENCOUNTERS, 0, 0x8025
     SEPlay SEQ_SE_SELECT1
+    VMJump L_DebugEncounters
+
+L_DebugToggleFewerWild:
+    Debug DEBUG_ACTION_FLAG_TOGGLE, EVENT_FLAG_DEBUG_FEWER_WILD_ENCOUNTERS, 0, 0x8025
+    SEPlay SEQ_SE_SELECT1
+    VMJump L_DebugEncounters
+
+L_DebugToggleNoWanderers:
+    Debug DEBUG_ACTION_FLAG_TOGGLE, EVENT_FLAG_DEBUG_NO_WANDERERS, 0, 0x8025
+    SEPlay SEQ_SE_SELECT1
+    VMJump L_DebugEncounters
+
+// Wanderers now: how many are out, and each one's species, level, shininess and state
+L_DebugWanderersNow:
+    Debug DEBUG_ACTION_WANDERER_WORDS, 0, 0, 0x8025
+    SystemMsg Global10200_Text_DebugWanderersReadout, 2
+    LastKeyWait
     VMJump L_DebugEncounters
 
 L_DebugForceSpecies:

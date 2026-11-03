@@ -15,6 +15,7 @@
 #include "nnsys/gfd.h"
 #include "paperwhite2/ambients.h"
 #include "paperwhite2/sprites.h"
+#include "paperwhite2/wanderers.h"
 #ifdef PAPERWHITE2_DEBUG_MENU
 #include "paperwhite2/vram_stats.h"
 #endif
@@ -379,7 +380,8 @@ static void FieldBillboardActor_UnbindActorObjCode(FieldBillboardActor *billboar
         if (info[0] & 1) {
 #ifdef PAPERWHITE2
             // Paper White 2: kept while an ambient draws it too (paperwhite2_ambients.c), which releases it after
-            if (!FldAct_CheckObjCodeShared(actor, objCode) && !PaperWhite2_AmbientsUseObjCode(objCode)) {
+            if (!FldAct_CheckObjCodeShared(actor, objCode) && !PaperWhite2_AmbientsUseObjCode(objCode) &&
+                !PaperWhite2_WanderersUseObjCode(objCode)) {
 #else
             if (!FldAct_CheckObjCodeShared(actor, objCode)) {
 #endif
@@ -575,7 +577,7 @@ void FldBillboardActor_ReleaseObjCode(MMSys *system, u16 objCode) {
             return;
         }
     }
-    if (PaperWhite2_AmbientsUseObjCode(objCode) ||
+    if (PaperWhite2_AmbientsUseObjCode(objCode) || PaperWhite2_WanderersUseObjCode(objCode) ||
         FldBillboardActor_HasOtherPendingActor(billboardActor, objCode, NULL)) {
         return;
     }

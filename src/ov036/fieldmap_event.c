@@ -79,6 +79,7 @@
 #include "system/wipe.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/following_field.h"
+#include "paperwhite2/wanderers.h"
 #endif
 
 // The scripts that these events call
@@ -444,6 +445,9 @@ GameEvent *FieldEventProvider_Grid(GameSystem *gsys, void *data) {
     // Paper White 2: the Following Pokémon's scene notes a menu these checks opened, and with no event A in front of
     // the follower talks to it (follower-grid-event)
     event = PaperWhite2_FollowingGridEvent(gsys, data, event, &scriptCalled, menuOpened);
+    // Paper White 2: a wanderer the player touched, or that touched the player, starts its battle
+    // (paperwhite2_wanderers.c)
+    event = PaperWhite2_WanderersGridEvent(gsys, data, event);
 #endif
     if (event != NULL) {
         CasteliaRush *rush;

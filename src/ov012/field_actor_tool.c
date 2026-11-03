@@ -12,6 +12,7 @@
 
 #ifdef PAPERWHITE2
 #include "paperwhite2/following_events.h"
+#include "paperwhite2/wanderers.h"
 #endif
 
 // The grid height of a height on the map
@@ -599,9 +600,11 @@ BOOL CheckActorNewPosOtherActorCollision(const FieldActor *actor, s16 x, s16 y, 
 
 #ifdef PAPERWHITE2
 // Paper White 2: an actor's own move code doesn't walk it into the Following Pokémon
-// (docs/paperwhite2/following-pokemon.md, ambient-grid-collision)
+// (docs/paperwhite2/following-pokemon.md, ambient-grid-collision), and no actor steps onto a wanderer's tile
+// (paperwhite2_wanderers.c)
 BOOL CheckActorNewPosOtherActorCollision(const FieldActor *actor, s16 x, s16 y, s16 z) {
-    return PaperWhite2_FollowingCheckGridCollision(actor, x, y, z, CheckOtherActorCollision(actor, x, y, z));
+    return PaperWhite2_WanderersCheckGridCollision(
+        actor, x, z, PaperWhite2_FollowingCheckGridCollision(actor, x, y, z, CheckOtherActorCollision(actor, x, y, z)));
 }
 #endif
 

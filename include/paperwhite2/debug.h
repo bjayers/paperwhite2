@@ -28,6 +28,8 @@ enum {
 
 // An override that is off
 #define DEBUG_OVERRIDE_OFF 0xffff
+// Fewer step encounters' share of the step encounter rate: a quarter (EventWildBattleCall_CreateRandom)
+#define DEBUG_FEWER_ENCOUNTERS_DIVISOR 4
 
 u16 PaperWhite2_Debug_GetOverride(u32 override);
 void PaperWhite2_Debug_SetOverride(u32 override, u16 value);

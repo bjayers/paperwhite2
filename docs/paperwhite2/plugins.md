@@ -222,6 +222,9 @@ DEBUG                           L_DebugMenu
   Encounters...
     Always shiny: ON/OFF            EVENT_FLAG_DEBUG_ALWAYS_SHINY
     No wild encounters: ON/OFF      EVENT_FLAG_DEBUG_NO_WILD_ENCOUNTERS
+    Fewer step encounters: ON/OFF   EVENT_FLAG_DEBUG_FEWER_WILD_ENCOUNTERS: a quarter of the step rate
+    No wanderers: ON/OFF            EVENT_FLAG_DEBUG_NO_WANDERERS (Wanderers, below)
+    Wanderers now                   how many are out, and each one's species, level, shininess and state
     Force species: <Off|species>    number, 0 for Off
     Wild level: <Off|level>         number, 0 for Off
   Player...
@@ -400,7 +403,7 @@ used one is named with a `# Paper White 2:` comment). New features take theirs f
 | 0x92f-0x95f | the hack's features | 0x92f `EVENT_FLAG_EXP_SHARE_OFF`, 0x930 `EVENT_FLAG_SPAWN_HIDDEN` |
 | 0xaef | the user's: the Wurmple daily-feeding mini-event (`route_20.s`), a daily flag | `EVENT_FLAG_DAILY_0x0aef`; don't touch |
 | 0xaf0 | the user's: the Pokémon Center lottery girl (`global_10850.s`, set in `aspertia_city.s` too), a daily flag | `EVENT_FLAG_DAILY_0x0af0`; don't touch |
-| 0xbd9-0xbf7 | the debug menu's toggles | 0xbd9 `EVENT_FLAG_DEBUG_ALWAYS_SHINY`, 0xbda `EVENT_FLAG_DEBUG_NO_WILD_ENCOUNTERS`, 0xbdb `EVENT_FLAG_DEBUG_WALK_THROUGH_WALLS` |
+| 0xbd9-0xbf7 | the debug menu's toggles | 0xbd9 `EVENT_FLAG_DEBUG_ALWAYS_SHINY`, 0xbda `EVENT_FLAG_DEBUG_NO_WILD_ENCOUNTERS`, 0xbdb `EVENT_FLAG_DEBUG_WALK_THROUGH_WALLS`, 0xbdc `EVENT_FLAG_DEBUG_FEWER_WILD_ENCOUNTERS`, 0xbdd `EVENT_FLAG_DEBUG_NO_WANDERERS` |
 
 Flags elsewhere, even ones no text search finds, may be reached by a base plus an index (hidden items, trainers), so
 don't take them. 0x5d0, which the Exp. Share used first, is back to its original name.
@@ -917,6 +920,40 @@ edited in the Overworld Editor's Ambients tab.
   the paths, the facing from the way it goes, a perch's turns among its faces and its hops, a walking Pokémon's two
   frames always playing); `tests/ambient-path.test.ts` checks it against the formulas.
 - **Not yet:** flying off when the player comes near, picking again in the zone, and sprites from the encounters.
+
+### Wanderers
+
+Wild Pokémon seen in tall and dark grass (`docs/paperwhite2/design/overworld-editor.md`, Overworld encounters), up to
+3 at once, drawn as the ambients are, without an actor (`src/paperwhite2/ov036/paperwhite2_wanderers.c`,
+`include/paperwhite2/wanderers.h`, from the field's update after the ambients'). Stage 1: spawning, rising and
+sinking, random wandering, the touch and the battle.
+
+- **Spawning:** every 3 to 6 seconds while fewer than 3 are out, a grass tile within the screen's 8 by 6 tiles round
+  the player and not within 4 of it, whose encounter type is `ENCTYPE_GRASS` or `ENCTYPE_GRASS_RARE`
+  (`EncSys_GetTileEncType`, the step's `FieldEncount_DecideTypeByTerrain`). Its Pokémon is the one a step there would
+  bring (`EventWildBattleCall_PickWanderer` in `field_encount.c`: `FieldEncount_GenWilds` with one Pokémon, no
+  partner and through a Repel, the new encounter data's context and the debug overrides). Its shininess is rolled
+  as a wild one's (its rolls of a PID, the Shiny Charm and the Pass Power's, the debug Always shiny) and its sex
+  from its species' ratio (Cute Charm aside), and both are set in its `WildPkmParam` for the battle
+  (`WILD_SHINY_FORCED` or `NEVER`, `WILD_SEX_*`). Its sprite is its follower sprite for its species, form, sex and
+  shininess (`PaperWhite2_FollowingCodeFor`, the follower's registry match without its side effects), loaded on
+  demand where the sprite cache has room (`FldBillboardActor_CanLoadObjCode`).
+- **Rising and sinking:** from 20 units under its tile's ground over 12 frames (the ground hides what's under it),
+  and back down at the end of its 20 to 40 seconds. Past 11 tiles from the player it goes at once.
+- **Wandering:** a step every 20 to 80 frames onto a neighbouring tile of the same encounter type, at most 8 units
+  higher or lower, that no actor or other wanderer is on or walking to, and not beside the player (where the
+  follower walks), over 12 frames, facing its way, its animation always playing.
+- **Solid, and the touch:** `CheckActorNewPosOtherActorCollision` (ov012's `field_actor_tool.c`) blocks any actor's
+  step onto a wanderer's tile or the one it walks to (`PaperWhite2_WanderersCheckGridCollision`); the player's step
+  onto one touches it, as one stepping into the player does. The touch waits for the player to be free (no event, not
+  mid-step; given up after 2 seconds), then the grid's event check (`fieldmap_event.c`, after the follower's) starts
+  its event: the two face each other, its cry plays, and 18 frames later the single battle with it
+  (`EventWildBattleCall_CreateWanderer`: `FieldEncount_SetupNormal` with one Pokémon, then
+  `EventWildBattleCall_CreateCore`).
+- **None** on rails, with a partner, or with the debug menu's No wanderers; all go at a zone change, and the field's
+  making (`FieldRoutine_Open`, `PaperWhite2_WanderersReset`) starts from none, as after a battle or a menu.
+- **Not yet:** aggressive and passive species, Repel, the per-species "appears in" and "wanders" settings, the
+  zone's switch and the editor's settings, "!", the shiny sparkle and the grass rustle (stages 2 to 4).
 
 ### Wild encounters
 

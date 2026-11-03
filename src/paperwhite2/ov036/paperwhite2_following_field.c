@@ -227,6 +227,10 @@ static u8 sBallOff;
 // The party slot a fresh map would bring out. Indoors, L and R still offer it as its ball when it is large
 static s32 sLeadSlot = -1;
 static u8 sPage[FOLLOWING_REGISTRY_PAGE];
+// The best registry row FindFollowerRow found: its bytes, as many as a row has at most
+// (paperwhite2_following_registry.c)
+#define FOLLOWING_REGISTRY_ROW_MAX 24
+static u8 sRowScratch[FOLLOWING_REGISTRY_ROW_MAX];
 static u16 sIndex[FOLLOWING_MAX_SPECIES + 2];
 static u32 sRegistrySize;
 static u32 sStride;
@@ -1633,37 +1637,24 @@ static BOOL LoadConfig(MMSys *system) {
     return ok;
 }
 
-// The follower code of a party member, from its species' rows of the registry: the best match of form, sex and
-// shininess. Also sets the follower's side gap, its sprite's Y and its walking gaps. Only called when the choice or the
-// appearance changes, never while moving or drawing
-static u16 GetFollowerCode(MMSys *system, const FollowingPokemon *mon) {
+// The best match of form, sex and shininess among a species' rows of the registry: its follower code (0 where the
+// registry can't be read, FOLLOWING_CODE_BASE where the species has no rows), with the row's bytes in found
+static u16 FindFollowerRow(MMSys *system, const FollowingPokemon *mon, u8 *found) {
     u32 first;
     u32 end;
-    u16 fallback;
+    u16 code;
     s32 best;
-    s32 artX;
     u32 i;
-    u32 maximum;
-    u32 gap;
 
     if (sConfigState != 1 || mon == NULL || mon->species == 0 || mon->species > FOLLOWING_MAX_SPECIES) {
         return 0;
     }
     first = sIndex[mon->species];
     end = sIndex[mon->species + 1];
-    sFollower.sideGap = 0;
-    sFollower.spriteY = 0;
-    fallback = FOLLOWING_CODE_BASE;
+    code = FOLLOWING_CODE_BASE;
     best = -100;
-    artX = 0;
     for (i = first; i < end; i++) {
         const u8 *row;
-        u32 species;
-        u32 form;
-        u32 gender;
-        u32 shiny;
-        u32 modelRow;
-        u32 shown;
         s32 score;
 
         if (i < sPageFirst || i - sPageFirst >= sPageCount) {
@@ -1680,25 +1671,62 @@ static u16 GetFollowerCode(MMSys *system, const FollowingPokemon *mon) {
             sPageCount = n;
         }
         row = sPage + (i - sPageFirst) * sStride;
-        species = Read16(row);
-        form = row[2];
-        gender = row[3];
-        shiny = row[4];
-        modelRow = Read16(row + 6);
-        if (species != mon->species) {
+        if (Read16(row) != mon->species) {
             sPageCount = 0;
             return 0;
         }
-        score = form == mon->form ? 8 : form == 0 ? 0 : -20;
-        score += gender == mon->gender ? 4 : gender == 2 ? 2 : -20;
-        score += shiny == mon->shiny ? 1 : -20;
+        score = row[2] == mon->form ? 8 : row[2] == 0 ? 0 : -20;
+        score += row[3] == mon->gender ? 4 : row[3] == 2 ? 2 : -20;
+        score += row[4] == mon->shiny ? 1 : -20;
         if (score > best) {
             best = score;
-            fallback = (u16)(FOLLOWING_CODE_BASE + modelRow - FOLLOWING_STOCK_ROWS);
-            sFollower.sideGap = row[15];
-            sFollower.spriteY = (s8)row[13];
-            artX = (s8)row[12];
+            code = (u16)(FOLLOWING_CODE_BASE + Read16(row + 6) - FOLLOWING_STOCK_ROWS);
+            MI_CpuCopy8(row, found, sStride < FOLLOWING_REGISTRY_ROW_MAX ? sStride : FOLLOWING_REGISTRY_ROW_MAX);
         }
+    }
+    return code;
+}
+
+u16 PaperWhite2_FollowingCodeFor(MMSys *system, u16 species, u8 form, u8 gender, u8 shiny) {
+    FollowingPokemon mon;
+    u16 code;
+
+    if (!LoadConfig(system)) {
+        return 0;
+    }
+    MI_CpuFill8(&mon, 0, sizeof(mon));
+    mon.species = species;
+    mon.form = form;
+    mon.gender = gender;
+    mon.shiny = shiny;
+    code = FindFollowerRow(system, &mon, sRowScratch);
+    // (a species without rows has no sprite of its own)
+    return species <= FOLLOWING_MAX_SPECIES && sIndex[species] < sIndex[species + 1] ? code : 0;
+}
+
+// The follower code of a party member (FindFollowerRow). Also sets the follower's side gap, its sprite's Y and its
+// walking gaps. Only called when the choice or the appearance changes, never while moving or drawing
+static u16 GetFollowerCode(MMSys *system, const FollowingPokemon *mon) {
+    u32 first;
+    u32 end;
+    u16 fallback;
+    s32 artX = 0;
+    u32 i;
+    u32 maximum;
+    u32 gap;
+
+    sFollower.sideGap = 0;
+    sFollower.spriteY = 0;
+    fallback = FindFollowerRow(system, mon, sRowScratch);
+    if (fallback == 0) {
+        return 0;
+    }
+    first = sIndex[mon->species];
+    end = sIndex[mon->species + 1];
+    if (first < end) {
+        sFollower.sideGap = sRowScratch[15];
+        sFollower.spriteY = (s8)sRowScratch[13];
+        artX = (s8)sRowScratch[12];
     }
     if (artX < 0) {
         artX = -artX;

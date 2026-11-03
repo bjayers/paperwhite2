@@ -3038,8 +3038,9 @@ EVENT_FLAG_DEBUG_ALWAYS_SHINY
 # Paper White 2: the debug menu's No wild encounters (0xbda) and Walk through walls (0xbdb), in the debug toggles' block
 EVENT_FLAG_DEBUG_NO_WILD_ENCOUNTERS
 EVENT_FLAG_DEBUG_WALK_THROUGH_WALLS
-EVENT_FLAG_HIDDEN_ITEM_216
-EVENT_FLAG_HIDDEN_ITEM_217
+# Paper White 2: the debug menu's Fewer step encounters (0xbdc) and No wanderers (0xbdd), in the debug toggles' block
+EVENT_FLAG_DEBUG_FEWER_WILD_ENCOUNTERS
+EVENT_FLAG_DEBUG_NO_WANDERERS
 EVENT_FLAG_HIDDEN_ITEM_218
 EVENT_FLAG_HIDDEN_ITEM_219
 EVENT_FLAG_HIDDEN_ITEM_220
