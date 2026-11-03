@@ -43,8 +43,10 @@ export interface Ambient {
   offset?: { x?: number; z?: number };
   y: number;
   facing?: string | number;
-  path?: { kind: "perch" | "hover" | "ellipse" | "line" | "eight"; width?: number; depth?: number; speed?: number; start?: number;
-           every?: number; turns?: boolean; hops?: boolean; faces?: (string | number)[]; height?: number };
+  path?: { kind: "perch" | "hover" | "ellipse" | "line" | "eight" | "wander" | "waypoints" | "peek" | "flyover" | "surface";
+           width?: number; depth?: number; speed?: number; start?: number; every?: number; turns?: boolean; hops?: boolean;
+           faces?: (string | number)[]; height?: number; points?: { x?: number; z?: number; y?: number }[]; back?: boolean;
+           pace?: number; wait?: number; up?: number; heading?: number; range?: number };
   shadow?: "none" | "feet" | "ground";
   when?: Condition;
   rolls?: Rolls;

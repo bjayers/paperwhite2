@@ -118,3 +118,9 @@
 .ow-offset-grid { display: grid; grid-template-columns: repeat(3, 26px); gap: 2px; flex-basis: 100%; }
 .ow-offset-grid button { padding: 1px 0; }
 .ow-offset-grid button.active { border-color: var(--accent); background: var(--selected); }
+
+/* A waypoints path's points: a row each, its number, its three offsets and its remove button */
+.ow-points { display: flex; flex-direction: column; gap: 6px; }
+.ow-point { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ow-path-group { width: 48px; text-align: right; }
+.ow-section .ow-section-actions + .ow-section-actions { margin-top: -4px; }

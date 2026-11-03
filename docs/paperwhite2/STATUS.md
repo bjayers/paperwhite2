@@ -2,6 +2,18 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-03 (towards morning): five new ambient paths; a condition's default
+
+- **The new paths** (plugins.md, Ambients: Traveling paths): wander, waypoints, peek, surface, fly-over; the record is
+  104 bytes. The panel groups the paths in three rows (Stays, Round, Travels) with each one's settings, the map draws
+  their areas and stops and previews them, and the editor's tests cover waypoints, a wander's area and a peek. The
+  follower's emotes for ambients: dropped by the user. Built (hack, no warnings, DSi intact). **Not tested in game.**
+- **The user's spring-only Taillow didn't show:** the game evaluates an ambient's condition as an NPC instance's (the
+  same context, season by `GameData_GetSeason`), and the rule compiles right; the panel's "Add a condition" started
+  with the time set to morning, day and evening, so a spring condition also left out the night. It starts empty now
+  for an ambient. **For the user:** if it still doesn't show, Debug → Info gives the game's season then (a forced
+  season takes effect at the next map change into an exterior).
+
 ## 2026-11-03 (later at night): ambients' reactions, climbing lines, offset buttons
 
 - **The user's asks:** ambients that fly, run or hide when the player comes near, on a heading away from the player

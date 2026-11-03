@@ -64,6 +64,14 @@
 #define AMBIENT_RETURN_OFFSCREEN_X 9
 #define AMBIENT_RETURN_OFFSCREEN_Z 7
 #define AMBIENT_CRY_PAN 64
+// The traveling paths': a wander's step (a tile) and its frames, a peek's or a surface's rise and sink and how deep it
+// goes, a surface's bob, and how far ahead of the player and behind it a fly-over starts and ends
+#define AMBIENT_TILE_UNITS FX32_CONST(16)
+#define AMBIENT_WANDER_FRAMES 16
+#define AMBIENT_PEEK_FRAMES 8
+#define AMBIENT_PEEK_DEPTH FX32_CONST(24)
+#define AMBIENT_SURFACE_BOB FX32_CONST(1)
+#define AMBIENT_FLYOVER_REACH FX32_CONST(16 * 14)
 // A world position's tile
 #define AMBIENT_TILE(v) ((v) >> (FX32_SHIFT + 4))
 
@@ -102,6 +110,20 @@ typedef struct {
     // Where it is in its reaction, and its move a frame
     VecFx32 reactPos;
     VecFx32 reactStep;
+    // A traveling path's: where it is, where its step or leg started and goes, its stage's frames left (and all of
+    // them), its stage, its waypoint and the way it goes through them, whether it's out of sight (a peek down, a
+    // fly-over between passes), whether it has started, and its height over the ground (a wander)
+    VecFx32 pathPos;
+    VecFx32 pathFrom;
+    VecFx32 pathTo;
+    u16 pathTimer;
+    u16 pathFrames;
+    u8 pathStage;
+    u8 pathIndex;
+    s8 pathDir;
+    u8 pathHidden;
+    u8 pathStarted;
+    fx32 pathOver;
 } Ambient;
 
 typedef struct {
@@ -292,7 +314,232 @@ static u8 Ambients_PickFacing(u8 flags) {
 }
 
 // An ambient's place on its path now, and its facing and whether it moves (walks)
-static BOOL Ambients_Move(Ambient *ambient, VecFx32 *pos) {
+// The ground nearest a height at a place, or the height itself where the map has none
+static fx32 Ambients_GroundAt(Field *field, const VecFx32 *pos) {
+    FieldG3DMapperTerrain terrain;
+    fx32 best = pos->y;
+    BOOL found = FALSE;
+    u32 i;
+
+    if (!FieldG3DMapper_GetTerrainAll(field->g3DMapper, pos, &terrain)) {
+        return pos->y;
+    }
+    for (i = 0; i < terrain.layerCount; i++) {
+        fx32 height = terrain.layers[i].height;
+
+        if (!found ||
+            (height > pos->y ? height - pos->y : pos->y - height) < (best > pos->y ? best - pos->y : pos->y - best)) {
+            best = height;
+            found = TRUE;
+        }
+    }
+    return best;
+}
+
+static u32 Ambients_Frames(u32 seconds) {
+    return seconds * AMBIENT_FRAMES_A_SECOND;
+}
+
+// A waypoints path's stop: its place (0) or a point after it
+static void Ambients_Stop(const Ambient *ambient, u32 index, VecFx32 *out) {
+    *out = ambient->record.at;
+    if (index != 0) {
+        out->x += ambient->record.points[index - 1][0] << FX32_SHIFT;
+        out->y += ambient->record.points[index - 1][1] << FX32_SHIFT;
+        out->z += ambient->record.points[index - 1][2] << FX32_SHIFT;
+    }
+}
+
+// A leg from where it is to a place, at its pace (at least a frame)
+static void Ambients_Leg(Ambient *ambient, const VecFx32 *to) {
+    fx32 step = ambient->record.pace * FX32_ONE / AMBIENT_FRAMES_A_SECOND;
+    fx32 length = VEC_Distance(&ambient->pathPos, to);
+
+    ambient->pathFrom = ambient->pathPos;
+    ambient->pathTo = *to;
+    ambient->pathFrames = step > 0 ? (u16)(length / step) : 1;
+    if (ambient->pathFrames == 0) {
+        ambient->pathFrames = 1;
+    }
+    ambient->pathTimer = ambient->pathFrames;
+}
+
+// Part way from a leg's start to its end, by its frames left; the facing it goes
+static void Ambients_AlongLeg(Ambient *ambient) {
+    fx32 t = FX32_ONE * (ambient->pathFrames - ambient->pathTimer) / ambient->pathFrames;
+
+    ambient->pathPos.x = ambient->pathFrom.x + FX_Mul(ambient->pathTo.x - ambient->pathFrom.x, t);
+    ambient->pathPos.y = ambient->pathFrom.y + FX_Mul(ambient->pathTo.y - ambient->pathFrom.y, t);
+    ambient->pathPos.z = ambient->pathFrom.z + FX_Mul(ambient->pathTo.z - ambient->pathFrom.z, t);
+    ambient->facing = Ambients_DirOf(ambient->pathTo.x - ambient->pathFrom.x, ambient->pathTo.z - ambient->pathFrom.z,
+                                     ambient->facing);
+}
+
+// A traveling path a frame on (AMBIENT_PATH_WANDER and after): where it is, and whether it moves (walks)
+static BOOL Ambients_Travel(Field *field, Ambient *ambient, VecFx32 *pos) {
+    const SpawnAmbient *record = &ambient->record;
+    BOOL moving = FALSE;
+
+    if (!ambient->pathStarted) {
+        ambient->pathStarted = TRUE;
+        ambient->pathPos = record->at;
+        ambient->pathOver = record->at.y - Ambients_GroundAt(field, &record->at);
+        ambient->pathDir = 1;
+        ambient->pathTimer = AMBIENT_FRAMES_A_SECOND;
+        ambient->pathHidden = record->path == AMBIENT_PATH_PEEK || record->path == AMBIENT_PATH_FLYOVER;
+        if (record->path == AMBIENT_PATH_PEEK || record->path == AMBIENT_PATH_SURFACE) {
+            ambient->pathStage = 2;
+            ambient->pathTimer = Ambients_Frames(record->up);
+            ambient->pathHidden = FALSE;
+        }
+    }
+    switch (record->path) {
+    case AMBIENT_PATH_WANDER:
+        if (ambient->pathStage == 1) {
+            // A step
+            ambient->pathTimer--;
+            Ambients_AlongLeg(ambient);
+            moving = TRUE;
+            if (ambient->pathTimer == 0) {
+                u32 seconds = record->speed != 0 ? record->speed : AMBIENT_PERCH_SECONDS;
+
+                ambient->pathStage = 0;
+                ambient->pathTimer = Ambients_Frames(seconds) / 2 + GFL_RandomLC(Ambients_Frames(seconds));
+            }
+        } else if (--ambient->pathTimer == 0) {
+            // A step tried in a direction at random, within its area, on the ground there
+            u8 dir = (u8)GFL_RandomLC(4);
+            VecFx32 to = ambient->pathPos;
+
+            to.x += dir == DIR_LEFT ? -AMBIENT_TILE_UNITS : dir == DIR_RIGHT ? AMBIENT_TILE_UNITS : 0;
+            to.z += dir == DIR_UP ? -AMBIENT_TILE_UNITS : dir == DIR_DOWN ? AMBIENT_TILE_UNITS : 0;
+            if ((to.x > record->at.x ? to.x - record->at.x : record->at.x - to.x) <= (record->sizeX << FX32_SHIFT) &&
+                (to.z > record->at.z ? to.z - record->at.z : record->at.z - to.z) <= (record->sizeZ << FX32_SHIFT)) {
+                to.y -= ambient->pathOver;
+                to.y = Ambients_GroundAt(field, &to) + ambient->pathOver;
+                ambient->pathFrom = ambient->pathPos;
+                ambient->pathTo = to;
+                ambient->pathFrames = ambient->pathTimer = AMBIENT_WANDER_FRAMES;
+                ambient->pathStage = 1;
+                ambient->facing = dir;
+            } else {
+                ambient->pathTimer = AMBIENT_FRAMES_A_SECOND;
+            }
+        }
+        break;
+    case AMBIENT_PATH_WAYPOINTS:
+        if (record->pointCount == 0) {
+            break;
+        }
+        if (ambient->pathStage == 0) {
+            // Waiting at a stop, then on to the next: round, or back the way it came at the ends
+            if (ambient->pathTimer != 0 && --ambient->pathTimer != 0) {
+                break;
+            }
+            {
+                s32 next = ambient->pathIndex + ambient->pathDir;
+                VecFx32 to;
+
+                if (record->pathFlags & AMBIENT_PATH_FLAG_BACK) {
+                    if (next > record->pointCount || next < 0) {
+                        ambient->pathDir = (s8)-ambient->pathDir;
+                        next = ambient->pathIndex + ambient->pathDir;
+                    }
+                } else if (next > record->pointCount) {
+                    next = 0;
+                }
+                ambient->pathIndex = (u8)next;
+                Ambients_Stop(ambient, ambient->pathIndex, &to);
+                Ambients_Leg(ambient, &to);
+                ambient->pathStage = 1;
+            }
+        }
+        if (ambient->pathStage == 1) {
+            ambient->pathTimer--;
+            Ambients_AlongLeg(ambient);
+            moving = TRUE;
+            if (ambient->pathTimer == 0) {
+                ambient->pathStage = 0;
+                ambient->pathTimer = (u16)Ambients_Frames(record->wait);
+            }
+        }
+        break;
+    case AMBIENT_PATH_PEEK:
+    case AMBIENT_PATH_SURFACE:
+        // Down (0), rising (1), up (2), sinking (3)
+        if (ambient->pathTimer != 0) {
+            ambient->pathTimer--;
+        }
+        if (ambient->pathTimer == 0) {
+            ambient->pathStage = (u8)((ambient->pathStage + 1) & 3);
+            ambient->pathTimer = (u16)(ambient->pathStage == 0   ? Ambients_Frames(record->wait)
+                                       : ambient->pathStage == 2 ? Ambients_Frames(record->up)
+                                                                 : AMBIENT_PEEK_FRAMES);
+            // A surface comes up somewhere else in its area
+            if (ambient->pathStage == 1 && record->path == AMBIENT_PATH_SURFACE) {
+                ambient->pathPos = record->at;
+                ambient->pathPos.x += ((s32)GFL_RandomLC(2 * record->sizeX + 1) - record->sizeX) << FX32_SHIFT;
+                ambient->pathPos.z += ((s32)GFL_RandomLC(2 * record->sizeZ + 1) - record->sizeZ) << FX32_SHIFT;
+                ambient->facing = (u8)GFL_RandomLC(4);
+            }
+        }
+        ambient->pathHidden = ambient->pathStage == 0;
+        *pos = ambient->pathPos;
+        if (ambient->pathStage == 1) {
+            pos->y -= AMBIENT_PEEK_DEPTH * ambient->pathTimer / AMBIENT_PEEK_FRAMES;
+        } else if (ambient->pathStage == 3) {
+            pos->y -= AMBIENT_PEEK_DEPTH * (AMBIENT_PEEK_FRAMES - ambient->pathTimer) / AMBIENT_PEEK_FRAMES;
+        } else if (ambient->pathStage == 2 && record->path == AMBIENT_PATH_SURFACE) {
+            ambient->angle = (ambient->angle + 0x10000 / AMBIENT_FRAMES_A_SECOND / 2) & 0xffff;
+            pos->y += FX_Mul(AMBIENT_SURFACE_BOB, FX_SinIdx(ambient->angle));
+        }
+        return ambient->pathStage == 2;
+    case AMBIENT_PATH_FLYOVER:
+        if (ambient->pathStage == 1) {
+            ambient->pathTimer--;
+            Ambients_AlongLeg(ambient);
+            moving = TRUE;
+            if (ambient->pathTimer == 0) {
+                ambient->pathStage = 0;
+                ambient->pathHidden = TRUE;
+                ambient->pathTimer =
+                    (u16)(Ambients_Frames(record->wait) / 2 + GFL_RandomLC(Ambients_Frames(record->wait) + 1));
+            }
+        } else if (ambient->pathTimer != 0) {
+            ambient->pathTimer--;
+        } else {
+            // A pass, while the player is within its range of its place: from behind the player's view to past it
+            VecFx32 at;
+
+            FieldPlayer_GetWPos(field->player, &at);
+            if ((at.x > record->at.x ? at.x - record->at.x : record->at.x - at.x) <= (record->sizeX << FX32_SHIFT) &&
+                (at.z > record->at.z ? at.z - record->at.z : record->at.z - at.z) <= (record->sizeX << FX32_SHIFT)) {
+                u16 heading = record->heading == AMBIENT_REACT_AWAY ? (u16)GFL_RandomLC(0x10000)
+                                                                    : DEG_TO_IDX(record->heading % 360);
+                VecFx32 to;
+
+                ambient->pathPos = at;
+                ambient->pathPos.x -= FX_Mul(AMBIENT_FLYOVER_REACH, FX_SinIdx(heading));
+                ambient->pathPos.z += FX_Mul(AMBIENT_FLYOVER_REACH, FX_CosIdx(heading));
+                ambient->pathPos.y += record->sizeY << FX32_SHIFT;
+                to = at;
+                to.x += FX_Mul(AMBIENT_FLYOVER_REACH, FX_SinIdx(heading));
+                to.z -= FX_Mul(AMBIENT_FLYOVER_REACH, FX_CosIdx(heading));
+                to.y = ambient->pathPos.y;
+                Ambients_Leg(ambient, &to);
+                ambient->pathStage = 1;
+                ambient->pathHidden = FALSE;
+            } else {
+                ambient->pathTimer = AMBIENT_FRAMES_A_SECOND;
+            }
+        }
+        break;
+    }
+    *pos = ambient->pathPos;
+    return moving;
+}
+
+static BOOL Ambients_Move(Field *field, Ambient *ambient, VecFx32 *pos) {
     const SpawnAmbient *record = &ambient->record;
     fx32 sx = record->sizeX << FX32_SHIFT;
     fx32 sz = record->sizeZ << FX32_SHIFT;
@@ -302,6 +549,9 @@ static BOOL Ambients_Move(Ambient *ambient, VecFx32 *pos) {
     fx32 dx = 0;
     fx32 dz = 0;
 
+    if (record->path >= AMBIENT_PATH_WANDER) {
+        return Ambients_Travel(field, ambient, pos);
+    }
     *pos = record->at;
     if (record->path == AMBIENT_PATH_PERCH) {
         // Now and then it turns or hops
@@ -370,7 +620,7 @@ static BOOL Ambients_ShouldReact(Field *field, const Ambient *ambient, const Vec
     s32 dz;
     u32 radius = ambient->record.reactNear;
 
-    if (ambient->record.reactKind == AMBIENT_REACT_NONE || player == NULL) {
+    if (ambient->record.reactKind == AMBIENT_REACT_NONE || player == NULL || ambient->pathHidden) {
         return FALSE;
     }
     if (FieldPlayer_GetExState(player) == FLD_PLAYER_EXSTATE_CYCLING ||
@@ -474,6 +724,7 @@ static void Ambients_TickGone(Field *field, Ambient *ambient) {
     }
     if (dx > AMBIENT_RETURN_OFFSCREEN_X || dz > AMBIENT_RETURN_OFFSCREEN_Z) {
         ambient->reaction = AMBIENT_AT_HOME;
+        ambient->pathStarted = FALSE;
         ambient->facing = record->facing;
         ambient->angle = DEG_TO_IDX(record->phase % 360);
     }
@@ -521,7 +772,7 @@ void PaperWhite2_AmbientsUpdate(Field *field) {
             continue; // (still loading)
         }
         if (ambient->reaction == AMBIENT_AT_HOME) {
-            moving = Ambients_Move(ambient, &pos);
+            moving = Ambients_Move(field, ambient, &pos);
             if (free && Ambients_ShouldReact(field, ambient, &pos)) {
                 Ambients_StartReaction(field, ambient, &pos);
             }
@@ -535,7 +786,8 @@ void PaperWhite2_AmbientsUpdate(Field *field) {
                     ? ambient->react[1]
                     : ambient->billboard[1];
         BillboardActorSys_SetActorVisible(sys, ambient->billboard[1],
-                                          ambient->reaction != AMBIENT_GONE && drawn == ambient->billboard[1]);
+                                          ambient->reaction != AMBIENT_GONE && drawn == ambient->billboard[1] &&
+                                              !(ambient->reaction == AMBIENT_AT_HOME && ambient->pathHidden));
         if (ambient->react[1] != BILLBOARD_ACTOR_NONE) {
             BillboardActorSys_SetActorVisible(sys, ambient->react[1],
                                               ambient->reaction != AMBIENT_GONE && drawn == ambient->react[1]);
@@ -553,7 +805,9 @@ void PaperWhite2_AmbientsUpdate(Field *field) {
         if (ambient->shadow != BILLBOARD_ACTOR_NONE) {
             BillboardActorScene *shadowScene = BillboardActorSys_GetScene(sAmbients.shadowSys);
             VecFx32 at;
-            BOOL shown = Ambients_ShadowAt(field, ambient, &pos, &at);
+            // (none while it's out of sight)
+            BOOL shown = !(ambient->reaction == AMBIENT_AT_HOME && ambient->pathHidden) &&
+                         Ambients_ShadowAt(field, ambient, &pos, &at);
 
             // (SetActorHidden takes whether it shows, as FldeffShadow_Draw passes it)
             BillboardActorScene_SetActorHidden(shadowScene, ambient->shadow, &shown);

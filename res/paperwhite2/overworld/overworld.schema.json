@@ -157,8 +157,8 @@
                     "description": "How it moves; a perch that turns and hops by default",
                     "properties": {
                         "kind": {
-                            "enum": [ "perch", "hover", "ellipse", "line", "eight" ],
-                            "description": "perch: sitting, turning and hopping now and then; hover: bobbing in place; ellipse: round an ellipse of width by depth (a circle where they're the same); line: to a point width east and depth south and back; eight: a figure eight width wide and depth deep"
+                            "enum": [ "perch", "hover", "ellipse", "line", "eight", "wander", "waypoints", "peek", "flyover", "surface" ],
+                            "description": "perch: sitting, turning and hopping now and then; hover: bobbing in place; ellipse: round an ellipse of width by depth (a circle where they're the same); line: to a point width east and depth south and back; eight: a figure eight width wide and depth deep; wander: tile to tile on the ground within width east and west and depth north and south of its place, with pauses of about every seconds; waypoints: from its place to each of its points and round again (or back the way it came), at its pace, waiting at each; peek: under the ground for its wait, up for its up; flyover: now and then, while the player is within its range of its place, across the screen height over the player at its pace on its heading; surface: bobbing at its height for its up, then under for its wait, coming up elsewhere within width by depth"
                         },
                         "width": {
                             "type": "integer",
@@ -188,7 +188,7 @@
                             "type": "integer",
                             "minimum": 0,
                             "maximum": 600,
-                            "description": "A perch's: about how many seconds between its turns and hops (4 by default)"
+                            "description": "About how many seconds between a perch's turns and hops (4 by default), or a wander's steps (3 by default)"
                         },
                         "turns": {
                             "type": "boolean",
@@ -210,11 +210,59 @@
                             "type": "boolean",
                             "description": "A perch's: whether it hops now and then (by default)"
                         },
+                        "points": {
+                            "type": "array",
+                            "maxItems": 6,
+                            "description": "A waypoints path's points after its place, in units from it (16 a tile)",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                    "x": { "type": "integer", "minimum": -1024, "maximum": 1024 },
+                                    "z": { "type": "integer", "minimum": -1024, "maximum": 1024 },
+                                    "y": { "type": "integer", "minimum": -1024, "maximum": 1024 }
+                                }
+                            }
+                        },
+                        "back": {
+                            "type": "boolean",
+                            "description": "A waypoints path's: back the way it came at its ends, rather than round to its place"
+                        },
+                        "pace": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 32,
+                            "description": "A waypoints path's or a fly-over's speed in tiles a second (2 by default)"
+                        },
+                        "wait": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 600,
+                            "description": "Seconds: a waypoints path's wait at each stop (0 by default), a peek's or a surface's time down, a fly-over's time between passes, about (4 by default)"
+                        },
+                        "up": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 600,
+                            "description": "A peek's or a surface's seconds up (4 by default)"
+                        },
+                        "heading": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 359,
+                            "description": "A fly-over's heading in degrees clockwise from north; without it, one at random each pass"
+                        },
+                        "range": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 64,
+                            "description": "A fly-over's: how near its place the player must be for it to pass, in tiles (12 by default)"
+                        },
                         "height": {
                             "type": "integer",
                             "minimum": 0,
                             "maximum": 1024,
-                            "description": "A line's: how far up it climbs on the way to its far end, in units (a climb up a cliff, with no width or depth)"
+                            "description": "In units: a line's climb on the way to its far end (a climb up a cliff, with no width or depth); a fly-over's height over the player (64 by default)"
                         }
                     }
                 },

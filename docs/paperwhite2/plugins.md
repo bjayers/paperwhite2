@@ -913,6 +913,15 @@ edited in the Overworld Editor's Ambients tab.
   ambient uses (`PaperWhite2_AmbientsUseObjCode`, checked in `FieldBillboardActor_UnbindActorObjCode`), and a zone
   change cancels an ambient's load still waiting (`FldBillboardActor_CancelPendingPos`) and unloads a sprite loaded on
   demand that no actor, ambient or waiting actor uses (`FldBillboardActor_ReleaseObjCode`).
+- **Traveling paths** (`Ambients_Travel`): `wander`, tile to tile on the ground (its height over the ground kept)
+  within `width` and `depth` of its place, a pause of about `every` seconds (3); `waypoints`, from its place to each
+  of up to 6 `points` (units from it) and round, or `back` the way it came, at its `pace` (tiles a second, 2), waiting
+  `wait` seconds at each; `peek`, under the ground for `wait` and up for `up` seconds (4 each), rising and sinking
+  over 8 frames, out of sight (no sprite, no shadow, no reaction) while down; `surface`, as a peek, bobbing while up
+  and coming up elsewhere in its area; `flyover`, while the player is within `range` tiles (12) of its place, every
+  `wait` seconds or so, across the screen from 14 tiles before the player to 14 past, `height` units over it (64), at
+  its `pace`, on its `heading` or a new one each pass, its shadow on the ground. The Overworld Editor draws a wander's
+  or a surface's area and a waypoints path's stops, and previews them all (a fly-over over its own place).
 - **Reactions** (`react`): when the player comes within `near` tiles (3), or `startle` (near + 2) while it runs or
   cycles, and no event runs, it flies away (up at its `climb`, 30 degrees, its shadow on the ground), runs away (along
   the ground) or hides (sinks 20 units over 12 frames): on its heading, away from the player

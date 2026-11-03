@@ -45,3 +45,34 @@ test("a perch turns only to the directions it names", () => {
   for (let i = 0; i < 30 * 60; i++) { m.tick(); seen.add(m.place().dir); }
   assert.deepEqual([...seen].sort(), ["DIR_DOWN", "DIR_RIGHT"]);
 });
+
+test("waypoints reach each point and come round to the place", () => {
+  const a = at({ kind: "waypoints", points: [{ x: 32, z: 0 }, { x: 32, z: 32 }], pace: 4 });
+  const m = new AmbientMover(a, 8);
+  const [ox, , oz] = ambientOrigin(a);
+  const reached = new Set<string>();
+  for (let i = 0; i < 30 * 20; i++) {
+    m.tick();
+    const p = m.place();
+    reached.add(`${Math.round(p.x - ox)},${Math.round(p.z - oz)}`);
+  }
+  for (const stop of ["32,0", "32,32", "0,0"]) assert.ok(reached.has(stop), stop);
+});
+
+test("a wander stays within its area", () => {
+  const a = at({ kind: "wander", width: 32, depth: 16, every: 1 });
+  const m = new AmbientMover(a, 8);
+  const [ox, , oz] = ambientOrigin(a);
+  for (let i = 0; i < 30 * 60; i++) {
+    m.tick();
+    const p = m.place();
+    assert.ok(Math.abs(p.x - ox) <= 32 && Math.abs(p.z - oz) <= 16);
+  }
+});
+
+test("a peek is out of sight while it's down, and shows while it's up", () => {
+  const m = new AmbientMover(at({ kind: "peek", up: 1, wait: 1 }), 8);
+  const seen = new Set<boolean>();
+  for (let i = 0; i < 30 * 5; i++) { m.tick(); seen.add(m.place().hidden); }
+  assert.deepEqual([...seen].sort(), [false, true]);
+});

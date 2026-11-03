@@ -499,7 +499,7 @@ class MapScene {
       const entry = { entity: e, mover: new AmbientMover(e.ambient, 0) };
       this.ambientMovers.push(entry);
       // (its sheet's frames choose its animation: a walking Pokémon's always plays)
-      if (e.model) void spriteFrameCount(e.model).then((n) => { entry.mover.frames = n; });
+      if (e.model) void spriteFrameCount(e.model).then((n) => { entry.mover.sheetFrames = n; });
     }
     this.previewTime = 0;
     this.lastFrame = performance.now();
@@ -522,6 +522,7 @@ class MapScene {
       if (!sprite || !entity.model) continue;
       const at = mover.place();
       sprite.position.set(at.x, at.y + 12, at.z);
+      sprite.visible = !at.hidden && sprite.material.map !== null;
       const key = `${entity.model}:${at.dir}:${at.step}`;
       const texture = readyTextures.get(key);
       if (texture === undefined) spriteTexture(entity.model, at.dir, at.step);

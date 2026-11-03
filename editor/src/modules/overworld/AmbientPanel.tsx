@@ -29,7 +29,15 @@ const PATHS: { kind: PathKind; label: string; note: string }[] = [
   { kind: "ellipse", label: "Circle", note: "Goes round an ellipse of its width by its depth, a circle where they're the same." },
   { kind: "line", label: "Line", note: "Goes to a point its width east and its depth south, and back." },
   { kind: "eight", label: "Figure eight", note: "Goes round a figure eight its width wide and its depth deep." },
+  { kind: "wander", label: "Wander", note: "Steps tile to tile on the ground within its area, with pauses, as an NPC wandering." },
+  { kind: "waypoints", label: "Waypoints", note: "Goes from its place to each of its points and round again (or back the way it came), waiting at each." },
+  { kind: "peek", label: "Peek", note: "Stays under the ground for a while, comes up for a while, and ducks down again." },
+  { kind: "surface", label: "Surface", note: "Bobs at its height for a while, dives, and comes up somewhere else in its area." },
+  { kind: "flyover", label: "Fly-over", note: "Now and then, while the player is near its place, crosses the screen high over the player, its shadow on the ground." },
 ];
+// The traveling paths' defaults (tools/paperwhite2/overworld.py)
+const TRAVEL = { every: 3, pace: 2, wait: 4, up: 4, range: 12, height: 64 };
+const MAX_POINTS = 6;
 const FACINGS = [["DIR_UP", "↑", "Up"], ["DIR_DOWN", "↓", "Down"], ["DIR_LEFT", "←", "Left"], ["DIR_RIGHT", "→", "Right"]] as const;
 const REACTIONS: { kind: Reaction["kind"] | null; label: string; note: string }[] = [
   { kind: null, label: "None", note: "It stays whoever comes near." },
@@ -105,8 +113,22 @@ export function AmbientPanel({ path, index, ambient, constants, ground, used, on
   const over = ground !== null ? ambient.y - ground : null;
   const facing = typeof ambient.facing === "string" ? ambient.facing : "DIR_DOWN";
   const shadow = ambient.shadow ?? "none";
-  const moving = p.kind !== "perch";
+  const moving = p.kind === "hover" || p.kind === "ellipse" || p.kind === "line" || p.kind === "eight";
   const sized = p.kind === "ellipse" || p.kind === "line" || p.kind === "eight";
+  const area = p.kind === "wander" || p.kind === "surface";
+  const timed = p.kind === "peek" || p.kind === "surface";
+  /** A number of the path's in its user's units (scale per stored unit), its default left out. */
+  const pathNumber = (key: "every" | "pace" | "wait" | "up" | "range" | "height", label: string, hint: string, lo: number, hi: number,
+                      fallback: number, scale = 1) => (
+    <span className="ow-xyz">
+      <ScrubNumber label={label} value={(p[key] ?? fallback) / scale} step={scale === 1 ? 0.05 : 0.02} digits={scale === 1 ? 0 : 2}
+                   onChange={(n, ph) => {
+                     const v = clamp(Math.round(n * scale), lo, hi);
+                     setPath(clean({ ...p, [key]: v === fallback ? undefined : v }), ph);
+                   }} />
+      <span className="muted hint">{hint}</span>
+    </span>
+  );
   const speed = p.speed ?? DEFAULT_SPEED;
   // The directions a perch turns to: all four when it names none
   const faces: string[] = p.faces?.length ? p.faces.map(String) : FACINGS.map(([d]) => d);
@@ -192,11 +214,16 @@ export function AmbientPanel({ path, index, ambient, constants, ground, used, on
 
       <section className="ow-panel-box ow-section">
         <h5>Movement <span className="muted">{PATHS.find((k) => k.kind === p.kind)?.label}</span></h5>
-        <div className="ow-section-actions">
+        {([["Stays", ["perch", "hover", "peek", "surface"]], ["Round", ["ellipse", "line", "eight"]], ["Travels", ["wander", "waypoints", "flyover"]]] as const).map(([group, kinds]) => (
+        <div key={group} className="ow-section-actions">
+          <span className="muted small ow-path-group">{group}</span>
           <span className="view-switch">
-            {PATHS.map((k) => (
+            {PATHS.filter((k) => (kinds as readonly string[]).includes(k.kind)).map((k) => (
               <button key={k.kind} className={p.kind === k.kind ? "active" : ""} title={k.note}
                       onClick={() => setPath(clean(k.kind === "perch" ? { kind: "perch", every: p.every, turns: p.turns, hops: p.hops, faces: p.faces }
+                        : k.kind === "wander" || k.kind === "surface" ? { kind: k.kind, width: p.width ?? DEFAULT_SIZE, depth: p.depth ?? DEFAULT_SIZE }
+                        : k.kind === "waypoints" ? { kind: "waypoints", points: p.points ?? [{ x: DEFAULT_SIZE, z: 0 }] }
+                        : k.kind === "peek" || k.kind === "flyover" ? { kind: k.kind }
                         : { kind: k.kind, width: k.kind === "hover" ? undefined : p.width ?? DEFAULT_SIZE,
                             depth: k.kind === "hover" ? undefined : p.depth ?? DEFAULT_SIZE, speed: p.speed, start: p.start }))}>
                 {k.label}
@@ -204,6 +231,7 @@ export function AmbientPanel({ path, index, ambient, constants, ground, used, on
             ))}
           </span>
         </div>
+        ))}
         <p className="muted ow-note">{PATHS.find((k) => k.kind === p.kind)?.note}</p>
         <div className="ow-condition">
           {p.kind === "perch" && (
@@ -242,6 +270,101 @@ export function AmbientPanel({ path, index, ambient, constants, ground, used, on
                   </span>
                 </>
               )}
+            </>
+          )}
+          {area && (
+            <>
+              <span className="ow-condition-label">Area</span>
+              <span className="ow-xyz">
+                <ScrubNumber label="± east-west" value={(p.width ?? 0) / UNITS_PER_TILE} step={0.02} digits={2}
+                             onChange={(n, ph) => setPath({ ...p, width: clamp(Math.round(n * UNITS_PER_TILE), 0, 1024) }, ph)} />
+                <ScrubNumber label="± north-south" value={(p.depth ?? 0) / UNITS_PER_TILE} step={0.02} digits={2}
+                             onChange={(n, ph) => setPath({ ...p, depth: clamp(Math.round(n * UNITS_PER_TILE), 0, 1024) }, ph)} />
+                <span className="muted hint">tiles either way of its place</span>
+              </span>
+            </>
+          )}
+          {p.kind === "wander" && (
+            <>
+              <span className="ow-condition-label">Every</span>
+              {pathNumber("every", "seconds", "about how long it waits between steps", 1, 600, TRAVEL.every)}
+            </>
+          )}
+          {timed && (
+            <>
+              <span className="ow-condition-label">Up</span>
+              {pathNumber("up", "seconds", "how long it shows", 1, 600, TRAVEL.up)}
+              <span className="ow-condition-label">Down</span>
+              {pathNumber("wait", "seconds", p.kind === "surface" ? "how long it's under before it comes up elsewhere" : "how long it's under the ground", 0, 600, TRAVEL.wait)}
+            </>
+          )}
+          {p.kind === "waypoints" && (
+            <>
+              <span className="ow-condition-label">Points</span>
+              <div className="ow-points">
+                <span className="muted small">0 · its place</span>
+                {(p.points ?? []).map((pt, i) => (
+                  <span key={i} className="ow-xyz ow-point">
+                    <span className="muted small">{i + 1}</span>
+                    {(["x", "z", "y"] as const).map((axis) => (
+                      <ScrubNumber key={axis} label={axis === "x" ? "E" : axis === "z" ? "S" : "up"} value={(pt[axis] ?? 0) / UNITS_PER_TILE} step={0.02} digits={2}
+                                   onChange={(n, ph) => {
+                                     const points = (p.points ?? []).map((q, k) => {
+                                       if (k !== i) return q;
+                                       const next = { ...q, [axis]: clamp(Math.round(n * UNITS_PER_TILE), -1024, 1024) };
+                                       if (!next[axis]) delete next[axis];
+                                       return next;
+                                     });
+                                     setPath({ ...p, points }, ph);
+                                   }} />
+                    ))}
+                    <button className="icon" title="Remove this point" disabled={(p.points ?? []).length <= 1}
+                            onClick={() => setPath({ ...p, points: (p.points ?? []).filter((_, k) => k !== i) })}>×</button>
+                  </span>
+                ))}
+                {(p.points ?? []).length < MAX_POINTS && (
+                  <button className="ow-ambient-add" onClick={() => {
+                    const last = (p.points ?? []).at(-1) ?? { x: 0, z: 0 };
+                    setPath({ ...p, points: [...(p.points ?? []), { x: (last.x ?? 0) + DEFAULT_SIZE, z: last.z ?? 0, ...(last.y ? { y: last.y } : {}) }] });
+                  }}>+ Add a point</button>
+                )}
+                <span className="muted hint">tiles east, south and up from its place, up to {MAX_POINTS}</span>
+              </div>
+              <span className="ow-condition-label">Then</span>
+              <span className="ow-xyz">
+                <span className="view-switch">
+                  <button className={!p.back ? "active" : ""} onClick={() => setPath(clean({ ...p, back: undefined }))}>Round to its place</button>
+                  <button className={p.back ? "active" : ""} onClick={() => setPath({ ...p, back: true })}>Back the way it came</button>
+                </span>
+              </span>
+              <span className="ow-condition-label">Pace</span>
+              {pathNumber("pace", "tiles a second", "how fast it goes", 1, 32, TRAVEL.pace)}
+              <span className="ow-condition-label">Wait</span>
+              {pathNumber("wait", "seconds", "at each stop", 0, 600, 0)}
+            </>
+          )}
+          {p.kind === "flyover" && (
+            <>
+              <span className="ow-condition-label">Range</span>
+              {pathNumber("range", "tiles", "how near its place the player must be for it to pass", 1, 64, TRAVEL.range)}
+              <span className="ow-condition-label">Height</span>
+              {pathNumber("height", "tiles", "over the player as it passes", 0, 1024, TRAVEL.height, UNITS_PER_TILE)}
+              <span className="ow-condition-label">Pace</span>
+              {pathNumber("pace", "tiles a second", "how fast it crosses", 1, 32, TRAVEL.pace)}
+              <span className="ow-condition-label">Every</span>
+              {pathNumber("wait", "seconds", "about how long between passes", 0, 600, TRAVEL.wait)}
+              <span className="ow-condition-label">Heading</span>
+              <span className="ow-xyz">
+                <span className="view-switch">
+                  <button className={p.heading === undefined ? "active" : ""} onClick={() => setPath(clean({ ...p, heading: undefined }))}>Random</button>
+                  <button className={p.heading !== undefined ? "active" : ""} onClick={() => setPath({ ...p, heading: p.heading ?? 90 })}>Fixed</button>
+                </span>
+                {p.heading !== undefined && (
+                  <ScrubNumber label="°" value={p.heading} step={1} digits={0}
+                               onChange={(n, ph) => setPath({ ...p, heading: ((Math.round(n) % 360) + 360) % 360 }, ph)} />
+                )}
+                <span className="muted hint">{p.heading === undefined ? "a new one each pass" : "clockwise from north"}</span>
+              </span>
             </>
           )}
           {sized && (
@@ -307,7 +430,7 @@ export function AmbientPanel({ path, index, ambient, constants, ground, used, on
         <div className="ow-section-actions">
           {ambient.when
             ? <button onClick={() => set("when", undefined)}>Remove the condition</button>
-            : <button onClick={() => set("when", { time: ["morning", "day", "evening"] })}>Add a condition</button>}
+            : <button onClick={() => set("when", {})}>Add a condition</button>}
           <span className="muted">The zone shows the first 8 whose conditions hold, in the list's order.</span>
         </div>
         {ambient.when && (

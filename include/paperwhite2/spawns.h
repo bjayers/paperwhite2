@@ -25,8 +25,9 @@ u16 Spawns_PickKey(GameData *gameData);
 // appear are out of view, its actor removed and made again if it shows. TRUE when every NPC has its record for now,
 // FALSE while some wait to leave the view
 BOOL Spawns_Repick(GameSystem *gsys, MMSys *actorSystem, HeapID heapId, SpawnsInView inView, void *arg);
-// The most sprites an ambient picks from
+// The most sprites an ambient picks from, and the most waypoints a waypoints path has after its place
 #define SPAWNS_AMBIENT_SPRITES 4
+#define SPAWNS_AMBIENT_POINTS 6
 
 // An ambient's record, packed by tools/paperwhite2/overworld.py after its rule's payload: a sprite drawn without an
 // actor (src/paperwhite2/ov036/paperwhite2_ambients.c), on its path round its place
@@ -68,6 +69,18 @@ typedef struct {
     u8 reactEmote;
     u8 reactSpread;
     u8 reactClimb;
+    // The traveling paths' (AMBIENT_PATH_WANDER and after): a waypoints' or a fly-over's pace in units a second; the
+    // seconds it waits (at a waypoint, down for a peek or a surface, between fly-overs); the seconds a peek or a
+    // surface stays up; a fly-over's heading in degrees (AMBIENT_REACT_AWAY: one at random each time); the waypoints'
+    // count and AMBIENT_PATH_FLAG_*s; then the waypoints after its place, x, y and z in units from it
+    u16 pace;
+    u16 wait;
+    u16 up;
+    u16 heading;
+    u8 pointCount;
+    u8 pathFlags;
+    u8 pad2[2];
+    s16 points[SPAWNS_AMBIENT_POINTS][3];
 } SpawnAmbient;
 
 enum {
@@ -94,7 +107,24 @@ enum {
     AMBIENT_PATH_LINE,
     // A figure eight sizeX wide and sizeZ deep
     AMBIENT_PATH_EIGHT,
+    // Tile to tile on the ground within sizeX east and west and sizeZ north and south of its place, with pauses of
+    // about speed seconds
+    AMBIENT_PATH_WANDER,
+    // From its place to each of its points and on, at its pace, waiting at each; back to its place, or back the way
+    // it came (AMBIENT_PATH_FLAG_BACK)
+    AMBIENT_PATH_WAYPOINTS,
+    // Under the ground for its wait, up for its up, and down again
+    AMBIENT_PATH_PEEK,
+    // Now and then, while the player is within sizeX of its place, across the screen sizeY over the player, at its
+    // pace, on its heading
+    AMBIENT_PATH_FLYOVER,
+    // Bobbing at its place's height for its up, then under for its wait, coming up again elsewhere within sizeX by
+    // sizeZ of its place
+    AMBIENT_PATH_SURFACE,
 };
+
+// A waypoints path that goes back the way it came rather than round
+#define AMBIENT_PATH_FLAG_BACK 0x1
 
 enum {
     AMBIENT_SHADOW_NONE,

@@ -13,7 +13,7 @@ is a conditions table (tools/paperwhite2/conditions.py) whose rules' payloads sa
 - an instance: u8 1, u8 the seed, u16 its host's id, then the instance's 36-byte NPC record (ZoneNPC, as event_data.py
   packs it, its id the host's); a host's instances are one after another, after its condition if it has one, and the
   field picks among those that hold, by weight.
-- an ambient: u8 2, u8 the seed, u16 its index among the zone's ambients, then its 56-byte record (SpawnAmbient,
+- an ambient: u8 2, u8 the seed, u16 its index among the zone's ambients, then its 104-byte record (SpawnAmbient,
   include/paperwhite2/spawns.h): u16 its sprites' object codes (4, the unused 0), u8 how many, u8 path, u8 shadow, u8
   facing, u8 flags, 3 bytes 0, s32 x, y and z
   (fx32 world units: a tile's middle plus its offset, and its height), u16 its path's width and depth (units), speed
@@ -21,7 +21,10 @@ is a conditions table (tools/paperwhite2/conditions.py) whose rules' payloads sa
   own), its heading in degrees (REACT_AWAY: away from the player), its speed (units a second), the species of its cry
   (0 none), the seconds it returns after, at least and at most (NEVER: not in the zone), u8 its kind, how near the
   player and a running or cycling player come before it, its emote (EMOTES, 0 none), its heading's spread and its
-  flight's climb (degrees); it shows while its rule holds (paperwhite2_ambients.c).
+  flight's climb (degrees), then its traveling path's (wander and after): u16 its pace (units a second), its wait and
+  its up (seconds), a fly-over's heading (REACT_AWAY: at random), u8 its waypoints' count and FLAG_BACK, 2 bytes 0,
+  and six waypoints of s16 x, y and z (units from its place; a fly-over's range is its width, its height its line
+  height); it shows while its rule holds (paperwhite2_ambients.c).
 The seed is the CONDITION_SEED_* the NPC's rolls start from, keyed by its id (its "rolls": the hour's by default, the
 day's, the time of day's or each entry's); the field picks again when the hour or the time of day changes.
 """
@@ -44,9 +47,14 @@ HEADER = struct.Struct("<IHH")
 ENTRY = struct.Struct("<HHII")
 PAYLOAD = struct.Struct("<BBH")
 KIND_CONDITION, KIND_INSTANCE, KIND_AMBIENT = 0, 1, 2
-AMBIENT = struct.Struct("<4H5B3xiii4H7H6B")
+AMBIENT = struct.Struct("<4H5B3xiii4H7H6B4H2B2x18h")
+AMBIENT_POINTS = 6
 AMBIENT_SPRITES = 4
-PATHS = {"perch": 0, "hover": 1, "ellipse": 2, "line": 3, "eight": 4}
+PATHS = {"perch": 0, "hover": 1, "ellipse": 2, "line": 3, "eight": 4, "wander": 5, "waypoints": 6, "peek": 7,
+         "flyover": 8, "surface": 9}
+# The traveling paths' defaults: a wander's pause (seconds), a pace (tiles a second), the waits and ups (seconds), a
+# fly-over's range (tiles) and height (units), and AMBIENT_PATH_FLAG_BACK
+WANDER_EVERY, PACE, WAIT, UP, FLYOVER_RANGE, FLYOVER_HEIGHT, FLAG_BACK = 3, 2, 4, 4, 12, 64, 0x1
 SHADOWS = {"none": 0, "feet": 1, "ground": 2}
 FLAG_TURNS, FLAG_HOPS = 0x1, 0x2
 # The directions a perch turns to: a bit each from bit 4 (AMBIENT_FLAG_FACES_SHIFT), none for all four
@@ -102,7 +110,19 @@ def ambient_bytes(ambient: dict, where: str) -> bytes:
     x = round((ambient["x"] * 16 + 8 + offset.get("x", 0)) * 4096)
     z = round((ambient["z"] * 16 + 8 + offset.get("z", 0)) * 4096)
     y = round(ambient["y"] * 4096)
-    speed = p.get("every", 0) if p["kind"] == "perch" else p.get("speed", 45)
+    kind = p["kind"]
+    speed = (p.get("every", 0) if kind == "perch" else p.get("every", WANDER_EVERY) if kind == "wander"
+             else p.get("speed", 45))
+    width, depth, height = p.get("width", 0), p.get("depth", 0), p.get("height", 0)
+    if kind == "flyover":
+        width, height = p.get("range", FLYOVER_RANGE) * 16, p.get("height", FLYOVER_HEIGHT)
+    points = p.get("points", []) if kind == "waypoints" else []
+    if len(points) > AMBIENT_POINTS:
+        raise DataError(f"{where}: a waypoints path has at most {AMBIENT_POINTS} points after its place")
+    travel = (p.get("pace", PACE) * 16, p.get("wait", WAIT if kind != "waypoints" else 0), p.get("up", UP),
+              p.get("heading", REACT_AWAY), len(points), FLAG_BACK if p.get("back") else 0,
+              *[c for point in points for c in (point.get("x", 0), point.get("y", 0), point.get("z", 0))],
+              *[0] * (3 * (AMBIENT_POINTS - len(points))))
     sprites = [value(s, where) for s in ambient.get("sprites", [ambient["sprite"]] if "sprite" in ambient else [])]
     if not 1 <= len(sprites) <= AMBIENT_SPRITES:
         raise DataError(f"{where}: an ambient needs a sprite, or a set of 1 to {AMBIENT_SPRITES}")
@@ -123,8 +143,7 @@ def ambient_bytes(ambient: dict, where: str) -> bytes:
         reaction = (0, REACT_AWAY, 0, 0, NEVER, NEVER, 0, 0, 0, 0, 0, 0)
     return AMBIENT.pack(*sprites, *[0] * (AMBIENT_SPRITES - len(sprites)), len(sprites), PATHS[p["kind"]],
                         SHADOWS[ambient.get("shadow", "none")], value(ambient.get("facing", "DIR_DOWN"), where), flags,
-                        x, y, z, p.get("width", 0), p.get("depth", 0), speed, p.get("start", 0) % 360,
-                        p.get("height", 0), *reaction)
+                        x, y, z, width, depth, speed, p.get("start", 0) % 360, height, *reaction, *travel)
 
 
 def member(sources: Path = SOURCES) -> bytes:
