@@ -165,3 +165,6 @@ Global10200_Text_DebugConditionsWorldEntry = World and tiles
 Global10200_Text_DebugConditionsPartyEntry = Party and seeds
 Global10200_Text_DebugConditionsRulesEntry = Sample rules
 Global10200_Text_DebugConditionsPickEntry = Sample pick
+Global10200_Text_DebugMemory = Memory
+Global10200_Text_DebugMemoryReadout = Sprite cache: {0200:0} of {0200:1}\n{0200:2} on demand, peak {0200:3}{be01}Sprites not cached: {0200:4}\nBillboards {0200:15}/{0200:16}, materials {0200:17}/{0200:18}{be01}Textures: {0200:5} of {0200:9} KB\nPeak {0200:6} KB, largest free {0200:7} KB{be01}Texture failures: {0200:8}\nPalettes: {0200:10} of {0200:14} bytes{be01}Palette peak {0200:11} bytes\nLargest free {0200:12}, failures {0200:13}
+Global10200_Text_DebugMemoryResetPeaks = Reset peaks

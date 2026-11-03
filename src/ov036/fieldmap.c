@@ -91,12 +91,13 @@
 #include "system/season.h"
 #include "system/zone_weather.h"
 #ifdef PAPERWHITE2
-#include "paperwhite2/camera_areas.h"
 #include "paperwhite2/ambients.h"
+#include "paperwhite2/camera_areas.h"
 #include "paperwhite2/field.h"
 #include "paperwhite2/following_field.h"
 #ifdef PAPERWHITE2_DEBUG_MENU
 #include "paperwhite2/debug.h"
+#include "paperwhite2/vram_stats.h"
 #endif
 #endif
 
@@ -296,6 +297,11 @@ u32 FieldRoutine_Open(GameSystem *gsys, Field *field) {
     BmpWin_InitAllocator(heapId);
     GFL_TextRndInitColorIndexLUT();
     GFL_G3DSysCreate(0, 3, 0, 1, FX32_ONE, field->heapId, FieldG3D_InitCallback);
+#ifdef PAPERWHITE2_DEBUG_MENU
+    // Paper White 2: the debug menu's Memory page counts the field's VRAM from here: 3 slots of 128 KB of textures and
+    // 1 of 16 KB of palettes, as made just above
+    PaperWhite2_VramStats_Install(3 * 0x20000, 0x4000);
+#endif
     FieldG3D_Init(field);
     field->g3DMapper = FieldG3DMapper_Create(field->heapId, GameData_GetSeason(field->gameData));
     field->asyncActorMatLoadTCB = GFL_VBlankTCBAdd(FldActSys_AsyncMatLoadTCBFunc, field, 0);

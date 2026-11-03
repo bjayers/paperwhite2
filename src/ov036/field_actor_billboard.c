@@ -13,6 +13,9 @@
 #include "nitro/mi.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/ambients.h"
+#ifdef PAPERWHITE2_DEBUG_MENU
+#include "paperwhite2/vram_stats.h"
+#endif
 #endif
 
 // A material of an object code, for the actors that share it. A free one has BILLBOARD_ACTOR_NONE as its object code
@@ -488,6 +491,44 @@ void FldBillboardActor_CancelPendingPos(MMSys *system, u16 *out) {
     }
 }
 
+#ifdef PAPERWHITE2_DEBUG_MENU
+void FldBillboardActor_GetCacheStats(MMSys *system, FldBillboardCacheStats *out) {
+    FieldBillboardActor *billboardActor = FldActSys_GetFieldBillboardActor(system);
+    BillboardActorSys *sys = billboardActor->sys;
+    int i;
+
+    MI_CpuFill8(out, 0, sizeof(FldBillboardCacheStats));
+    out->count = billboardActor->cache.count;
+    for (i = 0; i < billboardActor->cache.count; i++) {
+        if (billboardActor->cache.entries[i].objCode != BILLBOARD_ACTOR_NONE) {
+            out->used++;
+            if (billboardActor->cache.entries[i].flags & 1) {
+                out->onDemand++;
+            }
+        }
+    }
+    out->materialCount = sys->texMatCount;
+    for (i = 0; i < sys->texMatCount; i++) {
+        if (sys->texMats[i].material != BILLBOARD_ACTOR_NONE || sys->texMats[i].texResource != NULL) {
+            out->materials++;
+        }
+    }
+    out->billboardCount = sys->handleCount;
+    for (i = 0; i < sys->handleCount; i++) {
+        if (sys->handles[i].actor != BILLBOARD_ACTOR_NONE) {
+            out->billboards++;
+        }
+    }
+}
+
+void FldBillboardActor_ResetCachePeaks(MMSys *system) {
+    FldBillboardCacheStats stats;
+
+    FldBillboardActor_GetCacheStats(system, &stats);
+    PaperWhite2_VramStats_ResetSprites(stats.used);
+}
+#endif
+
 void FldBillboardActor_ReleaseObjCode(MMSys *system, u16 objCode) {
     FieldBillboardActor *billboardActor = FldActSys_GetFieldBillboardActor(system);
     FieldActor *actor;
@@ -554,11 +595,29 @@ static void FldBillboardActor_RegistCachedMat(MatCache *cache, u16 objCode, u16 
             entry->objCode = objCode;
             entry->mat = mat;
             entry->flags = flags;
+#ifdef PAPERWHITE2_DEBUG_MENU
+            // Paper White 2: the debug menu's Memory page counts the entries in use
+            {
+                u32 used = 0;
+                int j;
+
+                for (j = 0; j < cache->count; j++) {
+                    if (cache->entries[j].objCode != BILLBOARD_ACTOR_NONE) {
+                        used++;
+                    }
+                }
+                PaperWhite2_VramStats_OnSpriteCached(used);
+            }
+#endif
             return;
         }
         i++;
         entry++;
     } while (i < cache->count);
+#ifdef PAPERWHITE2_DEBUG_MENU
+    // Paper White 2: and the sprites that found no entry, which then never show
+    PaperWhite2_VramStats_OnSpriteDropped();
+#endif
 }
 
 static void FldBillboardActor_RemoveCachedMat(MatCache *cache, u16 objCode) {
@@ -601,6 +660,10 @@ static BOOL FldBillboardActor_FindCachedMat(MatCache *cache, u16 objCode, u16 *m
 }
 
 static void FldBillboardActor_InitMatCache(FieldBillboardActor *billboardActor, int count) {
+#ifdef PAPERWHITE2_DEBUG_MENU
+    // Paper White 2: the Memory page's sprite peak starts over with the field
+    PaperWhite2_VramStats_ResetSprites(0);
+#endif
     FldBillboardActor_CreateMatCache(&billboardActor->cache, count, FldActSys_GetFieldHeapID(billboardActor->system));
 }
 

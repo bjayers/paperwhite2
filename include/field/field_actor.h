@@ -200,6 +200,23 @@ BOOL FldBillboardActor_CanLoadObjCode(MMSys *system, u16 objCode);
 void FldBillboardActor_CancelPendingPos(MMSys *system, u16 *out);
 void FldBillboardActor_ReleaseObjCode(MMSys *system, u16 objCode);
 #endif
+#ifdef PAPERWHITE2_DEBUG_MENU
+// Paper White 2: the debug menu's Memory page: the sprite cache's entries (in use, and of them loaded on demand; the
+// peak and the sprites that found no entry are paperwhite2/vram_stats.h's), and the field billboard system's
+// materials and billboards in use
+typedef struct {
+    u16 count;
+    u16 used;
+    u16 onDemand;
+    u16 materials;
+    u16 materialCount;
+    u16 billboards;
+    u16 billboardCount;
+} FldBillboardCacheStats;
+
+void FldBillboardActor_GetCacheStats(MMSys *system, FldBillboardCacheStats *out);
+void FldBillboardActor_ResetCachePeaks(MMSys *system);
+#endif
 void FldBillboardActor_GetActorSize(FieldActor *actor, u16 *scaleX, u16 *scaleY);
 // Overlay 36's field_rail_loader.c: sets a flag of the actor's rail billboard work
 void RailActorAnim_SetState(FieldActor *actor, BOOL value);

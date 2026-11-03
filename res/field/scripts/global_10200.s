@@ -41,6 +41,7 @@ L_DebugMenu:
     ListMenuAdd Global10200_Text_DebugInfo, 65535, 5
     ListMenuAdd Global10200_Text_DebugConditions, 65535, 6
     ListMenuAdd Global10200_Text_DebugFollower, 65535, 7
+    ListMenuAdd Global10200_Text_DebugMemory, 65535, 8
     ListMenuAdd Global10200_Text_DebugClose, 65535, DEBUG_LIST_BACK
     ListMenuShow
     WorkCmpConst 0x8020, 0
@@ -59,6 +60,8 @@ L_DebugMenu:
     VMJumpIf CMP_EQ, L_DebugConditions
     WorkCmpConst 0x8020, 7
     VMJumpIf CMP_EQ, L_DebugFollower
+    WorkCmpConst 0x8020, 8
+    VMJumpIf CMP_EQ, L_DebugMemory
 
 L_DebugClose:
     SystemMsgClose
@@ -628,6 +631,20 @@ L_DebugMoneyDone:
     SystemMsg Global10200_Text_DebugMoneyDone, 2
     LastKeyWait
     VMJump L_DebugMoney
+
+// Memory: the sprite cache, the texture and palette VRAM, and the field's billboards, with their peaks since the field
+// was made (a warp, a battle or a menu makes it again) or Reset peaks
+L_DebugMemory:
+    Debug DEBUG_ACTION_MEMORY_WORDS, 0, 0, 0x8025
+    SystemMsg Global10200_Text_DebugMemoryReadout, 2
+    ListMenuAnchorTopRight 31, 1, 0, 1, 0x8020
+    ListMenuAdd Global10200_Text_DebugMemoryResetPeaks, 65535, 0
+    ListMenuAdd Global10200_Text_DebugBack, 65535, DEBUG_LIST_BACK
+    ListMenuShow
+    WorkCmpConst 0x8020, 0
+    VMJumpIf CMP_NE, L_DebugMenu
+    Debug DEBUG_ACTION_MEMORY_RESET_PEAKS, 0, 0, 0x8025
+    VMJump L_DebugMemory
 
 // Info: the zone, the position, the season, the time, the weather and the follower, on a grid or on rails
 L_DebugInfo:

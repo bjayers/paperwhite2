@@ -2,6 +2,24 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-03 (night): sprite and VRAM research; the debug menu's Memory readout
+
+- **What limits sprites** (research, from the code): the field's G3D system has 384 KB of texture VRAM (3 slots) and
+  16 KB of palette VRAM, linked-list managers that free anywhere (`FieldRoutine_Open`), shared by the maps, buildings,
+  effects and sprites. The sprite cache holds 32 codes (`FldActSys_InitBillboardActor`, a number Game Freak passed),
+  the field billboard system 64 materials and 128 billboards (`FieldG3D_Init`). A sprite uploads its frames whole (a
+  person's 7 of 32 by 32 at 4 bits, 3.5 KB; a walking Pokémon's 8, 4 KB; the player's about 8 KB) and a 16-color
+  palette. A preload list is read only at a warp, fly or game start (`FieldMapControl_InitSpawn`), not when walking
+  into a zone, so each list covers a region (Route 20's is Floccesy Town's, Floccesy Ranch's and Route 19's too: 14 of
+  its 23 on Route 20, the rest those zones' people). The loader reads one sprite at a time from the card.
+- **The plan the user agreed:** measure first (this readout), then sprite streaming: the cache counts its users, preloads
+  become hints released when unused, NPCs far from the camera hold no sprite, unused sprites stay until the space is
+  needed; then raise the 32 as far as the measured VRAM allows.
+- **Memory** in the debug menu (plugins.md, Memory readout): the sprite cache's use, peak and sprites that found no
+  entry; billboards and materials; texture and palette VRAM used, peak, largest free block and failures. Built (hack, no
+  warnings, DSi intact). **Not tested in game.** **For the user:** open it in busy places (Route 20, Virbank City,
+  Castelia City, a zone after a battle) and note the numbers, with Reset peaks before walking around.
+
 ## 2026-11-03 (evening): ambients' sprites loaded on demand; the bird moved to Virbank City
 
 - **The user's next test (Virbank City):** Swellow showed, but always from behind, unanimated, and now and then gone.

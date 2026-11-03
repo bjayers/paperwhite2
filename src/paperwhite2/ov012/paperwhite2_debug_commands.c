@@ -6,7 +6,9 @@
 #include "constants/species.h"
 #include "field/event_mapchange.h"
 #include "field/field.h"
+#include "field/field_actor.h"
 #include "field/field_environment.h"
+#include "field/field_internal.h"
 #include "field/field_script.h"
 #include "field/field_weather.h"
 #include "field/player_state.h"
@@ -28,6 +30,7 @@
 #include "paperwhite2/season.h"
 #include "paperwhite2/shiny_candy.h"
 #include "paperwhite2/terrain_groups.h"
+#include "paperwhite2/vram_stats.h"
 #include "pml/poke_party.h"
 #include "save/bag.h"
 #include "save/event_work.h"
@@ -207,6 +210,7 @@ static void DebugCommands_FillConditions(FieldScriptEnv *env, ConditionContext *
 static void DebugCommands_SetWordRule(FieldScriptEnv *env, u32 index, const ConditionTable *table, s32 rule);
 static BOOL DebugCommands_FollowerWords(FieldScriptEnv *env, Field *field);
 static BOOL DebugCommands_FollowerRules(FieldScriptEnv *env, Field *field);
+static void DebugCommands_MemoryWords(FieldScriptEnv *env, Field *field);
 static void DebugCommands_ConditionsWorld(FieldScriptEnv *env);
 static BOOL DebugCommands_ConditionsParty(FieldScriptEnv *env);
 static u32 DebugCommands_ConditionsRules(FieldScriptEnv *env, u32 first);
@@ -399,6 +403,13 @@ static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2
         return FollowingDebug_ClearItem(GSYS_GetField(gsys));
     case DEBUG_ACTION_FOLLOWER_RULES:
         return DebugCommands_FollowerRules(env, GSYS_GetField(gsys));
+    case DEBUG_ACTION_MEMORY_WORDS:
+        DebugCommands_MemoryWords(env, GSYS_GetField(gsys));
+        return 0;
+    case DEBUG_ACTION_MEMORY_RESET_PEAKS:
+        PaperWhite2_VramStats_ResetPeaks();
+        FldBillboardActor_ResetCachePeaks(GSYS_GetField(gsys)->actorSystem);
+        return 0;
     }
     // The actions on the target, which do nothing without one
     if (pkm == NULL) {
@@ -947,6 +958,34 @@ static BOOL DebugCommands_FollowerWords(FieldScriptEnv *env, Field *field) {
 }
 
 // The rules that would be chosen now: a rule's name, or "none"
+// The Memory page's words (DEBUG_ACTION_MEMORY_WORDS)
+static void DebugCommands_MemoryWords(FieldScriptEnv *env, Field *field) {
+    FldBillboardCacheStats cache;
+    VramStats vram;
+
+    FldBillboardActor_GetCacheStats(field->actorSystem, &cache);
+    PaperWhite2_VramStats_Get(&vram);
+    DebugCommands_SetWordNumber(env, 0, cache.used);
+    DebugCommands_SetWordNumber(env, 1, cache.count);
+    DebugCommands_SetWordNumber(env, 2, cache.onDemand);
+    DebugCommands_SetWordNumber(env, 3, vram.spritePeak);
+    DebugCommands_SetWordNumber(env, 4, vram.spriteDropped);
+    DebugCommands_SetWordNumber(env, 5, vram.texUsed / 1024);
+    DebugCommands_SetWordNumber(env, 6, vram.texPeak / 1024);
+    DebugCommands_SetWordNumber(env, 7, PaperWhite2_VramStats_LargestFreeTex() / 1024);
+    DebugCommands_SetWordNumber(env, 8, vram.texFailed);
+    DebugCommands_SetWordNumber(env, 9, vram.texTotal / 1024);
+    DebugCommands_SetWordNumber(env, 10, vram.plttUsed);
+    DebugCommands_SetWordNumber(env, 11, vram.plttPeak);
+    DebugCommands_SetWordNumber(env, 12, PaperWhite2_VramStats_LargestFreePltt());
+    DebugCommands_SetWordNumber(env, 13, vram.plttFailed);
+    DebugCommands_SetWordNumber(env, 14, vram.plttTotal);
+    DebugCommands_SetWordNumber(env, 15, cache.billboards);
+    DebugCommands_SetWordNumber(env, 16, cache.billboardCount);
+    DebugCommands_SetWordNumber(env, 17, cache.materials);
+    DebugCommands_SetWordNumber(env, 18, cache.materialCount);
+}
+
 static BOOL DebugCommands_FollowerRules(FieldScriptEnv *env, Field *field) {
     static const u8 tables[] = { FOLLOWING_TABLE_AMBIENT, FOLLOWING_TABLE_PICKUP };
     const char *name;

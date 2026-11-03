@@ -121,6 +121,15 @@
 // (3) and pickup rules (4) that would be
 #define DEBUG_ACTION_FOLLOWER_RULES 42
 
+// The Memory page (include/paperwhite2/vram_stats.h, field_actor.h's FldBillboardCacheStats): puts the sprite cache's
+// entries in use (0), its size (1), those loaded on demand (2), its peak (3), the sprites that found no entry (4), the
+// texture VRAM in use (5), its peak (6), the largest free block (7) and the failed allocations (8), in KB but 8, and
+// the total (9); the palette VRAM's the same in bytes (10 to 14); the billboards in use (15) of (16) and the materials
+// (17) of (18)
+#define DEBUG_ACTION_MEMORY_WORDS 43
+// Starts the peaks and the failure counts over from now
+#define DEBUG_ACTION_MEMORY_RESET_PEAKS 44
+
 // The kinds of number entry: their ranges and messages are sDebugNumberKinds (paperwhite2_debug_commands.c)
 #define DEBUG_NUMBER_LEVEL 0
 #define DEBUG_NUMBER_NATURE 1

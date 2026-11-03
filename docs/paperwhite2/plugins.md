@@ -235,8 +235,20 @@ DEBUG                           L_DebugMenu
                                   sample's match) / Sample pick (Conditions, below)
   Follower...                     the Following Pokémon's steps and waiting item, Set steps..., Force a pickup,
                                   Clear waiting item, Rules now (following-pokemon.md, Dialogue rules, gifts and steps)
+  Memory                          the sprite cache, texture and palette VRAM, billboards and materials, with peaks;
+                                  Reset peaks (Memory readout, below)
   Close
 ```
+
+**Memory readout.** What the field has loaded, to see how near it is to its limits: the sprite cache's entries in use
+of 32, those loaded on demand, the most in use at once and the sprites that found no entry (and so never showed); the
+field billboard system's billboards (of 128) and materials (of 64); the texture VRAM in use (of 384 KB: 3 slots, as
+`FieldRoutine_Open` makes the G3D system), the most in use at once, the largest block that could be allocated now and
+the allocations that failed; and the palette VRAM's the same, in bytes (of 16 KB). The peaks count from when the field
+was made (a warp, a battle or a menu makes it again) or Reset peaks. The VRAM is counted by wrapping NitroSystem's
+default allocation functions after the field's `GFL_G3DSysCreate` (`src/paperwhite2/main/paperwhite2_vram_stats.c`),
+which every allocation goes through; the largest free block is found by trying sizes through the managers' own
+functions. The sprite counts are `#ifdef PAPERWHITE2_DEBUG_MENU` lines in `field_actor_billboard.c`.
 
 A block shows its list, compares the result in 0x8020 with its entries and jumps to each one's block; B, Back and
 anything else go back to the menu above it (B on the top menu closes it). A list entry's label is formatted with the
