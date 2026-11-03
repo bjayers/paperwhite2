@@ -48,7 +48,7 @@ export function SpriteImage({ model, direction, size = 32 }: { model: string; di
 
 /** Every model by its sprite, filtered by name and bank; choosing one closes it. With used (the zone's sprites), those
  * are marked, and can be left out. */
-function ModelPicker({ constants, value, used, onPick, onClose }: {
+export function ModelPicker({ constants, value, used, onPick, onClose }: {
   constants: Constants; value: string; used?: ReadonlySet<string>; onPick(model: string): void; onClose(): void;
 }) {
   const [filter, setFilter] = useState("");
@@ -103,9 +103,7 @@ function ModelPicker({ constants, value, used, onPick, onClose }: {
   );
 }
 
-function ModelField({ schema, value, path, ctx, used }: {
-  schema: Schema; value: JsonValue; path: JsonPath; ctx: FormContext; used?: ReadonlySet<string>;
-}) {
+function ModelField({ schema, value, path, ctx }: { schema: Schema; value: JsonValue; path: JsonPath; ctx: FormContext }) {
   const [picking, setPicking] = useState(false);
   const model = typeof value === "string" ? value : "";
   return (
@@ -113,7 +111,7 @@ function ModelField({ schema, value, path, ctx, used }: {
       {model && <SpriteImage model={model} size={40} />}
       <div className="ow-model-field"><BaseField schema={schema} value={value} path={path} ctx={ctx} /></div>
       <button onClick={() => setPicking(true)} title="Choose by sprite">Browse…</button>
-      {picking && <ModelPicker constants={ctx.constants} value={model} used={used} onClose={() => setPicking(false)}
+      {picking && <ModelPicker constants={ctx.constants} value={model} onClose={() => setPicking(false)}
                                onPick={(m) => { ctx.edit(path, m); setPicking(false); }} />}
     </div>
   );
@@ -149,17 +147,6 @@ export function entityFields(kind: EntityKind, onOpenScript: () => void, base?: 
     if (height && rest === `grid.${height.field}`) return <HeightField kind={kind} value={value} path={path} ctx={ctx} />;
     if (kind === "npc" && rest === "model") return <ModelField schema={schema} value={value} path={path} ctx={ctx} />;
     if (rest === "script") return <ScriptField schema={schema} value={value} path={path} ctx={ctx} onOpen={onOpenScript} />;
-    return undefined;
-  };
-}
-
-/** The ambient at ["ambients", index]'s sprite fields, its sprite and each of its set's, with the sprite and the picker;
- * used marks the sprites the zone already has. */
-export function ambientFields(index: number, used: ReadonlySet<string>): FormContext["render"] {
-  return (path, value, schema, ctx) => {
-    if (path[0] !== "ambients" || path[1] !== index) return undefined;
-    if ((path.length === 3 && path[2] === "sprite") || (path.length === 4 && path[2] === "sprites" && typeof path[3] === "number"))
-      return <ModelField schema={schema} value={value} path={path} ctx={ctx} used={used} />;
     return undefined;
   };
 }

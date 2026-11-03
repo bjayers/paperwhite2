@@ -29,6 +29,9 @@ export function spriteCacheSize(): Promise<number> {
 }
 // The player: its walking sprite, and the one it changes to (cycling, surfing), while the first is still loaded
 export const PLAYER_SPRITES = 2;
+// The most ambients a zone shows at once (SPAWNS_AMBIENT_MAX, include/paperwhite2/spawns.h), and the most it can have
+export const AMBIENTS_SHOWN = 8;
+export const AMBIENTS_MAX = 32;
 // The Following Pokémon's sprite
 export const FOLLOWER_SPRITES = 1;
 // Past this many flags in the zone's conditions, only all set, none set and each one alone are tried
@@ -107,6 +110,8 @@ export interface SpriteLoad {
   /** The NPCs' and instances' sprites past the preloads, in the worst case, and the ambients'. */
   npcs: number;
   ambients: number;
+  /** The most ambients whose conditions hold at once, over every combination (the game shows the first 8). */
+  ambientsAtOnce: number;
   /** The worst case's world, in words. */
   worst: string;
   /** The preloaded sprites, and those past them in the worst case. */
@@ -190,6 +195,7 @@ export async function spriteLoad(npcs: Entity[], entries: SpawnEntry[], ambients
   const likelySets: number[][] = [[]];
   used.forEach((f, i) => { likelySets.push([f]); used.slice(i + 1).forEach((g) => likelySets.push([f, g])); });
   let likely = 0;
+  let ambientsAtOnce = 0;
   /** The sprites past the preloads that show in a world and a state of 10852, with the rare flags that come up. */
   const evaluate = (w: World, state: (typeof states)[number] | null, rare: readonly number[]) => {
     const seasonalShown = state
@@ -214,14 +220,15 @@ export async function spriteLoad(npcs: Entity[], entries: SpawnEntry[], ambients
       if (fresh) shown.add(fresh);
     }
     const npcCount = shown.size - base.size;
-    for (const a of ambients) {
-      if (!holds(a.when, w)) continue;
+    // (the game shows the first AMBIENTS_SHOWN whose conditions hold)
+    for (const a of ambients.filter((x) => holds(x.when, w)).slice(0, AMBIENTS_SHOWN)) {
       const choices = (a.sprites ?? [a.sprite]).map(codeOf).filter((c): c is string => !!c && !!sprite.get(c));
       const fresh = choices.find((c) => !shown.has(c));
       if (fresh) shown.add(fresh);
     }
     return { npcCount, ambientCount: shown.size - base.size - npcCount, shown };
   };
+  for (const w of worlds(conditions)) ambientsAtOnce = Math.max(ambientsAtOnce, ambients.filter((a) => holds(a.when, w)).length);
   for (const w of worlds(conditions)) for (const state of states.length ? states.filter((st) => st.night === atNight(w)) : [null]) {
     const { npcCount, ambientCount, shown } = evaluate(w, state, RARE_FLAGS);
     if (npcCount + ambientCount > worst.npcs + worst.ambients) {
@@ -239,7 +246,7 @@ export async function spriteLoad(npcs: Entity[], entries: SpawnEntry[], ambients
   }
   if (!conditions.length && !states.length) worst.world = "";
   const total = base.size + PLAYER_SPRITES + FOLLOWER_SPRITES + worst.npcs + worst.ambients;
-  return { total, preloaded: base.size, player: PLAYER_SPRITES, follower: FOLLOWER_SPRITES, npcs: worst.npcs, ambients: worst.ambients, worst: worst.world,
+  return { total, preloaded: base.size, player: PLAYER_SPRITES, follower: FOLLOWER_SPRITES, npcs: worst.npcs, ambients: worst.ambients, ambientsAtOnce, worst: worst.world,
            preloadedCodes: [...base], extraCodes: worst.codes,
            likely: states.length ? base.size + PLAYER_SPRITES + FOLLOWER_SPRITES + likely : null };
 }

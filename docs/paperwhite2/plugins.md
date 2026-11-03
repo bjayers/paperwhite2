@@ -885,7 +885,9 @@ edited in the Overworld Editor's Ambients tab.
 - **Data:** `ambients` in `res/paperwhite2/overworld/<zone>.json` (`overworld.schema.json`): each a sprite (an
   `OBJ_CODE_*`) or a set of up to 4, a tile, an offset in it and a height in the world in units, a facing, a path (`perch`, `hover`,
   `ellipse`, `line`, `eight`, with its width, depth, speed and start, or a perch's turns, hops and how often), a shadow
-  (none, under its feet, or on the ground below), a `when` and `rolls`. A zone shows at most 8.
+  (none, under its feet, or on the ground below), a `when` and `rolls`. A zone has up to 32 and shows at most 8 at
+  once (`SPAWNS_AMBIENT_MAX`): the first 8 in its list whose conditions hold; the Overworld Editor warns where more can
+  hold together.
 - **Packing:** `overworld.py` adds each as a rule of the zone's table: payload kind 2, its seed, its index, then its
   36-byte record (`SpawnAmbient`, `include/paperwhite2/spawns.h`). `Spawns_GetAmbients` picks a set's sprite with the
   roll its chance was rolled with, so the pick holds as long as the chance does.

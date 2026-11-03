@@ -61,6 +61,15 @@
 .ow-picker-number { font-size: 10px; font-family: var(--mono); }
 .ow-picker-here { font-size: 10px; color: var(--accent); }
 
+/* An ambient's sprites: each with its name and its actions, and the add button after them */
+.ow-ambient-sprites { display: flex; flex-direction: column; gap: 6px; }
+.ow-ambient-sprite { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 8px; }
+.ow-ambient-sprite-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.ow-ambient-sprite-actions { display: flex; gap: 4px; }
+.ow-ambient-add { justify-self: start; }
+.ow-condition > .ow-xyz { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ow-condition > .ow-xyz .hint { font-size: 12px; }
+
 /* The events buffer's load bar */
 .ow-load { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-family: var(--mono); color: var(--muted); }
 .ow-load-bar { width: 160px; height: 10px; border-radius: 5px; background: var(--border); overflow: hidden; }

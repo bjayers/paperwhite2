@@ -2,6 +2,18 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-04 (later): the sprite cache tested; the Ambients panel; more than 8 ambients placed
+
+- **Tested by the user, emulator and 3DS:** Route 20 at autumn night with 7 more ambients of new sprites: 39 of 48
+  cached (14 on demand), none uncached, textures 303 KB (peak 304), largest free 80 KB, no failures; no missing NPCs,
+  wrong sprites, pop-in, crashes or freezes, there or elsewhere. 48 stays.
+- **The Ambients panel** (`editor/src/modules/overworld/AmbientPanel.tsx`), laid out as the spawn panels: Ambient (name,
+  its sprites with the sprite browser, which marks the zone's own and can hide them, up to 4; facing), Place (tile,
+  offset, height over the ground), Movement (the path's kind and only its settings), Shadow, Appears, Rolls, and all
+  fields last.
+- **More than 8 ambients:** a zone can have 32 (the schema); the game already showed the first 8 whose conditions hold.
+  The editor warns where more than 8 can hold at once, and the sprite bar counts only the 8 shown.
+
 ## 2026-11-04: the sprite cache raised to 48, with a VRAM reserve (trial)
 
 - **More measurements (the user's):** Castelia's Mode Street (zone 33) 8 of 32 sprites, textures 252 KB, largest free

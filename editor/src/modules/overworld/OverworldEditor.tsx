@@ -21,14 +21,15 @@ import { loadRails, oppositeRailDir, railDirOf, railEntities, railLevels, railTo
 import { RailPanel } from "./RailPanel.tsx";
 import { CameraPanel } from "./CameraPanel.tsx";
 import { InstancePanel, SpawnSection } from "./SpawnPanel.tsx";
-import { RARE_LIKELY, SPRITE_CACHE_ORIGINAL, flagNumber, spriteCacheSize, preloadLists, seasonalOf, spriteLoad, type Seasonal, type SpriteLoad } from "./spriteLoad.ts";
+import { AMBIENTS_MAX, AMBIENTS_SHOWN, RARE_LIKELY, SPRITE_CACHE_ORIGINAL, flagNumber, spriteCacheSize, preloadLists, seasonalOf, spriteLoad, type Seasonal, type SpriteLoad } from "./spriteLoad.ts";
 import { SEASON_NAMES, TIME_NAMES, ambientEntities, instanceEntities, newAmbient, previewPicks, spawnPath, type Ambient, type PreviewWorld,
   type SpawnEntry } from "./spawns.ts";
 import { WEATHERS } from "../encounters/model.ts";
 import { cameraEntities, cameraFileOf, circleCamera, defaultCamera, newRectArea, rectCamera, type CameraArea, type DefaultCamera,
   type ViewCamera } from "./cameras.ts";
 import { api } from "../../api.ts";
-import { ambientFields, entityFields } from "./fields.tsx";
+import { entityFields } from "./fields.tsx";
+import { AmbientPanel } from "./AmbientPanel.tsx";
 import { BuildingPanel } from "./BuildingPanel.tsx";
 import { MapView, hasRect, type OverlayMode, type TileRect } from "./MapView.tsx";
 import { amendProps, bundleModels, buildingEntities, dirtyPropChunks, loadProps, propsOf, propsSaveError, redoProps, revertProps, saveProps, setProps,
@@ -243,8 +244,6 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     ...spawnEntries.flatMap((e) => e.instances?.map((i) => String(i.npc.model ?? "")) ?? []),
     ...ambients.flatMap((a) => (a.sprites ?? [a.sprite]).map(String)),
   ].filter((m) => m.startsWith("OBJ_CODE_"))), [sprites, entities, spawnEntries, ambients]);
-  const ambientRender = useMemo(() => chosen?.kind === "ambient" ? ambientFields(chosen.index, usedSprites) : undefined,
-    [chosen?.kind, chosen?.index, usedSprites]);
 
   useEffect(() => { if (constants.size) loadWorld(constants).then(setWorld, () => setWorld(null)); }, [constants]);
   useEffect(() => { const z = params.get("zone"); if (z) setZone(z); }, [params]);
@@ -449,7 +448,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   const add = useCallback((x: number, z: number, height: number, onRail?: RailPlace) => {
     if (module === "ambient") {
       if (!spawnFile) return;
-      if (ambients.length >= 8) { setNote("A zone shows at most 8 ambients."); return; }
+      if (ambients.length >= AMBIENTS_MAX) { setNote(`A zone has at most ${AMBIENTS_MAX} ambients.`); return; }
       holdSpawnFile("ambients");
       documents.edit(spawnFile, ["ambients"], fromPlain([...ambients, newAmbient(x, z, height, ambients.length)]));
       record([spawnFile]);
@@ -1030,10 +1029,12 @@ export function OverworldEditor({ constants, open }: ToolProps) {
               ) : chosen.kind === "ambient" && spawnFile ? (
                 <>
                   <p className="ow-note muted">A sprite the game draws without an actor, on its path round its place: nothing collides with it and it
-                    isn't talked to. Its height is in units (16 a tile) in the world: its tile's ground plus how far over it it is. Drag it to
-                    another tile to move it, keeping its height over the ground.</p>
-                  <DocForm key={`ambient:${chosen.index}`} path={spawnFile} at={["ambients", chosen.index]} constants={constants}
-                           hideDescription flat render={ambientRender} onEdit={() => record([spawnFile])} />
+                    isn't talked to. Drag it to another tile to move it, keeping its height over the ground.</p>
+                  {ambients[chosen.index] && (
+                    <AmbientPanel path={spawnFile} index={chosen.index} ambient={ambients[chosen.index]} constants={constants}
+                                  ground={map ? standingOn(map, ambients[chosen.index].x, ambients[chosen.index].z, ambients[chosen.index].y)?.height ?? null : null}
+                                  used={usedSprites} onEdit={() => record([spawnFile])} />
+                  )}
                 </>
               ) : chosen.kind === "instance" && spawnFile ? (
                 <>
@@ -1082,6 +1083,10 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                 <button key={`${e.kind}${e.index}`} className="link" onClick={() => setSelected({ kind: e.kind, index: e.index })}>{e.label} </button>
               ))}</p>}
               <h4>{KIND_NAMES[module]} <span className="muted">{entities.filter((e) => e.kind === module).length}</span></h4>
+              {module === "ambient" && sprites && sprites.ambientsAtOnce > AMBIENTS_SHOWN && (
+                <p className="notice warning ow-note">Up to {sprites.ambientsAtOnce} of these can hold at once, and the game shows {AMBIENTS_SHOWN}: the first {AMBIENTS_SHOWN} in
+                  this list whose conditions hold. Give them conditions that don't overlap, or order them by which matter most.</p>
+              )}
               <div className="ow-list">
                 {entities.filter((e) => e.kind === module).map((e) => (
                   <button key={e.index} className="ow-item" onClick={() => select(e, null)}>

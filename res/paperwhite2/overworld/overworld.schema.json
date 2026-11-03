@@ -18,8 +18,8 @@
         },
         "ambients": {
             "type": "array",
-            "maxItems": 8,
-            "description": "Sprites drawn without an actor, on paths round their places: no actor, event or save entry, nothing collides with them, and they aren't talked to. A zone shows at most 8, and the editor warns past 4 distinct sprites",
+            "maxItems": 32,
+            "description": "Sprites drawn without an actor, on paths round their places: no actor, event or save entry, nothing collides with them, and they aren't talked to. A zone shows at most 8 at once, the first 8 whose conditions hold in the list's order (SPAWNS_AMBIENT_MAX), and the Overworld Editor warns where more could hold together",
             "items": {
                 "$ref": "#/$defs/ambient"
             }
