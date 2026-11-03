@@ -11,6 +11,9 @@
 #include "gfl/heap.h"
 #include "nitro/fx.h"
 #include "nitro/mi.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/ambients.h"
+#endif
 
 // A material of an object code, for the actors that share it. A free one has BILLBOARD_ACTOR_NONE as its object code
 typedef struct {
@@ -365,7 +368,12 @@ static void FieldBillboardActor_UnbindActorObjCode(FieldBillboardActor *billboar
                                             BillboardActorSys_GetMatByActor(billboardActor->sys, index), 1);
         }
         if (info[0] & 1) {
+#ifdef PAPERWHITE2
+            // Paper White 2: kept while an ambient draws it too (paperwhite2_ambients.c), which releases it after
+            if (!FldAct_CheckObjCodeShared(actor, objCode) && !PaperWhite2_AmbientsUseObjCode(objCode)) {
+#else
             if (!FldAct_CheckObjCodeShared(actor, objCode)) {
+#endif
                 FldBillboardActor_UnloadCachedMaterial(billboardActor, objCode);
             }
         }
@@ -392,7 +400,13 @@ BOOL FldBillboardActor_AddActorPosOrReserve(MMSys *system, const FieldActorConfi
     u16 mat;
 
     FieldBillboardActor_FindCachedObjMat(billboardActor, config->uid, &mat, &out[0]);
+#ifdef PAPERWHITE2
+    // Paper White 2: an object code whose sprite isn't loaded waits for it too, as an actor's does (an ambient's; a
+    // reflection's actor has always loaded its own). The original drew the billboard with no material
+    if (mat != BILLBOARD_ACTOR_NONE && !(out[0] & 2)) {
+#else
     if (!(out[0] & 2)) {
+#endif
         out[1] =
             FldActSys_AddBillboardActor(system, pos, config->billboardSize, config->spriteControllerType, mat, lights);
         return TRUE;
@@ -415,6 +429,86 @@ void FldBillboardActor_DeleteActorPos(MMSys *system, u16 *out) {
     out[0] = 0;
     out[1] = BILLBOARD_ACTOR_NONE;
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: for the ambients (paperwhite2_ambients.c), which draw billboards by position
+
+BOOL FldBillboardActor_CanLoadObjCode(MMSys *system, u16 objCode) {
+    FieldBillboardActor *billboardActor = FldActSys_GetFieldBillboardActor(system);
+    AsyncLoader *loader = billboardActor->loader;
+    u16 flags;
+    int free = 0;
+    int i;
+
+    if (FieldBillboardActor_FindCachedObjMat(billboardActor, objCode, NULL, NULL) ||
+        FldBillboardActor_CheckAsyncLoading(billboardActor, objCode, &flags)) {
+        return TRUE;
+    }
+    for (i = 0; i < billboardActor->cache.count; i++) {
+        if (billboardActor->cache.entries[i].objCode == BILLBOARD_ACTOR_NONE) {
+            free++;
+        }
+    }
+    // (each load still on its way takes an entry when it lands)
+    for (i = 0; i < loader->readCount; i++) {
+        if (loader->reads[i].objCode != BILLBOARD_ACTOR_NONE) {
+            free--;
+        }
+    }
+    for (i = 0; i < loader->resourceCount; i++) {
+        if (loader->resources[i].resource != NULL) {
+            free--;
+        }
+    }
+    return free > 0;
+}
+
+void FldBillboardActor_CancelPendingPos(MMSys *system, u16 *out) {
+    FieldBillboardActor *billboardActor = FldActSys_GetFieldBillboardActor(system);
+    u32 i = 0;
+    u16 limit = GetActorLimit(system);
+    PendingActor *pending = billboardActor->loader->actors;
+    u16 flags;
+
+    for (; i < limit; i++, pending++) {
+        if (pending->index == &out[1] && pending->actor == NULL) {
+            pending->state = 0;
+            if (FldBillboardActor_CheckAsyncLoading(billboardActor, pending->objCode, &flags) == TRUE && (flags & 1)) {
+                if (!FldBillboardActor_HasOtherPendingActor(billboardActor, pending->objCode, NULL)) {
+                    FldBillboardActor_CancelAsyncLoad(billboardActor, pending->objCode);
+                }
+            }
+            if (pending->resource != NULL) {
+                GFL_G3DResFree(pending->resource);
+                pending->resource = NULL;
+            }
+            FldBillboardActor_ClearPendingActor(pending);
+            return;
+        }
+    }
+}
+
+void FldBillboardActor_ReleaseObjCode(MMSys *system, u16 objCode) {
+    FieldBillboardActor *billboardActor = FldActSys_GetFieldBillboardActor(system);
+    FieldActor *actor;
+    u32 index = 0;
+    u16 flags;
+
+    if (!FieldBillboardActor_FindCachedObjMat(billboardActor, objCode, NULL, &flags) || !(flags & 1)) {
+        return; // (not loaded, or preloaded: it stays)
+    }
+    while (NextActor(system, &actor, &index) == TRUE) {
+        if (FldAct_GetObjCode(actor) == objCode) {
+            return;
+        }
+    }
+    if (PaperWhite2_AmbientsUseObjCode(objCode) ||
+        FldBillboardActor_HasOtherPendingActor(billboardActor, objCode, NULL)) {
+        return;
+    }
+    FldBillboardActor_UnloadCachedMaterial(billboardActor, objCode);
+}
+#endif
 
 static void FieldBillboardActor_ActorCallback(BillboardActorSys *sys, u32 actor, void *data) {
     FieldBillboardActor *billboardActor = data;

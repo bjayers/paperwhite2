@@ -22,9 +22,9 @@
 // (FldBillboardActor_AddActorPosOrReserve), placed on its path and given its animation every frame. They take no actor,
 // event or save entry, and nothing collides with them. A shadow, where it has one, is the actors' shadow (the shadow
 // effect's material, in the effects' billboard system), under its feet or on the ground below it. A battle or a menu
-// tears the field and its billboards down, and a zone change replaces them, once every sprite asked for has loaded (the
-// cache writes a billboard's index where it was told to when its sprite loads, so a slot isn't reused before then):
-// either way they're made again for what's there then
+// tears the field and its billboards down, and a zone change replaces them: either way they're made again for what's
+// there then. A sprite that isn't loaded is loaded on demand, as an NPC's is, where the cache has an entry free (where
+// it hasn't, the ambient doesn't show); the zone change cancels a load still waiting and unloads what no one else uses
 
 // The field's frames a second
 #define AMBIENT_FRAMES_A_SECOND 30
@@ -36,8 +36,6 @@
 #define AMBIENT_HOP_HEIGHT FX32_CONST(3)
 // A perch turns and hops at about every speed seconds, 4 when it gives none
 #define AMBIENT_PERCH_SECONDS 4
-// How long a zone change waits for sprites still loading, at most, in frames (a load that never ends doesn't hold it)
-#define AMBIENT_LOAD_WAIT_FRAMES (5 * AMBIENT_FRAMES_A_SECOND)
 // A shadow's lift over what it lies on, as the actors' (FldeffShadow_Draw), and its alpha
 #define AMBIENT_SHADOW_LIFT FX32_ONE
 #define AMBIENT_SHADOW_ALPHA 19
@@ -71,7 +69,6 @@ typedef struct {
     u16 zone;
     u8 loaded;
     u8 count;
-    u16 waited;
     Ambient list[SPAWNS_AMBIENT_MAX];
 } AmbientState;
 
@@ -81,29 +78,25 @@ static BillboardActorSys *Ambients_GetSys(MMSys *actorSystem) {
     return FieldBillboardActor_GetBillboardActorSys(FldActSys_GetFieldBillboardActor(actorSystem));
 }
 
-// Whether a sprite asked for is still loading
-static BOOL Ambients_IsLoading(void) {
-    u32 i;
-
-    for (i = 0; i < sAmbients.count; i++) {
-        if (sAmbients.list[i].billboard[1] == BILLBOARD_ACTOR_NONE && (sAmbients.list[i].billboard[0] & 2)) {
-            return TRUE;
-        }
-    }
-    return FALSE;
-}
-
 // The billboards made, deleted
 static void Ambients_Clear(MMSys *actorSystem) {
     u32 i;
+    u32 count = sAmbients.count;
 
-    for (i = 0; i < sAmbients.count; i++) {
+    for (i = 0; i < count; i++) {
+        if (sAmbients.list[i].billboard[1] == BILLBOARD_ACTOR_NONE) {
+            FldBillboardActor_CancelPendingPos(actorSystem, sAmbients.list[i].billboard);
+        }
         FldBillboardActor_DeleteActorPos(actorSystem, sAmbients.list[i].billboard);
         if (sAmbients.list[i].shadow != BILLBOARD_ACTOR_NONE) {
             BillboardActorSys_DeleteActors(sAmbients.shadowSys, sAmbients.list[i].shadow, 1);
         }
     }
     sAmbients.count = 0;
+    // (once none is counted, so that none holds them)
+    for (i = 0; i < count; i++) {
+        FldBillboardActor_ReleaseObjCode(actorSystem, sAmbients.list[i].record.objCodes[0]);
+    }
 }
 
 // An ambient's shadow made, as an actor's is (FldeffShadow_Init); none where the system has no handle left
@@ -172,6 +165,9 @@ static void Ambients_Load(Field *field) {
         GetNPCMdlInfoForOBJCODE(actorSystem, records[i].objCodes[0], &config);
         if (config.uid != records[i].objCodes[0]) {
             continue; // (no such object code)
+        }
+        if (!FldBillboardActor_CanLoadObjCode(actorSystem, config.uid)) {
+            continue; // (the sprite cache is full: it doesn't show)
         }
         MI_CpuFill8(ambient, 0, sizeof(Ambient));
         ambient->record = records[i];
@@ -290,9 +286,7 @@ void PaperWhite2_AmbientsUpdate(Field *field) {
             sAmbients.shadowSys = NULL;
         }
     }
-    if ((!sAmbients.loaded || sAmbients.zone != zone) &&
-        (!Ambients_IsLoading() || ++sAmbients.waited >= AMBIENT_LOAD_WAIT_FRAMES)) {
-        sAmbients.waited = 0;
+    if (!sAmbients.loaded || sAmbients.zone != zone) {
         Ambients_Clear(actorSystem);
         sAmbients.zone = zone;
         sAmbients.loaded = TRUE;
@@ -327,4 +321,15 @@ void PaperWhite2_AmbientsUpdate(Field *field) {
             BillboardActorSys_SetActorAnimating(sys, ambient->billboard[1], moving);
         }
     }
+}
+
+BOOL PaperWhite2_AmbientsUseObjCode(u16 objCode) {
+    u32 i;
+
+    for (i = 0; i < sAmbients.count; i++) {
+        if (sAmbients.list[i].record.objCodes[0] == objCode) {
+            return TRUE;
+        }
+    }
+    return FALSE;
 }

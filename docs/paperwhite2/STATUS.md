@@ -2,6 +2,18 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-03 (evening): ambients' sprites loaded on demand; the bird moved to Virbank City
+
+- **The user's test (Route 20):** the bird was invisible with its shadow showing, then drew a trainer's sprite. Cause:
+  Pidove wasn't loaded (not preloaded, and the cache full), and the reflections' call it used drew a billboard with no
+  material, which pointed at an empty slot and later a trainer's. Fixed (plugins.md, Ambients, Sprites not loaded):
+  the sprite loads on demand as an NPC's does, an ambient whose sprite can't get a cache entry doesn't show, NPCs going
+  don't unload an ambient's sprite, and a zone change cancels and releases.
+- The bird is now in Virbank City (`res/paperwhite2/overworld/virbank_city.json`) on the railing at 205, 649, height
+  16 (ground 0 there), as Pidove or Swellow; Route 20's file had only the bird and is gone. Built (hack, no warnings, DSi
+  intact). **Not tested in game.** Still to see: an ambient over a full cache now shows nothing, and one that couldn't
+  load at zone entry doesn't try again until the zone is entered again.
+
 ## 2026-11-03 (early): the Overworld Editor's sprite bar
 
 - The header's second bar: the sprites a zone can have loaded at once, in the worst case, against the sprite cache's 32

@@ -10,5 +10,7 @@
 // The zone's ambients made when the zone or the field is new, and moved and animated; the field's update calls it every
 // frame, after the actors' update
 void PaperWhite2_AmbientsUpdate(Field *field);
+// Whether an ambient draws, or waits for, an object code's sprite (which an actor's going doesn't unload then)
+BOOL PaperWhite2_AmbientsUseObjCode(u16 objCode);
 
 #endif // PAPERWHITE2_AMBIENTS_H

@@ -872,14 +872,22 @@ edited in the Overworld Editor's Ambients tab.
 - **In the field,** `PaperWhite2_AmbientsUpdate` (`src/paperwhite2/ov036/paperwhite2_ambients.c`, from the field's
   update after the actors'): when the zone, or the field's billboard system (made again after a battle or a menu), is
   new, the zone's ambients whose rules hold (`Spawns_GetAmbients`, keyed past every NPC's id) each get a billboard of
-  their sprite from the actor system's cache, as reflections do (`FldBillboardActor_AddActorPosOrReserve`, with the
+  their sprite from the actor system's cache, as reflections are (`FldBillboardActor_AddActorPosOrReserve`, with the
   object code's config from `GetNPCMdlInfoForOBJCODE`). Every frame each is placed on its path, at the field's actor
   height offset, and given its animation (standing or walking, by its facing turned by the camera's angle, set only
   when it changes). A shadow is the actors' oval (`FldeffShadow_GetMaterial`, an `#ifdef PAPERWHITE2` accessor in
   `fldeff_shadow.c`, gives the effects' billboard system and the shadow material), made as `FldeffShadow_Init` makes
   one and placed each frame: at its place's height (under its feet, a hop leaving it), or on the highest collision
-  layer at or below it (`FieldG3DMapper_GetTerrainAll`), hidden where there's none. A zone change waits for sprites still loading (the cache writes a billboard's index into its slot
-  when it loads), at most 5 seconds. No actor, task, event or save entry; nothing collides with them.
+  layer at or below it (`FieldG3DMapper_GetTerrainAll`), hidden where there's none. No actor, task, event or save
+  entry; nothing collides with them.
+- **Sprites not loaded** (`#ifdef PAPERWHITE2` in `field_actor_billboard.c`): reflections always find their actor's
+  sprite loaded, so the original `FldBillboardActor_AddActorPosOrReserve` drew a billboard with no material for a code
+  that isn't (an empty slot's or another sprite's). It now waits for the sprite, loaded on demand as an NPC's is. An
+  ambient is made only where `FldBillboardActor_CanLoadObjCode` finds its sprite loaded, on its way, or a cache entry
+  free (counting loads still on their way); where the cache is full it doesn't show. An NPC's going keeps a sprite an
+  ambient uses (`PaperWhite2_AmbientsUseObjCode`, checked in `FieldBillboardActor_UnbindActorObjCode`), and a zone
+  change cancels an ambient's load still waiting (`FldBillboardActor_CancelPendingPos`) and unloads a sprite loaded on
+  demand that no actor, ambient or waiting actor uses (`FldBillboardActor_ReleaseObjCode`).
 - **Not yet:** flying off when the player comes near, picking again in the zone, the editor's path drawing and preview,
   sprites from the encounters, and the budget's 4 distinct sprites.
 

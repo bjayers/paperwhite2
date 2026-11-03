@@ -112,5 +112,19 @@
                 }
             ]
         }
+    ],
+    "ambients": [
+        {
+            "name": "Bird on the railing",
+            "sprites": [ "OBJ_CODE_POKEMON_PIDOVE", "OBJ_CODE_POKEMON_SWELLOW" ],
+            "x": 205,
+            "z": 649,
+            "y": 16,
+            "facing": "DIR_DOWN",
+            "path": {
+                "kind": "perch"
+            },
+            "shadow": "feet"
+        }
     ]
 }

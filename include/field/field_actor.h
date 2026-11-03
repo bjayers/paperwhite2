@@ -192,6 +192,14 @@ void FldBillboardActor_DeleteFieldActor(FieldActor *actor, u32 index);
 BOOL FldBillboardActor_AddActorPosOrReserve(MMSys *system, const FieldActorConfig *config, u16 *out, VecFx32 *pos,
                                             void (*callback)(u16 index, void *data), void *callbackData, u32 lights);
 void FldBillboardActor_DeleteActorPos(MMSys *system, u16 *out);
+#ifdef PAPERWHITE2
+// Paper White 2: for the ambients: whether an object code's sprite is loaded, on its way or has a cache entry free; a
+// billboard by position still waiting for its sprite cancelled (out as FldBillboardActor_AddActorPosOrReserve took it);
+// and a sprite loaded on demand unloaded where no actor, ambient or waiting actor uses it
+BOOL FldBillboardActor_CanLoadObjCode(MMSys *system, u16 objCode);
+void FldBillboardActor_CancelPendingPos(MMSys *system, u16 *out);
+void FldBillboardActor_ReleaseObjCode(MMSys *system, u16 objCode);
+#endif
 void FldBillboardActor_GetActorSize(FieldActor *actor, u16 *scaleX, u16 *scaleY);
 // Overlay 36's field_rail_loader.c: sets a flag of the actor's rail billboard work
 void RailActorAnim_SetState(FieldActor *actor, BOOL value);
