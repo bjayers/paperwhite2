@@ -83,5 +83,15 @@ Switches Unova between the way it is in Black 2 and in White 2, without Unova Li
 - **Description:** ends with "It's set to Black 2." or "White 2.".
 - **Icon:** the GB Sounds' for now.
 - **Obtained:** the debug menu for now.
+- **Shelved (2026-11-03): tested, not ready.** Known problems, for when it's picked up again:
+  - White textures on Route 4 after switching, which a battle (the field's reload) fixes. Not yet explained: the map
+    change closes and reopens the field. The lead is the areas' own version swap, `VERSION_SPECIFIC_AREAS`, which
+    `FieldMapControl_LoadZone` (`src/ov035/event_mapchange.c`) allows for `VERSION_AREA_OWN` only (the build's
+    version, not the key's) once map-replace event 0 is set. That is Opelucid City's area (50 to 266 or 270), so
+    Opelucid's textures are sure to be wrong too until it follows the key.
+  - A Black 2 Route 4 trainer (the one by the road, script 5220, an ID of `GLOBAL_SCRIPT_TABLE`'s 5000-6999 row)
+    battles again each time the player comes back: its defeat isn't kept. Not yet looked into.
+  - Not yet checked: Black 2's story flags and events in the zones it switches, and Black City's and White Forest's
+    own data the first time it's switched.
 - **Scripts:** 2820-2822 are past `global_2800.s`'s original last ID, so its row of `GLOBAL_SCRIPT_TABLE`
   (`src/ov012/script_sys.c`) ends at 2822 under `PAPERWHITE2`.

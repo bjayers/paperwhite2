@@ -2,6 +2,13 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-03 (late night): the Version Key shelved
+
+- Tested (with the fade-in fix): switching works, but Route 4 shows white textures until a battle, and a Black 2
+  Route 4 trainer battles again on every visit. Shelved; the leads are in items.md, Version Key. The item stays in the
+  build (debug menu only). The user's save is switched until the key is used again.
+- Next: spawn groups.
+
 ## 2026-11-03 (night): the Version Key; the items documented
 
 - **The Version Key** (the Galactic Key's place, GB Sounds' icon for now): switches Unova between Black 2's and White
