@@ -65,38 +65,53 @@ export function RailPanel({ rails, path, part, constants, onEdit, onConnect, con
   return (
     <div>
       {part.type === "point" && (
-        <p className="ow-note">
-          <button onClick={onConnect} className={connecting ? "active" : ""}>{connecting ? "Click the line's other point…" : "New line from here"}</button>{" "}
-          <span className="muted">Drag the point to move it at its height; its lines follow.</span>
-        </p>
+        <section className="ow-panel-box ow-section">
+          <h5>Point <span className="muted">{part.index}</span></h5>
+          <div className="ow-section-actions">
+            <button onClick={onConnect} className={connecting ? "active" : ""}>{connecting ? "Click the line's other point…" : "New line from here"}</button>
+            <span className="muted">Drag the point to move it at its height; its lines follow.</span>
+          </div>
+        </section>
       )}
       {line && (
-        <div className="ow-panel-box">
-          <p className="ow-note">
-            <strong>Length</strong> {line.length} tiles; its shape measures {Math.round(measured * 10) / 10}.{" "}
-            {Math.round(measured) !== line.length && Math.round(measured) > 0 && (
-              <button onClick={() => onFitLength(Math.round(measured))} title="Sets the length and resizes the line's attributes, repeating its last row">
-                Set it to {Math.round(measured)}</button>
+        <section className="ow-panel-box ow-section">
+          <h5>Line <span className="muted">{line.length} tiles</span></h5>
+          <div className="ow-condition ow-event-rows">
+            <span className="ow-condition-label">Length</span>
+            <span className="ow-event-control">
+              <span>{line.length} tiles; its shape measures {Math.round(measured * 10) / 10}</span>
+              {Math.round(measured) !== line.length && Math.round(measured) > 0 && (
+                <button onClick={() => onFitLength(Math.round(measured))} title="Sets the length and resizes the line's attributes, repeating its last row">
+                  Set it to {Math.round(measured)}</button>
+              )}
+            </span>
+            {curve && (
+              <>
+                <span className="ow-condition-label">Curve</span>
+                <span className="ow-event-control">
+                  <span className="view-switch">
+                    {(["straight", "arc, flat", "arc in 3D"] as const).map((name, h) => (
+                      <button key={h} className={curve.handler === h ? "active" : ""} onClick={() => editCurve("handler", h)}
+                              title={h === 1 ? "an arc in x and z, its height blended" : undefined}>{name}</button>
+                    ))}
+                  </span>
+                  <span className="muted hint">curve {line.curve}{curve.handler === 1 ? ": an arc in x and z, its height blended along it" : ""}</span>
+                </span>
+                {curve.handler !== 0 && (
+                  <>
+                    <span className="ow-condition-label">Center</span>
+                    <VecTiles value={curve.center} onChange={(v, phase) => editCurve("center", v, phase)} />
+                  </>
+                )}
+              </>
             )}
-          </p>
-          {curve && (
-            <div className="row-control ow-xyz">
-              <label>Curve {line.curve}{" "}
-                <select value={curve.handler} onChange={(e) => editCurve("handler", Number(e.target.value))}>
-                  <option value={0}>straight</option>
-                  <option value={1}>arc (flat, height blended)</option>
-                  <option value={2}>arc (in 3D)</option>
-                </select>
-              </label>
-              {curve.handler !== 0 && <>
-                <span className="muted">Center</span>
-                <VecTiles value={curve.center} onChange={(v, phase) => editCurve("center", v, phase)} />
-              </>}
-            </div>
-          )}
-        </div>
+          </div>
+        </section>
       )}
-      <DocForm key={`${list}:${part.index}`} path={path} at={[list, part.index]} constants={constants} hideDescription flat render={render} onEdit={onEdit} />
+      <section className="ow-panel-box ow-section">
+        <h5>{part.type === "point" ? "Point's fields" : "Line's fields"}</h5>
+        <DocForm key={`${list}:${part.index}`} path={path} at={[list, part.index]} constants={constants} hideDescription flat render={render} onEdit={onEdit} />
+      </section>
     </div>
   );
 }

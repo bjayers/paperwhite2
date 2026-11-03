@@ -8,7 +8,13 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   table over the map from the encounter species files that name its area: methods, seasons, times, rarity, levels,
   weather and conditions, filtered by season, time and method, sorted by any column), and ambients' sprites by
   condition (plugins.md, Ambients). Built (hack, no warnings, DSi intact); each checked in the browser. **Not tested
-  in game** (the sprites by condition). Next: the other sidebars restyled after the Ambients panel.
+  in game** (the sprites by condition).
+- **The other sidebars in sections, as the Ambients panel** (`editor/src/modules/overworld/EventPanel.tsx`): NPCs,
+  proxies, triggers, warps, level scripts and an instance's NPC get headed sections with a label column and hints,
+  each control the form's own or the editor's (sprite, height, script), NPC facing as arrows, and the whole form under
+  All fields; buildings, cameras and rails their own sections (blend direction and curve as buttons). Nothing removed:
+  every field the form had is still under All fields or a section. Screenshotted: NPC, warp, trigger, building,
+  camera. Left for later: the camera's own settings are still the schema form inside its Camera section.
 
 ## 2026-11-03 (towards morning): five new ambient paths; a condition's default
 

@@ -135,11 +135,13 @@ const LAYOUTS: Partial<Record<EntityKind, Section[]>> = {
 /** Whether a kind has a sectioned panel (the others keep their own). */
 export const hasEventLayout = (kind: EntityKind) => kind in LAYOUTS;
 
-export function EventPanel({ kind, path, index, constants, render, onEdit, children }: {
+export function EventPanel({ kind, path, index, record: recordAt, constants, render, onEdit, children }: {
   kind: EntityKind;
-  /** The zone's events file. */
+  /** The zone's events file (or the spawn file, for an instance's NPC). */
   path: string;
   index: number;
+  /** The record's path in the file, where it isn't the kind's list at index (an instance's NPC). */
+  record?: JsonPath;
   constants: Constants;
   /** The editor's own controls for some fields (entityFields: the model, the height, the script). */
   render?: FormContext["render"];
@@ -148,7 +150,7 @@ export function EventPanel({ kind, path, index, constants, render, onEdit, child
   children?: ReactNode;
 }) {
   const { data, schema } = useHeld(path);
-  const base: JsonPath = [KIND_LISTS[kind], index];
+  const base: JsonPath = recordAt ?? [KIND_LISTS[kind], index];
   const errors = useMemo(() => (data !== null && schema ? validate(data, schema, constants) : []), [data, schema, constants]);
   const ctx: FormContext | null = useMemo(() => schema ? {
     root: schema, constants, errors,
@@ -196,7 +198,7 @@ export function EventPanel({ kind, path, index, constants, render, onEdit, child
       {children}
       <details className="ow-panel-box ow-section">
         <summary className="muted">All fields</summary>
-        <DocForm key={`${kind}:${index}`} path={path} at={base} constants={constants} hideDescription flat render={render} onEdit={onEdit} />
+        <DocForm key={`${kind}:${base.join(".")}`} path={path} at={base} constants={constants} hideDescription flat render={render} onEdit={onEdit} />
       </details>
     </>
   );

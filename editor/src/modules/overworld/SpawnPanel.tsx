@@ -9,6 +9,7 @@ import { DocForm } from "../followers/DocForm.tsx";
 import { BaseField, type FormContext } from "../schema-form/form.tsx";
 import { Chips, WeatherPicker } from "../encounters/ui.tsx";
 import { ScrubNumber, type ScrubPhase } from "./ScrubNumber.tsx";
+import { EventPanel } from "./EventPanel.tsx";
 import { SEASON_NAMES, TIME_NAMES, conditionSummary, type Condition, type Instance, type Rolls, type SpawnEntry } from "./spawns.ts";
 
 const label = (v: string) => v.replace("_", " ");
@@ -183,11 +184,7 @@ export function InstancePanel({ path, entry, instance, inst, constants, onEdit, 
                    render={spawnRender(undefined)} onEdit={onEdit} />
         )}
       </section>
-      <section className="ow-panel-box ow-section">
-        <h5>Its NPC</h5>
-        <DocForm key={`${path}:${entry}:${instance}:npc`} path={path} at={[...base, "npc"]} constants={constants} hideDescription flat
-                 render={npcFields} onEdit={onEdit} />
-      </section>
+      <EventPanel kind="npc" path={path} index={instance} record={[...base, "npc"]} constants={constants} render={npcFields} onEdit={onEdit} />
     </>
   );
 }

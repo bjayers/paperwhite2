@@ -102,42 +102,55 @@ export function CameraPanel({ path, index, area, constants, onEdit, previewing, 
     }));
     onEdit();
   };
+  const kind = area.rect ? "rect" : Object.keys(area)[0];
   return (
     <div>
-      <div className="ow-panel-box ow-sticky">
-        <label className="ow-check"><input type="checkbox" checked={previewing} onChange={(e) => onPreview(e.target.checked)} /> Preview the game's camera</label>
-        {previewing && r && (
-          <label className="ow-inline" title="Where the player stands across the area: its first row to its last">
-            first row <input type="range" min={0} max={1} step={0.01} value={t} onChange={(e) => onT(Number(e.target.value))} /> last row
-          </label>
-        )}
+      <section className="ow-panel-box ow-section ow-sticky">
+        <h5>Preview <span className="muted">{previewing ? "the game's camera" : "off"}</span></h5>
+        <div className="ow-section-actions">
+          <label className="ow-check"><input type="checkbox" checked={previewing} onChange={(e) => onPreview(e.target.checked)} /> Preview the game's camera</label>
+          {previewing && r && (
+            <label className="ow-inline" title="Where the player stands across the area: its first row to its last">
+              first row <input type="range" min={0} max={1} step={0.01} value={t} onChange={(e) => onT(Number(e.target.value))} /> last row
+            </label>
+          )}
+        </div>
         <p className="muted ow-note">The map shows what the camera sees, in the DS's 4:3 frame, with the player across the area's middle.
           Drag a value's label to change it and watch the preview. The game's 3D and lighting differ a little from the editor's.</p>
-      </div>
+      </section>
       {r && size && (
-        <div className="ow-panel-box">
-          <p className="ow-note"><strong>{size.w} × {size.d} tiles</strong> from {r.x}, {r.z}.{" "}
-            <button onClick={onDraw} className={drawing ? "active" : ""}>{drawing ? "Drag on the map…" : "Draw on the map"}</button></p>
-          <label className="ow-inline" title="The camera blends from the first setting to the last as the player crosses the area this way">Blends
-            <select value={size.alongX ? "x" : "z"} onChange={(e) => setAlongX(e.target.value === "x")}>
-              <option value="z">front to back (north to south)</option>
-              <option value="x">left to right (west to east)</option>
-            </select>
-          </label>{" "}
-          {(() => {
-            const same = JSON.stringify([r.pitch[0], r.yaw[0], r.distance[0], r.target_offset[0], r.fov[0]]) ===
-              JSON.stringify([r.pitch[1], r.yaw[1], r.distance[1], r.target_offset[1], r.fov[1]]);
-            return (
-              <button onClick={swapEnds} disabled={same}
-                      title={same ? "Both rows have the same camera, so there's nothing to swap yet: change one row's values first"
-                        : "The other way round: the last row's camera at the first row and the first's at the last"}>Swap first and last</button>
-            );
-          })()}
+        <section className="ow-panel-box ow-section">
+          <h5>Area <span className="muted">{size.w} × {size.d} tiles from {r.x}, {r.z}</span></h5>
+          <div className="ow-section-actions">
+            <button onClick={onDraw} className={drawing ? "active" : ""}>{drawing ? "Drag on the map…" : "Draw on the map"}</button>
+            {(() => {
+              const same = JSON.stringify([r.pitch[0], r.yaw[0], r.distance[0], r.target_offset[0], r.fov[0]]) ===
+                JSON.stringify([r.pitch[1], r.yaw[1], r.distance[1], r.target_offset[1], r.fov[1]]);
+              return (
+                <button onClick={swapEnds} disabled={same}
+                        title={same ? "Both rows have the same camera, so there's nothing to swap yet: change one row's values first"
+                          : "The other way round: the last row's camera at the first row and the first's at the last"}>Swap first and last</button>
+              );
+            })()}
+          </div>
+          <div className="ow-condition ow-event-rows">
+            <span className="ow-condition-label">Blends</span>
+            <span className="ow-event-control">
+              <span className="view-switch" title="The camera blends from the first setting to the last as the player crosses the area this way">
+                <button className={!size.alongX ? "active" : ""} onClick={() => setAlongX(false)}>Front to back</button>
+                <button className={size.alongX ? "active" : ""} onClick={() => setAlongX(true)}>Left to right</button>
+              </span>
+              <span className="muted hint">{size.alongX ? "west to east, across x" : "north to south, along z"}</span>
+            </span>
+          </div>
           <p className="muted ow-note">On the map, the arrow runs from the first row (green edge) to the last (orange edge); drag the
             area to move it, or its edges and corners to resize it.</p>
-        </div>
+        </section>
       )}
-      <DocForm key={`${path}:${index}`} path={path} at={["areas", index]} constants={constants} hideDescription flat render={render} onEdit={onEdit} />
+      <section className="ow-panel-box ow-section">
+        <h5>Camera <span className="muted">{kind}</span></h5>
+        <DocForm key={`${path}:${index}`} path={path} at={["areas", index]} constants={constants} hideDescription flat render={render} onEdit={onEdit} />
+      </section>
     </div>
   );
 }
