@@ -143,3 +143,12 @@
 .ow-ambient-sprite-block .ow-ambient-sprite { grid-template-columns: 40px 1fr; row-gap: 4px; }
 .ow-ambient-sprite-block .ow-ambient-sprite-name { white-space: normal; }
 .ow-ambient-sprite-block .ow-ambient-sprite-actions { grid-column: 2; }
+
+/* An events entity's sections (EventPanel): each control with its hint under it */
+.ow-event-rows { grid-template-columns: 84px 1fr; }
+.ow-event-control { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.ow-event-control .hint { font-size: 12px; }
+/* (the model field, with its sprite: the sprite beside the field, Browse under it; the script field stays a row) */
+.ow-event-control .ow-model:has(> .ow-sprite) { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 4px 8px; }
+.ow-event-control .ow-model:has(> .ow-sprite) .ow-model-field { min-width: 0; overflow: hidden; }
+.ow-event-control .ow-model:has(> .ow-sprite) > button { grid-column: 2; justify-self: start; }

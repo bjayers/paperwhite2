@@ -32,6 +32,7 @@ import { entityFields } from "./fields.tsx";
 import { AmbientPanel } from "./AmbientPanel.tsx";
 import { OverworldGrid } from "../maps/OverworldGrid.tsx";
 import { WildPanel } from "./WildPanel.tsx";
+import { EventPanel, hasEventLayout } from "./EventPanel.tsx";
 import { BuildingPanel } from "./BuildingPanel.tsx";
 import { MapView, hasRect, type OverlayMode, type TileRect } from "./MapView.tsx";
 import { amendProps, bundleModels, buildingEntities, dirtyPropChunks, loadProps, propsOf, propsSaveError, redoProps, revertProps, saveProps, setProps,
@@ -1069,6 +1070,19 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                                    onEdit={() => record([spawnFile])} npcFields={instanceFields} />
                   )}
                 </>
+              ) : eventsPath && hasEventLayout(chosen.kind) ? (
+                <EventPanel key={`${chosen.kind}:${chosen.index}`} kind={chosen.kind} path={eventsPath} index={chosen.index} constants={constants}
+                            render={fields} onEdit={() => record([eventsPath])}>
+                  {chosen.kind === "npc" && spawnFile && data instanceof Map && (
+                    <SpawnSection path={spawnFile} entries={spawnEntries} npcId={chosen.npcId!} constants={constants}
+                                  npcRecord={toPlain((data.get("npcs") as JsonValue[])[chosen.index]) as Record<string, unknown>}
+                                  onEdit={(paths) => { record(paths); setSpawnExists(true); }}
+                                  onOpenInstance={(entry, k) => {
+                                    const inst = entities.find((e) => e.spawn?.entry === entry && e.spawn.instance === k);
+                                    if (inst) setSelected({ kind: "instance", index: inst.index });
+                                  }} />
+                  )}
+                </EventPanel>
               ) : eventsPath && (
                 <>
                   {chosen.kind === "npc" && spawnFile && data instanceof Map && (
