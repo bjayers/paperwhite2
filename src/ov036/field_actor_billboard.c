@@ -12,7 +12,9 @@
 #include "nitro/fx.h"
 #include "nitro/mi.h"
 #ifdef PAPERWHITE2
+#include "nnsys/gfd.h"
 #include "paperwhite2/ambients.h"
+#include "paperwhite2/sprites.h"
 #ifdef PAPERWHITE2_DEBUG_MENU
 #include "paperwhite2/vram_stats.h"
 #endif
@@ -152,6 +154,10 @@ static BOOL FldBillboardActor_IsUnloadPending(FieldBillboardActor *billboardActo
 static const FieldBillboardAnimSet *FieldBillboardActor_GetBillboardAnimSet(u32 ctrlType);
 static u16 FldBillboardActor_LoadMaterial(FieldBillboardActor *billboardActor, u16 objCode, u32 sizeIdx, u32 atlasIdx,
                                           G3DResource *resource, int mode);
+#ifdef PAPERWHITE2
+static BOOL FldBillboardActor_HasRoom(FieldBillboardActor *billboardActor);
+static void FldBillboardActor_RequestPending(FieldBillboardActor *billboardActor, PendingActor *pending);
+#endif
 
 // The scale of the billboard actors' scene
 static const VecFx32 BILLBOARD_ACTOR_SCENE_SCALE = { 0x7000, 0x7000, 0x7000 };
@@ -438,15 +444,24 @@ void FldBillboardActor_DeleteActorPos(MMSys *system, u16 *out) {
 
 BOOL FldBillboardActor_CanLoadObjCode(MMSys *system, u16 objCode) {
     FieldBillboardActor *billboardActor = FldActSys_GetFieldBillboardActor(system);
-    AsyncLoader *loader = billboardActor->loader;
     u16 flags;
-    int free = 0;
-    int i;
 
     if (FieldBillboardActor_FindCachedObjMat(billboardActor, objCode, NULL, NULL) ||
         FldBillboardActor_CheckAsyncLoading(billboardActor, objCode, &flags)) {
         return TRUE;
     }
+    return FldBillboardActor_HasRoom(billboardActor);
+}
+
+// Whether a sprite more can be loaded on demand: a cache entry free past the loads on their way, and a block of
+// texture VRAM free with room to spare (PAPERWHITE2_SPRITE_VRAM_ROOM). The field's manager is the linked-list one
+// (GFL_G3DSysCreate), and a block it frees merges back, so trying one leaves it as it was
+static BOOL FldBillboardActor_HasRoom(FieldBillboardActor *billboardActor) {
+    AsyncLoader *loader = billboardActor->loader;
+    NNSGfdTexKey key;
+    int free = 0;
+    int i;
+
     for (i = 0; i < billboardActor->cache.count; i++) {
         if (billboardActor->cache.entries[i].objCode == BILLBOARD_ACTOR_NONE) {
             free++;
@@ -463,7 +478,24 @@ BOOL FldBillboardActor_CanLoadObjCode(MMSys *system, u16 objCode) {
             free--;
         }
     }
-    return free > 0;
+    if (free <= 0) {
+        return FALSE;
+    }
+    key = NNS_GfdAllocLnkTexVram(PAPERWHITE2_SPRITE_VRAM_ROOM, FALSE, 0);
+    if (key == NNS_GFD_ALLOC_ERROR_TEXKEY) {
+        return FALSE;
+    }
+    NNS_GfdFreeLnkTexVram(key);
+    return TRUE;
+}
+
+// A waiting actor's sprite asked for, as FldAct_InitBillboardActorNewMat asks
+static void FldBillboardActor_RequestPending(FieldBillboardActor *billboardActor, PendingActor *pending) {
+    FieldActorConfig config;
+
+    GetNPCMdlInfoForOBJCODE(billboardActor->system, pending->objCode, &config);
+    FldBillboardActor_ReqAsyncLoad(billboardActor, pending->objCode, pending->sizeIdx, pending->atlasIdx,
+                                   GetNPCMdlInfoG2DRscGroup(&config)->res1, 1);
 }
 
 void FldBillboardActor_CancelPendingPos(MMSys *system, u16 *out) {
@@ -955,8 +987,17 @@ static void FldAct_InitBillboardActorNewMat(FieldBillboardActor *billboardActor,
             pending->atlasIdx = config->spriteAtlasSize;
             pending->ctrlType = config->spriteControllerType;
             FieldBillboardActor_FindCachedObjMat(billboardActor, pending->objCode, &info[1], &info[0]);
+#ifdef PAPERWHITE2
+            // Paper White 2: only where there's room (FldBillboardActor_HasRoom); otherwise it waits, and is asked for
+            // once there is (FldBillboardActor_UpdateAsyncActorSetup). The original asked anyway, and a sprite that
+            // found no cache entry kept its VRAM and never showed
+            if (info[1] == BILLBOARD_ACTOR_NONE &&
+                !FldBillboardActor_CheckAsyncLoading(billboardActor, pending->objCode, &info[0]) &&
+                FldBillboardActor_HasRoom(billboardActor)) {
+#else
             if (info[1] == BILLBOARD_ACTOR_NONE &&
                 !FldBillboardActor_CheckAsyncLoading(billboardActor, pending->objCode, &info[0])) {
+#endif
                 const FieldActorResGroup *group = GetNPCMdlInfoG2DRscGroup(config);
 
                 info[0] = 1;
@@ -1016,6 +1057,13 @@ static void FldBillboardActor_UpdateAsyncActorSetup(FieldBillboardActor *billboa
                 FldBillboardActor_SetupPendingActor(billboardActor, pending);
                 FldBillboardActor_ClearPendingActor(pending);
             }
+#ifdef PAPERWHITE2
+            // Paper White 2: a sprite that waited for room is asked for once there is
+            else if (!FldBillboardActor_CheckAsyncLoading(billboardActor, pending->objCode, &info[1]) &&
+                     FldBillboardActor_HasRoom(billboardActor)) {
+                FldBillboardActor_RequestPending(billboardActor, pending);
+            }
+#endif
         }
     }
 }

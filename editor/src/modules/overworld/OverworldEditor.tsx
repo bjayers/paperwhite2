@@ -21,7 +21,7 @@ import { loadRails, oppositeRailDir, railDirOf, railEntities, railLevels, railTo
 import { RailPanel } from "./RailPanel.tsx";
 import { CameraPanel } from "./CameraPanel.tsx";
 import { InstancePanel, SpawnSection } from "./SpawnPanel.tsx";
-import { RARE_LIKELY, SPRITE_CACHE, flagNumber, preloadLists, seasonalOf, spriteLoad, type Seasonal, type SpriteLoad } from "./spriteLoad.ts";
+import { RARE_LIKELY, SPRITE_CACHE_ORIGINAL, flagNumber, spriteCacheSize, preloadLists, seasonalOf, spriteLoad, type Seasonal, type SpriteLoad } from "./spriteLoad.ts";
 import { SEASON_NAMES, TIME_NAMES, ambientEntities, instanceEntities, newAmbient, previewPicks, spawnPath, type Ambient, type PreviewWorld,
   type SpawnEntry } from "./spawns.ts";
 import { WEATHERS } from "../encounters/model.ts";
@@ -208,6 +208,8 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   const size = eventsSize(data);
   // The sprites the zone can have loaded at once, in the worst case, against the sprite cache (spriteLoad.ts)
   const [npcCache, setNpcCache] = useState<number | null>(null);
+  const [cacheSize, setCacheSize] = useState(SPRITE_CACHE_ORIGINAL);
+  useEffect(() => { void spriteCacheSize().then(setCacheSize); }, []);
   // Whether the zone's scripts run 10852, the seasonal spawns, which the count works out (spriteLoad.ts)
   const [seasonal, setSeasonal] = useState<Seasonal>({ runs: false, night: false });
   useEffect(() => {
@@ -818,7 +820,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
         <h2>Overworld Editor</h2>
         {zone && <strong>{zoneLabel(zone)}</strong>}
         {zone && <LoadBar used={size} limit={EVENTS_BUDGET} />}
-        {zone && sprites && <SpriteBar load={sprites} cacheList={npcCache} seasonal={seasonal} />}
+        {zone && sprites && <SpriteBar load={sprites} cacheList={npcCache} seasonal={seasonal} size={cacheSize} />}
         <span className="spacer" />
         {unsaved.length > 0 && <span className="muted">{unsaved.length} unsaved</span>}
         <button onClick={revert} disabled={!unsaved.length}>Revert</button>
@@ -1123,24 +1125,24 @@ function WheelNumber({ value, step, onChange }: { value: number; step: number; o
 
 const short = (code: string) => code.replace(/^OBJ_CODE_/, "").toLowerCase();
 
-/** How many sprites the zone can have loaded at once, in the worst case, against the sprite cache's 32 entries: green
- * under 80%, yellow from 80%, red past it. */
-function SpriteBar({ load, cacheList, seasonal }: { load: SpriteLoad; cacheList: number | null; seasonal: Seasonal }) {
-  const share = load.total / SPRITE_CACHE;
+/** How many sprites the zone can have loaded at once, in the worst case, against the sprite cache's entries (size, as
+ * the hack's build sets it): green under 80%, yellow from 80%, red past it. */
+function SpriteBar({ load, cacheList, seasonal, size }: { load: SpriteLoad; cacheList: number | null; seasonal: Seasonal; size: number }) {
+  const share = load.total / size;
   const level = share > 1 ? "over" : share >= 0.8 ? "near" : "ok";
   const title = [
-    `Sprites the zone can have loaded at once, in the worst case: ${load.total} of the ${SPRITE_CACHE} the game's sprite cache holds. Past it, a sprite gets no entry and isn't shown.`,
+    `Sprites the zone can have loaded at once, in the worst case: ${load.total} of the ${size} the game's sprite cache holds (include/paperwhite2/sprites.h). Past it, or with too little texture memory free, a sprite waits, and shows once there's room.`,
     `${load.preloaded} preloaded by the zone (list ${cacheList ?? "none"}, res/field/actors/preloads.json); an NPC of one of those costs nothing more.`,
     `${load.player} for the player (walking, and cycling or surfing) and ${load.follower} for the Following Pokémon.`,
     `${load.npcs} more for NPCs and instances, and ${load.ambients} for ambients${load.worst ? `, at worst in ${load.worst}` : ""} (every chance coming up; ${seasonal.runs ? "script 10852's seasonal NPCs, flags 500 to 599, as the script shows them together" : "flags 500 to 599 count as shown, since the zone doesn't run script 10852"}; another flag, a story flag, counts as shown, unknown here).`,
-    ...(load.likely !== null && load.likely < load.total ? [`With at most ${RARE_LIKELY} of script 10852's ten 10% NPCs at once (93% of entries): ${load.likely} of ${SPRITE_CACHE}. The bar is the most that can ever show.`] : []),
+    ...(load.likely !== null && load.likely < load.total ? [`With at most ${RARE_LIKELY} of script 10852's ten 10% NPCs at once (93% of entries): ${load.likely} of ${size}. The bar is the most that can ever show.`] : []),
     `Past the preloads: ${load.extraCodes.map(short).join(", ") || "none"}.`,
     `Preloaded: ${load.preloadedCodes.map(short).join(", ") || "none"}.`,
   ].join("\n");
   return (
     <span className={`ow-load ${level}`} title={title}>
       <span className="ow-load-bar"><span className="ow-load-fill" style={{ width: `${Math.min(100, share * 100)}%` }} /></span>
-      <span className="ow-load-text">{load.total} / {SPRITE_CACHE} sprites · {Math.round(share * 100)}%</span>
+      <span className="ow-load-text">{load.total} / {size} sprites · {Math.round(share * 100)}%</span>
     </span>
   );
 }

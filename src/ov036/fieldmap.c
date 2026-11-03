@@ -95,6 +95,7 @@
 #include "paperwhite2/camera_areas.h"
 #include "paperwhite2/field.h"
 #include "paperwhite2/following_field.h"
+#include "paperwhite2/sprites.h"
 #ifdef PAPERWHITE2_DEBUG_MENU
 #include "paperwhite2/debug.h"
 #include "paperwhite2/vram_stats.h"
@@ -969,7 +970,13 @@ static inline G3DCamera *FieldG3D_CreateCamera(HeapID heapId) {
 void FieldG3D_Init(Field *field) {
     BillboardActorScene *scene;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: materials for the larger sprite cache (paperwhite2/sprites.h)
+    field->actorBillboardActor =
+        BillboardActorSys_Create(PAPERWHITE2_SPRITE_MATERIALS, 0x80, FldActSys_VRAMUploadFunc, field->heapId);
+#else
     field->actorBillboardActor = BillboardActorSys_Create(0x40, 0x80, FldActSys_VRAMUploadFunc, field->heapId);
+#endif
     scene = BillboardActorSys_GetScene(field->actorBillboardActor);
     BillboardActorScene_SetGeomOrigin(scene, 2);
     BillboardActorScene_SetTexcoordOffset(scene, 0, -0xa00);
@@ -1099,7 +1106,12 @@ void Field_InitActorSystem(Field *field) {
     field->actorSystem = actorSystem;
     FldActSys_AttachField(actorSystem, field->heapId, gameData, field, field->g3DMapper, field->noGridMapper,
                           &field->colorPostFX);
+#ifdef PAPERWHITE2
+    // Paper White 2: a larger sprite cache (paperwhite2/sprites.h)
+    FldActSys_InitBillboardActor(field->actorSystem, field->actorBillboardActor, PAPERWHITE2_SPRITE_CACHE);
+#else
     FldActSys_InitBillboardActor(field->actorSystem, field->actorBillboardActor, 0x20);
+#endif
     FldActSys_LoadCachedBillboardActor(field->actorSystem);
     FldActSys_LoadStaticBillboardActor(
         actorSystem,

@@ -2,6 +2,18 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-04: the sprite cache raised to 48, with a VRAM reserve (trial)
+
+- **More measurements (the user's):** Castelia's Mode Street (zone 33) 8 of 32 sprites, textures 252 KB, largest free
+  131 KB, palettes 7,792; Pokéstar Studios 15 (13 on demand), 230 KB, largest free 153 KB. An estimate of every
+  exterior zone (texture sets of a/0/1/4 and a/1/7/4, plus about 55 KB the field always has, plus sprites) puts none
+  above Castelia's outer ring (272 KB measured).
+- **The trial** (plugins.md, Sprite limits): cache 48, materials 96, and a sprite loaded on demand waits until a cache
+  entry and 32 KB of texture VRAM are free, then loads. The Overworld Editor's bar reads the 48 from
+  `include/paperwhite2/sprites.h` (Route 20 now 36 of 48, Virbank City 26). Built (hack, no warnings, DSi intact).
+  **Not tested in game.** **For the user:** Route 20 at autumn night (its worst case) and a busy city, with Memory:
+  sprites past 32 now show, no texture failures, and the largest free block stays above about 24 KB.
+
 ## 2026-11-03 (night): sprite and VRAM research; the debug menu's Memory readout
 
 - **What limits sprites** (research, from the code): the field's G3D system has 384 KB of texture VRAM (3 slots) and

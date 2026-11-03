@@ -16,7 +16,17 @@ import { api } from "../../api.ts";
 import { actorFolder, type Entity } from "./entities.ts";
 import { SEASON_NAMES, TIME_NAMES, type Ambient, type Condition, type SpawnEntry } from "./spawns.ts";
 
-export const SPRITE_CACHE = 32;
+// The original's sprite cache, 32 object codes; the hack's build sets its own (spriteCacheSize)
+export const SPRITE_CACHE_ORIGINAL = 32;
+let cacheSize: Promise<number> | null = null;
+/** The sprite cache's size as the hack's build makes it: PAPERWHITE2_SPRITE_CACHE in include/paperwhite2/sprites.h,
+ * else the original's. */
+export function spriteCacheSize(): Promise<number> {
+  cacheSize ??= api.scan("include/paperwhite2/sprites.h", "^#define PAPERWHITE2_SPRITE_CACHE ").then(
+    (lines) => Number(/PAPERWHITE2_SPRITE_CACHE\s+(\d+)/.exec(lines[0]?.text ?? "")?.[1] ?? SPRITE_CACHE_ORIGINAL),
+    () => SPRITE_CACHE_ORIGINAL);
+  return cacheSize;
+}
 // The player: its walking sprite, and the one it changes to (cycling, surfing), while the first is still loaded
 export const PLAYER_SPRITES = 2;
 // The Following Pokémon's sprite

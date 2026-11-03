@@ -240,6 +240,14 @@ DEBUG                           L_DebugMenu
   Close
 ```
 
+**Sprite limits** (`include/paperwhite2/sprites.h`, `#ifdef PAPERWHITE2` in `fieldmap.c` and
+`field_actor_billboard.c`): the sprite cache holds 48 object codes (the original's 32) and the field billboard system
+96 materials (64). A sprite loaded on demand is asked for only where a cache entry is free past the loads on their
+way and a 32 KB block of texture VRAM is free (`FldBillboardActor_HasRoom`, which tries one through the linked-list
+manager and frees it); otherwise its actor waits, and `FldBillboardActor_UpdateAsyncActorSetup` asks again once there
+is room. The original asked anyway, and a sprite that found no entry kept its VRAM and never showed. The Overworld
+Editor's sprite bar reads the cache's size from the header.
+
 **Memory readout.** What the field has loaded, to see how near it is to its limits: the sprite cache's entries in use
 of 32, those loaded on demand, the most in use at once and the sprites that found no entry (and so never showed); the
 field billboard system's billboards (of 128) and materials (of 64); the texture VRAM in use (of 384 KB: 3 slots, as
