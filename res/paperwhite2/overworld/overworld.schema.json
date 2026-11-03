@@ -194,6 +194,18 @@
                             "type": "boolean",
                             "description": "A perch's: whether it turns now and then (by default)"
                         },
+                        "faces": {
+                            "type": "array",
+                            "minItems": 1,
+                            "maxItems": 4,
+                            "items": {
+                                "type": [ "string", "integer" ],
+                                "x-constant": "DIR_",
+                                "minimum": 0,
+                                "maximum": 3
+                            },
+                            "description": "A perch's: the directions it turns to (DIR_* constants); all four by default"
+                        },
                         "hops": {
                             "type": "boolean",
                             "description": "A perch's: whether it hops now and then (by default)"

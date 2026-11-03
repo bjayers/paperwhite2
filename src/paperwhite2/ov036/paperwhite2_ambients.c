@@ -204,6 +204,30 @@ static u8 Ambients_DirOf(fx32 dx, fx32 dz, u8 otherwise) {
     return dz > 0 ? DIR_DOWN : DIR_UP;
 }
 
+// One of the directions a perch turns to, at random
+static u8 Ambients_PickFacing(u8 flags) {
+    u32 faces = (flags >> AMBIENT_FLAG_FACES_SHIFT) & AMBIENT_FACES_ALL;
+    u32 count = 0;
+    u32 pick;
+    u8 dir;
+
+    if (faces == 0) {
+        faces = AMBIENT_FACES_ALL;
+    }
+    for (dir = DIR_UP; dir <= DIR_RIGHT; dir++) {
+        if (faces & (1 << dir)) {
+            count++;
+        }
+    }
+    pick = GFL_RandomLC(count);
+    for (dir = DIR_UP; dir <= DIR_RIGHT; dir++) {
+        if ((faces & (1 << dir)) && pick-- == 0) {
+            break;
+        }
+    }
+    return dir;
+}
+
 // An ambient's place on its path now, and its facing and whether it moves (walks)
 static BOOL Ambients_Move(Ambient *ambient, VecFx32 *pos) {
     const SpawnAmbient *record = &ambient->record;
@@ -226,7 +250,7 @@ static BOOL Ambients_Move(Ambient *ambient, VecFx32 *pos) {
             if ((record->flags & AMBIENT_FLAG_HOPS) && GFL_RandomLC(2) == 0) {
                 ambient->hop = AMBIENT_HOP_FRAMES;
             } else if (record->flags & AMBIENT_FLAG_TURNS) {
-                ambient->facing = GFL_RandomLC(4);
+                ambient->facing = Ambients_PickFacing(record->flags);
             }
         } else {
             ambient->nextChange--;

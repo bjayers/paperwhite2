@@ -79,6 +79,11 @@ export function spriteFrame(model: string, direction?: string, step = 0): Promis
   return frames.get(key)!;
 }
 
+/** How many frames a model's sheet has (0 without a sprite): a walking Pokémon's 8, one animation of 2 a direction. */
+export function spriteFrameCount(model: string): Promise<number> {
+  return sheetOf(model).then((sheet) => (sheet ? Math.floor(sheet.width / Math.min(sheet.height, sheet.width)) : 0));
+}
+
 /** A frame as an image URL, for the model picker. */
 const urls = new Map<string, Promise<string | null>>();
 export function spriteUrl(model: string, direction?: string): Promise<string | null> {

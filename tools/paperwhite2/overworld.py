@@ -45,6 +45,8 @@ AMBIENT_SPRITES = 4
 PATHS = {"perch": 0, "hover": 1, "ellipse": 2, "line": 3, "eight": 4}
 SHADOWS = {"none": 0, "feet": 1, "ground": 2}
 FLAG_TURNS, FLAG_HOPS = 0x1, 0x2
+# The directions a perch turns to: a bit each from bit 4 (AMBIENT_FLAG_FACES_SHIFT), none for all four
+FLAG_FACES_SHIFT = 4
 # An NPC's "rolls" as the CONDITION_SEED_* its picks start from (include/paperwhite2/conditions.h)
 SEEDS = {"entry": 0, "day": 1, "hour": 3, "period": 4}
 
@@ -83,6 +85,8 @@ def ambient_bytes(ambient: dict, where: str) -> bytes:
     """An ambient's record (SpawnAmbient)."""
     p = ambient.get("path", {"kind": "perch"})
     flags = (FLAG_TURNS if p.get("turns", True) else 0) | (FLAG_HOPS if p.get("hops", True) else 0)
+    for face in p.get("faces", []):
+        flags |= 1 << (value(face, where) + FLAG_FACES_SHIFT)
     offset = ambient.get("offset", {})
     # (fx32 world units: 16 a tile, from the tile's middle)
     x = round((ambient["x"] * 16 + 8 + offset.get("x", 0)) * 4096)

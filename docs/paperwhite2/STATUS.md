@@ -2,6 +2,15 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-04 (evening): ambients' turn directions, a new one's height, their paths in the editor
+
+- **Turns to:** a perch can turn to only some directions (`path.faces`, the panel's Turns to buttons; plugins.md,
+  Ambients). Packed in the flags' top bits; the game picks among them. Built (hack, no warnings, DSi intact). **Not
+  tested in game.**
+- A new ambient starts on the ground (0 over it), not a tile up.
+- **Paths in the editor:** drawn on the map, and moving in the Movement preview as the game moves them (the user's
+  paths: perch, hover, circle, line, figure eight). Checked in the browser on a scratch copy; tests for the formulas.
+
 ## 2026-11-04 (later): the sprite cache tested; the Ambients panel; more than 8 ambients placed
 
 - **Tested by the user, emulator and 3DS:** Route 20 at autumn night with 7 more ambients of new sprites: 39 of 48

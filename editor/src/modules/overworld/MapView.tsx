@@ -14,7 +14,8 @@ import { directionStep, type Entity } from "./entities.ts";
 import { FRAME_SECONDS, movers, type World } from "./movement.ts";
 import { angle as turnAngle, FX, type CameraArea, type ViewCamera } from "./cameras.ts";
 import { lineAtLevel, railTile, railToWorld, sidesAt, type RailMap, type RailPlace } from "./rails.ts";
-import { spriteFrame } from "./sprites.ts";
+import { spriteFrame, spriteFrameCount } from "./sprites.ts";
+import { AmbientMover, ambientOrigin, pathOutline } from "./ambientPath.ts";
 import { TILE, TILE_FLAG_COLLISION, TILE_FLAG_ENCOUNT, TILE_FLAG_WATER, standingOn, tileFlags, type ZoneMap } from "./terrain.ts";
 
 export type OverlayMode = "off" | "walk" | "type";
@@ -195,6 +196,9 @@ class MapScene {
   frame = 0;
   /** The NPCs' sprites, and the preview's movers and time. */
   npcSprites = new Map<Entity, THREE.Sprite>();
+  /** The ambients' sprites, and the preview's ambient movers. */
+  ambientSprites = new Map<Entity, THREE.Sprite>();
+  ambientMovers: { entity: Entity; mover: AmbientMover }[] = [];
   world: World | null = null;
   previewTime = 0;
   lastFrame = 0;
@@ -489,6 +493,14 @@ class MapScene {
   startPreview() {
     this.previewEntities = this.props.entities;
     this.world = movers(this.props.map, this.props.entities, this.props.rails);
+    this.ambientMovers = [];
+    for (const e of this.props.entities) {
+      if (e.kind !== "ambient" || !e.ambient) continue;
+      const entry = { entity: e, mover: new AmbientMover(e.ambient, 0) };
+      this.ambientMovers.push(entry);
+      // (its sheet's frames choose its animation: a walking Pokémon's always plays)
+      if (e.model) void spriteFrameCount(e.model).then((n) => { entry.mover.frames = n; });
+    }
     this.previewTime = 0;
     this.lastFrame = performance.now();
   }
@@ -502,7 +514,18 @@ class MapScene {
     this.previewTime += elapsed;
     while (this.previewTime >= FRAME_SECONDS) {
       this.world.tick();
+      for (const a of this.ambientMovers) a.mover.tick();
       this.previewTime -= FRAME_SECONDS;
+    }
+    for (const { entity, mover } of this.ambientMovers) {
+      const sprite = this.ambientSprites.get(entity);
+      if (!sprite || !entity.model) continue;
+      const at = mover.place();
+      sprite.position.set(at.x, at.y + 12, at.z);
+      const key = `${entity.model}:${at.dir}:${at.step}`;
+      const texture = readyTextures.get(key);
+      if (texture === undefined) spriteTexture(entity.model, at.dir, at.step);
+      else if (texture && sprite.material.map !== texture) { sprite.material.map = texture; sprite.material.needsUpdate = true; }
     }
     const rails = this.props.rails;
     for (const m of this.world.railMovers) {
@@ -533,6 +556,7 @@ class MapScene {
     this.marks.clear();
     this.entityMeshes = [];
     this.npcSprites.clear();
+    this.ambientSprites.clear();
     this.handles = [];
     this.rectPreview = null;
     if (selected && hasRect(selected, this.props.cameraAreas)) this.addHandles(selected);
@@ -576,12 +600,22 @@ class MapScene {
         sprite.renderOrder = 5;
         sprite.scale.set(24, 24, 1);
         sprite.visible = false;
-        sprite.position.set((e.x + 0.5) * TILE, e.y + 12, (e.z + 0.5) * TILE);
+        const [ox, oy, oz] = e.ambient ? ambientOrigin(e.ambient) : [(e.x + 0.5) * TILE, e.y, (e.z + 0.5) * TILE];
+        sprite.position.set(ox, oy + 12, oz);
         if (e.model) spriteTexture(e.model, e.direction).then((t) => { if (t) { sprite.material.map = t; sprite.material.needsUpdate = true; sprite.visible = true; } });
         this.marks.add(sprite);
         this.entityMeshes.push({ object: sprite, entity: e });
-        const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3((e.x + 0.5) * TILE, ground + 2, (e.z + 0.5) * TILE),
-                                                            new THREE.Vector3((e.x + 0.5) * TILE, e.y, (e.z + 0.5) * TILE)]);
+        this.ambientSprites.set(e, sprite);
+        // Its path round its place, at its height: brighter when it's chosen
+        const outline = e.ambient ? pathOutline(e.ambient) : [];
+        if (outline.length) {
+          const path = new THREE.Line(new THREE.BufferGeometry().setFromPoints(outline.map(([dx, dz]) => new THREE.Vector3(ox + dx, oy + 1, oz + dz))),
+            new THREE.LineBasicMaterial({ color: isSelected ? 0xffffff : color, transparent: true, opacity: (isSelected ? 1 : 0.55) * fade, depthTest: false }));
+          path.renderOrder = 4;
+          this.marks.add(path);
+        }
+        const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(ox, ground + 2, oz),
+                                                            new THREE.Vector3(ox, oy, oz)]);
         const stem = new THREE.Line(g, new THREE.LineDashedMaterial({ color: isSelected ? 0xffffff : color, dashSize: 3, gapSize: 2, depthTest: false }));
         stem.computeLineDistances();
         stem.renderOrder = 4;

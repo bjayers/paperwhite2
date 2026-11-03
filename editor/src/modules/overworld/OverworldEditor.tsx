@@ -903,7 +903,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                       title="Shows what the game would for a season (the Season choice), a time, a weather and set flags: no NPC whose condition fails, each host as its instance">
                 {conditionsPreview ? "■ Conditions" : "▶ Conditions"}</button>
               <button className={preview ? "active" : ""} onClick={() => setPreview(!preview)}
-                      title="The NPCs move as their move codes move them in game (at 30 frames a second, blocked as the game blocks them, without the player); their tiles stay marked">
+                      title="The NPCs move as their move codes move them in game (at 30 frames a second, blocked as the game blocks them, without the player), and the ambients along their paths as the game moves them; their tiles stay marked">
                 {preview ? "■ Stop" : "▶ Movement"}</button>
               <label className="ow-check" title="Drag over tiles to paint them"><input type="checkbox" checked={painting} onChange={(e) => setPainting(e.target.checked)} /> Paint</label>
               {painting && (

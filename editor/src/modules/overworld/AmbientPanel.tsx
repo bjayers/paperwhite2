@@ -90,6 +90,8 @@ export function AmbientPanel({ path, index, ambient, constants, ground, used, on
   const moving = p.kind !== "perch";
   const sized = p.kind === "ellipse" || p.kind === "line" || p.kind === "eight";
   const speed = p.speed ?? DEFAULT_SPEED;
+  // The directions a perch turns to: all four when it names none
+  const faces: string[] = p.faces?.length ? p.faces.map(String) : FACINGS.map(([d]) => d);
 
   return (
     <>
@@ -169,7 +171,7 @@ export function AmbientPanel({ path, index, ambient, constants, ground, used, on
           <span className="view-switch">
             {PATHS.map((k) => (
               <button key={k.kind} className={p.kind === k.kind ? "active" : ""} title={k.note}
-                      onClick={() => setPath(clean(k.kind === "perch" ? { kind: "perch", every: p.every, turns: p.turns, hops: p.hops }
+                      onClick={() => setPath(clean(k.kind === "perch" ? { kind: "perch", every: p.every, turns: p.turns, hops: p.hops, faces: p.faces }
                         : { kind: k.kind, width: k.kind === "hover" ? undefined : p.width ?? DEFAULT_SIZE,
                             depth: k.kind === "hover" ? undefined : p.depth ?? DEFAULT_SIZE, speed: p.speed, start: p.start }))}>
                 {k.label}
@@ -194,6 +196,27 @@ export function AmbientPanel({ path, index, ambient, constants, ground, used, on
                 <label className="ow-check"><input type="checkbox" checked={p.hops ?? true}
                   onChange={(e) => setPath(clean({ ...p, hops: e.target.checked ? undefined : false }))} /> hops</label>
               </span>
+              {(p.turns ?? true) && (
+                <>
+                  <span className="ow-condition-label">Turns to</span>
+                  <span className="ow-xyz">
+                    <span className="view-switch">
+                      {FACINGS.map(([v, arrow, l]) => {
+                        const on = faces.includes(v);
+                        return (
+                          <button key={v} className={on ? "active" : ""} title={on && faces.length === 1 ? `${l}: it turns to one direction at least` : l}
+                                  onClick={() => {
+                                    if (on && faces.length === 1) return;
+                                    const next = FACINGS.map(([d]) => d).filter((d) => (d === v ? !on : faces.includes(d)));
+                                    setPath(clean({ ...p, faces: next.length === FACINGS.length ? undefined : next }));
+                                  }}>{arrow}</button>
+                        );
+                      })}
+                    </span>
+                    <span className="muted hint">{faces.length === FACINGS.length ? "any direction" : `only ${faces.map((d) => FACINGS.find(([v]) => v === d)?.[2].toLowerCase()).join(" and ")}`}</span>
+                  </span>
+                </>
+              )}
             </>
           )}
           {sized && (

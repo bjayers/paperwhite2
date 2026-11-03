@@ -72,9 +72,12 @@ enum {
     AMBIENT_SHADOW_GROUND,
 };
 
-// A perch's turns and hops
+// A perch's turns and hops, and the directions it turns to: a bit for each DIR_* from AMBIENT_FLAG_FACES_SHIFT, none
+// for all four
 #define AMBIENT_FLAG_TURNS 0x1
 #define AMBIENT_FLAG_HOPS 0x2
+#define AMBIENT_FLAG_FACES_SHIFT 4
+#define AMBIENT_FACES_ALL 0xf
 
 // The most ambients a zone shows (the budget, docs/paperwhite2/design/overworld-editor.md, Ambients)
 #define SPAWNS_AMBIENT_MAX 8

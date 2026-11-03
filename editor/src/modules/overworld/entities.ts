@@ -7,6 +7,7 @@
 
 import { toPlain, type JsonValue } from "../../../shared/json.ts";
 import { TILE } from "./terrain.ts";
+import type { Ambient } from "./spawns.ts";
 
 export type EntityKind = "npc" | "proxy" | "building" | "trigger" | "warp" | "level" | "rail" | "camera" | "instance" | "ambient";
 
@@ -56,6 +57,8 @@ export interface Entity {
   depth: number;
   label: string;
   model?: string;
+  /** An ambient's record, for its path on the map and the preview. */
+  ambient?: Ambient;
   direction?: string;
   /** An NPC's move code. */
   movement?: string;

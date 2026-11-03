@@ -910,8 +910,13 @@ edited in the Overworld Editor's Ambients tab.
   ambient uses (`PaperWhite2_AmbientsUseObjCode`, checked in `FieldBillboardActor_UnbindActorObjCode`), and a zone
   change cancels an ambient's load still waiting (`FldBillboardActor_CancelPendingPos`) and unloads a sprite loaded on
   demand that no actor, ambient or waiting actor uses (`FldBillboardActor_ReleaseObjCode`).
-- **Not yet:** flying off when the player comes near, picking again in the zone, the editor's path drawing and preview,
-  sprites from the encounters, and the budget's 4 distinct sprites.
+- **A perch's turns** go to the directions its `faces` names (all four without it): a bit each in the record's flags
+  from `AMBIENT_FLAG_FACES_SHIFT`, which `Ambients_PickFacing` picks among at random.
+- **In the editor:** each ambient's path is drawn round its place at its height (brighter when chosen), and the map's
+  Movement preview moves them as the game does (`editor/src/modules/overworld/ambientPath.ts`, after `Ambients_Move`:
+  the paths, the facing from the way it goes, a perch's turns among its faces and its hops, a walking Pokémon's two
+  frames always playing); `tests/ambient-path.test.ts` checks it against the formulas.
+- **Not yet:** flying off when the player comes near, picking again in the zone, and sprites from the encounters.
 
 ### Wild encounters
 

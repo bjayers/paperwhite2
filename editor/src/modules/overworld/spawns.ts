@@ -44,7 +44,7 @@ export interface Ambient {
   y: number;
   facing?: string | number;
   path?: { kind: "perch" | "hover" | "ellipse" | "line" | "eight"; width?: number; depth?: number; speed?: number; start?: number;
-           every?: number; turns?: boolean; hops?: boolean };
+           every?: number; turns?: boolean; hops?: boolean; faces?: (string | number)[] };
   shadow?: "none" | "feet" | "ground";
   when?: Condition;
   rolls?: Rolls;
@@ -55,12 +55,13 @@ export function ambientEntities(ambients: Ambient[]): Entity[] {
   return ambients.map((a, i) => ({
     kind: "ambient", index: i, x: a.x, z: a.z, y: a.y, width: 1, depth: 1, label: a.name || `Ambient ${i + 1}`,
     model: [a.sprite ?? a.sprites?.[0]].find((m): m is string => typeof m === "string"), direction: typeof a.facing === "string" ? a.facing : "DIR_DOWN",
+    ambient: a,
   }));
 }
 
-/** A new ambient at a tile: a perch at its standing height and a tile over it. */
+/** A new ambient at a tile: a perch on the ground it stands on. */
 export const newAmbient = (x: number, z: number, height: number, n: number): Ambient =>
-  ({ name: `Ambient ${n + 1}`, sprite: "OBJ_CODE_POKEMON_PIDOVE", x, z, y: Math.round(height + 16), facing: "DIR_DOWN", path: { kind: "perch" } });
+  ({ name: `Ambient ${n + 1}`, sprite: "OBJ_CODE_POKEMON_PIDOVE", x, z, y: Math.round(height), facing: "DIR_DOWN", path: { kind: "perch" } });
 
 /** The world the preview checks conditions against. */
 export interface PreviewWorld {
