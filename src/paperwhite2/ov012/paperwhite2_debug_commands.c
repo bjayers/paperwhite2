@@ -174,11 +174,11 @@ static const u16 sDebugWeatherNames[WEATHER_MAX] = {
 // the Key Items pocket is left out: the Light and Dark Stones, the Dragon Skull, the Grams, the Plasma Card, the
 // Colress Machine, the Grubby Hanky and the Dropped Items, which events give and take back; the Medal Box and the Prop
 // Case, which come with their features' setup; the Liberty Pass and the Xtransceivers; and the other games' items
-// (the Poké Radar is the DexNav)
+// (the Poké Radar is the DexNav, and the Galactic Key the Version Key)
 static const u16 sDebugKeyItems[] = {
-    ITEM_BICYCLE,      ITEM_DOWSING_MCHN,          ITEM_SUPER_ROD,  ITEM_VS_RECORDER, ITEM_GRACIDEA,
-    ITEM_REVEAL_GLASS, ITEM_DNA_SPLICERS_FUSE,     ITEM_PERMIT,     ITEM_OVAL_CHARM,  ITEM_SHINY_CHARM,
-    ITEM_EXP_SHARE,    ITEM_DNA_SPLICERS_SEPARATE, ITEM_POKE_RADAR,
+    ITEM_BICYCLE,      ITEM_DOWSING_MCHN,          ITEM_SUPER_ROD,  ITEM_VS_RECORDER,  ITEM_GRACIDEA,
+    ITEM_REVEAL_GLASS, ITEM_DNA_SPLICERS_FUSE,     ITEM_PERMIT,     ITEM_OVAL_CHARM,   ITEM_SHINY_CHARM,
+    ITEM_EXP_SHARE,    ITEM_DNA_SPLICERS_SEPARATE, ITEM_POKE_RADAR, ITEM_GALACTIC_KEY,
 };
 
 // The conditions' status names, by CONDITION_STATUS_*, and the terrain groups' (paperwhite2/terrain_groups.h)

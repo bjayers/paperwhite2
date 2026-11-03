@@ -49,6 +49,7 @@
 #ifdef PAPERWHITE2
 #include "paperwhite2/dexnav_event.h"
 #include "paperwhite2/exp_share.h"
+#include "paperwhite2/version_key.h"
 #endif
 
 // The bag (itemmenu.c): its proc, the item list and its menus
@@ -103,6 +104,7 @@ static BOOL ItemMenu_UseMedalBox(ItemMenuWork *work);
 #ifdef PAPERWHITE2
 static BOOL ItemMenu_UseExpShare(ItemMenuWork *work);
 static BOOL ItemMenu_UseDexnav(ItemMenuWork *work);
+static BOOL ItemMenu_UseVersionKey(ItemMenuWork *work);
 #endif
 static s32 ItemMenu_FindFieldUse(u16 item);
 static void ItemMenu_StateItemMenu(ItemMenuWork *work);
@@ -205,6 +207,7 @@ static const ItemMenuFieldUse sItemMenuFieldUses[] = {
     // Paper White 2: the Exp. Share is a key item that turns on and off in the bag, and the DexNav opens from it
     { ITEM_EXP_SHARE, 1, ItemMenu_UseExpShare },
     { ITEM_POKE_RADAR, 1, ItemMenu_UseDexnav },
+    { ITEM_VERSION_KEY, 1, ItemMenu_UseVersionKey },
 #endif
 };
 
@@ -791,6 +794,14 @@ static BOOL ItemMenu_UseExpShare(ItemMenuWork *work) {
 // Paper White 2: leaves the bag for the DexNav (paperwhite2/dexnav_event.h), anywhere
 static BOOL ItemMenu_UseDexnav(ItemMenuWork *work) {
     work->result = BAG_RESULT_DEXNAV;
+    ItemMenu_SetState(work, NULL);
+    return TRUE;
+}
+
+// Paper White 2: leaves the bag for the Version Key's event (paperwhite2/version_key.h), which says itself where it
+// can't be used
+static BOOL ItemMenu_UseVersionKey(ItemMenuWork *work) {
+    work->result = BAG_RESULT_VERSION_KEY;
     ItemMenu_SetState(work, NULL);
     return TRUE;
 }

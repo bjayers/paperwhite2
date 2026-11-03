@@ -2,6 +2,19 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-03 (night): the Version Key; the items documented
+
+- **The Version Key** (the Galactic Key's place, GB Sounds' icon for now): switches Unova between Black 2's and White
+  2's from the bag or Y, without the Unova Link keys. Its state is the save's city key, so Black City / White Forest
+  follow it as they follow the keys; Route 4's zone and the version's map pieces (Route 4, Opelucid City, Driftveil's
+  market) and Opelucid City's scripts' version checks now read it too. Use says which version, then reloads the map
+  where the player stands; on rails, cycling, surfing or in the Union Room / Entralink it can't be used. Its
+  description says the current setting. The debug menu's Give key items gives it. Built (hack, no warnings, DSi
+  intact). **Not tested in game.**
+- **docs/paperwhite2/items.md**: every item the hack adds or changes (Exp. Share, Shiny Candy, DexNav, Version Key).
+  The Y button's shortcut slots are now full (36): another registrable item needs a larger save.
+- Next, per the user: spawn groups (NPC, Instance and Ambient groups, and the random chance rework).
+
 ## 2026-11-03 (later evening): a shorter dust cloud; sinking into sand
 
 - Tested: the dust cloud lasted too long. Now one appears as the cloud is cut off after a second; one goes from sand

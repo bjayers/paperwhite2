@@ -22,6 +22,9 @@
 #ifdef PAPERWHITE2
     ScriptEntry Script_19
     ScriptEntry Script_20
+    ScriptEntry Script_21
+    ScriptEntry Script_22
+    ScriptEntry Script_23
 #endif
     ScriptEntriesEnd
 
@@ -667,6 +670,41 @@ Script_20:
     WorkSetConst 0x8000, ITEM_SHINY_CANDY
     WorkSetConst 0x8001, 1
     VMCall L_0151
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+
+// Paper White 2: scripts 2820 and 2821, which the Version Key's event runs once it has switched Unova
+// (paperwhite2/version_key.h), before it loads the map again: they say which version Unova is as now
+Script_21:
+    ActorsPauseAll
+    SEPlay SEQ_SE_SYS_07
+    // "Unova shifted to the way\nit is in Black 2!"
+    SystemMsg Global7000_Text_VersionKeyBlack, 0
+    VMJump L_VersionKeyDone
+
+Script_22:
+    ActorsPauseAll
+    SEPlay SEQ_SE_SYS_07
+    // "Unova shifted to the way\nit is in White 2!"
+    SystemMsg Global7000_Text_VersionKeyWhite, 0
+
+L_VersionKeyDone:
+    LastKeyWait
+    SystemMsgClose
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+
+// Paper White 2: script 2822, where the Version Key's event can't load the map again (on rails, cycling, surfing, in
+// the Union Room or the Entralink): it switches nothing and says so
+Script_23:
+    ActorsPauseAll
+    WordSetItemName 0, ITEM_GALACTIC_KEY
+    // "The [Version Key] can't be used here."
+    SystemMsg Global7000_Text_VersionKeyNotHere, 0
+    LastKeyWait
+    SystemMsgClose
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt

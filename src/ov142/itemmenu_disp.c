@@ -40,6 +40,7 @@
 #include "system/scroll_bar.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/exp_share.h"
+#include "paperwhite2/version_key.h"
 #include "text/system/btl_main.h"
 #endif
 #include "system/text_speed.h"
@@ -515,6 +516,14 @@ void ItemMenuDisp_DrawItemInfo(ItemMenuWork *work) {
         GFL_MsgDataLoadStrbuf(work->msgData,
                               PaperWhite2_IsExpShareOn(work->gameData) ? BtlMain_Text_ExpShareStateOn
                                                                        : BtlMain_Text_ExpShareStateOff,
+                              work->expandBuf);
+        GFL_StrBufConcat(work->strbuf, work->expandBuf);
+    }
+    // Paper White 2: the Version Key's ends with the version Unova is as
+    if (slot->item == ITEM_VERSION_KEY) {
+        GFL_MsgDataLoadStrbuf(work->msgData,
+                              PaperWhite2_IsBlackVersionWorld(work->gameData) ? BtlMain_Text_VersionKeyStateBlack
+                                                                              : BtlMain_Text_VersionKeyStateWhite,
                               work->expandBuf);
         GFL_StrBufConcat(work->strbuf, work->expandBuf);
     }

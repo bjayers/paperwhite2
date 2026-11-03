@@ -163,4 +163,6 @@ BtlMain_Text_ExpShareTurnedOn = The {0109:1} was turned on.
 BtlMain_Text_ExpShareTurnedOff = The {0109:1} was turned off.
 BtlMain_Text_ExpShareStateOn = \nIt is currently ON.
 BtlMain_Text_ExpShareStateOff = \nIt is currently OFF.
+BtlMain_Text_VersionKeyStateBlack = \nIt's set to Black 2.
+BtlMain_Text_VersionKeyStateWhite = \nIt's set to White 2.
 \pad{54}

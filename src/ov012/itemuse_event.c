@@ -19,6 +19,7 @@
 
 #ifdef PAPERWHITE2
 #include "paperwhite2/exp_share.h"
+#include "paperwhite2/version_key.h"
 #endif
 
 // Whether a field action is blocked where the player stands
@@ -65,6 +66,8 @@ static const FieldCommonEvent FIELD_COMMON_EVENTS[FIELD_COMMON_EVENT_COUNT] = {
 #ifdef PAPERWHITE2
     // Paper White 2: the Exp. Share's script, which any place allows
     { PaperWhite2_EventToggleExpShare_Create, 0xff },
+    // Paper White 2: the Version Key's event, which checks where it can be used itself
+    { PaperWhite2_EventVersionKey_Create, 0xff },
 #endif
 };
 // clang-format on

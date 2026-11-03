@@ -462,6 +462,10 @@ u32 ShortcutMenu_SetKeyItemID(FieldAppCallInput *input, u32 item) {
     case SHORTCUT_EXP_SHARE:
         input->eventId = FIELD_COMMON_EVENT_EXP_SHARE;
         return 1;
+    // Paper White 2: the Version Key runs its common event, which switches Unova
+    case SHORTCUT_VERSION_KEY:
+        input->eventId = FIELD_COMMON_EVENT_VERSION_KEY;
+        return 1;
     // Paper White 2: the DexNav opens as one of the field's apps
     case SHORTCUT_DEXNAV:
         input->appId = FIELD_APP_DEXNAV;
@@ -505,9 +509,11 @@ BOOL ShortcutMenu_GetActionFromKeyItem(s32 item, u32 *action, u32 *invalid) {
     case SHORTCUT_DNA_SPLICERS_SEPARATE:
     case SHORTCUT_REVEAL_GLASS:
 #ifdef PAPERWHITE2
-    // Paper White 2: the Exp. Share can be turned on or off anywhere, and the DexNav opened anywhere
+    // Paper White 2: the Exp. Share can be turned on or off anywhere, and the DexNav opened anywhere; the Version Key's
+    // event says itself where it can't be used
     case SHORTCUT_EXP_SHARE:
     case SHORTCUT_DEXNAV:
+    case SHORTCUT_VERSION_KEY:
 #endif
         return FALSE;
     default:

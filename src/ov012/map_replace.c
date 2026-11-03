@@ -8,6 +8,9 @@
 #include "system/game_data.h"
 #include "system/game_system.h"
 #include "system/season.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/version_key.h"
+#endif
 
 // The events that change the map, which a MapReplaceEntry's condition picks: an event happened when its work has the
 // value
@@ -110,6 +113,13 @@ void MapReplace_LoadVariables(MapReplaceVariables *variables, GameSystem *gsys) 
     } else {
         variables->version = 1;
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the Version Key switches the version's map pieces (Route 4, Opelucid City, Driftveil City's
+    // market) to the other version's (paperwhite2/version_key.h)
+    if (PaperWhite2_IsVersionSwitched(GSYS_GetGameData(gsys))) {
+        variables->version ^= 1;
+    }
+#endif
     if (variables->version == 0) {
         variables->versionSeason = 0;
     } else {

@@ -16,7 +16,7 @@ and original file names are the user's reference list of Gen 5's global scripts.
 | 2260-2279 | `res/field/scripts/global_2260.s` | 1235 | `poke_waza.ev` | Move deleter, Move reminder | 2260-2261 (2) | 2262 | 18 |
 | 2280-2299 | `res/field/scripts/global_2280.s` | 1236 | `move_tutor.ev` | Move tutors | 2280-2288 (9) | 2289 | 11 |
 | 2500-2799 | `res/field/scripts/global_2500.s` | 1237 | `bg_attr.ev` | Interactible tiles - trash cans, bookcases... | 2500-2507 (8) | 2508 | 292 |
-| 2800-2819 | `res/field/scripts/global_2800.s` | 1238 | `item_get_scr.ev` | Field item dialogs | 2800-2819 (20) | none | 0 |
+| 2800-2822 | `res/field/scripts/global_2800.s` | 1238 | `item_get_scr.ev` | Field item dialogs | 2800-2822 (23) | none | 0 |
 | 3000-4999 | `res/field/scripts/global_3000.s` | 1239 | `trainer.ev` | Regular field trainers - single/primary double battle trainer | 3000-3816 (817) | 3817 | 1183 |
 | 5000-6999 | `res/field/scripts/global_3000.s` | 1239 | `trainer.ev` | Regular field trainers - secondary double battle trainer (the file of 3000-, whose entries this range reaches from its own start) | 5000-5816 (817) | 5817 | 1183 |
 | 7000-7799 | `res/field/scripts/global_7000.s` | 1240 | `fld_item.ev` | Regular field item logic | 7000-7400 (401) | 7401 | 399 |
@@ -69,7 +69,7 @@ and original file names are the user's reference list of Gen 5's global scripts.
 | 10865-10884 | `res/field/scripts/global_10865.s` | 1287 | `pokewood_theatre.ev` | Pokéstar studios theatre system | 10865-10869 (5) | 10870 | 15 |
 | 10885-10914 | `res/field/scripts/global_10885.s` | 1288 | `dun2710_common.ev` | Plasma Frigate password hint trainers | 10885-10901 (17) | 10902 | 13 |
 
-2621 IDs used, 4539 free.
+2624 IDs used, 4539 free.
 
 ## Hack scripts
 
@@ -80,6 +80,9 @@ changed without adding entries isn't listed.
 | --- | --- | --- | --- |
 | 2818 | `res/field/scripts/global_2800.s` | Script_19 | The Exp. Share toggle, which the Y button's shortcut starts (`SCRID_EXP_SHARE_TOGGLE`, include/paperwhite2/exp_share.h) |
 | 2819 | `res/field/scripts/global_2800.s` | Script_20 | The Shiny Candy drop after a wild battle won against a shiny Pokémon (`SCRID_SHINY_CANDY_DROP`, include/paperwhite2/shiny_candy.h) |
+| 2820 | `res/field/scripts/global_2800.s` | Script_21 | The Version Key's message, Unova as in Black 2 (`SCRID_VERSION_KEY_BLACK`, include/paperwhite2/version_key.h) |
+| 2821 | `res/field/scripts/global_2800.s` | Script_22 | The Version Key's message, Unova as in White 2 (`SCRID_VERSION_KEY_WHITE`, include/paperwhite2/version_key.h) |
+| 2822 | `res/field/scripts/global_2800.s` | Script_23 | The Version Key's "can't be used here" (`SCRID_VERSION_KEY_NOT_HERE`, include/paperwhite2/version_key.h) |
 | 9603 | `res/field/scripts/global_9600.s` | Script_4 | The new game's starting flags, the original's subroutine of scripts 9600 and 9602 given an entry by the hack's data; nothing starts it by its ID |
 | 9604 | `res/field/scripts/global_9600.s` | Script_5 | The survey's answers by the version and the player's sex, the original's subroutine of script 9600 given an entry by the hack's data; nothing starts it by its ID |
 | 9605 | `res/field/scripts/global_9600.s` | Script_6 | The flags and work reset after the Hall of Fame, the original's subroutine of script 9601 given an entry by the hack's data; nothing starts it by its ID |

@@ -97,6 +97,9 @@ HACK_SCRIPTS = {
           "include/paperwhite2/exp_share.h)",
     2819: "The Shiny Candy drop after a wild battle won against a shiny Pokémon (`SCRID_SHINY_CANDY_DROP`, "
           "include/paperwhite2/shiny_candy.h)",
+    2820: "The Version Key's message, Unova as in Black 2 (`SCRID_VERSION_KEY_BLACK`, include/paperwhite2/version_key.h)",
+    2821: "The Version Key's message, Unova as in White 2 (`SCRID_VERSION_KEY_WHITE`, include/paperwhite2/version_key.h)",
+    2822: "The Version Key's \"can't be used here\" (`SCRID_VERSION_KEY_NOT_HERE`, include/paperwhite2/version_key.h)",
     9603: "The new game's starting flags, the original's subroutine of scripts 9600 and 9602 given an entry by the "
           "hack's data; nothing starts it by its ID",
     9604: "The survey's answers by the version and the player's sex, the original's subroutine of script 9600 given an "

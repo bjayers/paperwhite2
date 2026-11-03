@@ -43,6 +43,7 @@
 #include "paperwhite2/dexnav.h"
 #include "paperwhite2/dexnav_event.h"
 #include "paperwhite2/encounters.h"
+#include "paperwhite2/version_key.h"
 #endif
 
 // clang-format off
@@ -671,6 +672,10 @@ u32 FieldAppCall_GetBagResult(FieldAppCallWork *work, void *data) {
     case BAG_RESULT_DEXNAV:
         work->nextAppId = FIELD_APP_DEXNAV;
         return FIELD_APP_RESULT_NEXT;
+    // Paper White 2: the Version Key used from the bag runs its common event
+    case BAG_RESULT_VERSION_KEY:
+        work->input->eventId = FIELD_COMMON_EVENT_VERSION_KEY;
+        return 3;
 #endif
     case 22:
         work->nextAppId = FIELD_APP_MEDALBOX;

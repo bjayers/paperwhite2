@@ -355,7 +355,8 @@ Each hook is under `PAPERWHITE2_DEBUG_MENU` with the original in `#else`:
 | Info's follower | `PaperWhite2_FollowingGetSpecies` (`src/paperwhite2/ov036/paperwhite2_following_field.c`) | the follower's species, or none |
 
 **Give key items** adds the Bicycle, Dowsing MCHN, Super Rod, VS Recorder, Gracidea, Reveal Glass, both DNA Splicers,
-the Permit, the Oval and Shiny Charms and the Exp. Share (`sDebugKeyItems`). It leaves out, as its message says, the
+the Permit, the Oval and Shiny Charms, the Exp. Share, the DexNav and the Version Key (`sDebugKeyItems`; the hack's
+items are in [items.md](items.md)). It leaves out, as its message says, the
 items that events give, check or take back (the Light and Dark Stones, the Dragon Skull, the Grams, the Plasma Card,
 the Colress Machine, the Grubby Hanky, the Dropped Items), those that come with their feature's setup (the Medal Box,
 the Prop Case), the Liberty Pass, the Xtransceivers (given at the start, one per sex), and the Key Items pocket's

@@ -11,6 +11,9 @@
 #include "gfl/arc.h"
 #include "gfl/arc_util.h"
 #include "gfl/heap.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/version_key.h"
+#endif
 #include "system/game_data.h"
 #include "system/season.h"
 
@@ -275,6 +278,21 @@ static u16 GetVersionedMapChangeZoneNum(u16 zoneId) {
 u16 GetVersionedMapChangeZoneNum2(u16 zoneId) {
     return GetVersionedMapChangeZoneNum(zoneId);
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: the zone a version-specific zone stands in for, for the Version Key's reload where the player stands
+// (paperwhite2/version_key.h)
+u16 PaperWhite2_GetUnversionedZone(u16 zoneId) {
+    int i;
+
+    for (i = 0; i < VERSION_SPECIFIC_COUNT; i++) {
+        if (zoneId == VERSION_SPECIFIC_ZONES[i].to) {
+            return VERSION_SPECIFIC_ZONES[i].from;
+        }
+    }
+    return zoneId;
+}
+#endif
 
 static ZoneHeader *ZoneData_GetHeaderCore(u16 zoneId, BOOL versioned) {
     if (g_ZoneDataSystem == NULL) {

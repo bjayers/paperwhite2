@@ -56,6 +56,9 @@ enum {
     // Paper White 2: the DexNav, the Poké Radar's place (paperwhite2/dexnav.h). With it the shortcuts that can be
     // registered at once are 35, more than the original's 34 slots, so ShortcutSave has its last two bytes too
     SHORTCUT_DEXNAV,
+    // Paper White 2: the Version Key, the Galactic Key's place (paperwhite2/version_key.h). With it the shortcuts that
+    // can be registered at once are 36, all of ShortcutSave's slots: a further one needs a larger save
+    SHORTCUT_VERSION_KEY,
 #endif
 };
 

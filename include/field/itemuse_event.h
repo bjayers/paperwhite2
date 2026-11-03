@@ -21,6 +21,8 @@ enum {
 #ifdef PAPERWHITE2
     // Paper White 2: turns the Exp. Share on or off from the Y button (paperwhite2/exp_share.h)
     FIELD_COMMON_EVENT_EXP_SHARE,
+    // Paper White 2: switches Unova with the Version Key, from the bag or the Y button (paperwhite2/version_key.h)
+    FIELD_COMMON_EVENT_VERSION_KEY,
 #endif
     FIELD_COMMON_EVENT_COUNT,
 };

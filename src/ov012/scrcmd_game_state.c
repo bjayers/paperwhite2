@@ -31,6 +31,9 @@
 #include "system/game_system.h"
 #include "system/union_view.h"
 #include "system/vm.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/version_key.h"
+#endif
 
 BOOL Scrcmd_GameState_GameGetVersion(VM *vm, FieldScriptEnv *env) {
     u16 *value = ScriptReadVar(vm, env);
@@ -38,6 +41,13 @@ BOOL Scrcmd_GameState_GameGetVersion(VM *vm, FieldScriptEnv *env) {
     *value = 23;
 #else
     *value = 22;
+#endif
+#ifdef PAPERWHITE2
+    // Paper White 2: Opelucid City's scripts see the other version while the Version Key has switched it
+    // (paperwhite2/version_key.h)
+    if (PaperWhite2_ScriptSeesOtherVersion(FieldScriptEnv_GetGameData(env))) {
+        *value ^= 22 ^ 23;
+    }
 #endif
     return FALSE;
 }

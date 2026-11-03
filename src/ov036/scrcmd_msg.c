@@ -38,6 +38,9 @@
 #include "system/vm.h"
 #include "system/wordset.h"
 #include "text/script/global_10520.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/version_key.h"
+#endif
 
 // The rows of the system and info windows at the top and the bottom of the screen
 #define MSG_WIN_ROW_TOP 1
@@ -580,6 +583,15 @@ BOOL Scrcmd_Msg_ActorMsgGendered(VM *vm, FieldScriptEnv *env) {
 }
 
 BOOL Scrcmd_Msg_ActorMsgVersioned(VM *vm, FieldScriptEnv *env) {
+#ifdef PAPERWHITE2
+    // Paper White 2: Opelucid City's people say the other version's lines while the Version Key has switched it
+    // (paperwhite2/version_key.h)
+    GameData *gameData = FieldScriptEnv_GetGameData(env);
+
+    if (PaperWhite2_ScriptSeesOtherVersion(gameData)) {
+        return CallFieldActorMessageDispSelect(vm, env, PaperWhite2_IsBlackVersionWorld(gameData));
+    }
+#endif
 #ifdef BLACK2
     return CallFieldActorMessageDispSelect(vm, env, TRUE);
 #else

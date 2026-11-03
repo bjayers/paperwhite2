@@ -30,6 +30,8 @@ static const ItemShortcut sItemShortcuts[] = {
     { ITEM_EXP_SHARE, SHORTCUT_EXP_SHARE },
     // Paper White 2: the DexNav registers to Y
     { ITEM_POKE_RADAR, SHORTCUT_DEXNAV },
+    // Paper White 2: the Version Key registers to Y (ITEM_GALACTIC_KEY, paperwhite2/version_key.h)
+    { ITEM_GALACTIC_KEY, SHORTCUT_VERSION_KEY },
 #endif
 };
 
