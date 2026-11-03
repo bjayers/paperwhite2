@@ -928,8 +928,9 @@ Wild Pokémon seen in tall and dark grass (`docs/paperwhite2/design/overworld-ed
 `include/paperwhite2/wanderers.h`, from the field's update after the ambients'). Stage 1: spawning, rising and
 sinking, random wandering, the touch and the battle.
 
-- **Spawning:** every 3 to 6 seconds while fewer than 3 are out, a grass tile within the screen's 8 by 6 tiles round
-  the player and not within 4 of it, whose encounter type is `ENCTYPE_GRASS` or `ENCTYPE_GRASS_RARE`
+- **Spawning:** every 2 to 4 seconds while fewer than 3 are out (a second after a try that found no grass), a grass
+  tile within the screen's 8 by 6 tiles round the player and not within 4 of it, picked among every such tile (those
+  ahead of the player, the way it faces, 3 times as likely), whose encounter type is `ENCTYPE_GRASS` or `ENCTYPE_GRASS_RARE`
   (`EncSys_GetTileEncType`, the step's `FieldEncount_DecideTypeByTerrain`). Its Pokémon is the one a step there would
   bring (`EventWildBattleCall_PickWanderer` in `field_encount.c`: `FieldEncount_GenWilds` with one Pokémon, no
   partner and through a Repel, the new encounter data's context and the debug overrides). Its shininess is rolled
@@ -939,7 +940,8 @@ sinking, random wandering, the touch and the battle.
   shininess (`PaperWhite2_FollowingCodeFor`, the follower's registry match without its side effects), loaded on
   demand where the sprite cache has room (`FldBillboardActor_CanLoadObjCode`).
 - **Rising and sinking:** from 20 units under its tile's ground over 12 frames (the ground hides what's under it),
-  and back down at the end of its 20 to 40 seconds. Past 11 tiles from the player it goes at once.
+  and back down at the end of its 20 to 40 seconds. Past 11 tiles from the player it goes at once, and after 2
+  seconds off the screen (9 by 7 tiles round the player), unseen, so the ones left behind make room.
 - **Wandering:** a step every 20 to 80 frames onto a neighbouring tile of the same encounter type, at most 8 units
   higher or lower, that no actor or other wanderer is on or walking to, and not beside the player (where the
   follower walks), over 12 frames, facing its way, its animation always playing.

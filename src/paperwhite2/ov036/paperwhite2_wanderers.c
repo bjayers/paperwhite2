@@ -49,17 +49,23 @@
 #define WANDERER_LIFE_MIN (20 * WANDERER_FRAMES_A_SECOND)
 #define WANDERER_LIFE_SPAN (20 * WANDERER_FRAMES_A_SECOND)
 // How often one more is tried, from 3 to 6 seconds, and the first after the field opens
-#define WANDERER_SPAWN_MIN (3 * WANDERER_FRAMES_A_SECOND)
-#define WANDERER_SPAWN_SPAN (3 * WANDERER_FRAMES_A_SECOND)
+#define WANDERER_SPAWN_MIN (2 * WANDERER_FRAMES_A_SECOND)
+#define WANDERER_SPAWN_SPAN (2 * WANDERER_FRAMES_A_SECOND)
+// How soon one more is tried after a try that found no grass in view
+#define WANDERER_SPAWN_RETRY WANDERER_FRAMES_A_SECOND
 #define WANDERER_SPAWN_FIRST (2 * WANDERER_FRAMES_A_SECOND)
-// Where one spawns: within the screen's tiles round the player, not within WANDERER_SPAWN_NEAR tiles of it, from a few
-// random tries
+// Where one spawns: a grass tile within the screen's tiles round the player and not within WANDERER_SPAWN_NEAR of it,
+// picked among all of them, those ahead of the player (the way it faces) WANDERER_SPAWN_AHEAD times as likely
 #define WANDERER_SPAWN_RANGE_X 8
 #define WANDERER_SPAWN_RANGE_Z 6
 #define WANDERER_SPAWN_NEAR 4
-#define WANDERER_SPAWN_TRIES 12
-// Past this many tiles from the player it goes at once, out of view
+#define WANDERER_SPAWN_AHEAD 3
+// Past this many tiles from the player it goes at once, out of view; and one off the screen (past its tiles round the
+// player, and a tile more) goes after a while there, so that the ones the player left behind make room
 #define WANDERER_FAR 11
+#define WANDERER_OFFSCREEN_X (WANDERER_SPAWN_RANGE_X + 1)
+#define WANDERER_OFFSCREEN_Z (WANDERER_SPAWN_RANGE_Z + 1)
+#define WANDERER_OFFSCREEN_FRAMES (2 * WANDERER_FRAMES_A_SECOND)
 // The most a step's ground may rise or drop, in units
 #define WANDERER_STEP_HEIGHT FX32_CONST(8)
 // How long a touch waits before the battle (as long as its "!" takes: FldeffEmotionBubble_StepAnimation's hop and 30
@@ -111,6 +117,8 @@ typedef struct {
     FieldEffectTask *grass;
     u16 sparkleTimer;
     u16 sparkleNext;
+    // How long it has been off the screen
+    u16 offscreen;
 } Wanderer;
 
 typedef struct {
@@ -306,64 +314,84 @@ static void Wanderers_Clear(MMSys *actorSystem) {
     sWanderers.touch = WANDERER_NONE;
 }
 
-// One more, on a grass tile near the screen's edge that a step there would bring one from, if its sprite can load
-static void Wanderers_Spawn(Field *field, Wanderer *wanderer) {
+// One more, on a grass tile near the screen's edge that a step there would bring one from, if its sprite can load;
+// FALSE where no grass tile in view would do
+static BOOL Wanderers_Spawn(Field *field, Wanderer *wanderer) {
     FieldActor *player = FieldPlayer_GetActor(field->player);
     s16 px = GetGPosX(player);
     s16 pz = GetGPosZ(player);
+    u8 facing = (u8)GetActorFaceDir(player);
     VecFx32 at;
     FieldActorConfig config;
-    u32 try;
+    s16 x = 0;
+    s16 z = 0;
+    fx32 y = 0;
+    u32 type = ENCTYPE_NONE;
+    u32 total = 0;
+    s16 dx;
+    s16 dz;
+    u8 gender;
+    BOOL shiny;
 
+    // Every tile of the ring, one picked by weight as it's found
     FieldPlayer_GetWPos(field->player, &at);
-    for (try = 0; try < WANDERER_SPAWN_TRIES; try++) {
-        s16 dx = (s16)GFL_RandomLC(2 * WANDERER_SPAWN_RANGE_X + 1) - WANDERER_SPAWN_RANGE_X;
-        s16 dz = (s16)GFL_RandomLC(2 * WANDERER_SPAWN_RANGE_Z + 1) - WANDERER_SPAWN_RANGE_Z;
-        fx32 ground;
-        u32 encType;
-        u8 gender;
-        BOOL shiny;
+    for (dz = -WANDERER_SPAWN_RANGE_Z; dz <= WANDERER_SPAWN_RANGE_Z; dz++) {
+        for (dx = -WANDERER_SPAWN_RANGE_X; dx <= WANDERER_SPAWN_RANGE_X; dx++) {
+            fx32 ground;
+            u32 encType;
+            u32 weight;
 
-        if (Wanderers_Abs(dx) < WANDERER_SPAWN_NEAR && Wanderers_Abs(dz) < WANDERER_SPAWN_NEAR) {
-            continue;
+            if (Wanderers_Abs(dx) < WANDERER_SPAWN_NEAR && Wanderers_Abs(dz) < WANDERER_SPAWN_NEAR) {
+                continue;
+            }
+            if (!Wanderers_TileAt(field, px + dx, pz + dz, at.y, &ground, &encType) ||
+                (encType != ENCTYPE_GRASS && encType != ENCTYPE_GRASS_RARE) ||
+                Wanderers_IsTaken(field, wanderer, px + dx, pz + dz)) {
+                continue;
+            }
+            weight = DIR_DX[facing] * dx + DIR_DZ[facing] * dz > 0 ? WANDERER_SPAWN_AHEAD : 1;
+            total += weight;
+            if (GFL_RandomLC(total) < weight) {
+                x = px + dx;
+                z = pz + dz;
+                y = ground;
+                type = encType;
+            }
         }
-        if (!Wanderers_TileAt(field, px + dx, pz + dz, at.y, &ground, &encType) ||
-            (encType != ENCTYPE_GRASS && encType != ENCTYPE_GRASS_RARE) ||
-            Wanderers_IsTaken(field, wanderer, px + dx, pz + dz)) {
-            continue;
-        }
-        MI_CpuFill8(wanderer, 0, sizeof(Wanderer));
-        if (!EventWildBattleCall_PickWanderer(Field_GetEncountSystem(field), encType, &wanderer->param, &gender,
-                                              &shiny)) {
-            return;
-        }
-        wanderer->objCode = PaperWhite2_FollowingCodeFor(field->actorSystem, wanderer->param.species,
-                                                         wanderer->param.form, gender, (u8)shiny);
-        if (wanderer->objCode == 0 || !FldBillboardActor_CanLoadObjCode(field->actorSystem, wanderer->objCode)) {
-            return;
-        }
-        GetNPCMdlInfoForOBJCODE(field->actorSystem, wanderer->objCode, &config);
-        if (config.uid != wanderer->objCode) {
-            return;
-        }
-        wanderer->x = px + dx;
-        wanderer->z = pz + dz;
-        wanderer->y = ground;
-        wanderer->encType = (u8)encType;
-        wanderer->shiny = (u8)shiny;
-        wanderer->facing = (u8)GFL_RandomLC(4);
-        wanderer->life = WANDERER_LIFE_MIN + GFL_RandomLC(WANDERER_LIFE_SPAN);
-        wanderer->anim = 0xffff;
-        wanderer->byDirection = FIELD_BILLBOARD_ANIM_SETS[config.spriteControllerType].count < WANDERER_ANIM_PERSON;
-        wanderer->billboard[1] = BILLBOARD_ACTOR_NONE;
-        wanderer->state = WANDERER_LOADING;
-        wanderer->timer = WANDERER_LOAD_FRAMES;
-        ConvGXZToVector(wanderer->x, wanderer->z, &at);
-        at.y = ground - WANDERER_RISE_DEPTH;
-        FldBillboardActor_AddActorPosOrReserve(field->actorSystem, &config, wanderer->billboard, &at, NULL, NULL,
-                                               func_ov012_02166fc0(field->actorSystem));
-        return;
     }
+    if (total == 0) {
+        return FALSE;
+    }
+    MI_CpuFill8(wanderer, 0, sizeof(Wanderer));
+    if (!EventWildBattleCall_PickWanderer(Field_GetEncountSystem(field), type, &wanderer->param, &gender, &shiny)) {
+        return TRUE;
+    }
+    wanderer->objCode = PaperWhite2_FollowingCodeFor(field->actorSystem, wanderer->param.species, wanderer->param.form,
+                                                     gender, (u8)shiny);
+    if (wanderer->objCode == 0 || !FldBillboardActor_CanLoadObjCode(field->actorSystem, wanderer->objCode)) {
+        return TRUE;
+    }
+    GetNPCMdlInfoForOBJCODE(field->actorSystem, wanderer->objCode, &config);
+    if (config.uid != wanderer->objCode) {
+        return TRUE;
+    }
+    wanderer->x = x;
+    wanderer->z = z;
+    wanderer->y = y;
+    wanderer->encType = (u8)type;
+    wanderer->shiny = (u8)shiny;
+    wanderer->facing = (u8)GFL_RandomLC(4);
+    wanderer->life = WANDERER_LIFE_MIN + GFL_RandomLC(WANDERER_LIFE_SPAN);
+    wanderer->anim = 0xffff;
+    wanderer->byDirection = FIELD_BILLBOARD_ANIM_SETS[config.spriteControllerType].count < WANDERER_ANIM_PERSON;
+    wanderer->billboard[1] = BILLBOARD_ACTOR_NONE;
+    wanderer->state = WANDERER_LOADING;
+    wanderer->timer = WANDERER_LOAD_FRAMES;
+    ConvGXZToVector(wanderer->x, wanderer->z, &at);
+    at.y = y - WANDERER_RISE_DEPTH;
+    FldBillboardActor_AddActorPosOrReserve(field->actorSystem, &config, wanderer->billboard, &at, NULL, NULL,
+                                           func_ov012_02166fc0(field->actorSystem));
+    return TRUE;
 }
 
 // A step tried, in a random direction first: onto a free tile of its grass, or into the player, which touches it
@@ -430,11 +458,20 @@ static void Wanderers_Tick(Field *field, Wanderer *wanderer, s32 index) {
     if (wanderer->state == WANDERER_TOUCHED) {
         return;
     }
-    // Far out of view: gone at once
+    // Far out of view: gone at once; off the screen for a while: gone too, unseen
     if (Wanderers_Abs(wanderer->x - GetGPosX(player)) > WANDERER_FAR ||
         Wanderers_Abs(wanderer->z - GetGPosZ(player)) > WANDERER_FAR) {
         Wanderers_Remove(field->actorSystem, wanderer);
         return;
+    }
+    if (Wanderers_Abs(wanderer->x - GetGPosX(player)) > WANDERER_OFFSCREEN_X ||
+        Wanderers_Abs(wanderer->z - GetGPosZ(player)) > WANDERER_OFFSCREEN_Z) {
+        if (++wanderer->offscreen >= WANDERER_OFFSCREEN_FRAMES) {
+            Wanderers_Remove(field->actorSystem, wanderer);
+            return;
+        }
+    } else {
+        wanderer->offscreen = 0;
     }
     if (wanderer->life != 0) {
         wanderer->life--;
@@ -585,13 +622,15 @@ void PaperWhite2_WanderersUpdate(Field *field) {
         sWanderers.touch = WANDERER_NONE;
     }
     if (!paused && count < WANDERERS_MAX && --sWanderers.spawnTimer == 0) {
+        BOOL found = FALSE;
+
         for (i = 0; i < WANDERERS_MAX; i++) {
             if (sWanderers.list[i].state == WANDERER_FREE) {
-                Wanderers_Spawn(field, &sWanderers.list[i]);
+                found = Wanderers_Spawn(field, &sWanderers.list[i]);
                 break;
             }
         }
-        sWanderers.spawnTimer = WANDERER_SPAWN_MIN + GFL_RandomLC(WANDERER_SPAWN_SPAN);
+        sWanderers.spawnTimer = found ? WANDERER_SPAWN_MIN + GFL_RandomLC(WANDERER_SPAWN_SPAN) : WANDERER_SPAWN_RETRY;
     }
 }
 
