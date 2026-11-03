@@ -2,6 +2,14 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-03 (afternoon): wanderers on sand and in caves
+
+- Where a wanderer's tile has no grass (cave floors, sand), it appears and goes in a puff of dust (the landing
+  actors' puff) instead of rising out of the ground. In deep sand (Route 4's, the Desert Resort's) it stands sunk in 7
+  units and leaves deep-sand tracks as actors do; in sand or snow, footprints. No shadow, as before (plugins.md,
+  Wanderers). Built (hack, no warnings, DSi intact). **Not tested in game.**
+- Next, per the user: fliers flying in from above and leaving upward (no-grass species), after this round.
+
 ## 2026-11-03 (midday): Route 4 in the Overworld Editor; no area empty under the level gate
 
 - **Route 4 is zone 551 (route_4_16) in White 2.** The game plays the overworld's ZONE_ROUTE_4 cells as

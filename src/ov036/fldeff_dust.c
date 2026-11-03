@@ -99,6 +99,23 @@ void FldeffDust_StartFacing(FieldActor *actor, FieldEffects *effects) {
     FieldEffects_TCBCreate(effects, &SMOKE_TASK_VTABLE, NULL, 0, &params, 0);
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: a puff where something drawn without an actor appears or goes (the wanderers,
+// paperwhite2_wanderers.c), placed as a landing actor's is from its feet
+void FldeffDust_StartAt(FieldEffects *effects, const VecFx32 *feet) {
+    SmokeTaskParams params;
+
+    params.smoke = FieldEffects_GetHandleData(effects, FLDEFF_DUST);
+    if (params.smoke == NULL) {
+        return;
+    }
+    params.pos = *feet;
+    params.pos.y += FX32_ONE;
+    params.pos.z += FX32_CONST(6);
+    FieldEffects_TCBCreate(effects, &SMOKE_TASK_VTABLE, NULL, 0, &params, 0);
+}
+#endif
+
 static void FldeffDust_Init(FieldEffectTask *task, void *work) {
     SmokeTask *smokeTask = work;
     SmokeTaskParams *params = FieldEffects_GetObjectParam(task);

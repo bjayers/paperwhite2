@@ -170,6 +170,35 @@ void Footmark_SetActor(FieldActor *actor, FieldEffects *effects, u32 kind) {
     FieldEffects_TCBCreate(effects, &FOOTMARK_TASK_VTABLE, &pos, 0, &params, 0);
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: a mark left at a tile, for what is drawn without an actor (the wanderers,
+// paperwhite2_wanderers.c): placed as an actor's is, at the tile's middle on its ground, by the direction it goes and
+// the one it came from
+void Footmark_StartAt(FieldEffects *effects, s16 gx, s16 gz, fx32 ground, u32 kind, u32 dir, u32 prevDir) {
+    FootmarkTaskParams params;
+    VecFx32 pos;
+    u16 texture;
+    FieldEffectFootmark *footmark = FieldEffects_GetHandleData(effects, FLDEFF_FOOTMARK);
+
+    if (footmark == NULL || kind >= FOOTMARK_KIND_MAX) {
+        return;
+    }
+    params.footmark = footmark;
+    texture = Footmark_GetTexture(footmark, kind, dir, prevDir);
+    ConvGXZToVector(gx, gz, &pos);
+    pos.y = ground;
+    if ((kind == FOOTMARK_KIND_SAND || kind == FOOTMARK_KIND_DEEP_SAND_TRACKS) &&
+        (texture == DIR_LEFT || texture == DIR_RIGHT)) {
+        pos.z -= FX32_CONST(2);
+    }
+    if (kind == FOOTMARK_KIND_DEEP_SAND_TRACKS) {
+        pos.y -= footmark->sinkDepth;
+    }
+    params.texture = texture;
+    FieldEffects_TCBCreate(effects, &FOOTMARK_TASK_VTABLE, &pos, 0, &params, 0);
+}
+#endif
+
 static void FootmarkTask_Init(FieldEffectTask *task, void *work) {
     FootmarkTask *fmTask = work;
     FootmarkTaskParams *params = FieldEffects_GetObjectParam(task);

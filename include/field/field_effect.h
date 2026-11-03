@@ -73,6 +73,10 @@ BOOL FldeffShadow_GetMaterial(FieldEffects *effects, BillboardActorSys **sys, u3
 void FldeffDust_Start(FieldActor *actor, FieldEffects *effects);
 // The dust in front of an actor
 void FldeffDust_StartFacing(FieldActor *actor, FieldEffects *effects);
+#ifdef PAPERWHITE2
+// Paper White 2: a puff at a place, from the feet of what is drawn without an actor (the wanderers)
+void FldeffDust_StartAt(FieldEffects *effects, const VecFx32 *feet);
+#endif
 // fldeff_grass.c: the grass that shakes where an actor steps, a task for each step, whose work is a GrassTask
 #define GRASS_KIND_COUNT 8
 
@@ -123,6 +127,10 @@ enum {
     FOOTMARK_KIND_MAX,
 };
 void Footmark_SetActor(FieldActor *actor, FieldEffects *effects, u32 kind);
+#ifdef PAPERWHITE2
+// Paper White 2: a mark at a tile on its ground, for what is drawn without an actor (the wanderers)
+void Footmark_StartAt(FieldEffects *effects, s16 gx, s16 gz, fx32 ground, u32 kind, u32 dir, u32 prevDir);
+#endif
 // fldeff_reflect.c: an actor's reflection, by kind: in water, whose width swings, and in a mirror floor or ice, which
 // stays still
 enum {

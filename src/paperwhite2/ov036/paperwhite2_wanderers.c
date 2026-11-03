@@ -29,17 +29,19 @@
 #include "system/game_data.h"
 #include "system/game_event.h"
 #include "system/game_system.h"
+#include "system/season.h"
 
 // Paper White 2: the wanderers (paperwhite2/wanderers.h; docs/paperwhite2/plugins.md, Wanderers;
 // docs/paperwhite2/design/overworld-editor.md, Overworld encounters). Every few seconds while fewer than WANDERERS_MAX
 // are out, one rises out of a grass tile near the screen's edge, away from the player: the Pokémon a step in that grass
 // would bring (EventWildBattleCall_PickWanderer), drawn with its follower sprite, shiny or of its gender as it was
 // rolled. It wanders tile to tile in grass of the same kind with pauses, and sinks back into it after its time, or goes
-// once it's far out of view. A wanderer is solid: an actor's step onto its tile, or the one it walks to, is blocked
-// (PaperWhite2_WanderersCheckGridCollision), and the player's touches it, as one stepping into the player does. A
-// touch, once the player is free, faces the two to each other, plays its cry and starts the single battle with it.
-// They're drawn as the ambients are, billboards of the actor system's sprite cache without an actor; a battle or a
-// menu tears the field down, and they start again from none
+// once it's far out of view. Where its tile has no grass (a cave's floor, sand) it appears and goes in a puff of dust
+// instead; in deep sand it stands sunk in as actors do and leaves tracks, and in sand or snow footprints. A wanderer is
+// solid: an actor's step onto its tile, or the one it walks to, is blocked (PaperWhite2_WanderersCheckGridCollision),
+// and the player's touches it, as one stepping into the player does. A touch, once the player is free, faces the two to
+// each other, plays its cry and starts the single battle with it. They're drawn as the ambients are, billboards of the
+// actor system's sprite cache without an actor; a battle or a menu tears the field down, and they start again from none
 
 // The field's frames a second
 #define WANDERER_FRAMES_A_SECOND 30
@@ -99,6 +101,15 @@
 #define WANDERER_RUSTLE_SE SEQ_SE_FLD_70
 // A tile's flag of the grass an actor stands in (ActorTerrainEffect_GrassStill's)
 #define WANDERER_TILE_FLAG_GRASS 0x20
+// A tile's flag of the ground that takes footprints (ActorTerrainEffect_Footmark's)
+#define WANDERER_TILE_FLAG_FOOTMARK 0x08
+// How far one sinks into deep sand, as an actor does (ActorTerrainEffect_DeepSand)
+#define WANDERER_DEEP_SAND_SINK FX32_CONST(7)
+// One that appears in a puff of dust shows this many frames into it, and one that goes in a puff is hidden this many
+// frames into it, while the dust covers it
+#define WANDERER_PUFF_HIDE 4
+// A model's footprint type whose marks are tracks (FieldActorConfig's footprintType)
+#define WANDERER_FOOTPRINT_TRACKS 2
 // A shiny one's sparkle (the Join Avenue's, FLDEFF_FES_SPARKLE): as it rises, and again every few seconds while it's
 // out, a little over its feet
 #define WANDERER_SPARKLE_FRAMES 15
@@ -131,6 +142,12 @@ typedef struct {
     u8 wanders;
     u8 noGrass;
     u8 fast;
+    // Whether it appears and goes in a puff of dust (its tile has no grass), whether it stands sunk into deep sand, its
+    // model's footprint type, and whether its billboard is hidden now
+    u8 puff;
+    u8 sunk;
+    u8 footprint;
+    u8 hidden;
     // The animation it was last given
     u16 anim;
     // The grass it stands in, as an actor does (FLDEFF_GRASS); its sparkle's frames left, and the frames to its next
@@ -268,25 +285,80 @@ static BOOL Wanderers_IsNearPlayer(Field *field, s16 x, s16 z) {
            (Wanderers_Abs(x - FldAct_GetInitGPosX(player)) <= 1 && Wanderers_Abs(z - FldAct_GetInitGPosZ(player)) <= 1);
 }
 
+// A tile's type on its ground
+static u32 Wanderers_TileType(Field *field, s16 x, s16 z, fx32 ground) {
+    VecFx32 pos;
+
+    ConvGXZToVector(x, z, &pos);
+    pos.y = ground;
+    return GetTileTypeAtPos(field->g3DMapper, &pos);
+}
+
+// Whether a tile is deep sand, which one that walks sinks into
+static BOOL Wanderers_IsDeepSand(const Wanderer *wanderer, u32 tile) {
+    return !wanderer->noGrass && tile != TILE_TYPE_NONE && MapTile_IsDeepSand(GetTileClass(tile));
+}
+
 // The grass an actor stands in at a tile, where the tile has it and the wanderer stands in grass (its kind by the tile
 // and the season, as an actor's is), shaking first when animate; NULL where it has none
 static FieldEffectTask *Wanderers_Grass(Field *field, const Wanderer *wanderer, s16 x, s16 z, fx32 ground,
                                         BOOL animate) {
-    VecFx32 pos;
     u32 tile;
 
     // (none under one that flies or hovers)
     if (wanderer->noGrass) {
         return NULL;
     }
-    ConvGXZToVector(x, z, &pos);
-    pos.y = ground;
-    tile = GetTileTypeAtPos(field->g3DMapper, &pos);
+    tile = Wanderers_TileType(field, x, z, ground);
     if (tile == TILE_TYPE_NONE || !(GetTileFlags(tile) & WANDERER_TILE_FLAG_GRASS)) {
         return NULL;
     }
     return GrassTask_StartAt(field->fieldEffects, x, z, ground, animate,
                              ActorTerrainEffect_GetGrassKind(GetTileClass(tile), GameData_GetSeason(field->gameData)));
+}
+
+// The mark a step leaves on the tile it starts from, by the ground and the season, as an actor's
+// (ActorTerrainEffect_Footmark): footprints, or tracks for a model whose footprint type is tracks, in sand, and in
+// snow, mud in winter or spring and puddles in winter; tracks in deep sand. FOOTMARK_KIND_MAX for none
+static u32 Wanderers_FootmarkKind(const Wanderer *wanderer, u32 tile, u32 season) {
+    BOOL tracks = wanderer->footprint == WANDERER_FOOTPRINT_TRACKS;
+    u32 tileClass;
+
+    if (wanderer->noGrass || tile == TILE_TYPE_NONE || !(GetTileFlags(tile) & WANDERER_TILE_FLAG_FOOTMARK)) {
+        return FOOTMARK_KIND_MAX;
+    }
+    tileClass = GetTileClass(tile);
+    if (MapTile_IsPuddle(tileClass)) {
+        if (season != SEASON_WINTER) {
+            return FOOTMARK_KIND_MAX;
+        }
+    } else if (MapTile_IsMud(tileClass)) {
+        if (season != SEASON_SPRING && season != SEASON_WINTER) {
+            return FOOTMARK_KIND_MAX;
+        }
+    } else if (MapTile_IsDeepSand(tileClass)) {
+        return FOOTMARK_KIND_DEEP_SAND_TRACKS;
+    } else if (!MapTile_IsSnow(tileClass) && !MapTile_IsSnowNoCycling(tileClass)) {
+        return tracks ? FOOTMARK_KIND_SAND_TRACKS : FOOTMARK_KIND_SAND;
+    }
+    return tracks ? FOOTMARK_KIND_SNOW_TRACKS : FOOTMARK_KIND_SNOW;
+}
+
+// Its billboard shown or hidden
+static void Wanderers_SetHidden(BillboardActorSys *sys, Wanderer *wanderer, BOOL hidden) {
+    if (wanderer->hidden != hidden) {
+        wanderer->hidden = (u8)hidden;
+        BillboardActorSys_SetActorVisible(sys, wanderer->billboard[1], !hidden);
+    }
+}
+
+// Its puff of dust, at its feet
+static void Wanderers_Puff(Field *field, const Wanderer *wanderer) {
+    VecFx32 feet;
+
+    ConvGXZToVector(wanderer->x, wanderer->z, &feet);
+    feet.y = wanderer->y;
+    FldeffDust_StartAt(field->fieldEffects, &feet);
 }
 
 static void Wanderers_DeleteGrass(FieldEffectTask **grass) {
@@ -386,6 +458,7 @@ static BOOL Wanderers_Spawn(Field *field, Wanderer *wanderer) {
     s16 dz;
     u8 gender;
     BOOL shiny;
+    u32 tile;
 
     // Every tile of the ring, one picked by weight as it's found
     FieldPlayer_GetWPos(field->player, &at);
@@ -445,6 +518,10 @@ static BOOL Wanderers_Spawn(Field *field, Wanderer *wanderer) {
         ENCOUNTERS_WANDERS_MASK;
     wanderer->noGrass =
         (PaperWhite2_Encounters_GetSpeciesOverworld(wanderer->param.species) & ENCOUNTERS_NO_GRASS) != 0;
+    tile = Wanderers_TileType(field, x, z, y);
+    wanderer->puff = tile == TILE_TYPE_NONE || !(GetTileFlags(tile) & WANDERER_TILE_FLAG_GRASS);
+    wanderer->sunk = (u8)Wanderers_IsDeepSand(wanderer, tile);
+    wanderer->footprint = config.footprintType;
     wanderer->facing = (u8)GFL_RandomLC(4);
     wanderer->life = WANDERER_LIFE_MIN + GFL_RandomLC(WANDERER_LIFE_SPAN);
     wanderer->anim = 0xffff;
@@ -557,6 +634,14 @@ static void Wanderers_Step(Field *field, Wanderer *wanderer, s32 index) {
             Wanderers_Abs(ground - wanderer->y) > WANDERER_STEP_HEIGHT || Wanderers_IsTaken(field, wanderer, x, z)) {
             continue;
         }
+        // The mark it leaves on the tile it starts from, and how it stands on the one it goes to, as an actor's are
+        // from its step's start
+        Footmark_StartAt(field->fieldEffects, wanderer->x, wanderer->z, wanderer->y,
+                         Wanderers_FootmarkKind(wanderer,
+                                                Wanderers_TileType(field, wanderer->x, wanderer->z, wanderer->y),
+                                                GameData_GetSeason(field->gameData)),
+                         dir, wanderer->facing);
+        wanderer->sunk = (u8)Wanderers_IsDeepSand(wanderer, Wanderers_TileType(field, x, z, ground));
         wanderer->facing = dir;
         wanderer->toX = x;
         wanderer->toZ = z;
@@ -582,8 +667,12 @@ static void Wanderers_Tick(Field *field, Wanderer *wanderer, s32 index) {
         if (wanderer->billboard[1] != BILLBOARD_ACTOR_NONE) {
             wanderer->state = WANDERER_RISING;
             wanderer->timer = WANDERER_RISE_FRAMES;
-            wanderer->grass = Wanderers_Grass(field, wanderer, wanderer->x, wanderer->z, wanderer->y, TRUE);
-            GFL_SndSEPlay(WANDERER_RUSTLE_SE);
+            if (wanderer->puff) {
+                Wanderers_Puff(field, wanderer);
+            } else {
+                wanderer->grass = Wanderers_Grass(field, wanderer, wanderer->x, wanderer->z, wanderer->y, TRUE);
+                GFL_SndSEPlay(WANDERER_RUSTLE_SE);
+            }
             Wanderers_Sparkle(field, wanderer);
         } else if (--wanderer->timer == 0) {
             Wanderers_Remove(field->actorSystem, wanderer);
@@ -626,12 +715,20 @@ static void Wanderers_Tick(Field *field, Wanderer *wanderer, s32 index) {
         break;
     case WANDERER_IDLE:
         if (wanderer->life == 0) {
+            u32 tile = Wanderers_TileType(field, wanderer->x, wanderer->z, wanderer->y);
+
             wanderer->state = WANDERER_SINKING;
             wanderer->timer = WANDERER_RISE_FRAMES;
-            // (its grass shakes again as it goes)
-            Wanderers_DeleteGrass(&wanderer->grass);
-            wanderer->grass = Wanderers_Grass(field, wanderer, wanderer->x, wanderer->z, wanderer->y, TRUE);
-            GFL_SndSEPlay(WANDERER_RUSTLE_SE);
+            // (by the tile it's on now, which may not be the one it came out of)
+            wanderer->puff = tile == TILE_TYPE_NONE || !(GetTileFlags(tile) & WANDERER_TILE_FLAG_GRASS);
+            if (wanderer->puff) {
+                Wanderers_Puff(field, wanderer);
+            } else {
+                // (its grass shakes again as it goes)
+                Wanderers_DeleteGrass(&wanderer->grass);
+                wanderer->grass = Wanderers_Grass(field, wanderer, wanderer->x, wanderer->z, wanderer->y, TRUE);
+                GFL_SndSEPlay(WANDERER_RUSTLE_SE);
+            }
         } else if (--wanderer->timer == 0) {
             Wanderers_Step(field, wanderer, index);
         }
@@ -658,7 +755,8 @@ static void Wanderers_Tick(Field *field, Wanderer *wanderer, s32 index) {
     }
 }
 
-// Its billboard placed and animated: risen as far as its rise or sink has come, part way along its step
+// Its billboard placed and animated: risen as far as its rise or sink has come (or shown once its puff covers it, and
+// hidden once its puff does), part way along its step, sunk into deep sand
 static void Wanderers_Draw(Field *field, BillboardActorSys *sys, Wanderer *wanderer) {
     VecFx32 pos;
     u16 anim;
@@ -676,6 +774,12 @@ static void Wanderers_Draw(Field *field, BillboardActorSys *sys, Wanderer *wande
         pos.x += FX_Mul(to.x - pos.x, t);
         pos.z += FX_Mul(to.z - pos.z, t);
         pos.y += FX_Mul(wanderer->toY - wanderer->y, t);
+    } else if (wanderer->puff) {
+        Wanderers_SetHidden(
+            sys, wanderer,
+            wanderer->state == WANDERER_LOADING ||
+                (wanderer->state == WANDERER_RISING && wanderer->timer > WANDERER_RISE_FRAMES - WANDERER_PUFF_HIDE) ||
+                (wanderer->state == WANDERER_SINKING && wanderer->timer <= WANDERER_RISE_FRAMES - WANDERER_PUFF_HIDE));
     } else if (wanderer->state == WANDERER_RISING || wanderer->state == WANDERER_LOADING) {
         pos.y -= WANDERER_RISE_DEPTH * wanderer->timer / WANDERER_RISE_FRAMES;
     } else if (wanderer->state == WANDERER_SINKING) {
@@ -686,6 +790,10 @@ static void Wanderers_Draw(Field *field, BillboardActorSys *sys, Wanderer *wande
 
         at.y += WANDERER_SPARKLE_LIFT;
         FldeffFesSparkle_Show(sWanderers.sparkles, (u8)(wanderer - sWanderers.list), 0, &at);
+    }
+    // (sunk below its sparkle, which stays over the sand)
+    if (wanderer->sunk) {
+        pos.y -= WANDERER_DEEP_SAND_SINK;
     }
     pos.y += Field_GetActorYOffset(field);
     BillboardActorScene_SetActorPos(BillboardActorSys_GetScene(sys), wanderer->billboard[1], &pos);

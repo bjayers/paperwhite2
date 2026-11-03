@@ -965,7 +965,10 @@ sinking, random wandering, the touch and the battle.
   shininess (`PaperWhite2_FollowingCodeFor`, the follower's registry match without its side effects), loaded on
   demand where the sprite cache has room (`FldBillboardActor_CanLoadObjCode`).
 - **Rising and sinking:** from 20 units under its tile's ground over 12 frames (the ground hides what's under it),
-  and back down at the end of its 20 to 40 seconds. Past 11 tiles from the player it goes at once, and after 2
+  and back down at the end of its 20 to 40 seconds, where its tile has grass (`0x20`). Where it has none (a cave's
+  floor, sand), it appears in a puff of dust instead, shown 4 frames into the puff, and goes in one, hidden 4 frames
+  in: the landing actors' puff (`FLDEFF_DUST`, at a place by `FldeffDust_StartAt`, an `#ifdef PAPERWHITE2` puff
+  without an actor in `fldeff_dust.c`), silent. How it goes is by the tile it's on then. Past 11 tiles from the player it goes at once, and after 2
   seconds off the screen (9 by 7 tiles round the player), unseen, so the ones left behind make room.
 - **Wandering:** a step every 20 to 80 frames onto a neighbouring tile of the same encounter type, at most 8 units
   higher or lower, that no actor or other wanderer is on or walking to, and not beside the player (where the
@@ -988,7 +991,12 @@ sinking, random wandering, the touch and the battle.
   deletes it), its kind by the tile and the season (`ActorTerrainEffect_GetGrassKind`: dark, the C grasses, snowy).
   It shakes as one rises (with the rustle's sound, `SEQ_SE_FLD_70`), as it sinks (again with the sound) and on each
   tile it steps onto, on one tile only, as an actor's: going down or sideways it moves to the new tile as the step
-  starts, going up once it's there. A shiny one sparkles (the Join Avenue's sparkle,
+  starts, going up once it's there. On ground that takes marks (`0x08`) a step leaves one on the tile it starts
+  from, as an actor's (`ActorTerrainEffect_Footmark`'s choice, by the ground, the season and the model's footprint
+  type; `Footmark_StartAt`, an `#ifdef PAPERWHITE2` mark at a tile in `fldeff_footmark.c`): tracks in deep sand,
+  footprints in sand and snow. In deep sand it stands 7 units sunk in, as actors do (`ActorTerrainEffect_DeepSand`),
+  from each step's start; like them, it has no shadow there (none of its tiles has the shadow flag, `0x80`), as it has
+  none anywhere. One that floats (`grass` false) leaves no marks and doesn't sink. A shiny one sparkles (the Join Avenue's sparkle,
   `FldeffFesSparkle_Start` and `_Show`, which every field loads) for half a second as it rises and every 5 seconds
   while it's out; silent for now.
 - **Shiny sprites:** 975 of the followers' shiny rows are placeholders (`"placeholder": true`), the normal sprite in
