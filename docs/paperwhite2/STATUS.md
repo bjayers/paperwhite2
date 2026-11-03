@@ -7,8 +7,12 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
 - The header's second bar: the sprites a zone can have loaded at once, in the worst case, against the sprite cache's 32
   (overworld-editor.md, The sprite load bar). The zones' preload lists are in `res/field/actors/preloads.json` now
   (dumped; `npc_cache_data.py check` matches the ROM's 25), read-only so far: the build packs the ROM's a/0/5/7.
-- Route 20: 46 of 32. 23 are its preloads (vanilla's people), 3 the player and follower, and 20 the seasonal walking
-  Pokémon of script 10852 and the ambient, all counted as shown. Virbank City 29, Castelia City 15.
+- Script 10852 is modelled now (`spriteLoad.ts`, `seasonalFlags`): in zones whose scripts call it, flags 500 to 599
+  show as it shows them (the season's base and its three rolls, 540's set, the night swaps where EVENT_WORK_0x401f is
+  set and it is night, 550 to 559 always, 590 to 599 at 10% each), every season, roll and time tried. Route 20: 37 of
+  32 at worst (autumn night, rolls 1, 5, 9): 23 preloads, the player and follower, 10 NPC sprites and the ambient.
+  Virbank City 25, Virbank Complex 2 24, Aspertia City 22, Castelia City 15. With at most 2 of the 10% NPCs the figures
+  are the same, so the tooltip only gives that figure where it is lower. Other flags (story flags) count as shown.
 - **For the user:** packing the preload lists from res/ (hack builds) would let a zone drop vanilla preloads it no
   longer uses, freeing cache slots; moving 10852's NPCs to conditions would make the bar exact for them.
 

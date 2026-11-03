@@ -6,8 +6,11 @@
 //
 // The count is the worst case: over every combination of the seasons, times, weathers and flags the zone's conditions
 // name, with every chance coming up, the NPCs and ambients that would show, each host (an NPC with instances) and
-// ambient counting the sprite of whichever of its choices adds one more. An NPC without spawn data counts as shown, since
-// its story flag can't be known here.
+// ambient counting the sprite of whichever of its choices adds one more. Where the zone runs script 10852 (the user's
+// seasonal spawns, global_10850.s), its flags 500 to 599 are worked out too, for each season, each of its three rolls and
+// day or night (seasonalFlags): an NPC of one of those flags counts only where the script shows it. Any other flag of an
+// NPC (a story flag) can't be known here, so it counts as shown, and so do 500 to 599 where the zone doesn't run 10852
+// (they keep what the last zone that ran it left).
 
 import { api } from "../../api.ts";
 import { actorFolder, type Entity } from "./entities.ts";
@@ -41,6 +44,51 @@ export function preloadLists(): Promise<(string | number)[][]> {
 
 interface World { season: string; time: string; weather: string; flags: Set<string> }
 
+/** Whether and how a zone runs script 10852: its script file calls it, and sets EVENT_WORK_0x401f first (its night
+ * swaps). */
+export interface Seasonal { runs: boolean; night: boolean }
+
+/** The flags of script 10852 shown each at 10% (590 to 599) */
+export const RARE_FLAGS = Array.from({ length: 10 }, (_, i) => 590 + i);
+// The practical worst case: at most this many of the rare ones (at least 3 of 10 at 10% comes up on 7% of entries)
+export const RARE_LIKELY = 2;
+
+/** Script 10852's shown flags among 500 to 599 for a season (0 to 3), its three rolls (a 1 to 3, b 4 to 6, c 7 to 9),
+ * whether its night swaps run, and which of the rare ones come up (all of them by default: the worst case). */
+export function seasonalFlags(season: number, a: number, b: number, c: number, night: boolean,
+                              rare: readonly number[] = RARE_FLAGS): Set<number> {
+  const shown = new Set<number>();
+  for (let f = 550; f <= 559; f++) shown.add(f);
+  const base = 500 + 10 * season;
+  [base, base + a, base + b, base + c, 540, 540 + a, 540 + b, 540 + c].forEach((f) => shown.add(f));
+  if (night) {
+    shown.add(575);
+    const d = 560 + season * 3;
+    // A roll at its last value is swapped for the season's night NPC and for the night one of 572 to 574
+    if (a === 3) { shown.delete(base + 3); shown.add(d); shown.delete(543); shown.add(572); }
+    if (b === 6) { shown.delete(base + 6); shown.add(d + 1); shown.delete(546); shown.add(573); }
+    if (c === 9) { shown.delete(base + 9); shown.add(d + 2); shown.delete(549); shown.add(574); }
+  }
+  rare.forEach((f) => shown.add(f));
+  return shown;
+}
+
+/** Whether a zone's script file runs script 10852, and its night swaps. */
+export function seasonalOf(script: string): Seasonal {
+  const runs = /RTCallGlobal\s+10852\b/.test(script);
+  return { runs, night: runs && /WorkSetConst\s+EVENT_WORK_0x401f,\s*1\s*\n\s*RTCallGlobal\s+10852\b/.test(script) };
+}
+
+/** A flag's number, from a constant (EVENT_FLAG_0x0226) or a number; null where it has none. */
+export function flagNumber(v: unknown): number | null {
+  if (typeof v === "number") return v || null;
+  const m = typeof v === "string" ? /0x([0-9a-f]+)$/i.exec(v) : null;
+  return m ? parseInt(m[1], 16) : null;
+}
+
+const SEASONAL_FIRST = 500;
+const SEASONAL_LAST = 599;
+
 export interface SpriteLoad {
   total: number;
   preloaded: number;
@@ -54,6 +102,8 @@ export interface SpriteLoad {
   /** The preloaded sprites, and those past them in the worst case. */
   preloadedCodes: string[];
   extraCodes: string[];
+  /** Where the zone runs 10852: the total with at most RARE_LIKELY of its rare NPCs at once (the practical worst). */
+  likely: number | null;
 }
 
 /** Whether a condition holds in a world, every chance coming up (the worst case). */
@@ -93,7 +143,8 @@ function worlds(conditions: Condition[]): World[] {
 }
 
 /** The zone's worst case: its NPCs (the events' NPC entities), its spawn data, its ambients and its preload list. */
-export async function spriteLoad(npcs: Entity[], entries: SpawnEntry[], ambients: Ambient[], preload: (string | number)[]): Promise<SpriteLoad> {
+export async function spriteLoad(npcs: Entity[], entries: SpawnEntry[], ambients: Ambient[], preload: (string | number)[],
+                                 flagOf: (npcId: number) => number | null, seasonal: Seasonal): Promise<SpriteLoad> {
   const managed = new Map(entries.map((e) => [e.id, e]));
   const conditions: Condition[] = [];
   for (const e of entries) {
@@ -113,19 +164,44 @@ export async function spriteLoad(npcs: Entity[], entries: SpawnEntry[], ambients
   await Promise.all([...all].map(async (c) => sprite.set(c, (await actorType(c)) !== "model" && (await actorType(c)) !== "none")));
   const base = new Set(preload.map(codeOf).filter((c): c is string => !!c && !!sprite.get(c)));
   let worst = { npcs: 0, ambients: 0, world: "", codes: [] as string[] };
-  for (const w of worlds(conditions)) {
+  // Script 10852's states: each roll and day or night where it runs, else none (every flag shown)
+  const states: { a: number; b: number; c: number; night: boolean }[] = [];
+  if (seasonal.runs) {
+    for (let a = 1; a <= 3; a++) for (let b = 4; b <= 6; b++) for (let c = 7; c <= 9; c++) for (const night of [false, true]) {
+      states.push({ a, b, c, night });
+    }
+  }
+  // (its night is the hours it tests, which are each season's night and late night exactly, so a state's night goes
+  // with the world's time; without its night swaps, never)
+  const atNight = (w: World) => seasonal.night && (w.time === "night" || w.time === "late_night");
+  // The rare flags the zone's NPCs use, and their sets of at most RARE_LIKELY
+  const used = RARE_FLAGS.filter((f) => npcs.some((n) => flagOf(n.npcId!) === f)
+    || entries.some((e) => e.instances?.some((i) => flagNumber(i.npc.flag) === f)));
+  const likelySets: number[][] = [[]];
+  used.forEach((f, i) => { likelySets.push([f]); used.slice(i + 1).forEach((g) => likelySets.push([f, g])); });
+  let likely = 0;
+  /** The sprites past the preloads that show in a world and a state of 10852, with the rare flags that come up. */
+  const evaluate = (w: World, state: (typeof states)[number] | null, rare: readonly number[]) => {
+    const seasonalShown = state
+      ? seasonalFlags(SEASON_NAMES.indexOf(w.season as typeof SEASON_NAMES[number]), state.a, state.b, state.c, state.night, rare) : null;
+    /** Whether a record's own flag lets it show: a seasonal flag by the script's state, any other always (unknown). */
+    const flagShows = (flag: number | null) => !seasonalShown || flag === null || flag < SEASONAL_FIRST || flag > SEASONAL_LAST || seasonalShown.has(flag);
     const shown = new Set(base);
     for (const n of npcs) {
       const entry = managed.get(n.npcId!);
       const code = codeOf(n.model);
-      if (!entry) { if (code && sprite.get(code)) shown.add(code); continue; }
+      if (!entry || !entry.instances?.length) {
+        if (!flagShows(flagOf(n.npcId!))) continue;
+        if (entry && !holds(entry.when, w)) continue;
+        if (code && sprite.get(code)) shown.add(code);
+        continue;
+      }
       if (!holds(entry.when, w)) continue;
-      if (entry.instances?.length) {
-        // A host: whichever of its instances that can show adds one more, if any does
-        const choices = entry.instances.filter((i) => holds(i.when, w)).map((i) => codeOf(i.npc.model)).filter((c): c is string => !!c && !!sprite.get(c));
-        const fresh = choices.find((c) => !shown.has(c));
-        if (fresh) shown.add(fresh);
-      } else if (code && sprite.get(code)) shown.add(code);
+      // A host: whichever of its instances that can show adds one more, if any does
+      const choices = entry.instances.filter((i) => holds(i.when, w) && flagShows(flagNumber(i.npc.flag)))
+        .map((i) => codeOf(i.npc.model)).filter((c): c is string => !!c && !!sprite.get(c));
+      const fresh = choices.find((c) => !shown.has(c));
+      if (fresh) shown.add(fresh);
     }
     const npcCount = shown.size - base.size;
     for (const a of ambients) {
@@ -134,15 +210,26 @@ export async function spriteLoad(npcs: Entity[], entries: SpawnEntry[], ambients
       const fresh = choices.find((c) => !shown.has(c));
       if (fresh) shown.add(fresh);
     }
-    const ambientCount = shown.size - base.size - npcCount;
+    return { npcCount, ambientCount: shown.size - base.size - npcCount, shown };
+  };
+  for (const w of worlds(conditions)) for (const state of states.length ? states.filter((st) => st.night === atNight(w)) : [null]) {
+    const { npcCount, ambientCount, shown } = evaluate(w, state, RARE_FLAGS);
     if (npcCount + ambientCount > worst.npcs + worst.ambients) {
       worst = { npcs: npcCount, ambients: ambientCount, codes: [...shown].filter((c) => !base.has(c)),
-                world: [w.season, w.time.replace("_", " "), w.weather.replace(/^WEATHER_/, "").toLowerCase(), w.flags.size ? `flags ${[...w.flags].join(", ")}` : ""]
+                world: [w.season, w.time.replace("_", " "), w.weather.replace(/^WEATHER_/, "").toLowerCase(), w.flags.size ? `flags ${[...w.flags].join(", ")}` : "",
+                        state ? `10852's rolls ${state.a}, ${state.b}, ${state.c}${state.night ? " at night" : ""}` : ""]
                   .filter(Boolean).join(", ") };
     }
+    if (state) {
+      for (const rare of likelySets) {
+        const r = evaluate(w, state, rare);
+        likely = Math.max(likely, r.npcCount + r.ambientCount);
+      }
+    }
   }
-  if (!conditions.length) worst.world = "";
+  if (!conditions.length && !states.length) worst.world = "";
   const total = base.size + PLAYER_SPRITES + FOLLOWER_SPRITES + worst.npcs + worst.ambients;
   return { total, preloaded: base.size, player: PLAYER_SPRITES, follower: FOLLOWER_SPRITES, npcs: worst.npcs, ambients: worst.ambients, worst: worst.world,
-           preloadedCodes: [...base], extraCodes: worst.codes };
+           preloadedCodes: [...base], extraCodes: worst.codes,
+           likely: states.length ? base.size + PLAYER_SPRITES + FOLLOWER_SPRITES + likely : null };
 }

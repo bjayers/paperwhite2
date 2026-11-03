@@ -186,8 +186,9 @@ matches the ROM; the build still packs the ROM's), which Route 20's takes 23 of.
 and cycling or surfing), the Following Pokémon (1), and the NPCs', instances' and ambients' sprites past those, in the
 worst case over every combination of the seasons, times, weathers and flags the zone's conditions name, every chance
 coming up, each host and ambient counting whichever of its choices adds one more. 3D models don't count. An NPC
-without spawn data counts as shown, since its story flag isn't known: script 10852's seasonal NPCs (flags 0x1f4 to
-0x257) all count, so a zone of them reads high until they move to conditions. The bar's tooltip lists the sprites.
+without spawn data counts as shown, since its story flag isn't known, except script 10852's seasonal NPCs (flags 500
+to 599) in the zones whose scripts call it: those show as the script shows them, for every season, roll and time
+(with its night swaps where the zone sets EVENT_WORK_0x401f first), and the 10% ones all at once at worst. The bar's tooltip lists the sprites.
 The research's 24 codes on Route 20 (§4) left the preloads out.
 
 ## Phases
