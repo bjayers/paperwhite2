@@ -59,6 +59,7 @@
 .ow-picker-item.selected { border-color: var(--accent); background: var(--selected); }
 .ow-picker-name { font-size: 11px; text-align: center; line-height: 1.2; overflow-wrap: anywhere; }
 .ow-picker-number { font-size: 10px; font-family: var(--mono); }
+.ow-picker-here { font-size: 10px; color: var(--accent); }
 
 /* The events buffer's load bar */
 .ow-load { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-family: var(--mono); color: var(--muted); }

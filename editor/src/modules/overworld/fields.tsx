@@ -46,18 +46,20 @@ export function SpriteImage({ model, direction, size = 32 }: { model: string; di
   );
 }
 
-/** Every model by its sprite, filtered by name and bank; choosing one closes it. */
-function ModelPicker({ constants, value, onPick, onClose }: {
-  constants: Constants; value: string; onPick(model: string): void; onClose(): void;
+/** Every model by its sprite, filtered by name and bank; choosing one closes it. With used (the zone's sprites), those
+ * are marked, and can be left out. */
+function ModelPicker({ constants, value, used, onPick, onClose }: {
+  constants: Constants; value: string; used?: ReadonlySet<string>; onPick(model: string): void; onClose(): void;
 }) {
   const [filter, setFilter] = useState("");
+  const [fresh, setFresh] = useState(false);
   const [bank, setBank] = useState<number | null>(() => {
     const v = constants.get(value);
     return v === undefined ? null : v >> 12;
   });
   const models = useMemo(() => [...constants.entries()].filter(([k]) => k.startsWith(MODEL_PREFIX)).sort((a, b) => a[1] - b[1]), [constants]);
   const q = filter.trim().toLowerCase();
-  const shown = models.filter(([k, v]) => (bank === null || v >> 12 === bank) &&
+  const shown = models.filter(([k, v]) => (bank === null || v >> 12 === bank) && !(fresh && used?.has(k)) &&
     (!q || k.toLowerCase().includes(q.replace(/ /g, "_")) || String(v) === q || constantLabel(k, MODEL_PREFIX).toLowerCase().includes(q)));
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -77,14 +79,21 @@ function ModelPicker({ constants, value, onPick, onClose }: {
               </button>
             ))}
           </div>
+          {used && (
+            <label className="check" title="Leave out the sprites the zone already has: its preloads, NPCs, instances and ambients">
+              <input type="checkbox" checked={fresh} onChange={(e) => setFresh(e.target.checked)} /> Not on this map
+            </label>
+          )}
           <span className="muted">{shown.length}</span>
           <button className="icon" onClick={onClose} title="Close (Esc)">×</button>
         </div>
         <div className="ow-picker-grid">
           {shown.map(([k, v]) => (
-            <button key={k} className={`ow-picker-item${k === value ? " selected" : ""}`} onClick={() => onPick(k)} title={`${k} (${v}, 0x${v.toString(16)})`}>
+            <button key={k} className={`ow-picker-item${k === value ? " selected" : ""}`} onClick={() => onPick(k)}
+                    title={`${k} (${v}, 0x${v.toString(16)})${used?.has(k) ? ": already on this map" : ""}`}>
               <SpriteImage model={k} size={48} />
               <span className="ow-picker-name">{constantLabel(k, MODEL_PREFIX)}</span>
+              {used?.has(k) && <span className="ow-picker-here">on this map</span>}
               <span className="muted ow-picker-number">{v}</span>
             </button>
           ))}
@@ -94,7 +103,9 @@ function ModelPicker({ constants, value, onPick, onClose }: {
   );
 }
 
-function ModelField({ schema, value, path, ctx }: { schema: Schema; value: JsonValue; path: JsonPath; ctx: FormContext }) {
+function ModelField({ schema, value, path, ctx, used }: {
+  schema: Schema; value: JsonValue; path: JsonPath; ctx: FormContext; used?: ReadonlySet<string>;
+}) {
   const [picking, setPicking] = useState(false);
   const model = typeof value === "string" ? value : "";
   return (
@@ -102,7 +113,7 @@ function ModelField({ schema, value, path, ctx }: { schema: Schema; value: JsonV
       {model && <SpriteImage model={model} size={40} />}
       <div className="ow-model-field"><BaseField schema={schema} value={value} path={path} ctx={ctx} /></div>
       <button onClick={() => setPicking(true)} title="Choose by sprite">Browse…</button>
-      {picking && <ModelPicker constants={ctx.constants} value={model} onClose={() => setPicking(false)}
+      {picking && <ModelPicker constants={ctx.constants} value={model} used={used} onClose={() => setPicking(false)}
                                onPick={(m) => { ctx.edit(path, m); setPicking(false); }} />}
     </div>
   );
@@ -138,6 +149,17 @@ export function entityFields(kind: EntityKind, onOpenScript: () => void, base?: 
     if (height && rest === `grid.${height.field}`) return <HeightField kind={kind} value={value} path={path} ctx={ctx} />;
     if (kind === "npc" && rest === "model") return <ModelField schema={schema} value={value} path={path} ctx={ctx} />;
     if (rest === "script") return <ScriptField schema={schema} value={value} path={path} ctx={ctx} onOpen={onOpenScript} />;
+    return undefined;
+  };
+}
+
+/** The ambient at ["ambients", index]'s sprite fields, its sprite and each of its set's, with the sprite and the picker;
+ * used marks the sprites the zone already has. */
+export function ambientFields(index: number, used: ReadonlySet<string>): FormContext["render"] {
+  return (path, value, schema, ctx) => {
+    if (path[0] !== "ambients" || path[1] !== index) return undefined;
+    if ((path.length === 3 && path[2] === "sprite") || (path.length === 4 && path[2] === "sprites" && typeof path[3] === "number"))
+      return <ModelField schema={schema} value={value} path={path} ctx={ctx} used={used} />;
     return undefined;
   };
 }

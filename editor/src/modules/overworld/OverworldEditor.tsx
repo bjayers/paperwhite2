@@ -28,7 +28,7 @@ import { WEATHERS } from "../encounters/model.ts";
 import { cameraEntities, cameraFileOf, circleCamera, defaultCamera, newRectArea, rectCamera, type CameraArea, type DefaultCamera,
   type ViewCamera } from "./cameras.ts";
 import { api } from "../../api.ts";
-import { entityFields } from "./fields.tsx";
+import { ambientFields, entityFields } from "./fields.tsx";
 import { BuildingPanel } from "./BuildingPanel.tsx";
 import { MapView, hasRect, type OverlayMode, type TileRect } from "./MapView.tsx";
 import { amendProps, bundleModels, buildingEntities, dirtyPropChunks, loadProps, propsOf, propsSaveError, redoProps, revertProps, saveProps, setProps,
@@ -235,6 +235,16 @@ export function OverworldEditor({ constants, open }: ToolProps) {
       .then((load) => { if (live) setSprites(load); }, () => { if (live) setSprites(null); });
     return () => { live = false; };
   }, [zone, npcCache, entities, spawnEntries, ambients, data, seasonal]);
+
+  // The sprites the zone already has, which the ambients' sprite picker marks: its preloads, NPCs, instances and ambients
+  const usedSprites = useMemo(() => new Set<string>([
+    ...(sprites?.preloadedCodes ?? []),
+    ...entities.filter((e) => e.kind === "npc").map((e) => e.model ?? ""),
+    ...spawnEntries.flatMap((e) => e.instances?.map((i) => String(i.npc.model ?? "")) ?? []),
+    ...ambients.flatMap((a) => (a.sprites ?? [a.sprite]).map(String)),
+  ].filter((m) => m.startsWith("OBJ_CODE_"))), [sprites, entities, spawnEntries, ambients]);
+  const ambientRender = useMemo(() => chosen?.kind === "ambient" ? ambientFields(chosen.index, usedSprites) : undefined,
+    [chosen?.kind, chosen?.index, usedSprites]);
 
   useEffect(() => { if (constants.size) loadWorld(constants).then(setWorld, () => setWorld(null)); }, [constants]);
   useEffect(() => { const z = params.get("zone"); if (z) setZone(z); }, [params]);
@@ -1023,7 +1033,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                     isn't talked to. Its height is in units (16 a tile) in the world: its tile's ground plus how far over it it is. Drag it to
                     another tile to move it, keeping its height over the ground.</p>
                   <DocForm key={`ambient:${chosen.index}`} path={spawnFile} at={["ambients", chosen.index]} constants={constants}
-                           hideDescription flat onEdit={() => record([spawnFile])} />
+                           hideDescription flat render={ambientRender} onEdit={() => record([spawnFile])} />
                 </>
               ) : chosen.kind === "instance" && spawnFile ? (
                 <>
