@@ -113,6 +113,13 @@ A follower row's `data.json` already has `"follower": { "species", "form", "sex"
   the build checks `follower.species/form` of a row against its sheet owner's `"palette"."pokemon"` and stops on a
   mismatch unless the row has its own `"palette": { "pokemon": ... }`.
 
+**Note (2026-11-03, the wanderers):** those 975 rows are what a shiny follower or wanderer of their species shows
+today: the registry marks them `"placeholder": true` and points them at the normal walking sprite, so a shiny
+Swinub, Wurmple or Silcoon looks normal (a shiny wanderer still sparkles, `paperwhite2_wanderers.c`). The user chose
+to leave them for now and fix them with this design (shared palettes patched in at runtime, no shiny sheets), not
+with generated shiny sprites; the wanderers pick their sprite through the followers' registry
+(`PaperWhite2_FollowingCodeFor`), so they'd get the shiny palettes with the followers.
+
 **The 564 walking sprites** (`res/field/actors/pokemon/<name>/`, `OBJ_CODE_POKEMON_*`, 564 distinct ones referenced
 by the shiny rows): their `data.json` gains `"palette": { "pokemon": "<group>", "mode": "mapped", "map": [...] }`
 and nothing else changes: `sprite.png` and `sprite.pal` are the original game's, so `a/0/4/8`'s 975 original members

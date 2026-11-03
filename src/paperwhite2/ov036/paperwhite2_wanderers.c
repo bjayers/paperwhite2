@@ -107,10 +107,8 @@ typedef struct {
     u8 pad[3];
     // The animation it was last given
     u16 anim;
-    // The grass it stands in, as an actor does (FLDEFF_GRASS), and the grass of the tile it walks to; its sparkle's
-    // frames left, and the frames to its next
+    // The grass it stands in, as an actor does (FLDEFF_GRASS); its sparkle's frames left, and the frames to its next
     FieldEffectTask *grass;
-    FieldEffectTask *grassTo;
     u16 sparkleTimer;
     u16 sparkleNext;
 } Wanderer;
@@ -285,7 +283,6 @@ static void Wanderers_Remove(MMSys *actorSystem, Wanderer *wanderer) {
         return;
     }
     Wanderers_DeleteGrass(&wanderer->grass);
-    Wanderers_DeleteGrass(&wanderer->grassTo);
     if (sWanderers.sparkles != NULL) {
         FldeffFesSparkle_Hide(sWanderers.sparkles, (u8)(wanderer - sWanderers.list));
     }
@@ -403,7 +400,12 @@ static void Wanderers_Step(Field *field, Wanderer *wanderer, s32 index) {
         wanderer->toY = ground;
         wanderer->state = WANDERER_WALKING;
         wanderer->timer = WANDERER_WALK_FRAMES;
-        wanderer->grassTo = Wanderers_Grass(field, x, z, ground, TRUE);
+        // Its grass as an actor's is, on one tile only: going down or sideways it leaves the tile it starts from at
+        // once for the one it walks to; going up it keeps it until it arrives (Wanderers_Tick)
+        if (dir != DIR_UP) {
+            Wanderers_DeleteGrass(&wanderer->grass);
+            wanderer->grass = Wanderers_Grass(field, x, z, ground, TRUE);
+        }
         return;
     }
     wanderer->timer = WANDERER_PAUSE_MIN + GFL_RandomLC(WANDERER_PAUSE_SPAN);
@@ -467,10 +469,11 @@ static void Wanderers_Tick(Field *field, Wanderer *wanderer, s32 index) {
             wanderer->x = wanderer->toX;
             wanderer->z = wanderer->toZ;
             wanderer->y = wanderer->toY;
-            // (the grass it left goes, and the one it came to is its own)
-            Wanderers_DeleteGrass(&wanderer->grass);
-            wanderer->grass = wanderer->grassTo;
-            wanderer->grassTo = NULL;
+            // (going up, its grass moves to the tile it came to once it's there)
+            if (wanderer->facing == DIR_UP) {
+                Wanderers_DeleteGrass(&wanderer->grass);
+                wanderer->grass = Wanderers_Grass(field, wanderer->x, wanderer->z, wanderer->y, TRUE);
+            }
             wanderer->state = WANDERER_IDLE;
             wanderer->timer = WANDERER_PAUSE_MIN + GFL_RandomLC(WANDERER_PAUSE_SPAN);
         }

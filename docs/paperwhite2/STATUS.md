@@ -23,9 +23,13 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   its tile, plugins.md, Wanderers: Effects). The sparkle is lower (3 units) and half as long. The "!" never showed: its
   bubble had the held task's update, which ends one without an actor at once; now it's the one that ends itself, over
   the one walked into. The non-shiny Swinub with a sparkle: Swinub's, Wurmple's and Silcoon's shiny follower rows are
-  placeholders (975 in all). **For the user:** a palette tool could make the missing shiny follower sprites (the
-  battle sprites' normal-to-shiny colors mapped onto the follower's), for followers and wanderers both. Built (hack,
-  no warnings, DSi intact). **Not tested in game.**
+  placeholders (975 in all). The user chose to leave them for the shared shiny palettes (note in
+  design/shiny-palettes.md, 1.3). Built (hack, no warnings, DSi intact).
+- **The user's third test:** the grass and the "!" work. The grass now moves as an actor's, on one tile only (down
+  and sideways at the step's start, up on arrival). **For the per-Pokémon settings (stage 2):** an option to show no
+  grass under a species that flies or hovers; perhaps the sparkle's height by the sprite (the registry's sprite Y),
+  since it floats over small ones and the user left it as is for large ones. Built (hack, no warnings, DSi intact).
+  **Not tested in game.**
 
 ## 2026-11-03 (later still): ambients' turn directions, a new one's height, their paths in the editor
 

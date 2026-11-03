@@ -960,7 +960,8 @@ sinking, random wandering, the touch and the battle.
   (`GrassTask_StartAt`, an `#ifdef PAPERWHITE2` grass without an actor in `fldeff_grass.c` that stays until its owner
   deletes it), its kind by the tile and the season (`ActorTerrainEffect_GetGrassKind`: dark, the C grasses, snowy).
   It shakes as one rises (with the rustle's sound, `SEQ_SE_FLD_70`), as it sinks (again with the sound) and on each
-  tile it steps onto, and the one it left goes when it arrives. A shiny one sparkles (the Join Avenue's sparkle,
+  tile it steps onto, on one tile only, as an actor's: going down or sideways it moves to the new tile as the step
+  starts, going up once it's there. A shiny one sparkles (the Join Avenue's sparkle,
   `FldeffFesSparkle_Start` and `_Show`, which every field loads) for half a second as it rises and every 5 seconds
   while it's out; silent for now.
 - **Shiny sprites:** 975 of the followers' shiny rows are placeholders (`"placeholder": true`), the normal sprite in
