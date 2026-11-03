@@ -44,11 +44,31 @@ export interface Ambient {
   y: number;
   facing?: string | number;
   path?: { kind: "perch" | "hover" | "ellipse" | "line" | "eight"; width?: number; depth?: number; speed?: number; start?: number;
-           every?: number; turns?: boolean; hops?: boolean; faces?: (string | number)[] };
+           every?: number; turns?: boolean; hops?: boolean; faces?: (string | number)[]; height?: number };
   shadow?: "none" | "feet" | "ground";
   when?: Condition;
   rolls?: Rolls;
+  react?: Reaction;
 }
+
+/** What an ambient does when the player comes near (overworld.schema.json's react); each absent is the default. */
+export interface Reaction {
+  kind: "fly" | "run" | "hide";
+  near?: number;
+  startle?: number;
+  /** Degrees clockwise from north; away from the player without it. */
+  direction?: number;
+  spread?: number;
+  climb?: number;
+  speed?: number;
+  sprite?: string | number;
+  emote?: "exclamation" | "question" | "note" | "ellipsis";
+  cry?: string | number;
+  returns?: { min: number; max: number };
+}
+
+/** The packer's reaction defaults (tools/paperwhite2/overworld.py). */
+export const REACT_DEFAULTS = { near: 3, startleMore: 2, spread: 20, climb: 30, speed: 6 };
 
 /** The ambients as the map's entities, of kind "ambient", at their height. */
 export function ambientEntities(ambients: Ambient[]): Entity[] {

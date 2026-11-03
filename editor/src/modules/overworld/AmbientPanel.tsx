@@ -11,7 +11,7 @@ import { constantLabel } from "../schema-form/form.tsx";
 import { ModelPicker, SpriteImage } from "./fields.tsx";
 import { ScrubNumber, type ScrubPhase } from "./ScrubNumber.tsx";
 import { spawnRender } from "./SpawnPanel.tsx";
-import { conditionSummary, type Ambient, type Rolls } from "./spawns.ts";
+import { REACT_DEFAULTS, conditionSummary, type Ambient, type Reaction, type Rolls } from "./spawns.ts";
 
 type Path = NonNullable<Ambient["path"]>;
 type PathKind = Path["kind"];
@@ -31,6 +31,24 @@ const PATHS: { kind: PathKind; label: string; note: string }[] = [
   { kind: "eight", label: "Figure eight", note: "Goes round a figure eight its width wide and its depth deep." },
 ];
 const FACINGS = [["DIR_UP", "↑", "Up"], ["DIR_DOWN", "↓", "Down"], ["DIR_LEFT", "←", "Left"], ["DIR_RIGHT", "→", "Right"]] as const;
+const REACTIONS: { kind: Reaction["kind"] | null; label: string; note: string }[] = [
+  { kind: null, label: "None", note: "It stays whoever comes near." },
+  { kind: "fly", label: "Fly away", note: "Up and away on its heading at its climb, its shadow on the ground, gone once it's far off." },
+  { kind: "run", label: "Run away", note: "Away along the ground on its heading, gone once it's far off." },
+  { kind: "hide", label: "Hide", note: "Down into the grass or the ground where it is." },
+];
+const EMOTES: { value: Reaction["emote"] | null; label: string; title: string }[] = [
+  { value: null, label: "None", title: "No bubble" },
+  { value: "exclamation", label: "!", title: "A \"!\", with its sound" },
+  { value: "question", label: "?", title: "A \"?\"" },
+  { value: "note", label: "♪", title: "A music note" },
+  { value: "ellipsis", label: "…", title: "\"...\"" },
+];
+// The compass points of a heading, by eighths clockwise from north
+const COMPASS = ["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"];
+// The offsets of a tile's middle, edges and corners, in units (as the record's x and z: east and south)
+const SPOTS = [[-8, -8, "↖"], [0, -8, "↑"], [8, -8, "↗"], [-8, 0, "←"], [0, 0, "•"], [8, 0, "→"], [-8, 8, "↙"], [0, 8, "↓"], [8, 8, "↘"]] as const;
+
 const SHADOWS: { value: NonNullable<Ambient["shadow"]>; label: string; note: string }[] = [
   { value: "none", label: "None", note: "No shadow." },
   { value: "feet", label: "Under its feet", note: "At its own height, as on a branch or a railing it sits on." },
@@ -144,7 +162,14 @@ export function AmbientPanel({ path, index, ambient, constants, ground, used, on
                          onChange={(n, ph) => set("offset", offsetWith(ambient.offset, "x", n), ph)} />
             <ScrubNumber label="Z" value={ambient.offset?.z ?? 0} step={0.1} digits={1}
                          onChange={(n, ph) => set("offset", offsetWith(ambient.offset, "z", n), ph)} />
-            <span className="muted hint">units from the tile's middle, −8 to 8 (16 a tile)</span>
+            <span className="muted hint">units from the tile's middle, −8 to 8 (16 a tile): 8 is the edge, so a corner sits between
+              four tiles, as on top of a 2×2 tree</span>
+            <span className="ow-offset-grid" title="Its tile's middle, an edge or a corner">
+              {SPOTS.map(([ox, oz, arrow]) => (
+                <button key={`${ox},${oz}`} className={(ambient.offset?.x ?? 0) === ox && (ambient.offset?.z ?? 0) === oz ? "active" : ""}
+                        onClick={() => set("offset", ox === 0 && oz === 0 ? undefined : { x: ox, z: oz })}>{arrow}</button>
+              ))}
+            </span>
           </span>
           <span className="ow-condition-label">Height</span>
           <span className="ow-xyz">
@@ -229,6 +254,17 @@ export function AmbientPanel({ path, index, ambient, constants, ground, used, on
                              onChange={(n, ph) => setPath({ ...p, depth: clamp(Math.round(n * UNITS_PER_TILE), 0, 1024) }, ph)} />
                 <span className="muted hint">in tiles</span>
               </span>
+              {p.kind === "line" && (
+                <>
+                  <span className="ow-condition-label">Climbs</span>
+                  <span className="ow-xyz">
+                    <ScrubNumber label="up" value={(p.height ?? 0) / UNITS_PER_TILE} step={0.02} digits={2}
+                                 onChange={(n, ph) => setPath(clean({ ...p, height: clamp(Math.round(n * UNITS_PER_TILE), 0, 1024) || undefined }), ph)} />
+                    <span className="muted hint">tiles up on the way to its far end, and down on the way back: with no width or depth,
+                      straight up, as up a cliff</span>
+                  </span>
+                </>
+              )}
             </>
           )}
           {moving && (
@@ -262,6 +298,9 @@ export function AmbientPanel({ path, index, ambient, constants, ground, used, on
         </div>
         <p className="muted ow-note">{SHADOWS.find((s) => s.value === shadow)?.note}</p>
       </section>
+
+      <ReactionSection reaction={ambient.react} constants={constants} used={used} sprite={sprites[0] ?? ""}
+                       onChange={(r, ph) => set("react", r, ph)} />
 
       <section className="ow-panel-box ow-section">
         <h5>Appears <span className="muted">{conditionSummary(ambient.when)}</span></h5>
@@ -308,6 +347,158 @@ export function AmbientPanel({ path, index, ambient, constants, ground, used, on
                      }} />
       )}
     </>
+  );
+}
+
+/** The species an object code shows, by its name (OBJ_CODE_POKEMON_PIDOVE, OBJ_CODE_FOLLOWER_PIDOVE_FEMALE_SHINY), where
+ * the constants have it. */
+function speciesOfSprite(sprite: string, constants: Constants): string | null {
+  const m = /^OBJ_CODE_(?:POKEMON|FOLLOWER)_(.+?)(?:_FEMALE)?(?:_SHINY)?$/.exec(sprite);
+  return m && constants.has(`SPECIES_${m[1]}`) ? `SPECIES_${m[1]}` : null;
+}
+
+/** An ambient's reaction to the player coming near: what it does, when, which way, as what, and whether it returns. */
+function ReactionSection({ reaction, constants, used, sprite, onChange }: {
+  reaction: Reaction | undefined;
+  constants: Constants;
+  used: ReadonlySet<string>;
+  /** Its own (first) sprite, for its cry's species. */
+  sprite: string;
+  onChange(reaction: Reaction | undefined, phase?: ScrubPhase): void;
+}) {
+  const [picking, setPicking] = useState(false);
+  const r = reaction;
+  /** One setting changed, its default left out. */
+  const set = (key: keyof Reaction, value: unknown, phase?: ScrubPhase) => {
+    if (!r) return;
+    const next = { ...r } as Record<string, unknown>;
+    if (value === undefined) delete next[key];
+    else next[key] = value;
+    onChange(next as unknown as Reaction, phase);
+  };
+  const choice = REACTIONS.find((k) => k.kind === (r?.kind ?? null))!;
+  const near = r?.near ?? REACT_DEFAULTS.near;
+  const startle = r?.startle ?? near + REACT_DEFAULTS.startleMore;
+  const spread = r?.spread ?? REACT_DEFAULTS.spread;
+  const heading = r?.direction;
+  const cry = typeof r?.cry === "string" ? r.cry : null;
+  const reactSprite = typeof r?.sprite === "string" ? r.sprite : null;
+  const own = speciesOfSprite(sprite, constants);
+  return (
+    <section className="ow-panel-box ow-section">
+      <h5>Reaction <span className="muted">{r ? `${choice.label.toLowerCase()} within ${near} ${near === 1 ? "tile" : "tiles"}` : "none"}</span></h5>
+      <div className="ow-section-actions">
+        <span className="view-switch">
+          {REACTIONS.map((k) => (
+            <button key={k.label} className={(r?.kind ?? null) === k.kind ? "active" : ""} title={k.note}
+                    onClick={() => onChange(k.kind ? { ...(r ?? {}), kind: k.kind } : undefined)}>{k.label}</button>
+          ))}
+        </span>
+      </div>
+      <p className="muted ow-note">{choice.note}</p>
+      {r && (
+        <div className="ow-condition">
+          <span className="ow-condition-label">When</span>
+          <span className="ow-xyz">
+            <ScrubNumber label="within" value={near} step={0.05} digits={0}
+                         onChange={(n, ph) => set("near", clamp(Math.round(n), 1, 15) === REACT_DEFAULTS.near ? undefined : clamp(Math.round(n), 1, 15), ph)} />
+            <ScrubNumber label="running or cycling" value={startle} step={0.05} digits={0}
+                         onChange={(n, ph) => set("startle", clamp(Math.round(n), 1, 15) === near + REACT_DEFAULTS.startleMore ? undefined : clamp(Math.round(n), 1, 15), ph)} />
+            <span className="muted hint">tiles from the player</span>
+          </span>
+          {r.kind !== "hide" && (
+            <>
+              <span className="ow-condition-label">Heading</span>
+              <span className="ow-xyz">
+                <span className="view-switch">
+                  <button className={heading === undefined ? "active" : ""} onClick={() => set("direction", undefined)}>Away from the player</button>
+                  <button className={heading !== undefined ? "active" : ""} onClick={() => set("direction", heading ?? 0)}>Fixed</button>
+                </span>
+                {heading !== undefined && (
+                  <ScrubNumber label="°" value={heading} step={1} digits={0}
+                               onChange={(n, ph) => set("direction", ((Math.round(n) % 360) + 360) % 360, ph)} />
+                )}
+                <span className="muted hint">{heading === undefined ? "straight away from the player, as it comes"
+                  : `${COMPASS[Math.round(heading / 45) % 8]}, clockwise from north: for the map's lie, a gap in the trees`}</span>
+              </span>
+              <span className="ow-condition-label">Spread</span>
+              <span className="ow-xyz">
+                <ScrubNumber label="±°" value={spread} step={0.5} digits={0}
+                             onChange={(n, ph) => set("spread", clamp(Math.round(n), 0, 180) === REACT_DEFAULTS.spread ? undefined : clamp(Math.round(n), 0, 180), ph)} />
+                <span className="muted hint">how far its heading varies either way, at random: birds flying off together scatter</span>
+              </span>
+              {r.kind === "fly" && (
+                <>
+                  <span className="ow-condition-label">Climb</span>
+                  <span className="ow-xyz">
+                    <ScrubNumber label="°" value={r.climb ?? REACT_DEFAULTS.climb} step={0.5} digits={0}
+                                 onChange={(n, ph) => set("climb", clamp(Math.round(n), 0, 90) === REACT_DEFAULTS.climb ? undefined : clamp(Math.round(n), 0, 90), ph)} />
+                    <span className="muted hint">up from the ground: 90 is straight up</span>
+                  </span>
+                </>
+              )}
+              <span className="ow-condition-label">Speed</span>
+              <span className="ow-xyz">
+                <ScrubNumber label="tiles a second" value={r.speed ?? REACT_DEFAULTS.speed} step={0.05} digits={0}
+                             onChange={(n, ph) => set("speed", clamp(Math.round(n), 1, 32) === REACT_DEFAULTS.speed ? undefined : clamp(Math.round(n), 1, 32), ph)} />
+              </span>
+            </>
+          )}
+          <span className="ow-condition-label">Sprite</span>
+          <div className="ow-ambient-sprites">
+            <div className="ow-ambient-sprite">
+              {reactSprite ? <SpriteImage model={reactSprite} size={40} /> : <span className="muted small">its own</span>}
+              <span className="ow-ambient-sprite-name" title={reactSprite ?? ""}>
+                {reactSprite ? constantLabel(reactSprite, "OBJ_CODE_").replace(/^(Pokemon|Follower) /, "") : ""}
+              </span>
+              <span className="ow-ambient-sprite-actions">
+                <button onClick={() => setPicking(true)} title="The sprite it changes to as it reacts: a flying one for a bird that sits">Browse…</button>
+                {reactSprite && <button className="icon" title="Keep its own sprite" onClick={() => set("sprite", undefined)}>×</button>}
+              </span>
+            </div>
+          </div>
+          <span className="ow-condition-label">Emote</span>
+          <span className="ow-xyz">
+            <span className="view-switch">
+              {EMOTES.map((e) => <button key={e.label} title={e.title} className={(r.emote ?? null) === e.value ? "active" : ""}
+                                         onClick={() => set("emote", e.value ?? undefined)}>{e.label}</button>)}
+            </span>
+            <span className="muted hint">a bubble over it as it reacts</span>
+          </span>
+          <span className="ow-condition-label">Cry</span>
+          <span className="ow-xyz">
+            <select value={cry ?? ""} onChange={(e) => set("cry", e.target.value || undefined)}>
+              <option value="">none</option>
+              {[...constants.keys()].filter((k) => k.startsWith("SPECIES_") && k !== "SPECIES_NONE").sort().map((k) => (
+                <option key={k} value={k}>{constantLabel(k, "SPECIES_")}</option>
+              ))}
+            </select>
+            {own && cry !== own && <button onClick={() => set("cry", own)}>Its sprite's ({constantLabel(own, "SPECIES_")})</button>}
+          </span>
+          <span className="ow-condition-label">Returns</span>
+          <span className="ow-xyz">
+            <span className="view-switch">
+              <button className={!r.returns ? "active" : ""} onClick={() => set("returns", undefined)}>Not in the zone</button>
+              <button className={r.returns ? "active" : ""} onClick={() => set("returns", r.returns ?? { min: 30, max: 90 })}>After a while</button>
+            </span>
+            {r.returns && (
+              <>
+                <ScrubNumber label="from" value={r.returns.min} step={0.5} digits={0}
+                             onChange={(n, ph) => set("returns", { ...r.returns!, min: clamp(Math.round(n), 1, Math.min(3600, r.returns!.max)) }, ph)} />
+                <ScrubNumber label="to" value={r.returns.max} step={0.5} digits={0}
+                             onChange={(n, ph) => set("returns", { ...r.returns!, max: clamp(Math.round(n), Math.max(1, r.returns!.min), 3600) }, ph)} />
+              </>
+            )}
+            <span className="muted hint">{r.returns ? "seconds, at random, counted while the player is away from its place; it comes back unseen, once its place is out of view"
+              : "gone until the zone is entered again"}</span>
+          </span>
+        </div>
+      )}
+      {picking && (
+        <ModelPicker constants={constants} value={reactSprite ?? ""} used={used} onClose={() => setPicking(false)}
+                     onPick={(m) => { set("sprite", m); setPicking(false); }} />
+      )}
+    </section>
   );
 }
 

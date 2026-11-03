@@ -614,6 +614,27 @@ class MapScene {
           path.renderOrder = 4;
           this.marks.add(path);
         }
+        // Chosen, with a reaction: the tiles it reacts within, and its fixed heading with its spread either way
+        const react = e.ambient?.react;
+        if (isSelected && react) {
+          const near = (react.near ?? 3) * TILE + TILE / 2;
+          const flat = (points: [number, number][], c: number) => {
+            const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points.map(([x, z]) => new THREE.Vector3(x, ground + 2.5, z))),
+              new THREE.LineDashedMaterial({ color: c, dashSize: 4, gapSize: 3, depthTest: false }));
+            l.computeLineDistances();
+            l.renderOrder = 4;
+            this.marks.add(l);
+          };
+          const cx = (e.x + 0.5) * TILE, cz = (e.z + 0.5) * TILE;
+          flat([[cx - near, cz - near], [cx + near, cz - near], [cx + near, cz + near], [cx - near, cz + near], [cx - near, cz - near]], 0xffd060);
+          if (react.direction !== undefined && react.kind !== "hide") {
+            const ray = (deg: number, length: number): [number, number][] =>
+              [[ox, oz], [ox + Math.sin((deg * Math.PI) / 180) * length, oz - Math.cos((deg * Math.PI) / 180) * length]];
+            flat(ray(react.direction, 4 * TILE), 0xffffff);
+            const spread = react.spread ?? 20;
+            if (spread) { flat(ray(react.direction - spread, 3 * TILE), 0xffd060); flat(ray(react.direction + spread, 3 * TILE), 0xffd060); }
+          }
+        }
         const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(ox, ground + 2, oz),
                                                             new THREE.Vector3(ox, oy, oz)]);
         const stem = new THREE.Line(g, new THREE.LineDashedMaterial({ color: isSelected ? 0xffffff : color, dashSize: 3, gapSize: 2, depthTest: false }));

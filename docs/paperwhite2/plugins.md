@@ -913,6 +913,17 @@ edited in the Overworld Editor's Ambients tab.
   ambient uses (`PaperWhite2_AmbientsUseObjCode`, checked in `FieldBillboardActor_UnbindActorObjCode`), and a zone
   change cancels an ambient's load still waiting (`FldBillboardActor_CancelPendingPos`) and unloads a sprite loaded on
   demand that no actor, ambient or waiting actor uses (`FldBillboardActor_ReleaseObjCode`).
+- **Reactions** (`react`): when the player comes within `near` tiles (3), or `startle` (near + 2) while it runs or
+  cycles, and no event runs, it flies away (up at its `climb`, 30 degrees, its shadow on the ground), runs away (along
+  the ground) or hides (sinks 20 units over 12 frames): on its heading, away from the player
+  (`FX_Atan2Idx` of the way from the player to it) or its `direction` (degrees clockwise from north), varied at random
+  by its `spread` either way (20), at its `speed` (6 tiles a second). It may change to another sprite as it reacts
+  (`sprite`, loaded with it and hidden until then, so a sitting Pidove becomes the follower's flying one), show a
+  bubble (`emote`: the field's four, over it with `FldeffEmotionBubble_SetPos`) and give a cry (`cry`, a species). It's
+  gone after 4 seconds or 12 tiles from the player; with `returns`, it comes back after `min` to `max` seconds counted
+  while the player is past its startle radius and 2 tiles more from its place, unseen once that's off the screen;
+  without, not until the zone is entered again. A line can also climb (`path.height`, units), straight up with no width
+  or depth.
 - **A perch's turns** go to the directions its `faces` names (all four without it): a bit each in the record's flags
   from `AMBIENT_FLAG_FACES_SHIFT`, which `Ambients_PickFacing` picks among at random.
 - **In the editor:** each ambient's path is drawn round its place at its height (brighter when chosen), and the map's

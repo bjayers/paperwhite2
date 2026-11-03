@@ -172,7 +172,7 @@ export async function spriteLoad(npcs: Entity[], entries: SpawnEntry[], ambients
   const add = (v: unknown) => { const c = codeOf(v); if (c) all.add(c); };
   npcs.forEach((n) => add(n.model));
   entries.forEach((e) => e.instances?.forEach((i) => add(i.npc.model)));
-  ambients.forEach((a) => (a.sprites ?? [a.sprite]).forEach(add));
+  ambients.forEach((a) => { (a.sprites ?? [a.sprite]).forEach(add); add(a.react?.sprite); });
   preload.forEach(add);
   const sprite = new Map<string, boolean>();
   // (a code with no actor data counts: a work code's sprite, which a variable chooses, is one)
@@ -225,6 +225,9 @@ export async function spriteLoad(npcs: Entity[], entries: SpawnEntry[], ambients
       const choices = (a.sprites ?? [a.sprite]).map(codeOf).filter((c): c is string => !!c && !!sprite.get(c));
       const fresh = choices.find((c) => !shown.has(c));
       if (fresh) shown.add(fresh);
+      // (its reaction sprite is loaded with it, hidden until it reacts)
+      const reacts = codeOf(a.react?.sprite);
+      if (reacts && sprite.get(reacts)) shown.add(reacts);
     }
     return { npcCount, ambientCount: shown.size - base.size - npcCount, shown };
   };

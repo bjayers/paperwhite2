@@ -49,7 +49,39 @@ typedef struct {
     u16 sizeZ;
     u16 speed;
     u16 phase;
+    // A line's climb, in units
+    u16 sizeY;
+    // Its reaction to the player coming near (AMBIENT_REACT_*): the sprite it changes to (0 its own), its heading in
+    // degrees clockwise from north (AMBIENT_REACT_AWAY for away from the player), its speed in units a second, the
+    // species of its cry (0 none), the seconds after the player has gone that it returns, at least and at most
+    // (AMBIENT_RETURN_NEVER), its kind, how near the player and a running or cycling player come before it (tiles),
+    // its bubble (EMOTION_BUBBLE_* + 1, 0 none), its heading's spread either way and its flight's climb (degrees)
+    u16 reactSprite;
+    u16 reactHeading;
+    u16 reactSpeed;
+    u16 reactCry;
+    u16 returnMin;
+    u16 returnMax;
+    u8 reactKind;
+    u8 reactNear;
+    u8 reactStartle;
+    u8 reactEmote;
+    u8 reactSpread;
+    u8 reactClimb;
 } SpawnAmbient;
+
+enum {
+    AMBIENT_REACT_NONE,
+    // Up and away on its heading
+    AMBIENT_REACT_FLY,
+    // Away along the ground
+    AMBIENT_REACT_RUN,
+    // Down into the grass or the ground where it is
+    AMBIENT_REACT_HIDE,
+};
+
+#define AMBIENT_REACT_AWAY 0xffff
+#define AMBIENT_RETURN_NEVER 0xffff
 
 enum {
     // Sitting at its place, turning and hopping now and then

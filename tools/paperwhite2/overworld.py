@@ -13,11 +13,15 @@ is a conditions table (tools/paperwhite2/conditions.py) whose rules' payloads sa
 - an instance: u8 1, u8 the seed, u16 its host's id, then the instance's 36-byte NPC record (ZoneNPC, as event_data.py
   packs it, its id the host's); a host's instances are one after another, after its condition if it has one, and the
   field picks among those that hold, by weight.
-- an ambient: u8 2, u8 the seed, u16 its index among the zone's ambients, then its 36-byte record (SpawnAmbient,
+- an ambient: u8 2, u8 the seed, u16 its index among the zone's ambients, then its 56-byte record (SpawnAmbient,
   include/paperwhite2/spawns.h): u16 its sprites' object codes (4, the unused 0), u8 how many, u8 path, u8 shadow, u8
   facing, u8 flags, 3 bytes 0, s32 x, y and z
   (fx32 world units: a tile's middle plus its offset, and its height), u16 its path's width and depth (units), speed
-  and start; it shows while its rule holds (paperwhite2_ambients.c).
+  and start, its line's height (units), then its reaction (REACTS: 0 for none): u16 the sprite it changes to (0 its
+  own), its heading in degrees (REACT_AWAY: away from the player), its speed (units a second), the species of its cry
+  (0 none), the seconds it returns after, at least and at most (NEVER: not in the zone), u8 its kind, how near the
+  player and a running or cycling player come before it, its emote (EMOTES, 0 none), its heading's spread and its
+  flight's climb (degrees); it shows while its rule holds (paperwhite2_ambients.c).
 The seed is the CONDITION_SEED_* the NPC's rolls start from, keyed by its id (its "rolls": the hour's by default, the
 day's, the time of day's or each entry's); the field picks again when the hour or the time of day changes.
 """
@@ -40,13 +44,19 @@ HEADER = struct.Struct("<IHH")
 ENTRY = struct.Struct("<HHII")
 PAYLOAD = struct.Struct("<BBH")
 KIND_CONDITION, KIND_INSTANCE, KIND_AMBIENT = 0, 1, 2
-AMBIENT = struct.Struct("<4H5B3xiii4H")
+AMBIENT = struct.Struct("<4H5B3xiii4H7H6B")
 AMBIENT_SPRITES = 4
 PATHS = {"perch": 0, "hover": 1, "ellipse": 2, "line": 3, "eight": 4}
 SHADOWS = {"none": 0, "feet": 1, "ground": 2}
 FLAG_TURNS, FLAG_HOPS = 0x1, 0x2
 # The directions a perch turns to: a bit each from bit 4 (AMBIENT_FLAG_FACES_SHIFT), none for all four
 FLAG_FACES_SHIFT = 4
+# A reaction (SpawnAmbient's react fields, include/paperwhite2/spawns.h): its kind (0 none), its emote (0 none, else
+# the bubble's EMOTION_BUBBLE_* + 1), a heading of AWAY for away from the player and a return of NEVER, and the defaults
+REACTS = {"fly": 1, "run": 2, "hide": 3}
+EMOTES = {"exclamation": 1, "question": 2, "note": 3, "ellipsis": 4}
+REACT_AWAY = NEVER = 0xFFFF
+REACT_NEAR, REACT_STARTLE_MORE, REACT_SPREAD, REACT_CLIMB, REACT_SPEED = 3, 2, 20, 30, 6
 # An NPC's "rolls" as the CONDITION_SEED_* its picks start from (include/paperwhite2/conditions.h)
 SEEDS = {"entry": 0, "day": 1, "hour": 3, "period": 4}
 
@@ -96,9 +106,25 @@ def ambient_bytes(ambient: dict, where: str) -> bytes:
     sprites = [value(s, where) for s in ambient.get("sprites", [ambient["sprite"]] if "sprite" in ambient else [])]
     if not 1 <= len(sprites) <= AMBIENT_SPRITES:
         raise DataError(f"{where}: an ambient needs a sprite, or a set of 1 to {AMBIENT_SPRITES}")
+    react = ambient.get("react")
+    if react:
+        near = react.get("near", REACT_NEAR)
+        returns = react.get("returns")
+        if returns and returns["min"] > returns["max"]:
+            raise DataError(f"{where}: react.returns' min is past its max")
+        reaction = (value(react["sprite"], where) if "sprite" in react else 0,
+                    react.get("direction", REACT_AWAY), react.get("speed", REACT_SPEED) * 16,
+                    value(react["cry"], where) if "cry" in react else 0,
+                    returns["min"] if returns else NEVER, returns["max"] if returns else NEVER,
+                    REACTS[react["kind"]], near, react.get("startle", near + REACT_STARTLE_MORE),
+                    EMOTES[react["emote"]] if "emote" in react else 0, react.get("spread", REACT_SPREAD),
+                    react.get("climb", REACT_CLIMB))
+    else:
+        reaction = (0, REACT_AWAY, 0, 0, NEVER, NEVER, 0, 0, 0, 0, 0, 0)
     return AMBIENT.pack(*sprites, *[0] * (AMBIENT_SPRITES - len(sprites)), len(sprites), PATHS[p["kind"]],
                         SHADOWS[ambient.get("shadow", "none")], value(ambient.get("facing", "DIR_DOWN"), where), flags,
-                        x, y, z, p.get("width", 0), p.get("depth", 0), speed, p.get("start", 0) % 360)
+                        x, y, z, p.get("width", 0), p.get("depth", 0), speed, p.get("start", 0) % 360,
+                        p.get("height", 0), *reaction)
 
 
 def member(sources: Path = SOURCES) -> bytes:

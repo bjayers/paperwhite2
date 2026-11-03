@@ -6,16 +6,21 @@
 #include "field/field_effect.h"
 #include "field/field_g3d_mapper.h"
 #include "field/field_internal.h"
+#include "field/field_player.h"
 #include "field/player_state.h"
 #include "field/zone.h"
 #include "gfl/billboard_actor.h"
 #include "gfl/heap.h"
+#include "gfl/key.h"
 #include "gfl/random.h"
+#include "gfl/sound.h"
 #include "nitro/fx.h"
 #include "nitro/mi.h"
 #include "paperwhite2/ambients.h"
 #include "paperwhite2/spawns.h"
 #include "system/game_data.h"
+#include "system/game_event.h"
+#include "system/game_system.h"
 
 // Paper White 2: the ambients, sprites drawn without an actor (docs/paperwhite2/design/overworld-editor.md, Ambients;
 // docs/paperwhite2/plugins.md, Ambients). The zone's ambients whose conditions hold (Spawns_GetAmbients) each get a
@@ -47,6 +52,27 @@
 #define AMBIENT_SHADOW_POLYGON_ID 2
 // A hover's bob, in units either way
 #define AMBIENT_HOVER_BOB FX32_CONST(2)
+// A reaction: the longest a flight or a run lasts before it's gone, how far from the player it's gone at once (tiles),
+// a hide's frames and depth; how far the player must be from its place for its return to count down, past its
+// startle radius, and how far its place must be (the screen's tiles round the player, and one more) for it to come
+// back unseen
+#define AMBIENT_REACT_FRAMES (4 * AMBIENT_FRAMES_A_SECOND)
+#define AMBIENT_REACT_FAR 12
+#define AMBIENT_HIDE_FRAMES 12
+#define AMBIENT_HIDE_DEPTH FX32_CONST(20)
+#define AMBIENT_RETURN_AWAY 2
+#define AMBIENT_RETURN_OFFSCREEN_X 9
+#define AMBIENT_RETURN_OFFSCREEN_Z 7
+#define AMBIENT_CRY_PAN 64
+// A world position's tile
+#define AMBIENT_TILE(v) ((v) >> (FX32_SHIFT + 4))
+
+// Where an ambient is in its reaction: at its place on its path, reacting, or gone until it returns
+enum {
+    AMBIENT_AT_HOME,
+    AMBIENT_REACTING,
+    AMBIENT_GONE,
+};
 
 typedef struct {
     SpawnAmbient record;
@@ -64,6 +90,18 @@ typedef struct {
     u8 hop;
     // Whether its sprite has one animation a direction, always playing (a walking Pokémon's)
     u8 byDirection;
+    // Its reaction (AMBIENT_AT_HOME and the rest), and whether its reaction sprite has one animation a direction
+    u8 reaction;
+    u8 reactByDirection;
+    // Its reaction sprite's billboard, as billboard, or BILLBOARD_ACTOR_NONE in both without one
+    u16 react[2];
+    // The animation its reaction sprite was last given
+    u16 reactAnim;
+    // A reaction's frames left, or the frames before it returns (counted while the player is away)
+    u32 reactTimer;
+    // Where it is in its reaction, and its move a frame
+    VecFx32 reactPos;
+    VecFx32 reactStep;
 } Ambient;
 
 typedef struct {
@@ -94,6 +132,12 @@ static void Ambients_Clear(MMSys *actorSystem) {
             FldBillboardActor_CancelPendingPos(actorSystem, sAmbients.list[i].billboard);
         }
         FldBillboardActor_DeleteActorPos(actorSystem, sAmbients.list[i].billboard);
+        if (sAmbients.list[i].record.reactSprite != 0) {
+            if (sAmbients.list[i].react[1] == BILLBOARD_ACTOR_NONE) {
+                FldBillboardActor_CancelPendingPos(actorSystem, sAmbients.list[i].react);
+            }
+            FldBillboardActor_DeleteActorPos(actorSystem, sAmbients.list[i].react);
+        }
         if (sAmbients.list[i].shadow != BILLBOARD_ACTOR_NONE) {
             BillboardActorSys_DeleteActors(sAmbients.shadowSys, sAmbients.list[i].shadow, 1);
         }
@@ -102,6 +146,9 @@ static void Ambients_Clear(MMSys *actorSystem) {
     // (once none is counted, so that none holds them)
     for (i = 0; i < count; i++) {
         FldBillboardActor_ReleaseObjCode(actorSystem, sAmbients.list[i].record.objCodes[0]);
+        if (sAmbients.list[i].record.reactSprite != 0) {
+            FldBillboardActor_ReleaseObjCode(actorSystem, sAmbients.list[i].record.reactSprite);
+        }
     }
 }
 
@@ -137,7 +184,8 @@ static BOOL Ambients_ShadowAt(Field *field, const Ambient *ambient, const VecFx3
     u32 i;
 
     *out = *pos;
-    if (ambient->record.shadow == AMBIENT_SHADOW_FEET) {
+    // (under its feet only at its place: once it reacts, on the ground)
+    if (ambient->record.shadow == AMBIENT_SHADOW_FEET && ambient->reaction == AMBIENT_AT_HOME) {
         out->y = ambient->record.at.y + AMBIENT_SHADOW_LIFT;
         return TRUE;
     }
@@ -185,6 +233,21 @@ static void Ambients_Load(Field *field) {
         ambient->billboard[1] = BILLBOARD_ACTOR_NONE;
         FldBillboardActor_AddActorPosOrReserve(actorSystem, &config, ambient->billboard, &ambient->record.at, NULL,
                                                NULL, func_ov012_02166fc0(actorSystem));
+        // Its reaction sprite too, hidden until it reacts (where it has one and it can load)
+        ambient->react[1] = BILLBOARD_ACTOR_NONE;
+        if (records[i].reactSprite != 0) {
+            MI_CpuFill8(&config, 0, sizeof(config));
+            GetNPCMdlInfoForOBJCODE(actorSystem, records[i].reactSprite, &config);
+            if (config.uid == records[i].reactSprite && FldBillboardActor_CanLoadObjCode(actorSystem, config.uid)) {
+                ambient->reactAnim = 0xffff;
+                ambient->reactByDirection =
+                    FIELD_BILLBOARD_ANIM_SETS[config.spriteControllerType].count < AMBIENT_ANIM_PERSON;
+                FldBillboardActor_AddActorPosOrReserve(actorSystem, &config, ambient->react, &ambient->record.at, NULL,
+                                                       NULL, func_ov012_02166fc0(actorSystem));
+            } else {
+                ambient->record.reactSprite = 0;
+            }
+        }
         ambient->shadow = BILLBOARD_ACTOR_NONE;
         if (records[i].shadow != AMBIENT_SHADOW_NONE && sAmbients.shadowSys != NULL) {
             Ambients_AddShadow(ambient);
@@ -282,6 +345,7 @@ static BOOL Ambients_Move(Ambient *ambient, VecFx32 *pos) {
         // From its place to the line's end and back: (1 - cos) / 2 of the way
         pos->x += FX_Mul(sx, (FX32_ONE - c) / 2);
         pos->z += FX_Mul(sz, (FX32_ONE - c) / 2);
+        pos->y += FX_Mul(record->sizeY << FX32_SHIFT, (FX32_ONE - c) / 2);
         dx = FX_Mul(sx, s);
         dz = FX_Mul(sz, s);
         break;
@@ -297,9 +361,128 @@ static BOOL Ambients_Move(Ambient *ambient, VecFx32 *pos) {
     return TRUE;
 }
 
+// Whether the player has come near enough for an ambient to react: within its radius in tiles, or its startle radius
+// while the player runs or cycles
+static BOOL Ambients_ShouldReact(Field *field, const Ambient *ambient, const VecFx32 *pos) {
+    FieldPlayer *player = field->player;
+    VecFx32 at;
+    s32 dx;
+    s32 dz;
+    u32 radius = ambient->record.reactNear;
+
+    if (ambient->record.reactKind == AMBIENT_REACT_NONE || player == NULL) {
+        return FALSE;
+    }
+    if (FieldPlayer_GetExState(player) == FLD_PLAYER_EXSTATE_CYCLING ||
+        (FieldPlayer_CheckRunningShoesFlag(player) && (GCTX_HIDGetHeldKeys() & PAD_BUTTON_B) &&
+         FieldPlayer_GetMoveObserveStatus(player) == PLAYER_OBSERVE_MOVING)) {
+        radius = ambient->record.reactStartle;
+    }
+    FieldPlayer_GetWPos(player, &at);
+    dx = AMBIENT_TILE(pos->x) - AMBIENT_TILE(at.x);
+    dz = AMBIENT_TILE(pos->z) - AMBIENT_TILE(at.z);
+    return (u32)(dx < 0 ? -dx : dx) <= radius && (u32)(dz < 0 ? -dz : dz) <= radius;
+}
+
+// A reaction started: its heading (away from the player, or its own) varied by its spread, its move a frame by its
+// kind and speed, its bubble and its cry
+static void Ambients_StartReaction(Field *field, Ambient *ambient, const VecFx32 *pos) {
+    const SpawnAmbient *record = &ambient->record;
+    fx32 speed = record->reactSpeed * FX32_ONE / AMBIENT_FRAMES_A_SECOND;
+    VecFx32 at;
+    u16 heading;
+
+    FieldPlayer_GetWPos(field->player, &at);
+    // (clockwise from north, the world's -z: away from the player is the way from it to the ambient)
+    heading = record->reactHeading == AMBIENT_REACT_AWAY ? FX_Atan2Idx(pos->x - at.x, at.z - pos->z)
+                                                         : DEG_TO_IDX(record->reactHeading % 360);
+    if (record->reactSpread != 0) {
+        heading += DEG_TO_IDX(GFL_RandomLC(2 * record->reactSpread + 1)) - DEG_TO_IDX(record->reactSpread);
+    }
+    MI_CpuFill8(&ambient->reactStep, 0, sizeof(VecFx32));
+    if (record->reactKind == AMBIENT_REACT_HIDE) {
+        ambient->reactStep.y = -AMBIENT_HIDE_DEPTH / AMBIENT_HIDE_FRAMES;
+        ambient->reactTimer = AMBIENT_HIDE_FRAMES;
+    } else {
+        u16 climb = record->reactKind == AMBIENT_REACT_FLY ? DEG_TO_IDX(record->reactClimb) : 0;
+        fx32 ground = FX_Mul(speed, FX_CosIdx(climb));
+
+        ambient->reactStep.x = FX_Mul(ground, FX_SinIdx(heading));
+        ambient->reactStep.z = -FX_Mul(ground, FX_CosIdx(heading));
+        ambient->reactStep.y = FX_Mul(speed, FX_SinIdx(climb));
+        ambient->reactTimer = AMBIENT_REACT_FRAMES;
+        ambient->facing = Ambients_DirOf(ambient->reactStep.x, ambient->reactStep.z, ambient->facing);
+    }
+    ambient->reactPos = *pos;
+    ambient->hop = 0;
+    ambient->reaction = AMBIENT_REACTING;
+    if (record->reactEmote != 0) {
+        FldeffEmotionBubble_SetPos(field->fieldEffects, pos, record->reactEmote - 1, TRUE);
+    }
+    if (record->reactCry != 0 && !GFL_SndIsLoadThreadRunning()) {
+        PokeVoice_Play(record->reactCry, 0, AMBIENT_CRY_PAN, 0, 0, 0, 0, NULL);
+    }
+}
+
+// A reaction a frame on, gone at its end or once it's far from the player; then its return's wait, in frames
+static void Ambients_StepReaction(Field *field, Ambient *ambient, VecFx32 *pos) {
+    const SpawnAmbient *record = &ambient->record;
+    VecFx32 at;
+    s32 dx;
+    s32 dz;
+
+    ambient->reactPos.x += ambient->reactStep.x;
+    ambient->reactPos.y += ambient->reactStep.y;
+    ambient->reactPos.z += ambient->reactStep.z;
+    *pos = ambient->reactPos;
+    FieldPlayer_GetWPos(field->player, &at);
+    dx = AMBIENT_TILE(pos->x) - AMBIENT_TILE(at.x);
+    dz = AMBIENT_TILE(pos->z) - AMBIENT_TILE(at.z);
+    if (--ambient->reactTimer != 0 && (dx < 0 ? -dx : dx) <= AMBIENT_REACT_FAR &&
+        (dz < 0 ? -dz : dz) <= AMBIENT_REACT_FAR) {
+        return;
+    }
+    ambient->reaction = AMBIENT_GONE;
+    ambient->reactTimer =
+        record->returnMin == AMBIENT_RETURN_NEVER
+            ? 0
+            : (record->returnMin + GFL_RandomLC(record->returnMax - record->returnMin + 1)) * AMBIENT_FRAMES_A_SECOND;
+}
+
+// A gone one's return: its wait counts down while the player is away from its place, and it comes back once that's
+// out of view, as it was; one that doesn't return stays gone until the zone is entered again
+static void Ambients_TickGone(Field *field, Ambient *ambient) {
+    const SpawnAmbient *record = &ambient->record;
+    VecFx32 at;
+    s32 dx;
+    s32 dz;
+
+    if (record->returnMin == AMBIENT_RETURN_NEVER) {
+        return;
+    }
+    FieldPlayer_GetWPos(field->player, &at);
+    dx = AMBIENT_TILE(record->at.x) - AMBIENT_TILE(at.x);
+    dz = AMBIENT_TILE(record->at.z) - AMBIENT_TILE(at.z);
+    dx = dx < 0 ? -dx : dx;
+    dz = dz < 0 ? -dz : dz;
+    if (dx <= record->reactStartle + AMBIENT_RETURN_AWAY && dz <= record->reactStartle + AMBIENT_RETURN_AWAY) {
+        return;
+    }
+    if (ambient->reactTimer != 0) {
+        ambient->reactTimer--;
+        return;
+    }
+    if (dx > AMBIENT_RETURN_OFFSCREEN_X || dz > AMBIENT_RETURN_OFFSCREEN_Z) {
+        ambient->reaction = AMBIENT_AT_HOME;
+        ambient->facing = record->facing;
+        ambient->angle = DEG_TO_IDX(record->phase % 360);
+    }
+}
+
 void PaperWhite2_AmbientsUpdate(Field *field) {
     MMSys *actorSystem = field->actorSystem;
     BillboardActorSys *sys;
+    BOOL free;
     u16 zone;
     u16 angle;
     u32 i;
@@ -324,16 +507,49 @@ void PaperWhite2_AmbientsUpdate(Field *field) {
         Ambients_Load(field);
     }
     angle = FldActSys_GetCameraAngle(actorSystem);
+    free = GSYS_GetNowEvent(field->gameSystem) == NULL && !Field_IsEventRunning(field);
     for (i = 0; i < sAmbients.count; i++) {
         Ambient *ambient = &sAmbients.list[i];
-        VecFx32 pos;
-        BOOL moving;
+        VecFx32 pos = ambient->reactPos;
+        BOOL moving = TRUE;
+        BOOL byDirection;
+        u16 drawn;
+        u16 *last;
         u16 anim;
 
         if (ambient->billboard[1] == BILLBOARD_ACTOR_NONE) {
             continue; // (still loading)
         }
-        moving = Ambients_Move(ambient, &pos);
+        if (ambient->reaction == AMBIENT_AT_HOME) {
+            moving = Ambients_Move(ambient, &pos);
+            if (free && Ambients_ShouldReact(field, ambient, &pos)) {
+                Ambients_StartReaction(field, ambient, &pos);
+            }
+        }
+        if (ambient->reaction == AMBIENT_REACTING) {
+            moving = TRUE;
+            Ambients_StepReaction(field, ambient, &pos);
+        }
+        // Its own sprite at home, its reaction sprite (where it has one) once it reacts, neither once it's gone
+        drawn = ambient->reaction == AMBIENT_REACTING && ambient->react[1] != BILLBOARD_ACTOR_NONE
+                    ? ambient->react[1]
+                    : ambient->billboard[1];
+        BillboardActorSys_SetActorVisible(sys, ambient->billboard[1],
+                                          ambient->reaction != AMBIENT_GONE && drawn == ambient->billboard[1]);
+        if (ambient->react[1] != BILLBOARD_ACTOR_NONE) {
+            BillboardActorSys_SetActorVisible(sys, ambient->react[1],
+                                              ambient->reaction != AMBIENT_GONE && drawn == ambient->react[1]);
+        }
+        if (ambient->reaction == AMBIENT_GONE) {
+            if (ambient->shadow != BILLBOARD_ACTOR_NONE) {
+                BOOL shown = FALSE;
+
+                BillboardActorScene_SetActorHidden(BillboardActorSys_GetScene(sAmbients.shadowSys), ambient->shadow,
+                                                   &shown);
+            }
+            Ambients_TickGone(field, ambient);
+            continue;
+        }
         if (ambient->shadow != BILLBOARD_ACTOR_NONE) {
             BillboardActorScene *shadowScene = BillboardActorSys_GetScene(sAmbients.shadowSys);
             VecFx32 at;
@@ -344,17 +560,20 @@ void PaperWhite2_AmbientsUpdate(Field *field) {
             BillboardActorScene_SetActorPos(shadowScene, ambient->shadow, &at);
         }
         pos.y += Field_GetActorYOffset(field);
-        BillboardActorScene_SetActorPos(BillboardActorSys_GetScene(sys), ambient->billboard[1], &pos);
-        if (ambient->byDirection) {
+        BillboardActorScene_SetActorPos(BillboardActorSys_GetScene(sys), drawn, &pos);
+        byDirection = drawn == ambient->react[1] ? ambient->reactByDirection : ambient->byDirection;
+        if (byDirection) {
             anim = ambient->facing;
             moving = TRUE;
         } else {
             anim = (moving ? AMBIENT_ANIM_WALK : AMBIENT_ANIM_STAND) + RotateDirByAngle(ambient->facing, angle);
         }
-        if (anim != ambient->anim) {
-            ambient->anim = anim;
-            BillboardActorSys_SetActorAnim(sys, ambient->billboard[1], anim);
-            BillboardActorSys_SetActorAnimating(sys, ambient->billboard[1], moving);
+        // (each sprite's own last animation, set again only when it changes)
+        last = drawn == ambient->react[1] ? &ambient->reactAnim : &ambient->anim;
+        if (anim != *last) {
+            *last = anim;
+            BillboardActorSys_SetActorAnim(sys, drawn, anim);
+            BillboardActorSys_SetActorAnimating(sys, drawn, moving);
         }
     }
 }
@@ -363,7 +582,8 @@ BOOL PaperWhite2_AmbientsUseObjCode(u16 objCode) {
     u32 i;
 
     for (i = 0; i < sAmbients.count; i++) {
-        if (sAmbients.list[i].record.objCodes[0] == objCode) {
+        if (sAmbients.list[i].record.objCodes[0] == objCode ||
+            (sAmbients.list[i].record.reactSprite != 0 && sAmbients.list[i].record.reactSprite == objCode)) {
             return TRUE;
         }
     }

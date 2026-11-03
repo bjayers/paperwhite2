@@ -30,7 +30,7 @@ export function pathAt(a: Ambient, angle: number): { dx: number; dy: number; dz:
   switch (p.kind) {
     case "hover": return { dx: 0, dy: HOVER_BOB * s, dz: 0, vx: 0, vz: 0 };
     case "ellipse": return { dx: sx * c, dy: 0, dz: sz * s, vx: -sx * s, vz: sz * c };
-    case "line": return { dx: (sx * (1 - c)) / 2, dy: 0, dz: (sz * (1 - c)) / 2, vx: sx * s, vz: sz * s };
+    case "line": return { dx: (sx * (1 - c)) / 2, dy: ((p.height ?? 0) * (1 - c)) / 2, dz: (sz * (1 - c)) / 2, vx: sx * s, vz: sz * s };
     case "eight": return { dx: sx * s, dy: 0, dz: sz * s * c, vx: sx * c, vz: sz * (c * c - s * s) };
     default: return { dx: 0, dy: 0, dz: 0, vx: 0, vz: 0 };
   }

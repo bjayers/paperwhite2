@@ -113,3 +113,8 @@
 .ow-dialog { margin-top: 20vh; width: min(520px, 92vw); background: var(--panel); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); padding: 16px 18px; }
 .ow-dialog h4 { margin: 0 0 8px; }
 .ow-dialog-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 12px 0; }
+
+/* An ambient's place in its tile: its middle, edges and corners */
+.ow-offset-grid { display: grid; grid-template-columns: repeat(3, 26px); gap: 2px; flex-basis: 100%; }
+.ow-offset-grid button { padding: 1px 0; }
+.ow-offset-grid button.active { border-color: var(--accent); background: var(--selected); }

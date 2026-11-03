@@ -209,6 +209,12 @@
                         "hops": {
                             "type": "boolean",
                             "description": "A perch's: whether it hops now and then (by default)"
+                        },
+                        "height": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 1024,
+                            "description": "A line's: how far up it climbs on the way to its far end, in units (a climb up a cliff, with no width or depth)"
                         }
                     }
                 },
@@ -223,6 +229,82 @@
                 "rolls": {
                     "enum": [ "hour", "day", "period", "entry" ],
                     "description": "How long a chance in its condition, and its pick from a set of sprites, hold: the hour (by default), the day, the time of day, or each zone entry"
+                },
+                "react": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [ "kind" ],
+                    "description": "What it does when the player comes near: flies away, runs away or hides, then is gone until it returns",
+                    "properties": {
+                        "kind": {
+                            "enum": [ "fly", "run", "hide" ],
+                            "description": "fly: up and away on its heading; run: away along the ground; hide: down into the grass or the ground where it is"
+                        },
+                        "near": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 15,
+                            "description": "How near the player comes before it reacts, in tiles (3 by default)"
+                        },
+                        "startle": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 15,
+                            "description": "How near a running or cycling player comes before it reacts, in tiles (2 more than near by default)"
+                        },
+                        "direction": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 359,
+                            "description": "Its heading in degrees, clockwise from north (0 north, 90 east); without it, away from the player"
+                        },
+                        "spread": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 180,
+                            "description": "How far its heading may vary either way, at random, in degrees (20 by default)"
+                        },
+                        "climb": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 90,
+                            "description": "A flight's angle up from the ground, in degrees (30 by default; 90 straight up)"
+                        },
+                        "speed": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 32,
+                            "description": "Its speed in tiles a second (6 by default)"
+                        },
+                        "sprite": {
+                            "type": [ "string", "integer" ],
+                            "x-constant": "OBJ_CODE_",
+                            "minimum": 0,
+                            "maximum": 65535,
+                            "description": "The sprite it changes to as it reacts (a flying one for a bird that sits); its own without it"
+                        },
+                        "emote": {
+                            "enum": [ "exclamation", "question", "note", "ellipsis" ],
+                            "description": "A bubble over it as it reacts; none without it"
+                        },
+                        "cry": {
+                            "type": [ "string", "integer" ],
+                            "x-constant": "SPECIES_",
+                            "minimum": 0,
+                            "maximum": 65535,
+                            "description": "The species whose cry it gives as it reacts; none without it"
+                        },
+                        "returns": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [ "min", "max" ],
+                            "description": "How long after the player has gone from its place it returns, at random between min and max seconds (once its place is out of view); without it, not until the zone is entered again",
+                            "properties": {
+                                "min": { "type": "integer", "minimum": 1, "maximum": 3600 },
+                                "max": { "type": "integer", "minimum": 1, "maximum": 3600 }
+                            }
+                        }
+                    }
                 }
             },
             "anyOf": [

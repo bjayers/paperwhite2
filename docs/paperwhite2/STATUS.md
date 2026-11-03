@@ -2,6 +2,18 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-03 (later at night): ambients' reactions, climbing lines, offset buttons
+
+- **The user's asks:** ambients that fly, run or hide when the player comes near, on a heading away from the player
+  or fixed, with a random spread; a sprite to change to (a sitting Pidove to a flying one); an emote; returning after
+  a customizable while, or not; a straight-up move. All in (plugins.md, Ambients: Reactions): the record is 56 bytes
+  now, the Ambients panel has a Reaction section, the map shows a chosen one's trigger tiles and fixed heading, and
+  the sprite bar counts its reaction sprite. The offset already reached the corner between four tiles (8 units): the
+  panel now has buttons for the middle, edges and corners. Built (hack, no warnings, DSi intact); the panel
+  screenshotted. **Not tested in game.**
+- **Next:** the follower's own emotes for ambients (drawn without the follower's actor), then the new paths: wander,
+  waypoints, peek, fly-over, surface.
+
 ## 2026-11-03 (late night): wanderers spread out; deleted files no longer go stale
 
 - **Spawns** (the user's): at least 3 tiles from the player (was 4), never beside another wanderer, and more likely the
