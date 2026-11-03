@@ -364,12 +364,14 @@ static void EncountTask_Draw(FieldEffectTask *task, void *work) {
 }
 
 #ifdef PAPERWHITE2
-// Paper White 2: a phenomenon's animation played once at a place, for what appears or goes without an actor (the
-// wanderers, paperwhite2_wanderers.c). It draws the phenomenon's model at its own frames, putting back the model's
-// after, so a phenomenon of the same kind on the field plays on as it was
+// Paper White 2: a phenomenon's animation played once at a place, whole or cut off after some frames, for what appears
+// or goes without an actor (the wanderers, paperwhite2_wanderers.c). It draws the phenomenon's model at its own frames,
+// putting back the model's after, so a phenomenon of the same kind on the field plays on as it was
 typedef struct {
     FieldEffectEncount *effect;
     u8 variant;
+    // The frame it ends at
+    fx32 end;
 } EncountOnceParams;
 
 typedef struct {
@@ -397,7 +399,7 @@ static void EncountOnceTask_Update(FieldEffectTask *task, void *work) {
     EncountOnceTask *once = work;
 
     once->frame += FX32_ONE;
-    if (once->frame >= once->counts[0]) {
+    if (once->frame >= once->params.end) {
         FieldEffects_DeleteObject(task);
     }
 }
@@ -434,7 +436,7 @@ static const FieldEffectTaskVTable ENCOUNT_ONCE_TASK_VTABLE = {
 
 // clang-format on
 
-u32 EncountTask_PlayOnceAt(FieldEffects *effects, u32 kind, const VecFx32 *pos) {
+u32 EncountTask_PlayOnceAt(FieldEffects *effects, u32 kind, const VecFx32 *pos, u32 maxFrames) {
     EncountOnceParams params;
     u32 effectIndex;
     fx32 count;
@@ -451,7 +453,8 @@ u32 EncountTask_PlayOnceAt(FieldEffects *effects, u32 kind, const VecFx32 *pos) 
     if (!GFL_G3DActorGetAnmFrameCount(params.effect->objs[params.variant].actor, 0, &count) || count <= 0) {
         return 0;
     }
+    params.end = maxFrames != 0 && FX32_CONST(maxFrames) < count ? FX32_CONST(maxFrames) : count;
     FieldEffects_TCBCreate(effects, &ENCOUNT_ONCE_TASK_VTABLE, pos, 0, &params, 0);
-    return FX_Whole(count);
+    return FX_Whole(params.end);
 }
 #endif

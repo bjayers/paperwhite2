@@ -105,8 +105,11 @@
 #define WANDERER_TILE_FLAG_FOOTMARK 0x08
 // How far one sinks into deep sand, as an actor does (ActorTerrainEffect_DeepSand)
 #define WANDERER_DEEP_SAND_SINK FX32_CONST(7)
-// One that appears in a dust cloud (the rustling spots', ENCOUNT_EFFECT_DUST_CLOUD, played once) shows a third of the
-// way into it, and one that goes in one is gone a third of the way in, while the dust covers it; with its sound
+// One that appears where there's no grass does in a dust cloud (the rustling spots', ENCOUNT_EFFECT_DUST_CLOUD, played
+// once, with its sound), shown as the cloud is cut off after a second. One that goes from ground that takes marks
+// (sand, snow) sinks into it in the landing puff; from other ground (a cave's floor) in a whole dust cloud, gone a
+// third of the way in, while the dust covers it
+#define WANDERER_CLOUD_FRAMES WANDERER_FRAMES_A_SECOND
 #define WANDERER_CLOUD_COVERED 3
 #define WANDERER_CLOUD_SE SEQ_SE_FLD_73
 // Where the field has no dust cloud, the landing puff, and how many frames into it
@@ -355,21 +358,26 @@ static void Wanderers_SetHidden(BillboardActorSys *sys, Wanderer *wanderer, BOOL
     }
 }
 
-// Its dust cloud at its feet, with its sound (or the landing puff where the field has none); the frames until the dust
-// covers it
-static u16 Wanderers_Puff(Field *field, const Wanderer *wanderer) {
+// Its feet
+static void Wanderers_Feet(const Wanderer *wanderer, VecFx32 *feet) {
+    ConvGXZToVector(wanderer->x, wanderer->z, feet);
+    feet->y = wanderer->y;
+}
+
+// Its dust cloud at its feet, with its sound, cut off after maxFrames (0 for none), or the landing puff where the field
+// has none; the frames it plays for
+static u16 Wanderers_Cloud(Field *field, const Wanderer *wanderer, u32 maxFrames) {
     VecFx32 feet;
     u32 frames;
 
-    ConvGXZToVector(wanderer->x, wanderer->z, &feet);
-    feet.y = wanderer->y;
-    frames = EncountTask_PlayOnceAt(field->fieldEffects, ENCOUNT_EFFECT_DUST_CLOUD, &feet);
+    Wanderers_Feet(wanderer, &feet);
+    frames = EncountTask_PlayOnceAt(field->fieldEffects, ENCOUNT_EFFECT_DUST_CLOUD, &feet, maxFrames);
     if (frames == 0) {
         FldeffDust_StartAt(field->fieldEffects, &feet);
         return WANDERER_PUFF_HIDE;
     }
     GFL_SndSEPlay(WANDERER_CLOUD_SE);
-    return frames / WANDERER_CLOUD_COVERED > WANDERER_PUFF_HIDE ? frames / WANDERER_CLOUD_COVERED : WANDERER_PUFF_HIDE;
+    return (u16)frames;
 }
 
 static void Wanderers_DeleteGrass(FieldEffectTask **grass) {
@@ -679,7 +687,7 @@ static void Wanderers_Tick(Field *field, Wanderer *wanderer, s32 index) {
             wanderer->state = WANDERER_RISING;
             wanderer->timer = WANDERER_RISE_FRAMES;
             if (wanderer->puff) {
-                wanderer->timer = Wanderers_Puff(field, wanderer);
+                wanderer->timer = Wanderers_Cloud(field, wanderer, WANDERER_CLOUD_FRAMES);
             } else {
                 wanderer->grass = Wanderers_Grass(field, wanderer, wanderer->x, wanderer->z, wanderer->y, TRUE);
                 GFL_SndSEPlay(WANDERER_RUSTLE_SE);
@@ -730,10 +738,20 @@ static void Wanderers_Tick(Field *field, Wanderer *wanderer, s32 index) {
 
             wanderer->state = WANDERER_SINKING;
             wanderer->timer = WANDERER_RISE_FRAMES;
-            // (by the tile it's on now, which may not be the one it came out of)
-            wanderer->puff = tile == TILE_TYPE_NONE || !(GetTileFlags(tile) & WANDERER_TILE_FLAG_GRASS);
+            // (by the tile it's on now, which may not be the one it came out of: from grass it sinks into it, from sand
+            // or snow in a puff, from other ground in a dust cloud)
+            wanderer->puff = tile == TILE_TYPE_NONE ||
+                             !(GetTileFlags(tile) & (WANDERER_TILE_FLAG_GRASS | WANDERER_TILE_FLAG_FOOTMARK));
             if (wanderer->puff) {
-                wanderer->timer = Wanderers_Puff(field, wanderer);
+                wanderer->timer = Wanderers_Cloud(field, wanderer, 0) / WANDERER_CLOUD_COVERED;
+                if (wanderer->timer < WANDERER_PUFF_HIDE) {
+                    wanderer->timer = WANDERER_PUFF_HIDE;
+                }
+            } else if (!(GetTileFlags(tile) & WANDERER_TILE_FLAG_GRASS)) {
+                VecFx32 feet;
+
+                Wanderers_Feet(wanderer, &feet);
+                FldeffDust_StartAt(field->fieldEffects, &feet);
             } else {
                 // (its grass shakes again as it goes)
                 Wanderers_DeleteGrass(&wanderer->grass);

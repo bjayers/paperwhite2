@@ -2,6 +2,16 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-03 (later evening): a shorter dust cloud; sinking into sand
+
+- Tested: the dust cloud lasted too long. Now one appears as the cloud is cut off after a second; one goes from sand
+  or snow by sinking in, in the landing puff, and from a cave's floor still in the whole cloud (plugins.md,
+  Wanderers). Built (hack, no warnings, DSi intact). **Not tested in game.**
+- For later (the user): switching Black City / White Forest, Route 4 and the version-dependent map pieces from the
+  game, by an NPC or a key item, without the Unova Link keys. The machinery: the save's city key
+  (`CityState_InitFromSave`, `CityState_ApplyVersionZones`), `VERSION_SPECIFIC_ZONES`' third entry (Route 4, always
+  on in White 2), and `MapReplace_LoadVariables`' version (by the game's origin); a save flag and a few hooks.
+
 ## 2026-11-03 (evening): wanderers appear and go in the dust cloud
 
 - Tested: the puff showed as one went, but was too small to hide it, and wasn't seen as one appeared. Now the

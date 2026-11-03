@@ -966,8 +966,10 @@ sinking, random wandering, the touch and the battle.
   demand where the sprite cache has room (`FldBillboardActor_CanLoadObjCode`).
 - **Rising and sinking:** from 20 units under its tile's ground over 12 frames (the ground hides what's under it),
   and back down at the end of its 20 to 40 seconds, where its tile has grass (`0x20`). Where it has none (a cave's
-  floor, sand), it appears in a dust cloud instead, shown a third of the way into it, once the dust covers its tile,
-  and goes in one, gone a third of the way in: the rustling spots' dust cloud played once, with its sound
+  floor, sand), it appears in a dust cloud instead, cut off after a second as it shows. It goes from sand or snow
+  (tiles that take marks, `0x08`) by sinking in as from grass, in the landing puff (`FldeffDust_StartAt`), and from
+  other ground (a cave's floor) in a whole dust cloud, gone a third of the way in: the rustling spots' dust cloud
+  played once, with its sound
   (`SEQ_SE_FLD_73`), by `EncountTask_PlayOnceAt`, an `#ifdef PAPERWHITE2` task in `fldeff_encount.c` that draws the
   phenomenon's shared model at its own frames and puts the model's back after, so a real dust cloud nearby plays on
   as it was. Where a field has no dust cloud, the landing actors' puff (`FldeffDust_StartAt` in `fldeff_dust.c`) for 4
