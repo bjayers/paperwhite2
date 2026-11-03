@@ -4,6 +4,12 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
 ## 2026-11-03 (evening): ambients' sprites loaded on demand; the bird moved to Virbank City
 
+- **The user's next test (Virbank City):** Swellow showed, but always from behind, unanimated, and now and then gone.
+  Pokémon sprites (animation set 13) have 4 animations, one a direction, always playing (`RailActorAnim_DrawWalking`);
+  the ambients used a person's layout (status times 4 plus direction), so a hop asked for animation 8 or more, past the
+  set's end, and standing stopped the animation. An ambient whose set has fewer than 12 now plays its facing's
+  animation, always (`byDirection`). Built (hack, no warnings, DSi intact). **Not tested in game.**
+
 - **The user's test (Route 20):** the bird was invisible with its shadow showing, then drew a trainer's sprite. Cause:
   Pidove wasn't loaded (not preloaded, and the cache full), and the reflections' call it used drew a billboard with no
   material, which pointed at an empty slot and later a trainer's. Fixed (plugins.md, Ambients, Sprites not loaded):

@@ -2,6 +2,7 @@
 #include "constants/directions.h"
 #include "field/field.h"
 #include "field/field_actor.h"
+#include "field/field_actor_drawdata.h"
 #include "field/field_effect.h"
 #include "field/field_g3d_mapper.h"
 #include "field/field_internal.h"
@@ -28,9 +29,12 @@
 
 // The field's frames a second
 #define AMBIENT_FRAMES_A_SECOND 30
-// A billboard animation: its status times 4 plus the camera-relative direction (field_actor.h's DRAW_STATUS_*)
+// A person's billboard animation: its status times 4 plus the camera-relative direction (field_actor.h's
+// DRAW_STATUS_*). A sprite whose animation set has fewer (a walking Pokémon's, 4) has one animation a direction, always
+// playing, as RailActorAnim_DrawWalking gives them
 #define AMBIENT_ANIM_STAND 0
 #define AMBIENT_ANIM_WALK (2 * 4)
+#define AMBIENT_ANIM_PERSON (AMBIENT_ANIM_WALK + 4)
 // A perch's hop: its frames and its height, in units
 #define AMBIENT_HOP_FRAMES 8
 #define AMBIENT_HOP_HEIGHT FX32_CONST(3)
@@ -58,6 +62,8 @@ typedef struct {
     u16 shadow;
     u8 facing;
     u8 hop;
+    // Whether its sprite has one animation a direction, always playing (a walking Pokémon's)
+    u8 byDirection;
 } Ambient;
 
 typedef struct {
@@ -175,6 +181,7 @@ static void Ambients_Load(Field *field) {
         ambient->angle = DEG_TO_IDX(records[i].phase % 360);
         ambient->nextChange = AMBIENT_FRAMES_A_SECOND;
         ambient->anim = 0xffff;
+        ambient->byDirection = FIELD_BILLBOARD_ANIM_SETS[config.spriteControllerType].count < AMBIENT_ANIM_PERSON;
         ambient->billboard[1] = BILLBOARD_ACTOR_NONE;
         FldBillboardActor_AddActorPosOrReserve(actorSystem, &config, ambient->billboard, &ambient->record.at, NULL,
                                                NULL, func_ov012_02166fc0(actorSystem));
@@ -314,7 +321,12 @@ void PaperWhite2_AmbientsUpdate(Field *field) {
         }
         pos.y += Field_GetActorYOffset(field);
         BillboardActorScene_SetActorPos(BillboardActorSys_GetScene(sys), ambient->billboard[1], &pos);
-        anim = (moving ? AMBIENT_ANIM_WALK : AMBIENT_ANIM_STAND) + RotateDirByAngle(ambient->facing, angle);
+        if (ambient->byDirection) {
+            anim = ambient->facing;
+            moving = TRUE;
+        } else {
+            anim = (moving ? AMBIENT_ANIM_WALK : AMBIENT_ANIM_STAND) + RotateDirByAngle(ambient->facing, angle);
+        }
         if (anim != ambient->anim) {
             ambient->anim = anim;
             BillboardActorSys_SetActorAnim(sys, ambient->billboard[1], anim);
