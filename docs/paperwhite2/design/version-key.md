@@ -281,12 +281,29 @@ All the files hooked are complete in `delinks.txt`. Build with `python3 configur
   | 27-33 | Route 4 |
   | 45 | Driftveil City's market (`driftveil_city_7`, matrix replacement) |
 
-  plus Black City / White Forest (zones of their own). Driftveil's market is in the data's list; whether it counts
-  as "largely different" is the user's to confirm.
+  plus Black City / White Forest (zones of their own), and **Reversal Mountain** (below). **Driftveil's market is
+  left out** (entry 45: the user found nothing on it differing), and so are the small layout changes elsewhere, such
+  as Victory Road's.
+- **Reversal Mountain** has no map pieces by version: each version has its own cave, as Route 4 has its own zone.
+  Black 2's is `reversal_mountain_2` to `_7` (`AREA_REVERSAL_MOUNTAIN_2`), White 2's `reversal_mountain_8` to `_13`
+  (`AREA_REVERSAL_MOUNTAIN_8`). The ways in choose by `GameGetVersion`, moving the other version's warps off their
+  doorways as Castelia Gate does: the mountain's outside (`reversal_mountain.s`, level script: Black 2 keeps warps 0,
+  2 and 4, to zones 2 and 6; White 2 warps 1, 3 and 5, to 8 and 12) and Undella Town (`undella_town.s`: warp 5 to
+  zone 7, or 6 to 13). The swap is those two scripts reading the flag. The new encounter tables already have both
+  caves' zones; their trainers' defeats are their own trainer IDs' flags.
 - **The gates' warps follow the flag**: Castelia Gate's and Join Avenue's level scripts choose Route 4's warp with
   `GameGetVersion` (Black 2's gate activates warp 1, `ZONE_ROUTE_4`; White 2's warp 2, `ZONE_ROUTE_4_16`: the script
   moves the other warp off the doorway, to tile 9, 11, `SetZoneWarpLocation`); they're to read the new flag.
 - **The key refuses inside the affected places** (option A of "Where it can be used").
+- **Being considered: the Pokémon Centers' globe instead of a key item.** The globe already opens the Season app in
+  hack builds (`src/paperwhite2/ov312/paperwhite2_season_app.c`, plugins.md, Season app); a "Set Version" entry
+  beside Set Season, Dynamic Options and Set Hemisphere would switch the flag there. Inside a Pokémon Center nothing
+  has to reload in place: the next map change (walking out) loads the outside as the flag now says, so the tile
+  problem of "Where it can be used" goes away, and Castelia Gate's, Undella Town's and Reversal Mountain's level
+  scripts run again on entry. It still needs refusing where the Center's own outside changes: Opelucid City (its
+  buildings move between versions, so the door the player walks out of may not be where the other version's is)
+  and Black City / White Forest (the Center's exit names Black City, which the other version plays as White Forest).
+  What's left of the item (its icon, bag and Y) would go.
 - **The Desert Resort** isn't part of Route 4 in the user's view; to be tested (its texture set still has to match
   the Route 4 cells beside it).
 - **Opelucid's people** change their dialogue with the swap.
