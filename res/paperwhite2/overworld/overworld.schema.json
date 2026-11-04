@@ -26,6 +26,24 @@
         }
     },
     "$defs": {
+        "membership": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [ "id" ],
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9_]+$",
+                    "description": "The group's id in groups.json"
+                },
+                "weight": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535,
+                    "description": "Its share of the group's picks among the members whose conditions hold (and the group's nobody weight); 1 by default"
+                }
+            }
+        },
         "entry": {
             "type": "object",
             "additionalProperties": false,
@@ -44,6 +62,10 @@
                 "rolls": {
                     "enum": [ "hour", "day", "period", "entry" ],
                     "description": "How long a roll holds, its chance's and its instance's pick: the hour (by default), the day, the time of day, or each zone entry. The field picks again when the hour or the time of day changes, and changes the NPC while it's out of view"
+                },
+                "group": {
+                    "$ref": "#/$defs/membership",
+                    "description": "The group it belongs to (groups.json), of which at most one member appears at a time: the whole NPC, whichever instance it shows. An NPC in a group can't have an instance in one"
                 },
                 "instances": {
                     "type": "array",
@@ -73,6 +95,10 @@
                     "minimum": 1,
                     "maximum": 65535,
                     "description": "Its share of the picks among the instances whose conditions hold; 1 by default"
+                },
+                "group": {
+                    "$ref": "#/$defs/membership",
+                    "description": "The group it belongs to (groups.json), of which at most one member appears at a time: this instance alone; not picked, it leaves its NPC's pool"
                 },
                 "npc": {
                     "$ref": "../../field/events/events.schema.json#/$defs/npc",
@@ -298,6 +324,10 @@
                 "rolls": {
                     "enum": [ "hour", "day", "period", "entry" ],
                     "description": "How long a chance in its condition, and its pick from a set of sprites, hold: the hour (by default), the day, the time of day, or each zone entry"
+                },
+                "group": {
+                    "$ref": "#/$defs/membership",
+                    "description": "The group it belongs to (groups.json), of which at most one member appears at a time: not picked, it doesn't show. A group counts as one ambient in the zone's 8"
                 },
                 "react": {
                     "type": "object",

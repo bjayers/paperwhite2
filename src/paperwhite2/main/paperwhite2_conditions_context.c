@@ -52,12 +52,16 @@ void ConditionContext_FillWorld(ConditionContext *ctx, GameData *gameData) {
     ctx->dayNumber = RTC_ConvertDateToDay(&time->date);
     RTC_GetCachedTime(&now);
     ctx->hour = now.hour;
-    ctx->loadSeed = Conditions_Hash(ctx->zoneLoadCounter, ctx->zone);
-    ctx->daySeed = Conditions_Hash(ctx->dayNumber, ctx->zone);
-    // The hour's and the time of day's: the day's mixed with them, so each is new the next day too
-    ctx->hourSeed = Conditions_Hash(Conditions_Hash(ctx->dayNumber, ctx->hour), ctx->zone);
-    ctx->periodSeed = Conditions_Hash(Conditions_Hash(ctx->dayNumber, 0x100 + ctx->period), ctx->zone);
+    ConditionContext_SetSeedZone(ctx, ctx->zone);
     ctx->filled |= CONDITION_CONTEXT_WORLD;
+}
+
+void ConditionContext_SetSeedZone(ConditionContext *ctx, u16 zone) {
+    ctx->loadSeed = Conditions_Hash(ctx->zoneLoadCounter, zone);
+    ctx->daySeed = Conditions_Hash(ctx->dayNumber, zone);
+    // The hour's and the time of day's: the day's mixed with them, so each is new the next day too
+    ctx->hourSeed = Conditions_Hash(Conditions_Hash(ctx->dayNumber, ctx->hour), zone);
+    ctx->periodSeed = Conditions_Hash(Conditions_Hash(ctx->dayNumber, 0x100 + ctx->period), zone);
 }
 
 BOOL ConditionContext_FillSubject(ConditionContext *ctx, PartyPkm *pkm, u16 steps) {

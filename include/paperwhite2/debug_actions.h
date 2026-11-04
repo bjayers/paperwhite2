@@ -135,6 +135,10 @@
 // level, shininess and state (2, 4, 6), or none
 #define DEBUG_ACTION_WANDERER_WORDS 45
 
+// The zone's spawn groups (include/paperwhite2/spawns.h) from the one arg1 counts, a line each in words 0 to 2: its
+// index in groups.json, how many of its members can appear now and the one it picked; how many (at most 3)
+#define DEBUG_ACTION_SPAWN_GROUPS 46
+
 // The kinds of number entry: their ranges and messages are sDebugNumberKinds (paperwhite2_debug_commands.c)
 #define DEBUG_NUMBER_LEVEL 0
 #define DEBUG_NUMBER_NATURE 1

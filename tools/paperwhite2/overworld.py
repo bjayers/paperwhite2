@@ -25,6 +25,12 @@ is a conditions table (tools/paperwhite2/conditions.py) whose rules' payloads sa
   its up (seconds), a fly-over's heading (REACT_AWAY: at random), u8 its waypoints' count and FLAG_BACK, 2 bytes 0,
   and six waypoints of s16 x, y and z (units from its place; a fly-over's range is its width, its height its line
   height); it shows while its rule holds (paperwhite2_ambients.c).
+- after the zone's own rules, each group (groups.json) it has a member of: a header, u8 4, u8 the group's seed, u16
+  its index in groups.json, then u16 its nobody weight and its members' count; then each member's parts, the rules
+  that its own zone works out for it, in that zone's order, so the rolls come out the same: u8 5, u8 the member's
+  seed, u16 its key (an NPC's id, an ambient's index), then u16 its zone, u8 its index in the group, its part's role
+  (ROLES), its kind (MEMBERS) and its instance's index among its NPC's, u16 the instance's spawn flag. A part's rule's
+  weight is the member's (Spawns_GroupDenied, paperwhite2_spawns.c).
 The seed is the CONDITION_SEED_* the NPC's rolls start from, keyed by its id (its "rolls": the hour's by default, the
 day's, the time of day's or each entry's); the field picks again when the hour or the time of day changes.
 """
@@ -46,7 +52,17 @@ MAGIC = 0x574F5750
 HEADER = struct.Struct("<IHH")
 ENTRY = struct.Struct("<HHII")
 PAYLOAD = struct.Struct("<BBH")
-KIND_CONDITION, KIND_INSTANCE, KIND_AMBIENT, KIND_AMBIENT_SPRITE = 0, 1, 2, 3
+KIND_CONDITION, KIND_INSTANCE, KIND_AMBIENT, KIND_AMBIENT_SPRITE, KIND_GROUP, KIND_GROUP_PART = 0, 1, 2, 3, 4, 5
+GROUP = struct.Struct("<HH")
+GROUP_PART = struct.Struct("<HBBBBH")
+# A part's role in its member: its NPC's condition (must hold), an instance of a whole NPC (one must hold), the
+# instance that is the member (must hold), another instance of its NPC (worked out for the rolls only), an ambient's
+ROLE_GATE, ROLE_OPTION, ROLE_TARGET, ROLE_PASS, ROLE_AMBIENT = 0, 1, 2, 3, 4
+# What a member is: a whole NPC, an instance, an ambient
+MEMBER_NPC, MEMBER_INSTANCE, MEMBER_AMBIENT = 0, 1, 2
+GROUPS = "groups.json"
+# The most members of groups a zone has (SPAWNS_GROUP_ZONE_MEMBERS_MAX, include/paperwhite2/spawns.h)
+ZONE_MEMBERS_MAX = 64
 AMBIENT = struct.Struct("<4H5B3xiii4H7H6B4H2B2x18h")
 AMBIENT_POINTS = 6
 AMBIENT_SPRITES = 4
@@ -69,7 +85,98 @@ REACT_NEAR, REACT_STARTLE_MORE, REACT_SPREAD, REACT_CLIMB, REACT_SPEED = 3, 2, 2
 SEEDS = {"entry": 0, "day": 1, "hour": 3, "period": 4}
 
 
-def zone_table(path: Path, schema: dict) -> bytes | None:
+def group_members(sources: Path, schema: dict) -> tuple[list[dict], dict[str, list[dict]]]:
+    """The groups of groups.json, and each one's members from the zones' files: its zone, its kind, its key, its
+    instance's index, its weight and the parts its zone works out for it (each its condition, its role and its flag)."""
+    path = sources / GROUPS
+    groups = load(path, load_schema(SOURCES / "groups.schema.json"))["groups"] if path.is_file() else []
+    index = {}
+    for i, group in enumerate(groups):
+        if group["id"] in index:
+            raise DataError(f"{label(path)}: groups[{i}]: the id {group['id']!r} is taken")
+        index[group["id"]] = i
+    members = {group["id"]: [] for group in groups}
+
+    def join(membership: dict, where: str, member: dict):
+        if membership["id"] not in members:
+            raise DataError(f"{where}.group: {label(path)} has no group {membership['id']!r}")
+        members[membership["id"]].append({**member, "weight": membership.get("weight", 1), "where": where})
+
+    for zone_path in zone_files(sources):
+        source = load(zone_path, schema)
+        zone = value(f"ZONE_{zone_path.stem.upper()}", label(zone_path))
+        for i, entry in enumerate(source.get("npcs", [])):
+            where = f"{label(zone_path)}: npcs[{i}]"
+            seed = SEEDS[entry.get("rolls", "hour")]
+            instances = entry.get("instances", [])
+            gate = [(entry["when"], ROLE_GATE, 0)] if "when" in entry else []
+            if "group" in entry:
+                if any("group" in instance for instance in instances):
+                    raise DataError(f"{where}: an NPC in a group can't have an instance in one")
+                join(entry["group"], where, {"zone": zone, "kind": MEMBER_NPC, "key": entry["id"], "instance": 0,
+                                             "seed": seed, "rolls": entry.get("rolls", "hour"), "parts": (gate + [
+                                                 (instance.get("when", {}), ROLE_OPTION, instance_flag(instance, where))
+                                                 for instance in instances]) or [({}, ROLE_GATE, 0)]})
+            for j, instance in enumerate(instances):
+                if "group" in instance:
+                    join(instance["group"], f"{where}.instances[{j}]", {
+                        "zone": zone, "kind": MEMBER_INSTANCE, "key": entry["id"], "instance": j, "seed": seed,
+                        "rolls": entry.get("rolls", "hour"), "parts": gate + [
+                            (other.get("when", {}), ROLE_TARGET if k == j else ROLE_PASS,
+                             instance_flag(other, where)) for k, other in enumerate(instances)]})
+        for i, ambient in enumerate(source.get("ambients", [])):
+            if "group" in ambient:
+                join(ambient["group"], f"{label(zone_path)}: ambients[{i}]", {
+                    "zone": zone, "kind": MEMBER_AMBIENT, "key": i, "instance": 0,
+                    "seed": SEEDS[ambient.get("rolls", "hour")], "rolls": ambient.get("rolls", "hour"),
+                    "parts": [(ambient.get("when", {}), ROLE_AMBIENT, 0)]})
+    for group in groups:
+        listed = members[group["id"]]
+        if len({m["zone"] for m in listed}) > 1:
+            rolling = [m["where"] for m in listed if m["rolls"] == "entry"]
+            if group.get("rolls") == "entry" or rolling:
+                raise DataError(f"{label(path)}: group {group['id']!r} has members in several zones, so neither it nor "
+                                f"they can roll each entry ({', '.join(rolling) or 'the group'})")
+        # (a member's index is a byte, and 0xff is SPAWNS_GROUP_PICKED_NOBODY)
+        if len(listed) > 255:
+            raise DataError(f"{label(path)}: group {group['id']!r} has more than 255 members")
+    per_zone = {}
+    for listed in members.values():
+        for member in listed:
+            per_zone[member["zone"]] = per_zone.get(member["zone"], 0) + 1
+    for zone, count in per_zone.items():
+        if count > ZONE_MEMBERS_MAX:
+            raise DataError(f"zone {zone} has {count} members of groups, more than {ZONE_MEMBERS_MAX}")
+    return groups, members
+
+
+def instance_flag(instance: dict, where: str) -> int:
+    return value(instance["npc"].get("flag", 0), where)
+
+
+def group_rules(compiler: Compiler, zone: int, groups: list[dict], members: dict[str, list[dict]]) -> list:
+    """The rules of the groups that a zone has a member of: each one's header, then its members' parts."""
+    rules = []
+    for g, group in enumerate(groups):
+        listed = members[group["id"]]
+        if not any(m["zone"] == zone for m in listed):
+            continue
+        rules.append(([], 0, 1, PAYLOAD.pack(KIND_GROUP, SEEDS[group.get("rolls", "hour")], g)
+                      + GROUP.pack(group.get("nobody", 0), len(listed))))
+        for m, member in enumerate(listed):
+            for when, role, flag in member["parts"]:
+                rules.append((compiler.compile(when, f"{member['where']}.when"), 0, member["weight"],
+                              PAYLOAD.pack(KIND_GROUP_PART, member["seed"], member["key"])
+                              + GROUP_PART.pack(member["zone"], m, role, member["kind"], member["instance"], flag)))
+    return rules
+
+
+def zone_files(sources: Path) -> list[Path]:
+    return [path for path in sorted(sources.glob("*.json")) if not path.name.endswith(".schema.json")
+            and path.name != GROUPS]
+
+
+def zone_table(path: Path, schema: dict, groups: list[dict] = (), members: dict | None = None) -> bytes | None:
     """A zone's table, or None when it has nothing to pack."""
     source = load(path, schema)
     events = json.loads((ROOT / "res/field/events" / path.name).read_text())
@@ -88,6 +195,9 @@ def zone_table(path: Path, schema: dict) -> bytes | None:
         seed = SEEDS[entry.get("rolls", "hour")]
         if "when" in entry:
             rules.append((compiler.compile(entry["when"], f"{where}.when"), 0, 1, PAYLOAD.pack(KIND_CONDITION, seed, npc_id)))
+        elif "group" in entry and not entry.get("instances"):
+            # (a member with no rules of its own: an empty condition, so the field sees it)
+            rules.append(([], 0, 1, PAYLOAD.pack(KIND_CONDITION, seed, npc_id)))
         for j, instance in enumerate(entry.get("instances", [])):
             at = f"{where}.instances[{j}]"
             record = npc_bytes({**instance["npc"], "id": npc_id}, at)
@@ -103,6 +213,8 @@ def zone_table(path: Path, schema: dict) -> bytes | None:
                 rules.append((compiler.compile(sprite.get("when", {}), f"{where}.when"), 0, 1,
                               PAYLOAD.pack(KIND_AMBIENT_SPRITE, SEEDS[ambient.get("rolls", "hour")], i)
                               + struct.pack("<Hxx", value(sprite["sprite"], where))))
+    if members:
+        rules += group_rules(compiler, value(f"ZONE_{path.stem.upper()}", label(path)), groups, members)
     return pack_table(rules, compiler.lists) if rules else None
 
 
@@ -158,11 +270,10 @@ def ambient_bytes(ambient: dict, where: str) -> bytes:
 def member(sources: Path = SOURCES) -> bytes:
     """The spawn member of the zones' files in sources."""
     schema = load_schema(SOURCES / "overworld.schema.json")
+    groups, members = group_members(sources, schema)
     tables = []
-    for path in sorted(sources.glob("*.json")):
-        if path.name.endswith(".schema.json"):
-            continue
-        table = zone_table(path, schema)
+    for path in zone_files(sources):
+        table = zone_table(path, schema, groups, members)
         if table is not None:
             tables.append((value(f"ZONE_{path.stem.upper()}", label(path)), table))
     tables.sort()
@@ -193,7 +304,18 @@ def dump(path: Path):
         for clauses, _, weight, payload in table["rules"]:
             kind, seed, npc_id = PAYLOAD.unpack_from(payload)
             rolls = next((k for k, v in SEEDS.items() if v == seed), seed)
-            print(f"  {'instance of' if kind else 'condition of'} NPC {npc_id}, weight {weight}, {len(clauses)} clauses, rolls {rolls}")
+            if kind == KIND_GROUP:
+                nobody, count = GROUP.unpack_from(payload, PAYLOAD.size)
+                print(f"  group {npc_id}: {count} members, nobody {nobody}, rolls {rolls}")
+            elif kind == KIND_GROUP_PART:
+                zone_id, m, role, member_kind, instance, flag = GROUP_PART.unpack_from(payload, PAYLOAD.size)
+                print(f"    member {m} (zone {zone_id}, {['NPC', 'instance', 'ambient'][member_kind]} {npc_id}"
+                      f"{f'.{instance}' if member_kind == MEMBER_INSTANCE else ''}): role {role}, weight {weight}, "
+                      f"{len(clauses)} clauses")
+            elif kind in (KIND_AMBIENT, KIND_AMBIENT_SPRITE):
+                print(f"  {'ambient' if kind == KIND_AMBIENT else 'sprite of ambient'} {npc_id}, {len(clauses)} clauses")
+            else:
+                print(f"  {'instance of' if kind else 'condition of'} NPC {npc_id}, weight {weight}, {len(clauses)} clauses, rolls {rolls}")
 
 
 def main():

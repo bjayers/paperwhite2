@@ -258,6 +258,9 @@ u32 Conditions_ScaledLevelMax(u32 scaled);
 void ConditionContext_Init(ConditionContext *ctx);
 // The season, the period, the weather, the zone and its parent, the flags and variables, and the seeds
 void ConditionContext_FillWorld(ConditionContext *ctx, GameData *gameData);
+// The seeds made again as a zone's (FillWorld's are the player's zone's): for working out another zone's rules as it
+// would, or a pick that every zone makes the same (a spawn group's)
+void ConditionContext_SetSeedZone(ConditionContext *ctx, u16 zone);
 // The subject from a party member, with steps the caller counts. FALSE, with the subject not filled, for an Egg. The
 // total steps and the waiting item are 0; a consumer that counts them sets them after
 BOOL ConditionContext_FillSubject(ConditionContext *ctx, PartyPkm *pkm, u16 steps);

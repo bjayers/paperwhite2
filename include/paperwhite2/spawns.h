@@ -145,10 +145,30 @@ enum {
 #define SPAWNS_AMBIENT_MAX 8
 // What an ambient's rolls are keyed by: its index past every NPC's id
 #define SPAWNS_AMBIENT_KEY 0x10000
+// What a spawn group's pick is keyed by: its index in groups.json past every ambient's key, from the seed of no zone
+// (ConditionContext_SetSeedZone), so every zone with a member picks the same
+#define SPAWNS_GROUP_KEY 0x20000
+#define SPAWNS_GROUP_SEED_ZONE 0xffff
+// The most members of groups a zone has (tools/paperwhite2/overworld.py checks it)
+#define SPAWNS_GROUP_ZONE_MEMBERS_MAX 64
 
 // The zone's ambients whose conditions hold now, into out (at most max); how many
 u32 Spawns_GetAmbients(GameSystem *gsys, HeapID heapId, SpawnAmbient *out, u32 max);
 // The zone's groups applied again after a script changed what they read (a SpawnRefresh command to come)
 void Spawns_Refresh(GameSystem *gsys);
+
+// A spawn group of the zone, for the debug menu: its index in groups.json, its members' count, how many of them can
+// appear now, and the one it picked, by its index in the group (SPAWNS_GROUP_PICKED_NOBODY for nobody)
+typedef struct {
+    u8 group;
+    u8 members;
+    u8 holding;
+    u8 picked;
+} SpawnsGroupInfo;
+
+#define SPAWNS_GROUP_PICKED_NOBODY 0xff
+
+// The zone's groups from the first, at most max, into out, as the field picks them now; how many
+u32 Spawns_GetGroupInfo(GameSystem *gsys, HeapID heapId, u32 first, SpawnsGroupInfo *out, u32 max);
 
 #endif // PAPERWHITE2_SPAWNS_H

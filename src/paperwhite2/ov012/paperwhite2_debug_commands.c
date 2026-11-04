@@ -29,6 +29,7 @@
 #include "paperwhite2/following_field.h"
 #include "paperwhite2/season.h"
 #include "paperwhite2/shiny_candy.h"
+#include "paperwhite2/spawns.h"
 #include "paperwhite2/terrain_groups.h"
 #include "paperwhite2/vram_stats.h"
 #include "paperwhite2/wanderers.h"
@@ -218,6 +219,7 @@ static void DebugCommands_ConditionsWorld(FieldScriptEnv *env);
 static BOOL DebugCommands_ConditionsParty(FieldScriptEnv *env);
 static u32 DebugCommands_ConditionsRules(FieldScriptEnv *env, u32 first);
 static void DebugCommands_ConditionsPick(FieldScriptEnv *env);
+static u32 DebugCommands_SpawnGroups(FieldScriptEnv *env, u32 first);
 static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2, BOOL *wait);
 
 BOOL Scrcmd_PaperWhite2_Debug(VM *vm, FieldScriptEnv *env) {
@@ -415,6 +417,8 @@ static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2
     case DEBUG_ACTION_WANDERER_WORDS:
         DebugCommands_WandererWords(env);
         return 0;
+    case DEBUG_ACTION_SPAWN_GROUPS:
+        return DebugCommands_SpawnGroups(env, arg1);
     case DEBUG_ACTION_MEMORY_RESET_PEAKS:
         PaperWhite2_VramStats_ResetPeaks();
         FldBillboardActor_ResetCachePeaks(GSYS_GetField(gsys)->actorSystem);
@@ -1030,6 +1034,33 @@ static void DebugCommands_WandererWords(FieldScriptEnv *env) {
         DebugCommands_SetWordAscii(env, 2 + 2 * i, details);
     }
     DebugCommands_SetWordNumber(env, 0, count);
+}
+
+// The spawn groups' lines (DEBUG_ACTION_SPAWN_GROUPS): "Group 3: 2/4 can, picked 1", or "picked nobody"
+static u32 DebugCommands_SpawnGroups(FieldScriptEnv *env, u32 first) {
+    SpawnsGroupInfo infos[CONDITIONS_RULES_PER_PAGE];
+    u32 count = Spawns_GetGroupInfo(FieldScriptEnv_GetGameSystem(env), FieldScriptEnv_GetHeapID(env), first, infos,
+                                    CONDITIONS_RULES_PER_PAGE);
+    u32 i;
+
+    for (i = 0; i < count; i++) {
+        char line[ASCII_WORD_LENGTH];
+        char *end = DebugCommands_AppendText(line, "Group ");
+
+        end = DebugCommands_AppendNumber(end, infos[i].group);
+        end = DebugCommands_AppendText(end, ": ");
+        end = DebugCommands_AppendNumber(end, infos[i].holding);
+        end = DebugCommands_AppendText(end, "/");
+        end = DebugCommands_AppendNumber(end, infos[i].members);
+        end = DebugCommands_AppendText(end, " can, picked ");
+        if (infos[i].picked == SPAWNS_GROUP_PICKED_NOBODY) {
+            DebugCommands_AppendText(end, "nobody");
+        } else {
+            DebugCommands_AppendNumber(end, infos[i].picked);
+        }
+        DebugCommands_SetWordAscii(env, i, line);
+    }
+    return count;
 }
 
 // The Memory page's words (DEBUG_ACTION_MEMORY_WORDS)

@@ -879,7 +879,21 @@ edited in the Overworld Editor.
   condition has only its spawn flag changed, its original one read back from the zone's entity file, so an init
   script's changes to its record stay. The key is stored once every NPC has its record; until then the rest are tried
   again each second.
-- **Not yet:** a script's `SpawnRefresh`, ambients, groups (on hold), and NPCs walking off when their time is over.
+- **Groups** (`res/paperwhite2/overworld/groups.json`, `groups.schema.json`; docs/paperwhite2/design/overworld-editor.md,
+  Groups): at most one member of a group appears at a time. A member, an NPC's entry (the whole NPC), an instance or
+  an ambient, names its group with `"group": {"id", "weight"}`; a group has a name, an optional home zone, `rolls` and
+  a `nobody` weight. `overworld.py` adds to each zone's table, after its own rules, each group it has a member of: a
+  header rule (payload kind 4: its seed, its index in groups.json, its nobody weight and members' count), then every
+  member's parts (kind 5), the rules its own zone works out for it in that zone's order, wherever it is. Before the
+  NPCs and ambients are worked out (`Spawns_OnZoneInit`, `Spawns_Repick`, `Spawns_GetAmbients`), `Spawns_GroupDenied`
+  works out each member as its own zone would (`ConditionContext_SetSeedZone`: that zone's seeds, the same key and
+  order of rolls, so its chance is the same everywhere), picks one by weight or nobody from the group's seed with no
+  zone (`SPAWNS_GROUP_SEED_ZONE`, keyed `SPAWNS_GROUP_KEY` plus its index), and denies the zone's members it didn't
+  pick: an NPC is hidden, an instance leaves its NPC's pool, an ambient doesn't show and takes none of the 8 places.
+  A group with members in several zones can't roll each entry (the packer refuses it); a zone has at most 64 members
+  of groups. The debug menu's Conditions, Spawn groups lists the zone's groups: each one's index, how many of its
+  members can appear and its pick.
+- **Not yet:** a script's `SpawnRefresh`, and NPCs walking off when their time is over.
 
 ### Ambients
 

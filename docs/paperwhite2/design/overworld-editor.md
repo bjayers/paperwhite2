@@ -135,30 +135,46 @@ Pokémon seen walking in tall and dark grass, drawn as ambients are (no actor), 
 - **Undecided (the user will playtest first):** whether random grass encounters stay, get rarer or go where
   wanderers are; a debug switch for the three while testing.
 
-### Groups: sets where only one can appear (the user's idea, 2026-10-31; on hold, 2026-11-02)
+### Groups: sets where only one can appear (the user's idea, 2026-10-31; agreed 2026-11-03)
 
-A group is a set of **mutually exclusive** members, as the old seasonal flag script used flags for: NPCs, instances
-and ambients each keep their own condition, and the group only says that at most one of them appears at a time. A group
-has no condition of its own. When several members' conditions hold, the group picks one, by its **mode**:
-- **priority:** the first in the group's order;
-- **random:** by the members' weights, from the day's seed.
+A group is a set of members of which at most one appears at a time. It works as an NPC's instances do, across
+separate NPCs, instances, ambients and zones, and it helps keep a zone in its budget: eight groups of ambients never
+show more than eight ambients.
 
-Members are hosts (an NPC with its instances counts as one, whichever instance it shows) or single instances and
-ambients. A host's own instances are already exclusive among themselves.
+- **Members:** an NPC (whole, whichever instance it shows), a single instance, or an ambient. Each belongs to one
+  group at most, and an NPC in a group can't have an instance in another. Each keeps its own condition and its own
+  chance, rolled as before from its own `rolls`.
+- **The pick:** among the members whose conditions (chances included) hold and whose flags aren't set, one by weight.
+  The group has a **nobody** weight too, so it has a chance of its own: "someone's here 60% of the time, one of these
+  four". Its own `rolls` (the hour by default, the day, the time of day, each entry) say how long the pick holds, from
+  a seed keyed by the group that ignores the zone, so every zone picks the same.
+- **Across zones:** a group's members can be in several zones ("this traveler is in one of these towns today").
+  Each zone works out every member's condition as that member's own zone would (its seed, its key, the same order of
+  rolls), so a member's chance comes out the same everywhere. A cross-zone group can't roll "each entry" (every entry
+  would roll again), and what a zone can't know for another (its weather, the player's tile) is read where the player
+  is, so the editor warns about those clauses in a cross-zone group.
+- **Budget:** members still count toward the zone's NPC and sprite budget; a group only guarantees that at most one
+  of its members shows.
 
-**Rates as conditions.** A member's chance to appear (10%, as flags 590-599 did) is a clause of its condition. It
-is rolled from a seed, so it holds for a while rather than on every zone entry:
-- the day's seed by default: a 10% NPC is there all day or not at all, and leaving and coming back doesn't reroll it;
-- a member can choose the period's or each entry's instead.
+**Data.** `res/paperwhite2/overworld/groups.json` (`groups.schema.json`) has the groups: an id, a name, a home zone
+(optional, where the editor lists it), `rolls` and `nobody`. A member says its group where it is defined, in its zone's
+file: `"group": {"id": "traveler", "weight": 2}` on an NPC's entry, an instance or an ambient. A group's members are
+found by looking through the zones.
 
-The group then chooses among the members whose conditions, rates included, hold.
+**Packing.** `overworld.py` adds to each zone's table the groups it has a member of, each a header rule and then every
+member's rules from whichever zone, so a zone needs no other zone's table. An NPC in a group that has no rules of its
+own gets an empty condition, so the field sees it.
 
-**Across zones.** A group can span zones ("this traveler is in one of these towns today"), as long as its members'
-conditions use only what every zone can know (season, time, day, flags, vars, rates on the day's seed). A zone's
-weather or terrain can't be known for another zone, so the editor warns about those in a cross-zone group.
+**The editor.**
+- A zone lists its own groups (home zone) and those it has a member of; a button opens the full list, where a group
+  can be added, renamed or deleted, and an NPC, instance or ambient added to any group.
+- Each member's panel gets a Group section: its group, its weight, and its chance of appearing, simulated.
+- The simulated chance is worked out exactly from the members' chances and weights and the nobody weight, taking their
+  other conditions as met (later, with the preview mode's context, as they are then).
+- "Show only this group": the map fades everything else and shows the group's members in this zone.
+- Warnings: a cross-zone group rolling each entry, a cross-zone member's condition reading the weather or the tile.
 
-**Flags.** An instance whose flag is set leaves its host's pool for good (a one-time gift), and a host with none
-left shows nothing. The same goes for any member of a group.
+**Debug.** A debug menu page lists the zone's groups, each member's state (eligible or not) and the pick.
 
 ### The preview mode
 
@@ -208,7 +224,7 @@ The research's 24 codes on Route 20 (§4) left the preloads out.
    shadows (none, under its feet, or on the ground below), flying off when the player comes near, the budget,
    sprites from the encounters, and the editor's warnings.
 4. **Overworld encounters** (above), on the ambients' framework.
-5. **Groups** (mutually exclusive sets), on hold until the user decides.
+5. **Groups** (mutually exclusive sets), agreed 2026-11-03: runtime and packing, then the editor.
 
 Phase 0 and 1 of `npc-research.md` (the freeze test and the size guard) come with phase 1 here.
 
@@ -222,7 +238,7 @@ Phase 0 and 1 of `npc-research.md` (the freeze test and the size guard) come wit
 4. **The ambient budget:** 8 a zone and 4 distinct sprites to start. Planned for later, perhaps: overworld encounters
    in grass and dark grass (sprites from the area's Pokémon that start a wild battle when touched), up to 3 on screen.
    They would be actors, so they share the sprite and texture budget with ambients.
-5. **Groups:** mutually exclusive sets (Groups), pending the user's agreement; after instances and ambients.
+5. **Groups:** mutually exclusive sets (Groups), agreed 2026-11-03.
 6. **Rail zones** after the grid ones.
 7. **The phases** as listed: the editor over the existing data, designed with room for the new; then the engine's
    conditions and instances; then ambients and groups.

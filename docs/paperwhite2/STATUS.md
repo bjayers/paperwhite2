@@ -2,6 +2,17 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-04: spawn groups, the runtime, the packing and the debug page
+
+- The design agreed with the user is in design/overworld-editor.md, Groups: at most one member at a time, picked by
+  weight with a nobody weight; members are NPCs, instances or ambients, one group each, across zones; the group's own
+  rolls; groups in `res/paperwhite2/overworld/groups.json`, membership on the member.
+- Built (plugins.md, NPC spawns, Groups): `overworld.py` packs each zone's groups with every member's parts;
+  `Spawns_GroupDenied` (paperwhite2_spawns.c) picks and denies; the debug menu's Conditions, Spawn groups shows the
+  picks. Checked with a scratch two-zone group's dump. Built (hack, no warnings, DSi intact). **Not tested in game**:
+  groups.json is empty until the editor can add them.
+- Next: the editor (groups list, Group sections, simulated chance, show only a group).
+
 ## 2026-11-03 (late night): the Version Key shelved
 
 - Tested (with the fade-in fix): switching works, but Route 4 shows white textures until a battle, and a Black 2

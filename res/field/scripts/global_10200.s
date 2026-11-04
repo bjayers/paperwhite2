@@ -703,6 +703,7 @@ L_DebugConditions:
     ListMenuAdd Global10200_Text_DebugConditionsPartyEntry, 65535, 2
     ListMenuAdd Global10200_Text_DebugConditionsRulesEntry, 65535, 3
     ListMenuAdd Global10200_Text_DebugConditionsPickEntry, 65535, 4
+    ListMenuAdd Global10200_Text_DebugSpawnGroupsEntry, 65535, 5
     ListMenuAdd Global10200_Text_DebugBack, 65535, DEBUG_LIST_BACK
     ListMenuShow
     WorkCmpConst 0x8020, 0
@@ -715,6 +716,8 @@ L_DebugConditions:
     VMJumpIf CMP_EQ, L_DebugConditionsRulesStart
     WorkCmpConst 0x8020, 4
     VMJumpIf CMP_EQ, L_DebugConditionsPick
+    WorkCmpConst 0x8020, 5
+    VMJumpIf CMP_EQ, L_DebugSpawnGroupsStart
     VMJump L_DebugMenu
 
 L_DebugConditionsAll:
@@ -766,6 +769,41 @@ L_DebugConditionsRulesEnd:
 L_DebugConditionsPick:
     Debug DEBUG_ACTION_CONDITIONS_PICK, 0, 0, 0x8025
     SystemMsg Global10200_Text_DebugConditionsPick, 2
+    LastKeyWait
+    VMJump L_DebugConditions
+
+// Spawn groups: the zone's, three a page: each one's index in groups.json, its members that can appear and its pick
+L_DebugSpawnGroupsStart:
+    WorkSetConst 0x8026, 0
+
+L_DebugSpawnGroups:
+    Debug DEBUG_ACTION_SPAWN_GROUPS, 0x8026, 0, 0x8025
+    WorkCmpConst 0x8025, 0
+    VMJumpIf CMP_EQ, L_DebugSpawnGroupsEnd
+    WorkCmpConst 0x8025, 1
+    VMJumpIf CMP_EQ, L_DebugSpawnGroups1
+    WorkCmpConst 0x8025, 2
+    VMJumpIf CMP_EQ, L_DebugSpawnGroups2
+    SystemMsg Global10200_Text_DebugSpawnGroups3, 2
+    LastKeyWait
+    WorkAdd 0x8026, 3
+    VMJump L_DebugSpawnGroups
+
+L_DebugSpawnGroups1:
+    SystemMsg Global10200_Text_DebugSpawnGroups1, 2
+    LastKeyWait
+    VMJump L_DebugConditions
+
+L_DebugSpawnGroups2:
+    SystemMsg Global10200_Text_DebugSpawnGroups2, 2
+    LastKeyWait
+    VMJump L_DebugConditions
+
+L_DebugSpawnGroupsEnd:
+    // (none at all, or none past the last page)
+    WorkCmpConst 0x8026, 0
+    VMJumpIf CMP_NE, L_DebugConditions
+    SystemMsg Global10200_Text_DebugSpawnGroupsNone, 2
     LastKeyWait
     VMJump L_DebugConditions
 

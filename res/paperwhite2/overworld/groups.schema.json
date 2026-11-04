@@ -1,0 +1,48 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Paper White 2: the spawn groups, res/paperwhite2/overworld/groups.json",
+    "description": "Sets of NPCs, instances and ambients of which at most one member appears at a time, in one zone or across several (docs/paperwhite2/design/overworld-editor.md, Groups). A member names its group in its zone's file (\"group\"). Packed by tools/paperwhite2/overworld.py into each zone's table that has a member of the group.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "groups" ],
+    "properties": {
+        "$schema": {
+            "type": "string",
+            "description": "This schema, for editors"
+        },
+        "groups": {
+            "type": "array",
+            "maxItems": 255,
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [ "id", "name" ],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "pattern": "^[a-z0-9_]+$",
+                        "description": "What its members name it by"
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "A name for the editor"
+                    },
+                    "zone": {
+                        "type": "string",
+                        "description": "The zone it belongs to (a ZONE_* constant), where the editor lists it; it's also listed in each zone with a member of it. None for a group of its own"
+                    },
+                    "rolls": {
+                        "enum": [ "hour", "day", "period", "entry" ],
+                        "description": "How long its pick holds: the hour (by default), the day, the time of day, or each zone entry. A group with members in several zones can't roll each entry"
+                    },
+                    "nobody": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 65535,
+                        "description": "The weight of no member appearing, against the members' weights; 0 by default"
+                    }
+                }
+            }
+        }
+    }
+}

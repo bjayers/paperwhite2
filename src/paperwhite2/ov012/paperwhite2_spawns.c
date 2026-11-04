@@ -21,7 +21,12 @@
 // player stays in the zone, the same pick runs again, and an NPC whose record should change is changed only while it's
 // out of the camera's view (the caller says which are): its actor removed, its record written and its actor made
 // again if it shows. The field then creates, talks to and saves the NPCs as its own (docs/paperwhite2/plugins.md, NPC
-// spawns)
+// spawns).
+//
+// A spawn group (groups.json) lets at most one of its members appear: before the NPCs and the ambients are worked out,
+// each group the zone has a member of picks one among the members whose rules hold, by weight, or nobody, and the
+// zone's members it didn't pick are denied: an NPC is hidden, an instance leaves its NPC's pool, an ambient doesn't
+// show (Spawns_GroupDenied)
 
 // The spawn member, the events' archive's last file: a header, a zone's entry each, then the zones' tables
 #define SPAWNS_MAGIC 0x574f5750
@@ -55,10 +60,62 @@ enum {
     // A sprite of an ambient's that shows only while its condition holds, after the ambient's rule: its npcId is the
     // ambient's index, and its payload the object code (u16)
     SPAWN_KIND_AMBIENT_SPRITE,
+    // A spawn group, after the zone's own rules: its npcId is its index in groups.json, and its payload a SpawnGroup;
+    // its members' parts follow it
+    SPAWN_KIND_GROUP,
+    // A part of a group's member, one of the rules that the member's own zone works out for it, in that zone's order:
+    // its npcId is the member's key (an NPC's id, an ambient's index), its payload a SpawnGroupPart, and its rule's
+    // weight the member's
+    SPAWN_KIND_GROUP_PART,
 };
 
-// An ambient's rule, or one of its sprites'
-#define SPAWN_IS_AMBIENT(kind) ((kind) == SPAWN_KIND_AMBIENT || (kind) == SPAWN_KIND_AMBIENT_SPRITE)
+// An NPC's rule: its condition or one of its instances
+#define SPAWN_IS_NPC(kind) ((kind) == SPAWN_KIND_CONDITION || (kind) == SPAWN_KIND_INSTANCE)
+
+typedef struct {
+    u16 nobody;
+    u16 memberCount;
+} SpawnGroup;
+
+typedef struct {
+    // The member's zone, its index in its group, the part's SPAWN_ROLE_*, the member's SPAWN_MEMBER_*, an instance's
+    // index among its NPC's, and the instance's spawn flag
+    u16 zone;
+    u8 member;
+    u8 role;
+    u8 memberKind;
+    u8 instance;
+    u16 spawnFlag;
+} SpawnGroupPart;
+
+enum {
+    // Its NPC's condition, which must hold
+    SPAWN_ROLE_GATE,
+    // An instance of a whole NPC: one of them must hold
+    SPAWN_ROLE_OPTION,
+    // The instance that is the member, which must hold
+    SPAWN_ROLE_TARGET,
+    // Another instance of the member's NPC, worked out only for the rolls after it
+    SPAWN_ROLE_PASS,
+    // An ambient's rule, which must hold
+    SPAWN_ROLE_AMBIENT,
+};
+
+enum {
+    SPAWN_MEMBER_NPC,
+    SPAWN_MEMBER_INSTANCE,
+    SPAWN_MEMBER_AMBIENT,
+};
+
+// The zone's members that their groups didn't pick
+typedef struct {
+    u32 count;
+    struct {
+        u8 memberKind;
+        u8 instance;
+        u16 key;
+    } list[SPAWNS_GROUP_ZONE_MEMBERS_MAX];
+} SpawnsDenied;
 
 // A zone's entity file: the offset of its init script, the counts of its entities, NPCs, warps and triggers, then the
 // entities and the NPCs (LoadZoneEntities)
@@ -128,19 +185,188 @@ static BOOL Spawns_ReadOriginal(EventData *events, u16 zoneId, u16 npcId, ZoneNP
     return FALSE;
 }
 
+// Whether a member is one its group didn't pick
+static BOOL Spawns_IsDenied(const SpawnsDenied *denied, u32 memberKind, u16 key, u32 instance) {
+    u32 i;
+
+    for (i = 0; i < denied->count; i++) {
+        if (denied->list[i].memberKind == memberKind && denied->list[i].key == key &&
+            (memberKind != SPAWN_MEMBER_INSTANCE || denied->list[i].instance == instance)) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+// A group's member part's fields, after its payload
+static const SpawnGroupPart *Spawns_Part(const ConditionTable *table, u32 index) {
+    return (const SpawnGroupPart *)(Spawns_Payload(table, index) + 1);
+}
+
+// The end of a member's parts that start at first, within its group's end
+static u32 Spawns_MemberEnd(const ConditionTable *table, u32 first, u32 end) {
+    u32 next = first + 1;
+
+    while (next < end && Spawns_Part(table, next)->member == Spawns_Part(table, first)->member) {
+        next++;
+    }
+    return next;
+}
+
+// Whether a group's member can appear now: its parts, first to end, worked out as its own zone works out its rules
+// (Spawns_Want, Spawns_GetAmbients), with that zone's seeds and the same rolls in the same order
+static BOOL Spawns_MemberHolds(const ConditionTable *table, u32 first, u32 end, const ConditionContext *ctx,
+                               EventWork *eventWork) {
+    const SpawnPayload *payload = Spawns_Payload(table, first);
+    const SpawnGroupPart *part = (const SpawnGroupPart *)(payload + 1);
+    ConditionContext zoneCtx = *ctx;
+    BOOL hasOption = FALSE;
+    BOOL option = FALSE;
+    BOOL target = TRUE;
+    u32 rng;
+    u32 i;
+
+    zoneCtx.zone = part->zone;
+    zoneCtx.zoneParent = GetZoneParentZone(part->zone);
+    ConditionContext_SetSeedZone(&zoneCtx, part->zone);
+    rng = Conditions_Seed(&zoneCtx, payload->seed,
+                          part->memberKind == SPAWN_MEMBER_AMBIENT ? SPAWNS_AMBIENT_KEY + payload->npcId
+                                                                   : payload->npcId);
+    for (i = first; i < end; i++) {
+        BOOL holds;
+
+        part = Spawns_Part(table, i);
+        holds = Conditions_MatchRule(table, i, &zoneCtx, &rng) &&
+                (part->spawnFlag == 0 || !EventWork_FlagGet(eventWork, part->spawnFlag));
+        switch (part->role) {
+        case SPAWN_ROLE_GATE:
+        case SPAWN_ROLE_AMBIENT:
+            if (!holds) {
+                return FALSE;
+            }
+            break;
+        case SPAWN_ROLE_OPTION:
+            hasOption = TRUE;
+            option |= holds;
+            break;
+        case SPAWN_ROLE_TARGET:
+            target = holds;
+            break;
+        }
+    }
+    return (!hasOption || option) && target;
+}
+
+// What the debug menu asks of the groups' picks (Spawns_GetGroupInfo): the groups from the first, at most max
+typedef struct {
+    u32 first;
+    u32 max;
+    u32 count;
+    SpawnsGroupInfo *out;
+} SpawnsGroupReport;
+
+// The zone's members that their groups didn't pick: each group's pick among its members that can appear, by their
+// weights and its nobody weight, from its seed keyed by it, which every zone makes the same; with report, each group's
+// as well
+static void Spawns_GroupDenied(const ConditionTable *table, const ConditionContext *ctx, EventWork *eventWork,
+                               u16 zoneId, SpawnsDenied *denied, SpawnsGroupReport *report) {
+    ConditionContext groupCtx = *ctx;
+    u32 group = 0;
+    u32 i;
+
+    denied->count = 0;
+    ConditionContext_SetSeedZone(&groupCtx, SPAWNS_GROUP_SEED_ZONE);
+    for (i = 0; i < table->ruleCount; i++) {
+        const SpawnPayload *payload = Spawns_Payload(table, i);
+        u32 holds[(CONDITION_TABLE_MAX_RULES + 31) / 32];
+        u32 total;
+        u32 picked = SPAWNS_GROUP_PICKED_NOBODY;
+        u32 holding = 0;
+        u32 pick;
+        u32 end;
+        u32 j;
+        u32 rng;
+
+        if (payload->kind != SPAWN_KIND_GROUP) {
+            continue;
+        }
+        end = i + 1;
+        while (end < table->ruleCount && Spawns_Payload(table, end)->kind == SPAWN_KIND_GROUP_PART) {
+            end++;
+        }
+        // Each member's parts: whether it can appear, and its weight with the others' that can
+        total = ((const SpawnGroup *)(payload + 1))->nobody;
+        MI_CpuClear32(holds, sizeof(holds));
+        for (j = i + 1; j < end; j = Spawns_MemberEnd(table, j, end)) {
+            u8 member = Spawns_Part(table, j)->member;
+
+            if (Spawns_MemberHolds(table, j, Spawns_MemberEnd(table, j, end), ctx, eventWork)) {
+                holds[member / 32] |= 1 << (member % 32);
+                total += Conditions_GetRule(table, j)->weight;
+                holding++;
+            }
+        }
+        // The pick: a member by weight, or past every member's weight, nobody
+        if (total != 0) {
+            rng = Conditions_Seed(&groupCtx, payload->seed, SPAWNS_GROUP_KEY + payload->npcId);
+            pick = Conditions_Random(&rng, total);
+            for (j = i + 1; j < end; j = Spawns_MemberEnd(table, j, end)) {
+                u8 member = Spawns_Part(table, j)->member;
+
+                if (!(holds[member / 32] & (1 << (member % 32)))) {
+                    continue;
+                }
+                if (pick < Conditions_GetRule(table, j)->weight) {
+                    picked = member;
+                    break;
+                }
+                pick -= Conditions_GetRule(table, j)->weight;
+            }
+        }
+        // The zone's own members that weren't picked
+        for (j = i + 1; j < end && denied->count < SPAWNS_GROUP_ZONE_MEMBERS_MAX; j = Spawns_MemberEnd(table, j, end)) {
+            const SpawnGroupPart *part = Spawns_Part(table, j);
+
+            if (part->zone != zoneId || part->member == picked) {
+                continue;
+            }
+            denied->list[denied->count].memberKind = part->memberKind;
+            denied->list[denied->count].instance = part->instance;
+            denied->list[denied->count].key = Spawns_Payload(table, j)->npcId;
+            denied->count++;
+        }
+        if (report != NULL && group >= report->first && report->count < report->max) {
+            SpawnsGroupInfo *info = &report->out[report->count++];
+
+            info->group = (u8)payload->npcId;
+            info->members = (u8)((const SpawnGroup *)(payload + 1))->memberCount;
+            info->holding = (u8)holding;
+            info->picked = (u8)picked;
+        }
+        group++;
+        i = end - 1;
+    }
+}
+
 // The record an NPC should have now, from its rules, first to end (a condition and then its instances, one after
-// another): its own (original) where it shows as it is, an instance picked by weight from those whose conditions hold
-// and whose flags aren't set, or its own, hidden, where its condition fails or no instance holds
+// another): its own (original) where it shows as it is, an instance picked by weight from those whose conditions hold,
+// whose flags aren't set and that their groups didn't deny, or its own, hidden, where its condition fails, its group
+// didn't pick it or no instance holds
 static void Spawns_Want(const ConditionTable *table, u32 first, u32 end, const ZoneNPC *original, ZoneNPC *out,
-                        const ConditionContext *ctx, EventWork *eventWork) {
+                        const ConditionContext *ctx, EventWork *eventWork, const SpawnsDenied *denied) {
     const SpawnPayload *payload = Spawns_Payload(table, first);
     u32 rng = Conditions_Seed(ctx, payload->seed, original->uid);
     u32 total = 0;
     u32 pick;
     u32 i;
+    u32 instances;
     u8 holds[CONDITION_TABLE_MAX_RULES];
 
     *out = *original;
+    if (Spawns_IsDenied(denied, SPAWN_MEMBER_NPC, original->uid, 0)) {
+        out->spawnFlag = EVENT_FLAG_SPAWN_HIDDEN;
+        return;
+    }
     if (payload->kind == SPAWN_KIND_CONDITION) {
         if (!Conditions_MatchRule(table, first, ctx, &rng)) {
             out->spawnFlag = EVENT_FLAG_SPAWN_HIDDEN;
@@ -151,11 +377,13 @@ static void Spawns_Want(const ConditionTable *table, u32 first, u32 end, const Z
     if (first == end) {
         return;
     }
-    for (i = first; i < end; i++) {
+    for (i = first, instances = first; i < end; i++) {
         const ZoneNPC *record = (const ZoneNPC *)(Spawns_Payload(table, i) + 1);
 
+        // (the rolls first, as a group works them out for its members)
         holds[i] = Conditions_MatchRule(table, i, ctx, &rng) &&
-                   (record->spawnFlag == 0 || !EventWork_FlagGet(eventWork, record->spawnFlag));
+                   (record->spawnFlag == 0 || !EventWork_FlagGet(eventWork, record->spawnFlag)) &&
+                   !Spawns_IsDenied(denied, SPAWN_MEMBER_INSTANCE, original->uid, i - instances);
         if (holds[i]) {
             total += Conditions_GetRule(table, i)->weight;
         }
@@ -183,10 +411,10 @@ static u32 Spawns_RulesEnd(const ConditionTable *table, u32 first) {
     u16 npcId = Spawns_Payload(table, first)->npcId;
     u32 end = first + 1;
 
-    if (SPAWN_IS_AMBIENT(Spawns_Payload(table, first)->kind)) {
+    if (!SPAWN_IS_NPC(Spawns_Payload(table, first)->kind)) {
         return end;
     }
-    while (end < table->ruleCount && !SPAWN_IS_AMBIENT(Spawns_Payload(table, end)->kind) &&
+    while (end < table->ruleCount && SPAWN_IS_NPC(Spawns_Payload(table, end)->kind) &&
            Spawns_Payload(table, end)->npcId == npcId) {
         end++;
     }
@@ -208,6 +436,7 @@ void Spawns_OnZoneInit(GameSystem *gsys, u16 zoneId, HeapID heapId) {
     EventWork *eventWork = GameData_GetEventWork(gameData);
     ConditionTable *table = Spawns_LoadTable(events, zoneId, heapId);
     ConditionContext ctx;
+    SpawnsDenied denied;
     u32 i;
 
     // The flag of what is hidden, always set
@@ -218,14 +447,15 @@ void Spawns_OnZoneInit(GameSystem *gsys, u16 zoneId, HeapID heapId) {
     }
     ConditionContext_Init(&ctx);
     ConditionContext_FillGame(&ctx, gameData);
+    Spawns_GroupDenied(table, &ctx, eventWork, zoneId, &denied, NULL);
     for (i = 0; i < table->ruleCount; i = Spawns_RulesEnd(table, i)) {
         ZoneNPC *npc = Spawns_FindNPC(events, Spawns_Payload(table, i)->npcId);
         ZoneNPC original;
 
-        if (npc != NULL && !SPAWN_IS_AMBIENT(Spawns_Payload(table, i)->kind)) {
+        if (npc != NULL && SPAWN_IS_NPC(Spawns_Payload(table, i)->kind)) {
             // (the record as just read is the original)
             original = *npc;
-            Spawns_Want(table, i, Spawns_RulesEnd(table, i), &original, npc, &ctx, eventWork);
+            Spawns_Want(table, i, Spawns_RulesEnd(table, i), &original, npc, &ctx, eventWork, &denied);
         }
     }
     GFL_HeapFree(table);
@@ -238,6 +468,7 @@ BOOL Spawns_Repick(GameSystem *gsys, MMSys *actorSystem, HeapID heapId, SpawnsIn
     u16 zoneId = events->zoneId;
     ConditionTable *table = Spawns_LoadTable(events, zoneId, heapId);
     ConditionContext ctx;
+    SpawnsDenied denied;
     BOOL done = TRUE;
     u32 i;
 
@@ -246,6 +477,7 @@ BOOL Spawns_Repick(GameSystem *gsys, MMSys *actorSystem, HeapID heapId, SpawnsIn
     }
     ConditionContext_Init(&ctx);
     ConditionContext_FillGame(&ctx, gameData);
+    Spawns_GroupDenied(table, &ctx, eventWork, zoneId, &denied, NULL);
     for (i = 0; i < table->ruleCount; i = Spawns_RulesEnd(table, i)) {
         u16 npcId = Spawns_Payload(table, i)->npcId;
         ZoneNPC *npc = Spawns_FindNPC(events, npcId);
@@ -255,12 +487,12 @@ BOOL Spawns_Repick(GameSystem *gsys, MMSys *actorSystem, HeapID heapId, SpawnsIn
         u32 end;
         u16 spawnFlag;
 
-        if (SPAWN_IS_AMBIENT(Spawns_Payload(table, i)->kind) || npc == NULL ||
+        if (!SPAWN_IS_NPC(Spawns_Payload(table, i)->kind) || npc == NULL ||
             !Spawns_ReadOriginal(events, zoneId, npcId, &original)) {
             continue;
         }
         end = Spawns_RulesEnd(table, i);
-        Spawns_Want(table, i, end, &original, &want, &ctx, eventWork);
+        Spawns_Want(table, i, end, &original, &want, &ctx, eventWork, &denied);
         if (end == i + 1 && Spawns_Payload(table, i)->kind == SPAWN_KIND_CONDITION) {
             // Only a condition: only whether it's hidden changes, and the rest of its record stays as it is (an init
             // script may have moved it)
@@ -297,6 +529,7 @@ u32 Spawns_GetAmbients(GameSystem *gsys, HeapID heapId, SpawnAmbient *out, u32 m
     EventData *events = GameData_GetEventData(gameData);
     ConditionTable *table = Spawns_LoadTable(events, events->zoneId, heapId);
     ConditionContext ctx;
+    SpawnsDenied denied;
     u32 count = 0;
     u32 i;
 
@@ -305,11 +538,13 @@ u32 Spawns_GetAmbients(GameSystem *gsys, HeapID heapId, SpawnAmbient *out, u32 m
     }
     ConditionContext_Init(&ctx);
     ConditionContext_FillGame(&ctx, gameData);
+    Spawns_GroupDenied(table, &ctx, GameData_GetEventWork(gameData), events->zoneId, &denied, NULL);
     for (i = 0; i < table->ruleCount && count < max; i++) {
         const SpawnPayload *payload = Spawns_Payload(table, i);
         u32 rng;
 
-        if (payload->kind != SPAWN_KIND_AMBIENT) {
+        // (one its group didn't pick doesn't show, and takes none of the zone's places)
+        if (payload->kind != SPAWN_KIND_AMBIENT || Spawns_IsDenied(&denied, SPAWN_MEMBER_AMBIENT, payload->npcId, 0)) {
             continue;
         }
         rng = Conditions_Seed(&ctx, payload->seed, SPAWNS_AMBIENT_KEY + payload->npcId);
@@ -349,4 +584,26 @@ u32 Spawns_GetAmbients(GameSystem *gsys, HeapID heapId, SpawnAmbient *out, u32 m
 }
 
 void Spawns_Refresh(GameSystem *gsys) {
+}
+
+u32 Spawns_GetGroupInfo(GameSystem *gsys, HeapID heapId, u32 first, SpawnsGroupInfo *out, u32 max) {
+    GameData *gameData = GSYS_GetGameData(gsys);
+    EventData *events = GameData_GetEventData(gameData);
+    ConditionTable *table = Spawns_LoadTable(events, events->zoneId, heapId);
+    ConditionContext ctx;
+    SpawnsDenied denied;
+    SpawnsGroupReport report;
+
+    if (table == NULL) {
+        return 0;
+    }
+    report.first = first;
+    report.max = max;
+    report.count = 0;
+    report.out = out;
+    ConditionContext_Init(&ctx);
+    ConditionContext_FillGame(&ctx, gameData);
+    Spawns_GroupDenied(table, &ctx, GameData_GetEventWork(gameData), events->zoneId, &denied, &report);
+    GFL_HeapFree(table);
+    return report.count;
 }
