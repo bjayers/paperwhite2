@@ -10,7 +10,11 @@ scripts in something close to it, with real control flow.
 A small C-like language that the editor translates to and from a script's block in its `.s` file:
 
 - **The `.s` stays the source.** The Script Editor shows a script in the language (translated from its block); saving
-  translates it back and replaces that block only. The build doesn't change; scripts not touched stay as they are.
+  translates it back and replaces that block only: every other line of the file stays as it was, byte for byte, and a
+  new script adds its ScriptEntry and its block at the end. The build doesn't change. Before writing, the save
+  translates the new block back to the language and checks it reads as the user wrote it; where it doesn't, it
+  writes nothing and says what differs (the user's worry from Frost's, which reimported whole files and sometimes
+  rewrote scripts it shouldn't have).
 - **Round trip.** A test translates every script of every file to the language and back and requires the same lines.
   What the translator can't express cleanly stays a raw block of command lines, so nothing is lost.
 - **Names.** Frost's names for the commands (from his `FrostScriptCommandsBW2.h`, aligned with the command numbers:
@@ -63,8 +67,11 @@ sub step_aside {
 
 - **Names:** lowercase with underscores, Frost's names where he has them (`LockAll` is `lock_all`), the macros' and
   the `c0xNN` ones too. Every command keeps its full form with all its arguments.
-- **Variables** as `0x4060`: a hex number from 0x4000 is a variable, as the engine reads any argument from 0x4000 up
-  (`ScriptReadAny`); a decimal one is a value. `alias hiker_talks = 0x4060;` names one for the file.
+- **Variables and flags as functions** (the user, 2026-11-04): `var(0x4060)` and `flag(510)`, in conditions
+  (`if (var(0x8008) == 1)`, `if (flag(510) == 1)`, `== 0` for one that's off) and in the arguments the command
+  reference says take a variable or a flag. A hex number from 0x4000 alone still reads as a variable, as the engine
+  reads any argument from 0x4000 up (`ScriptReadAny`), and `flag(510)` alone as its test. `alias hiker_talks =
+  0x4060;` names one for the file.
 - **Numbers for species and flags:** `wild_battle(74)`, `set_flag(513)`. Saving writes the constant's name where the
   `.s` has one (`SPECIES_GEODUDE`, `EVENT_FLAG_...`), so the round trip stays exact; this needs each argument's kind
   (flag, variable, species, item, move, message line, actor, ...), which the command reference gives.

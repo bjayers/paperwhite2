@@ -3,9 +3,9 @@
 //
 //   script 2 {
 //       actors_pause_all();
-//       if (flag(EVENT_FLAG_0x01ec)) {
+//       if (flag(EVENT_FLAG_0x01ec) == 1) {
 //           se_play(SEQ_SE_MESSAGE);
-//       } else if (0x8000 >= 2 && !flag(513)) {
+//       } else if (var(0x8000) >= 2 && flag(513) == 0) {
 //           goto L_0177;
 //       }
 //   L_0177:
@@ -14,9 +14,10 @@
 //       }
 //   }
 //
-// A command is its name and its arguments as written; a condition is built from flag(F), variables (a hex number
-// from 0x4000, an EVENT_WORK_ name, or var(X)), values (anything else, or const(X)), the comparisons, + - * /, !, &&
-// and ||. asm { } keeps lines of the .s as they are.
+// A command is its name and its arguments as written; a condition is built from flag(F), variables (var(X), printed
+// so; a hex number from 0x4000 or an EVENT_WORK_ name alone reads as one too), values (anything else, or const(X)),
+// the comparisons, + - * /, !, && and ||. A flag alone, or after !, is its test: flag(F) is flag(F) == 1, and prints
+// so. asm { } keeps lines of the .s as they are.
 
 export type CmpOp = "<" | "==" | ">" | "<=" | ">=" | "!=";
 export type Expr =
@@ -87,11 +88,11 @@ export function printExpr(e: Expr, outer = 0): string {
   const wrap = (s: string) => (precOf(e) < outer ? `(${s})` : s);
   switch (e.k) {
     case "flag": return `flag(${e.arg})`;
-    case "var": return isVarText(e.text) ? e.text : `var(${e.text})`;
+    case "var": return `var(${e.text})`;
     case "const": return isVarText(e.text) ? `const(${e.text})` : e.text;
     case "not": return `!${printExpr(e.e, PREC.unary)}`;
     case "cmp":
-      if (isFlagTest(e)) return ((e.op === "==") === ((e.r as { text: string }).text === "1") ? "" : "!") + printExpr(e.l);
+      if (isFlagTest(e)) return `${printExpr(e.l)} == ${(e.op === "==") === ((e.r as { text: string }).text === "1") ? 1 : 0}`;
       return wrap(`${printExpr(e.l, PREC.add)} ${e.op} ${printExpr(e.r, PREC.add)}`);
     case "arith": {
       const p = precOf(e);
@@ -258,19 +259,22 @@ class Reader {
 
 const CMP_OPS: CmpOp[] = ["==", "!=", "<=", ">=", "<", ">"];
 
+/** A flag alone where a condition is: its test, flag(F) == 1. */
+const asTest = (e: Expr): Expr => (e.k === "flag" ? { k: "cmp", op: "==", l: e, r: { k: "const", text: "1" } } : e);
+
 function parseExpr(r: Reader): Expr {
-  return parseOr(r);
+  return asTest(parseOr(r));
 }
 
 function parseOr(r: Reader): Expr {
   let l = parseAnd(r);
-  while (r.eat("||")) l = { k: "or", l, r: parseAnd(r) };
+  while (r.eat("||")) l = { k: "or", l: asTest(l), r: asTest(parseAnd(r)) };
   return l;
 }
 
 function parseAnd(r: Reader): Expr {
   let l = parseCmp(r);
-  while (r.eat("&&")) l = { k: "and", l, r: parseCmp(r) };
+  while (r.eat("&&")) l = { k: "and", l: asTest(l), r: asTest(parseCmp(r)) };
   return l;
 }
 
@@ -309,7 +313,7 @@ function parseUnary(r: Reader): Expr {
   if (r.peek("!") && !r.peek("!=")) {
     r.pos++;
     // (pushed into a comparison: !flag(F) is the flag compared with 1 the other way, as it prints)
-    return negate(parseUnary(r));
+    return negate(asTest(parseUnary(r)));
   }
   return parseAtom(r);
 }
@@ -330,7 +334,7 @@ function parseAtom(r: Reader): Expr {
     const [arg] = r.args();
     if (!arg) r.fail(`${word}() needs its argument`, start);
     // A flag alone is the flag compared with 1
-    if (word === "flag") return { k: "cmp", op: "==", l: { k: "flag", arg }, r: { k: "const", text: "1" } };
+    if (word === "flag") return { k: "flag", arg };
     return { k: word, text: arg };
   }
   return isVarText(word) ? { k: "var", text: word } : { k: "const", text: word };

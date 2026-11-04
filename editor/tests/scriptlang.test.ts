@@ -54,7 +54,7 @@ test("conditions and blocks written by hand translate as written", () => {
     actors_pause_all();
     if (flag(513)) {
         se_play(SEQ_SE_MESSAGE);
-    } else if (0x4060 >= 2 && !flag(EVENT_FLAG_0x01ec)) {
+    } else if (var(0x4060) >= 2 && flag(EVENT_FLAG_0x01ec) == 0 || 0x4061 == 1) {
         vm_halt();
     } else {
         goto L_x;
@@ -67,5 +67,8 @@ L_x:
   const out = compileScript(script, "Script_1", names, new Set());
   assert.deepEqual(out.slice(0, 7), ["Script_1:", "    ActorsPauseAll", "    VMStackPushFlag 513", "    VMStackPushConst 1",
     "    VMStackCmp CMP_EQ", "    VMJumpIf CMP_STACK, L_Script_1_1", "    SEPlay SEQ_SE_MESSAGE"]);
-  assert.ok(out.includes("    VMStackCmp CMP_AND"));
+  assert.ok(out.includes("    VMStackCmp CMP_AND") && out.includes("    VMStackCmp CMP_OR"));
+  // (as it prints: variables and flags as functions, a flag's test with its value)
+  assert.match(printScript(script), /if \(flag\(513\) == 1\) \{/);
+  assert.match(printScript(script), /var\(0x4060\) >= 2 && flag\(EVENT_FLAG_0x01ec\) == 0 \|\| var\(0x4061\) == 1/);
 });
