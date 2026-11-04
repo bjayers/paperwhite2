@@ -16,6 +16,7 @@ import type { Constants } from "../../../shared/schema.ts";
 import { navigate, useToolParams } from "../../navigation.ts";
 import { eventLabel, eventsRunning, loadWorld, scriptConstantOf, scriptId, zoneLabel, type World } from "../world/world.ts";
 import { loadCommands, replaceScript, scriptEntries, scriptRange, textBankOf, type Command } from "./commands.ts";
+import { CodeColors } from "./CodeColors.tsx";
 import { addScript, applyScript, callAt, highlightLang, langEnv, loadReference, outline, restoreScript, showScript } from "./lang.ts";
 import { LangSide } from "./LangSide.tsx";
 import { parseScript } from "../../../shared/scriptlang/lang.ts";
@@ -117,6 +118,7 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
     try { parseScript(langText); return null; } catch (e) { return (e as Error).message; }
   }, [langOn, langText]);
   const [textOpen, setTextOpen] = useState(false);
+  const [colorsOpen, setColorsOpen] = useState(false);
   // The routines and aliases the script can name, for the highlighting and the sidebar
   const named = useMemo(() => (langOn ? outline(text!, entry!.index, langText) : undefined), [langOn, text, entry, langText]);
   const highlight = useCallback((line: string) => highlightLang(line, (name) => !!env && (env.names.toMacro.has(name) || env.names.globals.has(name) || SHORTCUT_NAMES.has(name)
@@ -309,14 +311,14 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
               <button className="scr-script scr-add" onClick={newScript} title="A new script after the last, which the file's ScriptEntry table lists">+ New script</button>
             </div>
             <div className="scr-code">
-              {entry && (
+              {path && (
                 <div className="scr-lang-bar">
-                  <span className="view-switch">
+                  {entry && <span className="view-switch">
                     <button className={mode === "lang" ? "active" : ""} onClick={() => { setMode("lang"); try { localStorage.setItem("script-mode", "lang"); } catch { /* private window */ } }}
                             title="The script in the script language">Script</button>
                     <button className={mode === "s" ? "active" : ""} onClick={() => { setMode("s"); try { localStorage.setItem("script-mode", "s"); } catch { /* private window */ } }}
                             title="Its lines of the .s file, as the build reads them">.s</button>
-                  </span>
+                  </span>}
                   {langOn && (
                     <>
                       <button className="primary" onClick={apply} disabled={!langDirty || !!parseError}
@@ -332,6 +334,8 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
                       </select>
                     </>
                   )}
+                  {!langOn && <span className="spacer" />}
+                  <button onClick={() => setColorsOpen(!colorsOpen)} className={colorsOpen ? "active" : ""} title="The code's colors, in every script editor">Colors…</button>
                 </div>
               )}
               {langOn && parseError && <div className="scr-error scr-bar">{parseError}</div>}
@@ -348,6 +352,7 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
                 <CodeEditor value={shownText} onChange={change} commands={commands} firstLine={range?.start ?? 1}
                             onCaret={setCaret} goToLine={goTo?.line ?? null} key={`${path}:${index ?? "file"}`} />
               )}
+              {colorsOpen && <CodeColors onClose={() => setColorsOpen(false)} />}
               {langOn && textOpen && bank && (
                 <TextWindow bank={bank} onClose={() => setTextOpen(false)}
                             onPick={(line) => { if (langCaret?.call && langCaret.call.arg >= 0) insertArg(String(line)); }} />

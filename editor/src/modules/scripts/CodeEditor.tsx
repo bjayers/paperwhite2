@@ -5,6 +5,8 @@
 
 import { memo, useEffect, useMemo, useRef } from "react";
 import { highlightLine, type Command, type Span } from "./commands.ts";
+// (its colors, as chosen in the Colors panel)
+import "./codeColors.ts";
 
 const Line = memo(function Line({ text, known, highlight }: { text: string; known: Map<string, Command> | null; highlight?: (line: string) => Span[] }) {
   const spans = highlight ? highlight(text) : highlightLine(text, known);

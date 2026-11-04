@@ -298,27 +298,29 @@ textarea.raw {
 
 /* The code editor (src/modules/scripts/CodeEditor.tsx), shared by the editors that show scripts */
 .code-editor { display: flex; flex: 1; min-width: 0; min-height: 0; font-family: var(--mono); font-size: 13px; line-height: 20px;
-  background: var(--panel); }
-.code-gutter { overflow: hidden; padding: 6px 8px 6px 6px; text-align: right; color: var(--muted); user-select: none; min-width: 44px;
-  border-right: 1px solid var(--border); background: var(--panel-2); }
+  background: var(--code-background, var(--panel)); }
+.code-gutter { overflow: hidden; padding: 6px 8px 6px 6px; text-align: right; color: var(--code-gutter, var(--muted)); user-select: none; min-width: 44px;
+  border-right: 1px solid var(--border); background: var(--code-background, var(--panel-2)); }
 .code-stack { position: relative; flex: 1; min-width: 0; }
 .code-shown, .code-input { position: absolute; inset: 0; margin: 0; padding: 6px 10px; white-space: pre; font: inherit; line-height: inherit;
   tab-size: 4; overflow: auto; border: none; border-radius: 0; }
-.code-shown { pointer-events: none; color: var(--text); overflow: hidden; }
-.code-input { background: transparent; color: transparent; caret-color: var(--text); resize: none; outline: none; }
+.code-shown { pointer-events: none; color: var(--code-text, var(--text)); font-weight: var(--code-text-weight, normal); font-style: var(--code-text-style, normal);
+  overflow: hidden; }
+.code-input { background: transparent; color: transparent; caret-color: var(--code-text, var(--text)); resize: none; outline: none; }
 .code-input::selection { background: rgba(61, 111, 216, 0.3); color: transparent; }
 .code-line { min-height: 20px; }
 .code-pad { height: 40px; }
-.tok-comment { color: #6a8a5a; font-style: italic; }
-.tok-label { color: #b5651d; font-weight: 600; }
-.tok-directive { color: #8b5cb8; }
-.tok-command { color: #3d6fd8; }
-.tok-unknown { color: var(--error); text-decoration: wavy underline; }
-.tok-message { color: #8b5cb8; text-decoration: underline dotted; }
-.tok-constant { color: #1f7a72; }
-.tok-number { color: #b0306a; }
-.tok-ref { color: #b5651d; }
-.tok-string { color: #9a6700; }
+/* (each token's look can be chosen in the Script Editor's Colors panel: src/modules/scripts/codeColors.ts) */
+.tok-comment { color: var(--code-comment, #6a8a5a); font-style: var(--code-comment-style, italic); font-weight: var(--code-comment-weight, normal); }
+.tok-label { color: var(--code-label, #b5651d); font-weight: var(--code-label-weight, 600); font-style: var(--code-label-style, normal); }
+.tok-directive { color: var(--code-directive, #8b5cb8); font-weight: var(--code-directive-weight, normal); font-style: var(--code-directive-style, normal); }
+.tok-command { color: var(--code-command, #3d6fd8); font-weight: var(--code-command-weight, normal); font-style: var(--code-command-style, normal); }
+.tok-unknown { color: var(--code-unknown, var(--error)); text-decoration: wavy underline; font-weight: var(--code-unknown-weight, normal); font-style: var(--code-unknown-style, normal); }
+.tok-message { color: var(--code-message, #8b5cb8); text-decoration: underline dotted; font-weight: var(--code-message-weight, normal); font-style: var(--code-message-style, normal); }
+.tok-constant { color: var(--code-constant, #1f7a72); font-weight: var(--code-constant-weight, normal); font-style: var(--code-constant-style, normal); }
+.tok-number { color: var(--code-number, #b0306a); font-weight: var(--code-number-weight, normal); font-style: var(--code-number-style, normal); }
+.tok-ref { color: var(--code-ref, #b5651d); font-weight: var(--code-ref-weight, normal); font-style: var(--code-ref-style, normal); }
+.tok-string { color: var(--code-string, #9a6700); font-weight: var(--code-string-weight, normal); font-style: var(--code-string-style, normal); }
 
 /* A species' party icon (src/modules/pokemon/SpeciesIcon.tsx), shared by the editors that list Pokémon */
 .species-icon { display: inline-block; overflow: hidden; flex: none; vertical-align: middle; image-rendering: pixelated; }
