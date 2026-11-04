@@ -455,7 +455,7 @@ export function AmbientPanel({ path, index, ambient, constants, ground, used, on
           {ambient.when
             ? <button onClick={() => set("when", undefined)}>Remove the condition</button>
             : <button onClick={() => set("when", {})}>Add a condition</button>}
-          <span className="muted">The zone shows the first 8 whose conditions hold, in the list's order; a group counts once.</span>
+          <span className="muted">A zone has up to 32; the game shows the 8 whose conditions hold and whose paths come nearest the player, a group's one at most.</span>
         </div>
         {ambient.when && (
           <DocForm key={`${path}:ambient:${index}:when`} path={path} at={[...base, "when"]} constants={constants} hideDescription flat

@@ -1161,8 +1161,8 @@ export function OverworldEditor({ constants, open }: ToolProps) {
               ))}</p>}
               <h4>{KIND_NAMES[module]} <span className="muted">{entities.filter((e) => e.kind === module).length}</span></h4>
               {module === "ambient" && sprites && sprites.ambientsAtOnce > AMBIENTS_SHOWN && (
-                <p className="notice warning ow-note">Up to {sprites.ambientsAtOnce} of these can hold at once, and the game shows {AMBIENTS_SHOWN}: the first {AMBIENTS_SHOWN} in
-                  this list whose conditions hold. Give them conditions that don't overlap, or order them by which matter most.</p>
+                <p className="notice warning ow-note">Up to {sprites.ambientsAtOnce} of these can hold near one place at once, and the game shows the {AMBIENTS_SHOWN}
+                  whose paths come nearest the player. Spread them out, give them conditions that don't overlap, or put some in a group.</p>
               )}
               <div className="ow-list">
                 {entities.filter((e) => e.kind === module).map((e) => (

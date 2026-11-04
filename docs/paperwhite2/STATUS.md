@@ -2,6 +2,16 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-04 (later): ambients streamed, up to 32 a zone; Global groups
+
+- **Ambients are streamed** (plugins.md, Ambients, Streaming): a zone has up to 32, and the 8 whose path areas come
+  nearest the player are made, joining out of view and leaving past a margin, their sprites loaded and given back as
+  they go. The editor's warning is now "more than 8 near one place", and its sprite worst case takes the 8 nearest
+  the player standing at each ambient. Built (hack, no warnings, DSi intact). **Not tested in game**: watch for an
+  ambient popping in view (a camera wider than 9 by 7 tiles round the player would show one joining) and for the
+  sprite cache filling as they come and go.
+- The Groups panel's tabs are This zone and Global (the groups with no home zone only).
+
 ## 2026-11-04: spawn groups, the runtime, the packing and the debug page
 
 - The design agreed with the user is in design/overworld-editor.md, Groups: at most one member at a time, picked by

@@ -141,8 +141,10 @@ enum {
 #define AMBIENT_FLAG_FACES_SHIFT 4
 #define AMBIENT_FACES_ALL 0xf
 
-// The most ambients a zone shows (the budget, docs/paperwhite2/design/overworld-editor.md, Ambients)
+// The most ambients a zone shows at once, those nearest the player (the budget,
+// docs/paperwhite2/design/overworld-editor.md, Ambients), and the most whose conditions hold that it streams them from
 #define SPAWNS_AMBIENT_MAX 8
+#define SPAWNS_AMBIENT_LIST_MAX 32
 // What an ambient's rolls are keyed by: its index past every NPC's id
 #define SPAWNS_AMBIENT_KEY 0x10000
 // What a spawn group's pick is keyed by: its index in groups.json past every ambient's key, from the seed of no zone

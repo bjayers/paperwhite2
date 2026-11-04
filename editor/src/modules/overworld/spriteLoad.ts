@@ -29,9 +29,14 @@ export function spriteCacheSize(): Promise<number> {
 }
 // The player: its walking sprite, and the one it changes to (cycling, surfing), while the first is still loaded
 export const PLAYER_SPRITES = 2;
-// The most ambients a zone shows at once (SPAWNS_AMBIENT_MAX, include/paperwhite2/spawns.h), and the most it can have
+// The most ambients a zone shows at once (SPAWNS_AMBIENT_MAX, include/paperwhite2/spawns.h), those whose paths' areas
+// come nearest the player, and the most it can have (SPAWNS_AMBIENT_LIST_MAX)
 export const AMBIENTS_SHOWN = 8;
 export const AMBIENTS_MAX = 32;
+// How near the player, in tiles east and west, north and south, an ambient's path area comes for the game to show it
+// (AMBIENT_JOIN_X and _Z, paperwhite2_ambients.c)
+export const AMBIENT_JOIN_X = 14;
+export const AMBIENT_JOIN_Z = 11;
 // The Following Pokémon's sprite
 export const FOLLOWER_SPRITES = 1;
 // Past this many flags in the zone's conditions, only all set, none set and each one alone are tried
@@ -110,7 +115,8 @@ export interface SpriteLoad {
   /** The NPCs' and instances' sprites past the preloads, in the worst case, and the ambients'. */
   npcs: number;
   ambients: number;
-  /** The most ambients whose conditions hold at once, over every combination (the game shows the first 8). */
+  /** The most ambients whose conditions hold near one place at once, over every combination (the game shows the 8
+   * nearest the player). */
   ambientsAtOnce: number;
   /** The worst case's world, in words. */
   worst: string;
@@ -155,6 +161,38 @@ function worlds(conditions: Condition[]): World[] {
     out.push({ season, time, weather, flags: f });
   }
   return out;
+}
+
+/** An ambient's path area in tiles, x and z, least and greatest, as the game streams it (Ambients_Area): an
+ * ellipse's, an eight's, a wander's and a surface's sizes either way, a line's to its end, a waypoints' points, a
+ * fly-over's range. */
+export function ambientArea(a: Ambient): [number, number, number, number] {
+  const p = a.path ?? { kind: "perch" };
+  const w = (p.width ?? 0) / 16;
+  const d = (p.depth ?? 0) / 16;
+  switch (p.kind) {
+    case "ellipse": case "eight": case "wander": case "surface": return [a.x - w, a.x + w, a.z - d, a.z + d];
+    case "flyover": { const r = p.range ?? 12; return [a.x - r, a.x + r, a.z - r, a.z + r]; }
+    case "line": return [a.x, a.x + w, a.z, a.z + d];
+    case "waypoints": {
+      const xs = [a.x, ...(p.points ?? []).map((q) => a.x + (q.x ?? 0) / 16)];
+      const zs = [a.z, ...(p.points ?? []).map((q) => a.z + (q.z ?? 0) / 16)];
+      return [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)];
+    }
+    default: return [a.x, a.x, a.z, a.z];
+  }
+}
+
+/** The ambients the game would show with the player at a tile: those whose areas come within the join distance,
+ * nearest first, at most AMBIENTS_SHOWN; and how many come within it. */
+export function ambientsNear(list: Ambient[], x: number, z: number): { shown: Ambient[]; near: number } {
+  const near = list.map((a) => {
+    const [x0, x1, z0, z1] = ambientArea(a);
+    const dx = x < x0 ? x0 - x : x > x1 ? x - x1 : 0;
+    const dz = z < z0 ? z0 - z : z > z1 ? z - z1 : 0;
+    return { a, dx, dz };
+  }).filter((n) => n.dx <= AMBIENT_JOIN_X && n.dz <= AMBIENT_JOIN_Z).sort((m, n) => m.dx + m.dz - (n.dx + n.dz));
+  return { shown: near.slice(0, AMBIENTS_SHOWN).map((n) => n.a), near: near.length };
 }
 
 /** Ambients with at most one of each spawn group's (the first): a group shows one of its members at most. */
@@ -229,22 +267,32 @@ export async function spriteLoad(npcs: Entity[], entries: SpawnEntry[], ambients
       if (fresh) shown.add(fresh);
     }
     const npcCount = shown.size - base.size;
-    // (the game shows the first AMBIENTS_SHOWN whose conditions hold, a group's one at most)
-    for (const a of oneAGroup(ambients.filter((x) => holds(x.when, w))).slice(0, AMBIENTS_SHOWN)) {
-      // (its sprites with conditions that hold are picked from first, else those without)
-      const listed = a.sprites ?? [a.sprite];
-      const held = listed.filter((s) => s !== null && typeof s === "object" && holds(s.when, w));
-      const pool = held.length ? held : listed.filter((s) => s === undefined || typeof s !== "object");
-      const choices = pool.map((s) => codeOf(spriteCodeOf(s))).filter((c): c is string => !!c && !!sprite.get(c));
-      const fresh = choices.find((c) => !shown.has(c));
-      if (fresh) shown.add(fresh);
-      // (its reaction sprite is loaded with it, hidden until it reacts)
-      const reacts = codeOf(a.react?.sprite);
-      if (reacts && sprite.get(reacts)) shown.add(reacts);
+    // (the game shows the AMBIENTS_SHOWN whose conditions hold nearest the player, a group's one at most: the worst of
+    // the player standing at each one's place)
+    const holding = oneAGroup(ambients.filter((x) => holds(x.when, w)));
+    let worstShown = shown;
+    for (const at of holding.length ? holding : [null]) {
+      const near = new Set(shown);
+      for (const a of at ? ambientsNear(holding, at.x, at.z).shown : []) {
+        // (its sprites with conditions that hold are picked from first, else those without)
+        const listed = a.sprites ?? [a.sprite];
+        const held = listed.filter((s) => s !== null && typeof s === "object" && holds(s.when, w));
+        const pool = held.length ? held : listed.filter((s) => s === undefined || typeof s !== "object");
+        const choices = pool.map((s) => codeOf(spriteCodeOf(s))).filter((c): c is string => !!c && !!sprite.get(c));
+        const fresh = choices.find((c) => !near.has(c));
+        if (fresh) near.add(fresh);
+        // (its reaction sprite is loaded with it, hidden until it reacts)
+        const reacts = codeOf(a.react?.sprite);
+        if (reacts && sprite.get(reacts)) near.add(reacts);
+      }
+      if (near.size > worstShown.size) worstShown = near;
     }
-    return { npcCount, ambientCount: shown.size - base.size - npcCount, shown };
+    return { npcCount, ambientCount: worstShown.size - base.size - npcCount, shown: worstShown };
   };
-  for (const w of worlds(conditions)) ambientsAtOnce = Math.max(ambientsAtOnce, oneAGroup(ambients.filter((a) => holds(a.when, w))).length);
+  for (const w of worlds(conditions)) {
+    const holding = oneAGroup(ambients.filter((a) => holds(a.when, w)));
+    for (const at of holding) ambientsAtOnce = Math.max(ambientsAtOnce, ambientsNear(holding, at.x, at.z).near);
+  }
   for (const w of worlds(conditions)) for (const state of states.length ? states.filter((st) => st.night === atNight(w)) : [null]) {
     const { npcCount, ambientCount, shown } = evaluate(w, state, RARE_FLAGS);
     if (npcCount + ambientCount > worst.npcs + worst.ambients) {

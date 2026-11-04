@@ -903,12 +903,21 @@ edited in the Overworld Editor's Ambients tab.
 - **Data:** `ambients` in `res/paperwhite2/overworld/<zone>.json` (`overworld.schema.json`): each a sprite (an
   `OBJ_CODE_*`) or a set of up to 4, a tile, an offset in it and a height in the world in units, a facing, a path (`perch`, `hover`,
   `ellipse`, `line`, `eight`, with its width, depth, speed and start, or a perch's turns, hops and how often), a shadow
-  (none, under its feet, or on the ground below), a `when` and `rolls`. A zone has up to 32 and shows at most 8 at
-  once (`SPAWNS_AMBIENT_MAX`): the first 8 in its list whose conditions hold; the Overworld Editor warns where more can
-  hold together.
+  (none, under its feet, or on the ground below), a `when` and `rolls`. A zone has up to 32 (`SPAWNS_AMBIENT_LIST_MAX`) and
+  shows at most 8 at once (`SPAWNS_AMBIENT_MAX`), streamed: those whose conditions hold and whose paths come nearest
+  the player, a group's one at most (below); the Overworld Editor warns where more than 8 can hold near one place.
 - **Packing:** `overworld.py` adds each as a rule of the zone's table: payload kind 2, its seed, its index, then its
   36-byte record (`SpawnAmbient`, `include/paperwhite2/spawns.h`). `Spawns_GetAmbients` picks a set's sprite with the
   roll its chance was rolled with, so the pick holds as long as the chance does.
+- **Streaming** (`Ambients_Stream`, every 8 frames): at the zone's entry, or the field's making again, the ambients
+  whose rules hold are its candidates (up to 32), each with its path's area round its place (`Ambients_Area`: an
+  ellipse's, an eight's, a wander's and a surface's sizes either way, a line's to its end, a waypoints' points, a
+  fly-over's range). A candidate joins, nearest first, while fewer than 8 are made, once its area comes within 14
+  tiles east or west and 11 north or south of the player, where its place on its path is out of view (more than 9 and
+  7 tiles off; a loop joins where it would be had it run since the zone's entry, `Ambients_JoinPos`; at the entry, in
+  view too, behind the fade). One leaves once its area is past 16 and 13 tiles, never while it reacts or a fly-over
+  passes: its billboards deleted, its sprites given back (`Ambients_Leave`). One that fled and doesn't return stays
+  gone until the zone is entered again; one that returns is back at its place when it joins again.
 - **In the field,** `PaperWhite2_AmbientsUpdate` (`src/paperwhite2/ov036/paperwhite2_ambients.c`, from the field's
   update after the actors'): when the zone, or the field's billboard system (made again after a battle or a menu), is
   new, the zone's ambients whose rules hold (`Spawns_GetAmbients`, keyed past every NPC's id) each get a billboard of

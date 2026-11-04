@@ -30,7 +30,14 @@
 // effect's material, in the effects' billboard system), under its feet or on the ground below it. A battle or a menu
 // tears the field and its billboards down, and a zone change replaces them: either way they're made again for what's
 // there then. A sprite that isn't loaded is loaded on demand, as an NPC's is, where the cache has an entry free (where
-// it hasn't, the ambient doesn't show); the zone change cancels a load still waiting and unloads what no one else uses
+// it hasn't, the ambient doesn't show); the zone change cancels a load still waiting and unloads what no one else uses.
+//
+// They're streamed: the zone's ambients whose conditions hold (up to SPAWNS_AMBIENT_LIST_MAX) are its candidates, and
+// at most SPAWNS_AMBIENT_MAX of them are made at once, those whose paths' areas come nearest the player. One joins once
+// its area comes within the join distance, where its place on its path is out of view (one that loops joins where it
+// would be had it run from the zone's entry), and leaves, its billboards and sprites given back, once its area is past
+// the leave distance; never while it reacts or a fly-over passes. One that fled for good stays gone until the zone is
+// entered again
 
 // The field's frames a second
 #define AMBIENT_FRAMES_A_SECOND 30
@@ -74,6 +81,22 @@
 #define AMBIENT_FLYOVER_REACH FX32_CONST(16 * 14)
 // A world position's tile
 #define AMBIENT_TILE(v) ((v) >> (FX32_SHIFT + 4))
+// The streaming: how often it's checked (frames), how near the player (tiles east and west, north and south) a
+// candidate's path area comes for it to join, and how far it goes for it to leave
+#define AMBIENT_STREAM_FRAMES 8
+#define AMBIENT_JOIN_X 14
+#define AMBIENT_JOIN_Z 11
+#define AMBIENT_LEAVE_X 16
+#define AMBIENT_LEAVE_Z 13
+
+// A candidate's state: not made, made (in the list), gone for good (it fled and doesn't return), or not to be made (no
+// such object code)
+enum {
+    AMBIENT_CANDIDATE_IDLE,
+    AMBIENT_CANDIDATE_ACTIVE,
+    AMBIENT_CANDIDATE_FLED,
+    AMBIENT_CANDIDATE_SKIP,
+};
 
 // Where an ambient is in its reaction: at its place on its path, reacting, or gone until it returns
 enum {
@@ -84,6 +107,8 @@ enum {
 
 typedef struct {
     SpawnAmbient record;
+    // Its candidate's index (sAmbients.candidates)
+    u8 candidate;
     // The material's flags and the billboard's index, as FldBillboardActor_AddActorPosOrReserve gives them; the index
     // is BILLBOARD_ACTOR_NONE until the sprite has loaded
     u16 billboard[2];
@@ -136,6 +161,14 @@ typedef struct {
     u8 loaded;
     u8 count;
     Ambient list[SPAWNS_AMBIENT_MAX];
+    // The zone's ambients whose conditions held at its entry, each one's AMBIENT_CANDIDATE_* and its path's area (world
+    // units, x and z, least and greatest), the frames since, and those to the next streaming check
+    SpawnAmbient candidates[SPAWNS_AMBIENT_LIST_MAX];
+    u8 candidateState[SPAWNS_AMBIENT_LIST_MAX];
+    fx32 area[SPAWNS_AMBIENT_LIST_MAX][4];
+    u8 candidateCount;
+    u8 streamTimer;
+    u32 frames;
 } AmbientState;
 
 static AmbientState sAmbients;
@@ -165,6 +198,7 @@ static void Ambients_Clear(MMSys *actorSystem) {
         }
     }
     sAmbients.count = 0;
+    sAmbients.candidateCount = 0;
     // (once none is counted, so that none holds them)
     for (i = 0; i < count; i++) {
         FldBillboardActor_ReleaseObjCode(actorSystem, sAmbients.list[i].record.objCodes[0]);
@@ -226,56 +260,256 @@ static BOOL Ambients_ShadowAt(Field *field, const Ambient *ambient, const VecFx3
     return found;
 }
 
-// The zone's ambients asked for: each a billboard of its sprite at its place, made now or once the sprite has loaded
-static void Ambients_Load(Field *field) {
-    MMSys *actorSystem = field->actorSystem;
-    SpawnAmbient records[SPAWNS_AMBIENT_MAX];
-    u32 count = Spawns_GetAmbients(field->gameSystem, HEAPID_TAIL(field->heapId), records, SPAWNS_AMBIENT_MAX);
+// The angle a looping path (a hover, an ellipse, a line, an eight) has reached after frames, from its start
+static u32 Ambients_LoopAngle(const SpawnAmbient *record, u32 frames) {
+    return (DEG_TO_IDX(record->phase % 360) + frames * (record->speed * 0x10000 / (360 * AMBIENT_FRAMES_A_SECOND))) &
+           0xffff;
+}
+
+// Where a candidate would be on its path if it joined now: a looping path's point (as Ambients_Move puts it), else its
+// place
+static void Ambients_JoinPos(const SpawnAmbient *record, VecFx32 *pos) {
+    u16 angle = (u16)Ambients_LoopAngle(record, sAmbients.frames);
+    fx32 sx = record->sizeX << FX32_SHIFT;
+    fx32 sz = record->sizeZ << FX32_SHIFT;
+    fx32 s = FX_SinIdx(angle);
+    fx32 c = FX_CosIdx(angle);
+
+    *pos = record->at;
+    switch (record->path) {
+    case AMBIENT_PATH_ELLIPSE:
+        pos->x += FX_Mul(sx, c);
+        pos->z += FX_Mul(sz, s);
+        break;
+    case AMBIENT_PATH_LINE:
+        pos->x += FX_Mul(sx, (FX32_ONE - c) / 2);
+        pos->z += FX_Mul(sz, (FX32_ONE - c) / 2);
+        break;
+    case AMBIENT_PATH_EIGHT:
+        pos->x += FX_Mul(sx, s);
+        pos->z += FX_Mul(sz, FX_Mul(s, c));
+        break;
+    }
+}
+
+// The area a path covers round its place, x and z, least and greatest, in world units: an ellipse's, an eight's, a
+// wander's and a surface's sizes either way, a line's to its end, a waypoints' points; a fly-over's range, within which
+// the player's presence starts its passes
+static void Ambients_Area(const SpawnAmbient *record, fx32 *area) {
+    fx32 sx = record->sizeX << FX32_SHIFT;
+    fx32 sz = record->sizeZ << FX32_SHIFT;
     u32 i;
 
-    for (i = 0; i < count; i++) {
-        Ambient *ambient = &sAmbients.list[sAmbients.count];
-        FieldActorConfig config;
+    area[0] = area[1] = record->at.x;
+    area[2] = area[3] = record->at.z;
+    switch (record->path) {
+    case AMBIENT_PATH_ELLIPSE:
+    case AMBIENT_PATH_EIGHT:
+    case AMBIENT_PATH_WANDER:
+    case AMBIENT_PATH_SURFACE:
+    case AMBIENT_PATH_FLYOVER:
+        area[0] -= sx;
+        area[1] += sx;
+        area[2] -= sz;
+        area[3] += sz;
+        if (record->path == AMBIENT_PATH_FLYOVER) {
+            // (its range is its width, as a radius)
+            area[2] = record->at.z - sx;
+            area[3] = record->at.z + sx;
+        }
+        break;
+    case AMBIENT_PATH_LINE:
+        area[1] += sx;
+        area[3] += sz;
+        break;
+    case AMBIENT_PATH_WAYPOINTS:
+        for (i = 0; i < record->pointCount; i++) {
+            fx32 x = record->at.x + (record->points[i][0] << FX32_SHIFT);
+            fx32 z = record->at.z + (record->points[i][2] << FX32_SHIFT);
 
-        MI_CpuFill8(&config, 0, sizeof(config));
-        GetNPCMdlInfoForOBJCODE(actorSystem, records[i].objCodes[0], &config);
-        if (config.uid != records[i].objCodes[0]) {
-            continue; // (no such object code)
+            area[0] = x < area[0] ? x : area[0];
+            area[1] = x > area[1] ? x : area[1];
+            area[2] = z < area[2] ? z : area[2];
+            area[3] = z > area[3] ? z : area[3];
         }
-        if (!FldBillboardActor_CanLoadObjCode(actorSystem, config.uid)) {
-            continue; // (the sprite cache is full: it doesn't show)
-        }
-        MI_CpuFill8(ambient, 0, sizeof(Ambient));
-        ambient->record = records[i];
-        ambient->facing = records[i].facing;
-        ambient->angle = DEG_TO_IDX(records[i].phase % 360);
-        ambient->nextChange = AMBIENT_FRAMES_A_SECOND;
-        ambient->anim = 0xffff;
-        ambient->byDirection = FIELD_BILLBOARD_ANIM_SETS[config.spriteControllerType].count < AMBIENT_ANIM_PERSON;
-        ambient->billboard[1] = BILLBOARD_ACTOR_NONE;
-        FldBillboardActor_AddActorPosOrReserve(actorSystem, &config, ambient->billboard, &ambient->record.at, NULL,
-                                               NULL, func_ov012_02166fc0(actorSystem));
-        // Its reaction sprite too, hidden until it reacts (where it has one and it can load)
-        ambient->react[1] = BILLBOARD_ACTOR_NONE;
-        if (records[i].reactSprite != 0) {
-            MI_CpuFill8(&config, 0, sizeof(config));
-            GetNPCMdlInfoForOBJCODE(actorSystem, records[i].reactSprite, &config);
-            if (config.uid == records[i].reactSprite && FldBillboardActor_CanLoadObjCode(actorSystem, config.uid)) {
-                ambient->reactAnim = 0xffff;
-                ambient->reactByDirection =
-                    FIELD_BILLBOARD_ANIM_SETS[config.spriteControllerType].count < AMBIENT_ANIM_PERSON;
-                FldBillboardActor_AddActorPosOrReserve(actorSystem, &config, ambient->react, &ambient->record.at, NULL,
-                                                       NULL, func_ov012_02166fc0(actorSystem));
-            } else {
-                ambient->record.reactSprite = 0;
-            }
-        }
-        ambient->shadow = BILLBOARD_ACTOR_NONE;
-        if (records[i].shadow != AMBIENT_SHADOW_NONE && sAmbients.shadowSys != NULL) {
-            Ambients_AddShadow(ambient);
-        }
-        sAmbients.count++;
+        break;
     }
+}
+
+// How far an area is from a tile, in tiles east or west and north or south (0 where the tile is within it)
+static void Ambients_AreaDistance(const fx32 *area, s32 x, s32 z, s32 *dx, s32 *dz) {
+    s32 least = AMBIENT_TILE(area[0]);
+    s32 greatest = AMBIENT_TILE(area[1]);
+
+    *dx = x < least ? least - x : x > greatest ? x - greatest : 0;
+    least = AMBIENT_TILE(area[2]);
+    greatest = AMBIENT_TILE(area[3]);
+    *dz = z < least ? least - z : z > greatest ? z - greatest : 0;
+}
+
+// A candidate made: a billboard of its sprite at its place, made now or once the sprite has loaded, as far along its
+// path as a loop has come since the zone's entry; FALSE where it can't be (no such object code, or the sprite cache
+// full)
+static BOOL Ambients_Join(Field *field, u32 candidate) {
+    MMSys *actorSystem = field->actorSystem;
+    const SpawnAmbient *record = &sAmbients.candidates[candidate];
+    Ambient *ambient = &sAmbients.list[sAmbients.count];
+    FieldActorConfig config;
+
+    MI_CpuFill8(&config, 0, sizeof(config));
+    GetNPCMdlInfoForOBJCODE(actorSystem, record->objCodes[0], &config);
+    if (config.uid != record->objCodes[0]) {
+        sAmbients.candidateState[candidate] = AMBIENT_CANDIDATE_SKIP;
+        return FALSE;
+    }
+    if (!FldBillboardActor_CanLoadObjCode(actorSystem, config.uid)) {
+        return FALSE; // (the sprite cache is full: it doesn't show, and is tried again)
+    }
+    MI_CpuFill8(ambient, 0, sizeof(Ambient));
+    ambient->record = *record;
+    ambient->candidate = (u8)candidate;
+    ambient->facing = record->facing;
+    ambient->angle = Ambients_LoopAngle(record, sAmbients.frames);
+    ambient->nextChange = AMBIENT_FRAMES_A_SECOND;
+    ambient->anim = 0xffff;
+    ambient->byDirection = FIELD_BILLBOARD_ANIM_SETS[config.spriteControllerType].count < AMBIENT_ANIM_PERSON;
+    ambient->billboard[1] = BILLBOARD_ACTOR_NONE;
+    FldBillboardActor_AddActorPosOrReserve(actorSystem, &config, ambient->billboard, &ambient->record.at, NULL, NULL,
+                                           func_ov012_02166fc0(actorSystem));
+    // Its reaction sprite too, hidden until it reacts (where it has one and it can load)
+    ambient->react[1] = BILLBOARD_ACTOR_NONE;
+    if (record->reactSprite != 0) {
+        MI_CpuFill8(&config, 0, sizeof(config));
+        GetNPCMdlInfoForOBJCODE(actorSystem, record->reactSprite, &config);
+        if (config.uid == record->reactSprite && FldBillboardActor_CanLoadObjCode(actorSystem, config.uid)) {
+            ambient->reactAnim = 0xffff;
+            ambient->reactByDirection =
+                FIELD_BILLBOARD_ANIM_SETS[config.spriteControllerType].count < AMBIENT_ANIM_PERSON;
+            FldBillboardActor_AddActorPosOrReserve(actorSystem, &config, ambient->react, &ambient->record.at, NULL,
+                                                   NULL, func_ov012_02166fc0(actorSystem));
+        } else {
+            ambient->record.reactSprite = 0;
+        }
+    }
+    ambient->shadow = BILLBOARD_ACTOR_NONE;
+    if (record->shadow != AMBIENT_SHADOW_NONE && sAmbients.shadowSys != NULL) {
+        Ambients_AddShadow(ambient);
+    }
+    sAmbients.candidateState[candidate] = AMBIENT_CANDIDATE_ACTIVE;
+    sAmbients.count++;
+    return TRUE;
+}
+
+// A made one taken away, its billboards deleted and its sprites given back, the last of the list moved to its place;
+// one that fled for good stays gone
+static void Ambients_Leave(MMSys *actorSystem, u32 index) {
+    Ambient *ambient = &sAmbients.list[index];
+    u16 objCode = ambient->record.objCodes[0];
+    u16 reactSprite = ambient->record.reactSprite;
+
+    if (ambient->billboard[1] == BILLBOARD_ACTOR_NONE) {
+        FldBillboardActor_CancelPendingPos(actorSystem, ambient->billboard);
+    }
+    FldBillboardActor_DeleteActorPos(actorSystem, ambient->billboard);
+    if (reactSprite != 0) {
+        if (ambient->react[1] == BILLBOARD_ACTOR_NONE) {
+            FldBillboardActor_CancelPendingPos(actorSystem, ambient->react);
+        }
+        FldBillboardActor_DeleteActorPos(actorSystem, ambient->react);
+    }
+    if (ambient->shadow != BILLBOARD_ACTOR_NONE) {
+        BillboardActorSys_DeleteActors(sAmbients.shadowSys, ambient->shadow, 1);
+    }
+    sAmbients.candidateState[ambient->candidate] =
+        ambient->reaction == AMBIENT_GONE && ambient->record.returnMin == AMBIENT_RETURN_NEVER ? AMBIENT_CANDIDATE_FLED
+                                                                                               : AMBIENT_CANDIDATE_IDLE;
+    sAmbients.count--;
+    if (index != sAmbients.count) {
+        *ambient = sAmbients.list[sAmbients.count];
+    }
+    // (once it isn't counted, so that it doesn't hold them)
+    FldBillboardActor_ReleaseObjCode(actorSystem, objCode);
+    if (reactSprite != 0) {
+        FldBillboardActor_ReleaseObjCode(actorSystem, reactSprite);
+    }
+}
+
+// The streaming: the made ones whose areas are past the leave distance leave, then the nearest candidates within the
+// join distance join while there's room, where their places on their paths are out of view (at the zone's entry, in
+// view too: the screen is still dark)
+static void Ambients_Stream(Field *field, BOOL entering) {
+    VecFx32 at;
+    s32 px;
+    s32 pz;
+    u32 i;
+
+    if (field->player == NULL) {
+        return;
+    }
+    FieldPlayer_GetWPos(field->player, &at);
+    px = AMBIENT_TILE(at.x);
+    pz = AMBIENT_TILE(at.z);
+    for (i = sAmbients.count; i-- != 0;) {
+        Ambient *ambient = &sAmbients.list[i];
+        s32 dx;
+        s32 dz;
+
+        Ambients_AreaDistance(sAmbients.area[ambient->candidate], px, pz, &dx, &dz);
+        if (ambient->reaction == AMBIENT_REACTING ||
+            (ambient->record.path == AMBIENT_PATH_FLYOVER && !ambient->pathHidden) ||
+            (dx <= AMBIENT_LEAVE_X && dz <= AMBIENT_LEAVE_Z)) {
+            continue;
+        }
+        Ambients_Leave(field->actorSystem, i);
+    }
+    while (sAmbients.count < SPAWNS_AMBIENT_MAX) {
+        u32 best = SPAWNS_AMBIENT_LIST_MAX;
+        s32 bestDistance = 0;
+
+        for (i = 0; i < sAmbients.candidateCount; i++) {
+            s32 dx;
+            s32 dz;
+            VecFx32 pos;
+
+            if (sAmbients.candidateState[i] != AMBIENT_CANDIDATE_IDLE) {
+                continue;
+            }
+            Ambients_AreaDistance(sAmbients.area[i], px, pz, &dx, &dz);
+            if (dx > AMBIENT_JOIN_X || dz > AMBIENT_JOIN_Z ||
+                (best != SPAWNS_AMBIENT_LIST_MAX && dx + dz >= bestDistance)) {
+                continue;
+            }
+            Ambients_JoinPos(&sAmbients.candidates[i], &pos);
+            dx = AMBIENT_TILE(pos.x) - px;
+            dz = AMBIENT_TILE(pos.z) - pz;
+            if (!entering && sAmbients.candidates[i].path != AMBIENT_PATH_FLYOVER &&
+                (dx < 0 ? -dx : dx) <= AMBIENT_RETURN_OFFSCREEN_X &&
+                (dz < 0 ? -dz : dz) <= AMBIENT_RETURN_OFFSCREEN_Z) {
+                continue; // (it would appear in view: later)
+            }
+            Ambients_AreaDistance(sAmbients.area[i], px, pz, &dx, &dz);
+            best = i;
+            bestDistance = dx + dz;
+        }
+        if (best == SPAWNS_AMBIENT_LIST_MAX || !Ambients_Join(field, best)) {
+            break;
+        }
+    }
+}
+
+// The zone's ambients asked for: its candidates and their areas, and the nearest made
+static void Ambients_Load(Field *field) {
+    u32 i;
+
+    sAmbients.candidateCount = (u8)Spawns_GetAmbients(field->gameSystem, HEAPID_TAIL(field->heapId),
+                                                      sAmbients.candidates, SPAWNS_AMBIENT_LIST_MAX);
+    for (i = 0; i < sAmbients.candidateCount; i++) {
+        sAmbients.candidateState[i] = AMBIENT_CANDIDATE_IDLE;
+        Ambients_Area(&sAmbients.candidates[i], sAmbients.area[i]);
+    }
+    sAmbients.frames = 0;
+    sAmbients.streamTimer = AMBIENT_STREAM_FRAMES;
+    Ambients_Stream(field, TRUE);
 }
 
 // The direction a velocity on the ground goes, as a DIR_*
@@ -756,6 +990,11 @@ void PaperWhite2_AmbientsUpdate(Field *field) {
         sAmbients.zone = zone;
         sAmbients.loaded = TRUE;
         Ambients_Load(field);
+    }
+    sAmbients.frames++;
+    if (--sAmbients.streamTimer == 0) {
+        sAmbients.streamTimer = AMBIENT_STREAM_FRAMES;
+        Ambients_Stream(field, FALSE);
     }
     angle = FldActSys_GetCameraAngle(actorSystem);
     free = GSYS_GetNowEvent(field->gameSystem) == NULL && !Field_IsEventRunning(field);
