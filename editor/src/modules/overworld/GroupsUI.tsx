@@ -247,7 +247,9 @@ export function GroupsPanel({ selected, onClose }: {
   const [all, setAll] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
   if (!state) return null;
-  const listed = all ? state.groups : zoneGroups(state);
+  // (Global: the groups with no home zone, which no zone lists for itself)
+  const global = state.groups.filter((g) => !g.zone);
+  const listed = all ? global : zoneGroups(state);
   const add = () => {
     const id = state.createGroup(`Group ${state.groups.length + 1}`);
     setOpen(id);
@@ -256,10 +258,12 @@ export function GroupsPanel({ selected, onClose }: {
     <div className="ow-wild-panel ow-groups-panel">
       <div className="me-overworld-head">
         <strong>Spawn groups</strong>
-        <span className="muted" title="All groups lists every group, this zone's among them">{zoneGroups(state).length} listed in this zone · {state.groups.length} in all</span>
+        <span className="muted">{zoneGroups(state).length} listed in this zone · {global.length} global</span>
         <span className="view-switch">
-          <button className={!all ? "active" : ""} onClick={() => setAll(false)}>This zone</button>
-          <button className={all ? "active" : ""} onClick={() => setAll(true)}>All groups</button>
+          <button className={!all ? "active" : ""} onClick={() => setAll(false)}
+                  title="The groups at home in this zone, and those with a member here">This zone</button>
+          <button className={all ? "active" : ""} onClick={() => setAll(true)}
+                  title="The groups with no home zone: a traveler's, say, across zones">Global</button>
         </span>
         <span className="spacer" />
         <button onClick={add}>New group</button>
@@ -268,7 +272,8 @@ export function GroupsPanel({ selected, onClose }: {
       <p className="muted ow-note">At most one member of a group appears at a time: among the members whose conditions hold, the game picks one
         by weight, or nobody by the group's nobody weight. A zone lists the groups at home in it and those it has a member of.</p>
       <div className="ow-groups-list">
-        {!listed.length && <p className="muted">{all ? "No groups yet." : "No groups in this zone. New group makes one here, or All groups shows the others."}</p>}
+        {!listed.length && <p className="muted">{all ? "No global groups: a group's Home set to No zone makes it one."
+          : "No groups in this zone. New group makes one here; Global shows the groups with no home zone."}</p>}
         {listed.map((group) => (
           <GroupBox key={group.id} group={group} open={open === group.id} onToggle={() => setOpen(open === group.id ? null : group.id)}
                     selected={selected} />
@@ -340,8 +345,8 @@ function GroupBox({ group, open, onToggle, selected }: {
               {group.zone && group.zone !== home && <button className="active">{zoneLabel(group.zone.replace(/^ZONE_/, "").toLowerCase())}</button>}
             </span>
             <span className="muted hint">{group.zone
-              ? "the zone that lists it; it's also listed in every zone with a member of it, and under All groups"
-              : "no zone lists it for itself: it's listed in the zones with a member of it, and under All groups"}</span>
+              ? "the zone that lists it; it's also listed in every zone with a member of it"
+              : "a global group: listed under Global, and in every zone with a member of it"}</span>
           </span>
           <span className="ow-condition-label">Picks for</span>
           <span className="ow-event-control">
