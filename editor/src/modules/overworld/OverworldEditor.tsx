@@ -319,6 +319,16 @@ export function OverworldEditor({ constants, open }: ToolProps) {
 
   const [versioned, setVersioned] = useState<Map<string, string>>(new Map());
   useEffect(() => { versionZones().then(setVersioned, () => {}); }, []);
+  // The zone's other version's, where the two versions play a place as two zones (Route 4, Black City and White Forest)
+  const versionPair = useMemo(() => {
+    if (!zone) return null;
+    const constant = `ZONE_${zone.toUpperCase()}`;
+    const name = (c: string) => c.replace(/^ZONE_/, "").toLowerCase();
+    const white2 = versioned.get(constant);
+    if (white2) return { black2: true, white2: name(white2), black2Zone: zone };
+    const black2 = [...versioned].find(([, to]) => to === constant)?.[0];
+    return black2 ? { black2: false, white2: zone, black2Zone: name(black2) } : null;
+  }, [zone, versioned]);
   const zones = useMemo(() => {
     const q = filter.trim().toLowerCase();
     return (world?.zones ?? []).filter((z) => !q || z.name.includes(q.replace(/ /g, "_")) || String(z.number) === q);
@@ -903,6 +913,12 @@ export function OverworldEditor({ constants, open }: ToolProps) {
         <div className="ow-center">
           {zone && (
             <div className="ow-toolbar">
+              {versionPair && (
+                <div className="view-switch" title="The place as each version plays it: its zone, its NPCs and its map pieces">
+                  <button className={!versionPair.black2 ? "active" : ""} onClick={() => setZone(versionPair.white2)}>White 2</button>
+                  <button className={versionPair.black2 ? "active" : ""} onClick={() => setZone(versionPair.black2Zone)}>Black 2</button>
+                </div>
+              )}
               <div className="view-switch">
                 {KINDS.filter((k) => (k !== "rail" || rails) && (k !== "camera" || cameraFile)).map((k) => (
                   <button key={k} className={module === k ? "active" : ""} onClick={() => setModule(k)}

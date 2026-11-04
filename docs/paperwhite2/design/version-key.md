@@ -263,6 +263,37 @@ All the files hooked are complete in `delinks.txt`. Build with `python3 configur
 5. Opelucid during the freeze, if a save has it.
 6. Unova Link's key screen with a save on Route 4: refused.
 
+## The user's decisions (2026-11-04)
+
+- **Its own state, not Unova Link's keys.** The swap no longer reads or sets the city key (`KeyInfo_GetCityKey`);
+  it is a hack flag of its own, and the Black City / White Forest choice follows it. What Unova Link's key screen
+  does with the city key then (hide its city key, or leave it doing nothing) is to decide when it's built.
+- **What swaps: every place whose maps are largely different between the versions.** From `replacements.json`'s
+  `version` and `version_season` entries (each entry's cells looked up in its matrix):
+
+  | Entries | Place |
+  | --- | --- |
+  | 19-22 | Mistralton City |
+  | 34-37 | Mistralton City's gate |
+  | 23-26 | Opelucid City |
+  | 38-41 | Opelucid City's gate |
+  | 42, 43, 44 | Opelucid's interiors `opelucid_city_2`, `_3`, `_12` (matrix replacements) |
+  | 27-33 | Route 4 |
+  | 45 | Driftveil City's market (`driftveil_city_7`, matrix replacement) |
+
+  plus Black City / White Forest (zones of their own). Driftveil's market is in the data's list; whether it counts
+  as "largely different" is the user's to confirm.
+- **The gates' warps follow the flag**: Castelia Gate's and Join Avenue's level scripts choose Route 4's warp with
+  `GameGetVersion` (Black 2's gate activates warp 1, `ZONE_ROUTE_4`; White 2's warp 2, `ZONE_ROUTE_4_16`: the script
+  moves the other warp off the doorway, to tile 9, 11, `SetZoneWarpLocation`); they're to read the new flag.
+- **The key refuses inside the affected places** (option A of "Where it can be used").
+- **The Desert Resort** isn't part of Route 4 in the user's view; to be tested (its texture set still has to match
+  the Route 4 cells beside it).
+- **Opelucid's people** change their dialogue with the swap.
+- **Investigating the 5220 re-battle:** the Overworld Editor shows each version's Route 4 (White 2 | Black 2 switch
+  over the map): `route_4` with Black 2's map pieces (the replacements' first value), its NPCs and its texture set,
+  `route_4_16` with White 2's, so the user can compare the NPCs with the debug menu.
+
 ## Open questions for the user
 
 1. Where it can be used: A (refuse inside the places), B (warp to a fixed spot), or something else?

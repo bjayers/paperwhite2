@@ -284,6 +284,63 @@ that the Exp. loop settles; which ordinary classes deserve `strong`.
 boss untouched; PWT untouched; a double and a multi battle; a scaled-down custom moveset in battle; the money and Exp.
 given.
 
+## The user's decisions (2026-11-04)
+
+- **One party level for wild and trainer battles**, each with its own modifiers (the wild ones' 80% and spread;
+  each trainer tier's), and a solid formula for it chosen first: see "The party's level: formulas" below.
+- **A floor by badge count** to stop exploits such as filling the party with level 1 Pokémon.
+- **Below their original level:** possibly, undecided.
+- **Caps:** not wanted as an imposed limit; a gentler form (below) is to be considered.
+- **Trainer Pokémon stay as they are**: no evolving or devolving, no moveset changes; only the level, the stats
+  recalculated for it.
+- **Rematches scale** too.
+- **Funfest missions** (the Entralink's missions, ov072) will likely be removed or reworked with the Entralink; no
+  scaling for them.
+- **The partner in multi battles scales** to the party level itself, without the opponents' tier modifiers.
+
+## The party's level: formulas (2026-11-04)
+
+The basis both kinds of battle share. The player can lower it to make battles easy (the exploit to stop); raising
+it only makes battles harder. Eggs never count. Today's wild basis is the median, the lower middle level of the
+party: that one can be gamed, as the examples show.
+
+Candidates, on the party's levels sorted highest first:
+
+| | Formula | In words |
+| --- | --- | --- |
+| A | median | today's wild basis |
+| B | mean of the top 3 | the three strongest |
+| C | (highest + mean of the top 3) / 2 | top-heavy: the strongest counts most |
+| D | highest | the strongest alone |
+| E | weighted mean, weights 6, 5, 4, 3, 2, 1 | every member counts, the strong more |
+
+Each then raised to the **badge floor**: the lowest level of the last gym leader beaten (the current parties:
+0 badges 5, Cheren 11, Roxie 16, Burgh 22, Elesa 28, Clay 31, Skyla 37, Drayden 46, Marlon 49; 56 after the
+Champion, the Elite Four's first round), kept in `level_scaling.json` so it can be tuned.
+
+Worked examples (rounded down):
+
+| Party | Badges (floor) | A | B | C | D | E |
+| --- | --- | --- | --- | --- | --- | --- |
+| A balanced team: 24, 22, 21, 19, 18, 15 | 3 (22) | 19 → **22** | **22** | **23** | **24** | 21 → **22** |
+| One carry and fillers: 40, 5, 5, 5, 5, 5 | 2 (16) | 5 → **16** | **16** | **28** | **40** | 15 → **16** |
+| Padded with level 1s: 30, 28, 27, 1, 1, 1 | 4 (28) | 1 → **28** | **28** | **29** | **30** | 20 → **28** |
+| Raising a new catch: 45, 44, 43, 42, 41, 10 | 6 (37) | **42** | **44** | **44** | **45** | **41** |
+| A solo run: 50 | 7 (46) | **50** | **50** | **50** | **50** | **50** |
+
+- **A (median)** falls to the floor as soon as half the party is weak: the padding exploit, which only the floor
+  stops. It's also the one most thrown by a new catch.
+- **B (top 3)** ignores fillers but is lowered by a carry with two weak members.
+- **C (top-heavy)** follows the strongest Pokémon closely, isn't lowered by fillers or padding, and doesn't jump
+  when a new catch joins. **The recommendation**, with the badge floor.
+- **D (highest)** can't be gamed at all, but one over-levelled Pokémon makes every battle hard for the rest of the
+  party.
+- **E (weighted)** is gamed by fillers as A is.
+
+A gentler ceiling, in place of a cap: levels above the **next** gym leader's lowest level count half. Before the
+third badge (Burgh, 22), a party level of 40 counts as 22 + (40 − 22) / 2 = 31, so grinding still makes battles
+harder, only less so, and nothing stops it. Off unless the user wants it.
+
 ## Open questions for the user
 
 1. The basis: the party's top three, its median (as wild), or its highest level?

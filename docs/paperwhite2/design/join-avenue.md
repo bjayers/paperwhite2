@@ -284,3 +284,15 @@ JSON under `res/field/join_avenue/` once the packer exists. A person:
 5. Should the eight shops be fixed (always the same owners) or should owners change over time?
 6. Do people need their own full dialogue (the `lines` hook), or are name, greeting and two messages enough?
 7. The tutorial when the avenue opens: shorten it, or replace it with a scene of the user's?
+
+## The user's decisions (2026-11-04)
+
+- **Keep the rank system**, earned a new way: upgrading the shops (with Poké money, section 9's paid upgrades), not
+  by visitors' recommendations.
+- **Remove everything multiplayer or wireless**: the people met by Pass By, IR, Wi-Fi and the Union Room, inviting,
+  recommending, and whatever else only they feed.
+- **Fixed shops and people**: the eight owners and the avenue's people are the user's, the same in every game
+  (no daily roster that changes them).
+- **Their own dialogue**, in place of the generic lines by gender and the eight-character messages: the `lines`
+  hook (keyed by trainer ID, section 9) is wanted.
+- **The opening tutorial** will likely be changed or shortened by the user.

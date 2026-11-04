@@ -179,12 +179,14 @@ export function nameOf(constants: Constants, prefix: string, value: number): str
   return null;
 }
 
-/** The value a replacement gives in White 2 in a season, or null for one an event or the version decides by default. */
-export function replacementValue(r: Replacement, season: number): string | number | null {
+/** The value a replacement gives in White 2 (or Black 2) in a season, or null for one an event decides by default. A
+ * version's value is its index's (MapReplace_LoadVariables, src/ov012/map_replace.c): Black 2's is the first, and
+ * White 2's the second, or the season's after the first. */
+export function replacementValue(r: Replacement, season: number, black2 = false): string | number | null {
   switch (r.condition) {
     case "season": return r.values[season] ?? null;
-    case "version_season": return r.values[season + 1] ?? null;
-    case "version": return r.values[1] ?? null;
+    case "version_season": return r.values[black2 ? 0 : season + 1] ?? null;
+    case "version": return r.values[black2 ? 0 : 1] ?? null;
     default: return null;
   }
 }
@@ -197,11 +199,16 @@ export async function loadZoneMap(zone: string, season: number, constants: Const
   const same = (a: string | number, b: string | number) => a === b || (constants.get(String(a)) ?? a) === (constants.get(String(b)) ?? b);
   const replacements = await api.file("res/field/map_replacements/replacements.json")
     .then((f) => (JSON.parse(f.text) as { replacements: Replacement[] }).replacements, () => [] as Replacement[]);
+  // A zone that Black 2 alone plays (Route 4's ZONE_ROUTE_4, which Black 2's Castelia Gate leads to) shows Black 2's
+  // map pieces; the rest White 2's
+  const constant = `ZONE_${zone.toUpperCase()}`;
+  const versioned = await versionZones();
+  const black2 = versioned.has(constant);
   // A matrix the season replaces, as the field loads the replacement
   let matrixName = zoneData.matrix;
   for (const r of replacements) {
     if (r.kind !== "matrix" || !same(r.matrix, matrixName) || !same(r.values[0], matrixName)) continue;
-    const v = replacementValue(r, season);
+    const v = replacementValue(r, season, black2);
     if (v !== null) matrixName = typeof v === "number" ? nameOf(constants, "MAP_MATRIX_", v) ?? matrixName : v;
   }
   const matrixFile = `res/field/matrices/${matrixName.replace(/^MAP_MATRIX_/, "").toLowerCase()}.json`;
@@ -210,7 +217,7 @@ export async function loadZoneMap(zone: string, season: number, constants: Const
   const swapped = (model: string): string => {
     for (const r of chunkSwaps) {
       if (!same(r.values[0], model)) continue;
-      const v = replacementValue(r, season);
+      const v = replacementValue(r, season, black2);
       if (v !== null) return typeof v === "number" ? nameOf(constants, "MAP_MODEL_", v) ?? model : v;
     }
     return model;
@@ -233,10 +240,8 @@ export async function loadZoneMap(zone: string, season: number, constants: Const
     }
   }
   const tb = await heightTables();
-  const constant = `ZONE_${zone.toUpperCase()}`;
   // White 2 plays some of the overworld's cells as another zone (VERSION_SPECIFIC_ZONES): Route 4's are route_4_16's,
   // which shows them, as Route 4 (Black 2's) still does
-  const versioned = await versionZones();
   const cells: { model: string; column: number; row: number }[] = [];
   matrix.maps.forEach((row, r) => row.forEach((model, c) => {
     if (!model) return;

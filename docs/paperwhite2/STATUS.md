@@ -2,6 +2,19 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-04 (morning): the user's decisions, and Route 4 in both versions in the Overworld Editor
+
+- The user's decisions on the three researches are in each design doc ("The user's decisions"): the Join Avenue
+  keeps its rank, earned by paid upgrades, with fixed shops and people and their own dialogue, and loses everything
+  wireless; the Version Key gets its own flag in place of Unova Link's keys, swaps every place the version's map
+  replacements change (Mistralton, Opelucid, Route 4, Driftveil's market, Black City / White Forest), refuses inside
+  them, and the gates' warps follow it; trainer scaling shares one party level with the wild Pokémon, with a badge
+  floor, five candidate formulas compared in trainer-scaling.md (top-heavy recommended).
+- Black 2's Castelia Gate leads to `ZONE_ROUTE_4`, White 2's to `ZONE_ROUTE_4_16` (zone 551; the script moves the
+  unused warp off the doorway). The Overworld Editor now shows `route_4` with Black 2's map pieces (each version
+  replacement's first value) over its own NPCs and texture set, and a White 2 | Black 2 switch on the two zones of a
+  place. Screenshotted on a scratch copy.
+
 ## 2026-11-04 (overnight): research for the Join Avenue, the Version Key and trainer level scaling
 
 Three research reports, read from the source and data, nothing built; each ends with the user's open questions:
