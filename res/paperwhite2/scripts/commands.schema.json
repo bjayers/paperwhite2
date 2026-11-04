@@ -1,0 +1,81 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Paper White 2: the script language's command reference, res/paperwhite2/scripts/commands.json",
+    "description": "The field scripts' commands as the script language names and documents them (docs/paperwhite2/design/script-language.md): each one's macro (include/asm/field_script.inc) and number, its name in the language and the names it also takes, Frost's name for it, its handler, what it does, and each argument's name, type and kind. Made from the macros, the command table (tools/script/field_commands.json) and Frost's header lined up with the command numbers; kept by hand after, and by the Script Editor.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "commands" ],
+    "properties": {
+        "$schema": {
+            "type": "string",
+            "description": "This schema, for editors"
+        },
+        "commands": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [ "op", "macro", "name", "args" ],
+                "properties": {
+                    "op": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Its command number"
+                    },
+                    "macro": {
+                        "type": "string",
+                        "description": "Its macro, as the .s files name it"
+                    },
+                    "name": {
+                        "type": "string",
+                        "pattern": "^[a-z][a-z0-9_]*$",
+                        "description": "Its name in the script language"
+                    },
+                    "aliases": {
+                        "type": "array",
+                        "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+                        "description": "Other names it takes (the macro's in lowercase), which read back as its name"
+                    },
+                    "frost": {
+                        "type": "string",
+                        "description": "Frost's Gen 5 Editor's name for it"
+                    },
+                    "handler": {
+                        "type": "string",
+                        "description": "The game's function that runs it"
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "What it does"
+                    },
+                    "args": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [ "name", "type", "kind" ],
+                            "properties": {
+                                "name": {
+                                    "type": "string",
+                                    "description": "The argument's name"
+                                },
+                                "type": {
+                                    "enum": [ "u8", "u16", "u32", "var", "any" ],
+                                    "description": "How the command reads it: a number of a size, a variable, or a value or a variable (any, from 0x4000 a variable)"
+                                },
+                                "kind": {
+                                    "enum": [ "number", "var", "flag", "message", "msgfile", "actor", "item", "species", "move", "trainer", "zone", "word", "ability", "nature", "type", "party_slot", "sound", "label", "script" ],
+                                    "description": "What it is, for the sidebar's reference and how numbers show"
+                                },
+                                "description": {
+                                    "type": "string",
+                                    "description": "What it means"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

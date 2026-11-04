@@ -1,0 +1,62 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Paper White 2: the script language's named global scripts, res/paperwhite2/scripts/globals.json",
+    "description": "Global scripts the script language calls by name (docs/paperwhite2/design/script-language.md): a call name(a, b) sets each input's variable and calls the script (WorkSetConst for a value, WorkGet for var(X), then RTCallGlobal), and those lines read back as the call.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "globals" ],
+    "properties": {
+        "$schema": {
+            "type": "string",
+            "description": "This schema, for editors"
+        },
+        "globals": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [ "name", "script", "inputs" ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "pattern": "^[a-z][a-z0-9_]*$",
+                        "description": "Its name in the script language"
+                    },
+                    "script": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 65535,
+                        "description": "The global script's ID"
+                    },
+                    "inputs": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [ "name", "var" ],
+                            "properties": {
+                                "name": { "type": "string", "description": "The input's name" },
+                                "var": { "type": "string", "pattern": "^0x[0-9a-fA-F]{4}$", "description": "The variable it's set in" },
+                                "kind": {
+                                    "enum": [ "number", "var", "flag", "message", "actor", "item", "species", "move", "trainer", "zone" ],
+                                    "description": "What it is, for the sidebar"
+                                },
+                                "description": { "type": "string" }
+                            }
+                        },
+                        "description": "Its inputs, in the order a call takes them and sets them"
+                    },
+                    "result": {
+                        "type": "string",
+                        "pattern": "^0x[0-9a-fA-F]{4}$",
+                        "description": "The variable it leaves its result in"
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "What it does"
+                    }
+                }
+            }
+        }
+    }
+}

@@ -29,8 +29,12 @@ export type Expr =
   | { k: "and" | "or"; l: Expr; r: Expr }
   | { k: "not"; e: Expr };
 
+export type AssignOp = "=" | "+=" | "-=" | "*=" | "/=" | "%=";
+
 export type Stmt =
   | { k: "call"; name: string; args: string[] }
+  // A variable set, added to and the rest: var(target) op value
+  | { k: "assign"; target: string; op: AssignOp; value: string }
   | { k: "label"; name: string }
   | { k: "goto"; target: string }
   | { k: "ifgoto"; cond: Expr; target: string }
@@ -110,6 +114,7 @@ function printStmts(stmts: Stmt[], depth: number, out: string[]) {
   for (const s of stmts) {
     switch (s.k) {
       case "call": out.push(`${pad}${s.name}(${s.args.join(", ")});`); break;
+      case "assign": out.push(`${pad}var(${s.target}) ${s.op} ${s.value};`); break;
       // (a label sits one step out, as in C)
       case "label": out.push(`${INDENT.repeat(Math.max(0, depth - 1))}${s.name}:`); break;
       case "goto": out.push(`${pad}goto ${s.target};`); break;
@@ -397,6 +402,18 @@ function parseStmt(r: Reader): Stmt {
     const target = r.word() ?? r.fail("expected a label");
     r.expect(";");
     return { k: "goto", target };
+  }
+  // An assignment: var(X) or a variable's number, then = += -= *= /= %=, then its value up to the ;
+  const assign = /^(?:var\(\s*([^)]+?)\s*\)|(0x[0-9A-Fa-f]+|EVENT_WORK_\w+))\s*(\+=|-=|\*=|\/=|%=|=(?!=))/.exec(r.text.slice(r.pos));
+  if (assign && (assign[1] || isVarText(assign[2]))) {
+    r.pos += assign[0].length;
+    const end = r.text.indexOf(";", r.pos);
+    const line = r.text.indexOf("\n", r.pos);
+    if (end < 0 || (line >= 0 && line < end)) r.fail("an assignment ends with ; on its line");
+    const value = r.text.slice(r.pos, end).trim();
+    if (!value) r.fail("expected a value");
+    r.pos = end + 1;
+    return { k: "assign", target: assign[1] ?? assign[2], op: assign[3] as AssignOp, value };
   }
   if (r.keyword("asm")) {
     r.gap();

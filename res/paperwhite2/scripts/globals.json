@@ -1,0 +1,38 @@
+{
+    "$schema": "globals.schema.json",
+    "globals": [
+        {
+            "name": "random_item",
+            "script": 10853,
+            "inputs": [
+                {
+                    "name": "count",
+                    "var": "0x8010",
+                    "kind": "number",
+                    "description": "How many items the range has"
+                },
+                {
+                    "name": "first",
+                    "var": "0x8011",
+                    "kind": "item",
+                    "description": "The range's first item"
+                }
+            ],
+            "result": "0x8012",
+            "description": "Gives one of count items from first, at random, if the bag has room: 0x8012 is 1 when given, 0 when not (global_10850.s, Script_4)"
+        },
+        {
+            "name": "wild_battle",
+            "script": 10854,
+            "inputs": [
+                {
+                    "name": "species",
+                    "var": "0x8010",
+                    "kind": "species"
+                }
+            ],
+            "result": "0x8012",
+            "description": "A wild battle with the species at four fifths of the lead's level (rounded down to fives), with its cry: 0x8012 is 1, 2 or 3 by the result; a loss blacks out (global_10850.s, Script_5)"
+        }
+    ]
+}

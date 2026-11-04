@@ -132,6 +132,17 @@ sub step_aside {
   and 434 gotos are left of the 8775 jumps; the labels left are those a command names (a routine, a movement) or more
   than one structure jumps to. Commands still carry the macros' names in lowercase (`actor_msg`); Frost's names, the
   shortcuts and the numbers come next.
+- **2026-11-04, the names.** The command reference, `res/paperwhite2/scripts/commands.json` (`commands.schema.json`),
+  905 commands: each one's number, macro, language name (Frost's in lowercase where he named it, 278 of them, else the
+  macro's), the macro's name as an alias, Frost's name, its handler, Frost's description, and each argument's name
+  (Frost's where he gave one), type (the command table's) and kind (from Frost's argument names and a few by hand).
+  Frost's list was lined up with the command numbers between his `c0xNN` anchors by argument count and the words his
+  name shares with the handler's (his list skips numbers without saying). The named globals,
+  `res/paperwhite2/scripts/globals.json` (`globals.schema.json`): `random_item(count, first)` (10853) and
+  `wild_battle(species)` (10854), read back where a script sets their inputs just before the call. The variable
+  commands read as assignments: `var(0x4060) = 2` (WorkSetConst), `= var(0x8000)` (WorkGet), `+= -= *= /= %=`
+  (WorkAdd and the rest). An argument the command reads as a variable shows as `var(...)`. Still all 4051 scripts
+  round trip.
 - Equivalence, not sameness: a condition can be the stack's form or a WorkCmp's, a label's name changes, and a jump
   to the next statement may go; `equiv.ts` walks both files from the script's label through every command, condition
   (or its negation with its ways swapped) and jump. Untouched scripts aren't rewritten at all.

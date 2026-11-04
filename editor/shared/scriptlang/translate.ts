@@ -9,22 +9,61 @@
 // Back: each statement its lines, a condition always as the stack's pushes and VMStackCmp with VMJumpIf CMP_STACK
 // (which jumps when the condition is false, Scrcmd_Vm_VMJumpIf), an if and its else with new labels.
 
-import { negate, type CmpOp, type Expr, type Script, type Stmt } from "./lang.ts";
+import { isVarText, negate, type AssignOp, type CmpOp, type Expr, type Script, type Stmt } from "./lang.ts";
 import { parseS, type SLine } from "./sfile.ts";
 
-/** The language's names for the commands (a macro's name in lowercase with underscores) and back. */
+/** An argument of a command, as the command reference (res/paperwhite2/scripts/commands.json) has it. */
+export interface RefArg {
+  name: string;
+  /** How the command reads it: a number, a variable, or either (any: from 0x4000 a variable). */
+  type: "u8" | "u16" | "u32" | "var" | "any";
+  kind: string;
+  description?: string;
+}
+
+export interface RefCommand {
+  op: number;
+  macro: string;
+  name: string;
+  aliases?: string[];
+  frost?: string;
+  handler?: string;
+  description?: string;
+  args: RefArg[];
+}
+
+/** A named global script (res/paperwhite2/scripts/globals.json): a call sets its inputs' variables and calls it. */
+export interface RefGlobal {
+  name: string;
+  script: number;
+  inputs: { name: string; var: string; kind?: string; description?: string }[];
+  result?: string;
+  description?: string;
+}
+
+/** The language's names for the commands (the command reference's, or a macro's in lowercase with underscores where
+ * it has none) and back, each name or alias to its macro, and the named globals. */
 export class Names {
   readonly toLang = new Map<string, string>();
   readonly toMacro = new Map<string, string>();
+  readonly commands = new Map<string, RefCommand>();
+  readonly globals = new Map<string, RefGlobal>();
 
-  constructor(macros: Iterable<string>) {
+  constructor(macros: Iterable<string>, reference: RefCommand[] = [], globals: RefGlobal[] = []) {
+    for (const c of reference) {
+      this.commands.set(c.macro, c);
+      this.toLang.set(c.macro, c.name);
+      for (const n of [c.name, ...(c.aliases ?? [])]) if (!this.toMacro.has(n)) this.toMacro.set(n, c.macro);
+    }
     for (const m of macros) {
+      if (this.toLang.has(m)) continue;
       const name = snake(m);
       // (the first macro keeps a name two would share)
       if (this.toMacro.has(name)) continue;
       this.toLang.set(m, name);
       this.toMacro.set(name, m);
     }
+    for (const g of globals) this.globals.set(g.name, g);
   }
 }
 
@@ -46,6 +85,48 @@ const ARITH_MACROS = { "+": "VMStackAdd", "-": "VMStackSub", "*": "VMStackMul", 
 export const TERMINATORS = new Set(["VMHalt", "VMReturn", "RTEndGlobal"]);
 /** The commands of data (a movement's, a map script table's), which a label before them starts. */
 const DATA_COMMANDS = new Set(["Move", "MoveEnd", "MapScript", "MapScriptConditions", "MapScriptsEnd"]);
+
+/** The variable commands that read as assignments, and back. */
+const ASSIGNS: Record<string, AssignOp> = { WorkAdd: "+=", WorkSub: "-=", WorkMul: "*=", WorkDiv: "/=", WorkMod: "%=" };
+const ASSIGN_MACROS: Record<AssignOp, string> = { "=": "WorkSetConst", "+=": "WorkAdd", "-=": "WorkSub", "*=": "WorkMul", "/=": "WorkDiv", "%=": "WorkMod" };
+
+/** An argument as the language shows it: a variable's as var(X), where the command reads one (its type var, or any
+ * with a variable's number). */
+function showArg(text: string, type: RefArg["type"] | undefined): string {
+  return type === "var" || (type === "any" && isVarText(text)) ? `var(${text})` : text;
+}
+
+/** An argument as the .s has it: var(X) is X. */
+export function plainArg(text: string): string {
+  const m = /^var\((.*)\)$/.exec(text.trim());
+  return m ? m[1].trim() : text.trim();
+}
+
+/** A named global's call, where lines from first set its inputs' variables in its order (WorkSetConst, or WorkGet for
+ * another variable) and then call it: the call and the last line, or null. */
+function globalCall(lines: SLine[], first: number, end: number, names: Names): { stmt: Stmt; last: number } | null {
+  const sets: { var: string; value: string }[] = [];
+  let i = first;
+  for (; i < end; i++) {
+    const l = lines[i];
+    if (l.kind !== "cmd") return null;
+    if ((l.name === "WorkSetConst" || l.name === "WorkGet") && l.args.length === 2) {
+      sets.push({ var: l.args[0], value: l.name === "WorkGet" ? `var(${l.args[1]})` : l.args[1] });
+      continue;
+    }
+    break;
+  }
+  const call = lines[i];
+  if (!sets.length || call?.kind !== "cmd" || call.name !== "RTCallGlobal" || call.args.length !== 1) return null;
+  const script = Number(call.args[0]);
+  for (const g of names.globals.values()) {
+    if (g.script !== script || g.inputs.length !== sets.length) continue;
+    if (g.inputs.every((input, k) => parseInt(input.var, 16) === parseInt(sets[k].var, 16) && /^0x/i.test(sets[k].var))) {
+      return { stmt: { k: "call", name: g.name, args: sets.map((s) => s.value) }, last: i };
+    }
+  }
+  return null;
+}
 
 const cmpOf = (arg: string): number | undefined => (arg in CMP_NAMES ? CMP_NAMES[arg] : /^\d+$/.test(arg) ? Number(arg) : undefined);
 
@@ -135,6 +216,23 @@ export function flatStatements(lines: SLine[], start: number, end: number, names
         continue;
       }
     }
+    if (l.name === "WorkSetConst" || l.name === "WorkGet") {
+      const g = globalCall(lines, i, end, names);
+      if (g) {
+        out.push(g.stmt);
+        i = g.last;
+        continue;
+      }
+    }
+    // The variable commands as assignments
+    if ((l.name === "WorkSetConst" || l.name === "WorkGet") && l.args.length === 2) {
+      out.push({ k: "assign", target: l.args[0], op: "=", value: l.name === "WorkGet" ? `var(${l.args[1]})` : l.args[1] });
+      continue;
+    }
+    if (l.name in ASSIGNS && l.args.length === 2) {
+      out.push({ k: "assign", target: l.args[0], op: ASSIGNS[l.name], value: showArg(l.args[1], "any") });
+      continue;
+    }
     if ((l.name === "WorkCmpConst" || l.name === "WorkCmpWork") && l.args.length === 2) {
       // Its jumps after it, each on its comparison
       const left: Expr = { k: "var", text: l.args[0] };
@@ -155,8 +253,9 @@ export function flatStatements(lines: SLine[], start: number, end: number, names
       }
     }
     const name = names.toLang.get(l.name);
+    const ref = names.commands.get(l.name);
     if (!name) out.push({ k: "raw", lines: [l.text] });
-    else out.push({ k: "call", name, args: l.args });
+    else out.push({ k: "call", name, args: l.args.map((a, n) => showArg(a, ref?.args[n]?.type)) });
   }
   return out;
 }
@@ -301,9 +400,25 @@ export function compileScript(script: Script, label: string, names: Names, taken
     for (const s of stmts) {
       switch (s.k) {
         case "call": {
+          const global = names.globals.get(s.name);
+          if (global) {
+            if (s.args.length !== global.inputs.length) throw new CompileError(`${s.name} takes ${global.inputs.length} arguments`);
+            global.inputs.forEach((input, n) => {
+              const value = s.args[n].trim();
+              out.push(/^var\(/.test(value) ? `    WorkGet ${input.var}, ${plainArg(value)}` : `    WorkSetConst ${input.var}, ${value}`);
+            });
+            out.push(`    RTCallGlobal ${global.script}`);
+            break;
+          }
           const macro = names.toMacro.get(s.name);
           if (!macro) throw new CompileError(`no command ${s.name}`);
-          out.push(`    ${macro}${s.args.length ? ` ${s.args.join(", ")}` : ""}`);
+          out.push(`    ${macro}${s.args.length ? ` ${s.args.map(plainArg).join(", ")}` : ""}`);
+          break;
+        }
+        case "assign": {
+          const value = s.value.trim();
+          const macro = s.op === "=" && /^var\(/.test(value) ? "WorkGet" : ASSIGN_MACROS[s.op];
+          out.push(`    ${macro} ${s.target}, ${plainArg(value)}`);
           break;
         }
         case "label": out.push(`${s.name}:`); break;

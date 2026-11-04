@@ -124,6 +124,12 @@ export function scriptDifference(textA: string, textB: string, label: string, na
         else return differ(`conditions ${canon(sa.cond)} against ${canon(cb.cond)}`);
         break;
       }
+      case "assign": {
+        const cb = sb as typeof sa;
+        if (sa.target !== cb.target || sa.op !== cb.op || sa.value !== cb.value) return differ("different assignments");
+        todo.push([i + 1, j + 1]);
+        break;
+      }
       case "raw": {
         const ra = sa.lines.map((l) => l.trim()).join("\n");
         const rb = (sb as typeof sa).lines.map((l) => l.trim()).join("\n");
