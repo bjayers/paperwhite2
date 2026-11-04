@@ -33,6 +33,13 @@
             ],
             "result": "0x8012",
             "description": "A wild battle with the species at four fifths of the lead's level (rounded down to fives), with its cry: 0x8012 is 1, 2 or 3 by the result; a loss blacks out (global_10850.s, Script_5)"
+        },
+        {
+            "name": "zone_reload",
+            "script": 2823,
+            "inputs": [],
+            "result": "0x8000",
+            "description": "Loads the map again where the player stands, as the Version Key does, after a script sets a place's flag (EVENT_FLAG_BLACK2_*) or the Regi chamber (EVENT_WORK_REGI_CHAMBER): the zone's look and its level scripts follow. 0x8000 is 1 when it did, 0 where it can't (on rails, cycling, surfing, the Union Room, the Entralink). The script's last thing: the map's people are new after it (global_2800.s, Script_24; plugins.md, Version places)"
         }
     ]
 }

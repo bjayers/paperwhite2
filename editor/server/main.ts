@@ -16,6 +16,7 @@ import { editGlbFaces, moveGlbFaces, pasteGlbFaces, setGlbProps, type FaceEdits,
 import { Project, versionOf } from "./project.ts";
 import { Python, pythonFor } from "./python.ts";
 import { loadSettings } from "./settings.ts";
+import { UsageCache } from "./usage.ts";
 
 // The checkout this folder is in; PAPERWHITE_ROOT points it at another, as the tests do with a scratch copy.
 const ROOT = resolve(process.env.PAPERWHITE_ROOT ?? join(import.meta.dirname, "../.."));
@@ -26,6 +27,7 @@ const settings = loadSettings();
 const started = Date.now();
 const project = new Project(ROOT);
 const python = new Python(ROOT);
+const usage = new UsageCache(ROOT);
 const git = new Git(ROOT);
 const clients = new Set<ServerResponse>();
 const builder = new Builder(ROOT, (line) => send({ type: "build-line", line }), (state) => {
@@ -214,6 +216,16 @@ const routes: Record<string, Handler> = {
     }
   },
   "GET /api/constants": (_req, res) => json(res, python.constants()),
+  // Every flag or variable with its name, status, uses and documentation (server/usage.ts); again=1 runs the tools again
+  "GET /api/usage": async (_req, res, url) => {
+    const kind = url.searchParams.get("kind");
+    if (kind !== "flags" && kind !== "vars") return error(res, 400, "Ask for flags or vars");
+    try {
+      json(res, await usage.get(kind, url.searchParams.get("again") === "1"));
+    } catch (e) {
+      error(res, 500, (e as Error).message);
+    }
+  },
   "PUT /api/file": async (req, res) => {
     const body = (await readJson(req)) as SaveRequest;
     const path = project.checkPath(body.path);

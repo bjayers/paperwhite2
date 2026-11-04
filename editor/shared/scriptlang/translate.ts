@@ -121,7 +121,7 @@ export function plainArg(text: string): string {
 }
 
 /** A named global's call, where lines from first set its inputs' variables in its order (WorkSetConst, or WorkGet for
- * another variable) and then call it: the call and the last line, or null. */
+ * another variable), none for one without inputs, and then call it: the call and the last line, or null. */
 function globalCall(lines: SLine[], first: number, end: number, names: Names): { stmt: Stmt; last: number } | null {
   const sets: { var: string; value: string }[] = [];
   let i = first;
@@ -135,7 +135,8 @@ function globalCall(lines: SLine[], first: number, end: number, names: Names): {
     break;
   }
   const call = lines[i];
-  if (!sets.length || call?.kind !== "cmd" || call.name !== "RTCallGlobal" || call.args.length !== 1) return null;
+  // (a global without inputs is its call alone)
+  if (call?.kind !== "cmd" || call.name !== "RTCallGlobal" || call.args.length !== 1) return null;
   const script = Number(call.args[0]);
   for (const g of names.globals.values()) {
     if (g.script !== script || g.inputs.length !== sets.length) continue;
@@ -253,7 +254,7 @@ export function flatStatements(lines: SLine[], start: number, end: number, names
         continue;
       }
     }
-    if (l.name === "WorkSetConst" || l.name === "WorkGet") {
+    if (l.name === "WorkSetConst" || l.name === "WorkGet" || l.name === "RTCallGlobal") {
       const g = globalCall(lines, i, end, names);
       if (g) {
         out.push(g.stmt);

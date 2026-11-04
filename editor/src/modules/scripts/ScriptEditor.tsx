@@ -17,6 +17,8 @@ import { navigate, useToolParams } from "../../navigation.ts";
 import { eventLabel, eventsRunning, loadWorld, scriptConstantOf, scriptId, rebattleTrainers, trainerOfScript, zoneLabel, type World } from "../world/world.ts";
 import { loadCommands, replaceScript, scriptEntries, scriptRange, textBankOf, type Command } from "./commands.ts";
 import { CodeColors } from "./CodeColors.tsx";
+import { FlagReference } from "../flags/FlagReference.tsx";
+import "../flags/flags.css";
 import { addScript, applyScript, callAt, highlightLang, langEnv, loadReference, outline, restoreScript, showScript } from "./lang.ts";
 import { LangSide } from "./LangSide.tsx";
 import { parseScript } from "../../../shared/scriptlang/lang.ts";
@@ -134,6 +136,7 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
   }, [langOn, langText]);
   const [textOpen, setTextOpen] = useState(false);
   const [colorsOpen, setColorsOpen] = useState(false);
+  const [flagsOpen, setFlagsOpen] = useState(false);
   // The routines and aliases the script can name, for the highlighting and the sidebar
   const named = useMemo(() => (langOn ? outline(text!, entry!.index, langText) : undefined), [langOn, text, entry, langText]);
   const highlight = useCallback((line: string) => highlightLang(line, (name) => !!env && (env.names.toMacro.has(name) || env.names.globals.has(name) || SHORTCUT_NAMES.has(name)
@@ -350,6 +353,7 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
                     </>
                   )}
                   {!langOn && <span className="spacer" />}
+                  <button onClick={() => setFlagsOpen(!flagsOpen)} className={flagsOpen ? "active" : ""} title="Every flag and variable, with its name, uses and notes">Flags & vars</button>
                   <button onClick={() => setColorsOpen(!colorsOpen)} className={colorsOpen ? "active" : ""} title="The code's colors, in every script editor">Colors…</button>
                 </div>
               )}
@@ -368,6 +372,14 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
                             onCaret={setCaret} goToLine={goTo?.line ?? null} key={`${path}:${index ?? "file"}`} />
               )}
               {colorsOpen && <CodeColors onClose={() => setColorsOpen(false)} />}
+              {flagsOpen && (
+                <div className="overlay" onMouseDown={() => setFlagsOpen(false)}>
+                  <div className="fr-window" onMouseDown={(e) => e.stopPropagation()}>
+                    <FlagReference compact open={openFile} onClose={() => setFlagsOpen(false)}
+                                   onInsert={langOn && langCaret?.call && langCaret.call.arg >= 0 ? insertArg : undefined} />
+                  </div>
+                </div>
+              )}
               {langOn && textOpen && bank && (
                 <TextWindow bank={bank} onClose={() => setTextOpen(false)}
                             onPick={(line) => { if (langCaret?.call && langCaret.call.arg >= 0) insertArg(String(line)); }} />

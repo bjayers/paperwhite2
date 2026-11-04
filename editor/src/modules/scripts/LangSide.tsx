@@ -6,17 +6,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../api.ts";
-import { documents, useDocuments } from "../../documents.ts";
-import { fromPlain, toPlain } from "../../../shared/json.ts";
 import { navigate } from "../../navigation.ts";
 import { MessageEditor } from "../text/TextEditor.tsx";
 import { SpeciesIcon } from "../pokemon/SpeciesIcon.tsx";
 import { SHORTCUT_NAMES } from "../../../shared/scriptlang/shortcuts.ts";
 import { MENU_MACROS, OPTION_MACRO } from "../../../shared/scriptlang/translate.ts";
 import { numberOf } from "../../../shared/scriptlang/values.ts";
+import { NOTES, noteKey, useNotes } from "../flags/notes.ts";
 import type { CaretCall, LangEnv, Outline } from "./lang.ts";
-
-export const NOTES = "res/paperwhite2/scripts/notes.json";
 
 interface ArgInfo { name: string; kind?: string; description?: string; type?: string }
 
@@ -207,13 +204,9 @@ function ArgHelper({ kind, value, env, bank, onInsert, onOpenText, noChoices }: 
 
 /** A flag's or a variable's name, the user's note on what it does, and the scripts that use it. */
 function FlagNote({ kind, n, name }: { kind: "flag" | "var"; n: number; name: string | null }) {
-  const { docs } = useDocuments();
-  const key = kind === "flag" ? String(n) : `0x${n.toString(16).padStart(4, "0")}`;
-  const list = kind === "flag" ? "flags" : "vars";
-  useEffect(() => { if (!documents.get(NOTES)) documents.hold(NOTES).catch(() => undefined); }, []);
-  const doc = docs.get(NOTES);
-  const notes = doc?.data instanceof Map ? (toPlain(doc.data) as Record<string, Record<string, string>>) : null;
-  const note = notes?.[list]?.[key] ?? "";
+  const { notes, setNote: saveNote } = useNotes();
+  const key = noteKey(kind, n);
+  const note = notes[kind === "flag" ? "flags" : "vars"][key] ?? "";
   const [uses, setUses] = useState<{ path: string; line: number; text: string }[] | null>(null);
   useEffect(() => {
     setUses(null);
@@ -228,15 +221,7 @@ function FlagNote({ kind, n, name }: { kind: "flag" | "var"; n: number; name: st
     for (const u of uses ?? []) out.set(u.path, (out.get(u.path) ?? 0) + 1);
     return [...out];
   }, [uses]);
-  const setNote = (text: string) => {
-    if (!notes) {
-      documents.create(NOTES, "res/paperwhite2/scripts/notes.schema.json", fromPlain({ $schema: "notes.schema.json", flags: {}, vars: {}, [list]: text ? { [key]: text } : {} }));
-      return;
-    }
-    const next = { ...(notes[list] ?? {}) };
-    if (text) next[key] = text; else delete next[key];
-    documents.edit(NOTES, [list], fromPlain(next));
-  };
+  const setNote = (text: string) => saveNote(kind, n, text);
   return (
     <div className="scr-flag-note">
       <div className="scr-section-head"><strong>{kind === "flag" ? `Flag ${n}` : `Variable ${key}`}</strong> {name && <code className="muted small">{name}</code>}</div>

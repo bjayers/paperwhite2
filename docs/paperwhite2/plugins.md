@@ -412,7 +412,7 @@ A flag takes effect at the next map change; where the player stands now, the map
   variable loads the map again where the player stands, as the Version Key does, with a fade, so the zone's look and
   its level scripts (the gates' and the Pokémon Centers' exits) follow. 0x8000 is 1 where it did, 0 where it can't (on
   rails, cycling, surfing, the Union Room, the Entralink). It's the script's last thing: the map's actors are new
-  after it. In the script language: `set_flag(2353); call_global_script(2823); end();`.
+  after it. In the script language: `set_flag(2353); zone_reload(); end();` (`res/paperwhite2/scripts/globals.json`).
 - **The command** `ReloadMapHere result` (0x2f5, 757), which script 2823 runs: `Scrcmd_PaperWhite2_ReloadMapHere`
   (`src/paperwhite2/ov012/paperwhite2_version_key_event.c`).
 

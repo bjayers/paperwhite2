@@ -3,6 +3,7 @@
 import { WRITE_HEADER, type BuildState, type DataFile, type Entry, type ScanMatch, type FileContent, type GitState, type ProjectInfo,
   type SaveRequest, type SaveResult, type ServerEvent } from "../shared/api.ts";
 import { schemaPart, splitSchemaId, type Schema } from "../shared/schema.ts";
+import type { Usage, UsageKind } from "../server/usage.ts";
 import type { ArtReport } from "../shared/api.ts";
 
 /** Whether a request failed because what it asked for isn't there (the server's 404: a file deleted on disk). */
@@ -160,6 +161,8 @@ export const api = {
   /** The address of an image under res/. */
   assetUrl: (path: string) => `/api/asset?path=${encodeURIComponent(path)}`,
   constants: () => request<Record<string, number>>("GET", "/api/constants"),
+  /** Every flag or variable with its name, status, uses and documentation; again runs the usage tools again. */
+  usage: (kind: UsageKind, again = false) => request<Usage>("GET", `/api/usage?kind=${kind}${again ? "&again=1" : ""}`),
   save: (save: SaveRequest) => request<SaveResult>("PUT", "/api/file", save),
   /** Removes a species' encounter file (the only kind the server lets go). */
   removeFile: (path: string) => request<{ removed: boolean }>("DELETE", `/api/file?path=${encodeURIComponent(path)}`),
