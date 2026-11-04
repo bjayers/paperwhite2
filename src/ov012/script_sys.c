@@ -104,8 +104,8 @@ static const GlobalScriptEntry GLOBAL_SCRIPT_TABLE[60] = {
     { 5000, 6999, SCRIPTS_GLOBAL_3000, ARCID_SCRIPT_MESSAGE, SCRIPT_TEXT_GLOBAL_10520 },
     { 3000, 4999, SCRIPTS_GLOBAL_3000, ARCID_SCRIPT_MESSAGE, SCRIPT_TEXT_GLOBAL_10520 },
 #ifdef PAPERWHITE2
-    // Paper White 2: to 2822 for the Version Key's scripts (paperwhite2/version_key.h)
-    { 2800, 2822, SCRIPTS_GLOBAL_2800, ARCID_SCRIPT_MESSAGE, SCRIPT_TEXT_GLOBAL_7000 },
+    // Paper White 2: to 2823 for the Version Key's scripts and the map's reload (paperwhite2/version_key.h)
+    { 2800, 2823, SCRIPTS_GLOBAL_2800, ARCID_SCRIPT_MESSAGE, SCRIPT_TEXT_GLOBAL_7000 },
 #else
     { 2800, 2819, SCRIPTS_GLOBAL_2800, ARCID_SCRIPT_MESSAGE, SCRIPT_TEXT_GLOBAL_7000 },
 #endif
@@ -221,11 +221,11 @@ static const struct OpcodePermissions EVCMD_PERM_TABLE[] = {
     { 0, 0, 0 }, { 1, 1, 1 }, { 1, 1, 1 },                                                                  // 0x2f0
 #ifdef PAPERWHITE2
     // Paper White 2: the hack's commands of EVCMD_TABLE (scrcmd_vm.c), which run at every feature level: the
-    // conditions' GetPartyLevel and CheckCondition, then the debug menu's Debug
-    { 1, 1, 1 }, { 1, 1, 1 }, // 0x2f3
+    // conditions' GetPartyLevel and CheckCondition, the map's ReloadMapHere, then the debug menu's Debug
+    { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, // 0x2f3
 #endif
 #ifdef PAPERWHITE2_DEBUG_MENU
-    { 1, 1, 1 }, // 0x2f5
+    { 1, 1, 1 }, // 0x2f6
 #endif
 };
 

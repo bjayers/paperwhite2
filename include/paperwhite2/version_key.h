@@ -35,5 +35,19 @@ BOOL PaperWhite2_ScriptSeesOtherVersion(GameData *gameData);
 u16 PaperWhite2_GetUnversionedZone(u16 zoneId);
 // The field's event that switches it, then loads the map again where the player stands
 GameEvent *PaperWhite2_EventVersionKey_Create(Field *field, GameSystem *gsys);
+// The field's event that loads the map again where the player stands, as the places' flags and the Regi chamber are
+// now, without switching anything: what a script runs after it sets them (ReloadMapHere, script 2823)
+GameEvent *PaperWhite2_EventReloadMap_Create(Field *field, GameSystem *gsys);
+// Whether the map can be loaded again where the player stands: walking on the grid, in a normal zone
+BOOL PaperWhite2_CanReloadMap(GameSystem *gsys, Field *field);
+
+// The script of res/field/scripts/global_2800.s (Script_24) that loads the map again where the player stands, for
+// an NPC's script after it sets a place's flag or the Regi chamber's variable; 0x8000 is 1 where it did, else 0
+#define SCRID_RELOAD_MAP_HERE 2823
+
+// Command 0x2f5, ReloadMapHere result: loads the map again where the player stands, as the Version Key does, and puts 1
+// in the variable result; where it can't (PaperWhite2_CanReloadMap), puts 0 and does nothing. The script goes on in
+// the map loaded again, whose actors are new: it's the script's last thing before its end
+BOOL Scrcmd_PaperWhite2_ReloadMapHere(VM *vm, FieldScriptEnv *env);
 
 #endif // PAPERWHITE2_VERSION_KEY_H

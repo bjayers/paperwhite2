@@ -378,6 +378,11 @@ What the user should know about mixing:
   Key stays, as a test item (the user may give it after the game, limited to outside the places). Unova Link's other
   keys: the difficulty is to be the hack's own (trainer scaling's modifier), the Regis' chambers to be replaced by
   other ways to catch the Regis, later.
+- 2026-11-04: the Regi chamber is `EVENT_WORK_REGI_CHAMBER` (0x4059: 0 as White 2 has it, 1 the Iron Chamber's key, 2
+  the Iceberg Chamber's), which `KeyInfoGetChamberKey` reads in Unova Link's place; not yet tested. Script 2823 and the
+  `ReloadMapHere` command load the map again where the player stands, for NPCs that set a place's flag or the chamber
+  (plugins.md, Version places, which lists every flag and variable). The Aspertia save reminder, added for the keys,
+  is gone too.
 
 ## Open questions for the user
 

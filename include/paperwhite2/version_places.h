@@ -26,6 +26,15 @@ enum {
 // A zone that's in none of the places
 #define VERSION_PLACE_NONE VERSION_PLACE_COUNT
 
+// The Underground Ruins' chamber, EVENT_WORK_REGI_CHAMBER's values, in Unova Link's chamber key's place (the
+// KeyInfoGetChamberKey command reads it): the ruins as White 2 has them, or as the Iron Chamber's or the Iceberg
+// Chamber's key has them
+enum {
+    REGI_CHAMBER_DEFAULT,
+    REGI_CHAMBER_IRON,
+    REGI_CHAMBER_ICEBERG,
+};
+
 // The place a zone is in, by its place name, or VERSION_PLACE_NONE
 u32 PaperWhite2_GetVersionPlace(u16 zoneId);
 // Whether a place plays as Black 2 (FALSE for VERSION_PLACE_NONE), and setting it; with the save's flags

@@ -25,6 +25,7 @@
     ScriptEntry Script_21
     ScriptEntry Script_22
     ScriptEntry Script_23
+    ScriptEntry Script_24
 #endif
     ScriptEntriesEnd
 
@@ -707,6 +708,16 @@ Script_23:
     SystemMsgClose
     FinishAllEvents
     ActorsUnpauseAll
+    VMHalt
+
+// Paper White 2: script 2823, for an NPC's script after it sets a place's flag (EVENT_FLAG_BLACK2_*) or the Regi
+// chamber's variable (EVENT_WORK_REGI_CHAMBER): loads the map again where the player stands, as the Version Key does,
+// so the zone's look and its level scripts follow (docs/paperwhite2/plugins.md, Version places). 0x8000 is 1 where it
+// did, 0 where it can't (on rails, cycling, surfing, the Union Room, the Entralink). The caller's last thing: the map's
+// actors are new after it
+Script_24:
+    ReloadMapHere 0x8000
+    RTEndGlobal
     VMHalt
 #endif
     .balign 4, 0

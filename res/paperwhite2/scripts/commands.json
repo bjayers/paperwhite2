@@ -11598,6 +11598,20 @@
         },
         {
             "op": 757,
+            "macro": "ReloadMapHere",
+            "name": "reload_map_here",
+            "handler": "Scrcmd_PaperWhite2_ReloadMapHere",
+            "description": "Loads the map again where the player stands, as the places' flags (EVENT_FLAG_BLACK2_*) and the Regi chamber (EVENT_WORK_REGI_CHAMBER) are now, so the zone's look and its level scripts follow; puts 1 in the variable, or 0 where it can't (on rails, cycling, surfing, the Union Room, the Entralink). The script's last thing: the map's actors are new after it",
+            "args": [
+                {
+                    "name": "result",
+                    "type": "var",
+                    "kind": "var"
+                }
+            ]
+        },
+        {
+            "op": 758,
             "macro": "Debug",
             "name": "debug",
             "handler": "Scrcmd_PaperWhite2_Debug",

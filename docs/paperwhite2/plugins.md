@@ -268,7 +268,7 @@ script's words like a message, so a block runs a `..._WORDS` action before its l
 script's work variables are listed at the top of its Script_2.
 
 **One command, many actions.** The menu's work is done by one script command, `Debug action, arg1, arg2, result`
-(0x2f5), which runs the action with the two arguments, each a value or a variable, and puts what it returns in the
+(0x2f6), which runs the action with the two arguments, each a value or a variable, and puts what it returns in the
 variable result (the script uses 0x8025). So a new option needs a new action, not a new opcode. The actions are
 `#define`s in `include/paperwhite2/debug_actions.h`, not an enum, since the script includes the header too; the handler
 is `Scrcmd_PaperWhite2_Debug` (`src/paperwhite2/ov012/paperwhite2_debug_commands.c`), a switch on the action. The
@@ -375,8 +375,9 @@ Back and B jump back up. Removing the define from `configure.py` removes the men
 hooks; the text stays.
 
 The hack's script commands follow the original's last, 0x2f2, in `EVCMD_TABLE` (`src/ov012/scrcmd_vm.c`), each with
-its row in `EVCMD_PERM_TABLE` (`src/ov012/script_sys.c`): the conditions' two (0x2f3, 0x2f4) under `PAPERWHITE2`, then
-`Debug` (0x2f5) under `PAPERWHITE2_DEBUG_MENU`, last, so that a build without the menu keeps the others' IDs. Its entry in
+its row in `EVCMD_PERM_TABLE` (`src/ov012/script_sys.c`): the conditions' two (0x2f3, 0x2f4) and `ReloadMapHere`
+(0x2f5, Version places below) under `PAPERWHITE2`, then `Debug` (0x2f6) under `PAPERWHITE2_DEBUG_MENU`, last, so that a
+build without the menu keeps the others' IDs. Its entry in
 `tools/script/field_commands.json` has a `"hack"` key, which `field_command_table.py` keeps when it writes the table
 again from the original ROM and `field_script.py inc` writes above the macro. To add another command (rarely needed
 now): its handler under `src/paperwhite2/`, its declaration in `include/paperwhite2/debug_commands.h`, its rows in
@@ -384,10 +385,36 @@ both tables, its entry in the JSON, then `python3 tools/script/field_script.py i
 
 | Command | ID | Arguments | Handler |
 | --- | --- | --- | --- |
-| `Debug action, arg1, arg2, result` | 0x2f5 (757) | a `DEBUG_ACTION_*`, two arguments, each a value or a variable, and the variable for the result | `Scrcmd_PaperWhite2_Debug` (`src/paperwhite2/ov012/paperwhite2_debug_commands.c`); the actions above. A warp action waits a frame, as the map change commands do |
+| `Debug action, arg1, arg2, result` | 0x2f6 (758) | a `DEBUG_ACTION_*`, two arguments, each a value or a variable, and the variable for the result | `Scrcmd_PaperWhite2_Debug` (`src/paperwhite2/ov012/paperwhite2_debug_commands.c`); the actions above. A warp action waits a frame, as the map change commands do |
 
 **Memory.** The menu costs about 4 KB of the budget (the main arena had 159 KB left before it, 155 KB after): the
 command's code and tables in overlay 12, the overrides and the shiny PID in main, the hooks.
+
+### Version places
+
+Each place Unova has as Black 2 or as White 2, and the Underground Ruins' Regi chamber, has a flag or a variable of
+its own, which an NPC's script can set (`include/paperwhite2/version_places.h`; design/version-key.md). Set while the
+place is as Black 2 has it, clear as White 2 has it:
+
+| Place | Flag or variable | What it switches |
+| --- | --- | --- |
+| Route 4 | `EVENT_FLAG_BLACK2_ROUTE_4` (0x931, 2353) | the route's zone and map pieces (City Route, Black 2's; Desert Route, White 2's), the warp Castelia Gate and Join Avenue lead to, the Desert Resort's textures, the Dowsing Machine's |
+| Reversal Mountain | `EVENT_FLAG_BLACK2_REVERSAL_MOUNTAIN` (0x932, 2354) | the cave its outside and Undella Town lead to (Damp Caves, Black 2's; Fiery Caves, White 2's) |
+| Mistralton City | `EVENT_FLAG_BLACK2_MISTRALTON_CITY` (0x933, 2355) | the city's and its gate's map pieces (Greenhouses, Black 2's; Farmland, White 2's) |
+| Opelucid City | `EVENT_FLAG_BLACK2_OPELUCID_CITY` (0x934, 2356) | the city's, its gate's and three interiors' map pieces, its textures in the Kyurem freeze, its people's lines (Modern City, Black 2's; Old Town, White 2's) |
+| Black City / White Forest | `EVENT_FLAG_BLACK2_BLACK_CITY` (0x935, 2357) | Black City while set, White Forest while clear: the city, its gate and the way back from its Pokémon Center |
+| Underground Ruins | `EVENT_WORK_REGI_CHAMBER` (0x4059) | the chamber, in Unova Link's chamber key's place: 0 as White 2 has it, 1 as the Iron Chamber's key has it, 2 as the Iceberg Chamber's (`REGI_CHAMBER_*`; `KeyInfoGetChamberKey` reads it) |
+
+In every place's zones the scripts' version checks (`GameGetVersion`, `ActorMsgVersioned`) see the place's version.
+A flag takes effect at the next map change; where the player stands now, the map has to load again:
+
+- **Script 2823** (`global_2800.s`, `SCRID_RELOAD_MAP_HERE`): `RTCallGlobal 2823` after setting the flag or the
+  variable loads the map again where the player stands, as the Version Key does, with a fade, so the zone's look and
+  its level scripts (the gates' and the Pokémon Centers' exits) follow. 0x8000 is 1 where it did, 0 where it can't (on
+  rails, cycling, surfing, the Union Room, the Entralink). It's the script's last thing: the map's actors are new
+  after it. In the script language: `set_flag(2353); call_global_script(2823); end();`.
+- **The command** `ReloadMapHere result` (0x2f5, 757), which script 2823 runs: `Scrcmd_PaperWhite2_ReloadMapHere`
+  (`src/paperwhite2/ov012/paperwhite2_version_key_event.c`).
 
 ### Flags
 
@@ -829,7 +856,8 @@ under `PAPERWHITE2`, since only the hack's build generates the second:
 
 The handlers are `src/paperwhite2/ov012/paperwhite2_condition_commands.c`, declared in
 `include/paperwhite2/condition_commands.h`, with rows in `EVCMD_TABLE` and `EVCMD_PERM_TABLE` under `PAPERWHITE2` and
-`"hack"` entries in `tools/script/field_commands.json`; the debug menu's `Debug` moved to 0x2f5 (757).
+`"hack"` entries in `tools/script/field_commands.json`; the debug menu's `Debug` moved to 0x2f5 (757), then to 0x2f6
+(758) for `ReloadMapHere`.
 
 **The debug readout:** Conditions in the START menu (Debug menu, above): the world (season, time, weather, zone and
 place, parent zone and place, indoors or outdoors, the terrain groups under the player and under the follower, the

@@ -3811,9 +3811,15 @@
     .2byte \a1
     .endm
 
+    // Paper White 2: loads the map again where the player stands, as the places' flags and the Regi chamber are now, and puts 1 in a variable; 0 where it can't (on rails, cycling, surfing, the Union Room, the Entralink). The script's last thing before its end (include/paperwhite2/version_key.h)
+    .macro ReloadMapHere a0
+    FieldCommand 757
+    .2byte \a0
+    .endm
+
     // Paper White 2: the debug menu's, under PAPERWHITE2_DEBUG_MENU: runs one of its actions (DEBUG_ACTION_*, paperwhite2/debug_actions.h) with two arguments and puts the result in a variable (include/paperwhite2/debug_commands.h)
     .macro Debug a0, a1, a2, a3
-    FieldCommand 757
+    FieldCommand 758
     .2byte \a0
     .2byte \a1
     .2byte \a2

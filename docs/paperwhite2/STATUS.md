@@ -12,6 +12,8 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   textures. Black City's and White Forest's Pokémon Centers now lead out to the city the flag has.
 - Unova Link is gone from the title menu; the Aspertia scene that gave the keys is the original's again
   (design/version-key.md, Progress).
+- The Regi chamber is a variable (`EVENT_WORK_REGI_CHAMBER`), and script 2823 (`ReloadMapHere`) loads the map again
+  for NPCs that switch a place: plugins.md, Version places, lists every place's flag and variable.
 
 ## 2026-11-04 (afternoon): the re-battling Route 4 trainer explained; a flag watch in the debug menu
 

@@ -5411,6 +5411,14 @@
    "hack": "the conditions': puts 1 in a variable if the condition (a SCRIPT_CONDITION_* of paperwhite2/script_conditions.h, from res/paperwhite2/conditions/script_conditions.json) holds now, else 0 (include/paperwhite2/condition_commands.h)"
   },
   "757": {
+   "handler": "Scrcmd_PaperWhite2_ReloadMapHere",
+   "overlay": 12,
+   "args": [
+    "var"
+   ],
+   "hack": "loads the map again where the player stands, as the places' flags and the Regi chamber are now, and puts 1 in a variable; 0 where it can't (on rails, cycling, surfing, the Union Room, the Entralink). The script's last thing before its end (include/paperwhite2/version_key.h)"
+  },
+  "758": {
    "handler": "Scrcmd_PaperWhite2_Debug",
    "overlay": 12,
    "args": [

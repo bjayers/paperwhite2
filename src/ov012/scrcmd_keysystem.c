@@ -13,6 +13,11 @@
 #include "system/game_event.h"
 #include "system/game_system.h"
 #include "system/vm.h"
+#ifdef PAPERWHITE2
+#include "constants/vars.h"
+#include "paperwhite2/version_places.h"
+#include "save/event_work.h"
+#endif
 
 static void FreeUnovaLinkKeyParam(void *param);
 
@@ -45,7 +50,17 @@ BOOL Scrcmd_Keysystem_KeyInfoGetChamberKey(VM *vm, FieldScriptEnv *env) {
     FieldScriptEnv_GetScriptWork(env);
     keyInfo = getKeyInfoSaveBlk(GameData_GetSaveControl(GSYS_GetGameData(FieldScriptEnv_GetGameSystem(env))));
     result = ScriptReadVar(vm, env);
+#ifdef PAPERWHITE2
+    // Paper White 2: the chamber is the hack's variable, not Unova Link's key, which hack builds don't have
+    // (docs/paperwhite2/plugins.md, Version places)
+    *result = *EventWork_GetWkPtr(GameData_GetEventWork(GSYS_GetGameData(FieldScriptEnv_GetGameSystem(env))),
+                                  EVENT_WORK_REGI_CHAMBER);
+    if (*result > REGI_CHAMBER_ICEBERG) {
+        *result = REGI_CHAMBER_DEFAULT;
+    }
+#else
     *result = KeyInfo_GetChamberKey(keyInfo);
+#endif
     return FALSE;
 }
 
