@@ -23,6 +23,7 @@
 #include "paperwhite2/debug.h"
 #include "paperwhite2/debug_actions.h"
 #include "paperwhite2/debug_commands.h"
+#include "paperwhite2/flag_watch.h"
 #include "paperwhite2/following_ambient.h"
 #include "paperwhite2/following_data.h"
 #include "paperwhite2/following_dialogue.h"
@@ -160,6 +161,15 @@ static const u16 sDebugSeasonModeNames[SEASON_MODE_COUNT] = {
     Global10200_Text_DebugModeDaily,   Global10200_Text_DebugModeRealTime, Global10200_Text_DebugModeChaos,
 };
 
+// The flag watch's checkpoints' names, by FLAG_WATCH_STAGE_*
+static const u16 sDebugWatchStageNames[FLAG_WATCH_STAGE_COUNT] = {
+    Global10200_Text_DebugWatchFrame,           Global10200_Text_DebugWatchEvents,
+    Global10200_Text_DebugWatchProcesses,       Global10200_Text_DebugWatchCommand,
+    Global10200_Text_DebugWatchZoneInit,        Global10200_Text_DebugWatchZoneLocalReset,
+    Global10200_Text_DebugWatchZoneConditions,  Global10200_Text_DebugWatchZoneSpawns,
+    Global10200_Text_DebugWatchZoneInitScripts,
+};
+
 static const u16 sDebugWeatherNames[WEATHER_MAX] = {
     Global10200_Text_DebugWeatherClear,        Global10200_Text_DebugWeatherSnow,
     Global10200_Text_DebugWeatherRain,         Global10200_Text_DebugWeatherSandstorm,
@@ -220,6 +230,7 @@ static BOOL DebugCommands_ConditionsParty(FieldScriptEnv *env);
 static u32 DebugCommands_ConditionsRules(FieldScriptEnv *env, u32 first);
 static void DebugCommands_ConditionsPick(FieldScriptEnv *env);
 static u32 DebugCommands_SpawnGroups(FieldScriptEnv *env, u32 first);
+static u32 DebugCommands_FlagWatchEntry(FieldScriptEnv *env, u32 index);
 static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2, BOOL *wait);
 
 BOOL Scrcmd_PaperWhite2_Debug(VM *vm, FieldScriptEnv *env) {
@@ -419,6 +430,12 @@ static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2
         return 0;
     case DEBUG_ACTION_SPAWN_GROUPS:
         return DebugCommands_SpawnGroups(env, arg1);
+    case DEBUG_ACTION_FLAG_WATCH:
+        PaperWhite2_FlagWatch_Start(gameData, sDebugNumber.value);
+        DebugCommands_SetWordNumber(env, 0, sDebugNumber.value);
+        return TRUE;
+    case DEBUG_ACTION_FLAG_WATCH_ENTRY:
+        return DebugCommands_FlagWatchEntry(env, arg1);
     case DEBUG_ACTION_MEMORY_RESET_PEAKS:
         PaperWhite2_VramStats_ResetPeaks();
         FldBillboardActor_ResetCachePeaks(GSYS_GetField(gsys)->actorSystem);
@@ -1118,5 +1135,34 @@ static BOOL DebugCommands_FollowerRules(FieldScriptEnv *env, Field *field) {
         }
     }
     return TRUE;
+}
+
+// The flag watch's change in words: which of how many (0, 1), the flag and its state (2, 3), the checkpoint, zone and
+// frame (4 to 6), a command's script, command and offset (7 to 9), and the other flags and variables that changed
+// with it (10 to 14). 0 where there's no such change, with the watched flag in word 0 and the count in word 1
+static u32 DebugCommands_FlagWatchEntry(FieldScriptEnv *env, u32 index) {
+    const FlagWatchEntry *entry = PaperWhite2_FlagWatch_GetEntry(index);
+
+    if (entry == NULL) {
+        DebugCommands_SetWordNumber(env, 0, PaperWhite2_FlagWatch_GetFlag());
+        DebugCommands_SetWordNumber(env, 1, PaperWhite2_FlagWatch_GetCount());
+        return 0;
+    }
+    DebugCommands_SetWordNumber(env, 0, index + 1);
+    DebugCommands_SetWordNumber(env, 1, PaperWhite2_FlagWatch_GetCount());
+    DebugCommands_SetWordNumber(env, 2, PaperWhite2_FlagWatch_GetFlag());
+    DebugCommands_SetWordOnOff(env, 3, entry->on);
+    DebugCommands_SetWordText(env, 4, sDebugWatchStageNames[entry->stage]);
+    DebugCommands_SetWordNumber(env, 5, entry->zone);
+    DebugCommands_SetWordNumber(env, 6, entry->frame);
+    DebugCommands_SetWordNumber(env, 7, entry->script);
+    DebugCommands_SetWordHex(env, 8, entry->command, HEX_DIGITS);
+    DebugCommands_SetWordHex(env, 9, entry->offset, HEX_DIGITS);
+    DebugCommands_SetWordNumber(env, 10, entry->otherFlags);
+    DebugCommands_SetWordNumber(env, 11, entry->firstFlag);
+    DebugCommands_SetWordNumber(env, 12, entry->lastFlag);
+    DebugCommands_SetWordNumber(env, 13, entry->otherVars);
+    DebugCommands_SetWordHex(env, 14, entry->firstVar, HEX_DIGITS);
+    return entry->stage == FLAG_WATCH_STAGE_COMMAND && entry->script != FLAG_WATCH_NO_SCRIPT ? 2 : 1;
 }
 #endif

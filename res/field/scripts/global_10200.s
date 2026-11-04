@@ -382,6 +382,7 @@ L_DebugWorld:
     ListMenuAdd Global10200_Text_DebugWeather, 65535, 2
     ListMenuAdd Global10200_Text_DebugFlags, 65535, 3
     ListMenuAdd Global10200_Text_DebugVars, 65535, 4
+    ListMenuAdd Global10200_Text_DebugWatchLog, 65535, 5
     ListMenuAdd Global10200_Text_DebugBack, 65535, DEBUG_LIST_BACK
     ListMenuShow
     WorkCmpConst 0x8020, 0
@@ -394,6 +395,8 @@ L_DebugWorld:
     VMJumpIf CMP_EQ, L_DebugFlags
     WorkCmpConst 0x8020, 4
     VMJumpIf CMP_EQ, L_DebugVars
+    WorkCmpConst 0x8020, 5
+    VMJumpIf CMP_EQ, L_DebugWatchLog
     VMJump L_DebugMenu
 
 // Time: Off, or a DAY_PERIOD_* + 1
@@ -453,7 +456,8 @@ L_DebugWeather:
     SEPlay SEQ_SE_SELECT1
     VMJump L_DebugWorld
 
-// Flag get/set...: the flag's number, then its state with Set and Clear
+// Flag get/set...: the flag's number, then its state with Set, Clear and Watch (the flag watch,
+// include/paperwhite2/flag_watch.h)
 L_DebugFlags:
     Debug DEBUG_ACTION_NUMBER_BEGIN, DEBUG_NUMBER_FLAG, 0, 0x8025
     VMCall L_DebugNumber
@@ -466,13 +470,54 @@ L_DebugFlagState:
     ListMenuAnchorTopRight 31, 1, 0, 1, 0x8020
     ListMenuAdd Global10200_Text_DebugFlagSet, 65535, 1
     ListMenuAdd Global10200_Text_DebugFlagClear, 65535, 0
+    ListMenuAdd Global10200_Text_DebugFlagWatch, 65535, 2
     ListMenuAdd Global10200_Text_DebugBack, 65535, DEBUG_LIST_BACK
     ListMenuShow
+    WorkCmpConst 0x8020, 2
+    VMJumpIf CMP_EQ, L_DebugFlagWatch
     WorkCmpConst 0x8020, 1
     VMJumpIf CMP_GT, L_DebugWorld
     Debug DEBUG_ACTION_FLAG_SET, 0x8020, 0, 0x8025
     SEPlay SEQ_SE_SELECT1
     VMJump L_DebugFlagState
+
+L_DebugFlagWatch:
+    Debug DEBUG_ACTION_FLAG_WATCH, 0, 0, 0x8025
+    SEPlay SEQ_SE_SELECT1
+    SystemMsg Global10200_Text_DebugFlagWatching, 2
+    LastKeyWait
+    VMJump L_DebugFlagState
+
+// Flag watch log...: each change logged, Next to the next, until the log ends
+L_DebugWatchLog:
+    WorkSetConst 0x8026, 0
+
+L_DebugWatchEntry:
+    Debug DEBUG_ACTION_FLAG_WATCH_ENTRY, 0x8026, 0, 0x8025
+    WorkCmpConst 0x8025, 0
+    VMJumpIf CMP_EQ, L_DebugWatchEmpty
+    WorkCmpConst 0x8025, 2
+    VMJumpIf CMP_EQ, L_DebugWatchEntryScript
+    SystemMsg Global10200_Text_DebugWatchEntry, 2
+    VMJump L_DebugWatchMenu
+
+L_DebugWatchEntryScript:
+    SystemMsg Global10200_Text_DebugWatchEntryScript, 2
+
+L_DebugWatchMenu:
+    ListMenuAnchorTopRight 31, 1, 0, 1, 0x8020
+    ListMenuAdd Global10200_Text_DebugWatchNext, 65535, 0
+    ListMenuAdd Global10200_Text_DebugBack, 65535, DEBUG_LIST_BACK
+    ListMenuShow
+    WorkCmpConst 0x8020, 0
+    VMJumpIf CMP_NE, L_DebugWorld
+    WorkAdd 0x8026, 1
+    VMJump L_DebugWatchEntry
+
+L_DebugWatchEmpty:
+    SystemMsg Global10200_Text_DebugWatchEmpty, 2
+    LastKeyWait
+    VMJump L_DebugWorld
 
 // Variable get/set...: the variable's number (0x4000 to 0x41ae, the save's), then its value, which Change value
 // enters

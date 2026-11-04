@@ -27,6 +27,9 @@
 #include "system/game_system.h"
 #include "system/iss_sys.h"
 #include "system/playtime_ctrl.h"
+#ifdef PAPERWHITE2_DEBUG_MENU
+#include "paperwhite2/flag_watch.h"
+#endif
 
 // The game system: the process that runs the game from the title screen's choice on, and the accessors of what it
 // owns. The file's name is a guess, from the GameSystem and GSYS names: the ROM has no string for it. The functions'
@@ -255,6 +258,11 @@ static void SetupGameSystem(GameSystem *gsys, HeapID heapId, GameSystemProcData 
 
 // Runs a frame of the game. Whether it is over: no process and no event is left
 static BOOL GSYS_Update(GameSystem *gsys) {
+#ifdef PAPERWHITE2_DEBUG_MENU
+    // Paper White 2: the debug menu's flag watch looks at the frame's start, its events and its processes
+    // (paperwhite2/flag_watch.h)
+    PaperWhite2_FlagWatch_Check(gsys->gameData, FLAG_WATCH_STAGE_FRAME);
+#endif
     GSYS_UpdateEventRunningFlag(gsys);
     if (GameData_Is30FPSMode(gsys->gameData)) {
         GCTX_HIDSetUpdateRate(30);
@@ -263,9 +271,15 @@ static BOOL GSYS_Update(GameSystem *gsys) {
         GSYS_FeedEventsFromProvider(gsys, gsys->eventProvider, gsys->eventProviderData);
         GSYS_UpdateGameCommBoot(gsys);
         GSYS_UpdateEvents(gsys);
+#ifdef PAPERWHITE2_DEBUG_MENU
+        PaperWhite2_FlagWatch_Check(gsys->gameData, FLAG_WATCH_STAGE_EVENTS);
+#endif
         GameCommSys_Main(gsys->comm);
     }
     gsys->procManagerState = GFL_ProcMgrUpdate(gsys->procManager);
+#ifdef PAPERWHITE2_DEBUG_MENU
+    PaperWhite2_FlagWatch_Check(gsys->gameData, FLAG_WATCH_STAGE_PROCESSES);
+#endif
     FieldSnd_Update(GameData_GetFieldSoundSystem(gsys->gameData));
     ISS_Update(gsys->iss);
     GameSystemTimer_Update(gsys->gameData);

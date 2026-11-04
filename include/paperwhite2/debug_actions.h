@@ -139,6 +139,13 @@
 // index in groups.json, how many of its members can appear now and the one it picked; how many (at most 3)
 #define DEBUG_ACTION_SPAWN_GROUPS 46
 
+// The flag watch (include/paperwhite2/flag_watch.h): starts watching the number's flag, with an empty log, and puts
+// the flag in word 0
+#define DEBUG_ACTION_FLAG_WATCH 47
+// The flag watch's change arg1 (from 0) in words 0 to 14 (DebugCommands_FlagWatchEntry); 0 where the log has no
+// such change (word 0 the watched flag, word 1 how many it has), else 1, or 2 for one of a script's commands
+#define DEBUG_ACTION_FLAG_WATCH_ENTRY 48
+
 // The kinds of number entry: their ranges and messages are sDebugNumberKinds (paperwhite2_debug_commands.c)
 #define DEBUG_NUMBER_LEVEL 0
 #define DEBUG_NUMBER_NATURE 1

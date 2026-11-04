@@ -6,6 +6,9 @@
 #ifdef PAPERWHITE2
 #include "paperwhite2/following_resident.h"
 #endif
+#ifdef PAPERWHITE2_DEBUG_MENU
+#include "paperwhite2/flag_watch.h"
+#endif
 
 void VM_Reset(VM *vm) {
     vm->pc = NULL;
@@ -35,6 +38,10 @@ void VM_Free(VM *vm) {
     // Paper White 2: the follower forgets a script that ends (docs/paperwhite2/following-pokemon.md, event-vm-free)
     PaperWhite2_FollowingOnVmFree(vm);
 #endif
+#ifdef PAPERWHITE2_DEBUG_MENU
+    // Paper White 2: the debug menu's flag watch forgets the VM's script (paperwhite2/flag_watch.h)
+    PaperWhite2_FlagWatch_OnVMFree(vm);
+#endif
     GFL_HeapFree(vm);
 }
 
@@ -56,6 +63,10 @@ void VM_Halt(VM *vm) {
 
 BOOL VM_Run(VM *vm) {
     u16 cmd;
+#ifdef PAPERWHITE2_DEBUG_MENU
+    const u8 *at;
+    BOOL wait;
+#endif
 
     switch (vm->state) {
     case VM_STATE_STOPPED:
@@ -76,6 +87,9 @@ BOOL VM_Run(VM *vm) {
                 vm->state = VM_STATE_STOPPED;
                 return FALSE;
             }
+#ifdef PAPERWHITE2_DEBUG_MENU
+            at = vm->pc;
+#endif
             cmd = VM_Read16(vm);
 #ifdef PAPERWHITE2
             // Paper White 2: the follower sees each script command, to stay out or be recalled (event-opcode-fetch)
@@ -88,17 +102,35 @@ BOOL VM_Run(VM *vm) {
                     vm->state = VM_STATE_STOPPED;
                     return FALSE;
                 }
+#ifdef PAPERWHITE2_DEBUG_MENU
+                // Paper White 2: the debug menu's flag watch looks at the save after each command
+                // (paperwhite2/flag_watch.h)
+                wait = vm->param.extraCommands[cmd - vm->param.extraCommandStart](vm, vm->env);
+                PaperWhite2_FlagWatch_OnCommand(vm, cmd, at);
+                if (wait == TRUE) {
+                    break;
+                }
+#else
                 if (vm->param.extraCommands[cmd - vm->param.extraCommandStart](vm, vm->env) == TRUE) {
                     break;
                 }
+#endif
             } else {
                 if (vm->verifier != NULL && vm->verifier(vm, vm->env, vm->verifierArg, cmd) == FALSE) {
                     vm->state = VM_STATE_STOPPED;
                     return FALSE;
                 }
+#ifdef PAPERWHITE2_DEBUG_MENU
+                wait = vm->param.commands[cmd](vm, vm->env);
+                PaperWhite2_FlagWatch_OnCommand(vm, cmd, at);
+                if (wait == TRUE) {
+                    break;
+                }
+#else
                 if (vm->param.commands[cmd](vm, vm->env) == TRUE) {
                     break;
                 }
+#endif
             }
         }
         break;

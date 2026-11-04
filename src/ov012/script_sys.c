@@ -28,6 +28,9 @@
 #include "paperwhite2/conditions.h"
 #include "paperwhite2/spawns.h"
 #endif
+#ifdef PAPERWHITE2_DEBUG_MENU
+#include "paperwhite2/flag_watch.h"
+#endif
 
 // A range of global script IDs, with its script file and text bank
 struct GlobalScriptEntry {
@@ -467,16 +470,32 @@ void FieldScript_CallOnZoneInit(GameSystem *gsys, u32 arg1) {
 
     gameData = GSYS_GetGameData(gsys);
     eventWork = GameData_GetEventWork(gameData);
+#ifdef PAPERWHITE2_DEBUG_MENU
+    // Paper White 2: the debug menu's flag watch looks at each step (paperwhite2/flag_watch.h)
+    PaperWhite2_FlagWatch_Check(gameData, FLAG_WATCH_STAGE_ZONE_INIT);
+#endif
     FieldScript_ResetMapLocalEvents(eventWork);
+#ifdef PAPERWHITE2_DEBUG_MENU
+    PaperWhite2_FlagWatch_Check(gameData, FLAG_WATCH_STAGE_ZONE_LOCAL_RESET);
+#endif
 #ifdef PAPERWHITE2
     // Paper White 2: counts the zone load for the conditions' load seed, before the zone's init scripts, which can
     // then read the new zone's picks; a battle or a menu reopens the field without a zone init, so the picks hold
     Conditions_OnZoneInit(gameData);
+#ifdef PAPERWHITE2_DEBUG_MENU
+    PaperWhite2_FlagWatch_Check(gameData, FLAG_WATCH_STAGE_ZONE_CONDITIONS);
+#endif
     // Paper White 2: the zone's NPCs' conditions and instances, on the records the init scripts and SpawnAllZoneNPCs
     // then use (paperwhite2_spawns.c)
     Spawns_OnZoneInit(gsys, GameData_GetEventData(gameData)->zoneId, HEAPID_TAIL(HEAPID_GAMEEVENT));
+#ifdef PAPERWHITE2_DEBUG_MENU
+    PaperWhite2_FlagWatch_Check(gameData, FLAG_WATCH_STAGE_ZONE_SPAWNS);
+#endif
 #endif
     FieldScript_CallZoneInitCore(gsys, arg1, 2, 2);
+#ifdef PAPERWHITE2_DEBUG_MENU
+    PaperWhite2_FlagWatch_Check(gameData, FLAG_WATCH_STAGE_ZONE_INIT_SCRIPTS);
+#endif
 }
 
 GameEvent *FieldScript_CheckSceneChangeEvent(GameSystem *gsys, HeapID heapId) {
@@ -596,6 +615,10 @@ VM *FieldScript_CreateVM(HeapID heapId, ScriptWork *work, u16 zoneId, u16 script
     vm->pc += scriptOffset * 4;
     vm->pc += VM_Read32(vm);
     FieldScript_AttachOpcodeGuard(vm);
+#ifdef PAPERWHITE2_DEBUG_MENU
+    // Paper White 2: the debug menu's flag watch names the script of the VM's commands (paperwhite2/flag_watch.h)
+    PaperWhite2_FlagWatch_OnScriptVM(vm, scriptId);
+#endif
     return vm;
 }
 
