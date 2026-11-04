@@ -1,4 +1,4 @@
-# A C-like language for the field scripts (proposal, 2026-11-04)
+# A C-like language for the field scripts (agreed 2026-11-04)
 
 The field scripts (`res/field/scripts/<file>.s`) are lists of the script engine's commands, one a line (macros of
 `include/asm/field_script.inc`, numbered by `tools/script/field_commands.json`), with labels and jumps for control
@@ -29,6 +29,72 @@ A small C-like language that the editor translates to and from a script's block 
   `global RandomItem(first = 0x8011, count = 0x8010) = 10853;` (result in 0x8012), `global WildBattle(species = 0x8010)
   = 10854;`. A call sets the variables and calls the global; existing calls read back as the names.
 - **Later:** movements inline (`ApplyMovement(1, { WalkUp(2), FaceLeft() })`), menus as a `switch` on the choice.
+
+## The user's choices (2026-11-04)
+
+From three options (Frost's names in C style; lowercase with shortcuts; fewer parentheses) the user chose the second:
+
+```c
+script 3 {
+    lock_all();
+    face_player();
+    if (flag(1210)) {
+        say(14);
+    } else if (0x4060 >= 2) {
+        say(12);
+        wild_battle(74);
+        if (0x8012 == 1) {
+            set_flag(1210);
+            step_aside();
+        }
+    } else {
+        say(10);
+        0x4060 += 1;
+    }
+    unlock_all();
+    end();
+}
+
+sub step_aside {
+    move(2, walk_left(1), face_right);
+    wait_move();
+}
+```
+
+- **Names:** lowercase with underscores, Frost's names where he has them (`LockAll` is `lock_all`), the macros' and
+  the `c0xNN` ones too. Every command keeps its full form with all its arguments.
+- **Variables** as `0x4060`: a hex number from 0x4000 is a variable, as the engine reads any argument from 0x4000 up
+  (`ScriptReadAny`); a decimal one is a value. `alias hiker_talks = 0x4060;` names one for the file.
+- **Numbers for species and flags:** `wild_battle(74)`, `set_flag(513)`. Saving writes the constant's name where the
+  `.s` has one (`SPECIES_GEODUDE`, `EVENT_FLAG_...`), so the round trip stays exact; this needs each argument's kind
+  (flag, variable, species, item, move, message line, actor, ...), which the command reference gives.
+- **Messages:** `say(line)` shows the talk window of the NPC talked to, waits for a key and closes it; a variant for
+  each window style Frost had:
+
+  | Frost | Command | Shortcut |
+  | --- | --- | --- |
+  | Message2 | `ParentActorMsg` | `say(line)` |
+  | Message | `ActorMsg` | `say_npc(npc, line)` |
+  | EventGreyMessage | `SystemMsg` | `say_event(line)` |
+  | BubbleMessage | `InfoMsg` | `say_bubble(line)` |
+  | BorderedMessage | `MsgPlaceSign` | `say_sign(line)` |
+  | AngryMessage | `ScreamMsg` | `say_yell(line)` |
+  | CheckerMessage | `CheckerMsg` | `say_checker(line, x, y)` |
+  | ShowMessageAt | `MultiMsg` | `say_at(line, x, y)` |
+  | GenderedMessage, VersionMessage | `ActorMsgGendered`, `ActorMsgVersioned` | `say_gendered(male, female)`, `say_versioned(white, black)` |
+
+  Each shortcut is the sequence the game's scripts use for that window (found from the scripts themselves), so
+  existing scripts read back as the shortcuts.
+- **The sidebar,** for what's under the cursor:
+  - a message line: its text in the talk window's preview, editable, and a button that opens the text file beside;
+  - a species number: its name and sprite;
+  - a flag or a variable: its constant, the user's note for it (kept in a file the editor writes), and every script
+    that sets or checks it;
+  - a command: what it does and what each argument is, from the command reference (Frost's comments, the handler's
+    name, and our own notes).
+- **The command reference** is a file of the language's names: each command's name, aliases, what it does, and each
+  argument's name, kind and meaning. It starts from Frost's header and the game's handlers, and grows as commands are
+  learned.
 
 ## The user's global scripts
 
