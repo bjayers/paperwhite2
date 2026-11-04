@@ -21,7 +21,7 @@ import { LangSide } from "./LangSide.tsx";
 import { parseScript } from "../../../shared/scriptlang/lang.ts";
 import { messageIds, messageTexts } from "../../../shared/scriptlang/values.ts";
 import { SHORTCUT_NAMES } from "../../../shared/scriptlang/shortcuts.ts";
-import type { RefCommand, RefGlobal } from "../../../shared/scriptlang/translate.ts";
+import type { Reference } from "./lang.ts";
 
 const SCRIPTS = "res/field/scripts";
 
@@ -96,8 +96,8 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
   const [mode, setMode] = useState<"lang" | "s">(() => {
     try { return localStorage.getItem("script-mode") === "s" ? "s" : "lang"; } catch { return "lang"; }
   });
-  const [reference, setReference] = useState<{ commands: RefCommand[]; globals: RefGlobal[] } | null>(null);
-  useEffect(() => { loadReference().then(setReference, () => setReference({ commands: [], globals: [] })); }, []);
+  const [reference, setReference] = useState<Reference | null>(null);
+  useEffect(() => { loadReference().then(setReference, () => setReference({ commands: [], globals: [], movements: [] })); }, []);
   const env = useMemo(() => (commands && reference && constants
     ? langEnv(commands.keys(), reference, constants, bankText ? messageIds(bankText) : [], bankText ? messageTexts(bankText) : undefined) : null),
   [commands, reference, constants, bankText]);
@@ -117,7 +117,8 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
     try { parseScript(langText); return null; } catch (e) { return (e as Error).message; }
   }, [langOn, langText]);
   const [textOpen, setTextOpen] = useState(false);
-  const highlight = useCallback((line: string) => highlightLang(line, (name) => !!env && (env.names.toMacro.has(name) || env.names.globals.has(name) || SHORTCUT_NAMES.has(name))), [env]);
+  const highlight = useCallback((line: string) => highlightLang(line, (name) => !!env && (env.names.toMacro.has(name) || env.names.globals.has(name) || SHORTCUT_NAMES.has(name)
+    || env.names.movements.has(name) || /^action_\d+$/.test(name))), [env]);
 
   /** The draft put back into the .s, after the checks; FALSE where it wasn't. */
   const apply = (): boolean => {
@@ -163,6 +164,20 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
     const line = langText.split("\n")[caret.line - 1] ?? "";
     return { line: caret.line, text: line, call: callAt(line, caret.column) };
   }, [langOn, caret, langText]);
+  /** Puts text in place of the call's name at the caret (a movement's step). */
+  const replaceSpan = (value: string) => {
+    if (!langCaret?.call || langCaret.call.arg !== -1) return;
+    const { start, end } = langCaret.call;
+    const lines = langText.split("\n");
+    const line = lines[langCaret.line - 1];
+    lines[langCaret.line - 1] = `${line.slice(0, start)}${value}${line.slice(start, end).match(/\s*$/)![0]}${line.slice(end)}`;
+    setLangText(lines.join("\n"));
+  };
+  /** Adds a step at the end of the movement in the argument at the caret, or makes the argument one. */
+  const addStep = (name: string) => {
+    const t = langCaret?.call?.argText ?? "";
+    insertArg(t.startsWith("[") && t.endsWith("]") ? (t.slice(1, -1).trim() ? `${t.slice(0, -1)}, ${name}]` : `[${name}]`) : `[${name}]`);
+  };
   /** Puts text in place of the argument at the caret, keeping the spaces round it. */
   const insertArg = (value: string) => {
     if (!langCaret?.call || langCaret.call.arg < 0) return;
@@ -357,7 +372,8 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
                 </div>
               )}
               {langOn && env ? (
-                <LangSide call={langCaret?.call ?? null} env={env} bank={bank} onInsert={insertArg} onOpenText={() => setTextOpen(true)} />
+                <LangSide call={langCaret?.call ?? null} env={env} bank={bank} onInsert={insertArg} onOpenText={() => setTextOpen(true)}
+                          onReplaceName={(name) => replaceSpan(name)} onAddStep={addStep} />
               ) : caret ? (
                 <>
                   <p className="muted scr-note">Line {caret.line}</p>

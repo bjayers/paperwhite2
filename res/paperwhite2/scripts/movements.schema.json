@@ -1,0 +1,28 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Paper White 2: the script language's movement actions, res/paperwhite2/scripts/movements.json",
+    "description": "The actions a movement can take (a Move's action code: the index of its table in src/ov036/field_actor_movedata.c's ACTOR_ACTION_COMMAND_TABLES), as the script language names them in apply_movement(actor, [walk_up(2), face_left]) and movement NAME = [...]; (docs/paperwhite2/design/script-language.md). Made from the tables' names; kept by hand after.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "movements" ],
+    "properties": {
+        "$schema": {
+            "type": "string",
+            "description": "This schema, for editors"
+        },
+        "movements": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [ "code", "name" ],
+                "properties": {
+                    "code": { "type": "integer", "minimum": 0, "maximum": 252, "description": "Its action code" },
+                    "name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "Its name in the script language" },
+                    "description": { "type": "string", "description": "What it does" },
+                    "table": { "type": "string", "description": "Its table of ACTOR_ACTION_COMMAND_TABLES" }
+                }
+            }
+        }
+    }
+}

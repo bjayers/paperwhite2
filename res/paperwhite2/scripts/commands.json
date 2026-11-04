@@ -1760,16 +1760,19 @@
             "handler": "Scrcmd_FieldActor_ActorCmdExec",
             "args": [
                 {
-                    "name": "value",
+                    "name": "actor",
                     "type": "any",
-                    "kind": "actor"
+                    "kind": "actor",
+                    "description": "The actor's id in the zone's events; 255 for the player"
                 },
                 {
-                    "name": "a2",
+                    "name": "movement",
                     "type": "u32",
-                    "kind": "label"
+                    "kind": "label",
+                    "description": "Its steps, [walk_up(2), face_left], or a movement NAME = [...] of this file"
                 }
-            ]
+            ],
+            "description": "Starts a movement on an actor (by its id; 255 for the player): its steps in [ ], as [walk_up(2), face_left], or a movement's name; wait_movement() waits for it to end"
         },
         {
             "op": 101,
@@ -1778,7 +1781,8 @@
             "aliases": [ "actor_cmd_wait" ],
             "frost": "WaitMovement",
             "handler": "Scrcmd_FieldActor_ActorCmdWait",
-            "args": []
+            "args": [],
+            "description": "Waits until every movement started ends"
         },
         {
             "op": 102,
@@ -5873,11 +5877,12 @@
         {
             "op": 325,
             "macro": "EvCameraWait",
-            "name": "end_camera_event",
-            "aliases": [ "ev_camera_wait" ],
+            "name": "wait_camera",
+            "aliases": [ "ev_camera_wait", "end_camera_event" ],
             "frost": "EndCameraEvent",
             "handler": "Scrcmd_Camera_EvCameraWait",
-            "args": []
+            "args": [],
+            "description": "Waits for the camera to finish its move (Frost called it EndCameraEvent)"
         },
         {
             "op": 326,

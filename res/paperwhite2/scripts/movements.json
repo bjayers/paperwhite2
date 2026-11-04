@@ -1,0 +1,1163 @@
+{
+    "$schema": "movements.schema.json",
+    "movements": [
+        {
+            "code": 0,
+            "name": "face_up",
+            "description": "Faces up",
+            "table": "ACMD_DIR_TABLE"
+        },
+        {
+            "code": 1,
+            "name": "face_down",
+            "description": "Faces down",
+            "table": "ACMD_FACE_DOWN_TABLE"
+        },
+        {
+            "code": 2,
+            "name": "face_left",
+            "description": "Faces left",
+            "table": "ACMD_FACE_LEFT_TABLE"
+        },
+        {
+            "code": 3,
+            "name": "face_right",
+            "description": "Faces right",
+            "table": "ACMD_FACE_RIGHT_TABLE"
+        },
+        {
+            "code": 4,
+            "name": "walk_up_32f",
+            "description": "Walks a tile up, 32 frames a tile",
+            "table": "ACMD_WALK32_TABLE"
+        },
+        {
+            "code": 5,
+            "name": "walk_down_32f",
+            "description": "Walks a tile down, 32 frames a tile",
+            "table": "ACMD_WALK_DOWN32_F_TABLE"
+        },
+        {
+            "code": 6,
+            "name": "walk_left_32f",
+            "description": "Walks a tile left, 32 frames a tile",
+            "table": "ACMD_WALK_LEFT32_F_TABLE"
+        },
+        {
+            "code": 7,
+            "name": "walk_right_32f",
+            "description": "Walks a tile right, 32 frames a tile",
+            "table": "ACMD_WALK_RIGHT32_F_TABLE"
+        },
+        {
+            "code": 8,
+            "name": "walk_up_16f",
+            "description": "Walks a tile up, 16 frames a tile",
+            "table": "ACMD_WALK16_TABLE"
+        },
+        {
+            "code": 9,
+            "name": "walk_down_16f",
+            "description": "Walks a tile down, 16 frames a tile",
+            "table": "ACMD_WALK_DOWN16_F_TABLE"
+        },
+        {
+            "code": 10,
+            "name": "walk_left_16f",
+            "description": "Walks a tile left, 16 frames a tile",
+            "table": "ACMD_WALK_LEFT16_F_TABLE"
+        },
+        {
+            "code": 11,
+            "name": "walk_right_16f",
+            "description": "Walks a tile right, 16 frames a tile",
+            "table": "ACMD_WALK_RIGHT16_F_TABLE"
+        },
+        {
+            "code": 12,
+            "name": "walk_up",
+            "description": "Walks a tile up, 8 frames a tile (normal)",
+            "table": "ACMD_WALK8_TABLE"
+        },
+        {
+            "code": 13,
+            "name": "walk_down",
+            "description": "Walks a tile down, 8 frames a tile (normal)",
+            "table": "ACMD_WALK_DOWN8_F_TABLE"
+        },
+        {
+            "code": 14,
+            "name": "walk_left",
+            "description": "Walks a tile left, 8 frames a tile (normal)",
+            "table": "ACMD_WALK_LEFT8_F_TABLE"
+        },
+        {
+            "code": 15,
+            "name": "walk_right",
+            "description": "Walks a tile right, 8 frames a tile (normal)",
+            "table": "ACMD_WALK_RIGHT8_F_TABLE"
+        },
+        {
+            "code": 16,
+            "name": "walk_up_4f",
+            "description": "Walks a tile up, 4 frames a tile",
+            "table": "ACMD_WALK4_TABLE"
+        },
+        {
+            "code": 17,
+            "name": "walk_down_4f",
+            "description": "Walks a tile down, 4 frames a tile",
+            "table": "ACMD_WALK_DOWN4_F_TABLE"
+        },
+        {
+            "code": 18,
+            "name": "walk_left_4f",
+            "description": "Walks a tile left, 4 frames a tile",
+            "table": "ACMD_WALK_LEFT4_F_TABLE"
+        },
+        {
+            "code": 19,
+            "name": "walk_right_4f",
+            "description": "Walks a tile right, 4 frames a tile",
+            "table": "ACMD_WALK_RIGHT4_F_TABLE"
+        },
+        {
+            "code": 20,
+            "name": "walk_up_2f",
+            "description": "Walks a tile up, 2 frames a tile",
+            "table": "ACMD_WALK2_TABLE"
+        },
+        {
+            "code": 21,
+            "name": "walk_down_2f",
+            "description": "Walks a tile down, 2 frames a tile",
+            "table": "ACMD_WALK_DOWN2_F_TABLE"
+        },
+        {
+            "code": 22,
+            "name": "walk_left_2f",
+            "description": "Walks a tile left, 2 frames a tile",
+            "table": "ACMD_WALK_LEFT2_F_TABLE"
+        },
+        {
+            "code": 23,
+            "name": "walk_right_2f",
+            "description": "Walks a tile right, 2 frames a tile",
+            "table": "ACMD_WALK_RIGHT2_F_TABLE"
+        },
+        {
+            "code": 24,
+            "name": "walk_in_place_up_32f",
+            "description": "Walks on the spot facing up, 32 frames",
+            "table": "ACMD_TURN32_TABLE"
+        },
+        {
+            "code": 25,
+            "name": "walk_in_place_down_32f",
+            "description": "Walks on the spot facing down, 32 frames",
+            "table": "ACMD_STAY_WALK_DOWN32_F_TABLE"
+        },
+        {
+            "code": 26,
+            "name": "walk_in_place_left_32f",
+            "description": "Walks on the spot facing left, 32 frames",
+            "table": "ACMD_STAY_WALK_LEFT32_F_TABLE"
+        },
+        {
+            "code": 27,
+            "name": "walk_in_place_right_32f",
+            "description": "Walks on the spot facing right, 32 frames",
+            "table": "ACMD_STAY_WALK_RIGHT32_F_TABLE"
+        },
+        {
+            "code": 28,
+            "name": "walk_in_place_up_16f",
+            "description": "Walks on the spot facing up, 16 frames",
+            "table": "ACMD_TURN16_TABLE"
+        },
+        {
+            "code": 29,
+            "name": "walk_in_place_down_16f",
+            "description": "Walks on the spot facing down, 16 frames",
+            "table": "ACMD_STAY_WALK_DOWN16_F_TABLE"
+        },
+        {
+            "code": 30,
+            "name": "walk_in_place_left_16f",
+            "description": "Walks on the spot facing left, 16 frames",
+            "table": "ACMD_STAY_WALK_LEFT16_F_TABLE"
+        },
+        {
+            "code": 31,
+            "name": "walk_in_place_right_16f",
+            "description": "Walks on the spot facing right, 16 frames",
+            "table": "ACMD_STAY_WALK_RIGHT16_F_TABLE"
+        },
+        {
+            "code": 32,
+            "name": "walk_in_place_up",
+            "description": "Walks on the spot facing up, 8 frames",
+            "table": "ACMD_TURN8_TABLE"
+        },
+        {
+            "code": 33,
+            "name": "walk_in_place_down",
+            "description": "Walks on the spot facing down, 8 frames",
+            "table": "ACMD_STAY_WALK_DOWN8_F_TABLE"
+        },
+        {
+            "code": 34,
+            "name": "walk_in_place_left",
+            "description": "Walks on the spot facing left, 8 frames",
+            "table": "ACMD_STAY_WALK_LEFT8_F_TABLE"
+        },
+        {
+            "code": 35,
+            "name": "walk_in_place_right",
+            "description": "Walks on the spot facing right, 8 frames",
+            "table": "ACMD_STAY_WALK_RIGHT8_F_TABLE"
+        },
+        {
+            "code": 36,
+            "name": "walk_in_place_up_4f",
+            "description": "Walks on the spot facing up, 4 frames",
+            "table": "ACMD_TURN4_TABLE"
+        },
+        {
+            "code": 37,
+            "name": "walk_in_place_down_4f",
+            "description": "Walks on the spot facing down, 4 frames",
+            "table": "ACMD_STAY_WALK_DOWN4_F_TABLE"
+        },
+        {
+            "code": 38,
+            "name": "walk_in_place_left_4f",
+            "description": "Walks on the spot facing left, 4 frames",
+            "table": "ACMD_STAY_WALK_LEFT4_F_TABLE"
+        },
+        {
+            "code": 39,
+            "name": "walk_in_place_right_4f",
+            "description": "Walks on the spot facing right, 4 frames",
+            "table": "ACMD_STAY_WALK_RIGHT4_F_TABLE"
+        },
+        {
+            "code": 40,
+            "name": "walk_in_place_up_2f",
+            "description": "Walks on the spot facing up, 2 frames",
+            "table": "ACMD_TURN2_TABLE"
+        },
+        {
+            "code": 41,
+            "name": "walk_in_place_down_2f",
+            "description": "Walks on the spot facing down, 2 frames",
+            "table": "ACMD_STAY_WALK_DOWN2_F_TABLE"
+        },
+        {
+            "code": 42,
+            "name": "walk_in_place_left_2f",
+            "description": "Walks on the spot facing left, 2 frames",
+            "table": "ACMD_STAY_WALK_LEFT2_F_TABLE"
+        },
+        {
+            "code": 43,
+            "name": "walk_in_place_right_2f",
+            "description": "Walks on the spot facing right, 2 frames",
+            "table": "ACMD_STAY_WALK_RIGHT2_F_TABLE"
+        },
+        {
+            "code": 44,
+            "name": "jump_in_place_up_16f",
+            "description": "Hops on the spot facing up, 16 frames",
+            "table": "ACMD_JUMP16F"
+        },
+        {
+            "code": 45,
+            "name": "jump_in_place_down_16f",
+            "description": "Hops on the spot facing down, 16 frames",
+            "table": "ACMD_STAY_JUMP_DOWN16_F_TABLE"
+        },
+        {
+            "code": 46,
+            "name": "jump_in_place_left_16f",
+            "description": "Hops on the spot facing left, 16 frames",
+            "table": "ACMD_STAY_JUMP_LEFT16_F_TABLE"
+        },
+        {
+            "code": 47,
+            "name": "jump_in_place_right_16f",
+            "description": "Hops on the spot facing right, 16 frames",
+            "table": "ACMD_STAY_JUMP_RIGHT16_F_TABLE"
+        },
+        {
+            "code": 48,
+            "name": "jump_in_place_up",
+            "description": "Hops on the spot facing up, 8 frames",
+            "table": "ACMD_JUMP8F"
+        },
+        {
+            "code": 49,
+            "name": "jump_in_place_down",
+            "description": "Hops on the spot facing down, 8 frames",
+            "table": "ACMD_STAY_JUMP_DOWN8_F_TABLE"
+        },
+        {
+            "code": 50,
+            "name": "jump_in_place_left",
+            "description": "Hops on the spot facing left, 8 frames",
+            "table": "ACMD_STAY_JUMP_LEFT8_F_TABLE"
+        },
+        {
+            "code": 51,
+            "name": "jump_in_place_right",
+            "description": "Hops on the spot facing right, 8 frames",
+            "table": "ACMD_STAY_JUMP_RIGHT8_F_TABLE"
+        },
+        {
+            "code": 52,
+            "name": "jump_up",
+            "description": "Jumps 1 tile up, 8 frames",
+            "table": "ACMD_JUMP_UP1_G8_F_TABLE"
+        },
+        {
+            "code": 53,
+            "name": "jump_down",
+            "description": "Jumps 1 tile down, 8 frames",
+            "table": "ACMD_JUMP_DOWN1_G8_F_TABLE"
+        },
+        {
+            "code": 54,
+            "name": "jump_left",
+            "description": "Jumps 1 tile left, 8 frames",
+            "table": "ACMD_JUMP_LEFT1_G8_F_TABLE"
+        },
+        {
+            "code": 55,
+            "name": "jump_right",
+            "description": "Jumps 1 tile right, 8 frames",
+            "table": "ACMD_JUMP_RIGHT1_G8_F_TABLE"
+        },
+        {
+            "code": 56,
+            "name": "jump_up_2",
+            "description": "Jumps 2 tiles up, 16 frames",
+            "table": "ACMD_JUMP_UP2_G16_F_TABLE"
+        },
+        {
+            "code": 57,
+            "name": "jump_down_2",
+            "description": "Jumps 2 tiles down, 16 frames",
+            "table": "ACMD_JUMP_DOWN2_G16_F_TABLE"
+        },
+        {
+            "code": 58,
+            "name": "jump_left_2",
+            "description": "Jumps 2 tiles left, 16 frames",
+            "table": "ACMD_JUMP_LEFT2_G16_F_TABLE"
+        },
+        {
+            "code": 59,
+            "name": "jump_right_2",
+            "description": "Jumps 2 tiles right, 16 frames",
+            "table": "ACMD_JUMP_RIGHT2_G16_F_TABLE"
+        },
+        {
+            "code": 60,
+            "name": "wait_1f",
+            "description": "Waits 1 frames",
+            "table": "ACMD_WAIT1_F_TABLE"
+        },
+        {
+            "code": 61,
+            "name": "wait_2f",
+            "description": "Waits 2 frames",
+            "table": "ACMD_WAIT2_F_TABLE"
+        },
+        {
+            "code": 62,
+            "name": "wait_4f",
+            "description": "Waits 4 frames",
+            "table": "ACMD_WAIT4_F_TABLE"
+        },
+        {
+            "code": 63,
+            "name": "wait_8f",
+            "description": "Waits 8 frames",
+            "table": "ACMD_WAIT8_F_TABLE"
+        },
+        {
+            "code": 64,
+            "name": "wait_15f",
+            "description": "Waits 15 frames",
+            "table": "ACMD_WAIT15_F_TABLE"
+        },
+        {
+            "code": 65,
+            "name": "wait_16f",
+            "description": "Waits 16 frames",
+            "table": "ACMD_WAIT16_F_TABLE"
+        },
+        {
+            "code": 66,
+            "name": "wait_32f",
+            "description": "Waits 32 frames",
+            "table": "ACMD_WAIT32_F_TABLE"
+        },
+        {
+            "code": 67,
+            "name": "rise",
+            "description": "Rises",
+            "table": "ACMD_RISE_INIT_TABLE"
+        },
+        {
+            "code": 68,
+            "name": "fall",
+            "description": "Falls",
+            "table": "ACMD_FALL_INIT_TABLE"
+        },
+        {
+            "code": 69,
+            "name": "hide",
+            "description": "Hides it",
+            "table": "ACMD_SET_HIDDEN_FLAG_TABLE"
+        },
+        {
+            "code": 70,
+            "name": "show",
+            "description": "Shows it",
+            "table": "ACMD_CLEAR_HIDDEN_FLAG_TABLE"
+        },
+        {
+            "code": 71,
+            "name": "lock_facing",
+            "description": "Keeps its facing while it moves",
+            "table": "ACMD_SET_FACE_DIR_LOCK_FLAG_TABLE"
+        },
+        {
+            "code": 72,
+            "name": "unlock_facing",
+            "description": "Faces the way it moves again",
+            "table": "ACMD_CLEAR_FACE_DIR_LOCK_FLAG_TABLE"
+        },
+        {
+            "code": 73,
+            "name": "pause_animation",
+            "description": "Stops its animation",
+            "table": "ACMD_SET_ANIME_PAUSE_FLAG_TABLE"
+        },
+        {
+            "code": 74,
+            "name": "resume_animation",
+            "description": "Starts its animation again",
+            "table": "ACMD_CLEAR_ANIME_PAUSE_FLAG_TABLE"
+        },
+        {
+            "code": 75,
+            "name": "emote_exclamation",
+            "description": "The exclamation bubble over it, waiting for it to end",
+            "table": "ACMD_MARK_WAIT_EXCL_TABLE"
+        },
+        {
+            "code": 76,
+            "name": "walk_up_6f",
+            "description": "Walks a tile up, 6 frames a tile",
+            "table": "ACMD_WALK_UP6_F_TABLE"
+        },
+        {
+            "code": 77,
+            "name": "walk_down_6f",
+            "description": "Walks a tile down, 6 frames a tile",
+            "table": "ACMD_WALK_DOWN6_F_TABLE"
+        },
+        {
+            "code": 78,
+            "name": "walk_left_6f",
+            "description": "Walks a tile left, 6 frames a tile",
+            "table": "ACMD_WALK_LEFT6_F_TABLE"
+        },
+        {
+            "code": 79,
+            "name": "walk_right_6f",
+            "description": "Walks a tile right, 6 frames a tile",
+            "table": "ACMD_WALK_RIGHT6_F_TABLE"
+        },
+        {
+            "code": 80,
+            "name": "walk_up_3f",
+            "description": "Walks a tile up, 3 frames a tile",
+            "table": "ACMD_WALK_UP3_F_TABLE"
+        },
+        {
+            "code": 81,
+            "name": "walk_down_3f",
+            "description": "Walks a tile down, 3 frames a tile",
+            "table": "ACMD_WALK_DOWN3_F_TABLE"
+        },
+        {
+            "code": 82,
+            "name": "walk_left_3f",
+            "description": "Walks a tile left, 3 frames a tile",
+            "table": "ACMD_WALK_LEFT3_F_TABLE"
+        },
+        {
+            "code": 83,
+            "name": "walk_right_3f",
+            "description": "Walks a tile right, 3 frames a tile",
+            "table": "ACMD_WALK_RIGHT3_F_TABLE"
+        },
+        {
+            "code": 84,
+            "name": "walk_up_1f",
+            "description": "Walks a tile up, 1 frames a tile",
+            "table": "ACMD_WALK_UP1_F_TABLE"
+        },
+        {
+            "code": 85,
+            "name": "walk_down_1f",
+            "description": "Walks a tile down, 1 frames a tile",
+            "table": "ACMD_WALK_DOWN1_F_TABLE"
+        },
+        {
+            "code": 86,
+            "name": "walk_left_1f",
+            "description": "Walks a tile left, 1 frames a tile",
+            "table": "ACMD_WALK_LEFT1_F_TABLE"
+        },
+        {
+            "code": 87,
+            "name": "walk_right_1f",
+            "description": "Walks a tile right, 1 frames a tile",
+            "table": "ACMD_WALK_RIGHT1_F_TABLE"
+        },
+        {
+            "code": 88,
+            "name": "run_up",
+            "description": "Runs a tile up, 4 frames a tile",
+            "table": "ACMD_RUN4F_TABLE"
+        },
+        {
+            "code": 89,
+            "name": "run_down",
+            "description": "Runs a tile down, 4 frames a tile",
+            "table": "ACMD_DASH_DOWN4_F_TABLE"
+        },
+        {
+            "code": 90,
+            "name": "run_left",
+            "description": "Runs a tile left, 4 frames a tile",
+            "table": "ACMD_DASH_LEFT4_F_TABLE"
+        },
+        {
+            "code": 91,
+            "name": "run_right",
+            "description": "Runs a tile right, 4 frames a tile",
+            "table": "ACMD_DASH_RIGHT4_F_TABLE"
+        },
+        {
+            "code": 92,
+            "name": "jump_up_3",
+            "description": "Jumps 3 tiles up, 16 frames",
+            "table": "ACMD_JUMP3G16F_TABLE"
+        },
+        {
+            "code": 93,
+            "name": "action_93",
+            "description": "Action 93 (ACMD_JUMP_RIGHT1_G16_F_TABLE)",
+            "table": "ACMD_JUMP_RIGHT1_G16_F_TABLE"
+        },
+        {
+            "code": 94,
+            "name": "jump_left_3",
+            "description": "Jumps 3 tiles left, 12 frames",
+            "table": "ACMD_JUMP_LEFT3_G12_F_TABLE"
+        },
+        {
+            "code": 95,
+            "name": "jump_right_3",
+            "description": "Jumps 3 tiles right, 12 frames",
+            "table": "ACMD_JUMP_RIGHT3_G12_F_TABLE"
+        },
+        {
+            "code": 96,
+            "name": "walk_up_7f",
+            "description": "Walks a tile up, 7 frames a tile",
+            "table": "ACMD_WALK_UP7_F_TABLE"
+        },
+        {
+            "code": 97,
+            "name": "walk_down_7f",
+            "description": "Walks a tile down, 7 frames a tile",
+            "table": "ACMD_WALK_DOWN7_F_TABLE"
+        },
+        {
+            "code": 98,
+            "name": "walk_left_7f",
+            "description": "Walks a tile left, 7 frames a tile",
+            "table": "ACMD_WALK_LEFT7_F_TABLE"
+        },
+        {
+            "code": 99,
+            "name": "walk_right_7f",
+            "description": "Walks a tile right, 7 frames a tile",
+            "table": "ACMD_WALK_RIGHT7_F_TABLE"
+        },
+        {
+            "code": 100,
+            "name": "action_100",
+            "description": "Action 100 (ACMD_ANIME_WAIT_END_INIT10_ANIME_WAIT_END_STOP_TABLE)",
+            "table": "ACMD_ANIME_WAIT_END_INIT10_ANIME_WAIT_END_STOP_TABLE"
+        },
+        {
+            "code": 101,
+            "name": "unhide",
+            "description": "Shows it (the hide effect's end)",
+            "table": "ACMD_HIDE_OFF_INIT_TABLE"
+        },
+        {
+            "code": 102,
+            "name": "action_102",
+            "description": "Action 102 (ACMD_STAY_WALK32_F40_F_TABLE)",
+            "table": "ACMD_STAY_WALK32_F40_F_TABLE"
+        },
+        {
+            "code": 103,
+            "name": "action_103",
+            "description": "Action 103 (data_ov036_021cb1b4)",
+            "table": "data_ov036_021cb1b4"
+        },
+        {
+            "code": 104,
+            "name": "action_104",
+            "description": "Action 104 (ACMD_STAY_WALK16_F41_F_TABLE)",
+            "table": "ACMD_STAY_WALK16_F41_F_TABLE"
+        },
+        {
+            "code": 105,
+            "name": "step_up_face_left",
+            "description": "Steps a tile up facing left, 8 frames",
+            "table": "ACMD_STEP_UP_FACE_LEFT8_F_TABLE"
+        },
+        {
+            "code": 106,
+            "name": "step_down_face_right",
+            "description": "Steps a tile down facing right, 8 frames",
+            "table": "ACMD_STEP_DOWN_FACE_RIGHT8_F_TABLE"
+        },
+        {
+            "code": 107,
+            "name": "step_left_face_down",
+            "description": "Steps a tile left facing down, 8 frames",
+            "table": "ACMD_STEP_LEFT_FACE_DOWN8_F_TABLE"
+        },
+        {
+            "code": 108,
+            "name": "step_right_face_up",
+            "description": "Steps a tile right facing up, 8 frames",
+            "table": "ACMD_STEP_RIGHT_FACE_UP8_F_TABLE"
+        },
+        {
+            "code": 109,
+            "name": "step_up_face_right",
+            "description": "Steps a tile up facing right, 8 frames",
+            "table": "ACMD_STEP_UP_FACE_RIGHT8_F_TABLE"
+        },
+        {
+            "code": 110,
+            "name": "step_down_face_left",
+            "description": "Steps a tile down facing left, 8 frames",
+            "table": "ACMD_STEP_DOWN_FACE_LEFT8_F_TABLE"
+        },
+        {
+            "code": 111,
+            "name": "step_left_face_up",
+            "description": "Steps a tile left facing up, 8 frames",
+            "table": "ACMD_STEP_LEFT_FACE_UP8_F_TABLE"
+        },
+        {
+            "code": 112,
+            "name": "action_112",
+            "description": "Action 112 (data_ov036_021cb1f0)",
+            "table": "data_ov036_021cb1f0"
+        },
+        {
+            "code": 113,
+            "name": "step_up_face_down",
+            "description": "Steps a tile up facing down, 8 frames",
+            "table": "ACMD_STEP_UP_FACE_DOWN8_F_TABLE"
+        },
+        {
+            "code": 114,
+            "name": "step_down_face_up",
+            "description": "Steps a tile down facing up, 8 frames",
+            "table": "ACMD_STEP_DOWN_FACE_UP8_F_TABLE"
+        },
+        {
+            "code": 115,
+            "name": "step_left_face_right",
+            "description": "Steps a tile left facing right, 8 frames",
+            "table": "ACMD_STEP_LEFT_FACE_RIGHT8_F_TABLE"
+        },
+        {
+            "code": 116,
+            "name": "step_right_face_left",
+            "description": "Steps a tile right facing left, 8 frames",
+            "table": "ACMD_STEP_RIGHT_FACE_LEFT8_F_TABLE"
+        },
+        {
+            "code": 117,
+            "name": "jump_up_3_quiet",
+            "description": "Jumps 3 tiles up, 24 frames, without its sound",
+            "table": "ACMD_JUMP_UP3_G24_F_NO_SE_TABLE"
+        },
+        {
+            "code": 118,
+            "name": "jump_down_3_quiet",
+            "description": "Jumps 3 tiles down, 24 frames, without its sound",
+            "table": "ACMD_JUMP_DOWN3_G24_F_NO_SE_TABLE"
+        },
+        {
+            "code": 119,
+            "name": "jump_left_3_quiet",
+            "description": "Jumps 3 tiles left, 24 frames, without its sound",
+            "table": "ACMD_JUMP_LEFT3_G24_F_NO_SE_TABLE"
+        },
+        {
+            "code": 120,
+            "name": "jump_right_3_quiet",
+            "description": "Jumps 3 tiles right, 24 frames, without its sound",
+            "table": "ACMD_JUMP_RIGHT3_G24_F_NO_SE_TABLE"
+        },
+        {
+            "code": 121,
+            "name": "run_up_face_left",
+            "description": "Runs a tile up facing left, 4 frames",
+            "table": "ACMD_DASH_STEP_UP_FACE_LEFT4_F_TABLE"
+        },
+        {
+            "code": 122,
+            "name": "run_down_face_right",
+            "description": "Runs a tile down facing right, 4 frames",
+            "table": "ACMD_DASH_STEP_DOWN_FACE_RIGHT4_F_TABLE"
+        },
+        {
+            "code": 123,
+            "name": "run_left_face_down",
+            "description": "Runs a tile left facing down, 4 frames",
+            "table": "ACMD_DASH_STEP_LEFT_FACE_DOWN4_F_TABLE"
+        },
+        {
+            "code": 124,
+            "name": "run_right_face_up",
+            "description": "Runs a tile right facing up, 4 frames",
+            "table": "ACMD_DASH_STEP_RIGHT_FACE_UP4_F_TABLE"
+        },
+        {
+            "code": 125,
+            "name": "run_up_face_right",
+            "description": "Runs a tile up facing right, 4 frames",
+            "table": "ACMD_DASH_STEP_UP_FACE_RIGHT4_F_TABLE"
+        },
+        {
+            "code": 126,
+            "name": "run_down_face_left",
+            "description": "Runs a tile down facing left, 4 frames",
+            "table": "ACMD_DASH_STEP_DOWN_FACE_LEFT4_F_TABLE"
+        },
+        {
+            "code": 127,
+            "name": "run_left_face_up",
+            "description": "Runs a tile left facing up, 4 frames",
+            "table": "ACMD_DASH_STEP_LEFT_FACE_UP4_F_TABLE"
+        },
+        {
+            "code": 128,
+            "name": "action_128",
+            "description": "Action 128 (data_ov036_021cae60)",
+            "table": "data_ov036_021cae60"
+        },
+        {
+            "code": 129,
+            "name": "run_up_face_down",
+            "description": "Runs a tile up facing down, 4 frames",
+            "table": "ACMD_DASH_STEP_UP_FACE_DOWN4_F_TABLE"
+        },
+        {
+            "code": 130,
+            "name": "run_down_face_up",
+            "description": "Runs a tile down facing up, 4 frames",
+            "table": "ACMD_DASH_STEP_DOWN_FACE_UP4_F_TABLE"
+        },
+        {
+            "code": 131,
+            "name": "run_left_face_right",
+            "description": "Runs a tile left facing right, 4 frames",
+            "table": "ACMD_DASH_STEP_LEFT_FACE_RIGHT4_F_TABLE"
+        },
+        {
+            "code": 132,
+            "name": "run_right_face_left",
+            "description": "Runs a tile right facing left, 4 frames",
+            "table": "ACMD_DASH_STEP_RIGHT_FACE_LEFT4_F_TABLE"
+        },
+        {
+            "code": 133,
+            "name": "hop_up_face_left",
+            "description": "Hops a tile up facing left",
+            "table": "ACMD_HOP_UP_FACE_LEFT8_F_TABLE"
+        },
+        {
+            "code": 134,
+            "name": "hop_down_face_right",
+            "description": "Hops a tile down facing right",
+            "table": "ACMD_HOP_DOWN_FACE_RIGHT8_F_TABLE"
+        },
+        {
+            "code": 135,
+            "name": "hop_left_face_down",
+            "description": "Hops a tile left facing down",
+            "table": "ACMD_HOP_LEFT_FACE_DOWN8_F_TABLE"
+        },
+        {
+            "code": 136,
+            "name": "hop_right_face_up",
+            "description": "Hops a tile right facing up",
+            "table": "ACMD_HOP_RIGHT_FACE_UP8_F_TABLE"
+        },
+        {
+            "code": 137,
+            "name": "hop_up_face_right",
+            "description": "Hops a tile up facing right",
+            "table": "ACMD_HOP_UP_FACE_RIGHT8_F_TABLE"
+        },
+        {
+            "code": 138,
+            "name": "hop_down_face_left",
+            "description": "Hops a tile down facing left",
+            "table": "ACMD_HOP_DOWN_FACE_LEFT8_F_TABLE"
+        },
+        {
+            "code": 139,
+            "name": "hop_left_face_up",
+            "description": "Hops a tile left facing up",
+            "table": "ACMD_HOP_LEFT_FACE_UP8_F_TABLE"
+        },
+        {
+            "code": 140,
+            "name": "action_140",
+            "description": "Action 140 (data_ov036_021cb598)",
+            "table": "data_ov036_021cb598"
+        },
+        {
+            "code": 141,
+            "name": "hop_up_face_down",
+            "description": "Hops a tile up facing down",
+            "table": "ACMD_HOP_UP_FACE_DOWN8_F_TABLE"
+        },
+        {
+            "code": 142,
+            "name": "hop_down_face_up",
+            "description": "Hops a tile down facing up",
+            "table": "ACMD_HOP_DOWN_FACE_UP8_F_TABLE"
+        },
+        {
+            "code": 143,
+            "name": "hop_left_face_right",
+            "description": "Hops a tile left facing right",
+            "table": "ACMD_HOP_LEFT_FACE_RIGHT8_F_TABLE"
+        },
+        {
+            "code": 144,
+            "name": "hop_right_face_left",
+            "description": "Hops a tile right facing left",
+            "table": "ACMD_HOP_RIGHT_FACE_LEFT8_F_TABLE"
+        },
+        {
+            "code": 145,
+            "name": "step_up_face_down_4f",
+            "description": "Steps a tile up facing down, 4 frames",
+            "table": "ACMD_STEP_UP_FACE_DOWN4_F_TABLE"
+        },
+        {
+            "code": 146,
+            "name": "step_down_face_up_4f",
+            "description": "Steps a tile down facing up, 4 frames",
+            "table": "ACMD_STEP_DOWN_FACE_UP4_F_TABLE"
+        },
+        {
+            "code": 147,
+            "name": "step_left_face_right_4f",
+            "description": "Steps a tile left facing right, 4 frames",
+            "table": "ACMD_STEP_LEFT_FACE_RIGHT4_F_TABLE"
+        },
+        {
+            "code": 148,
+            "name": "step_right_face_left_4f",
+            "description": "Steps a tile right facing left, 4 frames",
+            "table": "ACMD_STEP_RIGHT_FACE_LEFT4_F_TABLE"
+        },
+        {
+            "code": 149,
+            "name": "step_up_face_down_2f",
+            "description": "Steps a tile up facing down, 2 frames",
+            "table": "ACMD_STEP_UP_FACE_DOWN2_F_TABLE"
+        },
+        {
+            "code": 150,
+            "name": "step_down_face_up_2f",
+            "description": "Steps a tile down facing up, 2 frames",
+            "table": "ACMD_STEP_DOWN_FACE_UP2_F_TABLE"
+        },
+        {
+            "code": 151,
+            "name": "step_left_face_right_2f",
+            "description": "Steps a tile left facing right, 2 frames",
+            "table": "ACMD_STEP_LEFT_FACE_RIGHT2_F_TABLE"
+        },
+        {
+            "code": 152,
+            "name": "step_right_face_left_2f",
+            "description": "Steps a tile right facing left, 2 frames",
+            "table": "ACMD_STEP_RIGHT_FACE_LEFT2_F_TABLE"
+        },
+        {
+            "code": 153,
+            "name": "action_153",
+            "description": "Action 153 (data_ov036_021cada0)",
+            "table": "data_ov036_021cada0"
+        },
+        {
+            "code": 154,
+            "name": "bob_in_place",
+            "description": "Bobs on the spot",
+            "table": "ACMD_STAY_WALK_BOB_INIT_TABLE"
+        },
+        {
+            "code": 155,
+            "name": "walk_up_16f_fast_steps",
+            "description": "Walks a tile up in 16 frames, its feet at the fast walk's pace",
+            "table": "ACMD_WALK_UP16_F_FAST_ANIME_TABLE"
+        },
+        {
+            "code": 156,
+            "name": "walk_down_16f_fast_steps",
+            "description": "Walks a tile down in 16 frames, its feet at the fast walk's pace",
+            "table": "ACMD_WALK_DOWN16_F_FAST_ANIME_TABLE"
+        },
+        {
+            "code": 157,
+            "name": "walk_left_16f_fast_steps",
+            "description": "Walks a tile left in 16 frames, its feet at the fast walk's pace",
+            "table": "ACMD_WALK_LEFT16_F_FAST_ANIME_TABLE"
+        },
+        {
+            "code": 158,
+            "name": "walk_right_16f_fast_steps",
+            "description": "Walks a tile right in 16 frames, its feet at the fast walk's pace",
+            "table": "ACMD_WALK_RIGHT16_F_FAST_ANIME_TABLE"
+        },
+        {
+            "code": 159,
+            "name": "emote_question",
+            "description": "The question bubble over it, waiting for it to end",
+            "table": "ACMD_MARK_WAIT_QUESTION_TABLE"
+        },
+        {
+            "code": 160,
+            "name": "emote_note",
+            "description": "The note bubble over it, waiting for it to end",
+            "table": "ACMD_MARK_WAIT_NOTE_TABLE"
+        },
+        {
+            "code": 161,
+            "name": "emote_ellipsis",
+            "description": "The ellipsis bubble over it, waiting for it to end",
+            "table": "ACMD_MARK_WAIT_ELLIPSIS_TABLE"
+        },
+        {
+            "code": 162,
+            "name": "idle_8f",
+            "description": "Stays still for 8 frames",
+            "table": "ACMD_STAY_IDLE8_F_TABLE"
+        },
+        {
+            "code": 163,
+            "name": "run_up_6f",
+            "description": "Runs a tile up, 6 frames a tile",
+            "table": "ACMD_DASH_UP6_F_TABLE"
+        },
+        {
+            "code": 164,
+            "name": "run_down_6f",
+            "description": "Runs a tile down, 6 frames a tile",
+            "table": "ACMD_DASH_DOWN6_F_TABLE"
+        },
+        {
+            "code": 165,
+            "name": "run_left_6f",
+            "description": "Runs a tile left, 6 frames a tile",
+            "table": "ACMD_DASH_LEFT6_F_TABLE"
+        },
+        {
+            "code": 166,
+            "name": "run_right_6f",
+            "description": "Runs a tile right, 6 frames a tile",
+            "table": "ACMD_DASH_RIGHT6_F_TABLE"
+        },
+        {
+            "code": 167,
+            "name": "walk_up_12f",
+            "description": "Walks a tile up, 12 frames a tile",
+            "table": "ACMD_WALK_UP12_F_TABLE"
+        },
+        {
+            "code": 168,
+            "name": "walk_down_12f",
+            "description": "Walks a tile down, 12 frames a tile",
+            "table": "ACMD_WALK_DOWN12_F_TABLE"
+        },
+        {
+            "code": 169,
+            "name": "walk_left_12f",
+            "description": "Walks a tile left, 12 frames a tile",
+            "table": "ACMD_WALK_LEFT12_F_TABLE"
+        },
+        {
+            "code": 170,
+            "name": "walk_right_12f",
+            "description": "Walks a tile right, 12 frames a tile",
+            "table": "ACMD_WALK_RIGHT12_F_TABLE"
+        },
+        {
+            "code": 171,
+            "name": "walk_in_place_22f",
+            "description": "Walks on the spot, 22 frames",
+            "table": "ACMD_STAY_WALK22_F_INIT_TABLE"
+        },
+        {
+            "code": 172,
+            "name": "set_animation_10",
+            "description": "Sets its animation 10",
+            "table": "ACMD_SET_ANIME10_TABLE"
+        },
+        {
+            "code": 173,
+            "name": "run_left_2f",
+            "description": "Runs a tile left, 2 frames a tile",
+            "table": "ACMD_DASH_LEFT2_F_TABLE"
+        },
+        {
+            "code": 174,
+            "name": "fly_up",
+            "description": "Flies up",
+            "table": "ACMD_FLY_UP_INIT_TABLE"
+        },
+        {
+            "code": 175,
+            "name": "action_175",
+            "description": "Action 175 (data_ov036_021cacc4)",
+            "table": "data_ov036_021cacc4"
+        },
+        {
+            "code": 176,
+            "name": "animation_then_face_down",
+            "description": "Plays its animation to its end, then faces down",
+            "table": "ACMD_ANIME_WAIT_END_FACE_DOWN_INIT_TABLE"
+        },
+        {
+            "code": 177,
+            "name": "action_177",
+            "description": "Action 177 (ACMD_DRAW_READY_WAIT_INIT10_TABLE)",
+            "table": "ACMD_DRAW_READY_WAIT_INIT10_TABLE"
+        },
+        {
+            "code": 178,
+            "name": "action_178",
+            "description": "Action 178 (ACMD_DRAW_READY_WAIT_INIT11_TABLE)",
+            "table": "ACMD_DRAW_READY_WAIT_INIT11_TABLE"
+        },
+        {
+            "code": 179,
+            "name": "action_179",
+            "description": "Action 179 (ACMD_DRAW_READY_WAIT_INIT12_TABLE)",
+            "table": "ACMD_DRAW_READY_WAIT_INIT12_TABLE"
+        },
+        {
+            "code": 180,
+            "name": "reset_draw_offset",
+            "description": "Puts its sprite back where it stands",
+            "table": "ACMD_RESET_DRAW_OFFSET_TABLE"
+        },
+        {
+            "code": 181,
+            "name": "action_181",
+            "description": "Action 181 (ACMD_ANIME_WAIT_END_INIT10_ANIME_WAIT_END_TABLE)",
+            "table": "ACMD_ANIME_WAIT_END_INIT10_ANIME_WAIT_END_TABLE"
+        },
+        {
+            "code": 182,
+            "name": "action_182",
+            "description": "Action 182 (ACMD_ANIME_WAIT_END_INIT11_ANIME_WAIT_END_STOP_TABLE)",
+            "table": "ACMD_ANIME_WAIT_END_INIT11_ANIME_WAIT_END_STOP_TABLE"
+        },
+        {
+            "code": 183,
+            "name": "action_183",
+            "description": "Action 183 (ACMD_ANIME_WAIT_END_INIT11_ANIME_WAIT_END_TABLE)",
+            "table": "ACMD_ANIME_WAIT_END_INIT11_ANIME_WAIT_END_TABLE"
+        },
+        {
+            "code": 184,
+            "name": "action_184",
+            "description": "Action 184 (ACMD_ANIME_WAIT_END_INIT10_SE_TABLE)",
+            "table": "ACMD_ANIME_WAIT_END_INIT10_SE_TABLE"
+        },
+        {
+            "code": 185,
+            "name": "action_185",
+            "description": "Action 185 (ACMD_ANIME_WAIT_END_INIT11_SE_TABLE)",
+            "table": "ACMD_ANIME_WAIT_END_INIT11_SE_TABLE"
+        },
+        {
+            "code": 186,
+            "name": "action_186",
+            "description": "Action 186 (ACMD_ANIME_WAIT_END_INIT12_ANIME_WAIT_END_STOP_TABLE)",
+            "table": "ACMD_ANIME_WAIT_END_INIT12_ANIME_WAIT_END_STOP_TABLE"
+        },
+        {
+            "code": 187,
+            "name": "action_187",
+            "description": "Action 187 (ACMD_ANIME_WAIT_END_INIT12_ANIME_WAIT_END_TABLE)",
+            "table": "ACMD_ANIME_WAIT_END_INIT12_ANIME_WAIT_END_TABLE"
+        },
+        {
+            "code": 188,
+            "name": "fly_ready",
+            "description": "Readies to fly",
+            "table": "ACMD_FLY_READY_INIT_TABLE"
+        },
+        {
+            "code": 189,
+            "name": "emote_exclamation_quiet",
+            "description": "The exclamation bubble over it, without its sound",
+            "table": "ACMD_MARK_WAIT_EXCL_NO_SE_TABLE"
+        },
+        {
+            "code": 190,
+            "name": "emote_note_quiet",
+            "description": "The note bubble over it, without its sound",
+            "table": "ACMD_MARK_WAIT_NOTE_NO_SE_TABLE"
+        },
+        {
+            "code": 191,
+            "name": "action_191",
+            "description": "Action 191 (data_ov036_021cacb4)",
+            "table": "data_ov036_021cacb4"
+        },
+        {
+            "code": 192,
+            "name": "action_192",
+            "description": "Action 192 (ACMD_DRAW_READY_WAIT_INIT13_TABLE)",
+            "table": "ACMD_DRAW_READY_WAIT_INIT13_TABLE"
+        }
+    ]
+}

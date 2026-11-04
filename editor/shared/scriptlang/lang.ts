@@ -40,6 +40,8 @@ export type Stmt =
   | { k: "ifgoto"; cond: Expr; target: string }
   | { k: "if"; cond: Expr; then: Stmt[]; else?: Stmt[] }
   | { k: "raw"; lines: string[] }
+  // A movement named for the commands that run it: movement NAME = [walk_up(2), face_left];
+  | { k: "movement"; name: string; steps: string[] }
   | { k: "comment"; text: string }
   | { k: "blank" };
 
@@ -121,6 +123,7 @@ function printStmts(stmts: Stmt[], depth: number, out: string[]) {
       case "ifgoto": out.push(`${pad}if (${printExpr(s.cond)}) goto ${s.target};`); break;
       case "comment": out.push(`${pad}${s.text}`); break;
       case "blank": out.push(""); break;
+      case "movement": out.push(`${pad}movement ${s.name} = [${s.steps.join(", ")}];`); break;
       case "raw":
         out.push(`${pad}asm {`);
         for (const line of s.lines) out.push(line);
@@ -237,29 +240,39 @@ class Reader {
   args(): string[] {
     const start = this.pos;
     let depth = 0;
+    // (a movement's [list] may run over lines)
+    let brackets = 0;
     for (; this.pos < this.text.length; this.pos++) {
       const c = this.text[this.pos];
       if (c === "(") depth++;
+      else if (c === "[") brackets++;
+      else if (c === "]") brackets--;
       else if (c === ")") {
         if (depth === 0) break;
         depth--;
-      } else if (c === "\n") this.fail("a command's arguments end on its line");
+      } else if (c === "\n" && brackets <= 0) this.fail("a command's arguments end on its line (or within a movement's [ ])");
     }
     if (this.pos >= this.text.length) this.fail("expected \")\"", start);
     const inner = this.text.slice(start, this.pos);
     this.pos++;
     if (!inner.trim()) return [];
-    const out: string[] = [];
-    depth = 0;
-    let from = 0;
-    for (let i = 0; i < inner.length; i++) {
-      if (inner[i] === "(") depth++;
-      else if (inner[i] === ")") depth--;
-      else if (inner[i] === "," && depth === 0) { out.push(inner.slice(from, i).trim()); from = i + 1; }
-    }
-    out.push(inner.slice(from).trim());
-    return out;
+    return splitTop(inner);
   }
+}
+
+/** Text split at its commas outside parentheses and brackets, each part trimmed. */
+export function splitTop(text: string): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  let from = 0;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === "(" || c === "[") depth++;
+    else if (c === ")" || c === "]") depth--;
+    else if (c === "," && depth === 0) { out.push(text.slice(from, i).trim()); from = i + 1; }
+  }
+  out.push(text.slice(from).trim());
+  return out;
 }
 
 const CMP_OPS: CmpOp[] = ["==", "!=", "<=", ">=", "<", ">"];
@@ -414,6 +427,18 @@ function parseStmt(r: Reader): Stmt {
     if (!value) r.fail("expected a value");
     r.pos = end + 1;
     return { k: "assign", target: assign[1] ?? assign[2], op: assign[3] as AssignOp, value };
+  }
+  if (r.keyword("movement")) {
+    const name = r.word() ?? r.fail("expected the movement's name");
+    r.expect("=");
+    r.expect("[");
+    const open = r.pos;
+    const close = r.text.indexOf("]", open);
+    if (close < 0) r.fail("expected \"]\" to close the movement", open);
+    r.pos = close + 1;
+    r.expect(";");
+    const steps = splitTop(r.text.slice(open, close).replace(/\/\/[^\n]*/g, "")).filter(Boolean);
+    return { k: "movement", name, steps };
   }
   if (r.keyword("asm")) {
     r.gap();

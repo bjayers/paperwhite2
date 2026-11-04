@@ -23,6 +23,24 @@ interface Program {
   labels: Map<string, number>;
 }
 
+/** The Move lines from a data label to its MoveEnd, as numbers, or null where it labels no data. */
+function movementAt(p: Program, label: string): string | null {
+  const at = p.labels.get(label);
+  const s = at === undefined ? undefined : p.stmts[at];
+  if (s?.k !== "raw") return null;
+  const from = s.lines.findIndex((l) => l.trim() === `${label}:`);
+  if (from < 0) return null;
+  const out: string[] = [];
+  for (const line of s.lines.slice(from + 1)) {
+    const t = line.trim();
+    if (!t || t.startsWith(".balign")) continue;
+    if (/^[A-Za-z_]\w*:$/.test(t)) break;
+    out.push(t.replace(/\s+/g, " "));
+    if (t === "MoveEnd") break;
+  }
+  return out.join(";");
+}
+
 function program(text: string, names: Names): Program {
   const lines = parseS(text);
   const stmts = flatStatements(lines, 0, lines.length, names);
@@ -121,7 +139,11 @@ export function scriptDifference(textA: string, textB: string, label: string, na
         for (let n = 0; n < sa.args.length; n++) {
           const ta = target(a, sa.args[n]);
           const tb = target(b, cb.args[n]);
-          if (ta !== undefined && tb !== undefined) todo.push([ta, tb]);
+          const ma = movementAt(a, sa.args[n]);
+          const mb = movementAt(b, cb.args[n]);
+          if (ma !== null || mb !== null) {
+            if (ma !== mb) return differ(`movement ${n + 1}: ${ma} against ${mb}`);
+          } else if (ta !== undefined && tb !== undefined) todo.push([ta, tb]);
           else if (valueKey(sa.args[n]) !== valueKey(cb.args[n])) return differ(`argument ${n + 1}: ${sa.args[n]} against ${cb.args[n]}`);
         }
         if (!ends(sa)) todo.push([i + 1, j + 1]);

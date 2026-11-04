@@ -23,6 +23,11 @@ interface ArgInfo { name: string; kind?: string; description?: string; type?: st
 function describe(name: string, env: LangEnv): { title: string; sub?: string; description?: string; args: ArgInfo[] } | null {
   if (name === "flag") return { title: "flag(F)", description: "A flag's test: flag(F) == 1 while it's set, == 0 while it isn't", args: [{ name: "flag", kind: "flag" }] };
   if (name === "var") return { title: "var(X)", description: "A variable's value (0x4000 to 0x40FF are saved, 0x8000 and up the script's own)", args: [{ name: "variable", kind: "var" }] };
+  const step = env.names.movements.get(name);
+  if (step || /^action_\d+$/.test(name)) {
+    return { title: name, sub: `movement action ${step?.code ?? name.slice(7)}`, description: step?.description,
+             args: [{ name: "count", kind: "number", description: "how many times in a row; 1 when left out" }] };
+  }
   const shortcut = SHORTCUT_NAMES.get(name);
   if (shortcut) {
     return { title: name, sub: `shortcut: ${shortcut.macro}, then ${shortcut.after.join(" and ")}`, description: shortcut.description,
@@ -58,13 +63,17 @@ const CHOICES: Record<string, { prefixes: string[]; as: "number" | "name" | "var
   type: { prefixes: ["TYPE_"], as: "name" },
 };
 
-export function LangSide({ call, env, bank, onInsert, onOpenText }: {
+export function LangSide({ call, env, bank, onInsert, onReplaceName, onAddStep, onOpenText }: {
   call: CaretCall | null;
   env: LangEnv;
   /** The file's text bank's path. */
   bank: string | null;
   /** Puts text in place of the argument at the caret. */
   onInsert(text: string): void;
+  /** Puts a name in place of the call's at the caret (a movement's step). */
+  onReplaceName(name: string): void;
+  /** Adds a step at the end of the movement at the caret. */
+  onAddStep(name: string): void;
   onOpenText(): void;
 }) {
   if (!call) {
@@ -73,6 +82,8 @@ export function LangSide({ call, env, bank, onInsert, onOpenText }: {
   const info = describe(call.name, env);
   if (!info) return <div className="scr-error scr-note">No command {call.name}: the command reference has no such name.</div>;
   const arg = call.arg >= 0 ? info.args[call.arg] : undefined;
+  const isStep = env.names.movements.has(call.name) || /^action_\d+$/.test(call.name);
+  const runsMovement = env.names.toMacro.get(call.name) === "ActorCmdExec" && call.arg === 1;
   return (
     <div className="scr-lang-side">
       <div className="scr-help">
@@ -89,7 +100,33 @@ export function LangSide({ call, env, bank, onInsert, onOpenText }: {
           </ol>
         ) : <p className="muted small">No arguments.</p>}
       </div>
-      {arg && <ArgHelper kind={arg.kind ?? "number"} value={call.argText} env={env} bank={bank} onInsert={onInsert} onOpenText={onOpenText} />}
+      {arg && !runsMovement && <ArgHelper kind={arg.kind ?? "number"} value={call.argText} env={env} bank={bank} onInsert={onInsert} onOpenText={onOpenText} />}
+      {(isStep || runsMovement) && (
+        <MovementChoices env={env} current={isStep ? call.name : null} onPick={isStep ? onReplaceName : onAddStep}
+                         hint={isStep ? "A click puts it in this step's place (its count stays)." : "A click adds it at the movement's end; [walk_up(2), face_left] is its form."} />
+      )}
+    </div>
+  );
+}
+
+/** Every movement action, filtered by name or what it does; a click puts it in. */
+function MovementChoices({ env, current, onPick, hint }: { env: LangEnv; current: string | null; onPick(name: string): void; hint: string }) {
+  const [filter, setFilter] = useState("");
+  const all = useMemo(() => [...env.names.movements.values()], [env]);
+  const q = filter.trim().toLowerCase();
+  const shown = q ? all.filter((m) => m.name.includes(q.replace(/\s+/g, "_")) || (m.description ?? "").toLowerCase().includes(q) || String(m.code) === q) : all;
+  return (
+    <div className="scr-choices">
+      <div className="scr-section-head"><strong>Movements</strong> <span className="muted small">{all.length}</span></div>
+      <p className="muted small">{hint}</p>
+      <input className="filter" placeholder="Filter: walk, jump, face, emote, up…" value={filter} onChange={(e) => setFilter(e.target.value)} />
+      <div className="scr-choice-list">
+        {shown.map((m) => (
+          <button key={m.code} className={`scr-choice${m.name === current ? " current" : ""}`} onClick={() => onPick(m.name)} title={m.description}>
+            <span>{m.name}</span><span className="muted small">{m.code}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

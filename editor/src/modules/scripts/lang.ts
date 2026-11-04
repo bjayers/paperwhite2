@@ -6,23 +6,27 @@
 import { api } from "../../api.ts";
 import { ParseError, parseScript, printScript, type Script } from "../../../shared/scriptlang/lang.ts";
 import { parseS, scriptBlocks, type SLine } from "../../../shared/scriptlang/sfile.ts";
-import { CompileError, Names, compileScript, decompileBlock, labelUses, replaceBlock, type RefCommand, type RefGlobal } from "../../../shared/scriptlang/translate.ts";
+import { CompileError, Names, compileScript, decompileBlock, labelUses, replaceBlock, type RefCommand, type RefGlobal, type RefMovement } from "../../../shared/scriptlang/translate.ts";
 import { scriptDifference } from "../../../shared/scriptlang/equiv.ts";
 import { valueContext, type ValueContext } from "../../../shared/scriptlang/values.ts";
 import type { Span } from "./commands.ts";
 
 export const REFERENCE = "res/paperwhite2/scripts/commands.json";
 export const GLOBALS = "res/paperwhite2/scripts/globals.json";
+export const MOVEMENTS = "res/paperwhite2/scripts/movements.json";
 
-let reference: Promise<{ commands: RefCommand[]; globals: RefGlobal[] }> | null = null;
+export interface Reference { commands: RefCommand[]; globals: RefGlobal[]; movements: RefMovement[] }
 
-/** The command reference and the named globals, read once (again after an edit to either, through reload). */
-export function loadReference(reload = false): Promise<{ commands: RefCommand[]; globals: RefGlobal[] }> {
+let reference: Promise<Reference> | null = null;
+
+/** The command reference, the named globals and the movement actions, read once (again through reload). */
+export function loadReference(reload = false): Promise<Reference> {
   if (!reference || reload) {
     reference = Promise.all([
       api.file(REFERENCE).then((f) => (JSON.parse(f.text) as { commands: RefCommand[] }).commands, () => [] as RefCommand[]),
       api.file(GLOBALS).then((f) => (JSON.parse(f.text) as { globals: RefGlobal[] }).globals, () => [] as RefGlobal[]),
-    ]).then(([commands, globals]) => ({ commands, globals }));
+      api.file(MOVEMENTS).then((f) => (JSON.parse(f.text) as { movements: RefMovement[] }).movements, () => [] as RefMovement[]),
+    ]).then(([commands, globals, movements]) => ({ commands, globals, movements }));
   }
   return reference;
 }
@@ -33,9 +37,8 @@ export interface LangEnv {
   ctx: ValueContext;
 }
 
-export function langEnv(macros: Iterable<string>, ref: { commands: RefCommand[]; globals: RefGlobal[] }, constants: ReadonlyMap<string, number>,
-                        messages: string[], texts?: string[]): LangEnv {
-  return { names: new Names(macros, ref.commands, ref.globals), ctx: valueContext(constants, messages, texts) };
+export function langEnv(macros: Iterable<string>, ref: Reference, constants: ReadonlyMap<string, number>, messages: string[], texts?: string[]): LangEnv {
+  return { names: new Names(macros, ref.commands, ref.globals, ref.movements), ctx: valueContext(constants, messages, texts) };
 }
 
 /** A script of the file as the language shows it, or null where the file has no such script. */
@@ -215,6 +218,15 @@ export function callAt(line: string, column: number): CaretCall | null {
       else if (line[i] === "," && inner === 0) { end = i; break; }
     }
     best = { name: m[1], arg, argText: line.slice(start, end).trim(), start, end };
+  }
+  // In a movement's [list], a step written without its count (face_up) is a call of its own
+  if (best && best.arg >= 0 && best.argText.startsWith("[")) {
+    const word = /[A-Za-z_]\w*/g;
+    let w: RegExpExecArray | null;
+    while ((w = word.exec(line))) {
+      if (column < w.index || column > w.index + w[0].length || w.index < best.start || w.index > best.end) continue;
+      if (!line.slice(w.index + w[0].length).trimStart().startsWith("(")) return { name: w[0], arg: -1, argText: "", start: w.index, end: w.index + w[0].length };
+    }
   }
   return best;
 }

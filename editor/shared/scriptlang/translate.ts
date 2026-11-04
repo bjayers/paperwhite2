@@ -9,7 +9,7 @@
 // Back: each statement its lines, a condition always as the stack's pushes and VMStackCmp with VMJumpIf CMP_STACK
 // (which jumps when the condition is false, Scrcmd_Vm_VMJumpIf), an if and its else with new labels.
 
-import { isVarText, negate, type AssignOp, type CmpOp, type Expr, type Script, type Stmt } from "./lang.ts";
+import { isVarText, negate, splitTop, type AssignOp, type CmpOp, type Expr, type Script, type Stmt } from "./lang.ts";
 import { parseS, type SLine } from "./sfile.ts";
 import { SHORTCUTS, SHORTCUT_NAMES, messageArgs, shortcutArgs } from "./shortcuts.ts";
 import { showValue, storeValue, type ValueContext } from "./values.ts";
@@ -34,6 +34,13 @@ export interface RefCommand {
   args: RefArg[];
 }
 
+/** A movement action (res/paperwhite2/scripts/movements.json): a Move's action code and its name. */
+export interface RefMovement {
+  code: number;
+  name: string;
+  description?: string;
+}
+
 /** A named global script (res/paperwhite2/scripts/globals.json): a call sets its inputs' variables and calls it. */
 export interface RefGlobal {
   name: string;
@@ -50,8 +57,17 @@ export class Names {
   readonly toMacro = new Map<string, string>();
   readonly commands = new Map<string, RefCommand>();
   readonly globals = new Map<string, RefGlobal>();
+  /** The movement actions' names by code and back (res/paperwhite2/scripts/movements.json). */
+  readonly movementNames = new Map<number, string>();
+  readonly movementCodes = new Map<string, number>();
+  readonly movements = new Map<string, RefMovement>();
 
-  constructor(macros: Iterable<string>, reference: RefCommand[] = [], globals: RefGlobal[] = []) {
+  constructor(macros: Iterable<string>, reference: RefCommand[] = [], globals: RefGlobal[] = [], movements: RefMovement[] = []) {
+    for (const m of movements) {
+      this.movementNames.set(m.code, m.name);
+      this.movementCodes.set(m.name, m.code);
+      this.movements.set(m.name, m);
+    }
     for (const c of reference) {
       this.commands.set(c.macro, c);
       this.toLang.set(c.macro, c.name);
@@ -172,6 +188,8 @@ function startsData(lines: SLine[], at: number, end: number): boolean {
     const l = lines[i];
     if (l.kind === "label") return false;
     if (l.kind === "cmd") return DATA_COMMANDS.has(l.name);
+    // (or bytes: a table a command reads)
+    if (/^\s*\.(byte|2byte|4byte|word|hword)\b/.test(l.text)) return true;
   }
   return false;
 }
@@ -366,6 +384,96 @@ function chain(stmts: Stmt[], uses: Map<string, number>, exit?: string) {
   }
 }
 
+// ---- Movements
+
+/** The command that runs a movement, and its argument that names it. */
+const MOVEMENT_COMMAND = "ActorCmdExec";
+const MOVEMENT_ARG = 1;
+
+/** A movement's steps from its Move lines: each its action's name, with its count where it isn't 1. */
+function stepOf(action: string, count: string, names: Names): string {
+  const code = Number(action);
+  const name = names.movementNames.get(code) ?? `action_${code}`;
+  return count.trim() === "1" ? name : `${name}(${count.trim()})`;
+}
+
+/** The data statements turned movements where they're pure ones: a label, its Move lines and MoveEnd. The rest of the
+ * data stays as it is. */
+function movementStatements(stmts: Stmt[], names: Names): Stmt[] {
+  const out: Stmt[] = [];
+  for (const s of stmts) {
+    if (s.k !== "raw") { out.push(s); continue; }
+    let rest: string[] = [];
+    // (what's left between movements: blank lines go)
+    const flush = () => { if (rest.some((l) => l.trim())) out.push({ k: "raw", lines: rest }); rest = []; };
+    for (let i = 0; i < s.lines.length; i++) {
+      const label = /^([A-Za-z_]\w*):\s*$/.exec(s.lines[i]);
+      const steps: string[] = [];
+      let j = i + 1;
+      let ended = false;
+      if (label && names.movementNames.size) {
+        for (; j < s.lines.length; j++) {
+          const t = s.lines[j].trim();
+          const move = /^Move\s+(\d+)\s*,\s*(\d+)$/.exec(t);
+          if (move && names.movementNames.has(Number(move[1]))) steps.push(stepOf(move[1], move[2], names));
+          else { ended = t === "MoveEnd"; break; }
+        }
+      }
+      if (label && ended && steps.length) {
+        flush();
+        out.push({ k: "movement", name: label[1], steps });
+        i = j;
+      } else rest.push(s.lines[i]);
+    }
+    flush();
+  }
+  return out;
+}
+
+/** A zero byte the dump put to keep the next script on an even address. */
+const isPad = (s: Stmt) => s.k === "raw" && s.lines.every((l) => /^\s*\.byte\s+0x00\s*$/.test(l));
+
+/** Whether statements end so that nothing after them runs: a jump, or a command after which nothing runs. */
+function endsRun(stmts: Stmt[], names: Names): boolean {
+  for (let i = stmts.length - 1; i >= 0; i--) {
+    const s = stmts[i];
+    if (s.k === "blank" || s.k === "comment" || s.k === "raw" || s.k === "movement" || s.k === "label") continue;
+    return s.k === "goto" || (s.k === "call" && TERMINATORS.has(names.toMacro.get(s.name) ?? ""));
+  }
+  return false;
+}
+
+/** The movements one command alone runs, put in it as [steps] (so their data goes where the script's ends, which a
+ * script that runs on into the next can't have). */
+function inlineMovements(stmts: Stmt[], names: Names, uses: Map<string, number>): Stmt[] {
+  if (!endsRun(stmts, names)) return stmts;
+  const movements = new Map<string, string[]>();
+  for (const s of stmts) if (s.k === "movement" && uses.get(s.name) === 1) movements.set(s.name, s.steps);
+  const used = new Set<string>();
+  const run = names.toLang.get(MOVEMENT_COMMAND);
+  const out = stmts.map((s): Stmt => {
+    if (s.k !== "call" || s.name !== run) return s;
+    const steps = movements.get(s.args[MOVEMENT_ARG]);
+    if (!steps) return s;
+    used.add(s.args[MOVEMENT_ARG]);
+    return { ...s, args: s.args.map((a, n) => (n === MOVEMENT_ARG ? `[${steps.join(", ")}]` : a)) };
+  });
+  return out.filter((s) => !(s.k === "movement" && used.has(s.name)));
+}
+
+/** A movement's Move lines from its steps (name, or name(count)); a message for a step it doesn't know. */
+function moveLines(steps: string[], names: Names): string[] {
+  const out: string[] = [];
+  for (const step of steps) {
+    const m = /^([a-z_][a-z0-9_]*)\s*(?:\(\s*([^)]*?)\s*\))?$/.exec(step.trim());
+    const code = m ? names.movementCodes.get(m[1]) ?? (/^action_(\d+)$/.exec(m[1]) ? Number(m[1].slice(7)) : undefined) : undefined;
+    if (!m || code === undefined) throw new CompileError(`no movement ${step.trim()}: the movement reference (movements.json) has no such name`);
+    out.push(`    Move ${code}, ${m[2] || 1}`);
+  }
+  out.push("    MoveEnd");
+  return out;
+}
+
 /** Each argument's kind of a call, by its name: a shortcut's, a named global's or the command reference's. */
 function argKinds(name: string, names: Names): (string | undefined)[] {
   const shortcut = SHORTCUT_NAMES.get(name);
@@ -441,7 +549,15 @@ function mapValues(stmts: Stmt[], names: Names, ctx: ValueContext, way: "show" |
 export function decompileBlock(lines: SLine[], start: number, end: number, number: number, names: Names, uses = labelUses(lines),
                                ctx?: ValueContext): Script {
   // (its own label is the script's)
-  const flat = flatStatements(lines, start + 1, end, names);
+  const flat = inlineMovements(movementStatements(flatStatements(lines, start + 1, end, names), names), names, uses);
+  // The pad at its end that keeps the next script on an even address goes: it's written back as an alignment
+  // (only straight after the script's end, where it's no data)
+  for (;;) {
+    let at = flat.length - 1;
+    while (at >= 0 && flat[at].k === "blank") at--;
+    if (at < 1 || !isPad(flat[at]) || !endsRun(flat.slice(0, at), names) || !/^(call|goto)$/.test(flat[at - 1].k)) break;
+    flat.splice(at);
+  }
   const body = structure(flat, new Map(uses));
   return { number, body: ctx ? mapValues(body, names, ctx, "show") : body };
 }
@@ -455,12 +571,13 @@ export function compileScript(script: Script, label: string, names: Names, taken
   if (ctx) script = { ...script, body: mapValues(script.body, names, ctx, "store") };
   const out = [`${label}:`];
   let next = 1;
-  const fresh = () => {
+  const fresh = (kind = "L") => {
     let name: string;
-    do name = `L_${label}_${next++}`; while (taken.has(name));
+    do name = `${kind}_${label}_${next++}`; while (taken.has(name));
     taken.add(name);
     return name;
   };
+  const inline: { label: string; steps: string[] }[] = [];
   const pushExpr = (e: Expr) => {
     switch (e.k) {
       case "flag": out.push(`    VMStackPushFlag ${e.arg}`); break;
@@ -506,7 +623,16 @@ export function compileScript(script: Script, label: string, names: Names, taken
           }
           const macro = names.toMacro.get(s.name);
           if (!macro) throw new CompileError(`no command ${s.name}`);
-          out.push(`    ${macro}${s.args.length ? ` ${s.args.map(plainArg).join(", ")}` : ""}`);
+          // (a movement in its command: its data after the script, under a new label)
+          const args = s.args.map((a) => {
+            const t = a.trim();
+            if (!t.startsWith("[")) return plainArg(t);
+            if (!t.endsWith("]")) throw new CompileError(`${s.name}: a movement's [ ] isn't closed`);
+            const name = fresh("Movement");
+            inline.push({ label: name, steps: splitTop(t.slice(1, -1).replace(/\/\/[^\n]*/g, "")).filter(Boolean) });
+            return name;
+          });
+          out.push(`    ${macro}${args.length ? ` ${args.join(", ")}` : ""}`);
           break;
         }
         case "assign": {
@@ -519,6 +645,7 @@ export function compileScript(script: Script, label: string, names: Names, taken
         case "goto": out.push(`    VMJump ${s.target}`); break;
         case "ifgoto": jumpUnless(negate(s.cond), s.target); break;
         case "raw": out.push(...s.lines); break;
+        case "movement": out.push("    .balign 4, 0", `${s.name}:`, ...moveLines(s.steps, names)); break;
         case "comment": out.push(`    ${s.text}`); break;
         case "blank": out.push(""); break;
         case "if": {
@@ -538,6 +665,13 @@ export function compileScript(script: Script, label: string, names: Names, taken
     }
   };
   emit(script.body);
+  // The movements put in their commands, after the script's end
+  if (inline.length) {
+    if (!endsRun(script.body, names)) throw new CompileError("A script with a movement in its command must end (with end() or a goto): its data goes after it");
+    for (const { label: name, steps } of inline) out.push("    .balign 4, 0", `${name}:`, ...moveLines(steps, names));
+  }
+  // (the next script on an even address, as the dump padded it; not for a script that runs on into the next)
+  if (endsRun(script.body, names)) out.push("    .balign 2, 0");
   return out;
 }
 

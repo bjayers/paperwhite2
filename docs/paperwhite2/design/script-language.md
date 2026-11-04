@@ -179,6 +179,13 @@ sub step_aside {
 - Equivalence, not sameness: a condition can be the stack's form or a WorkCmp's, a label's name changes, and a jump
   to the next statement may go; `equiv.ts` walks both files from the script's label through every command, condition
   (or its negation with its ways swapped) and jump. Untouched scripts aren't rewritten at all.
+- 2026-11-04, movements: a Move's action by its name (`res/paperwhite2/scripts/movements.json`, 193 actions, each its
+  code, the index of its table in `field_actor_movedata.c`'s `ACTOR_ACTION_COMMAND_TABLES`; the ones without a clear
+  name stay `action_N`), a step with its count where it isn't 1: `walk_up(2)`. A movement one command alone runs, in a
+  script that ends, is written in it, `move(1, [walk_up(2), face_left])`, and its data goes after the script's end
+  under a new label; one used more than once, or in a script that runs on into the next, is named:
+  `movement NAME = [ ... ];`. The equivalence check compares a movement by its steps. The sidebar describes the step
+  at the caret and lists every action, filtered, a click to add it.
 
 ## Order
 

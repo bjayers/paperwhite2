@@ -8,7 +8,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { parseScript, printScript } from "../shared/scriptlang/lang.ts";
 import { scriptBlocks, parseS } from "../shared/scriptlang/sfile.ts";
-import { Names, compileScript, decompileBlock, labelUses, macroNames, replaceBlock, type RefCommand, type RefGlobal } from "../shared/scriptlang/translate.ts";
+import { Names, compileScript, decompileBlock, labelUses, macroNames, replaceBlock, type RefCommand, type RefGlobal, type RefMovement } from "../shared/scriptlang/translate.ts";
 import { scriptDifference } from "../shared/scriptlang/equiv.ts";
 import { messageIds, messageTexts, scriptBank, valueContext } from "../shared/scriptlang/values.ts";
 import { Python } from "../server/python.ts";
@@ -24,7 +24,8 @@ const contextOf = (text: string) => {
 };
 const json = (path: string) => JSON.parse(readFileSync(join(ROOT, path), "utf8"));
 const names = new Names(macroNames(readFileSync(join(ROOT, "include/asm/field_script.inc"), "utf8")),
-  json("res/paperwhite2/scripts/commands.json").commands as RefCommand[], json("res/paperwhite2/scripts/globals.json").globals as RefGlobal[]);
+  json("res/paperwhite2/scripts/commands.json").commands as RefCommand[], json("res/paperwhite2/scripts/globals.json").globals as RefGlobal[],
+  json("res/paperwhite2/scripts/movements.json").movements as RefMovement[]);
 
 test("each language name names one command", () => {
   const seen = new Map<string, string>();
@@ -123,4 +124,31 @@ test("lines, flags, species and variables written as numbers are stored by name,
   const lines = parseS(["#include \"asm/field_script.inc\"", "    ScriptEntry Script_1", ...out].join("\n"));
   const back = decompileBlock(lines, 2, lines.length, 1, names, labelUses(lines), ctx);
   assert.match(printScript(back), /say\(2\);\n {4}set_flag\(492\);\n {4}if \(flag\(492\) == 0 && var\(0x40ac\) == 1\) \{\n {8}wild_battle\(74\);/);
+});
+
+test("movements: one a command alone runs goes in it, a shared one is named, and both go back as Move lines", () => {
+  const script = parseScript(`script 1 {
+    apply_movement(1, [walk_left(3), face_up]);
+    wait_movement();
+    apply_movement(2, Shared);
+    apply_movement(3, Shared);
+    end();
+    movement Shared = [
+        jump_in_place_down,
+        emote_exclamation,
+    ];
+}
+`);
+  const out = compileScript(script, "Script_1", names, new Set());
+  assert.ok(out.includes("    ActorCmdExec 1, Movement_Script_1_1"));
+  assert.deepEqual(out.slice(out.indexOf("Shared:"), out.indexOf("Shared:") + 4), ["Shared:", "    Move 49, 1", "    Move 75, 1", "    MoveEnd"]);
+  const at = out.indexOf("Movement_Script_1_1:");
+  assert.deepEqual(out.slice(at - 1, at + 4), ["    .balign 4, 0", "Movement_Script_1_1:", "    Move 14, 3", "    Move 0, 1", "    MoveEnd"]);
+  assert.equal(out[out.length - 1], "    .balign 2, 0");
+  // And back
+  const lines = parseS(["#include \"asm/field_script.inc\"", "    ScriptEntry Script_1", ...out].join("\n"));
+  const printed = printScript(decompileBlock(lines, 2, lines.length, 1, names, labelUses(lines)));
+  assert.match(printed, /apply_movement\(1, \[walk_left\(3\), face_up\]\);/);
+  assert.match(printed, /movement Shared = \[jump_in_place_down, emote_exclamation\];/);
+  assert.throws(() => compileScript(parseScript("script 1 {\n    apply_movement(1, [fly_backwards]);\n    end();\n}\n"), "Script_1", names, new Set()), /no movement fly_backwards/);
 });
