@@ -1055,12 +1055,12 @@
             "handler": "Scrcmd_Msg_MsgPlaceSign",
             "args": [
                 {
-                    "name": "value",
+                    "name": "line",
                     "type": "any",
-                    "kind": "number"
+                    "kind": "message"
                 },
                 {
-                    "name": "a2",
+                    "name": "position",
                     "type": "u16",
                     "kind": "number"
                 }
@@ -1221,12 +1221,12 @@
             "handler": "Scrcmd_Msg_ScreamMsg",
             "args": [
                 {
-                    "name": "value",
+                    "name": "line",
                     "type": "any",
-                    "kind": "number"
+                    "kind": "message"
                 },
                 {
-                    "name": "a2",
+                    "name": "position",
                     "type": "u8",
                     "kind": "number"
                 }

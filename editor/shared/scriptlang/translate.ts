@@ -12,6 +12,7 @@
 import { isVarText, negate, type AssignOp, type CmpOp, type Expr, type Script, type Stmt } from "./lang.ts";
 import { parseS, type SLine } from "./sfile.ts";
 import { SHORTCUTS, SHORTCUT_NAMES, messageArgs, shortcutArgs } from "./shortcuts.ts";
+import { showValue, storeValue, type ValueContext } from "./values.ts";
 
 /** An argument of a command, as the command reference (res/paperwhite2/scripts/commands.json) has it. */
 export interface RefArg {
@@ -365,11 +366,55 @@ function chain(stmts: Stmt[], uses: Map<string, number>, exit?: string) {
   }
 }
 
-/** A file's script block translated: its statements after its label. */
-export function decompileBlock(lines: SLine[], start: number, end: number, number: number, names: Names, uses = labelUses(lines)): Script {
+/** Each argument's kind of a call, by its name: a shortcut's, a named global's or the command reference's. */
+function argKinds(name: string, names: Names): (string | undefined)[] {
+  const shortcut = SHORTCUT_NAMES.get(name);
+  if (shortcut) return shortcut.params.map((p) => p.kind);
+  const global = names.globals.get(name);
+  if (global) return global.inputs.map((i) => i.kind);
+  return names.commands.get(names.toMacro.get(name) ?? "")?.args.map((a) => a.kind) ?? [];
+}
+
+/** The values of statements turned, by their kinds, as they show (way "show") or as the .s stores them ("store"). */
+function mapValues(stmts: Stmt[], names: Names, ctx: ValueContext, way: "show" | "store"): Stmt[] {
+  const turn = (text: string, kind: string | undefined): string => {
+    const t = text.trim();
+    const inVar = /^var\((.*)\)$/.exec(t);
+    const out = way === "show" ? showValue(inVar ? inVar[1] : t, inVar ? "var" : kind, ctx) : storeValue(inVar ? inVar[1] : t, inVar ? "var" : kind, ctx);
+    if (typeof out !== "string") throw new CompileError(`${t}: ${out.error}`);
+    return inVar ? `var(${out})` : out;
+  };
+  const expr = (e: Expr): Expr => {
+    switch (e.k) {
+      case "flag": return { k: "flag", arg: turn(e.arg, "flag") };
+      case "var": return { k: "var", text: turn(e.text, "var") };
+      case "const": return e;
+      case "not": return { k: "not", e: expr(e.e) };
+      default: return { ...e, l: expr(e.l), r: expr(e.r) };
+    }
+  };
+  return stmts.map((s): Stmt => {
+    switch (s.k) {
+      case "call": {
+        const kinds = argKinds(s.name, names);
+        return { ...s, args: s.args.map((a, n) => turn(a, kinds[n])) };
+      }
+      case "assign": return { ...s, target: turn(s.target, "var"), value: turn(s.value, undefined) };
+      case "ifgoto": return { ...s, cond: expr(s.cond) };
+      case "if": return { ...s, cond: expr(s.cond), then: mapValues(s.then, names, ctx, way), else: s.else && mapValues(s.else, names, ctx, way) };
+      default: return s;
+    }
+  });
+}
+
+/** A file's script block translated: its statements after its label, its values as they show where there's a
+ * context (a message by its line, flags and species by number). */
+export function decompileBlock(lines: SLine[], start: number, end: number, number: number, names: Names, uses = labelUses(lines),
+                               ctx?: ValueContext): Script {
   // (its own label is the script's)
   const flat = flatStatements(lines, start + 1, end, names);
-  return { number, body: structure(flat, new Map(uses)) };
+  const body = structure(flat, new Map(uses));
+  return { number, body: ctx ? mapValues(body, names, ctx, "show") : body };
 }
 
 // ---- Back to lines
@@ -377,7 +422,8 @@ export function decompileBlock(lines: SLine[], start: number, end: number, numbe
 export class CompileError extends Error {}
 
 /** A script's lines, its label first. taken: the labels the file has, which new ones keep clear of. */
-export function compileScript(script: Script, label: string, names: Names, taken: Set<string>): string[] {
+export function compileScript(script: Script, label: string, names: Names, taken: Set<string>, ctx?: ValueContext): string[] {
+  if (ctx) script = { ...script, body: mapValues(script.body, names, ctx, "store") };
   const out = [`${label}:`];
   let next = 1;
   const fresh = () => {

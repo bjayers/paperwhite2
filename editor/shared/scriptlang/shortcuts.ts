@@ -9,7 +9,7 @@ export interface Shortcut {
   macro: string;
   fixed: Record<number, string>;
   /** The shortcut's arguments in order: each the macro's argument it fills, and its value when left out. */
-  params: { arg: number; name: string; default?: string }[];
+  params: { arg: number; name: string; kind?: string; default?: string }[];
   /** The commands after it, in order, with no arguments. */
   after: string[];
   description: string;
@@ -17,19 +17,20 @@ export interface Shortcut {
 
 export const SHORTCUTS: Shortcut[] = [
   { name: "say", macro: "ParentActorMsg", fixed: { 0: "MSGFILE_SCRIPT" }, after: ["LastKeyWait", "ActorMsgClose"],
-    params: [{ arg: 1, name: "line" }, { arg: 2, name: "p2", default: "0" }, { arg: 3, name: "box_type", default: "0" }],
+    params: [{ arg: 1, name: "line", kind: "message" }, { arg: 2, name: "p2", default: "0" }, { arg: 3, name: "box_type", default: "0" }],
     description: "The talk window of the NPC the player talked to, with the line; waits for a key and closes it" },
   { name: "say_npc", macro: "ActorMsg", fixed: { 0: "MSGFILE_SCRIPT" }, after: ["LastKeyWait", "ActorMsgClose"],
-    params: [{ arg: 2, name: "npc" }, { arg: 1, name: "line" }, { arg: 3, name: "p3", default: "0" }, { arg: 4, name: "box_type", default: "0" }],
+    params: [{ arg: 2, name: "npc", kind: "actor" }, { arg: 1, name: "line", kind: "message" }, { arg: 3, name: "p3", default: "0" },
+             { arg: 4, name: "box_type", default: "0" }],
     description: "A talk window from an NPC (by its id), with the line; waits for a key and closes it" },
   { name: "say_event", macro: "SystemMsg", fixed: {}, after: ["LastKeyWait", "SystemMsgClose"],
-    params: [{ arg: 0, name: "line" }, { arg: 1, name: "position", default: "2" }],
+    params: [{ arg: 0, name: "line", kind: "message" }, { arg: 1, name: "position", default: "2" }],
     description: "The grey event window, with the line; waits for a key and closes it" },
   { name: "say_bubble", macro: "InfoMsg", fixed: {}, after: ["LastKeyWait", "InfoMsgClose"],
-    params: [{ arg: 0, name: "line" }, { arg: 1, name: "position", default: "2" }],
+    params: [{ arg: 0, name: "line", kind: "message" }, { arg: 1, name: "position", default: "2" }],
     description: "The bubble window, with the line; waits for a key and closes it" },
   { name: "say_sign", macro: "MsgPlaceSign", fixed: {}, after: ["MsgPlaceSignClose"],
-    params: [{ arg: 0, name: "line" }, { arg: 1, name: "position", default: "2" }],
+    params: [{ arg: 0, name: "line", kind: "message" }, { arg: 1, name: "position", default: "2" }],
     description: "The bordered sign window, with the line (it waits for a key itself); closes it" },
 ];
 

@@ -98,7 +98,11 @@ sub step_aside {
   - a flag or a variable: its constant, the user's note for it (kept in a file the editor writes), and every script
     that sets or checks it;
   - a command: what it does and what each argument is, from the command reference (Frost's comments, the handler's
-    name, and our own notes).
+    name, and our own notes);
+  - an argument: every choice of its kind, searchable, one click to put it in (the user, 2026-11-04: in Frost's the
+    choices could only be guessed or learned from other scripts): the sounds (`SEQ_SE_*`, `SEQ_BGM_*`, with a play
+    button where the editor can play them), the movements' actions by name, flags, variables, species, items, moves,
+    zones, directions, the windows' positions and box types; and the same as completions while typing.
 - **The command reference** is a file of the language's names: each command's name, aliases, what it does, and each
   argument's name, kind and meaning. It starts from Frost's header and the game's handlers, and grows as commands are
   learned.
@@ -152,6 +156,13 @@ sub step_aside {
   sequence in the game's scripts (a yell is mostly followed by a cry's wait), so they stay their commands
   (`angry_message`, `checker_message`, `show_message_at`, `gendered_message`, `version_message`) with their waits and
   closes written out.
+- **2026-11-04, the numbers** (`editor/shared/scriptlang/values.ts`): by each argument's kind, a message shows as
+  its line in the file's text bank (the bank its `#include "text/script/<bank>.h"` names; the line is the message's
+  index in the bank's `.txt`, from 0), a flag and a species by number, a variable as `var(0x40ac)`; in conditions too.
+  Saving stores each by the constant's name where there is one (the message's id, `EVENT_FLAG_...`, `SPECIES_...`,
+  `EVENT_WORK_...`). A message number past the bank's lines stays a number (some commands take one, 65535 for none);
+  the editor will warn about it. `equiv.ts` compares values by number, so a name and its number are the same. Items,
+  sounds and the rest keep their names. Still all 4051 scripts round trip.
 - Equivalence, not sameness: a condition can be the stack's form or a WorkCmp's, a label's name changes, and a jump
   to the next statement may go; `equiv.ts` walks both files from the script's label through every command, condition
   (or its negation with its ways swapped) and jump. Untouched scripts aren't rewritten at all.

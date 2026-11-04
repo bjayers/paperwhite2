@@ -6,6 +6,17 @@
 import { negate, type Expr, type Stmt } from "./lang.ts";
 import { flatStatements, TERMINATORS, type Names } from "./translate.ts";
 import { parseS } from "./sfile.ts";
+import { numberOf, type ValueContext } from "./values.ts";
+
+/** What a value is, for comparing: its number where it has one (a constant's name or the number it stands for, the
+ * same), else its text; var(X) is X's. */
+let valueCtx: ValueContext | undefined;
+function valueKey(text: string): string {
+  const t = text.trim().replace(/^var\((.*)\)$/, "$1").trim();
+  // (a message's id is its line in the bank)
+  const n = numberOf(t, valueCtx) ?? valueCtx?.messageLine.get(t);
+  return n === undefined ? t : `#${n}`;
+}
 
 interface Program {
   stmts: Stmt[];
@@ -36,7 +47,7 @@ function canon(e: Expr): string {
     case "or": return `or(${canon(e.l)},${canon(e.r)})`;
     case "cmp":
       if (e.l.k === "flag" && e.r.k === "const" && (e.r.text === "0" || e.r.text === "1") && (e.op === "==" || e.op === "!=")) {
-        return `flag(${e.l.arg})=${(e.op === "==") === (e.r.text === "1") ? 1 : 0}`;
+        return `flag(${valueKey(e.l.arg)})=${(e.op === "==") === (e.r.text === "1") ? 1 : 0}`;
       }
       return `${e.op}(${value(e.l)},${value(e.r)})`;
     default: return canon({ k: "cmp", op: "==", l: e, r: { k: "const", text: "1" } });
@@ -45,9 +56,9 @@ function canon(e: Expr): string {
 
 function value(e: Expr): string {
   switch (e.k) {
-    case "flag": return `flag(${e.arg})`;
-    case "var": return `var(${e.text})`;
-    case "const": return `const(${e.text})`;
+    case "flag": return `flag(${valueKey(e.arg)})`;
+    case "var": return `var(${valueKey(e.text)})`;
+    case "const": return `const(${valueKey(e.text)})`;
     case "arith": return `${e.op}(${value(e.l)},${value(e.r)})`;
     default: return `bool(${canon(e)})`;
   }
@@ -76,8 +87,10 @@ export interface Difference {
   b: Stmt | null;
 }
 
-/** The first difference in how the two files run the script at label, or null where they run it the same. */
-export function scriptDifference(textA: string, textB: string, label: string, names: Names): Difference | null {
+/** The first difference in how the two files run the script at label, or null where they run it the same. With a
+ * context, a constant's name and its number are the same value. */
+export function scriptDifference(textA: string, textB: string, label: string, names: Names, ctx?: ValueContext): Difference | null {
+  valueCtx = ctx;
   const a = program(textA, names);
   const b = program(textB, names);
   const start = [a.labels.get(label), b.labels.get(label)];
@@ -109,7 +122,7 @@ export function scriptDifference(textA: string, textB: string, label: string, na
           const ta = target(a, sa.args[n]);
           const tb = target(b, cb.args[n]);
           if (ta !== undefined && tb !== undefined) todo.push([ta, tb]);
-          else if (sa.args[n] !== cb.args[n]) return differ(`argument ${n + 1}: ${sa.args[n]} against ${cb.args[n]}`);
+          else if (valueKey(sa.args[n]) !== valueKey(cb.args[n])) return differ(`argument ${n + 1}: ${sa.args[n]} against ${cb.args[n]}`);
         }
         if (!ends(sa)) todo.push([i + 1, j + 1]);
         break;
@@ -126,7 +139,7 @@ export function scriptDifference(textA: string, textB: string, label: string, na
       }
       case "assign": {
         const cb = sb as typeof sa;
-        if (sa.target !== cb.target || sa.op !== cb.op || sa.value !== cb.value) return differ("different assignments");
+        if (valueKey(sa.target) !== valueKey(cb.target) || sa.op !== cb.op || valueKey(sa.value) !== valueKey(cb.value)) return differ("different assignments");
         todo.push([i + 1, j + 1]);
         break;
       }
