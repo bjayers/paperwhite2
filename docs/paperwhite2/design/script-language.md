@@ -22,13 +22,13 @@ A small C-like language that the editor translates to and from a script's block 
   comparison is false), and back.
 - **Routines without numbers.** `sub Name { ... }` in the same file: a label the scripts call (`Name();`, `VMCall`) and
   return from (`VMReturn`), with no `ScriptEntry`, so no script is renumbered.
-- **Text by line number.** A message names its line in the zone's text file (`Message(0, 52, 2, 0, 0)`); saving writes
+- **Text by line number.** A message names its line in the zone's text file (`say(52)`, `message(0, 52, 2, 0, 0)`); saving writes
   the line's message id (`VirbankCity_Text_...`). The sidebar shows the line under the cursor in the talk window's
   preview, and a button opens the text file beside the script.
 - **Named globals.** One file, in the language, names the user's global scripts and the variables they read and set:
-  `global RandomItem(first = 0x8011, count = 0x8010) = 10853;` (result in 0x8012), `global WildBattle(species = 0x8010)
-  = 10854;`. A call sets the variables and calls the global; existing calls read back as the names.
-- **Later:** movements inline (`ApplyMovement(1, { WalkUp(2), FaceLeft() })`), menus as a `switch` on the choice.
+  `global random_item(first = 0x8011, count = 0x8010) = 10853;` (result in 0x8012), `global wild_battle(species =
+  0x8010) = 10854;`. A call sets the variables and calls the global; existing calls read back as the names.
+- **Later:** movements inline (`move(1, walk_up(2), face_left)`), menus as a `switch` on the choice.
 
 ## The user's choices (2026-11-04)
 
