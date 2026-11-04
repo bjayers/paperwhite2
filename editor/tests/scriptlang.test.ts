@@ -200,3 +200,33 @@ sub step_aside {
   assert.throws(() => compileScript(parseScript("script 1 {\n    goto L;\n}\n\nsub x {\n    end();\n}\n"), "Script_1", names, new Set(["x"])), /label of that name/);
   assert.throws(() => compileScript(parseScript("script 1 {\n    lock_all();\n}\n\nsub x {\n    end();\n}\n"), "Script_1", names, new Set()), /must end/);
 });
+
+test("menus and switches: a menu's setup, options and show, and an if's else ifs on one variable, as written", () => {
+  const written = `script 1 {
+    menu(31, 1, 0, 1, var(0x8010)) {
+        option(39, 0);
+        option(40, 41, 1);
+    }
+    switch (var(0x8010)) {
+        case 0 {
+            set_flag(513);
+        }
+        case 1 {
+        }
+        else {
+            unlock_all();
+        }
+    }
+    end();
+}
+`;
+  const script = parseScript(written);
+  assert.equal(printScript(script), written);
+  const ctx = valueContext(constants, []);
+  const out = compileScript(script, "Script_1", names, new Set(), ctx);
+  assert.deepEqual(out.slice(1, 5), ["    ListMenuAnchorTopRight 31, 1, 0, 1, 0x8010", "    ListMenuAdd 39, 65535, 0", "    ListMenuAdd 40, 41, 1", "    ListMenuShow"]);
+  // Read back from the .s: the same script, the empty case and all
+  const lines = parseS(["    ScriptEntry Script_1", "", ...out].join("\n"));
+  assert.equal(printScript(decompileBlock(lines, 2, lines.length, 1, names, labelUses(lines), ctx)), written);
+  assert.throws(() => parseScript("script 1 {\n    switch (var(0x8010)) {\n    }\n}\n"), /a case at least/);
+});

@@ -4,7 +4,7 @@
 // and what nothing runs don't count. The script language's round trip is checked with it (tests/scriptlang.test.ts).
 
 import { negate, type Expr, type Stmt } from "./lang.ts";
-import { flatStatements, TERMINATORS, type Names } from "./translate.ts";
+import { flatStatements, SAME_COMMANDS, TERMINATORS, type Names } from "./translate.ts";
 import { parseS } from "./sfile.ts";
 import { numberOf, type ValueContext } from "./values.ts";
 
@@ -135,7 +135,9 @@ export function scriptDifference(textA: string, textB: string, label: string, na
     switch (sa.k) {
       case "call": {
         const cb = sb as typeof sa;
-        if (sa.name !== cb.name || sa.args.length !== cb.args.length) return differ("different commands");
+        // (by macro, where two run the same handler's code)
+        const same = (name: string) => { const macro = names.toMacro.get(name) ?? name; return SAME_COMMANDS[macro] ?? macro; };
+        if (same(sa.name) !== same(cb.name) || sa.args.length !== cb.args.length) return differ("different commands");
         for (let n = 0; n < sa.args.length; n++) {
           const ta = target(a, sa.args[n]);
           const tb = target(b, cb.args[n]);

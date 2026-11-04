@@ -4,7 +4,7 @@
 // and the call under the caret, for the sidebar.
 
 import { api } from "../../api.ts";
-import { ParseError, parseScript, printScript, type Script } from "../../../shared/scriptlang/lang.ts";
+import { MENUS, ParseError, parseScript, printScript, type Script } from "../../../shared/scriptlang/lang.ts";
 import { parseS, scriptBlocks, type SLine } from "../../../shared/scriptlang/sfile.ts";
 import { CompileError, Names, compileScript, decompileBlock, fileAliases, labelUses, replaceBlock, type RefCommand, type RefGlobal, type RefMovement } from "../../../shared/scriptlang/translate.ts";
 import { scriptDifference } from "../../../shared/scriptlang/equiv.ts";
@@ -178,7 +178,7 @@ export function outline(fileText: string, number: number, draft: string): Outlin
 
 // ---- Highlighting and the caret's call
 
-const KEYWORDS = new Set(["script", "if", "else", "goto", "asm", "sub", "alias"]);
+const KEYWORDS = new Set(["script", "if", "else", "goto", "asm", "sub", "alias", "switch", "case", "movement"]);
 const BUILTINS = new Set(["var", "flag", "const"]);
 const TOKEN = /\/\/.*|0x[0-9A-Fa-f]+|-?\d+|[A-Za-z_]\w*|"(?:[^"\\]|\\.)*"|\S/g;
 
@@ -202,7 +202,7 @@ export function highlightLang(line: string, known: (name: string) => boolean, na
     else if (/^[A-Za-z_]/.test(word)) {
       const call = line.slice(m.index + word.length).trimStart().startsWith("(");
       if (call && names?.routines.has(word)) kind = "ref";
-      else if (call) kind = BUILTINS.has(word) || known(word) ? "command" : "unknown";
+      else if (call) kind = BUILTINS.has(word) || MENUS.has(word) || word === "option" || known(word) ? "command" : "unknown";
       else if (/^\s*sub\s+$/.test(line.slice(0, m.index))) kind = "ref";
       else if (names?.aliases.has(word)) kind = "constant";
       else if (/^(L|Script|Movement|Conditions|Data)_\w+$/.test(word)) kind = "ref";
@@ -224,6 +224,8 @@ export interface CaretCall {
   /** The argument's place in the line: [start, end). */
   start: number;
   end: number;
+  /** How many arguments the call has as written. */
+  count?: number;
 }
 
 export function callAt(line: string, column: number): CaretCall | null {
@@ -253,6 +255,14 @@ export function callAt(line: string, column: number): CaretCall | null {
         if (i < column) { arg++; start = i + 1; }
       }
     }
+    let count = 1;
+    inner = 0;
+    for (let i = open + 1; i < close; i++) {
+      if (line[i] === "(" || line[i] === "[") inner++;
+      else if (line[i] === ")" || line[i] === "]") inner--;
+      else if (line[i] === "," && inner === 0) count++;
+    }
+    if (!line.slice(open + 1, close).trim()) count = 0;
     let end = close;
     inner = 0;
     for (let i = start; i < close; i++) {
@@ -260,7 +270,7 @@ export function callAt(line: string, column: number): CaretCall | null {
       else if (line[i] === ")") inner--;
       else if (line[i] === "," && inner === 0) { end = i; break; }
     }
-    best = { name: m[1], arg, argText: line.slice(start, end).trim(), start, end };
+    best = { name: m[1], arg, argText: line.slice(start, end).trim(), start, end, count };
   }
   // In a movement's [list], a step written without its count (face_up) is a call of its own
   if (best && best.arg >= 0 && best.argText.startsWith("[")) {

@@ -9,7 +9,7 @@
 // Back: each statement its lines, a condition always as the stack's pushes and VMStackCmp with VMJumpIf CMP_STACK
 // (which jumps when the condition is false, Scrcmd_Vm_VMJumpIf), an if and its else with new labels.
 
-import { isVarText, negate, splitTop, type AssignOp, type CmpOp, type Expr, type Script, type Stmt, type Sub } from "./lang.ts";
+import { MENUS, isVarText, negate, splitTop, type AssignOp, type CmpOp, type Expr, type Script, type Stmt, type Sub } from "./lang.ts";
 import { parseS, type SLine } from "./sfile.ts";
 import { SHORTCUTS, SHORTCUT_NAMES, messageArgs, shortcutArgs } from "./shortcuts.ts";
 import { showValue, storeValue, type ValueContext } from "./values.ts";
@@ -519,8 +519,112 @@ function moveLines(steps: string[], names: Names): string[] {
   return out;
 }
 
+// ---- Menus and switches
+
+/** Each menu statement's setup macro, and its options' and its show's. */
+export const MENU_MACROS: Record<string, string> = { menu: "ListMenuAnchorTopRight", menu_top_left: "ListMenuAnchorTopLeft", menu_common: "ListMenuInitCommon" };
+export const OPTION_MACRO = "ListMenuAdd";
+const SHOW_MACRO = "ListMenuShow";
+
+/** Commands whose handlers run the same code (src/ov036/scrcmd_menu.c), as the one the language writes. */
+export const SAME_COMMANDS: Record<string, string> = { ListMenuShow2: SHOW_MACRO };
+/** A menu's argument that names the variable its choice goes in. */
+const MENU_RESULT = 4;
+
+/** A statement with its parts (an if's, a menu's, a switch's) turned by f. */
+function mapBlocks(s: Stmt, f: (stmts: Stmt[]) => Stmt[]): Stmt {
+  switch (s.k) {
+    case "if": return { ...s, then: f(s.then), else: s.else && f(s.else) };
+    case "menu": return { ...s, body: f(s.body) };
+    case "switch": return { ...s, cases: s.cases.map((c) => ({ ...c, body: f(c.body) })), else: s.else && f(s.else) };
+    default: return s;
+  }
+}
+
+/** A statement's parts. */
+function blocksOf(s: Stmt): Stmt[][] {
+  switch (s.k) {
+    case "if": return s.else ? [s.then, s.else] : [s.then];
+    case "menu": return [s.body];
+    case "switch": return [...s.cases.map((c) => c.body), ...(s.else ? [s.else] : [])];
+    default: return [];
+  }
+}
+
+/** The menus among statements: a setup, what's after it up to its show at the same level (no label or jump between),
+ * and the show, as one menu statement, with its options as option(). */
+function groupMenus(stmts: Stmt[], names: Names): Stmt[] {
+  const setups = new Map(Object.entries(MENU_MACROS).map(([lang, macro]) => [names.toLang.get(macro), lang]));
+  const shows = new Set([SHOW_MACRO, ...Object.keys(SAME_COMMANDS)].map((m) => names.toLang.get(m)));
+  const add = names.toLang.get(OPTION_MACRO);
+  const options = (list: Stmt[]): Stmt[] => list.map((s) => (s.k === "call" && s.name === add ? { ...s, name: "option" } : mapBlocks(s, options)));
+  const out: Stmt[] = [];
+  for (let i = 0; i < stmts.length; i++) {
+    const s = stmts[i];
+    const menu = s.k === "call" ? setups.get(s.name) : undefined;
+    let j = i + 1;
+    if (menu && s.k === "call") {
+      for (; j < stmts.length; j++) {
+        const t = stmts[j];
+        if (t.k === "call" && (shows.has(t.name) || setups.has(t.name))) break;
+        if (t.k === "label" || t.k === "goto" || t.k === "ifgoto" || t.k === "raw") { j = stmts.length; break; }
+      }
+      const end = stmts[j];
+      if (end?.k === "call" && shows.has(end.name) && !end.args.length) {
+        out.push({ k: "menu", name: menu, args: s.args, body: options(stmts.slice(i + 1, j)) });
+        i = j;
+        continue;
+      }
+    }
+    out.push(s);
+  }
+  return out;
+}
+
+/** An if and its else ifs as a switch, where each compares one variable with a value: three of them at least, or two
+ * straight after a menu whose choice it is. */
+function asSwitch(s: Extract<Stmt, { k: "if" }>, menuResult?: string): Stmt | null {
+  const cases: { value: string; body: Stmt[] }[] = [];
+  let on: Expr | null = null;
+  let node: Stmt = s;
+  let rest: Stmt[] | undefined;
+  const real = (list: Stmt[]) => list.filter((t) => t.k !== "blank" && t.k !== "comment");
+  for (;;) {
+    const c = node.k === "if" ? node.cond : null;
+    // (a case that does nothing, as it reads back: if (v != 0) { the next cases, or the else })
+    if (node.k === "if" && !node.else && c?.k === "cmp" && c.op === "!=" && c.l.k === "var" && c.r.k === "const" && !isVarText(c.r.text)
+        && (!on || sameValue((on as { text: string }).text, c.l.text))) {
+      on = c.l;
+      cases.push({ value: c.r.text, body: [] });
+      const then = real(node.then);
+      if (then.length === 1 && then[0].k === "if") { node = then[0]; continue; }
+      rest = node.then;
+      break;
+    }
+    const matches = !!c && c.k === "cmp" && c.op === "==" && c.l.k === "var" && c.r.k === "const" && !isVarText(c.r.text)
+      && (!on || sameValue((on as { text: string }).text, (c.l as { text: string }).text));
+    if (!matches || node.k !== "if" || c?.k !== "cmp") { rest = [node]; break; }
+    on = c.l;
+    cases.push({ value: (c.r as { text: string }).text, body: node.then });
+    if (node.else?.length === 1 && node.else[0].k === "if") { node = node.else[0]; continue; }
+    rest = node.else;
+    break;
+  }
+  const afterMenu = on && menuResult !== undefined && sameValue(menuResult.replace(/^var\((.*)\)$/, "$1"), (on as { text: string }).text);
+  if (!on || cases.length < (afterMenu ? 2 : 3)) return null;
+  return rest ? { k: "switch", on, cases, else: rest } : { k: "switch", on, cases };
+}
+
+/** A switch as the if and else ifs it is. */
+function switchIfs(s: Extract<Stmt, { k: "switch" }>): Stmt {
+  const at = (n: number): Stmt => ({ k: "if", cond: { k: "cmp", op: "==", l: s.on, r: { k: "const", text: s.cases[n].value } }, then: s.cases[n].body,
+                                      else: n + 1 < s.cases.length ? [at(n + 1)] : s.else });
+  return at(0);
+}
+
 /** Each argument's kind of a call, by its name: a shortcut's, a named global's or the command reference's. */
 function argKinds(name: string, names: Names): (string | undefined)[] {
+  if (MENUS.has(name) || name === "option") return names.commands.get(MENU_MACROS[name] ?? OPTION_MACRO)?.args.map((a) => a.kind) ?? [];
   const shortcut = SHORTCUT_NAMES.get(name);
   if (shortcut) return shortcut.params.map((p) => p.kind);
   const global = names.globals.get(name);
@@ -536,6 +640,13 @@ function mapValues(stmts: Stmt[], names: Names, ctx: ValueContext, way: "show" |
     const out = way === "show" ? showValue(inVar ? inVar[1] : t, inVar ? "var" : kind, ctx) : storeValue(inVar ? inVar[1] : t, inVar ? "var" : kind, ctx);
     if (typeof out !== "string") throw new CompileError(`${t}: ${out.error}`);
     return inVar ? `var(${out})` : out;
+  };
+  // A command's argument: a variable's the .s wrote as a number, 32784 or 0x8010, shows as one: var(0x8010)
+  const turnArg = (text: string, kind: string | undefined): string => {
+    const t = text.trim();
+    const n = /^\d+$/.test(t) ? Number(t) : /^0x[0-9a-f]+$/i.test(t) ? parseInt(t, 16) : NaN;
+    if (way === "show" && kind === "var" && n >= 0x4000 && n <= 0xffff) return `var(0x${n.toString(16).padStart(4, "0")})`;
+    return turn(text, kind);
   };
   const expr = (e: Expr): Expr => {
     switch (e.k) {
@@ -581,11 +692,16 @@ function mapValues(stmts: Stmt[], names: Names, ctx: ValueContext, way: "show" |
     switch (s.k) {
       case "call": {
         const kinds = argKinds(s.name, names);
-        return { ...s, args: s.args.map((a, n) => turn(a, kinds[n])) };
+        return { ...s, args: s.args.map((a, n) => turnArg(a, kinds[n])) };
       }
       case "assign": return { ...s, target: turn(s.target, "var"), value: turn(s.value, undefined) };
       case "ifgoto": return { ...s, cond: expr(s.cond) };
-      case "if": return { ...s, cond: expr(s.cond), then: mapValues(s.then, names, ctx, way), else: s.else && mapValues(s.else, names, ctx, way) };
+      case "if": return mapBlocks({ ...s, cond: expr(s.cond) }, (b) => mapValues(b, names, ctx, way));
+      case "switch": return mapBlocks({ ...s, on: expr(s.on) }, (b) => mapValues(b, names, ctx, way));
+      case "menu": {
+        const kinds = argKinds(s.name, names);
+        return mapBlocks({ ...s, args: s.args.map((a, n) => turnArg(a, kinds[n])) }, (b) => mapValues(b, names, ctx, way));
+      }
       default: return s;
     }
   }
@@ -608,7 +724,7 @@ export function decompileBlock(lines: SLine[], start: number, end: number, numbe
     if (before < 0 || !isPad(flat[at]) || !endsRun(flat.slice(0, at), names) || !/^(call|goto)$/.test(flat[before].k)) break;
     flat.splice(at);
   }
-  const body = tidy(structure(flat, new Map(uses)));
+  const body = tidy(structure(flat, new Map(uses)), names);
   const parts = splitSubs(body, uses, callUses(lines), names);
   const aliases = aliasValues(fileAliases(lines), ctx);
   const show = (stmts: Stmt[]) => showAliases(ctx ? mapValues(stmts, names, ctx, "show") : stmts, aliases, names);
@@ -617,19 +733,25 @@ export function decompileBlock(lines: SLine[], start: number, end: number, numbe
 }
 
 /** Statements tidied as they'll read back once saved: raw lines one after another (and the blank lines between them)
- * as one asm block, its empty lines at its end a blank line after it; an if with nothing to do and an else as the else on its negation. */
-function tidy(stmts: Stmt[]): Stmt[] {
+ * as one asm block, its empty lines at its end a blank line after it; menus grouped; an if and its else ifs on one
+ * variable as a switch; an if with nothing to do and an else as the else on its negation. */
+function tidy(stmts: Stmt[], names: Names): Stmt[] {
   const out: Stmt[] = [];
-  for (const s of stmts) {
+  for (const s of groupMenus(stmts, names)) {
     // (with the blank lines between them)
     let j = out.length - 1;
     while (j >= 0 && out[j].k === "blank") j--;
     const last = out[j];
     if (s.k === "raw" && last?.k === "raw") {
       out.splice(j, out.length - j, { k: "raw", lines: [...last.lines, ...Array<string>(out.length - 1 - j).fill(""), ...s.lines] });
-    } else if (s.k === "if" && s.else && s.then.every((t) => t.k === "blank" || t.k === "comment")) out.push({ k: "if", cond: negate(s.cond), then: tidy(s.else) });
-    else if (s.k === "if") out.push({ ...s, then: tidy(s.then), else: s.else && tidy(s.else) });
-    else out.push(s);
+      continue;
+    }
+    // (a menu before it, whose choice a switch may be on)
+    const menu = last?.k === "menu" ? last.args[MENU_RESULT] : undefined;
+    const sw = s.k === "if" ? asSwitch(s, menu) : null;
+    if (sw) out.push(mapBlocks(sw, (b) => tidy(b, names)));
+    else if (s.k === "if" && s.else && s.then.every((t) => t.k === "blank" || t.k === "comment")) out.push(...tidy([{ k: "if", cond: negate(s.cond), then: s.else }], names));
+    else out.push(mapBlocks(s, (b) => tidy(b, names)));
   }
   return out.flatMap((s): Stmt[] => {
     if (s.k !== "raw" || s.lines[s.lines.length - 1]?.trim() !== "") return [s];
@@ -747,7 +869,12 @@ function showAliases(stmts: Stmt[], aliases: Map<string, AliasValue>, names: Nam
       }
       case "assign": return { ...s, target: find(s.target, "var") ?? s.target, value: arg(s.value) };
       case "ifgoto": return { ...s, cond: expr(s.cond) };
-      case "if": return { ...s, cond: expr(s.cond), then: showAliases(s.then, aliases, names), else: s.else && showAliases(s.else, aliases, names) };
+      case "if": return mapBlocks({ ...s, cond: expr(s.cond) }, (b) => showAliases(b, aliases, names));
+      case "switch": return mapBlocks({ ...s, on: expr(s.on) }, (b) => showAliases(b, aliases, names));
+      case "menu": {
+        const kinds = argKinds(s.name, names);
+        return mapBlocks({ ...s, args: s.args.map((a, n) => arg(a, kinds[n])) }, (b) => showAliases(b, aliases, names));
+      }
       default: return s;
     }
   });
@@ -785,7 +912,9 @@ function storeAliases(stmts: Stmt[], aliases: Map<string, AliasValue>, names: Na
         return { ...s, target: v ? v.shown : s.target, value: arg(s.value) };
       }
       case "ifgoto": return { ...s, cond: expr(s.cond) };
-      case "if": return { ...s, cond: expr(s.cond), then: storeAliases(s.then, aliases, names), else: s.else && storeAliases(s.else, aliases, names) };
+      case "if": return mapBlocks({ ...s, cond: expr(s.cond) }, (b) => storeAliases(b, aliases, names));
+      case "switch": return mapBlocks({ ...s, on: expr(s.on) }, (b) => storeAliases(b, aliases, names));
+      case "menu": return mapBlocks({ ...s, args: s.args.map(arg) }, (b) => storeAliases(b, aliases, names));
       default: return s;
     }
   });
@@ -799,7 +928,7 @@ function scriptAliases(script: Script): Map<string, string> {
       if (s.k === "alias") {
         if (out.has(s.name) && out.get(s.name) !== s.value) throw new CompileError(`alias ${s.name} is written twice, as ${out.get(s.name)} and ${s.value}`);
         out.set(s.name, s.value);
-      } else if (s.k === "if") { walk(s.then); if (s.else) walk(s.else); }
+      } else blocksOf(s).forEach(walk);
     }
   };
   walk(script.body);
@@ -836,7 +965,7 @@ export function compileScript(script: Script, label: string, names: Names, taken
   script = { ...script, body: store(script.body), subs: subs.map((sub) => ({ name: sub.name, body: store(sub.body) })) };
   // The labels it can call as routines: the file's, its own and its subs'
   const labels = new Set(taken);
-  const addLabels = (stmts: Stmt[]) => { for (const s of stmts) { if (s.k === "label") labels.add(s.name); else if (s.k === "if") { addLabels(s.then); if (s.else) addLabels(s.else); } } };
+  const addLabels = (stmts: Stmt[]) => { for (const s of stmts) { if (s.k === "label") labels.add(s.name); else blocksOf(s).forEach(addLabels); } };
   addLabels(script.body);
   for (const sub of script.subs!) {
     if (names.toMacro.has(sub.name) || names.globals.has(sub.name) || SHORTCUT_NAMES.has(sub.name)) throw new CompileError(`sub ${sub.name}: a command has that name`);
@@ -892,7 +1021,7 @@ export function compileScript(script: Script, label: string, names: Names, taken
             out.push(`    ${shortcut.macro} ${args.join(", ")}`, ...shortcut.after.map((m) => `    ${m}`));
             break;
           }
-          const macro = names.toMacro.get(s.name);
+          const macro = s.name === "option" ? OPTION_MACRO : names.toMacro.get(s.name);
           if (!macro && labels.has(s.name)) {
             if (s.args.length) throw new CompileError(`${s.name}() is a routine: it takes no arguments`);
             out.push(`    VMCall ${s.name}`);
@@ -924,6 +1053,12 @@ export function compileScript(script: Script, label: string, names: Names, taken
         case "movement": out.push("    .balign 4, 0", `${s.name}:`, ...moveLines(s.steps, names)); break;
         case "comment": out.push(`    ${s.text}`); break;
         case "alias": out.push(`    //@ alias ${s.name} = ${s.value}`); break;
+        case "menu":
+          out.push(`    ${MENU_MACROS[s.name]} ${s.args.map(plainArg).join(", ")}`);
+          emit(s.body);
+          out.push(`    ${SHOW_MACRO}`);
+          break;
+        case "switch": emit([switchIfs(s)]); break;
         case "blank": out.push(""); break;
         case "if": {
           const otherwise = fresh();

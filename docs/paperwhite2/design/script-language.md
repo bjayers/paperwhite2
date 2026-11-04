@@ -197,6 +197,14 @@ sub step_aside {
   fixed alignment lines that grew with each save, data read as code once its label was renamed (data and dead code
   after an alignment stay data up to the next label), an else's jump left out after a then part that ends (the game's
   scripts keep it, so it reads back as an else), and an empty then part with an else (shown as the else, negated).
+- 2026-11-04, menus and switches (the form the user chose): `menu(x, y, first, can_cancel, var(R)) { option(line,
+  value); option(line, hint_line, value); }` is a list menu's setup (`menu` top right, `menu_top_left`,
+  `menu_common`), what's between it and its show at the same level (other statements may sit among the options),
+  and the show; `ListMenuShow2` runs the same code as `ListMenuShow` (`scrcmd_menu.c`), so a menu saves with the
+  first, and the equivalence check counts them as one. `switch (var(R)) { case 0 { ... } case 1 { ... } else { ... } }`
+  is an if and its else ifs comparing one variable with values, three at least, or two straight after a menu that
+  sets it; no case runs on into the next, and an empty case reads back as one. 152 menus and 406 switches in the
+  game. A variable's argument the dump wrote as a number (`32784`) shows as `var(0x8010)`.
 
 ## Order
 

@@ -22,6 +22,11 @@
 // After the script, its routines: sub NAME { ... }, a label its scripts call (NAME();) and return from. An alias
 // names a variable or a flag for the whole file: alias hiker_talks = var(0x4060); then hiker_talks == 1,
 // hiker_talks += 1; and set_var(hiker_talks, 2).
+//
+// A menu is its setup, its options and its show: menu(x, y, first, can_cancel, var(R)) { option(line, value); }
+// (option(line, hint_line, value) with a hint; other statements may sit between the options). A switch is an if and
+// its else ifs on one variable's values: switch (var(R)) { case 0 { ... } case 1 { ... } else { ... } }, no case
+// running on into the next.
 
 export type CmpOp = "<" | "==" | ">" | "<=" | ">=" | "!=";
 export type Expr =
@@ -48,8 +53,17 @@ export type Stmt =
   | { k: "movement"; name: string; steps: string[] }
   // A name for a variable or a flag, for the file: alias NAME = var(0x4060); (its value as written)
   | { k: "alias"; name: string; value: string }
+  // A menu: its setup command's name and arguments, then what's between it and its show (its options)
+  | { k: "menu"; name: string; args: string[]; body: Stmt[] }
+  // An if and its else ifs, each comparing one variable with a value
+  | { k: "switch"; on: Expr; cases: { value: string; body: Stmt[] }[]; else?: Stmt[] }
   | { k: "comment"; text: string }
   | { k: "blank" };
+
+/** The menus' setup commands' names in the language, as menu statements. */
+export const MENUS = new Set(["menu", "menu_top_left", "menu_common"]);
+/** A menu option's hint line where it has none. */
+export const NO_HINT = "65535";
 
 export interface Script {
   /** Its number in the file's ScriptEntry table. */
@@ -129,7 +143,31 @@ function printStmts(stmts: Stmt[], depth: number, out: string[]) {
   const pad = INDENT.repeat(depth);
   for (const s of stmts) {
     switch (s.k) {
-      case "call": out.push(`${pad}${s.name}(${s.args.join(", ")});`); break;
+      case "call": {
+        // (an option without a hint, without it)
+        const args = s.name === "option" && s.args.length === 3 && s.args[1].trim() === NO_HINT ? [s.args[0], s.args[2]] : s.args;
+        out.push(`${pad}${s.name}(${args.join(", ")});`);
+        break;
+      }
+      case "menu":
+        out.push(`${pad}${s.name}(${s.args.join(", ")}) {`);
+        printStmts(s.body, depth + 1, out);
+        out.push(`${pad}}`);
+        break;
+      case "switch":
+        out.push(`${pad}switch (${printExpr(s.on)}) {`);
+        for (const c of s.cases) {
+          out.push(`${pad}${INDENT}case ${c.value} {`);
+          printStmts(c.body, depth + 2, out);
+          out.push(`${pad}${INDENT}}`);
+        }
+        if (s.else) {
+          out.push(`${pad}${INDENT}else {`);
+          printStmts(s.else, depth + 2, out);
+          out.push(`${pad}${INDENT}}`);
+        }
+        out.push(`${pad}}`);
+        break;
       // (a variable's alias as itself)
       case "assign": out.push(`${pad}${/^[A-Za-z_]\w*$/.test(s.target) && !isVarText(s.target) ? s.target : `var(${s.target})`} ${s.op} ${s.value};`); break;
       case "alias": out.push(`${pad}alias ${s.name} = ${s.value};`); break;
@@ -437,6 +475,27 @@ function parseStmt(r: Reader): Stmt {
     r.expect(";");
     return { k: "goto", target };
   }
+  if (r.keyword("switch")) {
+    r.expect("(");
+    const on = parseExpr(r);
+    r.expect(")");
+    r.expect("{");
+    const cases: { value: string; body: Stmt[] }[] = [];
+    let otherwise: Stmt[] | undefined;
+    for (;;) {
+      r.gap();
+      if (r.eat("}")) break;
+      if (otherwise) r.fail("the else is a switch's last part");
+      if (r.keyword("else")) { otherwise = parseBlock(r); continue; }
+      if (!r.keyword("case")) r.fail("expected case VALUE { ... }, else { ... } or \"}\"");
+      r.gap();
+      const m = /^(0x[0-9A-Fa-f]+|-?\d+|[A-Za-z_]\w*)/.exec(r.text.slice(r.pos)) ?? r.fail("expected the case's value");
+      r.pos += m[0].length;
+      cases.push({ value: m[0], body: parseBlock(r) });
+    }
+    if (!cases.length) r.fail("a switch has a case at least", start);
+    return otherwise ? { k: "switch", on, cases, else: otherwise } : { k: "switch", on, cases };
+  }
   if (r.keyword("alias")) {
     const name = r.word() ?? r.fail("expected the alias's name");
     r.expect("=");
@@ -498,7 +557,13 @@ function parseStmt(r: Reader): Stmt {
   if (r.eat(":")) return { k: "label", name };
   if (!r.eat("(")) r.fail(`expected "(" after ${name}`);
   const args = r.args();
+  if (MENUS.has(name)) {
+    r.gap();
+    if (r.peek("{")) return { k: "menu", name, args, body: parseBlock(r) };
+  }
   r.expect(";");
+  // (an option without a hint has none)
+  if (name === "option" && args.length === 2) return { k: "call", name, args: [args[0], NO_HINT, args[1]] };
   return { k: "call", name, args };
 }
 

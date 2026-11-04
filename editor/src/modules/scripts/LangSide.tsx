@@ -12,6 +12,7 @@ import { navigate } from "../../navigation.ts";
 import { MessageEditor } from "../text/TextEditor.tsx";
 import { SpeciesIcon } from "../pokemon/SpeciesIcon.tsx";
 import { SHORTCUT_NAMES } from "../../../shared/scriptlang/shortcuts.ts";
+import { MENU_MACROS, OPTION_MACRO } from "../../../shared/scriptlang/translate.ts";
 import { numberOf } from "../../../shared/scriptlang/values.ts";
 import type { CaretCall, LangEnv, Outline } from "./lang.ts";
 
@@ -38,9 +39,14 @@ function describe(name: string, env: LangEnv): { title: string; sub?: string; de
     return { title: name, sub: `global script ${global.script}${global.result ? `, its result in var(${global.result})` : ""}`, description: global.description,
              args: global.inputs.map((i) => ({ name: i.name, kind: i.kind, description: `${i.description ? `${i.description}; ` : ""}set in var(${i.var})` })) };
   }
-  const macro = env.names.toMacro.get(name);
+  // (a menu's setup and its options: their commands, with what the language makes of them)
+  const macro = MENU_MACROS[name] ?? (name === "option" ? OPTION_MACRO : env.names.toMacro.get(name));
   const ref = macro ? env.names.commands.get(macro) : undefined;
   if (!macro) return null;
+  const note = MENU_MACROS[name]
+    ? " Its options go in its braces, option(line, value) (option(line, hint_line, value) with a hint), and the menu shows after them; the choice's value goes in the variable, for a switch on it."
+    : name === "option" ? " In a menu's braces: option(line, value), or option(line, hint_line, value) with a hint line." : "";
+  if (note && ref) return { title: name, sub: `macro ${macro} · command ${ref.op} (0x${ref.op.toString(16)})`, description: `${(ref.description ?? "").trim().replace(/([^.])$/, "$1.")}${note}`.trim(), args: ref.args };
   return {
     title: name, sub: [macro !== name && `macro ${macro}`, ref?.frost && !ref.frost.startsWith("c0x") && `Frost's ${ref.frost}`, ref && `command ${ref.op} (0x${ref.op.toString(16)})`]
       .filter(Boolean).join(" · "),
@@ -106,7 +112,9 @@ export function LangSide({ call, word, named, env, bank, onInsert, onReplaceName
   if (!call) {
     return <p className="muted scr-note">Click a command: what it does and its arguments show here; on an argument, its value and every choice of its kind.</p>;
   }
-  const info = describe(call.name, env);
+  const described = describe(call.name, env);
+  // (an option written without its hint line)
+  const info = described && call.name === "option" && call.count === 2 ? { ...described, args: [described.args[0], described.args[2]] } : described;
   if (!info) return <div className="scr-error scr-note">No command {call.name}: the command reference has no such name.</div>;
   const arg = call.arg >= 0 ? info.args[call.arg] : undefined;
   const isStep = env.names.movements.has(call.name) || /^action_\d+$/.test(call.name);
