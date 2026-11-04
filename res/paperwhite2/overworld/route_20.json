@@ -1,0 +1,152 @@
+{
+    "$schema": "overworld.schema.json",
+    "ambients": [
+        {
+            "name": "Ambient 1",
+            "sprite": "OBJ_CODE_POKEMON_PIDOVE",
+            "x": 176,
+            "z": 647,
+            "y": 48,
+            "facing": "DIR_DOWN",
+            "path": {
+                "kind": "perch",
+                "faces": [ "DIR_DOWN", "DIR_LEFT", "DIR_RIGHT" ]
+            },
+            "offset": {
+                "x": 8,
+                "z": -8
+            },
+            "react": {
+                "kind": "fly",
+                "returns": {
+                    "min": 30,
+                    "max": 90
+                },
+                "spread": 30,
+                "near": 2,
+                "sprite": "OBJ_CODE_FOLLOWER_PIDOVE",
+                "startle": 2
+            }
+        },
+        {
+            "name": "Ambient 2",
+            "sprite": "OBJ_CODE_POKEMON_PIDOVE",
+            "x": 182,
+            "z": 647,
+            "y": 48,
+            "facing": "DIR_DOWN",
+            "path": {
+                "kind": "perch",
+                "faces": [ "DIR_DOWN", "DIR_LEFT", "DIR_RIGHT" ]
+            },
+            "offset": {
+                "x": 8,
+                "z": -8
+            }
+        },
+        {
+            "name": "Ambient 4",
+            "sprite": "OBJ_CODE_POKEMON_TAILLOW",
+            "x": 154,
+            "z": 643,
+            "y": 80,
+            "facing": "DIR_DOWN",
+            "path": {
+                "kind": "perch",
+                "faces": [ "DIR_DOWN", "DIR_LEFT", "DIR_RIGHT" ]
+            },
+            "offset": {
+                "x": 8,
+                "z": -8
+            },
+            "when": {
+                "season": [ "spring" ]
+            },
+            "rolls": "entry"
+        },
+        {
+            "name": "Ambient 5",
+            "sprite": "OBJ_CODE_POKEMON_TAILLOW",
+            "x": 157,
+            "z": 658,
+            "y": 80,
+            "facing": "DIR_DOWN",
+            "path": {
+                "kind": "perch"
+            },
+            "offset": {
+                "x": 8,
+                "z": -8
+            },
+            "when": {
+                "season": [ "spring" ]
+            },
+            "rolls": "entry"
+        },
+        {
+            "name": "Ambient 6",
+            "sprite": "OBJ_CODE_POKEMON_HOOTHOOT",
+            "x": 140,
+            "z": 655,
+            "y": 60,
+            "facing": "DIR_DOWN",
+            "path": {
+                "kind": "perch",
+                "faces": [ "DIR_DOWN" ]
+            },
+            "when": {
+                "time": [ "night", "late_night" ]
+            }
+        },
+        {
+            "name": "Ambient 7",
+            "sprites": [
+                {
+                    "sprite": "OBJ_CODE_POKEMON_TAILLOW",
+                    "when": {
+                        "season": [ "spring" ]
+                    }
+                },
+                "OBJ_CODE_POKEMON_PIDOVE"
+            ],
+            "x": 176,
+            "z": 662,
+            "y": 0,
+            "facing": "DIR_DOWN",
+            "path": {
+                "kind": "perch",
+                "faces": [ "DIR_DOWN", "DIR_LEFT" ]
+            },
+            "offset": {
+                "x": 8,
+                "z": -8
+            },
+            "when": {
+                "season": [ "spring" ]
+            },
+            "rolls": "entry"
+        },
+        {
+            "name": "Ambient 7",
+            "sprite": "OBJ_CODE_POKEMON_NOCTOWL",
+            "x": 165,
+            "z": 643,
+            "y": 22,
+            "facing": "DIR_DOWN",
+            "path": {
+                "kind": "line",
+                "width": 56,
+                "depth": 444,
+                "speed": 46
+            },
+            "offset": {
+                "x": -8,
+                "z": 0
+            },
+            "rolls": "entry",
+            "when": {
+                "time": [ "night", "late_night" ]
+            }
+        }
+    ]
+}

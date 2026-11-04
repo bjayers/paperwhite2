@@ -42,5 +42,8 @@
                 }
             }
         }
-    ]
+    ],
+    "overworld": {
+        "grass": false
+    }
 }

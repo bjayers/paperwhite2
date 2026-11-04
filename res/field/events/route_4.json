@@ -300,7 +300,7 @@
             "flag": 0,
             "script": 3296,
             "direction": "DIR_LEFT",
-            "params": [ 4, 0, 0 ],
+            "params": [ 0, 0, 0 ],
             "area": {
                 "width": 0,
                 "height": 0
