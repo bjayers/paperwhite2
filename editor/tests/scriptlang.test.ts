@@ -10,7 +10,7 @@ import { parseScript, printScript } from "../shared/scriptlang/lang.ts";
 import { scriptBlocks, parseS } from "../shared/scriptlang/sfile.ts";
 import { Names, compileScript, decompileBlock, labelUses, macroNames, replaceBlock, type RefCommand, type RefGlobal } from "../shared/scriptlang/translate.ts";
 import { scriptDifference } from "../shared/scriptlang/equiv.ts";
-import { messageIds, scriptBank, valueContext } from "../shared/scriptlang/values.ts";
+import { messageIds, messageTexts, scriptBank, valueContext } from "../shared/scriptlang/values.ts";
 import { Python } from "../server/python.ts";
 
 const ROOT = join(import.meta.dirname, "../..");
@@ -19,8 +19,8 @@ const constants = new Map(Object.entries(new Python(ROOT).constants()));
 /** A file's values' context: the constants and its text bank's messages. */
 const contextOf = (text: string) => {
   const bank = scriptBank(text);
-  const messages = bank ? messageIds(readFileSync(join(ROOT, `res/text/script/${bank}.txt`), "utf8")) : [];
-  return valueContext(constants, messages);
+  const bankText = bank ? readFileSync(join(ROOT, `res/text/script/${bank}.txt`), "utf8") : "";
+  return valueContext(constants, messageIds(bankText), messageTexts(bankText));
 };
 const json = (path: string) => JSON.parse(readFileSync(join(ROOT, path), "utf8"));
 const names = new Names(macroNames(readFileSync(join(ROOT, "include/asm/field_script.inc"), "utf8")),
@@ -113,6 +113,8 @@ test("lines, flags, species and variables written as numbers are stored by name,
 `);
   const out = compileScript(script, "Script_1", names, new Set(), ctx);
   assert.ok(out.includes("    ParentActorMsg MSGFILE_SCRIPT, VirbankCity_Text_CaptainOhDearDaughter, 0, 0"));
+  // (with the message's text over it, as a comment)
+  assert.ok(out.some((l) => l.startsWith('    // "Captain: Oh, dear daughter.')));
   assert.ok(out.includes("    FlagSet EVENT_FLAG_0x01ec"));
   assert.ok(out.includes("    VMStackPushFlag EVENT_FLAG_0x01ec"));
   assert.ok(out.includes("    VMStackPush EVENT_WORK_0x40ac"));

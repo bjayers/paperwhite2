@@ -163,6 +163,19 @@ sub step_aside {
   `EVENT_WORK_...`). A message number past the bank's lines stays a number (some commands take one, 65535 for none);
   the editor will warn about it. `equiv.ts` compares values by number, so a name and its number are the same. Items,
   sounds and the rest keep their names. Still all 4051 scripts round trip.
+- **2026-11-04, the Script Editor** (`editor/src/modules/scripts/lang.ts`, `LangSide.tsx`, `ScriptEditor.tsx`): a
+  script opens in the language (Script) or as its lines of the .s (.s), the choice kept. Apply puts the draft into its
+  block after the check (the new block read back and put back again runs the same, `equiv.ts`; it says whether it
+  also reads back as written, or tidied, with how), and Save applies a draft first; a draft not applied keeps a dot on
+  its script. Restore… puts the script's block back as the last commit's or the original game's has it (a new read-only
+  route, `GET /api/git/show`, HEAD or w2-original only). + New script adds a ScriptEntry and an empty script. Text
+  file opens the bank over the code, by line number, filtered, to edit a message or put its number in. The sidebar:
+  the call at the caret (a command with its macro, Frost's name and number, a shortcut, a named global, flag() or
+  var()), what it does, its arguments with the one at the caret marked; for that argument a message's text in the
+  talk window's preview, a species' name and icon, a flag's or a variable's name, the user's note on it
+  (`res/paperwhite2/scripts/notes.json`) and the scripts that use it, and every choice of its kind, filtered, a click
+  to put it in. The dump's comments of messages' texts are hidden in the language and written again from the bank on
+  Apply.
 - Equivalence, not sameness: a condition can be the stack's form or a WorkCmp's, a label's name changes, and a jump
   to the next statement may go; `equiv.ts` walks both files from the script's label through every command, condition
   (or its negation with its ways swapped) and jump. Untouched scripts aren't rewritten at all.

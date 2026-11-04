@@ -168,6 +168,8 @@ export const api = {
   stopBuild: () => request("POST", "/api/build/stop"),
   git: () => request<GitState>("GET", "/api/git"),
   diff: (path: string) => request<string>("GET", `/api/git/diff?path=${encodeURIComponent(path)}`),
+  /** A file under res/ at the last commit or the original game's data (w2-original). */
+  fileAt: (rev: "HEAD" | "w2-original", path: string) => request<string>("GET", `/api/git/show?rev=${rev}&path=${encodeURIComponent(path)}`),
   /** Puts changed files back as the last commit has them; new files are removed. */
   discard: (paths: string[]) => request<{ discarded: number }>("POST", "/api/git/discard", { paths }),
   commit: (paths: string[], message: string) => request<{ commit: string }>("POST", "/api/git/commit", { paths, message }),

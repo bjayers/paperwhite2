@@ -1,0 +1,23 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Paper White 2: notes on the flags and variables, res/paperwhite2/scripts/notes.json",
+    "description": "What each flag or variable is for, as the user notes it in the Script Editor's sidebar, by its number (a flag's in decimal, a variable's in hex). For the editor only: nothing in the game reads it.",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "$schema": {
+            "type": "string",
+            "description": "This schema, for editors"
+        },
+        "flags": {
+            "type": "object",
+            "additionalProperties": { "type": "string" },
+            "description": "A note for each flag, by its number in decimal"
+        },
+        "vars": {
+            "type": "object",
+            "additionalProperties": { "type": "string" },
+            "description": "A note for each variable, by its number in hex (0x4060)"
+        }
+    }
+}

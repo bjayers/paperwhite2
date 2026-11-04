@@ -393,7 +393,36 @@ function mapValues(stmts: Stmt[], names: Names, ctx: ValueContext, way: "show" |
       default: return { ...e, l: expr(e.l), r: expr(e.r) };
     }
   };
-  return stmts.map((s): Stmt => {
+  // A message's line of text, for the comment over it in the .s (the text bank's, as the dump wrote one)
+  const messageText = (s: Stmt): string | null => {
+    if (s.k !== "call") return null;
+    const kinds = argKinds(s.name, names);
+    const at = kinds.indexOf("message");
+    if (at < 0) return null;
+    // (its line as written: a number, or a message's id)
+    const written = (s.args[at] ?? "").trim();
+    const line = /^\d+$/.test(written) ? Number(written) : ctx.messageLine.get(written);
+    return line !== undefined && ctx.texts?.[line] !== undefined ? ctx.texts[line] : null;
+  };
+  const isPreview = (s: Stmt) => s.k === "comment" && s.text.startsWith('// "');
+  const out: Stmt[] = [];
+  stmts.forEach((s, i) => {
+    if (way === "show") {
+      // (the dump's comment of a message's text over it goes: the sidebar shows the message)
+      let next = i + 1;
+      while (next < stmts.length && stmts[next].k === "blank") next++;
+      if (isPreview(s) && stmts[next] && argKinds((stmts[next] as { name?: string }).name ?? "", names).includes("message")) return;
+    } else if (!isPreview(s) && ctx.texts) {
+      const said = messageText(s);
+      if (said !== null && !(out.length && isPreview(out[out.length - 1]))) out.push({ k: "comment", text: `// "${said}"` });
+    }
+    out.push(turnStmt(s));
+  });
+  // (a part's blank lines at its end go)
+  if (way === "show") while (out.length && out[out.length - 1].k === "blank") out.pop();
+  return out;
+
+  function turnStmt(s: Stmt): Stmt {
     switch (s.k) {
       case "call": {
         const kinds = argKinds(s.name, names);
@@ -404,7 +433,7 @@ function mapValues(stmts: Stmt[], names: Names, ctx: ValueContext, way: "show" |
       case "if": return { ...s, cond: expr(s.cond), then: mapValues(s.then, names, ctx, way), else: s.else && mapValues(s.else, names, ctx, way) };
       default: return s;
     }
-  });
+  }
 }
 
 /** A file's script block translated: its statements after its label, its values as they show where there's a

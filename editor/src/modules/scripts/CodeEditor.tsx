@@ -4,10 +4,10 @@
 // editor can show a script with <CodeEditor value={...} onChange={...} />.
 
 import { memo, useEffect, useMemo, useRef } from "react";
-import { highlightLine, type Command } from "./commands.ts";
+import { highlightLine, type Command, type Span } from "./commands.ts";
 
-const Line = memo(function Line({ text, known }: { text: string; known: Map<string, Command> | null }) {
-  const spans = highlightLine(text, known);
+const Line = memo(function Line({ text, known, highlight }: { text: string; known: Map<string, Command> | null; highlight?: (line: string) => Span[] }) {
+  const spans = highlight ? highlight(text) : highlightLine(text, known);
   return (
     <div className="code-line">
       {spans.length ? spans.map((s, i) => (s.kind === "plain" ? s.text : <span key={i} className={`tok-${s.kind}`}>{s.text}</span>)) : "​"}
@@ -24,10 +24,12 @@ export interface Caret {
   command: string;
 }
 
-export function CodeEditor({ value, onChange, commands, firstLine = 1, onCaret, readOnly, goToLine }: {
+export function CodeEditor({ value, onChange, commands, firstLine = 1, onCaret, readOnly, goToLine, highlight }: {
   value: string;
   onChange(value: string): void;
   commands: Map<string, Command> | null;
+  /** A line's colors, in place of the .s's (the script language's). */
+  highlight?: (line: string) => Span[];
   /** The number of the first line, when the text is a part of a file. */
   firstLine?: number;
   onCaret?(caret: Caret): void;
@@ -78,7 +80,7 @@ export function CodeEditor({ value, onChange, commands, firstLine = 1, onCaret, 
       </div>
       <div className="code-stack">
         <div className="code-shown" ref={shown} aria-hidden>
-          {lines.map((l, i) => <Line key={i} text={l} known={commands} />)}
+          {lines.map((l, i) => <Line key={i} text={l} known={commands} highlight={highlight} />)}
           <div className="code-pad" />
         </div>
         <textarea ref={area} className="code-input" value={value} spellCheck={false} readOnly={readOnly} wrap="off"

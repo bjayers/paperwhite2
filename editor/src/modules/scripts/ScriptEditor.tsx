@@ -1,8 +1,11 @@
 // The Script Editor: the field scripts (res/field/scripts/<file>.s, docs/scripts.md), a file whole or one of its
 // scripts by its number in the file's ScriptEntry table, highlighted (commands that the macros don't have are marked),
 // with the help of the command at the cursor and the message it names, editable in the talk window's preview, from the
-// text bank the file includes. Reusable: <ScriptEditor file={...} script={...} embedded /> shows one file (and one
-// script) without the file list, for other editors' pages.
+// text bank the file includes. A script shows in the script language too (lang.ts, LangSide.tsx;
+// docs/paperwhite2/design/script-language.md): written there, Apply puts it back into its block of the .s after the
+// checks, Restore takes it back to the original game's or the last commit's, and the sidebar documents the call at the
+// caret with its argument's choices. Reusable: <ScriptEditor file={...} script={...} embedded /> shows one file (and
+// one script) without the file list, for other editors' pages.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../../api.ts";
@@ -13,6 +16,12 @@ import type { Constants } from "../../../shared/schema.ts";
 import { navigate, useToolParams } from "../../navigation.ts";
 import { eventLabel, eventsRunning, loadWorld, scriptConstantOf, scriptId, zoneLabel, type World } from "../world/world.ts";
 import { loadCommands, replaceScript, scriptEntries, scriptRange, textBankOf, type Command } from "./commands.ts";
+import { addScript, applyScript, callAt, highlightLang, langEnv, loadReference, restoreScript, showScript } from "./lang.ts";
+import { LangSide } from "./LangSide.tsx";
+import { parseScript } from "../../../shared/scriptlang/lang.ts";
+import { messageIds, messageTexts } from "../../../shared/scriptlang/values.ts";
+import { SHORTCUT_NAMES } from "../../../shared/scriptlang/shortcuts.ts";
+import type { RefCommand, RefGlobal } from "../../../shared/scriptlang/translate.ts";
 
 const SCRIPTS = "res/field/scripts";
 
@@ -81,7 +90,89 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
     return text.split("\n").slice(range.start - 1, range.end).join("\n");
   }, [text, range]);
   const bank = useMemo(() => (text ? textBankOf(text) : null), [text]);
-  const { messages } = useBank(bank);
+  const { messages, text: bankText } = useBank(bank);
+
+  // The script language's view of the chosen script: its translation, the user's draft of it, and what Apply did
+  const [mode, setMode] = useState<"lang" | "s">(() => {
+    try { return localStorage.getItem("script-mode") === "s" ? "s" : "lang"; } catch { return "lang"; }
+  });
+  const [reference, setReference] = useState<{ commands: RefCommand[]; globals: RefGlobal[] } | null>(null);
+  useEffect(() => { loadReference().then(setReference, () => setReference({ commands: [], globals: [] })); }, []);
+  const env = useMemo(() => (commands && reference && constants
+    ? langEnv(commands.keys(), reference, constants, bankText ? messageIds(bankText) : [], bankText ? messageTexts(bankText) : undefined) : null),
+  [commands, reference, constants, bankText]);
+  const langOn = mode === "lang" && entry !== null && env !== null && text !== null;
+  const shownLang = useMemo(() => (langOn ? showScript(text!, entry!.index, env!) : null), [langOn, text, entry, env]);
+  const [drafts, setDrafts] = useState<Map<string, { from: string; text: string }>>(new Map());
+  const draftKey = path && entry ? `${path}:${entry.index}` : "";
+  const draft = drafts.get(draftKey);
+  // (a draft holds while the translation it started from does)
+  const langText = draft && draft.from === shownLang ? draft.text : shownLang ?? "";
+  const langDirty = shownLang !== null && langText !== shownLang;
+  const setLangText = (value: string) => setDrafts((d) => new Map(d).set(draftKey, { from: shownLang ?? "", text: value }));
+  const [langNote, setLangNote] = useState<{ kind: "ok" | "error" | "warning"; text: string; detail?: string; reads?: string } | null>(null);
+  useEffect(() => setLangNote(null), [draftKey]);
+  const parseError = useMemo(() => {
+    if (!langOn) return null;
+    try { parseScript(langText); return null; } catch (e) { return (e as Error).message; }
+  }, [langOn, langText]);
+  const [textOpen, setTextOpen] = useState(false);
+  const highlight = useCallback((line: string) => highlightLang(line, (name) => !!env && (env.names.toMacro.has(name) || env.names.globals.has(name) || SHORTCUT_NAMES.has(name))), [env]);
+
+  /** The draft put back into the .s, after the checks; FALSE where it wasn't. */
+  const apply = (): boolean => {
+    if (!path || text === null || !entry || !env) return false;
+    const result = applyScript(text, entry.index, langText, env);
+    if (!result.ok) {
+      setLangNote({ kind: "error", text: result.line ? `${result.error}` : result.error, detail: result.detail });
+      if (result.line) setGoTo({ line: result.line });
+      return false;
+    }
+    documents.editText(path, result.text);
+    setDrafts((d) => new Map(d).set(draftKey, { from: result.reads, text: result.reads }));
+    setLangNote(result.same
+      ? { kind: "ok", text: "Applied: it reads back as written, and runs as written. Save writes the file." }
+      : { kind: "ok", text: "Applied: it runs as written, and reads back tidied (its jumps as if and else). Save writes the file.", reads: result.reads });
+    return true;
+  };
+  const restore = async (rev: "w2-original" | "HEAD") => {
+    if (!path || text === null || !entry) return;
+    const what = rev === "HEAD" ? "the last commit's" : "the original game's";
+    if (!window.confirm(`Put script ${scriptId(path, entry.index)} back as ${what}? Its changes since are lost (until you Revert without saving).`)) return;
+    try {
+      const other = await api.fileAt(rev, path);
+      const result = restoreScript(text, entry.index, other);
+      if ("error" in result) { setLangNote({ kind: "error", text: result.error }); return; }
+      documents.editText(path, result.text);
+      setDrafts((d) => { const n = new Map(d); n.delete(draftKey); return n; });
+      setLangNote({ kind: "ok", text: `Restored to ${what}. Save writes the file.` });
+    } catch (e) {
+      setLangNote({ kind: "error", text: rev === "w2-original" ? "The original game's file has no such script (it's one the hack added)" : (e as Error).message });
+    }
+  };
+  const newScript = () => {
+    if (!path || text === null) return;
+    if (/\/global_\d+\.s$/.test(path) && !window.confirm("A global script file's IDs are a fixed range (docs/paperwhite2/plugins.md, Adding global scripts): a script past it needs its range raised. Add one anyway?")) return;
+    const added = addScript(text);
+    documents.editText(path, added.text);
+    setIndex(added.number);
+    setMode("lang");
+  };
+  const langCaret = useMemo(() => {
+    if (!langOn || !caret) return null;
+    const line = langText.split("\n")[caret.line - 1] ?? "";
+    return { line: caret.line, text: line, call: callAt(line, caret.column) };
+  }, [langOn, caret, langText]);
+  /** Puts text in place of the argument at the caret, keeping the spaces round it. */
+  const insertArg = (value: string) => {
+    if (!langCaret?.call || langCaret.call.arg < 0) return;
+    const { start, end } = langCaret.call;
+    const lines = langText.split("\n");
+    const line = lines[langCaret.line - 1];
+    const old = line.slice(start, end);
+    lines[langCaret.line - 1] = `${line.slice(0, start)}${/^\s*/.exec(old)![0]}${value}${/\s*$/.exec(old)![0]}${line.slice(end)}`;
+    setLangText(lines.join("\n"));
+  };
   const summaries = useMemo(() => {
     // Each script's first message, from the file's text bank, to tell them apart
     const out = new Map<number, string>();
@@ -104,8 +195,11 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
   };
 
   const save = useCallback(async () => {
-    for (const p of documents.dirtyPaths().filter((p) => p.startsWith(`${SCRIPTS}/`) || p.startsWith("res/text/"))) await documents.save(p);
-  }, []);
+    // (the language's draft applied first; nothing is saved where it can't be)
+    if (langOn && langDirty && !apply()) return;
+    for (const p of documents.dirtyPaths().filter((p) => p.startsWith(`${SCRIPTS}/`) || p.startsWith("res/text/") || p.startsWith("res/paperwhite2/scripts/"))) await documents.save(p);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [langOn, langDirty, langText, text, entry, env, path]);
 
   useEffect(() => {
     if (embedded) return;
@@ -151,8 +245,8 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
           {path && <span className="scr-mono">{path}{dirty && " •"}</span>}
           <span className="spacer" />
           {unsaved.length > 0 && <span className="muted">{unsaved.length} unsaved</span>}
-          <button onClick={() => unsaved.forEach((d) => documents.reload(d.path))} disabled={!unsaved.length}>Revert</button>
-          <button className="primary" onClick={save} disabled={!unsaved.length} title="Ctrl+S: the scripts and their messages">Save</button>
+          <button onClick={() => { unsaved.forEach((d) => documents.reload(d.path)); setDrafts(new Map()); }} disabled={!unsaved.length && !langDirty}>Revert</button>
+          <button className="primary" onClick={save} disabled={!unsaved.length && !langDirty} title="Ctrl+S: the scripts and their messages (a script's draft applied first)">Save</button>
         </header>
       )}
       {saveError && <div className="scr-error scr-bar">{saveError}</div>}
@@ -189,13 +283,56 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
               {entries.map((e) => (
                 <button key={e.index} className={`scr-script${e.index === index ? " selected" : ""}`} onClick={() => { setIndex(e.index); setGoTo(null); }}
                         title={`${e.label}: script ID ${scriptId(path, e.index)}, Frost's ${scriptId(path, e.index) - 1}`}>
-                  <strong>{scriptId(path, e.index)}</strong> <span className="muted scr-summary">{summaries.get(e.index) ?? (e.line === null ? "no label" : "")}</span>
+                  <strong>{scriptId(path, e.index)}{drafts.has(`${path}:${e.index}`) && drafts.get(`${path}:${e.index}`)!.text !== drafts.get(`${path}:${e.index}`)!.from ? " •" : ""}</strong>
+                  <span className="muted scr-summary">{summaries.get(e.index) ?? (e.line === null ? "no label" : "")}</span>
                 </button>
               ))}
+              <button className="scr-script scr-add" onClick={newScript} title="A new script after the last, which the file's ScriptEntry table lists">+ New script</button>
             </div>
             <div className="scr-code">
-              <CodeEditor value={shownText} onChange={change} commands={commands} firstLine={range?.start ?? 1}
-                          onCaret={setCaret} goToLine={goTo?.line ?? null} key={`${path}:${index ?? "file"}`} />
+              {entry && (
+                <div className="scr-lang-bar">
+                  <span className="view-switch">
+                    <button className={mode === "lang" ? "active" : ""} onClick={() => { setMode("lang"); try { localStorage.setItem("script-mode", "lang"); } catch { /* private window */ } }}
+                            title="The script in the script language">Script</button>
+                    <button className={mode === "s" ? "active" : ""} onClick={() => { setMode("s"); try { localStorage.setItem("script-mode", "s"); } catch { /* private window */ } }}
+                            title="Its lines of the .s file, as the build reads them">.s</button>
+                  </span>
+                  {langOn && (
+                    <>
+                      <button className="primary" onClick={apply} disabled={!langDirty || !!parseError}
+                              title="Puts it into its block of the .s, after checking it reads and runs back as written">Apply</button>
+                      {langDirty && <span className="muted small">not applied</span>}
+                      <button onClick={() => setTextOpen(!textOpen)} disabled={!bank} className={textOpen ? "active" : ""}>Text file</button>
+                      <span className="spacer" />
+                      <select value="" onChange={(e) => { const v = e.target.value as "HEAD" | "w2-original"; e.target.value = ""; if (v) void restore(v); }}
+                              title="Puts this script back as it was">
+                        <option value="">Restore…</option>
+                        <option value="HEAD">to the last commit</option>
+                        <option value="w2-original">to the original game</option>
+                      </select>
+                    </>
+                  )}
+                </div>
+              )}
+              {langOn && parseError && <div className="scr-error scr-bar">{parseError}</div>}
+              {langOn && langNote && (
+                <div className={`${langNote.kind === "error" ? "scr-error" : "scr-ok"} scr-bar`}>{langNote.text}
+                  {langNote.detail && <div className="small">{langNote.detail}</div>}
+                  {langNote.reads && <details><summary className="small">How it reads back</summary><pre className="scr-reads">{langNote.reads}</pre></details>}
+                </div>
+              )}
+              {langOn ? (
+                <CodeEditor value={langText} onChange={setLangText} commands={commands} highlight={highlight}
+                            onCaret={setCaret} goToLine={goTo?.line ?? null} key={`${path}:${index}:lang`} />
+              ) : (
+                <CodeEditor value={shownText} onChange={change} commands={commands} firstLine={range?.start ?? 1}
+                            onCaret={setCaret} goToLine={goTo?.line ?? null} key={`${path}:${index ?? "file"}`} />
+              )}
+              {langOn && textOpen && bank && (
+                <TextWindow bank={bank} onClose={() => setTextOpen(false)}
+                            onPick={(line) => { if (langCaret?.call && langCaret.call.arg >= 0) insertArg(String(line)); }} />
+              )}
             </div>
             <div className="scr-side">
               {zonesOfFile.length > 0 && (
@@ -219,7 +356,9 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
                   ) : <p className="muted scr-note">Reading the zones' events…</p>}
                 </div>
               )}
-              {caret ? (
+              {langOn && env ? (
+                <LangSide call={langCaret?.call ?? null} env={env} bank={bank} onInsert={insertArg} onOpenText={() => setTextOpen(true)} />
+              ) : caret ? (
                 <>
                   <p className="muted scr-note">Line {caret.line}</p>
                   {command ? (
@@ -236,6 +375,38 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+/** The file's text bank over the code: each message by its line number (as the script language names it), filtered;
+ * a click shows it to edit, Use puts its number in the argument at the caret. */
+function TextWindow({ bank, onClose, onPick }: { bank: string; onClose(): void; onPick(line: number): void }) {
+  const { messages } = useBank(bank);
+  const [filter, setFilter] = useState("");
+  const [chosen, setChosen] = useState<string | null>(null);
+  const list = useMemo(() => (messages ?? []).filter((m) => m.id).map((m, i) => ({ ...m, number: i })), [messages]);
+  const q = filter.trim().toLowerCase();
+  const shown = q ? list.filter((m) => String(m.number) === q || m.text.toLowerCase().includes(q) || m.id!.toLowerCase().includes(q)) : list;
+  return (
+    <div className="scr-text-window">
+      <div className="scr-section-head">
+        <strong>{bank.slice(bank.lastIndexOf("/") + 1)}</strong> <span className="muted small">{list.length} lines</span>
+        <span className="spacer" />
+        <button onClick={() => navigate("text", { bank })}>Open in the Text Editor</button>
+        <button onClick={onClose}>Close</button>
+      </div>
+      <input className="filter" placeholder="Filter by line, text or ID…" value={filter} onChange={(e) => setFilter(e.target.value)} />
+      <div className="scr-text-list">
+        {shown.map((m) => (
+          <div key={m.id} className={`scr-text-line${chosen === m.id ? " selected" : ""}`} onClick={() => setChosen(m.id)}>
+            <span className="scr-number">{m.number}</span>
+            <span className="scr-text-preview">{m.text.replace(/\{[^}]*\}/g, " ").replace(/\\n/g, " ").trim() || <span className="muted">empty</span>}</span>
+            <button className="link" onClick={(e) => { e.stopPropagation(); onPick(m.number); }} title="Put this line's number in the argument at the caret">Use</button>
+          </div>
+        ))}
+      </div>
+      {chosen && <MessageEditor path={bank} id={chosen} />}
     </div>
   );
 }

@@ -530,6 +530,17 @@ const routes: Record<string, Handler> = {
   },
   "GET /api/git": async (_req, res) => json(res, await git.state()),
   "GET /api/git/diff": async (_req, res, url) => text(res, await git.diff(url.searchParams.get("path") ?? "")),
+  // A file under res/ as the last commit or the original game's data has it (the Script Editor's restores): read only
+  "GET /api/git/show": async (_req, res, url) => {
+    const rev = url.searchParams.get("rev") ?? "";
+    const path = project.checkPath(url.searchParams.get("path") ?? "");
+    if (!["HEAD", "w2-original"].includes(rev) || !path) return error(res, 400, "A file under res/, at HEAD or w2-original");
+    try {
+      text(res, (await git.show(rev, path)).toString("utf8"));
+    } catch {
+      error(res, 404, `${path} isn't in ${rev}`);
+    }
+  },
   "POST /api/git/commit": async (req, res) => {
     if (!settings.commitEnabled) return error(res, 403, "Committing is turned off in settings.local.json");
     const { paths, message } = (await readJson(req)) as { paths: string[]; message: string };

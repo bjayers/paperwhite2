@@ -6,21 +6,27 @@
 
 export interface ValueContext {
   /** Every constant's value, by name (the build's datajson.constants()). */
-  constants: Map<string, number>;
-  /** The file's text bank's message ids, by line. */
+  constants: ReadonlyMap<string, number>;
+  /** The file's text bank's message ids, by line, and their texts as the bank writes them (for the .s's comments). */
   messages: string[];
+  texts?: string[];
   /** Each prefix's names by value, made when first asked. */
   byValue: Map<string, Map<number, string>>;
   messageLine: Map<string, number>;
 }
 
-export function valueContext(constants: Map<string, number>, messages: string[]): ValueContext {
-  return { constants, messages, byValue: new Map(), messageLine: new Map(messages.map((id, i) => [id, i])) };
+export function valueContext(constants: ReadonlyMap<string, number>, messages: string[], texts?: string[]): ValueContext {
+  return { constants, messages, texts, byValue: new Map(), messageLine: new Map(messages.map((id, i) => [id, i])) };
 }
 
-/** A text bank's message ids in order, from its .txt (one message a line: id = text). */
+/** A text bank's messages' texts in order, as messageIds gives their ids. */
+export function messageTexts(bankText: string): string[] {
+  return [...bankText.matchAll(/^[A-Za-z_]\w* =(?: (.*))?$/gm)].map((m) => m[1] ?? "");
+}
+
+/** A text bank's message ids in order, from its .txt (one message a line: id = text, or id = for an empty one). */
 export function messageIds(bankText: string): string[] {
-  return [...bankText.matchAll(/^([A-Za-z_]\w*) = /gm)].map((m) => m[1]);
+  return [...bankText.matchAll(/^([A-Za-z_]\w*) =(?: |$)/gm)].map((m) => m[1]);
 }
 
 /** The text bank a script file includes for its messages: the name of res/text/script/<bank>.txt, or null. */

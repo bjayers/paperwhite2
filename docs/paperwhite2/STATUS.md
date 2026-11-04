@@ -2,6 +2,18 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-04 (evening): the script language in the Script Editor
+
+- The script language (docs/paperwhite2/design/script-language.md) is in the Script Editor: a script shows as
+  `script N { ... }` with Frost's names, if/else, `say(26)`, `flag(492) == 1`, `var(0x4060) += 1`, `wild_battle(74)`;
+  Apply checks it and puts it into its block of the .s only, Save writes; Restore… to the last commit or the original
+  game; + New script; Text file over the code; the sidebar's reference, argument helpers (messages, species, flags and
+  variables with notes and uses) and choices (sounds, species, items, moves, flags, variables, zones, ...). Every one
+  of the game's 4051 scripts round trips (`editor/tests/scriptlang.test.ts`). Screenshotted on a scratch copy (Restore
+  needs git, which the copy hasn't). **The user's test run next.**
+- Not yet: movements inline, menus as a switch, `sub` routines, `alias`, the editor's warning for a message number
+  past the bank's lines, completions while typing.
+
 ## 2026-11-04 (later): ambients streamed, up to 32 a zone; Global groups
 
 - **Ambients are streamed** (plugins.md, Ambients, Streaming): a zone has up to 32, and the 8 whose path areas come
