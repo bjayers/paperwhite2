@@ -14,7 +14,7 @@ import { navigate, useToolParams } from "../../navigation.ts";
 import { DocForm, schemaAt, useHeld } from "../followers/DocForm.tsx";
 import { defaultFor, type FormContext } from "../schema-form/form.tsx";
 import { ScriptEditor } from "../scripts/ScriptEditor.tsx";
-import { loadWorld, resolveScript, trainerOfScript, zoneLabel, type World } from "../world/world.ts";
+import { loadWorld, rebattleTrainers, resolveScript, trainerOfScript, zoneLabel, type World } from "../world/world.ts";
 import { KIND_LISTS, KIND_NAMES, entitiesOf, positionEdits, railEdits, type Entity, type EntityKind } from "./entities.ts";
 import { loadRails, oppositeRailDir, railDirOf, railEntities, railLevels, railToWorld, resizeAttributes, setRailTile, sidesAt,
   type RailMap, type RailPlace } from "./rails.ts";
@@ -319,6 +319,8 @@ export function OverworldEditor({ constants, open }: ToolProps) {
 
   const [versioned, setVersioned] = useState<Map<string, string>>(new Map());
   useEffect(() => { versionZones().then(setVersioned, () => {}); }, []);
+  const [rebattle, setRebattle] = useState<Set<number>>(new Set());
+  useEffect(() => { rebattleTrainers().then(setRebattle, () => {}); }, []);
   // The zone's other version's, where the two versions play a place as two zones (Route 4, Black City and White Forest)
   const versionPair = useMemo(() => {
     if (!zone) return null;
@@ -1078,7 +1080,8 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                 if (!t) return null;
                 return (
                   <p className="ow-note">Trainer {t.id}{t.constant && <> <code>{t.constant}</code></>}{t.second ? ", a double battle pair's second" : ""} (script {chosen.script} less {t.second ? 5000 : 3000});
-                    its defeat is flag {t.flag} (0x{t.flag.toString(16)}).{t.constant && <> <button className="link" onClick={() => navigate("trainers", { trainer: t.constant! })}>Open in the Trainer Editor</button></>}</p>
+                    its defeat is flag {t.flag} (0x{t.flag.toString(16)}).{rebattle.has(t.id) && <> It battles again each time the player comes back: every map change resets its flag (the game's re-battle trainers, <code>resetRebattleTrainers</code>).</>}
+                    {t.constant && <> <button className="link" onClick={() => navigate("trainers", { trainer: t.constant! })}>Open in the Trainer Editor</button></>}</p>
                 );
               })()}
               {chosen.target && (

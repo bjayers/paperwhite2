@@ -17,6 +17,19 @@ const TRAINER_SCRIPT_END = 7000;
 /** A trainer's defeat flag is this plus its ID (TrainerFlagGet, src/ov012/trainer_script.c). */
 export const TRAINER_FLAG = 0x5f0;
 
+let rebattle: Promise<Set<number>> | null = null;
+/** The trainers whose defeats every map change resets, so they battle again each time the player comes back (the
+ * game's Pokémon Breeders and some of the Black Tower's bosses): resetRebattleTrainers' list, sRebattleTrainers in
+ * src/ov012/trainer_script.c, read from its lines of hex numbers. */
+export function rebattleTrainers(): Promise<Set<number>> {
+  if (!rebattle) {
+    rebattle = api.scan("src/ov012/trainer_script.c", "^(static const u16 sRebattleTrainers|\\s+0x[0-9a-f]+,)").then((lines) =>
+      new Set(lines.flatMap((l) => [...l.text.replace(/^.*=\s*\{/, "").matchAll(/0x[0-9a-f]+/g)].map((m) => parseInt(m[0], 16)))));
+    rebattle.catch(() => { rebattle = null; });
+  }
+  return rebattle;
+}
+
 /** The trainer an NPC's script ID battles (GetNPCTrainerIDFromSCRID): the ID less 3000, or less 5000 for a double
  * battle pair's second; its constant, and its defeat flag. Null for a script that isn't a trainer's. */
 export function trainerOfScript(script: number, constants: Constants): { id: number; second: boolean; constant: string | null; flag: number } | null {

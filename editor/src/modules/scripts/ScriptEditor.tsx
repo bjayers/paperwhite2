@@ -14,7 +14,7 @@ import { MessageEditor, useBank } from "../text/TextEditor.tsx";
 import { CodeEditor, type Caret } from "./CodeEditor.tsx";
 import type { Constants } from "../../../shared/schema.ts";
 import { navigate, useToolParams } from "../../navigation.ts";
-import { eventLabel, eventsRunning, loadWorld, scriptConstantOf, scriptId, trainerOfScript, zoneLabel, type World } from "../world/world.ts";
+import { eventLabel, eventsRunning, loadWorld, scriptConstantOf, scriptId, rebattleTrainers, trainerOfScript, zoneLabel, type World } from "../world/world.ts";
 import { loadCommands, replaceScript, scriptEntries, scriptRange, textBankOf, type Command } from "./commands.ts";
 import { CodeColors } from "./CodeColors.tsx";
 import { addScript, applyScript, callAt, highlightLang, langEnv, loadReference, outline, restoreScript, showScript } from "./lang.ts";
@@ -98,6 +98,8 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
     return { label, index: entries.find((e) => e.label === label)?.index ?? null };
   }, [text, entry, range, entries]);
   const trainer = path && entry && constants ? trainerOfScript(scriptId(path, entry.index), constants) : null;
+  const [rebattle, setRebattle] = useState<Set<number>>(new Set());
+  useEffect(() => { rebattleTrainers().then(setRebattle, () => {}); }, []);
   const shownText = useMemo(() => {
     if (text === null) return "";
     if (!range) return text;
@@ -384,7 +386,7 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
                   {runsOnInto && <p className="muted scr-note">It doesn't end: it runs on into <code>{runsOnInto.label}</code>{runsOnInto.index !== null && <>, <button className="link" onClick={() => { setIndex(runsOnInto.index); setGoTo(null); }}>script {scriptId(path, runsOnInto.index)}</button></>}.</p>}
                   {trainer && (
                     <p className="scr-note">A trainer's script: it battles trainer {trainer.id}{trainer.constant && <> (<code>{trainer.constant}</code>)</>}{trainer.second ? ", as a pair's second" : ""}, the
-                      script number choosing the trainer; its defeat is flag {trainer.flag} (0x{trainer.flag.toString(16)}).{trainer.constant && <> <button className="link" onClick={() => navigate("trainers", { trainer: trainer.constant! })}>Open in the Trainer Editor</button></>}</p>
+                      script number choosing the trainer; its defeat is flag {trainer.flag} (0x{trainer.flag.toString(16)}).{rebattle.has(trainer.id) && <> It battles again each time the player comes back: every map change resets its flag (<code>resetRebattleTrainers</code>).</>}{trainer.constant && <> <button className="link" onClick={() => navigate("trainers", { trainer: trainer.constant! })}>Open in the Trainer Editor</button></>}</p>
                   )}
                   {world ? (
                     running.length ? (

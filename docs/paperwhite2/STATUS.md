@@ -2,6 +2,19 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-04 (afternoon): the re-battling Route 4 trainer explained; a flag watch in the debug menu
+
+- The Route 4 trainer who battles on every visit is Pokémon Breeder Irene (296), one of the original game's 12
+  re-battle trainers, whose defeats every map change resets (`resetRebattleTrainers`, src/ov012/trainer_script.c):
+  the Pokémon Breeders and four Black Tower bosses (design/version-key.md, "Why a Route 4 trainer battles again").
+  The Overworld Editor and the Script Editor say so on a trainer NPC.
+- The debug menu's flag watch (World, Flag get/set..., Watch; World, Flag watch log...;
+  include/paperwhite2/flag_watch.h): logs where a flag changes (a frame's step, a script command with its script and
+  offset, a zone init's step) and what else changed with it. Built and tested by the user.
+- The editors: a script entry that shares its label with others (global_3000.s's 815 trainer entries) opens it, with
+  a warning and the script it runs on into; a trainer NPC names its trainer, its defeat flag and opens the Trainer
+  Editor, which takes `?trainer=`.
+
 ## 2026-11-04 (morning): the user's decisions, and Route 4 in both versions in the Overworld Editor
 
 - The user's decisions on the three researches are in each design doc ("The user's decisions"): the Join Avenue

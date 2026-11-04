@@ -126,7 +126,18 @@ Resort or Nimbasa. A test after the fixes below settles it.
   296 (`res/field/events/route_4.json`, `route_4_16.json`). The shared IDs share a flag, the rest keep their own. So
   the two versions already keep their own defeats, with no change needed.
 
-### Why script 5220 battles again
+### Why a Route 4 trainer battles again (solved, 2026-11-04)
+
+The trainer the user found battling on every visit is Pokémon Breeder Irene (296, NPC 11 of Black 2's Route 4 and NPC
+2 of White 2's), one of the game's 12 re-battle trainers: every map change resets their defeat flags
+(`resetRebattleTrainers`, `src/ov012/trainer_script.c`, from `event_mapchange.c` and `fieldmap.c`), as the original
+game does. The debug menu's flag watch showed flag 1816 cleared after the map change's events, alone, in both
+versions' Route 4; the Fisherman (1730) and the Backpacker (1733) kept theirs. The list is the Pokémon Breeders Owen,
+Brooke, Irene, Galen, Marcus, Magnolia, Addison and April, and the Black Tower's bosses Abigail, Abed, Brent and Bess.
+The editors now say so for these trainers (Overworld Editor, Script Editor). Nothing for the Version Key to fix.
+
+What the earlier research wrote about script 5220 (Hooligans Rob & Sal), kept in case it shows again:
+
 
 Script 5220 is the second Hooligan of `TRAINER_HOOLIGANS_ROB_SAL` (ID 220, flag 0x6CC = 1740), a double battle in the
 data (`res/trainers/data/hooligans_rob_sal.json`). Nothing in the C or the scripts clears 0x6CC: it isn't a rebattle
