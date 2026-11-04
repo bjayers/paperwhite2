@@ -13,6 +13,20 @@ export const ZONE_SCHEMA = "res/field/zones/zone.schema.json";
 export const EVENTS_SCHEMA = "res/field/events/events.schema.json";
 export const TRAINER_SCRIPT = 3000;
 export const TRAINER_SCRIPT_SECOND = 5000;
+const TRAINER_SCRIPT_END = 7000;
+/** A trainer's defeat flag is this plus its ID (TrainerFlagGet, src/ov012/trainer_script.c). */
+export const TRAINER_FLAG = 0x5f0;
+
+/** The trainer an NPC's script ID battles (GetNPCTrainerIDFromSCRID): the ID less 3000, or less 5000 for a double
+ * battle pair's second; its constant, and its defeat flag. Null for a script that isn't a trainer's. */
+export function trainerOfScript(script: number, constants: Constants): { id: number; second: boolean; constant: string | null; flag: number } | null {
+  if (script < TRAINER_SCRIPT || script >= TRAINER_SCRIPT_END) return null;
+  const second = script >= TRAINER_SCRIPT_SECOND;
+  const id = script - (second ? TRAINER_SCRIPT_SECOND : TRAINER_SCRIPT);
+  let constant: string | null = null;
+  for (const [name, value] of constants) if (value === id && name.startsWith("TRAINER_") && !name.startsWith("TRAINER_CLASS_")) { constant = name; break; }
+  return { id, second, constant, flag: TRAINER_FLAG + id };
+}
 
 export interface Zone {
   /** Its file's name: "aspertia_city". */

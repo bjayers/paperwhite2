@@ -54,6 +54,23 @@ export interface ScriptBlock {
   end: number;
 }
 
+/** The block an entry of the ScriptEntry table runs (from 1), or undefined: its label's, so the entries that name a
+ * label another entry names too (global_3000.s's trainers all name Script_1) have the first's block. */
+export function entryBlock(lines: SLine[], number: number): ScriptBlock | undefined {
+  const entries: string[] = [];
+  for (const l of lines) {
+    const m = /^\s*ScriptEntry\s+(\w+)/.exec(l.text);
+    if (m) entries.push(m[1]);
+  }
+  const label = entries[number - 1];
+  return label === undefined ? undefined : scriptBlocks(lines).find((b) => b.label === label);
+}
+
+/** How many entries of the ScriptEntry table run a block's label. */
+export function entriesOf(lines: SLine[], label: string): number {
+  return lines.filter((l) => new RegExp(`^\\s*ScriptEntry\\s+${label}\\b`).test(l.text)).length;
+}
+
 /** The file's scripts' blocks, in the file's order: each from its label to the next script's label or the file's end. */
 export function scriptBlocks(lines: SLine[]): ScriptBlock[] {
   const entries: string[] = [];

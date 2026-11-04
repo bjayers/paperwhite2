@@ -18,7 +18,7 @@ import { DocForm, useHeld } from "../followers/DocForm.tsx";
 import { SpeciesIcon } from "../pokemon/SpeciesIcon.tsx";
 import { TextBox } from "../text/TextBox.tsx";
 import type { ScanMatch } from "../../../shared/api.ts";
-import { navigate } from "../../navigation.ts";
+import { navigate, useToolParams } from "../../navigation.ts";
 import { TRAINER_SCRIPT, TRAINER_SCRIPT_SECOND, eventLabel, loadWorld, scriptConstantOf, zoneLabel, type World } from "../world/world.ts";
 
 const SCHEMA = "res/trainers/data/trainer.schema.json";
@@ -290,6 +290,13 @@ export function TrainerEditor({ constants, open }: ToolProps) {
   };
   const [chosen, setChosen] = useState<string | null>(null);
   const { docs } = useDocuments();
+  // A link from another editor: #tool/trainers?trainer=TRAINER_... (or its number)
+  const params = useToolParams("trainers");
+  useEffect(() => {
+    const wanted = params.get("trainer");
+    const hit = wanted && list?.find((t) => t.constant === wanted || String(t.number) === wanted);
+    if (hit) { setChosen(hit.path); setFilter(""); setKind("all"); }
+  }, [params, list]);
 
   useEffect(() => {
     api.data(SCHEMA, ["name", "class", "party"]).then((files) => {

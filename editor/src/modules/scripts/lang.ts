@@ -5,7 +5,7 @@
 
 import { api } from "../../api.ts";
 import { MENUS, ParseError, parseScript, printScript, type Script } from "../../../shared/scriptlang/lang.ts";
-import { parseS, scriptBlocks, type SLine } from "../../../shared/scriptlang/sfile.ts";
+import { entryBlock, parseS, scriptBlocks, type SLine } from "../../../shared/scriptlang/sfile.ts";
 import { CompileError, Names, compileScript, decompileBlock, fileAliases, labelUses, replaceBlock, type RefCommand, type RefGlobal, type RefMovement } from "../../../shared/scriptlang/translate.ts";
 import { scriptDifference } from "../../../shared/scriptlang/equiv.ts";
 import { valueContext, type ValueContext } from "../../../shared/scriptlang/values.ts";
@@ -44,7 +44,7 @@ export function langEnv(macros: Iterable<string>, ref: Reference, constants: Rea
 /** A script of the file as the language shows it, or null where the file has no such script. */
 export function showScript(fileText: string, number: number, env: LangEnv): string | null {
   const lines = parseS(fileText);
-  const block = scriptBlocks(lines).find((b) => b.number === number);
+  const block = entryBlock(lines, number);
   if (!block) return null;
   return printScript(decompileBlock(lines, block.start, block.end, number, env.names, labelUses(lines), env.ctx));
 }
@@ -66,7 +66,7 @@ export function applyScript(fileText: string, number: number, draft: string, env
   }
   if (script.number !== number) return { ok: false, error: `This is script ${number}: its first line is script ${number} {` };
   const lines = parseS(fileText);
-  const block = scriptBlocks(lines).find((b) => b.number === number);
+  const block = entryBlock(lines, number);
   if (!block) return { ok: false, error: `The file has no script ${number}` };
   let compiled: string[];
   try {
@@ -81,7 +81,7 @@ export function applyScript(fileText: string, number: number, draft: string, env
   if (lost.length) return { ok: false, error: `${lost.join(", ")}: another script of the file still names it (a sub renamed or taken out?)` };
   // (1) read back and put back again: the same program
   const newLines = parseS(text);
-  const newBlock = scriptBlocks(newLines).find((b) => b.number === number)!;
+  const newBlock = entryBlock(newLines, number)!;
   const readBack = decompileBlock(newLines, newBlock.start, newBlock.end, number, env.names, labelUses(newLines), env.ctx);
   const again = replaceBlock(text, newBlock.start, newBlock.end, compileScript(readBack, newBlock.label, env.names, takenLabels(newLines, newBlock), env.ctx,
                                                                                fileAliases(newLines, newBlock.start, newBlock.end)));
@@ -114,10 +114,10 @@ function takenLabels(lines: SLine[], block: { start: number; end: number }): Set
  * with it in place, or a message where that version has no such script. */
 export function restoreScript(fileText: string, number: number, otherText: string): { text: string } | { error: string } {
   const other = parseS(otherText);
-  const from = scriptBlocks(other).find((b) => b.number === number);
+  const from = entryBlock(other, number);
   if (!from) return { error: `That version of the file has no script ${number}` };
   const lines = parseS(fileText);
-  const block = scriptBlocks(lines).find((b) => b.number === number);
+  const block = entryBlock(lines, number);
   if (!block) return { error: `The file has no script ${number}` };
   const restored = otherText.split("\n").slice(from.start, from.end);
   // (its label as this file names the script)
@@ -136,7 +136,8 @@ export function restoreScript(fileText: string, number: number, otherText: strin
 export function addScript(fileText: string): { number: number; text: string } {
   const lines = fileText.split("\n");
   const parsed = parseS(fileText);
-  const count = scriptBlocks(parsed).length;
+  // (its number is the table's next: entries may share a block)
+  const count = parsed.filter((l) => /^\s*ScriptEntry\s/.test(l.text)).length;
   const taken = new Set(parsed.filter((l) => l.kind === "label").map((l) => (l as { name: string }).name));
   let n = count + 1;
   let label = `Script_${n}`;
@@ -162,7 +163,7 @@ export interface Outline {
 export function outline(fileText: string, number: number, draft: string): Outline {
   const lines = parseS(fileText);
   const blocks = scriptBlocks(lines);
-  const block = blocks.find((b) => b.number === number);
+  const block = entryBlock(lines, number);
   const inScript = (at: number) => blocks.find((b) => at >= b.start && at < b.end);
   const routines = new Map<string, string>();
   const aliases = new Map<string, { value: string; where: string }>();

@@ -14,7 +14,7 @@ import { MessageEditor, useBank } from "../text/TextEditor.tsx";
 import { CodeEditor, type Caret } from "./CodeEditor.tsx";
 import type { Constants } from "../../../shared/schema.ts";
 import { navigate, useToolParams } from "../../navigation.ts";
-import { eventLabel, eventsRunning, loadWorld, scriptConstantOf, scriptId, zoneLabel, type World } from "../world/world.ts";
+import { eventLabel, eventsRunning, loadWorld, scriptConstantOf, scriptId, trainerOfScript, zoneLabel, type World } from "../world/world.ts";
 import { loadCommands, replaceScript, scriptEntries, scriptRange, textBankOf, type Command } from "./commands.ts";
 import { CodeColors } from "./CodeColors.tsx";
 import { addScript, applyScript, callAt, highlightLang, langEnv, loadReference, outline, restoreScript, showScript } from "./lang.ts";
@@ -85,6 +85,19 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
   const entries = useMemo(() => (text ? scriptEntries(text) : []), [text]);
   const entry = index !== null ? entries.find((e) => e.index === index) ?? null : null;
   const range = useMemo(() => (text && entry ? scriptRange(text, entry) : null), [text, entry]);
+  // The entries that share the chosen one's label; the script it runs on into, where it doesn't end; its trainer
+  const sharedBy = entry ? entries.filter((e) => e.label === entry.label).length : 0;
+  const runsOnInto = useMemo(() => {
+    if (!text || !entry || !range) return null;
+    const lines = text.split("\n");
+    const last = lines.slice(range.start, range.end).map((l) => l.trim()).filter((l) => l && !l.startsWith("//") && !l.startsWith(".") && !/:$/.test(l)).pop() ?? "";
+    if (/^(VMHalt|VMReturn|VMJump|RTEndGlobal)\b/.test(last)) return null;
+    const next = lines.slice(range.end).find((l) => /^[A-Za-z_]\w*:\s*$/.test(l));
+    const label = next?.replace(/:\s*$/, "");
+    if (!label) return null;
+    return { label, index: entries.find((e) => e.label === label)?.index ?? null };
+  }, [text, entry, range, entries]);
+  const trainer = path && entry && constants ? trainerOfScript(scriptId(path, entry.index), constants) : null;
   const shownText = useMemo(() => {
     if (text === null) return "";
     if (!range) return text;
@@ -367,6 +380,12 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
               {entry && (
                 <div className="scr-entry">
                   <p className="scr-note"><strong>Script ID {scriptId(path, entry.index)}</strong> <span className="muted">(Frost's {scriptId(path, entry.index) - 1}) · <code>{entry.label}</code>, lines {range?.start}–{range?.end}</span></p>
+                  {sharedBy > 1 && <p className="notice warning scr-note">{sharedBy} entries of this file run <code>{entry.label}</code>: a change here changes all of them.</p>}
+                  {runsOnInto && <p className="muted scr-note">It doesn't end: it runs on into <code>{runsOnInto.label}</code>{runsOnInto.index !== null && <>, <button className="link" onClick={() => { setIndex(runsOnInto.index); setGoTo(null); }}>script {scriptId(path, runsOnInto.index)}</button></>}.</p>}
+                  {trainer && (
+                    <p className="scr-note">A trainer's script: it battles trainer {trainer.id}{trainer.constant && <> (<code>{trainer.constant}</code>)</>}{trainer.second ? ", as a pair's second" : ""}, the
+                      script number choosing the trainer; its defeat is flag {trainer.flag} (0x{trainer.flag.toString(16)}).{trainer.constant && <> <button className="link" onClick={() => navigate("trainers", { trainer: trainer.constant! })}>Open in the Trainer Editor</button></>}</p>
+                  )}
                   {world ? (
                     running.length ? (
                       <ul className="scr-running">
