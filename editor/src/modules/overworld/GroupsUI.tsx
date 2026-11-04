@@ -256,7 +256,7 @@ export function GroupsPanel({ selected, onClose }: {
     <div className="ow-wild-panel ow-groups-panel">
       <div className="me-overworld-head">
         <strong>Spawn groups</strong>
-        <span className="muted">{zoneGroups(state).length} in this zone · {state.groups.length} in all</span>
+        <span className="muted" title="All groups lists every group, this zone's among them">{zoneGroups(state).length} listed in this zone · {state.groups.length} in all</span>
         <span className="view-switch">
           <button className={!all ? "active" : ""} onClick={() => setAll(false)}>This zone</button>
           <button className={all ? "active" : ""} onClick={() => setAll(true)}>All groups</button>
@@ -336,10 +336,12 @@ function GroupBox({ group, open, onToggle, selected }: {
           <span className="ow-event-control">
             <span className="view-switch">
               <button className={group.zone === home ? "active" : ""} onClick={() => set({ zone: home })}>This zone</button>
-              <button className={!group.zone ? "active" : ""} onClick={() => set({ zone: undefined })}>None</button>
+              <button className={!group.zone ? "active" : ""} onClick={() => set({ zone: undefined })}>No zone</button>
               {group.zone && group.zone !== home && <button className="active">{zoneLabel(group.zone.replace(/^ZONE_/, "").toLowerCase())}</button>}
             </span>
-            <span className="muted hint">the zone that lists it; it's listed too in every zone with a member of it</span>
+            <span className="muted hint">{group.zone
+              ? "the zone that lists it; it's also listed in every zone with a member of it, and under All groups"
+              : "no zone lists it for itself: it's listed in the zones with a member of it, and under All groups"}</span>
           </span>
           <span className="ow-condition-label">Picks for</span>
           <span className="ow-event-control">
