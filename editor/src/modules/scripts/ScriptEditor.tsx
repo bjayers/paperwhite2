@@ -16,7 +16,7 @@ import type { Constants } from "../../../shared/schema.ts";
 import { navigate, useToolParams } from "../../navigation.ts";
 import { eventLabel, eventsRunning, loadWorld, scriptConstantOf, scriptId, zoneLabel, type World } from "../world/world.ts";
 import { loadCommands, replaceScript, scriptEntries, scriptRange, textBankOf, type Command } from "./commands.ts";
-import { addScript, applyScript, callAt, highlightLang, langEnv, loadReference, restoreScript, showScript } from "./lang.ts";
+import { addScript, applyScript, callAt, highlightLang, langEnv, loadReference, outline, restoreScript, showScript } from "./lang.ts";
 import { LangSide } from "./LangSide.tsx";
 import { parseScript } from "../../../shared/scriptlang/lang.ts";
 import { messageIds, messageTexts } from "../../../shared/scriptlang/values.ts";
@@ -117,8 +117,10 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
     try { parseScript(langText); return null; } catch (e) { return (e as Error).message; }
   }, [langOn, langText]);
   const [textOpen, setTextOpen] = useState(false);
+  // The routines and aliases the script can name, for the highlighting and the sidebar
+  const named = useMemo(() => (langOn ? outline(text!, entry!.index, langText) : undefined), [langOn, text, entry, langText]);
   const highlight = useCallback((line: string) => highlightLang(line, (name) => !!env && (env.names.toMacro.has(name) || env.names.globals.has(name) || SHORTCUT_NAMES.has(name)
-    || env.names.movements.has(name) || /^action_\d+$/.test(name))), [env]);
+    || env.names.movements.has(name) || /^action_\d+$/.test(name)), named), [env, named]);
 
   /** The draft put back into the .s, after the checks; FALSE where it wasn't. */
   const apply = (): boolean => {
@@ -162,7 +164,9 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
   const langCaret = useMemo(() => {
     if (!langOn || !caret) return null;
     const line = langText.split("\n")[caret.line - 1] ?? "";
-    return { line: caret.line, text: line, call: callAt(line, caret.column) };
+    // (and the word at it, for an alias)
+    const word = [...line.matchAll(/[A-Za-z_]\w*/g)].find((w) => caret.column >= w.index && caret.column <= w.index + w[0].length)?.[0] ?? null;
+    return { line: caret.line, text: line, call: callAt(line, caret.column), word };
   }, [langOn, caret, langText]);
   /** Puts text in place of the call's name at the caret (a movement's step). */
   const replaceSpan = (value: string) => {
@@ -372,7 +376,7 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
                 </div>
               )}
               {langOn && env ? (
-                <LangSide call={langCaret?.call ?? null} env={env} bank={bank} onInsert={insertArg} onOpenText={() => setTextOpen(true)}
+                <LangSide call={langCaret?.call ?? null} word={langCaret?.word ?? null} named={named} env={env} bank={bank} onInsert={insertArg} onOpenText={() => setTextOpen(true)}
                           onReplaceName={(name) => replaceSpan(name)} onAddStep={addStep} />
               ) : caret ? (
                 <>

@@ -186,6 +186,17 @@ sub step_aside {
   under a new label; one used more than once, or in a script that runs on into the next, is named:
   `movement NAME = [ ... ];`. The equivalence check compares a movement by its steps. The sidebar describes the step
   at the caret and lists every action, filtered, a click to add it.
+- 2026-11-04, subs and aliases: a label at a block's top that only `VMCall` names, after a part that ends, is a
+  `sub NAME { ... }` printed after the script, up to the next; a call of any label reads `NAME();`. Renaming a sub
+  renames its label; Apply refuses where another script of the file still names the old one. The `.balign 4, 0`
+  before a sub is written with it. `alias NAME = var(0x4060);` (or `0x4060`, or `flag(510)`) names a variable or a
+  flag for the whole file, kept in the block as `//@ alias NAME = ...`; where the variable or flag shows (conditions,
+  assignments, arguments) its alias shows instead, and saving writes the number. The sidebar describes a sub's call
+  and an alias (its variable's or flag's note and uses).
+- Reopening is tested too: every script, saved once and translated again, prints exactly as before. That found and
+  fixed alignment lines that grew with each save, data read as code once its label was renamed (data and dead code
+  after an alignment stay data up to the next label), an else's jump left out after a then part that ends (the game's
+  scripts keep it, so it reads back as an else), and an empty then part with an else (shown as the else, negated).
 
 ## Order
 

@@ -27,6 +27,14 @@ const names = new Names(macroNames(readFileSync(join(ROOT, "include/asm/field_sc
   json("res/paperwhite2/scripts/commands.json").commands as RefCommand[], json("res/paperwhite2/scripts/globals.json").globals as RefGlobal[],
   json("res/paperwhite2/scripts/movements.json").movements as RefMovement[]);
 
+/** The first line two texts differ at, each's. */
+function firstDifference(a: string, b: string): string {
+  const la = a.split("\n");
+  const lb = b.split("\n");
+  const at = la.findIndex((l, i) => l !== lb[i]);
+  return `line ${at + 1}: ${JSON.stringify(la[at])} / ${JSON.stringify(lb[at])}`;
+}
+
 test("each language name names one command", () => {
   const seen = new Map<string, string>();
   for (const [macro, name] of names.toLang) {
@@ -36,16 +44,17 @@ test("each language name names one command", () => {
   }
 });
 
-test("every script translates to the language and back, and runs the same", () => {
+test("every script translates to the language and back, runs the same and reopens the same", () => {
   const failures: string[] = [];
   let count = 0;
   for (const file of readdirSync(SCRIPTS).filter((f) => f.endsWith(".s")).sort()) {
     const text = readFileSync(join(SCRIPTS, file), "utf8");
     const lines = parseS(text);
     const uses = labelUses(lines);
-    const taken = new Set(lines.filter((l) => l.kind === "label").map((l) => (l as { name: string }).name));
     const ctx = contextOf(text);
     for (const block of scriptBlocks(lines)) {
+      // (the labels outside the block, as the editor's Apply gives them)
+      const taken = new Set(lines.flatMap((l, i) => (l.kind === "label" && (i < block.start || i >= block.end) ? [l.name] : [])));
       count++;
       const where = `${file} script ${block.number}`;
       try {
@@ -57,7 +66,12 @@ test("every script translates to the language and back, and runs the same", () =
         const back = compileScript(parsed, block.label, names, new Set(taken), ctx);
         const rewritten = replaceBlock(text, block.start, block.end, back);
         const difference = scriptDifference(text, rewritten, block.label, names, ctx);
-        if (difference) failures.push(`${where}: ${difference.message} (${JSON.stringify(difference.a)} / ${JSON.stringify(difference.b)})`);
+        if (difference) { failures.push(`${where}: ${difference.message} (${JSON.stringify(difference.a)} / ${JSON.stringify(difference.b)})`); continue; }
+        // (and reopened, it reads as it did)
+        const newLines = parseS(rewritten);
+        const newBlock = scriptBlocks(newLines).find((b) => b.number === block.number)!;
+        const reopened = printScript(decompileBlock(newLines, newBlock.start, newBlock.end, block.number, names, labelUses(newLines), ctx));
+        if (reopened !== printed) failures.push(`${where}: reopens differently: ${firstDifference(printed, reopened)}`);
       } catch (e) {
         failures.push(`${where}: ${(e as Error).message}`);
       }
@@ -144,11 +158,45 @@ test("movements: one a command alone runs goes in it, a shared one is named, and
   assert.deepEqual(out.slice(out.indexOf("Shared:"), out.indexOf("Shared:") + 4), ["Shared:", "    Move 49, 1", "    Move 75, 1", "    MoveEnd"]);
   const at = out.indexOf("Movement_Script_1_1:");
   assert.deepEqual(out.slice(at - 1, at + 4), ["    .balign 4, 0", "Movement_Script_1_1:", "    Move 14, 3", "    Move 0, 1", "    MoveEnd"]);
-  assert.equal(out[out.length - 1], "    .balign 2, 0");
+  // (no pad after data, which is an even length: one goes straight after the script's end)
+  assert.equal(out[out.length - 1], "    MoveEnd");
   // And back
   const lines = parseS(["#include \"asm/field_script.inc\"", "    ScriptEntry Script_1", ...out].join("\n"));
   const printed = printScript(decompileBlock(lines, 2, lines.length, 1, names, labelUses(lines)));
   assert.match(printed, /apply_movement\(1, \[walk_left\(3\), face_up\]\);/);
   assert.match(printed, /movement Shared = \[jump_in_place_down, emote_exclamation\];/);
   assert.throws(() => compileScript(parseScript("script 1 {\n    apply_movement(1, [fly_backwards]);\n    end();\n}\n"), "Script_1", names, new Set()), /no movement fly_backwards/);
+});
+
+test("subs and aliases: a routine by its name after the script, a variable and a flag named for the file", () => {
+  const written = `script 1 {
+    alias talked = var(0x4060);
+    alias got_it = flag(510);
+    if (got_it == 0) {
+        talked += 1;
+        step_aside();
+    }
+    end();
+}
+
+sub step_aside {
+    apply_movement(2, [walk_left, face_right]);
+    wait_movement();
+    return();
+}
+`;
+  const script = parseScript(written);
+  assert.equal(printScript(script), written);
+  const out = compileScript(script, "Script_1", names, new Set());
+  for (const line of ["    //@ alias talked = var(0x4060)", "    VMStackPushFlag 510", "    WorkAdd 0x4060, 1", "    VMCall step_aside", "step_aside:", "    VMReturn"]) {
+    assert.ok(out.includes(line), line);
+  }
+  // Read back from the .s: the same script
+  const lines = parseS(["    ScriptEntry Script_1", "", ...out].join("\n"));
+  assert.equal(printScript(decompileBlock(lines, 2, lines.length, 1, names, labelUses(lines))), written);
+  // (an alias another script of the file wrote names its variable here too)
+  const other = compileScript(parseScript("script 2 {\n    talked = 3;\n    end();\n}\n"), "Script_2", names, new Set(), undefined, new Map([["talked", "var(0x4060)"]]));
+  assert.ok(other.includes("    WorkSetConst 0x4060, 3"));
+  assert.throws(() => compileScript(parseScript("script 1 {\n    goto L;\n}\n\nsub x {\n    end();\n}\n"), "Script_1", names, new Set(["x"])), /label of that name/);
+  assert.throws(() => compileScript(parseScript("script 1 {\n    lock_all();\n}\n\nsub x {\n    end();\n}\n"), "Script_1", names, new Set()), /must end/);
 });

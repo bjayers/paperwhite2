@@ -13,7 +13,7 @@ import { MessageEditor } from "../text/TextEditor.tsx";
 import { SpeciesIcon } from "../pokemon/SpeciesIcon.tsx";
 import { SHORTCUT_NAMES } from "../../../shared/scriptlang/shortcuts.ts";
 import { numberOf } from "../../../shared/scriptlang/values.ts";
-import type { CaretCall, LangEnv } from "./lang.ts";
+import type { CaretCall, LangEnv, Outline } from "./lang.ts";
 
 export const NOTES = "res/paperwhite2/scripts/notes.json";
 
@@ -63,8 +63,11 @@ const CHOICES: Record<string, { prefixes: string[]; as: "number" | "name" | "var
   type: { prefixes: ["TYPE_"], as: "name" },
 };
 
-export function LangSide({ call, env, bank, onInsert, onReplaceName, onAddStep, onOpenText }: {
+export function LangSide({ call, word, named, env, bank, onInsert, onReplaceName, onAddStep, onOpenText }: {
   call: CaretCall | null;
+  /** The word at the caret, and the routines and aliases the script can name. */
+  word: string | null;
+  named?: Outline;
   env: LangEnv;
   /** The file's text bank's path. */
   bank: string | null;
@@ -76,6 +79,30 @@ export function LangSide({ call, env, bank, onInsert, onReplaceName, onAddStep, 
   onAddStep(name: string): void;
   onOpenText(): void;
 }) {
+  const alias = word ? named?.aliases.get(word) : undefined;
+  if (alias) {
+    const kind = /^flag\(/.test(alias.value) ? "flag" : "var";
+    return (
+      <div className="scr-lang-side">
+        <div className="scr-help">
+          <code>{word}</code><div className="muted small">alias of {alias.value}, written in {alias.where}</div>
+          <p className="scr-note">A name for the {kind === "flag" ? "flag" : "variable"} through the whole file: {kind === "flag" ? `${word} == 1 while it's set` : `${word} == 1, ${word} += 1, or as a command's argument`}.
+            Saving writes the {kind === "flag" ? "flag" : "variable"} itself; the alias is kept as a comment line in the script that writes it.</p>
+        </div>
+        <ArgHelper kind={kind} value={alias.value.replace(/^(flag|var)\((.*)\)$/, "$2")} env={env} bank={bank} onInsert={() => {}} onOpenText={onOpenText} noChoices />
+      </div>
+    );
+  }
+  if (call && named?.routines.has(call.name) && !env.names.toMacro.has(call.name)) {
+    return (
+      <div className="scr-lang-side">
+        <div className="scr-help">
+          <code>{call.name}()</code><div className="muted small">routine: {named.routines.get(call.name)} · call_routine (VMCall)</div>
+          <p className="scr-note">Runs the routine's commands, then comes back here at its return(). A sub is written after the script: <code>sub {call.name} {"{ ... return(); }"}</code>; it needs no ScriptEntry, so no script is renumbered.</p>
+        </div>
+      </div>
+    );
+  }
   if (!call) {
     return <p className="muted scr-note">Click a command: what it does and its arguments show here; on an argument, its value and every choice of its kind.</p>;
   }
@@ -131,8 +158,10 @@ function MovementChoices({ env, current, onPick, hint }: { env: LangEnv; current
   );
 }
 
-function ArgHelper({ kind, value, env, bank, onInsert, onOpenText }: {
+function ArgHelper({ kind, value, env, bank, onInsert, onOpenText, noChoices }: {
   kind: string;
+  /** Without the list of choices. */
+  noChoices?: boolean;
   value: string;
   env: LangEnv;
   bank: string | null;
@@ -163,7 +192,7 @@ function ArgHelper({ kind, value, env, bank, onInsert, onOpenText }: {
           <strong>{nameOf(["SPECIES_"])?.replace(/^SPECIES_/, "").toLowerCase().replace(/_/g, " ") ?? `species ${n}`}</strong> <span className="muted">#{n}</span></div>
       )}
       {(kind === "flag" || kind === "var") && n !== undefined && <FlagNote kind={kind} n={n} name={nameOf(kind === "flag" ? ["EVENT_FLAG_"] : ["EVENT_WORK_"])} />}
-      {CHOICES[kind] && <Choices kind={kind} env={env} current={n} onInsert={onInsert} />}
+      {CHOICES[kind] && !noChoices && <Choices kind={kind} env={env} current={n} onInsert={onInsert} />}
     </div>
   );
 }

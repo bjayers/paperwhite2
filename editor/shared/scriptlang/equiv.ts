@@ -94,7 +94,7 @@ function runs(p: Program, at: number): number {
       i = t - 1;
       continue;
     }
-    if (s.k !== "label" && s.k !== "comment" && s.k !== "blank") return i;
+    if (s.k !== "label" && s.k !== "comment" && s.k !== "blank" && s.k !== "alias") return i;
   }
   return -1;
 }

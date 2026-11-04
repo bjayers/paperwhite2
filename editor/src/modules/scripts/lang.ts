@@ -6,7 +6,7 @@
 import { api } from "../../api.ts";
 import { ParseError, parseScript, printScript, type Script } from "../../../shared/scriptlang/lang.ts";
 import { parseS, scriptBlocks, type SLine } from "../../../shared/scriptlang/sfile.ts";
-import { CompileError, Names, compileScript, decompileBlock, labelUses, replaceBlock, type RefCommand, type RefGlobal, type RefMovement } from "../../../shared/scriptlang/translate.ts";
+import { CompileError, Names, compileScript, decompileBlock, fileAliases, labelUses, replaceBlock, type RefCommand, type RefGlobal, type RefMovement } from "../../../shared/scriptlang/translate.ts";
 import { scriptDifference } from "../../../shared/scriptlang/equiv.ts";
 import { valueContext, type ValueContext } from "../../../shared/scriptlang/values.ts";
 import type { Span } from "./commands.ts";
@@ -70,17 +70,21 @@ export function applyScript(fileText: string, number: number, draft: string, env
   if (!block) return { ok: false, error: `The file has no script ${number}` };
   let compiled: string[];
   try {
-    compiled = compileScript(script, block.label, env.names, takenLabels(lines, block), env.ctx);
+    compiled = compileScript(script, block.label, env.names, takenLabels(lines, block), env.ctx, fileAliases(lines, block.start, block.end));
   } catch (e) {
     if (e instanceof CompileError) return { ok: false, error: e.message };
     throw e;
   }
   const text = replaceBlock(fileText, block.start, block.end, compiled);
+  // A label the file still names that it no longer has (a sub renamed that another script calls)
+  const lost = lostLabels(lines, parseS(text));
+  if (lost.length) return { ok: false, error: `${lost.join(", ")}: another script of the file still names it (a sub renamed or taken out?)` };
   // (1) read back and put back again: the same program
   const newLines = parseS(text);
   const newBlock = scriptBlocks(newLines).find((b) => b.number === number)!;
   const readBack = decompileBlock(newLines, newBlock.start, newBlock.end, number, env.names, labelUses(newLines), env.ctx);
-  const again = replaceBlock(text, newBlock.start, newBlock.end, compileScript(readBack, newBlock.label, env.names, takenLabels(newLines, newBlock), env.ctx));
+  const again = replaceBlock(text, newBlock.start, newBlock.end, compileScript(readBack, newBlock.label, env.names, takenLabels(newLines, newBlock), env.ctx,
+                                                                               fileAliases(newLines, newBlock.start, newBlock.end)));
   const difference = scriptDifference(text, again, block.label, env.names, env.ctx);
   if (difference) {
     return { ok: false, error: "The script doesn't read back as it was written, so nothing was saved (please report this one)",
@@ -88,6 +92,15 @@ export function applyScript(fileText: string, number: number, draft: string, env
   }
   const reads = printScript(readBack);
   return { ok: true, text, reads, same: reads === printScript(script) };
+}
+
+/** The labels the old lines had that the new ones name in a command but no longer have. */
+function lostLabels(old: SLine[], lines: SLine[]): string[] {
+  const had = new Set(old.flatMap((l) => (l.kind === "label" ? [l.name] : [])));
+  const has = new Set(lines.flatMap((l) => (l.kind === "label" ? [l.name] : [])));
+  const lost = new Set<string>();
+  for (const l of lines) if (l.kind === "cmd") for (const a of l.args) if (had.has(a) && !has.has(a)) lost.add(a);
+  return [...lost];
 }
 
 /** The labels the file has outside a block, which a new block's labels keep clear of. */
@@ -137,14 +150,41 @@ export function addScript(fileText: string): { number: number; text: string } {
   return { number: count + 1, text: lines.join("\n") };
 }
 
+// ---- What a script can name
+
+/** The routines and aliases a script can name: each routine's name and where it is (its sub, or a label of the file
+ * and the script it's in), each alias's value and where it's written. */
+export interface Outline {
+  routines: Map<string, string>;
+  aliases: Map<string, { value: string; where: string }>;
+}
+
+export function outline(fileText: string, number: number, draft: string): Outline {
+  const lines = parseS(fileText);
+  const blocks = scriptBlocks(lines);
+  const block = blocks.find((b) => b.number === number);
+  const inScript = (at: number) => blocks.find((b) => at >= b.start && at < b.end);
+  const routines = new Map<string, string>();
+  const aliases = new Map<string, { value: string; where: string }>();
+  lines.forEach((l, i) => {
+    if (block && i >= block.start && i < block.end) return;
+    if (l.kind === "label") routines.set(l.name, `a label of script ${inScript(i)?.number ?? "?"}`);
+  });
+  if (block) for (const [name, value] of fileAliases(lines, block.start, block.end)) aliases.set(name, { value, where: "another script of this file" });
+  for (const m of draft.matchAll(/^\s*sub\s+([A-Za-z_]\w*)/gm)) routines.set(m[1], "a sub of this script");
+  for (const m of draft.matchAll(/^\s*alias\s+([A-Za-z_]\w*)\s*=\s*([^;\n]+);/gm)) aliases.set(m[1], { value: m[2].trim(), where: "this script" });
+  return { routines, aliases };
+}
+
 // ---- Highlighting and the caret's call
 
 const KEYWORDS = new Set(["script", "if", "else", "goto", "asm", "sub", "alias"]);
 const BUILTINS = new Set(["var", "flag", "const"]);
 const TOKEN = /\/\/.*|0x[0-9A-Fa-f]+|-?\d+|[A-Za-z_]\w*|"(?:[^"\\]|\\.)*"|\S/g;
 
-/** A line of the language's colors: comments, keywords, commands (unknown ones marked), labels, numbers, constants. */
-export function highlightLang(line: string, known: (name: string) => boolean): Span[] {
+/** A line of the language's colors: comments, keywords, commands (unknown ones marked; a routine's call as a label's
+ * name, as a sub's), labels, numbers, constants and aliases. */
+export function highlightLang(line: string, known: (name: string) => boolean, names?: Outline): Span[] {
   const spans: Span[] = [];
   const label = /^\s*([A-Za-z_]\w*):\s*$/.exec(line);
   if (label) return [{ kind: "label", text: line }];
@@ -161,7 +201,10 @@ export function highlightLang(line: string, known: (name: string) => boolean): S
     else if (KEYWORDS.has(word)) kind = "directive";
     else if (/^[A-Za-z_]/.test(word)) {
       const call = line.slice(m.index + word.length).trimStart().startsWith("(");
-      if (call) kind = BUILTINS.has(word) || known(word) ? "command" : "unknown";
+      if (call && names?.routines.has(word)) kind = "ref";
+      else if (call) kind = BUILTINS.has(word) || known(word) ? "command" : "unknown";
+      else if (/^\s*sub\s+$/.test(line.slice(0, m.index))) kind = "ref";
+      else if (names?.aliases.has(word)) kind = "constant";
       else if (/^(L|Script|Movement|Conditions|Data)_\w+$/.test(word)) kind = "ref";
       else if (/^[A-Z][A-Z0-9_]+$/.test(word)) kind = "constant";
     }

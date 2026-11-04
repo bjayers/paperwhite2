@@ -18,6 +18,10 @@
 // so; a hex number from 0x4000 or an EVENT_WORK_ name alone reads as one too), values (anything else, or const(X)),
 // the comparisons, + - * /, !, && and ||. A flag alone, or after !, is its test: flag(F) is flag(F) == 1, and prints
 // so. asm { } keeps lines of the .s as they are.
+//
+// After the script, its routines: sub NAME { ... }, a label its scripts call (NAME();) and return from. An alias
+// names a variable or a flag for the whole file: alias hiker_talks = var(0x4060); then hiker_talks == 1,
+// hiker_talks += 1; and set_var(hiker_talks, 2).
 
 export type CmpOp = "<" | "==" | ">" | "<=" | ">=" | "!=";
 export type Expr =
@@ -42,12 +46,22 @@ export type Stmt =
   | { k: "raw"; lines: string[] }
   // A movement named for the commands that run it: movement NAME = [walk_up(2), face_left];
   | { k: "movement"; name: string; steps: string[] }
+  // A name for a variable or a flag, for the file: alias NAME = var(0x4060); (its value as written)
+  | { k: "alias"; name: string; value: string }
   | { k: "comment"; text: string }
   | { k: "blank" };
 
 export interface Script {
   /** Its number in the file's ScriptEntry table. */
   number: number;
+  body: Stmt[];
+  /** Its routines, after it: sub NAME { ... }. */
+  subs?: Sub[];
+}
+
+/** A routine: a label the scripts call and return from. */
+export interface Sub {
+  name: string;
   body: Stmt[];
 }
 
@@ -116,7 +130,9 @@ function printStmts(stmts: Stmt[], depth: number, out: string[]) {
   for (const s of stmts) {
     switch (s.k) {
       case "call": out.push(`${pad}${s.name}(${s.args.join(", ")});`); break;
-      case "assign": out.push(`${pad}var(${s.target}) ${s.op} ${s.value};`); break;
+      // (a variable's alias as itself)
+      case "assign": out.push(`${pad}${/^[A-Za-z_]\w*$/.test(s.target) && !isVarText(s.target) ? s.target : `var(${s.target})`} ${s.op} ${s.value};`); break;
+      case "alias": out.push(`${pad}alias ${s.name} = ${s.value};`); break;
       // (a label sits one step out, as in C)
       case "label": out.push(`${INDENT.repeat(Math.max(0, depth - 1))}${s.name}:`); break;
       case "goto": out.push(`${pad}goto ${s.target};`); break;
@@ -159,6 +175,11 @@ export function printScript(script: Script): string {
   const out = [`script ${script.number} {`];
   printStmts(script.body, 1, out);
   out.push("}");
+  for (const sub of script.subs ?? []) {
+    out.push("", `sub ${sub.name} {`);
+    printStmts(sub.body, 1, out);
+    out.push("}");
+  }
   return out.join("\n") + "\n";
 }
 
@@ -416,9 +437,23 @@ function parseStmt(r: Reader): Stmt {
     r.expect(";");
     return { k: "goto", target };
   }
-  // An assignment: var(X) or a variable's number, then = += -= *= /= %=, then its value up to the ;
-  const assign = /^(?:var\(\s*([^)]+?)\s*\)|(0x[0-9A-Fa-f]+|EVENT_WORK_\w+))\s*(\+=|-=|\*=|\/=|%=|=(?!=))/.exec(r.text.slice(r.pos));
-  if (assign && (assign[1] || isVarText(assign[2]))) {
+  if (r.keyword("alias")) {
+    const name = r.word() ?? r.fail("expected the alias's name");
+    r.expect("=");
+    const at = r.pos;
+    const end = r.text.indexOf(";", at);
+    const line = r.text.indexOf("\n", at);
+    if (end < 0 || (line >= 0 && line < end)) r.fail("an alias ends with ; on its line");
+    const value = r.text.slice(at, end).trim();
+    if (!/^(var\(\s*\S+?\s*\)|flag\(\s*\S+?\s*\)|0x[0-9A-Fa-f]+)$/.test(value) || (/^0x/i.test(value) && !isVarText(value))) {
+      r.fail("an alias names a variable or a flag: var(0x4060), 0x4060 or flag(510)", at);
+    }
+    r.pos = end + 1;
+    return { k: "alias", name, value };
+  }
+  // An assignment: var(X), a variable's number or an alias's name, then = += -= *= /= %=, then its value up to the ;
+  const assign = /^(?:var\(\s*([^)]+?)\s*\)|(0x[0-9A-Fa-f]+|[A-Za-z_]\w*))\s*(\+=|-=|\*=|\/=|%=|=(?!=))/.exec(r.text.slice(r.pos));
+  if (assign && (assign[1] || isVarText(assign[2]) || /^[A-Za-z_]/.test(assign[2]))) {
     r.pos += assign[0].length;
     const end = r.text.indexOf(";", r.pos);
     const line = r.text.indexOf("\n", r.pos);
@@ -476,7 +511,13 @@ export function parseScript(text: string): Script {
   const m = /^\d+/.exec(text.slice(r.pos)) ?? r.fail("expected the script's number");
   r.pos += m[0].length;
   const body = parseBlock(r);
-  r.gap();
-  if (r.pos < text.length) r.fail("expected nothing after the script's }");
-  return { number: Number(m[0]), body };
+  const subs: Sub[] = [];
+  for (;;) {
+    r.gap();
+    if (r.pos >= text.length) break;
+    if (!r.keyword("sub")) r.fail("expected a sub NAME { ... } after the script's }, or nothing");
+    const name = r.word() ?? r.fail("expected the sub's name");
+    subs.push({ name, body: parseBlock(r) });
+  }
+  return subs.length ? { number: Number(m[0]), body, subs } : { number: Number(m[0]), body };
 }

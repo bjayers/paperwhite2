@@ -9,7 +9,7 @@
 // Back: each statement its lines, a condition always as the stack's pushes and VMStackCmp with VMJumpIf CMP_STACK
 // (which jumps when the condition is false, Scrcmd_Vm_VMJumpIf), an if and its else with new labels.
 
-import { isVarText, negate, splitTop, type AssignOp, type CmpOp, type Expr, type Script, type Stmt } from "./lang.ts";
+import { isVarText, negate, splitTop, type AssignOp, type CmpOp, type Expr, type Script, type Stmt, type Sub } from "./lang.ts";
 import { parseS, type SLine } from "./sfile.ts";
 import { SHORTCUTS, SHORTCUT_NAMES, messageArgs, shortcutArgs } from "./shortcuts.ts";
 import { showValue, storeValue, type ValueContext } from "./values.ts";
@@ -197,11 +197,17 @@ function startsData(lines: SLine[], at: number, end: number): boolean {
 /** The statements of lines [start, end), one by one, before structuring. */
 export function flatStatements(lines: SLine[], start: number, end: number, names: Names): Stmt[] {
   const out: Stmt[] = [];
+  // (after data or an alignment without a label, up to the next label: nothing can jump into it)
+  let inData = false;
   for (let i = start; i < end; i++) {
     const l = lines[i];
+    if (l.kind === "label") inData = false;
     if (l.kind === "other") {
       const t = l.text.trim();
+      const alias = ALIAS_LINE.exec(t);
       if (!t) out.push({ k: "blank" });
+      else if (alias) out.push({ k: "alias", name: alias[1], value: alias[2] });
+      else if (/^\.(balign|byte|2byte|4byte|word|hword)\b/.test(t)) { out.push({ k: "raw", lines: [l.text] }); inData = true; }
       else if (t.startsWith("//")) out.push({ k: "comment", text: t });
       else out.push({ k: "raw", lines: [l.text] });
       continue;
@@ -223,8 +229,19 @@ export function flatStatements(lines: SLine[], start: number, end: number, names
       out.push({ k: "label", name: l.name });
       continue;
     }
+    // (a data command is data, with or without its label)
+    if (DATA_COMMANDS.has(l.name) || inData) {
+      out.push({ k: "raw", lines: [l.text] });
+      inData = true;
+      continue;
+    }
     if (l.name === "VMJump" && l.args.length === 1) {
       out.push({ k: "goto", target: l.args[0] });
+      continue;
+    }
+    // A routine called: by its label's name, NAME();
+    if (l.name === "VMCall" && l.args.length === 1 && /^[A-Za-z_]\w*$/.test(l.args[0]) && !names.toMacro.has(l.args[0])) {
+      out.push({ k: "call", name: l.args[0], args: [] });
       continue;
     }
     if (STACK_OPS.has(l.name)) {
@@ -289,6 +306,26 @@ export function flatStatements(lines: SLine[], start: number, end: number, names
     else out.push({ k: "call", name, args: l.args.map((a, n) => showArg(a, ref?.args[n]?.type)) });
   }
   return out;
+}
+
+/** An alias's line in the .s: a comment, as the .s has no place for one. */
+const ALIAS_LINE = /^\/\/@ alias ([A-Za-z_]\w*) = (.+?)\s*$/;
+
+/** The aliases of a file's lines, outside lines [skipFrom, skipTo): each name's value as written. */
+export function fileAliases(lines: SLine[], skipFrom = 0, skipTo = 0): Map<string, string> {
+  const out = new Map<string, string>();
+  lines.forEach((l, i) => {
+    const m = l.kind === "other" && (i < skipFrom || i >= skipTo) ? ALIAS_LINE.exec(l.text.trim()) : null;
+    if (m) out.set(m[1], m[2]);
+  });
+  return out;
+}
+
+/** How many times each label is called as a routine (VMCall), through a file's lines. */
+export function callUses(lines: SLine[]): Map<string, number> {
+  const calls = new Map<string, number>();
+  for (const l of lines) if (l.kind === "cmd" && l.name === "VMCall" && l.args.length === 1) calls.set(l.args[0], (calls.get(l.args[0]) ?? 0) + 1);
+  return calls;
 }
 
 /** How many times each label is named, in jumps and in arguments, through a file's lines. */
@@ -420,6 +457,9 @@ function movementStatements(stmts: Stmt[], names: Names): Stmt[] {
         }
       }
       if (label && ended && steps.length) {
+        // (the alignment before it goes: a movement is written with its own)
+        if (rest.length && ALIGN4.test(rest[rest.length - 1])) rest.pop();
+        else if (!rest.length && out.length && isAlign4(out[out.length - 1])) out.pop();
         flush();
         out.push({ k: "movement", name: label[1], steps });
         i = j;
@@ -430,17 +470,22 @@ function movementStatements(stmts: Stmt[], names: Names): Stmt[] {
   return out;
 }
 
-/** A zero byte the dump put to keep the next script on an even address. */
-const isPad = (s: Stmt) => s.k === "raw" && s.lines.every((l) => /^\s*\.byte\s+0x00\s*$/.test(l));
+/** A pad the dump put to keep the next script on an even address (a zero byte), or the alignment written for one. */
+const isPad = (s: Stmt) => s.k === "raw" && s.lines.every((l) => /^\s*(\.byte\s+0x00|\.balign\s+2\s*,\s*0)\s*$/.test(l));
 
-/** Whether statements end so that nothing after them runs: a jump, or a command after which nothing runs. */
+/** The alignment before a movement's data, which compileScript writes with it. */
+const ALIGN4 = /^\s*\.balign\s+4\s*,\s*0\s*$/;
+const isAlign4 = (s: Stmt) => s.k === "raw" && s.lines.length === 1 && ALIGN4.test(s.lines[0]);
+
+/** Whether nothing runs past statements' end: after a jump or a command after which nothing runs, statements are dead
+ * up to a label (which a jump can reach). */
 function endsRun(stmts: Stmt[], names: Names): boolean {
-  for (let i = stmts.length - 1; i >= 0; i--) {
-    const s = stmts[i];
-    if (s.k === "blank" || s.k === "comment" || s.k === "raw" || s.k === "movement" || s.k === "label") continue;
-    return s.k === "goto" || (s.k === "call" && TERMINATORS.has(names.toMacro.get(s.name) ?? ""));
+  let live = true;
+  for (const s of stmts) {
+    if (s.k === "label") live = true;
+    else if (s.k === "goto" || (s.k === "call" && TERMINATORS.has(names.toMacro.get(s.name) ?? ""))) live = false;
   }
-  return false;
+  return !live;
 }
 
 /** The movements one command alone runs, put in it as [steps] (so their data goes where the script's ends, which a
@@ -501,16 +546,18 @@ function mapValues(stmts: Stmt[], names: Names, ctx: ValueContext, way: "show" |
       default: return { ...e, l: expr(e.l), r: expr(e.r) };
     }
   };
-  // A message's line of text, for the comment over it in the .s (the text bank's, as the dump wrote one)
-  const messageText = (s: Stmt): string | null => {
-    if (s.k !== "call") return null;
-    const kinds = argKinds(s.name, names);
-    const at = kinds.indexOf("message");
-    if (at < 0) return null;
-    // (its line as written: a number, or a message's id)
-    const written = (s.args[at] ?? "").trim();
-    const line = /^\d+$/.test(written) ? Number(written) : ctx.messageLine.get(written);
-    return line !== undefined && ctx.texts?.[line] !== undefined ? ctx.texts[line] : null;
+  // Its messages' lines of text, for the comments over it in the .s (the text bank's, as the dump wrote them)
+  const messageTexts = (s: Stmt): string[] => {
+    if (s.k !== "call") return [];
+    const out: string[] = [];
+    argKinds(s.name, names).forEach((kind, at) => {
+      if (kind !== "message") return;
+      // (its line as written: a number, or a message's id)
+      const written = (s.args[at] ?? "").trim();
+      const line = /^\d+$/.test(written) ? Number(written) : ctx.messageLine.get(written);
+      if (line !== undefined && ctx.texts?.[line] !== undefined) out.push(ctx.texts[line]);
+    });
+    return out;
   };
   const isPreview = (s: Stmt) => s.k === "comment" && s.text.startsWith('// "');
   const out: Stmt[] = [];
@@ -518,11 +565,11 @@ function mapValues(stmts: Stmt[], names: Names, ctx: ValueContext, way: "show" |
     if (way === "show") {
       // (the dump's comment of a message's text over it goes: the sidebar shows the message)
       let next = i + 1;
-      while (next < stmts.length && stmts[next].k === "blank") next++;
+      while (next < stmts.length && (stmts[next].k === "blank" || isPreview(stmts[next]))) next++;
       if (isPreview(s) && stmts[next] && argKinds((stmts[next] as { name?: string }).name ?? "", names).includes("message")) return;
     } else if (!isPreview(s) && ctx.texts) {
-      const said = messageText(s);
-      if (said !== null && !(out.length && isPreview(out[out.length - 1]))) out.push({ k: "comment", text: `// "${said}"` });
+      const said = messageTexts(s);
+      if (said.length && !(out.length && isPreview(out[out.length - 1]))) out.push(...said.map((t): Stmt => ({ k: "comment", text: `// "${t}"` })));
     }
     out.push(turnStmt(s));
   });
@@ -555,25 +602,253 @@ export function decompileBlock(lines: SLine[], start: number, end: number, numbe
   for (;;) {
     let at = flat.length - 1;
     while (at >= 0 && flat[at].k === "blank") at--;
-    if (at < 1 || !isPad(flat[at]) || !endsRun(flat.slice(0, at), names) || !/^(call|goto)$/.test(flat[at - 1].k)) break;
+    // (past the comments and blank lines after the end, which the pad is written after)
+    let before = at - 1;
+    while (before >= 0 && (flat[before].k === "blank" || flat[before].k === "comment")) before--;
+    if (before < 0 || !isPad(flat[at]) || !endsRun(flat.slice(0, at), names) || !/^(call|goto)$/.test(flat[before].k)) break;
     flat.splice(at);
   }
-  const body = structure(flat, new Map(uses));
-  return { number, body: ctx ? mapValues(body, names, ctx, "show") : body };
+  const body = tidy(structure(flat, new Map(uses)));
+  const parts = splitSubs(body, uses, callUses(lines), names);
+  const aliases = aliasValues(fileAliases(lines), ctx);
+  const show = (stmts: Stmt[]) => showAliases(ctx ? mapValues(stmts, names, ctx, "show") : stmts, aliases, names);
+  const subs = parts.subs.map((sub) => ({ name: sub.name, body: show(sub.body) }));
+  return subs.length ? { number, body: show(parts.body), subs } : { number, body: show(parts.body) };
+}
+
+/** Statements tidied as they'll read back once saved: raw lines one after another (and the blank lines between them)
+ * as one asm block, its empty lines at its end a blank line after it; an if with nothing to do and an else as the else on its negation. */
+function tidy(stmts: Stmt[]): Stmt[] {
+  const out: Stmt[] = [];
+  for (const s of stmts) {
+    // (with the blank lines between them)
+    let j = out.length - 1;
+    while (j >= 0 && out[j].k === "blank") j--;
+    const last = out[j];
+    if (s.k === "raw" && last?.k === "raw") {
+      out.splice(j, out.length - j, { k: "raw", lines: [...last.lines, ...Array<string>(out.length - 1 - j).fill(""), ...s.lines] });
+    } else if (s.k === "if" && s.else && s.then.every((t) => t.k === "blank" || t.k === "comment")) out.push({ k: "if", cond: negate(s.cond), then: tidy(s.else) });
+    else if (s.k === "if") out.push({ ...s, then: tidy(s.then), else: s.else && tidy(s.else) });
+    else out.push(s);
+  }
+  return out.flatMap((s): Stmt[] => {
+    if (s.k !== "raw" || s.lines[s.lines.length - 1]?.trim() !== "") return [s];
+    const lines = [...s.lines];
+    while (lines.length && !lines[lines.length - 1].trim()) lines.pop();
+    return lines.length ? [{ k: "raw", lines }, { k: "blank" }] : [{ k: "blank" }];
+  });
+}
+
+/** Whether statements end their run: their last but data, comments and blanks is a jump or a command after which
+ * nothing runs (labels count: one can be jumped to). */
+function partEnds(stmts: Stmt[], names: Names): boolean {
+  for (let i = stmts.length - 1; i >= 0; i--) {
+    const s = stmts[i];
+    if (s.k === "blank" || s.k === "comment" || s.k === "raw" || s.k === "movement" || s.k === "alias") continue;
+    return s.k === "goto" || (s.k === "call" && TERMINATORS.has(names.toMacro.get(s.name) ?? ""));
+  }
+  return false;
+}
+
+/** A block's statements split into the script and its routines: a sub from each label at the top that only calls
+ * name (VMCall), where what comes before it ends, up to the next. */
+function splitSubs(body: Stmt[], uses: Map<string, number>, calls: Map<string, number>, names: Names): { body: Stmt[]; subs: Sub[] } {
+  const subs: Sub[] = [];
+  let part = { name: "", from: 0 };
+  const cut = (to: number) => body.slice(part.from, to);
+  let main: Stmt[] | null = null;
+  body.forEach((s, i) => {
+    if (s.k !== "label" || !(calls.get(s.name) ?? 0) || calls.get(s.name) !== uses.get(s.name) || !partEnds(cut(i), names)) return;
+    if (main === null) main = cut(i);
+    else subs.push({ name: part.name, body: cut(i) });
+    part = { name: s.name, from: i + 1 };
+  });
+  if (main === null) return { body, subs };
+  subs.push({ name: part.name, body: cut(body.length) });
+  // (the blank lines before a sub are the space between them, and the alignment before it is written with it)
+  const trim = (stmts: Stmt[], beforeSub: boolean) => {
+    const blanks = () => { while (stmts.length && stmts[stmts.length - 1].k === "blank") stmts.pop(); };
+    blanks();
+    const last = stmts[stmts.length - 1];
+    if (beforeSub && last?.k === "raw" && ALIGN4.test(last.lines[last.lines.length - 1])) {
+      const lines = last.lines.slice(0, -1);
+      while (lines.length && !lines[lines.length - 1].trim()) lines.pop();
+      if (lines.length) stmts[stmts.length - 1] = { k: "raw", lines }; else stmts.pop();
+      blanks();
+    }
+    return stmts;
+  };
+  return { body: trim(main, true), subs: subs.map((sub, n) => ({ name: sub.name, body: trim(sub.body, n < subs.length - 1) })) };
+}
+
+// ---- Aliases
+
+/** An alias's value: a variable's or a flag's, as it shows and as the .s stores it. */
+interface AliasValue {
+  kind: "var" | "flag";
+  shown: string;
+  stored: string;
+}
+
+function aliasValue(value: string, ctx?: ValueContext): AliasValue | { error: string } {
+  const m = /^(var|flag)\(\s*(.+?)\s*\)$/.exec(value.trim());
+  const kind = m ? (m[1] as "var" | "flag") : isVarText(value.trim()) ? "var" : null;
+  if (!kind) return { error: `${value}: an alias names a variable or a flag: var(0x4060), 0x4060 or flag(510)` };
+  const inner = m ? m[2] : value.trim();
+  const stored = storeValue(inner, kind, ctx);
+  if (typeof stored !== "string") return { error: `${value}: ${stored.error}` };
+  return { kind, shown: showValue(stored, kind, ctx), stored };
+}
+
+/** A file's aliases' values; one whose value can't be read is left out. */
+function aliasValues(aliases: Map<string, string>, ctx?: ValueContext): Map<string, AliasValue> {
+  const out = new Map<string, AliasValue>();
+  for (const [name, value] of aliases) {
+    const v = aliasValue(value, ctx);
+    if (!("error" in v)) out.set(name, v);
+  }
+  return out;
+}
+
+/** A value's text compared by its number where it is one (0x4060 is 16480). */
+const sameValue = (a: string, b: string) => {
+  const n = (t: string) => (/^0x[0-9a-f]+$/i.test(t) ? parseInt(t, 16) : /^\d+$/.test(t) ? Number(t) : t);
+  return n(a.trim()) === n(b.trim());
+};
+
+/** Statements with the variables and flags that have an alias shown by it. */
+function showAliases(stmts: Stmt[], aliases: Map<string, AliasValue>, names: Names): Stmt[] {
+  if (!aliases.size) return stmts;
+  const find = (text: string, kind: "var" | "flag") => {
+    for (const [name, v] of aliases) if (v.kind === kind && sameValue(v.shown, text)) return name;
+    return undefined;
+  };
+  const arg = (text: string, kind?: string) => {
+    const t = text.trim();
+    const inVar = /^var\((.+)\)$/.exec(t);
+    if (inVar) return find(inVar[1], "var") ?? t;
+    if (kind === "var" || kind === "flag") return find(t, kind) ?? t;
+    return isVarText(t) ? find(t, "var") ?? t : t;
+  };
+  const expr = (e: Expr): Expr => {
+    switch (e.k) {
+      case "flag": { const name = find(e.arg, "flag"); return name ? { k: "const", text: name } : e; }
+      case "var": { const name = find(e.text, "var"); return name ? { k: "const", text: name } : e; }
+      case "const": return e;
+      case "not": return { k: "not", e: expr(e.e) };
+      default: return { ...e, l: expr(e.l), r: expr(e.r) };
+    }
+  };
+  return stmts.map((s): Stmt => {
+    switch (s.k) {
+      case "call": {
+        const kinds = argKinds(s.name, names);
+        return { ...s, args: s.args.map((a, n) => (a.trim().startsWith("[") ? a : arg(a, kinds[n]))) };
+      }
+      case "assign": return { ...s, target: find(s.target, "var") ?? s.target, value: arg(s.value) };
+      case "ifgoto": return { ...s, cond: expr(s.cond) };
+      case "if": return { ...s, cond: expr(s.cond), then: showAliases(s.then, aliases, names), else: s.else && showAliases(s.else, aliases, names) };
+      default: return s;
+    }
+  });
+}
+
+/** Statements with each alias's name put back as its variable or flag, as they show (for mapValues' store). */
+function storeAliases(stmts: Stmt[], aliases: Map<string, AliasValue>, names: Names): Stmt[] {
+  if (!aliases.size) return stmts;
+  const arg = (text: string) => {
+    const v = aliases.get(text.trim());
+    if (!v) return text;
+    return v.kind === "var" ? `var(${v.shown})` : v.shown;
+  };
+  const expr = (e: Expr): Expr => {
+    switch (e.k) {
+      case "const": {
+        const v = aliases.get(e.text);
+        return !v ? e : v.kind === "var" ? { k: "var", text: v.shown } : { k: "flag", arg: v.shown };
+      }
+      case "flag": case "var": return e;
+      case "not": return { k: "not", e: expr(e.e) };
+      default: return { ...e, l: expr(e.l), r: expr(e.r) };
+    }
+  };
+  return stmts.map((s): Stmt => {
+    switch (s.k) {
+      case "call": {
+        return { ...s, args: s.args.map((a) => arg(a)) };
+      }
+      case "assign": {
+        const v = aliases.get(s.target);
+        if (v && v.kind !== "var") throw new CompileError(`${s.target} names a flag: set_flag() and clear_flag() set one`);
+        const value = aliases.get(s.value.trim());
+        if (value && value.kind !== "var") throw new CompileError(`${s.value.trim()} names a flag, which a variable can't be set to`);
+        return { ...s, target: v ? v.shown : s.target, value: arg(s.value) };
+      }
+      case "ifgoto": return { ...s, cond: expr(s.cond) };
+      case "if": return { ...s, cond: expr(s.cond), then: storeAliases(s.then, aliases, names), else: s.else && storeAliases(s.else, aliases, names) };
+      default: return s;
+    }
+  });
+}
+
+/** The aliases a script writes, in its body and its subs. */
+function scriptAliases(script: Script): Map<string, string> {
+  const out = new Map<string, string>();
+  const walk = (stmts: Stmt[]) => {
+    for (const s of stmts) {
+      if (s.k === "alias") {
+        if (out.has(s.name) && out.get(s.name) !== s.value) throw new CompileError(`alias ${s.name} is written twice, as ${out.get(s.name)} and ${s.value}`);
+        out.set(s.name, s.value);
+      } else if (s.k === "if") { walk(s.then); if (s.else) walk(s.else); }
+    }
+  };
+  walk(script.body);
+  for (const sub of script.subs ?? []) walk(sub.body);
+  return out;
 }
 
 // ---- Back to lines
 
 export class CompileError extends Error {}
 
-/** A script's lines, its label first. taken: the labels the file has, which new ones keep clear of. */
-export function compileScript(script: Script, label: string, names: Names, taken: Set<string>, ctx?: ValueContext): string[] {
-  if (ctx) script = { ...script, body: mapValues(script.body, names, ctx, "store") };
+/** A script's lines, its label first, then its subs'. taken: the labels the file has, which new ones keep clear of;
+ * aliases: the file's aliases outside this script. */
+export function compileScript(script: Script, label: string, names: Names, taken: Set<string>, ctx?: ValueContext,
+                              aliases = new Map<string, string>()): string[] {
+  // The aliases: the file's and this script's, which must agree
+  const own = scriptAliases(script);
+  const all = new Map(aliases);
+  for (const [name, value] of own) {
+    if (names.toMacro.has(name) || names.globals.has(name) || SHORTCUT_NAMES.has(name)) throw new CompileError(`alias ${name}: a command has that name`);
+    const other = all.get(name);
+    if (other !== undefined && other.replace(/\s+/g, "") !== value.replace(/\s+/g, "")) {
+      throw new CompileError(`alias ${name} is ${other} in another script of this file`);
+    }
+    all.set(name, value);
+  }
+  const values = new Map<string, AliasValue>();
+  for (const [name, value] of all) {
+    const v = aliasValue(value, ctx);
+    if ("error" in v) { if (own.has(name)) throw new CompileError(`alias ${name}: ${v.error}`); } else values.set(name, v);
+  }
+  const subs = script.subs ?? [];
+  const store = (stmts: Stmt[]) => { const named = storeAliases(stmts, values, names); return ctx ? mapValues(named, names, ctx, "store") : named; };
+  script = { ...script, body: store(script.body), subs: subs.map((sub) => ({ name: sub.name, body: store(sub.body) })) };
+  // The labels it can call as routines: the file's, its own and its subs'
+  const labels = new Set(taken);
+  const addLabels = (stmts: Stmt[]) => { for (const s of stmts) { if (s.k === "label") labels.add(s.name); else if (s.k === "if") { addLabels(s.then); if (s.else) addLabels(s.else); } } };
+  addLabels(script.body);
+  for (const sub of script.subs!) {
+    if (names.toMacro.has(sub.name) || names.globals.has(sub.name) || SHORTCUT_NAMES.has(sub.name)) throw new CompileError(`sub ${sub.name}: a command has that name`);
+    if (labels.has(sub.name) || sub.name === label) throw new CompileError(`sub ${sub.name}: the file or the script has a label of that name`);
+    labels.add(sub.name);
+    addLabels(sub.body);
+  }
   const out = [`${label}:`];
   let next = 1;
   const fresh = (kind = "L") => {
     let name: string;
-    do name = `${kind}_${label}_${next++}`; while (taken.has(name));
+    do name = `${kind}_${label}_${next++}`; while (taken.has(name) || labels.has(name));
     taken.add(name);
     return name;
   };
@@ -595,10 +870,6 @@ export function compileScript(script: Script, label: string, names: Names, taken
   const jumpUnless = (cond: Expr, target: string) => {
     pushExpr(cond);
     out.push(`    VMJumpIf CMP_STACK, ${target}`);
-  };
-  const ends = (stmts: Stmt[]) => {
-    const last = stmts[stmts.length - 1];
-    return !!last && (last.k === "goto" || (last.k === "call" && TERMINATORS.has(names.toMacro.get(last.name) ?? "")));
   };
   const emit = (stmts: Stmt[]) => {
     for (const s of stmts) {
@@ -622,6 +893,11 @@ export function compileScript(script: Script, label: string, names: Names, taken
             break;
           }
           const macro = names.toMacro.get(s.name);
+          if (!macro && labels.has(s.name)) {
+            if (s.args.length) throw new CompileError(`${s.name}() is a routine: it takes no arguments`);
+            out.push(`    VMCall ${s.name}`);
+            break;
+          }
           if (!macro) throw new CompileError(`no command ${s.name}`);
           // (a movement in its command: its data after the script, under a new label)
           const args = s.args.map((a) => {
@@ -647,15 +923,17 @@ export function compileScript(script: Script, label: string, names: Names, taken
         case "raw": out.push(...s.lines); break;
         case "movement": out.push("    .balign 4, 0", `${s.name}:`, ...moveLines(s.steps, names)); break;
         case "comment": out.push(`    ${s.text}`); break;
+        case "alias": out.push(`    //@ alias ${s.name} = ${s.value}`); break;
         case "blank": out.push(""); break;
         case "if": {
           const otherwise = fresh();
           jumpUnless(s.cond, otherwise);
           emit(s.then);
           if (s.else) {
+            // (the jump past the else even after a then part that ends, as the game's scripts have it: so it reads
+            // back as an else)
             const done = fresh();
-            if (!ends(s.then)) out.push(`    VMJump ${done}`);
-            out.push(`${otherwise}:`);
+            out.push(`    VMJump ${done}`, `${otherwise}:`);
             emit(s.else);
             out.push(`${done}:`);
           } else out.push(`${otherwise}:`);
@@ -665,13 +943,26 @@ export function compileScript(script: Script, label: string, names: Names, taken
     }
   };
   emit(script.body);
+  let last = script.body;
+  for (const sub of script.subs!) {
+    // (what runs before a sub must end, or it would run on into it)
+    if (!partEnds(last, names)) throw new CompileError(last === script.body
+      ? `The script must end (with end() or a goto) before its sub ${sub.name}`
+      : `The sub before ${sub.name} must end, with return() (or a goto)`);
+    out.push("    .balign 4, 0", "", `${sub.name}:`);
+    emit(sub.body);
+    last = sub.body;
+  }
   // The movements put in their commands, after the script's end
   if (inline.length) {
-    if (!endsRun(script.body, names)) throw new CompileError("A script with a movement in its command must end (with end() or a goto): its data goes after it");
+    if (!endsRun(last, names)) throw new CompileError("A script with a movement in its command must end (with end() or a goto): its data goes after it");
     for (const { label: name, steps } of inline) out.push("    .balign 4, 0", `${name}:`, ...moveLines(steps, names));
   }
-  // (the next script on an even address, as the dump padded it; not for a script that runs on into the next)
-  if (endsRun(script.body, names)) out.push("    .balign 2, 0");
+  // (the next script on an even address, as the dump padded it straight after its end; not for a script that runs on
+  // into the next)
+  const real = last.filter((s) => s.k !== "blank" && s.k !== "comment");
+  const final = real[real.length - 1];
+  if (endsRun(last, names) && (final?.k === "goto" || final?.k === "call")) out.push("    .balign 2, 0");
   return out;
 }
 
