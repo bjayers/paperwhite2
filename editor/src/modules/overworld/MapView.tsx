@@ -578,9 +578,9 @@ class MapScene {
       if (e.x === null || e.z === null) continue;
       const stands = standingOn(map, e.x, e.z, e.y);
       const ground = stands?.height ?? e.y;
-      // On the other layer: faded, still to be clicked
-      // On the other layer, or a host (whose instances are what appears): faded, still to be clicked
-      const fade = (stands !== null && stands.layer !== Math.min(layer, this.layersAt(e.x, e.z) - 1)) || e.host ? 0.35 : 1;
+      // On the other layer, a host (whose instances are what appears), or not in the group the map shows only: faded,
+      // still to be clicked
+      const fade = (stands !== null && stands.layer !== Math.min(layer, this.layersAt(e.x, e.z) - 1)) || e.host || e.faded ? 0.35 : 1;
       const color = KIND_COLORS[e.kind];
       if (e.building) {
         this.addBuilding(e, isSelected);

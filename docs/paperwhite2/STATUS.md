@@ -11,7 +11,15 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   `Spawns_GroupDenied` (paperwhite2_spawns.c) picks and denies; the debug menu's Conditions, Spawn groups shows the
   picks. Checked with a scratch two-zone group's dump. Built (hack, no warnings, DSi intact). **Not tested in game**:
   groups.json is empty until the editor can add them.
-- Next: the editor (groups list, Group sections, simulated chance, show only a group).
+- **The editor** (`editor/src/modules/overworld/groups.ts`, `GroupsUI.tsx`): the ◇ Groups button opens the zone's
+  groups (at home here, or with a member here) or all of them; New group, name, home zone, rolls, nobody weight,
+  delete (once empty); each member with its weight and its chance of being picked, worked out exactly (sampled past 14
+  members), with the Conditions preview's world when it's on; "Add" puts the chosen NPC, instance or ambient in a
+  group, × takes it out. A Group section in the NPC's, the instance's and the ambient's panels: group, weight, chance,
+  New group, Show only its group, which fades the rest of the map. Warnings for a cross-zone group rolling each entry
+  or reading the weather or the tile. The 8-ambient count and the sprite worst case count a group's ambients once.
+  Tested in the browser on a scratch copy (a group of an NPC and an ambient, 50/50, then 25/25 with nobody 2); 34
+  editor tests pass (groups.test.ts). **Not tested in game.**
 
 ## 2026-11-03 (late night): the Version Key shelved
 

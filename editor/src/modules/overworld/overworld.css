@@ -152,3 +152,12 @@
 .ow-event-control .ow-model:has(> .ow-sprite) { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 4px 8px; }
 .ow-event-control .ow-model:has(> .ow-sprite) .ow-model-field { min-width: 0; overflow: hidden; }
 .ow-event-control .ow-model:has(> .ow-sprite) > button { grid-column: 2; justify-self: start; }
+
+/* The spawn groups' panel over the map (GroupsUI.tsx): a box a group, its members' chances as bars */
+.ow-groups-panel { width: min(720px, calc(100% - 20px)); }
+.ow-groups-list { overflow: auto; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.ow-group-head { cursor: pointer; user-select: none; }
+.ow-group-members td:first-child { width: 40%; }
+.ow-group-bar { display: inline-block; width: 70px; height: 7px; border-radius: 4px; background: var(--border); vertical-align: middle;
+  overflow: hidden; }
+.ow-group-bar > span { display: block; height: 100%; background: var(--accent); }

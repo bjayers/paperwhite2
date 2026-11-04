@@ -77,6 +77,8 @@ export interface Entity {
   npcId?: number;
   /** An NPC with instances: its record is their host, its own fields unused. */
   host?: boolean;
+  /** Not a member of the group the map shows only (GroupsUI.tsx): drawn faded, still to be clicked. */
+  faded?: boolean;
   /** An instance: its place in the zone's spawn file (its entry and its index there) and its host NPC's id. */
   spawn?: { entry: number; instance: number; host: number };
   /** A rail's point or line, by its index in the rail file. */

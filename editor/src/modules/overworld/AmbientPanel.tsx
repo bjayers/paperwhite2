@@ -10,6 +10,7 @@ import { DocForm } from "../followers/DocForm.tsx";
 import { constantLabel } from "../schema-form/form.tsx";
 import { ModelPicker, SpriteImage } from "./fields.tsx";
 import { ScrubNumber, type ScrubPhase } from "./ScrubNumber.tsx";
+import { GroupSection } from "./GroupsUI.tsx";
 import { spawnRender } from "./SpawnPanel.tsx";
 import { REACT_DEFAULTS, conditionSummary, spriteCodeOf, type Ambient, type AmbientSprite, type Reaction, type Rolls } from "./spawns.ts";
 
@@ -454,13 +455,15 @@ export function AmbientPanel({ path, index, ambient, constants, ground, used, on
           {ambient.when
             ? <button onClick={() => set("when", undefined)}>Remove the condition</button>
             : <button onClick={() => set("when", {})}>Add a condition</button>}
-          <span className="muted">The zone shows the first 8 whose conditions hold, in the list's order.</span>
+          <span className="muted">The zone shows the first 8 whose conditions hold, in the list's order; a group counts once.</span>
         </div>
         {ambient.when && (
           <DocForm key={`${path}:ambient:${index}:when`} path={path} at={[...base, "when"]} constants={constants} hideDescription flat
                    render={spawnRender(undefined)} onEdit={onEdit} />
         )}
       </section>
+
+      <GroupSection member={{ kind: "ambient", ambient: index }} membership={ambient.group} />
 
       <section className="ow-panel-box ow-section">
         <h5>Rolls</h5>

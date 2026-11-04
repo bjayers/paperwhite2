@@ -25,11 +25,13 @@ export interface Condition {
   chance?: number;
   [field: string]: unknown;
 }
-export interface Instance { name?: string; when?: Condition; weight?: number; npc: Record<string, unknown> }
+/** A member's place in a spawn group (groups.ts): the group's id and its weight among the members. */
+export interface Membership { id: string; weight?: number }
+export interface Instance { name?: string; when?: Condition; weight?: number; group?: Membership; npc: Record<string, unknown> }
 /** How long an NPC's rolls hold (its chance's and its instance's pick): the game picks again when the hour or the time
  * of day changes, and changes the NPC while it's out of view. */
 export type Rolls = "hour" | "day" | "period" | "entry";
-export interface SpawnEntry { id: number; when?: Condition; instances?: Instance[]; rolls?: Rolls }
+export interface SpawnEntry { id: number; when?: Condition; instances?: Instance[]; rolls?: Rolls; group?: Membership }
 /** An ambient (overworld.schema.json): a sprite drawn without an actor on a path round its place, which the game draws
  * (src/paperwhite2/ov036/paperwhite2_ambients.c). Its tile, its place in it in units from the middle, and its height
  * in units. */
@@ -57,6 +59,7 @@ export interface Ambient {
   when?: Condition;
   rolls?: Rolls;
   react?: Reaction;
+  group?: Membership;
 }
 
 /** What an ambient does when the player comes near (overworld.schema.json's react); each absent is the default. */

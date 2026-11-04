@@ -10,7 +10,8 @@ import { BaseField, type FormContext } from "../schema-form/form.tsx";
 import { Chips, WeatherPicker } from "../encounters/ui.tsx";
 import { ScrubNumber, type ScrubPhase } from "./ScrubNumber.tsx";
 import { EventPanel } from "./EventPanel.tsx";
-import { SEASON_NAMES, TIME_NAMES, conditionSummary, type Condition, type Instance, type Rolls, type SpawnEntry } from "./spawns.ts";
+import { GroupSection } from "./GroupsUI.tsx";
+import { SEASON_NAMES, TIME_NAMES, conditionSummary, type Condition, type Instance, type Membership, type Rolls, type SpawnEntry } from "./spawns.ts";
 
 const label = (v: string) => v.replace("_", " ");
 
@@ -80,7 +81,7 @@ export function SpawnSection({ path, entries, npcId, npcRecord, constants, onEdi
   const write = (next: SpawnEntry | null) => {
     const list = [...entries];
     if (index >= 0) {
-      if (next && (next.when || next.instances?.length)) list[index] = next;
+      if (next && (next.when || next.instances?.length || next.group)) list[index] = next;
       else list.splice(index, 1);
     } else if (next) list.push(next);
     if (!documents.get(path)) documents.create(path, "res/paperwhite2/overworld/overworld.schema.json", fromPlain({ $schema: "overworld.schema.json", npcs: [] }));
@@ -104,6 +105,8 @@ export function SpawnSection({ path, entries, npcId, npcRecord, constants, onEdi
                    render={spawnRender(undefined)} onEdit={() => onEdit([path])} />
         )}
       </section>
+      <GroupSection member={{ kind: "npc", npcId }} membership={entry?.group}
+                    blocked={entry?.instances?.some((i) => i.group) ? "One of its instances is in a group, so the NPC as a whole can't be in one." : undefined} />
       {(entry?.when || entry?.instances?.length) && (
         <section className="ow-panel-box ow-section">
           <h5>Rolls</h5>
@@ -140,10 +143,13 @@ export function SpawnSection({ path, entries, npcId, npcRecord, constants, onEdi
 }
 
 /** An instance's panel: its name, its weight and its condition first, then the NPC it is. */
-export function InstancePanel({ path, entry, instance, inst, constants, onEdit, npcFields }: {
+export function InstancePanel({ path, entry, instance, host, hostGroup, inst, constants, onEdit, npcFields }: {
   path: string;
   entry: number;
   instance: number;
+  /** Its host NPC's id, and the host's group, which takes its instances with it. */
+  host: number;
+  hostGroup: Membership | undefined;
   inst: Instance;
   constants: Constants;
   onEdit(): void;
@@ -184,6 +190,8 @@ export function InstancePanel({ path, entry, instance, inst, constants, onEdit, 
                    render={spawnRender(undefined)} onEdit={onEdit} />
         )}
       </section>
+      <GroupSection member={{ kind: "instance", npcId: host, instance }} membership={inst.group}
+                    blocked={hostGroup ? `Its NPC is in a group (${hostGroup.id}) with all its instances.` : undefined} />
       <EventPanel kind="npc" path={path} index={instance} record={[...base, "npc"]} constants={constants} render={npcFields} onEdit={onEdit} />
     </>
   );

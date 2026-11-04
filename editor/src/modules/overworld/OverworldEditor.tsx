@@ -32,6 +32,8 @@ import { entityFields } from "./fields.tsx";
 import { AmbientPanel } from "./AmbientPanel.tsx";
 import { OverworldGrid } from "../maps/OverworldGrid.tsx";
 import { WildPanel } from "./WildPanel.tsx";
+import { GroupsPanel, GroupsProvider, useGroupsState } from "./GroupsUI.tsx";
+import { sameRef, type MemberRef } from "./groups.ts";
 import { EventPanel, hasEventLayout } from "./EventPanel.tsx";
 import { BuildingPanel } from "./BuildingPanel.tsx";
 import { MapView, hasRect, type OverlayMode, type TileRect } from "./MapView.tsx";
@@ -196,21 +198,52 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   const [previewWeather, setPreviewWeather] = useState("WEATHER_SUNNY");
   const [previewFlags, setPreviewFlags] = useState("");
   const [previewSeed, setPreviewSeed] = useState(1);
-  const picks = useMemo(() => {
-    if (!conditionsPreview || !zone) return null;
-    const world: PreviewWorld = { season: SEASON_NAMES[season], time: previewTime, weather: previewWeather, zone, exterior: null, seed: previewSeed,
-                                  flags: new Set(previewFlags.split(/[\s,]+/).filter(Boolean)) };
-    return previewPicks(spawnEntries, world);
-  }, [conditionsPreview, zone, season, previewTime, previewWeather, previewFlags, previewSeed, spawnEntries]);
-  const visible = useMemo(() => entities.filter((e) => {
+  const previewWorld = useMemo((): PreviewWorld | null => (!conditionsPreview || !zone ? null : {
+    season: SEASON_NAMES[season], time: previewTime, weather: previewWeather, zone, exterior: null, seed: previewSeed,
+    flags: new Set(previewFlags.split(/[\s,]+/).filter(Boolean)),
+  }), [conditionsPreview, zone, season, previewTime, previewWeather, previewFlags, previewSeed]);
+  const picks = useMemo(() => (previewWorld ? previewPicks(spawnEntries, previewWorld) : null), [previewWorld, spawnEntries]);
+  // The spawn groups (GroupsUI.tsx): their chances as the preview's world has them while it's on, and the group the map
+  // shows only, the rest faded
+  const groups = useGroupsState({
+    zone: zone ?? "", world: previewWorld, onEdit: (paths) => { record(paths); setSpawnExists(true); },
+    onOpenMember: (ref) => {
+      if (ref.zone !== zone) { setZone(ref.zone); return; }
+      const found = entities.find((e) => sameRef(memberRefOf(e, zone), ref));
+      if (found) setSelected({ kind: found.kind, index: found.index });
+    },
+  });
+  const focusMembers = useMemo(() => (groups.focus ? (groups.members.get(groups.focus) ?? []).filter((m) => m.zone === zone) : null),
+    [groups.focus, groups.members, zone]);
+  const visible = useMemo(() => entities.map((e) => {
+    if (!focusMembers || !zone) return e;
+    // A whole NPC's instances are the member too
+    const ref = memberRefOf(e, zone);
+    const member = focusMembers.some((m) => sameRef(m, ref) || (e.kind === "instance" && m.kind === "npc" && m.npcId === e.spawn!.host));
+    return member ? e : { ...e, faded: true };
+  }).filter((e) => {
     if (!shown.has(e.kind === "instance" ? "npc" : e.kind)) return false;
     if (!picks) return true;
     // The preview shows what the game would: no NPC whose condition fails, a host as its pick
     if (e.kind === "npc") { const p = picks.get(e.npcId!); return !p || (p.shown && p.instance === null && !e.host); }
     if (e.kind === "instance") { const p = picks.get(e.spawn!.host); return !!p && p.shown && p.instance === e.spawn!.instance; }
     return true;
-  }), [entities, shown, picks]);
+  }), [entities, shown, picks, focusMembers, zone]);
   const chosen = selected ? entities.find((e) => e.kind === selected.kind && e.index === selected.index) ?? null : null;
+  // The chosen NPC, instance or ambient, which the Groups panel can add to a group: its group now, and why it can't
+  // join one (an NPC whose instance is in one, an instance whose NPC is)
+  const groupCandidate = useMemo(() => {
+    if (!chosen || !zone || !["npc", "instance", "ambient"].includes(chosen.kind)) return null;
+    const ref = memberRefOf(chosen, zone);
+    const entry = spawnEntries.find((x) => x.id === ref.npcId);
+    if (chosen.kind === "ambient") return { ref, label: chosen.label, membership: ambients[chosen.index]?.group };
+    if (chosen.kind === "instance") {
+      return { ref, label: chosen.label, membership: entry?.instances?.[ref.instance!]?.group,
+               blocked: entry?.group ? `Its NPC is in a group (${entry.group.id}), with all its instances.` : undefined };
+    }
+    return { ref, label: chosen.label, membership: entry?.group,
+             blocked: entry?.instances?.some((i) => i.group) ? "One of its instances is in a group: an NPC can't be in one as well." : undefined };
+  }, [chosen, zone, spawnEntries, ambients]);
   const size = eventsSize(data);
   // The sprites the zone can have loaded at once, in the worst case, against the sprite cache (spriteLoad.ts)
   const [npcCache, setNpcCache] = useState<number | null>(null);
@@ -808,6 +841,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   };
 
   return (
+    <GroupsProvider value={groups}>
     <div className="ow-editor">
       {removing && (() => {
         const entry = spawnEntries.find((e) => e.id === removing.npcId);
@@ -921,7 +955,9 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                       title="The NPCs move as their move codes move them in game (at 30 frames a second, blocked as the game blocks them, without the player), and the ambients along their paths as the game moves them; their tiles stay marked">
                 {preview ? "■ Stop" : "▶ Movement"}</button>
               <label className="ow-check" title="Drag over tiles to paint them"><input type="checkbox" checked={painting} onChange={(e) => setPainting(e.target.checked)} /> Paint</label>
-              <button className={wild ? "active" : ""} onClick={() => setWild(!wild)} disabled={!zone}
+              <button className={groups.panelOpen ? "active" : ""} onClick={() => { groups.setPanelOpen(!groups.panelOpen); setWild(false); }} disabled={!zone}
+                      title="The spawn groups: sets of NPCs, instances and ambients of which at most one appears at a time">◇ Groups</button>
+              <button className={wild ? "active" : ""} onClick={() => { setWild(!wild); groups.setPanelOpen(false); }} disabled={!zone}
                       title="The Pokémon of this zone's encounter area: their methods, seasons, times, rarity and levels, sortable">🐾 Wild Pokémon</button>
               {painting && (
                 <>
@@ -958,6 +994,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
           )}
           <div className={`ow-map-wrap${painting ? " painting" : ""}`}>
             {wild && zone && <WildPanel zone={zone} onClose={() => setWild(false)} />}
+            {groups.panelOpen && zone && <GroupsPanel selected={groupCandidate} onClose={() => groups.setPanelOpen(false)} />}
             {overworld && (
               <div className="me-overworld-panel">
                 <div className="me-overworld-head"><strong>Overworld</strong><span className="spacer" /><button onClick={() => setOverworld(false)}>Close</button></div>
@@ -1069,7 +1106,8 @@ export function OverworldEditor({ constants, open }: ToolProps) {
                     if (host) setSelected({ kind: "npc", index: host.index });
                   }}>Its host, NPC {chosen.spawn!.host}</button> <span className="muted">The field writes it into the host's record when it's picked; its id stays the host's.</span></p>
                   {spawnEntries[chosen.spawn!.entry]?.instances?.[chosen.spawn!.instance] && (
-                    <InstancePanel path={spawnFile} entry={chosen.spawn!.entry} instance={chosen.spawn!.instance}
+                    <InstancePanel path={spawnFile} entry={chosen.spawn!.entry} instance={chosen.spawn!.instance} host={chosen.spawn!.host}
+                                   hostGroup={spawnEntries[chosen.spawn!.entry].group}
                                    inst={spawnEntries[chosen.spawn!.entry].instances![chosen.spawn!.instance]} constants={constants}
                                    onEdit={() => record([spawnFile])} npcFields={instanceFields} />
                   )}
@@ -1142,7 +1180,16 @@ export function OverworldEditor({ constants, open }: ToolProps) {
         </div>
       </div>
     </div>
+    </GroupsProvider>
   );
+}
+
+/** What an entity is as a spawn group's member: an NPC, an instance or an ambient of the zone (another kind matches
+ * no member). */
+function memberRefOf(e: Entity, zone: string): MemberRef {
+  if (e.kind === "instance") return { zone, kind: "instance", npcId: e.spawn!.host, instance: e.spawn!.instance };
+  if (e.kind === "ambient") return { zone, kind: "ambient", ambient: e.index };
+  return { zone, kind: "npc", npcId: e.kind === "npc" ? e.npcId : -1 };
 }
 
 /** The files the Overworld Editor edits, which its Save and Revert cover: the field's data and the zones' spawn files. */

@@ -157,6 +157,12 @@ function worlds(conditions: Condition[]): World[] {
   return out;
 }
 
+/** Ambients with at most one of each spawn group's (the first): a group shows one of its members at most. */
+const oneAGroup = (list: Ambient[]): Ambient[] => {
+  const seen = new Set<string>();
+  return list.filter((a) => !a.group || (!seen.has(a.group.id) && !!seen.add(a.group.id)));
+};
+
 /** The zone's worst case: its NPCs (the events' NPC entities), its spawn data, its ambients and its preload list. */
 export async function spriteLoad(npcs: Entity[], entries: SpawnEntry[], ambients: Ambient[], preload: (string | number)[],
                                  flagOf: (npcId: number) => number | null, seasonal: Seasonal): Promise<SpriteLoad> {
@@ -223,8 +229,8 @@ export async function spriteLoad(npcs: Entity[], entries: SpawnEntry[], ambients
       if (fresh) shown.add(fresh);
     }
     const npcCount = shown.size - base.size;
-    // (the game shows the first AMBIENTS_SHOWN whose conditions hold)
-    for (const a of ambients.filter((x) => holds(x.when, w)).slice(0, AMBIENTS_SHOWN)) {
+    // (the game shows the first AMBIENTS_SHOWN whose conditions hold, a group's one at most)
+    for (const a of oneAGroup(ambients.filter((x) => holds(x.when, w))).slice(0, AMBIENTS_SHOWN)) {
       // (its sprites with conditions that hold are picked from first, else those without)
       const listed = a.sprites ?? [a.sprite];
       const held = listed.filter((s) => s !== null && typeof s === "object" && holds(s.when, w));
@@ -238,7 +244,7 @@ export async function spriteLoad(npcs: Entity[], entries: SpawnEntry[], ambients
     }
     return { npcCount, ambientCount: shown.size - base.size - npcCount, shown };
   };
-  for (const w of worlds(conditions)) ambientsAtOnce = Math.max(ambientsAtOnce, ambients.filter((a) => holds(a.when, w)).length);
+  for (const w of worlds(conditions)) ambientsAtOnce = Math.max(ambientsAtOnce, oneAGroup(ambients.filter((a) => holds(a.when, w))).length);
   for (const w of worlds(conditions)) for (const state of states.length ? states.filter((st) => st.night === atNight(w)) : [null]) {
     const { npcCount, ambientCount, shown } = evaluate(w, state, RARE_FLAGS);
     if (npcCount + ambientCount > worst.npcs + worst.ambients) {
