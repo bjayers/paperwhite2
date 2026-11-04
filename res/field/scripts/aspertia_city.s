@@ -228,9 +228,6 @@ L_0251:
     // "[f000]Ā\u0001\u0001's Sister: Um...\nThis is from me![f000]븁\u0000"
     ActorMsg MSGFILE_SCRIPT, AspertiaCity_Text_SSisterUmFrom, 3, 0, 0
     MsgWinCloseAll
-    CallUnovaLinkKeyUnlock 0
-    CallUnovaLinkKeyUnlock 1
-    CallUnovaLinkKeyUnlock 7
     VMStackPush 0x8000
     VMStackPush 0x8001
     WorkSet 0x8000, 442
@@ -242,16 +239,16 @@ L_0251:
     ActorCmdWait
     ActorCmdExec 2, Movement_047E
     ActorCmdWait
-    // "Bianca: Trainer keys, and...\nOh. Why are there two Town Maps?[f000]븁\u0000"
-    ActorMsg MSGFILE_SCRIPT, AspertiaCity_Text_BiancaTrainerKeysOh, 2, 0, 0
+    // "Bianca: Why are there\ntwo Town Maps?[f000]븁\u0000"
+    ActorMsg MSGFILE_SCRIPT, AspertiaCity_Text_BiancaWhyThereTwo, 2, 0, 0
     MsgWinCloseAll
     WordSetLoadRivalName 1
-    // "[f000]Ā\u0001\u0001's Sister: I want you to\ngive the other one to my big brother![f000]븁\u0000\nWill you give him his keys too?[f000]븁\u0000"
+    // "[f000]Ā\u0001\u0001's Sister: I want you to\ngive the other one to my big brother![f000]븁\u0000"
     ActorMsg MSGFILE_SCRIPT, AspertiaCity_Text_SSisterWantGive, 3, 0, 0
     MsgWinCloseAll
     ActorCmdExec 2, Movement_0486
     ActorCmdWait
-    // "Mom: That's a good idea!\nEvery Unovan trainer needs keys, and [f000]븀\u0000\neven if it is a single road to the ocean,[f000]븀\u0000\nhaving a Town Map is always nice.[f000]븁\u0000\nI mean, if you use a Town Map,\nyou'll know all about what the[f000]븀\u0000\nUnova region is like![f000]븁\u0000"
+    // "Mom: That's a good idea! Even if it is\na single road to the ocean, having a[f000]븀\u0000\nTown Map is always nice.[f000]븁\u0000\nI mean, if you use a Town Map,\nyou'll know all about what the[f000]븀\u0000\nUnova region is like![f000]븁\u0000"
     ActorMsg MSGFILE_SCRIPT, AspertiaCity_Text_MomThatsGoodIdea, 1, 0, 0
     MsgWinCloseAll
     ActorCmdExec 255, Movement_048E

@@ -371,6 +371,13 @@ What the user should know about mixing:
   labels, a preview of each place in each version (`res/paperwhite2/version_preview.json`, cameras to tune), and the
   place the player is in refused. Every map change now sets the city and Route 4's zones from the flags, so a flag set
   in the app or the debug menu takes effect at the next map change. Built, not yet tested in game.
+- 2026-11-04, tested by the user: every place switches, with the right textures, from the globe, the debug menu and
+  the Version Key (in a gate too). Then: Black City's and White Forest's Pokémon Centers lead out to the city the flag
+  has (a second exit and a level script each), so the app refuses nothing; Unova Link is gone from the title menu,
+  and its key notice; the Aspertia scene that gave the keys with the Town Map is the original's again. The Version
+  Key stays, as a test item (the user may give it after the game, limited to outside the places). Unova Link's other
+  keys: the difficulty is to be the hack's own (trainer scaling's modifier), the Regis' chambers to be replaced by
+  other ways to catch the Regis, later.
 
 ## Open questions for the user
 

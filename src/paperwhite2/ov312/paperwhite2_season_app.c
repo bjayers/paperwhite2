@@ -2,7 +2,6 @@
 #include "constants/arc.h"
 #include "constants/sound.h"
 #include "constants/text_banks.h"
-#include "field/player_state.h"
 #include "gfl/arc.h"
 #include "gfl/arc_util.h"
 #include "gfl/bg_sys.h"
@@ -1106,20 +1105,14 @@ static void SeasonApp_ApplyButton(SeasonAppWork *work) {
     SeasonApp_UpdatePreview(work);
 }
 
-// Sets the button's place as its version has it, unless the player is in that place (in its Pokémon Center, whose door
-// outside may move), and says what changes, with the place as it is now in the preview
+// Sets the button's place as its version has it, and says what changes, with the place as it is now in the preview.
+// The place the player is in changes at the next map change there too: Black City's and White Forest's Pokémon Centers
+// lead out to the city the flag has (their level scripts), and Opelucid City's is the same zone in both
 static void SeasonApp_ApplyUnovaButton(SeasonAppWork *work, const SeasonAppButtonSetup *button) {
-    u16 zone = PlayerState_GetZoneID(GameData_GetPlayerState(work->gameData));
-
-    SeasonApp_ClearMessage(work);
-    if (PaperWhite2_GetVersionPlace(zone) == UNOVA_PLACE(button->value)) {
-        SeasonApp_MoveCurrentButton(work);
-        SeasonApp_PrintLine(work, SeasonApp_Text_CantChangeHere, 0);
-        return;
-    }
     PaperWhite2_SetPlaceBlack2(GameData_GetEventWork(work->gameData), UNOVA_PLACE(button->value),
                                UNOVA_BLACK2(button->value));
     SeasonApp_MoveCurrentButton(work);
+    SeasonApp_ClearMessage(work);
     SeasonApp_PrintLine(work, button->confirmation, 0);
     SeasonApp_UpdatePreview(work);
 }

@@ -238,6 +238,20 @@
                 "height": 1,
                 "unk0a": 0
             }
+        },
+        {
+            "zone": "ZONE_WHITE_FOREST",
+            "warp": 2,
+            "unk4": 1,
+            "transition": 1,
+            "grid": {
+                "x": 104,
+                "y": 0,
+                "z": 312,
+                "width": 3,
+                "height": 1,
+                "unk0a": 0
+            }
         }
     ],
     "triggers": [],
@@ -265,6 +279,14 @@
         {
             "type": 3,
             "script": 2104
+        },
+        {
+            "type": 2,
+            "script": 4
+        },
+        {
+            "type": 3,
+            "script": 4
         }
     ]
 }

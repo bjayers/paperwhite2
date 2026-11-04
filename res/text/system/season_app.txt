@@ -66,4 +66,3 @@ SeasonApp_Text_ChangeFarmland = Mistralton will have farmland\nthe next time you
 SeasonApp_Text_ChangeGreenhouses = Mistralton will have greenhouses\nthe next time you go there.
 SeasonApp_Text_ChangeFieryCaves = Reversal Mountain will be fiery\nthe next time you go there.
 SeasonApp_Text_ChangeDampCaves = Reversal Mountain will be damp\nthe next time you go there.
-SeasonApp_Text_CantChangeHere = You can't change the place\nyou're in right now.

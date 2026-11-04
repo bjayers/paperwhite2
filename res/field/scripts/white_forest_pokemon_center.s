@@ -6,6 +6,7 @@
     ScriptEntry Script_1
     ScriptEntry Script_2
     ScriptEntry Script_3
+    ScriptEntry Script_4
     ScriptEntriesEnd
 
 Script_1:
@@ -49,4 +50,23 @@ Script_3:
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
+
+// Paper White 2: the exit leads to Black City or White Forest, as the place is now: the other city's exit is moved off
+// the doorway (paperwhite2/version_places.h)
+Script_4:
+    VMCall L_Exit
+    VMHalt
+
+L_Exit:
+    VMStackPushFlag EVENT_FLAG_BLACK2_BLACK_CITY
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMJumpIf CMP_STACK, L_ExitWhiteForest
+    ObjInitWarpGPos 0, 0, 0, 0
+    VMReturn
+
+L_ExitWhiteForest:
+    ObjInitWarpGPos 1, 0, 0, 0
+    VMReturn
+
     .balign 4, 0

@@ -2,6 +2,17 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-04 (evening): the version switch by place, tested; Alter Unova on the globe; no Unova Link
+
+- Each place Unova has as Black 2 or White 2 has its own flag (`paperwhite2/version_places.h`): Route 4, Reversal
+  Mountain, Mistralton City, Opelucid City, Black City. The map pieces follow each cell's place, the gates' and
+  Undella Town's level scripts the flags, the textures their places; the Version Key sets them all (a test item). The
+  globe's Season app has the Alter Unova page with a preview of each place in each version
+  (`res/paperwhite2/version_preview.json`, cameras to tune). Tested by the user: every place switches with the right
+  textures. Black City's and White Forest's Pokémon Centers now lead out to the city the flag has.
+- Unova Link is gone from the title menu; the Aspertia scene that gave the keys is the original's again
+  (design/version-key.md, Progress).
+
 ## 2026-11-04 (afternoon): the re-battling Route 4 trainer explained; a flag watch in the debug menu
 
 - The Route 4 trainer who battles on every visit is Pokémon Breeder Irene (296), one of the original game's 12

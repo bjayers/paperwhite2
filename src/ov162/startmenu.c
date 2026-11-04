@@ -522,6 +522,12 @@ static u32 StartMenu_WaitPrint(StartMenuWork *wk) {
         if (StartMenu_CheckBrokenSave(wk) == TRUE) {
             return STATE_BROKEN_SAVE;
         }
+#ifdef PAPERWHITE2
+        // Paper White 2: no notice that Unova Link can send keys, which hack builds don't have
+        if (TrainerGameInfo_GetKeyNotice(wk->gameInfo) == TRUE) {
+            TrainerGameInfo_SetKeyNotice(wk->gameInfo, 0);
+        }
+#endif
         if (TrainerGameInfo_GetKeyNotice(wk->gameInfo) == TRUE) {
             TrainerGameInfo_SetKeyNotice(wk->gameInfo, 0);
             GFL_BGSysSetBGEnabledA(GX_PLANEMASK_BG1 | GX_PLANEMASK_BG2, FALSE);
@@ -1367,8 +1373,14 @@ static void StartMenu_InitItems(StartMenuWork *wk) {
     }
     wk->items[n] = ITEM_NEW_GAME;
     *(wk->items + n + 1) = ITEM_MYSTERY_GIFT;
+#ifdef PAPERWHITE2
+    // Paper White 2: no Unova Link: the places' versions are the globe's (paperwhite2/version_places.h), and the
+    // difficulty and the Regis' chambers are to be the hack's own
+    n += 2;
+#else
     *(wk->items + n + 2) = ITEM_UNOVA_LINK;
     n += 3;
+#endif
     if (TrainerGameInfo_GetStartMenuItemFlags(wk->gameInfo, 1)) {
         wk->items[n] = ITEM_BATTLE_COMPETITION;
         n++;
