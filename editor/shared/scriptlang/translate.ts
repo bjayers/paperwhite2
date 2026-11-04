@@ -11,6 +11,7 @@
 
 import { isVarText, negate, type AssignOp, type CmpOp, type Expr, type Script, type Stmt } from "./lang.ts";
 import { parseS, type SLine } from "./sfile.ts";
+import { SHORTCUTS, SHORTCUT_NAMES, messageArgs, shortcutArgs } from "./shortcuts.ts";
 
 /** An argument of a command, as the command reference (res/paperwhite2/scripts/commands.json) has it. */
 export interface RefArg {
@@ -252,6 +253,17 @@ export function flatStatements(lines: SLine[], start: number, end: number, names
         continue;
       }
     }
+    // A message window shown, waited for and closed, as its shortcut
+    const shortcut = SHORTCUTS.find((sc) => sc.macro === l.name && sc.after.every((m, n) => {
+      const next = lines[i + 1 + n];
+      return next?.kind === "cmd" && next.name === m && !next.args.length;
+    }));
+    const shortArgs = shortcut ? shortcutArgs(shortcut, l.args) : null;
+    if (shortcut && shortArgs) {
+      out.push({ k: "call", name: shortcut.name, args: shortArgs });
+      i += shortcut.after.length;
+      continue;
+    }
     const name = names.toLang.get(l.name);
     const ref = names.commands.get(l.name);
     if (!name) out.push({ k: "raw", lines: [l.text] });
@@ -408,6 +420,13 @@ export function compileScript(script: Script, label: string, names: Names, taken
               out.push(/^var\(/.test(value) ? `    WorkGet ${input.var}, ${plainArg(value)}` : `    WorkSetConst ${input.var}, ${value}`);
             });
             out.push(`    RTCallGlobal ${global.script}`);
+            break;
+          }
+          const shortcut = SHORTCUT_NAMES.get(s.name);
+          if (shortcut) {
+            const args = messageArgs(shortcut, s.args.map(plainArg));
+            if (typeof args === "string") throw new CompileError(args);
+            out.push(`    ${shortcut.macro} ${args.join(", ")}`, ...shortcut.after.map((m) => `    ${m}`));
             break;
           }
           const macro = names.toMacro.get(s.name);

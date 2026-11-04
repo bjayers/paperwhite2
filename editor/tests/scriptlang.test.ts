@@ -72,16 +72,19 @@ L_x:
     0x4061 = var(0x8000);
     wild_battle(74);
     random_item(5, ITEM_POTION);
+    say(VirbankCity_Text_Hello);
+    say_npc(2, VirbankCity_Text_Hello, 4);
 }
 `);
-  assert.equal(script.body.length, 8);
+  assert.equal(script.body.length, 10);
   const out = compileScript(script, "Script_1", names, new Set());
   assert.deepEqual(out.slice(0, 7), ["Script_1:", "    ActorsPauseAll", "    VMStackPushFlag 513", "    VMStackPushConst 1",
     "    VMStackCmp CMP_EQ", "    VMJumpIf CMP_STACK, L_Script_1_1", "    SEPlay SEQ_SE_MESSAGE"]);
   assert.ok(out.includes("    VMStackCmp CMP_AND") && out.includes("    VMStackCmp CMP_OR"));
-  assert.deepEqual(out.slice(-9), ["L_x:", "    ActorsUnpauseAll", "    WorkAdd 0x4060, 1", "    WorkGet 0x4061, 0x8000",
+  assert.deepEqual(out.slice(-15), ["L_x:", "    ActorsUnpauseAll", "    WorkAdd 0x4060, 1", "    WorkGet 0x4061, 0x8000",
     "    WorkSetConst 0x8010, 74", "    RTCallGlobal 10854", "    WorkSetConst 0x8010, 5", "    WorkSetConst 0x8011, ITEM_POTION",
-    "    RTCallGlobal 10853"]);
+    "    RTCallGlobal 10853", "    ParentActorMsg MSGFILE_SCRIPT, VirbankCity_Text_Hello, 0, 0", "    LastKeyWait", "    ActorMsgClose",
+    "    ActorMsg MSGFILE_SCRIPT, VirbankCity_Text_Hello, 2, 4, 0", "    LastKeyWait", "    ActorMsgClose"]);
   // (as it prints: variables and flags as functions, a flag's test with its value)
   assert.match(printScript(script), /if \(flag\(513\) == 1\) \{/);
   assert.match(printScript(script), /var\(0x4060\) >= 2 && flag\(EVENT_FLAG_0x01ec\) == 0 \|\| var\(0x4061\) == 1/);

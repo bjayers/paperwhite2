@@ -143,6 +143,15 @@ sub step_aside {
   commands read as assignments: `var(0x4060) = 2` (WorkSetConst), `= var(0x8000)` (WorkGet), `+= -= *= /= %=`
   (WorkAdd and the rest). An argument the command reads as a variable shows as `var(...)`. Still all 4051 scripts
   round trip.
+- **2026-11-04, the shortcuts** (`editor/shared/scriptlang/shortcuts.ts`): `say(line)`, `say_npc(npc, line)`,
+  `say_event(line)`, `say_bubble(line)`, `say_sign(line)`, each the sequence the game's scripts use for that window
+  (found by counting what follows each message command across the scripts: ParentActorMsg then LastKeyWait and
+  ActorMsgClose 1280 times, ActorMsg so 212, SystemMsg with SystemMsgClose 74, InfoMsg with InfoMsgClose 145,
+  MsgPlaceSign then MsgPlaceSignClose, which waits itself, 128); arguments after the line default to the game's most
+  common value and show only where they differ. The yell, checker, "at", gendered and versioned windows have no one
+  sequence in the game's scripts (a yell is mostly followed by a cry's wait), so they stay their commands
+  (`angry_message`, `checker_message`, `show_message_at`, `gendered_message`, `version_message`) with their waits and
+  closes written out.
 - Equivalence, not sameness: a condition can be the stack's form or a WorkCmp's, a label's name changes, and a jump
   to the next statement may go; `equiv.ts` walks both files from the script's label through every command, condition
   (or its negation with its ways swapped) and jump. Untouched scripts aren't rewritten at all.
