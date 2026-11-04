@@ -67,8 +67,8 @@ Switches Unova between the way it is in Black 2 and in White 2, without Unova Li
     `src/ov012/city_state.c`).
   - The map pieces that the version decides: `MapReplace_LoadVariables`' version (`src/ov012/map_replace.c`), the
     replacements of `res/field/map_replacements/replacements.json` whose condition is `version` or `version_season`.
-    These are Route 4's chunks, Opelucid City's buildings, Driftveil City's market and the area round Black City and
-    White Forest.
+    These are Route 4's chunks, Opelucid City's buildings, Driftveil City's market and Mistralton City's cells
+    (entries 19-22 and 34-37; design/version-key.md has the plan to keep only the three places the key should change).
   - Opelucid City's scripts' version checks (`GameGetVersion`, `ActorMsgVersioned`), in the zones whose place is
     Opelucid City, so its people talk about the city they stand in. Elsewhere the scripts keep White 2's, since the
     story's version-only events (Kyurem's, among others) shouldn't change.

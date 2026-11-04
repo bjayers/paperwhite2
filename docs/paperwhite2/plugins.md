@@ -789,8 +789,8 @@ zone change, not a battle or a menu, so the load seed holds until the next zone 
 
 **Level scaling.** `res/paperwhite2/level_scaling.json` (`paperwhite2/level_scaling_config.h`): the adjusted median is
 `median * percent / 100 + offset`, rounded down, from `min` to `max`, and wild levels go from it minus `spread` to it
-plus `spread` (1 to 100). The defaults are `percent` 80, `offset` 0, `min` 2, `max` 100, `spread` 5: a party median
-of 50 gives 40 and wild levels 35-45; 20 gives 16 (11-21); 5 gives 4 (1-9); 100 gives 80. The median is the lower
+plus `spread` (1 to 100). The file has `percent` 80, `offset` 0, `min` 2, `max` 100, `spread` 3: a party median
+of 50 gives 40 and wild levels 37-43; 20 gives 16 (13-19); 5 gives 4 (1-7); 100 gives 80. The median is the lower
 middle level for an even count, Eggs left out.
 
 **Script commands,** in every hack build, before the debug menu's so its removal leaves their IDs:

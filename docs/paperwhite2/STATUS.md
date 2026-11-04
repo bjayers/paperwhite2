@@ -2,6 +2,24 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-04 (overnight): research for the Join Avenue, the Version Key and trainer level scaling
+
+Three research reports, read from the source and data, nothing built; each ends with the user's open questions:
+- `design/join-avenue.md`: all of it is complete C ("resort"); the game already adds local visitors each day
+  (`ResortField_AddInitialEntries`, file 9 of `a/2/4/4`); plan: a packer for `a/2/4/4` (`ARCID_RESORT_BINARY`, not in
+  `res/` yet), seed the eight shops' owners from `res/paperwhite2/join_avenue/` once, daily visitors from the same
+  roster, and paid shop upgrades through `MoneySub` and `AddShopExperience`.
+- `design/version-key.md`: the white textures come from the field's single texture set per field open (the area of
+  the zone it opens in) and from gates whose exit picks Route 4 by the build's version (`GameGetVersion`), which leaves
+  the player in White 2's Route 4 header over Black 2's chunks; trainer defeats are global flags (`0x5f0 + ID`), so
+  the 5220 re-battle is still unexplained (a debug test is in the report). An eight-step plan; steps 1-3 should fix the
+  textures. The current item also switches Mistralton's and Driftveil's version pieces (items.md corrected).
+- `design/trainer-scaling.md`: one hook in `BtlSetup_LoadTrainer` (src/system/btl_setup.c) after the party loads;
+  tiers from the trainer class (`SPECIAL_TRAINER_CLASSES`), the team's highest level set to the tier's target with
+  the others keeping their distance below; the facilities never reach it with a trainer ID except the Black Tower's
+  bosses, excluded by class. `res/paperwhite2/trainer_scaling.json` with a new packer.
+- plugins.md's level scaling example corrected to `level_scaling.json`'s spread of 3.
+
 ## 2026-11-04 (evening): the script language in the Script Editor
 
 - The script language (docs/paperwhite2/design/script-language.md) is in the Script Editor: a script shows as
