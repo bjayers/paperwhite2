@@ -103,6 +103,18 @@ sub step_aside {
   argument's name, kind and meaning. It starts from Frost's header and the game's handlers, and grows as commands are
   learned.
 
+## Saving, reopening and restoring (the user, 2026-11-04)
+
+- **Reopening** a saved script translates it from its block again, which the save's checks make read as it was
+  written, but tidied (brace style, spacing; a flag alone as `flag(510) == 1`). Comments and blank lines are kept in
+  the `.s`; what the `.s` has no place for (an `alias`) is kept as a comment line in the block (`//@ alias name =
+  0x4060`). No second copy of the script is kept: two sources would come to disagree.
+- **Checks before writing**, either failing writes nothing and shows the difference:
+  1. the new block translated back reads as the user's script (printed the same);
+  2. the new block runs as the user's script compiles, walked by `equiv.ts`.
+- **Restore** a script: to the original game's (its block in the `w2-original` tag's file, for a script the original
+  file has), or to the last commit's (its block at `HEAD`). Text lines restore the same way from the Text Editor.
+
 ## The user's global scripts
 
 - 10853 (`global_10850.s`, Script_4): a random item, `0x8011` plus a random number below `0x8010`, given if the bag has
