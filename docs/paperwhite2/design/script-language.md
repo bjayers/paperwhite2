@@ -182,7 +182,7 @@ sub step_aside {
 - 2026-11-04, movements: a Move's action by its name (`res/paperwhite2/scripts/movements.json`, 193 actions, each its
   code, the index of its table in `field_actor_movedata.c`'s `ACTOR_ACTION_COMMAND_TABLES`; the ones without a clear
   name stay `action_N`), a step with its count where it isn't 1: `walk_up(2)`. A movement one command alone runs, in a
-  script that ends, is written in it, `move(1, [walk_up(2), face_left])`, and its data goes after the script's end
+  script that ends, is written in it, `apply_movement(1, [walk_up(2), face_left])`, and its data goes after the script's end
   under a new label; one used more than once, or in a script that runs on into the next, is named:
   `movement NAME = [ ... ];`. The equivalence check compares a movement by its steps. The sidebar describes the step
   at the caret and lists every action, filtered, a click to add it.
