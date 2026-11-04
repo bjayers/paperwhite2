@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """Paper White 2's Season app preview: the map spot and camera that the app's top screen shows.
 
-    season_preview.py INPUT_JSON OUTPUT_HEADER
+    season_preview.py SEASON_JSON VERSION_JSON OUTPUT_HEADER
 
-res/paperwhite2/season_preview.json is the source to edit (docs/paperwhite2/plugins.md, Season app):
+Its spots: res/paperwhite2/season_preview.json's, the Set Season page's (and the menu's), and
+res/paperwhite2/version_preview.json's, the Alter Unova page's: each place's (`places`, in the order of
+include/paperwhite2/version_places.h) as White 2 has it (`white2`) and as Black 2 has it (`black2`), whose chunks take
+that version's map pieces by the game's map replacements. Each spot has (docs/paperwhite2/plugins.md, Season app):
 
 - `area`: the area whose textures, animations and lights the preview takes, by its AREA_ name (generated/areas.txt),
   as a zone's header names it. The app reads the area's record of the season it shows, as the field does
@@ -59,74 +62,87 @@ def fx32(value: float) -> str:
     return f"FX32_CONST({value:.4f})"
 
 
-def generate(path: Path) -> str:
-    data = json.loads(path.read_text())
-    areas = load_list("areas")
-    models = load_list("map_models")
+# The places of res/paperwhite2/version_preview.json, in VERSION_PLACE_* order (include/paperwhite2/version_places.h)
+PLACES = ("route_4", "reversal_mountain", "mistralton_city", "opelucid_city", "black_city")
+
+
+def spot_row(path: Path, data, version: int, where: str, areas, models) -> str:
+    """A spot's row of SEASON_PREVIEW_SPOTS: its area, chunks, props, lights, version and camera."""
+    def bad(message):
+        fail(path, f"{where}: {message}")
+    if not isinstance(data, dict):
+        bad("must be an object")
     if data.get("area") not in areas:
-        fail(path, f"area {data.get('area')!r} is not in generated/areas.txt")
+        bad(f"area {data.get('area')!r} is not in generated/areas.txt")
     chunks = data.get("chunks")
     if not isinstance(chunks, list) or not 1 <= len(chunks) <= CHUNK_MAX:
-        fail(path, f"chunks must list 1 to {CHUNK_MAX} chunks")
+        bad(f"chunks must list 1 to {CHUNK_MAX} chunks")
     for chunk in chunks:
         if chunk.get("model") not in models:
-            fail(path, f"model {chunk.get('model')!r} is not in generated/map_models.txt")
+            bad(f"model {chunk.get('model')!r} is not in generated/map_models.txt")
         for axis in ("x", "z"):
             if not isinstance(chunk.get(axis), int) or not 0 <= chunk[axis] < 64:
-                fail(path, f"a chunk's {axis} must be a matrix cell from 0 to 63")
+                bad(f"a chunk's {axis} must be a matrix cell from 0 to 63")
     if not isinstance(data.get("props"), bool):
-        fail(path, "props must be true or false")
+        bad("props must be true or false")
     camera = data.get("camera", {})
     target = camera.get("target", {})
-    tx = number(path, target.get("x"), "camera.target.x", 0, 32767)
-    ty = number(path, target.get("y"), "camera.target.y", -1024, 1024)
-    tz = number(path, target.get("z"), "camera.target.z", 0, 32767)
-    distance = number(path, camera.get("distance"), "camera.distance", 16, 1024)
-    yaw = number(path, camera.get("yaw"), "camera.yaw", -360, 360)
-    pitch = number(path, camera.get("pitch"), "camera.pitch", 1, 89)
-    fov = number(path, camera.get("fov"), "camera.fov", 5, 60)
-    near = number(path, camera.get("near"), "camera.near", 0.25, 64)
-    far = number(path, camera.get("far"), "camera.far", 128, 2048)
+    tx = number(path, target.get("x"), f"{where}: camera.target.x", 0, 32767)
+    ty = number(path, target.get("y"), f"{where}: camera.target.y", -1024, 1024)
+    tz = number(path, target.get("z"), f"{where}: camera.target.z", 0, 32767)
+    distance = number(path, camera.get("distance"), f"{where}: camera.distance", 16, 1024)
+    yaw = number(path, camera.get("yaw"), f"{where}: camera.yaw", -360, 360)
+    pitch = number(path, camera.get("pitch"), f"{where}: camera.pitch", 1, 89)
+    fov = number(path, camera.get("fov"), f"{where}: camera.fov", 5, 60)
+    near = number(path, camera.get("near"), f"{where}: camera.near", 0.25, 64)
+    far = number(path, camera.get("far"), f"{where}: camera.far", 128, 2048)
     hour = data.get("light_hour")
     if hour is not None and (isinstance(hour, bool) or not isinstance(hour, int) or not 0 <= hour <= 23):
-        fail(path, "light_hour must be null or an hour from 0 to 23")
+        bad("light_hour must be null or an hour from 0 to 23")
 
     # The eye from the target, as FieldCameraApply_TransRot puts it
     yaw_radians = math.radians(yaw)
     pitch_radians = math.radians(pitch)
     eye = (distance * math.sin(yaw_radians) * math.cos(pitch_radians), ty + distance * math.sin(pitch_radians),
            distance * math.cos(yaw_radians) * math.cos(pitch_radians))
-    rows = [f"    {{ {chunk['model']}, {fx32(chunk['x'] * CHUNK_SPAN + CHUNK_SPAN / 2 - tx)}, "
-            f"{fx32(chunk['z'] * CHUNK_SPAN + CHUNK_SPAN / 2 - tz)} }}," for chunk in chunks]
-    relative = path.resolve().relative_to(ROOT).as_posix()
+    cells = ", ".join(f"{{ {chunk['model']}, {fx32(chunk['x'] * CHUNK_SPAN + CHUNK_SPAN / 2 - tx)}, "
+                      f"{fx32(chunk['z'] * CHUNK_SPAN + CHUNK_SPAN / 2 - tz)} }}" for chunk in chunks)
+    return (f"    {{ {data['area']}, {len(chunks)}, {'TRUE' if data['props'] else 'FALSE'}, "
+            f"{-1 if hour is None else hour}, {version}, {angle(fov):#06x}, {fx32(ty)}, "
+            f"{{ {fx32(eye[0])}, {fx32(eye[1])}, {fx32(eye[2])} }}, {fx32(near)}, {fx32(far)}, {{ {cells} }} }},")
+
+
+def generate(season_path: Path, version_path: Path) -> str:
+    areas = load_list("areas")
+    models = load_list("map_models")
+    # The season page's spot, as White 2 has it, then each place's as White 2 and as Black 2 has it
+    rows = [spot_row(season_path, json.loads(season_path.read_text()), 1, "the season's spot", areas, models)]
+    places = json.loads(version_path.read_text()).get("places")
+    if not isinstance(places, list) or [p.get("place") for p in places] != list(PLACES):
+        fail(version_path, f"places must list {', '.join(PLACES)}, in that order")
+    for place in places:
+        for version, key in ((1, "white2"), (0, "black2")):
+            rows.append(spot_row(version_path, place.get(key), version, f"{place['place']}'s {key}", areas, models))
+    sources = " and ".join(p.resolve().relative_to(ROOT).as_posix() for p in (season_path, version_path))
     lines = [
         f"#ifndef {GUARD}",
         f"#define {GUARD}",
         "",
-        f"// Generated by tools/paperwhite2/season_preview.py from {relative}, edit that instead",
+        f"// Generated by tools/paperwhite2/season_preview.py from {sources}, edit those instead",
         "",
         '#include "constants/areas.h"',
         '#include "constants/map_models.h"',
         '#include "nitro/fx.h"',
         "",
-        f"#define SEASON_PREVIEW_AREA {data['area']}",
-        f"#define SEASON_PREVIEW_CHUNK_COUNT {len(chunks)}",
-        "// Each chunk's map model, and its center's x and z from the camera's target",
-        "#define SEASON_PREVIEW_CHUNKS \\",
+        f"#define SEASON_PREVIEW_CHUNK_MAX {CHUNK_MAX}",
+        f"#define SEASON_PREVIEW_SPOT_COUNT {len(rows)}",
+        "// Each spot: its area, how many chunks, whether it has props, the hour of its lights (-1 for the time of",
+        "// day's), the version whose map pieces it takes (0 Black 2, 1 White 2), half the vertical field of view in",
+        "// 65536ths of a turn, the camera's target height, its eye in x and z from the target, the clipping planes, and",
+        "// each chunk's map model and its center's x and z from the target",
+        "#define SEASON_PREVIEW_SPOTS \\",
         *(row + " \\" for row in rows[:-1]),
         rows[-1],
-        f"#define SEASON_PREVIEW_PROPS {'TRUE' if data['props'] else 'FALSE'}",
-        "// The camera: the target's height, and the eye, in x and z from the target",
-        f"#define SEASON_PREVIEW_TARGET_Y {fx32(ty)}",
-        f"#define SEASON_PREVIEW_EYE_X {fx32(eye[0])}",
-        f"#define SEASON_PREVIEW_EYE_Y {fx32(eye[1])}",
-        f"#define SEASON_PREVIEW_EYE_Z {fx32(eye[2])}",
-        "// Half the vertical field of view, in 65536ths of a turn, and the clipping planes",
-        f"#define SEASON_PREVIEW_FOV {angle(fov):#06x}",
-        f"#define SEASON_PREVIEW_NEAR {fx32(near)}",
-        f"#define SEASON_PREVIEW_FAR {fx32(far)}",
-        "// The hour whose lights the preview has, or -1 for the time of day's",
-        f"#define SEASON_PREVIEW_LIGHT_HOUR {-1 if hour is None else hour}",
         "",
         f"#endif // {GUARD}",
         "",
@@ -136,10 +152,11 @@ def generate(path: Path) -> str:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("input", type=Path)
+    parser.add_argument("season", type=Path)
+    parser.add_argument("version", type=Path)
     parser.add_argument("output", type=Path)
     args = parser.parse_args()
-    text = generate(args.input)
+    text = generate(args.season, args.version)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     if not args.output.exists() or args.output.read_text() != text:
         args.output.write_text(text)

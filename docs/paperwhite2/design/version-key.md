@@ -367,6 +367,10 @@ What the user should know about mixing:
   flags (no more Unova Link key); the Desert Resort's and the Kyurem freeze's areas; the Dowsing Machine; the scripts'
   version checks in each place's zones; Castelia Gate's, Join Avenue's, Undella Town's and Reversal Mountain's level
   scripts on the flags. The Version Key sets them all at once, for testing. Built, not yet tested in game.
+- 2026-11-04, stage 3: the globe's Season app has the Alter Unova page (plugins.md, Season app), with the user's
+  labels, a preview of each place in each version (`res/paperwhite2/version_preview.json`, cameras to tune), and the
+  place the player is in refused. Every map change now sets the city and Route 4's zones from the flags, so a flag set
+  in the app or the debug menu takes effect at the next map change. Built, not yet tested in game.
 
 ## Open questions for the user
 

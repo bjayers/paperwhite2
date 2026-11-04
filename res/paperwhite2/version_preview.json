@@ -1,0 +1,389 @@
+{
+    "places": [
+        {
+            "place": "route_4",
+            "white2": {
+                "area": "AREA_ROUTE_4_16",
+                "chunks": [
+                    {
+                        "model": "MAP_MODEL_OVERWORLD_2_MAP12_16",
+                        "x": 12,
+                        "z": 16
+                    },
+                    {
+                        "model": "MAP_MODEL_OVERWORLD_2_MAP13_16",
+                        "x": 13,
+                        "z": 16
+                    },
+                    {
+                        "model": "MAP_MODEL_OVERWORLD_2_MAP12_17",
+                        "x": 12,
+                        "z": 17
+                    },
+                    {
+                        "model": "MAP_MODEL_OVERWORLD_2_MAP13_17",
+                        "x": 13,
+                        "z": 17
+                    }
+                ],
+                "props": true,
+                "camera": {
+                    "target": {
+                        "x": 6656,
+                        "y": 0,
+                        "z": 8704
+                    },
+                    "distance": 500,
+                    "yaw": 0,
+                    "pitch": 50,
+                    "fov": 20,
+                    "near": 1,
+                    "far": 1536
+                },
+                "light_hour": null
+            },
+            "black2": {
+                "area": "AREA_DESERT_RESORT",
+                "chunks": [
+                    {
+                        "model": "MAP_MODEL_OVERWORLD_2_MAP12_16",
+                        "x": 12,
+                        "z": 16
+                    },
+                    {
+                        "model": "MAP_MODEL_OVERWORLD_2_MAP13_16",
+                        "x": 13,
+                        "z": 16
+                    },
+                    {
+                        "model": "MAP_MODEL_OVERWORLD_2_MAP12_17",
+                        "x": 12,
+                        "z": 17
+                    },
+                    {
+                        "model": "MAP_MODEL_OVERWORLD_2_MAP13_17",
+                        "x": 13,
+                        "z": 17
+                    }
+                ],
+                "props": true,
+                "camera": {
+                    "target": {
+                        "x": 6656,
+                        "y": 0,
+                        "z": 8704
+                    },
+                    "distance": 500,
+                    "yaw": 0,
+                    "pitch": 50,
+                    "fov": 20,
+                    "near": 1,
+                    "far": 1536
+                },
+                "light_hour": null
+            }
+        },
+        {
+            "place": "reversal_mountain",
+            "white2": {
+                "area": "AREA_REVERSAL_MOUNTAIN_8",
+                "chunks": [
+                    {
+                        "model": "MAP_MODEL_REVERSAL_MOUNTAIN_8_WHITE2401_00_00",
+                        "x": 0,
+                        "z": 0
+                    }
+                ],
+                "props": true,
+                "camera": {
+                    "target": {
+                        "x": 256,
+                        "y": 0,
+                        "z": 256
+                    },
+                    "distance": 350,
+                    "yaw": 0,
+                    "pitch": 50,
+                    "fov": 20,
+                    "near": 1,
+                    "far": 1536
+                },
+                "light_hour": null
+            },
+            "black2": {
+                "area": "AREA_REVERSAL_MOUNTAIN_2",
+                "chunks": [
+                    {
+                        "model": "MAP_MODEL_REVERSAL_MOUNTAIN_2_M_DUN2401_00_00",
+                        "x": 0,
+                        "z": 0
+                    }
+                ],
+                "props": true,
+                "camera": {
+                    "target": {
+                        "x": 256,
+                        "y": 0,
+                        "z": 256
+                    },
+                    "distance": 350,
+                    "yaw": 0,
+                    "pitch": 50,
+                    "fov": 20,
+                    "near": 1,
+                    "far": 1536
+                },
+                "light_hour": null
+            }
+        },
+        {
+            "place": "mistralton_city",
+            "white2": {
+                "area": "AREA_MISTRALTON_CITY",
+                "chunks": [
+                    {
+                        "model": "MAP_MODEL_OVERWORLD_2_MAP02_08",
+                        "x": 2,
+                        "z": 8
+                    },
+                    {
+                        "model": "MAP_MODEL_OVERWORLD_2_MAP02_09",
+                        "x": 2,
+                        "z": 9
+                    },
+                    {
+                        "model": "MAP_MODEL_OVERWORLD_2_MAP03_09",
+                        "x": 3,
+                        "z": 9
+                    },
+                    {
+                        "model": "MAP_MODEL_OVERWORLD_2_MAP02_10",
+                        "x": 2,
+                        "z": 10
+                    }
+                ],
+                "props": true,
+                "camera": {
+                    "target": {
+                        "x": 1536,
+                        "y": 0,
+                        "z": 4864
+                    },
+                    "distance": 500,
+                    "yaw": 0,
+                    "pitch": 50,
+                    "fov": 20,
+                    "near": 1,
+                    "far": 1536
+                },
+                "light_hour": null
+            },
+            "black2": {
+                "area": "AREA_MISTRALTON_CITY",
+                "chunks": [
+                    {
+                        "model": "MAP_MODEL_OVERWORLD_2_MAP02_08",
+                        "x": 2,
+                        "z": 8
+                    },
+                    {
+                        "model": "MAP_MODEL_OVERWORLD_2_MAP02_09",
+                        "x": 2,
+                        "z": 9
+                    },
+                    {
+                        "model": "MAP_MODEL_OVERWORLD_2_MAP03_09",
+                        "x": 3,
+                        "z": 9
+                    },
+                    {
+                        "model": "MAP_MODEL_OVERWORLD_2_MAP02_10",
+                        "x": 2,
+                        "z": 10
+                    }
+                ],
+                "props": true,
+                "camera": {
+                    "target": {
+                        "x": 1536,
+                        "y": 0,
+                        "z": 4864
+                    },
+                    "distance": 500,
+                    "yaw": 0,
+                    "pitch": 50,
+                    "fov": 20,
+                    "near": 1,
+                    "far": 1536
+                },
+                "light_hour": null
+            }
+        },
+        {
+            "place": "opelucid_city",
+            "white2": {
+                "area": "AREA_OPELUCID_CITY",
+                "chunks": [
+                    {
+                        "model": "MAP_MODEL_OVERWORLD_2_MAP12_04",
+                        "x": 12,
+                        "z": 4
+                    },
+                    {
+                        "model": "MAP_MODEL_OVERWORLD_2_MAP13_04",
+                        "x": 13,
+                        "z": 4
+                    },
+                    {
+                        "model": "MAP_MODEL_OVERWORLD_2_MAP12_05",
+                        "x": 12,
+                        "z": 5
+                    },
+                    {
+                        "model": "MAP_MODEL_OVERWORLD_2_MAP13_05",
+                        "x": 13,
+                        "z": 5
+                    }
+                ],
+                "props": true,
+                "camera": {
+                    "target": {
+                        "x": 6656,
+                        "y": 0,
+                        "z": 2560
+                    },
+                    "distance": 500,
+                    "yaw": 0,
+                    "pitch": 50,
+                    "fov": 20,
+                    "near": 1,
+                    "far": 1536
+                },
+                "light_hour": null
+            },
+            "black2": {
+                "area": "AREA_OPELUCID_CITY",
+                "chunks": [
+                    {
+                        "model": "MAP_MODEL_OVERWORLD_2_MAP12_04",
+                        "x": 12,
+                        "z": 4
+                    },
+                    {
+                        "model": "MAP_MODEL_OVERWORLD_2_MAP13_04",
+                        "x": 13,
+                        "z": 4
+                    },
+                    {
+                        "model": "MAP_MODEL_OVERWORLD_2_MAP12_05",
+                        "x": 12,
+                        "z": 5
+                    },
+                    {
+                        "model": "MAP_MODEL_OVERWORLD_2_MAP13_05",
+                        "x": 13,
+                        "z": 5
+                    }
+                ],
+                "props": true,
+                "camera": {
+                    "target": {
+                        "x": 6656,
+                        "y": 0,
+                        "z": 2560
+                    },
+                    "distance": 500,
+                    "yaw": 0,
+                    "pitch": 50,
+                    "fov": 20,
+                    "near": 1,
+                    "far": 1536
+                },
+                "light_hour": null
+            }
+        },
+        {
+            "place": "black_city",
+            "white2": {
+                "area": "AREA_WHITE_FOREST_GATE",
+                "chunks": [
+                    {
+                        "model": "MAP_MODEL_WHITE_FOREST_SWWF_00_00",
+                        "x": 0,
+                        "z": 0
+                    },
+                    {
+                        "model": "MAP_MODEL_WHITE_FOREST_SWWF_01_00",
+                        "x": 1,
+                        "z": 0
+                    },
+                    {
+                        "model": "MAP_MODEL_WHITE_FOREST_SWWF_00_01",
+                        "x": 0,
+                        "z": 1
+                    },
+                    {
+                        "model": "MAP_MODEL_WHITE_FOREST_SWWF_01_01",
+                        "x": 1,
+                        "z": 1
+                    }
+                ],
+                "props": true,
+                "camera": {
+                    "target": {
+                        "x": 512,
+                        "y": 0,
+                        "z": 512
+                    },
+                    "distance": 500,
+                    "yaw": 0,
+                    "pitch": 50,
+                    "fov": 20,
+                    "near": 1,
+                    "far": 1536
+                },
+                "light_hour": null
+            },
+            "black2": {
+                "area": "AREA_BLACK_CITY",
+                "chunks": [
+                    {
+                        "model": "MAP_MODEL_BLACK_CITY_SWBC_00_00",
+                        "x": 0,
+                        "z": 0
+                    },
+                    {
+                        "model": "MAP_MODEL_BLACK_CITY_SWBC_01_00",
+                        "x": 1,
+                        "z": 0
+                    },
+                    {
+                        "model": "MAP_MODEL_BLACK_CITY_SWBC_00_01",
+                        "x": 0,
+                        "z": 1
+                    },
+                    {
+                        "model": "MAP_MODEL_BLACK_CITY_SWBC_01_01",
+                        "x": 1,
+                        "z": 1
+                    }
+                ],
+                "props": true,
+                "camera": {
+                    "target": {
+                        "x": 512,
+                        "y": 0,
+                        "z": 512
+                    },
+                    "distance": 500,
+                    "yaw": 0,
+                    "pitch": 50,
+                    "fov": 20,
+                    "near": 1,
+                    "far": 1536
+                },
+                "light_hour": null
+            }
+        }
+    ]
+}

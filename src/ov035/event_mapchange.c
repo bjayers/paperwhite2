@@ -1593,6 +1593,14 @@ void FieldMapControl_LoadZone(GameSystem *gsys, u16 zoneId) {
     MapMatrix *matrix;
 
     GSYS_GetField(gsys);
+#ifdef PAPERWHITE2
+    // Paper White 2: the places' flags take effect at each map change, the globe's and the debug menu's changes too:
+    // the city the field plays and the zones that follow it and Route 4 (paperwhite2/version_places.h)
+    GameData_GetMyCityState(gameData)->city =
+        PaperWhite2_IsPlaceBlack2(GameData_GetEventWork(gameData), VERSION_PLACE_BLACK_CITY) ? CITY_BLACK_CITY
+                                                                                             : CITY_WHITE_FOREST;
+    CityState_ApplyVersionZones(GameData_GetMyCityState(gameData));
+#endif
 
     if (GameData_IsForceSeasonSync(gameData) == TRUE && !IsZoneEntralinkHub(zoneId)) {
         FieldStatus_SetInLinkedWorld(GameData_GetFieldStatus(gameData), TRUE);

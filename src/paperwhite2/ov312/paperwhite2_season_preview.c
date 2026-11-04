@@ -28,13 +28,16 @@
 // the area's SRT animation on each model and its texture pattern animation over the textures in VRAM
 // (field_ground_anime.c), the chunks' props with the area's prop bundle (field_buildmodel.c), and the area's lights at
 // the time of day (field_light.c). Over the map, a soft shadow behind the app's banner. The spot and the camera are
-// res/paperwhite2/season_preview.json's (docs/paperwhite2/plugins.md, Season app)
+// res/paperwhite2/season_preview.json's, and each of the Alter Unova page's places' in each version,
+// res/paperwhite2/version_preview.json's (docs/paperwhite2/plugins.md, Season app)
 
 // The map replacements, which map_replace.c reads by number
 #define ARCID_MAP_REPLACE 10
-// MapReplaceEntry's kind and condition of a chunk that the season replaces
+// MapReplaceEntry's kind of a chunk, and its conditions of the season, the version and both (MapReplace_ResolvePatch)
 #define MAP_REPLACE_KIND_CHUNK 0
 #define MAP_REPLACE_CONDITION_SEASON 0
+#define MAP_REPLACE_CONDITION_VERSION 1
+#define MAP_REPLACE_CONDITION_VERSION_SEASON 2
 
 // What a file must leave free in the heap to be read: the 3D system's and the models' small allocations
 #define SEASON_PREVIEW_HEAP_MARGIN 0x4000
@@ -97,6 +100,23 @@ typedef struct {
     fx32 z;
 } SeasonPreviewChunkSetup;
 
+// A spot, as SEASON_PREVIEW_SPOTS writes it: its area, its chunks, whether it has props, the hour of its lights or -1,
+// the version whose map pieces its chunks take (0 Black 2's, 1 White 2's), and its camera: half the vertical field of
+// view, the target's height and the eye from the target, and the clipping planes
+typedef struct {
+    u16 area;
+    u8 chunkCount;
+    u8 props;
+    s8 lightHour;
+    u8 version;
+    u16 fov;
+    fx32 targetY;
+    VecFx32 eye;
+    fx32 near;
+    fx32 far;
+    SeasonPreviewChunkSetup chunks[SEASON_PREVIEW_CHUNK_MAX];
+} SeasonPreviewSpot;
+
 typedef struct {
     // The model's section, which the resource points into
     void *data;
@@ -145,10 +165,12 @@ struct SeasonPreview {
     NNSGfdTexKey shadowTexKey;
     NNSGfdPlttKey shadowPlttKey;
     G3DCamera *camera;
+    // The spot loaded, or last loaded
+    const SeasonPreviewSpot *spot;
     G3DResource *mapTextures;
     // The area's SRT animation file, which every chunk's animation plays
     G3DResource *srtAnimation;
-    SeasonPreviewChunk chunks[SEASON_PREVIEW_CHUNK_COUNT];
+    SeasonPreviewChunk chunks[SEASON_PREVIEW_CHUNK_MAX];
     FieldTerrainTexPatAnimationPack *texPatPack;
     u32 texPatCount;
     SeasonPreviewTexPat texPats[FIELD_TERRAIN_TEXPAT_ANIMATION_MAX];
@@ -172,7 +194,8 @@ static void *SeasonPreview_ReadRange(SeasonPreview *preview, ArcTool *arc, u32 f
 static void *SeasonPreview_ReadFile(SeasonPreview *preview, u32 arcId, u32 fileId);
 static G3DResource *SeasonPreview_CreateResource(SeasonPreview *preview, void *data);
 static BOOL SeasonPreview_LoadMapTextures(SeasonPreview *preview, u32 fileId);
-static u32 SeasonPreview_GetSeasonModel(SeasonPreview *preview, u32 model, u8 season);
+static u32 SeasonPreview_GetSeasonModel(SeasonPreview *preview, u32 model, u8 season, u8 version);
+static void SeasonPreview_SetCamera(SeasonPreview *preview);
 static BOOL SeasonPreview_LoadChunks(SeasonPreview *preview, AreaData *area, u8 season);
 static ArcTool *SeasonPreview_OpenPropBundle(SeasonPreview *preview, AreaData *area);
 static BOOL SeasonPreview_LoadChunk(SeasonPreview *preview, ArcTool *arc, ArcTool *propArc, u32 index, u32 model);
@@ -201,7 +224,7 @@ static void SeasonPreview_DrawShadow(SeasonPreview *preview);
 static fx16 SeasonPreview_GetScreenX(int x);
 static fx16 SeasonPreview_GetScreenY(int y);
 
-static const SeasonPreviewChunkSetup sSeasonPreviewChunks[SEASON_PREVIEW_CHUNK_COUNT] = { SEASON_PREVIEW_CHUNKS };
+static const SeasonPreviewSpot sSeasonPreviewSpots[SEASON_PREVIEW_SPOT_COUNT] = { SEASON_PREVIEW_SPOTS };
 
 // The file name of the preview's allocations, which the heap keeps for its reports. An array, so that it is in
 // .rodata: overlay 312 has no .data
@@ -211,20 +234,36 @@ static const VecFx32 sSeasonPreviewScale = { FX32_ONE, FX32_ONE, FX32_ONE };
 
 SeasonPreview *SeasonPreview_Create(HeapID heapId, int shadowY) {
     SeasonPreview *preview = GFL_HeapAllocate(heapId, sizeof(SeasonPreview), TRUE, sSeasonPreviewFileName, __LINE__);
-    VecFx32 eye = { SEASON_PREVIEW_EYE_X, SEASON_PREVIEW_EYE_Y, SEASON_PREVIEW_EYE_Z };
-    VecFx32 target = { 0, SEASON_PREVIEW_TARGET_Y, 0 };
+    const SeasonPreviewSpot *spot = &sSeasonPreviewSpots[SEASON_PREVIEW_SPOT_SEASON];
+    VecFx32 target = { 0, spot->targetY, 0 };
     VecFx32 up = { 0, FX32_ONE, 0 };
 
     preview->heapId = heapId;
+    preview->spot = spot;
     preview->shadowY = shadowY;
     preview->shadowTexKey = NNS_GFD_ALLOC_ERROR_TEXKEY;
     preview->shadowPlttKey = NNS_GFD_ALLOC_ERROR_PLTTKEY;
     // The field's: texture VRAM and palette VRAM in one slot each, managed as linked lists
     GFL_G3DSysCreate(FALSE, 1, FALSE, 1, 0, heapId, SeasonPreview_InitG3D);
-    preview->camera = GFL_G3DCameraCreate(G3DCAM_PROJECTION_PERSPECTIVE, FX_SinIdx(SEASON_PREVIEW_FOV),
-                                          FX_CosIdx(SEASON_PREVIEW_FOV), FX32_CONST(4.0 / 3.0), 0, SEASON_PREVIEW_NEAR,
-                                          SEASON_PREVIEW_FAR, 0, &eye, &up, &target, heapId);
+    preview->camera =
+        GFL_G3DCameraCreate(G3DCAM_PROJECTION_PERSPECTIVE, FX_SinIdx(spot->fov), FX_CosIdx(spot->fov),
+                            FX32_CONST(4.0 / 3.0), 0, spot->near, spot->far, 0, &spot->eye, &up, &target, heapId);
     return preview;
+}
+
+// Puts the camera where the spot has it
+static void SeasonPreview_SetCamera(SeasonPreview *preview) {
+    const SeasonPreviewSpot *spot = preview->spot;
+    VecFx32 target = { 0, spot->targetY, 0 };
+    fx32 near = spot->near;
+    fx32 far = spot->far;
+
+    GFL_G3DCameraSetLookatPos(preview->camera, &spot->eye);
+    GFL_G3DCameraSetLookatTarget(preview->camera, &target);
+    GFL_G3DCameraPerspectiveSetFOVSin(preview->camera, FX_SinIdx(spot->fov));
+    GFL_G3DCameraPerspectiveSetFOVCos(preview->camera, FX_CosIdx(spot->fov));
+    GFL_G3DCameraSetProjectionZNear(preview->camera, &near);
+    GFL_G3DCameraSetProjectionZFar(preview->camera, &far);
 }
 
 void SeasonPreview_Free(SeasonPreview *preview) {
@@ -248,12 +287,14 @@ static void SeasonPreview_InitG3D(void) {
     GFL_G3DSysSetSwapBufferParams(GX_SORTMODE_AUTO, GX_BUFFERMODE_Z);
 }
 
-BOOL SeasonPreview_Load(SeasonPreview *preview, u8 season) {
-    u16 areaId = SEASON_PREVIEW_AREA;
+BOOL SeasonPreview_Load(SeasonPreview *preview, u32 spot, u8 season) {
+    u16 areaId = sSeasonPreviewSpots[spot].area;
     AreaData *area;
     BOOL loaded;
 
     SeasonPreview_Unload(preview);
+    preview->spot = &sSeasonPreviewSpots[spot];
+    SeasonPreview_SetCamera(preview);
     // The area's record of the season, as Field_Create reads it
     area = AreaData_Create(preview->heapId, areaId, AreaData_HasSeasons(areaId) ? season : 0);
     loaded = SeasonPreview_LoadMapTextures(preview, AreaData_GetTexSetID(area));
@@ -262,7 +303,7 @@ BOOL SeasonPreview_Load(SeasonPreview *preview, u8 season) {
             preview, SeasonPreview_ReadFile(preview, ARCID_AREA_ANIME_SRT, AreaData_GetSRTAnmID(area)));
         loaded = preview->srtAnimation != NULL;
     }
-    if (loaded && SEASON_PREVIEW_PROPS) {
+    if (loaded && preview->spot->props) {
         loaded = SeasonPreview_LoadPropTextures(preview, area);
     }
     if (loaded) {
@@ -296,7 +337,7 @@ void SeasonPreview_Unload(SeasonPreview *preview) {
     }
     preview->propResourceCount = 0;
     preview->propCount = 0;
-    for (i = 0; i < SEASON_PREVIEW_CHUNK_COUNT; i++) {
+    for (i = 0; i < SEASON_PREVIEW_CHUNK_MAX; i++) {
         SeasonPreview_FreeChunk(&preview->chunks[i]);
     }
     for (i = 0; i < preview->texPatCount; i++) {
@@ -331,7 +372,7 @@ void SeasonPreview_Draw(SeasonPreview *preview) {
     if (!preview->loaded) {
         return;
     }
-    for (i = 0; i < SEASON_PREVIEW_CHUNK_COUNT; i++) {
+    for (i = 0; i < SEASON_PREVIEW_CHUNK_MAX; i++) {
         if (preview->chunks[i].animation != NULL) {
             GFL_G3DActorStepAnmFrameLoop(preview->chunks[i].actor, 0, FX32_ONE);
         }
@@ -353,7 +394,7 @@ void SeasonPreview_Draw(SeasonPreview *preview) {
     GFL_G3DSysMtxViewFlush();
     status.scale = sSeasonPreviewScale;
     MTX_Identity33_(&status.rotation);
-    for (i = 0; i < SEASON_PREVIEW_CHUNK_COUNT; i++) {
+    for (i = 0; i < preview->spot->chunkCount; i++) {
         status.translation = preview->chunks[i].position;
         GFL_G3DSysDrawObj(preview->chunks[i].actor, &status);
     }
@@ -424,9 +465,9 @@ static BOOL SeasonPreview_LoadMapTextures(SeasonPreview *preview, u32 fileId) {
     return TRUE;
 }
 
-// The chunk that the season's map replacement puts in the model's place (MapReplace_Patch), or the model. Only the
-// replacements by season apply
-static u32 SeasonPreview_GetSeasonModel(SeasonPreview *preview, u32 model, u8 season) {
+// The chunk that the map replacement of the season, the version or both puts in the model's place (MapReplace_Patch),
+// or the model: Black 2's pieces are the first values, White 2's the second or the season's after the first
+static u32 SeasonPreview_GetSeasonModel(SeasonPreview *preview, u32 model, u8 season, u8 version) {
     MapReplaceEntry *entries = SeasonPreview_ReadFile(preview, ARCID_MAP_REPLACE, 0);
     u32 count;
     u32 i;
@@ -436,9 +477,19 @@ static u32 SeasonPreview_GetSeasonModel(SeasonPreview *preview, u32 model, u8 se
     }
     count = GFL_ArcSysGetDataLength(ARCID_MAP_REPLACE, 0) / sizeof(MapReplaceEntry);
     for (i = 0; i < count; i++) {
-        if (entries[i].kind == MAP_REPLACE_KIND_CHUNK && entries[i].condition == MAP_REPLACE_CONDITION_SEASON &&
-            entries[i].values[0] == model) {
+        if (entries[i].kind != MAP_REPLACE_KIND_CHUNK || entries[i].values[0] != model) {
+            continue;
+        }
+        if (entries[i].condition == MAP_REPLACE_CONDITION_SEASON) {
             model = entries[i].values[season];
+            break;
+        }
+        if (entries[i].condition == MAP_REPLACE_CONDITION_VERSION) {
+            model = entries[i].values[version];
+            break;
+        }
+        if (entries[i].condition == MAP_REPLACE_CONDITION_VERSION_SEASON) {
+            model = entries[i].values[version == 0 ? 0 : season + 1];
             break;
         }
     }
@@ -452,11 +503,12 @@ static BOOL SeasonPreview_LoadChunks(SeasonPreview *preview, AreaData *area, u8 
     BOOL loaded = TRUE;
     u32 i;
 
-    if (SEASON_PREVIEW_PROPS) {
+    if (preview->spot->props) {
         propArc = SeasonPreview_OpenPropBundle(preview, area);
     }
-    for (i = 0; i < SEASON_PREVIEW_CHUNK_COUNT && loaded; i++) {
-        u32 model = SeasonPreview_GetSeasonModel(preview, sSeasonPreviewChunks[i].model, season);
+    for (i = 0; i < preview->spot->chunkCount && loaded; i++) {
+        u32 model =
+            SeasonPreview_GetSeasonModel(preview, preview->spot->chunks[i].model, season, preview->spot->version);
 
         loaded = SeasonPreview_LoadChunk(preview, arc, propArc, i, model);
     }
@@ -527,9 +579,9 @@ static BOOL SeasonPreview_LoadChunk(SeasonPreview *preview, ArcTool *arc, ArcToo
     if (chunk->animation != NULL) {
         GFL_G3DActorBindAnm(chunk->actor, 0);
     }
-    chunk->position.x = sSeasonPreviewChunks[index].x;
+    chunk->position.x = preview->spot->chunks[index].x;
     chunk->position.y = 0;
-    chunk->position.z = sSeasonPreviewChunks[index].z;
+    chunk->position.z = preview->spot->chunks[index].z;
 
     // The props section is empty in a chunk without props
     propsOffset = header.offsets[header.sectionCount - 1];
@@ -889,7 +941,7 @@ static void SeasonPreview_FreePropResource(SeasonPreviewPropResource *resource) 
 static void SeasonPreview_LoadLights(SeasonPreview *preview, u32 lightsId, u8 season) {
     FieldLightEntry *entries = SeasonPreview_ReadFile(preview, ARCID_LIGHTS_FIELD, lightsId);
     const FieldLightEntry *entry;
-    s32 daySeconds = SEASON_PREVIEW_LIGHT_HOUR < 0 ? RTC_ConvertDaySecondsCached() : SEASON_PREVIEW_LIGHT_HOUR * 3600;
+    s32 daySeconds = preview->spot->lightHour < 0 ? RTC_ConvertDaySecondsCached() : preview->spot->lightHour * 3600;
     s32 previousEnd = 0;
     u32 count;
     u32 index = 0;

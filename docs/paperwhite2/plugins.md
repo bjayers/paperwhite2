@@ -525,6 +525,17 @@ no Geonet. It is Geonet's process slot and overlay with Geonet's parts, without 
   (`generated/text_banks.txt`). Every label, status line and confirmation is there.
 - Graphics: Geonet's archive (`ARCID_GEONET`, `res/graphics/geonet/`) gains three members, see below. The banners
   are the game's own (`ARCID_SEASON_BANNER`, `res/graphics/season_banner/`), unchanged.
+- **Alter Unova** (the menu's fourth button): a row for each place of `paperwhite2/version_places.h`, White 2's look
+  on the left and Black 2's on the right (Desert Route / City Route, Old Town / Modern City, White Forest / Black
+  City, Farmland / Greenhouses, Fiery Caves / Damp Caves), each row's current one in the current colors. A pick sets
+  the place's flag; the place changes at the next map change there (`FieldMapControl_LoadZone` sets the city and the
+  zones from the flags at every map change). The place the player is in (its Pokémon Center) can't be changed. The
+  preview shows the place under the cursor as that button has it, in the season the app shows.
+- **The preview's spots:** `res/paperwhite2/season_preview.json` (the season pages') and
+  `res/paperwhite2/version_preview.json` (each place as White 2 and as Black 2 has it, in `places`), both read by
+  `tools/paperwhite2/season_preview.py` into one table of spots; each spot has its area, chunks, props, lights and
+  camera, and a place's chunks take its version's map pieces by the game's map replacements. The places' cameras are
+  first placements, to be tuned.
 
 | Hook | Where | What |
 | --- | --- | --- |

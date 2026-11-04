@@ -2,6 +2,7 @@
 #include "constants/arc.h"
 #include "constants/sound.h"
 #include "constants/text_banks.h"
+#include "field/player_state.h"
 #include "gfl/arc.h"
 #include "gfl/arc_util.h"
 #include "gfl/bg_sys.h"
@@ -24,6 +25,7 @@
 #include "paperwhite2/season.h"
 #include "paperwhite2/season_app.h"
 #include "paperwhite2/season_preview.h"
+#include "paperwhite2/version_places.h"
 #include "system/app_taskmenu.h"
 #include "system/bmp_winframe.h"
 #include "system/game_data.h"
@@ -36,9 +38,11 @@
 // Paper White 2: the Season app, which the Pokémon Centers' globe opens in Geonet's place, in Geonet's overlay 312. It
 // is built from Geonet's parts (src/ov312/geonet.c): its grid on both screens, its message window and its touch
 // buttons, without the globe. The top screen shows the setting, the season and the season's banner; on the touch
-// screen a menu of buttons leads to pages of buttons that set the season setting of paperwhite2/season.h. Behind the
-// top screen's banner, a 3D preview shows a spot of the field's map in the season (paperwhite2/season_preview.h), or
-// Geonet's grid if it doesn't load (docs/paperwhite2/plugins.md, Season app)
+// screen a menu of buttons leads to pages of buttons that set the season setting of paperwhite2/season.h, and the
+// Alter Unova page, which sets each place of paperwhite2/version_places.h as White 2 or as Black 2 has it. Behind the
+// top screen's banner, a 3D preview shows a spot of the field's map in the season (paperwhite2/season_preview.h), on
+// the Alter Unova page the place under the cursor as that button has it, or Geonet's grid if it doesn't load
+// (docs/paperwhite2/plugins.md, Season app)
 
 // Geonet's heap, which the app takes in its place, at 384 KB, with room for the preview's map, textures and props;
 // Geonet's own was 512 KB
@@ -123,11 +127,10 @@ enum {
 #define EXIT_BUTTON_Y 21
 #define EXIT_BUTTON_WIDTH 9
 // The most buttons a page has, with its Quit or Back button
-#define BUTTON_MAX 6
-// What SeasonApp_GetCurrentValue gives for the menu, whose buttons set nothing
+#define BUTTON_MAX 11
+// What SeasonApp_GetCurrentValue gives for the menu, whose buttons set nothing, and Alter Unova, whose rows each have
+// one
 #define NO_CURRENT_VALUE 0xff
-// The current button when no button of the page is the current setting's
-#define NO_CURRENT_BUTTON 0xff
 
 #define BUTTON_TEXT_COLOR PRINT_COLOR(14, 15, 3)
 
@@ -140,16 +143,25 @@ enum {
     SEQ_END,
 };
 
-// The pages: the three of the settings, which the menu's buttons open, and the menu, the first one
+// The pages: the three of the settings and Alter Unova's, which the menu's buttons open, and the menu, the first one
 enum {
     PAGE_SEASON,
     PAGE_DYNAMIC,
     PAGE_HEMISPHERE,
+    PAGE_UNOVA,
     PAGE_MENU,
     PAGE_COUNT,
 };
 
 #define PAGE_NONE PAGE_COUNT
+
+// An Alter Unova button's value: its place (a VERSION_PLACE_*) and whether it's the place as Black 2 has it
+#define UNOVA_VALUE(place, black2) ((place) * 2 + (black2))
+#define UNOVA_PLACE(value) ((value) / 2)
+#define UNOVA_BLACK2(value) ((value) % 2)
+
+// No spot of the preview yet
+#define NO_PREVIEW_SPOT 0xff
 
 typedef struct {
     u8 bg;
@@ -160,8 +172,8 @@ typedef struct {
     u8 palette;
 } SeasonAppWindowSetup;
 
-// A button of a page: its label, the message once it is picked, the SEASON_MODE_* or HEMISPHERE_* it sets, or on the
-// menu the PAGE_* it opens, and its place in tiles
+// A button of a page: its label, the message once it is picked, the SEASON_MODE_*, HEMISPHERE_* or UNOVA_VALUE it sets,
+// or on the menu the PAGE_* it opens, and its place in tiles
 typedef struct {
     u32 label;
     u32 confirmation;
@@ -202,12 +214,14 @@ typedef struct {
     u8 bannerHidden;
     // Whether the buttons' BG is off until the next frame, while the new buttons' screen waits for the VBlank
     u8 buttonsHidden;
-    // The button drawn in the current setting's colors, or NO_CURRENT_BUTTON
-    u8 currentButton;
+    // The buttons drawn in the current setting's colors, a bit each: one a page, one a row on Alter Unova's
+    u16 currentButtons;
     AppTaskMenuWin *buttons[BUTTON_MAX];
     TouchRect buttonRects[BUTTON_MAX + 1];
-    // The 3D preview, NULL once it fails to load, and the frames left of its fade in after a season loads
+    // The 3D preview, NULL once it fails to load, its spot (NO_PREVIEW_SPOT before the first), and the frames left of
+    // its fade in after a season loads
     SeasonPreview *preview;
+    u8 previewSpot;
     u8 previewFade;
     // Whether the BGs are on, as they are from the fade in
     u8 bgsEnabled;
@@ -229,8 +243,11 @@ static void SeasonApp_ClearMessage(SeasonAppWork *work);
 static void SeasonApp_PrintLine(SeasonAppWork *work, u32 message, u8 line);
 static void SeasonApp_ShowStatus(SeasonAppWork *work);
 static void SeasonApp_ShowHemisphere(SeasonAppWork *work);
-static void SeasonApp_ShowBanner(SeasonAppWork *work, u8 season);
-static void SeasonApp_ShowPreview(SeasonAppWork *work, u8 season);
+static void SeasonApp_ShowBanner(SeasonAppWork *work, u8 season, u8 spot);
+static void SeasonApp_ShowPreview(SeasonAppWork *work, u8 season, u8 spot);
+static void SeasonApp_ShowUnova(SeasonAppWork *work);
+static BOOL SeasonApp_IsCurrentButton(SeasonAppWork *work, u8 index);
+static void SeasonApp_ApplyUnovaButton(SeasonAppWork *work, const SeasonAppButtonSetup *button);
 static void SeasonApp_FreePreview(SeasonAppWork *work);
 static void SeasonApp_UpdatePreviewFade(SeasonAppWork *work);
 static void SeasonApp_ClearBannerBackground(u8 *chars, u32 size);
@@ -311,9 +328,10 @@ static const SeasonAppWindowSetup sSeasonAppMessageWindow = { BG_TOP_TEXT, 2, 19
 
 // clang-format off
 static const SeasonAppButtonSetup sSeasonAppMenuButtons[] = {
-    {SeasonApp_Text_SetSeason, 0, PAGE_SEASON, 8, 4},
-    {SeasonApp_Text_DynamicOptions, 0, PAGE_DYNAMIC, 8, 9},
-    {SeasonApp_Text_SetHemisphere, 0, PAGE_HEMISPHERE, 8, 14},
+    {SeasonApp_Text_SetSeason, 0, PAGE_SEASON, 8, 2},
+    {SeasonApp_Text_DynamicOptions, 0, PAGE_DYNAMIC, 8, 7},
+    {SeasonApp_Text_SetHemisphere, 0, PAGE_HEMISPHERE, 8, 12},
+    {SeasonApp_Text_AlterUnova, 0, PAGE_UNOVA, 8, 17},
 };
 
 static const SeasonAppButtonSetup sSeasonAppSeasonButtons[] = {
@@ -336,12 +354,27 @@ static const SeasonAppButtonSetup sSeasonAppHemisphereButtons[] = {
     {SeasonApp_Text_Southern, SeasonApp_Text_ChangeSouthern, HEMISPHERE_SOUTHERN, 17, 8},
 };
 
+// A row a place, White 2's on the left and Black 2's on the right
+static const SeasonAppButtonSetup sSeasonAppUnovaButtons[] = {
+    {SeasonApp_Text_DesertRoute, SeasonApp_Text_ChangeDesertRoute, UNOVA_VALUE(VERSION_PLACE_ROUTE_4, FALSE), 2, 1},
+    {SeasonApp_Text_CityRoute, SeasonApp_Text_ChangeCityRoute, UNOVA_VALUE(VERSION_PLACE_ROUTE_4, TRUE), 17, 1},
+    {SeasonApp_Text_OldTown, SeasonApp_Text_ChangeOldTown, UNOVA_VALUE(VERSION_PLACE_OPELUCID_CITY, FALSE), 2, 5},
+    {SeasonApp_Text_ModernCity, SeasonApp_Text_ChangeModernCity, UNOVA_VALUE(VERSION_PLACE_OPELUCID_CITY, TRUE), 17, 5},
+    {SeasonApp_Text_WhiteForest, SeasonApp_Text_ChangeWhiteForest, UNOVA_VALUE(VERSION_PLACE_BLACK_CITY, FALSE), 2, 9},
+    {SeasonApp_Text_BlackCity, SeasonApp_Text_ChangeBlackCity, UNOVA_VALUE(VERSION_PLACE_BLACK_CITY, TRUE), 17, 9},
+    {SeasonApp_Text_Farmland, SeasonApp_Text_ChangeFarmland, UNOVA_VALUE(VERSION_PLACE_MISTRALTON_CITY, FALSE), 2, 13},
+    {SeasonApp_Text_Greenhouses, SeasonApp_Text_ChangeGreenhouses, UNOVA_VALUE(VERSION_PLACE_MISTRALTON_CITY, TRUE), 17, 13},
+    {SeasonApp_Text_FieryCaves, SeasonApp_Text_ChangeFieryCaves, UNOVA_VALUE(VERSION_PLACE_REVERSAL_MOUNTAIN, FALSE), 2, 17},
+    {SeasonApp_Text_DampCaves, SeasonApp_Text_ChangeDampCaves, UNOVA_VALUE(VERSION_PLACE_REVERSAL_MOUNTAIN, TRUE), 17, 17},
+};
+
 // clang-format on
 
 static const SeasonAppPage sSeasonAppPages[PAGE_COUNT] = {
     { sSeasonAppSeasonButtons, NELEMS(sSeasonAppSeasonButtons), BUTTON_WIDTH, SeasonApp_Text_Back },
     { sSeasonAppDynamicButtons, NELEMS(sSeasonAppDynamicButtons), BUTTON_WIDTH, SeasonApp_Text_Back },
     { sSeasonAppHemisphereButtons, NELEMS(sSeasonAppHemisphereButtons), BUTTON_WIDTH, SeasonApp_Text_Back },
+    { sSeasonAppUnovaButtons, NELEMS(sSeasonAppUnovaButtons), BUTTON_WIDTH, SeasonApp_Text_Back },
     { sSeasonAppMenuButtons, NELEMS(sSeasonAppMenuButtons), MENU_BUTTON_WIDTH, SeasonApp_Text_Quit },
 };
 
@@ -371,6 +404,7 @@ static BOOL SeasonAppProc_Init(GameProc *proc, u32 *state, void *param, void *pr
     work->gameData = param;
     work->page = PAGE_NONE;
     work->bannerSeason = SEASON_COUNT;
+    work->previewSpot = NO_PREVIEW_SPOT;
     SeasonApp_SetVRAMBanks();
     SeasonApp_InitGraphics(work->heapId);
     GFL_BGSysSetDisplayLayout(GX_DISP_SELECT_MAIN_SUB);
@@ -640,11 +674,18 @@ static void SeasonApp_ShowHemisphere(SeasonAppWork *work) {
     SeasonApp_PrintLine(work, SeasonApp_Text_HemisphereUsedByRealTime, 1);
 }
 
-// Shows the season in the preview, then its banner, as EventSeasonBanner_LoadGraphics loads it, in the banner's palette
-// of the top screen. The palette and the characters are loaded at once, the screen and the scroll at the next VBlank,
-// after the preview's load has taken its frames, so the banner's BG stays off until the frame after that VBlank: no
-// frame shows the new characters with the last banner's screen or scroll
-static void SeasonApp_ShowBanner(SeasonAppWork *work, u8 season) {
+static void SeasonApp_ShowUnova(SeasonAppWork *work) {
+    SeasonApp_ClearMessage(work);
+    SeasonApp_PrintLine(work, SeasonApp_Text_AlterUnovaTitle, 0);
+    SeasonApp_PrintLine(work, SeasonApp_Text_AlterUnovaWhen, 1);
+}
+
+// Shows the season at the preview's spot, then the season's banner, as EventSeasonBanner_LoadGraphics loads it, in the
+// banner's palette of the top screen. The palette and the characters are loaded at once, the screen and the scroll at
+// the next VBlank, after the preview's load has taken its frames, so the banner's BG stays off until the frame after
+// that VBlank: no frame shows the new characters with the last banner's screen or scroll. A new spot in the same season
+// keeps the banner
+static void SeasonApp_ShowBanner(SeasonAppWork *work, u8 season, u8 spot) {
     ArcTool *arc;
     void *file;
     NNSG2dPaletteData *palette;
@@ -652,11 +693,14 @@ static void SeasonApp_ShowBanner(SeasonAppWork *work, u8 season) {
     NNSG2dScreenData *screen;
     int offsetY;
 
+    if (season == work->bannerSeason && spot == work->previewSpot) {
+        return;
+    }
+    SeasonApp_ShowPreview(work, season, spot);
     if (season == work->bannerSeason) {
         return;
     }
     work->bannerSeason = season;
-    SeasonApp_ShowPreview(work, season);
     offsetY = sBannerNameAdjustY[season];
     if (work->preview != NULL) {
         offsetY += BANNER_PREVIEW_OFFSET_Y;
@@ -687,14 +731,15 @@ static void SeasonApp_ShowBanner(SeasonAppWork *work, u8 season) {
     GFL_ArcToolFree(arc);
 }
 
-// Loads the season in the preview, dark until a frame is drawn with it, then fading in. If it doesn't load, the top
-// screen goes back to the grid, without the preview
-static void SeasonApp_ShowPreview(SeasonAppWork *work, u8 season) {
+// Loads a spot in the season in the preview, dark until a frame is drawn with it, then fading in. If it doesn't load,
+// the top screen goes back to the grid, without the preview
+static void SeasonApp_ShowPreview(SeasonAppWork *work, u8 season, u8 spot) {
+    work->previewSpot = spot;
     if (work->preview == NULL) {
         return;
     }
     G2x_SetBlendBrightness_(REG_BLDCNT_ADDR, GX_BLEND_PLANEMASK_BG0, PREVIEW_DARK_BRIGHTNESS);
-    if (SeasonPreview_Load(work->preview, season)) {
+    if (SeasonPreview_Load(work->preview, spot, season)) {
         work->previewFade = PREVIEW_DARK_FRAMES + PREVIEW_FADE_FRAMES;
         return;
     }
@@ -742,11 +787,23 @@ static void SeasonApp_ClearBannerBackground(u8 *chars, u32 size) {
 
 // Shows the season the button under the key cursor would give now: on the season page its season, on the dynamic page
 // its mode's (the game's own for chaos), and on the hemisphere page, in the real-time mode, the hemisphere's. Else, and
-// on Back, the message's season
+// on Back, the message's season. On the Alter Unova page the button's place as it has it, in the message's season, by
+// the key cursor or the touch (on Back the last place shown)
 static void SeasonApp_UpdatePreview(SeasonAppWork *work) {
     const SeasonAppButtonSetup *button;
     u8 season = work->messageSeason;
 
+    if (work->page == PAGE_UNOVA) {
+        u8 spot = work->previewSpot;
+
+        if (work->cursor < work->buttonCount - 1 || spot == NO_PREVIEW_SPOT || spot == SEASON_PREVIEW_SPOT_SEASON) {
+            u8 value = sSeasonAppUnovaButtons[work->cursor < work->buttonCount - 1 ? work->cursor : 0].value;
+
+            spot = SEASON_PREVIEW_SPOT_OF_PLACE(UNOVA_PLACE(value), UNOVA_BLACK2(value));
+        }
+        SeasonApp_ShowBanner(work, season, spot);
+        return;
+    }
     if (work->page < PAGE_MENU && work->cursor < work->buttonCount - 1 && GCTX_HIDIsUsingTouch() == FALSE) {
         button = &sSeasonAppPages[work->page].buttons[work->cursor];
         if (work->page == PAGE_HEMISPHERE) {
@@ -757,7 +814,7 @@ static void SeasonApp_UpdatePreview(SeasonAppWork *work) {
             season = SeasonApp_GetSeasonOf(work, button->value, PaperWhite2_GetSeasonHemisphere(work->gameData));
         }
     }
-    SeasonApp_ShowBanner(work, season);
+    SeasonApp_ShowBanner(work, season, SEASON_PREVIEW_SPOT_SEASON);
 }
 
 // The season a mode and hemisphere give now, as PaperWhite2_GetCurrentSeason has it for the setting
@@ -790,6 +847,9 @@ static void SeasonApp_OpenPage(SeasonAppWork *work, u8 page) {
     if (page == PAGE_HEMISPHERE) {
         SeasonApp_ShowHemisphere(work);
     }
+    if (page == PAGE_UNOVA) {
+        SeasonApp_ShowUnova(work);
+    }
     // The preview's load takes frames, and the buttons' old screen and characters stay until it is done
     SeasonApp_UpdatePreview(work);
     SeasonApp_CreateButtons(work);
@@ -801,9 +861,10 @@ static void SeasonApp_ClosePage(SeasonAppWork *work) {
     work->buttonCount = 0;
 }
 
-// The setting that the page's buttons set, NO_CURRENT_VALUE for the menu
+// The setting that the page's buttons set, NO_CURRENT_VALUE for the menu and Alter Unova, whose rows each have their
+// own (SeasonApp_IsCurrentButton)
 static u8 SeasonApp_GetCurrentValue(SeasonAppWork *work) {
-    if (work->page == PAGE_MENU) {
+    if (work->page == PAGE_MENU || work->page == PAGE_UNOVA) {
         return NO_CURRENT_VALUE;
     }
     if (work->page == PAGE_HEMISPHERE) {
@@ -812,25 +873,35 @@ static u8 SeasonApp_GetCurrentValue(SeasonAppWork *work) {
     return PaperWhite2_GetSeasonMode(work->gameData);
 }
 
+// Whether a button of the page is its current setting's: on Alter Unova, the version its place is as now
+static BOOL SeasonApp_IsCurrentButton(SeasonAppWork *work, u8 index) {
+    u8 value = sSeasonAppPages[work->page].buttons[index].value;
+
+    if (work->page == PAGE_UNOVA) {
+        return PaperWhite2_IsPlaceBlack2(GameData_GetEventWork(work->gameData), UNOVA_PLACE(value)) ==
+               UNOVA_BLACK2(value);
+    }
+    return value == SeasonApp_GetCurrentValue(work);
+}
+
 // Makes the page's buttons, the current setting's in its own colors, then the Quit or Back button, and their rectangles
 // of the touch screen, when a page opens. Their characters go to VRAM at once, over the last buttons', but their screen
 // only at the next VBlank, so the buttons' BG stays off until the frame after it: no frame shows the new characters
 // with the old screen. A pick that keeps the page only moves the colors (SeasonApp_MoveCurrentButton)
 static void SeasonApp_CreateButtons(SeasonAppWork *work) {
     const SeasonAppPage *setup = &sSeasonAppPages[work->page];
-    u8 current = SeasonApp_GetCurrentValue(work);
     u8 i;
 
     work->buttonsHidden = TRUE;
     GFL_BGSysSetBGEnabled(BG_TOUCH_TEXT, FALSE);
-    work->currentButton = NO_CURRENT_BUTTON;
+    work->currentButtons = 0;
     for (i = 0; i < setup->count; i++) {
         const SeasonAppButtonSetup *button = &setup->buttons[i];
         AppTaskMenuRes *res = work->buttonRes;
 
-        if (button->value == current) {
+        if (work->page != PAGE_MENU && SeasonApp_IsCurrentButton(work, i)) {
             res = work->currentButtonRes;
-            work->currentButton = i;
+            work->currentButtons |= 1 << i;
         }
         SeasonApp_CreateButton(work, i, res, button->label, 0, button->x, button->y, setup->buttonWidth);
     }
@@ -893,30 +964,29 @@ static void SeasonApp_UpdateButtons(SeasonAppWork *work) {
     }
 }
 
-// After a pick that keeps the page: ends the picked button's flash, draws the new current setting's button in its
-// colors and the last one in the others', and shows the cursor on the picked button as before, unless the touch screen
-// is in use. Only the palette numbers of those buttons' screen change, at the next VBlank: no button is made again or
-// hidden, and the others aren't touched
+// After a pick that keeps the page: ends the picked button's flash, draws the buttons of the new current settings in
+// their colors and the last ones in the others', and shows the cursor on the picked button as before, unless the touch
+// screen is in use. Only the palette numbers of those buttons' screen change, at the next VBlank: no button is made
+// again or hidden, and the others aren't touched
 static void SeasonApp_MoveCurrentButton(SeasonAppWork *work) {
     const SeasonAppPage *setup = &sSeasonAppPages[work->page];
-    u8 current = SeasonApp_GetCurrentValue(work);
-    u8 next = NO_CURRENT_BUTTON;
+    u16 next = 0;
     BOOL cursorShown = GCTX_HIDIsUsingTouch() == FALSE;
     u8 i;
 
     for (i = 0; i < setup->count; i++) {
-        if (setup->buttons[i].value == current) {
-            next = i;
+        if (SeasonApp_IsCurrentButton(work, i)) {
+            next |= 1 << i;
         }
     }
     AppTaskMenuWin_ResetFlash(work->buttons[work->cursor]);
     for (i = 0; i < setup->count; i++) {
-        if (i == work->cursor || i == work->currentButton || i == next) {
-            AppTaskMenuWin_SetRes(work->buttons[i], i == next ? work->currentButtonRes : work->buttonRes,
+        if (i == work->cursor || ((work->currentButtons ^ next) >> i) & 1) {
+            AppTaskMenuWin_SetRes(work->buttons[i], (next >> i) & 1 ? work->currentButtonRes : work->buttonRes,
                                   cursorShown && i == work->cursor);
         }
     }
-    work->currentButton = next;
+    work->currentButtons = next;
 }
 
 // Reads the touch screen and the keys as the game's task menus do: a touch picks a button, and in touch mode the first
@@ -1020,6 +1090,10 @@ static BOOL SeasonApp_PickButton(SeasonAppWork *work) {
 static void SeasonApp_ApplyButton(SeasonAppWork *work) {
     const SeasonAppButtonSetup *button = &sSeasonAppPages[work->page].buttons[work->cursor];
 
+    if (work->page == PAGE_UNOVA) {
+        SeasonApp_ApplyUnovaButton(work, button);
+        return;
+    }
     if (work->page == PAGE_HEMISPHERE) {
         PaperWhite2_SetSeasonHemisphere(work->gameData, button->value);
     } else {
@@ -1028,6 +1102,24 @@ static void SeasonApp_ApplyButton(SeasonAppWork *work) {
     SeasonApp_MoveCurrentButton(work);
     work->messageSeason = PaperWhite2_GetCurrentSeason(work->gameData);
     SeasonApp_ClearMessage(work);
+    SeasonApp_PrintLine(work, button->confirmation, 0);
+    SeasonApp_UpdatePreview(work);
+}
+
+// Sets the button's place as its version has it, unless the player is in that place (in its Pokémon Center, whose door
+// outside may move), and says what changes, with the place as it is now in the preview
+static void SeasonApp_ApplyUnovaButton(SeasonAppWork *work, const SeasonAppButtonSetup *button) {
+    u16 zone = PlayerState_GetZoneID(GameData_GetPlayerState(work->gameData));
+
+    SeasonApp_ClearMessage(work);
+    if (PaperWhite2_GetVersionPlace(zone) == UNOVA_PLACE(button->value)) {
+        SeasonApp_MoveCurrentButton(work);
+        SeasonApp_PrintLine(work, SeasonApp_Text_CantChangeHere, 0);
+        return;
+    }
+    PaperWhite2_SetPlaceBlack2(GameData_GetEventWork(work->gameData), UNOVA_PLACE(button->value),
+                               UNOVA_BLACK2(button->value));
+    SeasonApp_MoveCurrentButton(work);
     SeasonApp_PrintLine(work, button->confirmation, 0);
     SeasonApp_UpdatePreview(work);
 }
