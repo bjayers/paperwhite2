@@ -12,7 +12,8 @@
 // VMStackCmp only: whether either value or both are TRUE
 #define CMP_OR 6
 #define CMP_AND 7
-// VMJumpIf and VMCallIf: jump if the value popped from the stack is TRUE, instead of testing the comparison register
+// VMJumpIf and VMCallIf: jump if the value popped from the stack isn't TRUE (1), instead of testing the comparison
+// register (Scrcmd_Vm_VMJumpIf)
 #define CMP_STACK 0xFF
 
 // Script variables. Arguments that take a value can take a variable instead

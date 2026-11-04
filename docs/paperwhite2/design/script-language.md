@@ -103,6 +103,20 @@ sub step_aside {
 - 10854 (Script_5): a wild battle with `0x8010`'s species at four fifths of the lead's level (rounded down to fives);
   `0x8012` is 1, 2 or 3 by the result; a loss blacks out.
 
+## Progress
+
+- **2026-11-04, the translator** (`editor/shared/scriptlang/`: `sfile.ts` reads a `.s` file into lines and script
+  blocks, `lang.ts` is the language's syntax tree, printer and parser, `translate.ts` translates a block to the
+  language and back, `equiv.ts` checks that two files run a script the same). Every script of the game (4051) goes to
+  the language, prints and parses back the same, goes back to lines in its file's place and runs as the original
+  (`editor/tests/scriptlang.test.ts`). The original's jumps become if, else and else if: across the game, 7328 ifs
+  and 434 gotos are left of the 8775 jumps; the labels left are those a command names (a routine, a movement) or more
+  than one structure jumps to. Commands still carry the macros' names in lowercase (`actor_msg`); Frost's names, the
+  shortcuts and the numbers come next.
+- Equivalence, not sameness: a condition can be the stack's form or a WorkCmp's, a label's name changes, and a jump
+  to the next statement may go; `equiv.ts` walks both files from the script's label through every command, condition
+  (or its negation with its ways swapped) and jump. Untouched scripts aren't rewritten at all.
+
 ## Order
 
 1. The translator both ways (TypeScript in `editor/shared/`), with the whole-game round trip test.
