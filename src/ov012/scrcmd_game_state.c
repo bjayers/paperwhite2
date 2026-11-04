@@ -43,10 +43,9 @@ BOOL Scrcmd_GameState_GameGetVersion(VM *vm, FieldScriptEnv *env) {
     *value = 22;
 #endif
 #ifdef PAPERWHITE2
-    // Paper White 2: Opelucid City's scripts see the other version while the Version Key has switched it
-    // (paperwhite2/version_key.h)
+    // Paper White 2: the scripts of a place that is Black 2's see Black 2 (paperwhite2/version_places.h)
     if (PaperWhite2_ScriptSeesOtherVersion(FieldScriptEnv_GetGameData(env))) {
-        *value ^= 22 ^ 23;
+        *value = 23;
     }
 #endif
     return FALSE;

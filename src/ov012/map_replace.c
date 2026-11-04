@@ -9,7 +9,7 @@
 #include "system/game_system.h"
 #include "system/season.h"
 #ifdef PAPERWHITE2
-#include "paperwhite2/version_key.h"
+#include "paperwhite2/version_places.h"
 #endif
 
 // The events that change the map, which a MapReplaceEntry's condition picks: an event happened when its work has the
@@ -90,6 +90,25 @@ u32 MapReplace_ResolvePatch(MapReplace *replace, u32 *oldValue, u32 *newValue) {
     return 0;
 }
 
+#ifdef PAPERWHITE2
+u32 MapReplace_ResolvePatchInZone(MapReplace *replace, u16 zoneId, u32 *oldValue, u32 *newValue) {
+    MapReplaceVariables *variables = &replace->variables;
+    u8 version = variables->version;
+    u8 versionSeason = variables->versionSeason;
+    u32 result;
+
+    // (a place that is Black 2's has Black 2's values, the first; a zone of no place keeps the version's)
+    if ((variables->black2Places >> PaperWhite2_GetVersionPlace(zoneId)) & 1) {
+        variables->version = 0;
+        variables->versionSeason = 0;
+    }
+    result = MapReplace_ResolvePatch(replace, oldValue, newValue);
+    variables->version = version;
+    variables->versionSeason = versionSeason;
+    return result;
+}
+#endif
+
 int MapReplace_GetEventByCond(u8 condition) {
     u32 i;
 
@@ -114,10 +133,12 @@ void MapReplace_LoadVariables(MapReplaceVariables *variables, GameSystem *gsys) 
         variables->version = 1;
     }
 #ifdef PAPERWHITE2
-    // Paper White 2: the Version Key switches the version's map pieces (Route 4, Opelucid City, Driftveil City's
-    // market) to the other version's (paperwhite2/version_key.h)
-    if (PaperWhite2_IsVersionSwitched(GSYS_GetGameData(gsys))) {
-        variables->version ^= 1;
+    // Paper White 2: the places that are Black 2's, whose cells take Black 2's pieces (MapReplace_ResolvePatchInZone)
+    variables->black2Places = 0;
+    for (i = 0; i < VERSION_PLACE_COUNT; i++) {
+        if (PaperWhite2_IsPlaceBlack2(eventWork, i)) {
+            variables->black2Places |= 1 << i;
+        }
     }
 #endif
     if (variables->version == 0) {

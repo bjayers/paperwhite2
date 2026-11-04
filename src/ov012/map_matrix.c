@@ -60,9 +60,26 @@ BOOL RangeCheckChunkCoordinateWorld(MapMatrix *matrix, s32 x, s32 z) {
 void MapReplace_Patch(MapMatrix *matrix, MapReplace *replace, HeapID heapId) {
     u32 oldValue;
     u32 newValue;
+#ifdef PAPERWHITE2
+    // Paper White 2: a version's replacement follows the place of the matrix's zone, and a chunk's the place of each
+    // cell (paperwhite2/version_places.h)
+    u32 result = MapReplace_ResolvePatchInZone(replace, matrix->zoneId, &oldValue, &newValue);
+#else
     u32 result = MapReplace_ResolvePatch(replace, &oldValue, &newValue);
+#endif
     u32 i;
 
+#ifdef PAPERWHITE2
+    if (result != 2) {
+        for (i = 0; i < matrix->chunkIdCount; i++) {
+            if (matrix->chunkIds[i] == oldValue &&
+                MapReplace_ResolvePatchInZone(replace, matrix->zoneIds[i], &oldValue, &newValue) == 1) {
+                matrix->chunkIds[i] = newValue;
+            }
+        }
+        return;
+    }
+#endif
     switch (result) {
     case 2:
         MapMatrix_Load(matrix, (u16)newValue, matrix->zoneId, heapId);

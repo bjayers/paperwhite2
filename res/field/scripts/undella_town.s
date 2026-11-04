@@ -24,9 +24,10 @@
     WorkSetConst 0x8023, 0
 
 L_005A:
-    GameGetVersion 0x8023
-    VMStackPush 0x8023
-    VMStackPushConst 23
+    // Paper White 2: Reversal Mountain's warp: Black 2's cave while the place is Black 2's, by its flag, not the game's version
+    // (paperwhite2/version_places.h)
+    VMStackPushFlag EVENT_FLAG_BLACK2_REVERSAL_MOUNTAIN
+    VMStackPushConst 1
     VMStackCmp CMP_EQ
     VMJumpIf CMP_STACK, L_0081
     ObjInitWarpGPos 6, 707, 65532, 299

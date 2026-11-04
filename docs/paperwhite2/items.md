@@ -56,23 +56,25 @@ shares and levels of the new encounter rules (docs/paperwhite2/design/dexnav.md,
 
 ## Version Key
 
-Switches Unova between the way it is in Black 2 and in White 2, without Unova Link's keys or restarting the game.
+A test item: switches every place Unova has as Black 2 or as White 2 at once, all to Black 2's or all back to White
+2's. The game never gives it (the debug menu does); the Pokémon Centers' globe is to switch the places one by one
+(docs/paperwhite2/design/version-key.md).
 
-- **State:** the save's city key (`KeyInfo_GetCityKey`), the one Unova Link's Black City and White Forest keys set, so
-  the item and the keys always agree. The state is in ARM9 main (`src/paperwhite2/main/paperwhite2_version_key.c`).
-- **What it switches:**
-  - Black City or White Forest, as the key does: `CityState`, which the town map and the city's own data read too.
-  - Route 4: White 2 plays the overworld's Route 4 cells as `ZONE_ROUTE_4_16` (zone 551), which
-    `CityState_ApplyVersionZones` now switches with the city (`VERSION_SPECIFIC_ZONES`' third zone,
-    `src/ov012/city_state.c`).
-  - The map pieces that the version decides: `MapReplace_LoadVariables`' version (`src/ov012/map_replace.c`), the
-    replacements of `res/field/map_replacements/replacements.json` whose condition is `version` or `version_season`.
-    These are Route 4's chunks, Opelucid City's buildings, Driftveil City's market and Mistralton City's cells
-    (entries 19-22 and 34-37; design/version-key.md has the plan to keep only the three places the key should change).
-  - Opelucid City's scripts' version checks (`GameGetVersion`, `ActorMsgVersioned`), in the zones whose place is
-    Opelucid City, so its people talk about the city they stand in. Elsewhere the scripts keep White 2's, since the
-    story's version-only events (Kyurem's, among others) shouldn't change.
-  - Not the wild Pokémon: the new encounter tables already have both versions' species.
+- **State:** a flag per place, `EVENT_FLAG_BLACK2_*` (0x931-0x935), set while the place is Black 2's
+  (`include/paperwhite2/version_places.h`, `src/paperwhite2/main/paperwhite2_version_places.c`). Unova Link's city key
+  is no longer read for it: Black City or White Forest follows its place's flag.
+- **The places and what each flag switches:**
+  - **Route 4:** its cells' zone (`ZONE_ROUTE_4` or `ROUTE_4_16`, `CityState_ApplyVersionZones`), its map pieces, the
+    warp Castelia Gate and Join Avenue lead to (their level scripts), the Desert Resort's texture set
+    (`ZoneData_GetAreaID`), and the Dowsing Machine's other Route 4.
+  - **Reversal Mountain:** which cave the mountain's outside and Undella Town lead to (their level scripts).
+  - **Mistralton City:** its and its gate's map pieces.
+  - **Opelucid City:** its, its gate's and three interiors' map pieces, its texture set during the Kyurem freeze.
+  - **Black City:** Black City or White Forest (`CityState_InitFromSave`, the return location, the town map's zone).
+  - In every place's zones, the scripts' version checks (`GameGetVersion`, `ActorMsgVersioned`) see the place's
+    version, so its people say their version's lines.
+  - The map pieces follow the place of each cell (`MapReplace_ResolvePatchInZone`): Driftveil City's market, in no
+    place, stays White 2's.
 - **Bag and Y:** Use leaves the bag with `BAG_RESULT_VERSION_KEY`, and Y runs `SHORTCUT_VERSION_KEY`; both run
   `FIELD_COMMON_EVENT_VERSION_KEY` (`src/paperwhite2/ov012/paperwhite2_version_key_event.c`). It switches the key and
   says which version Unova is as now (script 2820 or 2821), then fades out and loads the map again where the player
@@ -83,18 +85,10 @@ Switches Unova between the way it is in Black 2 and in White 2, without Unova Li
 - **Description:** ends with "It's set to Black 2." or "White 2.".
 - **Icon:** the GB Sounds' for now.
 - **Obtained:** the debug menu for now.
-- **Shelved (2026-11-03): tested, not ready.** Known problems, for when it's picked up again:
-  - White textures on Route 4 after switching, which a battle (the field's reload) fixes. Not yet explained: the map
-    change closes and reopens the field. The lead is the areas' own version swap, `VERSION_SPECIFIC_AREAS`, which
-    `FieldMapControl_LoadZone` (`src/ov035/event_mapchange.c`) allows for `VERSION_AREA_OWN` only (the build's
-    version, not the key's) once map-replace event 0 is set. That is Opelucid City's area (50 to 266 or 270), so
-    Opelucid's textures are sure to be wrong too until it follows the key.
-  - A Black 2 Route 4 trainer (the one by the road, script 5220, an ID of `GLOBAL_SCRIPT_TABLE`'s 5000-6999 row)
-    battles again each time the player comes back: its defeat isn't kept. Not yet looked into.
-  - Where it can be used needs limiting: the reload keeps the player's tile, and the other version can have a
-    building or a wall there (tested on Route 4: the player ends up inside a building). It should be used only where
-    both versions' tiles are free, or move the player to a free tile, or warp to a fixed spot.
-  - Not yet checked: Black 2's story flags and events in the zones it switches, and Black City's and White Forest's
-    own data the first time it's switched.
+- **Rebuilt by place (2026-11-04), to test.** The shelved version's problems: the white textures came from the gates'
+  warps, which chose Route 4 by the game's version (now Route 4's flag), and the Kyurem freeze's and the Desert
+  Resort's areas (now their places' flags); the re-battling trainer was Pokémon Breeder Irene, one of the game's
+  re-battle trainers (design/version-key.md). Still to do: limiting where it can be used (the reload keeps the
+  player's tile), the globe's page, and Unova Link's key screen.
 - **Scripts:** 2820-2822 are past `global_2800.s`'s original last ID, so its row of `GLOBAL_SCRIPT_TABLE`
   (`src/ov012/script_sys.c`) ends at 2822 under `PAPERWHITE2`.

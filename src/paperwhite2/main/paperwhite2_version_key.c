@@ -1,46 +1,31 @@
 #include "types.h"
-#include "constants/places.h"
 #include "field/player_state.h"
 #include "field/zone.h"
 #include "paperwhite2/version_key.h"
-#include "save/key_info.h"
-#include "save/save_control.h"
+#include "paperwhite2/version_places.h"
 #include "system/game_data.h"
 
-// Paper White 2: the Version Key's state (paperwhite2/version_key.h), the save's city key, which the bag, the field's
-// event, the map's loading and Opelucid City's scripts read
-
-static KeyInfoSave *VersionKey_GetKeyInfo(GameData *gameData) {
-    return getKeyInfoSaveBlk(GameData_GetSaveControl(gameData));
-}
-
-BOOL PaperWhite2_IsVersionSwitched(GameData *gameData) {
-    return KeyInfo_GetCityKey(VersionKey_GetKeyInfo(gameData)) != 0;
-}
+// Paper White 2: the Version Key's state (paperwhite2/version_key.h): every place of paperwhite2/version_places.h at
+// once, which the bag, the field's event and the scripts read
 
 BOOL PaperWhite2_IsBlackVersionWorld(GameData *gameData) {
-#ifdef BLACK2
-    return !PaperWhite2_IsVersionSwitched(gameData);
-#else
-    return PaperWhite2_IsVersionSwitched(gameData);
-#endif
+    return PaperWhite2_AreAllPlacesBlack2(GameData_GetEventWork(gameData));
 }
 
 BOOL PaperWhite2_ToggleVersion(GameData *gameData) {
-    CityState *city = GameData_GetMyCityState(gameData);
+    EventWork *eventWork = GameData_GetEventWork(gameData);
+    BOOL black2 = !PaperWhite2_AreAllPlacesBlack2(eventWork);
+    u32 place;
 
-    KeyInfo_SetCityKey(VersionKey_GetKeyInfo(gameData), !PaperWhite2_IsVersionSwitched(gameData));
-    // The city the field plays, as CityState_InitFromSave sets it from the key when the game starts
-    city->city = PaperWhite2_IsBlackVersionWorld(gameData) ? CITY_BLACK_CITY : CITY_WHITE_FOREST;
-    return PaperWhite2_IsBlackVersionWorld(gameData);
+    for (place = 0; place < VERSION_PLACE_COUNT; place++) {
+        PaperWhite2_SetPlaceBlack2(eventWork, place, black2);
+    }
+    // The city the field plays, as CityState_InitFromSave sets it from the flag when the game starts
+    GameData_GetMyCityState(gameData)->city = black2 ? CITY_BLACK_CITY : CITY_WHITE_FOREST;
+    return black2;
 }
 
 BOOL PaperWhite2_ScriptSeesOtherVersion(GameData *gameData) {
-    u16 place;
-
-    if (!PaperWhite2_IsVersionSwitched(gameData)) {
-        return FALSE;
-    }
-    place = ZoneData_GetPlaceNameID(PlayerState_GetZoneID(GameData_GetPlayerState(gameData)));
-    return place == PLACE_OPELUCID_CITY || place == PLACE_OPELUCID_CITY_2;
+    return PaperWhite2_IsZoneBlack2(GameData_GetEventWork(gameData),
+                                    PlayerState_GetZoneID(GameData_GetPlayerState(gameData)));
 }

@@ -63,6 +63,10 @@ typedef struct {
     u8 versionSeason;
     // Whether each event of EVENT_MAP_REPLACE_TABLE happened
     u8 events[10];
+#ifdef PAPERWHITE2
+    // Paper White 2: the places that are Black 2's, a bit each by VERSION_PLACE_* (paperwhite2/version_places.h)
+    u8 black2Places;
+#endif
 } MapReplaceVariables;
 
 struct MapReplace {
@@ -106,6 +110,10 @@ s32 MapReplace_LoadEntry(MapReplace *replace, u32 index);
 void MapReplace_Free(MapReplace *replace);
 void MapReplace_Patch(MapMatrix *matrix, MapReplace *replace, HeapID heapId);
 u32 MapReplace_ResolvePatch(MapReplace *replace, u32 *oldValue, u32 *newValue);
+#ifdef PAPERWHITE2
+// Paper White 2: MapReplace_ResolvePatch for a cell of a zone, whose place's version decides a version's replacement
+u32 MapReplace_ResolvePatchInZone(MapReplace *replace, u16 zoneId, u32 *oldValue, u32 *newValue);
+#endif
 int MapReplace_GetEventByCond(u8 condition);
 const MapReplaceEvent *MapReplace_GetEventByUID(GameData *gameData, u16 uid);
 void GameData_SetEventMapReplace(GameData *gameData, u16 uid, BOOL set);

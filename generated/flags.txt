@@ -2353,11 +2353,13 @@ EVENT_FLAG_0x092e
 EVENT_FLAG_EXP_SHARE_OFF
 # Paper White 2: always set, the spawn flag of the NPCs whose conditions fail at zone entry (paperwhite2_spawns.c)
 EVENT_FLAG_SPAWN_HIDDEN
-EVENT_FLAG_0x0931
-EVENT_FLAG_0x0932
-EVENT_FLAG_0x0933
-EVENT_FLAG_0x0934
-EVENT_FLAG_0x0935
+# Paper White 2: each place that plays as Black 2 has it while it's set (paperwhite2/version_places.h): Route 4,
+# Reversal Mountain, Mistralton City, Opelucid City, Black City (else White Forest)
+EVENT_FLAG_BLACK2_ROUTE_4
+EVENT_FLAG_BLACK2_REVERSAL_MOUNTAIN
+EVENT_FLAG_BLACK2_MISTRALTON_CITY
+EVENT_FLAG_BLACK2_OPELUCID_CITY
+EVENT_FLAG_BLACK2_BLACK_CITY
 EVENT_FLAG_0x0936
 EVENT_FLAG_0x0937
 EVENT_FLAG_0x0938

@@ -360,6 +360,14 @@ What the user should know about mixing:
 - **Opelucid's story events** (the Kyurem freeze, map-replace event 0) run under its flag; switching it during the
   freeze is a case to test.
 
+## Progress
+
+- 2026-11-04, stage 1 and the level scripts: the places and their flags (`paperwhite2/version_places.h`); the map
+  pieces by each cell's place; Route 4's zone pair, Black City's city, the return location and the town map by their
+  flags (no more Unova Link key); the Desert Resort's and the Kyurem freeze's areas; the Dowsing Machine; the scripts'
+  version checks in each place's zones; Castelia Gate's, Join Avenue's, Undella Town's and Reversal Mountain's level
+  scripts on the flags. The Version Key sets them all at once, for testing. Built, not yet tested in game.
+
 ## Open questions for the user
 
 1. Where it can be used: A (refuse inside the places), B (warp to a fixed spot), or something else?

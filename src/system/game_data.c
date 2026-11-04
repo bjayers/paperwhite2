@@ -46,6 +46,9 @@
 #include "system/season.h"
 #include "system/shortcut_util.h"
 #include "system/wih_dwc.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/version_places.h"
+#endif
 
 // The game's data while it runs: the save control, the works the field and its applications share, and the copies
 // of the save's blocks that the report writes back. Names from swan (https://github.com/ds-pokemon-hacking/swan,
@@ -357,9 +360,17 @@ u16 GetReturnLocationIdx(GameData *gameData) {
         }
         return RETURN_LOCATION_WHITE_FOREST;
 #else
+#ifdef PAPERWHITE2
+        // Paper White 2: Black City is Black 2's by its place's flag, not Unova Link's key
+        // (paperwhite2/version_places.h)
+        if (!PaperWhite2_IsPlaceBlack2(GameData_GetEventWork(gameData), VERSION_PLACE_BLACK_CITY)) {
+            return RETURN_LOCATION_WHITE_FOREST;
+        }
+#else
         if (KeyInfo_GetCityKey(getKeyInfoSaveBlk(GameData_GetSaveControl(gameData))) == 0) {
             return RETURN_LOCATION_WHITE_FOREST;
         }
+#endif
         return RETURN_LOCATION_BLACK_CITY;
 #endif
     }

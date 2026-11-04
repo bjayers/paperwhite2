@@ -13,6 +13,7 @@
 #include "gfl/heap.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/version_key.h"
+#include "paperwhite2/version_places.h"
 #endif
 #include "system/game_data.h"
 #include "system/season.h"
@@ -340,9 +341,18 @@ u16 ZoneData_GetAreaID(u16 zoneId) {
     }
 
 #ifdef WHITE2
+#ifdef PAPERWHITE2
+    // Paper White 2: the Desert Resort's textures are White 2's only while Route 4, beside it, is too
+    // (paperwhite2/version_places.h)
+    if (zoneId == ZONE_DESERT_RESORT &&
+        !PaperWhite2_IsPlaceBlack2(PaperWhite2_GetRunningEventWork(), VERSION_PLACE_ROUTE_4)) {
+        areaId = AREA_DESERT_RESORT_WHITE2;
+    }
+#else
     if (zoneId == ZONE_DESERT_RESORT) {
         areaId = AREA_DESERT_RESORT_WHITE2;
     }
+#endif
 #endif
     return areaId;
 }

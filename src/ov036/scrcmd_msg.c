@@ -584,12 +584,9 @@ BOOL Scrcmd_Msg_ActorMsgGendered(VM *vm, FieldScriptEnv *env) {
 
 BOOL Scrcmd_Msg_ActorMsgVersioned(VM *vm, FieldScriptEnv *env) {
 #ifdef PAPERWHITE2
-    // Paper White 2: Opelucid City's people say the other version's lines while the Version Key has switched it
-    // (paperwhite2/version_key.h)
-    GameData *gameData = FieldScriptEnv_GetGameData(env);
-
-    if (PaperWhite2_ScriptSeesOtherVersion(gameData)) {
-        return CallFieldActorMessageDispSelect(vm, env, PaperWhite2_IsBlackVersionWorld(gameData));
+    // Paper White 2: the people of a place that is Black 2's say Black 2's lines (paperwhite2/version_places.h)
+    if (PaperWhite2_ScriptSeesOtherVersion(FieldScriptEnv_GetGameData(env))) {
+        return CallFieldActorMessageDispSelect(vm, env, TRUE);
     }
 #endif
 #ifdef BLACK2

@@ -30,6 +30,9 @@
 #include "system/game_system.h"
 #include "system/infowin.h"
 #include "system/palanm.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/version_places.h"
+#endif
 
 // The Dowsing MCHN's touch screen, named after the ROM's "dowsing.c". Every frame it looks for the closest hidden item
 // in the area around the player, picks a signal from the map of the archive (how near it is), and shows it with the
@@ -493,10 +496,21 @@ void Dowsing_Update(DowsingWork *work, BOOL active) {
             if (hit.type == HIT_HIDDEN_ITEM) {
                 const HiddenItem *item = hit.item;
                 if (zoneId != item->zoneId) {
+#ifdef PAPERWHITE2
+                    // Paper White 2: the Route 4 left out is the one its place isn't as (paperwhite2/version_places.h)
+                    if (!item->outdoors || !zoneIsMatrix0 || GetZoneIsEntralinkAny(item->zoneId) ||
+                        item->zoneId == (PaperWhite2_IsPlaceBlack2(GameData_GetEventWork(GSYS_GetGameData(gsys)),
+                                                                   VERSION_PLACE_ROUTE_4)
+                                             ? ZONE_ROUTE_4_16
+                                             : ZONE_ROUTE_4)) {
+                        continue;
+                    }
+#else
                     if (!item->outdoors || !zoneIsMatrix0 || GetZoneIsEntralinkAny(item->zoneId) ||
                         item->zoneId == ZONE_OTHER_ROUTE_4) {
                         continue;
                     }
+#endif
                 }
                 x = item->x;
                 z = item->z;

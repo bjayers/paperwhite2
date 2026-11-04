@@ -12,6 +12,9 @@
 #include "save/save_control.h"
 #include "save/trainer_card.h"
 #include "system/game_data.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/version_places.h"
+#endif
 
 // The Union Room, the Plasma Frigate, the Hidden Grottoes and the Black Tower or White Treehollow with Black City's or
 // White Forest's gates show on the map where the player entered them, or where the game state puts them
@@ -45,9 +48,17 @@ u16 TownMap_GetMapZone(GameData *gameData, u16 zoneId) {
         }
         return ZONE_WHITE_FOREST;
 #else
+#ifdef PAPERWHITE2
+        // Paper White 2: Black City is Black 2's by its place's flag, not Unova Link's key
+        // (paperwhite2/version_places.h)
+        if (!PaperWhite2_IsPlaceBlack2(GameData_GetEventWork(gameData), VERSION_PLACE_BLACK_CITY)) {
+            return ZONE_WHITE_FOREST;
+        }
+#else
         if (KeyInfo_GetCityKey(getKeyInfoSaveBlk(GameData_GetSaveControl(gameData))) == 0) {
             return ZONE_WHITE_FOREST;
         }
+#endif
         return ZONE_BLACK_CITY;
 #endif
     }

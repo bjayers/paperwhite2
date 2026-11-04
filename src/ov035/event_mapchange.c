@@ -61,6 +61,7 @@
 
 #ifdef PAPERWHITE2
 #include "paperwhite2/season.h"
+#include "paperwhite2/version_places.h"
 #endif
 
 struct EventGameOpening {
@@ -1631,7 +1632,16 @@ void FieldMapControl_LoadZone(GameSystem *gsys, u16 zoneId) {
     SetAllowVersionSpecificArea(VERSION_AREA_2, FALSE);
     if (GameData_IsMapReplaceEventSet(gameData, 0)) {
         SetAllowVersionSpecificArea(VERSION_AREA_2, TRUE);
+#ifdef PAPERWHITE2
+        // Paper White 2: Opelucid City frozen as the version its place is (paperwhite2/version_places.h)
+        SetAllowVersionSpecificArea(
+            PaperWhite2_IsPlaceBlack2(GameData_GetEventWork(gameData), VERSION_PLACE_OPELUCID_CITY)
+                ? VERSION_AREA_BLACK2
+                : VERSION_AREA_WHITE2,
+            TRUE);
+#else
         SetAllowVersionSpecificArea(VERSION_AREA_OWN, TRUE);
+#endif
     }
 }
 
@@ -1841,7 +1851,12 @@ void *EventMapChange_DSProtNop(void *arg0, void *arg1) {
 }
 
 void CityState_InitFromSave(CityState *state, PlayerInfo *player, SaveControl *save, u32 unused) {
+#ifdef PAPERWHITE2
+    // Paper White 2: Black City is Black 2's by its place's flag, not Unova Link's key (paperwhite2/version_places.h)
+    u32 switched = PaperWhite2_IsPlaceBlack2(getConstDataBlock(save), VERSION_PLACE_BLACK_CITY);
+#else
     u32 switched = KeyInfo_GetCityKey(getKeyInfoSaveBlk(save));
+#endif
 
     state->initialized = TRUE;
 #ifdef BLACK2
