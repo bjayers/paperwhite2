@@ -311,6 +311,44 @@ All the files hooked are complete in `delinks.txt`. Build with `python3 configur
   over the map): `route_4` with Black 2's map pieces (the replacements' first value), its NPCs and its texture set,
   `route_4_16` with White 2's, so the user can compare the NPCs with the debug menu.
 
+## Each place on its own (the user's idea, 2026-11-04)
+
+The globe's menu can switch the places one by one, each with its own event flag, set when that place is as the
+other version (Black 2) has it. The flags come from the hack's block (plugins.md, flags: 0x931 on is free).
+
+| Place | What its flag switches |
+| --- | --- |
+| Route 4 | its zone pair (`ZONE_ROUTE_4` / `ROUTE_4_16`, `VERSION_SPECIFIC_ZONES`' third), its replacements 27-33, Castelia Gate's and Join Avenue's warp choice, the Dowsing Machine's other-Route-4 check, and the Desert Resort's texture set (the area White 2 forces, zonedata.c:342-346, has to match the Route 4 cells beside it) |
+| Reversal Mountain | the warp choice of the mountain's outside and Undella Town (which cave) |
+| Mistralton City | its replacements 19-22 and the gate's 34-37 |
+| Opelucid City | its replacements 23-26, the gate's 38-41 and the interiors' 42-44, its areas (`VERSION_SPECIFIC_AREAS`, the Kyurem freeze's included), and its people's version checks (`GameGetVersion` and `ActorMsgVersioned` in its zones) |
+| Black City / White Forest | `CityState` and the first two zone pairs, the town map's city |
+
+How the parts read them:
+
+- **The C** asks one function, `PaperWhite2_PlaceIsOtherVersion(place)`, in place of the one switch the shelved key
+  had: `MapReplace_LoadVariables`' single `version` becomes a per-entry choice (each version replacement's place, a
+  small table by entry, or the place of the cell, as the plan's step 4 has it), `CityState_ApplyVersionZones` takes
+  each pair's place, and `GameGetVersion`'s hook asks the place of the zone the script runs in.
+- **The scripts** that choose a warp read the place's flag directly (`if (flag(...) == 1)`) in place of
+  `GameGetVersion`, so no new command is needed and they stay editable in the script language; only those lines
+  change, since Undella Town's and the gates' other version checks (if any) shouldn't follow the place.
+- **The menu**: a page of the places, each Black 2 or White 2, and "All". A place's row is refused (greyed) while the
+  player is in that place's own Pokémon Center (Opelucid's, Black City's): the door outside may move.
+
+What it costs over one flag: little. The per-place work (the replacements by place, the zone pairs, the areas) is in
+the plan already; the flags add a table of places and a menu page.
+
+What the user should know about mixing:
+
+- **Black City / White Forest switches its facility**: Black City has the Black Tower, White Forest the White
+  Treehollow. Whether their saved progress and records are shared or kept apart isn't checked yet.
+- **Places are independent of each other** as far as read: each place's trainers have their own IDs (defeats are
+  `0x5f0 + ID`), its items their own flags, its wild Pokémon their zones' tables. Route 4 and the Desert Resort's
+  textures are the one tie found, kept by one flag.
+- **Opelucid's story events** (the Kyurem freeze, map-replace event 0) run under its flag; switching it during the
+  freeze is a case to test.
+
 ## Open questions for the user
 
 1. Where it can be used: A (refuse inside the places), B (warp to a fixed spot), or something else?
