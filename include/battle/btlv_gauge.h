@@ -57,6 +57,8 @@ typedef struct {
 #ifdef PAPERWHITE2
     // Paper White 2: the level with its prestige, shown in gold, or 0 without one (paperwhite2/prestige.h)
     u16 prestigeLevel;
+    // Paper White 2: the Exp. bar is its prestige's, in gold (exp and expMax its progress and the level's cost)
+    BOOL prestigeBar;
 #endif
 } BtlvGaugeMon;
 

@@ -101,3 +101,25 @@ BOOL PaperWhite2_AddPrestigeLevel(BoxPkm *pkm) {
     PML_PkmSetParam(pkm, PKM_PARAM_PRESTIGE, prestige + 1);
     return TRUE;
 }
+
+BOOL PaperWhite2_GetPrestigeProgress(BoxPkm *pkm, u32 *progress, u32 *cost, u32 *total) {
+    u32 value;
+    u32 prestige;
+    u32 i;
+
+    if (PML_PkmGetLevel(pkm) < PRESTIGE_LEVEL_START) {
+        return FALSE;
+    }
+    value = PML_PkmGetParam(pkm, PKM_PARAM_PRESTIGE, NULL);
+    prestige = value & PRESTIGE_LEVEL_MASK;
+    if (prestige > PRESTIGE_MAX) {
+        prestige = PRESTIGE_MAX;
+    }
+    *progress = (value >> PRESTIGE_LEVEL_BITS) * PRESTIGE_EXP_UNIT;
+    *cost = Prestige_GetCost(pkm, prestige) * PRESTIGE_EXP_UNIT;
+    *total = *progress;
+    for (i = 0; i < prestige; i++) {
+        *total += Prestige_GetCost(pkm, i) * PRESTIGE_EXP_UNIT;
+    }
+    return TRUE;
+}

@@ -213,6 +213,21 @@ void BtlvGauge_Update(BtlvGauge *gauge) {
     }
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: a level 100 Pokémon's Exp. bar shows its prestige's progress, in gold (paperwhite2/prestige.h)
+static void BtlvGauge_SetPrestigeBar(BtlvGaugeMon *gaugeMon, BoxPkm *pkm) {
+    u32 progress;
+    u32 cost;
+    u32 total;
+
+    if (PaperWhite2_GetPrestigeProgress(pkm, &progress, &cost, &total)) {
+        gaugeMon->exp = progress;
+        gaugeMon->expMax = cost;
+        gaugeMon->prestigeBar = TRUE;
+    }
+}
+
+#endif
 void BtlvGauge_SetBattleMon(BtlvGauge *gauge, BtlMainModule *mainModule, BattleMon *mon, u32 type, int index) {
     u32 status;
 
@@ -244,6 +259,9 @@ void BtlvGauge_SetBattleMon(BtlvGauge *gauge, BtlMainModule *mainModule, BattleM
         gauge->entries[index].mon.exp = 0;
         gauge->entries[index].mon.expMax = 0;
     }
+#ifdef PAPERWHITE2
+    BtlvGauge_SetPrestigeBar(&gauge->entries[index].mon, PokeParty_GetBoxPkm(GetSrcData(mon)));
+#endif
     gauge->entries[index].mon.expAnim = GAUGE_ANIM_START;
     gauge->entries[index].mon.expDelta = 0;
     gauge->entries[index].mon.unk2e = 0;
@@ -300,6 +318,9 @@ void BtlvGauge_SetPartyPkm(BtlvGauge *gauge, PokeDexSave *pokedex, PartyPkm *pkm
         gauge->entries[index].mon.exp = 0;
         gauge->entries[index].mon.expMax = 0;
     }
+#ifdef PAPERWHITE2
+    BtlvGauge_SetPrestigeBar(&gauge->entries[index].mon, PokeParty_GetBoxPkm(pkm));
+#endif
     gauge->entries[index].mon.expAnim = GAUGE_ANIM_START;
     gauge->entries[index].mon.expDelta = 0;
     gauge->entries[index].mon.unk2e = 0;
@@ -1143,6 +1164,35 @@ static void BtlvGauge_DrawBar(BtlvGauge *gauge, int index, int bar) {
         }
         ClActor_GetImageProxy(entry->expActor, &proxy);
         BtlvGauge_CalcBarTiles(entry->mon.expMax, entry->mon.exp, entry->mon.expDelta, &entry->mon.expAnim, tiles, 10);
+#ifdef PAPERWHITE2
+        // Paper White 2: a prestige bar's tiles with the blue as the HP bar's gold (paperwhite2/prestige.h)
+        if (entry->mon.prestigeBar) {
+            u8 tile[0x20];
+            u32 j;
+
+            for (i = 0; i < 10; i++) {
+                const u8 *src = (const u8 *)gauge->chars + tiles[i] * 0x20 + 0x400;
+
+                for (j = 0; j < sizeof(tile); j++) {
+                    u8 low = src[j] & 0xf;
+                    u8 high = src[j] >> 4;
+
+                    if (low == PRESTIGE_GAUGE_BAR_FROM || low == PRESTIGE_GAUGE_BAR_FROM + 1) {
+                        low += PRESTIGE_GAUGE_BAR_TO - PRESTIGE_GAUGE_BAR_FROM;
+                    }
+                    if (high == PRESTIGE_GAUGE_BAR_FROM || high == PRESTIGE_GAUGE_BAR_FROM + 1) {
+                        high += PRESTIGE_GAUGE_BAR_TO - PRESTIGE_GAUGE_BAR_FROM;
+                    }
+                    tile[j] = low | (high << 4);
+                }
+                MI_CpuCopy16(
+                    tile,
+                    (void *)((u32)vram + (i + 1) * 0x20 + proxy.vramLocation.baseAddrOfVram[NNS_G2D_VRAM_TYPE_2DMAIN]),
+                    0x20);
+            }
+            break;
+        }
+#endif
         for (i = 0; i < 10; i++) {
             MI_CpuCopy16(
                 gauge->chars + (tiles[i] * 0x20 + 0x400),

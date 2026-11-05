@@ -5586,11 +5586,14 @@ BOOL ServerControl_GiveExp(BtlServerFlow *flow, BattleParty *party, const BtlFlo
                 result = TRUE;
             }
 #ifdef PAPERWHITE2
-            // Paper White 2: at level 100, the Exp. goes to its prestige, which the screens show past 100; a new
-            // prestige level is said, in gold (paperwhite2/prestige.h)
+            // Paper White 2: at level 100, the Exp. goes to its prestige, which the screens show past 100, said as the
+            // Exp. is; a new prestige level is said too, in gold (paperwhite2/prestige.h)
             else {
                 BoxPkm *pkm = PokeParty_GetBoxPkm(GetSrcData(mon));
 
+                BtlServerCmdQueue_PutMsg(flow->queue, SC_MSG_STD, Bank0017_Text_GainedPrestigePoints, GetMonID(mon),
+                                         entry->exp, SC_MSG_ARG_END);
+                result = TRUE;
                 if (PaperWhite2_AddPrestigeExp(pkm, entry->exp)) {
                     BtlServerCmdQueue_PutMsg(flow->queue, SC_MSG_STD, Bank0017_Text_PrestigeRose, GetMonID(mon),
                                              PaperWhite2_GetShownLevel(pkm), SC_MSG_ARG_END);

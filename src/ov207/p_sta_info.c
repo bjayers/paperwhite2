@@ -15,6 +15,10 @@
 #include "pml/species_names.h"
 #include "system/app_menu_common.h"
 #include "system/game_data.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/prestige.h"
+#include "text/system/p_sta_sys.h"
+#endif
 
 // The summary screen's info page: the Pokédex number, species, original trainer, ID and experience, and the trainer
 // memo, which says where and when the Pokémon was met and what its nature and best individual value say about it. The
@@ -291,6 +295,33 @@ static void PStaInfo_PrintInfo(PStatusWork *wk, PStaInfoWork *info, BoxPkm *pkm)
         if (level == LEVEL_MAX) {
             toNext = 0;
         }
+#ifdef PAPERWHITE2
+        // Paper White 2: at level 100, its prestige: the points gained, to the next prestige level, and the bar in gold
+        // (paperwhite2/prestige.h)
+        if (PaperWhite2_GetPrestigeProgress(pkm, &gained, &nextExp, &exp)) {
+            PStatus_PrintToWindow(wk, info->windows[5], PStaSys_Text_PrestigePoints, 1, 1, PRINT_COLOR(15, 2, 0));
+            wordSet = GFL_WordSetSystemCreateDefault(wk->heapId);
+            WordSetNumber(wordSet, 0, exp, 8, 0, 1);
+            PStatus_PrintFormattedToWindow(wk, info->windows[6], wordSet, 18, 1, 1, PRESTIGE_PRINT_COLOR);
+            GFL_WordSetSystemFree(wordSet);
+            PStatus_PrintToWindow(wk, info->windows[7], 19, 1, 1, PRINT_COLOR(15, 2, 0));
+            PStatus_PrintToWindow(wk, info->windows[8], 20, 1, 1, PRINT_COLOR(1, 2, 0));
+            wordSet = GFL_WordSetSystemCreateDefault(wk->heapId);
+            WordSetNumber(wordSet, 0, nextExp - gained, 8, 0, 1);
+            PStatus_PrintFormattedToWindow(wk, info->windows[8], wordSet, 21, 33, 1, PRESTIGE_PRINT_COLOR);
+            GFL_WordSetSystemFree(wordSet);
+            width = gained * EXP_BAR_WIDTH / nextExp;
+            if (gained != 0 && width == 0) {
+                width = 1;
+            }
+            if (width >= EXP_BAR_WIDTH) {
+                width = EXP_BAR_WIDTH - 1;
+            }
+            GFL_BitmapFillArea(BmpWin_GetBitmap(info->windows[9]), 0, 3, width, 3, PRESTIGE_BAR_COLOR);
+            info->isPrinted = TRUE;
+            return;
+        }
+#endif
         PStatus_PrintToWindow(wk, info->windows[5], 17, 1, 1, PRINT_COLOR(15, 2, 0));
         wordSet = GFL_WordSetSystemCreateDefault(wk->heapId);
         WordSetNumber(wordSet, 0, exp, 7, 0, 1);

@@ -297,7 +297,7 @@ static void PokeListPlate_DrawInfo(PokeListWork *wk, PokeListPlate *plate, BOOL 
 #ifdef PAPERWHITE2
             // Paper White 2: a level 100 Pokémon's prestige level, in gold (paperwhite2/prestige.h)
             BoxPkm *box = PokeParty_GetBoxPkm(plate->pkm);
-            u32 color = PaperWhite2_HasPrestige(box) ? PRESTIGE_PRINT_COLOR : 0x440;
+            u32 color = PaperWhite2_HasPrestige(box) ? PRESTIGE_PLATE_PRINT_COLOR : 0x440;
 
             WordSetNumber(wordSet, 0, PaperWhite2_GetShownLevel(box), 3, 0, TRUE);
             if (numbersOnly == FALSE) {

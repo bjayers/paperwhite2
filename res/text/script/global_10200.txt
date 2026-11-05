@@ -198,5 +198,5 @@ Global10200_Text_DebugPartyLevel100 = Party to level 100
 Global10200_Text_DebugAddPrestige = Add prestige
 Global10200_Text_DebugLevel100Done = {0100:0} is now level 100.\nIts moves stay as they were.
 Global10200_Text_DebugPartyLevel100Done = The whole party is now level 100.\nTheir moves stay as they were.
-Global10200_Text_DebugAddPrestigeDone = {0100:0}'s Prestige is now\n{ff00:433}Lv. {0200:2}{ff00:0}.
+Global10200_Text_DebugAddPrestigeDone = {0100:0}'s Prestige is now\n{ff00:450}Lv. {0200:2}{ff00:0}.
 Global10200_Text_DebugAddPrestigeNot = {0100:0} isn't level 100,\nor its Prestige is at its greatest.

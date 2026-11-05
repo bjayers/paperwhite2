@@ -22,14 +22,26 @@ u32 PaperWhite2_GetShownLevel(BoxPkm *pkm);
 BOOL PaperWhite2_HasPrestige(BoxPkm *pkm);
 // Adds Exp. to a level 100 Pokémon's prestige, and returns TRUE if its prestige level rose
 BOOL PaperWhite2_AddPrestigeExp(BoxPkm *pkm, u32 exp);
+// A level 100 Pokémon's Exp. toward its next prestige level, what that level costs, and all it has gained as prestige
+// (the levels' costs and the progress); FALSE below level 100
+BOOL PaperWhite2_GetPrestigeProgress(BoxPkm *pkm, u32 *progress, u32 *cost, u32 *total);
 // Raises a level 100 Pokémon's prestige level by one, from no progress, for the debug menu; FALSE below level 100 or
 // at the greatest
 BOOL PaperWhite2_AddPrestigeLevel(BoxPkm *pkm);
 
 // The colors a screen prints a prestige level in, for its font palette: the standard one (archive 23's palette 5,
-// gold letters with the dark gray of normal text as the shadow), and the battle's HP box (gold, its near-black)
+// gold letters with the dark gray of normal text as the shadow); the party list's plates (archive 75's palette 0, its
+// HP bar's gold with black); and the battle's HP box (gold, its near-black). Messages take {ff00:N} with N 256 +
+// letter * 16 + shadow: 433 in a talk window (palette 5), 450 in a system window (palette 7, gold and its gray), 505
+// in the battle's (btlv_scu.c's gold in color 15, and the text's gray)
 #define PRESTIGE_PRINT_COLOR PRINT_COLOR(11, 1, 0)
+#define PRESTIGE_PLATE_PRINT_COLOR PRINT_COLOR(13, 7, 0)
 #define PRESTIGE_GAUGE_LETTER 9
 #define PRESTIGE_GAUGE_SHADOW 4
+// The summary's Exp. bar in the standard palette's gold
+#define PRESTIGE_BAR_COLOR 11
+// The battle's Exp. bar: its blue (colors 11 and 12 of the gauge's palette) drawn as the HP bar's gold (9 and 10)
+#define PRESTIGE_GAUGE_BAR_FROM 11
+#define PRESTIGE_GAUGE_BAR_TO 9
 
 #endif // PAPERWHITE2_PRESTIGE_H
