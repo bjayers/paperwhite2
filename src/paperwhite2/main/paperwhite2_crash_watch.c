@@ -1,4 +1,5 @@
 #include "types.h"
+#include "gfl/overlay.h"
 #include "nitro/os.h"
 #include "paperwhite2/crash_watch.h"
 
@@ -20,11 +21,12 @@
 #define RGB(r, g, b) ((r) | ((g) << 5) | ((b) << 10))
 #define COLOR_FREEZE RGB(20, 0, 0)
 #define COLOR_EXCEPTION RGB(0, 0, 20)
+#define COLOR_CODE_CHANGED RGB(20, 0, 20)
 #define COLOR_TEXT RGB(31, 31, 31)
 // A digit is 4 by 6 dots, drawn at 2 pixels a dot
 #define GLYPH_SCALE 2
 #define GLYPH_ADVANCE 10
-#define ROW_HEIGHT 16
+#define ROW_HEIGHT 14
 #define ROW_TOP 8
 #define LEFT 8
 
@@ -37,6 +39,41 @@ static const u16 sDigits[16][6] = {
     { 0x7, 0x8, 0x8, 0x8, 0x8, 0x7 }, { 0xe, 0x9, 0x9, 0x9, 0x9, 0xe }, { 0xf, 0x8, 0xe, 0x8, 0x8, 0xf },
     { 0xf, 0x8, 0xe, 0x8, 0x8, 0x8 },
 };
+
+// The code check: the code of each watched module, in blocks whose checksums are taken when it loads and checked a few
+// at a time each frame. A block that changes while its module stays loaded is reported
+#define CODE_BLOCK_SIZE 0x800
+#define CODE_BLOCK_MAX 1400
+#define CODE_CHECK_BLOCKS_PER_FRAME 32
+#define CODE_REGION_COUNT 5
+#define CODE_RESIDENT 0xffffffff
+
+extern u32 ARM9_TEXT_START[];
+extern u32 ARM9_TEXT_END[];
+extern u32 OV012_TEXT_START[];
+extern u32 OV012_TEXT_END[];
+extern u32 OV036_TEXT_START[];
+extern u32 OV036_TEXT_END[];
+extern u32 OV167_TEXT_START[];
+extern u32 OV167_TEXT_END[];
+extern u32 OV168_TEXT_START[];
+extern u32 OV168_TEXT_END[];
+
+typedef struct {
+    const u32 *start;
+    const u32 *end;
+    // The overlay, or CODE_RESIDENT for ARM9 main
+    u32 overlay;
+    // Where its blocks' checksums begin in sCodeSums, and how many it has
+    u32 first;
+    u32 count;
+    BOOL valid;
+} CodeRegion;
+
+static CodeRegion sCodeRegions[CODE_REGION_COUNT];
+static u32 sCodeSums[CODE_BLOCK_MAX];
+static u32 sCodeLoadCount;
+static u32 sCodeNext;
 
 static u32 sBeats;
 static u32 sLastBeats;
@@ -102,6 +139,106 @@ static void CrashWatch_DrawContext(u32 row, const OSContext *context) {
     CrashWatch_DrawWord(row + 3, 1, context->r[3]);
 }
 
+static u32 CodeCheck_Sum(const u32 *start, const u32 *end) {
+    u32 sum = 0;
+
+    for (; start < end; start++) {
+        sum = ((sum << 5) | (sum >> 27)) + *start;
+    }
+    return sum;
+}
+
+static const u32 *CodeCheck_BlockEnd(const CodeRegion *region, u32 block) {
+    const u32 *end = region->start + (block + 1) * (CODE_BLOCK_SIZE / sizeof(u32));
+
+    return end < region->end ? end : region->end;
+}
+
+static void CodeCheck_AddRegion(u32 index, const u32 *start, const u32 *end, u32 overlay, u32 *first) {
+    CodeRegion *region = &sCodeRegions[index];
+
+    region->start = start;
+    region->end = end;
+    region->overlay = overlay;
+    region->first = *first;
+    region->count = ((u32)end - (u32)start + CODE_BLOCK_SIZE - 1) / CODE_BLOCK_SIZE;
+    if (region->first + region->count > CODE_BLOCK_MAX) {
+        region->count = CODE_BLOCK_MAX - region->first;
+    }
+    *first += region->count;
+}
+
+// The checksums of a module's blocks, as it is now
+static void CodeCheck_Take(CodeRegion *region) {
+    u32 i;
+
+    for (i = 0; i < region->count; i++) {
+        sCodeSums[region->first + i] =
+            CodeCheck_Sum(region->start + i * (CODE_BLOCK_SIZE / sizeof(u32)), CodeCheck_BlockEnd(region, i));
+    }
+    region->valid = TRUE;
+}
+
+static BOOL CodeCheck_IsLoaded(const CodeRegion *region) {
+    return region->overlay == CODE_RESIDENT || GFL_OvlIsLoaded(region->overlay);
+}
+
+// A block that changed: the block's address, its module's index, the checksum taken and the one now, what the
+// interrupt came in at (none from the main loop) and the main thread's registers
+static void CodeCheck_Report(u32 index, u32 block, u32 sum) {
+    CodeRegion *region = &sCodeRegions[index];
+
+    sReported = TRUE;
+    CrashWatch_BeginScreen(COLOR_CODE_CHANGED);
+    CrashWatch_DrawWord(0, 0, (u32)(region->start + block * (CODE_BLOCK_SIZE / sizeof(u32))));
+    CrashWatch_DrawWord(0, 1, index);
+    CrashWatch_DrawWord(1, 0, sCodeSums[region->first + block]);
+    CrashWatch_DrawWord(1, 1, sum);
+    if (sMainThread != NULL) {
+        CrashWatch_DrawContext(3, &sMainThread->context);
+    }
+}
+
+// Each frame: after an overlay loads or unloads, a watched module that has just loaded has its checksums taken, and
+// one that is gone stops being checked (nothing loads over a loaded overlay, gf_overlay.c, so one that stays loaded
+// keeps them); then the next blocks in turn are checked
+static void CodeCheck_Step(void) {
+    u32 i;
+    u32 n;
+
+    if (sCodeLoadCount != GFL_OvlGetLoadCount()) {
+        sCodeLoadCount = GFL_OvlGetLoadCount();
+        for (i = 0; i < CODE_REGION_COUNT; i++) {
+            BOOL loaded = CodeCheck_IsLoaded(&sCodeRegions[i]);
+
+            if (loaded && !sCodeRegions[i].valid) {
+                CodeCheck_Take(&sCodeRegions[i]);
+            } else if (!loaded) {
+                sCodeRegions[i].valid = FALSE;
+            }
+        }
+    }
+    for (n = 0; n < CODE_CHECK_BLOCKS_PER_FRAME; n++) {
+        u32 at = sCodeNext;
+
+        sCodeNext = sCodeNext + 1 < CODE_BLOCK_MAX ? sCodeNext + 1 : 0;
+        for (i = 0; i < CODE_REGION_COUNT; i++) {
+            CodeRegion *region = &sCodeRegions[i];
+            u32 sum;
+
+            if (!region->valid || at < region->first || at >= region->first + region->count) {
+                continue;
+            }
+            sum = CodeCheck_Sum(region->start + (at - region->first) * (CODE_BLOCK_SIZE / sizeof(u32)),
+                                CodeCheck_BlockEnd(region, at - region->first));
+            if (sum != sCodeSums[at]) {
+                CodeCheck_Report(i, at - region->first, sum);
+            }
+            break;
+        }
+    }
+}
+
 // An exception: the first one's registers (the handler's context begins with an OSContext), then how many there were
 static void CrashWatch_OnException(void *context, void *arg) {
     sExceptions++;
@@ -121,7 +258,16 @@ static void CrashWatch_OnException(void *context, void *arg) {
 }
 
 void PaperWhite2_CrashWatch_Init(void) {
+    u32 first = 0;
+
     OS_SetUserExceptionHandler(CrashWatch_OnException, NULL);
+    CodeCheck_AddRegion(0, ARM9_TEXT_START, ARM9_TEXT_END, CODE_RESIDENT, &first);
+    CodeCheck_AddRegion(1, OV012_TEXT_START, OV012_TEXT_END, OVERLAY_ID(12), &first);
+    CodeCheck_AddRegion(2, OV036_TEXT_START, OV036_TEXT_END, OVERLAY_ID(36), &first);
+    CodeCheck_AddRegion(3, OV167_TEXT_START, OV167_TEXT_END, OVERLAY_ID(167), &first);
+    CodeCheck_AddRegion(4, OV168_TEXT_START, OV168_TEXT_END, OVERLAY_ID(168), &first);
+    CodeCheck_Take(&sCodeRegions[0]);
+    sCodeLoadCount = GFL_OvlGetLoadCount() - 1;
 }
 
 void PaperWhite2_CrashWatch_Beat(void) {
@@ -129,6 +275,9 @@ void PaperWhite2_CrashWatch_Beat(void) {
         sMainThread = OS_GetCurrentThread();
     }
     sBeats++;
+    if (!sReported) {
+        CodeCheck_Step();
+    }
 }
 
 // The BIOS's frame of the interrupt at the top of the IRQ stack: r0 to r3, r12, and lr, the address it came in at + 4

@@ -8,7 +8,9 @@
 // beats once a frame; when the VBlank interrupt finds no beat for CRASH_WATCH_FRAMES frames, it draws over the main
 // engine, red, what was running: the address the interrupt came in at, its registers, and the main thread's saved
 // registers. An exception (a data abort or an undefined instruction) draws its registers, blue: the first one's, with
-// the count of all on the last row. The screen is a bitmap
+// the count of all on the last row. And a code check: the code of ARM9 main, the field's overlays 12 and 36 and the
+// battle's 167 and 168 is checksummed in 2 KB blocks when each loads, and checked 64 KB a frame; a block that changes
+// while its module stays loaded draws, magenta, its address, its module and the two checksums. The screen is a bitmap
 // of the main engine's VRAM A, so it shows whatever state the game is in
 // (src/paperwhite2/main/paperwhite2_crash_watch.c)
 

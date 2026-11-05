@@ -359,5 +359,11 @@ void GFL_OvlManagerInit(HeapID heapId, u32 mainCount, u32 itcmCount, u32 dtcmCou
 // Loads an overlay, unless it would overwrite one that is loaded. OVERLAY_NONE loads nothing
 BOOL GFL_OvlLoad(u32 overlayId);
 void GFL_OvlUnload(u32 overlayId);
+#ifdef PAPERWHITE2
+// Paper White 2: whether an overlay is loaded, and a count that changes at every load and unload, for the debug
+// build's code check (paperwhite2/crash_watch.h)
+BOOL GFL_OvlIsLoaded(u32 overlayId);
+u32 GFL_OvlGetLoadCount(void);
+#endif
 
 #endif // POKEBW2_GFL_OVERLAY_H
