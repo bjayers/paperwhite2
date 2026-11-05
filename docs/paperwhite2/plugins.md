@@ -725,8 +725,8 @@ matrix is `res/field/matrices/`, its models' names `generated/map_models.txt`); 
 look from more to the side raise `yaw`; to look down more steeply raise `pitch` (the field's is 53.2). Another
 area's spot needs that area's `area` too (`res/field/zones/<zone>.json`). Then rebuild with `--hack`.
 
-**The menu** is the first page: Set Season, Dynamic Options and Set Hemisphere, one above the other (8,4, 8,9 and 8,14,
-16 by 3 tiles), each opening its page, and Geonet's Quit button, labeled QUIT as Geonet's, at its place (23,21), which
+**The menu** is the first page: Set Season, Dynamic Options, Set Hemisphere and Alter Unova, one above the other (8,3,
+8,7, 8,11 and 8,15, 16 by 3 tiles, a tile apart), each opening its page, and Geonet's Quit button, labeled QUIT as Geonet's, at its place (23,21), which
 closes the app.
 
 **Pages.** Set Season: Spring, Summer, Autumn, Winter (a 2 by 2 grid), locking that season. Dynamic Options: Monthly,

@@ -328,10 +328,10 @@ static const SeasonAppWindowSetup sSeasonAppMessageWindow = { BG_TOP_TEXT, 2, 19
 
 // clang-format off
 static const SeasonAppButtonSetup sSeasonAppMenuButtons[] = {
-    {SeasonApp_Text_SetSeason, 0, PAGE_SEASON, 8, 2},
+    {SeasonApp_Text_SetSeason, 0, PAGE_SEASON, 8, 3},
     {SeasonApp_Text_DynamicOptions, 0, PAGE_DYNAMIC, 8, 7},
-    {SeasonApp_Text_SetHemisphere, 0, PAGE_HEMISPHERE, 8, 12},
-    {SeasonApp_Text_AlterUnova, 0, PAGE_UNOVA, 8, 17},
+    {SeasonApp_Text_SetHemisphere, 0, PAGE_HEMISPHERE, 8, 11},
+    {SeasonApp_Text_AlterUnova, 0, PAGE_UNOVA, 8, 15},
 };
 
 static const SeasonAppButtonSetup sSeasonAppSeasonButtons[] = {
