@@ -750,6 +750,16 @@ void BtlvEffect_CalcGaugeExpLevelUp(u32 viewPos, BattleMon *mon) {
     BtlvGauge_StartLevelUp(sBtlvEffect->gauge, mon, viewPos);
 }
 
+#ifdef PAPERWHITE2
+void BtlvEffect_AddPrestigeGauge(u32 viewPos, s32 exp) {
+    BtlvGauge_StartExpGain(sBtlvEffect->gauge, viewPos, exp);
+}
+
+void BtlvEffect_SetPrestigeGauge(u32 viewPos, u32 shownLevel, s32 cost) {
+    BtlvGauge_SetPrestige(sBtlvEffect->gauge, viewPos, shownLevel, cost);
+}
+#endif
+
 void BtlvEffect_SetGaugeFlag(void) {
     BtlvGauge_RequestNumberToggle(sBtlvEffect->gauge);
 }

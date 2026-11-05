@@ -202,4 +202,6 @@ Bank0019_Text_WildAppeared_4 = A wild {0101:0} appeared?!
 Bank0019_Text_OhWildAppearedThree = Oh! A wild {0101:0},\n{0101:1}, and {0101:2} appeared!
 Bank0019_Text_OhThreeWildAppeared = Oh! Three wild {0101:0} appeared!
 Bank0019_Text_OhTwoWildAndWildAppeared = Oh! Two wild {0101:0} and\na wild {0101:1} appeared!
+Bank0019_Text_PrestigeRose = {010c:0}'s Prestige\nrose to {ff00:505}Lv. {0206:1}{ff00:0}!
+Bank0019_Text_GainedPrestigePoints = {010c:0} gained\n{0206:1} Prestige Points!
 \pad{48}

@@ -109,6 +109,12 @@ typedef enum {
     SC_MSG_SET,
     SC_MSG_STD_SE,
     SC_MSG_SET_SE,
+#ifdef PAPERWHITE2
+    // Paper White 2: a level 100 Pokémon's prestige before a gain (its PKM_PARAM_PRESTIGE value), then the Exp. it
+    // gains, which the client's gauge fills in gold (paperwhite2/prestige.h)
+    SC_PRESTIGE_FROM,
+    SC_PRESTIGE_GAIN,
+#endif
     // What BtlServerCmdQueue_Read returns when no command is left
     SC_NONE,
     // The room SCQUE_RESERVE_Pos keeps for a command, with its size, which BtlServerCmdQueue_Read skips

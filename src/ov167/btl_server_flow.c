@@ -37,8 +37,9 @@
 #include "system/comm_player_support.h"
 #include "system/game_beacon.h"
 #ifdef PAPERWHITE2
+#include "constants/pokemon.h"
 #include "paperwhite2/prestige.h"
-#include "text/system/0017.h"
+#include "text/system/0019.h"
 #endif
 
 s32 ConvertConditionCode(BattleMon *mon, s32 *condition);
@@ -5591,11 +5592,15 @@ BOOL ServerControl_GiveExp(BtlServerFlow *flow, BattleParty *party, const BtlFlo
             else {
                 BoxPkm *pkm = PokeParty_GetBoxPkm(GetSrcData(mon));
 
-                BtlServerCmdQueue_PutMsg(flow->queue, SC_MSG_STD, Bank0017_Text_GainedPrestigePoints, GetMonID(mon),
-                                         entry->exp, SC_MSG_ARG_END);
+                monId = GetMonID(mon);
+                BtlServerCmdQueue_PutMsg(flow->queue, SC_MSG_STD, Bank0019_Text_GainedPrestigePoints, monId, entry->exp,
+                                         SC_MSG_ARG_END);
+                BtlServerCmdQueue_Put(flow->queue, SC_PRESTIGE_FROM, monId,
+                                      PML_PkmGetParam(pkm, PKM_PARAM_PRESTIGE, NULL));
+                BtlServerCmdQueue_Put(flow->queue, SC_PRESTIGE_GAIN, monId, entry->exp);
                 result = TRUE;
                 if (PaperWhite2_AddPrestigeExp(pkm, entry->exp)) {
-                    BtlServerCmdQueue_PutMsg(flow->queue, SC_MSG_STD, Bank0017_Text_PrestigeRose, GetMonID(mon),
+                    BtlServerCmdQueue_PutMsg(flow->queue, SC_MSG_STD, Bank0019_Text_PrestigeRose, GetMonID(mon),
                                              PaperWhite2_GetShownLevel(pkm), SC_MSG_ARG_END);
                     result = TRUE;
                 }

@@ -719,6 +719,21 @@ void BtlvGauge_StartExpGain(BtlvGauge *gauge, int index, s32 exp) {
     BtlvGauge_SetExpTarget(&gauge->entries[index], exp);
 }
 
+#ifdef PAPERWHITE2
+void BtlvGauge_SetPrestige(BtlvGauge *gauge, int index, u32 shownLevel, s32 cost) {
+    BtlvGaugeEntry *entry = &gauge->entries[index];
+
+    entry->mon.prestigeLevel = shownLevel;
+    entry->mon.prestigeBar = TRUE;
+    entry->mon.exp = 0;
+    entry->mon.expMax = cost;
+    entry->mon.expDelta = 0;
+    entry->mon.expAnim = GAUGE_ANIM_START;
+    BtlvGauge_DrawLevel(gauge, entry);
+    BtlvGauge_DrawBar(gauge, index, 1);
+}
+
+#endif
 void BtlvGauge_StartLevelUp(BtlvGauge *gauge, BattleMon *mon, int index) {
     s32 exp = gauge->entries[index].mon.expMax - gauge->entries[index].mon.exp;
 

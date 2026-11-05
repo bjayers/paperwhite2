@@ -15,6 +15,14 @@
 
 #define PRESTIGE_LEVEL_START 100
 #define PRESTIGE_EXP_UNIT 16
+// The parts of PKM_PARAM_PRESTIGE's value, and Exp. as the units it adds, rounded
+#define PRESTIGE_LEVEL_OF(value) ((value) & 0x3ff)
+#define PRESTIGE_PROGRESS_OF(value) ((value) >> 10)
+#define PRESTIGE_UNITS_OF(exp) (((exp) + PRESTIGE_EXP_UNIT / 2) / PRESTIGE_EXP_UNIT)
+// The greatest prestige level above 100
+u32 PaperWhite2_GetPrestigeMax(void);
+// The units of Exp. a species' prestige level above 100 costs to leave, the next one's
+u32 PaperWhite2_GetPrestigeCost(u32 species, u32 form, u32 prestige);
 
 // The level a screen shows: the Pokémon's, or 100 plus its prestige level at 100
 u32 PaperWhite2_GetShownLevel(BoxPkm *pkm);

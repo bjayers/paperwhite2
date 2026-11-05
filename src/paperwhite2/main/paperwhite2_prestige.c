@@ -15,9 +15,11 @@
 
 // The Exp. units the next prestige level costs: what the species' level 99 to 100 does, grown by the percent for each
 // level already gained, up to what the progress's bits hold
-static u32 Prestige_GetCost(BoxPkm *pkm, u32 prestige) {
-    u32 species = PML_PkmGetParam(pkm, PKM_PARAM_SPECIES, NULL);
-    u32 form = PML_PkmGetParam(pkm, PKM_PARAM_FORM, NULL);
+u32 PaperWhite2_GetPrestigeMax(void) {
+    return PRESTIGE_MAX;
+}
+
+u32 PaperWhite2_GetPrestigeCost(u32 species, u32 form, u32 prestige) {
     u32 cost = (PML_UtilGetPkmLvExp(species, form, PRESTIGE_LEVEL_START) -
                 PML_UtilGetPkmLvExp(species, form, PRESTIGE_LEVEL_START - 1)) /
                PRESTIGE_EXP_UNIT;
@@ -33,6 +35,11 @@ static u32 Prestige_GetCost(BoxPkm *pkm, u32 prestige) {
         cost = PRESTIGE_EXP_MAX;
     }
     return cost;
+}
+
+static u32 Prestige_GetCost(BoxPkm *pkm, u32 prestige) {
+    return PaperWhite2_GetPrestigeCost(PML_PkmGetParam(pkm, PKM_PARAM_SPECIES, NULL),
+                                       PML_PkmGetParam(pkm, PKM_PARAM_FORM, NULL), prestige);
 }
 
 static u32 Prestige_GetLevelAbove(BoxPkm *pkm) {
@@ -73,7 +80,7 @@ BOOL PaperWhite2_AddPrestigeExp(BoxPkm *pkm, u32 exp) {
         return FALSE;
     }
     // Rounded to the nearest unit
-    progress = (value >> PRESTIGE_LEVEL_BITS) + (exp + PRESTIGE_EXP_UNIT / 2) / PRESTIGE_EXP_UNIT;
+    progress = (value >> PRESTIGE_LEVEL_BITS) + PRESTIGE_UNITS_OF(exp);
     cost = Prestige_GetCost(pkm, prestige);
     while (progress >= cost && prestige < PRESTIGE_MAX) {
         progress -= cost;

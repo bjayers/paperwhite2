@@ -40,6 +40,9 @@
 #include "save/join_avenue.h"
 #include "save/player_info.h"
 #include "system/pms_data.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/prestige.h"
+#endif
 
 // Function names from swan (https://github.com/ds-pokemon-hacking/swan, GPL-3.0) where it has them
 
@@ -663,6 +666,10 @@ static BOOL BattleClient_ScPlayBgm(BtlClient *client, s32 *seq, const u32 *args)
 static BOOL BattleClient_ScHideMsgWindow(BtlClient *client, s32 *seq, const u32 *args);
 static BOOL BattleClient_ScAddEVs(BtlClient *client, s32 *seq, const u32 *args);
 static BOOL BattleClient_ScExpGain(BtlClient *client, s32 *seq, const u32 *args);
+#ifdef PAPERWHITE2
+static BOOL BattleClient_ScPrestigeFrom(BtlClient *client, s32 *seq, const u32 *args);
+static BOOL BattleClient_ScPrestigeGain(BtlClient *client, s32 *seq, const u32 *args);
+#endif
 static BOOL BattleClient_ForgetMoveSECallback(u32 arg0);
 static BOOL BattleClient_LearnMoveSeq(BtlClient *client, s32 *seq, BattleMon *mon);
 static BOOL BattleClient_ScBallThrow(BtlClient *client, s32 *seq, const u32 *args);
@@ -4904,6 +4911,10 @@ static const BtlClientServerCmdEntry sServerCmdTable[] = {
     { SC_FAINT_HP_GAUGE, BattleClient_ScFaintHpGauge },
     { SC_SWAP_POS, BattleClient_ScSwapPos },
     { SC_EXP_GAIN, BattleClient_ScExpGain },
+#ifdef PAPERWHITE2
+    { SC_PRESTIGE_FROM, BattleClient_ScPrestigeFrom },
+    { SC_PRESTIGE_GAIN, BattleClient_ScPrestigeGain },
+#endif
     { SC_BALL_THROW, BattleClient_ScBallThrow },
     { SC_BALL_THROW_TRAINER, BattleClient_ScBallThrowTrainer },
     { SC_ROTATION, BattleClient_ScRotation },
@@ -5821,6 +5832,87 @@ static BOOL BattleClient_ScAddEVs(BtlClient *client, s32 *seq, const u32 *args) 
     return TRUE;
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: a level 100 Pokémon's prestige gain, as its Exp. gain is shown: the gauge's gold bar fills a prestige
+// level at a time, and at each the HP box's level goes up with the level-up's sparkle (paperwhite2/prestige.h). The
+// server works the prestige out on its own data; the client follows from what it was, in its units
+enum {
+    PRESTIGE_SEQ_INIT,
+    PRESTIGE_SEQ_ADD,
+    PRESTIGE_SEQ_WAIT_FILL,
+    PRESTIGE_SEQ_WAIT_EFFECT,
+    PRESTIGE_SEQ_WAIT_END,
+};
+
+static u32 sPrestigeFrom;
+static u32 sPrestigeLevel;
+static u32 sPrestigeProgress;
+static u32 sPrestigeLeft;
+
+static BOOL BattleClient_ScPrestigeFrom(BtlClient *client, s32 *seq, const u32 *args) {
+    sPrestigeFrom = args[1];
+    return TRUE;
+}
+
+static BOOL BattleClient_ScPrestigeGain(BtlClient *client, s32 *seq, const u32 *args) {
+    u8 monId = args[0];
+    BattleMon *mon = GetPokeParam(client->pokeCon, monId);
+    u32 pos = MonIDToViewPos(client->mainModule, client->pokeCon, monId);
+    u32 species = GetBattleMonSpecies(mon);
+    u32 form = GetBattleMonStat(mon, BATTLEMON_FORM);
+    u32 cost;
+
+    if (pos == 0xff || !BtlvEffect_CheckGaugeExist(pos)) {
+        return TRUE;
+    }
+    switch (*seq) {
+    case PRESTIGE_SEQ_INIT:
+        sPrestigeLevel = PRESTIGE_LEVEL_OF(sPrestigeFrom);
+        sPrestigeProgress = PRESTIGE_PROGRESS_OF(sPrestigeFrom);
+        sPrestigeLeft = PRESTIGE_UNITS_OF(args[1]);
+        *seq = PRESTIGE_SEQ_ADD;
+    case PRESTIGE_SEQ_ADD:
+        if (sPrestigeLeft == 0 || sPrestigeLevel >= PaperWhite2_GetPrestigeMax()) {
+            return TRUE;
+        }
+        cost = PaperWhite2_GetPrestigeCost(species, form, sPrestigeLevel);
+        if (sPrestigeProgress + sPrestigeLeft >= cost) {
+            // To the end of the bar, then a new prestige level
+            sPrestigeLeft -= cost - sPrestigeProgress;
+            BtlvEffect_AddPrestigeGauge(pos, (cost - sPrestigeProgress) * PRESTIGE_EXP_UNIT);
+            *seq = PRESTIGE_SEQ_WAIT_FILL;
+        } else {
+            BtlvEffect_AddPrestigeGauge(pos, sPrestigeLeft * PRESTIGE_EXP_UNIT);
+            sPrestigeProgress += sPrestigeLeft;
+            sPrestigeLeft = 0;
+            *seq = PRESTIGE_SEQ_WAIT_END;
+        }
+        break;
+    case PRESTIGE_SEQ_WAIT_FILL:
+        if (!BtlvEffect_CheckExecuteGauge()) {
+            sPrestigeLevel++;
+            sPrestigeProgress = 0;
+            BtlvEffect_SetPrestigeGauge(pos, PRESTIGE_LEVEL_START + sPrestigeLevel,
+                                        PaperWhite2_GetPrestigeCost(species, form, sPrestigeLevel) * PRESTIGE_EXP_UNIT);
+            BtlvCore_StartPosEffect(client->viewCore, pos, 0x25d);
+            *seq = PRESTIGE_SEQ_WAIT_EFFECT;
+        }
+        break;
+    case PRESTIGE_SEQ_WAIT_EFFECT:
+        if (BtlvCore_WaitPosEffect(client->viewCore)) {
+            *seq = PRESTIGE_SEQ_ADD;
+        }
+        break;
+    case PRESTIGE_SEQ_WAIT_END:
+        if (!BtlvEffect_CheckExecuteGauge()) {
+            return TRUE;
+        }
+        break;
+    }
+    return FALSE;
+}
+
+#endif
 static BOOL BattleClient_ScExpGain(BtlClient *client, s32 *seq, const u32 *args) {
     u8 monId = args[0];
     BattleMon *mon = GetPokeParam(client->pokeCon, monId);

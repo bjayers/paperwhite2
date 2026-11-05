@@ -777,9 +777,9 @@ in gold, up to 999. `include/paperwhite2/prestige.h`, `src/paperwhite2/main/pape
   after 70, 150 after 900, 200 after 7,000.
 - **Gained** only in battle, by the party: `ServerControl_GiveExp` (`src/ov167/btl_server_flow.c`), which skips a
   level 100 Pokémon, gives its Exp. (the battlers' and the Exp. Share's, as `AddExpAndEVs` worked it out) to
-  `PaperWhite2_AddPrestigeExp`. Not the Day Care. Each gain is said as Exp. is, `Bank0017_Text_GainedPrestigePoints`
-  ("X gained N Prestige Points!"), and a new prestige level queues `Bank0017_Text_PrestigeRose` ("X's Prestige rose
-  to Lv. N!", `res/text/system/0017.txt`) with the level in gold.
+  `PaperWhite2_AddPrestigeExp`. Not the Day Care. Each gain is said as Exp. is, `Bank0019_Text_GainedPrestigePoints`
+  ("X gained N Prestige Points!"), and a new prestige level queues `Bank0019_Text_PrestigeRose` ("X's Prestige rose
+  to Lv. N!", `res/text/system/0019.txt`, the battle's standard messages) with the level in gold.
 - **Gold:** a message's `{ff00:N}` with N of 256 or more is a color of its own, 256 + letter × 16 + shadow
   (`GFL_TextRndExecColorCmd`, `src/system/printsys.c`); the battle message window's palette is grays only, so
   `btlv_scu.c` puts gold in its color 15, a second black, and the message uses `{ff00:505}` (15 and 9, the text's
@@ -790,8 +790,11 @@ in gold, up to 999. `include/paperwhite2/prestige.h`, `src/paperwhite2/main/pape
   digits in its palette's gold (9, the HP bar's) with its near-black (4).
 - **The progress:** at level 100 the summary's Exp. page shows Prestige Points (all gained as prestige), To Next Lv.
   and the bar in gold (`p_sta_info.c`, `PaperWhite2_GetPrestigeProgress`); the battle's Exp. bar shows the progress
-  with its blue drawn as the HP bar's gold (colors 11 and 12 to 9 and 10). The battle's bar is set with the gauge, so
-  it doesn't move until the next time it is set.
+  with its blue drawn as the HP bar's gold (colors 11 and 12 to 9 and 10). A gain fills it as Exp. does: the server,
+  after the "gained" message, sends `SC_PRESTIGE_FROM` (the prestige before) and `SC_PRESTIGE_GAIN` (the Exp.), and
+  the client (`BattleClient_ScPrestigeGain`, `btl_client.c`) fills the gauge a prestige level at a time; at each it
+  shows the new level and an empty bar (`BtlvGauge_SetPrestige`) with the level-up's sparkle (effect 0x25d), then
+  the "rose" message follows. A Pokémon without a gauge on the field (an Exp. Share one) gains without it.
 - **Shown** in the battle HP box (`btlv_gauge.c`, set when the gauge is set, so a prestige level gained mid-battle
   shows from the next), the party list (`plist_plate.c`), the summary (`p_sta_sub.c`) and the PC box's upper screen
   (`box2_bmp.c`, from `Box2PokeInfo`). Other screens (trades, the Day Care, Join Avenue) still show 100.

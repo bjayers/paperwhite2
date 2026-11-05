@@ -219,5 +219,3 @@ Bank0017_Text_Scene17 = SCENE 17
 Bank0017_Text_Scene18 = SCENE 18
 Bank0017_Text_Scene19 = SCENE 19
 Bank0017_Text_Scene20 = SCENE 20
-Bank0017_Text_PrestigeRose = {010c:0}'s Prestige\nrose to {ff00:505}Lv. {0206:1}{ff00:0}!
-Bank0017_Text_GainedPrestigePoints = {010c:0} gained\n{0206:1} Prestige Points!

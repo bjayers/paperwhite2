@@ -108,6 +108,12 @@ void BtlvEffect_CalcGaugeHP(u32 viewPos, s32 hp);
 void BtlvEffect_CalcGaugeHPAtOnce(u32 viewPos, s32 hp);
 void BtlvEffect_CalcGaugeExp(u32 viewPos, s32 exp, BattleMon *mon);
 void BtlvEffect_CalcGaugeExpLevelUp(u32 viewPos, BattleMon *mon);
+#ifdef PAPERWHITE2
+// Paper White 2: a prestige gain's fill of the gold bar, and a new prestige level's level and bar
+// (paperwhite2/prestige.h)
+void BtlvEffect_AddPrestigeGauge(u32 viewPos, s32 exp);
+void BtlvEffect_SetPrestigeGauge(u32 viewPos, u32 shownLevel, s32 cost);
+#endif
 void BtlvEffect_SetGaugeFlag(void);
 BOOL BtlvEffect_CheckExecuteGauge(void);
 void BtlvEffect_SetGaugeDrawEnableBySide(BOOL visible, u32 side);

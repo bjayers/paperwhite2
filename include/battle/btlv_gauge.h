@@ -126,6 +126,10 @@ void BtlvGauge_SetPos(BtlvGauge *gauge, int index, const ClActorPos *offset);
 void BtlvGauge_StartHpChange(BtlvGauge *gauge, int index, s32 hp);
 void BtlvGauge_SetHpAtOnce(BtlvGauge *gauge, int index, s32 hp);
 void BtlvGauge_StartExpGain(BtlvGauge *gauge, int index, s32 exp);
+#ifdef PAPERWHITE2
+// Paper White 2: a new prestige level: the level shown, and the gold bar empty with the next level's cost
+void BtlvGauge_SetPrestige(BtlvGauge *gauge, int index, u32 shownLevel, s32 cost);
+#endif
 void BtlvGauge_StartLevelUp(BtlvGauge *gauge, BattleMon *mon, int index);
 BOOL BtlvGauge_IsBusy(BtlvGauge *gauge);
 // side 2 is both sides

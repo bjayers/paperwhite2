@@ -514,6 +514,10 @@ static const u8 data_ov167_021d6e50[SC_MAX] = {
     [SC_MSG_SET] = SC_ARGS_NONE,
     [SC_MSG_STD_SE] = SC_ARGS_MSG_SE,
     [SC_MSG_SET_SE] = SC_ARGS_MSG_SE,
+#ifdef PAPERWHITE2
+    [SC_PRESTIGE_FROM] = SC_ARGS_U8_U32,
+    [SC_PRESTIGE_GAIN] = SC_ARGS_U8_U32,
+#endif
     [SC_NONE] = SC_ARGS_NONE,
     [SC_RESERVE] = SC_ARGS_NONE,
 };
