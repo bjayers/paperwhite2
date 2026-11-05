@@ -97,7 +97,7 @@
 // the terrain groups under the player (8) and the follower (9), and the follower (10)
 #define DEBUG_ACTION_CONDITIONS_WORLD 34
 // Puts the lead's and the party's words: the lead's species (0), level (1), HP percent (2), status (3) and nature (4),
-// the party's median level (5), the adjusted median (6) and the wild levels' range (7, 8), the zone loads (9), the
+// the party's level (5), the adjusted level (6) and the wild levels' range (7, 8), the zone loads (9), the
 // load seed (10), the save clock's day number (11) and the day seed (12). Returns FALSE without a lead
 #define DEBUG_ACTION_CONDITIONS_PARTY 35
 // Puts the names of the debug samples' rules from arg1 (0, 2, 4) and whether each matches (1, 3, 5), three at most.

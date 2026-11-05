@@ -181,26 +181,45 @@ s32 Conditions_Select(const ConditionTable *table, const ConditionContext *ctx, 
     }
 }
 
-u32 Conditions_MedianLevel(u8 *levels, u32 count) {
+u32 Conditions_PartyLevel(u8 *levels, u32 count) {
     u32 i;
     u32 j;
     u8 level;
+    u32 ace;
+    u32 gap;
+    u32 band;
+    u32 pull;
 
     if (count == 0) {
         return 0;
     }
+    // Highest first
     for (i = 1; i < count; i++) {
         level = levels[i];
-        for (j = i; j > 0 && levels[j - 1] > level; j--) {
+        for (j = i; j > 0 && levels[j - 1] < level; j--) {
             levels[j] = levels[j - 1];
         }
         levels[j] = level;
     }
-    return levels[(count - 1) / 2];
+    // Each of the others among the top ones pulls the ace down by its gap while that's within the band, then less and
+    // less, to nothing at twice the band; in hundredths of a level. A missing member pulls nothing
+    ace = levels[0];
+    band = ace * LEVEL_SCALING_PARTY_BAND;
+    pull = 0;
+    for (i = 1; i < LEVEL_SCALING_PARTY_TOP && i < count; i++) {
+        gap = (ace - levels[i]) * PERCENT;
+        if (gap <= band) {
+            pull += gap;
+        } else if (gap < band * 2) {
+            pull += band * 2 - gap;
+        }
+    }
+    // The average pull, rounded up, so the level is rounded down
+    return ace - (pull + PERCENT * LEVEL_SCALING_PARTY_TOP - 1) / (PERCENT * LEVEL_SCALING_PARTY_TOP);
 }
 
-u32 Conditions_ScaledLevel(u32 median) {
-    s32 level = (s32)(median * LEVEL_SCALING_PERCENT / PERCENT) + LEVEL_SCALING_OFFSET;
+u32 Conditions_ScaledLevel(u32 partyLevel) {
+    s32 level = (s32)(partyLevel * LEVEL_SCALING_PERCENT / PERCENT) + LEVEL_SCALING_OFFSET;
 
     if (level < LEVEL_SCALING_MIN) {
         return LEVEL_SCALING_MIN;
@@ -293,7 +312,7 @@ static u32 Conditions_GetValue(const Condition *clause, const ConditionContext *
     case CONDITION_KIND_EXTERIOR:
         return ctx->exterior;
     case CONDITION_KIND_PARTY_LEVEL:
-        return ctx->medianLevel;
+        return ctx->partyLevel;
     case CONDITION_KIND_SCALED_LEVEL:
         return ctx->scaledLevel;
     case CONDITION_KIND_LEVEL:

@@ -31,6 +31,7 @@
 .enc-wrap { flex-wrap: wrap; align-items: flex-start; }
 .enc-inline { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; }
 .enc-inline input[type="number"] { width: 64px; }
+.enc-inline input.enc-try { width: 200px; }
 .enc-check { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; cursor: pointer; }
 .enc-check.strong { font-weight: 600; }
 .enc-check.sub { margin-left: 18px; color: var(--muted); }

@@ -116,8 +116,8 @@ void ConditionContext_FillParty(ConditionContext *ctx, PokeParty *party) {
         }
     }
     ctx->partyCount = count;
-    ctx->medianLevel = Conditions_MedianLevel(levels, count);
-    ctx->scaledLevel = Conditions_ScaledLevel(ctx->medianLevel);
+    ctx->partyLevel = Conditions_PartyLevel(levels, count);
+    ctx->scaledLevel = Conditions_ScaledLevel(ctx->partyLevel);
     ctx->filled |= CONDITION_CONTEXT_PARTY;
 }
 

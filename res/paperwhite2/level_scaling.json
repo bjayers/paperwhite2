@@ -1,5 +1,7 @@
 {
     "$schema": "conditions/condition.schema.json#/$defs/level_scaling",
+    "party_top": 3,
+    "party_band": 20,
     "percent": 80,
     "offset": 0,
     "min": 2,

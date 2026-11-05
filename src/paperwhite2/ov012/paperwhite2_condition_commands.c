@@ -20,8 +20,8 @@ BOOL Scrcmd_PaperWhite2_GetPartyLevel(VM *vm, FieldScriptEnv *env) {
     ConditionContext_Init(&ctx);
     ConditionContext_FillParty(&ctx, GameData_GetParty(FieldScriptEnv_GetGameData(env)));
     switch (kind) {
-    case PARTY_LEVEL_MEDIAN:
-        *result = ctx.medianLevel;
+    case PARTY_LEVEL_BASE:
+        *result = ctx.partyLevel;
         break;
     case PARTY_LEVEL_ADJUSTED:
         *result = ctx.scaledLevel;

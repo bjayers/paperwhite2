@@ -56,8 +56,8 @@
           "type": "array", "minItems": 1, "items": { "type": "string" },
           "description": "Names of terrain_groups.json's groups of the subject's tile, from the field"
         },
-        "party_level": { "$ref": "#/$defs/range", "description": "The party's median level, the lower middle one for an even count" },
-        "scaled_level": { "$ref": "#/$defs/range", "description": "The adjusted party median, the level wild Pokémon scale to (level_scaling.json)" },
+        "party_level": { "$ref": "#/$defs/range", "description": "The party's level, the level of the Pokémon doing the battling (level_scaling.json's party_top and party_band)" },
+        "scaled_level": { "$ref": "#/$defs/range", "description": "The adjusted party level, the level wild Pokémon scale to (level_scaling.json)" },
         "level": { "$ref": "#/$defs/range", "description": "The subject's level" },
         "species": {
           "type": "array", "minItems": 1,
@@ -185,16 +185,18 @@
       "description": "Named groups of zones: every zone whose parent (the zone header's) is one of parent, and the zones listed"
     },
     "level_scaling": {
-      "type": "object", "additionalProperties": false, "required": [ "percent", "offset", "min", "max", "spread" ],
+      "type": "object", "additionalProperties": false, "required": [ "party_top", "party_band", "percent", "offset", "min", "max", "spread" ],
       "properties": {
         "$schema": { "type": "string" },
+        "party_top": { "type": "integer", "minimum": 1, "maximum": 6, "description": "The party's level: how many of the highest levels count (Eggs left out); the highest is the ace" },
+        "party_band": { "type": "integer", "minimum": 1, "maximum": 50, "description": "The party's level: a percent of the ace's level. Each other counted member lowers it by its gap from the ace while the gap is within this, then less and less, to nothing at twice this, so a member too weak to battle doesn't; the average of their pulls, rounded up, comes off the ace's level" },
         "percent": { "type": "integer", "minimum": 1, "maximum": 200 },
         "offset": { "type": "integer", "minimum": -100, "maximum": 100 },
         "min": { "type": "integer", "minimum": 1, "maximum": 100 },
         "max": { "type": "integer", "minimum": 1, "maximum": 100 },
         "spread": { "type": "integer", "minimum": 0, "maximum": 50 }
       },
-      "description": "The adjusted party median: median * percent / 100 + offset, rounded down, from min to max; wild levels around it from adjusted - spread to adjusted + spread"
+      "description": "The party's level and the adjusted party level: party level * percent / 100 + offset, rounded down, from min to max; wild levels around it from adjusted - spread to adjusted + spread"
     }
   }
 }

@@ -88,7 +88,7 @@ static void Fill(ConditionContext *ctx, const u32 *v) {
     ctx->zone = v[F_ZONE]; ctx->exterior = v[F_EXTERIOR]; ctx->terrain = v[F_TERRAIN];
     ctx->followerSpecies = v[F_FOLLOWER]; ctx->species = v[F_SPECIES]; ctx->form = v[F_FORM]; ctx->level = v[F_LEVEL];
     ctx->type1 = v[F_TYPE1]; ctx->type2 = v[F_TYPE2]; ctx->nature = v[F_NATURE]; ctx->friendship = v[F_FRIENDSHIP];
-    ctx->hpPercent = v[F_HP]; ctx->status = v[F_STATUS]; ctx->steps = v[F_STEPS]; ctx->medianLevel = v[F_MEDIAN];
+    ctx->hpPercent = v[F_HP]; ctx->status = v[F_STATUS]; ctx->steps = v[F_STEPS]; ctx->partyLevel = v[F_MEDIAN];
     ctx->scaledLevel = v[F_SCALED]; ctx->loadSeed = v[F_LOAD_SEED]; ctx->daySeed = v[F_DAY_SEED];
     ctx->totalSteps = v[F_TOTAL_STEPS]; ctx->itemWaiting = v[F_ITEM_WAITING]; ctx->facing = v[F_FACING];
     ctx->tileX = v[F_TILE_X]; ctx->tileY = v[F_TILE_Y];
@@ -147,7 +147,7 @@ class Library:
                         "-I", str(stubs), str(SOURCE), str(harness), "-o", str(output)], check=True)
         self.lib = ctypes.CDLL(str(output))
         for name, result in (("Test_Match", ctypes.c_int), ("Test_Select", ctypes.c_int32), ("Test_Valid", ctypes.c_int),
-                             ("Test_Seed", U32), ("Conditions_Hash", U32), ("Conditions_MedianLevel", U32),
+                             ("Test_Seed", U32), ("Conditions_Hash", U32), ("Conditions_PartyLevel", U32),
                              ("Conditions_ScaledLevel", U32), ("Conditions_ScaledLevelMin", U32),
                              ("Conditions_ScaledLevelMax", U32), ("Test_Payload", U32)):
             getattr(self.lib, name).restype = result
@@ -352,16 +352,22 @@ class MatcherTest(unittest.TestCase):
             for season in range(4):
                 self.assertEqual(self.c.lib.Conditions_Hash(day, season), old(day, season))
 
-    def test_median(self):
-        for levels, expected in (([], 0), ([7], 7), ([5, 50], 5), ([50, 5, 30], 30), ([10, 40, 20, 30], 20),
-                                 ([50, 52, 48, 51, 49, 47], 49)):
+    def test_party_level(self):
+        # The defaults: the top 3, a band of 20%. The user's examples (docs/paperwhite2/design/trainer-scaling.md)
+        for levels, expected in (([], 0), ([7], 7), ([80, 73, 74, 65, 70, 1], 75), ([100, 100, 100, 100, 100, 1], 100),
+                                 ([20, 18, 17, 14, 15, 5], 18), ([6, 3, 3], 6), ([40, 43, 36, 30, 32, 28], 39),
+                                 ([42, 43, 41, 43, 42, 40], 42), ([80, 5, 3, 7, 1, 1], 80), ([62], 62),
+                                 ([90, 21, 54, 83, 12, 71], 82),
+                                 # An ace at 80: battlers at the band's edge pull most; weaker ones less, then not at all
+                                 ([80, 64, 64], 69), ([80, 60, 60], 72), ([80, 50, 50], 78), ([80, 48, 48], 80),
+                                 ([80, 40, 40], 80), ([80, 80], 80), ([5, 50], 50)):
             array = (ctypes.c_uint8 * 6)(*levels)
-            self.assertEqual(self.c.lib.Conditions_MedianLevel(array, len(levels)), expected, levels)
+            self.assertEqual(self.c.lib.Conditions_PartyLevel(array, len(levels)), expected, levels)
 
     def test_level_scaling_defaults(self):
         lib = self.c.lib
         self.assertEqual(lib.Conditions_ScaledLevel(50), 40)
-        self.assertEqual((lib.Conditions_ScaledLevelMin(40), lib.Conditions_ScaledLevelMax(40)), (35, 45))
+        self.assertEqual((lib.Conditions_ScaledLevelMin(40), lib.Conditions_ScaledLevelMax(40)), (37, 43))
         self.assertEqual(lib.Conditions_ScaledLevel(1), 2)
         self.assertEqual(lib.Conditions_ScaledLevel(0), 2)
         self.assertEqual(lib.Conditions_ScaledLevel(100), 80)

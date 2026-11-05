@@ -270,7 +270,8 @@ Lists are any-of.
   **subject**:
   - the follower, for follower rules;
   - the lead (slot 0, not an egg) for encounter and spawn rules.
-- `party_level` is the median.
+- `party_level` was the median; since 2026-11-04 it is the party's level of `trainer-scaling.md` (plugins.md, Level
+  scaling).
 - `chance` is a percent rolled per check. It replaces the follower format's `chance`.
 
 **The rule wrapper.** Consumers embed a rule as their own object, with these shared fields:

@@ -56,7 +56,12 @@ export interface RarityTier {
 export interface EncounterSettings {
   tiers: RarityTier[];
   levels: {
-    /** The scaled level: this percent of the party's level (the median, lower middle). */
+    /** The party's level: how many of its highest levels count; the highest is the ace (Conditions_PartyLevel). */
+    partyTop: number;
+    /** The party's level: each other counted member pulls the ace's level down by its gap while that is within this
+     * percent of the ace's level, then less and less, to nothing at twice it. */
+    partyBand: number;
+    /** The scaled level: this percent of the party's level. */
     percent: number;
     /** A wild Pokémon's level is the scaled level plus or minus this, kept within its species' range. */
     spread: number;
@@ -226,7 +231,7 @@ export const DEFAULT_SETTINGS: EncounterSettings = {
     { id: "very_rare", name: "Very rare", share: 7 },
     { id: "exotic", name: "Exotic", share: 1 },
   ],
-  levels: { percent: 80, spread: 3, gate: "scaled" },
+  levels: { partyTop: 3, partyBand: 20, percent: 80, spread: 3, gate: "scaled" },
   hiddenAbility: 10,
   battles: { single: 100, double: 0, triple: 0, partners: "family" },
   rustling: { grass: { species: "SPECIES_AUDINO", share: 30 }, dust: { share: 30 }, shadow: { share: 30 }, tiers: ["rare", "very_rare", "exotic"],

@@ -68,7 +68,8 @@ the scripts' `CallTrainerBattle trainer1, trainer2, flags` and `CallTrainerMulti
 Verified in `src/paperwhite2/main/`:
 
 - **The median:** `ConditionContext_FillParty` takes the levels of the party's non-Egg members
-  (`paperwhite2_conditions_context.c:106-122`) and `Conditions_MedianLevel` sorts them and takes the lower middle one
+  (`paperwhite2_conditions_context.c:106-122`) and `Conditions_MedianLevel` sorted them and took the lower middle one
+  (replaced on 2026-11-04 by the party's level below, `Conditions_PartyLevel`)
   (`paperwhite2_conditions.c:184-200`).
 - **The scaled level:** `Conditions_ScaledLevel` = `median * percent / 100 + offset`, clamped to `min`..`max`
   (`paperwhite2_conditions.c:202-212`), from `res/paperwhite2/level_scaling.json` via the generated
@@ -287,7 +288,7 @@ given.
 ## The user's decisions (2026-11-04)
 
 - **One party level for wild and trainer battles**, each with its own modifiers (the wild ones' 80% and spread;
-  each trainer tier's), and a solid formula for it chosen first: see "The party's level: formulas" below.
+  each trainer tier's), and a difficulty modifier on top; the formula chosen: see "The party's level: chosen" below.
 - **A floor by badge count** to stop exploits such as filling the party with level 1 Pokémon.
 - **Below their original level:** possibly, undecided.
 - **Caps:** not wanted as an imposed limit; a gentler form (below) is to be considered.
@@ -298,7 +299,51 @@ given.
   scaling for them.
 - **The partner in multi battles scales** to the party level itself, without the opponents' tier modifiers.
 
-## The party's level: formulas (2026-11-04)
+## The party's level: chosen (2026-11-04), built for playtesting
+
+The user's rule: **the party's level is the level of the Pokémon doing the battling.** Close battlers with a spread
+may lower it a little, for a fair fight; Pokémon too weak to battle mustn't. Built as `Conditions_PartyLevel`
+(plugins.md, Level scaling), for the wild Pokémon now and for the trainers when they scale, with both numbers in
+`level_scaling.json` and the Encounter Editor's Settings, which also tries a party. The user will playtest it and
+adjust.
+
+- Of the **3** highest levels (Eggs left out), the highest is the **ace**.
+- Each of the other two pulls the ace's level down by its gap while the gap is within a **fifth** (20%) of the ace's
+  level, then less and less, to nothing at two fifths. Party level = ace − (pull 2 + pull 3) / 3, rounded down.
+- The most it can fall is about 13% below the ace, and only from battlers at the band's edge (80, 64, 64 gives 69);
+  a weaker member pulls less than they do. A quarter fitted the examples a little better but let it fall 17%, which the
+  user found too much.
+
+The user's examples, a party and the level they expected, and the formula's:
+
+| Party | Expected | Formula |
+| --- | --- | --- |
+| 80, 73, 74, 65, 70, 1 | ~75 | 75 |
+| 100 ×5, 1 | 100 | 100 |
+| 20, 18, 17, 14, 15, 5 | ~17 | 18 |
+| 6, 3, 3 | ~5 | 6 |
+| 40, 43, 36, 30, 32, 28 | ~38 | 39 |
+| 42, 43, 41, 43, 42, 40 | ~42 | 42 |
+| 80, 5, 3, 7, 1, 1 | 80 | 80 |
+| 62, 5 Eggs | 62 | 62 |
+| 90, 21, 54, 83, 12, 71 | ~80 | 82 |
+
+Some dip is unavoidable: "80 with weak teammates" is 80 and "80 with close ones" is 75, so as a teammate rises toward
+the ace the level first falls, then rises again. The band bounds that dip. Averaging all six by how much each battles
+fitted worse and let a normal spread pull more.
+
+**A solo ace pulling away** (the user's concern): no Exp. brake for now. The game scales each Pokémon's Exp. by
+((2D + 10) / (D + L + 10))^2.5 for a defeated level D and its own level L (`ScaleExpGainedByLevel`,
+`btl_server_flow_sub.c:613`), and the hack's party-wide Exp. Share gives every non-battler half, scaled the same, so a
+weak teammate gains most. A simulation (ace 40, teammates 12, 10, 8, wild battles at 80% of the party level, Medium
+Fast): with the Share on, 100 battles give 49 and 37, 37, 37, 200 give 56 and 45; with it off the teammates stay put.
+A brake that slowed the ace when far ahead of the party's median held it back about 3 levels and left the teammates a
+level or two lower (a lower party level lowers every foe's Exp.), and with the Share off it can't help them at all.
+Revisit if playtesting shows otherwise.
+
+## The party's level: the first candidates (2026-11-04)
+
+Superseded by the formula above; kept for the reasoning.
 
 The basis both kinds of battle share. The player can lower it to make battles easy (the exploit to stop); raising
 it only makes battles harder. Eggs never count. Today's wild basis is the median, the lower middle level of the

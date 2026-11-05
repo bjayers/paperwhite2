@@ -37,9 +37,9 @@ export function settingsFile(s: EncounterSettings): Json {
   };
 }
 
-/** The conditions engine's level scaling with the editor's percent and spread, its other fields kept. */
+/** The conditions engine's level scaling with the editor's party level, percent and spread, its other fields kept. */
 export function levelScalingFile(current: Json, s: EncounterSettings): Json {
-  return { ...current, percent: s.levels.percent, spread: s.levels.spread };
+  return { ...current, party_top: s.levels.partyTop, party_band: s.levels.partyBand, percent: s.levels.percent, spread: s.levels.spread };
 }
 
 export function groupsFile(groups: AreaGroup[]): Json {
@@ -154,7 +154,10 @@ export function readSettings(f: EncounterFiles): EncounterSettings {
   const imp = (s.import ?? {}) as Record<string, any>;
   return {
     tiers: (s.tiers as { id: string; name: string; share: number }[]).map((t) => ({ ...t })),
-    levels: { percent: Number(f.levelScaling.percent ?? 80), spread: Number(f.levelScaling.spread ?? 3), gate: s.level_gate },
+    levels: {
+      partyTop: Number(f.levelScaling.party_top ?? 3), partyBand: Number(f.levelScaling.party_band ?? 20),
+      percent: Number(f.levelScaling.percent ?? 80), spread: Number(f.levelScaling.spread ?? 3), gate: s.level_gate,
+    },
     hiddenAbility: s.hidden_ability,
     battles: { ...s.battles },
     rustling: { grass: { ...s.rustling.grass }, dust: { ...s.rustling.dust }, shadow: { ...s.rustling.shadow },

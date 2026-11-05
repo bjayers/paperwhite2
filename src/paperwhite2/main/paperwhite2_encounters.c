@@ -248,7 +248,7 @@ u8 PaperWhite2_Encounters_Build(const ConditionContext *ctx, u32 encType, u32 sp
     if (!sActive || encType >= ENCTYPE_MAX) {
         return 0;
     }
-    level = sHeader.gate == ENCOUNTERS_GATE_SCALED ? ctx->scaledLevel : ctx->medianLevel;
+    level = sHeader.gate == ENCOUNTERS_GATE_SCALED ? ctx->scaledLevel : ctx->partyLevel;
     low = Conditions_ScaledLevelMin(ctx->scaledLevel);
     high = Conditions_ScaledLevelMax(ctx->scaledLevel);
     level = LevelForGate(area, candidates, ctx, level, encType);

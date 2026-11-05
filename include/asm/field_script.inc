@@ -3797,7 +3797,7 @@
     .2byte \a1
     .endm
 
-    // Paper White 2: the conditions': puts a PARTY_LEVEL_* of the party (the median, the adjusted median that wild Pokémon scale to, or the wild range's ends; paperwhite2/condition_script.h) in a variable (include/paperwhite2/condition_commands.h)
+    // Paper White 2: the conditions': puts a PARTY_LEVEL_* of the party (its level, the adjusted level that wild Pokémon scale to, or the wild range's ends; paperwhite2/condition_script.h) in a variable (include/paperwhite2/condition_commands.h)
     .macro GetPartyLevel a0, a1
     FieldCommand 755
     .2byte \a0

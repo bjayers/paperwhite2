@@ -11,7 +11,7 @@
 // Conditions
 
 // Command 0x2f3, GetPartyLevel kind, result: puts a PARTY_LEVEL_* of the party in the variable result, so a script
-// scales its Pokémon by the adjusted median instead of the lead's level
+// scales its Pokémon by the adjusted party level instead of the lead's level
 BOOL Scrcmd_PaperWhite2_GetPartyLevel(VM *vm, FieldScriptEnv *env);
 // Command 0x2f4, CheckCondition id, result: puts 1 in the variable result if the condition id (a SCRIPT_CONDITION_* of
 // paperwhite2/script_conditions.h, a rule of res/paperwhite2/conditions/script_conditions.json) holds now, else 0. The

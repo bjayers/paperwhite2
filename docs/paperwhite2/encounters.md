@@ -16,7 +16,7 @@ All files are in `res/paperwhite2/encounters/`, each with its schema beside it.
 | `species/<species>.json` | A species' levels (min gates it, max caps it), battles, hidden ability chance, habitats and outbreaks, and as a wanderer (`overworld`: where it's met, `appears` both, steps or overworld; how it wanders, `wanders` random, aggressive or passive; and `grass`, false for one that floats over it; plugins.md, Wanderers). A habitat names areas or groups. It has one slot for its listed seasons, or `by_season`, giving each season its own methods, rarity, times and weather, plus extra conditions-engine clauses (`when`). A species without a file isn't found in the wild. |
 
 The scaled level's percent and spread are the conditions engine's, in `res/paperwhite2/level_scaling.json`: 80% of the
-party's median, ±3.
+party's level (plugins.md, Level scaling), ±3.
 
 The first data came from `editor/scripts/export-encounters.ts`: the editor's import of the original tables, the
 game's swarms (`SWARM_DATA`) and the zone headers. Running it again needs `--force` and replaces every edit.
@@ -84,7 +84,7 @@ of `a/1/2/7` (`configure.py`'s `HACK_ARCHIVE_MEMBERS`). Its docstring has the by
 
 - `encounters.py check` prints the sizes against the runtime's limits: 4 KB per area block, 64 candidates per method
   and area, 128 outbreak entries, 8 tiers.
-- `encounters.py odds AREA METHOD SEASON PERIOD WEATHER SCALED [MEDIAN]` prints a place's odds from the packed member.
+- `encounters.py odds AREA METHOD SEASON PERIOD WEATHER SCALED [PARTY]` prints a place's odds from the packed member.
 
 `encounters.py habitats DIR` writes the Pokédex's Habitat List from this data, and the hack's build packs `a/2/9/6`
 from what it writes (`configure.py`'s `HACK_GENERATED_DATA`). `res/pokedex/habitats/` stays the template for each

@@ -4,7 +4,7 @@
     encounters.py archive ARCHIVE_IN ARCHIVE_OUT    # the wild encounters' archive (a/1/2/7) with the data after it
     encounters.py member OUTPUT                     # the member alone
     encounters.py check                             # validate the data and print its sizes
-    encounters.py odds AREA METHOD SEASON PERIOD WEATHER SCALED [MEDIAN]   # one place's odds from the packed member
+    encounters.py odds AREA METHOD SEASON PERIOD WEATHER SCALED [PARTY]   # one place's odds from the packed member
     encounters.py habitats OUTPUT_DIR               # the Pokédex's Habitat List (res/pokedex/habitats/) from this data
 
 The sources, each checked against its schema beside it: settings.json, groups.json, areas/<area>.json (an area is an
@@ -349,7 +349,7 @@ def check():
           f"{most[2]}, {most[0]} of {SLOT_MAX}")
 
 
-def odds(area: str, method: str, season: str, period: str, weather: str, scaled: int, median: int) -> list[tuple]:
+def odds(area: str, method: str, season: str, period: str, weather: str, scaled: int, party: int) -> list[tuple]:
     """A place's odds as the runtime computes them from the packed member (BuildSlots in
     src/paperwhite2/main/paperwhite2_encounters.c), without extra conditions, outbreaks or the spot's kind (its
     area's): each slot's species number, form, share in percent and level range."""
@@ -362,7 +362,7 @@ def odds(area: str, method: str, season: str, period: str, weather: str, scaled:
     area_fields = AREA.unpack_from(data, offset)
     spots, count = area_fields[28], area_fields[29]
     encounter_type, season_bit, period_bit = METHODS.index(method), SEASONS.index(season), TIMES.index(period)
-    level = scaled if gate == GATES.index("scaled") else median
+    level = scaled if gate == GATES.index("scaled") else party
     spread = json.loads(LEVEL_SCALING.read_text())["spread"]
     low, high = max(1, scaled - spread), min(100, scaled + spread)
     candidates = []
@@ -553,7 +553,7 @@ def main():
     for name in ("area", "method", "season", "period", "weather"):
         command.add_argument(name)
     command.add_argument("scaled", type=int)
-    command.add_argument("median", type=int, nargs="?", default=0)
+    command.add_argument("party", type=int, nargs="?", default=0)
     commands.add_parser("habitats").add_argument("output", type=Path)
     args = parser.parse_args()
     try:
@@ -566,7 +566,7 @@ def main():
         elif args.command == "odds":
             names = {number: name for name, number in species_numbers().items()}
             for number, form, low, high, share in odds(args.area, args.method, args.season, args.period, args.weather,
-                                                       args.scaled, args.median):
+                                                       args.scaled, args.party):
                 print(f"{names.get(number, number):24} form {form}  Lv. {low}-{high}  {share:.2f}%")
         else:
             check()

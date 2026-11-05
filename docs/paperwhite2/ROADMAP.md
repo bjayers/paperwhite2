@@ -34,7 +34,7 @@ Agreed with the user on 2026-10-29. Design notes, not final; each big item gets 
 - A **priority** so that conditional spawns (rain, snow, night) show through instead of being drowned out.
 - A build check (and the editor's): every zone and method with terrain for it has a Pokémon under every
   combination of conditions.
-- **Level scaling** from the party's median, then lowered: wild Pokémon a bit below the party (a party of 50 meets
+- **Level scaling** from the party's level (the level of the Pokémon doing the battling), then lowered: wild Pokémon a bit below the party (a party of 50 meets
   about 35–45), more evolved species a little higher, each clamped to its own range and eligible only from its
   minimum. The user's scripts today use floor(floor(lead / 5) * 4). The formula is exposed to the editor for tuning.
 - Later: auto-generating starting encounters from the user's descriptions of each species' habitat and behavior

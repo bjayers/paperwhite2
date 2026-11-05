@@ -905,7 +905,7 @@ static BOOL DebugCommands_ConditionsParty(FieldScriptEnv *env) {
     ConditionContext ctx;
 
     DebugCommands_FillConditions(env, &ctx);
-    DebugCommands_SetWordNumber(env, 5, ctx.medianLevel);
+    DebugCommands_SetWordNumber(env, 5, ctx.partyLevel);
     DebugCommands_SetWordNumber(env, 6, ctx.scaledLevel);
     DebugCommands_SetWordNumber(env, 7, Conditions_ScaledLevelMin(ctx.scaledLevel));
     DebugCommands_SetWordNumber(env, 8, Conditions_ScaledLevelMax(ctx.scaledLevel));

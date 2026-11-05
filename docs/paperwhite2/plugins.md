@@ -311,7 +311,7 @@ of the last number entry.
 | `NUMBER_ADJUST` (32) | change (`DEBUG_NUMBER_STEP_*`) | plus or minus the step, or the step times or over ten |
 | `NUMBER_GET` (33) | | the number, kept as the kind's last |
 | `CONDITIONS_WORLD` (34) | | the conditions' world in words 0-10 (season, time, weather, zone, parent, exterior, terrain under the player and the follower, the follower) |
-| `CONDITIONS_PARTY` (35) | | the lead in words 0-4, the median, adjusted median and wild range in 5-8, the zone loads and seeds in 9-12; FALSE without a lead |
+| `CONDITIONS_PARTY` (35) | | the lead in words 0-4, the party level, adjusted level and wild range in 5-8, the zone loads and seeds in 9-12; FALSE without a lead |
 | `CONDITIONS_RULES` (36) | first | up to three debug samples from first: names in words 0, 2, 4, yes/no in 1, 3, 5; how many |
 | `CONDITIONS_PICK` (37) | | the samples' pick with a check seed (0, its seed in 1), with the load seed twice (2, 3), a keyed seed (4) |
 | `FOLLOWER_WORDS` (38) | | the follower's species, steps, total steps and waiting item in words 0-3; FALSE without one |
@@ -775,7 +775,7 @@ all of them must hold, a list is any of its items), `$defs/rule` (`when`, `prior
 | `zone`, `zone_group` | the zone; a group of `zone_groups.json` (zones whose header's parent is listed, plus `zones`) | `["castelia"]` |
 | `exterior` | `AreaData_IsExterior`, from the field | `true` |
 | `terrain` | the groups of `terrain_groups.json` of the subject's tile, from the field | `["grass", "dark_grass"]` |
-| `party_level`, `scaled_level` | the party's median, the adjusted median | `{"min": 20, "max": 40}` |
+| `party_level`, `scaled_level` | the party's level, the adjusted party level | `{"min": 20, "max": 40}` |
 | `level`, `species` (with an optional `form`), `type`, `nature`, `hp` (percent), `status`, `friendship`, `steps` | the subject: the lead (party slot 0) for encounters and spawns, the follower for its rules | `{"min": 20}` |
 | `follower` | `true` (one is out), `false`, or species | `["SPECIES_PIKACHU"]` |
 | `total_steps`, `item_waiting` | the subject's total steps and whether it keeps an item, which the consumer gives (the follower's record, following-pokemon.md) | `{"min": 1000}`, `true` |
@@ -825,11 +825,11 @@ consumers' own tables will go with their data (the encounters' and spawns' in th
 - `src/paperwhite2/main/paperwhite2_conditions.c` (main): `Conditions_Hash` (MurmurHash3's finalizer of
   `a * 0x9e3779b1 + b`, now also the weather date's), `Conditions_Random` (an LCG step whose state is mixed by the hash),
   `Conditions_Seed`, the table's checks and accessors, `Conditions_MatchRule`, `Conditions_Select`,
-  `Conditions_MedianLevel`, `Conditions_ScaledLevel` and the wild range. It reads nothing but the context and the table.
+  `Conditions_PartyLevel`, `Conditions_ScaledLevel` and the wild range. It reads nothing but the context and the table.
 - `src/paperwhite2/main/paperwhite2_conditions_context.c` (main): `ConditionContext_Init`, `FillWorld` (season,
   period, weather, zone, parent, the event work, the zone-load counter, the save clock's day number and the seeds),
-  `FillSubject`/`FillLead` (species, form, level, types, nature, friendship, HP %, status, steps), `FillParty` (median,
-  adjusted median), `FillGame` (all three), `Conditions_OnZoneInit` and `Conditions_LoadTable`.
+  `FillSubject`/`FillLead` (species, form, level, types, nature, friendship, HP %, status, steps), `FillParty` (party
+  level, adjusted level), `FillGame` (all three), `Conditions_OnZoneInit` and `Conditions_LoadTable`.
 - `src/paperwhite2/ov036/paperwhite2_conditions_field.c` (the field): `Conditions_TerrainGroups(tile, exterior)`,
   `ConditionContext_FillField` (the exterior, the terrain under the player, `FieldPlayer_GetTileTypeUnder`, and under
   the follower, `PaperWhite2_FollowingGetTile`, which the follower's terrain update keeps; its species) and
@@ -847,17 +847,25 @@ variables' survey, beside `flag_usage.py`) found unused with 0x4052-0x406f. `Fie
 (`src/ov012/script_sys.c`) bumps it under `PAPERWHITE2` before the zone's init scripts: every map change and seamless
 zone change, not a battle or a menu, so the load seed holds until the next zone load, and after a save and continue.
 
-**Level scaling.** `res/paperwhite2/level_scaling.json` (`paperwhite2/level_scaling_config.h`): the adjusted median is
-`median * percent / 100 + offset`, rounded down, from `min` to `max`, and wild levels go from it minus `spread` to it
-plus `spread` (1 to 100). The file has `percent` 80, `offset` 0, `min` 2, `max` 100, `spread` 3: a party median
-of 50 gives 40 and wild levels 37-43; 20 gives 16 (13-19); 5 gives 4 (1-7); 100 gives 80. The median is the lower
-middle level for an even count, Eggs left out.
+**Level scaling.** `res/paperwhite2/level_scaling.json` (`paperwhite2/level_scaling_config.h`).
+
+- **The party's level** (`Conditions_PartyLevel`) is the level of the Pokémon doing the battling, Eggs left out. Of
+  the `party_top` (3) highest levels, the highest is the ace. Each of the others pulls it down by its gap from the ace
+  while the gap is within `party_band` (20) percent of the ace's level, then less and less, to nothing at twice that;
+  the average pull, rounded up, comes off the ace's level. So close battlers lower it for a fair fight, and a Pokémon
+  too weak to battle doesn't: 80, 74, 73 gives 75; 80, 64, 64 gives 69, the most it can fall (about 13%); 80, 7, 5
+  gives 80; 62 and five Eggs gives 62. A missing member pulls nothing. The user chose it on 2026-11-04 for playtesting
+  (`design/trainer-scaling.md`); the Encounter Editor's Settings tunes both numbers and tries a party.
+- **The adjusted party level** is `party level * percent / 100 + offset`, rounded down, from `min` to `max`, and wild
+  levels go from it minus `spread` to it plus `spread` (1 to 100). The file has `percent` 80, `offset` 0, `min` 2,
+  `max` 100, `spread` 3: a party level of 50 gives 40 and wild levels 37-43; 20 gives 16 (13-19); 5 gives 4 (1-7);
+  100 gives 80.
 
 **Script commands,** in every hack build, before the debug menu's so its removal leaves their IDs:
 
 | Command | ID | What |
 | --- | --- | --- |
-| `GetPartyLevel kind, result` | 0x2f3 (755) | `PARTY_LEVEL_MEDIAN` (0), `_ADJUSTED` (1), `_WILD_MIN` (2), `_WILD_MAX` (3) (`paperwhite2/condition_script.h`) into the variable |
+| `GetPartyLevel kind, result` | 0x2f3 (755) | `PARTY_LEVEL_BASE` (0, the party's level), `_ADJUSTED` (1), `_WILD_MIN` (2), `_WILD_MAX` (3) (`paperwhite2/condition_script.h`) into the variable |
 | `CheckCondition id, result` | 0x2f4 (756) | 1 if the condition holds now, else 0; `id` is a `SCRIPT_CONDITION_*` of `paperwhite2/script_conditions.h` |
 
 `res/paperwhite2/conditions/script_conditions.json` names CheckCondition's conditions: `night`, `daytime`, `raining`,
@@ -881,7 +889,7 @@ The handlers are `src/paperwhite2/ov012/paperwhite2_condition_commands.c`, decla
 
 **The debug readout:** Conditions in the START menu (Debug menu, above): the world (season, time, weather, zone and
 place, parent zone and place, indoors or outdoors, the terrain groups under the player and under the follower, the
-follower), then the lead (species, level, HP %, status, nature), the party median, the adjusted median and the wild
+follower), then the lead (species, level, HP %, status, nature), the party level, the adjusted level and the wild
 range, the zone loads, the load seed, the day number and the day seed; then each of `debug_samples.json`'s rules (night,
 rain, spring or summer, Castelia, lead level 20+, Always shiny on, zone loads 10+, grass outdoors, and a default at
 priority 0) with yes or no, three a message; then the pick of `Conditions_Select` with a check seed (and the seed), with
@@ -890,13 +898,13 @@ the load seed twice (the same pick) and a keyed seed. Its actions are `DEBUG_ACT
 dark grass, on Virbank's puddles, in a cave, on Desert Resort's sand, in Icirrus's snow (the terrain); set the time and
 weather overrides in World (Night and Rain become yes); toggle Always shiny (its rule); walk through ten zone changes
 (Zone loads 10+; the load seed changes with each, and stays across a battle); in Castelia's buildings (Castelia yes);
-reorder the party (the lead and its level); compare the median and adjusted median with the party's levels.
+reorder the party (the lead and its level); compare the party level and adjusted level with the party's levels.
 
 **Tests.** `python3 -m unittest tools.paperwhite2.test_conditions` compiles `paperwhite2_conditions.c` unchanged with
 the host's clang or gcc against stubs of the game's headers (u32 32 bits wide) and drives it through ctypes: every
 clause kind at its edges (each season and period, each variable op at the value and either side of it, ranges at their
 bounds, species by form, either type, unfilled parts), the samples' tables, the chance's and the weights' distributions
-by chi-squared, the share's fraction, priority order, stability under a seed, the median, the level scaling's defaults,
+by chi-squared, the share's fraction, priority order, stability under a seed, the party level (the user's examples), the level scaling's defaults,
 the hash's identity with the weather date's, and the compiler's round trip, layout and bad names.
 
 **Memory.** About 4.8 KB of the arena's budget (155 KB left before, 150 KB after): main 0x920 bytes (the matcher and

@@ -32,9 +32,9 @@ enum {
     CONDITION_KIND_EXTERIOR = 6,
     // value: a bit for each terrain group (paperwhite2/terrain_groups.h) of the subject's tile, from the field
     CONDITION_KIND_TERRAIN = 7,
-    // RANGE of the party's median level, the lower middle one for an even count
+    // RANGE of the party's level (Conditions_PartyLevel)
     CONDITION_KIND_PARTY_LEVEL = 8,
-    // RANGE of the adjusted party median, the level wild Pokémon scale to (Conditions_ScaledLevel)
+    // RANGE of the adjusted party level, the level wild Pokémon scale to (Conditions_ScaledLevel)
     CONDITION_KIND_SCALED_LEVEL = 9,
     // RANGE of the subject's level. The subject is the lead (party slot 0) for encounters and spawns, the follower
     // for the follower's rules
@@ -215,7 +215,7 @@ typedef struct {
     u16 tileY;
     // Party (ConditionContext_FillParty)
     u8 partyCount;
-    u8 medianLevel;
+    u8 partyLevel;
     u8 scaledLevel;
 } ConditionContext;
 
@@ -244,11 +244,15 @@ BOOL Conditions_MatchRule(const ConditionTable *table, u32 index, const Conditio
 // rule that matched (CONDITION_TABLE_MAX_RULES / 32 words)
 s32 Conditions_Select(const ConditionTable *table, const ConditionContext *ctx, u32 share, u32 *rng, u32 *matched);
 
-// The median of count levels, the lower middle one for an even count; 0 for none. Sorts levels
-u32 Conditions_MedianLevel(u8 *levels, u32 count);
-// The adjusted party median: the level wild Pokémon scale to, from the median by res/paperwhite2/level_scaling.json
-// (paperwhite2/level_scaling_config.h): median * percent / 100 + offset, rounded down, within the least and greatest
-u32 Conditions_ScaledLevel(u32 median);
+// The party's level, the level of the Pokémon doing the battling, from count levels (Eggs left out); 0 for none. Sorts
+// levels, highest first. The highest (the ace) less the average pull of the others among the top party_top: each
+// pulls by its gap from the ace while that's within party_band percent of the ace's level, then less and less, to
+// nothing at twice that, so a member too weak to battle doesn't lower it; rounded down. A missing member pulls
+// nothing. From res/paperwhite2/level_scaling.json (paperwhite2/level_scaling_config.h)
+u32 Conditions_PartyLevel(u8 *levels, u32 count);
+// The adjusted party level: the level wild Pokémon scale to, from the party's level by level_scaling.json:
+// level * percent / 100 + offset, rounded down, within the least and greatest
+u32 Conditions_ScaledLevel(u32 partyLevel);
 // The lowest and highest wild level around a scaled level, by the spread of level_scaling.json
 u32 Conditions_ScaledLevelMin(u32 scaled);
 u32 Conditions_ScaledLevelMax(u32 scaled);
@@ -268,7 +272,7 @@ BOOL ConditionContext_FillSubject(ConditionContext *ctx, PartyPkm *pkm, u16 step
 void ConditionContext_SetPosition(ConditionContext *ctx, u32 facing, u32 tileX, u32 tileY);
 // The subject from the lead, party slot 0
 BOOL ConditionContext_FillLead(ConditionContext *ctx, PokeParty *party);
-// The party's median and adjusted median levels, of the members that aren't Eggs
+// The party's level and adjusted level, of the members that aren't Eggs
 void ConditionContext_FillParty(ConditionContext *ctx, PokeParty *party);
 // The world, the lead and the party: what a script's check reads besides the field
 void ConditionContext_FillGame(ConditionContext *ctx, GameData *gameData);

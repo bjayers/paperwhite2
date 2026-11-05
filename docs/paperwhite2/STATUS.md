@@ -2,6 +2,18 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-05: the party's level, for playtesting; editor tabs; saving the flag notes
+
+- **The party's level** replaces the median for the wild levels (and the trainers' when they scale):
+  `Conditions_PartyLevel`, the 3 highest levels, the ace less the pull of the other two within a fifth of its level
+  (plugins.md, Level scaling; design/trainer-scaling.md, "The party's level: chosen"). `level_scaling.json` has
+  `party_top` and `party_band`; the Encounter Editor's Settings edits them and tries a party. `PARTY_LEVEL_MEDIAN` is
+  `PARTY_LEVEL_BASE`. Built and verified; **not yet tried in game**: the debug menu's Conditions shows the party level
+  as "Party". The conditions tests pass, the level scaling one fixed for the spread of 3.
+- **Next, the user's to decide:** the wild, trainer, boss and difficulty modifiers (a percent with a cap was
+  suggested, to fit the user's wild table), the badge soft cap, and help with catching when the party is strong.
+- The editor's tools open in tabs, kept open, with Back after a link; the Flag and Var Reference saves the notes.
+
 ## 2026-11-05: the Flag and Var Reference complete; the Discord list of unused variables checked
 
 - The reference lists every flag and variable and every use (the usage tools' `--all-uses`), and each one's region:

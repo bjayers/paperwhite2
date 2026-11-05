@@ -2,8 +2,9 @@
 // the default battle styles, the rustling spots' rule, and how the import from the current tables picks tiers and
 // levels.
 
-import type { Dispatch, SetStateAction } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import { METHODS, type EncounterSettings, type Method, type RarityTier, type SpeciesInfo } from "./model.ts";
+import { partyLevel, scaledLevel } from "./resolve.ts";
 import { Chips, label } from "./ui.tsx";
 
 export function SettingsPage({ settings, setSettings, reimport, species }: {
@@ -78,6 +79,20 @@ export function SettingsPage({ settings, setSettings, reimport, species }: {
       <div className="enc-card">
         <h3>Levels</h3>
         <div className="enc-row">
+          <label className="enc-inline">Party level: the top
+            <input type="number" min={1} max={6} value={settings.levels.partyTop}
+                   onChange={(e) => set({ levels: { ...settings.levels, partyTop: number(e.target.value, 1, 6) } })} /> levels, a band of
+            <input type="number" min={1} max={50} value={settings.levels.partyBand}
+                   onChange={(e) => set({ levels: { ...settings.levels, partyBand: number(e.target.value, 1, 50) } })} />% of the ace's</label>
+        </div>
+        <p className="small muted">
+          The party's level is the level of the Pokémon doing the battling. The highest (the ace) counts, less the
+          average pull of the others among the top ones: each pulls it down by its gap from the ace while the gap is
+          within the band, then less and less, to nothing at twice the band, so a Pokémon too weak to battle doesn't
+          lower it. Eggs never count; the result is rounded down.
+        </p>
+        <PartyTry settings={settings} />
+        <div className="enc-row">
           <label className="enc-inline">Scaled level =
             <input type="number" min={1} max={200} value={settings.levels.percent}
                    onChange={(e) => set({ levels: { ...settings.levels, percent: number(e.target.value, 1, 200) } })} />% of the party's level</label>
@@ -86,8 +101,8 @@ export function SettingsPage({ settings, setSettings, reimport, species }: {
                    onChange={(e) => set({ levels: { ...settings.levels, spread: number(e.target.value, 0, 50) } })} /></label>
         </div>
         <p className="small muted">
-          The party's level is its median (the lower middle), as the conditions engine computes it. A wild Pokémon's
-          level is the scaled level plus or minus the spread, kept within its species' minimum and maximum.
+          A wild Pokémon's level is the scaled level plus or minus the spread, kept within its species' minimum and
+          maximum.
         </p>
         <div className="enc-row">
           <span className="small">A species appears once its minimum is reached by</span>
@@ -181,6 +196,23 @@ export function SettingsPage({ settings, setSettings, reimport, species }: {
           <input type="number" min={0} max={100} value={settings.outbreakShare} onChange={(e) => set({ outbreakShare: number(e.target.value) })} />% of its
           place's encounters by its methods (the game's swarms take 40%). One place has an outbreak each day.</label>
       </div>
+    </div>
+  );
+}
+
+/** A party to try the formula on: its levels, typed, and the party and wild levels they give. */
+function PartyTry({ settings }: { settings: EncounterSettings }) {
+  const [text, setText] = useState("80, 73, 74, 65, 70, 1");
+  const levels = text.split(/[^0-9]+/).filter(Boolean).map(Number).filter((n) => n >= 1 && n <= 100).slice(0, 6);
+  const party = partyLevel(levels, settings);
+  const scaled = scaledLevel(party, settings);
+  return (
+    <div className="enc-row">
+      <label className="enc-inline">Try a party:
+        <input className="enc-try" value={text} onChange={(e) => setText(e.target.value)} placeholder="Levels, such as 40, 38, 12" /></label>
+      {levels.length > 0 && (
+        <span className="small">party level <strong>{party}</strong> · wild <strong>{Math.max(1, scaled - settings.levels.spread)}–{Math.min(100, scaled + settings.levels.spread)}</strong></span>
+      )}
     </div>
   );
 }

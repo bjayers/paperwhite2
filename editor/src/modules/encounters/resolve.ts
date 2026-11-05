@@ -39,6 +39,23 @@ export interface Odds {
   outbreak?: boolean;
 }
 
+/** The party's level from its members' levels (Eggs left out), as the game works it out (Conditions_PartyLevel,
+ * src/paperwhite2/main/paperwhite2_conditions.c): the ace's level less the average pull of the others among the top
+ * ones, rounded down. */
+export function partyLevel(levels: number[], settings: EncounterSettings): number {
+  if (!levels.length) return 0;
+  const top = [...levels].sort((a, b) => b - a).slice(0, settings.levels.partyTop);
+  const ace = top[0];
+  const band = ace * settings.levels.partyBand;
+  let pull = 0;
+  for (const level of top.slice(1)) {
+    const gap = (ace - level) * 100;
+    pull += gap <= band ? gap : gap < band * 2 ? band * 2 - gap : 0;
+  }
+  const n = settings.levels.partyTop;
+  return ace - Math.floor((pull + 100 * n - 1) / (100 * n));
+}
+
 export function scaledLevel(partyLevel: number, settings: EncounterSettings): number {
   return Math.max(1, Math.floor((partyLevel * settings.levels.percent) / 100));
 }
