@@ -36,6 +36,15 @@ static void *OSi_UserExceptionHandlerArg; // swan's g_ExcUndefAbortCallbackData
 u8 OSi_UnusedExceptionWork[0x20];
 static OSiExContext OSi_ExContext; // swan's g_ExcRegDump
 
+#ifdef PAPERWHITE2
+// NitroSDK's OS_SetUserExceptionHandler, which the original drops: the game's handler of an exception, which gets the
+// registers (its OSContext first) and the argument. Paper White 2's debug builds use it (paperwhite2/crash_watch.h)
+void OS_SetUserExceptionHandler(void (*handler)(void *context, void *arg), void *arg) {
+    OSi_UserExceptionHandler = (OSExceptionHandler)handler;
+    OSi_UserExceptionHandlerArg = arg;
+}
+
+#endif
 // NitroSDK's OS_InitException: keeps the handler of a debugger in the vector, calling it before ours
 // would run, and otherwise installs ours there and, on a DS, in the main memory's copy of the vector
 void OS_InitException(void) {

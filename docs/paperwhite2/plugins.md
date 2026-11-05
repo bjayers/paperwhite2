@@ -103,6 +103,12 @@ still in the ROM, and overlay 165's copy still decrypts itself when that overlay
   doesn't add up, only the highest counts.
 - On a DSi the arena starts after the LTD module, at `0x02700000`, so there the overlays have about 5 MB.
 
+- **The original's layout is kept** (`tools/build/plugin_lcf.py`, `keep_original_order`): each overlay is placed after
+  every overlay wholly below it in the original ROM (the extract's `arm9_overlays/overlays.yaml`), not only after the
+  ones dsd's script names, so two overlays apart in the original stay apart however much one grows. Without it the
+  field overlay (ov036) grew into the battle menus' memory (ov285-ov290), and melonDS DS's JIT with literal
+  optimisations froze after battles while hardware didn't (STATUS.md, 2026-11-05). It cost about 9 KB of the budget.
+
 So a large plugin goes in the overlay that runs it (the field's in `ov036`, a battle feature in the battle's
 overlay), and only what every module needs goes in main. The Following Pokémon runtime fits in the field's overlay
 plus the budget.
@@ -395,6 +401,26 @@ both tables, its entry in the JSON, then `python3 tools/script/field_script.py i
 
 **Memory.** The menu costs about 4 KB of the budget (the main arena had 159 KB left before it, 155 KB after): the
 command's code and tables in overlay 12, the overrides and the shiny PID in main, the hooks.
+
+### Crash report
+
+Every hack build (`PAPERWHITE2_DEBUG_MENU`) draws what went wrong over the main engine as a VRAM bitmap, 8-digit hex
+words two to a row (`include/paperwhite2/crash_watch.h`, `src/paperwhite2/main/paperwhite2_crash_watch.c`, hooked in
+`src/system/main.c`):
+
+- **Red, a freeze:** no main-loop frame for 300 VBlanks. Row 1 the address the interrupt came in at (+ 4) and r12,
+  rows 2-3 r0-r3 (the BIOS frame at the top of the IRQ stack); rows 5-8 the main thread's saved pc + 4, lr, sp,
+  cpsr, r0-r3; row 10 the running thread and the main thread.
+- **Blue, an exception:** through NitroSDK's `OS_SetUserExceptionHandler` (added to `lib/nitro/src/os/os_exception.c`;
+  the original drops it). Rows 1-4 the first exception's pc + 4, lr, sp, cpsr (the SPSR, the mode it came from), r0-r3;
+  rows 6-9 the main thread's; row 11 the count of exceptions and the context's next words.
+- **Magenta, code that changed:** the code of ARM9 main and overlays 12, 36, 167 and 168 is checksummed in 2 KB
+  blocks when each loads (`GFL_OvlIsLoaded`, `GFL_OvlGetLoadCount` in `src/gfl/gf_overlay.c`) and 32 blocks are
+  checked each frame; row 1 the block's address and the module's index, row 2 the two checksums, then the main
+  thread's registers.
+
+Look the addresses up in that build's `build/w2_us/arm9.o.xMAP`: overlays share addresses, so several functions may
+match; the module that was loaded tells which.
 
 ### Version places
 

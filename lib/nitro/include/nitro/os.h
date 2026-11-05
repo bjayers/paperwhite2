@@ -254,6 +254,9 @@ u32 OS_ReferentSize(OSArenaId arena, void *ptr);
 // calls last, on a DSi
 void OS_Init(void);          // swan's os_init
 void OS_InitException(void); // swan's exceptions_init
+#ifdef PAPERWHITE2
+void OS_SetUserExceptionHandler(void (*handler)(void *context, void *arg), void *arg);
+#endif
 void OS_InitVAlarm(void);
 // NitroSDK's OSi_InitVramExclusive, and OSi_UnlockVram: gives back the banks of the mask (a bit for each of A to I)
 // that the lock ID has

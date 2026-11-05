@@ -13,6 +13,22 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   addresses, and part of an overlay arrives by DMA, which the JIT may not watch. So a stale constant from replaced
   code, whose effect depends on where each overlay lands. The field overlay (ov036) now reaches into the battle
   menus' memory (ov285-ov290), which the original's layout doesn't; no overlap is between overlays loaded together.
+- **On branch `layout-original` (main backed up as tag `backup/before-layout-2026-11-05`):** the linker keeps the
+  original's layout, so no two overlays that are apart in the original overlap (plugins.md, Memory); 94 KB of the DS
+  budget left. **It still freezes** with literal optimisations on, so the layout isn't the cause. The freeze comes
+  when the field's event check runs again after a battle: at the end of a trainer's after-battle dialogue, or after
+  a wild battle once the player walks, talks or opens a menu.
+- **A crash report for debug builds** (`paperwhite2/crash_watch.h`): with no main-loop frame for 5 seconds, the VBlank
+  interrupt draws, red, the address it came in at and its registers, and the main thread's saved registers; an
+  exception draws its registers, blue (NitroSDK's `OS_SetUserExceptionHandler`, which the original drops, added to
+  `os_exception.c`). **What it showed** (DS mode, native BIOS): the CPU ran `IsSafeCallback`'s literal pool (the
+  Following Pokémon's scene, ov036) as Thumb code; the registers left (r0 0x1000, r1 0xe9, r2 0x85) are those bytes as
+  instructions, and the abort's lr is 8 past the `ldrh` at 0x1030 that they make. It then ran on in abort mode with
+  sp 0. With the built-in BIOS the same freeze shows no screen.
+- **A code check** (same header): ARM9 main's, ov012's, ov036's, ov167's and ov168's code, checksummed in 2 KB blocks
+  when each loads and checked 64 KB a frame, magenta on a change. With literal optimisations on it never fired before
+  the freeze: the code was intact, so the JIT went wrong over unchanged memory. **Conclusion: melonDS DS's JIT with
+  literal optimisations, not the game.** The user plays with it off. Merged to main 2026-11-05 with the layout change.
 - **For now:** the user plays with literal optimisations off. **If it matters later:** variants of a freezing build
   that each move one group of overlays by padding would show which region goes stale; that region could then be
   kept apart as the original's is.

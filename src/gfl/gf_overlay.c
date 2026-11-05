@@ -39,6 +39,9 @@ static u32 GFL_OvlGetMemoryRegion(u32 id);
 static BOOL GFL_OvlGetMemoryRange(u32 id, u32 *start, u32 *end);
 
 static OvlManager *sOvlManager;
+#ifdef PAPERWHITE2
+static u32 sOvlLoadCount;
+#endif
 
 void GFL_OvlManagerInit(HeapID heapId, u32 mainCount, u32 itcmCount, u32 dtcmCount) {
     u32 size = (mainCount + itcmCount + dtcmCount) * sizeof(OvlEntry) + sizeof(OvlManager);
@@ -56,6 +59,9 @@ void GFL_OvlManagerInit(HeapID heapId, u32 mainCount, u32 itcmCount, u32 dtcmCou
 static void GFL_OvlEntryUnload(OvlEntry *entry) {
     FS_UnloadOverlay(MI_PROCESSOR_ARM9, entry->id);
     entry->loaded = FALSE;
+#ifdef PAPERWHITE2
+    sOvlLoadCount++;
+#endif
 }
 
 void GFL_OvlUnload(u32 overlayId) {
@@ -117,6 +123,9 @@ BOOL GFL_OvlLoad(u32 overlayId) {
     if (region == OVL_REGION_ITCM || region == OVL_REGION_DTCM) {
         FS_SetDefaultDMA(dma);
     }
+#ifdef PAPERWHITE2
+    sOvlLoadCount++;
+#endif
     result = FALSE;
     if (loaded) {
         result = TRUE;
@@ -124,6 +133,25 @@ BOOL GFL_OvlLoad(u32 overlayId) {
     return result;
 }
 
+#ifdef PAPERWHITE2
+BOOL GFL_OvlIsLoaded(u32 overlayId) {
+    OvlEntry *list = GFL_OvlGetList(GFL_OvlGetMemoryRegion(overlayId));
+    int count = GFL_OvlGetListCount(GFL_OvlGetMemoryRegion(overlayId));
+    int i;
+
+    for (i = 0; i < count; i++) {
+        if (list[i].loaded == TRUE && list[i].id == overlayId) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+u32 GFL_OvlGetLoadCount(void) {
+    return sOvlLoadCount;
+}
+
+#endif
 // Returns FALSE if the overlay would overwrite one that is loaded
 static BOOL GFL_OvlCheckMemoryCollision(u32 id) {
     u32 start;
