@@ -13,7 +13,15 @@ export type NoteKind = "flag" | "var";
 /** A flag's or a variable's key in the notes. */
 export const noteKey = (kind: NoteKind, n: number) => (kind === "flag" ? String(n) : `0x${n.toString(16).padStart(4, "0")}`);
 
-export function useNotes(): { notes: Record<"flags" | "vars", Record<string, string>>; setNote(kind: NoteKind, n: number, text: string): void } {
+export function useNotes(): {
+  notes: Record<"flags" | "vars", Record<string, string>>;
+  setNote(kind: NoteKind, n: number, text: string): void;
+  /** Notes changed since the file was read or saved */
+  dirty: boolean;
+  saving: boolean;
+  saveError: string | null;
+  save(): Promise<boolean>;
+} {
   const { docs } = useDocuments();
   useEffect(() => { if (!documents.get(NOTES)) documents.hold(NOTES).catch(() => undefined); }, []);
   const doc = docs.get(NOTES);
@@ -30,5 +38,6 @@ export function useNotes(): { notes: Record<"flags" | "vars", Record<string, str
     if (text) next[key] = text; else delete next[key];
     documents.edit(NOTES, [list], fromPlain(next));
   };
-  return { notes, setNote };
+  const save = () => documents.save(NOTES);
+  return { notes, setNote, dirty: !!doc?.dirty, saving: !!doc?.saving, saveError: doc?.saveError ?? null, save };
 }

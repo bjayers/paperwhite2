@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../../api.ts";
 import { navigate } from "../../navigation.ts";
 import type { Usage, UsageKind, UsageRow } from "../../../server/usage.ts";
-import { noteKey, useNotes } from "./notes.ts";
+import { NOTES, noteKey, useNotes } from "./notes.ts";
 import { useToolActive } from "../active.ts";
 
 // A name that only says its number, as the generated lists bootstrap them
@@ -52,7 +52,7 @@ export function FlagReference({ compact, onInsert, onClose, open }: {
   const [show, setShow] = useState<Show>("all");
   const [region, setRegion] = useState("");
   const [chosen, setChosen] = useState<number | null>(null);
-  const { notes, setNote } = useNotes();
+  const { notes, setNote, dirty, saving, saveError, save } = useNotes();
   const noteList = notes[kind === "flags" ? "flags" : "vars"];
   const noteKind = kind === "flags" ? "flag" : "var";
 
@@ -70,6 +70,15 @@ export function FlagReference({ compact, onInsert, onClose, open }: {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose, toolActive]);
+  // (Ctrl+S saves the notes on the page; in the Script Editor's window, its own Save does)
+  useEffect(() => {
+    if (!toolActive || compact) return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); e.stopPropagation(); save(); }
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  });
 
   const data = usage[kind];
   const regions = useMemo(() => [...new Set((data?.rows ?? []).map((r) => r.region).filter(Boolean))], [data]);
@@ -113,9 +122,12 @@ export function FlagReference({ compact, onInsert, onClose, open }: {
         <span className="spacer" />
         <button onClick={() => load(kind, true)} disabled={loading} title="Looks through the scripts, the data and the code again">
           {loading ? "Looking…" : "Look again"}</button>
+        <button className="primary" onClick={() => save()} disabled={!dirty || saving}
+                title={`Saves your notes to ${NOTES}${compact ? "" : " (Ctrl+S)"}`}>{saving ? "Saving…" : dirty ? "Save notes" : "Notes saved"}</button>
         {onClose && <button onClick={onClose}>Close</button>}
       </div>
       {error && <p className="notice error">{error}</p>}
+      {saveError && <p className="notice error">Your notes weren't saved: {saveError}</p>}
       <div className="fr-body">
         <div className="fr-list">
           {!data ? <p className="muted fr-note">{loading ? "Looking through the scripts, the data and the code (a few seconds)…" : ""}</p> : (
@@ -162,7 +174,7 @@ export function FlagReference({ compact, onInsert, onClose, open }: {
               <section className="fr-section">
                 <h3>Your note</h3>
                 <textarea className="fr-note-edit" rows={3} value={noteList[noteKey(noteKind, row.number)] ?? ""}
-                          placeholder={`What this ${kind === "flags" ? "flag" : "variable"} is for, kept in res/paperwhite2/scripts/notes.json (saved with the others)`}
+                          placeholder={`What this ${kind === "flags" ? "flag" : "variable"} is for, kept in ${NOTES}: Save notes writes it`}
                           onChange={(e) => setNote(noteKind, row.number, e.target.value)} />
               </section>
               <section className="fr-section">
