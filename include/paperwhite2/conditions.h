@@ -217,6 +217,7 @@ typedef struct {
     u8 partyCount;
     u8 partyLevel;
     u8 scaledLevel;
+    u8 wildSpread;
 } ConditionContext;
 
 // The matcher and the selection (main, paperwhite2_conditions.c)
@@ -250,12 +251,16 @@ s32 Conditions_Select(const ConditionTable *table, const ConditionContext *ctx, 
 // nothing at twice that, so a member too weak to battle doesn't lower it; rounded down. A missing member pulls
 // nothing. From res/paperwhite2/level_scaling.json (paperwhite2/level_scaling_config.h)
 u32 Conditions_PartyLevel(u8 *levels, u32 count);
-// The adjusted party level: the level wild Pokémon scale to, from the party's level by level_scaling.json:
-// level * percent / 100 + offset, rounded down, within the least and greatest
+// The adjusted party level: the level wild Pokémon scale to, from the party's level by level_scaling.json: the party's
+// level changed by percent of it (rounded toward it) but by no more than cap levels, plus offset, within the least and
+// greatest. So a percent at low levels and a flat change at high ones
 u32 Conditions_ScaledLevel(u32 partyLevel);
-// The lowest and highest wild level around a scaled level, by the spread of level_scaling.json
-u32 Conditions_ScaledLevelMin(u32 scaled);
-u32 Conditions_ScaledLevelMax(u32 scaled);
+// How far wild levels go either side of the adjusted level: spread_percent of the party's level, rounded, from
+// spread_min to spread_max
+u32 Conditions_WildSpread(u32 partyLevel);
+// The lowest and highest wild level around an adjusted level, by a spread, within 1 to 100
+u32 Conditions_ScaledLevelMin(u32 scaled, u32 spread);
+u32 Conditions_ScaledLevelMax(u32 scaled, u32 spread);
 
 // The context's fills (main, paperwhite2_conditions_context.c)
 
@@ -272,7 +277,7 @@ BOOL ConditionContext_FillSubject(ConditionContext *ctx, PartyPkm *pkm, u16 step
 void ConditionContext_SetPosition(ConditionContext *ctx, u32 facing, u32 tileX, u32 tileY);
 // The subject from the lead, party slot 0
 BOOL ConditionContext_FillLead(ConditionContext *ctx, PokeParty *party);
-// The party's level and adjusted level, of the members that aren't Eggs
+// The party's level, adjusted level and wild spread, of the members that aren't Eggs
 void ConditionContext_FillParty(ConditionContext *ctx, PokeParty *party);
 // The world, the lead and the party: what a script's check reads besides the field
 void ConditionContext_FillGame(ConditionContext *ctx, GameData *gameData);

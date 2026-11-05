@@ -4,7 +4,7 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { METHODS, type EncounterSettings, type Method, type RarityTier, type SpeciesInfo } from "./model.ts";
-import { partyLevel, scaledLevel } from "./resolve.ts";
+import { partyLevel, scaledLevel, wildSpread } from "./resolve.ts";
 import { Chips, label } from "./ui.tsx";
 
 export function SettingsPage({ settings, setSettings, reimport, species }: {
@@ -95,14 +95,24 @@ export function SettingsPage({ settings, setSettings, reimport, species }: {
         <div className="enc-row">
           <label className="enc-inline">Scaled level =
             <input type="number" min={1} max={200} value={settings.levels.percent}
-                   onChange={(e) => set({ levels: { ...settings.levels, percent: number(e.target.value, 1, 200) } })} />% of the party's level</label>
-          <label className="enc-inline">±
-            <input type="number" min={0} max={50} value={settings.levels.spread}
-                   onChange={(e) => set({ levels: { ...settings.levels, spread: number(e.target.value, 0, 50) } })} /></label>
+                   onChange={(e) => set({ levels: { ...settings.levels, percent: number(e.target.value, 1, 200) } })} />% of the party's level, changed by at most
+            <input type="number" min={0} max={100} value={settings.levels.cap}
+                   onChange={(e) => set({ levels: { ...settings.levels, cap: number(e.target.value, 0, 100) } })} /> levels</label>
+        </div>
+        <div className="enc-row">
+          <label className="enc-inline">Wild levels: ±
+            <input type="number" min={0} max={100} value={settings.levels.spreadPercent}
+                   onChange={(e) => set({ levels: { ...settings.levels, spreadPercent: number(e.target.value, 0, 100) } })} />% of the party's level, from
+            <input type="number" min={0} max={50} value={settings.levels.spreadMin}
+                   onChange={(e) => set({ levels: { ...settings.levels, spreadMin: number(e.target.value, 0, settings.levels.spreadMax) } })} /> to
+            <input type="number" min={0} max={50} value={settings.levels.spreadMax}
+                   onChange={(e) => set({ levels: { ...settings.levels, spreadMax: number(e.target.value, settings.levels.spreadMin, 50) } })} /> levels</label>
         </div>
         <p className="small muted">
-          A wild Pokémon's level is the scaled level plus or minus the spread, kept within its species' minimum and
-          maximum.
+          A percent alone changes low levels too little and high ones too much, and a flat change the other way round,
+          so the scaled level is a percent of the party's level that never moves it further than the cap: 60% at most
+          10 below turns 10 into 6 and 50 into 40. The spread works the same way. A wild Pokémon's level is the scaled
+          level plus or minus the spread, kept within its species' minimum and maximum.
         </p>
         <div className="enc-row">
           <span className="small">A species appears once its minimum is reached by</span>
@@ -206,12 +216,13 @@ function PartyTry({ settings }: { settings: EncounterSettings }) {
   const levels = text.split(/[^0-9]+/).filter(Boolean).map(Number).filter((n) => n >= 1 && n <= 100).slice(0, 6);
   const party = partyLevel(levels, settings);
   const scaled = scaledLevel(party, settings);
+  const spread = wildSpread(party, settings);
   return (
     <div className="enc-row">
       <label className="enc-inline">Try a party:
         <input className="enc-try" value={text} onChange={(e) => setText(e.target.value)} placeholder="Levels, such as 40, 38, 12" /></label>
       {levels.length > 0 && (
-        <span className="small">party level <strong>{party}</strong> · wild <strong>{Math.max(1, scaled - settings.levels.spread)}–{Math.min(100, scaled + settings.levels.spread)}</strong></span>
+        <span className="small">party level <strong>{party}</strong> · wild <strong>{Math.max(1, scaled - spread)}–{Math.min(100, scaled + spread)}</strong></span>
       )}
     </div>
   );

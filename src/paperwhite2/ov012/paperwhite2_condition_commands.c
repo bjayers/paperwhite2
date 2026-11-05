@@ -27,10 +27,10 @@ BOOL Scrcmd_PaperWhite2_GetPartyLevel(VM *vm, FieldScriptEnv *env) {
         *result = ctx.scaledLevel;
         break;
     case PARTY_LEVEL_WILD_MIN:
-        *result = Conditions_ScaledLevelMin(ctx.scaledLevel);
+        *result = Conditions_ScaledLevelMin(ctx.scaledLevel, ctx.wildSpread);
         break;
     case PARTY_LEVEL_WILD_MAX:
-        *result = Conditions_ScaledLevelMax(ctx.scaledLevel);
+        *result = Conditions_ScaledLevelMax(ctx.scaledLevel, ctx.wildSpread);
         break;
     default:
         *result = 0;

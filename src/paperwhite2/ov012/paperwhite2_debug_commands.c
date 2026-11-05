@@ -907,8 +907,8 @@ static BOOL DebugCommands_ConditionsParty(FieldScriptEnv *env) {
     DebugCommands_FillConditions(env, &ctx);
     DebugCommands_SetWordNumber(env, 5, ctx.partyLevel);
     DebugCommands_SetWordNumber(env, 6, ctx.scaledLevel);
-    DebugCommands_SetWordNumber(env, 7, Conditions_ScaledLevelMin(ctx.scaledLevel));
-    DebugCommands_SetWordNumber(env, 8, Conditions_ScaledLevelMax(ctx.scaledLevel));
+    DebugCommands_SetWordNumber(env, 7, Conditions_ScaledLevelMin(ctx.scaledLevel, ctx.wildSpread));
+    DebugCommands_SetWordNumber(env, 8, Conditions_ScaledLevelMax(ctx.scaledLevel, ctx.wildSpread));
     DebugCommands_SetWordNumber(env, 9, ctx.zoneLoadCounter);
     DebugCommands_SetWordHex(env, 10, ctx.loadSeed, HEX_DIGITS_SEED);
     DebugCommands_SetWordNumber(env, 11, ctx.dayNumber);

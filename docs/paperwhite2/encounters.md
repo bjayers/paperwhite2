@@ -15,8 +15,8 @@ All files are in `res/paperwhite2/encounters/`, each with its schema beside it.
 | `areas/<area>.json` | An area is an original table, `ENCOUNTERS_<AREA>`, shared by the zones whose header names it. The file has its per-step rates per method (`all_year` or per season, the original tables' values) and its kind of rustling spots (`grass`, `dust`, `shadow`). |
 | `species/<species>.json` | A species' levels (min gates it, max caps it), battles, hidden ability chance, habitats and outbreaks, and as a wanderer (`overworld`: where it's met, `appears` both, steps or overworld; how it wanders, `wanders` random, aggressive or passive; and `grass`, false for one that floats over it; plugins.md, Wanderers). A habitat names areas or groups. It has one slot for its listed seasons, or `by_season`, giving each season its own methods, rarity, times and weather, plus extra conditions-engine clauses (`when`). A species without a file isn't found in the wild. |
 
-The scaled level's percent and spread are the conditions engine's, in `res/paperwhite2/level_scaling.json`: 80% of the
-party's level (plugins.md, Level scaling), ±3.
+The scaled level's percent and spread are the conditions engine's, in `res/paperwhite2/level_scaling.json`: 60% of the
+party's level but at most 10 below it, ±15% of the party's level from 1 to 5 (plugins.md, Level scaling).
 
 The first data came from `editor/scripts/export-encounters.ts`: the editor's import of the original tables, the
 game's swarms (`SWARM_DATA`) and the zone headers. Running it again needs `--force` and replaces every edit.
@@ -40,7 +40,7 @@ level, and the area never goes empty (`LevelForGate`).
 
 **Shares and levels.**
 - Each tier present takes its share, split evenly among its Pokémon there. The tiers present are rescaled to 100%.
-- The level is the scaled level ±3, kept within the species' minimum and maximum.
+- The level is the scaled level ± the spread, kept within the species' minimum and maximum.
 
 **Rustling spots** (method `rustling`, `ENCTYPE_GRASS_SHAKING`). The spots draw on their own habitats first, then on
 the area's Rare, Very rare and Exotic Pokémon found by grass and dark grass that aren't among those yet. On top of that:

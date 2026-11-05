@@ -61,10 +61,19 @@ export interface EncounterSettings {
     /** The party's level: each other counted member pulls the ace's level down by its gap while that is within this
      * percent of the ace's level, then less and less, to nothing at twice it. */
     partyBand: number;
-    /** The scaled level: this percent of the party's level. */
+    /** The scaled level: this percent of the party's level, while the change is within cap. */
     percent: number;
-    /** A wild Pokémon's level is the scaled level plus or minus this, kept within its species' range. */
-    spread: number;
+    /** The most the percent changes the party's level by, in levels: a percent at low levels, flat at high ones. */
+    cap: number;
+    /** Levels added after the percent, and the scaled level's least and greatest (level_scaling.json's; no field). */
+    offset: number;
+    min: number;
+    max: number;
+    /** A wild Pokémon's level is the scaled level plus or minus this percent of the party's level, rounded, from
+     * spreadMin to spreadMax, kept within its species' range. */
+    spreadPercent: number;
+    spreadMin: number;
+    spreadMax: number;
     /** What a species' minimum level is compared with to decide whether it appears at all. */
     gate: "party" | "scaled";
   };
@@ -231,7 +240,7 @@ export const DEFAULT_SETTINGS: EncounterSettings = {
     { id: "very_rare", name: "Very rare", share: 7 },
     { id: "exotic", name: "Exotic", share: 1 },
   ],
-  levels: { partyTop: 3, partyBand: 20, percent: 80, spread: 3, gate: "scaled" },
+  levels: { partyTop: 3, partyBand: 20, percent: 60, cap: 10, offset: 0, min: 2, max: 100, spreadPercent: 15, spreadMin: 1, spreadMax: 5, gate: "scaled" },
   hiddenAbility: 10,
   battles: { single: 100, double: 0, triple: 0, partners: "family" },
   rustling: { grass: { species: "SPECIES_AUDINO", share: 30 }, dust: { share: 30 }, shadow: { share: 30 }, tiers: ["rare", "very_rare", "exotic"],

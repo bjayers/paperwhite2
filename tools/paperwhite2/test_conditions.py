@@ -148,8 +148,9 @@ class Library:
         self.lib = ctypes.CDLL(str(output))
         for name, result in (("Test_Match", ctypes.c_int), ("Test_Select", ctypes.c_int32), ("Test_Valid", ctypes.c_int),
                              ("Test_Seed", U32), ("Conditions_Hash", U32), ("Conditions_PartyLevel", U32),
-                             ("Conditions_ScaledLevel", U32), ("Conditions_ScaledLevelMin", U32),
-                             ("Conditions_ScaledLevelMax", U32), ("Test_Payload", U32)):
+                             ("Conditions_ScaledLevel", U32), ("Conditions_WildSpread", U32),
+                             ("Conditions_ScaledLevelMin", U32), ("Conditions_ScaledLevelMax", U32),
+                             ("Test_Payload", U32)):
             getattr(self.lib, name).restype = result
         self.lib.Conditions_Hash.argtypes = [U32, U32]
         if self.lib.Test_ContextFields() != len(FIELDS):
@@ -365,15 +366,20 @@ class MatcherTest(unittest.TestCase):
             self.assertEqual(self.c.lib.Conditions_PartyLevel(array, len(levels)), expected, levels)
 
     def test_level_scaling_defaults(self):
+        # 60% of the party's level, at most 10 below; a spread of 15% of it, 1 to 5. The user's table, a party level
+        # and the wild levels expected (docs/paperwhite2/design/trainer-scaling.md), and the defaults'
         lib = self.c.lib
-        self.assertEqual(lib.Conditions_ScaledLevel(50), 40)
-        self.assertEqual((lib.Conditions_ScaledLevelMin(40), lib.Conditions_ScaledLevelMax(40)), (37, 43))
+        for party, wild in ((5, (2, 4)), (10, (4, 8)), (20, (9, 15)), (30, (15, 25)), (50, (35, 45)), (80, (65, 75)),
+                            (100, (85, 95))):
+            scaled, spread = lib.Conditions_ScaledLevel(party), lib.Conditions_WildSpread(party)
+            low, high = lib.Conditions_ScaledLevelMin(scaled, spread), lib.Conditions_ScaledLevelMax(scaled, spread)
+            self.assertEqual((low, high), wild, party)
         self.assertEqual(lib.Conditions_ScaledLevel(1), 2)
         self.assertEqual(lib.Conditions_ScaledLevel(0), 2)
-        self.assertEqual(lib.Conditions_ScaledLevel(100), 80)
-        self.assertEqual(lib.Conditions_ScaledLevel(9), 7)
-        self.assertEqual(lib.Conditions_ScaledLevelMin(2), 1)
-        self.assertEqual(lib.Conditions_ScaledLevelMax(98), 100)
+        self.assertEqual(lib.Conditions_ScaledLevel(9), 6)
+        self.assertEqual(lib.Conditions_WildSpread(1), 1)
+        self.assertEqual(lib.Conditions_ScaledLevelMin(2, 1), 1)
+        self.assertEqual(lib.Conditions_ScaledLevelMax(98, 5), 100)
 
     def test_samples_compile_and_validate(self):
         for path in conditions.TABLES.values():
@@ -432,7 +438,7 @@ class CompilerTest(unittest.TestCase):
     def test_headers(self):
         terrain = conditions.terrain_header()
         self.assertIn("#define TERRAIN_GROUP_COUNT 18", terrain)
-        self.assertIn("#define LEVEL_SCALING_PERCENT 80", conditions.level_scaling_header())
+        self.assertIn("#define LEVEL_SCALING_PERCENT 60", conditions.level_scaling_header())
         self.assertIn("#define SCRIPT_CONDITION_NIGHT 0", conditions.script_header())
 
 

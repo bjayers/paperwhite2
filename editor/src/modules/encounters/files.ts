@@ -37,9 +37,13 @@ export function settingsFile(s: EncounterSettings): Json {
   };
 }
 
-/** The conditions engine's level scaling with the editor's party level, percent and spread, its other fields kept. */
+/** The conditions engine's level scaling with the editor's party level, scaled level and spread, its other fields kept. */
 export function levelScalingFile(current: Json, s: EncounterSettings): Json {
-  return { ...current, party_top: s.levels.partyTop, party_band: s.levels.partyBand, percent: s.levels.percent, spread: s.levels.spread };
+  const l = s.levels;
+  return {
+    ...current, party_top: l.partyTop, party_band: l.partyBand, percent: l.percent, cap: l.cap,
+    spread_percent: l.spreadPercent, spread_min: l.spreadMin, spread_max: l.spreadMax,
+  };
 }
 
 export function groupsFile(groups: AreaGroup[]): Json {
@@ -156,7 +160,10 @@ export function readSettings(f: EncounterFiles): EncounterSettings {
     tiers: (s.tiers as { id: string; name: string; share: number }[]).map((t) => ({ ...t })),
     levels: {
       partyTop: Number(f.levelScaling.party_top ?? 3), partyBand: Number(f.levelScaling.party_band ?? 20),
-      percent: Number(f.levelScaling.percent ?? 80), spread: Number(f.levelScaling.spread ?? 3), gate: s.level_gate,
+      percent: Number(f.levelScaling.percent ?? 60), cap: Number(f.levelScaling.cap ?? 10),
+      offset: Number(f.levelScaling.offset ?? 0), min: Number(f.levelScaling.min ?? 2), max: Number(f.levelScaling.max ?? 100),
+      spreadPercent: Number(f.levelScaling.spread_percent ?? 15), spreadMin: Number(f.levelScaling.spread_min ?? 1),
+      spreadMax: Number(f.levelScaling.spread_max ?? 5), gate: s.level_gate,
     },
     hiddenAbility: s.hidden_ability,
     battles: { ...s.battles },

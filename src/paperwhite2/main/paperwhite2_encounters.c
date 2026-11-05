@@ -249,8 +249,8 @@ u8 PaperWhite2_Encounters_Build(const ConditionContext *ctx, u32 encType, u32 sp
         return 0;
     }
     level = sHeader.gate == ENCOUNTERS_GATE_SCALED ? ctx->scaledLevel : ctx->partyLevel;
-    low = Conditions_ScaledLevelMin(ctx->scaledLevel);
-    high = Conditions_ScaledLevelMax(ctx->scaledLevel);
+    low = Conditions_ScaledLevelMin(ctx->scaledLevel, ctx->wildSpread);
+    high = Conditions_ScaledLevelMax(ctx->scaledLevel, ctx->wildSpread);
     level = LevelForGate(area, candidates, ctx, level, encType);
     MI_CpuClear32(tierCounts, sizeof(tierCounts));
     // The candidates of the method first, then for rustling spots the area's Pokémon they draw from that aren't

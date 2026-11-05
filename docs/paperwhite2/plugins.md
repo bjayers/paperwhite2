@@ -856,10 +856,12 @@ zone change, not a battle or a menu, so the load seed holds until the next zone 
   too weak to battle doesn't: 80, 74, 73 gives 75; 80, 64, 64 gives 69, the most it can fall (about 13%); 80, 7, 5
   gives 80; 62 and five Eggs gives 62. A missing member pulls nothing. The user chose it on 2026-11-04 for playtesting
   (`design/trainer-scaling.md`); the Encounter Editor's Settings tunes both numbers and tries a party.
-- **The adjusted party level** is `party level * percent / 100 + offset`, rounded down, from `min` to `max`, and wild
-  levels go from it minus `spread` to it plus `spread` (1 to 100). The file has `percent` 80, `offset` 0, `min` 2,
-  `max` 100, `spread` 3: a party level of 50 gives 40 and wild levels 37-43; 20 gives 16 (13-19); 5 gives 4 (1-7);
-  100 gives 80.
+- **The adjusted party level** (`Conditions_ScaledLevel`) is the party's level changed by `percent` of it (rounded
+  toward it) but by no more than `cap` levels, plus `offset`, from `min` to `max`: a percent at low levels, a flat
+  change at high ones. Wild levels go `spread_percent` of the party's level (rounded, from `spread_min` to
+  `spread_max`, `Conditions_WildSpread`) either side of it, within 1 to 100. The file has 60%, a cap of 10, offset 0,
+  2-100, and a spread of 15% from 1 to 5, to fit the user's table (2026-11-05): a party level of 5 gives wild levels
+  2-4, 10 gives 4-8, 20 9-15, 30 15-25, 50 35-45, 80 65-75, 100 85-95.
 
 **Script commands,** in every hack build, before the debug menu's so its removal leaves their IDs:
 

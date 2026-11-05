@@ -9,7 +9,8 @@
 //   and the rest to their own habitats and the area's habitats of the settings' tiers and methods (the rare ones of
 //   the grass), split by tier the same way; with no Pokémon there, the fixed thing is all they give;
 // - on a day with an outbreak, its species take the outbreak's share of its methods and the rest is scaled down;
-// - the level is the scaled level plus or minus the spread, kept within the species' range.
+// - the level is the scaled level plus or minus the spread (a share of the party's level), kept within the species'
+//   range.
 // The habitats' extra conditions (`when`) need the game's state, so the preview doesn't evaluate them.
 
 import { SEASONS, type Area, type AreaGroup, type Battles, type Context, type EncounterSettings, type Habitat, type Method,
@@ -56,14 +57,25 @@ export function partyLevel(levels: number[], settings: EncounterSettings): numbe
   return ace - Math.floor((pull + 100 * n - 1) / (100 * n));
 }
 
+/** The scaled level, as the game works it out (Conditions_ScaledLevel): the party's level changed by the percent of it
+ * (rounded toward it) but by no more than the cap, plus the offset, within the least and greatest. */
 export function scaledLevel(partyLevel: number, settings: EncounterSettings): number {
-  return Math.max(1, Math.floor((partyLevel * settings.levels.percent) / 100));
+  const l = settings.levels;
+  const change = Math.max(-l.cap, Math.min(l.cap, Math.trunc((partyLevel * (l.percent - 100)) / 100)));
+  return Math.max(l.min, Math.min(l.max, partyLevel + change + l.offset));
+}
+
+/** How far wild levels go either side of the scaled level (Conditions_WildSpread). */
+export function wildSpread(partyLevel: number, settings: EncounterSettings): number {
+  const l = settings.levels;
+  return Math.max(l.spreadMin, Math.min(l.spreadMax, Math.floor((partyLevel * l.spreadPercent + 50) / 100)));
 }
 
 export function levelRange(levels: { min: number; max: number }, partyLevel: number, settings: EncounterSettings): [number, number] {
   const scaled = scaledLevel(partyLevel, settings);
+  const spread = wildSpread(partyLevel, settings);
   const clamp = (n: number) => Math.min(levels.max, Math.max(levels.min, n));
-  return [clamp(scaled - settings.levels.spread), clamp(scaled + settings.levels.spread)];
+  return [clamp(scaled - spread), clamp(scaled + spread)];
 }
 
 /** The level the minimums are checked against: the party's or the scaled level, as the settings say. */

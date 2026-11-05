@@ -10,8 +10,13 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   `party_top` and `party_band`; the Encounter Editor's Settings edits them and tries a party. `PARTY_LEVEL_MEDIAN` is
   `PARTY_LEVEL_BASE`. Built and verified; **not yet tried in game**: the debug menu's Conditions shows the party level
   as "Party". The conditions tests pass, the level scaling one fixed for the spread of 3.
-- **Next, the user's to decide:** the wild, trainer, boss and difficulty modifiers (a percent with a cap was
-  suggested, to fit the user's wild table), the badge soft cap, and help with catching when the party is strong.
+- **The wild modifier** is a percent with a cap: 60% of the party's level, at most 10 below; wild levels ±15% of it,
+  1 to 5 (`level_scaling.json`'s `cap`, `spread_percent`, `spread_min`, `spread_max`; `Conditions_WildSpread`), fitting
+  the user's table. **Not yet tried in game.**
+- **Trainers' modifiers, the user's** (design/trainer-scaling.md, The modifiers): most 2-5 below the party, rivals and
+  leaders 0-3 below, the Elite Four and Champion 1 above to 2 below; Easy −4, Normal −1, Challenge +2. Not built.
+- **Still open:** the badge soft cap; help with catching when the party is strong (a catch bonus for out-levelling,
+  False Swipe early, or both).
 - The editor's tools open in tabs, kept open, with Back after a link; the Flag and Var Reference saves the notes.
 
 ## 2026-11-05: the Flag and Var Reference complete; the Discord list of unused variables checked

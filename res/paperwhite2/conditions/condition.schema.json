@@ -185,18 +185,21 @@
       "description": "Named groups of zones: every zone whose parent (the zone header's) is one of parent, and the zones listed"
     },
     "level_scaling": {
-      "type": "object", "additionalProperties": false, "required": [ "party_top", "party_band", "percent", "offset", "min", "max", "spread" ],
+      "type": "object", "additionalProperties": false, "required": [ "party_top", "party_band", "percent", "cap", "offset", "min", "max", "spread_percent", "spread_min", "spread_max" ],
       "properties": {
         "$schema": { "type": "string" },
         "party_top": { "type": "integer", "minimum": 1, "maximum": 6, "description": "The party's level: how many of the highest levels count (Eggs left out); the highest is the ace" },
         "party_band": { "type": "integer", "minimum": 1, "maximum": 50, "description": "The party's level: a percent of the ace's level. Each other counted member lowers it by its gap from the ace while the gap is within this, then less and less, to nothing at twice this, so a member too weak to battle doesn't; the average of their pulls, rounded up, comes off the ace's level" },
-        "percent": { "type": "integer", "minimum": 1, "maximum": 200 },
-        "offset": { "type": "integer", "minimum": -100, "maximum": 100 },
+        "percent": { "type": "integer", "minimum": 1, "maximum": 200, "description": "The adjusted level: this percent of the party's level, while the change is within cap" },
+        "cap": { "type": "integer", "minimum": 0, "maximum": 100, "description": "The adjusted level: the most the percent changes the party's level by, in levels" },
+        "offset": { "type": "integer", "minimum": -100, "maximum": 100, "description": "The adjusted level: levels added after the percent" },
         "min": { "type": "integer", "minimum": 1, "maximum": 100 },
         "max": { "type": "integer", "minimum": 1, "maximum": 100 },
-        "spread": { "type": "integer", "minimum": 0, "maximum": 50 }
+        "spread_percent": { "type": "integer", "minimum": 0, "maximum": 100, "description": "Wild levels go this percent of the party's level either side of the adjusted level, rounded" },
+        "spread_min": { "type": "integer", "minimum": 0, "maximum": 50, "description": "The least spread, in levels" },
+        "spread_max": { "type": "integer", "minimum": 0, "maximum": 50, "description": "The greatest spread, in levels" }
       },
-      "description": "The party's level and the adjusted party level: party level * percent / 100 + offset, rounded down, from min to max; wild levels around it from adjusted - spread to adjusted + spread"
+      "description": "The party's level, the adjusted party level that wild Pokémon scale to (the party's level changed by percent of it but by no more than cap, plus offset, from min to max), and the wild levels around it (spread_percent of the party's level, from spread_min to spread_max, either side)"
     }
   }
 }

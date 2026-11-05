@@ -72,7 +72,8 @@ test("a place's shares under any context make 100%, and levels stay within the s
   }
   const levels = { min: 30, max: 60 };
   assert.deepEqual(levelRange(levels, 26, settings), [30, 30]);
-  assert.deepEqual(levelRange(levels, 71, settings), [53, 59]);
+  // 71: 60% would be 42, but the cap keeps it 10 below, 61, and the spread is at most 5: 56-66, within 30-60
+  assert.deepEqual(levelRange(levels, 71, settings), [56, 60]);
   assert.deepEqual(levelRange({ min: 2, max: 25 }, 71, settings), [25, 25]);
 });
 

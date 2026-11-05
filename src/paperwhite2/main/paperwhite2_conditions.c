@@ -219,7 +219,16 @@ u32 Conditions_PartyLevel(u8 *levels, u32 count) {
 }
 
 u32 Conditions_ScaledLevel(u32 partyLevel) {
-    s32 level = (s32)(partyLevel * LEVEL_SCALING_PERCENT / PERCENT) + LEVEL_SCALING_OFFSET;
+    // The percent's change, rounded toward the party's level, by no more than the cap
+    s32 change = (s32)partyLevel * (LEVEL_SCALING_PERCENT - PERCENT) / PERCENT;
+    s32 level;
+
+    if (change < -LEVEL_SCALING_CAP) {
+        change = -LEVEL_SCALING_CAP;
+    } else if (change > LEVEL_SCALING_CAP) {
+        change = LEVEL_SCALING_CAP;
+    }
+    level = (s32)partyLevel + change + LEVEL_SCALING_OFFSET;
 
     if (level < LEVEL_SCALING_MIN) {
         return LEVEL_SCALING_MIN;
@@ -230,18 +239,30 @@ u32 Conditions_ScaledLevel(u32 partyLevel) {
     return level;
 }
 
-u32 Conditions_ScaledLevelMin(u32 scaled) {
-    if (scaled < LEVEL_LOWEST + LEVEL_SCALING_SPREAD) {
-        return LEVEL_LOWEST;
+u32 Conditions_WildSpread(u32 partyLevel) {
+    u32 spread = (partyLevel * LEVEL_SCALING_SPREAD_PERCENT + PERCENT / 2) / PERCENT;
+
+    if (spread < LEVEL_SCALING_SPREAD_MIN) {
+        return LEVEL_SCALING_SPREAD_MIN;
     }
-    return scaled - LEVEL_SCALING_SPREAD;
+    if (spread > LEVEL_SCALING_SPREAD_MAX) {
+        return LEVEL_SCALING_SPREAD_MAX;
+    }
+    return spread;
 }
 
-u32 Conditions_ScaledLevelMax(u32 scaled) {
-    if (scaled + LEVEL_SCALING_SPREAD > LEVEL_HIGHEST) {
+u32 Conditions_ScaledLevelMin(u32 scaled, u32 spread) {
+    if (scaled < LEVEL_LOWEST + spread) {
+        return LEVEL_LOWEST;
+    }
+    return scaled - spread;
+}
+
+u32 Conditions_ScaledLevelMax(u32 scaled, u32 spread) {
+    if (scaled + spread > LEVEL_HIGHEST) {
         return LEVEL_HIGHEST;
     }
-    return scaled + LEVEL_SCALING_SPREAD;
+    return scaled + spread;
 }
 
 // The table's bytes from an offset, which its rules and lists are laid out in

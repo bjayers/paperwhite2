@@ -73,7 +73,7 @@ Verified in `src/paperwhite2/main/`:
   (`paperwhite2_conditions.c:184-200`).
 - **The scaled level:** `Conditions_ScaledLevel` = `median * percent / 100 + offset`, clamped to `min`..`max`
   (`paperwhite2_conditions.c:202-212`), from `res/paperwhite2/level_scaling.json` via the generated
-  `paperwhite2/level_scaling_config.h` (`tools/paperwhite2/conditions.py:381`). Now 80%, offset 0, 2-100, spread 3.
+  `paperwhite2/level_scaling_config.h` (`tools/paperwhite2/conditions.py:381`). Then 80%, offset 0, 2-100, spread 3; since 2026-11-05 a percent with a cap (below).
 - **Wild levels:** scaled ± spread, within the species' own min and max (`paperwhite2_encounters.c:251-253`).
   plugins.md (Conditions, "Level scaling") still says the default spread is 5; the file and encounters.md say 3.
 
@@ -340,6 +340,41 @@ Fast): with the Share on, 100 battles give 49 and 37, 37, 37, 200 give 56 and 45
 A brake that slowed the ace when far ahead of the party's median held it back about 3 levels and left the teammates a
 level or two lower (a lower party level lowers every foe's Exp.), and with the Share off it can't help them at all.
 Revisit if playtesting shows otherwise.
+
+## The modifiers (2026-11-05)
+
+Each modifier changes the party's level. A percent alone changes low levels too little and high ones too much, and a
+flat number the other way round; the wild one is a percent that never moves the level further than a cap.
+
+**Wild, built:** 60% of the party's level, at most 10 below it; wild levels ±15% of the party's level, from 1 to 5
+(plugins.md, Level scaling). Against the user's table:
+
+| Party | Expected | Built |
+| --- | --- | --- |
+| 5 | 2-4 | 2-4 |
+| 10 | 4-8 | 4-8 |
+| 20 | 10-16 | 9-15 |
+| 30 | 20-25 | 15-25 |
+| 50 | 35-45 | 35-45 |
+| 80 | 65-75 | 65-75 |
+| 100 | 85-95 | 85-95 |
+
+**Trainers, the user's (not built):** not a difficulty hack; most trainers a little below the party.
+
+| Tier | Levels, from the party's | With Normal (−1) |
+| --- | --- | --- |
+| Most trainers | 2 to 5 below | 3 to 6 below |
+| Strong: rivals, gym leaders | 0 to 3 below (their ace may match) | 1 to 4 below |
+| Very strong: the Elite Four, the Champion | 1 above to 2 below | 0 to 3 below |
+
+Read as each team's spread: its ace at the top of the range, the others below by their original gaps from it, no
+lower than the bottom. **Difficulty** on top: Easy −4, Normal −1, Challenge +2, likely from the game's own Easy and
+Challenge modes (in place of their zone offsets, `adjustPkmLvForChallengeKeys`, which change only the shown level).
+
+Why it stays near vanilla: the party's level already sits at or below the player's ace (by up to 13%), so the ace
+out-levels every trainer; trainers keep their original species and moves, so a team made for an early route is weaker
+than its level when scaled up; and the player has the EVs, items and IVs trainers lack. What changes is that grinding
+no longer out-levels a boss: Easy is the way to make one easier.
 
 ## The party's level: the first candidates (2026-11-04)
 

@@ -2,9 +2,12 @@
     "$schema": "conditions/condition.schema.json#/$defs/level_scaling",
     "party_top": 3,
     "party_band": 20,
-    "percent": 80,
+    "percent": 60,
+    "cap": 10,
     "offset": 0,
     "min": 2,
     "max": 100,
-    "spread": 3
+    "spread_percent": 15,
+    "spread_min": 1,
+    "spread_max": 5
 }

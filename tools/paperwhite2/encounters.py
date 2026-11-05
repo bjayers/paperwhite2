@@ -8,7 +8,7 @@
     encounters.py habitats OUTPUT_DIR               # the Pokédex's Habitat List (res/pokedex/habitats/) from this data
 
 The sources, each checked against its schema beside it: settings.json, groups.json, areas/<area>.json (an area is an
-original table, ENCOUNTERS_<AREA>) and species/<species>.json, with the scaled level's percent and spread from
+original table, ENCOUNTERS_<AREA>) and species/<species>.json, with the scaled level's percent, cap and spread from
 res/paperwhite2/level_scaling.json (the conditions engine's). The member follows the archive's tables, so the zone
 headers' ENCOUNTERS_* numbers still name the areas, and src/paperwhite2/main/paperwhite2_encounters.c reads the
 current area's block when the field loads its table. Its layout (include/paperwhite2/encounters.h):
@@ -363,7 +363,10 @@ def odds(area: str, method: str, season: str, period: str, weather: str, scaled:
     spots, count = area_fields[28], area_fields[29]
     encounter_type, season_bit, period_bit = METHODS.index(method), SEASONS.index(season), TIMES.index(period)
     level = scaled if gate == GATES.index("scaled") else party
-    spread = json.loads(LEVEL_SCALING.read_text())["spread"]
+    # The spread is a share of the party's level (Conditions_WildSpread); without it, of the scaled level
+    scaling = json.loads(LEVEL_SCALING.read_text())
+    spread = ((party or scaled) * scaling["spread_percent"] + 50) // 100
+    spread = min(scaling["spread_max"], max(scaling["spread_min"], spread))
     low, high = max(1, scaled - spread), min(100, scaled + spread)
     candidates = []
     for wanted in (False, True):
