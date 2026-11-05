@@ -4,6 +4,13 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
 ## 2026-11-05: the difficulty setting
 
+- **Trainer scaling** (plugins.md, Trainer scaling): every trainer battle's Pokémon scale to the party level (at
+  least the badge floor) by tier: normal −2 to −5, strong 0 to −3, boss +1 to −2, ally 0 to −3, the ace at the top and
+  the rest by their gaps; guests and facilities fixed. `res/paperwhite2/trainer_scaling/trainer_scaling.json`; the
+  Trainer Editor previews it. **Not yet tried in game.** Open: whether bosses may go below their original levels (all
+  may, for now: `below_original`), and the tiers of N, Colress, Ghetsis and Cynthia.
+- The intro's menu lists NORMAL first.
+
 - **Difficulty** (plugins.md, Difficulty): the new game asks after the rival's name (EASY / NORMAL / HARD); the
   Options screen's DIFFICULTY row (EASY / NORM / HARD) replaces Save Before IR, which is now always "no save". Kept in
   the key system's slot, so the leaders', Elite Four's and Champion's Challenge Mode teams come with HARD. Trainers'

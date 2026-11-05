@@ -1151,6 +1151,16 @@ def main():
                 ["res/paperwhite2/following/event-policy.json", "res/paperwhite2/following/audio-event-policy.json"],
                 implicit=["tools/paperwhite2/following_scene_policy.py", "config/w2_us/arm9/symbols.txt"])
         constant_headers += outputs
+        # Paper White 2: trainer level scaling's tiers, classes and badge floor, from
+        # res/paperwhite2/trainer_scaling/trainer_scaling.json (docs/paperwhite2/plugins.md, Trainer scaling)
+        n.rule("trainer_scaling", "$python tools/paperwhite2/trainer_scaling.py $in $out", "Generating $out",
+               restat="1")
+        output = Path(GENERATED_INCLUDE_DIR) / "paperwhite2" / "trainer_scaling_config.h"
+        n.build([output], "trainer_scaling", ["res/paperwhite2/trainer_scaling/trainer_scaling.json"],
+                implicit=["tools/paperwhite2/trainer_scaling.py",
+                          "res/paperwhite2/trainer_scaling/trainer_scaling.schema.json", "tools/data/datajson.py",
+                          "tools/data/gen_constants.py", "generated/trainer_classes.txt", "generated/trainers.txt"])
+        constant_headers.append(output)
         # Paper White 2: the conditions' generated headers, the terrain groups, the level scaling and CheckCondition's
         # IDs (tools/paperwhite2/conditions.py, docs/paperwhite2/plugins.md's Conditions)
         n.rule("conditions_header", "$python tools/paperwhite2/conditions.py $kind $out", "Generating $out",

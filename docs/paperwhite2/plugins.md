@@ -755,6 +755,35 @@ the message bank, then the BG system and the heap, and puts the display layout b
 has it).
 
 
+### Trainer scaling
+
+Trainers' Pokémon scale to the player's party level by their tier (`design/trainer-scaling.md` for the research and
+the decisions). `include/paperwhite2/trainer_scaling.h`, `src/paperwhite2/main/paperwhite2_trainer_scaling.c`, called
+by `BtlSetup_LoadTrainer` (`src/system/btl_setup.c`) right after `TrainerUtil_LoadParty`, so every battle with a
+trainer of `ARCID_TRDATA` takes it, a wild multi battle's partner too.
+
+- **The data:** `res/paperwhite2/trainer_scaling/trainer_scaling.json` (its schema beside it), made into
+  `paperwhite2/trainer_scaling_config.h` by `tools/paperwhite2/trainer_scaling.py`, whose `preview TRAINER PARTY_LEVEL
+  [BADGES]` prints a trainer's party scaled. Its tiers: `normal` (ace 2 below the party level, none lower than 5
+  below), `strong` (0 and 3 below: the Gym Leaders, Hugh, Cheren and Bianca as trainers, N, Colress, Zinzolin, the
+  Shadow Triad), `boss` (1 above and 2 below: the Elite Four, the Champion, Ghetsis) and `ally`; every other class is
+  `normal`, and the guest and facility classes (Subway Bosses, Boss Trainers, Benga, the other regions' leaders and
+  champions, Alder, Cynthia, Lenora) are `fixed`. A trainer can take another tier (`trainers`).
+- **The rule:** the basis is the party's level (`Conditions_PartyLevel`), at least `badge_floor` for the badges
+  (`setup->unk98`, which `BtlSetup_LoadGameData` sets): 5, 11, 16, 22, 28, 31, 37, 46, 49, the lowest level of the
+  last Gym Leader beaten. The team's highest level goes to the basis + `top`; each other Pokémon keeps its original
+  gap below it but goes no lower than the basis + `bottom`; with `below_original` false it stays at least at its own
+  level (true for every tier now); all from 1 to 100, with the Exp. of the level and the stats
+  (`PokeParty_RecalcStats`). Species, moves, items, abilities and the PID stay as loaded. Client 2, a partner on the
+  player's side, takes `ally_tier`.
+- **Left alone:** trainer ID 0 (facilities, Pokéstar Studios) and Battle Institute IDs (from 0x500), a zone of an area
+  that `AreaData_IsInfinityDungeon` (the Black Tower's and White Treehollow's bosses), the PWT (its own loader), link
+  battles. Funfest mission battles do scale, then add the mission's levels (the Entralink is to be reworked).
+- **Then the difficulty** (below) adds its levels to the opponents, not the partner.
+- **The editor:** the Trainer Editor's Level scaling card shows the trainer's tier (set apart from its class's there,
+  saved with the trainer) and its party at a party level and badge count on each difficulty
+  (`editor/src/modules/trainers/scaling.ts`, with a test).
+
 ### Difficulty
 
 Easy, Normal or Challenge, the key system's `GAME_DIFFICULTY_*`, kept where it kept it (`GetGameDifficulty`), so the
@@ -766,7 +795,7 @@ original's scripts that give the Gym Leaders, the Elite Four and the Champion th
   command `INTRO_CMD_CHOOSE_DIFFICULTY` in `intro_cmd.c` and a menu window as tall as its items in `intro_msg.c`);
   `game_start.c` puts the choice in the save after the outside data. Its text is
   `res/text/system/game_start.txt`'s `GameStart_Text_Difficulty*` (the question, EASY, NORMAL, HARD, and the line
-  after).
+  after); the menu lists NORMAL first, so pressing A through it keeps the default.
 - **The Options screen** (`src/ov140/config_panel.c`) has DIFFICULTY: EASY / NORM / HARD on Save Before IR's row,
   laid out as the text speed's (`config_panel_work.h`: 12 values, `OPTION_DIFFICULTY`). Its text is
   `res/text/system/title_2.txt`'s `Title2_Text_Difficulty`, `_Easy`, `_Norm`, `_Hard` and `_CanChooseDifficulty`.
@@ -776,8 +805,8 @@ original's scripts that give the Gym Leaders, the Elite Four and the Champion th
   left the stats as they were, is off. `PaperWhite2_ApplyDifficulty`, after it in `EventTrainerBattleCall_Create`
   (`src/ov012/event_battle.c`), changes the opponents' Pokémon (clients 1 and 3, not a multi battle's ally) by
   `res/paperwhite2/level_scaling.json`'s `difficulty_easy` (−4), `difficulty_normal` (−1) or `difficulty_challenge`
-  (+2), from 1 to 100, with the Exp. and stats of the level. On the original levels until trainers scale
-  (`design/trainer-scaling.md`). The Trial House's battles are left alone.
+  (+2), from 1 to 100, with the Exp. and stats of the level, after trainer scaling. The Trial House's battles are
+  left alone.
 - The Continue screen still shows a difficulty other than Normal in its key system box.
 
 ### Conditions

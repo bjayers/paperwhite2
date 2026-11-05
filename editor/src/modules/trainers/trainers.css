@@ -46,3 +46,9 @@
 .trn-list-tools { display: flex; gap: 10px; align-items: center; margin: 0 10px 6px; font-size: 13px; }
 .trn-group { font-weight: 600; padding: 4px 10px; background: var(--panel-2); position: sticky; top: 0; z-index: 1; }
 .trn-places { margin: 4px 0; padding-left: 18px; font-size: 13px; }
+/* The level scaling's preview (ScalingCard) */
+.trn-scale-try { display: flex; gap: 14px; align-items: center; margin: 8px 0 6px; font-size: 13px; }
+.trn-scale-try input { width: 56px; margin-left: 6px; }
+.trn-scale { border-collapse: collapse; font-size: 13px; margin-bottom: 4px; }
+.trn-scale td { padding: 2px 10px 2px 0; text-align: right; font-variant-numeric: tabular-nums; }
+.trn-scale td:first-child { text-align: left; padding-right: 16px; }

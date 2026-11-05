@@ -1,6 +1,7 @@
-# Trainer level scaling (design, not built)
+# Trainer level scaling (design; built 2026-11-05)
 
-Research of 2026-11-04. Nothing here is built. "Verified" means read in the code at the cited line; "inferred" means
+Research of 2026-11-04. Built on 2026-11-05 as the user's decisions below have it (plugins.md, Trainer scaling); the
+research's own proposals that differ (percent tiers, evolutions, level-up moves) were not taken. "Verified" means read in the code at the cited line; "inferred" means
 reasoned from it and not yet seen in game.
 
 ## What it should do

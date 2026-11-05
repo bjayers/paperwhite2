@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Trainer level scaling",
+  "description": "How trainers' Pokémon scale to the player's party level (Conditions_PartyLevel), by tier (docs/paperwhite2/plugins.md, Trainer scaling). A team's ace goes to the party level + top, and each other Pokémon keeps its original gap below the ace but goes no lower than the party level + bottom. The difficulty's levels come after, for the opponents (level_scaling.json's difficulty_*).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [ "tiers", "default_tier", "ally_tier", "classes", "trainers", "badge_floor" ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "tiers": {
+      "type": "array", "minItems": 1, "maxItems": 15,
+      "description": "The tiers, each a team's levels from the party's level",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": [ "name", "top", "bottom", "below_original" ],
+        "properties": {
+          "name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "Its name, which classes and trainers give; not \"fixed\", which means not scaled" },
+          "top": { "type": "integer", "minimum": -50, "maximum": 50, "description": "The team's ace's level, from the party's level" },
+          "bottom": { "type": "integer", "minimum": -50, "maximum": 50, "description": "The lowest any of the team goes, from the party's level; at most top" },
+          "below_original": { "type": "boolean", "description": "Whether a Pokémon may go below its original level, for a player below it" }
+        }
+      }
+    },
+    "default_tier": { "type": "string", "description": "The tier of a class that classes doesn't list" },
+    "ally_tier": { "type": "string", "description": "The tier of a partner on the player's side (a multi battle's ally), whatever its class" },
+    "classes": {
+      "type": "array",
+      "description": "Classes and their tier, or \"fixed\" for not scaled",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": [ "class", "tier" ],
+        "properties": {
+          "class": { "type": "string", "x-constant": "TRAINER_CLASS_", "description": "A TRAINER_CLASS_* constant" },
+          "tier": { "type": "string", "description": "A tier's name, or \"fixed\"" }
+        }
+      }
+    },
+    "trainers": {
+      "type": "array",
+      "description": "Trainers whose tier isn't their class's, or \"fixed\" for not scaled",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": [ "trainer", "tier" ],
+        "properties": {
+          "trainer": { "type": "string", "description": "A trainer's constant, of generated/trainers.txt" },
+          "tier": { "type": "string", "description": "A tier's name, or \"fixed\"" }
+        }
+      }
+    },
+    "badge_floor": {
+      "type": "array", "minItems": 9, "maxItems": 9,
+      "items": { "type": "integer", "minimum": 1, "maximum": 100 },
+      "description": "For 0 to 8 badges, the least party level trainers scale from: the lowest level of the last Gym Leader beaten, so an under-levelled party doesn't make the story's trainers trivial"
+    }
+  }
+}

@@ -21,6 +21,7 @@ import type { ScanMatch } from "../../../shared/api.ts";
 import { navigate, useToolParams } from "../../navigation.ts";
 import { TRAINER_SCRIPT, TRAINER_SCRIPT_SECOND, eventLabel, loadWorld, scriptConstantOf, zoneLabel, type World } from "../world/world.ts";
 import { useToolActive } from "../active.ts";
+import { FIXED, LEVEL_SCALING, SCALING, readScaling, scaleTeam, scalingBasis, tierOf, trainerConstant } from "./scaling.ts";
 
 const SCHEMA = "res/trainers/data/trainer.schema.json";
 const DATA = "res/trainers/data";
@@ -165,12 +166,80 @@ function PartyCard({ path, index, mon, constants, withItems, withMoves, count }:
   );
 }
 
-function TrainerPage({ path, constants, places, world, open }: {
+/** The trainer's level scaling: its tier, which a trainer can set apart from its class's, and its party at a party
+ * level and badge count on each difficulty (scaling.ts). */
+function ScalingCard({ path, cls, levels, preview, setPreview, open }: {
+  path: string;
+  cls: string;
+  levels: number[];
+  preview: { party: number; badges: number };
+  setPreview(p: { party: number; badges: number }): void;
+  open(path: string): void;
+}) {
+  const scaling = readScaling(useHeld(SCALING).data);
+  const levelData = useHeld(LEVEL_SCALING).data;
+  if (!scaling) return null;
+  const trainer = trainerConstant(path);
+  const { tier, own } = tierOf(scaling, trainer, cls);
+  const byClass = tierOf({ ...scaling, trainers: [] }, trainer, cls).tier;
+  const setTier = (value: string) => {
+    const rest = scaling.trainers.filter((t) => t.trainer !== trainer);
+    const next = value === "" ? rest : [...rest, { trainer, tier: value }];
+    documents.edit(SCALING, ["trainers"], next.map((t) => new Map<string, JsonValue>([["trainer", t.trainer], ["tier", t.tier]])));
+  };
+  const difficulty = (key: string) => (levelData instanceof Map ? Number(levelData.get(key) ?? 0) : 0);
+  const t = scaling.tiers.find((x) => x.name === tier);
+  const basis = scalingBasis(scaling, preview.party, preview.badges);
+  const describe = (name: string) => {
+    const x = scaling.tiers.find((y) => y.name === name);
+    return x ? `${name} (ace ${x.top >= 0 ? "+" : ""}${x.top}, lowest ${x.bottom >= 0 ? "+" : ""}${x.bottom})` : "fixed: not scaled";
+  };
+  return (
+    <section className="trn-card">
+      <h3>Level scaling</h3>
+      <div className="trn-setting">
+        <span className="muted">tier</span>
+        <select value={own ? tier : ""} onChange={(e) => setTier(e.target.value)}>
+          <option value="">By its class: {describe(byClass)}</option>
+          {scaling.tiers.map((x) => <option key={x.name} value={x.name}>{describe(x.name)}</option>)}
+          <option value={FIXED}>Fixed: keeps its levels</option>
+        </select>
+      </div>
+      {t ? (
+        <>
+          <div className="trn-scale-try">
+            <label>Party level <input type="number" min={1} max={100} value={preview.party}
+                                      onChange={(e) => setPreview({ ...preview, party: Math.min(100, Math.max(1, Number(e.target.value) || 1)) })} /></label>
+            <label>Badges <input type="number" min={0} max={8} value={preview.badges}
+                                 onChange={(e) => setPreview({ ...preview, badges: Math.min(8, Math.max(0, Number(e.target.value) || 0)) })} /></label>
+            {basis !== preview.party && <span className="muted trn-note">The badge floor raises it to {basis}.</span>}
+          </div>
+          <table className="trn-scale">
+            <tbody>
+              <tr><td className="muted">Original</td>{levels.map((l, i) => <td key={i}>{l}</td>)}</tr>
+              {([["Easy", "difficulty_easy"], ["Normal", "difficulty_normal"], ["Hard", "difficulty_challenge"]] as const).map(([label, key]) => (
+                <tr key={key}><td className="muted">{label}</td>{scaleTeam(levels, t, basis, difficulty(key)).map((l, i) => <td key={i}>{l}</td>)}</tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      ) : <p className="muted trn-note">Its Pokémon keep their levels on every difficulty but Easy's and Hard's changes.</p>}
+      <p className="muted trn-note">
+        The tiers, the classes' tiers and the badge floor: <button className="link" onClick={() => open(SCALING)}>trainer_scaling.json</button>.
+        A partner on the player's side takes the ally tier and no difficulty change.
+      </p>
+    </section>
+  );
+}
+
+function TrainerPage({ path, constants, places, world, open, preview, setPreview }: {
   path: string;
   constants: Constants;
   places: Place[] | undefined;
   world: World | null;
   open(path: string): void;
+  preview: { party: number; badges: number };
+  setPreview(p: { party: number; badges: number }): void;
 }) {
   const { data, error } = useHeld(path);
   if (error) return <p className="trn-error">{error}</p>;
@@ -249,6 +318,8 @@ function TrainerPage({ path, constants, places, world, open }: {
           {party.length < 6 && <button className="trn-add" onClick={addMon}>+ Add a Pokémon</button>}
         </div>
       </section>
+      <ScalingCard path={path} cls={cls} levels={party.map((m) => Number(m.get("level") ?? 1))} preview={preview}
+                   setPreview={setPreview} open={open} />
       <section className="trn-card">
         <h3>What the trainer says</h3>
         {messages.length === 0 && <p className="muted trn-note">Nothing.</p>}
@@ -291,6 +362,7 @@ export function TrainerEditor({ constants, open }: ToolProps) {
     return zoneLabel(parent ? parent.replace(/^ZONE_/, "").toLowerCase() : first.zone);
   };
   const [chosen, setChosen] = useState<string | null>(null);
+  const [preview, setPreview] = useState({ party: 30, badges: 4 });
   const { docs } = useDocuments();
   // A link from another editor: #tool/trainers?trainer=TRAINER_... (or its number)
   const params = useToolParams("trainers");
@@ -314,9 +386,9 @@ export function TrainerEditor({ constants, open }: ToolProps) {
     });
   }, [constants]);
 
-  const unsaved = [...docs.values()].filter((d) => d.dirty && d.path.startsWith(`${DATA}/`));
+  const unsaved = [...docs.values()].filter((d) => d.dirty && (d.path.startsWith(`${DATA}/`) || d.path === SCALING));
   const save = useCallback(async () => {
-    for (const p of documents.dirtyPaths().filter((p) => p.startsWith(`${DATA}/`))) await documents.save(p);
+    for (const p of documents.dirtyPaths().filter((p) => p.startsWith(`${DATA}/`) || p === SCALING)) await documents.save(p);
   }, []);
   useEffect(() => {
     if (!toolActive) return;
@@ -389,7 +461,8 @@ export function TrainerEditor({ constants, open }: ToolProps) {
           </div>
         </div>
         <div className="trn-detail">
-          {chosen ? <TrainerPage key={chosen} path={chosen} constants={constants} places={places.get(chosen)} world={world} open={open} />
+          {chosen ? <TrainerPage key={chosen} path={chosen} constants={constants} places={places.get(chosen)} world={world} open={open}
+                                     preview={preview} setPreview={setPreview} />
             : <p className="muted trn-empty">Choose a trainer.</p>}
         </div>
       </div>

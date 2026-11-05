@@ -24,6 +24,9 @@
 #include "save/trainer_data_savedata.h"
 #include "system/game_data.h"
 #include "system/pms_data.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/trainer_scaling.h"
+#endif
 
 // The setup of a battle: its kind, parties, trainers and surroundings. The file name is the ROM's string; the function
 // names are swan's where they have one.
@@ -172,6 +175,10 @@ static void BtlSetup_LoadTrainer(BtlSetup *setup, GameData *gameData, u32 client
     if (trainerId != 0) {
         TrainerUtil_LoadTrainer(gameData, trainerId, setup->trainers[client], heapId);
         TrainerUtil_LoadParty(trainerId, *party, heapId);
+#ifdef PAPERWHITE2
+        // Paper White 2: the trainer's levels scaled to the player's party by its tier (paperwhite2/trainer_scaling.h)
+        PaperWhite2_TrainerScaling_Apply(setup, gameData, client, *party, trainerId);
+#endif
         TransformVsPokePartyBySeason(gameData, *party, GameData_GetSeason(gameData));
         switch (GetTrainerClassBGMGroupId(setup->trainers[client]->trainerClass)) {
         case 0:

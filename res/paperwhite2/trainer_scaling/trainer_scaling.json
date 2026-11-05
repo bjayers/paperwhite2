@@ -1,0 +1,375 @@
+{
+    "$schema": "trainer_scaling.schema.json",
+    "tiers": [
+        {
+            "name": "normal",
+            "top": -2,
+            "bottom": -5,
+            "below_original": true
+        },
+        {
+            "name": "strong",
+            "top": 0,
+            "bottom": -3,
+            "below_original": true
+        },
+        {
+            "name": "boss",
+            "top": 1,
+            "bottom": -2,
+            "below_original": true
+        },
+        {
+            "name": "ally",
+            "top": 0,
+            "bottom": -3,
+            "below_original": true
+        }
+    ],
+    "default_tier": "normal",
+    "ally_tier": "ally",
+    "classes": [
+        {
+            "class": "TRAINER_CLASS_LEADER_CHEREN",
+            "tier": "strong"
+        },
+        {
+            "class": "TRAINER_CLASS_LEADER_ROXIE",
+            "tier": "strong"
+        },
+        {
+            "class": "TRAINER_CLASS_LEADER_BURGH",
+            "tier": "strong"
+        },
+        {
+            "class": "TRAINER_CLASS_LEADER_ELESA",
+            "tier": "strong"
+        },
+        {
+            "class": "TRAINER_CLASS_LEADER_CLAY",
+            "tier": "strong"
+        },
+        {
+            "class": "TRAINER_CLASS_LEADER_SKYLA",
+            "tier": "strong"
+        },
+        {
+            "class": "TRAINER_CLASS_LEADER_DRAYDEN",
+            "tier": "strong"
+        },
+        {
+            "class": "TRAINER_CLASS_LEADER_MARLON",
+            "tier": "strong"
+        },
+        {
+            "class": "TRAINER_CLASS_PKMN_TRAINER_RIVAL",
+            "tier": "strong"
+        },
+        {
+            "class": "TRAINER_CLASS_PKMN_TRAINER_CHEREN",
+            "tier": "strong"
+        },
+        {
+            "class": "TRAINER_CLASS_PKMN_TRAINER_BIANCA",
+            "tier": "strong"
+        },
+        {
+            "class": "TRAINER_CLASS_PKMN_TRAINER_N",
+            "tier": "strong"
+        },
+        {
+            "class": "TRAINER_CLASS_PKMN_TRAINER_COLRESS_195",
+            "tier": "strong"
+        },
+        {
+            "class": "TRAINER_CLASS_PKMN_TRAINER_COLRESS_235",
+            "tier": "strong"
+        },
+        {
+            "class": "TRAINER_CLASS_TEAM_PLASMA_COLRESS",
+            "tier": "strong"
+        },
+        {
+            "class": "TRAINER_CLASS_TEAM_PLASMA_ZINZOLIN",
+            "tier": "strong"
+        },
+        {
+            "class": "TRAINER_CLASS_TEAM_PLASMA_SHADOW",
+            "tier": "strong"
+        },
+        {
+            "class": "TRAINER_CLASS_ELITE_FOUR_SHAUNTAL",
+            "tier": "boss"
+        },
+        {
+            "class": "TRAINER_CLASS_ELITE_FOUR_GRIMSLEY",
+            "tier": "boss"
+        },
+        {
+            "class": "TRAINER_CLASS_ELITE_FOUR_MARSHAL",
+            "tier": "boss"
+        },
+        {
+            "class": "TRAINER_CLASS_ELITE_FOUR_CAITLIN",
+            "tier": "boss"
+        },
+        {
+            "class": "TRAINER_CLASS_CHAMPION",
+            "tier": "boss"
+        },
+        {
+            "class": "TRAINER_CLASS_TEAM_PLASMA_GHETSIS",
+            "tier": "boss"
+        },
+        {
+            "class": "TRAINER_CLASS_SUBWAY_BOSS_88",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_SUBWAY_BOSS_102",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_SUBWAY_BOSS_INGO",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_SUBWAY_BOSS_EMMET",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_BOSS_TRAINER_BENGA",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_BOSS_TRAINER_BRENT",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_BOSS_TRAINER_ABED",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_BOSS_TRAINER_ABIGAIL",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_BOSS_TRAINER_BESS",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_BOSS_TRAINER_DANEIL",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_BOSS_TRAINER_CARLEN",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_BOSS_TRAINER_CARLEIGH",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_BOSS_TRAINER_DANELLE",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_BOSS_TRAINER_FREDERICK",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_BOSS_TRAINER_GAIUS",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_BOSS_TRAINER_GAIL",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_BOSS_TRAINER_FREIRA",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_BOSS_TRAINER_M_161",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_BOSS_TRAINER_M_162",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_BOSS_TRAINER_F_163",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_BOSS_TRAINER_F_164",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_PKMN_TRAINER_ALDER",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_PKMN_TRAINER_CYNTHIA",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_LENORA",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_BROCK",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_MISTY",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_LT_SURGE",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_ERIKA",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_SABRINA",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_BLAINE",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_GIOVANNI",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_FALKNER",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_BUGSY",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_WHITNEY",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_MORTY",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_CHUCK",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_JASMINE",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_PRYCE",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_CLAIR",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_JANINE",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_ROXANNE",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_BRAWLY",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_WATTSON",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_FLANNERY",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_NORMAN",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_WINONA",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_TATE",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_LIZA",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_JUAN",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_ROARK",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_GARDENIA",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_FANTINA",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_MAYLENE",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_WAKE",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_BYRON",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_CANDICE",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_VOLKNER",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_BLUE",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_LANCE",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_STEVEN",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_WALLACE",
+            "tier": "fixed"
+        },
+        {
+            "class": "TRAINER_CLASS_RED",
+            "tier": "fixed"
+        }
+    ],
+    "trainers": [],
+    "badge_floor": [ 5, 11, 16, 22, 28, 31, 37, 46, 49 ]
+}
