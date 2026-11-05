@@ -755,6 +755,31 @@ the message bank, then the BG system and the heap, and puts the display layout b
 has it).
 
 
+### Difficulty
+
+Easy, Normal or Challenge, the key system's `GAME_DIFFICULTY_*`, kept where it kept it (`GetGameDifficulty`), so the
+original's scripts that give the Gym Leaders, the Elite Four and the Champion their Challenge Mode teams
+(`GameGetDifficulty`, 13 scripts) see it. `include/paperwhite2/difficulty.h`,
+`src/paperwhite2/main/paperwhite2_difficulty.c`.
+
+- **The new game asks** once the rival's name is right (`src/ov294/intro_script.c`, `sScriptDifficulty`, with the
+  command `INTRO_CMD_CHOOSE_DIFFICULTY` in `intro_cmd.c` and a menu window as tall as its items in `intro_msg.c`);
+  `game_start.c` puts the choice in the save after the outside data. Its text is
+  `res/text/system/game_start.txt`'s `GameStart_Text_Difficulty*` (the question, EASY, NORMAL, HARD, and the line
+  after).
+- **The Options screen** (`src/ov140/config_panel.c`) has DIFFICULTY: EASY / NORM / HARD on Save Before IR's row,
+  laid out as the text speed's (`config_panel_work.h`: 12 values, `OPTION_DIFFICULTY`). Its text is
+  `res/text/system/title_2.txt`'s `Title2_Text_Difficulty`, `_Easy`, `_Norm`, `_Hard` and `_CanChooseDifficulty`.
+  Save Before IR is gone with the wireless modes: `Config_GetSaveBeforeIR` is always 0 (no save) and a new config
+  starts at 0.
+- **Levels:** the original's change of the shown level by the zone's offset (`adjustPkmLvForChallengeKeys`), which
+  left the stats as they were, is off. `PaperWhite2_ApplyDifficulty`, after it in `EventTrainerBattleCall_Create`
+  (`src/ov012/event_battle.c`), changes the opponents' Pokémon (clients 1 and 3, not a multi battle's ally) by
+  `res/paperwhite2/level_scaling.json`'s `difficulty_easy` (−4), `difficulty_normal` (−1) or `difficulty_challenge`
+  (+2), from 1 to 100, with the Exp. and stats of the level. On the original levels until trainers scale
+  (`design/trainer-scaling.md`). The Trial House's battles are left alone.
+- The Continue screen still shows a difficulty other than Normal in its key system box.
+
 ### Conditions
 
 The shared conditions engine of `design/conditions.md` (phase 1: the engine, the script commands and the debug

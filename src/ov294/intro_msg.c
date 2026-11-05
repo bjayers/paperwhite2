@@ -193,6 +193,13 @@ void IntroMsg_OpenMenu(IntroMsg *msg, const IntroMenuItem *items, u32 count, BOO
 
     menu = &msg->menu;
     heapId = msg->heapId;
+#ifdef PAPERWHITE2
+    // Paper White 2: the window as tall as the items, above the message's (the original's menus have two)
+    if (BmpWin_GetSizeY(msg->menuWindow) != count * 2) {
+        BmpWin_Free(msg->menuWindow);
+        msg->menuWindow = BmpWin_CreateDynamic(1, 22, 17 - count * 2, 9, count * 2, WINDOW_PALETTE, 1);
+    }
+#endif
     window = msg->menuWindow;
     MI_CpuFill8(menu, 0, sizeof(IntroMenu));
     menu->options = ListMenuCore_CreateOptionList(count, heapId);

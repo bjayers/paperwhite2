@@ -43,6 +43,10 @@ typedef struct {
     const u16 *rivalName;
     // INTRO_RESULT_*
     u32 result;
+#ifdef PAPERWHITE2
+    // Paper White 2: the difficulty chosen, a GAME_DIFFICULTY_* (INTRO_CMD_CHOOSE_DIFFICULTY)
+    u32 difficulty;
+#endif
 } IntroParam;
 
 typedef struct IntroGraphic IntroGraphic;

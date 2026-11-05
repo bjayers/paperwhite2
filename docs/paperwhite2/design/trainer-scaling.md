@@ -368,8 +368,9 @@ flat number the other way round; the wild one is a percent that never moves the 
 | Very strong: the Elite Four, the Champion | 1 above to 2 below | 0 to 3 below |
 
 Read as each team's spread: its ace at the top of the range, the others below by their original gaps from it, no
-lower than the bottom. **Difficulty** on top: Easy −4, Normal −1, Challenge +2, likely from the game's own Easy and
-Challenge modes (in place of their zone offsets, `adjustPkmLvForChallengeKeys`, which change only the shown level).
+lower than the bottom. **Difficulty** on top: Easy −4, Normal −1, Challenge +2, built on 2026-11-05 (plugins.md,
+Difficulty) on the original levels, in place of the zone offsets (`adjustPkmLvForChallengeKeys`, which changed only
+the shown level, the user's reason); Challenge keeps the leaders' Challenge Mode teams, as the user wants.
 
 Why it stays near vanilla: the party's level already sits at or below the player's ace (by up to 13%), so the ace
 out-levels every trainer; trainers keep their original species and moves, so a team made for an early route is weaker

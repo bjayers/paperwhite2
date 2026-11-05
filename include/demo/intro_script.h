@@ -107,6 +107,11 @@ enum {
     INTRO_CMD_OBJ_FADE_OUT,
     INTRO_CMD_NOP,
     INTRO_CMD_END,
+#ifdef PAPERWHITE2
+    // Paper White 2: easy, normal, hard: the messages of a menu of the difficulties, which can't be cancelled; the
+    // choice, a GAME_DIFFICULTY_*, goes to the param's difficulty
+    INTRO_CMD_CHOOSE_DIFFICULTY,
+#endif
 };
 
 enum {
@@ -125,6 +130,10 @@ enum {
     INTRO_SCRIPT_RENAME_RIVAL,
     INTRO_SCRIPT_FAREWELL,
     INTRO_SCRIPT_FINISH,
+#ifdef PAPERWHITE2
+    // Paper White 2: the difficulty, asked once the rival's name is right
+    INTRO_SCRIPT_DIFFICULTY,
+#endif
     INTRO_SCRIPT_COUNT,
 };
 

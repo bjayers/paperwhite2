@@ -38,4 +38,9 @@ GameStart_Text_Empty_15 =                                                       
 GameStart_Text_Empty_16 =           \x{ffff}
 GameStart_Text_Empty_17 =          \x{ffff}
 GameStart_Text_Empty_18 =        \x{ffff}
+GameStart_Text_DifficultyQuestion = One more thing! How strong would you\nlike the Trainers you meet to be?{be01}
+GameStart_Text_DifficultyEasy = EASY
+GameStart_Text_DifficultyNormal = NORMAL
+GameStart_Text_DifficultyHard = HARD
+GameStart_Text_DifficultyChangeLater = You can change this whenever you like\nin the Options.{be01}
 \pad{28}

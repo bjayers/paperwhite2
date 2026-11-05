@@ -5,6 +5,9 @@
 #include "demo/intro_script.h"
 #include "gfl/fade.h"
 #include "nitro/fx.h"
+#ifdef PAPERWHITE2
+#include "text/system/game_start.h"
+#endif
 
 // The intro's scripts. The messages are those of the system message file 54, and the professor's sprite changes frames
 // while she talks. Word 0 is the player's name and word 1 the rival's.
@@ -158,9 +161,30 @@ static const IntroCmdEntry sScriptRivalNamed[] = {
     { INTRO_CMD_WAIT, { 1 } },
     // YES / NO
     { INTRO_CMD_YES_NO, { 19, 20, 1 } },
+#ifdef PAPERWHITE2
+    // Paper White 2: the difficulty, then the farewell
+    { INTRO_CMD_GOTO, { INTRO_SCRIPT_DIFFICULTY } },
+#else
     { INTRO_CMD_GOTO, { INTRO_SCRIPT_FAREWELL } },
+#endif
     { INTRO_CMD_GOTO, { INTRO_SCRIPT_RENAME_RIVAL } },
 };
+
+#ifdef PAPERWHITE2
+// Paper White 2: the difficulty, which the Options screen changes later. Its messages are game_start.txt's
+// GameStart_Text_Difficulty*
+static const IntroCmdEntry sScriptDifficulty[] = {
+    // One more thing! How strong would you like the Trainers you meet to be?
+    { INTRO_CMD_TALK, { GameStart_Text_DifficultyQuestion, INTRO_SPRITE_PROFESSOR, 1 } },
+    { INTRO_CMD_WAIT, { 1 } },
+    // EASY / NORMAL / HARD
+    { INTRO_CMD_CHOOSE_DIFFICULTY,
+      { GameStart_Text_DifficultyEasy, GameStart_Text_DifficultyNormal, GameStart_Text_DifficultyHard } },
+    // You can change this whenever you like in the Options.
+    { INTRO_CMD_TALK, { GameStart_Text_DifficultyChangeLater, INTRO_SPRITE_PROFESSOR, 1 } },
+    { INTRO_CMD_GOTO, { INTRO_SCRIPT_FAREWELL } },
+};
+#endif
 
 static const IntroCmdEntry sScriptRenameRival[] = {
     { INTRO_CMD_SET_RESULT, { INTRO_RESULT_ENTER_NAME } },
@@ -211,6 +235,9 @@ static const IntroCmdEntry *sScripts[INTRO_SCRIPT_COUNT] = {
     [INTRO_SCRIPT_RENAME_RIVAL] = sScriptRenameRival,
     [INTRO_SCRIPT_FAREWELL] = sScriptFarewell,
     [INTRO_SCRIPT_FINISH] = sScriptFinish,
+#ifdef PAPERWHITE2
+    [INTRO_SCRIPT_DIFFICULTY] = sScriptDifficulty,
+#endif
 };
 
 const IntroCmdEntry *IntroScript_Get(u32 script) {

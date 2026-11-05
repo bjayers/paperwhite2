@@ -9,5 +9,8 @@
     "max": 100,
     "spread_percent": 15,
     "spread_min": 1,
-    "spread_max": 5
+    "spread_max": 5,
+    "difficulty_easy": -4,
+    "difficulty_normal": -1,
+    "difficulty_challenge": 2
 }

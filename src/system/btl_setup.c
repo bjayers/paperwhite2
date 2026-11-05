@@ -40,7 +40,9 @@ static void BtlSetup_SetNetImpl(BtlSetup *setup, GameData *gameData, u32 style, 
                                 u8 a6, HeapID heapId);
 
 // The clients whose parties the difficulty changes the levels of
+#ifndef PAPERWHITE2
 static const u32 DIFFICULTY_ADJUST_PARTIES[] = { 1, 3 };
+#endif
 
 BtlSetup *BtlSetup_Create(HeapID heapId) {
     BtlSetup *setup = GFL_HeapAllocate(heapId, sizeof(BtlSetup), FALSE, "btl_setup.c", 52);
@@ -448,6 +450,12 @@ void BtlSetup_FreeForRecord(BtlSetup *setup) {
 }
 
 void adjustPkmLvForChallengeKeys(BtlSetup *setup, GameData *gameData, u16 zoneId) {
+#ifdef PAPERWHITE2
+    // Paper White 2: no change of the shown level by the zone's offset, which left the stats as they were; the
+    // difficulty changes trainers' levels with their stats instead (PaperWhite2_ApplyDifficulty)
+    setup->levelDiff = 0;
+}
+#else
     u32 difficulty = GetGameDifficulty(getKeyInfoSaveBlk(GameData_GetSaveControl(gameData)));
     s16 adjust = GetZoneEasyChallengeModeLevelAdjust(zoneId);
     u32 i;
@@ -478,6 +486,7 @@ void adjustPkmLvForChallengeKeys(BtlSetup *setup, GameData *gameData, u16 zoneId
         }
     }
 }
+#endif
 
 // Makes a trainer battle a Battle Subway one, with its music
 void BtlSetup_PostProcessTrialHouse(BtlSetup *setup) {

@@ -53,6 +53,7 @@
 #include "system/game_system.h"
 #include "system/zone_weather.h"
 #ifdef PAPERWHITE2
+#include "paperwhite2/difficulty.h"
 #include "paperwhite2/shiny_candy.h"
 #endif
 
@@ -213,6 +214,10 @@ GameEvent *EventTrainerBattleCall_Create(GameSystem *gsys, Field *field, u32 a2,
     setup = BtlSetup_Create(4);
     BtlSetup_SetTrainerLocal(encountSystem, setup, a2, a3, trainerId, a5, 4);
     adjustPkmLvForChallengeKeys(setup, gameData, Field_GetPlayerStateZoneID(field));
+#ifdef PAPERWHITE2
+    // Paper White 2: the difficulty's levels for the trainers' Pokémon (paperwhite2/difficulty.h)
+    PaperWhite2_ApplyDifficulty(setup, gameData);
+#endif
     EventBattleCall_BroadcastTrainerBattle(trainerId, 0);
     RecordAddOne(records, 6);
     RecordAddOne(records, 0x56);

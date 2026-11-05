@@ -21,10 +21,18 @@
 #define BG_MESSAGE 4
 
 // The windows: the values, the options' names, the title, the explanation and the question
+#ifdef PAPERWHITE2
+// Paper White 2: the last row is the difficulty's, with three values, in place of Save Before IR's two
+#define LABEL_COUNT 17
+enum {
+    WINDOW_OPTION = 12,
+    WINDOW_TITLE = 17,
+#else
 #define LABEL_COUNT 16
 enum {
     WINDOW_OPTION = 11,
     WINDOW_TITLE = 16,
+#endif
     WINDOW_MESSAGE,
     WINDOW_CONFIRM,
     WINDOW_COUNT,
@@ -43,7 +51,13 @@ enum {
     OPTION_SAVE_BEFORE_IR,
     OPTION_COUNT,
 };
+#ifdef PAPERWHITE2
+// Paper White 2: the difficulty (GAME_DIFFICULTY_*, the key system's) on Save Before IR's row
+#define OPTION_DIFFICULTY OPTION_SAVE_BEFORE_IR
+#define ITEM_COUNT 12
+#else
 #define ITEM_COUNT 11
+#endif
 
 // The cursor: an option, or one of the buttons
 enum {

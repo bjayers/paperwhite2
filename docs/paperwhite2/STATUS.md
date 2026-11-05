@@ -2,6 +2,15 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-05: the difficulty setting
+
+- **Difficulty** (plugins.md, Difficulty): the new game asks after the rival's name (EASY / NORMAL / HARD); the
+  Options screen's DIFFICULTY row (EASY / NORM / HARD) replaces Save Before IR, which is now always "no save". Kept in
+  the key system's slot, so the leaders', Elite Four's and Champion's Challenge Mode teams come with HARD. Trainers'
+  Pokémon change level by −4 / −1 / +2 with their stats (`level_scaling.json`'s `difficulty_*`); the original's
+  shown-level offset is off. Built and verified; **not yet tried in game**: the Options row's layout, the intro's
+  menu window, the levels and stats in battle, a gym on HARD.
+
 ## 2026-11-05: the party's level, for playtesting; editor tabs; saving the flag notes
 
 - **The party's level** replaces the median for the wild levels (and the trainers' when they scale):

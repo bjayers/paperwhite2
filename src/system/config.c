@@ -32,7 +32,12 @@ void Config_Init(Config *config) {
     config->unk6 = 0;
     config->unk7 = 0;
     config->kanji = 0;
+#ifdef PAPERWHITE2
+    // Paper White 2: no save before infrared, which hack builds don't have; its row is the difficulty's
+    config->unk9 = 0;
+#else
     config->unk9 = 1;
+#endif
     config->cgearOn = 0;
 }
 
@@ -82,7 +87,12 @@ void Config_ApplyMsgLanguage(const Config *config) {
 }
 
 u32 Config_GetSaveBeforeIR(const Config *config) {
+#ifdef PAPERWHITE2
+    // Paper White 2: never, whatever an old save has (Config_Init)
+    return 0;
+#else
     return config->unk9;
+#endif
 }
 
 void Config_SetSaveBeforeIR(Config *config, u32 value) {

@@ -36,6 +36,9 @@
 #include "system/gf_font.h"
 #include "system/printsys.h"
 #include "system/wipe.h"
+#ifdef PAPERWHITE2
+#include "save/key_info.h"
+#endif
 
 // Starting the game: a new game runs the intro and the name entries while it creates the save data, and a continue
 // loads the save. Both then start the game system. A debug screen, whose questions are blank outside Japan, can set
@@ -258,6 +261,9 @@ static BOOL NewGame_Init(GameProc *proc, u32 *state, void *param, void *work) {
     wk->introParam.saveTask = wk->saveTask;
     wk->introParam.pokeVoice = pokeVoice;
     wk->introParam.rivalName = wk->rivalName;
+#ifdef PAPERWHITE2
+    wk->introParam.difficulty = GAME_DIFFICULTY_NORMAL;
+#endif
     return TRUE;
 }
 
@@ -369,6 +375,10 @@ static BOOL NewGame_Exit(GameProc *proc, u32 *state, void *param, void *work) {
     GFL_HeapFree(wk->newConfig);
     FreeGameProcManager(wk->procManager);
     NewGame_ImportOutsideData(save);
+#ifdef PAPERWHITE2
+    // Paper White 2: the difficulty the intro asked for, which the Options screen changes later
+    SetGameDifficulty(getKeyInfoSaveBlk(save), wk->introParam.difficulty);
+#endif
     procData = GameSystem_CreateProcData(GAME_ENTRYPOINT_OPENING, 0, &spawnPos, 0);
     NameEntryParam_Free(wk->nameEntryParam);
     GFL_ProcReleaseSubsystem(proc);

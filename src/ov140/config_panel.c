@@ -50,6 +50,7 @@
 #include "text/system/title_2.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/following_options.h"
+#include "save/key_info.h"
 #endif
 
 // The options screen of the menu: five options in rows that scroll, each with two or three values to pick with the
@@ -299,23 +300,52 @@ static const ConfigPanelBgSetup sConfigPanelBgSetups[BG_COUNT] = {
 
 // The values' texts in the order of sConfigPanelItems, then the options' names
 static ConfigPanelLabel sConfigPanelLabels[LABEL_COUNT] = {
-    { Title2_Text_Slow, 14, 5, 6, 2 },        { Title2_Text_Mid, 20, 5, 6, 2 },
-    { Title2_Text_Fast, 26, 5, 6, 2 },        { Title2_Text_On, 15, 8, 4, 2 },
-    { Title2_Text_Off, 24, 8, 6, 2 },         { Title2_Text_Shift, 15, 11, 8, 2 },
-    { Title2_Text_Set, 24, 11, 8, 2 },        { Title2_Text_Stereo, 15, 14, 6, 2 },
+    { Title2_Text_Slow, 14, 5, 6, 2 },
+    { Title2_Text_Mid, 20, 5, 6, 2 },
+    { Title2_Text_Fast, 26, 5, 6, 2 },
+    { Title2_Text_On, 15, 8, 4, 2 },
+    { Title2_Text_Off, 24, 8, 6, 2 },
+    { Title2_Text_Shift, 15, 11, 8, 2 },
+    { Title2_Text_Set, 24, 11, 8, 2 },
+    { Title2_Text_Stereo, 15, 14, 6, 2 },
+#ifdef PAPERWHITE2
+    // Paper White 2: the difficulty's values where the text speed's are, a row lower
+    { Title2_Text_Mono, 24, 14, 6, 2 },
+    { Title2_Text_Easy, 14, 17, 6, 2 },
+    { Title2_Text_Norm, 20, 17, 6, 2 },
+    { Title2_Text_Hard, 26, 17, 6, 2 },
+    { Title2_Text_TextSpeed, 1, 5, 12, 2 },
+    { Title2_Text_BattleScene, 1, 8, 10, 2 },
+    { Title2_Text_BattleStyle, 1, 11, 12, 2 },
+    { Title2_Text_Sound, 1, 14, 6, 2 },
+    { Title2_Text_Difficulty, 1, 17, 10, 2 },
+#else
     { Title2_Text_Mono, 24, 14, 6, 2 },       { Title2_Text_Save, 15, 17, 6, 2 },
     { Title2_Text_NoSave, 24, 17, 7, 2 },     { Title2_Text_TextSpeed, 1, 5, 12, 2 },
     { Title2_Text_BattleScene, 1, 8, 10, 2 }, { Title2_Text_BattleStyle, 1, 11, 12, 2 },
     { Title2_Text_Sound, 1, 14, 6, 2 },       { Title2_Text_SaveBeforeIr, 1, 17, 10, 2 },
+#endif
 };
 
 static const ConfigPanelItem sConfigPanelItems[ITEM_COUNT] = {
-    { OPTION_TEXT_SPEED, 0, 120, 0, 112, 0, 48, 24 },       { OPTION_TEXT_SPEED, 1, 165, 0, 160, 0, 48, 24 },
-    { OPTION_TEXT_SPEED, 2, 211, 0, 208, 0, 48, 24 },       { OPTION_BATTLE_SCENE, 0, 120, 24, 112, 24, 72, 24 },
-    { OPTION_BATTLE_SCENE, 1, 192, 24, 184, 24, 72, 24 },   { OPTION_BATTLE_STYLE, 0, 120, 48, 112, 48, 72, 24 },
-    { OPTION_BATTLE_STYLE, 1, 192, 48, 184, 48, 72, 24 },   { OPTION_SOUND, 0, 120, 72, 112, 72, 72, 24 },
+    { OPTION_TEXT_SPEED, 0, 120, 0, 112, 0, 48, 24 },
+    { OPTION_TEXT_SPEED, 1, 165, 0, 160, 0, 48, 24 },
+    { OPTION_TEXT_SPEED, 2, 211, 0, 208, 0, 48, 24 },
+    { OPTION_BATTLE_SCENE, 0, 120, 24, 112, 24, 72, 24 },
+    { OPTION_BATTLE_SCENE, 1, 192, 24, 184, 24, 72, 24 },
+    { OPTION_BATTLE_STYLE, 0, 120, 48, 112, 48, 72, 24 },
+    { OPTION_BATTLE_STYLE, 1, 192, 48, 184, 48, 72, 24 },
+    { OPTION_SOUND, 0, 120, 72, 112, 72, 72, 24 },
+#ifdef PAPERWHITE2
+    // Paper White 2: the difficulty's frames where the text speed's are, a row lower
+    { OPTION_SOUND, 1, 192, 72, 184, 72, 72, 24 },
+    { OPTION_DIFFICULTY, GAME_DIFFICULTY_EASY, 120, 96, 112, 96, 48, 24 },
+    { OPTION_DIFFICULTY, GAME_DIFFICULTY_NORMAL, 165, 96, 160, 96, 48, 24 },
+    { OPTION_DIFFICULTY, GAME_DIFFICULTY_CHALLENGE, 211, 96, 208, 96, 48, 24 },
+#else
     { OPTION_SOUND, 1, 192, 72, 184, 72, 72, 24 },          { OPTION_SAVE_BEFORE_IR, 1, 120, 96, 112, 96, 72, 24 },
     { OPTION_SAVE_BEFORE_IR, 0, 192, 96, 184, 96, 72, 24 },
+#endif
 };
 
 // The buttons' areas of the touch screen
@@ -323,9 +353,13 @@ static const ConfigPanelRect sConfigPanelConfirmRect = { 112, 168, 184, 192 };
 static const ConfigPanelRect sConfigPanelQuitRect = { 184, 168, 256, 192 };
 
 static const ConfigPanelOption sConfigPanelOptions[OPTION_COUNT] = {
-    { Title2_Text_CanChooseFromThree, 3, { 0, 1, 2 } },  { Title2_Text_CanChooseWhetherView, 2, { 3, 4 } },
-    { Title2_Text_CanChooseSwitchPokemon, 2, { 5, 6 } }, { Title2_Text_CanChooseWayGame, 2, { 7, 8 } },
+    { Title2_Text_CanChooseFromThree, 3, { 0, 1, 2 } },    { Title2_Text_CanChooseWhetherView, 2, { 3, 4 } },
+    { Title2_Text_CanChooseSwitchPokemon, 2, { 5, 6 } },   { Title2_Text_CanChooseWayGame, 2, { 7, 8 } },
+#ifdef PAPERWHITE2
+    { Title2_Text_CanChooseDifficulty, 3, { 9, 10, 11 } },
+#else
     { Title2_Text_CanChooseSaveGame, 2, { 9, 10 } },
+#endif
 };
 
 // The palettes of the rows on the screen, from the top
@@ -568,6 +602,19 @@ static void ConfigPanelBg_PrintLabels(ConfigPanelBg *bg) {
         case 2:
             x = 2;
             break;
+#ifdef PAPERWHITE2
+        // Paper White 2: the difficulty's values centered in their frames, as the text speed's are
+        case 9:
+        case 10:
+        case 11:
+            str = GFL_MsgDataLoadStrbufNew(msgData, sConfigPanelLabels[i].msgId);
+            x = (48 - GFL_FontGetBlockWidth(str, font, 0)) / 2;
+            GFL_StrBufFree(str);
+            if (x < 0) {
+                x = 0;
+            }
+            break;
+#endif
         }
         label = &sConfigPanelLabels[i];
         str = GFL_MsgDataLoadStrbufNew(msgData, sConfigPanelLabels[i].msgId);
@@ -1533,7 +1580,12 @@ static void ConfigPanelOptions_Init(ConfigPanelOptions *options, Config *config)
     options->values[OPTION_BATTLE_SCENE] = Config_GetBattleScene(config);
     options->values[OPTION_BATTLE_STYLE] = Config_GetBattleStyle(config);
     options->values[OPTION_SOUND] = getSoundFlags(config);
+#ifdef PAPERWHITE2
+    // Paper White 2: the difficulty, kept where the key system kept it
+    options->values[OPTION_DIFFICULTY] = GetGameDifficulty(getKeyInfoSaveBlk(SaveControl_GetInstance()));
+#else
     options->values[OPTION_SAVE_BEFORE_IR] = Config_GetSaveBeforeIR(config);
+#endif
 }
 
 static void ConfigPanelOptions_Exit(ConfigPanelOptions *options) {
@@ -1546,7 +1598,11 @@ static void ConfigPanelOptions_Apply(const ConfigPanelOptions *options) {
     Config_SetBattleScene(options->config, options->values[OPTION_BATTLE_SCENE]);
     Config_SetBattleStyle(options->config, options->values[OPTION_BATTLE_STYLE]);
     Config_SetSoundFlags(options->config, options->values[OPTION_SOUND]);
+#ifdef PAPERWHITE2
+    SetGameDifficulty(getKeyInfoSaveBlk(SaveControl_GetInstance()), options->values[OPTION_DIFFICULTY]);
+#else
     Config_SetSaveBeforeIR(options->config, options->values[OPTION_SAVE_BEFORE_IR]);
+#endif
 }
 
 static void ConfigPanelOptions_SetItem(ConfigPanelOptions *options, u32 item) {
@@ -1739,6 +1795,7 @@ static void ConfigPanelSeq_Input(ConfigPanelSeq *seq, u32 *state, void *data) {
             }
         }
 
+#ifndef PAPERWHITE2
         // The save of another game can't be overwritten, so there is nothing to save before infrared
         {
             BOOL otherSave = SaveControl_IsNewGameOverSave(GameData_GetSaveControl(GSYS_GetGameData(wk->param->gsys)));
@@ -1749,6 +1806,7 @@ static void ConfigPanelSeq_Input(ConfigPanelSeq *seq, u32 *state, void *data) {
                 *state = 1;
             }
         }
+#endif
         break;
     case 1: {
         ConfigPanelOptions options;
