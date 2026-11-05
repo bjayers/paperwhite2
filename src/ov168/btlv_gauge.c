@@ -722,15 +722,22 @@ void BtlvGauge_StartExpGain(BtlvGauge *gauge, int index, s32 exp) {
 #ifdef PAPERWHITE2
 void BtlvGauge_SetPrestige(BtlvGauge *gauge, int index, u32 shownLevel, s32 cost) {
     BtlvGaugeEntry *entry = &gauge->entries[index];
+    PaperWhite2TypeIcon *icon;
 
+    // As a level up's last step does (BtlvGauge_UpdateLevelUp): its sound, the bar empty, then the level, with Type
+    // Icons' wedge off the box while it is drawn
+    GFL_SndSEPlay(SEQ_SE_EXPMAX);
     entry->mon.prestigeLevel = shownLevel;
     entry->mon.prestigeBar = TRUE;
     entry->mon.exp = 0;
     entry->mon.expMax = cost;
-    entry->mon.expDelta = 0;
     entry->mon.expAnim = GAUGE_ANIM_START;
-    BtlvGauge_DrawLevel(gauge, entry);
+    entry->mon.expDelta = 0;
+    BtlvGauge_StepGauge(entry->mon.expMax, entry->mon.exp, 0, &entry->mon.expAnim, 10, 1);
     BtlvGauge_DrawBar(gauge, index, 1);
+    icon = PaperWhite2_TypeIconsBeforeText(gauge, entry);
+    BtlvGauge_DrawLevel(gauge, entry);
+    PaperWhite2_TypeIconsAfterText(icon);
 }
 
 #endif

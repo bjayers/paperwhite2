@@ -11,10 +11,12 @@
 // prestige level, in gold, up to prestige_max (src/paperwhite2/main/paperwhite2_prestige.c).
 //
 // Stored in PKM_PARAM_PRESTIGE's 30 bits: the prestige level above 100 in bits 0-9, and the Exp. toward the next in
-// bits 10-29, in units of PRESTIGE_EXP_UNIT. A level's cost stops growing at what 20 bits hold (about prestige 260)
+// bits 10-29, in Prestige Points, one per PRESTIGE_EXP_UNIT Exp. (rounded), which is what the screens and the battle
+// show, so the numbers stay short: a tenth of the Exp. A level's cost stops growing at what 20 bits hold (about
+// prestige 245)
 
 #define PRESTIGE_LEVEL_START 100
-#define PRESTIGE_EXP_UNIT 16
+#define PRESTIGE_EXP_UNIT 10
 // The parts of PKM_PARAM_PRESTIGE's value, and Exp. as the units it adds, rounded
 #define PRESTIGE_LEVEL_OF(value) ((value) & 0x3ff)
 #define PRESTIGE_PROGRESS_OF(value) ((value) >> 10)
@@ -30,7 +32,7 @@ u32 PaperWhite2_GetShownLevel(BoxPkm *pkm);
 BOOL PaperWhite2_HasPrestige(BoxPkm *pkm);
 // Adds Exp. to a level 100 Pokémon's prestige, and returns TRUE if its prestige level rose
 BOOL PaperWhite2_AddPrestigeExp(BoxPkm *pkm, u32 exp);
-// A level 100 Pokémon's Exp. toward its next prestige level, what that level costs, and all it has gained as prestige
+// A level 100 Pokémon's Prestige Points toward its next prestige level, what that level costs, and all it has gained
 // (the levels' costs and the progress); FALSE below level 100
 BOOL PaperWhite2_GetPrestigeProgress(BoxPkm *pkm, u32 *progress, u32 *cost, u32 *total);
 // Raises a level 100 Pokémon's prestige level by one, from no progress, for the debug menu; FALSE below level 100 or

@@ -122,11 +122,11 @@ BOOL PaperWhite2_GetPrestigeProgress(BoxPkm *pkm, u32 *progress, u32 *cost, u32 
     if (prestige > PRESTIGE_MAX) {
         prestige = PRESTIGE_MAX;
     }
-    *progress = (value >> PRESTIGE_LEVEL_BITS) * PRESTIGE_EXP_UNIT;
-    *cost = Prestige_GetCost(pkm, prestige) * PRESTIGE_EXP_UNIT;
+    *progress = value >> PRESTIGE_LEVEL_BITS;
+    *cost = Prestige_GetCost(pkm, prestige);
     *total = *progress;
     for (i = 0; i < prestige; i++) {
-        *total += Prestige_GetCost(pkm, i) * PRESTIGE_EXP_UNIT;
+        *total += Prestige_GetCost(pkm, i);
     }
     return TRUE;
 }

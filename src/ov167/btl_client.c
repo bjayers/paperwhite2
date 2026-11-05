@@ -5879,10 +5879,10 @@ static BOOL BattleClient_ScPrestigeGain(BtlClient *client, s32 *seq, const u32 *
         if (sPrestigeProgress + sPrestigeLeft >= cost) {
             // To the end of the bar, then a new prestige level
             sPrestigeLeft -= cost - sPrestigeProgress;
-            BtlvEffect_AddPrestigeGauge(pos, (cost - sPrestigeProgress) * PRESTIGE_EXP_UNIT);
+            BtlvEffect_AddPrestigeGauge(pos, cost - sPrestigeProgress);
             *seq = PRESTIGE_SEQ_WAIT_FILL;
         } else {
-            BtlvEffect_AddPrestigeGauge(pos, sPrestigeLeft * PRESTIGE_EXP_UNIT);
+            BtlvEffect_AddPrestigeGauge(pos, sPrestigeLeft);
             sPrestigeProgress += sPrestigeLeft;
             sPrestigeLeft = 0;
             *seq = PRESTIGE_SEQ_WAIT_END;
@@ -5893,7 +5893,7 @@ static BOOL BattleClient_ScPrestigeGain(BtlClient *client, s32 *seq, const u32 *
             sPrestigeLevel++;
             sPrestigeProgress = 0;
             BtlvEffect_SetPrestigeGauge(pos, PRESTIGE_LEVEL_START + sPrestigeLevel,
-                                        PaperWhite2_GetPrestigeCost(species, form, sPrestigeLevel) * PRESTIGE_EXP_UNIT);
+                                        PaperWhite2_GetPrestigeCost(species, form, sPrestigeLevel));
             BtlvCore_StartPosEffect(client->viewCore, pos, 0x25d);
             *seq = PRESTIGE_SEQ_WAIT_EFFECT;
         }

@@ -769,16 +769,17 @@ in gold, up to 999. `include/paperwhite2/prestige.h`, `src/paperwhite2/main/pape
 
 - **Stored** in 30 bits the game never writes, `PKM_PARAM_PRESTIGE` (`poke_tool.c`): block B's 14 bits after the
   hidden ability and N's flags (PK5 0x42-0x43) and block D's two bytes before the Pokéstar fame (PK5 0x85-0x86). Bits
-  0-9 are the prestige level above 100, bits 10-29 the Exp. toward the next in units of 16. The Following Pokémon's
+  0-9 are the prestige level above 100, bits 10-29 the Prestige Points toward the next: one per 10 Exp. (rounded),
+  what the summary and the battle show, so the numbers stay short. The Following Pokémon's
   record uses other bytes (block B's u32 and block C's byte).
-- **The curve:** the first prestige level costs the species' level 99 to 100 Exp. (29,701 for Medium Fast), and each
-  one after costs `level_scaling.json`'s `prestige_growth_percent` (4) more, until a level costs what 20 bits hold
-  (about prestige 260); `prestige_max` is 999. Medium Fast at 5,000 Exp. a battle: 101 after about 6 battles, 110
+- **The curve:** the first prestige level costs the species' level 99 to 100 Exp. in points (2,970 for Medium Fast),
+  and each one after costs `level_scaling.json`'s `prestige_growth_percent` (4) more, until a level costs what 20 bits
+  hold (about prestige 245); `prestige_max` is 999. Medium Fast at 5,000 Exp. a battle: 101 after about 6 battles, 110
   after 70, 150 after 900, 200 after 7,000.
 - **Gained** only in battle, by the party: `ServerControl_GiveExp` (`src/ov167/btl_server_flow.c`), which skips a
   level 100 Pokémon, gives its Exp. (the battlers' and the Exp. Share's, as `AddExpAndEVs` worked it out) to
   `PaperWhite2_AddPrestigeExp`. Not the Day Care. Each gain is said as Exp. is, `Bank0019_Text_GainedPrestigePoints`
-  ("X gained N Prestige Points!"), and a new prestige level queues `Bank0019_Text_PrestigeRose` ("X's Prestige rose
+  ("X gained N Prestige Points!", N the points), and a new prestige level queues `Bank0019_Text_PrestigeRose` ("X's Prestige rose
   to Lv. N!", `res/text/system/0019.txt`, the battle's standard messages) with the level in gold.
 - **Gold:** a message's `{ff00:N}` with N of 256 or more is a color of its own, 256 + letter × 16 + shadow
   (`GFL_TextRndExecColorCmd`, `src/system/printsys.c`); the battle message window's palette is grays only, so
@@ -793,7 +794,8 @@ in gold, up to 999. `include/paperwhite2/prestige.h`, `src/paperwhite2/main/pape
   with its blue drawn as the HP bar's gold (colors 11 and 12 to 9 and 10). A gain fills it as Exp. does: the server,
   after the "gained" message, sends `SC_PRESTIGE_FROM` (the prestige before) and `SC_PRESTIGE_GAIN` (the Exp.), and
   the client (`BattleClient_ScPrestigeGain`, `btl_client.c`) fills the gauge a prestige level at a time; at each it
-  shows the new level and an empty bar (`BtlvGauge_SetPrestige`) with the level-up's sparkle (effect 0x25d), then
+  shows the new level and an empty bar (`BtlvGauge_SetPrestige`, with Type Icons' wedge off the box while the level is
+  drawn, as every level redraw has it) with the level-up's sound and sparkle (effect 0x25d), then
   the "rose" message follows. A Pokémon without a gauge on the field (an Exp. Share one) gains without it.
 - **Shown** in the battle HP box (`btlv_gauge.c`, set when the gauge is set, so a prestige level gained mid-battle
   shows from the next), the party list (`plist_plate.c`), the summary (`p_sta_sub.c`) and the PC box's upper screen

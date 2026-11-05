@@ -5593,8 +5593,8 @@ BOOL ServerControl_GiveExp(BtlServerFlow *flow, BattleParty *party, const BtlFlo
                 BoxPkm *pkm = PokeParty_GetBoxPkm(GetSrcData(mon));
 
                 monId = GetMonID(mon);
-                BtlServerCmdQueue_PutMsg(flow->queue, SC_MSG_STD, Bank0019_Text_GainedPrestigePoints, monId, entry->exp,
-                                         SC_MSG_ARG_END);
+                BtlServerCmdQueue_PutMsg(flow->queue, SC_MSG_STD, Bank0019_Text_GainedPrestigePoints, monId,
+                                         PRESTIGE_UNITS_OF(entry->exp), SC_MSG_ARG_END);
                 BtlServerCmdQueue_Put(flow->queue, SC_PRESTIGE_FROM, monId,
                                       PML_PkmGetParam(pkm, PKM_PARAM_PRESTIGE, NULL));
                 BtlServerCmdQueue_Put(flow->queue, SC_PRESTIGE_GAIN, monId, entry->exp);
