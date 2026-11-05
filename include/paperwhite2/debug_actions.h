@@ -145,6 +145,13 @@
 // The flag watch's change arg1 (from 0) in words 0 to 14 (DebugCommands_FlagWatchEntry); 0 where the log has no
 // such change (word 0 the watched flag, word 1 how many it has), else 1, or 2 for one of a script's commands
 #define DEBUG_ACTION_FLAG_WATCH_ENTRY 48
+// Sets the target to level 100: its experience to level 100's, then its stats; the moves stay
+#define DEBUG_ACTION_PARTY_LEVEL_100 49
+// Sets every Pokémon of the party but Eggs to level 100, as DEBUG_ACTION_PARTY_LEVEL_100 does
+#define DEBUG_ACTION_PARTY_ALL_LEVEL_100 50
+// Raises the target's prestige level by one (paperwhite2/prestige.h) and puts its shown level in word 2. Returns
+// FALSE below level 100 or at the greatest
+#define DEBUG_ACTION_PARTY_ADD_PRESTIGE 51
 
 // The kinds of number entry: their ranges and messages are sDebugNumberKinds (paperwhite2_debug_commands.c)
 #define DEBUG_NUMBER_LEVEL 0

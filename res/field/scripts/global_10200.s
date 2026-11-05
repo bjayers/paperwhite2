@@ -119,8 +119,17 @@ L_DebugPartyList:
     ListMenuAdd Global10200_Text_DebugFriendship, 65535, 6
     ListMenuAdd Global10200_Text_DebugHealParty, 65535, 7
     ListMenuAdd Global10200_Text_DebugGivePokemon, 65535, 8
+    ListMenuAdd Global10200_Text_DebugLevel100, 65535, 9
+    ListMenuAdd Global10200_Text_DebugPartyLevel100, 65535, 10
+    ListMenuAdd Global10200_Text_DebugAddPrestige, 65535, 11
     ListMenuAdd Global10200_Text_DebugBack, 65535, DEBUG_LIST_BACK
     ListMenuShow
+    WorkCmpConst 0x8020, 9
+    VMJumpIf CMP_EQ, L_DebugLevel100
+    WorkCmpConst 0x8020, 10
+    VMJumpIf CMP_EQ, L_DebugPartyLevel100
+    WorkCmpConst 0x8020, 11
+    VMJumpIf CMP_EQ, L_DebugAddPrestige
     WorkCmpConst 0x8020, 0
     VMJumpIf CMP_EQ, L_DebugNextTarget
     WorkCmpConst 0x8020, 1
@@ -285,6 +294,39 @@ L_DebugFriendship:
     Debug DEBUG_ACTION_PARTY_SET_FRIENDSHIP, 0x8020, 0, 0x8025
     SEPlay SEQ_SE_SELECT1
     SystemMsg Global10200_Text_DebugFriendshipDone, 2
+    LastKeyWait
+    VMJump L_DebugParty
+
+// Level 100: the target, or the whole party, to level 100; the moves stay. For trying Prestige levels
+L_DebugLevel100:
+    Debug DEBUG_ACTION_PARTY_LEVEL_100, 0, 0, 0x8025
+    Debug DEBUG_ACTION_PARTY_WORDS, 0, 0, 0x8025
+    SEPlay SEQ_SE_SELECT1
+    SystemMsg Global10200_Text_DebugLevel100Done, 2
+    LastKeyWait
+    VMJump L_DebugParty
+
+L_DebugPartyLevel100:
+    Debug DEBUG_ACTION_PARTY_ALL_LEVEL_100, 0, 0, 0x8025
+    SEPlay SEQ_SE_SELECT1
+    SystemMsg Global10200_Text_DebugPartyLevel100Done, 2
+    LastKeyWait
+    VMJump L_DebugParty
+
+// Add prestige: the target's prestige level up by one, at level 100 (paperwhite2/prestige.h)
+L_DebugAddPrestige:
+    Debug DEBUG_ACTION_PARTY_ADD_PRESTIGE, 0, 0, 0x8025
+    WorkCmpConst 0x8025, 0
+    VMJumpIf CMP_EQ, L_DebugAddPrestigeNot
+    Debug DEBUG_ACTION_PARTY_WORDS, 0, 0, 0x8025
+    SEPlay SEQ_SE_SELECT1
+    SystemMsg Global10200_Text_DebugAddPrestigeDone, 2
+    LastKeyWait
+    VMJump L_DebugParty
+
+L_DebugAddPrestigeNot:
+    Debug DEBUG_ACTION_PARTY_WORDS, 0, 0, 0x8025
+    SystemMsg Global10200_Text_DebugAddPrestigeNot, 2
     LastKeyWait
     VMJump L_DebugParty
 

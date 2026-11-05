@@ -28,6 +28,7 @@
 #include "paperwhite2/following_data.h"
 #include "paperwhite2/following_dialogue.h"
 #include "paperwhite2/following_field.h"
+#include "paperwhite2/prestige.h"
 #include "paperwhite2/season.h"
 #include "paperwhite2/shiny_candy.h"
 #include "paperwhite2/spawns.h"
@@ -281,6 +282,19 @@ static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2
     case DEBUG_ACTION_PARTY_HEAL:
         PokeParty_RecoverAll(GameData_GetParty(gameData));
         return TRUE;
+    case DEBUG_ACTION_PARTY_ALL_LEVEL_100: {
+        PokeParty *party = GameData_GetParty(gameData);
+        s32 i;
+
+        for (i = 0; i < PokeParty_GetPkmCount(party); i++) {
+            PartyPkm *member = PokeParty_GetPkm(party, i);
+
+            if (!PokeParty_GetParam(member, PKM_PARAM_IS_EGG, NULL)) {
+                setLevel(member, PRESTIGE_LEVEL_START);
+            }
+        }
+        return TRUE;
+    }
     case DEBUG_ACTION_GIVE_POKEMON:
         return DebugCommands_GivePokemon(env, arg1, sDebugNumber.value);
     case DEBUG_ACTION_GIVE_ITEM:
@@ -470,6 +484,15 @@ static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2
         // The experience of the level's start, then the stats; the moves aren't learned or forgotten
         setLevel(pkm, sDebugNumber.value);
         DebugCommands_SetWordNumber(env, PARTY_WORD_VALUE, sDebugNumber.value);
+        return TRUE;
+    case DEBUG_ACTION_PARTY_LEVEL_100:
+        setLevel(pkm, PRESTIGE_LEVEL_START);
+        return TRUE;
+    case DEBUG_ACTION_PARTY_ADD_PRESTIGE:
+        if (!PaperWhite2_AddPrestigeLevel(PokeParty_GetBoxPkm(pkm))) {
+            return FALSE;
+        }
+        DebugCommands_SetWordNumber(env, PARTY_WORD_VALUE, PaperWhite2_GetShownLevel(PokeParty_GetBoxPkm(pkm)));
         return TRUE;
     case DEBUG_ACTION_PARTY_SET_NATURE:
         PokeParty_SetNature(pkm, sDebugNumber.value);

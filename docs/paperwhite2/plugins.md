@@ -210,6 +210,9 @@ DEBUG                           L_DebugMenu
     Friendship...                   0 / 70 / 255
     Heal party                      PokeParty_RecoverAll, as a Center
     Give Pokémon...                 number: species, then level; to the party, or the PC when it is full
+    Level 100                       the target to level 100's experience and stats; the moves stay
+    Party to level 100              the same for every Pokémon of the party but Eggs
+    Add prestige                    the target's Prestige level up by one, at level 100 (Prestige levels, below)
   Items...
     Give item...                    number: item (with its name), then how many (1-999)
     Give key items                  the safe ones (below), each the Bag doesn't have
@@ -289,6 +292,9 @@ of the last number entry.
 | `PARTY_MAKE_SHINY` (8) | | the Shiny Candy's PID (`PaperWhite2_MakeShinyPID`, now in main); `DEBUG_SHINY_DONE`, `_ALREADY` or `_EGG` |
 | `PARTY_SET_FRIENDSHIP` (9) | value | `PKM_PARAM_HAPPINESS`; not on an Egg (whose field is its steps) |
 | `PARTY_HEAL` (10) | | `PokeParty_RecoverAll` |
+| `PARTY_LEVEL_100` (49) | | the target to level 100 (`setLevel`) |
+| `PARTY_ALL_LEVEL_100` (50) | | every Pokémon but Eggs to level 100 |
+| `PARTY_ADD_PRESTIGE` (51) | | the target's prestige level + 1, its shown level in word 2; FALSE below level 100 or at the greatest |
 | `GIVE_POKEMON` (11) | species | at the number's level, made as `PokePartyAdd` makes one (`addPkmToParty`, else `GameData_AddBoxPkm`); `DEBUG_GIVE_PARTY`, `_BOX` or `_FULL` |
 | `GIVE_ITEM` (12) | item | the number of them, `BagSave_AddItem`; name in word 0, count in word 2; whether it fit |
 | `GIVE_KEY_ITEMS` (13) | | each of `sDebugKeyItems` the Bag lacks; how many, also in word 0 |

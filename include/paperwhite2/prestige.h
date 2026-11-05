@@ -22,6 +22,9 @@ u32 PaperWhite2_GetShownLevel(BoxPkm *pkm);
 BOOL PaperWhite2_HasPrestige(BoxPkm *pkm);
 // Adds Exp. to a level 100 Pokémon's prestige, and returns TRUE if its prestige level rose
 BOOL PaperWhite2_AddPrestigeExp(BoxPkm *pkm, u32 exp);
+// Raises a level 100 Pokémon's prestige level by one, from no progress, for the debug menu; FALSE below level 100 or
+// at the greatest
+BOOL PaperWhite2_AddPrestigeLevel(BoxPkm *pkm);
 
 // The colors a screen prints a prestige level in, for its font palette: the standard one (archive 23's palette 5,
 // gold letters with the dark gray of normal text as the shadow), and the battle's HP box (gold, its near-black)
