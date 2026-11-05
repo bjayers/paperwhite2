@@ -9,6 +9,7 @@ import { BaseField, constantLabel, type FormContext } from "../schema-form/form.
 import { HEIGHT_FIELDS, KIND_LISTS, heightInTiles, storedHeight, type EntityKind } from "./entities.ts";
 import { spriteUrl } from "./sprites.ts";
 import { ScrubNumber } from "./ScrubNumber.tsx";
+import { useToolActive } from "../active.ts";
 
 const MODEL_PREFIX = "OBJ_CODE_";
 
@@ -51,6 +52,7 @@ export function SpriteImage({ model, direction, size = 32 }: { model: string; di
 export function ModelPicker({ constants, value, used, onPick, onClose }: {
   constants: Constants; value: string; used?: ReadonlySet<string>; onPick(model: string): void; onClose(): void;
 }) {
+  const toolActive = useToolActive();
   const [filter, setFilter] = useState("");
   const [fresh, setFresh] = useState(false);
   const [bank, setBank] = useState<number | null>(() => {
@@ -62,10 +64,11 @@ export function ModelPicker({ constants, value, used, onPick, onClose }: {
   const shown = models.filter(([k, v]) => (bank === null || v >> 12 === bank) && !(fresh && used?.has(k)) &&
     (!q || k.toLowerCase().includes(q.replace(/ /g, "_")) || String(v) === q || constantLabel(k, MODEL_PREFIX).toLowerCase().includes(q)));
   useEffect(() => {
+    if (!toolActive) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, toolActive]);
   return (
     <div className="overlay" onMouseDown={onClose}>
       <div className="ow-picker" onMouseDown={(e) => e.stopPropagation()}>

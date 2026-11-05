@@ -8,6 +8,7 @@ import { api } from "../../api.ts";
 import { NO_ADJUSTMENT, adjust, bgr555, from5, fromHex, isAdjusted, parsePal, sameColor, snap, to5, toHex, writePal,
   type Adjustment, type Rgb } from "./pal.ts";
 import { readIndexedPng, type IndexedImage } from "./png.ts";
+import { useToolActive } from "../active.ts";
 
 const ROW = 16;
 const LIST_LIMIT = 300;
@@ -170,6 +171,7 @@ function ColorEditor({ color, index, onChange }: { color: Rgb; index: number; on
 
 /** requested opens a palette, as the Screens page's "Edit its palette" does. */
 export function PaletteEditor({ requested }: { requested?: { path: string } }) {
+  const toolActive = useToolActive();
   const [paths, setPaths] = useState<string[]>([]);
   const [filter, setFilter] = useState("");
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set(["paperwhite2"]));
@@ -412,6 +414,7 @@ export function PaletteEditor({ requested }: { requested?: { path: string } }) {
 
   // Keys while the page is open: Ctrl+S saves the palette, Ctrl+Z and Ctrl+Y undo and redo (not in a text field)
   useEffect(() => {
+    if (!toolActive) return;
     const onKey = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey) || !file) return;
       const key = e.key.toLowerCase();
@@ -430,7 +433,7 @@ export function PaletteEditor({ requested }: { requested?: { path: string } }) {
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [file, save, undo, redo]);
+  }, [file, save, undo, redo, toolActive]);
 
   // ---------------------------------------------------------------- Showing
 

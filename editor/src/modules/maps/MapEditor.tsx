@@ -28,6 +28,7 @@ import { PaintPanel } from "./PaintPanel.tsx";
 import { DecorationsPanel, type GrassShape } from "./DecorationsPanel.tsx";
 import { ScrubNumber } from "../overworld/ScrubNumber.tsx";
 import { ObjectsPanel } from "./ObjectsPanel.tsx";
+import { useToolActive } from "../active.ts";
 import { NO_GRASS, fillCells, footprint, grassFillCells, grassPainted, grassRows, holdsGrass, loadGrass, takesGrassType, textureNames,
   type GrassKind,
   loadLibrary, loadStyles, painted, projectPath, strokeCells, type LibraryObject, type MapStyle, type PaintShape,
@@ -80,6 +81,7 @@ async function glbBase64(path: string, collision = false): Promise<Snapshot> {
 }
 
 export function MapEditor({ constants }: ToolProps) {
+  const toolActive = useToolActive();
   const params = useToolParams("maps");
   const [world, setWorld] = useState<World | null>(null);
   const [filter, setFilter] = useState("");
@@ -1018,6 +1020,7 @@ export function MapEditor({ constants }: ToolProps) {
 
   const removeFaces = () => editFaces(`Deleted ${faces.length} face(s)`, { remove: faceSets(faces) });
   useEffect(() => {
+    if (!toolActive) return;
     const onKey = (e: KeyboardEvent) => {
       // Typing in a box keeps its own undo; a checkbox or radio button that has focus doesn't
       const typing = (e.target as HTMLElement)?.closest?.("input:not([type=checkbox]):not([type=radio]), textarea, select, [contenteditable]");

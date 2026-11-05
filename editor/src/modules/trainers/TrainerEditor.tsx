@@ -20,6 +20,7 @@ import { TextBox } from "../text/TextBox.tsx";
 import type { ScanMatch } from "../../../shared/api.ts";
 import { navigate, useToolParams } from "../../navigation.ts";
 import { TRAINER_SCRIPT, TRAINER_SCRIPT_SECOND, eventLabel, loadWorld, scriptConstantOf, zoneLabel, type World } from "../world/world.ts";
+import { useToolActive } from "../active.ts";
 
 const SCHEMA = "res/trainers/data/trainer.schema.json";
 const DATA = "res/trainers/data";
@@ -269,6 +270,7 @@ function TrainerPage({ path, constants, places, world, open }: {
 }
 
 export function TrainerEditor({ constants, open }: ToolProps) {
+  const toolActive = useToolActive();
   const [list, setList] = useState<Listed[] | null>(null);
   const [filter, setFilter] = useState("");
   const [kind, setKind] = useState<"all" | "leaders" | "elite">("all");
@@ -317,6 +319,7 @@ export function TrainerEditor({ constants, open }: ToolProps) {
     for (const p of documents.dirtyPaths().filter((p) => p.startsWith(`${DATA}/`))) await documents.save(p);
   }, []);
   useEffect(() => {
+    if (!toolActive) return;
     const onKey = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey)) return;
       const key = e.key.toLowerCase();
@@ -328,7 +331,7 @@ export function TrainerEditor({ constants, open }: ToolProps) {
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [save, chosen]);
+  }, [save, chosen, toolActive]);
 
   const shown = useMemo(() => {
     const q = filter.trim().toLowerCase();

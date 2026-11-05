@@ -31,6 +31,10 @@ If Edge can't reach it, WSL isn't forwarding the port: check that `localhostForw
 - **Saving is safe.** The build's own validator (`tools/data/datajson.py`) checks the new text before it replaces the
   file, and the file is written in the exact layout the data tools write, so an unchanged file stays unchanged in git.
   A crash never leaves half a file.
+- **Tabs for the editors and the files.** Each editor opened from the sidebar or a link gets a tab and stays open
+  behind it, keeping its place (its zone, file, filter, selection). A link from one editor to another (a script's
+  trainer, a flag's uses) opens the target's tab, and **← Back to …** at the strip's end returns to where it was
+  followed from. Middle-click or × closes a tab. A hidden editor's keys are off and its 3D view stops drawing.
 - **Files changed elsewhere** (by you, or a Claude session) reload in their tabs; one with unsaved changes asks first.
 - **Build** (Ctrl+B) runs `python3 configure.py w2_us --hack && ninja` and shows the log; the hack build copies the
   ROM to your playtest folder. **Changes** lists what changed since the last commit, with each file's diff.

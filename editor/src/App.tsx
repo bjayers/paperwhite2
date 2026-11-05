@@ -1,10 +1,11 @@
 // The editor's frame: the kinds of data, their files, open tabs, the build and the changes. Modules fill the tabs.
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { BuildState, GitState, ProjectInfo, ServerEvent } from "../shared/api.ts";
 import type { Constants } from "../shared/schema.ts";
 import { api, listen } from "./api.ts";
 import { documents, useDocuments } from "./documents.ts";
+import { ToolActive } from "./modules/active.ts";
 import { tools } from "./modules/registry.ts";
 import { readHash } from "./navigation.ts";
 import { BuildPanel } from "./shell/BuildPanel.tsx";
@@ -26,6 +27,17 @@ export function App() {
     const hash = readHash();
     return hash ? { kind: "tool", id: hash.tool } : null;
   });
+  // The tools opened, each kept mounted behind its tab so a trip to another editor keeps its place
+  const [openTools, setOpenTools] = useState<string[]>(() => {
+    const hash = readHash();
+    return hash ? [hash.tool] : [];
+  });
+  // Where a link came from, while its target is shown: the tab strip's Back goes there
+  const [back, setBack] = useState<{ at: string; to: Selection } | null>(null);
+  const selectionNow = useRef(selection);
+  selectionNow.current = selection;
+  // Each open tool's own address (its page of a file, a script), restored when its tab is chosen again
+  const toolHashes = useRef(new Map<string, string>());
   const [refresh, setRefresh] = useState(0);
   const [schemaEpoch, setSchemaEpoch] = useState(0);
   const [connected, setConnected] = useState(true);
@@ -39,10 +51,14 @@ export function App() {
   const { docs, order, active } = useDocuments();
 
   useEffect(() => {
+    if (selection?.kind === "tool") setOpenTools((list) => (list.includes(selection.id) ? list : [...list, selection.id]));
     // The address keeps the tool's own parameters while the tool stays open
     const current = readHash();
-    if (selection?.kind === "tool" && current?.tool === selection.id) return;
-    const hash = selection?.kind === "tool" ? `#tool/${selection.id}` : "";
+    if (selection?.kind === "tool" && current?.tool === selection.id) {
+      toolHashes.current.set(selection.id, location.hash);
+      return;
+    }
+    const hash = selection?.kind === "tool" ? (toolHashes.current.get(selection.id) ?? `#tool/${selection.id}`) : "";
     if (location.hash !== hash) history.replaceState(null, "", hash || location.pathname);
   }, [selection]);
 
@@ -50,7 +66,12 @@ export function App() {
   useEffect(() => {
     const changed = () => {
       const hash = readHash();
-      if (hash) setSelection((s) => (s?.kind === "tool" && s.id === hash.tool ? s : { kind: "tool", id: hash.tool }));
+      if (!hash) return;
+      toolHashes.current.set(hash.tool, location.hash);
+      const from = selectionNow.current;
+      if (from?.kind === "tool" && from.id === hash.tool) return;
+      setBack({ at: `tool:${hash.tool}`, to: from });
+      setSelection({ kind: "tool", id: hash.tool });
     };
     window.addEventListener("hashchange", changed);
     return () => window.removeEventListener("hashchange", changed);
@@ -104,9 +125,25 @@ export function App() {
 
   const open = useCallback((path: string) => {
     setQuickOpen(false);
-    setSelection((s) => (s?.kind === "tool" ? null : s));
+    const from = selectionNow.current;
+    if (from?.kind === "tool") {
+      setBack({ at: "files", to: from });
+      setSelection(null);
+    }
     documents.open(path).catch((e: Error) => alert(`Couldn't open ${path}: ${e.message}`));
   }, []);
+
+  const closeTool = (id: string) => {
+    const at = openTools.indexOf(id);
+    const rest = openTools.filter((t) => t !== id);
+    setOpenTools(rest);
+    toolHashes.current.delete(id);
+    setBack((b) => (b && (b.at === `tool:${id}` || (b.to?.kind === "tool" && b.to.id === id)) ? null : b));
+    if (selection?.kind === "tool" && selection.id === id) {
+      const next = rest[Math.min(at, rest.length - 1)];
+      setSelection(next ? { kind: "tool", id: next } : null);
+    }
+  };
 
   const close = (path: string) => {
     if (docs.get(path)?.dirty && !confirm(`${path} has unsaved changes. Close it anyway?`)) return;
@@ -174,6 +211,13 @@ export function App() {
   const tool = selection?.kind === "tool" ? visibleTools.find((t) => t.id === selection.id) : undefined;
   const dirty = new Set([...docs.values()].filter((d) => d.dirty).map((d) => d.path));
   const activeDoc = active ? docs.get(active) : undefined;
+  const backShown = back && (tool ? back.at === `tool:${tool.id}` : back.at === "files") ? back : null;
+  const backTitle = backShown?.to?.kind === "tool" ? (tools.find((t) => t.id === (backShown.to as { id: string }).id)?.title ?? "the tool")
+    : backShown?.to?.kind === "type" ? (typeOf(backShown.to.schema)?.title ?? "the files") : "the files";
+  const goBack = () => {
+    setBack(null);
+    setSelection(backShown?.to ?? null);
+  };
   const changes = git?.changes.filter((c) => c.path.startsWith("res/")).length ?? 0;
 
   if (loadError) return <div className="fatal">The editor's server didn't answer: {loadError}. Is <code>npm start</code> running?</div>;
@@ -205,34 +249,58 @@ export function App() {
       )}
 
       <main className={`main${selectedType ? "" : " wide"}`}>
-        {tool ? (
-          <tool.View types={types} constants={constants} open={open} />
-        ) : (
-          <>
-            <div className="tabs">
-              {order.map((path) => {
-                const doc = docs.get(path)!;
-                return (
-                  <div key={path} className={`tab${path === active ? " active" : ""}`} title={path}
-                       onMouseDown={(e) => e.button === 1 && close(path)} onClick={() => documents.activate(path)}>
-                    <span>{path.split("/").slice(-2).join("/").replace(/\.json$/, "")}</span>
-                    {doc.dirty ? <span className="dot" /> : null}
-                    <button className="icon" onClick={(e) => {
-                      e.stopPropagation();
-                      close(path);
-                    }}>×</button>
-                  </div>
-                );
-              })}
+        <div className="tabs">
+          {openTools.map((id) => {
+            const t = visibleTools.find((v) => v.id === id);
+            if (!t) return null;
+            return (
+              <div key={`tool:${id}`} className={`tab tool-tab${t === tool ? " active" : ""}`} title={t.title}
+                   onMouseDown={(e) => e.button === 1 && closeTool(id)} onClick={() => setSelection({ kind: "tool", id })}>
+                <span className="tab-icon">{t.icon}</span><span>{t.title}</span>
+                <button className="icon" onClick={(e) => {
+                  e.stopPropagation();
+                  closeTool(id);
+                }}>×</button>
+              </div>
+            );
+          })}
+          {order.map((path) => {
+            const doc = docs.get(path)!;
+            return (
+              <div key={path} className={`tab${!tool && path === active ? " active" : ""}`} title={path}
+                   onMouseDown={(e) => e.button === 1 && close(path)} onClick={() => {
+                     documents.activate(path);
+                     if (tool) setSelection(null);
+                   }}>
+                <span>{path.split("/").slice(-2).join("/").replace(/\.json$/, "")}</span>
+                {doc.dirty ? <span className="dot" /> : null}
+                <button className="icon" onClick={(e) => {
+                  e.stopPropagation();
+                  close(path);
+                }}>×</button>
+              </div>
+            );
+          })}
+          <span className="spacer" />
+          {backShown && <button className="tab-back" onClick={goBack} title="Where the link was followed from">← Back to {backTitle}</button>}
+        </div>
+        {openTools.map((id) => {
+          const t = visibleTools.find((v) => v.id === id);
+          if (!t) return null;
+          return (
+            <div key={id} className={`tool-pane${t === tool ? "" : " hidden"}`}>
+              <ToolActive.Provider value={t === tool}>
+                <t.View types={types} constants={constants} open={open} />
+              </ToolActive.Provider>
             </div>
-            {activeDoc ? (
-              <DocumentView key={`${activeDoc.path}:${schemaEpoch}`} doc={activeDoc} type={typeOf(activeDoc.schema)}
-                            constants={constants} onOpen={open} />
-            ) : (
-              <Welcome info={info} />
-            )}
-          </>
-        )}
+          );
+        })}
+        {!tool && (activeDoc ? (
+          <DocumentView key={`${activeDoc.path}:${schemaEpoch}`} doc={activeDoc} type={typeOf(activeDoc.schema)}
+                        constants={constants} onOpen={open} />
+        ) : (
+          <Welcome info={info} />
+        ))}
         {showBuild && <BuildPanel state={build} lines={buildLines} onOpen={open} onClose={() => setShowBuild(false)} />}
       </main>
 

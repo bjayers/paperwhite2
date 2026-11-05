@@ -13,6 +13,7 @@ import { PalettePreview } from "../palettes/PaletteEditor.tsx";
 import { parsePal, type Rgb } from "../palettes/pal.ts";
 import { readIndexedPng, type IndexedImage } from "../palettes/png.ts";
 import { DocForm, useHeld } from "./DocForm.tsx";
+import { useToolActive } from "../active.ts";
 import { FOLLOWERS, FOLLOWING, INTERACTIONS, POOLS, SHARED_DIALOGUE, dialoguePath, loadFollowers, speciesName, spriteFolder,
   variantLabel, type FollowerSpecies, type Variant } from "./data.ts";
 
@@ -171,6 +172,7 @@ function ArtPage() {
 // ---------------------------------------------------------------- The frame
 
 export function FollowerEditor({ constants, open }: ToolProps) {
+  const toolActive = useToolActive();
   const [page, setPage] = useState<Page>("pokemon");
   const [list, setList] = useState<FollowerSpecies[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -209,6 +211,7 @@ export function FollowerEditor({ constants, open }: ToolProps) {
 
   // Keys while the page is open: Ctrl+S saves the follower's files, Ctrl+Z and Ctrl+Y undo and redo the last one changed
   useEffect(() => {
+    if (!toolActive) return;
     const onKey = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey)) return;
       const key = e.key.toLowerCase();
@@ -229,7 +232,7 @@ export function FollowerEditor({ constants, open }: ToolProps) {
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [saveAll, dirty]);
+  }, [saveAll, dirty, toolActive]);
 
   const shown = useMemo(() => {
     const q = filter.trim().toLowerCase();

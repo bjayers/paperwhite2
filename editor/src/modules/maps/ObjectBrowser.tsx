@@ -163,7 +163,7 @@ function ObjectViewer({ object, onClose }: { object: LibraryObject; onClose(): v
       const controls = new OrbitControls(camera, renderer.domElement);
       controls.target.copy(centre);
       controls.update();
-      const draw = () => { renderer.render(scene, camera); frame = requestAnimationFrame(draw); };
+      const draw = () => { if (el.clientWidth) renderer.render(scene, camera); frame = requestAnimationFrame(draw); };
       draw();
     });
     return () => { live = false; cancelAnimationFrame(frame); renderer.dispose(); el.removeChild(renderer.domElement); };

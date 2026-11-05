@@ -40,6 +40,7 @@ import { MapView, hasRect, type OverlayMode, type TileRect } from "./MapView.tsx
 import { amendProps, bundleModels, buildingEntities, dirtyPropChunks, loadProps, propsOf, propsSaveError, redoProps, revertProps, saveProps, setProps,
   undoProps, usePropsVersion } from "./props.ts";
 import { SEASONS, TILE, flatTileFor, paintOver, loadZoneMap, reloadLayers, standingOn, tileAt, versionZones, type ZoneMap } from "./terrain.ts";
+import { useToolActive } from "../active.ts";
 
 const EVENTS_BUDGET = 2436;
 const KINDS: EntityKind[] = ["npc", "proxy", "building", "rail", "trigger", "warp", "level", "camera", "ambient"];
@@ -70,6 +71,7 @@ const PAINTS: { label: string; type: number }[] = [
 ];
 
 export function OverworldEditor({ constants, open }: ToolProps) {
+  const toolActive = useToolActive();
   const [world, setWorld] = useState<World | null>(null);
   const [zone, setZone] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
@@ -792,6 +794,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     for (const chunk of dirtyPropChunks()) await saveProps(chunk);
   }, []);
   useEffect(() => {
+    if (!toolActive) return;
     const onKey = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey)) return;
       const key = e.key.toLowerCase();
@@ -803,7 +806,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [save, eventsPath, step]);
+  }, [save, eventsPath, step, toolActive]);
 
   /** The game's camera to look through: the chosen area's at the preview's point, or the zone's default at the tile. */
   const viewCamera = useMemo<ViewCamera | null>(() => {

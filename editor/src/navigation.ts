@@ -25,7 +25,11 @@ export function useToolParams(tool: string): URLSearchParams {
   };
   const [params, setParams] = useState(read);
   useEffect(() => {
-    const changed = () => setParams(read());
+    // (a link to another tool leaves this one's page as it was: it stays open behind its tab)
+    const changed = () => {
+      const h = readHash();
+      if (h && h.tool === tool) setParams(h.params);
+    };
     window.addEventListener("hashchange", changed);
     return () => window.removeEventListener("hashchange", changed);
     // eslint-disable-next-line react-hooks/exhaustive-deps

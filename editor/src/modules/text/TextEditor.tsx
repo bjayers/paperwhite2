@@ -13,6 +13,7 @@ import { TextBox } from "./TextBox.tsx";
 import type { Constants } from "../../../shared/schema.ts";
 import { navigate, useToolParams } from "../../navigation.ts";
 import { loadWorld, scriptFileOf, textBankConstantOf, zoneLabel, type World } from "../world/world.ts";
+import { useToolActive } from "../active.ts";
 
 /** A bank's file, held through the document store: its messages, and whether it has unsaved changes. */
 export function useBank(path: string | null): { messages: Message[] | null; text: string | null; dirty: boolean; error: string | null } {
@@ -62,6 +63,7 @@ export function TextEditor({ bank: initialBank, line: initialLine, constants, op
   /** Opens a data file in a tab, for the zone links. */
   open?(path: string): void;
 } = {}) {
+  const toolActive = useToolActive();
   const [banks, setBanks] = useState<Bank[]>([]);
   const [path, setPath] = useState<string | null>(initialBank ?? null);
   const [chosen, setChosen] = useState<number | null>(initialLine ?? null);
@@ -116,6 +118,7 @@ export function TextEditor({ bank: initialBank, line: initialLine, constants, op
   }, []);
 
   useEffect(() => {
+    if (!toolActive) return;
     const onKey = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey)) return;
       const key = e.key.toLowerCase();
@@ -127,7 +130,7 @@ export function TextEditor({ bank: initialBank, line: initialLine, constants, op
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [save, path]);
+  }, [save, path, toolActive]);
 
   const shownBanks = useMemo(() => {
     const q = bankFilter.trim().toLowerCase();

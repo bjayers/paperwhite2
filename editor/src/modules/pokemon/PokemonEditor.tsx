@@ -17,6 +17,7 @@ import { readIndexedPng, type IndexedImage } from "../palettes/png.ts";
 import { constantLabel, constantOptions } from "../schema-form/form.tsx";
 import { DocForm, useHeld } from "../followers/DocForm.tsx";
 import { SpeciesIcon, speciesFolder } from "./SpeciesIcon.tsx";
+import { useToolActive } from "../active.ts";
 
 const SCHEMA = "res/pokemon/species.schema.json";
 const STATS = [["hp", "HP"], ["attack", "Attack"], ["defense", "Defense"], ["special_attack", "Sp. Atk"],
@@ -244,6 +245,7 @@ function SpeciesPage({ entry, list, constants, onOpen }: { entry: Listed; list: 
 }
 
 export function PokemonEditor({ constants }: ToolProps) {
+  const toolActive = useToolActive();
   const [list, setList] = useState<Listed[] | null>(null);
   const [filter, setFilter] = useState("");
   const [chosen, setChosen] = useState<string | null>(null);
@@ -271,6 +273,7 @@ export function PokemonEditor({ constants }: ToolProps) {
     for (const p of documents.dirtyPaths().filter((p) => p.startsWith("res/pokemon/"))) await documents.save(p);
   }, []);
   useEffect(() => {
+    if (!toolActive) return;
     const onKey = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey)) return;
       const key = e.key.toLowerCase();
@@ -282,7 +285,7 @@ export function PokemonEditor({ constants }: ToolProps) {
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [save, chosen]);
+  }, [save, chosen, toolActive]);
 
   const shown = useMemo(() => {
     const q = filter.trim().toLowerCase();

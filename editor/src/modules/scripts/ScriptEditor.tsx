@@ -25,6 +25,7 @@ import { parseScript } from "../../../shared/scriptlang/lang.ts";
 import { messageIds, messageTexts } from "../../../shared/scriptlang/values.ts";
 import { SHORTCUT_NAMES } from "../../../shared/scriptlang/shortcuts.ts";
 import type { Reference } from "./lang.ts";
+import { useToolActive } from "../active.ts";
 
 const SCRIPTS = "res/field/scripts";
 
@@ -51,6 +52,7 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
   /** Opens a data file in a tab, for the zone links. */
   open?(path: string): void;
 } = {}) {
+  const toolActive = useToolActive();
   const [files, setFiles] = useState<string[]>([]);
   const [filter, setFilter] = useState("");
   const [path, setPath] = useState<string | null>(initialFile ?? null);
@@ -241,13 +243,14 @@ export function ScriptEditor({ file: initialFile, script: initialScript, embedde
   }, [langOn, langDirty, langText, text, entry, env, path]);
 
   useEffect(() => {
+    if (!toolActive) return;
     if (embedded) return;
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); e.stopPropagation(); save(); }
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [save, embedded]);
+  }, [save, embedded, toolActive]);
 
   // Where a label is: its script and its line in what is shown
   const goToLabel = (label: string) => {

@@ -9,6 +9,7 @@ import { api } from "../../api.ts";
 import { navigate } from "../../navigation.ts";
 import type { Usage, UsageKind, UsageRow } from "../../../server/usage.ts";
 import { noteKey, useNotes } from "./notes.ts";
+import { useToolActive } from "../active.ts";
 
 // A name that only says its number, as the generated lists bootstrap them
 const UNNAMED = /^EVENT_(FLAG|WORK)(_DAILY)?_0x[0-9a-f]+$/i;
@@ -42,6 +43,7 @@ export function FlagReference({ compact, onInsert, onClose, open }: {
   /** Opens a data file in a tab */
   open?(path: string): void;
 }) {
+  const toolActive = useToolActive();
   const [kind, setKind] = useState<UsageKind>("flags");
   const [usage, setUsage] = useState<Partial<Record<UsageKind, Usage>>>({});
   const [error, setError] = useState<string | null>(null);
@@ -62,11 +64,12 @@ export function FlagReference({ compact, onInsert, onClose, open }: {
   useEffect(() => { if (!usage[kind]) load(kind); }, [kind]); // eslint-disable-line react-hooks/exhaustive-deps
   // (Escape closes the window)
   useEffect(() => {
+    if (!toolActive) return;
     if (!onClose) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, toolActive]);
 
   const data = usage[kind];
   const regions = useMemo(() => [...new Set((data?.rows ?? []).map((r) => r.region).filter(Boolean))], [data]);

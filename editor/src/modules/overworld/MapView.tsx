@@ -231,6 +231,8 @@ class MapScene {
     this.resize();
     const loop = () => {
       this.frame = requestAnimationFrame(loop);
+      // (a tool in a tab that isn't shown has no size: nothing to draw)
+      if (!this.host.clientWidth) return;
       this.controls.update();
       this.liftOverlay();
       this.stepPreview();
