@@ -7,7 +7,8 @@
 // the one in melonDS DS's JIT with literal optimisations (docs/paperwhite2/STATUS.md, 2026-11-05). The main loop
 // beats once a frame; when the VBlank interrupt finds no beat for CRASH_WATCH_FRAMES frames, it draws over the main
 // engine, red, what was running: the address the interrupt came in at, its registers, and the main thread's saved
-// registers. An exception (a data abort or an undefined instruction) draws its registers, blue. The screen is a bitmap
+// registers. An exception (a data abort or an undefined instruction) draws its registers, blue: the first one's, with
+// the count of all on the last row. The screen is a bitmap
 // of the main engine's VRAM A, so it shows whatever state the game is in
 // (src/paperwhite2/main/paperwhite2_crash_watch.c)
 

@@ -43,6 +43,9 @@ static u32 sLastBeats;
 static u32 sStillFrames;
 static BOOL sReported;
 static OSThread *sMainThread;
+// The exceptions taken: the first is the one shown, and the count goes on the last row, so that a fault that only
+// follows another one doesn't hide it
+static u32 sExceptions;
 
 static void CrashWatch_DrawDigit(u32 x, u32 y, u32 digit) {
     u32 row;
@@ -99,13 +102,22 @@ static void CrashWatch_DrawContext(u32 row, const OSContext *context) {
     CrashWatch_DrawWord(row + 3, 1, context->r[3]);
 }
 
-// An exception: its registers (the handler's context begins with an OSContext)
+// An exception: the first one's registers (the handler's context begins with an OSContext), then how many there were
 static void CrashWatch_OnException(void *context, void *arg) {
-    CrashWatch_BeginScreen(COLOR_EXCEPTION);
-    CrashWatch_DrawContext(0, context);
-    if (sMainThread != NULL) {
-        CrashWatch_DrawContext(5, &sMainThread->context);
+    sExceptions++;
+    if (sExceptions == 1) {
+        sReported = TRUE;
+        CrashWatch_BeginScreen(COLOR_EXCEPTION);
+        CrashWatch_DrawContext(0, context);
+        if (sMainThread != NULL) {
+            CrashWatch_DrawContext(5, &sMainThread->context);
+        }
     }
+    CrashWatch_DrawWord(10, 0, sExceptions);
+    // The words after the OSContext: the BIOS frame's first word, the word after it, and the stack's low bit
+    CrashWatch_DrawWord(10, 1, ((const u32 *)context)[sizeof(OSContext) / sizeof(u32)]);
+    CrashWatch_DrawWord(11, 0, ((const u32 *)context)[sizeof(OSContext) / sizeof(u32) + 1]);
+    CrashWatch_DrawWord(11, 1, ((const u32 *)context)[sizeof(OSContext) / sizeof(u32) + 2]);
 }
 
 void PaperWhite2_CrashWatch_Init(void) {
