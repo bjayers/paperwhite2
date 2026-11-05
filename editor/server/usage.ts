@@ -16,9 +16,10 @@ export interface UsageRow {
   name: string;
   /** used, range, indirect-candidate or unused, as the tool says */
   status: string;
-  /** The flags' region (map-local, daily, trainer, ...); empty for the variables */
+  /** Its region: what resets it (map-local, daily, re-battled trainer, Funfest mission) or what it is (trainer,
+   * hidden item, map replacement event), or saved */
   region: string;
-  /** Where it's used, as the tool lists it, the last "+N more" */
+  /** Where it's used, every use the tool finds */
   where: string[];
 }
 
@@ -88,7 +89,7 @@ export class UsageCache {
     const dir = mkdtempSync(join(tmpdir(), "paperwhite2-usage-"));
     const csv = join(dir, `${kind}.csv`);
     return new Promise((done, fail) => {
-      execFile(pythonFor(this.root), [script, "--csv", csv, "--quiet"], { cwd: this.root, maxBuffer: 16 << 20 }, (e, stdout, stderr) => {
+      execFile(pythonFor(this.root), [script, "--csv", csv, "--quiet", "--all-uses"], { cwd: this.root, maxBuffer: 16 << 20 }, (e, stdout, stderr) => {
         try {
           if (e) throw new Error(`${script} failed: ${`${stdout}${stderr}`.trim()}`);
           const [header, ...lines] = parseCsv(readFileSync(csv, "utf8")).filter((r) => r.length > 1);

@@ -38,8 +38,30 @@ from flag_usage import (PreprocessorState, c_defines, c_files, compress, eval_ex
                         load_constants, parse_script, path, read, rel, resolve_names, split_args, strip_c_comments)
 
 FIRST = 0x4000
-# FieldScript_ResetMapLocalEvents (src/ov012/script_sys.c) clears these on every map change
-MAP_LOCAL = (0x4000, 0x401F)
+
+
+def map_local():
+    """The variables FieldScript_ResetMapLocalEvents (src/ov012/script_sys.c) clears on every map change:
+    EventWork_WorkResetRange's first up to, but not including, its last (src/system/event_work.c)."""
+    m = re.search(r"ResetMapLocalEvents.*?EventWork_WorkResetRange\(\w+, (\w+), (\w+)\)",
+                  read(path("src", "ov012", "script_sys.c")), re.S)
+    return int(m.group(1), 0), int(m.group(2), 0) - 1
+
+
+MAP_LOCAL = map_local()
+
+
+def map_replace_events():
+    """The variables of the map replacements' events (EVENT_MAP_REPLACE_TABLE, src/ov012/map_replace.c), each its event's
+    uid: an event is on while its variable has the table's value, which MapReplaceSetEvent sets, and it decides map
+    pieces (Opelucid City's Kyurem freeze is event 0)."""
+    text = read(path("src", "ov012", "map_replace.c"))
+    table = re.search(r"EVENT_MAP_REPLACE_TABLE\[\w+\] = \{(.*?)\};", text, re.S).group(1)
+    return {int(work, 0): int(uid, 0)
+            for _, uid, work, _ in re.findall(r"\{\s*(\w+),\s*(\w+),\s*(\w+),\s*(\w+)\s*\}", table)}
+
+
+MAP_REPLACE_EVENTS = map_replace_events()
 # The variables C reads by a base and an index: (first, last, what)
 COMPUTED_RANGES = [
     (0x4020, 0x402F, "the actors' object codes, OBJ_CODE_WORK_00 + n (src/ov012/field_actor.c, WORK_OBJCODE_FIRST)"),
@@ -127,7 +149,9 @@ def scan_c(refs, consts, last):
         names = resolve_names({**header_defs, **c_defines(text)}, consts)
         for m in re.finditer(r"\b0x(4[01][0-9a-fA-F]{2})\b", text):
             v = int(m.group(1), 16)
-            if in_space(v, last):
+            line = text[text.rfind("\n", 0, m.start()) + 1:text.find("\n", m.end())]
+            # (a reset range's own numbers are read below, as the range: its last isn't in it)
+            if in_space(v, last) and "EventWork_WorkResetRange" not in line:
                 refs.use(v, f"{rel(p)}:{text.count(chr(10), 0, m.start()) + 1} literal")
         for func, index in WORK_FUNCS.items():
             for m in re.finditer(r"\b" + func + r"\s*\(", text):
@@ -137,7 +161,8 @@ def scan_c(refs, consts, last):
                 where = f"{rel(p)}:{text.count(chr(10), 0, m.start()) + 1} {func}"
                 values = [eval_expr(a, names) for a in args[index:index + (2 if func.endswith("Range") else 1)]]
                 if func.endswith("Range") and None not in values:
-                    for v in range(values[0], values[1] + 1):
+                    # (EventWork_WorkResetRange clears from its first up to, but not including, its last)
+                    for v in range(values[0], values[1]):
                         refs.use(v, where)
                 elif values[0] is not None:
                     if in_space(values[0], last):
@@ -151,6 +176,7 @@ def main():
     ap.add_argument("--csv", default=None, help="where to write the per-variable CSV")
     ap.add_argument("--check", nargs="*", default=None, help="variables that must be unused, by name or number")
     ap.add_argument("--quiet", action="store_true", help="don't list the unresolved references")
+    ap.add_argument("--all-uses", action="store_true", help="list every use in the CSV, not the first four")
     args = ap.parse_args()
 
     consts = load_constants()
@@ -169,7 +195,8 @@ def main():
     for v in range(FIRST, last + 1):
         if refs.used.get(v):
             where = sorted(set(refs.used[v]))
-            status, detail = "used", "; ".join(where[:4]) + (f"; +{len(where) - 4} more" if len(where) > 4 else "")
+            shown = where if args.all_uses else where[:4]
+            status, detail = "used", "; ".join(shown) + (f"; +{len(where) - 4} more" if len(where) > len(shown) else "")
         elif refs.ranges.get(v):
             status, detail = "range", "; ".join(refs.ranges[v])
         elif MAP_LOCAL[0] <= v <= MAP_LOCAL[1]:
@@ -181,9 +208,15 @@ def main():
     if args.csv:
         with open(args.csv, "w", newline="") as fh:
             w = csv.writer(fh)
-            w.writerow(["var_hex", "name", "status", "where"])
+            w.writerow(["var_hex", "name", "status", "region", "where"])
             for v, name, status, detail in rows:
-                w.writerow([f"{v:#06x}", name, status, detail])
+                if MAP_LOCAL[0] <= v <= MAP_LOCAL[1]:
+                    region = "map-local (cleared on map change)"
+                elif v in MAP_REPLACE_EVENTS:
+                    region = f"map replacement event {MAP_REPLACE_EVENTS[v]} (map pieces; set by MapReplaceSetEvent)"
+                else:
+                    region = "saved"
+                w.writerow([f"{v:#06x}", name, status, region, detail])
 
     counts = defaultdict(int)
     for r in rows:

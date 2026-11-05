@@ -31,9 +31,6 @@ const SHOWS: { value: Show; label: string }[] = [
   { value: "noted", label: "With my note" },
 ];
 
-// The most rows the list draws at once; a filter narrows it
-const ROW_LIMIT = 600;
-
 const hexOf = (kind: UsageKind, n: number) => `0x${n.toString(16).padStart(kind === "vars" ? 4 : 3, "0")}`;
 
 export function FlagReference({ compact, onInsert, onClose, open }: {
@@ -105,7 +102,7 @@ export function FlagReference({ compact, onInsert, onClose, open }: {
           {SHOWS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
         </select>
         {regions.length > 0 && (
-          <select value={region} onChange={(e) => setRegion(e.target.value)} title="The flags' region">
+          <select value={region} onChange={(e) => setRegion(e.target.value)} title="What resets it, or what it is">
             <option value="">Every region</option>
             {regions.map((r) => <option key={r} value={r}>{r}</option>)}
           </select>
@@ -120,8 +117,8 @@ export function FlagReference({ compact, onInsert, onClose, open }: {
         <div className="fr-list">
           {!data ? <p className="muted fr-note">{loading ? "Looking through the scripts, the data and the code (a few seconds)…" : ""}</p> : (
             <>
-              <div className="muted small fr-count">{shown.length} of {data.rows.length}{shown.length > ROW_LIMIT ? `, the first ${ROW_LIMIT} shown: filter to narrow` : ""}</div>
-              {shown.slice(0, ROW_LIMIT).map((r) => {
+              <div className="muted small fr-count">{shown.length} of {data.rows.length}</div>
+              {shown.map((r) => {
                 const note = noteList[noteKey(noteKind, r.number)];
                 return (
                   <button key={r.number} className={`fr-row${r.number === chosen ? " selected" : ""}`} onClick={() => setChosen(r.number)}>
@@ -166,7 +163,7 @@ export function FlagReference({ compact, onInsert, onClose, open }: {
                           onChange={(e) => setNote(noteKind, row.number, e.target.value)} />
               </section>
               <section className="fr-section">
-                <h3>Where it's used <span className="muted small">{row.where.length ? "" : "nowhere found"}</span></h3>
+                <h3>Where it's used <span className="muted small">{row.where.length ? `${row.where.length}` : "nowhere found"}</span></h3>
                 {row.status === "indirect-candidate" && <p className="muted small">A script names a variable that may hold it; the uses below are the ones found.</p>}
                 <ul className="fr-where">
                   {row.where.map((w, i) => <li key={i}><Where text={w} open={open} /></li>)}

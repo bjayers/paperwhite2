@@ -2,6 +2,19 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-05: the Flag and Var Reference complete; the Discord list of unused variables checked
+
+- The reference lists every flag and variable and every use (the usage tools' `--all-uses`), and each one's region:
+  what resets it or what it is (plugins.md, What resets flags and variables). The variable tool's map-local range is
+  0x4000-0x401e (0x401f isn't cleared), and it knows the map replacements' events and the Following Pokémon's talk
+  days.
+- The user's Discord list of "unused" variables, against the source: 0x4010-0x401e reset on every map change (as it
+  said); 54 of its 143 are used by the original game, among them 0x4031-0x403a (map replacement events: 0x4031,
+  which the user's Route 20 Wurmple affection uses, is Opelucid's Kyurem freeze) and 0x4041, 0x4043, 0x404c, 0x4078,
+  0x4085, 0x408a, 0x408d, 0x4095, 0x4096, 0x40a4, 0x40b7, 0x40c4, 0x40e1, 0x411c, 0x4144, 0x414a-0x414e, 0x4161,
+  0x4174, 0x417a, 0x4181, 0x4189, 0x4190, 0x4191, 0x4195. The user's others are safe: 0x401f (night), 0x402f (the
+  Wurmple, whose object code `OBJ_CODE_WORK_0F` no NPC uses), 0x4050 (the season setting).
+
 ## 2026-11-04 (evening): the version switch by place, tested; Alter Unova on the globe; no Unova Link
 
 - Each place Unova has as Black 2 or White 2 has its own flag (`paperwhite2/version_places.h`): Route 4, Reversal

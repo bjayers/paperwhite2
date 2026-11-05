@@ -12,6 +12,8 @@
 .fr-row { display: grid; grid-template-columns: 56px 52px 150px minmax(0, 1fr); gap: 10px; align-items: baseline; width: 100%;
   padding: 3px 14px; border: none; border-radius: 0; background: none; text-align: left; font: inherit; color: inherit; cursor: pointer; }
 .fr-row:hover { background: var(--hover); }
+/* (thousands of rows: the ones off screen aren't laid out) */
+.fr-row { content-visibility: auto; contain-intrinsic-size: auto 24px; }
 .fr-row.selected { background: var(--selected); }
 .fr-number { font-family: var(--mono); font-size: 13px; }
 .fr-hex { font-family: var(--mono); font-size: 12px; }

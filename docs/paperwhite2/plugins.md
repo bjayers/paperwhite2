@@ -416,6 +416,26 @@ A flag takes effect at the next map change; where the player stands now, the map
 - **The command** `ReloadMapHere result` (0x2f5, 757), which script 2823 runs: `Scrcmd_PaperWhite2_ReloadMapHere`
   (`src/paperwhite2/ov012/paperwhite2_version_key_event.c`).
 
+### What resets flags and variables
+
+Read from the code; the usage tools (`tools/paperwhite2/flag_usage.py`, `var_usage.py`) and the editor's Flag and Var
+Reference mark each one's region by it:
+
+| What | When | Where |
+| --- | --- | --- |
+| Flags 1-0x63 (1-99) | every map change | `FieldScript_ResetMapLocalEvents`, `src/ov012/script_sys.c` (`EventWork_FlagResetRange`, both ends in) |
+| Variables 0x4000-0x401e | every map change | the same, `EventWork_WorkResetRange(0x4000, 0x401f)`, whose last isn't cleared: 0x401f is a saved variable |
+| Flags 0xaa0-0xb03 (2720-2819), `EVENT_FLAG_DAILY_*` | each day, at midnight | `EventWork_ResetDailyFlags`, `src/system/event_work.c`, from `midnight` (`src/ov012/ev_time.c`); no variable resets daily |
+| The defeats of the 12 re-battle trainers (the Pokémon Breeders and four Black Tower bosses) | every map change | `resetRebattleTrainers`, `src/ov012/trainer_script.c` |
+| Flags 0x3a1-0x3ac (929-940) | a Funfest mission's start | `ClearFesEventFlags`, `src/ov036/fes_gimmick.c` |
+| Flags from 0x4000 (temporary) | never saved | `EventWork_GetFlagBytePtr`, `src/system/event_work.c` |
+
+Not reset, but not free either: variables 0x4031-0x403a are the map replacements' events
+(`EVENT_MAP_REPLACE_TABLE`, `src/ov012/map_replace.c`; event 0, 0x4031, is Opelucid City's Kyurem freeze, on while it
+holds 0x1220), which `MapReplaceSetEvent` sets by event number, so no script names the variable; and 0x4020-0x402f
+are the object codes of the NPCs whose model is `OBJ_CODE_WORK_00` to `_0F` (`src/ov012/field_actor.c`; `_00` to `_0E`
+are used, `_0F`, 0x402f's, isn't).
+
 ### Flags
 
 The save's event flags that the hack uses, from the blocks the user found unused (`generated/flags.txt`, where each

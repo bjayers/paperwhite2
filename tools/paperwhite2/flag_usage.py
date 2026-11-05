@@ -139,7 +139,17 @@ def flag_space(consts):
     trainer_base = int(re.search(r"FlagGet\(\w+, \(trainerId \+ (0x[0-9a-f]+)\)", read(path("src", "ov012", "trainer_script.c"))).group(1), 0)
     hidden_base = int(re.search(r"#define HIDDEN_ITEM_FLAG_START (\w+)", read(path("include", "field", "hidden_item.h"))).group(1), 0)
     trainers = load_constant_list(path("generated", "trainers.txt"))
+    # The trainers whose defeats every map change clears (resetRebattleTrainers' list), and the Funfest missions' flags,
+    # which a mission's start clears (ClearFesEventFlags)
+    script = read(path("src", "ov012", "trainer_script.c"))
+    table = re.search(r"sRebattleTrainers\[\w+\] = \{(.*?)\};", script, re.S).group(1)
+    rebattle = {trainer_base + int(n, 0) for n in re.findall(r"0x[0-9a-f]+|\d+", table)}
+    fes = read(path("src", "ov036", "fes_gimmick.c"))
+    fes_first = int(re.search(r"#define FIRST_MISSION_FLAG (\w+)", fes).group(1), 0)
+    fes_count = int(re.search(r"#define MISSION_FLAG_COUNT (\w+)", fes).group(1), 0)
     return {
+        "rebattle": rebattle,
+        "fes": (fes_first, fes_first + fes_count - 1),
         "saved": (1, saved - 1),
         "temp": (temp_base, temp_base + temp - 1),
         "daily": daily,
@@ -154,8 +164,12 @@ def region_of(flag, space):
     names = []
     if space["local"][0] <= flag <= space["local"][1]:
         names.append("map-local (cleared on map change)")
-    if space["trainer"][0] <= flag <= space["trainer"][1]:
+    if flag in space["rebattle"]:
+        names.append("trainer, re-battled (cleared on map change)")
+    elif space["trainer"][0] <= flag <= space["trainer"][1]:
         names.append("trainer")
+    if space["fes"][0] <= flag <= space["fes"][1]:
+        names.append("Funfest mission (cleared when a mission starts)")
     if space["daily"][0] <= flag <= space["daily"][1]:
         names.append("daily (cleared each day)")
     if space["hidden"][0] <= flag <= space["hidden"][1]:
@@ -888,6 +902,7 @@ def main():
     ap.add_argument("--csv", default=None, help="where to write the per-flag CSV (default: print the summary only)")
     ap.add_argument("--user-list", default=None, help="a CSV of flags believed unused, to cross-check")
     ap.add_argument("--quiet", action="store_true", help="don't list the unresolved references")
+    ap.add_argument("--all-uses", action="store_true", help="list every use in the CSV, not the first four")
     args = ap.parse_args()
 
     consts = load_constants()
@@ -909,8 +924,8 @@ def main():
     rows = []
     for f in all_flags:
         if refs.used.get(f):
-            status, detail = "used", "; ".join(sorted(set(refs.used[f]))[:4])
-            if len(set(refs.used[f])) > 4:
+            status, detail = "used", "; ".join(sorted(set(refs.used[f]))[:None if args.all_uses else 4])
+            if len(set(refs.used[f])) > 4 and not args.all_uses:
                 detail += f"; +{len(set(refs.used[f])) - 4} more"
         elif refs.ranges.get(f):
             status, detail = "range", "; ".join(sorted(set(refs.ranges[f])))
