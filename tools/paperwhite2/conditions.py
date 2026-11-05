@@ -391,10 +391,12 @@ def level_scaling_header() -> str:
         "// level is it changed by PERCENT of it but by no more than CAP, plus OFFSET, from MIN to MAX; wild levels go",
         "// SPREAD_PERCENT of the party's level either side, from SPREAD_MIN to SPREAD_MAX (Conditions_ScaledLevel and",
         "// Conditions_WildSpread, src/paperwhite2/main/paperwhite2_conditions.c); DIFFICULTY_* are the levels each",
-        "// difficulty adds to trainers' Pokémon (paperwhite2/difficulty.h)", "",
+        "// difficulty adds to trainers' Pokémon (paperwhite2/difficulty.h); PRESTIGE_* the prestige levels' curve and",
+        "// greatest (paperwhite2/prestige.h)", "",
         *(f"#define LEVEL_SCALING_{key.upper()} {data[key]}"
           for key in ("party_top", "party_band", "percent", "cap", "offset", "min", "max", "spread_percent",
-                      "spread_min", "spread_max", "difficulty_easy", "difficulty_normal", "difficulty_challenge")),
+                      "spread_min", "spread_max", "difficulty_easy", "difficulty_normal", "difficulty_challenge",
+                      "prestige_growth_percent", "prestige_max")),
         "", "#endif // PAPERWHITE2_LEVEL_SCALING_CONFIG_H", ""])
 
 

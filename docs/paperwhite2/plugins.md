@@ -755,6 +755,33 @@ the message bank, then the BG system and the heap, and puts the display layout b
 has it).
 
 
+### Prestige levels
+
+A trophy past level 100, the user's idea of 2026-11-05. A level 100 Pokémon in the party keeps the Exp. it would have
+gained as prestige; its level stays 100 in every calculation, and only the screens show 100 plus its prestige level,
+in gold, up to 999. `include/paperwhite2/prestige.h`, `src/paperwhite2/main/paperwhite2_prestige.c`.
+
+- **Stored** in 30 bits the game never writes, `PKM_PARAM_PRESTIGE` (`poke_tool.c`): block B's 14 bits after the
+  hidden ability and N's flags (PK5 0x42-0x43) and block D's two bytes before the Pokéstar fame (PK5 0x85-0x86). Bits
+  0-9 are the prestige level above 100, bits 10-29 the Exp. toward the next in units of 16. The Following Pokémon's
+  record uses other bytes (block B's u32 and block C's byte).
+- **The curve:** the first prestige level costs the species' level 99 to 100 Exp. (29,701 for Medium Fast), and each
+  one after costs `level_scaling.json`'s `prestige_growth_percent` (4) more, until a level costs what 20 bits hold
+  (about prestige 260); `prestige_max` is 999. Medium Fast at 5,000 Exp. a battle: 101 after about 6 battles, 110
+  after 70, 150 after 900, 200 after 7,000.
+- **Gained** only in battle, by the party: `ServerControl_GiveExp` (`src/ov167/btl_server_flow.c`), which skips a
+  level 100 Pokémon, gives its Exp. (the battlers' and the Exp. Share's, as `AddExpAndEVs` worked it out) to
+  `PaperWhite2_AddPrestigeExp`. Not the Day Care. A new prestige level queues `Bank0017_Text_PrestigeRose` ("X's
+  Prestige rose to Lv. N!", `res/text/system/0017.txt`) with the level in gold.
+- **Gold:** a message's `{ff00:N}` with N of 256 or more is a color of its own, 256 + letter × 16 + shadow
+  (`GFL_TextRndExecColorCmd`, `src/system/printsys.c`); the battle message window's palette is grays only, so
+  `btlv_scu.c` puts gold in its color 15, a second black, and the message uses `{ff00:505}` (15 and 9, the text's
+  gray shadow). The screens print in `PRESTIGE_PRINT_COLOR`: the standard font palette's gold (11) with its dark
+  gray (1) as the shadow. The HP box draws its digits in its palette's gold (9, the HP bar's) with its near-black (4).
+- **Shown** in the battle HP box (`btlv_gauge.c`, set when the gauge is set, so a prestige level gained mid-battle
+  shows from the next), the party list (`plist_plate.c`), the summary (`p_sta_sub.c`) and the PC box's upper screen
+  (`box2_bmp.c`, from `Box2PokeInfo`). Other screens (trades, the Day Care, Join Avenue) still show 100.
+
 ### Trainer scaling
 
 Trainers' Pokémon scale to the player's party level by their tier (`design/trainer-scaling.md` for the research and

@@ -18,6 +18,9 @@
 #include "system/poke_icon.h"
 #include "system/printsys.h"
 #include "system/wordset.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/prestige.h"
+#endif
 
 // A Pokémon's plate in the party list: its name, level, HP, icon, ball, item and status
 
@@ -291,12 +294,25 @@ static void PokeListPlate_DrawInfo(PokeListWork *wk, PokeListPlate *plate, BOOL 
         if ((GetStatusCond(plate->pkm) == 0 && plate->hp != 0) || plate->entry != POKELIST_ENTRY_EMPTY) {
             WordSet *wordSet = GFL_WordSetSystemCreateDefault(wk->heapId);
 
+#ifdef PAPERWHITE2
+            // Paper White 2: a level 100 Pokémon's prestige level, in gold (paperwhite2/prestige.h)
+            BoxPkm *box = PokeParty_GetBoxPkm(plate->pkm);
+            u32 color = PaperWhite2_HasPrestige(box) ? PRESTIGE_PRINT_COLOR : 0x440;
+
+            WordSetNumber(wordSet, 0, PaperWhite2_GetShownLevel(box), 3, 0, TRUE);
+            if (numbersOnly == FALSE) {
+                PokeList_PrintWordSetStringSmall(wk, plate->window, wordSet, 2, 9, 35, color);
+            } else {
+                PokeList_DrawWordSetStringSmall(wk, plate->window, wordSet, 2, 9, 35, color);
+            }
+#else
             WordSetNumber(wordSet, 0, PokeParty_GetLevel(plate->pkm), 3, 0, TRUE);
             if (numbersOnly == FALSE) {
                 PokeList_PrintWordSetStringSmall(wk, plate->window, wordSet, 2, 9, 35, 0x440);
             } else {
                 PokeList_DrawWordSetStringSmall(wk, plate->window, wordSet, 2, 9, 35, 0x440);
             }
+#endif
             GFL_WordSetSystemFree(wordSet);
             ClActor_SetVisible(plate->statusIcon, FALSE);
         } else {

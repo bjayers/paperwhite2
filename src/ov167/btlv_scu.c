@@ -437,6 +437,15 @@ void BtlvScu_Setup(BtlvScu *scu) {
     PaletteFade_LoadNCLREx(BtlvEffect_GetPaletteFade(), 11, 0x1e4, scu->heapId, 0, 0x60, 0x10, 0x10);
     black = 0;
     PaletteFade_LoadData(BtlvEffect_GetPaletteFade(), &black, 0, 0, sizeof(black));
+#ifdef PAPERWHITE2
+    {
+        // Paper White 2: the message window's palette has only grays, so the prestige's gold ({ff00:505} in a
+        // message, paperwhite2/prestige.h) takes its last color, a second black
+        u16 gold = GX_RGB(30, 22, 0);
+
+        PaletteFade_LoadData(BtlvEffect_GetPaletteFade(), &gold, 0, 15, sizeof(gold));
+    }
+#endif
     GFL_BGSysFillScrArea(1, 0, 0, 0, 32, 32, 0x11);
     GFL_BGSysFillChar(1, 0, 1, 0);
     frameChar = BtlvScu_LoadArcCharsDynamic(scu, 11, 0x164, 1);

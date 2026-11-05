@@ -140,6 +140,12 @@
 // Whether it is one of N's Pokémon
 #define PKM_PARAM_N_POKEMON 0xb2
 #define PKM_PARAM_POKESTAR_FAME 0xb3
+#ifdef PAPERWHITE2
+// Paper White 2: the prestige of a level 100 Pokémon, 30 bits in data the game never writes: block B's 14 bits after
+// the hidden ability and N's flags (PK5 0x42-0x43), then block D's two bytes before the Pokéstar fame (PK5 0x85-0x86).
+// paperwhite2/prestige.h reads it
+#define PKM_PARAM_PRESTIGE 0xb4
+#endif
 
 // The numbers of ribbons in the three groups, which start at PKM_PARAM_RIBBON_CHAMPION_SINNOH,
 // PKM_PARAM_RIBBON_G3_COOL and PKM_PARAM_RIBBON_G4_COOL

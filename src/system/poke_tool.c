@@ -1840,6 +1840,12 @@ static u32 PML_PkmGetParamCore(BoxPkm *pkm, PkmField field, void *buffer) {
     case PKM_PARAM_UNK9C:
         result = blockD->unk1E;
         break;
+#ifdef PAPERWHITE2
+    // Paper White 2: the prestige's 30 bits (paperwhite2/prestige.h)
+    case PKM_PARAM_PRESTIGE:
+        result = blockB->unk1A_2 | (blockD->unk1D << 14) | (blockD->unk1E << 22);
+        break;
+#endif
     case PKM_PARAM_IVS_ALL:
         result = blockB->hpIV | (blockB->atkIV << 5) | (blockB->defIV << 10) | (blockB->speIV << 15) |
                  (blockB->spaIV << 20) | (blockB->spdIV << 25);
@@ -2301,6 +2307,13 @@ static void PML_PkmSetParamCore(BoxPkm *pkm, PkmField field, u32 value) {
     case PKM_PARAM_UNK9C:
         blockD->unk1E = value;
         break;
+#ifdef PAPERWHITE2
+    case PKM_PARAM_PRESTIGE:
+        blockB->unk1A_2 = value & 0x3fff;
+        blockD->unk1D = (value >> 14) & 0xff;
+        blockD->unk1E = (value >> 22) & 0xff;
+        break;
+#endif
     case PKM_PARAM_POKESTAR_FAME:
         blockD->pokestarFame = value;
         break;

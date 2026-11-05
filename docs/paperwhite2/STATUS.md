@@ -2,6 +2,14 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-05: Prestige levels
+
+- **Prestige levels** (plugins.md, Prestige levels): past level 100, the Exp. a party Pokémon would gain becomes
+  prestige, 4% more per level, shown as 100 plus the prestige level in gold up to 999 in the battle HP box, the party
+  list, the summary and the PC box, with "X's Prestige rose to Lv. N!" in battle. Stored in unused bits of the
+  Pokémon's data. Built; **not yet tried in game**: the gold in each place (the battle message's palette color 15
+  above all), the message, and a box move keeping it.
+
 ## 2026-11-05: the difficulty setting
 
 - **Trainer scaling** (plugins.md, Trainer scaling): every trainer battle's Pokémon scale to the party level (at

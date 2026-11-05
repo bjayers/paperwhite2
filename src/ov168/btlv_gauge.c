@@ -31,6 +31,9 @@
 #include "system/app_menu_common.h"
 #include "system/gf_font.h"
 #include "system/hp_gauge.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/prestige.h"
+#endif
 #include "system/palanm.h"
 #include "system/printsys.h"
 #include "system/str_tool.h"
@@ -222,6 +225,12 @@ void BtlvGauge_SetBattleMon(BtlvGauge *gauge, BtlMainModule *mainModule, BattleM
     gauge->entries[index].mon.type = type;
     gauge->entries[index].mon.side = index & 1;
     gauge->entries[index].mon.changed = TRUE;
+#ifdef PAPERWHITE2
+    // Paper White 2: a level 100 Pokémon's prestige
+    if (PaperWhite2_HasPrestige(PokeParty_GetBoxPkm(GetSrcData(mon)))) {
+        gauge->entries[index].mon.prestigeLevel = PaperWhite2_GetShownLevel(PokeParty_GetBoxPkm(GetSrcData(mon)));
+    }
+#endif
     if (gauge->entries[index].mon.level < 100) {
         u32 base = PML_UtilGetPkmLvExp(GetBattleMonSpecies(mon), GetBattleMonStat(mon, BATTLEMON_FORM),
                                        GetBattleMonStat(mon, BATTLEMON_LEVEL));
@@ -274,6 +283,11 @@ void BtlvGauge_SetPartyPkm(BtlvGauge *gauge, PokeDexSave *pokedex, PartyPkm *pkm
     gauge->entries[index].mon.type = type;
     gauge->entries[index].mon.side = index & 1;
     gauge->entries[index].mon.changed = TRUE;
+#ifdef PAPERWHITE2
+    if (PaperWhite2_HasPrestige(PokeParty_GetBoxPkm(pkm))) {
+        gauge->entries[index].mon.prestigeLevel = PaperWhite2_GetShownLevel(PokeParty_GetBoxPkm(pkm));
+    }
+#endif
     if (gauge->entries[index].mon.level < 100) {
         u32 monsno = PokeParty_GetParam(pkm, PKM_PARAM_SPECIES, NULL);
         u32 form = PokeParty_GetParam(pkm, PKM_PARAM_FORM, NULL);
@@ -1200,9 +1214,20 @@ static void BtlvGauge_DrawLevel(BtlvGauge *gauge, BtlvGaugeEntry *entry) {
 
     GFL_BitmapFill(bitmap, 0);
     if (entry->nameActor != NULL) {
-        GFL_WordSetFormatNumber(str, entry->mon.level, 3, 0, FALSE);
         GFL_TextRndGetGlobalColors(&letter, &shadow, &background);
+#ifdef PAPERWHITE2
+        // Paper White 2: a prestige level in the gauge's gold, the HP bar's, with its near-black shadow
+        if (entry->mon.prestigeLevel != 0) {
+            GFL_WordSetFormatNumber(str, entry->mon.prestigeLevel, 3, 0, FALSE);
+            GFL_TextRndUpdateColorIndexLUT(PRESTIGE_GAUGE_LETTER, PRESTIGE_GAUGE_SHADOW, 0);
+        } else {
+            GFL_WordSetFormatNumber(str, entry->mon.level, 3, 0, FALSE);
+            GFL_TextRndUpdateColorIndexLUT(1, 4, 0);
+        }
+#else
+        GFL_WordSetFormatNumber(str, entry->mon.level, 3, 0, FALSE);
         GFL_TextRndUpdateColorIndexLUT(1, 4, 0);
+#endif
         GFL_TextRendererDrawToBitmap(bitmap, 0, 5, str, gauge->font);
         GFL_TextRndUpdateColorIndexLUT(letter, shadow, background);
         pixels = GFL_BitmapGetPixelData(bitmap);

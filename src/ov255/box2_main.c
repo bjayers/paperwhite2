@@ -53,6 +53,9 @@
 #include "system/printsys.h"
 #include "system/wordset.h"
 #include "text/system/btl_pokeparam_box_main_save_init.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/prestige.h"
+#endif
 
 // The PC box's graphics setup, the moves of Pokémon between the boxes and the party, and the frames and buttons that
 // slide in and out. Names are ours
@@ -2442,6 +2445,10 @@ static Box2PokeInfo *PokeInfoDataMake(BoxPkm *pkm) {
         info->nature = PML_PkmGetNature(pkm);
         info->mark = PML_PkmGetParam(pkm, PKM_PARAM_MARKINGS, NULL);
         info->level = PML_PkmGetParam(pkm, PKM_PARAM_LEVEL, NULL);
+#ifdef PAPERWHITE2
+        info->shownLevel = PaperWhite2_GetShownLevel(pkm);
+        info->prestige = PaperWhite2_HasPrestige(pkm);
+#endif
         info->egg = PML_PkmGetParam(pkm, PKM_PARAM_IS_EGG, NULL);
         if (info->egg == 0) {
             info->sex = PML_PkmGetSex(pkm);

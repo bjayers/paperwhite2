@@ -24,6 +24,9 @@
 #include "system/printsys.h"
 #include "system/wordset.h"
 #include "text/system/box2_bmp.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/prestige.h"
+#endif
 
 // The PC box's windows: the Pokémon's data on the upper screen, the buttons of the frames, the box names and counts on
 // OAM, and the messages. The ROM doesn't name this file; box2_bmp.c is a guess after box2_main.c. None of these
@@ -196,11 +199,22 @@ static void PrintInfoLevel(Box2AppWork *app, Box2PokeInfo *info, u32 index) {
     u32 width;
 
     GFL_BitmapFill(BmpWin_GetBitmap(app->windows[index].window), 0);
+#ifdef PAPERWHITE2
+    // Paper White 2: a level 100 Pokémon's prestige level, in gold (paperwhite2/prestige.h)
+    if (info->egg == FALSE) {
+        u32 color = info->prestige ? PRESTIGE_PRINT_COLOR : BOX2_COLOR_NORMAL;
+
+        PrintFormattedMsg(app, index, app->msgData, 107, 0, 0, app->font, color);
+        width = GFL_FontGetBlockWidth(app->expandBuf, app->font, 0);
+        WordSetNumber(app->wordSet, 0, info->shownLevel, 3, 0, TRUE);
+        PrintFormattedMsg(app, index, app->msgData, 103, width, 0, app->font, color);
+#else
     if (info->egg == FALSE) {
         PrintFormattedMsg(app, index, app->msgData, 107, 0, 0, app->font, BOX2_COLOR_NORMAL);
         width = GFL_FontGetBlockWidth(app->expandBuf, app->font, 0);
         WordSetNumber(app->wordSet, 0, info->level, 3, 0, TRUE);
         PrintFormattedMsg(app, index, app->msgData, 103, width, 0, app->font, BOX2_COLOR_NORMAL);
+#endif
     } else {
         RequestFlushChar(app, index);
         return;

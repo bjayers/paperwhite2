@@ -12,5 +12,7 @@
     "spread_max": 5,
     "difficulty_easy": -4,
     "difficulty_normal": -1,
-    "difficulty_challenge": 2
+    "difficulty_challenge": 2,
+    "prestige_growth_percent": 4,
+    "prestige_max": 999
 }

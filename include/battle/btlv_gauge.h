@@ -54,6 +54,10 @@ typedef struct {
     s32 hpDots;     // 0x38  the HP bar's pixels
     u32 status;     // 0x3c  the status icon's sequence, in mode 2
     TCB *slideTask; // 0x40
+#ifdef PAPERWHITE2
+    // Paper White 2: the level with its prestige, shown in gold, or 0 without one (paperwhite2/prestige.h)
+    u16 prestigeLevel;
+#endif
 } BtlvGaugeMon;
 
 // A battler's gauge, 0x84 bytes

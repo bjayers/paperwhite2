@@ -36,6 +36,10 @@
 #include "pml/poke_party.h"
 #include "system/comm_player_support.h"
 #include "system/game_beacon.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/prestige.h"
+#include "text/system/0017.h"
+#endif
 
 s32 ConvertConditionCode(BattleMon *mon, s32 *condition);
 
@@ -5581,6 +5585,19 @@ BOOL ServerControl_GiveExp(BtlServerFlow *flow, BattleParty *party, const BtlFlo
                 AddRecord(flow->mainModule, 0x1b, exp);
                 result = TRUE;
             }
+#ifdef PAPERWHITE2
+            // Paper White 2: at level 100, the Exp. goes to its prestige, which the screens show past 100; a new
+            // prestige level is said, in gold (paperwhite2/prestige.h)
+            else {
+                BoxPkm *pkm = PokeParty_GetBoxPkm(GetSrcData(mon));
+
+                if (PaperWhite2_AddPrestigeExp(pkm, entry->exp)) {
+                    BtlServerCmdQueue_PutMsg(flow->queue, SC_MSG_STD, Bank0017_Text_PrestigeRose, GetMonID(mon),
+                                             PaperWhite2_GetShownLevel(pkm), SC_MSG_ARG_END);
+                    result = TRUE;
+                }
+            }
+#endif
         }
     }
     return result;

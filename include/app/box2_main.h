@@ -240,6 +240,11 @@ typedef struct {
     // 1 while infected, 2 once cured
     u8 pokerus : 2;
     u16 moveId[4];
+#ifdef PAPERWHITE2
+    // Paper White 2: the level with its prestige, and whether it has one (paperwhite2/prestige.h)
+    u16 shownLevel;
+    BOOL prestige;
+#endif
 } Box2PokeInfo;
 
 // The cursor's move to a position

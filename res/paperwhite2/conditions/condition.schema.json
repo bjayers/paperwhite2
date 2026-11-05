@@ -185,7 +185,7 @@
       "description": "Named groups of zones: every zone whose parent (the zone header's) is one of parent, and the zones listed"
     },
     "level_scaling": {
-      "type": "object", "additionalProperties": false, "required": [ "party_top", "party_band", "percent", "cap", "offset", "min", "max", "spread_percent", "spread_min", "spread_max", "difficulty_easy", "difficulty_normal", "difficulty_challenge" ],
+      "type": "object", "additionalProperties": false, "required": [ "party_top", "party_band", "percent", "cap", "offset", "min", "max", "spread_percent", "spread_min", "spread_max", "difficulty_easy", "difficulty_normal", "difficulty_challenge", "prestige_growth_percent", "prestige_max" ],
       "properties": {
         "$schema": { "type": "string" },
         "party_top": { "type": "integer", "minimum": 1, "maximum": 6, "description": "The party's level: how many of the highest levels count (Eggs left out); the highest is the ace" },
@@ -200,7 +200,9 @@
         "spread_max": { "type": "integer", "minimum": 0, "maximum": 50, "description": "The greatest spread, in levels" },
         "difficulty_easy": { "type": "integer", "minimum": -50, "maximum": 50, "description": "Levels the Easy difficulty adds to trainers' Pokémon (paperwhite2/difficulty.h)" },
         "difficulty_normal": { "type": "integer", "minimum": -50, "maximum": 50, "description": "Levels the Normal difficulty adds to trainers' Pokémon" },
-        "difficulty_challenge": { "type": "integer", "minimum": -50, "maximum": 50, "description": "Levels the Challenge difficulty adds to trainers' Pokémon" }
+        "difficulty_challenge": { "type": "integer", "minimum": -50, "maximum": 50, "description": "Levels the Challenge difficulty adds to trainers' Pokémon" },
+        "prestige_growth_percent": { "type": "integer", "minimum": 0, "maximum": 100, "description": "Prestige levels past 100 (paperwhite2/prestige.h): each costs this percent more Exp. than the one before; the first costs what the species' level 99 to 100 does" },
+        "prestige_max": { "type": "integer", "minimum": 100, "maximum": 999, "description": "The highest prestige level shown" }
       },
       "description": "The party's level, the adjusted party level that wild Pokémon scale to (the party's level changed by percent of it but by no more than cap, plus offset, from min to max), and the wild levels around it (spread_percent of the party's level, from spread_min to spread_max, either side)"
     }

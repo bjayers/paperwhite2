@@ -10,6 +10,9 @@
 #include "pml/personal.h"
 #include "pml/poke_party.h"
 #include "system/app_menu_common.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/prestige.h"
+#endif
 
 // The bottom screen of the summary screen: the Pokémon's sprite, which turns around when touched and bounces, hops or
 // spins after a swipe or a circle drawn on it, its name, level, held item, ball, markings and status. The names of the
@@ -456,11 +459,20 @@ static void PStaSub_PrintInfo(PStatusWork *wk, PStaSubWork *sub, BoxPkm *pkm) {
     if (wk->isEgg == FALSE) {
         wordSet = GFL_WordSetSystemCreateDefault(wk->heapId);
         str = GFL_StrBufCreate(16, wk->heapId);
+#ifdef PAPERWHITE2
+        // Paper White 2: a level 100 Pokémon's prestige level, in gold (paperwhite2/prestige.h)
+        WordSetNumber(wordSet, 0, PaperWhite2_GetShownLevel(pkm), 3, 0, 1);
+        format = GFL_MsgDataLoadStrbufNew(wk->msgData, 3);
+        GFL_WordSetFormatStrbuf(wordSet, str, format);
+        PrintQueue_PrintColor(wk->printQueue, BmpWin_GetBitmap(sub->nameWindow), 9, 17, str, wk->font,
+                              PaperWhite2_HasPrestige(pkm) ? PRESTIGE_PRINT_COLOR : PRINT_COLOR(1, 2, 0));
+#else
         WordSetNumber(wordSet, 0, PML_PkmGetLevel(pkm), 3, 0, 1);
         format = GFL_MsgDataLoadStrbufNew(wk->msgData, 3);
         GFL_WordSetFormatStrbuf(wordSet, str, format);
         PrintQueue_PrintColor(wk->printQueue, BmpWin_GetBitmap(sub->nameWindow), 9, 17, str, wk->font,
                               PRINT_COLOR(1, 2, 0));
+#endif
         GFL_StrBufFree(format);
         GFL_StrBufFree(str);
         GFL_WordSetSystemFree(wordSet);

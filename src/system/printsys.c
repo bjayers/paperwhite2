@@ -535,6 +535,19 @@ static const u16 *GFL_TextRndExecColorCmd(TextRenderer *renderer, const u16 *cmd
     if (StrCmd_Index(cmd) == STRCMD_COLOR_SET) {
         u8 color = StrCmd_Param(cmd, 0);
 
+#ifdef PAPERWHITE2
+        // Paper White 2: a color of its own letter and shadow indices, 0x100 + letter * 16 + shadow ({ff00:505} is
+        // 15 and 9), for a color that isn't one of the palette's pairs, such as the prestige's gold
+        u16 custom = StrCmd_Param(cmd, 0);
+
+        if (custom >= 0x100) {
+            u8 background = TEXT_COLOR_BACKGROUND(renderer->color);
+
+            GFL_TextRndUpdateColorIndexLUT((custom >> 4) & 0xf, custom & 0xf, background);
+            renderer->defaultColor = PRINT_COLOR((u8)((custom >> 4) & 0xf), (u8)(custom & 0xf), background);
+            return StrCmd_Skip(cmd);
+        }
+#endif
         if (color == STRCMD_COLOR_DEFAULT) {
             GFL_TextRndUpdateColorIndexLUT(TEXT_COLOR_LETTER(renderer->defaultColor),
                                            TEXT_COLOR_SHADOW(renderer->defaultColor),
