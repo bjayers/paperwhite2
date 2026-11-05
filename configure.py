@@ -656,9 +656,12 @@ def add_version(n: Writer, version: str, dsd: Path, bugfix: bool, shift: int,
                     variables={"defines": defines, "dep": obj.with_suffix(".d"),
                                "flags": " ".join(source_compiler(source).flags)})
             plugin_objects.append((module, obj))
+        # The original's overlays, whose layout the hack's keeps (tools/build/plugin_lcf.py)
+        original_overlays = extract_dir / "arm9_overlays" / "overlays.yaml"
         n.build([plugin_lcf, plugin_objects_file], "plugin_lcf", [lcf_file, objects_file],
-                implicit=["tools/build/plugin_lcf.py", *(obj for _, obj in plugin_objects)],
-                variables={"objects": " ".join(f"--object {module}={obj}" for module, obj in plugin_objects)})
+                implicit=["tools/build/plugin_lcf.py", original_overlays, *(obj for _, obj in plugin_objects)],
+                variables={"objects": f"--original-overlays {original_overlays} "
+                                      + " ".join(f"--object {module}={obj}" for module, obj in plugin_objects)})
         link_lcf = plugin_lcf
         link_objects_file = plugin_objects_file
     placed_lcf = link_lcf

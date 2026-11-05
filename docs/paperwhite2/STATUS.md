@@ -13,6 +13,9 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   addresses, and part of an overlay arrives by DMA, which the JIT may not watch. So a stale constant from replaced
   code, whose effect depends on where each overlay lands. The field overlay (ov036) now reaches into the battle
   menus' memory (ov285-ov290), which the original's layout doesn't; no overlap is between overlays loaded together.
+- **On branch `layout-original` (main backed up as tag `backup/before-layout-2026-11-05`):** the linker keeps the
+  original's layout, so no two overlays that are apart in the original overlap (plugins.md, Memory); 94 KB of the DS
+  budget left. **To test** with literal optimisations on, then merge to main if it holds.
 - **For now:** the user plays with literal optimisations off. **If it matters later:** variants of a freezing build
   that each move one group of overlays by padding would show which region goes stale; that region could then be
   kept apart as the original's is.

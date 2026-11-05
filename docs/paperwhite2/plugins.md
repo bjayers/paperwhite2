@@ -103,6 +103,12 @@ still in the ROM, and overlay 165's copy still decrypts itself when that overlay
   doesn't add up, only the highest counts.
 - On a DSi the arena starts after the LTD module, at `0x02700000`, so there the overlays have about 5 MB.
 
+- **The original's layout is kept** (`tools/build/plugin_lcf.py`, `keep_original_order`): each overlay is placed after
+  every overlay wholly below it in the original ROM (the extract's `arm9_overlays/overlays.yaml`), not only after the
+  ones dsd's script names, so two overlays apart in the original stay apart however much one grows. Without it the
+  field overlay (ov036) grew into the battle menus' memory (ov285-ov290), and melonDS DS's JIT with literal
+  optimisations froze after battles while hardware didn't (STATUS.md, 2026-11-05). It cost about 9 KB of the budget.
+
 So a large plugin goes in the overlay that runs it (the field's in `ov036`, a battle feature in the battle's
 overlay), and only what every module needs goes in main. The Following Pokémon runtime fits in the field's overlay
 plus the budget.

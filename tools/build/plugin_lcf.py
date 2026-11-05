@@ -11,6 +11,13 @@ data keep their offsets in it and only what is placed after the module moves, wh
 relocation, as with configure.py --shift. The object goes at the end of its module's objects in dsd's object list too,
 in the overlay's -overlay group for an overlay, so that mwldarm gives it the module's long-branch veneers.
 
+It keeps the original's layout of the overlays: each overlay is placed after every overlay that lies wholly below it in
+the original ROM (--original-overlays, the extract's overlays.yaml), not only after those dsd's script names, so that two
+overlays that don't overlap in the original never do here, however much one grows. The game loads overlays that share
+memory one after another, and some emulators (melonDS's JIT with literal optimisations) keep what they read of the code
+that was there; an overlap that the original doesn't have can then run stale code, which hardware never does
+(docs/paperwhite2/plugins.md, Memory).
+
 It also defines SDK_MAIN_ARENA_LO, the SDK's symbol for where the main arena begins on a DS: the end of the highest
 overlay in main memory. dsd's script has no such symbol, and NitroSDK's OS_GetInitArenaLo reads OV290_BSS_END, the end
 of the overlay that is highest in the original (lib/nitro/include/nitro/os.h). Once an overlay that is placed after
@@ -95,6 +102,40 @@ def place_objects(lines: list[str], objects: list[tuple[str, Path]]) -> list[str
     return out
 
 
+MAIN_MEMORY = (0x02000000, 0x02400000)
+
+
+def read_overlays(path: Path) -> dict[str, tuple[int, int]]:
+    """Each overlay of an overlays.yaml in main memory: its name in the linker script and its start and end with .bss."""
+    overlays = {}
+    for block in path.read_text().split("- id: ")[1:]:
+        fields = dict(re.findall(r"^\s+(\w+): (\S+)", block, re.M))
+        start = int(fields["base_address"], 0)
+        end = start + int(fields["code_size"], 0) + int(fields["bss_size"], 0)
+        if MAIN_MEMORY[0] <= start < MAIN_MEMORY[1]:
+            overlays[f"OV{int(block.split(chr(10))[0]):03d}"] = (start, end)
+    return overlays
+
+
+def keep_original_order(lines: list[str], original: dict[str, tuple[int, int]]) -> list[str]:
+    """Adds to each overlay's AFTER the overlays wholly below it in the original that nothing else already puts it
+    after, so that every pair that is apart in the original stays apart."""
+    below = {name: {other for other, (start, end) in original.items()
+                    if start < original[name][0] and end <= original[name][0]} for name in original}
+    out = []
+    for line in lines:
+        match = re.fullmatch(r"(\s+)(OV\d{3}) : ORIGIN = AFTER\(([^)]*)\)(.*)", line)
+        if match and match.group(2) in below:
+            indent, name, parents, rest = match.groups()
+            listed = [parent.strip() for parent in parents.split(",")]
+            # Only the nearest ones: an overlay below another one that is below is reached through it
+            implied = set().union(*(below.get(other, set()) for other in below[name]))
+            needed = sorted(below[name] - implied - set(listed))
+            line = f"{indent}{name} : ORIGIN = AFTER({', '.join(listed + needed)}){rest}"
+        out.append(line)
+    return out
+
+
 def add_arena_symbol(lines: list[str]) -> list[str]:
     """Adds the empty region after every overlay in main memory, and SDK_MAIN_ARENA_LO at its origin."""
     text = "\n".join(lines)
@@ -152,6 +193,8 @@ def main():
     parser.add_argument("objects", type=Path, help="dsd's objects.txt")
     parser.add_argument("lcf_output", type=Path)
     parser.add_argument("objects_output", type=Path)
+    parser.add_argument("--original-overlays", type=Path, required=True,
+                        help="the original ROM's overlays.yaml, whose layout is kept")
     parser.add_argument("--object", action="append", default=[], metavar="MODULE=PATH",
                         help="an object and its module's name in the linker script (ARM9, OV036)")
     args = parser.parse_args()
@@ -163,7 +206,8 @@ def main():
             parser.error(f"--object {spec}: expected ARM9=PATH or OVNNN=PATH")
         objects.append((module, Path(path)))
 
-    lcf = add_arena_symbol(place_objects(args.lcf.read_text().splitlines(), objects))
+    lcf = place_objects(args.lcf.read_text().splitlines(), objects)
+    lcf = add_arena_symbol(keep_original_order(lcf, read_overlays(args.original_overlays)))
     args.lcf_output.write_text("\n".join(lcf) + "\n")
     object_lines = [line for line in args.objects.read_text().splitlines() if line]
     args.objects_output.write_text("\n".join(add_objects(object_lines, objects)) + "\n")
