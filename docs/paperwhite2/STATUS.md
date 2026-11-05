@@ -15,7 +15,13 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   menus' memory (ov285-ov290), which the original's layout doesn't; no overlap is between overlays loaded together.
 - **On branch `layout-original` (main backed up as tag `backup/before-layout-2026-11-05`):** the linker keeps the
   original's layout, so no two overlays that are apart in the original overlap (plugins.md, Memory); 94 KB of the DS
-  budget left. **To test** with literal optimisations on, then merge to main if it holds.
+  budget left. **It still freezes** with literal optimisations on, so the layout isn't the cause. The freeze comes
+  when the field's event check runs again after a battle: at the end of a trainer's after-battle dialogue, or after
+  a wild battle once the player walks, talks or opens a menu.
+- **A crash report for debug builds** (`paperwhite2/crash_watch.h`): with no main-loop frame for 5 seconds, the VBlank
+  interrupt draws, red, the address it came in at and its registers, and the main thread's saved registers; an
+  exception draws its registers, blue (NitroSDK's `OS_SetUserExceptionHandler`, which the original drops, added to
+  `os_exception.c`). Waiting on the user's reading of it.
 - **For now:** the user plays with literal optimisations off. **If it matters later:** variants of a freezing build
   that each move one group of overlays by padding would show which region goes stale; that region could then be
   kept apart as the original's is.

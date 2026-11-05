@@ -27,6 +27,9 @@
 #include "system/text_speed.h"
 #include "system/wih_dwc.h"
 #include "system/wipe.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/crash_watch.h"
+#endif
 
 // The game's main file: the main loop, the game's setup and its per-frame updates. The file name is a guess, as the
 // ROM does not embed it. Names from swan (https://github.com/ds-pokemon-hacking/swan, GPL-3.0), except those of the
@@ -55,6 +58,10 @@ void main(void) {
     GX_VBlankIntr(TRUE);
     OS_EnableInterrupts();
     GameInit();
+#ifdef PAPERWHITE2
+    // Paper White 2: a debug build's crash report (paperwhite2/crash_watch.h)
+    PaperWhite2_CrashWatch_Init();
+#endif
 
     while (TRUE) {
         BOOL priority;
@@ -62,6 +69,9 @@ void main(void) {
         Machine_ProcessExitRequest();
         GFLAppUpdate();
         GameUpdate();
+#ifdef PAPERWHITE2
+        PaperWhite2_CrashWatch_Beat();
+#endif
         GflUse_NoOpFrameHook();
         GFL_G3DSysCheckSwapBuffers();
 
@@ -113,6 +123,9 @@ static void GFLAppIRQHBlank(void) {
 }
 
 static void GFLAppIRQVBlank(void) {
+#ifdef PAPERWHITE2
+    PaperWhite2_CrashWatch_VBlank();
+#endif
     GFL_VBlankExecCallback();
     OS_SetIrqCheckFlag(OS_IE_V_BLANK);
     MI_WaitDma(3);
