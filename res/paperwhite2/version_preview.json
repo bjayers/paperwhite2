@@ -199,7 +199,7 @@
                         "y": 0,
                         "z": 5416
                     },
-                    "distance": 230,
+                    "distance": 280,
                     "yaw": 20,
                     "pitch": 40,
                     "fov": 20,
@@ -239,7 +239,7 @@
                         "y": 0,
                         "z": 5416
                     },
-                    "distance": 230,
+                    "distance": 280,
                     "yaw": 20,
                     "pitch": 40,
                     "fov": 20,
@@ -282,7 +282,7 @@
                         "y": -16,
                         "z": 2504
                     },
-                    "distance": 300,
+                    "distance": 360,
                     "yaw": 20,
                     "pitch": 40,
                     "fov": 20,
@@ -322,7 +322,7 @@
                         "y": -16,
                         "z": 2504
                     },
-                    "distance": 300,
+                    "distance": 360,
                     "yaw": 20,
                     "pitch": 40,
                     "fov": 20,
@@ -365,7 +365,7 @@
                         "y": 4,
                         "z": 488
                     },
-                    "distance": 500,
+                    "distance": 600,
                     "yaw": 0,
                     "pitch": 50,
                     "fov": 20,
@@ -401,11 +401,11 @@
                 "props": true,
                 "camera": {
                     "target": {
-                        "x": 456,
+                        "x": 440,
                         "y": -4,
-                        "z": 488
+                        "z": 344
                     },
-                    "distance": 500,
+                    "distance": 600,
                     "yaw": 0,
                     "pitch": 50,
                     "fov": 20,
