@@ -611,7 +611,14 @@ no Geonet. It is Geonet's process slot and overlay with Geonet's parts, without 
   zones from the flags at every map change). The place the player is in changes too: Black City's and White
   Forest's Pokémon Centers each have an exit to both cities, and their level scripts (type 2 and 3, `Script_4`) move
   the one the flag doesn't pick off the doorway; Opelucid City's Center leads to the same zone in both versions. The
-  preview shows the place under the cursor as that button has it, in the season the app shows.
+  preview shows the place under the cursor as that button has it, in the season the app shows, without the season's
+  banner or the shadow behind it (`SeasonApp_IsBannerShown`, `SeasonPreview_SetShadowHidden`). The spots (2026-11-05,
+  the user's): Route 4 at tile 428, 553; Opelucid at 418, 156; White Forest and Black City at 28, 30 from above;
+  Mistralton's farm at 85, 338, closer; and Reversal Mountain's lava room (reversal_mountain_10, Black 2's
+  reversal_mountain_4) at 21, 19; the angled ones as the season page's camera (distance 300, yaw 20, pitch 40), each
+  target at its tile's ground height.
+- **The preview's props:** up to 48 from 24 models of the area's bundle (each only if the heap has room), of those
+  within 384 units of the target across and from 512 beyond it to 256 before it, so a city's buildings fit.
 - **The preview's spots:** `res/paperwhite2/season_preview.json` (the season pages') and
   `res/paperwhite2/version_preview.json` (each place as White 2 and as Black 2 has it, in `places`), both read by
   `tools/paperwhite2/season_preview.py` into one table of spots; each spot has its area, chunks, props, lights and

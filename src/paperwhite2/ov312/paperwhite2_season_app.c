@@ -243,6 +243,7 @@ static void SeasonApp_PrintLine(SeasonAppWork *work, u32 message, u8 line);
 static void SeasonApp_ShowStatus(SeasonAppWork *work);
 static void SeasonApp_ShowHemisphere(SeasonAppWork *work);
 static void SeasonApp_ShowBanner(SeasonAppWork *work, u8 season, u8 spot);
+static BOOL SeasonApp_IsBannerShown(SeasonAppWork *work);
 static void SeasonApp_ShowPreview(SeasonAppWork *work, u8 season, u8 spot);
 static void SeasonApp_ShowUnova(SeasonAppWork *work);
 static BOOL SeasonApp_IsCurrentButton(SeasonAppWork *work, u8 index);
@@ -419,7 +420,7 @@ static BOOL SeasonAppProc_Main(GameProc *proc, u32 *state, void *param, void *pr
     // The VBlank since the banner was loaded has set its screen and scroll
     if (work->bannerHidden) {
         work->bannerHidden = FALSE;
-        GFL_BGSysSetBGEnabled(BG_TOP_BANNER, work->bgsEnabled);
+        GFL_BGSysSetBGEnabled(BG_TOP_BANNER, SeasonApp_IsBannerShown(work));
     }
     // And the buttons' screen
     if (work->buttonsHidden) {
@@ -547,7 +548,7 @@ static void SeasonApp_FreeGraphics(void) {
 static void SeasonApp_SetBGsEnabled(SeasonAppWork *work, BOOL enabled) {
     work->bgsEnabled = enabled;
     GFL_BGSysSetBGEnabled(BG_TOP_TEXT, enabled);
-    GFL_BGSysSetBGEnabled(BG_TOP_BANNER, enabled && !work->bannerHidden);
+    GFL_BGSysSetBGEnabled(BG_TOP_BANNER, SeasonApp_IsBannerShown(work));
     if (work->preview != NULL && enabled) {
         GFL_BGSysSet3DBGPriority(BG_TOP_3D_PRIORITY);
         GFL_BGSysSetBGEnabled(BG_TOP_GRID, FALSE);
@@ -684,6 +685,12 @@ static void SeasonApp_ShowUnova(SeasonAppWork *work) {
 // the next VBlank, after the preview's load has taken its frames, so the banner's BG stays off until the frame after
 // that VBlank: no frame shows the new characters with the last banner's screen or scroll. A new spot in the same season
 // keeps the banner
+// The season's banner shows with the top screen, once its screen is set, but not on Alter Unova, whose preview is of a
+// place and not of the season
+static BOOL SeasonApp_IsBannerShown(SeasonAppWork *work) {
+    return work->bgsEnabled && !work->bannerHidden && work->page != PAGE_UNOVA;
+}
+
 static void SeasonApp_ShowBanner(SeasonAppWork *work, u8 season, u8 spot) {
     ArcTool *arc;
     void *file;
@@ -852,6 +859,11 @@ static void SeasonApp_OpenPage(SeasonAppWork *work, u8 page) {
     // The preview's load takes frames, and the buttons' old screen and characters stay until it is done
     SeasonApp_UpdatePreview(work);
     SeasonApp_CreateButtons(work);
+    // Alter Unova shows no season's name, nor the shadow behind it
+    GFL_BGSysSetBGEnabled(BG_TOP_BANNER, SeasonApp_IsBannerShown(work));
+    if (work->preview != NULL) {
+        SeasonPreview_SetShadowHidden(work->preview, page == PAGE_UNOVA);
+    }
 }
 
 static void SeasonApp_ClosePage(SeasonAppWork *work) {

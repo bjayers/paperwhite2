@@ -22,6 +22,8 @@ typedef struct SeasonPreview SeasonPreview;
 // shadow, a dark ellipse that fades out from its center at the middle of line shadowY, behind the 2D layers: the
 // app's banner, for the season's name
 SeasonPreview *SeasonPreview_Create(HeapID heapId, int shadowY);
+// Leaves the shadow out, or draws it again
+void SeasonPreview_SetShadowHidden(SeasonPreview *preview, BOOL hidden);
 // Frees what is loaded, the camera and the 3D system
 void SeasonPreview_Free(SeasonPreview *preview);
 // Loads a spot with a season's textures and props, after freeing what was loaded, and puts the camera where the spot

@@ -42,9 +42,16 @@
 // What a file must leave free in the heap to be read: the 3D system's and the models' small allocations
 #define SEASON_PREVIEW_HEAP_MARGIN 0x4000
 
-// The most props the preview draws, and the most of their resources
-#define PROP_MAX 16
-#define PROP_RESOURCE_MAX 8
+// The most props the preview draws, and the most of their resources; a city's buildings, lamps and signs over four
+// chunks need about this many (each resource only loads if the heap still has room for it, SeasonPreview_Fits)
+#define PROP_MAX 48
+#define PROP_RESOURCE_MAX 24
+// The props the preview keeps: those whose position is within this far of the camera's target in x, and from this far
+// beyond it to this far before it in z (the camera looks north from the south), in world units, so that the limits go
+// to what is on screen
+#define PROP_VIEW_X FX32_CONST(384)
+#define PROP_VIEW_FAR_Z FX32_CONST(512)
+#define PROP_VIEW_NEAR_Z FX32_CONST(256)
 #define PROP_ANIMATION_MAX 4
 // The most targets a texture pattern animation of the preview has
 #define TEXPAT_TARGET_MAX 4
@@ -162,6 +169,8 @@ struct SeasonPreview {
     // The line of the shadow's center on the screen, and its texture and palette in VRAM, or NNS_GFD_ALLOC_ERROR_TEXKEY
     // if it isn't loaded
     int shadowY;
+    // The Alter Unova page has no season's name over the preview, so no shadow behind it
+    BOOL shadowHidden;
     NNSGfdTexKey shadowTexKey;
     NNSGfdPlttKey shadowPlttKey;
     G3DCamera *camera;
@@ -249,6 +258,10 @@ SeasonPreview *SeasonPreview_Create(HeapID heapId, int shadowY) {
         GFL_G3DCameraCreate(G3DCAM_PROJECTION_PERSPECTIVE, FX_SinIdx(spot->fov), FX_CosIdx(spot->fov),
                             FX32_CONST(4.0 / 3.0), 0, spot->near, spot->far, 0, &spot->eye, &up, &target, heapId);
     return preview;
+}
+
+void SeasonPreview_SetShadowHidden(SeasonPreview *preview, BOOL hidden) {
+    preview->shadowHidden = hidden;
 }
 
 // Puts the camera where the spot has it
@@ -405,7 +418,9 @@ void SeasonPreview_Draw(SeasonPreview *preview) {
         MTX_RotY33_(&status.rotation, FX_SinIdx(prop->rotationY), FX_CosIdx(prop->rotationY));
         GFL_G3DSysDrawObj(preview->propResources[prop->resource].actor, &status);
     }
-    SeasonPreview_DrawShadow(preview);
+    if (!preview->shadowHidden) {
+        SeasonPreview_DrawShadow(preview);
+    }
     GFL_G3DSysReqSwapBuffers();
 }
 
@@ -804,9 +819,16 @@ static void SeasonPreview_AddProps(SeasonPreview *preview, ArcTool *propArc, con
     u32 i;
 
     for (i = 0; i < props->count && preview->propCount < PROP_MAX; i++) {
-        s32 resource = SeasonPreview_FindPropResource(preview, propArc, infos[i].lowResId + (infos[i].highResId << 8));
+        fx32 x = chunkPosition->x + infos[i].x;
+        fx32 z = chunkPosition->z - infos[i].z;
+        s32 resource;
         SeasonPreviewProp *prop;
 
+        // The chunks' positions are from the target, which is the origin
+        if (x < -PROP_VIEW_X || x > PROP_VIEW_X || z < -PROP_VIEW_FAR_Z || z > PROP_VIEW_NEAR_Z) {
+            continue;
+        }
+        resource = SeasonPreview_FindPropResource(preview, propArc, infos[i].lowResId + (infos[i].highResId << 8));
         if (resource < 0) {
             continue;
         }

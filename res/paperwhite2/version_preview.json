@@ -29,16 +29,16 @@
                 "props": true,
                 "camera": {
                     "target": {
-                        "x": 6656,
+                        "x": 6856,
                         "y": 0,
-                        "z": 8704
+                        "z": 8856
                     },
-                    "distance": 500,
-                    "yaw": 0,
-                    "pitch": 50,
+                    "distance": 300,
+                    "yaw": 20,
+                    "pitch": 40,
                     "fov": 20,
                     "near": 1,
-                    "far": 1536
+                    "far": 1024
                 },
                 "light_hour": null
             },
@@ -69,16 +69,16 @@
                 "props": true,
                 "camera": {
                     "target": {
-                        "x": 6656,
+                        "x": 6856,
                         "y": 0,
-                        "z": 8704
+                        "z": 8856
                     },
-                    "distance": 500,
-                    "yaw": 0,
-                    "pitch": 50,
+                    "distance": 300,
+                    "yaw": 20,
+                    "pitch": 40,
                     "fov": 20,
                     "near": 1,
-                    "far": 1536
+                    "far": 1024
                 },
                 "light_hour": null
             }
@@ -89,24 +89,39 @@
                 "area": "AREA_REVERSAL_MOUNTAIN_8",
                 "chunks": [
                     {
-                        "model": "MAP_MODEL_REVERSAL_MOUNTAIN_8_WHITE2401_00_00",
+                        "model": "MAP_MODEL_REVERSAL_MOUNTAIN_10_WHITE2403_00_00",
                         "x": 0,
                         "z": 0
+                    },
+                    {
+                        "model": "MAP_MODEL_REVERSAL_MOUNTAIN_10_WHITE2403_01_00",
+                        "x": 1,
+                        "z": 0
+                    },
+                    {
+                        "model": "MAP_MODEL_REVERSAL_MOUNTAIN_10_WHITE2403_00_01",
+                        "x": 0,
+                        "z": 1
+                    },
+                    {
+                        "model": "MAP_MODEL_REVERSAL_MOUNTAIN_10_WHITE2403_01_01",
+                        "x": 1,
+                        "z": 1
                     }
                 ],
                 "props": true,
                 "camera": {
                     "target": {
-                        "x": 256,
-                        "y": 0,
-                        "z": 256
+                        "x": 344,
+                        "y": 32,
+                        "z": 312
                     },
-                    "distance": 350,
-                    "yaw": 0,
-                    "pitch": 50,
+                    "distance": 300,
+                    "yaw": 20,
+                    "pitch": 40,
                     "fov": 20,
                     "near": 1,
-                    "far": 1536
+                    "far": 1024
                 },
                 "light_hour": null
             },
@@ -114,24 +129,39 @@
                 "area": "AREA_REVERSAL_MOUNTAIN_2",
                 "chunks": [
                     {
-                        "model": "MAP_MODEL_REVERSAL_MOUNTAIN_2_M_DUN2401_00_00",
+                        "model": "MAP_MODEL_REVERSAL_MOUNTAIN_4_M_DUN2403_00_00",
                         "x": 0,
                         "z": 0
+                    },
+                    {
+                        "model": "MAP_MODEL_REVERSAL_MOUNTAIN_4_M_DUN2403_01_00",
+                        "x": 1,
+                        "z": 0
+                    },
+                    {
+                        "model": "MAP_MODEL_REVERSAL_MOUNTAIN_4_M_DUN2403_00_01",
+                        "x": 0,
+                        "z": 1
+                    },
+                    {
+                        "model": "MAP_MODEL_REVERSAL_MOUNTAIN_4_M_DUN2403_01_01",
+                        "x": 1,
+                        "z": 1
                     }
                 ],
                 "props": true,
                 "camera": {
                     "target": {
-                        "x": 256,
-                        "y": 0,
-                        "z": 256
+                        "x": 344,
+                        "y": 32,
+                        "z": 312
                     },
-                    "distance": 350,
-                    "yaw": 0,
-                    "pitch": 50,
+                    "distance": 300,
+                    "yaw": 20,
+                    "pitch": 40,
                     "fov": 20,
                     "near": 1,
-                    "far": 1536
+                    "far": 1024
                 },
                 "light_hour": null
             }
@@ -142,11 +172,6 @@
                 "area": "AREA_MISTRALTON_CITY",
                 "chunks": [
                     {
-                        "model": "MAP_MODEL_OVERWORLD_2_MAP02_08",
-                        "x": 2,
-                        "z": 8
-                    },
-                    {
                         "model": "MAP_MODEL_OVERWORLD_2_MAP02_09",
                         "x": 2,
                         "z": 9
@@ -160,21 +185,26 @@
                         "model": "MAP_MODEL_OVERWORLD_2_MAP02_10",
                         "x": 2,
                         "z": 10
+                    },
+                    {
+                        "model": "MAP_MODEL_OVERWORLD_2_MAP03_10",
+                        "x": 3,
+                        "z": 10
                     }
                 ],
                 "props": true,
                 "camera": {
                     "target": {
-                        "x": 1536,
+                        "x": 1368,
                         "y": 0,
-                        "z": 4864
+                        "z": 5416
                     },
-                    "distance": 500,
-                    "yaw": 0,
-                    "pitch": 50,
+                    "distance": 230,
+                    "yaw": 20,
+                    "pitch": 40,
                     "fov": 20,
                     "near": 1,
-                    "far": 1536
+                    "far": 1024
                 },
                 "light_hour": null
             },
@@ -182,11 +212,6 @@
                 "area": "AREA_MISTRALTON_CITY",
                 "chunks": [
                     {
-                        "model": "MAP_MODEL_OVERWORLD_2_MAP02_08",
-                        "x": 2,
-                        "z": 8
-                    },
-                    {
                         "model": "MAP_MODEL_OVERWORLD_2_MAP02_09",
                         "x": 2,
                         "z": 9
@@ -200,21 +225,26 @@
                         "model": "MAP_MODEL_OVERWORLD_2_MAP02_10",
                         "x": 2,
                         "z": 10
+                    },
+                    {
+                        "model": "MAP_MODEL_OVERWORLD_2_MAP03_10",
+                        "x": 3,
+                        "z": 10
                     }
                 ],
                 "props": true,
                 "camera": {
                     "target": {
-                        "x": 1536,
+                        "x": 1368,
                         "y": 0,
-                        "z": 4864
+                        "z": 5416
                     },
-                    "distance": 500,
-                    "yaw": 0,
-                    "pitch": 50,
+                    "distance": 230,
+                    "yaw": 20,
+                    "pitch": 40,
                     "fov": 20,
                     "near": 1,
-                    "far": 1536
+                    "far": 1024
                 },
                 "light_hour": null
             }
@@ -248,16 +278,16 @@
                 "props": true,
                 "camera": {
                     "target": {
-                        "x": 6656,
-                        "y": 0,
-                        "z": 2560
+                        "x": 6696,
+                        "y": -16,
+                        "z": 2504
                     },
-                    "distance": 500,
-                    "yaw": 0,
-                    "pitch": 50,
+                    "distance": 300,
+                    "yaw": 20,
+                    "pitch": 40,
                     "fov": 20,
                     "near": 1,
-                    "far": 1536
+                    "far": 1024
                 },
                 "light_hour": null
             },
@@ -288,16 +318,16 @@
                 "props": true,
                 "camera": {
                     "target": {
-                        "x": 6656,
-                        "y": 0,
-                        "z": 2560
+                        "x": 6696,
+                        "y": -16,
+                        "z": 2504
                     },
-                    "distance": 500,
-                    "yaw": 0,
-                    "pitch": 50,
+                    "distance": 300,
+                    "yaw": 20,
+                    "pitch": 40,
                     "fov": 20,
                     "near": 1,
-                    "far": 1536
+                    "far": 1024
                 },
                 "light_hour": null
             }
@@ -331,9 +361,9 @@
                 "props": true,
                 "camera": {
                     "target": {
-                        "x": 512,
-                        "y": 0,
-                        "z": 512
+                        "x": 456,
+                        "y": 4,
+                        "z": 488
                     },
                     "distance": 500,
                     "yaw": 0,
@@ -371,9 +401,9 @@
                 "props": true,
                 "camera": {
                     "target": {
-                        "x": 512,
-                        "y": 0,
-                        "z": 512
+                        "x": 456,
+                        "y": -4,
+                        "z": 488
                     },
                     "distance": 500,
                     "yaw": 0,
