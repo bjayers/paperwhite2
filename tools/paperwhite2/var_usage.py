@@ -66,6 +66,8 @@ MAP_REPLACE_EVENTS = map_replace_events()
 COMPUTED_RANGES = [
     (0x4020, 0x402F, "the actors' object codes, OBJ_CODE_WORK_00 + n (src/ov012/field_actor.c, WORK_OBJCODE_FIRST)"),
     (0x4000, 0x4001, "the multiboot parent's high score and transfer count, VARS_START + n (src/ov181/mb_parent_sys.c)"),
+    (0x4052, 0x4057, "Paper White 2: the Following Pokémon's talks of the day, EVENT_WORK_FOLLOWER_TALK_DAY_0 + n for TALK_DAYS "
+                     "(src/paperwhite2/ov036/paperwhite2_following_data.c)"),
 ]
 WORK_FUNCS = {"EventWork_GetWkPtr": 1, "EventWork_WorkResetRange": 1}
 
