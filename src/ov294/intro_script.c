@@ -177,9 +177,9 @@ static const IntroCmdEntry sScriptDifficulty[] = {
     // One more thing! How strong would you like the Trainers you meet to be?
     { INTRO_CMD_TALK, { GameStart_Text_DifficultyQuestion, INTRO_SPRITE_PROFESSOR, 1 } },
     { INTRO_CMD_WAIT, { 1 } },
-    // EASY / NORMAL / HARD
+    // NORMAL / EASY / HARD
     { INTRO_CMD_CHOOSE_DIFFICULTY,
-      { GameStart_Text_DifficultyEasy, GameStart_Text_DifficultyNormal, GameStart_Text_DifficultyHard } },
+      { GameStart_Text_DifficultyNormal, GameStart_Text_DifficultyEasy, GameStart_Text_DifficultyHard } },
     // You can change this whenever you like in the Options.
     { INTRO_CMD_TALK, { GameStart_Text_DifficultyChangeLater, INTRO_SPRITE_PROFESSOR, 1 } },
     { INTRO_CMD_GOTO, { INTRO_SCRIPT_FAREWELL } },

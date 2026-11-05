@@ -287,8 +287,8 @@ static BOOL IntroCmd_YesNo(IntroCmd *cmd, IntroCmdWork *work, s32 *args) {
 }
 
 #ifdef PAPERWHITE2
-// Paper White 2: the difficulty's menu, as the yes or no question's but with three items and no cancel. game_start.c
-// puts the choice in the save
+// Paper White 2: the difficulty's menu, as the yes or no question's but with three items and no cancel, Normal first
+// so that pressing A through it keeps the default. game_start.c puts the choice in the save
 static BOOL IntroCmd_ChooseDifficulty(IntroCmd *cmd, IntroCmdWork *work, s32 *args) {
     IntroMenuItem items[3];
     s32 choice;
@@ -296,9 +296,9 @@ static BOOL IntroCmd_ChooseDifficulty(IntroCmd *cmd, IntroCmdWork *work, s32 *ar
     switch (work->state) {
     case 0:
         items[0].message = args[0];
-        items[0].value = GAME_DIFFICULTY_EASY;
+        items[0].value = GAME_DIFFICULTY_NORMAL;
         items[1].message = args[1];
-        items[1].value = GAME_DIFFICULTY_NORMAL;
+        items[1].value = GAME_DIFFICULTY_EASY;
         items[2].message = args[2];
         items[2].value = GAME_DIFFICULTY_CHALLENGE;
         IntroMsg_OpenMenu(cmd->msg, items, 3, FALSE);
