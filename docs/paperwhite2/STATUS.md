@@ -2,6 +2,21 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-05: a freeze in melonDS DS with JIT literal optimisations (known issue)
+
+- **The freeze:** after a trainer battle, or after a wild battle once the player does anything, the game freezes in
+  melonDS DS 1.3.1 (RetroArch) with JIT on, in DS and DSi mode alike. It doesn't on a 3DS (TWiLight Menu), and not
+  with **JIT Literal Optimisations** off; block size, branch optimisations and fast memory don't matter.
+- **Address-sensitive:** builds `1d5cda3742` and `70200eba70` don't freeze with the same save; `b0e81a5561` does,
+  though what it changed doesn't run in that test (no level 100 Pokémon). The JIT reads a function's literal pool
+  once and re-reads it only when it sees that memory written; the game loads different overlays at the same
+  addresses, and part of an overlay arrives by DMA, which the JIT may not watch. So a stale constant from replaced
+  code, whose effect depends on where each overlay lands. The field overlay (ov036) now reaches into the battle
+  menus' memory (ov285-ov290), which the original's layout doesn't; no overlap is between overlays loaded together.
+- **For now:** the user plays with literal optimisations off. **If it matters later:** variants of a freezing build
+  that each move one group of overlays by padding would show which region goes stale; that region could then be
+  kept apart as the original's is.
+
 ## 2026-11-05: Prestige levels
 
 - **Prestige levels** (plugins.md, Prestige levels): past level 100, the Exp. a party Pokémon would gain becomes
