@@ -2413,6 +2413,8 @@ static void CGearSw_ShowPicture(CGearSw *work, int number) {
     if (number == 0 || number > CGearSw_GetPictureCount(work) ||
         GFL_HeapGetFreeSize(HEAPID_FIELD_MENU) < sizeof(CGearPictureSave) + 0x400) {
         GFL_BGSysClearChar(5);
+        // The picture's blend off again, as the C-Gear starts
+        G2S_BlendNone();
         return;
     }
     picture =

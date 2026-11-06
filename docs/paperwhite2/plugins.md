@@ -1308,7 +1308,10 @@ The redesign's research and plan: `docs/paperwhite2/design/cgear.md`. Done so fa
   (a `.cgb`, or any 256 by 192 PNG, reduced to 15 colors and 255 distinct tiles) and packs as members 31 on of the
   C-Gear's archive (`a/2/8/7`, `HACK_ARCHIVE_MEMBERS`). Help shows the next of none and them
   (`CGearSw_ShowPicture`, the count read from the archive), kept in `CGearSettings`' unused bytes (`picture`); the
-  save's own downloaded skin isn't shown. The editor's C-Gear Pictures page imports, orders and removes them.
+  save's own downloaded skin isn't shown. The editor's C-Gear Pictures page imports, orders and removes them. The
+  original's circles of the buttons and clock, and the markers' bases and lamps, were semi-transparent objects, which
+  the picture's blend made show the rings through; their objects in `17.ncer` are now opaque (the same without a
+  picture, when nothing blends), and none turns the blend off again. The help button's icon is the user's skins icon.
 - **The date:** the right-hand circle shows the month above the day in the clock's digits (`ACTOR_DATE_DIGIT`,
   four actors, set by `CGearSw_UpdateClock`).
 - **No survey button or log:** their actors (`ACTOR_RADAR`, `ACTOR_LOGO` and `ACTOR_NOTICE`) are kept off the screen,
