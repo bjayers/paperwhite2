@@ -628,9 +628,9 @@ static u32 StartMenu_Continue(StartMenuWork *wk) {
             return StartMenu_WipeOut(wk, STATE_FREE);
         }
 #ifdef PAPERWHITE2
-        // Paper White 2: no question; the C-Gear starts as if Yes was chosen. A DSi with its wireless turned off
-        // starts it off, as the original does after its notice, without the notice
-        wk->cgearOff = isWirelessEnabled() == FALSE;
+        // Paper White 2: no question; the C-Gear starts as if Yes was chosen, whatever the console's wireless setting,
+        // since it uses no wireless (GSYS_CanBootGameComm)
+        wk->cgearOff = FALSE;
         wk->seq = 0;
         return StartMenu_WipeOut(wk, STATE_FREE);
 #endif

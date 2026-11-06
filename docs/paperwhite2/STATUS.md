@@ -2,6 +2,13 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-06: the C-Gear's buttons with the console's wireless off (3DS)
+
+The user's 3DS (DSi mode, wireless off) showed only the clock, the battery and the save button: the start menu still
+started the C-Gear off when the wireless was off, a check kept while the C-Gear still networked. It now starts on
+whatever the setting, and Aspertia's C-Gear scene doesn't check it either (it showed the wireless error and never
+powered the C-Gear on). Not yet tested on the 3DS. The follower rebuild (branch `follower-rebuild`): the user's first
+tests on melonDS and the 3DS found nothing wrong.
 ## 2026-11-05 (branch `follower-rebuild`): stage 2, the movement and drawing tidied, and one gap
 
 The same behavior throughout; to test in one batch with stage 1 (the user's choice). Not yet tested in game.

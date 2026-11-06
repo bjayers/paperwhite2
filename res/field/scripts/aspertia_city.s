@@ -458,7 +458,8 @@ L_0668:
     VMStackPushConst 3
     VMStackCmp CMP_EQ
     VMJumpIf CMP_STACK, L_06C6
-    GameCommCheckDSiWiFi 0x8008
+    // Paper White 2: the C-Gear uses no wireless, so the console's wireless setting doesn't stop it
+    WorkSetConst 0x8008, 1
     VMStackPush 0x8008
     VMStackPushConst 1
     VMStackCmp CMP_EQ
@@ -2393,7 +2394,8 @@ L_2097:
     VMStackCmp CMP_EQ
     VMJumpIf CMP_STACK, L_213B
     CGearControlWarning 0
-    GameCommCheckDSiWiFi 0x8008
+    // Paper White 2: the C-Gear uses no wireless, so the console's wireless setting doesn't stop it
+    WorkSetConst 0x8008, 1
     VMStackPush 0x8008
     VMStackPushConst 1
     VMStackCmp CMP_EQ

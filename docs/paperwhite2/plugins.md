@@ -1271,7 +1271,9 @@ docs/paperwhite2/design/dexnav.md ("As built").
 The redesign's research and plan: `docs/paperwhite2/design/cgear.md`. Done so far:
 
 - **No question on Continue:** `StartMenu_Continue` (`src/ov162/startmenu.c`) starts the C-Gear as Yes did whenever
-  the save has it on, without asking. A DSi with its wireless off starts it off, as before, without the notice.
+  the save has it on, without asking, whatever the console's wireless setting (it uses no wireless). Aspertia's
+  C-Gear scene (`aspertia_city.s`) no longer checks the setting either, so it powers the C-Gear on with wireless off;
+  the Pokémon Centers' wireless rooms still check it.
 - **No networking, always lit:** `GSYS_CanBootGameComm` (`src/system/game_system.c`) is always FALSE, so "on" never
   starts the beacon search or the Entralink's connection, and `CGearSw_SetCommDark` does nothing, so the C-Gear
   doesn't dim for the missing connection (it still dims while an event runs, as the original does). Nothing turns it
