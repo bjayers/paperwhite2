@@ -48,3 +48,66 @@ the rest) follow it too, and what a liked or disliked flavour does when fed.
   (16 colours each), the tile budget, the sprites' sizes (8 to 64 pixels), and a template PNG per screen at 256 by 192
   with the regions and buttons marked, plus an export and import tool for the art, like `cgear_sprites.py`. Research of
   the current screens' resources comes first.
+
+## Everything we could add (the ROM session's list, 2026-11-06)
+
+For planning: what the data supports, page by page. Each is read from `res/` at build time or from the ROM's archives
+at run time, so the user's changes show. **Seen** and **caught** suggest what to show at each stage; the user decides.
+
+### Info (top screen)
+
+- The animated sprite (the battle's animation), front or back; the **shiny** colours once a shiny has been seen (the
+  Pokédex already keeps the forms and shinies seen, for its Forms page).
+- Name, national and regional numbers, category, types, height and weight, the entry text (as now).
+
+### Data (bottom screen, beside Info)
+
+- **Base stats** as bars, and their total. Caught.
+- **Type matchups:** weak to (×4, ×2), resists (×½, ×¼), immune, from the type chart. Seen, since types are.
+- **Gender ratio** (a bar, or genderless), **catch rate**, **growth rate**, **egg groups**, **hatch steps**, **base
+  friendship**, **base Exp.**, **EV yield**, **wild held items** with their odds (50%, 5%, 1%). Caught.
+- **Favourite flavour** (new table, below).
+- Buttons: the cry, front or back, the form, shiny (when one has been seen).
+
+### Moves and abilities (in place of the Cry page)
+
+- The learnset in tabs: **by level** (with the levels), **TM and HM** (with their numbers), **tutor**, **egg moves**.
+  Each with its type and category icons.
+- Tapping a move: type, category, power, accuracy, PP, priority and its description (`res/moves/<move>/data.json`).
+- **Abilities:** the two and the hidden one, each with its description (`res/abilities/`). Perhaps the hidden one
+  only once caught.
+
+### Evolution and forms (in place of the Forms page)
+
+- The whole family: from what, into what, each with its method in words. The methods used by the data: level, stone
+  or item, held item by day or night, friendship (by day, by night), knowing a move, levelling at a place (the
+  magnetic field, the moss rock, the ice rock), gender, the Attack and Defense comparison, the personality value
+  (Wurmple), beauty (Feebas), a species in the party (Mantyke), Shedinja's, and the trades (which need a local way
+  first: `design/pokemon-center.md`). Up to 7 branches (Eevee) must fit.
+- Tapping one opens its page once discovered; one not yet seen shows as unknown but with its method.
+- **Forms:** each form's sprite, and its own types, stats and abilities where they differ (Rotom, Deoxys, the
+  Therians, Kyurem, Darmanitan, Meloetta, Wormadam...).
+
+### Kept
+
+- **Habitat** (the area map, with the DexNav beside it).
+
+### New data
+
+- **Favourite flavour**, one per species and form, in a table of ours with an editor column. To decide: what feeding a
+  liked or disliked berry does (to followers, to wild Pokémon), and whether the confusion berries follow it.
+
+### Later
+
+- The list of Pokémon redesigned (the user's idea), and its search and sorting.
+- Where to learn a TM or a tutor move (needs a table of ours).
+
+## A plan
+
+1. **Research** the current pages: their background layers, palettes, tiles and sprites, the touch bar's tabs, how
+   much room the overlays have, and how the battle's animated sprite can be drawn on the top screen.
+2. **Specs and templates** for the user's art: a marked-up 256 by 192 template per screen and the limits, with an
+   export and import tool.
+3. **The data side** while the user draws: reading the learnsets, evolutions, moves and type chart, and the new
+   flavour table.
+4. **The pages**, one at a time: Info and Data first, then Moves, then Evolution, each tested before the next.
