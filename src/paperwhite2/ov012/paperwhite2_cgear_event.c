@@ -68,6 +68,11 @@ static GameEventReturnCode PaperWhite2_CGearEvent_Main(GameEvent *event, u32 *st
 
     switch (*state) {
     case 0:
+        // Saving dims the field and shows the arrow to the touch screen, as the field menu it opens from in the
+        // original does (FieldMenu_Update)
+        if (input->appId == FIELD_APP_SAVE) {
+            FieldSubscreen_LoadBackdrop(Field_GetSubscreen(work->field), work->code);
+        }
         GameEvent_ChainNext(event, EventFieldAppCall_Create(input, work->code));
         *state = 1;
         break;
@@ -86,9 +91,12 @@ static GameEventReturnCode PaperWhite2_CGearEvent_Main(GameEvent *event, u32 *st
             break;
         default:
             EnableAllActorsMovement(Field_GetActorSystem(work->field));
-            // Saving's No changes the touch screen to the field menu, which it came from in the original
+            // Saving's No changes the touch screen to the field menu, which it came from in the original, and the menu
+            // dims the field again; back to the C-Gear, then the field as a cancelled menu leaves it
+            // (FieldMenu_RestoreSubscreenOnCancel)
             if (input->appId == FIELD_APP_SAVE && input->eventType == 0) {
-                GameEvent_Replace(event, EventFieldMenuReturn_Create(work->gsys, work->field, 0));
+                GameEvent_ChainNext(event, EventFieldMenuReturn_Create(work->gsys, work->field, 0));
+                *state = 5;
                 return GAMEEVENT_CONTINUE;
             }
             return GAMEEVENT_DONE;
@@ -117,6 +125,10 @@ static GameEventReturnCode PaperWhite2_CGearEvent_Main(GameEvent *event, u32 *st
                 event, EventScriptCall_Create(work->gsys, CGEAR_APP_RESULT_SCRIPT, NULL, Field_GetHeapID(work->field)));
         }
         break;
+    case 5:
+        // Back on the C-Gear after saving's No
+        FieldSubscreen_ResumeField(Field_GetSubscreen(work->field), work->code);
+        return GAMEEVENT_DONE;
     }
     return GAMEEVENT_CONTINUE;
 }

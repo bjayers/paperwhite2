@@ -1300,8 +1300,11 @@ The redesign's research and plan: `docs/paperwhite2/design/cgear.md`. Done so fa
   sides, where the log's rectangle was, and the outer ring at the bottom left, where the survey button was.
 - **Power saves, help changes the background:** the power button (the user's save icon in `16.png`) saves as the
   field menu's Save does, through the same event (`ACTION_SAVE`, `FIELD_APP_SAVE`), and shows in its pressed palette
-  where the menu has no Save (the Union Room, the Royal Unova, a forced season sync). Saving's No changed the touch
-  screen to the field menu, which it came from, so the event changes it back to the C-Gear. Help cycles the
+  where the menu has no Save (the Union Room, the Royal Unova, a forced season sync). The field menu is what dims the
+  field and shows the arrow to the touch screen (`FieldSubscreen_LoadBackdrop`, from `FieldMenu_Update`), so the event
+  does it before saving. Saving's No changes the touch screen to the field menu, which it came from in the original and
+  which dims the field again, so the event changes it back to the C-Gear and then undoes the dimming as a cancelled
+  menu does (`FieldSubscreen_ResumeField`); before, the field stayed dim after a No until another menu closed. Help cycles the
   background pictures (below). The title strip cycles the skins, the survey and
   the log are gone, and editing moves the markers and changes the colors.
 - **Background pictures:** what downloaded C-Gear skins were (a `.cgb` file is one: 255 tiles, a palette and a screen,

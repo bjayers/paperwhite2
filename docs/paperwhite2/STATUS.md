@@ -2,6 +2,14 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-06: the C-Gear's save, dimmed as the menu's
+
+The user found that saving from the C-Gear didn't dim the field or show the arrow, and that after a No the field
+stayed dim with the arrow (still taking input) until another menu closed. Cause: the field menu does the dimming, and
+saving's No goes back to the field menu, which dims again; the C-Gear's event then left for the C-Gear without the
+menu's own undo. Now the event dims before saving and undoes it after a No (plugins.md, C-Gear). Not yet tested in
+game.
+
 ## 2026-11-06: where things stand (the user's notes, end of a long session)
 
 - **Testing:** the user has tried most recent features briefly and will test them properly on a fresh save, playing
