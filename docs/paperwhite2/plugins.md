@@ -1345,7 +1345,8 @@ The plan and research: `docs/paperwhite2/design/join-avenue.md`. Its tables are 
 on the avenue yet joins the visitors first (`PaperWhite2_JoinAvenue_AddOwner`, `src/paperwhite2/ov137/
 paperwhite2_join_avenue.c`, from `ResortField_AddInitialEntries`), making room by sending one visitor away when the
 list is full; the Nursery's comes after unlock 6. `PaperWhite2_ResortSys_MakeEntryFromRow` (`resort_sys.c`) makes
-an entry from a given row.
+an entry from a given row. The visitors' menus offer Invite only to owners, while a lot is free, and Recommend only
+to the others (`GetValue 100`, `JOIN_AVENUE_VALUE_IS_OWNER`); no one is recruited, so no owner is ever replaced.
 
 ## Adding global scripts
 

@@ -33,6 +33,9 @@
 #include "system/resort_work.h"
 #include "system/vm.h"
 #include "system/wordset.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/join_avenue.h"
+#endif
 
 // The script plugin of the Join Avenue (plugin 8), commands from 1000. Its command table is in overlay 58, so that
 // the shops' overlay 60 can take this overlay's place
@@ -347,6 +350,14 @@ BOOL Scrcmd_Resort_GetValue(VM *vm, FieldScriptEnv *env) {
     case 64:
         *var = JoinAvenueOccupants_CountPeople(occupants);
         break;
+#ifdef PAPERWHITE2
+    // Paper White 2: whether the person is one of the avenue's owners, who alone can be invited
+    // (paperwhite2/join_avenue.h)
+    case JOIN_AVENUE_VALUE_IS_OWNER:
+        *var = person != NULL &&
+               PaperWhite2_JoinAvenue_IsOwner(sys, ResortPerson_GetParam(person, JOIN_AVE_PARAM_TRAINER_ID, NULL));
+        break;
+#endif
     }
     return FALSE;
 }

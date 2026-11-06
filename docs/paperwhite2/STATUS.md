@@ -8,7 +8,10 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
 - Eight placeholder owners, one per shop kind, join the daily visitors one a day (plugins.md, Join Avenue); the
   original's menu still lets any visitor be invited until step 3. Not yet tested in game: the avenue must be opened
   (its intro) first.
-- Next: step 3, only the owners invited and only the others recommended to, and owners that never leave.
+- Step 3: only the owners can be invited (while a lot is free) and only the others recommended to; no recruiting, so
+  owners never leave. Not yet tested in game.
+- Next: step 4, the editor's Join Avenue page; then step 5, the opening (its tutorial invites a visitor who isn't an
+  owner) and the wireless sources.
 
 ## 2026-11-06: the C-Gear's buttons with the console's wireless off (3DS)
 

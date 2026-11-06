@@ -316,7 +316,7 @@ Verified on the way: a visitor leaves once recommended something (the visit's sc
 `RemovePerson 0, 255, 0`, `global_10685.s:673`), as one invited does; the others stay from day to day.
 
 Steps: 1. the packer (done); 2. the owners' data and the daily hook (done: below); 3. the menu's rule and owners that
-stay;
+stay (done: below);
 4. the editor page; 5. the opening and the wireless sources. To check in game or in the code on the way: whether
 Invite goes when the eight lots are full, how the talk's menu is built, what unlocks 1-5, 7 and 8 give.
 
@@ -332,3 +332,17 @@ Invite goes when the eight lots are full, how the talk's menu is built, what unl
   after unlock 6. A full list of entries sends one daily visitor away for it (by the avenue's draw), never an owner or
   a special visitor. The random visitors are the original's type 2 rows, which never draw an owner.
 - Until step 3, the original's menu still lets any visitor be invited.
+
+### Step 3 as built (2026-11-06)
+
+- **The visitors' menus** (`global_10685.s`, `L_0257` for the visitors and `L_3BF2` of `Script_9`, the special
+  visitors'): an owner is offered only Invite, and only while a lot is free (`GetValue 10`, eight shops); anyone else
+  only Recommend, once there is a shop (`GetValue 6`); Recruit (a visitor replacing one of the four records,
+  `L_05B6`) is offered to no one. "Ask about recent activities" and End are as before.
+- **Whether a person is an owner**: `GetValue 100` (`JOIN_AVENUE_VALUE_IS_OWNER`, a case of `Scrcmd_Resort_GetValue`
+  under `PAPERWHITE2`, `PaperWhite2_JoinAvenue_IsOwner`).
+- **Owners stay**: an occupant leaves only when an invite with no free lot replaces its building (`ThereNoRoomNew`, in
+  `L_034B` and the people-met list's, which only wireless filled); Invite is now offered only with a free lot, so that
+  can't happen. The invites are `L_034B` from the two menus, and the opening's tutorial (`global_10685.s:4145`),
+  whose visitor isn't an owner: step 5 changes the opening.
+- A save from before keeps the occupants it has; owners fill the free lots.

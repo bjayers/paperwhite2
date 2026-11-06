@@ -156,21 +156,25 @@ L_0257:
     // ""
     SystemMsg Global10685_Text_Empty_253, 2
     ListMenuAnchorTopRight 31, 1, 0, 1, 32800
-    ListMenuAdd 174, 235, 0
+    // Paper White 2: an owner can only be invited, while a lot is free (GetValue 100 is
+    // JOIN_AVENUE_VALUE_IS_OWNER, paperwhite2/join_avenue.h); anyone else can only be recommended a shop, once there
+    // is one. No one is recruited
+    GetValue 100, 0x803a
+    WorkCmpConst 0x803a, 1
+    VMJumpIf CMP_EQ, L_InviteOwner
     GetValue 6, 0x803a
     VMStackPush 0x803a
     VMStackPushConst 0
     VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_02A1
-    ListMenuAdd 176, 237, 2
-
-L_02A1:
-    GetValue 1, 0x8039
-    VMStackPush 0x8039
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
     VMJumpIf CMP_STACK, L_02C2
-    ListMenuAdd 175, 236, 1
+    ListMenuAdd 176, 237, 2
+    VMJump L_02C2
+
+L_InviteOwner:
+    GetValue 10, 0x8039
+    WorkCmpConst 0x8039, 1
+    VMJumpIf CMP_EQ, L_02C2
+    ListMenuAdd 174, 235, 0
 
 L_02C2:
     GetValue 41, 0x803b
@@ -3648,13 +3652,24 @@ L_3BF2:
     // ""
     SystemMsg Global10685_Text_Empty_253, 2
     ListMenuAnchorTopRight 31, 1, 0, 1, 32800
-    ListMenuAdd 174, 235, 0
+    // Paper White 2: as the visitors' menu, an owner can only be invited while a lot is free, anyone else only
+    // recommended a shop (GetValue 100 is JOIN_AVENUE_VALUE_IS_OWNER, paperwhite2/join_avenue.h)
+    GetValue 100, 0x8056
+    WorkCmpConst 0x8056, 1
+    VMJumpIf CMP_EQ, L_InviteOwner_2
     GetValue 6, 0x8056
     VMStackPush 0x8056
     VMStackPushConst 0
     VMStackCmp CMP_EQ
     VMJumpIf CMP_STACK, L_3C30
     ListMenuAdd 176, 237, 2
+    VMJump L_3C30
+
+L_InviteOwner_2:
+    GetValue 10, 0x8056
+    WorkCmpConst 0x8056, 1
+    VMJumpIf CMP_EQ, L_3C30
+    ListMenuAdd 174, 235, 0
 
 L_3C30:
     ListMenuAdd 183, 244, 7
