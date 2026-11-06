@@ -1354,6 +1354,16 @@ Janus (the type-0 row, who opened the shop the player's profile wanted); the ent
 script (`Script_13`, chosen by kind and gender from table 0) still moves the tutorial on. The daily owners then come in
 the table's order; Flora (Flower Shop) is first. Daily entries start only once the avenue is open, so no daily owner
 can take the tutorial's.
+The guide's tip after the first recommendation (turn on the C-Gear, try the Union Room and the GTS) now says people
+who dream of opening a shop will come by (`join_avenue.txt`). The office assistant's help (`join_avenue_2.txt`,
+`join_avenue_2.s`) describes the avenue as it is: owners to invite, everyone else to recommend to, visitors each day
+and owners one a day; "What does recruit mean?" is gone, the manager's advice to recruit is advice on recommending,
+and the Nursery's news says its owner will come by.
+
+### Storage menu order
+
+The PCs' "Someone's PC" menu (`global_10090.s`) lists Move Pokémon, Move Items, Deposit Pokémon, Withdraw Pokémon,
+Battle Box (the user's order). The Battle Box stays: the Battle Subway lets the player battle with it.
 
 ### Name entry without the word filter
 

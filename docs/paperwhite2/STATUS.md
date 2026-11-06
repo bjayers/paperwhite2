@@ -2,6 +2,12 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-06: the avenue's help, the guide's tip, the PC menu
+
+The user tested the tutorial owner: it works. The guide no longer talks of the C-Gear and the Union Room, the office
+assistant's help describes owners and visitors (no Recruit), and the PCs' storage menu is reordered (plugins.md). Not
+yet tested in game.
+
 ## 2026-11-06: the tutorial's owner
 
 The user tested step 4 and the filter removal: both work. The word lists aren't loaded at all now. The avenue's

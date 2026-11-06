@@ -113,12 +113,7 @@ L_0171:
     ListMenuAdd 25, 65535, 3
     ListMenuAdd 26, 65535, 4
     ListMenuAdd 27, 65535, 5
-    GetValue 1, 0x8020
-    VMStackPush 0x8020
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_01FE
-    ListMenuAdd 40, 65535, 9
+    // Paper White 2: no "What does recruit mean?": no one is recruited
 
 L_01FE:
     ListMenuAdd 29, 65535, 7
@@ -157,17 +152,12 @@ L_027B:
     VMJump L_02CB
 
 L_028E:
-    GetValue 1, 0x8020
-    VMStackPush 0x8020
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_02B9
-    // "Bring in more customers by using\nthe communication features.[f000]븁\u0000\nPeople you've met through communication\nfeatures will visit the avenue.[f000]븁\u0000\nWhen you talk to them, there are three\nthings you can choose to do.[f000]븁\u0000\nYou can “invite\" the person to join\nthe avenue, “recommend\" a shop, or[f000]븀\u0000\n“recruit\" that person as an assistant.[f000]븁\u0000\nFor details, please listen to\neach explanation.[f000]븁\u0000"
-    ActorMsg MSGFILE_SCRIPT, JoinAvenue2_Text_BringMoreCustomersBy, 0, 0, 0
-    VMJump L_02C5
+    // Paper White 2: the answer of two things to do (invite and recommend), as before Recruit's unlock: no one is
+    // recruited
+    VMJump L_02B9
 
 L_02B9:
-    // "You can use various communication\nfeatures to encourage people to visit.[f000]븁\u0000\nTalk to people during their visits here.\nThere are two things you can do.[f000]븁\u0000\nThe first thing is to “invite\" someone.\nThe other thing is to “recommend\" a shop[f000]븀\u0000\nto someone.[f000]븁\u0000\nTo really get the idea of all you can do,\nstay and listen to a little more about it.[f000]븁\u0000"
+    // "Talk to people during their visits here.\nThere are two things you can do.[f000]븁\u0000\nThe first thing is to “invite\" someone\nwho dreams of opening a shop.[f000]븁\u0000\nThe other thing is to “recommend\" a shop\nto anyone else.[f000]븁\u0000\nTo really get the idea of all you can do,\nstay and listen to a little more about it.[f000]븁\u0000"
     ActorMsg MSGFILE_SCRIPT, JoinAvenue2_Text_CanUseVariousCommunication, 0, 0, 0
 
 L_02C5:
@@ -179,7 +169,7 @@ L_02CB:
     VMJump L_02F0
 
 L_02DE:
-    // "You can bring in more customers by\nusing the communication features.[f000]븁\u0000\nWhen you have the C-Gear turned on,\npassersby will visit the avenue.[f000]븁\u0000\nPeople you've met through the Union\nRoom, Infrared Communication, Random[f000]븀\u0000\nMatchups, and GTS visit the avenue, too.[f000]븁\u0000\nCommunication features aren't the\nonly way to bring in visitors.[f000]븁\u0000\nAs your adventure progresses,\nfans might sometimes visit the avenue.[f000]븁\u0000\nYou can use your Town Map to check\nthe current number of visitors.[f000]븁\u0000\nIt might be fun to check it now and then.[f000]븁\u0000"
+    // "New visitors come to the avenue\nevery day.[f000]븁\u0000\nThe more famous the avenue gets,\nthe more of them come by.[f000]븁\u0000\nEach day, someone who dreams of\nopening a shop may come along, too,[f000]븀\u0000\nuntil every kind of shop has an owner.[f000]븁\u0000\nAs your adventure progresses,\nfans might sometimes visit the avenue.[f000]븁\u0000\nYou can use your Town Map to check\nthe current number of visitors.[f000]븁\u0000\nIt might be fun to check it now and then.[f000]븁\u0000"
     ActorMsg MSGFILE_SCRIPT, JoinAvenue2_Text_CanBringMoreCustomers, 0, 0, 0
     VMJump L_03D4
 
@@ -189,7 +179,7 @@ L_02F0:
     VMJump L_0315
 
 L_0303:
-    // "When you select “Invite,\" the visitor\nwill begin to live here and create a shop.[f000]븁\u0000\nEach person has his or her own\nhopes and dreams.[f000]븁\u0000\nI recommend listening carefully to the\nperson before you decide.[f000]븁\u0000"
+    // "When you “invite\" someone who dreams\nof opening a shop, that person will[f000]븀\u0000\nmove in and build it on a free lot.[f000]븁\u0000\nEach of them has a particular kind\nof shop in mind.[f000]븁\u0000\nOnce a shop is open, its owner is here\nto stay, so the avenue keeps growing.[f000]븁\u0000"
     ActorMsg MSGFILE_SCRIPT, JoinAvenue2_Text_WhenSelectInviteVisitor, 0, 0, 0
     VMJump L_03D4
 
@@ -652,7 +642,7 @@ L_0A7F:
     SetWord 4, 255, 0, 0
     // "[f000]Ā\u0001\u0000,\nI see you are putting in a lot of effort![f000]븁\u0000"
     ActorMsg MSGFILE_SCRIPT, JoinAvenue2_Text_SeePuttingLotEffort_5, 1, 0, 0
-    // "I have a piece of advice for you today.[f000]븁\u0000\nYou'd want an assistant that suits\nyour preferences, wouldn't you?[f000]븁\u0000\nWhy don't you choose one of the visitors?\nIt's quite easy.[f000]븁\u0000\nTalk to a person and choose “Recruit.\"[f000]븁\u0000\nThe higher the current avenue rank is\ncompared to the person's ideals,[f000]븀\u0000\nthe better chance you'll have of[f000]븀\u0000\nrecruiting him or her successfully.[f000]븁\u0000\nPlease bring even more delight\nto our visitors![f000]븁\u0000"
+    // "I have a piece of advice for you today.[f000]븁\u0000\nEvery visitor has his or her own tastes.[f000]븁\u0000\nListen carefully to what visitors say,\nand recommend a shop they'll love.[f000]븁\u0000\nA delighted visitor makes the shop\nand the avenue more popular![f000]븁\u0000\nPlease bring even more delight\nto our visitors![f000]븁\u0000"
     ActorMsg MSGFILE_SCRIPT, JoinAvenue2_Text_HavePieceAdviceToday, 1, 0, 0
     // "Keep up the good work![f000]븁\u0000"
     ActorMsg MSGFILE_SCRIPT, JoinAvenue2_Text_KeepUpGoodWork_5, 1, 0, 0
@@ -666,7 +656,7 @@ L_0AC3:
     SetWord 4, 255, 0, 0
     // "[f000]Ā\u0001\u0000,\nI see you are putting in a lot of effort![f000]븁\u0000"
     ActorMsg MSGFILE_SCRIPT, JoinAvenue2_Text_SeePuttingLotEffort_6, 1, 0, 0
-    // "Today, I have a big present for you![f000]븁\u0000\nTo commemorate your entering the\nHall of Fame, shops have been renovated.[f000]븁\u0000\nYou'll notice new services and items,\nso you might want to check those out.[f000]븁\u0000\nWhat's more...\nHave you heard of Pokémon Eggs?[f000]븁\u0000\nYou'll now be able to build what they call\na “Nursery,\" which enables Eggs to[f000]븀\u0000\nbe hatched more quickly than normal.[f000]븁\u0000\nFind a visitor who wants to build a\nNursery, and give it a try![f000]븁\u0000"
+    // "Today, I have a big present for you![f000]븁\u0000\nTo commemorate your entering the\nHall of Fame, shops have been renovated.[f000]븁\u0000\nYou'll notice new services and items,\nso you might want to check those out.[f000]븁\u0000\nWhat's more...\nHave you heard of Pokémon Eggs?[f000]븁\u0000\nYou'll now be able to build what they call\na “Nursery,\" which enables Eggs to[f000]븀\u0000\nbe hatched more quickly than normal.[f000]븁\u0000\nSomeone who dreams of running one\nshould be coming by soon![f000]븁\u0000"
     ActorMsg MSGFILE_SCRIPT, JoinAvenue2_Text_TodayHaveBigPresent, 1, 0, 0
     // "I have nothing more to\npoint out to you![f000]븁\u0000\nJust keep up the good work![f000]븁\u0000"
     ActorMsg MSGFILE_SCRIPT, JoinAvenue2_Text_HaveNothingMorePoint, 1, 0, 0

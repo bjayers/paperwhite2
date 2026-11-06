@@ -498,7 +498,7 @@ Script_6:
     ActorCmdExec 2, Movement_04B4
     ActorCmdWait
     SetWord 4, 255, 0, 0
-    // "Congratulations![f000]븁\u0000\nYou've just recommended the shop, and\nthat made the popularity of[f000]븀\u0000\nthe avenue go up![f000]븁\u0000\nRaise the popularities of shops and the\navenue to make it famous![f000]븁\u0000\nA good tip for bringing more customers\nis to use the communication features.[f000]븁\u0000\nYou should turn on the C-Gear to attract\nlots of passersby.[f000]븁\u0000\nYou should also try communication\nfacilities, such as the Union Room[f000]븀\u0000\nand the Global Terminal.[f000]븁\u0000\n[f000]ĺ\u0001\u0000,\nwe'll be serving as your assistants[f000]븀\u0000\nin the room over here.[f000]븁\u0000\nPlease come visit us.[f000]븁\u0000\nIf you'll excuse us...[f000]븁\u0000"
+    // "Congratulations![f000]븁\u0000\nYou've just recommended the shop, and\nthat made the popularity of[f000]븀\u0000\nthe avenue go up![f000]븁\u0000\nRaise the popularities of shops and the\navenue to make it famous![f000]븁\u0000\nPeople who dream of opening a shop\nwill come by the avenue, too.[f000]븁\u0000\nBe sure to invite them when they do![f000]븁\u0000\n[f000]ĺ\u0001\u0000,\nwe'll be serving as your assistants[f000]븀\u0000\nin the room over here.[f000]븁\u0000\nPlease come visit us.[f000]븁\u0000\nIf you'll excuse us...[f000]븁\u0000"
     ActorMsg MSGFILE_SCRIPT, JoinAvenue_Text_CongratulationsYouveJustRecommended, 1, 0, 0
     MsgWinCloseAll
     ActorCmdExec 2, Movement_065C

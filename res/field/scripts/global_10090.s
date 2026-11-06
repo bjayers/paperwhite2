@@ -210,10 +210,12 @@ L_02F4:
     // ""
     SystemMsg Global10090_Text_Empty_9, 2
     ListMenuAnchorTopRight 31, 1, 0, 1, 32808
-    ListMenuAdd 15, 21, 15
-    ListMenuAdd 16, 22, 16
+    // Paper White 2: moving first, then depositing and withdrawing (the original's Deposit, Withdraw, Move Pokémon, Move
+    // Items, Battle Box)
     ListMenuAdd 17, 23, 17
     ListMenuAdd 20, 26, 20
+    ListMenuAdd 15, 21, 15
+    ListMenuAdd 16, 22, 16
     ListMenuAdd 18, 24, 18
     ListMenuAdd 19, 25, 19
     ListMenuShow2
