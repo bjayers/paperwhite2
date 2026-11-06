@@ -301,6 +301,9 @@ DATA_PACKS = [
     # Zone headers, which give each zone the number of its events in res/field/events/order.json
     ("tools/data/zone_data.py", "res/field/zones", ["a/0/1/2"], False, ["res/field/events"]),
     ("tools/data/trade_data.py", "res/field/trades", ["a/1/6/3"], False),  # In-game trades
+    # The Join Avenue's tables, whose people's texts are message IDs of the avenue's text bank
+    ("tools/data/join_avenue_data.py", "res/field/join_avenue", ["a/2/4/4"], False,
+     ["res/text/script/global_10685.txt"]),
     ("tools/data/map_matrix_data.py", "res/field/matrices", ["a/0/0/9"], False),  # Map matrices
     # The camera areas of the grid zones and of the rail maps, and the default cameras
     ("tools/data/camera_data.py", "res/field/cameras", ["a/1/5/6", "a/0/7/9", "a/0/5/9"], False),

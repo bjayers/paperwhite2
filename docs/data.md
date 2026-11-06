@@ -90,6 +90,7 @@ which documents the format and can write them again.
 | `a/0/4/7`, `a/0/4/8` | `res/field/actors/<code>/` (JSON, PNG, palette, Nitro model), and in Paper White 2 `res/paperwhite2/following/` | The field actors' models: their table and graphics, and the Following Pokémon's data | `tools/data/field_actor_data.py` |
 | `a/1/2/7` | `res/field/encounters/` (JSON) | Wild encounters | `tools/data/encounter_data.py` |
 | `a/1/6/3` | `res/field/trades/` (JSON) | In-game trades | `tools/data/trade_data.py` |
+| `a/2/4/4` | `res/field/join_avenue/` (JSON) | The Join Avenue's tables: shops, goods, lots, NPCs, ranks, local people | `tools/data/join_avenue_data.py` |
 | `a/2/1/2`, `a/2/1/1` | `res/trainers/facilities/battle_subway/` (JSON) | Battle Subway and Trial House trainers and Pokémon | `tools/data/facility_data.py` |
 | `a/2/6/2`, `a/2/6/1` | `res/trainers/facilities/black_tower/` (JSON) | Black Tower and White Treehollow trainers and Pokémon | `tools/data/facility_data.py` |
 | `a/2/4/8` to `a/2/5/7` | `res/trainers/facilities/pwt_*/` (JSON) | Pokémon World Tournament trainers, Pokémon and rental Pokémon | `tools/data/facility_data.py` |

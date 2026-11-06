@@ -1,0 +1,19 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "A Join Avenue table",
+    "description": "One member of the Join Avenue's archive (a/2/4/4), rows of u16 columns in order (tools/data/join_avenue_data.py): a column named where the code shows what it is, col_<n> where it doesn't. Object codes are OBJ_CODE_ constants; the people's names, greetings, messages and lines are message IDs of res/text/script/global_10685.txt, null for none",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "$schema", "table", "rows" ],
+    "properties": {
+        "$schema": { "type": "string" },
+        "table": { "type": "string", "description": "Which table it is, from its file's name" },
+        "rows": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": { "type": [ "integer", "string", "null" ] }
+            }
+        }
+    }
+}

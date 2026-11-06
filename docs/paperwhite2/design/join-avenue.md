@@ -39,7 +39,7 @@ All of it is complete, matching C, so every change is an `#ifdef PAPERWHITE2` ed
 The commands' names and arguments are in `tools/script/field_commands.json` under `plugins/8` (zones 490 and 491;
 1036 is unused; 1000 and 1011 are the shop menu while overlay 60 is loaded).
 
-`a/2/4/4` is **not in `res/`**: no packer covers it, so the build copies the extracted file. The hack's ROM v0.21 has
+`a/2/4/4` is in `res/field/join_avenue/` since 2026-11-06 (`tools/data/join_avenue_data.py`, byte for byte). The hack's ROM v0.21 has
 the same `a/2/4/4` as the clean ROM (compared byte for byte), and `git diff w2-original` shows only command renames in
 the avenue's scripts: Frost's edits didn't touch the avenue.
 
@@ -296,3 +296,22 @@ JSON under `res/field/join_avenue/` once the packer exists. A person:
 - **Their own dialogue**, in place of the generic lines by gender and the eight-character messages: the `lines`
   hook (keyed by trainer ID, section 9) is wanted.
 - **The opening tutorial** will likely be changed or shortened by the user.
+
+## The user's decisions (2026-11-06), the plan
+
+The original's progression stays: inviting, recommending, shop levels, the rank and its discounts and unlocks.
+
+- **The owners are the user's**, from the editor, each wanting its shop, so all eight kinds come. Each day the visitors
+  are first the owners who haven't opened a shop yet, then random visitors as now (a hook in the daily visitors,
+  `ResortField_AddInitialEntries` / `ResortSys_MakeShopEntry`).
+- **Only the owners can be invited, and only the others recommended to**: the talk's menu tells them apart by a
+  trainer ID range kept for the owners (a small command the avenue's script asks).
+- **Owners can't leave or be replaced.** Records of people who left are hidden.
+- **The Nursery's owner comes from rank 15** (unlock 6), as the original allows the Nursery.
+- **The random visitors** are the original's 48 until the user edits them (`res/field/join_avenue/09_people.json`,
+  type 2, data only); the Gym Leaders stay special visitors. Everything wireless is off.
+- **The owners' own dialogue** (the `lines` hook of section 10), and a shortened opening, which the user may rewrite.
+
+Steps: 1. the packer (done); 2. the owners' data and the daily hook; 3. the menu's rule and owners that stay;
+4. the editor page; 5. the opening and the wireless sources. To check in game or in the code on the way: whether
+Invite goes when the eight lots are full, how the talk's menu is built, what unlocks 1-5, 7 and 8 give.
