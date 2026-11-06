@@ -29,6 +29,9 @@
 #include "system/resort_work.h"
 #include "system/union_view.h"
 #include "system/wordset.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/join_avenue.h"
+#endif
 
 // The Join Avenue's system (resort_sys.c, from its assert string): the avenue's people and their data, its tables and
 // the questions the scripts ask about them. The scripts get a message of the avenue's texts, SCRIPT_TEXT_GLOBAL_10685,
@@ -2079,6 +2082,9 @@ void ResortSys_AddEntryOrRecord(ResortSys *sys, PlayerInfo *playerInfo, u32 mode
         u16 type = 0xff;
         JoinAvenueEntry *entry;
         u32 i;
+#ifdef PAPERWHITE2
+        s32 ownerRow;
+#endif
 
         for (i = 0; i < 3; i++) {
             if (shopKind == sEntryTypes[i].key) {
@@ -2087,7 +2093,16 @@ void ResortSys_AddEntryOrRecord(ResortSys *sys, PlayerInfo *playerInfo, u32 mode
         }
         entry = JoinAvenueEntry_Create(HEAPID_TAIL(heapId));
         ResortEntry_SetupFromType(sys, entry, type, shopKind, heapId);
+#ifdef PAPERWHITE2
+        // Paper White 2: the tutorial's first person (Janus, the type-0 row, who opens the shop the player's profile
+        // wants) is the first owner who can arrive, with the shop they want; Janus only when no owner can
+        ownerRow = shopKind == 0 ? PaperWhite2_JoinAvenue_GetArrivingOwnerRow(sys) : -1;
+        if (ownerRow >= 0) {
+            ResortEntry_Fill(entry, type, ResortSys_GetTexts(sys), ownerRow, heapId);
+        } else if (shopKind == 0) {
+#else
         if (shopKind == 0) {
+#endif
             JoinAvenueEntry_SetParam(
                 entry, JOIN_AVE_PARAM_SHOP_ID,
                 JoinAvenuePerson_GetShopId(JoinAvenueOccupants_GetPlayerPerson(occupants), playerInfo));

@@ -364,8 +364,10 @@ day and alone can be invited to open a shop, and the random visitors, who can on
 (7 characters), a gender, a look from the sprite browser, a trainer ID, and a greeting and two messages (8 characters
 each); an owner also has the shop they want, by kind and variant, with its sign and the goods the variant sells at its
 top level. The texts are messages of `res/text/script/global_10685.txt`: a text other people share gets a new message
-of its own when it is changed. **+ Add** makes an owner with the next free ID and a shop kind no owner wants yet, and
-Remove owner drops one (their texts stay in the bank). An owner's ID must be theirs alone, since the avenue knows
+of its own when it is changed. The owners arrive in the list's order: the first (but the Nursery's, which waits for rank 15) in the
+tutorial, marked *tutorial*, the others one a day; ↑ Earlier and ↓ Later reorder them. Venus, the tutorial's visitor,
+is listed apart. **+ Add** makes an owner with the next free ID and a shop kind no owner wants yet, and Remove owner
+drops one (their texts stay in the bank). An owner's ID must be theirs alone, since the avenue knows
 owners by ID; the original's visitors share some. Save (Ctrl+S) writes the bank, then the table.
 
 ## Dragging values

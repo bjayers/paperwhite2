@@ -1348,6 +1348,12 @@ list is full; the Nursery's comes after unlock 6. `PaperWhite2_ResortSys_MakeEnt
 an entry from a given row. The visitors' menus offer Invite only to owners, while a lot is free, and Recommend only
 to the others (`GetValue 100`, `JOIN_AVENUE_VALUE_IS_OWNER`); no one is recruited, so no owner is ever replaced.
 The intro no longer warns that the avenue's name and greeting may be sent to other players (`join_avenue.s`).
+The tutorial's first person, whom the guide asks the player to invite, is the first owner who can arrive
+(`PaperWhite2_JoinAvenue_GetArrivingOwnerRow`, from `ResortSys_AddEntryOrRecord`), with the shop they want, in place of
+Janus (the type-0 row, who opened the shop the player's profile wanted); the entry keeps the tutorial's kind, so its
+script (`Script_13`, chosen by kind and gender from table 0) still moves the tutorial on. The daily owners then come in
+the table's order; Flora (Flower Shop) is first. Daily entries start only once the avenue is open, so no daily owner
+can take the tutorial's.
 
 ### Name entry without the word filter
 

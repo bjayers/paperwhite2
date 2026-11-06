@@ -344,5 +344,10 @@ Invite goes when the eight lots are full, how the talk's menu is built, what unl
 - **Owners stay**: an occupant leaves only when an invite with no free lot replaces its building (`ThereNoRoomNew`, in
   `L_034B` and the people-met list's, which only wireless filled); Invite is now offered only with a free lot, so that
   can't happen. The invites are `L_034B` from the two menus, and the opening's tutorial (`global_10685.s:4145`),
-  whose visitor isn't an owner: step 5 changes the opening.
+  whose visitor is now the first owner who can arrive.
+- **The tutorial's owner** (2026-11-06, the user's choice): the opening stays; its first person is the first owner who
+  can arrive (`PaperWhite2_JoinAvenue_GetArrivingOwnerRow` in `ResortSys_AddEntryOrRecord`, mode 1, kind 0), with
+  the shop they want, in place of Janus. The entry keeps the tutorial's kind (2), so table 0 still gives it
+  `Script_13`, which moves the tutorial on. Flora (Flower Shop) is first; Venus (type 1) stays the tutorial's visitor.
+  Step 5 is now only the wireless sources.
 - A save from before keeps the occupants it has; owners fill the free lots.

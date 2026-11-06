@@ -18,10 +18,13 @@
 // original's values
 #define JOIN_AVENUE_VALUE_IS_OWNER 100
 
-// The daily visitors' first: one owner who isn't on the avenue yet (not an occupant, not waiting), but for the
-// Nursery's before its unlock. A full list of entries makes room by sending one visitor away, never an owner or a
-// special visitor
+// The daily visitors' first: the first owner who can arrive (PaperWhite2_JoinAvenue_GetArrivingOwnerRow). A full list
+// of entries makes room by sending one visitor away, never an owner or a special visitor
 void PaperWhite2_JoinAvenue_AddOwner(ResortSys *sys, GameData *gameData, JoinAvenueSave *joinAvenue, HeapID heapId);
+// The row of the people's table of the first owner, in the table's order, who can arrive now (not on the avenue yet;
+// the Nursery's only after its unlock): the next of the daily visitors, and the one the avenue's tutorial brings in.
+// -1 when none can
+s32 PaperWhite2_JoinAvenue_GetArrivingOwnerRow(ResortSys *sys);
 // Whether a trainer ID is one of the owners'
 BOOL PaperWhite2_JoinAvenue_IsOwner(ResortSys *sys, u32 trainerId);
 

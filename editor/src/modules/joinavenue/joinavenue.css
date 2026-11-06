@@ -44,3 +44,8 @@
 .ja-sign { font-weight: 600; font-size: 13px; }
 .ja-wrap { flex-wrap: wrap; }
 .ja-control button.active { border-color: var(--accent); background: var(--selected); }
+.ja-actions { display: flex; gap: 6px; }
+.ja-arrival { margin: -2px 0 4px; }
+.ja-badge { margin-left: 6px; padding: 0 5px; border-radius: 4px; font-size: 11px; background: var(--selected); color: var(--accent); }
+.ja-header > * { white-space: nowrap; }
+.ja-header .ja-note { min-width: 0; overflow: hidden; text-overflow: ellipsis; }

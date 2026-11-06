@@ -2,6 +2,14 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-06: the tutorial's owner
+
+The user tested step 4 and the filter removal: both work. The word lists aren't loaded at all now. The avenue's
+tutorial brings in the first owner (Flora, Flower Shop, now first in the table) in place of Janus, then the others
+come one a day; the editor marks the tutorial owner, reorders owners and lists Venus, the tutorial's visitor. The
+opening stays as it is (the user's choice). Not yet tested in game: it needs a save that hasn't done the avenue's
+tutorial. Next: the wireless sources of visitors, then the owners' own dialogue.
+
 ## 2026-11-06: Join Avenue, step 4: the editor's page
 
 The editor's **Join Avenue** page (`editor/src/modules/joinavenue/`, editor README) edits the owners and the random

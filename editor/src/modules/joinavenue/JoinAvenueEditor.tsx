@@ -1,11 +1,13 @@
 // The Join Avenue Editor: the people of the avenue's people table (res/field/join_avenue/09_people.json,
 // tools/data/join_avenue_data.py, docs/paperwhite2/design/join-avenue.md) that Paper White 2 uses: the owners (type 8),
 // one of whom joins the visitors each day and alone can be invited to open the shop they want, and the random visitors
-// (type 2), who come and go and can only be recommended to. Each has a name, a look, a gender, a trainer ID, an
+// (type 2), who come and go and can only be recommended to. The first owner who can arrive is the tutorial's, whom the
+// avenue's guide asks the player to invite (ResortSys_AddEntryOrRecord); the rest arrive in the table's order. The
+// tutorial's second person, whom the guide asks the player to recommend the first shop to, is the type-1 row. Each has a name, a look, a gender, a trainer ID, an
 // eight-character greeting and two messages; an owner also a shop. The texts are messages of the avenue's text bank
 // (res/text/script/global_10685.txt) that the rows name; a text that other rows share gets a message of its own when it
 // is changed, so changing one person's never changes another's. The special visitors and the Gym Leaders (the other
-// types) are left as they are.
+// types, Janus among them) are left as they are.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { documents, useDocuments } from "../../documents.ts";
@@ -31,6 +33,7 @@ const MODEL_PREFIX = "OBJ_CODE_";
 // The people's types this editor shows (include/paperwhite2/join_avenue.h, ResortSys_MakeShopEntry)
 const OWNER = 8;
 const VISITOR = 2;
+const TUTORIAL_VISITOR = 1;
 // The texts' lengths: the profile's name holds 7 characters and its greeting and messages 8 (JoinAvenueProfile)
 const NAME_LENGTH = 7;
 const MESSAGE_LENGTH = 8;
@@ -131,7 +134,7 @@ function TextField({ label, value, limit, hint, onChange }: { label: string; val
   );
 }
 
-function PersonPage({ index, rows, bank, shops, goods, constants, usedModels, onRemoved }: {
+function PersonPage({ index, rows, bank, shops, goods, constants, usedModels, order, tutorial, onRemoved, onMove }: {
   index: number;
   rows: JsonMap[];
   bank: Bank;
@@ -139,7 +142,13 @@ function PersonPage({ index, rows, bank, shops, goods, constants, usedModels, on
   goods: JsonMap[];
   constants: Constants;
   usedModels: ReadonlySet<string>;
+  /** An owner's place among the owners, from 0, and how many there are. */
+  order: { place: number; count: number } | null;
+  /** Whether this is the owner the tutorial brings in. */
+  tutorial: boolean;
   onRemoved(): void;
+  /** Moves an owner earlier (-1) or later (1) among the owners. */
+  onMove(by: number): void;
 }) {
   const [picking, setPicking] = useState(false);
   const [allFields, setAllFields] = useState(false);
@@ -177,11 +186,25 @@ function PersonPage({ index, rows, bank, shops, goods, constants, usedModels, on
         <div>
           <h2>{name || "(no name)"}</h2>
           <p className="muted ja-note">
-            {owner ? `Owner · wants ${KINDS[kind] ?? "a shop"}` : "Random visitor"} · row {index} of {PEOPLE.slice(PEOPLE.lastIndexOf("/") + 1)}
+            {owner ? `${tutorial ? "Tutorial owner" : `Owner ${order ? `${order.place + 1} of ${order.count}` : ""}`} · wants ${KINDS[kind] ?? "a shop"}`
+              : num(row, "type") === TUTORIAL_VISITOR ? "Tutorial visitor" : "Random visitor"} · row {index} of {PEOPLE.slice(PEOPLE.lastIndexOf("/") + 1)}
           </p>
         </div>
         <span className="spacer" />
-        {owner && <button onClick={remove} title="Remove this owner from the avenue's people">Remove owner</button>}
+        {owner && order && (
+          <span className="ja-actions">
+            <button onClick={() => onMove(-1)} disabled={order.place === 0} title="Arrives earlier: the first is the tutorial's">↑ Earlier</button>
+            <button onClick={() => onMove(1)} disabled={order.place === order.count - 1} title="Arrives later">↓ Later</button>
+            <button onClick={remove} title="Remove this owner from the avenue's people">Remove owner</button>
+          </span>
+        )}
+      </div>
+      <div className="muted ja-note ja-arrival">
+        {owner ? (tutorial ? "Arrives in the avenue's tutorial, as the person the guide asks you to invite; the other owners then arrive one a day, in the list's order."
+          : kind === NURSERY ? "Arrives in the list's order, one owner a day, but only once the avenue reaches rank 15 (the Nursery's unlock); until then the next one comes instead."
+            : "Arrives in the list's order, one owner a day after the tutorial's.")
+          : num(row, "type") === TUTORIAL_VISITOR ? "Arrives in the avenue's tutorial after its first shop opens, as the person the guide asks you to recommend it to."
+            : "One of the visitors who come and go each day; they can be recommended to, not invited."}
       </div>
 
       <section className="ja-box">
@@ -296,7 +319,7 @@ export function JoinAvenueEditor({ constants }: ToolProps) {
   const [filter, setFilter] = useState("");
   const { docs } = useDocuments();
 
-  const listed = useMemo(() => rows.map((r, i) => ({ index: i, type: num(r, "type"), row: r })).filter((p) => p.type === OWNER || p.type === VISITOR), [rows]);
+  const listed = useMemo(() => rows.map((r, i) => ({ index: i, type: num(r, "type"), row: r })).filter((p) => [OWNER, VISITOR, TUTORIAL_VISITOR].includes(p.type)), [rows]);
   const nameOf = (r: JsonMap) => (bank ? shown(bank.byId.get(str(r, "name") ?? "")) : "");
   const usedModels = useMemo(() => new Set(listed.map((p) => String(p.row.get("model") ?? ""))), [listed]);
   useEffect(() => {
@@ -351,11 +374,24 @@ export function JoinAvenueEditor({ constants }: ToolProps) {
   const item = (p: (typeof listed)[number]) => (
     <button key={p.index} className={`ja-item${p.index === chosen ? " selected" : ""}`} onClick={() => setChosen(p.index)}>
       <SpriteImage model={String(p.row.get("model") ?? "")} size={24} />
-      <span className="ja-item-name">{nameOf(p.row) || "(no name)"}</span>
+      <span className="ja-item-name">{nameOf(p.row) || "(no name)"}{p.index === tutorialOwner && <span className="ja-badge" title="Arrives in the tutorial">tutorial</span>}</span>
       <span className="muted ja-item-detail">{p.type === OWNER ? KINDS[shops[num(p.row, "wanted_shop")]?.kind ?? -1] ?? "" : num(p.row, "gender") ? "♀" : "♂"}</span>
     </button>
   );
   const owners = group(OWNER);
+  const tutorialVisitors = group(TUTORIAL_VISITOR);
+  // The owners in their order, unfiltered, and the tutorial's: the first but the Nursery's, which can't arrive yet
+  const ownerRows = listed.filter((p) => p.type === OWNER).map((p) => p.index);
+  const tutorialOwner = ownerRows.find((i) => shops[num(rows[i], "wanted_shop")]?.kind !== NURSERY);
+  const move = (index: number, by: number) => {
+    const place = ownerRows.indexOf(index);
+    const other = ownerRows[place + by];
+    const all = (people.data instanceof Map ? (people.data.get("rows") as JsonValue[]) : []).slice();
+    if (other === undefined) return;
+    [all[index], all[other]] = [all[other], all[index]];
+    documents.edit(PEOPLE, ["rows"], all);
+    setChosen(other);
+  };
   const visitors = group(VISITOR);
   const error = people.error ?? bankError;
 
@@ -363,7 +399,7 @@ export function JoinAvenueEditor({ constants }: ToolProps) {
     <div className="ja-editor">
       <header className="ja-header">
         <h2>Join Avenue</h2>
-        <span className="muted ja-note">One owner joins the visitors each day; only owners can be invited, and visitors only recommended to.</span>
+        <span className="muted ja-note">The first owner arrives in the tutorial, then one a day in the list's order; only owners can be invited, and visitors only recommended to.</span>
         <span className="spacer" />
         {unsaved.length > 0 && <span className="muted">{unsaved.length} unsaved</span>}
         <button onClick={() => unsaved.forEach((d) => documents.reload(d.path))} disabled={!unsaved.length}>Revert</button>
@@ -381,14 +417,17 @@ export function JoinAvenueEditor({ constants }: ToolProps) {
               </div>
               {owners.map(item)}
               {!owners.length && <p className="muted ja-note ja-pad">No owners{q ? " match" : " yet"}.</p>}
+              <div className="ja-group"><span>Tutorial visitor</span></div>
+              {tutorialVisitors.map(item)}
               <div className="ja-group"><span>Random visitors <span className="muted">{visitors.length}</span></span></div>
               {visitors.map(item)}
             </div>
           </div>
           <div className="ja-detail">
-            {chosen !== null && rows[chosen] && [OWNER, VISITOR].includes(num(rows[chosen], "type"))
+            {chosen !== null && rows[chosen] && [OWNER, VISITOR, TUTORIAL_VISITOR].includes(num(rows[chosen], "type"))
               ? <PersonPage key={chosen} index={chosen} rows={rows} bank={bank} shops={shops} goods={goods} constants={constants} usedModels={usedModels}
-                            onRemoved={() => setChosen(null)} />
+                            order={ownerRows.includes(chosen) ? { place: ownerRows.indexOf(chosen), count: ownerRows.length } : null}
+                            tutorial={chosen === tutorialOwner} onRemoved={() => setChosen(null)} onMove={(by) => move(chosen, by)} />
               : <p className="muted ja-pad">Choose someone.</p>}
           </div>
         </div>

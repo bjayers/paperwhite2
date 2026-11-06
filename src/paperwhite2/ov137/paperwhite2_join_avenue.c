@@ -106,33 +106,42 @@ static BOOL MakeRoom(ResortSys *sys) {
     return FALSE;
 }
 
-void PaperWhite2_JoinAvenue_AddOwner(ResortSys *sys, GameData *gameData, JoinAvenueSave *joinAvenue, HeapID heapId) {
+// Whether an owner can arrive now: not on the avenue yet, and the Nursery's only after its unlock
+static BOOL CanArrive(ResortSys *sys, u32 row) {
     ResortBinary *people = ResortSys_GetTexts(sys);
     ResortShopData *shops = ResortSys_GetShopData(sys);
-    BOOL nursery = JoinAvenue_GetParam(ResortSys_GetInfo(sys), JOIN_AVE_INFO_UNLOCKED_6, NULL) != 0;
+    u32 shop;
+
+    if (ResortBinary_Get(people, row, PEOPLE_COL_TYPE) != JOIN_AVENUE_OWNER_TYPE ||
+        IsOnAvenue(sys, ResortBinary_Get(people, row, PEOPLE_COL_TRAINER_ID))) {
+        return FALSE;
+    }
+    shop = ResortBinary_Get(people, row, PEOPLE_COL_WANTED_SHOP);
+    return JoinAvenue_GetParam(ResortSys_GetInfo(sys), JOIN_AVE_INFO_UNLOCKED_6, NULL) != 0 ||
+           ResortShopData_GetShopParam(ResortShopData_GetShop(shops, shop), SHOP_COL_KIND) != SHOP_KIND_NURSERY;
+}
+
+s32 PaperWhite2_JoinAvenue_GetArrivingOwnerRow(ResortSys *sys) {
+    ResortBinary *people = ResortSys_GetTexts(sys);
     u32 row;
 
     for (row = 0; row < ResortBinary_GetRowCount(people); row++) {
-        u32 shop;
-        JoinAvenueEntry *entry;
+        if (CanArrive(sys, row)) {
+            return row;
+        }
+    }
+    return -1;
+}
 
-        if (ResortBinary_Get(people, row, PEOPLE_COL_TYPE) != JOIN_AVENUE_OWNER_TYPE ||
-            IsOnAvenue(sys, ResortBinary_Get(people, row, PEOPLE_COL_TRAINER_ID))) {
-            continue;
-        }
-        shop = ResortBinary_Get(people, row, PEOPLE_COL_WANTED_SHOP);
-        if (!nursery &&
-            ResortShopData_GetShopParam(ResortShopData_GetShop(shops, shop), SHOP_COL_KIND) == SHOP_KIND_NURSERY) {
-            continue;
-        }
-        if (!MakeRoom(sys)) {
-            return;
-        }
-        entry = JoinAvenueEntry_Create(HEAPID_TAIL(heapId));
-        PaperWhite2_ResortSys_MakeEntryFromRow(sys, gameData, entry, ENTRY_KIND_DAILY, (u16)row, heapId);
-        JoinAvenue_Add(joinAvenue, gameData, entry, ADD_KIND_ENTRY);
-        JoinAvenueEntry_Free(entry);
-        // One owner a day
+void PaperWhite2_JoinAvenue_AddOwner(ResortSys *sys, GameData *gameData, JoinAvenueSave *joinAvenue, HeapID heapId) {
+    s32 row = PaperWhite2_JoinAvenue_GetArrivingOwnerRow(sys);
+    JoinAvenueEntry *entry;
+
+    if (row < 0 || !MakeRoom(sys)) {
         return;
     }
+    entry = JoinAvenueEntry_Create(HEAPID_TAIL(heapId));
+    PaperWhite2_ResortSys_MakeEntryFromRow(sys, gameData, entry, ENTRY_KIND_DAILY, (u16)row, heapId);
+    JoinAvenue_Add(joinAvenue, gameData, entry, ADD_KIND_ENTRY);
+    JoinAvenueEntry_Free(entry);
 }
