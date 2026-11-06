@@ -8,7 +8,9 @@ The user's 3DS (DSi mode, wireless off) showed only the clock, the battery and t
 started the C-Gear off when the wireless was off, a check kept while the C-Gear still networked. It now starts on
 whatever the setting, and Aspertia's C-Gear scene doesn't check it either (it showed the wireless error and never
 powered the C-Gear on). Not yet tested on the 3DS. The follower rebuild (branch `follower-rebuild`): the user's first
-tests on melonDS and the 3DS found nothing wrong.
+tests on melonDS and the 3DS found nothing wrong, so it is merged into `main` (the user's decision), and the Trainer
+sight's re-measure (`event_trainer_eye.c`, for Policeman Dell) is back to vanilla: nothing holds events any more, so the
+original's distance is right again.
 ## 2026-11-05 (branch `follower-rebuild`): stage 2, the movement and drawing tidied, and one gap
 
 The same behavior throughout; to test in one batch with stage 1 (the user's choice). Not yet tested in game.
