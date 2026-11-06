@@ -2,6 +2,14 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-06: Join Avenue, steps 1 and 2
+
+- The avenue's tables are JSON in `res/field/join_avenue/` (packed byte for byte as the original's).
+- Eight placeholder owners, one per shop kind, join the daily visitors one a day (plugins.md, Join Avenue); the
+  original's menu still lets any visitor be invited until step 3. Not yet tested in game: the avenue must be opened
+  (its intro) first.
+- Next: step 3, only the owners invited and only the others recommended to, and owners that never leave.
+
 ## 2026-11-06: the C-Gear's buttons with the console's wireless off (3DS)
 
 The user's 3DS (DSi mode, wireless off) showed only the clock, the battery and the save button: the start menu still

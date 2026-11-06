@@ -1338,6 +1338,15 @@ The redesign's research and plan: `docs/paperwhite2/design/cgear.md`. Done so fa
   the labels once (`labels/red.png` and so on) and imports them into every skin; a label's own colors are 10-12
   (1-3 are the base ring's, which follow the ring's color, and the import says so).
 
+### Join Avenue
+
+The plan and research: `docs/paperwhite2/design/join-avenue.md`. Its tables are in `res/field/join_avenue/`
+(`tools/data/join_avenue_data.py`). The user's owners are the people's table's rows of type 8; each day one who isn't
+on the avenue yet joins the visitors first (`PaperWhite2_JoinAvenue_AddOwner`, `src/paperwhite2/ov137/
+paperwhite2_join_avenue.c`, from `ResortField_AddInitialEntries`), making room by sending one visitor away when the
+list is full; the Nursery's comes after unlock 6. `PaperWhite2_ResortSys_MakeEntryFromRow` (`resort_sys.c`) makes
+an entry from a given row.
+
 ## Adding global scripts
 
 A global script file's IDs are limited by its row in `GLOBAL_SCRIPT_TABLE` (`src/ov012/script_sys.c`), e.g.

@@ -2046,6 +2046,14 @@ static void ResortRecord_Setup(ResortSys *sys, JoinAvenueRecord *record, u16 sho
     JoinAvenueEntry_Free(entry);
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: an entry from a given row of the people's table, for the avenue's owners (paperwhite2_join_avenue.c)
+void PaperWhite2_ResortSys_MakeEntryFromRow(ResortSys *sys, GameData *gameData, JoinAvenueEntry *entry, u32 shopKind,
+                                            u16 row, HeapID heapId) {
+    ResortEntry_Setup(sys, gameData, entry, shopKind, row, heapId);
+}
+#endif
+
 static void ResortEntry_SetupFromType(ResortSys *sys, JoinAvenueEntry *entry, u16 shopKind, u32 type, HeapID heapId) {
     ResortBinary *texts = ResortSys_GetTexts(sys);
     u32 row;

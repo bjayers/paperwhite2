@@ -24,6 +24,9 @@
 #include "system/resort_binary.h"
 #include "system/resort_layout.h"
 #include "system/resort_work.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/join_avenue.h"
+#endif
 
 // The gimmick of the avenue's main zone, made of the objects below, and of its other zone, which has only its people
 // and NPCs
@@ -1875,6 +1878,10 @@ static void ResortField_AddInitialEntries(ResortSys *sys, GameData *gameData, He
         } else {
             count += 5;
         }
+#ifdef PAPERWHITE2
+        // Paper White 2: an owner who hasn't opened a shop yet comes first (paperwhite2_join_avenue.c)
+        PaperWhite2_JoinAvenue_AddOwner(sys, gameData, joinAvenue, heapId);
+#endif
         added = 0;
         tries = 0;
         while (added < count) {

@@ -312,6 +312,23 @@ The original's progression stays: inviting, recommending, shop levels, the rank 
   type 2, data only); the Gym Leaders stay special visitors. Everything wireless is off.
 - **The owners' own dialogue** (the `lines` hook of section 10), and a shortened opening, which the user may rewrite.
 
-Steps: 1. the packer (done); 2. the owners' data and the daily hook; 3. the menu's rule and owners that stay;
+Verified on the way: a visitor leaves once recommended something (the visit's script removes them,
+`RemovePerson 0, 255, 0`, `global_10685.s:673`), as one invited does; the others stay from day to day.
+
+Steps: 1. the packer (done); 2. the owners' data and the daily hook (done: below); 3. the menu's rule and owners that
+stay;
 4. the editor page; 5. the opening and the wireless sources. To check in game or in the code on the way: whether
 Invite goes when the eight lots are full, how the talk's menu is built, what unlocks 1-5, 7 and 8 give.
+
+### Step 2 as built (2026-11-06)
+
+- **The owners** are rows of the people's table (`res/field/join_avenue/09_people.json`) of type 8
+  (`JOIN_AVENUE_OWNER_TYPE`), after the original's 0-7, each wanting the level-0 row of its shop (an invited person
+  keeps a level-0 shop it wants, `JoinAvenue_ChooseShop`). Eight placeholders for now, one per shop kind in variant 0,
+  trainer IDs 61001-61008, their names at the end of `global_10685.txt` (`Global10685_Text_Owner*`), the greeting and
+  messages the original's.
+- **The daily hook** (`PaperWhite2_JoinAvenue_AddOwner`, `src/paperwhite2/ov137/paperwhite2_join_avenue.c`, called
+  first in `ResortField_AddInitialEntries`): one owner a day who isn't running a shop or waiting, the Nursery's only
+  after unlock 6. A full list of entries sends one daily visitor away for it (by the avenue's draw), never an owner or
+  a special visitor. The random visitors are the original's type 2 rows, which never draw an owner.
+- Until step 3, the original's menu still lets any visitor be invited.

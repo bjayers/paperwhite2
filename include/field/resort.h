@@ -131,6 +131,11 @@ ResortSlots *ResortSlots_Create(ResortPersonData **datas, HeapID heapId);
 void ResortSlots_Free(ResortSlots *slots);
 // Places each data that is not empty in the slot of its params 0 and 1, the slot and the row (1 or 2)
 void ResortSlots_Fill(ResortSlots *slots);
+#ifdef PAPERWHITE2
+// Paper White 2: overlay 137's resort_sys.c, for the avenue's owners (paperwhite2_join_avenue.c)
+void PaperWhite2_ResortSys_MakeEntryFromRow(ResortSys *sys, GameData *gameData, JoinAvenueEntry *entry, u32 shopKind,
+                                            u16 row, HeapID heapId);
+#endif
 u16 ResortData_GetTypeOfKind(u32 kind);
 u32 ResortData_GetMakeKind(u32 kind);
 // Whether a slot of a row is empty, the data in it, and the first empty one (0xffff if none)
