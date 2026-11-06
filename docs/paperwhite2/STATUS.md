@@ -2,6 +2,11 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-06: no word filter, no warning about other players
+
+The user tested the avenue's first day: it works. The name entry no longer checks for profane words or long numbers,
+and the avenue's intro no longer warns that its words go to other players (plugins.md). Not yet tested in game.
+
 ## 2026-11-06: Join Avenue, steps 1 and 2
 
 - The avenue's tables are JSON in `res/field/join_avenue/` (packed byte for byte as the original's).

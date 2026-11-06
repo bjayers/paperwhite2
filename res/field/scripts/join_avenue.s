@@ -202,16 +202,12 @@ L_034F:
     WorkSetConst 0x8024, 0
     WorkSetConst 0x8023, 0
     MsgWinCloseAll
-    // "[f000][ff00]\u0001\u0002[f000]봂\u0000Warning![f000][ff00]\u0001\u0000[f000]븁\u0000\nThe words you are about to enter\nmay be sent to other players.[f000]븁\u0000\nPlease consider them carefully\nbefore you register them.[f000]븁\u0000"
-    SystemMsg JoinAvenue_Text_WarningWordsAboutEnter, 2
-    SystemMsgClose
+    // Paper White 2: no warning that the words go to other players: nothing goes anywhere now
     NameEntry 2, 0
     // "That's a great line![f000]븁\u0000\nThen what would you say when\nsomething truly moves your heart?[f000]븁\u0000\nYou want to choose something universal,\na phrase that anyone will understand,[f000]븀\u0000\nyou know?[f000]븁\u0000"
     ActorMsg MSGFILE_SCRIPT, JoinAvenue_Text_ThatsGreatLineThen, 0, 0, 0
     MsgWinCloseAll
-    // "[f000][ff00]\u0001\u0002[f000]봂\u0000Warning![f000][ff00]\u0001\u0000[f000]븁\u0000\nThe words you are about to enter\nmay be sent to other players.[f000]븁\u0000\nPlease consider them carefully\nbefore you register them.[f000]븁\u0000"
-    SystemMsg JoinAvenue_Text_WarningWordsAboutEnter, 2
-    SystemMsgClose
+    // Paper White 2: no warning that the words go to other players: nothing goes anywhere now
     NameEntry 3, 0
     SetWord 19, 255, 0, 0
     SetWord 20, 255, 0, 1

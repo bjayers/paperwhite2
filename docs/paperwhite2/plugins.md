@@ -1347,6 +1347,13 @@ paperwhite2_join_avenue.c`, from `ResortField_AddInitialEntries`), making room b
 list is full; the Nursery's comes after unlock 6. `PaperWhite2_ResortSys_MakeEntryFromRow` (`resort_sys.c`) makes
 an entry from a given row. The visitors' menus offer Invite only to owners, while a lot is free, and Recommend only
 to the others (`GetValue 100`, `JOIN_AVENUE_VALUE_IS_OWNER`); no one is recruited, so no owner is ever replaced.
+The intro no longer warns that the avenue's name and greeting may be sent to other players (`join_avenue.s`).
+
+### Name entry without the word filter
+
+With wireless gone nothing typed reaches anyone else, so the name entry (`src/ov280/name_input.c`) no longer refuses
+profane words or numbers of more than four digits (`ProfWord_Check`, `ProfWord_HasManyDigits`). This covers every
+name: the player's, Pokémon's, the rival's, the Join Avenue's and its greeting.
 
 ## Adding global scripts
 

@@ -3465,6 +3465,9 @@ static void NameEntryTask_Input(NameEntryTask *task, u32 *state, NameEntryWork *
                 work->messagePending = TRUE;
                 break;
             }
+            // Paper White 2: no check of profane words or of long numbers: with wireless gone, nothing typed here
+            // reaches other players
+#ifndef PAPERWHITE2
             if (!(work->param->unk2C & 2) && ProfWord_Check(work->profWord, work->box.text, HEAPID_NAME_INPUT)) {
                 GFL_SndSEPlay(SEQ_SE_BEEP);
                 break;
@@ -3476,6 +3479,7 @@ static void NameEntryTask_Input(NameEntryTask *task, u32 *state, NameEntryWork *
                 work->messagePending = TRUE;
                 break;
             }
+#endif
             GFL_SndSEPlay(SEQ_SE_DECIDE2);
             NameEntry_CheckChanged(work);
             if (work->param->mode == NAME_ENTRY_POKEMON && work->param->unkC != NULL) {
