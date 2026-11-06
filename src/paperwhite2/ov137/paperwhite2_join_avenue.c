@@ -29,6 +29,22 @@
 // The salt of the visitor sent away, apart from the original's draws
 #define SEND_AWAY_SALT 40
 
+// The people's table's columns of an owner's own lines (line_1 to line_4 in res/field/join_avenue/09_people.json), by
+// the question of the avenue's scripts (ResortSys_GetScriptValue) each answers in place of the generic line: talked to
+// while waiting (Script_9), the dream told when invited and the thanks for the invite (L_034B), and the welcome in the
+// shop (Script_3)
+static const struct {
+    u16 query;
+    u16 column;
+} sOwnLines[] = {
+    { 120, 11 },
+    { 5, 12 },
+    { 59, 13 },
+    { 80, 14 },
+};
+// The avenue's texts' empty message: a line left empty, which keeps the generic one
+#define NO_LINE 0
+
 BOOL PaperWhite2_JoinAvenue_IsOwner(ResortSys *sys, u32 trainerId) {
     ResortBinary *people = ResortSys_GetTexts(sys);
     u32 row;
@@ -40,6 +56,30 @@ BOOL PaperWhite2_JoinAvenue_IsOwner(ResortSys *sys, u32 trainerId) {
         }
     }
     return FALSE;
+}
+
+u16 PaperWhite2_JoinAvenue_GetOwnLine(ResortSys *sys, ResortPersonData *data, u32 query) {
+    ResortBinary *people = ResortSys_GetTexts(sys);
+    u32 trainerId = ResortData_GetParam(data, JOIN_AVE_PARAM_TRAINER_ID, NULL);
+    u32 column = 0;
+    u32 row;
+    u32 i;
+
+    for (i = 0; i < NELEMS(sOwnLines); i++) {
+        if (sOwnLines[i].query == query) {
+            column = sOwnLines[i].column;
+        }
+    }
+    if (column == 0) {
+        return NO_LINE;
+    }
+    for (row = 0; row < ResortBinary_GetRowCount(people); row++) {
+        if (ResortBinary_Get(people, row, PEOPLE_COL_TYPE) == JOIN_AVENUE_OWNER_TYPE &&
+            ResortBinary_Get(people, row, PEOPLE_COL_TRAINER_ID) == trainerId) {
+            return ResortBinary_Get(people, row, column);
+        }
+    }
+    return NO_LINE;
 }
 
 // Whether the owner is on the avenue already: running a shop, or waiting among the entries

@@ -350,5 +350,8 @@ Invite goes when the eight lots are full, how the talk's menu is built, what unl
   the shop they want, in place of Janus. The entry keeps the tutorial's kind (2), so table 0 still gives it
   `Script_13`, which moves the tutorial on. Flora (Flower Shop) is first; Venus (type 1) stays the tutorial's visitor.
   Step 5 is now only the wireless sources.
+- **The owners' own lines** (section 10's hook, by trainer ID): four moments, `line_1` to `line_4` (questions 120, 5,
+  59 and 80 of `ResortSys_GetScriptValue`); an empty line keeps the generic one. Question 52 is Recruit's, not the
+  invite's thanks.
 - **Step 5, the wireless sources**: one gate in `JoinAvenue_MergeExisting` turns away every source of section 4.
 - A save from before keeps the occupants it has; owners fill the free lots.

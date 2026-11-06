@@ -18,6 +18,7 @@ import { DocForm, useHeld } from "../followers/DocForm.tsx";
 import { constantLabel } from "../schema-form/form.tsx";
 import { ModelPicker, SpriteImage } from "../overworld/fields.tsx";
 import { useBank } from "../text/TextEditor.tsx";
+import { TextBox } from "../text/TextBox.tsx";
 import type { Message } from "../text/banks.ts";
 import { fromEditable, toEditable } from "../text/message.ts";
 import { useToolActive } from "../active.ts";
@@ -49,6 +50,17 @@ const TEXTS = [
   ["message_1", "Message 1"],
   ["message_2", "Message 2"],
 ] as const;
+// An owner's own lines (PaperWhite2_JoinAvenue_GetOwnLine, src/paperwhite2/ov137/paperwhite2_join_avenue.c): the
+// table's line columns each moment reads in place of the generic line, which an empty one keeps. Their name is word 0
+// in each, and the dream's line stays on screen under the invite's menu, so it ends without a pause
+const OWN_LINES = [
+  { column: "line_1", label: "Waiting", hint: "When you talk to them on the avenue, before they're invited.", start: "{0100:0}: " },
+  { column: "line_2", label: "Their dream", hint: "When you choose Invite: what they want to build. It stays on screen under the menu that asks to make them a resident, so it ends without a pause.", start: "If I could make one dream come true...{be01}\n", open: true },
+  { column: "line_3", label: "Invited", hint: "Their thanks once they're made a resident, before their shop is built.", start: "{0100:0}: " },
+  { column: "line_4", label: "In their shop", hint: "Their welcome when you talk to them in their shop, before its menu.", start: "{0100:0}: " },
+] as const;
+// The game keeps a person's look in a byte (resort_people.c), so only the first 256 object codes show
+const MODEL_LIMIT = 256;
 const MESSAGE_COLUMNS = ["name", "greeting", "message_1", "message_2", ...Array.from({ length: 12 }, (_, i) => `line_${i + 1}`)];
 
 const map = (v: JsonValue | undefined) => (v instanceof Map ? v : new Map<string, JsonValue>());
@@ -95,7 +107,18 @@ function setText(bank: Bank, rows: JsonMap[], index: number, column: string, tex
     documents.editText(BANK, lines.join("\n"));
     return;
   }
-  const id = freshId(bank, stem, column === "name" ? "" : column.split("_").map((w) => w[0].toUpperCase() + w.slice(1)).join(""));
+  // The person's own message for the field when no row names it any more (its line was given back to the usual one),
+  // else a new one
+  const own = `${PREFIX}${stem}${column === "name" ? "" : column.split("_").map((w) => w[0].toUpperCase() + w.slice(1)).join("")}`;
+  const unused = bank.byId.get(own);
+  if (unused && !rows.some((r) => MESSAGE_COLUMNS.some((c) => r.get(c) === own))) {
+    const lines = bankDoc.text.split("\n");
+    lines[unused.line - 1] = `${own} = ${value}`;
+    documents.editText(BANK, lines.join("\n"));
+    documents.edit(PEOPLE, ["rows", index, column], own);
+    return;
+  }
+  const id = freshId(bank, stem, own.slice(PREFIX.length + stem.length));
   const body = bankDoc.text.endsWith("\n") ? bankDoc.text : `${bankDoc.text}\n`;
   documents.editText(BANK, `${body}${id} = ${value}\n`);
   documents.edit(PEOPLE, ["rows", index, column], id);
@@ -155,6 +178,7 @@ function PersonPage({ index, rows, bank, shops, goods, constants, usedModels, or
   const row = rows[index];
   const owner = num(row, "type") === OWNER;
   const textOf = (column: string) => shown(bank.byId.get(str(row, column) ?? ""));
+  const isEmpty = (column: string) => { const l = str(row, column); return l === null || l === `${PREFIX}Empty` || !bank.byId.has(l); };
   const name = textOf("name");
   const stem = stemOf(row, name);
   const set = (key: string, value: JsonValue) => documents.edit(PEOPLE, ["rows", index, key], value);
@@ -228,7 +252,10 @@ function PersonPage({ index, rows, bank, shops, goods, constants, usedModels, or
               <span>{constantLabel(model, MODEL_PREFIX)}</span>
               <button onClick={() => setPicking(true)}>Browse…</button>
             </span>
-            <span className="muted ja-hint">The sprite they walk the avenue with; the original's visitors wear the Union Room's looks.</span>
+            <span className={(constants.get(model) ?? 0) >= MODEL_LIMIT ? "ja-error ja-hint" : "muted ja-hint"}>
+              {(constants.get(model) ?? 0) >= MODEL_LIMIT ? `The avenue only shows the first ${MODEL_LIMIT} looks (object codes 0 to ${MODEL_LIMIT - 1}): this one is ${constants.get(model)}, so choose another.`
+                : "The sprite they walk the avenue with; the original's visitors wear the Union Room's looks."}
+            </span>
           </span>
           <span className="ja-label">Trainer ID</span>
           <span className="ja-control">
@@ -290,6 +317,42 @@ function PersonPage({ index, rows, bank, shops, goods, constants, usedModels, or
         </div>
         <p className="muted ja-note">A text that others share becomes {name ? `${name}'s` : "their"} own once it's changed, so no one else's changes with it.</p>
       </section>
+
+      {owner && (
+        <section className="ja-box">
+          <h5>Their own lines <span className="muted">{OWN_LINES.filter((l) => !isEmpty(l.column)).length} of {OWN_LINES.length}, the rest the avenue's usual lines</span></h5>
+          <div className="ja-grid">
+            {OWN_LINES.map((l) => {
+              const message = bank.byId.get(str(row, l.column) ?? "");
+              const empty = isEmpty(l.column);
+              const raw = message?.text ?? "";
+              const paused = /\{be0[01]\}\s*$/.test(raw);
+              return (
+                <div key={l.column} className="ja-line">
+                  <span className="ja-label">{l.label}</span>
+                  <span className="ja-control">
+                    {empty ? (
+                      <button onClick={() => setText(bank, rows, index, l.column, toEditable(l.start), stem)}>Write their own</button>
+                    ) : (
+                      <>
+                        <textarea className="ja-line-text" value={toEditable(raw)} rows={Math.max(3, toEditable(raw).split("\n").length + 1)}
+                                  onChange={(e) => setText(bank, rows, index, l.column, e.target.value, stem)} spellCheck />
+                        <button onClick={() => set(l.column, `${PREFIX}Empty`)} title="Say the avenue's usual line here instead">Use the usual line</button>
+                        <span className="ja-preview"><TextBox text={raw} words={{ 0: name || "…" }} /></span>
+                      </>
+                    )}
+                    <span className={"open" in l && paused ? "ja-error ja-hint" : "muted ja-hint"}>
+                      {"open" in l && paused ? "This ends with a pause, so it would close before the menu shows: remove the last {be01}." : l.hint}
+                      {!empty && !("open" in l) && !paused && " It should end with {be01}, a pause, so it waits for A."}
+                    </span>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <p className="muted ja-note">{"{0100:0}"} is their name. {"{be01}"} waits for A and scrolls on, {"{be00}"} waits for A and starts a new box.</p>
+        </section>
+      )}
 
       <section className="ja-box">
         <h5>

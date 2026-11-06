@@ -1365,6 +1365,13 @@ No one comes by wireless or online: `JoinAvenue_MergeExisting` (`src/system/join
 Random Matchups, GTS Negotiations) and the entries of source kinds 0 and 1 (the GTS and Game Sync); the avenue's own
 (kinds 2 to 5) come as before.
 
+**The owners' own lines**: `PaperWhite2_JoinAvenue_GetOwnLine`, from the start of `ResortSys_GetScriptValue`, answers
+four of the scripts' questions with the owner's line from the people's table (`line_1` to `line_4`, keyed by trainer
+ID), where it isn't the empty message: 120, talked to while waiting (`Script_9`); 5, their dream when invited, which
+stays up under the "Make the person a resident" menu and so ends without a pause (`L_034B`); 59, their thanks once
+invited; and 80, their welcome in their shop (`Script_3`). `{0100:0}` is their name in each. The eight placeholders
+have lines of their own (`Global10685_Text_Owner*Line*`).
+
 ### Storage menu order
 
 The PCs' "Someone's PC" menu (`global_10090.s`) lists Move Pokémon, Move Items, Deposit Pokémon, Withdraw Pokémon,

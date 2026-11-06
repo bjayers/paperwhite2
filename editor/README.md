@@ -368,7 +368,9 @@ of its own when it is changed. The owners arrive in the list's order: the first 
 tutorial, marked *tutorial*, the others one a day; ↑ Earlier and ↓ Later reorder them. Venus, the tutorial's visitor,
 is listed apart. **+ Add** makes an owner with the next free ID and a shop kind no owner wants yet, and Remove owner
 drops one (their texts stay in the bank). An owner's ID must be theirs alone, since the avenue knows
-owners by ID; the original's visitors share some. Save (Ctrl+S) writes the bank, then the table.
+owners by ID; the original's visitors share some. An owner's **own lines** say what they say while waiting, when telling their dream, when invited and in their shop,
+each with its talk window preview; **Use the usual line** gives a moment back to the avenue's generic line. A look
+past the first 256 object codes is flagged: the avenue keeps looks in a byte. Save (Ctrl+S) writes the bank, then the table.
 
 ## Dragging values
 

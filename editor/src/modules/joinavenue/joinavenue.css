@@ -49,3 +49,7 @@
 .ja-badge { margin-left: 6px; padding: 0 5px; border-radius: 4px; font-size: 11px; background: var(--selected); color: var(--accent); }
 .ja-header > * { white-space: nowrap; }
 .ja-header .ja-note { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* An owner's own lines: each a label and its text, the preview under it */
+.ja-line { display: contents; }
+.ja-line-text { width: 100%; max-width: 460px; font-family: var(--mono); font-size: 13px; }
+.ja-preview { flex-basis: 100%; }

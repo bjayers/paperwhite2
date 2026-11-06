@@ -2,6 +2,13 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-06: no wireless visitors; the owners' own lines
+
+No one comes to the avenue by wireless or online any more (one gate, `JoinAvenue_MergeExisting`). Owners have lines of
+their own for four moments (waiting, their dream, thanks when invited, welcome in their shop), a first pass written for
+the eight placeholders, editable on the editor's page. The Battle Box stays (the Battle Subway uses it). Not yet tested
+in game.
+
 ## 2026-11-06: the avenue's help, the guide's tip, the PC menu
 
 The user tested the tutorial owner: it works. The guide no longer talks of the C-Gear and the Union Room, the office

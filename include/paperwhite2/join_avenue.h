@@ -25,6 +25,10 @@ void PaperWhite2_JoinAvenue_AddOwner(ResortSys *sys, GameData *gameData, JoinAve
 // the Nursery's only after its unlock): the next of the daily visitors, and the one the avenue's tutorial brings in.
 // -1 when none can
 s32 PaperWhite2_JoinAvenue_GetArrivingOwnerRow(ResortSys *sys);
+// An owner's own line, a message of the avenue's texts, for a question of its scripts (ResortSys_GetScriptValue) that
+// owners have lines of their own for: 0 for none (not an owner, another question, or a line left empty), which keeps
+// the generic line
+u16 PaperWhite2_JoinAvenue_GetOwnLine(ResortSys *sys, ResortPersonData *data, u32 query);
 // Whether a trainer ID is one of the owners'
 BOOL PaperWhite2_JoinAvenue_IsOwner(ResortSys *sys, u32 trainerId);
 

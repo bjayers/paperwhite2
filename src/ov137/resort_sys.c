@@ -292,6 +292,16 @@ u16 ResortSys_GetScriptValue(u32 query, ResortSys *sys, ResortPersonData *data, 
         shopKind = ResortData_GetParam(data, JOIN_AVE_PARAM_SHOP_KIND, NULL);
     }
 
+#ifdef PAPERWHITE2
+    // Paper White 2: an owner's own line, where the people's table gives one (paperwhite2_join_avenue.c)
+    if (data != NULL) {
+        u16 own = PaperWhite2_JoinAvenue_GetOwnLine(sys, data, query);
+
+        if (own != 0) {
+            return own;
+        }
+    }
+#endif
     switch (query) {
     case 0:
     case 1:
