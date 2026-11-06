@@ -354,7 +354,9 @@ HACK_ARCHIVE_MEMBERS = {"a/0/9/6": ("tools/paperwhite2/conditions.py", "res/pape
                         "a/1/2/6": ("tools/paperwhite2/overworld.py", "res/paperwhite2/overworld"),
                         # The zones' camera area files, read from the files' zones (paperwhite2_camera_areas.c)
                         "a/1/5/6": ("tools/data/camera_data.py", "res/field/cameras"),
-                        "a/1/2/7": ("tools/paperwhite2/encounters.py", "res/paperwhite2/encounters")}
+                        "a/1/2/7": ("tools/paperwhite2/encounters.py", "res/paperwhite2/encounters"),
+                        # The C-Gear's background pictures (CGearSw_ShowPicture)
+                        "a/2/8/7": ("tools/paperwhite2/cgear_pictures.py", "res/paperwhite2/cgear_pictures")}
 HACK_MEMBER_EXTRA_SOURCES = {"a/1/2/7": ["res/paperwhite2/conditions", "res/pokemon/*/data.json"],
                              "a/1/2/6": ["res/paperwhite2/conditions", "res/field/events"]}
 # Paper White 2: data that the hack's build makes from other data before packing it: the data directory, and the tool,

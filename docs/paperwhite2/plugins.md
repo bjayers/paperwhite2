@@ -1300,8 +1300,15 @@ The redesign's research and plan: `docs/paperwhite2/design/cgear.md`. Done so fa
   field menu's Save does, through the same event (`ACTION_SAVE`, `FIELD_APP_SAVE`), and shows in its pressed palette
   where the menu has no Save (the Union Room, the Royal Unova, a forced season sync). Saving's No changed the touch
   screen to the field menu, which it came from, so the event changes it back to the C-Gear. Help cycles the
-  background's six colors, as editing's background button does. The title strip cycles the skins, the survey and
+  background pictures (below). The title strip cycles the skins, the survey and
   the log are gone, and editing moves the markers and changes the colors.
+- **Background pictures:** what downloaded C-Gear skins were (a `.cgb` file is one: 255 tiles, a palette and a screen,
+  `CGearPictureSave`), shown on the same background layer, blended over the rings. They are indexed PNGs in
+  `res/paperwhite2/cgear_pictures/`, in `pictures.json`'s order, which `tools/paperwhite2/cgear_pictures.py` imports
+  (a `.cgb`, or any 256 by 192 PNG, reduced to 15 colors and 255 distinct tiles) and packs as members 31 on of the
+  C-Gear's archive (`a/2/8/7`, `HACK_ARCHIVE_MEMBERS`). Help shows the next of none and them
+  (`CGearSw_ShowPicture`, the count read from the archive), kept in `CGearSettings`' unused bytes (`picture`); the
+  save's own downloaded skin isn't shown. The editor's C-Gear Pictures page imports, orders and removes them.
 - **The date:** the right-hand circle shows the month and the day in the clock's digits (`ACTOR_DATE_DIGIT`, four
   actors at the clock's spacing, set by `CGearSw_UpdateClock`).
 - **No survey button or log:** their actors (`ACTOR_RADAR`, `ACTOR_LOGO` and `ACTOR_NOTICE`) are kept off the screen,

@@ -348,6 +348,15 @@ party is cards: species with its icon, level, form, difficulty, ability and gend
 them or not, held items and its own moves (else the moves of their levels). Each of the trainer's lines is edited with
 its talk window preview. Save (Ctrl+S) checks each file with the build's validator.
 
+## C-Gear Pictures
+
+The pictures shown over the C-Gear's rings, which its help button cycles in the page's order, after none
+(`res/paperwhite2/cgear_pictures/`: an indexed PNG for each and `pictures.json` for the order). Import a PNG of
+256 by 192, transparent where the C-Gear should show through, or a `.cgb` skin file: the build's own tool
+(`tools/paperwhite2/cgear_pictures.py`) converts it, keeping 15 colors and 255 distinct tiles (a tile and its flips
+count once), so a busy PNG can lose detail, and the saved PNG is what the game shows. An existing name replaces its
+picture. The arrows reorder, and Remove deletes the picture.
+
 ## Dragging values
 
 Number fields that measure something have a ⇔ grip (in the forms) or a label (in the Overworld Editor's panels) that

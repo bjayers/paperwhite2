@@ -215,6 +215,43 @@ const routes: Record<string, Handler> = {
       rmSync(dir, { recursive: true, force: true });
     }
   },
+  // The C-Gear's background pictures (res/paperwhite2/cgear_pictures/, tools/paperwhite2/cgear_pictures.py): a PNG
+  // or a .cgb skin ({ name, file, data: base64 }) converted by the build's own tool and added to the list
+  "POST /api/cgear-pictures/import": async (req, res) => {
+    const body = (await readJson(req)) as { name: string; file: string; data: string };
+    if (!/^[a-z0-9_]+$/.test(body.name ?? "")) return error(res, 400, "Name it with lowercase letters, digits and _");
+    const ext = extname(body.file ?? "").toLowerCase();
+    if (ext !== ".png" && ext !== ".cgb") return error(res, 400, "Import a .png or a .cgb file");
+    const dir = mkdtempSync(join(tmpdir(), "paperwhite-cgear-"));
+    try {
+      const path = join(dir, `picture${ext}`);
+      writeFileSync(path, Buffer.from(body.data ?? "", "base64"));
+      const run = await python.tool(CGEAR_PICTURES_TOOL, ["import", path, body.name]);
+      if (run.code !== 0) return error(res, 400, run.stderr.trim().split("\n").pop()?.replace(/^cgear_pictures\.py: /, "") || "Not imported");
+      json(res, { message: run.stdout.trim() });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  },
+  // The pictures' order ({ pictures: [names] }), which the help button cycles: the same names, rearranged
+  "PUT /api/cgear-pictures/order": async (req, res) => {
+    const body = (await readJson(req)) as { pictures: string[] };
+    const current = cgearPictures();
+    const next = body.pictures ?? [];
+    if (next.length !== current.length || [...next].sort().join() !== [...current].sort().join())
+      return error(res, 400, "The order must have the same pictures");
+    writeCgearPictures(next);
+    json(res, { pictures: next });
+  },
+  "DELETE /api/cgear-pictures": (_req, res, url) => {
+    const name = url.searchParams.get("name") ?? "";
+    const current = cgearPictures();
+    if (!current.includes(name)) return error(res, 404, "No such picture");
+    writeCgearPictures(current.filter((n) => n !== name));
+    const png = project.abs(`${CGEAR_PICTURES_DIR}/${name}.png`);
+    if (existsSync(png)) rmSync(png);
+    json(res, { pictures: current.filter((n) => n !== name) });
+  },
   "GET /api/constants": (_req, res) => json(res, python.constants()),
   // Every flag or variable with its name, status, uses and documentation (server/usage.ts); again=1 runs the tools again
   "GET /api/usage": async (_req, res, url) => {
@@ -601,6 +638,20 @@ function text(res: ServerResponse, value: string) {
 function error(res: ServerResponse, status: number, message: string) {
   res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
   res.end(JSON.stringify({ error: message }));
+}
+
+const CGEAR_PICTURES_TOOL = "tools/paperwhite2/cgear_pictures.py";
+const CGEAR_PICTURES_DIR = "res/paperwhite2/cgear_pictures";
+
+/** The C-Gear pictures' names in their order. */
+function cgearPictures(): string[] {
+  const path = project.abs(`${CGEAR_PICTURES_DIR}/pictures.json`);
+  return existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as { pictures: string[] }).pictures : [];
+}
+
+/** Writes the list as the tool does (json.dumps with an indent of 2). */
+function writeCgearPictures(names: string[]) {
+  writeFileSync(project.abs(`${CGEAR_PICTURES_DIR}/pictures.json`), JSON.stringify({ pictures: names }, null, 2) + "\n");
 }
 
 async function readJson(req: IncomingMessage): Promise<unknown> {

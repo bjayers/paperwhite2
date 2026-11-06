@@ -421,6 +421,10 @@ static void CGearSw_StateOpen(CGearSw *work);
 static void CGearSw_StateFlash(CGearSw *work);
 static void CGearSw_StateWake(CGearSw *work);
 static BOOL CGearSw_LoadSkin(CGearSw *work, GameSystem *gsys);
+#ifdef PAPERWHITE2
+static int CGearSw_GetPictureCount(CGearSw *work);
+static void CGearSw_ShowPicture(CGearSw *work, int number);
+#endif
 static void CGearSw_SleepCallback(void *data);
 static void CGearSw_WakeCallback(void *data);
 static void CGearSw_VBlankTask(TCB *tcb, void *data);
@@ -1378,12 +1382,14 @@ static void CGearSw_UpdateTouch(CGearSw *work) {
         break;
     case TOUCH_HELP:
 #ifdef PAPERWHITE2
-        // Paper White 2: the help button cycles the background's colors, as editing's background button does
+        // Paper White 2: the help button cycles the background pictures, and none
         GFL_SndSEPlay(SEQ_SE_MSCL_07);
-        work->panels[PANEL_COUNT]++;
-        work->panels[PANEL_COUNT] %= 6;
-        CGearSettings_SetPanel(work->settings, PANEL_COUNT, work->panels[PANEL_COUNT]);
-        CGearSw_LoadSkinColors(work, work->panels[PANEL_COUNT]);
+        {
+            int picture = (CGearSettings_GetPicture(work->settings) + 1) % (CGearSw_GetPictureCount(work) + 1);
+
+            CGearSettings_SetPicture(work->settings, picture);
+            CGearSw_ShowPicture(work, picture);
+        }
 #else
         work->touchAction = ACTION_HELP;
 #endif
@@ -2390,6 +2396,42 @@ static void CGearSw_StateWake(CGearSw *work) {
 }
 
 // Shows the downloaded skin, if its extra save block is the one the settings have the CRC of
+#ifdef PAPERWHITE2
+// Paper White 2: the hack's background pictures, members of the C-Gear's archive after the original's, each a
+// downloaded skin's picture (CGearPictureSave), packed from res/paperwhite2/cgear_pictures/ by
+// tools/paperwhite2/cgear_pictures.py
+#define PICTURE_FIRST_MEMBER 31
+
+static int CGearSw_GetPictureCount(CGearSw *work) {
+    return GFL_ArcToolGetDataMax(work->arc) - PICTURE_FIRST_MEMBER;
+}
+
+// Shows a picture as a downloaded skin shows, or none for 0
+static void CGearSw_ShowPicture(CGearSw *work, int number) {
+    CGearPictureSave *picture;
+
+    if (number == 0 || number > CGearSw_GetPictureCount(work) ||
+        GFL_HeapGetFreeSize(HEAPID_FIELD_MENU) < sizeof(CGearPictureSave) + 0x400) {
+        GFL_BGSysClearChar(5);
+        return;
+    }
+    picture =
+        GFL_HeapAllocate(HEAPID_TAIL(HEAPID_FIELD_MENU), sizeof(CGearPictureSave), FALSE, "c_gear_sw.c", __LINE__);
+    GFL_ArcToolRead(work->arc, PICTURE_FIRST_MEMBER + number - 1, picture);
+    GFL_BGSysLoadChar(5, picture, 0x1fe0, 0);
+    GFL_BGSysUploadStdPalette(5, &picture->chars[0x1fe0], 0x20, 13 * 0x20);
+    // The palette fade's buffer holds the screen's colors once the C-Gear runs
+    if (work->fade != NULL) {
+        PaletteFade_LoadData(work->fade, &picture->chars[0x1fe0], PALFADE_BUFFER_SUB_BG, 13 * 16, 0x20);
+    }
+    GFL_BGSysBufferScrDefault(5, picture->unk2000, sizeof(picture->unk2000));
+    GFL_BGSysSetScrPaletteNo(5, 0, 0, 32, 24, 13);
+    GFL_BGSysLoadScr(5);
+    CGearSw_SetSkinBlend(work);
+    GFL_HeapFree(picture);
+}
+#endif
+
 static BOOL CGearSw_LoadSkin(CGearSw *work, GameSystem *gsys) {
     BOOL loaded = FALSE;
     CGearPictureSave *picture = GFL_HeapAllocate(HEAPID_FIELD_MENU, 0x2800, FALSE, "c_gear_sw.c", 3980);
@@ -2469,9 +2511,14 @@ static void CGearSw_Init(CGearSw *work, CGearSettings *settings, FieldSubscreen 
     }
     CGearSw_InitBG(work);
     CGearSw_InitGraphics(work, startup);
+#ifdef PAPERWHITE2
+    // Paper White 2: the hack's background picture in place of a downloaded one
+    CGearSw_ShowPicture(work, CGearSettings_GetPicture(work->settings));
+#else
     if (CGearSettings_GetSkinValid(work->settings)) {
         CGearSw_LoadSkin(work, gsys);
     }
+#endif
     work->fade = PaletteFade_Create(HEAPID_FIELD_MENU);
     active = TRUE;
     PaletteFade_SetTransferAll(work->fade, TRUE);

@@ -1,0 +1,20 @@
+.cg-page { padding: 16px 20px; overflow: auto; height: 100%; box-sizing: border-box; }
+.cg-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+.cg-section { margin-bottom: 20px; }
+.cg-section h3 { margin: 0 0 8px; font-size: 14px; }
+.cg-import { display: grid; grid-template-columns: max-content minmax(0, 360px); gap: 8px 16px; align-items: center; }
+.cg-label { color: var(--muted, #888); }
+.cg-error { color: var(--error); }
+.cg-grid { display: flex; flex-wrap: wrap; gap: 14px; }
+.cg-card { border: 1px solid var(--border, #444); border-radius: 6px; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+.cg-title { font-size: 13px; }
+/* A checkerboard behind the picture shows where the C-Gear shows through */
+.cg-image {
+  image-rendering: pixelated;
+  background-color: #2a2f3a;
+  background-image: linear-gradient(45deg, #3a404c 25%, transparent 25%, transparent 75%, #3a404c 75%),
+    linear-gradient(45deg, #3a404c 25%, transparent 25%, transparent 75%, #3a404c 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 8px 8px;
+}
+.cg-actions { display: flex; align-items: center; gap: 6px; }

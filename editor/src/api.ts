@@ -161,6 +161,12 @@ export const api = {
   /** The address of an image under res/. */
   assetUrl: (path: string) => `/api/asset?path=${encodeURIComponent(path)}`,
   constants: () => request<Record<string, number>>("GET", "/api/constants"),
+  /** Converts a PNG or .cgb into a C-Gear picture and adds it; the tool's report. */
+  cgearPictureImport: (name: string, file: string, data: string) =>
+    request<{ message: string }>("POST", "/api/cgear-pictures/import", { name, file, data }),
+  cgearPictureOrder: (pictures: string[]) => request<{ pictures: string[] }>("PUT", "/api/cgear-pictures/order", { pictures }),
+  cgearPictureRemove: (name: string) =>
+    request<{ pictures: string[] }>("DELETE", `/api/cgear-pictures?name=${encodeURIComponent(name)}`),
   /** Every flag or variable with its name, status, uses and documentation; again runs the usage tools again. */
   usage: (kind: UsageKind, again = false) => request<Usage>("GET", `/api/usage?kind=${kind}${again ? "&again=1" : ""}`),
   save: (save: SaveRequest) => request<SaveResult>("PUT", "/api/file", save),

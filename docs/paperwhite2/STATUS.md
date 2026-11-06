@@ -18,7 +18,9 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   show dimmed with their lamp off; six more places on the rings (the middle, where the log and the survey were). Not
   yet tested in game.
 - Then power saves (the user's icon) and is dimmed where saving can't be done, help cycles the background's colors,
-  and the right-hand circle shows the date. Not yet tested in game.
+  and the right-hand circle shows the date. Tested by the user: works.
+- Then help cycles background pictures instead (C-Gear skins, `res/paperwhite2/cgear_pictures/`, the Keldeo one the
+  user found), with the editor's C-Gear Pictures page to import PNGs and .cgb files. Not yet tested in game.
 
 ## 2026-11-05: a freeze in melonDS DS with JIT literal optimisations (known issue)
 

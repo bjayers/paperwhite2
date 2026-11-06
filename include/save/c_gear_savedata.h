@@ -33,7 +33,9 @@ struct CGearSettings {
 #ifdef PAPERWHITE2
     // Paper White 2: the places of the C-Gear's fourth and fifth markers, plus one (0 for none yet)
     u8 extraColors[CGEAR_EXTRA_COLOR_MAX];
-    u8 padding11[0x25 - CGEAR_EXTRA_COLOR_MAX];
+    // Paper White 2: the background picture shown, of the hack's (0 for none)
+    u8 picture;
+    u8 padding14[0x25 - CGEAR_EXTRA_COLOR_MAX - 1];
 #else
     u8 padding0F[0x25];
 #endif
@@ -65,6 +67,10 @@ void CGearSettings_SetColor(CGearSettings *settings, s32 index, u8 color);
 u8 CGearSettings_GetColor(CGearSettings *settings, s32 index);
 void CGearSettings_SetWasOn(CGearSettings *settings, u32 value);
 u8 CGearSettings_GetWasOn(CGearSettings *settings);
+#ifdef PAPERWHITE2
+void CGearSettings_SetPicture(CGearSettings *settings, u8 picture);
+u8 CGearSettings_GetPicture(CGearSettings *settings);
+#endif
 CGearSettings *CGearSettings_GetFromSave(SaveControl *save);
 CGearSettings *CGearSettings_GetFromGameData(GameData *gameData);
 

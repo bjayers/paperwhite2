@@ -124,3 +124,14 @@ CGearSettings *CGearSettings_GetFromSave(SaveControl *save) {
 CGearSettings *CGearSettings_GetFromGameData(GameData *gameData) {
     return CGearSettings_GetFromSave(GameData_GetSaveControl(gameData));
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: the background picture, which the C-Gear's help button cycles (src/ov079/c_gear_sw.c)
+void CGearSettings_SetPicture(CGearSettings *settings, u8 picture) {
+    settings->picture = picture;
+}
+
+u8 CGearSettings_GetPicture(CGearSettings *settings) {
+    return settings->picture;
+}
+#endif

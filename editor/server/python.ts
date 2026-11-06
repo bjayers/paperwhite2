@@ -85,6 +85,18 @@ export class Python {
     });
   }
 
+  /** Runs one of the build's tools (a path under the checkout) with its arguments. */
+  tool(script: string, args: string[]): Promise<{ code: number; stdout: string; stderr: string }> {
+    return new Promise((resolve) => {
+      const child = spawn(pythonFor(this.root), ["-I", join(this.root, script), ...args],
+                          { cwd: this.root, env: { ...process.env, PAPERWHITE_ROOT: this.root } });
+      let stdout = "", stderr = "";
+      child.stdout.on("data", (c) => (stdout += c));
+      child.stderr.on("data", (c) => (stderr += c));
+      child.on("close", (code) => resolve({ code: code ?? 1, stdout, stderr }));
+    });
+  }
+
   stop() {
     this.validator?.kill();
   }
