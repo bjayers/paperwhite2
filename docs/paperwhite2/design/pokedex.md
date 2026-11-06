@@ -151,3 +151,30 @@ at run time, so the user's changes show. **Seen** and **caught** suggest what to
 - **Numbers:** the catch chance with a Poké Ball at full HP is `CheckBallCapture`'s (`btl_server_flow_sub.c:926`):
   a = rate / 3, three shake checks of (a/255)^¼ each (Tepig, 45: about 11.9%; critical captures only add). An egg
   cycle is 256 steps, halved by Flame Body or Magma Armor (`fieldmap_event.c`). Of 3,912 base stats only 8 pass 180.
+
+## The user's decisions (2026-11-06, after the research)
+
+- **The animated sprite goes on top**, as the Season app runs its 3D on top (`GX_DISP_SELECT_MAIN_SUB`). Only the
+  Info page swaps the engines; Area, Cry and Forms keep the original layout, so the shared bars move between engines
+  at a page change. Step 1 is that swap alone, with no visible change; if it causes much trouble, the fallback is the
+  still sprite on top.
+- **The 10 px font** (font 1) for the small headers ("GROUP", "CYCLES") and for the sub-page bar's L and R.
+- **"Turn"** for the front and back button; **Shiny** a button of its own, shown once a shiny has been seen; a
+  **Language** button cycling the entry's unlocked languages, as L and R do today.
+- **Stat bars** full at 180, drawn as the summary screen's EV and IV bars are, coloured by the stat: red under 50,
+  orange 50-79, yellow 80-99, green 100-129, blue from 130 (the ROM session's breakpoints, easy to change).
+- **Catch rate** as the number and the chance with a Poké Ball at full HP, e.g. "45 (11.9%)".
+- **Hidden until caught:** shown as "?", as the original does. Shown once seen: the gender split, catch rate, EV
+  yield, base Exp. and matchups; the rest once caught.
+- **Matchups** blank for now; its data may be worked out first.
+- **The art:** the ROM session builds the layout as close to the mockup as it can, then gives pixel-exact templates
+  from the result. The user draws each screen as one picture (16 colours in all, to be safe), and a tool cuts it into
+  tiles, palettes and the screen. The animated grid background stays.
+
+## Steps
+
+1. The Info page with the engines swapped, nothing else changed (the user tests it).
+2. The new Info page: top (animated sprite, number, name, category, type, height and weight, entry) and bottom
+   (sub-page bar, Stats with bars and buttons, Data, Matchups blank).
+3. Pixel-exact templates from the result, and the tool for the user's art.
+4. MOVE and EVO in place of CRY and FORMS.
