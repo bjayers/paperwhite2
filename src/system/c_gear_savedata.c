@@ -87,9 +87,21 @@ void CGearSettings_SetColor(CGearSettings *settings, s32 index, u8 color) {
     if (index < CGEAR_COLOR_MAX) {
         settings->colors[index] = color;
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the fourth and fifth markers' places
+    else if (index < CGEAR_COLOR_MAX + CGEAR_EXTRA_COLOR_MAX) {
+        settings->extraColors[index - CGEAR_COLOR_MAX] = color + 1;
+    }
+#endif
 }
 
 u8 CGearSettings_GetColor(CGearSettings *settings, s32 index) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the fourth and fifth markers' places, CGEAR_COLOR_NONE until they have one
+    if (index >= CGEAR_COLOR_MAX && index < CGEAR_COLOR_MAX + CGEAR_EXTRA_COLOR_MAX) {
+        return settings->extraColors[index - CGEAR_COLOR_MAX] - 1;
+    }
+#endif
     if (index >= CGEAR_COLOR_MAX) {
         return 0;
     }

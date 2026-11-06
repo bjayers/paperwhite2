@@ -1279,9 +1279,20 @@ The redesign's research and plan: `docs/paperwhite2/design/cgear.md`. Done so fa
   (`FieldSubscreenDisable`, used by the Royal Unova, the Battle Subway's wireless multi and the Pokémon Center's
   wireless rooms). The Royal Unova (`castelia_city_11.s`) no longer asks to turn it off. With the C-Gear on, closing
   the lid sleeps (`GSYS_SleepCheckCallback`).
-- **Buttons with nothing to start yet:** `CGearSw_UpdateTouch` ignores the three markers (outside editing), help,
-  power, the survey, the log and the title strip (which cycled the skins). Editing still moves the markers and
-  changes the colors.
+- **Five markers that open apps:** red the Pokédex, yellow the bag, blue the party, green the DexNav and purple the
+  Town Map (`sMarkerActions`). Each opens one of the field's apps as a Y shortcut does, through
+  `PaperWhite2_CGearEvent_Create` (`src/paperwhite2/ov012/paperwhite2_cgear_event.c`), which then does what the app
+  chose, as the field menu does (a field move from the party, an item's event from the bag). A marker whose app isn't
+  had yet (`PaperWhite2_CGearEvent_CanOpen`: the Pokédex, a Pokémon, the Poké Radar, the Town Map; no bag in the Black
+  Tower and White Treehollow) plays the refused sound. `MARKER_COUNT` and `LAMP_COUNT` are 5: the green and purple
+  markers are palette rows 7 and 8 of `14.pal`/`15.pal` (`sMarkerPalettes`; color 13 is the lamp), with cells 63-68
+  and animations 32-37 of `17.ncer`/`18.nanr` (`sMarkerBaseAnims`, `sMarkerEditAnims`, `sMarkerTouchAnims`), and
+  their places in two of `CGearSettings`' unused bytes (`extraColors`, the place plus one, so a save without them
+  gives them their defaults beside the others, `CGearSw_GetFreeMarkerPos`). Without communication every lamp blinks
+  slowly in its own dark color (`sIdleLampPalettes`; `13.pal` rows 11 and 12 are the new dark green and purple).
+  `tools/paperwhite2/nitro_cells.py` reads and writes the cell and animation files, adding at their ends.
+- **Buttons with nothing to start yet:** `CGearSw_UpdateTouch` ignores help, power, the survey, the log and the title
+  strip (which cycled the skins). Editing still moves the markers and changes the colors.
 - **No survey button or log:** their actors (`ACTOR_RADAR`, `ACTOR_LOGO` and `ACTOR_NOTICE`) are kept off the screen,
   since the original shows and hides them in many places, and the log's rectangle is gone from the ring screen
   (`res/graphics/c_gear/11.nscr`, rows 10-13, columns 9-22, which now hold the rings' tiles from `10.nscr`, the
@@ -1296,10 +1307,12 @@ The redesign's research and plan: `docs/paperwhite2/design/cgear.md`. Done so fa
   skins' `19-28.png`), named by what it is and its first tile, with previews of the whole cells; `import DIR` puts the
   edited ones back. Only palette indices count, and a piece keeps its size.
 - **The markers' labels:** each marker is a 32 by 32 shape, one for each skin (five for each gender), under a label
-  that is the same in all ten skin sheets. The labels are now three 32 by 16 objects (IR in tiles 0-7, the shape in
-  8-23, WIRELESS in 24-31, ONLINE in 32-39 of `19-28.png`, with `29.ncer`'s three cells to match); WIRELESS was 48
-  pixels in two objects and is cut to "WIRE" until its new art. The tool exports the labels once (`labels/`) and
-  imports them into every skin.
+  that is the same in all ten skin sheets. Each sheet of `19-28.png` is 60 tiles: the shape in 0-15, the red label
+  48 by 16 in 16-27 (a 32 by 16 and a 16 by 16 object), then the yellow, blue, green and purple labels 32 by 16 at 28,
+  36, 44 and 52, with `29.ncer`'s cells 1-5 and `30.nanr`'s animations 0-4 to match. The touch screen's sprites have
+  16 KB (`FIELDMAP_VRAM_CONFIG`) and the C-Gear uses about 14 KB, so only the red label is 48 wide. The tool exports
+  the labels once (`labels/red.png` and so on) and imports them into every skin; a label's own colors are 10-12
+  (1-3 are the base ring's, which follow the ring's color, and the import says so).
 
 ## Adding global scripts
 

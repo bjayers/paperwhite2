@@ -9,6 +9,12 @@
 #define CGEAR_PHRASE_MAX 5
 #define CGEAR_PANEL_MAX 6
 #define CGEAR_COLOR_MAX 3
+#ifdef PAPERWHITE2
+// Paper White 2: two more markers' places, in the settings' unused bytes
+#define CGEAR_EXTRA_COLOR_MAX 2
+// What CGearSettings_GetColor gives for a marker with no place yet
+#define CGEAR_COLOR_NONE 0xff
+#endif
 
 // The C-Gear's settings, in the middle of its save block (CGearSettings_GetFromSave)
 struct CGearSettings {
@@ -24,7 +30,13 @@ struct CGearSettings {
     // The CRC of the downloaded skin, and whether there is one
     u16 skinCrc;
     u8 skinValid;
+#ifdef PAPERWHITE2
+    // Paper White 2: the places of the C-Gear's fourth and fifth markers, plus one (0 for none yet)
+    u8 extraColors[CGEAR_EXTRA_COLOR_MAX];
+    u8 padding11[0x25 - CGEAR_EXTRA_COLOR_MAX];
+#else
     u8 padding0F[0x25];
+#endif
 }; // size: 0x34
 
 // Block 0x20 (swan's getCGearDataBlkAddress): the C-Gear's phrases, its settings, the shortcuts and a name

@@ -11,7 +11,10 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
 - The user tested the above in game (works). Then: no networking and no dimming, nothing turns the C-Gear off, the
   markers, help, power and the title strip start nothing, the survey button and the center log are gone, and the
   markers' labels are three 32 by 16 objects shared by every skin. Not yet tested in game.
-- Next: the user draws the labels; the buttons' actions once the user decides.
+- Then five markers: red Pokédex, yellow bag, blue party, green DexNav, purple map, each opening its app as a Y
+  shortcut does; the red label 48 by 16 for POKEDEX. The user's BAG and PARTY labels are imported. Not yet tested
+  in game.
+- Next: the user draws POKEDEX (48 by 16), DEXNAV and MAP; help, power and the skins' button are still inactive.
 
 ## 2026-11-05: a freeze in melonDS DS with JIT literal optimisations (known issue)
 

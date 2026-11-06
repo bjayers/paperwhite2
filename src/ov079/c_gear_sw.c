@@ -44,14 +44,27 @@
 #include "system/game_system.h"
 #include "system/palanm.h"
 #include "system/wipe.h"
+#ifdef PAPERWHITE2
+#include "field/app_call.h"
+#include "paperwhite2/cgear_event.h"
+#endif
 
 // The C-Gear, the field's touch screen while it is on, named after the ROM's "c_gear_sw.c" ("sw" is probably swan,
 // Black 2 and White 2's code name). Five colored panels hold its buttons, and three markers that the player can move
 // stand for infrared, wireless and online communication: touching one starts its feature, and its lamp blinks by what
 // the communication is doing. The names are ours
 
+#ifdef PAPERWHITE2
+// Paper White 2: five markers, each with its lamp: red, yellow and blue as before, then green and purple
+#define LAMP_COUNT 5
+#define MARKER_COUNT 5
+// The lamp palettes of 13.pal, the original's nine and the new markers' dark green and dark purple
+#define LAMP_PALETTE_COUNT 13
+#else
 #define LAMP_COUNT 3
 #define MARKER_COUNT 3
+#define LAMP_PALETTE_COUNT 9
+#endif
 #define TOUCH_EFFECT_COUNT 4
 #define PATTERN_COUNT 5
 // The five panels, and the background as a sixth
@@ -70,6 +83,14 @@ enum {
     ACTION_RADAR = 11,
     ACTION_HELP,
     ACTION_POWER_OFF,
+#ifdef PAPERWHITE2
+    // Paper White 2: the markers open the field's apps
+    ACTION_POKEDEX,
+    ACTION_BAG,
+    ACTION_PARTY,
+    ACTION_DEXNAV,
+    ACTION_MAP,
+#endif
 };
 
 // The touch areas: the markers, the eight of sCGearSwButtonRects, and with the editing on the six color buttons
@@ -198,7 +219,7 @@ struct CGearSw {
     u16 lampBaseColors[LAMP_COUNT];
     u16 lampColors[LAMP_COUNT];
     u16 lampTargets[LAMP_COUNT];
-    u16 lampPalettes[9][5];
+    u16 lampPalettes[LAMP_PALETTE_COUNT][5];
     u16 panelColors[PANEL_COUNT + 1][9];
     u16 skinColors[PANEL_COUNT + 1][16];
     // The marker that was touched
@@ -445,7 +466,17 @@ static const u8 sLightFractions[] = { 0, 4, 8, 10, 14, 18, 20, 22, 24, 26, 28, 3
 
 // The actors that stop animating while the screen is dark
 static const u8 sDarkActors[] = {
-    ACTOR_EDIT, ACTOR_MARKER + 1, ACTOR_MARKER + 3, ACTOR_MARKER + 5, ACTOR_NOTICE, ACTOR_RADAR,
+    ACTOR_EDIT,
+    ACTOR_MARKER + 1,
+    ACTOR_MARKER + 3,
+    ACTOR_MARKER + 5,
+    ACTOR_NOTICE,
+    ACTOR_RADAR,
+#ifdef PAPERWHITE2
+    // Paper White 2: the green and purple markers' lamps
+    ACTOR_MARKER + 7,
+    ACTOR_MARKER + 9,
+#endif
 };
 
 // clang-format off
@@ -467,7 +498,37 @@ static const TouchRect sColorButtonRects[] = {
 };
 
 // What touching each marker starts
+#ifdef PAPERWHITE2
+// Paper White 2: red, yellow, blue, green and purple
+static const u8 sMarkerActions[MARKER_COUNT] = { ACTION_POKEDEX, ACTION_BAG, ACTION_PARTY, ACTION_DEXNAV, ACTION_MAP };
+
+// The app each action opens
+static s32 CGearSw_GetActionApp(u32 action) {
+    switch (action) {
+    case ACTION_POKEDEX:
+        return FIELD_APP_POKEDEX;
+    case ACTION_BAG:
+        return FIELD_APP_BAG;
+    case ACTION_PARTY:
+        return FIELD_APP_POKELIST;
+    case ACTION_DEXNAV:
+        return FIELD_APP_DEXNAV;
+    }
+    return FIELD_APP_TOWNMAP;
+}
+
+// Each marker's animations of 18.nanr: its base, its lamp while editing and its touch, the last two markers' added
+// after the original's
+static const u8 sMarkerBaseAnims[MARKER_COUNT] = { 22, 23, 24, 32, 33 };
+static const u8 sMarkerEditAnims[MARKER_COUNT] = { 25, 26, 27, 34, 35 };
+static const u8 sMarkerTouchAnims[MARKER_COUNT] = { 28, 29, 30, 36, 37 };
+// Each marker's palette row, whose color 13 is its lamp
+static const u8 sMarkerPalettes[MARKER_COUNT] = { 2, 3, 4, 7, 8 };
+// Each lamp's palette of 13.pal while nothing is going on: a slow blink in its own color, dark
+static const u8 sIdleLampPalettes[LAMP_COUNT] = { 6, 8, 7, 11, 12 };
+#else
 static const u8 sMarkerActions[MARKER_COUNT] = { ACTION_IRC, ACTION_TVT, ACTION_GSYNC };
+#endif
 
 static void CGearSw_SetState(CGearSw *work, CGearSwStateFunc state) {
     work->state = state;
@@ -493,10 +554,18 @@ static void CGearSw_AddTouchEffect(CGearSw *work, int x, int y) {
     effect->x = x;
     effect->y = y;
     if (effect->actor != NULL) {
+#ifdef PAPERWHITE2
+        CGearSw_SetActorAnim(effect->actor, sMarkerTouchAnims[work->marker]);
+#else
         CGearSw_SetActorAnim(effect->actor, work->marker + 28);
+#endif
         CGearSw_SetActorPos(effect->actor, x, y);
     } else {
+#ifdef PAPERWHITE2
+        effect->actor = CGearSw_AddActor(work, x, y, sMarkerTouchAnims[work->marker], 2, 3, 0);
+#else
         effect->actor = CGearSw_AddActor(work, x, y, work->marker + 28, 2, 3, 0);
+#endif
         ClActor_SetVisible(effect->actor, TRUE);
         ClActor_SetDrawAnim(effect->actor, TRUE);
     }
@@ -531,7 +600,11 @@ static BOOL CGearSw_UpdateTouchEffect(CGearSw *work) {
     switch (work->effectSeq) {
     case 0:
         CGearSw_SetActorPos(work->actors[ACTOR_TOUCH], work->touchX, work->touchY);
+#ifdef PAPERWHITE2
+        CGearSw_SetActorAnim(work->actors[ACTOR_TOUCH], sMarkerTouchAnims[work->marker]);
+#else
         CGearSw_SetActorAnim(work->actors[ACTOR_TOUCH], work->marker + 28);
+#endif
         ClActor_SetVisible(work->actors[ACTOR_TOUCH], TRUE);
         work->effectSeq++;
         break;
@@ -620,6 +693,13 @@ static void CGearSw_SetLampPattern(CGearSw *work, int pattern, int lamp, BOOL in
         slow = 0;
         light = 0;
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: without communication, each lamp blinks slowly in its own dark color
+    for (i = 0; i < LAMP_COUNT; i++) {
+        CGearSw_TryLampPattern(work, i, sIdleLampPalettes[i], slow, pattern, lamp);
+    }
+    return;
+#endif
     bits = WihDwc_GetStatus(GameData_GetWifiList(work->gameData));
     intrude = Intrude_GetAlertState(comm);
     if (alert) {
@@ -840,7 +920,12 @@ static void CGearSw_SetLampColor(CGearSw *work, int lamp, int fraction, int max)
 
         work->lampColors[lamp] |= ((from + diff * fraction / max) & 0x1f) << shift;
     }
+#ifdef PAPERWHITE2
+    PaletteFade_LoadData(work->fade, &work->lampColors[lamp], PALFADE_BUFFER_SUB_OBJ, sMarkerPalettes[lamp] * 16 + 13,
+                         2);
+#else
     PaletteFade_LoadData(work->fade, &work->lampColors[lamp], PALFADE_BUFFER_SUB_OBJ, (lamp + 2) * 16 + 13, 2);
+#endif
 }
 
 static void CGearSw_ReadLampPalette(CGearSw *work, const u16 *colors, int palette) {
@@ -864,6 +949,11 @@ static void CGearSwPattern_Init(CGearSwPattern *pattern, u16 max, u16 start, u8 
     pattern->count[1] = 0;
     pattern->count[2] = start;
     pattern->count[0] = start * 2;
+#ifdef PAPERWHITE2
+    // Paper White 2: the added lamps start between the others
+    pattern->count[3] = start / 2;
+    pattern->count[4] = start * 3 / 2;
+#endif
     pattern->max = max;
     pattern->loop = loop;
     pattern->active = TRUE;
@@ -972,12 +1062,16 @@ static void CGearSw_LoadBG(CGearSw *work, int gender, int skin, BOOL palettes) {
         file = GFL_G2DIOReadNCLRArc(work->arc, gender + 14, &palette, HEAPID_TAIL(work->heapId));
         colors = palette->pRawData;
         for (i = 0; i < LAMP_COUNT; i++) {
+#ifdef PAPERWHITE2
+            work->lampBaseColors[i] = colors[sMarkerPalettes[i] * 16 + 13];
+#else
             work->lampBaseColors[i] = colors[(i + 2) * 16 + 13];
+#endif
         }
         GFL_HeapFree(file);
 
         file = GFL_G2DIOReadNCLRArc(work->arc, 13, &palette, HEAPID_TAIL(work->heapId));
-        for (i = 0; i < 9; i++) {
+        for (i = 0; i < LAMP_PALETTE_COUNT; i++) {
             CGearSw_ReadLampPalette(work, palette->pRawData, i);
         }
         GFL_HeapFree(file);
@@ -1225,10 +1319,9 @@ static void CGearSw_UpdateTouch(CGearSw *work) {
         return;
     }
 #ifdef PAPERWHITE2
-    // Paper White 2: the markers (outside editing), help, power, the survey, the log and the title strip start
-    // nothing yet. The edit button and the color buttons work
-    if ((touched < TOUCH_MARKER + MARKER_COUNT && !work->editing) || touched == TOUCH_HELP || touched == TOUCH_POWER ||
-        touched == TOUCH_RADAR || touched == TOUCH_LOG || touched == TOUCH_SKIN) {
+    // Paper White 2: help, power, the survey, the log and the title strip start nothing yet
+    if (touched == TOUCH_HELP || touched == TOUCH_POWER || touched == TOUCH_RADAR || touched == TOUCH_LOG ||
+        touched == TOUCH_SKIN) {
         return;
     }
 #endif
@@ -1237,6 +1330,10 @@ static void CGearSw_UpdateTouch(CGearSw *work) {
     case TOUCH_MARKER:
     case TOUCH_MARKER + 1:
     case TOUCH_MARKER + 2:
+#ifdef PAPERWHITE2
+    case TOUCH_MARKER + 3:
+    case TOUCH_MARKER + 4:
+#endif
         CGearSw_GetMarkerPos(work, touched, &pos);
         work->touchX = pos.x;
         work->touchY = pos.y;
@@ -1325,7 +1422,12 @@ static const CGearSwActorData sActorData[ACTOR_COUNT - ACTOR_CLOCK] = {
 #endif
     { 8, 215, 163, 1, 1, 0 }, { 10, 228, 144, 1, 1, 0 }, { 12, 35, 160, 1, 1, 0 }, { 3, 128, 96, 1, 7, 0 },
     { 16, 128, 86, 1, 7, 0 }, { 0, 68, 60, 1, 5, 1 },   { 22, 68, 60, 1, 6, 0 },  { 1, 128, 164, 1, 5, 1 },
-    { 23, 128, 164, 1, 6, 0 }, { 2, 188, 60, 1, 5, 1 },  { 24, 188, 60, 1, 6, 0 }, { 28, 68, 60, 1, 3, 0 },
+    { 23, 128, 164, 1, 6, 0 }, { 2, 188, 60, 1, 5, 1 },  { 24, 188, 60, 1, 6, 0 },
+#ifdef PAPERWHITE2
+    // Paper White 2: the green and purple markers
+    { 3, 68, 132, 1, 5, 1 },  { 32, 68, 132, 1, 6, 0 }, { 4, 188, 132, 1, 5, 1 }, { 33, 188, 132, 1, 6, 0 },
+#endif
+    { 28, 68, 60, 1, 3, 0 },
 };
 
 // clang-format on
@@ -1370,7 +1472,11 @@ static void CGearSw_SetMarkerMode(CGearSw *work, int marker, int mode) {
     case MARKER_NORMAL:
         CGearSw_SetActorAnim(work->actors[actor], marker);
         ClActor_SetVisible(work->actors[actor], TRUE);
+#ifdef PAPERWHITE2
+        CGearSw_SetActorAnim(work->actors[actor + 1], sMarkerBaseAnims[marker]);
+#else
         CGearSw_SetActorAnim(work->actors[actor + 1], marker + 22);
+#endif
         ClActor_SetPriority(work->actors[actor + 1], 6);
         ClActor_SetDrawAnim(work->actors[actor + 1], FALSE);
         ClActor_SetVisible(work->actors[actor + 1], TRUE);
@@ -1378,14 +1484,22 @@ static void CGearSw_SetMarkerMode(CGearSw *work, int marker, int mode) {
     case MARKER_EDIT:
         CGearSw_SetActorAnim(work->actors[actor], marker);
         ClActor_SetVisible(work->actors[actor], TRUE);
+#ifdef PAPERWHITE2
+        CGearSw_SetActorAnim(work->actors[actor + 1], sMarkerEditAnims[marker]);
+#else
         CGearSw_SetActorAnim(work->actors[actor + 1], marker + 25);
+#endif
         ClActor_SetPriority(work->actors[actor + 1], 6);
         ClActor_SetDrawAnim(work->actors[actor + 1], TRUE);
         ClActor_SetVisible(work->actors[actor + 1], TRUE);
         break;
     case MARKER_DRAG:
         ClActor_SetVisible(work->actors[actor], FALSE);
+#ifdef PAPERWHITE2
+        CGearSw_SetActorAnim(work->actors[actor + 1], sMarkerEditAnims[marker]);
+#else
         CGearSw_SetActorAnim(work->actors[actor + 1], marker + 25);
+#endif
         ClActor_SetPriority(work->actors[actor + 1], 0);
         ClActor_SetDrawAnim(work->actors[actor + 1], TRUE);
         ClActor_SetVisible(work->actors[actor + 1], TRUE);
@@ -1725,7 +1839,11 @@ static void CGearSw_LoadSkinColors(CGearSw *work, int color) {
 static void CGearSw_LoadMarkerColors(CGearSw *work, int marker, int color) {
     u16 *colors = work->panelColors[color];
 
+#ifdef PAPERWHITE2
+    PaletteFade_LoadData(work->fade, &colors[3], PALFADE_BUFFER_SUB_OBJ, sMarkerPalettes[marker] * 16 + 1, 6);
+#else
     PaletteFade_LoadData(work->fade, &colors[3], PALFADE_BUFFER_SUB_OBJ, marker * 16 + 0x21, 6);
+#endif
 }
 
 static void CGearSw_LoadPanelColors(CGearSw *work, u8 panel, u8 color) {
@@ -1844,11 +1962,45 @@ static void CGearSw_PlaceMarker(CGearSw *work, int marker, int pos) {
     CGearSw_LoadMarkerColors(work, marker, work->panels[data->panel]);
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: the green and purple markers' first places, below the red and the yellow
+static const u8 sDefaultMarkerPos[MARKER_COUNT] = { 12, 21, 9, 18, 15 };
+
+// A marker without a place yet takes its default, or the first place that no marker placed before it is near
+static u8 CGearSw_GetFreeMarkerPos(CGearSw *work, int marker) {
+    int pos = sDefaultMarkerPos[marker];
+    int tries;
+    int i;
+
+    for (tries = 0; tries < MARKER_POS_COUNT; tries++) {
+        for (i = 0; i < marker; i++) {
+            const CGearSwMarkerPos *other = &sMarkerPositions[work->markerPos[i]];
+
+            if (CGearSw_GetDistance(other->x, other->y, sMarkerPositions[pos].x, sMarkerPositions[pos].y) <=
+                FX32_CONST(40)) {
+                break;
+            }
+        }
+        if (i == marker) {
+            break;
+        }
+        pos = tries;
+    }
+    return pos;
+}
+#endif
+
 static void CGearSw_PlaceMarkers(CGearSw *work) {
     int i;
 
     for (i = 0; i < MARKER_COUNT; i++) {
         work->markerPos[i] = CGearSettings_GetColor(work->settings, i);
+#ifdef PAPERWHITE2
+        if (work->markerPos[i] >= MARKER_POS_COUNT) {
+            work->markerPos[i] = CGearSw_GetFreeMarkerPos(work, i);
+            CGearSettings_SetColor(work->settings, i, work->markerPos[i]);
+        }
+#endif
         CGearSw_PlaceMarker(work, i, work->markerPos[i]);
     }
 }
@@ -2345,6 +2497,23 @@ GameEvent *CGearSw_CheckEvent(CGearSw *work, BOOL enabled, FieldSubscreen *subsc
         GFL_SndSEPlay(SEQ_SE_DECIDE3);
         event = CGearSw_CreateEvent(work, work->touchAction);
         break;
+#ifdef PAPERWHITE2
+    case ACTION_POKEDEX:
+    case ACTION_BAG:
+    case ACTION_PARTY:
+    case ACTION_DEXNAV:
+    case ACTION_MAP:
+        if (PaperWhite2_CGearEvent_CanOpen(work->gsys, CGearSw_GetActionApp(work->touchAction))) {
+            GFL_SndSEPlay(SEQ_SE_DECIDE3);
+            event = CGearSw_CreateEvent(work, work->touchAction);
+        } else {
+            // Not had yet, as a refused touch of the original
+            GFL_SndSEPlay(SEQ_SE_SYS_100);
+            CGearSw_StartTouchEffect(work);
+            CGearSw_SetStateDebug(work, CGearSw_StateRefused, 4425);
+        }
+        break;
+#endif
     case ACTION_HELP:
     case ACTION_POWER_OFF:
         GFL_SndSEPlay(SEQ_SE_MSCL_07);
@@ -2548,6 +2717,13 @@ static GameEvent *CGearSw_CreateEvent(CGearSw *work, u32 action) {
     case ACTION_IRC:
     case ACTION_TVT:
     case ACTION_GSYNC:
+#ifdef PAPERWHITE2
+    case ACTION_POKEDEX:
+    case ACTION_BAG:
+    case ACTION_PARTY:
+    case ACTION_DEXNAV:
+    case ACTION_MAP:
+#endif
         work->effect = EFFECT_TOUCH;
         CGearSw_ClearUnk2b9(data->work);
         break;
@@ -2630,6 +2806,15 @@ static GameEventReturnCode CGearSw_EventMain(GameEvent *event, u32 *state, void 
     case ACTION_POWER_OFF:
         next = EventCGearShutdown_Create(work->gsys);
         break;
+#ifdef PAPERWHITE2
+    case ACTION_POKEDEX:
+    case ACTION_BAG:
+    case ACTION_PARTY:
+    case ACTION_DEXNAV:
+    case ACTION_MAP:
+        next = PaperWhite2_CGearEvent_Create(work->gsys, field, CGearSw_GetActionApp(eventData->action));
+        break;
+#endif
     }
     GameEvent_Replace(event, next);
     return 0;

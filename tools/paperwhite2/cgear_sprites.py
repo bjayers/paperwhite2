@@ -1,15 +1,16 @@
 """Exports the C-Gear's sprite pieces as PNGs to edit, and imports them back into res/graphics/c_gear.
 
 The C-Gear's sprites are tiles in sheets four tiles wide (16.png for the clock, battery, buttons and lamps, and 19-28.png
-for the five skins of each gender, which hold the IR, WIRELESS and ONLINE markers), cut up by cells (17.ncer for 16.png,
+for the five skins of each gender, which hold the five markers), cut up by cells (17.ncer for 16.png,
 29.ncer for the skins). A sheet stores each object's tiles in a row, so an object narrower than the sheet comes out
 scrambled. This tool writes each object of the cells as its own PNG, as it shows in game and in its palette row (14.pal,
 the boy's; the girl's 15.pal differs in color only), and a preview of each cell with its objects stacked. Importing
 writes the edited objects' tiles back into the sheets: only palette indices count, 0 transparent, 1-15 the row's
 colors, and an object's PNG must keep its size.
 
-The skins' markers are a 32 by 32 shape, different in each skin (`shape.png` in each skin's folder), under a 32 by 16
-label, the same in all ten (`labels/ir.png`, `wireless.png` and `online.png`, imported into every skin).
+The skins' markers are a 32 by 32 shape, different in each skin (`shape.png` in each skin's folder), under a label,
+the same in all ten (`labels/red.png`, 48 by 16, and `yellow.png`, `blue.png`, `green.png` and `purple.png`, 32 by
+16), imported into every skin. The red label is two objects, which the tool joins and splits.
 
     tools/paperwhite2/cgear_sprites.py export DIR
     tools/paperwhite2/cgear_sprites.py import DIR
@@ -41,8 +42,10 @@ MAIN_CELLS = {
     48: "clock_am", 49: "clock_am_blink", 50: "clock_pm", 51: "clock_pm_blink", 52: "log",
     53: "marker_base_ir", 54: "lamp_ir", 55: "lamp_ir", 56: "marker_base_wireless", 57: "lamp_wireless",
     58: "lamp_wireless", 59: "marker_base_online", 60: "lamp_online", 61: "lamp_online", 62: "touch",
+    63: "marker_base_green", 64: "lamp_green", 65: "lamp_green", 66: "marker_base_purple", 67: "lamp_purple",
+    68: "lamp_purple",
 }
-SKIN_CELLS = {1: "ir", 2: "wireless", 3: "online"}
+SKIN_CELLS = {1: "red", 2: "yellow", 3: "blue", 4: "green", 5: "purple"}
 
 
 def read_cells(path):
@@ -102,13 +105,6 @@ def object_tile(tile, width, x, y):
     return tile + y // 8 * (width // 8) + x // 8, x % 8, y % 8
 
 
-def piece_path(root, folder, label, width, height, tile):
-    """Returns where a piece's PNG goes: the skins' labels shared, their shapes by skin, the rest by name and tile."""
-    if folder.startswith("skin_"):
-        return root / "labels" / f"{label}.png" if height == 16 else root / folder / "shape.png"
-    return root / folder / f"{label}_t{tile:03d}_{width}x{height}.png"
-
-
 def resources():
     """Yields each sheet's folder name, sheet, cells and names of cells."""
     yield "main", GRAPHICS / "16.png", GRAPHICS / "17.ncer", MAIN_CELLS
@@ -118,17 +114,31 @@ def resources():
                    SKIN_CELLS)
 
 
-def pieces(cells, names):
-    """Returns each distinct object (label, width, height, tile, palette) of the named cells, by first use."""
-    seen = {}
+def pieces(folder, cells, names):
+    """Returns each distinct piece of the named cells, by first use: where its PNG goes (relative to the export), its
+    objects as (x in the piece, width, height, tile), its size and its palette row. A piece is one object, but for the
+    skins' labels, which are a cell's objects 16 high side by side, the same in every skin, and their shapes."""
+    seen = set()
+    found = []
     for cell, objects in enumerate(cells):
         if cell not in names:
             continue
-        for x, y, width, height, tile, palette, _, _ in objects:
-            key = (tile, width, height)
-            if key not in seen:
-                seen[key] = (names[cell], width, height, tile, palette)
-    return list(seen.values())
+        if folder.startswith("skin_"):
+            groups = [(Path("labels") / f"{names[cell]}.png", [o for o in objects if o[3] == 16])]
+            groups += [(Path(folder) / "shape.png", [o]) for o in objects if o[3] != 16]
+        else:
+            groups = [(Path(folder) / f"{names[cell]}_t{o[4]:03d}_{o[2]}x{o[3]}.png", [o]) for o in objects]
+        for path, objs in groups:
+            key = tuple((o[4], o[2], o[3]) for o in objs)
+            if not objs or key in seen:
+                continue
+            seen.add(key)
+            left = min(o[0] for o in objs)
+            width = max(o[0] + o[2] for o in objs) - left
+            height = max(o[3] for o in objs)
+            parts = [(o[0] - left, o[2], o[3], o[4]) for o in objs]
+            found.append((path, parts, width, height, objs[0][5]))
+    return found
 
 
 def export(out):
@@ -139,14 +149,14 @@ def export(out):
         target = out / folder
         (target / "preview").mkdir(parents=True, exist_ok=True)
         (out / "labels").mkdir(exist_ok=True)
-        for label, width, height, tile, palette in pieces(cells, names):
+        for path, parts, width, height, palette in pieces(folder, cells, names):
             pixels = bytearray(width * height)
-            for y in range(height):
-                for x in range(width):
-                    pixels[y * width + x] = sheet.get(*object_tile(tile, width, x, y))
+            for left, w, h, tile in parts:
+                for y in range(h):
+                    for x in range(w):
+                        pixels[y * width + left + x] = sheet.get(*object_tile(tile, w, x, y))
             row = colors[palette * 16:palette * 16 + 16]
-            piece_path(out, folder, label, width, height, tile).write_bytes(
-                write_indexed_png(width, height, bytes(pixels), row))
+            (out / path).write_bytes(write_indexed_png(width, height, bytes(pixels), row))
         for cell, objects in enumerate(cells):
             if cell not in names or not objects:
                 continue
@@ -171,21 +181,25 @@ def import_(source):
     for folder, sheet_path, cells_path, names in resources():
         sheet = Sheet(sheet_path)
         written = {}
-        for label, width, height, tile, _ in pieces(read_cells(cells_path), names):
-            path = piece_path(source, folder, label, width, height, tile)
+        for path, parts, width, height, _ in pieces(folder, read_cells(cells_path), names):
+            path = source / path
             if not path.exists():
                 continue
             w, h, pixels, _ = read_indexed_png(path)
             if (w, h) != (width, height):
                 sys.exit(f"{path}: is {w}x{h}, must stay {width}x{height}")
-            for y in range(height):
-                for x in range(width):
-                    place = object_tile(tile, width, x, y)
-                    value = pixels[y * width + x] & 15
-                    if written.get(place, value) != value:
-                        sys.exit(f"{path}: tile {place[0]} is shared with another piece and they differ")
-                    written[place] = value
-                    sheet.set(*place, value)
+            # A marker's colors 1-3 are its base ring's, which the C-Gear recolors by the ring the marker is on
+            if path.parent.name == "labels" and folder == "skin_boy_1" and any(v & 15 in (1, 2, 3) for v in pixels):
+                print(f"Note: {path.name} uses colors 1-3, which follow the ring's color; the label's own are 10-12")
+            for left, pw, ph, tile in parts:
+                for y in range(ph):
+                    for x in range(pw):
+                        place = object_tile(tile, pw, x, y)
+                        value = pixels[y * width + left + x] & 15
+                        if written.get(place, value) != value:
+                            sys.exit(f"{path}: tile {place[0]} is shared with another piece and they differ")
+                        written[place] = value
+                        sheet.set(*place, value)
         if sheet.save():
             print(f"Updated {sheet_path.relative_to(ROOT)}")
 
