@@ -1,5 +1,13 @@
 {
     "$schema": "notes.schema.json",
-    "flags": {},
-    "vars": {}
+    "flags": {
+        "1051": "Keldeo Spawn Flag",
+        "2799": "Wurmple Fed Today",
+        "2800": "Pokemon Center Daily Raffle"
+    },
+    "vars": {
+        "0x401f": "TODO: remove old night var script",
+        "0x402f": "Raising Wurmple on Route 20",
+        "0x4031": "Wurmple Affection NOT UNUSED\nTODO: use different variable for Wurmple Affection!"
+    }
 }
