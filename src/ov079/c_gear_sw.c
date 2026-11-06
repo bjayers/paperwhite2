@@ -1224,6 +1224,14 @@ static void CGearSw_UpdateTouch(CGearSw *work) {
     if (touched == TOUCH_RECT_NONE) {
         return;
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the markers (outside editing), help, power, the survey, the log and the title strip start
+    // nothing yet. The edit button and the color buttons work
+    if ((touched < TOUCH_MARKER + MARKER_COUNT && !work->editing) || touched == TOUCH_HELP || touched == TOUCH_POWER ||
+        touched == TOUCH_RADAR || touched == TOUCH_LOG || touched == TOUCH_SKIN) {
+        return;
+    }
+#endif
     GCTX_HIDSetUsingTouch(TRUE);
     switch (touched) {
     case TOUCH_MARKER:
@@ -1439,6 +1447,11 @@ static void CGearSw_AddActors(CGearSw *work) {
     // Paper White 2: the clock's frame without the colon is the bare circle
     ClActor_SetAutoAnim(work->actors[ACTOR_RIGHT_CIRCLE], FALSE);
     ClActor_SetAnimFrame(work->actors[ACTOR_RIGHT_CIRCLE], 1);
+    // Paper White 2: no survey button and no log in the middle. They are kept off the screen rather than hidden,
+    // since the original shows and hides them in many places
+    CGearSw_SetActorPos(work->actors[ACTOR_RADAR], -128, 160);
+    CGearSw_SetActorPos(work->actors[ACTOR_LOGO], -128, 96);
+    CGearSw_SetActorPos(work->actors[ACTOR_NOTICE], -128, 86);
 #endif
     if (OS_IsRunOnTwl()) {
         CGearSw_SetActorAnim(work->actors[ACTOR_BATTERY], 4);
@@ -2426,11 +2439,14 @@ static void CGearSw_SetEventDark(CGearSw *work) {
 }
 
 static void CGearSw_SetCommDark(CGearSw *work) {
+#ifndef PAPERWHITE2
+    // Paper White 2: no dimming for the missing connection
     if (!work->commDark) {
         work->commDark = TRUE;
         work->darkChanged = TRUE;
         work->darkWait = 0;
     }
+#endif
 }
 
 static void CGearSw_ClearCommDark(CGearSw *work) {

@@ -8,8 +8,10 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
 - The battery is under the clock's digits; the right-hand circle stays, empty but for the DS's wireless icon.
 - `tools/paperwhite2/cgear_sprites.py` exports the C-Gear's sprites as editable pieces and imports them; the user
   has an export in their workspace (`Pokemon Paper White/C-Gear sprites`) to work on icons.
-- Next: the always-on step (no networking, no dimming, the sweep), then the buttons' actions once the user decides.
-  Not yet tested in game.
+- The user tested the above in game (works). Then: no networking and no dimming, nothing turns the C-Gear off, the
+  markers, help, power and the title strip start nothing, the survey button and the center log are gone, and the
+  markers' labels are three 32 by 16 objects shared by every skin. Not yet tested in game.
+- Next: the user draws the labels; the buttons' actions once the user decides.
 
 ## 2026-11-05: a freeze in melonDS DS with JIT literal optimisations (known issue)
 

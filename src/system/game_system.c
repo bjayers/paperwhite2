@@ -405,6 +405,10 @@ void GSYS_SetCGearOn(GameSystem *gsys, u32 value) {
 }
 
 static BOOL GSYS_CanBootGameComm(GameSystem *gsys) {
+#ifdef PAPERWHITE2
+    // Paper White 2: no wireless; the C-Gear works while on without the beacon search or the Entralink's connection
+    return FALSE;
+#else
     GameCommSys *comm = GSYS_GetGameCommSystem(gsys);
     u16 zoneId = PlayerState_GetZoneID(GSYS_GetPlayerState(gsys));
 
@@ -415,6 +419,7 @@ static BOOL GSYS_CanBootGameComm(GameSystem *gsys) {
         return TRUE;
     }
     return FALSE;
+#endif
 }
 
 BOOL GSYS_TryBootGameComm(GameSystem *gsys) {
@@ -439,6 +444,10 @@ void GSYS_ClearLowBatteryCGearOff(GameSystem *gsys) {
 static void GSYS_UICallback(void *work) {
     GameSystem *gsys = work;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: the C-Gear uses no wireless, so a low battery leaves it on
+    return;
+#endif
     if (GSYS_IsCGearOn(gsys)) {
         GSYS_SetCGearOn(gsys, FALSE);
         GameData_SetCGearPowerRequest(GSYS_GetGameData(gsys), 0);
@@ -467,9 +476,12 @@ static BOOL GSYS_SleepCheckCallback(void *work) {
     if (GetIsShouldUICallback()) {
         return FALSE;
     }
+#ifndef PAPERWHITE2
+    // Paper White 2: the C-Gear has no beacons to keep up, so closing the lid sleeps while it is on
     if (GSYS_IsCGearOn(gsys)) {
         return TRUE;
     }
+#endif
     return FALSE;
 }
 

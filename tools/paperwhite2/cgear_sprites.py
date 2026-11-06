@@ -8,6 +8,9 @@ the boy's; the girl's 15.pal differs in color only), and a preview of each cell 
 writes the edited objects' tiles back into the sheets: only palette indices count, 0 transparent, 1-15 the row's
 colors, and an object's PNG must keep its size.
 
+The skins' markers are a 32 by 32 shape, different in each skin (`shape.png` in each skin's folder), under a 32 by 16
+label, the same in all ten (`labels/ir.png`, `wireless.png` and `online.png`, imported into every skin).
+
     tools/paperwhite2/cgear_sprites.py export DIR
     tools/paperwhite2/cgear_sprites.py import DIR
 """
@@ -39,7 +42,7 @@ MAIN_CELLS = {
     53: "marker_base_ir", 54: "lamp_ir", 55: "lamp_ir", 56: "marker_base_wireless", 57: "lamp_wireless",
     58: "lamp_wireless", 59: "marker_base_online", 60: "lamp_online", 61: "lamp_online", 62: "touch",
 }
-SKIN_CELLS = {1: "marker_ir", 2: "marker_wireless", 3: "marker_online"}
+SKIN_CELLS = {1: "ir", 2: "wireless", 3: "online"}
 
 
 def read_cells(path):
@@ -99,8 +102,11 @@ def object_tile(tile, width, x, y):
     return tile + y // 8 * (width // 8) + x // 8, x % 8, y % 8
 
 
-def object_name(label, width, height, tile):
-    return f"{label}_t{tile:03d}_{width}x{height}.png"
+def piece_path(root, folder, label, width, height, tile):
+    """Returns where a piece's PNG goes: the skins' labels shared, their shapes by skin, the rest by name and tile."""
+    if folder.startswith("skin_"):
+        return root / "labels" / f"{label}.png" if height == 16 else root / folder / "shape.png"
+    return root / folder / f"{label}_t{tile:03d}_{width}x{height}.png"
 
 
 def resources():
@@ -132,13 +138,14 @@ def export(out):
         cells = read_cells(cells_path)
         target = out / folder
         (target / "preview").mkdir(parents=True, exist_ok=True)
+        (out / "labels").mkdir(exist_ok=True)
         for label, width, height, tile, palette in pieces(cells, names):
             pixels = bytearray(width * height)
             for y in range(height):
                 for x in range(width):
                     pixels[y * width + x] = sheet.get(*object_tile(tile, width, x, y))
             row = colors[palette * 16:palette * 16 + 16]
-            (target / object_name(label, width, height, tile)).write_bytes(
+            piece_path(out, folder, label, width, height, tile).write_bytes(
                 write_indexed_png(width, height, bytes(pixels), row))
         for cell, objects in enumerate(cells):
             if cell not in names or not objects:
@@ -165,7 +172,7 @@ def import_(source):
         sheet = Sheet(sheet_path)
         written = {}
         for label, width, height, tile, _ in pieces(read_cells(cells_path), names):
-            path = source / folder / object_name(label, width, height, tile)
+            path = piece_path(source, folder, label, width, height, tile)
             if not path.exists():
                 continue
             w, h, pixels, _ = read_indexed_png(path)

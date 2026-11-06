@@ -1271,8 +1271,21 @@ docs/paperwhite2/design/dexnav.md ("As built").
 The redesign's research and plan: `docs/paperwhite2/design/cgear.md`. Done so far:
 
 - **No question on Continue:** `StartMenu_Continue` (`src/ov162/startmenu.c`) starts the C-Gear as Yes did whenever
-  the save has it on, without asking. A DSi with its wireless off starts it off, as before, without the notice. Until
-  the networking is turned off (the plan's always-on step), "on" still starts the beacon search as Yes did.
+  the save has it on, without asking. A DSi with its wireless off starts it off, as before, without the notice.
+- **No networking, always lit:** `GSYS_CanBootGameComm` (`src/system/game_system.c`) is always FALSE, so "on" never
+  starts the beacon search or the Entralink's connection, and `CGearSw_SetCommDark` does nothing, so the C-Gear
+  doesn't dim for the missing connection (it still dims while an event runs, as the original does). Nothing turns it
+  off any more: not a low battery (`GSYS_UICallback`), the ending (`event_game_clear.c`), nor scripts
+  (`FieldSubscreenDisable`, used by the Royal Unova, the Battle Subway's wireless multi and the Pokémon Center's
+  wireless rooms). The Royal Unova (`castelia_city_11.s`) no longer asks to turn it off. With the C-Gear on, closing
+  the lid sleeps (`GSYS_SleepCheckCallback`).
+- **Buttons with nothing to start yet:** `CGearSw_UpdateTouch` ignores the three markers (outside editing), help,
+  power, the survey, the log and the title strip (which cycled the skins). Editing still moves the markers and
+  changes the colors.
+- **No survey button or log:** their actors (`ACTOR_RADAR`, `ACTOR_LOGO` and `ACTOR_NOTICE`) are kept off the screen,
+  since the original shows and hides them in many places, and the log's rectangle is gone from the ring screen
+  (`res/graphics/c_gear/11.nscr`, rows 10-13, columns 9-22, which now hold the rings' tiles from `10.nscr`, the
+  off screen, in the on screen's palette).
 - **The battery under the clock:** the battery actor is at the clock's (48, 22), in front of it, and its icon shows in
   the clock circle's empty 16 by 8 slot under the digits (the US clock has no AM/PM there). Its cells (31-37 of
   `res/graphics/c_gear/17.ncer`, used by nothing else) keep only the icon: their second object, the circle, is cut
@@ -1281,8 +1294,12 @@ The redesign's research and plan: `docs/paperwhite2/design/cgear.md`. Done so fa
 - **Sprite art:** `tools/paperwhite2/cgear_sprites.py export DIR` writes each object of the C-Gear's cells as its own
   PNG, as it shows (the sheets store an object's tiles in a row, so small ones are scrambled in `16.png` and the
   skins' `19-28.png`), named by what it is and its first tile, with previews of the whole cells; `import DIR` puts the
-  edited ones back. Only palette indices count, and a piece keeps its size. The markers' IR, WIRELESS and ONLINE art
-  is in each skin's sheet (five shapes for each gender), so a new marker icon is ten edits.
+  edited ones back. Only palette indices count, and a piece keeps its size.
+- **The markers' labels:** each marker is a 32 by 32 shape, one for each skin (five for each gender), under a label
+  that is the same in all ten skin sheets. The labels are now three 32 by 16 objects (IR in tiles 0-7, the shape in
+  8-23, WIRELESS in 24-31, ONLINE in 32-39 of `19-28.png`, with `29.ncer`'s three cells to match); WIRELESS was 48
+  pixels in two objects and is cut to "WIRE" until its new art. The tool exports the labels once (`labels/`) and
+  imports them into every skin.
 
 ## Adding global scripts
 

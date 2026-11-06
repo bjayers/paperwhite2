@@ -117,7 +117,10 @@ GameEventReturnCode EventGameClear_Callback(GameEvent *event, u32 *state, void *
         break;
     case 14:
         GSYS_QueueProcAsEvent(event, OVERLAY_THE_END, &THE_END_PROC_FUNCTIONS, &work->ov267Param);
+#ifndef PAPERWHITE2
+        // Paper White 2: the C-Gear stays on through the ending, since it has no power button to turn it on again
         GSYS_SetCGearOn(gsys, 0);
+#endif
         EventGameClear_NextState(work, state);
         break;
     case 15:

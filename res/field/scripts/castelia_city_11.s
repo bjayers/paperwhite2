@@ -200,12 +200,8 @@ L_02E3:
     VMStackPushConst 1
     VMStackCmp CMP_EQ
     VMJumpIf CMP_STACK, L_0372
-    WorkSetConst 0x8025, 0
-    FieldSubscreenIsEnabled 0x8025
-    VMStackPush 0x8025
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_0366
+    // Paper White 2: the C-Gear stays on, so the ferry doesn't ask to turn it off
+    VMJump L_0366
     // "The power of the C-Gear will be turned\noff. Is that OK?"
     ActorMsg MSGFILE_SCRIPT, CasteliaCity11_Text_PowerCGearWill, 0, 2, 0
     YesNoWin 0x8010

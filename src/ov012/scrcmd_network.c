@@ -118,8 +118,11 @@ BOOL Scrcmd_Network_FieldSubscreenIsEnabled(VM *vm, FieldScriptEnv *env) {
 }
 
 BOOL Scrcmd_Network_FieldSubscreenDisable(VM *vm, FieldScriptEnv *env) {
+#ifndef PAPERWHITE2
+    // Paper White 2: scripts no longer turn the C-Gear off (it has no wireless to stop, nor a power button)
     GameSystem *gsys = FieldScriptEnv_GetGameSystem(env);
     GSYS_SetCGearOn(gsys, 0);
     GameData_SetCGearPowerRequest(GSYS_GetGameData(gsys), 0);
+#endif
     return FALSE;
 }
