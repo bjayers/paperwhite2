@@ -14,7 +14,10 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
 - Then five markers: red Pokédex, yellow bag, blue party, green DexNav, purple map, each opening its app as a Y
   shortcut does; the red label 48 by 16 for POKEDEX. The user's BAG and PARTY labels are imported. Not yet tested
   in game.
-- Next: the user draws POKEDEX (48 by 16), DEXNAV and MAP; help, power and the skins' button are still inactive.
+- Then the user's POKEDEX, DEXNAV and MAP labels; the title strip cycles the skins again; markers that can't be used
+  show dimmed with their lamp off; six more places on the rings (the middle, where the log and the survey were). Not
+  yet tested in game.
+- Next: help and power are still inactive.
 
 ## 2026-11-05: a freeze in melonDS DS with JIT literal optimisations (known issue)
 

@@ -1291,8 +1291,13 @@ The redesign's research and plan: `docs/paperwhite2/design/cgear.md`. Done so fa
   gives them their defaults beside the others, `CGearSw_GetFreeMarkerPos`). Without communication every lamp blinks
   slowly in its own dark color (`sIdleLampPalettes`; `13.pal` rows 11 and 12 are the new dark green and purple).
   `tools/paperwhite2/nitro_cells.py` reads and writes the cell and animation files, adding at their ends.
-- **Buttons with nothing to start yet:** `CGearSw_UpdateTouch` ignores help, power, the survey, the log and the title
-  strip (which cycled the skins). Editing still moves the markers and changes the colors.
+- **Markers that can't be used look it:** every 30 frames (`CGearSw_UpdateUsable`) a marker whose app can't be opened
+  now shows its label's light and middle colors one step darker (10 and 11 take 11 and 12's), and its lamp stays
+  unlit; the colors come back once it can. Not while the screen darkens for an event, whose palettes it would light.
+- **More places:** `MARKER_POS_COUNT` is 48: after the original 42, the middle (128, 96), the two inner rings at its
+  sides, where the log's rectangle was, and the outer ring at the bottom left, where the survey button was.
+- **Buttons with nothing to start yet:** `CGearSw_UpdateTouch` ignores help, power, the survey and the log. The title
+  strip cycles the skins again, and editing moves the markers and changes the colors.
 - **No survey button or log:** their actors (`ACTOR_RADAR`, `ACTOR_LOGO` and `ACTOR_NOTICE`) are kept off the screen,
   since the original shows and hides them in many places, and the log's rectangle is gone from the ring screen
   (`res/graphics/c_gear/11.nscr`, rows 10-13, columns 9-22, which now hold the rings' tiles from `10.nscr`, the

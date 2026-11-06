@@ -70,7 +70,12 @@
 // The five panels, and the background as a sixth
 #define PANEL_COUNT 5
 #define SKIN_COUNT 5
+#ifdef PAPERWHITE2
+// Paper White 2: six more places, where the log and the survey button were, after the original's
+#define MARKER_POS_COUNT 48
+#else
 #define MARKER_POS_COUNT 42
+#endif
 #define BEACON_COUNT 10
 
 // What the player touched, which CGearSw_CheckEvent makes an event of
@@ -245,6 +250,13 @@ struct CGearSw {
     u8 dragging;
     u8 skin;
     u8 markerPos[MARKER_COUNT];
+#ifdef PAPERWHITE2
+    // Paper White 2: each marker's label colors (10-12 of its palette), and whether its app can be opened now, which
+    // CGearSw_UpdateUsable checks every USABLE_CHECK_FRAMES frames
+    u16 labelColors[MARKER_COUNT][3];
+    u8 markerUsable[MARKER_COUNT];
+    u8 usableWait;
+#endif
     u8 panels[PANEL_COUNT + 1];
     u8 gender;
     // Whether the game shows other players' beacons
@@ -911,6 +923,12 @@ static void CGearSw_LightLamp(CGearSw *work, int lamp, CGearSwPattern *pattern) 
 static void CGearSw_SetLampColor(CGearSw *work, int lamp, int fraction, int max) {
     int i;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: the lamp of a marker that can't be used stays unlit
+    if (!work->markerUsable[lamp]) {
+        fraction = 0;
+    }
+#endif
     work->lampColors[lamp] = 0;
     for (i = 0; i < 3; i++) {
         int shift = i * 5;
@@ -1064,6 +1082,7 @@ static void CGearSw_LoadBG(CGearSw *work, int gender, int skin, BOOL palettes) {
         for (i = 0; i < LAMP_COUNT; i++) {
 #ifdef PAPERWHITE2
             work->lampBaseColors[i] = colors[sMarkerPalettes[i] * 16 + 13];
+            MI_CpuCopy16(&colors[sMarkerPalettes[i] * 16 + 10], work->labelColors[i], sizeof(work->labelColors[i]));
 #else
             work->lampBaseColors[i] = colors[(i + 2) * 16 + 13];
 #endif
@@ -1319,9 +1338,8 @@ static void CGearSw_UpdateTouch(CGearSw *work) {
         return;
     }
 #ifdef PAPERWHITE2
-    // Paper White 2: help, power, the survey, the log and the title strip start nothing yet
-    if (touched == TOUCH_HELP || touched == TOUCH_POWER || touched == TOUCH_RADAR || touched == TOUCH_LOG ||
-        touched == TOUCH_SKIN) {
+    // Paper White 2: help, power, the survey and the log start nothing yet
+    if (touched == TOUCH_HELP || touched == TOUCH_POWER || touched == TOUCH_RADAR || touched == TOUCH_LOG) {
         return;
     }
 #endif
@@ -1433,13 +1451,57 @@ static const CGearSwActorData sActorData[ACTOR_COUNT - ACTOR_CLOCK] = {
 // clang-format on
 
 static const CGearSwMarkerPos sMarkerPositions[MARKER_POS_COUNT] = {
-    { 16, 96, 4 },   { 40, 96, 3 },   { 60, 96, 2 },   { 196, 96, 2 },  { 216, 96, 3 },  { 240, 96, 4 },
-    { 128, 64, 0 },  { 128, 128, 0 }, { 128, 144, 1 }, { 128, 164, 2 }, { 128, 184, 3 }, { 52, 52, 3 },
-    { 68, 60, 2 },   { 88, 72, 1 },   { 168, 120, 1 }, { 188, 132, 2 }, { 204, 140, 3 }, { 52, 140, 3 },
-    { 68, 132, 2 },  { 88, 120, 1 },  { 168, 72, 1 },  { 188, 60, 2 },  { 204, 52, 3 },  { 84, 20, 3 },
-    { 96, 36, 2 },   { 104, 56, 1 },  { 112, 68, 0 },  { 144, 124, 0 }, { 152, 136, 1 }, { 160, 156, 2 },
-    { 172, 172, 3 }, { 84, 172, 3 },  { 96, 156, 2 },  { 104, 136, 1 }, { 112, 124, 0 }, { 144, 68, 0 },
-    { 152, 56, 1 },  { 160, 36, 2 },  { 172, 20, 3 },  { 128, 48, 1 },  { 32, 40, 4 },   { 224, 40, 4 },
+    { 16, 96, 4 },
+    { 40, 96, 3 },
+    { 60, 96, 2 },
+    { 196, 96, 2 },
+    { 216, 96, 3 },
+    { 240, 96, 4 },
+    { 128, 64, 0 },
+    { 128, 128, 0 },
+    { 128, 144, 1 },
+    { 128, 164, 2 },
+    { 128, 184, 3 },
+    { 52, 52, 3 },
+    { 68, 60, 2 },
+    { 88, 72, 1 },
+    { 168, 120, 1 },
+    { 188, 132, 2 },
+    { 204, 140, 3 },
+    { 52, 140, 3 },
+    { 68, 132, 2 },
+    { 88, 120, 1 },
+    { 168, 72, 1 },
+    { 188, 60, 2 },
+    { 204, 52, 3 },
+    { 84, 20, 3 },
+    { 96, 36, 2 },
+    { 104, 56, 1 },
+    { 112, 68, 0 },
+    { 144, 124, 0 },
+    { 152, 136, 1 },
+    { 160, 156, 2 },
+    { 172, 172, 3 },
+    { 84, 172, 3 },
+    { 96, 156, 2 },
+    { 104, 136, 1 },
+    { 112, 124, 0 },
+    { 144, 68, 0 },
+    { 152, 56, 1 },
+    { 160, 36, 2 },
+    { 172, 20, 3 },
+    { 128, 48, 1 },
+    { 32, 40, 4 },
+    { 224, 40, 4 },
+#ifdef PAPERWHITE2
+    // Paper White 2: the middle, the two inner rings at its sides, and the outer ring at the bottom left
+    { 128, 96, 0 },
+    { 96, 96, 0 },
+    { 160, 96, 0 },
+    { 80, 96, 1 },
+    { 176, 96, 1 },
+    { 32, 152, 4 },
+#endif
 };
 
 static const ClActSurfaceSetup sSurfaceSetup = { 0, 0, 256, 192, 1, 2 };
@@ -2191,7 +2253,36 @@ static void CGearSw_UpdateClock(CGearSw *work) {
     }
 }
 
+#ifdef PAPERWHITE2
+#define USABLE_CHECK_FRAMES 30
+
+// Paper White 2: a marker whose app can't be opened now (not had yet, or not here) shows dimmed, its label's light and
+// middle colors one step darker and its lamp unlit
+static void CGearSw_UpdateUsable(CGearSw *work, BOOL force) {
+    int i;
+
+    // Not while the screen darkens, whose palettes this would light
+    if (!force && (++work->usableWait < USABLE_CHECK_FRAMES || CGearSw_IsDarkOrChanging(work))) {
+        return;
+    }
+    work->usableWait = 0;
+    for (i = 0; i < MARKER_COUNT; i++) {
+        BOOL usable = PaperWhite2_CGearEvent_CanOpen(work->gsys, CGearSw_GetActionApp(sMarkerActions[i])) != FALSE;
+
+        if (force || usable != work->markerUsable[i]) {
+            work->markerUsable[i] = usable;
+            PaletteFade_LoadData(work->fade, &work->labelColors[i][usable ? 0 : 1], PALFADE_BUFFER_SUB_OBJ,
+                                 sMarkerPalettes[i] * 16 + 10, 4);
+            CGearSw_SetLampColor(work, i, 0, 31);
+        }
+    }
+}
+#endif
+
 static void CGearSw_UpdateMain(CGearSw *work) {
+#ifdef PAPERWHITE2
+    CGearSw_UpdateUsable(work, FALSE);
+#endif
     CGearSw_UpdateTouch(work);
     CGearSw_UpdateDark(work);
     CGearSw_UpdateAlert(work);
@@ -2337,6 +2428,9 @@ static void CGearSw_Init(CGearSw *work, CGearSettings *settings, FieldSubscreen 
     PaletteFade_LoadFromVRAM(work->fade, PALFADE_VRAM_SUB_BG, 0, 0x1c0);
     CGearSw_PlaceMarkers(work);
     CGearSw_LoadColors(work);
+#ifdef PAPERWHITE2
+    CGearSw_UpdateUsable(work, TRUE);
+#endif
     PaletteFade_Transfer(work->fade);
     work->vblankTcb = GFL_VBlankTCBAdd(CGearSw_VBlankTask, work, 1);
     GCTX_HIDSetSleepCallback(CGearSw_SleepCallback, work);
