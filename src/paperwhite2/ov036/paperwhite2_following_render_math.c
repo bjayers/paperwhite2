@@ -5,6 +5,7 @@
 #include "nitro/fx.h"
 #include "nitro/mi.h"
 #include "paperwhite2/following.h"
+#include "paperwhite2/following_math.h"
 #include "paperwhite2/following_render_math.h"
 
 // Paper White 2: the depth corrections of the Following Pokémon's billboards, ported from Pokeweb's render_math.c
@@ -15,48 +16,19 @@
 // The strong margin is larger than the ordinary one (FOLLOWING_RENDER_SORT_STRONG > FOLLOWING_RENDER_SORT_BEHIND) and
 // fits in the tile they are capped at (FOLLOWING_RENDER_SORT_STRONG <= FOLLOWING_TILE)
 
-// value / divisor, by a 64-bit long division a bit at a time, the quotient saturating. 0 for a divisor of 0 or less
+// value / divisor, by a 64-bit division, the quotient saturating. 0 for a divisor of 0 or less
 static s32 Divide(s64 value, s32 divisor) {
-    u64 n = value < 0 ? (u64)-value : (u64)value;
-    u64 r = 0;
-    u64 q = 0;
-    u32 bit;
+    u32 q;
 
     if (divisor <= 0) {
         return 0;
     }
-    for (bit = 0; bit < 64; bit++) {
-        r = (r << 1) | (n >> 63);
-        n <<= 1;
-        q <<= 1;
-        if (r >= (u32)divisor) {
-            r -= (u32)divisor;
-            q |= 1;
-        }
-    }
-    if (q > LONG_MAX) {
-        q = LONG_MAX;
-    }
+    q = Following_DivideSaturating(value < 0 ? (u64)-value : (u64)value, (u32)divisor);
     return value < 0 ? -(s32)q : (s32)q;
 }
 
 static u32 SquareRoot(u64 n) {
-    u64 bit = (u64)1 << 62;
-    u64 result = 0;
-
-    while (bit > n) {
-        bit >>= 2;
-    }
-    while (bit != 0) {
-        if (n >= result + bit) {
-            n -= result + bit;
-            result = (result >> 1) + bit;
-        } else {
-            result >>= 1;
-        }
-        bit >>= 2;
-    }
-    return result > 0xffffffffu ? 0xffffffffu : (u32)result;
+    return Following_SquareRoot64(n);
 }
 
 static u32 SquareRoot32(u32 n) {
@@ -718,15 +690,43 @@ BOOL FollowingRender_Correct(const VecFx32 *world, const VecFx32 *playerWorld, c
     return TRUE;
 }
 
+// The last camera FollowingRender_Basis was given and what it gave: a draw asks for the same camera several times, and
+// the basis is a function of the camera alone
+static FollowingCamera sBasisCamera;
+static FollowingCameraBasis sBasis;
+static BOOL sBasisValid;
+static BOOL sBasisOk;
+
+static BOOL IsSameCamera(const FollowingCamera *a, const FollowingCamera *b) {
+    return a->eye.x == b->eye.x && a->eye.y == b->eye.y && a->eye.z == b->eye.z && a->target.x == b->target.x &&
+           a->target.y == b->target.y && a->target.z == b->target.z && a->projection == b->projection;
+}
+
+static BOOL ComputeBasis(const FollowingCamera *camera, FollowingCameraBasis *output);
+
 BOOL FollowingRender_Basis(const FollowingCamera *camera, FollowingCameraBasis *output) {
+    if (camera == NULL || output == NULL) {
+        return FALSE;
+    }
+    if (!sBasisValid || !IsSameCamera(camera, &sBasisCamera)) {
+        sBasisCamera = *camera;
+        sBasisOk = ComputeBasis(camera, &sBasis);
+        sBasisValid = TRUE;
+    }
+    if (sBasisOk) {
+        *output = sBasis;
+    }
+    return sBasisOk;
+}
+
+static BOOL ComputeBasis(const FollowingCamera *camera, FollowingCameraBasis *output) {
     VecFx32 view;
     VecFx32 right;
     u32 flat;
 
     // The axes of FollowingRender_HeadPosition, without normalizing up again, which is the cross product of two unit
     // vectors
-    if (camera == NULL || output == NULL || camera->projection > G3DCAM_PROJECTION_ORTHO ||
-        !ViewAxis(camera, &output->view)) {
+    if (camera->projection > G3DCAM_PROJECTION_ORTHO || !ViewAxis(camera, &output->view)) {
         return FALSE;
     }
     view = output->view;

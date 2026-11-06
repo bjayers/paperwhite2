@@ -31,12 +31,7 @@
             "z": 0
         },
         "side_gap": 1,
-        "gaps": {
-            "up": 7,
-            "down": 7,
-            "left": 7,
-            "right": 7
-        }
+        "gap": 7
     },
     "sprite": "OBJ_CODE_POKEMON_KABUTOPS"
 }

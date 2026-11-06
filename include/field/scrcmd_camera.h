@@ -23,8 +23,4 @@ BOOL Scrcmd_Camera_EvCameraShake(VM *vm, FieldScriptEnv *env);
 // FIELD_SCRIPT_SUB_EVENT_FINISH_FUNCS's entry for the event camera
 BOOL FieldScriptSubEventFinish_EvCamera(FinishScriptSubEventsWork *work, u32 *state);
 
-#ifdef PAPERWHITE2
-// Paper White 2: overlay 36's scrcmd_camera.c, for the Following Pokémon
-BOOL PaperWhite2_IsCameraWaitCallback(GameEventCallback callback);
-#endif
 #endif // POKEBW2_FIELD_SCRCMD_CAMERA_H

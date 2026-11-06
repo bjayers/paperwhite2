@@ -415,11 +415,3 @@ static GameEventReturnCode EventPokeVoicePlay_Callback(GameEvent *event, u32 *st
     SetScrEnvNowPkmVoice(voice->env, handle);
     return GAMEEVENT_DONE;
 }
-
-#ifdef PAPERWHITE2
-// Paper White 2: whether a callback is the cry's, which the Following Pokémon's scene policy lets run under the
-// script that played it (paperwhite2_following_scene.c)
-BOOL PaperWhite2_IsPokeVoicePlayCallback(GameEventCallback callback) {
-    return callback == EventPokeVoicePlay_Callback;
-}
-#endif

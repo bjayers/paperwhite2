@@ -2,6 +2,7 @@
 #include "limits.h"
 #include "nitro/fx.h"
 #include "paperwhite2/following.h"
+#include "paperwhite2/following_math.h"
 
 // Paper White 2: the Following Pokémon's follower, its trail behind the player, the swap when the player steps back
 // onto it and the choice of the party member that follows, ported from Pokeweb's following.c
@@ -162,22 +163,7 @@ static u32 AbsDelta(s32 a, s32 b) {
 }
 
 static u32 SquareRoot(u64 n) {
-    u64 bit = (u64)1 << 62;
-    u64 result = 0;
-
-    while (bit > n) {
-        bit >>= 2;
-    }
-    while (bit != 0) {
-        if (n >= result + bit) {
-            n -= result + bit;
-            result = (result >> 1) + bit;
-        } else {
-            result >>= 1;
-        }
-        bit >>= 2;
-    }
-    return result;
+    return Following_SquareRoot64(n);
 }
 
 static u32 Distance(const FollowingSample *a, const FollowingSample *b) {
@@ -260,33 +246,18 @@ static u32 IndexAt(const FollowingTrail *trail, u32 at) {
     return (trail->head + at) % FOLLOWING_TRAIL_CAPACITY;
 }
 
-// (delta * over) / span, by a 64-bit long division a bit at a time, the quotient saturating
+// (delta * over) / span, by a 64-bit division, the quotient saturating
 static s32 ScaleStep(s32 delta, u32 over, u32 span) {
     BOOL negative;
     u64 n;
-    u64 q;
-    u64 r;
-    u32 bit;
+    u32 q;
 
     if (span == 0 || over == 0 || delta == 0) {
         return 0;
     }
     negative = delta < 0;
     n = (negative ? (u64)(-(s64)delta) : (u64)delta) * over;
-    q = 0;
-    r = 0;
-    for (bit = 0; bit < 64; bit++) {
-        r = (r << 1) | (n >> 63);
-        n <<= 1;
-        q <<= 1;
-        if (r >= span) {
-            r -= span;
-            q |= 1;
-        }
-    }
-    if (q > LONG_MAX) {
-        q = LONG_MAX;
-    }
+    q = Following_DivideSaturating(n, span);
     return negative ? -(s32)q : (s32)q;
 }
 
@@ -514,16 +485,13 @@ s32 Following_Tile(fx32 coord) {
     return tile;
 }
 
-// (delta * num) / den, the signs applied after an unsigned long division
+// (delta * num) / den, the signs applied after an unsigned division
 static s32 MulDiv(s32 delta, s32 num, s32 den) {
     BOOL negative;
     u64 absDelta;
     u64 absNum;
     u32 span;
-    u64 n;
-    u64 q;
-    u64 r;
-    u32 bit;
+    u32 q;
 
     if (den == 0 || num == 0 || delta == 0) {
         return 0;
@@ -532,21 +500,7 @@ static s32 MulDiv(s32 delta, s32 num, s32 den) {
     absDelta = delta < 0 ? (u64) - (s64)delta : (u64)delta;
     absNum = num < 0 ? (u64) - (s64)num : (u64)num;
     span = den < 0 ? (u32) - (s64)den : (u32)den;
-    n = absDelta * absNum;
-    q = 0;
-    r = 0;
-    for (bit = 0; bit < 64; bit++) {
-        r = (r << 1) | (n >> 63);
-        n <<= 1;
-        q <<= 1;
-        if (r >= span) {
-            r -= span;
-            q |= 1;
-        }
-    }
-    if (q > LONG_MAX) {
-        q = LONG_MAX;
-    }
+    q = Following_DivideSaturating(absDelta * absNum, span);
     return negative ? -(s32)q : (s32)q;
 }
 
@@ -632,33 +586,16 @@ BOOL Following_SwapMatch(const FollowingTrail *trail, const VecFx32 *follower, c
     return cardinal && IsAheadOrigin(trail, follower, origin);
 }
 
-// n / d, by a 64-bit long division a bit at a time, the quotient saturating
+// n / d, by a 64-bit division, the quotient saturating
 static s32 DivS64(s64 n, u32 d) {
     BOOL negative;
-    u64 u;
-    u64 q;
-    u64 r;
-    u32 bit;
+    u32 q;
 
     if (d == 0 || n == 0 || n == LLONG_MIN) {
         return 0;
     }
     negative = n < 0;
-    u = negative ? (u64)(-n) : (u64)n;
-    q = 0;
-    r = 0;
-    for (bit = 0; bit < 64; bit++) {
-        r = (r << 1) | (u >> 63);
-        u <<= 1;
-        q <<= 1;
-        if (r >= d) {
-            r -= d;
-            q |= 1;
-        }
-    }
-    if (q > LONG_MAX) {
-        q = LONG_MAX;
-    }
+    q = Following_DivideSaturating(negative ? (u64)(-n) : (u64)n, d);
     return negative ? -(s32)q : (s32)q;
 }
 

@@ -508,11 +508,3 @@ GameEvent *EventBGMFadeWait_Create(GameSystem *gsys) {
     work->fieldSound = GameData_GetFieldSoundSystem(gameData);
     return event;
 }
-
-#ifdef PAPERWHITE2
-// Paper White 2: whether a callback is the wait for the field's music to fade back, or its pop, which a battle's
-// return runs; the Following Pokémon's scene policy lets them run with the follower placed
-BOOL PaperWhite2_IsBGMRestoreCallback(GameEventCallback callback) {
-    return callback == EventBGMFadeWait_Callback || callback == EventBGMPop_Callback;
-}
-#endif

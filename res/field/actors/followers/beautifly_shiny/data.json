@@ -31,12 +31,7 @@
             "z": 0
         },
         "side_gap": 3,
-        "gaps": {
-            "up": 9,
-            "down": 9,
-            "left": 9,
-            "right": 9
-        }
+        "gap": 9
     },
     "sprite": "OBJ_CODE_POKEMON_BEAUTIFLY"
 }

@@ -77,7 +77,8 @@ def follower_json(species_names: dict[int, str], row: tuple, positioning: bytes)
         "animation_profile": ("mirrored", "asymmetric")[profile],
         "art_offset": {"x": x, "y": y, "z": z},
         "side_gap": side_gap,
-        "gaps": dict(zip(("up", "down", "left", "right"), positioning[:4])),
+        # One gap whichever way the player faces, the largest of the table's four, which is what the runtime uses
+        "gap": max(positioning[:4]),
     }
 
 

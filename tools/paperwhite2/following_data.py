@@ -13,8 +13,8 @@ follower runtime (src/paperwhite2/ov036/) reads, in the formats that Pokeweb's r
   profile, the art's x, y and z offsets, the side gap and 8 zero bytes.
 - member 2, the positioning table (member 0 of following/positioning.narc): "FWPO" version 1, the follower and Surf
   row counts (no Surf rows), the strides 12 and 8, the registry's CRC-32, 0 for the Surf registry's, the CRC-32 of
-  what follows the header, then per table row from the first follower's the up, down, left and right gaps and 8 zero
-  bytes of rider anchors.
+  what follows the header, then per table row from the first follower's the up, down, left and right gaps (the
+  follower's one gap four times: the runtime takes the largest) and 8 zero bytes of rider anchors.
 """
 import struct
 import zlib
@@ -24,7 +24,6 @@ REGISTRY_ABI = 1
 POSITIONING_VERSION = 1
 SEXES = {"GENDER_MALE": 0, "GENDER_FEMALE": 1, None: 2}
 PROFILES = {"mirrored": 0, "asymmetric": 1}
-GAPS = ("up", "down", "left", "right")
 SIDE_GAP_MAX = 6
 GAP_MAX = 12
 
@@ -41,12 +40,12 @@ def members(followers: list[tuple[int, int, int, int, dict]], rows: int, resourc
         sex = SEXES[follower["sex"]]
         key = species * 2048 + follower["form"] * 8 + sex * 2 + int(follower["shiny"])
         offset = follower["art_offset"]
-        if not 0 <= follower["side_gap"] <= SIDE_GAP_MAX or any(not 0 <= follower["gaps"][g] <= GAP_MAX for g in GAPS):
+        if not 0 <= follower["side_gap"] <= SIDE_GAP_MAX or not 0 <= follower["gap"] <= GAP_MAX:
             raise ValueError(f"object code {code:#x}: a gap out of range")
         entries.append((key, struct.pack(
             "<HBBBBHHBBbbbB8x", species, follower["form"], sex, int(follower["shiny"]), int(follower["placeholder"]),
             row, resource, size, PROFILES[follower["animation_profile"]], offset["x"], offset["y"], offset["z"],
-            follower["side_gap"]), bytes(follower["gaps"][g] for g in GAPS) + bytes(8)))
+            follower["side_gap"]), bytes([follower["gap"]] * 4) + bytes(8)))
     keys = [key for key, *_ in entries]
     if len(set(keys)) != len(keys):
         raise ValueError("two followers have one species, form, sex and shininess")

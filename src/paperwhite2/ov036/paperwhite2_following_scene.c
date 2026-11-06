@@ -523,6 +523,24 @@ static fx32 GetRailRadius(MMSys *system, BOOL *found) {
     return rail != NULL ? FieldRailSystem_GetUnitScale(rail) / 4 : FOLLOWING_TILE / 4;
 }
 
+// How many tiles away an actor is far from a target, in X or in Z, for FollowingScene_IsStepClear
+#define FAR_TILES 4
+
+static BOOL IsFarAxis(s32 a, s32 b) {
+    return a - b > FAR_TILES || b - a > FAR_TILES;
+}
+
+// Whether the actor, at its world position and at both its grid tiles, is far from the target's tile: further than any
+// footprint (3 by 2 tiles at most) or rail step (a tile) reaches
+static BOOL IsFarFrom(const FieldActor *actor, const VecFx32 *grid) {
+    s32 wx = actor->wPos.x / FOLLOWING_TILE;
+    s32 wz = actor->wPos.z / FOLLOWING_TILE;
+
+    return (IsFarAxis(wx, grid->x) || IsFarAxis(wz, grid->z)) &&
+           (IsFarAxis(actor->gPos.x, grid->x) || IsFarAxis(actor->gPos.z, grid->z)) &&
+           (IsFarAxis(actor->initGPos.x, grid->x) || IsFarAxis(actor->initGPos.z, grid->z));
+}
+
 // Called before the follower takes its next sample of the trail. The NPCs' destinations are already held in the
 // game's grid and rail work, whatever the order of the updates; the player and the actors that no collision sees
 // don't count
@@ -558,6 +576,11 @@ BOOL FollowingScene_IsStepClear(FieldActor *follower, const VecFx32 *target) {
             if (!found) {
                 return FALSE;
             }
+            // A rail actor this far stands on none of the target and its step reaches it from nowhere: its prediction,
+            // the costliest part on a crowded street, isn't asked for (a failed one far away blocked the step)
+            if (IsFarFrom(actor, &grid)) {
+                continue;
+            }
             RailUnit_GetPreviousCalcPos(unit, &point);
             if (OverlapsSphere(target, &point, radius)) {
                 return FALSE;
@@ -570,7 +593,8 @@ BOOL FollowingScene_IsStepClear(FieldActor *follower, const VecFx32 *target) {
                     return FALSE;
                 }
             }
-        } else if (OverlapsTile(&grid, actor, &actor->gPos) || OverlapsTile(&grid, actor, &actor->initGPos)) {
+        } else if (!IsFarFrom(actor, &grid) &&
+                   (OverlapsTile(&grid, actor, &actor->gPos) || OverlapsTile(&grid, actor, &actor->initGPos))) {
             return FALSE;
         }
     }

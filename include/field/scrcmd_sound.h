@@ -49,8 +49,4 @@ BOOL Scrcmd_Sound_ISSSwitchEnable(VM *vm, FieldScriptEnv *env);
 BOOL Scrcmd_Sound_ISSSwitchDisable(VM *vm, FieldScriptEnv *env);
 BOOL Scrcmd_Sound_ISSSwitchQuery(VM *vm, FieldScriptEnv *env);
 
-#ifdef PAPERWHITE2
-// Paper White 2: overlay 36's scrcmd_sound.c, for the Following Pokémon
-BOOL PaperWhite2_IsPokeVoicePlayCallback(GameEventCallback callback);
-#endif
 #endif // POKEBW2_FIELD_SCRCMD_SOUND_H

@@ -32,7 +32,7 @@
         },
         "follower": {
             "type": "object", "additionalProperties": false,
-            "required": [ "species", "form", "sex", "shiny", "placeholder", "animation_profile", "art_offset", "side_gap", "gaps" ],
+            "required": [ "species", "form", "sex", "shiny", "placeholder", "animation_profile", "art_offset", "side_gap", "gap" ],
             "description": "Paper White 2: the Following Pokémon this sprite shows, its row of the follower registry and of the positioning table (tools/paperwhite2/following_data.py, docs/paperwhite2/following-pokemon.md). Only the rows after the original's, OBJ_CODE_FOLLOWER_, have one",
             "properties": {
                 "species": { "type": "string", "x-constant": "SPECIES_", "description": "The species it follows as" },
@@ -47,14 +47,7 @@
                     "properties": { "x": { "$ref": "#/$defs/s8" }, "y": { "$ref": "#/$defs/s8" }, "z": { "$ref": "#/$defs/s8" } }
                 },
                 "side_gap": { "type": "integer", "minimum": 0, "maximum": 6, "description": "The spacing its art needs at its sides, from the art" },
-                "gaps": {
-                    "type": "object", "additionalProperties": false, "required": [ "up", "down", "left", "right" ],
-                    "description": "The walking gap behind the player when the player faces each way, in world units (16 a tile)",
-                    "properties": {
-                        "up": { "type": "integer", "minimum": 0, "maximum": 12 }, "down": { "type": "integer", "minimum": 0, "maximum": 12 },
-                        "left": { "type": "integer", "minimum": 0, "maximum": 12 }, "right": { "type": "integer", "minimum": 0, "maximum": 12 }
-                    }
-                }
+                "gap": { "type": "integer", "minimum": 0, "maximum": 12, "description": "The walking gap behind the player, the same whichever way the player faces, in world units (16 a tile)" }
             }
         },
         "scene_node_type": { "$ref": "#/$defs/u8", "description": "sceneNodeType" },

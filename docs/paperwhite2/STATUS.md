@@ -2,6 +2,31 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-05 (branch `follower-rebuild`): stage 2, the movement and drawing tidied, and one gap
+
+The same behavior throughout; to test in one batch with stage 1 (the user's choice). Not yet tested in game.
+
+- **The hardware divider and square root unit** (`include/paperwhite2/following_math.h`) in place of the four
+  64-bit long divisions done a bit at a time (`ScaleStep`, `MulDiv`, `DivS64` in the trail, `Divide` in the render
+  math) and the two 64-bit square roots: the same truncated, saturating results.
+- **The camera basis once per camera** (`FollowingRender_Basis` keeps the last camera's), not up to four times a draw.
+- **The step check skips far actors** (`FollowingScene_IsStepClear`, more than 4 tiles in X or Z by their position and
+  both grid tiles): the grid checks are the same, and a rail actor that far no longer has its next step predicted,
+  the costliest part on a crowded street. One edge changes on purpose: a far rail actor whose prediction failed
+  blocked the follower's step; it no longer does.
+- **One gap** (the user's decision): each follower's `data.json` has `gap` for the four `gaps`, all 2,574 of which
+  were equal, so the packed table is byte for byte the same (`tools/paperwhite2/following_data.py` writes it four
+  times; `import_followers.py` reads the largest). The Follower Editor shows one field, from the schema.
+- **Kept on purpose:** the busy-wait for the scanline before a texture's upload (`WaitVramWindow`). A VBlank transfer
+  could copy freed memory into another texture's VRAM when an effect's resource is freed in the frame its upload was
+  queued, and the line flicker it prevents shows only on hardware; it runs only on L/R, a new sheet, a ball change or
+  an emote's start.
+- **Cleanup:** the original files' exports that only the policy used are gone (`PaperWhite2_Is*Callback` in
+  event_sound.c, scrcmd_camera.c, field_transition.c, field_event.c, scrcmd_menu.c and scrcmd_sound.c, and
+  `PaperWhite2_GetActiveFieldScriptSubEvents`); the battle's and the menu return's stay, still used.
+  `following-pokemon.md` marks the hooks the rebuild removed or changed.
+- **Next:** the user's batch test of stages 1 and 2; then the Dell re-measure back to vanilla, and the merge.
+
 ## 2026-11-05 (branch `follower-rebuild`): stage 1, the follower's events watched, never held
 
 On the branch `follower-rebuild` (from the tag `follower-before-rebuild` on `main`), the plan of
