@@ -7,8 +7,8 @@
 #include "struct_decls.h"
 
 // Paper White 2: the Following Pokémon's events bridge (src/paperwhite2/ov012/paperwhite2_following_events.c), ported
-// from Pokeweb's events.c: what the game's events, scripts and actors do, told to the one observer that the field's
-// scene policy binds while its field runs, and the PC's restore token (docs/paperwhite2/following-pokemon.md)
+// from Pokeweb's events.c: what the game's events and actors do, told to the one observer that the field's scene binds
+// while its field runs, and the restore token that a fade keeps (docs/paperwhite2/design/following-rewrite.md)
 
 // What the observer is told, each with its subject and value:
 // - CALLBACK: an event of the bound game system is about to run; the event, its callback
@@ -66,10 +66,9 @@ typedef struct {
 #define FOLLOWING_RESTORE_MAGIC ('F' | 'W' << 8 | 'S' << 16 | (u32)'R' << 24)
 
 // Binds observer to field and its game system for generation, the field's follower generation, and the main's event
-// hooks to the bridge. While hold returns TRUE (the recall's image and ball finishing), each event of the game system
-// waits. FALSE when another field or generation is bound
-BOOL FollowingEvents_Bind(Field *field, GameSystem *gsys, u32 generation, FollowingEventObserver observer,
-                          BOOL (*hold)(void));
+// hooks to the bridge. The observer only watches: no event waits for it. FALSE when another field or generation is
+// bound
+BOOL FollowingEvents_Bind(Field *field, GameSystem *gsys, u32 generation, FollowingEventObserver observer);
 void FollowingEvents_Unbind(Field *field, u32 generation);
 // Keeps restore, while field and generation are bound, for the next field
 void FollowingEvents_Preserve(Field *field, u32 generation, const FollowingRestore *restore);

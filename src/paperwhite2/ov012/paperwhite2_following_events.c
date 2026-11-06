@@ -3,16 +3,15 @@
 #include "field/field_actor_internal.h"
 #include "field/field_nogrid_mapper.h"
 #include "field/field_rail.h"
-#include "field/field_script.h"
 #include "paperwhite2/following_events.h"
 #include "paperwhite2/following_field.h"
 #include "paperwhite2/following_resident.h"
 #include "system/game_event.h"
-#include "system/vm.h"
 
 // Paper White 2: the Following Pokémon's events bridge, ported from Pokeweb's events.c. Overlay 12's actors and main's
-// events and scripts tell it what they do, and it tells the one observer that the field's scene policy binds, for the
-// field and the follower generation it is bound to (docs/paperwhite2/following-pokemon.md)
+// events tell it what they do, and it tells the one observer that the field's scene binds, for the field and the
+// follower generation it is bound to. It only watches: no event or actor waits for it, but for the NPCs' own steps into
+// the follower, which their collision blocks (docs/paperwhite2/design/following-rewrite.md)
 
 // A FieldActor's flag that its move code is set up (FldAct_SetupMoveCode), which DeleteActor also tests
 #define ACTOR_FLAG_MOVE_SET_UP 0x2
@@ -25,25 +24,19 @@ typedef struct FollowingEventBridge {
     BOOL notifying;
     // The actor whose move code runs, whose collision queries the observer may block
     FieldActor *ambient;
-    BOOL (*hold)(void);
 } FollowingEventBridge;
 
-static void OnOpcode(VM *vm, u16 cmd);
-static BOOL OnCallback(GameEvent *event, GameSystem *gsys, GameEventCallback callback);
+static void OnCallback(GameEvent *event, GameSystem *gsys, GameEventCallback callback);
 static void OnEventFree(GameEvent *event, GameSystem *gsys);
-static void OnVmFree(VM *vm);
 
 static const FollowingEventHooks sResidentHooks = {
-    OnOpcode,
     OnCallback,
     OnEventFree,
-    OnVmFree,
 };
 
 static FollowingEventBridge sBridge;
 
-BOOL FollowingEvents_Bind(Field *field, GameSystem *gsys, u32 generation, FollowingEventObserver observer,
-                          BOOL (*hold)(void)) {
+BOOL FollowingEvents_Bind(Field *field, GameSystem *gsys, u32 generation, FollowingEventObserver observer) {
     if (field == NULL || gsys == NULL || generation == 0 || observer == NULL) {
         return FALSE;
     }
@@ -55,7 +48,6 @@ BOOL FollowingEvents_Bind(Field *field, GameSystem *gsys, u32 generation, Follow
     sBridge.gsys = gsys;
     sBridge.generation = generation;
     sBridge.observer = observer;
-    sBridge.hold = hold;
     return TRUE;
 }
 
@@ -66,7 +58,6 @@ void FollowingEvents_Unbind(Field *field, u32 generation) {
         sBridge.field = NULL;
         sBridge.gsys = NULL;
         sBridge.generation = 0;
-        sBridge.hold = NULL;
         PaperWhite2_FollowingClearEventHooks();
     }
 }
@@ -101,39 +92,16 @@ static BOOL IsBoundActor(const FieldActor *actor) {
     return sBridge.observer != NULL && actor->actorSystem != NULL && actor->actorSystem->field == sBridge.field;
 }
 
-// Only field scripts, which run EVCMD_TABLE's commands, are the field's: the others (battle, applications) aren't
-// looked into, and this comparison comes before any read of their environment
-static void OnOpcode(VM *vm, u16 cmd) {
-    if (sBridge.observer != NULL && vm->param.commands == (const VMCommand *)EVCMD_TABLE) {
-        FieldScriptEnv *env = vm->env;
-        ScriptSubwork *subwork = env != NULL ? env->subwork : NULL;
-
-        if (subwork != NULL && subwork->gsys == sBridge.gsys && subwork->mmSys != NULL &&
-            subwork->mmSys->field == sBridge.field) {
-            Notify(FOLLOWING_EVENT_OPCODE, vm, cmd);
-        }
-    }
-}
-
-// TRUE keeps the event waiting while the field's recall image and ball finish: it is the original's "still running"
-// result, in which no script command, warp or scripted movement of the player goes on
-static BOOL OnCallback(GameEvent *event, GameSystem *gsys, GameEventCallback callback) {
+// An event's callback is about to run: the observer sees it, and the event runs as ever
+static void OnCallback(GameEvent *event, GameSystem *gsys, GameEventCallback callback) {
     if (sBridge.observer != NULL && gsys == sBridge.gsys) {
         Notify(FOLLOWING_EVENT_CALLBACK, event, (uptr)callback);
     }
-    return sBridge.observer != NULL && gsys == sBridge.gsys && sBridge.hold != NULL && sBridge.hold();
 }
 
 static void OnEventFree(GameEvent *event, GameSystem *gsys) {
     if (sBridge.observer != NULL && gsys == sBridge.gsys) {
         Notify(FOLLOWING_EVENT_FREE, event, 0);
-    }
-}
-
-// The script's environment is already freed
-static void OnVmFree(VM *vm) {
-    if (sBridge.observer != NULL && vm->param.commands == (const VMCommand *)EVCMD_TABLE) {
-        Notify(FOLLOWING_EVENT_VM_FREE, vm, 0);
     }
 }
 

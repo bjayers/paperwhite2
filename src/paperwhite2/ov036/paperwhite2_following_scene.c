@@ -4,22 +4,13 @@
 #include "constants/pokemon.h"
 #include "field/app_call.h"
 #include "field/event_battle.h"
-#include "field/event_sound.h"
 #include "field/field_acmd.h"
 #include "field/field_actor.h"
 #include "field/field_actor_internal.h"
 #include "field/field_event.h"
 #include "field/field_internal.h"
-#include "field/field_menu.h"
 #include "field/field_nogrid_mapper.h"
 #include "field/field_rail.h"
-#include "field/field_script.h"
-#include "field/field_script_event.h"
-#include "field/pc_sound.h"
-#include "field/scrcmd_camera.h"
-#include "field/scrcmd_menu.h"
-#include "field/scrcmd_sound.h"
-#include "field/shortcut_menu.h"
 #include "field/zone.h"
 #include "nitro/mi.h"
 #include "paperwhite2/following.h"
@@ -29,54 +20,23 @@
 #include "paperwhite2/following_field.h"
 #include "paperwhite2/following_interaction.h"
 #include "paperwhite2/following_scene.h"
-#include "paperwhite2/following_scene_policy.h"
 #include "pml/poke_party.h"
 #include "system/game_data.h"
 #include "system/game_event.h"
 #include "system/game_system.h"
-#include "system/vm.h"
 
-// Paper White 2: the Following Pokémon's scene policy, ported from Pokeweb's scene.c. While an event runs, the follower
-// waits if each event of the chain and each script command is one the policy knows to leave it alone, and is recalled
-// otherwise, or when an actor of the event would walk into it. It never follows a token it has kept: those are only
-// identities, of events and scripts the bridge says are still alive
+// Paper White 2: the Following Pokémon's scene. While any event runs, the follower stands where it is, as the game's
+// own partner NPCs do; it is recalled only when the event needs its place: an actor's scripted move, placement or new
+// actor that covers it, a scripted move of the player, or its own actor taken. A fade hides it, kept for the field to
+// put back where it was (FollowingScene_PreserveForFade). Nothing here holds an event or the player's input: the
+// recall's effect plays on its own. It never follows a token it has kept: those are only identities, of events the
+// bridge says are still alive (docs/paperwhite2/design/following-rewrite.md)
 
 // A FieldActor's flag that no other actor's collision sees it (CheckActorNewPosOtherActorCollision's)
 #define ACTOR_FLAG_NO_COLLISION 0x80
 
-// The events and the scripts' machines the scene keeps track of; more recalls the follower
+// How deep the scene walks the game system's chain of events
 #define EVENT_LIMIT 16
-#define VM_LIMIT 48
-
-// The script commands that the policy treats apart (the command table's handlers): a PC's storage opens and idles
-// (Scrcmd_Buildmodel_PokecenPCOpen, Scrcmd_Buildmodel_PokecenPCIdle), its quick fades and their wait
-// (Scrcmd_Fade_FadeInBlackQ, Scrcmd_Fade_FadeOutBlackQ, Scrcmd_Fade_FadeWait), the storage itself
-// (Scrcmd_ProcFld_CallPC), the battles (Scrcmd_Trainer_CallTrainerBattle, Scrcmd_Encount_CallWildBattle,
-// Scrcmd_Encount_CallWildBattleEx) and the Repel's spray when the prompt says yes (Scrcmd_Encount_RepelRearm)
-#define CMD_PC_OPEN 0x130
-#define CMD_PC_IDLE 0x131
-#define CMD_FADE_IN_BLACK_QUICK 0x1a3
-#define CMD_FADE_OUT_BLACK_QUICK 0x1a4
-#define CMD_FADE_WAIT 0x1a7
-#define CMD_CALL_PC 0x14f
-#define CMD_CALL_TRAINER_BATTLE 0x85
-#define CMD_CALL_WILD_BATTLE 0x174
-#define CMD_CALL_WILD_BATTLE_EX 0x297
-#define CMD_REPEL_REARM 0x2c2
-
-// The hack's own commands (scrcmd_vm.c's table), which keep the follower: GetPartyLevel and CheckCondition only read,
-// ReloadMapHere is a zone change, and Debug, the debug menu's, changes data that the follower follows by itself (a new
-// lead swaps it, a warp is a zone change)
-#define CMD_GET_PARTY_LEVEL 0x2f3
-#define CMD_CHECK_CONDITION 0x2f4
-#define CMD_RELOAD_MAP_HERE 0x2f5
-#define CMD_DEBUG 0x2f6
-
-// The script of the Repel's "Use another?" prompt, in res/field/scripts/global_10130.s
-#define SCRIPT_REPEL_PROMPT 10144
-
-// The script's end finishes the sub events from the index up to the count, which is the count of finish functions
-#define SUB_EVENT_FINISH_COUNT 15
 
 // The highest state of a battle's event while it still starts the battle
 #define BATTLE_EVENT_STARTING 3
@@ -91,7 +51,7 @@
 // A rail's step is replayed for at most this many frames, its slowest walk
 #define RAIL_STEP_FRAMES 16
 
-// The action commands the policy reads (field_acmd.h names the families it has): facing, the codes of the stay walks
+// The action commands the scene reads (field_acmd.h names the families it has): facing, the codes of the stay walks
 // (and the two families after them) that move no actor, the dashes that the player's own run gives, and the
 // sidewalk crowds' wall walks
 #define ACMD_STAY_LAST 0x33
@@ -102,16 +62,6 @@
 #define ACMD_CROWD_FIRST 0x69
 #define ACMD_CROWD_LAST 0x98
 
-typedef struct FollowingSceneEvent {
-    GameEvent *event;
-    GameEventCallback callback;
-} FollowingSceneEvent;
-
-typedef struct FollowingSceneVm {
-    VM *vm;
-    GameEvent *event;
-} FollowingSceneVm;
-
 typedef struct FollowingScene {
     MMSys *system;
     FieldActor *player;
@@ -119,28 +69,20 @@ typedef struct FollowingScene {
     Field *field;
     GameSystem *gsys;
     u32 generation;
+    // An event runs, and the follower waits; or it has been recalled for it
     BOOL active;
     BOOL recalled;
     FollowingState previousState;
-    // A PC's storage runs, and it fades the screen
-    BOOL pcActive;
-    BOOL pcFade;
-    // The PC's storage kept a restore token
-    BOOL boxPreserve;
     // The player's own run, which a seamless zone change's event can end between the poll and the run
     BOOL naturalRun;
+    // The field just put the follower back from its restore token: the fades of the event it came back in keep it
+    BOOL restoring;
     GameEvent *menuRoot;
     // The follower was out, its body or its resting ball, when the running events began
     BOOL wasOut;
-    // The events that were running when the field came back from a menu's application or a battle, which the follower
-    // waits through; their fades back in and music restores too
-    GameEvent *returnEvents[EVENT_LIMIT];
-    VM *pcVm;
     GameEvent *battleRoot;
     BtlSetup *battleSetup;
     void (*recall)(void);
-    FollowingSceneEvent events[EVENT_LIMIT];
-    FollowingSceneVm vms[VM_LIMIT];
 } FollowingScene;
 
 static FollowingScene sScene;
@@ -176,44 +118,9 @@ static void Recall(void) {
     }
     if (!sScene.recalled) {
         FollowingEvents_Discard();
-        sScene.pcActive = FALSE;
-        sScene.pcFade = FALSE;
         sScene.recalled = TRUE;
         sScene.recall();
     }
-}
-
-static BOOL IsSafeCommand(u32 cmd) {
-    u32 lo = 0;
-    u32 hi = NELEMS(FOLLOWING_SAFE_COMMANDS);
-
-    if (cmd == CMD_GET_PARTY_LEVEL || cmd == CMD_CHECK_CONDITION || cmd == CMD_RELOAD_MAP_HERE || cmd == CMD_DEBUG) {
-        return TRUE;
-    }
-
-    while (lo < hi) {
-        u32 mid = (lo + hi) / 2;
-
-        if (FOLLOWING_SAFE_COMMANDS[mid] < cmd) {
-            lo = mid + 1;
-        } else {
-            hi = mid;
-        }
-    }
-    return lo < NELEMS(FOLLOWING_SAFE_COMMANDS) && FOLLOWING_SAFE_COMMANDS[lo] == cmd;
-}
-
-// The script work of event, a field script's event of the bound game system that the script work names as its own
-static ScriptWork *GetScriptEventWork(GameEvent *event) {
-    EventScriptCallData *data;
-    ScriptWork *work;
-
-    if (event == NULL || event->callback != EventScriptCall_Callback || event->gsys != sScene.gsys) {
-        return NULL;
-    }
-    data = event->data;
-    work = data != NULL ? data->work : NULL;
-    return work != NULL && work->event == event ? work : NULL;
 }
 
 // Whether party's lead is the follower, visible and healthy, the first of the party. The follower's slot is a choice
@@ -315,179 +222,6 @@ static BOOL IsBattleChain(GameEvent *event) {
 
 BOOL FollowingScene_IsBattleEntry(void) {
     return sScene.battleSetup != NULL && !sScene.recalled && IsBattleChain(sScene.gsys->event);
-}
-
-static BOOL IsReturnRoot(GameEvent *event) {
-    u32 i;
-
-    for (i = 0; i < EVENT_LIMIT; i++) {
-        if (sScene.returnEvents[i] != NULL && sScene.returnEvents[i] == event) {
-            return TRUE;
-        }
-    }
-    return FALSE;
-}
-
-// Whether event is one of the return's: an event that was running when the field came back, or a fade back in or a
-// music restore under one. A freed event leaves the list (ForgetEvent), so its address can't be trusted again; a new
-// application, field move or script that the menu starts is none of these, and the policy decides on it as ever
-static BOOL IsReturnEvent(GameEvent *event) {
-    u32 depth;
-
-    for (depth = 0; event != NULL && depth < EVENT_LIMIT; depth++, event = event->parent) {
-        if (event->gsys != sScene.gsys) {
-            return FALSE;
-        }
-        if (IsReturnRoot(event)) {
-            return TRUE;
-        }
-        if (!PaperWhite2_IsFieldFadeInCallback(event->callback) && !PaperWhite2_IsFieldOpenCallback(event->callback) &&
-            !PaperWhite2_IsBGMRestoreCallback(event->callback)) {
-            return FALSE;
-        }
-    }
-    return FALSE;
-}
-
-// Whether the policy lets event run with the follower kept. A recycled event's address or another application's
-// child is never trusted: each exception checks its event's work against the bound game system and field
-static BOOL IsSafeCallback(GameEvent *event, GameEventCallback callback) {
-    void *work;
-
-    if (IsBattleChain(event) || IsReturnEvent(event)) {
-        return TRUE;
-    }
-    work = event->data;
-    // The sound events of the music and fanfare commands only own a sound work, under a root event or a cleanup's or
-    // menu's: their field sound must be the game's. Their parents are inspected as well
-    if (PaperWhite2_IsFollowingSoundCallback(callback)) {
-        GameData *gameData = sScene.gsys->gameData;
-        FieldSound *sound = gameData != NULL ? GameData_GetFieldSoundSystem(gameData) : NULL;
-
-        return work != NULL && sound != NULL && event->gsys == sScene.gsys &&
-               ((EventSoundWork *)work)->fieldSound == sound;
-    }
-    // The menu, and the event that returns from the screen it opened
-    if (callback == EventFieldMenu_Callback) {
-        FieldMenuWork *menu = work;
-
-        return menu != NULL && menu->gameSystem == sScene.gsys && menu->field == sScene.field;
-    }
-    // The Y button's shortcut, with its menu or its one item, while it stays on the field: what it chains (an
-    // application, an item's event such as the Exp. Share's script) is decided on as ever
-    if (callback == EventShortcutCallDirect_Callback || callback == EventShortcutChoicePopup_Callback) {
-        ShortcutMenuWork *shortcut = work;
-
-        return shortcut != NULL && shortcut->gameSystem == sScene.gsys && shortcut->field == sScene.field;
-    }
-    if (PaperWhite2_IsFieldMenuReturnCallback(callback)) {
-        EventFieldMenuReturn *menuReturn = work;
-
-        return menuReturn != NULL && menuReturn->gsys == sScene.gsys && menuReturn->field == sScene.field;
-    }
-    if (callback == pcEntrySound || callback == func_ov033_021799e8 || callback == pcLogOffSound) {
-        struct PCSoundEventData *pc = work;
-
-        return sScene.pcActive && pc != NULL && pc->gameSystem == sScene.gsys && pc->field == sScene.field;
-    }
-    // The storage closes the field and opens it again, only in a PC's storage that the scene saw begin
-    if (sScene.pcActive && PaperWhite2_IsFieldSubprocessCallback(callback)) {
-        return TRUE;
-    }
-    // The field's opening waits for the field before the Repel's script begins: only that work's shape counts, and the
-    // later callbacks and commands are checked as ever
-    if (PaperWhite2_IsFieldOpenCallback(callback)) {
-        EventFieldOpenWork *open = work;
-
-        return open != NULL && open->gsys == sScene.gsys && open->gameData == sScene.gsys->gameData;
-    }
-    // The cry's event, under the live script that played it: it can't borrow this once that script or its event is
-    // freed
-    if (PaperWhite2_IsPokeVoicePlayCallback(callback)) {
-        FieldScriptEnv *env = work != NULL ? ((PokeVoiceEvent *)work)->env : NULL;
-        GameEvent *parent = event->parent;
-        u32 i;
-
-        if (env == NULL || parent == NULL || parent->callback != EventScriptCall_Callback ||
-            parent->gsys != sScene.gsys) {
-            return FALSE;
-        }
-        for (i = 0; i < VM_LIMIT; i++) {
-            ScriptSubwork *subwork;
-
-            if (sScene.vms[i].event != parent || sScene.vms[i].vm == NULL || sScene.vms[i].vm->env != env) {
-                continue;
-            }
-            subwork = env->subwork;
-            return subwork != NULL && subwork->gsys == sScene.gsys && subwork->mmSys != NULL &&
-                   subwork->mmSys->field == sScene.field;
-        }
-        return FALSE;
-    }
-    // The Yes/No prompt, under the script that the prompt's environment names
-    if (PaperWhite2_IsYesNoEventCallback(callback)) {
-        ScriptWork *scriptWork = GetScriptEventWork(event->parent);
-        FieldScriptEnv *prompt = work != NULL ? ((YesNoEvent *)work)->env : NULL;
-
-        return scriptWork != NULL && prompt != NULL && prompt->args.work == scriptWork;
-    }
-    // The script's end, which finishes its sub events: any that the policy doesn't know recalls the follower
-    if (callback == EventFinishScriptSubEvents_Callback) {
-        FinishScriptSubEventsWork *finish = work;
-        u32 active = PaperWhite2_GetActiveFieldScriptSubEvents();
-
-        if (finish == NULL || finish->gsys != sScene.gsys || (u32)finish->index >= SUB_EVENT_FINISH_COUNT ||
-            finish->count != SUB_EVENT_FINISH_COUNT || (active & ~FOLLOWING_SAFE_FINISHERS)) {
-            Recall();
-            return FALSE;
-        }
-        return TRUE;
-    }
-    // The field script's own event, the list's choices and the camera's waits
-    return callback == EventScriptCall_Callback || PaperWhite2_IsListMenuEventCallback(callback) ||
-           PaperWhite2_IsCameraWaitCallback(callback);
-}
-
-static void TrackEvent(GameEvent *event, GameEventCallback callback) {
-    u32 free = EVENT_LIMIT;
-    u32 i;
-
-    for (i = 0; i < EVENT_LIMIT; i++) {
-        if (sScene.events[i].event == event) {
-            sScene.events[i].callback = callback;
-            return;
-        }
-        if (sScene.events[i].event == NULL) {
-            free = i;
-        }
-    }
-    if (free == EVENT_LIMIT) {
-        Recall();
-        return;
-    }
-    sScene.events[free].event = event;
-    sScene.events[free].callback = callback;
-}
-
-// Walks the game system's live chain only: the events freed are already off the tokens
-static void InspectChain(void) {
-    GameEvent *event = sScene.gsys->event;
-    u32 depth;
-
-    for (depth = 0; event != NULL && depth < EVENT_LIMIT; depth++) {
-        GameEventCallback callback = event->callback;
-
-        if (event->gsys != sScene.gsys || !IsSafeCallback(event, callback)) {
-            Recall();
-            return;
-        }
-        Pause();
-        TrackEvent(event, callback);
-        event = event->parent;
-    }
-    if (event != NULL) {
-        Recall();
-    }
 }
 
 // The sidewalk crowds' wall walks, whose directions start one past a multiple of four, unlike the compass walks. Their
@@ -843,105 +577,13 @@ BOOL FollowingScene_IsStepClear(FieldActor *follower, const VecFx32 *target) {
     return TRUE;
 }
 
-static void ForgetVm(VM *vm) {
-    u32 i;
-
-    for (i = 0; i < VM_LIMIT; i++) {
-        if (sScene.vms[i].vm == vm) {
-            sScene.vms[i].vm = NULL;
-            sScene.vms[i].event = NULL;
-        }
-    }
-}
-
 static void ForgetEvent(GameEvent *event) {
-    u32 i;
-
     if (event == sScene.menuRoot) {
         sScene.menuRoot = NULL;
-    }
-    for (i = 0; i < EVENT_LIMIT; i++) {
-        if (sScene.returnEvents[i] == event) {
-            sScene.returnEvents[i] = NULL;
-        }
     }
     if (event == sScene.battleRoot) {
         sScene.battleRoot = NULL;
         sScene.battleSetup = NULL;
-    }
-    for (i = 0; i < EVENT_LIMIT; i++) {
-        if (sScene.events[i].event == event) {
-            sScene.events[i].event = NULL;
-            sScene.events[i].callback = NULL;
-        }
-    }
-    for (i = 0; i < VM_LIMIT; i++) {
-        if (sScene.vms[i].event == event) {
-            sScene.vms[i].vm = NULL;
-            sScene.vms[i].event = NULL;
-        }
-    }
-}
-
-static void ObserveCommand(VM *vm, u32 cmd) {
-    FieldScriptEnv *env = vm->env;
-    ScriptWork *work = env->subwork->work;
-    u32 scriptId = work != NULL ? work->scriptId : 0xffff;
-    GameEvent *event = work != NULL ? ScriptWork_GetEvent(work) : NULL;
-    u32 free = VM_LIMIT;
-    BOOL pcFade;
-    u32 i;
-
-    sScene.naturalRun = FALSE;
-    Pause();
-    for (i = 0; i < VM_LIMIT; i++) {
-        if (sScene.vms[i].vm == vm) {
-            free = i;
-            break;
-        }
-        if (sScene.vms[i].vm == NULL) {
-            free = i;
-        }
-    }
-    if (free == VM_LIMIT) {
-        Recall();
-    } else {
-        sScene.vms[free].vm = vm;
-        sScene.vms[free].event = event;
-    }
-    if (cmd == CMD_PC_OPEN || cmd == CMD_PC_IDLE) {
-        sScene.pcActive = TRUE;
-        sScene.pcVm = vm;
-    }
-    pcFade = sScene.pcActive && sScene.pcVm == vm &&
-             (cmd == CMD_FADE_IN_BLACK_QUICK || cmd == CMD_FADE_OUT_BLACK_QUICK || cmd == CMD_FADE_WAIT);
-    if (pcFade) {
-        sScene.pcFade = TRUE;
-    }
-    if (cmd == CMD_CALL_PC && sScene.pcActive && !sScene.recalled && sScene.follower->actor != NULL &&
-        sScene.player != NULL && !(sScene.follower->actor->flags & FOLLOWING_ACTOR_FLAG_HIDDEN)) {
-        FieldActor *follower = sScene.follower->actor;
-        FollowingRestore restore;
-
-        restore.magic = FOLLOWING_RESTORE_MAGIC;
-        restore.player = sScene.player->wPos;
-        restore.follower = follower->wPos;
-        restore.grid[0] = follower->gPos.x;
-        restore.grid[1] = follower->gPos.y;
-        restore.grid[2] = follower->gPos.z;
-        restore.face = follower->faceDir;
-        restore.zone = sScene.player->zoneId;
-        restore.selected = sScene.follower->selected;
-        FollowingEvents_Preserve(sScene.field, sScene.generation, &restore);
-        sScene.boxPreserve = TRUE;
-    }
-    // Yes at the Repel's prompt sprays another, only in that script; the move query before it is a read-only command
-    // of the policy
-    if (!IsSafeCommand(cmd) && !pcFade &&
-        !((cmd == CMD_CALL_TRAINER_BATTLE || cmd == CMD_CALL_WILD_BATTLE || cmd == CMD_CALL_WILD_BATTLE_EX) &&
-          IsBattleCandidate()) &&
-        !(cmd == CMD_REPEL_REARM && scriptId == SCRIPT_REPEL_PROMPT)) {
-        Recall();
     }
 }
 
@@ -995,30 +637,18 @@ static void Observe(u32 kind, void *subject, uptr value) {
     case FOLLOWING_EVENT_AMBIENT_RAIL:
         CheckAmbientCollision(kind, subject, (FollowingEventCollision *)value);
         return;
-    case FOLLOWING_EVENT_VM_FREE:
-        if (subject == sScene.pcVm) {
-            sScene.pcVm = NULL;
-            sScene.pcFade = FALSE;
-        }
-        ForgetVm(subject);
-        return;
     case FOLLOWING_EVENT_FREE:
         ForgetEvent(subject);
         return;
     case FOLLOWING_EVENT_CALLBACK:
+        // An event runs: the follower waits where it is, whatever the event, and a battle it leads into is marked.
+        // Its own talk's event is its own
         sScene.naturalRun = FALSE;
         if (FollowingTalk_Owns(sScene.field) && subject == sScene.gsys->event) {
             return;
         }
         Pause();
-        TrackEvent(subject, (GameEventCallback)value);
-        InspectChain();
-        if (!IsSafeCallback(subject, (GameEventCallback)value)) {
-            Recall();
-        }
-        return;
-    case FOLLOWING_EVENT_OPCODE:
-        ObserveCommand(subject, value);
+        IsBattleChain(subject);
         return;
     case FOLLOWING_EVENT_ALLOCATE:
         if (sScene.follower->actor != NULL && subject == sScene.system) {
@@ -1088,7 +718,7 @@ BOOL FollowingScene_Attach(MMSys *system, Follower *follower, u32 generation, vo
     sScene.follower = follower;
     sScene.generation = generation;
     sScene.recall = recall;
-    if (!FollowingEvents_Bind(sScene.field, sScene.gsys, generation, Observe, FollowingEffects_IsRecalling)) {
+    if (!FollowingEvents_Bind(sScene.field, sScene.gsys, generation, Observe)) {
         sScene.system = NULL;
         return FALSE;
     }
@@ -1105,7 +735,6 @@ void FollowingScene_MarkMenu(GameEvent *event) {
     }
     sScene.menuRoot = event;
     Pause();
-    TrackEvent(event, event->callback);
 }
 
 BOOL FollowingScene_IsMenuActive(void) {
@@ -1138,9 +767,6 @@ BOOL FollowingScene_BeginReturn(void) {
             }
         }
     }
-    for (event = sScene.gsys->event, depth = 0; event != NULL && depth < EVENT_LIMIT; depth++, event = event->parent) {
-        sScene.returnEvents[depth] = event;
-    }
     return TRUE;
 }
 
@@ -1148,10 +774,33 @@ BOOL FollowingScene_TakeRestore(FollowingRestore *restore) {
     if (sScene.system == NULL || !FollowingEvents_Consume(restore)) {
         return FALSE;
     }
-    sScene.pcActive = TRUE;
-    sScene.pcFade = TRUE;
+    sScene.restoring = TRUE;
     sScene.previousState = FOLLOWING_STATE_FOLLOWING;
     return TRUE;
+}
+
+void FollowingScene_PreserveForFade(void) {
+    FieldActor *follower = sScene.follower != NULL ? sScene.follower->actor : NULL;
+    FollowingRestore restore;
+
+    if (sScene.system == NULL || !sScene.active || sScene.recalled || follower == NULL || sScene.player == NULL ||
+        (follower->flags & FOLLOWING_ACTOR_FLAG_HIDDEN)) {
+        return;
+    }
+    restore.magic = FOLLOWING_RESTORE_MAGIC;
+    restore.player = sScene.player->wPos;
+    restore.follower = follower->wPos;
+    restore.grid[0] = follower->gPos.x;
+    restore.grid[1] = follower->gPos.y;
+    restore.grid[2] = follower->gPos.z;
+    restore.face = follower->faceDir;
+    restore.zone = sScene.player->zoneId;
+    restore.selected = sScene.follower->selected;
+    FollowingEvents_Preserve(sScene.field, sScene.generation, &restore);
+}
+
+BOOL FollowingScene_KeepsFade(void) {
+    return (sScene.active && !sScene.recalled && sScene.restoring) || FollowingScene_IsBattleEntry();
 }
 
 void FollowingScene_Detach(void) {
@@ -1172,35 +821,20 @@ u32 FollowingScene_Poll(void) {
     if (sScene.gsys->event != NULL) {
         sScene.naturalRun = FALSE;
         if (!FollowingTalk_Owns(sScene.field)) {
-            InspectChain();
+            Pause();
+            IsBattleChain(sScene.gsys->event);
         }
     } else if (sScene.active && !sScene.gsys->eventRunning) {
         BOOL recalled = sScene.recalled;
-        u32 i;
 
-        if (sScene.boxPreserve) {
-            FollowingEvents_Discard();
-        }
         sScene.active = FALSE;
         sScene.recalled = FALSE;
-        sScene.pcActive = FALSE;
-        sScene.pcFade = FALSE;
-        sScene.boxPreserve = FALSE;
         sScene.naturalRun = FALSE;
+        sScene.restoring = FALSE;
         sScene.menuRoot = NULL;
         sScene.wasOut = FALSE;
-        sScene.pcVm = NULL;
         sScene.battleRoot = NULL;
         sScene.battleSetup = NULL;
-        for (i = 0; i < EVENT_LIMIT; i++) {
-            sScene.events[i].event = NULL;
-            sScene.events[i].callback = NULL;
-            sScene.returnEvents[i] = NULL;
-        }
-        for (i = 0; i < VM_LIMIT; i++) {
-            sScene.vms[i].vm = NULL;
-            sScene.vms[i].event = NULL;
-        }
         if (!recalled && sScene.follower->state == FOLLOWING_STATE_EVENT_PAUSED) {
             sScene.follower->state = sScene.previousState;
         }
@@ -1210,10 +844,6 @@ u32 FollowingScene_Poll(void) {
         return FOLLOWING_SCENE_NONE;
     }
     return sScene.recalled ? FOLLOWING_SCENE_RECALLED : FOLLOWING_SCENE_PAUSED;
-}
-
-BOOL FollowingScene_IsPcFade(void) {
-    return sScene.active && !sScene.recalled && sScene.pcActive && sScene.pcFade;
 }
 
 void FollowingScene_PauseAs(FollowingState state) {

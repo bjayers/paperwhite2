@@ -7,11 +7,10 @@
 #include "paperwhite2/following_events.h"
 #include "struct_decls.h"
 
-// Paper White 2: the Following Pokémon's scene policy (src/paperwhite2/ov036/paperwhite2_following_scene.c), ported
-// from Pokeweb's scene.c: which events and script commands keep the follower (it waits) and which recall it, the PC's
-// restore, the menu's and the battle's markers, and the actors on the follower's way. It observes the events bridge
-// (following_events.h); its lists of safe commands and sound events are generated from
-// res/paperwhite2/following/event-policy.json and audio-event-policy.json (docs/paperwhite2/following-pokemon.md)
+// Paper White 2: the Following Pokémon's scene (src/paperwhite2/ov036/paperwhite2_following_scene.c): during an event
+// the follower waits where it is, and is recalled only when the event needs its place; a fade keeps its pose for the
+// field to put it back; the menu's and the battle's markers, and the actors on the follower's way. It observes the
+// events bridge (following_events.h) and never holds an event (docs/paperwhite2/design/following-rewrite.md)
 
 // What the poll says of the running event: nothing, the follower waits, the follower was recalled; or
 // FOLLOWING_SCENE_REFRESH when the event has just ended, and FOLLOWING_SCENE_INVALID when the field changed
@@ -29,21 +28,24 @@ BOOL FollowingScene_Attach(MMSys *system, Follower *follower, u32 generation, vo
 void FollowingScene_Detach(void);
 void FollowingScene_SetPlayer(FieldActor *player);
 u32 FollowingScene_Poll(void);
-// Whether a PC's storage fades the screen, which keeps the follower through the fade
-BOOL FollowingScene_IsPcFade(void);
+// Whether a fade keeps the follower: a battle it leads into, or the event it was just put back in from its restore
+BOOL FollowingScene_KeepsFade(void);
+// A fade during an event hides the follower: its pose, the player's and the zone are kept as the restore token, which
+// the field takes back on this field when the event ends or on the next field (FollowingScene_TakeRestore)
+void FollowingScene_PreserveForFade(void);
 // Whether a local single battle with the follower in front is starting, which carries the follower into its opening
 BOOL FollowingScene_IsBattleEntry(void);
-// Takes the PC's restore token for the field just attached: FALSE when there is none
+// Takes the restore token that a fade kept: FALSE when there is none
 BOOL FollowingScene_TakeRestore(FollowingRestore *restore);
-// The follower was put back (from the PC's restore token) or placed (on a return) while the scene waits: it waits until
+// The follower was put back (from the restore token) or placed (on a return) while the scene waits: it waits until
 // the events end, then goes on in state
 void FollowingScene_PauseAs(FollowingState state);
 BOOL FollowingScene_IsMenuActive(void);
 // Whether the follower was out, as its body or its resting ball, when the running events began
 BOOL FollowingScene_WasOut(void);
-// The field just attached came back from a menu's application or a battle on the tile it left: the events running now,
-// and the fades back in and music restores under them, keep the follower (it is placed and waits). FALSE, and nothing
-// kept, when an application handed the menu a field move, an item's event or a script to run next
+// The field just attached came back from a menu's application or a battle on the tile it left, so the follower is
+// placed and waits through the events running now. FALSE when an application handed the menu a field move, an item's
+// event or a script to run next
 BOOL FollowingScene_BeginReturn(void);
 // Notes event, the menu that the field's checks opened, as the menu's
 void FollowingScene_MarkMenu(GameEvent *event);

@@ -45,10 +45,9 @@ GameEvent *GameEvent_Create(GameSystem *gsys, GameEvent *parent, GameEventCallba
 
 static GameEventReturnCode GameEvent_RunCallback(GameEvent *event) {
 #ifdef PAPERWHITE2
-    // Paper White 2: the follower sees each event, and holds one while its recall finishes (event-callback)
-    if (PaperWhite2_FollowingHoldEvent(event, event->gsys, event->callback)) {
-        return GAMEEVENT_CONTINUE;
-    }
+    // Paper White 2: the follower sees each event before it runs, which waits where it is for it; no event waits for
+    // the follower (event-callback)
+    PaperWhite2_FollowingOnEvent(event, event->gsys, event->callback);
 #endif
     return event->callback(event, &event->state, event->data);
 }

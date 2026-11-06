@@ -3,9 +3,6 @@
 #include "gfl/std.h"
 #include "system/vm.h"
 
-#ifdef PAPERWHITE2
-#include "paperwhite2/following_resident.h"
-#endif
 #ifdef PAPERWHITE2_DEBUG_MENU
 #include "paperwhite2/flag_watch.h"
 #endif
@@ -34,10 +31,6 @@ VM *VM_Create(HeapID heapId, const VMInitParam *param) {
 }
 
 void VM_Free(VM *vm) {
-#ifdef PAPERWHITE2
-    // Paper White 2: the follower forgets a script that ends (docs/paperwhite2/following-pokemon.md, event-vm-free)
-    PaperWhite2_FollowingOnVmFree(vm);
-#endif
 #ifdef PAPERWHITE2_DEBUG_MENU
     // Paper White 2: the debug menu's flag watch forgets the VM's script (paperwhite2/flag_watch.h)
     PaperWhite2_FlagWatch_OnVMFree(vm);
@@ -91,10 +84,6 @@ BOOL VM_Run(VM *vm) {
             at = vm->pc;
 #endif
             cmd = VM_Read16(vm);
-#ifdef PAPERWHITE2
-            // Paper White 2: the follower sees each script command, to stay out or be recalled (event-opcode-fetch)
-            PaperWhite2_FollowingOnOpcode(vm, cmd);
-#endif
             if (cmd >= vm->param.commandCount) {
                 if (cmd < vm->param.extraCommandStart ||
                     cmd >= vm->param.extraCommandCount + vm->param.extraCommandStart ||

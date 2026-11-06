@@ -70,24 +70,14 @@ void PaperWhite2_FollowingClearEventHooks(void) {
     MI_CpuFill8(&sFollowingHooks, 0, sizeof(sFollowingHooks));
 }
 
-void PaperWhite2_FollowingOnOpcode(VM *vm, u16 cmd) {
-    if (sFollowingHooks.opcode != NULL) {
-        sFollowingHooks.opcode(vm, cmd);
+void PaperWhite2_FollowingOnEvent(GameEvent *event, GameSystem *gsys, GameEventCallback callback) {
+    if (sFollowingHooks.callback != NULL) {
+        sFollowingHooks.callback(event, gsys, callback);
     }
-}
-
-BOOL PaperWhite2_FollowingHoldEvent(GameEvent *event, GameSystem *gsys, GameEventCallback callback) {
-    return sFollowingHooks.callback != NULL && sFollowingHooks.callback(event, gsys, callback);
 }
 
 void PaperWhite2_FollowingOnEventFree(GameEvent *event, GameSystem *gsys) {
     if (sFollowingHooks.freeEvent != NULL) {
         sFollowingHooks.freeEvent(event, gsys);
-    }
-}
-
-void PaperWhite2_FollowingOnVmFree(VM *vm) {
-    if (sFollowingHooks.freeVm != NULL) {
-        sFollowingHooks.freeVm(vm);
     }
 }

@@ -10,10 +10,6 @@
 #include "system/game_event.h"
 #include "system/game_system.h"
 
-#ifdef PAPERWHITE2
-#include "paperwhite2/following_sound_policy.h"
-#endif
-
 static GameEventReturnCode EventBGMFadeIn_Callback(GameEvent *event, u32 *state, void *data);
 static GameEventReturnCode EventBGMFadeOut_Callback(GameEvent *event, u32 *state, void *data);
 static GameEventReturnCode EventBGMPushWait_Callback(GameEvent *event, u32 *state, void *data);
@@ -514,13 +510,6 @@ GameEvent *EventBGMFadeWait_Create(GameSystem *gsys) {
 }
 
 #ifdef PAPERWHITE2
-// Paper White 2: whether a callback is one of the sound events that the Following Pokémon's scene policy lets
-// run with the follower kept, those of res/paperwhite2/following/audio-event-policy.json
-// (paperwhite2_following_scene.c)
-BOOL PaperWhite2_IsFollowingSoundCallback(GameEventCallback callback) {
-    return Following_IsSoundCallback(callback);
-}
-
 // Paper White 2: whether a callback is the wait for the field's music to fade back, or its pop, which a battle's
 // return runs; the Following Pokémon's scene policy lets them run with the follower placed
 BOOL PaperWhite2_IsBGMRestoreCallback(GameEventCallback callback) {

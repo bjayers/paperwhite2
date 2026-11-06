@@ -45,9 +45,9 @@
 // walks the player's trail (paperwhite2_following_trail.c), with the swap when the player steps back onto it, the stand
 // beside the player, the ball that a large follower stays in under a floor or indoors, L and R to switch it, and A in
 // front of it to talk to it (paperwhite2_following_interaction.c), from the field's event checks. Its state lives here
-// and goes with overlay 36; what must outlive the field is a resident token. The scene policy
-// (paperwhite2_following_scene.c) says which events keep the follower and which recall it; the ball effects are
-// paperwhite2_following_effects.c.
+// and goes with overlay 36; what must outlive the field is a resident token. The scene
+// (paperwhite2_following_scene.c) keeps the follower waiting through events and recalls it when one needs its place;
+// the ball effects are paperwhite2_following_effects.c.
 // The original's FollowingDebug, a block of values for its emulator tests, isn't ported; the last reason that kept the
 // follower away, which its talk reads, is sReason
 
@@ -66,7 +66,8 @@
 
 // The reasons that keep the follower away, a bit each: the data or the config, the field's actors not running, the
 // player not there or held, the player riding or surfing, an event, the partner, no party member to follow, too few
-// free actors, no free uid, too little heap, the events bridge, the scene recalled it, and the Followers Off choice
+// free actors, no free uid, too little heap, the events bridge, the scene recalled it, the Followers Off choice, and a
+// fade, which hides the follower with no recall's effect and keeps its pose for the restore
 #define REASON_CONFIG 0x1
 #define REASON_FIELD 0x2
 #define REASON_PLAYER 0x4
@@ -80,6 +81,7 @@
 #define REASON_EVENTS_BRIDGE 0x400
 #define REASON_SCENE 0x800
 #define REASON_OFF 0x1000
+#define REASON_FADE 0x2000
 
 // The actors' system's flags that the follower needs set (its actors run and draw), and those it needs clear
 #define SYSTEM_FLAGS_RUNNING (0x1 | 0x10)
@@ -1525,13 +1527,8 @@ static void Cleanup(void) {
     CleanupKeepingTrail(FALSE);
 }
 
-BOOL PaperWhite2_FollowingHoldsPlayer(void) {
-    // Not a recall into the resting ball: that one rolls on with the player
-    return FollowingEffects_IsRecalling() && GetRestBall() == NULL;
-}
-
-// The scene policy's recall. An application of the menu that keeps the field (the save) gives the follower back
-// beside the player once the menu's events end, as one that closes the field does on the next
+// The scene's recall, when an event needs the follower's place. During the menu's events the follower comes back beside
+// the player once they end, as after an application that closes the field
 static void RecallForScene(void) {
     if (IsOwned() && !(sFollower.actor->flags & FOLLOWING_ACTOR_FLAG_HIDDEN)) {
         FollowingEffects_Recall(sFollower.actor);
@@ -2207,7 +2204,8 @@ static void UpdateBefore(MMSys *system) {
             sReturnSummon = FALSE;
         }
         ClearRestore();
-        if (system != NULL && system->field != NULL && IsFollowersOff(system->field->gameData)) {
+        // A summon (a menu's or a battle's return, the boot) places the follower its own way, with its send-out
+        if ((system != NULL && system->field != NULL && IsFollowersOff(system->field->gameData)) || sSummon) {
             FollowingEvents_Discard();
         } else if (sEventsReady) {
             FollowingScene_TakeRestore(&sRestore);
@@ -2227,6 +2225,15 @@ static void UpdateBefore(MMSys *system) {
     eventState = FollowingScene_Poll();
     if (eventState == FOLLOWING_SCENE_INVALID) {
         sEventsReady = FALSE;
+    }
+    // An event that faded the screen on this field has ended: the follower it hid comes back where it was, if the
+    // player is too (the restore below)
+    if ((eventState & FOLLOWING_SCENE_REFRESH) && sEventsReady) {
+        if (sFollower.actor == NULL) {
+            FollowingScene_TakeRestore(&sRestore);
+        } else {
+            FollowingEvents_Discard();
+        }
     }
     paused = eventState == FOLLOWING_SCENE_PAUSED;
     reason = 0;
@@ -2278,9 +2285,13 @@ static void UpdateBefore(MMSys *system) {
         if (fieldPlayer != NULL && FieldPlayer_GetExState(fieldPlayer) != 0) {
             reason |= REASON_EX_STATE;
         }
-        if ((Field_IsEventRunning(field) && !ownTalk && !paused) ||
-            (field->fadeFlag && !FollowingScene_IsPcFade() && !FollowingScene_IsBattleEntry())) {
+        if (Field_IsEventRunning(field) && !ownTalk && !paused) {
             reason |= REASON_EVENT;
+        }
+        // A fade hides the follower, kept for the restore, but for a battle it leads into
+        if (field->fadeFlag && !FollowingScene_KeepsFade()) {
+            FollowingScene_PreserveForFade();
+            reason |= REASON_FADE;
         }
         if (GameData_CheckPairFlag(gameData)) {
             reason |= REASON_PAIR;
@@ -2315,12 +2326,13 @@ static void UpdateBefore(MMSys *system) {
     }
     sReason = reason;
     if (reason != 0) {
-        if (sEventsReady) {
+        // The restore that a fade keeps lasts through it
+        if (sEventsReady && !(reason & REASON_FADE)) {
             FollowingEvents_Discard();
         }
         ClearRestore();
         FollowingTalk_Cancel();
-        if (!(reason & REASON_OFF) && (reason & REASON_EVENT)) {
+        if (!(reason & REASON_OFF) && (reason & (REASON_EVENT | REASON_FADE))) {
             FollowingEffects_Warm(system);
         }
         if (IsOwned() && !(sFollower.actor->flags & FOLLOWING_ACTOR_FLAG_HIDDEN) &&
@@ -2606,8 +2618,8 @@ void PaperWhite2_FollowingTerrainDraw(BillboardActorSys *system, G3DCamera *came
 
 // The field menu's chain of events leaving the field for an application: EventFieldMenu_Callback, the
 // EventFieldAppCall_Callback it chains, or the menu's return; the Y button's shortcut menu chains the same application
-// call. The scene policy recalls the follower for that application before this unload, so the menu's marker and the
-// actor are both gone by then; the chain isn't
+// call. The menu's marker and the actor may be gone by this unload (the application's fade hid the follower); the chain
+// isn't
 static BOOL IsMenuCallback(GameEventCallback callback) {
     return callback == EventFieldMenu_Callback || callback == EventFieldAppCall_Callback ||
            PaperWhite2_IsFieldMenuReturnCallback(callback);

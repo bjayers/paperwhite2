@@ -2,6 +2,32 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-05 (branch `follower-rebuild`): stage 1, the follower's events watched, never held
+
+On the branch `follower-rebuild` (from the tag `follower-before-rebuild` on `main`), the plan of
+`docs/paperwhite2/design/following-rewrite.md`. Not yet tested in game.
+
+- **No event waits for the follower, nor the player's input:** the event hook only watches
+  (`PaperWhite2_FollowingOnEvent`, game_event.c), the D-pad gate is gone (field_player.c), and so are the script
+  command and script-freed hooks (vm.c).
+- **The scene** (`paperwhite2_following_scene.c`, 1224 lines to 854): during any event the follower waits where it is.
+  It is recalled only when the event needs its place (the checks kept as they were: an actor's scripted move,
+  placement or new actor over it, a scripted move of the player, its own actor taken). The allow-list of 376 commands
+  with its generator and data (`tools/paperwhite2/following_scene_policy.py`,
+  `res/paperwhite2/following/event-policy.json`, `audio-event-policy.json`), the event and VM tables, and the PC's,
+  Repel's, return's and finisher's special cases are gone.
+- **Fades:** a fade during an event hides the follower with no recall effect (`REASON_FADE`) and keeps its pose as
+  the restore token (`FollowingScene_PreserveForFade`), which comes back on the same field when the event ends, or on
+  the next field (the PC's storage), if the player is on the same tile of the same zone. A summon (a menu's or a
+  battle's return, the boot) still wins, with its send-out. A battle the follower leads into keeps it through its fade,
+  as before.
+- **Memory:** the DS arena has 90 KB left, from 87.
+- **To test:** talking to NPCs and signs, menus (the bag, the party, the save, which no longer recalls the follower),
+  the PC, wild and trainer battles (with the follower in front and not), Policeman Dell and other trainers,
+  cutscenes with NPCs walking, doors, seamless connections, Castelia's streets, Fly and Dig, the Escape Rope.
+- **Next:** stage 2, tidying the movement and drawing with the same behavior; then the dead exports the policy used
+  (`PaperWhite2_Is*Callback` in original files), and the Dell re-measure back to vanilla once nothing holds events.
+
 ## 2026-11-05: a patrolling Trainer walking onto the player with the follower out (Route 4's Policeman Dell)
 
 - **The user's tests:** with the follower out, Dell (Route 4, `MOVE_CODE_WALK_BACK_AND_FORTH`, the route's only

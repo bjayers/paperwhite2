@@ -101,34 +101,29 @@ Options row and save bit (`following-review/hooks.md` section 3).
   makes it vanish as the path is set, as now but without the stall.
 - **Kept:** everything else in `following-review/features.md`, which is the checklist each stage is tested against.
 
-## Decisions for the user
+## The user's decisions (2026-11-05)
 
-1. **Spacing:** accept the tile-based spacing (and losing the eased swap), or keep fine spacing at a cost in
-   complexity?
-2. **The side-by-side stand:** rebuild it on the new core, or drop it?
-3. **The four direction gaps** in each species' data have always acted as one value (the largest of them,
-   `paperwhite2_following_field.c:1745-1763`). With tile spacing they'd mostly go away; otherwise, make them work or
-   keep one value and simplify the editor.
-4. **The L/R follower choice** isn't saved, so after a reset the lead follows again. Save it?
+1. **Spacing, the smooth swap and the side-by-side stand stay as they are.** So the movement and drawing aren't
+   rebuilt on the game's partner movement (section 2 and 3 above are kept as the research, not the plan): they're
+   tidied, with the same behavior.
+2. **One spacing value in all four directions**, which is what the code already does (the largest of the four): the
+   data and the Follower Editor become one value.
+3. **The L/R choice isn't saved**, as now.
 
-Smaller findings to fix on the way: the daily friendship is given whenever the dialogue data loads, even when no
-dialogue rule played; the docs' sample values are out of date; a stale build object (`paperwhite2_following_gifts.o`)
-is left over.
+## The plan as decided
 
-## Stages
+On the branch `follower-rebuild`, from the tag `follower-before-rebuild` on `main`. The two aims are stability and
+keeping every feature. Each stage builds, passes the DSi check and is tested in game against
+[features.md](following-review/features.md) before the next.
 
-On a branch, `follower-rebuild`, with a tag on `main` before it starts (`follower-before-rebuild`). Each stage builds,
-passes the DSi check, and is tested by the user in game against the checklist before the next.
-
-1. **Events.** Replace the scene policy with the watch-and-hide rules on the current movement code. This is the
-   biggest stability gain and doesn't depend on the rest. Test: talks, signs, menus, the PC, battles, Dell and the
-   trainers, cutscenes, connections, Castelia.
-2. **Grid movement and drawing.** The new move code and native drawing on grid maps; rail maps keep today's trail
-   for now. Test: walking, running, stairs, ledges, grass and water edges, buildings, large followers, NPCs.
-3. **Rail movement.** The rail move code. Test: Castelia's streets and the other rail maps, switching between grid
-   and rail.
-4. **Clean up.** Remove the old trail, swap, terrain, shadow and collision code and the unused hooks; measure memory
-   and frame time against today's; update `following-pokemon.md`, the editor if the data changes, and STATUS.
+1. **Events: watch, never hold** (section 1 above). Drop the event hold, the input gate, the script-command hook and
+   its list, the event and VM tables and their special cases. The follower stops when an event starts, hides at once
+   only when something needs its place, and comes back by the one rule. The Dell re-measure goes back to vanilla once
+   this is tested.
+2. **Tidy movement and drawing, the same behavior.** Texture uploads in the vertical blank instead of the
+   busy-wait for the scanline; the per-frame math made cheaper (the software divisions, the camera basis computed once
+   a draw, the pass over the actors); the collision hooks kept unless the game's 0x8000 flag does the same.
+3. **One spacing value** in the data, its tools and the Follower Editor.
+4. **Clean up and measure:** remove what the stages left unused, measure memory and frame time against
+   `follower-before-rebuild`, update `following-pokemon.md` and STATUS.
 5. **Merge** once the user has played through on the branch.
-
-The content (registry, dialogue, interactions, effects, options, battle opening, save) carries over in every stage.

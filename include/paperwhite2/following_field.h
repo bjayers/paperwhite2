@@ -50,8 +50,6 @@ void PaperWhite2_FollowingUnload(GameSystem *gsys, Field *field);
 void PaperWhite2_FollowingDraw(BillboardActorSys *system, G3DCamera *camera, G3DLight *lights);
 void PaperWhite2_FollowingTerrainDraw(BillboardActorSys *system, G3DCamera *camera, G3DLight *lights);
 void PaperWhite2_FollowingEffectsDraw(BillboardActorSys *system, G3DCamera *camera, G3DLight *lights);
-// Whether the player's D-pad waits while the follower is recalled into its ball (field-player-recall-direction-gate)
-BOOL PaperWhite2_FollowingHoldsPlayer(void);
 // In fieldmap_event.c, after the field's own event checks on a grid and on rails, given the event they found: the
 // scene notes a menu that the grid's checks opened, and with no event, A in front of the follower talks to it, which on
 // a grid counts as a script called (follower-grid-event, follower-rail-event)

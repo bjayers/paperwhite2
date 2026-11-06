@@ -39,14 +39,10 @@ enum {
 // What the field's follower code watches, set while the field is loaded: each is called before the game does
 // what it names
 typedef struct FollowingEventHooks {
-    // A script command's opcode, just read
-    void (*opcode)(VM *vm, u16 cmd);
-    // An event's callback is about to run: TRUE keeps the event waiting a frame instead
-    BOOL (*callback)(GameEvent *event, GameSystem *gsys, GameEventCallback callback);
+    // An event's callback is about to run
+    void (*callback)(GameEvent *event, GameSystem *gsys, GameEventCallback callback);
     // An event is about to be freed
     void (*freeEvent)(GameEvent *event, GameSystem *gsys);
-    // A script's machine is about to be freed
-    void (*freeVm)(VM *vm);
 } FollowingEventHooks;
 
 BOOL PaperWhite2_FollowingTokenStore(u32 kind, const void *source, u32 size);
@@ -55,10 +51,8 @@ void PaperWhite2_FollowingTokenDiscard(u32 kind);
 void PaperWhite2_FollowingBindEventHooks(const FollowingEventHooks *hooks);
 void PaperWhite2_FollowingClearEventHooks(void);
 
-// The hooks' sites, in vm.c and game_event.c
-void PaperWhite2_FollowingOnOpcode(VM *vm, u16 cmd);
-BOOL PaperWhite2_FollowingHoldEvent(GameEvent *event, GameSystem *gsys, GameEventCallback callback);
+// The hooks' sites, in game_event.c
+void PaperWhite2_FollowingOnEvent(GameEvent *event, GameSystem *gsys, GameEventCallback callback);
 void PaperWhite2_FollowingOnEventFree(GameEvent *event, GameSystem *gsys);
-void PaperWhite2_FollowingOnVmFree(VM *vm);
 
 #endif // PAPERWHITE2_FOLLOWING_RESIDENT_H

@@ -5,7 +5,7 @@
 #include "battle/btl_setup.h"
 #include "constants/battle.h"
 
-// Paper White 2: the Following Pokémon's battle opening, ported from Pokeweb's battle-entry.h: the field's scene policy
+// Paper White 2: the Following Pokémon's battle opening, ported from Pokeweb's battle-entry.h: the field's scene
 // marks the setup of a local single battle whose lead is the follower in front, and the battle's opening takes the
 // mark (docs/paperwhite2/following-pokemon.md)
 
