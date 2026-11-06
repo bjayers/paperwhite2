@@ -2,6 +2,14 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-06: Join Avenue, step 4: the editor's page
+
+The editor's **Join Avenue** page (`editor/src/modules/joinavenue/`, editor README) edits the owners and the random
+visitors: name, gender, look, trainer ID, greeting and messages, and an owner's shop (kind and variant). Adding,
+changing and removing owners were tested on a scratch copy: the saved files pack. Not yet tested in game. Next: step 5,
+the opening (its tutorial invites a visitor who isn't an owner) and the wireless sources; then the owners' own
+dialogue (`line_1` to `line_12`, which only Gym Leaders use so far).
+
 ## 2026-11-06: no word filter, no warning about other players
 
 The user tested the avenue's first day: it works. The name entry no longer checks for profane words or long numbers,

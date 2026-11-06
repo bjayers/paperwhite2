@@ -1,0 +1,46 @@
+/* The Join Avenue Editor. Colours are the shell's tokens, so it follows the theme. */
+
+.ja-editor { display: flex; flex-direction: column; flex: 1; min-height: 0; background: var(--panel); }
+.ja-header { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-bottom: 1px solid var(--border); }
+.ja-header h2 { margin: 0; font-size: 16px; }
+.ja-header .spacer, .ja-top .spacer { flex: 1; }
+.ja-error { color: var(--error); }
+.ja-bar { margin: 8px 14px 0; }
+.ja-note { font-size: 12px; margin: 2px 0; }
+.ja-pad { padding: 10px 14px; }
+.ja-split { display: grid; grid-template-columns: 260px 1fr; flex: 1; min-height: 0; }
+.ja-list { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--border); }
+.ja-list > .filter { margin: 8px 10px 6px; }
+.ja-list-items { flex: 1; overflow-y: auto; }
+.ja-group { display: flex; align-items: center; justify-content: space-between; font-weight: 600; padding: 4px 10px;
+  background: var(--panel-2); position: sticky; top: 0; z-index: 1; }
+.ja-group-add { font-weight: normal; padding: 1px 8px; font-size: 12px; }
+.ja-item { display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 8px; width: 100%; border: none;
+  border-radius: 0; background: none; text-align: left; padding: 2px 10px; }
+.ja-item:hover { background: var(--hover); }
+.ja-item.selected { background: var(--selected); box-shadow: inset 3px 0 var(--accent); }
+.ja-item-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ja-item-detail { font-size: 12px; white-space: nowrap; }
+.ja-detail { overflow-y: auto; min-width: 0; }
+.ja-page { padding: 12px 20px 48px; max-width: 900px; display: flex; flex-direction: column; gap: 4px; }
+.ja-top { display: flex; gap: 14px; align-items: center; margin-bottom: 6px; }
+.ja-top h2 { margin: 0; font-size: 18px; }
+.ja-portrait { background: var(--panel-2); border-radius: 8px; padding: 4px; display: inline-flex; }
+.ja-portrait img, .ja-model img, .ja-item img { image-rendering: pixelated; }
+
+/* Sections laid out as the Overworld Editor's Ambients panel: a heading with a summary, a label column beside the
+   controls, a hint under each */
+.ja-box { border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; margin: 6px 0; }
+.ja-box h5 { margin: 0 0 10px; font-size: 13px; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.ja-grid { display: grid; grid-template-columns: 110px 1fr; gap: 12px 14px; align-items: start; }
+.ja-label { font-size: 13px; padding-top: 5px; }
+.ja-control { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+.ja-hint { flex-basis: 100%; font-size: 12px; }
+.ja-text { width: 160px; font-family: var(--mono); }
+.ja-text.invalid { border-color: var(--error); }
+.ja-number { width: 90px; }
+.ja-count { font-size: 12px; font-variant-numeric: tabular-nums; }
+.ja-model { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; }
+.ja-sign { font-weight: 600; font-size: 13px; }
+.ja-wrap { flex-wrap: wrap; }
+.ja-control button.active { border-color: var(--accent); background: var(--selected); }

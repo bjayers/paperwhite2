@@ -357,6 +357,17 @@ The pictures shown over the C-Gear's rings, which its help button cycles in the 
 count once), so a busy PNG can lose detail, and the saved PNG is what the game shows. An existing name replaces its
 picture. The arrows reorder, and Remove deletes the picture.
 
+## Join Avenue
+
+The avenue's people (`src/modules/joinavenue/`, `res/field/join_avenue/09_people.json`): the owners, who arrive one a
+day and alone can be invited to open a shop, and the random visitors, who can only be recommended to. Each has a name
+(7 characters), a gender, a look from the sprite browser, a trainer ID, and a greeting and two messages (8 characters
+each); an owner also has the shop they want, by kind and variant, with its sign and the goods the variant sells at its
+top level. The texts are messages of `res/text/script/global_10685.txt`: a text other people share gets a new message
+of its own when it is changed. **+ Add** makes an owner with the next free ID and a shop kind no owner wants yet, and
+Remove owner drops one (their texts stay in the bank). An owner's ID must be theirs alone, since the avenue knows
+owners by ID; the original's visitors share some. Save (Ctrl+S) writes the bank, then the table.
+
 ## Dragging values
 
 Number fields that measure something have a ⇔ grip (in the forms) or a label (in the Overworld Editor's panels) that
