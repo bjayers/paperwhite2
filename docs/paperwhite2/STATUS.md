@@ -2,6 +2,15 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-05: the C-Gear, first steps
+
+- Loading a save no longer asks about the C-Gear: it starts on whenever the save has it on (plugins.md, "C-Gear").
+- The battery is under the clock's digits; the right-hand circle stays, empty but for the DS's wireless icon.
+- `tools/paperwhite2/cgear_sprites.py` exports the C-Gear's sprites as editable pieces and imports them; the user
+  has an export in their workspace (`Pokemon Paper White/C-Gear sprites`) to work on icons.
+- Next: the always-on step (no networking, no dimming, the sweep), then the buttons' actions once the user decides.
+  Not yet tested in game.
+
 ## 2026-11-05: a freeze in melonDS DS with JIT literal optimisations (known issue)
 
 - **The freeze:** after a trainer battle, or after a wild battle once the player does anything, the game freezes in

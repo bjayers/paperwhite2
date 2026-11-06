@@ -627,6 +627,13 @@ static u32 StartMenu_Continue(StartMenuWork *wk) {
             wk->seq = 0;
             return StartMenu_WipeOut(wk, STATE_FREE);
         }
+#ifdef PAPERWHITE2
+        // Paper White 2: no question; the C-Gear starts as if Yes was chosen. A DSi with its wireless turned off
+        // starts it off, as the original does after its notice, without the notice
+        wk->cgearOff = isWirelessEnabled() == FALSE;
+        wk->seq = 0;
+        return StartMenu_WipeOut(wk, STATE_FREE);
+#endif
         wk->wait = 8;
         wk->seq++;
         break;

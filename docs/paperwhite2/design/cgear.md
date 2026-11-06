@@ -1,6 +1,7 @@
 # The C-Gear: what can change, and the limits (research, 2026-10-31)
 
-Research for the user's C-Gear redesign, nothing changed yet. The C-Gear is complete, matching C, so every change
+Research for the user's C-Gear redesign. What is done is in plugins.md, "C-Gear".
+The C-Gear is complete, matching C, so every change
 below is an `#ifdef PAPERWHITE2` edit of named code, not a binary patch. Not tested in game: everything here is read
 from the source.
 

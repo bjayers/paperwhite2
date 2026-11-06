@@ -91,6 +91,10 @@ enum {
     ACTOR_CLOCK_DIGIT,
     ACTOR_CLOCK = 4,
     ACTOR_BATTERY,
+#ifdef PAPERWHITE2
+    // Paper White 2: the right-hand circle, empty since the battery moved under the clock
+    ACTOR_RIGHT_CIRCLE,
+#endif
     ACTOR_TITLE,
     ACTOR_POWER,
     ACTOR_HELP,
@@ -1303,7 +1307,14 @@ static const u8 sClockDigitSteps[4] = { 0, 6, 9, 6 };
 // The actors from ACTOR_CLOCK on
 // clang-format off
 static const CGearSwActorData sActorData[ACTOR_COUNT - ACTOR_CLOCK] = {
+#ifdef PAPERWHITE2
+    // Paper White 2: the battery under the clock's digits, in front of its circle (its cells no longer have a circle
+    // of their own), and the right-hand circle drawn by the clock's colonless frame
+    { 1, 48, 22, 1, 2, 0 },   { 5, 48, 22, 1, 1, 0 },   { 1, 208, 22, 1, 2, 0 },  { 21, 128, 10, 1, 1, 0 },
+    { 6, 200, 180, 1, 1, 0 },
+#else
     { 1, 48, 22, 1, 2, 0 },   { 5, 208, 22, 1, 2, 0 },  { 21, 128, 10, 1, 1, 0 }, { 6, 200, 180, 1, 1, 0 },
+#endif
     { 8, 215, 163, 1, 1, 0 }, { 10, 228, 144, 1, 1, 0 }, { 12, 35, 160, 1, 1, 0 }, { 3, 128, 96, 1, 7, 0 },
     { 16, 128, 86, 1, 7, 0 }, { 0, 68, 60, 1, 5, 1 },   { 22, 68, 60, 1, 6, 0 },  { 1, 128, 164, 1, 5, 1 },
     { 23, 128, 164, 1, 6, 0 }, { 2, 188, 60, 1, 5, 1 },  { 24, 188, 60, 1, 6, 0 }, { 28, 68, 60, 1, 3, 0 },
@@ -1424,6 +1435,11 @@ static void CGearSw_AddActors(CGearSw *work) {
                              sActorData[i].priority, sActorData[i].res);
     }
     ClActor_SetAutoAnim(work->actors[ACTOR_CLOCK], FALSE);
+#ifdef PAPERWHITE2
+    // Paper White 2: the clock's frame without the colon is the bare circle
+    ClActor_SetAutoAnim(work->actors[ACTOR_RIGHT_CIRCLE], FALSE);
+    ClActor_SetAnimFrame(work->actors[ACTOR_RIGHT_CIRCLE], 1);
+#endif
     if (OS_IsRunOnTwl()) {
         CGearSw_SetActorAnim(work->actors[ACTOR_BATTERY], 4);
     }

@@ -1266,6 +1266,24 @@ docs/paperwhite2/design/dexnav.md ("As built").
 - **The app:** `FIELD_APP_DEXNAV`, in overlay 303 beside the Habitat List.
 - **The code:** `src/paperwhite2/ov303/paperwhite2_dexnav{,_data}.c` and `src/paperwhite2/ov012/paperwhite2_dexnav_event.c`.
 
+### C-Gear
+
+The redesign's research and plan: `docs/paperwhite2/design/cgear.md`. Done so far:
+
+- **No question on Continue:** `StartMenu_Continue` (`src/ov162/startmenu.c`) starts the C-Gear as Yes did whenever
+  the save has it on, without asking. A DSi with its wireless off starts it off, as before, without the notice. Until
+  the networking is turned off (the plan's always-on step), "on" still starts the beacon search as Yes did.
+- **The battery under the clock:** the battery actor is at the clock's (48, 22), in front of it, and its icon shows in
+  the clock circle's empty 16 by 8 slot under the digits (the US clock has no AM/PM there). Its cells (31-37 of
+  `res/graphics/c_gear/17.ncer`, used by nothing else) keep only the icon: their second object, the circle, is cut
+  (count 1, bounds -8..7 by 5..12). The right-hand circle stays as a new actor, `ACTOR_RIGHT_CIRCLE`, showing the clock's
+  colonless frame, which is the bare circle; the DS's wireless icon still shows there (`GFL_NetMoveIcon(200, 10)`).
+- **Sprite art:** `tools/paperwhite2/cgear_sprites.py export DIR` writes each object of the C-Gear's cells as its own
+  PNG, as it shows (the sheets store an object's tiles in a row, so small ones are scrambled in `16.png` and the
+  skins' `19-28.png`), named by what it is and its first tile, with previews of the whole cells; `import DIR` puts the
+  edited ones back. Only palette indices count, and a piece keeps its size. The markers' IR, WIRELESS and ONLINE art
+  is in each skin's sheet (five shapes for each gender), so a new marker icon is ten edits.
+
 ## Adding global scripts
 
 A global script file's IDs are limited by its row in `GLOBAL_SCRIPT_TABLE` (`src/ov012/script_sys.c`), e.g.
