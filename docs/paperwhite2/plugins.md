@@ -1352,7 +1352,8 @@ The intro no longer warns that the avenue's name and greeting may be sent to oth
 ### Name entry without the word filter
 
 With wireless gone nothing typed reaches anyone else, so the name entry (`src/ov280/name_input.c`) no longer refuses
-profane words or numbers of more than four digits (`ProfWord_Check`, `ProfWord_HasManyDigits`). This covers every
+profane words or numbers of more than four digits (`ProfWord_Check`, `ProfWord_HasManyDigits`), and its
+word lists and their overlay (281) are no longer loaded. This covers every
 name: the player's, Pokémon's, the rival's, the Join Avenue's and its greeting.
 
 ## Adding global scripts

@@ -516,7 +516,10 @@ BOOL NameEntry_ProcInit(GameProc *proc, u32 *state, void *arg, void *unused) {
     u16 species;
     ClActUnit *unit;
 
+    // Paper White 2: no word filter (NameEntry_ProcMain), so its overlay and lists aren't loaded
+#ifndef PAPERWHITE2
     GFL_OvlLoad(OVERLAY_PROF_WORD);
+#endif
     if (param->mode != NAME_ENTRY_GAME_SYNC_ID && param->gameInfo != NULL) {
         // The modes that name the same kind of thing share a slot of the keyboard that was used last
         slot = param->mode;
@@ -575,7 +578,9 @@ BOOL NameEntry_ProcInit(GameProc *proc, u32 *state, void *arg, void *unused) {
     }
     NameEntryMessage_Init(&work->message, work->font, work->msgData, work->queue, work->wordSet, HEAPID_NAME_INPUT);
     NameEntryTalk_Init(&work->talk, HEAPID_NAME_INPUT);
+#ifndef PAPERWHITE2
     work->profWord = ProfWord_LoadLists(HEAPID_NAME_INPUT);
+#endif
     NameEntryObjs_ShowSelectors(&work->objs, work->usesPresetNames);
     if (param->mode == NAME_ENTRY_POKEMON) {
         if (param->pkm == NULL) {
@@ -598,7 +603,9 @@ BOOL NameEntry_ProcInit(GameProc *proc, u32 *state, void *arg, void *unused) {
 BOOL NameEntry_ProcExit(GameProc *proc, u32 *state, void *param, void *arg) {
     NameEntryWork *work = arg;
 
+#ifndef PAPERWHITE2
     ProfWord_FreeLists(work->profWord);
+#endif
     NameEntryTalk_Free(&work->talk);
     NameEntryMessage_Free(&work->message);
     Keyboard_Free(&work->keyboard);
@@ -618,7 +625,9 @@ BOOL NameEntry_ProcExit(GameProc *proc, u32 *state, void *param, void *arg) {
     GFL_FontFree(work->font);
     GFL_ProcReleaseSubsystem(proc);
     GFL_HeapDelete(HEAPID_NAME_INPUT);
+#ifndef PAPERWHITE2
     GFL_OvlUnload(OVERLAY_PROF_WORD);
+#endif
     return TRUE;
 }
 
