@@ -1309,8 +1309,8 @@ The redesign's research and plan: `docs/paperwhite2/design/cgear.md`. Done so fa
   C-Gear's archive (`a/2/8/7`, `HACK_ARCHIVE_MEMBERS`). Help shows the next of none and them
   (`CGearSw_ShowPicture`, the count read from the archive), kept in `CGearSettings`' unused bytes (`picture`); the
   save's own downloaded skin isn't shown. The editor's C-Gear Pictures page imports, orders and removes them.
-- **The date:** the right-hand circle shows the month and the day in the clock's digits (`ACTOR_DATE_DIGIT`, four
-  actors at the clock's spacing, set by `CGearSw_UpdateClock`).
+- **The date:** the right-hand circle shows the month above the day in the clock's digits (`ACTOR_DATE_DIGIT`,
+  four actors, set by `CGearSw_UpdateClock`).
 - **No survey button or log:** their actors (`ACTOR_RADAR`, `ACTOR_LOGO` and `ACTOR_NOTICE`) are kept off the screen,
   since the original shows and hides them in many places, and the log's rectangle is gone from the ring screen
   (`res/graphics/c_gear/11.nscr`, rows 10-13, columns 9-22, which now hold the rings' tiles from `10.nscr`, the

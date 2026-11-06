@@ -123,7 +123,7 @@ enum {
 #ifdef PAPERWHITE2
     // Paper White 2: the right-hand circle, empty since the battery moved under the clock
     ACTOR_RIGHT_CIRCLE,
-    // Paper White 2: the date's month and day in the right-hand circle, as the clock's digits
+    // Paper White 2: the date in the right-hand circle in the clock's digits, the month above the day
     ACTOR_DATE_DIGIT,
     ACTOR_TITLE = ACTOR_DATE_DIGIT + 4,
 #else
@@ -1462,7 +1462,7 @@ static const CGearSwActorData sActorData[ACTOR_COUNT - ACTOR_CLOCK] = {
     // Paper White 2: the battery under the clock's digits, in front of its circle (its cells no longer have a circle
     // of their own), and the right-hand circle drawn by the clock's colonless frame
     { 1, 48, 22, 1, 2, 0 },   { 5, 48, 22, 1, 1, 0 },   { 1, 208, 22, 1, 2, 0 },
-    { 0, 193, 18, 1, 1, 0 },  { 0, 199, 18, 1, 1, 0 },  { 0, 208, 18, 1, 1, 0 },  { 0, 214, 18, 1, 1, 0 },
+    { 0, 202, 13, 1, 1, 0 },  { 0, 208, 13, 1, 1, 0 },  { 0, 202, 23, 1, 1, 0 },  { 0, 208, 23, 1, 1, 0 },
     { 21, 128, 10, 1, 1, 0 }, { 6, 200, 180, 1, 1, 0 },
 #else
     { 1, 48, 22, 1, 2, 0 },   { 5, 208, 22, 1, 2, 0 },  { 21, 128, 10, 1, 1, 0 }, { 6, 200, 180, 1, 1, 0 },
