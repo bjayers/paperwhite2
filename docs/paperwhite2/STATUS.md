@@ -17,7 +17,8 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
 - Then the user's POKEDEX, DEXNAV and MAP labels; the title strip cycles the skins again; markers that can't be used
   show dimmed with their lamp off; six more places on the rings (the middle, where the log and the survey were). Not
   yet tested in game.
-- Next: help and power are still inactive.
+- Then power saves (the user's icon) and is dimmed where saving can't be done, help cycles the background's colors,
+  and the right-hand circle shows the date. Not yet tested in game.
 
 ## 2026-11-05: a freeze in melonDS DS with JIT literal optimisations (known issue)
 

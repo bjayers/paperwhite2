@@ -1296,8 +1296,14 @@ The redesign's research and plan: `docs/paperwhite2/design/cgear.md`. Done so fa
   unlit; the colors come back once it can. Not while the screen darkens for an event, whose palettes it would light.
 - **More places:** `MARKER_POS_COUNT` is 48: after the original 42, the middle (128, 96), the two inner rings at its
   sides, where the log's rectangle was, and the outer ring at the bottom left, where the survey button was.
-- **Buttons with nothing to start yet:** `CGearSw_UpdateTouch` ignores help, power, the survey and the log. The title
-  strip cycles the skins again, and editing moves the markers and changes the colors.
+- **Power saves, help changes the background:** the power button (the user's save icon in `16.png`) saves as the
+  field menu's Save does, through the same event (`ACTION_SAVE`, `FIELD_APP_SAVE`), and shows in its pressed palette
+  where the menu has no Save (the Union Room, the Royal Unova, a forced season sync). Saving's No changed the touch
+  screen to the field menu, which it came from, so the event changes it back to the C-Gear. Help cycles the
+  background's six colors, as editing's background button does. The title strip cycles the skins, the survey and
+  the log are gone, and editing moves the markers and changes the colors.
+- **The date:** the right-hand circle shows the month and the day in the clock's digits (`ACTOR_DATE_DIGIT`, four
+  actors at the clock's spacing, set by `CGearSw_UpdateClock`).
 - **No survey button or log:** their actors (`ACTOR_RADAR`, `ACTOR_LOGO` and `ACTOR_NOTICE`) are kept off the screen,
   since the original shows and hides them in many places, and the log's rectangle is gone from the ring screen
   (`res/graphics/c_gear/11.nscr`, rows 10-13, columns 9-22, which now hold the rings' tiles from `10.nscr`, the

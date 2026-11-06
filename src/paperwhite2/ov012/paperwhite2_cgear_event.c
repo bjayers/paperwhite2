@@ -4,6 +4,7 @@
 #include "field/app_call.h"
 #include "field/field.h"
 #include "field/field_actor.h"
+#include "field/field_menu.h"
 #include "field/field_script_event.h"
 #include "field/hidden_event.h"
 #include "field/itemuse_event.h"
@@ -47,6 +48,13 @@ BOOL PaperWhite2_CGearEvent_CanOpen(GameSystem *gsys, s32 appId) {
         return BagSave_GetItemCountByID(bag, ITEM_POKE_RADAR, HEAPID_GAMEEVENT) != 0;
     case FIELD_APP_TOWNMAP:
         return BagSave_GetItemCountByID(bag, ITEM_TOWN_MAP, HEAPID_GAMEEVENT) != 0;
+    case FIELD_APP_SAVE: {
+        // Where the field menu has no Save
+        u16 zoneId = PlayerState_GetZoneID(GSYS_GetPlayerState(gsys));
+
+        return !GetZoneIsUnionRoom(zoneId) && !IsZone150Or151(zoneId) && !IsZoneRoyalUnova(zoneId) &&
+               !GameData_IsForceSeasonSync(gameData);
+    }
     }
     return FALSE;
 }
@@ -78,6 +86,11 @@ static GameEventReturnCode PaperWhite2_CGearEvent_Main(GameEvent *event, u32 *st
             break;
         default:
             EnableAllActorsMovement(Field_GetActorSystem(work->field));
+            // Saving's No changes the touch screen to the field menu, which it came from in the original
+            if (input->appId == FIELD_APP_SAVE && input->eventType == 0) {
+                GameEvent_Replace(event, EventFieldMenuReturn_Create(work->gsys, work->field, 0));
+                return GAMEEVENT_CONTINUE;
+            }
             return GAMEEVENT_DONE;
         }
         break;

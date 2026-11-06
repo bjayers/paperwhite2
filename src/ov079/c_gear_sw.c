@@ -46,6 +46,7 @@
 #include "system/wipe.h"
 #ifdef PAPERWHITE2
 #include "field/app_call.h"
+#include "gfl/rtc_cache.h"
 #include "paperwhite2/cgear_event.h"
 #endif
 
@@ -95,6 +96,8 @@ enum {
     ACTION_PARTY,
     ACTION_DEXNAV,
     ACTION_MAP,
+    // Paper White 2: the power button saves
+    ACTION_SAVE,
 #endif
 };
 
@@ -120,8 +123,12 @@ enum {
 #ifdef PAPERWHITE2
     // Paper White 2: the right-hand circle, empty since the battery moved under the clock
     ACTOR_RIGHT_CIRCLE,
-#endif
+    // Paper White 2: the date's month and day in the right-hand circle, as the clock's digits
+    ACTOR_DATE_DIGIT,
+    ACTOR_TITLE = ACTOR_DATE_DIGIT + 4,
+#else
     ACTOR_TITLE,
+#endif
     ACTOR_POWER,
     ACTOR_HELP,
     ACTOR_EDIT,
@@ -525,6 +532,8 @@ static s32 CGearSw_GetActionApp(u32 action) {
         return FIELD_APP_POKELIST;
     case ACTION_DEXNAV:
         return FIELD_APP_DEXNAV;
+    case ACTION_SAVE:
+        return FIELD_APP_SAVE;
     }
     return FIELD_APP_TOWNMAP;
 }
@@ -1338,8 +1347,8 @@ static void CGearSw_UpdateTouch(CGearSw *work) {
         return;
     }
 #ifdef PAPERWHITE2
-    // Paper White 2: help, power, the survey and the log start nothing yet
-    if (touched == TOUCH_HELP || touched == TOUCH_POWER || touched == TOUCH_RADAR || touched == TOUCH_LOG) {
+    // Paper White 2: the survey and the log are gone
+    if (touched == TOUCH_RADAR || touched == TOUCH_LOG) {
         return;
     }
 #endif
@@ -1368,7 +1377,16 @@ static void CGearSw_UpdateTouch(CGearSw *work) {
         CGearSw_SetEditing(work, work->editing);
         break;
     case TOUCH_HELP:
+#ifdef PAPERWHITE2
+        // Paper White 2: the help button cycles the background's colors, as editing's background button does
+        GFL_SndSEPlay(SEQ_SE_MSCL_07);
+        work->panels[PANEL_COUNT]++;
+        work->panels[PANEL_COUNT] %= 6;
+        CGearSettings_SetPanel(work->settings, PANEL_COUNT, work->panels[PANEL_COUNT]);
+        CGearSw_LoadSkinColors(work, work->panels[PANEL_COUNT]);
+#else
         work->touchAction = ACTION_HELP;
+#endif
         break;
     case TOUCH_LOG:
         work->touchAction = ACTION_LOG;
@@ -1377,7 +1395,11 @@ static void CGearSw_UpdateTouch(CGearSw *work) {
         work->touchAction = ACTION_RADAR;
         break;
     case TOUCH_POWER:
+#ifdef PAPERWHITE2
+        work->touchAction = ACTION_SAVE;
+#else
         work->touchAction = ACTION_POWER_OFF;
+#endif
         break;
     case TOUCH_SKIN:
         GFL_SndSEPlay(SEQ_SE_MSCL_07);
@@ -1433,8 +1455,9 @@ static const CGearSwActorData sActorData[ACTOR_COUNT - ACTOR_CLOCK] = {
 #ifdef PAPERWHITE2
     // Paper White 2: the battery under the clock's digits, in front of its circle (its cells no longer have a circle
     // of their own), and the right-hand circle drawn by the clock's colonless frame
-    { 1, 48, 22, 1, 2, 0 },   { 5, 48, 22, 1, 1, 0 },   { 1, 208, 22, 1, 2, 0 },  { 21, 128, 10, 1, 1, 0 },
-    { 6, 200, 180, 1, 1, 0 },
+    { 1, 48, 22, 1, 2, 0 },   { 5, 48, 22, 1, 1, 0 },   { 1, 208, 22, 1, 2, 0 },
+    { 0, 193, 18, 1, 1, 0 },  { 0, 199, 18, 1, 1, 0 },  { 0, 208, 18, 1, 1, 0 },  { 0, 214, 18, 1, 1, 0 },
+    { 21, 128, 10, 1, 1, 0 }, { 6, 200, 180, 1, 1, 0 },
 #else
     { 1, 48, 22, 1, 2, 0 },   { 5, 208, 22, 1, 2, 0 },  { 21, 128, 10, 1, 1, 0 }, { 6, 200, 180, 1, 1, 0 },
 #endif
@@ -1620,9 +1643,13 @@ static void CGearSw_AddActors(CGearSw *work) {
     }
     ClActor_SetAutoAnim(work->actors[ACTOR_CLOCK], FALSE);
 #ifdef PAPERWHITE2
-    // Paper White 2: the clock's frame without the colon is the bare circle
+    // Paper White 2: the clock's frame without the colon is the bare circle, and the date's digits are set by the
+    // clock's update
     ClActor_SetAutoAnim(work->actors[ACTOR_RIGHT_CIRCLE], FALSE);
     ClActor_SetAnimFrame(work->actors[ACTOR_RIGHT_CIRCLE], 1);
+    for (i = 0; i < 4; i++) {
+        ClActor_SetAutoAnim(work->actors[ACTOR_DATE_DIGIT + i], FALSE);
+    }
     // Paper White 2: no survey button and no log in the middle. They are kept off the screen rather than hidden,
     // since the original shows and hides them in many places
     CGearSw_SetActorPos(work->actors[ACTOR_RADAR], -128, 160);
@@ -2251,13 +2278,33 @@ static void CGearSw_UpdateClock(CGearSw *work) {
             ClActor_SetAnimFrame(actor, frame);
         }
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the month and the day
+    {
+        RTCDate date;
+        int digits[4];
+        int i;
+
+        RTC_GetCachedDateTime(&date, &time);
+        digits[0] = date.month / 10;
+        digits[1] = date.month % 10;
+        digits[2] = date.day / 10;
+        digits[3] = date.day % 10;
+        for (i = 0; i < 4; i++) {
+            actor = work->actors[ACTOR_DATE_DIGIT + i];
+            if (digits[i] != ClActor_GetAnimFrame(actor)) {
+                ClActor_SetAnimFrame(actor, digits[i]);
+            }
+        }
+    }
+#endif
 }
 
 #ifdef PAPERWHITE2
 #define USABLE_CHECK_FRAMES 30
 
 // Paper White 2: a marker whose app can't be opened now (not had yet, or not here) shows dimmed, its label's light and
-// middle colors one step darker and its lamp unlit
+// middle colors one step darker and its lamp unlit; the power button likewise
 static void CGearSw_UpdateUsable(CGearSw *work, BOOL force) {
     int i;
 
@@ -2275,6 +2322,12 @@ static void CGearSw_UpdateUsable(CGearSw *work, BOOL force) {
                                  sMarkerPalettes[i] * 16 + 10, 4);
             CGearSw_SetLampColor(work, i, 0, 31);
         }
+    }
+    // The power button, which saves, in its pressed palette where saving can't be done
+    if (PaperWhite2_CGearEvent_CanOpen(work->gsys, FIELD_APP_SAVE)) {
+        ClActor_SetPalette(work->actors[ACTOR_POWER], 0, 0);
+    } else {
+        ClActor_SetPalette(work->actors[ACTOR_POWER], 1, 1);
     }
 }
 #endif
@@ -2607,6 +2660,14 @@ GameEvent *CGearSw_CheckEvent(CGearSw *work, BOOL enabled, FieldSubscreen *subsc
             CGearSw_SetStateDebug(work, CGearSw_StateRefused, 4425);
         }
         break;
+    case ACTION_SAVE:
+        if (PaperWhite2_CGearEvent_CanOpen(work->gsys, FIELD_APP_SAVE)) {
+            GFL_SndSEPlay(SEQ_SE_MSCL_07);
+            event = CGearSw_CreateEvent(work, work->touchAction);
+        } else {
+            GFL_SndSEPlay(SEQ_SE_SYS_100);
+        }
+        break;
 #endif
     case ACTION_HELP:
     case ACTION_POWER_OFF:
@@ -2836,6 +2897,9 @@ static GameEvent *CGearSw_CreateEvent(CGearSw *work, u32 action) {
         work->buttonAnim = 9;
         break;
     case ACTION_POWER_OFF:
+#ifdef PAPERWHITE2
+    case ACTION_SAVE:
+#endif
         work->effect = EFFECT_BUTTON;
         work->buttonActor = ACTOR_POWER;
         work->buttonAnim = 7;
@@ -2906,6 +2970,7 @@ static GameEventReturnCode CGearSw_EventMain(GameEvent *event, u32 *state, void 
     case ACTION_PARTY:
     case ACTION_DEXNAV:
     case ACTION_MAP:
+    case ACTION_SAVE:
         next = PaperWhite2_CGearEvent_Create(work->gsys, field, CGearSw_GetActionApp(eventData->action));
         break;
 #endif
