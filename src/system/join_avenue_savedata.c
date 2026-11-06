@@ -31,6 +31,13 @@ typedef struct {
 static u32 JoinAvenue_MergeExisting(JoinAvenueSave *joinAvenue, GameData *gameData, void *source, u32 kind);
 static u32 JoinAvenue_MergeOrAdd(JoinAvenueSave *joinAvenue, GameData *gameData, void *source, u32 kind);
 
+#ifdef PAPERWHITE2
+// Paper White 2: the sources' kind of an entry (sSourceFuncs), and the entries' last source kind that came online
+// (the GTS's and Game Sync's, JoinAvenueEntry_IsValid); the avenue's own are the later ones
+#define ADD_KIND_ENTRY 2
+#define LAST_ONLINE_SOURCE 1
+#endif
+
 static const JoinAvenueSourceFuncs sSourceFuncs[] = {
     {
         (BOOL (*)(void *))JoinAvenueVisitor_IsValid,
@@ -132,6 +139,15 @@ static u32 JoinAvenue_MergeExisting(JoinAvenueSave *joinAvenue, GameData *gameDa
     JoinAvenueInfo *info = JoinAvenue_GetInfo(joinAvenue);
     u32 result;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: no one comes by wireless or online any more, so none of its people are added: not the people met
+    // (Pass By, the Union Room, Infrared, Random Matchups, GTS Negotiations) and not the GTS's or Game Sync's entries.
+    // Only the avenue's own visitors come
+    if (kind != ADD_KIND_ENTRY ||
+        JoinAvenueEntry_GetParam(source, JOIN_AVE_PARAM_SHOP_KIND, NULL) <= LAST_ONLINE_SOURCE) {
+        return JOIN_AVE_ADD_FAILED;
+    }
+#endif
     if (!sSourceFuncs[kind].isValid(source)) {
         return JOIN_AVE_ADD_FAILED;
     }

@@ -1360,6 +1360,11 @@ who dream of opening a shop will come by (`join_avenue.txt`). The office assista
 and owners one a day; "What does recruit mean?" is gone, the manager's advice to recruit is advice on recommending,
 and the Nursery's news says its owner will come by.
 
+No one comes by wireless or online: `JoinAvenue_MergeExisting` (`src/system/join_avenue_savedata.c`), through which
+`JoinAvenue_Add` and `JoinAvenue_AddStepwise` both go, turns away the people met (Pass By, the Union Room, Infrared,
+Random Matchups, GTS Negotiations) and the entries of source kinds 0 and 1 (the GTS and Game Sync); the avenue's own
+(kinds 2 to 5) come as before.
+
 ### Storage menu order
 
 The PCs' "Someone's PC" menu (`global_10090.s`) lists Move Pokémon, Move Items, Deposit Pokémon, Withdraw Pokémon,
