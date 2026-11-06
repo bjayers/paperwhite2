@@ -111,3 +111,43 @@ at run time, so the user's changes show. **Seen** and **caught** suggest what to
 3. **The data side** while the user draws: reading the learnsets, evolutions, moves and type chart, and the new
    flavour table.
 4. **The pages**, one at a time: Info and Data first, then Moves, then Evolution, each tested before the next.
+
+## The user's first mockup (2026-11-06)
+
+- **Top:** today's Info page (sprite, number, name, category, type, height and weight, entry), the sprite animated.
+- **Bottom:** sub-pages switched with L/R (shown as button sprites, not the letters):
+  - **Stats:** the six base stats as bars with numbers, and the total. Buttons in the game's style: Cry, Sprite
+    (front or back) and Form; perhaps Shiny and Language too.
+  - **Data:** the gender ratio, catch rate, growth, favourite flavour, EV yield, base Exp., base friendship, egg
+    group and egg cycles, with one free row.
+  - **Matchups:** the vanilla type icons, with abilities such as Thick Fat taken into account.
+- **Shown once seen:** the gender split, catch rate, EV yield, base Exp. and matchups. **Once caught:** everything else.
+- **Next pages:** MOVE (moves and abilities) and EVO, in place of CRY and FORMS.
+
+## What the screens allow (research of 2026-11-06, read from the source)
+
+- **The engines are swapped:** `PokedexDetailGraphic_Create` calls `GX_SetDispSelect(0)`, so the main engine (with 3D)
+  drives the bottom screen and the sub engine the top (`pokedex_detail.c:53-55`, `pokedex_detail_graphic.c`).
+- **The animated sprite** is MCSS, the battle's system, drawn with 3D on main BG0: the Forms page already shows it,
+  front and back, shiny (`pokedex_detail_form.c:756-758, 1491-1606`; `SetupPokemonLoaderFSTool(..., rare, ..., back)`).
+  3D reaches only the main engine, so **today it can only be on the bottom screen**. The top can show the static
+  sprite (a 2D OBJ, as the Info page does). Putting it on top needs either the engines swapped for the page (the
+  bottom then has the sub engine's 16 KB of OBJ VRAM, and every VRAM bank reassigned) or display capture with a bank
+  freed: both possible, both heavy.
+- **VRAM:** main BG A, sub BG C, main OBJ B, sub OBJ I (16 KB), textures D, texture palettes E. Every BG is 16-colour,
+  text mode. About 11 palette rows are free on the bottom and 9 on the top on the Info page; the fades cover rows 0-12.
+- **Fonts** (`a/0/2/3`): 0 is the standard (12 by 15 cells); **1 is a small font with every character, 10 pixels
+  high**, so "GROUP" and "CYCLES" can be text; 3 (8 pixels) has only 32 glyphs.
+- **Buttons in the game's style** without new art: `AppTaskMenuWin` (the save's YES and NO), 3 tiles high, any width
+  (`a/0/8/2` 0x20 and 0x1f, `src/system/app_taskmenu.c`). The type icons are loaded already (`a/0/8/2` 0x21-0x3e).
+- **Keys:** L and R cycle the entry's languages on the Info page, the seasons on Area, the forms' arrows on Forms; the
+  D-pad's Left and Right change tabs, Up and Down change Pokémon.
+- **The cry:** `PokeVoice_Play(species, form, 64, ...)` (`pokedex_detail_voice.c:950`).
+- **Seen and caught:** caught is per species only; seen is per form, sex and shiny (`PokeDex_HasSeenVariant`). The
+  entries' languages are kept for species 1-493 only (`POKEDEX_LANGUAGE_SPECIES_MAX`), and Gen 5 species have only the
+  English and Japanese entries in the ROM.
+- **Memory:** ov296, ov298 and ov302 all chain up to the highest overlay, so every byte of code added costs the DS
+  budget, 90 KB left now. MCSS and the loaders are in ARM9 main already.
+- **Numbers:** the catch chance with a Poké Ball at full HP is `CheckBallCapture`'s (`btl_server_flow_sub.c:926`):
+  a = rate / 3, three shake checks of (a/255)^¼ each (Tepig, 45: about 11.9%; critical captures only add). An egg
+  cycle is 256 steps, halved by Flame Body or Magma Armor (`fieldmap_event.c`). Of 3,912 base stats only 8 pass 180.
