@@ -1462,7 +1462,7 @@ static const CGearSwActorData sActorData[ACTOR_COUNT - ACTOR_CLOCK] = {
     // Paper White 2: the battery under the clock's digits, in front of its circle (its cells no longer have a circle
     // of their own), and the right-hand circle drawn by the clock's colonless frame
     { 1, 48, 22, 1, 2, 0 },   { 5, 48, 22, 1, 1, 0 },   { 1, 208, 22, 1, 2, 0 },
-    { 0, 202, 13, 1, 1, 0 },  { 0, 208, 13, 1, 1, 0 },  { 0, 202, 23, 1, 1, 0 },  { 0, 208, 23, 1, 1, 0 },
+    { 0, 201, 13, 1, 1, 0 },  { 0, 207, 13, 1, 1, 0 },  { 0, 201, 23, 1, 1, 0 },  { 0, 207, 23, 1, 1, 0 },
     { 21, 128, 10, 1, 1, 0 }, { 6, 200, 180, 1, 1, 0 },
 #else
     { 1, 48, 22, 1, 2, 0 },   { 5, 208, 22, 1, 2, 0 },  { 21, 128, 10, 1, 1, 0 }, { 6, 200, 180, 1, 1, 0 },
