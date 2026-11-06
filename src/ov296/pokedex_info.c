@@ -375,7 +375,13 @@ PokedexInfo *PokedexInfo_Create(HeapID heapId, u16 species, u16 form, u16 sex, u
     info->delay = 0;
     info->tick = 0;
     info->glowPhase = 0;
+#ifdef PAPERWHITE2
+    // Paper White 2: the detail screen's bottom entry is on the sub engine, which drives the bottom screen on its info
+    // page (pokedex_detail.c), and its top entry on the main engine, here and below
+    if (info->mode == POKEDEX_INFO_MODE_DETAIL && info->engine == 1) {
+#else
     if (info->mode == POKEDEX_INFO_MODE_DETAIL && info->engine == 0) {
+#endif
         info->scrollY = -24;
     } else {
         info->scrollY = 0;
@@ -398,7 +404,11 @@ PokedexInfo *PokedexInfo_Create(HeapID heapId, u16 species, u16 form, u16 sex, u
     info->hasExtraChars = FALSE;
     info->hidden = FALSE;
 
+#ifdef PAPERWHITE2
+    if (info->mode == POKEDEX_INFO_MODE_DETAIL && info->engine == 0) {
+#else
     if (info->mode == POKEDEX_INFO_MODE_DETAIL && info->engine == 1) {
+#endif
         GFL_BGSysFillScrArea(info->midBG, 0, 0, 0, 0x20, 3, 0x11);
         arc = info->arcs[POKEDEX_INFO_ARC_POKEDEX_GRA];
         GFL_G2DIOLoadArcNCLR(arc, POKEDEX_GRA_PALETTE_EXTRA, info->palType, 0, 0x80, 0x40, info->heapId);
@@ -1204,7 +1214,12 @@ static void PokedexInfo_InitTypeIcons(PokedexInfo *info) {
     info->typeCellAnims = ClActSys_LoadCellAnims(arc, AppMenuCommon_GetTypeIconCellFile(2),
                                                  AppMenuCommon_GetTypeIconAnimFile(2), info->heapId);
 
+#ifdef PAPERWHITE2
+    // Paper White 2: the detail screen's bottom entry, on the sub engine, as above
+    if (info->mode == POKEDEX_INFO_MODE_DETAIL && info->engine == 1) {
+#else
     if (info->mode == POKEDEX_INFO_MODE_DETAIL && info->engine == 0) {
+#endif
         setup.x = 0;
         setup.y = 0;
         setup.sequence = 0;

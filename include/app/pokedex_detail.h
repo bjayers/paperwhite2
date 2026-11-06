@@ -385,6 +385,10 @@ void PokedexDetailTouchbar_PushMapPlace(PokedexDetailTouchbar *touchbar);
 BOOL PokedexDetailTouchbar_IsMapPlaceTriggered(PokedexDetailTouchbar *touchbar);
 BOOL PokedexDetailTouchbar_IsArrowTriggered(PokedexDetailTouchbar *touchbar);
 BOOL PokedexDetailTouchbar_IsFormButtonTriggered(PokedexDetailTouchbar *touchbar);
+#ifdef PAPERWHITE2
+// Paper White 2: moves the bar to BG 1 of either engine (1 or 5), for the info page's swap of the engines
+void PokedexDetailTouchbar_SetBG(PokedexDetailTouchbar *touchbar, u8 bg);
+#endif
 
 // pokedex_detail_headbar.c: the bar at the top of the screen
 
@@ -400,6 +404,10 @@ int PokedexDetailHeadbar_GetState(PokedexDetailHeadbar *headbar);
 // Slides the bar in or out
 void PokedexDetailHeadbar_Appear(PokedexDetailHeadbar *headbar);
 void PokedexDetailHeadbar_Disappear(PokedexDetailHeadbar *headbar);
+#ifdef PAPERWHITE2
+// Paper White 2: moves the hidden bar to BG 1 of either engine (1 or 5), for the info page's swap of the engines
+void PokedexDetailHeadbar_SetBG(PokedexDetailHeadbar *headbar, u8 bg);
+#endif
 
 // pokedex_detail_info.c, a guessed name, as the ROM names neither this file nor the map's: the Pokémon's info
 

@@ -2,6 +2,16 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-06: Pokédex step 1, the engines swapped on Info
+
+The user tested the C-Gear's save: it works. Pokédex step 1 is built (plugins.md, Pokédex): the Info page runs with
+the 3D engine on the top screen, the other pages as before, with no visible change meant. Built (hack, no warnings,
+DSi intact); **not yet tested in game**. The user tests: Info looks as before; switching to and from Area, Cry and Forms
+by touch and with Left/Right (no flashes, no bar on the wrong screen, the right tab glowing); the check icon; Up/Down
+on Info; the language buttons (touch, L/R, A); Forms' 3D sprites; Area's map and seasons; closing (X) and returning
+(B) from each page; entering from a catch's registration. If it causes much trouble, the fallback is the still sprite
+on top. Next, once it works: step 2, the new Info page.
+
 ## 2026-11-06: the C-Gear's save, dimmed as the menu's
 
 The user found that saving from the C-Gear didn't dim the field or show the arrow, and that after a No the field

@@ -17,7 +17,13 @@
 
 // The detail screen's head bar, on BG 5 at the top of the sub screen: the title of the page, which slides in and out
 
+#ifdef PAPERWHITE2
+// Paper White 2: BG 1 of the engine that drives the top screen, which the info page changes
+// (PokedexDetailHeadbar_SetBG)
+#define HEADBAR_BG headbar->bg
+#else
 #define HEADBAR_BG 5
+#endif
 // How far the bar is hidden above the screen
 #define HIDDEN_Y 24
 
@@ -44,6 +50,9 @@ struct PokedexDetailHeadbar {
     TCB *vblankTcb;
     PrintQueue *printQueue;
     BOOL transferPending;
+#ifdef PAPERWHITE2
+    u8 bg;
+#endif
 };
 
 static void PokedexDetailHeadbar_VBlank(TCB *tcb, void *data);
@@ -61,6 +70,9 @@ PokedexDetailHeadbar *PokedexDetailHeadbar_Create(HeapID heapId, Font *font) {
     headbar->font = font;
     headbar->state = HEADBAR_HIDDEN;
     headbar->title = POKEDEX_DETAIL_HEADBAR_TITLE_COUNT;
+#ifdef PAPERWHITE2
+    headbar->bg = 5;
+#endif
     GFL_BGSysMoveBG(HEADBAR_BG, BG_MOVE_SET_Y, HIDDEN_Y);
     GFL_BGSysSetBGPriority(HEADBAR_BG, 0);
     PokedexDetailHeadbar_InitBG(headbar);
@@ -141,6 +153,19 @@ void PokedexDetailHeadbar_Disappear(PokedexDetailHeadbar *headbar) {
     }
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: moves the hidden bar to another BG, BG 1 of the engine that drives the top screen once the info page
+// has swapped the engines, with the title it has
+void PokedexDetailHeadbar_SetBG(PokedexDetailHeadbar *headbar, u8 bg) {
+    PokedexDetailHeadbar_FreeBG(headbar);
+    headbar->bg = bg;
+    GFL_BGSysMoveBG(HEADBAR_BG, BG_MOVE_SET_Y, HIDDEN_Y);
+    GFL_BGSysSetBGPriority(HEADBAR_BG, 0);
+    PokedexDetailHeadbar_InitBG(headbar);
+    PokedexDetailHeadbar_PrintTitle(headbar);
+}
+#endif
+
 static void PokedexDetailHeadbar_VBlank(TCB *tcb, void *data) {
 }
 
@@ -151,7 +176,8 @@ static void PokedexDetailHeadbar_InitBG(PokedexDetailHeadbar *headbar) {
     headbar->bitmap = GFL_G2DIOLoadBitmap(ARCID_POKEDEX_GRA, 14, FALSE, headbar->heapId);
     headbar->charSize = GFL_BitmapCalcPixelDataSize(headbar->bitmap);
     headbar->charPos = GFL_BGSysLoadCharDynamic(HEADBAR_BG, GFL_BitmapGetPixelData(headbar->bitmap), headbar->charSize);
-    loadBGScrToVramByNarcNoReserve(ARCID_POKEDEX_GRA, 38, HEADBAR_BG, 0, headbar->charPos, 0xc0, FALSE, headbar->heapId);
+    loadBGScrToVramByNarcNoReserve(ARCID_POKEDEX_GRA, 38, HEADBAR_BG, 0, headbar->charPos, 0xc0, FALSE,
+                                   headbar->heapId);
     GFL_BGSysSetScrPaletteNo(HEADBAR_BG, 0, 0, 32, 24, 13);
     headbar->msgData =
         GFL_MsgSysLoadData(FALSE, ARCID_SYSTEM_MESSAGE, TEXT_BANK_BTL_SERVER_FLOW_TITLE, headbar->heapId);
@@ -172,7 +198,13 @@ static void PokedexDetailHeadbar_PrintTitle(PokedexDetailHeadbar *headbar) {
         GFLBitmap *bitmap;
         StrBuf *strbuf;
 
+#ifdef PAPERWHITE2
+        // Paper White 2: the palette of the bar's engine
+        GFL_G2DIOLoadArcNCLR(arc, 4, HEADBAR_BG < 4 ? PALTYPE_MAIN_BG : PALTYPE_SUB_BG, palettes[headbar->title] * 32,
+                             13 * 32, 32, headbar->heapId);
+#else
         GFL_G2DIOLoadArcNCLR(arc, 4, PALTYPE_SUB_BG, palettes[headbar->title] * 32, 13 * 32, 32, headbar->heapId);
+#endif
         GFL_ArcToolFree(arc);
         bitmap = GFL_G2DIOLoadBitmap(ARCID_POKEDEX_GRA, 14, FALSE, headbar->heapId);
         GFL_BitmapCopy(bitmap, headbar->bitmap);

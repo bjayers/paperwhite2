@@ -1387,6 +1387,18 @@ profane words or numbers of more than four digits (`ProfWord_Check`, `ProfWord_H
 word lists and their overlay (281) are no longer loaded. This covers every
 name: the player's, Pokémon's, the rival's, the Join Avenue's and its greeting.
 
+### Pokédex (in progress)
+
+The plan: `docs/paperwhite2/design/pokedex.md`. **Step 1, the engines swapped on the Info page** (no visible change):
+the detail screen (`src/ov298/pokedex_detail.c`) shows the main engine, the only one with 3D, on the top screen while
+the Info page runs (`GX_DISP_SELECT_MAIN_SUB`), and on the bottom on Area, Cry and Forms as the original does. At a
+page change between them the touch bar is made again on BG 1 of the engine of the bottom screen
+(`PokedexDetailTouchbar_SetBG`), the screens swap in the VBlank, and the hidden head bar moves to the other engine's
+BG (`PokedexDetailHeadbar_SetBG`) before the new page shows it. The Info page draws its two entries and its language
+buttons on the swapped engines (`pokedex_detail_info.c`, three checks in `src/ov296/pokedex_info.c`). The VRAM for
+every page (`pokedex_detail_graphic.c`): main OBJ E (64 KB), sub OBJ D (128 KB, the Info page's bottom needs about
+30 KB), textures B, texture palettes F (one slot); main and sub BG A and C as before. About 640 bytes of ov298.
+
 ## Adding global scripts
 
 A global script file's IDs are limited by its row in `GLOBAL_SCRIPT_TABLE` (`src/ov012/script_sys.c`), e.g.

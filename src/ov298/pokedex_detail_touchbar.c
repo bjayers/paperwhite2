@@ -25,6 +25,18 @@
 // How far the bar is hidden below the screen
 #define HIDDEN_Y 24
 
+#ifdef PAPERWHITE2
+// Paper White 2: the bar is on BG 1 of the engine that drives the bottom screen, which the info page changes
+// (PokedexDetailTouchbar_SetBG), with its icons on that engine's OBJs
+#define TOUCHBAR_BG touchbar->bg
+#define TOUCHBAR_VRAM (touchbar->bg < 4 ? CLACT_VRAM_MAIN : CLACT_VRAM_SUB)
+#define TOUCHBAR_OBJ_PLTT (touchbar->bg < 4 ? NNS_GFD_DST_2D_OBJ_PLTT_MAIN : NNS_GFD_DST_2D_OBJ_PLTT_SUB)
+#else
+#define TOUCHBAR_BG 1
+#define TOUCHBAR_VRAM CLACT_VRAM_MAIN
+#define TOUCHBAR_OBJ_PLTT NNS_GFD_DST_2D_OBJ_PLTT_MAIN
+#endif
+
 // The bar's icons of each type, in the order of the bar's items
 enum {
     GENERAL_RETURN,
@@ -107,6 +119,9 @@ struct PokedexDetailTouchbar {
     u16 glowPalettes[2][16];
     u16 glowPalette[16];
     int glowPhase;
+#ifdef PAPERWHITE2
+    u8 bg;
+#endif
 };
 
 static void PokedexDetailTouchbar_VBlank(TCB *tcb, void *data);
@@ -207,8 +222,11 @@ PokedexDetailTouchbar *PokedexDetailTouchbar_Create(HeapID heapId, BOOL showForm
     touchbar->page = POKEDEX_DETAIL_PAGE_INFO - 1;
     touchbar->selectedPage = POKEDEX_DETAIL_PAGE_INFO - 1;
     touchbar->speed = 0;
-    GFL_BGSysMoveBG(1, BG_MOVE_SET_Y, -HIDDEN_Y);
-    GFL_BGSysSetBGPriority(1, 0);
+#ifdef PAPERWHITE2
+    touchbar->bg = 1;
+#endif
+    GFL_BGSysMoveBG(TOUCHBAR_BG, BG_MOVE_SET_Y, -HIDDEN_Y);
+    GFL_BGSysSetBGPriority(TOUCHBAR_BG, 0);
     touchbar->bgPriority = 0;
     touchbar->bgPriorityChanged = FALSE;
     touchbar->unit = ClActUnit_Create(16, 0, touchbar->heapId);
@@ -236,8 +254,8 @@ void PokedexDetailTouchbar_Update(PokedexDetailTouchbar *touchbar) {
         break;
     case POKEDEX_DETAIL_TOUCHBAR_APPEARING:
         if (touchbar->wait == 0) {
-            if (GFL_BGSysGetBGOffsetY(1) >= 0) {
-                GFL_BGSysMoveBGReq(1, BG_MOVE_SET_Y, 0);
+            if (GFL_BGSysGetBGOffsetY(TOUCHBAR_BG) >= 0) {
+                GFL_BGSysMoveBGReq(TOUCHBAR_BG, BG_MOVE_SET_Y, 0);
                 touchbar->scrollY = 0;
                 PokedexDetailTouchbar_SetItemsY(touchbar, touchbar->scrollY);
                 touchbar->state = POKEDEX_DETAIL_TOUCHBAR_SHOWN;
@@ -245,7 +263,7 @@ void PokedexDetailTouchbar_Update(PokedexDetailTouchbar *touchbar) {
                     PokedexDetailTbar_SetActiveAll(touchbar->tbar, TRUE);
                 }
             } else {
-                GFL_BGSysMoveBGReq(1, BG_MOVE_DOWN, sPokedexDetailTouchbarSpeeds[touchbar->speed]);
+                GFL_BGSysMoveBGReq(TOUCHBAR_BG, BG_MOVE_DOWN, sPokedexDetailTouchbarSpeeds[touchbar->speed]);
                 touchbar->scrollY = touchbar->scrollY - (s16)sPokedexDetailTouchbarSpeeds[touchbar->speed];
                 PokedexDetailTouchbar_SetItemsY(touchbar, touchbar->scrollY);
                 touchbar->wait = sPokedexDetailTouchbarWaits[touchbar->speed];
@@ -256,13 +274,13 @@ void PokedexDetailTouchbar_Update(PokedexDetailTouchbar *touchbar) {
         break;
     case POKEDEX_DETAIL_TOUCHBAR_DISAPPEARING:
         if (touchbar->wait == 0) {
-            if (GFL_BGSysGetBGOffsetY(1) <= -HIDDEN_Y) {
-                GFL_BGSysMoveBGReq(1, BG_MOVE_SET_Y, -HIDDEN_Y);
+            if (GFL_BGSysGetBGOffsetY(TOUCHBAR_BG) <= -HIDDEN_Y) {
+                GFL_BGSysMoveBGReq(TOUCHBAR_BG, BG_MOVE_SET_Y, -HIDDEN_Y);
                 touchbar->scrollY = HIDDEN_Y;
                 PokedexDetailTouchbar_SetItemsY(touchbar, touchbar->scrollY);
                 touchbar->state = POKEDEX_DETAIL_TOUCHBAR_HIDDEN;
             } else {
-                GFL_BGSysMoveBGReq(1, BG_MOVE_UP, sPokedexDetailTouchbarSpeeds[touchbar->speed]);
+                GFL_BGSysMoveBGReq(TOUCHBAR_BG, BG_MOVE_UP, sPokedexDetailTouchbarSpeeds[touchbar->speed]);
                 touchbar->scrollY = touchbar->scrollY + (s16)sPokedexDetailTouchbarSpeeds[touchbar->speed];
                 PokedexDetailTouchbar_SetItemsY(touchbar, touchbar->scrollY);
                 touchbar->wait = sPokedexDetailTouchbarWaits[touchbar->speed];
@@ -448,10 +466,36 @@ static void PokedexDetailTouchbar_VBlank(TCB *tcb, void *data) {
     PokedexDetailTouchbar *touchbar = data;
 
     if (touchbar->bgPriorityChanged) {
-        GFL_BGSysSetBGPriority(1, touchbar->bgPriority);
+        GFL_BGSysSetBGPriority(TOUCHBAR_BG, touchbar->bgPriority);
         touchbar->bgPriorityChanged = FALSE;
     }
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: moves the bar, shown or hidden, to another BG, BG 1 of the engine that will drive the bottom screen
+// when the info page swaps the engines. It is made again there as the page change left it: the tab of the page it
+// changed to is the one that glows and can't be touched, the check is as it was, and the bar waits for the page to
+// make it active
+void PokedexDetailTouchbar_SetBG(PokedexDetailTouchbar *touchbar, u8 bg) {
+    int page = touchbar->page;
+    int glowPhase = touchbar->glowPhase;
+    BOOL active = touchbar->active;
+    BOOL check = PokedexDetailTouchbar_GetCheck(touchbar);
+
+    PokedexDetailTouchbar_FreeType(touchbar);
+    touchbar->bg = bg;
+    GFL_BGSysMoveBG(TOUCHBAR_BG, BG_MOVE_SET_Y, -touchbar->scrollY);
+    GFL_BGSysSetBGPriority(TOUCHBAR_BG, touchbar->bgPriority);
+    touchbar->page = touchbar->selectedPage;
+    PokedexDetailTouchbar_CreateType(touchbar);
+    touchbar->page = page;
+    touchbar->active = active;
+    touchbar->glowPhase = glowPhase;
+    PokedexDetailTouchbar_SetCheck(touchbar, check);
+    PokedexDetailTbar_SetActiveAll(touchbar->tbar, FALSE);
+    PokedexDetailTouchbar_SetItemsY(touchbar, touchbar->scrollY);
+}
+#endif
 
 static void PokedexDetailTouchbar_CreateType(PokedexDetailTouchbar *touchbar) {
     switch (touchbar->type) {
@@ -491,7 +535,12 @@ static void PokedexDetailTouchbar_SetItemsY(PokedexDetailTouchbar *touchbar, s16
         ClActor_GetPos(touchbar->items[i].actor, &pos);
         pos.y = touchbar->items[i].icon->pos.y;
         pos.y += offset;
+#ifdef PAPERWHITE2
+        // Paper White 2: the position on the bar's screen, since the sub engine's OBJs are placed below the main's
+        ClActor_SetSurfacePos(touchbar->items[i].actor, &pos, TOUCHBAR_VRAM);
+#else
         ClActor_SetPos(touchbar->items[i].actor, &pos);
+#endif
     }
 }
 
@@ -503,9 +552,9 @@ static void PokedexDetailTouchbar_CreateGeneral(PokedexDetailTouchbar *touchbar)
 
     arc = GFL_ArcSysCreateFileHandle(ARCID_POKEDEX_GRA, touchbar->heapId);
     touchbar->res[POKEDEX_DETAIL_TOUCHBAR_GENERAL].palette =
-        ClActSys_LoadPlttRange(arc, 3, CLACT_VRAM_MAIN, 11 * 32, 0, 3, touchbar->heapId);
+        ClActSys_LoadPlttRange(arc, 3, TOUCHBAR_VRAM, 11 * 32, 0, 3, touchbar->heapId);
     touchbar->res[POKEDEX_DETAIL_TOUCHBAR_GENERAL].chars =
-        ClActSys_LoadChars(arc, 13, FALSE, CLACT_VRAM_MAIN, touchbar->heapId);
+        ClActSys_LoadChars(arc, 13, FALSE, TOUCHBAR_VRAM, touchbar->heapId);
     touchbar->res[POKEDEX_DETAIL_TOUCHBAR_GENERAL].cellAnims = ClActSys_LoadCellAnims(arc, 28, 45, touchbar->heapId);
     GFL_ArcToolFree(arc);
 
@@ -556,7 +605,7 @@ static void PokedexDetailTouchbar_CreateGeneral(PokedexDetailTouchbar *touchbar)
     param.icons = icons;
     param.iconCount = NELEMS(sPokedexDetailTouchbarGeneralIcons);
     param.unit = touchbar->unit;
-    param.bg = 1;
+    param.bg = TOUCHBAR_BG;
     param.bgPalette = 13;
     param.objPalette = 8;
     param.mapping = 2;
@@ -787,7 +836,7 @@ static void PokedexDetailTouchbar_UpdateGlow(PokedexDetailTouchbar *touchbar) {
 
         touchbar->glowPalette[i] = r | (g << 5) | (b << 10);
     }
-    NNS_GfdRegisterNewVramTransferTask(NNS_GFD_DST_2D_OBJ_PLTT_MAIN, 13 * 32, touchbar->glowPalette, 32);
+    NNS_GfdRegisterNewVramTransferTask(TOUCHBAR_OBJ_PLTT, 13 * 32, touchbar->glowPalette, 32);
 }
 
 static u8 PokedexDetailTouchbar_GetPageItem(int page) {
@@ -849,9 +898,9 @@ static void PokedexDetailTouchbar_CreateMap(PokedexDetailTouchbar *touchbar) {
 
     arc = GFL_ArcSysCreateFileHandle(ARCID_POKEDEX_GRA, touchbar->heapId);
     touchbar->res[POKEDEX_DETAIL_TOUCHBAR_MAP].palette =
-        ClActSys_LoadPlttRange(arc, 6, CLACT_VRAM_MAIN, 11 * 32, 0, 3, touchbar->heapId);
+        ClActSys_LoadPlttRange(arc, 6, TOUCHBAR_VRAM, 11 * 32, 0, 3, touchbar->heapId);
     touchbar->res[POKEDEX_DETAIL_TOUCHBAR_MAP].chars =
-        ClActSys_LoadChars(arc, 16, FALSE, CLACT_VRAM_MAIN, touchbar->heapId);
+        ClActSys_LoadChars(arc, 16, FALSE, TOUCHBAR_VRAM, touchbar->heapId);
     touchbar->res[POKEDEX_DETAIL_TOUCHBAR_MAP].cellAnims = ClActSys_LoadCellAnims(arc, 30, 47, touchbar->heapId);
     GFL_ArcToolFree(arc);
 
@@ -878,7 +927,7 @@ static void PokedexDetailTouchbar_CreateMap(PokedexDetailTouchbar *touchbar) {
     param.icons = icons;
     param.iconCount = NELEMS(sPokedexDetailTouchbarMapIcons);
     param.unit = touchbar->unit;
-    param.bg = 1;
+    param.bg = TOUCHBAR_BG;
     param.bgPalette = 13;
     param.objPalette = 8;
     param.mapping = 2;
@@ -908,9 +957,9 @@ static void PokedexDetailTouchbar_CreateForm(PokedexDetailTouchbar *touchbar) {
 
     arc = GFL_ArcSysCreateFileHandle(ARCID_POKEDEX_GRA, touchbar->heapId);
     touchbar->res[POKEDEX_DETAIL_TOUCHBAR_FORM].palette =
-        ClActSys_LoadPlttRange(arc, 3, CLACT_VRAM_MAIN, 11 * 32, 0, 3, touchbar->heapId);
+        ClActSys_LoadPlttRange(arc, 3, TOUCHBAR_VRAM, 11 * 32, 0, 3, touchbar->heapId);
     touchbar->res[POKEDEX_DETAIL_TOUCHBAR_FORM].chars =
-        ClActSys_LoadChars(arc, 13, FALSE, CLACT_VRAM_MAIN, touchbar->heapId);
+        ClActSys_LoadChars(arc, 13, FALSE, TOUCHBAR_VRAM, touchbar->heapId);
     touchbar->res[POKEDEX_DETAIL_TOUCHBAR_FORM].cellAnims = ClActSys_LoadCellAnims(arc, 28, 45, touchbar->heapId);
     GFL_ArcToolFree(arc);
 
@@ -937,7 +986,7 @@ static void PokedexDetailTouchbar_CreateForm(PokedexDetailTouchbar *touchbar) {
     param.icons = icons;
     param.iconCount = NELEMS(sPokedexDetailTouchbarFormIcons);
     param.unit = touchbar->unit;
-    param.bg = 1;
+    param.bg = TOUCHBAR_BG;
     param.bgPalette = 13;
     param.objPalette = 8;
     param.mapping = 2;

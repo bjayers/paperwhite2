@@ -13,6 +13,12 @@
 #include "system/gf_font.h"
 #include "system/printsys.h"
 
+#ifdef PAPERWHITE2
+#include "gfl/bg_sys.h"
+#include "gfl/gx_layers.h"
+#include "nitro/gx.h"
+#endif
+
 // The Pokédex's detail screen: sets up the bars and the systems that its pages share, and runs the page that the bars
 // switch to
 
@@ -29,13 +35,35 @@ typedef struct {
     void *pageParam;
     // The page to switch to once the current one has exited, or POKEDEX_DETAIL_PAGE_NONE
     int nextPage;
+#ifdef PAPERWHITE2
+    // Whether the main engine drives the top screen, as on the info page, and the step of a change of it
+    BOOL mainOnTop;
+    int layoutStep;
+#endif
 } PokedexDetailWork;
+
+#ifdef PAPERWHITE2
+// Paper White 2: the info page shows the main engine, the only one with 3D, on the top screen, and the other pages show
+// it on the bottom screen as the original does. A change moves the bars to the engines of their screens: the touch bar
+// first, drawn on the hidden head bar's BG while that BG is hidden, then the screens swap in the VBlank, and the head
+// bar moves to the touch bar's old BG in the next frame, before the new page shows it. Every page change leaves the
+// head bar hidden, so nothing shows on the wrong screen
+enum {
+    LAYOUT_STEP_NONE,
+    LAYOUT_STEP_MOVE_TOUCHBAR,
+    LAYOUT_STEP_SWAP,
+    LAYOUT_STEP_MOVE_HEADBAR,
+};
+#endif
 
 static BOOL PokedexDetail_Init(GameProc *proc, u32 *state, void *param, void *work);
 static BOOL PokedexDetail_Exit(GameProc *proc, u32 *state, void *param, void *work);
 static BOOL PokedexDetail_Main(GameProc *proc, u32 *state, void *param, void *work);
 static void PokedexDetail_VBlank(TCB *tcb, void *data);
 static void PokedexDetail_StartPage(PokedexDetailParam *param, PokedexDetailWork *wk);
+#ifdef PAPERWHITE2
+static void PokedexDetail_UpdateLayout(PokedexDetailWork *wk);
+#endif
 
 const GameProcFunctions POKEDEX_DETAIL_PROC_FUNCTIONS = { PokedexDetail_Init, PokedexDetail_Main, PokedexDetail_Exit };
 
@@ -75,6 +103,13 @@ static BOOL PokedexDetail_Exit(GameProc *proc, u32 *state, void *param, void *wo
     PokedexDetailWork *wk = work;
 
     GFL_FadeSet(3, 16, 16, 0);
+#ifdef PAPERWHITE2
+    // Paper White 2: leaves the main engine on the bottom screen, as the original does, with the screens black
+    if (wk->mainOnTop) {
+        GFL_BGSysSetDisplayLayout(GX_DISP_SELECT_SUB_MAIN);
+        GFL_NetSetIconScreen(TRUE, wk->heapId);
+    }
+#endif
     if (wk->procSys != NULL) {
         PokedexDetailProcSys_Free(wk->procSys);
     }
@@ -105,6 +140,9 @@ static BOOL PokedexDetail_Main(GameProc *proc, u32 *state, void *param_, void *w
         (*state)++;
     }
 
+#ifdef PAPERWHITE2
+    PokedexDetail_UpdateLayout(wk);
+#endif
     if (PokedexDetailProcSys_Main(wk->procSys, wk->common)) {
         if (wk->nextPage != POKEDEX_DETAIL_PAGE_NONE) {
             param->page = wk->nextPage;
@@ -161,6 +199,18 @@ static BOOL PokedexDetail_Main(GameProc *proc, u32 *state, void *param_, void *w
 }
 
 static void PokedexDetail_VBlank(TCB *tcb, void *data) {
+#ifdef PAPERWHITE2
+    PokedexDetailWork *wk = data;
+
+    // Paper White 2: swaps the screens once the touch bar is on the engine of its new screen, showing it there and
+    // hiding its old BG on the other screen
+    if (wk->layoutStep == LAYOUT_STEP_SWAP) {
+        GFL_BGSysSetDisplayLayout(wk->mainOnTop ? GX_DISP_SELECT_MAIN_SUB : GX_DISP_SELECT_SUB_MAIN);
+        GFL_BGSysSetBGEnabled(wk->mainOnTop ? 5 : 1, TRUE);
+        GFL_BGSysSetBGEnabled(wk->mainOnTop ? 1 : 5, FALSE);
+        wk->layoutStep = LAYOUT_STEP_MOVE_HEADBAR;
+    }
+#endif
 }
 
 static void PokedexDetail_StartPage(PokedexDetailParam *param, PokedexDetailWork *wk) {
@@ -209,4 +259,37 @@ static void PokedexDetail_StartPage(PokedexDetailParam *param, PokedexDetailWork
     }
 
     wk->procSys = PokedexDetailProcSys_Create(funcs, wk->pageParam, wk->heapId);
+#ifdef PAPERWHITE2
+    // Paper White 2: the info page swaps the engines' screens, from the next frame (PokedexDetail_UpdateLayout)
+    if (wk->mainOnTop != (param->page == POKEDEX_DETAIL_PAGE_INFO)) {
+        wk->mainOnTop = param->page == POKEDEX_DETAIL_PAGE_INFO;
+        wk->layoutStep = LAYOUT_STEP_MOVE_TOUCHBAR;
+    }
+#endif
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: the steps of a change of the screens' engines before and after the VBlank that swaps them. The old
+// page has exited a frame before, so no OBJ of it is in the OAM, and the head bar is hidden
+static void PokedexDetail_UpdateLayout(PokedexDetailWork *wk) {
+    // BG 1 of the engine that drives the bottom screen after the swap, and of the one that drives the top screen
+    u8 bottomBG = wk->mainOnTop ? 5 : 1;
+    u8 topBG = wk->mainOnTop ? 1 : 5;
+
+    switch (wk->layoutStep) {
+    case LAYOUT_STEP_MOVE_TOUCHBAR:
+        GFL_BGSysSetBGEnabled(bottomBG, FALSE);
+        GFL_BGSysClearScr(bottomBG);
+        PokedexDetailTouchbar_SetBG(wk->touchbar, bottomBG);
+        wk->layoutStep = LAYOUT_STEP_SWAP;
+        break;
+    case LAYOUT_STEP_MOVE_HEADBAR:
+        GFL_BGSysClearScr(topBG);
+        PokedexDetailHeadbar_SetBG(wk->headbar, topBG);
+        GFL_BGSysSetBGEnabled(topBG, TRUE);
+        GFL_NetSetIconScreen(TRUE, wk->heapId);
+        wk->layoutStep = LAYOUT_STEP_NONE;
+        break;
+    }
+}
+#endif

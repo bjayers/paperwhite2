@@ -50,11 +50,23 @@ static void PokedexDetailG3dSys_Free(PokedexDetailG3dSys *g3d);
 static void PokedexDetailG3dSys_Begin(PokedexDetailG3dSys *g3d);
 static void PokedexDetailG3dSys_End(PokedexDetailG3dSys *g3d);
 
+#ifdef PAPERWHITE2
+// Paper White 2: the info page shows the main engine on the top screen, so the bottom screen's OBJs, about 30 KB there,
+// are the sub engine's, which gets bank D (128 KB) for them rather than I (16 KB). The textures move to B and the main
+// engine's OBJs to E (64 KB, at most about 26 KB on the other pages' bottom screen), and the texture palettes to F
+// (16 KB, with MCSS's palettes in its first 5 KB)
+static const BGSysVRAMConfig sVRAMConfig = {
+    GX_VRAM_BG_128_A, GX_VRAM_BGEXTPLTT_23_G,  GX_VRAM_SUB_BG_128_C,        GX_VRAM_SUB_BGEXTPLTT_NONE,
+    GX_VRAM_OBJ_64_E, GX_VRAM_OBJEXTPLTT_NONE, GX_VRAM_SUB_OBJ_128_D,       GX_VRAM_SUB_OBJEXTPLTT_NONE,
+    GX_VRAM_TEX_0_B,  GX_VRAM_TEXPLTT_0_F,     GX_OBJVRAMMODE_CHAR_1D_128K, GX_OBJVRAMMODE_CHAR_1D_128K,
+};
+#else
 static const BGSysVRAMConfig sVRAMConfig = {
     GX_VRAM_BG_128_A,  GX_VRAM_BGEXTPLTT_23_G,  GX_VRAM_SUB_BG_128_C,        GX_VRAM_SUB_BGEXTPLTT_NONE,
     GX_VRAM_OBJ_128_B, GX_VRAM_OBJEXTPLTT_NONE, GX_VRAM_SUB_OBJ_16_I,        GX_VRAM_SUB_OBJEXTPLTT_NONE,
     GX_VRAM_TEX_0_D,   GX_VRAM_TEXPLTT_0123_E,  GX_OBJVRAMMODE_CHAR_1D_128K, GX_OBJVRAMMODE_CHAR_1D_128K,
 };
+#endif
 
 static const VecFx32 sCameraPosition = { 0, 0, FX32_CONST(70) };
 static const VecFx32 sCameraTarget = { 0, 0, 0 };
@@ -275,7 +287,12 @@ static ClActUnit *PokedexDetailClAct_GetUnit(PokedexDetailClAct *clact) {
 }
 
 static void PokedexDetailG3dSys_Init(PokedexDetailG3dSys *g3d, HeapID heapId) {
+#ifdef PAPERWHITE2
+    // Paper White 2: one 16 KB slot of texture palettes, bank F (sVRAMConfig)
+    GFL_G3DSysCreate(FALSE, 1, 0, 1, 0, heapId, PokedexDetailGraphic_G3DInit);
+#else
     GFL_G3DSysCreate(FALSE, 1, 0, 2, 0, heapId, PokedexDetailGraphic_G3DInit);
+#endif
     // A 40 degree field of view
     g3d->camera = GFL_G3DCameraCreate(G3DCAM_PROJECTION_PERSPECTIVE, FX_SinIdx(DEG_TO_IDX(20)),
                                       FX_CosIdx(DEG_TO_IDX(20)), FX32_CONST(4.0 / 3.0), 0, 0x107c20, FX32_CONST(1024),
