@@ -339,6 +339,24 @@ static BOOL EventTrainerEyeSub_ForceTrainerDir(EventTrainerEyeWork *work) {
     }
     CheckSetActorFaceDir(work->data.actor, work->data.dir);
     DisableActorMovement(work->data.actor);
+#ifdef PAPERWHITE2
+    // Paper White 2: the distance again, now that the Trainer stands still. The original's is from when the Trainer saw
+    // the player, and a walking Trainer's own movement goes on until the event pauses it: an event held before then
+    // (the Following Pokémon's recall) let it walk on, and it stopped short of the player or walked onto them. A
+    // Trainer no longer in line with the player keeps the original's
+    {
+        GridPos pos;
+        GridPos playerPos;
+        int dist;
+
+        FldAct_GetGPos(work->data.actor, &pos);
+        FldAct_GetGPos(FieldPlayer_GetActor(work->player), &playerPos);
+        dist = EventTrainerEye_CalcLineOfSight(work->data.dir, 0x7fff, &pos, &playerPos);
+        if (dist != -1) {
+            work->data.range = dist;
+        }
+    }
+#endif
     work->seq = TRAINER_EYE_SEQ_DECIDE_JUMP_OUT;
     return TRUE;
 }

@@ -2,6 +2,24 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-05: a patrolling Trainer walking onto the player with the follower out (Route 4's Policeman Dell)
+
+- **The user's tests:** with the follower out, Dell (Route 4, `MOVE_CODE_WALK_BACK_AND_FORTH`, the route's only
+  patroller) sometimes stops beside the player, sometimes a few tiles short, and mostly walks onto the player; with
+  the follower off, and in vanilla Black 2, he stops beside the player.
+- **Read from the code:** the walk's distance is measured when he sees the player (`EventTrainerEye_FindClashActor`),
+  but he is paused only later: by the clash script's `ActorsPauseAll`, which lets an actor in mid-step finish it, and
+  by the eye event's own wait for that step. The Following Pokémon's scene can hold events while its recall plays
+  (`FollowingEvents_Bind`'s hold, `FollowingEffects_IsRecalling`), and a patroller left moving walks on meanwhile, so
+  the distance is stale by however far he went. Which callback starts the recall here isn't pinned down yet.
+- **The fix:** `EventTrainerEyeSub_ForceTrainerDir` measures the distance again once the Trainer is still and paused
+  (`#ifdef PAPERWHITE2`), keeping the original's when he's no longer in line. If he now always stops beside the
+  player, the stale distance was the whole bug; if he still stops short, steps are being lost, which is another.
+  Not yet tested in game.
+- **Next:** the follower runtime's in-depth review (the user's decision): map every hook into the original's code and
+  what it can change, collect the user's list of follower oddities, and weigh building on the game's own
+  `MOVE_CODE_FOLLOW_PLAYER` partner movement; in stages, on a branch with a backup tag.
+
 ## 2026-11-05: the C-Gear, first steps
 
 - Loading a save no longer asks about the C-Gear: it starts on whenever the save has it on (plugins.md, "C-Gear").
