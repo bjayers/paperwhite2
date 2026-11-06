@@ -23,6 +23,9 @@ Agreed with the user on 2026-10-29. Design notes, not final; each big item gets 
    Pokémon Center and its art for the dynamic options, the berry picker and the wild-Pokémon interaction menu, the
    Pokédex's new pages (evolutions, stats, learnsets) and maybe an HGSS-style grid, Join Avenue offline, the
    Pokémon Centers' upstairs attendants, roaming legendaries.
+   **2026-11-06:** the Pokédex's pages and the Pokémon Center's attendants have the user's ideas in
+   `design/pokedex.md` and `design/pokemon-center.md`; the DexNav's UI in `design/dexnav.md`. The user draws the UI art
+   from specs. The Version Key stays a debug tool. Wireless goes feature by feature, then a last pass at the end.
 
 ## Encounter overhaul
 

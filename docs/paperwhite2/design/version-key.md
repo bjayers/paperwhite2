@@ -1,6 +1,10 @@
 # Version Key (design, research of 2026-11-04)
 
 The Version Key is built and shelved (`docs/paperwhite2/items.md`, Version Key; STATUS.md, 2026-11-03 late night).
+
+**Since (2026-11-06, the user):** the key stays a debug tool, never given to the player. The Route 4 textures were
+fixed after this report, and the re-battle was never a bug (the trainer's lines were misread), so the plan below is
+history.
 This page says why it misbehaves and how to narrow it to the three places the user wants. Nothing here is built yet.
 "Verified" means read in the code or the data; "inferred" means reasoned from it but not checked in game.
 

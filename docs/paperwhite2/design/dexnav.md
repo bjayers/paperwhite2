@@ -59,6 +59,13 @@ base is Pokeweb's **Pokenav** (the user calls it Pokeweb's Dexnav, `bjayers/poke
 
 **Verified** means read in the code or data cited. **Inferred** means reasoned from it, not tested.
 
+## Still to come (the user, 2026-11-06)
+
+- **A new UI**, drawn by the user from specs and templates the ROM session writes (screen regions, button sizes, tile
+  and palette limits, the files to draw into), as for the Pokédex (`design/pokedex.md`).
+- **Starting the searched Pokémon's battle**, perhaps with a shiny chance that grows the longer it is searched or
+  chained. The user hasn't decided how it should work, so it waits; section 3's search rows are the options.
+
 ## 1. Pokenav today
 
 ### What it shows (verified, `runtime/pokenav/README.md`, `view.cpp`, `logic.h`)

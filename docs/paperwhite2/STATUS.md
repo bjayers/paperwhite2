@@ -2,6 +2,27 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-06: where things stand (the user's notes, end of a long session)
+
+- **Testing:** the user has tried most recent features briefly and will test them properly on a fresh save, playing
+  as a player would. The Join Avenue's latest additions work.
+- **Decisions waiting on that playtest:** trainer scaling (bosses below their original levels, the tiers of N,
+  Colress, Ghetsis and Cynthia), the badge soft cap, help with catching, the Join Avenue's further lines and the
+  user's own owners and visitors. Don't push for them before the user has played.
+- **Wireless:** removed piece by piece as each feature is reworked to be local (the user is still thinking about
+  some), then one final pass at the end for whatever is left. No full audit before then.
+- **Version Key:** kept for debugging only; not given to the player. The Route 4 textures and the "re-battle" are both
+  resolved: the re-battle was never a bug (the user misread the trainer's lines). The version-key.md report predates
+  the fix.
+- **Larger features:** mostly done. Still open: the DexNav starting the searched Pokémon's battle, perhaps with a
+  shiny chance that grows over time; the user hasn't decided how, so it waits (design/dexnav.md).
+- **The editor:** the user will test it properly while adding content to each map, and may want additions then.
+- **melonDS DS's JIT freeze** (literal optimisations on): gone after the follower rebuild, so the follower code was
+  involved after all, not only the JIT. The user keeps the setting off to be safe.
+- **New ideas on the books** (not started): the Pokédex's informative pages and the DexNav's UI, both with the user
+  drawing the art from specs (design/pokedex.md, design/dexnav.md), and the Pokémon Center as a hub with new
+  attendants in place of the wireless ones (design/pokemon-center.md).
+
 ## 2026-11-06: no wireless visitors; the owners' own lines
 
 No one comes to the avenue by wireless or online any more (one gate, `JoinAvenue_MergeExisting`). Owners have lines of
