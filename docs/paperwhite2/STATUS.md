@@ -16,9 +16,11 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   (`#ifdef PAPERWHITE2`), keeping the original's when he's no longer in line. If he now always stops beside the
   player, the stale distance was the whole bug; if he still stops short, steps are being lost, which is another.
   Not yet tested in game.
-- **Next:** the follower runtime's in-depth review (the user's decision): map every hook into the original's code and
-  what it can change, collect the user's list of follower oddities, and weigh building on the game's own
-  `MOVE_CODE_FOLLOW_PLAYER` partner movement; in stages, on a branch with a backup tag.
+- **Tested by the user:** no longer reproducible.
+- **Then the follower review** (the user's request): `docs/paperwhite2/design/following-rewrite.md`, with the four
+  reports in `docs/paperwhite2/design/following-review/`. The plan rebuilds the core (events that are watched, never
+  held; the game's own partner movement and drawing) and keeps the content, in stages on a branch. Waiting on the
+  user's approval and four decisions listed there.
 
 ## 2026-11-05: the C-Gear, first steps
 
