@@ -174,6 +174,40 @@
                     "screen": "res/graphics/pokedex_gra/145.nscr"
                 }
             ]
+        },
+        {
+            "name": "pokedex_info_evo",
+            "title": "Pokédex Info: Evo",
+            "description": "The bottom screen of the Pokédex's Info page on its Evo sub-page, under the page's text and over the grid (src/paperwhite2/ov298/paperwhite2_pokedex_info_panels.c): sub BG 6 in palette row 9. Its source is res/paperwhite2/pokedex_art/info_evo.png.",
+            "palette": "res/graphics/pokedex_gra/146.pal",
+            "colors": 16,
+            "depth": 4,
+            "max_tiles": 768,
+            "screens": [
+                {
+                    "name": "touch",
+                    "title": "Touch screen",
+                    "chars": "res/graphics/pokedex_gra/147.png",
+                    "screen": "res/graphics/pokedex_gra/148.nscr"
+                }
+            ]
+        },
+        {
+            "name": "pokedex_info_matchups",
+            "title": "Pokédex Info: Matchups",
+            "description": "The bottom screen of the Pokédex's Info page on its Matchups sub-page, under the page's text and over the grid (src/paperwhite2/ov298/paperwhite2_pokedex_info_panels.c): sub BG 6 in palette row 10. Its source is res/paperwhite2/pokedex_art/info_matchups.png.",
+            "palette": "res/graphics/pokedex_gra/149.pal",
+            "colors": 16,
+            "depth": 4,
+            "max_tiles": 768,
+            "screens": [
+                {
+                    "name": "touch",
+                    "title": "Touch screen",
+                    "chars": "res/graphics/pokedex_gra/150.png",
+                    "screen": "res/graphics/pokedex_gra/151.nscr"
+                }
+            ]
         }
     ]
 }

@@ -702,10 +702,10 @@ def matchups_text(canvas, d, m, font, small, icons):
         letter, shadow = ((M_SUPER, BORDER_C) if value > MULTIPLIER_ONE else (M_RESISTED, BORDER_C)
                           if 0 < value < MULTIPLIER_ONE else (M_IMMUNE, BORDER_C) if value == 0 else (TEXT_C, SHADOW))
         number, sign = multiplier_text(value), m["Multiplier"]
-        left = x - (small.text_width(sign) + font.text_width(number)) // 2
+        left = x - (small.text_width(sign) + small.text_width(number)) // 2
         top = y + d["MATCHUPS_VALUE_OFFSET_Y"]
         canvas.text(small, sign, left, top + d["MULTIPLIER_SIGN_OFFSET_Y"], "left", letter, shadow)
-        canvas.text(font, number, left + small.text_width(sign), top, "left", letter, shadow)
+        canvas.text(small, number, left + small.text_width(sign), top, "left", letter, shadow)
     count, w, h = len(SAMPLE_ABILITIES), d["ABILITY_BUTTON_WIDTH"], d["ABILITY_BUTTON_HEIGHT"]
     for i, ability in enumerate(SAMPLE_ABILITIES):
         x = (d["ABILITY_BUTTON_CENTER_X"] - count * w // 2 + i * w) * 8

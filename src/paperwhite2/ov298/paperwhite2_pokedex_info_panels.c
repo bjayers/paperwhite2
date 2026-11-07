@@ -207,9 +207,9 @@
 #define MATCHUPS_COLUMNS 6
 // The first icon's center, and the distances between the icons' centers
 #define MATCHUPS_ICON_X 28
-#define MATCHUPS_ICON_Y 34
+#define MATCHUPS_ICON_Y 40
 #define MATCHUPS_COLUMN_PITCH 40
-#define MATCHUPS_ROW_PITCH 38
+#define MATCHUPS_ROW_PITCH 35
 // From an icon's center to its multiplier's top
 #define MATCHUPS_VALUE_OFFSET_Y 10
 // The type icons' sub OBJ palette rows (a/0/8/2's three, from this one), below the touch bar's 8 to 13, and their
@@ -288,8 +288,9 @@ static const GXRgb sMatchupColors[16] = {
 #define MULTIPLIER_DOWN_COLOR PRINT_COLOR(MATCHUPS_COLOR_RESISTED, PANELS_COLOR_BORDER, PANELS_COLOR_CLEAR)
 #define MULTIPLIER_NONE_COLOR PRINT_COLOR(MATCHUPS_COLOR_IMMUNE, PANELS_COLOR_BORDER, PANELS_COLOR_CLEAR)
 #define MULTIPLIER_NORMAL_COLOR TEXT_COLOR
-// The small font's "×" lower than the number's top, as the Data labels are (DATA_LABEL_OFFSET_Y)
-#define MULTIPLIER_SIGN_OFFSET_Y 3
+// The multipliers' font, the small one (the user's choice, the rows closer for the art's margin), and its "×"'s place
+// against the number's top, the same font's
+#define MULTIPLIER_SIGN_OFFSET_Y 0
 
 // A stat bar's color: the first whose limit the stat is under, else blue
 typedef struct {
@@ -457,11 +458,7 @@ typedef struct {
 } PanelsArt;
 
 static const PanelsArt sSubpageArt[POKEDEX_INFO_SUBPAGE_COUNT] = {
-    { 131, 132, 133 },
-    { 134, 135, 136 },
-    { 140, 141, 142 },
-    { ART_NONE, ART_NONE, ART_NONE },
-    { ART_NONE, ART_NONE, ART_NONE },
+    { 131, 132, 133 }, { 134, 135, 136 }, { 140, 141, 142 }, { 146, 147, 148 }, { 149, 150, 151 },
 };
 
 struct PokedexInfoPanels {
@@ -1194,11 +1191,11 @@ static void PokedexInfoPanels_PrintMultiplier(PokedexInfoPanels *panels, GFLBitm
         message = PokedexData_Text_MultiplierDecimal;
     }
     signWidth = PokedexInfoPanels_GetWidth(panels, panels->smallFont, PokedexData_Text_Multiplier);
-    numberWidth = PokedexInfoPanels_GetWidth(panels, panels->font, message);
+    numberWidth = PokedexInfoPanels_GetWidth(panels, panels->smallFont, message);
     x -= (signWidth + numberWidth) / 2;
     PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->smallFont, PokedexData_Text_Multiplier, x,
                             y + MULTIPLIER_SIGN_OFFSET_Y, PRINT_ALIGN_LEFT, color);
-    PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->font, message, x + signWidth, y, PRINT_ALIGN_LEFT,
+    PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->smallFont, message, x + signWidth, y, PRINT_ALIGN_LEFT,
                             color);
 }
 

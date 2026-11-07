@@ -21,6 +21,9 @@ tiles in VRAM, from the code that loads it.
 | `title_top` | `title/white2/08.pal`, `09.png`, `10.nscr` | The title's other screen, "Developed by GAME FREAK inc." |
 | `pokedex_info_stats` | `pokedex_gra/131.pal`, `132.png`/`133.nscr` (new members) | The Pokédex Info page's bottom screen on Stats, under its text, bars and buttons (sub BG 6, palette row 6); the source is `res/paperwhite2/pokedex_art/info_stats.png` |
 | `pokedex_info_data` | `pokedex_gra/134.pal`, `135.png`/`136.nscr` (new members) | The same on Data (palette row 7, each sub-page's art in row 6 + its place); the source is `res/paperwhite2/pokedex_art/info_data.png` |
+| `pokedex_info_moves` | `pokedex_gra/140.pal`, `141.png`/`142.nscr` | The same on Moves; `info_moves.png` |
+| `pokedex_info_evo` | `pokedex_gra/146.pal`, `147.png`/`148.nscr` | The same on Evo; `info_evo.png` |
+| `pokedex_info_matchups` | `pokedex_gra/149.pal`, `150.png`/`151.nscr` | The same on Matchups; `info_matchups.png` |
 | `pokedex_info_moves` | `pokedex_gra/140.pal`, `141.png`/`142.nscr` (new members) | The same on Moves (palette row 8): the tab strip and the sets' bar only, the rows and track drawn by the page over it; the source is `res/paperwhite2/pokedex_art/info_moves.png` |
 | `pokedex_move_panel` | `pokedex_gra/143.pal`, `144.png`/`145.nscr` (new members) | The top screen's move panel, opened from Moves (`paperwhite2_pokedex_move_panel.c`): main BG 1 in palette row 6, beside the head bar's and the text's tiles, so only about 65 different tiles fit (45 used); the art behind the text is copied into the text's windows. The source is `res/paperwhite2/pokedex_art/move_panel.png` |
 
