@@ -42,7 +42,7 @@
 // Where the sprite stands on the top screen, in pixels: the middle of its feet, in the entry's left panel, where the
 // original's still sprite had its 96 by 96 frame centered at 50, 72
 #define SPRITE_X 50
-#define SPRITE_Y 120
+#define SPRITE_Y 96
 // The size of a pixel at the sprites' depth: the detail screen's camera (pokedex_detail_graphic.c), 70 units away with
 // a 40 degree field of view, shows 2 * 70 * tan(20 degrees) units in the screen's 192 pixels
 #define SPRITE_PIXEL_SIZE FX32_CONST(0.2654)

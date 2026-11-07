@@ -478,11 +478,15 @@ static void PokedexDetailTouchbar_VBlank(TCB *tcb, void *data) {
 // make it active
 void PokedexDetailTouchbar_SetBG(PokedexDetailTouchbar *touchbar, u8 bg) {
     int page = touchbar->page;
+    int selectedPage = touchbar->selectedPage;
     int glowPhase = touchbar->glowPhase;
     BOOL active = touchbar->active;
     BOOL check = PokedexDetailTouchbar_GetCheck(touchbar);
 
     PokedexDetailTouchbar_FreeType(touchbar);
+    // Freeing the bar stops the glow, which forgets the page it changed to (PokedexDetailTouchbar_StopGlow); without
+    // it, the bar made again had no tab that couldn't be touched, and touching the current one locked the bar
+    touchbar->selectedPage = selectedPage;
     touchbar->bg = bg;
     GFL_BGSysMoveBG(TOUCHBAR_BG, BG_MOVE_SET_Y, -touchbar->scrollY);
     GFL_BGSysSetBGPriority(TOUCHBAR_BG, touchbar->bgPriority);

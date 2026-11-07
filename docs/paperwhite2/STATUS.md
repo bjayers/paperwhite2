@@ -2,6 +2,16 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-06: Pokédex step 2, the user's first check
+
+The user's screenshots look right. Fixed: the touch bar locked after touching INFO on Info. Step 1's
+`PokedexDetailTouchbar_SetBG` frees the bar, and freeing stops the glow, which sets `selectedPage` to "none"; the bar
+made again then had no current tab that couldn't be touched, and the Info page (as the original) never unlocks the
+bar for its own tab. Only after coming back to Info from another page, so it seemed random. Now `SetBG` keeps the
+page (which also keeps INFO's glow). Layout: the sprite 24 px higher; Stats and Data with 10 px of padding round
+their text, rows 16 apart, the stat bars 63 px long; more room before GROUP; the male share blue and the female pink
+(the panels' palette has pink in the orange bars' shade's place). Not yet tested in game.
+
 ## 2026-11-06: Pokédex step 2, the new Info page
 
 Built (hack, no warnings, DSi intact), **not yet tested in game** (plugins.md, Pokédex): the entry and the animated

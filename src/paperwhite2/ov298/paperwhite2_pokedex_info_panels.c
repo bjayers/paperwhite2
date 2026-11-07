@@ -67,17 +67,17 @@
 #define STATS_PANEL_Y 20
 #define STATS_PANEL_WIDTH 168
 #define STATS_PANEL_HEIGHT 144
-#define STATS_ROW_Y 25
-#define STATS_ROW_PITCH 18
-#define STATS_NAME_X 10
-#define STATS_VALUE_RIGHT 76
-#define STATS_BAR_X 82
-#define STATS_BAR_WIDTH 84
+#define STATS_ROW_Y 30
+#define STATS_ROW_PITCH 16
+#define STATS_NAME_X 14
+#define STATS_VALUE_RIGHT 93
+#define STATS_BAR_X 99
+#define STATS_BAR_WIDTH 63
 #define STATS_BAR_HEIGHT 6
 // From the row's top
 #define STATS_BAR_OFFSET_Y 5
-#define STATS_LINE_Y 134
-#define STATS_TOTAL_Y 139
+#define STATS_LINE_Y 132
+#define STATS_TOTAL_Y 141
 // The base stat that fills a bar; a higher one shows it full
 #define STATS_BAR_MAX 180
 
@@ -86,24 +86,24 @@
 #define DATA_PANEL_Y 20
 #define DATA_PANEL_WIDTH 176
 #define DATA_PANEL_HEIGHT 144
-#define DATA_ROW_Y 24
-#define DATA_ROW_PITCH 17
-#define DATA_LABEL_X 10
+#define DATA_ROW_Y 30
+#define DATA_ROW_PITCH 16
+#define DATA_LABEL_X 14
 // Font 1's labels a little lower than font 0's values
 #define DATA_LABEL_OFFSET_Y 3
-#define DATA_VALUE_RIGHT 174
+#define DATA_VALUE_RIGHT 170
 #define EGG_PANEL_X 184
 #define EGG_PANEL_Y 20
 #define EGG_PANEL_WIDTH 68
 #define EGG_PANEL_HEIGHT 144
 #define EGG_CENTER_X (EGG_PANEL_X + EGG_PANEL_WIDTH / 2)
-#define EGG_HEADING_Y 24
-#define EGG_GROUP_LABEL_Y 44
-#define EGG_GROUP_Y 56
+#define EGG_HEADING_Y 30
+#define EGG_GROUP_LABEL_Y 56
+#define EGG_GROUP_Y 68
 #define EGG_GROUP_PITCH 16
-#define EGG_CYCLES_LABEL_Y 96
-#define EGG_CYCLES_Y 108
-#define EGG_STEPS_Y 126
+#define EGG_CYCLES_LABEL_Y 108
+#define EGG_CYCLES_Y 120
+#define EGG_STEPS_Y 138
 // The steps of an egg cycle (fieldmap_event.c)
 #define EGG_CYCLE_STEPS 256
 
@@ -136,7 +136,7 @@ enum {
     PANELS_COLOR_RED,
     PANELS_COLOR_RED_SHADE,
     PANELS_COLOR_ORANGE,
-    PANELS_COLOR_ORANGE_SHADE,
+    PANELS_COLOR_PINK,
     PANELS_COLOR_YELLOW,
     PANELS_COLOR_YELLOW_SHADE,
     PANELS_COLOR_GREEN,
@@ -147,11 +147,14 @@ enum {
 
 static const GXRgb sPanelColors[16] = {
     GX_RGB(0, 0, 0),  GX_RGB(4, 4, 5),  GX_RGB(22, 22, 23), GX_RGB(31, 31, 31), GX_RGB(7, 7, 8),   GX_RGB(15, 15, 16),
-    GX_RGB(30, 7, 6), GX_RGB(19, 4, 4), GX_RGB(31, 18, 4),  GX_RGB(22, 11, 2),  GX_RGB(31, 28, 5), GX_RGB(22, 18, 2),
+    GX_RGB(30, 7, 6), GX_RGB(19, 4, 4), GX_RGB(31, 18, 4),  GX_RGB(31, 12, 21), GX_RGB(31, 28, 5), GX_RGB(22, 18, 2),
     GX_RGB(9, 26, 7), GX_RGB(4, 17, 4), GX_RGB(7, 17, 31),  GX_RGB(3, 9, 21),
 };
 
 #define TEXT_COLOR PRINT_COLOR(PANELS_COLOR_TEXT, PANELS_COLOR_SHADOW, PANELS_COLOR_CLEAR)
+// The male and female shares' colors
+#define MALE_COLOR PRINT_COLOR(PANELS_COLOR_BLUE, PANELS_COLOR_SHADOW, PANELS_COLOR_CLEAR)
+#define FEMALE_COLOR PRINT_COLOR(PANELS_COLOR_PINK, PANELS_COLOR_SHADOW, PANELS_COLOR_CLEAR)
 #define LABEL_COLOR PRINT_COLOR(PANELS_COLOR_DIM, PANELS_COLOR_CLEAR, PANELS_COLOR_CLEAR)
 #define BAR_SHOWN_COLOR PRINT_COLOR(PANELS_COLOR_PANEL, PANELS_COLOR_CLEAR, PANELS_COLOR_CLEAR)
 #define BAR_OTHER_COLOR PRINT_COLOR(PANELS_COLOR_DIM, PANELS_COLOR_CLEAR, PANELS_COLOR_CLEAR)
@@ -264,9 +267,10 @@ static void PokedexInfoPanels_DrawData(PokedexInfoPanels *panels, PersonalData *
 static void PokedexInfoPanels_DrawEgg(PokedexInfoPanels *panels, PersonalData *personal, BOOL caught);
 static void PokedexInfoPanels_DrawPanel(GFLBitmap *bitmap, int x, int y, int width, int height);
 static void PokedexInfoPanels_DrawStatBar(GFLBitmap *bitmap, int x, int y, u32 value);
-static void PokedexInfoPanels_Print(PokedexInfoPanels *panels, GFLBitmap *bitmap, int top, Font *font, u32 messageId,
-                                    int x, int y, u32 align, u16 color);
+static u32 PokedexInfoPanels_Print(PokedexInfoPanels *panels, GFLBitmap *bitmap, int top, Font *font, u32 messageId,
+                                   int x, int y, u32 align, u16 color);
 static void PokedexInfoPanels_PrintValue(PokedexInfoPanels *panels, u32 messageId, BOOL known, int y);
+static void PokedexInfoPanels_DrawGender(PokedexInfoPanels *panels, GFLBitmap *bitmap, u32 sexRatio, int y);
 static Font *PokedexInfoPanels_GetFittingFont(PokedexInfoPanels *panels, u32 messageId, u32 width);
 static void PokedexInfoPanels_SetShare(WordSet *wordSet, u32 index, u32 permille);
 static u32 PokedexInfoPanels_GetFemalePermille(u32 sexRatio);
@@ -420,26 +424,7 @@ static void PokedexInfoPanels_DrawData(PokedexInfoPanels *panels, PersonalData *
                                 DATA_ROW_Y + i * DATA_ROW_PITCH + DATA_LABEL_OFFSET_Y, PRINT_ALIGN_LEFT, LABEL_COLOR);
     }
 
-    switch (sexRatio) {
-    case GENDER_RATIO_GENDERLESS:
-        message = PokedexData_Text_Genderless;
-        break;
-    case GENDER_RATIO_MALE_ONLY:
-        message = PokedexData_Text_MaleOnly;
-        break;
-    case GENDER_RATIO_FEMALE_ONLY:
-        message = PokedexData_Text_FemaleOnly;
-        break;
-    default: {
-        u32 female = PokedexInfoPanels_GetFemalePermille(sexRatio);
-
-        PokedexInfoPanels_SetShare(panels->wordSet, 0, 1000 - female);
-        PokedexInfoPanels_SetShare(panels->wordSet, 2, female);
-        message = PokedexData_Text_GenderRatio;
-        break;
-    }
-    }
-    PokedexInfoPanels_PrintValue(panels, message, TRUE, DATA_ROW_Y + DATA_ROW_GENDER * DATA_ROW_PITCH);
+    PokedexInfoPanels_DrawGender(panels, bitmap, sexRatio, DATA_ROW_Y + DATA_ROW_GENDER * DATA_ROW_PITCH);
 
     WordSetNumber(panels->wordSet, 0, catchRate, 3, 0, TRUE);
     PokedexInfoPanels_SetShare(panels->wordSet, 1, catchPermille);
@@ -545,26 +530,61 @@ static void PokedexInfoPanels_DrawStatBar(GFLBitmap *bitmap, int x, int y, u32 v
     GFL_BitmapFillArea(bitmap, x + 1, y + 1, STATS_BAR_WIDTH - 2, STATS_BAR_HEIGHT - 2, PANELS_COLOR_PANEL);
     if (fill != 0) {
         GFL_BitmapFillArea(bitmap, x + 1, y + 1, fill, STATS_BAR_HEIGHT - 3, color);
-        // Each color's shade follows it in the palette
-        GFL_BitmapFillArea(bitmap, x + 1, y + STATS_BAR_HEIGHT - 2, fill, 1, color + 1);
+        // Each color's shade follows it in the palette, but orange's, whose place is pink's, which takes red's
+        GFL_BitmapFillArea(bitmap, x + 1, y + STATS_BAR_HEIGHT - 2, fill, 1,
+                           color == PANELS_COLOR_ORANGE ? PANELS_COLOR_RED_SHADE : color + 1);
     }
 }
 
 // Draws a message, formatted with the word set, into a window whose top is at top on the screen. x is where it
-// starts, ends or is centered, by a PRINT_ALIGN_*
-static void PokedexInfoPanels_Print(PokedexInfoPanels *panels, GFLBitmap *bitmap, int top, Font *font, u32 messageId,
-                                    int x, int y, u32 align, u16 color) {
+// starts, ends or is centered, by a PRINT_ALIGN_*. Returns its width
+static u32 PokedexInfoPanels_Print(PokedexInfoPanels *panels, GFLBitmap *bitmap, int top, Font *font, u32 messageId,
+                                   int x, int y, u32 align, u16 color) {
+    u32 width;
+
     GFL_MsgDataLoadStrbuf(panels->msgData, messageId, panels->message);
     GFL_WordSetFormatStrbuf(panels->wordSet, panels->text, panels->message);
+    width = GFL_FontGetBlockWidth(panels->text, font, 0);
     switch (align) {
     case PRINT_ALIGN_RIGHT:
-        x -= GFL_FontGetBlockWidth(panels->text, font, 0);
+        x -= width;
         break;
     case PRINT_ALIGN_CENTER:
-        x -= GFL_FontGetBlockWidth(panels->text, font, 0) / 2;
+        x -= width / 2;
         break;
     }
     GFL_TextRendererDrawToBitmapEx(bitmap, x, y - top, panels->text, font, color);
+    return width;
+}
+
+// The gender row's value, right-aligned: the male share in blue and the female share in pink, either alone for a
+// species of one gender, or "Genderless"
+static void PokedexInfoPanels_DrawGender(PokedexInfoPanels *panels, GFLBitmap *bitmap, u32 sexRatio, int y) {
+    int right = DATA_VALUE_RIGHT;
+    u32 female;
+
+    switch (sexRatio) {
+    case GENDER_RATIO_GENDERLESS:
+        PokedexInfoPanels_PrintValue(panels, PokedexData_Text_Genderless, TRUE, y);
+        return;
+    case GENDER_RATIO_MALE_ONLY:
+        PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->font, PokedexData_Text_MaleOnly, right, y,
+                                PRINT_ALIGN_RIGHT, MALE_COLOR);
+        return;
+    case GENDER_RATIO_FEMALE_ONLY:
+        PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->font, PokedexData_Text_FemaleOnly, right, y,
+                                PRINT_ALIGN_RIGHT, FEMALE_COLOR);
+        return;
+    }
+    female = PokedexInfoPanels_GetFemalePermille(sexRatio);
+    PokedexInfoPanels_SetShare(panels->wordSet, 0, 1000 - female);
+    PokedexInfoPanels_SetShare(panels->wordSet, 2, female);
+    right -= PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->font, PokedexData_Text_GenderFemale, right, y,
+                                     PRINT_ALIGN_RIGHT, FEMALE_COLOR);
+    right -= PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->font, PokedexData_Text_GenderSeparator, right,
+                                     y, PRINT_ALIGN_RIGHT, TEXT_COLOR);
+    PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->font, PokedexData_Text_GenderMale, right, y,
+                            PRINT_ALIGN_RIGHT, MALE_COLOR);
 }
 
 // A Data row's value, right-aligned, or "?" while it isn't known
