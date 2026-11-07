@@ -200,3 +200,40 @@ multiplier under each, coloured red above ×1, blue below, dark grey at ×0, dim
 Absorb, Storm Drain, Volt Absorb, Motor Drive, Lightningrod, Sap Sipper, Thick Fat, Heatproof, Dry Skin, Filter,
 Solid Rock, Wonder Guard). The type chart moved to ARM9 main for it. No art yet: the placeholder panel. Templates:
 `matchups_canvas.png`, `_reference.png`, `_reference_tiles.png` (Tepig, Blaze chosen).
+
+## Moves and Evo tabs: the user's plan and the research (2026-11-07)
+
+The user's plan: the Info page's sub-pages become Stats, Data, Moves, Evo and Matchups, with the tab bar redrawn in the
+art with icons (no text) and the tap areas where the art puts them; Cry and Forms stay as they are. Nothing is built:
+the user designs the tabs first.
+
+- **Moves:** a list on the bottom screen that always has Up and Down (changing Pokémon there by the bar's arrows by
+  touch), in four sets (Level, TM/HM, Tutor, Egg) switched with Left and Right and shown in a second tab bar under the
+  main one. A or a touch on a move opens a larger panel over the top screen with the move's data; B closes it.
+- **Evo:** each evolution's party icon (the "?" icon while undiscovered, with its method still written), touching one
+  opening its page when it has been seen.
+
+What it needs, read from the source:
+
+| Need | Where |
+| --- | --- |
+| Level-up moves | `PML_LearnsetLvUpLoad(species, form, dest)`, `LearnsetEntry_GetMove`/`_GetLevel` (`pml/personal.h`) |
+| TM/HM moves | the species' `PERSONAL_MACHINES_1`-`4` bits; a machine's move `PML_ItemGetTMMoveID(item)` (`pml/item.h`) |
+| Tutor moves | `PERSONAL_TUTORS` (the type tutor, its bits' moves in `species_data.py`'s TYPE_TUTOR_MOVES) and `PERSONAL_TUTOR_PAID_1`-`4` (the four tutors, each bit a place in its shop table in `src/ov036/scrcmd_shop.c`, MOVE_TUTOR_SHOP_ITEMS). The shop tables are in the field's overlay, so the Pokédex needs them where it can read them (ARM9 main, as the type chart, or its own copy) |
+| Egg moves | archive 124 by species, `u16` count then moves (`inheritEggMoves`, `src/ov036/day_care.c:916`) |
+| A move's data | `PML_MoveGetParam(move, MOVE_PARAM_*)` (type, category, power, accuracy, PP, priority), `PML_MoveIsAlwaysHit`; its description `TEXT_BANK_BTL_MAIN_13`, its name the move names bank; the category icon as the relearner shows it (`MoveTutor_SetCategory`, `src/ov258/move_tutor_main.c`) |
+| A list to move through and touch | the relearner draws its own rows with type icons and scroll arrows, its cursor `system/cursor_move.h` (a key and touch cursor over a table of rectangles), reusable; `system/bmp_menulist.h` and `scroll_bar.c` exist too |
+| Evolutions | `loadEvolutionFile`, `getEvolutionInfoParam` (`pml/personal.h`); the methods as `res/pokemon/*/data.json` lists them (`EVO_METHOD_*`, 27 kinds), with item, move and species names from their banks |
+| Party icons | `system/poke_icon.h` (`PokeIcon_GetFileOfPkm`, `_GetPalette`, the palette and cell files); the "?" for an undiscovered one (which icon file, to check) |
+| Jumping to a species | the detail screen's list (`PokedexDetailCommon_GoNext` and the list and index it was opened with): a species outside that list (after a search) can't be jumped to |
+
+Constraints found:
+- **Keys:** the touch bar maps Up and Down to its arrows and Left and Right to the page tabs (Info, Area, Cry, Forms;
+  `pokedex_detail_touchbar.c`). On Moves the page takes all four (the bar's keys can be cleared, `PokedexDetailTbar_SetKey`),
+  so there the arrows and the page tabs are by touch only.
+- **The panel over the top screen:** the top's BGs are 0 (the 3D sprite), 1 (the head bar and the entry's text), 2
+  (the panels) and 3 (the grid). BG 1 has only 16 KB of tiles, which the entry's windows use, so the panel takes the
+  entry's text's place while it is open (the entry is cleared and drawn again on closing), with the user's frame as
+  art; the sprite and panels behind can be dimmed with the hardware's brightness blend to make the panel stand out.
+- **Memory:** a list, its icons and the evolution page cost ov298 code (the DS budget, 90 KB left) but no new
+  overlays; the art's palette rows go 6-10 (five sub-pages) and Matchups' text palette moves to 11.
