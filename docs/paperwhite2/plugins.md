@@ -1399,6 +1399,18 @@ buttons on the swapped engines (`pokedex_detail_info.c`, three checks in `src/ov
 every page (`pokedex_detail_graphic.c`): main OBJ E (64 KB), sub OBJ D (128 KB, the Info page's bottom needs about
 30 KB), textures B, texture palettes F (one slot); main and sub BG A and C as before. About 640 bytes of ov298.
 
+**Step 2, the new Info page** (`src/paperwhite2/ov298/paperwhite2_pokedex_info{,_panels}.c`, `include/paperwhite2/pokedex_info.h`;
+`pokedex_detail_info.c` keeps the original page outside `PAPERWHITE2` and points `POKEDEX_DETAIL_INFO_PROC_FUNCS` at the
+hack's). **Top** (main engine): overlay 296's entry (`PokedexInfo`, engine 0) with its text on BG 1 beside the head bar,
+its panels on BG 2 and its grid on BG 3, and no still sprite (`PokedexInfo_IsDetailTop`); the battle's animated sprite
+(MCSS) on BG 0 in 3D, which the page turns on at its start and off at its end. BG 1 fades with the page there, so the
+head bar is shown at once and fades in and out with it, and slides out only once the screen is dark. **Bottom** (sub
+engine): the grid on BG 4, the bar of sub-pages and the panels drawn into two windows on BG 7 (palette 3, a table in
+the panels' file until there is art), and on Stats the buttons Cry, Turn, Form, Shiny and Language on BG 6
+(`AppTaskMenuWin`, palettes 4 and 5), hidden when they can do nothing. L and R, or touching a name, cycle Stats, Data
+and Matchups. The text is `res/text/system/pokedex_data.txt` (`TEXT_BANK_POKEDEX_DATA`). Every place is a constant at
+the top of the two files.
+
 ## Adding global scripts
 
 A global script file's IDs are limited by its row in `GLOBAL_SCRIPT_TABLE` (`src/ov012/script_sys.c`), e.g.

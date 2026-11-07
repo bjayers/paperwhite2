@@ -190,6 +190,14 @@ struct PokedexInfo {
     /* 0x2b0 */ u16 *formNameTable;
 };
 
+#ifdef PAPERWHITE2
+// Paper White 2: the detail screen's info page shows a single entry, on the top screen, which the main engine drives on
+// that page (pokedex_detail.c). The page draws the Pokémon's animated sprite itself, with 3D on BG 0
+static inline BOOL PokedexInfo_IsDetailTop(PokedexInfo *info) {
+    return info->mode == POKEDEX_INFO_MODE_DETAIL && info->engine == 0;
+}
+#endif
+
 static void PokedexInfo_ClearDisplay(PokedexInfo *info);
 static void PokedexInfo_VBlankTask(TCB *tcb, void *data);
 static void PokedexInfo_InitWindows(PokedexInfo *info);
@@ -353,6 +361,15 @@ PokedexInfo *PokedexInfo_Create(HeapID heapId, u16 species, u16 form, u16 sex, u
         info->midBG = 6;
         info->backBG = 4;
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the info page's top entry leaves BG 0 to the 3D of the page's animated sprite, so its text shares
+    // BG 1 with the head bar and its panels and grid move up to BGs 2 and 3
+    if (PokedexInfo_IsDetailTop(info)) {
+        info->frontBG = 1;
+        info->midBG = 2;
+        info->backBG = 3;
+    }
+#endif
     GFL_BGSysSetBGPriority(info->frontBG, info->bgPriority);
     GFL_BGSysSetBGPriority(info->midBG, (u8)(info->bgPriority + 1));
     GFL_BGSysSetBGPriority(info->backBG, (u8)(info->bgPriority + 2));
@@ -405,10 +422,14 @@ PokedexInfo *PokedexInfo_Create(HeapID heapId, u16 species, u16 form, u16 sex, u
     info->hidden = FALSE;
 
 #ifdef PAPERWHITE2
-    if (info->mode == POKEDEX_INFO_MODE_DETAIL && info->engine == 0) {
+    // Paper White 2: the top entry clears its panels' top rows for the head bar, as the original's top entry does, but
+    // is always shown, so it has no grid of its own for while it is hidden: that grid's screen is the second half of a
+    // 256 by 512 BG, which BG 3 isn't
+    if (PokedexInfo_IsDetailTop(info)) {
+        GFL_BGSysFillScrArea(info->midBG, 0, 0, 0, 0x20, 3, 0x11);
+    }
 #else
     if (info->mode == POKEDEX_INFO_MODE_DETAIL && info->engine == 1) {
-#endif
         GFL_BGSysFillScrArea(info->midBG, 0, 0, 0, 0x20, 3, 0x11);
         arc = info->arcs[POKEDEX_INFO_ARC_POKEDEX_GRA];
         GFL_G2DIOLoadArcNCLR(arc, POKEDEX_GRA_PALETTE_EXTRA, info->palType, 0, 0x80, 0x40, info->heapId);
@@ -420,6 +441,7 @@ PokedexInfo *PokedexInfo_Create(HeapID heapId, u16 species, u16 form, u16 sex, u
         GFL_BGSysSetScrPaletteNo(info->backBG, 0, 0x20, 0x20, 0x15, 4);
         GFL_BGSysSetScrPaletteNo(info->backBG, 0, 0x35, 0x20, 3, 5);
     }
+#endif
 
     arc = info->arcs[POKEDEX_INFO_ARC_POKEDEX_GRA];
     size = GFL_ArcToolGetDataLength(arc, POKEDEX_GRA_PALETTE);
@@ -819,6 +841,17 @@ static void PokedexInfo_InitWindows(PokedexInfo *info) {
             { 2, 17, 28, 7 },
         };
 
+#ifdef PAPERWHITE2
+        // Paper White 2: the top entry's text shares BG 1's characters and screen with the head bar, and the detail
+        // screen never prints in the label window, so it takes a single character, in a corner clear of the bar and
+        // of the other windows
+        if (PokedexInfo_IsDetailTop(info)) {
+            rects[POKEDEX_INFO_WINDOW_LABEL][0] = 0;
+            rects[POKEDEX_INFO_WINDOW_LABEL][1] = 23;
+            rects[POKEDEX_INFO_WINDOW_LABEL][2] = 1;
+            rects[POKEDEX_INFO_WINDOW_LABEL][3] = 1;
+        }
+#endif
         for (i = 0; i < POKEDEX_INFO_WINDOW_COUNT; i++) {
             info->windows[i] =
                 BmpWin_CreateDynamic(info->frontBG, rects[i][0], rects[i][1], rects[i][2], rects[i][3], 3, TRUE);
@@ -1119,6 +1152,12 @@ static void PokedexInfo_FlushLabelWindow(PokedexInfo *info) {
 }
 
 static void PokedexInfo_LoadSprite(PokedexInfo *info, int x, u16 y, u32 slot) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the info page's top entry has no still sprite, as the page shows the animated one
+    if (PokedexInfo_IsDetailTop(info)) {
+        return;
+    }
+#endif
     PokedexInfo_LoadSpriteResources(info, slot);
     PokedexInfo_CreateSpriteActor(info, x, y, slot);
     PokedexInfo_HideOtherSprites(info);
@@ -1606,7 +1645,14 @@ static void PokedexInfo_SetFootprintsVisible(PokedexInfo *info, BOOL visible) {
 }
 
 static void PokedexInfo_SetVisible(PokedexInfo *info, BOOL visible) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the info page's top entry has no still sprite (PokedexInfo_LoadSprite)
+    if (info->sprites[info->spriteSlot] != NULL) {
+        ClActor_SetVisible(info->sprites[info->spriteSlot], visible);
+    }
+#else
     ClActor_SetVisible(info->sprites[info->spriteSlot], visible);
+#endif
     if (!info->caught) {
         visible = FALSE;
     }

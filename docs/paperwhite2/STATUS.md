@@ -2,6 +2,12 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-06: Pokédex step 2, the new Info page
+
+Built (hack, no warnings, DSi intact), **not yet tested in game** (plugins.md, Pokédex): the entry and the animated
+sprite on the top screen, the sub-pages Stats, Data and Matchups (blank) on the bottom with L/R, and the buttons Cry,
+Turn, Form, Shiny and Language on Stats. Positions are constants for the user to check; then step 3, the templates.
+
 ## 2026-11-06: Pokédex step 1, the engines swapped on Info
 
 The user tested the C-Gear's save: it works. Pokédex step 1 is built (plugins.md, Pokédex): the Info page runs with

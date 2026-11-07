@@ -24,10 +24,20 @@
 #include "save/pokedex_savedata.h"
 #include "system/game_data.h"
 #include "system/gf_font.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/pokedex_info.h"
+#endif
 
 // The detail screen's info page, which the ROM does not name: the Pokémon's entry on both screens, from overlay 296,
 // with buttons for the languages it has been seen in, which show the entry on the sub screen in that language
 
+#ifdef PAPERWHITE2
+// Paper White 2: the hack's info page (paperwhite2_pokedex_info.c), with the entry and the animated sprite on the top
+// screen and the Pokémon's stats and data on the bottom, in place of this one
+const PokedexDetailProcFuncs POKEDEX_DETAIL_INFO_PROC_FUNCS = {
+    PokedexInfoPage_Init, PokedexInfoPage_Main, PokedexInfoPage_Exit, PokedexInfoPage_Command, PokedexInfoPage_Draw,
+};
+#else
 #define LANGUAGE_BUTTON_COUNT 6
 // No language button is pushed, or the entry is in the game's language
 #define LANGUAGE_NONE LANGUAGE_BUTTON_COUNT
@@ -150,11 +160,13 @@ static const LanguageButtonData sPokedexDetailInfoLanguageButtons[LANGUAGE_BUTTO
     { 38, 91, { 40, 91, 20, 15 }, 10, 27, 5 }, { 59, 91, { 61, 91, 20, 15 }, 11, 17, 4 },
     { 80, 91, { 82, 91, 20, 15 }, 12, 18, 7 }, { 101, 91, { 103, 91, 20, 15 }, 13, 19, 8 },
 };
+#endif
 
 void PokedexDetailInfo_InitParam(PokedexDetailInfoParam *param, HeapID heapId) {
     param->heapId = heapId;
 }
 
+#ifndef PAPERWHITE2
 static BOOL PokedexDetailInfo_Init(PokedexDetailProcSys *sys, int *seq, void *param_, void *work,
                                    PokedexDetailCommon *common) {
     PokedexDetailInfoParam *param = param_;
@@ -266,23 +278,12 @@ static BOOL PokedexDetailInfo_Main(PokedexDetailProcSys *sys, int *seq, void *pa
             break;
         }
         PokedexDetailInfo_GetPokemon(param, wk, common, &species, &form, &sex, &rare, &personality, &caught, languages);
-#ifdef PAPERWHITE2
-        // Paper White 2: the page shows the main engine on the top screen (pokedex_detail.c), so the bottom screen's
-        // entry is the sub engine's and the top screen's the main engine's
-        wk->infoMain = PokedexInfo_Create(param->heapId, species, form, sex, rare, personality, national, caught, 2, 1,
-                                          1, unit, wk->font, PokedexDetailCommon_GetPrintQueue(common), wk->msgData[0],
-                                          wk->msgData[1], wk->msgData[2]);
-        wk->infoSub = PokedexInfo_Create(param->heapId, species, form, sex, rare, personality, national, caught, 2, 0,
-                                         1, unit, wk->font, PokedexDetailCommon_GetPrintQueue(common), wk->msgData[0],
-                                         wk->msgData[1], wk->msgData[2]);
-#else
         wk->infoMain = PokedexInfo_Create(param->heapId, species, form, sex, rare, personality, national, caught, 2, 0,
                                           1, unit, wk->font, PokedexDetailCommon_GetPrintQueue(common), wk->msgData[0],
                                           wk->msgData[1], wk->msgData[2]);
         wk->infoSub = PokedexInfo_Create(param->heapId, species, form, sex, rare, personality, national, caught, 2, 1,
                                          1, unit, wk->font, PokedexDetailCommon_GetPrintQueue(common), wk->msgData[0],
                                          wk->msgData[1], wk->msgData[2]);
-#endif
         PokedexInfo_Hide(wk->infoSub);
         PokedexDetailInfo_ResetButtons(param, wk, common, languages);
         PokedexDetailInfo_InitGlow(param, wk, common);
@@ -589,22 +590,13 @@ static void PokedexDetailInfo_CreateButtons(PokedexDetailInfoParam *param, Poked
                                             PokedexDetailCommon *common) {
     PokedexDetailTouchbar *touchbar = PokedexDetailCommon_GetTouchbar(common);
     ClActUnit *unit = PokedexDetailGraphic_GetClActUnit(PokedexDetailCommon_GetGraphic(common));
-#ifdef PAPERWHITE2
-    // Paper White 2: the buttons are on the bottom screen, the sub engine's on this page
-    ClActSurface surface = CLACT_SURFACE_SUB;
-#else
     ClActSurface surface = CLACT_SURFACE_MAIN;
-#endif
     ArcTool *arc = GFL_ArcSysCreateFileHandle(ARCID_POKEDEX_GRA, param->heapId);
     ClActorSetup setup;
     u8 i;
 
     wk->palette = PokedexDetailTouchbar_GetIconPalette(touchbar);
-#ifdef PAPERWHITE2
-    wk->chars = ClActSys_LoadChars(arc, 13, FALSE, CLACT_VRAM_SUB, param->heapId);
-#else
     wk->chars = ClActSys_LoadChars(arc, 13, FALSE, CLACT_VRAM_MAIN, param->heapId);
-#endif
     wk->cellAnims = ClActSys_LoadCellAnims(arc, 28, 45, param->heapId);
     GFL_ArcToolFree(arc);
 
@@ -725,12 +717,7 @@ static void PokedexDetailInfo_InitGlow(PokedexDetailInfoParam *param, PokedexDet
     GFL_HeapFree(file);
     wk->glowPhase = 0;
     MI_CpuCopy8(wk->glowPalettes[0], wk->glowPalette, 32);
-#ifdef PAPERWHITE2
-    // Paper White 2: the palette of the bottom screen's OBJs, the sub engine's on this page
-    NNS_GfdRegisterNewVramTransferTask(NNS_GFD_DST_2D_OBJ_PLTT_SUB, 6 * 32, wk->glowPalette, 32);
-#else
     NNS_GfdRegisterNewVramTransferTask(NNS_GFD_DST_2D_OBJ_PLTT_MAIN, 6 * 32, wk->glowPalette, 32);
-#endif
 }
 
 static void PokedexDetailInfo_FreeGlow(PokedexDetailInfoParam *param, PokedexDetailInfoWork *wk,
@@ -788,10 +775,6 @@ static void PokedexDetailInfo_UpdateGlow(PokedexDetailInfoParam *param, PokedexD
 
         wk->glowPalette[i] = r | (g << 5) | (b << 10);
     }
-#ifdef PAPERWHITE2
-    // Paper White 2: the palette of the bottom screen's OBJs, the sub engine's on this page
-    NNS_GfdRegisterNewVramTransferTask(NNS_GFD_DST_2D_OBJ_PLTT_SUB, 6 * 32, wk->glowPalette, 32);
-#else
     NNS_GfdRegisterNewVramTransferTask(NNS_GFD_DST_2D_OBJ_PLTT_MAIN, 6 * 32, wk->glowPalette, 32);
-#endif
 }
+#endif // PAPERWHITE2
