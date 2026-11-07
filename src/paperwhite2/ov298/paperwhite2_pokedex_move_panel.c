@@ -56,6 +56,8 @@
 // its title 14 and 15: the panel's edge over it takes two of the others for its fill and border
 #define HEADBAR_FILL_COLOR 9
 #define HEADBAR_BORDER_COLOR 10
+// The colors of a palette row
+#define PALETTE_COLORS 16
 
 // The windows of its text, in tiles: the name, the left numbers (Category, Power, Accuracy), the right ones (PP,
 // Priority) and the description
@@ -110,6 +112,10 @@
 // BG 1, where the panel and the head bar are, nor the OBJs, the panel's icons
 #define DIM_PLANES (GX_BLEND_PLANEMASK_BG0 | GX_BLEND_PLANEMASK_BG2 | GX_BLEND_PLANEMASK_BG3 | GX_BLEND_PLANEMASK_BD)
 #define DIM_BRIGHTNESS (-8)
+// The hardware's darkening, which takes EVY / 16 of each color away (DIM_BRIGHTNESS's EVY), for the head bar: it is on
+// the panel's BG, so it is dimmed in its palette instead, but for its two colors that the panel's edge takes
+#define DIM_EVY 8
+#define DIM_STEPS 16
 // The page's 3D sprite, on BG 0, which would show over the panel: hidden while it is open
 #define SPRITE_BG 0
 
@@ -198,6 +204,9 @@ struct PokedexMovePanel {
     u32 coverTiles[PANEL_TILE_WIDTH][TILE_SIZE / 4];
     u32 coverPos;
     u16 headbarMaps[PANEL_TILE_WIDTH];
+    // The head bar's palette row and its colors as they were, while the panel dims them
+    u32 headbarPalette;
+    GXRgb headbarColors[PALETTE_COLORS];
     BmpWin *windows[WINDOW_COUNT];
     BOOL open;
     // The icons, and the characters each shows, loaded for each move
@@ -211,6 +220,7 @@ struct PokedexMovePanel {
 
 static void PokedexMovePanel_MakeTiles(PokedexMovePanel *panel);
 static void PokedexMovePanel_Open(PokedexMovePanel *panel, PokedexInfo *entry);
+static void PokedexMovePanel_DimHeadbar(PokedexMovePanel *panel);
 static void PokedexMovePanel_CoverHeadbar(PokedexMovePanel *panel);
 static void PokedexMovePanel_DrawMove(PokedexMovePanel *panel, u16 move);
 static void PokedexMovePanel_SetIcons(PokedexMovePanel *panel, u16 move);
@@ -296,8 +306,31 @@ void PokedexMovePanel_Show(PokedexMovePanel *panel, PokedexInfo *entry, u16 move
     if (opening) {
         GFL_BGSysLoadScr(PANEL_BG);
         G2x_SetBlendBrightness_(REG_BLDCNT_ADDR, DIM_PLANES, DIM_BRIGHTNESS);
+        PokedexMovePanel_DimHeadbar(panel);
         GFL_BGSysSetBGEnabled(SPRITE_BG, FALSE);
     }
+}
+
+// The head bar's colors darkened as DIM_BRIGHTNESS darkens the other BGs, those of the panel's edge over it kept
+static void PokedexMovePanel_DimHeadbar(PokedexMovePanel *panel) {
+    const GXRgb *row = (const GXRgb *)HW_BG_PLTT + panel->headbarPalette * PALETTE_COLORS;
+    GXRgb dimmed[PALETTE_COLORS];
+    u32 i;
+
+    for (i = 0; i < PALETTE_COLORS; i++) {
+        GXRgb color = row[i];
+        u32 r = color & GX_RGB_R_MASK;
+        u32 g = (color & GX_RGB_G_MASK) >> GX_RGB_G_SHIFT;
+        u32 b = (color & GX_RGB_B_MASK) >> GX_RGB_B_SHIFT;
+
+        panel->headbarColors[i] = color;
+        if (i == HEADBAR_FILL_COLOR || i == HEADBAR_BORDER_COLOR) {
+            dimmed[i] = color;
+        } else {
+            dimmed[i] = GX_RGB(r - r * DIM_EVY / DIM_STEPS, g - g * DIM_EVY / DIM_STEPS, b - b * DIM_EVY / DIM_STEPS);
+        }
+    }
+    GFL_BGSysUploadStdPalette(PANEL_BG, dimmed, sizeof(dimmed), panel->headbarPalette * 0x20);
 }
 
 // The panel's screen is cleared at once, as the entry's windows will take its characters, with the head bar's row put
@@ -324,6 +357,8 @@ void PokedexMovePanel_Close(PokedexMovePanel *panel, PokedexInfo *entry, u32 lan
     ClActor_SetVisible(panel->typeIcon, FALSE);
     ClActor_SetVisible(panel->categoryIcon, FALSE);
     PokedexDetailBlend_SetIn(0, panel->blend);
+    GFL_BGSysUploadStdPalette(PANEL_BG, panel->headbarColors, sizeof(panel->headbarColors),
+                              panel->headbarPalette * 0x20);
     GFL_BGSysSetBGEnabled(SPRITE_BG, TRUE);
     PokedexInfo_RestoreText(entry, language);
 }
@@ -400,6 +435,8 @@ static void PokedexMovePanel_CoverHeadbar(PokedexMovePanel *panel) {
     u32 i;
     u32 x;
     u32 y;
+
+    panel->headbarPalette = palette;
 
     GFL_BGSysUploadStdPalette(PANEL_BG, &sPanelColors[COLOR_FILL], sizeof(GXRgb),
                               palette * 0x20 + HEADBAR_FILL_COLOR * sizeof(GXRgb));

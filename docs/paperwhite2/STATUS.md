@@ -2,6 +2,13 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-07: Pokédex, the head bar dimmed under the move panel
+
+The head bar shares BG 1 with the move panel, so the hardware dimming (by BG) couldn't reach it. Now its palette row
+is darkened as the hardware darkens (EVY 8 of 16), but for the two colours the panel's edge takes over it, and put
+back when the panel closes (`PokedexMovePanel_DimHeadbar`). The panel keeps its place from y 21. Not yet tested in
+game.
+
 ## 2026-11-07: Pokédex Moves, the user's test notes
 
 The user's test of Moves went well; fixed from the notes (plugins.md, Pokédex), not yet tested in game: the 3D sprite
