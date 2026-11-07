@@ -170,8 +170,6 @@ static const GXRgb sPanelColors[16] = {
 #define EGG_HEADING_COLOR PRINT_COLOR(PANELS_COLOR_YELLOW, PANELS_COLOR_BORDER, PANELS_COLOR_CLEAR)
 #define EGG_VALUE_COLOR PRINT_COLOR(PANELS_COLOR_PANEL, PANELS_COLOR_BORDER, PANELS_COLOR_CLEAR)
 #define LABEL_COLOR PRINT_COLOR(PANELS_COLOR_DIM, PANELS_COLOR_CLEAR, PANELS_COLOR_CLEAR)
-// The Data rows' labels, darker, over the art's light grey column
-#define DATA_LABEL_COLOR PRINT_COLOR(PANELS_COLOR_BORDER, PANELS_COLOR_CLEAR, PANELS_COLOR_CLEAR)
 #define BAR_SHOWN_COLOR PRINT_COLOR(PANELS_COLOR_PANEL, PANELS_COLOR_CLEAR, PANELS_COLOR_CLEAR)
 #define BAR_OTHER_COLOR PRINT_COLOR(PANELS_COLOR_DIM, PANELS_COLOR_CLEAR, PANELS_COLOR_CLEAR)
 
@@ -512,8 +510,7 @@ static void PokedexInfoPanels_DrawData(PokedexInfoPanels *panels, PersonalData *
     }
     for (i = 0; i < NELEMS(sDataLabels); i++) {
         PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->smallFont, sDataLabels[i], DATA_LABEL_X,
-                                DATA_ROW_Y + i * DATA_ROW_PITCH + DATA_LABEL_OFFSET_Y, PRINT_ALIGN_LEFT,
-                                DATA_LABEL_COLOR);
+                                DATA_ROW_Y + i * DATA_ROW_PITCH + DATA_LABEL_OFFSET_Y, PRINT_ALIGN_LEFT, LABEL_COLOR);
     }
 
     PokedexInfoPanels_DrawGender(panels, bitmap, sexRatio, DATA_ROW_Y + DATA_ROW_GENDER * DATA_ROW_PITCH);

@@ -2,6 +2,11 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-06: Pokédex, Data's art without the grey column
+
+The flicker is gone (the user). The user prefers Data's labels light, without the grey column behind them: new Data
+art, and the labels mid grey again. Next: the Matchups sub-page's design.
+
 ## 2026-11-06: Pokédex, no flicker between Stats and Data
 
 The user saw a flicker when changing sub-page. Two causes in `PokedexInfoPanels_LoadArt`: the screen was written to
