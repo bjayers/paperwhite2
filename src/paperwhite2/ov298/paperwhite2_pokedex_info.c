@@ -41,10 +41,10 @@
 // Matchups (paperwhite2_pokedex_info_panels.c), and, on Stats, the buttons Cry, Turn, Form, Shiny and Language in the
 // menus' style. A button that can't do anything for the Pokémon is hidden, and the others keep their places. On
 // Matchups, a button for each of the species' abilities picks the one whose effect the type chart shows. Moves lists
-// a set of the Pokémon's moves, and a move chosen there opens a panel of it over the top screen
-// (paperwhite2_pokedex_move_panel.c). L and R, and Left and Right, step through the sub-pages and Moves' sets; the
-// touch bar's Left and Right (to Area, Cry and Forms, still there by touch) are the page's while it runs, and on Moves
-// its Up and Down and, while the panel is open, its B
+// a set of the Pokémon's moves, with a panel of the cursor's move over the top screen
+// (paperwhite2_pokedex_move_panel.c). Left and Right step through the sub-pages, and on Moves L and R through its sets;
+// the touch bar's Left and Right (to Area, Cry and Forms, still there by touch) are the page's while it runs, and on
+// Moves its Up and Down and, while the panel is open, its B
 
 // Where the sprite stands on the top screen, in pixels: the middle of its feet, in the entry's left panel, where the
 // original's still sprite had its 96 by 96 frame centered at 50, 72
@@ -153,6 +153,12 @@ typedef struct {
     // Moves' set, which it keeps when another sub-page shows, and the top screen's panel of its moves
     PokedexInfoMoves moves;
     PokedexMovePanel *movePanel;
+    // Whether Moves shows the panel: on as Moves is entered, by A and by a touch on a row, off by B
+    BOOL movePanelOn;
+    // The shown Pokémon's entry, under the open panel, is changed only as the panel closes
+    BOOL entryStale;
+    // A touch held on the scroll bar scrolls the list, and the panel shows the cursor's move as it lets go
+    BOOL draggingKnob;
 } PokedexInfoPageWork;
 
 static void PokedexInfoPage_LoadPokemon(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
@@ -172,7 +178,9 @@ static void PokedexInfoPage_SetMoveSet(PokedexDetailInfoParam *param, PokedexInf
                                        PokedexDetailCommon *common, u32 set);
 static BOOL PokedexInfoPage_CheckMovesInput(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                             PokedexDetailCommon *common);
+static BOOL PokedexInfoPage_CheckKnobDrag(PokedexInfoPageWork *wk, PokedexDetailCommon *common);
 static void PokedexInfoPage_ShowMove(PokedexInfoPageWork *wk, PokedexDetailCommon *common);
+static void PokedexInfoPage_UpdateMovePanel(PokedexInfoPageWork *wk, PokedexDetailCommon *common);
 static void PokedexInfoPage_CloseMovePanel(PokedexInfoPageWork *wk);
 static void PokedexInfoPage_TakeTouchbarKeys(PokedexInfoPageWork *wk, PokedexDetailCommon *common);
 static void PokedexInfoPage_LoadAbilities(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk);
@@ -531,19 +539,23 @@ static void PokedexInfoPage_LoadPokemon(PokedexDetailInfoParam *param, PokedexIn
     }
 }
 
+// The move panel stays open on Moves, on the new Pokémon's first move, over the entry, which changes as it closes
 static void PokedexInfoPage_ChangePokemon(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                           PokedexDetailCommon *common) {
-    PokedexInfoPage_CloseMovePanel(wk);
     PokedexInfoPage_LoadPokemon(param, wk, common);
-    PokedexInfo_SetPokemonInLanguage(wk->entry, wk->species, wk->form, wk->sex, wk->rare, wk->personality, wk->caught,
-                                     wk->language);
+    if (PokedexMovePanel_IsOpen(wk->movePanel)) {
+        wk->entryStale = TRUE;
+    } else {
+        PokedexInfo_SetPokemonInLanguage(wk->entry, wk->species, wk->form, wk->sex, wk->rare, wk->personality,
+                                         wk->caught, wk->language);
+    }
     PokedexInfoPage_RemoveSprite(wk);
     PokedexInfoPage_AddSprite(wk);
     PokedexInfoPage_ShowSubpage(param, wk, common);
 }
 
 // Touching a sub-page's tab switches to it, Moves takes its own touches and keys, and on Stats and Matchups touching a
-// button pushes it; L and R, and Left and Right, step through the sub-pages
+// button pushes it; Left and Right step through the sub-pages
 static void PokedexInfoPage_CheckInput(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                        PokedexDetailCommon *common) {
     u32 typed = GCTX_HIDGetTypedKeys();
@@ -558,77 +570,68 @@ static void PokedexInfoPage_CheckInput(PokedexDetailInfoParam *param, PokedexInf
         return;
     } else if (PokedexInfoPage_CheckButtons(param, wk, common)) {
         GCTX_HIDSetUsingTouch(TRUE);
-    } else if (typed & (PAD_BUTTON_R | PAD_KEY_RIGHT)) {
+    } else if (typed & PAD_KEY_RIGHT) {
         GCTX_HIDSetUsingTouch(FALSE);
         PokedexInfoPage_Step(param, wk, common, TRUE);
-    } else if (typed & (PAD_BUTTON_L | PAD_KEY_LEFT)) {
+    } else if (typed & PAD_KEY_LEFT) {
         GCTX_HIDSetUsingTouch(FALSE);
         PokedexInfoPage_Step(param, wk, common, FALSE);
     }
 }
 
-// The next or the previous of the sub-pages with each of Moves' sets in its place, wrapping round: Stats, Data, Moves'
-// Level Up, TM/HM, Tutor and Egg, Evo, Matchups. Moves is entered at its first set going forward, its last going back
+// The next or the previous of the sub-pages, wrapping round: Stats, Data, Moves (in the set it showed last), Evo,
+// Matchups
 static void PokedexInfoPage_Step(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk, PokedexDetailCommon *common,
                                  BOOL forward) {
     u32 subpage;
 
-    if (wk->subpage == POKEDEX_INFO_SUBPAGE_MOVES) {
-        if (forward && wk->moves.set + 1 < POKEDEX_INFO_MOVES_SET_COUNT) {
-            PokedexInfoPage_SetMoveSet(param, wk, common, wk->moves.set + 1);
-            return;
-        }
-        if (!forward && wk->moves.set != POKEDEX_INFO_MOVES_LEVEL_UP) {
-            PokedexInfoPage_SetMoveSet(param, wk, common, wk->moves.set - 1);
-            return;
-        }
-    }
     if (forward) {
         subpage = (wk->subpage + 1) % POKEDEX_INFO_SUBPAGE_COUNT;
     } else {
         subpage = (wk->subpage + POKEDEX_INFO_SUBPAGE_COUNT - 1) % POKEDEX_INFO_SUBPAGE_COUNT;
     }
-    if (subpage == POKEDEX_INFO_SUBPAGE_MOVES) {
-        wk->moves.set = forward ? POKEDEX_INFO_MOVES_LEVEL_UP : POKEDEX_INFO_MOVES_EGG;
-    }
     PokedexInfoPage_SetSubpage(param, wk, common, subpage);
 }
 
-// Closes the move panel, and on Moves takes the touch bar's Up and Down at once, before the bar sees them this frame
+// Entering Moves turns its move panel on, and takes the touch bar's Up and Down at once, before the bar sees them this
+// frame; leaving it closes the panel
 static void PokedexInfoPage_SetSubpage(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                        PokedexDetailCommon *common, u32 subpage) {
-    PokedexInfoPage_CloseMovePanel(wk);
     wk->subpage = subpage;
     if (subpage == POKEDEX_INFO_SUBPAGE_MOVES) {
+        wk->movePanelOn = TRUE;
         PokedexInfoPage_TakeTouchbarKeys(wk, common);
     }
     PokedexInfoPage_ShowSubpage(param, wk, common);
     GFL_SndSEPlay(SEQ_SE_SELECT1);
 }
 
-// Moves' set, its cursor on its first move, with the move panel closed
+// Moves' set, its cursor on its first move, which the move panel shows if it is on
 static void PokedexInfoPage_SetMoveSet(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                        PokedexDetailCommon *common, u32 set) {
-    PokedexInfoPage_CloseMovePanel(wk);
     wk->moves.set = set;
     PokedexInfoPage_ShowSubpage(param, wk, common);
     GFL_SndSEPlay(SEQ_SE_SELECT1);
 }
 
-// Draws the sub-page of the shown Pokémon and form, with its buttons; Moves loads its set again, its cursor at the top
+// Draws the sub-page of the shown Pokémon and form, with its buttons; Moves loads its set again, its cursor at the top,
+// and the move panel shows its first move or closes
 static void PokedexInfoPage_ShowSubpage(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                         PokedexDetailCommon *common) {
+    wk->draggingKnob = FALSE;
     if (wk->subpage == POKEDEX_INFO_SUBPAGE_MOVES) {
         PokedexInfoMoves_Load(&wk->moves, wk->moves.set, wk->species, wk->form, param->heapId);
     }
     PokedexInfoPage_LoadAbilities(param, wk);
     PokedexInfoPage_ShowPanels(wk);
     PokedexInfoPage_ResetButtons(param, wk, common);
+    PokedexInfoPage_UpdateMovePanel(wk, common);
 }
 
-// On Moves: touching a set's name shows that set; touching a row puts the cursor on it and opens the move panel with
-// its move, as A does with the cursor's; B closes the panel; Up and Down move the cursor, stopping at the list's ends,
-// and show its move in the panel while it is open. TRUE if one of them was used
+// On Moves: touching a set's name shows that set, as L and R step through them, wrapping round; a touch on the scroll
+// bar scrolls the list while it is held; touching a row puts the cursor on it and opens the move panel with its move,
+// as A does with the cursor's; B closes the panel; Up and Down move the cursor, stopping at the list's ends, and show
+// its move in the panel while it is open. TRUE if one of them was used
 static BOOL PokedexInfoPage_CheckMovesInput(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                             PokedexDetailCommon *common) {
     u32 pressed = GCTX_HIDGetPressedKeys();
@@ -637,6 +640,9 @@ static BOOL PokedexInfoPage_CheckMovesInput(PokedexDetailInfoParam *param, Poked
     u32 row = PokedexInfoPanels_GetTouchedMoveRow();
     BOOL open = PokedexMovePanel_IsOpen(wk->movePanel);
 
+    if (PokedexInfoPage_CheckKnobDrag(wk, common)) {
+        return TRUE;
+    }
     if (set != POKEDEX_INFO_MOVES_SET_COUNT) {
         if (set != wk->moves.set) {
             GCTX_HIDSetUsingTouch(TRUE);
@@ -644,9 +650,20 @@ static BOOL PokedexInfoPage_CheckMovesInput(PokedexDetailInfoParam *param, Poked
         }
         return TRUE;
     }
+    if (typed & (PAD_BUTTON_L | PAD_BUTTON_R)) {
+        GCTX_HIDSetUsingTouch(FALSE);
+        if (typed & PAD_BUTTON_R) {
+            set = (wk->moves.set + 1) % POKEDEX_INFO_MOVES_SET_COUNT;
+        } else {
+            set = (wk->moves.set + POKEDEX_INFO_MOVES_SET_COUNT - 1) % POKEDEX_INFO_MOVES_SET_COUNT;
+        }
+        PokedexInfoPage_SetMoveSet(param, wk, common, set);
+        return TRUE;
+    }
     if (row != POKEDEX_INFO_MOVE_ROWS) {
         if (PokedexInfoMoves_SelectRow(&wk->moves, row)) {
             GCTX_HIDSetUsingTouch(TRUE);
+            wk->movePanelOn = TRUE;
             PokedexInfoPanels_ShowMoves(wk->panels);
             PokedexInfoPage_ShowMove(wk, common);
             GFL_SndSEPlay(SEQ_SE_DECIDE1);
@@ -655,12 +672,14 @@ static BOOL PokedexInfoPage_CheckMovesInput(PokedexDetailInfoParam *param, Poked
     }
     if ((pressed & PAD_BUTTON_B) && open) {
         GCTX_HIDSetUsingTouch(FALSE);
+        wk->movePanelOn = FALSE;
         PokedexInfoPage_CloseMovePanel(wk);
         GFL_SndSEPlay(SEQ_SE_CANCEL1);
         return TRUE;
     }
     if ((pressed & PAD_BUTTON_A) && !open && wk->moves.count != 0) {
         GCTX_HIDSetUsingTouch(FALSE);
+        wk->movePanelOn = TRUE;
         PokedexInfoPage_ShowMove(wk, common);
         GFL_SndSEPlay(SEQ_SE_DECIDE1);
         return TRUE;
@@ -679,14 +698,59 @@ static BOOL PokedexInfoPage_CheckMovesInput(PokedexDetailInfoParam *param, Poked
     return FALSE;
 }
 
+// A touch on the scroll bar's track, of a list longer than its rows, starts a drag: while it is held, the list scrolls
+// to the place on the track that it is at, as the Pokédex's list does (FrameList's bar), the cursor staying on its
+// row; as it lets go, the open panel shows the cursor's move. TRUE while it lasts
+static BOOL PokedexInfoPage_CheckKnobDrag(PokedexInfoPageWork *wk, PokedexDetailCommon *common) {
+    u32 scroll;
+
+    if (!wk->draggingKnob) {
+        if (wk->moves.count <= POKEDEX_INFO_MOVE_ROWS || !PokedexInfoPanels_IsMoveTrackTouched()) {
+            return FALSE;
+        }
+        GCTX_HIDSetUsingTouch(TRUE);
+        wk->draggingKnob = TRUE;
+        GFL_SndSEPlay(SEQ_SE_SELECT1);
+    }
+    if (PokedexInfoPanels_GetHeldMoveScroll(wk->panels, &scroll)) {
+        if (PokedexInfoMoves_SetScroll(&wk->moves, scroll)) {
+            PokedexInfoPanels_ShowMoves(wk->panels);
+        }
+        return TRUE;
+    }
+    wk->draggingKnob = FALSE;
+    if (PokedexMovePanel_IsOpen(wk->movePanel)) {
+        PokedexInfoPage_ShowMove(wk, common);
+    }
+    return TRUE;
+}
+
 // Opens the move panel with the cursor's move, or shows it there, and takes the touch bar's B at once, which closes it
 static void PokedexInfoPage_ShowMove(PokedexInfoPageWork *wk, PokedexDetailCommon *common) {
     PokedexMovePanel_Show(wk->movePanel, wk->entry, wk->moves.moves[wk->moves.cursor].move);
     PokedexInfoPage_TakeTouchbarKeys(wk, common);
 }
 
+// On Moves the panel shows the cursor's move while it is on and the set has moves; otherwise it is closed
+static void PokedexInfoPage_UpdateMovePanel(PokedexInfoPageWork *wk, PokedexDetailCommon *common) {
+    if (wk->subpage == POKEDEX_INFO_SUBPAGE_MOVES && wk->movePanelOn && wk->moves.count != 0) {
+        PokedexInfoPage_ShowMove(wk, common);
+    } else {
+        PokedexInfoPage_CloseMovePanel(wk);
+    }
+}
+
+// The entry is printed again as the panel closes, of the Pokémon shown now if it changed while the panel was open
 static void PokedexInfoPage_CloseMovePanel(PokedexInfoPageWork *wk) {
+    if (!PokedexMovePanel_IsOpen(wk->movePanel)) {
+        return;
+    }
     PokedexMovePanel_Close(wk->movePanel, wk->entry, wk->language);
+    if (wk->entryStale) {
+        wk->entryStale = FALSE;
+        PokedexInfo_SetPokemonInLanguage(wk->entry, wk->species, wk->form, wk->sex, wk->rare, wk->personality,
+                                         wk->caught, wk->language);
+    }
 }
 
 // The touch bar's keys that the page takes: Left and Right always, as they step through the sub-pages; Up and Down

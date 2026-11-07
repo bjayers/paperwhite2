@@ -26,6 +26,7 @@
 #include "system/bmp_winframe.h"
 #include "system/gf_font.h"
 #include "system/printsys.h"
+#include "system/scroll_bar.h"
 #include "system/str_tool.h"
 #include "system/wordset.h"
 #include "text/system/pokedex_data.h"
@@ -135,12 +136,13 @@
 #define MOVES_SET_TOUCH_LEFT 16
 #define MOVES_SET_TOUCH_RIGHT 240
 // Below it, POKEDEX_INFO_MOVE_ROWS rows of moves the size of the move relearner's (move_tutor_main.c), so that its
-// cursor fits round one: each a parallelogram ROW_WIDTH wide, its bottom ROW_SLANT right of its top, with a light end
+// cursor fits round one, centered between the sets' bar (to y 31) and the touch bar (from y 168): each a
+// parallelogram ROW_WIDTH wide, its bottom ROW_SLANT right of its top, with a light end
 // from ROW_END_X (at its top) for the set's detail. A row has the move's type icon (an OBJ centered at ROW_ICON_X),
 // the name after it in font 0 and the detail right-aligned at ROW_DETAIL_RIGHT, either in font 1 if it is wider than
 // its room
 #define MOVES_ROW_X 21
-#define MOVES_ROW_Y 36
+#define MOVES_ROW_Y 41
 #define MOVES_ROW_WIDTH 208
 #define MOVES_ROW_HEIGHT 22
 #define MOVES_ROW_PITCH 24
@@ -169,13 +171,16 @@
 #define CURSOR_CELLS 138
 #define CURSOR_ANIMS 139
 #define CURSOR_PALETTE 5
-// The scroll bar: a thin track, and the Pokédex list's knob (ARCID_POKEDEX_GRA's characters 57, palette 53's row 3,
-// cells 63 and animations 73, its sequence 2, pokedex_list_obj.c), placed by the scroll from the track's top to its
-// bottom
+// The scroll bar: a thin track, centered on the rows, and the Pokédex list's knob (ARCID_POKEDEX_GRA's characters 57,
+// palette 53's row 3, cells 63 and animations 73, its sequence 2, pokedex_list_obj.c), placed by the scroll from the
+// track's top to its bottom. Touching the track, from the rows' touch areas to the screen's edge, and holding it
+// scrolls the list to the touch's place
 #define MOVES_TRACK_X 240
-#define MOVES_TRACK_TOP 50
-#define MOVES_TRACK_BOTTOM 160
+#define MOVES_TRACK_TOP 45
+#define MOVES_TRACK_BOTTOM 155
 #define MOVES_KNOB_HALF_HEIGHT 4
+#define MOVES_TRACK_TOUCH_LEFT (MOVES_ROW_TOUCH_RIGHT + 1)
+#define MOVES_TRACK_TOUCH_RIGHT 255
 #define KNOB_CHARS 57
 #define KNOB_PALETTE 53
 #define KNOB_PALETTE_ROW 3
@@ -433,6 +438,11 @@ static const TouchRect sMoveSetRects[] = {
 static const TouchRect sMoveRowRects[] = {
     MOVES_ROW_RECT(0), MOVES_ROW_RECT(1), MOVES_ROW_RECT(2),
     MOVES_ROW_RECT(3), MOVES_ROW_RECT(4), { TOUCH_RECT_END, 0, 0, 0 },
+};
+
+static const TouchRect sMoveTrackRects[] = {
+    { MOVES_TRACK_TOP, MOVES_TRACK_BOTTOM, MOVES_TRACK_TOUCH_LEFT, MOVES_TRACK_TOUCH_RIGHT },
+    { TOUCH_RECT_END, 0, 0, 0 },
 };
 
 // The user's art of each sub-page, members of ARCID_POKEDEX_GRA that tools/paperwhite2/screen_art.py makes from
@@ -811,6 +821,24 @@ u32 PokedexInfoPanels_GetTouchedMoveRow(void) {
         return POKEDEX_INFO_MOVE_ROWS;
     }
     return rect;
+}
+
+BOOL PokedexInfoPanels_IsMoveTrackTouched(void) {
+    return GFL_HIDGetTouchPressedRect(sMoveTrackRects) != TOUCH_RECT_NONE;
+}
+
+// The scroll whose knob is at the touch's height, as the knob is placed (PokedexInfoPanels_UpdateMoveActors), from the
+// first scroll at the knob's highest place and above to the last at its lowest and below
+BOOL PokedexInfoPanels_GetHeldMoveScroll(PokedexInfoPanels *panels, u32 *scroll) {
+    u32 x;
+    u32 y;
+
+    if (!GFL_HIDGetTouchHeldPoint(&x, &y)) {
+        return FALSE;
+    }
+    *scroll = ScrollBar_GetValue(panels->moves->count - POKEDEX_INFO_MOVE_ROWS, y, MOVES_TRACK_TOP, MOVES_TRACK_BOTTOM,
+                                 MOVES_KNOB_HALF_HEIGHT * 2);
+    return TRUE;
 }
 
 StrBuf *PokedexInfoPanels_LoadMessage(PokedexInfoPanels *panels, u32 messageId) {

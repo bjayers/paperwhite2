@@ -240,5 +240,8 @@ Constraints found:
 
 **Built (2026-11-07):** the five sub-pages with the art's tab bar, L/R and Left/Right stepping through them and Moves'
 sets, Moves (the four sets, 5 rows with the relearner's cursor and the list's knob) and the move panel over the top
-screen; Evo is a blank sub-page. Details in `docs/paperwhite2/plugins.md`'s Pokédex section. The panel starts at y 24,
-under the head bar's last row, rather than 21, so that it doesn't cover the bar's tiles.
+screen; Evo is a blank sub-page. Details in `docs/paperwhite2/plugins.md`'s Pokédex section. After the user's test
+(2026-11-07): the panel starts at y 21 as in the mockup, covering the head bar's bottom edge (the bar's tiles of that
+row redrawn with the edge over them and put back as it closes), the sprite is hidden under it, it opens as Moves is
+entered and follows the set; Left and Right step through the five tabs and L and R through Moves' sets; the list's
+rows are centred (from y 41) and its scroll bar can be dragged.

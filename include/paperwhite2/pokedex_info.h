@@ -10,7 +10,7 @@
 
 // Paper White 2's info page of the Pokédex's detail screen, in overlay 298 (docs/paperwhite2/design/pokedex.md). The
 // top screen shows the Pokémon's entry, as the original's bottom screen did, with its sprite animated; the bottom
-// screen shows the sub-pages Stats, Data, Moves, Evo and Matchups, which L and R, and Left and Right, cycle
+// screen shows the sub-pages Stats, Data, Moves, Evo and Matchups, which Left and Right cycle, and L and R Moves' sets
 
 // The page (paperwhite2_pokedex_info.c), which POKEDEX_DETAIL_INFO_PROC_FUNCS runs in place of the original's
 BOOL PokedexInfoPage_Init(PokedexDetailProcSys *sys, int *seq, void *param, void *work, PokedexDetailCommon *common);
@@ -66,6 +66,8 @@ typedef struct {
 void PokedexInfoMoves_Load(PokedexInfoMoves *moves, u32 set, u16 species, u16 form, HeapID heapId);
 // Moves the cursor by delta, scrolling to keep it shown; FALSE at the list's ends, where it stops
 BOOL PokedexInfoMoves_MoveCursor(PokedexInfoMoves *moves, int delta);
+// Scrolls the list of a set longer than its rows, the cursor staying on its row; FALSE if the scroll is unchanged
+BOOL PokedexInfoMoves_SetScroll(PokedexInfoMoves *moves, u32 scroll);
 // Puts the cursor on a shown row; FALSE for a row without a move
 BOOL PokedexInfoMoves_SelectRow(PokedexInfoMoves *moves, u32 row);
 
@@ -97,6 +99,10 @@ u32 PokedexInfoPanels_GetTouchedSubpage(void);
 // Moves' set whose name is touched this frame, or POKEDEX_INFO_MOVES_SET_COUNT, and its row, or POKEDEX_INFO_MOVE_ROWS
 u32 PokedexInfoPanels_GetTouchedMoveSet(void);
 u32 PokedexInfoPanels_GetTouchedMoveRow(void);
+// Whether Moves' scroll bar is touched this frame, and, while a touch is held, the scroll of a set longer than its rows
+// at its place on the bar; FALSE once it lets go
+BOOL PokedexInfoPanels_IsMoveTrackTouched(void);
+BOOL PokedexInfoPanels_GetHeldMoveScroll(PokedexInfoPanels *panels, u32 *scroll);
 // Whether an ability changes what the Matchups chart shows (its rules in sMatchupRules)
 BOOL PokedexInfoPanels_IsMatchupAbility(u32 ability);
 // A message of the panels' bank, for the page's buttons; the caller frees it

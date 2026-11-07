@@ -37,7 +37,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from tools.data.narc import read_narc  # noqa: E402
 from tools.data.nitro_2d import (  # noqa: E402
-    character_pixels, palette_colors, read_indexed_png, write_indexed_png, write_palette)
+    character_pixels, palette_colors, read_indexed_png, read_palette, write_indexed_png, write_palette)
 from tools.paperwhite2.nitro_cells import CellBank  # noqa: E402
 from tools.paperwhite2.obj_remap import OBJ_TILES, tiles_of  # noqa: E402
 
@@ -71,6 +71,14 @@ TOP_ROWS = (0, 1)
 SWATCH = 16
 # The touch bar's rows, the game's
 TOUCHBAR_Y = 168
+# The top screen's head bar ("INFO", src/ov298/pokedex_detail_headbar.c): its characters, screen and palette (row 0,
+# INFO's), its title from the battle's titles' bank, printed on the characters at (24, 5) in colors 15 and 14
+HEAD_BAR_CHARS = GRAPHICS / "pokedex_gra/014.png"
+HEAD_BAR_SCREEN = GRAPHICS / "pokedex_gra/038.nscr"
+HEAD_BAR_PALETTE = GRAPHICS / "pokedex_gra/004.pal"
+HEAD_BAR_TITLE = ROOT / "res/text/system/btl_server_flow_title.txt"
+HEAD_BAR_TITLE_X, HEAD_BAR_TITLE_Y = 24, 5
+HEAD_BAR_ROWS = 3
 # A sample species for the numbers: Tepig
 SAMPLE_STATS = [65, 63, 45, 45, 45, 45]
 SAMPLE_DATA = ["45 (11.9%)", "Medium Slow", "\u2015", "1 HP", "62", "70"]
@@ -187,7 +195,8 @@ Moves
   the shown set near-black with its shadow, the others light grey (180,180,189), no shadow.
   Their touch areas run from each name to the next (the gap after TM/HM is for your current
   tab hanging down). The canvas draws this bar as a light strip.
-- 5 rows of moves, each 22 px tall at a 24 px pitch, from y 36: the move relearner's rows,
+- 5 rows of moves, each 22 px tall at a 24 px pitch, from y 41 (centred between the sets' bar,
+  which ends at y 31, and the touch bar from y 168): the move relearner's rows,
   208 px wide with both ends slanted 6 px (x 21-228 at a row's top, 27-234 at its bottom),
   grey with a light end from x 152 (at the top). The cyan cursor round a row is the game's
   (the relearner's sprite) and fits that shape exactly, so keep the rows where they are.
@@ -195,17 +204,19 @@ Moves
   white with a dark shadow, from x 67, and the set's detail right-aligned at x 220 in the light
   end, near-black ("Lv. 22", "TM26", the tutor's town in the small font, a dash for egg moves).
   The sample is Tepig's level-up moves.
-- The scroll bar: a thin track at x 240, y 50-160 (the canvas draws a light line with a dark
-  edge) and the Pokedex list's yellow knob, a sprite, which moves down it as the list scrolls.
+- The scroll bar: a thin track at x 240, y 45-155, centred on the rows (the canvas draws a light
+  line with a dark edge) and the Pokedex list's yellow knob, a sprite, which moves down it as
+  the list scrolls. Touching the track (x 234-255) and holding scrolls the list to that place.
 
 Evo
 - evo_canvas.png etc.: nothing yet but the placeholder panel; the sub-page is still to come.
 
 The move panel (top screen)
 - move_panel_canvas.png: the panel as the game draws it until there is art, 256 x 192, the top
-  screen: x 9-248, y 24-169, light grey with a dark 1 px border. The top 24 rows (outlined) are
-  the head bar ("INFO"), which stays above the panel; the checker is the rest of the screen,
-  which is dimmed while the panel is open.
+  screen: x 9-248, y 21-169, light grey with a dark 1 px border. The head bar ("INFO", the top
+  24 rows, drawn as the game shows it) stays bright; the panel covers its bottom edge (y 21-23)
+  where they overlap. The checker is the rest of the screen, which is dimmed while the panel is
+  open; the Pokemon's sprite is hidden.
 - move_panel_reference.png, move_panel_reference_tiles.png: with a sample move (Arm Thrust):
   the name at (20, 32), its type icon at the top right (centred at 224, 40), "Category" at
   (20, 64) with the category icon (centred at 99, 70), "Power" (20, 77) and "Accuracy"
@@ -532,10 +543,39 @@ def sprite_colors():
     return (palette_row(GRAPHICS / "move_tutor/05.pal", 0) + palette_row(GRAPHICS / "pokedex_gra/053.pal", 3))
 
 
+def head_bar_colors():
+    """The head bar's 16 colors, INFO's row of its palette."""
+    return read_palette(HEAD_BAR_PALETTE)[:16]
+
+
+def head_bar(canvas, font):
+    """The head bar as PokedexDetailHeadbar_InitBG and _PrintTitle draw it, shown, in the colors from ART_BASE: its
+    characters with the title printed on them, placed by its screen's first rows."""
+    width, height, pixels, _ = read_indexed_png(HEAD_BAR_CHARS)
+    chars = Canvas()
+    for y in range(height):
+        chars.pixels[y * WIDTH:y * WIDTH + width] = pixels[y * width:(y + 1) * width]
+    title = re.search(r"^BtlServerFlowTitle_Text_Info = (.*)$", HEAD_BAR_TITLE.read_text(), re.M).group(1)
+    chars.text(font, title, HEAD_BAR_TITLE_X, HEAD_BAR_TITLE_Y, letter=15, shadow=14)
+    data = HEAD_BAR_SCREEN.read_bytes()
+    start = data.find(b"NRCS") + 20
+    for row in range(HEAD_BAR_ROWS):
+        for column in range(WIDTH // 8):
+            entry = struct.unpack_from("<H", data, start + (row * WIDTH // 8 + column) * 2)[0]
+            tile = entry & 0x3ff
+            for y in range(8):
+                for x in range(8):
+                    cx = 7 - x if entry & 0x400 else x
+                    cy = 7 - y if entry & 0x800 else y
+                    value = chars.pixels[(tile // 32 * 8 + cy) * WIDTH + tile % 32 * 8 + cx]
+                    if value:
+                        canvas.pixels[(row * 8 + y) * WIDTH + column * 8 + x] = ART_BASE + value
+
+
 def move_panel(d, m, font, icons, text, tiles):
     """The top screen's move panel as PokedexMovePanel_Open and _DrawMove draw it, over a dark checker (the dimmed
-    screen), the head bar's rows outlined; with the sample move's text and icons if text, and the tiles' grid if
-    tiles."""
+    screen) and the head bar, whose bottom edge it covers; with the sample move's text and icons if text, and the
+    tiles' grid if tiles."""
     panel_colors = [tuple(int(v) for v in c) for c in re.findall(
         r"GX_RGB\((\d+), (\d+), (\d+)\)", MOVE_PANEL.read_text().split("sPanelColors[] = {", 1)[1].split("};")[0])]
     clear, text_c, shadow, fill, border = range(5)
@@ -543,13 +583,12 @@ def move_panel(d, m, font, icons, text, tiles):
     for y in range(HEIGHT):
         for x in range(WIDTH):
             canvas.pixels[y * WIDTH + x] = GRID_A if (x // 4 + y // 4) % 2 else GRID_B
-    left, top = d["PANEL_TILE_X"] * 8 + 1, d["PANEL_TILE_Y"] * 8
+    head_bar(canvas, font)
+    left, top = d["PANEL_TILE_X"] * 8 + 1, d["PANEL_TILE_Y"] * 8 + d["PANEL_TOP_LINE"]
     right = (d["PANEL_TILE_X"] + d["PANEL_TILE_WIDTH"]) * 8 - 8
     bottom = (d["PANEL_TILE_Y"] + d["PANEL_TILE_HEIGHT"]) * 8 - 7
     canvas.fill(left, top, right - left + 1, bottom - top + 1, border)
     canvas.fill(left + 1, top + 1, right - left - 1, bottom - top - 1, fill)
-    # The head bar, which stays above the panel
-    canvas.outline(0, 0, WIDTH, d["PANEL_TILE_Y"] * 8, TILE_LINE)
     if text:
         data = move_data(SAMPLE_MOVE)
         canvas.text(font, data["name"], d["NAME_X"], d["NAME_Y"], letter=text_c, shadow=shadow)
@@ -743,8 +782,9 @@ def main():
     for name, text, tiles in (("move_panel_canvas.png", False, False), ("move_panel_reference.png", True, False),
                               ("move_panel_reference_tiles.png", True, True)):
         canvas, panel_colors = move_panel(d, m, font, icons, text, tiles)
-        # The dimmed screen's checker in dark greys, in the grid's places
+        # The dimmed screen's checker in dark greys, in the grid's places, and the head bar's colors in the art's
         palette = panel_colors + [(0, 0, 0)] * (GRID_A - len(panel_colors)) + [(46, 46, 54), (32, 32, 38)] + EXTRA[2:]
+        palette += head_bar_colors()
         palette += [(0, 0, 0)] * (ICON_BASE - len(palette)) + list(icon_colors)
         canvas.write(args.out / name, palette)
     (args.out / "README.txt").write_text(README)

@@ -85,6 +85,23 @@ BOOL PokedexInfoMoves_MoveCursor(PokedexInfoMoves *moves, int delta) {
     return TRUE;
 }
 
+BOOL PokedexInfoMoves_SetScroll(PokedexInfoMoves *moves, u32 scroll) {
+    u32 row = moves->cursor - moves->scroll;
+
+    if (moves->count <= POKEDEX_INFO_MOVE_ROWS) {
+        return FALSE;
+    }
+    if (scroll > moves->count - POKEDEX_INFO_MOVE_ROWS) {
+        scroll = moves->count - POKEDEX_INFO_MOVE_ROWS;
+    }
+    if (scroll == moves->scroll) {
+        return FALSE;
+    }
+    moves->scroll = scroll;
+    moves->cursor = scroll + row;
+    return TRUE;
+}
+
 BOOL PokedexInfoMoves_SelectRow(PokedexInfoMoves *moves, u32 row) {
     if (moves->scroll + row >= moves->count) {
         return FALSE;

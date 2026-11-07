@@ -2,6 +2,16 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-07: Pokédex Moves, the user's test notes
+
+The user's test of Moves went well; fixed from the notes (plugins.md, Pokédex), not yet tested in game: the 3D sprite
+off (BG 0) while the move panel is open; the panel from y 21, covering the head bar's bottom edge (its 31 tiles of
+tile row 2 copied with the panel's edge drawn in, and their screen entries restored on closing); the scroll bar
+dragged by touch (as `ov139/frame_list.c`); the rows centred (y 41-159, the track 45-155); the panel open at once on
+the set's first move when Moves shows, following set and Pokémon changes, hidden on an empty set, closed by B and
+reopened by A. Keys: the D-pad's Left/Right step the five top tabs, L/R the Moves sets (on Moves only), both
+wrapping. Templates for Moves' bottom and top screens regenerated for the user's art.
+
 ## 2026-11-07: Pokédex, five tabs, the Moves list and the move panel
 
 Built (plugins.md, Pokédex), not yet tested in game:

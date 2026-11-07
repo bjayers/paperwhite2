@@ -1409,9 +1409,9 @@ engine): the grid on BG 4, the bar of sub-pages and the panels drawn into two wi
 the panels' file until there is art), and on Stats the buttons Cry, Turn, Form, Shiny and Language on BG 6
 (`AppTaskMenuWin`, palettes 4 and 5), hidden when they can do nothing. The sub-pages are Stats, Data, Moves, Evo
 (blank for now) and Matchups; the art draws the tab bar's five icons (centres x 64 to 192, 32 apart), and touching a
-tab's column (y 0-17) switches to it. A sub-page without art shows a dark strip with its own name. L and R, and the
-D-pad's Left and Right, step through Stats, Data, Moves' four sets, Evo and Matchups, wrapping: the touch bar takes
-Left and Right no more while the page runs (`PokedexDetailTouchbar_SetDisabledKeys`, `pokedex_detail_touchbar.c`,
+tab's column (y 0-17) switches to it. A sub-page without art shows a dark strip with its own name. The D-pad's Left
+and Right step through the five sub-pages, wrapping (Moves keeps the set it showed last), and on Moves only L and R
+step through its four sets, wrapping: the touch bar takes Left and Right no more while the page runs (`PokedexDetailTouchbar_SetDisabledKeys`, `pokedex_detail_touchbar.c`,
 under `PAPERWHITE2`; Area, Cry and Forms are still there by touch), and the page gives the keys back as it ends. The text is `res/text/system/pokedex_data.txt` (`TEXT_BANK_POKEDEX_DATA`). Every place is a constant at
 the top of the two files.
 
@@ -1430,11 +1430,13 @@ is in ARM9 main (`src/paperwhite2/main/paperwhite2_type_chart.c`, `PaperWhite2_T
 
 **Moves** (`paperwhite2_pokedex_info_moves.c` reads the sets, the panels' file draws them): a bar of the four sets
 (Level Up, TM/HM, Tutor, Egg; font 1) under the tab bar, then 5 rows the move relearner's size (22 px at a 24 px
-pitch from y 36, slanted 6 px), each the move's type icon (an OBJ showing Matchups' characters through
+pitch from y 41, centred between the sets' bar and the touch bar, slanted 6 px), each the move's type icon (an OBJ showing Matchups' characters through
 `ClActor_SetImageProxy`), its name and the set's detail ("Lv. 22", "TM26"/"HM03", the tutor's town, a dash); the
-relearner's cyan cursor and the Pokédex list's scroll knob (sub OBJ rows 3 and 4). Up and Down move the cursor, stopping
-at the ends (the touch bar's Up and Down are the page's there, so the Pokémon changes by touching the arrows); A or a
-touch on a row opens the move panel. The relearner's cursor is 1D 64 KB, the Pokédex's sub engine 128 KB, so its
+relearner's cyan cursor and the Pokédex list's scroll knob (sub OBJ rows 3 and 4) on a track at x 240, y 45-155. Up and
+Down move the cursor, stopping at the ends (the touch bar's Up and Down are the page's there, so the Pokémon changes by
+touching the arrows); A or a touch on a row opens the move panel. A touch held on the track (x 234-255) scrolls the
+list to its place as the Pokédex list's bar does (`ScrollBar_GetValue`), the cursor keeping its row, and the open
+panel shows the cursor's move as it lets go. The relearner's cursor is 1D 64 KB, the Pokédex's sub engine 128 KB, so its
 characters and cells are converted by `tools/paperwhite2/obj_remap.py` into `ARCID_POKEDEX_GRA`'s new members 137
 (characters), 138 (cells) and 139 (its animations, copied); its palette is `ARCID_MOVE_TUTOR`'s 5. The data: the
 learnset, the machines' bits (`PML_ItemGetTMMoveID`), the tutors' bits with **the tutors' lists in ARM9 main**
@@ -1445,17 +1447,23 @@ to 7, started by the events of driftveil_city_2, lentimas_town_2, humilau_city_2
 243 of `global_10110.s`); the Pledges and ultimate moves at the PWT (`pwt.json`), Draco Meteor in Opelucid City
 (`opelucid_city_2.s`).
 
-**The move panel** (`paperwhite2_pokedex_move_panel.c`): over the top screen's entry, x 9-248, y 24-169 (below the head
-bar), on main BG 1 in palette 6: its fill and border are 9 generated tiles repeated over the screen, its text 4 windows
-(name 18x2, left numbers 13x6, right 13x4, description 28x6 tiles; 343 tiles with the panel's own). BG 1 has 512
+**The move panel** (`paperwhite2_pokedex_move_panel.c`): over the top screen's entry, x 9-248, y 21-169, on main BG 1
+in palette 6: its fill and border are 9 generated tiles repeated over the screen, its text 4 windows (name 18x2, left
+numbers 13x6, right 13x4, description 28x6 tiles). Its top edge covers the head bar's bottom 3 rows, which share BG 1:
+the bar's 31 tiles of tile row 2 are copied from VRAM with the edge drawn over them (in two spare colours, 9 and 10, of
+the bar's palette 13) and its map entries kept, put back as the panel closes; the bar's own characters are never
+touched (374 tiles with the panel's own). BG 1 has 512
 tiles, which the head bar (112) and the entry's windows (337) fill, so the entry's windows, type icons and footprint
 are freed while it is open and made again as it closes (`PokedexInfo_FreeText`, `PokedexInfo_RestoreText` in
-`src/ov296/pokedex_info.c`, under `PAPERWHITE2`): about 56 tiles are left. The type and category icons are main OBJs
+`src/ov296/pokedex_info.c`, under `PAPERWHITE2`): about 25 tiles are left. BG 0 (the 3D sprite) is turned off while it
+is open. The type and category icons are main OBJs
 (the menus' type icon palette in main OBJ rows 9-11), their characters loaded into a new place before the old are
 freed. The rest of the top screen is dimmed (brightness on BG 0, 2, 3 and the backdrop) until it closes. B closes it
 (the touch bar's B is the page's while it is open, given back a frame later so that the bar doesn't see the same
-press), Up and Down move the list's cursor and the panel follows, and a change of set, sub-page or Pokémon, or the
-page's end, closes it.
+press) and turns it off, A or a touch on a row turns it on again; it opens with the first move as Moves is entered,
+follows the cursor, shows the new set's or Pokémon's first move, hides for a set without moves until one has some, and
+closes as another sub-page shows or the page ends. A Pokémon changed while it is open changes the entry, hidden under
+it, only as it closes.
 
 ## Adding global scripts
 
