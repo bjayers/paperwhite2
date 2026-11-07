@@ -109,6 +109,11 @@ still in the ROM, and overlay 165's copy still decrypts itself when that overlay
   field overlay (ov036) grew into the battle menus' memory (ov285-ov290), and melonDS DS's JIT with literal
   optimisations froze after battles while hardware didn't (STATUS.md, 2026-11-05). It cost about 9 KB of the budget.
 
+- **Never hand VRAM or palette loads a stack buffer.** The stack is in DTCM, which DMA can't read, and the GX loads
+  (`GX_LoadBGPltt`, `GFL_BGSysUploadStdPalette`, character and screen loads) copy by DMA: from a local array they
+  load whatever main memory holds at that address. Build the data in the work (the heap) or a static table. Found
+  when the Pokédex's dimmed head bar came out green (2026-11-07).
+
 So a large plugin goes in the overlay that runs it (the field's in `ov036`, a battle feature in the battle's
 overlay), and only what every module needs goes in main. The Following Pokémon runtime fits in the field's overlay
 plus the budget.
