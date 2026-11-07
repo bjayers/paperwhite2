@@ -52,7 +52,7 @@ SAMPLE_EGG = ("Field", "20", "5120 steps")
 # then the template's own: the grid's checker, the touch bar, the buttons, the tiles' grid
 PANEL_COLORS = [
     (0, 0, 0), (4, 4, 5), (22, 22, 23), (31, 31, 31), (7, 7, 8), (15, 15, 16), (30, 7, 6), (19, 4, 4), (31, 18, 4),
-    (31, 12, 21), (31, 28, 5), (22, 18, 2), (9, 26, 7), (4, 17, 4), (7, 17, 31), (3, 9, 21),
+    (31, 12, 21), (31, 29, 3), (22, 18, 2), (9, 26, 7), (4, 17, 4), (7, 17, 31), (3, 9, 21),
 ]
 CLEAR, TEXT_C, SHADOW, PANEL, BORDER, DIM = 0, 1, 2, 3, 4, 5
 BAR_COLORS = [(50, 6), (80, 8), (100, 10), (130, 12)]
@@ -292,12 +292,12 @@ def data_text(canvas, d, m, font, small):
     for i, value in enumerate(SAMPLE_DATA, 1):
         canvas.text(font, value, d["DATA_VALUE_RIGHT"], rows[0] + i * rows[1], "right")
     center = d["EGG_CENTER_X"]
-    canvas.text(font, m["EggHeading"], center, d["EGG_HEADING_Y"], "center")
+    canvas.text(font, m["EggHeading"], center, d["EGG_HEADING_Y"], "center", 10, BORDER)
     canvas.text(small, m["Group"], center, d["EGG_GROUP_LABEL_Y"], "center", DIM, CLEAR)
     group, cycles, steps = SAMPLE_EGG
-    canvas.text(font, group, center, d["EGG_GROUP_Y"], "center")
+    canvas.text(font, group, center, d["EGG_GROUP_Y"], "center", PANEL, BORDER)
     canvas.text(small, m["Cycles"], center, d["EGG_CYCLES_LABEL_Y"], "center", DIM, CLEAR)
-    canvas.text(font, cycles, center, d["EGG_CYCLES_Y"], "center")
+    canvas.text(font, cycles, center, d["EGG_CYCLES_Y"], "center", PANEL, BORDER)
     canvas.text(small, steps, center, d["EGG_STEPS_Y"], "center", DIM, CLEAR)
 
 

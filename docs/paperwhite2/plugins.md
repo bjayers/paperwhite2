@@ -1427,7 +1427,7 @@ and how many are free, and the scripts the hack added, found by comparing each f
 **The user's art** (step 3): each sub-page can have a screen of art, a target of `screen_art.py`
 (`res/paperwhite2/art/targets.json`, `pokedex_info_*`; `docs/paperwhite2/art.md`) whose source PNG is in
 `res/paperwhite2/pokedex_art/`. Stats has it: `ARCID_POKEDEX_GRA`'s new members 131 (palette), 132 (tiles) and 133
-(screen). `PokedexInfoPanels_LoadArt` loads it on sub BG 6, the buttons' BG, its tiles allocated (so the buttons'
+(screen), and Data 134 to 136. `PokedexInfoPanels_LoadArt` loads it on sub BG 6, the buttons' BG, its tiles allocated (so the buttons'
 windows never overlap them) and its screen moved onto them, in palette row 6, before the page makes its buttons. BG 6
 is at priority 2, under the text's BG 7 (1) and over the grid (3); a sub-page with art draws no fills of its own. To
 change the art: `screen_art.py convert pokedex_info_stats touch=res/paperwhite2/pokedex_art/info_stats.png --write`

@@ -123,6 +123,23 @@
                     "screen": "res/graphics/pokedex_gra/133.nscr"
                 }
             ]
+        },
+        {
+            "name": "pokedex_info_data",
+            "title": "Pokédex Info: Data",
+            "description": "The bottom screen of the Pokédex's Info page on its Data sub-page, under the page's text and over the grid (src/paperwhite2/ov298/paperwhite2_pokedex_info_panels.c): sub BG 6 in palette row 6. Its source is res/paperwhite2/pokedex_art/info_data.png, drawn over tools/paperwhite2/pokedex_templates.py's templates.",
+            "palette": "res/graphics/pokedex_gra/134.pal",
+            "colors": 16,
+            "depth": 4,
+            "max_tiles": 768,
+            "screens": [
+                {
+                    "name": "touch",
+                    "title": "Touch screen",
+                    "chars": "res/graphics/pokedex_gra/135.png",
+                    "screen": "res/graphics/pokedex_gra/136.nscr"
+                }
+            ]
         }
     ]
 }

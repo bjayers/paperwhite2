@@ -20,6 +20,7 @@ tiles in VRAM, from the code that loads it.
 | `title_logo` | `title/white2/02.pal`, `00.png`, `01.nscr`, `03.nscr` | The title's logo and the streaks behind it, 256 colors; the credits show the logo too |
 | `title_top` | `title/white2/08.pal`, `09.png`, `10.nscr` | The title's other screen, "Developed by GAME FREAK inc." |
 | `pokedex_info_stats` | `pokedex_gra/131.pal`, `132.png`/`133.nscr` (new members) | The Pokédex Info page's bottom screen on Stats, under its text, bars and buttons (sub BG 6, palette row 6); the source is `res/paperwhite2/pokedex_art/info_stats.png` |
+| `pokedex_info_data` | `pokedex_gra/134.pal`, `135.png`/`136.nscr` (new members) | The same on Data; the source is `res/paperwhite2/pokedex_art/info_data.png` |
 
 Another screen is a new entry: its palette, its sheet and screen files, the depth and the limits, all from the code
 that loads it.

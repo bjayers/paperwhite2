@@ -96,7 +96,7 @@
 #define DATA_PANEL_Y 20
 #define DATA_PANEL_WIDTH 176
 #define DATA_PANEL_HEIGHT 144
-#define DATA_ROW_Y 30
+#define DATA_ROW_Y 34
 #define DATA_ROW_PITCH 16
 #define DATA_LABEL_X 14
 // Font 1's labels a little lower than font 0's values
@@ -108,8 +108,8 @@
 #define EGG_PANEL_HEIGHT 144
 #define EGG_CENTER_X (EGG_PANEL_X + EGG_PANEL_WIDTH / 2)
 #define EGG_HEADING_Y 30
-#define EGG_GROUP_LABEL_Y 56
-#define EGG_GROUP_Y 68
+#define EGG_GROUP_LABEL_Y 62
+#define EGG_GROUP_Y 74
 #define EGG_GROUP_PITCH 16
 #define EGG_CYCLES_LABEL_Y 108
 #define EGG_CYCLES_Y 120
@@ -157,7 +157,7 @@ enum {
 
 static const GXRgb sPanelColors[16] = {
     GX_RGB(0, 0, 0),  GX_RGB(4, 4, 5),  GX_RGB(22, 22, 23), GX_RGB(31, 31, 31), GX_RGB(7, 7, 8),   GX_RGB(15, 15, 16),
-    GX_RGB(30, 7, 6), GX_RGB(19, 4, 4), GX_RGB(31, 18, 4),  GX_RGB(31, 12, 21), GX_RGB(31, 28, 5), GX_RGB(22, 18, 2),
+    GX_RGB(30, 7, 6), GX_RGB(19, 4, 4), GX_RGB(31, 18, 4),  GX_RGB(31, 12, 21), GX_RGB(31, 29, 3), GX_RGB(22, 18, 2),
     GX_RGB(9, 26, 7), GX_RGB(4, 17, 4), GX_RGB(7, 17, 31),  GX_RGB(3, 9, 21),
 };
 
@@ -165,6 +165,9 @@ static const GXRgb sPanelColors[16] = {
 // The male and female shares' colors
 #define MALE_COLOR PRINT_COLOR(PANELS_COLOR_BLUE, PANELS_COLOR_SHADOW, PANELS_COLOR_CLEAR)
 #define FEMALE_COLOR PRINT_COLOR(PANELS_COLOR_PINK, PANELS_COLOR_SHADOW, PANELS_COLOR_CLEAR)
+// The Egg column's, on the art's dark column: its heading in the art's yellow, its values white
+#define EGG_HEADING_COLOR PRINT_COLOR(PANELS_COLOR_YELLOW, PANELS_COLOR_BORDER, PANELS_COLOR_CLEAR)
+#define EGG_VALUE_COLOR PRINT_COLOR(PANELS_COLOR_PANEL, PANELS_COLOR_BORDER, PANELS_COLOR_CLEAR)
 #define LABEL_COLOR PRINT_COLOR(PANELS_COLOR_DIM, PANELS_COLOR_CLEAR, PANELS_COLOR_CLEAR)
 #define BAR_SHOWN_COLOR PRINT_COLOR(PANELS_COLOR_PANEL, PANELS_COLOR_CLEAR, PANELS_COLOR_CLEAR)
 #define BAR_OTHER_COLOR PRINT_COLOR(PANELS_COLOR_DIM, PANELS_COLOR_CLEAR, PANELS_COLOR_CLEAR)
@@ -270,7 +273,7 @@ typedef struct {
 
 static const PanelsArt sSubpageArt[POKEDEX_INFO_SUBPAGE_COUNT] = {
     { 131, 132, 133 },
-    { ART_NONE, ART_NONE, ART_NONE },
+    { 134, 135, 136 },
     { ART_NONE, ART_NONE, ART_NONE },
 };
 
@@ -479,7 +482,10 @@ static void PokedexInfoPanels_DrawData(PokedexInfoPanels *panels, PersonalData *
     u32 count = 0;
     u32 i;
 
-    PokedexInfoPanels_DrawPanel(bitmap, DATA_PANEL_X, DATA_PANEL_Y - CONTENT_TOP, DATA_PANEL_WIDTH, DATA_PANEL_HEIGHT);
+    if (sSubpageArt[POKEDEX_INFO_SUBPAGE_DATA].screen == ART_NONE) {
+        PokedexInfoPanels_DrawPanel(bitmap, DATA_PANEL_X, DATA_PANEL_Y - CONTENT_TOP, DATA_PANEL_WIDTH,
+                                    DATA_PANEL_HEIGHT);
+    }
     for (i = 0; i < NELEMS(sDataLabels); i++) {
         PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->smallFont, sDataLabels[i], DATA_LABEL_X,
                                 DATA_ROW_Y + i * DATA_ROW_PITCH + DATA_LABEL_OFFSET_Y, PRINT_ALIGN_LEFT, LABEL_COLOR);
@@ -529,9 +535,11 @@ static void PokedexInfoPanels_DrawEgg(PokedexInfoPanels *panels, PersonalData *p
 
     groups[0] = PML_PersonalGetParam(personal, PERSONAL_EGG_GROUP_1);
     groups[1] = PML_PersonalGetParam(personal, PERSONAL_EGG_GROUP_2);
-    PokedexInfoPanels_DrawPanel(bitmap, EGG_PANEL_X, EGG_PANEL_Y - CONTENT_TOP, EGG_PANEL_WIDTH, EGG_PANEL_HEIGHT);
+    if (sSubpageArt[POKEDEX_INFO_SUBPAGE_DATA].screen == ART_NONE) {
+        PokedexInfoPanels_DrawPanel(bitmap, EGG_PANEL_X, EGG_PANEL_Y - CONTENT_TOP, EGG_PANEL_WIDTH, EGG_PANEL_HEIGHT);
+    }
     PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->font, PokedexData_Text_EggHeading, EGG_CENTER_X,
-                            EGG_HEADING_Y, PRINT_ALIGN_CENTER, TEXT_COLOR);
+                            EGG_HEADING_Y, PRINT_ALIGN_CENTER, EGG_HEADING_COLOR);
     PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->smallFont, PokedexData_Text_Group, EGG_CENTER_X,
                             EGG_GROUP_LABEL_Y, PRINT_ALIGN_CENTER, LABEL_COLOR);
     for (i = 0; i < 2; i++) {
@@ -546,7 +554,7 @@ static void PokedexInfoPanels_DrawEgg(PokedexInfoPanels *panels, PersonalData *p
         }
         PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP,
                                 PokedexInfoPanels_GetFittingFont(panels, message, EGG_PANEL_WIDTH - 4), message,
-                                EGG_CENTER_X, EGG_GROUP_Y + i * EGG_GROUP_PITCH, PRINT_ALIGN_CENTER, TEXT_COLOR);
+                                EGG_CENTER_X, EGG_GROUP_Y + i * EGG_GROUP_PITCH, PRINT_ALIGN_CENTER, EGG_VALUE_COLOR);
     }
 
     PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->smallFont, PokedexData_Text_Cycles, EGG_CENTER_X,
@@ -554,7 +562,7 @@ static void PokedexInfoPanels_DrawEgg(PokedexInfoPanels *panels, PersonalData *p
     WordSetNumber(panels->wordSet, 0, cycles, 3, 0, TRUE);
     PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->font,
                             caught ? PokedexData_Text_Number : PokedexData_Text_Unknown, EGG_CENTER_X, EGG_CYCLES_Y,
-                            PRINT_ALIGN_CENTER, TEXT_COLOR);
+                            PRINT_ALIGN_CENTER, EGG_VALUE_COLOR);
     if (caught) {
         WordSetNumber(panels->wordSet, 0, cycles * EGG_CYCLE_STEPS, 5, 0, TRUE);
         PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->smallFont, PokedexData_Text_Steps, EGG_CENTER_X,

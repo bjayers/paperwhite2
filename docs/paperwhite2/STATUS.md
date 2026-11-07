@@ -2,6 +2,14 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-06: Pokédex, the user's Data art; Stats' text placed
+
+The user's Stats art works; its text moved to fit (rows 5 px lower, the first column 4 px right, the bars 5 px shorter
+at each end). The user's new Stats art (with a tab behind the current sub-page's name, to try) and the Data art are
+built in (`pokedex_info_data`, members 134-136). Data's rows 4 px lower, GROUP and the groups 6 px lower; "Egg" in the
+art's yellow, which the 80-99 stat bars now use too; the Egg column's values white, as the art's column is dark. Not
+yet tested in game.
+
 ## 2026-11-06: Pokédex, the user's Stats art in the game
 
 The user's first art, the Stats sub-page's (strip and panel, in the top screen's palette row 0), is built in
