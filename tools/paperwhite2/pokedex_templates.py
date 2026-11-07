@@ -12,6 +12,9 @@ For each sub-page it writes:
 - <page>_reference.png: the whole screen as the game shows it over the canvas, with the game's text, bars and buttons,
   the grid's area checkered and the touch bar's marked;
 - <page>_reference_tiles.png: the same with the 8 by 8 tiles' grid.
+
+And the top screen's Info panels' palettes (a/1/5/7's palette 9, rows 0 and 1, ov296's POKEDEX_GRA_PALETTE), to draw
+with the same colors: top_panels_row<N>.pal (JASC), .gpl (GIMP, Aseprite) and top_panels_palette.png (the swatches).
 """
 import argparse
 import re
@@ -22,13 +25,18 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from tools.data.narc import read_narc  # noqa: E402
-from tools.data.nitro_2d import write_indexed_png  # noqa: E402
+from tools.data.nitro_2d import palette_colors, write_indexed_png, write_palette  # noqa: E402
 
 WIDTH, HEIGHT = 256, 192
 PANELS = ROOT / "src/paperwhite2/ov298/paperwhite2_pokedex_info_panels.c"
 PAGE = ROOT / "src/paperwhite2/ov298/paperwhite2_pokedex_info.c"
 TEXT = ROOT / "res/text/system/pokedex_data.txt"
 FONTS = "files/a/0/2/3"
+# The Pokédex's graphics, and the Info panels' palette and the rows its panels use (screens 0x20 and 0x29)
+POKEDEX_GRA = "files/a/1/5/7"
+TOP_PALETTE = 9
+TOP_ROWS = (0, 1)
+SWATCH = 16
 # The touch bar's rows, the game's
 TOUCHBAR_Y = 168
 # A sample species for the numbers: Tepig
@@ -78,6 +86,12 @@ Limits
   So keep the panel behind the text light, and the tab strip dark enough for white text.
 - The text and bars go where the reference shows them; ask to have any moved, the bars or
   the line left to your art, or the text in other colours.
+
+The top screen's colours
+- top_panels_row0.pal / .gpl and top_panels_row1.pal / .gpl: the two 16-colour palettes
+  the top screen's Info panels and background use (row 0 the panels' and the grid's, row 1
+  the rest of the panels'); top_panels_palette.png shows them as swatches, row 0 on top.
+  In each palette, colour 0 is the transparent one.
 
 When you're done, send the PNG back (any 16-colour PNG, indexed or not, transparency as
 transparent pixels) and it gets built into the game. Data and Matchups get their own
@@ -262,6 +276,21 @@ def reference(art, draw_text, tiles):
     return canvas
 
 
+def top_palettes(extract, out):
+    """The top screen's Info panels' palette rows, as palette files and a PNG of swatches, a row of 16 for each."""
+    colors16 = palette_colors(read_narc((extract / POKEDEX_GRA).read_bytes())[TOP_PALETTE])
+    rows = [colors16[row * 16:row * 16 + 16] for row in TOP_ROWS]
+    for row, cs in zip(TOP_ROWS, rows):
+        (out / f"top_panels_row{row}.pal").write_text(write_palette(cs))
+        (out / f"top_panels_row{row}.gpl").write_text(
+            f"GIMP Palette\nName: Pokedex Info top, row {row}\nColumns: 16\n#\n"
+            + "".join(f"{r:3} {g:3} {b:3}\tIndex {i}\n" for i, (r, g, b) in enumerate(cs)))
+    swatches = [c for cs in rows for c in cs]
+    width, height = 16 * SWATCH, len(rows) * SWATCH
+    pixels = bytes((y // SWATCH) * 16 + x // SWATCH for y in range(height) for x in range(width))
+    (out / "top_panels_palette.png").write_bytes(write_indexed_png(width, height, pixels, swatches))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--extract", type=Path, default=ROOT / "extract/w2_us")
@@ -282,6 +311,7 @@ def main():
     for tiles, name in ((False, "stats_reference.png"), (True, "stats_reference_tiles.png")):
         reference(art, stats, tiles).write(args.out / name)
     (args.out / "README.txt").write_text(README)
+    top_palettes(args.extract, args.out)
     print(f"wrote the Stats templates to {args.out}")
 
 
