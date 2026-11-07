@@ -2,6 +2,7 @@
 #include "app/pokedex_detail.h"
 #include "app/pokedex_info.h"
 #include "app/ui/ui_scene.h"
+#include "constants/abilities.h"
 #include "constants/arc.h"
 #include "constants/language.h"
 #include "constants/pokemon.h"
@@ -23,6 +24,7 @@
 #include "nitro/fx.h"
 #include "nitro/gx.h"
 #include "paperwhite2/pokedex_info.h"
+#include "pml/personal.h"
 #include "pml/poke_graphic.h"
 #include "save/pokedex_savedata.h"
 #include "system/app_taskmenu.h"
@@ -37,7 +39,8 @@
 // Pokémon's entry from overlay 296, as the original's bottom screen showed it, with the battle's animated sprite (MCSS,
 // on BG 0) where the still one was. The bottom screen, the sub engine's, has the sub-pages that L and R cycle
 // (paperwhite2_pokedex_info_panels.c) and, on Stats, the buttons Cry, Turn, Form, Shiny and Language in the menus'
-// style. A button that can't do anything for the Pokémon is hidden, and the others keep their places
+// style. A button that can't do anything for the Pokémon is hidden, and the others keep their places. On Matchups, a
+// button for each of the species' abilities picks the one whose effect the type chart shows
 
 // Where the sprite stands on the top screen, in pixels: the middle of its feet, in the entry's left panel, where the
 // original's still sprite had its 96 by 96 frame centered at 50, 72
@@ -59,6 +62,17 @@
 #define BUTTON_PITCH 3
 // The text's colors in the buttons' palettes, as the menus' YES and NO have them
 #define BUTTON_TEXT_COLOR PRINT_COLOR(14, 15, 3)
+
+// Matchups' ability buttons, in tiles: a row along the bottom of the sub-page above the touch bar, side by side and
+// centered on ABILITY_BUTTON_CENTER_X, as many as the species has abilities. A name wider than the button's text area
+// (its width less 16 pixels of frame) in font 0 is in font 1
+#define ABILITY_BUTTON_CENTER_X 16
+#define ABILITY_BUTTON_Y 18
+#define ABILITY_BUTTON_WIDTH 10
+#define ABILITY_BUTTON_HEIGHT 3
+#define ABILITY_BUTTON_TEXT_WIDTH (ABILITY_BUTTON_WIDTH * 8 - 16)
+// The two abilities and the hidden one
+#define ABILITY_MAX 3
 
 // The entry's languages other than the game's, as PokedexInfo numbers them, and the game's own after them
 #define LANGUAGE_COUNT 6
@@ -108,6 +122,9 @@ typedef struct {
     PokedexInfoPanels *panels;
     u32 subpage;
     AppTaskMenuRes *buttonRes;
+    // The same buttons with font 1's text
+    AppTaskMenuRes *smallButtonRes;
+    // The shown sub-page's buttons: Stats' by BUTTON_*, Matchups' by ability
     AppTaskMenuWin *buttons[BUTTON_COUNT];
     // The button flashing after a touch, or BUTTON_NONE
     u32 pushed;
@@ -125,6 +142,10 @@ typedef struct {
     BOOL caught;
     BOOL back;
     u32 language;
+    // The shown form's distinct abilities, the hidden one once caught, and the one Matchups shows, by its place
+    u16 abilities[ABILITY_MAX];
+    u32 abilityCount;
+    u32 chosenAbility;
 } PokedexInfoPageWork;
 
 static void PokedexInfoPage_LoadPokemon(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
@@ -137,16 +158,21 @@ static void PokedexInfoPage_SetSubpage(PokedexDetailInfoParam *param, PokedexInf
                                        PokedexDetailCommon *common, u32 subpage);
 static void PokedexInfoPage_ShowSubpage(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                         PokedexDetailCommon *common);
+static void PokedexInfoPage_ShowPanels(PokedexInfoPageWork *wk);
+static void PokedexInfoPage_LoadAbilities(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk);
 static void PokedexInfoPage_CreateMCSS(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk);
 static void PokedexInfoPage_FreeMCSS(PokedexInfoPageWork *wk);
 static void PokedexInfoPage_AddSprite(PokedexInfoPageWork *wk);
 static void PokedexInfoPage_RemoveSprite(PokedexInfoPageWork *wk);
 static void PokedexInfoPage_ResetButtons(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                          PokedexDetailCommon *common);
+static void PokedexInfoPage_CreateAbilityButtons(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk);
 static void PokedexInfoPage_FreeButtons(PokedexInfoPageWork *wk, PokedexDetailCommon *common);
 static void PokedexInfoPage_UpdateButtons(PokedexInfoPageWork *wk, PokedexDetailCommon *common);
 static BOOL PokedexInfoPage_CheckButtons(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                          PokedexDetailCommon *common);
+static BOOL PokedexInfoPage_GetButtonPlace(PokedexInfoPageWork *wk, u32 button, u32 *x, u32 *y, u32 *width,
+                                           u32 *height);
 static void PokedexInfoPage_PressButton(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                         PokedexDetailCommon *common, u32 button);
 static BOOL PokedexInfoPage_IsButtonUsable(PokedexInfoPageWork *wk, PokedexDetailCommon *common, u32 button);
@@ -158,6 +184,13 @@ static BOOL PokedexInfoPage_HasLanguage(PokeDexSave *pokedex, u16 species, u32 l
 // The language codes of PokedexInfo's languages: Japanese, French, German, Italian, Spanish and Korean
 static const u8 sLanguageCodes[LANGUAGE_COUNT] = {
     LANGUAGE_JAPANESE, LANGUAGE_FRENCH, LANGUAGE_GERMAN, LANGUAGE_ITALIAN, LANGUAGE_SPANISH, LANGUAGE_KOREAN,
+};
+
+// The personal data's abilities, the hidden one last
+static const u8 sAbilityParams[ABILITY_MAX] = {
+    PERSONAL_ABILITY_1,
+    PERSONAL_ABILITY_2,
+    PERSONAL_ABILITY_HIDDEN,
 };
 
 static const u16 sButtonLabels[BUTTON_COUNT] = {
@@ -193,6 +226,7 @@ BOOL PokedexInfoPage_Exit(PokedexDetailProcSys *sys, int *seq, void *param_, voi
     PokedexInfoPageWork *wk = work;
 
     PokedexInfoPage_FreeButtons(wk, common);
+    AppTaskMenuRes_Free(wk->smallButtonRes);
     AppTaskMenuRes_Free(wk->buttonRes);
     PokedexInfoPanels_Free(wk->panels);
     PokedexInfo_Free(wk->entry);
@@ -275,9 +309,12 @@ BOOL PokedexInfoPage_Main(PokedexDetailProcSys *sys, int *seq, void *param_, voi
         GFL_BGSysSetBGEnabled(3, TRUE);
         PokedexInfoPage_AddSprite(wk);
 
-        wk->panels = PokedexInfoPanels_Create(param->heapId, wk->font);
+        wk->panels = PokedexInfoPanels_Create(param->heapId, wk->font, PokedexDetailGraphic_GetClActUnit(graphic));
         wk->buttonRes = AppTaskMenuRes_Create(POKEDEX_INFO_BUTTON_BG, POKEDEX_INFO_BUTTON_PALETTE, wk->font,
                                               PokedexDetailCommon_GetPrintQueue(common), param->heapId);
+        wk->smallButtonRes = AppTaskMenuRes_Create(POKEDEX_INFO_BUTTON_BG, POKEDEX_INFO_BUTTON_PALETTE,
+                                                   PokedexInfoPanels_GetSmallFont(wk->panels),
+                                                   PokedexDetailCommon_GetPrintQueue(common), param->heapId);
         GFL_BGSysSetBGPriority(POKEDEX_INFO_BUTTON_BG, POKEDEX_INFO_ART_PRIORITY);
         GFL_BGSysSetBGEnabled(POKEDEX_INFO_BUTTON_BG, TRUE);
         wk->subpage = POKEDEX_INFO_SUBPAGE_STATS;
@@ -459,6 +496,7 @@ static void PokedexInfoPage_LoadPokemon(PokedexDetailInfoParam *param, PokedexIn
     }
     wk->caught = PokeDex_IsCaught(pokedex, wk->species);
     wk->back = FALSE;
+    wk->chosenAbility = 0;
     if (!PokedexInfoPage_HasLanguage(pokedex, wk->species, wk->language)) {
         wk->language = LANGUAGE_GAME;
     }
@@ -474,7 +512,8 @@ static void PokedexInfoPage_ChangePokemon(PokedexDetailInfoParam *param, Pokedex
     PokedexInfoPage_ShowSubpage(param, wk, common);
 }
 
-// Touching a sub-page's name switches to it, and on Stats touching a button pushes it; L and R cycle the sub-pages
+// Touching a sub-page's name switches to it, and on Stats and Matchups touching a button pushes it; L and R cycle the
+// sub-pages
 static void PokedexInfoPage_CheckInput(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                        PokedexDetailCommon *common) {
     u32 typed = GCTX_HIDGetTypedKeys();
@@ -485,7 +524,7 @@ static void PokedexInfoPage_CheckInput(PokedexDetailInfoParam *param, PokedexInf
             GCTX_HIDSetUsingTouch(TRUE);
             PokedexInfoPage_SetSubpage(param, wk, common, touched);
         }
-    } else if (wk->subpage == POKEDEX_INFO_SUBPAGE_STATS && PokedexInfoPage_CheckButtons(param, wk, common)) {
+    } else if (PokedexInfoPage_CheckButtons(param, wk, common)) {
         GCTX_HIDSetUsingTouch(TRUE);
     } else if (typed & PAD_BUTTON_R) {
         GCTX_HIDSetUsingTouch(FALSE);
@@ -504,11 +543,45 @@ static void PokedexInfoPage_SetSubpage(PokedexDetailInfoParam *param, PokedexInf
     GFL_SndSEPlay(SEQ_SE_SELECT1);
 }
 
-// Draws the sub-page of the shown Pokémon and form, with the buttons on Stats
+// Draws the sub-page of the shown Pokémon and form, with its buttons
 static void PokedexInfoPage_ShowSubpage(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                         PokedexDetailCommon *common) {
-    PokedexInfoPanels_Show(wk->panels, wk->subpage, wk->species, wk->form, wk->caught);
+    PokedexInfoPage_LoadAbilities(param, wk);
+    PokedexInfoPage_ShowPanels(wk);
     PokedexInfoPage_ResetButtons(param, wk, common);
+}
+
+// Draws the sub-page's panels, Matchups with the chosen ability
+static void PokedexInfoPage_ShowPanels(PokedexInfoPageWork *wk) {
+    PokedexInfoPanels_Show(wk->panels, wk->subpage, wk->species, wk->form, wk->caught,
+                           wk->abilityCount != 0 ? wk->abilities[wk->chosenAbility] : ABILITY_NONE);
+}
+
+// The shown form's abilities, each once: its first and second, and its hidden one once the species is caught
+static void PokedexInfoPage_LoadAbilities(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk) {
+    PersonalData *personal = PML_PersonalLoad(wk->species, wk->form, param->heapId);
+    u32 count = wk->caught ? ABILITY_MAX : ABILITY_MAX - 1;
+    u32 i;
+    u32 j;
+
+    wk->abilityCount = 0;
+    for (i = 0; i < count; i++) {
+        u32 ability = PML_PersonalGetParam(personal, sAbilityParams[i]);
+        BOOL listed = ability == ABILITY_NONE;
+
+        for (j = 0; j < wk->abilityCount; j++) {
+            if (wk->abilities[j] == ability) {
+                listed = TRUE;
+            }
+        }
+        if (!listed) {
+            wk->abilities[wk->abilityCount++] = ability;
+        }
+    }
+    PML_PersonalFree(personal);
+    if (wk->chosenAbility >= wk->abilityCount) {
+        wk->chosenAbility = 0;
+    }
 }
 
 static void PokedexInfoPage_CreateMCSS(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk) {
@@ -570,6 +643,10 @@ static void PokedexInfoPage_ResetButtons(PokedexDetailInfoParam *param, PokedexI
     PokedexInfoPage_FreeButtons(wk, common);
     // The art first, as it replaces the buttons' BG's screen
     PokedexInfoPanels_LoadArt(wk->panels, wk->subpage);
+    if (wk->subpage == POKEDEX_INFO_SUBPAGE_MATCHUPS) {
+        PokedexInfoPage_CreateAbilityButtons(param, wk);
+        return;
+    }
     if (wk->subpage != POKEDEX_INFO_SUBPAGE_STATS) {
         return;
     }
@@ -585,6 +662,36 @@ static void PokedexInfoPage_ResetButtons(PokedexDetailInfoParam *param, PokedexI
             GFL_StrBufFree(item.str);
         }
     }
+}
+
+// Matchups' buttons, one for each ability with its name, the chosen one shown as the menus show their cursor's
+static void PokedexInfoPage_CreateAbilityButtons(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk) {
+    MsgData *names = GFL_MsgSysLoadData(FALSE, ARCID_SYSTEM_MESSAGE, TEXT_BANK_ABILITY_NAMES, param->heapId);
+    u32 i;
+
+    for (i = 0; i < wk->abilityCount; i++) {
+        AppTaskMenuItem item;
+        AppTaskMenuRes *res = wk->buttonRes;
+        u32 x;
+        u32 y;
+        u32 width;
+        u32 height;
+
+        PokedexInfoPage_GetButtonPlace(wk, i, &x, &y, &width, &height);
+        item.str = GFL_MsgDataLoadStrbufNew(names, wk->abilities[i]);
+        item.color = BUTTON_TEXT_COLOR;
+        item.type = 0;
+        // Centering a text wider than the button would place it past the button's end (AppTaskMenuWin_CreateCore)
+        if (GFL_FontGetBlockWidth(item.str, wk->font, 0) > ABILITY_BUTTON_TEXT_WIDTH) {
+            res = wk->smallButtonRes;
+        }
+        wk->buttons[i] = AppTaskMenuWin_CreateEx(res, &item, x, y, width, height, FALSE, TRUE, param->heapId);
+        GFL_StrBufFree(item.str);
+        if (i == wk->chosenAbility) {
+            AppTaskMenuWin_SetActive(wk->buttons[i], TRUE);
+        }
+    }
+    GFL_MsgDataFree(names);
 }
 
 // Frees the buttons once their text is printed, and ends a push
@@ -619,7 +726,8 @@ static void PokedexInfoPage_UpdateButtons(PokedexInfoPageWork *wk, PokedexDetail
     }
     if (wk->pushed != BUTTON_NONE && AppTaskMenuWin_IsFlashFinished(wk->buttons[wk->pushed])) {
         AppTaskMenuWin_ResetFlash(wk->buttons[wk->pushed]);
-        AppTaskMenuWin_SetActive(wk->buttons[wk->pushed], FALSE);
+        // A chosen ability stays shown as chosen
+        AppTaskMenuWin_SetActive(wk->buttons[wk->pushed], wk->subpage == POKEDEX_INFO_SUBPAGE_MATCHUPS);
         wk->pushed = BUTTON_NONE;
         PokedexDetailTouchbar_SetActive(PokedexDetailCommon_GetTouchbar(common), TRUE);
     }
@@ -629,18 +737,25 @@ static void PokedexInfoPage_UpdateButtons(PokedexInfoPageWork *wk, PokedexDetail
 // takes a button's bottom from its width (AppTaskMenuWin_IsTouched)
 static BOOL PokedexInfoPage_CheckButtons(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                          PokedexDetailCommon *common) {
-    u32 x;
-    u32 y;
+    u32 touchX;
+    u32 touchY;
     u32 i;
 
-    if (!GFL_HIDGetTouchPressedPoint(&x, &y)) {
+    if (!GFL_HIDGetTouchPressedPoint(&touchX, &touchY)) {
         return FALSE;
     }
     for (i = 0; i < BUTTON_COUNT; i++) {
-        u32 top = (BUTTON_Y + i * BUTTON_PITCH) * 8;
+        u32 x;
+        u32 y;
+        u32 width;
+        u32 height;
 
-        if (wk->buttons[i] != NULL && x >= BUTTON_X * 8 && x < (BUTTON_X + BUTTON_WIDTH) * 8 && y >= top &&
-            y < top + BUTTON_HEIGHT * 8) {
+        if (wk->buttons[i] != NULL && PokedexInfoPage_GetButtonPlace(wk, i, &x, &y, &width, &height) &&
+            touchX >= x * 8 && touchX < (x + width) * 8 && touchY >= y * 8 && touchY < (y + height) * 8) {
+            // The chosen ability is chosen already
+            if (wk->subpage == POKEDEX_INFO_SUBPAGE_MATCHUPS && i == wk->chosenAbility) {
+                return FALSE;
+            }
             wk->pushed = i;
             AppTaskMenuWin_SetFlashing(wk->buttons[i], TRUE);
             PokedexDetailTouchbar_SetActive(PokedexDetailCommon_GetTouchbar(common), FALSE);
@@ -651,10 +766,39 @@ static BOOL PokedexInfoPage_CheckButtons(PokedexDetailInfoParam *param, PokedexI
     return FALSE;
 }
 
+// Where the shown sub-page's button is, in tiles: Stats' in their column, Matchups' in their row. FALSE on a sub-page
+// without buttons
+static BOOL PokedexInfoPage_GetButtonPlace(PokedexInfoPageWork *wk, u32 button, u32 *x, u32 *y, u32 *width,
+                                           u32 *height) {
+    switch (wk->subpage) {
+    case POKEDEX_INFO_SUBPAGE_STATS:
+        *x = BUTTON_X;
+        *y = BUTTON_Y + button * BUTTON_PITCH;
+        *width = BUTTON_WIDTH;
+        *height = BUTTON_HEIGHT;
+        return TRUE;
+    case POKEDEX_INFO_SUBPAGE_MATCHUPS:
+        *x = ABILITY_BUTTON_CENTER_X - wk->abilityCount * ABILITY_BUTTON_WIDTH / 2 + button * ABILITY_BUTTON_WIDTH;
+        *y = ABILITY_BUTTON_Y;
+        *width = ABILITY_BUTTON_WIDTH;
+        *height = ABILITY_BUTTON_HEIGHT;
+        return TRUE;
+    }
+    return FALSE;
+}
+
 static void PokedexInfoPage_PressButton(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                         PokedexDetailCommon *common, u32 button) {
     PokeDexSave *pokedex = GameData_GetPokedex(PokedexDetailCommon_GetGameData(common));
 
+    // On Matchups, the touched ability is chosen, and the chart shows it
+    if (wk->subpage == POKEDEX_INFO_SUBPAGE_MATCHUPS) {
+        AppTaskMenuWin_SetActive(wk->buttons[wk->chosenAbility], FALSE);
+        wk->chosenAbility = button;
+        PokedexInfoPage_ShowPanels(wk);
+        GFL_SndSEPlay(SEQ_SE_SELECT3);
+        return;
+    }
     switch (button) {
     case BUTTON_CRY:
         // As the cry page plays it (pokedex_detail_voice.c)
@@ -667,7 +811,10 @@ static void PokedexInfoPage_PressButton(PokedexDetailInfoParam *param, PokedexIn
         PokedexInfoPage_NextForm(pokedex, wk);
         PokedexInfo_SetPokemonInLanguage(wk->entry, wk->species, wk->form, wk->sex, wk->rare, wk->personality,
                                          wk->caught, wk->language);
-        PokedexInfoPanels_Show(wk->panels, wk->subpage, wk->species, wk->form, wk->caught);
+        // A new form's abilities start from its first again
+        wk->chosenAbility = 0;
+        PokedexInfoPage_LoadAbilities(param, wk);
+        PokedexInfoPage_ShowPanels(wk);
         break;
     case BUTTON_SHINY:
         wk->rare = !wk->rare;

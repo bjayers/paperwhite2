@@ -1411,6 +1411,19 @@ the panels' file until there is art), and on Stats the buttons Cry, Turn, Form, 
 and Matchups. The text is `res/text/system/pokedex_data.txt` (`TEXT_BANK_POKEDEX_DATA`). Every place is a constant at
 the top of the two files.
 
+**Matchups** (shown once seen): the 17 attacking types in 3 rows of 6 (the 18th place free for a Fairy type), each the
+game's type icon (`a/0/8/2` palette 0x21, chars 0x22+type, cells and animations 0x3d and 0x40 for the 1D 128 KB
+mapping) as a sub OBJ, semi-transparent so the page's fades darken it, with the multiplier against the shown form's
+types under it in font 0 (`×0.5`, `×1.25`..., computed in 64ths, coloured by the panels' palette). The icons use sub
+OBJ palette rows 0-2 (the touch bar has 8-13); their 17 characters, palette and cells are loaded with the panels and
+only shown or hidden by sub-page. Below the chart, one `AppTaskMenuWin` per distinct ability (the hidden one once
+caught, the name in font 1 through a second `AppTaskMenuRes` when font 0's is wider than the button), the chosen one in
+the cursor's palette; touching another chooses it and redraws the chart. The abilities' rules (immunities, Thick Fat,
+Heatproof, Dry Skin, Filter and Solid Rock, Wonder Guard) are `sMatchupRules` in the panels' file. **The type chart**
+is in ARM9 main (`src/paperwhite2/main/paperwhite2_type_chart.c`, `PaperWhite2_TypeChart`, `TYPE_CHART_SIZE` in
+`include/paperwhite2/type_chart.h`), which `btl_calc.c` reads under `PAPERWHITE2` in place of its own
+`data_ov167_021d7500` (289 bytes of main).
+
 ## Adding global scripts
 
 A global script file's IDs are limited by its row in `GLOBAL_SCRIPT_TABLE` (`src/ov012/script_sys.c`), e.g.

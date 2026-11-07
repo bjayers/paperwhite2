@@ -73,3 +73,5 @@ PokedexData_Text_EggHeading = Egg
 PokedexData_Text_Group = GROUP
 PokedexData_Text_Cycles = CYCLES
 PokedexData_Text_Steps = {0200:0} steps
+PokedexData_Text_Multiplier = ×{0200:0}
+PokedexData_Text_MultiplierDecimal = ×{0200:0}.{0200:1}

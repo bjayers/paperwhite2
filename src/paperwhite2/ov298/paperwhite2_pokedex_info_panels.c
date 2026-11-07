@@ -1,14 +1,17 @@
 #include "types.h"
 #include "app/pokedex_detail.h"
 #include "app/ui/print_msg.h"
+#include "constants/abilities.h"
 #include "constants/arc.h"
 #include "constants/pokemon.h"
 #include "constants/text_banks.h"
+#include "constants/types.h"
 #include "gfl/arc.h"
 #include "gfl/arc_util.h"
 #include "gfl/bg_sys.h"
 #include "gfl/bmp.h"
 #include "gfl/bmpwin.h"
+#include "gfl/clact.h"
 #include "gfl/heap.h"
 #include "gfl/msg.h"
 #include "gfl/str.h"
@@ -16,10 +19,13 @@
 #include "nitro/fx.h"
 #include "nitro/gx.h"
 #include "paperwhite2/pokedex_info.h"
+#include "paperwhite2/type_chart.h"
 #include "pml/personal.h"
+#include "system/app_menu_common.h"
 #include "system/bmp_winframe.h"
 #include "system/gf_font.h"
 #include "system/printsys.h"
+#include "system/str_tool.h"
 #include "system/wordset.h"
 #include "text/system/pokedex_data.h"
 
@@ -118,11 +124,28 @@
 // The steps of an egg cycle (fieldmap_event.c)
 #define EGG_CYCLE_STEPS 256
 
-// Matchups: an empty panel for now
+// Matchups: a chart of the attacking types in the types' order, MATCHUPS_COLUMNS to a row, each its type icon (an OBJ
+// centered on its place) with the damage multiplier against the species centered under it in font 0. The page's
+// ability buttons are below it (paperwhite2_pokedex_info.c), so the placeholder panel ends above them
 #define MATCHUPS_PANEL_X 4
 #define MATCHUPS_PANEL_Y 20
 #define MATCHUPS_PANEL_WIDTH 248
-#define MATCHUPS_PANEL_HEIGHT 144
+#define MATCHUPS_PANEL_HEIGHT 120
+#define MATCHUPS_COLUMNS 6
+// The first icon's center, and the distances between the icons' centers
+#define MATCHUPS_ICON_X 28
+#define MATCHUPS_ICON_Y 34
+#define MATCHUPS_COLUMN_PITCH 40
+#define MATCHUPS_ROW_PITCH 38
+// From an icon's center to its multiplier's top
+#define MATCHUPS_VALUE_OFFSET_Y 10
+// The type icons' sub OBJ palette rows (a/0/8/2's three, from this one), below the touch bar's 8 to 13, and their
+// cells for the sub engine's 1D 128 KB mapping (pokedex_detail_graphic.c)
+#define PALETTE_TYPE_ICONS 0
+#define TYPE_ICON_PALETTE_COUNT 3
+#define TYPE_ICON_MAPPING 2
+// A multiplier's 1 in its fixed point, 64ths, so that a quarter halved or times 1.25 stays exact
+#define MULTIPLIER_ONE 64
 
 // The Data panel's rows
 enum {
@@ -172,6 +195,11 @@ static const GXRgb sPanelColors[16] = {
 #define LABEL_COLOR PRINT_COLOR(PANELS_COLOR_DIM, PANELS_COLOR_CLEAR, PANELS_COLOR_CLEAR)
 #define BAR_SHOWN_COLOR PRINT_COLOR(PANELS_COLOR_PANEL, PANELS_COLOR_CLEAR, PANELS_COLOR_CLEAR)
 #define BAR_OTHER_COLOR PRINT_COLOR(PANELS_COLOR_DIM, PANELS_COLOR_CLEAR, PANELS_COLOR_CLEAR)
+// The Matchups' multipliers: above 1 red, below it blue, 0 dark grey, and 1 dim
+#define MULTIPLIER_UP_COLOR PRINT_COLOR(PANELS_COLOR_RED, PANELS_COLOR_SHADOW, PANELS_COLOR_CLEAR)
+#define MULTIPLIER_DOWN_COLOR PRINT_COLOR(PANELS_COLOR_BLUE, PANELS_COLOR_SHADOW, PANELS_COLOR_CLEAR)
+#define MULTIPLIER_NONE_COLOR PRINT_COLOR(PANELS_COLOR_BORDER, PANELS_COLOR_SHADOW, PANELS_COLOR_CLEAR)
+#define MULTIPLIER_NORMAL_COLOR PRINT_COLOR(PANELS_COLOR_DIM, PANELS_COLOR_CLEAR, PANELS_COLOR_CLEAR)
 
 // A stat bar's color: the first whose limit the stat is under, else blue
 typedef struct {
@@ -247,6 +275,38 @@ static const u16 sFlavorNames[] = {
     PokedexData_Text_Bitter, PokedexData_Text_Sour, PokedexData_Text_NoFlavor,
 };
 
+// What an ability does to the damage of the moves it takes in: a type's, or the super-effective ones' (above 1), or
+// the others'. Their multiplier is times quarters / 4
+enum {
+    MATCHUP_TARGET_SUPER_EFFECTIVE = TYPE_CHART_SIZE,
+    MATCHUP_TARGET_NOT_SUPER_EFFECTIVE,
+};
+
+typedef struct {
+    u16 ability;
+    u8 target;
+    u8 quarters;
+} MatchupRule;
+
+static const MatchupRule sMatchupRules[] = {
+    { ABILITY_LEVITATE, TYPE_GROUND, 0 },
+    { ABILITY_FLASH_FIRE, TYPE_FIRE, 0 },
+    { ABILITY_WATER_ABSORB, TYPE_WATER, 0 },
+    { ABILITY_STORM_DRAIN, TYPE_WATER, 0 },
+    { ABILITY_VOLT_ABSORB, TYPE_ELECTRIC, 0 },
+    { ABILITY_MOTOR_DRIVE, TYPE_ELECTRIC, 0 },
+    { ABILITY_LIGHTNINGROD, TYPE_ELECTRIC, 0 },
+    { ABILITY_SAP_SIPPER, TYPE_GRASS, 0 },
+    { ABILITY_THICK_FAT, TYPE_FIRE, 2 },
+    { ABILITY_THICK_FAT, TYPE_ICE, 2 },
+    { ABILITY_HEATPROOF, TYPE_FIRE, 2 },
+    { ABILITY_DRY_SKIN, TYPE_WATER, 0 },
+    { ABILITY_DRY_SKIN, TYPE_FIRE, 5 },
+    { ABILITY_FILTER, MATCHUP_TARGET_SUPER_EFFECTIVE, 3 },
+    { ABILITY_SOLID_ROCK, MATCHUP_TARGET_SUPER_EFFECTIVE, 3 },
+    { ABILITY_WONDER_GUARD, MATCHUP_TARGET_NOT_SUPER_EFFECTIVE, 0 },
+};
+
 static const TouchRect sSubpageRects[] = {
     { 0, BAR_TOUCH_BOTTOM, BAR_STATS_X - BAR_TOUCH_HALF_WIDTH, BAR_STATS_X + BAR_TOUCH_HALF_WIDTH - 1 },
     { 0, BAR_TOUCH_BOTTOM, BAR_DATA_X - BAR_TOUCH_HALF_WIDTH, BAR_DATA_X + BAR_TOUCH_HALF_WIDTH - 1 },
@@ -293,14 +353,25 @@ struct PokedexInfoPanels {
     // Each sub-page's art's characters on BG_ART, all loaded with the page so that changing sub-page only changes the
     // screen; 0 for a sub-page without art
     u32 artChars[POKEDEX_INFO_SUBPAGE_COUNT];
+    // The Matchups' type icons, loaded with the page and shown on Matchups only
+    u32 typeIconPalette;
+    u32 typeIconCellAnims;
+    u32 typeIconChars[TYPE_CHART_SIZE];
+    ClActor *typeIcons[TYPE_CHART_SIZE];
 };
 
 static void PokedexInfoPanels_DrawBar(PokedexInfoPanels *panels, u32 subpage);
 static void PokedexInfoPanels_CreateArt(PokedexInfoPanels *panels);
 static void PokedexInfoPanels_FreeArt(PokedexInfoPanels *panels);
+static void PokedexInfoPanels_CreateTypeIcons(PokedexInfoPanels *panels, ClActUnit *unit);
+static void PokedexInfoPanels_FreeTypeIcons(PokedexInfoPanels *panels);
 static void PokedexInfoPanels_DrawStats(PokedexInfoPanels *panels, PersonalData *personal, BOOL caught);
 static void PokedexInfoPanels_DrawData(PokedexInfoPanels *panels, PersonalData *personal, BOOL caught);
 static void PokedexInfoPanels_DrawEgg(PokedexInfoPanels *panels, PersonalData *personal, BOOL caught);
+static void PokedexInfoPanels_DrawMatchups(PokedexInfoPanels *panels, PersonalData *personal, u32 ability);
+static u32 PokedexInfoPanels_GetMultiplier(u32 attackType, u32 type1, u32 type2, u32 ability);
+static void PokedexInfoPanels_PrintMultiplier(PokedexInfoPanels *panels, GFLBitmap *bitmap, u32 multiplier, int x,
+                                              int y);
 static void PokedexInfoPanels_DrawPanel(GFLBitmap *bitmap, int x, int y, int width, int height);
 static void PokedexInfoPanels_DrawStatBar(GFLBitmap *bitmap, int x, int y, u32 value);
 static u32 PokedexInfoPanels_Print(PokedexInfoPanels *panels, GFLBitmap *bitmap, int top, Font *font, u32 messageId,
@@ -313,7 +384,7 @@ static u32 PokedexInfoPanels_GetFemalePermille(u32 sexRatio);
 static u32 PokedexInfoPanels_GetCatchPermille(u32 catchRate);
 static u32 PokedexInfoPanels_GetFavoriteFlavor(PersonalData *personal);
 
-PokedexInfoPanels *PokedexInfoPanels_Create(HeapID heapId, Font *font) {
+PokedexInfoPanels *PokedexInfoPanels_Create(HeapID heapId, Font *font, ClActUnit *unit) {
     PokedexInfoPanels *panels =
         GFL_HeapAllocate(heapId, sizeof(PokedexInfoPanels), TRUE, "paperwhite2_pokedex_info_panels.c", __LINE__);
 
@@ -335,12 +406,14 @@ PokedexInfoPanels *PokedexInfoPanels_Create(HeapID heapId, Font *font) {
     panels->contentWindow = BmpWin_CreateDynamic(BG_PANELS, CONTENT_WINDOW_X, CONTENT_WINDOW_Y, CONTENT_WINDOW_WIDTH,
                                                  CONTENT_WINDOW_HEIGHT, PALETTE_PANELS, FALSE);
     PokedexInfoPanels_CreateArt(panels);
+    PokedexInfoPanels_CreateTypeIcons(panels, unit);
     GFL_BGSysSetBGEnabled(BG_GRID, TRUE);
     GFL_BGSysSetBGEnabled(BG_PANELS, TRUE);
     return panels;
 }
 
 void PokedexInfoPanels_Free(PokedexInfoPanels *panels) {
+    PokedexInfoPanels_FreeTypeIcons(panels);
     PokedexInfoPanels_FreeArt(panels);
     GFL_BGSysFillScrArea(BG_ART, 0, 0, 0, ART_TILES_ACROSS, ART_TILES_DOWN, 0);
     GFL_BGSysQueueScrLoad(BG_ART);
@@ -404,13 +477,58 @@ static void PokedexInfoPanels_FreeArt(PokedexInfoPanels *panels) {
     }
 }
 
+// The type icons of Matchups, hidden, each in its place on the sub-page. Its palette, cells and characters stay loaded
+// while the page runs, so a sub-page change only shows or hides them, in the next VBlank as the BGs change
+static void PokedexInfoPanels_CreateTypeIcons(PokedexInfoPanels *panels, ClActUnit *unit) {
+    ArcTool *arc = GFL_ArcSysCreateFileHandle(ARCID_APP_MENU_COMMON, panels->heapId);
+    ClActorSetup setup;
+    u32 i;
+
+    panels->typeIconPalette =
+        ClActSys_LoadPlttRange(arc, AppMenuCommon_GetTypeIconPaletteFile(), CLACT_VRAM_SUB, PALETTE_TYPE_ICONS * 0x20,
+                               0, TYPE_ICON_PALETTE_COUNT, panels->heapId);
+    panels->typeIconCellAnims =
+        ClActSys_LoadCellAnims(arc, AppMenuCommon_GetTypeIconCellFile(TYPE_ICON_MAPPING),
+                               AppMenuCommon_GetTypeIconAnimFile(TYPE_ICON_MAPPING), panels->heapId);
+    setup.sequence = 0;
+    setup.priority = 0;
+    // Over the panels' windows
+    setup.bgPriority = PRIORITY_PANELS;
+    for (i = 0; i < TYPE_CHART_SIZE; i++) {
+        setup.x = MATCHUPS_ICON_X + i % MATCHUPS_COLUMNS * MATCHUPS_COLUMN_PITCH;
+        setup.y = MATCHUPS_ICON_Y + i / MATCHUPS_COLUMNS * MATCHUPS_ROW_PITCH;
+        panels->typeIconChars[i] =
+            ClActSys_LoadChars(arc, AppMenuCommon_GetTypeIconCharFile(i), FALSE, CLACT_VRAM_SUB, panels->heapId);
+        panels->typeIcons[i] = ClActor_Create(unit, panels->typeIconChars[i], panels->typeIconPalette,
+                                              panels->typeIconCellAnims, &setup, CLACT_SURFACE_SUB, panels->heapId);
+        ClActor_SetPalette(panels->typeIcons[i], AppMenuCommon_GetTypeIconPaletteIndex(i), TRUE);
+        // Semi-transparent, as the entry's type icons are (PokedexInfo_InitTypeIcons), so that the page's fades darken
+        // them with the BGs
+        ClActor_SetObjMode(panels->typeIcons[i], GX_OAM_MODE_XLU);
+        ClActor_SetVisible(panels->typeIcons[i], FALSE);
+    }
+    GFL_ArcToolFree(arc);
+}
+
+static void PokedexInfoPanels_FreeTypeIcons(PokedexInfoPanels *panels) {
+    u32 i;
+
+    for (i = 0; i < TYPE_CHART_SIZE; i++) {
+        ClActor_Delete(panels->typeIcons[i]);
+        ClActSys_FreeChars(panels->typeIconChars[i]);
+    }
+    ClActSys_FreeCellAnims(panels->typeIconCellAnims);
+    ClActSys_FreePltt(panels->typeIconPalette);
+}
+
 void PokedexInfoPanels_Update(PokedexInfoPanels *panels) {
     PokedexDetailBackground_Update(panels->grid);
 }
 
-void PokedexInfoPanels_Show(PokedexInfoPanels *panels, u32 subpage, u16 species, u16 form, BOOL caught) {
+void PokedexInfoPanels_Show(PokedexInfoPanels *panels, u32 subpage, u16 species, u16 form, BOOL caught, u32 ability) {
     PersonalData *personal = PML_PersonalLoad(species, form, panels->heapId);
     GFLBitmap *bitmap = BmpWin_GetBitmap(panels->contentWindow);
+    u32 i;
 
     PokedexInfoPanels_DrawBar(panels, subpage);
     GFL_BitmapFill(bitmap, PANELS_COLOR_CLEAR);
@@ -423,9 +541,11 @@ void PokedexInfoPanels_Show(PokedexInfoPanels *panels, u32 subpage, u16 species,
         PokedexInfoPanels_DrawEgg(panels, personal, caught);
         break;
     case POKEDEX_INFO_SUBPAGE_MATCHUPS:
-        PokedexInfoPanels_DrawPanel(bitmap, MATCHUPS_PANEL_X, MATCHUPS_PANEL_Y - CONTENT_TOP, MATCHUPS_PANEL_WIDTH,
-                                    MATCHUPS_PANEL_HEIGHT);
+        PokedexInfoPanels_DrawMatchups(panels, personal, ability);
         break;
+    }
+    for (i = 0; i < TYPE_CHART_SIZE; i++) {
+        ClActor_SetVisible(panels->typeIcons[i], subpage == POKEDEX_INFO_SUBPAGE_MATCHUPS);
     }
     PML_PersonalFree(personal);
     BmpWin_Transfer(panels->barWindow);
@@ -443,6 +563,10 @@ u32 PokedexInfoPanels_GetTouchedSubpage(void) {
 
 StrBuf *PokedexInfoPanels_LoadMessage(PokedexInfoPanels *panels, u32 messageId) {
     return GFL_MsgDataLoadStrbufNew(panels->msgData, messageId);
+}
+
+Font *PokedexInfoPanels_GetSmallFont(PokedexInfoPanels *panels) {
+    return panels->smallFont;
 }
 
 // L, the names and R, over the art's strip, or a dark strip of their own where the sub-page has no art
@@ -590,6 +714,81 @@ static void PokedexInfoPanels_DrawEgg(PokedexInfoPanels *panels, PersonalData *p
         PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->smallFont, PokedexData_Text_Steps, EGG_CENTER_X,
                                 EGG_STEPS_Y, PRINT_ALIGN_CENTER, LABEL_COLOR);
     }
+}
+
+// Each attacking type's multiplier against the species' types and the ability, under its icon. Shown once the species
+// is seen, as the types are
+static void PokedexInfoPanels_DrawMatchups(PokedexInfoPanels *panels, PersonalData *personal, u32 ability) {
+    GFLBitmap *bitmap = BmpWin_GetBitmap(panels->contentWindow);
+    u32 type1 = PML_PersonalGetParam(personal, PERSONAL_TYPE_1);
+    u32 type2 = PML_PersonalGetParam(personal, PERSONAL_TYPE_2);
+    u32 i;
+
+    if (sSubpageArt[POKEDEX_INFO_SUBPAGE_MATCHUPS].screen == ART_NONE) {
+        PokedexInfoPanels_DrawPanel(bitmap, MATCHUPS_PANEL_X, MATCHUPS_PANEL_Y - CONTENT_TOP, MATCHUPS_PANEL_WIDTH,
+                                    MATCHUPS_PANEL_HEIGHT);
+    }
+    for (i = 0; i < TYPE_CHART_SIZE; i++) {
+        PokedexInfoPanels_PrintMultiplier(panels, bitmap, PokedexInfoPanels_GetMultiplier(i, type1, type2, ability),
+                                          MATCHUPS_ICON_X + i % MATCHUPS_COLUMNS * MATCHUPS_COLUMN_PITCH,
+                                          MATCHUPS_ICON_Y + i / MATCHUPS_COLUMNS * MATCHUPS_ROW_PITCH +
+                                              MATCHUPS_VALUE_OFFSET_Y);
+    }
+}
+
+// The damage multiplier of a move of the attacking type against the types, a species of one having it twice, and
+// then the ability's rules, in MULTIPLIER_ONE's fixed point
+static u32 PokedexInfoPanels_GetMultiplier(u32 attackType, u32 type1, u32 type2, u32 ability) {
+    u32 multiplier = PaperWhite2_TypeChart[attackType][type1] * (MULTIPLIER_ONE / TYPE_CHART_NORMAL);
+    u32 i;
+
+    if (type2 != type1) {
+        multiplier = multiplier * PaperWhite2_TypeChart[attackType][type2] / TYPE_CHART_NORMAL;
+    }
+    for (i = 0; i < NELEMS(sMatchupRules); i++) {
+        const MatchupRule *rule = &sMatchupRules[i];
+
+        if (rule->ability == ability &&
+            (rule->target == attackType ||
+             (rule->target == MATCHUP_TARGET_SUPER_EFFECTIVE && multiplier > MULTIPLIER_ONE) ||
+             (rule->target == MATCHUP_TARGET_NOT_SUPER_EFFECTIVE && multiplier <= MULTIPLIER_ONE))) {
+            multiplier = multiplier * rule->quarters / 4;
+        }
+    }
+    return multiplier;
+}
+
+// A multiplier as "×" and its decimals, as many as it has (64ths have at most six), centered at x
+static void PokedexInfoPanels_PrintMultiplier(PokedexInfoPanels *panels, GFLBitmap *bitmap, u32 multiplier, int x,
+                                              int y) {
+    u32 fraction = multiplier % MULTIPLIER_ONE;
+    u32 decimals = 0;
+    u32 digits = 0;
+    u16 color = MULTIPLIER_NORMAL_COLOR;
+
+    while (fraction != 0) {
+        fraction *= 10;
+        decimals = decimals * 10 + fraction / MULTIPLIER_ONE;
+        fraction %= MULTIPLIER_ONE;
+        digits++;
+    }
+    if (multiplier == 0) {
+        color = MULTIPLIER_NONE_COLOR;
+    } else if (multiplier > MULTIPLIER_ONE) {
+        color = MULTIPLIER_UP_COLOR;
+    } else if (multiplier < MULTIPLIER_ONE) {
+        color = MULTIPLIER_DOWN_COLOR;
+    }
+    WordSetNumber(panels->wordSet, 0, multiplier / MULTIPLIER_ONE, 2, NUM_PAD_NONE, TRUE);
+    if (digits == 0) {
+        PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->font, PokedexData_Text_Multiplier, x, y,
+                                PRINT_ALIGN_CENTER, color);
+        return;
+    }
+    // The decimals with their leading zeros
+    WordSetNumber(panels->wordSet, 1, decimals, digits, NUM_PAD_ZERO, TRUE);
+    PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->font, PokedexData_Text_MultiplierDecimal, x, y,
+                            PRINT_ALIGN_CENTER, color);
 }
 
 // A filled rectangle with a border, without its corners, as the summary screen's hidden stats' bars are drawn

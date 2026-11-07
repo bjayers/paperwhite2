@@ -3,6 +3,7 @@
 
 #include "types.h"
 #include "app/pokedex_detail.h"
+#include "gfl/clact.h"
 #include "gfl/heap.h"
 #include "system/gf_font.h"
 
@@ -36,8 +37,8 @@ enum {
 
 typedef struct PokedexInfoPanels PokedexInfoPanels;
 
-// font is the detail screen's font 0; the panels load font 1 for their small text
-PokedexInfoPanels *PokedexInfoPanels_Create(HeapID heapId, Font *font);
+// font is the detail screen's font 0; the panels load font 1 for their small text. unit has the Matchups' type icons
+PokedexInfoPanels *PokedexInfoPanels_Create(HeapID heapId, Font *font, ClActUnit *unit);
 void PokedexInfoPanels_Free(PokedexInfoPanels *panels);
 // Shows the sub-page's art on POKEDEX_INFO_BUTTON_BG, replacing its whole screen, or clears it for a sub-page without
 // art; the page makes its buttons after it
@@ -45,11 +46,14 @@ void PokedexInfoPanels_LoadArt(PokedexInfoPanels *panels, u32 subpage);
 // Scrolls the grid
 void PokedexInfoPanels_Update(PokedexInfoPanels *panels);
 // Draws the bar with the sub-page bright, and the sub-page's panel of the species and form. caught shows what the
-// Pokédex shows only once it has been caught
-void PokedexInfoPanels_Show(PokedexInfoPanels *panels, u32 subpage, u16 species, u16 form, BOOL caught);
+// Pokédex shows only once it has been caught; Matchups applies ability's effect (an ABILITY_*, or ABILITY_NONE) and
+// shows the type icons, which the other sub-pages hide
+void PokedexInfoPanels_Show(PokedexInfoPanels *panels, u32 subpage, u16 species, u16 form, BOOL caught, u32 ability);
 // The sub-page whose name in the bar is touched this frame, or POKEDEX_INFO_SUBPAGE_COUNT
 u32 PokedexInfoPanels_GetTouchedSubpage(void);
 // A message of the panels' bank, for the page's buttons; the caller frees it
 StrBuf *PokedexInfoPanels_LoadMessage(PokedexInfoPanels *panels, u32 messageId);
+// Font 1, for the page's buttons whose text font 0 makes too wide
+Font *PokedexInfoPanels_GetSmallFont(PokedexInfoPanels *panels);
 
 #endif // POKEBW2_PAPERWHITE2_POKEDEX_INFO_H

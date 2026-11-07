@@ -2,6 +2,15 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-06: Pokédex, the Matchups sub-page
+
+Built (plugins.md, Pokédex), not yet tested in game: the 17 attacking types' icons in 3 rows of 6 (the 18th slot kept
+for a Fairy type), each with its multiplier against the species' types; buttons along the bottom for the abilities
+it can have (the hidden one once caught), the chosen one applying its effect (Levitate, Thick Fat, Filter and the
+rest). The type chart moved to ARM9 main (`PaperWhite2_TypeChart`, the same values), which the battle reads too.
+Templates for Matchups written. The user tests: Tepig with Thick Fat (Fire and Ice ×0.25), Gastly, Shedinja,
+Toxicroak (Fire ×1.25), Mr. Mime (×1.5), forms, long ability names, a battle's type effectiveness.
+
 ## 2026-11-06: Pokédex, Data's art without the grey column
 
 The flicker is gone (the user). The user prefers Data's labels light, without the grey column behind them: new Data

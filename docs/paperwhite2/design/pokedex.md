@@ -191,3 +191,12 @@ The art's plan: one 256 by 192 picture per sub-page, at most 16 colours with the
 palette of its own (6), under the text and bars of BG7 and over the grid of BG4. BG6 also holds the buttons, which
 cover the art where they are shown. A tool cuts it into tiles, a palette and a screen (as `cgear_pictures.py` does);
 the page loads it in place of the placeholder panel and strip. Up to 672 tiles, all different, fit.
+
+## Matchups (2026-11-06)
+
+Built as the user decided: shown once seen; the 17 type icons in 3 rows of 6 (an 18th place free for Fairy) with the
+multiplier under each, coloured red above ×1, blue below, dark grey at ×0, dim at ×1; a row of ability buttons below
+(the two abilities, the hidden one once caught), the chosen one applied to the chart (Levitate, Flash Fire, Water
+Absorb, Storm Drain, Volt Absorb, Motor Drive, Lightningrod, Sap Sipper, Thick Fat, Heatproof, Dry Skin, Filter,
+Solid Rock, Wonder Guard). The type chart moved to ARM9 main for it. No art yet: the placeholder panel. Templates:
+`matchups_canvas.png`, `_reference.png`, `_reference_tiles.png` (Tepig, Blaze chosen).

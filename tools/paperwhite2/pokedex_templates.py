@@ -6,13 +6,16 @@ to the pixel. As they hold the ROM's fonts, they are written to an ignored folde
 
     pokedex_templates.py [--extract extract/w2_us] [OUT_DIR]
 
-For each sub-page (stats, data) it writes:
+For each sub-page (stats, data, matchups) it writes:
 - <page>_canvas.png: the art to draw over, 256 by 192, transparent where the grid shows: the user's art where the
   sub-page has it (res/paperwhite2/pokedex_art/info_<page>.png), else in the art's palette the Stats art's strip and
   plain panels where the page draws its own until there is art;
 - <page>_reference.png: the whole screen as the game shows it over the canvas, with the game's text, bars and buttons,
   the grid's area checkered and the touch bar's marked;
 - <page>_reference_tiles.png: the same with the 8 by 8 tiles' grid.
+
+Matchups' reference has the game's type icons (a/0/8/2, as the page loads them) and the multipliers of a sample
+species, worked out as the page does from the type chart (src/paperwhite2/main/paperwhite2_type_chart.c).
 
 And the top screen's Info panels' palettes (a/1/5/7's palette 9, rows 0 and 1, ov296's POKEDEX_GRA_PALETTE), to draw
 with the same colors: top_panels_row<N>.pal (JASC), .gpl (GIMP, Aseprite) and top_panels_palette.png (the swatches).
@@ -26,15 +29,26 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from tools.data.narc import read_narc  # noqa: E402
-from tools.data.nitro_2d import palette_colors, read_indexed_png, write_indexed_png, write_palette  # noqa: E402
+from tools.data.nitro_2d import (  # noqa: E402
+    character_pixels, palette_colors, read_indexed_png, write_indexed_png, write_palette)
 
 WIDTH, HEIGHT = 256, 192
 PANELS = ROOT / "src/paperwhite2/ov298/paperwhite2_pokedex_info_panels.c"
+TYPE_CHART = ROOT / "src/paperwhite2/main/paperwhite2_type_chart.c"
+APP_MENU_COMMON = ROOT / "src/system/app_menu_common.c"
 PAGE = ROOT / "src/paperwhite2/ov298/paperwhite2_pokedex_info.c"
 TEXT = ROOT / "res/text/system/pokedex_data.txt"
 # The user's art of each sub-page (screen_art.py's pokedex_info_* targets' sources)
 ART = ROOT / "res/paperwhite2/pokedex_art"
 FONTS = "files/a/0/2/3"
+# The menus' common graphics: the type icons' palette (three rows) and each type's 32 by 16 characters
+MENU_COMMON = "files/a/0/8/2"
+TYPE_ICON_PALETTE = 0x21
+TYPE_ICON_CHARS = 0x22
+TYPE_ICON_WIDTH, TYPE_ICON_HEIGHT = 32, 16
+# AppTaskMenuWin's text: its top in the button, and the frame's width at each side (app_taskmenu.c)
+BUTTON_TEXT_Y = 6
+BUTTON_FRAME = 8
 # The Pokédex's graphics, and the Info panels' palette and the rows its panels use (screens 0x20 and 0x29)
 POKEDEX_GRA = "files/a/1/5/7"
 TOP_PALETTE = 9
@@ -47,6 +61,9 @@ SAMPLE_STATS = [65, 63, 45, 45, 45, 45]
 SAMPLE_DATA = ["45 (11.9%)", "Medium Slow", "\u2015", "1 HP", "62", "70"]
 SAMPLE_GENDER = ("\u2642 87.5%", " / ", "12.5% \u2640")
 SAMPLE_EGG = ("Field", "20", "5120 steps")
+# Tepig's types (Fire) for the Matchups, and its abilities, Blaze shown chosen
+SAMPLE_TYPES = (9, 9)
+SAMPLE_ABILITIES = ("blaze", "thick_fat")
 
 # The palette: the page's placeholder colors as paperwhite2_pokedex_info_panels.c's sPanelColors (index 0 clear),
 # then the template's own: the grid's checker, the touch bar, the buttons, the tiles' grid
@@ -64,10 +81,17 @@ PINK = 9
 ART_BASE = 23
 # The placeholder panels' colors in the art's palette (the top screen's row 0): its white and a dark grey
 ART_PANEL, ART_BORDER = 4, 10
+# Matchups' reference: after the art's 16 colors, the type icons' 48, then a chosen button's color
+ICON_BASE = ART_BASE + 16
+BUTTON_CHOSEN_COLOR = (90, 200, 230)
+BUTTON_CHOSEN = ICON_BASE + 48
+# The multipliers' colors, as the page's MULTIPLIER_*_COLOR: above 1, below it, 0, and 1 (letter, shadow)
+RED, BORDER_C = 6, 4
+MULTIPLIER_ONE = 64
 
 # What the templates are and the art's limits, for the user, beside them
-README = """Pokedex Info page, bottom screen: art templates (Stats and Data sub-pages)
-===========================================================================
+README = """Pokedex Info page, bottom screen: art templates (Stats, Data and Matchups sub-pages)
+======================================================================================
 
 Files
 - stats_canvas.png: draw your art over this one. 256 x 192, the whole bottom screen.
@@ -110,16 +134,28 @@ The top screen's colours
   the rest of the panels'); top_panels_palette.png shows them as swatches, row 0 on top.
   In each palette, colour 0 is the transparent one.
 
+Matchups
+- matchups_canvas.png, matchups_reference.png, matchups_reference_tiles.png: the same for
+  Matchups. Its canvas is in your palette, with your tab strip and the plain placeholder panel.
+- The 17 type icons are the game's own sprites, drawn over everything: their places are fixed
+  (3 rows of 6, the last place free for a possible new type). Under each, the damage
+  multiplier against the Pokemon in the standard font: red above x1, blue below, dark grey for
+  x0, mid grey for x1 (the sample is Tepig, Fire).
+- The row of ability buttons at the bottom (y 144-167) are the game's buttons (1 to 3 of them,
+  centered); the chosen ability's (Blaze) is shown in the menus' cursor colour.
+
 When you're done, send the PNG back (any 16-colour PNG, indexed or not, transparency as
-transparent pixels) and it gets built into the game. Data and Matchups get their own
-templates next, with the same tab strip.
+transparent pixels) and it gets built into the game.
 """
 
 
-def colors(art_colors=()):
+def colors(art_colors=(), icon_colors=()):
     def rgb(c):
         return tuple(v * 255 // 31 for v in c)
-    return [rgb(c) for c in PANEL_COLORS] + EXTRA + list(art_colors)
+    out = [rgb(c) for c in PANEL_COLORS] + EXTRA + list(art_colors)
+    if icon_colors:
+        out += [(0, 0, 0)] * (ICON_BASE - len(out)) + list(icon_colors) + [BUTTON_CHOSEN_COLOR]
+    return out
 
 
 def defines(*paths):
@@ -310,18 +346,79 @@ def load_art(page):
     return bytearray(pixels), list(art_colors)[:16]
 
 
-def data_canvas(d, stats_art):
-    """Data's canvas in the art's palette: the Stats art's strip, and the panels the page draws until there is art."""
+def placeholder_canvas(d, stats_art, panels):
+    """A sub-page's canvas in the art's palette: the Stats art's strip, and the panels the page draws until there is
+    art."""
     pixels, art_colors = stats_art
     canvas = Canvas()
     strip = d["BAR_WINDOW_HEIGHT"] * 8 * WIDTH
     canvas.pixels[:strip] = pixels[:strip]
-    for name in ("DATA", "EGG"):
+    for name in panels:
         x, y, w, h = (d[f"{name}_PANEL_{k}"] for k in ("X", "Y", "WIDTH", "HEIGHT"))
         canvas.fill(x + 1, y, w - 2, h, ART_BORDER)
         canvas.fill(x, y + 1, w, h - 2, ART_BORDER)
         canvas.fill(x + 1, y + 1, w - 2, h - 2, ART_PANEL)
     return canvas.pixels, art_colors
+
+
+def type_chart():
+    """The type chart, attacking type first, from its C file."""
+    values = [int(v) for v in re.findall(r"\d+", TYPE_CHART.read_text().split("= {", 1)[1].split("};")[0])]
+    size = int(len(values) ** 0.5)
+    return [values[i * size:(i + 1) * size] for i in range(size)]
+
+
+def multiplier_text(value):
+    """As PokedexInfoPanels_PrintMultiplier: "\u00d7", the whole part and as many decimals as it has."""
+    whole, fraction = divmod(value, MULTIPLIER_ONE)
+    digits = ""
+    while fraction:
+        fraction *= 10
+        digits += str(fraction // MULTIPLIER_ONE)
+        fraction %= MULTIPLIER_ONE
+    return f"\u00d7{whole}" + (f".{digits}" if digits else "")
+
+
+def type_icons(extract):
+    """Each type's icon as its 32 by 16 pixels in the icons' 48 colors, and those colors."""
+    files = read_narc((extract / MENU_COMMON).read_bytes())
+    icon_colors = palette_colors(files[TYPE_ICON_PALETTE])[:48]
+    rows = [int(v) for v in re.search(r"sTypeIconPalettes\[\] = \{([^}]*)\}", APP_MENU_COMMON.read_text())
+            .group(1).replace(",", " ").split()]
+    icons = []
+    for t in range(len(type_chart())):
+        _, _, pixels = character_pixels(files[TYPE_ICON_CHARS + t], TYPE_ICON_WIDTH, TYPE_ICON_HEIGHT)
+        icons.append(bytes(v + rows[t] * 16 if v else 0 for v in pixels))
+    return icons, icon_colors
+
+
+def matchups_text(canvas, d, m, font, icons):
+    # As PokedexInfoPanels_DrawMatchups, the icons as the page places them (their cells are centered), and the ability
+    # buttons as PokedexInfoPage_CreateAbilityButtons
+    chart = type_chart()
+    type1, type2 = SAMPLE_TYPES
+    for t, icon in enumerate(icons):
+        x = d["MATCHUPS_ICON_X"] + t % d["MATCHUPS_COLUMNS"] * d["MATCHUPS_COLUMN_PITCH"]
+        y = d["MATCHUPS_ICON_Y"] + t // d["MATCHUPS_COLUMNS"] * d["MATCHUPS_ROW_PITCH"]
+        for i, value in enumerate(icon):
+            if value:
+                px, py = x - TYPE_ICON_WIDTH // 2 + i % TYPE_ICON_WIDTH, y - TYPE_ICON_HEIGHT // 2 + i // TYPE_ICON_WIDTH
+                canvas.pixels[py * WIDTH + px] = ICON_BASE + value
+        value = chart[t][type1] * (MULTIPLIER_ONE // 4)
+        if type2 != type1:
+            value = value * chart[t][type2] // 4
+        letter, shadow = ((RED, SHADOW) if value > MULTIPLIER_ONE else (BLUE, SHADOW) if 0 < value < MULTIPLIER_ONE
+                          else (BORDER_C, SHADOW) if value == 0 else (DIM, CLEAR))
+        canvas.text(font, multiplier_text(value), x, y + d["MATCHUPS_VALUE_OFFSET_Y"], "center", letter, shadow)
+    count, w, h = len(SAMPLE_ABILITIES), d["ABILITY_BUTTON_WIDTH"], d["ABILITY_BUTTON_HEIGHT"]
+    for i, ability in enumerate(SAMPLE_ABILITIES):
+        x = (d["ABILITY_BUTTON_CENTER_X"] - count * w // 2 + i * w) * 8
+        y = d["ABILITY_BUTTON_Y"] * 8
+        name = re.search(r'"name": "([^"]*)"', (ROOT / f"res/abilities/{ability}.json").read_text()).group(1)
+        canvas.fill(x, y, w * 8, h * 8, BUTTON_CHOSEN if i == 0 else BUTTON)
+        canvas.outline(x, y, w * 8, h * 8, BUTTON_EDGE)
+        text_x = (w * 8 - font.text_width(name) - 2 * BUTTON_FRAME) // 2 + BUTTON_FRAME
+        canvas.text(font, name, x + text_x, y + BUTTON_TEXT_Y, letter=PANEL, shadow=CLEAR)
 
 
 def reference(art, draw_text, tiles):
@@ -384,7 +481,7 @@ def main():
         reference(art, stats, tiles).write(args.out / name, palette)
 
     # Data: the user's art once there is some, else a canvas in the Stats art's palette with its strip
-    data_art = load_art("data") or (data_canvas(d, stats_art) if stats_art else None)
+    data_art = load_art("data") or (placeholder_canvas(d, stats_art, ("DATA", "EGG")) if stats_art else None)
     if data_art:
         (args.out / "data_canvas.png").write_bytes(write_indexed_png(WIDTH, HEIGHT, bytes(data_art[0]), data_art[1]))
 
@@ -393,9 +490,22 @@ def main():
             data_text(canvas, d, m, font, small)
         for tiles, name in ((False, "data_reference.png"), (True, "data_reference_tiles.png")):
             reference(data_art, data, tiles).write(args.out / name, colors(data_art[1]))
+    # Matchups, as Data
+    matchups_art = load_art("matchups") or (placeholder_canvas(d, stats_art, ("MATCHUPS",)) if stats_art else None)
+    if matchups_art:
+        (args.out / "matchups_canvas.png").write_bytes(
+            write_indexed_png(WIDTH, HEIGHT, bytes(matchups_art[0]), matchups_art[1]))
+        icons, icon_colors = type_icons(args.extract)
+        art_colors = (list(matchups_art[1]) + [(0, 0, 0)] * 16)[:16]
+
+        def matchups(canvas):
+            bar_text(canvas, d, m, small, 2)
+            matchups_text(canvas, d, m, font, icons)
+        for tiles, name in ((False, "matchups_reference.png"), (True, "matchups_reference_tiles.png")):
+            reference(matchups_art, matchups, tiles).write(args.out / name, colors(art_colors, icon_colors))
     (args.out / "README.txt").write_text(README)
     top_palettes(args.extract, args.out)
-    print(f"wrote the Stats templates to {args.out}")
+    print(f"wrote the templates to {args.out}")
 
 
 if __name__ == "__main__":

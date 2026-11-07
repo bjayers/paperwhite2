@@ -13,6 +13,9 @@
 #include "pml/move.h"
 #include "pml/personal.h"
 #include "pml/poke_party.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/type_chart.h"
+#endif
 
 // A numerator and a denominator
 typedef struct {
@@ -57,6 +60,10 @@ const BtlCalcRatio data_ov167_021d74cc[13] = {
     { 3, 2 }, { 4, 2 }, { 5, 2 }, { 6, 2 }, { 7, 2 }, { 8, 2 },
 };
 
+#ifdef PAPERWHITE2
+// Paper White 2: the type chart is in ARM9 main (paperwhite2/type_chart.h), unchanged, so that the Pokédex can read it
+#define BTL_TYPE_CHART PaperWhite2_TypeChart
+#else
 // The damage of each attacking type against each defending type in halves: 0, 2 (half), 4 (normal) or 8 (double)
 const u8 data_ov167_021d7500[17][17] = {
     { 4, 4, 4, 4, 4, 2, 4, 0, 2, 4, 4, 4, 4, 4, 4, 4, 4 }, { 8, 4, 2, 2, 4, 8, 2, 0, 8, 4, 4, 4, 4, 2, 8, 4, 8 },
@@ -69,6 +76,8 @@ const u8 data_ov167_021d7500[17][17] = {
     { 4, 4, 8, 4, 8, 4, 4, 4, 2, 2, 2, 8, 4, 4, 2, 8, 4 }, { 4, 4, 4, 4, 4, 4, 4, 4, 2, 4, 4, 4, 4, 4, 4, 8, 4 },
     { 4, 2, 4, 4, 4, 4, 4, 8, 2, 4, 4, 4, 4, 8, 4, 4, 2 },
 };
+#define BTL_TYPE_CHART data_ov167_021d7500
+#endif
 
 // Reconstructed, not known from the ROM. MWCC puts data_ov167_021d74ba with the file's other small tables, as the
 // original has it, only when some code reads it, even code it never emits. This accessor is that code; nothing
@@ -124,7 +133,7 @@ u32 GetTypeEffectiveness(u8 attackType, u8 defenseType) {
     if (attackType == 17 || defenseType == 17) {
         return 3;
     }
-    switch (data_ov167_021d7500[attackType][defenseType]) {
+    switch (BTL_TYPE_CHART[attackType][defenseType]) {
     case 0:
         return 0;
     case 2:
@@ -197,7 +206,7 @@ u8 GetTypeWeaknesses(u8 attackType, u8 *defenseTypes) {
     u8 i;
 
     for (i = 0, count = 0; i < 17; i++) {
-        if (data_ov167_021d7500[attackType][i] == 0 || data_ov167_021d7500[attackType][i] == 2) {
+        if (BTL_TYPE_CHART[attackType][i] == 0 || BTL_TYPE_CHART[attackType][i] == 2) {
             defenseTypes[count++] = i;
         }
     }
