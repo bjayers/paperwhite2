@@ -6,9 +6,10 @@ to the pixel. As they hold the ROM's fonts, they are written to an ignored folde
 
     pokedex_templates.py [--extract extract/w2_us] [OUT_DIR]
 
-For each sub-page it writes:
-- <page>_canvas.png: the art to draw over, 256 by 192, transparent where the grid shows; now the placeholder strip and
-  panel the page draws until there is art;
+For each sub-page (stats, data) it writes:
+- <page>_canvas.png: the art to draw over, 256 by 192, transparent where the grid shows: the user's art where the
+  sub-page has it (res/paperwhite2/pokedex_art/info_<page>.png), else in the art's palette the Stats art's strip and
+  plain panels where the page draws its own until there is art;
 - <page>_reference.png: the whole screen as the game shows it over the canvas, with the game's text, bars and buttons,
   the grid's area checkered and the touch bar's marked;
 - <page>_reference_tiles.png: the same with the 8 by 8 tiles' grid.
@@ -25,12 +26,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from tools.data.narc import read_narc  # noqa: E402
-from tools.data.nitro_2d import palette_colors, write_indexed_png, write_palette  # noqa: E402
+from tools.data.nitro_2d import palette_colors, read_indexed_png, write_indexed_png, write_palette  # noqa: E402
 
 WIDTH, HEIGHT = 256, 192
 PANELS = ROOT / "src/paperwhite2/ov298/paperwhite2_pokedex_info_panels.c"
 PAGE = ROOT / "src/paperwhite2/ov298/paperwhite2_pokedex_info.c"
 TEXT = ROOT / "res/text/system/pokedex_data.txt"
+# The user's art of each sub-page (screen_art.py's pokedex_info_* targets' sources)
+ART = ROOT / "res/paperwhite2/pokedex_art"
 FONTS = "files/a/0/2/3"
 # The Pokédex's graphics, and the Info panels' palette and the rows its panels use (screens 0x20 and 0x29)
 POKEDEX_GRA = "files/a/1/5/7"
@@ -41,6 +44,9 @@ SWATCH = 16
 TOUCHBAR_Y = 168
 # A sample species for the numbers: Tepig
 SAMPLE_STATS = [65, 63, 45, 45, 45, 45]
+SAMPLE_DATA = ["45 (11.9%)", "Medium Slow", "\u2015", "1 HP", "62", "70"]
+SAMPLE_GENDER = ("\u2642 87.5%", " / ", "12.5% \u2640")
+SAMPLE_EGG = ("Field", "20", "5120 steps")
 
 # The palette: the page's placeholder colors as paperwhite2_pokedex_info_panels.c's sPanelColors (index 0 clear),
 # then the template's own: the grid's checker, the touch bar, the buttons, the tiles' grid
@@ -53,10 +59,15 @@ BAR_COLORS = [(50, 6), (80, 8), (100, 10), (130, 12)]
 BLUE = 14
 EXTRA = [(150, 60, 60), (110, 40, 40), (90, 140, 200), (40, 60, 100), (255, 0, 255), (120, 120, 140), (90, 90, 105)]
 GRID_A, GRID_B, TOUCH, TOUCH_EDGE, BUTTON, BUTTON_EDGE, TILE_LINE = range(16, 23)
+PINK = 9
+# Where the art's 16 colors start in a reference's palette, after the template's
+ART_BASE = 23
+# The placeholder panels' colors in the art's palette (the top screen's row 0): its white and a dark grey
+ART_PANEL, ART_BORDER = 4, 10
 
 # What the templates are and the art's limits, for the user, beside them
-README = """Pokedex Info page, bottom screen: art templates (Stats sub-page)
-=================================================================
+README = """Pokedex Info page, bottom screen: art templates (Stats and Data sub-pages)
+===========================================================================
 
 Files
 - stats_canvas.png: draw your art over this one. 256 x 192, the whole bottom screen.
@@ -66,6 +77,12 @@ Files
   own text, numbers and bars, exact to the pixel. Use it as a reference
   layer above or below your drawing.
 - stats_reference_tiles.png: the same with the 8 x 8 tile grid.
+- data_canvas.png, data_reference.png, data_reference_tiles.png: the same for Data. Its canvas is
+  already in your palette, with your tab strip from the Stats art and plain placeholder panels
+  (the Data panel and the Egg column) where the game draws its own until there is art.
+  Data has no buttons. Its labels (Gender, Catch Rate, GROUP, CYCLES...) are the small font in
+  mid grey (123,123,131) without a shadow; its values are near-black with the light grey shadow;
+  the male share is blue (57,139,255), the female pink (255,98,172).
 
 Colours on the reference that are NOT art
 - the checker = transparent (the grid shows there)
@@ -99,10 +116,10 @@ templates next, with the same tab strip.
 """
 
 
-def colors():
+def colors(art_colors=()):
     def rgb(c):
         return tuple(v * 255 // 31 for v in c)
-    return [rgb(c) for c in PANEL_COLORS] + EXTRA
+    return [rgb(c) for c in PANEL_COLORS] + EXTRA + list(art_colors)
 
 
 def defines(*paths):
@@ -203,8 +220,8 @@ class Canvas:
         self.fill(x, y + 1, w, h - 2, BORDER)
         self.fill(x + 1, y + 1, w - 2, h - 2, PANEL)
 
-    def write(self, path):
-        path.write_bytes(write_indexed_png(WIDTH, HEIGHT, bytes(self.pixels), colors()))
+    def write(self, path, palette=None):
+        path.write_bytes(write_indexed_png(WIDTH, HEIGHT, bytes(self.pixels), palette or colors()))
 
 
 def stat_bar(canvas, d, x, y, value):
@@ -257,12 +274,64 @@ def buttons(canvas, d, m, font, labels):
         canvas.text(font, m[label], x + w // 2, y + 4, "center", PANEL, CLEAR)
 
 
-def reference(art, draw_text, tiles):
+def data_text(canvas, d, m, font, small):
+    # As PokedexInfoPanels_DrawData and _DrawEgg
+    labels = ["GenderLabel", "CatchRateLabel", "GrowthLabel", "FlavorLabel", "EvYieldLabel", "BaseExpLabel",
+              "FriendshipLabel"]
+    rows = d["DATA_ROW_Y"], d["DATA_ROW_PITCH"]
+    for i, label in enumerate(labels):
+        canvas.text(small, m[label], d["DATA_LABEL_X"], rows[0] + i * rows[1] + d["DATA_LABEL_OFFSET_Y"],
+                    letter=DIM, shadow=CLEAR)
+    right = d["DATA_VALUE_RIGHT"]
+    female, separator, male = SAMPLE_GENDER[2], SAMPLE_GENDER[1], SAMPLE_GENDER[0]
+    canvas.text(font, female, right, rows[0], "right", PINK)
+    right -= font.text_width(female)
+    canvas.text(font, separator, right, rows[0], "right")
+    right -= font.text_width(separator)
+    canvas.text(font, male, right, rows[0], "right", BLUE)
+    for i, value in enumerate(SAMPLE_DATA, 1):
+        canvas.text(font, value, d["DATA_VALUE_RIGHT"], rows[0] + i * rows[1], "right")
+    center = d["EGG_CENTER_X"]
+    canvas.text(font, m["EggHeading"], center, d["EGG_HEADING_Y"], "center")
+    canvas.text(small, m["Group"], center, d["EGG_GROUP_LABEL_Y"], "center", DIM, CLEAR)
+    group, cycles, steps = SAMPLE_EGG
+    canvas.text(font, group, center, d["EGG_GROUP_Y"], "center")
+    canvas.text(small, m["Cycles"], center, d["EGG_CYCLES_LABEL_Y"], "center", DIM, CLEAR)
+    canvas.text(font, cycles, center, d["EGG_CYCLES_Y"], "center")
+    canvas.text(small, steps, center, d["EGG_STEPS_Y"], "center", DIM, CLEAR)
+
+
+def load_art(page):
+    """The user's art of a sub-page as its pixels and 16 colors, or None."""
+    path = ART / f"info_{page}.png"
+    if not path.exists():
+        return None
+    _, _, pixels, art_colors = read_indexed_png(path)
+    return bytearray(pixels), list(art_colors)[:16]
+
+
+def data_canvas(d, stats_art):
+    """Data's canvas in the art's palette: the Stats art's strip, and the panels the page draws until there is art."""
+    pixels, art_colors = stats_art
     canvas = Canvas()
+    strip = d["BAR_WINDOW_HEIGHT"] * 8 * WIDTH
+    canvas.pixels[:strip] = pixels[:strip]
+    for name in ("DATA", "EGG"):
+        x, y, w, h = (d[f"{name}_PANEL_{k}"] for k in ("X", "Y", "WIDTH", "HEIGHT"))
+        canvas.fill(x + 1, y, w - 2, h, ART_BORDER)
+        canvas.fill(x, y + 1, w, h - 2, ART_BORDER)
+        canvas.fill(x + 1, y + 1, w - 2, h - 2, ART_PANEL)
+    return canvas.pixels, art_colors
+
+
+def reference(art, draw_text, tiles):
+    """art is a placeholder Canvas, or the art's (pixels, colors), which go after the template's colors."""
+    canvas = Canvas()
+    pixels, base = (art.pixels, 0) if isinstance(art, Canvas) else (art[0], ART_BASE)
     for y in range(HEIGHT):
         for x in range(WIDTH):
-            value = art.pixels[y * WIDTH + x]
-            canvas.pixels[y * WIDTH + x] = value or (GRID_A if (x // 4 + y // 4) % 2 else GRID_B)
+            value = pixels[y * WIDTH + x]
+            canvas.pixels[y * WIDTH + x] = value + base if value else (GRID_A if (x // 4 + y // 4) % 2 else GRID_B)
     draw_text(canvas)
     canvas.fill(0, TOUCHBAR_Y, WIDTH, HEIGHT - TOUCHBAR_Y, TOUCH)
     canvas.outline(0, TOUCHBAR_Y, WIDTH, HEIGHT - TOUCHBAR_Y, TOUCH_EDGE)
@@ -299,15 +368,31 @@ def main():
     d, m = defines(PANELS, PAGE), messages()
     args.out.mkdir(parents=True, exist_ok=True)
 
-    art = stats_page(d, m, font, small)
-    art.write(args.out / "stats_canvas.png")
+    stats_art = load_art("stats")
+    if stats_art:
+        (args.out / "stats_canvas.png").write_bytes((ART / "info_stats.png").read_bytes())
+        art, palette = stats_art, colors(stats_art[1])
+    else:
+        art, palette = stats_page(d, m, font, small), colors()
+        art.write(args.out / "stats_canvas.png")
 
     def stats(canvas):
         bar_text(canvas, d, m, small, 0)
         stats_text(canvas, d, m, font)
         buttons(canvas, d, m, font, ["Cry", "Turn", "Form", "Shiny", "Language"])
     for tiles, name in ((False, "stats_reference.png"), (True, "stats_reference_tiles.png")):
-        reference(art, stats, tiles).write(args.out / name)
+        reference(art, stats, tiles).write(args.out / name, palette)
+
+    # Data: the user's art once there is some, else a canvas in the Stats art's palette with its strip
+    data_art = load_art("data") or (data_canvas(d, stats_art) if stats_art else None)
+    if data_art:
+        (args.out / "data_canvas.png").write_bytes(write_indexed_png(WIDTH, HEIGHT, bytes(data_art[0]), data_art[1]))
+
+        def data(canvas):
+            bar_text(canvas, d, m, small, 1)
+            data_text(canvas, d, m, font, small)
+        for tiles, name in ((False, "data_reference.png"), (True, "data_reference_tiles.png")):
+            reference(data_art, data, tiles).write(args.out / name, colors(data_art[1]))
     (args.out / "README.txt").write_text(README)
     top_palettes(args.extract, args.out)
     print(f"wrote the Stats templates to {args.out}")

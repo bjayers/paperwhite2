@@ -78,12 +78,12 @@
 #define STATS_PANEL_Y 20
 #define STATS_PANEL_WIDTH 168
 #define STATS_PANEL_HEIGHT 144
-#define STATS_ROW_Y 30
+#define STATS_ROW_Y 35
 #define STATS_ROW_PITCH 16
-#define STATS_NAME_X 14
+#define STATS_NAME_X 18
 #define STATS_VALUE_RIGHT 93
-#define STATS_BAR_X 99
-#define STATS_BAR_WIDTH 63
+#define STATS_BAR_X 104
+#define STATS_BAR_WIDTH 53
 #define STATS_BAR_HEIGHT 6
 // From the row's top
 #define STATS_BAR_OFFSET_Y 5
