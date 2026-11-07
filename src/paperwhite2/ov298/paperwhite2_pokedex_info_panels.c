@@ -130,7 +130,7 @@
 // the others light, and touching one shows it; the first of its x is where the name starts
 #define MOVES_SET_BAR_Y 16
 #define MOVES_SET_BAR_HEIGHT 16
-#define MOVES_SET_TEXT_Y 19
+#define MOVES_SET_TEXT_Y 20
 #define MOVES_SET_TOUCH_TOP 18
 #define MOVES_SET_TOUCH_BOTTOM 31
 #define MOVES_SET_TOUCH_LEFT 16
@@ -459,7 +459,7 @@ typedef struct {
 static const PanelsArt sSubpageArt[POKEDEX_INFO_SUBPAGE_COUNT] = {
     { 131, 132, 133 },
     { 134, 135, 136 },
-    { ART_NONE, ART_NONE, ART_NONE },
+    { 140, 141, 142 },
     { ART_NONE, ART_NONE, ART_NONE },
     { ART_NONE, ART_NONE, ART_NONE },
 };
@@ -993,7 +993,8 @@ static void PokedexInfoPanels_DrawEgg(PokedexInfoPanels *panels, PersonalData *p
 }
 
 // The bar of the sets, and the rows of the shown set from its scroll, or "No moves" for an empty one, with the scroll
-// bar's track; until there is art, the bar is a light strip and each row its placeholder
+// bar's track; until there is art, the bar is a light strip. The art draws the tabs and the sets' bar only, so the
+// rows' placeholders and the track are drawn over it
 static void PokedexInfoPanels_DrawMoves(PokedexInfoPanels *panels) {
     const PokedexInfoMoves *moves = panels->moves;
     GFLBitmap *bitmap = BmpWin_GetBitmap(panels->contentWindow);
@@ -1003,11 +1004,11 @@ static void PokedexInfoPanels_DrawMoves(PokedexInfoPanels *panels) {
     if (!art) {
         GFL_BitmapFillArea(bitmap, 0, MOVES_SET_BAR_Y - CONTENT_TOP, CONTENT_WINDOW_WIDTH * 8, MOVES_SET_BAR_HEIGHT,
                            PANELS_COLOR_PANEL);
-        GFL_BitmapFillArea(bitmap, MOVES_TRACK_X - 1, MOVES_TRACK_TOP - CONTENT_TOP, 3,
-                           MOVES_TRACK_BOTTOM - MOVES_TRACK_TOP, PANELS_COLOR_BORDER);
-        GFL_BitmapFillArea(bitmap, MOVES_TRACK_X, MOVES_TRACK_TOP + 1 - CONTENT_TOP, 1,
-                           MOVES_TRACK_BOTTOM - MOVES_TRACK_TOP - 2, PANELS_COLOR_PANEL);
     }
+    GFL_BitmapFillArea(bitmap, MOVES_TRACK_X - 1, MOVES_TRACK_TOP - CONTENT_TOP, 3,
+                       MOVES_TRACK_BOTTOM - MOVES_TRACK_TOP, PANELS_COLOR_BORDER);
+    GFL_BitmapFillArea(bitmap, MOVES_TRACK_X, MOVES_TRACK_TOP + 1 - CONTENT_TOP, 1,
+                       MOVES_TRACK_BOTTOM - MOVES_TRACK_TOP - 2, PANELS_COLOR_PANEL);
     for (i = 0; i < POKEDEX_INFO_MOVES_SET_COUNT; i++) {
         PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->smallFont, sMoveSetNames[i], sMoveSetX[i],
                                 MOVES_SET_TEXT_Y, PRINT_ALIGN_LEFT,
@@ -1016,9 +1017,7 @@ static void PokedexInfoPanels_DrawMoves(PokedexInfoPanels *panels) {
     for (i = 0; i < POKEDEX_INFO_MOVE_ROWS; i++) {
         int top = MOVES_ROW_Y + i * MOVES_ROW_PITCH;
 
-        if (!art) {
-            PokedexInfoPanels_DrawMoveRow(bitmap, top - CONTENT_TOP);
-        }
+        PokedexInfoPanels_DrawMoveRow(bitmap, top - CONTENT_TOP);
         if (moves->scroll + i < moves->count) {
             PokedexInfoPanels_DrawMove(panels, bitmap, &moves->moves[moves->scroll + i], top);
         }

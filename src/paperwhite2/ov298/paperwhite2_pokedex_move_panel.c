@@ -6,6 +6,7 @@
 #include "constants/text_banks.h"
 #include "constants/types.h"
 #include "gfl/arc.h"
+#include "gfl/arc_util.h"
 #include "gfl/bg_sys.h"
 #include "gfl/bmp.h"
 #include "gfl/bmpwin.h"
@@ -25,26 +26,33 @@
 
 // Paper White 2: the Pokédex info page's move panel, over the top screen's entry while a move of the Moves sub-page is
 // chosen (docs/paperwhite2/design/pokedex.md, "Moves and Evo tabs"): the move's name and type, its category, power,
-// accuracy, PP and priority, and its description, on a light panel with a dark border, the rest of the top screen
-// dimmed. It is drawn on the main engine's BG 1, over the entry, whose BG it shares with the head bar: BG 1 has 16 KB
-// of characters, which the head bar and the entry's windows fill, so the entry's windows are freed while the panel is
-// open (PokedexInfo_FreeText) and the panel takes their room. Its fill and border are a few characters repeated over
-// the screen, and only its text has windows. Its top edge covers the head bar's last pixels: the bar's tiles of that
-// row are drawn again with the edge over them while it is open, and put back as it closes. Every place is a constant
-// here, in the top screen's pixels or tiles
+// accuracy, PP and priority, and its description, on the user's art, the rest of the top screen dimmed. It is drawn
+// on the main engine's BG 1, over the entry, whose BG it shares with the head bar: BG 1 has 16 KB of characters, which
+// the head bar and the entry's windows fill, so the entry's windows are freed while the panel is open
+// (PokedexInfo_FreeText) and the panel takes their room. The art's tiles show around the text, and its pixels are
+// copied into the text's windows before the text is printed, so the art shows behind it too. Every place is a
+// constant here, in the top screen's pixels or tiles
 
-// BG 1 and a palette of it that the top screen doesn't use, its colors sPanelColors
+// The art, members of ARCID_POKEDEX_GRA that tools/paperwhite2/screen_art.py makes from
+// res/paperwhite2/pokedex_art/move_panel.png (res/paperwhite2/art/targets.json, pokedex_move_panel): a whole screen,
+// in its palette's first row
+#define ART_PALETTE_FILE 143
+#define ART_CHARS_FILE 144
+#define ART_SCREEN_FILE 145
+
+// BG 1 and a palette of it that the top screen doesn't use, which takes the art's colors
 #define PANEL_BG 1
 #define PANEL_PALETTE 6
-// The panel in tiles: from the second column to the last, and from the head bar's last row to the 22nd. Its border is
-// inside that, at x 9 and 248, y 21 and 169 (TOP_LINE pixels down its top row, over the head bar's bottom edge), so
-// the tiles of its edges are partly clear
+// The panel in tiles: from the second column to the last, and from the 5th row to the 23rd, below the head bar (rows 0
+// to 2). The art draws its edges inside that, at x 9 and 248, y 33 and 181
 #define PANEL_TILE_X 1
-#define PANEL_TILE_Y 2
+#define PANEL_TILE_Y 4
 #define PANEL_TILE_WIDTH 31
-#define PANEL_TILE_HEIGHT 20
-#define PANEL_TOP_LINE 5
+#define PANEL_TILE_HEIGHT 19
 #define TILE_SIZE 0x20
+// A tile's rows, of 4 bytes, each two pixels
+#define TILE_ROWS 8
+#define TILE_ROW_SIZE 4
 
 // BG 1's screen, 32 tiles wide, and a map entry's character, flips and palette
 #define SCREEN_TILE_WIDTH 32
@@ -52,56 +60,53 @@
 #define MAP_FLIP_H (1 << 10)
 #define MAP_FLIP_V (1 << 11)
 #define MAP_PALETTE_SHIFT 12
-// The head bar's tiles all have one palette (PokedexDetailHeadbar_InitBG), whose bar uses colors 0, 2, 4, 11 to 13 and
-// its title 14 and 15: the panel's edge over it takes two of the others for its fill and border
-#define HEADBAR_FILL_COLOR 9
-#define HEADBAR_BORDER_COLOR 10
 // The colors of a palette row
 #define PALETTE_COLORS 16
 
 // The windows of its text, in tiles: the name, the left numbers (Category, Power, Accuracy), the right ones (PP,
 // Priority) and the description
 #define NAME_WINDOW_X 2
-#define NAME_WINDOW_Y 4
+#define NAME_WINDOW_Y 5
 #define NAME_WINDOW_WIDTH 18
 #define NAME_WINDOW_HEIGHT 2
 #define LEFT_WINDOW_X 2
-#define LEFT_WINDOW_Y 8
+#define LEFT_WINDOW_Y 9
 #define LEFT_WINDOW_WIDTH 13
 #define LEFT_WINDOW_HEIGHT 6
 #define RIGHT_WINDOW_X 17
-#define RIGHT_WINDOW_Y 8
+#define RIGHT_WINDOW_Y 9
 #define RIGHT_WINDOW_WIDTH 13
 #define RIGHT_WINDOW_HEIGHT 4
 #define DESCRIPTION_WINDOW_X 2
-#define DESCRIPTION_WINDOW_Y 15
+#define DESCRIPTION_WINDOW_Y 16
 #define DESCRIPTION_WINDOW_WIDTH 28
 #define DESCRIPTION_WINDOW_HEIGHT 6
 
-// The text, in the screen's pixels: the name, the labels' column and rows, the values centered on their columns, the
-// right labels' column, and the description's lines
+// The text, in the screen's pixels, 2 px down in its windows: the name, the labels' column and rows, the values
+// centered on their columns, the right labels' column, and the description's lines. The name is 1 px down only: font
+// 0's cells are 15 px, whose last row (the shadow of p, q and y) a 2 px drop would put below its 16 px window
 #define NAME_X 20
-#define NAME_Y 32
+#define NAME_Y 41
 #define LABEL_X 20
-#define CATEGORY_Y 64
-#define POWER_Y 77
-#define ACCURACY_Y 91
+#define CATEGORY_Y 74
+#define POWER_Y 87
+#define ACCURACY_Y 101
 #define POWER_VALUE_X 93
 #define ACCURACY_VALUE_X 94
 #define RIGHT_LABEL_X 138
-#define PP_Y 64
-#define PRIORITY_Y 77
+#define PP_Y 74
+#define PRIORITY_Y 87
 #define RIGHT_VALUE_X 212
 #define DESCRIPTION_X 20
-#define DESCRIPTION_Y 120
+#define DESCRIPTION_Y 130
 #define DESCRIPTION_LINE_PITCH 14
 #define DESCRIPTION_LINES 3
 
 // The type icon at the top right and the category icon after its label, centered on these, over the panel
 #define TYPE_ICON_X 224
-#define TYPE_ICON_Y 40
+#define TYPE_ICON_Y 50
 #define CATEGORY_ICON_X 99
-#define CATEGORY_ICON_Y 70
+#define CATEGORY_ICON_Y 80
 // The icons' palette, the menus' type icons' three rows, in main OBJ rows the top screen doesn't use, and their cells
 // for the main engine's 1D 128 KB mapping
 #define ICON_PALETTE 9
@@ -113,7 +118,7 @@
 #define DIM_PLANES (GX_BLEND_PLANEMASK_BG0 | GX_BLEND_PLANEMASK_BG2 | GX_BLEND_PLANEMASK_BG3 | GX_BLEND_PLANEMASK_BD)
 #define DIM_BRIGHTNESS (-8)
 // The hardware's darkening, which takes EVY / 16 of each color away (DIM_BRIGHTNESS's EVY), for the head bar: it is on
-// the panel's BG, so it is dimmed in its palette instead, but for its two colors that the panel's edge takes
+// the panel's BG, so it is dimmed in its palette instead
 #define DIM_EVY 8
 #define DIM_STEPS 16
 // The page's 3D sprite, on BG 0, which would show over the panel: hidden while it is open
@@ -122,53 +127,18 @@
 // A power of 1 or less is a move's own rule (PML_MoveGetParam), shown as a dash, as the relearner shows it
 #define POWER_NONE 1
 
+// The art's colors that the text takes (res/graphics/pokedex_gra/143.pal): its white (238, 238, 238), near-black
+// (24, 24, 24) and light grey (172, 172, 172), and its clear color, where the text leaves the art
 enum {
-    COLOR_CLEAR,
-    COLOR_TEXT,
-    COLOR_SHADOW,
-    COLOR_FILL,
-    COLOR_BORDER,
+    ART_COLOR_CLEAR = 0,
+    ART_COLOR_NEAR_BLACK = 4,
+    ART_COLOR_LIGHT_GREY = 5,
+    ART_COLOR_WHITE = 6,
 };
 
-static const GXRgb sPanelColors[] = {
-    GX_RGB(0, 0, 0), GX_RGB(4, 4, 5), GX_RGB(21, 21, 22), GX_RGB(29, 29, 29), GX_RGB(7, 7, 8),
-};
-
-#define TEXT_COLOR PRINT_COLOR(COLOR_TEXT, COLOR_SHADOW, COLOR_CLEAR)
-
-// The edges of a tile of the panel, each a bit
-enum {
-    EDGE_LEFT = 1 << 0,
-    EDGE_RIGHT = 1 << 1,
-    EDGE_TOP = 1 << 2,
-    EDGE_BOTTOM = 1 << 3,
-};
-
-// The panel's tiles: its fill, and its edges and corners
-enum {
-    TILE_FILL,
-    TILE_TOP,
-    TILE_BOTTOM,
-    TILE_LEFT,
-    TILE_RIGHT,
-    TILE_TOP_LEFT,
-    TILE_TOP_RIGHT,
-    TILE_BOTTOM_LEFT,
-    TILE_BOTTOM_RIGHT,
-    TILE_COUNT,
-};
-
-static const u8 sTileEdges[TILE_COUNT] = {
-    0,
-    EDGE_TOP,
-    EDGE_BOTTOM,
-    EDGE_LEFT,
-    EDGE_RIGHT,
-    EDGE_TOP | EDGE_LEFT,
-    EDGE_TOP | EDGE_RIGHT,
-    EDGE_BOTTOM | EDGE_LEFT,
-    EDGE_BOTTOM | EDGE_RIGHT,
-};
+// The name in white with a near-black shadow, on the art's dark header; the rest near-black with a light grey shadow
+#define NAME_COLOR PRINT_COLOR(ART_COLOR_WHITE, ART_COLOR_NEAR_BLACK, ART_COLOR_CLEAR)
+#define TEXT_COLOR PRINT_COLOR(ART_COLOR_NEAR_BLACK, ART_COLOR_LIGHT_GREY, ART_COLOR_CLEAR)
 
 enum {
     WINDOW_NAME,
@@ -197,13 +167,17 @@ struct PokedexMovePanel {
     StrBuf *message;
     StrBuf *text;
     StrBuf *line;
-    // The tiles' pixels, and where they are on BG 1 while the panel is open
-    u32 tiles[TILE_COUNT][TILE_SIZE / 4];
+    // The art's files, read once, kept while the page runs: its colors, its tiles and its screen's map entries, and
+    // how many of its tiles the panel shows (the sheet holds whole rows of 32), and where they are on BG 1 while the
+    // panel is open. In the work, in main memory, as the palette and tiles are loaded by DMA
+    void *artPaletteFile;
+    void *artCharsFile;
+    void *artScreenFile;
+    NNSG2dPaletteData *artPalette;
+    NNSG2dCharacterData *artChars;
+    const u16 *artScreen;
+    u32 artTileCount;
     u32 tilePos;
-    // The top edge's tiles over the head bar, where they are, and the bar's map entries that they replace
-    u32 coverTiles[PANEL_TILE_WIDTH][TILE_SIZE / 4];
-    u32 coverPos;
-    u16 headbarMaps[PANEL_TILE_WIDTH];
     // The head bar's palette row and its colors as they were, while the panel dims them, and the dimmed ones. Both in
     // the work, in main memory: the palette is loaded by DMA, which can't read the stack (in DTCM)
     u32 headbarPalette;
@@ -220,10 +194,11 @@ struct PokedexMovePanel {
     ClActor *categoryIcon;
 };
 
-static void PokedexMovePanel_MakeTiles(PokedexMovePanel *panel);
+static void PokedexMovePanel_ReadArt(PokedexMovePanel *panel);
 static void PokedexMovePanel_Open(PokedexMovePanel *panel, PokedexInfo *entry);
 static void PokedexMovePanel_DimHeadbar(PokedexMovePanel *panel);
-static void PokedexMovePanel_CoverHeadbar(PokedexMovePanel *panel);
+static void PokedexMovePanel_DrawArt(PokedexMovePanel *panel, u32 window);
+static void PokedexMovePanel_CopyTile(u8 *dest, const u8 *src, u16 map);
 static void PokedexMovePanel_DrawMove(PokedexMovePanel *panel, u16 move);
 static void PokedexMovePanel_SetIcons(PokedexMovePanel *panel, u16 move);
 static u32 PokedexMovePanel_ReplaceChars(PokedexMovePanel *panel, ClActor *actor, u32 chars, u32 fileId);
@@ -247,7 +222,7 @@ PokedexMovePanel *PokedexMovePanel_Create(HeapID heapId, Font *font, ClActUnit *
     panel->message = GFL_StrBufCreate(0x80, heapId);
     panel->text = GFL_StrBufCreate(0x100, heapId);
     panel->line = GFL_StrBufCreate(0x80, heapId);
-    PokedexMovePanel_MakeTiles(panel);
+    PokedexMovePanel_ReadArt(panel);
 
     // The icons, hidden while the panel is closed, each with the first type's or category's characters until a move
     // is shown
@@ -284,6 +259,9 @@ void PokedexMovePanel_Free(PokedexMovePanel *panel) {
     ClActSys_FreeChars(panel->typeChars);
     ClActSys_FreeCellAnims(panel->iconCellAnims);
     ClActSys_FreePltt(panel->iconPalette);
+    GFL_HeapFree(panel->artScreenFile);
+    GFL_HeapFree(panel->artCharsFile);
+    GFL_HeapFree(panel->artPaletteFile);
     GFL_StrBufFree(panel->line);
     GFL_StrBufFree(panel->text);
     GFL_StrBufFree(panel->message);
@@ -313,12 +291,16 @@ void PokedexMovePanel_Show(PokedexMovePanel *panel, PokedexInfo *entry, u16 move
     }
 }
 
-// The head bar's colors darkened as DIM_BRIGHTNESS darkens the other BGs, those of the panel's edge over it kept
+// The head bar's colors darkened as DIM_BRIGHTNESS darkens the other BGs. Its tiles all have one palette
+// (PokedexDetailHeadbar_InitBG), that of the screen's first map entry
 static void PokedexMovePanel_DimHeadbar(PokedexMovePanel *panel) {
-    const GXRgb *row = (const GXRgb *)HW_BG_PLTT + panel->headbarPalette * PALETTE_COLORS;
+    const u16 *screen = GFL_BGSysIsScrHeapExists(PANEL_BG);
+    const GXRgb *row;
     GXRgb *dimmed = panel->headbarDimmed;
     u32 i;
 
+    panel->headbarPalette = screen[0] >> MAP_PALETTE_SHIFT;
+    row = (const GXRgb *)HW_BG_PLTT + panel->headbarPalette * PALETTE_COLORS;
     for (i = 0; i < PALETTE_COLORS; i++) {
         GXRgb color = row[i];
         u32 r = color & GX_RGB_R_MASK;
@@ -326,17 +308,13 @@ static void PokedexMovePanel_DimHeadbar(PokedexMovePanel *panel) {
         u32 b = (color & GX_RGB_B_MASK) >> GX_RGB_B_SHIFT;
 
         panel->headbarColors[i] = color;
-        if (i == HEADBAR_FILL_COLOR || i == HEADBAR_BORDER_COLOR) {
-            dimmed[i] = color;
-        } else {
-            dimmed[i] = GX_RGB(r - r * DIM_EVY / DIM_STEPS, g - g * DIM_EVY / DIM_STEPS, b - b * DIM_EVY / DIM_STEPS);
-        }
+        dimmed[i] = GX_RGB(r - r * DIM_EVY / DIM_STEPS, g - g * DIM_EVY / DIM_STEPS, b - b * DIM_EVY / DIM_STEPS);
     }
     GFL_BGSysUploadStdPalette(PANEL_BG, dimmed, sizeof(panel->headbarDimmed), panel->headbarPalette * 0x20);
 }
 
-// The panel's screen is cleared at once, as the entry's windows will take its characters, with the head bar's row put
-// back, and the entry is printed again; the dimming ends as the page's blend leaves the screen, shown, and the sprite
+// The panel's screen is cleared at once, as the entry's windows will take its characters, and the entry is printed
+// again; the dimming ends as the page's blend leaves the screen, shown, and the sprite
 // shows again
 void PokedexMovePanel_Close(PokedexMovePanel *panel, PokedexInfo *entry, u32 language) {
     u32 i;
@@ -349,13 +327,9 @@ void PokedexMovePanel_Close(PokedexMovePanel *panel, PokedexInfo *entry, u32 lan
         BmpWin_Free(panel->windows[i]);
         panel->windows[i] = NULL;
     }
-    for (i = 0; i < PANEL_TILE_WIDTH; i++) {
-        GFL_BGSysSetScrTile(PANEL_BG, PANEL_TILE_X + i, PANEL_TILE_Y, panel->headbarMaps[i]);
-    }
-    GFL_BGSysFillScrArea(PANEL_BG, 0, PANEL_TILE_X, PANEL_TILE_Y + 1, PANEL_TILE_WIDTH, PANEL_TILE_HEIGHT - 1, 0);
+    GFL_BGSysFillScrArea(PANEL_BG, 0, PANEL_TILE_X, PANEL_TILE_Y, PANEL_TILE_WIDTH, PANEL_TILE_HEIGHT, 0);
     GFL_BGSysLoadScr(PANEL_BG);
-    GFL_BGSysFreeCharMemory(PANEL_BG, panel->coverPos, sizeof(panel->coverTiles));
-    GFL_BGSysFreeCharMemory(PANEL_BG, panel->tilePos, TILE_COUNT * TILE_SIZE);
+    GFL_BGSysFreeCharMemory(PANEL_BG, panel->tilePos, panel->artTileCount * TILE_SIZE);
     ClActor_SetVisible(panel->typeIcon, FALSE);
     ClActor_SetVisible(panel->categoryIcon, FALSE);
     PokedexDetailBlend_SetIn(0, panel->blend);
@@ -369,56 +343,51 @@ BOOL PokedexMovePanel_IsOpen(PokedexMovePanel *panel) {
     return panel->open;
 }
 
-// Each tile's pixels from its edges: an edge's line is the border, a pixel in from the tile's side for the left and
-// bottom edges and TOP_LINE pixels down for the top, with clear pixels outside it, and the rest is the fill
-static void PokedexMovePanel_MakeTiles(PokedexMovePanel *panel) {
-    u32 i;
+// The art's palette, tiles and screen, and how many of its tiles the panel's area shows: those up to the highest it
+// shows are loaded as it opens, not the sheet's whole rows
+static void PokedexMovePanel_ReadArt(PokedexMovePanel *panel) {
+    ArcTool *arc = GFL_ArcSysCreateFileHandle(ARCID_POKEDEX_GRA, panel->heapId);
+    NNSG2dScreenData *screen;
     u32 x;
     u32 y;
 
-    for (i = 0; i < TILE_COUNT; i++) {
-        u8 *pixels = (u8 *)panel->tiles[i];
-        u32 edges = sTileEdges[i];
+    panel->artPaletteFile = GFL_G2DIOReadNCLRArc(arc, ART_PALETTE_FILE, &panel->artPalette, panel->heapId);
+    panel->artCharsFile = GFL_G2DIOReadBGNCGRArc(arc, ART_CHARS_FILE, FALSE, &panel->artChars, panel->heapId);
+    panel->artScreenFile = GFL_G2DIOReadNSCRArc(arc, ART_SCREEN_FILE, FALSE, &screen, panel->heapId);
+    GFL_ArcToolFree(arc);
+    panel->artScreen = (const u16 *)screen->rawData;
+    panel->artTileCount = 0;
+    for (y = PANEL_TILE_Y; y < PANEL_TILE_Y + PANEL_TILE_HEIGHT; y++) {
+        for (x = PANEL_TILE_X; x < PANEL_TILE_X + PANEL_TILE_WIDTH; x++) {
+            u32 tile = panel->artScreen[y * SCREEN_TILE_WIDTH + x] & MAP_CHAR_MASK;
 
-        for (y = 0; y < 8; y++) {
-            for (x = 0; x < 8; x++) {
-                u8 color = COLOR_FILL;
-
-                if (((edges & EDGE_LEFT) && x == 0) || ((edges & EDGE_RIGHT) && x != 0) ||
-                    ((edges & EDGE_TOP) && y < PANEL_TOP_LINE) || ((edges & EDGE_BOTTOM) && y > 1)) {
-                    color = COLOR_CLEAR;
-                } else if (((edges & EDGE_LEFT) && x == 1) || (edges & EDGE_RIGHT) ||
-                           ((edges & EDGE_TOP) && y == PANEL_TOP_LINE) || ((edges & EDGE_BOTTOM) && y == 1)) {
-                    color = COLOR_BORDER;
-                }
-                // Two pixels a byte, the left one in the low nibble
-                pixels[y * 4 + x / 2] |= color << (x % 2 * 4);
+            if (tile >= panel->artTileCount) {
+                panel->artTileCount = tile + 1;
             }
         }
     }
 }
 
-// Frees the entry's text, puts the panel's tiles and palette on BG 1, and fills the panel's screen in the screen buffer
-// with its tiles, its top edge over the head bar, and its windows
+// Frees the entry's text, puts the art's tiles and palette on BG 1, and fills the panel's screen in the screen buffer
+// with the art's map entries, moved to its tiles' place and palette row, and its windows over them
 static void PokedexMovePanel_Open(PokedexMovePanel *panel, PokedexInfo *entry) {
-    u32 right = PANEL_TILE_X + PANEL_TILE_WIDTH - 1;
-    u32 bottom = PANEL_TILE_Y + PANEL_TILE_HEIGHT - 1;
     u32 i;
+    u32 x;
+    u32 y;
 
     PokedexInfo_FreeText(entry);
-    panel->tilePos = GFL_BGSysLoadCharDynamic(PANEL_BG, panel->tiles, TILE_COUNT * TILE_SIZE);
-    GFL_BGSysUploadStdPalette(PANEL_BG, sPanelColors, sizeof(sPanelColors), PANEL_PALETTE * 0x20);
-    PokedexMovePanel_CoverHeadbar(panel);
-    GFL_BGSysFillScrArea(PANEL_BG, panel->tilePos + TILE_FILL, PANEL_TILE_X + 1, PANEL_TILE_Y + 1, PANEL_TILE_WIDTH - 2,
-                         PANEL_TILE_HEIGHT - 2, PANEL_PALETTE);
-    GFL_BGSysFillScrArea(PANEL_BG, panel->tilePos + TILE_BOTTOM, PANEL_TILE_X + 1, bottom, PANEL_TILE_WIDTH - 2, 1,
-                         PANEL_PALETTE);
-    GFL_BGSysFillScrArea(PANEL_BG, panel->tilePos + TILE_LEFT, PANEL_TILE_X, PANEL_TILE_Y + 1, 1, PANEL_TILE_HEIGHT - 2,
-                         PANEL_PALETTE);
-    GFL_BGSysFillScrArea(PANEL_BG, panel->tilePos + TILE_RIGHT, right, PANEL_TILE_Y + 1, 1, PANEL_TILE_HEIGHT - 2,
-                         PANEL_PALETTE);
-    GFL_BGSysFillScrArea(PANEL_BG, panel->tilePos + TILE_BOTTOM_LEFT, PANEL_TILE_X, bottom, 1, 1, PANEL_PALETTE);
-    GFL_BGSysFillScrArea(PANEL_BG, panel->tilePos + TILE_BOTTOM_RIGHT, right, bottom, 1, 1, PANEL_PALETTE);
+    panel->tilePos = GFL_BGSysLoadCharDynamic(PANEL_BG, panel->artChars->pRawData, panel->artTileCount * TILE_SIZE);
+    GFL_BGSysUploadStdPalette(PANEL_BG, panel->artPalette->pRawData, PALETTE_COLORS * sizeof(GXRgb),
+                              PANEL_PALETTE * 0x20);
+    for (y = PANEL_TILE_Y; y < PANEL_TILE_Y + PANEL_TILE_HEIGHT; y++) {
+        for (x = PANEL_TILE_X; x < PANEL_TILE_X + PANEL_TILE_WIDTH; x++) {
+            u16 map = panel->artScreen[y * SCREEN_TILE_WIDTH + x];
+
+            GFL_BGSysSetScrTile(PANEL_BG, x, y,
+                                (panel->tilePos + (map & MAP_CHAR_MASK)) | (map & (MAP_FLIP_H | MAP_FLIP_V)) |
+                                    PANEL_PALETTE << MAP_PALETTE_SHIFT);
+        }
+    }
     for (i = 0; i < WINDOW_COUNT; i++) {
         panel->windows[i] = BmpWin_CreateDynamic(PANEL_BG, sWindowRects[i][0], sWindowRects[i][1], sWindowRects[i][2],
                                                  sWindowRects[i][3], PANEL_PALETTE, FALSE);
@@ -427,67 +396,45 @@ static void PokedexMovePanel_Open(PokedexMovePanel *panel, PokedexInfo *entry) {
     panel->open = TRUE;
 }
 
-// The panel's top row, over the head bar's last: each of the bar's tiles there is drawn again with the panel's top edge
-// over it, the bar's pixels where the edge is clear and the edge's fill and border in two spare colors of the bar's
-// palette, and is put in its place in the screen buffer, the bar's own map entry kept for the panel's closing
-static void PokedexMovePanel_CoverHeadbar(PokedexMovePanel *panel) {
-    const u16 *screen = GFL_BGSysIsScrHeapExists(PANEL_BG);
-    const u8 *chars = GFL_BGSysGetBGCharAddress(PANEL_BG);
-    u32 palette = screen[PANEL_TILE_Y * SCREEN_TILE_WIDTH + PANEL_TILE_X] >> MAP_PALETTE_SHIFT;
-    u32 i;
+// A window's pixels from the art at its place on the screen, each of its tiles the art's tile there
+static void PokedexMovePanel_DrawArt(PokedexMovePanel *panel, u32 window) {
+    u8 *pixels = GFL_BitmapGetPixelData(BmpWin_GetBitmap(panel->windows[window]));
+    const u8 *chars = panel->artChars->pRawData;
+    u32 width = sWindowRects[window][2];
     u32 x;
     u32 y;
 
-    panel->headbarPalette = palette;
+    for (y = 0; y < sWindowRects[window][3]; y++) {
+        for (x = 0; x < width; x++) {
+            u16 map = panel->artScreen[(sWindowRects[window][1] + y) * SCREEN_TILE_WIDTH + sWindowRects[window][0] + x];
 
-    GFL_BGSysUploadStdPalette(PANEL_BG, &sPanelColors[COLOR_FILL], sizeof(GXRgb),
-                              palette * 0x20 + HEADBAR_FILL_COLOR * sizeof(GXRgb));
-    GFL_BGSysUploadStdPalette(PANEL_BG, &sPanelColors[COLOR_BORDER], sizeof(GXRgb),
-                              palette * 0x20 + HEADBAR_BORDER_COLOR * sizeof(GXRgb));
-    for (i = 0; i < PANEL_TILE_WIDTH; i++) {
-        u16 map = screen[PANEL_TILE_Y * SCREEN_TILE_WIDTH + PANEL_TILE_X + i];
-        const u8 *bar = chars + (map & MAP_CHAR_MASK) * TILE_SIZE;
-        u32 tile = TILE_TOP;
-        const u8 *edge;
-        u8 *pixels = (u8 *)panel->coverTiles[i];
-
-        if (i == 0) {
-            tile = TILE_TOP_LEFT;
-        } else if (i == PANEL_TILE_WIDTH - 1) {
-            tile = TILE_TOP_RIGHT;
+            PokedexMovePanel_CopyTile(pixels + (y * width + x) * TILE_SIZE, chars + (map & MAP_CHAR_MASK) * TILE_SIZE,
+                                      map);
         }
-        edge = (const u8 *)panel->tiles[tile];
-        panel->headbarMaps[i] = map;
-        for (y = 0; y < 8; y++) {
-            for (x = 0; x < 8; x++) {
-                u32 color = (edge[y * 4 + x / 2] >> (x % 2 * 4)) & 0xf;
-
-                if (color == COLOR_CLEAR) {
-                    u32 barX = (map & MAP_FLIP_H) ? 7 - x : x;
-                    u32 barY = (map & MAP_FLIP_V) ? 7 - y : y;
-
-                    color = (bar[barY * 4 + barX / 2] >> (barX % 2 * 4)) & 0xf;
-                } else if (color == COLOR_FILL) {
-                    color = HEADBAR_FILL_COLOR;
-                } else {
-                    color = HEADBAR_BORDER_COLOR;
-                }
-                if (x % 2 == 0) {
-                    pixels[y * 4 + x / 2] = color;
-                } else {
-                    pixels[y * 4 + x / 2] |= color << 4;
-                }
-            }
-        }
-    }
-    panel->coverPos = GFL_BGSysLoadCharDynamic(PANEL_BG, panel->coverTiles, sizeof(panel->coverTiles));
-    for (i = 0; i < PANEL_TILE_WIDTH; i++) {
-        GFL_BGSysSetScrTile(PANEL_BG, PANEL_TILE_X + i, PANEL_TILE_Y,
-                            (panel->coverPos + i) | palette << MAP_PALETTE_SHIFT);
     }
 }
 
-// The labels and the move's text, into the windows filled with the panel's color, whose characters go to VRAM at once
+// A tile's pixels as a map entry shows them, flipped as it says: two pixels a byte, the left one in the low nibble
+static void PokedexMovePanel_CopyTile(u8 *dest, const u8 *src, u16 map) {
+    u32 row;
+    u32 i;
+
+    for (row = 0; row < TILE_ROWS; row++) {
+        const u8 *line = src + ((map & MAP_FLIP_V) ? TILE_ROWS - 1 - row : row) * TILE_ROW_SIZE;
+
+        for (i = 0; i < TILE_ROW_SIZE; i++) {
+            if (map & MAP_FLIP_H) {
+                u8 pair = line[TILE_ROW_SIZE - 1 - i];
+
+                dest[row * TILE_ROW_SIZE + i] = (pair >> 4) | (pair << 4);
+            } else {
+                dest[row * TILE_ROW_SIZE + i] = line[i];
+            }
+        }
+    }
+}
+
+// The labels and the move's text, into the windows filled with the art, whose characters go to VRAM at once
 static void PokedexMovePanel_DrawMove(PokedexMovePanel *panel, u16 move) {
     u32 power = PML_MoveGetParam(move, MOVE_PARAM_POWER);
     u32 accuracy = PML_MoveGetParam(move, MOVE_PARAM_ACCURACY);
@@ -496,7 +443,7 @@ static void PokedexMovePanel_DrawMove(PokedexMovePanel *panel, u16 move) {
     u32 i;
 
     for (i = 0; i < WINDOW_COUNT; i++) {
-        GFL_BitmapFill(BmpWin_GetBitmap(panel->windows[i]), COLOR_FILL);
+        PokedexMovePanel_DrawArt(panel, i);
     }
     GFL_MsgDataLoadStrbuf(panel->moveNames, move, panel->text);
     PokedexMovePanel_Print(panel, WINDOW_NAME, panel->text, NAME_X, NAME_Y, PRINT_ALIGN_LEFT);
@@ -563,7 +510,8 @@ static u32 PokedexMovePanel_ReplaceChars(PokedexMovePanel *panel, ClActor *actor
     return newChars;
 }
 
-// Draws a string into a window, at x and y in the screen's pixels; x is where it starts, ends or is centered
+// Draws a string into a window, at x and y in the screen's pixels; x is where it starts, ends or is centered. The name
+// is in its own colors, on the art's header
 static void PokedexMovePanel_Print(PokedexMovePanel *panel, u32 window, const StrBuf *text, int x, int y, u32 align) {
     u32 width = GFL_FontGetBlockWidth(text, panel->font, 0);
 
@@ -576,7 +524,8 @@ static void PokedexMovePanel_Print(PokedexMovePanel *panel, u32 window, const St
         break;
     }
     GFL_TextRendererDrawToBitmapEx(BmpWin_GetBitmap(panel->windows[window]), x - sWindowRects[window][0] * 8,
-                                   y - sWindowRects[window][1] * 8, text, panel->font, TEXT_COLOR);
+                                   y - sWindowRects[window][1] * 8, text, panel->font,
+                                   window == WINDOW_NAME ? NAME_COLOR : TEXT_COLOR);
 }
 
 // A message of the Pokédex's bank, formatted with the word set

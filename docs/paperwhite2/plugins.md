@@ -1434,8 +1434,10 @@ is in ARM9 main (`src/paperwhite2/main/paperwhite2_type_chart.c`, `PaperWhite2_T
 `data_ov167_021d7500` (289 bytes of main).
 
 **Moves** (`paperwhite2_pokedex_info_moves.c` reads the sets, the panels' file draws them): a bar of the four sets
-(Level Up, TM/HM, Tutor, Egg; font 1) under the tab bar, then 5 rows the move relearner's size (22 px at a 24 px
-pitch from y 41, centred between the sets' bar and the touch bar, slanted 6 px), each the move's type icon (an OBJ showing Matchups' characters through
+(Level Up, TM/HM, Tutor, Egg; font 1, from y 20) under the tab bar, drawn by the user's art (`ARCID_POKEDEX_GRA`
+140-142, the target `pokedex_info_moves`, the tab strip and the sets' bar only, in sub palette row 8), then 5 rows the move relearner's size (22 px at a 24 px
+pitch from y 41, centred between the sets' bar and the touch bar, slanted 6 px, still the code's grey placeholders
+over the art, as is the scroll bar's track), each the move's type icon (an OBJ showing Matchups' characters through
 `ClActor_SetImageProxy`), its name and the set's detail ("Lv. 22", "TM26"/"HM03", the tutor's town, a dash); the
 relearner's cyan cursor and the Pokédex list's scroll knob (sub OBJ rows 3 and 4) on a track at x 240, y 45-155. Up and
 Down move the cursor, stopping at the ends (the touch bar's Up and Down are the page's there, so the Pokémon changes by
@@ -1452,18 +1454,26 @@ to 7, started by the events of driftveil_city_2, lentimas_town_2, humilau_city_2
 243 of `global_10110.s`); the Pledges and ultimate moves at the PWT (`pwt.json`), Draco Meteor in Opelucid City
 (`opelucid_city_2.s`).
 
-**The move panel** (`paperwhite2_pokedex_move_panel.c`): over the top screen's entry, x 9-248, y 21-169, on main BG 1
-in palette 6: its fill and border are 9 generated tiles repeated over the screen, its text 4 windows (name 18x2, left
-numbers 13x6, right 13x4, description 28x6 tiles). Its top edge covers the head bar's bottom 3 rows, which share BG 1:
-the bar's 31 tiles of tile row 2 are copied from VRAM with the edge drawn over them (in two spare colours, 9 and 10, of
-the bar's palette 13) and its map entries kept, put back as the panel closes; the bar's own characters are never
-touched (374 tiles with the panel's own). BG 1 has 512
-tiles, which the head bar (112) and the entry's windows (337) fill, so the entry's windows, type icons and footprint
-are freed while it is open and made again as it closes (`PokedexInfo_FreeText`, `PokedexInfo_RestoreText` in
-`src/ov296/pokedex_info.c`, under `PAPERWHITE2`): about 25 tiles are left. BG 0 (the 3D sprite) is turned off while it
-is open. The type and category icons are main OBJs
+**The move panel** (`paperwhite2_pokedex_move_panel.c`): over the top screen's entry, x 9-248, y 33-181 (below the
+head bar, rows 0-2, which it no longer touches), on main BG 1 in palette 6: its background is the user's art
+(`ARCID_POKEDEX_GRA` 143-145, the target `pokedex_move_panel`), whose palette, tiles and screen are read into the work
+as the page starts; as it opens, the art's palette goes to row 6, the tiles that the panel's area shows (45, those up
+to the highest it uses: the sheet's PNG holds whole rows of 32) are allocated on BG 1, and the art's map entries of
+tile rows 4-22 are put in the screen buffer, moved to those tiles and row 6, then its text's 4 windows over them
+(name 18x2, left numbers 13x6, right 13x4, description 28x6 tiles, at tile rows 5, 9, 9 and 16). Before each move's
+text is printed, each window's bitmap is filled with the art's tiles at its place (flips applied), so the art shows
+behind the text; the text is in the art's colours (143.pal): the name white (6) with a near-black (4) shadow on the
+art's dark header, the rest near-black (4) with a light grey (5) shadow. The text is 2 px down in its windows (10 px
+lower than before the art), but the name 1 px: font 0's 15 px cells would lose their last row (the shadow of p, q, y)
+in its 16 px window. BG 1 has 512 tiles, which the head bar (112) and the entry's windows (337) fill, so the entry's
+windows, type icons and footprint are freed while it is open and made again as it closes (`PokedexInfo_FreeText`,
+`PokedexInfo_RestoreText` in `src/ov296/pokedex_info.c`, under `PAPERWHITE2`): with the panel's windows (334) and the
+art (45), about 20 tiles are left. A new art with more different tiles in the panel's area must stay within those.
+BG 0 (the 3D sprite) is turned off while it is open. The type and category icons are main OBJs
 (the menus' type icon palette in main OBJ rows 9-11), their characters loaded into a new place before the old are
-freed. The rest of the top screen is dimmed (brightness on BG 0, 2, 3 and the backdrop) until it closes. B closes it
+freed. The rest of the top screen is dimmed (brightness on BG 0, 2, 3 and the backdrop) until it closes, and the head bar,
+on the panel's BG, through its palette row (13, read from its map entries): all 16 colours darkened from a buffer in
+the work, put back as it closes. B closes it
 (the touch bar's B is the page's while it is open, given back a frame later so that the bar doesn't see the same
 press) and turns it off, A or a touch on a row turns it on again; it opens with the first move as Moves is entered,
 follows the cursor, shows the new set's or Pokémon's first move, hides for a set without moves until one has some, and

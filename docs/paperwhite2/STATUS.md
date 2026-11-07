@@ -2,6 +2,14 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-07: Pokédex, the user's Moves art and move panel art
+
+Built (plugins.md, Pokédex; art.md, `pokedex_info_moves` 140-142 and `pokedex_move_panel` 143-145), not yet tested
+in game: Moves' tab strip and sets bar (the code's rows still placeholders, the sets' text 1 px lower); the move panel
+10 px lower (no longer over the head bar: its cover removed, the bar still dimmed by palette), its art on BG1 (45
+tiles, about 20 left), drawn into the text windows behind the text, the windows a tile lower with the text 2 px down
+in them (the name 1 px, to fit its window); the name white on the art's header. Next: the user's Matchups art.
+
 ## 2026-11-07: Pokédex, the head bar dimmed under the move panel
 
 The head bar shares BG 1 with the move panel, so the hardware dimming (by BG) couldn't reach it. Now its palette row

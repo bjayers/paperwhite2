@@ -140,6 +140,40 @@
                     "screen": "res/graphics/pokedex_gra/136.nscr"
                 }
             ]
+        },
+        {
+            "name": "pokedex_info_moves",
+            "title": "Pokédex Info: Moves",
+            "description": "The bottom screen of the Pokédex's Info page on its Moves sub-page: its tab strip and the sets' bar, under the page's text, rows and cursor and over the grid (src/paperwhite2/ov298/paperwhite2_pokedex_info_panels.c): sub BG 6 in palette row 8. Its source is res/paperwhite2/pokedex_art/info_moves.png.",
+            "palette": "res/graphics/pokedex_gra/140.pal",
+            "colors": 16,
+            "depth": 4,
+            "max_tiles": 768,
+            "screens": [
+                {
+                    "name": "touch",
+                    "title": "Touch screen",
+                    "chars": "res/graphics/pokedex_gra/141.png",
+                    "screen": "res/graphics/pokedex_gra/142.nscr"
+                }
+            ]
+        },
+        {
+            "name": "pokedex_move_panel",
+            "title": "Pokédex Info: move panel",
+            "description": "The panel of a move's data over the top screen of the Pokédex's Info page, opened from the Moves sub-page (src/paperwhite2/ov298/paperwhite2_pokedex_move_panel.c): its tiles on main BG 1 beside the head bar's and the text's, so few distinct ones fit outside the text boxes, where the art is drawn into the boxes behind the text. Its source is res/paperwhite2/pokedex_art/move_panel.png.",
+            "palette": "res/graphics/pokedex_gra/143.pal",
+            "colors": 16,
+            "depth": 4,
+            "max_tiles": 65,
+            "screens": [
+                {
+                    "name": "top",
+                    "title": "Top screen",
+                    "chars": "res/graphics/pokedex_gra/144.png",
+                    "screen": "res/graphics/pokedex_gra/145.nscr"
+                }
+            ]
         }
     ]
 }
