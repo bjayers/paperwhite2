@@ -9,6 +9,9 @@ is darkened as the hardware darkens (EVY 8 of 16), but for the two colours the p
 back when the panel closes (`PokedexMovePanel_DimHeadbar`). The panel keeps its place from y 21. Not yet tested in
 game.
 
+First test: the bar turned green, not darker. The dimmed colours were in a stack array, and the palette's load is
+a DMA, which can't read the stack (DTCM): it loaded whatever main memory held there. Now in the panel's work.
+
 ## 2026-11-07: Pokédex Moves, the user's test notes
 
 The user's test of Moves went well; fixed from the notes (plugins.md, Pokédex), not yet tested in game: the 3D sprite

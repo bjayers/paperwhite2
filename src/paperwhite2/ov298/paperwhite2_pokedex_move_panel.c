@@ -204,9 +204,11 @@ struct PokedexMovePanel {
     u32 coverTiles[PANEL_TILE_WIDTH][TILE_SIZE / 4];
     u32 coverPos;
     u16 headbarMaps[PANEL_TILE_WIDTH];
-    // The head bar's palette row and its colors as they were, while the panel dims them
+    // The head bar's palette row and its colors as they were, while the panel dims them, and the dimmed ones. Both in
+    // the work, in main memory: the palette is loaded by DMA, which can't read the stack (in DTCM)
     u32 headbarPalette;
     GXRgb headbarColors[PALETTE_COLORS];
+    GXRgb headbarDimmed[PALETTE_COLORS];
     BmpWin *windows[WINDOW_COUNT];
     BOOL open;
     // The icons, and the characters each shows, loaded for each move
@@ -314,7 +316,7 @@ void PokedexMovePanel_Show(PokedexMovePanel *panel, PokedexInfo *entry, u16 move
 // The head bar's colors darkened as DIM_BRIGHTNESS darkens the other BGs, those of the panel's edge over it kept
 static void PokedexMovePanel_DimHeadbar(PokedexMovePanel *panel) {
     const GXRgb *row = (const GXRgb *)HW_BG_PLTT + panel->headbarPalette * PALETTE_COLORS;
-    GXRgb dimmed[PALETTE_COLORS];
+    GXRgb *dimmed = panel->headbarDimmed;
     u32 i;
 
     for (i = 0; i < PALETTE_COLORS; i++) {
@@ -330,7 +332,7 @@ static void PokedexMovePanel_DimHeadbar(PokedexMovePanel *panel) {
             dimmed[i] = GX_RGB(r - r * DIM_EVY / DIM_STEPS, g - g * DIM_EVY / DIM_STEPS, b - b * DIM_EVY / DIM_STEPS);
         }
     }
-    GFL_BGSysUploadStdPalette(PANEL_BG, dimmed, sizeof(dimmed), panel->headbarPalette * 0x20);
+    GFL_BGSysUploadStdPalette(PANEL_BG, dimmed, sizeof(panel->headbarDimmed), panel->headbarPalette * 0x20);
 }
 
 // The panel's screen is cleared at once, as the entry's windows will take its characters, with the head bar's row put
