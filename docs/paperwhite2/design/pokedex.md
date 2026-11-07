@@ -178,3 +178,16 @@ at run time, so the user's changes show. **Seen** and **caught** suggest what to
    (sub-page bar, Stats with bars and buttons, Data, Matchups blank).
 3. Pixel-exact templates from the result, and the tool for the user's art.
 4. MOVE and EVO in place of CRY and FORMS.
+
+## Step 3: the art (2026-11-06)
+
+`tools/paperwhite2/pokedex_templates.py` writes the bottom screen's templates for the user, drawn as the game lays the
+page out: places from the page's `#define`s, text from `pokedex_data.txt` in the game's fonts (read from the extract),
+so exact to the pixel. They hold the ROM's fonts, so they go to `build/pokedex_templates/` (ignored) and the user's
+Windows folder (`Pokedex templates`), never to `res/`. Stats first: `stats_canvas.png` (to draw over),
+`stats_reference.png` and `_tiles.png`, `README.txt` (the limits).
+
+The art's plan: one 256 by 192 picture per sub-page, at most 16 colours with the transparent one, on sub BG6 with a
+palette of its own (6), under the text and bars of BG7 and over the grid of BG4. BG6 also holds the buttons, which
+cover the art where they are shown. A tool cuts it into tiles, a palette and a screen (as `cgear_pictures.py` does);
+the page loads it in place of the placeholder panel and strip. Up to 672 tiles, all different, fit.
