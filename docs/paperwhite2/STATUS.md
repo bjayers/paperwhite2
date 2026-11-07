@@ -2,6 +2,13 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-07: Pokédex, every tab has its art
+
+The user's Moves art (updated), a blank Evo art (for the full tab bar) and the Matchups art (targets
+`pokedex_info_evo` 146-148, `pokedex_info_matchups` 149-151). Matchups' rows closer for the art's top margin (the first
+6 px lower, the pitch 35), the multipliers all in the small font. Not yet tested in game. Next: the last page (Evo),
+with a possible addition to an earlier one, which the user will explain.
+
 ## 2026-11-07: Pokédex, the user's Moves art and move panel art
 
 Built (plugins.md, Pokédex; art.md, `pokedex_info_moves` 140-142 and `pokedex_move_panel` 143-145), not yet tested
