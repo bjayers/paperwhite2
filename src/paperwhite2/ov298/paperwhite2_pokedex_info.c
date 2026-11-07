@@ -557,7 +557,9 @@ static void PokedexInfoPage_ShowPanels(PokedexInfoPageWork *wk) {
                            wk->abilityCount != 0 ? wk->abilities[wk->chosenAbility] : ABILITY_NONE);
 }
 
-// The shown form's abilities, each once: its first and second, and its hidden one once the species is caught
+// Matchups' choices of the shown form's abilities, of its first and second, and its hidden one once the species is
+// caught: "Default" (ABILITY_NONE) first, for all of them that don't change the chart, if it has any, then each that
+// does, once. Most have Default only
 static void PokedexInfoPage_LoadAbilities(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk) {
     PersonalData *personal = PML_PersonalLoad(wk->species, wk->form, param->heapId);
     u32 count = wk->caught ? ABILITY_MAX : ABILITY_MAX - 1;
@@ -567,7 +569,15 @@ static void PokedexInfoPage_LoadAbilities(PokedexDetailInfoParam *param, Pokedex
     wk->abilityCount = 0;
     for (i = 0; i < count; i++) {
         u32 ability = PML_PersonalGetParam(personal, sAbilityParams[i]);
-        BOOL listed = ability == ABILITY_NONE;
+
+        if (ability != ABILITY_NONE && !PokedexInfoPanels_IsMatchupAbility(ability)) {
+            wk->abilities[wk->abilityCount++] = ABILITY_NONE;
+            break;
+        }
+    }
+    for (i = 0; i < count; i++) {
+        u32 ability = PML_PersonalGetParam(personal, sAbilityParams[i]);
+        BOOL listed = !PokedexInfoPanels_IsMatchupAbility(ability);
 
         for (j = 0; j < wk->abilityCount; j++) {
             if (wk->abilities[j] == ability) {
@@ -579,6 +589,10 @@ static void PokedexInfoPage_LoadAbilities(PokedexDetailInfoParam *param, Pokedex
         }
     }
     PML_PersonalFree(personal);
+    // A species with no ability at all still has the chart's choice
+    if (wk->abilityCount == 0) {
+        wk->abilities[wk->abilityCount++] = ABILITY_NONE;
+    }
     if (wk->chosenAbility >= wk->abilityCount) {
         wk->chosenAbility = 0;
     }
@@ -664,7 +678,8 @@ static void PokedexInfoPage_ResetButtons(PokedexDetailInfoParam *param, PokedexI
     }
 }
 
-// Matchups' buttons, one for each ability with its name, the chosen one shown as the menus show their cursor's
+// Matchups' buttons, one for each choice with its ability's name or "Default", the chosen one shown as the menus show
+// their cursor's
 static void PokedexInfoPage_CreateAbilityButtons(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk) {
     MsgData *names = GFL_MsgSysLoadData(FALSE, ARCID_SYSTEM_MESSAGE, TEXT_BANK_ABILITY_NAMES, param->heapId);
     u32 i;
@@ -678,7 +693,9 @@ static void PokedexInfoPage_CreateAbilityButtons(PokedexDetailInfoParam *param, 
         u32 height;
 
         PokedexInfoPage_GetButtonPlace(wk, i, &x, &y, &width, &height);
-        item.str = GFL_MsgDataLoadStrbufNew(names, wk->abilities[i]);
+        item.str = wk->abilities[i] == ABILITY_NONE
+                       ? PokedexInfoPanels_LoadMessage(wk->panels, PokedexData_Text_DefaultAbility)
+                       : GFL_MsgDataLoadStrbufNew(names, wk->abilities[i]);
         item.color = BUTTON_TEXT_COLOR;
         item.type = 0;
         // Centering a text wider than the button would place it past the button's end (AppTaskMenuWin_CreateCore)

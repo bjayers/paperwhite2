@@ -2,6 +2,14 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-07: Pokédex, Matchups in the battle's colours, a Default button
+
+The user tested Matchups: it works. Now the multipliers are in the battle's move preview colours (light blue above
+×1, yellow below, grey for ×0, dark shadows; ×1 the panels' text), through a second palette for the content window
+while Matchups shows (`sMatchupColors`, row 9), and the "×" is the small font's. The ability buttons are "Default" for
+every ability that changes no matchup, if the species has one, then each that does (Croagunk: Default, Dry Skin;
+Gastly: Levitate; Zebstrika: its three). Not yet tested in game.
+
 ## 2026-11-06: Pokédex, the Matchups sub-page
 
 Built (plugins.md, Pokédex), not yet tested in game: the 17 attacking types' icons in 3 rows of 6 (the 18th slot kept

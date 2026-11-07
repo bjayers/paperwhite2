@@ -51,6 +51,8 @@ void PokedexInfoPanels_Update(PokedexInfoPanels *panels);
 void PokedexInfoPanels_Show(PokedexInfoPanels *panels, u32 subpage, u16 species, u16 form, BOOL caught, u32 ability);
 // The sub-page whose name in the bar is touched this frame, or POKEDEX_INFO_SUBPAGE_COUNT
 u32 PokedexInfoPanels_GetTouchedSubpage(void);
+// Whether an ability changes what the Matchups chart shows (its rules in sMatchupRules)
+BOOL PokedexInfoPanels_IsMatchupAbility(u32 ability);
 // A message of the panels' bank, for the page's buttons; the caller frees it
 StrBuf *PokedexInfoPanels_LoadMessage(PokedexInfoPanels *panels, u32 messageId);
 // Font 1, for the page's buttons whose text font 0 makes too wide

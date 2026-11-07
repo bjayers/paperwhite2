@@ -61,9 +61,9 @@ SAMPLE_STATS = [65, 63, 45, 45, 45, 45]
 SAMPLE_DATA = ["45 (11.9%)", "Medium Slow", "\u2015", "1 HP", "62", "70"]
 SAMPLE_GENDER = ("\u2642 87.5%", " / ", "12.5% \u2640")
 SAMPLE_EGG = ("Field", "20", "5120 steps")
-# Tepig's types (Fire) for the Matchups, and its abilities, Blaze shown chosen
+# Tepig's types (Fire) for the Matchups, and its choices: Default (Blaze changes nothing), shown chosen, and Thick Fat
 SAMPLE_TYPES = (9, 9)
-SAMPLE_ABILITIES = ("blaze", "thick_fat")
+SAMPLE_ABILITIES = (None, "thick_fat")
 
 # The palette: the page's placeholder colors as paperwhite2_pokedex_info_panels.c's sPanelColors (index 0 clear),
 # then the template's own: the grid's checker, the touch bar, the buttons, the tiles' grid
@@ -85,8 +85,11 @@ ART_PANEL, ART_BORDER = 4, 10
 ICON_BASE = ART_BASE + 16
 BUTTON_CHOSEN_COLOR = (90, 200, 230)
 BUTTON_CHOSEN = ICON_BASE + 48
-# The multipliers' colors, as the page's MULTIPLIER_*_COLOR: above 1, below it, 0, and 1 (letter, shadow)
-RED, BORDER_C = 6, 4
+# The multipliers' colors, as the page's MULTIPLIER_*_COLOR and sMatchupColors (the battle's move colors): above 1,
+# below it and 0, each with the dark shadow, after the chosen button's color; 1 is the panels' text
+MATCHUP_COLORS = [(12, 22, 31), (30, 27, 11), (16, 16, 16)]
+M_SUPER, M_RESISTED, M_IMMUNE = BUTTON_CHOSEN + 1, BUTTON_CHOSEN + 2, BUTTON_CHOSEN + 3
+BORDER_C = 4
 MULTIPLIER_ONE = 64
 
 # What the templates are and the art's limits, for the user, beside them
@@ -139,10 +142,13 @@ Matchups
   Matchups. Its canvas is in your palette, with your tab strip and the plain placeholder panel.
 - The 17 type icons are the game's own sprites, drawn over everything: their places are fixed
   (3 rows of 6, the last place free for a possible new type). Under each, the damage
-  multiplier against the Pokemon in the standard font: red above x1, blue below, dark grey for
-  x0, mid grey for x1 (the sample is Tepig, Fire).
-- The row of ability buttons at the bottom (y 144-167) are the game's buttons (1 to 3 of them,
-  centered); the chosen ability's (Blaze) is shown in the menus' cursor colour.
+  multiplier against the Pokemon: a small "x" and the number in the standard font, in the
+  battle's move colours: light blue (98,180,255) above x1, yellow (246,222,90) below, grey
+  (131,131,131) for x0, each with a dark shadow; x1 is the panels' near-black text (the sample
+  is Tepig, Fire).
+- The row of buttons at the bottom (y 144-167) are the game's buttons (1 to 3 of them,
+  centered): "Default" for every ability that changes no matchup, if the Pokemon has one, then
+  each ability that does (Tepig: Default, chosen, and Thick Fat).
 
 When you're done, send the PNG back (any 16-colour PNG, indexed or not, transparency as
 transparent pixels) and it gets built into the game.
@@ -155,6 +161,7 @@ def colors(art_colors=(), icon_colors=()):
     out = [rgb(c) for c in PANEL_COLORS] + EXTRA + list(art_colors)
     if icon_colors:
         out += [(0, 0, 0)] * (ICON_BASE - len(out)) + list(icon_colors) + [BUTTON_CHOSEN_COLOR]
+        out += [rgb(c) for c in MATCHUP_COLORS]
     return out
 
 
@@ -369,14 +376,14 @@ def type_chart():
 
 
 def multiplier_text(value):
-    """As PokedexInfoPanels_PrintMultiplier: "\u00d7", the whole part and as many decimals as it has."""
+    """As PokedexInfoPanels_PrintMultiplier: the whole part and as many decimals as it has, after a small "\u00d7"."""
     whole, fraction = divmod(value, MULTIPLIER_ONE)
     digits = ""
     while fraction:
         fraction *= 10
         digits += str(fraction // MULTIPLIER_ONE)
         fraction %= MULTIPLIER_ONE
-    return f"\u00d7{whole}" + (f".{digits}" if digits else "")
+    return f"{whole}" + (f".{digits}" if digits else "")
 
 
 def type_icons(extract):
@@ -392,7 +399,7 @@ def type_icons(extract):
     return icons, icon_colors
 
 
-def matchups_text(canvas, d, m, font, icons):
+def matchups_text(canvas, d, m, font, small, icons):
     # As PokedexInfoPanels_DrawMatchups, the icons as the page places them (their cells are centered), and the ability
     # buttons as PokedexInfoPage_CreateAbilityButtons
     chart = type_chart()
@@ -407,14 +414,19 @@ def matchups_text(canvas, d, m, font, icons):
         value = chart[t][type1] * (MULTIPLIER_ONE // 4)
         if type2 != type1:
             value = value * chart[t][type2] // 4
-        letter, shadow = ((RED, SHADOW) if value > MULTIPLIER_ONE else (BLUE, SHADOW) if 0 < value < MULTIPLIER_ONE
-                          else (BORDER_C, SHADOW) if value == 0 else (DIM, CLEAR))
-        canvas.text(font, multiplier_text(value), x, y + d["MATCHUPS_VALUE_OFFSET_Y"], "center", letter, shadow)
+        letter, shadow = ((M_SUPER, BORDER_C) if value > MULTIPLIER_ONE else (M_RESISTED, BORDER_C)
+                          if 0 < value < MULTIPLIER_ONE else (M_IMMUNE, BORDER_C) if value == 0 else (TEXT_C, SHADOW))
+        number, sign = multiplier_text(value), m["Multiplier"]
+        left = x - (small.text_width(sign) + font.text_width(number)) // 2
+        top = y + d["MATCHUPS_VALUE_OFFSET_Y"]
+        canvas.text(small, sign, left, top + d["MULTIPLIER_SIGN_OFFSET_Y"], "left", letter, shadow)
+        canvas.text(font, number, left + small.text_width(sign), top, "left", letter, shadow)
     count, w, h = len(SAMPLE_ABILITIES), d["ABILITY_BUTTON_WIDTH"], d["ABILITY_BUTTON_HEIGHT"]
     for i, ability in enumerate(SAMPLE_ABILITIES):
         x = (d["ABILITY_BUTTON_CENTER_X"] - count * w // 2 + i * w) * 8
         y = d["ABILITY_BUTTON_Y"] * 8
-        name = re.search(r'"name": "([^"]*)"', (ROOT / f"res/abilities/{ability}.json").read_text()).group(1)
+        name = m["DefaultAbility"] if ability is None else re.search(
+            r'"name": "([^"]*)"', (ROOT / f"res/abilities/{ability}.json").read_text()).group(1)
         canvas.fill(x, y, w * 8, h * 8, BUTTON_CHOSEN if i == 0 else BUTTON)
         canvas.outline(x, y, w * 8, h * 8, BUTTON_EDGE)
         text_x = (w * 8 - font.text_width(name) - 2 * BUTTON_FRAME) // 2 + BUTTON_FRAME
@@ -500,7 +512,7 @@ def main():
 
         def matchups(canvas):
             bar_text(canvas, d, m, small, 2)
-            matchups_text(canvas, d, m, font, icons)
+            matchups_text(canvas, d, m, font, small, icons)
         for tiles, name in ((False, "matchups_reference.png"), (True, "matchups_reference_tiles.png")):
             reference(matchups_art, matchups, tiles).write(args.out / name, colors(art_colors, icon_colors))
     (args.out / "README.txt").write_text(README)

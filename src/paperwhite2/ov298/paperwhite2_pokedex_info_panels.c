@@ -50,6 +50,8 @@
 // The art's palettes, after the buttons' two (POKEDEX_INFO_BUTTON_PALETTE): each sub-page's art has its own row, from
 // this one in the sub-pages' order
 #define PALETTE_ART 6
+// The content window's palette while Matchups shows (sMatchupColors), after the art's three
+#define PALETTE_MATCHUPS 9
 // The art's screen, the whole screen in tiles
 #define ART_TILES_ACROSS 32
 #define ART_TILES_DOWN 24
@@ -185,6 +187,13 @@ static const GXRgb sPanelColors[16] = {
     GX_RGB(9, 26, 7), GX_RGB(4, 17, 4), GX_RGB(7, 17, 31),  GX_RGB(3, 9, 21),
 };
 
+// The battle's move colors, in sPanelColors' red's, orange's and green's places (MATCHUPS_COLOR_*)
+static const GXRgb sMatchupColors[16] = {
+    GX_RGB(0, 0, 0),    GX_RGB(4, 4, 5),  GX_RGB(22, 22, 23), GX_RGB(31, 31, 31), GX_RGB(7, 7, 8),   GX_RGB(15, 15, 16),
+    GX_RGB(12, 22, 31), GX_RGB(19, 4, 4), GX_RGB(30, 27, 11), GX_RGB(31, 12, 21), GX_RGB(31, 29, 3), GX_RGB(22, 18, 2),
+    GX_RGB(16, 16, 16), GX_RGB(4, 17, 4), GX_RGB(7, 17, 31),  GX_RGB(3, 9, 21),
+};
+
 #define TEXT_COLOR PRINT_COLOR(PANELS_COLOR_TEXT, PANELS_COLOR_SHADOW, PANELS_COLOR_CLEAR)
 // The male and female shares' colors
 #define MALE_COLOR PRINT_COLOR(PANELS_COLOR_BLUE, PANELS_COLOR_SHADOW, PANELS_COLOR_CLEAR)
@@ -195,11 +204,19 @@ static const GXRgb sPanelColors[16] = {
 #define LABEL_COLOR PRINT_COLOR(PANELS_COLOR_DIM, PANELS_COLOR_CLEAR, PANELS_COLOR_CLEAR)
 #define BAR_SHOWN_COLOR PRINT_COLOR(PANELS_COLOR_PANEL, PANELS_COLOR_CLEAR, PANELS_COLOR_CLEAR)
 #define BAR_OTHER_COLOR PRINT_COLOR(PANELS_COLOR_DIM, PANELS_COLOR_CLEAR, PANELS_COLOR_CLEAR)
-// The Matchups' multipliers: above 1 red, below it blue, 0 dark grey, and 1 dim
-#define MULTIPLIER_UP_COLOR PRINT_COLOR(PANELS_COLOR_RED, PANELS_COLOR_SHADOW, PANELS_COLOR_CLEAR)
-#define MULTIPLIER_DOWN_COLOR PRINT_COLOR(PANELS_COLOR_BLUE, PANELS_COLOR_SHADOW, PANELS_COLOR_CLEAR)
-#define MULTIPLIER_NONE_COLOR PRINT_COLOR(PANELS_COLOR_BORDER, PANELS_COLOR_SHADOW, PANELS_COLOR_CLEAR)
-#define MULTIPLIER_NORMAL_COLOR PRINT_COLOR(PANELS_COLOR_DIM, PANELS_COLOR_CLEAR, PANELS_COLOR_CLEAR)
+// The Matchups' multipliers in the battle's move colors (MOVE_PREVIEW_COLORS, paperwhite2_move_preview.c): above 1
+// light blue, below it yellow, 0 grey, each with a dark shadow to read on the panel, and 1 as the panels' text. They
+// are in sMatchupColors, the panels' palette with them in the place of three of the stat bars' colors, which Matchups
+// doesn't use, as the content window's palette while Matchups shows
+#define MATCHUPS_COLOR_SUPER PANELS_COLOR_RED
+#define MATCHUPS_COLOR_RESISTED PANELS_COLOR_ORANGE
+#define MATCHUPS_COLOR_IMMUNE PANELS_COLOR_GREEN
+#define MULTIPLIER_UP_COLOR PRINT_COLOR(MATCHUPS_COLOR_SUPER, PANELS_COLOR_BORDER, PANELS_COLOR_CLEAR)
+#define MULTIPLIER_DOWN_COLOR PRINT_COLOR(MATCHUPS_COLOR_RESISTED, PANELS_COLOR_BORDER, PANELS_COLOR_CLEAR)
+#define MULTIPLIER_NONE_COLOR PRINT_COLOR(MATCHUPS_COLOR_IMMUNE, PANELS_COLOR_BORDER, PANELS_COLOR_CLEAR)
+#define MULTIPLIER_NORMAL_COLOR TEXT_COLOR
+// The small font's "×" lower than the number's top, as the Data labels are (DATA_LABEL_OFFSET_Y)
+#define MULTIPLIER_SIGN_OFFSET_Y 3
 
 // A stat bar's color: the first whose limit the stat is under, else blue
 typedef struct {
@@ -370,6 +387,7 @@ static void PokedexInfoPanels_DrawData(PokedexInfoPanels *panels, PersonalData *
 static void PokedexInfoPanels_DrawEgg(PokedexInfoPanels *panels, PersonalData *personal, BOOL caught);
 static void PokedexInfoPanels_DrawMatchups(PokedexInfoPanels *panels, PersonalData *personal, u32 ability);
 static u32 PokedexInfoPanels_GetMultiplier(u32 attackType, u32 type1, u32 type2, u32 ability);
+static u32 PokedexInfoPanels_GetWidth(PokedexInfoPanels *panels, Font *font, u32 messageId);
 static void PokedexInfoPanels_PrintMultiplier(PokedexInfoPanels *panels, GFLBitmap *bitmap, u32 multiplier, int x,
                                               int y);
 static void PokedexInfoPanels_DrawPanel(GFLBitmap *bitmap, int x, int y, int width, int height);
@@ -401,6 +419,7 @@ PokedexInfoPanels *PokedexInfoPanels_Create(HeapID heapId, Font *font, ClActUnit
     GFL_BGSysSetBGPriority(BG_GRID, PRIORITY_GRID);
     panels->grid = PokedexDetailBackground_Create(heapId, GRID_PAGE, BG_GRID, PALETTE_GRID_BOTTOM, PALETTE_GRID_TOP);
     GFL_BGSysUploadStdPalette(BG_PANELS, sPanelColors, sizeof(sPanelColors), PALETTE_PANELS * 0x20);
+    GFL_BGSysUploadStdPalette(BG_PANELS, sMatchupColors, sizeof(sMatchupColors), PALETTE_MATCHUPS * 0x20);
     panels->barWindow = BmpWin_CreateDynamic(BG_PANELS, BAR_WINDOW_X, BAR_WINDOW_Y, BAR_WINDOW_WIDTH, BAR_WINDOW_HEIGHT,
                                              PALETTE_PANELS, FALSE);
     panels->contentWindow = BmpWin_CreateDynamic(BG_PANELS, CONTENT_WINDOW_X, CONTENT_WINDOW_Y, CONTENT_WINDOW_WIDTH,
@@ -548,6 +567,8 @@ void PokedexInfoPanels_Show(PokedexInfoPanels *panels, u32 subpage, u16 species,
         ClActor_SetVisible(panels->typeIcons[i], subpage == POKEDEX_INFO_SUBPAGE_MATCHUPS);
     }
     PML_PersonalFree(personal);
+    BmpWin_SetPalette(panels->contentWindow,
+                      subpage == POKEDEX_INFO_SUBPAGE_MATCHUPS ? PALETTE_MATCHUPS : PALETTE_PANELS);
     BmpWin_Transfer(panels->barWindow);
     BmpWin_Transfer(panels->contentWindow);
 }
@@ -758,13 +779,17 @@ static u32 PokedexInfoPanels_GetMultiplier(u32 attackType, u32 type1, u32 type2,
     return multiplier;
 }
 
-// A multiplier as "×" and its decimals, as many as it has (64ths have at most six), centered at x
+// A multiplier as a small "×" and the number with its decimals, as many as it has (64ths have at most six), centered
+// at x
 static void PokedexInfoPanels_PrintMultiplier(PokedexInfoPanels *panels, GFLBitmap *bitmap, u32 multiplier, int x,
                                               int y) {
     u32 fraction = multiplier % MULTIPLIER_ONE;
     u32 decimals = 0;
     u32 digits = 0;
     u16 color = MULTIPLIER_NORMAL_COLOR;
+    u32 message = PokedexData_Text_Number;
+    u32 signWidth;
+    u32 numberWidth;
 
     while (fraction != 0) {
         fraction *= 10;
@@ -780,15 +805,36 @@ static void PokedexInfoPanels_PrintMultiplier(PokedexInfoPanels *panels, GFLBitm
         color = MULTIPLIER_DOWN_COLOR;
     }
     WordSetNumber(panels->wordSet, 0, multiplier / MULTIPLIER_ONE, 2, NUM_PAD_NONE, TRUE);
-    if (digits == 0) {
-        PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->font, PokedexData_Text_Multiplier, x, y,
-                                PRINT_ALIGN_CENTER, color);
-        return;
+    if (digits != 0) {
+        // The decimals with their leading zeros
+        WordSetNumber(panels->wordSet, 1, decimals, digits, NUM_PAD_ZERO, TRUE);
+        message = PokedexData_Text_MultiplierDecimal;
     }
-    // The decimals with their leading zeros
-    WordSetNumber(panels->wordSet, 1, decimals, digits, NUM_PAD_ZERO, TRUE);
-    PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->font, PokedexData_Text_MultiplierDecimal, x, y,
-                            PRINT_ALIGN_CENTER, color);
+    signWidth = PokedexInfoPanels_GetWidth(panels, panels->smallFont, PokedexData_Text_Multiplier);
+    numberWidth = PokedexInfoPanels_GetWidth(panels, panels->font, message);
+    x -= (signWidth + numberWidth) / 2;
+    PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->smallFont, PokedexData_Text_Multiplier, x,
+                            y + MULTIPLIER_SIGN_OFFSET_Y, PRINT_ALIGN_LEFT, color);
+    PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->font, message, x + signWidth, y, PRINT_ALIGN_LEFT,
+                            color);
+}
+
+// A message's width in a font, formatted with the word set
+static u32 PokedexInfoPanels_GetWidth(PokedexInfoPanels *panels, Font *font, u32 messageId) {
+    GFL_MsgDataLoadStrbuf(panels->msgData, messageId, panels->message);
+    GFL_WordSetFormatStrbuf(panels->wordSet, panels->text, panels->message);
+    return GFL_FontGetBlockWidth(panels->text, font, 0);
+}
+
+BOOL PokedexInfoPanels_IsMatchupAbility(u32 ability) {
+    u32 i;
+
+    for (i = 0; i < NELEMS(sMatchupRules); i++) {
+        if (sMatchupRules[i].ability == ability) {
+            return TRUE;
+        }
+    }
+    return FALSE;
 }
 
 // A filled rectangle with a border, without its corners, as the summary screen's hidden stats' bars are drawn
