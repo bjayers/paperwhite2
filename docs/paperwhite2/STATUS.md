@@ -2,6 +2,15 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-06: Pokédex, no flicker between Stats and Data
+
+The user saw a flicker when changing sub-page. Two causes in `PokedexInfoPanels_LoadArt`: the screen was written to
+VRAM at once (a sync load) and its palette row set only after, so it showed a frame in row 0; and the art's tiles
+were freed and loaded again while the old screen still showed them. Now every sub-page's art is loaded with the page,
+each in its own palette row, and a change only sets the screen in the buffer for the VBlank. The Data rows' labels
+are darker (the panels' dark grey) over the user's light grey column. Not yet tested in game. If a slight tear
+remains, it is the text windows' tiles, which BmpWin_Transfer copies at once; a VBlank transfer would fix it.
+
 ## 2026-11-06: Pokédex, the user's Data art; Stats' text placed
 
 The user's Stats art works; its text moved to fit (rows 5 px lower, the first column 4 px right, the bars 5 px shorter

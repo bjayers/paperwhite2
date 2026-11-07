@@ -41,7 +41,8 @@
 #define PALETTE_GRID_TOP 1
 #define PALETTE_GRID_BOTTOM 2
 #define PALETTE_PANELS 3
-// The art's palette, after the buttons' two (POKEDEX_INFO_BUTTON_PALETTE)
+// The art's palettes, after the buttons' two (POKEDEX_INFO_BUTTON_PALETTE): each sub-page's art has its own row, from
+// this one in the sub-pages' order
 #define PALETTE_ART 6
 // The art's screen, the whole screen in tiles
 #define ART_TILES_ACROSS 32
@@ -169,6 +170,8 @@ static const GXRgb sPanelColors[16] = {
 #define EGG_HEADING_COLOR PRINT_COLOR(PANELS_COLOR_YELLOW, PANELS_COLOR_BORDER, PANELS_COLOR_CLEAR)
 #define EGG_VALUE_COLOR PRINT_COLOR(PANELS_COLOR_PANEL, PANELS_COLOR_BORDER, PANELS_COLOR_CLEAR)
 #define LABEL_COLOR PRINT_COLOR(PANELS_COLOR_DIM, PANELS_COLOR_CLEAR, PANELS_COLOR_CLEAR)
+// The Data rows' labels, darker, over the art's light grey column
+#define DATA_LABEL_COLOR PRINT_COLOR(PANELS_COLOR_BORDER, PANELS_COLOR_CLEAR, PANELS_COLOR_CLEAR)
 #define BAR_SHOWN_COLOR PRINT_COLOR(PANELS_COLOR_PANEL, PANELS_COLOR_CLEAR, PANELS_COLOR_CLEAR)
 #define BAR_OTHER_COLOR PRINT_COLOR(PANELS_COLOR_DIM, PANELS_COLOR_CLEAR, PANELS_COLOR_CLEAR)
 
@@ -289,12 +292,13 @@ struct PokedexInfoPanels {
     BmpWin *barWindow;
     BmpWin *contentWindow;
     PokedexDetailBackground *grid;
-    // The shown art's characters on BG_ART, while hasArt
-    u32 artChars;
-    BOOL hasArt;
+    // Each sub-page's art's characters on BG_ART, all loaded with the page so that changing sub-page only changes the
+    // screen; 0 for a sub-page without art
+    u32 artChars[POKEDEX_INFO_SUBPAGE_COUNT];
 };
 
 static void PokedexInfoPanels_DrawBar(PokedexInfoPanels *panels, u32 subpage);
+static void PokedexInfoPanels_CreateArt(PokedexInfoPanels *panels);
 static void PokedexInfoPanels_FreeArt(PokedexInfoPanels *panels);
 static void PokedexInfoPanels_DrawStats(PokedexInfoPanels *panels, PersonalData *personal, BOOL caught);
 static void PokedexInfoPanels_DrawData(PokedexInfoPanels *panels, PersonalData *personal, BOOL caught);
@@ -332,6 +336,7 @@ PokedexInfoPanels *PokedexInfoPanels_Create(HeapID heapId, Font *font) {
                                              PALETTE_PANELS, FALSE);
     panels->contentWindow = BmpWin_CreateDynamic(BG_PANELS, CONTENT_WINDOW_X, CONTENT_WINDOW_Y, CONTENT_WINDOW_WIDTH,
                                                  CONTENT_WINDOW_HEIGHT, PALETTE_PANELS, FALSE);
+    PokedexInfoPanels_CreateArt(panels);
     GFL_BGSysSetBGEnabled(BG_GRID, TRUE);
     GFL_BGSysSetBGEnabled(BG_PANELS, TRUE);
     return panels;
@@ -355,30 +360,49 @@ void PokedexInfoPanels_Free(PokedexInfoPanels *panels) {
     GFL_HeapFree(panels);
 }
 
-// The art's screen replaces BG_ART's whole screen, so the page makes its buttons after it
+// Every sub-page's art's palette and characters, kept while the page runs
+static void PokedexInfoPanels_CreateArt(PokedexInfoPanels *panels) {
+    ArcTool *arc = GFL_ArcSysCreateFileHandle(ARCID_POKEDEX_GRA, panels->heapId);
+    u32 i;
+
+    for (i = 0; i < POKEDEX_INFO_SUBPAGE_COUNT; i++) {
+        const PanelsArt *art = &sSubpageArt[i];
+
+        if (art->screen != ART_NONE) {
+            GFL_G2DIOLoadArcNCLR(arc, art->palette, PALTYPE_SUB_BG, 0, (PALETTE_ART + i) * 0x20, 0x20, panels->heapId);
+            panels->artChars[i] = GFL_BGSysLoadArcNCGRDynamic(arc, art->chars, BG_ART, 0, FALSE, panels->heapId);
+        }
+    }
+    GFL_ArcToolFree(arc);
+}
+
+// The sub-page's art's screen replaces BG_ART's whole screen, so the page makes its buttons after it. Only the screen
+// changes, in the screen buffer, which goes to VRAM in the next VBlank, so the change shows all at once: writing it
+// at once (as a sync load does) showed it a frame in the palette's first row, before its own row was set
 void PokedexInfoPanels_LoadArt(PokedexInfoPanels *panels, u32 subpage) {
     const PanelsArt *art = &sSubpageArt[subpage];
 
-    PokedexInfoPanels_FreeArt(panels);
     GFL_BGSysFillScrArea(BG_ART, 0, 0, 0, ART_TILES_ACROSS, ART_TILES_DOWN, 0);
     if (art->screen != ART_NONE) {
         ArcTool *arc = GFL_ArcSysCreateFileHandle(ARCID_POKEDEX_GRA, panels->heapId);
 
-        GFL_G2DIOLoadArcNCLR(arc, art->palette, PALTYPE_SUB_BG, 0, PALETTE_ART * 0x20, 0x20, panels->heapId);
-        panels->artChars = GFL_BGSysLoadArcNCGRDynamic(arc, art->chars, BG_ART, 0, FALSE, panels->heapId);
-        panels->hasArt = TRUE;
         // The screen's entries are the art's own tiles in its palette's first row, moved to where they are loaded
-        GFL_G2DIOLoadNSCRSync(arc, art->screen, BG_ART, 0, CHAR_POS(panels->artChars), 0, FALSE, panels->heapId);
-        GFL_BGSysSetScrPaletteNo(BG_ART, 0, 0, ART_TILES_ACROSS, ART_TILES_DOWN, PALETTE_ART);
+        GFL_G2DIOLoadNSCRAsync(arc, art->screen, BG_ART, 0, CHAR_POS(panels->artChars[subpage]), 0, FALSE,
+                               panels->heapId);
+        GFL_BGSysSetScrPaletteNo(BG_ART, 0, 0, ART_TILES_ACROSS, ART_TILES_DOWN, PALETTE_ART + subpage);
         GFL_ArcToolFree(arc);
     }
     GFL_BGSysQueueScrLoad(BG_ART);
 }
 
 static void PokedexInfoPanels_FreeArt(PokedexInfoPanels *panels) {
-    if (panels->hasArt) {
-        GFL_BGSysFreeCharMemory(BG_ART, CHAR_POS(panels->artChars), CHAR_SIZE(panels->artChars));
-        panels->hasArt = FALSE;
+    u32 i;
+
+    for (i = 0; i < POKEDEX_INFO_SUBPAGE_COUNT; i++) {
+        if (panels->artChars[i] != 0) {
+            GFL_BGSysFreeCharMemory(BG_ART, CHAR_POS(panels->artChars[i]), CHAR_SIZE(panels->artChars[i]));
+            panels->artChars[i] = 0;
+        }
     }
 }
 
@@ -488,7 +512,8 @@ static void PokedexInfoPanels_DrawData(PokedexInfoPanels *panels, PersonalData *
     }
     for (i = 0; i < NELEMS(sDataLabels); i++) {
         PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->smallFont, sDataLabels[i], DATA_LABEL_X,
-                                DATA_ROW_Y + i * DATA_ROW_PITCH + DATA_LABEL_OFFSET_Y, PRINT_ALIGN_LEFT, LABEL_COLOR);
+                                DATA_ROW_Y + i * DATA_ROW_PITCH + DATA_LABEL_OFFSET_Y, PRINT_ALIGN_LEFT,
+                                DATA_LABEL_COLOR);
     }
 
     PokedexInfoPanels_DrawGender(panels, bitmap, sexRatio, DATA_ROW_Y + DATA_ROW_GENDER * DATA_ROW_PITCH);

@@ -80,8 +80,8 @@ Files
 - data_canvas.png, data_reference.png, data_reference_tiles.png: the same for Data. Its canvas is
   already in your palette, with your tab strip from the Stats art and plain placeholder panels
   (the Data panel and the Egg column) where the game draws its own until there is art.
-  Data has no buttons. Its labels (Gender, Catch Rate, GROUP, CYCLES...) are the small font in
-  mid grey (123,123,131) without a shadow; its values are near-black with the light grey shadow;
+  Data has no buttons. Its labels are the small font without a shadow: the rows' (Gender, Catch Rate...)
+  dark grey (57,57,66), GROUP and CYCLES mid grey (123,123,131); its values are near-black with the light grey shadow;
   the male share is blue (57,139,255), the female pink (255,98,172).
 
 Colours on the reference that are NOT art
@@ -281,7 +281,7 @@ def data_text(canvas, d, m, font, small):
     rows = d["DATA_ROW_Y"], d["DATA_ROW_PITCH"]
     for i, label in enumerate(labels):
         canvas.text(small, m[label], d["DATA_LABEL_X"], rows[0] + i * rows[1] + d["DATA_LABEL_OFFSET_Y"],
-                    letter=DIM, shadow=CLEAR)
+                    letter=BORDER, shadow=CLEAR)
     right = d["DATA_VALUE_RIGHT"]
     female, separator, male = SAMPLE_GENDER[2], SAMPLE_GENDER[1], SAMPLE_GENDER[0]
     canvas.text(font, female, right, rows[0], "right", PINK)
