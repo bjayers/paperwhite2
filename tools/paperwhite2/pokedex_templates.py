@@ -63,7 +63,7 @@ Files
   It now holds the placeholder tab strip (top 16 rows) and the white Stats panel.
   Transparent (palette index 0) = the animated red grid shows through.
 - stats_reference.png: the screen as the game shows it over the canvas, with the game's
-  own text, numbers, bars and the line above BST, exact to the pixel. Use it as a reference
+  own text, numbers and bars, exact to the pixel. Use it as a reference
   layer above or below your drawing.
 - stats_reference_tiles.png: the same with the 8 x 8 tile grid.
 
@@ -82,7 +82,7 @@ Limits
 - The game draws on top of your art, in its own colours:
   - the panel text: near-black (32,32,41) with a light grey shadow (180,180,189)
   - the tab strip's text: the current tab white, the others mid grey (123,123,131), no shadow
-  - the stat bars (outline, white track and the coloured fill) and the line above BST
+  - the stat bars (outline, white track and the coloured fill)
   So keep the panel behind the text light, and the tab strip dark enough for white text.
 - The text and bars go where the reference shows them; ask to have any moved, the bars or
   the line left to your art, or the text in other colours.
@@ -243,8 +243,6 @@ def stats_text(canvas, d, m, font):
         canvas.text(font, m[name], d["STATS_NAME_X"], y)
         canvas.text(font, str(value), d["STATS_VALUE_RIGHT"], y, "right")
         stat_bar(canvas, d, d["STATS_BAR_X"], y + d["STATS_BAR_OFFSET_Y"], value)
-    canvas.fill(d["STATS_NAME_X"], d["STATS_LINE_Y"], d["STATS_BAR_X"] + d["STATS_BAR_WIDTH"] - d["STATS_NAME_X"], 1,
-                BORDER)
     canvas.text(font, m["Total"], d["STATS_NAME_X"], d["STATS_TOTAL_Y"])
     canvas.text(font, str(sum(SAMPLE_STATS)), d["STATS_VALUE_RIGHT"], d["STATS_TOTAL_Y"], "right")
 

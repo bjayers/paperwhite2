@@ -4,6 +4,8 @@
 #include "constants/arc.h"
 #include "constants/pokemon.h"
 #include "constants/text_banks.h"
+#include "gfl/arc.h"
+#include "gfl/arc_util.h"
 #include "gfl/bg_sys.h"
 #include "gfl/bmp.h"
 #include "gfl/bmpwin.h"
@@ -15,6 +17,7 @@
 #include "nitro/gx.h"
 #include "paperwhite2/pokedex_info.h"
 #include "pml/personal.h"
+#include "system/bmp_winframe.h"
 #include "system/gf_font.h"
 #include "system/printsys.h"
 #include "system/wordset.h"
@@ -22,19 +25,27 @@
 
 // Paper White 2: the bottom screen of the Pokédex's info page, on the sub engine above the touch bar: the bar of the
 // sub-pages' names at the top, and below it the shown sub-page's panel, Stats, Data or Matchups, read from the
-// species' personal data at run time. Everything is drawn into two windows with fills and text until the user's art
-// replaces the panels, so every place is a constant here: the screen's pixels, the windows' tiles
+// species' personal data at run time. The text and bars are drawn into two windows over the user's art (below), and
+// a sub-page without art yet gets fills in its place, so every place is a constant here: the screen's pixels, the
+// windows' tiles
 
-// The sub engine's BGs: the grid at the back, the panels' windows (the page's buttons are on POKEDEX_INFO_BUTTON_BG,
-// above them), and their priorities under the touch bar's 0
+// The sub engine's BGs: the grid at the back, the user's art over it on the page's buttons' BG
+// (POKEDEX_INFO_BUTTON_BG, at POKEDEX_INFO_ART_PRIORITY), and the panels' windows above both, all under the touch
+// bar's 0. The windows are clear but for their text, so the buttons show through them
 #define BG_GRID 4
+#define BG_ART POKEDEX_INFO_BUTTON_BG
 #define BG_PANELS 7
-#define PRIORITY_PANELS 2
+#define PRIORITY_PANELS 1
 #define PRIORITY_GRID 3
 // The palettes: the grid's two (its top 21 rows and its bottom 3, PokedexDetailBackground_Create), and the panels'
 #define PALETTE_GRID_TOP 1
 #define PALETTE_GRID_BOTTOM 2
 #define PALETTE_PANELS 3
+// The art's palette, after the buttons' two (POKEDEX_INFO_BUTTON_PALETTE)
+#define PALETTE_ART 6
+// The art's screen, the whole screen in tiles
+#define ART_TILES_ACROSS 32
+#define ART_TILES_DOWN 24
 // The grid of the info page's top screen in the original, the backgrounds' page 0
 #define GRID_PAGE (POKEDEX_DETAIL_PAGE_INFO - 1)
 
@@ -76,7 +87,6 @@
 #define STATS_BAR_HEIGHT 6
 // From the row's top
 #define STATS_BAR_OFFSET_Y 5
-#define STATS_LINE_Y 132
 #define STATS_TOTAL_Y 141
 // The base stat that fills a bar; a higher one shows it full
 #define STATS_BAR_MAX 180
@@ -247,6 +257,23 @@ static const u16 sSubpageNames[POKEDEX_INFO_SUBPAGE_COUNT] = {
     PokedexData_Text_Matchups,
 };
 
+// The user's art of each sub-page, members of ARCID_POKEDEX_GRA that tools/paperwhite2/screen_art.py makes from
+// res/paperwhite2/pokedex_art/ (res/paperwhite2/art/targets.json, pokedex_info_*): its palette, tiles and screen.
+// ART_NONE for a sub-page that has none yet, drawn with fills
+#define ART_NONE 0xffff
+
+typedef struct {
+    u16 palette;
+    u16 chars;
+    u16 screen;
+} PanelsArt;
+
+static const PanelsArt sSubpageArt[POKEDEX_INFO_SUBPAGE_COUNT] = {
+    { 131, 132, 133 },
+    { ART_NONE, ART_NONE, ART_NONE },
+    { ART_NONE, ART_NONE, ART_NONE },
+};
+
 struct PokedexInfoPanels {
     HeapID heapId;
     Font *font;
@@ -259,9 +286,13 @@ struct PokedexInfoPanels {
     BmpWin *barWindow;
     BmpWin *contentWindow;
     PokedexDetailBackground *grid;
+    // The shown art's characters on BG_ART, while hasArt
+    u32 artChars;
+    BOOL hasArt;
 };
 
 static void PokedexInfoPanels_DrawBar(PokedexInfoPanels *panels, u32 subpage);
+static void PokedexInfoPanels_FreeArt(PokedexInfoPanels *panels);
 static void PokedexInfoPanels_DrawStats(PokedexInfoPanels *panels, PersonalData *personal, BOOL caught);
 static void PokedexInfoPanels_DrawData(PokedexInfoPanels *panels, PersonalData *personal, BOOL caught);
 static void PokedexInfoPanels_DrawEgg(PokedexInfoPanels *panels, PersonalData *personal, BOOL caught);
@@ -304,6 +335,9 @@ PokedexInfoPanels *PokedexInfoPanels_Create(HeapID heapId, Font *font) {
 }
 
 void PokedexInfoPanels_Free(PokedexInfoPanels *panels) {
+    PokedexInfoPanels_FreeArt(panels);
+    GFL_BGSysFillScrArea(BG_ART, 0, 0, 0, ART_TILES_ACROSS, ART_TILES_DOWN, 0);
+    GFL_BGSysQueueScrLoad(BG_ART);
     BmpWin_ClearScreen(panels->contentWindow);
     BmpWin_ClearScreen(panels->barWindow);
     GFL_BGSysQueueScrLoad(BG_PANELS);
@@ -316,6 +350,33 @@ void PokedexInfoPanels_Free(PokedexInfoPanels *panels) {
     GFL_MsgDataFree(panels->msgData);
     GFL_FontFree(panels->smallFont);
     GFL_HeapFree(panels);
+}
+
+// The art's screen replaces BG_ART's whole screen, so the page makes its buttons after it
+void PokedexInfoPanels_LoadArt(PokedexInfoPanels *panels, u32 subpage) {
+    const PanelsArt *art = &sSubpageArt[subpage];
+
+    PokedexInfoPanels_FreeArt(panels);
+    GFL_BGSysFillScrArea(BG_ART, 0, 0, 0, ART_TILES_ACROSS, ART_TILES_DOWN, 0);
+    if (art->screen != ART_NONE) {
+        ArcTool *arc = GFL_ArcSysCreateFileHandle(ARCID_POKEDEX_GRA, panels->heapId);
+
+        GFL_G2DIOLoadArcNCLR(arc, art->palette, PALTYPE_SUB_BG, 0, PALETTE_ART * 0x20, 0x20, panels->heapId);
+        panels->artChars = GFL_BGSysLoadArcNCGRDynamic(arc, art->chars, BG_ART, 0, FALSE, panels->heapId);
+        panels->hasArt = TRUE;
+        // The screen's entries are the art's own tiles in its palette's first row, moved to where they are loaded
+        GFL_G2DIOLoadNSCRSync(arc, art->screen, BG_ART, 0, CHAR_POS(panels->artChars), 0, FALSE, panels->heapId);
+        GFL_BGSysSetScrPaletteNo(BG_ART, 0, 0, ART_TILES_ACROSS, ART_TILES_DOWN, PALETTE_ART);
+        GFL_ArcToolFree(arc);
+    }
+    GFL_BGSysQueueScrLoad(BG_ART);
+}
+
+static void PokedexInfoPanels_FreeArt(PokedexInfoPanels *panels) {
+    if (panels->hasArt) {
+        GFL_BGSysFreeCharMemory(BG_ART, CHAR_POS(panels->artChars), CHAR_SIZE(panels->artChars));
+        panels->hasArt = FALSE;
+    }
 }
 
 void PokedexInfoPanels_Update(PokedexInfoPanels *panels) {
@@ -359,12 +420,12 @@ StrBuf *PokedexInfoPanels_LoadMessage(PokedexInfoPanels *panels, u32 messageId) 
     return GFL_MsgDataLoadStrbufNew(panels->msgData, messageId);
 }
 
-// A dark strip with L, the names and R
+// L, the names and R, over the art's strip, or a dark strip of their own where the sub-page has no art
 static void PokedexInfoPanels_DrawBar(PokedexInfoPanels *panels, u32 subpage) {
     GFLBitmap *bitmap = BmpWin_GetBitmap(panels->barWindow);
     u32 i;
 
-    GFL_BitmapFill(bitmap, PANELS_COLOR_BORDER);
+    GFL_BitmapFill(bitmap, sSubpageArt[subpage].screen != ART_NONE ? PANELS_COLOR_CLEAR : PANELS_COLOR_BORDER);
     PokedexInfoPanels_Print(panels, bitmap, 0, panels->smallFont, PokedexData_Text_SubpageL, BAR_L_X, BAR_TEXT_Y,
                             PRINT_ALIGN_LEFT, BAR_OTHER_COLOR);
     PokedexInfoPanels_Print(panels, bitmap, 0, panels->smallFont, PokedexData_Text_SubpageR, BAR_R_RIGHT, BAR_TEXT_Y,
@@ -381,8 +442,10 @@ static void PokedexInfoPanels_DrawStats(PokedexInfoPanels *panels, PersonalData 
     u32 total = 0;
     u32 i;
 
-    PokedexInfoPanels_DrawPanel(bitmap, STATS_PANEL_X, STATS_PANEL_Y - CONTENT_TOP, STATS_PANEL_WIDTH,
-                                STATS_PANEL_HEIGHT);
+    if (sSubpageArt[POKEDEX_INFO_SUBPAGE_STATS].screen == ART_NONE) {
+        PokedexInfoPanels_DrawPanel(bitmap, STATS_PANEL_X, STATS_PANEL_Y - CONTENT_TOP, STATS_PANEL_WIDTH,
+                                    STATS_PANEL_HEIGHT);
+    }
     for (i = 0; i < NELEMS(sStatParams); i++) {
         int y = STATS_ROW_Y + i * STATS_ROW_PITCH;
         u32 value = PML_PersonalGetParam(personal, sStatParams[i]);
@@ -396,8 +459,6 @@ static void PokedexInfoPanels_DrawStats(PokedexInfoPanels *panels, PersonalData 
                                 PRINT_ALIGN_RIGHT, TEXT_COLOR);
         PokedexInfoPanels_DrawStatBar(bitmap, STATS_BAR_X, y + STATS_BAR_OFFSET_Y - CONTENT_TOP, caught ? value : 0);
     }
-    GFL_BitmapFillArea(bitmap, STATS_NAME_X, STATS_LINE_Y - CONTENT_TOP, STATS_BAR_X + STATS_BAR_WIDTH - STATS_NAME_X,
-                       1, PANELS_COLOR_BORDER);
     PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->font, PokedexData_Text_Total, STATS_NAME_X,
                             STATS_TOTAL_Y, PRINT_ALIGN_LEFT, TEXT_COLOR);
     WordSetNumber(panels->wordSet, 0, total, 3, 0, TRUE);

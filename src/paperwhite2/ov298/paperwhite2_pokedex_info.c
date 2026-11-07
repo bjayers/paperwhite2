@@ -57,7 +57,6 @@
 #define BUTTON_WIDTH 9
 #define BUTTON_HEIGHT 3
 #define BUTTON_PITCH 3
-#define BUTTON_PRIORITY 1
 // The text's colors in the buttons' palettes, as the menus' YES and NO have them
 #define BUTTON_TEXT_COLOR PRINT_COLOR(14, 15, 3)
 
@@ -279,7 +278,7 @@ BOOL PokedexInfoPage_Main(PokedexDetailProcSys *sys, int *seq, void *param_, voi
         wk->panels = PokedexInfoPanels_Create(param->heapId, wk->font);
         wk->buttonRes = AppTaskMenuRes_Create(POKEDEX_INFO_BUTTON_BG, POKEDEX_INFO_BUTTON_PALETTE, wk->font,
                                               PokedexDetailCommon_GetPrintQueue(common), param->heapId);
-        GFL_BGSysSetBGPriority(POKEDEX_INFO_BUTTON_BG, BUTTON_PRIORITY);
+        GFL_BGSysSetBGPriority(POKEDEX_INFO_BUTTON_BG, POKEDEX_INFO_ART_PRIORITY);
         GFL_BGSysSetBGEnabled(POKEDEX_INFO_BUTTON_BG, TRUE);
         wk->subpage = POKEDEX_INFO_SUBPAGE_STATS;
         PokedexInfoPage_ShowSubpage(param, wk, common);
@@ -569,6 +568,8 @@ static void PokedexInfoPage_ResetButtons(PokedexDetailInfoParam *param, PokedexI
     u32 i;
 
     PokedexInfoPage_FreeButtons(wk, common);
+    // The art first, as it replaces the buttons' BG's screen
+    PokedexInfoPanels_LoadArt(wk->panels, wk->subpage);
     if (wk->subpage != POKEDEX_INFO_SUBPAGE_STATS) {
         return;
     }

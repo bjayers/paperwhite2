@@ -2,6 +2,13 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-06: Pokédex, the user's Stats art in the game
+
+The user's first art, the Stats sub-page's (strip and panel, in the top screen's palette row 0), is built in
+(plugins.md, Pokédex; art.md): 21 distinct tiles. The game no longer draws the line above BST. Not yet tested in
+game; the text will likely need moving to fit the art. The templates (`tools/paperwhite2/pokedex_templates.py`) don't
+yet show the art itself under the text.
+
 ## 2026-11-06: Pokédex step 2, the user's first check
 
 The user's screenshots look right. Fixed: the touch bar locked after touching INFO on Info. Step 1's

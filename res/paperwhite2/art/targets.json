@@ -106,6 +106,23 @@
                     "screen": "res/graphics/title/10.nscr"
                 }
             ]
+        },
+        {
+            "name": "pokedex_info_stats",
+            "title": "Pokédex Info: Stats",
+            "description": "The bottom screen of the Pokédex's Info page on its Stats sub-page, under the page's text, bars and buttons and over the grid (src/paperwhite2/ov298/paperwhite2_pokedex_info_panels.c): sub BG 6 in palette row 6, which the buttons share. Its source is res/paperwhite2/pokedex_art/info_stats.png, drawn over tools/paperwhite2/pokedex_templates.py's templates.",
+            "palette": "res/graphics/pokedex_gra/131.pal",
+            "colors": 16,
+            "depth": 4,
+            "max_tiles": 768,
+            "screens": [
+                {
+                    "name": "touch",
+                    "title": "Touch screen",
+                    "chars": "res/graphics/pokedex_gra/132.png",
+                    "screen": "res/graphics/pokedex_gra/133.nscr"
+                }
+            ]
         }
     ]
 }

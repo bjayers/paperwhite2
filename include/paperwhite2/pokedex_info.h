@@ -28,9 +28,10 @@ enum {
     POKEDEX_INFO_SUBPAGE_COUNT,
 };
 
-// The sub engine's BG that the page's buttons are on, above the panels' BG, and its pair of palettes (the cursor's,
-// then the others'), for AppTaskMenuRes_Create
+// The sub engine's BG that the page's buttons and the user's art are on, under the panels' BG and over the grid, its
+// priority, and the buttons' pair of palettes (the cursor's, then the others'), for AppTaskMenuRes_Create
 #define POKEDEX_INFO_BUTTON_BG 6
+#define POKEDEX_INFO_ART_PRIORITY 2
 #define POKEDEX_INFO_BUTTON_PALETTE 4
 
 typedef struct PokedexInfoPanels PokedexInfoPanels;
@@ -38,6 +39,9 @@ typedef struct PokedexInfoPanels PokedexInfoPanels;
 // font is the detail screen's font 0; the panels load font 1 for their small text
 PokedexInfoPanels *PokedexInfoPanels_Create(HeapID heapId, Font *font);
 void PokedexInfoPanels_Free(PokedexInfoPanels *panels);
+// Shows the sub-page's art on POKEDEX_INFO_BUTTON_BG, replacing its whole screen, or clears it for a sub-page without
+// art; the page makes its buttons after it
+void PokedexInfoPanels_LoadArt(PokedexInfoPanels *panels, u32 subpage);
 // Scrolls the grid
 void PokedexInfoPanels_Update(PokedexInfoPanels *panels);
 // Draws the bar with the sub-page bright, and the sub-page's panel of the species and form. caught shows what the
