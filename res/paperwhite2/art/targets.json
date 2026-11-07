@@ -127,7 +127,7 @@
         {
             "name": "pokedex_info_data",
             "title": "Pokédex Info: Data",
-            "description": "The bottom screen of the Pokédex's Info page on its Data sub-page, under the page's text and over the grid (src/paperwhite2/ov298/paperwhite2_pokedex_info_panels.c): sub BG 6 in palette row 6. Its source is res/paperwhite2/pokedex_art/info_data.png, drawn over tools/paperwhite2/pokedex_templates.py's templates.",
+            "description": "The bottom screen of the Pokédex's Info page on its Data sub-page, under the page's text and over the grid (src/paperwhite2/ov298/paperwhite2_pokedex_info_panels.c): sub BG 6 in palette row 7. Its source is res/paperwhite2/pokedex_art/info_data.png, drawn over tools/paperwhite2/pokedex_templates.py's templates.",
             "palette": "res/graphics/pokedex_gra/134.pal",
             "colors": 16,
             "depth": 4,

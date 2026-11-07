@@ -20,6 +20,7 @@
 #include "nitro/gx.h"
 #include "paperwhite2/pokedex_info.h"
 #include "paperwhite2/type_chart.h"
+#include "pml/move.h"
 #include "pml/personal.h"
 #include "system/app_menu_common.h"
 #include "system/bmp_winframe.h"
@@ -30,8 +31,8 @@
 #include "text/system/pokedex_data.h"
 
 // Paper White 2: the bottom screen of the Pokédex's info page, on the sub engine above the touch bar: the bar of the
-// sub-pages' names at the top, and below it the shown sub-page's panel, Stats, Data or Matchups, read from the
-// species' personal data at run time. The text and bars are drawn into two windows over the user's art (below), and
+// sub-pages' tabs at the top, and below it the shown sub-page's panel, Stats, Data, Moves, Evo or Matchups, read from
+// the species' data at run time. The text and bars are drawn into two windows over the user's art (below), and
 // a sub-page without art yet gets fills in its place, so every place is a constant here: the screen's pixels, the
 // windows' tiles
 
@@ -50,8 +51,8 @@
 // The art's palettes, after the buttons' two (POKEDEX_INFO_BUTTON_PALETTE): each sub-page's art has its own row, from
 // this one in the sub-pages' order
 #define PALETTE_ART 6
-// The content window's palette while Matchups shows (sMatchupColors), after the art's three
-#define PALETTE_MATCHUPS 9
+// The content window's palette while Matchups shows (sMatchupColors), after the art's five
+#define PALETTE_MATCHUPS 11
 // The art's screen, the whole screen in tiles
 #define ART_TILES_ACROSS 32
 #define ART_TILES_DOWN 24
@@ -70,16 +71,14 @@
 // Everything below is in the bottom screen's pixels; the panels' window starts this far down
 #define CONTENT_TOP (CONTENT_WINDOW_Y * 8)
 
-// The bar: L at the left, R at the right and the sub-pages' names centered between them, in font 1, the shown one
-// bright, and the area of each name that touching switches to it
+// The bar: the art draws a tab for each sub-page, an icon, the first centered at BAR_TAB_X and the others BAR_TAB_PITCH
+// apart, with the shown one's tab hanging below the bar. Touching a tab's column switches to its sub-page. A sub-page
+// without art has a dark strip with its name centered on it in font 1
+#define BAR_TAB_X 64
+#define BAR_TAB_PITCH 32
+#define BAR_TOUCH_BOTTOM 17
 #define BAR_TEXT_Y 3
-#define BAR_L_X 8
-#define BAR_R_RIGHT 248
-#define BAR_STATS_X 76
-#define BAR_DATA_X 128
-#define BAR_MATCHUPS_X 180
-#define BAR_TOUCH_HALF_WIDTH 26
-#define BAR_TOUCH_BOTTOM (BAR_WINDOW_HEIGHT * 8 - 1)
+#define BAR_NAME_X 128
 
 // Stats: a panel of the six base stats, each a row of its name, its value right-aligned and its bar, then a line and
 // the total
@@ -110,8 +109,8 @@
 #define DATA_LABEL_X 14
 // Font 1's labels a little lower than font 0's values
 #define DATA_LABEL_OFFSET_Y 3
-#define DATA_VALUE_RIGHT 170
-#define EGG_PANEL_X 184
+#define DATA_VALUE_RIGHT 169
+#define EGG_PANEL_X 183
 #define EGG_PANEL_Y 20
 #define EGG_PANEL_WIDTH 68
 #define EGG_PANEL_HEIGHT 144
@@ -125,6 +124,73 @@
 #define EGG_STEPS_Y 138
 // The steps of an egg cycle (fieldmap_event.c)
 #define EGG_CYCLE_STEPS 256
+
+// Moves: a bar of its four sets below the tab bar, each name in font 1, the shown one in the panels' text color and
+// the others light, and touching one shows it; the first of its x is where the name starts
+#define MOVES_SET_BAR_Y 16
+#define MOVES_SET_BAR_HEIGHT 16
+#define MOVES_SET_TEXT_Y 19
+#define MOVES_SET_TOUCH_TOP 18
+#define MOVES_SET_TOUCH_BOTTOM 31
+#define MOVES_SET_TOUCH_LEFT 16
+#define MOVES_SET_TOUCH_RIGHT 240
+// Below it, POKEDEX_INFO_MOVE_ROWS rows of moves the size of the move relearner's (move_tutor_main.c), so that its
+// cursor fits round one: each a parallelogram ROW_WIDTH wide, its bottom ROW_SLANT right of its top, with a light end
+// from ROW_END_X (at its top) for the set's detail. A row has the move's type icon (an OBJ centered at ROW_ICON_X),
+// the name after it in font 0 and the detail right-aligned at ROW_DETAIL_RIGHT, either in font 1 if it is wider than
+// its room
+#define MOVES_ROW_X 21
+#define MOVES_ROW_Y 36
+#define MOVES_ROW_WIDTH 208
+#define MOVES_ROW_HEIGHT 22
+#define MOVES_ROW_PITCH 24
+#define MOVES_ROW_SLANT 6
+#define MOVES_ROW_END_X 152
+#define MOVES_ROW_ICON_X 47
+#define MOVES_ROW_ICON_OFFSET_Y 11
+#define MOVES_ROW_NAME_X 67
+#define MOVES_ROW_NAME_WIDTH 84
+#define MOVES_ROW_TEXT_OFFSET_Y 3
+#define MOVES_ROW_DETAIL_RIGHT 220
+#define MOVES_ROW_DETAIL_WIDTH 60
+// The TMs, whose machines' bits come before the HMs' (PML_ItemGetTMBitMask)
+#define MOVES_TM_COUNT 95
+// Font 1's text this much lower than font 0's, to be centered in the row
+#define MOVES_SMALL_TEXT_OFFSET_Y 3
+// The rows' touch areas, the relearner's
+#define MOVES_ROW_TOUCH_LEFT 21
+#define MOVES_ROW_TOUCH_RIGHT 233
+// The relearner's cursor, its cell's place from a row's top (ACTOR_CURSOR, MoveTutor_SetCursorActor), made for the
+// sub engine's 1D 128 KB mapping as ARCID_POKEDEX_GRA's 137 to 139 (tools/paperwhite2/obj_remap.py) from
+// ARCID_MOVE_TUTOR's 17, 07 and 08, with that archive's palette 5
+#define MOVES_CURSOR_X 130
+#define MOVES_CURSOR_OFFSET_Y 15
+#define CURSOR_CHARS 137
+#define CURSOR_CELLS 138
+#define CURSOR_ANIMS 139
+#define CURSOR_PALETTE 5
+// The scroll bar: a thin track, and the Pokédex list's knob (ARCID_POKEDEX_GRA's characters 57, palette 53's row 3,
+// cells 63 and animations 73, its sequence 2, pokedex_list_obj.c), placed by the scroll from the track's top to its
+// bottom
+#define MOVES_TRACK_X 240
+#define MOVES_TRACK_TOP 50
+#define MOVES_TRACK_BOTTOM 160
+#define MOVES_KNOB_HALF_HEIGHT 4
+#define KNOB_CHARS 57
+#define KNOB_PALETTE 53
+#define KNOB_PALETTE_ROW 3
+#define KNOB_CELLS 63
+#define KNOB_ANIMS 73
+#define KNOB_SEQUENCE 2
+// The cursor's and the knob's sub OBJ palette rows, after the type icons' and below the touch bar's
+#define PALETTE_CURSOR 3
+#define PALETTE_KNOB 4
+
+// Evo: nothing yet but its placeholder panel
+#define EVO_PANEL_X 4
+#define EVO_PANEL_Y 20
+#define EVO_PANEL_WIDTH 248
+#define EVO_PANEL_HEIGHT 144
 
 // Matchups: a chart of the attacking types in the types' order, MATCHUPS_COLUMNS to a row, each its type icon (an OBJ
 // centered on its place) with the damage multiplier against the species centered under it in font 0. The page's
@@ -203,7 +269,9 @@ static const GXRgb sMatchupColors[16] = {
 #define EGG_VALUE_COLOR PRINT_COLOR(PANELS_COLOR_PANEL, PANELS_COLOR_BORDER, PANELS_COLOR_CLEAR)
 #define LABEL_COLOR PRINT_COLOR(PANELS_COLOR_DIM, PANELS_COLOR_CLEAR, PANELS_COLOR_CLEAR)
 #define BAR_SHOWN_COLOR PRINT_COLOR(PANELS_COLOR_PANEL, PANELS_COLOR_CLEAR, PANELS_COLOR_CLEAR)
-#define BAR_OTHER_COLOR PRINT_COLOR(PANELS_COLOR_DIM, PANELS_COLOR_CLEAR, PANELS_COLOR_CLEAR)
+// Moves' sets other than the shown one, light grey on the light bar; a row's move name, white on its grey
+#define MOVES_SET_OTHER_COLOR PRINT_COLOR(PANELS_COLOR_SHADOW, PANELS_COLOR_CLEAR, PANELS_COLOR_CLEAR)
+#define MOVES_NAME_COLOR PRINT_COLOR(PANELS_COLOR_PANEL, PANELS_COLOR_BORDER, PANELS_COLOR_CLEAR)
 // The Matchups' multipliers in the battle's move colors (MOVE_PREVIEW_COLORS, paperwhite2_move_preview.c): above 1
 // light blue, below it yellow, 0 grey, each with a dark shadow to read on the panel, and 1 as the panels' text. They
 // are in sMatchupColors, the panels' palette with them in the place of three of the stat bars' colors, which Matchups
@@ -324,18 +392,47 @@ static const MatchupRule sMatchupRules[] = {
     { ABILITY_WONDER_GUARD, MATCHUP_TARGET_NOT_SUPER_EFFECTIVE, 0 },
 };
 
+// Each tab's column, BAR_TAB_PITCH wide and centered on its icon
+#define BAR_TAB_RECT(i)                                                                                                \
+    { 0, BAR_TOUCH_BOTTOM, BAR_TAB_X + (i) * BAR_TAB_PITCH - BAR_TAB_PITCH / 2,                                        \
+      BAR_TAB_X + (i) * BAR_TAB_PITCH + BAR_TAB_PITCH / 2 - 1 }
+
 static const TouchRect sSubpageRects[] = {
-    { 0, BAR_TOUCH_BOTTOM, BAR_STATS_X - BAR_TOUCH_HALF_WIDTH, BAR_STATS_X + BAR_TOUCH_HALF_WIDTH - 1 },
-    { 0, BAR_TOUCH_BOTTOM, BAR_DATA_X - BAR_TOUCH_HALF_WIDTH, BAR_DATA_X + BAR_TOUCH_HALF_WIDTH - 1 },
-    { 0, BAR_TOUCH_BOTTOM, BAR_MATCHUPS_X - BAR_TOUCH_HALF_WIDTH, BAR_MATCHUPS_X + BAR_TOUCH_HALF_WIDTH - 1 },
+    BAR_TAB_RECT(POKEDEX_INFO_SUBPAGE_STATS),    BAR_TAB_RECT(POKEDEX_INFO_SUBPAGE_DATA),
+    BAR_TAB_RECT(POKEDEX_INFO_SUBPAGE_MOVES),    BAR_TAB_RECT(POKEDEX_INFO_SUBPAGE_EVO),
+    BAR_TAB_RECT(POKEDEX_INFO_SUBPAGE_MATCHUPS), { TOUCH_RECT_END, 0, 0, 0 },
+};
+
+static const u16 sSubpageNames[POKEDEX_INFO_SUBPAGE_COUNT] = {
+    PokedexData_Text_Stats, PokedexData_Text_Data,     PokedexData_Text_Moves,
+    PokedexData_Text_Evo,   PokedexData_Text_Matchups,
+};
+
+// Moves' sets' names, where each starts, and the area touching each, from its start to the next one's (the gap after
+// TM/HM is the shown tab's)
+static const u16 sMoveSetNames[POKEDEX_INFO_MOVES_SET_COUNT] = {
+    PokedexData_Text_LevelUp,
+    PokedexData_Text_Machines,
+    PokedexData_Text_Tutor,
+    PokedexData_Text_EggMoves,
+};
+static const u8 sMoveSetX[POKEDEX_INFO_MOVES_SET_COUNT] = { 22, 71, 170, 210 };
+
+static const TouchRect sMoveSetRects[] = {
+    { MOVES_SET_TOUCH_TOP, MOVES_SET_TOUCH_BOTTOM, MOVES_SET_TOUCH_LEFT, 70 },
+    { MOVES_SET_TOUCH_TOP, MOVES_SET_TOUCH_BOTTOM, 71, 110 },
+    { MOVES_SET_TOUCH_TOP, MOVES_SET_TOUCH_BOTTOM, 160, 209 },
+    { MOVES_SET_TOUCH_TOP, MOVES_SET_TOUCH_BOTTOM, 210, MOVES_SET_TOUCH_RIGHT },
     { TOUCH_RECT_END, 0, 0, 0 },
 };
 
-static const u8 sSubpageCenters[POKEDEX_INFO_SUBPAGE_COUNT] = { BAR_STATS_X, BAR_DATA_X, BAR_MATCHUPS_X };
-static const u16 sSubpageNames[POKEDEX_INFO_SUBPAGE_COUNT] = {
-    PokedexData_Text_Stats,
-    PokedexData_Text_Data,
-    PokedexData_Text_Matchups,
+#define MOVES_ROW_RECT(i)                                                                                              \
+    { MOVES_ROW_Y + (i) * MOVES_ROW_PITCH, MOVES_ROW_Y + (i) * MOVES_ROW_PITCH + MOVES_ROW_HEIGHT - 1,                 \
+      MOVES_ROW_TOUCH_LEFT, MOVES_ROW_TOUCH_RIGHT }
+
+static const TouchRect sMoveRowRects[] = {
+    MOVES_ROW_RECT(0), MOVES_ROW_RECT(1), MOVES_ROW_RECT(2),
+    MOVES_ROW_RECT(3), MOVES_ROW_RECT(4), { TOUCH_RECT_END, 0, 0, 0 },
 };
 
 // The user's art of each sub-page, members of ARCID_POKEDEX_GRA that tools/paperwhite2/screen_art.py makes from
@@ -352,6 +449,8 @@ typedef struct {
 static const PanelsArt sSubpageArt[POKEDEX_INFO_SUBPAGE_COUNT] = {
     { 131, 132, 133 },
     { 134, 135, 136 },
+    { ART_NONE, ART_NONE, ART_NONE },
+    { ART_NONE, ART_NONE, ART_NONE },
     { ART_NONE, ART_NONE, ART_NONE },
 };
 
@@ -375,6 +474,20 @@ struct PokedexInfoPanels {
     u32 typeIconCellAnims;
     u32 typeIconChars[TYPE_CHART_SIZE];
     ClActor *typeIcons[TYPE_CHART_SIZE];
+    // Moves: the page's set, the moves' and places' names, and the rows' type icons (the Matchups' characters), the
+    // cursor and the scroll knob, shown on Moves only
+    const PokedexInfoMoves *moves;
+    MsgData *moveNames;
+    MsgData *placeNames;
+    ClActor *moveIcons[POKEDEX_INFO_MOVE_ROWS];
+    u32 cursorPalette;
+    u32 cursorChars;
+    u32 cursorCellAnims;
+    ClActor *cursor;
+    u32 knobPalette;
+    u32 knobChars;
+    u32 knobCellAnims;
+    ClActor *knob;
 };
 
 static void PokedexInfoPanels_DrawBar(PokedexInfoPanels *panels, u32 subpage);
@@ -382,9 +495,16 @@ static void PokedexInfoPanels_CreateArt(PokedexInfoPanels *panels);
 static void PokedexInfoPanels_FreeArt(PokedexInfoPanels *panels);
 static void PokedexInfoPanels_CreateTypeIcons(PokedexInfoPanels *panels, ClActUnit *unit);
 static void PokedexInfoPanels_FreeTypeIcons(PokedexInfoPanels *panels);
+static void PokedexInfoPanels_CreateMoveActors(PokedexInfoPanels *panels, ClActUnit *unit);
+static void PokedexInfoPanels_FreeMoveActors(PokedexInfoPanels *panels);
 static void PokedexInfoPanels_DrawStats(PokedexInfoPanels *panels, PersonalData *personal, BOOL caught);
 static void PokedexInfoPanels_DrawData(PokedexInfoPanels *panels, PersonalData *personal, BOOL caught);
 static void PokedexInfoPanels_DrawEgg(PokedexInfoPanels *panels, PersonalData *personal, BOOL caught);
+static void PokedexInfoPanels_DrawMoves(PokedexInfoPanels *panels);
+static void PokedexInfoPanels_DrawMove(PokedexInfoPanels *panels, GFLBitmap *bitmap, const PokedexInfoMove *move,
+                                       int top);
+static void PokedexInfoPanels_DrawMoveRow(GFLBitmap *bitmap, int y);
+static void PokedexInfoPanels_UpdateMoveActors(PokedexInfoPanels *panels, BOOL shown);
 static void PokedexInfoPanels_DrawMatchups(PokedexInfoPanels *panels, PersonalData *personal, u32 ability);
 static u32 PokedexInfoPanels_GetMultiplier(u32 attackType, u32 type1, u32 type2, u32 ability);
 static u32 PokedexInfoPanels_GetWidth(PokedexInfoPanels *panels, Font *font, u32 messageId);
@@ -394,15 +514,18 @@ static void PokedexInfoPanels_DrawPanel(GFLBitmap *bitmap, int x, int y, int wid
 static void PokedexInfoPanels_DrawStatBar(GFLBitmap *bitmap, int x, int y, u32 value);
 static u32 PokedexInfoPanels_Print(PokedexInfoPanels *panels, GFLBitmap *bitmap, int top, Font *font, u32 messageId,
                                    int x, int y, u32 align, u16 color);
+static u32 PokedexInfoPanels_PrintText(GFLBitmap *bitmap, int top, Font *font, const StrBuf *text, int x, int y,
+                                       u32 align, u16 color);
+static void PokedexInfoPanels_PrintFitting(PokedexInfoPanels *panels, GFLBitmap *bitmap, const StrBuf *text, u32 width,
+                                           int x, int y, u32 align, u16 color);
 static void PokedexInfoPanels_PrintValue(PokedexInfoPanels *panels, u32 messageId, BOOL known, int y);
 static void PokedexInfoPanels_DrawGender(PokedexInfoPanels *panels, GFLBitmap *bitmap, u32 sexRatio, int y);
-static Font *PokedexInfoPanels_GetFittingFont(PokedexInfoPanels *panels, u32 messageId, u32 width);
 static void PokedexInfoPanels_SetShare(WordSet *wordSet, u32 index, u32 permille);
 static u32 PokedexInfoPanels_GetFemalePermille(u32 sexRatio);
 static u32 PokedexInfoPanels_GetCatchPermille(u32 catchRate);
 static u32 PokedexInfoPanels_GetFavoriteFlavor(PersonalData *personal);
 
-PokedexInfoPanels *PokedexInfoPanels_Create(HeapID heapId, Font *font, ClActUnit *unit) {
+PokedexInfoPanels *PokedexInfoPanels_Create(HeapID heapId, Font *font, ClActUnit *unit, const PokedexInfoMoves *moves) {
     PokedexInfoPanels *panels =
         GFL_HeapAllocate(heapId, sizeof(PokedexInfoPanels), TRUE, "paperwhite2_pokedex_info_panels.c", __LINE__);
 
@@ -411,6 +534,9 @@ PokedexInfoPanels *PokedexInfoPanels_Create(HeapID heapId, Font *font, ClActUnit
     // Streamed, its glyphs read as they are drawn, as the panels draw little text and the page already holds font 0
     panels->smallFont = GFL_FontCreate(ARCID_FONT, 1, 0, FALSE, heapId);
     panels->msgData = GFL_MsgSysLoadData(FALSE, ARCID_SYSTEM_MESSAGE, TEXT_BANK_POKEDEX_DATA, heapId);
+    panels->moveNames = GFL_MsgSysLoadData(FALSE, ARCID_SYSTEM_MESSAGE, TEXT_BANK_MOVE_NAMES, heapId);
+    panels->placeNames = GFL_MsgSysLoadData(FALSE, ARCID_SYSTEM_MESSAGE, TEXT_BANK_PLACE_NAMES, heapId);
+    panels->moves = moves;
     panels->wordSet = GFL_WordSetSystemCreateDefault(heapId);
     panels->message = GFL_StrBufCreate(0x80, heapId);
     panels->text = GFL_StrBufCreate(0x80, heapId);
@@ -426,12 +552,14 @@ PokedexInfoPanels *PokedexInfoPanels_Create(HeapID heapId, Font *font, ClActUnit
                                                  CONTENT_WINDOW_HEIGHT, PALETTE_PANELS, FALSE);
     PokedexInfoPanels_CreateArt(panels);
     PokedexInfoPanels_CreateTypeIcons(panels, unit);
+    PokedexInfoPanels_CreateMoveActors(panels, unit);
     GFL_BGSysSetBGEnabled(BG_GRID, TRUE);
     GFL_BGSysSetBGEnabled(BG_PANELS, TRUE);
     return panels;
 }
 
 void PokedexInfoPanels_Free(PokedexInfoPanels *panels) {
+    PokedexInfoPanels_FreeMoveActors(panels);
     PokedexInfoPanels_FreeTypeIcons(panels);
     PokedexInfoPanels_FreeArt(panels);
     GFL_BGSysFillScrArea(BG_ART, 0, 0, 0, ART_TILES_ACROSS, ART_TILES_DOWN, 0);
@@ -445,6 +573,8 @@ void PokedexInfoPanels_Free(PokedexInfoPanels *panels) {
     GFL_StrBufFree(panels->text);
     GFL_StrBufFree(panels->message);
     GFL_WordSetSystemFree(panels->wordSet);
+    GFL_MsgDataFree(panels->placeNames);
+    GFL_MsgDataFree(panels->moveNames);
     GFL_MsgDataFree(panels->msgData);
     GFL_FontFree(panels->smallFont);
     GFL_HeapFree(panels);
@@ -540,6 +670,73 @@ static void PokedexInfoPanels_FreeTypeIcons(PokedexInfoPanels *panels) {
     ClActSys_FreePltt(panels->typeIconPalette);
 }
 
+// Moves' actors, hidden: a type icon for each row, which shows the type of its move by showing that type's Matchups
+// characters, the relearner's cursor and the list's scroll knob. They are semi-transparent as the type icons are, so
+// that the page's fades darken them
+static void PokedexInfoPanels_CreateMoveActors(PokedexInfoPanels *panels, ClActUnit *unit) {
+    ArcTool *arc = GFL_ArcSysCreateFileHandle(ARCID_POKEDEX_GRA, panels->heapId);
+    ArcTool *tutorArc = GFL_ArcSysCreateFileHandle(ARCID_MOVE_TUTOR, panels->heapId);
+    ClActorSetup setup;
+    u32 i;
+
+    panels->cursorPalette =
+        ClActSys_LoadPlttRange(tutorArc, CURSOR_PALETTE, CLACT_VRAM_SUB, PALETTE_CURSOR * 0x20, 0, 1, panels->heapId);
+    panels->cursorChars = ClActSys_LoadChars(arc, CURSOR_CHARS, FALSE, CLACT_VRAM_SUB, panels->heapId);
+    panels->cursorCellAnims = ClActSys_LoadCellAnims(arc, CURSOR_CELLS, CURSOR_ANIMS, panels->heapId);
+    panels->knobPalette = ClActSys_LoadPlttRange(arc, KNOB_PALETTE, CLACT_VRAM_SUB, PALETTE_KNOB * 0x20,
+                                                 KNOB_PALETTE_ROW, 1, panels->heapId);
+    panels->knobChars = ClActSys_LoadChars(arc, KNOB_CHARS, FALSE, CLACT_VRAM_SUB, panels->heapId);
+    panels->knobCellAnims = ClActSys_LoadCellAnims(arc, KNOB_CELLS, KNOB_ANIMS, panels->heapId);
+    GFL_ArcToolFree(tutorArc);
+    GFL_ArcToolFree(arc);
+
+    setup.x = MOVES_ROW_ICON_X;
+    setup.sequence = 0;
+    // Over the panels' windows, the cursor over the icons
+    setup.priority = 1;
+    setup.bgPriority = PRIORITY_PANELS;
+    for (i = 0; i < POKEDEX_INFO_MOVE_ROWS; i++) {
+        setup.y = MOVES_ROW_Y + i * MOVES_ROW_PITCH + MOVES_ROW_ICON_OFFSET_Y;
+        panels->moveIcons[i] = ClActor_Create(unit, panels->typeIconChars[0], panels->typeIconPalette,
+                                              panels->typeIconCellAnims, &setup, CLACT_SURFACE_SUB, panels->heapId);
+        ClActor_SetObjMode(panels->moveIcons[i], GX_OAM_MODE_XLU);
+        ClActor_SetVisible(panels->moveIcons[i], FALSE);
+    }
+    setup.x = MOVES_CURSOR_X;
+    setup.y = MOVES_ROW_Y + MOVES_CURSOR_OFFSET_Y;
+    setup.priority = 0;
+    panels->cursor = ClActor_Create(unit, panels->cursorChars, panels->cursorPalette, panels->cursorCellAnims, &setup,
+                                    CLACT_SURFACE_SUB, panels->heapId);
+    ClActor_SetAutoAnim(panels->cursor, TRUE);
+    ClActor_SetObjMode(panels->cursor, GX_OAM_MODE_XLU);
+    ClActor_SetVisible(panels->cursor, FALSE);
+    setup.x = MOVES_TRACK_X;
+    setup.y = MOVES_TRACK_TOP + MOVES_KNOB_HALF_HEIGHT;
+    setup.sequence = KNOB_SEQUENCE;
+    panels->knob = ClActor_Create(unit, panels->knobChars, panels->knobPalette, panels->knobCellAnims, &setup,
+                                  CLACT_SURFACE_SUB, panels->heapId);
+    // The knob's cell names the list's palette row; it is the only row loaded, as this one
+    ClActor_SetPalette(panels->knob, 0, TRUE);
+    ClActor_SetObjMode(panels->knob, GX_OAM_MODE_XLU);
+    ClActor_SetVisible(panels->knob, FALSE);
+}
+
+static void PokedexInfoPanels_FreeMoveActors(PokedexInfoPanels *panels) {
+    u32 i;
+
+    ClActor_Delete(panels->knob);
+    ClActor_Delete(panels->cursor);
+    for (i = 0; i < POKEDEX_INFO_MOVE_ROWS; i++) {
+        ClActor_Delete(panels->moveIcons[i]);
+    }
+    ClActSys_FreeCellAnims(panels->knobCellAnims);
+    ClActSys_FreeChars(panels->knobChars);
+    ClActSys_FreePltt(panels->knobPalette);
+    ClActSys_FreeCellAnims(panels->cursorCellAnims);
+    ClActSys_FreeChars(panels->cursorChars);
+    ClActSys_FreePltt(panels->cursorPalette);
+}
+
 void PokedexInfoPanels_Update(PokedexInfoPanels *panels) {
     PokedexDetailBackground_Update(panels->grid);
 }
@@ -559,6 +756,12 @@ void PokedexInfoPanels_Show(PokedexInfoPanels *panels, u32 subpage, u16 species,
         PokedexInfoPanels_DrawData(panels, personal, caught);
         PokedexInfoPanels_DrawEgg(panels, personal, caught);
         break;
+    case POKEDEX_INFO_SUBPAGE_MOVES:
+        PokedexInfoPanels_DrawMoves(panels);
+        break;
+    case POKEDEX_INFO_SUBPAGE_EVO:
+        PokedexInfoPanels_DrawPanel(bitmap, EVO_PANEL_X, EVO_PANEL_Y - CONTENT_TOP, EVO_PANEL_WIDTH, EVO_PANEL_HEIGHT);
+        break;
     case POKEDEX_INFO_SUBPAGE_MATCHUPS:
         PokedexInfoPanels_DrawMatchups(panels, personal, ability);
         break;
@@ -566,10 +769,20 @@ void PokedexInfoPanels_Show(PokedexInfoPanels *panels, u32 subpage, u16 species,
     for (i = 0; i < TYPE_CHART_SIZE; i++) {
         ClActor_SetVisible(panels->typeIcons[i], subpage == POKEDEX_INFO_SUBPAGE_MATCHUPS);
     }
+    PokedexInfoPanels_UpdateMoveActors(panels, subpage == POKEDEX_INFO_SUBPAGE_MOVES);
     PML_PersonalFree(personal);
     BmpWin_SetPalette(panels->contentWindow,
                       subpage == POKEDEX_INFO_SUBPAGE_MATCHUPS ? PALETTE_MATCHUPS : PALETTE_PANELS);
     BmpWin_Transfer(panels->barWindow);
+    BmpWin_Transfer(panels->contentWindow);
+}
+
+// Only the list and its actors change, the window's characters at once and the actors in the next VBlank, as a change
+// of sub-page shows
+void PokedexInfoPanels_ShowMoves(PokedexInfoPanels *panels) {
+    GFL_BitmapFill(BmpWin_GetBitmap(panels->contentWindow), PANELS_COLOR_CLEAR);
+    PokedexInfoPanels_DrawMoves(panels);
+    PokedexInfoPanels_UpdateMoveActors(panels, TRUE);
     BmpWin_Transfer(panels->contentWindow);
 }
 
@@ -582,6 +795,24 @@ u32 PokedexInfoPanels_GetTouchedSubpage(void) {
     return rect;
 }
 
+u32 PokedexInfoPanels_GetTouchedMoveSet(void) {
+    s32 rect = GFL_HIDGetTouchPressedRect(sMoveSetRects);
+
+    if (rect == TOUCH_RECT_NONE) {
+        return POKEDEX_INFO_MOVES_SET_COUNT;
+    }
+    return rect;
+}
+
+u32 PokedexInfoPanels_GetTouchedMoveRow(void) {
+    s32 rect = GFL_HIDGetTouchPressedRect(sMoveRowRects);
+
+    if (rect == TOUCH_RECT_NONE) {
+        return POKEDEX_INFO_MOVE_ROWS;
+    }
+    return rect;
+}
+
 StrBuf *PokedexInfoPanels_LoadMessage(PokedexInfoPanels *panels, u32 messageId) {
     return GFL_MsgDataLoadStrbufNew(panels->msgData, messageId);
 }
@@ -590,20 +821,17 @@ Font *PokedexInfoPanels_GetSmallFont(PokedexInfoPanels *panels) {
     return panels->smallFont;
 }
 
-// L, the names and R, over the art's strip, or a dark strip of their own where the sub-page has no art
+// The art draws the tabs; a sub-page without art has a dark strip with its own name, so that it can be told apart
 static void PokedexInfoPanels_DrawBar(PokedexInfoPanels *panels, u32 subpage) {
     GFLBitmap *bitmap = BmpWin_GetBitmap(panels->barWindow);
-    u32 i;
 
-    GFL_BitmapFill(bitmap, sSubpageArt[subpage].screen != ART_NONE ? PANELS_COLOR_CLEAR : PANELS_COLOR_BORDER);
-    PokedexInfoPanels_Print(panels, bitmap, 0, panels->smallFont, PokedexData_Text_SubpageL, BAR_L_X, BAR_TEXT_Y,
-                            PRINT_ALIGN_LEFT, BAR_OTHER_COLOR);
-    PokedexInfoPanels_Print(panels, bitmap, 0, panels->smallFont, PokedexData_Text_SubpageR, BAR_R_RIGHT, BAR_TEXT_Y,
-                            PRINT_ALIGN_RIGHT, BAR_OTHER_COLOR);
-    for (i = 0; i < POKEDEX_INFO_SUBPAGE_COUNT; i++) {
-        PokedexInfoPanels_Print(panels, bitmap, 0, panels->smallFont, sSubpageNames[i], sSubpageCenters[i], BAR_TEXT_Y,
-                                PRINT_ALIGN_CENTER, i == subpage ? BAR_SHOWN_COLOR : BAR_OTHER_COLOR);
+    if (sSubpageArt[subpage].screen != ART_NONE) {
+        GFL_BitmapFill(bitmap, PANELS_COLOR_CLEAR);
+        return;
     }
+    GFL_BitmapFill(bitmap, PANELS_COLOR_BORDER);
+    PokedexInfoPanels_Print(panels, bitmap, 0, panels->smallFont, sSubpageNames[subpage], BAR_NAME_X, BAR_TEXT_Y,
+                            PRINT_ALIGN_CENTER, BAR_SHOWN_COLOR);
 }
 
 // The six base stats and their total, each "?" with an empty bar until the species is caught
@@ -693,7 +921,7 @@ static void PokedexInfoPanels_DrawData(PokedexInfoPanels *panels, PersonalData *
                                  DATA_ROW_Y + DATA_ROW_FRIENDSHIP * DATA_ROW_PITCH);
 }
 
-// The egg's column: the egg groups, one or two, and the hatch cycles with their steps
+// The egg's column: the egg groups, one or two in font 1, and the hatch cycles with their steps
 static void PokedexInfoPanels_DrawEgg(PokedexInfoPanels *panels, PersonalData *personal, BOOL caught) {
     GFLBitmap *bitmap = BmpWin_GetBitmap(panels->contentWindow);
     u32 groups[2];
@@ -719,9 +947,8 @@ static void PokedexInfoPanels_DrawEgg(PokedexInfoPanels *panels, PersonalData *p
         if (!caught) {
             message = PokedexData_Text_Unknown;
         }
-        PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP,
-                                PokedexInfoPanels_GetFittingFont(panels, message, EGG_PANEL_WIDTH - 4), message,
-                                EGG_CENTER_X, EGG_GROUP_Y + i * EGG_GROUP_PITCH, PRINT_ALIGN_CENTER, EGG_VALUE_COLOR);
+        PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->smallFont, message, EGG_CENTER_X,
+                                EGG_GROUP_Y + i * EGG_GROUP_PITCH, PRINT_ALIGN_CENTER, EGG_VALUE_COLOR);
     }
 
     PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->smallFont, PokedexData_Text_Cycles, EGG_CENTER_X,
@@ -735,6 +962,135 @@ static void PokedexInfoPanels_DrawEgg(PokedexInfoPanels *panels, PersonalData *p
         PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->smallFont, PokedexData_Text_Steps, EGG_CENTER_X,
                                 EGG_STEPS_Y, PRINT_ALIGN_CENTER, LABEL_COLOR);
     }
+}
+
+// The bar of the sets, and the rows of the shown set from its scroll, or "No moves" for an empty one, with the scroll
+// bar's track; until there is art, the bar is a light strip and each row its placeholder
+static void PokedexInfoPanels_DrawMoves(PokedexInfoPanels *panels) {
+    const PokedexInfoMoves *moves = panels->moves;
+    GFLBitmap *bitmap = BmpWin_GetBitmap(panels->contentWindow);
+    BOOL art = sSubpageArt[POKEDEX_INFO_SUBPAGE_MOVES].screen != ART_NONE;
+    u32 i;
+
+    if (!art) {
+        GFL_BitmapFillArea(bitmap, 0, MOVES_SET_BAR_Y - CONTENT_TOP, CONTENT_WINDOW_WIDTH * 8, MOVES_SET_BAR_HEIGHT,
+                           PANELS_COLOR_PANEL);
+        GFL_BitmapFillArea(bitmap, MOVES_TRACK_X - 1, MOVES_TRACK_TOP - CONTENT_TOP, 3,
+                           MOVES_TRACK_BOTTOM - MOVES_TRACK_TOP, PANELS_COLOR_BORDER);
+        GFL_BitmapFillArea(bitmap, MOVES_TRACK_X, MOVES_TRACK_TOP + 1 - CONTENT_TOP, 1,
+                           MOVES_TRACK_BOTTOM - MOVES_TRACK_TOP - 2, PANELS_COLOR_PANEL);
+    }
+    for (i = 0; i < POKEDEX_INFO_MOVES_SET_COUNT; i++) {
+        PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->smallFont, sMoveSetNames[i], sMoveSetX[i],
+                                MOVES_SET_TEXT_Y, PRINT_ALIGN_LEFT,
+                                i == moves->set ? TEXT_COLOR : MOVES_SET_OTHER_COLOR);
+    }
+    for (i = 0; i < POKEDEX_INFO_MOVE_ROWS; i++) {
+        int top = MOVES_ROW_Y + i * MOVES_ROW_PITCH;
+
+        if (!art) {
+            PokedexInfoPanels_DrawMoveRow(bitmap, top - CONTENT_TOP);
+        }
+        if (moves->scroll + i < moves->count) {
+            PokedexInfoPanels_DrawMove(panels, bitmap, &moves->moves[moves->scroll + i], top);
+        }
+    }
+    if (moves->count == 0) {
+        PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->font, PokedexData_Text_NoMoves, MOVES_ROW_NAME_X,
+                                MOVES_ROW_Y + MOVES_ROW_TEXT_OFFSET_Y, PRINT_ALIGN_LEFT, MOVES_NAME_COLOR);
+    }
+}
+
+// A row's move name, and its detail in the row's end: the level it is learnt at, its machine, the town of its tutor,
+// or a dash for an egg move
+static void PokedexInfoPanels_DrawMove(PokedexInfoPanels *panels, GFLBitmap *bitmap, const PokedexInfoMove *move,
+                                       int top) {
+    int y = top + MOVES_ROW_TEXT_OFFSET_Y;
+    u32 message = PokedexData_Text_EggMove;
+
+    GFL_MsgDataLoadStrbuf(panels->moveNames, move->move, panels->text);
+    PokedexInfoPanels_PrintFitting(panels, bitmap, panels->text, MOVES_ROW_NAME_WIDTH, MOVES_ROW_NAME_X, y,
+                                   PRINT_ALIGN_LEFT, MOVES_NAME_COLOR);
+    switch (panels->moves->set) {
+    case POKEDEX_INFO_MOVES_LEVEL_UP:
+        WordSetNumber(panels->wordSet, 0, move->detail, 3, NUM_PAD_NONE, TRUE);
+        message = PokedexData_Text_MoveLevel;
+        break;
+    case POKEDEX_INFO_MOVES_MACHINES:
+        // The TMs' bits are their numbers from 0, the HMs' follow the TMs'
+        if (move->detail < MOVES_TM_COUNT) {
+            WordSetNumber(panels->wordSet, 0, move->detail + 1, 2, NUM_PAD_ZERO, TRUE);
+            message = PokedexData_Text_MoveTM;
+        } else {
+            WordSetNumber(panels->wordSet, 0, move->detail - MOVES_TM_COUNT + 1, 2, NUM_PAD_ZERO, TRUE);
+            message = PokedexData_Text_MoveHM;
+        }
+        break;
+    case POKEDEX_INFO_MOVES_TUTOR:
+        GFL_MsgDataLoadStrbuf(panels->placeNames, move->detail, panels->text);
+        PokedexInfoPanels_PrintFitting(panels, bitmap, panels->text, MOVES_ROW_DETAIL_WIDTH, MOVES_ROW_DETAIL_RIGHT, y,
+                                       PRINT_ALIGN_RIGHT, TEXT_COLOR);
+        return;
+    }
+    PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->font, message, MOVES_ROW_DETAIL_RIGHT, y,
+                            PRINT_ALIGN_RIGHT, TEXT_COLOR);
+}
+
+// A row's placeholder as the relearner's rows are shaped: a grey parallelogram with a light end and a dark border,
+// each line ROW_SLANT / (ROW_HEIGHT - 1) right of the one above
+static void PokedexInfoPanels_DrawMoveRow(GFLBitmap *bitmap, int y) {
+    int line;
+
+    for (line = 0; line < MOVES_ROW_HEIGHT; line++) {
+        int shift = line * MOVES_ROW_SLANT / (MOVES_ROW_HEIGHT - 1);
+        int left = MOVES_ROW_X + shift;
+        int end = MOVES_ROW_END_X + shift;
+        int right = MOVES_ROW_X + MOVES_ROW_WIDTH - 1 + shift;
+
+        GFL_BitmapFillArea(bitmap, left, y + line, right - left + 1, 1, PANELS_COLOR_BORDER);
+        if (line != 0 && line != MOVES_ROW_HEIGHT - 1) {
+            GFL_BitmapFillArea(bitmap, left + 1, y + line, end - left - 1, 1, PANELS_COLOR_DIM);
+            GFL_BitmapFillArea(bitmap, end, y + line, right - end, 1, PANELS_COLOR_PANEL);
+        }
+    }
+}
+
+// Each row's type icon to its move's type, the cursor on its row and the knob at the scroll's place on the track, or
+// all hidden off Moves
+static void PokedexInfoPanels_UpdateMoveActors(PokedexInfoPanels *panels, BOOL shown) {
+    const PokedexInfoMoves *moves = panels->moves;
+    ClActorPos pos;
+    u32 i;
+
+    for (i = 0; i < POKEDEX_INFO_MOVE_ROWS; i++) {
+        BOOL visible = FALSE;
+
+        if (shown && moves->scroll + i < moves->count) {
+            u32 type = PML_MoveGetParam(moves->moves[moves->scroll + i].move, MOVE_PARAM_TYPE);
+
+            if (type < TYPE_CHART_SIZE) {
+                NNSG2dImageProxy proxy;
+
+                ClActSys_GetCharProxy(panels->typeIconChars[type], &proxy);
+                ClActor_SetImageProxy(panels->moveIcons[i], &proxy);
+                ClActor_SetPalette(panels->moveIcons[i], AppMenuCommon_GetTypeIconPaletteIndex(type), TRUE);
+                visible = TRUE;
+            }
+        }
+        ClActor_SetVisible(panels->moveIcons[i], visible);
+    }
+    pos.x = MOVES_CURSOR_X;
+    pos.y = MOVES_ROW_Y + (moves->cursor - moves->scroll) * MOVES_ROW_PITCH + MOVES_CURSOR_OFFSET_Y;
+    ClActor_SetSurfacePos(panels->cursor, &pos, CLACT_SURFACE_SUB);
+    ClActor_SetVisible(panels->cursor, shown && moves->count != 0);
+    pos.x = MOVES_TRACK_X;
+    pos.y = MOVES_TRACK_TOP + MOVES_KNOB_HALF_HEIGHT;
+    if (moves->count > POKEDEX_INFO_MOVE_ROWS) {
+        pos.y += (MOVES_TRACK_BOTTOM - MOVES_TRACK_TOP - MOVES_KNOB_HALF_HEIGHT * 2) * moves->scroll /
+                 (moves->count - POKEDEX_INFO_MOVE_ROWS);
+    }
+    ClActor_SetSurfacePos(panels->knob, &pos, CLACT_SURFACE_SUB);
+    ClActor_SetVisible(panels->knob, shown);
 }
 
 // Each attacking type's multiplier against the species' types and the ability, under its icon. Shown once the species
@@ -876,11 +1232,16 @@ static void PokedexInfoPanels_DrawStatBar(GFLBitmap *bitmap, int x, int y, u32 v
 // starts, ends or is centered, by a PRINT_ALIGN_*. Returns its width
 static u32 PokedexInfoPanels_Print(PokedexInfoPanels *panels, GFLBitmap *bitmap, int top, Font *font, u32 messageId,
                                    int x, int y, u32 align, u16 color) {
-    u32 width;
-
     GFL_MsgDataLoadStrbuf(panels->msgData, messageId, panels->message);
     GFL_WordSetFormatStrbuf(panels->wordSet, panels->text, panels->message);
-    width = GFL_FontGetBlockWidth(panels->text, font, 0);
+    return PokedexInfoPanels_PrintText(bitmap, top, font, panels->text, x, y, align, color);
+}
+
+// Draws a string as PokedexInfoPanels_Print draws a message
+static u32 PokedexInfoPanels_PrintText(GFLBitmap *bitmap, int top, Font *font, const StrBuf *text, int x, int y,
+                                       u32 align, u16 color) {
+    u32 width = GFL_FontGetBlockWidth(text, font, 0);
+
     switch (align) {
     case PRINT_ALIGN_RIGHT:
         x -= width;
@@ -889,8 +1250,19 @@ static u32 PokedexInfoPanels_Print(PokedexInfoPanels *panels, GFLBitmap *bitmap,
         x -= width / 2;
         break;
     }
-    GFL_TextRendererDrawToBitmapEx(bitmap, x, y - top, panels->text, font, color);
+    GFL_TextRendererDrawToBitmapEx(bitmap, x, y - top, text, font, color);
     return width;
+}
+
+// Draws a string into the content window in font 0, or in font 1 a little lower if font 0 makes it wider than width
+static void PokedexInfoPanels_PrintFitting(PokedexInfoPanels *panels, GFLBitmap *bitmap, const StrBuf *text, u32 width,
+                                           int x, int y, u32 align, u16 color) {
+    if (GFL_FontGetBlockWidth(text, panels->font, 0) > width) {
+        PokedexInfoPanels_PrintText(bitmap, CONTENT_TOP, panels->smallFont, text, x, y + MOVES_SMALL_TEXT_OFFSET_Y,
+                                    align, color);
+    } else {
+        PokedexInfoPanels_PrintText(bitmap, CONTENT_TOP, panels->font, text, x, y, align, color);
+    }
 }
 
 // The gender row's value, right-aligned: the male share in blue and the female share in pink, either alone for a
@@ -928,15 +1300,6 @@ static void PokedexInfoPanels_PrintValue(PokedexInfoPanels *panels, u32 messageI
     PokedexInfoPanels_Print(panels, BmpWin_GetBitmap(panels->contentWindow), CONTENT_TOP, panels->font,
                             known ? messageId : PokedexData_Text_Unknown, DATA_VALUE_RIGHT, y, PRINT_ALIGN_RIGHT,
                             TEXT_COLOR);
-}
-
-// Font 0, or font 1 for a message wider than width in font 0
-static Font *PokedexInfoPanels_GetFittingFont(PokedexInfoPanels *panels, u32 messageId, u32 width) {
-    GFL_MsgDataLoadStrbuf(panels->msgData, messageId, panels->message);
-    if (GFL_FontGetBlockWidth(panels->message, panels->font, 0) > width) {
-        return panels->smallFont;
-    }
-    return panels->font;
 }
 
 // A share in tenths of a percent, as its whole percent and its tenth in two of the word set's slots

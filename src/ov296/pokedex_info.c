@@ -811,6 +811,28 @@ void PokedexInfo_Show(PokedexInfo *info) {
     }
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: the info page's move panel takes the place of the top entry's text on BG 1, whose characters it needs
+// (paperwhite2_pokedex_move_panel.c): the entry's windows are cleared from the screen and freed, and its type icons
+// and footprint go with them, until PokedexInfo_RestoreText makes them again and prints the entry in the language
+void PokedexInfo_FreeText(PokedexInfo *info) {
+    int i;
+
+    for (i = 0; i < POKEDEX_INFO_WINDOW_COUNT; i++) {
+        BmpWin_ClearScreen(info->windows[i]);
+    }
+    GFL_BGSysQueueScrLoad(info->frontBG);
+    PokedexInfo_FreeWindows(info);
+    PokedexInfo_FreeTypeActors(info, info->typeSlot);
+    PokedexInfo_SetFootprintsVisible(info, FALSE);
+}
+
+void PokedexInfo_RestoreText(PokedexInfo *info, u32 language) {
+    PokedexInfo_InitWindows(info);
+    PokedexInfo_SetLanguage(info, language);
+}
+#endif
+
 static void PokedexInfo_VBlankTask(TCB *tcb, void *data) {
     PokedexInfo *info = data;
 

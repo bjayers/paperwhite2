@@ -51,5 +51,11 @@ void PokedexInfo_SetPokemonInLanguage(PokedexInfo *info, u16 species, u16 form, 
                                       BOOL caught, u32 language);
 void PokedexInfo_Hide(PokedexInfo *info);
 void PokedexInfo_Show(PokedexInfo *info);
+#ifdef PAPERWHITE2
+// Paper White 2: frees the entry's text windows, type icons and footprint for a while, and makes them again with the
+// entry in a language (as PokedexInfo_SetLanguage), for the detail screen's info page's move panel
+void PokedexInfo_FreeText(PokedexInfo *info);
+void PokedexInfo_RestoreText(PokedexInfo *info, u32 language);
+#endif
 
 #endif // POKEBW2_APP_POKEDEX_INFO_H

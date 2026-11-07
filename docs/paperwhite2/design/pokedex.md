@@ -237,3 +237,8 @@ Constraints found:
   art; the sprite and panels behind can be dimmed with the hardware's brightness blend to make the panel stand out.
 - **Memory:** a list, its icons and the evolution page cost ov298 code (the DS budget, 90 KB left) but no new
   overlays; the art's palette rows go 6-10 (five sub-pages) and Matchups' text palette moves to 11.
+
+**Built (2026-11-07):** the five sub-pages with the art's tab bar, L/R and Left/Right stepping through them and Moves'
+sets, Moves (the four sets, 5 rows with the relearner's cursor and the list's knob) and the move panel over the top
+screen; Evo is a blank sub-page. Details in `docs/paperwhite2/plugins.md`'s Pokédex section. The panel starts at y 24,
+under the head bar's last row, rather than 21, so that it doesn't cover the bar's tiles.

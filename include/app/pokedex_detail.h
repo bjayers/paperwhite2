@@ -388,6 +388,9 @@ BOOL PokedexDetailTouchbar_IsFormButtonTriggered(PokedexDetailTouchbar *touchbar
 #ifdef PAPERWHITE2
 // Paper White 2: moves the bar to BG 1 of either engine (1 or 5), for the info page's swap of the engines
 void PokedexDetailTouchbar_SetBG(PokedexDetailTouchbar *touchbar, u8 bg);
+// Paper White 2: the keys of PAD_KEY_LEFT, PAD_KEY_RIGHT, PAD_KEY_UP, PAD_KEY_DOWN and PAD_BUTTON_B that the general
+// bar leaves to the page, which handles them itself; 0 gives them all back
+void PokedexDetailTouchbar_SetDisabledKeys(PokedexDetailTouchbar *touchbar, u32 keys);
 #endif
 
 // pokedex_detail_headbar.c: the bar at the top of the screen

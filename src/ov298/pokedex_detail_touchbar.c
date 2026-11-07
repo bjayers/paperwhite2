@@ -121,6 +121,8 @@ struct PokedexDetailTouchbar {
     int glowPhase;
 #ifdef PAPERWHITE2
     u8 bg;
+    // The keys that the page takes from the general bar's icons (PokedexDetailTouchbar_SetDisabledKeys)
+    u32 disabledKeys;
 #endif
 };
 
@@ -131,6 +133,9 @@ static void PokedexDetailTouchbar_SetItemsY(PokedexDetailTouchbar *touchbar, s16
 static void PokedexDetailTouchbar_CreateGeneral(PokedexDetailTouchbar *touchbar);
 static void PokedexDetailTouchbar_FreeGeneral(PokedexDetailTouchbar *touchbar);
 static void PokedexDetailTouchbar_UpdateGeneral(PokedexDetailTouchbar *touchbar);
+#ifdef PAPERWHITE2
+static void PokedexDetailTouchbar_ApplyDisabledKeys(PokedexDetailTouchbar *touchbar);
+#endif
 static void PokedexDetailTouchbar_InitGlow(PokedexDetailTouchbar *touchbar);
 static void PokedexDetailTouchbar_FreeGlow(PokedexDetailTouchbar *touchbar);
 static void PokedexDetailTouchbar_StartGlow(PokedexDetailTouchbar *touchbar);
@@ -224,6 +229,7 @@ PokedexDetailTouchbar *PokedexDetailTouchbar_Create(HeapID heapId, BOOL showForm
     touchbar->speed = 0;
 #ifdef PAPERWHITE2
     touchbar->bg = 1;
+    touchbar->disabledKeys = 0;
 #endif
     GFL_BGSysMoveBG(TOUCHBAR_BG, BG_MOVE_SET_Y, -HIDDEN_Y);
     GFL_BGSysSetBGPriority(TOUCHBAR_BG, 0);
@@ -501,6 +507,31 @@ void PokedexDetailTouchbar_SetBG(PokedexDetailTouchbar *touchbar, u8 bg) {
 }
 #endif
 
+#ifdef PAPERWHITE2
+// Paper White 2: the general bar's keys that the running page takes for itself, of PAD_KEY_LEFT and PAD_KEY_RIGHT
+// (the pages' tabs), PAD_KEY_UP and PAD_KEY_DOWN (the arrows) and PAD_BUTTON_B (the return icon); those pages stay
+// reachable by touch. The info page takes some while it runs (paperwhite2_pokedex_info.c) and gives them back as it
+// ends, so the other pages have the original's keys
+void PokedexDetailTouchbar_SetDisabledKeys(PokedexDetailTouchbar *touchbar, u32 keys) {
+    touchbar->disabledKeys = keys;
+    PokedexDetailTouchbar_ApplyDisabledKeys(touchbar);
+}
+
+// The bar's own icons take their keys themselves (pokedex_detail_tbar.c's sPokedexDetailTbarIconData), so a key that
+// the page takes is cleared from its icon, and one it gives back set again
+static void PokedexDetailTouchbar_ApplyDisabledKeys(PokedexDetailTouchbar *touchbar) {
+    if (touchbar->type != POKEDEX_DETAIL_TOUCHBAR_GENERAL || touchbar->tbar == NULL) {
+        return;
+    }
+    PokedexDetailTbar_SetKey(touchbar->tbar, touchbar->items[GENERAL_RETURN].icon->icon,
+                             PAD_BUTTON_B & ~touchbar->disabledKeys);
+    PokedexDetailTbar_SetKey(touchbar->tbar, touchbar->items[GENERAL_CUR_U].icon->icon,
+                             PAD_KEY_UP & ~touchbar->disabledKeys);
+    PokedexDetailTbar_SetKey(touchbar->tbar, touchbar->items[GENERAL_CUR_D].icon->icon,
+                             PAD_KEY_DOWN & ~touchbar->disabledKeys);
+}
+#endif
+
 static void PokedexDetailTouchbar_CreateType(PokedexDetailTouchbar *touchbar) {
     switch (touchbar->type) {
     case POKEDEX_DETAIL_TOUCHBAR_GENERAL:
@@ -644,6 +675,10 @@ static void PokedexDetailTouchbar_CreateGeneral(PokedexDetailTouchbar *touchbar)
         PokedexDetailTbar_SetVisible(touchbar->tbar, touchbar->items[GENERAL_CUR_U].icon->icon, FALSE);
         PokedexDetailTbar_SetVisible(touchbar->tbar, touchbar->items[GENERAL_CUR_D].icon->icon, FALSE);
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: a bar made again keeps the keys that the page took
+    PokedexDetailTouchbar_ApplyDisabledKeys(touchbar);
+#endif
 }
 
 static void PokedexDetailTouchbar_FreeGeneral(PokedexDetailTouchbar *touchbar) {
@@ -667,6 +702,11 @@ static void PokedexDetailTouchbar_UpdateGeneral(PokedexDetailTouchbar *touchbar)
     int trigger;
     int touch;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: the keys that the page takes push no tab or arrow (PokedexDetailTouchbar_SetDisabledKeys)
+    pressed &= ~touchbar->disabledKeys;
+    typed &= ~touchbar->disabledKeys;
+#endif
     if (typed & PAD_KEY_LEFT) {
         switch (touchbar->page) {
         case POKEDEX_DETAIL_PAGE_INFO - 1:

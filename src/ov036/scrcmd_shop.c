@@ -55,6 +55,10 @@
 #include "system/wordset.h"
 #include "text/script/scrcmd_shop.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/move_tutors.h"
+#endif
+
 // The command's shop IDs past the Poké Marts', whose items are in file ID + 6 of ARCID_SHOP_ITEMS. The special marts'
 // stock grows with a level that KeyDataSave_GetProgress keeps in the key system's data, its value 0 for 0xf7 to 0xfa
 // and 1 for 0xef to 0xf2
@@ -326,7 +330,10 @@ static void GetMoveTutorShopSortimentBits(GameSystem *gsys, u32 moveIndex, u32 t
 
 static const u8 BP_SHOP_ITEM_COUNTS[] = { 42, 18 };
 
+#ifndef PAPERWHITE2
+// Paper White 2: the tutors' lists are in ARM9 main (paperwhite2/move_tutors.h), for the Pokédex too
 static const u8 MOVE_TUTOR_SHOP_ITEM_COUNTS[] = { 15, 17, 13, 15 };
+#endif
 
 static const ConfirmDialogSetup sConfirmDialogSetup = { 1, 24, 13, 11, 25 };
 
@@ -424,6 +431,8 @@ static const ShopItem BP_SHOP_ITEMS_TMS[] = {
 
 // clang-format on
 
+#ifndef PAPERWHITE2
+// Paper White 2: these four lists are paperwhite2_move_tutors.c's in the hack's build, the same moves and prices
 // clang-format off
 static const MoveTutorShopItem MOVE_TUTOR_ITEMS_HUMILAU_CITY[] = {
     { { MOVE_BIND, 2 }, 0 },
@@ -507,6 +516,7 @@ static const MoveTutorShopItem MOVE_TUTOR_ITEMS_LENTIMAS_TOWN[] = {
 };
 
 // clang-format on
+#endif
 
 // clang-format off
 static const ShopItem BP_SHOP_ITEMS_NORMAL[] = {
@@ -558,12 +568,15 @@ static const ShopItem BP_SHOP_ITEMS_NORMAL[] = {
 
 static const ShopItem *BP_SHOP_ITEMS[] = { BP_SHOP_ITEMS_NORMAL, BP_SHOP_ITEMS_TMS };
 
+#ifndef PAPERWHITE2
+// Paper White 2: PaperWhite2_MoveTutorMoves in the hack's build
 static const MoveTutorShopItem *MOVE_TUTOR_SHOP_ITEMS[] = {
     MOVE_TUTOR_ITEMS_DRIFTVEIL_CITY,
     MOVE_TUTOR_ITEMS_LENTIMAS_TOWN,
     MOVE_TUTOR_ITEMS_HUMILAU_CITY,
     MOVE_TUTOR_ITEMS_NACRENE_CITY,
 };
+#endif
 
 // The windows: the title, the balance, the list, how many the bag holds, the amount, the description and messages
 static const ShopWindowSetup *sBPShopWindows[] = {
@@ -1215,13 +1228,27 @@ static void ShopUI_LoadSpecialPokeMartItems(ShopUIWork *wk, int shopId) {
 static void ShopUI_LoadMoveTutorItems(ShopUIWork *wk, u32 tutor) {
     int i = 0;
     MsgData *msgData = GFL_MsgSysLoadData(FALSE, ARCID_SYSTEM_MESSAGE, TEXT_BANK_ITEM_NAMES, wk->heapId);
+#ifdef PAPERWHITE2
+    // Paper White 2: the tutor's list from ARM9 main, the same as the original's
+    const PaperWhite2TutorMove *items = PaperWhite2_MoveTutorMoves[tutor];
+    int count = PaperWhite2_MoveTutorMoveCounts[tutor];
+#else
     const MoveTutorShopItem *items = MOVE_TUTOR_SHOP_ITEMS[tutor];
     int count = MOVE_TUTOR_SHOP_ITEM_COUNTS[tutor];
+#endif
 
     wk->options = ListMenuCore_CreateOptionList(count + 1, wk->heapId);
     for (; i < count; i++) {
+#ifdef PAPERWHITE2
+        ShopItem item;
+        u16 index = items[i].index;
+
+        item.item = items[i].move;
+        item.price = items[i].price;
+#else
         ShopItem item = items[i].item;
         u16 index = items[i].index;
+#endif
 
         ShopUI_AppendOption(wk, index, wk->listMode, item.item, msgData);
         wk->entries[index].item = item.item;

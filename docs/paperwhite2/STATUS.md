@@ -2,6 +2,22 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-07: Pokédex, five tabs, the Moves list and the move panel
+
+Built (plugins.md, Pokédex), not yet tested in game:
+- Five sub-pages, Stats, Data, Moves, Evo (blank for now), Matchups, touched by the art's tab icons (x 64-192, 32
+  apart); L/R and the D-pad's Left/Right cycle them and Moves' four sets, wrapping, and no longer go to Area, Cry or
+  Forms (touch only). The user's new Stats and Data art, with icons in the tab bar.
+- Moves: the sets bar (Level Up, TM/HM, Tutor, Egg), 5 rows at the relearner's size with its cursor (converted to the
+  Pokédex's sprite mapping, members 137-139, `tools/paperwhite2/obj_remap.py`), the list's scroll bar as the Pokédex
+  list's; "Lv. N", "TM05"/"HM04", the tutor's town (Driftveil, Lentimas, Humilau, Nacrene for the shard tutors, the
+  PWT for Pledges and the ultimate moves, Opelucid for Draco Meteor) or "―" for egg moves. Up/Down move the list there.
+- The move panel over the top screen (A or a touch), the rest dimmed; B closes it. The entry's text is freed while it's
+  open and printed again after.
+- The tutors' lists moved to ARM9 main (`PaperWhite2_MoveTutorMoves`, values checked identical), which the shops read.
+- Data: values and the Egg column 1 px left, egg groups in the small font.
+- About 29-30 of the screen's 32 sprite resource slots are in use: tight for Evo's icons.
+
 ## 2026-11-07: Pokédex, Matchups in the battle's colours, a Default button
 
 The user tested Matchups: it works. Now the multipliers are in the battle's move preview colours (light blue above

@@ -6,7 +6,7 @@ to the pixel. As they hold the ROM's fonts, they are written to an ignored folde
 
     pokedex_templates.py [--extract extract/w2_us] [OUT_DIR]
 
-For each sub-page (stats, data, matchups) it writes:
+For each sub-page (stats, data, moves, evo, matchups) it writes:
 - <page>_canvas.png: the art to draw over, 256 by 192, transparent where the grid shows: the user's art where the
   sub-page has it (res/paperwhite2/pokedex_art/info_<page>.png), else in the art's palette the Stats art's strip and
   plain panels where the page draws its own until there is art;
@@ -15,12 +15,19 @@ For each sub-page (stats, data, matchups) it writes:
 - <page>_reference_tiles.png: the same with the 8 by 8 tiles' grid.
 
 Matchups' reference has the game's type icons (a/0/8/2, as the page loads them) and the multipliers of a sample
-species, worked out as the page does from the type chart (src/paperwhite2/main/paperwhite2_type_chart.c).
+species, worked out as the page does from the type chart (src/paperwhite2/main/paperwhite2_type_chart.c). Moves'
+reference has a sample species' level-up moves (res/pokemon/), their type icons, the move relearner's cursor
+(res/graphics/pokedex_gra/137-139, its 128 KB mapping) and the Pokédex list's scroll knob.
+
+And the top screen's move panel, which a move chosen on Moves opens over the entry: move_panel_canvas.png (the panel
+the game draws until there is art) and move_panel_reference.png / _tiles.png (with a sample move, over a dark
+checker for the dimmed screen, from paperwhite2_pokedex_move_panel.c's constants).
 
 And the top screen's Info panels' palettes (a/1/5/7's palette 9, rows 0 and 1, ov296's POKEDEX_GRA_PALETTE), to draw
 with the same colors: top_panels_row<N>.pal (JASC), .gpl (GIMP, Aseprite) and top_panels_palette.png (the swatches).
 """
 import argparse
+import json
 import re
 import struct
 import sys
@@ -31,9 +38,13 @@ sys.path.insert(0, str(ROOT))
 from tools.data.narc import read_narc  # noqa: E402
 from tools.data.nitro_2d import (  # noqa: E402
     character_pixels, palette_colors, read_indexed_png, write_indexed_png, write_palette)
+from tools.paperwhite2.nitro_cells import CellBank  # noqa: E402
+from tools.paperwhite2.obj_remap import OBJ_TILES, tiles_of  # noqa: E402
 
 WIDTH, HEIGHT = 256, 192
 PANELS = ROOT / "src/paperwhite2/ov298/paperwhite2_pokedex_info_panels.c"
+HEADER = ROOT / "include/paperwhite2/pokedex_info.h"
+MOVE_PANEL = ROOT / "src/paperwhite2/ov298/paperwhite2_pokedex_move_panel.c"
 TYPE_CHART = ROOT / "src/paperwhite2/main/paperwhite2_type_chart.c"
 APP_MENU_COMMON = ROOT / "src/system/app_menu_common.c"
 PAGE = ROOT / "src/paperwhite2/ov298/paperwhite2_pokedex_info.c"
@@ -46,6 +57,10 @@ MENU_COMMON = "files/a/0/8/2"
 TYPE_ICON_PALETTE = 0x21
 TYPE_ICON_CHARS = 0x22
 TYPE_ICON_WIDTH, TYPE_ICON_HEIGHT = 32, 16
+# The category icons' characters (AppMenuCommon_GetCategoryIconCharFile), with the type icons' palette
+CATEGORY_ICON_CHARS = 0x38
+# The Pokédex's own graphics in res/ (the cursor made for its mapping, the list's knob) and the relearner's palette
+GRAPHICS = ROOT / "res/graphics"
 # AppTaskMenuWin's text: its top in the button, and the frame's width at each side (app_taskmenu.c)
 BUTTON_TEXT_Y = 6
 BUTTON_FRAME = 8
@@ -64,6 +79,9 @@ SAMPLE_EGG = ("Field", "20", "5120 steps")
 # Tepig's types (Fire) for the Matchups, and its choices: Default (Blaze changes nothing), shown chosen, and Thick Fat
 SAMPLE_TYPES = (9, 9)
 SAMPLE_ABILITIES = (None, "thick_fat")
+# Moves' sample: its level-up moves, the cursor on the first; the move panel's sample move
+SAMPLE_SPECIES = "tepig"
+SAMPLE_MOVE = "arm_thrust"
 
 # The palette: the page's placeholder colors as paperwhite2_pokedex_info_panels.c's sPanelColors (index 0 clear),
 # then the template's own: the grid's checker, the touch bar, the buttons, the tiles' grid
@@ -79,8 +97,9 @@ GRID_A, GRID_B, TOUCH, TOUCH_EDGE, BUTTON, BUTTON_EDGE, TILE_LINE = range(16, 23
 PINK = 9
 # Where the art's 16 colors start in a reference's palette, after the template's
 ART_BASE = 23
-# The placeholder panels' colors in the art's palette (the top screen's row 0): its white and a dark grey
-ART_PANEL, ART_BORDER = 4, 10
+# The placeholder panels' colors in the art's palette (the top screen's row 0): its white, a dark grey and, for Moves'
+# rows, a mid grey
+ART_PANEL, ART_BORDER, ART_ROW = 4, 10, 8
 # Matchups' reference: after the art's 16 colors, the type icons' 48, then a chosen button's color
 ICON_BASE = ART_BASE + 16
 BUTTON_CHOSEN_COLOR = (90, 200, 230)
@@ -89,12 +108,21 @@ BUTTON_CHOSEN = ICON_BASE + 48
 # below it and 0, each with the dark shadow, after the chosen button's color; 1 is the panels' text
 MATCHUP_COLORS = [(12, 22, 31), (30, 27, 11), (16, 16, 16)]
 M_SUPER, M_RESISTED, M_IMMUNE = BUTTON_CHOSEN + 1, BUTTON_CHOSEN + 2, BUTTON_CHOSEN + 3
+# Moves' reference: the cursor's 16 colors and the knob's after the multipliers'
+CURSOR_BASE = M_IMMUNE + 1
+KNOB_BASE = CURSOR_BASE + 16
 BORDER_C = 4
 MULTIPLIER_ONE = 64
 
 # What the templates are and the art's limits, for the user, beside them
-README = """Pokedex Info page, bottom screen: art templates (Stats, Data and Matchups sub-pages)
-======================================================================================
+README = """Pokedex Info page: art templates (bottom screen: Stats, Data, Moves, Evo, Matchups; top: move panel)
+===========================================================================================================
+
+The tab bar (top 16 rows) is your art: five icons centred at x 64, 96, 128, 160 and 192, the
+current tab as you draw it on each sub-page. The game prints no tab names over art; touching
+a tab is its icon's column (32 px wide, y 0-17). A sub-page without art yet shows a dark strip
+with its own name in the middle instead. The canvases of the sub-pages without art borrow the
+Stats art's strip, so their current tab is still Stats' there: draw each sub-page's own.
 
 Files
 - stats_canvas.png: draw your art over this one. 256 x 192, the whole bottom screen.
@@ -125,9 +153,8 @@ Limits
   flipped ones) are stored once; the screen has room for every tile being different.
 - The game draws on top of your art, in its own colours:
   - the panel text: near-black (32,32,41) with a light grey shadow (180,180,189)
-  - the tab strip's text: the current tab white, the others mid grey (123,123,131), no shadow
   - the stat bars (outline, white track and the coloured fill)
-  So keep the panel behind the text light, and the tab strip dark enough for white text.
+  So keep the panel behind the text light.
 - The text and bars go where the reference shows them; ask to have any moved, the bars or
   the line left to your art, or the text in other colours.
 
@@ -150,18 +177,60 @@ Matchups
   centered): "Default" for every ability that changes no matchup, if the Pokemon has one, then
   each ability that does (Tepig: Default, chosen, and Thick Fat).
 
+Data
+- The values' column is 1 px further left than before, the whole Egg column too, and the egg
+  group names are always the small font.
+
+Moves
+- moves_canvas.png, moves_reference.png, moves_reference_tiles.png. Under the tab bar, a second
+  bar (y 16-31) of the four sets, "Level Up", "TM/HM", "Tutor", "Egg", in the small font:
+  the shown set near-black with its shadow, the others light grey (180,180,189), no shadow.
+  Their touch areas run from each name to the next (the gap after TM/HM is for your current
+  tab hanging down). The canvas draws this bar as a light strip.
+- 5 rows of moves, each 22 px tall at a 24 px pitch, from y 36: the move relearner's rows,
+  208 px wide with both ends slanted 6 px (x 21-228 at a row's top, 27-234 at its bottom),
+  grey with a light end from x 152 (at the top). The cyan cursor round a row is the game's
+  (the relearner's sprite) and fits that shape exactly, so keep the rows where they are.
+- In each row: the move's type icon (a sprite, centred at x 47), its name in the standard font,
+  white with a dark shadow, from x 67, and the set's detail right-aligned at x 220 in the light
+  end, near-black ("Lv. 22", "TM26", the tutor's town in the small font, a dash for egg moves).
+  The sample is Tepig's level-up moves.
+- The scroll bar: a thin track at x 240, y 50-160 (the canvas draws a light line with a dark
+  edge) and the Pokedex list's yellow knob, a sprite, which moves down it as the list scrolls.
+
+Evo
+- evo_canvas.png etc.: nothing yet but the placeholder panel; the sub-page is still to come.
+
+The move panel (top screen)
+- move_panel_canvas.png: the panel as the game draws it until there is art, 256 x 192, the top
+  screen: x 9-248, y 24-169, light grey with a dark 1 px border. The top 24 rows (outlined) are
+  the head bar ("INFO"), which stays above the panel; the checker is the rest of the screen,
+  which is dimmed while the panel is open.
+- move_panel_reference.png, move_panel_reference_tiles.png: with a sample move (Arm Thrust):
+  the name at (20, 32), its type icon at the top right (centred at 224, 40), "Category" at
+  (20, 64) with the category icon (centred at 99, 70), "Power" (20, 77) and "Accuracy"
+  (20, 91) with their values centred at x 93 and 94, "PP" (138, 64) and "Priority" (138, 77)
+  with theirs centred at x 212, and the description from (20, 120), three lines 14 px apart.
+  The text is near-black (32,32,41) with a grey shadow (172,172,180), on (238,238,238).
+- As art, the panel would be part of the top screen's BG 1, which has little room: keep it
+  simple (few different tiles), or ask for the frame as sprites.
+
 When you're done, send the PNG back (any 16-colour PNG, indexed or not, transparency as
 transparent pixels) and it gets built into the game.
 """
 
 
-def colors(art_colors=(), icon_colors=()):
-    def rgb(c):
-        return tuple(v * 255 // 31 for v in c)
+def rgb(c):
+    return tuple(v * 255 // 31 for v in c)
+
+
+def colors(art_colors=(), icon_colors=(), sprite_colors=()):
     out = [rgb(c) for c in PANEL_COLORS] + EXTRA + list(art_colors)
     if icon_colors:
         out += [(0, 0, 0)] * (ICON_BASE - len(out)) + list(icon_colors) + [BUTTON_CHOSEN_COLOR]
         out += [rgb(c) for c in MATCHUP_COLORS]
+    if sprite_colors:
+        out += list(sprite_colors)
     return out
 
 
@@ -287,15 +356,6 @@ def stats_page(d, m, font, small):
     return canvas
 
 
-def bar_text(canvas, d, m, small, shown):
-    y = d["BAR_TEXT_Y"]
-    canvas.text(small, m["SubpageL"], d["BAR_L_X"], y, letter=DIM, shadow=CLEAR)
-    canvas.text(small, m["SubpageR"], d["BAR_R_RIGHT"], y, "right", DIM, CLEAR)
-    for i, (name, center) in enumerate([("Stats", "BAR_STATS_X"), ("Data", "BAR_DATA_X"),
-                                        ("Matchups", "BAR_MATCHUPS_X")]):
-        canvas.text(small, m[name], d[center], y, "center", PANEL if i == shown else DIM, CLEAR)
-
-
 def stats_text(canvas, d, m, font):
     names = ["HP", "Attack", "Defense", "SpAttack", "SpDefense", "Speed"]
     for i, (name, value) in enumerate(zip(names, SAMPLE_STATS)):
@@ -338,7 +398,7 @@ def data_text(canvas, d, m, font, small):
     canvas.text(font, m["EggHeading"], center, d["EGG_HEADING_Y"], "center", 10, BORDER)
     canvas.text(small, m["Group"], center, d["EGG_GROUP_LABEL_Y"], "center", DIM, CLEAR)
     group, cycles, steps = SAMPLE_EGG
-    canvas.text(font, group, center, d["EGG_GROUP_Y"], "center", PANEL, BORDER)
+    canvas.text(small, group, center, d["EGG_GROUP_Y"], "center", PANEL, BORDER)
     canvas.text(small, m["Cycles"], center, d["EGG_CYCLES_LABEL_Y"], "center", DIM, CLEAR)
     canvas.text(font, cycles, center, d["EGG_CYCLES_Y"], "center", PANEL, BORDER)
     canvas.text(small, steps, center, d["EGG_STEPS_Y"], "center", DIM, CLEAR)
@@ -368,6 +428,157 @@ def placeholder_canvas(d, stats_art, panels):
     return canvas.pixels, art_colors
 
 
+def moves_canvas(d, canvas):
+    """Draws Moves' placeholders into a canvas in the art's palette, as PokedexInfoPanels_DrawMoves and _DrawMoveRow:
+    the sets' light bar, the rows and the scroll bar's track."""
+    canvas.fill(0, d["MOVES_SET_BAR_Y"], WIDTH, d["MOVES_SET_BAR_HEIGHT"], ART_PANEL)
+    height = d["MOVES_ROW_HEIGHT"]
+    for row in range(d["POKEDEX_INFO_MOVE_ROWS"]):
+        top = d["MOVES_ROW_Y"] + row * d["MOVES_ROW_PITCH"]
+        for line in range(height):
+            shift = line * d["MOVES_ROW_SLANT"] // (height - 1)
+            left, end = d["MOVES_ROW_X"] + shift, d["MOVES_ROW_END_X"] + shift
+            right = d["MOVES_ROW_X"] + d["MOVES_ROW_WIDTH"] - 1 + shift
+            canvas.fill(left, top + line, right - left + 1, 1, ART_BORDER)
+            if 0 < line < height - 1:
+                canvas.fill(left + 1, top + line, end - left - 1, 1, ART_ROW)
+                canvas.fill(end, top + line, right - end, 1, ART_PANEL)
+    track = d["MOVES_TRACK_X"], d["MOVES_TRACK_TOP"], d["MOVES_TRACK_BOTTOM"] - d["MOVES_TRACK_TOP"]
+    canvas.fill(track[0] - 1, track[1], 3, track[2], ART_BORDER)
+    canvas.fill(track[0], track[1] + 1, 1, track[2] - 2, ART_PANEL)
+
+
+def sprite_cell(chars, cells, cell=0):
+    """A cell of a sprite of res/graphics as {(x, y): color index} around its origin, its characters in its bank's
+    mapping."""
+    width, height, pixels, colors16 = read_indexed_png(chars)
+    tiles = tiles_of(pixels, width, height)
+    bank = CellBank(cells.read_bytes())
+    unit = 1 << struct.unpack_from("<I", bank.tail)[0]
+    out = {}
+    for obj in bank.cells[cell].objs:
+        w, h = OBJ_TILES[obj.attr0 >> 14][obj.attr1 >> 14]
+        x, y = obj.attr1 & 0x1FF, obj.attr0 & 0xFF
+        x, y = x - 512 if x > 255 else x, y - 256 if y > 127 else y
+        hflip, vflip = obj.attr1 >> 12 & 1, obj.attr1 >> 13 & 1
+        for t in range(w * h):
+            tile = tiles[obj.tile * unit + t]
+            for i, value in enumerate(tile):
+                if value:
+                    px, py = t % w * 8 + i % 8, t // w * 8 + i // 8
+                    px, py = w * 8 - 1 - px if hflip else px, h * 8 - 1 - py if vflip else py
+                    out[(x + px, y + py)] = value
+    return out, colors16
+
+
+def palette_row(path, row):
+    """A row of a JASC palette of res/."""
+    lines = path.read_text().split("\n")[3:]
+    return [tuple(int(v) for v in line.split()) for line in lines[row * 16:row * 16 + 16]]
+
+
+def put_sprite(canvas, sprite, x, y, base):
+    for (sx, sy), value in sprite.items():
+        if 0 <= x + sx < WIDTH and 0 <= y + sy < HEIGHT:
+            canvas.pixels[(y + sy) * WIDTH + x + sx] = base + value
+
+
+def put_icon(canvas, icon, x, y):
+    """A 32 by 16 icon centered at x, y, as the type icons' cells center it."""
+    for i, value in enumerate(icon):
+        if value:
+            canvas.pixels[(y - TYPE_ICON_HEIGHT // 2 + i // TYPE_ICON_WIDTH) * WIDTH + x - TYPE_ICON_WIDTH // 2
+                          + i % TYPE_ICON_WIDTH] = ICON_BASE + value
+
+
+def move_data(move):
+    """A move's data (name, type, category, power, accuracy, PP, priority, description) from res/moves/."""
+    return json.loads((ROOT / f"res/moves/{move}/data.json").read_text())
+
+
+def type_index(name):
+    order = ["NORMAL", "FIGHTING", "FLYING", "POISON", "GROUND", "ROCK", "BUG", "GHOST", "STEEL", "FIRE", "WATER",
+             "GRASS", "ELECTRIC", "PSYCHIC", "ICE", "DRAGON", "DARK"]
+    return order.index(name.replace("TYPE_", ""))
+
+
+def moves_text(canvas, d, m, font, small, icons):
+    # As PokedexInfoPanels_DrawMoves and _UpdateMoveActors: the sample's level-up set, the cursor on the first row
+    set_x = [int(v) for v in re.search(r"sMoveSetX\[[^]]*\] = \{([^}]*)\}", PANELS.read_text()).group(1).split(",")]
+    for i, name in enumerate(["LevelUp", "Machines", "Tutor", "EggMoves"]):
+        x = set_x[i]
+        canvas.text(small, m[name], x, d["MOVES_SET_TEXT_Y"], letter=TEXT_C if i == 0 else SHADOW,
+                    shadow=SHADOW if i == 0 else CLEAR)
+    learnset = json.loads((ROOT / f"res/pokemon/{SAMPLE_SPECIES}/data.json").read_text())["learnset"]["by_level"]
+    for row, (level, move) in enumerate(learnset[:d["POKEDEX_INFO_MOVE_ROWS"]]):
+        top = d["MOVES_ROW_Y"] + row * d["MOVES_ROW_PITCH"]
+        data = move_data(move.replace("MOVE_", "").lower())
+        put_icon(canvas, icons[type_index(data["type"])], d["MOVES_ROW_ICON_X"], top + d["MOVES_ROW_ICON_OFFSET_Y"])
+        y = top + d["MOVES_ROW_TEXT_OFFSET_Y"]
+        name_font = font if font.text_width(data["name"]) <= d["MOVES_ROW_NAME_WIDTH"] else small
+        canvas.text(name_font, data["name"], d["MOVES_ROW_NAME_X"],
+                    y + (0 if name_font is font else d["MOVES_SMALL_TEXT_OFFSET_Y"]), letter=PANEL, shadow=BORDER)
+        canvas.text(font, m["MoveLevel"].replace("{0200:0}", str(level)), d["MOVES_ROW_DETAIL_RIGHT"], y, "right")
+    cursor, _ = sprite_cell(GRAPHICS / "pokedex_gra/137.png", GRAPHICS / "pokedex_gra/138.ncer")
+    put_sprite(canvas, cursor, d["MOVES_CURSOR_X"], d["MOVES_ROW_Y"] + d["MOVES_CURSOR_OFFSET_Y"], CURSOR_BASE)
+    knob, _ = sprite_cell(GRAPHICS / "pokedex_gra/057.png", GRAPHICS / "pokedex_gra/063.ncer", d["KNOB_SEQUENCE"])
+    # The knob's cell names the list's palette row, 3, whose colors are KNOB_BASE's
+    put_sprite(canvas, {k: v % 16 for k, v in knob.items()}, d["MOVES_TRACK_X"],
+               d["MOVES_TRACK_TOP"] + d["MOVES_KNOB_HALF_HEIGHT"], KNOB_BASE)
+
+
+def sprite_colors():
+    """The cursor's palette (the relearner's 05.pal) and the knob's (the list's 053.pal, row 3)."""
+    return (palette_row(GRAPHICS / "move_tutor/05.pal", 0) + palette_row(GRAPHICS / "pokedex_gra/053.pal", 3))
+
+
+def move_panel(d, m, font, icons, text, tiles):
+    """The top screen's move panel as PokedexMovePanel_Open and _DrawMove draw it, over a dark checker (the dimmed
+    screen), the head bar's rows outlined; with the sample move's text and icons if text, and the tiles' grid if
+    tiles."""
+    panel_colors = [tuple(int(v) for v in c) for c in re.findall(
+        r"GX_RGB\((\d+), (\d+), (\d+)\)", MOVE_PANEL.read_text().split("sPanelColors[] = {", 1)[1].split("};")[0])]
+    clear, text_c, shadow, fill, border = range(5)
+    canvas = Canvas()
+    for y in range(HEIGHT):
+        for x in range(WIDTH):
+            canvas.pixels[y * WIDTH + x] = GRID_A if (x // 4 + y // 4) % 2 else GRID_B
+    left, top = d["PANEL_TILE_X"] * 8 + 1, d["PANEL_TILE_Y"] * 8
+    right = (d["PANEL_TILE_X"] + d["PANEL_TILE_WIDTH"]) * 8 - 8
+    bottom = (d["PANEL_TILE_Y"] + d["PANEL_TILE_HEIGHT"]) * 8 - 7
+    canvas.fill(left, top, right - left + 1, bottom - top + 1, border)
+    canvas.fill(left + 1, top + 1, right - left - 1, bottom - top - 1, fill)
+    # The head bar, which stays above the panel
+    canvas.outline(0, 0, WIDTH, d["PANEL_TILE_Y"] * 8, TILE_LINE)
+    if text:
+        data = move_data(SAMPLE_MOVE)
+        canvas.text(font, data["name"], d["NAME_X"], d["NAME_Y"], letter=text_c, shadow=shadow)
+        put_icon(canvas, icons[type_index(data["type"])], d["TYPE_ICON_X"], d["TYPE_ICON_Y"])
+        put_icon(canvas, icons[len(type_chart()) + ["MOVE_CATEGORY_STATUS", "MOVE_CATEGORY_PHYSICAL",
+                                                    "MOVE_CATEGORY_SPECIAL"].index(data["category"])],
+                 d["CATEGORY_ICON_X"], d["CATEGORY_ICON_Y"])
+        for label, y in (("Category", "CATEGORY_Y"), ("Power", "POWER_Y"), ("Accuracy", "ACCURACY_Y")):
+            canvas.text(font, m[label], d["LABEL_X"], d[y], letter=text_c, shadow=shadow)
+        for label, y in (("PP", "PP_Y"), ("Priority", "PRIORITY_Y")):
+            canvas.text(font, m[label], d["RIGHT_LABEL_X"], d[y], letter=text_c, shadow=shadow)
+        dash = m["NoValue"]
+        values = [(str(data["power"]) if data["power"] > 1 else dash, "POWER_VALUE_X", "POWER_Y"),
+                  (str(data["accuracy"]) if data["accuracy"] else dash, "ACCURACY_VALUE_X", "ACCURACY_Y"),
+                  (str(data["pp"]), "RIGHT_VALUE_X", "PP_Y"),
+                  (("+" if data["priority"] > 0 else "") + str(data["priority"]), "RIGHT_VALUE_X", "PRIORITY_Y")]
+        for value, x, y in values:
+            canvas.text(font, value, d[x], d[y], "center", text_c, shadow)
+        for i, line in enumerate(data["description"].split("\n")[:d["DESCRIPTION_LINES"]]):
+            canvas.text(font, line, d["DESCRIPTION_X"], d["DESCRIPTION_Y"] + i * d["DESCRIPTION_LINE_PITCH"],
+                        letter=text_c, shadow=shadow)
+    if tiles:
+        for y in range(HEIGHT):
+            for x in range(WIDTH):
+                if x % 8 == 0 or y % 8 == 0:
+                    canvas.pixels[y * WIDTH + x] = TILE_LINE
+    return canvas, [rgb(c) for c in panel_colors]
+
+
 def type_chart():
     """The type chart, attacking type first, from its C file."""
     values = [int(v) for v in re.findall(r"\d+", TYPE_CHART.read_text().split("= {", 1)[1].split("};")[0])]
@@ -392,10 +603,16 @@ def type_icons(extract):
     icon_colors = palette_colors(files[TYPE_ICON_PALETTE])[:48]
     rows = [int(v) for v in re.search(r"sTypeIconPalettes\[\] = \{([^}]*)\}", APP_MENU_COMMON.read_text())
             .group(1).replace(",", " ").split()]
+    category_rows = [int(v) for v in re.search(r"sIconPalettes\[\] = \{([^}]*)\}", APP_MENU_COMMON.read_text())
+                     .group(1).replace(",", " ").split()]
     icons = []
     for t in range(len(type_chart())):
         _, _, pixels = character_pixels(files[TYPE_ICON_CHARS + t], TYPE_ICON_WIDTH, TYPE_ICON_HEIGHT)
         icons.append(bytes(v + rows[t] * 16 if v else 0 for v in pixels))
+    # Then the three categories' (status, physical, special), after the types'
+    for c in range(3):
+        _, _, pixels = character_pixels(files[CATEGORY_ICON_CHARS + c], TYPE_ICON_WIDTH, TYPE_ICON_HEIGHT)
+        icons.append(bytes(v + category_rows[c] * 16 if v else 0 for v in pixels))
     return icons, icon_colors
 
 
@@ -404,7 +621,7 @@ def matchups_text(canvas, d, m, font, small, icons):
     # buttons as PokedexInfoPage_CreateAbilityButtons
     chart = type_chart()
     type1, type2 = SAMPLE_TYPES
-    for t, icon in enumerate(icons):
+    for t, icon in enumerate(icons[:len(chart)]):
         x = d["MATCHUPS_ICON_X"] + t % d["MATCHUPS_COLUMNS"] * d["MATCHUPS_COLUMN_PITCH"]
         y = d["MATCHUPS_ICON_Y"] + t // d["MATCHUPS_COLUMNS"] * d["MATCHUPS_ROW_PITCH"]
         for i, value in enumerate(icon):
@@ -474,8 +691,13 @@ def main():
     args = parser.parse_args()
     fonts = read_narc((args.extract / FONTS).read_bytes())
     font, small = Font(fonts[0]), Font(fonts[1])
-    d, m = defines(PANELS, PAGE), messages()
+    d, m = defines(HEADER, PANELS, PAGE, MOVE_PANEL), messages()
     args.out.mkdir(parents=True, exist_ok=True)
+    icons, icon_colors = type_icons(args.extract)
+
+    def write(page, art, draw, palette):
+        for tiles, name in ((False, f"{page}_reference.png"), (True, f"{page}_reference_tiles.png")):
+            reference(art, draw, tiles).write(args.out / name, palette)
 
     stats_art = load_art("stats")
     if stats_art:
@@ -486,35 +708,45 @@ def main():
         art.write(args.out / "stats_canvas.png")
 
     def stats(canvas):
-        bar_text(canvas, d, m, small, 0)
         stats_text(canvas, d, m, font)
         buttons(canvas, d, m, font, ["Cry", "Turn", "Form", "Shiny", "Language"])
-    for tiles, name in ((False, "stats_reference.png"), (True, "stats_reference_tiles.png")):
-        reference(art, stats, tiles).write(args.out / name, palette)
+    write("stats", art, stats, palette)
 
-    # Data: the user's art once there is some, else a canvas in the Stats art's palette with its strip
-    data_art = load_art("data") or (placeholder_canvas(d, stats_art, ("DATA", "EGG")) if stats_art else None)
-    if data_art:
-        (args.out / "data_canvas.png").write_bytes(write_indexed_png(WIDTH, HEIGHT, bytes(data_art[0]), data_art[1]))
+    # The other sub-pages: the user's art once there is some, else a canvas in the Stats art's palette with its tab
+    # strip and the placeholders that the page draws until there is art
+    def sub_page(page, panels, extra=None):
+        found = load_art(page)
+        if found or not stats_art:
+            return found
+        pixels, art_colors = placeholder_canvas(d, stats_art, panels)
+        if extra:
+            canvas = Canvas()
+            canvas.pixels = pixels
+            extra(d, canvas)
+        return pixels, art_colors
 
-        def data(canvas):
-            bar_text(canvas, d, m, small, 1)
-            data_text(canvas, d, m, font, small)
-        for tiles, name in ((False, "data_reference.png"), (True, "data_reference_tiles.png")):
-            reference(data_art, data, tiles).write(args.out / name, colors(data_art[1]))
-    # Matchups, as Data
-    matchups_art = load_art("matchups") or (placeholder_canvas(d, stats_art, ("MATCHUPS",)) if stats_art else None)
-    if matchups_art:
-        (args.out / "matchups_canvas.png").write_bytes(
-            write_indexed_png(WIDTH, HEIGHT, bytes(matchups_art[0]), matchups_art[1]))
-        icons, icon_colors = type_icons(args.extract)
-        art_colors = (list(matchups_art[1]) + [(0, 0, 0)] * 16)[:16]
+    def art16(found):
+        return (list(found[1]) + [(0, 0, 0)] * 16)[:16]
 
-        def matchups(canvas):
-            bar_text(canvas, d, m, small, 2)
-            matchups_text(canvas, d, m, font, small, icons)
-        for tiles, name in ((False, "matchups_reference.png"), (True, "matchups_reference_tiles.png")):
-            reference(matchups_art, matchups, tiles).write(args.out / name, colors(art_colors, icon_colors))
+    for page, panels, extra, draw, sprites in (
+            ("data", ("DATA", "EGG"), None, lambda c: data_text(c, d, m, font, small), False),
+            ("moves", (), moves_canvas, lambda c: moves_text(c, d, m, font, small, icons), True),
+            ("evo", ("EVO",), None, lambda c: None, False),
+            ("matchups", ("MATCHUPS",), None, lambda c: matchups_text(c, d, m, font, small, icons), False)):
+        found = sub_page(page, panels, extra)
+        if not found:
+            continue
+        (args.out / f"{page}_canvas.png").write_bytes(write_indexed_png(WIDTH, HEIGHT, bytes(found[0]), found[1]))
+        write(page, found, draw, colors(art16(found), icon_colors, sprite_colors() if sprites else ()))
+
+    # The top screen's move panel: the canvas is the panel the game draws, the reference has the sample move
+    for name, text, tiles in (("move_panel_canvas.png", False, False), ("move_panel_reference.png", True, False),
+                              ("move_panel_reference_tiles.png", True, True)):
+        canvas, panel_colors = move_panel(d, m, font, icons, text, tiles)
+        # The dimmed screen's checker in dark greys, in the grid's places
+        palette = panel_colors + [(0, 0, 0)] * (GRID_A - len(panel_colors)) + [(46, 46, 54), (32, 32, 38)] + EXTRA[2:]
+        palette += [(0, 0, 0)] * (ICON_BASE - len(palette)) + list(icon_colors)
+        canvas.write(args.out / name, palette)
     (args.out / "README.txt").write_text(README)
     top_palettes(args.extract, args.out)
     print(f"wrote the templates to {args.out}")
