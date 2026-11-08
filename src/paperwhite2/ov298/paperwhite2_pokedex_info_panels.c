@@ -76,6 +76,10 @@
 #define MAP_FLIPS (3 << 10)
 #define MAP_PALETTE_SHIFT 12
 #define TILE_SIZE 0x20
+// The grid's characters (PokedexDetailBackground_Create's, ARCID_POKEDEX_GRA member 12) fill the whole of its BG's
+// 0x8000 bytes (pokedex_detail_graphic.c), so none of them can be allocated, but its screens draw only the first 41 and
+// the rest are blank: the banner's tiles take the last ones
+#define GRID_CHAR_COUNT 1024
 // The grid of the info page's top screen in the original, the backgrounds' page 0
 #define GRID_PAGE (POKEDEX_DETAIL_PAGE_INFO - 1)
 
@@ -508,7 +512,6 @@ struct PokedexInfoPanels {
     // copied into the grid's BG, and their map entries there
     u16 gridEntries[BANNER_ENTRIES];
     u16 bannerEntries[BANNER_ENTRIES];
-    u32 bannerChars;
     u32 bannerTileCount;
     // Each sub-page's art's characters on BG_ART, all loaded with the page so that changing sub-page only changes the
     // screen; 0 for a sub-page without art
@@ -626,9 +629,6 @@ void PokedexInfoPanels_Free(PokedexInfoPanels *panels) {
     GFL_BGSysQueueScrLoad(BG_PANELS);
     BmpWin_Free(panels->contentWindow);
     BmpWin_Free(panels->barWindow);
-    if (panels->bannerTileCount != 0) {
-        GFL_BGSysFreeCharMemory(BG_GRID, panels->bannerChars, panels->bannerTileCount * TILE_SIZE);
-    }
     PokedexDetailBackground_Free(panels->grid);
     GFL_StrBufFree(panels->text);
     GFL_StrBufFree(panels->message);
@@ -659,9 +659,9 @@ static void PokedexInfoPanels_CreateArt(PokedexInfoPanels *panels) {
     GFL_ArcToolFree(arc);
 }
 
-// Evo's banner on the grid's BG: the art's tiles of the band's inside, each of its different ones once, loaded into the
-// grid's characters (from the heap, which DMA can read), and the band's map entries moved to them, in the art's palette
-// row; and the grid's own map entries there, which the other sub-pages show
+// Evo's banner on the grid's BG: the art's tiles of the band's inside, each of its different ones once, loaded over the
+// grid's last, blank characters (GRID_CHAR_COUNT; from the heap, which DMA can read), and the band's map entries moved
+// to them, in the art's palette row; and the grid's own map entries there, which the other sub-pages show
 static void PokedexInfoPanels_CreateBanner(PokedexInfoPanels *panels, ArcTool *arc) {
     const PanelsArt *art = &sSubpageArt[BANNER_SUBPAGE];
     const u16 *grid = GFL_BGSysIsScrHeapExists(BG_GRID);
@@ -674,6 +674,7 @@ static void PokedexInfoPanels_CreateBanner(PokedexInfoPanels *panels, ArcTool *a
     u16 *tiles = GFL_HeapAllocate(HEAPID_TAIL(panels->heapId), BANNER_ENTRIES * sizeof(u16), FALSE,
                                   "paperwhite2_pokedex_info_panels.c", __LINE__);
     u8 *pixels;
+    u32 firstChar;
     u32 i;
     u32 j;
 
@@ -698,11 +699,12 @@ static void PokedexInfoPanels_CreateBanner(PokedexInfoPanels *panels, ArcTool *a
     for (j = 0; j < panels->bannerTileCount; j++) {
         MI_CpuCopy8((const u8 *)chars->pRawData + tiles[j] * TILE_SIZE, pixels + j * TILE_SIZE, TILE_SIZE);
     }
-    panels->bannerChars = GFL_BGSysLoadCharDynamic(BG_GRID, pixels, panels->bannerTileCount * TILE_SIZE);
+    firstChar = GRID_CHAR_COUNT - panels->bannerTileCount;
+    GFL_BGSysLoadChar(BG_GRID, pixels, panels->bannerTileCount * TILE_SIZE, firstChar);
     for (i = 0; i < BANNER_ENTRIES; i++) {
         u16 entry = panels->bannerEntries[i];
 
-        panels->bannerEntries[i] = (panels->bannerChars + (entry & MAP_CHAR_MASK)) | (entry & MAP_FLIPS) |
+        panels->bannerEntries[i] = (firstChar + (entry & MAP_CHAR_MASK)) | (entry & MAP_FLIPS) |
                                    (PALETTE_ART + BANNER_SUBPAGE) << MAP_PALETTE_SHIFT;
     }
     GFL_HeapFree(pixels);

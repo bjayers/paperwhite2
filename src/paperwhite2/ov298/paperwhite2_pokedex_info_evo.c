@@ -71,7 +71,8 @@ enum {
 #define EVO_PANEL_BORDER 2
 // The tree's rows, each a ball centered at EVO_ROW_X (EVO_DEPTH_INDENT further for each stage) and the row's center,
 // the name EVO_NAME_OFFSET_X right of the ball's center, and the method in font 1 right-aligned at EVO_METHOD_RIGHT,
-// half a row higher, between the row and the one above, at least EVO_METHOD_GAP after both rows' names. Up to
+// at least EVO_METHOD_GAP after the names beside it: half a row higher, between the row and its parent, where the
+// parent is the row above (PokedexInfoEvo_IsMethodRaised says when), else on its own row. Up to
 // EVO_ROWS_NORMAL rows have their names in font 0 at EVO_ROW_PITCH; more have font 1 at EVO_SMALL_ROW_PITCH, so that
 // Eevee's 8 fit
 #define EVO_ROW_X 34
@@ -84,7 +85,7 @@ enum {
 #define EVO_NAME_OFFSET_X 10
 #define EVO_METHOD_RIGHT 226
 #define EVO_METHOD_GAP 4
-// From a row's center to its text's top, in font 0 and font 1 (a method's from half a row above its row's)
+// From a row's center to its text's top, in font 0 and font 1 (a raised method's from half a row above its row's)
 #define EVO_TEXT_OFFSET_Y 8
 #define EVO_SMALL_TEXT_OFFSET_Y 5
 // The lines from a parent to its evolutions, as thick as this
@@ -205,6 +206,7 @@ static void PokedexInfoEvo_LoadFamily(PokedexInfoEvo *evo, u16 species);
 static void PokedexInfoEvo_AddEvolutions(PokedexInfoEvo *evo, u32 row);
 static void PokedexInfoEvo_DrawRow(PokedexInfoEvo *evo, GFLBitmap *bitmap, int top, u32 row);
 static void PokedexInfoEvo_DrawMethod(PokedexInfoEvo *evo, GFLBitmap *bitmap, int top, u32 row);
+static BOOL PokedexInfoEvo_IsMethodRaised(PokedexInfoEvo *evo, u32 row);
 static void PokedexInfoEvo_LoadName(PokedexInfoEvo *evo, u32 row);
 static int PokedexInfoEvo_GetNameRight(PokedexInfoEvo *evo, u32 row);
 static void PokedexInfoEvo_FormatMethod(PokedexInfoEvo *evo, u32 row, const Evolution *evolution, BOOL shortened,
@@ -406,18 +408,20 @@ static void PokedexInfoEvo_DrawRow(PokedexInfoEvo *evo, GFLBitmap *bitmap, int t
     }
 }
 
-// The row's method in font 1, half a row up, between the row's species and the one above it (its parent, or an
-// evolution of its parent's before it), right-aligned at EVO_METHOD_RIGHT in the first wording that fits after both
-// rows' names; if none fits, the shortest from there
+// The row's method in font 1, right-aligned at EVO_METHOD_RIGHT in the first wording that fits after the names beside
+// it, its row's and, raised between its row and its parent's, its parent's too; if none fits, the shortest from there
 static void PokedexInfoEvo_DrawMethod(PokedexInfoEvo *evo, GFLBitmap *bitmap, int top, u32 row) {
     const EvoRow *evoRow = &evo->rows[row];
-    int y = PokedexInfoEvo_GetRowY(evo, row) - PokedexInfoEvo_GetRowPitch(evo) / 2 - EVO_SMALL_TEXT_OFFSET_Y - top;
+    int y = PokedexInfoEvo_GetRowY(evo, row) - EVO_SMALL_TEXT_OFFSET_Y - top;
     int left = PokedexInfoEvo_GetNameRight(evo, row);
     u32 wording = evoRow->other.method != EVO_METHOD_NONE ? EVO_WORDING_BOTH : EVO_WORDING_FIRST;
     u32 width;
 
-    if (PokedexInfoEvo_GetNameRight(evo, row - 1) > left) {
-        left = PokedexInfoEvo_GetNameRight(evo, row - 1);
+    if (PokedexInfoEvo_IsMethodRaised(evo, row)) {
+        y -= PokedexInfoEvo_GetRowPitch(evo) / 2;
+        if (PokedexInfoEvo_GetNameRight(evo, row - 1) > left) {
+            left = PokedexInfoEvo_GetNameRight(evo, row - 1);
+        }
     }
     left += EVO_METHOD_GAP;
 
@@ -442,6 +446,16 @@ static void PokedexInfoEvo_DrawMethod(PokedexInfoEvo *evo, GFLBitmap *bitmap, in
         }
     }
     GFL_TextRendererDrawToBitmapEx(bitmap, left, y, evo->text, evo->smallFont, EVO_TEXT_COLOR);
+}
+
+// Whether a row's method is half a row up, between it and its parent: where the row above is its parent (Pignite under
+// Tepig) and that row's own method, if any, is raised too, as it would be in the way on its row (Cascoon's, above
+// Dustox). Under a sibling or another branch (Glaceon under Leafeon, Cascoon under Beautifly) it stays on its row
+static BOOL PokedexInfoEvo_IsMethodRaised(PokedexInfoEvo *evo, u32 row) {
+    if (row == 0 || evo->rows[row].parent != row - 1) {
+        return FALSE;
+    }
+    return row - 1 == 0 || PokedexInfoEvo_IsMethodRaised(evo, row - 1);
 }
 
 // A row's name into evo->text: its species' name, or "????" for one not yet seen

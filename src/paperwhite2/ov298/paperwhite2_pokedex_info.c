@@ -53,10 +53,12 @@
 // and on Moves its Up and Down and, while the panel is open, its B
 
 // Where the sprite stands on the top screen, in pixels, in the entry's left panel, where the original's still sprite
-// had its 96 by 96 frame centered at 50, 72: its middle at SPRITE_X, and its visible pixels' middle at the middle of
-// the panel's grey stripe (y 33 to 100), its feet as far below that as SPRITE_MIDDLES_FILE says
+// had its 96 by 96 frame centered at 50, 72: its middle at SPRITE_X, and its visible pixels' middle at y 72, its feet
+// as far below that as SPRITE_MIDDLES_FILE says. That is the frame's center and the middle of the panel's track,
+// between its dashed rows (y 45-46 and 97-98); the grey stripe around them (y 33 to 100) is deeper above, so its own
+// middle, 67, looked high
 #define SPRITE_X 50
-#define SPRITE_MIDDLE_Y 67
+#define SPRITE_MIDDLE_Y 72
 // ARCID_POKEDEX_GRA's member that tools/paperwhite2/pokedex_sprites.py makes (after Evo's, pokedex_evo.py): a u8 for
 // each member of the battle sprites' archive, for a sprite's characters how far above its feet its visible pixels'
 // middle is on its first frame
