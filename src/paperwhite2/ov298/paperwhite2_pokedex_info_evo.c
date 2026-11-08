@@ -70,9 +70,10 @@ enum {
 #define EVO_PANEL_HEIGHT 98
 #define EVO_PANEL_BORDER 2
 // The tree's rows, each a ball centered at EVO_ROW_X (EVO_DEPTH_INDENT further for each stage) and the row's center,
-// the name EVO_NAME_OFFSET_X right of the ball's center, and the method right-aligned at EVO_METHOD_RIGHT, at least
-// EVO_METHOD_GAP after the name. Up to EVO_ROWS_NORMAL rows have font 0 at EVO_ROW_PITCH; more have font 1 at
-// EVO_SMALL_ROW_PITCH, so that Eevee's 8 fit
+// the name EVO_NAME_OFFSET_X right of the ball's center, and the method in font 1 right-aligned at EVO_METHOD_RIGHT,
+// half a row higher, between the row and the one above, at least EVO_METHOD_GAP after both rows' names. Up to
+// EVO_ROWS_NORMAL rows have their names in font 0 at EVO_ROW_PITCH; more have font 1 at EVO_SMALL_ROW_PITCH, so that
+// Eevee's 8 fit
 #define EVO_ROW_X 34
 #define EVO_DEPTH_INDENT 20
 #define EVO_ROW_Y 78
@@ -83,7 +84,7 @@ enum {
 #define EVO_NAME_OFFSET_X 10
 #define EVO_METHOD_RIGHT 226
 #define EVO_METHOD_GAP 4
-// From a row's center to its text's top, in font 0 and font 1
+// From a row's center to its text's top, in font 0 and font 1 (a method's from half a row above its row's)
 #define EVO_TEXT_OFFSET_Y 8
 #define EVO_SMALL_TEXT_OFFSET_Y 5
 // The lines from a parent to its evolutions, as thick as this
@@ -150,8 +151,8 @@ static const EvoMethodText sEvoMethodTexts[] = {
     { PokedexData_Text_EvoIceRock, PokedexData_Text_EvoIceRockShort, EVO_PARAM_NUMBER },
 };
 
-// The wordings that a row's method is tried in until one fits, in font 0 and then font 1: both methods (of a species
-// that evolves two ways, as Feebas) in full, then shortened, then the first alone in full, then shortened
+// The wordings that a row's method is tried in until one fits: both methods (of a species that evolves two ways, as
+// Feebas) in full, then shortened, then the first alone in full, then shortened
 enum {
     EVO_WORDING_BOTH,
     EVO_WORDING_BOTH_SHORT,
@@ -203,7 +204,9 @@ struct PokedexInfoEvo {
 static void PokedexInfoEvo_LoadFamily(PokedexInfoEvo *evo, u16 species);
 static void PokedexInfoEvo_AddEvolutions(PokedexInfoEvo *evo, u32 row);
 static void PokedexInfoEvo_DrawRow(PokedexInfoEvo *evo, GFLBitmap *bitmap, int top, u32 row);
-static void PokedexInfoEvo_DrawMethod(PokedexInfoEvo *evo, GFLBitmap *bitmap, int top, u32 row, int left);
+static void PokedexInfoEvo_DrawMethod(PokedexInfoEvo *evo, GFLBitmap *bitmap, int top, u32 row);
+static void PokedexInfoEvo_LoadName(PokedexInfoEvo *evo, u32 row);
+static int PokedexInfoEvo_GetNameRight(PokedexInfoEvo *evo, u32 row);
 static void PokedexInfoEvo_FormatMethod(PokedexInfoEvo *evo, u32 row, const Evolution *evolution, BOOL shortened,
                                         StrBuf *dest);
 static void PokedexInfoEvo_ShowIcons(PokedexInfoEvo *evo, u16 form, u16 sex);
@@ -381,7 +384,6 @@ static void PokedexInfoEvo_AddEvolutions(PokedexInfoEvo *evo, u32 row) {
 // for one not yet seen, and how it evolves from its parent
 static void PokedexInfoEvo_DrawRow(PokedexInfoEvo *evo, GFLBitmap *bitmap, int top, u32 row) {
     u16 species = evo->rows[row].species;
-    BOOL seen = PokeDex_IsSeen(evo->pokedex, species);
     Font *font = PokedexInfoEvo_IsSmall(evo) ? evo->smallFont : evo->font;
     int x = PokedexInfoEvo_GetRowX(evo, row);
     int y = PokedexInfoEvo_GetRowY(evo, row);
@@ -389,33 +391,35 @@ static void PokedexInfoEvo_DrawRow(PokedexInfoEvo *evo, GFLBitmap *bitmap, int t
 
     if (PokeDex_IsCaught(evo->pokedex, species)) {
         ball = EVO_BALL_CAUGHT;
-    } else if (seen) {
+    } else if (PokeDex_IsSeen(evo->pokedex, species)) {
         ball = EVO_BALL_SEEN;
     }
     GFL_BitmapCopyArea(evo->ballBitmap, bitmap, 0, ball * EVO_BALL_SIZE, x - EVO_BALL_SIZE / 2,
                        y - EVO_BALL_SIZE / 2 - top, EVO_BALL_SIZE, EVO_BALL_SIZE, EVO_COLOR_CLEAR);
-    if (seen) {
-        GFL_MsgDataLoadStrbuf(g_PMLSpeciesNamesResident, species, evo->text);
-    } else {
-        GFL_MsgDataLoadStrbuf(evo->msgData, PokedexData_Text_EvoUnknownName, evo->text);
-    }
-    x += EVO_NAME_OFFSET_X;
-    GFL_TextRendererDrawToBitmapEx(
-        bitmap, x, y - (PokedexInfoEvo_IsSmall(evo) ? EVO_SMALL_TEXT_OFFSET_Y : EVO_TEXT_OFFSET_Y) - top, evo->text,
-        font, species == evo->species ? EVO_SHOWN_COLOR : EVO_TEXT_COLOR);
+    PokedexInfoEvo_LoadName(evo, row);
+    GFL_TextRendererDrawToBitmapEx(bitmap, x + EVO_NAME_OFFSET_X,
+                                   y - (PokedexInfoEvo_IsSmall(evo) ? EVO_SMALL_TEXT_OFFSET_Y : EVO_TEXT_OFFSET_Y) -
+                                       top,
+                                   evo->text, font, species == evo->species ? EVO_SHOWN_COLOR : EVO_TEXT_COLOR);
     if (row != 0) {
-        PokedexInfoEvo_DrawMethod(evo, bitmap, top, row,
-                                  x + GFL_FontGetBlockWidth(evo->text, font, 0) + EVO_METHOD_GAP);
+        PokedexInfoEvo_DrawMethod(evo, bitmap, top, row);
     }
 }
 
-// The row's method right-aligned at EVO_METHOD_RIGHT in the first wording and font that fit between left (after the
-// name) and there, font 1 only in the small layout; if none fits, the shortest in font 1 from left, past the name
-static void PokedexInfoEvo_DrawMethod(PokedexInfoEvo *evo, GFLBitmap *bitmap, int top, u32 row, int left) {
+// The row's method in font 1, half a row up, between the row's species and the one above it (its parent, or an
+// evolution of its parent's before it), right-aligned at EVO_METHOD_RIGHT in the first wording that fits after both
+// rows' names; if none fits, the shortest from there
+static void PokedexInfoEvo_DrawMethod(PokedexInfoEvo *evo, GFLBitmap *bitmap, int top, u32 row) {
     const EvoRow *evoRow = &evo->rows[row];
-    int y = PokedexInfoEvo_GetRowY(evo, row) - top;
+    int y = PokedexInfoEvo_GetRowY(evo, row) - PokedexInfoEvo_GetRowPitch(evo) / 2 - EVO_SMALL_TEXT_OFFSET_Y - top;
+    int left = PokedexInfoEvo_GetNameRight(evo, row);
     u32 wording = evoRow->other.method != EVO_METHOD_NONE ? EVO_WORDING_BOTH : EVO_WORDING_FIRST;
     u32 width;
+
+    if (PokedexInfoEvo_GetNameRight(evo, row - 1) > left) {
+        left = PokedexInfoEvo_GetNameRight(evo, row - 1);
+    }
+    left += EVO_METHOD_GAP;
 
     for (; wording < EVO_WORDING_COUNT; wording++) {
         BOOL shortened = wording == EVO_WORDING_BOTH_SHORT || wording == EVO_WORDING_FIRST_SHORT;
@@ -430,23 +434,32 @@ static void PokedexInfoEvo_DrawMethod(PokedexInfoEvo *evo, GFLBitmap *bitmap, in
         } else {
             GFL_StrBufCopy(evo->text, evo->first);
         }
-        if (!PokedexInfoEvo_IsSmall(evo)) {
-            width = GFL_FontGetBlockWidth(evo->text, evo->font, 0);
-            if (left + (int)width <= EVO_METHOD_RIGHT) {
-                GFL_TextRendererDrawToBitmapEx(bitmap, EVO_METHOD_RIGHT - width, y - EVO_TEXT_OFFSET_Y, evo->text,
-                                               evo->font, EVO_TEXT_COLOR);
-                return;
-            }
-        }
         width = GFL_FontGetBlockWidth(evo->text, evo->smallFont, 0);
         if (left + (int)width <= EVO_METHOD_RIGHT) {
-            GFL_TextRendererDrawToBitmapEx(bitmap, EVO_METHOD_RIGHT - width, y - EVO_SMALL_TEXT_OFFSET_Y, evo->text,
-                                           evo->smallFont, EVO_TEXT_COLOR);
+            GFL_TextRendererDrawToBitmapEx(bitmap, EVO_METHOD_RIGHT - width, y, evo->text, evo->smallFont,
+                                           EVO_TEXT_COLOR);
             return;
         }
     }
-    GFL_TextRendererDrawToBitmapEx(bitmap, left, y - EVO_SMALL_TEXT_OFFSET_Y, evo->text, evo->smallFont,
-                                   EVO_TEXT_COLOR);
+    GFL_TextRendererDrawToBitmapEx(bitmap, left, y, evo->text, evo->smallFont, EVO_TEXT_COLOR);
+}
+
+// A row's name into evo->text: its species' name, or "????" for one not yet seen
+static void PokedexInfoEvo_LoadName(PokedexInfoEvo *evo, u32 row) {
+    u16 species = evo->rows[row].species;
+
+    if (PokeDex_IsSeen(evo->pokedex, species)) {
+        GFL_MsgDataLoadStrbuf(g_PMLSpeciesNamesResident, species, evo->text);
+    } else {
+        GFL_MsgDataLoadStrbuf(evo->msgData, PokedexData_Text_EvoUnknownName, evo->text);
+    }
+}
+
+// Where a row's name ends, on its right
+static int PokedexInfoEvo_GetNameRight(PokedexInfoEvo *evo, u32 row) {
+    PokedexInfoEvo_LoadName(evo, row);
+    return PokedexInfoEvo_GetRowX(evo, row) + EVO_NAME_OFFSET_X +
+           GFL_FontGetBlockWidth(evo->text, PokedexInfoEvo_IsSmall(evo) ? evo->smallFont : evo->font, 0);
 }
 
 // An evolution's text, in full or shortened: its number in the word set's slot 0 and its item's, move's or species'

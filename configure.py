@@ -360,10 +360,11 @@ HACK_ARCHIVE_MEMBERS = {"a/0/9/6": ("tools/paperwhite2/conditions.py", "res/pape
                         "a/1/2/7": ("tools/paperwhite2/encounters.py", "res/paperwhite2/encounters"),
                         # The C-Gear's background pictures (CGearSw_ShowPicture)
                         "a/2/8/7": ("tools/paperwhite2/cgear_pictures.py", "res/paperwhite2/cgear_pictures"),
-                        # The Pokédex Info page's Evo data: the species' family roots and the tree's balls
+                        # The Pokédex Info page's data: Evo's family roots and the tree's balls, and how high each
+                        # battle sprite's visible middle is (tools/paperwhite2/pokedex_sprites.py)
                         "a/1/5/7": ("tools/paperwhite2/pokedex_evo.py", "res/paperwhite2/pokedex_art")}
 HACK_MEMBER_EXTRA_SOURCES = {"a/1/2/7": ["res/paperwhite2/conditions", "res/pokemon/*/data.json"],
-                             "a/1/5/7": ["res/pokemon/*/data.json"],
+                             "a/1/5/7": ["res/pokemon/*/data.json", "res/pokemon/**/front*", "res/pokemon/**/back*"],
                              "a/1/2/6": ["res/paperwhite2/conditions", "res/field/events"]}
 # Paper White 2: data that the hack's build makes from other data before packing it: the data directory, and the tool,
 # its command (which writes the directory given) and what it reads. The Pokédex's Habitat List comes from the wild

@@ -10,6 +10,7 @@
 #include "constants/sound.h"
 #include "constants/species.h"
 #include "constants/text_banks.h"
+#include "gfl/arc.h"
 #include "gfl/bg_sys.h"
 #include "gfl/bmp.h"
 #include "gfl/clact.h"
@@ -51,10 +52,15 @@
 // one ring; the touch bar's Left and Right (to Area, Cry and Forms, still there by touch) are the page's while it runs,
 // and on Moves its Up and Down and, while the panel is open, its B
 
-// Where the sprite stands on the top screen, in pixels: the middle of its feet, in the entry's left panel, where the
-// original's still sprite had its 96 by 96 frame centered at 50, 72
+// Where the sprite stands on the top screen, in pixels, in the entry's left panel, where the original's still sprite
+// had its 96 by 96 frame centered at 50, 72: its middle at SPRITE_X, and its visible pixels' middle at the middle of
+// the panel's grey stripe (y 33 to 100), its feet as far below that as SPRITE_MIDDLES_FILE says
 #define SPRITE_X 50
-#define SPRITE_Y 96
+#define SPRITE_MIDDLE_Y 67
+// ARCID_POKEDEX_GRA's member that tools/paperwhite2/pokedex_sprites.py makes (after Evo's, pokedex_evo.py): a u8 for
+// each member of the battle sprites' archive, for a sprite's characters how far above its feet its visible pixels'
+// middle is on its first frame
+#define SPRITE_MIDDLES_FILE 154
 // The size of a pixel at the sprites' depth: the detail screen's camera (pokedex_detail_graphic.c), 70 units away with
 // a 40 degree field of view, shows 2 * 70 * tan(20 degrees) units in the screen's 192 pixels
 #define SPRITE_PIXEL_SIZE FX32_CONST(0.2654)
@@ -161,6 +167,8 @@ typedef struct {
     // palette load, after which it replaces the shown one in the same frame
     MCSS *mcss;
     MCSS *nextMcss;
+    // The next sprite's SPRITE_MIDDLES_FILE entry, read by the file system, so in the heap
+    u8 spriteMiddle;
     void *tcbBuffer;
     TCBManager *tcbMgr;
     // What the page shows: the Pokémon, its form, sex and color, Spinda's spots, whether it has been caught, its back
@@ -991,9 +999,10 @@ static void PokedexInfoPage_AddSprite(PokedexInfoPageWork *wk) {
         MCSSSys_SetSpindaLoadCallback(wk->mcssSys, wk->personality);
     }
     SetupPokemonLoaderFSTool(wk->species, wk->form, wk->sex, wk->rare, FALSE, &info, wk->back);
+    GFL_ArcSysReadRange(&wk->spriteMiddle, ARCID_POKEDEX_GRA, SPRITE_MIDDLES_FILE, info.character, sizeof(u8));
     MCSSSys_SetTCBManager(wk->mcssSys, NULL);
     mcss = MCSSSys_Add(wk->mcssSys, (SPRITE_X - SCREEN_CENTER_X) * SPRITE_PIXEL_SIZE,
-                       (SCREEN_CENTER_Y - SPRITE_Y) * SPRITE_PIXEL_SIZE, 0, &info);
+                       (SCREEN_CENTER_Y - (SPRITE_MIDDLE_Y + wk->spriteMiddle)) * SPRITE_PIXEL_SIZE, 0, &info);
     MCSSSys_SetTCBManager(wk->mcssSys, wk->tcbMgr);
     MCSS_SetNoShadow(mcss, 1);
     MCSS_SetScale(mcss, &scale);

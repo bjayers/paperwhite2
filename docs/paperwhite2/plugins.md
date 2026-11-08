@@ -1525,7 +1525,15 @@ every page (`pokedex_detail_graphic.c`): main OBJ E (64 KB), sub OBJ D (128 KB, 
 `pokedex_detail_info.c` keeps the original page outside `PAPERWHITE2` and points `POKEDEX_DETAIL_INFO_PROC_FUNCS` at the
 hack's). **Top** (main engine): overlay 296's entry (`PokedexInfo`, engine 0) with its text on BG 1 beside the head bar,
 its panels on BG 2 and its grid on BG 3, and no still sprite (`PokedexInfo_IsDetailTop`); the battle's animated sprite
-(MCSS) on BG 0 in 3D, which the page turns on at its start and off at its end. **A new sprite** (Form, Shiny, Turn,
+(MCSS) on BG 0 in 3D, which the page turns on at its start and off at its end. **The sprite's place**: x 50 less the
+bin file's offsetX, as the forms page's; vertically, its visible pixels' middle on its first frame at y 67, the middle
+of the panel's grey stripe (y 33-100), from member 154 of `ARCID_POKEDEX_GRA` that `tools/paperwhite2/pokedex_sprites.py`
+makes from `res/pokemon` at build time (a u8 for each battle sprite archive member, 15020 bytes, read by range at the
+sprite's characters' number, so per form, sex and side: how far above its feet the middle is, measured as MCSS
+assembles the first frame from the multi-cell, cell animations and the bin file's quads). Vanilla's own box in the bin
+file (height and offsetY, which the egg hatching and the evolution centre by) is a few pixels off for some sprites and
+64 for Chandelure, so it isn't used. Sprites taller than the stripe's 68 px (Kyurem 74, Zekrom 91) overlap it evenly.
+**A new sprite** (Form, Shiny, Turn,
 another Pokémon) is added beside the shown one (`SPRITE_CAPACITY` 2, each MCSS in its own 16 KB of texture VRAM), with
 no TCB manager for the add, so that `MCSS_LoadTask` runs as a VBlank task in lines 192-200, before the 3D draws, as the
 forms page loads its sprites (`PokedexDetailForm_LoadTurnedSprites`); the shown one stays drawn until the new one is
@@ -1651,9 +1659,9 @@ so the characters' 32 slots hold the other sub-pages' 29-30 and Evo's one. **The
 the root, then each species' evolutions under it in the data's order, each a row of the user's ball (16 by 16,
 `res/paperwhite2/pokedex_art/evo_ball_{caught,seen,unknown}.png`, copied into the window), centred at x 34, 54 or 74 by
 stage and at y 78 + 15 a row, the name 10 px right of it in font 0 (gold for the shown species, white, "????" if not
-seen) and how it evolves from its parent right-aligned at x 226: font 0 where it fits after the name (4 px gap), else
-font 1, else a shortened wording (`sEvoMethodTexts`, the messages `PokedexData_Text_Evo*`); more than 5 rows (Eevee) use
-font 1 throughout at y 74 + 11 a row. Gold lines, 2 px, run from each parent's ball down and across to its evolutions',
+seen) and how it evolves from its parent in font 1, right-aligned at x 226 and half a row up (between the row and the
+one above it), where it fits after both rows' names (4 px gap), else a shortened wording (`sEvoMethodTexts`, the
+messages `PokedexData_Text_Evo*`); more than 5 rows (Eevee) put the names in font 1 too, at y 74 + 11 a row. Gold lines, 2 px, run from each parent's ball down and across to its evolutions',
 drawn into the window before the balls. A species that evolves into the same one two ways (Feebas, by Beauty or a
 trade) shows both joined with "or" if they fit, else the first. Karrablast's and Shelmet's trades name the other (the
 game checks their species, `evolution_check.c`; their parameter is none). **The banner** (the art's band under the tab bar,
@@ -1667,11 +1675,11 @@ The rows must be opaque and repeat across with a period that divides 256 (the us
 a seam (`pokedex_templates.py` prints the period). Touching an icon's column of the strip or a row opens
 that species' page through the detail screen's list (as the touch bar's arrows do, `common->index`) if it has been seen
 and is in the list, else it beeps; Up and Down change the Pokémon as on the other sub-pages. **The family table**:
-`tools/paperwhite2/pokedex_evo.py` adds two members to `ARCID_POKEDEX_GRA` in the hack's build (`HACK_ARCHIVE_MEMBERS`,
+`tools/paperwhite2/pokedex_evo.py` adds three members to `ARCID_POKEDEX_GRA` in the hack's build (`HACK_ARCHIVE_MEMBERS`,
 rebuilt when `res/pokemon/*/data.json` or the balls change): 152, each species' family root as a u16 by species
 (SPECIES_NONE to Genesect, 1300 bytes: a child's parent is the first species whose evolutions name it), of which the
 page reads the one entry, then the tree from the root down through the game's own evolution data (`ARCID_EVOLUTIONS`,
-three stages); 153, the balls' 16 colours and their 4bpp tiles (416 bytes). Forms have no evolutions of their own (the
+three stages); 153, the balls' 16 colours and their 4bpp tiles (416 bytes); 154, the sprites' middles (below). Forms have no evolutions of their own (the
 game reads them by species), so Burmy's and Wormadam's forms evolve as their species. About 3.2 KB of ov298.
 
 **The entry's text window shows the page's text** (`PokedexInfoPage_ShowTopText`): the description's 3 lines (the

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Paper White 2: the Pokédex Info page's Evo data, members of the Pokédex's graphics archive (ARCID_POKEDEX_GRA, a/1/5/7)
-after its own (docs/paperwhite2/plugins.md, Pokédex).
+"""Paper White 2: the Pokédex Info page's Evo data and its sprites' places, members of the Pokédex's graphics archive
+(ARCID_POKEDEX_GRA, a/1/5/7) after its own (docs/paperwhite2/plugins.md, Pokédex).
 
-    pokedex_evo.py archive ARCHIVE_IN ARCHIVE_OUT   # the build: the archive with the two members after its own
+    pokedex_evo.py archive ARCHIVE_IN ARCHIVE_OUT   # the build: the archive with the three members after its own
     pokedex_evo.py check                            # print the largest families
 
 The game's evolution data (a/0/1/9, res/pokemon/*/data.json's "evolutions") only names what each species evolves
@@ -17,6 +17,8 @@ into, so the page needs each species' family root to draw its tree from (paperwh
   indexed in the art's palette, the top screen's row 0, info_stats.png's): their 16 colors (BGR555, 32 bytes), then
   each one's 4 tiles of 4bpp, two across, in that order (3 times 128 bytes). The page loads the colors as the Evo
   window's palette, so its text's colors are the art's (EVO_COLOR_* in the C file).
+- MIDDLES_MEMBER: how far above its feet each battle sprite's visible middle is, for the page's sprite
+  (pokedex_sprites.py, which says how it is measured; SPRITE_MIDDLES_FILE in paperwhite2_pokedex_info.c).
 
 A family has at most FAMILY_MAX species (Eevee's 8), the rows the page has room for; check fails past it.
 """
@@ -31,15 +33,17 @@ sys.path.insert(0, str(ROOT))
 from tools.data.datajson import constants  # noqa: E402
 from tools.data.narc import read_narc, write_narc  # noqa: E402
 from tools.data.nitro_2d import read_indexed_png  # noqa: E402
+from tools.paperwhite2.pokedex_sprites import SpriteError, middles_member  # noqa: E402
 
 SPECIES = ROOT / "res" / "pokemon"
 ART = ROOT / "res" / "paperwhite2" / "pokedex_art"
 BALLS = ("evo_ball_caught.png", "evo_ball_seen.png", "evo_ball_unknown.png")
 # The archive's own members (the art's included, up to 151), then these, as EVO_FAMILY_FILE and EVO_BALLS_FILE in
-# paperwhite2_pokedex_info_evo.c
+# paperwhite2_pokedex_info_evo.c and SPRITE_MIDDLES_FILE in paperwhite2_pokedex_info.c
 ARCHIVE_MEMBERS = 152
 FAMILY_MEMBER = ARCHIVE_MEMBERS
 BALLS_MEMBER = ARCHIVE_MEMBERS + 1
+MIDDLES_MEMBER = ARCHIVE_MEMBERS + 2
 # POKEDEX_INFO_EVO_FAMILY_MAX in include/paperwhite2/pokedex_info.h
 FAMILY_MAX = 8
 BALL_SIZE = 16
@@ -125,7 +129,7 @@ def archive(source, output):
     if len(files) != ARCHIVE_MEMBERS:
         raise EvoError(f"{source}: {len(files)} members, not the {ARCHIVE_MEMBERS} that the Evo members follow "
                        f"(change ARCHIVE_MEMBERS here and EVO_FAMILY_FILE in paperwhite2_pokedex_info_evo.c)")
-    files += [family_member(), balls_member()]
+    files += [family_member(), balls_member(), middles_member()]
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_bytes(write_narc(files))
 
@@ -145,7 +149,7 @@ def main():
             _, sizes = roots()
             largest = sorted(sizes.items(), key=lambda item: -item[1])[:5]
             print("largest families (root species, size):", largest, "; balls", len(balls_member()), "bytes")
-    except EvoError as error:
+    except (EvoError, SpriteError) as error:
         sys.exit(f"pokedex_evo.py: {error}")
 
 
