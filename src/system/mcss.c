@@ -783,6 +783,14 @@ void MCSS_ToggleHidden(MCSS *mcss) {
     mcss->hidden ^= 1;
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: whether the sprite's characters and palette are in VRAM, as MCSSSys_Draw draws it only then, so that
+// the Pokédex info page keeps the old sprite shown until its new one is (paperwhite2_pokedex_info.c)
+BOOL MCSS_IsLoaded(MCSS *mcss) {
+    return mcss->loaded;
+}
+#endif
+
 NNSG2dMultiCellAnimation *MCSS_GetMultiCellAnimation(MCSS *mcss) {
     return &mcss->mcAnim;
 }

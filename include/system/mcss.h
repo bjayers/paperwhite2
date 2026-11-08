@@ -124,6 +124,10 @@ BOOL MCSS_IsPaused(MCSS *mcss);
 void MCSS_FreezeAnimation(MCSS *mcss);
 void MCSS_UnfreezeAnimation(MCSS *mcss);
 BOOL MCSS_IsHidden(MCSS *mcss);
+#ifdef PAPERWHITE2
+// Paper White 2: whether the sprite's characters and palette are loaded, so that MCSSSys_Draw draws it
+BOOL MCSS_IsLoaded(MCSS *mcss);
+#endif
 void MCSS_ToggleHidden(MCSS *mcss);
 u16 MCSS_GetAnimationCount(MCSS *mcss);
 u8 MCSS_GetIdleNodeCount(MCSS *mcss);

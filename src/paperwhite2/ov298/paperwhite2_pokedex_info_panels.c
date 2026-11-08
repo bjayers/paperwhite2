@@ -15,6 +15,7 @@
 #include "gfl/heap.h"
 #include "gfl/msg.h"
 #include "gfl/str.h"
+#include "gfl/tcb.h"
 #include "gfl/touchpanel.h"
 #include "nitro/fx.h"
 #include "nitro/gx.h"
@@ -61,6 +62,20 @@
 #define ART_TILES_ACROSS 32
 #define ART_TILES_DOWN 24
 #define ART_BG_TILES_DOWN 32
+// Evo's banner under the tab bar: the inside of the art's band (tile rows 3 to 6, y 24-55) is moved onto the grid's BG,
+// which scrolls, so that its pattern moves as the grid does; the art's band shows only its edges there (y 22-23 and
+// 56-58, rows of one color, which look the same scrolled). The art's band must repeat across with a period that divides
+// the BG's 256 pixels, so that it wraps without a seam (the user's: 4 px). Its tiles are copied into the grid's BG,
+// as many as the band has different ones, and its map entries keep the art's palette row
+#define BANNER_TILE_Y 3
+#define BANNER_TILES_DOWN 4
+#define BANNER_ENTRIES (ART_TILES_ACROSS * BANNER_TILES_DOWN)
+#define BANNER_SUBPAGE POKEDEX_INFO_SUBPAGE_EVO
+// A map entry's character, flips and palette, and a tile's bytes
+#define MAP_CHAR_MASK 0x3ff
+#define MAP_FLIPS (3 << 10)
+#define MAP_PALETTE_SHIFT 12
+#define TILE_SIZE 0x20
 // The grid of the info page's top screen in the original, the backgrounds' page 0
 #define GRID_PAGE (POKEDEX_DETAIL_PAGE_INFO - 1)
 
@@ -75,6 +90,9 @@
 #define CONTENT_WINDOW_HEIGHT 19
 // Everything below is in the bottom screen's pixels; the panels' window starts this far down
 #define CONTENT_TOP (CONTENT_WINDOW_Y * 8)
+// The windows whose characters go to VRAM in the next VBlank (PokedexInfoPanels_VBlank)
+#define PENDING_BAR (1 << 0)
+#define PENDING_CONTENT (1 << 1)
 
 // The bar: the art draws a tab for each sub-page, an icon, the first centered at BAR_TAB_X and the others BAR_TAB_PITCH
 // apart, with the shown one's tab hanging below the bar. Touching a tab's column switches to its sub-page. A sub-page
@@ -159,6 +177,11 @@
 #define MOVES_ROW_TEXT_OFFSET_Y 3
 #define MOVES_ROW_DETAIL_RIGHT 220
 #define MOVES_ROW_DETAIL_WIDTH 60
+// Until the species is caught, no rows: "Learnset Unknown" in font 0 (a 16 px line) centered at MOVES_UNKNOWN_X and on
+// y 100, between the sets' bar (to y 31) and the touch bar (from y 168), as a row's name in white with a dark shadow,
+// to read on the grid
+#define MOVES_UNKNOWN_X 128
+#define MOVES_UNKNOWN_Y 92
 // The TMs, whose machines' bits come before the HMs' (PML_ItemGetTMBitMask)
 #define MOVES_TM_COUNT 95
 // Font 1's text this much lower than font 0's, to be centered in the row
@@ -256,11 +279,12 @@ static const GXRgb sPanelColors[16] = {
     GX_RGB(9, 26, 7), GX_RGB(4, 17, 4), GX_RGB(7, 17, 31),  GX_RGB(3, 9, 21),
 };
 
-// The battle's move colors, in sPanelColors' red's, orange's and green's places (MATCHUPS_COLOR_*)
+// The battle's move colors above and below 1, in sPanelColors' red's and orange's places, and a light grey for 0, the
+// art's (148, 148, 148), in green's (MATCHUPS_COLOR_*)
 static const GXRgb sMatchupColors[16] = {
     GX_RGB(0, 0, 0),    GX_RGB(4, 4, 5),  GX_RGB(22, 22, 23), GX_RGB(31, 31, 31), GX_RGB(7, 7, 8),   GX_RGB(15, 15, 16),
     GX_RGB(12, 22, 31), GX_RGB(19, 4, 4), GX_RGB(30, 27, 11), GX_RGB(31, 12, 21), GX_RGB(31, 29, 3), GX_RGB(22, 18, 2),
-    GX_RGB(16, 16, 16), GX_RGB(4, 17, 4), GX_RGB(7, 17, 31),  GX_RGB(3, 9, 21),
+    GX_RGB(18, 18, 18), GX_RGB(4, 17, 4), GX_RGB(7, 17, 31),  GX_RGB(3, 9, 21),
 };
 
 #define TEXT_COLOR PRINT_COLOR(PANELS_COLOR_TEXT, PANELS_COLOR_SHADOW, PANELS_COLOR_CLEAR)
@@ -275,16 +299,16 @@ static const GXRgb sMatchupColors[16] = {
 // Moves' sets other than the shown one, light grey on the light bar; a row's move name, white on its grey
 #define MOVES_SET_OTHER_COLOR PRINT_COLOR(PANELS_COLOR_SHADOW, PANELS_COLOR_CLEAR, PANELS_COLOR_CLEAR)
 #define MOVES_NAME_COLOR PRINT_COLOR(PANELS_COLOR_PANEL, PANELS_COLOR_BORDER, PANELS_COLOR_CLEAR)
-// The Matchups' multipliers in the battle's move colors (MOVE_PREVIEW_COLORS, paperwhite2_move_preview.c): above 1
-// light blue, below it yellow, 0 grey, each with a dark shadow to read on the panel, and 1 as the panels' text. They
-// are in sMatchupColors, the panels' palette with them in the place of three of the stat bars' colors, which Matchups
-// doesn't use, as the content window's palette while Matchups shows
+// The Matchups' multipliers: above 1 light blue and below it yellow, the battle's move colors (MOVE_PREVIEW_COLORS,
+// paperwhite2_move_preview.c), 0 light grey, each with the panels' text's light shadow, and 1 as the panels' text.
+// They are in sMatchupColors, the panels' palette with them in the place of three of the stat bars' colors, which
+// Matchups doesn't use, as the content window's palette while Matchups shows
 #define MATCHUPS_COLOR_SUPER PANELS_COLOR_RED
 #define MATCHUPS_COLOR_RESISTED PANELS_COLOR_ORANGE
 #define MATCHUPS_COLOR_IMMUNE PANELS_COLOR_GREEN
-#define MULTIPLIER_UP_COLOR PRINT_COLOR(MATCHUPS_COLOR_SUPER, PANELS_COLOR_BORDER, PANELS_COLOR_CLEAR)
-#define MULTIPLIER_DOWN_COLOR PRINT_COLOR(MATCHUPS_COLOR_RESISTED, PANELS_COLOR_BORDER, PANELS_COLOR_CLEAR)
-#define MULTIPLIER_NONE_COLOR PRINT_COLOR(MATCHUPS_COLOR_IMMUNE, PANELS_COLOR_BORDER, PANELS_COLOR_CLEAR)
+#define MULTIPLIER_UP_COLOR PRINT_COLOR(MATCHUPS_COLOR_SUPER, PANELS_COLOR_SHADOW, PANELS_COLOR_CLEAR)
+#define MULTIPLIER_DOWN_COLOR PRINT_COLOR(MATCHUPS_COLOR_RESISTED, PANELS_COLOR_SHADOW, PANELS_COLOR_CLEAR)
+#define MULTIPLIER_NONE_COLOR PRINT_COLOR(MATCHUPS_COLOR_IMMUNE, PANELS_COLOR_SHADOW, PANELS_COLOR_CLEAR)
 #define MULTIPLIER_NORMAL_COLOR TEXT_COLOR
 // The multipliers' font, the small one (the user's choice, the rows closer for the art's margin), and its "×"'s place
 // against the number's top, the same font's
@@ -475,7 +499,17 @@ struct PokedexInfoPanels {
     StrBuf *text;
     BmpWin *barWindow;
     BmpWin *contentWindow;
+    // The windows drawn since the last VBlank (PENDING_*), whose characters go to VRAM in the next one, with their
+    // screen, the BGs' and the OBJs' changes, so that a frame never shows new characters in an old palette or place
+    TCB *vblankTcb;
+    u32 pendingWindows;
     PokedexDetailBackground *grid;
+    // The grid's map entries where Evo's banner shows, kept for the other sub-pages, and the banner's: its tiles,
+    // copied into the grid's BG, and their map entries there
+    u16 gridEntries[BANNER_ENTRIES];
+    u16 bannerEntries[BANNER_ENTRIES];
+    u32 bannerChars;
+    u32 bannerTileCount;
     // Each sub-page's art's characters on BG_ART, all loaded with the page so that changing sub-page only changes the
     // screen; 0 for a sub-page without art
     u32 artChars[POKEDEX_INFO_SUBPAGE_COUNT];
@@ -487,6 +521,8 @@ struct PokedexInfoPanels {
     // Moves: the page's set, the moves' and places' names, and the rows' type icons (the Matchups' characters), the
     // cursor and the scroll knob, shown on Moves only
     const PokedexInfoMoves *moves;
+    // Whether the shown species is caught: until then Moves shows no list
+    BOOL movesKnown;
     MsgData *moveNames;
     MsgData *placeNames;
     ClActor *moveIcons[POKEDEX_INFO_MOVE_ROWS];
@@ -502,6 +538,9 @@ struct PokedexInfoPanels {
     PokedexInfoEvo *evo;
 };
 
+static void PokedexInfoPanels_VBlank(TCB *tcb, void *data);
+static void PokedexInfoPanels_Transfer(PokedexInfoPanels *panels, BmpWin *window, u32 pending);
+static void PokedexInfoPanels_CreateBanner(PokedexInfoPanels *panels, ArcTool *arc);
 static void PokedexInfoPanels_DrawBar(PokedexInfoPanels *panels, u32 subpage);
 static void PokedexInfoPanels_CreateArt(PokedexInfoPanels *panels);
 static void PokedexInfoPanels_FreeArt(PokedexInfoPanels *panels);
@@ -564,6 +603,7 @@ PokedexInfoPanels *PokedexInfoPanels_Create(HeapID heapId, Font *font, ClActUnit
     panels->contentWindow = BmpWin_CreateDynamic(BG_PANELS, CONTENT_WINDOW_X, CONTENT_WINDOW_Y, CONTENT_WINDOW_WIDTH,
                                                  CONTENT_WINDOW_HEIGHT, PALETTE_PANELS, FALSE);
     PokedexInfoPanels_CreateArt(panels);
+    panels->vblankTcb = GFL_VBlankTCBAdd(PokedexInfoPanels_VBlank, panels, 0);
     PokedexInfoPanels_CreateTypeIcons(panels, unit);
     PokedexInfoPanels_CreateMoveActors(panels, unit);
     panels->evo = PokedexInfoEvo_Create(heapId, font, panels->smallFont, unit, pokedex, BG_PANELS, PALETTE_EVO);
@@ -573,6 +613,7 @@ PokedexInfoPanels *PokedexInfoPanels_Create(HeapID heapId, Font *font, ClActUnit
 }
 
 void PokedexInfoPanels_Free(PokedexInfoPanels *panels) {
+    GFL_TCBRemove(panels->vblankTcb);
     PokedexInfoEvo_Free(panels->evo);
     PokedexInfoPanels_FreeMoveActors(panels);
     PokedexInfoPanels_FreeTypeIcons(panels);
@@ -585,6 +626,9 @@ void PokedexInfoPanels_Free(PokedexInfoPanels *panels) {
     GFL_BGSysQueueScrLoad(BG_PANELS);
     BmpWin_Free(panels->contentWindow);
     BmpWin_Free(panels->barWindow);
+    if (panels->bannerTileCount != 0) {
+        GFL_BGSysFreeCharMemory(BG_GRID, panels->bannerChars, panels->bannerTileCount * TILE_SIZE);
+    }
     PokedexDetailBackground_Free(panels->grid);
     GFL_StrBufFree(panels->text);
     GFL_StrBufFree(panels->message);
@@ -609,7 +653,62 @@ static void PokedexInfoPanels_CreateArt(PokedexInfoPanels *panels) {
             panels->artChars[i] = GFL_BGSysLoadArcNCGRDynamic(arc, art->chars, BG_ART, 0, FALSE, panels->heapId);
         }
     }
+    if (sSubpageArt[BANNER_SUBPAGE].screen != ART_NONE) {
+        PokedexInfoPanels_CreateBanner(panels, arc);
+    }
     GFL_ArcToolFree(arc);
+}
+
+// Evo's banner on the grid's BG: the art's tiles of the band's inside, each of its different ones once, loaded into the
+// grid's characters (from the heap, which DMA can read), and the band's map entries moved to them, in the art's palette
+// row; and the grid's own map entries there, which the other sub-pages show
+static void PokedexInfoPanels_CreateBanner(PokedexInfoPanels *panels, ArcTool *arc) {
+    const PanelsArt *art = &sSubpageArt[BANNER_SUBPAGE];
+    const u16 *grid = GFL_BGSysIsScrHeapExists(BG_GRID);
+    NNSG2dCharacterData *chars;
+    NNSG2dScreenData *screen;
+    void *charsFile = GFL_G2DIOReadBGNCGRArc(arc, art->chars, FALSE, &chars, panels->heapId);
+    void *screenFile = GFL_G2DIOReadNSCRArc(arc, art->screen, FALSE, &screen, panels->heapId);
+    const u16 *entries = (const u16 *)screen->rawData + BANNER_TILE_Y * ART_TILES_ACROSS;
+    // The art's tile of each of the banner's, by the banner's
+    u16 *tiles = GFL_HeapAllocate(HEAPID_TAIL(panels->heapId), BANNER_ENTRIES * sizeof(u16), FALSE,
+                                  "paperwhite2_pokedex_info_panels.c", __LINE__);
+    u8 *pixels;
+    u32 i;
+    u32 j;
+
+    panels->bannerTileCount = 0;
+    for (i = 0; i < BANNER_ENTRIES; i++) {
+        u16 tile = entries[i] & MAP_CHAR_MASK;
+
+        panels->gridEntries[i] = grid[BANNER_TILE_Y * ART_TILES_ACROSS + i];
+        for (j = 0; j < panels->bannerTileCount; j++) {
+            if (tiles[j] == tile) {
+                break;
+            }
+        }
+        if (j == panels->bannerTileCount) {
+            tiles[panels->bannerTileCount++] = tile;
+        }
+        // The banner's tile, placed below
+        panels->bannerEntries[i] = j | (entries[i] & MAP_FLIPS);
+    }
+    pixels = GFL_HeapAllocate(HEAPID_TAIL(panels->heapId), panels->bannerTileCount * TILE_SIZE, FALSE,
+                              "paperwhite2_pokedex_info_panels.c", __LINE__);
+    for (j = 0; j < panels->bannerTileCount; j++) {
+        MI_CpuCopy8((const u8 *)chars->pRawData + tiles[j] * TILE_SIZE, pixels + j * TILE_SIZE, TILE_SIZE);
+    }
+    panels->bannerChars = GFL_BGSysLoadCharDynamic(BG_GRID, pixels, panels->bannerTileCount * TILE_SIZE);
+    for (i = 0; i < BANNER_ENTRIES; i++) {
+        u16 entry = panels->bannerEntries[i];
+
+        panels->bannerEntries[i] = (panels->bannerChars + (entry & MAP_CHAR_MASK)) | (entry & MAP_FLIPS) |
+                                   (PALETTE_ART + BANNER_SUBPAGE) << MAP_PALETTE_SHIFT;
+    }
+    GFL_HeapFree(pixels);
+    GFL_HeapFree(tiles);
+    GFL_HeapFree(screenFile);
+    GFL_HeapFree(charsFile);
 }
 
 // The sub-page's art's screen replaces BG_ART's whole screen, so the page makes its buttons after it. Only the screen
@@ -629,6 +728,19 @@ void PokedexInfoPanels_LoadArt(PokedexInfoPanels *panels, u32 subpage) {
                                panels->heapId);
         GFL_BGSysSetScrPaletteNo(BG_ART, 0, 0, ART_TILES_ACROSS, ART_TILES_DOWN, PALETTE_ART + subpage);
         GFL_ArcToolFree(arc);
+    }
+    // Evo's banner shows on the grid's BG, in the same VBlank as the art, which leaves its place clear; the other
+    // sub-pages show the grid there
+    if (panels->bannerTileCount != 0) {
+        if (subpage == BANNER_SUBPAGE) {
+            GFL_BGSysFillScrArea(BG_ART, 0, 0, BANNER_TILE_Y, ART_TILES_ACROSS, BANNER_TILES_DOWN, 0);
+            GFL_BGSysLoadScrAreaAll(BG_GRID, panels->bannerEntries, 0, BANNER_TILE_Y, ART_TILES_ACROSS,
+                                    BANNER_TILES_DOWN);
+        } else {
+            GFL_BGSysLoadScrAreaAll(BG_GRID, panels->gridEntries, 0, BANNER_TILE_Y, ART_TILES_ACROSS,
+                                    BANNER_TILES_DOWN);
+        }
+        GFL_BGSysQueueScrLoad(BG_GRID);
     }
     GFL_BGSysQueueScrLoad(BG_ART);
 }
@@ -769,6 +881,7 @@ void PokedexInfoPanels_Show(PokedexInfoPanels *panels, u32 subpage, u16 species,
     GFLBitmap *bitmap = BmpWin_GetBitmap(panels->contentWindow);
     u32 i;
 
+    panels->movesKnown = caught;
     PokedexInfoPanels_DrawBar(panels, subpage);
     GFL_BitmapFill(bitmap, PANELS_COLOR_CLEAR);
     switch (subpage) {
@@ -809,17 +922,40 @@ void PokedexInfoPanels_Show(PokedexInfoPanels *panels, u32 subpage, u16 species,
         BmpWin_SetPalette(panels->contentWindow, PALETTE_PANELS);
         break;
     }
-    BmpWin_Transfer(panels->barWindow);
-    BmpWin_Transfer(panels->contentWindow);
+    PokedexInfoPanels_Transfer(panels, panels->barWindow, PENDING_BAR);
+    PokedexInfoPanels_Transfer(panels, panels->contentWindow, PENDING_CONTENT);
 }
 
-// Only the list and its actors change, the window's characters at once and the actors in the next VBlank, as a change
-// of sub-page shows
+// Only the list and its actors change, all in the next VBlank, as a change of sub-page shows
 void PokedexInfoPanels_ShowMoves(PokedexInfoPanels *panels) {
     GFL_BitmapFill(BmpWin_GetBitmap(panels->contentWindow), PANELS_COLOR_CLEAR);
     PokedexInfoPanels_DrawMoves(panels);
     PokedexInfoPanels_UpdateMoveActors(panels, TRUE);
-    BmpWin_Transfer(panels->contentWindow);
+    PokedexInfoPanels_Transfer(panels, panels->contentWindow, PENDING_CONTENT);
+}
+
+// A window's map entries go to the screen buffer, which goes to VRAM in the next VBlank, and its characters wait for
+// that VBlank too (PokedexInfoPanels_VBlank). Loaded at once, as BmpWin_Transfer loads them, the characters showed
+// for the rest of the frame in the old map entries' palette row (Evo's balls in the panels' or Matchups' colors) and
+// before the OBJs moved with them (Moves' icons, cursor and knob)
+static void PokedexInfoPanels_Transfer(PokedexInfoPanels *panels, BmpWin *window, u32 pending) {
+    BmpWin_FlushMap(window);
+    GFL_BGSysQueueScrLoad(BmpWin_GetBGIndex(window));
+    panels->pendingWindows |= pending;
+}
+
+// Runs in the VBlank, before the BGs' screens are loaded (GFL_VBlankUpdate), so that a window's characters and its
+// screen show from the same frame, with the OBJs that the frame moved
+static void PokedexInfoPanels_VBlank(TCB *tcb, void *data) {
+    PokedexInfoPanels *panels = data;
+
+    if (panels->pendingWindows & PENDING_BAR) {
+        BmpWin_FlushChar(panels->barWindow);
+    }
+    if (panels->pendingWindows & PENDING_CONTENT) {
+        BmpWin_FlushChar(panels->contentWindow);
+    }
+    panels->pendingWindows = 0;
 }
 
 u32 PokedexInfoPanels_GetTouchedSubpage(void) {
@@ -1024,7 +1160,8 @@ static void PokedexInfoPanels_DrawEgg(PokedexInfoPanels *panels, PersonalData *p
 
 // The bar of the sets, and the rows of the shown set from its scroll, or "No moves" for an empty one, with the scroll
 // bar's track; until there is art, the bar is a light strip. The art draws the tabs and the sets' bar only, so the
-// rows' placeholders and the track are drawn over it
+// rows' placeholders and the track are drawn over it. Until the species is caught, the bar only, and "Learnset
+// Unknown"
 static void PokedexInfoPanels_DrawMoves(PokedexInfoPanels *panels) {
     const PokedexInfoMoves *moves = panels->moves;
     GFLBitmap *bitmap = BmpWin_GetBitmap(panels->contentWindow);
@@ -1035,15 +1172,20 @@ static void PokedexInfoPanels_DrawMoves(PokedexInfoPanels *panels) {
         GFL_BitmapFillArea(bitmap, 0, MOVES_SET_BAR_Y - CONTENT_TOP, CONTENT_WINDOW_WIDTH * 8, MOVES_SET_BAR_HEIGHT,
                            PANELS_COLOR_PANEL);
     }
-    GFL_BitmapFillArea(bitmap, MOVES_TRACK_X - 1, MOVES_TRACK_TOP - CONTENT_TOP, 3,
-                       MOVES_TRACK_BOTTOM - MOVES_TRACK_TOP, PANELS_COLOR_BORDER);
-    GFL_BitmapFillArea(bitmap, MOVES_TRACK_X, MOVES_TRACK_TOP + 1 - CONTENT_TOP, 1,
-                       MOVES_TRACK_BOTTOM - MOVES_TRACK_TOP - 2, PANELS_COLOR_PANEL);
     for (i = 0; i < POKEDEX_INFO_MOVES_SET_COUNT; i++) {
         PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->smallFont, sMoveSetNames[i], sMoveSetX[i],
                                 MOVES_SET_TEXT_Y, PRINT_ALIGN_LEFT,
                                 i == moves->set ? TEXT_COLOR : MOVES_SET_OTHER_COLOR);
     }
+    if (!panels->movesKnown) {
+        PokedexInfoPanels_Print(panels, bitmap, CONTENT_TOP, panels->font, PokedexData_Text_LearnsetUnknown,
+                                MOVES_UNKNOWN_X, MOVES_UNKNOWN_Y, PRINT_ALIGN_CENTER, MOVES_NAME_COLOR);
+        return;
+    }
+    GFL_BitmapFillArea(bitmap, MOVES_TRACK_X - 1, MOVES_TRACK_TOP - CONTENT_TOP, 3,
+                       MOVES_TRACK_BOTTOM - MOVES_TRACK_TOP, PANELS_COLOR_BORDER);
+    GFL_BitmapFillArea(bitmap, MOVES_TRACK_X, MOVES_TRACK_TOP + 1 - CONTENT_TOP, 1,
+                       MOVES_TRACK_BOTTOM - MOVES_TRACK_TOP - 2, PANELS_COLOR_PANEL);
     for (i = 0; i < POKEDEX_INFO_MOVE_ROWS; i++) {
         int top = MOVES_ROW_Y + i * MOVES_ROW_PITCH;
 
@@ -1113,11 +1255,13 @@ static void PokedexInfoPanels_DrawMoveRow(GFLBitmap *bitmap, int y) {
 }
 
 // Each row's type icon to its move's type, the cursor on its row and the knob at the scroll's place on the track, or
-// all hidden off Moves
+// all hidden off Moves and until the species is caught
 static void PokedexInfoPanels_UpdateMoveActors(PokedexInfoPanels *panels, BOOL shown) {
     const PokedexInfoMoves *moves = panels->moves;
     ClActorPos pos;
     u32 i;
+
+    shown = shown && panels->movesKnown;
 
     for (i = 0; i < POKEDEX_INFO_MOVE_ROWS; i++) {
         BOOL visible = FALSE;

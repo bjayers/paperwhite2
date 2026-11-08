@@ -151,3 +151,4 @@ PokedexData_Text_EvoMossRock = Level up near a Moss Rock
 PokedexData_Text_EvoMossRockShort = Near a Moss Rock
 PokedexData_Text_EvoIceRock = Level up near an Ice Rock
 PokedexData_Text_EvoIceRockShort = Near an Ice Rock
+PokedexData_Text_LearnsetUnknown = Learnset Unknown

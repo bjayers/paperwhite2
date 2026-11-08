@@ -48,7 +48,7 @@
 // Matchups, a button for each of the species' abilities picks the one whose effect the type chart shows. Moves lists
 // a set of the Pokémon's moves, with a panel of the cursor's move over the top screen
 // (paperwhite2_pokedex_move_panel.c). Evo shows the Pokémon's family, and touching one of it opens its page. Left
-// and Right step through the sub-pages, and on Moves L and R through its sets;
+// and Right step through the sub-pages, L and R through the sub-pages and Moves' sets in one ring;
 // the touch bar's Left and Right (to Area, Cry and Forms, still there by touch) are the page's while it runs, and on
 // Moves its Up and Down and, while the panel is open, its B
 
@@ -61,7 +61,7 @@
 #define SPRITE_PIXEL_SIZE FX32_CONST(0.2654)
 #define SCREEN_CENTER_X 128
 #define SCREEN_CENTER_Y 96
-// The sprites at once: the shown one, and room for its next while the old one is removed
+// The sprites at once: the shown one, and its next while that loads, each in its own place in the texture VRAM
 #define SPRITE_CAPACITY 2
 
 // The buttons' column on the bottom screen, in tiles, on POKEDEX_INFO_BUTTON_BG, with one place for each button
@@ -157,7 +157,10 @@ typedef struct {
     // The button flashing after a touch, or BUTTON_NONE
     u32 pushed;
     MCSSSystem *mcssSys;
+    // The shown sprite, and the next one (another form, color or side, another Pokémon) while its characters and
+    // palette load, after which it replaces the shown one in the same frame
     MCSS *mcss;
+    MCSS *nextMcss;
     void *tcbBuffer;
     TCBManager *tcbMgr;
     // What the page shows: the Pokémon, its form, sex and color, Spinda's spots, whether it has been caught, its back
@@ -202,6 +205,8 @@ static void PokedexInfoPage_ShowSubpage(PokedexDetailInfoParam *param, PokedexIn
 static void PokedexInfoPage_ShowPanels(PokedexInfoPageWork *wk);
 static void PokedexInfoPage_Step(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk, PokedexDetailCommon *common,
                                  BOOL forward);
+static void PokedexInfoPage_Cycle(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk, PokedexDetailCommon *common,
+                                  BOOL forward);
 static void PokedexInfoPage_SetMoveSet(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                        PokedexDetailCommon *common, u32 set);
 static BOOL PokedexInfoPage_CheckMovesInput(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
@@ -217,7 +222,8 @@ static void PokedexInfoPage_LoadAbilities(PokedexDetailInfoParam *param, Pokedex
 static void PokedexInfoPage_CreateMCSS(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk);
 static void PokedexInfoPage_FreeMCSS(PokedexInfoPageWork *wk);
 static void PokedexInfoPage_AddSprite(PokedexInfoPageWork *wk);
-static void PokedexInfoPage_RemoveSprite(PokedexInfoPageWork *wk);
+static void PokedexInfoPage_SwapSprite(PokedexInfoPageWork *wk);
+static void PokedexInfoPage_RemoveSprites(PokedexInfoPageWork *wk);
 static void PokedexInfoPage_ResetButtons(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                          PokedexDetailCommon *common);
 static void PokedexInfoPage_CreateAbilityButtons(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk);
@@ -463,6 +469,7 @@ BOOL PokedexInfoPage_Main(PokedexDetailProcSys *sys, int *seq, void *param_, voi
     if (wk->mcssSys != NULL) {
         GFL_TCBMgrUpdate(wk->tcbMgr);
         MCSSSys_Update(wk->mcssSys);
+        PokedexInfoPage_SwapSprite(wk);
     }
     PokedexDetailBlend_Update(wk->blendMain, wk->blendSub);
     return FALSE;
@@ -604,13 +611,12 @@ static void PokedexInfoPage_ChangePokemon(PokedexDetailInfoParam *param, Pokedex
         PokedexInfo_SetPokemonInLanguage(wk->entry, wk->species, wk->form, wk->sex, wk->rare, wk->personality,
                                          wk->caught, wk->language);
     }
-    PokedexInfoPage_RemoveSprite(wk);
     PokedexInfoPage_AddSprite(wk);
     PokedexInfoPage_ShowSubpage(param, wk, common);
 }
 
 // Touching a sub-page's tab switches to it, Moves takes its own touches and keys, and on Stats and Matchups touching a
-// button pushes it; Left and Right step through the sub-pages
+// button pushes it; Left and Right step through the sub-pages, L and R through the sub-pages and Moves' sets
 static void PokedexInfoPage_CheckInput(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                        PokedexDetailCommon *common) {
     u32 typed = GCTX_HIDGetTypedKeys();
@@ -627,6 +633,9 @@ static void PokedexInfoPage_CheckInput(PokedexDetailInfoParam *param, PokedexInf
         return;
     } else if (PokedexInfoPage_CheckButtons(param, wk, common)) {
         GCTX_HIDSetUsingTouch(TRUE);
+    } else if (typed & (PAD_BUTTON_L | PAD_BUTTON_R)) {
+        GCTX_HIDSetUsingTouch(FALSE);
+        PokedexInfoPage_Cycle(param, wk, common, (typed & PAD_BUTTON_R) ? TRUE : FALSE);
     } else if (typed & PAD_KEY_RIGHT) {
         GCTX_HIDSetUsingTouch(FALSE);
         PokedexInfoPage_Step(param, wk, common, TRUE);
@@ -646,6 +655,34 @@ static void PokedexInfoPage_Step(PokedexDetailInfoParam *param, PokedexInfoPageW
         subpage = (wk->subpage + 1) % POKEDEX_INFO_SUBPAGE_COUNT;
     } else {
         subpage = (wk->subpage + POKEDEX_INFO_SUBPAGE_COUNT - 1) % POKEDEX_INFO_SUBPAGE_COUNT;
+    }
+    PokedexInfoPage_SetSubpage(param, wk, common, subpage);
+}
+
+// L and R: the next or the previous of the sub-pages and Moves' sets in one ring, wrapping round: Stats, Data, Moves'
+// Level Up, TM/HM, Tutor and Egg, Evo, Matchups. Moves is entered at its first set going forward, at its last going
+// back
+static void PokedexInfoPage_Cycle(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk, PokedexDetailCommon *common,
+                                  BOOL forward) {
+    u32 subpage;
+
+    if (wk->subpage == POKEDEX_INFO_SUBPAGE_MOVES) {
+        if (forward && wk->moves.set + 1 < POKEDEX_INFO_MOVES_SET_COUNT) {
+            PokedexInfoPage_SetMoveSet(param, wk, common, wk->moves.set + 1);
+            return;
+        }
+        if (!forward && wk->moves.set != 0) {
+            PokedexInfoPage_SetMoveSet(param, wk, common, wk->moves.set - 1);
+            return;
+        }
+    }
+    if (forward) {
+        subpage = (wk->subpage + 1) % POKEDEX_INFO_SUBPAGE_COUNT;
+    } else {
+        subpage = (wk->subpage + POKEDEX_INFO_SUBPAGE_COUNT - 1) % POKEDEX_INFO_SUBPAGE_COUNT;
+    }
+    if (subpage == POKEDEX_INFO_SUBPAGE_MOVES) {
+        wk->moves.set = forward ? POKEDEX_INFO_MOVES_LEVEL_UP : POKEDEX_INFO_MOVES_SET_COUNT - 1;
     }
     PokedexInfoPage_SetSubpage(param, wk, common, subpage);
 }
@@ -689,10 +726,11 @@ static void PokedexInfoPage_ShowSubpage(PokedexDetailInfoParam *param, PokedexIn
     PokedexInfoPage_ShowTopText(param, wk);
 }
 
-// On Moves: touching a set's name shows that set, as L and R step through them, wrapping round; a touch on the scroll
-// bar scrolls the list while it is held; touching a row puts the cursor on it and opens the move panel with its move,
-// as A does with the cursor's; B closes the panel; Up and Down move the cursor, stopping at the list's ends, and show
-// its move in the panel while it is open. TRUE if one of them was used
+// On Moves: touching a set's name shows that set; a touch on the scroll bar scrolls the list while it is held; touching
+// a row puts the cursor on it and opens the move panel with its move, as A does with the cursor's; B closes the panel;
+// Up and Down move the cursor, stopping at the list's ends, and show its move in the panel while it is open. Until the
+// species is caught there is no list, so only the sets' names are touched (Up and Down are the touch bar's then).
+// TRUE if one of them was used
 static BOOL PokedexInfoPage_CheckMovesInput(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                             PokedexDetailCommon *common) {
     u32 pressed = GCTX_HIDGetPressedKeys();
@@ -701,7 +739,7 @@ static BOOL PokedexInfoPage_CheckMovesInput(PokedexDetailInfoParam *param, Poked
     u32 row = PokedexInfoPanels_GetTouchedMoveRow();
     BOOL open = PokedexMovePanel_IsOpen(wk->movePanel);
 
-    if (PokedexInfoPage_CheckKnobDrag(wk, common)) {
+    if (wk->caught && PokedexInfoPage_CheckKnobDrag(wk, common)) {
         return TRUE;
     }
     if (set != POKEDEX_INFO_MOVES_SET_COUNT) {
@@ -711,15 +749,8 @@ static BOOL PokedexInfoPage_CheckMovesInput(PokedexDetailInfoParam *param, Poked
         }
         return TRUE;
     }
-    if (typed & (PAD_BUTTON_L | PAD_BUTTON_R)) {
-        GCTX_HIDSetUsingTouch(FALSE);
-        if (typed & PAD_BUTTON_R) {
-            set = (wk->moves.set + 1) % POKEDEX_INFO_MOVES_SET_COUNT;
-        } else {
-            set = (wk->moves.set + POKEDEX_INFO_MOVES_SET_COUNT - 1) % POKEDEX_INFO_MOVES_SET_COUNT;
-        }
-        PokedexInfoPage_SetMoveSet(param, wk, common, set);
-        return TRUE;
+    if (!wk->caught) {
+        return FALSE;
     }
     if (row != POKEDEX_INFO_MOVE_ROWS) {
         if (PokedexInfoMoves_SelectRow(&wk->moves, row)) {
@@ -822,9 +853,10 @@ static void PokedexInfoPage_ShowMove(PokedexInfoPageWork *wk, PokedexDetailCommo
     PokedexInfoPage_TakeTouchbarKeys(wk, common);
 }
 
-// On Moves the panel shows the cursor's move while it is on and the set has moves; otherwise it is closed
+// On Moves the panel shows the cursor's move while it is on and the set has moves, once the species is caught;
+// otherwise it is closed
 static void PokedexInfoPage_UpdateMovePanel(PokedexInfoPageWork *wk, PokedexDetailCommon *common) {
-    if (wk->subpage == POKEDEX_INFO_SUBPAGE_MOVES && wk->movePanelOn && wk->moves.count != 0) {
+    if (wk->subpage == POKEDEX_INFO_SUBPAGE_MOVES && wk->caught && wk->movePanelOn && wk->moves.count != 0) {
         PokedexInfoPage_ShowMove(wk, common);
     } else {
         PokedexInfoPage_CloseMovePanel(wk);
@@ -845,12 +877,12 @@ static void PokedexInfoPage_CloseMovePanel(PokedexInfoPageWork *wk) {
 }
 
 // The touch bar's keys that the page takes: Left and Right always, as they step through the sub-pages; Up and Down
-// on Moves, which move its cursor (the Pokémon changes there by the bar's arrows, touched); B while the move panel is
-// open, which closes it
+// on Moves once the species is caught, which move its cursor (the Pokémon changes there by the bar's arrows,
+// touched); B while the move panel is open, which closes it
 static void PokedexInfoPage_TakeTouchbarKeys(PokedexInfoPageWork *wk, PokedexDetailCommon *common) {
     u32 keys = PAD_KEY_LEFT | PAD_KEY_RIGHT;
 
-    if (wk->subpage == POKEDEX_INFO_SUBPAGE_MOVES) {
+    if (wk->subpage == POKEDEX_INFO_SUBPAGE_MOVES && wk->caught) {
         keys |= PAD_KEY_UP | PAD_KEY_DOWN;
     }
     if (wk->movePanel != NULL && PokedexMovePanel_IsOpen(wk->movePanel)) {
@@ -918,7 +950,7 @@ static void PokedexInfoPage_CreateMCSS(PokedexDetailInfoParam *param, PokedexInf
 }
 
 static void PokedexInfoPage_FreeMCSS(PokedexInfoPageWork *wk) {
-    PokedexInfoPage_RemoveSprite(wk);
+    PokedexInfoPage_RemoveSprites(wk);
     MCSSSys_CloseArc(wk->mcssSys);
     MCSSSys_Free(wk->mcssSys);
     wk->mcssSys = NULL;
@@ -927,29 +959,59 @@ static void PokedexInfoPage_FreeMCSS(PokedexInfoPageWork *wk) {
 }
 
 // The shown Pokémon's sprite, front or back, its animation looping, as the forms page adds its sprites
-// (PokedexDetailForm_AddMCSS) at a scale of one pixel to a pixel
+// (PokedexDetailForm_AddMCSS) at a scale of one pixel to a pixel. It is the next sprite until it is loaded: the shown
+// one stays drawn meanwhile, and a next one not yet shown is replaced. Its characters and palette load in the VBlank,
+// as the forms page loads a sprite while the screen shows (PokedexDetailForm_LoadTurnedSprites: no TCB manager for the
+// add, so MCSS_LoadTask runs as a VBlank task and only before the 3D starts drawing, lines 192 to 200), into the place
+// in the texture VRAM that the shown sprite doesn't use
 static void PokedexInfoPage_AddSprite(PokedexInfoPageWork *wk) {
     VecFx32 scale = { FX32_ONE * 16, FX32_ONE * 16, FX32_ONE };
     VecFx32 offset;
     MCSSLoadInfo info;
+    MCSS *mcss;
 
+    if (wk->nextMcss != NULL) {
+        MCSSSys_Remove(wk->mcssSys, wk->nextMcss);
+        wk->nextMcss = NULL;
+    }
     if (wk->species == SPECIES_SPINDA) {
         MCSSSys_SetSpindaLoadCallback(wk->mcssSys, wk->personality);
     }
     SetupPokemonLoaderFSTool(wk->species, wk->form, wk->sex, wk->rare, FALSE, &info, wk->back);
-    wk->mcss = MCSSSys_Add(wk->mcssSys, (SPRITE_X - SCREEN_CENTER_X) * SPRITE_PIXEL_SIZE,
-                           (SCREEN_CENTER_Y - SPRITE_Y) * SPRITE_PIXEL_SIZE, 0, &info);
-    MCSS_SetNoShadow(wk->mcss, 1);
-    MCSS_SetScale(wk->mcss, &scale);
-    MCSS_SetLoopAnimation(wk->mcss);
+    MCSSSys_SetTCBManager(wk->mcssSys, NULL);
+    mcss = MCSSSys_Add(wk->mcssSys, (SPRITE_X - SCREEN_CENTER_X) * SPRITE_PIXEL_SIZE,
+                       (SCREEN_CENTER_Y - SPRITE_Y) * SPRITE_PIXEL_SIZE, 0, &info);
+    MCSSSys_SetTCBManager(wk->mcssSys, wk->tcbMgr);
+    MCSS_SetNoShadow(mcss, 1);
+    MCSS_SetScale(mcss, &scale);
+    MCSS_SetLoopAnimation(mcss);
     // Centered on its frame, as the forms page's sprites (PokedexDetailForm_SetShadow)
-    offset.x = -MCSS_GetOffsetX(wk->mcss) * (FX32_ONE / 4);
+    offset.x = -MCSS_GetOffsetX(mcss) * (FX32_ONE / 4);
     offset.y = 0;
     offset.z = 0;
-    MCSS_SetPositionOffset(wk->mcss, &offset);
+    MCSS_SetPositionOffset(mcss, &offset);
+    wk->nextMcss = mcss;
 }
 
-static void PokedexInfoPage_RemoveSprite(PokedexInfoPageWork *wk) {
+// Once the next sprite is loaded, it replaces the shown one, which is removed in the frame that first draws the new
+// one, so that the screen shows one or the other, whole
+static void PokedexInfoPage_SwapSprite(PokedexInfoPageWork *wk) {
+    if (wk->nextMcss == NULL || !MCSS_IsLoaded(wk->nextMcss)) {
+        return;
+    }
+    if (wk->mcss != NULL) {
+        MCSS_Hide(wk->mcss);
+        MCSSSys_Remove(wk->mcssSys, wk->mcss);
+    }
+    wk->mcss = wk->nextMcss;
+    wk->nextMcss = NULL;
+}
+
+static void PokedexInfoPage_RemoveSprites(PokedexInfoPageWork *wk) {
+    if (wk->nextMcss != NULL) {
+        MCSSSys_Remove(wk->mcssSys, wk->nextMcss);
+        wk->nextMcss = NULL;
+    }
     if (wk->mcss != NULL) {
         MCSS_Hide(wk->mcss);
         MCSSSys_Remove(wk->mcssSys, wk->mcss);
@@ -1175,18 +1237,19 @@ static void PokedexInfoPage_PressButton(PokedexDetailInfoParam *param, PokedexIn
         GFL_SndSEPlay(SEQ_SE_SELECT3);
         return;
     }
-    PokedexInfoPage_RemoveSprite(wk);
     PokedexInfoPage_AddSprite(wk);
     GFL_SndSEPlay(SEQ_SE_SELECT3);
 }
 
-// Cry, Turn and Abilities always; Form once two forms have been seen, Shiny once a shiny one has, and Language once the
-// Pokédex has the entry in another language
+// Cry and Turn always; Form once two forms have been seen, Shiny once a shiny one has, Language once the Pokédex has
+// the entry in another language, and Abilities once the species is caught
 static BOOL PokedexInfoPage_IsButtonUsable(PokedexInfoPageWork *wk, PokedexDetailCommon *common, u32 button) {
     PokeDexSave *pokedex = GameData_GetPokedex(PokedexDetailCommon_GetGameData(common));
     u32 i;
 
     switch (button) {
+    case BUTTON_ABILITIES:
+        return wk->caught;
     case BUTTON_FORM:
         return PokedexInfoPage_CountSeenForms(pokedex, wk->species) >= 2;
     case BUTTON_SHINY:

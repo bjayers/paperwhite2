@@ -170,9 +170,10 @@ ART_PANEL, ART_BORDER, ART_ROW = 4, 10, 8
 ICON_BASE = ART_BASE + 16
 BUTTON_CHOSEN_COLOR = (90, 200, 230)
 BUTTON_CHOSEN = ICON_BASE + 48
-# The multipliers' colors, as the page's MULTIPLIER_*_COLOR and sMatchupColors (the battle's move colors): above 1,
-# below it and 0, each with the dark shadow, after the chosen button's color; 1 is the panels' text
-MATCHUP_COLORS = [(12, 22, 31), (30, 27, 11), (16, 16, 16)]
+# The multipliers' colors, as the page's MULTIPLIER_*_COLOR and sMatchupColors: above 1 and below it the battle's move
+# colors, 0 a light grey, each with the panels' text's light shadow, after the chosen button's color; 1 is the panels'
+# text
+MATCHUP_COLORS = [(12, 22, 31), (30, 27, 11), (18, 18, 18)]
 M_SUPER, M_RESISTED, M_IMMUNE = BUTTON_CHOSEN + 1, BUTTON_CHOSEN + 2, BUTTON_CHOSEN + 3
 # Moves' reference: the cursor's 16 colors and the knob's after the multipliers'
 CURSOR_BASE = M_IMMUNE + 1
@@ -210,7 +211,8 @@ Colours on the reference that are NOT art
 - the blue band at the bottom (y 168-191) = the game's touch bar; leave it transparent
 - the pink boxes = the game's buttons (Cry, Turn, Form, Shiny, Language, Abilities): they cover
   your art wherever a button is shown. Form, Shiny and Language only appear for some Pokemon,
-  so your art shows in their place otherwise. Abilities, the sixth (y 142-165), is always there.
+  so your art shows in their place otherwise. Abilities, the sixth (y 142-165), only once the
+  Pokemon is caught.
   The buttons sit 2 px above the 8 x 8 tile grid (Cry at y 22-45, each 24 px below the last):
   the game scrolls this screen's layer up 2 px and converts your art 2 px lower to match, so
   your art still shows exactly where you drew it. Keep its last 2 rows (y 190-191) transparent.
@@ -239,9 +241,9 @@ Matchups
 - The 17 type icons are the game's own sprites, drawn over everything: their places are fixed
   (3 rows of 6, the last place free for a possible new type). Under each, the damage
   multiplier against the Pokemon: a small "x" and the number in the standard font, in the
-  battle's move colours: light blue (98,180,255) above x1, yellow (246,222,90) below, grey
-  (131,131,131) for x0, each with a dark shadow; x1 is the panels' near-black text (the sample
-  is Tepig, Fire).
+  battle's move colours: light blue (98,180,255) above x1, yellow (246,222,90) below, and a
+  light grey (148,148,148) for x0, each with the same light grey shadow (180,180,189) as the
+  near-black text of x1 (the sample is Tepig, Fire).
 - The row of buttons at the bottom (y 141-164) are the game's buttons (1 to 3 of them,
   centered): "Default" for every ability that changes no matchup, if the Pokemon has one, then
   each ability that does (Tepig: Default, chosen, and Thick Fat). They sit 3 px above the tile
@@ -272,9 +274,18 @@ Moves
 - The scroll bar: a thin track at x 240, y 45-155, centred on the rows (the game draws a light
   line with a dark edge over your art) and the Pokedex list's yellow knob, a sprite, which moves down it as
   the list scrolls. Touching the track (x 234-255) and holding scrolls the list to that place.
+- moves_unknown_reference.png (and _tiles): until the Pokemon is caught, only the sets' bar,
+  no rows, scroll bar or cursor, and "Learnset Unknown" in the standard font, white with a dark
+  shadow, centred at x 128 and on y 100 (its top at y 92). The move panel doesn't open then.
 
 Evo
 - evo_canvas.png: your Evo art, the strip and the tree's panel (y 25-57; x 20-236, y 64-161).
+- The banner under the tab bar moves with the red grid (left 1 px every 5 frames): the game
+  moves your art's tile rows 3-6 (y 24-55, the banner's inside) onto the grid's layer, which
+  scrolls, and keeps the rest of your art, the banner's edges at y 22-23 and 56-58 included,
+  still (rows of one colour, so they look the same). Those rows must be opaque and repeat
+  across with a period that divides 256 (yours: a 4 px grid, the period 4), or a seam shows
+  as they wrap; the script prints the period it finds. The references show it at rest.
 - evo_reference.png, evo_reference_tiles.png: Tepig's family with Pignite shown (Tepig and
   Pignite caught, Emboar not yet seen); evo_eevee_reference.png and _tiles: Eevee's 8, the most a
   family has, in the small layout (Vaporeon and Espeon caught, Jolteon, Flareon, Umbreon seen,
@@ -300,10 +311,10 @@ The move panel (top screen)
 - move_panel_reference.png, move_panel_reference_tiles.png: your art as the game shows it, over
   a dark checker (the dimmed screen) and the head bar, with a sample move (Arm Thrust): the name
   at (20, 41) on your dark header, its type icon at the top right (centred at 224, 50),
-  "Category" at (20, 74) with the category icon (its sprite centred at 99, 80, its drawn
-  pixels x 85-112), "Power" (20, 87) and "Accuracy" (20, 101) with their values right-aligned
-  to end with the icon (their last pixel at x 112), "PP" (138, 74) and "Priority" (138, 87)
-  with theirs right-aligned to end at x 217, and the description from (20, 130), three lines 14 px
+  "Category" at (20, 74) with the category icon (its sprite centred at 105, 80, its drawn
+  pixels x 91-118), "Power" (20, 87) and "Accuracy" (20, 101) with their values right-aligned
+  to end with the icon (their last pixel at x 118), "PP" (138, 74) and "Priority" (138, 87)
+  with theirs right-aligned to end at x 236, and the description from (20, 130), three lines 14 px
   apart: all 10 px lower than before, the name 9 px (a 2 px drop would cut the shadow of its
   p, q and y in its 16 px box).
 - The text prints in your palette's colours: the name white (238,238,238) with a near-black
@@ -633,16 +644,28 @@ def type_index(name):
     return order.index(name.replace("TYPE_", ""))
 
 
+def move_sets_text(canvas, d, m, small):
+    """The sets' names on their bar, as PokedexInfoPanels_DrawMoves prints them, Level Up shown."""
+    set_x = [int(v) for v in re.search(r"sMoveSetX\[[^]]*\] = \{([^}]*)\}", PANELS.read_text()).group(1).split(",")]
+    for i, name in enumerate(["LevelUp", "Machines", "Tutor", "EggMoves"]):
+        canvas.text(small, m[name], set_x[i], d["MOVES_SET_TEXT_Y"], letter=TEXT_C if i == 0 else SHADOW,
+                    shadow=SHADOW if i == 0 else CLEAR)
+
+
+def moves_unknown_text(canvas, d, m, font, small):
+    # As PokedexInfoPanels_DrawMoves until the species is caught: the sets' bar, no rows, track, cursor or knob, and
+    # "Learnset Unknown" centred, white with the dark shadow, as a row's name
+    move_sets_text(canvas, d, m, small)
+    canvas.text(font, m["LearnsetUnknown"], d["MOVES_UNKNOWN_X"], d["MOVES_UNKNOWN_Y"], "center", letter=PANEL,
+                shadow=BORDER)
+
+
 def moves_text(canvas, d, m, font, small, icons):
     # As PokedexInfoPanels_DrawMoves and _UpdateMoveActors: the sample's level-up set, the cursor on the first row.
     # Over the user's art the page draws the rows' placeholders and the track in its panels' colors
     if load_art("moves"):
         moves_rows(d, canvas, BORDER, DIM, PANEL)
-    set_x = [int(v) for v in re.search(r"sMoveSetX\[[^]]*\] = \{([^}]*)\}", PANELS.read_text()).group(1).split(",")]
-    for i, name in enumerate(["LevelUp", "Machines", "Tutor", "EggMoves"]):
-        x = set_x[i]
-        canvas.text(small, m[name], x, d["MOVES_SET_TEXT_Y"], letter=TEXT_C if i == 0 else SHADOW,
-                    shadow=SHADOW if i == 0 else CLEAR)
+    move_sets_text(canvas, d, m, small)
     learnset = json.loads((ROOT / f"res/pokemon/{SAMPLE_SPECIES}/data.json").read_text())["learnset"]["by_level"]
     for row, (level, move) in enumerate(learnset[:d["POKEDEX_INFO_MOVE_ROWS"]]):
         top = d["MOVES_ROW_Y"] + row * d["MOVES_ROW_PITCH"]
@@ -898,8 +921,8 @@ def matchups_text(canvas, d, m, font, small, icons, lift):
         value = chart[t][type1] * (MULTIPLIER_ONE // 4)
         if type2 != type1:
             value = value * chart[t][type2] // 4
-        letter, shadow = ((M_SUPER, BORDER_C) if value > MULTIPLIER_ONE else (M_RESISTED, BORDER_C)
-                          if 0 < value < MULTIPLIER_ONE else (M_IMMUNE, BORDER_C) if value == 0 else (TEXT_C, SHADOW))
+        letter, shadow = ((M_SUPER, SHADOW) if value > MULTIPLIER_ONE else (M_RESISTED, SHADOW)
+                          if 0 < value < MULTIPLIER_ONE else (M_IMMUNE, SHADOW) if value == 0 else (TEXT_C, SHADOW))
         number, sign = multiplier_text(value), m["Multiplier"]
         left = x - (small.text_width(sign) + small.text_width(number)) // 2
         top = y + d["MATCHUPS_VALUE_OFFSET_Y"]
@@ -1090,6 +1113,21 @@ def evo_text(canvas, d, m, font, small, icon_of, shown, states):
                               - POKE_ICON_SIZE // 2 + j % POKE_ICON_SIZE] = ICON_BASE + value
 
 
+def banner_check(d, evo_art):
+    """Evo's banner: the art's tile rows that the page moves onto the grid's BG, which scrolls (paperwhite2_pokedex_
+    info_panels.c's BANNER_*), must repeat across with a period that divides 256, so that they wrap without a seam,
+    and be opaque, as the backdrop, not the grid, would show through them."""
+    pixels = evo_art[0]
+    top, bottom = d["BANNER_TILE_Y"] * 8, (d["BANNER_TILE_Y"] + d["BANNER_TILES_DOWN"]) * 8
+    rows = [pixels[y * WIDTH:(y + 1) * WIDTH] for y in range(top, bottom)]
+    if any(0 in row for row in rows):
+        return f"the banner (y {top}-{bottom - 1}) has transparent pixels, which would show the backdrop"
+    for period in (p for p in range(1, WIDTH + 1) if WIDTH % p == 0):
+        if all(row[x] == row[x % period] for row in rows for x in range(WIDTH)):
+            return f"the banner (y {top}-{bottom - 1}) scrolls with the grid and repeats every {period} px"
+    return f"the banner (y {top}-{bottom - 1}) doesn't repeat across: it would show a seam as it scrolls"
+
+
 def evo_check(d, m, font, small):
     """Every family's rows whose method doesn't fit after its species' name (all seen) in any wording, printed."""
     numbers = species_numbers()
@@ -1202,6 +1240,9 @@ def main():
             continue
         (args.out / f"{page}_canvas.png").write_bytes(write_indexed_png(WIDTH, HEIGHT, bytes(found[0]), found[1]))
         write(page, found, draw, colors(art16(found), icon_colors, sprite_colors() if sprites else ()))
+        if page == "moves":
+            write("moves_unknown", found, lambda c: moves_unknown_text(c, d, m, font, small),
+                  colors(art16(found), icon_colors))
 
     # Evo: the art as its canvas, and each sample family over it, the party icons' colors after the art's
     evo_art = load_art("evo")
@@ -1213,6 +1254,7 @@ def main():
                   colors(art16(evo_art), icon_colors16))
         for line in evo_check(d, m, font, small):
             print("evo:", line)
+        print("evo:", banner_check(d, evo_art))
 
     # The top screen's move panel, once it has the user's art: the canvas is the art, the reference has the sample move
     if MOVE_PANEL_ART.exists():

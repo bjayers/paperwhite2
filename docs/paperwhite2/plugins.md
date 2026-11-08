@@ -1408,12 +1408,21 @@ every page (`pokedex_detail_graphic.c`): main OBJ E (64 KB), sub OBJ D (128 KB, 
 `pokedex_detail_info.c` keeps the original page outside `PAPERWHITE2` and points `POKEDEX_DETAIL_INFO_PROC_FUNCS` at the
 hack's). **Top** (main engine): overlay 296's entry (`PokedexInfo`, engine 0) with its text on BG 1 beside the head bar,
 its panels on BG 2 and its grid on BG 3, and no still sprite (`PokedexInfo_IsDetailTop`); the battle's animated sprite
-(MCSS) on BG 0 in 3D, which the page turns on at its start and off at its end. BG 1 fades with the page there, so the
+(MCSS) on BG 0 in 3D, which the page turns on at its start and off at its end. **A new sprite** (Form, Shiny, Turn,
+another Pokémon) is added beside the shown one (`SPRITE_CAPACITY` 2, each MCSS in its own 16 KB of texture VRAM), with
+no TCB manager for the add, so that `MCSS_LoadTask` runs as a VBlank task in lines 192-200, before the 3D draws, as the
+forms page loads its sprites (`PokedexDetailForm_LoadTurnedSprites`); the shown one stays drawn until the new one is
+loaded (`MCSS_IsLoaded`, `src/system/mcss.c` under `PAPERWHITE2`), and is removed in the frame that first draws the
+new one (`PokedexInfoPage_SwapSprite`). Before, the old one was removed and the new one added in its slot, its
+characters written at once from the page's TCB manager, mid-frame and over the texture that the frame's 3D (the old
+sprite's polygons, sent the frame before) was drawing, its palette a frame later and the sprite not drawn between:
+Form's work before it (the entry, the panels) moved the write into the drawn frame, so it scrambled; Shiny's
+characters are the same, and Turn's write came early in the VBlank. BG 1 fades with the page there, so the
 head bar is shown at once and fades in and out with it, and slides out only once the screen is dark. **Bottom** (sub
 engine): the grid on BG 4, the bar of sub-pages and the panels drawn into two windows on BG 7 (palette 3, a table in
 the panels' file until there is art), and on Stats the buttons Cry, Turn, Form, Shiny, Language and Abilities on BG 6
 (`AppTaskMenuWin`, palettes 4 and 5, 9 by 3 tiles from tile row 3 at a 3-row pitch, shown 2 px higher, so Abilities
-is y 142-165, off the touch bar), hidden when they can do nothing (Abilities never is). **The buttons' lift**: they are
+is y 142-165, off the touch bar), hidden when they can do nothing (Abilities until the species is caught). **The buttons' lift**: they are
 tile-aligned windows on the art's BG, so a sub-page lifts them by scrolling BG 6 up (`sSubpageLift` beside
 `sSubpageArt` in the panels' file: Stats 2 px, Matchups 3, the others 0), set with the art's screen in the same VBlank
 (`PokedexInfoPanels_LoadArt`, `GFL_BGSysMoveBGReq`) and back to 0 as the page ends; the touches are checked that much
@@ -1423,15 +1432,18 @@ the lift shows at the bottom under the touch bar (y 168+, BG 5), are cleared wit
 (BG 7), the grid (BG 4) and the touch bar don't move. The sub-pages are Stats, Data, Moves, Evo
 and Matchups; the art draws the tab bar's five icons (centres x 64 to 192, 32 apart), and touching a
 tab's column (y 0-17) switches to it. A sub-page without art shows a dark strip with its own name. The D-pad's Left
-and Right step through the five sub-pages, wrapping (Moves keeps the set it showed last), and on Moves only L and R
-step through its four sets, wrapping: the touch bar takes Left and Right no more while the page runs (`PokedexDetailTouchbar_SetDisabledKeys`, `pokedex_detail_touchbar.c`,
+and Right step through the five sub-pages, wrapping (Moves keeps the set it showed last); L and R step through one
+ring of the sub-pages and Moves' sets, wrapping: Stats, Data, Moves' Level Up, TM/HM, Tutor, Egg, Evo, Matchups
+(`PokedexInfoPage_Cycle`; back into Moves enters at Egg, forward at Level Up): the touch bar takes Left and Right no more while the page runs (`PokedexDetailTouchbar_SetDisabledKeys`, `pokedex_detail_touchbar.c`,
 under `PAPERWHITE2`; Area, Cry and Forms are still there by touch), and the page gives the keys back as it ends. The text is `res/text/system/pokedex_data.txt` (`TEXT_BANK_POKEDEX_DATA`). Every place is a constant at
 the top of the two files.
 
 **Matchups** (shown once seen): the 17 attacking types in 3 rows of 6 (the 18th place free for a Fairy type), each the
 game's type icon (`a/0/8/2` palette 0x21, chars 0x22+type, cells and animations 0x3d and 0x40 for the 1D 128 KB
 mapping) as a sub OBJ, semi-transparent so the page's fades darken it, with the multiplier against the shown form's
-types under it in font 0 (`×0.5`, `×1.25`..., computed in 64ths, coloured by the panels' palette). The icons use sub
+types under it in font 0 (`×0.5`, `×1.25`..., computed in 64ths, coloured by `sMatchupColors`: above
+×1 the battle's light blue, below it its yellow, ×0 a light grey (148, 148, 148, slot 12), each with the panels' text's
+light shadow, ×1 the panels' near-black). The icons use sub
 OBJ palette rows 0-2 (the touch bar has 8-13); their 17 characters, palette and cells are loaded with the panels and
 only shown or hidden by sub-page. Below the chart (y 141-164, lifted 3 px to centre them between the chart's panel and the touch bar), one
 `AppTaskMenuWin` per distinct ability (the hidden one once
@@ -1442,6 +1454,12 @@ is in ARM9 main (`src/paperwhite2/main/paperwhite2_type_chart.c`, `PaperWhite2_T
 `include/paperwhite2/type_chart.h`), which `btl_calc.c` reads under `PAPERWHITE2` in place of its own
 `data_ov167_021d7500` (289 bytes of main).
 
+**The bottom screen's windows** (the bar and the content window on BG 7) go to VRAM in the VBlank: their map entries
+to the screen buffer, loaded by `GFL_BGSysUpdate`, and their characters by the panels' VBlank task
+(`PokedexInfoPanels_Transfer`, `_VBlank`), which runs before it in the same VBlank, with the OBJs' OAM. Loaded at once
+(`BmpWin_Transfer`), the characters showed for the rest of the frame in the old map entries' palette row (Evo's balls,
+drawn for row 12, in Matchups' 11 or the panels' 3) and before the OBJs moved (Moves' icons, cursor and knob).
+
 **Moves** (`paperwhite2_pokedex_info_moves.c` reads the sets, the panels' file draws them): a bar of the four sets
 (Level Up, TM/HM, Tutor, Egg; font 1, from y 20) under the tab bar, drawn by the user's art (`ARCID_POKEDEX_GRA`
 140-142, the target `pokedex_info_moves`, the tab strip and the sets' bar only, in sub palette row 8), then 5 rows the move relearner's size (22 px at a 24 px
@@ -1450,7 +1468,10 @@ over the art, as is the scroll bar's track), each the move's type icon (an OBJ s
 `ClActor_SetImageProxy`), its name and the set's detail ("Lv. 22", "TM26"/"HM03", the tutor's town, a dash); the
 relearner's cyan cursor and the Pokédex list's scroll knob (sub OBJ rows 3 and 4) on a track at x 240, y 45-155. Up and
 Down move the cursor, stopping at the ends (the touch bar's Up and Down are the page's there, so the Pokémon changes by
-touching the arrows); A or a touch on a row opens the move panel. A touch held on the track (x 234-255) scrolls the
+touching the arrows); A or a touch on a row opens the move panel. **Until the species is caught** there is no list,
+scroll bar or cursor, and the panel never opens: the sets' bar (its names still touched, L and R still stepping
+through it) and "Learnset Unknown" (`PokedexData_Text_LearnsetUnknown`) in font 0, white with a dark shadow, centred
+at x 128 and on y 100 (`MOVES_UNKNOWN_*`); Up and Down are the touch bar's then, and change the Pokémon. A touch held on the track (x 234-255) scrolls the
 list to its place as the Pokédex list's bar does (`ScrollBar_GetValue`), the cursor keeping its row, and the open
 panel shows the cursor's move as it lets go. The relearner's cursor is 1D 64 KB, the Pokédex's sub engine 128 KB, so its
 characters and cells are converted by `tools/paperwhite2/obj_remap.py` into `ARCID_POKEDEX_GRA`'s new members 137
@@ -1488,9 +1509,15 @@ press) and turns it off, A or a touch on a row turns it on again; it opens with 
 follows the cursor, shows the new set's or Pokémon's first move, hides for a set without moves until one has some, and
 closes as another sub-page shows or the page ends. A Pokémon changed while it is open changes the entry, hidden under
 it, only as it closes. Power's and Accuracy's values are right-aligned to end with the category icon (`LEFT_VALUE_RIGHT`
-113): its characters (`a/0/8/2` 0x38-0x3a) leave 2 clear columns at each side and its cell (0x3d, one 32x16 OBJ at
--16, -8) is centred on `CATEGORY_ICON_X` 99, so it shows x 85-112; PP's and Priority's end at 218
-(`RIGHT_VALUE_RIGHT`). The value's last pixel, its shadow, is the column before.
+119): its characters (`a/0/8/2` 0x38-0x3a) leave 2 clear columns at each side and its cell (0x3d, one 32x16 OBJ at
+-16, -8) is centred on `CATEGORY_ICON_X` 105, so it shows x 91-118; PP's and Priority's end at 237
+(`RIGHT_VALUE_RIGHT`). The value's last pixel, its shadow, is the column before. **What the panel shows reaches the
+screen in one VBlank** (`PokedexMovePanel_VBlank`): as it opens, its tiles' place is allocated and its screen (with the
+entry's windows cleared) queued, and the art's tiles and palette, the windows' characters, the dimming, the head bar's
+dimmed palette and BG 0 off are loaded in the VBlank, with the screen and the icons' OAM; a new move's windows too. They
+were loaded at once before, so the opening frame showed the panel's tiles under the entry's screen and the dimming
+from the line it was set at, and the icons a frame later. Closing is still at once (the entry's windows take the
+panel's characters as it closes).
 
 **Evo** (`paperwhite2_pokedex_info_evo.c`, drawn into the panels' content window, which shows sub BG palette row 12
 there, the balls' palette, the art's colours: rows 6-10 are the arts', 11 Matchups', 13 the touch bar's): the shown
@@ -1510,8 +1537,15 @@ font 1, else a shortened wording (`sEvoMethodTexts`, the messages `PokedexData_T
 font 1 throughout at y 74 + 11 a row. Gold lines, 2 px, run from each parent's ball down and across to its evolutions',
 drawn into the window before the balls. A species that evolves into the same one two ways (Feebas, by Beauty or a
 trade) shows both joined with "or" if they fit, else the first. Karrablast's and Shelmet's trades name the other (the
-game checks their species, `evolution_check.c`; their parameter is none). The strip and the panel are placeholders
-(the art, members 146-148, is blank) until the art draws them. Touching an icon's column of the strip or a row opens
+game checks their species, `evolution_check.c`; their parameter is none). **The banner** (the art's band under the tab bar,
+y 22-58) moves as the grid does (BG 4, `PokedexDetailBackground_Update`: its x scroll up 1 every 5 frames, so it
+moves left 1 px every 5 frames): its inside, the art's tile rows 3-6 (y 24-55, `BANNER_*` in the panels' file), is
+copied as the page starts onto the grid's BG, its different tiles (2 in the user's art) into BG 4's characters and its
+map entries in the art's palette row (9); while Evo shows, `PokedexInfoPanels_LoadArt` puts them in BG 4's rows 3-6
+and clears those rows of the art's BG, and puts the grid's own entries back for the other sub-pages, in the same VBlank
+as the art. The edges (y 22-23, 56-58) stay on the art's BG, still: rows of one colour, which look the same scrolled.
+The rows must be opaque and repeat across with a period that divides 256 (the user's: 4), so that they wrap without
+a seam (`pokedex_templates.py` prints the period). Touching an icon's column of the strip or a row opens
 that species' page through the detail screen's list (as the touch bar's arrows do, `common->index`) if it has been seen
 and is in the list, else it beeps; Up and Down change the Pokémon as on the other sub-pages. **The family table**:
 `tools/paperwhite2/pokedex_evo.py` adds two members to `ARCID_POKEDEX_GRA` in the hack's build (`HACK_ARCHIVE_MEMBERS`,
@@ -1528,8 +1562,8 @@ it has one, then the description), its name in gold on line 1 with which of the 
 "Ability 2", "Hidden Ability", `sAbilitySlotLabels`) in a mid grey with a near-black shadow
 (`POKEDEX_INFO_TEXT_LIGHT_GREY` and `_DARK_SHADOW`, colours 4 and 5 of the font's row: the entry's labels' grey, 1 with
 the light shadow 2, looked wrong on the dark panel), and its description
-(`TEXT_BANK_ABILITY_DESCRIPTIONS`, two lines) in the entry's white below, or for the hidden one before it is caught "Hidden ability undiscovered."
-centred on line 2; and on Data the wild held items (`PERSONAL_ITEM_1-3`), one a line, the name from x 2 and the rate
+(`TEXT_BANK_ABILITY_DESCRIPTIONS`, two lines) in the entry's white below (the button shows once the species is caught,
+so "Hidden ability undiscovered.", centred on line 2 for the hidden one before that, no longer shows); and on Data the wild held items (`PERSONAL_ITEM_1-3`), one a line, the name from x 2 and the rate
 right-aligned 2 px from the window's right ("Light Ball ... 5%"; the third item's "Dark grass only: 1%",
 `PokedexData_Text_ItemRateDarkGrass`), "Has no hold items." centred on line 2, or "?" until
 caught. The rates are the field's (`FieldEncount_SetRandomHeldItem`, `enc_pokeset.c`'s `HELD_ITEM_RATES`): 50%, 5% and

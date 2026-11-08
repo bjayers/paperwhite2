@@ -2,6 +2,16 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-07: Pokédex, final polish and the hardware flickers
+
+Built, DSi check intact, not yet tested in game (plugins.md, Pokédex): Abilities and the learnset hidden until caught
+("Learnset Unknown"), the move panel's value columns 6 and 19 px right, Evo's banner grid scrolling with the red grid
+(copied onto BG4), Matchups' coloured multipliers with the black text's shadow and ×0 light grey, L/R in one ring of
+the sub-pages and Moves' sets. Flickers: a form change loaded the new sprite into the shown one's texture mid-frame
+(now a second sprite loaded in the VBlank, swapped once loaded, `MCSS_IsLoaded`); Evo's balls and the Moves list had
+their characters written mid-frame but screen entries at the VBlank (now both at the VBlank); the move panel's
+changes now land in one VBlank. Next: the user's retest on the 3DS.
+
 ## 2026-11-07: Pokédex, the Evo page
 
 Built (plugins.md, Pokédex), not yet tested in game: the family's party icons in a strip ("?" for unseen), the tree
