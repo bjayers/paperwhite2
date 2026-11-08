@@ -78,6 +78,7 @@
 #include "system/game_system.h"
 #include "system/wipe.h"
 #ifdef PAPERWHITE2
+#include "paperwhite2/field_moves.h"
 #include "paperwhite2/following_field.h"
 #include "paperwhite2/wanderers.h"
 #endif
@@ -1553,6 +1554,11 @@ static u16 CheckFieldEnvInteraction(FieldInteractWk *wk, Field *field) {
 
 // The first Pokémon of the party, not an egg, that knows the move, or PARTY_SIZE
 static u32 GameData_FindPartyPkmByMove(GameData *gameData, u16 move) {
+#ifdef PAPERWHITE2
+    // Paper White 2: or, for an HM's move, the first that can learn it, so that the water offers Surf and a waterfall
+    // Waterfall to a learner (paperwhite2/field_moves.h); FIELD_MOVE_NO_USER is PARTY_SIZE
+    return PaperWhite2_FieldMoves_FindUser(GameData_GetParty(gameData), move);
+#else
     int count;
     PokeParty *party;
     int i;
@@ -1571,6 +1577,7 @@ static u32 GameData_FindPartyPkmByMove(GameData *gameData, u16 move) {
         }
     }
     return PARTY_SIZE;
+#endif
 }
 
 // The number of the party's Pokémon that can battle

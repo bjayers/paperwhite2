@@ -43,6 +43,7 @@
 #include "paperwhite2/dexnav.h"
 #include "paperwhite2/dexnav_event.h"
 #include "paperwhite2/encounters.h"
+#include "paperwhite2/field_moves.h"
 #include "paperwhite2/version_key.h"
 #endif
 
@@ -758,11 +759,31 @@ void *FieldAppCall_CreateTownMapParam(FieldAppCallWork *work, s32 appParam, s32 
     param->escapeZoneId = GameData_GetEscapeRopeZone(gameData)->zoneId;
     if (work->input->appId == FIELD_APP_POKELIST) {
         param->mode = TOWNMAP_MODE_FLY;
+#ifdef PAPERWHITE2
+        // Paper White 2: the Town Map, from the bag, the Y button or the C-Gear, picks where to fly when a party
+        // Pokémon can use Fly here, by knowing it or being able to learn it (paperwhite2/field_moves.h)
+    } else if (PaperWhite2_FieldMoves_FindFlyUser(work->input->gameSystem, &work->action) != FIELD_MOVE_NO_USER) {
+        param->mode = TOWNMAP_MODE_FLY;
+#endif
     } else {
         param->mode = TOWNMAP_MODE_VIEW;
     }
     return param;
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: a place picked to fly to from the Town Map flies there, as from the party's Fly
+static u32 FieldAppCall_FlyFromTownMap(FieldAppCallWork *work, TownMapParam *param) {
+    work->input->partySlot = PaperWhite2_FieldMoves_FindFlyUser(work->input->gameSystem, &work->action);
+    work->input->eventId = 4;
+    work->input->eventValue = param->zoneId;
+    work->input->unk38 = param->warpX;
+    work->input->unk3C = param->warpZ;
+    work->input->unk40 = 0;
+    RecordAddOne(GameData_GetRecords(GSYS_GetGameData(param->gsys)), 0x2a);
+    return 2;
+}
+#endif
 
 u32 FieldAppCall_GetTownMapResult(FieldAppCallWork *work, void *data) {
     TownMapParam *param = data;
@@ -773,6 +794,10 @@ u32 FieldAppCall_GetTownMapResult(FieldAppCallWork *work, void *data) {
             return 0;
         case TOWNMAP_RESULT_CLOSE:
             return 1;
+#ifdef PAPERWHITE2
+        case TOWNMAP_RESULT_FLY:
+            return FieldAppCall_FlyFromTownMap(work, param);
+#endif
         default:
             return 1;
         }
@@ -783,6 +808,10 @@ u32 FieldAppCall_GetTownMapResult(FieldAppCallWork *work, void *data) {
             return FIELD_APP_RESULT_NEXT;
         case TOWNMAP_RESULT_CLOSE:
             return 1;
+#ifdef PAPERWHITE2
+        case TOWNMAP_RESULT_FLY:
+            return FieldAppCall_FlyFromTownMap(work, param);
+#endif
         default:
             return 1;
         }

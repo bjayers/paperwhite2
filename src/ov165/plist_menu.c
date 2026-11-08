@@ -10,6 +10,9 @@
 #include "pml/poke_party.h"
 #include "system/app_menu_common.h"
 #include "system/app_taskmenu.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/pokelist_field_moves.h"
+#endif
 
 // The party list's menus: what to do with a Pokémon, yes or no, and the buttons of a battle's selection
 
@@ -135,6 +138,11 @@ static void PokeListMenu_SetItems(PokeListWork *wk, PokeListMenu *menu, const u3
                     menu->count++;
                 }
             }
+#ifdef PAPERWHITE2
+            // Paper White 2: then the HMs it can learn, in the room that the items after this one leave
+            menu->count = PaperWhite2_PokeList_AddLearnableHMs(wk, menu->items, menu->count,
+                                                               POKELIST_MENU_MAX - menu->count - (count - i - 1));
+#endif
             break;
         }
         case 2: {
@@ -220,8 +228,15 @@ static void PokeListMenu_SetItems(PokeListWork *wk, PokeListMenu *menu, const u3
     }
     for (i = 0; i < menu->count; i++) {
         menu->entries[i].str = PokeListMenu_GetItemName(wk, menu, menu->items[i]);
+#ifdef PAPERWHITE2
+        // Paper White 2: a learnable HM in the color of the moves outside battle
+        if ((menu->items[i] >= POKELIST_MENU_MOVE1 && menu->items[i] <= POKELIST_MENU_MOVE1 + 3 &&
+             wk->param->mode != 5) ||
+            PaperWhite2_PokeList_IsLearnableHMItem(menu->items[i])) {
+#else
         if (menu->items[i] >= POKELIST_MENU_MOVE1 && menu->items[i] <= POKELIST_MENU_MOVE1 + 3 &&
             wk->param->mode != 5) {
+#endif
             menu->entries[i].color = 0x35e0;
         } else {
             menu->entries[i].color = 0x39e0;
@@ -239,6 +254,14 @@ static StrBuf *PokeListMenu_GetItemName(PokeListWork *wk, PokeListMenu *menu, in
 
         str = GFL_MsgDataLoadStrbufNew(moveNames, move);
         GFL_MsgDataFree(moveNames);
+#ifdef PAPERWHITE2
+    } else if (PaperWhite2_PokeList_IsLearnableHMItem(item)) {
+        // Paper White 2: a learnable HM's item is named after its move, as a known move's is
+        MsgData *moveNames = GFL_MsgSysLoadData(FALSE, ARCID_SYSTEM_MESSAGE, TEXT_BANK_MOVE_NAMES, wk->heapId);
+
+        str = GFL_MsgDataLoadStrbufNew(moveNames, PaperWhite2_PokeList_GetLearnableHMMove(item));
+        GFL_MsgDataFree(moveNames);
+#endif
     } else {
         str = GFL_MsgDataLoadStrbufNew(wk->msgData, sItemNames[item]);
     }

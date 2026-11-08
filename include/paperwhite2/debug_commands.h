@@ -11,7 +11,7 @@
 // is src/paperwhite2/ov012/paperwhite2_debug_commands.c
 
 #ifdef PAPERWHITE2_DEBUG_MENU
-// Command 0x2f6, Debug action, arg1, arg2, result: runs one of the debug menu's actions (DEBUG_ACTION_*,
+// Command 0x2f7, Debug action, arg1, arg2, result: runs one of the debug menu's actions (DEBUG_ACTION_*,
 // paperwhite2/debug_actions.h) with its two arguments, each a value or a variable, and puts what it returns in the
 // variable result. One command serves every action, so a new option needs no new command, only a new action. A warp
 // action waits a frame, as the map change commands do, and the script ends after it

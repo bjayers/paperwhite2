@@ -49,6 +49,7 @@
 #include "system/wordset.h"
 
 #ifdef PAPERWHITE2
+#include "paperwhite2/pokelist_field_moves.h"
 #include "paperwhite2/shiny_candy.h"
 #endif
 
@@ -2328,6 +2329,15 @@ static void PokeList_DoMenuItem(PokeListWork *wk) {
     case 17:
     case 18:
     case 19:
+#ifdef PAPERWHITE2
+    // Paper White 2: a learnable HM's item (paperwhite2/pokelist_field_moves.h) is used as a known move's is
+    case POKELIST_MENU_LEARNABLE_HM:
+    case POKELIST_MENU_LEARNABLE_HM + 1:
+    case POKELIST_MENU_LEARNABLE_HM + 2:
+    case POKELIST_MENU_LEARNABLE_HM + 3:
+    case POKELIST_MENU_LEARNABLE_HM + 4:
+    case POKELIST_MENU_LEARNABLE_HM + 5:
+#endif
         if (wk->param->mode == 5) {
             if (StatusRcv_CanUseItem(wk->pkm, wk->param->item, wk->menuItem - 16, wk->heapId) == TRUE) {
                 u32 move = PokeParty_GetParam(wk->pkm, PKM_PARAM_MOVE1 + wk->menuItem - 16, NULL);
@@ -2342,7 +2352,11 @@ static void PokeList_DoMenuItem(PokeListWork *wk) {
                 PokeList_ShowItemUseless(wk);
             }
         } else {
+#ifdef PAPERWHITE2
+            u32 hm = PaperWhite2_PokeList_GetMenuHMResult(wk, wk->menuItem);
+#else
             u32 hm = PokeList_GetHMResult(wk->pkm, wk->menuItem - 16);
+#endif
 
             if (hm == 22 || hm == 23) {
                 if (IsZoneNormal(wk->param->zoneId) == FALSE) {
