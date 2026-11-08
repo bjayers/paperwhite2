@@ -74,15 +74,19 @@
 
 // The page's text in the entry's text window (PokedexInfo_BeginOtherText), in its pixels: its lines where the
 // description's are, and the held items' rates ending (their last column the one before) as far in from the window's
-// right as the lines start from its left. An ability's name is in the gold, the rest in the entry's white
+// right as the lines start from its left. An ability's name is in the gold, which of the species' abilities it is in
+// the entry's labels' grey, the rest in the entry's white
 #define TOP_TEXT_X 2
 #define TOP_TEXT_Y 5
 #define TOP_TEXT_LINE_PITCH 16
 #define TOP_TEXT_GOLD PRINT_COLOR(POKEDEX_INFO_TEXT_GOLD, POKEDEX_INFO_TEXT_SHADOW, 0)
 #define TOP_TEXT_WHITE PRINT_COLOR(POKEDEX_INFO_TEXT_WHITE, POKEDEX_INFO_TEXT_SHADOW, 0)
+#define TOP_TEXT_GREY PRINT_COLOR(POKEDEX_INFO_TEXT_GREY, POKEDEX_INFO_TEXT_SHADOW, 0)
 // The wild held items, as the field gives them (FieldEncount_SetRandomHeldItem, enc_pokeset.c's HELD_ITEM_RATES): the
-// first 50% and the second 5% of the time, the third 1% in dark grass only, and a first that is also the second always
+// first 50% and the second 5% of the time, the third 1% in dark grass only (its rate says so), and a first that is
+// also the second always
 #define HELD_ITEM_COUNT 3
+#define HELD_ITEM_DARK_GRASS 2
 #define HELD_ITEM_ALWAYS 100
 
 // Matchups' ability buttons, in tiles: a row along the bottom of the sub-page above the touch bar, side by side and
@@ -233,7 +237,8 @@ static void PokedexInfoPage_EndOtherText(PokedexInfoPageWork *wk);
 static void PokedexInfoPage_DrawAbility(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk, GFLBitmap *bitmap);
 static void PokedexInfoPage_DrawHeldItems(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk, GFLBitmap *bitmap);
 static void PokedexInfoPage_DrawItemLine(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk, GFLBitmap *bitmap,
-                                         MsgData *names, u32 line, u32 item, u32 rate);
+                                         MsgData *names, u32 line, u32 item, u32 rate, BOOL darkGrass);
+static void PokedexInfoPage_DrawRight(PokedexInfoPageWork *wk, GFLBitmap *bitmap, const StrBuf *text, u32 y, u16 color);
 static void PokedexInfoPage_DrawCentered(PokedexInfoPageWork *wk, GFLBitmap *bitmap, u32 messageId, u32 line);
 
 // The language codes of PokedexInfo's languages: Japanese, French, German, Italian, Spanish and Korean
@@ -251,6 +256,13 @@ static const u8 sAbilityParams[ABILITY_MAX] = {
 static const u16 sButtonLabels[BUTTON_COUNT] = {
     PokedexData_Text_Cry,   PokedexData_Text_Turn,     PokedexData_Text_Form,
     PokedexData_Text_Shiny, PokedexData_Text_Language, PokedexData_Text_Abilities,
+};
+
+// Which of the species' abilities the top screen shows, by its place in sAbilityParams
+static const u16 sAbilitySlotLabels[ABILITY_MAX] = {
+    PokedexData_Text_AbilitySlot1,
+    PokedexData_Text_AbilitySlot2,
+    PokedexData_Text_AbilitySlotHidden,
 };
 
 // The held items' rates, by their place in the personal data
@@ -1012,7 +1024,8 @@ static void PokedexInfoPage_UpdateButtons(PokedexInfoPageWork *wk, PokedexDetail
 }
 
 // Pushes the button touched this frame, which flashes while the touch bar waits. Its own check isn't used, as it
-// takes a button's bottom from its width (AppTaskMenuWin_IsTouched)
+// takes a button's bottom from its width (AppTaskMenuWin_IsTouched), and the buttons show as much higher than their
+// tiles as the sub-page lifts their BG
 static BOOL PokedexInfoPage_CheckButtons(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                          PokedexDetailCommon *common) {
     u32 touchX;
@@ -1022,6 +1035,8 @@ static BOOL PokedexInfoPage_CheckButtons(PokedexDetailInfoParam *param, PokedexI
     if (!GFL_HIDGetTouchPressedPoint(&touchX, &touchY)) {
         return FALSE;
     }
+    // The touch in the tiles' places, below where the lifted buttons show
+    touchY += PokedexInfoPanels_GetLift(wk->subpage);
     for (i = 0; i < BUTTON_COUNT; i++) {
         u32 x;
         u32 y;
@@ -1265,8 +1280,9 @@ static void PokedexInfoPage_EndOtherText(PokedexInfoPageWork *wk) {
     wk->otherText = FALSE;
 }
 
-// The shown ability's name in gold on the first line and its description, two lines, on the others; the hidden one
-// until the species is caught only says that it is undiscovered, on the second line
+// The shown ability's name in gold on the first line, with which of the species' abilities it is right-aligned there,
+// and its description, two lines, on the others; the hidden one until the species is caught only says that it is
+// undiscovered, on the second line
 static void PokedexInfoPage_DrawAbility(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk, GFLBitmap *bitmap) {
     PersonalData *personal = PML_PersonalLoad(wk->species, wk->form, param->heapId);
     u32 ability = PML_PersonalGetParam(personal, sAbilityParams[wk->shownAbility]);
@@ -1283,6 +1299,9 @@ static void PokedexInfoPage_DrawAbility(PokedexDetailInfoParam *param, PokedexIn
     GFL_TextRendererDrawToBitmapEx(bitmap, TOP_TEXT_X, TOP_TEXT_Y, text, wk->font, TOP_TEXT_GOLD);
     GFL_StrBufFree(text);
     GFL_MsgDataFree(msgData);
+    text = PokedexInfoPanels_LoadMessage(wk->panels, sAbilitySlotLabels[wk->shownAbility]);
+    PokedexInfoPage_DrawRight(wk, bitmap, text, TOP_TEXT_Y, TOP_TEXT_GREY);
+    GFL_StrBufFree(text);
     msgData = GFL_MsgSysLoadData(FALSE, ARCID_SYSTEM_MESSAGE, TEXT_BANK_ABILITY_DESCRIPTIONS, param->heapId);
     text = GFL_MsgDataLoadStrbufNew(msgData, ability);
     GFL_TextRendererDrawToBitmapEx(bitmap, TOP_TEXT_X, TOP_TEXT_Y + TOP_TEXT_LINE_PITCH, text, wk->font,
@@ -1312,12 +1331,13 @@ static void PokedexInfoPage_DrawHeldItems(PokedexDetailInfoParam *param, Pokedex
     names = GFL_MsgSysLoadData(FALSE, ARCID_SYSTEM_MESSAGE, TEXT_BANK_ITEM_NAMES, param->heapId);
     if (items[0] == items[1]) {
         if (items[0] != ITEM_NONE) {
-            PokedexInfoPage_DrawItemLine(param, wk, bitmap, names, lines++, items[0], HELD_ITEM_ALWAYS);
+            PokedexInfoPage_DrawItemLine(param, wk, bitmap, names, lines++, items[0], HELD_ITEM_ALWAYS, FALSE);
         }
     } else {
         for (i = 0; i < HELD_ITEM_COUNT; i++) {
             if (items[i] != ITEM_NONE) {
-                PokedexInfoPage_DrawItemLine(param, wk, bitmap, names, lines++, items[i], sHeldItemRates[i]);
+                PokedexInfoPage_DrawItemLine(param, wk, bitmap, names, lines++, items[i], sHeldItemRates[i],
+                                             i == HELD_ITEM_DARK_GRASS);
             }
         }
     }
@@ -1327,11 +1347,13 @@ static void PokedexInfoPage_DrawHeldItems(PokedexDetailInfoParam *param, Pokedex
     }
 }
 
-// An item's name on a line, from its start, and its rate, ending TOP_TEXT_X from the window's right
+// An item's name on a line, from its start, and its rate, ending TOP_TEXT_X from the window's right; the dark grass
+// item's rate says that it is held only there
 static void PokedexInfoPage_DrawItemLine(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk, GFLBitmap *bitmap,
-                                         MsgData *names, u32 line, u32 item, u32 rate) {
+                                         MsgData *names, u32 line, u32 item, u32 rate, BOOL darkGrass) {
     WordSet *wordSet = GFL_WordSetSystemCreateDefault(param->heapId);
-    StrBuf *format = PokedexInfoPanels_LoadMessage(wk->panels, PokedexData_Text_ItemRate);
+    StrBuf *format = PokedexInfoPanels_LoadMessage(wk->panels, darkGrass ? PokedexData_Text_ItemRateDarkGrass
+                                                                         : PokedexData_Text_ItemRate);
     StrBuf *text = GFL_StrBufCreate(0x20, param->heapId);
     StrBuf *name = GFL_MsgDataLoadStrbufNew(names, item);
     u32 y = TOP_TEXT_Y + line * TOP_TEXT_LINE_PITCH;
@@ -1339,13 +1361,19 @@ static void PokedexInfoPage_DrawItemLine(PokedexDetailInfoParam *param, PokedexI
     GFL_TextRendererDrawToBitmapEx(bitmap, TOP_TEXT_X, y, name, wk->font, TOP_TEXT_WHITE);
     WordSetNumber(wordSet, 0, rate, 3, NUM_PAD_NONE, TRUE);
     GFL_WordSetFormatStrbuf(wordSet, text, format);
-    GFL_TextRendererDrawToBitmapEx(bitmap,
-                                   GFL_BitmapGetWidth(bitmap) - TOP_TEXT_X - GFL_FontGetBlockWidth(text, wk->font, 0),
-                                   y, text, wk->font, TOP_TEXT_WHITE);
+    PokedexInfoPage_DrawRight(wk, bitmap, text, y, TOP_TEXT_WHITE);
     GFL_StrBufFree(name);
     GFL_StrBufFree(text);
     GFL_StrBufFree(format);
     GFL_WordSetSystemFree(wordSet);
+}
+
+// A text right-aligned on a line, ending TOP_TEXT_X from the window's right
+static void PokedexInfoPage_DrawRight(PokedexInfoPageWork *wk, GFLBitmap *bitmap, const StrBuf *text, u32 y,
+                                      u16 color) {
+    GFL_TextRendererDrawToBitmapEx(bitmap,
+                                   GFL_BitmapGetWidth(bitmap) - TOP_TEXT_X - GFL_FontGetBlockWidth(text, wk->font, 0),
+                                   y, text, wk->font, color);
 }
 
 // A message of the page's bank in white, centered across the window on a line

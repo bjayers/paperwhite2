@@ -86,6 +86,9 @@ void PokedexInfoPanels_Free(PokedexInfoPanels *panels);
 // Shows the sub-page's art on POKEDEX_INFO_BUTTON_BG, replacing its whole screen, or clears it for a sub-page without
 // art; the page makes its buttons after it
 void PokedexInfoPanels_LoadArt(PokedexInfoPanels *panels, u32 subpage);
+// How many pixels BG POKEDEX_INFO_BUTTON_BG is scrolled up while the sub-page shows, so its buttons show that much
+// higher than their tiles, and are touched there
+u32 PokedexInfoPanels_GetLift(u32 subpage);
 // Scrolls the grid
 void PokedexInfoPanels_Update(PokedexInfoPanels *panels);
 // Draws the bar with the sub-page's tab, and the sub-page's panel of the species and form. caught shows what the

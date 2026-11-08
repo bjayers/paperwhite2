@@ -10,7 +10,8 @@ ordinary data: `git diff w2-original -- res/graphics/` shows it.
 `res/paperwhite2/art/targets.json` (`art_targets.schema.json`) lists the screens art can replace. Each target is one
 palette and the screens drawn with it; screens naming the same character sheet share its tiles, and are rebuilt
 together. A target's `rows` leave out palette rows that the game uses elsewhere, and `max_tiles` is the room for its
-tiles in VRAM, from the code that loads it.
+tiles in VRAM, from the code that loads it. A target's `offset_y` (pixels, 0 by default) is for a BG that the game
+scrolls up while it shows the screen (below).
 
 | Target | Files | Where the game shows it |
 | --- | --- | --- |
@@ -44,6 +45,14 @@ that loads it.
   limit, the rows used, and each tile that can't be drawn (too many colors, or no row with room), which the editor
   marks on the preview.
 - A screen given no art is kept: its tiles go into the rebuilt sheet as they were.
+- **`offset_y`**: when the game scrolls the screen's BG up by some pixels while it shows it (to move tile-aligned
+  things on the same BG, such as the Pokédex Info page's buttons, off the tile grid), the target's `offset_y` says by
+  how many. The converter moves the art down by as many pixels before cutting it into tiles, so the art shows exactly
+  where it was drawn; the rows it pushes past the screen's 192 are dropped, and must be transparent (a problem
+  otherwise), so the art's last `offset_y` rows are left empty. `render` and `--preview` show the screen scrolled, as
+  the game does, so a render is the art as drawn. The game's scroll and `offset_y` must agree: `pokedex_info_stats`
+  has 2 and `pokedex_info_matchups` 3, as `sSubpageLift` in `paperwhite2_pokedex_info_panels.c` (which
+  `pokedex_templates.py` checks).
 
 `screen_art.py render TARGET SCREEN OUT.png` exports a screen as an indexed PNG in its palette, color 0 transparent,
 to draw over; the editor's **Download as PNG** is the same.

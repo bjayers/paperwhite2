@@ -27,9 +27,13 @@ constants).
 
 And the top screen's entry with the info page's own text in its text window (the entry's panels, grid and head bar,
 without its other text, sprite, types and footprint): top_ability_reference.png (Stats' Abilities button: a sample
-species' first ability, its name in the page's gold), top_hidden_ability_reference.png (the hidden one before the
-species is caught), and top_items_<species>_reference.png (Data's held items: Tepig's none, Pikachu's Light Ball), each
-with a _tiles.png.
+species' first ability, its name in the page's gold and "Ability 1" right-aligned in the entry's labels' grey),
+top_hidden_ability_reference.png (the hidden one before the species is caught), and top_items_<species>_reference.png
+(Data's held items: Tepig's none, Pikachu's Light Ball, Foongus's three, the third in dark grass only), each with a
+_tiles.png.
+
+Stats' and Matchups' buttons are drawn as high as the page lifts them (paperwhite2_pokedex_info_panels.c's
+sSubpageLift, which must equal the art targets' offset_y), over the art as it was drawn.
 
 And the top screen's Info panels' palettes (a/1/5/7's palette 9, rows 0 and 1, ov296's POKEDEX_GRA_PALETTE), to draw
 with the same colors: top_panels_row<N>.pal (JASC), .gpl (GIMP, Aseprite) and top_panels_palette.png (the swatches).
@@ -61,6 +65,9 @@ PAGE = ROOT / "src/paperwhite2/ov298/paperwhite2_pokedex_info.c"
 TEXT = ROOT / "res/text/system/pokedex_data.txt"
 # The user's art of each sub-page (screen_art.py's pokedex_info_* targets' sources)
 ART = ROOT / "res/paperwhite2/pokedex_art"
+ART_TARGETS = ROOT / "res/paperwhite2/art/targets.json"
+# The sub-pages in the page's order (POKEDEX_INFO_SUBPAGE_*)
+PAGES = ("stats", "data", "moves", "evo", "matchups")
 FONTS = "files/a/0/2/3"
 # The menus' common graphics: the type icons' palette (three rows) and each type's 32 by 16 characters
 MENU_COMMON = "files/a/0/8/2"
@@ -122,8 +129,8 @@ SAMPLE_ABILITIES = (None, "thick_fat")
 SAMPLE_SPECIES = "tepig"
 SAMPLE_MOVE = "arm_thrust"
 # The top screen's samples: Tepig's first ability (Blaze) and its hidden one before it is caught, and the held items of
-# Tepig (none) and Pikachu (a Light Ball, 5%)
-SAMPLE_ITEMS_SPECIES = ("tepig", "pikachu")
+# Tepig (none), Pikachu (a Light Ball, 5%) and Foongus (three, the third in dark grass only)
+SAMPLE_ITEMS_SPECIES = ("tepig", "pikachu", "foongus")
 
 # The palette: the page's placeholder colors as paperwhite2_pokedex_info_panels.c's sPanelColors (index 0 clear),
 # then the template's own: the grid's checker, the touch bar, the buttons, the tiles' grid
@@ -186,7 +193,10 @@ Colours on the reference that are NOT art
 - the blue band at the bottom (y 168-191) = the game's touch bar; leave it transparent
 - the pink boxes = the game's buttons (Cry, Turn, Form, Shiny, Language, Abilities): they cover
   your art wherever a button is shown. Form, Shiny and Language only appear for some Pokemon,
-  so your art shows in their place otherwise. Abilities, the sixth (y 144-167), is always there.
+  so your art shows in their place otherwise. Abilities, the sixth (y 142-165), is always there.
+  The buttons sit 2 px above the 8 x 8 tile grid (Cry at y 22-45, each 24 px below the last):
+  the game scrolls this screen's layer up 2 px and converts your art 2 px lower to match, so
+  your art still shows exactly where you drew it. Keep its last 2 rows (y 190-191) transparent.
 
 Limits
 - One picture, 256 x 192, at most 16 colours in all, and one of them is the transparent
@@ -215,9 +225,12 @@ Matchups
   battle's move colours: light blue (98,180,255) above x1, yellow (246,222,90) below, grey
   (131,131,131) for x0, each with a dark shadow; x1 is the panels' near-black text (the sample
   is Tepig, Fire).
-- The row of buttons at the bottom (y 144-167) are the game's buttons (1 to 3 of them,
+- The row of buttons at the bottom (y 141-164) are the game's buttons (1 to 3 of them,
   centered): "Default" for every ability that changes no matchup, if the Pokemon has one, then
-  each ability that does (Tepig: Default, chosen, and Thick Fat).
+  each ability that does (Tepig: Default, chosen, and Thick Fat). They sit 3 px above the tile
+  grid, between your panel and the touch bar: as on Stats, the layer is scrolled up 3 px and
+  your art converted 3 px lower, so it shows as drawn. Keep its last 3 rows (y 189-191)
+  transparent.
 
 Data
 - The values' column is 1 px further left than before, the whole Egg column too, and the egg
@@ -267,13 +280,17 @@ The move panel (top screen)
 
 The entry's text window (top screen)
 - top_ability_reference.png, top_hidden_ability_reference.png, top_items_tepig_reference.png,
-  top_items_pikachu_reference.png (and _tiles): the entry's 3 lines of description at the
-  bottom of the top screen (tiles 2-29, rows 17-23) show other text on some sub-pages. On
-  Stats, the Abilities button shows each ability in turn: its name in gold (255,238,24) on the
-  first line, its description in white below (the sample is Tepig's Blaze); the hidden one,
-  until the Pokemon is caught, just "Hidden ability undiscovered." centred on the second line.
-  On Data, the wild held items, one a line, the name from the left and the rate right-aligned
-  ("Light Ball ... 5%"), or "Has no hold items." centred (Tepig), or "?" until caught.
+  top_items_pikachu_reference.png, top_items_foongus_reference.png (and _tiles): the entry's 3
+  lines of description at the bottom of the top screen (tiles 2-29, rows 17-23) show other
+  text on some sub-pages. On Stats, the Abilities button shows each ability in turn: its name
+  in gold (255,238,24) on the first line with which one it is ("Ability 1", "Ability 2" or
+  "Hidden Ability") right-aligned on the same line in the entry's labels' dark grey
+  (90,82,82), its description in white below
+  (the sample is Tepig's Blaze); the hidden one, until the Pokemon is caught, just "Hidden
+  ability undiscovered." centred on the second line. On Data, the wild held items, one a line,
+  the name from the left and the rate right-aligned ("Light Ball ... 5%"), the third (found
+  only in dark grass) as "Dark grass only: 1%" (Foongus's BalmMushroom), or "Has no hold
+  items." centred (Tepig), or "?" until caught.
 
 When you're done, send the PNG back (any 16-colour PNG, indexed or not, transparency as
 transparent pixels) and it gets built into the game.
@@ -427,11 +444,25 @@ def stats_text(canvas, d, m, font):
     canvas.text(font, str(sum(SAMPLE_STATS)), d["STATS_VALUE_RIGHT"], d["STATS_TOTAL_Y"], "right")
 
 
-def buttons(canvas, d, m, font, labels):
-    # The game's AppTaskMenuWin buttons, outlined, as paperwhite2_pokedex_info.c places them
+def lifts():
+    """Each sub-page's lift of the art's BG, as paperwhite2_pokedex_info_panels.c's sSubpageLift has it: the buttons
+    show that many pixels above their tiles. Each must be its art target's offset_y, which converts the art as many
+    pixels lower, so that the art shows as drawn."""
+    table = re.search(r"sSubpageLift\[[^]]*\] = \{([^}]*)\}", PANELS.read_text()).group(1)
+    values = dict(zip(PAGES, (int(v) for v in table.replace(",", " ").split())))
+    targets = {t["name"]: t.get("offset_y", 0) for t in json.loads(ART_TARGETS.read_text())["targets"]}
+    for page, lift in values.items():
+        if targets.get(f"pokedex_info_{page}", 0) != lift:
+            raise SystemExit(f"sSubpageLift lifts {page} {lift} px, but its art target's offset_y is "
+                             f"{targets.get(f'pokedex_info_{page}', 0)}")
+    return values
+
+
+def buttons(canvas, d, m, font, labels, lift):
+    # The game's AppTaskMenuWin buttons, outlined, as paperwhite2_pokedex_info.c places them, lifted with their BG
     x, w, h = d["BUTTON_X"] * 8, d["BUTTON_WIDTH"] * 8, d["BUTTON_HEIGHT"] * 8
     for i, label in enumerate(labels):
-        y = (d["BUTTON_Y"] + i * d["BUTTON_PITCH"]) * 8
+        y = (d["BUTTON_Y"] + i * d["BUTTON_PITCH"]) * 8 - lift
         canvas.fill(x, y, w, h, BUTTON)
         canvas.outline(x, y, w, h, BUTTON_EDGE)
         canvas.text(font, m[label], x + w // 2, y + 4, "center", PANEL, CLEAR)
@@ -671,28 +702,31 @@ def item_name(constant):
 
 def top_text(d, m, font, kind, species):
     """The lines that the info page prints in the entry's text window, as PokedexInfoPage_DrawAbility and
-    _DrawHeldItems print them: (text, x, line, align, gold) with x in the window, align "left", "right" or "center"."""
+    _DrawHeldItems print them: (text, x, line, align, color) with x in the window, align "left", "right" (x its end)
+    or "center", and color "white", "gold" or "grey" (the entry's labels')."""
     data = json.loads((ROOT / f"res/pokemon/{species}/data.json").read_text())
+    right = TEXT_WINDOW_WIDTH - d["TOP_TEXT_X"]
     if kind == "ability":
         ability = ability_data(data["abilities"][0])
-        return [(ability["name"], d["TOP_TEXT_X"], 0, "left", True)] + [
-            (line, d["TOP_TEXT_X"], 1 + i, "left", False) for i, line in enumerate(ability["description"].split("\n"))]
+        lines = [(ability["name"], d["TOP_TEXT_X"], 0, "left", "gold"), (m["AbilitySlot1"], right, 0, "right", "grey")]
+        return lines + [(line, d["TOP_TEXT_X"], 1 + i, "left", "white")
+                        for i, line in enumerate(ability["description"].split("\n"))]
     if kind == "hidden":
-        return [(m["HiddenAbilityUndiscovered"], 0, 1, "center", False)]
+        return [(m["HiddenAbilityUndiscovered"], 0, 1, "center", "white")]
     held = data["held_items"]
     items = [held["common"], held["rare"], held["very_rare"]]
     rates = [50, 5, 1]
+    formats = [m["ItemRate"]] * 2 + [m["ItemRateDarkGrass"]]
     if items[0] == items[1]:
-        lines = [(items[0], d["HELD_ITEM_ALWAYS"])] if items[0] != "ITEM_NONE" else []
+        lines = [(items[0], d["HELD_ITEM_ALWAYS"], m["ItemRate"])] if items[0] != "ITEM_NONE" else []
     else:
-        lines = [(item, rate) for item, rate in zip(items, rates) if item != "ITEM_NONE"]
+        lines = [line for line in zip(items, rates, formats) if line[0] != "ITEM_NONE"]
     if not lines:
-        return [(m["NoHeldItems"], 0, 1, "center", False)]
+        return [(m["NoHeldItems"], 0, 1, "center", "white")]
     out = []
-    for i, (item, rate) in enumerate(lines):
-        out.append((item_name(item), d["TOP_TEXT_X"], i, "left", False))
-        rate_text = m["ItemRate"].replace("{0200:0}", str(rate))
-        out.append((rate_text, TEXT_WINDOW_WIDTH - d["TOP_TEXT_X"], i, "right", False))
+    for i, (item, rate, rate_format) in enumerate(lines):
+        out.append((item_name(item), d["TOP_TEXT_X"], i, "left", "white"))
+        out.append((rate_format.replace("{0200:0}", str(rate)), right, i, "right", "white"))
     return out
 
 
@@ -705,14 +739,14 @@ def top_screen(d, font, lines, tiles):
     paint_paletted(canvas, chars, TOP_SCREEN_BACK, 0, HEIGHT // 8)
     paint_paletted(canvas, chars, TOP_SCREEN_MID, HEAD_BAR_ROWS, HEIGHT // 8 - HEAD_BAR_ROWS)
     head_bar(canvas, font, TOP_HEAD_BAR_BASE)
-    white, shadow = TOP_FONT_BASE + d["POKEDEX_INFO_TEXT_WHITE"], TOP_FONT_BASE + d["POKEDEX_INFO_TEXT_SHADOW"]
-    gold = TOP_FONT_BASE + d["POKEDEX_INFO_TEXT_GOLD"]
-    for text, x, line, align, is_gold in lines:
+    shadow = TOP_FONT_BASE + d["POKEDEX_INFO_TEXT_SHADOW"]
+    letters = {color: TOP_FONT_BASE + d[f"POKEDEX_INFO_TEXT_{color.upper()}"] for color in ("white", "gold", "grey")}
+    for text, x, line, align, color in lines:
         if align == "center":
             x = (TEXT_WINDOW_WIDTH - font.text_width(text)) // 2
             align = "left"
         canvas.text(font, text, TEXT_WINDOW_X + x, TEXT_WINDOW_Y + d["TOP_TEXT_Y"] + line * d["TOP_TEXT_LINE_PITCH"],
-                    align, gold if is_gold else white, shadow)
+                    align, letters[color], shadow)
     if tiles:
         for y in range(HEIGHT):
             for x in range(WIDTH):
@@ -811,9 +845,9 @@ def type_icons(extract):
     return icons, icon_colors
 
 
-def matchups_text(canvas, d, m, font, small, icons):
+def matchups_text(canvas, d, m, font, small, icons, lift):
     # As PokedexInfoPanels_DrawMatchups, the icons as the page places them (their cells are centered), and the ability
-    # buttons as PokedexInfoPage_CreateAbilityButtons
+    # buttons as PokedexInfoPage_CreateAbilityButtons, lifted with their BG
     chart = type_chart()
     type1, type2 = SAMPLE_TYPES
     for t, icon in enumerate(icons[:len(chart)]):
@@ -836,7 +870,7 @@ def matchups_text(canvas, d, m, font, small, icons):
     count, w, h = len(SAMPLE_ABILITIES), d["ABILITY_BUTTON_WIDTH"], d["ABILITY_BUTTON_HEIGHT"]
     for i, ability in enumerate(SAMPLE_ABILITIES):
         x = (d["ABILITY_BUTTON_CENTER_X"] - count * w // 2 + i * w) * 8
-        y = d["ABILITY_BUTTON_Y"] * 8
+        y = d["ABILITY_BUTTON_Y"] * 8 - lift
         name = m["DefaultAbility"] if ability is None else re.search(
             r'"name": "([^"]*)"', (ROOT / f"res/abilities/{ability}.json").read_text()).group(1)
         canvas.fill(x, y, w * 8, h * 8, BUTTON_CHOSEN if i == 0 else BUTTON)
@@ -889,6 +923,7 @@ def main():
     d, m = defines(HEADER, ENTRY_HEADER, PANELS, PAGE, MOVE_PANEL), messages()
     args.out.mkdir(parents=True, exist_ok=True)
     icons, icon_colors = type_icons(args.extract)
+    lift = lifts()
 
     def write(page, art, draw, palette):
         for tiles, name in ((False, f"{page}_reference.png"), (True, f"{page}_reference_tiles.png")):
@@ -904,7 +939,7 @@ def main():
 
     def stats(canvas):
         stats_text(canvas, d, m, font)
-        buttons(canvas, d, m, font, ["Cry", "Turn", "Form", "Shiny", "Language", "Abilities"])
+        buttons(canvas, d, m, font, ["Cry", "Turn", "Form", "Shiny", "Language", "Abilities"], lift["stats"])
     write("stats", art, stats, palette)
 
     # The other sub-pages: the user's art once there is some, else a canvas in the Stats art's palette with its tab
@@ -927,7 +962,8 @@ def main():
             ("data", ("DATA", "EGG"), None, lambda c: data_text(c, d, m, font, small), False),
             ("moves", (), moves_canvas, lambda c: moves_text(c, d, m, font, small, icons), True),
             ("evo", ("EVO",), None, lambda c: None, False),
-            ("matchups", ("MATCHUPS",), None, lambda c: matchups_text(c, d, m, font, small, icons), False)):
+            ("matchups", ("MATCHUPS",), None,
+             lambda c: matchups_text(c, d, m, font, small, icons, lift["matchups"]), False)):
         found = sub_page(page, panels, extra)
         if not found:
             continue

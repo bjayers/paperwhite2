@@ -1412,8 +1412,15 @@ its panels on BG 2 and its grid on BG 3, and no still sprite (`PokedexInfo_IsDet
 head bar is shown at once and fades in and out with it, and slides out only once the screen is dark. **Bottom** (sub
 engine): the grid on BG 4, the bar of sub-pages and the panels drawn into two windows on BG 7 (palette 3, a table in
 the panels' file until there is art), and on Stats the buttons Cry, Turn, Form, Shiny, Language and Abilities on BG 6
-(`AppTaskMenuWin`, palettes 4 and 5, 9 by 3 tiles from tile row 3 at a 3-row pitch, so Abilities is y 144-167, just
-above the touch bar), hidden when they can do nothing (Abilities never is). The sub-pages are Stats, Data, Moves, Evo
+(`AppTaskMenuWin`, palettes 4 and 5, 9 by 3 tiles from tile row 3 at a 3-row pitch, shown 2 px higher, so Abilities
+is y 142-165, off the touch bar), hidden when they can do nothing (Abilities never is). **The buttons' lift**: they are
+tile-aligned windows on the art's BG, so a sub-page lifts them by scrolling BG 6 up (`sSubpageLift` beside
+`sSubpageArt` in the panels' file: Stats 2 px, Matchups 3, the others 0), set with the art's screen in the same VBlank
+(`PokedexInfoPanels_LoadArt`, `GFL_BGSysMoveBGReq`) and back to 0 as the page ends; the touches are checked that much
+lower (`PokedexInfoPanels_GetLift`), and the sub-page's art is converted as many pixels lower (the art target's
+`offset_y`, `docs/paperwhite2/art.md`) so it shows as drawn. The BG's screen is 256 by 256: its rows past 192, which
+the lift shows at the bottom under the touch bar (y 168+, BG 5), are cleared with the art. The bar's and panels' text
+(BG 7), the grid (BG 4) and the touch bar don't move. The sub-pages are Stats, Data, Moves, Evo
 (blank for now) and Matchups; the art draws the tab bar's five icons (centres x 64 to 192, 32 apart), and touching a
 tab's column (y 0-17) switches to it. A sub-page without art shows a dark strip with its own name. The D-pad's Left
 and Right step through the five sub-pages, wrapping (Moves keeps the set it showed last), and on Moves only L and R
@@ -1426,7 +1433,8 @@ game's type icon (`a/0/8/2` palette 0x21, chars 0x22+type, cells and animations 
 mapping) as a sub OBJ, semi-transparent so the page's fades darken it, with the multiplier against the shown form's
 types under it in font 0 (`×0.5`, `×1.25`..., computed in 64ths, coloured by the panels' palette). The icons use sub
 OBJ palette rows 0-2 (the touch bar has 8-13); their 17 characters, palette and cells are loaded with the panels and
-only shown or hidden by sub-page. Below the chart, one `AppTaskMenuWin` per distinct ability (the hidden one once
+only shown or hidden by sub-page. Below the chart (y 141-164, lifted 3 px to centre them between the chart's panel and the touch bar), one
+`AppTaskMenuWin` per distinct ability (the hidden one once
 caught, the name in font 1 through a second `AppTaskMenuRes` when font 0's is wider than the button), the chosen one in
 the cursor's palette; touching another chooses it and redraws the chart. The abilities' rules (immunities, Thick Fat,
 Heatproof, Dry Skin, Filter and Solid Rock, Wonder Guard) are `sMatchupRules` in the panels' file. **The type chart**
@@ -1487,10 +1495,13 @@ it, only as it closes. Power's and Accuracy's values are right-aligned to end wi
 **The entry's text window shows the page's text** (`PokedexInfoPage_ShowTopText`): the description's 3 lines (the
 window at tiles 2, 17, 28 by 7 on main BG 1) show, on Stats, the ability that the Abilities button is at (each press:
 the description, the first ability, the second if another and not none, the hidden one if another, or until caught if
-it has one, then the description), its name in gold on line 1 and its description (`TEXT_BANK_ABILITY_DESCRIPTIONS`,
-two lines) in the entry's white below, or for the hidden one before it is caught "Hidden ability undiscovered."
+it has one, then the description), its name in gold on line 1 with which of the species' abilities it is right-aligned on the same line ("Ability 1",
+"Ability 2", "Hidden Ability", `sAbilitySlotLabels`) in the entry's labels' dark grey (`POKEDEX_INFO_TEXT_GREY`,
+colour 1 of the font's row with the shadow 2, as ov296's `COLOR_LABEL`), and its description
+(`TEXT_BANK_ABILITY_DESCRIPTIONS`, two lines) in the entry's white below, or for the hidden one before it is caught "Hidden ability undiscovered."
 centred on line 2; and on Data the wild held items (`PERSONAL_ITEM_1-3`), one a line, the name from x 2 and the rate
-right-aligned 2 px from the window's right ("Light Ball ... 5%"), "Has no hold items." centred on line 2, or "?" until
+right-aligned 2 px from the window's right ("Light Ball ... 5%"; the third item's "Dark grass only: 1%",
+`PokedexData_Text_ItemRateDarkGrass`), "Has no hold items." centred on line 2, or "?" until
 caught. The rates are the field's (`FieldEncount_SetRandomHeldItem`, `enc_pokeset.c`'s `HELD_ITEM_RATES`): 50%, 5% and
 1% in a single battle, the third only in dark grass (`ENCTYPE_GRASS_RARE`, else 0%; Compound Eyes 60/20/5), and an
 item in both the first and second slots is always held, so it shows once at 100%. Changing sub-page, Pokémon, form or

@@ -97,3 +97,7 @@ PokedexData_Text_Abilities = Abilities
 PokedexData_Text_HiddenAbilityUndiscovered = Hidden ability undiscovered.
 PokedexData_Text_NoHeldItems = Has no hold items.
 PokedexData_Text_ItemRate = {0200:0}%
+PokedexData_Text_AbilitySlot1 = Ability 1
+PokedexData_Text_AbilitySlot2 = Ability 2
+PokedexData_Text_AbilitySlotHidden = Hidden Ability
+PokedexData_Text_ItemRateDarkGrass = Dark grass only: {0200:0}%

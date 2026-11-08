@@ -60,8 +60,10 @@ void PokedexInfo_RestoreText(PokedexInfo *info, u32 language);
 // place of the description: PokedexInfo_BeginOtherText clears the window's bitmap and returns it, for the caller to
 // draw into at once, and the entry's next update shows it; after PokedexInfo_EndOtherText, the entry's next print
 // (PokedexInfo_SetLanguage, PokedexInfo_SetPokemonInLanguage) has the description again. The window's colors, in the
-// font's palette row: the entry's white and shadow, and the page's gold in a color the entry doesn't use
+// font's palette row: the entry's white, its labels' grey and the shadow of both, and the page's gold in a color the
+// entry doesn't use
 #define POKEDEX_INFO_TEXT_WHITE 15
+#define POKEDEX_INFO_TEXT_GREY 1
 #define POKEDEX_INFO_TEXT_SHADOW 2
 #define POKEDEX_INFO_TEXT_GOLD 3
 GFLBitmap *PokedexInfo_BeginOtherText(PokedexInfo *info);

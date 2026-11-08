@@ -19,6 +19,11 @@ takes its colors from one palette row of 15 colors and the transparent one: the 
 tile, among the target's rows, reusing a row that has the tile's colors already and leaving the colors that the
 target's other screens (and the game's other users of the palette) need where they are. A tile repeated, also
 flipped, is stored once. Tile 0 stays blank.
+
+A target's offset_y (pixels, 0 by default) is for a BG that the game scrolls up by as many pixels while it shows the
+screen: convert moves the art down by it before cutting it into tiles, so it shows where it was drawn, and drops the
+rows it pushes past the screen's 192, which must be transparent; render and --preview show the screen scrolled, as
+the game does.
 """
 import json
 import os
@@ -179,6 +184,21 @@ def screen_tiles(entries, width, tiles):
 # ---------------------------------------------------------------- Converting
 
 
+SCREEN_HEIGHT = 192
+
+
+def offset_art(pixels, width, height, offset):
+    """The art's pixels moved down by offset rows within the screen's first SCREEN_HEIGHT, transparent above, and its
+    new height in whole tiles; or the first row it would push past the screen that isn't transparent, as an int."""
+    kept = max(0, min(height, SCREEN_HEIGHT - offset))
+    for y in range(kept, height):
+        if any(p is not None for p in pixels[y * width:(y + 1) * width]):
+            return y
+    moved = [None] * (offset * width) + pixels[:kept * width]
+    rows = (offset + kept + 7) // 8 * 8
+    return moved + [None] * ((rows - offset - kept) * width), rows
+
+
 def convert(target, art, write=False, preview=None):
     depth = target["depth"]
     row_size = 16 if depth == 4 else 256
@@ -190,6 +210,7 @@ def convert(target, art, write=False, preview=None):
         count = target.get("colors", row_size)
         colors = [(0, 0, 0)] * count
     rows = target.get("rows", list(range(count // row_size)) if depth == 4 else [0])
+    offset = target.get("offset_y", 0)
     report = {"target": target["name"], "screens": {}, "problems": [], "warnings": []}
 
     # The slots of each row the art may not change: those the target's kept screens show, and colors 0
@@ -232,6 +253,15 @@ def convert(target, art, write=False, preview=None):
             report["problems"].append({"screen": name, "message": f"the art is {aw} by {ah}; this screen is {width} by "
                                        f"{height} (or {width} by 192 for a full DS screen)"})
             continue
+        if offset:
+            moved = offset_art(pixels, aw, ah, offset)
+            if isinstance(moved, int):
+                report["problems"].append({"screen": name, "x": 0, "y": moved // 8 * 8, "message":
+                                           f"row {moved} isn't transparent: the target's offset_y ({offset}) moves "
+                                           f"the art down, pushing its rows from {SCREEN_HEIGHT - offset} on past "
+                                           f"the screen's {SCREEN_HEIGHT}"})
+                continue
+            pixels, ah = moved
         cells = []
         for ty in range(height // 8):
             for tx in range(width // 8):
@@ -316,9 +346,8 @@ def convert(target, art, write=False, preview=None):
         for chars, (sheet_width, sheet, new_entries) in outputs.items():
             for name, entries in new_entries.items():
                 _, width, height, _ = loaded[name]
-                shown_height = min(height, 192)
                 (Path(preview) / f"{name}.png").write_bytes(
-                    draw(entries, sheet.tiles, width, shown_height, colors, depth))
+                    draw(entries, sheet.tiles, width, height, colors, depth, offset))
     if write and report["ok"]:
         for chars, (sheet_width, sheet, new_entries) in outputs.items():
             per_row = sheet_width // 8
@@ -339,17 +368,27 @@ def convert(target, art, write=False, preview=None):
     return report
 
 
-def draw(entries, tiles, width, height, colors, depth):
-    image = bytearray(width * height * 4)
+def shown_rows(height, offset):
+    """The screen's rows that the DS shows, scrolled up by offset: the first of them and how many."""
+    return offset, min(height, SCREEN_HEIGHT)
+
+
+def draw(entries, tiles, width, height, colors, depth, offset=0):
+    """A screen as the DS shows it, scrolled up by offset, its rows past the screen resource's in color 0."""
+    first, shown = shown_rows(height, offset)
+    backdrop = colors[0] if colors else (0, 0, 0)
+    image = bytearray(bytes((*backdrop, 255)) * (width * shown))
     for i, entry in enumerate(entries[:(width // 8) * (height // 8)]):
         index, flip, row = entry & 0x3FF, entry >> 10 & 3, entry >> 12
         tile = flipped(tiles[index] if index < len(tiles) else (0,) * 64, flip)
-        sx, sy = i % (width // 8) * 8, i // (width // 8) * 8
+        sx, sy = i % (width // 8) * 8, i // (width // 8) * 8 - first
         for p, value in enumerate(tile):
-            color = colors[(row * 16 if depth == 4 else 0) + value] if value else (colors[0] if colors else (0, 0, 0))
+            if not 0 <= sy + p // 8 < shown:
+                continue
+            color = colors[(row * 16 if depth == 4 else 0) + value] if value else backdrop
             o = ((sy + p // 8) * width + sx + p % 8) * 4
             image[o:o + 4] = bytes((*color, 255))
-    return write_rgba_png(width, height, bytes(image))
+    return write_rgba_png(width, shown, bytes(image))
 
 
 def render(target, name, out):
@@ -359,13 +398,15 @@ def render(target, name, out):
     colors = [tuple(c) for c in read_palette(ROOT / target["palette"])]
     _, tiles = read_chars(ROOT / screen["chars"], depth)
     _, width, height, entries = read_screen(ROOT / screen["screen"])
-    height = min(height, 192)
-    pixels = bytearray(width * height)
+    # As the DS shows it, scrolled up by the target's offset_y, so that it is the art as drawn
+    first, shown = shown_rows(height, target.get("offset_y", 0))
+    pixels = bytearray(width * shown)
     for i, (tile, row) in enumerate(screen_tiles(entries[:(width // 8) * (height // 8)], width, tiles)):
-        sx, sy = i % (width // 8) * 8, i // (width // 8) * 8
+        sx, sy = i % (width // 8) * 8, i // (width // 8) * 8 - first
         for p, value in enumerate(tile):
-            pixels[(sy + p // 8) * width + sx + p % 8] = (row * 16 + value if depth == 4 else value) if value else 0
-    png = bytearray(write_indexed_png(width, height, bytes(pixels), colors[:256] + [(0, 0, 0)] * (256 - len(colors))))
+            if 0 <= sy + p // 8 < shown:
+                pixels[(sy + p // 8) * width + sx + p % 8] = (row * 16 + value if depth == 4 else value) if value else 0
+    png = bytearray(write_indexed_png(width, shown, bytes(pixels), colors[:256] + [(0, 0, 0)] * (256 - len(colors))))
     # tRNS after PLTE: color 0 transparent
     at = png.index(b"IDAT") - 4
     trns = struct.pack(">I", 1) + b"tRNS" + b"\0" + struct.pack(">I", zlib.crc32(b"tRNS\0"))

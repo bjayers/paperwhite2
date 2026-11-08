@@ -110,11 +110,12 @@
         {
             "name": "pokedex_info_stats",
             "title": "Pokédex Info: Stats",
-            "description": "The bottom screen of the Pokédex's Info page on its Stats sub-page, under the page's text, bars and buttons and over the grid (src/paperwhite2/ov298/paperwhite2_pokedex_info_panels.c): sub BG 6 in palette row 6, which the buttons share. Its source is res/paperwhite2/pokedex_art/info_stats.png, drawn over tools/paperwhite2/pokedex_templates.py's templates.",
+            "description": "The bottom screen of the Pokédex's Info page on its Stats sub-page, under the page's text, bars and buttons and over the grid (src/paperwhite2/ov298/paperwhite2_pokedex_info_panels.c): sub BG 6 in palette row 6, which the buttons share. Its source is res/paperwhite2/pokedex_art/info_stats.png, drawn over tools/paperwhite2/pokedex_templates.py's templates. The page scrolls BG 6 up 2 px on Stats to lift its buttons (sSubpageLift), so offset_y converts the art 2 px lower and it shows as drawn.",
             "palette": "res/graphics/pokedex_gra/131.pal",
             "colors": 16,
             "depth": 4,
             "max_tiles": 768,
+            "offset_y": 2,
             "screens": [
                 {
                     "name": "touch",
@@ -195,11 +196,12 @@
         {
             "name": "pokedex_info_matchups",
             "title": "Pokédex Info: Matchups",
-            "description": "The bottom screen of the Pokédex's Info page on its Matchups sub-page, under the page's text and over the grid (src/paperwhite2/ov298/paperwhite2_pokedex_info_panels.c): sub BG 6 in palette row 10. Its source is res/paperwhite2/pokedex_art/info_matchups.png.",
+            "description": "The bottom screen of the Pokédex's Info page on its Matchups sub-page, under the page's text and over the grid (src/paperwhite2/ov298/paperwhite2_pokedex_info_panels.c): sub BG 6 in palette row 10. Its source is res/paperwhite2/pokedex_art/info_matchups.png. The page scrolls BG 6 up 3 px on Matchups to lift its ability buttons (sSubpageLift), so offset_y converts the art 3 px lower and it shows as drawn.",
             "palette": "res/graphics/pokedex_gra/149.pal",
             "colors": 16,
             "depth": 4,
             "max_tiles": 768,
+            "offset_y": 3,
             "screens": [
                 {
                     "name": "touch",

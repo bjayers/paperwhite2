@@ -24,6 +24,7 @@
                         "description": "In 16-color mode, the palette rows the art may use; every row of the palette by default. Leave out rows the game uses elsewhere"
                     },
                     "max_tiles": { "type": "integer", "minimum": 1, "maximum": 1024, "description": "The most different tiles the screens' character sheet may have, from the game's VRAM layout for them; 1024 by default" },
+                    "offset_y": { "type": "integer", "minimum": 0, "maximum": 191, "description": "Pixels that the game scrolls the screens' BG up by while it shows them, 0 by default: the art is converted as many pixels lower, so it shows where it was drawn, and the rows it pushes past the screen's 192 must be transparent. Rendering and previews show the screen scrolled, as the game does" },
                     "screens": {
                         "type": "array", "minItems": 1,
                         "items": {

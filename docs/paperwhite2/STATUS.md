@@ -2,6 +2,15 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-07: Pokédex, ability slots, dark grass, the buttons lifted
+
+Built, not yet tested in game: the ability pages say "Ability 1", "Ability 2" or "Hidden Ability" on line 1 (the
+entry's label grey); a third held item reads "Dark grass only: 1%"; Stats' buttons 2 px higher and Matchups' 3 px, by
+scrolling BG6 per sub-page (`sSubpageLift`), the touch rects with it, and the art converted that much lower so it stays
+as drawn (a target's new `offset_y` in `screen_art.py`, art.md). Next: the user designs Evo (its plan in the reply of
+this date: tree rows drawn by the code, gold lines and the user's two 16x16 hexagon icons, a family table generated at
+build time, Matchups' icons freed while Evo shows).
+
 ## 2026-11-07: Pokédex, abilities and held items on the top screen
 
 Built (plugins.md, Pokédex), not yet tested in game:

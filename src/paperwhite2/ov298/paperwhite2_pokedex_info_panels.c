@@ -54,9 +54,11 @@
 #define PALETTE_ART 6
 // The content window's palette while Matchups shows (sMatchupColors), after the art's five
 #define PALETTE_MATCHUPS 11
-// The art's screen, the whole screen in tiles
+// The art's screen, the whole screen in tiles, and the BG's whole screen (256 by 256), whose rows past the screen's
+// show at the bottom, under the touch bar, while the BG is lifted (sSubpageLift)
 #define ART_TILES_ACROSS 32
 #define ART_TILES_DOWN 24
+#define ART_BG_TILES_DOWN 32
 // The grid of the info page's top screen in the original, the backgrounds' page 0
 #define GRID_PAGE (POKEDEX_DETAIL_PAGE_INFO - 1)
 
@@ -461,6 +463,11 @@ static const PanelsArt sSubpageArt[POKEDEX_INFO_SUBPAGE_COUNT] = {
     { 131, 132, 133 }, { 134, 135, 136 }, { 140, 141, 142 }, { 146, 147, 148 }, { 149, 150, 151 },
 };
 
+// How many pixels each sub-page scrolls BG_ART up while it shows, to lift its buttons off the tile grid (Stats' last
+// one off the touch bar, Matchups' centred between the chart's panel and the bar): its art is converted as many pixels
+// lower (offset_y in res/paperwhite2/art/targets.json), so it shows where it was drawn
+static const u8 sSubpageLift[POKEDEX_INFO_SUBPAGE_COUNT] = { 2, 0, 0, 0, 3 };
+
 struct PokedexInfoPanels {
     HeapID heapId;
     Font *font;
@@ -569,8 +576,9 @@ void PokedexInfoPanels_Free(PokedexInfoPanels *panels) {
     PokedexInfoPanels_FreeMoveActors(panels);
     PokedexInfoPanels_FreeTypeIcons(panels);
     PokedexInfoPanels_FreeArt(panels);
-    GFL_BGSysFillScrArea(BG_ART, 0, 0, 0, ART_TILES_ACROSS, ART_TILES_DOWN, 0);
+    GFL_BGSysFillScrArea(BG_ART, 0, 0, 0, ART_TILES_ACROSS, ART_BG_TILES_DOWN, 0);
     GFL_BGSysQueueScrLoad(BG_ART);
+    GFL_BGSysMoveBGReq(BG_ART, BG_MOVE_SET_Y, 0);
     BmpWin_ClearScreen(panels->contentWindow);
     BmpWin_ClearScreen(panels->barWindow);
     GFL_BGSysQueueScrLoad(BG_PANELS);
@@ -605,11 +613,13 @@ static void PokedexInfoPanels_CreateArt(PokedexInfoPanels *panels) {
 
 // The sub-page's art's screen replaces BG_ART's whole screen, so the page makes its buttons after it. Only the screen
 // changes, in the screen buffer, which goes to VRAM in the next VBlank, so the change shows all at once: writing it
-// at once (as a sync load does) showed it a frame in the palette's first row, before its own row was set
+// at once (as a sync load does) showed it a frame in the palette's first row, before its own row was set. The BG's
+// lift is set in the same VBlank, and the rows below the art, which it shows under the touch bar, are cleared
 void PokedexInfoPanels_LoadArt(PokedexInfoPanels *panels, u32 subpage) {
     const PanelsArt *art = &sSubpageArt[subpage];
 
-    GFL_BGSysFillScrArea(BG_ART, 0, 0, 0, ART_TILES_ACROSS, ART_TILES_DOWN, 0);
+    GFL_BGSysFillScrArea(BG_ART, 0, 0, 0, ART_TILES_ACROSS, ART_BG_TILES_DOWN, 0);
+    GFL_BGSysMoveBGReq(BG_ART, BG_MOVE_SET_Y, sSubpageLift[subpage]);
     if (art->screen != ART_NONE) {
         ArcTool *arc = GFL_ArcSysCreateFileHandle(ARCID_POKEDEX_GRA, panels->heapId);
 
@@ -620,6 +630,10 @@ void PokedexInfoPanels_LoadArt(PokedexInfoPanels *panels, u32 subpage) {
         GFL_ArcToolFree(arc);
     }
     GFL_BGSysQueueScrLoad(BG_ART);
+}
+
+u32 PokedexInfoPanels_GetLift(u32 subpage) {
+    return sSubpageLift[subpage];
 }
 
 static void PokedexInfoPanels_FreeArt(PokedexInfoPanels *panels) {
