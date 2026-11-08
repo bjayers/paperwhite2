@@ -322,6 +322,10 @@ static void PokedexListObj_CreateActors(PokedexListWork *wk) {
         PokedexListObj_SetAnmSeq(wk, POKEDEX_LIST_OBJ_NATIONAL, 14);
         PokedexListObj_EndAnm(wk, POKEDEX_LIST_OBJ_NATIONAL);
     } else if (national == TRUE && habitat == TRUE) {
+#ifdef PAPERWHITE2
+        // Paper White 2: no Unova button; the list is always the National Pokédex's
+        PokedexListObj_SetVisible(wk, POKEDEX_LIST_OBJ_UNOVA, FALSE);
+#endif
         if (PokeDex_GetMode(wk->param->pokedex) != 1) {
             PokedexListObj_SetAnmSeq(wk, POKEDEX_LIST_OBJ_UNOVA, 14);
             PokedexListObj_EndAnm(wk, POKEDEX_LIST_OBJ_UNOVA);

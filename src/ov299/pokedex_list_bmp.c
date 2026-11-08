@@ -158,12 +158,17 @@ static void PokedexListBmp_PutModes(PokedexListWork *wk) {
     national = PokeDex_IsNationalObtained(wk->param->pokedex);
     habitat = PokeDex_IsHabitatListEnabled(wk->param->pokedex);
     if (national == TRUE && habitat == TRUE) {
+        // Paper White 2: no Unova button, so its name isn't put (nor its window, below)
+#ifndef PAPERWHITE2
         PokedexListBmp_Print(wk, POKEDEX_LIST_WIN_UNOVA, GameStart3_Text_Unova, 2, 7, COLOR_BUTTON, PRINT_ALIGN_LEFT);
+#endif
         PokedexListBmp_Print(wk, POKEDEX_LIST_WIN_NATIONAL, GameStart3_Text_National, 2, 6, COLOR_BUTTON,
                              PRINT_ALIGN_LEFT);
         PokedexListBmp_Print(wk, POKEDEX_LIST_WIN_HABITAT, GameStart3_Text_Habitat, 2, 5, COLOR_BUTTON,
                              PRINT_ALIGN_LEFT);
+#ifndef PAPERWHITE2
         PokedexListBmp_PutWindow(&wk->windows[POKEDEX_LIST_WIN_UNOVA]);
+#endif
         PokedexListBmp_PutWindow(&wk->windows[POKEDEX_LIST_WIN_NATIONAL]);
         PokedexListBmp_PutWindow(&wk->windows[POKEDEX_LIST_WIN_HABITAT]);
     } else if (national == FALSE && habitat == TRUE) {

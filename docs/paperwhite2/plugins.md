@@ -1772,6 +1772,32 @@ and the button's cells use two rows (normal, and pushed for its flash), so the a
 727,160 bytes free (one block), and the detail heap 97-105 KB free on Stats, Moves and Evo. About 0.5 KB of ov012
 (which moves the arena: 89 KB of the budget left), 0.2 KB of ov165, 0.6 KB of ov207 and a little of ov298.
 
+### Pokédex list: no opening, no Unova mode, Unova natives
+
+The player has the National Pokédex from Bianca's gift in Aspertia (`PokeDexGiveNational` in `aspertia_city.s`), so:
+
+- **No opening.** The X menu and the C-Gear start the Pokédex with `POKEDEX_START_OPEN`, whose cover (overlay 301,
+  `pokedex_open.c`: wait for A, the halves slide up, a zoom and a fade) is skipped: `Pokedex_Init` (`src/ov302/pokedex.c`)
+  treats it as `POKEDEX_START_LIST`, as the Y shortcut opens it, so the list (or the habitat list, by the saved mode)
+  fades in. Overlay 301 is no longer loaded. Nothing closes with the cover; the list's own touch bars still slide in and
+  out with its fades, as on every return to the list.
+- **No Unova mode.** `PokeDex_SetMode` stores `DEX_NATIONAL` for `DEX_REGIONAL`, and `PokeDex_GetMode` reads a saved
+  `DEX_REGIONAL` as national (`src/system/pokedex_savedata.c`), so every caller (the list's SELECT and buttons, the
+  habitat list's, the Pokédex's states, old saves) lands on the National list. The list hides its UNOVA button and its
+  name and ignores a touch there (`src/ov299/pokedex_list_{obj,bmp,ui}.c`); the habitat list (`src/ov304/pokedex_area_list.c`)
+  takes the layout it has without the National Pokédex, one list button named National. The search is always national
+  (`criteria->regional = 0` in `PokedexCommon_InitCriteria` and `src/ov300/pokedex_search_seq.c`).
+- **Unova counts are of the species native to Unova**, national 494-649 (Victini to Genesect, 156;
+  `PokeDex_PaperWhite2_IsUnovaNative`): `PokeDex_GetSeenNoUnova`, `PokeDex_GetCaughtNoUnova` and their permissive
+  (non-mythical) forms, so `PokeDex_IsSeenAllUnova` and `PokeDex_IsCompleteUnova` need the 152 that aren't Victini,
+  Keldeo, Meloetta or Genesect (`UNOVA_DEX_COMPLETE`, 297 in the original). Their users follow: the professor's
+  evaluation (`PokeDexGetEvaluationParams` modes 2 and 3 in `global_10380.s`, and the Xtransceiver's
+  `local_tvt_person_doctor.c`), `PokeDexIsComplete` 2 (seen all: Juniper's Permit, flag 0x88) and 3 (caught all: the
+  Oval Charm, flag 0x89, and Game Freak's Unova diploma in `castelia_city_19.s`), and the fallbacks of `countSeenDexPokes` and the National
+  evaluation without the National Pokédex. The evaluation's tables are rescaled to 152 (`PokeDex_GetEvaluationParams`):
+  the "over 100" messages come after 100, and the two that say over 200 (seen 14, caught 29) are left out. The National
+  checks (`PokeDexGetCount`, `PokeDexIsComplete` 1, the Shiny Charm, the trainer card) are unchanged.
+
 ## Adding global scripts
 
 A global script file's IDs are limited by its row in `GLOBAL_SCRIPT_TABLE` (`src/ov012/script_sys.c`), e.g.

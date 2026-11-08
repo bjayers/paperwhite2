@@ -152,9 +152,15 @@ static BOOL Pokedex_Init(GameProc *proc, u32 *state, void *param, void *work) {
     PokedexHabitatSave_SetSeason(habitat, Season_GetRealTime());
 #endif
     PokedexHabitatSave_SetType(habitat, 0);
+#ifdef PAPERWHITE2
+    // Paper White 2: no opening (overlay 301's cover, whose halves slide apart): the X menu and the C-Gear open the
+    // list as the shortcut does, which fades in
+    if (wk->param->start == POKEDEX_START_OPEN || wk->param->start == POKEDEX_START_LIST) {
+#else
     if (wk->param->start == POKEDEX_START_OPEN) {
         wk->state = STATE_OPEN;
     } else if (wk->param->start == POKEDEX_START_LIST) {
+#endif
         if (PokeDex_GetMode(wk->param->pokedex) == DEX_HABITAT) {
             wk->state = STATE_AWARDS;
         } else {

@@ -141,11 +141,16 @@ static int PokedexSearchSeq_Init(PokedexSearchWork *wk) {
     GFL_BGSysSetDisplayLayout(0);
     GX_SetMasterBrightness(-16);
     GXS_SetMasterBrightness(-16);
+#ifdef PAPERWHITE2
+    // Paper White 2: there is no Unova mode, so the search is always the National Pokédex's, from the habitat list too
+    wk->param->criteria->regional = 0;
+#else
     if (PokeDex_GetMode(wk->param->pokedex) == 1) {
         wk->param->criteria->regional = 0;
     } else {
         wk->param->criteria->regional = 1;
     }
+#endif
     PokedexSearchMain_InitVRAM();
     PokedexSearchMain_InitBG();
     PokedexSearchMain_LoadGraphics();

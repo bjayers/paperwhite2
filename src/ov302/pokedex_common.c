@@ -169,11 +169,16 @@ BOOL PokedexCommon_IsFirstShown(PokeDexSave *pokedex) {
 }
 
 void PokedexCommon_InitCriteria(PokeDexSave *pokedex, PokedexSearchCriteria *criteria) {
+#ifdef PAPERWHITE2
+    // Paper White 2: there is no Unova mode, so the search is always the National Pokédex's, from the habitat list too
+    criteria->regional = 0;
+#else
     if (PokeDex_GetMode(pokedex) == 1) {
         criteria->regional = 0;
     } else {
         criteria->regional = 1;
     }
+#endif
     criteria->order = 0;
     criteria->initial = 0xff;
     criteria->type1 = 0xff;

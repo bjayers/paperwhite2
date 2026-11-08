@@ -15,7 +15,13 @@
 // are swan's where there is one. Block 0x36.
 
 #define NATIONAL_DEX_COMPLETE 636
+#ifdef PAPERWHITE2
+// Paper White 2: the "Unova" counts are of the 156 species native to Unova, Victini to Genesect (see
+// PokeDex_PaperWhite2_IsUnovaNative), so completing them needs the 152 that aren't mythical
+#define UNOVA_DEX_COMPLETE 152
+#else
 #define UNOVA_DEX_COMPLETE 297
+#endif
 // A species that isn't in the regional Pokédex, in its table
 #define REGIONAL_DEX_NONE 999
 
@@ -170,6 +176,15 @@ static BOOL PML_PkmIsRegionalDexExclude(u16 species) {
     return TRUE;
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: the player has the National Pokédex from the start, so what counted the regional Pokédex (its seen
+// and caught counts, its completion, the professor's evaluation) counts the species native to Unova instead, the
+// national numbers of Victini to Genesect
+static BOOL PokeDex_PaperWhite2_IsUnovaNative(u16 species) {
+    return species >= SPECIES_VICTINI && species <= SPECIES_GENESECT;
+}
+#endif
+
 // The bit of a species' first form in the lists of forms, or -1 for a species without forms
 static int getIndexPokemonWithForms(u16 species) {
     int index = 0;
@@ -302,10 +317,22 @@ u32 PokeDex_IsGiven(PokeDexSave *pokedex) {
 }
 
 void PokeDex_SetMode(PokeDexSave *pokedex, u32 mode) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the list has no Unova mode, so what would choose it chooses the National Pokédex
+    if (mode == DEX_REGIONAL) {
+        mode = DEX_NATIONAL;
+    }
+#endif
     pokedex->mode = mode;
 }
 
 u32 PokeDex_GetMode(PokeDexSave *pokedex) {
+#ifdef PAPERWHITE2
+    // Paper White 2: as above, for a save whose list was left in the Unova mode
+    if (pokedex->mode == DEX_REGIONAL) {
+        return DEX_NATIONAL;
+    }
+#endif
     return pokedex->mode;
 }
 
@@ -495,6 +522,14 @@ u16 PokeDex_GetCaughtNoNational(PokeDexSave *pokedex) {
 u16 PokeDex_GetCaughtNoUnova(PokeDexSave *pokedex, HeapID heapId) {
     u16 i;
     u16 count = 0;
+#ifdef PAPERWHITE2
+    // Paper White 2: the species native to Unova, not the regional Pokédex's
+    for (i = 1; i <= SPECIES_GENESECT; i++) {
+        if (PokeDex_IsCaught(pokedex, i) == TRUE && PokeDex_PaperWhite2_IsUnovaNative(i)) {
+            count++;
+        }
+    }
+#else
     u16 *table = PML_PersonalLoadRegionalDexTable(heapId, NULL);
 
     for (i = 1; i <= SPECIES_GENESECT; i++) {
@@ -503,6 +538,7 @@ u16 PokeDex_GetCaughtNoUnova(PokeDexSave *pokedex, HeapID heapId) {
         }
     }
     GFL_HeapFree(table);
+#endif
     return count;
 }
 
@@ -573,6 +609,14 @@ u16 PokeDex_GetSeenNoNational(PokeDexSave *pokedex) {
 u16 PokeDex_GetSeenNoUnova(PokeDexSave *pokedex, HeapID heapId) {
     u16 i;
     u16 count = 0;
+#ifdef PAPERWHITE2
+    // Paper White 2: the species native to Unova, not the regional Pokédex's
+    for (i = 1; i <= SPECIES_GENESECT; i++) {
+        if (PokeDex_IsSeen(pokedex, i) == TRUE && PokeDex_PaperWhite2_IsUnovaNative(i)) {
+            count++;
+        }
+    }
+#else
     u16 *table = PML_PersonalLoadRegionalDexTable(heapId, NULL);
 
     for (i = 1; i <= SPECIES_GENESECT; i++) {
@@ -581,6 +625,7 @@ u16 PokeDex_GetSeenNoUnova(PokeDexSave *pokedex, HeapID heapId) {
         }
     }
     GFL_HeapFree(table);
+#endif
     return count;
 }
 
@@ -665,6 +710,15 @@ static u16 PokeDex_GetCaughtNoPermissive(PokeDexSave *pokedex) {
 static u16 PokeDex_GetCaughtNoUnovaPermissive(PokeDexSave *pokedex, HeapID heapId) {
     u16 i;
     u16 count = 0;
+#ifdef PAPERWHITE2
+    // Paper White 2: as above
+    for (i = 1; i <= SPECIES_GENESECT; i++) {
+        if (PokeDex_IsCaught(pokedex, i) == TRUE && PokeDex_PaperWhite2_IsUnovaNative(i) &&
+            PML_PkmIsRegionalDexExclude(i) == TRUE) {
+            count++;
+        }
+    }
+#else
     u16 *table = PML_PersonalLoadRegionalDexTable(heapId, NULL);
 
     for (i = 1; i <= SPECIES_GENESECT; i++) {
@@ -674,12 +728,22 @@ static u16 PokeDex_GetCaughtNoUnovaPermissive(PokeDexSave *pokedex, HeapID heapI
         }
     }
     GFL_HeapFree(table);
+#endif
     return count;
 }
 
 static u16 PokeDex_GetSeenNoUnovaPermissive(PokeDexSave *pokedex, HeapID heapId) {
     u16 i;
     u16 count = 0;
+#ifdef PAPERWHITE2
+    // Paper White 2: as above
+    for (i = 1; i <= SPECIES_GENESECT; i++) {
+        if (PokeDex_IsSeen(pokedex, i) == TRUE && PokeDex_PaperWhite2_IsUnovaNative(i) &&
+            PML_PkmIsRegionalDexExclude(i) == TRUE) {
+            count++;
+        }
+    }
+#else
     u16 *table = PML_PersonalLoadRegionalDexTable(heapId, NULL);
 
     for (i = 1; i <= SPECIES_GENESECT; i++) {
@@ -689,6 +753,7 @@ static u16 PokeDex_GetSeenNoUnovaPermissive(PokeDexSave *pokedex, HeapID heapId)
         }
     }
     GFL_HeapFree(table);
+#endif
     return count;
 }
 
@@ -719,12 +784,31 @@ static u16 PokeDex_LookupEvaluation(const PokeDexEvaluation *table, int count) {
 }
 
 void PokeDex_GetEvaluationParams(PokeDexSave *pokedex, u16 mode, HeapID heapId, u16 *message, u16 *count, u16 *unk) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the evaluations of the species native to Unova, 156 of them and 152 without the mythical ones,
+    // scaled from the regional Pokédex's 297. The messages that say over 100 come after 100, and the two that say
+    // over 200 (14 and 29) are left out
+    static const PokeDexEvaluation unovaUnks[] = {
+        { 19, 1311 }, { 49, 1312 }, { 79, 1313 }, { 114, 1314 }, { 151, 1315 }, { 0, 1316 },
+    };
+#else
     static const PokeDexEvaluation unovaUnks[] = {
         { 39, 1311 }, { 99, 1312 }, { 159, 1313 }, { 229, 1314 }, { 296, 1315 }, { 0, 1316 },
     };
+#endif
     static const PokeDexEvaluation nationalUnks[] = {
         { 159, 1311 }, { 349, 1312 }, { 449, 1313 }, { 549, 1314 }, { 635, 1315 }, { 0, 1316 },
     };
+#ifdef PAPERWHITE2
+    static const PokeDexEvaluation unovaSeenMessages[] = {
+        { 9, 4 },    { 19, 5 },   { 34, 6 },   { 49, 7 },   { 69, 8 },   { 100, 9 },  { 110, 10 },
+        { 120, 11 }, { 128, 12 }, { 136, 13 }, { 142, 15 }, { 147, 16 }, { 151, 17 }, { 0, 17 },
+    };
+    static const PokeDexEvaluation unovaCaughtMessages[] = {
+        { 9, 19 },   { 19, 20 },  { 34, 21 },  { 49, 22 },  { 69, 23 },  { 100, 24 }, { 115, 25 },
+        { 125, 26 }, { 133, 27 }, { 140, 28 }, { 145, 30 }, { 148, 31 }, { 151, 32 }, { 0, 32 },
+    };
+#else
     static const PokeDexEvaluation unovaSeenMessages[] = {
         { 14, 4 },   { 29, 5 },   { 44, 6 },   { 64, 7 },   { 84, 8 },   { 104, 9 },  { 134, 10 }, { 164, 11 },
         { 194, 12 }, { 224, 13 }, { 244, 14 }, { 264, 15 }, { 284, 16 }, { 296, 17 }, { 0, 17 },
@@ -733,6 +817,7 @@ void PokeDex_GetEvaluationParams(PokeDexSave *pokedex, u16 mode, HeapID heapId, 
         { 14, 19 },  { 29, 20 },  { 44, 21 },  { 64, 22 },  { 84, 23 },  { 104, 24 }, { 134, 25 }, { 164, 26 },
         { 194, 27 }, { 224, 28 }, { 244, 29 }, { 264, 30 }, { 284, 31 }, { 296, 32 }, { 0, 32 },
     };
+#endif
     static const PokeDexEvaluation nationalCaughtMessages[] = {
         { 49, 44 },  { 104, 45 }, { 164, 46 }, { 229, 47 }, { 289, 48 }, { 344, 49 },
         { 394, 50 }, { 444, 51 }, { 494, 52 }, { 529, 53 }, { 559, 54 }, { 579, 55 },

@@ -633,7 +633,12 @@ static void PokedexAreaList_PrintModes(PokedexAreaListWork *wk) {
         PokedexAreaListView_Print(POKEDEX_AREA_LIST_WIN_MAIN, strbuf, &wk->view, 2, 126, 40, 16, PRINT_COLOR(15, 2, 1));
         GFL_StrBufFree(strbuf);
     } else {
+#ifdef PAPERWHITE2
+        // Paper White 2: the one list button is the National Pokédex's (see PokedexAreaList_LoadNationalObtained)
+        strbuf = GFL_MsgDataLoadStrbufNew(wk->msgData, PokedexHabitat_Text_National);
+#else
         strbuf = GFL_MsgDataLoadStrbufNew(wk->msgData, PokedexHabitat_Text_Unova);
+#endif
         PokedexAreaListView_Print(POKEDEX_AREA_LIST_WIN_MAIN, strbuf, &wk->view, 2, 126, 40, 16, PRINT_COLOR(15, 2, 1));
         GFL_StrBufFree(strbuf);
         ClActor_SetVisible(PokedexAreaListView_GetActor(&wk->view, POKEDEX_AREA_LIST_OBJ_MODE_UPPER), FALSE);
@@ -641,7 +646,14 @@ static void PokedexAreaList_PrintModes(PokedexAreaListWork *wk) {
 }
 
 static void PokedexAreaList_LoadNationalObtained(PokedexAreaListWork *wk) {
+#ifdef PAPERWHITE2
+    // Paper White 2: no Unova button. The list takes the layout it has without the National Pokédex, one list button
+    // above the habitats' named National here, and its result POKEDEX_AREA_LIST_RESULT_REGIONAL opens the National
+    // Pokédex, since PokeDex_SetMode has no Unova mode
+    wk->nationalObtained = FALSE;
+#else
     wk->nationalObtained = PokeDex_IsNationalObtained(GameData_GetPokedex(wk->param->gameData));
+#endif
 }
 
 static void PokedexAreaList_InitModes(PokedexAreaListWork *wk) {

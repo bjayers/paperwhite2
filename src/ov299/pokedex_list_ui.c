@@ -63,6 +63,10 @@ int PokedexListUI_Main(PokedexListWork *wk) {
             }
         }
         if (ret == POKEDEX_LIST_UI_UNOVA) {
+#ifdef PAPERWHITE2
+            // Paper White 2: no Unova button, so its place does nothing
+            return -1;
+#endif
             if (PokeDex_IsNationalObtained(wk->param->pokedex) != TRUE ||
                 PokeDex_IsHabitatListEnabled(wk->param->pokedex) != TRUE) {
                 return -1;
