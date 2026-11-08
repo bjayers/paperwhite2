@@ -4,14 +4,22 @@
 #include "types.h"
 #include "app/pokelist.h"
 
-// Paper White 2: the party list's menu shows the HMs' field moves that a Pokémon can learn after the ones it knows, and
-// using one works as using a known one (src/paperwhite2/ov165/paperwhite2_pokelist_field_moves.c, for plist_menu.c and
+// Paper White 2: the party list's menu has FIELD MOVES, which opens a menu of the moves usable outside battle that the
+// Pokémon knows, then the HMs' field moves that it can learn while the HM is in the bag, and using a learnable one
+// works as using a known one (src/paperwhite2/ov165/paperwhite2_pokelist_field_moves.c, for plist_menu.c and
 // plist_sys.c). See docs/paperwhite2/plugins.md, HMs by learners
 
 // The menu item of an HM's move that the Pokémon can learn, plus the HM's number from 0 (HM01 Cut to HM06 Dive), after
 // the original's items (0 to 23) and their waiting value, 0x19
 #define POKELIST_MENU_LEARNABLE_HM 26
 #define POKELIST_MENU_LEARNABLE_HM_COUNT 6
+// The menu items FIELD MOVES, under SUMMARY and POKéDEX, which opens the field moves' menu, and that menu's CANCEL,
+// which goes back to the Pokémon's menu
+#define POKELIST_MENU_FIELD_MOVES 32
+#define POKELIST_MENU_FIELD_MOVES_BACK 33
+
+// Whether the Pokémon has a move for the field moves' menu: a known move usable outside battle or a learnable HM
+BOOL PaperWhite2_PokeList_HasFieldMoves(PokeListWork *wk);
 
 // Adds the learnable HMs' items to a menu's items after its count, at most room of them, and gives the new count. The
 // moves that can be used where the player stands come first when they don't all fit, then the HMs' order

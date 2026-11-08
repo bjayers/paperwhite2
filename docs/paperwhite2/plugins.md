@@ -1412,10 +1412,17 @@ have lines of their own (`Global10685_Text_Owner*Line*`).
 ### HMs by learners
 
 The HMs' field moves (Cut, Fly, Surf, Strength, Waterfall, Dive: HM01 to HM06, `TM_MOVE_LIST` in
-`src/system/pml_item.c`) can be used by any party Pokémon, not an egg, that knows the move or can learn it by its HM
-(the HMs' bits of its personal data, `canPkmLearnTM_Wrapper`). Fainted Pokémon can, as in the original. The Pokémon
-used is the first that knows the move, otherwise the first that can learn it, and the messages and cut-in name and
-show it ("Keldeo used Surf!"). Everything else is the original's: the prompts, animations and messages.
+`src/system/pml_item.c`) can be used by any party Pokémon, not an egg, that knows the move, or that can learn it by its
+HM (the HMs' bits of its personal data, `canPkmLearnTM_Wrapper`) **while that HM is in the bag**
+(`BagSave_GetExistingItemCount`). Fainted Pokémon can, as in the original. The Pokémon used is the first that knows
+the move, otherwise the first that can learn it, and the messages and cut-in name and show it ("Keldeo used Surf!").
+Everything else is the original's: the prompts, animations and messages.
+
+**The bag gate** (the user's decision, 2026-11-08): White 2 checks no badges for field moves, and its progression
+comes from when the player gets each HM and a Pokémon to teach it to. A learner without the HM in the bag would skip
+that, so a Pokémon that only can learn the move uses it only while the HM is in the bag; one that knows the move works
+as in the original, with no HM needed. The gate is in `PaperWhite2_FieldMoves_CanUseHM`, which everything below goes
+through: the field's checks, the scripts, the party list's menu and the Town Map's Fly mode.
 
 **The original's requirements.** White 2 checks no badges for field moves (there is no badge check anywhere in the
 field-move code, the party list or the scripts). What it checks besides knowing the move, all kept:
@@ -1442,13 +1449,21 @@ All of them also need a normal zone (`IsZoneNormal`) and no forced season sync.
   `src/paperwhite2/ov012/paperwhite2_field_moves_field.c`) where they used `PokePartyHasMoveAny`. That command keeps
   its meaning, a Pokémon that knows the move, for the other scripts that ask (Driftveil City's request for a Pokémon
   that knows a TM's move, Clay Tunnel's Rock Smash, Humilau City's Surf fan).
-- **The party list:** a Pokémon's menu lists, after the field moves it knows, the HMs it can learn and doesn't know
-  (`src/paperwhite2/ov165/paperwhite2_pokelist_field_moves.c`), named and colored as known ones, and picking one does
-  what picking a known one does (`PokeList_DoMenuItem`, the same checks and messages, Fly's map). Their menu items are
-  26 to 31, the HM's number from 0 (`POKELIST_MENU_LEARNABLE_HM`), after the original's 0-23 and its waiting value
-  0x19. The menu holds 8 items (Summary, the moves, Switch, Item, Quit leave 4 for moves): when the learnable HMs
-  don't fit, the ones usable where the player stands come first, then the rest by HM number, and the others are left
-  out (they still work from the field's prompts). A Pokémon that knows four field moves shows no learnable ones.
+- **The party list: FIELD MOVES** (as in X and Y). A Pokémon's menu has FIELD MOVES (`POKELIST_MENU_FIELD_MOVES`, 32,
+  `BtlMain11_Text_FieldMoves`, the last message of `res/text/system/btl_main_11.txt`) under POKÉDEX, or under SUMMARY
+  where POKÉDEX isn't shown, in place of the original's field moves, and only when the Pokémon has a move for it
+  (`PaperWhite2_PokeList_HasFieldMoves`). It opens a second menu, with "Do what with Keldeo?" kept, of the moves it
+  knows that the original lists outside battle (Cut to Dive, Flash, Teleport, Dig, Sweet Scent, Chatter, Milk Drink,
+  Softboiled: `PokeList_GetHMResult`), then the HMs it can learn and doesn't know
+  (`src/paperwhite2/ov165/paperwhite2_pokelist_field_moves.c`), named and colored as known ones, and CANCEL
+  (`POKELIST_MENU_FIELD_MOVES_BACK`, 33, `BtlMain11_Text_Cancel`, the return arrow), which B picks and which goes back
+  to the Pokémon's menu. The screen stays dimmed between the two menus, as for ITEM's. Picking a move does what
+  picking it in the original's menu does (`PokeList_DoMenuItem`, the same checks and messages, Fly's map). The learnable
+  HMs' items are 26 to 31, the HM's number from 0 (`POKELIST_MENU_LEARNABLE_HM`), after the original's 0-23 and its
+  waiting value 0x19. The menu holds 8 items, the bottom screen's height, so with CANCEL a Pokémon that knows four
+  field moves has room for 3 learnable HMs: when they don't fit, the ones usable where the player stands come first,
+  then the rest by HM number, and the others are left out (they still work from the field's prompts). The Pokémon's
+  own menu has at most 6 items (SUMMARY, POKÉDEX, FIELD MOVES, SWITCH, ITEM or MAIL, QUIT).
 - **Fly from the Town Map:** the Town Map opened from the bag, the Y button or the C-Gear's map marker opens in its
   Fly mode ("Fly to where?") when `PaperWhite2_FieldMoves_FindFlyUser` finds a Pokémon for Fly and Fly can be used
   here (`CheckAllowHMEvent`), else as the view it was; a place picked flies there as the party's Fly does, with the
@@ -1456,12 +1471,24 @@ All of them also need a normal zone (`IsZoneNormal`) and no forced season sync.
   `src/ov012/event_field_proclink.c`). The bag's, the shortcut's and the C-Gear's events already run a field move
   that an app hands back.
 
-Tested in DeSmuME on the user's save (no Pokémon knows an HM): Pignite, Keldeo and Zekrom list Strength; Cut, Surf,
+Tested in DeSmuME on the user's save (no Pokémon knows an HM), before the bag gate: Pignite, Keldeo and Zekrom list Strength; Cut, Surf,
 Strength; Cut, Fly, Strength; Zekrom's Fly from the party flies; the C-Gear's map and the bag's Town Map fly to a
 picked town, and show the plain map indoors or with no Pokémon for Fly; facing Undella Town's deep water offers Surf
 and "Keldeo used Surf!"; the tree and boulder scripts run on a learner ("Keldeo used Cut!", "Oinkums used
 Strength!") and refuse when only an egg could; a Keldeo knowing Flash, Dig and Teleport lists only Cut of its three
 learnable HMs. Waterfall and Dive go through the same checks but weren't reached.
+
+Tested again with the bag gate and FIELD MOVES (2026-11-08, the user's save, the bag's HMs changed in RAM): with
+HM01 and HM04 in the bag, Keldeo's FIELD MOVES lists Cut and Strength and Zekrom's Cut and Strength (no Surf, no
+Fly); with HM02 and HM03 too, Cut, Surf, Strength and Cut, Fly, Strength; Klink, with no field move, has no FIELD
+MOVES; B in the field moves' menu goes back to the Pokémon's menu, and B again closes it; Zekrom's Fly from it opens
+the map and flies to Castelia City; the C-Gear's map opens as the plain view without HM02 and as "Fly to where?" with
+it; facing Undella Town's water offers Surf with HM03 ("Keldeo used Surf!" cut-in) and does nothing without it, as
+the original does with no Pokémon for Surf; a Swinub given Sweet Scent and Dig lists Sweet Scent, Dig, Strength, and
+Sweet Scent closes the party into its effect while Dig says "You can't use that here." and returns to the party; a
+Keldeo knowing Flash, Dig, Teleport and Sweet Scent with all six HMs fills the menu: those four, Cut, Surf (usable
+there, on the shore), Strength, CANCEL. The tree, boulder, waterfall and dive scripts weren't run again; they ask the
+same `FindUser` as the Surf script, which was.
 
 **Memory.** About 0.6 KB: the helper in main, the command and Town Map check in overlay 12, the menu's in overlay
 165, the hooks.
@@ -1691,8 +1718,7 @@ music for the cries as the Pokédex does, and loads overlay 302 (the Pokédex's 
 the Area page calls; `_GetPokedexInfoResult` unloads it and goes back. Only the field app call's party screen has the
 menu item (`PokeListParam`'s `showPokedex`, set by `FieldAppCall_CreatePokeListParam`; the menu's item 24,
 `POKELIST_MENU_POKEDEX`), and only in its field mode (0), so the party screens of battles, the day care, the Battle
-Subway, trades and the rest don't; it is left out for an egg, and for a Pokémon with four moves usable outside battle,
-whose menu is full (8 items) with it. The summary offers it where `PaperWhite2_PStatusPokedex_IsAvailable` holds:
+Subway, trades and the rest don't; it is left out for an egg. The summary offers it where `PaperWhite2_PStatusPokedex_IsAvailable` holds:
 `fromFieldMenu`, mode `PSTATUS_MODE_NORMAL` and the party's data, which is the field menu's summary (from the party
 screen, or the Y menu's summary pages); not in battle, the PC's boxes, trades or a move to forget. **The PC box's
 summary** doesn't have it: the box runs the summary from its own proc manager, and opening the Pokédex there would mean

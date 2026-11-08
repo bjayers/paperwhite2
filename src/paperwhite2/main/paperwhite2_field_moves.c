@@ -4,14 +4,15 @@
 #include "paperwhite2/field_moves.h"
 #include "pml/item.h"
 #include "pml/poke_party.h"
+#include "save/bag.h"
 
-// Paper White 2: which party Pokémon uses a field move, by knowing it or, for an HM's, by being able to learn it
-// (paperwhite2/field_moves.h)
+// Paper White 2: which party Pokémon uses a field move, by knowing it or, for an HM's, by being able to learn it while
+// the HM is in the bag (paperwhite2/field_moves.h)
 
 // The HMs, HM01 to HM06, after the TMs' items
 #define FIELD_MOVES_HM_COUNT 6
 
-BOOL PaperWhite2_FieldMoves_CanLearnHM(PartyPkm *pkm, u16 move) {
+BOOL PaperWhite2_FieldMoves_CanUseHM(PartyPkm *pkm, BagSave *bag, u16 move) {
     u16 i;
 
     if (PokeParty_GetParam(pkm, PKM_PARAM_IS_EGG, NULL) != 0) {
@@ -19,7 +20,9 @@ BOOL PaperWhite2_FieldMoves_CanLearnHM(PartyPkm *pkm, u16 move) {
     }
     for (i = 0; i < FIELD_MOVES_HM_COUNT; i++) {
         if (PML_ItemGetTMMoveID(ITEM_HM01 + i) == move) {
-            return canPkmLearnTM_Wrapper(pkm, PML_ItemGetTMBitMask(ITEM_HM01 + i));
+            // The HM in the bag stands in for the badges White 2 doesn't check, keeping the original's progression
+            return BagSave_GetExistingItemCount(bag, ITEM_HM01 + i) != 0 &&
+                   canPkmLearnTM_Wrapper(pkm, PML_ItemGetTMBitMask(ITEM_HM01 + i));
         }
     }
     return FALSE;
@@ -40,7 +43,7 @@ static BOOL PaperWhite2_FieldMoves_Knows(PartyPkm *pkm, u16 move) {
     return FALSE;
 }
 
-u32 PaperWhite2_FieldMoves_FindUser(PokeParty *party, u16 move) {
+u32 PaperWhite2_FieldMoves_FindUser(PokeParty *party, BagSave *bag, u16 move) {
     u32 count = PokeParty_GetPkmCount(party);
     u32 i;
 
@@ -50,7 +53,7 @@ u32 PaperWhite2_FieldMoves_FindUser(PokeParty *party, u16 move) {
         }
     }
     for (i = 0; i < count; i++) {
-        if (PaperWhite2_FieldMoves_CanLearnHM(PokeParty_GetPkm(party, i), move)) {
+        if (PaperWhite2_FieldMoves_CanUseHM(PokeParty_GetPkm(party, i), bag, move)) {
             return i;
         }
     }
