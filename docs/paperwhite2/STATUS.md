@@ -12,6 +12,10 @@ the sub-pages and Moves' sets. Flickers: a form change loaded the new sprite int
 their characters written mid-frame but screen entries at the VBlank (now both at the VBlank); the move panel's
 changes now land in one VBlank. Next: the user's retest on the 3DS.
 
+Fixed after the user's report: changing Pokémon on the info page to or from a caught Dewott halted the game. The next
+sprite's allocation failed in the full Pokédex heap (`OS_Terminate`, found in DeSmuME with py-desmume and the user's
+save); the heap is 64 KB larger (plugins.md, Memory).
+
 ## 2026-11-07: Pokédex, the Evo page
 
 Built (plugins.md, Pokédex), not yet tested in game: the family's party icons in a strip ("?" for unseen), the tree

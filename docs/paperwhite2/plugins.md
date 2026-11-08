@@ -114,6 +114,13 @@ still in the ROM, and overlay 165's copy still decrypts itself when that overlay
   load whatever main memory holds at that address. Build the data in the work (the heap) or a static table. Found
   when the Pokédex's dimmed head bar came out green (2026-11-07).
 
+- **A heap that runs out halts the game.** `GFL_HeapAllocate` calls `OS_Terminate` on a failure, which looks like a
+  freeze with the screen still drawn. The Pokédex detail screen's heap (`HEAPID_POKEDEX_DETAIL`, `pokedex_detail.c`)
+  is 0xa0000 in the hack, 64 KB over the original: the info page had about 25 KB free with a caught Dewott shown, and
+  its next sprite (about 11 KB, plus 16 KB for its characters while they load) didn't fit (2026-11-07). It now has
+  about 90 KB free on every sub-page. To measure a heap, walk its NitroSystem block lists in an emulator (the free
+  list at the heap handle + 0x24, the used list at + 0x2c; each used block's GFL header names the file and line).
+
 So a large plugin goes in the overlay that runs it (the field's in `ov036`, a battle feature in the battle's
 overlay), and only what every module needs goes in main. The Following Pokémon runtime fits in the field's overlay
 plus the budget.
