@@ -184,8 +184,11 @@ static const PStaWindowSetup sSkillWindows[SKILL_WINDOW_COUNT] = {
 static const PStaWindowSetup sHiddenTitleWindow = { 15, 1, 17, 2 };
 #define HIDDEN_HEADER_EV_RIGHT HIDDEN_EV_RIGHT
 #define HIDDEN_HEADER_IV_RIGHT HIDDEN_IV_RIGHT
-#define HIDDEN_HEADER_Y 3
-#define HIDDEN_BUTTON_GAP 5
+#define HIDDEN_HEADER_Y 4
+#define HIDDEN_BUTTON_GAP 15
+// The title's text is in the title bar's own palette row, white with a shadow of the bar's dark red
+#define HIDDEN_TITLE_PALETTE 1
+#define HIDDEN_TITLE_COLOR PRINT_COLOR(1, 4, 0)
 // The page's name in the title bar, which the empty bar left of it covers with the EVs and IVs; its tiles, and its
 // letters' pixels (« to »)
 #define HIDDEN_PAGE_NAME_X 22
@@ -427,7 +430,7 @@ void PStaSkill_Load(PStatusWork *wk, PStaSkillWork *skill) {
 #ifdef PAPERWHITE2
     // Paper White 2: the window of the title bar's text
     skill->titleWindow = BmpWin_CreateDynamic(4, sHiddenTitleWindow.x, sHiddenTitleWindow.y, sHiddenTitleWindow.width,
-                                              sHiddenTitleWindow.height, 14, 1);
+                                              sHiddenTitleWindow.height, HIDDEN_TITLE_PALETTE, 1);
 #endif
     PStaSkill_PrintStats(wk, skill);
     for (i = 0; i < skill->moveCount; i++) {
@@ -1618,7 +1621,7 @@ static u16 PStaSkill_PrintTitle(PStatusWork *wk, PStaSkillWork *skill, u32 msgId
         x -= GFL_FontGetBlockWidth(str, skill->smallFont, 0);
     }
     PrintQueue_PrintColor(wk->printQueue, BmpWin_GetBitmap(skill->titleWindow), x, HIDDEN_HEADER_Y, str,
-                          skill->smallFont, PRINT_COLOR(15, 2, 0));
+                          skill->smallFont, HIDDEN_TITLE_COLOR);
     GFL_StrBufFree(str);
     return x;
 }

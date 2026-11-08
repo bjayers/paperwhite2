@@ -489,9 +489,9 @@ static void PStatus_FreeResources(PStatusWork *wk) {
 static void PStatus_CreateActors(PStatusWork *wk) {
     u8 sequences[PSTA_BUTTON_COUNT] = { 0, 1, 2, 6, 3, 2, 0, 1 };
 #ifdef PAPERWHITE2
-    // Paper White 2: the bar squeezed to fit the INFO button beside the ribbons' tab: the info and skills tabs, half as
-    // wide in hack builds' art (p_status/013.png), 24 apart, the touch bar's buttons side by side at the right and the
-    // checkbox beside them (PStatus_CheckTouch)
+    // Paper White 2: the bar squeezed to fit the INFO button beside the ribbons' tab: the three tabs, half as wide in
+    // hack builds' art (p_status/013.png), 24 apart, the INFO button after them (paperwhite2_pstatus_pokedex.c), the
+    // touch bar's buttons side by side at the right and the checkbox beside them (PStatus_CheckTouch)
     u8 xs[PSTA_BUTTON_COUNT] = { 0, 24, 48, 140, 160, 184, 208, 232 };
 #else
     u8 xs[PSTA_BUTTON_COUNT] = { 0, 40, 80, 124, 144, 168, 200, 232 };
@@ -595,10 +595,10 @@ static void PStatus_ExitText(PStatusWork *wk) {
 
 static void PStatus_CheckTouch(PStatusWork *wk) {
 #ifdef PAPERWHITE2
-    // Paper White 2: the squeezed bar's buttons (PStatus_CreateActors): the info and skills tabs 24 wide, the ribbons'
-    // tab whole, then the INFO button's place (paperwhite2_pstatus_pokedex.c), the checkbox and the touch bar's buttons
+    // Paper White 2: the squeezed bar's buttons (PStatus_CreateActors): the three tabs 24 wide, then the INFO button's
+    // place (paperwhite2_pstatus_pokedex.c), the checkbox and the touch bar's buttons
     TouchRect rects[PSTA_BUTTON_COUNT + 1] = {
-        { 168, 192, 0, 24 },    { 168, 192, 24, 48 },   { 168, 192, 48, 88 },
+        { 168, 192, 0, 24 },    { 168, 192, 24, 48 },   { 168, 192, 48, 72 },
         { 168, 192, 136, 160 }, { 168, 192, 160, 184 }, { 168, 192, 184, 208 },
         { 168, 192, 208, 232 }, { 168, 192, 232, 0 },   { TOUCH_RECT_END, 0, 0, 0 },
     };
