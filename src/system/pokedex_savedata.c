@@ -776,3 +776,50 @@ void PokeDex_GetEvaluationParams(PokeDexSave *pokedex, u16 mode, HeapID heapId, 
         break;
     }
 }
+
+#ifdef PAPERWHITE2_DEBUG_MENU
+// Paper White 2: the debug menu's Fill Pokédex. Every species as if Pokémon of it had been caught in each sex it can
+// have, normal and shiny, in every form and every language (addPkmToDex's steps): a single-sex species is seen in its
+// sex alone, a genderless one in the male lists, as PokeDex_SetSeenSex puts it. A species not seen before shows its
+// first form, normal, in its first sex; one seen keeps what it shows. Spinda's personality is set only when unset
+void PokeDex_PaperWhite2_FillAll(PokeDexSave *pokedex, u32 spindaPersonality) {
+    u16 species;
+    u32 ratio;
+    u32 sex;
+    u32 form;
+    u32 forms;
+    u32 language;
+    BOOL rare;
+
+    for (species = 1; species <= SPECIES_GENESECT; species++) {
+        ratio = PML_PersonalGetParamSingle(species, 0, PERSONAL_SEX_RATIO);
+        if (ratio == GENDER_RATIO_GENDERLESS) {
+            sex = GENDER_UNKNOWN;
+        } else if (ratio == GENDER_RATIO_FEMALE_ONLY) {
+            sex = GENDER_FEMALE;
+        } else {
+            sex = GENDER_MALE;
+        }
+        if (!PokeDex_IsSeen(pokedex, species)) {
+            addToDex(pokedex, species, sex, FALSE, 0);
+        }
+        forms = getNumberOfForms(species);
+        for (rare = FALSE; rare <= TRUE; rare++) {
+            PokeDex_SetSeenSex(pokedex, species, sex, rare);
+            if (sex == GENDER_MALE && ratio != GENDER_RATIO_MALE_ONLY) {
+                PokeDex_SetSeenSex(pokedex, species, GENDER_FEMALE, rare);
+            }
+            for (form = 0; form < forms; form++) {
+                getForm(pokedex, species, sex, rare, form);
+            }
+        }
+        for (language = LANGUAGE_JAPANESE; language <= LANGUAGE_KOREAN; language++) {
+            PokeDex_SetLanguageSeen(pokedex, species, language);
+        }
+        SetSpeciesBit(pokedex->caught, species);
+    }
+    if (pokedex->spindaPersonality == 0) {
+        pokedex->spindaPersonality = spindaPersonality;
+    }
+}
+#endif

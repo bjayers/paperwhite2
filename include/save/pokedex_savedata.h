@@ -112,4 +112,10 @@ enum {
 
 void PokeDex_GetEvaluationParams(PokeDexSave *pokedex, u16 mode, HeapID heapId, u16 *message, u16 *count, u16 *unk);
 
+#ifdef PAPERWHITE2_DEBUG_MENU
+// Paper White 2: the debug menu's Fill Pokédex: every species seen and caught in each sex, normal and shiny, form and
+// language it can have; spindaPersonality is Spinda's when the Pokédex has none. The National Pokédex isn't given
+void PokeDex_PaperWhite2_FillAll(PokeDexSave *pokedex, u32 spindaPersonality);
+#endif
+
 #endif // POKEBW2_SAVE_POKEDEX_SAVEDATA_H

@@ -253,6 +253,9 @@ DEBUG                           L_DebugMenu
     Warp to zone...                 number (0-614, with its place name), at the zone's fly spot
     Walk through walls: ON/OFF      EVENT_FLAG_DEBUG_WALK_THROUGH_WALLS
     Money...                        Set money... (number, 0-9999999) / +100000
+  Pokédex...
+    Fill Pokédex                    every species seen and caught, each sex it has, shiny, every form and language
+    Give National Pokédex           as Juniper does (PokeDexGiveNational, PokeDexEnableHabitatList)
   Info                            zone and place, x/y/z (or the rail's line, front and side), season and mode,
                                   time of day, weather, follower
   Conditions                      All pages, or one: World and tiles / Party and seeds / Sample rules (each debug
@@ -313,6 +316,8 @@ of the last number entry.
 | `PARTY_LEVEL_100` (49) | | the target to level 100 (`setLevel`) |
 | `PARTY_ALL_LEVEL_100` (50) | | every Pokémon but Eggs to level 100 |
 | `PARTY_ADD_PRESTIGE` (51) | | the target's prestige level + 1, its shown level in word 2; FALSE below level 100 or at the greatest |
+| `POKEDEX_FILL` (52) | | `PokeDex_PaperWhite2_FillAll` (below); the national seen and caught counts in words 0 and 1 |
+| `POKEDEX_NATIONAL` (53) | | the National Pokédex and the habitat list, as Juniper's script gives them; FALSE when the player had it |
 | `GIVE_POKEMON` (11) | species | at the number's level, made as `PokePartyAdd` makes one (`addPkmToParty`, else `GameData_AddBoxPkm`); `DEBUG_GIVE_PARTY`, `_BOX` or `_FULL` |
 | `GIVE_ITEM` (12) | item | the number of them, `BagSave_AddItem`; name in word 0, count in word 2; whether it fit |
 | `GIVE_KEY_ITEMS` (13) | | each of `sDebugKeyItems` the Bag lacks; how many, also in word 0 |
@@ -385,6 +390,18 @@ items that events give, check or take back (the Light and Dark Stones, the Drago
 the Colress Machine, the Grubby Hanky, the Dropped Items), those that come with their feature's setup (the Medal Box,
 the Prop Case), the Liberty Pass, the Xtransceivers (given at the start, one per sex), and the Key Items pocket's
 leftovers from the other games.
+
+**Fill Pokédex** (`PokeDex_PaperWhite2_FillAll`, `#ifdef PAPERWHITE2_DEBUG_MENU` at the end of
+`src/system/pokedex_savedata.c`, since the bits' setters are that file's statics) does for every species 1-649 what
+catching one of each kind would (`addPkmToDex`'s steps): caught, seen in each sex it can have (by its sex ratio:
+male-only and genderless species in the male lists alone, as `PokeDex_SetSeenSex` puts them, female-only in the female
+ones), normal and shiny, in every form of `pokemonFormList` (83 bits each), and in the seven languages for the 493
+species that have them. A species not seen before shows its first form, normal, in its first sex; one seen keeps what
+it shows. Spinda's personality is set (a random one) only when unset. It changes no flag, variable or story state, and
+not the National Pokédex: without that bit the list only shows Unova's, and the seen and caught counts it shows are
+Unova's. **Give National Pokédex** sets it as Aspertia's script does after the story (`PokeDexGiveNational` then
+`PokeDexEnableHabitatList`); scripts read it (`PokeDexHaveNational` in `global_10380.s` and `global_10510.s`), as do
+the summary, the box and the trades, so it is its own choice.
 
 **Adding an option.** For a new action: its `DEBUG_ACTION_*` number in `debug_actions.h` (after the last), its `case` in
 `DebugCommands_Run`, and its messages at the end of `global_10200.txt`. Then in the script: an entry in its menu's

@@ -38,6 +38,7 @@ L_DebugMenu:
     ListMenuAdd Global10200_Text_DebugWorld, 65535, 2
     ListMenuAdd Global10200_Text_DebugEncounters, 65535, 3
     ListMenuAdd Global10200_Text_DebugPlayer, 65535, 4
+    ListMenuAdd Global10200_Text_DebugPokedex, 65535, 9
     ListMenuAdd Global10200_Text_DebugInfo, 65535, 5
     ListMenuAdd Global10200_Text_DebugConditions, 65535, 6
     ListMenuAdd Global10200_Text_DebugFollower, 65535, 7
@@ -62,6 +63,8 @@ L_DebugMenu:
     VMJumpIf CMP_EQ, L_DebugFollower
     WorkCmpConst 0x8020, 8
     VMJumpIf CMP_EQ, L_DebugMemory
+    WorkCmpConst 0x8020, 9
+    VMJumpIf CMP_EQ, L_DebugPokedex
 
 L_DebugClose:
     SystemMsgClose
@@ -762,6 +765,42 @@ L_DebugMemory:
     VMJumpIf CMP_NE, L_DebugMenu
     Debug DEBUG_ACTION_MEMORY_RESET_PEAKS, 0, 0, 0x8025
     VMJump L_DebugMemory
+
+// Pokédex...: everything seen and caught, and the National Pokédex, which the fill doesn't give: without it the list
+// shows only Unova's
+L_DebugPokedex:
+    SystemMsg Global10200_Text_DebugPokedexTitle, 2
+    ListMenuAnchorTopRight 31, 1, 0, 1, 0x8020
+    ListMenuAdd Global10200_Text_DebugPokedexFill, 65535, 0
+    ListMenuAdd Global10200_Text_DebugPokedexNational, 65535, 1
+    ListMenuAdd Global10200_Text_DebugBack, 65535, DEBUG_LIST_BACK
+    ListMenuShow
+    WorkCmpConst 0x8020, 0
+    VMJumpIf CMP_EQ, L_DebugPokedexFill
+    WorkCmpConst 0x8020, 1
+    VMJumpIf CMP_EQ, L_DebugPokedexNational
+    VMJump L_DebugMenu
+
+L_DebugPokedexFill:
+    Debug DEBUG_ACTION_POKEDEX_FILL, 0, 0, 0x8025
+    SEPlay SEQ_SE_SELECT1
+    SystemMsg Global10200_Text_DebugPokedexFillDone, 2
+    LastKeyWait
+    VMJump L_DebugPokedex
+
+L_DebugPokedexNational:
+    Debug DEBUG_ACTION_POKEDEX_NATIONAL, 0, 0, 0x8025
+    WorkCmpConst 0x8025, 0
+    VMJumpIf CMP_EQ, L_DebugPokedexNationalHad
+    SEPlay SEQ_SE_SELECT1
+    SystemMsg Global10200_Text_DebugPokedexNationalDone, 2
+    LastKeyWait
+    VMJump L_DebugPokedex
+
+L_DebugPokedexNationalHad:
+    SystemMsg Global10200_Text_DebugPokedexNationalHad, 2
+    LastKeyWait
+    VMJump L_DebugPokedex
 
 // Info: the zone, the position, the season, the time, the weather and the follower, on a grid or on rails
 L_DebugInfo:

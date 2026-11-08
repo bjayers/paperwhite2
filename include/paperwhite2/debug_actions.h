@@ -153,6 +153,13 @@
 // FALSE below level 100 or at the greatest
 #define DEBUG_ACTION_PARTY_ADD_PRESTIGE 51
 
+// Fills the Pokédex (PokeDex_PaperWhite2_FillAll): every species seen and caught, in each sex, shininess, form and
+// language. Puts the national counts of seen (0) and caught (1) species
+#define DEBUG_ACTION_POKEDEX_FILL 52
+// Gives the National Pokédex as Juniper does (PokeDexGiveNational, then PokeDexEnableHabitatList). Returns FALSE when
+// the player had it
+#define DEBUG_ACTION_POKEDEX_NATIONAL 53
+
 // The kinds of number entry: their ranges and messages are sDebugNumberKinds (paperwhite2_debug_commands.c)
 #define DEBUG_NUMBER_LEVEL 0
 #define DEBUG_NUMBER_NATURE 1
