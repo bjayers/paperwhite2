@@ -43,6 +43,7 @@
 #include "paperwhite2/dexnav.h"
 #include "paperwhite2/dexnav_event.h"
 #include "paperwhite2/encounters.h"
+#include "paperwhite2/pokedex_shortcut.h"
 #include "paperwhite2/version_key.h"
 #endif
 
@@ -66,6 +67,8 @@ const FieldProcLink FIELD_PROC_LINK_LIST[FIELD_APP_MAX] = {
 #ifdef PAPERWHITE2
     // Paper White 2: the DexNav, in the Pokédex's Habitat List's overlay
     { OVERLAY_ID(303), &DEXNAV_PROC_FUNCTIONS, PaperWhite2_FieldAppCall_CreateDexnavParam, PaperWhite2_FieldAppCall_GetDexnavResult, NULL, FieldProcLink_FreeParam },
+    // Paper White 2: the Pokédex's info page of a party Pokémon, from the party and summary screens
+    { OVERLAY_POKEDEX_DETAIL, &POKEDEX_DETAIL_PROC_FUNCTIONS, PaperWhite2_FieldAppCall_CreatePokedexInfoParam, PaperWhite2_FieldAppCall_GetPokedexInfoResult, NULL, FieldProcLink_FreeParam },
 #endif
 };
 
@@ -375,6 +378,14 @@ void *FieldAppCall_CreatePokeListParam(FieldAppCallWork *work, s32 appParam, s32
         param->mode = 5;
         param->item = work->item;
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: back from the Pokédex's page, the cursor on the Pokémon it was opened for; only the field's
+    // party shows the menu's item for it
+    if (prevAppId == FIELD_APP_POKEDEX_INFO) {
+        param->index = PaperWhite2_PokedexShortcut_GetPartySlot(prevParam);
+    }
+    param->showPokedex = TRUE;
+#endif
     return param;
 }
 
@@ -445,6 +456,12 @@ u32 FieldAppCall_GetPokeListResult(FieldAppCallWork *work, void *data) {
     case 15:
         work->nextAppId = FIELD_APP_TOWNMAP;
         return FIELD_APP_RESULT_NEXT;
+#ifdef PAPERWHITE2
+    // Paper White 2: the menu's POKéDEX
+    case POKELIST_RESULT_POKEDEX:
+        work->nextAppId = FIELD_APP_POKEDEX_INFO;
+        return FIELD_APP_RESULT_NEXT;
+#endif
     }
     return 1;
 }
@@ -564,6 +581,12 @@ void *FieldAppCall_CreatePStatusParam(FieldAppCallWork *work, s32 appParam, s32 
             param->page = PSTATUS_PAGE_INFO;
         }
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: back from the Pokédex's page, the summary as it was left
+    else if (prevAppId == FIELD_APP_POKEDEX_INFO) {
+        PaperWhite2_PokedexShortcut_RestoreSummary(param, prevParam);
+    }
+#endif
     return param;
 }
 
@@ -580,6 +603,12 @@ u32 FieldAppCall_GetPStatusResult(FieldAppCallWork *work, void *data) {
         return FIELD_APP_RESULT_NEXT;
     case 2:
         return 1;
+#ifdef PAPERWHITE2
+    // Paper White 2: its INFO button or START
+    case PSTATUS_RESULT_POKEDEX:
+        work->nextAppId = FIELD_APP_POKEDEX_INFO;
+        return FIELD_APP_RESULT_NEXT;
+#endif
     }
     return 1;
 }

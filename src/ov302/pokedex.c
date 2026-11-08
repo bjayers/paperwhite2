@@ -388,6 +388,10 @@ static u32 Pokedex_StateDetail(PokedexWork *work) {
     detail->page = work->page;
     detail->index = 0;
     detail->mode = work->fromHabitat;
+#ifdef PAPERWHITE2
+    // Paper White 2: the Pokédex shows what it has seen (paperwhite2/pokedex_shortcut.h)
+    detail->pokemon = NULL;
+#endif
     if (work->fromHabitat == 1) {
         detail->list = work->habitatList;
         detail->count = work->habitatCount;

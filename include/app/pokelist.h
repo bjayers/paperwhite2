@@ -27,7 +27,7 @@ typedef struct {
     u8 gender;
 } PokeListPartnerParam;
 
-// 0xa8 bytes, which PokeListParam_Setup (plist_data_setup.c) fills in
+// 0xa8 bytes (more in Paper White 2), which PokeListParam_Setup (plist_data_setup.c) fills in
 typedef struct {
     PokeParty *party;
     BagSave *bag;
@@ -77,6 +77,11 @@ typedef struct {
     // Whether key item 0x1e is registered to Y, and whether it is to be, once the screen is done
     u8 keyItemRegistered;
     u8 unkA6[2];
+#ifdef PAPERWHITE2
+    // Paper White 2: whether the field mode's menu has POKéDEX, the field app call's party screen only
+    // (paperwhite2/pokedex_shortcut.h); PokeListParam_Setup clears it
+    BOOL showPokedex;
+#endif
 } PokeListParam;
 
 // The moves to teach that stand for a set of moves: the ultimate moves, and the pledges

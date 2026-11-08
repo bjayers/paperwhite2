@@ -64,6 +64,8 @@ enum {
 #ifdef PAPERWHITE2
     // Paper White 2: the DexNav (paperwhite2/dexnav.h)
     FIELD_APP_DEXNAV,
+    // Paper White 2: the Pokédex's info page of a party Pokémon (paperwhite2/pokedex_shortcut.h)
+    FIELD_APP_POKEDEX_INFO,
 #endif
     FIELD_APP_MAX,
 };

@@ -49,6 +49,7 @@
 #include "system/wordset.h"
 
 #ifdef PAPERWHITE2
+#include "paperwhite2/pokedex_shortcut.h"
 #include "paperwhite2/shiny_candy.h"
 #endif
 
@@ -1184,6 +1185,25 @@ static void PokeList_OpenMenu(PokeListWork *wk) {
             items[2] = 6;
             items[3] = 16;
         } else {
+#ifdef PAPERWHITE2
+            // Paper White 2: POKéDEX under SUMMARY, opening the Pokédex's page of the Pokémon, where the field opened
+            // the screen (paperwhite2/pokedex_shortcut.h)
+            u32 i = 0;
+
+            items[i++] = 0;
+            if (wk->param->showPokedex) {
+                items[i++] = POKELIST_MENU_POKEDEX;
+            }
+            items[i++] = 1;
+            items[i++] = 3;
+            if (PML_ItemIsMail(PokeParty_GetParam(wk->pkm, PKM_PARAM_ITEM, NULL)) == TRUE) {
+                items[i++] = 5;
+            } else {
+                items[i++] = 4;
+            }
+            items[i++] = 6;
+            items[i] = 16;
+#else
             items[0] = 0;
             items[1] = 1;
             items[2] = 3;
@@ -1193,6 +1213,7 @@ static void PokeList_OpenMenu(PokeListWork *wk) {
             if (PML_ItemIsMail(PokeParty_GetParam(wk->pkm, PKM_PARAM_ITEM, NULL)) == TRUE) {
                 items[3] = 5;
             }
+#endif
         }
         PokeListMessage_CreateWordSet(wk, wk->message);
         PokeListMessage_SetPkmName(wk, wk->message, 0, wk->pkm);
@@ -2187,6 +2208,14 @@ static void PokeList_DoMenuItem(PokeListWork *wk) {
         wk->param->index = wk->cursorPos;
         wk->param->result = 1;
         break;
+#ifdef PAPERWHITE2
+    case POKELIST_MENU_POKEDEX:
+        // Paper White 2: the field app call opens the Pokédex's page of the Pokémon, as it opens the summary
+        wk->state = 19;
+        wk->param->index = wk->cursorPos;
+        wk->param->result = POKELIST_RESULT_POKEDEX;
+        break;
+#endif
     case 20: {
         Regulation *regulation = wk->param->regulation;
         BOOL full = FALSE;

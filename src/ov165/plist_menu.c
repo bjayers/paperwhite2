@@ -11,6 +11,11 @@
 #include "system/app_menu_common.h"
 #include "system/app_taskmenu.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/pokedex_shortcut.h"
+#include "text/system/btl_main_11.h"
+#endif
+
 // The party list's menus: what to do with a Pokémon, yes or no, and the buttons of a battle's selection
 
 // The items: 0 summary, 1 the moves usable outside battle, 2 the moves to restore, 3 switch, 4 item, 5 mail,
@@ -32,6 +37,9 @@ struct PokeListMenu {
 
 static void PokeListMenu_SetItems(PokeListWork *wk, PokeListMenu *menu, const u32 *items);
 static StrBuf *PokeListMenu_GetItemName(PokeListWork *wk, PokeListMenu *menu, int item);
+#ifdef PAPERWHITE2
+static u32 PokeListMenu_CountFieldMoves(PokeListWork *wk);
+#endif
 
 // The message of each item
 static const u32 sItemNames[] = {
@@ -208,6 +216,15 @@ static void PokeListMenu_SetItems(PokeListWork *wk, PokeListMenu *menu, const u3
             menu->items[menu->count] = 23;
             menu->count++;
             break;
+#ifdef PAPERWHITE2
+        case POKELIST_MENU_POKEDEX:
+            // Paper White 2: POKéDEX, unless the four moves usable outside battle fill the menu with it
+            if (PokeListMenu_CountFieldMoves(wk) < 4) {
+                menu->items[menu->count] = POKELIST_MENU_POKEDEX;
+                menu->count++;
+            }
+            break;
+#endif
         case 14:
             menu->items[menu->count] = 14;
             menu->count++;
@@ -239,11 +256,31 @@ static StrBuf *PokeListMenu_GetItemName(PokeListWork *wk, PokeListMenu *menu, in
 
         str = GFL_MsgDataLoadStrbufNew(moveNames, move);
         GFL_MsgDataFree(moveNames);
+#ifdef PAPERWHITE2
+    } else if (item == POKELIST_MENU_POKEDEX) {
+        // Paper White 2: POKéDEX, after the original's items
+        str = GFL_MsgDataLoadStrbufNew(wk->msgData, BtlMain11_Text_Pokedex);
+#endif
     } else {
         str = GFL_MsgDataLoadStrbufNew(wk->msgData, sItemNames[item]);
     }
     return str;
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: how many of the Pokémon's moves are usable outside battle, which item 1 lists
+static u32 PokeListMenu_CountFieldMoves(PokeListWork *wk) {
+    u32 count = 0;
+    u8 slot;
+
+    for (slot = 0; slot < 4; slot++) {
+        if (PokeList_GetHMResult(wk->pkm, slot) != 0) {
+            count++;
+        }
+    }
+    return count;
+}
+#endif
 
 // A button of a battle's selection, at a tile of the bottom bar
 AppTaskMenuWin *PokeListMenu_CreateButton(PokeListWork *wk, PokeListMenu *menu, u32 msgId, u8 x, u8 y, BOOL isBack) {
