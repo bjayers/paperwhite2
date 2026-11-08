@@ -29,9 +29,9 @@
 // The main OBJ palette row free on the summary screen
 #define BUTTON_PALETTE_ROW 15
 
-// Where the button is on the bottom screen: 32 by 24, between the ribbons' tab (to 88) and the checkbox (from 136), as
-// the summary squeezes its bar (p_sta_sys.c), as high as the bar's other buttons
-#define BUTTON_X 96
+// Where the button is on the bottom screen: 32 by 24, after the ribbons' tab (to 72), as the summary squeezes its bar
+// (p_sta_sys.c), as high as the bar's other buttons
+#define BUTTON_X 74
 #define BUTTON_Y 168
 #define BUTTON_WIDTH 32
 #define BUTTON_HEIGHT 24
