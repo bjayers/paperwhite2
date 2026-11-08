@@ -17,8 +17,8 @@
 #define NATIONAL_DEX_COMPLETE 636
 #ifdef PAPERWHITE2
 // Paper White 2: the "Unova" counts are of the 156 species native to Unova, Victini to Genesect (see
-// PokeDex_PaperWhite2_IsUnovaNative), so completing them needs the 152 that aren't mythical
-#define UNOVA_DEX_COMPLETE 152
+// PokeDex_PaperWhite2_IsUnovaNative), the mythical ones included, as the hack gives them in normal play
+#define UNOVA_DEX_COMPLETE 156
 #else
 #define UNOVA_DEX_COMPLETE 297
 #endif
@@ -713,8 +713,7 @@ static u16 PokeDex_GetCaughtNoUnovaPermissive(PokeDexSave *pokedex, HeapID heapI
 #ifdef PAPERWHITE2
     // Paper White 2: as above
     for (i = 1; i <= SPECIES_GENESECT; i++) {
-        if (PokeDex_IsCaught(pokedex, i) == TRUE && PokeDex_PaperWhite2_IsUnovaNative(i) &&
-            PML_PkmIsRegionalDexExclude(i) == TRUE) {
+        if (PokeDex_IsCaught(pokedex, i) == TRUE && PokeDex_PaperWhite2_IsUnovaNative(i)) {
             count++;
         }
     }
@@ -738,8 +737,7 @@ static u16 PokeDex_GetSeenNoUnovaPermissive(PokeDexSave *pokedex, HeapID heapId)
 #ifdef PAPERWHITE2
     // Paper White 2: as above
     for (i = 1; i <= SPECIES_GENESECT; i++) {
-        if (PokeDex_IsSeen(pokedex, i) == TRUE && PokeDex_PaperWhite2_IsUnovaNative(i) &&
-            PML_PkmIsRegionalDexExclude(i) == TRUE) {
+        if (PokeDex_IsSeen(pokedex, i) == TRUE && PokeDex_PaperWhite2_IsUnovaNative(i)) {
             count++;
         }
     }
@@ -785,11 +783,11 @@ static u16 PokeDex_LookupEvaluation(const PokeDexEvaluation *table, int count) {
 
 void PokeDex_GetEvaluationParams(PokeDexSave *pokedex, u16 mode, HeapID heapId, u16 *message, u16 *count, u16 *unk) {
 #ifdef PAPERWHITE2
-    // Paper White 2: the evaluations of the species native to Unova, 156 of them and 152 without the mythical ones,
-    // scaled from the regional Pokédex's 297. The messages that say over 100 come after 100, and the two that say
+    // Paper White 2: the evaluations of the species native to Unova, all 156 counted, scaled from the regional
+    // Pokédex's 297. The messages that say over 100 come after 100, and the two that say
     // over 200 (14 and 29) are left out
     static const PokeDexEvaluation unovaUnks[] = {
-        { 19, 1311 }, { 49, 1312 }, { 79, 1313 }, { 114, 1314 }, { 151, 1315 }, { 0, 1316 },
+        { 19, 1311 }, { 49, 1312 }, { 79, 1313 }, { 114, 1314 }, { 155, 1315 }, { 0, 1316 },
     };
 #else
     static const PokeDexEvaluation unovaUnks[] = {
@@ -802,11 +800,11 @@ void PokeDex_GetEvaluationParams(PokeDexSave *pokedex, u16 mode, HeapID heapId, 
 #ifdef PAPERWHITE2
     static const PokeDexEvaluation unovaSeenMessages[] = {
         { 9, 4 },    { 19, 5 },   { 34, 6 },   { 49, 7 },   { 69, 8 },   { 100, 9 },  { 110, 10 },
-        { 120, 11 }, { 128, 12 }, { 136, 13 }, { 142, 15 }, { 147, 16 }, { 151, 17 }, { 0, 17 },
+        { 120, 11 }, { 128, 12 }, { 136, 13 }, { 142, 15 }, { 147, 16 }, { 155, 17 }, { 0, 17 },
     };
     static const PokeDexEvaluation unovaCaughtMessages[] = {
         { 9, 19 },   { 19, 20 },  { 34, 21 },  { 49, 22 },  { 69, 23 },  { 100, 24 }, { 115, 25 },
-        { 125, 26 }, { 133, 27 }, { 140, 28 }, { 145, 30 }, { 148, 31 }, { 151, 32 }, { 0, 32 },
+        { 125, 26 }, { 133, 27 }, { 140, 28 }, { 145, 30 }, { 148, 31 }, { 155, 32 }, { 0, 32 },
     };
 #else
     static const PokeDexEvaluation unovaSeenMessages[] = {

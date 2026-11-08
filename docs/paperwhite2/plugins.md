@@ -1789,13 +1789,14 @@ The player has the National Pokédex from Bianca's gift in Aspertia (`PokeDexGiv
   (`criteria->regional = 0` in `PokedexCommon_InitCriteria` and `src/ov300/pokedex_search_seq.c`).
 - **Unova counts are of the species native to Unova**, national 494-649 (Victini to Genesect, 156;
   `PokeDex_PaperWhite2_IsUnovaNative`): `PokeDex_GetSeenNoUnova`, `PokeDex_GetCaughtNoUnova` and their permissive
-  (non-mythical) forms, so `PokeDex_IsSeenAllUnova` and `PokeDex_IsCompleteUnova` need the 152 that aren't Victini,
-  Keldeo, Meloetta or Genesect (`UNOVA_DEX_COMPLETE`, 297 in the original). Their users follow: the professor's
+  forms, which count the mythical ones too since the hack gives them in normal play (the user chose this), so
+  `PokeDex_IsSeenAllUnova` and `PokeDex_IsCompleteUnova` need all 156 (`UNOVA_DEX_COMPLETE`, 297 in the original). Their users follow: the professor's
   evaluation (`PokeDexGetEvaluationParams` modes 2 and 3 in `global_10380.s`, and the Xtransceiver's
   `local_tvt_person_doctor.c`), `PokeDexIsComplete` 2 (seen all: Juniper's Permit, flag 0x88) and 3 (caught all: the
   Oval Charm, flag 0x89, and Game Freak's Unova diploma in `castelia_city_19.s`), and the fallbacks of `countSeenDexPokes` and the National
-  evaluation without the National Pokédex. The evaluation's tables are rescaled to 152 (`PokeDex_GetEvaluationParams`):
-  the "over 100" messages come after 100, and the two that say over 200 (seen 14, caught 29) are left out. The National
+  evaluation without the National Pokédex. The evaluation's tables are rescaled to 156 (`PokeDex_GetEvaluationParams`):
+  the "over 100" messages come after 100, and the two that say over 200 (seen 14, caught 29) are left out. Its
+  messages in `global_10380.txt` say "native to the Unova region". The National
   checks (`PokeDexGetCount`, `PokeDexIsComplete` 1, the Shiny Charm, the trainer card) are unchanged.
 
 ## Adding global scripts
