@@ -59,6 +59,10 @@ static void PStatus_StartRedraw(PStatusWork *wk);
 static void PStatus_UpdateRedraw(PStatusWork *wk);
 static BOOL PStatus_IsFromFieldMenu(PStatusWork *wk);
 static BOOL PStatus_HasRibbon(PStatusWork *wk, BoxPkm *pkm);
+#ifdef PAPERWHITE2
+static void PStatus_ShowPokedexButton(PStatusWork *wk);
+static BOOL PStatus_CheckPokedexButton(PStatusWork *wk);
+#endif
 
 static const BGSysVRAMConfig sPStatusVRAMConfig = {
     GX_VRAM_BG_128_A,  GX_VRAM_BGEXTPLTT_NONE,  GX_VRAM_SUB_BG_128_C,        GX_VRAM_SUB_BGEXTPLTT_NONE,
@@ -285,6 +289,12 @@ int PStatus_Main(PStatusWork *wk) {
         wk->downPressed = FALSE;
     }
     PStatus_AnimatePalettes(wk);
+#ifdef PAPERWHITE2
+    // Paper White 2: the INFO button's push flashes its palette
+    if (wk->pokedexButton != NULL) {
+        PaperWhite2_PStatusPokedex_Update(wk->pokedexButton);
+    }
+#endif
     return 0;
 }
 
@@ -526,10 +536,24 @@ static void PStatus_CreateActors(PStatusWork *wk) {
     PStaSub_CreateActors(wk, wk->sub);
     PStaRibbon_CreateActors(wk, wk->ribbon);
     PStaSkill_CreateActors(wk, wk->skill);
+#ifdef PAPERWHITE2
+    // Paper White 2: the INFO button, shown with the Pokémon (PStatus_ShowPokedexButton)
+    wk->pokedexButton = NULL;
+    if (PaperWhite2_PStatusPokedex_IsAvailable(wk->param)) {
+        wk->pokedexButton = PaperWhite2_PStatusPokedex_Create(wk->actorUnit, wk->heapId);
+    }
+#endif
 }
 
 static void PStatus_FreeActors(PStatusWork *wk) {
     u8 i;
+
+#ifdef PAPERWHITE2
+    // Paper White 2: the INFO button and its resources
+    if (wk->pokedexButton != NULL) {
+        PaperWhite2_PStatusPokedex_Free(wk->pokedexButton);
+    }
+#endif
 
     PStaRibbon_FreeActors(wk, wk->ribbon);
     PStaSkill_FreeActors(wk, wk->skill);
@@ -581,6 +605,12 @@ static void PStatus_CheckTouch(PStatusWork *wk) {
 
 static void PStatus_HandleInput(PStatusWork *wk) {
     if (wk->isInputEnabled == TRUE && PrintQueue_IsEmpty(wk->printQueue) == TRUE && PStatus_HandleKeys(wk) == FALSE) {
+#ifdef PAPERWHITE2
+        // Paper White 2: START and the INFO button, which is over the ribbons' tab's place
+        if (PStatus_CheckPokedexButton(wk)) {
+            return;
+        }
+#endif
         PStatus_HandleTouch(wk);
     }
 }
@@ -902,6 +932,10 @@ void PStatus_EnableInput(PStatusWork *wk, BOOL enable) {
             ClActor_SetVisible(wk->buttons[PSTA_BUTTON_CLOSE], TRUE);
         }
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the INFO button with the tabs
+    PStatus_ShowPokedexButton(wk);
+#endif
 }
 
 static BOOL PStatus_ChangePokemon(PStatusWork *wk, u8 dir) {
@@ -1092,6 +1126,10 @@ static void PStatus_UpdateRedraw(PStatusWork *wk) {
         ClActor_SetVisible(wk->buttons[PSTA_BUTTON_SKILL], FALSE);
         ClActor_SetVisible(wk->buttons[PSTA_BUTTON_RIBBON], FALSE);
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the INFO button for the Pokémon now shown
+    PStatus_ShowPokedexButton(wk);
+#endif
     if (wk->upPressed == FALSE) {
         if (PStatus_FindPokemon(wk, PSTA_DIR_UP, NULL) == TRUE) {
             ClActor_SetSequence(wk->buttons[PSTA_BUTTON_UP], 3);
@@ -1249,6 +1287,35 @@ static BOOL PStatus_IsFromFieldMenu(PStatusWork *wk) {
     }
     return FALSE;
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: the INFO button shows while the tabs take input, for a Pokémon that isn't an egg and has no ribbons,
+// whose tab is in its place; START opens the page all the same
+static void PStatus_ShowPokedexButton(PStatusWork *wk) {
+    if (wk->pokedexButton != NULL) {
+        PaperWhite2_PStatusPokedex_SetVisible(wk->pokedexButton, wk->isInputEnabled == TRUE && wk->isEgg == FALSE &&
+                                                                     wk->hasRibbon == FALSE &&
+                                                                     wk->page != PSTATUS_PAGE_FORGET);
+    }
+}
+
+// Paper White 2: START or the INFO button leaves the summary for the Pokédex's page of the Pokémon shown, which the
+// field app call opens, opening the summary again on this page as it closes (paperwhite2/pokedex_shortcut.h)
+static BOOL PStatus_CheckPokedexButton(PStatusWork *wk) {
+    if (wk->pokedexButton == NULL || wk->isEgg == TRUE || wk->page == PSTATUS_PAGE_FORGET ||
+        !PaperWhite2_PStatusPokedex_IsPressed(wk->pokedexButton)) {
+        return FALSE;
+    }
+    wk->isTouch = (GCTX_HIDGetPressedKeys() & PAD_BUTTON_START) ? FALSE : TRUE;
+    wk->param->page = wk->page;
+    wk->exitResult = PSTATUS_RESULT_BACK;
+    wk->param->result = PSTATUS_RESULT_POKEDEX;
+    wk->seq = PSTA_SEQ_EXIT;
+    wk->pressedButton = PaperWhite2_PStatusPokedex_Push(wk->pokedexButton);
+    GFL_SndSEPlay(SEQ_SE_SELECT3);
+    return TRUE;
+}
+#endif
 
 static BOOL PStatus_HasRibbon(PStatusWork *wk, BoxPkm *pkm) {
     u8 i;

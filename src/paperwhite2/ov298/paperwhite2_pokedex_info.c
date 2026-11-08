@@ -512,20 +512,22 @@ void PokedexInfoPage_Command(PokedexDetailProcSys *sys, int *seq, void *param, v
         }
 
         switch (command) {
+        // A party's list can have a species twice, each its own Pokémon, so the place in the list says whether the
+        // Pokémon changed
         case POKEDEX_DETAIL_CMD_CUR_D_TOUCH: {
-            u16 species = PokedexDetailCommon_GetSpecies(common);
+            u16 index = *common->index;
 
             PokedexDetailCommon_GoNext(common);
-            if (species != PokedexDetailCommon_GetSpecies(common) && wk->entry != NULL) {
+            if (index != *common->index && wk->entry != NULL) {
                 PokedexInfoPage_ChangePokemon(param, wk, common);
             }
             break;
         }
         case POKEDEX_DETAIL_CMD_CUR_U_TOUCH: {
-            u16 species = PokedexDetailCommon_GetSpecies(common);
+            u16 index = *common->index;
 
             PokedexDetailCommon_GoPrev(common);
-            if (species != PokedexDetailCommon_GetSpecies(common) && wk->entry != NULL) {
+            if (index != *common->index && wk->entry != NULL) {
                 PokedexInfoPage_ChangePokemon(param, wk, common);
             }
             break;
@@ -570,8 +572,8 @@ void PokedexInfoPage_Draw(PokedexDetailProcSys *sys, int *seq, void *param, void
     }
 }
 
-// The Pokémon the list is at, as the Pokédex shows it, from the front. The entry stays in its language if the
-// Pokédex has the Pokémon's entry in it
+// The Pokémon the list is at, as the Pokédex shows it, or a party Pokémon as it is (paperwhite2/pokedex_shortcut.h),
+// from the front. The entry stays in its language if the Pokédex has the Pokémon's entry in it
 static void PokedexInfoPage_LoadPokemon(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                         PokedexDetailCommon *common) {
     PokeDexSave *pokedex = GameData_GetPokedex(PokedexDetailCommon_GetGameData(common));
@@ -580,15 +582,25 @@ static void PokedexInfoPage_LoadPokemon(PokedexDetailInfoParam *param, PokedexIn
     u32 form;
 
     wk->species = PokedexDetailCommon_GetSpecies(common);
-    PokeDex_GetShownSexRareForm(pokedex, wk->species, &sex, &rare, &form, param->heapId);
-    wk->sex = sex;
-    wk->rare = rare;
-    wk->form = form;
-    wk->personality = 0;
-    if (wk->species == SPECIES_SPINDA) {
-        wk->personality = PokeDex_GetSpindaPersonality(pokedex, 0);
+    if (common->pokemon != NULL) {
+        const PokedexDetailPokemon *pokemon = &common->pokemon[*common->index];
+
+        wk->sex = pokemon->sex;
+        wk->rare = pokemon->rare;
+        wk->form = pokemon->form;
+        wk->personality = pokemon->personality;
+        wk->caught = TRUE;
+    } else {
+        PokeDex_GetShownSexRareForm(pokedex, wk->species, &sex, &rare, &form, param->heapId);
+        wk->sex = sex;
+        wk->rare = rare;
+        wk->form = form;
+        wk->personality = 0;
+        if (wk->species == SPECIES_SPINDA) {
+            wk->personality = PokeDex_GetSpindaPersonality(pokedex, 0);
+        }
+        wk->caught = PokeDex_IsCaught(pokedex, wk->species);
     }
-    wk->caught = PokeDex_IsCaught(pokedex, wk->species);
     wk->back = FALSE;
     wk->chosenAbility = 0;
     wk->shownAbility = ABILITY_MAX;

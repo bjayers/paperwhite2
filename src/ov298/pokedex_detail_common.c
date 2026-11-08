@@ -108,7 +108,13 @@ void PokedexDetailCommon_GoNext(PokedexDetailCommon *common) {
         if (*common->index >= common->count) {
             *common->index = 0;
         }
+#ifdef PAPERWHITE2
+        // Paper White 2: a party's list has each of its Pokémon, seen or not (paperwhite2/pokedex_shortcut.h)
+    } while (*common->index != start && common->pokemon == NULL &&
+             !PokeDex_IsSeen(pokedex, common->list[*common->index]));
+#else
     } while (*common->index != start && !PokeDex_IsSeen(pokedex, common->list[*common->index]));
+#endif
 }
 
 void PokedexDetailCommon_GoPrev(PokedexDetailCommon *common) {
@@ -121,7 +127,13 @@ void PokedexDetailCommon_GoPrev(PokedexDetailCommon *common) {
         } else {
             (*common->index)--;
         }
+#ifdef PAPERWHITE2
+        // Paper White 2: a party's list has each of its Pokémon, seen or not (paperwhite2/pokedex_shortcut.h)
+    } while (*common->index != start && common->pokemon == NULL &&
+             !PokeDex_IsSeen(pokedex, common->list[*common->index]));
+#else
     } while (*common->index != start && !PokeDex_IsSeen(pokedex, common->list[*common->index]));
+#endif
 }
 
 PokedexDetailBlend *PokedexDetailBlend_Create(HeapID heapId) {

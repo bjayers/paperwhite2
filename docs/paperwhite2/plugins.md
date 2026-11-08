@@ -1608,6 +1608,50 @@ row (main BG palette row 3, the entry's windows' palette, of which the entry use
 (also as the move panel closes). The top screen's fades are hardware brightness, so it fades with the
 rest; the move panel's dimming touches rows 6 and 13 only. About 1.3 KB of ov298 and ov296.
 
+### Pokédex shortcuts from the party and the summary
+
+`include/paperwhite2/pokedex_shortcut.h`. The Pokédex's detail screen opens on the Info page of a party Pokémon from
+two places, both reached from the field: **the party screen's menu** (POKÉDEX under SUMMARY,
+`BtlMain11_Text_Pokedex`, the last message of `res/text/system/btl_main_11.txt`) and **the summary screen**, by START or
+its **INFO** button, the Pokédex touch bar's own INFO graphic (`ARCID_POKEDEX_GRA` palette 3, characters 13, cells 28 and
+animations 45, sequence 0, and 4 for its push) on the bottom bar at x 84-115, y 168-191, between the skills tab and the
+shortcut's checkbox. The page shows that Pokémon, not what the Pokédex has seen: its species, form, sex, color and
+personality (Spinda's spots), as caught (`PokedexDetailParam`'s and `PokedexDetailCommon`'s `pokemon`, by the list's
+index, NULL from the Pokédex; `PokedexInfoPage_LoadPokemon`). The list is the party without its eggs, so Up and Down
+step through it as the summary does, every Pokémon of it seen or not (`PokedexDetailCommon_GoNext`/`_GoPrev` under
+`PAPERWHITE2`), and a party with a species twice changes the Pokémon by the place in the list
+(`PokedexInfoPage_Command`). Area, Cry and Forms stay and work, by species as in the Pokédex. B, X and the bar's return
+all go back to the screen it was opened from, the party screen's cursor on that Pokémon, the summary on the same
+Pokémon and page.
+
+**How it opens:** the field app call's new app `FIELD_APP_POKEDEX_INFO` (`src/ov012/event_field_proclink.c`), overlay
+298 and `POKEDEX_DETAIL_PROC_FUNCTIONS`, as the summary is opened from the party screen: the party screen ends with
+`POKELIST_RESULT_POKEDEX` (30, after the original's 0-21), the summary with `PSTATUS_RESULT_POKEDEX` (3), and
+`PaperWhite2_FieldAppCall_CreatePokedexInfoParam` (`src/paperwhite2/ov012/paperwhite2_pokedex_shortcut_event.c`) builds
+the list from the closing screen's param, keeps the summary's param to open it again as it was, ducks the field's
+music for the cries as the Pokédex does, and loads overlay 302 (the Pokédex's list), whose `PokedexCommon_StartGlow`
+the Area page calls; `_GetPokedexInfoResult` unloads it and goes back. Only the field app call's party screen has the
+menu item (`PokeListParam`'s `showPokedex`, set by `FieldAppCall_CreatePokeListParam`; the menu's item 24,
+`POKELIST_MENU_POKEDEX`), and only in its field mode (0), so the party screens of battles, the day care, the Battle
+Subway, trades and the rest don't; it is left out for an egg, and for a Pokémon with four moves usable outside battle,
+whose menu is full (8 items) with it. The summary offers it where `PaperWhite2_PStatusPokedex_IsAvailable` holds:
+`fromFieldMenu`, mode `PSTATUS_MODE_NORMAL` and the party's data, which is the field menu's summary (from the party
+screen, or the Y menu's summary pages); not in battle, the PC's boxes, trades or a move to forget. **The PC box's
+summary** doesn't have it: the box runs the summary from its own proc manager, and opening the Pokédex there would mean
+running the detail screen (and overlay 302) inside the box's screens, beside its overlays and heap, which wasn't tried.
+
+**The summary's button** (`src/paperwhite2/ov207/paperwhite2_pstatus_pokedex.c`, hooks in `src/ov207/p_sta_sys.c`):
+shown with the tabs, for a Pokémon that isn't an egg and has no ribbons; with ribbons, the ribbons' tab is in its place
+(x 80-120), so the button hides and START still opens the page. The summary's main OBJ palette has one free row, 15,
+and the button's cells use two rows (normal, and pushed for its flash), so the actor draws every object in row 15
+(`ClActor_SetPalette(actor, 0, 1)`) and the push puts the pushed row's colours there on its pushed frames
+(`PaperWhite2_PStatusPokedex_Update`); the summary waits on the push's 16 frames as on its own buttons'.
+
+**Memory:** the detail screen's heap (0xa0000) comes from `HEAPID_USER` as from the Pokédex. Measured in the emulator
+(2026-11-08, the user's save): with the detail screen open from the party screen or the summary, `HEAPID_USER` had
+727,160 bytes free (one block), and the detail heap 97-105 KB free on Stats, Moves and Evo. About 0.5 KB of ov012
+(which moves the arena: 89 KB of the budget left), 0.2 KB of ov165, 0.6 KB of ov207 and a little of ov298.
+
 ## Adding global scripts
 
 A global script file's IDs are limited by its row in `GLOBAL_SCRIPT_TABLE` (`src/ov012/script_sys.c`), e.g.

@@ -73,12 +73,13 @@ static BOOL PokedexDetail_Init(GameProc *proc, u32 *state, void *param_, void *w
 
 #ifdef PAPERWHITE2
     // Paper White 2: 64 KB more, for the info page's sub-pages and its next sprite, which loads while the shown one
-    // stays (paperwhite2_pokedex_info.c). Only the Pokédex opens this screen, with about 700 KB of HEAPID_USER free
+    // stays (paperwhite2_pokedex_info.c). The Pokédex opens this screen with about 700 KB of HEAPID_USER free; opened
+    // from the party and summary screens (paperwhite2/pokedex_shortcut.h), it leaves about 710 KB of it free
     GFL_HeapCreateChild(HEAPID_USER, HEAPID_POKEDEX_DETAIL, 0xa0000);
 #else
     GFL_HeapCreateChild(HEAPID_USER, HEAPID_POKEDEX_DETAIL, 0x90000);
 #endif
-    wk =GFL_ProcInitSubsystem(proc, sizeof(PokedexDetailWork), HEAPID_POKEDEX_DETAIL);
+    wk = GFL_ProcInitSubsystem(proc, sizeof(PokedexDetailWork), HEAPID_POKEDEX_DETAIL);
     MI_CpuFill8(wk, 0, sizeof(PokedexDetailWork));
     wk->heapId = HEAPID_POKEDEX_DETAIL;
     param->result = POKEDEX_DETAIL_RESULT_CLOSE;
@@ -95,6 +96,10 @@ static BOOL PokedexDetail_Init(GameProc *proc, u32 *state, void *param_, void *w
     wk->headbar = PokedexDetailHeadbar_Create(wk->heapId, wk->font);
     wk->common = PokedexDetailCommon_Create(wk->heapId, param->gameData, wk->graphic, wk->font, wk->printQueue,
                                             wk->touchbar, wk->headbar, param->list, param->count, &param->index);
+#ifdef PAPERWHITE2
+    // Paper White 2: a party Pokémon's page shows that Pokémon (paperwhite2/pokedex_shortcut.h)
+    wk->common->pokemon = param->pokemon;
+#endif
     wk->procSys = NULL;
     wk->pageParam = NULL;
     PokedexDetail_StartPage(param, wk);

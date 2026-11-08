@@ -32,6 +32,18 @@ enum {
     POKEDEX_DETAIL_RESULT_RETURN,
 };
 
+#ifdef PAPERWHITE2
+// Paper White 2: what the screen shows of a Pokémon of its list in place of what the Pokédex has seen, for a party
+// Pokémon (paperwhite2/pokedex_shortcut.h)
+typedef struct {
+    u16 form;
+    // A GENDER_*, and whether it is shiny
+    u8 sex;
+    u8 rare;
+    u32 personality;
+} PokedexDetailPokemon;
+#endif
+
 typedef struct {
     GameData *gameData;
     // The POKEDEX_DETAIL_PAGE_* to start on
@@ -46,6 +58,10 @@ typedef struct {
     u16 unk18;
     // With POKEDEX_DETAIL_RESULT_PLACE
     u16 place;
+#ifdef PAPERWHITE2
+    // Paper White 2: by the list's index, the Pokémon that the info page shows, caught, or NULL for the Pokédex's
+    const PokedexDetailPokemon *pokemon;
+#endif
 } PokedexDetailParam;
 
 extern const GameProcFunctions POKEDEX_DETAIL_PROC_FUNCTIONS;
@@ -107,6 +123,10 @@ struct PokedexDetailCommon {
     const u16 *list;
     u16 count;
     u16 *index;
+#ifdef PAPERWHITE2
+    // Paper White 2: the param's pokemon
+    const PokedexDetailPokemon *pokemon;
+#endif
 };
 
 PokedexDetailCommon *PokedexDetailCommon_Create(HeapID heapId, GameData *gameData, PokedexDetailGraphic *graphic,

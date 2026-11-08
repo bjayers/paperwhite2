@@ -14,6 +14,10 @@
 #include "system/printsys.h"
 #include "system/wordset.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/pokedex_shortcut.h"
+#endif
+
 // The summary screen's work and the functions its files share. The ROM names p_status.c and the pages' files
 // (p_sta_sub.c, p_sta_info.c, p_sta_ribbon.c, p_sta_skill.c and p_sta_oam.c); p_sta_sys.c, the screen's core, and
 // ribbon.c, the ribbon table, are guessed names. So are the names of the fields and functions
@@ -154,6 +158,11 @@ struct PStatusWork {
     PartyPkm *boxPartyPkm;
     int mosaicState;
     u8 mosaicLevel;
+#ifdef PAPERWHITE2
+    // Paper White 2: the INFO button that opens the Pokédex's page of the Pokémon, where the summary can open it, else
+    // NULL (paperwhite2/pokedex_shortcut.h)
+    PStatusPokedexButton *pokedexButton;
+#endif
 };
 
 // p_sta_sys.c
