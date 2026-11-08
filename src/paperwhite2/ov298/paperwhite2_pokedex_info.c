@@ -237,7 +237,8 @@ static void PokedexInfoPage_PressButton(PokedexDetailInfoParam *param, PokedexIn
                                         PokedexDetailCommon *common, u32 button);
 static BOOL PokedexInfoPage_IsButtonUsable(PokedexInfoPageWork *wk, PokedexDetailCommon *common, u32 button);
 static BOOL PokedexInfoPage_HasSeenForm(PokeDexSave *pokedex, u16 species, u32 form, u32 sex, u32 rare);
-static u32 PokedexInfoPage_CountSeenForms(PokeDexSave *pokedex, u16 species);
+static BOOL PokedexInfoPage_FindLook(PokeDexSave *pokedex, u16 species, u32 form, BOOL female, u32 *sex);
+static u32 PokedexInfoPage_CountSeenLooks(PokeDexSave *pokedex, u16 species);
 static void PokedexInfoPage_NextForm(PokeDexSave *pokedex, PokedexInfoPageWork *wk);
 static BOOL PokedexInfoPage_HasLanguage(PokeDexSave *pokedex, u16 species, u32 language);
 static void PokedexInfoPage_NextShownAbility(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk);
@@ -1268,8 +1269,9 @@ static void PokedexInfoPage_PressButton(PokedexDetailInfoParam *param, PokedexIn
     GFL_SndSEPlay(SEQ_SE_SELECT3);
 }
 
-// Abilities once the species is caught; Cry and Turn always; Form once two forms have been seen, Shiny once a shiny
-// one has, and Language once the Pokédex has the entry in another language
+// Abilities once the species is caught; Cry and Turn always; Form once two looks (forms, or a male's and a female's
+// that differ) have been seen, Shiny once a shiny one has, and Language once the Pokédex has the entry in another
+// language
 static BOOL PokedexInfoPage_IsButtonUsable(PokedexInfoPageWork *wk, PokedexDetailCommon *common, u32 button) {
     PokeDexSave *pokedex = GameData_GetPokedex(PokedexDetailCommon_GetGameData(common));
     u32 i;
@@ -1278,7 +1280,7 @@ static BOOL PokedexInfoPage_IsButtonUsable(PokedexInfoPageWork *wk, PokedexDetai
     case BUTTON_ABILITIES:
         return wk->caught;
     case BUTTON_FORM:
-        return PokedexInfoPage_CountSeenForms(pokedex, wk->species) >= 2;
+        return PokedexInfoPage_CountSeenLooks(pokedex, wk->species) >= 2;
     case BUTTON_SHINY:
         for (i = 0; i < getNumberOfForms(wk->species); i++) {
             if (PokedexInfoPage_HasSeenForm(pokedex, wk->species, i, SEX_ANY, TRUE)) {
@@ -1313,38 +1315,63 @@ static BOOL PokedexInfoPage_HasSeenForm(PokeDexSave *pokedex, u16 species, u32 f
     return FALSE;
 }
 
-static u32 PokedexInfoPage_CountSeenForms(PokeDexSave *pokedex, u16 species) {
-    u32 count = 0;
+// Whether the Pokédex has seen the form's female look (its own sprite: Frillish's, Unfezant's) or its male one (the
+// male's sprite, which a female without a sprite of its own and a genderless one share), in any color. The male look
+// keeps *sex if it has been seen in it, else it is set to the first sex seen
+static BOOL PokedexInfoPage_FindLook(PokeDexSave *pokedex, u16 species, u32 form, BOOL female, u32 *sex) {
     u32 i;
 
-    for (i = 0; i < getNumberOfForms(species); i++) {
-        if (PokedexInfoPage_HasSeenForm(pokedex, species, i, SEX_ANY, RARE_ANY)) {
+    if (female) {
+        if (PokedexInfoPage_HasSeenForm(pokedex, species, form, GENDER_FEMALE, RARE_ANY) &&
+            PokedexInfo_HasSexDifference(species, form)) {
+            *sex = GENDER_FEMALE;
+            return TRUE;
+        }
+        return FALSE;
+    }
+    for (i = 0; i <= GENDER_UNKNOWN + 1; i++) {
+        // The shown sex first, then each
+        u32 tried = i == 0 ? *sex : i - 1;
+
+        if (PokedexInfoPage_HasSeenForm(pokedex, species, form, tried, RARE_ANY) &&
+            (tried != GENDER_FEMALE || !PokedexInfo_HasSexDifference(species, form))) {
+            *sex = tried;
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+// The forms' looks seen, a male and a female look each, as the forms page lists the forms and sexes seen
+// (PokedexDetailForm_GatherEntries), but sexes only where they look different
+static u32 PokedexInfoPage_CountSeenLooks(PokeDexSave *pokedex, u16 species) {
+    u32 count = 0;
+    u32 i;
+    u32 sex;
+
+    for (i = 0; i < getNumberOfForms(species) * 2; i++) {
+        sex = GENDER_MALE;
+        if (PokedexInfoPage_FindLook(pokedex, species, i / 2, i % 2, &sex)) {
             count++;
         }
     }
     return count;
 }
 
-// The next form seen, in the same sex if it has been seen in it, else in the first sex it has been seen in. The color
-// stays as Shiny set it
+// The next look seen: the shown form's female look after its male one, then the next form's. The color stays as Shiny
+// set it
 static void PokedexInfoPage_NextForm(PokeDexSave *pokedex, PokedexInfoPageWork *wk) {
-    u32 count = getNumberOfForms(wk->species);
+    u32 count = getNumberOfForms(wk->species) * 2;
+    u32 shown = wk->form * 2 + (wk->sex == GENDER_FEMALE && PokedexInfo_HasSexDifference(wk->species, wk->form));
     u32 i;
-    u32 sex;
 
     for (i = 1; i < count; i++) {
-        u32 form = (wk->form + i) % count;
+        u32 look = (shown + i) % count;
+        u32 sex = wk->sex;
 
-        if (PokedexInfoPage_HasSeenForm(pokedex, wk->species, form, SEX_ANY, RARE_ANY)) {
-            wk->form = form;
-            if (!PokedexInfoPage_HasSeenForm(pokedex, wk->species, form, wk->sex, RARE_ANY)) {
-                for (sex = GENDER_MALE; sex <= GENDER_UNKNOWN; sex++) {
-                    if (PokedexInfoPage_HasSeenForm(pokedex, wk->species, form, sex, RARE_ANY)) {
-                        wk->sex = sex;
-                        break;
-                    }
-                }
-            }
+        if (PokedexInfoPage_FindLook(pokedex, wk->species, look / 2, look % 2, &sex)) {
+            wk->form = look / 2;
+            wk->sex = sex;
             return;
         }
     }

@@ -203,8 +203,16 @@ static inline BOOL PokedexInfo_IsDetailTop(PokedexInfo *info) {
 
 // Paper White 2: the info page's colors in the text window, from POKEDEX_INFO_TEXT_GOLD on: the gold of the abilities'
 // names, (255, 238, 24) as its art's, and the abilities' slots' grey, (148, 148, 148), with its near-black shadow,
-// (24, 24, 24), as the art's. In a static, as the palette is loaded by DMA, which can't read the stack
-static const GXRgb sPageTextColors[] = { GX_RGB(31, 29, 3), GX_RGB(18, 18, 18), GX_RGB(3, 3, 3) };
+// (24, 24, 24), as the art's; then the sex symbol's blue and pink beside the name, the Data panel's (56, 136, 248) and
+// (248, 96, 168). In a static, as the palette is loaded by DMA, which can't read the stack
+static const GXRgb sPageTextColors[] = { GX_RGB(31, 29, 3), GX_RGB(18, 18, 18), GX_RGB(3, 3, 3), GX_RGB(7, 17, 31),
+                                         GX_RGB(31, 12, 21) };
+
+// Paper White 2: the font's sex symbols, ♂ and ♀, by sex
+static const u16 sSexSymbols[] = { 0x2642, 0x2640 };
+#define SEX_SYMBOL_GAP 3
+
+static void PokedexInfo_PrintSexSymbol(PokedexInfo *info, MsgData *names);
 #endif
 
 static void PokedexInfo_ClearDisplay(PokedexInfo *info);
@@ -1033,6 +1041,10 @@ static void PokedexInfo_PrintEntry(PokedexInfo *info) {
     PrintQueue_PrintColor(info->printQueue, BmpWin_GetBitmap(info->windows[POKEDEX_INFO_WINDOW_NAME]), 0x30, 5, name,
                           info->font, COLOR_LABEL);
     GFL_StrBufFree(name);
+#ifdef PAPERWHITE2
+    // Paper White 2: the sex beside the name, for a species whose sexes look different
+    PokedexInfo_PrintSexSymbol(info, g_PMLSpeciesNamesResident);
+#endif
 
     messageId = 0;
     if (info->caught) {
@@ -1129,6 +1141,10 @@ static void PokedexInfo_PrintEntryInLanguage(PokedexInfo *info, unsigned int lan
 
     PokedexInfo_PrintMessage(info->heapId, info->windows[POKEDEX_INFO_WINDOW_NAME], names, info->printQueue, info->font,
                              info->species, 0x30, 5, COLOR_LABEL, PRINT_ALIGN_LEFT, NULL);
+#ifdef PAPERWHITE2
+    // Paper White 2: the sex beside the name, for a species whose sexes look different
+    PokedexInfo_PrintSexSymbol(info, names);
+#endif
 
     messageId = 0;
     if (info->caught) {
@@ -1174,6 +1190,40 @@ static void PokedexInfo_PrintEntryInLanguage(PokedexInfo *info, unsigned int lan
     }
     PokedexInfo_FlushWindows(info);
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: on the detail screen's info page, the shown sex's symbol after the name (in the language's names), in
+// blue or pink, for a species whose female has a sprite of its own; none for the others, and none for no sex
+static void PokedexInfo_PrintSexSymbol(PokedexInfo *info, MsgData *names) {
+    StrBuf *name;
+    StrBuf *symbol;
+    u32 width;
+
+    if (!PokedexInfo_IsDetailTop(info) || info->sex > GENDER_FEMALE ||
+        !PokedexInfo_HasSexDifference(info->species, info->form)) {
+        return;
+    }
+    name = GFL_MsgDataLoadStrbufNew(names, info->species);
+    width = GFL_FontGetBlockWidth(name, info->font, 0);
+    GFL_StrBufFree(name);
+    symbol = GFL_StrBufCreate(2, info->heapId);
+    GFL_StrBufAppend(symbol, sSexSymbols[info->sex]);
+    PrintQueue_PrintColor(info->printQueue, BmpWin_GetBitmap(info->windows[POKEDEX_INFO_WINDOW_NAME]),
+                          0x30 + width + SEX_SYMBOL_GAP, 5, symbol, info->font,
+                          info->sex == GENDER_FEMALE
+                              ? PRINT_COLOR(POKEDEX_INFO_TEXT_PINK, POKEDEX_INFO_TEXT_SHADOW, 0)
+                              : PRINT_COLOR(POKEDEX_INFO_TEXT_BLUE, POKEDEX_INFO_TEXT_SHADOW, 0));
+    GFL_StrBufFree(symbol);
+}
+
+BOOL PokedexInfo_HasSexDifference(u32 species, u32 form) {
+    u32 arcId = GetPokemonGraphicsARCID();
+
+    // A sex without a sprite of its own gets the male's files
+    return GetPokemonCharacterDataNo(arcId, species, form, GENDER_FEMALE, FALSE, POKEGRA_DIR_FRONT, FALSE) !=
+           GetPokemonCharacterDataNo(arcId, species, form, GENDER_MALE, FALSE, POKEGRA_DIR_FRONT, FALSE);
+}
+#endif
 
 static void PokedexInfo_ClearWindows(PokedexInfo *info) {
     int i;
