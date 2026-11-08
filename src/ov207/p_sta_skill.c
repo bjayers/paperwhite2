@@ -83,11 +83,11 @@ struct PStaSkillWork {
     PStaOamActor *forgetOam;
     SkillPlate plates[PLATE_COUNT];
 #ifdef PAPERWHITE2
-    // Paper White 2: whether L or R shows the stats' EVs and IVs, the title bar's text for them, and the hint for L
-    // and R
+    // Paper White 2: whether L or R shows the stats' EVs and IVs, the title bar's text (the EVs' and IVs' headers, and
+    // L and R either side of them or of the page's name), and the small font it is in
     BOOL showHidden;
     BmpWin *titleWindow;
-    BmpWin *hintWindow;
+    Font *smallFont;
 #endif
 };
 
@@ -122,9 +122,9 @@ static void PStaSkill_SetPlateAnim(SkillPlate *plate, u32 anim);
 #ifdef PAPERWHITE2
 static void PStaSkill_PrintStatRows(PStatusWork *wk, PStaSkillWork *skill, PartyPkm *pkm, u32 nature);
 static void PStaSkill_PrintHiddenRow(PStatusWork *wk, BmpWin *window, PartyPkm *pkm, u32 stat, u32 evsLeft);
-static void PStaSkill_PrintHiddenTitle(PStatusWork *wk, PStaSkillWork *skill, u32 evTotal);
+static void PStaSkill_PrintHiddenTitle(PStatusWork *wk, PStaSkillWork *skill);
 static void PStaSkill_DrawHiddenBar(GFLBitmap *bitmap, u16 x, u32 value, u32 reach, u32 max, u8 color, u8 shade);
-static void PStaSkill_PrintRight(PStatusWork *wk, BmpWin *window, u32 msgId, u16 right, u16 color);
+static u16 PStaSkill_PrintTitle(PStatusWork *wk, PStaSkillWork *skill, u32 msgId, u16 x, BOOL alignRight);
 #endif
 
 // The Pokémon's move in a slot
@@ -152,20 +152,21 @@ static const PStaWindowSetup sSkillWindows[SKILL_WINDOW_COUNT] = {
 
 #ifdef PAPERWHITE2
 // Paper White 2: the hidden stats' layout. Each row has, in the stats' white panel (x 120 to 216 on the HP's row, the
-// narrowest), the EV's bar, the EV and the IV, right-aligned, and the IV's bar. Positions are the top screen's pixels
+// narrowest), the EV's bar, the EV and the IV, right-aligned, and the IV's bar, the EV's column and the IV's apart.
+// Positions are the top screen's pixels
 #define HIDDEN_EV_BAR_X 122
-#define HIDDEN_EV_RIGHT 168
-#define HIDDEN_IV_RIGHT 186
-#define HIDDEN_IV_BAR_X 189
+#define HIDDEN_EV_RIGHT 163
+#define HIDDEN_IV_RIGHT 185
+#define HIDDEN_IV_BAR_X 190
 // The rows' windows start at column 8
 #define HIDDEN_ROW_LEFT 64
 // The bars: their size and height in the row, and the values that fill them, an EV's useful most and an IV's most
-#define HIDDEN_BAR_WIDTH 26
+#define HIDDEN_BAR_WIDTH 20
 #define HIDDEN_BAR_HEIGHT 6
 #define HIDDEN_BAR_Y 5
 #define HIDDEN_EV_BAR_MAX 252
 #define HIDDEN_IV_BAR_MAX 31
-// The most EVs a Pokémon gains in all, the sum of its six
+// The most EVs a Pokémon gains in all, the sum of its six, which the EV bars' grey parts show
 #define HIDDEN_EV_TOTAL_MAX 510
 // The bars' colors in the font's palette: a dark outline round a white track, and the fill, light above its shade,
 // blue for the EVs and red for the IVs
@@ -177,21 +178,21 @@ static const PStaWindowSetup sSkillWindows[SKILL_WINDOW_COUNT] = {
 #define HIDDEN_IV_BAR_SHADE_COLOR 3
 // The EV bar's grey past the most that stat can still reach with the EVs left of the total's most, to the bar's end
 #define HIDDEN_EV_UNREACHABLE_COLOR 2
-// The title bar's window, over the empty bar and the page's name (« STATS ») to the screen's right edge, with "EV"
-// and "IV" ending where their columns do, and the EVs' total ("EVs 85/510") at the right
+// The title bar's window, over the empty bar and the page's name (« STATS ») to the screen's right edge, in the small
+// font: "EV" and "IV" ending where their columns do, with the EVs and IVs, and L and R either side of them, or either
+// side of the page's name with the stats, to say what L and R switch
 static const PStaWindowSetup sHiddenTitleWindow = { 15, 1, 17, 2 };
 #define HIDDEN_HEADER_EV_RIGHT HIDDEN_EV_RIGHT
 #define HIDDEN_HEADER_IV_RIGHT HIDDEN_IV_RIGHT
-#define HIDDEN_HEADER_TOTAL_RIGHT 252
-#define HIDDEN_HEADER_Y 1
-// The page's name in the title bar, which the empty bar left of it covers with the EVs and IVs
+#define HIDDEN_HEADER_Y 3
+#define HIDDEN_BUTTON_GAP 5
+// The page's name in the title bar, which the empty bar left of it covers with the EVs and IVs; its tiles, and its
+// letters' pixels (« to »)
 #define HIDDEN_PAGE_NAME_X 22
 #define HIDDEN_EMPTY_BAR_X 13
 #define HIDDEN_PAGE_NAME_WIDTH 7
-// The hint for L and R, at the left of the HP's row, and where it starts in its window
-static const PStaWindowSetup sHiddenHintWindow = { 0, 4, 8, 2 };
-#define HIDDEN_HINT_X 4
-#define HIDDEN_HINT_Y 1
+#define HIDDEN_PAGE_NAME_LEFT 176
+#define HIDDEN_PAGE_NAME_RIGHT 231
 
 // The stats in the rows' order, HP first, the stats' value, EV and IV
 static const u8 sStatRowParams[][3] = {
@@ -218,8 +219,9 @@ PStaSkillWork *PStaSkill_Create(PStatusWork *wk) {
     skill->swapSrc = SLOT_NONE;
     skill->cursor = CURSOR_NONE;
 #ifdef PAPERWHITE2
-    // Paper White 2: the stats first, until L or R
+    // Paper White 2: the stats first, until L or R; the title bar's font
     skill->showHidden = FALSE;
+    skill->smallFont = GFL_FontCreate(ARCID_FONT, 1, 0, FALSE, wk->heapId);
 #endif
     if (wk->param->mode == PSTATUS_MODE_FORGET_MOVE && wk->param->move != MOVE_NONE) {
         skill->moveCount = PLATE_COUNT;
@@ -234,6 +236,10 @@ PStaSkillWork *PStaSkill_Create(PStatusWork *wk) {
 }
 
 void PStaSkill_Free(PStatusWork *wk, PStaSkillWork *skill) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the title bar's font
+    GFL_FontFree(skill->smallFont);
+#endif
     GFL_HeapFree(skill);
 }
 
@@ -255,9 +261,8 @@ void PStaSkill_Main(PStatusWork *wk, PStaSkillWork *skill) {
             }
         }
 #ifdef PAPERWHITE2
-        // Paper White 2: and the title and the hint
-        if (PrintQueue_IsBitmapPending(wk->printQueue, BmpWin_GetBitmap(skill->titleWindow)) == TRUE ||
-            PrintQueue_IsBitmapPending(wk->printQueue, BmpWin_GetBitmap(skill->hintWindow)) == TRUE) {
+        // Paper White 2: and the title
+        if (PrintQueue_IsBitmapPending(wk->printQueue, BmpWin_GetBitmap(skill->titleWindow)) == TRUE) {
             done = FALSE;
         }
 #endif
@@ -420,11 +425,9 @@ void PStaSkill_Load(PStatusWork *wk, PStaSkillWork *skill) {
     }
     BmpWin_SetPalette(skill->windows[1], 13);
 #ifdef PAPERWHITE2
-    // Paper White 2: the windows of the hidden stats' title and of the hint for L and R
+    // Paper White 2: the window of the title bar's text
     skill->titleWindow = BmpWin_CreateDynamic(4, sHiddenTitleWindow.x, sHiddenTitleWindow.y, sHiddenTitleWindow.width,
                                               sHiddenTitleWindow.height, 14, 1);
-    skill->hintWindow = BmpWin_CreateDynamic(4, sHiddenHintWindow.x, sHiddenHintWindow.y, sHiddenHintWindow.width,
-                                             sHiddenHintWindow.height, 14, 1);
 #endif
     PStaSkill_PrintStats(wk, skill);
     for (i = 0; i < skill->moveCount; i++) {
@@ -458,9 +461,8 @@ void PStaSkill_Unload(PStatusWork *wk, PStaSkillWork *skill) {
         BmpWin_Free(skill->windows[i]);
     }
 #ifdef PAPERWHITE2
-    // Paper White 2: the hidden stats' title and the hint
+    // Paper White 2: the title bar's text
     BmpWin_Free(skill->titleWindow);
-    BmpWin_Free(skill->hintWindow);
 #endif
     skill->isShown = FALSE;
 }
@@ -506,11 +508,9 @@ static void PStaSkill_DrawStats(PStatusWork *wk, PStaSkillWork *skill) {
         GFL_BGSysLoadScr(BmpWin_GetBGIndex(window));
     }
 #ifdef PAPERWHITE2
-    // Paper White 2: the hidden stats' title and the hint for L and R
+    // Paper White 2: the title bar's text
     BmpWin_FlushChar(skill->titleWindow);
     BmpWin_FlushMap(skill->titleWindow);
-    BmpWin_FlushChar(skill->hintWindow);
-    BmpWin_FlushMap(skill->hintWindow);
     GFL_BGSysLoadScr(BmpWin_GetBGIndex(skill->titleWindow));
 #endif
     GFL_BGSysBufferScrDefault(6, skill->screens[1].screen->rawData, skill->screens[1].screen->szByte);
@@ -1495,7 +1495,7 @@ static void PStaSkill_SetPlateAnim(SkillPlate *plate, u32 anim) {
 
 #ifdef PAPERWHITE2
 // Paper White 2: the rows of HP and the five stats, with their names and either their values, as the original prints
-// them, or their EVs and IVs, then the title bar's text and the hint for L and R
+// them, or their EVs and IVs, then the title bar's text
 static void PStaSkill_PrintStatRows(PStatusWork *wk, PStaSkillWork *skill, PartyPkm *pkm, u32 nature) {
     WordSet *wordSet;
     BmpWin *window;
@@ -1538,7 +1538,7 @@ static void PStaSkill_PrintStatRows(PStatusWork *wk, PStaSkillWork *skill, Party
             GFL_WordSetSystemFree(wordSet);
         }
     }
-    PStaSkill_PrintHiddenTitle(wk, skill, evTotal);
+    PStaSkill_PrintHiddenTitle(wk, skill);
 }
 
 // A stat's EV and IV, in their columns between their bars. The EV's bar is grey past the most the stat can still reach,
@@ -1590,39 +1590,36 @@ static void PStaSkill_DrawHiddenBar(GFLBitmap *bitmap, u16 x, u32 value, u32 rea
     }
 }
 
-// With the EVs and IVs, the columns' names and the EVs' total in the title bar; and the hint for what L and R show
-static void PStaSkill_PrintHiddenTitle(PStatusWork *wk, PStaSkillWork *skill, u32 evTotal) {
+// The title bar's text in the small font: with the EVs and IVs, the columns' names, between L and R, and with the
+// stats, L and R either side of the page's name
+static void PStaSkill_PrintHiddenTitle(PStatusWork *wk, PStaSkillWork *skill) {
     u16 left = sHiddenTitleWindow.x * 8;
-    WordSet *wordSet;
+    u16 lRight;
+    u16 rLeft;
 
     GFL_BitmapFill(BmpWin_GetBitmap(skill->titleWindow), 0);
-    GFL_BitmapFill(BmpWin_GetBitmap(skill->hintWindow), 0);
     if (skill->showHidden == TRUE) {
-        PStaSkill_PrintRight(wk, skill->titleWindow, PStaSys_Text_EvColumn, HIDDEN_HEADER_EV_RIGHT - left,
-                             PRINT_COLOR(15, 2, 0));
-        PStaSkill_PrintRight(wk, skill->titleWindow, PStaSys_Text_IvColumn, HIDDEN_HEADER_IV_RIGHT - left,
-                             PRINT_COLOR(15, 2, 0));
-        wordSet = GFL_WordSetSystemCreateDefault(wk->heapId);
-        WordSetNumber(wordSet, 0, evTotal, 3, 1, 1);
-        WordSetNumber(wordSet, 1, HIDDEN_EV_TOTAL_MAX, 3, 1, 1);
-        PStatus_PrintFormattedRightToWindow(wk, skill->titleWindow, wordSet, PStaSys_Text_EvTotal,
-                                            HIDDEN_HEADER_TOTAL_RIGHT - left, HIDDEN_HEADER_Y, PRINT_COLOR(15, 2, 0));
-        GFL_WordSetSystemFree(wordSet);
-        PStatus_PrintToWindow(wk, skill->hintWindow, PStaSys_Text_ShowStats, HIDDEN_HINT_X, HIDDEN_HINT_Y,
-                              PRINT_COLOR(15, 2, 0));
+        lRight = PStaSkill_PrintTitle(wk, skill, PStaSys_Text_EvColumn, HIDDEN_HEADER_EV_RIGHT - left, TRUE);
+        PStaSkill_PrintTitle(wk, skill, PStaSys_Text_IvColumn, HIDDEN_HEADER_IV_RIGHT - left, TRUE);
+        rLeft = HIDDEN_HEADER_IV_RIGHT - left;
     } else {
-        PStatus_PrintToWindow(wk, skill->hintWindow, PStaSys_Text_ShowHiddenStats, HIDDEN_HINT_X, HIDDEN_HINT_Y,
-                              PRINT_COLOR(15, 2, 0));
+        lRight = HIDDEN_PAGE_NAME_LEFT - left;
+        rLeft = HIDDEN_PAGE_NAME_RIGHT - left;
     }
+    PStaSkill_PrintTitle(wk, skill, PStaSys_Text_ButtonL, lRight - HIDDEN_BUTTON_GAP, TRUE);
+    PStaSkill_PrintTitle(wk, skill, PStaSys_Text_ButtonR, rLeft + HIDDEN_BUTTON_GAP, FALSE);
 }
 
-// A header of the summary's bank in the title bar, ending at a column
-static void PStaSkill_PrintRight(PStatusWork *wk, BmpWin *window, u32 msgId, u16 right, u16 color) {
+// A text of the summary's bank in the title bar in the small font, starting or ending at a column, and where it starts
+static u16 PStaSkill_PrintTitle(PStatusWork *wk, PStaSkillWork *skill, u32 msgId, u16 x, BOOL alignRight) {
     StrBuf *str = GFL_MsgDataLoadStrbufNew(wk->msgData, msgId);
-    u32 width = GFL_FontGetBlockWidth(str, wk->font, 0);
 
-    PrintQueue_PrintColor(wk->printQueue, BmpWin_GetBitmap(window), right - width, HIDDEN_HEADER_Y, str, wk->font,
-                          color);
+    if (alignRight == TRUE) {
+        x -= GFL_FontGetBlockWidth(str, skill->smallFont, 0);
+    }
+    PrintQueue_PrintColor(wk->printQueue, BmpWin_GetBitmap(skill->titleWindow), x, HIDDEN_HEADER_Y, str,
+                          skill->smallFont, PRINT_COLOR(15, 2, 0));
     GFL_StrBufFree(str);
+    return x;
 }
 #endif

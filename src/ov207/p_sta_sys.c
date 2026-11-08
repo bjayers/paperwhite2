@@ -488,7 +488,14 @@ static void PStatus_FreeResources(PStatusWork *wk) {
 
 static void PStatus_CreateActors(PStatusWork *wk) {
     u8 sequences[PSTA_BUTTON_COUNT] = { 0, 1, 2, 6, 3, 2, 0, 1 };
+#ifdef PAPERWHITE2
+    // Paper White 2: the bar squeezed to fit the INFO button beside the ribbons' tab: the info and skills tabs, half as
+    // wide in hack builds' art (p_status/013.png), 24 apart, the touch bar's buttons side by side at the right and the
+    // checkbox beside them (PStatus_CheckTouch)
+    u8 xs[PSTA_BUTTON_COUNT] = { 0, 24, 48, 140, 160, 184, 208, 232 };
+#else
     u8 xs[PSTA_BUTTON_COUNT] = { 0, 40, 80, 124, 144, 168, 200, 232 };
+#endif
     ClActorSetup setup;
     u8 i;
     u32 chars;
@@ -587,6 +594,15 @@ static void PStatus_ExitText(PStatusWork *wk) {
 }
 
 static void PStatus_CheckTouch(PStatusWork *wk) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the squeezed bar's buttons (PStatus_CreateActors): the info and skills tabs 24 wide, the ribbons'
+    // tab whole, then the INFO button's place (paperwhite2_pstatus_pokedex.c), the checkbox and the touch bar's buttons
+    TouchRect rects[PSTA_BUTTON_COUNT + 1] = {
+        { 168, 192, 0, 24 },    { 168, 192, 24, 48 },   { 168, 192, 48, 88 },
+        { 168, 192, 136, 160 }, { 168, 192, 160, 184 }, { 168, 192, 184, 208 },
+        { 168, 192, 208, 232 }, { 168, 192, 232, 0 },   { TOUCH_RECT_END, 0, 0, 0 },
+    };
+#else
     TouchRect rects[PSTA_BUTTON_COUNT + 1] = {
         { 168, 192, 0, 40 },
         { 168, 192, 40, 80 },
@@ -599,6 +615,7 @@ static void PStatus_CheckTouch(PStatusWork *wk) {
         { 168, 192, 232, 0 },
         { TOUCH_RECT_END, 0, 0, 0 },
     };
+#endif
 
     wk->touchHit = GFL_HIDGetTouchPressedRect(rects);
 }
@@ -606,7 +623,7 @@ static void PStatus_CheckTouch(PStatusWork *wk) {
 static void PStatus_HandleInput(PStatusWork *wk) {
     if (wk->isInputEnabled == TRUE && PrintQueue_IsEmpty(wk->printQueue) == TRUE && PStatus_HandleKeys(wk) == FALSE) {
 #ifdef PAPERWHITE2
-        // Paper White 2: START and the INFO button, which is over the ribbons' tab's place
+        // Paper White 2: START and the INFO button, beside the ribbons' tab
         if (PStatus_CheckPokedexButton(wk)) {
             return;
         }
@@ -1289,12 +1306,11 @@ static BOOL PStatus_IsFromFieldMenu(PStatusWork *wk) {
 }
 
 #ifdef PAPERWHITE2
-// Paper White 2: the INFO button shows while the tabs take input, for a Pokémon that isn't an egg and has no ribbons,
-// whose tab is in its place; START opens the page all the same
+// Paper White 2: the INFO button shows while the tabs take input, for a Pokémon that isn't an egg, beside the ribbons'
+// tab when it has ribbons
 static void PStatus_ShowPokedexButton(PStatusWork *wk) {
     if (wk->pokedexButton != NULL) {
         PaperWhite2_PStatusPokedex_SetVisible(wk->pokedexButton, wk->isInputEnabled == TRUE && wk->isEgg == FALSE &&
-                                                                     wk->hasRibbon == FALSE &&
                                                                      wk->page != PSTATUS_PAGE_FORGET);
     }
 }

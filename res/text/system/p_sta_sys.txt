@@ -196,8 +196,7 @@ PStaSys_Text_Empty_172 =        \x{ffff}
 PStaSys_Text_Empty_173 =            \x{ffff}
 PStaSys_Text_EvColumn = EV
 PStaSys_Text_IvColumn = IV
-PStaSys_Text_ShowHiddenStats = L/R: EV/IV
-PStaSys_Text_ShowStats = L/R: Stats
-PStaSys_Text_EvTotal = EVs {0202:0}/{0202:1}
+PStaSys_Text_ButtonL = L
+PStaSys_Text_ButtonR = R
 PStaSys_Text_PrestigePoints = Prestige Points
 \pad{98}
