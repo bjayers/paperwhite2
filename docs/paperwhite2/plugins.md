@@ -1506,9 +1506,11 @@ Form's work before it (the entry, the panels) moved the write into the drawn fra
 characters are the same, and Turn's write came early in the VBlank. BG 1 fades with the page there, so the
 head bar is shown at once and fades in and out with it, and slides out only once the screen is dark. **Bottom** (sub
 engine): the grid on BG 4, the bar of sub-pages and the panels drawn into two windows on BG 7 (palette 3, a table in
-the panels' file until there is art), and on Stats the buttons Cry, Turn, Form, Shiny, Language and Abilities on BG 6
-(`AppTaskMenuWin`, palettes 4 and 5, 9 by 3 tiles from tile row 3 at a 3-row pitch, shown 2 px higher, so Abilities
-is y 142-165, off the touch bar), hidden when they can do nothing (Abilities until the species is caught). **The buttons' lift**: they are
+the panels' file until there is art), and on Stats the buttons Abilities, Cry, Turn, Form, Shiny and Language on BG 6
+(`AppTaskMenuWin`, palettes 4 and 5, 9 by 3 tiles from tile row 3 at a 3-row pitch, shown 2 px higher, so a sixth
+is y 142-165, off the touch bar), hidden when they can do nothing (Abilities until the species is caught), the shown
+ones stacked from the top in that order with no gaps (`PokedexInfoPage_GetButtonPlace` counts the shown ones before
+a button, for its window and its touch). **The buttons' lift**: they are
 tile-aligned windows on the art's BG, so a sub-page lifts them by scrolling BG 6 up (`sSubpageLift` beside
 `sSubpageArt` in the panels' file: Stats 2 px, Matchups 3, the others 0), set with the art's screen in the same VBlank
 (`PokedexInfoPanels_LoadArt`, `GFL_BGSysMoveBGReq`) and back to 0 as the page ends; the touches are checked that much

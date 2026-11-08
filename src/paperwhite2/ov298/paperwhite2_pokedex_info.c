@@ -41,16 +41,15 @@
 // shows the main engine on the top screen while this page runs (pokedex_detail.c), so the top has the 3D: the
 // Pokémon's entry from overlay 296, as the original's bottom screen showed it, with the battle's animated sprite (MCSS,
 // on BG 0) where the still one was. The bottom screen, the sub engine's, has the sub-pages Stats, Data, Moves, Evo and
-// Matchups (paperwhite2_pokedex_info_panels.c), and, on Stats, the buttons Cry, Turn, Form, Shiny, Language and
-// Abilities in the menus' style. A button that can't do anything for the Pokémon is hidden, and the others keep their
-// places. Abilities shows the species' abilities in turn in the entry's text window, in place of its description, and
-// on Data that window shows the species' wild held items. On
-// Matchups, a button for each of the species' abilities picks the one whose effect the type chart shows. Moves lists
-// a set of the Pokémon's moves, with a panel of the cursor's move over the top screen
-// (paperwhite2_pokedex_move_panel.c). Evo shows the Pokémon's family, and touching one of it opens its page. Left
-// and Right step through the sub-pages, L and R through the sub-pages and Moves' sets in one ring;
-// the touch bar's Left and Right (to Area, Cry and Forms, still there by touch) are the page's while it runs, and on
-// Moves its Up and Down and, while the panel is open, its B
+// Matchups (paperwhite2_pokedex_info_panels.c), and, on Stats, the buttons Abilities, Cry, Turn, Form, Shiny and
+// Language in the menus' style. A button that can't do anything for the Pokémon is hidden, and the others close up
+// from the top. Abilities shows the species' abilities in turn in the entry's text window, in place of its description,
+// and on Data that window shows the species' wild held items. On Matchups, a button for each of the species' abilities
+// picks the one whose effect the type chart shows. Moves lists a set of the Pokémon's moves, with a panel of the
+// cursor's move over the top screen (paperwhite2_pokedex_move_panel.c). Evo shows the Pokémon's family, and touching
+// one of it opens its page. Left and Right step through the sub-pages, L and R through the sub-pages and Moves' sets in
+// one ring; the touch bar's Left and Right (to Area, Cry and Forms, still there by touch) are the page's while it runs,
+// and on Moves its Up and Down and, while the panel is open, its B
 
 // Where the sprite stands on the top screen, in pixels: the middle of its feet, in the entry's left panel, where the
 // original's still sprite had its 96 by 96 frame centered at 50, 72
@@ -64,7 +63,8 @@
 // The sprites at once: the shown one, and its next while that loads, each in its own place in the texture VRAM
 #define SPRITE_CAPACITY 2
 
-// The buttons' column on the bottom screen, in tiles, on POKEDEX_INFO_BUTTON_BG, with one place for each button
+// The buttons' column on the bottom screen, in tiles, on POKEDEX_INFO_BUTTON_BG: the shown buttons from the top, in
+// BUTTON_* order with no gaps
 #define BUTTON_X 22
 #define BUTTON_Y 3
 #define BUTTON_WIDTH 9
@@ -128,12 +128,12 @@ enum {
 
 // The buttons, top to bottom
 enum {
+    BUTTON_ABILITIES,
     BUTTON_CRY,
     BUTTON_TURN,
     BUTTON_FORM,
     BUTTON_SHINY,
     BUTTON_LANGUAGE,
-    BUTTON_ABILITIES,
     BUTTON_COUNT,
 };
 #define BUTTON_NONE BUTTON_COUNT
@@ -263,8 +263,8 @@ static const u8 sAbilityParams[ABILITY_MAX] = {
 };
 
 static const u16 sButtonLabels[BUTTON_COUNT] = {
-    PokedexData_Text_Cry,   PokedexData_Text_Turn,     PokedexData_Text_Form,
-    PokedexData_Text_Shiny, PokedexData_Text_Language, PokedexData_Text_Abilities,
+    PokedexData_Text_Abilities, PokedexData_Text_Cry,   PokedexData_Text_Turn,
+    PokedexData_Text_Form,      PokedexData_Text_Shiny, PokedexData_Text_Language,
 };
 
 // Which of the species' abilities the top screen shows, by its place in sAbilityParams
@@ -1046,15 +1046,21 @@ static void PokedexInfoPage_ResetButtons(PokedexDetailInfoParam *param, PokedexI
     if (wk->subpage != POKEDEX_INFO_SUBPAGE_STATS) {
         return;
     }
+    // In order, so that each one's place counts the shown ones above it (PokedexInfoPage_GetButtonPlace)
     for (i = 0; i < BUTTON_COUNT; i++) {
         if (PokedexInfoPage_IsButtonUsable(wk, common, i)) {
             AppTaskMenuItem item;
+            u32 x;
+            u32 y;
+            u32 width;
+            u32 height;
 
+            PokedexInfoPage_GetButtonPlace(wk, i, &x, &y, &width, &height);
             item.str = PokedexInfoPanels_LoadMessage(wk->panels, sButtonLabels[i]);
             item.color = BUTTON_TEXT_COLOR;
             item.type = 0;
-            wk->buttons[i] = AppTaskMenuWin_CreateEx(wk->buttonRes, &item, BUTTON_X, BUTTON_Y + i * BUTTON_PITCH,
-                                                     BUTTON_WIDTH, BUTTON_HEIGHT, FALSE, TRUE, param->heapId);
+            wk->buttons[i] =
+                AppTaskMenuWin_CreateEx(wk->buttonRes, &item, x, y, width, height, FALSE, TRUE, param->heapId);
             GFL_StrBufFree(item.str);
         }
     }
@@ -1168,14 +1174,23 @@ static BOOL PokedexInfoPage_CheckButtons(PokedexDetailInfoParam *param, PokedexI
     return FALSE;
 }
 
-// Where the shown sub-page's button is, in tiles: Stats' in their column, Matchups' in their row. FALSE on a sub-page
-// without buttons
+// Where the shown sub-page's button is, in tiles: Stats' in their column, below the shown ones before it, Matchups' in
+// their row. FALSE on a sub-page without buttons
 static BOOL PokedexInfoPage_GetButtonPlace(PokedexInfoPageWork *wk, u32 button, u32 *x, u32 *y, u32 *width,
                                            u32 *height) {
+    u32 slot;
+    u32 i;
+
     switch (wk->subpage) {
     case POKEDEX_INFO_SUBPAGE_STATS:
+        slot = 0;
+        for (i = 0; i < button; i++) {
+            if (wk->buttons[i] != NULL) {
+                slot++;
+            }
+        }
         *x = BUTTON_X;
-        *y = BUTTON_Y + button * BUTTON_PITCH;
+        *y = BUTTON_Y + slot * BUTTON_PITCH;
         *width = BUTTON_WIDTH;
         *height = BUTTON_HEIGHT;
         return TRUE;
@@ -1253,8 +1268,8 @@ static void PokedexInfoPage_PressButton(PokedexDetailInfoParam *param, PokedexIn
     GFL_SndSEPlay(SEQ_SE_SELECT3);
 }
 
-// Cry and Turn always; Form once two forms have been seen, Shiny once a shiny one has, Language once the Pokédex has
-// the entry in another language, and Abilities once the species is caught
+// Abilities once the species is caught; Cry and Turn always; Form once two forms have been seen, Shiny once a shiny
+// one has, and Language once the Pokédex has the entry in another language
 static BOOL PokedexInfoPage_IsButtonUsable(PokedexInfoPageWork *wk, PokedexDetailCommon *common, u32 button) {
     PokeDexSave *pokedex = GameData_GetPokedex(PokedexDetailCommon_GetGameData(common));
     u32 i;
