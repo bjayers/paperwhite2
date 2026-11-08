@@ -1530,13 +1530,14 @@ every page (`pokedex_detail_graphic.c`): main OBJ E (64 KB), sub OBJ D (128 KB, 
 hack's). **Top** (main engine): overlay 296's entry (`PokedexInfo`, engine 0) with its text on BG 1 beside the head bar,
 its panels on BG 2 and its grid on BG 3, and no still sprite (`PokedexInfo_IsDetailTop`); the battle's animated sprite
 (MCSS) on BG 0 in 3D, which the page turns on at its start and off at its end. **The sprite's place**: x 50 less the
-bin file's offsetX, as the forms page's; vertically, its visible pixels' middle on its first frame at y 67, the middle
-of the panel's grey stripe (y 33-100), from member 154 of `ARCID_POKEDEX_GRA` that `tools/paperwhite2/pokedex_sprites.py`
+bin file's offsetX, as the forms page's; vertically, its visible pixels' middle on its first frame at y 72, the
+original's still sprite's frame centre and the middle of the panel's track between its dashed rows (y 45-46 and
+97-98; the grey stripe around them, y 33-100, is deeper above, and its middle, 67, looked high), from member 154 of `ARCID_POKEDEX_GRA` that `tools/paperwhite2/pokedex_sprites.py`
 makes from `res/pokemon` at build time (a u8 for each battle sprite archive member, 15020 bytes, read by range at the
 sprite's characters' number, so per form, sex and side: how far above its feet the middle is, measured as MCSS
 assembles the first frame from the multi-cell, cell animations and the bin file's quads). Vanilla's own box in the bin
 file (height and offsetY, which the egg hatching and the evolution centre by) is a few pixels off for some sprites and
-64 for Chandelure, so it isn't used. Sprites taller than the stripe's 68 px (Kyurem 74, Zekrom 91) overlap it evenly.
+64 for Chandelure, so it isn't used. Sprites taller than the stripe's 68 px (Kyurem 74, Zekrom 91) overlap it, 5 px more below than above.
 **A new sprite** (Form, Shiny, Turn,
 another Pokémon) is added beside the shown one (`SPRITE_CAPACITY` 2, each MCSS in its own 16 KB of texture VRAM), with
 no TCB manager for the add, so that `MCSS_LoadTask` runs as a VBlank task in lines 192-200, before the 3D draws, as the
@@ -1663,16 +1664,23 @@ so the characters' 32 slots hold the other sub-pages' 29-30 and Evo's one. **The
 the root, then each species' evolutions under it in the data's order, each a row of the user's ball (16 by 16,
 `res/paperwhite2/pokedex_art/evo_ball_{caught,seen,unknown}.png`, copied into the window), centred at x 34, 54 or 74 by
 stage and at y 78 + 15 a row, the name 10 px right of it in font 0 (gold for the shown species, white, "????" if not
-seen) and how it evolves from its parent in font 1, right-aligned at x 226 and half a row up (between the row and the
-one above it), where it fits after both rows' names (4 px gap), else a shortened wording (`sEvoMethodTexts`, the
+seen) and how it evolves from its parent in font 1, right-aligned at x 226: half a row up, between the row and its
+parent, where the row above is its parent and that row's own method (if any) is raised too
+(`PokedexInfoEvo_IsMethodRaised`: Pignite under Tepig; not Dustox under Cascoon, whose method stays on its row), else
+on its own row (under a sibling or another branch, as in Eevee's and Wurmple's families); where it fits after the
+names beside it (4 px gap; a raised one's both rows'), else a shortened wording (`sEvoMethodTexts`, the
 messages `PokedexData_Text_Evo*`); more than 5 rows (Eevee) put the names in font 1 too, at y 74 + 11 a row. Gold lines, 2 px, run from each parent's ball down and across to its evolutions',
 drawn into the window before the balls. A species that evolves into the same one two ways (Feebas, by Beauty or a
 trade) shows both joined with "or" if they fit, else the first. Karrablast's and Shelmet's trades name the other (the
 game checks their species, `evolution_check.c`; their parameter is none). **The banner** (the art's band under the tab bar,
 y 22-58) moves as the grid does (BG 4, `PokedexDetailBackground_Update`: its x scroll up 1 every 5 frames, so it
 moves left 1 px every 5 frames): its inside, the art's tile rows 3-6 (y 24-55, `BANNER_*` in the panels' file), is
-copied as the page starts onto the grid's BG, its different tiles (2 in the user's art) into BG 4's characters and its
-map entries in the art's palette row (9); while Evo shows, `PokedexInfoPanels_LoadArt` puts them in BG 4's rows 3-6
+copied as the page starts onto the grid's BG, its different tiles (2 in the user's art) into BG 4's last characters
+and its map entries in the art's palette row (9). The grid's characters file (member 12) is 0x8000 bytes, the whole
+of BG 4's characters, so the BG system can't allocate any there (an earlier build's allocation failed: the band's
+top row pointed at a blank character, a black bar, and the rest at the grid's own tile, which only looked like the
+band); but the grid's screens draw only its first 41 and the rest are blank, so the banner's tiles are written over
+the last ones (`GRID_CHAR_COUNT`), unallocated; while Evo shows, `PokedexInfoPanels_LoadArt` puts them in BG 4's rows 3-6
 and clears those rows of the art's BG, and puts the grid's own entries back for the other sub-pages, in the same VBlank
 as the art. The edges (y 22-23, 56-58) stay on the art's BG, still: rows of one colour, which look the same scrolled.
 The rows must be opaque and repeat across with a period that divides 256 (the user's: 4), so that they wrap without
