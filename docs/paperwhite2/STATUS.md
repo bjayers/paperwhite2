@@ -2,6 +2,15 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-08: quality of life batch
+
+Merged and tested in DeSmuME (plugins.md has each): Pokédex Info from the party menu and the summary (INFO button,
+START); HMs usable by any party Pokémon that can learn them (White 2 gates none by badge), listed in the party menu,
+and Fly from the Town Map and the C-Gear map; the debug menu's Pokédex fill and National Pokédex; wanderers' dust
+cloud silent; the waiting follower kept hidden through menus; the C-Gear's picture change in one VBlank. Open: which
+C-Gear flicker the user meant (the picture change, or vanilla's dim step after events); whether the follower should
+come out on a menu; the follower stayed hidden after Cut by a learner (not yet compared with a Pokémon knowing Cut).
+
 ## 2026-11-07: Pokédex, final polish and the hardware flickers
 
 Built, DSi check intact, not yet tested in game (plugins.md, Pokédex): Abilities and the learnset hidden until caught
