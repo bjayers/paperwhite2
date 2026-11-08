@@ -194,15 +194,17 @@ The summary's skill page (`src/ov207/p_sta_skill.c`, overlay 207) shows HP and t
 a blue EV bar (0-252), the EV and the IV, and a red IV bar (0-31), the bars rounded, with a dark outline round a white
 track, drawn into the rows' windows with fills (`PStaSkill_DrawHiddenBar`). Each EV bar's track is white up to the most
 that stat can still reach, min(252, EV + 510 - the six EVs' sum), and grey from there to 252, the part it can no
-longer reach: no grey while the sum is low, the right ends grey near 510, and at 510 each bar is grey past its blue. "EV" and "IV" stand over their columns in the title bar, where the empty bar's tiles cover « STATS », and the
-sum at its right ("EVs 85/510", `PStaSys_Text_EvTotal`, ending at x 252, which the wireless icon covered until hack builds hid it); the HP bar and its frame are hidden. The rows' windows are 19
-tiles wide in hack builds instead of 16 and 14, to the panel's edge on the HP's row (x 216), which BG 4's 768 tiles
-allow (754 used). L or R again switches back, and the view stays across Pokémon and pages until the summary closes. A
-hint at the left of the HP's row ("L/R: EV/IV", "L/R: Stats") says what L and R do: the game's archives have no L or R
-button art that the summary could use, so it is text until there is art. Everything is under `PAPERWHITE2` in that file
-(`showHidden`, `PStaSkill_PrintStatRows` and the `HIDDEN_` constants at the top: the columns and bars in screen pixels,
-the headers' and hint's places, the colors of the font's palette), and the text is at the end of the summary's bank,
-`res/text/system/p_sta_sys.txt`. The rows use `PKM_PARAM_EV_*`/`PKM_PARAM_IV_*` of their own stat, the same parameters
+longer reach: no grey while the sum is low, the right ends grey near 510, and at 510 each bar is grey past its blue. The
+bars are 20 pixels wide, so the EV's column (bar 122-142, EV ending at 163) and the IV's (IV ending at 185, bar 190-210)
+stand apart. "EV" and "IV" stand over their columns in the title bar, in the small font (font 1, `smallFont`), where
+the empty bar's tiles cover « STATS »; the HP bar and its frame are hidden. The rows' windows are 19 tiles wide in hack
+builds instead of 16 and 14, to the panel's edge on the HP's row (x 216), which BG 4's 768 tiles allow (754 used). L
+or R again switches back, and the view stays across Pokémon and pages until the summary closes. What L and R do is a
+small "L" and "R" in the title bar, either side of "EV IV", or of « STATS » with the stats (its letters' pixels are
+`HIDDEN_PAGE_NAME_LEFT`/`RIGHT`): the game's archives have no L or R button art that the summary could use. Everything
+is under `PAPERWHITE2` in that file (`showHidden`, `PStaSkill_PrintStatRows`, `PStaSkill_PrintHiddenTitle` and the
+`HIDDEN_` constants at the top: the columns and bars in screen pixels, the title's places, the colors of the font's
+palette), and the text is at the end of the summary's bank, `res/text/system/p_sta_sys.txt`. The rows use `PKM_PARAM_EV_*`/`PKM_PARAM_IV_*` of their own stat, the same parameters
 the stat calculation (`PokeParty_RecalcStats`) and Hidden Power read.
 
 ### Debug menu
@@ -1701,8 +1703,13 @@ summary** doesn't have it: the box runs the summary from its own proc manager, a
 running the detail screen (and overlay 302) inside the box's screens, beside its overlays and heap, which wasn't tried.
 
 **The summary's button** (`src/paperwhite2/ov207/paperwhite2_pstatus_pokedex.c`, hooks in `src/ov207/p_sta_sys.c`):
-shown with the tabs, for a Pokémon that isn't an egg and has no ribbons; with ribbons, the ribbons' tab is in its place
-(x 80-120), so the button hides and START still opens the page. The summary's main OBJ palette has one free row, 15,
+shown with the tabs, for a Pokémon that isn't an egg, beside the ribbons' tab when it has ribbons; START opens the page
+too. Hack builds squeeze the summary's bottom bar to make room (`PStatus_CreateActors`' positions and
+`PStatus_CheckTouch`'s rectangles, which match them): the info and skills tabs are half as wide, at x 0 and 24 (24
+wide), their sprites (`res/graphics/p_status/013.png`, each tab a 32x32 and a 16x32 object) cut to an 18-pixel box,
+the left edge, the icon and three columns of the inside, then the right edge, the 16x32 objects left blank; the
+ribbons' tab is whole at 48-88, the button at 96-128, the checkbox at 136-160, then the arrows, X and return 24 apart
+from 160 to the right edge. The summary's main OBJ palette has one free row, 15,
 and the button's cells use two rows (normal, and pushed for its flash), so the actor draws every object in row 15
 (`ClActor_SetPalette(actor, 0, 1)`) and the push puts the pushed row's colours there on its pushed frames
 (`PaperWhite2_PStatusPokedex_Update`); the summary waits on the push's 16 frames as on its own buttons'.

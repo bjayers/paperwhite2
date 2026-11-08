@@ -11,11 +11,10 @@
 
 // Paper White 2: the summary screen's INFO button, which opens the Pokédex's page of the Pokémon shown
 // (paperwhite2/pokedex_shortcut.h). It is the Pokédex touch bar's INFO (pokedex_detail_touchbar.c), its characters,
-// cells and animations from the Pokédex's graphics, on the bar between the pages' tabs and the shortcut's checkbox,
-// where the ribbons' tab shows for a Pokémon with ribbons. The bar's main OBJ palette has one free row, 15, so the
-// button's two palettes, the normal one and the pushed one that its push flashes with, take turns there: the actor
-// draws every object in row 15 (ClActor_SetPalette's mode 1), whatever its cell names, and the row gets the pushed
-// colors while the push shows a cell of the pushed palette
+// cells and animations from the Pokédex's graphics, on the bar between the pages' tabs and the shortcut's checkbox.
+// The bar's main OBJ palette has one free row, 15, so the button's two palettes, the normal one and the pushed one that
+// its push flashes with, take turns there: the actor draws every object in row 15 (ClActor_SetPalette's mode 1),
+// whatever its cell names, and the row gets the pushed colors while the push shows a cell of the pushed palette
 
 // The Pokédex's graphics: the touch bar's palettes (normal, pushed, and a third the summary doesn't use), characters,
 // cells and animations, and the INFO icon's animations, its normal one and its push, which alternates the pushed
@@ -30,9 +29,9 @@
 // The main OBJ palette row free on the summary screen
 #define BUTTON_PALETTE_ROW 15
 
-// Where the button is on the bottom screen: 32 by 24, centred between the skills tab (to 80) and the checkbox (from
-// 124), in the ribbons' tab's place, as high as the bar's other buttons
-#define BUTTON_X 84
+// Where the button is on the bottom screen: 32 by 24, between the ribbons' tab (to 88) and the checkbox (from 136), as
+// the summary squeezes its bar (p_sta_sys.c), as high as the bar's other buttons
+#define BUTTON_X 96
 #define BUTTON_Y 168
 #define BUTTON_WIDTH 32
 #define BUTTON_HEIGHT 24
