@@ -9,7 +9,7 @@
 #include "pml/item.h"
 #include "pml/poke_party.h"
 
-// Paper White 2: the learnable HMs in the party list's menu (paperwhite2/pokelist_field_moves.h)
+// Paper White 2: the party list's FIELD MOVES menu and its learnable HMs (paperwhite2/pokelist_field_moves.h)
 
 // The first result of the moves outside battle, Cut's, which CheckAllowHMEvent's kinds count from
 #define POKELIST_HM_RESULT_FIRST 11
@@ -33,12 +33,15 @@ static u32 PaperWhite2_PokeList_GetMoveHMResult(u16 move) {
     return 0;
 }
 
-// Whether the Pokémon can learn the HM of the number from 0 and doesn't know its move, which the menu lists already
-static BOOL PaperWhite2_PokeList_IsLearnableHM(PartyPkm *pkm, u32 hm) {
+// Whether the Pokémon can use the HM of the number from 0 by learning it, with the HM in the bag, and doesn't know its
+// move, which the menu lists already
+static BOOL PaperWhite2_PokeList_IsLearnableHM(PokeListWork *wk, u32 hm) {
+    PartyPkm *pkm = wk->pkm;
     u16 move = PML_ItemGetTMMoveID(ITEM_HM01 + hm);
     u32 slot;
 
-    if (PaperWhite2_PokeList_GetMoveHMResult(move) == 0 || !PaperWhite2_FieldMoves_CanLearnHM(pkm, move)) {
+    if (PaperWhite2_PokeList_GetMoveHMResult(move) == 0 ||
+        !PaperWhite2_FieldMoves_CanUseHM(pkm, wk->param->bag, move)) {
         return FALSE;
     }
     for (slot = 0; slot < 4; slot++) {
@@ -56,7 +59,7 @@ u32 PaperWhite2_PokeList_AddLearnableHMs(PokeListWork *wk, u16 *items, u32 count
     u32 hm;
 
     for (hm = 0; hm < POKELIST_MENU_LEARNABLE_HM_COUNT; hm++) {
-        listed[hm] = PaperWhite2_PokeList_IsLearnableHM(wk->pkm, hm);
+        listed[hm] = PaperWhite2_PokeList_IsLearnableHM(wk, hm);
         if (listed[hm]) {
             learnable++;
         }
@@ -76,7 +79,7 @@ u32 PaperWhite2_PokeList_AddLearnableHMs(PokeListWork *wk, u16 *items, u32 count
             }
         }
         for (hm = 0; hm < POKELIST_MENU_LEARNABLE_HM_COUNT && chosen < room; hm++) {
-            if (!listed[hm] && PaperWhite2_PokeList_IsLearnableHM(wk->pkm, hm)) {
+            if (!listed[hm] && PaperWhite2_PokeList_IsLearnableHM(wk, hm)) {
                 listed[hm] = TRUE;
                 chosen++;
             }
@@ -89,6 +92,22 @@ u32 PaperWhite2_PokeList_AddLearnableHMs(PokeListWork *wk, u16 *items, u32 count
         }
     }
     return count;
+}
+
+BOOL PaperWhite2_PokeList_HasFieldMoves(PokeListWork *wk) {
+    u32 i;
+
+    for (i = 0; i < 4; i++) {
+        if (PokeList_GetHMResult(wk->pkm, i) != 0) {
+            return TRUE;
+        }
+    }
+    for (i = 0; i < POKELIST_MENU_LEARNABLE_HM_COUNT; i++) {
+        if (PaperWhite2_PokeList_IsLearnableHM(wk, i)) {
+            return TRUE;
+        }
+    }
+    return FALSE;
 }
 
 BOOL PaperWhite2_PokeList_IsLearnableHMItem(u32 item) {

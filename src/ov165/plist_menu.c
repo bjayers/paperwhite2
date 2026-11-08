@@ -40,9 +40,6 @@ struct PokeListMenu {
 
 static void PokeListMenu_SetItems(PokeListWork *wk, PokeListMenu *menu, const u32 *items);
 static StrBuf *PokeListMenu_GetItemName(PokeListWork *wk, PokeListMenu *menu, int item);
-#ifdef PAPERWHITE2
-static u32 PokeListMenu_CountFieldMoves(PokeListWork *wk);
-#endif
 
 // The message of each item
 static const u32 sItemNames[] = {
@@ -147,8 +144,8 @@ static void PokeListMenu_SetItems(PokeListWork *wk, PokeListMenu *menu, const u3
                 }
             }
 #ifdef PAPERWHITE2
-            // Paper White 2: then the HMs it can learn, in the room that the items after this one leave, none when
-            // they fill the menu (POKéDEX and three known moves leave none)
+            // Paper White 2: then the HMs it can use by learning them, in the room that the items after this one
+            // leave (the field moves' menu: CANCEL's)
             {
                 int used = menu->count + (count - i - 1);
 
@@ -231,9 +228,15 @@ static void PokeListMenu_SetItems(PokeListWork *wk, PokeListMenu *menu, const u3
             break;
 #ifdef PAPERWHITE2
         case POKELIST_MENU_POKEDEX:
-            // Paper White 2: POKéDEX, unless the four moves usable outside battle fill the menu with it
-            if (PokeListMenu_CountFieldMoves(wk) < 4) {
-                menu->items[menu->count] = POKELIST_MENU_POKEDEX;
+        case POKELIST_MENU_FIELD_MOVES_BACK:
+            // Paper White 2: POKéDEX, and the field moves' menu's CANCEL
+            menu->items[menu->count] = items[i];
+            menu->count++;
+            break;
+        case POKELIST_MENU_FIELD_MOVES:
+            // Paper White 2: FIELD MOVES, when the Pokémon has a move for its menu
+            if (PaperWhite2_PokeList_HasFieldMoves(wk)) {
+                menu->items[menu->count] = POKELIST_MENU_FIELD_MOVES;
                 menu->count++;
             }
             break;
@@ -263,7 +266,13 @@ static void PokeListMenu_SetItems(PokeListWork *wk, PokeListMenu *menu, const u3
         } else {
             menu->entries[i].color = 0x39e0;
         }
+#ifdef PAPERWHITE2
+        // Paper White 2: the field moves' CANCEL returns as QUIT does, and B picks it as the last item
+        menu->entries[i].type =
+            menu->items[i] == 6 || menu->items[i] == POKELIST_MENU_FIELD_MOVES_BACK ? APP_TASKMENU_ITEM_RETURN : 0;
+#else
         menu->entries[i].type = menu->items[i] == 6 ? APP_TASKMENU_ITEM_RETURN : 0;
+#endif
     }
 }
 
@@ -280,6 +289,11 @@ static StrBuf *PokeListMenu_GetItemName(PokeListWork *wk, PokeListMenu *menu, in
     } else if (item == POKELIST_MENU_POKEDEX) {
         // Paper White 2: POKéDEX, after the original's items
         str = GFL_MsgDataLoadStrbufNew(wk->msgData, BtlMain11_Text_Pokedex);
+    } else if (item == POKELIST_MENU_FIELD_MOVES) {
+        // Paper White 2: FIELD MOVES, and its menu's CANCEL
+        str = GFL_MsgDataLoadStrbufNew(wk->msgData, BtlMain11_Text_FieldMoves);
+    } else if (item == POKELIST_MENU_FIELD_MOVES_BACK) {
+        str = GFL_MsgDataLoadStrbufNew(wk->msgData, BtlMain11_Text_Cancel);
     } else if (PaperWhite2_PokeList_IsLearnableHMItem(item)) {
         // Paper White 2: a learnable HM's item is named after its move, as a known move's is
         MsgData *moveNames = GFL_MsgSysLoadData(FALSE, ARCID_SYSTEM_MESSAGE, TEXT_BANK_MOVE_NAMES, wk->heapId);
@@ -292,21 +306,6 @@ static StrBuf *PokeListMenu_GetItemName(PokeListWork *wk, PokeListMenu *menu, in
     }
     return str;
 }
-
-#ifdef PAPERWHITE2
-// Paper White 2: how many of the Pokémon's moves are usable outside battle, which item 1 lists
-static u32 PokeListMenu_CountFieldMoves(PokeListWork *wk) {
-    u32 count = 0;
-    u8 slot;
-
-    for (slot = 0; slot < 4; slot++) {
-        if (PokeList_GetHMResult(wk->pkm, slot) != 0) {
-            count++;
-        }
-    }
-    return count;
-}
-#endif
 
 // A button of a battle's selection, at a tile of the bottom bar
 AppTaskMenuWin *PokeListMenu_CreateButton(PokeListWork *wk, PokeListMenu *menu, u32 msgId, u8 x, u8 y, BOOL isBack) {

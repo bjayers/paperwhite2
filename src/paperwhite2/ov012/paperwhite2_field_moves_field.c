@@ -18,13 +18,17 @@ BOOL Scrcmd_PaperWhite2_PartyFieldMoveUser(VM *vm, FieldScriptEnv *env) {
     u16 *result = ScriptReadVar(vm, env);
     u16 move = ScriptReadAny(vm, env);
 
-    *result = PaperWhite2_FieldMoves_FindUser(GameData_GetParty(FieldScriptEnv_GetGameData(env)), move);
+    GameData *gameData = FieldScriptEnv_GetGameData(env);
+
+    *result = PaperWhite2_FieldMoves_FindUser(GameData_GetParty(gameData), GameData_GetBag(gameData), move);
     return FALSE;
 }
 
 u32 PaperWhite2_FieldMoves_FindFlyUser(GameSystem *gsys, PlayerActionPossibilities *action) {
+    GameData *gameData = GSYS_GetGameData(gsys);
+
     if (CheckAllowHMEvent(HM_EVENT_FLY, action) != 0) {
         return FIELD_MOVE_NO_USER;
     }
-    return PaperWhite2_FieldMoves_FindUser(GameData_GetParty(GSYS_GetGameData(gsys)), MOVE_FLY);
+    return PaperWhite2_FieldMoves_FindUser(GameData_GetParty(gameData), GameData_GetBag(gameData), MOVE_FLY);
 }

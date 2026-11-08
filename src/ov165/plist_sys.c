@@ -1188,14 +1188,15 @@ static void PokeList_OpenMenu(PokeListWork *wk) {
         } else {
 #ifdef PAPERWHITE2
             // Paper White 2: POKéDEX under SUMMARY, opening the Pokédex's page of the Pokémon, where the field opened
-            // the screen (paperwhite2/pokedex_shortcut.h)
+            // the screen (paperwhite2/pokedex_shortcut.h), then FIELD MOVES, a menu of the moves usable outside
+            // battle (paperwhite2/pokelist_field_moves.h)
             u32 i = 0;
 
             items[i++] = 0;
             if (wk->param->showPokedex) {
                 items[i++] = POKELIST_MENU_POKEDEX;
             }
-            items[i++] = 1;
+            items[i++] = POKELIST_MENU_FIELD_MOVES;
             items[i++] = 3;
             if (PML_ItemIsMail(PokeParty_GetParam(wk->pkm, PKM_PARAM_ITEM, NULL)) == TRUE) {
                 items[i++] = 5;
@@ -2142,7 +2143,13 @@ static void func_ov165_0219cf70(PokeListWork *wk) {
     } else {
         ClActor_SetVisible(wk->exitButton, TRUE);
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the screen stays dimmed between the Pokémon's menu and the field moves' menu, as for ITEM's
+    if (wk->menuItem != 4 && wk->menuItem != 5 && wk->menuItem != POKELIST_MENU_FIELD_MOVES &&
+        wk->menuItem != POKELIST_MENU_FIELD_MOVES_BACK) {
+#else
     if (wk->menuItem != 4 && wk->menuItem != 5) {
+#endif
         G2x_SetBlendAlpha_(REG_BLDCNT_ADDR, GX_PLANEMASK_BG2 | GX_PLANEMASK_OBJ, GX_PLANEMASK_BG3, 16, 10);
         wk->glowPaused = FALSE;
     }
@@ -2215,6 +2222,25 @@ static void PokeList_DoMenuItem(PokeListWork *wk) {
         wk->state = 19;
         wk->param->index = wk->cursorPos;
         wk->param->result = POKELIST_RESULT_POKEDEX;
+        break;
+    case POKELIST_MENU_FIELD_MOVES: {
+        // Paper White 2: the menu of the moves usable outside battle, known and learnable, and CANCEL
+        u32 fieldMoveMenu[3] = { 1, POKELIST_MENU_FIELD_MOVES_BACK, 16 };
+
+        func_ov165_0219ceec(wk);
+        PokeListMessage_CreateWordSet(wk, wk->message);
+        PokeListMessage_SetPkmName(wk, wk->message, 0, wk->pkm);
+        PokeListMessage_Open(wk, wk->message, POKELIST_MESSAGE_WINDOW_MENU);
+        PokeListMessage_Print(wk, wk->message, 0x13);
+        PokeListMessage_FreeWordSet(wk, wk->message);
+        PokeListMenu_Open(wk, wk->menu, fieldMoveMenu);
+        GFL_BGSysLoadScr(0);
+        break;
+    }
+    case POKELIST_MENU_FIELD_MOVES_BACK:
+        // Paper White 2: back to the Pokémon's menu
+        func_ov165_0219ceec(wk);
+        PokeList_OpenMenu(wk);
         break;
 #endif
     case 20: {
