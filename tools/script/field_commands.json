@@ -5419,6 +5419,15 @@
    "hack": "loads the map again where the player stands, as the places' flags and the Regi chamber are now, and puts 1 in a variable; 0 where it can't (on rails, cycling, surfing, the Union Room, the Entralink). The script's last thing before its end (include/paperwhite2/version_key.h)"
   },
   "758": {
+   "handler": "Scrcmd_PaperWhite2_PartyFieldMoveUser",
+   "overlay": 12,
+   "args": [
+    "var",
+    "any"
+   ],
+   "hack": "the HMs': puts the party slot of the Pokémon that uses the move in the field, the first that knows it, else for an HM's move the first that can learn it, in a variable; 6 if none can (include/paperwhite2/field_moves.h)"
+  },
+  "759": {
    "handler": "Scrcmd_PaperWhite2_Debug",
    "overlay": 12,
    "args": [

@@ -292,7 +292,7 @@ script's words like a message, so a block runs a `..._WORDS` action before its l
 script's work variables are listed at the top of its Script_2.
 
 **One command, many actions.** The menu's work is done by one script command, `Debug action, arg1, arg2, result`
-(0x2f6), which runs the action with the two arguments, each a value or a variable, and puts what it returns in the
+(0x2f7), which runs the action with the two arguments, each a value or a variable, and puts what it returns in the
 variable result (the script uses 0x8025). So a new option needs a new action, not a new opcode. The actions are
 `#define`s in `include/paperwhite2/debug_actions.h`, not an enum, since the script includes the header too; the handler
 is `Scrcmd_PaperWhite2_Debug` (`src/paperwhite2/ov012/paperwhite2_debug_commands.c`), a switch on the action. The
@@ -417,7 +417,8 @@ hooks; the text stays.
 
 The hack's script commands follow the original's last, 0x2f2, in `EVCMD_TABLE` (`src/ov012/scrcmd_vm.c`), each with
 its row in `EVCMD_PERM_TABLE` (`src/ov012/script_sys.c`): the conditions' two (0x2f3, 0x2f4) and `ReloadMapHere`
-(0x2f5, Version places below) under `PAPERWHITE2`, then `Debug` (0x2f6) under `PAPERWHITE2_DEBUG_MENU`, last, so that a
+(0x2f5, Version places below) and `PartyFieldMoveUser` (0x2f6, HMs by learners below) under `PAPERWHITE2`, then
+`Debug` (0x2f7) under `PAPERWHITE2_DEBUG_MENU`, last, so that a
 build without the menu keeps the others' IDs. Its entry in
 `tools/script/field_commands.json` has a `"hack"` key, which `field_command_table.py` keeps when it writes the table
 again from the original ROM and `field_script.py inc` writes above the macro. To add another command (rarely needed
@@ -426,7 +427,7 @@ both tables, its entry in the JSON, then `python3 tools/script/field_script.py i
 
 | Command | ID | Arguments | Handler |
 | --- | --- | --- | --- |
-| `Debug action, arg1, arg2, result` | 0x2f6 (758) | a `DEBUG_ACTION_*`, two arguments, each a value or a variable, and the variable for the result | `Scrcmd_PaperWhite2_Debug` (`src/paperwhite2/ov012/paperwhite2_debug_commands.c`); the actions above. A warp action waits a frame, as the map change commands do |
+| `Debug action, arg1, arg2, result` | 0x2f7 (759) | a `DEBUG_ACTION_*`, two arguments, each a value or a variable, and the variable for the result | `Scrcmd_PaperWhite2_Debug` (`src/paperwhite2/ov012/paperwhite2_debug_commands.c`); the actions above. A warp action waits a frame, as the map change commands do |
 
 **Memory.** The menu costs about 4 KB of the budget (the main arena had 159 KB left before it, 155 KB after): the
 command's code and tables in overlay 12, the overrides and the shiny PID in main, the hooks.
@@ -1050,7 +1051,7 @@ under `PAPERWHITE2`, since only the hack's build generates the second:
 The handlers are `src/paperwhite2/ov012/paperwhite2_condition_commands.c`, declared in
 `include/paperwhite2/condition_commands.h`, with rows in `EVCMD_TABLE` and `EVCMD_PERM_TABLE` under `PAPERWHITE2` and
 `"hack"` entries in `tools/script/field_commands.json`; the debug menu's `Debug` moved to 0x2f5 (757), then to 0x2f6
-(758) for `ReloadMapHere`.
+(758) for `ReloadMapHere`, then to 0x2f7 (759) for `PartyFieldMoveUser`.
 
 **The debug readout:** Conditions in the START menu (Debug menu, above): the world (season, time, weather, zone and
 place, parent zone and place, indoors or outdoors, the terrain groups under the player and under the follower, the
@@ -1407,6 +1408,63 @@ ID), where it isn't the empty message: 120, talked to while waiting (`Script_9`)
 stays up under the "Make the person a resident" menu and so ends without a pause (`L_034B`); 59, their thanks once
 invited; and 80, their welcome in their shop (`Script_3`). `{0100:0}` is their name in each. The eight placeholders
 have lines of their own (`Global10685_Text_Owner*Line*`).
+
+### HMs by learners
+
+The HMs' field moves (Cut, Fly, Surf, Strength, Waterfall, Dive: HM01 to HM06, `TM_MOVE_LIST` in
+`src/system/pml_item.c`) can be used by any party Pokémon, not an egg, that knows the move or can learn it by its HM
+(the HMs' bits of its personal data, `canPkmLearnTM_Wrapper`). Fainted Pokémon can, as in the original. The Pokémon
+used is the first that knows the move, otherwise the first that can learn it, and the messages and cut-in name and
+show it ("Keldeo used Surf!"). Everything else is the original's: the prompts, animations and messages.
+
+**The original's requirements.** White 2 checks no badges for field moves (there is no badge check anywhere in the
+field-move code, the party list or the scripts). What it checks besides knowing the move, all kept:
+
+| Move | Where it can be used (`CalcPlayerActionPossibilities`, `hm_event.c`'s checks, the scripts) |
+| --- | --- |
+| Cut | a Cut tree in front (`OBJ_CODE_108`, whose actor runs script 10004) |
+| Fly | a zone that allows flying out (`GetZoneFlagsEnableFlyFrom`), and no partner with the player (`HMEvent_CheckPairFlag`) |
+| Surf | water in front at the player's height (`CheckSurfHeightAllow`), not already surfing or cycling, no partner |
+| Strength | a boulder in front that hasn't been moved (script 10000), or the Abyssal Ruins' place; once used, `EVENT_FLAG_0x0964` lets boulders move until the map changes |
+| Waterfall | a waterfall in front while surfing (`CheckCanInteractWaterfall`), no partner |
+| Dive | a dive spot (`GetAbyssalRuinsDiveZoneID`), no partner |
+
+All of them also need a normal zone (`IsZoneNormal`) and no forced season sync.
+
+**The shared answer** is `PaperWhite2_FieldMoves_FindUser` (`src/paperwhite2/main/paperwhite2_field_moves.c`,
+`include/paperwhite2/field_moves.h`), in ARM9 main for the field, the scripts and the party list:
+
+- **The field's checks:** `GameData_FindPartyPkmByMove` (`src/ov036/fieldmap_event.c`), which decides whether facing
+  water starts the Surf script and swimming into a waterfall climbs it, returns `FindUser`'s slot.
+- **The scripts:** the HMs' global scripts (`res/field/scripts/global_10000.s`: the boulder, the water, the tree, the
+  waterfall and the dive spot, both the check and the "used" message's slot) use the new command
+  `PartyFieldMoveUser result, move` (0x2f6, `Scrcmd_PaperWhite2_PartyFieldMoveUser`,
+  `src/paperwhite2/ov012/paperwhite2_field_moves_field.c`) where they used `PokePartyHasMoveAny`. That command keeps
+  its meaning, a Pokémon that knows the move, for the other scripts that ask (Driftveil City's request for a Pokémon
+  that knows a TM's move, Clay Tunnel's Rock Smash, Humilau City's Surf fan).
+- **The party list:** a Pokémon's menu lists, after the field moves it knows, the HMs it can learn and doesn't know
+  (`src/paperwhite2/ov165/paperwhite2_pokelist_field_moves.c`), named and colored as known ones, and picking one does
+  what picking a known one does (`PokeList_DoMenuItem`, the same checks and messages, Fly's map). Their menu items are
+  26 to 31, the HM's number from 0 (`POKELIST_MENU_LEARNABLE_HM`), after the original's 0-23 and its waiting value
+  0x19. The menu holds 8 items (Summary, the moves, Switch, Item, Quit leave 4 for moves): when the learnable HMs
+  don't fit, the ones usable where the player stands come first, then the rest by HM number, and the others are left
+  out (they still work from the field's prompts). A Pokémon that knows four field moves shows no learnable ones.
+- **Fly from the Town Map:** the Town Map opened from the bag, the Y button or the C-Gear's map marker opens in its
+  Fly mode ("Fly to where?") when `PaperWhite2_FieldMoves_FindFlyUser` finds a Pokémon for Fly and Fly can be used
+  here (`CheckAllowHMEvent`), else as the view it was; a place picked flies there as the party's Fly does, with the
+  same record (`FieldAppCall_CreateTownMapParam`, `FieldAppCall_GetTownMapResult`,
+  `src/ov012/event_field_proclink.c`). The bag's, the shortcut's and the C-Gear's events already run a field move
+  that an app hands back.
+
+Tested in DeSmuME on the user's save (no Pokémon knows an HM): Pignite, Keldeo and Zekrom list Strength; Cut, Surf,
+Strength; Cut, Fly, Strength; Zekrom's Fly from the party flies; the C-Gear's map and the bag's Town Map fly to a
+picked town, and show the plain map indoors or with no Pokémon for Fly; facing Undella Town's deep water offers Surf
+and "Keldeo used Surf!"; the tree and boulder scripts run on a learner ("Keldeo used Cut!", "Oinkums used
+Strength!") and refuse when only an egg could; a Keldeo knowing Flash, Dig and Teleport lists only Cut of its three
+learnable HMs. Waterfall and Dive go through the same checks but weren't reached.
+
+**Memory.** About 0.6 KB: the helper in main, the command and Town Map check in overlay 12, the menu's in overlay
+165, the hooks.
 
 ### Storage menu order
 

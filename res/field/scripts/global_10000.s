@@ -53,7 +53,12 @@ Script_1:
     VMJump L_00E7
 
 L_009D:
+#ifdef PAPERWHITE2
+    // Paper White 2: a Pokémon that can learn the HM uses it too (paperwhite2/field_moves.h)
+    PartyFieldMoveUser 0x8010, 70
+#else
     PokePartyHasMoveAny 0x8010, 70
+#endif
     VMStackPush 0x8010
     VMStackPushConst 6
     VMStackCmp CMP_EQ
@@ -95,7 +100,12 @@ L_0105:
     WorkSetConst 0x8021, 0
     FlagSet EVENT_FLAG_0x0964
     BroadcastGameBeacon 1, 70, 0
+#ifdef PAPERWHITE2
+    // Paper White 2: a Pokémon that can learn the HM uses it too (paperwhite2/field_moves.h)
+    PartyFieldMoveUser 0x8021, 70
+#else
     PokePartyHasMoveAny 0x8021, 70
+#endif
     WordSetPartyPokeName 0, 0x8021
     // "[f000]Ă\u0001\u0000 used Strength![f000]븁\u0000"
     SystemMsg Global10000_Text_UsedStrength, 2
@@ -143,7 +153,12 @@ L_01A6:
 Script_3:
     ActorsPauseAll
     SEPlay SEQ_SE_MESSAGE
+#ifdef PAPERWHITE2
+    // Paper White 2: a Pokémon that can learn the HM uses it too (paperwhite2/field_moves.h)
+    PartyFieldMoveUser 0x8010, 57
+#else
     PokePartyHasMoveAny 0x8010, 57
+#endif
     VMStackPush 0x8010
     VMStackPushConst 6
     VMStackCmp CMP_EQ
@@ -184,7 +199,12 @@ L_0226:
     VMReturn
 
 L_0232:
+#ifdef PAPERWHITE2
+    // Paper White 2: a Pokémon that can learn the HM uses it too (paperwhite2/field_moves.h)
+    PartyFieldMoveUser 0x8010, 57
+#else
     PokePartyHasMoveAny 0x8010, 57
+#endif
     WorkGet 0x8008, 0x8010
     WordSetPartyPokeName 0, 0x8010
     // "[f000]Ă\u0001\u0000 used Surf![f000]븁\u0000"
@@ -215,7 +235,12 @@ Script_4:
 Script_5:
     ActorsPauseAll
     SEPlay SEQ_SE_MESSAGE
+#ifdef PAPERWHITE2
+    // Paper White 2: a Pokémon that can learn the HM uses it too (paperwhite2/field_moves.h)
+    PartyFieldMoveUser 0x8010, 15
+#else
     PokePartyHasMoveAny 0x8010, 15
+#endif
     VMStackPush 0x8010
     VMStackPushConst 6
     VMStackCmp CMP_EQ
@@ -250,7 +275,12 @@ L_02F0:
     VMReturn
 
 L_02FC:
+#ifdef PAPERWHITE2
+    // Paper White 2: a Pokémon that can learn the HM uses it too (paperwhite2/field_moves.h)
+    PartyFieldMoveUser 0x8010, 15
+#else
     PokePartyHasMoveAny 0x8010, 15
+#endif
     WorkGet 0x8008, 0x8010
     WordSetPartyPokeName 0, 0x8010
     // "[f000]Ă\u0001\u0000 used Cut![f000]븁\u0000"
@@ -300,7 +330,12 @@ L_039B:
 Script_7:
     ActorsPauseAll
     SEPlay SEQ_SE_MESSAGE
+#ifdef PAPERWHITE2
+    // Paper White 2: a Pokémon that can learn the HM uses it too (paperwhite2/field_moves.h)
+    PartyFieldMoveUser 0x8010, 127
+#else
     PokePartyHasMoveAny 0x8010, 127
+#endif
     VMStackPush 0x8010
     VMStackPushConst 6
     VMStackCmp CMP_EQ
@@ -342,7 +377,12 @@ L_042B:
 
 L_0437:
     WorkSetConst 0x8024, 0
+#ifdef PAPERWHITE2
+    // Paper White 2: a Pokémon that can learn the HM uses it too (paperwhite2/field_moves.h)
+    PartyFieldMoveUser 0x8024, 127
+#else
     PokePartyHasMoveAny 0x8024, 127
+#endif
     WordSetPartyPokeName 0, 0x8024
     // "[f000]Ă\u0001\u0000 used Waterfall![f000]븁\u0000"
     SystemMsg Global10000_Text_UsedWaterfall, 2
@@ -416,7 +456,12 @@ Script_11:
 
 Script_12:
     ActorsPauseAll
+#ifdef PAPERWHITE2
+    // Paper White 2: a Pokémon that can learn the HM uses it too (paperwhite2/field_moves.h)
+    PartyFieldMoveUser 0x8010, 291
+#else
     PokePartyHasMoveAny 0x8010, 291
+#endif
     VMStackPush 0x8010
     VMStackPushConst 6
     VMStackCmp CMP_EQ
@@ -445,7 +490,12 @@ L_0563:
     VMStackPushConst 0
     VMStackCmp CMP_EQ
     VMJumpIf CMP_STACK, L_0599
+#ifdef PAPERWHITE2
+    // Paper White 2: a Pokémon that can learn the HM uses it too (paperwhite2/field_moves.h)
+    PartyFieldMoveUser 0x8010, 291
+#else
     PokePartyHasMoveAny 0x8010, 291
+#endif
     WorkGet 0x8008, 0x8010
     WordSetPartyPokeName 0, 0x8010
     VMCall L_059F

@@ -11612,6 +11612,25 @@
         },
         {
             "op": 758,
+            "macro": "PartyFieldMoveUser",
+            "name": "party_field_move_user",
+            "handler": "Scrcmd_PaperWhite2_PartyFieldMoveUser",
+            "description": "Puts the party slot of the Pokémon that uses the move in the field in the variable: the first that knows it, else, for an HM's move, the first that can learn it (not an egg); 6 if none can. The HMs' global scripts check with it",
+            "args": [
+                {
+                    "name": "result",
+                    "type": "var",
+                    "kind": "var"
+                },
+                {
+                    "name": "move_id",
+                    "type": "any",
+                    "kind": "move"
+                }
+            ]
+        },
+        {
+            "op": 759,
             "macro": "Debug",
             "name": "debug",
             "handler": "Scrcmd_PaperWhite2_Debug",

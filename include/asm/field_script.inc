@@ -3817,9 +3817,16 @@
     .2byte \a0
     .endm
 
+    // Paper White 2: the HMs': puts the party slot of the Pokémon that uses the move in the field, the first that knows it, else for an HM's move the first that can learn it, in a variable; 6 if none can (include/paperwhite2/field_moves.h)
+    .macro PartyFieldMoveUser a0, a1
+    FieldCommand 758
+    .2byte \a0
+    .2byte \a1
+    .endm
+
     // Paper White 2: the debug menu's, under PAPERWHITE2_DEBUG_MENU: runs one of its actions (DEBUG_ACTION_*, paperwhite2/debug_actions.h) with two arguments and puts the result in a variable (include/paperwhite2/debug_commands.h)
     .macro Debug a0, a1, a2, a3
-    FieldCommand 758
+    FieldCommand 759
     .2byte \a0
     .2byte \a1
     .2byte \a2
