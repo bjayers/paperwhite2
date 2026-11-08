@@ -2547,9 +2547,13 @@ void PaperWhite2_FollowingUpdate(MMSys *system) {
         BOOL firstBody;
 
         // Move can run before the material's loading writes the billboard's handle. Here the hidden flag clears on the
-        // frame that handle becomes real. The VBlank task owns the upload, which isn't finished here
+        // frame that handle becomes real. The VBlank task owns the upload, which isn't finished here. An event pauses a
+        // waiting follower too (one that walks in after a door or a warp, hidden on the player's own tile until the
+        // player steps): it stays hidden, or a menu opened before that step showed it on the player
         if ((actor->flags & FOLLOWING_ACTOR_FLAG_HIDDEN) && !sReturnHold &&
-            (sFollower.state == FOLLOWING_STATE_FOLLOWING || sFollower.state == FOLLOWING_STATE_EVENT_PAUSED)) {
+            (sFollower.state == FOLLOWING_STATE_FOLLOWING ||
+             (sFollower.state == FOLLOWING_STATE_EVENT_PAUSED &&
+              FollowingScene_GetResumeState() == FOLLOWING_STATE_FOLLOWING))) {
             RevealFollower(actor);
         }
         // The actor's move writes its coordinates itself, so the actors' attribute pass at a move's start never

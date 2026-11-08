@@ -38,6 +38,7 @@
 #include "pml/poke_party.h"
 #include "save/bag.h"
 #include "save/event_work.h"
+#include "save/pokedex_savedata.h"
 #include "save/save_control.h"
 #include "system/game_data.h"
 #include "system/game_event.h"
@@ -450,6 +451,24 @@ static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2
         return TRUE;
     case DEBUG_ACTION_FLAG_WATCH_ENTRY:
         return DebugCommands_FlagWatchEntry(env, arg1);
+    case DEBUG_ACTION_POKEDEX_FILL: {
+        PokeDexSave *pokedex = GameData_GetPokedex(gameData);
+
+        PokeDex_PaperWhite2_FillAll(pokedex, GFL_RandomMT());
+        DebugCommands_SetWordNumber(env, 0, PokeDex_GetSeenNoNational(pokedex));
+        DebugCommands_SetWordNumber(env, 1, PokeDex_GetCaughtNoNational(pokedex));
+        return TRUE;
+    }
+    case DEBUG_ACTION_POKEDEX_NATIONAL: {
+        PokeDexSave *pokedex = GameData_GetPokedex(gameData);
+
+        if (PokeDex_IsNationalObtained(pokedex)) {
+            return FALSE;
+        }
+        PokeDex_SetNationalObtained(pokedex);
+        PokeDex_EnableHabitatList(pokedex);
+        return TRUE;
+    }
     case DEBUG_ACTION_MEMORY_RESET_PEAKS:
         PaperWhite2_VramStats_ResetPeaks();
         FldBillboardActor_ResetCachePeaks(GSYS_GetField(gsys)->actorSystem);

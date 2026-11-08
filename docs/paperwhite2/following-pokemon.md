@@ -758,6 +758,18 @@ player (beside, the middle rows may be cut again). On a route, in a town's open 
 Against a building's wall a tile behind, the upper rows move toward the camera and the picture must not. A 64-pixel
 follower outdoors in front of a wall: as before.
 
+## A menu showed the waiting follower on the player
+
+After a door or a warp the follower walks in: its actor is made at the player's own position, hidden and waiting,
+until the player's first step. A menu (START's debug menu, the X menu) or any other event opened before that step
+showed it there, on the player's tile, until the player walked. The cause, found in DeSmuME with a watch on the actor's
+flags: the scene's pause (`Pause`, `paperwhite2_following_scene.c`) sets every follower actor's state to
+`FOLLOWING_STATE_EVENT_PAUSED`, the waiting one too, and `PaperWhite2_FollowingUpdate`'s reveal (for a body whose sheet
+loads after `Move` placed it) cleared the hidden flag for any paused follower. It now reveals a paused one only when the
+state it goes back to after the events (`FollowingScene_GetResumeState`) is `FOLLOWING_STATE_FOLLOWING`, so a waiting
+follower stays hidden through the menu and walks in on the player's first step, as without one. A follower that was out
+when the menu opened stays where it was, on its trail behind the player.
+
 ## What remains
 
 Every step of the base package is ported (1 to 6, above), each built with `--hack`, no warnings, `verify_dsi_rom.py`

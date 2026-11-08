@@ -43,6 +43,9 @@ void FollowingScene_PauseAs(FollowingState state);
 BOOL FollowingScene_IsMenuActive(void);
 // Whether the follower was out, as its body or its resting ball, when the running events began
 BOOL FollowingScene_WasOut(void);
+// The state the follower goes back to when the running events end: its state when they began, or what
+// FollowingScene_PauseAs set
+FollowingState FollowingScene_GetResumeState(void);
 // The field just attached came back from a menu's application or a battle on the tile it left, so the follower is
 // placed and waits through the events running now. FALSE when an application handed the menu a field move, an item's
 // event or a script to run next

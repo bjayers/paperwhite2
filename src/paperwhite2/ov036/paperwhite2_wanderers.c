@@ -106,12 +106,11 @@
 // How far one sinks into deep sand, as an actor does (ActorTerrainEffect_DeepSand)
 #define WANDERER_DEEP_SAND_SINK FX32_CONST(7)
 // One that appears where there's no grass does in a dust cloud (the rustling spots', ENCOUNT_EFFECT_DUST_CLOUD, played
-// once, with its sound), shown as the cloud is cut off after a second. One that goes from ground that takes marks
-// (sand, snow) sinks into it in the landing puff; from other ground (a cave's floor) in a whole dust cloud, gone a
-// third of the way in, while the dust covers it
+// once and silent: the rustling spots' sound is the sign of a real one), shown as the cloud is cut off after a second.
+// One that goes from ground that takes marks (sand, snow) sinks into it in the landing puff; from other ground (a
+// cave's floor) in a whole dust cloud, gone a third of the way in, while the dust covers it
 #define WANDERER_CLOUD_FRAMES WANDERER_FRAMES_A_SECOND
 #define WANDERER_CLOUD_COVERED 3
-#define WANDERER_CLOUD_SE SEQ_SE_FLD_73
 // Where the field has no dust cloud, the landing puff, and how many frames into it
 #define WANDERER_PUFF_HIDE 4
 // A model's footprint type whose marks are tracks (FieldActorConfig's footprintType)
@@ -364,8 +363,8 @@ static void Wanderers_Feet(const Wanderer *wanderer, VecFx32 *feet) {
     feet->y = wanderer->y;
 }
 
-// Its dust cloud at its feet, with its sound, cut off after maxFrames (0 for none), or the landing puff where the field
-// has none; the frames it plays for
+// Its dust cloud at its feet, without the real one's sound, cut off after maxFrames (0 for none), or the landing puff
+// where the field has none; the frames it plays for
 static u16 Wanderers_Cloud(Field *field, const Wanderer *wanderer, u32 maxFrames) {
     VecFx32 feet;
     u32 frames;
@@ -376,7 +375,6 @@ static u16 Wanderers_Cloud(Field *field, const Wanderer *wanderer, u32 maxFrames
         FldeffDust_StartAt(field->fieldEffects, &feet);
         return WANDERER_PUFF_HIDE;
     }
-    GFL_SndSEPlay(WANDERER_CLOUD_SE);
     return (u16)frames;
 }
 
