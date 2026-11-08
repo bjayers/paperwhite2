@@ -27,10 +27,15 @@ constants).
 
 And the top screen's entry with the info page's own text in its text window (the entry's panels, grid and head bar,
 without its other text, sprite, types and footprint): top_ability_reference.png (Stats' Abilities button: a sample
-species' first ability, its name in the page's gold and "Ability 1" right-aligned in the entry's labels' grey),
+species' first ability, its name in the page's gold and "Ability 1" right-aligned in the page's grey),
 top_hidden_ability_reference.png (the hidden one before the species is caught), and top_items_<species>_reference.png
 (Data's held items: Tepig's none, Pikachu's Light Ball, Foongus's three, the third in dark grass only), each with a
 _tiles.png.
+
+Evo's canvas is its art with the strip and panel that the page draws until the art does, and its references are
+Tepig's family (evo_) and Eevee's 8 in the small layout (evo_eevee_), with the party icons (a/0/0/7), the balls
+(res/paperwhite2/pokedex_art/evo_ball_*.png), the lines and the text as paperwhite2_pokedex_info_evo.c draws them; it
+prints every family's row whose method falls back to its first evolution (Milotic) or doesn't fit.
 
 Stats' and Matchups' buttons are drawn as high as the page lifts them (paperwhite2_pokedex_info_panels.c's
 sSubpageLift, which must equal the art targets' offset_y), over the art as it was drawn.
@@ -62,6 +67,8 @@ MOVE_PANEL = ROOT / "src/paperwhite2/ov298/paperwhite2_pokedex_move_panel.c"
 TYPE_CHART = ROOT / "src/paperwhite2/main/paperwhite2_type_chart.c"
 APP_MENU_COMMON = ROOT / "src/system/app_menu_common.c"
 PAGE = ROOT / "src/paperwhite2/ov298/paperwhite2_pokedex_info.c"
+EVO = ROOT / "src/paperwhite2/ov298/paperwhite2_pokedex_info_evo.c"
+POKE_ICON = ROOT / "src/system/poke_icon.c"
 TEXT = ROOT / "res/text/system/pokedex_data.txt"
 # The user's art of each sub-page (screen_art.py's pokedex_info_* targets' sources)
 ART = ROOT / "res/paperwhite2/pokedex_art"
@@ -131,6 +138,16 @@ SAMPLE_MOVE = "arm_thrust"
 # The top screen's samples: Tepig's first ability (Blaze) and its hidden one before it is caught, and the held items of
 # Tepig (none), Pikachu (a Light Ball, 5%) and Foongus (three, the third in dark grass only)
 SAMPLE_ITEMS_SPECIES = ("tepig", "pikachu", "foongus")
+# Evo's samples: the shown species, and which of its family have been caught or seen (the rest not seen): Tepig's line
+# with Pignite shown, and Eevee's 8 in the small layout
+SAMPLE_EVO = (("evo", "pignite", {"tepig": "caught", "pignite": "caught"}),
+              ("evo_eevee", "eevee", {"eevee": "caught", "vaporeon": "caught", "jolteon": "seen", "flareon": "seen",
+                                      "espeon": "caught", "umbreon": "seen"}))
+# The party icons (a/0/0/7): their palette file and the first icon's file, each species' two after it (poke_icon.c)
+POKE_ICONS = "files/a/0/0/7"
+POKE_ICON_FIRST = 8
+POKE_ICON_SIZE = 32
+BAD_EGG = "bad_egg"
 
 # The palette: the page's placeholder colors as paperwhite2_pokedex_info_panels.c's sPanelColors (index 0 clear),
 # then the template's own: the grid's checker, the touch bar, the buttons, the tiles' grid
@@ -257,7 +274,27 @@ Moves
   the list scrolls. Touching the track (x 234-255) and holding scrolls the list to that place.
 
 Evo
-- evo_canvas.png etc.: nothing yet but the placeholder panel; the sub-page is still to come.
+- evo_canvas.png: your Evo art (blank so far) with the two placeholders the game draws until your
+  art does: the light strip (y 25-57, a dark line at its top and bottom) and the dark tree panel
+  (x 20-236, y 64-161, a 2 px near-black border). Redraw them as you like; once your art draws
+  them, the game stops drawing its own.
+- evo_reference.png, evo_reference_tiles.png: Tepig's family with Pignite shown (Tepig and
+  Pignite caught, Emboar not yet seen); evo_eevee_reference.png and _tiles: Eevee's 8, the most a
+  family has, in the small layout (Vaporeon and Espeon caught, Jolteon, Flareon, Umbreon seen,
+  Leafeon and Glaceon not yet seen).
+- The strip: each species' party icon (the game's animated sprites, 32 x 32, centred at y 41),
+  in a row centred at x 128, 32 px apart, closer for big families (Eevee's 28 px). One not yet
+  seen is the game's "?" icon. Touching an icon (its column of the strip) opens that Pokemon's
+  page if it has been seen.
+- The tree, drawn by the game in your art's colours: each row a Poke Ball 16 x 16 (your
+  evo_ball_caught/seen/unknown.png), centred at x 34 for the first stage, 54 and 74 for the next,
+  rows 15 px apart from y 78 (their centres); the name 10 px right of the ball's centre in the
+  standard font, white (238,238,238) with a near-black (24,24,24) shadow, gold (255,238,24) for
+  the Pokemon shown, "????" for one not yet seen; how it evolves right-aligned to end at x 225
+  (white), in the standard font or the small one where it would reach the name. Gold lines 2 px
+  wide run from each Pokemon's ball down and across into its evolutions'. More than 5 rows
+  (Eevee) use the small font for everything, rows 11 px apart from y 74.
+- Touching a row opens that Pokemon's page, as touching its icon does.
 
 The move panel (top screen)
 - move_panel_canvas.png: your art (move_panel.png), 256 x 192, the top screen: the panel at
@@ -284,8 +321,8 @@ The entry's text window (top screen)
   lines of description at the bottom of the top screen (tiles 2-29, rows 17-23) show other
   text on some sub-pages. On Stats, the Abilities button shows each ability in turn: its name
   in gold (255,238,24) on the first line with which one it is ("Ability 1", "Ability 2" or
-  "Hidden Ability") right-aligned on the same line in the entry's labels' dark grey
-  (90,82,82), its description in white below
+  "Hidden Ability") right-aligned on the same line in a mid grey (148,148,148) with a near-black
+  (24,24,24) shadow, its description in white below
   (the sample is Tepig's Blaze); the hidden one, until the Pokemon is caught, just "Hidden
   ability undiscovered." centred on the second line. On Data, the wild held items, one a line,
   the name from the left and the rate right-aligned ("Light Ball ... 5%"), the third (found
@@ -703,12 +740,12 @@ def item_name(constant):
 def top_text(d, m, font, kind, species):
     """The lines that the info page prints in the entry's text window, as PokedexInfoPage_DrawAbility and
     _DrawHeldItems print them: (text, x, line, align, color) with x in the window, align "left", "right" (x its end)
-    or "center", and color "white", "gold" or "grey" (the entry's labels')."""
+    or "center", and color "white", "gold" or "light_grey" (the abilities' slots')."""
     data = json.loads((ROOT / f"res/pokemon/{species}/data.json").read_text())
     right = TEXT_WINDOW_WIDTH - d["TOP_TEXT_X"]
     if kind == "ability":
         ability = ability_data(data["abilities"][0])
-        lines = [(ability["name"], d["TOP_TEXT_X"], 0, "left", "gold"), (m["AbilitySlot1"], right, 0, "right", "grey")]
+        lines = [(ability["name"], d["TOP_TEXT_X"], 0, "left", "gold"), (m["AbilitySlot1"], right, 0, "right", "light_grey")]
         return lines + [(line, d["TOP_TEXT_X"], 1 + i, "left", "white")
                         for i, line in enumerate(ability["description"].split("\n"))]
     if kind == "hidden":
@@ -740,13 +777,16 @@ def top_screen(d, font, lines, tiles):
     paint_paletted(canvas, chars, TOP_SCREEN_MID, HEAD_BAR_ROWS, HEIGHT // 8 - HEAD_BAR_ROWS)
     head_bar(canvas, font, TOP_HEAD_BAR_BASE)
     shadow = TOP_FONT_BASE + d["POKEDEX_INFO_TEXT_SHADOW"]
-    letters = {color: TOP_FONT_BASE + d[f"POKEDEX_INFO_TEXT_{color.upper()}"] for color in ("white", "gold", "grey")}
+    letters = {color: TOP_FONT_BASE + d[f"POKEDEX_INFO_TEXT_{color.upper()}"]
+               for color in ("white", "gold", "light_grey")}
     for text, x, line, align, color in lines:
         if align == "center":
             x = (TEXT_WINDOW_WIDTH - font.text_width(text)) // 2
             align = "left"
+        # The slot's grey has the dark shadow (paperwhite2_pokedex_info.c's TOP_TEXT_GREY)
         canvas.text(font, text, TEXT_WINDOW_X + x, TEXT_WINDOW_Y + d["TOP_TEXT_Y"] + line * d["TOP_TEXT_LINE_PITCH"],
-                    align, letters[color], shadow)
+                    align, letters[color],
+                    TOP_FONT_BASE + d["POKEDEX_INFO_TEXT_DARK_SHADOW"] if color == "light_grey" else shadow)
     if tiles:
         for y in range(HEIGHT):
             for x in range(WIDTH):
@@ -756,13 +796,14 @@ def top_screen(d, font, lines, tiles):
 
 
 def top_colors(extract):
-    """The top references' palette: the entry's rows, the head bar's, the font's row with the page's gold
-    (pokedex_info.c's sGoldColor) in its place, and the tiles' grid's color."""
+    """The top references' palette: the entry's rows, the head bar's, the font's row with the page's colors
+    (pokedex_info.c's sPageTextColors) in their places, and the tiles' grid's color."""
     out = (read_palette(TOP_PALETTE_FILE) + [(0, 0, 0)] * 48)[:TOP_PALETTE_ROWS * 16]
     out += [(0, 0, 0)] * (TOP_HEAD_BAR_BASE - len(out)) + head_bar_colors()
     font_row = list(palette_colors(read_narc((extract / FONTS).read_bytes())[FONT_PALETTE])[:16])
-    gold = re.search(r"sGoldColor = GX_RGB\((\d+), (\d+), (\d+)\)", ENTRY.read_text()).groups()
-    font_row[defines(ENTRY_HEADER)["POKEDEX_INFO_TEXT_GOLD"]] = rgb([int(v) for v in gold])
+    table = re.search(r"sPageTextColors\[\] = \{(.*?)\};", ENTRY.read_text(), re.S).group(1)
+    for i, color in enumerate(re.findall(r"GX_RGB\((\d+), (\d+), (\d+)\)", table)):
+        font_row[defines(ENTRY_HEADER)["POKEDEX_INFO_TEXT_GOLD"] + i] = rgb([int(v) for v in color])
     return out + font_row + [EXTRA[6]]
 
 
@@ -879,6 +920,212 @@ def matchups_text(canvas, d, m, font, small, icons, lift):
         canvas.text(font, name, x + text_x, y + BUTTON_TEXT_Y, letter=PANEL, shadow=CLEAR)
 
 
+def species_data(name):
+    return json.loads((ROOT / f"res/pokemon/{name}/data.json").read_text())
+
+
+def species_numbers():
+    numbers = {}
+    for i, line in enumerate(l for l in (ROOT / "generated/species.txt").read_text().split("\n")
+                             if l.startswith("SPECIES_")):
+        numbers[line.split(" = ")[0].strip()] = i
+    return numbers
+
+
+def evo_family(species):
+    """As PokedexInfoEvo_LoadFamily: the family of a species from its root (the first species, in the species' order,
+    whose evolutions name it, and so on up), each species followed by its evolutions in their data's order and theirs,
+    as (species, depth, parent's row, [evolutions from the parent into it])."""
+    numbers = species_numbers()
+    names = {number: name[len("SPECIES_"):].lower() for name, number in numbers.items()}
+    parents = {}
+    for number in sorted(names):
+        path = ROOT / f"res/pokemon/{names[number]}/data.json"
+        if path.exists() and number <= numbers["SPECIES_GENESECT"]:
+            for e in species_data(names[number]).get("evolutions") or []:
+                parents.setdefault(e["species"][len("SPECIES_"):].lower(), names[number])
+    root = species
+    while root in parents:
+        root = parents[root]
+    rows = [(root, 0, None, [])]
+
+    def add(row):
+        name, depth = rows[row][0], rows[row][1]
+        if depth + 1 >= 3:
+            return
+        for e in species_data(name).get("evolutions") or []:
+            child = e["species"][len("SPECIES_"):].lower()
+            known = [r for r in rows if r[2] == row and r[0] == child]
+            if known:
+                known[0][3].append(e)
+                continue
+            rows.append((child, depth + 1, row, [e]))
+            add(len(rows) - 1)
+    add(0)
+    return rows
+
+
+# By EVO_METHOD_*, as sEvoMethodTexts: the full and shortened messages and the parameter's kind
+EVO_METHODS = {
+    "LEVEL": ("EvoLevel", "EvoLevelShort", "number"), "FRIENDSHIP": ("EvoFriendship", "EvoFriendshipShort", "number"),
+    "FRIENDSHIP_DAY": ("EvoFriendshipDay", "EvoFriendshipDayShort", "number"),
+    "FRIENDSHIP_NIGHT": ("EvoFriendshipNight", "EvoFriendshipNightShort", "number"),
+    "TRADE": ("EvoTrade", "EvoTrade", "number"), "TRADE_WITH_ITEM": ("EvoTradeItem", "EvoTradeItemShort", "item"),
+    "TRADE_WITH_SPECIES": ("EvoTradeSpecies", "EvoTradeSpecies", "partner"),
+    "ITEM": ("EvoItem", "EvoItemShort", "item"), "LEVEL_ATK_GT_DEF": ("EvoAttackHigher", "EvoAttackHigherShort", "number"),
+    "LEVEL_ATK_EQ_DEF": ("EvoAttackEqual", "EvoAttackEqualShort", "number"),
+    "LEVEL_ATK_LT_DEF": ("EvoAttackLower", "EvoAttackLowerShort", "number"),
+    "LEVEL_PERSONALITY_LOW": ("EvoPersonality", "EvoPersonalityShort", "number"),
+    "LEVEL_PERSONALITY_HIGH": ("EvoPersonality", "EvoPersonalityShort", "number"),
+    "SHEDINJA": ("EvoLevel", "EvoLevelShort", "number"), "SHEDINJA_MADE": ("EvoShedinja", "EvoShedinjaShort", "parent"),
+    "BEAUTY": ("EvoBeauty", "EvoBeautyShort", "number"), "ITEM_MALE": ("EvoItemMale", "EvoItemMaleShort", "item"),
+    "ITEM_FEMALE": ("EvoItemFemale", "EvoItemFemaleShort", "item"),
+    "HELD_ITEM_DAY": ("EvoHeldItemDay", "EvoHeldItemDayShort", "item"),
+    "HELD_ITEM_NIGHT": ("EvoHeldItemNight", "EvoHeldItemNightShort", "item"),
+    "KNOWS_MOVE": ("EvoKnowsMove", "EvoKnowsMoveShort", "move"),
+    "SPECIES_IN_PARTY": ("EvoSpeciesInParty", "EvoSpeciesInPartyShort", "species"),
+    "LEVEL_MALE": ("EvoLevelMale", "EvoLevelMaleShort", "number"),
+    "LEVEL_FEMALE": ("EvoLevelFemale", "EvoLevelFemaleShort", "number"),
+    "LEVEL_MAGNETIC_FIELD": ("EvoMagneticField", "EvoMagneticFieldShort", "number"),
+    "LEVEL_MOSS_ROCK": ("EvoMossRock", "EvoMossRockShort", "number"),
+    "LEVEL_ICE_ROCK": ("EvoIceRock", "EvoIceRockShort", "number"),
+}
+
+
+def evo_method_text(m, evolution, parent, shortened):
+    """As PokedexInfoEvo_FormatMethod."""
+    full, short, kind = EVO_METHODS[evolution["method"][len("EVO_METHOD_"):]]
+    param = evolution["param"]
+    text = m[short if shortened else full].replace("{0200:0}", str(param) if isinstance(param, int) else "0")
+    name = ""
+    if kind == "item":
+        name = item_name(param)
+    elif kind == "move":
+        name = move_data(param[len("MOVE_"):].lower())["name"]
+    elif kind == "species":
+        name = species_data(param[len("SPECIES_"):].lower())["name"]
+    elif kind == "parent":
+        name = species_data(parent)["name"]
+    elif kind == "partner":
+        name = species_data("shelmet" if parent == "karrablast" else "karrablast")["name"]
+    return text.replace("{0100:1}", name)
+
+
+def evo_method(d, m, font, small, row, rows, left, small_layout):
+    """As PokedexInfoEvo_DrawMethod: the text, its font and where it starts, the first wording and font that fit
+    between left and EVO_METHOD_RIGHT; or the shortest in font 1 from left, and False."""
+    _, _, parent, evolutions = rows[row]
+    parent = rows[parent][0]
+    wordings = ([(True, False), (True, True)] if len(evolutions) > 1 else []) + [(False, False), (False, True)]
+    for both, shortened in wordings:
+        text = evo_method_text(m, evolutions[0], parent, shortened)
+        if both:
+            text = m["EvoOr"].replace("{0100:0}", text).replace(
+                "{0100:1}", evo_method_text(m, evolutions[1], parent, shortened))
+        for f in ((small,) if small_layout else (font, small)):
+            if left + f.text_width(text) <= d["EVO_METHOD_RIGHT"]:
+                return text, f, d["EVO_METHOD_RIGHT"] - f.text_width(text), True
+    return text, small, left, False
+
+
+def evo_layout(d, rows):
+    """Each row's ball center, the layout's font size (small) and the strip's icons' centers, as the C file's."""
+    small_layout = len(rows) > d["EVO_ROWS_NORMAL"]
+    y0, pitch = ((d["EVO_SMALL_ROW_Y"], d["EVO_SMALL_ROW_PITCH"]) if small_layout
+                 else (d["EVO_ROW_Y"], d["EVO_ROW_PITCH"]))
+    centers = [(d["EVO_ROW_X"] + depth * d["EVO_DEPTH_INDENT"], y0 + i * pitch) for i, (_, depth, _, _) in
+               enumerate(rows)]
+    icon_pitch = d["EVO_STRIP_WIDTH"] // len(rows) if len(rows) * d["EVO_STRIP_PITCH_MAX"] > d["EVO_STRIP_WIDTH"] \
+        else d["EVO_STRIP_PITCH_MAX"]
+    icons = [d["EVO_STRIP_CENTER_X"] - (len(rows) - 1) * icon_pitch // 2 + i * icon_pitch for i in range(len(rows))]
+    return centers, small_layout, icons
+
+
+def evo_placeholders(d, canvas, base):
+    """As PokedexInfoEvo_DrawPlaceholders, in the art's colors from base."""
+    canvas.fill(0, d["EVO_STRIP_Y"], WIDTH, d["EVO_STRIP_HEIGHT"], base + d["EVO_COLOR_DARK"])
+    canvas.fill(0, d["EVO_STRIP_Y"] + 1, WIDTH, d["EVO_STRIP_HEIGHT"] - 2, base + d["EVO_COLOR_WHITE"])
+    x, y, w, h, b = (d[f"EVO_PANEL_{k}"] for k in ("X", "Y", "WIDTH", "HEIGHT", "BORDER"))
+    canvas.fill(x, y, w, h, base + d["EVO_COLOR_DARK"])
+    canvas.fill(x + b, y + b, w - 2 * b, h - 2 * b, base + d["EVO_COLOR_PANEL"])
+
+
+def poke_icons(extract):
+    """The party icons' 48 colors, and a function giving a species' icon (frame 0) as 32 by 32 color indices into them."""
+    files = read_narc((extract / POKE_ICONS).read_bytes())
+    numbers = species_numbers()
+    rows = [int(v, 0) for v in re.findall(r"0x[0-9a-fA-F]+|\b\d+\b", re.search(
+        r"sPokeIconPalettes\[\] = \{([^}]*)\}", POKE_ICON.read_text()).group(1))]
+
+    def icon(name):
+        number = numbers[f"SPECIES_{name.upper()}"]
+        _, _, pixels = character_pixels(files[POKE_ICON_FIRST + number * 2], POKE_ICON_SIZE, POKE_ICON_SIZE * 2)
+        row = rows[number] & 15
+        return [v + row * 16 if v else 0 for v in pixels[:POKE_ICON_SIZE * POKE_ICON_SIZE]]
+    return palette_colors(files[0])[:48], icon
+
+
+def evo_text(canvas, d, m, font, small, icon_of, shown, states):
+    """As PokedexInfoEvo_Show over the art (its colors from ART_BASE): the placeholders, the lines, each row's ball,
+    name and method, and the strip's icons (their colors from ICON_BASE)."""
+    rows = evo_family(shown)
+    centers, small_layout, icons = evo_layout(d, rows)
+    art = lambda name: ART_BASE + d[f"EVO_COLOR_{name}"]
+    evo_placeholders(d, canvas, ART_BASE)
+    line = d["EVO_LINE_WIDTH"]
+    for i, (_, _, parent, _) in enumerate(rows[1:], 1):
+        (px, py), (x, y) = centers[parent], centers[i]
+        canvas.fill(px - line // 2, py, line, y - py + 1, art("GOLD"))
+        canvas.fill(px - line // 2, y - line // 2, x - px + line // 2, line, art("GOLD"))
+    balls = {state: read_indexed_png(ART / f"evo_ball_{state}.png")[2] for state in ("caught", "seen", "unknown")}
+    size = d["EVO_BALL_SIZE"]
+    offset = d["EVO_SMALL_TEXT_OFFSET_Y"] if small_layout else d["EVO_TEXT_OFFSET_Y"]
+    name_font = small if small_layout else font
+    for i, (name, _, _, _) in enumerate(rows):
+        x, y = centers[i]
+        state = states.get(name, "unknown")
+        for j, value in enumerate(balls[state]):
+            if value:
+                canvas.pixels[(y - size // 2 + j // size) * WIDTH + x - size // 2 + j % size] = ART_BASE + value
+        text = species_data(name)["name"] if state != "unknown" else m["EvoUnknownName"]
+        x += d["EVO_NAME_OFFSET_X"]
+        canvas.text(name_font, text, x, y - offset, letter=art("GOLD" if name == shown else "WHITE"),
+                    shadow=art("DARK"))
+        if i:
+            method, f, left, _ = evo_method(d, m, font, small, i, rows, x + name_font.text_width(text)
+                                            + d["EVO_METHOD_GAP"], small_layout)
+            canvas.text(f, method, left, y - (d["EVO_TEXT_OFFSET_Y"] if f is font else d["EVO_SMALL_TEXT_OFFSET_Y"]),
+                        letter=art("WHITE"), shadow=art("DARK"))
+        pixels = icon_of(name if state != "unknown" else BAD_EGG)
+        for j, value in enumerate(pixels):
+            if value:
+                canvas.pixels[(d["EVO_STRIP_ICON_Y"] - POKE_ICON_SIZE // 2 + j // POKE_ICON_SIZE) * WIDTH + icons[i]
+                              - POKE_ICON_SIZE // 2 + j % POKE_ICON_SIZE] = ICON_BASE + value
+
+
+def evo_check(d, m, font, small):
+    """Every family's rows whose method doesn't fit after its species' name (all seen) in any wording, printed."""
+    numbers = species_numbers()
+    misfits = []
+    for name, number in numbers.items():
+        species = name[len("SPECIES_"):].lower()
+        if not 0 < number <= numbers["SPECIES_GENESECT"]:
+            continue
+        rows = evo_family(species)
+        if rows[0][0] != species:
+            continue
+        _, small_layout, _ = evo_layout(d, rows)
+        centers = evo_layout(d, rows)[0]
+        name_font = small if small_layout else font
+        for i in range(1, len(rows)):
+            width = max(name_font.text_width(species_data(rows[i][0])["name"]), name_font.text_width(m["EvoUnknownName"]))
+            left = centers[i][0] + d["EVO_NAME_OFFSET_X"] + width + d["EVO_METHOD_GAP"]
+            text, _, _, fits = evo_method(d, m, font, small, i, rows, left, small_layout)
+            if not fits or len(rows[i][3]) > 1:
+                misfits.append(f"{rows[i][0]}: {text!r}" + ("" if fits else " (doesn't fit)"))
+    return misfits
+
+
 def reference(art, draw_text, tiles):
     """art is a placeholder Canvas, or the art's (pixels, colors), which go after the template's colors."""
     canvas = Canvas()
@@ -920,7 +1167,7 @@ def main():
     args = parser.parse_args()
     fonts = read_narc((args.extract / FONTS).read_bytes())
     font, small = Font(fonts[0]), Font(fonts[1])
-    d, m = defines(HEADER, ENTRY_HEADER, PANELS, PAGE, MOVE_PANEL), messages()
+    d, m = defines(HEADER, ENTRY_HEADER, PANELS, PAGE, MOVE_PANEL, EVO), messages()
     args.out.mkdir(parents=True, exist_ok=True)
     icons, icon_colors = type_icons(args.extract)
     lift = lifts()
@@ -961,7 +1208,6 @@ def main():
     for page, panels, extra, draw, sprites in (
             ("data", ("DATA", "EGG"), None, lambda c: data_text(c, d, m, font, small), False),
             ("moves", (), moves_canvas, lambda c: moves_text(c, d, m, font, small, icons), True),
-            ("evo", ("EVO",), None, lambda c: None, False),
             ("matchups", ("MATCHUPS",), None,
              lambda c: matchups_text(c, d, m, font, small, icons, lift["matchups"]), False)):
         found = sub_page(page, panels, extra)
@@ -969,6 +1215,21 @@ def main():
             continue
         (args.out / f"{page}_canvas.png").write_bytes(write_indexed_png(WIDTH, HEIGHT, bytes(found[0]), found[1]))
         write(page, found, draw, colors(art16(found), icon_colors, sprite_colors() if sprites else ()))
+
+    # Evo: the art with the placeholders that the page draws over it (the strip and the panel) as its canvas, and each
+    # sample family over it, the party icons' colors after the art's
+    evo_art = load_art("evo")
+    if evo_art:
+        canvas = Canvas()
+        canvas.pixels = bytearray(evo_art[0])
+        evo_placeholders(d, canvas, 0)
+        (args.out / "evo_canvas.png").write_bytes(write_indexed_png(WIDTH, HEIGHT, bytes(canvas.pixels), evo_art[1]))
+        icon_colors16, icon_of = poke_icons(args.extract)
+        for name, shown, states in SAMPLE_EVO:
+            write(name, evo_art, lambda c: evo_text(c, d, m, font, small, icon_of, shown, states),
+                  colors(art16(evo_art), icon_colors16))
+        for line in evo_check(d, m, font, small):
+            print("evo:", line)
 
     # The top screen's move panel, once it has the user's art: the canvas is the art, the reference has the sample move
     if MOVE_PANEL_ART.exists():

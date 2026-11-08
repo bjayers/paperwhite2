@@ -2,6 +2,16 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-07: Pokédex, the Evo page
+
+Built (plugins.md, Pokédex), not yet tested in game: the family's party icons in a strip ("?" for unseen), the tree
+with the user's Pokéballs (caught, seen, unknown), names (gold for the shown species, "????" unseen), gold lines and
+each evolution's method (normal font, else small, else short wording; more than 5 rows in a small layout). Touching a
+seen species opens its page. The family roots and the balls are ARCID_POKEDEX_GRA's members 152 and 153, appended at
+build time by `tools/paperwhite2/pokedex_evo.py` from res/pokemon/*/data.json (configure.py's HACK_ARCHIVE_MEMBERS);
+the tool stops if the archive no longer has 152 members, so new art members must move them. The ability slot label
+is grey (148,148,148) with a near-black shadow. Next: the user's Evo background, drawn over the templates.
+
 ## 2026-11-07: Pokédex, ability slots, dark grass, the buttons lifted
 
 Built, not yet tested in game: the ability pages say "Ability 1", "Ability 2" or "Hidden Ability" on line 1 (the

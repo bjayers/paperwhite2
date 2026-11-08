@@ -201,9 +201,10 @@ static inline BOOL PokedexInfo_IsDetailTop(PokedexInfo *info) {
     return info->mode == POKEDEX_INFO_MODE_DETAIL && info->engine == 0;
 }
 
-// Paper White 2: the info page's gold, (255, 238, 24) as its art's, for the abilities' names it prints in the text
-// window. In a static, as the palette is loaded by DMA, which can't read the stack
-static const GXRgb sGoldColor = GX_RGB(31, 29, 3);
+// Paper White 2: the info page's colors in the text window, from POKEDEX_INFO_TEXT_GOLD on: the gold of the abilities'
+// names, (255, 238, 24) as its art's, and the abilities' slots' grey, (148, 148, 148), with its near-black shadow,
+// (24, 24, 24), as the art's. In a static, as the palette is loaded by DMA, which can't read the stack
+static const GXRgb sPageTextColors[] = { GX_RGB(31, 29, 3), GX_RGB(18, 18, 18), GX_RGB(3, 3, 3) };
 #endif
 
 static void PokedexInfo_ClearDisplay(PokedexInfo *info);
@@ -886,10 +887,10 @@ static void PokedexInfo_InitWindows(PokedexInfo *info) {
     }
     GFL_G2DIOLoadArcNCLRDefault(info->arcs[POKEDEX_INFO_ARC_FONT], 5, palType, 0x60, 0x20, info->heapId);
 #ifdef PAPERWHITE2
-    // Paper White 2: the info page's gold in a color of the font's row that the entry doesn't use, each time the row is
-    // loaded (the move panel's closing loads it again)
+    // Paper White 2: the info page's colors in colors of the font's row that the entry doesn't use, each time the row
+    // is loaded (the move panel's closing loads it again)
     if (PokedexInfo_IsDetailTop(info)) {
-        GFL_BGSysUploadStdPalette(info->frontBG, &sGoldColor, sizeof(sGoldColor),
+        GFL_BGSysUploadStdPalette(info->frontBG, sPageTextColors, sizeof(sPageTextColors),
                                   0x60 + POKEDEX_INFO_TEXT_GOLD * sizeof(GXRgb));
     }
 #endif

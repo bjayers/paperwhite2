@@ -32,10 +32,10 @@
 #include "text/system/pokedex_data.h"
 
 // Paper White 2: the bottom screen of the Pokédex's info page, on the sub engine above the touch bar: the bar of the
-// sub-pages' tabs at the top, and below it the shown sub-page's panel, Stats, Data, Moves, Evo or Matchups, read from
-// the species' data at run time. The text and bars are drawn into two windows over the user's art (below), and
-// a sub-page without art yet gets fills in its place, so every place is a constant here: the screen's pixels, the
-// windows' tiles
+// sub-pages' tabs at the top, and below it the shown sub-page's panel, Stats, Data, Moves, Evo (drawn by
+// paperwhite2_pokedex_info_evo.c) or Matchups, read from the species' data at run time. The text and bars are drawn
+// into two windows over the user's art (below), and a sub-page without art yet gets fills in its place, so every place
+// is a constant here: the screen's pixels, the windows' tiles
 
 // The sub engine's BGs: the grid at the back, the user's art over it on the page's buttons' BG
 // (POKEDEX_INFO_BUTTON_BG, at POKEDEX_INFO_ART_PRIORITY), and the panels' windows above both, all under the touch
@@ -52,8 +52,10 @@
 // The art's palettes, after the buttons' two (POKEDEX_INFO_BUTTON_PALETTE): each sub-page's art has its own row, from
 // this one in the sub-pages' order
 #define PALETTE_ART 6
-// The content window's palette while Matchups shows (sMatchupColors), after the art's five
+// The content window's palette while Matchups shows (sMatchupColors), after the art's five, and while Evo shows (the
+// art's colors, with its balls, paperwhite2_pokedex_info_evo.c), before the touch bar's 13
 #define PALETTE_MATCHUPS 11
+#define PALETTE_EVO 12
 // The art's screen, the whole screen in tiles, and the BG's whole screen (256 by 256), whose rows past the screen's
 // show at the bottom, under the touch bar, while the BG is lifted (sSubpageLift)
 #define ART_TILES_ACROSS 32
@@ -192,12 +194,6 @@
 // The cursor's and the knob's sub OBJ palette rows, after the type icons' and below the touch bar's
 #define PALETTE_CURSOR 3
 #define PALETTE_KNOB 4
-
-// Evo: nothing yet but its placeholder panel
-#define EVO_PANEL_X 4
-#define EVO_PANEL_Y 20
-#define EVO_PANEL_WIDTH 248
-#define EVO_PANEL_HEIGHT 144
 
 // Matchups: a chart of the attacking types in the types' order, MATCHUPS_COLUMNS to a row, each its type icon (an OBJ
 // centered on its place) with the damage multiplier against the species centered under it in font 0. The page's
@@ -502,6 +498,8 @@ struct PokedexInfoPanels {
     u32 knobChars;
     u32 knobCellAnims;
     ClActor *knob;
+    // Evo's family, its strip of icons and its tree
+    PokedexInfoEvo *evo;
 };
 
 static void PokedexInfoPanels_DrawBar(PokedexInfoPanels *panels, u32 subpage);
@@ -539,7 +537,8 @@ static u32 PokedexInfoPanels_GetFemalePermille(u32 sexRatio);
 static u32 PokedexInfoPanels_GetCatchPermille(u32 catchRate);
 static u32 PokedexInfoPanels_GetFavoriteFlavor(PersonalData *personal);
 
-PokedexInfoPanels *PokedexInfoPanels_Create(HeapID heapId, Font *font, ClActUnit *unit, const PokedexInfoMoves *moves) {
+PokedexInfoPanels *PokedexInfoPanels_Create(HeapID heapId, Font *font, ClActUnit *unit, const PokedexInfoMoves *moves,
+                                            PokeDexSave *pokedex) {
     PokedexInfoPanels *panels =
         GFL_HeapAllocate(heapId, sizeof(PokedexInfoPanels), TRUE, "paperwhite2_pokedex_info_panels.c", __LINE__);
 
@@ -567,12 +566,14 @@ PokedexInfoPanels *PokedexInfoPanels_Create(HeapID heapId, Font *font, ClActUnit
     PokedexInfoPanels_CreateArt(panels);
     PokedexInfoPanels_CreateTypeIcons(panels, unit);
     PokedexInfoPanels_CreateMoveActors(panels, unit);
+    panels->evo = PokedexInfoEvo_Create(heapId, font, panels->smallFont, unit, pokedex, BG_PANELS, PALETTE_EVO);
     GFL_BGSysSetBGEnabled(BG_GRID, TRUE);
     GFL_BGSysSetBGEnabled(BG_PANELS, TRUE);
     return panels;
 }
 
 void PokedexInfoPanels_Free(PokedexInfoPanels *panels) {
+    PokedexInfoEvo_Free(panels->evo);
     PokedexInfoPanels_FreeMoveActors(panels);
     PokedexInfoPanels_FreeTypeIcons(panels);
     PokedexInfoPanels_FreeArt(panels);
@@ -762,7 +763,8 @@ void PokedexInfoPanels_Update(PokedexInfoPanels *panels) {
     PokedexDetailBackground_Update(panels->grid);
 }
 
-void PokedexInfoPanels_Show(PokedexInfoPanels *panels, u32 subpage, u16 species, u16 form, BOOL caught, u32 ability) {
+void PokedexInfoPanels_Show(PokedexInfoPanels *panels, u32 subpage, u16 species, u16 form, u16 sex, BOOL caught,
+                            u32 ability) {
     PersonalData *personal = PML_PersonalLoad(species, form, panels->heapId);
     GFLBitmap *bitmap = BmpWin_GetBitmap(panels->contentWindow);
     u32 i;
@@ -781,7 +783,7 @@ void PokedexInfoPanels_Show(PokedexInfoPanels *panels, u32 subpage, u16 species,
         PokedexInfoPanels_DrawMoves(panels);
         break;
     case POKEDEX_INFO_SUBPAGE_EVO:
-        PokedexInfoPanels_DrawPanel(bitmap, EVO_PANEL_X, EVO_PANEL_Y - CONTENT_TOP, EVO_PANEL_WIDTH, EVO_PANEL_HEIGHT);
+        PokedexInfoEvo_Show(panels->evo, bitmap, CONTENT_TOP, species, form, sex);
         break;
     case POKEDEX_INFO_SUBPAGE_MATCHUPS:
         PokedexInfoPanels_DrawMatchups(panels, personal, ability);
@@ -791,9 +793,22 @@ void PokedexInfoPanels_Show(PokedexInfoPanels *panels, u32 subpage, u16 species,
         ClActor_SetVisible(panels->typeIcons[i], subpage == POKEDEX_INFO_SUBPAGE_MATCHUPS);
     }
     PokedexInfoPanels_UpdateMoveActors(panels, subpage == POKEDEX_INFO_SUBPAGE_MOVES);
+    // Evo's icons take OBJ resources only while it shows
+    if (subpage != POKEDEX_INFO_SUBPAGE_EVO) {
+        PokedexInfoEvo_Hide(panels->evo);
+    }
     PML_PersonalFree(personal);
-    BmpWin_SetPalette(panels->contentWindow,
-                      subpage == POKEDEX_INFO_SUBPAGE_MATCHUPS ? PALETTE_MATCHUPS : PALETTE_PANELS);
+    switch (subpage) {
+    case POKEDEX_INFO_SUBPAGE_MATCHUPS:
+        BmpWin_SetPalette(panels->contentWindow, PALETTE_MATCHUPS);
+        break;
+    case POKEDEX_INFO_SUBPAGE_EVO:
+        BmpWin_SetPalette(panels->contentWindow, PALETTE_EVO);
+        break;
+    default:
+        BmpWin_SetPalette(panels->contentWindow, PALETTE_PANELS);
+        break;
+    }
     BmpWin_Transfer(panels->barWindow);
     BmpWin_Transfer(panels->contentWindow);
 }
@@ -832,6 +847,10 @@ u32 PokedexInfoPanels_GetTouchedMoveRow(void) {
         return POKEDEX_INFO_MOVE_ROWS;
     }
     return rect;
+}
+
+u16 PokedexInfoPanels_GetTouchedEvoSpecies(PokedexInfoPanels *panels) {
+    return PokedexInfoEvo_GetTouchedSpecies(panels->evo);
 }
 
 BOOL PokedexInfoPanels_IsMoveTrackTouched(void) {

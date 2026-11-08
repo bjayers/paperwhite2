@@ -245,3 +245,11 @@ screen; Evo is a blank sub-page. Details in `docs/paperwhite2/plugins.md`'s Pok√
 row redrawn with the edge over them and put back as it closes), the sprite is hidden under it, it opens as Moves is
 entered and follows the set; Left and Right step through the five tabs and L and R through Moves' sets; the list's
 rows are centred (from y 41) and its scroll bar can be dragged.
+
+**Evo built (2026-11-07):** as the user's mockup: a strip of the family's party icons (the Bad Egg's "?" for one not
+seen) and below it a tree of the family, each row a ball (caught, seen, unknown; the user's art), the name ("????" until
+seen, gold for the shown one) and the method in words from the evolution data, with gold lines from parents to their
+evolutions; Eevee's 8 rows in the small font. Touching an icon or a row opens that species' page if seen and in the
+detail screen's list. The family comes from a table of each species' family root, made at build time from
+`res/pokemon/*/data.json` (`tools/paperwhite2/pokedex_evo.py`), and the game's evolution data from the root down.
+Details in `docs/paperwhite2/plugins.md`'s Pok√©dex section. The strip and the panel are placeholders until the user's art.

@@ -4,8 +4,10 @@
 #include "types.h"
 #include "app/pokedex_detail.h"
 #include "app/pokedex_info.h"
+#include "gfl/bmp.h"
 #include "gfl/clact.h"
 #include "gfl/heap.h"
+#include "save/pokedex_savedata.h"
 #include "system/gf_font.h"
 
 // Paper White 2's info page of the Pokédex's detail screen, in overlay 298 (docs/paperwhite2/design/pokedex.md). The
@@ -79,9 +81,11 @@ BOOL PokedexInfoMoves_SelectRow(PokedexInfoMoves *moves, u32 row);
 
 typedef struct PokedexInfoPanels PokedexInfoPanels;
 
-// font is the detail screen's font 0; the panels load font 1 for their small text. unit has the Matchups' type icons
-// and Moves' icons, cursor and scroll knob; moves is the set that Moves shows, the page's
-PokedexInfoPanels *PokedexInfoPanels_Create(HeapID heapId, Font *font, ClActUnit *unit, const PokedexInfoMoves *moves);
+// font is the detail screen's font 0; the panels load font 1 for their small text. unit has the Matchups' type icons,
+// Moves' icons, cursor and scroll knob and Evo's party icons; moves is the set that Moves shows, the page's; pokedex
+// says which of Evo's species have been seen and caught
+PokedexInfoPanels *PokedexInfoPanels_Create(HeapID heapId, Font *font, ClActUnit *unit, const PokedexInfoMoves *moves,
+                                            PokeDexSave *pokedex);
 void PokedexInfoPanels_Free(PokedexInfoPanels *panels);
 // Shows the sub-page's art on POKEDEX_INFO_BUTTON_BG, replacing its whole screen, or clears it for a sub-page without
 // art; the page makes its buttons after it
@@ -93,8 +97,9 @@ u32 PokedexInfoPanels_GetLift(u32 subpage);
 void PokedexInfoPanels_Update(PokedexInfoPanels *panels);
 // Draws the bar with the sub-page's tab, and the sub-page's panel of the species and form. caught shows what the
 // Pokédex shows only once it has been caught; Matchups applies ability's effect (an ABILITY_*, or ABILITY_NONE) and
-// shows the type icons, and Moves its set, which the other sub-pages hide
-void PokedexInfoPanels_Show(PokedexInfoPanels *panels, u32 subpage, u16 species, u16 form, BOOL caught, u32 ability);
+// shows the type icons, Moves its set and Evo its family's icons in the form and sex, which the other sub-pages hide
+void PokedexInfoPanels_Show(PokedexInfoPanels *panels, u32 subpage, u16 species, u16 form, u16 sex, BOOL caught,
+                            u32 ability);
 // Draws Moves' list again, after its cursor moved
 void PokedexInfoPanels_ShowMoves(PokedexInfoPanels *panels);
 // The sub-page whose tab in the bar is touched this frame, or POKEDEX_INFO_SUBPAGE_COUNT
@@ -106,12 +111,33 @@ u32 PokedexInfoPanels_GetTouchedMoveRow(void);
 // at its place on the bar; FALSE once it lets go
 BOOL PokedexInfoPanels_IsMoveTrackTouched(void);
 BOOL PokedexInfoPanels_GetHeldMoveScroll(PokedexInfoPanels *panels, u32 *scroll);
+// The species of Evo's family whose icon in the strip or row in the tree is touched this frame, or SPECIES_NONE
+u16 PokedexInfoPanels_GetTouchedEvoSpecies(PokedexInfoPanels *panels);
 // Whether an ability changes what the Matchups chart shows (its rules in sMatchupRules)
 BOOL PokedexInfoPanels_IsMatchupAbility(u32 ability);
 // A message of the panels' bank, for the page's buttons; the caller frees it
 StrBuf *PokedexInfoPanels_LoadMessage(PokedexInfoPanels *panels, u32 messageId);
 // Font 1, for the page's buttons whose text font 0 makes too wide
 Font *PokedexInfoPanels_GetSmallFont(PokedexInfoPanels *panels);
+
+// Evo (paperwhite2_pokedex_info_evo.c): the species' family, a strip of their party icons and a tree of them with how
+// each evolves, drawn into the panels' content window, from the family's root (tools/paperwhite2/pokedex_evo.py)
+
+// The most species a family has (Eevee's), as tools/paperwhite2/pokedex_evo.py checks
+#define POKEDEX_INFO_EVO_FAMILY_MAX 8
+
+typedef struct PokedexInfoEvo PokedexInfoEvo;
+
+// fonts are font 0 and font 1; the window's palette, the balls' colors, is loaded into BG bg's palette row
+PokedexInfoEvo *PokedexInfoEvo_Create(HeapID heapId, Font *font, Font *smallFont, ClActUnit *unit, PokeDexSave *pokedex,
+                                      u32 bg, u32 paletteRow);
+void PokedexInfoEvo_Free(PokedexInfoEvo *evo);
+// Draws the family of the species into bitmap, a window whose top is top pixels down the screen, and shows its icons
+// (in the form and sex where they have them), loading their resources if they aren't
+void PokedexInfoEvo_Show(PokedexInfoEvo *evo, GFLBitmap *bitmap, int top, u16 species, u16 form, u16 sex);
+// Frees the icons and their resources, while another sub-page shows
+void PokedexInfoEvo_Hide(PokedexInfoEvo *evo);
+u16 PokedexInfoEvo_GetTouchedSpecies(PokedexInfoEvo *evo);
 
 // The move panel over the top screen (paperwhite2_pokedex_move_panel.c): a move's name, type, category, numbers and
 // description over the entry, whose text it takes the place of while it is open, with the rest of the screen dimmed

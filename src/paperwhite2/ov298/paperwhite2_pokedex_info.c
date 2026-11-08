@@ -47,7 +47,8 @@
 // on Data that window shows the species' wild held items. On
 // Matchups, a button for each of the species' abilities picks the one whose effect the type chart shows. Moves lists
 // a set of the Pokémon's moves, with a panel of the cursor's move over the top screen
-// (paperwhite2_pokedex_move_panel.c). Left and Right step through the sub-pages, and on Moves L and R through its sets;
+// (paperwhite2_pokedex_move_panel.c). Evo shows the Pokémon's family, and touching one of it opens its page. Left
+// and Right step through the sub-pages, and on Moves L and R through its sets;
 // the touch bar's Left and Right (to Area, Cry and Forms, still there by touch) are the page's while it runs, and on
 // Moves its Up and Down and, while the panel is open, its B
 
@@ -74,14 +75,14 @@
 
 // The page's text in the entry's text window (PokedexInfo_BeginOtherText), in its pixels: its lines where the
 // description's are, and the held items' rates ending (their last column the one before) as far in from the window's
-// right as the lines start from its left. An ability's name is in the gold, which of the species' abilities it is in
-// the entry's labels' grey, the rest in the entry's white
+// right as the lines start from its left. An ability's name is in the gold, which of the species' abilities it is in a
+// lighter grey than the entry's labels' with a dark shadow (on the dark panel), the rest in the entry's white
 #define TOP_TEXT_X 2
 #define TOP_TEXT_Y 5
 #define TOP_TEXT_LINE_PITCH 16
 #define TOP_TEXT_GOLD PRINT_COLOR(POKEDEX_INFO_TEXT_GOLD, POKEDEX_INFO_TEXT_SHADOW, 0)
 #define TOP_TEXT_WHITE PRINT_COLOR(POKEDEX_INFO_TEXT_WHITE, POKEDEX_INFO_TEXT_SHADOW, 0)
-#define TOP_TEXT_GREY PRINT_COLOR(POKEDEX_INFO_TEXT_GREY, POKEDEX_INFO_TEXT_SHADOW, 0)
+#define TOP_TEXT_GREY PRINT_COLOR(POKEDEX_INFO_TEXT_LIGHT_GREY, POKEDEX_INFO_TEXT_DARK_SHADOW, 0)
 // The wild held items, as the field gives them (FieldEncount_SetRandomHeldItem, enc_pokeset.c's HELD_ITEM_RATES): the
 // first 50% and the second 5% of the time, the third 1% in dark grass only (its rate says so), and a first that is
 // also the second always
@@ -206,6 +207,8 @@ static void PokedexInfoPage_SetMoveSet(PokedexDetailInfoParam *param, PokedexInf
 static BOOL PokedexInfoPage_CheckMovesInput(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                             PokedexDetailCommon *common);
 static BOOL PokedexInfoPage_CheckKnobDrag(PokedexInfoPageWork *wk, PokedexDetailCommon *common);
+static BOOL PokedexInfoPage_CheckEvoInput(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
+                                          PokedexDetailCommon *common);
 static void PokedexInfoPage_ShowMove(PokedexInfoPageWork *wk, PokedexDetailCommon *common);
 static void PokedexInfoPage_UpdateMovePanel(PokedexInfoPageWork *wk, PokedexDetailCommon *common);
 static void PokedexInfoPage_CloseMovePanel(PokedexInfoPageWork *wk);
@@ -386,8 +389,8 @@ BOOL PokedexInfoPage_Main(PokedexDetailProcSys *sys, int *seq, void *param_, voi
         GFL_BGSysSetBGEnabled(3, TRUE);
         PokedexInfoPage_AddSprite(wk);
 
-        wk->panels =
-            PokedexInfoPanels_Create(param->heapId, wk->font, PokedexDetailGraphic_GetClActUnit(graphic), &wk->moves);
+        wk->panels = PokedexInfoPanels_Create(param->heapId, wk->font, PokedexDetailGraphic_GetClActUnit(graphic),
+                                              &wk->moves, pokedex);
         wk->movePanel =
             PokedexMovePanel_Create(param->heapId, wk->font, PokedexDetailGraphic_GetClActUnit(graphic), wk->blendMain);
         wk->buttonRes = AppTaskMenuRes_Create(POKEDEX_INFO_BUTTON_BG, POKEDEX_INFO_BUTTON_PALETTE, wk->font,
@@ -620,6 +623,8 @@ static void PokedexInfoPage_CheckInput(PokedexDetailInfoParam *param, PokedexInf
         }
     } else if (wk->subpage == POKEDEX_INFO_SUBPAGE_MOVES && PokedexInfoPage_CheckMovesInput(param, wk, common)) {
         return;
+    } else if (wk->subpage == POKEDEX_INFO_SUBPAGE_EVO && PokedexInfoPage_CheckEvoInput(param, wk, common)) {
+        return;
     } else if (PokedexInfoPage_CheckButtons(param, wk, common)) {
         GCTX_HIDSetUsingTouch(TRUE);
     } else if (typed & PAD_KEY_RIGHT) {
@@ -781,6 +786,36 @@ static BOOL PokedexInfoPage_CheckKnobDrag(PokedexInfoPageWork *wk, PokedexDetail
     return TRUE;
 }
 
+// On Evo, touching a species of the family, by its icon or its row, shows its page, as the touch bar's arrows change
+// the Pokémon, if it has been seen and is in the list that the detail screen pages through (a search's list may leave
+// it out); otherwise it beeps. TRUE if a species was touched
+static BOOL PokedexInfoPage_CheckEvoInput(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
+                                          PokedexDetailCommon *common) {
+    PokeDexSave *pokedex = GameData_GetPokedex(PokedexDetailCommon_GetGameData(common));
+    u16 species = PokedexInfoPanels_GetTouchedEvoSpecies(wk->panels);
+    u32 i;
+
+    if (species == SPECIES_NONE) {
+        return FALSE;
+    }
+    GCTX_HIDSetUsingTouch(TRUE);
+    if (species == wk->species) {
+        return TRUE;
+    }
+    if (PokeDex_IsSeen(pokedex, species)) {
+        for (i = 0; i < common->count; i++) {
+            if (common->list[i] == species) {
+                *common->index = i;
+                PokedexInfoPage_ChangePokemon(param, wk, common);
+                GFL_SndSEPlay(SEQ_SE_DECIDE1);
+                return TRUE;
+            }
+        }
+    }
+    GFL_SndSEPlay(SEQ_SE_BEEP);
+    return TRUE;
+}
+
 // Opens the move panel with the cursor's move, or shows it there, and takes the touch bar's B at once, which closes it
 static void PokedexInfoPage_ShowMove(PokedexInfoPageWork *wk, PokedexDetailCommon *common) {
     PokedexMovePanel_Show(wk->movePanel, wk->entry, wk->moves.moves[wk->moves.cursor].move);
@@ -826,7 +861,7 @@ static void PokedexInfoPage_TakeTouchbarKeys(PokedexInfoPageWork *wk, PokedexDet
 
 // Draws the sub-page's panels, Matchups with the chosen ability
 static void PokedexInfoPage_ShowPanels(PokedexInfoPageWork *wk) {
-    PokedexInfoPanels_Show(wk->panels, wk->subpage, wk->species, wk->form, wk->caught,
+    PokedexInfoPanels_Show(wk->panels, wk->subpage, wk->species, wk->form, wk->sex, wk->caught,
                            wk->abilityCount != 0 ? wk->abilities[wk->chosenAbility] : ABILITY_NONE);
 }
 

@@ -1421,7 +1421,7 @@ lower (`PokedexInfoPanels_GetLift`), and the sub-page's art is converted as many
 `offset_y`, `docs/paperwhite2/art.md`) so it shows as drawn. The BG's screen is 256 by 256: its rows past 192, which
 the lift shows at the bottom under the touch bar (y 168+, BG 5), are cleared with the art. The bar's and panels' text
 (BG 7), the grid (BG 4) and the touch bar don't move. The sub-pages are Stats, Data, Moves, Evo
-(blank for now) and Matchups; the art draws the tab bar's five icons (centres x 64 to 192, 32 apart), and touching a
+and Matchups; the art draws the tab bar's five icons (centres x 64 to 192, 32 apart), and touching a
 tab's column (y 0-17) switches to it. A sub-page without art shows a dark strip with its own name. The D-pad's Left
 and Right step through the five sub-pages, wrapping (Moves keeps the set it showed last), and on Moves only L and R
 step through its four sets, wrapping: the touch bar takes Left and Right no more while the page runs (`PokedexDetailTouchbar_SetDisabledKeys`, `pokedex_detail_touchbar.c`,
@@ -1492,12 +1492,42 @@ it, only as it closes. Power's and Accuracy's values are right-aligned to end wi
 -16, -8) is centred on `CATEGORY_ICON_X` 99, so it shows x 85-112; PP's and Priority's end at 218
 (`RIGHT_VALUE_RIGHT`). The value's last pixel, its shadow, is the column before.
 
+**Evo** (`paperwhite2_pokedex_info_evo.c`, drawn into the panels' content window, which shows sub BG palette row 12
+there, the balls' palette, the art's colours: rows 6-10 are the arts', 11 Matchups', 13 the touch bar's): the shown
+species' whole family from its root. **The strip** (y 25-57): each species' party icon (`ARCID_POKEICON`, sub OBJs,
+the 128 KB cells and animations, sequence 1 as a healthy party Pokémon's, palettes in sub OBJ rows 5-7, semi-transparent
+as the page's other OBJs), in the shown form and sex where the species has them (Burmy's cloak is Wormadam's), or the
+Bad Egg's "?" for one not seen, centred on x 128, 32 px apart or `224 / count` (Eevee's 8: 28). All the icons' frames are
+written into one character resource (`ClActSys_AllocChars`, 8 icons of 0x400 bytes, each actor showing its part through
+`ClActor_SetImageProxy`), which with the icons' palette and cells is loaded as Evo shows and freed as another sub-page
+shows: Evo takes 3 of the screen's OBJ resources (a character slot, a palette slot, a cell slot) only while it shows,
+so the characters' 32 slots hold the other sub-pages' 29-30 and Evo's one. **The tree** (the panel x 20-236, y 64-161):
+the root, then each species' evolutions under it in the data's order, each a row of the user's ball (16 by 16,
+`res/paperwhite2/pokedex_art/evo_ball_{caught,seen,unknown}.png`, copied into the window), centred at x 34, 54 or 74 by
+stage and at y 78 + 15 a row, the name 10 px right of it in font 0 (gold for the shown species, white, "????" if not
+seen) and how it evolves from its parent right-aligned at x 226: font 0 where it fits after the name (4 px gap), else
+font 1, else a shortened wording (`sEvoMethodTexts`, the messages `PokedexData_Text_Evo*`); more than 5 rows (Eevee) use
+font 1 throughout at y 74 + 11 a row. Gold lines, 2 px, run from each parent's ball down and across to its evolutions',
+drawn into the window before the balls. A species that evolves into the same one two ways (Feebas, by Beauty or a
+trade) shows both joined with "or" if they fit, else the first. Karrablast's and Shelmet's trades name the other (the
+game checks their species, `evolution_check.c`; their parameter is none). The strip and the panel are placeholders
+(the art, members 146-148, is blank) until the art draws them. Touching an icon's column of the strip or a row opens
+that species' page through the detail screen's list (as the touch bar's arrows do, `common->index`) if it has been seen
+and is in the list, else it beeps; Up and Down change the Pokémon as on the other sub-pages. **The family table**:
+`tools/paperwhite2/pokedex_evo.py` adds two members to `ARCID_POKEDEX_GRA` in the hack's build (`HACK_ARCHIVE_MEMBERS`,
+rebuilt when `res/pokemon/*/data.json` or the balls change): 152, each species' family root as a u16 by species
+(SPECIES_NONE to Genesect, 1300 bytes: a child's parent is the first species whose evolutions name it), of which the
+page reads the one entry, then the tree from the root down through the game's own evolution data (`ARCID_EVOLUTIONS`,
+three stages); 153, the balls' 16 colours and their 4bpp tiles (416 bytes). Forms have no evolutions of their own (the
+game reads them by species), so Burmy's and Wormadam's forms evolve as their species. About 3.2 KB of ov298.
+
 **The entry's text window shows the page's text** (`PokedexInfoPage_ShowTopText`): the description's 3 lines (the
 window at tiles 2, 17, 28 by 7 on main BG 1) show, on Stats, the ability that the Abilities button is at (each press:
 the description, the first ability, the second if another and not none, the hidden one if another, or until caught if
 it has one, then the description), its name in gold on line 1 with which of the species' abilities it is right-aligned on the same line ("Ability 1",
-"Ability 2", "Hidden Ability", `sAbilitySlotLabels`) in the entry's labels' dark grey (`POKEDEX_INFO_TEXT_GREY`,
-colour 1 of the font's row with the shadow 2, as ov296's `COLOR_LABEL`), and its description
+"Ability 2", "Hidden Ability", `sAbilitySlotLabels`) in a mid grey with a near-black shadow
+(`POKEDEX_INFO_TEXT_LIGHT_GREY` and `_DARK_SHADOW`, colours 4 and 5 of the font's row: the entry's labels' grey, 1 with
+the light shadow 2, looked wrong on the dark panel), and its description
 (`TEXT_BANK_ABILITY_DESCRIPTIONS`, two lines) in the entry's white below, or for the hidden one before it is caught "Hidden ability undiscovered."
 centred on line 2; and on Data the wild held items (`PERSONAL_ITEM_1-3`), one a line, the name from x 2 and the rate
 right-aligned 2 px from the window's right ("Light Ball ... 5%"; the third item's "Dark grass only: 1%",
@@ -1509,10 +1539,11 @@ language brings the description back; nothing of this shows on Moves (the panel 
 hooks, under `PAPERWHITE2`: `PokedexInfo_BeginOtherText` finishes the window's queued prints, marks it the page's (the
 entry's prints and clears then leave it alone), clears its bitmap and returns it; the page draws into it at once
 (`GFL_TextRendererDrawToBitmapEx`) and the entry's next update transfers it whole, so the old text is replaced in one
-frame. `PokedexInfo_EndOtherText` gives it back for the entry's next print. The gold, (255, 238, 24) as the art's
-(`GX_RGB(31, 29, 3)`, a static: DMA can't read the stack), is colour 3 of the font's row (main BG palette row 3, the
-entry's windows' palette, of which the entry uses only 0, 1, 2 and 15), put there each time `PokedexInfo_InitWindows`
-loads the row (also as the move panel closes). The top screen's fades are hardware brightness, so it fades with the
+frame. `PokedexInfo_EndOtherText` gives it back for the entry's next print. The page's colours are colours 3 to 5 of the font's
+row (main BG palette row 3, the entry's windows' palette, of which the entry uses only 0, 1, 2 and 15): the gold,
+(255, 238, 24) as the art's, the slot's grey (148, 148, 148) and its shadow (24, 24, 24), `sPageTextColors` in
+`pokedex_info.c` (a static: DMA can't read the stack), put there each time `PokedexInfo_InitWindows` loads the row
+(also as the move panel closes). The top screen's fades are hardware brightness, so it fades with the
 rest; the move panel's dimming touches rows 6 and 13 only. About 1.3 KB of ov298 and ov296.
 
 ## Adding global scripts
