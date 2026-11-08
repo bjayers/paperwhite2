@@ -188,6 +188,10 @@ struct PokedexInfo {
     /* 0x26c */ PersonalData *personal;
     /* 0x270 */ StrBuf *labels[POKEDEX_INFO_STRBUF_COUNT];
     /* 0x2b0 */ u16 *formNameTable;
+#ifdef PAPERWHITE2
+    // Paper White 2: whether the info page shows its own text in the text window, which the entry leaves alone then
+    BOOL otherText;
+#endif
 };
 
 #ifdef PAPERWHITE2
@@ -196,6 +200,10 @@ struct PokedexInfo {
 static inline BOOL PokedexInfo_IsDetailTop(PokedexInfo *info) {
     return info->mode == POKEDEX_INFO_MODE_DETAIL && info->engine == 0;
 }
+
+// Paper White 2: the info page's gold, (255, 238, 24) as its art's, for the abilities' names it prints in the text
+// window. In a static, as the palette is loaded by DMA, which can't read the stack
+static const GXRgb sGoldColor = GX_RGB(31, 29, 3);
 #endif
 
 static void PokedexInfo_ClearDisplay(PokedexInfo *info);
@@ -825,11 +833,34 @@ void PokedexInfo_FreeText(PokedexInfo *info) {
     PokedexInfo_FreeWindows(info);
     PokedexInfo_FreeTypeActors(info, info->typeSlot);
     PokedexInfo_SetFootprintsVisible(info, FALSE);
+    // The text comes back with the description
+    info->otherText = FALSE;
 }
 
 void PokedexInfo_RestoreText(PokedexInfo *info, u32 language) {
     PokedexInfo_InitWindows(info);
     PokedexInfo_SetLanguage(info, language);
+}
+
+// Paper White 2: the info page's own text (an ability, the held items) in place of the description. The window's
+// prints still queued are finished first, so that none of the description's lands on it later; the caller draws into
+// the cleared bitmap at once, and it goes to VRAM whole at the entry's next update, in place of the old text
+GFLBitmap *PokedexInfo_BeginOtherText(PokedexInfo *info) {
+    GFLBitmap *bitmap = BmpWin_GetBitmap(info->windows[POKEDEX_INFO_WINDOW_TEXT]);
+
+    while (PrintQueue_IsBitmapPending(info->printQueue, bitmap)) {
+        PrintQueue_Main(info->printQueue);
+    }
+    info->otherText = TRUE;
+    GFL_BitmapFill(bitmap, 0);
+    info->flushed[POKEDEX_INFO_WINDOW_TEXT] = FALSE;
+    return bitmap;
+}
+
+// The entry's next print (PokedexInfo_SetLanguage, PokedexInfo_SetPokemonInLanguage) prints the description again,
+// over the page's text as it is done
+void PokedexInfo_EndOtherText(PokedexInfo *info) {
+    info->otherText = FALSE;
 }
 #endif
 
@@ -854,6 +885,14 @@ static void PokedexInfo_InitWindows(PokedexInfo *info) {
         palType = PALTYPE_SUB_BG;
     }
     GFL_G2DIOLoadArcNCLRDefault(info->arcs[POKEDEX_INFO_ARC_FONT], 5, palType, 0x60, 0x20, info->heapId);
+#ifdef PAPERWHITE2
+    // Paper White 2: the info page's gold in a color of the font's row that the entry doesn't use, each time the row is
+    // loaded (the move panel's closing loads it again)
+    if (PokedexInfo_IsDetailTop(info)) {
+        GFL_BGSysUploadStdPalette(info->frontBG, &sGoldColor, sizeof(sGoldColor),
+                                  0x60 + POKEDEX_INFO_TEXT_GOLD * sizeof(GXRgb));
+    }
+#endif
     {
         // The position and size of each window
         u8 rects[POKEDEX_INFO_WINDOW_COUNT][4] = {
@@ -1022,8 +1061,16 @@ static void PokedexInfo_PrintEntry(PokedexInfo *info) {
     if (info->caught) {
         messageId = message;
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: not over the info page's own text
+    if (!info->otherText) {
+        PokedexInfo_PrintMessage(info->heapId, info->windows[POKEDEX_INFO_WINDOW_TEXT], entries, info->printQueue,
+                                 info->font, messageId, 2, 5, COLOR_TEXT, PRINT_ALIGN_LEFT, NULL);
+    }
+#else
     PokedexInfo_PrintMessage(info->heapId, info->windows[POKEDEX_INFO_WINDOW_TEXT], entries, info->printQueue,
                              info->font, messageId, 2, 5, COLOR_TEXT, PRINT_ALIGN_LEFT, NULL);
+#endif
 
     for (i = 0; i < POKEDEX_INFO_WINDOW_COUNT; i++) {
         info->flushed[i] = FALSE;
@@ -1110,8 +1157,16 @@ static void PokedexInfo_PrintEntryInLanguage(PokedexInfo *info, unsigned int lan
     if (info->caught) {
         messageId = info->species;
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: not over the info page's own text
+    if (!info->otherText) {
+        PokedexInfo_PrintMessage(info->heapId, info->windows[POKEDEX_INFO_WINDOW_TEXT], entries, info->printQueue,
+                                 info->font, messageId, sEntryX[language], 5, COLOR_TEXT, PRINT_ALIGN_LEFT, NULL);
+    }
+#else
     PokedexInfo_PrintMessage(info->heapId, info->windows[POKEDEX_INFO_WINDOW_TEXT], entries, info->printQueue,
                              info->font, messageId, sEntryX[language], 5, COLOR_TEXT, PRINT_ALIGN_LEFT, NULL);
+#endif
 
     for (i = 0; i < POKEDEX_INFO_WINDOW_COUNT; i++) {
         info->flushed[i] = FALSE;
@@ -1125,6 +1180,12 @@ static void PokedexInfo_ClearWindows(PokedexInfo *info) {
     PrintQueue_Clear(info->printQueue);
     for (i = 0; i < POKEDEX_INFO_WINDOW_COUNT; i++) {
         info->flushed[i] = TRUE;
+#ifdef PAPERWHITE2
+        // Paper White 2: the info page's own text stays
+        if (i == POKEDEX_INFO_WINDOW_TEXT && info->otherText) {
+            continue;
+        }
+#endif
         GFL_BitmapFill(BmpWin_GetBitmap(info->windows[i]), 0);
     }
 }

@@ -83,20 +83,22 @@
 #define DESCRIPTION_WINDOW_HEIGHT 6
 
 // The text, in the screen's pixels, 2 px down in its windows: the name, the labels' column and rows, the values
-// centered on their columns, the right labels' column, and the description's lines. The name is 1 px down only: font
-// 0's cells are 15 px, whose last row (the shadow of p, q and y) a 2 px drop would put below its 16 px window
+// right-aligned, ending at these x (their last column, the shadow's, is the one before), the right labels' column, and
+// the description's lines. The name is 1 px down only: font 0's cells are 15 px, whose last row (the shadow of p, q and
+// y) a 2 px drop would put below its 16 px window. Power's and Accuracy's values end with the category icon: its
+// characters (AppMenuCommon_GetCategoryIconCharFile) leave their first 2 and last 2 columns clear, and its cell
+// (AppMenuCommon_GetTypeIconCellFile) puts them 16 px left of CATEGORY_ICON_X, so it shows x 85 to 112
 #define NAME_X 20
 #define NAME_Y 41
 #define LABEL_X 20
 #define CATEGORY_Y 74
 #define POWER_Y 87
 #define ACCURACY_Y 101
-#define POWER_VALUE_X 94
-#define ACCURACY_VALUE_X 94
+#define LEFT_VALUE_RIGHT 113
 #define RIGHT_LABEL_X 138
 #define PP_Y 74
 #define PRIORITY_Y 87
-#define RIGHT_VALUE_X 212
+#define RIGHT_VALUE_RIGHT 218
 #define DESCRIPTION_X 20
 #define DESCRIPTION_Y 130
 #define DESCRIPTION_LINE_PITCH 14
@@ -451,21 +453,22 @@ static void PokedexMovePanel_DrawMove(PokedexMovePanel *panel, u16 move) {
     PokedexMovePanel_PrintMessage(panel, WINDOW_LEFT, PokedexData_Text_Category, LABEL_X, CATEGORY_Y, PRINT_ALIGN_LEFT);
     PokedexMovePanel_PrintMessage(panel, WINDOW_LEFT, PokedexData_Text_Power, LABEL_X, POWER_Y, PRINT_ALIGN_LEFT);
     PokedexMovePanel_PrintMessage(panel, WINDOW_LEFT, PokedexData_Text_Accuracy, LABEL_X, ACCURACY_Y, PRINT_ALIGN_LEFT);
-    PokedexMovePanel_PrintValue(panel, WINDOW_LEFT, power > POWER_NONE, power, POWER_VALUE_X, POWER_Y);
+    PokedexMovePanel_PrintValue(panel, WINDOW_LEFT, power > POWER_NONE, power, LEFT_VALUE_RIGHT, POWER_Y);
     PokedexMovePanel_PrintValue(panel, WINDOW_LEFT, accuracy != 0 && !PML_MoveIsAlwaysHit(move), accuracy,
-                                ACCURACY_VALUE_X, ACCURACY_Y);
+                                LEFT_VALUE_RIGHT, ACCURACY_Y);
 
     PokedexMovePanel_PrintMessage(panel, WINDOW_RIGHT, PokedexData_Text_PP, RIGHT_LABEL_X, PP_Y, PRINT_ALIGN_LEFT);
     PokedexMovePanel_PrintMessage(panel, WINDOW_RIGHT, PokedexData_Text_Priority, RIGHT_LABEL_X, PRIORITY_Y,
                                   PRINT_ALIGN_LEFT);
-    PokedexMovePanel_PrintValue(panel, WINDOW_RIGHT, TRUE, PML_MoveGetParam(move, MOVE_PARAM_PP), RIGHT_VALUE_X, PP_Y);
+    PokedexMovePanel_PrintValue(panel, WINDOW_RIGHT, TRUE, PML_MoveGetParam(move, MOVE_PARAM_PP), RIGHT_VALUE_RIGHT,
+                                PP_Y);
     if (priority == 0) {
-        PokedexMovePanel_PrintValue(panel, WINDOW_RIGHT, TRUE, 0, RIGHT_VALUE_X, PRIORITY_Y);
+        PokedexMovePanel_PrintValue(panel, WINDOW_RIGHT, TRUE, 0, RIGHT_VALUE_RIGHT, PRIORITY_Y);
     } else {
         WordSetNumber(panel->wordSet, 0, priority > 0 ? priority : -priority, 1, NUM_PAD_NONE, TRUE);
         PokedexMovePanel_PrintMessage(panel, WINDOW_RIGHT,
                                       priority > 0 ? PokedexData_Text_PriorityPlus : PokedexData_Text_PriorityMinus,
-                                      RIGHT_VALUE_X, PRIORITY_Y, PRINT_ALIGN_CENTER);
+                                      RIGHT_VALUE_RIGHT, PRIORITY_Y, PRINT_ALIGN_RIGHT);
     }
 
     // The description's lines, each on its own to space them as the panel does
@@ -535,12 +538,12 @@ static void PokedexMovePanel_PrintMessage(PokedexMovePanel *panel, u32 window, u
     PokedexMovePanel_Print(panel, window, panel->text, x, y, align);
 }
 
-// A number centered at x, or a dash where the move has none
+// A number ending at x, or a dash where the move has none
 static void PokedexMovePanel_PrintValue(PokedexMovePanel *panel, u32 window, BOOL known, u32 value, int x, int y) {
     if (!known) {
-        PokedexMovePanel_PrintMessage(panel, window, PokedexData_Text_NoValue, x, y, PRINT_ALIGN_CENTER);
+        PokedexMovePanel_PrintMessage(panel, window, PokedexData_Text_NoValue, x, y, PRINT_ALIGN_RIGHT);
         return;
     }
     WordSetNumber(panel->wordSet, 0, value, 3, NUM_PAD_NONE, TRUE);
-    PokedexMovePanel_PrintMessage(panel, window, PokedexData_Text_Number, x, y, PRINT_ALIGN_CENTER);
+    PokedexMovePanel_PrintMessage(panel, window, PokedexData_Text_Number, x, y, PRINT_ALIGN_RIGHT);
 }

@@ -1411,8 +1411,9 @@ its panels on BG 2 and its grid on BG 3, and no still sprite (`PokedexInfo_IsDet
 (MCSS) on BG 0 in 3D, which the page turns on at its start and off at its end. BG 1 fades with the page there, so the
 head bar is shown at once and fades in and out with it, and slides out only once the screen is dark. **Bottom** (sub
 engine): the grid on BG 4, the bar of sub-pages and the panels drawn into two windows on BG 7 (palette 3, a table in
-the panels' file until there is art), and on Stats the buttons Cry, Turn, Form, Shiny and Language on BG 6
-(`AppTaskMenuWin`, palettes 4 and 5), hidden when they can do nothing. The sub-pages are Stats, Data, Moves, Evo
+the panels' file until there is art), and on Stats the buttons Cry, Turn, Form, Shiny, Language and Abilities on BG 6
+(`AppTaskMenuWin`, palettes 4 and 5, 9 by 3 tiles from tile row 3 at a 3-row pitch, so Abilities is y 144-167, just
+above the touch bar), hidden when they can do nothing (Abilities never is). The sub-pages are Stats, Data, Moves, Evo
 (blank for now) and Matchups; the art draws the tab bar's five icons (centres x 64 to 192, 32 apart), and touching a
 tab's column (y 0-17) switches to it. A sub-page without art shows a dark strip with its own name. The D-pad's Left
 and Right step through the five sub-pages, wrapping (Moves keeps the set it showed last), and on Moves only L and R
@@ -1478,7 +1479,30 @@ the work, put back as it closes. B closes it
 press) and turns it off, A or a touch on a row turns it on again; it opens with the first move as Moves is entered,
 follows the cursor, shows the new set's or Pokémon's first move, hides for a set without moves until one has some, and
 closes as another sub-page shows or the page ends. A Pokémon changed while it is open changes the entry, hidden under
-it, only as it closes.
+it, only as it closes. Power's and Accuracy's values are right-aligned to end with the category icon (`LEFT_VALUE_RIGHT`
+113): its characters (`a/0/8/2` 0x38-0x3a) leave 2 clear columns at each side and its cell (0x3d, one 32x16 OBJ at
+-16, -8) is centred on `CATEGORY_ICON_X` 99, so it shows x 85-112; PP's and Priority's end at 218
+(`RIGHT_VALUE_RIGHT`). The value's last pixel, its shadow, is the column before.
+
+**The entry's text window shows the page's text** (`PokedexInfoPage_ShowTopText`): the description's 3 lines (the
+window at tiles 2, 17, 28 by 7 on main BG 1) show, on Stats, the ability that the Abilities button is at (each press:
+the description, the first ability, the second if another and not none, the hidden one if another, or until caught if
+it has one, then the description), its name in gold on line 1 and its description (`TEXT_BANK_ABILITY_DESCRIPTIONS`,
+two lines) in the entry's white below, or for the hidden one before it is caught "Hidden ability undiscovered."
+centred on line 2; and on Data the wild held items (`PERSONAL_ITEM_1-3`), one a line, the name from x 2 and the rate
+right-aligned 2 px from the window's right ("Light Ball ... 5%"), "Has no hold items." centred on line 2, or "?" until
+caught. The rates are the field's (`FieldEncount_SetRandomHeldItem`, `enc_pokeset.c`'s `HELD_ITEM_RATES`): 50%, 5% and
+1% in a single battle, the third only in dark grass (`ENCTYPE_GRASS_RARE`, else 0%; Compound Eyes 60/20/5), and an
+item in both the first and second slots is always held, so it shows once at 100%. Changing sub-page, Pokémon, form or
+language brings the description back; nothing of this shows on Moves (the panel has the windows). Overlay 296 has the
+hooks, under `PAPERWHITE2`: `PokedexInfo_BeginOtherText` finishes the window's queued prints, marks it the page's (the
+entry's prints and clears then leave it alone), clears its bitmap and returns it; the page draws into it at once
+(`GFL_TextRendererDrawToBitmapEx`) and the entry's next update transfers it whole, so the old text is replaced in one
+frame. `PokedexInfo_EndOtherText` gives it back for the entry's next print. The gold, (255, 238, 24) as the art's
+(`GX_RGB(31, 29, 3)`, a static: DMA can't read the stack), is colour 3 of the font's row (main BG palette row 3, the
+entry's windows' palette, of which the entry uses only 0, 1, 2 and 15), put there each time `PokedexInfo_InitWindows`
+loads the row (also as the move panel closes). The top screen's fades are hardware brightness, so it fades with the
+rest; the move panel's dimming touches rows 6 and 13 only. About 1.3 KB of ov298 and ov296.
 
 ## Adding global scripts
 

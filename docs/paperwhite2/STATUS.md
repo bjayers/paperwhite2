@@ -2,6 +2,19 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-07: Pokédex, abilities and held items on the top screen
+
+Built (plugins.md, Pokédex), not yet tested in game:
+- The move panel's values right-aligned: Power and Accuracy to the category icon's right edge (x 112, from its cell
+  data: the icon's pixels are x 85-112, not centred at 94 as the screenshot seemed), PP and Priority to x 217.
+- An Abilities button, Stats' sixth (y 144-167), cycling the entry's area: the entry, each ability (name in gold,
+  colour 3 of the font row 3, and its two-line description), the hidden one ("Hidden ability undiscovered." until
+  caught), the entry again; changing sub-page, Pokémon or form, or Language, returns to the entry.
+- On Data, the entry's area shows the wild held items, one a line with its rate (50%, 5%, 1%; one item at 100% where
+  slots 1 and 2 hold the same), "Has no hold items." or "?" until caught. In the game the third slot's 1% is only in
+  dark grass (`enc_pokeset.c`, `HELD_ITEM_RATES`), and Compound Eyes raises them.
+- The entry hands its text window to the page for these (`PokedexInfo_BeginOtherText` / `_EndOtherText`, ov296).
+
 ## 2026-11-07: Pokédex, every tab has its art
 
 The user's Moves art (updated), a blank Evo art (for the full tab bar) and the Matchups art (targets

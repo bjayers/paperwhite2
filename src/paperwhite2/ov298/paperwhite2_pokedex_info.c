@@ -4,12 +4,14 @@
 #include "app/ui/ui_scene.h"
 #include "constants/abilities.h"
 #include "constants/arc.h"
+#include "constants/items.h"
 #include "constants/language.h"
 #include "constants/pokemon.h"
 #include "constants/sound.h"
 #include "constants/species.h"
 #include "constants/text_banks.h"
 #include "gfl/bg_sys.h"
+#include "gfl/bmp.h"
 #include "gfl/clact.h"
 #include "gfl/heap.h"
 #include "gfl/key.h"
@@ -32,14 +34,17 @@
 #include "system/gf_font.h"
 #include "system/mcss.h"
 #include "system/printsys.h"
+#include "system/wordset.h"
 #include "text/system/pokedex_data.h"
 
 // Paper White 2: the Pokédex detail screen's info page (docs/paperwhite2/design/pokedex.md, step 2). The detail screen
 // shows the main engine on the top screen while this page runs (pokedex_detail.c), so the top has the 3D: the
 // Pokémon's entry from overlay 296, as the original's bottom screen showed it, with the battle's animated sprite (MCSS,
 // on BG 0) where the still one was. The bottom screen, the sub engine's, has the sub-pages Stats, Data, Moves, Evo and
-// Matchups (paperwhite2_pokedex_info_panels.c), and, on Stats, the buttons Cry, Turn, Form, Shiny and Language in the
-// menus' style. A button that can't do anything for the Pokémon is hidden, and the others keep their places. On
+// Matchups (paperwhite2_pokedex_info_panels.c), and, on Stats, the buttons Cry, Turn, Form, Shiny, Language and
+// Abilities in the menus' style. A button that can't do anything for the Pokémon is hidden, and the others keep their
+// places. Abilities shows the species' abilities in turn in the entry's text window, in place of its description, and
+// on Data that window shows the species' wild held items. On
 // Matchups, a button for each of the species' abilities picks the one whose effect the type chart shows. Moves lists
 // a set of the Pokémon's moves, with a panel of the cursor's move over the top screen
 // (paperwhite2_pokedex_move_panel.c). Left and Right step through the sub-pages, and on Moves L and R through its sets;
@@ -66,6 +71,19 @@
 #define BUTTON_PITCH 3
 // The text's colors in the buttons' palettes, as the menus' YES and NO have them
 #define BUTTON_TEXT_COLOR PRINT_COLOR(14, 15, 3)
+
+// The page's text in the entry's text window (PokedexInfo_BeginOtherText), in its pixels: its lines where the
+// description's are, and the held items' rates ending (their last column the one before) as far in from the window's
+// right as the lines start from its left. An ability's name is in the gold, the rest in the entry's white
+#define TOP_TEXT_X 2
+#define TOP_TEXT_Y 5
+#define TOP_TEXT_LINE_PITCH 16
+#define TOP_TEXT_GOLD PRINT_COLOR(POKEDEX_INFO_TEXT_GOLD, POKEDEX_INFO_TEXT_SHADOW, 0)
+#define TOP_TEXT_WHITE PRINT_COLOR(POKEDEX_INFO_TEXT_WHITE, POKEDEX_INFO_TEXT_SHADOW, 0)
+// The wild held items, as the field gives them (FieldEncount_SetRandomHeldItem, enc_pokeset.c's HELD_ITEM_RATES): the
+// first 50% and the second 5% of the time, the third 1% in dark grass only, and a first that is also the second always
+#define HELD_ITEM_COUNT 3
+#define HELD_ITEM_ALWAYS 100
 
 // Matchups' ability buttons, in tiles: a row along the bottom of the sub-page above the touch bar, side by side and
 // centered on ABILITY_BUTTON_CENTER_X, as many as the species has abilities. A name wider than the button's text area
@@ -110,6 +128,7 @@ enum {
     BUTTON_FORM,
     BUTTON_SHINY,
     BUTTON_LANGUAGE,
+    BUTTON_ABILITIES,
     BUTTON_COUNT,
 };
 #define BUTTON_NONE BUTTON_COUNT
@@ -150,6 +169,10 @@ typedef struct {
     u16 abilities[ABILITY_MAX];
     u32 abilityCount;
     u32 chosenAbility;
+    // The ability that the top screen's text window shows on Stats, by its place in sAbilityParams, or ABILITY_MAX for
+    // the description, and whether the window shows the page's text (an ability or the held items)
+    u32 shownAbility;
+    BOOL otherText;
     // Moves' set, which it keeps when another sub-page shows, and the top screen's panel of its moves
     PokedexInfoMoves moves;
     PokedexMovePanel *movePanel;
@@ -204,6 +227,14 @@ static BOOL PokedexInfoPage_HasSeenForm(PokeDexSave *pokedex, u16 species, u32 f
 static u32 PokedexInfoPage_CountSeenForms(PokeDexSave *pokedex, u16 species);
 static void PokedexInfoPage_NextForm(PokeDexSave *pokedex, PokedexInfoPageWork *wk);
 static BOOL PokedexInfoPage_HasLanguage(PokeDexSave *pokedex, u16 species, u32 language);
+static void PokedexInfoPage_NextShownAbility(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk);
+static void PokedexInfoPage_ShowTopText(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk);
+static void PokedexInfoPage_EndOtherText(PokedexInfoPageWork *wk);
+static void PokedexInfoPage_DrawAbility(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk, GFLBitmap *bitmap);
+static void PokedexInfoPage_DrawHeldItems(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk, GFLBitmap *bitmap);
+static void PokedexInfoPage_DrawItemLine(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk, GFLBitmap *bitmap,
+                                         MsgData *names, u32 line, u32 item, u32 rate);
+static void PokedexInfoPage_DrawCentered(PokedexInfoPageWork *wk, GFLBitmap *bitmap, u32 messageId, u32 line);
 
 // The language codes of PokedexInfo's languages: Japanese, French, German, Italian, Spanish and Korean
 static const u8 sLanguageCodes[LANGUAGE_COUNT] = {
@@ -219,8 +250,11 @@ static const u8 sAbilityParams[ABILITY_MAX] = {
 
 static const u16 sButtonLabels[BUTTON_COUNT] = {
     PokedexData_Text_Cry,   PokedexData_Text_Turn,     PokedexData_Text_Form,
-    PokedexData_Text_Shiny, PokedexData_Text_Language,
+    PokedexData_Text_Shiny, PokedexData_Text_Language, PokedexData_Text_Abilities,
 };
+
+// The held items' rates, by their place in the personal data
+static const u8 sHeldItemRates[HELD_ITEM_COUNT] = { 50, 5, 1 };
 
 BOOL PokedexInfoPage_Init(PokedexDetailProcSys *sys, int *seq, void *param_, void *work, PokedexDetailCommon *common) {
     PokedexDetailInfoParam *param = param_;
@@ -232,6 +266,7 @@ BOOL PokedexInfoPage_Init(PokedexDetailProcSys *sys, int *seq, void *param_, voi
     MI_CpuFill8(wk, 0, sizeof(PokedexInfoPageWork));
     wk->pushed = BUTTON_NONE;
     wk->language = LANGUAGE_GAME;
+    wk->shownAbility = ABILITY_MAX;
     wk->blendMain = PokedexDetailBlend_Create(param->heapId);
     wk->blendSub = PokedexDetailBlend_Create(param->heapId);
     PokedexDetailBlend_InitPlanes(wk->blendMain);
@@ -534,18 +569,23 @@ static void PokedexInfoPage_LoadPokemon(PokedexDetailInfoParam *param, PokedexIn
     wk->caught = PokeDex_IsCaught(pokedex, wk->species);
     wk->back = FALSE;
     wk->chosenAbility = 0;
+    wk->shownAbility = ABILITY_MAX;
     if (!PokedexInfoPage_HasLanguage(pokedex, wk->species, wk->language)) {
         wk->language = LANGUAGE_GAME;
     }
 }
 
-// The move panel stays open on Moves, on the new Pokémon's first move, over the entry, which changes as it closes
+// The move panel stays open on Moves, on the new Pokémon's first move, over the entry, which changes as it closes. The
+// top screen's text window goes back to the description, but on Data, where it shows the new Pokémon's held items
 static void PokedexInfoPage_ChangePokemon(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                           PokedexDetailCommon *common) {
     PokedexInfoPage_LoadPokemon(param, wk, common);
     if (PokedexMovePanel_IsOpen(wk->movePanel)) {
         wk->entryStale = TRUE;
     } else {
+        if (wk->subpage != POKEDEX_INFO_SUBPAGE_DATA) {
+            PokedexInfoPage_EndOtherText(wk);
+        }
         PokedexInfo_SetPokemonInLanguage(wk->entry, wk->species, wk->form, wk->sex, wk->rare, wk->personality,
                                          wk->caught, wk->language);
     }
@@ -594,10 +634,12 @@ static void PokedexInfoPage_Step(PokedexDetailInfoParam *param, PokedexInfoPageW
 }
 
 // Entering Moves turns its move panel on, and takes the touch bar's Up and Down at once, before the bar sees them this
-// frame; leaving it closes the panel
+// frame; leaving it closes the panel. The top screen's text window goes back to the description, or on Data shows the
+// held items
 static void PokedexInfoPage_SetSubpage(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                        PokedexDetailCommon *common, u32 subpage) {
     wk->subpage = subpage;
+    wk->shownAbility = ABILITY_MAX;
     if (subpage == POKEDEX_INFO_SUBPAGE_MOVES) {
         wk->movePanelOn = TRUE;
         PokedexInfoPage_TakeTouchbarKeys(wk, common);
@@ -615,7 +657,8 @@ static void PokedexInfoPage_SetMoveSet(PokedexDetailInfoParam *param, PokedexInf
 }
 
 // Draws the sub-page of the shown Pokémon and form, with its buttons; Moves loads its set again, its cursor at the top,
-// and the move panel shows its first move or closes
+// and the move panel shows its first move or closes, before the top screen's text window shows what the sub-page has
+// there, as a closing panel gives the window back
 static void PokedexInfoPage_ShowSubpage(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                         PokedexDetailCommon *common) {
     wk->draggingKnob = FALSE;
@@ -626,6 +669,7 @@ static void PokedexInfoPage_ShowSubpage(PokedexDetailInfoParam *param, PokedexIn
     PokedexInfoPage_ShowPanels(wk);
     PokedexInfoPage_ResetButtons(param, wk, common);
     PokedexInfoPage_UpdateMovePanel(wk, common);
+    PokedexInfoPage_ShowTopText(param, wk);
 }
 
 // On Moves: touching a set's name shows that set, as L and R step through them, wrapping round; a touch on the scroll
@@ -1043,6 +1087,9 @@ static void PokedexInfoPage_PressButton(PokedexDetailInfoParam *param, PokedexIn
         break;
     case BUTTON_FORM:
         PokedexInfoPage_NextForm(pokedex, wk);
+        // The new form's entry, with its description
+        wk->shownAbility = ABILITY_MAX;
+        PokedexInfoPage_EndOtherText(wk);
         PokedexInfo_SetPokemonInLanguage(wk->entry, wk->species, wk->form, wk->sex, wk->rare, wk->personality,
                                          wk->caught, wk->language);
         // A new form's abilities start from its first again
@@ -1065,18 +1112,26 @@ static void PokedexInfoPage_PressButton(PokedexDetailInfoParam *param, PokedexIn
                 break;
             }
         }
+        // With the description, if an ability showed
+        wk->shownAbility = ABILITY_MAX;
+        PokedexInfoPage_EndOtherText(wk);
         PokedexInfo_SetLanguage(wk->entry, wk->language);
         GFL_SndSEPlay(SEQ_SE_SELECT3);
         return;
     }
+    case BUTTON_ABILITIES:
+        PokedexInfoPage_NextShownAbility(param, wk);
+        PokedexInfoPage_ShowTopText(param, wk);
+        GFL_SndSEPlay(SEQ_SE_SELECT3);
+        return;
     }
     PokedexInfoPage_RemoveSprite(wk);
     PokedexInfoPage_AddSprite(wk);
     GFL_SndSEPlay(SEQ_SE_SELECT3);
 }
 
-// Cry and Turn always; Form once two forms have been seen, Shiny once a shiny one has, and Language once the Pokédex
-// has the entry in another language
+// Cry, Turn and Abilities always; Form once two forms have been seen, Shiny once a shiny one has, and Language once the
+// Pokédex has the entry in another language
 static BOOL PokedexInfoPage_IsButtonUsable(PokedexInfoPageWork *wk, PokedexDetailCommon *common, u32 button) {
     PokeDexSave *pokedex = GameData_GetPokedex(PokedexDetailCommon_GetGameData(common));
     u32 i;
@@ -1161,4 +1216,143 @@ static BOOL PokedexInfoPage_HasLanguage(PokeDexSave *pokedex, u16 species, u32 l
         return TRUE;
     }
     return PokeDex_HasLanguage(pokedex, species, sLanguageCodes[language]);
+}
+
+// The next of the shown form's abilities that the top screen shows, after the shown one, or the description after the
+// last: the first, the second if it is another, then the hidden one if it is another, or, until the species is caught,
+// if it has one at all
+static void PokedexInfoPage_NextShownAbility(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk) {
+    PersonalData *personal = PML_PersonalLoad(wk->species, wk->form, param->heapId);
+    u32 first = PML_PersonalGetParam(personal, sAbilityParams[0]);
+    u32 second = PML_PersonalGetParam(personal, sAbilityParams[1]);
+    u32 i = wk->shownAbility == ABILITY_MAX ? 0 : wk->shownAbility + 1;
+
+    for (; i < ABILITY_MAX; i++) {
+        u32 ability = PML_PersonalGetParam(personal, sAbilityParams[i]);
+
+        if (ability == ABILITY_NONE || (i == 1 && ability == first) ||
+            (i == 2 && wk->caught && (ability == first || ability == second))) {
+            continue;
+        }
+        break;
+    }
+    PML_PersonalFree(personal);
+    wk->shownAbility = i;
+}
+
+// The top screen's text window: on Data the species' held items, on Stats the ability that Abilities shows, else the
+// entry's description, printed again in the entry's language if the page's text was there. Never while the move panel
+// has freed the entry's windows
+static void PokedexInfoPage_ShowTopText(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk) {
+    if (PokedexMovePanel_IsOpen(wk->movePanel)) {
+        return;
+    }
+    if (wk->subpage == POKEDEX_INFO_SUBPAGE_DATA) {
+        PokedexInfoPage_DrawHeldItems(param, wk, PokedexInfo_BeginOtherText(wk->entry));
+        wk->otherText = TRUE;
+    } else if (wk->shownAbility != ABILITY_MAX) {
+        PokedexInfoPage_DrawAbility(param, wk, PokedexInfo_BeginOtherText(wk->entry));
+        wk->otherText = TRUE;
+    } else if (wk->otherText) {
+        PokedexInfoPage_EndOtherText(wk);
+        PokedexInfo_SetLanguage(wk->entry, wk->language);
+    }
+}
+
+// The entry's next print has its description again
+static void PokedexInfoPage_EndOtherText(PokedexInfoPageWork *wk) {
+    PokedexInfo_EndOtherText(wk->entry);
+    wk->otherText = FALSE;
+}
+
+// The shown ability's name in gold on the first line and its description, two lines, on the others; the hidden one
+// until the species is caught only says that it is undiscovered, on the second line
+static void PokedexInfoPage_DrawAbility(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk, GFLBitmap *bitmap) {
+    PersonalData *personal = PML_PersonalLoad(wk->species, wk->form, param->heapId);
+    u32 ability = PML_PersonalGetParam(personal, sAbilityParams[wk->shownAbility]);
+    MsgData *msgData;
+    StrBuf *text;
+
+    PML_PersonalFree(personal);
+    if (sAbilityParams[wk->shownAbility] == PERSONAL_ABILITY_HIDDEN && !wk->caught) {
+        PokedexInfoPage_DrawCentered(wk, bitmap, PokedexData_Text_HiddenAbilityUndiscovered, 1);
+        return;
+    }
+    msgData = GFL_MsgSysLoadData(FALSE, ARCID_SYSTEM_MESSAGE, TEXT_BANK_ABILITY_NAMES, param->heapId);
+    text = GFL_MsgDataLoadStrbufNew(msgData, ability);
+    GFL_TextRendererDrawToBitmapEx(bitmap, TOP_TEXT_X, TOP_TEXT_Y, text, wk->font, TOP_TEXT_GOLD);
+    GFL_StrBufFree(text);
+    GFL_MsgDataFree(msgData);
+    msgData = GFL_MsgSysLoadData(FALSE, ARCID_SYSTEM_MESSAGE, TEXT_BANK_ABILITY_DESCRIPTIONS, param->heapId);
+    text = GFL_MsgDataLoadStrbufNew(msgData, ability);
+    GFL_TextRendererDrawToBitmapEx(bitmap, TOP_TEXT_X, TOP_TEXT_Y + TOP_TEXT_LINE_PITCH, text, wk->font,
+                                   TOP_TEXT_WHITE);
+    GFL_StrBufFree(text);
+    GFL_MsgDataFree(msgData);
+}
+
+// The species' wild held items, one a line, each with its rate, once it is caught (Data shows "?" until then), or
+// that it has none: a first item that is also the second is the only one, always held
+static void PokedexInfoPage_DrawHeldItems(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk, GFLBitmap *bitmap) {
+    PersonalData *personal;
+    MsgData *names;
+    u16 items[HELD_ITEM_COUNT];
+    u32 lines = 0;
+    u32 i;
+
+    if (!wk->caught) {
+        PokedexInfoPage_DrawCentered(wk, bitmap, PokedexData_Text_Unknown, 1);
+        return;
+    }
+    personal = PML_PersonalLoad(wk->species, wk->form, param->heapId);
+    for (i = 0; i < HELD_ITEM_COUNT; i++) {
+        items[i] = PML_PersonalGetParam(personal, PERSONAL_ITEM_1 + i);
+    }
+    PML_PersonalFree(personal);
+    names = GFL_MsgSysLoadData(FALSE, ARCID_SYSTEM_MESSAGE, TEXT_BANK_ITEM_NAMES, param->heapId);
+    if (items[0] == items[1]) {
+        if (items[0] != ITEM_NONE) {
+            PokedexInfoPage_DrawItemLine(param, wk, bitmap, names, lines++, items[0], HELD_ITEM_ALWAYS);
+        }
+    } else {
+        for (i = 0; i < HELD_ITEM_COUNT; i++) {
+            if (items[i] != ITEM_NONE) {
+                PokedexInfoPage_DrawItemLine(param, wk, bitmap, names, lines++, items[i], sHeldItemRates[i]);
+            }
+        }
+    }
+    GFL_MsgDataFree(names);
+    if (lines == 0) {
+        PokedexInfoPage_DrawCentered(wk, bitmap, PokedexData_Text_NoHeldItems, 1);
+    }
+}
+
+// An item's name on a line, from its start, and its rate, ending TOP_TEXT_X from the window's right
+static void PokedexInfoPage_DrawItemLine(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk, GFLBitmap *bitmap,
+                                         MsgData *names, u32 line, u32 item, u32 rate) {
+    WordSet *wordSet = GFL_WordSetSystemCreateDefault(param->heapId);
+    StrBuf *format = PokedexInfoPanels_LoadMessage(wk->panels, PokedexData_Text_ItemRate);
+    StrBuf *text = GFL_StrBufCreate(0x20, param->heapId);
+    StrBuf *name = GFL_MsgDataLoadStrbufNew(names, item);
+    u32 y = TOP_TEXT_Y + line * TOP_TEXT_LINE_PITCH;
+
+    GFL_TextRendererDrawToBitmapEx(bitmap, TOP_TEXT_X, y, name, wk->font, TOP_TEXT_WHITE);
+    WordSetNumber(wordSet, 0, rate, 3, NUM_PAD_NONE, TRUE);
+    GFL_WordSetFormatStrbuf(wordSet, text, format);
+    GFL_TextRendererDrawToBitmapEx(bitmap,
+                                   GFL_BitmapGetWidth(bitmap) - TOP_TEXT_X - GFL_FontGetBlockWidth(text, wk->font, 0),
+                                   y, text, wk->font, TOP_TEXT_WHITE);
+    GFL_StrBufFree(name);
+    GFL_StrBufFree(text);
+    GFL_StrBufFree(format);
+    GFL_WordSetSystemFree(wordSet);
+}
+
+// A message of the page's bank in white, centered across the window on a line
+static void PokedexInfoPage_DrawCentered(PokedexInfoPageWork *wk, GFLBitmap *bitmap, u32 messageId, u32 line) {
+    StrBuf *text = PokedexInfoPanels_LoadMessage(wk->panels, messageId);
+
+    GFL_TextRendererDrawToBitmapEx(bitmap, (GFL_BitmapGetWidth(bitmap) - GFL_FontGetBlockWidth(text, wk->font, 0)) / 2,
+                                   TOP_TEXT_Y + line * TOP_TEXT_LINE_PITCH, text, wk->font, TOP_TEXT_WHITE);
+    GFL_StrBufFree(text);
 }

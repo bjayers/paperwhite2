@@ -56,6 +56,16 @@ void PokedexInfo_Show(PokedexInfo *info);
 // entry in a language (as PokedexInfo_SetLanguage), for the detail screen's info page's move panel
 void PokedexInfo_FreeText(PokedexInfo *info);
 void PokedexInfo_RestoreText(PokedexInfo *info, u32 language);
+// Paper White 2: the info page's own text in the entry's text window (tiles 2, 17, 28 by 7 on the top screen's BG 1) in
+// place of the description: PokedexInfo_BeginOtherText clears the window's bitmap and returns it, for the caller to
+// draw into at once, and the entry's next update shows it; after PokedexInfo_EndOtherText, the entry's next print
+// (PokedexInfo_SetLanguage, PokedexInfo_SetPokemonInLanguage) has the description again. The window's colors, in the
+// font's palette row: the entry's white and shadow, and the page's gold in a color the entry doesn't use
+#define POKEDEX_INFO_TEXT_WHITE 15
+#define POKEDEX_INFO_TEXT_SHADOW 2
+#define POKEDEX_INFO_TEXT_GOLD 3
+GFLBitmap *PokedexInfo_BeginOtherText(PokedexInfo *info);
+void PokedexInfo_EndOtherText(PokedexInfo *info);
 #endif
 
 #endif // POKEBW2_APP_POKEDEX_INFO_H

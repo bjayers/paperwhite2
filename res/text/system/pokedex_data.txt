@@ -93,3 +93,7 @@ PokedexData_Text_Priority = Priority
 PokedexData_Text_NoValue = ―
 PokedexData_Text_PriorityPlus = +{0200:0}
 PokedexData_Text_PriorityMinus = -{0200:0}
+PokedexData_Text_Abilities = Abilities
+PokedexData_Text_HiddenAbilityUndiscovered = Hidden ability undiscovered.
+PokedexData_Text_NoHeldItems = Has no hold items.
+PokedexData_Text_ItemRate = {0200:0}%

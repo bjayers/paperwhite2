@@ -25,6 +25,12 @@ And the top screen's move panel, which a move chosen on Moves opens over the ent
 panel prints in, over a dark checker for the dimmed screen and the head bar, from paperwhite2_pokedex_move_panel.c's
 constants).
 
+And the top screen's entry with the info page's own text in its text window (the entry's panels, grid and head bar,
+without its other text, sprite, types and footprint): top_ability_reference.png (Stats' Abilities button: a sample
+species' first ability, its name in the page's gold), top_hidden_ability_reference.png (the hidden one before the
+species is caught), and top_items_<species>_reference.png (Data's held items: Tepig's none, Pikachu's Light Ball), each
+with a _tiles.png.
+
 And the top screen's Info panels' palettes (a/1/5/7's palette 9, rows 0 and 1, ov296's POKEDEX_GRA_PALETTE), to draw
 with the same colors: top_panels_row<N>.pal (JASC), .gpl (GIMP, Aseprite) and top_panels_palette.png (the swatches).
 """
@@ -46,6 +52,8 @@ from tools.paperwhite2.obj_remap import OBJ_TILES, tiles_of  # noqa: E402
 WIDTH, HEIGHT = 256, 192
 PANELS = ROOT / "src/paperwhite2/ov298/paperwhite2_pokedex_info_panels.c"
 HEADER = ROOT / "include/paperwhite2/pokedex_info.h"
+ENTRY_HEADER = ROOT / "include/app/pokedex_info.h"
+ENTRY = ROOT / "src/ov296/pokedex_info.c"
 MOVE_PANEL = ROOT / "src/paperwhite2/ov298/paperwhite2_pokedex_move_panel.c"
 TYPE_CHART = ROOT / "src/paperwhite2/main/paperwhite2_type_chart.c"
 APP_MENU_COMMON = ROOT / "src/system/app_menu_common.c"
@@ -87,6 +95,21 @@ MOVE_PANEL_ART = ART / "move_panel.png"
 MOVE_PANEL_PALETTE = GRAPHICS / "pokedex_gra/143.pal"
 MOVE_PANEL_CHARS = GRAPHICS / "pokedex_gra/144.png"
 MOVE_PANEL_SCREEN = GRAPHICS / "pokedex_gra/145.nscr"
+# The top screen's entry (src/ov296/pokedex_info.c, the info page's top): its panels (BG 2, the Pokedex's graphics'
+# screen 0x29, the head bar's rows cleared) over its grid (BG 3, screen 0x20), both of characters 0x1a in the rows of
+# palette 9 that their map entries name, the head bar, and the text window at tiles (2, 17), 28 by 7, where the info
+# page prints its own text in the font's palette row (a/0/2/3's palette 5) with the page's gold in it
+TOP_CHARS = GRAPHICS / "pokedex_gra/026.png"
+TOP_SCREEN_MID = GRAPHICS / "pokedex_gra/041.nscr"
+TOP_SCREEN_BACK = GRAPHICS / "pokedex_gra/032.nscr"
+TOP_PALETTE_FILE = GRAPHICS / "pokedex_gra/009.pal"
+TOP_PALETTE_ROWS = 3
+TEXT_WINDOW_X, TEXT_WINDOW_Y, TEXT_WINDOW_WIDTH = 2 * 8, 17 * 8, 28 * 8
+FONT_PALETTE = 5
+# The top references' palette: the entry's three rows, the head bar's, the font's row, then the tiles' grid
+TOP_HEAD_BAR_BASE = 48
+TOP_FONT_BASE = 64
+TOP_TILE_LINE = 80
 # A sample species for the numbers: Tepig
 SAMPLE_STATS = [65, 63, 45, 45, 45, 45]
 SAMPLE_DATA = ["45 (11.9%)", "Medium Slow", "\u2015", "1 HP", "62", "70"]
@@ -98,6 +121,9 @@ SAMPLE_ABILITIES = (None, "thick_fat")
 # Moves' sample: its level-up moves, the cursor on the first; the move panel's sample move
 SAMPLE_SPECIES = "tepig"
 SAMPLE_MOVE = "arm_thrust"
+# The top screen's samples: Tepig's first ability (Blaze) and its hidden one before it is caught, and the held items of
+# Tepig (none) and Pikachu (a Light Ball, 5%)
+SAMPLE_ITEMS_SPECIES = ("tepig", "pikachu")
 
 # The palette: the page's placeholder colors as paperwhite2_pokedex_info_panels.c's sPanelColors (index 0 clear),
 # then the template's own: the grid's checker, the touch bar, the buttons, the tiles' grid
@@ -158,9 +184,9 @@ Files
 Colours on the reference that are NOT art
 - the checker = transparent (the grid shows there)
 - the blue band at the bottom (y 168-191) = the game's touch bar; leave it transparent
-- the pink boxes = the game's buttons (Cry, Turn, Form, Shiny, Language): they cover your art
-  wherever a button is shown. Shiny and Language only appear for some Pokemon, so your art
-  shows in their place otherwise.
+- the pink boxes = the game's buttons (Cry, Turn, Form, Shiny, Language, Abilities): they cover
+  your art wherever a button is shown. Form, Shiny and Language only appear for some Pokemon,
+  so your art shows in their place otherwise. Abilities, the sixth (y 144-167), is always there.
 
 Limits
 - One picture, 256 x 192, at most 16 colours in all, and one of them is the transparent
@@ -227,9 +253,10 @@ The move panel (top screen)
 - move_panel_reference.png, move_panel_reference_tiles.png: your art as the game shows it, over
   a dark checker (the dimmed screen) and the head bar, with a sample move (Arm Thrust): the name
   at (20, 41) on your dark header, its type icon at the top right (centred at 224, 50),
-  "Category" at (20, 74) with the category icon (centred at 99, 80), "Power" (20, 87) and
-  "Accuracy" (20, 101) with their values centred at x 93 and 94, "PP" (138, 74) and "Priority"
-  (138, 87) with theirs centred at x 212, and the description from (20, 130), three lines 14 px
+  "Category" at (20, 74) with the category icon (its sprite centred at 99, 80, its drawn
+  pixels x 85-112), "Power" (20, 87) and "Accuracy" (20, 101) with their values right-aligned
+  to end with the icon (their last pixel at x 112), "PP" (138, 74) and "Priority" (138, 87)
+  with theirs right-aligned to end at x 217, and the description from (20, 130), three lines 14 px
   apart: all 10 px lower than before, the name 9 px (a 2 px drop would cut the shadow of its
   p, q and y in its 16 px box).
 - The text prints in your palette's colours: the name white (238,238,238) with a near-black
@@ -237,6 +264,16 @@ The move panel (top screen)
   behind it, inside the text boxes too.
 - The panel's tiles share the top screen's BG 1 with the head bar and the text boxes: your art
   takes 45 different tiles, and about 20 more are free.
+
+The entry's text window (top screen)
+- top_ability_reference.png, top_hidden_ability_reference.png, top_items_tepig_reference.png,
+  top_items_pikachu_reference.png (and _tiles): the entry's 3 lines of description at the
+  bottom of the top screen (tiles 2-29, rows 17-23) show other text on some sub-pages. On
+  Stats, the Abilities button shows each ability in turn: its name in gold (255,238,24) on the
+  first line, its description in white below (the sample is Tepig's Blaze); the hidden one,
+  until the Pokemon is caught, just "Hidden ability undiscovered." centred on the second line.
+  On Data, the wild held items, one a line, the name from the left and the rate right-aligned
+  ("Light Ball ... 5%"), or "Has no hold items." centred (Tepig), or "?" until caught.
 
 When you're done, send the PNG back (any 16-colour PNG, indexed or not, transparency as
 transparent pixels) and it gets built into the game.
@@ -596,13 +633,103 @@ def head_bar_colors():
     return read_palette(HEAD_BAR_PALETTE)[:16]
 
 
-def head_bar(canvas, font):
-    """The head bar as PokedexDetailHeadbar_InitBG and _PrintTitle draw it, shown, in the colors from ART_BASE: its
+def head_bar(canvas, font, base=ART_BASE):
+    """The head bar as PokedexDetailHeadbar_InitBG and _PrintTitle draw it, shown, in the colors from base: its
     characters with the title printed on them, placed by its screen's first rows."""
     chars = sheet(HEAD_BAR_CHARS)
     title = re.search(r"^BtlServerFlowTitle_Text_Info = (.*)$", HEAD_BAR_TITLE.read_text(), re.M).group(1)
     chars.text(font, title, HEAD_BAR_TITLE_X, HEAD_BAR_TITLE_Y, letter=15, shadow=14)
-    paint_screen(canvas, chars, HEAD_BAR_SCREEN, HEAD_BAR_ROWS, ART_BASE)
+    paint_screen(canvas, chars, HEAD_BAR_SCREEN, HEAD_BAR_ROWS, base)
+
+
+def paint_paletted(canvas, chars, screen, first_row, rows):
+    """Draws rows of a screen file's map entries from first_row on, each tile from chars as flipped, in the palette row
+    that its entry names (16 colors a row from 0); color 0 is left clear."""
+    data = screen.read_bytes()
+    start = data.find(b"NRCS") + 20
+    for row in range(first_row, first_row + rows):
+        for column in range(WIDTH // 8):
+            entry = struct.unpack_from("<H", data, start + (row * WIDTH // 8 + column) * 2)[0]
+            tile, base = entry & 0x3ff, (entry >> 12) * 16
+            for y in range(8):
+                for x in range(8):
+                    cx = 7 - x if entry & 0x400 else x
+                    cy = 7 - y if entry & 0x800 else y
+                    value = chars.pixels[(tile // 32 * 8 + cy) * WIDTH + tile % 32 * 8 + cx]
+                    if value:
+                        canvas.pixels[(row * 8 + y) * WIDTH + column * 8 + x] = base + value
+
+
+def ability_data(constant):
+    """An ability's name and description from res/abilities/, by its ABILITY_* constant."""
+    return json.loads((ROOT / f"res/abilities/{constant[len('ABILITY_'):].lower()}.json").read_text())
+
+
+def item_name(constant):
+    return json.loads((ROOT / f"res/items/{constant[len('ITEM_'):].lower()}/data.json").read_text())["name"]
+
+
+def top_text(d, m, font, kind, species):
+    """The lines that the info page prints in the entry's text window, as PokedexInfoPage_DrawAbility and
+    _DrawHeldItems print them: (text, x, line, align, gold) with x in the window, align "left", "right" or "center"."""
+    data = json.loads((ROOT / f"res/pokemon/{species}/data.json").read_text())
+    if kind == "ability":
+        ability = ability_data(data["abilities"][0])
+        return [(ability["name"], d["TOP_TEXT_X"], 0, "left", True)] + [
+            (line, d["TOP_TEXT_X"], 1 + i, "left", False) for i, line in enumerate(ability["description"].split("\n"))]
+    if kind == "hidden":
+        return [(m["HiddenAbilityUndiscovered"], 0, 1, "center", False)]
+    held = data["held_items"]
+    items = [held["common"], held["rare"], held["very_rare"]]
+    rates = [50, 5, 1]
+    if items[0] == items[1]:
+        lines = [(items[0], d["HELD_ITEM_ALWAYS"])] if items[0] != "ITEM_NONE" else []
+    else:
+        lines = [(item, rate) for item, rate in zip(items, rates) if item != "ITEM_NONE"]
+    if not lines:
+        return [(m["NoHeldItems"], 0, 1, "center", False)]
+    out = []
+    for i, (item, rate) in enumerate(lines):
+        out.append((item_name(item), d["TOP_TEXT_X"], i, "left", False))
+        rate_text = m["ItemRate"].replace("{0200:0}", str(rate))
+        out.append((rate_text, TEXT_WINDOW_WIDTH - d["TOP_TEXT_X"], i, "right", False))
+    return out
+
+
+def top_screen(d, font, lines, tiles):
+    """The top screen as the info page shows the entry with its own text: the entry's panels and grid, the head bar,
+    and the text's lines in the font's colors, the gold for the ability's name (the entry's other text, its sprite,
+    types and footprint left out); and the tiles' grid if tiles."""
+    canvas = Canvas()
+    chars = sheet(TOP_CHARS)
+    paint_paletted(canvas, chars, TOP_SCREEN_BACK, 0, HEIGHT // 8)
+    paint_paletted(canvas, chars, TOP_SCREEN_MID, HEAD_BAR_ROWS, HEIGHT // 8 - HEAD_BAR_ROWS)
+    head_bar(canvas, font, TOP_HEAD_BAR_BASE)
+    white, shadow = TOP_FONT_BASE + d["POKEDEX_INFO_TEXT_WHITE"], TOP_FONT_BASE + d["POKEDEX_INFO_TEXT_SHADOW"]
+    gold = TOP_FONT_BASE + d["POKEDEX_INFO_TEXT_GOLD"]
+    for text, x, line, align, is_gold in lines:
+        if align == "center":
+            x = (TEXT_WINDOW_WIDTH - font.text_width(text)) // 2
+            align = "left"
+        canvas.text(font, text, TEXT_WINDOW_X + x, TEXT_WINDOW_Y + d["TOP_TEXT_Y"] + line * d["TOP_TEXT_LINE_PITCH"],
+                    align, gold if is_gold else white, shadow)
+    if tiles:
+        for y in range(HEIGHT):
+            for x in range(WIDTH):
+                if x % 8 == 0 or y % 8 == 0:
+                    canvas.pixels[y * WIDTH + x] = TOP_TILE_LINE
+    return canvas
+
+
+def top_colors(extract):
+    """The top references' palette: the entry's rows, the head bar's, the font's row with the page's gold
+    (pokedex_info.c's sGoldColor) in its place, and the tiles' grid's color."""
+    out = (read_palette(TOP_PALETTE_FILE) + [(0, 0, 0)] * 48)[:TOP_PALETTE_ROWS * 16]
+    out += [(0, 0, 0)] * (TOP_HEAD_BAR_BASE - len(out)) + head_bar_colors()
+    font_row = list(palette_colors(read_narc((extract / FONTS).read_bytes())[FONT_PALETTE])[:16])
+    gold = re.search(r"sGoldColor = GX_RGB\((\d+), (\d+), (\d+)\)", ENTRY.read_text()).groups()
+    font_row[defines(ENTRY_HEADER)["POKEDEX_INFO_TEXT_GOLD"]] = rgb([int(v) for v in gold])
+    return out + font_row + [EXTRA[6]]
 
 
 def move_panel(d, m, font, icons, tiles):
@@ -630,12 +757,12 @@ def move_panel(d, m, font, icons, tiles):
     for label, y in (("PP", "PP_Y"), ("Priority", "PRIORITY_Y")):
         canvas.text(font, m[label], d["RIGHT_LABEL_X"], d[y], letter=text_c, shadow=shadow)
     dash = m["NoValue"]
-    values = [(str(data["power"]) if data["power"] > 1 else dash, "POWER_VALUE_X", "POWER_Y"),
-              (str(data["accuracy"]) if data["accuracy"] else dash, "ACCURACY_VALUE_X", "ACCURACY_Y"),
-              (str(data["pp"]), "RIGHT_VALUE_X", "PP_Y"),
-              (("+" if data["priority"] > 0 else "") + str(data["priority"]), "RIGHT_VALUE_X", "PRIORITY_Y")]
+    values = [(str(data["power"]) if data["power"] > 1 else dash, "LEFT_VALUE_RIGHT", "POWER_Y"),
+              (str(data["accuracy"]) if data["accuracy"] else dash, "LEFT_VALUE_RIGHT", "ACCURACY_Y"),
+              (str(data["pp"]), "RIGHT_VALUE_RIGHT", "PP_Y"),
+              (("+" if data["priority"] > 0 else "") + str(data["priority"]), "RIGHT_VALUE_RIGHT", "PRIORITY_Y")]
     for value, x, y in values:
-        canvas.text(font, value, d[x], d[y], "center", text_c, shadow)
+        canvas.text(font, value, d[x], d[y], "right", text_c, shadow)
     for i, line in enumerate(data["description"].split("\n")[:d["DESCRIPTION_LINES"]]):
         canvas.text(font, line, d["DESCRIPTION_X"], d["DESCRIPTION_Y"] + i * d["DESCRIPTION_LINE_PITCH"],
                     letter=text_c, shadow=shadow)
@@ -759,7 +886,7 @@ def main():
     args = parser.parse_args()
     fonts = read_narc((args.extract / FONTS).read_bytes())
     font, small = Font(fonts[0]), Font(fonts[1])
-    d, m = defines(HEADER, PANELS, PAGE, MOVE_PANEL), messages()
+    d, m = defines(HEADER, ENTRY_HEADER, PANELS, PAGE, MOVE_PANEL), messages()
     args.out.mkdir(parents=True, exist_ok=True)
     icons, icon_colors = type_icons(args.extract)
 
@@ -777,7 +904,7 @@ def main():
 
     def stats(canvas):
         stats_text(canvas, d, m, font)
-        buttons(canvas, d, m, font, ["Cry", "Turn", "Form", "Shiny", "Language"])
+        buttons(canvas, d, m, font, ["Cry", "Turn", "Form", "Shiny", "Language", "Abilities"])
     write("stats", art, stats, palette)
 
     # The other sub-pages: the user's art once there is some, else a canvas in the Stats art's palette with its tab
@@ -817,6 +944,14 @@ def main():
             palette += head_bar_colors()
             palette += [(0, 0, 0)] * (ICON_BASE - len(palette)) + list(icon_colors)
             canvas.write(args.out / name, palette)
+    # The top screen's text window with the info page's own text: an ability on Stats, the held items on Data
+    samples = [("top_ability", "ability", SAMPLE_SPECIES), ("top_hidden_ability", "hidden", SAMPLE_SPECIES)]
+    samples += [(f"top_items_{species}", "items", species) for species in SAMPLE_ITEMS_SPECIES]
+    top_palette = top_colors(args.extract)
+    for name, kind, species in samples:
+        lines = top_text(d, m, font, kind, species)
+        for suffix, tiles in (("", False), ("_tiles", True)):
+            top_screen(d, font, lines, tiles).write(args.out / f"{name}_reference{suffix}.png", top_palette)
     (args.out / "README.txt").write_text(README)
     top_palettes(args.extract, args.out)
     print(f"wrote the templates to {args.out}")
