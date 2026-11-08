@@ -769,6 +769,10 @@ BOOL FollowingScene_WasOut(void) {
     return sScene.active && sScene.wasOut;
 }
 
+FollowingState FollowingScene_GetResumeState(void) {
+    return sScene.previousState;
+}
+
 BOOL FollowingScene_BeginReturn(void) {
     GameEvent *event;
     u32 depth;
