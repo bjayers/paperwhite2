@@ -91,7 +91,7 @@
 #define CATEGORY_Y 74
 #define POWER_Y 87
 #define ACCURACY_Y 101
-#define POWER_VALUE_X 93
+#define POWER_VALUE_X 94
 #define ACCURACY_VALUE_X 94
 #define RIGHT_LABEL_X 138
 #define PP_Y 74
