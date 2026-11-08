@@ -68,8 +68,14 @@ void PokedexInfo_RestoreText(PokedexInfo *info, u32 language);
 #define POKEDEX_INFO_TEXT_GOLD 3
 #define POKEDEX_INFO_TEXT_LIGHT_GREY 4
 #define POKEDEX_INFO_TEXT_DARK_SHADOW 5
+// Paper White 2: the sex symbol's colors beside the name, the info page's Data's blue and pink
+#define POKEDEX_INFO_TEXT_BLUE 6
+#define POKEDEX_INFO_TEXT_PINK 7
 GFLBitmap *PokedexInfo_BeginOtherText(PokedexInfo *info);
 void PokedexInfo_EndOtherText(PokedexInfo *info);
+// Paper White 2: whether the species' form has a female sprite of its own, which the Pokédex shows apart from the
+// male's
+BOOL PokedexInfo_HasSexDifference(u32 species, u32 form);
 #endif
 
 #endif // POKEBW2_APP_POKEDEX_INFO_H

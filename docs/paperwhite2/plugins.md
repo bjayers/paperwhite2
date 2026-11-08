@@ -1692,10 +1692,27 @@ entry's prints and clears then leave it alone), clears its bitmap and returns it
 (`GFL_TextRendererDrawToBitmapEx`) and the entry's next update transfers it whole, so the old text is replaced in one
 frame. `PokedexInfo_EndOtherText` gives it back for the entry's next print. The page's colours are colours 3 to 5 of the font's
 row (main BG palette row 3, the entry's windows' palette, of which the entry uses only 0, 1, 2 and 15): the gold,
-(255, 238, 24) as the art's, the slot's grey (148, 148, 148) and its shadow (24, 24, 24), `sPageTextColors` in
+(255, 238, 24) as the art's, the slot's grey (148, 148, 148) and its shadow (24, 24, 24), then 6 and 7 the sex
+symbol's blue and pink (below; 8 to 14 are still free), `sPageTextColors` in
 `pokedex_info.c` (a static: DMA can't read the stack), put there each time `PokedexInfo_InitWindows` loads the row
 (also as the move panel closes). The top screen's fades are hardware brightness, so it fades with the
 rest; the move panel's dimming touches rows 6 and 13 only. About 1.3 KB of ov298 and ov296.
+
+**Male and female looks** (`PokedexInfoPage_FindLook`, `_CountSeenLooks`, `_NextForm`): Stats' Form button steps
+through the looks the Pokédex has seen, each form's male look then its female one, as the original forms page lists
+the forms and sexes seen (`PokedexDetailForm_GatherEntries`, which lists every sex seen, and a form once per color),
+but a sex only where it looks different: where the species' form has a female sprite of its own
+(`PokedexInfo_HasSexDifference` in `src/ov296/pokedex_info.c`: the female's characters are another file than the
+male's, as `GetPokemonDataIDBase` gives the male's files to a female whose file is empty; Unfezant, Frillish,
+Jellicent, Pikachu, Hippowdon and the other 92 in the game's data, none of them with forms). A female without her own
+sprite and a genderless Pokémon have the male look, which keeps the shown sex if it has been seen in it; only sexes
+seen count, and the button shows once two looks have been seen, so for Unfezant with both sexes seen even with one
+form. Shiny stays its own toggle. **The sex symbol**: for such a species, the shown sex's ♂ or ♀ (the font's own
+characters, 0x2642 and 0x2640) follows the name in the entry's name window on the top screen, 3 px after it in the
+shown language's name (`PokedexInfo_PrintSexSymbol`, in both `PokedexInfo_PrintEntry` and `_PrintEntryInLanguage`, on
+the detail screen's top only), with the name's shadow, in the Data panel's blue (56, 136, 248) and pink (248, 96, 168),
+which are colours 6 and 7 of the font's row (`POKEDEX_INFO_TEXT_BLUE` and `_PINK`, after the page's 3 to 5 in
+`sPageTextColors`); a species without sex differences, a genderless one and no sex show none.
 
 ### Pokédex shortcuts from the party and the summary
 
