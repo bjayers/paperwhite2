@@ -1329,7 +1329,11 @@ The redesign's research and plan: `docs/paperwhite2/design/cgear.md`. Done so fa
   original's circles of the buttons and the clock were semi-transparent objects, which the picture's blend made show
   the rings through; their objects in `17.ncer` (cells 22-27 and 48-51) are now opaque, the same without a picture,
   when nothing blends. The markers' bases and lamps stay semi-transparent, as the original's. None turns the blend
-  off again. The help button's icon is the user's skins icon.
+  off again. The help button's icon is the user's skins icon. A change while the C-Gear shows is read at the touch and
+  lands whole in the next VBlank (`CGearSw_LoadQueuedPicture`, from `CGearSw_VBlankTask`, before the palette fade's
+  transfer, which carries its colors): loaded at once, its characters, palette, screen and blend each landed
+  mid-frame, so the new characters showed over the old screen for some lines and the picture came in torn for a
+  frame. When the C-Gear starts, the picture still loads at once, under the black screen.
 - **The date:** the right-hand circle shows the month above the day in the clock's digits (`ACTOR_DATE_DIGIT`,
   four actors, set by `CGearSw_UpdateClock`).
 - **No survey button or log:** their actors (`ACTOR_RADAR`, `ACTOR_LOGO` and `ACTOR_NOTICE`) are kept off the screen,

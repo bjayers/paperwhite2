@@ -263,6 +263,9 @@ struct CGearSw {
     u16 labelColors[MARKER_COUNT][3];
     u8 markerUsable[MARKER_COUNT];
     u8 usableWait;
+    // Paper White 2: a background picture to show in the next VBlank (CGearSw_LoadQueuedPicture), or none if NULL
+    CGearPictureSave *queuedPicture;
+    u8 pictureQueued;
 #endif
     u8 panels[PANEL_COUNT + 1];
     u8 gender;
@@ -424,6 +427,8 @@ static BOOL CGearSw_LoadSkin(CGearSw *work, GameSystem *gsys);
 #ifdef PAPERWHITE2
 static int CGearSw_GetPictureCount(CGearSw *work);
 static void CGearSw_ShowPicture(CGearSw *work, int number);
+static void CGearSw_FreeQueuedPicture(CGearSw *work);
+static void CGearSw_LoadQueuedPicture(CGearSw *work);
 #endif
 static void CGearSw_SleepCallback(void *data);
 static void CGearSw_WakeCallback(void *data);
@@ -2406,31 +2411,61 @@ static int CGearSw_GetPictureCount(CGearSw *work) {
     return GFL_ArcToolGetDataMax(work->arc) - PICTURE_FIRST_MEMBER;
 }
 
-// Shows a picture as a downloaded skin shows, or none for 0
+// Shows a picture as a downloaded skin shows, or none for 0. While the C-Gear shows (once it has its palette fade),
+// the picture changes in the next VBlank, from CGearSw_VBlankTask: loaded at once, its characters, palette, screen and
+// blend each landed mid-frame, so the new characters showed over the old screen for some lines and the picture came
+// in torn for a frame
 static void CGearSw_ShowPicture(CGearSw *work, int number) {
-    CGearPictureSave *picture;
+    CGearPictureSave *picture = NULL;
 
-    if (number == 0 || number > CGearSw_GetPictureCount(work) ||
-        GFL_HeapGetFreeSize(HEAPID_FIELD_MENU) < sizeof(CGearPictureSave) + 0x400) {
+    CGearSw_FreeQueuedPicture(work);
+    if (number != 0 && number <= CGearSw_GetPictureCount(work) &&
+        GFL_HeapGetFreeSize(HEAPID_FIELD_MENU) >= sizeof(CGearPictureSave) + 0x400) {
+        picture =
+            GFL_HeapAllocate(HEAPID_TAIL(HEAPID_FIELD_MENU), sizeof(CGearPictureSave), FALSE, "c_gear_sw.c", __LINE__);
+        GFL_ArcToolRead(work->arc, PICTURE_FIRST_MEMBER + number - 1, picture);
+    }
+    work->queuedPicture = picture;
+    work->pictureQueued = TRUE;
+    // Starting, the screen is still black
+    if (work->fade == NULL) {
+        CGearSw_LoadQueuedPicture(work);
+    }
+}
+
+static void CGearSw_FreeQueuedPicture(CGearSw *work) {
+    if (work->queuedPicture != NULL) {
+        GFL_HeapFree(work->queuedPicture);
+        work->queuedPicture = NULL;
+    }
+    work->pictureQueued = FALSE;
+}
+
+static void CGearSw_LoadQueuedPicture(CGearSw *work) {
+    CGearPictureSave *picture = work->queuedPicture;
+
+    if (!work->pictureQueued) {
+        return;
+    }
+    if (picture == NULL) {
         GFL_BGSysClearChar(5);
         // The picture's blend off again, as the C-Gear starts
         G2S_BlendNone();
-        return;
+    } else {
+        GFL_BGSysLoadChar(5, picture, 0x1fe0, 0);
+        // The palette fade's buffer holds the screen's colors once the C-Gear runs, and CGearSw_VBlankTask sends it
+        // after this
+        if (work->fade != NULL) {
+            PaletteFade_LoadData(work->fade, &picture->chars[0x1fe0], PALFADE_BUFFER_SUB_BG, 13 * 16, 0x20);
+        } else {
+            GFL_BGSysUploadStdPalette(5, &picture->chars[0x1fe0], 0x20, 13 * 0x20);
+        }
+        GFL_BGSysBufferScrDefault(5, picture->unk2000, sizeof(picture->unk2000));
+        GFL_BGSysSetScrPaletteNo(5, 0, 0, 32, 24, 13);
+        GFL_BGSysLoadScr(5);
+        CGearSw_SetSkinBlend(work);
     }
-    picture =
-        GFL_HeapAllocate(HEAPID_TAIL(HEAPID_FIELD_MENU), sizeof(CGearPictureSave), FALSE, "c_gear_sw.c", __LINE__);
-    GFL_ArcToolRead(work->arc, PICTURE_FIRST_MEMBER + number - 1, picture);
-    GFL_BGSysLoadChar(5, picture, 0x1fe0, 0);
-    GFL_BGSysUploadStdPalette(5, &picture->chars[0x1fe0], 0x20, 13 * 0x20);
-    // The palette fade's buffer holds the screen's colors once the C-Gear runs
-    if (work->fade != NULL) {
-        PaletteFade_LoadData(work->fade, &picture->chars[0x1fe0], PALFADE_BUFFER_SUB_BG, 13 * 16, 0x20);
-    }
-    GFL_BGSysBufferScrDefault(5, picture->unk2000, sizeof(picture->unk2000));
-    GFL_BGSysSetScrPaletteNo(5, 0, 0, 32, 24, 13);
-    GFL_BGSysLoadScr(5);
-    CGearSw_SetSkinBlend(work);
-    GFL_HeapFree(picture);
+    CGearSw_FreeQueuedPicture(work);
 }
 #endif
 
@@ -2481,6 +2516,10 @@ static void CGearSw_WakeCallback(void *data) {
 static void CGearSw_VBlankTask(TCB *tcb, void *data) {
     CGearSw *work = data;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: a new background picture, in the same VBlank as its palette
+    CGearSw_LoadQueuedPicture(work);
+#endif
     if (work->fade != NULL) {
         PaletteFade_Transfer(work->fade);
     }
@@ -2568,6 +2607,10 @@ static void CGearSw_Exit(CGearSw *work) {
     GFL_NetResetIconPos();
     GFL_NetSetIconScreen(FALSE, work->heapId);
     GFL_TCBRemove(work->vblankTcb);
+#ifdef PAPERWHITE2
+    // Paper White 2: a picture still waiting for the VBlank
+    CGearSw_FreeQueuedPicture(work);
+#endif
     GFL_TCBMgrDelete(work->tcbMgr);
     GFL_HeapFree(work->tcbMgrBuffer);
     GFL_TCBExMgrFreeTasks(work->tcbExMgr);
