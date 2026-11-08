@@ -2,7 +2,6 @@
 #include "app/p_status.h"
 #include "app/pokedex_detail.h"
 #include "app/pokelist.h"
-#include "constants/pokemon.h"
 #include "field/app_call.h"
 #include "field/field_sound.h"
 #include "gfl/heap.h"
@@ -19,14 +18,10 @@
 // The overlay of the Pokédex's list, whose code the detail screen's Area page uses (PokedexCommon_StartGlow)
 #define OVERLAY_POKEDEX OVERLAY_ID(302)
 
-// The detail screen's param first, as the screen and FieldProcLink_FreeParam take this. The list is the party's
+// The list first, whose detail screen's param the screen and FieldProcLink_FreeParam take. The list is the party's
 // Pokémon but its eggs; the screen it was opened from is opened again from what is kept here
 typedef struct {
-    PokedexDetailParam detail;
-    u16 species[POKEDEX_SHORTCUT_PARTY_MAX];
-    PokedexDetailPokemon pokemon[POKEDEX_SHORTCUT_PARTY_MAX];
-    // The slot of the Pokémon it was opened for
-    u8 openedSlot;
+    PokedexShortcutList list;
     // The screen to go back to, FIELD_APP_POKELIST or FIELD_APP_POKESTATUS, and the summary's param as it was
     s32 returnApp;
     PStatusParam summary;
@@ -38,7 +33,7 @@ void *PaperWhite2_FieldAppCall_CreatePokedexInfoParam(FieldAppCallWork *work, s3
                                                    "paperwhite2_pokedex_shortcut_event.c", __LINE__);
     GameData *gameData = GSYS_GetGameData(work->input->gameSystem);
     PokeParty *party;
-    u32 count;
+    u8 openedSlot;
     u32 i;
 
     if (prevAppId == FIELD_APP_POKESTATUS) {
@@ -46,38 +41,20 @@ void *PaperWhite2_FieldAppCall_CreatePokedexInfoParam(FieldAppCallWork *work, s3
 
         param->summary = *summary;
         party = summary->party;
-        param->openedSlot = summary->partyIndex;
+        openedSlot = summary->partyIndex;
     } else {
         const PokeListParam *list = prevParam;
 
         party = list->party;
-        param->openedSlot = list->index;
+        openedSlot = list->index;
     }
     param->returnApp = prevAppId;
 
-    count = 0;
+    PaperWhite2_PokedexShortcutList_Init(&param->list, gameData);
     for (i = 0; i < PokeParty_GetPkmCount(party); i++) {
-        PartyPkm *pkm = PokeParty_GetPkm(party, i);
-
-        if (PokeParty_GetParam(pkm, PKM_PARAM_SPECIES_VALID, NULL) &&
-            !PokeParty_GetParam(pkm, PKM_PARAM_IS_EGG, NULL)) {
-            if (i == param->openedSlot) {
-                param->detail.index = count;
-            }
-            param->species[count] = PokeParty_GetParam(pkm, PKM_PARAM_SPECIES, NULL);
-            param->pokemon[count].form = PokeParty_GetParam(pkm, PKM_PARAM_FORM, NULL);
-            param->pokemon[count].sex = PokeParty_GetParam(pkm, PKM_PARAM_SEX, NULL);
-            param->pokemon[count].rare = PokeParty_IsRare(pkm);
-            param->pokemon[count].personality = PokeParty_GetParam(pkm, PKM_PARAM_PID, NULL);
-            count++;
-        }
+        PaperWhite2_PokedexShortcutList_Add(&param->list, PokeParty_GetBoxPkm(PokeParty_GetPkm(party, i)), i,
+                                            openedSlot);
     }
-    param->detail.gameData = gameData;
-    param->detail.page = POKEDEX_DETAIL_PAGE_INFO;
-    param->detail.list = param->species;
-    param->detail.count = count;
-    param->detail.mode = 0;
-    param->detail.pokemon = param->pokemon;
 
     // As the Pokédex does, for the cries
     FieldSnd_DuckVolume(GameData_GetFieldSoundSystem(gameData), GameSystem_GetISS(work->input->gameSystem));
@@ -91,7 +68,7 @@ u32 PaperWhite2_FieldAppCall_GetPokedexInfoResult(FieldAppCallWork *work, void *
     PokedexShortcutParam *param = param_;
 
     GFL_OvlUnload(OVERLAY_POKEDEX);
-    FieldSnd_RestoreVolume(GameData_GetFieldSoundSystem(param->detail.gameData),
+    FieldSnd_RestoreVolume(GameData_GetFieldSoundSystem(param->list.detail.gameData),
                            GameSystem_GetISS(work->input->gameSystem));
     work->nextAppId = param->returnApp;
     return FIELD_APP_RESULT_NEXT;
@@ -100,11 +77,12 @@ u32 PaperWhite2_FieldAppCall_GetPokedexInfoResult(FieldAppCallWork *work, void *
 u32 PaperWhite2_PokedexShortcut_GetPartySlot(const void *param_) {
     const PokedexShortcutParam *param = param_;
 
-    return param->openedSlot;
+    return PaperWhite2_PokedexShortcutList_GetSlot(&param->list);
 }
 
 void PaperWhite2_PokedexShortcut_RestoreSummary(PStatusParam *summary, const void *param_) {
     const PokedexShortcutParam *param = param_;
 
     *summary = param->summary;
+    PaperWhite2_PokedexShortcutList_SetSummaryPokemon(&param->list, summary);
 }

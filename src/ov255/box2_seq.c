@@ -34,6 +34,7 @@
 #include "system/wipe.h"
 #ifdef PAPERWHITE2
 #include "constants/items.h"
+#include "paperwhite2/box2_pokedex.h"
 #include "paperwhite2/shiny_candy.h"
 #endif
 
@@ -480,6 +481,12 @@ static int Box2Seq_SubProcCall(Box2SysWork *syswk) {
 
 static int Box2Seq_SubProcMain(Box2SysWork *syswk) {
     if (syswk->procMgrResult != TRUE) {
+#ifdef PAPERWHITE2
+        // Paper White 2: the summary's INFO opens the Pokédex's page, and the page the summary again
+        if (syswk->subProcType == BOX2_SUBPROC_PSTATUS && PaperWhite2_Box2Pokedex_Continue(syswk) == TRUE) {
+            return BOX2SEQ_SUBPROC_MAIN;
+        }
+#endif
         sSubProcs[syswk->subProcType].exit(syswk);
         syswk->nextSeq = sSubProcs[syswk->subProcType].nextSeq;
         return BOX2SEQ_INIT;

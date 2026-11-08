@@ -54,6 +54,9 @@ static const TouchRect sButtonRect[] = {
 };
 
 BOOL PaperWhite2_PStatusPokedex_IsAvailable(const PStatusParam *param) {
+    if (param->fromFieldMenu == PSTATUS_FROM_BOX) {
+        return param->mode == PSTATUS_MODE_NORMAL || param->mode == PSTATUS_MODE_LOCK_MARKINGS;
+    }
     return param->fromFieldMenu == TRUE && param->mode == PSTATUS_MODE_NORMAL && param->dataType == PSTATUS_DATA_PARTY;
 }
 
