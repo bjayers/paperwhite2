@@ -54,6 +54,7 @@
 #include "system/wordset.h"
 #include "text/system/btl_pokeparam_box_main_save_init.h"
 #ifdef PAPERWHITE2
+#include "paperwhite2/box2_pokedex.h"
 #include "paperwhite2/prestige.h"
 #endif
 
@@ -2667,7 +2668,13 @@ static u32 BoxMovePutAreaCheck(Box2SysWork *syswk, s16 x, s16 y) {
 }
 
 int Box2Main_PokeStatusCall(Box2SysWork *syswk) {
+#ifdef PAPERWHITE2
+    // Paper White 2: in the work that also opens the Pokédex's page from the summary's INFO, zeroed: the original left
+    // fromFieldMenu unset, which can show the field menu's X and shortcut
+    PStatusParam *param = PaperWhite2_Box2Pokedex_CreateSummaryParam(HEAPID_BOX2);
+#else
     PStatusParam *param = GFL_HeapAllocate(HEAPID_BOX2, sizeof(PStatusParam), FALSE, "box2_main.c", 4544);
+#endif
 
     if (syswk->pos < BOX2_PARTY_POS) {
         param->party = (PokeParty *)Box2Main_GetBoxPkm(syswk, syswk->getTray, 0);

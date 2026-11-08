@@ -190,12 +190,13 @@ static const PStaWindowSetup sHiddenTitleWindow = { 15, 1, 17, 2 };
 #define HIDDEN_TITLE_PALETTE 1
 #define HIDDEN_TITLE_COLOR PRINT_COLOR(1, 4, 0)
 // The page's name in the title bar, which the empty bar left of it covers with the EVs and IVs; its tiles, and its
-// letters' pixels (« to »)
+// letters' right end (»). With the stats it shows 3 tiles left of its place, so that its L is where the EVs' and IVs'
+// is, 14 pixels left of it (the tiles' nearest to 15), and the empty bar fills the tiles it leaves
 #define HIDDEN_PAGE_NAME_X 22
+#define HIDDEN_PAGE_NAME_SHOWN_X 19
 #define HIDDEN_EMPTY_BAR_X 13
 #define HIDDEN_PAGE_NAME_WIDTH 7
-#define HIDDEN_PAGE_NAME_LEFT 176
-#define HIDDEN_PAGE_NAME_RIGHT 231
+#define HIDDEN_PAGE_NAME_RIGHT (231 - (HIDDEN_PAGE_NAME_X - HIDDEN_PAGE_NAME_SHOWN_X) * 8)
 
 // The stats in the rows' order, HP first, the stats' value, EV and IV
 static const u8 sStatRowParams[][3] = {
@@ -520,9 +521,16 @@ static void PStaSkill_DrawStats(PStatusWork *wk, PStaSkillWork *skill) {
     GFL_BGSysQueueScrLoad(6);
     GFL_BGSysLoadScrArea(5, 0, 0, 32, 3, skill->screens[3].screen->rawData, 0, 0, 32, 32);
 #ifdef PAPERWHITE2
-    // Paper White 2: with the EVs and IVs, the empty bar over the page's name, which the title replaces
+    // Paper White 2: with the EVs and IVs, the empty bar over the page's name, which the title replaces, and with the
+    // stats the name further left, its L where the EVs' and IVs' is
     if (skill->showHidden == TRUE) {
         GFL_BGSysLoadScrArea(5, HIDDEN_PAGE_NAME_X, 1, HIDDEN_PAGE_NAME_WIDTH, 2, skill->screens[3].screen->rawData,
+                             HIDDEN_EMPTY_BAR_X, 1, 32, 32);
+    } else {
+        GFL_BGSysLoadScrArea(5, HIDDEN_PAGE_NAME_SHOWN_X, 1, HIDDEN_PAGE_NAME_WIDTH, 2,
+                             skill->screens[3].screen->rawData, HIDDEN_PAGE_NAME_X, 1, 32, 32);
+        GFL_BGSysLoadScrArea(5, HIDDEN_PAGE_NAME_SHOWN_X + HIDDEN_PAGE_NAME_WIDTH, 1,
+                             HIDDEN_PAGE_NAME_X - HIDDEN_PAGE_NAME_SHOWN_X, 2, skill->screens[3].screen->rawData,
                              HIDDEN_EMPTY_BAR_X, 1, 32, 32);
     }
 #endif
@@ -1594,11 +1602,12 @@ static void PStaSkill_DrawHiddenBar(GFLBitmap *bitmap, u16 x, u32 value, u32 rea
 }
 
 // The title bar's text in the small font: with the EVs and IVs, the columns' names, between L and R, and with the
-// stats, L and R either side of the page's name
+// stats, L and R either side of the page's name, L where it is with the EVs and IVs (left of "EV")
 static void PStaSkill_PrintHiddenTitle(PStatusWork *wk, PStaSkillWork *skill) {
     u16 left = sHiddenTitleWindow.x * 8;
     u16 lRight;
     u16 rLeft;
+    StrBuf *str;
 
     GFL_BitmapFill(BmpWin_GetBitmap(skill->titleWindow), 0);
     if (skill->showHidden == TRUE) {
@@ -1606,7 +1615,9 @@ static void PStaSkill_PrintHiddenTitle(PStatusWork *wk, PStaSkillWork *skill) {
         PStaSkill_PrintTitle(wk, skill, PStaSys_Text_IvColumn, HIDDEN_HEADER_IV_RIGHT - left, TRUE);
         rLeft = HIDDEN_HEADER_IV_RIGHT - left;
     } else {
-        lRight = HIDDEN_PAGE_NAME_LEFT - left;
+        str = GFL_MsgDataLoadStrbufNew(wk->msgData, PStaSys_Text_EvColumn);
+        lRight = HIDDEN_HEADER_EV_RIGHT - left - GFL_FontGetBlockWidth(str, skill->smallFont, 0);
+        GFL_StrBufFree(str);
         rLeft = HIDDEN_PAGE_NAME_RIGHT - left;
     }
     PStaSkill_PrintTitle(wk, skill, PStaSys_Text_ButtonL, lRight - HIDDEN_BUTTON_GAP, TRUE);

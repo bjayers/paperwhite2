@@ -202,8 +202,12 @@ the empty bar's tiles cover « STATS »; the title's text is in the bar's own pa
 14 has no dark red; the HP bar and its frame are hidden. The rows' windows are 19 tiles wide in hack
 builds instead of 16 and 14, to the panel's edge on the HP's row (x 216), which BG 4's 768 tiles allow (754 used). L
 or R again switches back, and the view stays across Pokémon and pages until the summary closes. What L and R do is a
-small "L" and "R" in the title bar, 15 pixels either side of "EV IV", or of « STATS » with the stats (its letters' pixels are
-`HIDDEN_PAGE_NAME_LEFT`/`RIGHT`): the game's archives have no L or R button art that the summary could use. Everything
+small "L" and "R" in the title bar, 15 pixels either side of "EV IV", or of « STATS » with the stats: the game's archives
+have no L or R button art that the summary could use. L stands at the same place in both views (x 134, its right end
+at "EV"'s left less 15): with the stats, « STATS »'s 7 tiles show 3 tiles left of their place (`HIDDEN_PAGE_NAME_SHOWN_X`,
+the letters at 152-205, R 15 pixels after them at 223, `HIDDEN_PAGE_NAME_RIGHT`), the empty bar's tiles in the 3 they
+leave, so the gap between L and « is 14 pixels, the tiles' nearest to 15. R can't line up too: « STATS » is 54 pixels
+wide and "EV IV" 30, so with the EVs and IVs R is at 201. Everything
 is under `PAPERWHITE2` in that file (`showHidden`, `PStaSkill_PrintStatRows`, `PStaSkill_PrintHiddenTitle` and the
 `HIDDEN_` constants at the top: the columns and bars in screen pixels, the title's places, the colors of the font's
 palette), and the text is at the end of the summary's bank, `res/text/system/p_sta_sys.txt`. The rows use `PKM_PARAM_EV_*`/`PKM_PARAM_IV_*` of their own stat, the same parameters
@@ -1727,18 +1731,24 @@ which are colours 6 and 7 of the font's row (`POKEDEX_INFO_TEXT_BLUE` and `_PINK
 ### Pokédex shortcuts from the party and the summary
 
 `include/paperwhite2/pokedex_shortcut.h`. The Pokédex's detail screen opens on the Info page of a party Pokémon from
-two places, both reached from the field: **the party screen's menu** (POKÉDEX under SUMMARY,
+two places, both reached from the field, and of a box's Pokémon from the PC box's summary (below): **the party
+screen's menu** (POKÉDEX under SUMMARY,
 `BtlMain11_Text_Pokedex`, the last message of `res/text/system/btl_main_11.txt`) and **the summary screen**, by START or
 its **INFO** button, the Pokédex touch bar's own INFO graphic (`ARCID_POKEDEX_GRA` palette 3, characters 13, cells 28 and
 animations 45, sequence 0, and 4 for its push) on the bottom bar at x 84-115, y 168-191, between the skills tab and the
 shortcut's checkbox. The page shows that Pokémon, not what the Pokédex has seen: its species, form, sex, color and
 personality (Spinda's spots), as caught (`PokedexDetailParam`'s and `PokedexDetailCommon`'s `pokemon`, by the list's
-index, NULL from the Pokédex; `PokedexInfoPage_LoadPokemon`). The list is the party without its eggs, so Up and Down
-step through it as the summary does, every Pokémon of it seen or not (`PokedexDetailCommon_GoNext`/`_GoPrev` under
+index, NULL from the Pokédex; `PokedexInfoPage_LoadPokemon`). The list is the party without its eggs
+(`PokedexShortcutList`, built by `PaperWhite2_PokedexShortcutList_Add` in
+`src/paperwhite2/main/paperwhite2_pokedex_shortcut.c`, which keeps each one's slot), so Up and Down step through it as
+the summary does, every Pokémon of it seen or not (`PokedexDetailCommon_GoNext`/`_GoPrev` under
 `PAPERWHITE2`), and a party with a species twice changes the Pokémon by the place in the list
 (`PokedexInfoPage_Command`). Area, Cry and Forms stay and work, by species as in the Pokédex. B, X and the bar's return
-all go back to the screen it was opened from, the party screen's cursor on that Pokémon, the summary on the same
-Pokémon and page.
+all go back to the screen it was opened from on the Pokémon last shown: INFO on Keldeo, Down to Klink and back, and
+the summary shows Klink on the page it was left on, or the party screen's cursor is on Klink
+(`PaperWhite2_PokedexShortcutList_GetSlot`, by the detail screen's index, which it keeps in its param as it steps). The
+summary left on its ribbons' page opens on the info page for another Pokémon, which may have no ribbons
+(`PaperWhite2_PokedexShortcutList_SetSummaryPokemon`).
 
 **How it opens:** the field app call's new app `FIELD_APP_POKEDEX_INFO` (`src/ov012/event_field_proclink.c`), overlay
 298 and `POKEDEX_DETAIL_PROC_FUNCTIONS`, as the summary is opened from the party screen: the party screen ends with
@@ -1751,9 +1761,23 @@ menu item (`PokeListParam`'s `showPokedex`, set by `FieldAppCall_CreatePokeListP
 `POKELIST_MENU_POKEDEX`), and only in its field mode (0), so the party screens of battles, the day care, the Battle
 Subway, trades and the rest don't; it is left out for an egg. The summary offers it where `PaperWhite2_PStatusPokedex_IsAvailable` holds:
 `fromFieldMenu`, mode `PSTATUS_MODE_NORMAL` and the party's data, which is the field menu's summary (from the party
-screen, or the Y menu's summary pages); not in battle, the PC's boxes, trades or a move to forget. **The PC box's
-summary** doesn't have it: the box runs the summary from its own proc manager, and opening the Pokédex there would mean
-running the detail screen (and overlay 302) inside the box's screens, beside its overlays and heap, which wasn't tried.
+screen, or the Y menu's summary pages), or `fromFieldMenu` `PSTATUS_FROM_BOX` (2) and mode `PSTATUS_MODE_NORMAL` or
+`_LOCK_MARKINGS`, the PC box's; not in battle, trades or a move to forget.
+
+**The PC box's summary** (`include/paperwhite2/box2_pokedex.h`, `src/paperwhite2/ov255/paperwhite2_box2_pokedex.c`,
+hooks in `src/ov255/box2_main.c` and `box2_seq.c`): the box runs the summary from its own proc manager as a sub proc,
+having freed its screens and `HEAPID_BOX2_APP`. `Box2Main_PokeStatusCall` takes the summary's param from
+`PaperWhite2_Box2Pokedex_CreateSummaryParam`, zeroed, first in a work that also holds the list, with `fromFieldMenu`
+`PSTATUS_FROM_BOX`: the original allocated it unzeroed and never set `fromFieldMenu`, so the field menu's X and
+shortcut could show, and `PStatus_IsFromFieldMenu` still holds only for `TRUE`, so they don't. When the summary's sub
+proc ends, `Box2Seq_SubProcMain` asks `PaperWhite2_Box2Pokedex_Continue` first: a summary that ended with INFO or
+START (`PSTATUS_RESULT_POKEDEX`) has the box queue the detail screen (overlay 298) on the box's list, the box's 30
+slots (or the party, for the party's summary) without eggs and empty slots, loading overlay 302 and turning the music
+down for the cries (`FieldSnd_SetPlayerVolumeFade`, 64; the field's 3D sound isn't running); as the detail screen ends,
+whichever way, it unloads 302, turns the music up, and queues the summary again on the Pokémon last shown and its
+page; and only a summary left for the box goes back to it, as before, its cursor on the summary's last Pokémon.
+Overlays 298 (with 296, 139 and 144, which its pages load) and 302 lie below overlay 255 (from 0x021C3420 in the hack
+build) and the summary's 207, which has ended by then.
 
 **The summary's button** (`src/paperwhite2/ov207/paperwhite2_pstatus_pokedex.c`, hooks in `src/ov207/p_sta_sys.c`):
 shown with the tabs, for a Pokémon that isn't an egg, beside the ribbons' tab when it has ribbons; START opens the page
@@ -1770,7 +1794,10 @@ and the button's cells use two rows (normal, and pushed for its flash), so the a
 **Memory:** the detail screen's heap (0xa0000) comes from `HEAPID_USER` as from the Pokédex. Measured in the emulator
 (2026-11-08, the user's save): with the detail screen open from the party screen or the summary, `HEAPID_USER` had
 727,160 bytes free (one block), and the detail heap 97-105 KB free on Stats, Moves and Evo. About 0.5 KB of ov012
-(which moves the arena: 89 KB of the budget left), 0.2 KB of ov165, 0.6 KB of ov207 and a little of ov298.
+(which moves the arena: 89 KB of the budget left), 0.2 KB of ov165, 0.6 KB of ov207 and a little of ov298. From the
+PC box (2026-11-08, the user's save, a box's summary): `HEAPID_USER` had 792,680 bytes free with the box open, 989,288
+with the summary open, 661,608 (one block) with the detail screen open, and the detail heap 103,616; each went back to
+the same as the summary and the box reopened. Under 0.2 KB of ARM9 main (the list) and 0.2 KB of ov255.
 
 ### Pokédex list: no opening, no Unova mode, Unova natives
 
