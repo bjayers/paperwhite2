@@ -274,10 +274,7 @@ Moves
   the list scrolls. Touching the track (x 234-255) and holding scrolls the list to that place.
 
 Evo
-- evo_canvas.png: your Evo art (blank so far) with the two placeholders the game draws until your
-  art does: the light strip (y 25-57, a dark line at its top and bottom) and the dark tree panel
-  (x 20-236, y 64-161, a 2 px near-black border). Redraw them as you like; once your art draws
-  them, the game stops drawing its own.
+- evo_canvas.png: your Evo art, the strip and the tree's panel (y 25-57; x 20-236, y 64-161).
 - evo_reference.png, evo_reference_tiles.png: Tepig's family with Pignite shown (Tepig and
   Pignite caught, Emboar not yet seen); evo_eevee_reference.png and _tiles: Eevee's 8, the most a
   family has, in the small layout (Vaporeon and Espeon caught, Jolteon, Flareon, Umbreon seen,
@@ -1041,15 +1038,6 @@ def evo_layout(d, rows):
     return centers, small_layout, icons
 
 
-def evo_placeholders(d, canvas, base):
-    """As PokedexInfoEvo_DrawPlaceholders, in the art's colors from base."""
-    canvas.fill(0, d["EVO_STRIP_Y"], WIDTH, d["EVO_STRIP_HEIGHT"], base + d["EVO_COLOR_DARK"])
-    canvas.fill(0, d["EVO_STRIP_Y"] + 1, WIDTH, d["EVO_STRIP_HEIGHT"] - 2, base + d["EVO_COLOR_WHITE"])
-    x, y, w, h, b = (d[f"EVO_PANEL_{k}"] for k in ("X", "Y", "WIDTH", "HEIGHT", "BORDER"))
-    canvas.fill(x, y, w, h, base + d["EVO_COLOR_DARK"])
-    canvas.fill(x + b, y + b, w - 2 * b, h - 2 * b, base + d["EVO_COLOR_PANEL"])
-
-
 def poke_icons(extract):
     """The party icons' 48 colors, and a function giving a species' icon (frame 0) as 32 by 32 color indices into them."""
     files = read_narc((extract / POKE_ICONS).read_bytes())
@@ -1066,12 +1054,11 @@ def poke_icons(extract):
 
 
 def evo_text(canvas, d, m, font, small, icon_of, shown, states):
-    """As PokedexInfoEvo_Show over the art (its colors from ART_BASE): the placeholders, the lines, each row's ball,
+    """As PokedexInfoEvo_Show over the art (its colors from ART_BASE): the lines, each row's ball,
     name and method, and the strip's icons (their colors from ICON_BASE)."""
     rows = evo_family(shown)
     centers, small_layout, icons = evo_layout(d, rows)
     art = lambda name: ART_BASE + d[f"EVO_COLOR_{name}"]
-    evo_placeholders(d, canvas, ART_BASE)
     line = d["EVO_LINE_WIDTH"]
     for i, (_, _, parent, _) in enumerate(rows[1:], 1):
         (px, py), (x, y) = centers[parent], centers[i]
@@ -1216,14 +1203,10 @@ def main():
         (args.out / f"{page}_canvas.png").write_bytes(write_indexed_png(WIDTH, HEIGHT, bytes(found[0]), found[1]))
         write(page, found, draw, colors(art16(found), icon_colors, sprite_colors() if sprites else ()))
 
-    # Evo: the art with the placeholders that the page draws over it (the strip and the panel) as its canvas, and each
-    # sample family over it, the party icons' colors after the art's
+    # Evo: the art as its canvas, and each sample family over it, the party icons' colors after the art's
     evo_art = load_art("evo")
     if evo_art:
-        canvas = Canvas()
-        canvas.pixels = bytearray(evo_art[0])
-        evo_placeholders(d, canvas, 0)
-        (args.out / "evo_canvas.png").write_bytes(write_indexed_png(WIDTH, HEIGHT, bytes(canvas.pixels), evo_art[1]))
+        (args.out / "evo_canvas.png").write_bytes(write_indexed_png(WIDTH, HEIGHT, bytes(evo_art[0]), evo_art[1]))
         icon_colors16, icon_of = poke_icons(args.extract)
         for name, shown, states in SAMPLE_EVO:
             write(name, evo_art, lambda c: evo_text(c, d, m, font, small, icon_of, shown, states),

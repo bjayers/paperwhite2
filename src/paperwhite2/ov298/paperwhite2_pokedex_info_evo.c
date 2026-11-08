@@ -50,7 +50,6 @@ enum {
 // The balls' palette is the art's (the top screen's row 0): the colors that the page draws in
 #define EVO_COLOR_CLEAR 0
 #define EVO_COLOR_WHITE 4
-#define EVO_COLOR_PANEL 10
 #define EVO_COLOR_DARK 11
 #define EVO_COLOR_GOLD 15
 #define EVO_TEXT_COLOR PRINT_COLOR(EVO_COLOR_WHITE, EVO_COLOR_DARK, EVO_COLOR_CLEAR)
@@ -203,7 +202,6 @@ struct PokedexInfoEvo {
 
 static void PokedexInfoEvo_LoadFamily(PokedexInfoEvo *evo, u16 species);
 static void PokedexInfoEvo_AddEvolutions(PokedexInfoEvo *evo, u32 row);
-static void PokedexInfoEvo_DrawPlaceholders(GFLBitmap *bitmap, int top);
 static void PokedexInfoEvo_DrawRow(PokedexInfoEvo *evo, GFLBitmap *bitmap, int top, u32 row);
 static void PokedexInfoEvo_DrawMethod(PokedexInfoEvo *evo, GFLBitmap *bitmap, int top, u32 row, int left);
 static void PokedexInfoEvo_FormatMethod(PokedexInfoEvo *evo, u32 row, const Evolution *evolution, BOOL shortened,
@@ -254,13 +252,12 @@ void PokedexInfoEvo_Free(PokedexInfoEvo *evo) {
     GFL_HeapFree(evo);
 }
 
-// The window's characters change at once and the icons in the next VBlank, as the other sub-pages' do. The art is
-// blank for now, so the strip and the panel are placeholders, until the art draws them
+// The window's characters change at once and the icons in the next VBlank, as the other sub-pages' do. The strip and
+// the panel are the user's art (res/paperwhite2/pokedex_art/info_evo.png)
 void PokedexInfoEvo_Show(PokedexInfoEvo *evo, GFLBitmap *bitmap, int top, u16 species, u16 form, u16 sex) {
     u32 i;
 
     PokedexInfoEvo_LoadFamily(evo, species);
-    PokedexInfoEvo_DrawPlaceholders(bitmap, top);
     // The lines first, so that the balls cover their ends
     for (i = 1; i < evo->count; i++) {
         u32 parent = evo->rows[i].parent;
@@ -378,17 +375,6 @@ static void PokedexInfoEvo_AddEvolutions(PokedexInfoEvo *evo, u32 row) {
         evo->count++;
         PokedexInfoEvo_AddEvolutions(evo, evo->count - 1);
     }
-}
-
-// The light strip under the tab bar and the dark panel of the tree, where the art draws nothing yet
-static void PokedexInfoEvo_DrawPlaceholders(GFLBitmap *bitmap, int top) {
-    GFL_BitmapFillArea(bitmap, 0, EVO_STRIP_Y - top, GFL_BitmapGetWidth(bitmap), EVO_STRIP_HEIGHT, EVO_COLOR_DARK);
-    GFL_BitmapFillArea(bitmap, 0, EVO_STRIP_Y + 1 - top, GFL_BitmapGetWidth(bitmap), EVO_STRIP_HEIGHT - 2,
-                       EVO_COLOR_WHITE);
-    GFL_BitmapFillArea(bitmap, EVO_PANEL_X, EVO_PANEL_Y - top, EVO_PANEL_WIDTH, EVO_PANEL_HEIGHT, EVO_COLOR_DARK);
-    GFL_BitmapFillArea(bitmap, EVO_PANEL_X + EVO_PANEL_BORDER, EVO_PANEL_Y + EVO_PANEL_BORDER - top,
-                       EVO_PANEL_WIDTH - EVO_PANEL_BORDER * 2, EVO_PANEL_HEIGHT - EVO_PANEL_BORDER * 2,
-                       EVO_COLOR_PANEL);
 }
 
 // A row's ball, by whether its species has been caught or seen, its name, in gold for the shown species and "????"
