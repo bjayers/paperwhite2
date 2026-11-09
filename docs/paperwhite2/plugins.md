@@ -1755,14 +1755,18 @@ The player's marker (the town map's characters 8, cells 12, animations 19, seque
 palette's row 1 in main OBJ row 0) is at the player's zone's place (`TownMap_GetMapZone`). All places show, visited or
 not. **The current Pokémon's box** covers the head bar's right end (the blue the entry's panel left there): x 144-255,
 y 0-31, OBJs in front of the head bar (BG priority 0), made with the map and freed with it, so it shows and goes in the
-same VBlank. It is a placeholder until the user's art (`area_top_box.png` among the templates): the entry panels'
-white with their dark border, the party icon (32 by 32 at x 148, its two frames animated as Evo's) and the species'
-name at x 184, y 8 in font 0 (font 1, y 10, for a name that would pass x 252). The box is a 128 by 32 bitmap drawn
-again as the Pokémon changes and cut into four 32 by 32 OBJs from x 128, made with the party icons' cells
-(`PokeIcon_GetCellFile_Main`); the four and the icon share one character resource of 3 KB. Its palettes: main OBJ
-rows 12 (the icon's: the shown Pokémon's row of the party icons' three, written as it changes) and 13 (the box's
-colours), measured unchanged and unused by any OBJ while Area shows. It takes three OBJ resources (characters, palette,
-cells) while the map is open, and about 3 KB of the heap (the lowest free while the map opens is now 97 KB). The detail heap grew to 0xb0000: opening the map with the heap at its fullest left 21 KB free (largest block
+same VBlank. It is the user's art, `res/paperwhite2/pokedex_art/area_top_box.png` (a whole top screen with the box at
+x 129-255, y 0-31: a slanted left edge with a gold line, a light grid inside), which the build converts
+(`pokedex_area.py`'s `box_member`, `ARCID_POKEDEX_GRA` 160, `AREA_BOX_FILE`: its 16 colours and the 128 by 32's
+tiles; it fails on a pixel outside x 128-255, y 0-31 or more than 16 colours). Over it, right of the slant, the party
+icon (32 by 32 at x 156, its two frames animated as Evo's) and the species' name at x 190, y 8 in font 0 (font 1,
+y 10, for a name that would pass x 252), in the art's dark (11) with its light grey (6) as the shadow. The box is a
+128 by 32 bitmap, the art copied in and the name drawn again as the Pokémon changes, cut into four 32 by 32 OBJs from
+x 128, made with the party icons' cells (`PokeIcon_GetCellFile_Main`); the four and the icon share one character
+resource of 3 KB. Its palettes: main OBJ rows 12 (the icon's: the shown Pokémon's row of the party icons' three,
+written as it changes) and 13 (the art's 16 colours), measured unchanged and unused by any OBJ while Area shows. It
+takes three OBJ resources (characters, palette, cells) while the map is open, and about 5 KB of the heap (the art's
+member, 2 KB, kept to draw each name over). The detail heap grew to 0xb0000: opening the map with the heap at its fullest left 21 KB free (largest block
 10 KB) at 0xa0000; at 0xb0000, 152 KB free on Stats, 99 KB at the lowest while the map opens (largest block 90 KB),
 165 KB while Area shows (the entry's text freed). Area keeps about 13 KB while the page runs (the icons' member
 10.4 KB, the places, the species' block).

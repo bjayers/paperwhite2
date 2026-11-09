@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Paper White 2: the Pokédex Info page's Area icons, a member of the Pokédex's graphics archive (ARCID_POKEDEX_GRA)
-that tools/paperwhite2/pokedex_evo.py adds (docs/paperwhite2/plugins.md, Pokédex; docs/paperwhite2/design/pokedex-area.md).
+that tools/paperwhite2/pokedex_evo.py adds (docs/paperwhite2/plugins.md, Pokédex; docs/paperwhite2/design/pokedex-area.md),
+and the top screen's box of the current Pokémon, another (box_member, below).
 
     pokedex_area.py check     # how the sheet's tiles fit the palette rows, and each icon's colours
 
@@ -25,6 +26,12 @@ into the same rows. The member:
 - the 25 icons' tiles (4bpp, 32 bytes each), then the 15 grey icons'.
 
 check fails, and says which icons have the most colours, if the tiles don't fit the rows.
+
+The box is res/paperwhite2/pokedex_art/area_top_box.png, a whole top screen (256 by 192, indexed in 16 colours or
+fewer, index 0 transparent) with the box's pixels in BOX_X to the right edge and BOX_Y to BOX_Y + BOX_HEIGHT - 1, and
+none outside it: the page cuts that 128 by 32 into four OBJs of 32 by 32 in main OBJ row 13 and prints the
+Pokémon's name over it in the art's own colours (BOX_COLOR_* in the C file). Its member: the art's 16 colours (BGR555,
+32 bytes), then the 128 by 32's 64 tiles (4bpp, 32 bytes each), 16 across, in rows, the GFL bitmap's order.
 """
 import random
 import struct
@@ -33,9 +40,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
+from tools.data.nitro_2d import read_indexed_png  # noqa: E402
 from tools.paperwhite2.screen_art import read_png  # noqa: E402
 
 ICONS = ROOT / "res" / "paperwhite2" / "pokedex_art" / "area_icons.png"
+BOX = ROOT / "res" / "paperwhite2" / "pokedex_art" / "area_top_box.png"
+# BOX_OBJ_X and BOX_OBJ_Y in paperwhite2_pokedex_info_area.c, and the screen's size
+BOX_X, BOX_Y, BOX_WIDTH, BOX_HEIGHT = 128, 0, 128, 32
+SCREEN_WIDTH, SCREEN_HEIGHT = 256, 192
 ICON_WIDTH, ICON_HEIGHT = 32, 16
 ICONS_ACROSS, ICONS_DOWN = 5, 5
 ICON_COUNT = ICONS_ACROSS * ICONS_DOWN
@@ -139,6 +151,30 @@ def member():
     return bytes(out)
 
 
+def box_member():
+    """The box's colours and tiles, from area_top_box.png."""
+    try:
+        width, height, pixels, colors = read_indexed_png(BOX)
+    except ValueError as error:
+        raise IconError(str(error)) from error
+    if (width, height) != (SCREEN_WIDTH, SCREEN_HEIGHT) or max(pixels) > 15:
+        raise IconError(f"{BOX.name}: must be {SCREEN_WIDTH} by {SCREEN_HEIGHT}, indexed in 16 colours")
+    for i, value in enumerate(pixels):
+        x, y = i % width, i // width
+        if value and not (BOX_X <= x < BOX_X + BOX_WIDTH and BOX_Y <= y < BOX_Y + BOX_HEIGHT):
+            raise IconError(f"{BOX.name}: a pixel at x {x}, y {y}, outside the box's x {BOX_X}-{BOX_X + BOX_WIDTH - 1}, "
+                            f"y {BOX_Y}-{BOX_Y + BOX_HEIGHT - 1}")
+    out = bytearray()
+    colors5 = [to5(c) for c in (list(colors) + [(0, 0, 0)] * 16)[:16]]
+    out += struct.pack("<16H", *(r | g << 5 | b << 10 for r, g, b in colors5))
+    for tile_y in range(BOX_Y, BOX_Y + BOX_HEIGHT, TILE):
+        for tile_x in range(BOX_X, BOX_X + BOX_WIDTH, TILE):
+            for y in range(TILE):
+                row = pixels[(tile_y + y) * width + tile_x:(tile_y + y) * width + tile_x + TILE]
+                out += bytes(row[i] | row[i + 1] << 4 for i in range(0, TILE, 2))
+    return bytes(out)
+
+
 def main():
     if sys.argv[1:] != ["check"]:
         sys.exit(__doc__)
@@ -150,6 +186,8 @@ def main():
     counts = [len({c for t in icon for c in t if c is not None}) for icon in icons]
     rows = data[ICON_ROWS * 32:ICON_ROWS * 32 + (ICON_COUNT + GREY_ICONS) * TILES_PER_ICON]
     used = [sum(1 for c in struct.unpack_from("<16H", data, r * 32)[1:] if c) for r in range(ICON_ROWS)]
+    box = box_member()
+    print(f"box: {len(box)} bytes")
     print(f"{len(data)} bytes; the rows' colours {used} of {ROW_COLORS}; tiles in each row "
           f"{[rows.count(r) for r in range(ICON_ROWS)]}; each icon's colours {counts}")
 

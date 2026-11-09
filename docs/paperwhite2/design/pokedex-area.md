@@ -248,9 +248,11 @@ The details are in `docs/paperwhite2/plugins.md` (Pokédex, Area). Where the bui
   weathers" in place of the icons where they would all be coloured (for the seasons only when every place glows
   white; any season-specific place shows the four icons, each coloured where it is met); no gold marks (the season
   glowing, the preferred times and weathers) and no rates; and the current Pokémon's box over the head bar's right
-  end on the top screen (its party icon and name; a placeholder until the user draws `area_top_box.png`).
+  end on the top screen (its party icon and name; a placeholder until the user drew `area_top_box.png`, in since
+  2026-11-09).
 - **Members:** the new art is `ARCID_POKEDEX_GRA` 152-154, so Evo's members moved to 155-157 (`pokedex_evo.py`'s
-  `ARCHIVE_MEMBERS` is 155); the index is 158 and the icons 159, both written by `pokedex_evo.py archive`.
+  `ARCHIVE_MEMBERS` is 155); the index is 158, the icons 159 and the box's art 160, all written by
+  `pokedex_evo.py archive`.
 - **The index** has no tier or rate per place, only per method row (lowest and highest over its places and contexts);
   a row's rates are the species' summed share over its forms. 26.8 KB, 496 species, the largest block 118 bytes.
 - **Bottom palette rows:** arts 6-11; row 12 the content window's on Matchups and Evo and Area's third icon row, loaded
@@ -261,15 +263,18 @@ The details are in `docs/paperwhite2/plugins.md` (Pokédex, Area). Where the bui
   time icons y 136 and weather icons y 152 directly under the 4th row, no gap.
 - **Main OBJ rows:** the marker in row 0, the glow in rows 1 (all year), 6, 7, 14 and 15 (the plan's 3-7 hold the
   entry's type icons' and footprint's palettes, which stay loaded); the current Pokémon's box in 12 (its party icon)
-  and 13 (the box).
-- **The box:** x 144-255, y 0-31 (112 by 32); the party icon's 32 by 32 at x 148, y 0; the name at x 184, y 8 (font 0,
-  or font 1 at y 10 past x 252).
+  and 13 (the box's art, its 16 colours).
+- **The box:** the user's `area_top_box.png`, x 129-255, y 0-31 (four 32 by 32 OBJs from x 128), with a slanted left
+  edge; the party icon's 32 by 32 at x 156, y 0 and the name at x 190, y 8 (font 0, or font 1 at y 10 past x 252),
+  moved right from the placeholder's x 148 and 184 so that the icon clears the slant's gold line (it reaches x 155 at
+  the bottom); the name in the art's palette's dark (11) and light grey (6). Opening the map with it measured 86 KB
+  free at the lowest (the box's art adds 2 KB).
 - **VRAM swap:** the map's 62 KB of characters go to VRAM at once where the entry has none, and the rest (about
   9 KB: the BGs' blank first characters, the panels' and the caught labels') with the screens in the VBlank that
   switches the BGs; all 62 KB in the VBlank ran into the next frame in the emulator. Frame-by-frame captures of
   opening and leaving show no in-between frame.
 - **Heap:** opening Area left 21 KB free at 0xa0000, so the detail heap is 0xb0000 now (99 KB at the lowest).
-- **Placeholders:** the glow colours (the template's, until `area_glow.png`) and the current Pokémon's box. Not done: phase 4's `area_glow.png` target, phase 5 (cutting the
+- **Placeholders:** the glow colours (the template's, until `area_glow.png`). Not done: phase 4's `area_glow.png` target, phase 5 (cutting the
   touch bar's AREA page).
 
 ## Templates
