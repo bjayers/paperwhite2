@@ -42,6 +42,9 @@ sSubpageLift, which must equal the art targets' offset_y), over the art as it wa
 
 And the top screen's Info panels' palettes (a/1/5/7's palette 9, rows 0 and 1, ov296's POKEDEX_GRA_PALETTE), to draw
 with the same colors: top_panels_row<N>.pal (JASC), .gpl (GIMP, Aseprite) and top_panels_palette.png (the swatches).
+
+And the planned Area sub-page's templates (the six-tab bar, the map on the top screen, the bottom screen's layout, the
+icon sheet and the glow's colours), which pokedex_area_templates.py writes into the same folder.
 """
 import argparse
 import json
@@ -339,6 +342,55 @@ The entry's text window (top screen)
 
 When you're done, send the PNG back (any 16-colour PNG, indexed or not, transparency as
 transparent pixels) and it gets built into the game.
+"""
+
+# The planned Area sub-page (pokedex_area_templates.py, docs/paperwhite2/design/pokedex-area.md)
+AREA_README = """
+Area (planned sixth sub-page, between Evo and Matchups)
+=======================================================
+
+The tab bar for six sub-pages
+- tabs6_stats.png ... tabs6_matchups.png (one per selected tab, 256 x 24) and tabs6_sheet.png
+  (all six stacked): your five tab bars rebuilt for six tabs, centred at x 48, 80, 112, 144,
+  176 and 208 (32 apart, as now; the whole row moves 16 px left), Area 5th (x 176). They are cut
+  from your five arts: each art's selected tab, and the unselected icons. The dashed magenta box
+  is Area's icon to draw (about 16 x 11, as the others). Touching a tab is its 32 px column,
+  y 0-17. Each sub-page's art (info_<page>.png) gets its own tab bar from these; Moves' sets bar
+  under it has its gap under the Moves tab, which moves from x 96 to x 112.
+
+The top screen (nothing to draw)
+- area_top_map.png: the town map that the AREA page shows today, moved to the top screen 24 px
+  down under the INFO head bar: the map's 168 rows fill y 24-191 exactly.
+- area_top_shapes.png: every place's highlight shape (the game's own, in its original red).
+- area_top_frame1.png ... frame4.png: a sample (Unfezant) as its highlights cycle: each place
+  glows in the colour of one of its own seasons, the next one about every second; a place it
+  lives in all year glows white and doesn't change.
+
+The bottom screen
+- area_canvas.png: draw your Area art over this (256 x 192, at most 16 colours with the
+  transparent one, as the other sub-pages). It holds the tab bar with Area selected and plain
+  placeholder panels where the game prints.
+- area_reference.png, area_reference_tiles.png: the screen as the game would show it, with the
+  sample's text and the icons' places (yellow boxes, each 32 x 16 on the 8 x 8 grid):
+  - Seasons (y 24-39): the season icons at x 48, 88, 128, 168, only those it lives in; "All
+    year" at x 210 when it is all four. They double as the map's colour legend.
+  - Methods (y 48-135): up to 4 rows 24 px apart (icon at x 16, y 48/72/96/120): the method's
+    icon, the levels (x 56), the rarity (x 136) and the encounter rate, right-aligned at x 244.
+  - Time (y 136-151) and Weather (y 152-167): 5 icon places each at x 48, 88, 128, 168, 208;
+    the times and weathers it appears in, the preferred ones marked.
+  The icons must sit on the 8 x 8 grid: they are tiles of the text layer with their own palette.
+
+The icons
+- area_icons_template.png: the icon sheet, 160 x 80, slots of 32 x 16 (the type icons' size):
+  row 1 seasons (spring, summer, autumn, winter), row 2 times (morning, day, evening, night,
+  late night), row 3 weathers (clear, rain, thunderstorm, snow, sandstorm), row 4 methods
+  (grass, dark grass, shaking grass, dust cloud, bridge shadow), row 5 methods (surf, rippling
+  surf, fishing, rippling fishing) and an outbreak badge. area_icons_guide.png names each slot.
+- All icons share ONE palette of 16 colours (index 0 transparent, 15 that show). The template's
+  palette is a starter (season pink, green, red, blue, sun yellow, rain blue, sand...): change it
+  freely, but keep one palette for the whole sheet. Leave a slot's unused pixels transparent.
+- area_glow_template.png: the map's glow colours, a row each (spring, summer, autumn, winter,
+  all year), three shades (light, mid, dark), as the game's red has three. Change them to taste.
 """
 
 
@@ -1274,8 +1326,11 @@ def main():
         lines = top_text(d, m, font, kind, species)
         for suffix, tiles in (("", False), ("_tiles", True)):
             top_screen(d, font, lines, tiles).write(args.out / f"{name}_reference{suffix}.png", top_palette)
-    (args.out / "README.txt").write_text(README)
+    (args.out / "README.txt").write_text(README + AREA_README)
     top_palettes(args.extract, args.out)
+    # The planned Area sub-page's templates (docs/paperwhite2/design/pokedex-area.md)
+    from tools.paperwhite2 import pokedex_area_templates
+    pokedex_area_templates.write(args.out, font, small)
     print(f"wrote the templates to {args.out}")
 
 
