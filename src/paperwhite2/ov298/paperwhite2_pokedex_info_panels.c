@@ -447,21 +447,21 @@ static const u16 sSubpageNames[POKEDEX_INFO_SUBPAGE_COUNT] = {
     PokedexData_Text_Evo,   PokedexData_Text_Area, PokedexData_Text_Matchups,
 };
 
-// Moves' sets' names, where each starts, and the area touching each, from its start to the next one's (the gap after
-// TM/HM is the shown tab's, x 98-125 in the six-tab bar)
+// Moves' sets' names, where each starts, and the area touching each, halfway to the next one's: Level Up on the left
+// of the shown tab (x 98-125 in the six-tab bar), the other three spaced evenly on its right (the user's choice)
 static const u16 sMoveSetNames[POKEDEX_INFO_MOVES_SET_COUNT] = {
     PokedexData_Text_LevelUp,
     PokedexData_Text_Machines,
     PokedexData_Text_Tutor,
     PokedexData_Text_EggMoves,
 };
-static const u8 sMoveSetX[POKEDEX_INFO_MOVES_SET_COUNT] = { 10, 59, 154, 196 };
+static const u8 sMoveSetX[POKEDEX_INFO_MOVES_SET_COUNT] = { 10, 143, 184, 223 };
 
 static const TouchRect sMoveSetRects[] = {
-    { MOVES_SET_TOUCH_TOP, MOVES_SET_TOUCH_BOTTOM, MOVES_SET_TOUCH_LEFT, 58 },
-    { MOVES_SET_TOUCH_TOP, MOVES_SET_TOUCH_BOTTOM, 59, 97 },
-    { MOVES_SET_TOUCH_TOP, MOVES_SET_TOUCH_BOTTOM, 126, 195 },
-    { MOVES_SET_TOUCH_TOP, MOVES_SET_TOUCH_BOTTOM, 196, MOVES_SET_TOUCH_RIGHT },
+    { MOVES_SET_TOUCH_TOP, MOVES_SET_TOUCH_BOTTOM, MOVES_SET_TOUCH_LEFT, 97 },
+    { MOVES_SET_TOUCH_TOP, MOVES_SET_TOUCH_BOTTOM, 126, 175 },
+    { MOVES_SET_TOUCH_TOP, MOVES_SET_TOUCH_BOTTOM, 176, 214 },
+    { MOVES_SET_TOUCH_TOP, MOVES_SET_TOUCH_BOTTOM, 215, MOVES_SET_TOUCH_RIGHT },
     { TOUCH_RECT_END, 0, 0, 0 },
 };
 
