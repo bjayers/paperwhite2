@@ -288,11 +288,11 @@ The details are in `docs/paperwhite2/plugins.md` (Pokédex, Area). Where the bui
 - **The icons as OBJs (2026-11-09):** each icon is a sub OBJ of 32 by 16 (the type icons' cells, centred) at its exact
   place, its clear pixels showing the art; the special marks' slot is cut into two icons (left mark, right mark), each
   16 by 16 in its icon's left half. Each icon has at most 7 colours, so `pokedex_area.py` packs each whole (and its
-  grey copy, clear pixels clear) into one of three OBJ palette rows: sub OBJ 14 and 15 (unused) and 4 (Moves' knob's,
-  shown only on Moves). One character resource holds all 52 (13 KB of sub OBJ VRAM); each OBJ's image proxy points at
+  grey copy, clear pixels clear) into one of four OBJ palette rows: sub OBJ 14 and 15 (unused), 4 and 3 (Moves' knob's
+  and cursor's, shown only on Moves). One character resource holds all 52 (13 KB of sub OBJ VRAM); each OBJ's image proxy points at
   its icon and its palette proxy at its row. They are made as Area shows (anew for each species, up to 26) and freed as
   another sub-page shows; Area's VBlank task loads the rows' colours in the VBlank that first shows the OBJs, keeping
-  the knob's row, and puts it back in the VBlank that shows another sub-page (measured: row 4 the knob's again on
+  the knob's and the cursor's rows, and puts them back in the VBlank that shows another sub-page (measured: row 4 the knob's again on
   Moves and Evo; no in-between frame between Area and Evo or Moves either way). The page's OBJ unit has 128 actors
   (96 in the original) for them.
 - **The icon sheet (2026-11-09):** row 1's fifth slot holds the two special marks (left and right halves); row 4 grass,
@@ -302,6 +302,11 @@ The details are in `docs/paperwhite2/plugins.md` (Pokédex, Area). Where the bui
   levels from 22 to 27 of 31, under the panels' 29: barely there, plainly disabled), which also leaves 3 places free
   (42 of 45); the editor's Graphics & Palettes imports the sheet (its Sprite sheets page, checked by
   `pokedex_area.py check`).
+- **A fourth row (2026-11-09):** the user's next sheet has 33 colours with the greys and provably can't pack into three
+  rows (an exhaustive search), so Moves' cursor's row (sub OBJ 3, the panels' `PALETTE_CURSOR`) is the fourth, kept
+  and put back as the knob's is. `pack()` is an exact search: it places the icons' maximal colour sets (those in no
+  other's), largest first, into each row they fit with backtracking, then gives each icon the first row holding its
+  colours, so any sheet that can fit packs, always the same way. The sheet packs as 15, 15, 15 and 5.
 - **Main OBJ rows:** the marker in row 0, the glow in rows 1 (all year), 6, 7, 14 and 15 (the plan's 3-7 hold the
   entry's type icons' and footprint's palettes, which stay loaded); the current Pokémon's box in 12 (its party icon)
   and 13 (the box's art, its 16 colours).

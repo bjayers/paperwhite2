@@ -1749,16 +1749,17 @@ bridge, then surf, puddle, fishing, walking and an unused slot; their transparen
 that its fades darken them: the type icons' cells (`ARCID_APP_MENU_COMMON`, the 1D 128 KB mapping's, centred), one
 character resource for all the icons (13 KB of sub OBJ VRAM: 26 icons, the marks' slot cut into a left and a right
 mark, each in its icon's left half, and their grey copies), each OBJ's image proxy at its icon and its palette proxy at
-its row. Each icon has at most 7 colours, so each is packed whole into one of three OBJ palette rows of 15 with every
+its row. Each icon has at most 7 colours, so each is packed whole into one of four OBJ palette rows of 15 with every
 icon's grey copy (each colour's grey by its luminance, 4 levels from 22 to 27 of 31, just below the panels' 29, so that
 an unmet one is barely there; white stays white, clear stays
-clear): sub OBJ rows 14 and 15, which nothing uses, and 4, Moves' knob's. They are made as Area shows (made anew for
+clear): sub OBJ rows 14 and 15, which nothing uses, and 4 and 3, Moves' knob's and cursor's (an exact search packs
+them, so a sheet that can fit always does). They are made as Area shows (made anew for
 each species, at most 26) and freed as another sub-page shows (`PokedexInfoArea_Hide`), as Evo's icons are; the
 palette resource (the type icons' palette's first row, into row 14) is only what the OBJs are made with: Area's VBlank
-task loads the icons' colours into the three rows in the VBlank that shows the OBJs first, keeping the rows' own
-(the knob's), and puts those back in the VBlank that shows another sub-page. Frame-by-frame captures of Area to and
+task loads the icons' colours into the four rows in the VBlank that shows the OBJs first, keeping the rows' own
+(the knob's and the cursor's), and puts those back in the VBlank that shows another sub-page. Frame-by-frame captures of Area to and
 from Evo and Moves show no in-between frame. The sheet of 2026-11-09 (the user's, still unfinished: the marks' slot
-empty, the old method icons standing in for some terrains) packs into 42 of the rows' 45 places. The editor's Graphics & Palettes has the sheet on its Sprite sheets page:
+empty, the old method icons standing in for some terrains) packed into 42 of three rows' 45 places; the user's next (33 colours with the greys) needs the fourth row. The editor's Graphics & Palettes has the sheet on its Sprite sheets page:
 import a PNG, see `pokedex_area.py check`'s verdict (it names the icons with too many colours) and a preview, write
 it to `area_icons.png`. **The top screen** shows the original AREA page's
 town map (`ARCID_TOWNMAP_GRA` 5 and 7, screens 17 and 16, extended palette 0 into slots 2 and 3) in place of the entry:

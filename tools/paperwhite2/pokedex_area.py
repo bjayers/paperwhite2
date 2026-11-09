@@ -18,7 +18,7 @@ DS's 5 bits an axis, and transparent pixels (alpha below 128) show the page's ar
 
 The page shows each icon as a sub engine OBJ of 32 by 16 at its exact place, its clear pixels (index 0) showing
 the page's art, so each icon's colours must fit one OBJ palette row of 15: the icons are packed whole into ICON_ROWS
-rows (the page's sub OBJ rows 14, 15 and 4, sIconObjRows in the C file), each icon in a row that has all of its
+rows (the page's sub OBJ rows 14, 15, 4 and 3, sIconObjRows in the C file), each icon in a row that has all of its
 colours. The special marks' slot becomes two icons, the left mark (the slot's left half) in the slot and the right
 mark (its right half) after the 25 slots, each in its icon's left half with the right half clear. A season, time or
 weather the Pokémon isn't met in shows greyed out, and so does a row's icon where it is met only by the row's special
@@ -40,7 +40,6 @@ none outside it: the page cuts that 128 by 32 into four OBJs of 32 by 32 in main
 Pokémon's name over it in the art's own colours (BOX_COLOR_* in the C file). Its member: the art's 16 colours (BGR555,
 32 bytes), then the 128 by 32's 64 tiles (4bpp, 32 bytes each), 16 across, in rows, the GFL bitmap's order.
 """
-import random
 import struct
 import sys
 from pathlib import Path
@@ -64,7 +63,7 @@ MARK_WIDTH = ICON_WIDTH // 2
 IMAGE_COUNT = ICON_COUNT + 1
 TILE = 8
 TILES_PER_ICON = (ICON_WIDTH // TILE) * (ICON_HEIGHT // TILE)
-ICON_ROWS = 3
+ICON_ROWS = 4
 ROW_COLORS = 15
 GREY_LEVELS = 4
 GREY_DARK, GREY_LIGHT = 22, 27
@@ -75,9 +74,6 @@ PANEL = (29, 29, 29)
 ICON_NAMES = ("spring", "summer", "autumn", "winter", "special marks", "morning", "day", "evening", "night",
               "late night", "clear", "rain", "thunderstorm", "snow", "sandstorm", "grass", "dark grass", "cave floor",
               "sand", "bridge", "surf", "puddle", "fishing", "walking", "unused")
-# Packing is a search over the tiles' orders, from a fixed seed so that the build always packs them the same
-PACK_TRIES = 4000
-PACK_SEED = 1
 
 
 class IconError(Exception):
@@ -139,28 +135,36 @@ def tiles(icon):
 
 
 def pack(icons):
-    """A row for each icon, and the rows' colours, so that each icon's colours are in its row; None if no order of
-    PACK_TRIES fits."""
+    """A row for each icon, and the rows' colours, so that each icon's colours are in its row; None if they can't.
+
+    An exact search: the icons' maximal colour sets (those in no other's) are placed in turn, largest first, into each
+    row they fit, backtracking, so a sheet that can fit always packs; every icon then takes the first row that has all
+    of its colours. Deterministic: the sets and rows are tried in a fixed order."""
     sets = sorted({frozenset(c for c in icon if c is not None) for icon in icons}, key=lambda s: (-len(s), sorted(s)))
-    rng = random.Random(PACK_SEED)
-    for attempt in range(PACK_TRIES):
-        order = list(sets)
-        if attempt:
-            rng.shuffle(order)
-            order.sort(key=lambda s: -len(s) + rng.random() * 2)
-        rows = [set() for _ in range(ICON_ROWS)]
-        chosen = {}
-        for colors in order:
-            fits = [r for r in range(ICON_ROWS) if len(rows[r] | colors) <= ROW_COLORS]
-            if not fits:
-                break
-            row = min(fits, key=lambda r: (len(colors - rows[r]), -len(rows[r])))
-            rows[row] |= colors
-            chosen[colors] = row
-        else:
-            palettes = [sorted(row) for row in rows]
-            return [chosen[frozenset(c for c in icon if c is not None)] for icon in icons], palettes
-    return None
+    core = [s for s in sets if not any(s < other for other in sets)]
+    rows = [frozenset() for _ in range(ICON_ROWS)]
+
+    def place(index):
+        if index == len(core):
+            return True
+        tried = set()
+        for r in range(ICON_ROWS):
+            if rows[r] in tried or len(rows[r] | core[index]) > ROW_COLORS:
+                continue
+            tried.add(rows[r])
+            kept = rows[r]
+            rows[r] = kept | core[index]
+            if place(index + 1):
+                return True
+            rows[r] = kept
+        return False
+
+    if not place(0):
+        return None
+    palettes = [sorted(row) for row in rows]
+    chosen = [next(r for r in range(ICON_ROWS) if frozenset(c for c in icon if c is not None) <= rows[r])
+              for icon in icons]
+    return chosen, palettes
 
 
 def icon_name(index):

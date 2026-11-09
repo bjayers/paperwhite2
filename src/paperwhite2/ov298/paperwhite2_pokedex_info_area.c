@@ -184,7 +184,7 @@ enum {
 #define ICON_CHARS_SIZE (ICON_COUNT * 2 * ICON_SIZE)
 #define MARK_WIDTH (ICON_WIDTH / 2)
 // The member: the icons' palette rows' colours, each icon's row (the icons', then the grey ones'), and their tiles
-#define ICON_PALETTE_ROWS 3
+#define ICON_PALETTE_ROWS 4
 #define PALETTE_SIZE 0x20
 #define ICON_ROWS_OFFSET (ICON_PALETTE_ROWS * PALETTE_SIZE)
 #define ICON_TILES_OFFSET (ICON_ROWS_OFFSET + ICON_COUNT * 2)
@@ -212,6 +212,7 @@ static const u8 sIconObjRows[ICON_PALETTE_ROWS] = {
     POKEDEX_INFO_AREA_ICON_ROW_0,
     POKEDEX_INFO_AREA_ICON_ROW_1,
     POKEDEX_INFO_AREA_ICON_ROW_2,
+    POKEDEX_INFO_AREA_ICON_ROW_3,
 };
 
 // The bottom screen, in its pixels (the content window starts at y 16), over the user's art (info_area.png): its top
@@ -739,7 +740,7 @@ static void PokedexInfoArea_ShowIcon(PokedexInfoArea *area, u32 icon, BOOL grey,
 }
 
 // In the VBlank: the icons' rows take their colours as Area shows (and again as its palette resource is loaded over the
-// first), keeping the rows' own colours (the knob's), or get those back as it hides
+// first), keeping the rows' own colours (the knob's and the cursor's), or get those back as it hides
 static void PokedexInfoArea_SwapIconRows(PokedexInfoArea *area) {
     u32 i;
 

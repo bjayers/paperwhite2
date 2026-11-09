@@ -152,10 +152,11 @@ u16 PokedexInfoEvo_GetTouchedSpecies(PokedexInfoEvo *evo);
 // OBJs in palette rows of their own (POKEDEX_INFO_AREA_ICON_ROW_*)
 
 // The sub engine's OBJ palette rows of the icons, loaded in the VBlank as Area shows: two that no sub-page uses, and
-// Moves' knob's (the panels' PALETTE_KNOB), whose colours Area puts back as it hides
+// Moves' knob's and cursor's (the panels' PALETTE_KNOB and PALETTE_CURSOR), whose colours Area puts back as it hides
 #define POKEDEX_INFO_AREA_ICON_ROW_0 14
 #define POKEDEX_INFO_AREA_ICON_ROW_1 15
 #define POKEDEX_INFO_AREA_ICON_ROW_2 4
+#define POKEDEX_INFO_AREA_ICON_ROW_3 3
 
 typedef struct PokedexInfoArea PokedexInfoArea;
 

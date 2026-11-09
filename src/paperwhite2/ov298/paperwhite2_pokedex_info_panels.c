@@ -222,7 +222,7 @@
 #define KNOB_ANIMS 73
 #define KNOB_SEQUENCE 2
 // The cursor's and the knob's sub OBJ palette rows, after the type icons' and below the touch bar's; Area's icons take
-// the knob's while Area shows (POKEDEX_INFO_AREA_ICON_ROW_2), and put its colours back as it hides
+// both while Area shows (POKEDEX_INFO_AREA_ICON_ROW_3 and _2), and put their colours back as it hides
 #define PALETTE_CURSOR 3
 #define PALETTE_KNOB 4
 
