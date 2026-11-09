@@ -1727,16 +1727,23 @@ has no tier; there is no outbreak badge). The preferred times and weathers are t
 summed over its rows, is the highest; the index keeps them (and the rates), but the page shows neither. The page reads
 its header and the places as it starts, and the shown species' block (at most 512 bytes) by range as it shows. **The
 bottom screen** (drawn into the panels' content window in the panels' palette, row 3, over the art `info_area.png`,
-members 152-154, palette row 10, white under the tab bar): the seasons (font 1 label; "All seasons" at x 48 when every
-place it is at glows white, that is all year everywhere, else the four season icons at x 48-168, y 24, coloured for
-each season it is met in, even all four, grey for the others); up to four rows 24 px apart, centred on the tiles' grid
-in the methods' area (y 48-135, `METHODS_Y` and `METHODS_HEIGHT`: 4 rows at y 48, 3 at 56, 2 at 72, 1 at 88): the row's
-icon at x 24 (walking's by its terrain: grass, cave floor, sand, puddle, bridge or walking), the special marks (the
-icon sheet's fifth slot of its first row, cut in two 16 by 16 halves) at x 8 and x 56 where the special version
-applies, the icon grey where only it applies but on a bridge (whose areas have only shadows), the levels in font 0 at x
-76, the rarity or range in font 1 at x 140; the times (y 136) and weathers (y 152): "All times of day" or "All
-weathers" at x 48 when it is met in all five, else five icons at x 48-208, grey where it isn't met. A species never met
-in the wild shows "Not found in the wild". **The icons** (member 159, `tools/paperwhite2/pokedex_area.py` from
+members 152-154, palette row 10; the user's final background of 2026-11-09: a top bar, y 23-40 inside, a methods'
+box, y 48-122, and a bottom box, y 130-164, its transparent parts showing the grid). The text is where the user's mockup
+puts it, the icons on the tiles nearest to the mockup's places (they are tiles of the window: see below): the seasons'
+bar has no label, "All seasons" centred in it (x 128, y 29) when every place it is at glows white, that is all year
+everywhere, else the four season icons at x 48, 88, 128 and 168, y 24 (the mockup's 52 + 40 i, 4 px off either way),
+coloured for each season it is met in, even all four, grey for the others; up to four rows 19 px apart (the mockup's),
+centred in the methods' box (`METHODS_Y` 48, `METHODS_HEIGHT` 75): 4 rows at y 49, 68, 87, 106, 3 at 58, 77, 96, 2 at
+68, 87, 1 at 77; each row's icon at x 32 and the special marks (the icon sheet's fifth slot of its first row, cut in two
+16 by 16 halves) at x 16 and 64 where the special version applies (the mockup's 29, 13 and 61), at the multiple of 8
+nearest the row's y, a half rounded up (4 rows: y 48, 72, 88, 104; 3: 56, 80, 96; 2: 72, 88; 1: 80); the icon by
+walking's terrain (grass, cave floor, sand, puddle, bridge or walking), grey where only the special version applies but
+on a bridge (whose areas have only shadows); the levels in font 0 at x 88, the row's y, the rarity or range in font 1
+at x 159, 4 below; the labels "Time" (y 136) and "Weather" (y 153) in font 1 at x 17; the times' icons at y 128 and the
+weathers' at y 144, both at x 64, 96, 136, 168 and 208 (the mockup's 61 + 36 i, y 131 and 148: 3 or 1 px off across,
+3 and 4 down, so the times' top 2 rows are over the box's frame), or "All times of day" or "All weathers" at x 64 on
+the label's line when it is met in all five, grey where it isn't met. A species never met
+in the wild shows "Not found in the wild", centred in the methods' box. **The icons** (member 159, `tools/paperwhite2/pokedex_area.py` from
 `res/paperwhite2/pokedex_art/area_icons.png`, 160 by 80, 25 slots of 32 by 16: the seasons and the special marks, the
 times, the weathers, the terrains grass, dark grass, cave floor, sand and bridge, then surf, puddle, fishing, walking
 and an unused slot; each on solid white so that it blends into the art's white) are drawn into the window's tiles

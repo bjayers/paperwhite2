@@ -206,31 +206,38 @@ static const u8 sIconPaletteRows[ICON_PALETTE_ROWS] = {
     POKEDEX_INFO_AREA_ICON_ROW_2,
 };
 
-// The bottom screen, in its pixels (the content window starts at y 16), over the art's white; the icons are on the
-// window's tiles, so every icon's place is a multiple of 8. The seasons' strip, the methods' rows and the times' and
-// weathers' rows, each a label in font 1 and its icons (or "All ..." where they would all be colored)
-#define LABEL_X 8
-#define LABEL_OFFSET_Y 4
-#define ICON_COLUMN_X 48
-#define ICON_COLUMN_PITCH 40
+// The bottom screen, in its pixels (the content window starts at y 16), over the user's art (info_area.png): its top
+// bar (y 23-40 inside) holds the seasons' icons, its large box (y 48-122) the methods' rows and its bottom box (y
+// 130-164) the times' and weathers' rows, each a label in font 1 and its icons (or "All ..." where they would all be
+// colored). The text is where the user's mockup has it; the icons are on the window's tiles, so each is at the
+// multiple of 8 nearest to the mockup's place (the seasons' 52 + 40 i is 4 off either way, the times' and weathers'
+// 61 + 36 i, y 131 and 148, 3 or 1 off across and 3 and 4 down)
+static const u8 sSeasonIconX[AREA_SEASON_COUNT] = { 48, 88, 128, 168 };
+static const u8 sConditionIconX[AREA_TIME_COUNT] = { 64, 96, 136, 168, 208 };
 #define SEASONS_Y 24
-#define TIMES_Y 136
-#define WEATHERS_Y 152
-// The methods' area, between the seasons and the times, where the shown rows are centred (on the tiles' grid), each
-// its left mark, its icon and its right mark (the marks where its special version applies), the levels in font 0 and
-// the rarity in font 1
+#define TIMES_Y 128
+#define WEATHERS_Y 144
+#define ALL_SEASONS_X 128
+#define ALL_SEASONS_Y 29
+#define LABEL_X 17
+#define TIMES_LABEL_Y 136
+#define WEATHERS_LABEL_Y 153
+// The methods' box, where the shown rows are centred ROW_PITCH apart as the mockup's four (y 49, 68, 87 and 106):
+// one row at y 77, two at 68 and 87, three at 58, 77 and 96. Each row is its left mark, its icon and its right mark
+// (the marks where its special version applies), at the multiple of 8 nearest to the row's y (rounding up a half: 4
+// rows' icons at y 48, 72, 88 and 104, 3 at 56, 80 and 96, 2 at 72 and 88, 1 at 80) and 3 px right of the mockup's
+// 13, 29 and 61; the levels in font 0 and the rarity in font 1, both at the mockup's place from the row's y
 #define METHODS_Y 48
-#define METHODS_HEIGHT (TIMES_Y - METHODS_Y)
-#define ROW_PITCH 24
-#define ROW_MARK_LEFT_X 8
+#define METHODS_HEIGHT 75
+#define ROW_PITCH 19
+#define ROW_MARK_LEFT_X 16
 #define ROW_ICON_X (ROW_MARK_LEFT_X + MARK_WIDTH)
 #define ROW_MARK_RIGHT_X (ROW_ICON_X + ICON_WIDTH)
-#define ROW_LEVELS_X 76
-#define ROW_TIER_X 140
-#define ROW_TEXT_OFFSET_Y 1
-#define ROW_SMALL_TEXT_OFFSET_Y 3
+#define ROW_LEVELS_X 88
+#define ROW_TIER_X 159
+#define ROW_TIER_OFFSET_Y 4
 #define UNKNOWN_X 128
-#define UNKNOWN_Y 88
+#define UNKNOWN_Y 78
 
 // The panels' palette (paperwhite2_pokedex_info_panels.c's sPanelColors), the content window's on Area
 #define AREA_COLOR_CLEAR 0
@@ -446,7 +453,7 @@ static const AreaSpecies *PokedexInfoArea_GetSpecies(PokedexInfoArea *area);
 static const AreaSpeciesPlace *PokedexInfoArea_GetPlaces(PokedexInfoArea *area);
 static const AreaRow *PokedexInfoArea_GetRows(PokedexInfoArea *area);
 static void PokedexInfoArea_DrawConditions(PokedexInfoArea *area, GFLBitmap *bitmap, int top, u32 firstIcon, u32 count,
-                                           u32 available, int y);
+                                           u32 available, const u8 *xs, int y);
 static void PokedexInfoArea_DrawRow(PokedexInfoArea *area, GFLBitmap *bitmap, int top, const AreaRow *row, int y);
 static void PokedexInfoArea_DrawIcon(PokedexInfoArea *area, GFLBitmap *bitmap, int top, u32 icon, BOOL grey, int x,
                                      int y);
@@ -588,55 +595,58 @@ void PokedexInfoArea_Draw(PokedexInfoArea *area, GFLBitmap *bitmap, int top, u16
     entry = PokedexInfoArea_GetSpecies(area);
     rows = PokedexInfoArea_GetRows(area);
     PokedexInfoArea_InitSeasons(area);
-    PokedexInfoArea_Print(area, bitmap, top, area->smallFont, PokedexData_Text_AreaSeasons, LABEL_X,
-                          SEASONS_Y + LABEL_OFFSET_Y, PRINT_ALIGN_LEFT, AREA_LABEL_COLOR);
+    // The seasons' bar has no label, so "All seasons" is centred in it
     if (area->seasonSteps == 0 && entry->seasons == AREA_ALL_SEASONS) {
-        PokedexInfoArea_Print(area, bitmap, top, area->smallFont, PokedexData_Text_AreaAllSeasons, ICON_COLUMN_X,
-                              SEASONS_Y + LABEL_OFFSET_Y, PRINT_ALIGN_LEFT, AREA_TEXT_COLOR);
+        PokedexInfoArea_Print(area, bitmap, top, area->smallFont, PokedexData_Text_AreaAllSeasons, ALL_SEASONS_X,
+                              ALL_SEASONS_Y, PRINT_ALIGN_CENTER, AREA_TEXT_COLOR);
     } else {
-        PokedexInfoArea_DrawConditions(area, bitmap, top, ICON_SPRING, AREA_SEASON_COUNT, entry->seasons, SEASONS_Y);
+        PokedexInfoArea_DrawConditions(area, bitmap, top, ICON_SPRING, AREA_SEASON_COUNT, entry->seasons, sSeasonIconX,
+                                       SEASONS_Y);
     }
-    // The shown rows, centred in the methods' area on the tiles' grid
+    // The shown rows, centred in the methods' box
     count = entry->rowCount < AREA_ROW_MAX ? entry->rowCount : AREA_ROW_MAX;
     if (count != 0) {
-        y = METHODS_Y + (METHODS_HEIGHT - (count - 1) * ROW_PITCH - ICON_HEIGHT) / 2 / 8 * 8;
+        y = METHODS_Y + (METHODS_HEIGHT - (count - 1) * ROW_PITCH - ICON_HEIGHT) / 2;
         for (i = 0; i < count; i++) {
             PokedexInfoArea_DrawRow(area, bitmap, top, &rows[i], y + i * ROW_PITCH);
         }
     }
-    PokedexInfoArea_Print(area, bitmap, top, area->smallFont, PokedexData_Text_AreaTime, LABEL_X,
-                          TIMES_Y + LABEL_OFFSET_Y, PRINT_ALIGN_LEFT, AREA_LABEL_COLOR);
+    PokedexInfoArea_Print(area, bitmap, top, area->smallFont, PokedexData_Text_AreaTime, LABEL_X, TIMES_LABEL_Y,
+                          PRINT_ALIGN_LEFT, AREA_LABEL_COLOR);
     if (entry->times == AREA_ALL_TIMES) {
-        PokedexInfoArea_Print(area, bitmap, top, area->smallFont, PokedexData_Text_AreaAllTimes, ICON_COLUMN_X,
-                              TIMES_Y + LABEL_OFFSET_Y, PRINT_ALIGN_LEFT, AREA_TEXT_COLOR);
+        PokedexInfoArea_Print(area, bitmap, top, area->smallFont, PokedexData_Text_AreaAllTimes, sConditionIconX[0],
+                              TIMES_LABEL_Y, PRINT_ALIGN_LEFT, AREA_TEXT_COLOR);
     } else {
-        PokedexInfoArea_DrawConditions(area, bitmap, top, ICON_MORNING, AREA_TIME_COUNT, entry->times, TIMES_Y);
+        PokedexInfoArea_DrawConditions(area, bitmap, top, ICON_MORNING, AREA_TIME_COUNT, entry->times, sConditionIconX,
+                                       TIMES_Y);
     }
-    PokedexInfoArea_Print(area, bitmap, top, area->smallFont, PokedexData_Text_AreaWeather, LABEL_X,
-                          WEATHERS_Y + LABEL_OFFSET_Y, PRINT_ALIGN_LEFT, AREA_LABEL_COLOR);
+    PokedexInfoArea_Print(area, bitmap, top, area->smallFont, PokedexData_Text_AreaWeather, LABEL_X, WEATHERS_LABEL_Y,
+                          PRINT_ALIGN_LEFT, AREA_LABEL_COLOR);
     if (entry->weathers == AREA_ALL_WEATHERS) {
-        PokedexInfoArea_Print(area, bitmap, top, area->smallFont, PokedexData_Text_AreaAllWeathers, ICON_COLUMN_X,
-                              WEATHERS_Y + LABEL_OFFSET_Y, PRINT_ALIGN_LEFT, AREA_TEXT_COLOR);
+        PokedexInfoArea_Print(area, bitmap, top, area->smallFont, PokedexData_Text_AreaAllWeathers, sConditionIconX[0],
+                              WEATHERS_LABEL_Y, PRINT_ALIGN_LEFT, AREA_TEXT_COLOR);
     } else {
-        PokedexInfoArea_DrawConditions(area, bitmap, top, ICON_CLEAR, AREA_WEATHER_COUNT, entry->weathers, WEATHERS_Y);
+        PokedexInfoArea_DrawConditions(area, bitmap, top, ICON_CLEAR, AREA_WEATHER_COUNT, entry->weathers,
+                                       sConditionIconX, WEATHERS_Y);
     }
 }
 
-// A row of the seasons', times' or weathers' icons, grey where it isn't met
+// A row of the seasons', times' or weathers' icons at their places across, grey where it isn't met
 static void PokedexInfoArea_DrawConditions(PokedexInfoArea *area, GFLBitmap *bitmap, int top, u32 firstIcon, u32 count,
-                                           u32 available, int y) {
+                                           u32 available, const u8 *xs, int y) {
     u32 i;
 
     for (i = 0; i < count; i++) {
-        PokedexInfoArea_DrawIcon(area, bitmap, top, firstIcon + i, !(available & (1 << i)),
-                                 ICON_COLUMN_X + i * ICON_COLUMN_PITCH, y);
+        PokedexInfoArea_DrawIcon(area, bitmap, top, firstIcon + i, !(available & (1 << i)), xs[i], y);
     }
 }
 
 // A row's icon (walking's by its terrain) between the special marks where its special version applies, grey where only
-// that applies but on a bridge, which has nothing else; its levels; and its rarity (or the range of them)
+// that applies but on a bridge, which has nothing else, on the tiles nearest to the row's y; its levels; and its
+// rarity (or the range of them)
 static void PokedexInfoArea_DrawRow(PokedexInfoArea *area, GFLBitmap *bitmap, int top, const AreaRow *row, int y) {
     const AreaSpecies *entry = PokedexInfoArea_GetSpecies(area);
+    int iconY = (y + 8 / 2) / 8 * 8;
     u32 icon;
     u32 message;
 
@@ -646,17 +656,17 @@ static void PokedexInfoArea_DrawRow(PokedexInfoArea *area, GFLBitmap *bitmap, in
         icon = row->row < AREA_ROW_COUNT ? sRowIcons[row->row] : ICON_WALKING;
     }
     PokedexInfoArea_DrawIcon(area, bitmap, top, icon, (row->flags & AREA_FLAG_SPECIAL_ONLY) && icon != ICON_BRIDGE,
-                             ROW_ICON_X, y);
+                             ROW_ICON_X, iconY);
     if (row->flags & AREA_FLAG_SPECIAL) {
-        PokedexInfoArea_DrawIconPart(area, bitmap, top, ICON_SPECIAL, 0, MARK_WIDTH, FALSE, ROW_MARK_LEFT_X, y);
+        PokedexInfoArea_DrawIconPart(area, bitmap, top, ICON_SPECIAL, 0, MARK_WIDTH, FALSE, ROW_MARK_LEFT_X, iconY);
         PokedexInfoArea_DrawIconPart(area, bitmap, top, ICON_SPECIAL, MARK_WIDTH, MARK_WIDTH, FALSE, ROW_MARK_RIGHT_X,
-                                     y);
+                                     iconY);
     }
     WordSetNumber(area->wordSet, 0, entry->levelMin, 3, 0, TRUE);
     WordSetNumber(area->wordSet, 1, entry->levelMax, 3, 0, TRUE);
     PokedexInfoArea_Print(area, bitmap, top, area->font,
                           entry->levelMin == entry->levelMax ? PokedexData_Text_AreaLevel : PokedexData_Text_AreaLevels,
-                          ROW_LEVELS_X, y + ROW_TEXT_OFFSET_Y, PRINT_ALIGN_LEFT, AREA_TEXT_COLOR);
+                          ROW_LEVELS_X, y, PRINT_ALIGN_LEFT, AREA_TEXT_COLOR);
     if (row->tierLow >= AREA_TIER_COUNT) {
         message = (row->flags & AREA_FLAG_OUTBREAK) ? PokedexData_Text_AreaOutbreak : PokedexData_Text_AreaSpecial;
     } else if (row->tierHigh != row->tierLow && row->tierHigh < AREA_TIER_COUNT) {
@@ -668,7 +678,7 @@ static void PokedexInfoArea_DrawRow(PokedexInfoArea *area, GFLBitmap *bitmap, in
     } else {
         message = sTierNames[row->tierLow];
     }
-    PokedexInfoArea_Print(area, bitmap, top, area->smallFont, message, ROW_TIER_X, y + ROW_SMALL_TEXT_OFFSET_Y,
+    PokedexInfoArea_Print(area, bitmap, top, area->smallFont, message, ROW_TIER_X, y + ROW_TIER_OFFSET_Y,
                           PRINT_ALIGN_LEFT, AREA_TEXT_COLOR);
 }
 

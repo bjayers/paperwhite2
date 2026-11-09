@@ -275,10 +275,20 @@ The details are in `docs/paperwhite2/plugins.md` (Pokédex, Area). Where the bui
   in the VBlank as the sub-page changes; Area's text is in the panels' row 3 (not its art's); the icons take rows 14, 15
   and 12, each 8x8 tile its own row (the placeholder sheet's 27 colours and 8 greys don't fit two rows). Rows 0, 14 and
   15 were measured unused (zero, no map entry) on every sub-page.
-- **Rows' layout:** one line each, 24 px apart, centred on the 8 px grid in the methods' area (y 48-135, the C file's
-  `METHODS_Y` and `METHODS_HEIGHT`, kept as constants until the user's final background gives exact bounds; 4 rows at y
-  48, 3 at 56, 2 at 72, 1 at 88): left mark x 8, icon x 24, right mark x 56, levels x 76 (font 0), rarity x 140
-  (font 1); time icons y 136 and weather icons y 152 directly under the area, no gap.
+- **Layout on the user's final background (2026-11-09, `info_area.png` and the mockup `area-example.png`):** the text
+  exactly where the mockup has it, the icons (tiles of the content window, each in its own palette row) on the tiles
+  nearest to the mockup's places, as the user chose; the user may move the background's boxes to fit. The seasons' bar
+  has no label: icons at x 48, 88, 128, 168, y 24 (mockup 52 + 40 i), "All seasons" centred (x 128, y 29). Rows 19 px
+  apart, centred in the methods' box (y 48-122): rows at y 49/68/87/106 (4), 58/77/96 (3), 68/87 (2), 77 (1); marks x
+  16 and 64, icon x 32 (mockup 13, 61, 29) at the row's y rounded to the nearest multiple of 8 (4 rows: 48, 72, 88,
+  104; 3: 56, 80, 96; 2: 72, 88; 1: 80); levels x 88 at the row's y (font 0), rarity x 159, y + 4 (font 1). "Time" and
+  "Weather" at x 17, y 136 and 153 (font 1); times' icons y 128, weathers' y 144, both at x 64, 96, 136, 168, 208
+  (mockup 61 + 36 i, y 131 and 148: the times' icons cover the box's top frame by 2 rows); "All times of day" / "All
+  weathers" at x 64 on the label's line. Exact places would need the icons as OBJs: they have up to 45 colours in
+  three palette rows, assigned per 8 by 8 tile, so a BG can't put them off the grid, though each icon alone has at
+  most 7 colours and could be a 4bpp OBJ (32 by 16, the type icons' cells) in one sub OBJ row with a per-icon packing.
+  `pokedex_area_templates.py` writes `area_reference*.png` (the art with the slots and text where the page puts them,
+  1 to 4 rows, with and without the tiles' grid) from the C file's places.
 - **The icon sheet (2026-11-09):** row 1's fifth slot holds the two special marks (left and right halves, drawn as 2 by
   2 tiles); row 4 grass, dark grass, cave floor, sand, bridge; row 5 surf, puddle, fishing, walking and an unused slot.
   Every icon has a grey copy now (the rows' colours come to 15, 15 and 14 of 45). Until the user draws them, the old

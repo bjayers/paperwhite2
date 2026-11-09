@@ -15,13 +15,17 @@ pokedex_templates.py beside the other sub-pages' into the same ignored folder, a
   from the user's five arts (each one's selected tab and the others' unselected icons) and put at the six centres,
   with an empty dashed slot for Area's icon; indexed in the arts' colours, to draw over;
 - area_canvas.png: the Area bottom screen to draw over (indexed), the tab bar with Area selected and the regions'
-  placeholders; area_reference.png / area_reference_tiles.png: the same with the sample's text and icon slots marked;
+  placeholders (the first draft's; the user's art is res/paperwhite2/pokedex_art/info_area.png);
+- area_reference.png / area_reference_tiles.png (with the 8 by 8 tiles' grid): the user's art with every icon slot,
+  special mark and text where the page puts them (the places read from paperwhite2_pokedex_info_area.c), four method
+  rows; area_reference_rows<N>.png / _rows<N>_tiles.png (N 1-4): the same with N rows, as the page centres them;
 - area_icons_template.png: the icon sheet, 32 by 16 slots in a 16-colour starter palette; area_icons_guide.png: the
   same at 3x with each slot's name; area_glow_template.png: the highlight colours, three shades a row.
 
     pokedex_area_templates.py OUT_DIR  (or through pokedex_templates.py, which calls write())
 """
 import json
+import re
 import struct
 import sys
 from pathlib import Path
@@ -61,17 +65,17 @@ PAGES6 = ("stats", "data", "moves", "evo", "area", "matchups")
 SELECTED_HALF, SELECTED_ROWS = 22, 20
 ICON_HALF, ICON_ROWS = 12, 14
 STRIP_ROWS = 24
-# The bottom screen's regions (tile-aligned so that the icons, 4 by 2 tiles in the panels' window, take their own
-# palette row through their map entries)
+# The first draft's regions on area_canvas.png
 ICON_W, ICON_H = 32, 16
-LABEL_X = 8
-SLOT_X = (48, 88, 128, 168, 208)
 SEASONS_Y = 24
-# The methods' area (the C file's METHODS_*), where up to METHOD_ROWS rows are centred, each its left special mark,
-# its icon and its right mark, its levels and its rarity
-METHOD_Y, METHOD_HEIGHT, METHOD_PITCH, METHOD_ROWS = 48, 88, 24, 4
-ROW_ICON_X, ROW_LEVELS_X, ROW_TIER_X = 24, 76, 140
-TIMES_Y, WEATHER_Y = 136, 152
+METHOD_Y, METHOD_HEIGHT = 48, 88
+TIMES_Y = 136
+# The page's places (the bottom screen's pixels) are the C file's
+AREA_C = ROOT / "src/paperwhite2/ov298/paperwhite2_pokedex_info_area.c"
+AREA_ART = ROOT / "res/paperwhite2/pokedex_art/info_area.png"
+# The references' sample rows: icon, levels and rarity, the special marks on each
+REFERENCE_ROWS = (("grass", "Lv. 36-66", "Common-Exotic"), ("dark grass", "Lv. 36-66", "Common-Exotic"),
+                  ("surf", "Lv. 36-66", "Common-Uncommon"), ("fishing", "Lv. 36-66", "Uncommon"))
 TOUCHBAR_Y = 168
 # The top screen's box of the current Pokémon (paperwhite2_pokedex_info_area.c's BOX_*): the box's OBJs, the party
 # icon's 32 by 32 slot, and the name's left and top in font 0 (font 1 for a name that would pass BOX_NAME_RIGHT)
@@ -398,51 +402,62 @@ def bottom(out, font, small, bar):
     canvas.fill(4, TIMES_Y, W - 8, 32, PANEL)
     canvas.outline(4, TIMES_Y, W - 8, 32, PANEL_EDGE)
     canvas.indexed(out / "area_canvas.png")
-    rows, seasons, times = sample_rows(font, small)
+    rows, _, _ = sample_rows(font, small)
+    for count in range(1, len(REFERENCE_ROWS) + 1):
+        for tiles in (False, True):
+            name = f"area_reference_rows{count}" + ("_tiles" if tiles else "")
+            image = reference(font, small, count, tiles)
+            image.rgba(out / f"{name}.png")
+            if count == len(REFERENCE_ROWS):
+                image.rgba(out / ("area_reference_tiles.png" if tiles else "area_reference.png"))
+    return rows
 
-    def reference(tiles):
-        r = Rgb(fill=None)
+
+def area_places():
+    """The page's places from the C file: its #defines and its icons' x arrays."""
+    d = pt.defines(AREA_C)
+    text = AREA_C.read_text()
+    for name in ("sSeasonIconX", "sConditionIconX"):
+        body = re.search(name + r"\[\w+\] = \{([^}]*)\}", text).group(1)
+        d[name] = [int(v) for v in body.split(",")]
+    return d
+
+
+def reference(font, small, count, tiles):
+    """The user's art (transparent checkered) with the icon slots, marks and text where the page puts them, count
+    method rows, as PokedexInfoArea_Draw and _DrawRow place them."""
+    d = area_places()
+    m = pt.messages()
+    w, h, pixels, colors = read_indexed_png(AREA_ART)
+    r = Rgb(fill=None)
+    for y in range(H):
+        for x in range(W):
+            i = pixels[y * w + x]
+            r.px[y * W + x] = tuple(colors[i][:3]) if i else (CHECK_A if (x // 4 + y // 4) % 2 else CHECK_B)
+    for i, name in enumerate(SEASON_NAMES):
+        slot(r, d["sSeasonIconX"][i], d["SEASONS_Y"], name, small)
+    top = d["METHODS_Y"] + (d["METHODS_HEIGHT"] - (count - 1) * d["ROW_PITCH"] - ICON_H) // 2
+    for i, (key, levels, tier) in enumerate(REFERENCE_ROWS[:count]):
+        y = top + i * d["ROW_PITCH"]
+        icon_y = (y + 4) // 8 * 8
+        slot(r, d["ROW_ICON_X"], icon_y, key, small)
+        for x in (d["ROW_MARK_LEFT_X"], d["ROW_MARK_RIGHT_X"]):
+            r.fill(x, icon_y, ICON_W // 2, ICON_H, MARK)
+            r.outline(x, icon_y, ICON_W // 2, ICON_H, SLOT_EDGE, dashed=True)
+        r.text(font, levels, d["ROW_LEVELS_X"], y)
+        r.text(small, tier, d["ROW_TIER_X"], y + d["ROW_TIER_OFFSET_Y"])
+    r.text(small, m["AreaTime"], d["LABEL_X"], d["TIMES_LABEL_Y"])
+    r.text(small, m["AreaWeather"], d["LABEL_X"], d["WEATHERS_LABEL_Y"])
+    for i, name in enumerate(ICONS[1][1]):
+        slot(r, d["sConditionIconX"][i], d["TIMES_Y"], name.replace("_", " "), small)
+    for i, name in enumerate(ICONS[2][1]):
+        slot(r, d["sConditionIconX"][i], d["WEATHERS_Y"], name, small)
+    if tiles:
         for y in range(H):
             for x in range(W):
-                r.px[y * W + x] = CHECK_A if (x // 4 + y // 4) % 2 else CHECK_B
-        r.blit(canvas, 0, 0)
-        r.text(small, "Seasons", LABEL_X, SEASONS_Y + 3)
-        for i, name in enumerate(SEASON_NAMES):
-            if seasons >> i & 1:
-                slot(r, SLOT_X[i], SEASONS_Y, name, small)
-        if seasons == 15:
-            r.text(small, "All year", SLOT_X[4] + 2, SEASONS_Y + 3, color=GOLD, shadow=TEXT)
-        # The shown rows centred in the methods' area on the tiles' grid, as the page places them
-        top = METHOD_Y + (METHOD_HEIGHT - (len(rows) - 1) * METHOD_PITCH - ICON_H) // 2 // 8 * 8
-        for i, (key, special, grey, levels, tier, rate) in enumerate(rows):
-            y = top + i * METHOD_PITCH
-            slot(r, ROW_ICON_X, y, key.replace("_", " "), small, grey)
-            if special:
-                for x in (ROW_ICON_X - ICON_W // 2, ROW_ICON_X + ICON_W):
-                    r.fill(x, y, ICON_W // 2, ICON_H, MARK)
-                    r.outline(x, y, ICON_W // 2, ICON_H, SLOT_EDGE)
-            r.text(font, levels, ROW_LEVELS_X, y)
-            r.text(small, tier, ROW_TIER_X, y + 2)
-            r.text(font, rate, 252, y, "right")
-        r.text(small, "Time", LABEL_X, TIMES_Y + 3)
-        for i, name in enumerate(ICONS[1][1]):
-            if times >> i & 1:
-                slot(r, SLOT_X[i], TIMES_Y, name, small)
-        r.text(small, "Weather", LABEL_X, WEATHER_Y + 3)
-        for i, name in enumerate(ICONS[2][1]):
-            slot(r, SLOT_X[i], WEATHER_Y, name, small)
-        r.fill(0, TOUCHBAR_Y, W, H - TOUCHBAR_Y, TOUCH)
-        r.outline(0, TOUCHBAR_Y, W, H - TOUCHBAR_Y, TOUCH_EDGE)
-        if tiles:
-            for y in range(H):
-                for x in range(W):
-                    if x % 8 == 0 or y % 8 == 0:
-                        r.put(x, y, TILE_LINE)
-        return r
-
-    reference(False).rgba(out / "area_reference.png")
-    reference(True).rgba(out / "area_reference_tiles.png")
-    return rows
+                if x % 8 == 0 or y % 8 == 0:
+                    r.put(x, y, TILE_LINE)
+    return r
 
 
 def icons(out, small):
