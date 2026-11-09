@@ -252,9 +252,9 @@ The details are in `docs/paperwhite2/plugins.md` (Pokédex, Area). Where the bui
   walking, dark grass, surfing and fishing, the empty ones left out and the shown ones centred in the methods' area.
   Walking's icon is the terrain of the areas where it is walked into (by grass or the area's rustling spots): grass,
   cave floor, sand, puddle or bridge, or a generic walking icon where they differ. The row's special version (walking:
-  shaking grass, dust clouds, bridge shadows; surfing: rippling water; fishing: rippling water; dark grass: none) puts
-  a 16 by 16 mark on each side of the icon where the Pokémon is met by it too or only by it; met only by it, the icon is
-  grey, except a bridge's (a bridge area has only shadows). The rarity is the normal method's, or the special
+  shaking grass, dust clouds, bridge shadows; surfing: rippling water; fishing: rippling water; dark grass: none)
+  makes the icon shake where the Pokémon is met by it too or only by it (until later on 2026-11-09, a 16 by 16 mark on
+  each side); met only by it, the icon is grey, except a bridge's (a bridge area has only shadows). The rarity is the normal method's, or the special
   version's where only it applies. The outbreak badge is gone (the flag stays in the index, and a row whose only
   encounters are outbreaks still reads "Outbreak"). The terrains come from fixed lists in `encounters.py` (sand: Route
   4, the Desert Resort; puddles: Icirrus City, the Moor of Icirrus, Route 8; floors: the Castelia Sewers, Celestial
@@ -293,16 +293,15 @@ The details are in `docs/paperwhite2/plugins.md` (Pokédex, Area). Where the bui
   2 px like the others. `pokedex_area_templates.py` writes `area_reference*.png` (the art with the slots and text where
   the page puts them, 1 to 4 rows, with and without the tiles' grid) from the C file's places.
 - **The icons as OBJs (2026-11-09):** each icon is a sub OBJ of 32 by 16 (the type icons' cells, centred) at its exact
-  place, its clear pixels showing the art; the special marks' slot is cut into two icons (left mark, right mark), each
-  16 by 16 in its icon's left half. Each icon has at most 7 colours, so `pokedex_area.py` packs each whole (and its
+  place, its clear pixels showing the art. Each icon has at most 7 colours, so `pokedex_area.py` packs each whole (and its
   grey copy, clear pixels clear) into one of four OBJ palette rows: sub OBJ 14 and 15 (unused), 4 and 3 (Moves' knob's
-  and cursor's, shown only on Moves). One character resource holds all 52 (13 KB of sub OBJ VRAM); each OBJ's image proxy points at
-  its icon and its palette proxy at its row. They are made as Area shows (anew for each species, up to 26) and freed as
+  and cursor's, shown only on Moves). One character resource holds all 50 (12.5 KB of sub OBJ VRAM); each OBJ's image proxy points at
+  its icon and its palette proxy at its row. They are made as Area shows (anew for each species, up to 18) and freed as
   another sub-page shows; Area's VBlank task loads the rows' colours in the VBlank that first shows the OBJs, keeping
   the knob's and the cursor's rows, and puts them back in the VBlank that shows another sub-page (measured: row 4 the knob's again on
   Moves and Evo; no in-between frame between Area and Evo or Moves either way). The page's OBJ unit has 128 actors
   (96 in the original) for them.
-- **The icon sheet (2026-11-09):** row 1's fifth slot holds the two special marks (left and right halves); row 4 grass,
+- **The icon sheet (2026-11-09):** row 1's fifth slot held the two special marks (unused since the shake); row 4 grass,
   dark grass, cave floor, sand, bridge; row 5 surf, puddle, fishing, walking and an unused slot. The user's updated
   sheet (still unfinished: the marks' slot is empty, the old method icons stand in for some terrains) has 27 colours,
   at most 6 an icon, and transparent pixels; with the greys it fills the three rows' 45 places. Later the same day the greys were made much lighter (4
@@ -328,7 +327,13 @@ The details are in `docs/paperwhite2/plugins.md` (Pokédex, Area). Where the bui
   opening and leaving show no in-between frame.
 - **Heap:** opening Area left 21 KB free at 0xa0000, so the detail heap is 0xb0000 now (99 KB at the lowest); with the
   icons as OBJs and the 128-actor unit, opening Area with the map left 82 KB free at the lowest (largest block 74 KB).
-- **Placeholders:** the glow colours (the template's, until `area_glow.png`); the special marks and some terrain icons
+- **The shake (the user's, 2026-11-09, in place of the special marks):** a row whose special version applies shakes
+  its icon side to side as the field's shaking grass: x offsets 0, +2, -2, +2, -2, 0 from x 29, 2 frames each (12
+  frames), then still to 87 frames, all such rows in step, restarting as a species is drawn. `PokedexInfoArea_Update`
+  (each frame but while the page fades) sets the OBJs' x; the OAM takes it in the VBlank, as the page's other OBJs.
+  Special only: grey and shaking; both: colour and shaking; a bridge: colour and shaking. The marks' sheet slot (row
+  1's fifth) is unused, and `pokedex_area.py` packs the unused slots clear (25 icons and 25 greys in the member).
+- **Placeholders:** the glow colours (the template's, until `area_glow.png`); some terrain icons
   (see the icon sheet above). Not done: phase 4's `area_glow.png` target, phase 5 (cutting the
   touch bar's AREA page).
 
@@ -395,7 +400,8 @@ The sample is Unfezant; its rates in the reference are approximate (own candidat
 
 ## Open questions
 
-1. More than 4 methods: answered (2026-11-09) by the rows by terrain with special marks (As built).
+1. More than 4 methods: answered (2026-11-09) by the rows by terrain with their special versions shown by a shake
+   (As built).
 2. Times and weathers: show unavailable ones dimmed (needs a second palette row) or leave them out?
 3. Mark the season currently glowing on the bottom legend while the map cycles?
 4. The head bar's title on Area: INFO, or AREA?

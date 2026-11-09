@@ -178,7 +178,7 @@ BOOL PokedexInfoArea_IsMapOpen(PokedexInfoArea *area);
 void PokedexInfoArea_ShowPlaces(PokedexInfoArea *area);
 // The current Pokémon's box over the head bar's right end while the map is open: its party icon and name
 void PokedexInfoArea_ShowPokemon(PokedexInfoArea *area, u16 species, u16 form, u16 sex);
-// Each frame while the map is open: its glow, and the season it shows
+// Each frame: the shaking rows' icons, and while the map is open its glow and the season it shows
 void PokedexInfoArea_Update(PokedexInfoArea *area);
 // The panels' Area, and its update each frame but while the page fades
 PokedexInfoArea *PokedexInfoPanels_GetArea(PokedexInfoPanels *panels);

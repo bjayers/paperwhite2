@@ -966,7 +966,7 @@ PokedexInfoArea *PokedexInfoPanels_GetArea(PokedexInfoPanels *panels) {
     return panels->area;
 }
 
-// Area's glow on the open map
+// Area's shaking rows and its glow on the open map
 void PokedexInfoPanels_UpdateArea(PokedexInfoPanels *panels) {
     PokedexInfoArea_Update(panels->area);
 }

@@ -459,7 +459,7 @@ BOOL PokedexInfoPage_Main(PokedexDetailProcSys *sys, int *seq, void *param_, voi
             if (!PokedexDetailTouchbar_IsArrowTriggered(touchbar) && wk->inputEnabled && wk->pushed == BUTTON_NONE) {
                 PokedexInfoPage_CheckInput(param, wk, common);
             }
-            // Area's glow, which the page's fades don't share the blending with
+            // Area's shaking rows and its glow, which the page's fades don't share the blending with
             PokedexInfoPanels_UpdateArea(wk->panels);
         }
         break;

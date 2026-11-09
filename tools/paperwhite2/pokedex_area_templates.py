@@ -17,7 +17,7 @@ pokedex_templates.py beside the other sub-pages' into the same ignored folder, a
 - area_canvas.png: the Area bottom screen to draw over (indexed), the tab bar with Area selected and the regions'
   placeholders (the first draft's; the user's art is res/paperwhite2/pokedex_art/info_area.png);
 - area_reference.png / area_reference_tiles.png (with the 8 by 8 tiles' grid): the user's art with every icon slot,
-  special mark and text at the pixels where the page puts them (read from paperwhite2_pokedex_info_area.c), four method
+  and text at the pixels where the page puts them (read from paperwhite2_pokedex_info_area.c), four method
   rows; area_reference_rows<N>.png / _rows<N>_tiles.png (N 1-4): the same with N rows, as the page centres them;
 - area_icons_template.png: the icon sheet, 32 by 16 slots in a 16-colour starter palette; area_icons_guide.png: the
   same at 3x with each slot's name; area_glow_template.png: the highlight colours, three shades a row.
@@ -73,7 +73,7 @@ TIMES_Y = 136
 # The page's places (the bottom screen's pixels) are the C file's
 AREA_C = ROOT / "src/paperwhite2/ov298/paperwhite2_pokedex_info_area.c"
 AREA_ART = ROOT / "res/paperwhite2/pokedex_art/info_area.png"
-# The references' sample rows: icon, levels and rarity, the special marks on each
+# The references' sample rows: icon, levels and rarity
 REFERENCE_ROWS = (("grass", "Lv. 36-66", "Common - Exotic"), ("dark grass", "Lv. 36-66", "Common - Exotic"),
                   ("surf", "Lv. 36-66", "Common - Uncommon"), ("fishing", "Lv. 36-66", "Uncommon"))
 TOUCHBAR_Y = 168
@@ -82,17 +82,16 @@ TOUCHBAR_Y = 168
 BOX_X, BOX_Y, BOX_W, BOX_H = 128, 0, 128, 32
 BOX_ICON_X, BOX_ICON_Y = 156, 0
 BOX_NAME_X, BOX_NAME_Y, BOX_NAME_RIGHT = 190, 8, 252
-# The icons: (group, names), a row of the sheet each, 32 by 16 slots. Row 1's fifth slot holds the two 16 by 16
-# special marks (SPECIAL), drawn left and right of a method icon whose row's special version applies; row 5's fifth
-# is unused. The terrain icons show a walking row's terrain, "walking" when its areas' terrains differ.
+# The icons: (group, names), a row of the sheet each, 32 by 16 slots. Row 1's fifth slot (the special marks' until
+# 2026-11-09: a row whose special version applies now shakes its icon) and row 5's fifth are unused. The terrain icons
+# show a walking row's terrain, "walking" when its areas' terrains differ.
 ICONS = [
-    ("season", ["spring", "summer", "autumn", "winter", "special"]),
+    ("season", ["spring", "summer", "autumn", "winter", None]),
     ("time", ["morning", "day", "evening", "night", "late_night"]),
     ("weather", ["clear", "rain", "thunderstorm", "snow", "sandstorm"]),
     ("terrain", ["grass", "dark_grass", "cave_floor", "sand", "bridge"]),
     ("method", ["surf", "puddle", "fishing", "walking", None]),
 ]
-SPECIAL = "special"
 # The icons' starter palette (index 0 transparent)
 ICON_COLORS = [(0, 0, 0), (24, 24, 32), (255, 255, 255), (170, 170, 185), (100, 100, 115), (255, 150, 200),
                (70, 190, 60), (215, 55, 40), (60, 120, 230), (255, 220, 60), (120, 210, 255), (190, 150, 90),
@@ -101,7 +100,7 @@ ICON_COLORS = [(0, 0, 0), (24, 24, 32), (255, 255, 255), (170, 170, 185), (100, 
 CHECK_A, CHECK_B = (60, 60, 70), (45, 45, 52)
 TOUCH, TOUCH_EDGE = (90, 140, 200), (40, 60, 100)
 PANEL, PANEL_EDGE = (238, 238, 238), (24, 24, 24)
-SLOT, SLOT_EDGE, GREY_SLOT, MARK = (255, 230, 120), (200, 140, 0), (200, 200, 200), (255, 170, 60)
+SLOT, SLOT_EDGE, GREY_SLOT = (255, 230, 120), (200, 140, 0), (200, 200, 200)
 TEXT, SHADOW = (32, 32, 41), (180, 180, 189)
 GOLD = (255, 238, 24)
 TILE_LINE = (255, 0, 255)
@@ -357,7 +356,7 @@ def tabs(out):
 
 def sample_rows(font, small):
     """The sample's rows as the page would print them (encounters.py's area_shown_rows): per row its icon's name,
-    whether the special marks flank it and whether it is grey, its levels, rarity and share range, and its times and
+    whether it shakes (its special version applies) and whether it is grey, its levels, rarity and share range, and its times and
     seasons."""
     from tools.paperwhite2 import encounters as enc
     seasons, data, _, number, _ = place_seasons(SAMPLE)
@@ -424,7 +423,7 @@ def area_places():
 
 
 def reference(font, small, count, tiles):
-    """The user's art (transparent checkered) with the icon slots, marks and text where the page puts them, count
+    """The user's art (transparent checkered) with the icon slots and text where the page puts them, count
     method rows, as PokedexInfoArea_Draw and _DrawRow place them."""
     d = area_places()
     m = pt.messages()
@@ -440,9 +439,6 @@ def reference(font, small, count, tiles):
     for i, (key, levels, tier) in enumerate(REFERENCE_ROWS[:count]):
         y = top + i * d["ROW_PITCH"]
         slot(r, d["ROW_ICON_X"], y, key, small)
-        for x in (d["ROW_MARK_LEFT_X"], d["ROW_MARK_RIGHT_X"]):
-            r.fill(x, y, ICON_W // 2, ICON_H, MARK)
-            r.outline(x, y, ICON_W // 2, ICON_H, SLOT_EDGE, dashed=True)
         r.text(font, levels, d["ROW_LEVELS_X"], y)
         r.text(small, tier, d["ROW_TIER_X"], y + d["ROW_TIER_OFFSET_Y"])
     r.text(small, m["AreaTime"], d["LABEL_X"], d["TIMES_LABEL_Y"])
@@ -465,10 +461,8 @@ def icons(out, small):
         for col, name in enumerate(names):
             if name is None:
                 continue
-            # The slot's edge in the starter palette's mid grey, dashed, to be drawn over; the special marks' slot
-            # as its two 16 by 16 halves
-            for x, w in ((0, ICON_W // 2), (ICON_W // 2, ICON_W // 2)) if name == SPECIAL else ((0, ICON_W),):
-                sheet.outline(col * ICON_W + x, row * ICON_H, w, ICON_H, ICON_COLORS[4], dashed=True)
+            # The slot's edge in the starter palette's mid grey, dashed, to be drawn over
+            sheet.outline(col * ICON_W, row * ICON_H, ICON_W, ICON_H, ICON_COLORS[4], dashed=True)
     sheet.indexed(out / "area_icons_template.png", ICON_COLORS[1:])
     guide = sheet.scaled(3)
     big = Rgb(guide.w, guide.h, (40, 40, 48))
@@ -478,10 +472,6 @@ def icons(out, small):
             x, y = col * ICON_W * 3, row * ICON_H * 3
             if name is None:
                 big.text(small, "unused", x + 4, y + 4, color=(120, 120, 130), shadow=None)
-            elif name == SPECIAL:
-                big.text(small, "special", x + 4, y + 4, color=(255, 255, 255), shadow=None)
-                big.text(small, "left", x + 4, y + 30, color=(160, 160, 170), shadow=None)
-                big.text(small, "right", x + ICON_W * 3 // 2 + 4, y + 30, color=(160, 160, 170), shadow=None)
             else:
                 big.text(small, name.replace("_", " "), x + 4, y + 4, color=(255, 255, 255), shadow=None)
                 big.text(small, group, x + 4, y + 30, color=(160, 160, 170), shadow=None)
@@ -500,8 +490,8 @@ def write(out, font, small):
     rows = bottom(out, font, small, bar)
     icons(out, small)
     for key, special, grey, levels, tier, rate in rows:
-        marks = (" (special marks, grey)" if grey else " (special marks)") if special else ""
-        print(f"area: {SAMPLE} {key}{marks}: {levels}, {tier}, {rate}")
+        shake = (" (shakes, grey)" if grey else " (shakes)") if special else ""
+        print(f"area: {SAMPLE} {key}{shake}: {levels}, {tier}, {rate}")
 
 
 def main():

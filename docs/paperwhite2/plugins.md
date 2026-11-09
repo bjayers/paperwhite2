@@ -1739,8 +1739,10 @@ corners), 2 px higher with the boxes: the seasons' bar has no label, "All season
 every place it is at glows white, that is all year everywhere, else the four season icons at x 52, 92, 132 and 172,
 y 22, coloured for each season it is met in, even all four, grey for the others; up to four rows 19 px apart (the
 mockup's), centred in the methods' box (`METHODS_Y` 46, `METHODS_HEIGHT` 75): 4 rows at y 47, 66, 85, 104, 3 at 56,
-75, 94, 2 at 66, 85, 1 at 75; each row's icon at x 29 and the special marks at x 13 and 61 where the special version
-applies, all at the row's y; the icon by walking's terrain (grass, cave floor, sand, puddle, bridge or walking), grey
+75, 94, 2 at 66, 85, 1 at 75; each row's icon at x 29, the row's y, shaking side to side where the special version
+applies (as the field's shaking grass: x offsets 0, +2, -2, +2, -2, 0, 2 frames each, then still, 87 frames in all,
+every such row in step; `PokedexInfoArea_Update` moves the OBJs each frame from x 29 and the OAM takes them in the
+VBlank); the icon by walking's terrain (grass, cave floor, sand, puddle, bridge or walking), grey
 where only the special version applies but on a bridge (whose areas have only shadows); the levels in font 0 at x 86,
 the row's y, the rarity or range ("Common - Rare") in font 1 at x 157, 4 below (the longest, "Uncommon - Very
 rare", 90 px, ends at x 246, inside the box's 249); the labels "Time" (y 134) and "Weather" (y 151) in font 1
@@ -1749,22 +1751,22 @@ day" or "All weathers" at x 64 on the label's line when it is met in all five, g
 met in the wild shows "Not found in the wild", and one met only off the map "Not found on the map", both centred in
 the methods' box (y 76). **The icons** (member 159,
 `tools/paperwhite2/pokedex_area.py` from `res/paperwhite2/pokedex_art/area_icons.png`, 160 by 80, 25 slots of 32 by
-16: the seasons and the special marks, the times, the weathers, the terrains grass, dark grass, cave floor, sand and
+16: the seasons and an unused slot (the special marks' until the shake replaced them), the times, the weathers, the terrains grass, dark grass, cave floor, sand and
 bridge, then surf, puddle, fishing, walking and an unused slot; their transparent pixels show the art) are sub OBJs of
 32 by 16 at their exact places, over the content window (BG priority 1), semi-transparent as the page's other OBJs so
 that its fades darken them: the type icons' cells (`ARCID_APP_MENU_COMMON`, the 1D 128 KB mapping's, centred), one
-character resource for all the icons (13 KB of sub OBJ VRAM: 26 icons, the marks' slot cut into a left and a right
-mark, each in its icon's left half, and their grey copies), each OBJ's image proxy at its icon and its palette proxy at
+character resource for all the icons (12.5 KB of sub OBJ VRAM: 25 icons, the unused slots packed clear so that they
+take no colours, and their grey copies), each OBJ's image proxy at its icon and its palette proxy at
 its row. Each icon has at most 7 colours, so each is packed whole into one of four OBJ palette rows of 15 with every
 icon's grey copy (each colour's grey by its luminance, 4 levels from 22 to 27 of 31, just below the panels' 29, so that
 an unmet one is barely there; white stays white, clear stays
 clear): sub OBJ rows 14 and 15, which nothing uses, and 4 and 3, Moves' knob's and cursor's (an exact search packs
 them, so a sheet that can fit always does). They are made as Area shows (made anew for
-each species, at most 26) and freed as another sub-page shows (`PokedexInfoArea_Hide`), as Evo's icons are; the
+each species, at most 18) and freed as another sub-page shows (`PokedexInfoArea_Hide`), as Evo's icons are; the
 palette resource (the type icons' palette's first row, into row 14) is only what the OBJs are made with: Area's VBlank
 task loads the icons' colours into the four rows in the VBlank that shows the OBJs first, keeping the rows' own
 (the knob's and the cursor's), and puts those back in the VBlank that shows another sub-page. Frame-by-frame captures of Area to and
-from Evo and Moves show no in-between frame. The sheet of 2026-11-09 (the user's, still unfinished: the marks' slot
+from Evo and Moves show no in-between frame. The sheet of 2026-11-09 (the user's, still unfinished: the old marks' slot
 empty, the old method icons standing in for some terrains) packed into 42 of three rows' 45 places; the user's next (33 colours with the greys) needs the fourth row. The editor's Graphics & Palettes has the sheet on its Sprite sheets page:
 import a PNG, see `pokedex_area.py check`'s verdict (it names the icons with too many colours) and a preview, write
 it to `area_icons.png`. **The top screen** shows the original AREA page's
@@ -1807,7 +1809,7 @@ member, 2 KB, kept to draw each name over). The detail heap grew to 0xb0000: ope
 10 KB) at 0xa0000; at 0xb0000, 152 KB free on Stats, 99 KB at the lowest while the map opens (largest block 90 KB),
 165 KB while Area shows (the entry's text freed). Area keeps about 15 KB while the page runs (the icons' member
 13.1 KB, the places, the species' block). The page's OBJ unit has 128 actors under `PAPERWHITE2` (the original's 96,
-`src/ov298/pokedex_detail_graphic.c`), as Area's icons (up to 26) come on top of the other sub-pages' OBJs and the
+`src/ov298/pokedex_detail_graphic.c`), as Area's icons (up to 18) come on top of the other sub-pages' OBJs and the
 map's (up to 40 places, the marker and the box's 5); with it and the icons as OBJs, opening Area with the map from
 Hoothoot's entry left 82 KB free at the lowest (largest block 74 KB).
 
