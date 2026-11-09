@@ -239,10 +239,25 @@ The details are in `docs/paperwhite2/plugins.md` (Pokédex, Area). Where the bui
 
 - **The user's decisions:** Area between Evo and Matchups (D-pad and L/R include it), the head bar stays INFO, every
   place shows (visited or not), the player's marker stays; the glow cycles through the seasons of the places not met
-  all year, all-year places white; more than 4 methods merge
-  (rustling kinds, then rippling into plain, then dark grass into grass: Dratini and Poliwhirl need the second step,
-  Wingull, Piplup, Tympole, Palpitoad, Stunfisk and Rufflet the first); unmet seasons, times and weathers show greyed
-  (light grey copies of their icons); a species never met in the wild says "Not found in the wild".
+  all year, all-year places white; unmet seasons, times and weathers show greyed (light grey copies of their icons); a
+  species never met in the wild says "Not found in the wild".
+- **Rows by terrain (the user's, 2026-11-09; this replaced the method rows and their merging):** at most four rows,
+  walking, dark grass, surfing and fishing, the empty ones left out and the shown ones centred in the methods' area.
+  Walking's icon is the terrain of the areas where it is walked into (by grass or the area's rustling spots): grass,
+  cave floor, sand, puddle or bridge, or a generic walking icon where they differ. The row's special version (walking:
+  shaking grass, dust clouds, bridge shadows; surfing: rippling water; fishing: rippling water; dark grass: none) puts
+  a 16 by 16 mark on each side of the icon where the Pokémon is met by it too or only by it; met only by it, the icon is
+  grey, except a bridge's (a bridge area has only shadows). The rarity is the normal method's, or the special
+  version's where only it applies. The outbreak badge is gone (the flag stays in the index, and a row whose only
+  encounters are outbreaks still reads "Outbreak"). The terrains come from fixed lists in `encounters.py` (sand: Route
+  4, the Desert Resort; puddles: Icirrus City, the Moor of Icirrus, Route 8; floors: the Castelia Sewers, Celestial
+  Tower, Dragonspiral Tower's inside, Relic Castle, the Strange House), the `dust` areas (cave floor) and the `shadow`
+  areas without grass (bridge), checked against the encounter tiles of the areas' maps: the puddle areas have swamp
+  tiles and no grass, the sand areas deep sand, the buildings floor tiles (Relic Castle some sand too). No area has
+  two terrains, so no per-area setting was needed. The Village Bridge has grass and dark grass besides its shadows, so
+  it is a grass area whose shadows are walking's special version; only the Driftveil Drawbridge and the Marvelous
+  Bridge are bridges, and no species walks only there, so no row shows the bridge icon today (Ducklett's mixes the
+  bridge with the Moor's puddles: generic walking).
 - **The user's changes of 2026-11-08:** the icons on solid white, as their tiles replace the art behind them (the
   bottom art keeps its transparent parts, which show the grid: the user's choice, 2026-11-09); "All seasons", "All times of day" and "All
   weathers" in place of the icons where they would all be coloured (for the seasons only when every place glows
@@ -253,14 +268,22 @@ The details are in `docs/paperwhite2/plugins.md` (Pokédex, Area). Where the bui
 - **Members:** the new art is `ARCID_POKEDEX_GRA` 152-154, so Evo's members moved to 155-157 (`pokedex_evo.py`'s
   `ARCHIVE_MEMBERS` is 155); the index is 158, the icons 159 and the box's art 160, all written by
   `pokedex_evo.py archive`.
-- **The index** has no tier or rate per place, only per method row (lowest and highest over its places and contexts);
-  a row's rates are the species' summed share over its forms. 26.8 KB, 496 species, the largest block 118 bytes.
+- **The index** has no tier or rate per place, only per row (lowest and highest over its places and contexts); a row's
+  rates are the species' summed share over its forms. Version 2 (rows by terrain): 22.0 KB, 496 species, the largest
+  block 104 bytes.
 - **Bottom palette rows:** arts 6-11; row 12 the content window's on Matchups and Evo and Area's third icon row, loaded
   in the VBlank as the sub-page changes; Area's text is in the panels' row 3 (not its art's); the icons take rows 14, 15
   and 12, each 8x8 tile its own row (the placeholder sheet's 27 colours and 8 greys don't fit two rows). Rows 0, 14 and
   15 were measured unused (zero, no map entry) on every sub-page.
-- **Rows' layout:** one line each: icon x 16, levels x 52 (font 0), rarity x 108 (font 1), outbreak badge x 176;
-  time icons y 136 and weather icons y 152 directly under the 4th row, no gap.
+- **Rows' layout:** one line each, 24 px apart, centred on the 8 px grid in the methods' area (y 48-135, the C file's
+  `METHODS_Y` and `METHODS_HEIGHT`, kept as constants until the user's final background gives exact bounds; 4 rows at y
+  48, 3 at 56, 2 at 72, 1 at 88): left mark x 8, icon x 24, right mark x 56, levels x 76 (font 0), rarity x 140
+  (font 1); time icons y 136 and weather icons y 152 directly under the area, no gap.
+- **The icon sheet (2026-11-09):** row 1's fifth slot holds the two special marks (left and right halves, drawn as 2 by
+  2 tiles); row 4 grass, dark grass, cave floor, sand, bridge; row 5 surf, puddle, fishing, walking and an unused slot.
+  Every icon has a grey copy now (the rows' colours come to 15, 15 and 14 of 45). Until the user draws them, the old
+  method icons stand in for the terrains in their slots and two small sparkles (from the sheet's own colours) for the
+  marks.
 - **Main OBJ rows:** the marker in row 0, the glow in rows 1 (all year), 6, 7, 14 and 15 (the plan's 3-7 hold the
   entry's type icons' and footprint's palettes, which stay loaded); the current Pokémon's box in 12 (its party icon)
   and 13 (the box's art, its 16 colours).
@@ -274,7 +297,7 @@ The details are in `docs/paperwhite2/plugins.md` (Pokédex, Area). Where the bui
   switches the BGs; all 62 KB in the VBlank ran into the next frame in the emulator. Frame-by-frame captures of
   opening and leaving show no in-between frame.
 - **Heap:** opening Area left 21 KB free at 0xa0000, so the detail heap is 0xb0000 now (99 KB at the lowest).
-- **Placeholders:** the glow colours (the template's, until `area_glow.png`). Not done: phase 4's `area_glow.png` target, phase 5 (cutting the
+- **Placeholders:** the glow colours (the template's, until `area_glow.png`); the special marks and the terrain icons (see the icon sheet above). Not done: phase 4's `area_glow.png` target, phase 5 (cutting the
   touch bar's AREA page).
 
 ## Templates
@@ -287,8 +310,7 @@ The sample is Unfezant; its rates in the reference are approximate (own candidat
 
 ## Open questions
 
-1. More than 4 methods (Dratini 6, three species 5): page them by a touch, shrink rows to 20 px, or merge the
-   rustling kinds into one "special" row?
+1. More than 4 methods: answered (2026-11-09) by the rows by terrain with special marks (As built).
 2. Times and weathers: show unavailable ones dimmed (needs a second palette row) or leave them out?
 3. Mark the season currently glowing on the bottom legend while the map cycles?
 4. The head bar's title on Area: INFO, or AREA?

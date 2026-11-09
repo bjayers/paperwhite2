@@ -377,18 +377,25 @@ The bottom screen
   sample's text and the icons' places (yellow boxes, each 32 x 16 on the 8 x 8 grid):
   - Seasons (y 24-39): the season icons at x 48, 88, 128, 168, only those it lives in; "All
     year" at x 210 when it is all four. They double as the map's colour legend.
-  - Methods (y 48-135): up to 4 rows 24 px apart (icon at x 16, y 48/72/96/120): the method's
-    icon, the levels (x 56), the rarity (x 136) and the encounter rate, right-aligned at x 244.
+  - Methods (y 48-135): up to 4 rows 24 px apart (walking, dark grass, surf, fishing; the
+    empty ones left out and the shown ones centred in the area, on the 8 x 8 grid): the row's
+    icon at x 24 (walking's shows its terrain), with a special mark each side (16 x 16, x 8 and
+    x 56; orange boxes) where the Pokémon also, or only, appears by the row's special version
+    (shaking grass, dust clouds and bridge shadows for walking, rippling water for surf and
+    fishing); the icon is grey when only the special version applies (but on a bridge). Then
+    the levels (x 76), the rarity (x 140) and the encounter rate, right-aligned at x 252.
   - Time (y 136-151) and Weather (y 152-167): 5 icon places each at x 48, 88, 128, 168, 208;
     the times and weathers it appears in, the preferred ones marked.
   The icons must sit on the 8 x 8 grid: they are tiles of the text layer with their own palette.
 
 The icons
 - area_icons_template.png: the icon sheet, 160 x 80, slots of 32 x 16 (the type icons' size):
-  row 1 seasons (spring, summer, autumn, winter), row 2 times (morning, day, evening, night,
-  late night), row 3 weathers (clear, rain, thunderstorm, snow, sandstorm), row 4 methods
-  (grass, dark grass, shaking grass, dust cloud, bridge shadow), row 5 methods (surf, rippling
-  surf, fishing, rippling fishing) and an outbreak badge. area_icons_guide.png names each slot.
+  row 1 seasons (spring, summer, autumn, winter) and, in the 5th slot, the two 16 x 16 special
+  marks (left half: the mark left of a row's icon; right half: the one right of it), row 2
+  times (morning, day, evening, night, late night), row 3 weathers (clear, rain, thunderstorm,
+  snow, sandstorm), row 4 terrains (grass, dark grass, cave floor, sand, bridge), row 5 (surf,
+  puddle, fishing, walking: a walking row whose areas' terrains differ) and an unused slot.
+  Every icon has a grey copy that the game makes. area_icons_guide.png names each slot.
 - All icons share ONE palette of 16 colours (index 0 transparent, 15 that show). The template's
   palette is a starter (season pink, green, red, blue, sun yellow, rain blue, sand...): change it
   freely, but keep one palette for the whole sheet. Leave a slot's unused pixels transparent.

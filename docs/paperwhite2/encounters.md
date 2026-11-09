@@ -106,6 +106,14 @@ chosen, where the original list of the saved season didn't have it. A Pokémon i
 tell a habitat's extra conditions (`when`), so those Pokémon show whenever their seasons, times and weather allow.
 The map, the areas and the stamps are the original's. The Pokédex's area map (archive 176) isn't regenerated yet.
 
+**The Pokédex Info page's Area.** `encounters.py`'s `area_index` (plugins.md, Pokédex, Area) shows a species' rows as
+walking, dark grass, surfing and fishing, each with its special version (rustling spots, rippling water) as marks.
+A walking row's icon is its areas' terrain, which no area file holds: `area_terrain` makes it a bridge where the area
+has only bridge shadows (`spots` `shadow` and no grass rate), sand on Route 4 and in the Desert Resort, puddles in
+Icirrus City, the Moor of Icirrus and on Route 8, cave floor in a `dust` area or a building (`AREA_FLOORS`), else
+grass. A new area on sand, puddles or a building's floor goes into those lists (`encounters.py area-index` prints each
+terrain's areas).
+
 The original tables are still packed. A zone whose area has no file keeps its table and the original slot code, with
 the species-0 guard.
 

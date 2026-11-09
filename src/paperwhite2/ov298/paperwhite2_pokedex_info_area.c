@@ -35,14 +35,15 @@
 
 // Paper White 2: the Pokédex Info page's Area sub-page (docs/paperwhite2/design/pokedex-area.md). The index that
 // tools/paperwhite2/encounters.py builds of the wild encounters (area_index) has each species' places on the town map
-// with the seasons it is there, and its methods with their levels, rarities, rates, seasons, times and weathers; the
-// page reads the shown species' part of it. The top screen shows the original AREA page's town map (its two 256-color
-// BGs and an OBJ for each place, pokedex_detail_map.c) in place of the entry's panels, on BGs 2 and 3 of the same main
-// engine, 24 pixels down under the head bar; each of the species' places glows in its season's color, a place it is
-// at all year in white, and one it is at in some seasons only steps through them, with the current Pokémon's box (its
-// party icon and name) over the head bar's right end. The bottom screen's content window has its seasons, up to four
-// methods (their levels and rarities), and the times and weathers, each an icon from the user's sheet
-// (tools/paperwhite2/pokedex_area.py), greyed out where it isn't met, or "All ..." where it is met in all of them
+// with the seasons it is there, and its rows (walking, dark grass, surfing, fishing) with their levels, rarities,
+// rates, seasons, times and weathers; the page reads the shown species' part of it. The top screen shows the original
+// AREA page's town map (its two 256-color BGs and an OBJ for each place, pokedex_detail_map.c) in place of the entry's
+// panels, on BGs 2 and 3 of the same main engine, 24 pixels down under the head bar; each of the species' places glows
+// in its season's color, a place it is at all year in white, and one it is at in some seasons only steps through them,
+// with the current Pokémon's box (its party icon and name) over the head bar's right end. The bottom screen's content
+// window has its seasons, up to four rows (their terrain or method, special marks, levels and rarities), and the times
+// and weathers, each an icon from the user's sheet (tools/paperwhite2/pokedex_area.py), greyed out where it isn't met,
+// or "All ..." where it is met in all of them
 
 // ARCID_POKEDEX_GRA's members that tools/paperwhite2/pokedex_evo.py adds after Evo's: the index, the icons and the
 // current Pokémon's box
@@ -50,10 +51,10 @@
 #define AREA_ICONS_FILE 159
 #define AREA_BOX_FILE 160
 #define AREA_INDEX_MAGIC 0x45524150 // "PARE"
-#define AREA_INDEX_VERSION 1
+#define AREA_INDEX_VERSION 2
 // A species' part of the index is at most this long, as encounters.py checks (AREA_BLOCK_MAX)
 #define AREA_BLOCK_MAX 512
-// The rows that the bottom screen has room for, as encounters.py merges a species' methods into
+// The rows that the bottom screen has room for, encounters.py's AREA_ROWS
 #define AREA_ROW_MAX 4
 // A species is at most at this many of the map's places (encounters.py checks)
 #define AREA_PLACE_MAX 40
@@ -101,9 +102,10 @@ typedef struct {
     u8 seasons;
 } AreaSpeciesPlace;
 
-// A method's row: AREA_METHOD_*, its rarities (AREA_TIER_*), its seasons, and its rates in tenths of a percent
+// A row: AREA_ROW_*, its rarities (AREA_TIER_*), its seasons, and its rates in tenths of a percent, of its normal
+// method, or of its special version where only that applies (AREA_FLAG_SPECIAL_ONLY); and a walking row's terrain
 typedef struct {
-    u8 method;
+    u8 row;
     u8 tierLow;
     u8 tierHigh;
     u8 seasons;
@@ -114,29 +116,38 @@ typedef struct {
     u8 weathers;
     u8 preferredWeathers;
     u8 flags;
-    u8 padding;
+    u8 terrain;
 } AreaRow;
 
-// The index's methods, encounters.py's AREA_METHODS; rustling is by its kind of spots, or all of them in one row
+// The index's rows, encounters.py's AREA_ROWS: walking (grass, and the rustling spots as its special version), dark
+// grass, surfing (rippling water as its special version) and fishing (the same)
 enum {
-    AREA_METHOD_GRASS,
-    AREA_METHOD_DARK_GRASS,
-    AREA_METHOD_SHAKING_GRASS,
-    AREA_METHOD_DUST_CLOUD,
-    AREA_METHOD_BRIDGE_SHADOW,
-    AREA_METHOD_SURF,
-    AREA_METHOD_RIPPLING_SURF,
-    AREA_METHOD_FISHING,
-    AREA_METHOD_RIPPLING_FISHING,
-    AREA_METHOD_RUSTLING,
-    AREA_METHOD_COUNT,
+    AREA_ROW_WALKING,
+    AREA_ROW_DARK_GRASS,
+    AREA_ROW_SURF,
+    AREA_ROW_FISHING,
+    AREA_ROW_COUNT,
+};
+
+// A walking row's terrain, encounters.py's AREA_TERRAINS: that of all its areas, or walking where they differ
+enum {
+    AREA_TERRAIN_GRASS,
+    AREA_TERRAIN_CAVE_FLOOR,
+    AREA_TERRAIN_SAND,
+    AREA_TERRAIN_PUDDLE,
+    AREA_TERRAIN_BRIDGE,
+    AREA_TERRAIN_WALKING,
+    AREA_TERRAIN_COUNT,
 };
 
 // The settings' rarity tiers (res/paperwhite2/encounters/settings.json), and none, for an outbreak's or shaking
 // grass's own species
 #define AREA_TIER_COUNT 5
 #define AREA_TIER_NONE 0xff
+// A row's flags that the page reads: met in outbreaks, met by the row's special version too, and only by it
 #define AREA_FLAG_OUTBREAK (1 << 0)
+#define AREA_FLAG_SPECIAL (1 << 3)
+#define AREA_FLAG_SPECIAL_ONLY (1 << 4)
 
 #define AREA_SEASON_COUNT 4
 #define AREA_TIME_COUNT 5
@@ -145,25 +156,26 @@ enum {
 #define AREA_ALL_TIMES ((1 << AREA_TIME_COUNT) - 1)
 #define AREA_ALL_WEATHERS ((1 << AREA_WEATHER_COUNT) - 1)
 
-// The icon sheet's slots (pokedex_area.py): the seasons, the times, the weather groups, the methods and the
-// outbreak's badge, each 32 by 16; the first three rows' icons have grey copies
+// The icon sheet's slots (pokedex_area.py), each 32 by 16, five a row, and each with a grey copy: the seasons and
+// the special marks (two of 16 by 16, the left one's and the right one's), the times, the weather groups, the walking
+// terrains and dark grass, then surf, puddle, fishing and walking (the last slot is unused)
 enum {
     ICON_SPRING,
-    ICON_MORNING = 5,
+    ICON_SPECIAL = 4,
+    ICON_MORNING,
     ICON_CLEAR = 10,
     ICON_GRASS = 15,
     ICON_DARK_GRASS,
-    ICON_SHAKING_GRASS,
-    ICON_DUST_CLOUD,
-    ICON_BRIDGE_SHADOW,
+    ICON_CAVE_FLOOR,
+    ICON_SAND,
+    ICON_BRIDGE,
     ICON_SURF,
-    ICON_RIPPLING_SURF,
+    ICON_PUDDLE,
     ICON_FISHING,
-    ICON_RIPPLING_FISHING,
-    ICON_OUTBREAK,
-    ICON_COUNT,
+    ICON_WALKING,
+    ICON_COUNT = 25,
 };
-#define ICON_GREY_COUNT ICON_GRASS
+#define ICON_GREY_COUNT ICON_COUNT
 #define ICON_WIDTH 32
 #define ICON_HEIGHT 16
 #define ICON_TILES_ACROSS (ICON_WIDTH / 8)
@@ -171,13 +183,15 @@ enum {
 #define ICON_TILE_SIZE 0x20
 #define ICON_PALETTE_ROWS 3
 #define ICON_PALETTE_SIZE 0x20
-// The most icons the bottom screen shows: 4 seasons, 5 times, 5 weathers, and a method and a badge for each row
-#define ICON_SHOWN_MAX (AREA_SEASON_COUNT + AREA_TIME_COUNT + AREA_WEATHER_COUNT + AREA_ROW_MAX * 2)
+// A special mark: the left or right half of ICON_SPECIAL
+#define MARK_WIDTH (ICON_WIDTH / 2)
+// The most icons the bottom screen shows: 4 seasons, 5 times, 5 weathers, and an icon and two marks for each row
+#define ICON_SHOWN_MAX (AREA_SEASON_COUNT + AREA_TIME_COUNT + AREA_WEATHER_COUNT + AREA_ROW_MAX * 3)
 
-// Each method's icon, by AREA_METHOD_*; the merged rustling shows shaking grass's
-static const u8 sMethodIcons[AREA_METHOD_COUNT] = {
-    ICON_GRASS, ICON_DARK_GRASS,    ICON_SHAKING_GRASS, ICON_DUST_CLOUD,       ICON_BRIDGE_SHADOW,
-    ICON_SURF,  ICON_RIPPLING_SURF, ICON_FISHING,       ICON_RIPPLING_FISHING, ICON_SHAKING_GRASS,
+// Each row's icon, by AREA_ROW_* (walking's by its terrain, sTerrainIcons)
+static const u8 sRowIcons[AREA_ROW_COUNT] = { ICON_GRASS, ICON_DARK_GRASS, ICON_SURF, ICON_FISHING };
+static const u8 sTerrainIcons[AREA_TERRAIN_COUNT] = {
+    ICON_GRASS, ICON_CAVE_FLOOR, ICON_SAND, ICON_PUDDLE, ICON_BRIDGE, ICON_WALKING,
 };
 
 static const u16 sTierNames[AREA_TIER_COUNT] = {
@@ -202,13 +216,17 @@ static const u8 sIconPaletteRows[ICON_PALETTE_ROWS] = {
 #define SEASONS_Y 24
 #define TIMES_Y 136
 #define WEATHERS_Y 152
-// The methods' rows: the method's icon, the levels in font 0, the rarity in font 1, and the outbreak's badge
-#define ROW_Y 48
+// The methods' area, between the seasons and the times, where the shown rows are centred (on the tiles' grid), each
+// its left mark, its icon and its right mark (the marks where its special version applies), the levels in font 0 and
+// the rarity in font 1
+#define METHODS_Y 48
+#define METHODS_HEIGHT (TIMES_Y - METHODS_Y)
 #define ROW_PITCH 24
-#define ROW_ICON_X 16
-#define ROW_LEVELS_X 52
-#define ROW_TIER_X 108
-#define ROW_BADGE_X 176
+#define ROW_MARK_LEFT_X 8
+#define ROW_ICON_X (ROW_MARK_LEFT_X + MARK_WIDTH)
+#define ROW_MARK_RIGHT_X (ROW_ICON_X + ICON_WIDTH)
+#define ROW_LEVELS_X 76
+#define ROW_TIER_X 140
 #define ROW_TEXT_OFFSET_Y 1
 #define ROW_SMALL_TEXT_OFFSET_Y 3
 #define UNKNOWN_X 128
@@ -342,12 +360,15 @@ typedef struct {
 } VramRange;
 #define KEPT_RANGE_COUNT 6
 
-// An icon drawn into the window: where, which, and whether grey
+// An icon drawn into the window: where, which, whether grey, and the columns of its tiles it shows (a special mark's
+// half)
 typedef struct {
     u8 x;
     u8 y;
     u8 icon;
     u8 grey;
+    u8 column;
+    u8 columns;
 } ShownIcon;
 
 struct PokedexInfoArea {
@@ -429,6 +450,8 @@ static void PokedexInfoArea_DrawConditions(PokedexInfoArea *area, GFLBitmap *bit
 static void PokedexInfoArea_DrawRow(PokedexInfoArea *area, GFLBitmap *bitmap, int top, const AreaRow *row, int y);
 static void PokedexInfoArea_DrawIcon(PokedexInfoArea *area, GFLBitmap *bitmap, int top, u32 icon, BOOL grey, int x,
                                      int y);
+static void PokedexInfoArea_DrawIconPart(PokedexInfoArea *area, GFLBitmap *bitmap, int top, u32 icon, int left,
+                                         int width, BOOL grey, int x, int y);
 static u32 PokedexInfoArea_Print(PokedexInfoArea *area, GFLBitmap *bitmap, int top, Font *font, u32 messageId, int x,
                                  int y, u32 align, u16 color);
 static void PokedexInfoArea_SetKeptRanges(PokedexInfoArea *area);
@@ -549,7 +572,9 @@ static const AreaRow *PokedexInfoArea_GetRows(PokedexInfoArea *area) {
 void PokedexInfoArea_Draw(PokedexInfoArea *area, GFLBitmap *bitmap, int top, u16 species) {
     const AreaSpecies *entry;
     const AreaRow *rows;
+    u32 count;
     u32 i;
+    int y;
 
     PokedexInfoArea_Load(area, species);
     area->shownCount = 0;
@@ -571,8 +596,13 @@ void PokedexInfoArea_Draw(PokedexInfoArea *area, GFLBitmap *bitmap, int top, u16
     } else {
         PokedexInfoArea_DrawConditions(area, bitmap, top, ICON_SPRING, AREA_SEASON_COUNT, entry->seasons, SEASONS_Y);
     }
-    for (i = 0; i < entry->rowCount && i < AREA_ROW_MAX; i++) {
-        PokedexInfoArea_DrawRow(area, bitmap, top, &rows[i], ROW_Y + i * ROW_PITCH);
+    // The shown rows, centred in the methods' area on the tiles' grid
+    count = entry->rowCount < AREA_ROW_MAX ? entry->rowCount : AREA_ROW_MAX;
+    if (count != 0) {
+        y = METHODS_Y + (METHODS_HEIGHT - (count - 1) * ROW_PITCH - ICON_HEIGHT) / 2 / 8 * 8;
+        for (i = 0; i < count; i++) {
+            PokedexInfoArea_DrawRow(area, bitmap, top, &rows[i], y + i * ROW_PITCH);
+        }
     }
     PokedexInfoArea_Print(area, bitmap, top, area->smallFont, PokedexData_Text_AreaTime, LABEL_X,
                           TIMES_Y + LABEL_OFFSET_Y, PRINT_ALIGN_LEFT, AREA_LABEL_COLOR);
@@ -603,14 +633,25 @@ static void PokedexInfoArea_DrawConditions(PokedexInfoArea *area, GFLBitmap *bit
     }
 }
 
-// A method's icon, its levels, its rarity (or the range of them), and the outbreak's badge if it has outbreaks there
+// A row's icon (walking's by its terrain) between the special marks where its special version applies, grey where only
+// that applies but on a bridge, which has nothing else; its levels; and its rarity (or the range of them)
 static void PokedexInfoArea_DrawRow(PokedexInfoArea *area, GFLBitmap *bitmap, int top, const AreaRow *row, int y) {
     const AreaSpecies *entry = PokedexInfoArea_GetSpecies(area);
+    u32 icon;
     u32 message;
 
-    PokedexInfoArea_DrawIcon(area, bitmap, top,
-                             row->method < AREA_METHOD_COUNT ? sMethodIcons[row->method] : ICON_GRASS, FALSE,
+    if (row->row == AREA_ROW_WALKING) {
+        icon = row->terrain < AREA_TERRAIN_COUNT ? sTerrainIcons[row->terrain] : ICON_WALKING;
+    } else {
+        icon = row->row < AREA_ROW_COUNT ? sRowIcons[row->row] : ICON_WALKING;
+    }
+    PokedexInfoArea_DrawIcon(area, bitmap, top, icon, (row->flags & AREA_FLAG_SPECIAL_ONLY) && icon != ICON_BRIDGE,
                              ROW_ICON_X, y);
+    if (row->flags & AREA_FLAG_SPECIAL) {
+        PokedexInfoArea_DrawIconPart(area, bitmap, top, ICON_SPECIAL, 0, MARK_WIDTH, FALSE, ROW_MARK_LEFT_X, y);
+        PokedexInfoArea_DrawIconPart(area, bitmap, top, ICON_SPECIAL, MARK_WIDTH, MARK_WIDTH, FALSE, ROW_MARK_RIGHT_X,
+                                     y);
+    }
     WordSetNumber(area->wordSet, 0, entry->levelMin, 3, 0, TRUE);
     WordSetNumber(area->wordSet, 1, entry->levelMax, 3, 0, TRUE);
     PokedexInfoArea_Print(area, bitmap, top, area->font,
@@ -629,15 +670,18 @@ static void PokedexInfoArea_DrawRow(PokedexInfoArea *area, GFLBitmap *bitmap, in
     }
     PokedexInfoArea_Print(area, bitmap, top, area->smallFont, message, ROW_TIER_X, y + ROW_SMALL_TEXT_OFFSET_Y,
                           PRINT_ALIGN_LEFT, AREA_TEXT_COLOR);
-    if (row->flags & AREA_FLAG_OUTBREAK) {
-        PokedexInfoArea_DrawIcon(area, bitmap, top, ICON_OUTBREAK, FALSE, ROW_BADGE_X, y);
-    }
 }
 
 // An icon into the window, on its tiles, which take the icon's palette rows (PokedexInfoArea_SetIconPalettes); its
 // clear pixels show what is under the window
 static void PokedexInfoArea_DrawIcon(PokedexInfoArea *area, GFLBitmap *bitmap, int top, u32 icon, BOOL grey, int x,
                                      int y) {
+    PokedexInfoArea_DrawIconPart(area, bitmap, top, icon, 0, ICON_WIDTH, grey, x, y);
+}
+
+// The columns of an icon from left, width pixels wide (multiples of 8), into the window at x
+static void PokedexInfoArea_DrawIconPart(PokedexInfoArea *area, GFLBitmap *bitmap, int top, u32 icon, int left,
+                                         int width, BOOL grey, int x, int y) {
     ShownIcon *shown;
 
     if (area->shownCount >= ICON_SHOWN_MAX) {
@@ -651,9 +695,11 @@ static void PokedexInfoArea_DrawIcon(PokedexInfoArea *area, GFLBitmap *bitmap, i
     shown->y = y / 8;
     shown->icon = icon;
     shown->grey = grey;
-    GFL_BitmapFillArea(bitmap, x, y - top, ICON_WIDTH, ICON_HEIGHT, AREA_COLOR_CLEAR);
-    GFL_BitmapCopyArea(grey ? area->greyBitmap : area->iconBitmap, bitmap, 0, icon * ICON_HEIGHT, x, y - top,
-                       ICON_WIDTH, ICON_HEIGHT, AREA_COLOR_CLEAR);
+    shown->column = left / 8;
+    shown->columns = width / 8;
+    GFL_BitmapFillArea(bitmap, x, y - top, width, ICON_HEIGHT, AREA_COLOR_CLEAR);
+    GFL_BitmapCopyArea(grey ? area->greyBitmap : area->iconBitmap, bitmap, left, icon * ICON_HEIGHT, x, y - top, width,
+                       ICON_HEIGHT, AREA_COLOR_CLEAR);
 }
 
 void PokedexInfoArea_SetIconPalettes(PokedexInfoArea *area, u32 bg) {
@@ -666,8 +712,12 @@ void PokedexInfoArea_SetIconPalettes(PokedexInfoArea *area, u32 bg) {
         const u8 *iconBanks = banks + (shown->grey ? ICON_COUNT * ICON_TILES : 0) + shown->icon * ICON_TILES;
 
         for (j = 0; j < ICON_TILES; j++) {
-            GFL_BGSysSetScrPaletteNo(bg, shown->x + j % ICON_TILES_ACROSS, shown->y + j / ICON_TILES_ACROSS, 1, 1,
-                                     sIconPaletteRows[iconBanks[j]]);
+            u32 column = j % ICON_TILES_ACROSS;
+
+            if (column >= shown->column && column < shown->column + shown->columns) {
+                GFL_BGSysSetScrPaletteNo(bg, shown->x + column - shown->column, shown->y + j / ICON_TILES_ACROSS, 1, 1,
+                                         sIconPaletteRows[iconBanks[j]]);
+            }
         }
     }
 }

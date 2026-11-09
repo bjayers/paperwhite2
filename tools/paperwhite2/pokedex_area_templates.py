@@ -67,7 +67,10 @@ ICON_W, ICON_H = 32, 16
 LABEL_X = 8
 SLOT_X = (48, 88, 128, 168, 208)
 SEASONS_Y = 24
-METHOD_Y, METHOD_PITCH, METHOD_ROWS = 48, 24, 4
+# The methods' area (the C file's METHODS_*), where up to METHOD_ROWS rows are centred, each its left special mark,
+# its icon and its right mark, its levels and its rarity
+METHOD_Y, METHOD_HEIGHT, METHOD_PITCH, METHOD_ROWS = 48, 88, 24, 4
+ROW_ICON_X, ROW_LEVELS_X, ROW_TIER_X = 24, 76, 140
 TIMES_Y, WEATHER_Y = 136, 152
 TOUCHBAR_Y = 168
 # The top screen's box of the current Pokémon (paperwhite2_pokedex_info_area.c's BOX_*): the box's OBJs, the party
@@ -75,14 +78,17 @@ TOUCHBAR_Y = 168
 BOX_X, BOX_Y, BOX_W, BOX_H = 128, 0, 128, 32
 BOX_ICON_X, BOX_ICON_Y = 156, 0
 BOX_NAME_X, BOX_NAME_Y, BOX_NAME_RIGHT = 190, 8, 252
-# The icons: (group, names), a row of the sheet each, 32 by 16 slots
+# The icons: (group, names), a row of the sheet each, 32 by 16 slots. Row 1's fifth slot holds the two 16 by 16
+# special marks (SPECIAL), drawn left and right of a method icon whose row's special version applies; row 5's fifth
+# is unused. The terrain icons show a walking row's terrain, "walking" when its areas' terrains differ.
 ICONS = [
-    ("season", ["spring", "summer", "autumn", "winter"]),
+    ("season", ["spring", "summer", "autumn", "winter", "special"]),
     ("time", ["morning", "day", "evening", "night", "late_night"]),
     ("weather", ["clear", "rain", "thunderstorm", "snow", "sandstorm"]),
-    ("method", ["grass", "dark_grass", "shaking_grass", "dust_cloud", "bridge_shadow"]),
-    ("method", ["surf", "rippling_surf", "fishing", "rippling_fishing", "outbreak"]),
+    ("terrain", ["grass", "dark_grass", "cave_floor", "sand", "bridge"]),
+    ("method", ["surf", "puddle", "fishing", "walking", None]),
 ]
+SPECIAL = "special"
 # The icons' starter palette (index 0 transparent)
 ICON_COLORS = [(0, 0, 0), (24, 24, 32), (255, 255, 255), (170, 170, 185), (100, 100, 115), (255, 150, 200),
                (70, 190, 60), (215, 55, 40), (60, 120, 230), (255, 220, 60), (120, 210, 255), (190, 150, 90),
@@ -91,7 +97,7 @@ ICON_COLORS = [(0, 0, 0), (24, 24, 32), (255, 255, 255), (170, 170, 185), (100, 
 CHECK_A, CHECK_B = (60, 60, 70), (45, 45, 52)
 TOUCH, TOUCH_EDGE = (90, 140, 200), (40, 60, 100)
 PANEL, PANEL_EDGE = (238, 238, 238), (24, 24, 24)
-SLOT, SLOT_EDGE = (255, 230, 120), (200, 140, 0)
+SLOT, SLOT_EDGE, GREY_SLOT, MARK = (255, 230, 120), (200, 140, 0), (200, 200, 200), (255, 170, 60)
 TEXT, SHADOW = (32, 32, 41), (180, 180, 189)
 GOLD = (255, 238, 24)
 TILE_LINE = (255, 0, 255)
@@ -346,55 +352,37 @@ def tabs(out):
 
 
 def sample_rows(font, small):
-    """The sample's rows as the page would print them: per method its icon's name, levels, rarity and the
-    approximate share range (own candidates, tiers' shares split among their Pokémon; the build's index computes it
-    exactly), and its times and seasons."""
-    seasons, data, by_area, number, zones = place_seasons(SAMPLE)
+    """The sample's rows as the page would print them (encounters.py's area_shown_rows): per row its icon's name,
+    whether the special marks flank it and whether it is grey, its levels, rarity and share range, and its times and
+    seasons."""
     from tools.paperwhite2 import encounters as enc
-    shares = [t["share"] for t in data.settings["tiers"]]
+    seasons, data, _, number, _ = place_seasons(SAMPLE)
     names = [t["name"] for t in data.settings["tiers"]]
-    rows = {}
-    times = 0
-    for area, cands in by_area.items():
-        for fields, _ in cands:
-            if fields[0] != number:
-                continue
-            for m, method in enumerate(enc.METHODS):
-                if not fields[5] >> m & 1:
-                    continue
-                key = method if method != "rustling" else \
-                    {"grass": "shaking_grass", "dust": "dust_cloud", "shadow": "bridge_shadow"}[data.areas[area]["spots"]]
-                times |= fields[7]
-                low, high, tiers = rows.get(key, (100.0, 0.0, set()))
-                for s in range(4):
-                    for t in range(5):
-                        if not (fields[6] >> s & 1 and fields[7] >> t & 1):
-                            continue
-                        here = [c for c, _ in cands if c[5] >> m & 1 and c[6] >> s & 1 and c[7] >> t & 1]
-                        counts = {}
-                        for c in here:
-                            counts[c[4]] = counts.get(c[4], 0) + 1
-                        total = sum(shares[k] for k in counts)
-                        share = 100 * shares[fields[4]] / counts[fields[4]] / total
-                        low, high = min(low, share), max(high, share)
-                tiers.add(fields[4])
-                rows[key] = (low, high, tiers)
+    entry = enc.area_rows(data)[number]
     levels = data.species[SAMPLE]["levels"]
-    order = [n for _, group in ICONS[3:] for n in group]
     result = []
-    for key in sorted(rows, key=order.index):
-        low, high, tiers = rows[key]
-        tier = names[min(tiers)] if len(tiers) == 1 else f"{names[min(tiers)]}-{names[max(tiers)]}"
+    times = 0
+    for row in enc.area_shown_rows(entry):
+        key = row["terrain"] if enc.AREA_ROWS[row["row"]] == "walking" else enc.AREA_ROWS[row["row"]]
+        special = bool(row["flags"] & enc.AREA_FLAG_SPECIAL)
+        grey = bool(row["flags"] & enc.AREA_FLAG_SPECIAL_ONLY) and key != "bridge"
+        tiers = sorted(row["tiers"])
+        tier = "Special" if tiers[0] == enc.AREA_TIER_NONE else names[tiers[0]] if len(tiers) == 1 else \
+            f"{names[tiers[0]]}-{names[min(tiers[-1], len(names) - 1)]}"
+        shares = [c[4] for c in row["contexts"]]
+        low, high = min(shares), max(shares)
         rate = f"{low:.0f}%" if round(low) == round(high) else f"{low:.0f}-{high:.0f}%"
-        result.append((key, f"Lv. {levels['min']}-{levels['max']}", tier, rate))
+        for c in row["all"]:
+            times |= 1 << c[2]
+        result.append((key, special, grey, f"Lv. {levels['min']}-{levels['max']}", tier, rate))
     bits = 0
     for b in seasons.values():
         bits |= b
     return result, bits, times
 
 
-def slot(c, x, y, label, font):
-    c.fill(x, y, ICON_W, ICON_H, SLOT)
+def slot(c, x, y, label, font, grey=False):
+    c.fill(x, y, ICON_W, ICON_H, GREY_SLOT if grey else SLOT)
     c.outline(x, y, ICON_W, ICON_H, SLOT_EDGE)
     c.text(font, label[:6], x + ICON_W // 2, y + 2, "center", (90, 60, 0), None)
 
@@ -405,8 +393,8 @@ def bottom(out, font, small, bar):
         canvas.blit(bar, 0, 0)
     canvas.fill(4, SEASONS_Y - 2, W - 8, 20, PANEL)
     canvas.outline(4, SEASONS_Y - 2, W - 8, 20, PANEL_EDGE)
-    canvas.fill(4, METHOD_Y - 4, W - 8, METHOD_PITCH * METHOD_ROWS + 4, PANEL)
-    canvas.outline(4, METHOD_Y - 4, W - 8, METHOD_PITCH * METHOD_ROWS + 4, PANEL_EDGE)
+    canvas.fill(4, METHOD_Y - 4, W - 8, METHOD_HEIGHT + 4, PANEL)
+    canvas.outline(4, METHOD_Y - 4, W - 8, METHOD_HEIGHT + 4, PANEL_EDGE)
     canvas.fill(4, TIMES_Y, W - 8, 32, PANEL)
     canvas.outline(4, TIMES_Y, W - 8, 32, PANEL_EDGE)
     canvas.indexed(out / "area_canvas.png")
@@ -424,14 +412,18 @@ def bottom(out, font, small, bar):
                 slot(r, SLOT_X[i], SEASONS_Y, name, small)
         if seasons == 15:
             r.text(small, "All year", SLOT_X[4] + 2, SEASONS_Y + 3, color=GOLD, shadow=TEXT)
-        for i, (key, levels, tier, rate) in enumerate(rows[:METHOD_ROWS]):
-            y = METHOD_Y + i * METHOD_PITCH
-            slot(r, 16, y, key.replace("_", " "), small)
-            r.text(font, levels, 56, y)
-            r.text(small, tier, 136, y + 2)
-            r.text(font, rate, 244, y, "right")
-        if len(rows) > METHOD_ROWS:
-            r.text(small, f"+{len(rows) - METHOD_ROWS} more", 244, METHOD_Y + METHOD_PITCH * METHOD_ROWS - 10, "right")
+        # The shown rows centred in the methods' area on the tiles' grid, as the page places them
+        top = METHOD_Y + (METHOD_HEIGHT - (len(rows) - 1) * METHOD_PITCH - ICON_H) // 2 // 8 * 8
+        for i, (key, special, grey, levels, tier, rate) in enumerate(rows):
+            y = top + i * METHOD_PITCH
+            slot(r, ROW_ICON_X, y, key.replace("_", " "), small, grey)
+            if special:
+                for x in (ROW_ICON_X - ICON_W // 2, ROW_ICON_X + ICON_W):
+                    r.fill(x, y, ICON_W // 2, ICON_H, MARK)
+                    r.outline(x, y, ICON_W // 2, ICON_H, SLOT_EDGE)
+            r.text(font, levels, ROW_LEVELS_X, y)
+            r.text(small, tier, ROW_TIER_X, y + 2)
+            r.text(font, rate, 252, y, "right")
         r.text(small, "Time", LABEL_X, TIMES_Y + 3)
         for i, name in enumerate(ICONS[1][1]):
             if times >> i & 1:
@@ -456,18 +448,29 @@ def bottom(out, font, small, bar):
 def icons(out, small):
     sheet = Rgb(ICON_W * 5, ICON_H * len(ICONS))
     for row, (_, names) in enumerate(ICONS):
-        for col, _ in enumerate(names):
-            # The slot's edge in the starter palette's mid grey, dashed, to be drawn over
-            sheet.outline(col * ICON_W, row * ICON_H, ICON_W, ICON_H, ICON_COLORS[4], dashed=True)
+        for col, name in enumerate(names):
+            if name is None:
+                continue
+            # The slot's edge in the starter palette's mid grey, dashed, to be drawn over; the special marks' slot
+            # as its two 16 by 16 halves
+            for x, w in ((0, ICON_W // 2), (ICON_W // 2, ICON_W // 2)) if name == SPECIAL else ((0, ICON_W),):
+                sheet.outline(col * ICON_W + x, row * ICON_H, w, ICON_H, ICON_COLORS[4], dashed=True)
     sheet.indexed(out / "area_icons_template.png", ICON_COLORS[1:])
     guide = sheet.scaled(3)
     big = Rgb(guide.w, guide.h, (40, 40, 48))
     big.blit(guide, 0, 0)
     for row, (group, names) in enumerate(ICONS):
         for col, name in enumerate(names):
-            big.text(small, name.replace("_", " "), col * ICON_W * 3 + 4, row * ICON_H * 3 + 4, color=(255, 255, 255),
-                     shadow=None)
-            big.text(small, group, col * ICON_W * 3 + 4, row * ICON_H * 3 + 30, color=(160, 160, 170), shadow=None)
+            x, y = col * ICON_W * 3, row * ICON_H * 3
+            if name is None:
+                big.text(small, "unused", x + 4, y + 4, color=(120, 120, 130), shadow=None)
+            elif name == SPECIAL:
+                big.text(small, "special", x + 4, y + 4, color=(255, 255, 255), shadow=None)
+                big.text(small, "left", x + 4, y + 30, color=(160, 160, 170), shadow=None)
+                big.text(small, "right", x + ICON_W * 3 // 2 + 4, y + 30, color=(160, 160, 170), shadow=None)
+            else:
+                big.text(small, name.replace("_", " "), x + 4, y + 4, color=(255, 255, 255), shadow=None)
+                big.text(small, group, x + 4, y + 30, color=(160, 160, 170), shadow=None)
     big.rgba(out / "area_icons_guide.png")
     glow = Rgb(3 * 16, 5 * 16)
     for row, shades in enumerate(GLOW):
@@ -482,8 +485,9 @@ def write(out, font, small):
     bar = tabs(out)
     rows = bottom(out, font, small, bar)
     icons(out, small)
-    for key, levels, tier, rate in rows:
-        print(f"area: {SAMPLE} {key}: {levels}, {tier}, {rate}")
+    for key, special, grey, levels, tier, rate in rows:
+        marks = (" (special marks, grey)" if grey else " (special marks)") if special else ""
+        print(f"area: {SAMPLE} {key}{marks}: {levels}, {tier}, {rate}")
 
 
 def main():

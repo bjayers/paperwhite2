@@ -1700,37 +1700,52 @@ three stages); 156, the balls' 16 colours and their 4bpp tiles (416 bytes); 157,
 game reads them by species), so Burmy's and Wormadam's forms evolve as their species. About 3.2 KB of ov298.
 
 **Area** (`paperwhite2_pokedex_info_area.c`; `docs/paperwhite2/design/pokedex-area.md`): where the species is met in the
-wild, from the hack's encounter data. **The index** (member 158, `encounters.py`'s `area_index`, about 27 KB; `encounters.py
-area-index SPECIES...` prints a species' part): a header ("PARE", version 1), each species' block offset by its number,
-the town map's 85 places in its table's order (`res/town_map/order.json`: the zone, the area OBJ's place and animation on
-the Pokédex's map, the place's own position for the player's marker), then each species' block: its places (the town
-map place of each encounter area's zones' parent, and a season mask) and up to 4 method rows (the method, shaking
-grass, dust cloud and bridge shadow apart by the area's kind of spots; the rarity tiers, seasons, rates as the lowest
-and highest share in tenths of a percent, times and weather groups with the preferred ones, and flags: outbreak, extra
-condition, wanderer), with the species' levels and the union of its rows' seasons, times and weathers. The rates are
-the runtime's slots (`method_candidates` and `slot_shares`, which `encounters.py odds` uses too), computed for every
-area, method, season (where the area's rate for it isn't 0), period and weather group (clear, rain, thunderstorm,
-snow, sandstorm as the Habitat Dex groups them), with the level gate ignored (a party high enough); shaking grass's
-own species (Audino) is a row with no tier ("Special"), and an outbreak a row or a flag at the outbreak share. More than
-4 methods merge, in turn while they don't fit: the kinds of rustling into one row (shaking grass's icon), each rippling
-method into its plain one, dark grass into grass (Dratini and Poliwhirl need the second step). The preferred times and
-weathers are those where the species' best share, summed over its rows, is the highest; the index keeps them (and the
-rates), but the page shows neither. The page reads its header and the places as it starts, and the shown species' block (at
-most 512 bytes) by range as it shows. **The bottom screen** (drawn into the panels' content window in the panels'
-palette, row 3, over the art `info_area.png`, members 152-154, palette row 10, white under the tab bar): the seasons
-(font 1 label; "All seasons" at x 48 when every place it is at glows white, that is all year everywhere, else the four
-season icons at x 48-168, y 24, coloured for each season it is met in, even all four, grey for the others); up to four
-method rows (y 48, 72, 96, 120: the method's icon at x 16, the levels in font 0 at x 52, the rarity or range in font 1 at
-x 108, the outbreak's badge at x 176); the times (y 136) and weathers (y 152): "All times of day" or "All weathers" at x
-48 when it is met in all five, else five icons at x 48-208, grey where it isn't met. A species never met in the wild
-shows "Not found in the wild". **The icons** (member 159, `tools/paperwhite2/pokedex_area.py` from
-`res/paperwhite2/pokedex_art/area_icons.png`, 160 by 80, 25 slots of 32 by 16 in the plan's order, each on solid white
-so that it blends into the art's white) are drawn into the window's tiles (tile-aligned, 4 by 2 tiles each) and each
-tile's map entry takes its own palette row: the sheet's colours are packed per 8 by 8 tile into three rows of 15, sub
-BG rows 14 and 15 (loaded as the page starts; nothing else on the bottom screen uses them, measured) and 12 (loaded as
-Area shows), with the seasons', times' and weathers' grey copies (each colour's grey by its luminance, 8 levels from 13
-to 27 of 31; white stays white) packed into the same rows. The user's sheet of 2026-11-08 has 27 colours (white among
-them) and its greys 7 (white again among them), 33 different; packed they take 15, 15 and 10 of the rows' 45 places. **The top screen** shows the original AREA page's
+wild, from the hack's encounter data. **The index** (member 158, `encounters.py`'s `area_index`, about 22 KB; `encounters.py
+area-index SPECIES...` prints the areas' terrains and a species' part): a header ("PARE", version 2), each species' block
+offset by its number, the town map's 85 places in its table's order (`res/town_map/order.json`: the zone, the area OBJ's
+place and animation on the Pokédex's map, the place's own position for the player's marker), then each species' block:
+its places (the town map place of each encounter area's zones' parent, and a season mask) and up to 4 rows, in this
+order and only those it has: walking, dark grass, surfing and fishing. Each row joins a normal method and its special
+version (`AREA_SOURCES`): walking is grass and the area's rustling spots (shaking grass, dust clouds or bridge shadows),
+surfing plain and rippling water, fishing the same; dark grass has none. A row holds the row, the rarity tiers,
+seasons, rates as the lowest and highest share in tenths of a percent, times and weather groups with the preferred
+ones, of the normal method, or of the special version where only that applies; flags (outbreak, extra condition,
+wanderer, special: met by the special version too, special only: met only by it); and a walking row's terrain: that
+of every area it is walked in (by grass or rustling spots), or "walking" where they differ. An area's terrain
+(`area_terrain`) is a bridge where it has only bridge shadows to walk in (the Driftveil Drawbridge and the Marvelous
+Bridge; the Village Bridge has grass too, so its shadows are grass's special version), sand on Route 4 and in the Desert
+Resort (`AREA_SAND`), puddles in Icirrus City, the Moor of Icirrus and on Route 8 (`AREA_PUDDLES`), cave floor in the
+dust-cloud areas and the buildings (`AREA_FLOORS`: the Castelia Sewers, Celestial Tower, Dragonspiral Tower's inside,
+Relic Castle, the Strange House), else grass; the lists were checked against the encounter tiles of the areas' zones'
+maps (deep sand; swamp puddles alone, no grass; floors). The species' levels and the union of every context's
+seasons, times and weathers (the special versions' too) head the block. The rates are the runtime's slots
+(`method_candidates` and `slot_shares`, which `encounters.py odds` uses too), computed for every area, method, season
+(where the area's rate for it isn't 0), period and weather group (clear, rain, thunderstorm, snow, sandstorm as the
+Habitat Dex groups them), with the level gate ignored (a party high enough); shaking grass's own species (Audino) has
+no tier ("Special"), and an outbreak counts as its method at the outbreak share, with its flag ("Outbreak" where it
+has no tier; there is no outbreak badge). The preferred times and weathers are those where the species' best share,
+summed over its rows, is the highest; the index keeps them (and the rates), but the page shows neither. The page reads
+its header and the places as it starts, and the shown species' block (at most 512 bytes) by range as it shows. **The
+bottom screen** (drawn into the panels' content window in the panels' palette, row 3, over the art `info_area.png`,
+members 152-154, palette row 10, white under the tab bar): the seasons (font 1 label; "All seasons" at x 48 when every
+place it is at glows white, that is all year everywhere, else the four season icons at x 48-168, y 24, coloured for
+each season it is met in, even all four, grey for the others); up to four rows 24 px apart, centred on the tiles' grid
+in the methods' area (y 48-135, `METHODS_Y` and `METHODS_HEIGHT`: 4 rows at y 48, 3 at 56, 2 at 72, 1 at 88): the row's
+icon at x 24 (walking's by its terrain: grass, cave floor, sand, puddle, bridge or walking), the special marks (the
+icon sheet's fifth slot of its first row, cut in two 16 by 16 halves) at x 8 and x 56 where the special version
+applies, the icon grey where only it applies but on a bridge (whose areas have only shadows), the levels in font 0 at x
+76, the rarity or range in font 1 at x 140; the times (y 136) and weathers (y 152): "All times of day" or "All
+weathers" at x 48 when it is met in all five, else five icons at x 48-208, grey where it isn't met. A species never met
+in the wild shows "Not found in the wild". **The icons** (member 159, `tools/paperwhite2/pokedex_area.py` from
+`res/paperwhite2/pokedex_art/area_icons.png`, 160 by 80, 25 slots of 32 by 16: the seasons and the special marks, the
+times, the weathers, the terrains grass, dark grass, cave floor, sand and bridge, then surf, puddle, fishing, walking
+and an unused slot; each on solid white so that it blends into the art's white) are drawn into the window's tiles
+(tile-aligned, 4 by 2 tiles each, 2 by 2 for a mark) and each tile's map entry takes its own palette row: the sheet's
+colours are packed per 8 by 8 tile into three rows of 15, sub BG rows 14 and 15 (loaded as the page starts; nothing
+else on the bottom screen uses them, measured) and 12 (loaded as Area shows), with every icon's grey copy (each
+colour's grey by its luminance, 8 levels from 13 to 27 of 31; white stays white) packed into the same rows. The sheet of
+2026-11-09 (the user's, with placeholder marks and the old method icons standing in for the new terrains) packs into
+15, 15 and 14 of the rows' 45 places. **The top screen** shows the original AREA page's
 town map (`ARCID_TOWNMAP_GRA` 5 and 7, screens 17 and 16, extended palette 0 into slots 2 and 3) in place of the entry:
 opening it frees the entry's text, type icons and footprint (`PokedexInfo_FreeText`), loads the extended palettes at
 once and reads the characters and screens (about 62 KB, from the heap's tail). The map's characters go over the

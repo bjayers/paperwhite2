@@ -36,6 +36,7 @@ hidden ability's chance and its battle styles (single, double, triple, then 0 fo
 """
 import argparse
 import json
+import re
 import struct
 import sys
 from functools import cache
@@ -470,23 +471,33 @@ def odds(area: str, method: str, season: str, period: str, weather: str, scaled:
 
 # The Pokédex Info page's Area sub-page's index (src/paperwhite2/ov298/paperwhite2_pokedex_info_area.c), a member of
 # the Pokédex's graphics archive (tools/paperwhite2/pokedex_evo.py): each species' places on the town map with their
-# seasons, and its methods with their levels, rarities, rates, seasons, times and weathers
+# seasons, and its rows with their levels, rarities, rates, seasons, times and weathers
 AREA_INDEX_MAGIC = b"PARE"
-AREA_INDEX_VERSION = 1
+AREA_INDEX_VERSION = 2
 AREA_INDEX_HEADER = struct.Struct("<4sHHHxxII")
 AREA_INDEX_PLACE = struct.Struct("<HhhBBBx")
 AREA_INDEX_SPECIES = struct.Struct("<10B")
-AREA_INDEX_ROW = struct.Struct("<4BHH5Bx")
-# The page's methods (AREA_METHOD_* in the C file): rustling is shown by its area's kind of spots. A species with more
-# than AREA_INDEX_ROWS methods has them merged, in AREA_MERGES' order until they fit: its kinds of rustling into one
-# row, "rustling", then each rippling method into its plain one, then dark grass into grass. Rows are in AREA_ORDER
-AREA_METHODS = ["grass", "dark_grass", "shaking_grass", "dust_cloud", "bridge_shadow", "surf", "rippling_surf",
-                "fishing", "rippling_fishing", "rustling"]
-AREA_ORDER = [0, 1, 9, 2, 3, 4, 5, 6, 7, 8]
-AREA_RUSTLING_KINDS = ["shaking_grass", "dust_cloud", "bridge_shadow"]
-AREA_MERGES = [(AREA_RUSTLING_KINDS, "rustling"), (["rippling_surf"], "surf"), (["rippling_fishing"], "fishing"),
-               (["dark_grass"], "grass")]
-AREA_INDEX_ROWS = 4
+AREA_INDEX_ROW = struct.Struct("<4BHH6B")
+# The page's rows (AREA_ROW_* in the C file), in this order, each from a normal method and its special version
+# (AREA_SOURCES: each method's row, and whether it is the special version): walking, by grass or by an area's
+# rustling spots (shaking grass, dust clouds or bridge shadows); dark grass, which has none; surfing, by plain or
+# rippling water; fishing, by plain or rippling water
+AREA_ROWS = ["walking", "dark_grass", "surf", "fishing"]
+AREA_SOURCES = {"grass": (0, False), "dark_grass": (1, False), "rustling": (0, True), "surf": (2, False),
+                "rippling_surf": (2, True), "fishing": (3, False), "rippling_fishing": (3, True)}
+AREA_INDEX_ROWS = len(AREA_ROWS)
+# A walking row's terrain (AREA_TERRAIN_* in the C file), its icon: that of all the areas it is met in by walking or
+# by their rustling spots, "walking" when they differ. An area's terrain (area_terrain): a bridge where it has only
+# bridge shadows to walk in, sand in AREA_SAND's areas, puddles in AREA_PUDDLES', cave floor in a cave (dust clouds)
+# or in AREA_FLOORS' buildings, else grass. The lists name an area and its numbered ones (route_4 and route_4_2), as
+# the encounter tiles of the maps of the areas' zones have them (checked 2026-11-09): Route 4 and the Desert Resort
+# walk on deep sand; Icirrus City, the Moor of Icirrus and Route 8 on swamp puddles alone, without grass; the
+# buildings on floors (Relic Castle's on floors and some sand, shown as floor)
+AREA_TERRAINS = ["grass", "cave_floor", "sand", "puddle", "bridge", "walking"]
+AREA_SAND = ["route_4", "desert_resort"]
+AREA_PUDDLES = ["icirrus_city", "moor_of_icirrus", "route_8"]
+AREA_FLOORS = ["castelia_sewers", "celestial_tower", "dragonspiral_tower_3", "dragonspiral_tower_4", "relic_castle",
+               "strange_house"]
 # The weather groups, as the Habitat Dex's filters have them (paperwhite2_habitat_dex.c's sWeatherFilterBits); each is
 # computed in its first weather
 AREA_WEATHERS = {"clear": ["WEATHER_SUNNY", "WEATHER_FLUTTER", "WEATHER_TINT_9", "WEATHER_TINT_10", "WEATHER_TINT_11",
@@ -496,7 +507,9 @@ AREA_WEATHERS = {"clear": ["WEATHER_SUNNY", "WEATHER_FLUTTER", "WEATHER_TINT_9",
                  "sandstorm": ["WEATHER_SANDSTORM", "WEATHER_SANDSTORM_2"]}
 # A row's tier for an outbreak's or shaking grass's own species, which have none
 AREA_TIER_NONE = 0xFF
-AREA_FLAG_OUTBREAK, AREA_FLAG_RULE, AREA_FLAG_WANDERER = 1, 2, 4
+# A row's flags: met in outbreaks, under a rule, wandering the overworld, met by the row's special version too, and
+# met only by it
+AREA_FLAG_OUTBREAK, AREA_FLAG_RULE, AREA_FLAG_WANDERER, AREA_FLAG_SPECIAL, AREA_FLAG_SPECIAL_ONLY = 1, 2, 4, 8, 16
 # The most bytes a species' block has, the page's buffer, and the most places it has, the page's OBJs
 # (AREA_BLOCK_MAX and AREA_PLACE_MAX in the C file)
 AREA_BLOCK_MAX = 512
@@ -526,25 +539,46 @@ def area_places() -> tuple[list[dict], dict[str, list[int]]]:
     return places, found
 
 
+def area_in(area: str, names: list[str]) -> bool:
+    """Whether an area is one of names or a numbered one of them (route_4_2 of route_4)."""
+    return any(area == name or re.fullmatch(rf"{name}_\d+", area) for name in names)
+
+
+def area_terrain(area: str, source: dict) -> str:
+    """An area's walking terrain (AREA_TERRAINS; the lists above say how)."""
+    walks = any(rates.get(method, 0) for rates in source["rates"].values() for method in ("grass", "dark_grass"))
+    if source["spots"] == "shadow" and not walks:
+        return "bridge"
+    if area_in(area, AREA_SAND):
+        return "sand"
+    if area_in(area, AREA_PUDDLES):
+        return "puddle"
+    if source["spots"] == "dust" or area_in(area, AREA_FLOORS):
+        return "cave_floor"
+    return "grass"
+
+
 def area_rows(data: Data) -> dict[int, dict]:
-    """Each species' places (a season mask by place) and its methods (AREA_METHODS): for each, every context it
-    appears in (area, season, period, weather group, its share there in percent), its tiers and flags. The level gate
-    is ignored, as for a party high enough; outbreaks are rows of their own methods, at the outbreak share."""
+    """Each species' places (a season mask by place) and its sources (AREA_SOURCES' row and special flag): for each,
+    every context it appears in (area, season, period, weather group, its share there in percent), its tiers, flags
+    and the terrains of its areas. The level gate is ignored, as for a party high enough; outbreaks are contexts of
+    their own methods, at the outbreak share."""
     rules = rules_from_data(data)
     weathers = conditions.weathers()
     groups = [weathers[names[0]] for names in AREA_WEATHERS.values()]
     _, places = area_places()
     found: dict[int, dict] = {}
-    rustling = METHODS.index("rustling")
 
     def note(number, area, method, season, period, group, share, tiers, flags):
         entry = found.setdefault(number, {"places": {}, "rows": {}})
         for place in places.get(area, []):
             entry["places"][place] = entry["places"].get(place, 0) | 1 << season
-        row = entry["rows"].setdefault(method, {"contexts": [], "tiers": set(), "flags": 0})
+        row = entry["rows"].setdefault(AREA_SOURCES[method], {"contexts": [], "tiers": set(), "flags": 0,
+                                                              "terrains": set()})
         row["contexts"].append((area, season, period, group, share))
         row["tiers"] |= tiers
         row["flags"] |= flags
+        row["terrains"].add(area_terrain(area, data.areas[area]))
 
     for area, entries in candidates(data).items():
         source = data.areas[area]
@@ -554,7 +588,6 @@ def area_rows(data: Data) -> dict[int, dict]:
         # Without a weather in its candidates, an area's slots are the same in every weather
         weathered = any(e[1] for e in plain)
         for method in range(len(METHODS)):
-            shown = AREA_METHODS.index(AREA_RUSTLING_KINDS[spots] if method == rustling else METHODS[method])
             for season, name in enumerate(SEASONS):
                 if not source["rates"].get("all_year", source["rates"].get(name, {})).get(METHODS[method], 0):
                     continue
@@ -572,7 +605,7 @@ def area_rows(data: Data) -> dict[int, dict]:
                         shares, tiers = by_group[group if weathered else 0]
                         for number, share in shares.items():
                             if share > 0:
-                                note(number, area, shown, season, period, group, share,
+                                note(number, area, METHODS[method], season, period, group, share,
                                      tiers.get(number, {AREA_TIER_NONE}), AREA_FLAG_RULE if number in ruled else 0)
     share = data.settings["outbreak_share"]
     for folder, entry in data.species.items():
@@ -581,13 +614,11 @@ def area_rows(data: Data) -> dict[int, dict]:
         for index, outbreak in enumerate(entry.get("outbreaks", [])):
             at = f"{where}: outbreaks[{index}]"
             for area in data.places(outbreak["places"], at):
-                spots = SPOTS.index(data.areas[area]["spots"])
                 for method in outbreak["methods"]:
-                    shown = AREA_METHODS.index(AREA_RUSTLING_KINDS[spots] if method == "rustling" else method)
                     for season in outbreak["seasons"]:
                         for period in outbreak["times"]:
                             for group in range(len(groups)):
-                                note(number, area, shown, SEASONS.index(season), TIMES.index(period), group, share,
+                                note(number, area, method, SEASONS.index(season), TIMES.index(period), group, share,
                                      {AREA_TIER_NONE}, AREA_FLAG_OUTBREAK)
         if "overworld" in entry and number in found:
             for row in found[number]["rows"].values():
@@ -601,51 +632,54 @@ def preferred(best: list[float], available: int) -> int:
     return sum(1 << i for i, value in enumerate(best) if available >> i & 1 and value > top - AREA_SAME_SHARE)
 
 
-def area_merged_rows(rows: dict) -> dict:
-    """A species' rows, merged while there are more than the page's (AREA_MERGES, in turn)."""
-    rows = dict(rows)
-    for sources, target in AREA_MERGES:
-        if len(rows) <= AREA_INDEX_ROWS:
-            break
-        methods = [AREA_METHODS.index(name) for name in [target, *sources] if AREA_METHODS.index(name) in rows]
-        if len(methods) < 2:
+def area_shown_rows(entry: dict) -> list[dict]:
+    """A species' rows as the page shows them, in AREA_ROWS' order: each its row, its terrain (AREA_TERRAINS, for
+    walking), its flags (AREA_FLAG_SPECIAL where the special version applies, AREA_FLAG_SPECIAL_ONLY where only it
+    does), and the contexts and tiers of the normal method, or of the special version's where only it applies."""
+    shown = []
+    for row in range(len(AREA_ROWS)):
+        normal, special = entry["rows"].get((row, False)), entry["rows"].get((row, True))
+        if normal is None and special is None:
             continue
-        merged = [rows.pop(method) for method in methods]
-        flags = 0
-        for row in merged:
-            flags |= row["flags"]
-        rows[AREA_METHODS.index(target)] = {"contexts": [c for r in merged for c in r["contexts"]],
-                                            "tiers": set().union(*(r["tiers"] for r in merged)), "flags": flags}
-    return rows
+        flags = (normal or special)["flags"]
+        if special is not None:
+            flags |= AREA_FLAG_SPECIAL | (AREA_FLAG_SPECIAL_ONLY if normal is None else 0)
+        terrains = set().union(*(r["terrains"] for r in (normal, special) if r is not None))
+        terrain = terrains.pop() if len(terrains) == 1 else "walking"
+        source = normal or special
+        shown.append({"row": row, "terrain": terrain if AREA_ROWS[row] == "walking" else "grass", "flags": flags,
+                      "contexts": source["contexts"], "tiers": source["tiers"],
+                      "all": [c for r in (normal, special) if r is not None for c in r["contexts"]]})
+    return shown
 
 
 def area_species_block(entry: dict, levels: dict) -> bytes:
     """A species' block of the index (area_index)."""
-    rows = area_merged_rows(entry["rows"])
-    if len(rows) > AREA_INDEX_ROWS:
-        raise DataError(f"{len(rows)} methods after merging, more than the page's {AREA_INDEX_ROWS} rows")
+    rows = area_shown_rows(entry)
     packed = []
     best_times = [0.0] * len(TIMES)
     best_weathers = [0.0] * len(AREA_WEATHERS)
     seasons_all = times_all = weathers_all = flags_all = 0
-    for method in sorted(rows, key=AREA_ORDER.index):
-        row = rows[method]
+    for row in rows:
         contexts = row["contexts"]
         seasons = sum({1 << c[1] for c in contexts})
         times = sum({1 << c[2] for c in contexts})
         weathers = sum({1 << c[3] for c in contexts})
         row_times = [max([c[4] for c in contexts if c[2] == t], default=0) for t in range(len(TIMES))]
         row_weathers = [max([c[4] for c in contexts if c[3] == g], default=0) for g in range(len(AREA_WEATHERS))]
-        best_times = [a + b for a, b in zip(best_times, row_times)]
-        best_weathers = [a + b for a, b in zip(best_weathers, row_weathers)]
+        # The species' conditions are those of every context, the special versions' too
+        every = row["all"]
+        best_times = [a + max([c[4] for c in every if c[2] == t], default=0) for t, a in enumerate(best_times)]
+        best_weathers = [a + max([c[4] for c in every if c[3] == g], default=0) for g, a in enumerate(best_weathers)]
         tiers = sorted(row["tiers"])
         rates = [c[4] for c in contexts]
-        packed.append(AREA_INDEX_ROW.pack(method, tiers[0], tiers[-1], seasons, max(1, round(min(rates) * 10)),
+        packed.append(AREA_INDEX_ROW.pack(row["row"], tiers[0], tiers[-1], seasons, max(1, round(min(rates) * 10)),
                                           max(1, round(max(rates) * 10)), times, preferred(row_times, times),
-                                          weathers, preferred(row_weathers, weathers), row["flags"]))
-        seasons_all |= seasons
-        times_all |= times
-        weathers_all |= weathers
+                                          weathers, preferred(row_weathers, weathers), row["flags"],
+                                          AREA_TERRAINS.index(row["terrain"])))
+        seasons_all |= sum({1 << c[1] for c in every})
+        times_all |= sum({1 << c[2] for c in every})
+        weathers_all |= sum({1 << c[3] for c in every})
         flags_all |= row["flags"]
     places = sorted(entry["places"].items())
     head = AREA_INDEX_SPECIES.pack(len(places), len(packed), levels["min"], levels["max"], seasons_all, times_all,
@@ -696,20 +730,21 @@ def area_index(data: Data | None = None) -> bytes:
 
 
 def area_index_check(names: list[str]):
-    """Prints the index's size, the species with more methods than the page's rows, and the blocks of the species
-    named (SPECIES_* or folder names)."""
+    """Prints the index's size, each area's terrain, and the blocks of the species named (SPECIES_* or folder
+    names)."""
     data = Data()
     index = area_index(data)
     numbers = species_numbers()
     count = AREA_INDEX_HEADER.unpack_from(index, 0)[2]
     offsets = struct.unpack_from(f"<{count + 1}I", index, AREA_INDEX_HEADER.size)
-    rows = area_rows(data)
-    by_number = {n: name for name, n in numbers.items()}
-    over = [f"{by_number.get(n, n)} ({len(e['rows'])})" for n, e in sorted(rows.items())
-            if len(e["rows"]) > AREA_INDEX_ROWS]
     print(f"area index: {len(index)} bytes, {sum(1 for i in range(count) if offsets[i + 1] > offsets[i])} species, "
           f"largest block {max(offsets[i + 1] - offsets[i] for i in range(count))} bytes")
-    print(f"more than {AREA_INDEX_ROWS} methods: {', '.join(over) or 'none'}")
+    terrains: dict[str, list[str]] = {}
+    for area, source in data.areas.items():
+        terrains.setdefault(area_terrain(area, source), []).append(area)
+    for terrain in AREA_TERRAINS:
+        if terrain in terrains and terrain != "grass":
+            print(f"{terrain}: {', '.join(sorted(terrains[terrain]))}")
     for name in names:
         number = numbers.get(name if name.startswith("SPECIES_") else f"SPECIES_{name.upper()}")
         if number is None:
@@ -729,7 +764,10 @@ def area_index_check(names: list[str]):
         for i in range(head[1]):
             r = AREA_INDEX_ROW.unpack_from(index, cursor + AREA_INDEX_ROW.size * i)
             tiers = "-".join(dict.fromkeys(data.tiers[t] if t < len(data.tiers) else "none" for t in (r[1], r[2])))
-            print(f"  {AREA_METHODS[r[0]]:16} {tiers:18} {r[4] / 10:.1f}-{r[5] / 10:.1f}%  seasons {r[3]:04b}  "
+            special = ("only special" if r[10] & AREA_FLAG_SPECIAL_ONLY else
+                       "special" if r[10] & AREA_FLAG_SPECIAL else "")
+            shown = AREA_TERRAINS[r[11]] if AREA_ROWS[r[0]] == "walking" else AREA_ROWS[r[0]]
+            print(f"  {shown:12} {special:12} {tiers:18} {r[4] / 10:.1f}-{r[5] / 10:.1f}%  seasons {r[3]:04b}  "
                   f"times {r[6]:05b}/{r[7]:05b}  weathers {r[8]:05b}/{r[9]:05b}  flags {r[10]}")
 
 

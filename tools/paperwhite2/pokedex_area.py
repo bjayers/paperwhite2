@@ -6,9 +6,10 @@ and the top screen's box of the current Pokémon, another (box_member, below).
     pokedex_area.py check     # how the sheet's tiles fit the palette rows, and each icon's colours
 
 The source is res/paperwhite2/pokedex_art/area_icons.png, 160 by 80: 25 slots of 32 by 16, five a row: the seasons
-(spring, summer, autumn, winter, then an empty slot), the times (morning, day, evening, night, late night), the
-weather groups (clear, rain, thunderstorm, snow, sandstorm), the methods grass, dark grass, shaking grass, dust cloud,
-bridge shadow, and surf, rippling surf, fishing, rippling fishing, then the outbreak's badge (ICON_* in
+(spring, summer, autumn, winter, then the two 16 by 16 special marks, the left one drawn left of a method's icon and
+the right one right of it), the times (morning, day, evening, night, late night), the weather groups (clear, rain,
+thunderstorm, snow, sandstorm), the walking terrains grass, dark grass, cave floor, sand, bridge, and surf, puddle,
+fishing, walking (where a row's terrains differ), then an unused slot (ICON_* in
 src/paperwhite2/ov298/paperwhite2_pokedex_info_area.c). Its colours count, not its indices: each is rounded to the
 DS's 5 bits an axis, and transparent pixels (alpha below 128) show the panel behind; the user's sheet has
 none, its icons on white, which the page's art has under them.
@@ -16,14 +17,14 @@ none, its icons on white, which the page's art has under them.
 The page draws an icon's 4 by 2 tiles into its window on the sub engine's BG 7, each tile in a palette row of its own,
 so the sheet can have more colours than one row holds: its tiles are packed into ICON_ROWS rows of 15 colours (the
 page's rows 14, 15 and 12, AREA_ICON_PALETTES in the C file), each tile in a row that has all of its colours. A
-season, time or weather the Pokémon isn't met in shows greyed out: a second copy of the first three rows' icons in
-light greys, each colour's grey by its luminance (GREY_LEVELS of them, from GREY_DARK to GREY_LIGHT of 31), packed
-into the same rows. The member:
+season, time or weather the Pokémon isn't met in shows greyed out, and so does a row's icon where it is met only by
+the row's special version: a second copy of every icon in light greys, each colour's grey by its luminance
+(GREY_LEVELS of them, from GREY_DARK to GREY_LIGHT of 31), packed into the same rows. The member:
 
 - the rows' colours, ICON_ROWS times 16 (BGR555; color 0 unused);
 - a byte for each tile of the 25 icons (8 each, in order, the top row of 4 first) with its row, then the same for the
-  15 grey icons;
-- the 25 icons' tiles (4bpp, 32 bytes each), then the 15 grey icons'.
+  25 grey icons;
+- the 25 icons' tiles (4bpp, 32 bytes each), then the 25 grey icons'.
 
 check fails, and says which icons have the most colours, if the tiles don't fit the rows.
 
@@ -51,8 +52,8 @@ SCREEN_WIDTH, SCREEN_HEIGHT = 256, 192
 ICON_WIDTH, ICON_HEIGHT = 32, 16
 ICONS_ACROSS, ICONS_DOWN = 5, 5
 ICON_COUNT = ICONS_ACROSS * ICONS_DOWN
-# The seasons', times' and weathers' icons, which have grey copies
-GREY_ICONS = 3 * ICONS_ACROSS
+# The icons that have grey copies: all of them
+GREY_ICONS = ICON_COUNT
 TILE = 8
 TILES_PER_ICON = (ICON_WIDTH // TILE) * (ICON_HEIGHT // TILE)
 ICON_ROWS = 3
