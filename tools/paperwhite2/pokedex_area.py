@@ -3,7 +3,10 @@
 that tools/paperwhite2/pokedex_evo.py adds (docs/paperwhite2/plugins.md, Pokédex; docs/paperwhite2/design/pokedex-area.md),
 and the top screen's box of the current Pokémon, another (box_member, below).
 
-    pokedex_area.py check     # how the sheet's icons fit the palette rows, and each icon's colours
+    pokedex_area.py check [PNG] [--preview OUT]
+        # how the sheet's icons (area_icons.png, or another sheet such as the editor's import) fit the palette rows,
+        # and each icon's colours; with --preview, OUT is the sheet as the page shows it (on the panels' grey, the
+        # colours rounded to the DS's) over its grey copies, 160 by 160
 
 The source is res/paperwhite2/pokedex_art/area_icons.png, 160 by 80: 25 slots of 32 by 16, five a row: the seasons
 (spring, summer, autumn, winter, then the two 16 by 16 special marks, the left one drawn left of a method's icon and
@@ -19,15 +22,17 @@ rows (the page's sub OBJ rows 14, 15 and 4, sIconObjRows in the C file), each ic
 colours. The special marks' slot becomes two icons, the left mark (the slot's left half) in the slot and the right
 mark (its right half) after the 25 slots, each in its icon's left half with the right half clear. A season, time or
 weather the Pokémon isn't met in shows greyed out, and so does a row's icon where it is met only by the row's special
-version: a second copy of every icon in light greys, each colour's grey by its luminance (GREY_LEVELS of them, from
-GREY_DARK to GREY_LIGHT of 31), its clear pixels clear, packed into the same rows. The member:
+version: a second copy of every icon in very light greys, each colour's grey by its luminance (GREY_LEVELS of them,
+from GREY_DARK to GREY_LIGHT of 31, just below the panels' 29, so that a grey icon is barely there: disabled, not a
+grey icon), its clear pixels clear, packed into the same rows. The member:
 
 - the rows' colours, ICON_ROWS times 16 (BGR555; color 0 unused);
 - a byte for each of the 26 icons with its row, then the same for the 26 grey icons;
 - the 26 icons' tiles (8 each, 4bpp, 32 bytes each, the top row of 4 first: a 32 by 16 OBJ's in 1D mapping), then
   the 26 grey icons'.
 
-check fails, and says which icons have the most colours, if the icons don't fit the rows.
+check fails, and names the icons that have more colours than a row or else the ones with the most, if the icons don't
+fit the rows.
 
 The box is res/paperwhite2/pokedex_art/area_top_box.png, a whole top screen (256 by 192, indexed in 16 colours or
 fewer, index 0 transparent) with the box's pixels in BOX_X to the right edge and BOX_Y to BOX_Y + BOX_HEIGHT - 1, and
@@ -42,7 +47,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-from tools.data.nitro_2d import read_indexed_png  # noqa: E402
+from tools.data.nitro_2d import read_indexed_png, write_rgba_png  # noqa: E402
 from tools.paperwhite2.screen_art import read_png  # noqa: E402
 
 ICONS = ROOT / "res" / "paperwhite2" / "pokedex_art" / "area_icons.png"
@@ -61,9 +66,15 @@ TILE = 8
 TILES_PER_ICON = (ICON_WIDTH // TILE) * (ICON_HEIGHT // TILE)
 ICON_ROWS = 3
 ROW_COLORS = 15
-GREY_LEVELS = 8
-GREY_DARK, GREY_LIGHT = 13, 27
+GREY_LEVELS = 4
+GREY_DARK, GREY_LIGHT = 22, 27
 WHITE = (31, 31, 31)
+# The panels' grey behind the icons (info_area.png's), for the preview
+PANEL = (29, 29, 29)
+# The slots' names, by rows (ICON_* in the C file)
+ICON_NAMES = ("spring", "summer", "autumn", "winter", "special marks", "morning", "day", "evening", "night",
+              "late night", "clear", "rain", "thunderstorm", "snow", "sandstorm", "grass", "dark grass", "cave floor",
+              "sand", "bridge", "surf", "puddle", "fishing", "walking", "unused")
 # Packing is a search over the tiles' orders, from a fixed seed so that the build always packs them the same
 PACK_TRIES = 4000
 PACK_SEED = 1
@@ -78,8 +89,8 @@ def to5(color):
 
 
 def grey(color):
-    """A colour's light grey by its luminance (Rec. 601), one of GREY_LEVELS; white, the sheet's background, stays
-    white, so that a grey icon blends into the page's white as a coloured one does."""
+    """A colour's very light grey by its luminance (Rec. 601), one of GREY_LEVELS, darker colours darker; white, the
+    sheet's background, stays white, so that a grey icon blends into the page's white as a coloured one does."""
     if color == WHITE:
         return color
     r, g, b = color
@@ -89,13 +100,22 @@ def grey(color):
     return value, value, value
 
 
-def read_icons():
+def read_sheet(path=ICONS):
+    """The sheet's width, height and pixels as read_png reads them, checked for its size."""
+    try:
+        width, height, pixels = read_png(path)
+    except (ValueError, OSError) as error:
+        raise IconError(str(error)) from error
+    if (width, height) != (ICON_WIDTH * ICONS_ACROSS, ICON_HEIGHT * ICONS_DOWN):
+        raise IconError(f"{Path(path).name}: {width} by {height}, not {ICON_WIDTH * ICONS_ACROSS} by "
+                        f"{ICON_HEIGHT * ICONS_DOWN}")
+    return width, height, pixels
+
+
+def read_icons(path=ICONS):
     """Each icon's pixels, 32 by 16 colours by rows (None where transparent): the slots', the left mark in the special
     marks' slot and the right mark after them; and the grey icons' in the same order."""
-    width, height, pixels = read_png(ICONS)
-    if (width, height) != (ICON_WIDTH * ICONS_ACROSS, ICON_HEIGHT * ICONS_DOWN):
-        raise IconError(f"{ICONS.name}: {width} by {height}, not {ICON_WIDTH * ICONS_ACROSS} by "
-                        f"{ICON_HEIGHT * ICONS_DOWN}")
+    width, height, pixels = read_sheet(path)
 
     def color(x, y):
         return None if pixels[y * width + x] is None else to5(pixels[y * width + x])
@@ -143,14 +163,23 @@ def pack(icons):
     return None
 
 
-def member():
-    icons, greys = read_icons()
+def icon_name(index):
+    return ("left mark", "right mark")[index == ICON_COUNT] if index in (SPECIAL_SLOT, ICON_COUNT) else ICON_NAMES[index]
+
+
+def member(path=ICONS):
+    icons, greys = read_icons(path)
     images = icons + greys
     packed = pack(images)
     if packed is None:
-        worst = sorted(range(ICON_COUNT), key=lambda i: -len({c for c in icons[i] if c is not None}))[:5]
-        raise IconError(f"{ICONS.name}: its icons don't fit {ICON_ROWS} palette rows of {ROW_COLORS} colours; the "
-                        f"icons with the most colours are slots {', '.join(map(str, worst))}")
+        counts = [len({c for c in icon if c is not None}) for icon in icons]
+        over = [i for i in range(IMAGE_COUNT) if counts[i] > ROW_COLORS]
+        worst = over or sorted(range(IMAGE_COUNT), key=lambda i: -counts[i])[:5]
+        names = ", ".join(f"{icon_name(i)} ({counts[i]})" for i in worst)
+        raise IconError(f"{Path(path).name}: its icons don't fit {ICON_ROWS} palette rows of {ROW_COLORS} colours "
+                        f"with their grey copies; " + (f"these have more than {ROW_COLORS}: {names}" if over else
+                        f"the icons with the most colours: {names}; fewer colours in all, or icons sharing theirs, "
+                        f"fit better"))
     rows, palettes = packed
     out = bytearray()
     for palette in palettes:
@@ -189,14 +218,34 @@ def box_member():
     return bytes(out)
 
 
+def preview(path, out):
+    """Writes the sheet as the page shows it, on the panels' grey in the DS's colours, over its grey copies."""
+    width, height, pixels = read_sheet(path)
+    rgba = bytearray()
+    for convert in (lambda c: c, grey):
+        for c in pixels:
+            r, g, b = convert(to5(c)) if c is not None else PANEL
+            rgba += bytes((r * 255 // 31, g * 255 // 31, b * 255 // 31, 255))
+    Path(out).write_bytes(write_rgba_png(width, height * 2, bytes(rgba)))
+
+
 def main():
-    if sys.argv[1:] != ["check"]:
+    args = sys.argv[1:]
+    out = None
+    if "--preview" in args and args.index("--preview") + 1 < len(args):
+        at = args.index("--preview")
+        out = args[at + 1]
+        del args[at:at + 2]
+    if not args or args[0] != "check" or len(args) > 2:
         sys.exit(__doc__)
+    path = Path(args[1]) if len(args) == 2 else ICONS
     try:
-        data = member()
+        if out:
+            preview(path, out)
+        data = member(path)
     except IconError as error:
         sys.exit(f"pokedex_area.py: {error}")
-    icons, _ = read_icons()
+    icons, _ = read_icons(path)
     counts = [len({c for c in icon if c is not None}) for icon in icons]
     rows = data[ICON_ROWS * 32:ICON_ROWS * 32 + 2 * IMAGE_COUNT]
     used = [sum(1 for c in struct.unpack_from("<16H", data, r * 32)[1:] if c) for r in range(ICON_ROWS)]

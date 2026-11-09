@@ -89,7 +89,7 @@ what it reads, including the scripts' gifts and static battles and the swarm tab
 
 ## Graphics & Palettes
 
-The game's 2D art (`src/modules/palettes/`), in three pages. The art itself is drawn in an image editor such as
+The game's 2D art (`src/modules/palettes/`), in four pages. The art itself is drawn in an image editor such as
 Aseprite; these turn it into the game's files and set its colors.
 
 ### Screens
@@ -101,6 +101,16 @@ takes a PNG of the screen's size (256×192 for a whole DS screen) and shows it a
 rows it takes and each 8×8 tile that can't be drawn, marked on the preview. **Apply to the game's files** writes the
 tiles, screens and colors (`tools/paperwhite2/screen_art.py`, through `POST /api/art/convert`), and the next build packs
 them. **Edit its palette** opens the target's palette on the other page.
+
+### Sprite sheets
+
+Sheets of OBJ art that a build tool packs whole from one PNG (`SPRITE_SHEETS` in `server/main.ts`): so far the
+Pokédex Area page's icons (`res/paperwhite2/pokedex_art/area_icons.png`, 160×80, packed by
+`tools/paperwhite2/pokedex_area.py`). Each shows as the game will (on the page's grey, over its very light grey
+copies) with its tool's check. **Download PNG** gives the sheet to draw over; **Import PNG** takes a PNG of the
+sheet's size and runs the tool's `check` on it (`POST /api/sprite-sheets/check`): it says how the colors fit the
+palette rows, or names the icons with too many colors; **Apply to the game's files** writes it over the sheet's PNG,
+and the next build packs it.
 
 ### Palettes
 

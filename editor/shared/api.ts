@@ -107,6 +107,25 @@ export type ServerEvent =
 /** Mutating requests carry this header; a page on another site can't send it without permission. */
 export const WRITE_HEADER = "X-Paperwhite-Editor";
 
+/** A sprite sheet that a build tool packs whole (GET /api/sprite-sheets): its PNG under res/ and its size. */
+export interface SpriteSheet {
+  name: string;
+  title: string;
+  path: string;
+  tool: string;
+  width: number;
+  height: number;
+  description: string;
+}
+
+/** A sheet's check by its tool (POST /api/sprite-sheets/check): its last line, and the sheet as the game shows it. */
+export interface SpriteSheetCheck {
+  ok: boolean;
+  message: string;
+  written: boolean;
+  preview: string | null;
+}
+
 /** What the art converter (tools/paperwhite2/screen_art.py) says about art for a target (POST /api/art/convert). */
 export interface ArtReport {
   target: string;

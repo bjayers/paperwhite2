@@ -8,7 +8,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import { extname, join, resolve, sep } from "node:path";
 import { fileText, parseJson, setIn, JsonSyntaxError } from "../shared/json.ts";
 import { splitSchemaId } from "../shared/schema.ts";
-import { WRITE_HEADER, type DataFile, type ProjectInfo, type SaveRequest, type SaveResult, type ServerEvent } from "../shared/api.ts";
+import { WRITE_HEADER, type DataFile, type SpriteSheet, type ProjectInfo, type SaveRequest, type SaveResult, type ServerEvent } from "../shared/api.ts";
 import { Builder } from "./build.ts";
 import { narcMember } from "./narc.ts";
 import { Git } from "./git.ts";
@@ -251,6 +251,32 @@ const routes: Record<string, Handler> = {
     const png = project.abs(`${CGEAR_PICTURES_DIR}/${name}.png`);
     if (existsSync(png)) rmSync(png);
     json(res, { pictures: current.filter((n) => n !== name) });
+  },
+  // The sprite sheets that build tools pack whole (SPRITE_SHEETS below), such as the Pokédex Area page's icons
+  "GET /api/sprite-sheets": (_req, res) => json(res, SPRITE_SHEETS),
+  // A sheet checked by its tool ({ name, data?: base64 PNG, write? }; without data, the sheet in res/): the tool's
+  // message, whether it packs, and its preview; with write and a sheet that packs, the PNG replaces the sheet's file
+  "POST /api/sprite-sheets/check": async (req, res) => {
+    const body = (await readJson(req)) as { name: string; data?: string; write?: boolean };
+    const sheet = SPRITE_SHEETS.find((s) => s.name === body.name);
+    if (!sheet) return error(res, 404, "No such sprite sheet");
+    const dir = mkdtempSync(join(tmpdir(), "paperwhite-sheet-"));
+    try {
+      const path = body.data === undefined ? project.abs(sheet.path) : join(dir, "sheet.png");
+      if (body.data !== undefined) writeFileSync(path, Buffer.from(body.data, "base64"));
+      const preview = join(dir, "preview.png");
+      const run = await python.tool(sheet.tool, ["check", path, "--preview", preview]);
+      const ok = run.code === 0;
+      const message = (ok ? run.stdout : run.stderr).trim().split("\n").pop()?.replace(/^[a-z_]+\.py: /, "") ?? "";
+      let written = false;
+      if (ok && body.write && body.data !== undefined) {
+        await project.writeAtomic(sheet.path, readFileSync(path));
+        written = true;
+      }
+      json(res, { ok, message, written, preview: existsSync(preview) ? readFileSync(preview).toString("base64") : null });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   },
   "GET /api/constants": (_req, res) => json(res, python.constants()),
   // Every flag or variable with its name, status, uses and documentation (server/usage.ts); again=1 runs the tools again
@@ -639,6 +665,26 @@ function error(res: ServerResponse, status: number, message: string) {
   res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
   res.end(JSON.stringify({ error: message }));
 }
+
+/** Sprite sheets that a build tool packs whole: the tool's `check PNG --preview OUT` says whether a sheet packs (exit
+ * 0) or why not, and writes the sheet as the game shows it. */
+const SPRITE_SHEETS: SpriteSheet[] = [
+  {
+    name: "area_icons",
+    title: "Pokédex Area icons",
+    path: "res/paperwhite2/pokedex_art/area_icons.png",
+    tool: "tools/paperwhite2/pokedex_area.py",
+    width: 160,
+    height: 80,
+    description: "The Pokédex Info page's Area icons: 25 slots of 32×16, five a row: the seasons (spring, summer, " +
+      "autumn, winter) and the special marks (the left mark in the slot's left half, the right mark in its right " +
+      "half); the times (morning, day, evening, night, late night); the weathers (clear, rain, thunderstorm, snow, " +
+      "sandstorm); grass, dark grass, cave floor, sand, bridge; surf, puddle, fishing, walking and an unused slot. " +
+      "Transparent pixels show the page behind. Each icon's colors must fit one of three sub OBJ palette rows of 15, " +
+      "with every icon's very light grey copy (shown where a season, time or weather isn't met); the build packs " +
+      "them from this PNG.",
+  },
+];
 
 const CGEAR_PICTURES_TOOL = "tools/paperwhite2/cgear_pictures.py";
 const CGEAR_PICTURES_DIR = "res/paperwhite2/cgear_pictures";

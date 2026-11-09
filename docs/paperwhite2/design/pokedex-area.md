@@ -279,7 +279,8 @@ The details are in `docs/paperwhite2/plugins.md` (Pokédex, Area). Where the bui
   has no label: icons at x 52, 92, 132, 172, y 22, "All seasons" centred (x 128, y 27). Rows 19 px apart, centred in
   the methods' box (y 46-120): rows at y 47/66/85/104 (4), 56/75/94 (3), 66/85 (2), 75 (1), each row's left mark,
   icon and right mark at x 13, 29 and 61 at the row's own y (the mockup's yellow boxes); levels x 88 at the row's y
-  (font 0), rarity x 159, y + 4 (font 1). "Time" and "Weather" at x 17, y 134 and 151 (font 1); times' icons y 129,
+  (font 0), rarity x 159, y + 4 (font 1) (2026-11-09 later: x 86 and 157, and ranges with spaces, "Common - Rare";
+  the longest, "Uncommon - Very rare", ends at x 246, inside the box's right edge, 249). "Time" and "Weather" at x 17, y 134 and 151 (font 1); times' icons y 129,
   weathers' y 146, both at x 61, 97, 133, 169, 205; "All times of day" / "All weathers" at x 64 on the label's line;
   "Not found in the wild" centred at y 76. The bottom box (y 128-162 inside) is the same height as before, moved up
   2 px like the others. `pokedex_area_templates.py` writes `area_reference*.png` (the art with the slots and text where
@@ -297,7 +298,10 @@ The details are in `docs/paperwhite2/plugins.md` (Pokédex, Area). Where the bui
 - **The icon sheet (2026-11-09):** row 1's fifth slot holds the two special marks (left and right halves); row 4 grass,
   dark grass, cave floor, sand, bridge; row 5 surf, puddle, fishing, walking and an unused slot. The user's updated
   sheet (still unfinished: the marks' slot is empty, the old method icons stand in for some terrains) has 27 colours,
-  at most 6 an icon, and transparent pixels; with the greys it fills the three rows' 45 places.
+  at most 6 an icon, and transparent pixels; with the greys it fills the three rows' 45 places. Later the same day the greys were made much lighter (4
+  levels from 22 to 27 of 31, under the panels' 29: barely there, plainly disabled), which also leaves 3 places free
+  (42 of 45); the editor's Graphics & Palettes imports the sheet (its Sprite sheets page, checked by
+  `pokedex_area.py check`).
 - **Main OBJ rows:** the marker in row 0, the glow in rows 1 (all year), 6, 7, 14 and 15 (the plan's 3-7 hold the
   entry's type icons' and footprint's palettes, which stay loaded); the current Pokémon's box in 12 (its party icon)
   and 13 (the box's art, its 16 colours).

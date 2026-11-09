@@ -74,8 +74,8 @@ TIMES_Y = 136
 AREA_C = ROOT / "src/paperwhite2/ov298/paperwhite2_pokedex_info_area.c"
 AREA_ART = ROOT / "res/paperwhite2/pokedex_art/info_area.png"
 # The references' sample rows: icon, levels and rarity, the special marks on each
-REFERENCE_ROWS = (("grass", "Lv. 36-66", "Common-Exotic"), ("dark grass", "Lv. 36-66", "Common-Exotic"),
-                  ("surf", "Lv. 36-66", "Common-Uncommon"), ("fishing", "Lv. 36-66", "Uncommon"))
+REFERENCE_ROWS = (("grass", "Lv. 36-66", "Common - Exotic"), ("dark grass", "Lv. 36-66", "Common - Exotic"),
+                  ("surf", "Lv. 36-66", "Common - Uncommon"), ("fishing", "Lv. 36-66", "Uncommon"))
 TOUCHBAR_Y = 168
 # The top screen's box of the current Pokémon (paperwhite2_pokedex_info_area.c's BOX_*): the box's OBJs, the party
 # icon's 32 by 32 slot, and the name's left and top in font 0 (font 1 for a name that would pass BOX_NAME_RIGHT)
@@ -372,7 +372,7 @@ def sample_rows(font, small):
         grey = bool(row["flags"] & enc.AREA_FLAG_SPECIAL_ONLY) and key != "bridge"
         tiers = sorted(row["tiers"])
         tier = "Special" if tiers[0] == enc.AREA_TIER_NONE else names[tiers[0]] if len(tiers) == 1 else \
-            f"{names[tiers[0]]}-{names[min(tiers[-1], len(names) - 1)]}"
+            f"{names[tiers[0]]} - {names[min(tiers[-1], len(names) - 1)]}"
         shares = [c[4] for c in row["contexts"]]
         low, high = min(shares), max(shares)
         rate = f"{low:.0f}%" if round(low) == round(high) else f"{low:.0f}-{high:.0f}%"

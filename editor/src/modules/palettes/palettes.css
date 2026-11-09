@@ -81,6 +81,9 @@
 .art-problems ul { margin: 4px 0; padding-left: 20px; font-size: 13px; }
 a.pal-file-button { color: inherit; text-decoration: none; }
 
+/* The Sprite sheets page */
+.sheet-canvas { cursor: default; }
+
 /* The Shinies page */
 .shiny-page { flex: 1; }
 .shiny-page .pal-body { align-content: flex-start; }

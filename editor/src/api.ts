@@ -4,7 +4,7 @@ import { WRITE_HEADER, type BuildState, type DataFile, type Entry, type ScanMatc
   type SaveRequest, type SaveResult, type ServerEvent } from "../shared/api.ts";
 import { schemaPart, splitSchemaId, type Schema } from "../shared/schema.ts";
 import type { Usage, UsageKind } from "../server/usage.ts";
-import type { ArtReport } from "../shared/api.ts";
+import type { ArtReport, SpriteSheet, SpriteSheetCheck } from "../shared/api.ts";
 
 /** Whether a request failed because what it asked for isn't there (the server's 404: a file deleted on disk). */
 export function isNotFound(e: unknown): boolean {
@@ -161,6 +161,11 @@ export const api = {
   /** The address of an image under res/. */
   assetUrl: (path: string) => `/api/asset?path=${encodeURIComponent(path)}`,
   constants: () => request<Record<string, number>>("GET", "/api/constants"),
+  /** The sprite sheets that build tools pack whole. */
+  spriteSheets: () => request<SpriteSheet[]>("GET", "/api/sprite-sheets"),
+  /** Checks a sheet by its tool: the PNG given (base64), or the one in res/ without data; with write, saves it. */
+  spriteSheetCheck: (name: string, data?: string, write = false) =>
+    request<SpriteSheetCheck>("POST", "/api/sprite-sheets/check", { name, data, write }),
   /** Converts a PNG or .cgb into a C-Gear picture and adds it; the tool's report. */
   cgearPictureImport: (name: string, file: string, data: string) =>
     request<{ message: string }>("POST", "/api/cgear-pictures/import", { name, file, data }),

@@ -235,15 +235,15 @@ static const u8 sConditionIconX[AREA_TIME_COUNT] = { 61, 97, 133, 169, 205 };
 // The methods' box, where the shown rows are centred ROW_PITCH apart as the mockup's four (y 49, 68, 87 and 106, now
 // 47, 66, 85 and 104): one row at y 75, two at 66 and 85, three at 56, 75 and 94. Each row is its left mark, its icon
 // and its right mark (the marks where its special version applies) at the row's y, x 13, 29 and 61 as the mockup's;
-// the levels in font 0 and the rarity in font 1, both at the mockup's place from the row's y
+// the levels in font 0 and the rarity in font 1 from the row's y, both 2 px left of the mockup's place
 #define METHODS_Y 46
 #define METHODS_HEIGHT 75
 #define ROW_PITCH 19
 #define ROW_MARK_LEFT_X 13
 #define ROW_ICON_X (ROW_MARK_LEFT_X + MARK_WIDTH)
 #define ROW_MARK_RIGHT_X (ROW_ICON_X + ICON_WIDTH)
-#define ROW_LEVELS_X 88
-#define ROW_TIER_X 159
+#define ROW_LEVELS_X 86
+#define ROW_TIER_X 157
 #define ROW_TIER_OFFSET_Y 4
 #define UNKNOWN_X 128
 #define UNKNOWN_Y 76

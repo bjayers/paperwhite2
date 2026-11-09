@@ -1736,8 +1736,9 @@ y 22, coloured for each season it is met in, even all four, grey for the others;
 mockup's), centred in the methods' box (`METHODS_Y` 46, `METHODS_HEIGHT` 75): 4 rows at y 47, 66, 85, 104, 3 at 56,
 75, 94, 2 at 66, 85, 1 at 75; each row's icon at x 29 and the special marks at x 13 and 61 where the special version
 applies, all at the row's y; the icon by walking's terrain (grass, cave floor, sand, puddle, bridge or walking), grey
-where only the special version applies but on a bridge (whose areas have only shadows); the levels in font 0 at x 88,
-the row's y, the rarity or range in font 1 at x 159, 4 below; the labels "Time" (y 134) and "Weather" (y 151) in font 1
+where only the special version applies but on a bridge (whose areas have only shadows); the levels in font 0 at x 86,
+the row's y, the rarity or range ("Common - Rare") in font 1 at x 157, 4 below (the longest, "Uncommon - Very
+rare", 90 px, ends at x 246, inside the box's 249); the labels "Time" (y 134) and "Weather" (y 151) in font 1
 at x 17; the times' icons at y 129 and the weathers' at y 146, both at x 61, 97, 133, 169 and 205, or "All times of
 day" or "All weathers" at x 64 on the label's line when it is met in all five, grey where it isn't met. A species never
 met in the wild shows "Not found in the wild", centred in the methods' box (y 76). **The icons** (member 159,
@@ -1749,14 +1750,17 @@ that its fades darken them: the type icons' cells (`ARCID_APP_MENU_COMMON`, the 
 character resource for all the icons (13 KB of sub OBJ VRAM: 26 icons, the marks' slot cut into a left and a right
 mark, each in its icon's left half, and their grey copies), each OBJ's image proxy at its icon and its palette proxy at
 its row. Each icon has at most 7 colours, so each is packed whole into one of three OBJ palette rows of 15 with every
-icon's grey copy (each colour's grey by its luminance, 8 levels from 13 to 27 of 31; white stays white, clear stays
+icon's grey copy (each colour's grey by its luminance, 4 levels from 22 to 27 of 31, just below the panels' 29, so that
+an unmet one is barely there; white stays white, clear stays
 clear): sub OBJ rows 14 and 15, which nothing uses, and 4, Moves' knob's. They are made as Area shows (made anew for
 each species, at most 26) and freed as another sub-page shows (`PokedexInfoArea_Hide`), as Evo's icons are; the
 palette resource (the type icons' palette's first row, into row 14) is only what the OBJs are made with: Area's VBlank
 task loads the icons' colours into the three rows in the VBlank that shows the OBJs first, keeping the rows' own
 (the knob's), and puts those back in the VBlank that shows another sub-page. Frame-by-frame captures of Area to and
 from Evo and Moves show no in-between frame. The sheet of 2026-11-09 (the user's, still unfinished: the marks' slot
-empty, the old method icons standing in for some terrains) packs into all 45 of the rows' places. **The top screen** shows the original AREA page's
+empty, the old method icons standing in for some terrains) packs into 42 of the rows' 45 places. The editor's Graphics & Palettes has the sheet on its Sprite sheets page:
+import a PNG, see `pokedex_area.py check`'s verdict (it names the icons with too many colours) and a preview, write
+it to `area_icons.png`. **The top screen** shows the original AREA page's
 town map (`ARCID_TOWNMAP_GRA` 5 and 7, screens 17 and 16, extended palette 0 into slots 2 and 3) in place of the entry:
 opening it frees the entry's text, type icons and footprint (`PokedexInfo_FreeText`), loads the extended palettes at
 once and reads the characters and screens (about 62 KB, from the heap's tail). The map's characters go over the
