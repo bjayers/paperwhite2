@@ -26,7 +26,7 @@ from GREY_DARK to GREY_LIGHT of 31, just below the panels' 29, so that a grey ic
 grey icon), its clear pixels clear, packed into the same rows. The member:
 
 - the rows' colours, ICON_ROWS times 16 (BGR555; color 0 unused);
-- a byte for each of the 25 icons with its row, then the same for the 25 grey icons;
+- a byte for each of the 25 icons with its row, then the same for the 25 grey icons, padded to 4 bytes;
 - the 25 icons' tiles (8 each, 4bpp, 32 bytes each, the top row of 4 first: a 32 by 16 OBJ's in 1D mapping), then
   the 25 grey icons'.
 
@@ -182,6 +182,8 @@ def member(path=ICONS):
         colors = [0] + [r | g << 5 | b << 10 for r, g, b in palette]
         out += struct.pack("<16H", *(colors + [0] * (16 - len(colors))))
     out += bytes(rows)
+    # Padded to 4 bytes, as the page copies the tiles by the word (ICON_TILES_OFFSET in the C file)
+    out += bytes(-len(out) % 4)
     for image, row in zip(images, rows):
         index = {c: i + 1 for i, c in enumerate(palettes[row])}
         for tile in tiles(image):

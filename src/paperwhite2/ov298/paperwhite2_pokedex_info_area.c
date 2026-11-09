@@ -183,11 +183,12 @@ enum {
 #define ICON_HEIGHT 16
 #define ICON_SIZE (ICON_WIDTH * ICON_HEIGHT / 2)
 #define ICON_CHARS_SIZE (ICON_COUNT * 2 * ICON_SIZE)
-// The member: the icons' palette rows' colours, each icon's row (the icons', then the grey ones'), and their tiles
+// The member: the icons' palette rows' colours, each icon's row (the icons', then the grey ones'), padded to 4 bytes
+// as the tiles are copied by the word, and their tiles
 #define ICON_PALETTE_ROWS 4
 #define PALETTE_SIZE 0x20
 #define ICON_ROWS_OFFSET (ICON_PALETTE_ROWS * PALETTE_SIZE)
-#define ICON_TILES_OFFSET (ICON_ROWS_OFFSET + ICON_COUNT * 2)
+#define ICON_TILES_OFFSET ((ICON_ROWS_OFFSET + ICON_COUNT * 2 + 3) & ~3)
 // The most icons the bottom screen shows: 4 seasons, 5 times, 5 weathers, and an icon for each row
 #define ICON_SHOWN_MAX (AREA_SEASON_COUNT + AREA_TIME_COUNT + AREA_WEATHER_COUNT + AREA_ROW_MAX)
 // The icons' OBJs: the type icons' cells (ARCID_APP_MENU_COMMON's, a 32 by 16 OBJ centered on its place) for the sub
