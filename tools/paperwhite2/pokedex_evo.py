@@ -2,7 +2,7 @@
 """Paper White 2: the Pokédex Info page's Evo data, its sprites' places and its Area data, members of the Pokédex's
 graphics archive (ARCID_POKEDEX_GRA, a/1/5/7) after its own (docs/paperwhite2/plugins.md, Pokédex).
 
-    pokedex_evo.py archive ARCHIVE_IN ARCHIVE_OUT   # the build: the archive with the five members after its own
+    pokedex_evo.py archive ARCHIVE_IN ARCHIVE_OUT   # the build: the archive with the six members after its own
     pokedex_evo.py check                            # print the largest families
 
 The game's evolution data (a/0/1/9, res/pokemon/*/data.json's "evolutions") only names what each species evolves
@@ -22,6 +22,8 @@ into, so the page needs each species' family root to draw its tree from (paperwh
 - AREA_INDEX_MEMBER: the Area sub-page's index of each species' places and methods in the wild (encounters.py's
   area_index, from res/paperwhite2/encounters/ and the town map's places).
 - AREA_ICONS_MEMBER: the Area sub-page's icons and their palette rows (pokedex_area.py, from area_icons.png).
+- AREA_BOX_MEMBER: the Area sub-page's box of the current Pokémon on the top screen (pokedex_area.py's box_member,
+  from area_top_box.png).
 
 A family has at most FAMILY_MAX species (Eevee's 8), the rows the page has room for; check fails past it.
 """
@@ -39,6 +41,7 @@ from tools.data.nitro_2d import read_indexed_png  # noqa: E402
 from tools.data.datajson import DataError  # noqa: E402
 from tools.paperwhite2.encounters import area_index  # noqa: E402
 from tools.paperwhite2.pokedex_area import IconError  # noqa: E402
+from tools.paperwhite2.pokedex_area import box_member as area_box_member  # noqa: E402
 from tools.paperwhite2.pokedex_area import member as area_icons_member  # noqa: E402
 from tools.paperwhite2.pokedex_sprites import SpriteError, middles_member  # noqa: E402
 
@@ -51,10 +54,11 @@ ARCHIVE_MEMBERS = 155
 FAMILY_MEMBER = ARCHIVE_MEMBERS
 BALLS_MEMBER = ARCHIVE_MEMBERS + 1
 MIDDLES_MEMBER = ARCHIVE_MEMBERS + 2
-# The Area sub-page's index (encounters.py's area_index) and icons (pokedex_area.py), AREA_INDEX_FILE and
-# AREA_ICONS_FILE in paperwhite2_pokedex_info_area.c
+# The Area sub-page's index (encounters.py's area_index), icons and box (pokedex_area.py), AREA_INDEX_FILE,
+# AREA_ICONS_FILE and AREA_BOX_FILE in paperwhite2_pokedex_info_area.c
 AREA_INDEX_MEMBER = ARCHIVE_MEMBERS + 3
 AREA_ICONS_MEMBER = ARCHIVE_MEMBERS + 4
+AREA_BOX_MEMBER = ARCHIVE_MEMBERS + 5
 # POKEDEX_INFO_EVO_FAMILY_MAX in include/paperwhite2/pokedex_info.h
 FAMILY_MAX = 8
 BALL_SIZE = 16
@@ -141,8 +145,9 @@ def archive(source, output):
         raise EvoError(f"{source}: {len(files)} members, not the {ARCHIVE_MEMBERS} that the Evo members follow "
                        f"(change ARCHIVE_MEMBERS here, EVO_FAMILY_FILE and EVO_BALLS_FILE in "
                        f"paperwhite2_pokedex_info_evo.c, SPRITE_MIDDLES_FILE in paperwhite2_pokedex_info.c and "
-                       f"AREA_INDEX_FILE and AREA_ICONS_FILE in paperwhite2_pokedex_info_area.c)")
-    files += [family_member(), balls_member(), middles_member(), area_index(), area_icons_member()]
+                       f"AREA_INDEX_FILE, AREA_ICONS_FILE and AREA_BOX_FILE in paperwhite2_pokedex_info_area.c)")
+    files += [family_member(), balls_member(), middles_member(), area_index(), area_icons_member(),
+              area_box_member()]
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_bytes(write_narc(files))
 

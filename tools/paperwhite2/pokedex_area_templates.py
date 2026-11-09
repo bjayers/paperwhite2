@@ -6,8 +6,9 @@ pokedex_templates.py beside the other sub-pages' into the same ignored folder, a
   and 16, ext palette 0, as pokedex_detail_map.c loads them) moved 24 px down under the head bar, without highlights;
 - area_top_shapes.png: every place's highlight (the area OBJs, ARCID_POKEDEX_GRA 15/29/46, each place's animation and
   position from res/town_map/) in the original red, to see their shapes;
-- area_top_box.png: the current Pokémon's box over the head bar's right end (BOX_* below, as the C file's), on the
-  map, with the party icon's 32 by 32 slot and the name's place marked, to draw the box's art over;
+- area_top_box.png: the current Pokémon's box over the head bar's right end (BOX_* below, as the C file's: the area
+  its four OBJs cover), on the map, with the party icon's 32 by 32 slot and the name's place marked, to draw the
+  box's art over (the user's is res/paperwhite2/pokedex_art/area_top_box.png);
 - area_top_frame<N>.png (N 1-4): a sample species' (SAMPLE) highlights as the four steps of the season cycle: each
   place in the colour of the season that step shows of the place's own seasons, white where it is all year;
 - tabs6_<page>.png (one per selected tab) and tabs6_sheet.png (all six stacked): the tab bar for six sub-pages, cut
@@ -69,11 +70,11 @@ SEASONS_Y = 24
 METHOD_Y, METHOD_PITCH, METHOD_ROWS = 48, 24, 4
 TIMES_Y, WEATHER_Y = 136, 152
 TOUCHBAR_Y = 168
-# The top screen's box of the current Pokémon (paperwhite2_pokedex_info_area.c's BOX_*): the box, the party icon's
-# 32 by 32 slot, and the name's left and top in font 0 (font 1 for a name that would pass BOX_NAME_RIGHT)
-BOX_X, BOX_Y, BOX_W, BOX_H = 144, 0, 112, 32
-BOX_ICON_X, BOX_ICON_Y = 148, 0
-BOX_NAME_X, BOX_NAME_Y, BOX_NAME_RIGHT = 184, 8, 252
+# The top screen's box of the current Pokémon (paperwhite2_pokedex_info_area.c's BOX_*): the box's OBJs, the party
+# icon's 32 by 32 slot, and the name's left and top in font 0 (font 1 for a name that would pass BOX_NAME_RIGHT)
+BOX_X, BOX_Y, BOX_W, BOX_H = 128, 0, 128, 32
+BOX_ICON_X, BOX_ICON_Y = 156, 0
+BOX_NAME_X, BOX_NAME_Y, BOX_NAME_RIGHT = 190, 8, 252
 # The icons: (group, names), a row of the sheet each, 32 by 16 slots
 ICONS = [
     ("season", ["spring", "summer", "autumn", "winter"]),
