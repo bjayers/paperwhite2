@@ -19,6 +19,7 @@
 #include "gfl/touchpanel.h"
 #include "nitro/fx.h"
 #include "nitro/gx.h"
+#include "nitro/os.h"
 #include "paperwhite2/pokedex_info.h"
 #include "paperwhite2/type_chart.h"
 #include "pml/move.h"
@@ -34,7 +35,8 @@
 
 // Paper White 2: the bottom screen of the Pokédex's info page, on the sub engine above the touch bar: the bar of the
 // sub-pages' tabs at the top, and below it the shown sub-page's panel, Stats, Data, Moves, Evo (drawn by
-// paperwhite2_pokedex_info_evo.c) or Matchups, read from the species' data at run time. The text and bars are drawn
+// paperwhite2_pokedex_info_evo.c), Area (paperwhite2_pokedex_info_area.c) or Matchups, read from the species' data at
+// run time. The text and bars are drawn
 // into two windows over the user's art (below), and a sub-page without art yet gets fills in its place, so every place
 // is a constant here: the screen's pixels, the windows' tiles
 
@@ -53,10 +55,11 @@
 // The art's palettes, after the buttons' two (POKEDEX_INFO_BUTTON_PALETTE): each sub-page's art has its own row, from
 // this one in the sub-pages' order
 #define PALETTE_ART 6
-// The content window's palette while Matchups shows (sMatchupColors), after the art's five, and while Evo shows (the
-// art's colors, with its balls, paperwhite2_pokedex_info_evo.c), before the touch bar's 13
-#define PALETTE_MATCHUPS 11
-#define PALETTE_EVO 12
+// The content window's palette while Matchups shows (sMatchupColors) or Evo (the art's colors, with its balls,
+// paperwhite2_pokedex_info_evo.c), after the art's six and before the touch bar's 13, and Area's third row of icons
+// (POKEDEX_INFO_AREA_ICON_ROW_2): each loaded into it as its sub-page shows, in the VBlank that shows it
+#define PALETTE_CONTENT 12
+#define PALETTE_SIZE 0x20
 // The art's screen, the whole screen in tiles, and the BG's whole screen (256 by 256), whose rows past the screen's
 // show at the bottom, under the touch bar, while the BG is lifted (sSubpageLift)
 #define ART_TILES_ACROSS 32
@@ -101,7 +104,7 @@
 // The bar: the art draws a tab for each sub-page, an icon, the first centered at BAR_TAB_X and the others BAR_TAB_PITCH
 // apart, with the shown one's tab hanging below the bar. Touching a tab's column switches to its sub-page. A sub-page
 // without art has a dark strip with its name centered on it in font 1
-#define BAR_TAB_X 64
+#define BAR_TAB_X 48
 #define BAR_TAB_PITCH 32
 #define BAR_TOUCH_BOTTOM 17
 #define BAR_TEXT_Y 3
@@ -159,7 +162,7 @@
 #define MOVES_SET_TEXT_Y 20
 #define MOVES_SET_TOUCH_TOP 18
 #define MOVES_SET_TOUCH_BOTTOM 31
-#define MOVES_SET_TOUCH_LEFT 16
+#define MOVES_SET_TOUCH_LEFT 0
 #define MOVES_SET_TOUCH_RIGHT 240
 // Below it, POKEDEX_INFO_MOVE_ROWS rows of moves the size of the move relearner's (move_tutor_main.c), so that its
 // cursor fits round one, centered between the sets' bar (to y 31) and the touch bar (from y 168): each a
@@ -430,31 +433,35 @@ static const MatchupRule sMatchupRules[] = {
       BAR_TAB_X + (i) * BAR_TAB_PITCH + BAR_TAB_PITCH / 2 - 1 }
 
 static const TouchRect sSubpageRects[] = {
-    BAR_TAB_RECT(POKEDEX_INFO_SUBPAGE_STATS),    BAR_TAB_RECT(POKEDEX_INFO_SUBPAGE_DATA),
-    BAR_TAB_RECT(POKEDEX_INFO_SUBPAGE_MOVES),    BAR_TAB_RECT(POKEDEX_INFO_SUBPAGE_EVO),
-    BAR_TAB_RECT(POKEDEX_INFO_SUBPAGE_MATCHUPS), { TOUCH_RECT_END, 0, 0, 0 },
+    BAR_TAB_RECT(POKEDEX_INFO_SUBPAGE_STATS),
+    BAR_TAB_RECT(POKEDEX_INFO_SUBPAGE_DATA),
+    BAR_TAB_RECT(POKEDEX_INFO_SUBPAGE_MOVES),
+    BAR_TAB_RECT(POKEDEX_INFO_SUBPAGE_EVO),
+    BAR_TAB_RECT(POKEDEX_INFO_SUBPAGE_AREA),
+    BAR_TAB_RECT(POKEDEX_INFO_SUBPAGE_MATCHUPS),
+    { TOUCH_RECT_END, 0, 0, 0 },
 };
 
 static const u16 sSubpageNames[POKEDEX_INFO_SUBPAGE_COUNT] = {
-    PokedexData_Text_Stats, PokedexData_Text_Data,     PokedexData_Text_Moves,
-    PokedexData_Text_Evo,   PokedexData_Text_Matchups,
+    PokedexData_Text_Stats, PokedexData_Text_Data, PokedexData_Text_Moves,
+    PokedexData_Text_Evo,   PokedexData_Text_Area, PokedexData_Text_Matchups,
 };
 
 // Moves' sets' names, where each starts, and the area touching each, from its start to the next one's (the gap after
-// TM/HM is the shown tab's)
+// TM/HM is the shown tab's, x 98-125 in the six-tab bar)
 static const u16 sMoveSetNames[POKEDEX_INFO_MOVES_SET_COUNT] = {
     PokedexData_Text_LevelUp,
     PokedexData_Text_Machines,
     PokedexData_Text_Tutor,
     PokedexData_Text_EggMoves,
 };
-static const u8 sMoveSetX[POKEDEX_INFO_MOVES_SET_COUNT] = { 22, 71, 170, 210 };
+static const u8 sMoveSetX[POKEDEX_INFO_MOVES_SET_COUNT] = { 10, 59, 154, 196 };
 
 static const TouchRect sMoveSetRects[] = {
-    { MOVES_SET_TOUCH_TOP, MOVES_SET_TOUCH_BOTTOM, MOVES_SET_TOUCH_LEFT, 70 },
-    { MOVES_SET_TOUCH_TOP, MOVES_SET_TOUCH_BOTTOM, 71, 110 },
-    { MOVES_SET_TOUCH_TOP, MOVES_SET_TOUCH_BOTTOM, 160, 209 },
-    { MOVES_SET_TOUCH_TOP, MOVES_SET_TOUCH_BOTTOM, 210, MOVES_SET_TOUCH_RIGHT },
+    { MOVES_SET_TOUCH_TOP, MOVES_SET_TOUCH_BOTTOM, MOVES_SET_TOUCH_LEFT, 58 },
+    { MOVES_SET_TOUCH_TOP, MOVES_SET_TOUCH_BOTTOM, 59, 97 },
+    { MOVES_SET_TOUCH_TOP, MOVES_SET_TOUCH_BOTTOM, 126, 195 },
+    { MOVES_SET_TOUCH_TOP, MOVES_SET_TOUCH_BOTTOM, 196, MOVES_SET_TOUCH_RIGHT },
     { TOUCH_RECT_END, 0, 0, 0 },
 };
 
@@ -484,13 +491,13 @@ typedef struct {
 } PanelsArt;
 
 static const PanelsArt sSubpageArt[POKEDEX_INFO_SUBPAGE_COUNT] = {
-    { 131, 132, 133 }, { 134, 135, 136 }, { 140, 141, 142 }, { 146, 147, 148 }, { 149, 150, 151 },
+    { 131, 132, 133 }, { 134, 135, 136 }, { 140, 141, 142 }, { 146, 147, 148 }, { 152, 153, 154 }, { 149, 150, 151 },
 };
 
 // How many pixels each sub-page scrolls BG_ART up while it shows, to lift its buttons off the tile grid (Stats' last
 // one off the touch bar, Matchups' centred between the chart's panel and the bar): its art is converted as many pixels
 // lower (offset_y in res/paperwhite2/art/targets.json), so it shows where it was drawn
-static const u8 sSubpageLift[POKEDEX_INFO_SUBPAGE_COUNT] = { 2, 0, 0, 0, 3 };
+static const u8 sSubpageLift[POKEDEX_INFO_SUBPAGE_COUNT] = { 2, 0, 0, 0, 0, 3 };
 
 struct PokedexInfoPanels {
     HeapID heapId;
@@ -539,6 +546,11 @@ struct PokedexInfoPanels {
     ClActor *knob;
     // Evo's family, its strip of icons and its tree
     PokedexInfoEvo *evo;
+    // Area's seasons, methods, times and weathers, and its map on the top screen
+    PokedexInfoArea *area;
+    // The shown sub-page, and the colors that PALETTE_CONTENT takes in the next VBlank, or NULL
+    u32 subpage;
+    const GXRgb *pendingPalette;
 };
 
 static void PokedexInfoPanels_VBlank(TCB *tcb, void *data);
@@ -600,7 +612,6 @@ PokedexInfoPanels *PokedexInfoPanels_Create(HeapID heapId, Font *font, ClActUnit
     GFL_BGSysSetBGPriority(BG_GRID, PRIORITY_GRID);
     panels->grid = PokedexDetailBackground_Create(heapId, GRID_PAGE, BG_GRID, PALETTE_GRID_BOTTOM, PALETTE_GRID_TOP);
     GFL_BGSysUploadStdPalette(BG_PANELS, sPanelColors, sizeof(sPanelColors), PALETTE_PANELS * 0x20);
-    GFL_BGSysUploadStdPalette(BG_PANELS, sMatchupColors, sizeof(sMatchupColors), PALETTE_MATCHUPS * 0x20);
     panels->barWindow = BmpWin_CreateDynamic(BG_PANELS, BAR_WINDOW_X, BAR_WINDOW_Y, BAR_WINDOW_WIDTH, BAR_WINDOW_HEIGHT,
                                              PALETTE_PANELS, FALSE);
     panels->contentWindow = BmpWin_CreateDynamic(BG_PANELS, CONTENT_WINDOW_X, CONTENT_WINDOW_Y, CONTENT_WINDOW_WIDTH,
@@ -609,7 +620,9 @@ PokedexInfoPanels *PokedexInfoPanels_Create(HeapID heapId, Font *font, ClActUnit
     panels->vblankTcb = GFL_VBlankTCBAdd(PokedexInfoPanels_VBlank, panels, 0);
     PokedexInfoPanels_CreateTypeIcons(panels, unit);
     PokedexInfoPanels_CreateMoveActors(panels, unit);
-    panels->evo = PokedexInfoEvo_Create(heapId, font, panels->smallFont, unit, pokedex, BG_PANELS, PALETTE_EVO);
+    panels->evo = PokedexInfoEvo_Create(heapId, font, panels->smallFont, unit, pokedex);
+    panels->area = PokedexInfoArea_Create(heapId, font, panels->smallFont, BG_PANELS);
+    panels->subpage = POKEDEX_INFO_SUBPAGE_COUNT;
     GFL_BGSysSetBGEnabled(BG_GRID, TRUE);
     GFL_BGSysSetBGEnabled(BG_PANELS, TRUE);
     return panels;
@@ -617,6 +630,7 @@ PokedexInfoPanels *PokedexInfoPanels_Create(HeapID heapId, Font *font, ClActUnit
 
 void PokedexInfoPanels_Free(PokedexInfoPanels *panels) {
     GFL_TCBRemove(panels->vblankTcb);
+    PokedexInfoArea_Free(panels->area);
     PokedexInfoEvo_Free(panels->evo);
     PokedexInfoPanels_FreeMoveActors(panels);
     PokedexInfoPanels_FreeTypeIcons(panels);
@@ -900,6 +914,9 @@ void PokedexInfoPanels_Show(PokedexInfoPanels *panels, u32 subpage, u16 species,
     case POKEDEX_INFO_SUBPAGE_EVO:
         PokedexInfoEvo_Show(panels->evo, bitmap, CONTENT_TOP, species, form, sex);
         break;
+    case POKEDEX_INFO_SUBPAGE_AREA:
+        PokedexInfoArea_Draw(panels->area, bitmap, CONTENT_TOP, species);
+        break;
     case POKEDEX_INFO_SUBPAGE_MATCHUPS:
         PokedexInfoPanels_DrawMatchups(panels, personal, ability);
         break;
@@ -913,12 +930,28 @@ void PokedexInfoPanels_Show(PokedexInfoPanels *panels, u32 subpage, u16 species,
         PokedexInfoEvo_Hide(panels->evo);
     }
     PML_PersonalFree(personal);
+    // PALETTE_CONTENT takes the sub-page's colors as it changes, in the VBlank that shows it
+    if (subpage != panels->subpage) {
+        switch (subpage) {
+        case POKEDEX_INFO_SUBPAGE_MATCHUPS:
+            panels->pendingPalette = sMatchupColors;
+            break;
+        case POKEDEX_INFO_SUBPAGE_EVO:
+            panels->pendingPalette = PokedexInfoEvo_GetPalette(panels->evo);
+            break;
+        case POKEDEX_INFO_SUBPAGE_AREA:
+            panels->pendingPalette = PokedexInfoArea_GetPalette(panels->area);
+            break;
+        }
+        if (panels->pendingPalette != NULL) {
+            DC_FlushRange(panels->pendingPalette, PALETTE_SIZE);
+        }
+    }
+    panels->subpage = subpage;
     switch (subpage) {
     case POKEDEX_INFO_SUBPAGE_MATCHUPS:
-        BmpWin_SetPalette(panels->contentWindow, PALETTE_MATCHUPS);
-        break;
     case POKEDEX_INFO_SUBPAGE_EVO:
-        BmpWin_SetPalette(panels->contentWindow, PALETTE_EVO);
+        BmpWin_SetPalette(panels->contentWindow, PALETTE_CONTENT);
         break;
     default:
         BmpWin_SetPalette(panels->contentWindow, PALETTE_PANELS);
@@ -926,6 +959,21 @@ void PokedexInfoPanels_Show(PokedexInfoPanels *panels, u32 subpage, u16 species,
     }
     PokedexInfoPanels_Transfer(panels, panels->barWindow, PENDING_BAR);
     PokedexInfoPanels_Transfer(panels, panels->contentWindow, PENDING_CONTENT);
+    // Area's icons' tiles take their own rows, over the window's
+    if (subpage == POKEDEX_INFO_SUBPAGE_AREA) {
+        PokedexInfoArea_SetIconPalettes(panels->area, BG_PANELS);
+    }
+}
+
+PokedexInfoArea *PokedexInfoPanels_GetArea(PokedexInfoPanels *panels) {
+    return panels->area;
+}
+
+// Area's glow on the open map, and the season marked on its legend, whose characters go to VRAM in the next VBlank
+void PokedexInfoPanels_UpdateArea(PokedexInfoPanels *panels) {
+    if (PokedexInfoArea_Update(panels->area, BmpWin_GetBitmap(panels->contentWindow), CONTENT_TOP)) {
+        panels->pendingWindows |= PENDING_CONTENT;
+    }
 }
 
 // Only the list and its actors change, all in the next VBlank, as a change of sub-page shows
@@ -951,6 +999,10 @@ static void PokedexInfoPanels_Transfer(PokedexInfoPanels *panels, BmpWin *window
 static void PokedexInfoPanels_VBlank(TCB *tcb, void *data) {
     PokedexInfoPanels *panels = data;
 
+    if (panels->pendingPalette != NULL) {
+        GXS_LoadBGPltt(panels->pendingPalette, PALETTE_CONTENT * PALETTE_SIZE, PALETTE_SIZE);
+        panels->pendingPalette = NULL;
+    }
     if (panels->pendingWindows & PENDING_BAR) {
         BmpWin_FlushChar(panels->barWindow);
     }

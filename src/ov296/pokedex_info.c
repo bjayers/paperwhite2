@@ -830,8 +830,9 @@ void PokedexInfo_Show(PokedexInfo *info) {
 
 #ifdef PAPERWHITE2
 // Paper White 2: the info page's move panel takes the place of the top entry's text on BG 1, whose characters it needs
-// (paperwhite2_pokedex_move_panel.c): the entry's windows are cleared from the screen and freed, and its type icons
-// and footprint go with them, until PokedexInfo_RestoreText makes them again and prints the entry in the language
+// (paperwhite2_pokedex_move_panel.c), as Area's map takes the place of all of it (paperwhite2_pokedex_info_area.c): the
+// entry's windows are cleared from the screen and freed, and its type icons and footprint go with them, until
+// PokedexInfo_RestoreText makes them again and prints the entry in the language
 void PokedexInfo_FreeText(PokedexInfo *info) {
     int i;
 
@@ -849,6 +850,24 @@ void PokedexInfo_FreeText(PokedexInfo *info) {
 void PokedexInfo_RestoreText(PokedexInfo *info, u32 language) {
     PokedexInfo_InitWindows(info);
     PokedexInfo_SetLanguage(info, language);
+}
+
+u32 PokedexInfo_GetPanelChars(PokedexInfo *info, u32 *chars) {
+    u32 i;
+
+    chars[POKEDEX_INFO_PANEL_CHARS_MID] = info->midChars;
+    chars[POKEDEX_INFO_PANEL_CHARS_BACK] = info->backChars;
+    for (i = 0; i < 2; i++) {
+        BmpWin *window = info->labelWindows[i];
+
+        chars[POKEDEX_INFO_PANEL_CHARS_LABEL_CAUGHT + i] =
+            (BmpWin_GetSizeX(window) * BmpWin_GetSizeY(window) * 0x20) << 16 | BmpWin_GetCharPos(window);
+    }
+    return POKEDEX_GRA_CHARS;
+}
+
+void PokedexInfo_ReloadLabel(PokedexInfo *info) {
+    BmpWin_FlushChar(info->labelWindows[info->caught ? 0 : 1]);
 }
 
 // Paper White 2: the info page's own text (an ability, the held items) in place of the description. The window's

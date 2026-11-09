@@ -34,8 +34,8 @@
 
 // ARCID_POKEDEX_GRA's members that tools/paperwhite2/pokedex_evo.py adds after the art's: the family roots (a u16 for
 // each species by its number) and the tree's balls (their 16 colors, then each ball's 2 by 2 tiles of 4bpp)
-#define EVO_FAMILY_FILE 152
-#define EVO_BALLS_FILE 153
+#define EVO_FAMILY_FILE 155
+#define EVO_BALLS_FILE 156
 #define EVO_BALL_SIZE 16
 #define EVO_BALL_TILES 2
 #define EVO_PALETTE_SIZE 0x20
@@ -220,8 +220,8 @@ static int PokedexInfoEvo_GetRowPitch(PokedexInfoEvo *evo);
 static int PokedexInfoEvo_GetIconX(PokedexInfoEvo *evo, u32 row);
 static int PokedexInfoEvo_GetIconPitch(PokedexInfoEvo *evo);
 
-PokedexInfoEvo *PokedexInfoEvo_Create(HeapID heapId, Font *font, Font *smallFont, ClActUnit *unit, PokeDexSave *pokedex,
-                                      u32 bg, u32 paletteRow) {
+PokedexInfoEvo *PokedexInfoEvo_Create(HeapID heapId, Font *font, Font *smallFont, ClActUnit *unit,
+                                      PokeDexSave *pokedex) {
     PokedexInfoEvo *evo =
         GFL_HeapAllocate(heapId, sizeof(PokedexInfoEvo), TRUE, "paperwhite2_pokedex_info_evo.c", __LINE__);
 
@@ -239,9 +239,12 @@ PokedexInfoEvo *PokedexInfoEvo_Create(HeapID heapId, Font *font, Font *smallFont
     evo->balls = GFL_ArcSysReadHeapNew(ARCID_POKEDEX_GRA, EVO_BALLS_FILE, heapId);
     evo->ballBitmap = GFL_BitmapWrap((u8 *)evo->balls + EVO_PALETTE_SIZE, EVO_BALL_TILES,
                                      EVO_BALL_TILES * EVO_BALL_COUNT, 0x20, heapId);
-    // From the heap, which DMA can read
-    GFL_BGSysUploadStdPalette(bg, evo->balls, EVO_PALETTE_SIZE, paletteRow * 0x20);
     return evo;
+}
+
+// The window's colors, the balls', in the heap, which DMA can read
+const GXRgb *PokedexInfoEvo_GetPalette(PokedexInfoEvo *evo) {
+    return evo->balls;
 }
 
 void PokedexInfoEvo_Free(PokedexInfoEvo *evo) {

@@ -24,7 +24,8 @@ scrolls up while it shows the screen (below).
 | `pokedex_info_data` | `pokedex_gra/134.pal`, `135.png`/`136.nscr` (new members) | The same on Data (palette row 7, each sub-page's art in row 6 + its place); the source is `res/paperwhite2/pokedex_art/info_data.png` |
 | `pokedex_info_moves` | `pokedex_gra/140.pal`, `141.png`/`142.nscr` | The same on Moves; `info_moves.png` |
 | `pokedex_info_evo` | `pokedex_gra/146.pal`, `147.png`/`148.nscr` | The same on Evo; `info_evo.png`. Its tile rows 3-6 (y 24-55, the banner's inside) are shown on the grid's BG, scrolling with the grid: they must be opaque and repeat across with a period that divides 256 (`docs/paperwhite2/plugins.md`, Evo) |
-| `pokedex_info_matchups` | `pokedex_gra/149.pal`, `150.png`/`151.nscr` | The same on Matchups; `info_matchups.png` |
+| `pokedex_info_area` | `pokedex_gra/152.pal`, `153.png`/`154.nscr` (new members) | The same on Area (palette row 10), under the page's text and icons; `info_area.png`. The icons are a sheet of their own, `area_icons.png`, converted by the build (`tools/paperwhite2/pokedex_area.py`, `docs/paperwhite2/plugins.md`, Area) |
+| `pokedex_info_matchups` | `pokedex_gra/149.pal`, `150.png`/`151.nscr` | The same on Matchups (palette row 11); `info_matchups.png` |
 | `pokedex_info_moves` | `pokedex_gra/140.pal`, `141.png`/`142.nscr` (new members) | The same on Moves (palette row 8): the tab strip and the sets' bar only, the rows and track drawn by the page over it; the source is `res/paperwhite2/pokedex_art/info_moves.png` |
 | `pokedex_move_panel` | `pokedex_gra/143.pal`, `144.png`/`145.nscr` (new members) | The top screen's move panel, opened from Moves (`paperwhite2_pokedex_move_panel.c`): main BG 1 in palette row 6, beside the head bar's and the text's tiles, so only about 65 different tiles fit (45 used); the art behind the text is copied into the text's windows. The source is `res/paperwhite2/pokedex_art/move_panel.png` |
 

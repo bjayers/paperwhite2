@@ -72,10 +72,12 @@ static BOOL PokedexDetail_Init(GameProc *proc, u32 *state, void *param_, void *w
     PokedexDetailWork *wk;
 
 #ifdef PAPERWHITE2
-    // Paper White 2: 64 KB more, for the info page's sub-pages and its next sprite, which loads while the shown one
-    // stays (paperwhite2_pokedex_info.c). The Pokédex opens this screen with about 700 KB of HEAPID_USER free; opened
-    // from the party and summary screens (paperwhite2/pokedex_shortcut.h), it leaves about 710 KB of it free
-    GFL_HeapCreateChild(HEAPID_USER, HEAPID_POKEDEX_DETAIL, 0xa0000);
+    // Paper White 2: 128 KB more, for the info page's sub-pages and its next sprite, which loads while the shown one
+    // stays (paperwhite2_pokedex_info.c), and Area's town map, whose characters and screens (about 62 KB) wait in it
+    // for the VBlank that shows them (paperwhite2_pokedex_info_area.c). The Pokédex opens this screen with about 700 KB
+    // of HEAPID_USER free; opened from the party and summary screens (paperwhite2/pokedex_shortcut.h), it leaves about
+    // 710 KB of it free
+    GFL_HeapCreateChild(HEAPID_USER, HEAPID_POKEDEX_DETAIL, 0xb0000);
 #else
     GFL_HeapCreateChild(HEAPID_USER, HEAPID_POKEDEX_DETAIL, 0x90000);
 #endif

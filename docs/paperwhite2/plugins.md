@@ -1532,7 +1532,7 @@ its panels on BG 2 and its grid on BG 3, and no still sprite (`PokedexInfo_IsDet
 (MCSS) on BG 0 in 3D, which the page turns on at its start and off at its end. **The sprite's place**: x 50 less the
 bin file's offsetX, as the forms page's; vertically, its visible pixels' middle on its first frame at y 72, the
 original's still sprite's frame centre and the middle of the panel's track between its dashed rows (y 45-46 and
-97-98; the grey stripe around them, y 33-100, is deeper above, and its middle, 67, looked high), from member 154 of `ARCID_POKEDEX_GRA` that `tools/paperwhite2/pokedex_sprites.py`
+97-98; the grey stripe around them, y 33-100, is deeper above, and its middle, 67, looked high), from member 157 of `ARCID_POKEDEX_GRA` that `tools/paperwhite2/pokedex_sprites.py`
 makes from `res/pokemon` at build time (a u8 for each battle sprite archive member, 15020 bytes, read by range at the
 sprite's characters' number, so per form, sex and side: how far above its feet the middle is, measured as MCSS
 assembles the first frame from the multi-cell, cell animations and the bin file's quads). Vanilla's own box in the bin
@@ -1561,11 +1561,11 @@ tile-aligned windows on the art's BG, so a sub-page lifts them by scrolling BG 6
 lower (`PokedexInfoPanels_GetLift`), and the sub-page's art is converted as many pixels lower (the art target's
 `offset_y`, `docs/paperwhite2/art.md`) so it shows as drawn. The BG's screen is 256 by 256: its rows past 192, which
 the lift shows at the bottom under the touch bar (y 168+, BG 5), are cleared with the art. The bar's and panels' text
-(BG 7), the grid (BG 4) and the touch bar don't move. The sub-pages are Stats, Data, Moves, Evo
-and Matchups; the art draws the tab bar's five icons (centres x 64 to 192, 32 apart), and touching a
-tab's column (y 0-17) switches to it. A sub-page without art shows a dark strip with its own name. The D-pad's Left
-and Right step through the five sub-pages, wrapping (Moves keeps the set it showed last); L and R step through one
-ring of the sub-pages and Moves' sets, wrapping: Stats, Data, Moves' Level Up, TM/HM, Tutor, Egg, Evo, Matchups
+(BG 7), the grid (BG 4) and the touch bar don't move. The sub-pages are Stats, Data, Moves, Evo, Area
+and Matchups; the art draws the tab bar's six icons (centres x 48 to 208, 32 apart, `BAR_TAB_X`), and touching a
+tab's column (y 0-17, x 32-223) switches to it. A sub-page without art shows a dark strip with its own name. The D-pad's
+Left and Right step through the six sub-pages, wrapping (Moves keeps the set it showed last); L and R step through one
+ring of the sub-pages and Moves' sets, wrapping: Stats, Data, Moves' Level Up, TM/HM, Tutor, Egg, Evo, Area, Matchups
 (`PokedexInfoPage_Cycle`; back into Moves enters at Egg, forward at Level Up): the touch bar takes Left and Right no more while the page runs (`PokedexDetailTouchbar_SetDisabledKeys`, `pokedex_detail_touchbar.c`,
 under `PAPERWHITE2`; Area, Cry and Forms are still there by touch), and the page gives the keys back as it ends. The text is `res/text/system/pokedex_data.txt` (`TEXT_BANK_POKEDEX_DATA`). Every place is a constant at
 the top of the two files.
@@ -1590,7 +1590,9 @@ is in ARM9 main (`src/paperwhite2/main/paperwhite2_type_chart.c`, `PaperWhite2_T
 to the screen buffer, loaded by `GFL_BGSysUpdate`, and their characters by the panels' VBlank task
 (`PokedexInfoPanels_Transfer`, `_VBlank`), which runs before it in the same VBlank, with the OBJs' OAM. Loaded at once
 (`BmpWin_Transfer`), the characters showed for the rest of the frame in the old map entries' palette row (Evo's balls,
-drawn for row 12, in Matchups' 11 or the panels' 3) and before the OBJs moved (Moves' icons, cursor and knob).
+drawn for row 12, in the panels' 3) and before the OBJs moved (Moves' icons, cursor and knob). Row 12 is the content
+window's palette on Matchups (`sMatchupColors`) and Evo (the balls'), and Area's third row of icons: the panels load the
+sub-page's colours into it in the same VBlank as the windows (`pendingPalette`), as it changes.
 
 **Moves** (`paperwhite2_pokedex_info_moves.c` reads the sets, the panels' file draws them): a bar of the four sets
 (Level Up, TM/HM, Tutor, Egg; font 1, from y 20) under the tab bar, drawn by the user's art (`ARCID_POKEDEX_GRA`
@@ -1652,7 +1654,8 @@ from the line it was set at, and the icons a frame later. Closing is still at on
 panel's characters as it closes).
 
 **Evo** (`paperwhite2_pokedex_info_evo.c`, drawn into the panels' content window, which shows sub BG palette row 12
-there, the balls' palette, the art's colours: rows 6-10 are the arts', 11 Matchups', 13 the touch bar's): the shown
+there, the balls' palette, the art's colours: rows 6-11 are the arts' (Stats, Data, Moves, Evo, Area, Matchups), 12
+the content window's sub-page's, 13 the touch bar's, 14-15 Area's icons): the shown
 species' whole family from its root. **The strip** (y 25-57): each species' party icon (`ARCID_POKEICON`, sub OBJs,
 the 128 KB cells and animations, sequence 1 as a healthy party Pokémon's, palettes in sub OBJ rows 5-7, semi-transparent
 as the page's other OBJs), in the shown form and sex where the species has them (Burmy's cloak is Wormadam's), or the
@@ -1687,12 +1690,72 @@ The rows must be opaque and repeat across with a period that divides 256 (the us
 a seam (`pokedex_templates.py` prints the period). Touching an icon's column of the strip or a row opens
 that species' page through the detail screen's list (as the touch bar's arrows do, `common->index`) if it has been seen
 and is in the list, else it beeps; Up and Down change the Pokémon as on the other sub-pages. **The family table**:
-`tools/paperwhite2/pokedex_evo.py` adds three members to `ARCID_POKEDEX_GRA` in the hack's build (`HACK_ARCHIVE_MEMBERS`,
-rebuilt when `res/pokemon/*/data.json` or the balls change): 152, each species' family root as a u16 by species
+`tools/paperwhite2/pokedex_evo.py` adds five members to `ARCID_POKEDEX_GRA` in the hack's build (`HACK_ARCHIVE_MEMBERS`,
+rebuilt when `res/pokemon/*/data.json`, the balls, the wild encounters, the town map or the Area icons change), after
+the archive's own 155 (the arts' included): 155, each species' family root as a u16 by species
 (SPECIES_NONE to Genesect, 1300 bytes: a child's parent is the first species whose evolutions name it), of which the
 page reads the one entry, then the tree from the root down through the game's own evolution data (`ARCID_EVOLUTIONS`,
-three stages); 153, the balls' 16 colours and their 4bpp tiles (416 bytes); 154, the sprites' middles (below). Forms have no evolutions of their own (the
+three stages); 156, the balls' 16 colours and their 4bpp tiles (416 bytes); 157, the sprites' middles (below); 158 and
+159, Area's index and icons (below). Forms have no evolutions of their own (the
 game reads them by species), so Burmy's and Wormadam's forms evolve as their species. About 3.2 KB of ov298.
+
+**Area** (`paperwhite2_pokedex_info_area.c`; `docs/paperwhite2/design/pokedex-area.md`): where the species is met in the
+wild, from the hack's encounter data. **The index** (member 158, `encounters.py`'s `area_index`, about 27 KB; `encounters.py
+area-index SPECIES...` prints a species' part): a header ("PARE", version 1), each species' block offset by its number,
+the town map's 85 places in its table's order (`res/town_map/order.json`: the zone, the area OBJ's place and animation on
+the Pokédex's map, the place's own position for the player's marker), then each species' block: its places (the town
+map place of each encounter area's zones' parent, and a season mask) and up to 4 method rows (the method, shaking
+grass, dust cloud and bridge shadow apart by the area's kind of spots; the rarity tiers, seasons, rates as the lowest
+and highest share in tenths of a percent, times and weather groups with the preferred ones, and flags: outbreak, extra
+condition, wanderer), with the species' levels and the union of its rows' seasons, times and weathers. The rates are
+the runtime's slots (`method_candidates` and `slot_shares`, which `encounters.py odds` uses too), computed for every
+area, method, season (where the area's rate for it isn't 0), period and weather group (clear, rain, thunderstorm,
+snow, sandstorm as the Habitat Dex groups them), with the level gate ignored (a party high enough); shaking grass's
+own species (Audino) is a row with no tier ("Special"), and an outbreak a row or a flag at the outbreak share. More than
+4 methods merge, in turn while they don't fit: the kinds of rustling into one row (shaking grass's icon), each rippling
+method into its plain one, dark grass into grass (Dratini and Poliwhirl need the second step). The preferred times and
+weathers are those where the species' best share, summed over its rows, is the highest; the page marks them only when
+they aren't all of its own. The page reads its header and the places as it starts, and the shown species' block (at
+most 512 bytes) by range as it shows. **The bottom screen** (drawn into the panels' content window in the panels'
+palette, row 3, over the art `info_area.png`, members 152-154, palette row 10; placeholder panels until the art has
+them): the seasons (font 1 label, the four season icons at x 48-168, y 24, "All year" at x 210 when it is met in all
+four), the season the map glows in underlined in gold (y 40-41); up to four method rows (y 48, 72, 96, 120: the method's
+icon at x 16, the levels in font 0 at x 52, the rarity or range in font 1 at x 108, the outbreak's badge at x 176, the
+rate or range right-aligned at x 250, "<1%" under half a percent); the times (y 136) and weathers (y 152), five icons each
+at x 48-208, a 2 px gold bar left of the preferred ones. A season, time or weather it isn't met in shows its icon in
+light greys. A species never met in the wild shows "Not found in the wild". **The icons** (member 159,
+`tools/paperwhite2/pokedex_area.py` from `res/paperwhite2/pokedex_art/area_icons.png`, 160 by 80, 25 slots of 32 by
+16 in the plan's order) are drawn into the window's tiles (tile-aligned, 4 by 2 tiles each) and each tile's map entry
+takes its own palette row: the sheet's colours (27 in the placeholder sheet) are packed per 8 by 8 tile into three
+rows of 15, sub BG rows 14 and 15 (loaded as the page starts; nothing else on the bottom screen uses them, measured)
+and 12 (loaded as Area shows), with the seasons', times' and weathers' grey copies (each colour's grey by its
+luminance, 8 levels from 13 to 27 of 31) packed into the same rows. **The top screen** shows the original AREA page's
+town map (`ARCID_TOWNMAP_GRA` 5 and 7, screens 17 and 16, extended palette 0 into slots 2 and 3) in place of the entry:
+opening it frees the entry's text, type icons and footprint (`PokedexInfo_FreeText`), loads the extended palettes at
+once and reads the characters and screens (about 62 KB, from the heap's tail). The map's characters go over the
+entry's panels' (BGs 2 and 3, at 0x10000 and 0x14000): at once where the entry has none, and the rest (the BGs' first,
+blank character, the panels' 4 KB each and the caught labels, `PokedexInfo_GetPanelChars` in `src/ov296/pokedex_info.c`,
+under `PAPERWHITE2`), with its screens at 0x2000 and 0x3000, in the VBlank task that switches BGs 2 and 3 to 256-colour
+affine BGs (`G2_SetBG2Control256x16Pltt`, mode 5, BG 0's 3D hidden), 24 px down under the head bar (the affine
+offset), so the map, its OBJs and the cleared text change in one frame. Copying all 62 KB in the VBlank ran into the
+next frame in the emulator (its first frame showed the old BG settings over a band of half-copied tiles). Leaving
+Area puts the entry's panels' characters back, its caught label's (`PokedexInfo_ReloadLabel`), their screens from the
+BG system's buffers, BGs 2 and 3 as 16-colour text BGs, mode 0 and the 3D, in one VBlank, and prints the entry again;
+of the Pokémon shown now if it changed on Area, a frame later (`PokedexInfoPage_RefreshEntry`), as the entry loads its
+label's characters at once, which would have shown on the map. The page's end closes it at once, the screen dark.
+Each of the species' places is an OBJ (`ARCID_POKEDEX_GRA` characters 15, cells 29, animations 46, at the place's area
+position and animation from the index), semi-transparent, glowing as the original's (the alpha pulse of
+`PokedexCommon_StepGlow`, 64 frames, over every layer); its palette row (main OBJ, rows the info page leaves free) is
+its season's: all year 1 (white), spring 6 (pink), summer 7 (green), autumn 14 (red), winter 15 (blue), each the
+places' palette with its three shades (6-8) replaced (`sGlowColors`, placeholders from `area_glow_template.png` until
+the user draws `area_glow.png`). The map steps through the seasons of the places it isn't at all year, one a glow at
+its dimmest point: each place there in that season takes its colour, the others keep theirs, and the legend's
+underline moves with it. The player's marker (the town map's characters 8, cells 12, animations 19, sequence 6, its
+palette's row 1 in main OBJ row 0) is at the player's zone's place (`TownMap_GetMapZone`). All places show, visited or
+not. The detail heap grew to 0xb0000: opening the map with the heap at its fullest left 21 KB free (largest block
+10 KB) at 0xa0000; at 0xb0000, 152 KB free on Stats, 99 KB at the lowest while the map opens (largest block 90 KB),
+165 KB while Area shows (the entry's text freed). Area keeps about 13 KB while the page runs (the icons' member
+10.4 KB, the places, the species' block).
 
 **The entry's text window shows the page's text** (`PokedexInfoPage_ShowTopText`): the description's 3 lines (the
 window at tiles 2, 17, 28 by 7 on main BG 1) show, on Stats, the ability that the Abilities button is at (each press:

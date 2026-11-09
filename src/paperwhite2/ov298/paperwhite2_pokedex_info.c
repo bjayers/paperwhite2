@@ -62,7 +62,7 @@
 // ARCID_POKEDEX_GRA's member that tools/paperwhite2/pokedex_sprites.py makes (after Evo's, pokedex_evo.py): a u8 for
 // each member of the battle sprites' archive, for a sprite's characters how far above its feet its visible pixels'
 // middle is on its first frame
-#define SPRITE_MIDDLES_FILE 154
+#define SPRITE_MIDDLES_FILE 157
 // The size of a pixel at the sprites' depth: the detail screen's camera (pokedex_detail_graphic.c), 70 units away with
 // a 40 degree field of view, shows 2 * 70 * tan(20 degrees) units in the screen's 192 pixels
 #define SPRITE_PIXEL_SIZE FX32_CONST(0.2654)
@@ -196,8 +196,10 @@ typedef struct {
     PokedexMovePanel *movePanel;
     // Whether Moves shows the panel: on as Moves is entered, by A and by a touch on a row, off by B
     BOOL movePanelOn;
-    // The shown Pokémon's entry, under the open panel, is changed only as the panel closes
+    // The shown Pokémon's entry, under the open panel or Area's map, is changed only as they close, and after the map
+    // the frame after (PokedexInfoPage_RefreshEntry)
     BOOL entryStale;
+    BOOL entryRefresh;
     // A touch held on the scroll bar scrolls the list, and the panel shows the cursor's move as it lets go
     BOOL draggingKnob;
 } PokedexInfoPageWork;
@@ -227,6 +229,10 @@ static BOOL PokedexInfoPage_CheckEvoInput(PokedexDetailInfoParam *param, Pokedex
 static void PokedexInfoPage_ShowMove(PokedexInfoPageWork *wk, PokedexDetailCommon *common);
 static void PokedexInfoPage_UpdateMovePanel(PokedexInfoPageWork *wk, PokedexDetailCommon *common);
 static void PokedexInfoPage_CloseMovePanel(PokedexInfoPageWork *wk);
+static void PokedexInfoPage_ShowAreaMap(PokedexInfoPageWork *wk, PokedexDetailCommon *common);
+static void PokedexInfoPage_CloseAreaMap(PokedexInfoPageWork *wk, BOOL now);
+static void PokedexInfoPage_RefreshEntry(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk);
+static BOOL PokedexInfoPage_IsEntryHidden(PokedexInfoPageWork *wk);
 static void PokedexInfoPage_TakeTouchbarKeys(PokedexInfoPageWork *wk, PokedexDetailCommon *common);
 static void PokedexInfoPage_LoadAbilities(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk);
 static void PokedexInfoPage_CreateMCSS(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk);
@@ -319,8 +325,9 @@ BOOL PokedexInfoPage_Exit(PokedexDetailProcSys *sys, int *seq, void *param_, voi
     PokedexInfoPage_FreeButtons(wk, common);
     AppTaskMenuRes_Free(wk->smallButtonRes);
     AppTaskMenuRes_Free(wk->buttonRes);
-    // The panel has the entry's text until it closes, as the page's end closes it
+    // The panel and Area's map have the entry's text until they close, as the page's end closes them
     PokedexInfoPage_CloseMovePanel(wk);
+    PokedexInfoPage_CloseAreaMap(wk, TRUE);
     PokedexMovePanel_Free(wk->movePanel);
     PokedexInfoPanels_Free(wk->panels);
     PokedexInfo_Free(wk->entry);
@@ -439,6 +446,7 @@ BOOL PokedexInfoPage_Main(PokedexDetailProcSys *sys, int *seq, void *param_, voi
         // Keys that the page gave back go back to the bar only now, after the frame that the page took them in, so
         // that the bar doesn't also see the key that closed the move panel
         PokedexInfoPage_TakeTouchbarKeys(wk, common);
+        PokedexInfoPage_RefreshEntry(param, wk);
         if (wk->exit != EXIT_NONE) {
             PokedexInfoPage_CloseMovePanel(wk);
             *seq = SEQ_WAIT_FADE_OUT;
@@ -447,8 +455,12 @@ BOOL PokedexInfoPage_Main(PokedexDetailProcSys *sys, int *seq, void *param_, voi
             if (wk->exit == EXIT_SCREEN) {
                 PokedexDetailTouchbar_Disappear(touchbar, 0);
             }
-        } else if (!PokedexDetailTouchbar_IsArrowTriggered(touchbar) && wk->inputEnabled && wk->pushed == BUTTON_NONE) {
-            PokedexInfoPage_CheckInput(param, wk, common);
+        } else {
+            if (!PokedexDetailTouchbar_IsArrowTriggered(touchbar) && wk->inputEnabled && wk->pushed == BUTTON_NONE) {
+                PokedexInfoPage_CheckInput(param, wk, common);
+            }
+            // Area's glow, which the page's fades don't share the blending with
+            PokedexInfoPanels_UpdateArea(wk->panels);
         }
         break;
     case SEQ_WAIT_FADE_OUT:
@@ -465,7 +477,8 @@ BOOL PokedexInfoPage_Main(PokedexDetailProcSys *sys, int *seq, void *param_, voi
         }
         break;
     case SEQ_EXIT:
-        // The other pages expect BG 0 in 2D
+        // Area's map gives BGs 2 and 3 and the entry's text back, the screen dark. The other pages expect BG 0 in 2D
+        PokedexInfoPage_CloseAreaMap(wk, TRUE);
         PokedexInfoPage_FreeMCSS(wk);
         PokedexDetailGraphic_Free3D(graphic);
         GX_SetGraphicsMode(GX_DISPMODE_GRAPHICS, GX_BGMODE_0, GX_BG0_AS_2D);
@@ -625,7 +638,7 @@ static void PokedexInfoPage_LoadPokemon(PokedexDetailInfoParam *param, PokedexIn
 static void PokedexInfoPage_ChangePokemon(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                           PokedexDetailCommon *common) {
     PokedexInfoPage_LoadPokemon(param, wk, common);
-    if (PokedexMovePanel_IsOpen(wk->movePanel)) {
+    if (PokedexInfoPage_IsEntryHidden(wk)) {
         wk->entryStale = TRUE;
     } else {
         if (wk->subpage != POKEDEX_INFO_SUBPAGE_DATA) {
@@ -735,7 +748,8 @@ static void PokedexInfoPage_SetMoveSet(PokedexDetailInfoParam *param, PokedexInf
 
 // Draws the sub-page of the shown Pokémon and form, with its buttons; Moves loads its set again, its cursor at the top,
 // and the move panel shows its first move or closes, before the top screen's text window shows what the sub-page has
-// there, as a closing panel gives the window back
+// there, as a closing panel gives the window back. Area's map closes before the move panel opens, and opens after it
+// closes, as each takes the entry's text
 static void PokedexInfoPage_ShowSubpage(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                         PokedexDetailCommon *common) {
     wk->draggingKnob = FALSE;
@@ -745,8 +759,69 @@ static void PokedexInfoPage_ShowSubpage(PokedexDetailInfoParam *param, PokedexIn
     PokedexInfoPage_LoadAbilities(param, wk);
     PokedexInfoPage_ShowPanels(wk);
     PokedexInfoPage_ResetButtons(param, wk, common);
+    if (wk->subpage != POKEDEX_INFO_SUBPAGE_AREA) {
+        PokedexInfoPage_CloseAreaMap(wk, FALSE);
+    }
     PokedexInfoPage_UpdateMovePanel(wk, common);
+    if (wk->subpage == POKEDEX_INFO_SUBPAGE_AREA) {
+        PokedexInfoPage_ShowAreaMap(wk, common);
+    }
     PokedexInfoPage_ShowTopText(param, wk);
+}
+
+// Area shows its map over the entry, with the shown Pokémon's places
+static void PokedexInfoPage_ShowAreaMap(PokedexInfoPageWork *wk, PokedexDetailCommon *common) {
+    PokedexInfoArea *area = PokedexInfoPanels_GetArea(wk->panels);
+
+    if (PokedexInfoArea_IsMapOpen(area)) {
+        PokedexInfoArea_ShowPlaces(area);
+    } else {
+        PokedexInfoArea_OpenMap(area, wk->entry,
+                                PokedexDetailGraphic_GetClActUnit(PokedexDetailCommon_GetGraphic(common)),
+                                PokedexDetailCommon_GetGameData(common), wk->blendMain);
+    }
+}
+
+// Leaving Area gives the entry back, of the Pokémon shown now if it changed meanwhile; now while the screen is dark, at
+// the page's end
+static void PokedexInfoPage_CloseAreaMap(PokedexInfoPageWork *wk, BOOL now) {
+    PokedexInfoArea *area = PokedexInfoPanels_GetArea(wk->panels);
+
+    if (!PokedexInfoArea_IsMapOpen(area)) {
+        return;
+    }
+    PokedexInfoArea_CloseMap(area, wk->entry, wk->language, now);
+    if (wk->entryStale) {
+        if (now) {
+            wk->entryStale = FALSE;
+            PokedexInfo_SetPokemonInLanguage(wk->entry, wk->species, wk->form, wk->sex, wk->rare, wk->personality,
+                                             wk->caught, wk->language);
+        } else {
+            wk->entryRefresh = TRUE;
+        }
+    }
+}
+
+// The entry of the Pokémon shown now, the frame after Area's map gave BGs 2 and 3 back: the entry loads its label's
+// characters on BG 2 at once, which would have shown on the map until that VBlank. Unless the move panel opened in
+// between, which prints it as it closes
+static void PokedexInfoPage_RefreshEntry(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk) {
+    if (!wk->entryRefresh) {
+        return;
+    }
+    wk->entryRefresh = FALSE;
+    if (PokedexMovePanel_IsOpen(wk->movePanel) || !wk->entryStale) {
+        return;
+    }
+    wk->entryStale = FALSE;
+    PokedexInfo_SetPokemonInLanguage(wk->entry, wk->species, wk->form, wk->sex, wk->rare, wk->personality, wk->caught,
+                                     wk->language);
+    PokedexInfoPage_ShowTopText(param, wk);
+}
+
+// Whether the entry's text is freed, by the move panel or Area's map, so that it is printed only as they close
+static BOOL PokedexInfoPage_IsEntryHidden(PokedexInfoPageWork *wk) {
+    return PokedexMovePanel_IsOpen(wk->movePanel) || PokedexInfoArea_IsMapOpen(PokedexInfoPanels_GetArea(wk->panels));
 }
 
 // On Moves: touching a set's name shows that set; a touch on the scroll bar scrolls the list while it is held; touching
@@ -1420,9 +1495,9 @@ static void PokedexInfoPage_NextShownAbility(PokedexDetailInfoParam *param, Poke
 
 // The top screen's text window: on Data the species' held items, on Stats the ability that Abilities shows, else the
 // entry's description, printed again in the entry's language if the page's text was there. Never while the move panel
-// has freed the entry's windows
+// or Area's map has freed the entry's windows
 static void PokedexInfoPage_ShowTopText(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk) {
-    if (PokedexMovePanel_IsOpen(wk->movePanel)) {
+    if (PokedexInfoPage_IsEntryHidden(wk)) {
         return;
     }
     if (wk->subpage == POKEDEX_INFO_SUBPAGE_DATA) {

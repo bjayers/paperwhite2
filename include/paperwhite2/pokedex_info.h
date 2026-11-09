@@ -7,12 +7,15 @@
 #include "gfl/bmp.h"
 #include "gfl/clact.h"
 #include "gfl/heap.h"
+#include "nitro/gx.h"
 #include "save/pokedex_savedata.h"
+#include "struct_decls.h"
 #include "system/gf_font.h"
 
 // Paper White 2's info page of the Pokédex's detail screen, in overlay 298 (docs/paperwhite2/design/pokedex.md). The
 // top screen shows the Pokémon's entry, as the original's bottom screen did, with its sprite animated; the bottom
-// screen shows the sub-pages Stats, Data, Moves, Evo and Matchups, which Left and Right cycle, and L and R Moves' sets
+// screen shows the sub-pages Stats, Data, Moves, Evo, Area and Matchups, which Left and Right cycle, and L and R Moves'
+// sets too; Area shows the town map with the Pokémon's places in place of the entry
 
 // The page (paperwhite2_pokedex_info.c), which POKEDEX_DETAIL_INFO_PROC_FUNCS runs in place of the original's
 BOOL PokedexInfoPage_Init(PokedexDetailProcSys *sys, int *seq, void *param, void *work, PokedexDetailCommon *common);
@@ -30,6 +33,7 @@ enum {
     POKEDEX_INFO_SUBPAGE_DATA,
     POKEDEX_INFO_SUBPAGE_MOVES,
     POKEDEX_INFO_SUBPAGE_EVO,
+    POKEDEX_INFO_SUBPAGE_AREA,
     POKEDEX_INFO_SUBPAGE_MATCHUPS,
     POKEDEX_INFO_SUBPAGE_COUNT,
 };
@@ -128,9 +132,11 @@ Font *PokedexInfoPanels_GetSmallFont(PokedexInfoPanels *panels);
 
 typedef struct PokedexInfoEvo PokedexInfoEvo;
 
-// fonts are font 0 and font 1; the window's palette, the balls' colors, is loaded into BG bg's palette row
-PokedexInfoEvo *PokedexInfoEvo_Create(HeapID heapId, Font *font, Font *smallFont, ClActUnit *unit, PokeDexSave *pokedex,
-                                      u32 bg, u32 paletteRow);
+// fonts are font 0 and font 1
+PokedexInfoEvo *PokedexInfoEvo_Create(HeapID heapId, Font *font, Font *smallFont, ClActUnit *unit,
+                                      PokeDexSave *pokedex);
+// The window's palette while Evo shows, the balls' colors (16), which the panels load into its row
+const GXRgb *PokedexInfoEvo_GetPalette(PokedexInfoEvo *evo);
 void PokedexInfoEvo_Free(PokedexInfoEvo *evo);
 // Draws the family of the species into bitmap, a window whose top is top pixels down the screen, and shows its icons
 // (in the form and sex where they have them), loading their resources if they aren't
@@ -138,6 +144,44 @@ void PokedexInfoEvo_Show(PokedexInfoEvo *evo, GFLBitmap *bitmap, int top, u16 sp
 // Frees the icons and their resources, while another sub-page shows
 void PokedexInfoEvo_Hide(PokedexInfoEvo *evo);
 u16 PokedexInfoEvo_GetTouchedSpecies(PokedexInfoEvo *evo);
+
+// Area (paperwhite2_pokedex_info_area.c): where the species is met in the wild, from the index that
+// tools/paperwhite2/encounters.py builds of the wild encounters. The top screen shows the town map in place of the
+// entry, its places glowing in their seasons' colours, and the bottom screen the seasons, the methods with their
+// levels, rarities and rates, the times and the weathers, drawn into the panels' content window with icons in palette
+// rows of their own (POKEDEX_INFO_AREA_ICON_ROW_*)
+
+// The sub engine's BG palette rows of the icons: the first two loaded with Area, the third as Area shows (the
+// content window's other sub-pages use it)
+#define POKEDEX_INFO_AREA_ICON_ROW_0 14
+#define POKEDEX_INFO_AREA_ICON_ROW_1 15
+#define POKEDEX_INFO_AREA_ICON_ROW_2 12
+
+typedef struct PokedexInfoArea PokedexInfoArea;
+
+// fonts are font 0 and font 1; bg is the content window's BG, whose first two icon rows are loaded at once
+PokedexInfoArea *PokedexInfoArea_Create(HeapID heapId, Font *font, Font *smallFont, u32 bg);
+void PokedexInfoArea_Free(PokedexInfoArea *area);
+// Draws the species' places and methods into bitmap, a window whose top is top pixels down the screen, icons included
+void PokedexInfoArea_Draw(PokedexInfoArea *area, GFLBitmap *bitmap, int top, u16 species);
+// Puts the drawn icons' palette rows in BG bg's screen buffer, over the window's map entries
+void PokedexInfoArea_SetIconPalettes(PokedexInfoArea *area, u32 bg);
+// The icons' third palette row's colours (16), loaded into POKEDEX_INFO_AREA_ICON_ROW_2 as Area shows
+const GXRgb *PokedexInfoArea_GetPalette(PokedexInfoArea *area);
+// The map on the top screen, over the entry, whose text it frees until it closes; it shows from the next VBlank. now
+// closes it at once, while the screen is dark, without the entry's panels, which the page's end doesn't need
+void PokedexInfoArea_OpenMap(PokedexInfoArea *area, PokedexInfo *entry, ClActUnit *unit, GameData *gameData,
+                             PokedexDetailBlend *blend);
+void PokedexInfoArea_CloseMap(PokedexInfoArea *area, PokedexInfo *entry, u32 language, BOOL now);
+BOOL PokedexInfoArea_IsMapOpen(PokedexInfoArea *area);
+// Shows the places of the species drawn last on the open map
+void PokedexInfoArea_ShowPlaces(PokedexInfoArea *area);
+// Each frame while the map is open: its glow, and the season it shows; TRUE if the legend's marked season changed,
+// drawn again into bitmap
+BOOL PokedexInfoArea_Update(PokedexInfoArea *area, GFLBitmap *bitmap, int top);
+// The panels' Area, and its update each frame but while the page fades
+PokedexInfoArea *PokedexInfoPanels_GetArea(PokedexInfoPanels *panels);
+void PokedexInfoPanels_UpdateArea(PokedexInfoPanels *panels);
 
 // The move panel over the top screen (paperwhite2_pokedex_move_panel.c): a move's name, type, category, numbers and
 // description over the entry, whose text it takes the place of while it is open, with the rest of the screen dimmed

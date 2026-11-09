@@ -6,6 +6,10 @@
     encounters.py check                             # validate the data and print its sizes
     encounters.py odds AREA METHOD SEASON PERIOD WEATHER SCALED [PARTY]   # one place's odds from the packed member
     encounters.py habitats OUTPUT_DIR               # the Pokédex's Habitat List (res/pokedex/habitats/) from this data
+    encounters.py area-index [SPECIES ...]          # the Pokédex Info page's Area index: its size, and species' rows
+
+The odds and the Area index (area_index, which tools/paperwhite2/pokedex_evo.py packs into the Pokédex's graphics
+archive) build each method's slots with the same functions (method_candidates, slot_shares), as the runtime does.
 
 The sources, each checked against its schema beside it: settings.json, groups.json, areas/<area>.json (an area is an
 original table, ENCOUNTERS_<AREA>) and species/<species>.json, with the scaled level's percent, cap and spread from
@@ -35,6 +39,7 @@ import json
 import struct
 import sys
 from functools import cache
+from typing import NamedTuple
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -349,63 +354,383 @@ def check():
           f"{most[2]}, {most[0]} of {SLOT_MAX}")
 
 
+class Rules(NamedTuple):
+    """The settings that a method's slots are built by, as the member's header has them: the tier count and shares
+    (tenths of a percent), the tiers and methods that rustling spots draw from (a bit each), shaking grass's own
+    species with its levels, and the three kinds of spots' shares."""
+    tier_count: int
+    shares: tuple
+    rustling_tiers: int
+    rustling_from: int
+    special: int
+    special_min: int
+    special_max: int
+    spot_shares: tuple
+
+
+def rules_from_header(header: tuple) -> Rules:
+    return Rules(header[5], header[6:14], header[17], header[24], header[18], header[19], header[20], header[21:24])
+
+
+def rules_from_data(data: Data) -> Rules:
+    """The same from the sources, as member() packs them."""
+    rustling = data.settings["rustling"]
+    special = rustling["grass"]["species"]
+    special_file = data.species.get(special.removeprefix("SPECIES_").lower(), {"levels": {"min": 1, "max": 100}})
+    shares = tuple(round(t["share"] * 10) for t in data.settings["tiers"]) + (0,) * (TIER_MAX - len(data.tiers))
+    return Rules(len(data.tiers), shares, bits(rustling["tiers"], data.tiers, "rustling tiers"),
+                 bits(rustling["from"], METHODS, "rustling from"), species_numbers()[special],
+                 special_file["levels"]["min"], special_file["levels"]["max"],
+                 (rustling["grass"]["share"], rustling["dust"]["share"], rustling["shadow"]["share"]))
+
+
+def method_candidates(entries, method: int, season: int, period: int, weather: int, rules: Rules) -> list[tuple]:
+    """The candidates of one method (an ENCTYPE_*) in one area at a season, a period (DAY_PERIOD_*) and a weather
+    (WEATHER_*), as BuildSlots in src/paperwhite2/main/paperwhite2_encounters.c takes them, without extra conditions:
+    its own, then for rustling those of the methods it draws from in its tiers. entries are (number, weathers, form,
+    tier, methods, seasons, times, minimum, maximum); each result is (pooled, number, form, tier, minimum, maximum)."""
+    found = []
+    rustling = method == METHODS.index("rustling")
+    for wanted in (False, True):
+        for number, weathers, form, tier, methods, seasons, times, minimum, maximum in entries:
+            own = bool(methods & (1 << method))
+            pooled = (rustling and not own and bool(methods & rules.rustling_from)
+                      and bool(rules.rustling_tiers & (1 << tier)))
+            if not (own or pooled) or pooled != wanted or not seasons & (1 << season) or not times & (1 << period):
+                continue
+            if weathers and not weathers & (1 << weather):
+                continue
+            if tier < rules.tier_count:
+                found.append((pooled, number, form, tier, minimum, maximum))
+    return found
+
+
+def slot_shares(found: list[tuple], method: int, spots: int, level: int, low: int, high: int,
+                rules: Rules) -> list[tuple]:
+    """A method's slots from its candidates (method_candidates) in an area with spots of the kind spots (SPOTS), as
+    BuildSlots builds them for the gate's level and the scaled level's range low to high: each slot's species number,
+    form, level range and share in percent. The tiers present split their shares among their slots, rescaled to the
+    whole, and shaking grass's own species takes its spots' share on top."""
+    # Where the gate would leave the method with none, the lowest minimum of its own candidates lets theirs in
+    # (LevelForGate)
+    own_minimums = [c[4] for c in found if not c[0]]
+    if own_minimums and all(level < m for m in own_minimums):
+        level = min(own_minimums)
+    rustling = method == METHODS.index("rustling")
+    slots = []
+    for pooled, number, form, tier, minimum, maximum in found:
+        if level < minimum:
+            continue
+        if rustling and spots == 0 and number == rules.special:
+            continue
+        if pooled and any(s[0] == number and s[1] == form for s in slots):
+            continue
+        slots.append([number, form, tier, min(max(low, minimum), maximum), min(max(high, minimum), maximum)])
+    counts = {t: sum(1 for s in slots if s[2] == t) for t in range(rules.tier_count)}
+    total_share = sum(rules.shares[t] for t, n in counts.items() if n)
+    weights = [rules.shares[s[2]] * 1024 // counts[s[2]] if total_share else 0 for s in slots]
+    result = [(s[0], s[1], s[3], s[4]) for s in slots]
+    if rustling and spots == 0 and rules.special:
+        share = rules.spot_shares[0] if slots else 100
+        total = sum(weights)
+        weights.append(1024 if share >= 100 or not total else total * share // (100 - share))
+        result.append((rules.special, 0, min(max(low, rules.special_min), rules.special_max),
+                       min(max(high, rules.special_min), rules.special_max)))
+    total = sum(weights) or 1
+    return [(*r, 100 * w / total) for r, w in zip(result, weights)]
+
+
 def odds(area: str, method: str, season: str, period: str, weather: str, scaled: int, party: int) -> list[tuple]:
     """A place's odds as the runtime computes them from the packed member (BuildSlots in
     src/paperwhite2/main/paperwhite2_encounters.c), without extra conditions, outbreaks or the spot's kind (its
     area's): each slot's species number, form, share in percent and level range."""
     data = member()
     header = HEADER.unpack_from(data, 0)
-    tier_count, shares = header[5], header[6:14]
-    gate, rustling_tiers, special, special_min, special_max = header[14], header[17], header[18], header[19], header[20]
-    spot_shares, rustling_from, index_offset = header[21:24], header[24], header[26]
+    rules = rules_from_header(header)
+    gate, index_offset = header[14], header[26]
     offset, size = INDEX.unpack_from(data, index_offset + INDEX.size * area_numbers()[area])
     area_fields = AREA.unpack_from(data, offset)
     spots, count = area_fields[28], area_fields[29]
-    encounter_type, season_bit, period_bit = METHODS.index(method), SEASONS.index(season), TIMES.index(period)
     level = scaled if gate == GATES.index("scaled") else party
     # The spread is a share of the party's level (Conditions_WildSpread); without it, of the scaled level
     scaling = json.loads(LEVEL_SCALING.read_text())
     spread = ((party or scaled) * scaling["spread_percent"] + 50) // 100
     spread = min(scaling["spread_max"], max(scaling["spread_min"], spread))
     low, high = max(1, scaled - spread), min(100, scaled + spread)
-    candidates = []
-    for wanted in (False, True):
-        for i in range(count):
-            c = CANDIDATE.unpack_from(data, offset + AREA.size + CANDIDATE.size * i)
-            number, _, weathers, _, form, tier, methods, seasons, times, minimum, maximum = c[:11]
-            own = bool(methods & (1 << encounter_type))
-            pooled = method == "rustling" and not own and bool(methods & rustling_from) and bool(rustling_tiers & (1 << tier))
-            if not (own or pooled) or pooled != wanted or not seasons & (1 << season_bit) or not times & (1 << period_bit):
-                continue
-            if weathers and not weathers & (1 << conditions.weathers()[weather]):
-                continue
-            if tier < tier_count:
-                candidates.append((pooled, number, form, tier, minimum, maximum))
-    # Where the gate would leave the method with none, the lowest minimum of its own candidates lets theirs in
-    # (LevelForGate)
-    own_minimums = [c[4] for c in candidates if not c[0]]
-    if own_minimums and all(level < m for m in own_minimums):
-        level = min(own_minimums)
-    slots = []
-    for pooled, number, form, tier, minimum, maximum in candidates:
-        if level < minimum:
+    entries = []
+    for i in range(count):
+        number, _, weathers, _, form, tier, methods, seasons, times, minimum, maximum = \
+            CANDIDATE.unpack_from(data, offset + AREA.size + CANDIDATE.size * i)[:11]
+        entries.append((number, weathers, form, tier, methods, seasons, times, minimum, maximum))
+    method_bit = METHODS.index(method)
+    found = method_candidates(entries, method_bit, SEASONS.index(season), TIMES.index(period),
+                              conditions.weathers()[weather], rules)
+    return slot_shares(found, method_bit, spots, level, low, high, rules)
+
+
+# The Pokédex Info page's Area sub-page's index (src/paperwhite2/ov298/paperwhite2_pokedex_info_area.c), a member of
+# the Pokédex's graphics archive (tools/paperwhite2/pokedex_evo.py): each species' places on the town map with their
+# seasons, and its methods with their levels, rarities, rates, seasons, times and weathers
+AREA_INDEX_MAGIC = b"PARE"
+AREA_INDEX_VERSION = 1
+AREA_INDEX_HEADER = struct.Struct("<4sHHHxxII")
+AREA_INDEX_PLACE = struct.Struct("<HhhBBBx")
+AREA_INDEX_SPECIES = struct.Struct("<10B")
+AREA_INDEX_ROW = struct.Struct("<4BHH5Bx")
+# The page's methods (AREA_METHOD_* in the C file): rustling is shown by its area's kind of spots. A species with more
+# than AREA_INDEX_ROWS methods has them merged, in AREA_MERGES' order until they fit: its kinds of rustling into one
+# row, "rustling", then each rippling method into its plain one, then dark grass into grass. Rows are in AREA_ORDER
+AREA_METHODS = ["grass", "dark_grass", "shaking_grass", "dust_cloud", "bridge_shadow", "surf", "rippling_surf",
+                "fishing", "rippling_fishing", "rustling"]
+AREA_ORDER = [0, 1, 9, 2, 3, 4, 5, 6, 7, 8]
+AREA_RUSTLING_KINDS = ["shaking_grass", "dust_cloud", "bridge_shadow"]
+AREA_MERGES = [(AREA_RUSTLING_KINDS, "rustling"), (["rippling_surf"], "surf"), (["rippling_fishing"], "fishing"),
+               (["dark_grass"], "grass")]
+AREA_INDEX_ROWS = 4
+# The weather groups, as the Habitat Dex's filters have them (paperwhite2_habitat_dex.c's sWeatherFilterBits); each is
+# computed in its first weather
+AREA_WEATHERS = {"clear": ["WEATHER_SUNNY", "WEATHER_FLUTTER", "WEATHER_TINT_9", "WEATHER_TINT_10", "WEATHER_TINT_11",
+                           "WEATHER_TINT_13", "WEATHER_TINT_14"],
+                 "rain": ["WEATHER_RAIN", "WEATHER_GUSTY_RAIN"], "thunderstorm": ["WEATHER_THUNDERSTORM"],
+                 "snow": ["WEATHER_FLAKE", "WEATHER_BLIZZARD", "WEATHER_DIAMOND_DUST"],
+                 "sandstorm": ["WEATHER_SANDSTORM", "WEATHER_SANDSTORM_2"]}
+# A row's tier for an outbreak's or shaking grass's own species, which have none
+AREA_TIER_NONE = 0xFF
+AREA_FLAG_OUTBREAK, AREA_FLAG_RULE, AREA_FLAG_WANDERER = 1, 2, 4
+# The most bytes a species' block has, the page's buffer, and the most places it has, the page's OBJs
+# (AREA_BLOCK_MAX and AREA_PLACE_MAX in the C file)
+AREA_BLOCK_MAX = 512
+AREA_PLACE_MAX = 40
+# Shares this close (in percent) are the same, for the preferred times and weathers
+AREA_SAME_SHARE = 0.05
+TOWN_MAP = ROOT / "res" / "town_map"
+
+
+def area_places() -> tuple[list[dict], dict[str, list[int]]]:
+    """The town map's places in its table's order, and each encounter area's places: those of its zones' parents."""
+    order = json.loads((TOWN_MAP / "order.json").read_text())
+    places = [json.loads((TOWN_MAP / f"{zone.removeprefix('ZONE_').lower()}.json").read_text()) for zone in order]
+    by_zone = {zone: i for i, zone in enumerate(order)}
+    found: dict[str, list[int]] = {}
+    for path in sorted(ZONES.glob("*.json")):
+        if path.name.endswith(".schema.json"):
             continue
-        if method == "rustling" and spots == 0 and number == special:
+        zone = json.loads(path.read_text())
+        encounters = zone.get("encounters")
+        if not (isinstance(encounters, str) and encounters.startswith("ENCOUNTERS_")):
             continue
-        if pooled and any(s[0] == number and s[1] == form for s in slots):
+        place = by_zone.get(zone.get("parent"), by_zone.get(f"ZONE_{path.stem.upper()}"))
+        area = encounters.removeprefix("ENCOUNTERS_").lower()
+        if place is not None and place not in found.setdefault(area, []):
+            found[area].append(place)
+    return places, found
+
+
+def area_rows(data: Data) -> dict[int, dict]:
+    """Each species' places (a season mask by place) and its methods (AREA_METHODS): for each, every context it
+    appears in (area, season, period, weather group, its share there in percent), its tiers and flags. The level gate
+    is ignored, as for a party high enough; outbreaks are rows of their own methods, at the outbreak share."""
+    rules = rules_from_data(data)
+    weathers = conditions.weathers()
+    groups = [weathers[names[0]] for names in AREA_WEATHERS.values()]
+    _, places = area_places()
+    found: dict[int, dict] = {}
+    rustling = METHODS.index("rustling")
+
+    def note(number, area, method, season, period, group, share, tiers, flags):
+        entry = found.setdefault(number, {"places": {}, "rows": {}})
+        for place in places.get(area, []):
+            entry["places"][place] = entry["places"].get(place, 0) | 1 << season
+        row = entry["rows"].setdefault(method, {"contexts": [], "tiers": set(), "flags": 0})
+        row["contexts"].append((area, season, period, group, share))
+        row["tiers"] |= tiers
+        row["flags"] |= flags
+
+    for area, entries in candidates(data).items():
+        source = data.areas[area]
+        spots = SPOTS.index(source["spots"])
+        plain = [(f[0], f[2], f[3], f[4], f[5], f[6], f[7], f[8], f[9]) for f, _ in entries]
+        ruled = {f[0] for f, when in entries if when}
+        # Without a weather in its candidates, an area's slots are the same in every weather
+        weathered = any(e[1] for e in plain)
+        for method in range(len(METHODS)):
+            shown = AREA_METHODS.index(AREA_RUSTLING_KINDS[spots] if method == rustling else METHODS[method])
+            for season, name in enumerate(SEASONS):
+                if not source["rates"].get("all_year", source["rates"].get(name, {})).get(METHODS[method], 0):
+                    continue
+                for period in range(len(TIMES)):
+                    by_group = []
+                    for weather in groups if weathered else groups[:1]:
+                        taken = method_candidates(plain, method, season, period, weather, rules)
+                        shares, tiers = {}, {}
+                        for number, _, _, _, share in slot_shares(taken, method, spots, 100, 1, 100, rules):
+                            shares[number] = shares.get(number, 0) + share
+                        for _, number, _, tier, _, _ in taken:
+                            tiers.setdefault(number, set()).add(tier)
+                        by_group.append((shares, tiers))
+                    for group in range(len(groups)):
+                        shares, tiers = by_group[group if weathered else 0]
+                        for number, share in shares.items():
+                            if share > 0:
+                                note(number, area, shown, season, period, group, share,
+                                     tiers.get(number, {AREA_TIER_NONE}), AREA_FLAG_RULE if number in ruled else 0)
+    share = data.settings["outbreak_share"]
+    for folder, entry in data.species.items():
+        where = label(SOURCE / "species" / f"{folder}.json")
+        number = data.species_number(folder)
+        for index, outbreak in enumerate(entry.get("outbreaks", [])):
+            at = f"{where}: outbreaks[{index}]"
+            for area in data.places(outbreak["places"], at):
+                spots = SPOTS.index(data.areas[area]["spots"])
+                for method in outbreak["methods"]:
+                    shown = AREA_METHODS.index(AREA_RUSTLING_KINDS[spots] if method == "rustling" else method)
+                    for season in outbreak["seasons"]:
+                        for period in outbreak["times"]:
+                            for group in range(len(groups)):
+                                note(number, area, shown, SEASONS.index(season), TIMES.index(period), group, share,
+                                     {AREA_TIER_NONE}, AREA_FLAG_OUTBREAK)
+        if "overworld" in entry and number in found:
+            for row in found[number]["rows"].values():
+                row["flags"] |= AREA_FLAG_WANDERER
+    return found
+
+
+def preferred(best: list[float], available: int) -> int:
+    """The bits of the available contexts whose best share is the highest."""
+    top = max(best)
+    return sum(1 << i for i, value in enumerate(best) if available >> i & 1 and value > top - AREA_SAME_SHARE)
+
+
+def area_merged_rows(rows: dict) -> dict:
+    """A species' rows, merged while there are more than the page's (AREA_MERGES, in turn)."""
+    rows = dict(rows)
+    for sources, target in AREA_MERGES:
+        if len(rows) <= AREA_INDEX_ROWS:
+            break
+        methods = [AREA_METHODS.index(name) for name in [target, *sources] if AREA_METHODS.index(name) in rows]
+        if len(methods) < 2:
             continue
-        slots.append([number, form, tier, min(max(low, minimum), maximum), min(max(high, minimum), maximum)])
-    counts = {t: sum(1 for s in slots if s[2] == t) for t in range(tier_count)}
-    total_share = sum(shares[t] for t, n in counts.items() if n)
-    weights = [shares[s[2]] * 1024 // counts[s[2]] if total_share else 0 for s in slots]
-    result = [(s[0], s[1], s[3], s[4]) for s in slots]
-    if method == "rustling" and spots == 0 and special:
-        share = spot_shares[0] if slots else 100
-        total = sum(weights)
-        weights.append(1024 if share >= 100 or not total else total * share // (100 - share))
-        result.append((special, 0, min(max(low, special_min), special_max), min(max(high, special_min), special_max)))
-    total = sum(weights) or 1
-    return [(*r, 100 * w / total) for r, w in zip(result, weights)]
+        merged = [rows.pop(method) for method in methods]
+        flags = 0
+        for row in merged:
+            flags |= row["flags"]
+        rows[AREA_METHODS.index(target)] = {"contexts": [c for r in merged for c in r["contexts"]],
+                                            "tiers": set().union(*(r["tiers"] for r in merged)), "flags": flags}
+    return rows
+
+
+def area_species_block(entry: dict, levels: dict) -> bytes:
+    """A species' block of the index (area_index)."""
+    rows = area_merged_rows(entry["rows"])
+    if len(rows) > AREA_INDEX_ROWS:
+        raise DataError(f"{len(rows)} methods after merging, more than the page's {AREA_INDEX_ROWS} rows")
+    packed = []
+    best_times = [0.0] * len(TIMES)
+    best_weathers = [0.0] * len(AREA_WEATHERS)
+    seasons_all = times_all = weathers_all = flags_all = 0
+    for method in sorted(rows, key=AREA_ORDER.index):
+        row = rows[method]
+        contexts = row["contexts"]
+        seasons = sum({1 << c[1] for c in contexts})
+        times = sum({1 << c[2] for c in contexts})
+        weathers = sum({1 << c[3] for c in contexts})
+        row_times = [max([c[4] for c in contexts if c[2] == t], default=0) for t in range(len(TIMES))]
+        row_weathers = [max([c[4] for c in contexts if c[3] == g], default=0) for g in range(len(AREA_WEATHERS))]
+        best_times = [a + b for a, b in zip(best_times, row_times)]
+        best_weathers = [a + b for a, b in zip(best_weathers, row_weathers)]
+        tiers = sorted(row["tiers"])
+        rates = [c[4] for c in contexts]
+        packed.append(AREA_INDEX_ROW.pack(method, tiers[0], tiers[-1], seasons, max(1, round(min(rates) * 10)),
+                                          max(1, round(max(rates) * 10)), times, preferred(row_times, times),
+                                          weathers, preferred(row_weathers, weathers), row["flags"]))
+        seasons_all |= seasons
+        times_all |= times
+        weathers_all |= weathers
+        flags_all |= row["flags"]
+    places = sorted(entry["places"].items())
+    head = AREA_INDEX_SPECIES.pack(len(places), len(packed), levels["min"], levels["max"], seasons_all, times_all,
+                                   preferred(best_times, times_all), weathers_all,
+                                   preferred(best_weathers, weathers_all), flags_all)
+    return head + b"".join(struct.pack("<BB", place, mask) for place, mask in places) + b"".join(packed)
+
+
+def area_index(data: Data | None = None) -> bytes:
+    """The Area sub-page's index: a header (AREA_INDEX_HEADER: the magic, the version, the species and place counts,
+    the offsets of the species' offsets and of the places), each species' block offset by its number with the end's
+    after them, the town map's places in its table's order (AREA_INDEX_PLACE: the zone, the area's position and
+    animation on the Pokédex's map, and the place's position, for the player's marker), then each species' block:
+    AREA_INDEX_SPECIES (its place and row counts, its levels, the seasons, times and weather groups of all its rows with
+    the preferred ones, and their flags), its places (the place and a season mask each) and its rows (AREA_INDEX_ROW:
+    the method, its tiers, seasons, rates in tenths of a percent, times and weather groups with the preferred ones,
+    and flags). A species never met in the wild has an empty block."""
+    data = data or Data()
+    places, _ = area_places()
+    rows = area_rows(data)
+    names = constants()
+    count = names["SPECIES_GENESECT"] + 1
+    levels = {data.species_number(folder): entry["levels"] for folder, entry in data.species.items()}
+    rules = rules_from_data(data)
+    levels.setdefault(rules.special, {"min": rules.special_min, "max": rules.special_max})
+    place_table = b"".join(AREA_INDEX_PLACE.pack(names[p["zone"]], p["area"]["x"], p["area"]["y"],
+                                                 p["area"]["animation"], p["position"]["x"], p["position"]["y"])
+                           for p in places)
+    offsets_offset = AREA_INDEX_HEADER.size
+    places_offset = offsets_offset + 4 * (count + 1)
+    body_offset = places_offset + len(place_table)
+    offsets, body = [], bytearray()
+    for number in range(count):
+        offsets.append(body_offset + len(body))
+        if number in rows:
+            block = area_species_block(rows[number], levels.get(number, {"min": 1, "max": 100}))
+            if len(block) > AREA_BLOCK_MAX:
+                raise DataError(f"species {number}'s Area block is {len(block)} bytes, more than the page's "
+                                f"{AREA_BLOCK_MAX}")
+            if len(rows[number]["places"]) > AREA_PLACE_MAX:
+                raise DataError(f"species {number} is at {len(rows[number]['places'])} of the map's places, more "
+                                f"than the page's {AREA_PLACE_MAX}")
+            body += block
+    offsets.append(body_offset + len(body))
+    header = AREA_INDEX_HEADER.pack(AREA_INDEX_MAGIC, AREA_INDEX_VERSION, count, len(places), offsets_offset,
+                                    places_offset)
+    return header + struct.pack(f"<{count + 1}I", *offsets) + place_table + bytes(body)
+
+
+def area_index_check(names: list[str]):
+    """Prints the index's size, the species with more methods than the page's rows, and the blocks of the species
+    named (SPECIES_* or folder names)."""
+    data = Data()
+    index = area_index(data)
+    numbers = species_numbers()
+    count = AREA_INDEX_HEADER.unpack_from(index, 0)[2]
+    offsets = struct.unpack_from(f"<{count + 1}I", index, AREA_INDEX_HEADER.size)
+    rows = area_rows(data)
+    by_number = {n: name for name, n in numbers.items()}
+    over = [f"{by_number.get(n, n)} ({len(e['rows'])})" for n, e in sorted(rows.items())
+            if len(e["rows"]) > AREA_INDEX_ROWS]
+    print(f"area index: {len(index)} bytes, {sum(1 for i in range(count) if offsets[i + 1] > offsets[i])} species, "
+          f"largest block {max(offsets[i + 1] - offsets[i] for i in range(count))} bytes")
+    print(f"more than {AREA_INDEX_ROWS} methods: {', '.join(over) or 'none'}")
+    for name in names:
+        number = numbers.get(name if name.startswith("SPECIES_") else f"SPECIES_{name.upper()}")
+        if number is None:
+            print(f"{name}: no such species")
+            continue
+        start, end = offsets[number], offsets[number + 1]
+        if start == end:
+            print(f"{name}: not in the wild")
+            continue
+        head = AREA_INDEX_SPECIES.unpack_from(index, start)
+        print(f"{name}: Lv. {head[2]}-{head[3]}, seasons {head[4]:04b}, times {head[5]:05b} (preferred {head[6]:05b}), "
+              f"weathers {head[7]:05b} (preferred {head[8]:05b}), flags {head[9]}")
+        cursor = start + AREA_INDEX_SPECIES.size
+        found = [struct.unpack_from("<BB", index, cursor + 2 * i) for i in range(head[0])]
+        print("  places:", ", ".join(f"{place}:{mask:04b}" for place, mask in found))
+        cursor += 2 * head[0]
+        for i in range(head[1]):
+            r = AREA_INDEX_ROW.unpack_from(index, cursor + AREA_INDEX_ROW.size * i)
+            tiers = "-".join(dict.fromkeys(data.tiers[t] if t < len(data.tiers) else "none" for t in (r[1], r[2])))
+            print(f"  {AREA_METHODS[r[0]]:16} {tiers:18} {r[4] / 10:.1f}-{r[5] / 10:.1f}%  seasons {r[3]:04b}  "
+                  f"times {r[6]:05b}/{r[7]:05b}  weathers {r[8]:05b}/{r[9]:05b}  flags {r[10]}")
 
 
 HABITATS = ROOT / "res" / "pokedex" / "habitats"
@@ -558,9 +883,12 @@ def main():
     command.add_argument("scaled", type=int)
     command.add_argument("party", type=int, nargs="?", default=0)
     commands.add_parser("habitats").add_argument("output", type=Path)
+    commands.add_parser("area-index").add_argument("species", nargs="*")
     args = parser.parse_args()
     try:
-        if args.command == "archive":
+        if args.command == "area-index":
+            area_index_check(args.species)
+        elif args.command == "archive":
             archive(args.source, args.output)
         elif args.command == "member":
             args.output.write_bytes(member())

@@ -53,9 +53,23 @@ void PokedexInfo_Hide(PokedexInfo *info);
 void PokedexInfo_Show(PokedexInfo *info);
 #ifdef PAPERWHITE2
 // Paper White 2: frees the entry's text windows, type icons and footprint for a while, and makes them again with the
-// entry in a language (as PokedexInfo_SetLanguage), for the detail screen's info page's move panel
+// entry in a language (as PokedexInfo_SetLanguage), for the detail screen's info page's move panel and Area map
 void PokedexInfo_FreeText(PokedexInfo *info);
 void PokedexInfo_RestoreText(PokedexInfo *info, u32 language);
+// Paper White 2: the info page's Area map takes the top entry's panels' VRAM on BGs 2 and 3 while it shows and puts
+// their characters back as it closes: the ARCID_POKEDEX_GRA file they are, and where the BGs have them and the caught
+// label's two windows (the mid BG's), each as CHAR_POS and CHAR_SIZE give them, by POKEDEX_INFO_PANEL_CHARS_*; their
+// screens are still in the BGs' screen buffers
+enum {
+    POKEDEX_INFO_PANEL_CHARS_MID,
+    POKEDEX_INFO_PANEL_CHARS_BACK,
+    POKEDEX_INFO_PANEL_CHARS_LABEL_CAUGHT,
+    POKEDEX_INFO_PANEL_CHARS_LABEL_UNCAUGHT,
+    POKEDEX_INFO_PANEL_CHARS_COUNT,
+};
+u32 PokedexInfo_GetPanelChars(PokedexInfo *info, u32 *chars);
+// The caught label's characters on the panels' BG back in VRAM too (in a VBlank: their screen is unchanged)
+void PokedexInfo_ReloadLabel(PokedexInfo *info);
 // Paper White 2: the info page's own text in the entry's text window (tiles 2, 17, 28 by 7 on the top screen's BG 1) in
 // place of the description: PokedexInfo_BeginOtherText clears the window's bitmap and returns it, for the caller to
 // draw into at once, and the entry's next update shows it; after PokedexInfo_EndOtherText, the entry's next print

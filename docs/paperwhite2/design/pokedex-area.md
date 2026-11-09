@@ -233,6 +233,37 @@ weathers, methods as its tabs) and the DexNav's top panel (season, time, weather
 loading the sheet's tiles into its own BG or converting them to OBJs with `obj_remap.py`. The area index's per-method
 rows are what the DexNav's "what if" and Info's Habitat Dex link would want too.
 
+## As built (2026-11-08, phases 1-3)
+
+The details are in `docs/paperwhite2/plugins.md` (Pokédex, Area). Where the build differs from the plan above:
+
+- **The user's decisions:** Area between Evo and Matchups (D-pad and L/R include it), the head bar stays INFO, every
+  place shows (visited or not), the player's marker stays; the glow cycles through the seasons of the places not met
+  all year, all-year places white; the legend marks the season glowing (a gold underline); more than 4 methods merge
+  (rustling kinds, then rippling into plain, then dark grass into grass: Dratini and Poliwhirl need the second step,
+  Wingull, Piplup, Tympole, Palpitoad, Stunfisk and Rufflet the first); unmet seasons, times and weathers show greyed
+  (light grey copies of their icons); a species never met in the wild says "Not found in the wild".
+- **Members:** the new art is `ARCID_POKEDEX_GRA` 152-154, so Evo's members moved to 155-157 (`pokedex_evo.py`'s
+  `ARCHIVE_MEMBERS` is 155); the index is 158 and the icons 159, both written by `pokedex_evo.py archive`.
+- **The index** has no tier or rate per place, only per method row (lowest and highest over its places and contexts);
+  a row's rates are the species' summed share over its forms. 26.8 KB, 496 species, the largest block 118 bytes.
+- **Bottom palette rows:** arts 6-11; row 12 the content window's on Matchups and Evo and Area's third icon row, loaded
+  in the VBlank as the sub-page changes; Area's text is in the panels' row 3 (not its art's); the icons take rows 14, 15
+  and 12, each 8x8 tile its own row (the placeholder sheet's 27 colours and 8 greys don't fit two rows). Rows 0, 14 and
+  15 were measured unused (zero, no map entry) on every sub-page.
+- **Rows' layout:** one line each: icon x 16, levels x 52 (font 0), rarity x 108 (font 1), outbreak badge x 176, rate
+  right-aligned at x 250; time icons y 136 and weather icons y 152 directly under the 4th row, no gap.
+- **Main OBJ rows:** the marker in row 0, the glow in rows 1 (all year), 6, 7, 14 and 15 (the plan's 3-7 hold the
+  entry's type icons' and footprint's palettes, which stay loaded).
+- **VRAM swap:** the map's 62 KB of characters go to VRAM at once where the entry has none, and the rest (about
+  9 KB: the BGs' blank first characters, the panels' and the caught labels') with the screens in the VBlank that
+  switches the BGs; all 62 KB in the VBlank ran into the next frame in the emulator. Frame-by-frame captures of
+  opening and leaving show no in-between frame.
+- **Heap:** opening Area left 21 KB free at 0xa0000, so the detail heap is 0xb0000 now (99 KB at the lowest).
+- **Placeholders:** the panels behind the regions (until `info_area.png` draws them), the glow colours (the template's,
+  until `area_glow.png`), and the icon sheet itself. Not done: phase 4's `area_glow.png` target, phase 5 (cutting the
+  touch bar's AREA page).
+
 ## Templates
 
 `tools/paperwhite2/pokedex_templates.py` (which calls `tools/paperwhite2/pokedex_area_templates.py`) writes them
