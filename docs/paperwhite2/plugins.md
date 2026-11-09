@@ -1714,22 +1714,23 @@ snow, sandstorm as the Habitat Dex groups them), with the level gate ignored (a 
 own species (Audino) is a row with no tier ("Special"), and an outbreak a row or a flag at the outbreak share. More than
 4 methods merge, in turn while they don't fit: the kinds of rustling into one row (shaking grass's icon), each rippling
 method into its plain one, dark grass into grass (Dratini and Poliwhirl need the second step). The preferred times and
-weathers are those where the species' best share, summed over its rows, is the highest; the page marks them only when
-they aren't all of its own. The page reads its header and the places as it starts, and the shown species' block (at
+weathers are those where the species' best share, summed over its rows, is the highest; the index keeps them (and the
+rates), but the page shows neither. The page reads its header and the places as it starts, and the shown species' block (at
 most 512 bytes) by range as it shows. **The bottom screen** (drawn into the panels' content window in the panels'
-palette, row 3, over the art `info_area.png`, members 152-154, palette row 10; placeholder panels until the art has
-them): the seasons (font 1 label, the four season icons at x 48-168, y 24, "All year" at x 210 when it is met in all
-four), the season the map glows in underlined in gold (y 40-41); up to four method rows (y 48, 72, 96, 120: the method's
-icon at x 16, the levels in font 0 at x 52, the rarity or range in font 1 at x 108, the outbreak's badge at x 176, the
-rate or range right-aligned at x 250, "<1%" under half a percent); the times (y 136) and weathers (y 152), five icons each
-at x 48-208, a 2 px gold bar left of the preferred ones. A season, time or weather it isn't met in shows its icon in
-light greys. A species never met in the wild shows "Not found in the wild". **The icons** (member 159,
-`tools/paperwhite2/pokedex_area.py` from `res/paperwhite2/pokedex_art/area_icons.png`, 160 by 80, 25 slots of 32 by
-16 in the plan's order) are drawn into the window's tiles (tile-aligned, 4 by 2 tiles each) and each tile's map entry
-takes its own palette row: the sheet's colours (27 in the placeholder sheet) are packed per 8 by 8 tile into three
-rows of 15, sub BG rows 14 and 15 (loaded as the page starts; nothing else on the bottom screen uses them, measured)
-and 12 (loaded as Area shows), with the seasons', times' and weathers' grey copies (each colour's grey by its
-luminance, 8 levels from 13 to 27 of 31) packed into the same rows. **The top screen** shows the original AREA page's
+palette, row 3, over the art `info_area.png`, members 152-154, palette row 10, white under the tab bar): the seasons
+(font 1 label; "All seasons" at x 48 when every place it is at glows white, that is all year everywhere, else the four
+season icons at x 48-168, y 24, coloured for each season it is met in, even all four, grey for the others); up to four
+method rows (y 48, 72, 96, 120: the method's icon at x 16, the levels in font 0 at x 52, the rarity or range in font 1 at
+x 108, the outbreak's badge at x 176); the times (y 136) and weathers (y 152): "All times of day" or "All weathers" at x
+48 when it is met in all five, else five icons at x 48-208, grey where it isn't met. A species never met in the wild
+shows "Not found in the wild". **The icons** (member 159, `tools/paperwhite2/pokedex_area.py` from
+`res/paperwhite2/pokedex_art/area_icons.png`, 160 by 80, 25 slots of 32 by 16 in the plan's order, each on solid white
+so that it blends into the art's white) are drawn into the window's tiles (tile-aligned, 4 by 2 tiles each) and each
+tile's map entry takes its own palette row: the sheet's colours are packed per 8 by 8 tile into three rows of 15, sub
+BG rows 14 and 15 (loaded as the page starts; nothing else on the bottom screen uses them, measured) and 12 (loaded as
+Area shows), with the seasons', times' and weathers' grey copies (each colour's grey by its luminance, 8 levels from 13
+to 27 of 31; white stays white) packed into the same rows. The user's sheet of 2026-11-08 has 27 colours (white among
+them) and its greys 7 (white again among them), 33 different; packed they take 15, 15 and 10 of the rows' 45 places. **The top screen** shows the original AREA page's
 town map (`ARCID_TOWNMAP_GRA` 5 and 7, screens 17 and 16, extended palette 0 into slots 2 and 3) in place of the entry:
 opening it frees the entry's text, type icons and footprint (`PokedexInfo_FreeText`), loads the extended palettes at
 once and reads the characters and screens (about 62 KB, from the heap's tail). The map's characters go over the
@@ -1749,10 +1750,19 @@ position and animation from the index), semi-transparent, glowing as the origina
 its season's: all year 1 (white), spring 6 (pink), summer 7 (green), autumn 14 (red), winter 15 (blue), each the
 places' palette with its three shades (6-8) replaced (`sGlowColors`, placeholders from `area_glow_template.png` until
 the user draws `area_glow.png`). The map steps through the seasons of the places it isn't at all year, one a glow at
-its dimmest point: each place there in that season takes its colour, the others keep theirs, and the legend's
-underline moves with it. The player's marker (the town map's characters 8, cells 12, animations 19, sequence 6, its
+its dimmest point: each place there in that season takes its colour, the others keep theirs.
+The player's marker (the town map's characters 8, cells 12, animations 19, sequence 6, its
 palette's row 1 in main OBJ row 0) is at the player's zone's place (`TownMap_GetMapZone`). All places show, visited or
-not. The detail heap grew to 0xb0000: opening the map with the heap at its fullest left 21 KB free (largest block
+not. **The current Pokémon's box** covers the head bar's right end (the blue the entry's panel left there): x 144-255,
+y 0-31, OBJs in front of the head bar (BG priority 0), made with the map and freed with it, so it shows and goes in the
+same VBlank. It is a placeholder until the user's art (`area_top_box.png` among the templates): the entry panels'
+white with their dark border, the party icon (32 by 32 at x 148, its two frames animated as Evo's) and the species'
+name at x 184, y 8 in font 0 (font 1, y 10, for a name that would pass x 252). The box is a 128 by 32 bitmap drawn
+again as the Pokémon changes and cut into four 32 by 32 OBJs from x 128, made with the party icons' cells
+(`PokeIcon_GetCellFile_Main`); the four and the icon share one character resource of 3 KB. Its palettes: main OBJ
+rows 12 (the icon's: the shown Pokémon's row of the party icons' three, written as it changes) and 13 (the box's
+colours), measured unchanged and unused by any OBJ while Area shows. It takes three OBJ resources (characters, palette,
+cells) while the map is open, and about 3 KB of the heap (the lowest free while the map opens is now 97 KB). The detail heap grew to 0xb0000: opening the map with the heap at its fullest left 21 KB free (largest block
 10 KB) at 0xa0000; at 0xb0000, 152 KB free on Stats, 99 KB at the lowest while the map opens (largest block 90 KB),
 165 KB while Area shows (the entry's text freed). Area keeps about 13 KB while the page runs (the icons' member
 10.4 KB, the places, the species' block).

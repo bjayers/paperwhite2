@@ -769,7 +769,7 @@ static void PokedexInfoPage_ShowSubpage(PokedexDetailInfoParam *param, PokedexIn
     PokedexInfoPage_ShowTopText(param, wk);
 }
 
-// Area shows its map over the entry, with the shown Pokémon's places
+// Area shows its map over the entry, with the shown Pokémon's places and its box
 static void PokedexInfoPage_ShowAreaMap(PokedexInfoPageWork *wk, PokedexDetailCommon *common) {
     PokedexInfoArea *area = PokedexInfoPanels_GetArea(wk->panels);
 
@@ -780,6 +780,7 @@ static void PokedexInfoPage_ShowAreaMap(PokedexInfoPageWork *wk, PokedexDetailCo
                                 PokedexDetailGraphic_GetClActUnit(PokedexDetailCommon_GetGraphic(common)),
                                 PokedexDetailCommon_GetGameData(common), wk->blendMain);
     }
+    PokedexInfoArea_ShowPokemon(area, wk->species, wk->form, wk->sex);
 }
 
 // Leaving Area gives the entry back, of the Pokémon shown now if it changed meanwhile; now while the screen is dark, at

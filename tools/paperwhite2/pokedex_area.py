@@ -9,7 +9,8 @@ The source is res/paperwhite2/pokedex_art/area_icons.png, 160 by 80: 25 slots of
 weather groups (clear, rain, thunderstorm, snow, sandstorm), the methods grass, dark grass, shaking grass, dust cloud,
 bridge shadow, and surf, rippling surf, fishing, rippling fishing, then the outbreak's badge (ICON_* in
 src/paperwhite2/ov298/paperwhite2_pokedex_info_area.c). Its colours count, not its indices: each is rounded to the
-DS's 5 bits an axis, and transparent pixels (alpha below 128) show the panel behind.
+DS's 5 bits an axis, and transparent pixels (alpha below 128) show the panel behind; the user's sheet has
+none, its icons on white, which the page's art has under them.
 
 The page draws an icon's 4 by 2 tiles into its window on the sub engine's BG 7, each tile in a palette row of its own,
 so the sheet can have more colours than one row holds: its tiles are packed into ICON_ROWS rows of 15 colours (the
@@ -46,6 +47,7 @@ ICON_ROWS = 3
 ROW_COLORS = 15
 GREY_LEVELS = 8
 GREY_DARK, GREY_LIGHT = 13, 27
+WHITE = (31, 31, 31)
 # Packing is a search over the tiles' orders, from a fixed seed so that the build always packs them the same
 PACK_TRIES = 4000
 PACK_SEED = 1
@@ -60,7 +62,10 @@ def to5(color):
 
 
 def grey(color):
-    """A colour's light grey by its luminance (Rec. 601), one of GREY_LEVELS."""
+    """A colour's light grey by its luminance (Rec. 601), one of GREY_LEVELS; white, the sheet's background, stays
+    white, so that a grey icon blends into the page's white as a coloured one does."""
+    if color == WHITE:
+        return color
     r, g, b = color
     luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 31
     level = round(luminance * (GREY_LEVELS - 1))

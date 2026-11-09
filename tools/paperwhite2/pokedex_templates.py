@@ -358,9 +358,12 @@ The tab bar for six sub-pages
   y 0-17. Each sub-page's art (info_<page>.png) gets its own tab bar from these; Moves' sets bar
   under it has its gap under the Moves tab, which moves from x 96 to x 112.
 
-The top screen (nothing to draw)
+The top screen
 - area_top_map.png: the town map that the AREA page shows today, moved to the top screen 24 px
   down under the INFO head bar: the map's 168 rows fill y 24-191 exactly.
+- area_top_box.png (to draw): the current Pokémon's box over the head bar's right end, x 144-255,
+  y 0-31 (112 by 32), drawn as OBJs above the head bar; the party icon's 32 by 32 slot at x 148,
+  y 0 (dashed), and the name at x 184, y 8 in font 0 (to x 252 at most), on the placeholder white.
 - area_top_shapes.png: every place's highlight shape (the game's own, in its original red).
 - area_top_frame1.png ... frame4.png: a sample (Unfezant) as its highlights cycle: each place
   glows in the colour of one of its own seasons, the next one about every second; a place it

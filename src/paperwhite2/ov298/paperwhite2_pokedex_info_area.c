@@ -24,9 +24,11 @@
 #include "nitro/os.h"
 #include "nnsys/g2d.h"
 #include "paperwhite2/pokedex_info.h"
+#include "pml/species_names.h"
 #include "system/bmp_winframe.h"
 #include "system/game_data.h"
 #include "system/gf_font.h"
+#include "system/poke_icon.h"
 #include "system/printsys.h"
 #include "system/wordset.h"
 #include "text/system/pokedex_data.h"
@@ -37,9 +39,10 @@
 // page reads the shown species' part of it. The top screen shows the original AREA page's town map (its two 256-color
 // BGs and an OBJ for each place, pokedex_detail_map.c) in place of the entry's panels, on BGs 2 and 3 of the same main
 // engine, 24 pixels down under the head bar; each of the species' places glows in its season's color, a place it is
-// at all year in white, and one it is at in some seasons only steps through them. The bottom screen's content window
-// has its seasons (the legend, the season glowing marked), up to four methods, and the times and weathers, each an
-// icon from the user's sheet (tools/paperwhite2/pokedex_area.py), greyed out where it isn't met
+// at all year in white, and one it is at in some seasons only steps through them, with the current Pokémon's box (its
+// party icon and name) over the head bar's right end. The bottom screen's content window has its seasons, up to four
+// methods (their levels and rarities), and the times and weathers, each an icon from the user's sheet
+// (tools/paperwhite2/pokedex_area.py), greyed out where it isn't met, or "All ..." where it is met in all of them
 
 // ARCID_POKEDEX_GRA's members that tools/paperwhite2/pokedex_evo.py adds after Evo's: the index and the icons
 #define AREA_INDEX_FILE 158
@@ -137,6 +140,8 @@ enum {
 #define AREA_TIME_COUNT 5
 #define AREA_WEATHER_COUNT 5
 #define AREA_ALL_SEASONS ((1 << AREA_SEASON_COUNT) - 1)
+#define AREA_ALL_TIMES ((1 << AREA_TIME_COUNT) - 1)
+#define AREA_ALL_WEATHERS ((1 << AREA_WEATHER_COUNT) - 1)
 
 // The icon sheet's slots (pokedex_area.py): the seasons, the times, the weather groups, the methods and the
 // outbreak's badge, each 32 by 16; the first three rows' icons have grey copies
@@ -185,42 +190,23 @@ static const u8 sIconPaletteRows[ICON_PALETTE_ROWS] = {
     POKEDEX_INFO_AREA_ICON_ROW_2,
 };
 
-// The bottom screen, in its pixels (the content window starts at y 16); the icons are on the window's tiles, so every
-// icon's place is a multiple of 8. Placeholder panels until the user's art has them: the seasons' strip, the methods'
-// rows and the times' and weathers' rows, each a label in font 1 and five icon places
-#define LEGEND_PANEL_Y 20
-#define LEGEND_PANEL_HEIGHT 24
-#define METHODS_PANEL_Y 45
-#define METHODS_PANEL_HEIGHT 91
-#define CONDITIONS_PANEL_Y 136
-#define CONDITIONS_PANEL_HEIGHT 32
-#define PANEL_X 4
-#define PANEL_WIDTH 248
+// The bottom screen, in its pixels (the content window starts at y 16), over the art's white; the icons are on the
+// window's tiles, so every icon's place is a multiple of 8. The seasons' strip, the methods' rows and the times' and
+// weathers' rows, each a label in font 1 and its icons (or "All ..." where they would all be colored)
 #define LABEL_X 8
 #define LABEL_OFFSET_Y 4
 #define ICON_COLUMN_X 48
 #define ICON_COLUMN_PITCH 40
 #define SEASONS_Y 24
-#define ALL_YEAR_X 210
 #define TIMES_Y 136
 #define WEATHERS_Y 152
-// The season glowing, underlined in gold under its icon, and the preferred times and weathers, a gold bar left of
-// theirs (only when some of them are)
-#define MARK_UNDERLINE_Y 40
-#define MARK_UNDERLINE_HEIGHT 2
-#define MARK_BAR_OFFSET_X 5
-#define MARK_BAR_WIDTH 2
-#define MARK_BAR_OFFSET_Y 2
-#define MARK_BAR_HEIGHT 12
-// The methods' rows: the method's icon, the levels in font 0, the rarity in font 1, the outbreak's badge, and the rate
-// right-aligned
+// The methods' rows: the method's icon, the levels in font 0, the rarity in font 1, and the outbreak's badge
 #define ROW_Y 48
 #define ROW_PITCH 24
 #define ROW_ICON_X 16
 #define ROW_LEVELS_X 52
 #define ROW_TIER_X 108
 #define ROW_BADGE_X 176
-#define ROW_RATE_RIGHT 250
 #define ROW_TEXT_OFFSET_Y 1
 #define ROW_SMALL_TEXT_OFFSET_Y 3
 #define UNKNOWN_X 128
@@ -230,10 +216,7 @@ static const u8 sIconPaletteRows[ICON_PALETTE_ROWS] = {
 #define AREA_COLOR_CLEAR 0
 #define AREA_COLOR_TEXT 1
 #define AREA_COLOR_SHADOW 2
-#define AREA_COLOR_PANEL 3
-#define AREA_COLOR_BORDER 4
 #define AREA_COLOR_DIM 5
-#define AREA_COLOR_GOLD 10
 #define AREA_TEXT_COLOR PRINT_COLOR(AREA_COLOR_TEXT, AREA_COLOR_SHADOW, AREA_COLOR_CLEAR)
 #define AREA_LABEL_COLOR PRINT_COLOR(AREA_COLOR_DIM, AREA_COLOR_CLEAR, AREA_COLOR_CLEAR)
 
@@ -302,6 +285,51 @@ static const GXRgb sGlowColors[AREA_SEASON_COUNT + 1][GLOW_SHADES] = {
     (GX_BLEND_PLANEMASK_BG0 | GX_BLEND_PLANEMASK_BG1 | GX_BLEND_PLANEMASK_BG2 | GX_BLEND_PLANEMASK_BG3 |               \
      GX_BLEND_PLANEMASK_OBJ | GX_BLEND_PLANEMASK_BD)
 #define NO_SEASON 0xff
+
+// The current Pokémon's box over the head bar's right end on the top screen, while the map shows: a placeholder panel
+// (until the user's art) from BOX_X to the screen's edge, its party icon and its name. The box is a bitmap of the 4
+// OBJs of 32 by 32 from BOX_OBJ_X, as the party icons' cells make them; the box's OBJs and the icon (its two frames,
+// animated as a healthy party Pokémon's, as Evo's) share one character resource. The icon's palette row is the shown
+// Pokémon's of the party icons' three, written into BOX_ICON_ROW as it changes; the box's colors are in the next
+#define BOX_X 144
+#define BOX_WIDTH 112
+#define BOX_HEIGHT 32
+#define BOX_OBJ_X 128
+#define BOX_OBJ_Y 0
+#define BOX_OBJS 4
+#define BOX_OBJ_WIDTH 32
+#define BOX_OBJ_TILES_ACROSS (BOX_OBJ_WIDTH / 8)
+#define BOX_OBJ_TILES (BOX_OBJ_TILES_ACROSS * BOX_HEIGHT / 8)
+#define BOX_OBJ_SIZE (BOX_OBJ_TILES * TILE_SIZE)
+#define BOX_TILES_ACROSS (BOX_OBJS * BOX_OBJ_TILES_ACROSS)
+#define BOX_ICON_SIZE 0x400
+#define BOX_CHARS_SIZE (BOX_OBJS * BOX_OBJ_SIZE + BOX_ICON_SIZE)
+#define BOX_ICON_X 164
+#define BOX_ICON_Y 16
+#define BOX_ICON_SEQUENCE 1
+#define BOX_NAME_X 184
+#define BOX_NAME_RIGHT 252
+#define BOX_NAME_Y 8
+#define BOX_SMALL_NAME_Y 10
+// In front of the head bar (BG 1), the icon in front of the box
+#define BOX_BG_PRIORITY 0
+#define BOX_ICON_PRIORITY 0
+#define BOX_PRIORITY 1
+// Main OBJ rows that the info page leaves free (measured unchanged and unused while Area shows)
+#define BOX_ICON_ROW 12
+#define BOX_ROW 13
+#define PARTY_ICON_PALETTES 3
+#define BOX_COLOR_CLEAR 0
+#define BOX_COLOR_TEXT 1
+#define BOX_COLOR_SHADOW 2
+#define BOX_COLOR_PANEL 3
+#define BOX_COLOR_BORDER 4
+#define BOX_TEXT_COLOR PRINT_COLOR(BOX_COLOR_TEXT, BOX_COLOR_SHADOW, BOX_COLOR_PANEL)
+// The entry panels' colors (paperwhite2_pokedex_info_panels.c's sPanelColors): clear, text, its shadow, the panel's
+// white and its border
+static const GXRgb sBoxColors[GLOW_COLORS] = {
+    GX_RGB(0, 0, 0), GX_RGB(4, 4, 5), GX_RGB(22, 22, 23), GX_RGB(31, 31, 31), GX_RGB(7, 7, 8),
+};
 
 // What the map's VBlank does next: show the map, or put the entry's panels back
 enum {
@@ -382,6 +410,16 @@ struct PokedexInfoArea {
     // The seasons that the map steps through (those of the places not met at all year), and the one it shows
     u8 seasonSteps;
     u8 glowSeason;
+    // The current Pokémon's box: its OBJs' characters, palette and cells, its OBJs and the icon's, its bitmap, and
+    // the party icons' palettes' file and colors
+    u32 boxChars;
+    u32 boxPalette;
+    u32 boxCellAnims;
+    ClActor *boxObjs[BOX_OBJS];
+    ClActor *boxIcon;
+    GFLBitmap *boxBitmap;
+    void *iconPaletteFile;
+    const GXRgb *iconColors;
 };
 
 static void PokedexInfoArea_Load(PokedexInfoArea *area, u16 species);
@@ -389,15 +427,12 @@ static const AreaSpecies *PokedexInfoArea_GetSpecies(PokedexInfoArea *area);
 static const AreaSpeciesPlace *PokedexInfoArea_GetPlaces(PokedexInfoArea *area);
 static const AreaRow *PokedexInfoArea_GetRows(PokedexInfoArea *area);
 static void PokedexInfoArea_DrawConditions(PokedexInfoArea *area, GFLBitmap *bitmap, int top, u32 firstIcon, u32 count,
-                                           u32 available, u32 preferred, int y);
+                                           u32 available, int y);
 static void PokedexInfoArea_DrawRow(PokedexInfoArea *area, GFLBitmap *bitmap, int top, const AreaRow *row, int y);
-static void PokedexInfoArea_DrawLegendMark(PokedexInfoArea *area, GFLBitmap *bitmap, int top);
 static void PokedexInfoArea_DrawIcon(PokedexInfoArea *area, GFLBitmap *bitmap, int top, u32 icon, BOOL grey, int x,
                                      int y);
-static void PokedexInfoArea_DrawPanel(GFLBitmap *bitmap, int top, int y, int height);
 static u32 PokedexInfoArea_Print(PokedexInfoArea *area, GFLBitmap *bitmap, int top, Font *font, u32 messageId, int x,
                                  int y, u32 align, u16 color);
-static void PokedexInfoArea_SetRate(PokedexInfoArea *area, u32 index, u32 permille);
 static void PokedexInfoArea_SetKeptRanges(PokedexInfoArea *area);
 static void PokedexInfoArea_CopyMapChars(PokedexInfoArea *area, BOOL kept);
 static void PokedexInfoArea_CopyPieces(PokedexInfoArea *area, const u8 *src, u32 dest, u32 size, BOOL kept);
@@ -411,6 +446,10 @@ static void PokedexInfoArea_LoadGlowColors(PokedexInfoArea *area);
 static void PokedexInfoArea_ShowMarker(PokedexInfoArea *area);
 static void PokedexInfoArea_StepSeason(PokedexInfoArea *area);
 static void PokedexInfoArea_InitSeasons(PokedexInfoArea *area);
+static void PokedexInfoArea_CreateBox(PokedexInfoArea *area);
+static ClActor *PokedexInfoArea_CreateBoxActor(PokedexInfoArea *area, int x, u32 offset, u32 palette,
+                                               ClActorSetup *setup);
+static void PokedexInfoArea_FreeBox(PokedexInfoArea *area);
 
 PokedexInfoArea *PokedexInfoArea_Create(HeapID heapId, Font *font, Font *smallFont, u32 bg) {
     PokedexInfoArea *area =
@@ -506,9 +545,9 @@ static const AreaRow *PokedexInfoArea_GetRows(PokedexInfoArea *area) {
                              PokedexInfoArea_GetSpecies(area)->placeCount * sizeof(AreaSpeciesPlace));
 }
 
-// The seasons' strip with each season's icon (grey where it isn't met) and the one glowing marked, "All year" if it
-// is met in all four; the methods' rows; and the times' and weathers' rows. A species never met in the wild has a
-// message instead
+// The seasons' strip: "All seasons" if each of its places is met all year, else each season's icon, grey where it isn't
+// met; the methods' rows; and the times' and weathers' rows, each "All ..." if it is met in all of them. A species
+// never met in the wild has a message instead
 void PokedexInfoArea_Draw(PokedexInfoArea *area, GFLBitmap *bitmap, int top, u16 species) {
     const AreaSpecies *entry;
     const AreaRow *rows;
@@ -519,7 +558,6 @@ void PokedexInfoArea_Draw(PokedexInfoArea *area, GFLBitmap *bitmap, int top, u16
     area->seasonSteps = 0;
     area->glowSeason = NO_SEASON;
     if (!area->found) {
-        PokedexInfoArea_DrawPanel(bitmap, top, METHODS_PANEL_Y, METHODS_PANEL_HEIGHT);
         PokedexInfoArea_Print(area, bitmap, top, area->font, PokedexData_Text_AreaUnknown, UNKNOWN_X, UNKNOWN_Y,
                               PRINT_ALIGN_CENTER, AREA_TEXT_COLOR);
         return;
@@ -527,51 +565,47 @@ void PokedexInfoArea_Draw(PokedexInfoArea *area, GFLBitmap *bitmap, int top, u16
     entry = PokedexInfoArea_GetSpecies(area);
     rows = PokedexInfoArea_GetRows(area);
     PokedexInfoArea_InitSeasons(area);
-    PokedexInfoArea_DrawPanel(bitmap, top, LEGEND_PANEL_Y, LEGEND_PANEL_HEIGHT);
-    PokedexInfoArea_DrawPanel(bitmap, top, METHODS_PANEL_Y, METHODS_PANEL_HEIGHT);
-    PokedexInfoArea_DrawPanel(bitmap, top, CONDITIONS_PANEL_Y, CONDITIONS_PANEL_HEIGHT);
     PokedexInfoArea_Print(area, bitmap, top, area->smallFont, PokedexData_Text_AreaSeasons, LABEL_X,
                           SEASONS_Y + LABEL_OFFSET_Y, PRINT_ALIGN_LEFT, AREA_LABEL_COLOR);
-    for (i = 0; i < AREA_SEASON_COUNT; i++) {
-        PokedexInfoArea_DrawIcon(area, bitmap, top, ICON_SPRING + i, !(entry->seasons & (1 << i)),
-                                 ICON_COLUMN_X + i * ICON_COLUMN_PITCH, SEASONS_Y);
-    }
-    if (entry->seasons == AREA_ALL_SEASONS) {
-        PokedexInfoArea_Print(area, bitmap, top, area->smallFont, PokedexData_Text_AreaAllYear, ALL_YEAR_X,
+    if (area->seasonSteps == 0 && entry->seasons == AREA_ALL_SEASONS) {
+        PokedexInfoArea_Print(area, bitmap, top, area->smallFont, PokedexData_Text_AreaAllSeasons, ICON_COLUMN_X,
                               SEASONS_Y + LABEL_OFFSET_Y, PRINT_ALIGN_LEFT, AREA_TEXT_COLOR);
+    } else {
+        PokedexInfoArea_DrawConditions(area, bitmap, top, ICON_SPRING, AREA_SEASON_COUNT, entry->seasons, SEASONS_Y);
     }
-    PokedexInfoArea_DrawLegendMark(area, bitmap, top);
     for (i = 0; i < entry->rowCount && i < AREA_ROW_MAX; i++) {
         PokedexInfoArea_DrawRow(area, bitmap, top, &rows[i], ROW_Y + i * ROW_PITCH);
     }
     PokedexInfoArea_Print(area, bitmap, top, area->smallFont, PokedexData_Text_AreaTime, LABEL_X,
                           TIMES_Y + LABEL_OFFSET_Y, PRINT_ALIGN_LEFT, AREA_LABEL_COLOR);
-    PokedexInfoArea_DrawConditions(area, bitmap, top, ICON_MORNING, AREA_TIME_COUNT, entry->times,
-                                   entry->preferredTimes, TIMES_Y);
+    if (entry->times == AREA_ALL_TIMES) {
+        PokedexInfoArea_Print(area, bitmap, top, area->smallFont, PokedexData_Text_AreaAllTimes, ICON_COLUMN_X,
+                              TIMES_Y + LABEL_OFFSET_Y, PRINT_ALIGN_LEFT, AREA_TEXT_COLOR);
+    } else {
+        PokedexInfoArea_DrawConditions(area, bitmap, top, ICON_MORNING, AREA_TIME_COUNT, entry->times, TIMES_Y);
+    }
     PokedexInfoArea_Print(area, bitmap, top, area->smallFont, PokedexData_Text_AreaWeather, LABEL_X,
                           WEATHERS_Y + LABEL_OFFSET_Y, PRINT_ALIGN_LEFT, AREA_LABEL_COLOR);
-    PokedexInfoArea_DrawConditions(area, bitmap, top, ICON_CLEAR, AREA_WEATHER_COUNT, entry->weathers,
-                                   entry->preferredWeathers, WEATHERS_Y);
-}
-
-// A row of the times' or weathers' icons, grey where it isn't met, and the preferred ones marked unless they all are
-static void PokedexInfoArea_DrawConditions(PokedexInfoArea *area, GFLBitmap *bitmap, int top, u32 firstIcon, u32 count,
-                                           u32 available, u32 preferred, int y) {
-    u32 i;
-
-    for (i = 0; i < count; i++) {
-        int x = ICON_COLUMN_X + i * ICON_COLUMN_PITCH;
-
-        PokedexInfoArea_DrawIcon(area, bitmap, top, firstIcon + i, !(available & (1 << i)), x, y);
-        if (preferred != available && (preferred & (1 << i))) {
-            GFL_BitmapFillArea(bitmap, x - MARK_BAR_OFFSET_X, y + MARK_BAR_OFFSET_Y - top, MARK_BAR_WIDTH,
-                               MARK_BAR_HEIGHT, AREA_COLOR_GOLD);
-        }
+    if (entry->weathers == AREA_ALL_WEATHERS) {
+        PokedexInfoArea_Print(area, bitmap, top, area->smallFont, PokedexData_Text_AreaAllWeathers, ICON_COLUMN_X,
+                              WEATHERS_Y + LABEL_OFFSET_Y, PRINT_ALIGN_LEFT, AREA_TEXT_COLOR);
+    } else {
+        PokedexInfoArea_DrawConditions(area, bitmap, top, ICON_CLEAR, AREA_WEATHER_COUNT, entry->weathers, WEATHERS_Y);
     }
 }
 
-// A method's icon, its levels, its rarity (or the range of them), the outbreak's badge if it has outbreaks there, and
-// its rate (or the range of its rates)
+// A row of the seasons', times' or weathers' icons, grey where it isn't met
+static void PokedexInfoArea_DrawConditions(PokedexInfoArea *area, GFLBitmap *bitmap, int top, u32 firstIcon, u32 count,
+                                           u32 available, int y) {
+    u32 i;
+
+    for (i = 0; i < count; i++) {
+        PokedexInfoArea_DrawIcon(area, bitmap, top, firstIcon + i, !(available & (1 << i)),
+                                 ICON_COLUMN_X + i * ICON_COLUMN_PITCH, y);
+    }
+}
+
+// A method's icon, its levels, its rarity (or the range of them), and the outbreak's badge if it has outbreaks there
 static void PokedexInfoArea_DrawRow(PokedexInfoArea *area, GFLBitmap *bitmap, int top, const AreaRow *row, int y) {
     const AreaSpecies *entry = PokedexInfoArea_GetSpecies(area);
     u32 message;
@@ -599,33 +633,6 @@ static void PokedexInfoArea_DrawRow(PokedexInfoArea *area, GFLBitmap *bitmap, in
                           PRINT_ALIGN_LEFT, AREA_TEXT_COLOR);
     if (row->flags & AREA_FLAG_OUTBREAK) {
         PokedexInfoArea_DrawIcon(area, bitmap, top, ICON_OUTBREAK, FALSE, ROW_BADGE_X, y);
-    }
-    PokedexInfoArea_SetRate(area, 0, row->rateLow);
-    PokedexInfoArea_SetRate(area, 1, row->rateHigh);
-    if ((row->rateLow + 5) / 10 == (row->rateHigh + 5) / 10) {
-        message = row->rateHigh < 5 ? PokedexData_Text_AreaRateLow : PokedexData_Text_AreaRate;
-    } else {
-        message = row->rateLow < 5 ? PokedexData_Text_AreaRatesLow : PokedexData_Text_AreaRates;
-    }
-    if (message == PokedexData_Text_AreaRate) {
-        PokedexInfoArea_SetRate(area, 0, row->rateHigh);
-    }
-    PokedexInfoArea_Print(area, bitmap, top, area->font, message, ROW_RATE_RIGHT, y + ROW_TEXT_OFFSET_Y,
-                          PRINT_ALIGN_RIGHT, AREA_TEXT_COLOR);
-}
-
-// A rate in tenths of a percent, rounded to a percent
-static void PokedexInfoArea_SetRate(PokedexInfoArea *area, u32 index, u32 permille) {
-    WordSetNumber(area->wordSet, index, (permille + 5) / 10, 3, 0, TRUE);
-}
-
-// The underline under the season the map glows in, cleared under the others
-static void PokedexInfoArea_DrawLegendMark(PokedexInfoArea *area, GFLBitmap *bitmap, int top) {
-    u32 i;
-
-    for (i = 0; i < AREA_SEASON_COUNT; i++) {
-        GFL_BitmapFillArea(bitmap, ICON_COLUMN_X + i * ICON_COLUMN_PITCH, MARK_UNDERLINE_Y - top, ICON_WIDTH,
-                           MARK_UNDERLINE_HEIGHT, i == area->glowSeason ? AREA_COLOR_GOLD : AREA_COLOR_PANEL);
     }
 }
 
@@ -665,13 +672,6 @@ void PokedexInfoArea_SetIconPalettes(PokedexInfoArea *area, u32 bg) {
                                      sIconPaletteRows[iconBanks[j]]);
         }
     }
-}
-
-// A placeholder panel across the screen, until the user's art has them
-static void PokedexInfoArea_DrawPanel(GFLBitmap *bitmap, int top, int y, int height) {
-    GFL_BitmapFillArea(bitmap, PANEL_X + 1, y - top, PANEL_WIDTH - 2, height, AREA_COLOR_BORDER);
-    GFL_BitmapFillArea(bitmap, PANEL_X, y + 1 - top, PANEL_WIDTH, height - 2, AREA_COLOR_BORDER);
-    GFL_BitmapFillArea(bitmap, PANEL_X + 1, y + 1 - top, PANEL_WIDTH - 2, height - 2, AREA_COLOR_PANEL);
 }
 
 static u32 PokedexInfoArea_Print(PokedexInfoArea *area, GFLBitmap *bitmap, int top, Font *font, u32 messageId, int x,
@@ -917,6 +917,7 @@ static void PokedexInfoArea_CreateObjs(PokedexInfoArea *area) {
     area->markerCellAnims = ClActSys_LoadCellAnims(arc, MARKER_CELLS, MARKER_ANIMS, area->heapId);
     GFL_ArcToolFree(arc);
     PokedexInfoArea_LoadGlowColors(area);
+    PokedexInfoArea_CreateBox(area);
 
     MI_CpuFill8(&setup, 0, sizeof(ClActorSetup));
     setup.sequence = MARKER_SEQUENCE;
@@ -936,6 +937,7 @@ static void PokedexInfoArea_FreeObjs(PokedexInfoArea *area) {
     if (area->marker == NULL) {
         return;
     }
+    PokedexInfoArea_FreeBox(area);
     for (i = 0; i < area->actorCount; i++) {
         ClActor_Delete(area->actors[i]);
     }
@@ -1056,7 +1058,7 @@ void PokedexInfoArea_ShowPlaces(PokedexInfoArea *area) {
 }
 
 // The seasons the map steps through, those of the species' places that it isn't at all year, and the first of them,
-// which the map and the legend show first
+// which the map shows first
 static void PokedexInfoArea_InitSeasons(PokedexInfoArea *area) {
     const AreaSpeciesPlace *places = PokedexInfoArea_GetPlaces(area);
     u32 count = PokedexInfoArea_GetSpecies(area)->placeCount;
@@ -1097,26 +1099,140 @@ static void PokedexInfoArea_StepSeason(PokedexInfoArea *area) {
     }
 }
 
-BOOL PokedexInfoArea_Update(PokedexInfoArea *area, GFLBitmap *bitmap, int top) {
-    u32 season = area->glowSeason;
-
+void PokedexInfoArea_Update(PokedexInfoArea *area) {
     if (area->vblankRequest != VBLANK_NONE) {
-        return FALSE;
+        return;
     }
     // The files waited for the VBlank that put them in VRAM
     PokedexInfoArea_FreeFiles(area);
     if (!area->mapOpen) {
-        return FALSE;
+        return;
     }
     PokedexCommon_StepGlow(&area->glowPhase, &area->glowEv);
     G2x_SetBlendAlpha_(REG_BLDCNT_ADDR, 0, ALL_PLANES, area->glowEv, 16 - area->glowEv);
-    if (area->glowPhase != GLOW_DIMMEST) {
-        return FALSE;
+    if (area->glowPhase == GLOW_DIMMEST) {
+        PokedexInfoArea_StepSeason(area);
     }
-    PokedexInfoArea_StepSeason(area);
-    if (area->glowSeason == season || !area->found) {
-        return FALSE;
+}
+
+// ------------------------------------------------------------------------------------------------- The current Pokémon
+
+// The box's resources and OBJs, with the party icons' palettes' first two rows as their palette resource (the icon's
+// row and the box's), the box's colors into its row, and the party icons' palettes kept to write the shown one's
+static void PokedexInfoArea_CreateBox(PokedexInfoArea *area) {
+    ArcTool *arc = GFL_ArcSysCreateFileHandle(ARCID_POKEICON, area->heapId);
+    NNSG2dPaletteData *palette;
+    ClActorSetup setup;
+    u32 i;
+
+    area->boxPalette = ClActSys_LoadPlttRange(arc, PokeIcon_GetPaletteFile(), CLACT_VRAM_MAIN, BOX_ICON_ROW * 0x20, 0,
+                                              BOX_ROW - BOX_ICON_ROW + 1, area->heapId);
+    area->boxCellAnims =
+        ClActSys_LoadCellAnims(arc, PokeIcon_GetCellFile_Main(), getOBJTileMapping_MainEng(), area->heapId);
+    area->iconPaletteFile = GFL_ArcToolReadHeapNew(arc, PokeIcon_GetPaletteFile(), area->heapId);
+    GFL_ArcToolFree(arc);
+    NNS_G2dGetUnpackedPaletteData(area->iconPaletteFile, &palette);
+    area->iconColors = palette->pRawData;
+    DC_FlushRange(area->iconColors, PARTY_ICON_PALETTES * GLOW_COLORS * sizeof(GXRgb));
+    area->boxChars = ClActSys_AllocChars(BOX_CHARS_SIZE, CLACT_VRAM_MAIN, area->heapId);
+    area->boxBitmap = GFL_BitmapCreate(BOX_TILES_ACROSS, BOX_HEIGHT / 8, TILE_SIZE, area->heapId);
+    DC_FlushRange(sBoxColors, sizeof(sBoxColors));
+    GX_LoadOBJPltt(sBoxColors, BOX_ROW * 0x20, sizeof(sBoxColors));
+
+    MI_CpuFill8(&setup, 0, sizeof(ClActorSetup));
+    setup.y = BOX_OBJ_Y + BOX_HEIGHT / 2;
+    setup.bgPriority = BOX_BG_PRIORITY;
+    setup.priority = BOX_PRIORITY;
+    for (i = 0; i < BOX_OBJS; i++) {
+        area->boxObjs[i] = PokedexInfoArea_CreateBoxActor(area, BOX_OBJ_X + i * BOX_OBJ_WIDTH + BOX_OBJ_WIDTH / 2,
+                                                          i * BOX_OBJ_SIZE, BOX_ROW - BOX_ICON_ROW, &setup);
     }
-    PokedexInfoArea_DrawLegendMark(area, bitmap, top);
-    return TRUE;
+    setup.y = BOX_ICON_Y;
+    setup.sequence = BOX_ICON_SEQUENCE;
+    setup.priority = BOX_ICON_PRIORITY;
+    area->boxIcon = PokedexInfoArea_CreateBoxActor(area, BOX_ICON_X, BOX_OBJS * BOX_OBJ_SIZE, 0, &setup);
+    ClActor_SetAutoAnim(area->boxIcon, TRUE);
+}
+
+// An OBJ of the box's, on its characters from offset, centered at x as the party icons' cells are
+static ClActor *PokedexInfoArea_CreateBoxActor(PokedexInfoArea *area, int x, u32 offset, u32 palette,
+                                               ClActorSetup *setup) {
+    NNSG2dImageProxy proxy;
+    ClActor *actor;
+
+    setup->x = x;
+    actor = ClActor_Create(area->unit, area->boxChars, area->boxPalette, area->boxCellAnims, setup, CLACT_SURFACE_MAIN,
+                           area->heapId);
+    ClActSys_GetCharProxy(area->boxChars, &proxy);
+    proxy.vramLocation.baseAddrOfVram[NNS_G2D_VRAM_TYPE_2DMAIN] += offset;
+    ClActor_SetImageProxy(actor, &proxy);
+    ClActor_SetPalette(actor, palette, TRUE);
+    return actor;
+}
+
+static void PokedexInfoArea_FreeBox(PokedexInfoArea *area) {
+    u32 i;
+
+    if (area->boxIcon == NULL) {
+        return;
+    }
+    ClActor_Delete(area->boxIcon);
+    area->boxIcon = NULL;
+    for (i = 0; i < BOX_OBJS; i++) {
+        ClActor_Delete(area->boxObjs[i]);
+    }
+    GFL_BitmapFree(area->boxBitmap);
+    GFL_HeapFree(area->iconPaletteFile);
+    ClActSys_FreeChars(area->boxChars);
+    ClActSys_FreeCellAnims(area->boxCellAnims);
+    ClActSys_FreePltt(area->boxPalette);
+}
+
+// The box of the Pokémon shown, while the map is open: the panel with its name (in font 1 if font 0's is too long),
+// its tiles into the OBJs' order, and its party icon in its form and sex with its palette, as Evo's
+void PokedexInfoArea_ShowPokemon(PokedexInfoArea *area, u16 species, u16 form, u16 sex) {
+    GFLBitmap *bitmap = area->boxBitmap;
+    Font *font = area->font;
+    int nameY = BOX_NAME_Y;
+    const u8 *pixels;
+    u8 *chars;
+    NNSG2dCharacterData *icon;
+    void *file;
+    u32 i;
+
+    if (area->boxIcon == NULL) {
+        return;
+    }
+    GFL_BitmapFill(bitmap, BOX_COLOR_CLEAR);
+    GFL_BitmapFillArea(bitmap, BOX_X - BOX_OBJ_X + 1, 0, BOX_WIDTH - 2, BOX_HEIGHT, BOX_COLOR_BORDER);
+    GFL_BitmapFillArea(bitmap, BOX_X - BOX_OBJ_X, 1, BOX_WIDTH, BOX_HEIGHT - 2, BOX_COLOR_BORDER);
+    GFL_BitmapFillArea(bitmap, BOX_X - BOX_OBJ_X + 1, 1, BOX_WIDTH - 2, BOX_HEIGHT - 2, BOX_COLOR_PANEL);
+    GFL_MsgDataLoadStrbuf(g_PMLSpeciesNamesResident, species, area->text);
+    if (BOX_NAME_X + GFL_FontGetBlockWidth(area->text, font, 0) > BOX_NAME_RIGHT) {
+        font = area->smallFont;
+        nameY = BOX_SMALL_NAME_Y;
+    }
+    GFL_TextRendererDrawToBitmapEx(bitmap, BOX_NAME_X - BOX_OBJ_X, nameY, area->text, font, BOX_TEXT_COLOR);
+
+    pixels = GFL_BitmapGetPixelData(bitmap);
+    chars = GFL_HeapAllocate(HEAPID_TAIL(area->heapId), BOX_OBJS * BOX_OBJ_SIZE, FALSE,
+                             "paperwhite2_pokedex_info_area.c", __LINE__);
+    for (i = 0; i < BOX_OBJS * BOX_OBJ_TILES; i++) {
+        u32 obj = i / BOX_OBJ_TILES;
+        u32 tile = i % BOX_OBJ_TILES;
+        u32 source =
+            tile / BOX_OBJ_TILES_ACROSS * BOX_TILES_ACROSS + obj * BOX_OBJ_TILES_ACROSS + tile % BOX_OBJ_TILES_ACROSS;
+
+        MI_CpuCopy32(pixels + source * TILE_SIZE, chars + i * TILE_SIZE, TILE_SIZE);
+    }
+    ClActSys_WriteCharData(area->boxChars, chars, BOX_OBJS * BOX_OBJ_SIZE, 0, CLACT_VRAM_MAIN);
+    GFL_HeapFree(chars);
+
+    file = GFL_ArcSysReadHeapNew(ARCID_POKEICON, PokeParty_GetIconIndex(species, form, sex, FALSE),
+                                 HEAPID_TAIL(area->heapId));
+    NNS_G2dGetUnpackedCharacterData(file, &icon);
+    ClActSys_WriteCharData(area->boxChars, icon->pRawData, BOX_ICON_SIZE, BOX_OBJS * BOX_OBJ_SIZE, CLACT_VRAM_MAIN);
+    GFL_HeapFree(file);
+    GX_LoadOBJPltt(area->iconColors + PokeIcon_GetPalette(species, form, sex, FALSE) * GLOW_COLORS, BOX_ICON_ROW * 0x20,
+                   GLOW_COLORS * sizeof(GXRgb));
 }

@@ -969,11 +969,9 @@ PokedexInfoArea *PokedexInfoPanels_GetArea(PokedexInfoPanels *panels) {
     return panels->area;
 }
 
-// Area's glow on the open map, and the season marked on its legend, whose characters go to VRAM in the next VBlank
+// Area's glow on the open map
 void PokedexInfoPanels_UpdateArea(PokedexInfoPanels *panels) {
-    if (PokedexInfoArea_Update(panels->area, BmpWin_GetBitmap(panels->contentWindow), CONTENT_TOP)) {
-        panels->pendingWindows |= PENDING_CONTENT;
-    }
+    PokedexInfoArea_Update(panels->area);
 }
 
 // Only the list and its actors change, all in the next VBlank, as a change of sub-page shows

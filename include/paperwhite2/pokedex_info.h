@@ -176,9 +176,10 @@ void PokedexInfoArea_CloseMap(PokedexInfoArea *area, PokedexInfo *entry, u32 lan
 BOOL PokedexInfoArea_IsMapOpen(PokedexInfoArea *area);
 // Shows the places of the species drawn last on the open map
 void PokedexInfoArea_ShowPlaces(PokedexInfoArea *area);
-// Each frame while the map is open: its glow, and the season it shows; TRUE if the legend's marked season changed,
-// drawn again into bitmap
-BOOL PokedexInfoArea_Update(PokedexInfoArea *area, GFLBitmap *bitmap, int top);
+// The current Pokémon's box over the head bar's right end while the map is open: its party icon and name
+void PokedexInfoArea_ShowPokemon(PokedexInfoArea *area, u16 species, u16 form, u16 sex);
+// Each frame while the map is open: its glow, and the season it shows
+void PokedexInfoArea_Update(PokedexInfoArea *area);
 // The panels' Area, and its update each frame but while the page fades
 PokedexInfoArea *PokedexInfoPanels_GetArea(PokedexInfoPanels *panels);
 void PokedexInfoPanels_UpdateArea(PokedexInfoPanels *panels);
