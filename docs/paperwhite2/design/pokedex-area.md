@@ -243,8 +243,8 @@ The details are in `docs/paperwhite2/plugins.md` (Pokédex, Area). Where the bui
   (rustling kinds, then rippling into plain, then dark grass into grass: Dratini and Poliwhirl need the second step,
   Wingull, Piplup, Tympole, Palpitoad, Stunfisk and Rufflet the first); unmet seasons, times and weathers show greyed
   (light grey copies of their icons); a species never met in the wild says "Not found in the wild".
-- **The user's changes of 2026-11-08:** the icons and the bottom art on solid white (the art's white is a colour of
-  its own below the tab bar, as a 16-colour BG's colour 0 is clear); "All seasons", "All times of day" and "All
+- **The user's changes of 2026-11-08:** the icons on solid white, as their tiles replace the art behind them (the
+  bottom art keeps its transparent parts, which show the grid: the user's choice, 2026-11-09); "All seasons", "All times of day" and "All
   weathers" in place of the icons where they would all be coloured (for the seasons only when every place glows
   white; any season-specific place shows the four icons, each coloured where it is met); no gold marks (the season
   glowing, the preferred times and weathers) and no rates; and the current Pokémon's box over the head bar's right
