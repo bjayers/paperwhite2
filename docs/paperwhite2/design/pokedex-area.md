@@ -258,7 +258,7 @@ The details are in `docs/paperwhite2/plugins.md` (Pokédex, Area). Where the bui
   it is a grass area whose shadows are walking's special version; only the Driftveil Drawbridge and the Marvelous
   Bridge are bridges, and no species walks only there, so no row shows the bridge icon today (Ducklett's mixes the
   bridge with the Moor's puddles: generic walking).
-- **The user's changes of 2026-11-08:** the icons on solid white, as their tiles replace the art behind them (the
+- **The user's changes of 2026-11-08:** the icons on solid white, as their tiles replaced the art behind them (OBJs with transparent pixels since 2026-11-09; the
   bottom art keeps its transparent parts, which show the grid: the user's choice, 2026-11-09); "All seasons", "All times of day" and "All
   weathers" in place of the icons where they would all be coloured (for the seasons only when every place glows
   white; any season-specific place shows the four icons, each coloured where it is met); no gold marks (the season
@@ -271,29 +271,33 @@ The details are in `docs/paperwhite2/plugins.md` (Pokédex, Area). Where the bui
 - **The index** has no tier or rate per place, only per row (lowest and highest over its places and contexts); a row's
   rates are the species' summed share over its forms. Version 2 (rows by terrain): 22.0 KB, 496 species, the largest
   block 104 bytes.
-- **Bottom palette rows:** arts 6-11; row 12 the content window's on Matchups and Evo and Area's third icon row, loaded
-  in the VBlank as the sub-page changes; Area's text is in the panels' row 3 (not its art's); the icons take rows 14, 15
-  and 12, each 8x8 tile its own row (the placeholder sheet's 27 colours and 8 greys don't fit two rows). Rows 0, 14 and
-  15 were measured unused (zero, no map entry) on every sub-page.
-- **Layout on the user's final background (2026-11-09, `info_area.png` and the mockup `area-example.png`):** the text
-  exactly where the mockup has it, the icons (tiles of the content window, each in its own palette row) on the tiles
-  nearest to the mockup's places, as the user chose; the user may move the background's boxes to fit. The seasons' bar
-  has no label: icons at x 48, 88, 128, 168, y 24 (mockup 52 + 40 i), "All seasons" centred (x 128, y 29). Rows 19 px
-  apart, centred in the methods' box (y 48-122): rows at y 49/68/87/106 (4), 58/77/96 (3), 68/87 (2), 77 (1); marks x
-  16 and 64, icon x 32 (mockup 13, 61, 29) at the row's y rounded to the nearest multiple of 8 (4 rows: 48, 72, 88,
-  104; 3: 56, 80, 96; 2: 72, 88; 1: 80); levels x 88 at the row's y (font 0), rarity x 159, y + 4 (font 1). "Time" and
-  "Weather" at x 17, y 136 and 153 (font 1); times' icons y 128, weathers' y 144, both at x 64, 96, 136, 168, 208
-  (mockup 61 + 36 i, y 131 and 148: the times' icons cover the box's top frame by 2 rows); "All times of day" / "All
-  weathers" at x 64 on the label's line. Exact places would need the icons as OBJs: they have up to 45 colours in
-  three palette rows, assigned per 8 by 8 tile, so a BG can't put them off the grid, though each icon alone has at
-  most 7 colours and could be a 4bpp OBJ (32 by 16, the type icons' cells) in one sub OBJ row with a per-icon packing.
-  `pokedex_area_templates.py` writes `area_reference*.png` (the art with the slots and text where the page puts them,
-  1 to 4 rows, with and without the tiles' grid) from the C file's places.
-- **The icon sheet (2026-11-09):** row 1's fifth slot holds the two special marks (left and right halves, drawn as 2 by
-  2 tiles); row 4 grass, dark grass, cave floor, sand, bridge; row 5 surf, puddle, fishing, walking and an unused slot.
-  Every icon has a grey copy now (the rows' colours come to 15, 15 and 14 of 45). Until the user draws them, the old
-  method icons stand in for the terrains in their slots and two small sparkles (from the sheet's own colours) for the
-  marks.
+- **Bottom palette rows:** arts 6-11; row 12 the content window's on Matchups and Evo, loaded in the VBlank as the
+  sub-page changes; Area's text is in the panels' row 3 (not its art's). Its icons are sub OBJs since 2026-11-09 (below),
+  so sub BG rows 12 (for Area), 14 and 15 are free of them.
+- **Layout (2026-11-09, the user's background `info_area.png` with its boxes 2 px higher than the mockup
+  `area-example.png`'s):** the icons and the text at the mockup's pixels, 2 px higher. The seasons' bar (y 21-38 inside)
+  has no label: icons at x 52, 92, 132, 172, y 22, "All seasons" centred (x 128, y 27). Rows 19 px apart, centred in
+  the methods' box (y 46-120): rows at y 47/66/85/104 (4), 56/75/94 (3), 66/85 (2), 75 (1), each row's left mark,
+  icon and right mark at x 13, 29 and 61 at the row's own y (the mockup's yellow boxes); levels x 88 at the row's y
+  (font 0), rarity x 159, y + 4 (font 1). "Time" and "Weather" at x 17, y 134 and 151 (font 1); times' icons y 129,
+  weathers' y 146, both at x 61, 97, 133, 169, 205; "All times of day" / "All weathers" at x 64 on the label's line;
+  "Not found in the wild" centred at y 76. The bottom box (y 128-162 inside) is the same height as before, moved up
+  2 px like the others. `pokedex_area_templates.py` writes `area_reference*.png` (the art with the slots and text where
+  the page puts them, 1 to 4 rows, with and without the tiles' grid) from the C file's places.
+- **The icons as OBJs (2026-11-09):** each icon is a sub OBJ of 32 by 16 (the type icons' cells, centred) at its exact
+  place, its clear pixels showing the art; the special marks' slot is cut into two icons (left mark, right mark), each
+  16 by 16 in its icon's left half. Each icon has at most 7 colours, so `pokedex_area.py` packs each whole (and its
+  grey copy, clear pixels clear) into one of three OBJ palette rows: sub OBJ 14 and 15 (unused) and 4 (Moves' knob's,
+  shown only on Moves). One character resource holds all 52 (13 KB of sub OBJ VRAM); each OBJ's image proxy points at
+  its icon and its palette proxy at its row. They are made as Area shows (anew for each species, up to 26) and freed as
+  another sub-page shows; Area's VBlank task loads the rows' colours in the VBlank that first shows the OBJs, keeping
+  the knob's row, and puts it back in the VBlank that shows another sub-page (measured: row 4 the knob's again on
+  Moves and Evo; no in-between frame between Area and Evo or Moves either way). The page's OBJ unit has 128 actors
+  (96 in the original) for them.
+- **The icon sheet (2026-11-09):** row 1's fifth slot holds the two special marks (left and right halves); row 4 grass,
+  dark grass, cave floor, sand, bridge; row 5 surf, puddle, fishing, walking and an unused slot. The user's updated
+  sheet (still unfinished: the marks' slot is empty, the old method icons stand in for some terrains) has 27 colours,
+  at most 6 an icon, and transparent pixels; with the greys it fills the three rows' 45 places.
 - **Main OBJ rows:** the marker in row 0, the glow in rows 1 (all year), 6, 7, 14 and 15 (the plan's 3-7 hold the
   entry's type icons' and footprint's palettes, which stay loaded); the current Pokémon's box in 12 (its party icon)
   and 13 (the box's art, its 16 colours).
@@ -306,8 +310,10 @@ The details are in `docs/paperwhite2/plugins.md` (Pokédex, Area). Where the bui
   9 KB: the BGs' blank first characters, the panels' and the caught labels') with the screens in the VBlank that
   switches the BGs; all 62 KB in the VBlank ran into the next frame in the emulator. Frame-by-frame captures of
   opening and leaving show no in-between frame.
-- **Heap:** opening Area left 21 KB free at 0xa0000, so the detail heap is 0xb0000 now (99 KB at the lowest).
-- **Placeholders:** the glow colours (the template's, until `area_glow.png`); the special marks and the terrain icons (see the icon sheet above). Not done: phase 4's `area_glow.png` target, phase 5 (cutting the
+- **Heap:** opening Area left 21 KB free at 0xa0000, so the detail heap is 0xb0000 now (99 KB at the lowest); with the
+  icons as OBJs and the 128-actor unit, opening Area with the map left 82 KB free at the lowest (largest block 74 KB).
+- **Placeholders:** the glow colours (the template's, until `area_glow.png`); the special marks and some terrain icons
+  (see the icon sheet above). Not done: phase 4's `area_glow.png` target, phase 5 (cutting the
   touch bar's AREA page).
 
 ## Templates

@@ -262,7 +262,13 @@ static void PokedexDetailBG_VBlank(PokedexDetailBG *bg) {
 static void PokedexDetailClAct_Init(PokedexDetailClAct *clact, const BGSysVRAMConfig *vramConfig, HeapID heapId) {
     MI_CpuFill8(clact, 0, sizeof(PokedexDetailClAct));
     ClActSys_Create(&sClActSetup, vramConfig, heapId);
+#ifdef PAPERWHITE2
+    // Paper White 2: the info page's Area sub-page shows up to 26 icons on the bottom screen besides the map's places,
+    // marker and box on the top one, while the other sub-pages' OBJs stay made (docs/paperwhite2/plugins.md, Area)
+    clact->unit = ClActUnit_Create(128, 0, heapId);
+#else
     clact->unit = ClActUnit_Create(96, 0, heapId);
+#endif
     ClActUnit_UseSystemRenderer(clact->unit);
     GFL_BGSysSetBGEnabledA(GX_PLANEMASK_OBJ, TRUE);
     GFL_BGSysSetBGEnabledB(GX_PLANEMASK_OBJ, TRUE);

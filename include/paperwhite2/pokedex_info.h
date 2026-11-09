@@ -148,26 +148,25 @@ u16 PokedexInfoEvo_GetTouchedSpecies(PokedexInfoEvo *evo);
 // Area (paperwhite2_pokedex_info_area.c): where the species is met in the wild, from the index that
 // tools/paperwhite2/encounters.py builds of the wild encounters. The top screen shows the town map in place of the
 // entry, its places glowing in their seasons' colours, and the bottom screen the seasons, the methods with their
-// levels, rarities and rates, the times and the weathers, drawn into the panels' content window with icons in palette
-// rows of their own (POKEDEX_INFO_AREA_ICON_ROW_*)
+// levels, rarities and rates, the times and the weathers, drawn into the panels' content window, with icons as sub
+// OBJs in palette rows of their own (POKEDEX_INFO_AREA_ICON_ROW_*)
 
-// The sub engine's BG palette rows of the icons: the first two loaded with Area, the third as Area shows (the
-// content window's other sub-pages use it)
+// The sub engine's OBJ palette rows of the icons, loaded in the VBlank as Area shows: two that no sub-page uses, and
+// Moves' knob's (the panels' PALETTE_KNOB), whose colours Area puts back as it hides
 #define POKEDEX_INFO_AREA_ICON_ROW_0 14
 #define POKEDEX_INFO_AREA_ICON_ROW_1 15
-#define POKEDEX_INFO_AREA_ICON_ROW_2 12
+#define POKEDEX_INFO_AREA_ICON_ROW_2 4
 
 typedef struct PokedexInfoArea PokedexInfoArea;
 
-// fonts are font 0 and font 1; bg is the content window's BG, whose first two icon rows are loaded at once
-PokedexInfoArea *PokedexInfoArea_Create(HeapID heapId, Font *font, Font *smallFont, u32 bg);
+// fonts are font 0 and font 1; unit is the page's, for the icons' OBJs
+PokedexInfoArea *PokedexInfoArea_Create(HeapID heapId, Font *font, Font *smallFont, ClActUnit *unit);
 void PokedexInfoArea_Free(PokedexInfoArea *area);
-// Draws the species' places and methods into bitmap, a window whose top is top pixels down the screen, icons included
+// Draws the species' places and methods into bitmap, a window whose top is top pixels down the screen, and shows its
+// icons, loading their resources if they aren't
 void PokedexInfoArea_Draw(PokedexInfoArea *area, GFLBitmap *bitmap, int top, u16 species);
-// Puts the drawn icons' palette rows in BG bg's screen buffer, over the window's map entries
-void PokedexInfoArea_SetIconPalettes(PokedexInfoArea *area, u32 bg);
-// The icons' third palette row's colours (16), loaded into POKEDEX_INFO_AREA_ICON_ROW_2 as Area shows
-const GXRgb *PokedexInfoArea_GetPalette(PokedexInfoArea *area);
+// Frees the icons and their resources, while another sub-page shows
+void PokedexInfoArea_Hide(PokedexInfoArea *area);
 // The map on the top screen, over the entry, whose text it frees until it closes; it shows from the next VBlank. now
 // closes it at once, while the screen is dark, without the entry's panels, which the page's end doesn't need
 void PokedexInfoArea_OpenMap(PokedexInfoArea *area, PokedexInfo *entry, ClActUnit *unit, GameData *gameData,

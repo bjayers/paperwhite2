@@ -3,7 +3,7 @@
 that tools/paperwhite2/pokedex_evo.py adds (docs/paperwhite2/plugins.md, Pokédex; docs/paperwhite2/design/pokedex-area.md),
 and the top screen's box of the current Pokémon, another (box_member, below).
 
-    pokedex_area.py check     # how the sheet's tiles fit the palette rows, and each icon's colours
+    pokedex_area.py check     # how the sheet's icons fit the palette rows, and each icon's colours
 
 The source is res/paperwhite2/pokedex_art/area_icons.png, 160 by 80: 25 slots of 32 by 16, five a row: the seasons
 (spring, summer, autumn, winter, then the two 16 by 16 special marks, the left one drawn left of a method's icon and
@@ -11,22 +11,23 @@ the right one right of it), the times (morning, day, evening, night, late night)
 thunderstorm, snow, sandstorm), the walking terrains grass, dark grass, cave floor, sand, bridge, and surf, puddle,
 fishing, walking (where a row's terrains differ), then an unused slot (ICON_* in
 src/paperwhite2/ov298/paperwhite2_pokedex_info_area.c). Its colours count, not its indices: each is rounded to the
-DS's 5 bits an axis, and transparent pixels (alpha below 128) show the panel behind; the user's sheet has
-none, its icons on white, which the page's art has under them.
+DS's 5 bits an axis, and transparent pixels (alpha below 128) show the page's art behind.
 
-The page draws an icon's 4 by 2 tiles into its window on the sub engine's BG 7, each tile in a palette row of its own,
-so the sheet can have more colours than one row holds: its tiles are packed into ICON_ROWS rows of 15 colours (the
-page's rows 14, 15 and 12, AREA_ICON_PALETTES in the C file), each tile in a row that has all of its colours. A
-season, time or weather the Pokémon isn't met in shows greyed out, and so does a row's icon where it is met only by
-the row's special version: a second copy of every icon in light greys, each colour's grey by its luminance
-(GREY_LEVELS of them, from GREY_DARK to GREY_LIGHT of 31), packed into the same rows. The member:
+The page shows each icon as a sub engine OBJ of 32 by 16 at its exact place, its clear pixels (index 0) showing
+the page's art, so each icon's colours must fit one OBJ palette row of 15: the icons are packed whole into ICON_ROWS
+rows (the page's sub OBJ rows 14, 15 and 4, sIconObjRows in the C file), each icon in a row that has all of its
+colours. The special marks' slot becomes two icons, the left mark (the slot's left half) in the slot and the right
+mark (its right half) after the 25 slots, each in its icon's left half with the right half clear. A season, time or
+weather the Pokémon isn't met in shows greyed out, and so does a row's icon where it is met only by the row's special
+version: a second copy of every icon in light greys, each colour's grey by its luminance (GREY_LEVELS of them, from
+GREY_DARK to GREY_LIGHT of 31), its clear pixels clear, packed into the same rows. The member:
 
 - the rows' colours, ICON_ROWS times 16 (BGR555; color 0 unused);
-- a byte for each tile of the 25 icons (8 each, in order, the top row of 4 first) with its row, then the same for the
-  25 grey icons;
-- the 25 icons' tiles (4bpp, 32 bytes each), then the 25 grey icons'.
+- a byte for each of the 26 icons with its row, then the same for the 26 grey icons;
+- the 26 icons' tiles (8 each, 4bpp, 32 bytes each, the top row of 4 first: a 32 by 16 OBJ's in 1D mapping), then
+  the 26 grey icons'.
 
-check fails, and says which icons have the most colours, if the tiles don't fit the rows.
+check fails, and says which icons have the most colours, if the icons don't fit the rows.
 
 The box is res/paperwhite2/pokedex_art/area_top_box.png, a whole top screen (256 by 192, indexed in 16 colours or
 fewer, index 0 transparent) with the box's pixels in BOX_X to the right edge and BOX_Y to BOX_Y + BOX_HEIGHT - 1, and
@@ -52,8 +53,10 @@ SCREEN_WIDTH, SCREEN_HEIGHT = 256, 192
 ICON_WIDTH, ICON_HEIGHT = 32, 16
 ICONS_ACROSS, ICONS_DOWN = 5, 5
 ICON_COUNT = ICONS_ACROSS * ICONS_DOWN
-# The icons that have grey copies: all of them
-GREY_ICONS = ICON_COUNT
+# The special marks' slot: its left half is the left mark, and the right mark is an icon of its own after the slots
+SPECIAL_SLOT = 4
+MARK_WIDTH = ICON_WIDTH // 2
+IMAGE_COUNT = ICON_COUNT + 1
 TILE = 8
 TILES_PER_ICON = (ICON_WIDTH // TILE) * (ICON_HEIGHT // TILE)
 ICON_ROWS = 3
@@ -87,29 +90,38 @@ def grey(color):
 
 
 def read_icons():
-    """Each icon's tiles, each a list of 64 colours (None where transparent), the grey icons' after the icons'."""
+    """Each icon's pixels, 32 by 16 colours by rows (None where transparent): the slots', the left mark in the special
+    marks' slot and the right mark after them; and the grey icons' in the same order."""
     width, height, pixels = read_png(ICONS)
     if (width, height) != (ICON_WIDTH * ICONS_ACROSS, ICON_HEIGHT * ICONS_DOWN):
         raise IconError(f"{ICONS.name}: {width} by {height}, not {ICON_WIDTH * ICONS_ACROSS} by "
                         f"{ICON_HEIGHT * ICONS_DOWN}")
-    icons = []
-    for icon in range(ICON_COUNT):
-        left, top = icon % ICONS_ACROSS * ICON_WIDTH, icon // ICONS_ACROSS * ICON_HEIGHT
-        tiles = []
-        for tile in range(TILES_PER_ICON):
-            x0 = left + tile % (ICON_WIDTH // TILE) * TILE
-            y0 = top + tile // (ICON_WIDTH // TILE) * TILE
-            tiles.append([None if pixels[(y0 + y) * width + x0 + x] is None else to5(pixels[(y0 + y) * width + x0 + x])
-                          for y in range(TILE) for x in range(TILE)])
-        icons.append(tiles)
-    greys = [[[None if c is None else grey(c) for c in tile] for tile in icons[i]] for i in range(GREY_ICONS)]
+
+    def color(x, y):
+        return None if pixels[y * width + x] is None else to5(pixels[y * width + x])
+
+    def slot(index, column=0, columns=ICON_WIDTH):
+        left, top = index % ICONS_ACROSS * ICON_WIDTH, index // ICONS_ACROSS * ICON_HEIGHT
+        return [color(left + column + x, top + y) if x < columns else None
+                for y in range(ICON_HEIGHT) for x in range(ICON_WIDTH)]
+
+    icons = [slot(i, 0, MARK_WIDTH) if i == SPECIAL_SLOT else slot(i) for i in range(ICON_COUNT)]
+    icons.append(slot(SPECIAL_SLOT, MARK_WIDTH, MARK_WIDTH))
+    greys = [[None if c is None else grey(c) for c in icon] for icon in icons]
     return icons, greys
 
 
-def pack(tiles):
-    """A row for each tile, and the rows' colours, so that each tile's colours are in its row; None if no order of
+def tiles(icon):
+    """An icon's 8 tiles in a 32 by 16 OBJ's order, the top row's 4 first, each 64 colours by rows."""
+    across = ICON_WIDTH // TILE
+    return [[icon[(tile // across * TILE + y) * ICON_WIDTH + tile % across * TILE + x]
+             for y in range(TILE) for x in range(TILE)] for tile in range(TILES_PER_ICON)]
+
+
+def pack(icons):
+    """A row for each icon, and the rows' colours, so that each icon's colours are in its row; None if no order of
     PACK_TRIES fits."""
-    sets = sorted({frozenset(c for c in tile if c is not None) for tile in tiles}, key=lambda s: (-len(s), sorted(s)))
+    sets = sorted({frozenset(c for c in icon if c is not None) for icon in icons}, key=lambda s: (-len(s), sorted(s)))
     rng = random.Random(PACK_SEED)
     for attempt in range(PACK_TRIES):
         order = list(sets)
@@ -127,17 +139,17 @@ def pack(tiles):
             chosen[colors] = row
         else:
             palettes = [sorted(row) for row in rows]
-            return [chosen[frozenset(c for c in tile if c is not None)] for tile in tiles], palettes
+            return [chosen[frozenset(c for c in icon if c is not None)] for icon in icons], palettes
     return None
 
 
 def member():
     icons, greys = read_icons()
-    tiles = [tile for icon in icons + greys for tile in icon]
-    packed = pack(tiles)
+    images = icons + greys
+    packed = pack(images)
     if packed is None:
-        worst = sorted(range(ICON_COUNT), key=lambda i: -len({c for t in icons[i] for c in t if c is not None}))[:5]
-        raise IconError(f"{ICONS.name}: its tiles don't fit {ICON_ROWS} palette rows of {ROW_COLORS} colours; the "
+        worst = sorted(range(ICON_COUNT), key=lambda i: -len({c for c in icons[i] if c is not None}))[:5]
+        raise IconError(f"{ICONS.name}: its icons don't fit {ICON_ROWS} palette rows of {ROW_COLORS} colours; the "
                         f"icons with the most colours are slots {', '.join(map(str, worst))}")
     rows, palettes = packed
     out = bytearray()
@@ -145,10 +157,11 @@ def member():
         colors = [0] + [r | g << 5 | b << 10 for r, g, b in palette]
         out += struct.pack("<16H", *(colors + [0] * (16 - len(colors))))
     out += bytes(rows)
-    for tile, row in zip(tiles, rows):
+    for image, row in zip(images, rows):
         index = {c: i + 1 for i, c in enumerate(palettes[row])}
-        values = [0 if c is None else index[c] for c in tile]
-        out += bytes(values[i] | values[i + 1] << 4 for i in range(0, len(values), 2))
+        for tile in tiles(image):
+            values = [0 if c is None else index[c] for c in tile]
+            out += bytes(values[i] | values[i + 1] << 4 for i in range(0, len(values), 2))
     return bytes(out)
 
 
@@ -184,12 +197,12 @@ def main():
     except IconError as error:
         sys.exit(f"pokedex_area.py: {error}")
     icons, _ = read_icons()
-    counts = [len({c for t in icon for c in t if c is not None}) for icon in icons]
-    rows = data[ICON_ROWS * 32:ICON_ROWS * 32 + (ICON_COUNT + GREY_ICONS) * TILES_PER_ICON]
+    counts = [len({c for c in icon if c is not None}) for icon in icons]
+    rows = data[ICON_ROWS * 32:ICON_ROWS * 32 + 2 * IMAGE_COUNT]
     used = [sum(1 for c in struct.unpack_from("<16H", data, r * 32)[1:] if c) for r in range(ICON_ROWS)]
     box = box_member()
     print(f"box: {len(box)} bytes")
-    print(f"{len(data)} bytes; the rows' colours {used} of {ROW_COLORS}; tiles in each row "
+    print(f"{len(data)} bytes; the rows' colours {used} of {ROW_COLORS}; icons in each row "
           f"{[rows.count(r) for r in range(ICON_ROWS)]}; each icon's colours {counts}")
 
 

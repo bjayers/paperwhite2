@@ -17,7 +17,7 @@ pokedex_templates.py beside the other sub-pages' into the same ignored folder, a
 - area_canvas.png: the Area bottom screen to draw over (indexed), the tab bar with Area selected and the regions'
   placeholders (the first draft's; the user's art is res/paperwhite2/pokedex_art/info_area.png);
 - area_reference.png / area_reference_tiles.png (with the 8 by 8 tiles' grid): the user's art with every icon slot,
-  special mark and text where the page puts them (the places read from paperwhite2_pokedex_info_area.c), four method
+  special mark and text at the pixels where the page puts them (read from paperwhite2_pokedex_info_area.c), four method
   rows; area_reference_rows<N>.png / _rows<N>_tiles.png (N 1-4): the same with N rows, as the page centres them;
 - area_icons_template.png: the icon sheet, 32 by 16 slots in a 16-colour starter palette; area_icons_guide.png: the
   same at 3x with each slot's name; area_glow_template.png: the highlight colours, three shades a row.
@@ -439,11 +439,10 @@ def reference(font, small, count, tiles):
     top = d["METHODS_Y"] + (d["METHODS_HEIGHT"] - (count - 1) * d["ROW_PITCH"] - ICON_H) // 2
     for i, (key, levels, tier) in enumerate(REFERENCE_ROWS[:count]):
         y = top + i * d["ROW_PITCH"]
-        icon_y = (y + 4) // 8 * 8
-        slot(r, d["ROW_ICON_X"], icon_y, key, small)
+        slot(r, d["ROW_ICON_X"], y, key, small)
         for x in (d["ROW_MARK_LEFT_X"], d["ROW_MARK_RIGHT_X"]):
-            r.fill(x, icon_y, ICON_W // 2, ICON_H, MARK)
-            r.outline(x, icon_y, ICON_W // 2, ICON_H, SLOT_EDGE, dashed=True)
+            r.fill(x, y, ICON_W // 2, ICON_H, MARK)
+            r.outline(x, y, ICON_W // 2, ICON_H, SLOT_EDGE, dashed=True)
         r.text(font, levels, d["ROW_LEVELS_X"], y)
         r.text(small, tier, d["ROW_TIER_X"], y + d["ROW_TIER_OFFSET_Y"])
     r.text(small, m["AreaTime"], d["LABEL_X"], d["TIMES_LABEL_Y"])

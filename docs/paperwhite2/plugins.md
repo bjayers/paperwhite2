@@ -1591,7 +1591,7 @@ to the screen buffer, loaded by `GFL_BGSysUpdate`, and their characters by the p
 (`PokedexInfoPanels_Transfer`, `_VBlank`), which runs before it in the same VBlank, with the OBJs' OAM. Loaded at once
 (`BmpWin_Transfer`), the characters showed for the rest of the frame in the old map entries' palette row (Evo's balls,
 drawn for row 12, in the panels' 3) and before the OBJs moved (Moves' icons, cursor and knob). Row 12 is the content
-window's palette on Matchups (`sMatchupColors`) and Evo (the balls'), and Area's third row of icons: the panels load the
+window's palette on Matchups (`sMatchupColors`) and Evo (the balls'): the panels load the
 sub-page's colours into it in the same VBlank as the windows (`pendingPalette`), as it changes.
 
 **Moves** (`paperwhite2_pokedex_info_moves.c` reads the sets, the panels' file draws them): a bar of the four sets
@@ -1655,7 +1655,7 @@ panel's characters as it closes).
 
 **Evo** (`paperwhite2_pokedex_info_evo.c`, drawn into the panels' content window, which shows sub BG palette row 12
 there, the balls' palette, the art's colours: rows 6-11 are the arts' (Stats, Data, Moves, Evo, Area, Matchups), 12
-the content window's sub-page's, 13 the touch bar's, 14-15 Area's icons): the shown
+the content window's sub-page's, 13 the touch bar's): the shown
 species' whole family from its root. **The strip** (y 25-57): each species' party icon (`ARCID_POKEICON`, sub OBJs,
 the 128 KB cells and animations, sequence 1 as a healthy party Pokémon's, palettes in sub OBJ rows 5-7, semi-transparent
 as the page's other OBJs), in the shown form and sex where the species has them (Burmy's cloak is Wormadam's), or the
@@ -1727,32 +1727,36 @@ has no tier; there is no outbreak badge). The preferred times and weathers are t
 summed over its rows, is the highest; the index keeps them (and the rates), but the page shows neither. The page reads
 its header and the places as it starts, and the shown species' block (at most 512 bytes) by range as it shows. **The
 bottom screen** (drawn into the panels' content window in the panels' palette, row 3, over the art `info_area.png`,
-members 152-154, palette row 10; the user's final background of 2026-11-09: a top bar, y 23-40 inside, a methods'
-box, y 48-122, and a bottom box, y 130-164, its transparent parts showing the grid). The text is where the user's mockup
-puts it, the icons on the tiles nearest to the mockup's places (they are tiles of the window: see below): the seasons'
-bar has no label, "All seasons" centred in it (x 128, y 29) when every place it is at glows white, that is all year
-everywhere, else the four season icons at x 48, 88, 128 and 168, y 24 (the mockup's 52 + 40 i, 4 px off either way),
-coloured for each season it is met in, even all four, grey for the others; up to four rows 19 px apart (the mockup's),
-centred in the methods' box (`METHODS_Y` 48, `METHODS_HEIGHT` 75): 4 rows at y 49, 68, 87, 106, 3 at 58, 77, 96, 2 at
-68, 87, 1 at 77; each row's icon at x 32 and the special marks (the icon sheet's fifth slot of its first row, cut in two
-16 by 16 halves) at x 16 and 64 where the special version applies (the mockup's 29, 13 and 61), at the multiple of 8
-nearest the row's y, a half rounded up (4 rows: y 48, 72, 88, 104; 3: 56, 80, 96; 2: 72, 88; 1: 80); the icon by
-walking's terrain (grass, cave floor, sand, puddle, bridge or walking), grey where only the special version applies but
-on a bridge (whose areas have only shadows); the levels in font 0 at x 88, the row's y, the rarity or range in font 1
-at x 159, 4 below; the labels "Time" (y 136) and "Weather" (y 153) in font 1 at x 17; the times' icons at y 128 and the
-weathers' at y 144, both at x 64, 96, 136, 168 and 208 (the mockup's 61 + 36 i, y 131 and 148: 3 or 1 px off across,
-3 and 4 down, so the times' top 2 rows are over the box's frame), or "All times of day" or "All weathers" at x 64 on
-the label's line when it is met in all five, grey where it isn't met. A species never met
-in the wild shows "Not found in the wild", centred in the methods' box. **The icons** (member 159, `tools/paperwhite2/pokedex_area.py` from
-`res/paperwhite2/pokedex_art/area_icons.png`, 160 by 80, 25 slots of 32 by 16: the seasons and the special marks, the
-times, the weathers, the terrains grass, dark grass, cave floor, sand and bridge, then surf, puddle, fishing, walking
-and an unused slot; each on solid white so that it blends into the art's white) are drawn into the window's tiles
-(tile-aligned, 4 by 2 tiles each, 2 by 2 for a mark) and each tile's map entry takes its own palette row: the sheet's
-colours are packed per 8 by 8 tile into three rows of 15, sub BG rows 14 and 15 (loaded as the page starts; nothing
-else on the bottom screen uses them, measured) and 12 (loaded as Area shows), with every icon's grey copy (each
-colour's grey by its luminance, 8 levels from 13 to 27 of 31; white stays white) packed into the same rows. The sheet of
-2026-11-09 (the user's, with placeholder marks and the old method icons standing in for the new terrains) packs into
-15, 15 and 14 of the rows' 45 places. **The top screen** shows the original AREA page's
+members 152-154, palette row 10; the user's background of 2026-11-09, its boxes moved up 2 px from the first: a top
+bar, y 21-38 inside, a methods' box, y 46-120, and a bottom box, y 128-162, its transparent parts showing the grid). The
+icons and the text are where the user's mockup puts them (`area-example.png` of 2026-11-09, the icons' top left
+corners), 2 px higher with the boxes: the seasons' bar has no label, "All seasons" centred in it (x 128, y 27) when
+every place it is at glows white, that is all year everywhere, else the four season icons at x 52, 92, 132 and 172,
+y 22, coloured for each season it is met in, even all four, grey for the others; up to four rows 19 px apart (the
+mockup's), centred in the methods' box (`METHODS_Y` 46, `METHODS_HEIGHT` 75): 4 rows at y 47, 66, 85, 104, 3 at 56,
+75, 94, 2 at 66, 85, 1 at 75; each row's icon at x 29 and the special marks at x 13 and 61 where the special version
+applies, all at the row's y; the icon by walking's terrain (grass, cave floor, sand, puddle, bridge or walking), grey
+where only the special version applies but on a bridge (whose areas have only shadows); the levels in font 0 at x 88,
+the row's y, the rarity or range in font 1 at x 159, 4 below; the labels "Time" (y 134) and "Weather" (y 151) in font 1
+at x 17; the times' icons at y 129 and the weathers' at y 146, both at x 61, 97, 133, 169 and 205, or "All times of
+day" or "All weathers" at x 64 on the label's line when it is met in all five, grey where it isn't met. A species never
+met in the wild shows "Not found in the wild", centred in the methods' box (y 76). **The icons** (member 159,
+`tools/paperwhite2/pokedex_area.py` from `res/paperwhite2/pokedex_art/area_icons.png`, 160 by 80, 25 slots of 32 by
+16: the seasons and the special marks, the times, the weathers, the terrains grass, dark grass, cave floor, sand and
+bridge, then surf, puddle, fishing, walking and an unused slot; their transparent pixels show the art) are sub OBJs of
+32 by 16 at their exact places, over the content window (BG priority 1), semi-transparent as the page's other OBJs so
+that its fades darken them: the type icons' cells (`ARCID_APP_MENU_COMMON`, the 1D 128 KB mapping's, centred), one
+character resource for all the icons (13 KB of sub OBJ VRAM: 26 icons, the marks' slot cut into a left and a right
+mark, each in its icon's left half, and their grey copies), each OBJ's image proxy at its icon and its palette proxy at
+its row. Each icon has at most 7 colours, so each is packed whole into one of three OBJ palette rows of 15 with every
+icon's grey copy (each colour's grey by its luminance, 8 levels from 13 to 27 of 31; white stays white, clear stays
+clear): sub OBJ rows 14 and 15, which nothing uses, and 4, Moves' knob's. They are made as Area shows (made anew for
+each species, at most 26) and freed as another sub-page shows (`PokedexInfoArea_Hide`), as Evo's icons are; the
+palette resource (the type icons' palette's first row, into row 14) is only what the OBJs are made with: Area's VBlank
+task loads the icons' colours into the three rows in the VBlank that shows the OBJs first, keeping the rows' own
+(the knob's), and puts those back in the VBlank that shows another sub-page. Frame-by-frame captures of Area to and
+from Evo and Moves show no in-between frame. The sheet of 2026-11-09 (the user's, still unfinished: the marks' slot
+empty, the old method icons standing in for some terrains) packs into all 45 of the rows' places. **The top screen** shows the original AREA page's
 town map (`ARCID_TOWNMAP_GRA` 5 and 7, screens 17 and 16, extended palette 0 into slots 2 and 3) in place of the entry:
 opening it frees the entry's text, type icons and footprint (`PokedexInfo_FreeText`), loads the extended palettes at
 once and reads the characters and screens (about 62 KB, from the heap's tail). The map's characters go over the
@@ -1790,8 +1794,11 @@ written as it changes) and 13 (the art's 16 colours), measured unchanged and unu
 takes three OBJ resources (characters, palette, cells) while the map is open, and about 5 KB of the heap (the art's
 member, 2 KB, kept to draw each name over). The detail heap grew to 0xb0000: opening the map with the heap at its fullest left 21 KB free (largest block
 10 KB) at 0xa0000; at 0xb0000, 152 KB free on Stats, 99 KB at the lowest while the map opens (largest block 90 KB),
-165 KB while Area shows (the entry's text freed). Area keeps about 13 KB while the page runs (the icons' member
-10.4 KB, the places, the species' block).
+165 KB while Area shows (the entry's text freed). Area keeps about 15 KB while the page runs (the icons' member
+13.1 KB, the places, the species' block). The page's OBJ unit has 128 actors under `PAPERWHITE2` (the original's 96,
+`src/ov298/pokedex_detail_graphic.c`), as Area's icons (up to 26) come on top of the other sub-pages' OBJs and the
+map's (up to 40 places, the marker and the box's 5); with it and the icons as OBJs, opening Area with the map from
+Hoothoot's entry left 82 KB free at the lowest (largest block 74 KB).
 
 **The entry's text window shows the page's text** (`PokedexInfoPage_ShowTopText`): the description's 3 lines (the
 window at tiles 2, 17, 28 by 7 on main BG 1) show, on Stats, the ability that the Abilities button is at (each press:

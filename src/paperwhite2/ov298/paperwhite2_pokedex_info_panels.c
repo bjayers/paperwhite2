@@ -56,8 +56,8 @@
 // this one in the sub-pages' order
 #define PALETTE_ART 6
 // The content window's palette while Matchups shows (sMatchupColors) or Evo (the art's colors, with its balls,
-// paperwhite2_pokedex_info_evo.c), after the art's six and before the touch bar's 13, and Area's third row of icons
-// (POKEDEX_INFO_AREA_ICON_ROW_2): each loaded into it as its sub-page shows, in the VBlank that shows it
+// paperwhite2_pokedex_info_evo.c), after the art's six and before the touch bar's 13: each loaded into it as its
+// sub-page shows, in the VBlank that shows it
 #define PALETTE_CONTENT 12
 #define PALETTE_SIZE 0x20
 // The art's screen, the whole screen in tiles, and the BG's whole screen (256 by 256), whose rows past the screen's
@@ -221,7 +221,8 @@
 #define KNOB_CELLS 63
 #define KNOB_ANIMS 73
 #define KNOB_SEQUENCE 2
-// The cursor's and the knob's sub OBJ palette rows, after the type icons' and below the touch bar's
+// The cursor's and the knob's sub OBJ palette rows, after the type icons' and below the touch bar's; Area's icons take
+// the knob's while Area shows (POKEDEX_INFO_AREA_ICON_ROW_2), and put its colours back as it hides
 #define PALETTE_CURSOR 3
 #define PALETTE_KNOB 4
 
@@ -621,7 +622,7 @@ PokedexInfoPanels *PokedexInfoPanels_Create(HeapID heapId, Font *font, ClActUnit
     PokedexInfoPanels_CreateTypeIcons(panels, unit);
     PokedexInfoPanels_CreateMoveActors(panels, unit);
     panels->evo = PokedexInfoEvo_Create(heapId, font, panels->smallFont, unit, pokedex);
-    panels->area = PokedexInfoArea_Create(heapId, font, panels->smallFont, BG_PANELS);
+    panels->area = PokedexInfoArea_Create(heapId, font, panels->smallFont, unit);
     panels->subpage = POKEDEX_INFO_SUBPAGE_COUNT;
     GFL_BGSysSetBGEnabled(BG_GRID, TRUE);
     GFL_BGSysSetBGEnabled(BG_PANELS, TRUE);
@@ -925,9 +926,12 @@ void PokedexInfoPanels_Show(PokedexInfoPanels *panels, u32 subpage, u16 species,
         ClActor_SetVisible(panels->typeIcons[i], subpage == POKEDEX_INFO_SUBPAGE_MATCHUPS);
     }
     PokedexInfoPanels_UpdateMoveActors(panels, subpage == POKEDEX_INFO_SUBPAGE_MOVES);
-    // Evo's icons take OBJ resources only while it shows
+    // Evo's and Area's icons take OBJ resources only while their sub-page shows
     if (subpage != POKEDEX_INFO_SUBPAGE_EVO) {
         PokedexInfoEvo_Hide(panels->evo);
+    }
+    if (subpage != POKEDEX_INFO_SUBPAGE_AREA) {
+        PokedexInfoArea_Hide(panels->area);
     }
     PML_PersonalFree(personal);
     // PALETTE_CONTENT takes the sub-page's colors as it changes, in the VBlank that shows it
@@ -938,9 +942,6 @@ void PokedexInfoPanels_Show(PokedexInfoPanels *panels, u32 subpage, u16 species,
             break;
         case POKEDEX_INFO_SUBPAGE_EVO:
             panels->pendingPalette = PokedexInfoEvo_GetPalette(panels->evo);
-            break;
-        case POKEDEX_INFO_SUBPAGE_AREA:
-            panels->pendingPalette = PokedexInfoArea_GetPalette(panels->area);
             break;
         }
         if (panels->pendingPalette != NULL) {
@@ -959,10 +960,6 @@ void PokedexInfoPanels_Show(PokedexInfoPanels *panels, u32 subpage, u16 species,
     }
     PokedexInfoPanels_Transfer(panels, panels->barWindow, PENDING_BAR);
     PokedexInfoPanels_Transfer(panels, panels->contentWindow, PENDING_CONTENT);
-    // Area's icons' tiles take their own rows, over the window's
-    if (subpage == POKEDEX_INFO_SUBPAGE_AREA) {
-        PokedexInfoArea_SetIconPalettes(panels->area, BG_PANELS);
-    }
 }
 
 PokedexInfoArea *PokedexInfoPanels_GetArea(PokedexInfoPanels *panels) {
