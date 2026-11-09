@@ -1701,7 +1701,8 @@ game reads them by species), so Burmy's and Wormadam's forms evolve as their spe
 
 **Area** (`paperwhite2_pokedex_info_area.c`; `docs/paperwhite2/design/pokedex-area.md`): where the species is met in the
 wild, from the hack's encounter data. **The index** (member 158, `encounters.py`'s `area_index`, about 22 KB; `encounters.py
-area-index SPECIES...` prints the areas' terrains and a species' part): a header ("PARE", version 2), each species' block
+area-index SPECIES...` prints the areas' terrains, the encounter areas without a town map place with the species met
+there, and a species' part): a header ("PARE", version 3), each species' block
 offset by its number, the town map's 85 places in its table's order (`res/town_map/order.json`: the zone, the area OBJ's
 place and animation on the Pokédex's map, the place's own position for the player's marker), then each species' block:
 its places (the town map place of each encounter area's zones' parent, and a season mask) and up to 4 rows, in this
@@ -1717,7 +1718,11 @@ Bridge; the Village Bridge has grass too, so its shadows are grass's special ver
 Resort (`AREA_SAND`), puddles in Icirrus City, the Moor of Icirrus and on Route 8 (`AREA_PUDDLES`), cave floor in the
 dust-cloud areas and the buildings (`AREA_FLOORS`: the Castelia Sewers, Celestial Tower, Dragonspiral Tower's inside,
 Relic Castle, the Strange House), else grass; the lists were checked against the encounter tiles of the areas' zones'
-maps (deep sand; swamp puddles alone, no grass; floors). The species' levels and the union of every context's
+maps (deep sand; swamp puddles alone, no grass; floors). Only areas with a place on the town map count (the
+user's choice, 2026-11-09): an area without one (only the Nature Preserve today) adds nothing to the rows, seasons,
+times, weathers or rarities, as the map can't show it, and a species met only there (Kangaskhan, Tauros, Girafarig,
+Blissey) gets a block without places or rows, flagged off-map (`AREA_FLAG_OFF_MAP`, 32), which shows "Not found on
+the map". The species' levels and the union of every context's
 seasons, times and weathers (the special versions' too) head the block. The rates are the runtime's slots
 (`method_candidates` and `slot_shares`, which `encounters.py odds` uses too), computed for every area, method, season
 (where the area's rate for it isn't 0), period and weather group (clear, rain, thunderstorm, snow, sandstorm as the
@@ -1741,7 +1746,8 @@ the row's y, the rarity or range ("Common - Rare") in font 1 at x 157, 4 below (
 rare", 90 px, ends at x 246, inside the box's 249); the labels "Time" (y 134) and "Weather" (y 151) in font 1
 at x 17; the times' icons at y 129 and the weathers' at y 146, both at x 61, 97, 133, 169 and 205, or "All times of
 day" or "All weathers" at x 64 on the label's line when it is met in all five, grey where it isn't met. A species never
-met in the wild shows "Not found in the wild", centred in the methods' box (y 76). **The icons** (member 159,
+met in the wild shows "Not found in the wild", and one met only off the map "Not found on the map", both centred in
+the methods' box (y 76). **The icons** (member 159,
 `tools/paperwhite2/pokedex_area.py` from `res/paperwhite2/pokedex_art/area_icons.png`, 160 by 80, 25 slots of 32 by
 16: the seasons and the special marks, the times, the weathers, the terrains grass, dark grass, cave floor, sand and
 bridge, then surf, puddle, fishing, walking and an unused slot; their transparent pixels show the art) are sub OBJs of

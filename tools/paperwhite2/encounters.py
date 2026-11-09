@@ -473,7 +473,7 @@ def odds(area: str, method: str, season: str, period: str, weather: str, scaled:
 # the Pokédex's graphics archive (tools/paperwhite2/pokedex_evo.py): each species' places on the town map with their
 # seasons, and its rows with their levels, rarities, rates, seasons, times and weathers
 AREA_INDEX_MAGIC = b"PARE"
-AREA_INDEX_VERSION = 2
+AREA_INDEX_VERSION = 3
 AREA_INDEX_HEADER = struct.Struct("<4sHHHxxII")
 AREA_INDEX_PLACE = struct.Struct("<HhhBBBx")
 AREA_INDEX_SPECIES = struct.Struct("<10B")
@@ -508,8 +508,10 @@ AREA_WEATHERS = {"clear": ["WEATHER_SUNNY", "WEATHER_FLUTTER", "WEATHER_TINT_9",
 # A row's tier for an outbreak's or shaking grass's own species, which have none
 AREA_TIER_NONE = 0xFF
 # A row's flags: met in outbreaks, under a rule, wandering the overworld, met by the row's special version too, and
-# met only by it
+# met only by it; and a species' block's own: met in the wild only in areas without a place on the town map, so the
+# page says "Not found on the map" rather than "Not found in the wild"
 AREA_FLAG_OUTBREAK, AREA_FLAG_RULE, AREA_FLAG_WANDERER, AREA_FLAG_SPECIAL, AREA_FLAG_SPECIAL_ONLY = 1, 2, 4, 8, 16
+AREA_FLAG_OFF_MAP = 32
 # The most bytes a species' block has, the page's buffer, and the most places it has, the page's OBJs
 # (AREA_BLOCK_MAX and AREA_PLACE_MAX in the C file)
 AREA_BLOCK_MAX = 512
@@ -558,11 +560,13 @@ def area_terrain(area: str, source: dict) -> str:
     return "grass"
 
 
-def area_rows(data: Data) -> dict[int, dict]:
+def area_rows(data: Data, off_map: dict[str, set[int]] | None = None) -> dict[int, dict]:
     """Each species' places (a season mask by place) and its sources (AREA_SOURCES' row and special flag): for each,
     every context it appears in (area, season, period, weather group, its share there in percent), its tiers, flags
     and the terrains of its areas. The level gate is ignored, as for a party high enough; outbreaks are contexts of
-    their own methods, at the outbreak share."""
+    their own methods, at the outbreak share. Areas without a place on the town map (area_places) count for nothing,
+    as the page's map can't show them (the user chose this on 2026-11-09); off_map gets each of them with the species
+    met there."""
     rules = rules_from_data(data)
     weathers = conditions.weathers()
     groups = [weathers[names[0]] for names in AREA_WEATHERS.values()]
@@ -570,6 +574,10 @@ def area_rows(data: Data) -> dict[int, dict]:
     found: dict[int, dict] = {}
 
     def note(number, area, method, season, period, group, share, tiers, flags):
+        if not places.get(area):
+            if off_map is not None:
+                off_map.setdefault(area, set()).add(number)
+            return
         entry = found.setdefault(number, {"places": {}, "rows": {}})
         for place in places.get(area, []):
             entry["places"][place] = entry["places"].get(place, 0) | 1 << season
@@ -653,13 +661,14 @@ def area_shown_rows(entry: dict) -> list[dict]:
     return shown
 
 
-def area_species_block(entry: dict, levels: dict) -> bytes:
-    """A species' block of the index (area_index)."""
+def area_species_block(entry: dict, levels: dict, flags: int = 0) -> bytes:
+    """A species' block of the index (area_index), with flags added to its rows'."""
     rows = area_shown_rows(entry)
     packed = []
     best_times = [0.0] * len(TIMES)
     best_weathers = [0.0] * len(AREA_WEATHERS)
-    seasons_all = times_all = weathers_all = flags_all = 0
+    seasons_all = times_all = weathers_all = 0
+    flags_all = flags
     for row in rows:
         contexts = row["contexts"]
         seasons = sum({1 << c[1] for c in contexts})
@@ -696,10 +705,13 @@ def area_index(data: Data | None = None) -> bytes:
     AREA_INDEX_SPECIES (its place and row counts, its levels, the seasons, times and weather groups of all its rows with
     the preferred ones, and their flags), its places (the place and a season mask each) and its rows (AREA_INDEX_ROW:
     the method, its tiers, seasons, rates in tenths of a percent, times and weather groups with the preferred ones,
-    and flags). A species never met in the wild has an empty block."""
+    and flags). A species never met in the wild has an empty block, and one met only in areas without a place on the
+    map a block without places or rows, flagged AREA_FLAG_OFF_MAP."""
     data = data or Data()
     places, _ = area_places()
-    rows = area_rows(data)
+    off_map: dict[str, set[int]] = {}
+    rows = area_rows(data, off_map)
+    unplaced = set().union(*off_map.values()) - set(rows)
     names = constants()
     count = names["SPECIES_GENESECT"] + 1
     levels = {data.species_number(folder): entry["levels"] for folder, entry in data.species.items()}
@@ -723,6 +735,9 @@ def area_index(data: Data | None = None) -> bytes:
                 raise DataError(f"species {number} is at {len(rows[number]['places'])} of the map's places, more "
                                 f"than the page's {AREA_PLACE_MAX}")
             body += block
+        elif number in unplaced:
+            body += area_species_block({"places": {}, "rows": {}}, levels.get(number, {"min": 1, "max": 100}),
+                                       AREA_FLAG_OFF_MAP)
     offsets.append(body_offset + len(body))
     header = AREA_INDEX_HEADER.pack(AREA_INDEX_MAGIC, AREA_INDEX_VERSION, count, len(places), offsets_offset,
                                     places_offset)
@@ -730,11 +745,20 @@ def area_index(data: Data | None = None) -> bytes:
 
 
 def area_index_check(names: list[str]):
-    """Prints the index's size, each area's terrain, and the blocks of the species named (SPECIES_* or folder
-    names)."""
+    """Prints the index's size, each area's terrain, the areas without a place on the town map with the species met
+    there (those met nowhere else marked *), and the blocks of the species named (SPECIES_* or folder names)."""
     data = Data()
     index = area_index(data)
     numbers = species_numbers()
+    species_names = {number: name.removeprefix("SPECIES_").lower() for name, number in numbers.items()}
+    off_map: dict[str, set[int]] = {}
+    rows = area_rows(data, off_map)
+    print("areas without a place on the town map (* met only in such areas, \"Not found on the map\"):")
+    for area in sorted(off_map):
+        print(f"  {area}: " + ", ".join(species_names.get(n, str(n)) + ("*" if n not in rows else "")
+                                        for n in sorted(off_map[area])))
+    only = sorted(set().union(*off_map.values()) - set(rows))
+    print(f"not found on the map: {', '.join(species_names.get(n, str(n)) for n in only) or 'none'}")
     count = AREA_INDEX_HEADER.unpack_from(index, 0)[2]
     offsets = struct.unpack_from(f"<{count + 1}I", index, AREA_INDEX_HEADER.size)
     print(f"area index: {len(index)} bytes, {sum(1 for i in range(count) if offsets[i + 1] > offsets[i])} species, "
@@ -755,6 +779,9 @@ def area_index_check(names: list[str]):
             print(f"{name}: not in the wild")
             continue
         head = AREA_INDEX_SPECIES.unpack_from(index, start)
+        if head[9] & AREA_FLAG_OFF_MAP:
+            print(f"{name}: not found on the map")
+            continue
         print(f"{name}: Lv. {head[2]}-{head[3]}, seasons {head[4]:04b}, times {head[5]:05b} (preferred {head[6]:05b}), "
               f"weathers {head[7]:05b} (preferred {head[8]:05b}), flags {head[9]}")
         cursor = start + AREA_INDEX_SPECIES.size

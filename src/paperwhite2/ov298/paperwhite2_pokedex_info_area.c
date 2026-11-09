@@ -52,7 +52,7 @@
 #define AREA_ICONS_FILE 159
 #define AREA_BOX_FILE 160
 #define AREA_INDEX_MAGIC 0x45524150 // "PARE"
-#define AREA_INDEX_VERSION 2
+#define AREA_INDEX_VERSION 3
 // A species' part of the index is at most this long, as encounters.py checks (AREA_BLOCK_MAX)
 #define AREA_BLOCK_MAX 512
 // The rows that the bottom screen has room for, encounters.py's AREA_ROWS
@@ -145,10 +145,12 @@ enum {
 // grass's own species
 #define AREA_TIER_COUNT 5
 #define AREA_TIER_NONE 0xff
-// A row's flags that the page reads: met in outbreaks, met by the row's special version too, and only by it
+// A row's flags that the page reads: met in outbreaks, met by the row's special version too, and only by it; and a
+// species' own: met in the wild only in areas without a place on the town map, its block without places or rows
 #define AREA_FLAG_OUTBREAK (1 << 0)
 #define AREA_FLAG_SPECIAL (1 << 3)
 #define AREA_FLAG_SPECIAL_ONLY (1 << 4)
+#define AREA_FLAG_OFF_MAP (1 << 5)
 
 #define AREA_SEASON_COUNT 4
 #define AREA_TIME_COUNT 5
@@ -563,7 +565,8 @@ static const AreaRow *PokedexInfoArea_GetRows(PokedexInfoArea *area) {
 
 // The seasons' strip: "All seasons" if each of its places is met all year, else each season's icon, grey where it isn't
 // met; the methods' rows; and the times' and weathers' rows, each "All ..." if it is met in all of them. A species
-// never met in the wild has a message instead. The icons are OBJs, made anew for each species
+// never met in the wild has a message instead, and one met only in areas off the map another. The icons are OBJs, made
+// anew for each species
 void PokedexInfoArea_Draw(PokedexInfoArea *area, GFLBitmap *bitmap, int top, u16 species) {
     const AreaSpecies *entry;
     const AreaRow *rows;
@@ -582,6 +585,12 @@ void PokedexInfoArea_Draw(PokedexInfoArea *area, GFLBitmap *bitmap, int top, u16
         return;
     }
     entry = PokedexInfoArea_GetSpecies(area);
+    // Paper White 2: areas without a place on the town map count for nothing, so a species met only there says so
+    if (entry->flags & AREA_FLAG_OFF_MAP) {
+        PokedexInfoArea_Print(area, bitmap, top, area->font, PokedexData_Text_AreaOffMap, UNKNOWN_X, UNKNOWN_Y,
+                              PRINT_ALIGN_CENTER, AREA_TEXT_COLOR);
+        return;
+    }
     rows = PokedexInfoArea_GetRows(area);
     PokedexInfoArea_InitSeasons(area);
     // The seasons' bar has no label, so "All seasons" is centred in it

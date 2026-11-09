@@ -241,6 +241,13 @@ The details are in `docs/paperwhite2/plugins.md` (Pokédex, Area). Where the bui
   place shows (visited or not), the player's marker stays; the glow cycles through the seasons of the places not met
   all year, all-year places white; unmet seasons, times and weathers show greyed (light grey copies of their icons); a
   species never met in the wild says "Not found in the wild".
+- **Only areas on the map count (the user's, 2026-11-09):** an encounter area without a town map place adds nothing
+  to the page (rows, seasons, times, weathers, rarities), so the icons agree with the glowing map (Rapidash showed
+  all four seasons from the Nature Preserve while the map glowed summer and autumn at Reversal Mountain). The
+  Nature Preserve is the only such area; Kangaskhan, Tauros, Girafarig and Blissey are met only there and say "Not
+  found on the map" (`AREA_FLAG_OFF_MAP` in their block, index version 3). The levels are the species' own
+  (`species/<species>.json`), the same in every area, so they are unchanged. `encounters.py area-index` lists the
+  areas without a place and the species each affects.
 - **Rows by terrain (the user's, 2026-11-09; this replaced the method rows and their merging):** at most four rows,
   walking, dark grass, surfing and fishing, the empty ones left out and the shown ones centred in the methods' area.
   Walking's icon is the terrain of the areas where it is walked into (by grass or the area's rustling spots): grass,
@@ -270,7 +277,7 @@ The details are in `docs/paperwhite2/plugins.md` (Pokédex, Area). Where the bui
   `pokedex_evo.py archive`.
 - **The index** has no tier or rate per place, only per row (lowest and highest over its places and contexts); a row's
   rates are the species' summed share over its forms. Version 2 (rows by terrain): 22.0 KB, 496 species, the largest
-  block 104 bytes.
+  block 104 bytes. Version 3 (off-map areas left out): 21.9 KB, 496 species.
 - **Bottom palette rows:** arts 6-11; row 12 the content window's on Matchups and Evo, loaded in the VBlank as the
   sub-page changes; Area's text is in the panels' row 3 (not its art's). Its icons are sub OBJs since 2026-11-09 (below),
   so sub BG rows 12 (for Area), 14 and 15 are free of them.
@@ -324,6 +331,59 @@ The details are in `docs/paperwhite2/plugins.md` (Pokédex, Area). Where the bui
 - **Placeholders:** the glow colours (the template's, until `area_glow.png`); the special marks and some terrain icons
   (see the icon sheet above). Not done: phase 4's `area_glow.png` target, phase 5 (cutting the
   touch bar's AREA page).
+
+## Adding a place to the town map (research, 2026-11-09)
+
+How to give an encounter area without a place (the Nature Preserve today, new areas later) a place of its own, so the
+Town Map app (and its Fly mode), a beacon's details, the original habitat map and the Area page all show it. Not done:
+the user chose to leave the Nature Preserve off the map for now (Area ignores it, above). Effort for one place: about
+half a day of data and C, plus the art (one dot), then a check in the Town Map, Fly, the Pokédex and the C-Gear's
+beacons.
+
+**Data** (`res/town_map/`, packed into `a/0/8/5` by `tools/data/town_map_data.py`; `docs/data.md`, "Town map"):
+
+- A new `<zone>.json` (`place.schema.json`) and its zone at the **end** of `order.json`: the code numbers places by
+  that order, `pokedex_detail_map.c`'s `sPokedexDetailMapZones` lists them in it, and Black City must stay just before
+  White Forest (`TownMapPlaces_Init` shows one in the other's stead).
+- `zone`: the area's zone, or the parent its zones name (`area_places()` links an encounter area to the place of its
+  zones' `parent`; the Nature Preserve's zone is its own parent, `ZONE_NATURE_PRESERVE`, so it links by itself). The
+  name the map shows is the zone's place name (`TEXT_BANK_PLACE_NAMES`, `PLACE_NATURE_PRESERVE` already exists).
+- `type`: 2 (a dungeon's: a dot in the BG art, the selection highlight only, always counted as visited), or 4 (an OBJ
+  marker, animations 14/15 on the Town Map and 14 on the Pokédex's map, as the Abyssal Ruins, N's Castle and the
+  Plasma Frigate in the sea). `position`, `cursor` and the touch `hit` capsule (a dungeon's: the hit from y-4 to y+4,
+  radius 8; `radius` 12).
+- `fly` false, `arrival_flag` null, `unk13`/`unk14` (the landing point) 0: **no Fly.** The Nature Preserve is reached
+  by plane from Mistralton after the story allows it; Fly would skip that gate, and a Fly landing needs a warp spot.
+- `shown_by`: null to show it always, or an event flag to show it once set (the Abyssal Ruins' way). Only a type-4
+  OBJ marker can hide: a BG dot is always drawn, so a place hidden until visited needs type 4 or no dot. The flag
+  would be a new one set by the area's zone script on entry.
+- `description` (a new message in `res/text/system/town_map.txt`) and up to six `landmarks` (messages too).
+- `area`: the glow on the Pokédex's map: `animation` 1 is the dungeons' small round glow (35 places share it, so no
+  new OBJ art), at `position - 8` (`x`, `y` of its top left, as the others').
+
+**Code** (each a `#ifdef PAPERWHITE2` hook):
+
+- `TOWNMAP_PLACE_COUNT` (85, `include/app/townmap/townmap_data.h`) becomes 86. Its users: `townmap.c`
+  (`TownMapPlaces_Init`, heap-sized, fine), `townmap_data.c`'s `TownMapData_GetPlaceByZone`, ov303's
+  `pokedex_habitat_graphic.c`, and `pokedex_detail_map.c` (the work's arrays, in the heap, and
+  `sPokedexDetailMapZones[TOWNMAP_PLACE_COUNT + 1]`, which needs the new zone before its closing 0, while the original
+  habitat page stays: Area's phase 5 cuts it). The beacon details (ov308) only look places up by zone.
+- The Area page and its index need nothing: `area_index` packs every place of `order.json`, and the page reads the
+  count from the index's header (`AREA_PLACE_MAX`, 40 places a species, is unaffected).
+
+**Art** (the user draws it):
+
+- The dots, cities and routes are BG 2 (`res/graphics/townmap_gra/05.png`, 256-colour tiles, and screen `17.nscr`);
+  the land and sea BG 3 (`07.png`, `16.nscr`); both use palette `00.pal`. A dungeon's dot is a small green square with a
+  dark edge, about 7 by 7 inside one or two 8 by 8 tiles. `05.png` has 42 blank tiles at its end (its block, 0x4000,
+  holds 256), so a new dot fits: draw it into those tiles and put them in the screen at the spot. On the Area page
+  and the original habitat map the same BGs show, so the dot appears there too. Optionally a small island under it
+  on BG 3 (`07.png` has 704 tiles, 31 of them blank at its end; more would need checking each screen's character
+  block: the Area page loads up to 0xc000, 768 tiles).
+- With type 4 instead, no BG art: the existing marker OBJ (the town map's characters 8, cells 12, animations 19).
+- **A spot for the Nature Preserve:** the open sea south of Virbank City, between Aspertia's coast and Unity Tower's
+  island, around x 52, y 156 of the map (the screen's y 180 on the Area page). The west of the map is forest, not sea;
+  the east coast already has the Abyssal Ruins and the Plasma Frigate.
 
 ## Templates
 
