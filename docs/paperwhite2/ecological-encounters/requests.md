@@ -31,7 +31,7 @@ Each keeps its date. A request isn't a whole placement: the rest of the family a
 
 ## Weather the user may add
 
-The user will tune weather in the editor; these are the wishes so far, for the generator to plan with.
+The user tunes weather in the Weather Editor; `weather.md` has every place's weather, wishes and suggestions.
 
 - 2026-11-12: rare snowy days in winter in Aspertia City and on Route 19; perhaps the odd snowy day in autumn there and
   in the other snowy Southwest places (not spring). Snow outside winter can bring ice Pokémon very rarely.

@@ -228,6 +228,7 @@ places:
       - >-
         The sewers' Sandile comes from here: desert burrowers in the passage, thinning out toward the sewers and
         Driftveil. Dust clouds for burrowers.
-    questions:
-      - Which map is which end (the sewers, Driftveil, the way to Relic Castle)?
+    maps_detail: >-
+      relic_passage links to the sewers; relic_passage_2 is the middle, with the pool and the way to Relic Castle;
+      relic_passage_3 links to the PWT in Driftveil. One group, the same Pokémon throughout.
 
