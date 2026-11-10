@@ -17,11 +17,21 @@ Each keeps its date. A request isn't a whole placement: the rest of the family a
 - 2026-11-10: Combee on Route 12.
 - 2026-11-10: Zorua not wild: perhaps a "child" NPC in Nimbasa who runs away, or rarely starts a battle.
 - 2026-11-12: **Basculin:** the Red-Striped Form only in Unova's eastern rivers, the Blue-Striped Form only in the
-  western ones.
+  western ones; the line runs through Castelia, Nimbasa and Opelucid (all of the Southwest is west).
 - 2026-11-12: Virbank Complex: Magby in summer and autumn, Elekid in winter and spring; Pichu the trophy in summer and
   autumn, Growlithe the trophy in winter and spring (and Riolu's, above).
 - 2026-11-12: Route 20 and Floccesy Ranch 1 (its entrance) share the river and its Pokémon (the user's group).
-- 2026-11-12: Virbank Complex 1 and 2 share most Pokémon; a trophy may be Complex 2's only.
+- 2026-11-12: Virbank Complex 1 and 2 share most Pokémon; a trophy may be Complex 2's only. Klink and the Timburr
+  family are wild there (no NPCs yet).
+- 2026-11-12: Shinx a winter trophy in Floccesy Ranch; Chansey where Happiny is, at its levels.
+
+## Weather the user may add
+
+The user will tune weather in the editor; these are the wishes so far, for the generator to plan with.
+
+- 2026-11-12: rare snowy days in winter in Aspertia City and on Route 19; perhaps the odd snowy day in autumn there and
+  in the other snowy Southwest places (not spring). Snow outside winter can bring ice Pokémon very rarely.
+- 2026-11-12: rare rain on Route 20 in autumn.
 
 ## Keep close to what's in the game
 
