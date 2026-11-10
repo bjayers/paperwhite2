@@ -58,16 +58,19 @@ places:
       tiles: { grass: 137, surf: 68 }
       methods: [grass, rustling (shaking grass), surf, fishing]
       weather: fixed (not in the weather calendar)
-      npc_pokemon: [Buneary, Ekans, Pidgey, Pidove, Purrloin, Seedot, Sentret, Shroomish, Spearow, Swinub]
+      npc_pokemon: [Buneary, Ekans, Lillipup, Patrat, Pidgey, Pidove, Purrloin, Seedot, Sentret, Shroomish, Spearow,
+                    Swinub]  # Patrat and Lillipup use the unnamed sprite codes 128 and 306
     picture: >-
       A short route between Aspertia and the much smaller, rural Floccesy. North of a small starting area of grass and
       a few trees, a small lake at the foot of a fairly tall cliff. Starter Pokémon: Purrloin and Patrat, with Ekans
       hunting Patrat; Lillipup rare; Pidove common, near a city; other birds migrating through the year; Swinub
       rarely in winter only (the snow skiffs), and Shroomish rarely (Pokécology: Swinub digs up mushrooms).
-    habitats: [meadow, woodland_edge, lake, cliff]
+    habitats: [meadow, woodland_edge, pond, cliff]
     parts:
       grass: short grass on the edge of the city, among a few trees
-      lake: small freshwater lake at the foot of a tall cliff
+      pond: >-
+        a small pond at the foot of a tall cliff, joined to no river (2026-11-12: the user's map), so much like
+        Aspertia's
     human_presence: suburban
     climate:
       spring: mild, wet
@@ -84,12 +87,9 @@ places:
         A gateway for migrants: songbirds and swallows passing through in spring and autumn, so the route changes with
         the seasons from the very start.
       - >-
-        Weather: snow in winter like Floccesy's (34% of winter days), to go with the skiffs; the route isn't in the
-        calendar yet.
-    questions:
-      - >-
-        Does the lake have anything beyond the city pond's? It's bigger and wilder, so perhaps a larger fish or a
-        waterbird.
+        Weather: the user may add rare snowy days in winter (perhaps the odd one in autumn), here and in Aspertia;
+        snow outside winter could bring an ice Pokémon very rarely.
+      - The pond shares its Pokémon with Aspertia's.
 
   - id: floccesy_ranch
     name: Floccesy Ranch
@@ -108,8 +108,9 @@ places:
       A rustic ranch north of Route 20 and Floccesy Town, with the ranch's Mareep (NPCs), a forest in the north, and a
       river on the east side flowing from the mountains between the ranch and Driftveil, through Route 20 and into
       the sea at Virbank. The owners have two Herdier, so that family lives on the route. Riolu is the ranch's known
-      trophy, in summer and autumn. The user's NPCs: Ledyba in autumn, Sentret in spring, Furret in summer, Seedot in
-      autumn, Poochyena in summer, Shroomish in autumn, Happiny in summer, Bidoof all year.
+      trophy, in summer and autumn; Shinx a trophy in winter. The user's NPCs: Ledyba in autumn, Sentret in spring,
+      Furret in summer, Seedot in autumn, Poochyena in summer, Shroomish in autumn, Happiny in summer (Chansey with
+      it, at its levels), Bidoof all year.
     habitats: [pasture, farmland, woodland_edge, deciduous_forest, river]
     parts:
       pasture: open grazed grass round the barns
@@ -173,11 +174,10 @@ places:
       - >-
         Autumn as the route's peak: the bug lines' cocoons and their butterflies and moths, spiders, mushrooms. Spring
         and summer: caterpillars and flowers; winter: owls and Swinub.
-      - A cold-water fish fits the clear stream (trout country).
-    questions:
       - >-
-        Is the Southwest east or west for Basculin? The river flows east into Virbank's sea, but the region is on
-        Unova's west side. Where's the line between the eastern and western rivers?
+        A cold-water fish fits the clear stream (trout country); Basculin here is the Blue-Striped Form (west of the
+        Castelia, Nimbasa and Opelucid line).
+      - Weather: the user is willing to add rare rain in autumn (mushrooms).
 
   - id: virbank_city
     name: Virbank City
@@ -218,7 +218,8 @@ places:
       methods: [grass, dark_grass (map 2), rustling (shaking grass), surf and fishing (map 1)]
       weather: { spring: rain 26%, summer: rain 2%, autumn: rain 26%, winter: snow 38% }
       npc_pokemon: [Elekid, Grimer, Growlithe, Koffing, Magby, Magnemite, Mawile, Pichu (form 1, Spiky-eared), Purrloin,
-                    Riolu, Skarmory, Voltorb, Woobat]
+                    Riolu, Skarmory, Voltorb]  # and a Woobat beside a trainer who uses one: not wild
+      wild_without_npcs: [Klink, Timburr]
     picture: >-
       The industrial complex, which has the encounters: Koffing, Klink, Magnemite, Purrloin, Skarmory and the like;
       Magby in summer and autumn, Elekid in winter and spring; Pichu the trophy in summer and autumn, Growlithe in
