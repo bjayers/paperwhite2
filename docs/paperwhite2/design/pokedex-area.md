@@ -272,9 +272,16 @@ The details are in `docs/paperwhite2/plugins.md` (Pokédex, Area). Where the bui
   glowing, the preferred times and weathers) and no rates; and the current Pokémon's box over the head bar's right
   end on the top screen (its party icon and name; a placeholder until the user drew `area_top_box.png`, in since
   2026-11-09).
-- **Members:** the new art is `ARCID_POKEDEX_GRA` 152-154, so Evo's members moved to 155-157 (`pokedex_evo.py`'s
-  `ARCHIVE_MEMBERS` is 155); the index is 158, the icons 159 and the box's art 160, all written by
-  `pokedex_evo.py archive`.
+- **Members:** the new art is `ARCID_POKEDEX_GRA` 152-154, and the empty background's screen 155 (2026-11-09, below),
+  so Evo's members are 156-158 (`pokedex_evo.py`'s `ARCHIVE_MEMBERS` is 156); the index is 159, the icons 160 and the
+  box's art 161, all written by `pokedex_evo.py archive`.
+- **The empty background (2026-11-09):** a species with only a message ("Not found in the wild", or "Not found on the
+  map" for one met only off the map) shows the user's `info_area_empty.png` instead of `info_area.png`: the tab bar and
+  one box, x 48-208, y 64-102 (its light inside y 67-99), whose middle, y 83, is the methods' box's, so the message
+  stays centred at x 128 with font 0's line from y 76. It is the `pokedex_info_area` target's second screen (`empty`),
+  in the same character sheet (153) and palette (152; the user's colours are the Area art's), so only member 155, its
+  screen, is new. `PokedexInfoPanels_LoadArt` chooses it from `PokedexInfoArea_IsEmpty`; the art is loaded after the
+  sub-page is drawn and again at each change of Pokémon, the screen going to VRAM in the VBlank with the text.
 - **The index** has no tier or rate per place, only per row (lowest and highest over its places and contexts); a row's
   rates are the species' summed share over its forms. Version 2 (rows by terrain): 22.0 KB, 496 species, the largest
   block 104 bytes. Version 3 (off-map areas left out): 21.9 KB, 496 species.

@@ -48,9 +48,9 @@ from tools.paperwhite2.pokedex_sprites import SpriteError, middles_member  # noq
 SPECIES = ROOT / "res" / "pokemon"
 ART = ROOT / "res" / "paperwhite2" / "pokedex_art"
 BALLS = ("evo_ball_caught.png", "evo_ball_seen.png", "evo_ball_unknown.png")
-# The archive's own members (the art's included, up to 151), then these, as EVO_FAMILY_FILE and EVO_BALLS_FILE in
+# The archive's own members (the art's included, up to 155), then these, as EVO_FAMILY_FILE and EVO_BALLS_FILE in
 # paperwhite2_pokedex_info_evo.c and SPRITE_MIDDLES_FILE in paperwhite2_pokedex_info.c
-ARCHIVE_MEMBERS = 155
+ARCHIVE_MEMBERS = 156
 FAMILY_MEMBER = ARCHIVE_MEMBERS
 BALLS_MEMBER = ARCHIVE_MEMBERS + 1
 MIDDLES_MEMBER = ARCHIVE_MEMBERS + 2

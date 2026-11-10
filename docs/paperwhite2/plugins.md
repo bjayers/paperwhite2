@@ -1532,7 +1532,7 @@ its panels on BG 2 and its grid on BG 3, and no still sprite (`PokedexInfo_IsDet
 (MCSS) on BG 0 in 3D, which the page turns on at its start and off at its end. **The sprite's place**: x 50 less the
 bin file's offsetX, as the forms page's; vertically, its visible pixels' middle on its first frame at y 72, the
 original's still sprite's frame centre and the middle of the panel's track between its dashed rows (y 45-46 and
-97-98; the grey stripe around them, y 33-100, is deeper above, and its middle, 67, looked high), from member 157 of `ARCID_POKEDEX_GRA` that `tools/paperwhite2/pokedex_sprites.py`
+97-98; the grey stripe around them, y 33-100, is deeper above, and its middle, 67, looked high), from member 158 of `ARCID_POKEDEX_GRA` that `tools/paperwhite2/pokedex_sprites.py`
 makes from `res/pokemon` at build time (a u8 for each battle sprite archive member, 15020 bytes, read by range at the
 sprite's characters' number, so per form, sex and side: how far above its feet the middle is, measured as MCSS
 assembles the first frame from the multi-cell, cell animations and the bin file's quads). Vanilla's own box in the bin
@@ -1700,17 +1700,17 @@ The rows must be opaque and repeat across with a period that divides 256 (the us
 a seam (`pokedex_templates.py` prints the period). Touching an icon's column of the strip or a row opens
 that species' page through the detail screen's list (as the touch bar's arrows do, `common->index`) if it has been seen
 and is in the list, else it beeps; Up and Down change the Pokémon as on the other sub-pages. **The family table**:
-`tools/paperwhite2/pokedex_evo.py` adds five members to `ARCID_POKEDEX_GRA` in the hack's build (`HACK_ARCHIVE_MEMBERS`,
+`tools/paperwhite2/pokedex_evo.py` adds six members to `ARCID_POKEDEX_GRA` in the hack's build (`HACK_ARCHIVE_MEMBERS`,
 rebuilt when `res/pokemon/*/data.json`, the balls, the wild encounters, the town map or the Area icons change), after
-the archive's own 155 (the arts' included): 155, each species' family root as a u16 by species
+the archive's own 156 (the arts' included): 156, each species' family root as a u16 by species
 (SPECIES_NONE to Genesect, 1300 bytes: a child's parent is the first species whose evolutions name it), of which the
 page reads the one entry, then the tree from the root down through the game's own evolution data (`ARCID_EVOLUTIONS`,
-three stages); 156, the balls' 16 colours and their 4bpp tiles (416 bytes); 157, the sprites' middles (below); 158 and
-159, Area's index and icons (below). Forms have no evolutions of their own (the
+three stages); 157, the balls' 16 colours and their 4bpp tiles (416 bytes); 158, the sprites' middles (below); 159,
+160 and 161, Area's index, icons and box (below). Forms have no evolutions of their own (the
 game reads them by species), so Burmy's and Wormadam's forms evolve as their species. About 3.2 KB of ov298.
 
 **Area** (`paperwhite2_pokedex_info_area.c`; `docs/paperwhite2/design/pokedex-area.md`): where the species is met in the
-wild, from the hack's encounter data. **The index** (member 158, `encounters.py`'s `area_index`, about 22 KB; `encounters.py
+wild, from the hack's encounter data. **The index** (member 159, `encounters.py`'s `area_index`, about 22 KB; `encounters.py
 area-index SPECIES...` prints the areas' terrains, the encounter areas without a town map place with the species met
 there, and a species' part): a header ("PARE", version 3), each species' block
 offset by its number, the town map's 85 places in its table's order (`res/town_map/order.json`: the zone, the area OBJ's
@@ -1742,7 +1742,7 @@ has no tier; there is no outbreak badge). The preferred times and weathers are t
 summed over its rows, is the highest; the index keeps them (and the rates), but the page shows neither. The page reads
 its header and the places as it starts, and the shown species' block (at most 512 bytes) by range as it shows. **The
 bottom screen** (drawn into the panels' content window in the panels' palette, row 3, over the art `info_area.png`,
-members 152-154, palette row 10; the user's background of 2026-11-09, its boxes moved up 2 px from the first: a top
+members 152-154, palette row 10, or `info_area_empty.png` below; the user's background of 2026-11-09, its boxes moved up 2 px from the first: a top
 bar, y 21-38 inside, a methods' box, y 46-120, and a bottom box, y 128-162, its transparent parts showing the grid). The
 icons and the text are where the user's mockup puts them (`area-example.png` of 2026-11-09, the icons' top left
 corners), 2 px higher with the boxes: the seasons' bar has no label, "All seasons" centred in it (x 128, y 27) when
@@ -1758,8 +1758,13 @@ the row's y, the rarity or range ("Common - Rare") in font 1 at x 157, 4 below (
 rare", 90 px, ends at x 246, inside the box's 249); the labels "Time" (y 134) and "Weather" (y 151) in font 1
 at x 17; the times' icons at y 129 and the weathers' at y 146, both at x 61, 97, 133, 169 and 205, or "All times of
 day" or "All weathers" at x 64 on the label's line when it is met in all five, grey where it isn't met. A species never
-met in the wild shows "Not found in the wild", and one met only off the map "Not found on the map", both centred in
-the methods' box (y 76). **The icons** (member 159,
+met in the wild shows "Not found in the wild", and one met only off the map "Not found on the map"
+(`PokedexInfoArea_IsEmpty`), both on the user's other Area background, `info_area_empty.png` (2026-11-09: the tab bar
+and one box, x 48-208, y 64-102), centred in its box (x 128, font 0's line from y 76). It is a second screen of the
+`pokedex_info_area` art target, member 155 (`AREA_EMPTY_SCREEN`), sharing the Area art's characters (153, both
+screens' tiles) and palette (152, row 10), so only its screen is new; `PokedexInfoPanels_LoadArt` picks it for Area
+while the species has only the message. The page draws the sub-page before it loads the art and loads the art again
+as the Pokémon changes, so the background and the message change in the same VBlank. **The icons** (member 160,
 `tools/paperwhite2/pokedex_area.py` from `res/paperwhite2/pokedex_art/area_icons.png`, 160 by 80, 25 slots of 32 by
 16: the seasons and an unused slot (the special marks' until the shake replaced them), the times, the weathers, the terrains grass, dark grass, cave floor, sand and
 bridge, then surf, puddle, fishing, walking and an unused slot; their transparent pixels show the art) are sub OBJs of
@@ -1806,7 +1811,7 @@ not. **The current Pokémon's box** covers the head bar's right end (the blue th
 y 0-31, OBJs in front of the head bar (BG priority 0), made with the map and freed with it, so it shows and goes in the
 same VBlank. It is the user's art, `res/paperwhite2/pokedex_art/area_top_box.png` (a whole top screen with the box at
 x 129-255, y 0-31: a slanted left edge with a gold line, a light grid inside), which the build converts
-(`pokedex_area.py`'s `box_member`, `ARCID_POKEDEX_GRA` 160, `AREA_BOX_FILE`: its 16 colours and the 128 by 32's
+(`pokedex_area.py`'s `box_member`, `ARCID_POKEDEX_GRA` 161, `AREA_BOX_FILE`: its 16 colours and the 128 by 32's
 tiles; it fails on a pixel outside x 128-255, y 0-31 or more than 16 colours). Over it, right of the slant, the party
 icon (32 by 32 at x 156, its two frames animated as Evo's) and the species' name at x 190, y 8 in font 0 (font 1,
 y 10, for a name that would pass x 252), in the art's dark (11) with its light grey (6) as the shadow. The box is a
