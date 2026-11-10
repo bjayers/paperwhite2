@@ -5,6 +5,10 @@ special places that fit none of them. Each region lists its encounter maps (`res
 a place is made of one or more of them, set by the user's groups in the Encounter Editor
 (`res/paperwhite2/encounters/groups.json`). Which maps are leftovers from Black and White is decided place by place.
 
+An area (a map here) is an encounter table, `ENCOUNTERS_<AREA>`, named like the zone that uses it, but not always the
+same: the area `castelia_city` is the zone `castelia_city_31`, `route_4_2` is `route_4_16`, and Relic Castle's areas 3
+to 8 are its zones 16, 17, 19, 21, 22 and 23. The groups list areas.
+
 ## 1. Southwest Unova
 
 Aspertia City, Route 19, Floccesy Town and Ranch, Route 20, Pledge Grove, Virbank City and Virbank Complex.
@@ -21,8 +25,9 @@ Castelia City and its sewers, Route 4 (White 2's Desert Route and Black 2's City
 Castle.
 
 - **Feel:** a dense city (Manhattan) and its underbelly, then a sudden desert of ruins and sandstorms.
-- **Maps:** `castelia_city`, `castelia_sewers` to `_5`, `route_4` (White 2), `route_4_2` (Black 2), `desert_resort`,
-  `desert_resort_2`, `relic_castle` to `_8`.
+- **Maps:** `castelia_city` (the park, zone `castelia_city_31`), `castelia_sewers` to `_5`, `route_4` (Black 2's City
+  Route), `route_4_2` (White 2's Desert Route, zone `route_4_16`; the zone `route_4_2` is a house), `desert_resort`,
+  `desert_resort_2`, `relic_castle` to `_8` (all used: the zones relic_castle, 2, 16, 17, 19 and 21 to 23).
 
 ## 3. Southeast Unova
 

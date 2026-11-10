@@ -136,7 +136,8 @@ places:
     climate:
       all_year: hot, dry, always a sandstorm
     features: [sand_dunes, rocks]
-    real_world: A desert canyon: shelter from the wind for reptiles and rodents, ledges for birds of prey.
+    real_world: >-
+      A desert canyon: shelter from the wind for reptiles and rodents, ledges for birds of prey.
 
   - id: desert_resort
     name: Desert Resort
