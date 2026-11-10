@@ -1,0 +1,233 @@
+# Castelia and the desert (regions.md, 2): Castelia's park, the Castelia Sewers, Route 4, the Desert Resort, Relic
+# Castle and Relic Passage. Draft of 2026-11-12 from the user's descriptions, for review. The layout is southwest.yaml's.
+#
+# An area is an encounter table (ENCOUNTERS_<AREA>), named like the zone that uses it but not always the same: the
+# area castelia_city is the zone castelia_city_31 (the park), route_4_2 is route_4_16 (White 2's Route 4), and Relic
+# Castle's areas 3 to 8 are its zones 16, 17, 19, 21, 22 and 23. The zone route_4_2 is a house, with no table.
+
+region:
+  id: castelia_desert
+  name: Castelia and the desert
+  feel: >-
+    A dense city (Manhattan) and its underbelly, then a sudden desert of ruins and sandstorms, popular with trainers.
+  real_world: >-
+    City: Manhattan's parks and streets, where pigeons, rats, squirrels, raccoons and feral and stray cats and dogs live
+    on people's leavings, and its sewers (rats, roaches, and the old story of alligators below the streets). Desert:
+    the American Southwest's hot deserts: cacti and scrub, burrowing reptiles and rodents, scorpions, snakes, vultures
+    and eagles overhead, life that hides by day and comes out at dusk and night; and its ruins.
+
+places:
+
+  - id: castelia_park
+    name: Castelia City (the park)
+    maps: [castelia_city]  # the zone castelia_city_31
+    used: confirmed
+    facts:
+      tiles: { grass: 16, dark_grass: 16 }
+      methods: [grass, dark_grass, rustling (shaking grass)]
+      weather: none
+    picture: >-
+      The city's park, above ground but reached through the sewers: a walled square of grass, flowers and a tree among
+      the towers. The only place in Castelia with wild Pokémon. Mostly city and often domesticated Pokémon: Eevee,
+      Purrloin, Skitty, Glameow, Zigzagoon, Snubbull, Meowth, Minccino and Cinccino, Trubbish and the like, and their
+      families; the ones in the grass are strays and scavengers, like Zigzagoon. (Rules 3: introduced around people,
+      other regions' cats and domestic animals.)
+    habitats: [park, city]
+    parts:
+      grass: a small walled garden of grass and flowers round a tree, among skyscrapers
+    human_presence: urban
+    climate:
+      spring: mild
+      summer: warm
+      autumn: mild
+      winter: cool
+    features: [flowers, garbage, tall_trees]
+    real_world: >-
+      A small city park: strays and feral pets, raccoons (Zigzagoon) and other scavengers, pigeons and sparrows,
+      squirrels, rats at night.
+    suggestions:
+      - >-
+        Few but varied: lost and released pets (trophies among them, Eevee perhaps), scavengers, night-time visitors from
+        the sewers below.
+
+  - id: castelia_sewers
+    name: Castelia Sewers
+    maps: [castelia_sewers, castelia_sewers_2, castelia_sewers_3, castelia_sewers_4, castelia_sewers_5]
+    used: >-
+      confirmed: map 1 the main sewer, 2 to 5 its rooms (reachable; whatever they have, the same as map 1)
+    facts:
+      tiles: { indoor_floor: 1357, surf: 619 }  # map 1
+      room_tiles: { indoor_floor: [92, 92, 199, 199] }  # maps 2 to 5
+      methods: [walking (floor), surf, fishing]
+      weather: none
+      seasons: >-
+        The water rises and falls with the seasons: the sewers are dry in autumn and winter. The water Pokémon are set all
+        year all the same (the user, 2026-11-12): nothing is lost, and nothing to get wrong.
+    picture: >-
+      The city's underbelly, with trainers looking for a fight. Mostly trash-based Pokémon and those that like the
+      dark in human places; fish and other water Pokémon in the canals, perhaps Poison types; on the walkways sludge
+      and trash Pokémon, rats and the like.
+    habitats: [sewer]
+    parts:
+      walkways: dark, damp walkways along the canals and in the rooms
+      canals: the sewer's water, in spring and summer only
+    human_presence: urban
+    climate:
+      all_year: dark, damp, sheltered; the canals full in spring and summer, dry in autumn and winter
+    features: [garbage, pollution]
+    real_world: >-
+      Rats, roaches and their predators; tolerant fish and amphibians where water runs; sludge. And the urban legend of
+      alligators in New York's sewers, released pets grown big in the dark.
+    suggestions:
+    requests:
+      - >-
+        The sewer alligator (New York's legend of pets grown big in the dark): Totodile as a very rare trophy in spring
+        and summer, when the water's up; Sandile in the dry autumn and winter, sneaking in from Relic Passage, which
+        joins the sewers.
+
+  - id: route_4
+    name: Route 4
+    maps: [route_4, route_4_2]  # route_4 Black 2's City Route, route_4_2 (the zone route_4_16) White 2's Desert Route
+    used: confirmed (one version at a time, switched at any Pokémon Center)
+    facts:
+      tiles: { deep_sand: 392, surf: 80 }  # the base map (White 2's); Black 2's pieces are swapped in by the flag
+      methods: [walking (sand), surf, fishing]
+      weather: { route_4: none, route_4_2: always sandstorm (zone header) }
+      npc_pokemon: [Braviary (route_4_2)]
+    picture: >-
+      A desert road out of Castelia, with ruins; the sea just off the main road outside Castelia's exit, with two
+      fishermen. It changes a little with the version but stays desert, with the same Pokémon in both (unlike Reversal
+      Mountain). The vanilla games have Braviary and Mandibuzz here as overworld encounters; with no version exclusives,
+      both families live here.
+    habitats: [desert, ruins, coastal_sea]
+    parts:
+      sand: deep sand along the road and among the ruins
+      sea: a bit of the sea off the road, by Castelia
+    human_presence: rural (a busy road)
+    climate:
+      all_year: hot, dry, windy; sandstorms on White 2's road
+    features: [sand_dunes, rocks, ancient]
+    real_world: >-
+      Desert scrub by a coastal city: vultures and eagles over open ground, burrowing reptiles and rodents, snakes and
+      scorpions; at the sea's edge, gulls and shore fish.
+    suggestions:
+      - >-
+        Raptors overhead (Braviary hunting, Mandibuzz scavenging), burrowers in the sand, a little coastal life in the
+        water.
+    notes:
+      - >-
+        White 2's Route 4 always has a sandstorm and Black 2's never, so a sandstorm Pokémon here is White 2's only; the
+        user is fine with a few where they make sense (2026-11-12).
+
+  - id: desert_resort_path
+    name: Desert Resort (the path)
+    maps: [desert_resort]
+    used: confirmed
+    facts:
+      tiles: { deep_sand: 138 }
+      methods: [walking (sand)]
+      weather: always sandstorm (zone header)
+    picture: >-
+      The path from Route 4 to the Desert Resort proper, between cliffs and covered in sand: wilder and rougher than
+      even Route 4's ruins. A mix of Route 4's and the Desert Resort's Pokémon.
+    habitats: [desert, cliff]
+    parts:
+      sand: a sandy canyon between cliffs
+    human_presence: wild
+    climate:
+      all_year: hot, dry, always a sandstorm
+    features: [sand_dunes, rocks]
+    real_world: >-
+      A desert canyon: shelter from the wind for reptiles and rodents, ledges for birds of prey.
+
+  - id: desert_resort
+    name: Desert Resort
+    maps: [desert_resort_2]
+    used: confirmed
+    facts:
+      tiles: { deep_sand: 1529 }
+      methods: [walking (sand)]
+      rustling_spots: none (the area has no rustling rate)
+      weather: always sandstorm (zone header, its second sandstorm)
+    picture: >-
+      A large, open desert with dunes and the entrance to Relic Castle; crowded with trainers, so wild but a popular
+      spot. The usual desert Pokémon and Unova's own, like Darumaka and Maractus; cacti as overworld NPCs later.
+      Pokécology: Flygon's family makes whirlwinds for Krookodile, which hides in sandstorms (in whirlwinds).
+    habitats: [desert]
+    parts:
+      dunes: open dunes of deep sand
+    human_presence: rural (many trainers)
+    climate:
+      all_year: hot, dry, always a sandstorm
+    features: [sand_dunes, rocks, ancient]
+    real_world: >-
+      A sand desert: cacti and their pollinators, burrowing lizards, crocodilians only in legend, antlions (Trapinch)
+      digging pits, scorpions, sand-swimming reptiles; most life active at dusk and night.
+    plans:
+      - >-
+        The user will give the desert some clear days (the weather calendar), so the sandstorm becomes a condition;
+        Pokécology's story then plays in it: Flygon's family makes the sandstorms (whirlwinds) that Krookodile hides in,
+        so both are sandstorm Pokémon here. (No dust clouds: the sand's rustling spots aren't used.)
+    suggestions:
+      - Nocturnal desert life at night, the heat-lovers by day.
+
+  - id: relic_castle
+    name: Relic Castle
+    maps: [relic_castle, relic_castle_2, relic_castle_3, relic_castle_4, relic_castle_5, relic_castle_6, relic_castle_7,
+           relic_castle_8]
+    used: >-
+      confirmed: the used rooms are the zones relic_castle, 2, 16, 17, 19 and 21 to 23, which are exactly the eight
+      areas (3 to 8 are the zones 16, 17, 19, 21, 22, 23); the unused rooms have no encounter tables of their own
+    facts:
+      tiles: { sand_and_floors: 88 to 227 a room }
+      methods: [walking]
+      weather: none
+    picture: >-
+      Not fully decided: probably where the desert, ancient and ruin Pokémon dwell, where they fit. Yamask, above all.
+      Unown on hold (perhaps placed by hand later, or overworld Unown spelling words as a puzzle).
+    habitats: [ruins, desert]
+    parts:
+      halls: sand-filled halls and chambers of an ancient castle, sinking into the desert
+    human_presence: remote
+    climate:
+      all_year: hot, dry, dark, still
+    features: [ancient, spirits, sand_dunes]
+    real_world: >-
+      Tombs and buried ruins: bats in the dark, scarabs and other beetles, scorpions, snakes in the cool; and the
+      lore of mummies and guardians.
+    suggestions:
+      - >-
+        Yamask's family (the tomb), and other guardian and ancient-artefact Pokémon where they fit; Sigilyph, whose lore
+        is the Desert Resort's guardian statues, between the desert and the castle.
+
+  - id: relic_passage
+    name: Relic Passage
+    maps: [relic_passage, relic_passage_2, relic_passage_3]
+    used: confirmed
+    facts:
+      tiles: { cave_floor: 762 }  # map 1
+      tiles_2: { cave_floor: 884, surf: 107 }  # map 2, with water
+      tiles_3: { cave_floor: 399 }  # map 3
+      methods: [walking (cave floor), rustling (dust clouds), surf and fishing (map 2)]
+      weather: none
+    picture: >-
+      The cave joining the Castelia Sewers to Driftveil City, and in part to Relic Castle: a desert cave. The usual cave
+      dwellers, with sand and desert inhabitants too.
+    habitats: [cave, underground_water, desert, ruins]
+    parts:
+      tunnels: cave tunnels, sandy toward Relic Castle
+      water: an underground pool (map 2)
+    human_presence: remote
+    climate:
+      all_year: dark, dry, cool underground
+    features: [rocks, sand_dunes, ancient]
+    real_world: >-
+      Desert caves: bats, cave crickets and spiders, burrowing reptiles sheltering from the heat; blind fish and
+      amphibians in underground pools.
+    suggestions:
+      - >-
+        The sewers' Sandile comes from here: desert burrowers in the passage, thinning out toward the sewers and
+        Driftveil. Dust clouds for burrowers.
+    questions:
+      - Which map is which end (the sewers, Driftveil, the way to Relic Castle)?
+

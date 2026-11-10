@@ -197,7 +197,7 @@
   "zone": "dreamyard_2",
   "models": 1,
   "tiles": {
-   "walk_cls0x22": 18
+   "dark_grass": 18
   }
  },
  "driftveil_drawbridge": {

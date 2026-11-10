@@ -4,7 +4,9 @@ import json,glob,os,collections,csv,sys
 R='res/field'
 Z={os.path.basename(f)[:-5]:json.load(open(f)) for f in glob.glob(R+'/zones/*.json')}
 WATER,ENC=0x2,0x4
-GRASS={0x04,0x05,0x08,0x21}; DGRASS={0x06,0x07,0x09}; BRIDGE=0x20
+# The classes the step code counts as double-battle grass (MapTile_IsTallGrassDoubleBtl, map_attr.c) are dark grass;
+# every other encounter tile on land is the grass method, named here by its class when it isn't grass
+GRASS={0x04,0x05,0x08,0x21}; DGRASS={0x06,0x07,0x09,0x22}; BRIDGE=0x20
 def terrain(model):
     d=f"{R}/maps/models/{model.removeprefix('MAP_MODEL_').lower()}"
     c=collections.Counter()

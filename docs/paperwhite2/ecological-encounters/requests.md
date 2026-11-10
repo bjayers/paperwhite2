@@ -24,6 +24,10 @@ Each keeps its date. A request isn't a whole placement: the rest of the family a
 - 2026-11-12: Virbank Complex 1 and 2 share most Pokémon; a trophy may be Complex 2's only. Klink and the Timburr
   family are wild there (no NPCs yet).
 - 2026-11-12: Shinx a winter trophy in Floccesy Ranch; Chansey where Happiny is, at its levels.
+- 2026-11-12: Castelia Sewers: Totodile a very rare trophy in spring and summer (the sewer alligator); Sandile in
+  autumn and winter, the dry seasons, in from Relic Passage. The sewers' water Pokémon are set all year.
+- 2026-11-12: Krookodile hides in the desert's sandstorms that Flygon's family makes (Pokécology): both as sandstorm
+  Pokémon there. A few sandstorm Pokémon on Route 4 are fine (White 2's only, as its sandstorm is).
 
 ## Weather the user may add
 
@@ -32,6 +36,7 @@ The user will tune weather in the editor; these are the wishes so far, for the g
 - 2026-11-12: rare snowy days in winter in Aspertia City and on Route 19; perhaps the odd snowy day in autumn there and
   in the other snowy Southwest places (not spring). Snow outside winter can bring ice Pokémon very rarely.
 - 2026-11-12: rare rain on Route 20 in autumn.
+- 2026-11-12: some clear days in the Desert Resort (now always a sandstorm), so the sandstorm is a condition.
 
 ## Keep close to what's in the game
 
