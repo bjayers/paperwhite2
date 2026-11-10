@@ -87,22 +87,16 @@
         },
         {
             "id": "reversal_mountain",
-            "name": "Reversal Mountain",
+            "name": "Reversal Mountain (Black 2)",
             "areas": [
-                "reversal_mountain",
                 "reversal_mountain_2",
                 "reversal_mountain_3",
                 "reversal_mountain_4",
                 "reversal_mountain_5",
                 "reversal_mountain_6",
-                "reversal_mountain_7",
-                "reversal_mountain_8",
-                "reversal_mountain_9",
-                "reversal_mountain_10",
-                "reversal_mountain_11",
-                "reversal_mountain_12",
-                "reversal_mountain_13"
-            ]
+                "reversal_mountain_7"
+            ],
+            "custom": true
         },
         {
             "id": "route_4",
@@ -161,6 +155,25 @@
             "id": "wellspring_cave",
             "name": "Wellspring Cave",
             "areas": [ "wellspring_cave", "wellspring_cave_2" ]
+        },
+        {
+            "id": "custom_1",
+            "name": "Reversal Mountain (White 2)",
+            "areas": [
+                "reversal_mountain_8",
+                "reversal_mountain_9",
+                "reversal_mountain_10",
+                "reversal_mountain_11",
+                "reversal_mountain_12",
+                "reversal_mountain_13"
+            ],
+            "custom": true
+        },
+        {
+            "id": "custom_2",
+            "name": "Reversal Mountain (Exterior)",
+            "areas": [ "reversal_mountain" ],
+            "custom": true
         }
     ]
 }
