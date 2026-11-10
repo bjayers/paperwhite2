@@ -236,6 +236,11 @@ static void PokedexDetail_StartPage(PokedexDetailParam *param, PokedexDetailWork
         GFL_HeapFree(wk->pageParam);
     }
 
+#ifdef PAPERWHITE2
+    // Paper White 2: the screen always shows the info page, whose sub-pages and buttons have what the area, cry and
+    // forms pages showed. Those pages stay built but are never started, whatever page the caller or a page asked for
+    param->page = POKEDEX_DETAIL_PAGE_INFO;
+#endif
     switch (param->page) {
     case POKEDEX_DETAIL_PAGE_INFO: {
         PokedexDetailInfoParam *pageParam =

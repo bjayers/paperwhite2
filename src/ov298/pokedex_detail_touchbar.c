@@ -665,6 +665,13 @@ static void PokedexDetailTouchbar_CreateGeneral(PokedexDetailTouchbar *touchbar)
         PokedexDetailTbar_SetVisible(touchbar->tbar, touchbar->items[GENERAL_CHECK].icon->icon, FALSE);
     }
 
+#ifdef PAPERWHITE2
+    // Paper White 2: the detail screen has only the info page, which shows the other pages' Pokédex data itself, so
+    // the pages' tabs are hidden, and with them can't be touched (PokedexDetailTbarItem_CheckTouch)
+    for (i = GENERAL_FORM; i <= GENERAL_INFO; i++) {
+        PokedexDetailTbar_SetVisible(touchbar->tbar, touchbar->items[i].icon->icon, FALSE);
+    }
+#endif
     i = PokedexDetailTouchbar_GetPageItem(touchbar->page);
     if (i != ITEM_NONE) {
         PokedexDetailTbar_SetActive(touchbar->tbar, touchbar->items[i].icon->icon, FALSE);
@@ -706,7 +713,8 @@ static void PokedexDetailTouchbar_UpdateGeneral(PokedexDetailTouchbar *touchbar)
     // Paper White 2: the keys that the page takes push no tab or arrow (PokedexDetailTouchbar_SetDisabledKeys)
     pressed &= ~touchbar->disabledKeys;
     typed &= ~touchbar->disabledKeys;
-#endif
+    // Paper White 2: Left and Right push no tab, as the bar has none (PokedexDetailTouchbar_CreateGeneral)
+#else
     if (typed & PAD_KEY_LEFT) {
         switch (touchbar->page) {
         case POKEDEX_DETAIL_PAGE_INFO - 1:
@@ -757,6 +765,7 @@ static void PokedexDetailTouchbar_UpdateGeneral(PokedexDetailTouchbar *touchbar)
     if (item != ITEM_NONE) {
         PokedexDetailTbar_Push(touchbar->tbar, touchbar->items[item].icon->icon);
     }
+#endif
 
     if (!(pressed & (PAD_KEY_UP | PAD_KEY_DOWN))) {
         if (typed & PAD_KEY_UP) {
