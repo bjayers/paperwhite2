@@ -1,0 +1,94 @@
+# The habitat vocabulary: the words places and families share, so the generator can match them. A place lists the
+# ones it has (and its sub-habitats theirs); a family the ones it lives in, each with how much it likes it. Draft of
+# 2026-11-12, for the user to approve; add words as places need them, never a near-duplicate.
+
+biomes:
+  # Land
+  deciduous_forest: broadleaf woods that change colour and drop their leaves (maple, oak); bright in autumn
+  conifer_forest: evergreen woods (pine, spruce, hemlock)
+  dense_forest: old, dark forest under a closed canopy, with fallen logs and dappled light (Pinwheel Forest)
+  woodland_edge: where trees meet open ground; hedges, thickets
+  meadow: open grass and wildflowers, not grazed
+  pasture: grazed grass and fields of a farm or ranch
+  farmland: crops, orchards, gardens, barns
+  flower_field: dense flowers (Route 12)
+  scrub: low bushes on dry or poor ground
+  desert: sand and dunes, hot and dry
+  badlands: dry rock, canyons, little plant life
+  hills: rolling uplands
+  mountain: high, steep ground, cliffs, thin air
+  cliff: rock faces and ledges
+  # Cold
+  tundra: cold open ground, little growth
+  snowfield: deep snow for part or all of the year
+  # Water
+  pond: small still fresh water
+  lake: large still fresh water
+  stream: small running fresh water, cool and clear
+  river: large running fresh water
+  waterfall: falling water and its pool
+  marsh: wet grassland, reeds, puddles (fresh)
+  swamp: wet woodland, mud, standing water
+  estuary: where a river meets the sea; brackish, tidal
+  beach: sand at the sea
+  rocky_shore: rocks and tide pools at the sea
+  coastal_sea: shallow sea near land
+  open_sea: deep water far from land
+  reef: warm shallow sea with coral
+  # Underground
+  cave: natural rock caves
+  deep_cave: the far, dark depths of caves
+  underground_water: lakes and streams in caves
+  mine: worked tunnels and quarries
+  volcanic: heat, lava, ash
+  # People
+  city: dense buildings and streets
+  suburb: houses, gardens, parks
+  park: kept grass and trees in or near a town
+  industrial: factories, docks, pipes, scrap, pollution
+  sewer: underground drains and their water
+  ruins: old abandoned buildings, ancient sites
+  tower: tall old buildings (Celestial Tower, Dragonspiral)
+  building: indoors
+
+# What a place's people are like, from none to many
+human_presence: [wild, remote, rural, suburban, urban, industrial]
+
+# Features a place can have, which a family can seek or need (food, shelter, influence)
+features:
+  flowers: blooming flowers (nectar, pollen)
+  berries: berry plants or fruit trees
+  fallen_leaves: leaf litter (autumn, or all year in forests)
+  mushrooms: fungi, mostly in damp autumn woods
+  dead_wood: logs and stumps
+  tall_trees: big trees for nesting and perching
+  reeds: reeds and rushes at water
+  rocks: boulders and loose stone
+  sand_dunes: loose sand
+  ice: frozen water
+  snow_cover: snow on the ground
+  livestock: farm animals (and their food and leavings)
+  garbage: waste, scraps, dumps
+  machinery: power, electricity, engines, metal
+  pollution: smoke, chemicals, sludge
+  electric_field: natural electricity (Chargestone)
+  magnetic_field: magnetic rock or fields
+  moon_influence: a Moon Stone's or the moon's influence
+  leaf_influence: a Leaf Stone's influence
+  fire_influence: a Fire Stone's influence, or heat
+  water_influence: a Water Stone's influence
+  thunder_influence: a Thunder Stone's influence
+  sun_influence: a Sun Stone's influence, or strong sun
+  dusk_influence: a Dusk Stone's influence
+  shiny_influence: a Shiny Stone's influence
+  dawn_influence: a Dawn Stone's influence
+  spirits: haunted, graves, old mysteries
+  psychic_energy: dreams, mind, odd energies (the Dreamyard)
+  space: meteorites, the sky, the cosmos (Giant Chasm)
+  ancient: relics, fossils, old powers
+  dragons: dragon lore and the places dragons keep
+  cold_water: cold running water (trout country)
+  warm_water: warm sea or springs
+
+# Climate, by season, in each place's entry: temperature (cold, cool, mild, warm, hot), wetness (dry, normal, wet),
+# and what each season does (snow, frozen water, blossom, autumn colour, leaf fall, fog, storms)
