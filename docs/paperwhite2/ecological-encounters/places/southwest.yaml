@@ -1,0 +1,245 @@
+# Southwest Unova (regions.md, 1): Aspertia City, Route 19, Floccesy Ranch, Route 20, Virbank City, Virbank Complex.
+# Draft of 2026-11-12 from the user's descriptions, for review.
+#
+# Each place: its maps and whether they're used; the facts from the game (tiles.json; the weather calendar; the Pokémon
+# the user placed as NPCs, res/field/events/<zone>.json); then the description: habitats (vocabulary.yaml), its parts,
+# the climate by season, its people and features, the user's picture, real-world ecology, and suggestions and
+# questions. "Methods" are those whose tiles exist; fishing goes with surf water.
+
+region:
+  id: southwest
+  name: Southwest Unova
+  feel: >-
+    The Hudson Valley: hilly countryside of hardwood forest, farms and lakes, running down to an industrial harbour.
+    Chilly winters with light snow often falling and skiffs on the ground, unusual in Unova. The region's best autumn
+    colour (Route 20).
+  real_world: >-
+    The Hudson Valley of New York. Oak, maple and hickory forest with hemlock in the cool ravines; old fields, dairy and
+    sheep farms and orchards; cold, clear streams running to a tidal, brackish estuary. It lies on the Atlantic
+    flyway: hawks and songbirds pass along the valley in spring and autumn, waterfowl winter on open water, and many
+    birds leave for the south in winter. Bears and many reptiles sleep through the winter; insects bloom in spring and
+    summer; mushrooms and leaf litter peak in autumn.
+
+places:
+
+  - id: aspertia_city
+    name: Aspertia City
+    maps: [aspertia_city]
+    used: confirmed
+    facts:
+      tiles: { surf: 20 }
+      methods: [surf, fishing]
+      weather: fixed (not in the weather calendar)
+    picture: >-
+      A nice suburban city, the largest starting town in the series, known for its overlook with a view of the hills,
+      lakes, trees and mountains to the north (between the Southwest and the West). Its only encounters are a small
+      freshwater pond beside the player's house at the bottom of the map, among trees.
+    habitats: [suburb, pond]
+    parts:
+      pond: small freshwater garden pond among trees, beside houses
+    human_presence: suburban
+    climate:
+      spring: mild, wet
+      summer: warm
+      autumn: cool, autumn colour
+      winter: cold, light snow
+    real_world: >-
+      A suburban garden pond: frogs and tadpoles, small fish, dragonflies over the water, waterbirds now and then.
+    suggestions:
+      - >-
+        The pond suits small, people-tolerant freshwater Pokémon (tadpoles, small fish, Magikarp in Pokécology's small
+        ponds), few and common: a gentle start.
+
+  - id: route_19
+    name: Route 19
+    maps: [route_19]
+    used: confirmed
+    facts:
+      tiles: { grass: 137, surf: 68 }
+      methods: [grass, rustling (shaking grass), surf, fishing]
+      weather: fixed (not in the weather calendar)
+      npc_pokemon: [Buneary, Ekans, Pidgey, Pidove, Purrloin, Seedot, Sentret, Shroomish, Spearow, Swinub]
+    picture: >-
+      A short route between Aspertia and the much smaller, rural Floccesy. North of a small starting area of grass and
+      a few trees, a small lake at the foot of a fairly tall cliff. Starter Pokémon: Purrloin and Patrat, with Ekans
+      hunting Patrat; Lillipup rare; Pidove common, near a city; other birds migrating through the year; Swinub
+      rarely in winter only (the snow skiffs), and Shroomish rarely (Pokécology: Swinub digs up mushrooms).
+    habitats: [meadow, woodland_edge, lake, cliff]
+    parts:
+      grass: short grass on the edge of the city, among a few trees
+      lake: small freshwater lake at the foot of a tall cliff
+    human_presence: suburban
+    climate:
+      spring: mild, wet
+      summer: warm
+      autumn: cool
+      winter: cold, light snow, skiffs on the ground
+    features: [rocks]
+    real_world: >-
+      Suburban old field and woodland edge: rodents and rabbits (Patrat, Sentret, Buneary), the snakes and cats that
+      hunt them, pigeons and sparrows by people, and small hawks overhead. A cliff-foot lake holds frogs, small fish
+      and ducks.
+    suggestions:
+      - >-
+        A gateway for migrants: songbirds and swallows passing through in spring and autumn, so the route changes with
+        the seasons from the very start.
+      - >-
+        Weather: snow in winter like Floccesy's (34% of winter days), to go with the skiffs; the route isn't in the
+        calendar yet.
+    questions:
+      - >-
+        Does the lake have anything beyond the city pond's? It's bigger and wilder, so perhaps a larger fish or a
+        waterbird.
+
+  - id: floccesy_ranch
+    name: Floccesy Ranch
+    maps: [floccesy_ranch_2]
+    used: confirmed
+    note: >-
+      floccesy_ranch (map 1) is the entrance between the ranch and Route 20, on Route 20's river; it goes with Route
+      20 (the user's group).
+    facts:
+      tiles: { grass: 330, surf: 139 }
+      methods: [grass, rustling (shaking grass), surf, fishing]
+      weather: { spring: rain 22%, summer: rain 13%, autumn: clear, winter: snow 34% }
+      npc_pokemon: [Bidoof, Chansey, Furret, Happiny, Ledyba, Poochyena, Riolu, Seedot, Sentret, Shinx, Shroomish,
+                    Swinub]
+    picture: >-
+      A rustic ranch north of Route 20 and Floccesy Town, with the ranch's Mareep (NPCs), a forest in the north, and a
+      river on the east side flowing from the mountains between the ranch and Driftveil, through Route 20 and into
+      the sea at Virbank. The owners have two Herdier, so that family lives on the route. Riolu is the ranch's known
+      trophy, in summer and autumn. The user's NPCs: Ledyba in autumn, Sentret in spring, Furret in summer, Seedot in
+      autumn, Poochyena in summer, Shroomish in autumn, Happiny in summer, Bidoof all year.
+    habitats: [pasture, farmland, woodland_edge, deciduous_forest, river]
+    parts:
+      pasture: open grazed grass round the barns
+      forest: woods along the north edge
+      river: the river along the east side, from the mountains (Route 20's river)
+    human_presence: rural
+    climate:
+      spring: mild, rainy
+      summer: warm
+      autumn: cool, dry, autumn colour
+      winter: cold, snow on a third of the days
+    features: [livestock, tall_trees, fallen_leaves, mushrooms, berries]
+    real_world: >-
+      A Hudson Valley farm: grazed pasture and hedgerows. Rodents in the fields and barns (Sentret, Furret), the dogs,
+      foxes and hawks that hunt them, beavers on the river (Bidoof), swallows nesting in the barns in summer, and the
+      woods' edge for mushrooms and ladybugs in autumn.
+    suggestions:
+      - >-
+        Herding and farm dogs (the Lillipup line) and the Mareep line as the ranch's own; Diglett, which Pokécology says
+        farms raise to till the soil, would fit too.
+      - Barn swallows in summer (Taillow) and owls hunting the barns' rodents at night.
+
+  - id: route_20
+    name: Route 20
+    maps: [route_20, floccesy_ranch]
+    used: confirmed
+    facts:
+      tiles: { grass: 94, dark_grass: 102, surf: 512 }
+      entrance_tiles: { surf: 15 }  # floccesy_ranch, the river at the ranch's entrance
+      methods: [grass, dark_grass, rustling (shaking grass), surf, fishing]
+      weather: { spring: rain 22%, summer: rain 13%, autumn: clear, winter: snow 34% }
+      npc_pokemon: [Beautifly, Bidoof, Cascoon, Dustox, Gloom, Ledyba, Oddish, Shroomish, Silcoon, Spinarak, Swinub,
+                    Venipede, Wurmple, Yanma]
+      ambients: [Pidove, Taillow (spring), Hoothoot (night), Noctowl (night)]
+    picture: >-
+      Almost a forest, with rich autumn leaves: the definitive autumn route, the user's favourite. Bugs, spiders and
+      mushrooms in autumn; leaves fall and fly through the air, and even fill gaps so parts of the route are reached
+      only in autumn. A stream from the (unreachable) mountains north of Floccesy Ranch, with one waterfall, flowing
+      on to the sea through Virbank City to the east. The user's NPCs: Spinarak, Wurmple, Ledyba and Shroomish in
+      autumn; Oddish in spring and summer; Taillow in spring; Swinub in winter; Hoothoot and Noctowl at night, perhaps
+      more in winter.
+    habitats: [deciduous_forest, woodland_edge, stream, waterfall]
+    parts:
+      grass: grass in clearings among the trees
+      dark_grass: thick, wild grass deeper in the woods
+      stream: >-
+        a clear stream from the mountains, with one waterfall, flowing east to Virbank (and past the ranch's entrance)
+    human_presence: rural
+    climate:
+      spring: mild, rainy, blossom
+      summer: warm, green
+      autumn: cool and dry, the region's best colour, leaves falling and blowing
+      winter: cold, snow on a third of the days
+    features: [fallen_leaves, mushrooms, dead_wood, tall_trees, flowers, cold_water]
+    real_world: >-
+      Hudson Valley hardwood forest along a mountain stream. In autumn: leaf litter, mushrooms, spiders' webs, and the
+      monarchs' migration south; in spring: caterpillars and blossom; in summer: dragonflies on the water. Owls hunt
+      at night all year, and more easily in winter when the leaves are down. Brook trout in the cold, clear stream,
+      beavers, and herons at the pools.
+    suggestions:
+      - >-
+        Autumn as the route's peak: the bug lines' cocoons and their butterflies and moths, spiders, mushrooms. Spring
+        and summer: caterpillars and flowers; winter: owls and Swinub.
+      - A cold-water fish fits the clear stream (trout country).
+    questions:
+      - >-
+        Is the Southwest east or west for Basculin? The river flows east into Virbank's sea, but the region is on
+        Unova's west side. Where's the line between the eastern and western rivers?
+
+  - id: virbank_city
+    name: Virbank City
+    maps: [virbank_city]
+    used: confirmed
+    facts:
+      tiles: { surf: 177 }
+      methods: [surf, fishing]
+      weather: { spring: rain 26%, summer: rain 2%, autumn: rain 26%, winter: snow 38% }
+      ambients: [Pidove, Swellow]
+    picture: >-
+      Almost New England: darker and gloomier than other places, with its Poison-type Gym Leader. Rattata, Murkrow and
+      Pidove in the streets and on the buildings, Wingull out at sea, perhaps Purrloin on the pipes (mood only: the
+      city has only water encounters).
+    habitats: [industrial, city, estuary, coastal_sea]
+    parts:
+      water: the harbour, where Route 20's river meets the sea
+    human_presence: industrial
+    climate:
+      spring: cool, rainy
+      summer: mild, dry
+      autumn: cool, rainy
+      winter: cold, snow on over a third of the days
+    features: [machinery, pollution, garbage]
+    real_world: >-
+      A working harbour where a river reaches the sea: brackish water, gulls and cormorants, pigeons and crows on the
+      docks, rats. Fish that stand brackish or polluted water; jellyfish and crabs at the harbour's mouth.
+    suggestions:
+      - Hardy and polluted-water Pokémon in the harbour, gulls over it; the river's fish where it comes in.
+
+  - id: virbank_complex
+    name: Virbank Complex
+    maps: [virbank_complex, virbank_complex_2]
+    used: confirmed
+    facts:
+      tiles: { grass: 44, surf: 44 }  # map 1, between the city and map 2
+      inner_tiles: { grass: 215, dark_grass: 64 }  # map 2
+      methods: [grass, dark_grass (map 2), rustling (shaking grass), surf and fishing (map 1)]
+      weather: { spring: rain 26%, summer: rain 2%, autumn: rain 26%, winter: snow 38% }
+      npc_pokemon: [Elekid, Grimer, Growlithe, Koffing, Magby, Magnemite, Mawile, Pichu (form 1, Spiky-eared), Purrloin,
+                    Riolu, Skarmory, Voltorb, Woobat]
+    picture: >-
+      The industrial complex, which has the encounters: Koffing, Klink, Magnemite, Purrloin, Skarmory and the like;
+      Magby in summer and autumn, Elekid in winter and spring; Pichu the trophy in summer and autumn, Growlithe in
+      winter and spring, and Riolu a trophy in winter and spring; some Grimer; the Timburr family helping with the
+      work. Maps 1 and 2 share most Pokémon, perhaps with a trophy only in map 2.
+    habitats: [industrial, scrub]
+    parts:
+      yard: grass among the plant's pipes and machinery (map 1 by the water, map 2 inside)
+      dark_grass: rough, unkept grass in the complex (map 2)
+      water: the water by map 1
+    human_presence: industrial
+    climate:
+      spring: cool, rainy
+      summer: mild, dry
+      autumn: cool, rainy
+      winter: cold, snow on over a third of the days
+    features: [machinery, pollution, garbage, rocks]
+    real_world: >-
+      Brownfield industrial land: weeds and rough grass, rats, feral cats, pigeons and crows, kestrels on the
+      structures; warm machinery that draws animals in winter.
+    suggestions:
+      - >-
+        The machinery's warmth explains winter visitors (Elekid's and Magby's seasons could follow which machines run
+        when).
