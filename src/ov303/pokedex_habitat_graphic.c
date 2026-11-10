@@ -34,6 +34,9 @@
 #include "system/palanm.h"
 #include "system/printsys.h"
 #include "system/text_speed.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/habitat_dex.h"
+#endif
 
 // What the Pokédex's Habitat List draws. The ROM has no name for this file; pokedex_habitat_graphic.c is a guess after
 // the graphic files of the other screens. The main screen has the list of an area's Pokémon, with the tabs of the
@@ -391,7 +394,12 @@ static void PokedexHabitatGraphic_InitBG(void) {
 
 static void PokedexHabitatGraphic_InitObj(PokedexHabitatGraphic *graphic) {
     PokedexHabitatGraphic_InitClActSys();
+#ifdef PAPERWHITE2
+    // Paper White 2: room for the Habitat Dex bar's icons, besides the places of the map
+    graphic->unit = ClActUnit_Create(128, 0, HEAPID_POKEDEX_HABITAT);
+#else
     graphic->unit = ClActUnit_Create(94, 0, HEAPID_POKEDEX_HABITAT);
+#endif
     ClActUnit_UseSystemRenderer(graphic->unit);
     GFL_BGSysSetBGEnabledA(GX_PLANEMASK_OBJ, TRUE);
     GFL_BGSysSetBGEnabledB(GX_PLANEMASK_OBJ, TRUE);
@@ -435,6 +443,10 @@ static void PokedexHabitatGraphic_LoadBG(void) {
     GFL_G2DIOLoadArcNCLRDefault(arc, 51, PALTYPE_SUB_BG, 0, 0, HEAPID_POKEDEX_HABITAT);
     GFL_BGSysLoadArcNCGRStatic(arc, 58, 2, 0, 0, FALSE, HEAPID_POKEDEX_HABITAT);
     loadBGScrToVramByFileNoReserveNegAlign(arc, 128, 2, 0, 0, FALSE, HEAPID_POKEDEX_HABITAT);
+#ifdef PAPERWHITE2
+    // Paper White 2: the Habitat Dex's 6 by 5 grid
+    PaperWhite2_HabitatDex_LoadGrid();
+#endif
     GFL_BGSysLoadArcNCGRStatic(arc, 58, 3, 0, 0, FALSE, HEAPID_POKEDEX_HABITAT);
     loadBGScrToVramByFileNoReserveNegAlign(arc, 115, 3, 0, 0, FALSE, HEAPID_POKEDEX_HABITAT);
     GFL_BGSysLoadArcNCGRStatic(arc, 59, 5, 0, 0, FALSE, HEAPID_POKEDEX_HABITAT);
@@ -509,13 +521,24 @@ static void PokedexHabitatGraphic_CreateActors(PokedexHabitatGraphic *graphic) {
     mapSetup.paletteStart = 0;
     UIObjRes_Load(&graphic->mapRes, &mapSetup, graphic->unit, HEAPID_POKEDEX_HABITAT);
 
+#ifdef PAPERWHITE2
+    // Paper White 2: the arrows turn the Habitat Dex's pages, in the filter bar's bottom row either side of the page
+    graphic->actors[POKEDEX_HABITAT_OBJ_SEASON_LEFT] =
+        UIObjRes_CreateActor(&graphic->objRes, graphic->unit, 136, 36, 24, HEAPID_POKEDEX_HABITAT);
+#else
     graphic->actors[POKEDEX_HABITAT_OBJ_SEASON_LEFT] =
         UIObjRes_CreateActor(&graphic->objRes, graphic->unit, 20, 60, 24, HEAPID_POKEDEX_HABITAT);
+#endif
     ClActor_SetBgPriority(graphic->actors[POKEDEX_HABITAT_OBJ_SEASON_LEFT], 1);
     ClActor_SetAutoAnim(graphic->actors[POKEDEX_HABITAT_OBJ_SEASON_LEFT], TRUE);
 
+#ifdef PAPERWHITE2
+    graphic->actors[POKEDEX_HABITAT_OBJ_SEASON_RIGHT] =
+        UIObjRes_CreateActor(&graphic->objRes, graphic->unit, 184, 36, 22, HEAPID_POKEDEX_HABITAT);
+#else
     graphic->actors[POKEDEX_HABITAT_OBJ_SEASON_RIGHT] =
         UIObjRes_CreateActor(&graphic->objRes, graphic->unit, 236, 60, 22, HEAPID_POKEDEX_HABITAT);
+#endif
     ClActor_SetBgPriority(graphic->actors[POKEDEX_HABITAT_OBJ_SEASON_RIGHT], 1);
     ClActor_SetAutoAnim(graphic->actors[POKEDEX_HABITAT_OBJ_SEASON_RIGHT], TRUE);
 
@@ -684,8 +707,14 @@ void PokedexHabitatGraphic_StartFade(PokedexHabitatGraphic *graphic, u8 start, u
                           GFL_VBlankGetTCBMgr());
     PaletteFade_StartFade(graphic->paletteFade, 1 << PALFADE_BUFFER_SUB_BG, 0xffef, -14, start, end, 0,
                           GFL_VBlankGetTCBMgr());
+#ifdef PAPERWHITE2
+    // Paper White 2: and the Habitat Dex bar's icons' rows, 2, 14 and 15 (4 is faded already)
+    PaletteFade_StartFade(graphic->paletteFade, 1 << PALFADE_BUFFER_MAIN_OBJ, 0xf8bc, -14, start, end, 0,
+                          GFL_VBlankGetTCBMgr());
+#else
     PaletteFade_StartFade(graphic->paletteFade, 1 << PALFADE_BUFFER_MAIN_OBJ, 0x38b8, -14, start, end, 0,
                           GFL_VBlankGetTCBMgr());
+#endif
     PaletteFade_StartFade(graphic->paletteFade, 1 << PALFADE_BUFFER_SUB_OBJ, 0x3fff, -14, start, end, 0,
                           GFL_VBlankGetTCBMgr());
 }
@@ -819,23 +848,42 @@ void PokedexHabitatGraphic_SetIconVisible(PokedexHabitatGraphic *graphic, u8 cel
     ClActor_SetVisible(graphic->icons[cell], visible);
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: the Habitat Dex's grid's cells (PokedexHabitatGraphic_LoadGrid), the cell alone
+#define CELL_TILE_X(cell) ((cell) % POKEDEX_HABITAT_COLUMNS * 5 + 1)
+#define CELL_TILE_Y(cell) ((cell) / POKEDEX_HABITAT_COLUMNS * 3 + 6)
+#define CELL_TILES_ACROSS 4
+#define CELL_TILES_DOWN 3
+#else
+#define CELL_TILE_X(cell) ((cell) % POKEDEX_HABITAT_COLUMNS * 5 + 4)
+#define CELL_TILE_Y(cell) ((cell) / POKEDEX_HABITAT_COLUMNS * 4 + 6)
+#define CELL_TILES_ACROSS 5
+#define CELL_TILES_DOWN 4
+#endif
+
 void PokedexHabitatGraphic_SetCellPalette(PokedexHabitatGraphic *graphic, u8 cell, u32 state) {
-    u8 x = cell % POKEDEX_HABITAT_COLUMNS * 5 + 4;
-    u8 y = cell / POKEDEX_HABITAT_COLUMNS * 4 + 6;
+    u8 x = CELL_TILE_X(cell);
+    u8 y = CELL_TILE_Y(cell);
 
     if (state == POKEDEX_HABITAT_CELL_CURSOR) {
-        GFL_BGSysSetScrPaletteNo(2, x, y, 5, 4, 10);
+        GFL_BGSysSetScrPaletteNo(2, x, y, CELL_TILES_ACROSS, CELL_TILES_DOWN, 10);
     } else if (state == POKEDEX_HABITAT_CELL_FILLED) {
-        GFL_BGSysSetScrPaletteNo(2, x, y, 5, 4, 9);
+        GFL_BGSysSetScrPaletteNo(2, x, y, CELL_TILES_ACROSS, CELL_TILES_DOWN, 9);
     } else if (state == POKEDEX_HABITAT_CELL_EMPTY) {
-        GFL_BGSysSetScrPaletteNo(2, x, y, 5, 4, 11);
+        GFL_BGSysSetScrPaletteNo(2, x, y, CELL_TILES_ACROSS, CELL_TILES_DOWN, 11);
     }
     GFL_BGSysQueueScrLoad(2);
 }
 
 static void PokedexHabitatGraphic_GetCellPos(u8 cell, ClActorPos *pos) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the Habitat Dex's grid, its icons over its cells as the original's
+    pos->x = cell % POKEDEX_HABITAT_COLUMNS * 40 + 24;
+    pos->y = cell / POKEDEX_HABITAT_COLUMNS * 24 + 56;
+#else
     pos->x = cell % POKEDEX_HABITAT_COLUMNS * 40 + 48;
     pos->y = cell / POKEDEX_HABITAT_COLUMNS * 32 + 56;
+#endif
 }
 
 void PokedexHabitatGraphic_SetArea(PokedexHabitatGraphic *graphic, u16 zone) {

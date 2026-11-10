@@ -23,7 +23,12 @@
 
 // How many Pokémon an area shows, in rows of POKEDEX_HABITAT_COLUMNS
 #define POKEDEX_HABITAT_ICON_COUNT 30
+#ifdef PAPERWHITE2
+// Paper White 2: the Habitat Dex's grid, 6 by 5
+#define POKEDEX_HABITAT_COLUMNS 6
+#else
 #define POKEDEX_HABITAT_COLUMNS 5
+#endif
 
 // The actors
 enum {

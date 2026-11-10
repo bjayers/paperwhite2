@@ -873,10 +873,11 @@ def habitats(output: Path):
 
 
 # The Habitat Dex's lists (include/paperwhite2/habitat_dex.h): a header, each Habitat List area's offset in the order
-# of its archive (habitat_data.AREAS), then the areas' entries, each a species by one method
+# of its archive (habitat_data.AREAS) and the end's, each area's walking terrain (habitat_terrain) as a byte, padded to
+# 4 bytes, then the areas' entries, each a species by one method
 HABITAT_DEX_FILE = "paperwhite2_habitat_dex.bin"
 HABITAT_DEX_MAGIC = 0x58444850  # "PHDX"
-HABITAT_DEX_VERSION = 1
+HABITAT_DEX_VERSION = 2
 HABITAT_DEX_ENTRY = struct.Struct("<HBBBBBBI")
 HABITAT_DEX_OUTBREAK, HABITAT_DEX_RULE, HABITAT_DEX_SPOTS = 1, 2, 4
 # An outbreak's entries sort after the tiers'
@@ -892,6 +893,7 @@ def habitat_dex(data: Data, zones: dict) -> bytes:
     by_area = candidates(data)
     special = data.settings["rustling"]["grass"]["species"]
     blocks = []
+    terrains = []
     for name in AREAS:
         zone = f"ZONE_{name.upper()}"
         areas = {z["encounters"].removeprefix("ENCOUNTERS_").lower() for zname, z in zones.items()
@@ -924,14 +926,27 @@ def habitat_dex(data: Data, zones: dict) -> bytes:
                                          bits(outbreak["times"], TIMES, at), HABITAT_DEX_OUTBREAK, 0))
         blocks.append(b"".join(HABITAT_DEX_ENTRY.pack(number, form, method, seasons, times, tier, flags, weather)
                                for method, tier, number, form, seasons, times, flags, weather in sorted(entries)))
+        terrains.append(AREA_TERRAINS.index(habitat_terrain(data, areas)))
     header = struct.pack("<IHH", HABITAT_DEX_MAGIC, HABITAT_DEX_VERSION, len(blocks))
-    offset = len(header) + 4 * (len(blocks) + 1)
+    terrain_bytes = bytes(terrains) + bytes(-len(terrains) % 4)
+    offset = len(header) + 4 * (len(blocks) + 1) + len(terrain_bytes)
     offsets = []
     for block in blocks:
         offsets.append(offset)
         offset += len(block)
     offsets.append(offset)
-    return header + struct.pack(f"<{len(offsets)}I", *offsets) + b"".join(blocks)
+    return header + struct.pack(f"<{len(offsets)}I", *offsets) + terrain_bytes + b"".join(blocks)
+
+
+def habitat_terrain(data: Data, areas: set[str]) -> str:
+    """A Habitat List area's walking terrain, for its walking icon: the terrain (area_terrain) of most of its encounter
+    areas that have walking Pokémon (grass or dark grass), the first of AREA_TERRAINS on a tie, or of all of them
+    where none has (a bridge's shadows); grass for an area without any."""
+    walking = [area for area in sorted(areas)
+               if any(rates.get(method, 0) for rates in data.areas[area]["rates"].values()
+                      for method in ("grass", "dark_grass"))] or sorted(areas)
+    counts = [sum(area_terrain(area, data.areas[area]) == terrain for area in walking) for terrain in AREA_TERRAINS]
+    return AREA_TERRAINS[counts.index(max(counts))] if walking else "grass"
 
 
 def main():

@@ -4,50 +4,42 @@
 #include "constants/text_banks.h"
 #include "field/enc_pokeset.h"
 #include "gfl/arc.h"
+#include "gfl/arc_util.h"
+#include "gfl/bg_sys.h"
+#include "gfl/clact.h"
 #include "gfl/heap.h"
 #include "gfl/msg.h"
 #include "gfl/str.h"
+#include "nitro/hw.h"
 #include "nitro/mi.h"
 #include "paperwhite2/habitat_dex.h"
+#include "paperwhite2/season.h"
+#include "system/app_menu_common.h"
+#include "system/palanm.h"
 #include "system/printsys.h"
 #include "system/rtc.h"
 #include "system/wordset.h"
 #include "system/zone_weather.h"
 #include "text/system/dexnav.h"
 
-// Paper White 2: the Habitat Dex's lists and its text box (paperwhite2/habitat_dex.h)
+// Paper White 2: the Habitat Dex's lists and its filter bar (paperwhite2/habitat_dex.h)
 
 // The Habitat List's archive (ARCID_POKEDEX_HABITAT in pokedex_common.c)
 #define ARCID_HABITAT_LIST 296
 
-// The kinds of habitat's methods, in the tabs' order
+// The methods' encounter types, by HABITAT_DEX_METHOD_* (all's are the others')
+static const u8 sMethodTypes[HABITAT_DEX_METHOD_COUNT] = {
+    ENCTYPE_MAX, ENCTYPE_GRASS, ENCTYPE_GRASS_RARE, ENCTYPE_SURF, ENCTYPE_FISHING,
+};
+// And their kinds of habitat (0 land, 1 water, 2 fishing)
+static const u8 sMethodKinds[HABITAT_DEX_METHOD_COUNT] = { 0, 0, 0, 1, 2 };
 #define KIND_COUNT 3
-#define KIND_METHOD_MAX (HABITAT_DEX_TAB_MAX - 1)
-static const u8 sKindMethods[KIND_COUNT][KIND_METHOD_MAX] = {
-    { ENCTYPE_GRASS, ENCTYPE_GRASS_RARE, ENCTYPE_GRASS_SHAKING },
-    { ENCTYPE_SURF, ENCTYPE_SURF_RARE, ENCTYPE_MAX },
-    { ENCTYPE_FISHING, ENCTYPE_FISHING_RARE, ENCTYPE_MAX },
-};
 
-// The methods' names, by ENCTYPE_* (the DexNav's)
-static const u32 sMethodNames[ENCTYPE_MAX] = {
-    Dexnav_Text_Grass,      Dexnav_Text_DarkGrass, Dexnav_Text_Rustling,  Dexnav_Text_Surf,
-    Dexnav_Text_SurfRipple, Dexnav_Text_Rod,       Dexnav_Text_RodRipple,
-};
-
-// Each filter's names: any, then its values
+// Each filter's values: any, then its values
 #define SEASON_FILTERS 5
 #define TIME_FILTERS (DAY_PERIOD_COUNT + 1)
 #define WEATHER_FILTERS 6
 static const u8 sFilterCounts[HABITAT_DEX_FILTER_COUNT] = { SEASON_FILTERS, TIME_FILTERS, WEATHER_FILTERS };
-static const u32 sSeasonNames[SEASON_FILTERS] = { Dexnav_Text_AnySeason, Dexnav_Text_Spring, Dexnav_Text_Summer,
-                                                  Dexnav_Text_Autumn, Dexnav_Text_Winter };
-static const u32 sTimeNames[TIME_FILTERS] = { Dexnav_Text_AnyTime, Dexnav_Text_Morning, Dexnav_Text_Day,
-                                              Dexnav_Text_Evening, Dexnav_Text_Night,   Dexnav_Text_LateNight };
-static const u32 sWeatherNames[WEATHER_FILTERS] = { Dexnav_Text_AnyWeather,  Dexnav_Text_WeatherClear,
-                                                    Dexnav_Text_WeatherRain, Dexnav_Text_WeatherThunderstorm,
-                                                    Dexnav_Text_WeatherSnow, Dexnav_Text_WeatherSandstorm };
-static const u32 *const sFilterNames[HABITAT_DEX_FILTER_COUNT] = { sSeasonNames, sTimeNames, sWeatherNames };
 
 // The weathers of each weather filter, as the DexNav names a zone's weather
 #define WEATHER_BIT(weather) (1 << (weather))
@@ -62,26 +54,90 @@ static const u32 sWeatherFilterBits[WEATHER_FILTERS] = {
     WEATHER_BIT(WEATHER_SANDSTORM) | WEATHER_BIT(WEATHER_SANDSTORM_2),
 };
 
-// The text box: the main window's, two lines in it (the tabs and the page, then the filters), and the room between
-// parts
-#define BOX_X 12
-#define BOX_Y 4
-#define BOX_WIDTH 240
+// The Area icons (tools/paperwhite2/pokedex_area.py, as paperwhite2_pokedex_info_area.c reads them), each 32 by 16:
+// the sheet's slots, five a row, then a grey copy of each in the same order
+enum {
+    ICON_SPRING,
+    ICON_MORNING = 5,
+    ICON_CLEAR = 10,
+    ICON_GRASS = 15,
+    ICON_DARK_GRASS,
+    ICON_CAVE_FLOOR,
+    ICON_SAND,
+    ICON_BRIDGE,
+    ICON_SURF,
+    ICON_PUDDLE,
+    ICON_FISHING,
+    ICON_WALKING,
+    ICON_ANY,
+    ICON_COUNT,
+};
+#define ICON_WIDTH 32
+#define ICON_HEIGHT 16
+#define ICON_SIZE (ICON_WIDTH * ICON_HEIGHT / 2)
+#define ICON_CHARS_SIZE (ICON_COUNT * 2 * ICON_SIZE)
+// The member (ARCID_POKEDEX_GRA's AREA_ICONS_FILE in paperwhite2_pokedex_info_area.c): the icons' palette rows'
+// colours, each icon's row, padded to 4 bytes, and their tiles
+#define ICONS_FILE 163
+#define ICON_PALETTE_ROWS 4
+#define PALETTE_SIZE 0x20
+#define ICON_ROWS_OFFSET (ICON_PALETTE_ROWS * PALETTE_SIZE)
+#define ICON_TILES_OFFSET ((ICON_ROWS_OFFSET + ICON_COUNT * 2 + 3) & ~3)
+// The type icons' cells (a 32 by 16 OBJ centred on its place) for the main engine's 1D 128 KB mapping, over the bar
+#define ICON_CELL_MAPPING 2
+#define ICON_BG_PRIORITY 1
+// The main OBJ palette rows of the member's rows: rows that none of the screen's OBJs use (its cells' palettes, and
+// the touch bar's and the party icons' rows 8 to 13)
+static const u8 sIconObjRows[ICON_PALETTE_ROWS] = { 2, 4, 14, 15 };
+
+// The method's icons, by HABITAT_DEX_METHOD_* (walking's by the area's terrain)
+static const u8 sMethodIcons[HABITAT_DEX_METHOD_COUNT] = {
+    ICON_WALKING, ICON_GRASS, ICON_DARK_GRASS, ICON_SURF, ICON_FISHING,
+};
+static const u8 sTerrainIcons[HABITAT_DEX_TERRAIN_COUNT] = {
+    ICON_GRASS, ICON_CAVE_FLOOR, ICON_SAND, ICON_PUDDLE, ICON_BRIDGE, ICON_WALKING,
+};
+// Each filter's first icon (its value 1's)
+static const u8 sFilterIcons[HABITAT_DEX_FILTER_COUNT] = { ICON_SPRING, ICON_MORNING, ICON_CLEAR };
+
+// The bar's art (res/paperwhite2/pokedex_art/habitat_bar.png, the art target pokedex_habitat_bar): ARCID_POKEDEX_GRA's
+// palette, characters and screen, on the list's BG (2) after its own 256 characters, in main BG palette row 13 (12 is
+// the stamps' message box's), over the screen's top 6 tile rows
+#define BAR_PALETTE_FILE 156
+#define BAR_CHARS_FILE 157
+#define BAR_SCREEN_FILE 158
+#define BAR_BG 2
+#define BAR_CHAR_OFFSET 256
+#define BAR_PALETTE 13
+#define BAR_TILES_ACROSS 32
+#define BAR_TILES_DOWN 6
+
+// The bar, in pixels (pokedex_area_templates.py's habitat templates draw the same). The top row (y 0-23, the icons at
+// y 4) holds the methods the area has, spread evenly over its width: the i-th of n centred at
+// TOP_WIDTH * (2i + 1) / 2n, and a touch at x belongs to the (x * n / TOP_WIDTH)-th. The bottom row (y 24-47, the
+// icons at y 28) holds the season, time and weather filters at FILTER_X + FILTER_PITCH i, then the page arrows (the
+// list's actors, pokedex_habitat_graphic.c) and the page between them, centred at PAGE_X. The stamp shows to the right
+// of both, centred at x 224, y 24
+#define TOP_WIDTH 192
+#define ROW_HEIGHT 24
+#define ICON_INSET_Y 4
+#define FILTER_X 8
+#define FILTER_PITCH 40
+#define PAGE_X 160
+#define PAGE_WIDTH 32
 #define LINE_HEIGHT 16
-#define PART_GAP 12
 #define COLOR_PLAIN PRINT_COLOR(1, 2, 0)
-#define COLOR_CHOSEN PRINT_COLOR(5, 6, 0)
-#define COLOR_ANY PRINT_COLOR(2, 15, 0)
 // The window's (POKEDEX_HABITAT_WIN_MAIN), which covers the main screen from its corner
 #define WINDOW_MAIN 0
 
 static const HabitatDexEntry *HabitatDex_GetEntries(HabitatDex *dex, u32 file, u32 *count);
 static BOOL HabitatDex_Matches(HabitatDex *dex, const HabitatDexEntry *entry);
-static void HabitatDex_PrintPart(HabitatDex *dex, PokedexHabitatGraphic *graphic, StrBuf *text, s16 x, s16 y,
-                                 u16 color);
+static BOOL HabitatDex_IsListed(HabitatDex *dex, u32 method, const HabitatDexEntry *entry);
+static void HabitatDex_ShowIcon(HabitatDex *dex, u32 slot, u32 icon, BOOL grey, int x, int y);
 
 void PaperWhite2_HabitatDex_Init(HabitatDex *dex, HeapID heapId) {
     MI_CpuFill8(dex, 0, sizeof(HabitatDex));
+    dex->heapId = heapId;
     dex->data = GFL_ArcSysReadHeapNew(ARCID_HABITAT_LIST, HABITAT_DEX_MEMBER, heapId);
     if (dex->data->magic != HABITAT_DEX_MAGIC || dex->data->version != HABITAT_DEX_VERSION) {
         GFL_HeapFree((void *)dex->data);
@@ -97,8 +153,73 @@ void PaperWhite2_HabitatDex_Free(HabitatDex *dex) {
     GFL_MsgDataFree(dex->msgData);
 }
 
+void PaperWhite2_HabitatDex_InitBar(HabitatDex *dex, PokedexHabitatGraphic *graphic) {
+    ArcTool *arc = GFL_ArcSysCreateFileHandle(ARCID_POKEDEX_GRA, dex->heapId);
+    u8 season = PaperWhite2_GetCurrentSeason(graphic->gameData);
+    ClActorSetup setup;
+    u32 i;
+
+    dex->filters[HABITAT_DEX_FILTER_SEASON] = season + 1;
+    dex->filters[HABITAT_DEX_FILTER_TIME] = GetRealTimeDayPeriod(season) + 1;
+
+    // The art, its screen's entries moved to its characters, and its colours in the palette fade's buffer too
+    GFL_BGSysLoadArcNCGRStatic(arc, BAR_CHARS_FILE, BAR_BG, BAR_CHAR_OFFSET, 0, FALSE, dex->heapId);
+    GFL_G2DIOLoadNSCRAsync(arc, BAR_SCREEN_FILE, BAR_BG, 0, BAR_CHAR_OFFSET, 0, FALSE, dex->heapId);
+    GFL_BGSysSetScrPaletteNo(BAR_BG, 0, 0, BAR_TILES_ACROSS, BAR_TILES_DOWN, BAR_PALETTE);
+    GFL_BGSysQueueScrLoad(BAR_BG);
+    GFL_G2DIOLoadArcNCLR(arc, BAR_PALETTE_FILE, PALTYPE_MAIN_BG, 0, BAR_PALETTE * PALETTE_SIZE, PALETTE_SIZE,
+                         dex->heapId);
+    PaletteFade_LoadFromVRAM(graphic->paletteFade, PALFADE_BUFFER_MAIN_BG, 0, 0x200);
+    GFL_ArcToolFree(arc);
+
+    // The icons: the type icons' cells and first palette row as their resources, the VBlank loading the icons' colours
+    // into their rows
+    dex->icons = GFL_ArcSysReadHeapNew(ARCID_POKEDEX_GRA, ICONS_FILE, dex->heapId);
+    arc = GFL_ArcSysCreateFileHandle(ARCID_APP_MENU_COMMON, dex->heapId);
+    dex->iconPalette = ClActSys_LoadPlttRange(arc, AppMenuCommon_GetTypeIconPaletteFile(), CLACT_VRAM_MAIN,
+                                              sIconObjRows[0] * PALETTE_SIZE, 0, 1, dex->heapId);
+    dex->iconCellAnims = ClActSys_LoadCellAnims(arc, AppMenuCommon_GetTypeIconCellFile(ICON_CELL_MAPPING),
+                                                AppMenuCommon_GetTypeIconAnimFile(ICON_CELL_MAPPING), dex->heapId);
+    GFL_ArcToolFree(arc);
+    dex->iconChars = ClActSys_AllocChars(ICON_CHARS_SIZE, CLACT_VRAM_MAIN, dex->heapId);
+    ClActSys_WriteCharData(dex->iconChars, (u8 *)dex->icons + ICON_TILES_OFFSET, ICON_CHARS_SIZE, 0, CLACT_VRAM_MAIN);
+    MI_CpuFill8(&setup, 0, sizeof(ClActorSetup));
+    setup.bgPriority = ICON_BG_PRIORITY;
+    for (i = 0; i < HABITAT_DEX_BAR_ICONS; i++) {
+        dex->iconActors[i] = ClActor_Create(graphic->unit, dex->iconChars, dex->iconPalette, dex->iconCellAnims, &setup,
+                                            CLACT_SURFACE_MAIN, dex->heapId);
+        ClActor_SetVisible(dex->iconActors[i], FALSE);
+    }
+    dex->iconRowsPending = TRUE;
+}
+
+void PaperWhite2_HabitatDex_FreeBar(HabitatDex *dex) {
+    u32 i;
+
+    for (i = 0; i < HABITAT_DEX_BAR_ICONS; i++) {
+        ClActor_Delete(dex->iconActors[i]);
+    }
+    ClActSys_FreeChars(dex->iconChars);
+    ClActSys_FreeCellAnims(dex->iconCellAnims);
+    ClActSys_FreePltt(dex->iconPalette);
+    GFL_HeapFree(dex->icons);
+}
+
+void PaperWhite2_HabitatDex_VBlank(HabitatDex *dex, PokedexHabitatGraphic *graphic) {
+    u32 i;
+
+    if (!dex->iconRowsPending) {
+        return;
+    }
+    for (i = 0; i < ICON_PALETTE_ROWS; i++) {
+        MI_CpuCopy16((u8 *)dex->icons + i * PALETTE_SIZE, (void *)(HW_OBJ_PLTT + sIconObjRows[i] * PALETTE_SIZE),
+                     PALETTE_SIZE);
+    }
+    PaletteFade_LoadFromVRAM(graphic->paletteFade, PALFADE_BUFFER_MAIN_OBJ, 0, 0x200);
+    dex->iconRowsPending = FALSE;
+}
+
 void PaperWhite2_HabitatDex_Reset(HabitatDex *dex) {
-    dex->tab = 0;
     dex->page = 0;
 }
 
@@ -130,46 +251,55 @@ static BOOL HabitatDex_Matches(HabitatDex *dex, const HabitatDexEntry *entry) {
     return TRUE;
 }
 
+// Whether a method lists an entry: all of them any of theirs, the others their own
+static BOOL HabitatDex_IsListed(HabitatDex *dex, u32 method, const HabitatDexEntry *entry) {
+    u32 i;
+
+    if (method != HABITAT_DEX_METHOD_ALL) {
+        return entry->method == sMethodTypes[method];
+    }
+    for (i = HABITAT_DEX_METHOD_ALL + 1; i < HABITAT_DEX_METHOD_COUNT; i++) {
+        if (entry->method == sMethodTypes[i]) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 // The entries are sorted by method, then rarity: a Pokémon is listed once, at its first entry that matches
-void PaperWhite2_HabitatDex_Fill(HabitatDex *dex, u32 file, u32 kind, PokeDexSave *pokedex) {
+void PaperWhite2_HabitatDex_Fill(HabitatDex *dex, u32 file, PokeDexSave *pokedex) {
     u32 count, i, j;
     const HabitatDexEntry *entries = HabitatDex_GetEntries(dex, file, &count);
-    u32 method;
+    BOOL shown = FALSE;
 
     dex->count = 0;
     dex->unseen = 0;
-    dex->tabCount = 1;
-    if (kind >= KIND_COUNT) {
-        kind = 0;
+    dex->terrain = HABITAT_DEX_TERRAIN_GRASS;
+    if (count != 0) {
+        dex->terrain = ((const u8 *)&dex->data->offsets[dex->data->count + 1])[file];
     }
-    // The tabs: all, then each of the kind's methods that the area has
-    for (i = 0; i < KIND_METHOD_MAX && sKindMethods[kind][i] != ENCTYPE_MAX; i++) {
+    // The methods: all, then each that the area has
+    dex->shownCount = 0;
+    dex->shownMethods[dex->shownCount++] = HABITAT_DEX_METHOD_ALL;
+    for (i = HABITAT_DEX_METHOD_ALL + 1; i < HABITAT_DEX_METHOD_COUNT; i++) {
         for (j = 0; j < count; j++) {
-            if (entries[j].method == sKindMethods[kind][i]) {
-                dex->tabMethods[dex->tabCount - 1] = sKindMethods[kind][i];
-                dex->tabCount++;
+            if (entries[j].method == sMethodTypes[i]) {
+                dex->shownMethods[dex->shownCount++] = i;
+                if (i == dex->method) {
+                    shown = TRUE;
+                }
                 break;
             }
         }
     }
-    if (dex->tab >= dex->tabCount) {
-        dex->tab = 0;
+    if (!shown) {
+        dex->method = HABITAT_DEX_METHOD_ALL;
     }
-    method = dex->tab == 0 ? ENCTYPE_MAX : dex->tabMethods[dex->tab - 1];
     for (i = 0; i < count; i++) {
         const HabitatDexEntry *entry = &entries[i];
         BOOL listed = FALSE;
 
-        if (method == ENCTYPE_MAX) {
-            for (j = 0; j < KIND_METHOD_MAX && sKindMethods[kind][j] != entry->method; j++) {
-            }
-            if (j == KIND_METHOD_MAX) {
-                continue;
-            }
-        } else if (entry->method != method) {
-            continue;
-        }
-        if (!HabitatDex_Matches(dex, entry)) {
+        if (!HabitatDex_IsListed(dex, dex->method, entry) || !HabitatDex_Matches(dex, entry)) {
             continue;
         }
         for (j = 0; j < dex->count; j++) {
@@ -184,7 +314,8 @@ void PaperWhite2_HabitatDex_Fill(HabitatDex *dex, u32 file, u32 kind, PokeDexSav
         if (!PokeDex_IsSeen(pokedex, entry->species)) {
             // An unseen Pokémon is counted once for each species
             for (j = 0; j < i; j++) {
-                if (entries[j].species == entry->species && HabitatDex_Matches(dex, &entries[j])) {
+                if (entries[j].species == entry->species && HabitatDex_IsListed(dex, dex->method, &entries[j]) &&
+                    HabitatDex_Matches(dex, &entries[j])) {
                     break;
                 }
             }
@@ -203,6 +334,13 @@ void PaperWhite2_HabitatDex_Fill(HabitatDex *dex, u32 file, u32 kind, PokeDexSav
     }
 }
 
+u32 PaperWhite2_HabitatDex_GetKind(HabitatDex *dex) {
+    if (dex->method == HABITAT_DEX_METHOD_ALL && dex->shownCount > 1) {
+        return sMethodKinds[dex->shownMethods[1]];
+    }
+    return sMethodKinds[dex->method];
+}
+
 BOOL PaperWhite2_HabitatDex_HasKind(HabitatDex *dex, u32 file, u32 kind) {
     u32 count, i, j;
     const HabitatDexEntry *entries = HabitatDex_GetEntries(dex, file, &count);
@@ -211,8 +349,8 @@ BOOL PaperWhite2_HabitatDex_HasKind(HabitatDex *dex, u32 file, u32 kind) {
         return FALSE;
     }
     for (i = 0; i < count; i++) {
-        for (j = 0; j < KIND_METHOD_MAX; j++) {
-            if (sKindMethods[kind][j] == entries[i].method) {
+        for (j = HABITAT_DEX_METHOD_ALL + 1; j < HABITAT_DEX_METHOD_COUNT; j++) {
+            if (sMethodKinds[j] == kind && sMethodTypes[j] == entries[i].method) {
                 return TRUE;
             }
         }
@@ -257,85 +395,158 @@ BOOL PaperWhite2_HabitatDex_TurnPage(HabitatDex *dex, int direction) {
     return TRUE;
 }
 
-BOOL PaperWhite2_HabitatDex_NextTab(HabitatDex *dex) {
-    if (dex->tabCount <= 1) {
+BOOL PaperWhite2_HabitatDex_StepMethod(HabitatDex *dex, int direction) {
+    u32 i;
+
+    if (dex->shownCount <= 1) {
         return FALSE;
     }
-    dex->tab = (dex->tab + 1) % dex->tabCount;
+    for (i = 0; i < dex->shownCount && dex->shownMethods[i] != dex->method; i++) {
+    }
+    i = (i + dex->shownCount + direction) % dex->shownCount;
+    dex->method = dex->shownMethods[i];
     dex->page = 0;
     return TRUE;
 }
 
-// ------------------------------------------------------------------------------------------------ The text box
+// ------------------------------------------------------------------------------------------------ The grid
 
-static void HabitatDex_PrintPart(HabitatDex *dex, PokedexHabitatGraphic *graphic, StrBuf *text, s16 x, s16 y,
-                                 u16 color) {
-    u32 width = GFL_FontGetBlockWidth(text, graphic->font, 0);
+// The grid on the list's BG, from the original's tiles (screen 128's) in palette row 9:
+// 6 by 5 of its 4 by 3 tile cells, 5 tiles apart across from tile 1 and touching down from tile row 6, between the
+// frame's columns (tiles 0 and 31). The rows above are the filter bar's (below), the touch bar's
+// below stay the original's
+#define GRID_TILE_Y 6
+#define GRID_TILES_DOWN 15
+#define GRID_TILES_ACROSS 32
+#define GRID_PALETTE 9
+#define GRID_ENTRY(tile, flip) ((tile) | (flip) << 10 | GRID_PALETTE << 12)
+#define FLIP_H 1
+#define FLIP_V 2
+#define TILE_FRAME 31
+#define TILE_GAP 32
 
-    if (x + width > BOX_X + BOX_WIDTH) {
-        return;
+// A cell's tiles, its rows top to bottom
+static const u16 sGridCell[3][4] = {
+    { GRID_ENTRY(35, 0), GRID_ENTRY(36, 0), GRID_ENTRY(36, FLIP_H), GRID_ENTRY(35, FLIP_H) },
+    { GRID_ENTRY(40, 0), GRID_ENTRY(41, 0), GRID_ENTRY(41, 0), GRID_ENTRY(40, FLIP_H | FLIP_V) },
+    { GRID_ENTRY(35, FLIP_V), GRID_ENTRY(36, FLIP_V), GRID_ENTRY(36, FLIP_H | FLIP_V),
+      GRID_ENTRY(35, FLIP_H | FLIP_V) },
+};
+
+void PaperWhite2_HabitatDex_LoadGrid(void) {
+    u16 *entries = GFL_HeapAllocate(HEAPID_POKEDEX_HABITAT, GRID_TILES_ACROSS * GRID_TILES_DOWN * sizeof(u16), FALSE,
+                                    "paperwhite2_habitat_dex.c", __LINE__);
+    u32 x, y;
+
+    for (y = 0; y < GRID_TILES_DOWN; y++) {
+        u16 *row = &entries[y * GRID_TILES_ACROSS];
+
+        for (x = 0; x < GRID_TILES_ACROSS; x++) {
+            row[x] = GRID_ENTRY(TILE_GAP, 0);
+        }
+        row[0] = GRID_ENTRY(TILE_FRAME, 0);
+        row[GRID_TILES_ACROSS - 1] = GRID_ENTRY(TILE_FRAME, FLIP_H);
+        for (x = 0; x < POKEDEX_HABITAT_COLUMNS * 5; x++) {
+            if (x % 5 != 4) {
+                row[1 + x] = sGridCell[y % 3][x % 5];
+            }
+        }
     }
-    PokedexHabitatGraphic_Print(WINDOW_MAIN, text, graphic, x, y, width, LINE_HEIGHT, color);
+    GFL_BGSysLoadScrAreaAll(2, entries, 0, GRID_TILE_Y, GRID_TILES_ACROSS, GRID_TILES_DOWN);
+    GFL_BGSysQueueScrLoad(2);
+    GFL_HeapFree(entries);
+}
+
+// ------------------------------------------------------------------------------------------------ The bar
+
+// Shows an icon (its grey copy's if grey) in one of the bar's OBJs, with its top left corner at x, y: its place in the
+// icons' characters, and its palette proxy moved to its row
+static void HabitatDex_ShowIcon(HabitatDex *dex, u32 slot, u32 icon, BOOL grey, int x, int y) {
+    const u8 *rows = (const u8 *)dex->icons + ICON_ROWS_OFFSET;
+    u32 image = (grey ? ICON_COUNT : 0) + icon;
+    ClActor *actor = dex->iconActors[slot];
+    NNSG2dImageProxy proxy;
+    NNSG2dImagePaletteProxy paletteProxy;
+    ClActorPos pos;
+
+    ClActSys_GetCharProxy(dex->iconChars, &proxy);
+    proxy.vramLocation.baseAddrOfVram[NNS_G2D_VRAM_TYPE_2DMAIN] += image * ICON_SIZE;
+    ClActor_SetImageProxy(actor, &proxy);
+    ClActor_GetPlttProxy(actor, &paletteProxy);
+    paletteProxy.vramLocation.baseAddrOfVram[NNS_G2D_VRAM_TYPE_2DMAIN] = sIconObjRows[rows[image]] * PALETTE_SIZE;
+    ClActor_SetPlttProxy(actor, &paletteProxy);
+    ClActor_SetPalette(actor, 0, TRUE);
+    pos.x = x + ICON_WIDTH / 2;
+    pos.y = y + ICON_HEIGHT / 2;
+    ClActor_SetSurfacePos(actor, &pos, CLACT_SURFACE_MAIN);
+    ClActor_SetVisible(actor, TRUE);
 }
 
 void PaperWhite2_HabitatDex_Print(HabitatDex *dex, PokedexHabitatGraphic *graphic) {
-    StrBuf *text = GFL_StrBufCreate(0x40, HEAPID_POKEDEX_HABITAT);
-    s16 x = BOX_X;
     u32 i;
 
-    PokedexHabitatGraphic_ClearArea(WINDOW_MAIN, graphic, BOX_X, BOX_Y, BOX_WIDTH, LINE_HEIGHT * 2);
-    // The tabs, then the page on the right
-    for (i = 0; i < dex->tabCount; i++) {
-        GFL_MsgDataLoadStrbuf(dex->msgData, i == 0 ? Dexnav_Text_All : sMethodNames[dex->tabMethods[i - 1]], text);
-        dex->tabX[i] = x;
-        HabitatDex_PrintPart(dex, graphic, text, x, BOX_Y, i == dex->tab ? COLOR_CHOSEN : COLOR_PLAIN);
-        x += GFL_FontGetBlockWidth(text, graphic->font, 0) + PART_GAP;
+    // The methods, the chosen one in colour, spread evenly over the top row
+    for (i = 0; i < HABITAT_DEX_METHOD_COUNT; i++) {
+        u32 method;
+        u32 icon;
+
+        if (i >= dex->shownCount) {
+            ClActor_SetVisible(dex->iconActors[i], FALSE);
+            continue;
+        }
+        method = dex->shownMethods[i];
+        icon = method == HABITAT_DEX_METHOD_WALKING ? sTerrainIcons[dex->terrain] : sMethodIcons[method];
+        HabitatDex_ShowIcon(dex, i, icon, method != dex->method,
+                            TOP_WIDTH * (2 * i + 1) / (2 * dex->shownCount) - ICON_WIDTH / 2, ICON_INSET_Y);
     }
-    dex->tabX[dex->tabCount] = x;
+    // The filters, "any" or their value
+    for (i = 0; i < HABITAT_DEX_FILTER_COUNT; i++) {
+        u32 icon = dex->filters[i] == 0 ? ICON_ANY : sFilterIcons[i] + dex->filters[i] - 1;
+
+        HabitatDex_ShowIcon(dex, HABITAT_DEX_METHOD_COUNT + i, icon, FALSE, FILTER_X + FILTER_PITCH * i,
+                            ROW_HEIGHT + ICON_INSET_Y);
+    }
+    // The page between the arrows
+    PokedexHabitatGraphic_ClearArea(WINDOW_MAIN, graphic, PAGE_X - PAGE_WIDTH / 2, ROW_HEIGHT + ICON_INSET_Y,
+                                    PAGE_WIDTH, LINE_HEIGHT);
     if (dex->pageCount > 1) {
-        WordSet *wordSet = GFL_WordSetSystemCreateDefault(HEAPID_POKEDEX_HABITAT);
+        StrBuf *text = GFL_StrBufCreate(0x20, dex->heapId);
+        WordSet *wordSet = GFL_WordSetSystemCreateDefault(dex->heapId);
         StrBuf *format = GFL_MsgDataLoadStrbufNew(dex->msgData, Dexnav_Text_Page);
+        u32 width;
 
         WordSetNumber(wordSet, 0, dex->page + 1, 2, 0, TRUE);
         WordSetNumber(wordSet, 1, dex->pageCount, 2, 0, TRUE);
         GFL_WordSetFormatStrbuf(wordSet, text, format);
-        HabitatDex_PrintPart(dex, graphic, text, BOX_X + BOX_WIDTH - GFL_FontGetBlockWidth(text, graphic->font, 0),
-                             BOX_Y, COLOR_PLAIN);
+        width = GFL_FontGetBlockWidth(text, graphic->font, 0);
+        PokedexHabitatGraphic_Print(WINDOW_MAIN, text, graphic, PAGE_X - width / 2, ROW_HEIGHT + ICON_INSET_Y, width,
+                                    LINE_HEIGHT, COLOR_PLAIN);
         GFL_StrBufFree(format);
         GFL_WordSetSystemFree(wordSet);
+        GFL_StrBufFree(text);
     }
-    // The filters, "any" in grey
-    x = BOX_X;
-    for (i = 0; i < HABITAT_DEX_FILTER_COUNT; i++) {
-        GFL_MsgDataLoadStrbuf(dex->msgData, sFilterNames[i][dex->filters[i]], text);
-        dex->filterX[i] = x;
-        HabitatDex_PrintPart(dex, graphic, text, x, BOX_Y + LINE_HEIGHT,
-                             dex->filters[i] == 0 ? COLOR_ANY : COLOR_CHOSEN);
-        x += GFL_FontGetBlockWidth(text, graphic->font, 0) + PART_GAP;
-    }
-    dex->filterX[HABITAT_DEX_FILTER_COUNT] = x;
-    GFL_StrBufFree(text);
 }
 
-BOOL PaperWhite2_HabitatDex_Touch(HabitatDex *dex, u32 x, u32 y) {
+u32 PaperWhite2_HabitatDex_Touch(HabitatDex *dex, u32 x, u32 y) {
     u32 i;
 
-    if (y < BOX_Y + LINE_HEIGHT) {
-        for (i = 0; i < dex->tabCount; i++) {
-            if (x >= dex->tabX[i] && x < dex->tabX[i + 1] && i != dex->tab) {
-                dex->tab = i;
+    if (y < ROW_HEIGHT) {
+        if (x < TOP_WIDTH) {
+            u32 method = dex->shownMethods[x * dex->shownCount / TOP_WIDTH];
+
+            if (method != dex->method) {
+                dex->method = method;
                 dex->page = 0;
-                return TRUE;
+                return HABITAT_DEX_TOUCH_METHOD;
             }
         }
-    } else if (y < BOX_Y + LINE_HEIGHT * 2 + 8) {
-        for (i = 0; i < HABITAT_DEX_FILTER_COUNT; i++) {
-            if (x >= dex->filterX[i] && x < dex->filterX[i + 1]) {
-                dex->filters[i] = (dex->filters[i] + 1) % sFilterCounts[i];
-                dex->page = 0;
-                return TRUE;
-            }
+    } else if (y < ROW_HEIGHT * 2 && x >= FILTER_X) {
+        i = (x - FILTER_X) / FILTER_PITCH;
+        if (i < HABITAT_DEX_FILTER_COUNT) {
+            dex->filters[i] = (dex->filters[i] + 1) % sFilterCounts[i];
+            dex->page = 0;
+            return HABITAT_DEX_TOUCH_FILTER;
         }
     }
-    return FALSE;
+    return HABITAT_DEX_TOUCH_NONE;
 }

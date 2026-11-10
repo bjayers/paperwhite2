@@ -93,18 +93,18 @@ areas have more, Pinwheel Forest 77); it still gives the areas, their kinds of h
 
 **The Habitat Dex.** The same command writes `paperwhite2_habitat_dex.bin`, which `habitat_data.py pack` makes the
 member after the areas: every Pokémon of each area, one entry for each method of each habitat, outbreak and shaking
-grass's own species, with its seasons, times, weathers and rarity, sorted by method, rarity and number
-(`include/paperwhite2/habitat_dex.h`). The Habitat List's screen shows it (`src/paperwhite2/ov303/
-paperwhite2_habitat_dex.c`, hooked in `src/ov303/pokedex_habitat.c`): the area's kind of habitat (the original tabs)
-lists all its Pokémon the player has seen, with their seen and caught marks, in pages of 20; the text box has the tabs
-of the kind's methods (all, or one) and the season, time and weather filters, each "any" until touched. L and R, or
-the arrows beside the grid, turn the pages, Select changes the tab, and the cursor moves on to the next page from the
-last row. The text box is checked before the buttons' touch table, whose search runs on past its end (its BUG), and an
-area shows each kind of habitat the Habitat Dex has. Info leaves the list for the Pokédex's page
+grass's own species, with its seasons, times, weathers and rarity, sorted by method, rarity and number, and each
+area's walking terrain (`habitat_terrain`: the `area_terrain` of most of its encounter areas with walking Pokémon)
+for its walking icon (`include/paperwhite2/habitat_dex.h`, version 2). The Habitat List's screen shows it
+(`src/paperwhite2/ov303/paperwhite2_habitat_dex.c`, hooked in `src/ov303/pokedex_habitat.c`; plugins.md, Habitat
+Dex): the area's Pokémon the player has seen by one of its methods (walking, dark grass, surfing, fishing) or all of
+them, with their seen and caught marks, in pages of a 6 by 5 grid, filtered by season, time and weather in a bar of
+the Area icons. No special methods (shaking grass and its own species, rippling water) are listed. A Pokémon is
+listed once, at its first method. The filters can't tell a habitat's extra conditions (`when`), so those Pokémon show
+whenever their seasons, times and weather allow. Info leaves the list for the Pokédex's page
 (`PaperWhite2_HabitatDex_SetInfoList`, taken by `PokedexCommon_LoadHabitatSpecies`), so the page opens on the Pokémon
-chosen, where the original list of the saved season didn't have it. A Pokémon is listed once, at its first method (grass before dark grass before rustling). The filters can't
-tell a habitat's extra conditions (`when`), so those Pokémon show whenever their seasons, times and weather allow.
-The map, the areas and the stamps are the original's. The Pokédex's area map (archive 176) isn't regenerated yet.
+chosen, on its Area. The map, the areas and the stamps are the original's. The Pokédex's area map (archive 176) isn't
+regenerated yet.
 
 **The Pokédex Info page's Area.** `encounters.py`'s `area_index` (plugins.md, Pokédex, Area) shows a species' rows as
 walking, dark grass, surfing and fishing, each with its special version (rustling spots, rippling water) as marks.

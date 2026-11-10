@@ -26,6 +26,7 @@
 #include "gfl/ui.h"
 #include "nitro/fx.h"
 #include "nitro/gx.h"
+#include "paperwhite2/habitat_dex.h"
 #include "paperwhite2/pokedex_info.h"
 #include "pml/personal.h"
 #include "pml/poke_graphic.h"
@@ -62,7 +63,7 @@
 // ARCID_POKEDEX_GRA's member that tools/paperwhite2/pokedex_sprites.py makes (after Evo's, pokedex_evo.py): a u8 for
 // each member of the battle sprites' archive, for a sprite's characters how far above its feet its visible pixels'
 // middle is on its first frame
-#define SPRITE_MIDDLES_FILE 158
+#define SPRITE_MIDDLES_FILE 161
 // The size of a pixel at the sprites' depth: the detail screen's camera (pokedex_detail_graphic.c), 70 units away with
 // a 40 degree field of view, shows 2 * 70 * tan(20 degrees) units in the screen's 192 pixels
 #define SPRITE_PIXEL_SIZE FX32_CONST(0.2654)
@@ -429,7 +430,8 @@ BOOL PokedexInfoPage_Main(PokedexDetailProcSys *sys, int *seq, void *param_, voi
                                                    PokedexDetailCommon_GetPrintQueue(common), param->heapId);
         GFL_BGSysSetBGPriority(POKEDEX_INFO_BUTTON_BG, POKEDEX_INFO_ART_PRIORITY);
         GFL_BGSysSetBGEnabled(POKEDEX_INFO_BUTTON_BG, TRUE);
-        wk->subpage = POKEDEX_INFO_SUBPAGE_STATS;
+        // Area after the Habitat List's Pokémon, else Stats
+        wk->subpage = PaperWhite2_HabitatDex_TakeInfoArea() ? POKEDEX_INFO_SUBPAGE_AREA : POKEDEX_INFO_SUBPAGE_STATS;
         PokedexInfoPage_ShowSubpage(param, wk, common);
         break;
     }

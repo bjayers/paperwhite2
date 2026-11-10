@@ -43,10 +43,11 @@
 // again once all those of the area are caught, it stamps the area
 #ifdef PAPERWHITE2
 //
-// Paper White 2: the list is the Habitat Dex's (paperwhite2/habitat_dex.h): every Pokémon of the area's kind of
-// habitat from the wild encounters' data, in pages, with tabs of its methods and filters of season, time and weather in
-// the text box. L and R, or the arrows that changed the season, turn the pages, and Select changes the tab. The stamps
-// still count the original list's Pokémon
+// Paper White 2: the list is the Habitat Dex's (paperwhite2/habitat_dex.h): every Pokémon of the area from the wild
+// encounters' data, in pages of a 6 by 5 grid, by one of the area's methods or all of them, filtered by season, time
+// and weather, in a bar of icons above the grid in place of the text box; the touch bar has no tabs. L and R, or the
+// arrows that changed the season (now in the bar), turn the pages; Left, Right and Select change the method. A touched
+// Pokémon opens its page at once, on the Info page's Area. The stamps still count the original list's Pokémon
 #endif
 
 // How far the two screens slide in
@@ -54,7 +55,12 @@
 #define SLIDE_SPEED 3
 
 // The Pokémon that the cursor's screen can touch: the rows that fit above its buttons
+#ifdef PAPERWHITE2
+// Paper White 2: the Habitat Dex's grid, all of it
+#define TOUCH_ICON_COUNT POKEDEX_HABITAT_ICON_COUNT
+#else
 #define TOUCH_ICON_COUNT 20
+#endif
 
 #define SEASON_COUNT POKEDEX_SEASON_COUNT
 
@@ -253,6 +259,39 @@ static const PokedexHabitatSeqFunc sPokedexHabitatSequences[SEQ_COUNT + 1] = {
 
 // clang-format on
 
+#ifdef PAPERWHITE2
+// Paper White 2: the Habitat Dex's 6 by 5 grid of 32 by 24 cells, 40 px apart across from x 8 and touching down from
+// y 48 (pokedex_habitat_graphic.c); the page arrows in the bar's bottom row, the tabs gone (a rectangle under the
+// screen). Both tables end with TOUCH_RECT_END
+#define CELL_RECT(row, column) { 48 + 24 * (row), 71 + 24 * (row), 8 + 40 * (column), 47 + 40 * (column) }
+#define CELL_ROW_RECTS(row)                                                                                            \
+    CELL_RECT(row, 0), CELL_RECT(row, 1), CELL_RECT(row, 2), CELL_RECT(row, 3), CELL_RECT(row, 4), CELL_RECT(row, 5)
+#define NO_RECT { 192, 192, 0, 0 }
+
+static const TouchRect sPokedexHabitatCursorTouchRects[CURSOR_TOUCH_COUNT + 1] = {
+    { 168, 191, 232, 255 }, { 168, 191, 96, 212 }, CELL_ROW_RECTS(0), CELL_ROW_RECTS(1),
+    CELL_ROW_RECTS(2),      CELL_ROW_RECTS(3),     CELL_ROW_RECTS(4), { TOUCH_RECT_END },
+};
+
+static const TouchRect sPokedexHabitatListTouchRects[LIST_TOUCH_COUNT + 1] = {
+    { 168, 191, 184, 207 },
+    { 168, 191, 208, 231 },
+    { 168, 191, 232, 255 },
+    NO_RECT,
+    NO_RECT,
+    NO_RECT,
+    { 168, 191, 0, 24 },
+    { 168, 191, 24, 48 },
+    { 26, 46, 126, 148 },
+    { 26, 46, 172, 194 },
+    CELL_ROW_RECTS(0),
+    CELL_ROW_RECTS(1),
+    CELL_ROW_RECTS(2),
+    CELL_ROW_RECTS(3),
+    CELL_ROW_RECTS(4),
+    { TOUCH_RECT_END },
+};
+#else
 // BUG: neither table ends with TOUCH_RECT_END, so the search runs on into the data that follows them
 // clang-format off
 static const TouchRect sPokedexHabitatCursorTouchRects[CURSOR_TOUCH_COUNT] = {
@@ -276,6 +315,7 @@ static const TouchRect sPokedexHabitatListTouchRects[LIST_TOUCH_COUNT] = {
 };
 
 // clang-format on
+#endif
 
 // The areas of the habitat list, as in pokedex_common.c. An area's place in it is its habitat in the save
 static const PokedexHabitatTableEntry sPokedexHabitatAreas[] = {
@@ -344,6 +384,9 @@ static BOOL PokedexHabitat_ProcInit(GameProc *proc, u32 *state, void *param, voi
     GFL_HeapCreateChild(HEAPID_USER, HEAPID_POKEDEX_HABITAT, 0x60000);
     wk = PokedexHabitat_CreateWork(proc, param);
     PokedexHabitatGraphic_Init(&wk->graphic, wk->param->gameData);
+#ifdef PAPERWHITE2
+    PaperWhite2_HabitatDex_InitBar(&wk->dex, &wk->graphic);
+#endif
     PokedexHabitat_AddVBlank(wk);
     return TRUE;
 }
@@ -362,6 +405,9 @@ static BOOL PokedexHabitat_ProcEnd(GameProc *proc, u32 *state, void *param, void
     PokedexHabitatWork *wk = work;
 
     PokedexHabitat_RemoveVBlank(wk);
+#ifdef PAPERWHITE2
+    PaperWhite2_HabitatDex_FreeBar(&wk->dex);
+#endif
     PokedexHabitatGraphic_Exit(&wk->graphic);
     PokedexHabitat_FreeWork(proc, wk);
     GFL_HeapDelete(HEAPID_POKEDEX_HABITAT);
@@ -380,6 +426,9 @@ static void PokedexHabitat_VBlank(TCB *tcb, void *data) {
     PokedexHabitatWork *wk = data;
 
     PokedexHabitatGraphic_VBlank(&wk->graphic);
+#ifdef PAPERWHITE2
+    PaperWhite2_HabitatDex_VBlank(&wk->dex, &wk->graphic);
+#endif
 }
 
 static PokedexHabitatWork *PokedexHabitat_CreateWork(GameProc *proc, PokedexHabitatListParam *param) {
@@ -506,8 +555,7 @@ static void PokedexHabitat_SeqList(PokedexHabitatWork *wk) {
     int hit = GFL_HIDGetTouchPressedRect(sPokedexHabitatListTouchRects);
 
 #ifdef PAPERWHITE2
-    // Paper White 2: a touch on the text box's tabs and filters, before the buttons' table, whose search runs on into
-    // the data after it (the BUG at the tables) and so never says that nothing was touched
+    // Paper White 2: a touch on the bar's methods and filters, before the buttons' table
     if (PokedexHabitat_TouchTextBox(wk)) {
         return;
     }
@@ -582,6 +630,18 @@ static void PokedexHabitat_SeqList(PokedexHabitatWork *wk) {
     case LIST_TOUCH_ICON + 17:
     case LIST_TOUCH_ICON + 18:
     case LIST_TOUCH_ICON + 19:
+#ifdef PAPERWHITE2
+    case LIST_TOUCH_ICON + 20:
+    case LIST_TOUCH_ICON + 21:
+    case LIST_TOUCH_ICON + 22:
+    case LIST_TOUCH_ICON + 23:
+    case LIST_TOUCH_ICON + 24:
+    case LIST_TOUCH_ICON + 25:
+    case LIST_TOUCH_ICON + 26:
+    case LIST_TOUCH_ICON + 27:
+    case LIST_TOUCH_ICON + 28:
+    case LIST_TOUCH_ICON + 29:
+#endif
         if (wk->speciesCount > 0) {
             int cell = hit - LIST_TOUCH_ICON;
 
@@ -610,12 +670,10 @@ static void PokedexHabitat_ListKeys(PokedexHabitatWork *wk) {
     PokedexHabitatArea *area = PokedexHabitat_GetArea(wk);
 
 #ifdef PAPERWHITE2
-    // Paper White 2: L and R turn the pages, Select changes the tab
+    // Paper White 2: L and R turn the pages; Select, as Right, changes the method
     if (pressed & PAD_BUTTON_SELECT) {
-        if (PaperWhite2_HabitatDex_NextTab(&wk->dex)) {
-            GFL_SndSEPlay(SEQ_SE_SELECT1);
-            PokedexHabitat_UpdateList(wk);
-            PokedexHabitat_UpdateTabs(wk);
+        if (wk->dex.shownCount > 1) {
+            PokedexHabitat_SetSequence(wk, SEQ_CHANGE_TYPE, ACTION_RIGHT);
         }
     } else if (repeat & PAD_BUTTON_L) {
         if (PokedexHabitat_HasArrows(wk)) {
@@ -638,11 +696,20 @@ static void PokedexHabitat_ListKeys(PokedexHabitatWork *wk) {
     }
 #endif
     else if (repeat & PAD_KEY_LEFT) {
+#ifdef PAPERWHITE2
+        // Paper White 2: Left and Right step through the area's methods
+        if (wk->dex.shownCount > 1) {
+#else
         if (PokedexHabitat_HasSeveralTypes(wk)) {
+#endif
             PokedexHabitat_SetSequence(wk, SEQ_CHANGE_TYPE, ACTION_LEFT);
         }
     } else if (repeat & PAD_KEY_RIGHT) {
+#ifdef PAPERWHITE2
+        if (wk->dex.shownCount > 1) {
+#else
         if (PokedexHabitat_HasSeveralTypes(wk)) {
+#endif
             PokedexHabitat_SetSequence(wk, SEQ_CHANGE_TYPE, ACTION_RIGHT);
         }
     } else if (repeat & PAD_KEY_UP) {
@@ -749,11 +816,30 @@ static void PokedexHabitat_SeqCursor(PokedexHabitatWork *wk) {
         case CURSOR_TOUCH_ICON + 17:
         case CURSOR_TOUCH_ICON + 18:
         case CURSOR_TOUCH_ICON + 19:
+#ifdef PAPERWHITE2
+        case CURSOR_TOUCH_ICON + 20:
+        case CURSOR_TOUCH_ICON + 21:
+        case CURSOR_TOUCH_ICON + 22:
+        case CURSOR_TOUCH_ICON + 23:
+        case CURSOR_TOUCH_ICON + 24:
+        case CURSOR_TOUCH_ICON + 25:
+        case CURSOR_TOUCH_ICON + 26:
+        case CURSOR_TOUCH_ICON + 27:
+        case CURSOR_TOUCH_ICON + 28:
+        case CURSOR_TOUCH_ICON + 29:
+            // Paper White 2: a touched Pokémon opens its page, as from the list
+            if (hit - CURSOR_TOUCH_ICON < wk->speciesCount) {
+                wk->touched = hit - CURSOR_TOUCH_ICON;
+                PokedexHabitat_SetSequence(wk, SEQ_MOVE_CURSOR, ACTION_TOUCH_DECIDE);
+            }
+            break;
+#else
             if (hit - CURSOR_TOUCH_ICON < wk->speciesCount) {
                 wk->touched = hit - CURSOR_TOUCH_ICON;
                 PokedexHabitat_SetSequence(wk, SEQ_MOVE_CURSOR, ACTION_TOUCH);
             }
             break;
+#endif
         case TOUCH_RECT_NONE:
             PokedexHabitat_CursorKeys(wk);
             break;
@@ -1034,8 +1120,21 @@ static void PokedexHabitat_SeqChangeType(PokedexHabitatWork *wk) {
     switch (wk->step) {
     case 0:
 #ifdef PAPERWHITE2
+        // Paper White 2: the bar's methods, whose kind of habitat the list takes (PokedexHabitat_LoadSpecies): the
+        // keys step through those the area has, and a touch chose one (ACTION_TAB); no tabs to animate
+        if (wk->action == ACTION_LEFT) {
+            PaperWhite2_HabitatDex_StepMethod(&wk->dex, -1);
+        } else if (wk->action == ACTION_RIGHT) {
+            PaperWhite2_HabitatDex_StepMethod(&wk->dex, 1);
+        }
         PaperWhite2_HabitatDex_Reset(&wk->dex);
-#endif
+        PokedexHabitat_UpdateList(wk);
+        PokedexHabitat_UpdateTabs(wk);
+        PokedexHabitat_UpdateStamp(wk);
+        GFL_SndSEPlay(SEQ_SE_SELECT3);
+        wk->step = 2;
+        break;
+#else
         if (wk->action == ACTION_LEFT) {
             wk->type--;
             if (wk->type < 0) {
@@ -1063,6 +1162,7 @@ static void PokedexHabitat_SeqChangeType(PokedexHabitatWork *wk) {
         ClActor_SetAutoAnim(actor, TRUE);
         wk->step++;
         break;
+#endif
     case 1:
         actor = PokedexHabitatGraphic_GetActor(&wk->graphic, POKEDEX_HABITAT_OBJ_TAB + wk->type);
         if (!ClActor_IsAnimActive(actor)) {
@@ -1220,6 +1320,13 @@ static void PokedexHabitat_SeqMoveCursor(PokedexHabitatWork *wk) {
         } else {
             PokedexHabitat_ShowInfoButton(wk, FALSE, TRUE);
         }
+#ifdef PAPERWHITE2
+        // Paper White 2: a touched Pokémon opens its page at once, through the Info button
+        if (wk->action == ACTION_TOUCH_DECIDE && PokedexHabitat_GetSpecies(wk, wk->cursor) >= 0) {
+            PokedexHabitat_SetSequence(wk, SEQ_BUTTON, ACTION_INFO);
+            break;
+        }
+#endif
         wk->step++;
     }
         // fallthrough
@@ -1457,7 +1564,9 @@ static void PokedexHabitat_LoadSpecies(PokedexHabitatWork *wk) {
 
     MI_CpuFill8(wk->species, 0, sizeof(wk->species));
     PaperWhite2_HabitatDex_Fill(&wk->dex, sPokedexHabitatAreas[PokedexHabitat_GetHabitatIndex(area->zone)].file,
-                                wk->type, wk->pokedex);
+                                wk->pokedex);
+    // The kind of habitat of the chosen method: the grid's colours and the stamps
+    wk->type = PaperWhite2_HabitatDex_GetKind(&wk->dex);
     count = PaperWhite2_HabitatDex_GetPageCount(&wk->dex);
     for (i = 0; i < count; i++) {
         const HabitatDexEntry *entry = PaperWhite2_HabitatDex_GetCell(&wk->dex, i);
@@ -1535,6 +1644,12 @@ static void PokedexHabitat_LoadSpecies(PokedexHabitatWork *wk) {
 }
 
 static void PokedexHabitat_UpdateTabs(PokedexHabitatWork *wk) {
+#ifdef PAPERWHITE2
+    // Paper White 2: no tabs, the bar has the methods; the grid's colours still follow the kind of habitat
+    PokedexHabitatGraphic_SetTab(&wk->graphic, TYPE_LAND, POKEDEX_HABITAT_TAB_HIDDEN);
+    PokedexHabitatGraphic_SetTab(&wk->graphic, TYPE_WATER, POKEDEX_HABITAT_TAB_HIDDEN);
+    PokedexHabitatGraphic_SetTab(&wk->graphic, TYPE_FISHING, POKEDEX_HABITAT_TAB_HIDDEN);
+#else
     if (wk->type == TYPE_LAND) {
         PokedexHabitatGraphic_SetTab(&wk->graphic, TYPE_LAND, POKEDEX_HABITAT_TAB_CHOSEN);
     } else if (wk->typeShown[TYPE_LAND] == TRUE) {
@@ -1556,6 +1671,7 @@ static void PokedexHabitat_UpdateTabs(PokedexHabitatWork *wk) {
     } else {
         PokedexHabitatGraphic_SetTab(&wk->graphic, TYPE_FISHING, POKEDEX_HABITAT_TAB_HIDDEN);
     }
+#endif
     PokedexHabitatGraphic_RequestPalette(&wk->graphic, wk->type);
     PokedexHabitat_UpdateNewMarks(wk);
     PokedexHabitat_PrintHabitat(wk);
@@ -1571,7 +1687,12 @@ static void PokedexHabitat_UpdateNewMarks(PokedexHabitatWork *wk) {
 
 // Marks the tab of a kind of habitat that has a stamp to give
 static void PokedexHabitat_UpdateNewMark(PokedexHabitatWork *wk, u32 type, ClActor *actor) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the marks were the tabs'
+    if (FALSE) {
+#else
     if (wk->typeShown[type] == TRUE) {
+#endif
         if (PokedexHabitat_GetTypeAward(wk, type) != AWARD_NONE) {
             ClActor_SetVisible(actor, TRUE);
         } else {
@@ -1697,12 +1818,15 @@ static void PokedexHabitat_HideListButtons(PokedexHabitatWork *wk) {
 static void PokedexHabitat_ShowListButtons(PokedexHabitatWork *wk) {
     PokedexHabitatArea *area = PokedexHabitat_GetArea(wk);
 
+#ifndef PAPERWHITE2
+    // Paper White 2: no tabs
     ClActor_SetVisible(PokedexHabitatGraphic_GetActor(&wk->graphic, POKEDEX_HABITAT_OBJ_TAB + TYPE_LAND),
                        wk->typeShown[TYPE_LAND]);
     ClActor_SetVisible(PokedexHabitatGraphic_GetActor(&wk->graphic, POKEDEX_HABITAT_OBJ_TAB + TYPE_WATER),
                        wk->typeShown[TYPE_WATER]);
     ClActor_SetVisible(PokedexHabitatGraphic_GetActor(&wk->graphic, POKEDEX_HABITAT_OBJ_TAB + TYPE_FISHING),
                        wk->typeShown[TYPE_FISHING]);
+#endif
     if (wk->areaCount > 1) {
         ClActor_SetVisible(PokedexHabitatGraphic_GetActor(&wk->graphic, POKEDEX_HABITAT_OBJ_AREA_UP), TRUE);
         ClActor_SetVisible(PokedexHabitatGraphic_GetActor(&wk->graphic, POKEDEX_HABITAT_OBJ_AREA_DOWN), TRUE);
@@ -1877,17 +2001,24 @@ static BOOL PokedexHabitat_TurnPage(PokedexHabitatWork *wk, int direction) {
     return TRUE;
 }
 
-// A touch on the text box's tabs or filters shows the list they make; TRUE when it does
+// A touch on the bar: a method changes the list as the keys do, a filter shows the list it makes; TRUE for either
 static BOOL PokedexHabitat_TouchTextBox(PokedexHabitatWork *wk) {
     u32 x, y;
 
-    if (!GFL_HIDGetTouchPressedPoint(&x, &y) || !PaperWhite2_HabitatDex_Touch(&wk->dex, x, y)) {
+    if (!GFL_HIDGetTouchPressedPoint(&x, &y)) {
         return FALSE;
     }
-    GFL_SndSEPlay(SEQ_SE_SELECT1);
-    PokedexHabitat_UpdateList(wk);
-    PokedexHabitat_UpdateTabs(wk);
-    return TRUE;
+    switch (PaperWhite2_HabitatDex_Touch(&wk->dex, x, y)) {
+    case HABITAT_DEX_TOUCH_METHOD:
+        PokedexHabitat_SetSequence(wk, SEQ_CHANGE_TYPE, ACTION_TAB);
+        return TRUE;
+    case HABITAT_DEX_TOUCH_FILTER:
+        GFL_SndSEPlay(SEQ_SE_SELECT1);
+        PokedexHabitat_UpdateList(wk);
+        PokedexHabitat_UpdateTabs(wk);
+        return TRUE;
+    }
+    return FALSE;
 }
 #endif
 

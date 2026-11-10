@@ -1296,6 +1296,42 @@ The slot tables are replaced by per-species data packed by area: `docs/paperwhit
 
 Where no Pokémon can appear there is no encounter, and an original table's empty slot gives none either.
 
+### Habitat Dex
+
+The Pokédex's Habitat List (overlay 303, `src/ov303/pokedex_habitat.c` and `pokedex_habitat_graphic.c`, hooks under
+`PAPERWHITE2`) shows the wild encounters' data: `src/paperwhite2/ov303/paperwhite2_habitat_dex.c`,
+`include/paperwhite2/habitat_dex.h`, the lists from `encounters.py habitats` (`docs/paperwhite2/encounters.md`). As
+redesigned on 2026-11-09 with the Area icons:
+
+- **The grid** is 6 by 5 (`POKEDEX_HABITAT_COLUMNS` 6, all 30 of the original's icon slots, a page of
+  `HABITAT_DEX_PAGE_SIZE` 30): the original's 32 by 24 cells (screen 128's tiles, built by
+  `PaperWhite2_HabitatDex_LoadGrid` on BG 2 in palette row 9) 40 px apart across from x 8 and touching down from y 48,
+  each icon centred 16 px right of its cell's left and 8 below its top as the original's. A party icon's pixels are in
+  its rows 7-31 (every icon in `res/pokemon`, measured), so a 24 px pitch keeps the icons apart. More than 30 turn the
+  pages: L and R, the arrows, or the cursor past the first or last row; the touch tables end with `TOUCH_RECT_END`.
+- **The filter bar** (y 0-47, the original's text box) is the user's art (`pokedex_habitat_bar`, `docs/paperwhite2/art.md`)
+  on BG 2 after its 256 characters, in main BG row 13 (row 12 is the stamps' message box's), with the Area icons
+  (`pokedex_area.py`'s member, main OBJ rows 2, 4, 14 and 15, which no OBJ of the screen uses, loaded in the VBlank
+  and added to the fade's mask). Its **top row** shows the methods the area has, spread evenly over x 0-191 (the i-th
+  of n centred at 192 (2i + 1) / 2n, a touch at x the (x n / 192)-th): "List All" as the walking icon, always first;
+  walking as the area's terrain (grass, cave floor, sand or puddles, `encounters.py`'s `habitat_terrain`, by most of
+  its encounter areas with walking Pokémon); dark grass; surfing; fishing. The chosen method is in colour, the others
+  their grey copies; a method the area hasn't isn't shown. No special methods (shaking grass, dust clouds, bridge
+  shadows, rippling water). Its **bottom row** has the season, time and weather filters at x 8, 48 and 88, y 28, each
+  icon cycling its values and "any" (the sheet's last slot) as it's touched; season and time start on the player's
+  (`PaperWhite2_GetCurrentSeason`, `GetRealTimeDayPeriod`) each time the screen opens, weather on "any". Then the page
+  arrows (the season arrows' actors, at x 136 and 184) and the page between them, centred at x 160; the stamp stays
+  at x 224, y 20. Left, Right and Select step through the methods.
+- **The grid's colours** follow the chosen method's kind of habitat as the tabs' did (`PaperWhite2_HabitatDex_GetKind`:
+  green for all, walking and dark grass, blue for surfing, dark blue for fishing); the stamps still count the
+  original list. The touch bar's tabs and their "new" marks are hidden.
+- **A touched Pokémon** opens its page at once (through the Info button's animation), and the Info page opens on
+  Area (`PaperWhite2_HabitatDex_TakeInfoArea`, in main beside the list it leaves, taken once by
+  `paperwhite2_pokedex_info.c`); every other way in opens on Stats. A then A on the cursor does the same.
+- **Memory:** the screen's heap (`HEAPID_POKEDEX_HABITAT`, 0x60000) had 166,096 bytes free (one block of 166,004) on
+  Pinwheel Forest's list with the bar shown (2026-11-09). The actor unit holds 128 (94 before), for the bar's 8
+  icons beside the map's places.
+
 ### DexNav
 
 What can appear in the current area now, by method, with the encounter rules' shares and levels:
@@ -1532,7 +1568,7 @@ its panels on BG 2 and its grid on BG 3, and no still sprite (`PokedexInfo_IsDet
 (MCSS) on BG 0 in 3D, which the page turns on at its start and off at its end. **The sprite's place**: x 50 less the
 bin file's offsetX, as the forms page's; vertically, its visible pixels' middle on its first frame at y 72, the
 original's still sprite's frame centre and the middle of the panel's track between its dashed rows (y 45-46 and
-97-98; the grey stripe around them, y 33-100, is deeper above, and its middle, 67, looked high), from member 158 of `ARCID_POKEDEX_GRA` that `tools/paperwhite2/pokedex_sprites.py`
+97-98; the grey stripe around them, y 33-100, is deeper above, and its middle, 67, looked high), from member 161 of `ARCID_POKEDEX_GRA` that `tools/paperwhite2/pokedex_sprites.py`
 makes from `res/pokemon` at build time (a u8 for each battle sprite archive member, 15020 bytes, read by range at the
 sprite's characters' number, so per form, sex and side: how far above its feet the middle is, measured as MCSS
 assembles the first frame from the multi-cell, cell animations and the bin file's quads). Vanilla's own box in the bin
@@ -1702,15 +1738,15 @@ that species' page through the detail screen's list (as the touch bar's arrows d
 and is in the list, else it beeps; Up and Down change the Pokémon as on the other sub-pages. **The family table**:
 `tools/paperwhite2/pokedex_evo.py` adds six members to `ARCID_POKEDEX_GRA` in the hack's build (`HACK_ARCHIVE_MEMBERS`,
 rebuilt when `res/pokemon/*/data.json`, the balls, the wild encounters, the town map or the Area icons change), after
-the archive's own 156 (the arts' included): 156, each species' family root as a u16 by species
+the archive's own 159 (the arts' included, the Habitat List bar's 156-158 last): 159, each species' family root as a u16 by species
 (SPECIES_NONE to Genesect, 1300 bytes: a child's parent is the first species whose evolutions name it), of which the
 page reads the one entry, then the tree from the root down through the game's own evolution data (`ARCID_EVOLUTIONS`,
-three stages); 157, the balls' 16 colours and their 4bpp tiles (416 bytes); 158, the sprites' middles (below); 159,
-160 and 161, Area's index, icons and box (below). Forms have no evolutions of their own (the
+three stages); 160, the balls' 16 colours and their 4bpp tiles (416 bytes); 161, the sprites' middles (below); 162,
+163 and 164, Area's index, icons and box (below). Forms have no evolutions of their own (the
 game reads them by species), so Burmy's and Wormadam's forms evolve as their species. About 3.2 KB of ov298.
 
 **Area** (`paperwhite2_pokedex_info_area.c`; `docs/paperwhite2/design/pokedex-area.md`): where the species is met in the
-wild, from the hack's encounter data. **The index** (member 159, `encounters.py`'s `area_index`, about 22 KB; `encounters.py
+wild, from the hack's encounter data. **The index** (member 162, `encounters.py`'s `area_index`, about 22 KB; `encounters.py
 area-index SPECIES...` prints the areas' terrains, the encounter areas without a town map place with the species met
 there, and a species' part): a header ("PARE", version 3), each species' block
 offset by its number, the town map's 85 places in its table's order (`res/town_map/order.json`: the zone, the area OBJ's
@@ -1764,10 +1800,10 @@ and one box, x 48-208, y 64-102), centred in its box (x 128, font 0's line from 
 `pokedex_info_area` art target, member 155 (`AREA_EMPTY_SCREEN`), sharing the Area art's characters (153, both
 screens' tiles) and palette (152, row 10), so only its screen is new; `PokedexInfoPanels_LoadArt` picks it for Area
 while the species has only the message. The page draws the sub-page before it loads the art and loads the art again
-as the Pokémon changes, so the background and the message change in the same VBlank. **The icons** (member 160,
+as the Pokémon changes, so the background and the message change in the same VBlank. **The icons** (member 163,
 `tools/paperwhite2/pokedex_area.py` from `res/paperwhite2/pokedex_art/area_icons.png`, 160 by 80, 25 slots of 32 by
 16: the seasons and an unused slot (the special marks' until the shake replaced them), the times, the weathers, the terrains grass, dark grass, cave floor, sand and
-bridge, then surf, puddle, fishing, walking and an unused slot; their transparent pixels show the art) are sub OBJs of
+bridge, then surf, puddle, fishing, walking and "any" (the Habitat List's, Habitat Dex above); their transparent pixels show the art) are sub OBJs of
 32 by 16 at their exact places, over the content window (BG priority 1), semi-transparent as the page's other OBJs so
 that its fades darken them: the type icons' cells (`ARCID_APP_MENU_COMMON`, the 1D 128 KB mapping's, centred), one
 character resource for all the icons (12.5 KB of sub OBJ VRAM: 25 icons, the unused slots packed clear so that they
@@ -1811,7 +1847,7 @@ not. **The current Pokémon's box** covers the head bar's right end (the blue th
 y 0-31, OBJs in front of the head bar (BG priority 0), made with the map and freed with it, so it shows and goes in the
 same VBlank. It is the user's art, `res/paperwhite2/pokedex_art/area_top_box.png` (a whole top screen with the box at
 x 129-255, y 0-31: a slanted left edge with a gold line, a light grid inside), which the build converts
-(`pokedex_area.py`'s `box_member`, `ARCID_POKEDEX_GRA` 161, `AREA_BOX_FILE`: its 16 colours and the 128 by 32's
+(`pokedex_area.py`'s `box_member`, `ARCID_POKEDEX_GRA` 164, `AREA_BOX_FILE`: its 16 colours and the 128 by 32's
 tiles; it fails on a pixel outside x 128-255, y 0-31 or more than 16 colours). Over it, right of the slant, the party
 icon (32 by 32 at x 156, its two frames animated as Evo's) and the species' name at x 190, y 8 in font 0 (font 1,
 y 10, for a name that would pass x 252), in the art's dark (11) with its light grey (6) as the shadow. The box is a

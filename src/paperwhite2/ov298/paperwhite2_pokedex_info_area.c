@@ -49,9 +49,9 @@
 
 // ARCID_POKEDEX_GRA's members that tools/paperwhite2/pokedex_evo.py adds after Evo's: the index, the icons and the
 // current Pokémon's box
-#define AREA_INDEX_FILE 159
-#define AREA_ICONS_FILE 160
-#define AREA_BOX_FILE 161
+#define AREA_INDEX_FILE 162
+#define AREA_ICONS_FILE 163
+#define AREA_BOX_FILE 164
 #define AREA_INDEX_MAGIC 0x45524150 // "PARE"
 #define AREA_INDEX_VERSION 3
 // A species' part of the index is at most this long, as encounters.py checks (AREA_BLOCK_MAX)

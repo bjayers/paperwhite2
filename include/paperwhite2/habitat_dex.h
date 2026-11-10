@@ -3,21 +3,25 @@
 
 #include "types.h"
 #include "app/pokedex_habitat_graphic.h"
+#include "gfl/clact.h"
 #include "gfl/heap.h"
 #include "gfl/msg.h"
 #include "save/pokedex_savedata.h"
+#include "system/game_data.h"
 
 // Paper White 2: the Habitat Dex, the Pokédex's Habitat List (src/ov303/pokedex_habitat.c) on the wild encounters'
-// data (docs/paperwhite2/encounters.md). Each area's Pokémon by one of its kinds of habitat (land, water, fishing) come
-// from the Habitat Dex's lists, which tools/paperwhite2/encounters.py writes from the encounter data beside the Habitat
-// List's areas, as the member after them: every Pokémon, not the original list's 30, in pages of 20, filtered by
-// method (tabs: all, or one of the kind's), season, time and weather, each "any" by default. The screen's text box
-// shows the tabs and the filters, which a touch changes. The map, the areas and the stamps stay the original's
+// data (docs/paperwhite2/encounters.md). Each area's Pokémon come from the Habitat Dex's lists, which
+// tools/paperwhite2/encounters.py writes from the encounter data beside the Habitat List's areas, as the member after
+// them: every Pokémon, not the original list's 30, in pages of the grid's 30 (6 by 5), by one method or all of them,
+// filtered by season, time and weather. The filter bar above the grid (the user's art, res/paperwhite2/pokedex_art/
+// habitat_bar.png) shows the methods the area has as the Area icons (the chosen one in colour, the others grey),
+// spread evenly over the top row, and the season, time and weather filters, each an icon that a touch cycles, "any"
+// among them. The map, the areas and the stamps stay the original's
 
 // The member after the Habitat List's areas (tools/data/habitat_data.py AREAS), its magic "PHDX" and version
 #define HABITAT_DEX_MEMBER 58
 #define HABITAT_DEX_MAGIC 0x58444850
-#define HABITAT_DEX_VERSION 1
+#define HABITAT_DEX_VERSION 2
 
 // An entry's flags: from an outbreak, with extra conditions the Pokédex can't tell, shaking grass's own species
 #define HABITAT_DEX_FLAG_OUTBREAK 1
@@ -38,6 +42,7 @@ typedef struct {
     u32 weather;
 } HabitatDexEntry;
 
+// The header; after the offsets, each area's walking terrain (a HABITAT_DEX_TERRAIN_*) as a byte, padded to 4 bytes
 typedef struct {
     u32 magic;
     u16 version;
@@ -45,6 +50,29 @@ typedef struct {
     // Each area's entries' offset from the start, and the end's
     u32 offsets[];
 } HabitatDexHeader;
+
+// An area's walking terrain, as encounters.py's AREA_TERRAINS
+enum {
+    HABITAT_DEX_TERRAIN_GRASS,
+    HABITAT_DEX_TERRAIN_CAVE_FLOOR,
+    HABITAT_DEX_TERRAIN_SAND,
+    HABITAT_DEX_TERRAIN_PUDDLE,
+    HABITAT_DEX_TERRAIN_BRIDGE,
+    HABITAT_DEX_TERRAIN_WALKING,
+    HABITAT_DEX_TERRAIN_COUNT,
+};
+
+// The methods of the bar's top row, in its order: all of them together (the list's first, always shown), walking
+// (grass, cave floor, sand or puddles, by the area's terrain), dark grass, surfing and fishing. No special methods
+// (shaking grass, dust clouds, bridge shadows, rippling water)
+enum {
+    HABITAT_DEX_METHOD_ALL,
+    HABITAT_DEX_METHOD_WALKING,
+    HABITAT_DEX_METHOD_DARK_GRASS,
+    HABITAT_DEX_METHOD_SURF,
+    HABITAT_DEX_METHOD_FISHING,
+    HABITAT_DEX_METHOD_COUNT,
+};
 
 // The filters: season, time and weather, each 0 for any, else 1 + its value
 enum {
@@ -54,51 +82,79 @@ enum {
     HABITAT_DEX_FILTER_COUNT,
 };
 
-// A page of the list: the original's cells that a touch reaches, in rows of POKEDEX_HABITAT_COLUMNS
-#define HABITAT_DEX_PAGE_SIZE 20
-// The most Pokémon of one list, and the most tabs: all and a kind's methods
+// What a touch on the bar changed
+enum {
+    HABITAT_DEX_TOUCH_NONE,
+    HABITAT_DEX_TOUCH_METHOD,
+    HABITAT_DEX_TOUCH_FILTER,
+};
+
+// A page of the list: the grid's cells, in rows of POKEDEX_HABITAT_COLUMNS
+#define HABITAT_DEX_PAGE_SIZE POKEDEX_HABITAT_ICON_COUNT
+// The most Pokémon of one list
 #define HABITAT_DEX_LIST_MAX 160
-#define HABITAT_DEX_TAB_MAX 4
+// The bar's icons: a top row's for each method, and the filters'
+#define HABITAT_DEX_BAR_ICONS (HABITAT_DEX_METHOD_COUNT + HABITAT_DEX_FILTER_COUNT)
 
 typedef struct {
     const HabitatDexHeader *data;
     MsgData *msgData;
-    // The chosen tab: 0 for all the kind's methods, else 1 + an index into the tabs' methods
-    u8 tab;
+    HeapID heapId;
+    // The chosen method, a HABITAT_DEX_METHOD_*, and the methods the area has, in the bar's order (all first)
+    u8 method;
+    u8 shownCount;
+    u8 shownMethods[HABITAT_DEX_METHOD_COUNT];
+    // The area's walking terrain, a HABITAT_DEX_TERRAIN_*
+    u8 terrain;
     u8 page;
     u8 pageCount;
-    u8 tabCount;
-    u8 tabMethods[HABITAT_DEX_TAB_MAX];
     u8 filters[HABITAT_DEX_FILTER_COUNT];
     // The seen Pokémon of the list, as the area's entries, and how many of the list the player hasn't seen
     u16 count;
     u16 unseen;
     const HabitatDexEntry *list[HABITAT_DEX_LIST_MAX];
-    // Where the text box's tabs and filters are, in pixels, for touches
-    u16 tabX[HABITAT_DEX_TAB_MAX + 1];
-    u16 filterX[HABITAT_DEX_FILTER_COUNT + 1];
+    // The bar: the Area icons' member (its palette rows, each icon's row and their tiles), their OBJ resources and
+    // actors, and whether the VBlank is to load the rows' colours
+    void *icons;
+    u32 iconChars;
+    u32 iconPalette;
+    u32 iconCellAnims;
+    ClActor *iconActors[HABITAT_DEX_BAR_ICONS];
+    BOOL iconRowsPending;
 } HabitatDex;
 
-// Reads the lists and the text, with every filter on any
+// Reads the lists and the text, with every filter on any and all the methods
 void PaperWhite2_HabitatDex_Init(HabitatDex *dex, HeapID heapId);
 void PaperWhite2_HabitatDex_Free(HabitatDex *dex);
-// Back to all the methods and the first page, for another area or kind of habitat
+// The bar, once the screen's graphics are made: its art on the list's BG above the grid, and its icons; the season
+// and time filters start on the player's season and time of day
+void PaperWhite2_HabitatDex_InitBar(HabitatDex *dex, PokedexHabitatGraphic *graphic);
+// The grid's cells on the list's BG (2), as the screen loads its BGs (pokedex_habitat_graphic.c)
+void PaperWhite2_HabitatDex_LoadGrid(void);
+// Before the screen's graphics go
+void PaperWhite2_HabitatDex_FreeBar(HabitatDex *dex);
+// In the VBlank: the icons' palette rows
+void PaperWhite2_HabitatDex_VBlank(HabitatDex *dex, PokedexHabitatGraphic *graphic);
+// Back to the first page, for another area or method
 void PaperWhite2_HabitatDex_Reset(HabitatDex *dex);
-// Builds the list of an area (its Habitat List file) by a kind of habitat (0 land, 1 water, 2 fishing), with the tabs
-// and the pages
-void PaperWhite2_HabitatDex_Fill(HabitatDex *dex, u32 file, u32 kind, PokeDexSave *pokedex);
+// Builds the list of an area (its Habitat List file) by the chosen method (all where the area hasn't it), with the
+// methods it has and the pages
+void PaperWhite2_HabitatDex_Fill(HabitatDex *dex, u32 file, PokeDexSave *pokedex);
+// The kind of habitat of the chosen method (0 land, 1 water, 2 fishing), for the grid's colours and the stamps; all
+// the methods' is the first kind that the area has
+u32 PaperWhite2_HabitatDex_GetKind(HabitatDex *dex);
 // The entry of a cell of the page, or NULL
 const HabitatDexEntry *PaperWhite2_HabitatDex_GetCell(HabitatDex *dex, u32 cell);
 // The Pokémon on the page
 u32 PaperWhite2_HabitatDex_GetPageCount(HabitatDex *dex);
 // Turns the page by a direction; FALSE at the end, or with one page. The caller fills the list again
 BOOL PaperWhite2_HabitatDex_TurnPage(HabitatDex *dex, int direction);
-// The next tab, after the last the first; FALSE with only one
-BOOL PaperWhite2_HabitatDex_NextTab(HabitatDex *dex);
-// Prints the tabs, the page and the filters in the screen's text box
+// The next or previous method that the area has, around; FALSE with only one
+BOOL PaperWhite2_HabitatDex_StepMethod(HabitatDex *dex, int direction);
+// Shows the bar: the methods' and the filters' icons, and the page
 void PaperWhite2_HabitatDex_Print(HabitatDex *dex, PokedexHabitatGraphic *graphic);
-// A touch on the text box: a tab chooses it, a filter takes its next value. TRUE when the list changes
-BOOL PaperWhite2_HabitatDex_Touch(HabitatDex *dex, u32 x, u32 y);
+// A touch on the bar: a method chooses it, a filter takes its next value. A HABITAT_DEX_TOUCH_*
+u32 PaperWhite2_HabitatDex_Touch(HabitatDex *dex, u32 x, u32 y);
 
 // Whether an area (its Habitat List file) has any Pokémon by a kind of habitat, whatever the filters
 BOOL PaperWhite2_HabitatDex_HasKind(HabitatDex *dex, u32 file, u32 kind);
@@ -106,9 +162,12 @@ BOOL PaperWhite2_HabitatDex_HasKind(HabitatDex *dex, u32 file, u32 kind);
 u32 PaperWhite2_HabitatDex_GetSpecies(HabitatDex *dex, u16 *species, u32 max);
 
 // In main: the list that the Pokédex's page browses after Info, which the Habitat List leaves and the Pokédex takes
-// once (PokedexCommon_LoadHabitatSpecies), in place of the original list's of the saved season
+// once (PokedexCommon_LoadHabitatSpecies), in place of the original list's of the saved season. Leaving it also has
+// the Info page open on its Area sub-page, once (PaperWhite2_HabitatDex_TakeInfoArea)
 void PaperWhite2_HabitatDex_SetInfoList(const u16 *species, u32 count);
 // The list, allocated, and its count; 0 when there is none
 u32 PaperWhite2_HabitatDex_TakeInfoList(u16 **list, HeapID heapId);
+// Whether the Info page opens on Area, as it does once after the Habitat List
+BOOL PaperWhite2_HabitatDex_TakeInfoArea(void);
 
 #endif // PAPERWHITE2_HABITAT_DEX_H

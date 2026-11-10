@@ -676,12 +676,13 @@ const SPRITE_SHEETS: SpriteSheet[] = [
     tool: "tools/paperwhite2/pokedex_area.py",
     width: 160,
     height: 80,
-    description: "The Pokédex Info page's Area icons: 25 slots of 32×16, five a row: the seasons (spring, summer, " +
+    description: "The Pokédex's Area and Habitat List icons: 25 slots of 32×16, five a row: the seasons (spring, summer, " +
       "autumn, winter) and an unused slot; the times (morning, day, evening, night, late night); the weathers (clear, rain, thunderstorm, snow, " +
-      "sandstorm); grass, dark grass, cave floor, sand, bridge; surf, puddle, fishing, walking and an unused slot. " +
-      "Transparent pixels show the page behind. Each icon's colors must fit one of four sub OBJ palette rows of 15, " +
-      "with every icon's very light grey copy (shown where a season, time or weather isn't met); the build packs " +
-      "them from this PNG.",
+      "sandstorm); grass, dark grass, cave floor, sand, bridge; surf, puddle, fishing, walking and \"any\" (the Habitat " +
+      "List's season, time or weather filter when it is off). " +
+      "Transparent pixels show the page behind. Each icon's colors must fit one of four OBJ palette rows of 15, " +
+      "with every icon's very light grey copy (shown where a season, time or weather isn't met, and for the Habitat " +
+      "List's methods not chosen); the build packs them from this PNG.",
   },
 ];
 

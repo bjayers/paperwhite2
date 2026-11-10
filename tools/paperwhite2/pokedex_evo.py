@@ -48,14 +48,15 @@ from tools.paperwhite2.pokedex_sprites import SpriteError, middles_member  # noq
 SPECIES = ROOT / "res" / "pokemon"
 ART = ROOT / "res" / "paperwhite2" / "pokedex_art"
 BALLS = ("evo_ball_caught.png", "evo_ball_seen.png", "evo_ball_unknown.png")
-# The archive's own members (the art's included, up to 155), then these, as EVO_FAMILY_FILE and EVO_BALLS_FILE in
+# The archive's own members (the art's included, up to 158), then these, as EVO_FAMILY_FILE and EVO_BALLS_FILE in
 # paperwhite2_pokedex_info_evo.c and SPRITE_MIDDLES_FILE in paperwhite2_pokedex_info.c
-ARCHIVE_MEMBERS = 156
+ARCHIVE_MEMBERS = 159
 FAMILY_MEMBER = ARCHIVE_MEMBERS
 BALLS_MEMBER = ARCHIVE_MEMBERS + 1
 MIDDLES_MEMBER = ARCHIVE_MEMBERS + 2
 # The Area sub-page's index (encounters.py's area_index), icons and box (pokedex_area.py), AREA_INDEX_FILE,
-# AREA_ICONS_FILE and AREA_BOX_FILE in paperwhite2_pokedex_info_area.c
+# AREA_ICONS_FILE and AREA_BOX_FILE in paperwhite2_pokedex_info_area.c (the icons' also ICONS_FILE in
+# paperwhite2_habitat_dex.c, the Habitat List's)
 AREA_INDEX_MEMBER = ARCHIVE_MEMBERS + 3
 AREA_ICONS_MEMBER = ARCHIVE_MEMBERS + 4
 AREA_BOX_MEMBER = ARCHIVE_MEMBERS + 5
@@ -145,7 +146,8 @@ def archive(source, output):
         raise EvoError(f"{source}: {len(files)} members, not the {ARCHIVE_MEMBERS} that the Evo members follow "
                        f"(change ARCHIVE_MEMBERS here, EVO_FAMILY_FILE and EVO_BALLS_FILE in "
                        f"paperwhite2_pokedex_info_evo.c, SPRITE_MIDDLES_FILE in paperwhite2_pokedex_info.c and "
-                       f"AREA_INDEX_FILE, AREA_ICONS_FILE and AREA_BOX_FILE in paperwhite2_pokedex_info_area.c)")
+                       f"AREA_INDEX_FILE, AREA_ICONS_FILE and AREA_BOX_FILE in paperwhite2_pokedex_info_area.c, and "
+                       f"ICONS_FILE in paperwhite2_habitat_dex.c)")
     files += [family_member(), balls_member(), middles_member(), area_index(), area_icons_member(),
               area_box_member()]
     output.parent.mkdir(parents=True, exist_ok=True)

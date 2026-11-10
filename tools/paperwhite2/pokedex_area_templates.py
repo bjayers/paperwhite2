@@ -22,6 +22,17 @@ pokedex_templates.py beside the other sub-pages' into the same ignored folder, a
 - area_icons_template.png: the icon sheet, 32 by 16 slots in a 16-colour starter palette; area_icons_guide.png: the
   same at 3x with each slot's name; area_glow_template.png: the highlight colours, three shades a row.
 
+And the Pokédex Habitat List's filter bar (the art target pokedex_habitat_bar, paperwhite2_habitat_dex.c's BAR_* and
+the places below), from the user's art (res/paperwhite2/pokedex_art/habitat_bar.png) and the Area icons:
+
+- habitat_bar_canvas.png: the bar (256 by 48, indexed) to draw over, with every place marked in dashes: the top row's
+  icons for 5 methods, the filters', the page arrows' (16 by 16) and the page's, and the stamp's;
+- habitat_bar_layouts.png: the bar as the screen shows it with 1 to 5 methods (a bar each, stacked): the methods
+  spread evenly over the top row's width, the first chosen in colour and the others grey, the filters on spring, day
+  and "any", and the arrows' and the page's places;
+- habitat_bar_guide.png: the bar at 3x with each count's icon places outlined (a colour each, labelled), the touch
+  areas' edges, the filters', the arrows', the page's and the stamp's.
+
     pokedex_area_templates.py OUT_DIR  (or through pokedex_templates.py, which calls write())
 """
 import json
@@ -83,14 +94,15 @@ BOX_X, BOX_Y, BOX_W, BOX_H = 128, 0, 128, 32
 BOX_ICON_X, BOX_ICON_Y = 156, 0
 BOX_NAME_X, BOX_NAME_Y, BOX_NAME_RIGHT = 190, 8, 252
 # The icons: (group, names), a row of the sheet each, 32 by 16 slots. Row 1's fifth slot (the special marks' until
-# 2026-11-09: a row whose special version applies now shakes its icon) and row 5's fifth are unused. The terrain icons
-# show a walking row's terrain, "walking" when its areas' terrains differ.
+# 2026-11-09: a row whose special version applies now shakes its icon) is unused; row 5's fifth is "any", the Habitat
+# List's season, time or weather filter when it is off. The terrain icons show a walking row's terrain, "walking" when
+# its areas' terrains differ.
 ICONS = [
     ("season", ["spring", "summer", "autumn", "winter", None]),
     ("time", ["morning", "day", "evening", "night", "late_night"]),
     ("weather", ["clear", "rain", "thunderstorm", "snow", "sandstorm"]),
     ("terrain", ["grass", "dark_grass", "cave_floor", "sand", "bridge"]),
-    ("method", ["surf", "puddle", "fishing", "walking", None]),
+    ("method", ["surf", "puddle", "fishing", "walking", "any"]),
 ]
 # The icons' starter palette (index 0 transparent)
 ICON_COLORS = [(0, 0, 0), (24, 24, 32), (255, 255, 255), (170, 170, 185), (100, 100, 115), (255, 150, 200),
@@ -483,12 +495,122 @@ def icons(out, small):
     glow.indexed(out / "area_glow_template.png")
 
 
+# The Habitat List's filter bar (paperwhite2_habitat_dex.c): its art, its places, and the page arrows, centred
+# ARROW_OFFSET either side of the page (pokedex_habitat_graphic.c's POKEDEX_HABITAT_OBJ_SEASON_LEFT and _RIGHT)
+HABITAT_C = ROOT / "src/paperwhite2/ov303/paperwhite2_habitat_dex.c"
+HABITAT_BAR = ROOT / "res/paperwhite2/pokedex_art/habitat_bar.png"
+ARROW_OFFSET, ARROW_SIZE = 24, 16
+STAMP_X, STAMP_Y, STAMP_SIZE = 224, 20, 64
+# Each method count's outline colour in the guide, 1 to 5
+COUNT_COLORS = [(230, 60, 60), (240, 150, 30), (60, 170, 60), (40, 120, 230), (170, 70, 210)]
+# The sample filters of the layouts: spring, day and "any" (sheet slots)
+SAMPLE_FILTERS = (0, 6, 24)
+# The methods' sheet slots: walking (all), grass, dark grass, surf, fishing
+METHOD_ICONS = (23, 15, 16, 20, 22)
+
+
+def habitat_places():
+    """The bar's places from the C file: (top-row icon lefts for 1 to 5 methods, icon y of each row, filter lefts,
+    page centre, row height, top row width)."""
+    d = pt.defines(HABITAT_C)
+    width, row, inset = d["TOP_WIDTH"], d["ROW_HEIGHT"], d["ICON_INSET_Y"]
+    tops = {n: [width * (2 * i + 1) // (2 * n) - ICON_W // 2 for i in range(n)] for n in range(1, 6)}
+    filters = [d["FILTER_X"] + d["FILTER_PITCH"] * i for i in range(3)]
+    return tops, (inset, row + inset), filters, d["PAGE_X"], row, width
+
+
+def habitat_art():
+    """The user's bar art as RGB, transparent as None."""
+    from tools.paperwhite2.screen_art import read_png
+    w, h, px = read_png(HABITAT_BAR)
+    art = Rgb(w, h)
+    art.px = list(px)
+    return art
+
+
+def sheet_icons():
+    from tools.paperwhite2.pokedex_area import read_icons
+    icons, greys = read_icons()
+
+    def rgb(icon):
+        out = Rgb(ICON_W, ICON_H)
+        out.px = [None if c is None else tuple(v * 255 // 31 for v in c) for c in icon]
+        return out
+    return [rgb(i) for i in icons], [rgb(i) for i in greys]
+
+
+def habitat_bar(out, font):
+    tops, (top_y, bottom_y), filters, page_x, row, width = habitat_places()
+    art = habitat_art()
+    icons_rgb, greys_rgb = sheet_icons()
+    mark = (255, 0, 255)
+
+    # The canvas: every place dashed, 5 methods' icons
+    canvas = Rgb(art.w, art.h)
+    canvas.blit(art, 0, 0)
+    for x in tops[5]:
+        canvas.outline(x, top_y, ICON_W, ICON_H, mark, dashed=True)
+    for x in filters:
+        canvas.outline(x, bottom_y, ICON_W, ICON_H, mark, dashed=True)
+    for x in (page_x - ARROW_OFFSET, page_x + ARROW_OFFSET):
+        canvas.outline(x - ARROW_SIZE // 2, row + row // 2 - ARROW_SIZE // 2, ARROW_SIZE, ARROW_SIZE, mark, dashed=True)
+    canvas.outline(page_x - 16, bottom_y, 32, 16, mark, dashed=True)
+    canvas.outline(STAMP_X - STAMP_SIZE // 2, 0, STAMP_SIZE, art.h, mark, dashed=True)
+    canvas.indexed(out / "habitat_bar_canvas.png")
+
+    # The layouts, 1 to 5 methods
+    layouts = Rgb(art.w, art.h * 5 + 4 * 4, (255, 0, 0))
+    for n in range(1, 6):
+        bar = Rgb(art.w, art.h, (0, 0, 0))
+        bar.blit(art, 0, 0)
+        for i, x in enumerate(tops[n]):
+            bar.blit((icons_rgb if i == 0 else greys_rgb)[METHOD_ICONS[i]], x, top_y)
+        for x, icon in zip(filters, SAMPLE_FILTERS):
+            bar.blit(icons_rgb[icon], x, bottom_y)
+        for x in (page_x - ARROW_OFFSET, page_x + ARROW_OFFSET):
+            bar.outline(x - ARROW_SIZE // 2, row + row // 2 - ARROW_SIZE // 2, ARROW_SIZE, ARROW_SIZE, mark)
+        bar.text(font, "1/3", page_x, bottom_y, align="center")
+        layouts.blit(bar, 0, (n - 1) * (art.h + 4))
+    layouts.rgba(out / "habitat_bar_layouts.png")
+
+    # The guide at 3x: each count's places, the touch areas' edges, the rest
+    k = 3
+    guide = Rgb(art.w * k, art.h * k + 60, (40, 40, 48))
+    base = Rgb(art.w, art.h, (0, 0, 0))
+    base.blit(art, 0, 0)
+    guide.blit(base.scaled(k), 0, 0)
+    for n in range(1, 6):
+        c = COUNT_COLORS[n - 1]
+        for i, x in enumerate(tops[n]):
+            guide.outline(x * k + n - 1, (top_y - 1) * k + n - 1, ICON_W * k - 2 * (n - 1), ICON_H * k + 6 - 2 * (n - 1),
+                          c)
+        for i in range(1, n):
+            edge = width * i // n * k
+            for y in range(0, row * k, 2):
+                guide.put(edge, y + (n - 1) * 3 % 6, c)
+        guide.text(font, f"{n}", 4 + (n - 1) * 60, art.h * k + 6, color=c, shadow=None)
+        guide.text(font, "method" + ("" if n == 1 else "s"), 14 + (n - 1) * 60, art.h * k + 6, color=c, shadow=None)
+    for x in filters:
+        guide.outline(x * k, bottom_y * k, ICON_W * k, ICON_H * k, (255, 255, 255))
+    for x in (page_x - ARROW_OFFSET, page_x + ARROW_OFFSET):
+        guide.outline((x - ARROW_SIZE // 2) * k, (row + row // 2 - ARROW_SIZE // 2) * k, ARROW_SIZE * k,
+                      ARROW_SIZE * k, (255, 255, 255))
+    guide.outline((page_x - 16) * k, bottom_y * k, 32 * k, 16 * k, (255, 220, 60))
+    guide.outline((STAMP_X - STAMP_SIZE // 2) * k, 0, STAMP_SIZE * k, art.h * k, (255, 220, 60), dashed=True)
+    guide.text(font, "season, time, weather filters (white); arrows (white); page and stamp (gold); top row: dashes are",
+               4, art.h * k + 26, color=(220, 220, 230), shadow=None)
+    guide.text(font, "the touch areas' edges for each count, x * n / " + str(width), 4, art.h * k + 42,
+               color=(220, 220, 230), shadow=None)
+    guide.rgba(out / "habitat_bar_guide.png")
+
+
 def write(out, font, small):
-    """Writes the Area templates into out (pokedex_templates.py's folder)."""
+    """Writes the Area templates, and the Habitat List bar's, into out (pokedex_templates.py's folder)."""
     top_screens(out, font)
     bar = tabs(out)
     rows = bottom(out, font, small, bar)
     icons(out, small)
+    habitat_bar(out, font)
     for key, special, grey, levels, tier, rate in rows:
         shake = (" (shakes, grey)" if grey else " (shakes)") if special else ""
         print(f"area: {SAMPLE} {key}{shake}: {levels}, {tier}, {rate}")

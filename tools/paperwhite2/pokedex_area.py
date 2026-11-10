@@ -12,14 +12,15 @@ The source is res/paperwhite2/pokedex_art/area_icons.png, 160 by 80: 25 slots of
 (spring, summer, autumn, winter, then an unused slot, the special marks' until 2026-11-09: a row whose special version
 applies now shakes its icon), the times (morning, day, evening, night, late night), the weather groups (clear, rain,
 thunderstorm, snow, sandstorm), the walking terrains grass, dark grass, cave floor, sand, bridge, and surf, puddle,
-fishing, walking (where a row's terrains differ), then an unused slot (ICON_* in
-src/paperwhite2/ov298/paperwhite2_pokedex_info_area.c). Its colours count, not its indices: each is rounded to the
+fishing, walking (where a row's terrains differ), then "any", which the Habitat List shows for a season, time or
+weather filter that is off (ICON_* in src/paperwhite2/ov298/paperwhite2_pokedex_info_area.c and
+src/paperwhite2/ov303/paperwhite2_habitat_dex.c). Its colours count, not its indices: each is rounded to the
 DS's 5 bits an axis, and transparent pixels (alpha below 128) show the page's art behind.
 
 The page shows each icon as a sub engine OBJ of 32 by 16 at its exact place, its clear pixels (index 0) showing
 the page's art, so each icon's colours must fit one OBJ palette row of 15: the icons are packed whole into ICON_ROWS
 rows (the page's sub OBJ rows 14, 15, 4 and 3, sIconObjRows in the C file), each icon in a row that has all of its
-colours. The unused slots (UNUSED_SLOTS) are packed clear, so whatever is drawn in them takes no colours. A season, time or
+colours. The unused slot (UNUSED_SLOTS) is packed clear, so whatever is drawn in it takes no colours. A season, time or
 weather the Pokémon isn't met in shows greyed out, and so does a row's icon where it is met only by the row's special
 version: a second copy of every icon in very light greys, each colour's grey by its luminance (GREY_LEVELS of them,
 from GREY_DARK to GREY_LIGHT of 31, just below the panels' 29, so that a grey icon is barely there: disabled, not a
@@ -56,8 +57,8 @@ SCREEN_WIDTH, SCREEN_HEIGHT = 256, 192
 ICON_WIDTH, ICON_HEIGHT = 32, 16
 ICONS_ACROSS, ICONS_DOWN = 5, 5
 ICON_COUNT = ICONS_ACROSS * ICONS_DOWN
-# The slots the page doesn't show: the special marks' old one, and the last
-UNUSED_SLOTS = (4, 24)
+# The slot no screen shows: the special marks' old one (the last, the outbreak badge's until 2026-11-09, is "any")
+UNUSED_SLOTS = (4,)
 TILE = 8
 TILES_PER_ICON = (ICON_WIDTH // TILE) * (ICON_HEIGHT // TILE)
 ICON_ROWS = 4
@@ -70,7 +71,7 @@ PANEL = (29, 29, 29)
 # The slots' names, by rows (ICON_* in the C file)
 ICON_NAMES = ("spring", "summer", "autumn", "winter", "unused", "morning", "day", "evening", "night",
               "late night", "clear", "rain", "thunderstorm", "snow", "sandstorm", "grass", "dark grass", "cave floor",
-              "sand", "bridge", "surf", "puddle", "fishing", "walking", "unused")
+              "sand", "bridge", "surf", "puddle", "fishing", "walking", "any")
 
 
 class IconError(Exception):

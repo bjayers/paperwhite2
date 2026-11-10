@@ -34,8 +34,8 @@
 
 // ARCID_POKEDEX_GRA's members that tools/paperwhite2/pokedex_evo.py adds after the art's: the family roots (a u16 for
 // each species by its number) and the tree's balls (their 16 colors, then each ball's 2 by 2 tiles of 4bpp)
-#define EVO_FAMILY_FILE 156
-#define EVO_BALLS_FILE 157
+#define EVO_FAMILY_FILE 159
+#define EVO_BALLS_FILE 160
 #define EVO_BALL_SIZE 16
 #define EVO_BALL_TILES 2
 #define EVO_PALETTE_SIZE 0x20
