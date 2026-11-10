@@ -137,14 +137,14 @@ static const u8 sFilterIcons[HABITAT_DEX_FILTER_COUNT] = { ICON_SPRING, ICON_MOR
 #define WINDOW_MAIN 0
 // Right of each filter's icon, a column of dots, one for each of its values in the order a touch takes them (any at
 // the top), the chosen one red and the others grey, as the user drew them (2026-11-10): DOT_WIDTH by DOT_HEIGHT px,
-// DOT_PITCH px apart, DOT_OFFSET_X px from the icon's left, centred on y DOT_CENTER_Y (6 dots y 23-33), in the
+// DOT_PITCH px apart, DOT_OFFSET_X px from the icon's left, from y DOT_TOP_Y down (6 dots y 24-34, 5 y 24-32), in the
 // window's tile rows from DOT_TILE_ROW, which the VBlank sends with the icons (the font's palette row: 3 red, 2
 // grey)
 #define DOT_WIDTH 3
 #define DOT_HEIGHT 1
 #define DOT_PITCH 2
 #define DOT_OFFSET_X 33
-#define DOT_CENTER_Y 28
+#define DOT_TOP_Y 24
 #define DOT_AREA_Y 16
 #define DOT_AREA_HEIGHT 24
 #define DOT_TILE_ROW (DOT_AREA_Y / 8)
@@ -615,7 +615,7 @@ static void HabitatDex_ShowIcon(HabitatDex *dex, u32 slot, u32 icon, BOOL grey, 
 
 // A filter's dots under its icon, whose left edge is at x
 static void HabitatDex_DrawDots(GFLBitmap *bitmap, int x, u32 count, u32 chosen) {
-    int top = DOT_CENTER_Y - (int)((count - 1) * DOT_PITCH + DOT_HEIGHT) / 2;
+    int top = DOT_TOP_Y;
     u32 i;
 
     GFL_BitmapFillArea(bitmap, x + DOT_OFFSET_X, DOT_AREA_Y, DOT_WIDTH, DOT_AREA_HEIGHT, 0);

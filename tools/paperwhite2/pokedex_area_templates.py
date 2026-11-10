@@ -519,14 +519,13 @@ DOT_CHOSEN, DOT_OTHER = (197, 0, 0), (164, 164, 172)
 
 def habitat_dots(bar, filters, chosen=(0, 0, 0)):
     """Draws the filters' dots into bar, as paperwhite2_habitat_dex.c's HabitatDex_DrawDots: each filter's values'
-    dots in a column right of its icon, centred on DOT_CENTER_Y, the chosen one's yellow; returns each column's
+    dots in a column right of its icon, from DOT_TOP_Y down, the chosen one's red; returns each column's
     (left, top, width, height)."""
     d = pt.defines(HABITAT_C)
-    width, height, pitch, offset, centre = (d["DOT_WIDTH"], d["DOT_HEIGHT"], d["DOT_PITCH"], d["DOT_OFFSET_X"],
-                                             d["DOT_CENTER_Y"])
+    width, height, pitch, offset, top = (d["DOT_WIDTH"], d["DOT_HEIGHT"], d["DOT_PITCH"], d["DOT_OFFSET_X"],
+                                             d["DOT_TOP_Y"])
     rows = []
     for x, count, value in zip(filters, FILTER_COUNTS, chosen):
-        top = centre - ((count - 1) * pitch + height) // 2
         for i in range(count):
             bar.fill(x + offset, top + i * pitch, width, height, DOT_CHOSEN if i == value else DOT_OTHER)
         rows.append((x + offset, top, width, (count - 1) * pitch + height))
