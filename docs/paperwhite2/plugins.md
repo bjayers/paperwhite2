@@ -1329,12 +1329,12 @@ redesigned on 2026-11-09 with the Area icons:
   shadows, rippling water). Its **bottom row** has the season, time and weather filters at x 8, 48 and 88, y 28, each
   icon cycling "any" (the sheet's last slot) and its values as it's touched. Every filter starts on "any" whenever an
   area loads, as the screen opens and on each change of area (`PaperWhite2_HabitatDex_NewArea`): the list is the
-  area's Pokémon under every condition (the DexNav is the one for the current conditions). Under each filter's icon a
-  row of **page dots**, one for each state it cycles through in that order ("any" first: 5 for the season, 6 for the
-  time and the weather), the current one yellow and the others grey (the font's palette row, colours 7 and 2): 3 by 3
-  px, 2 px apart, centred under the 32 px icon at y 41-43, in the dark band between the art's panel (to y 39) and the
-  grid box's frame (y 46). They are pixels of the text window (BG 0, `HabitatDex_DrawDots`), whose tile row 5 the VBlank
-  sends with the icons (`HabitatDex_LoadDots`). Then the page arrows (the season arrows' actors, at x 136 and 184) and
+  area's Pokémon under every condition (the DexNav is the one for the current conditions). The filters' icons are at
+  y 24, and right of each a column of **page dots**, one for each state it cycles through in that order ("any" at the
+  top: 5 for the season, 6 for the time and the weather), the current one yellow and the others grey (the font's
+  palette row, colours 7 and 2), as the user drew them (2026-11-10): 3 by 1 px, 2 px apart, 33 px right of the icon's
+  left (x 41, 81, 121), centred on y 30 (six at y 25-35, five at 26-34). They are pixels of the text window (BG 0,
+  `HabitatDex_DrawDots`), whose tile rows 3 and 4 the VBlank sends with the icons (`HabitatDex_LoadDots`). Then the page arrows (the season arrows' actors, at x 136 and 184) and
   the page between them, centred at x 160; the stamp stays at x 224, y 20. Left, Right and Select step through the
   methods.
 - **An empty grid says why:** where the chosen method's list (only the Pokémon the player has seen) is empty, the
