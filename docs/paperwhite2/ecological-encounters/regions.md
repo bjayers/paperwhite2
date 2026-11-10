@@ -21,13 +21,14 @@ Aspertia City, Route 19, Floccesy Town and Ranch, Route 20, Pledge Grove, Virban
 
 ## 2. Castelia and the desert
 
-Castelia City and its sewers, Route 4 (White 2's Desert Route and Black 2's City Route), the Desert Resort and Relic
-Castle.
+Castelia City and its sewers, Route 4 (White 2's Desert Route and Black 2's City Route), the Desert Resort, Relic
+Castle and Relic Passage (the desert cave from the sewers to Driftveil, joining Relic Castle in part).
 
 - **Feel:** a dense city (Manhattan) and its underbelly, then a sudden desert of ruins and sandstorms.
 - **Maps:** `castelia_city` (the park, zone `castelia_city_31`), `castelia_sewers` to `_5`, `route_4` (Black 2's City
   Route), `route_4_2` (White 2's Desert Route, zone `route_4_16`; the zone `route_4_2` is a house), `desert_resort`,
-  `desert_resort_2`, `relic_castle` to `_8` (all used: the zones relic_castle, 2, 16, 17, 19 and 21 to 23).
+  `desert_resort_2`, `relic_castle` to `_8` (all used: the zones relic_castle, 2, 16, 17, 19 and 21 to 23),
+  `relic_passage` to `_3`.
 
 ## 3. Southeast Unova
 
@@ -98,12 +99,12 @@ Routes 13, 21 and 22, Undella Town and Bay, Humilau City and Seaside Cave.
 ## The Rest
 
 Special places that don't fit their regions, taken one at a time: Reversal Mountain (Exterior, Black 2, White 2),
-Lentimas Town, Twist Mountain, the Strange House, Clay Tunnel, the Underground Ruins, Relic Passage, P2 Laboratory
+Lentimas Town, Twist Mountain, the Strange House, Clay Tunnel, the Underground Ruins, P2 Laboratory
 with Routes 17 and 18, the Nature Preserve and the Regi chambers. Routes 17 and 18 feel marine, almost tropical, but
 more distant and unknown than the east coast (Tropius, Exeggcute and the like).
 
 - **Maps:** `reversal_mountain` to `_13` (1 the outside, 2–7 Black 2's Damp Caves, 8–13 White 2's Fiery Caves),
-  `strange_house` to `_10`, `clay_tunnel` to `_3`, `underground_ruins` to `_3`, `relic_passage` to `_3`,
+  `strange_house` to `_10`, `clay_tunnel` to `_3`, `underground_ruins` to `_3`,
   `twist_mountain` to `_4`, `p2_laboratory`, `route_17`, `route_18`, `nature_preserve`, `iron_chamber`,
   `iceberg_chamber`, `rock_peak_chamber`.
 
