@@ -1756,7 +1756,7 @@ VBlank); the icon by walking's terrain (grass, cave floor, sand, puddle, bridge 
 where only the special version applies but on a bridge (whose areas have only shadows); the levels in font 0 at x 86,
 the row's y, the rarity or range ("Common - Rare") in font 1 at x 157, 4 below (the longest, "Uncommon - Very
 rare", 90 px, ends at x 246, inside the box's 249); the labels "Time" (y 134) and "Weather" (y 151) in font 1
-at x 17; the times' icons at y 129 and the weathers' at y 146, both at x 61, 97, 133, 169 and 205, or "All times of
+at x 15; the times' icons at y 129 and the weathers' at y 146, both at x 66, 102, 138, 174 and 210, or "All times of
 day" or "All weathers" at x 64 on the label's line when it is met in all five, grey where it isn't met. A species never
 met in the wild shows "Not found in the wild", and one met only off the map "Not found on the map"
 (`PokedexInfoArea_IsEmpty`), both on the user's other Area background, `info_area_empty.png` (2026-11-09: the tab bar

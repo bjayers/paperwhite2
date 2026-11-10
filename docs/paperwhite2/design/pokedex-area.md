@@ -294,8 +294,8 @@ The details are in `docs/paperwhite2/plugins.md` (Pokédex, Area). Where the bui
   the methods' box (y 46-120): rows at y 47/66/85/104 (4), 56/75/94 (3), 66/85 (2), 75 (1), each row's left mark,
   icon and right mark at x 13, 29 and 61 at the row's own y (the mockup's yellow boxes); levels x 88 at the row's y
   (font 0), rarity x 159, y + 4 (font 1) (2026-11-09 later: x 86 and 157, and ranges with spaces, "Common - Rare";
-  the longest, "Uncommon - Very rare", ends at x 246, inside the box's right edge, 249). "Time" and "Weather" at x 17, y 134 and 151 (font 1); times' icons y 129,
-  weathers' y 146, both at x 61, 97, 133, 169, 205; "All times of day" / "All weathers" at x 64 on the label's line;
+  the longest, "Uncommon - Very rare", ends at x 246, inside the box's right edge, 249). "Time" and "Weather" at x 15, y 134 and 151 (font 1); times' icons y 129,
+  weathers' y 146, both at x 66, 102, 138, 174, 210; "All times of day" / "All weathers" at x 64 on the label's line;
   "Not found in the wild" centred at y 76. The bottom box (y 128-162 inside) is the same height as before, moved up
   2 px like the others. `pokedex_area_templates.py` writes `area_reference*.png` (the art with the slots and text where
   the page puts them, 1 to 4 rows, with and without the tiles' grid) from the C file's places.

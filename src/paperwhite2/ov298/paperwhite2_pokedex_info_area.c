@@ -221,15 +221,16 @@ static const u8 sIconObjRows[ICON_PALETTE_ROWS] = {
 // 128-162) the times' and weathers' rows, each a label in font 1 and its icons (or "All ..." where they would all be
 // colored). The icons and the text are where the user's mockup has them (area-example.png of 2026-11-09, the icons'
 // top left corners: the seasons' x 52 + 40 i, y 24, the times' and weathers' x 61 + 36 i, y 131 and 148), 2 px higher,
-// as the art's boxes moved up 2 px after it
+// as the art's boxes moved up 2 px after it; then the times' and weathers' labels 2 px left and their icons 5 px right
+// (the user, 2026-11-09)
 static const u8 sSeasonIconX[AREA_SEASON_COUNT] = { 52, 92, 132, 172 };
-static const u8 sConditionIconX[AREA_TIME_COUNT] = { 61, 97, 133, 169, 205 };
+static const u8 sConditionIconX[AREA_TIME_COUNT] = { 66, 102, 138, 174, 210 };
 #define SEASONS_Y 22
 #define TIMES_Y 129
 #define WEATHERS_Y 146
 #define ALL_SEASONS_X 128
 #define ALL_SEASONS_Y 27
-#define LABEL_X 17
+#define LABEL_X 15
 #define TIMES_LABEL_Y 134
 #define WEATHERS_LABEL_Y 151
 // "All times of day" and "All weathers", on their labels' lines where the icons start
