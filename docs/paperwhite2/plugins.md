@@ -1327,10 +1327,22 @@ redesigned on 2026-11-09 with the Area icons:
   its encounter areas with walking Pokémon); dark grass; surfing; fishing. The chosen method is in colour, the others
   their grey copies; a method the area hasn't isn't shown. No special methods (shaking grass, dust clouds, bridge
   shadows, rippling water). Its **bottom row** has the season, time and weather filters at x 8, 48 and 88, y 28, each
-  icon cycling its values and "any" (the sheet's last slot) as it's touched; season and time start on the player's
-  (`PaperWhite2_GetCurrentSeason`, `GetRealTimeDayPeriod`) each time the screen opens, weather on "any". Then the page
-  arrows (the season arrows' actors, at x 136 and 184) and the page between them, centred at x 160; the stamp stays
-  at x 224, y 20. Left, Right and Select step through the methods.
+  icon cycling "any" (the sheet's last slot) and its values as it's touched. Every filter starts on "any" whenever an
+  area loads, as the screen opens and on each change of area (`PaperWhite2_HabitatDex_NewArea`): the list is the
+  area's Pokémon under every condition (the DexNav is the one for the current conditions). Under each filter's icon a
+  row of **page dots**, one for each state it cycles through in that order ("any" first: 5 for the season, 6 for the
+  time and the weather), the current one yellow and the others grey (the font's palette row, colours 7 and 2): 3 by 3
+  px, 2 px apart, centred under the 32 px icon at y 41-43, in the dark band between the art's panel (to y 39) and the
+  grid box's frame (y 46). They are pixels of the text window (BG 0, `HabitatDex_DrawDots`), whose tile row 5 the VBlank
+  sends with the icons (`HabitatDex_LoadDots`). Then the page arrows (the season arrows' actors, at x 136 and 184) and
+  the page between them, centred at x 160; the stamp stays at x 224, y 20. Left, Right and Select step through the
+  methods.
+- **An empty grid says why:** where the chosen method's list (only the Pokémon the player has seen) is empty, the
+  grid's boxes are hidden under the gaps' colour (the grid's first character, `HabitatDex_SetGridShown`) and a note
+  is centred in the box (y 100, white): "Undiscovered" where the method and filters have Pokémon but none seen (Route
+  20's fishing), "None under these conditions" where the filters leave none (only walking in winter in the Moor of
+  Icirrus and Icirrus City, 2026-11-10). A list with some Pokémon unseen shows only the seen ones and gives no hint
+  of the others.
 - **The grid's colours** follow the chosen method's kind of habitat as the tabs' did (`PaperWhite2_HabitatDex_GetKind`:
   green for all, walking and dark grass, blue for surfing, dark blue for fishing); the stamps still count the
   original list. The touch bar's tabs and their "new" marks are hidden.

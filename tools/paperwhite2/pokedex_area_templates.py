@@ -26,12 +26,13 @@ And the Pokédex Habitat List's filter bar (the art target pokedex_habitat_bar, 
 the places below), from the user's art (res/paperwhite2/pokedex_art/habitat_bar.png) and the Area icons:
 
 - habitat_bar_canvas.png: the bar (256 by 48, indexed) to draw over, with every place marked in dashes: the top row's
-  icons for 5 methods, the filters', the page arrows' (16 by 16) and the page's, and the stamp's;
+  icons for 5 methods, the filters', the page arrows' (16 by 16) and the page's, and the stamp's; and the filters'
+  dots under their icons (one for each value, the first yellow), which the art leaves room for;
 - habitat_bar_layouts.png: the bar as the screen shows it with 1 to 5 methods (a bar each, stacked): the methods
   spread evenly over the top row's width, the first chosen in colour and the others grey, the filters on spring, day
-  and "any", and the arrows' and the page's places;
+  and "any" with their dots, and the arrows' and the page's places;
 - habitat_bar_guide.png: the bar at 3x with each count's icon places outlined (a colour each, labelled), the touch
-  areas' edges, the filters', the arrows', the page's and the stamp's.
+  areas' edges, the filters' and their dots', the arrows', the page's and the stamp's.
 
     pokedex_area_templates.py OUT_DIR  (or through pokedex_templates.py, which calls write())
 """
@@ -507,6 +508,26 @@ COUNT_COLORS = [(230, 60, 60), (240, 150, 30), (60, 170, 60), (40, 120, 230), (1
 SAMPLE_FILTERS = (0, 6, 24)
 # The methods' sheet slots: walking (all), grass, dark grass, surf, fishing
 METHOD_ICONS = (23, 15, 16, 20, 22)
+# The filters' values, any first (the C file's sFilterCounts), the layouts' samples' (spring, day, any), and the dots'
+# colours (the font's palette row, 7 and 2)
+FILTER_COUNTS = (5, 6, 6)
+SAMPLE_VALUES = (1, 2, 0)
+DOT_CHOSEN, DOT_OTHER = (232, 224, 0), (160, 160, 168)
+
+
+def habitat_dots(bar, filters, chosen=(0, 0, 0)):
+    """Draws the filters' dots into bar, as paperwhite2_habitat_dex.c's HabitatDex_DrawDots: each filter's values'
+    dots centred under its icon, the chosen one's yellow; returns each row's (left, top, width, height)."""
+    d = pt.defines(HABITAT_C)
+    size, gap, top = d["DOT_SIZE"], d["DOT_GAP"], d["DOT_Y"]
+    rows = []
+    for x, count, value in zip(filters, FILTER_COUNTS, chosen):
+        width = count * size + (count - 1) * gap
+        left = x + (ICON_W - width) // 2
+        for i in range(count):
+            bar.fill(left + i * (size + gap), top, size, size, DOT_CHOSEN if i == value else DOT_OTHER)
+        rows.append((left, top, width, size))
+    return rows
 
 
 def habitat_places():
@@ -556,6 +577,7 @@ def habitat_bar(out, font):
         canvas.outline(x - ARROW_SIZE // 2, row + row // 2 - ARROW_SIZE // 2, ARROW_SIZE, ARROW_SIZE, mark, dashed=True)
     canvas.outline(page_x - 16, bottom_y, 32, 16, mark, dashed=True)
     canvas.outline(STAMP_X - STAMP_SIZE // 2, 0, STAMP_SIZE, art.h, mark, dashed=True)
+    habitat_dots(canvas, filters)
     canvas.indexed(out / "habitat_bar_canvas.png")
 
     # The layouts, 1 to 5 methods
@@ -567,6 +589,7 @@ def habitat_bar(out, font):
             bar.blit((icons_rgb if i == 0 else greys_rgb)[METHOD_ICONS[i]], x, top_y)
         for x, icon in zip(filters, SAMPLE_FILTERS):
             bar.blit(icons_rgb[icon], x, bottom_y)
+        habitat_dots(bar, filters, SAMPLE_VALUES)
         for x in (page_x - ARROW_OFFSET, page_x + ARROW_OFFSET):
             bar.outline(x - ARROW_SIZE // 2, row + row // 2 - ARROW_SIZE // 2, ARROW_SIZE, ARROW_SIZE, mark)
         bar.text(font, "1/3", page_x, bottom_y, align="center")
@@ -578,7 +601,10 @@ def habitat_bar(out, font):
     guide = Rgb(art.w * k, art.h * k + 60, (40, 40, 48))
     base = Rgb(art.w, art.h, (0, 0, 0))
     base.blit(art, 0, 0)
+    dots = habitat_dots(base, filters)
     guide.blit(base.scaled(k), 0, 0)
+    for x, y, w, h in dots:
+        guide.outline(x * k - 1, y * k - 1, w * k + 2, h * k + 2, (255, 255, 255), dashed=True)
     for n in range(1, 6):
         c = COUNT_COLORS[n - 1]
         for i, x in enumerate(tops[n]):
@@ -597,7 +623,7 @@ def habitat_bar(out, font):
                       ARROW_SIZE * k, (255, 255, 255))
     guide.outline((page_x - 16) * k, bottom_y * k, 32 * k, 16 * k, (255, 220, 60))
     guide.outline((STAMP_X - STAMP_SIZE // 2) * k, 0, STAMP_SIZE * k, art.h * k, (255, 220, 60), dashed=True)
-    guide.text(font, "season, time, weather filters (white); arrows (white); page and stamp (gold); top row: dashes are",
+    guide.text(font, "filters and their dots (white); arrows (white); page and stamp (gold); top row: dashes are",
                4, art.h * k + 26, color=(220, 220, 230), shadow=None)
     guide.text(font, f"the touch areas' edges for each count, (x - {left}) * n / {width}", 4, art.h * k + 42,
                color=(220, 220, 230), shadow=None)

@@ -6,6 +6,8 @@
 #include "gfl/arc.h"
 #include "gfl/arc_util.h"
 #include "gfl/bg_sys.h"
+#include "gfl/bmp.h"
+#include "gfl/bmpwin.h"
 #include "gfl/clact.h"
 #include "gfl/heap.h"
 #include "gfl/msg.h"
@@ -13,7 +15,6 @@
 #include "nitro/hw.h"
 #include "nitro/mi.h"
 #include "paperwhite2/habitat_dex.h"
-#include "paperwhite2/season.h"
 #include "system/app_menu_common.h"
 #include "system/palanm.h"
 #include "system/printsys.h"
@@ -129,13 +130,31 @@ static const u8 sFilterIcons[HABITAT_DEX_FILTER_COUNT] = { ICON_SPRING, ICON_MOR
 #define PAGE_WIDTH 32
 #define LINE_HEIGHT 16
 #define COLOR_PLAIN PRINT_COLOR(1, 2, 0)
+// The grid's note: white with a dark shadow, on any of the grid's colours
+#define COLOR_NOTE PRINT_COLOR(15, 1, 0)
 // The window's (POKEDEX_HABITAT_WIN_MAIN), which covers the main screen from its corner
 #define WINDOW_MAIN 0
+// Under each filter's icon, a dot for each of its values in the order a touch takes them (any first), the chosen one
+// yellow and the others grey: DOT_SIZE px square, DOT_GAP px apart, centred under the icon at y DOT_Y, in the
+// window's tile row DOT_TILE_ROW, which the VBlank sends with the icons (the font's palette row: 7 yellow, 2 grey)
+#define DOT_SIZE 3
+#define DOT_GAP 2
+#define DOT_Y 41
+#define DOT_TILE_ROW (DOT_Y / 8)
+#define DOT_COLOR_CHOSEN 7
+#define DOT_COLOR_OTHER 2
+// Where the grid is, a note on why it is empty: centred across the box, in the middle of its height
+#define NOTE_LEFT 16
+#define NOTE_WIDTH 224
+#define NOTE_Y 100
 
 static const HabitatDexEntry *HabitatDex_GetEntries(HabitatDex *dex, u32 file, u32 *count);
 static BOOL HabitatDex_Matches(HabitatDex *dex, const HabitatDexEntry *entry);
 static BOOL HabitatDex_IsListed(HabitatDex *dex, u32 method, const HabitatDexEntry *entry);
 static void HabitatDex_ShowIcon(HabitatDex *dex, u32 slot, u32 icon, BOOL grey, int x, int y);
+static void HabitatDex_SetGridShown(HabitatDex *dex, BOOL shown);
+static void HabitatDex_DrawDots(GFLBitmap *bitmap, int x, u32 count, u32 chosen);
+static void HabitatDex_LoadDots(PokedexHabitatGraphic *graphic);
 
 void PaperWhite2_HabitatDex_Init(HabitatDex *dex, HeapID heapId) {
     MI_CpuFill8(dex, 0, sizeof(HabitatDex));
@@ -157,12 +176,12 @@ void PaperWhite2_HabitatDex_Free(HabitatDex *dex) {
 
 void PaperWhite2_HabitatDex_InitBar(HabitatDex *dex, PokedexHabitatGraphic *graphic) {
     ArcTool *arc = GFL_ArcSysCreateFileHandle(ARCID_POKEDEX_GRA, dex->heapId);
-    u8 season = PaperWhite2_GetCurrentSeason(graphic->gameData);
     ClActorSetup setup;
     u32 i;
 
-    dex->filters[HABITAT_DEX_FILTER_SEASON] = season + 1;
-    dex->filters[HABITAT_DEX_FILTER_TIME] = GetRealTimeDayPeriod(season) + 1;
+    PaperWhite2_HabitatDex_NewArea(dex);
+    dex->gridHidden = FALSE;
+    dex->note = HABITAT_DEX_NOTE_NONE;
 
     // The art, its screen's entries moved to its characters, and its colours in the palette fade's buffer too
     GFL_BGSysLoadArcNCGRStatic(arc, BAR_CHARS_FILE, BAR_BG, BAR_CHAR_OFFSET, 0, FALSE, dex->heapId);
@@ -210,6 +229,10 @@ void PaperWhite2_HabitatDex_FreeBar(HabitatDex *dex) {
 void PaperWhite2_HabitatDex_VBlank(HabitatDex *dex, PokedexHabitatGraphic *graphic) {
     u32 i;
 
+    if (dex->dotsPending) {
+        HabitatDex_LoadDots(graphic);
+        dex->dotsPending = FALSE;
+    }
     if (!dex->iconRowsPending) {
         return;
     }
@@ -222,6 +245,16 @@ void PaperWhite2_HabitatDex_VBlank(HabitatDex *dex, PokedexHabitatGraphic *graph
 }
 
 void PaperWhite2_HabitatDex_Reset(HabitatDex *dex) {
+    dex->page = 0;
+}
+
+// The Habitat List shows the area under every condition: each filter starts on any
+void PaperWhite2_HabitatDex_NewArea(HabitatDex *dex) {
+    u32 i;
+
+    for (i = 0; i < HABITAT_DEX_FILTER_COUNT; i++) {
+        dex->filters[i] = 0;
+    }
     dex->page = 0;
 }
 
@@ -334,6 +367,16 @@ void PaperWhite2_HabitatDex_Fill(HabitatDex *dex, u32 file, PokeDexSave *pokedex
     if (dex->page >= dex->pageCount) {
         dex->page = dex->pageCount - 1;
     }
+    // An empty list says why in place of the grid: the Pokémon are all unseen, or none comes under the filters
+    dex->note = HABITAT_DEX_NOTE_NONE;
+    if (dex->count == 0 && dex->unseen != 0) {
+        dex->note = HABITAT_DEX_NOTE_UNDISCOVERED;
+    } else if (dex->count == 0 &&
+               (dex->filters[HABITAT_DEX_FILTER_SEASON] != 0 || dex->filters[HABITAT_DEX_FILTER_TIME] != 0 ||
+                dex->filters[HABITAT_DEX_FILTER_WEATHER] != 0)) {
+        dex->note = HABITAT_DEX_NOTE_NO_MATCH;
+    }
+    HabitatDex_SetGridShown(dex, dex->note == HABITAT_DEX_NOTE_NONE);
 }
 
 u32 PaperWhite2_HabitatDex_GetKind(HabitatDex *dex) {
@@ -431,6 +474,8 @@ BOOL PaperWhite2_HabitatDex_StepMethod(HabitatDex *dex, int direction) {
 #define COLOR_GAP 2
 #define COLOR_SHADE 3
 #define COLOR_BOX 4
+// A tile's row of the gaps' colour
+#define GRID_GAP_ROW 0x22222222
 
 // The colour of the grid at x, y
 static u32 HabitatDex_GetGridColor(int x, int y) {
@@ -462,13 +507,16 @@ static u32 HabitatDex_GetGridColor(int x, int y) {
 }
 
 void PaperWhite2_HabitatDex_LoadGrid(void) {
-    u32 *pixels =
-        GFL_HeapAllocate(HEAPID_POKEDEX_HABITAT, GRID_TILES * TILE_SIZE, FALSE, "paperwhite2_habitat_dex.c", __LINE__);
+    u32 *pixels = GFL_HeapAllocate(HEAPID_POKEDEX_HABITAT, (GRID_TILES + 1) * TILE_SIZE, FALSE,
+                                   "paperwhite2_habitat_dex.c", __LINE__);
     u16 *entries = GFL_HeapAllocate(HEAPID_POKEDEX_HABITAT, GRID_TILES * sizeof(u16), FALSE,
                                     "paperwhite2_habitat_dex.c", __LINE__);
-    u32 count = 0;
+    u32 count = 1;
     u32 tile;
 
+    // The first character is the gaps' colour alone, which hides the grid (HabitatDex_SetGridShown), so there is room
+    // for one more than the tiles
+    MI_CpuFill32(pixels, GRID_GAP_ROW, TILE_SIZE);
     for (tile = 0; tile < GRID_TILES; tile++) {
         u32 *rows = &pixels[count * TILE_ROWS];
         int left = (GRID_TILE_X + tile % GRID_TILES_ACROSS) * 8;
@@ -507,6 +555,21 @@ void PaperWhite2_HabitatDex_LoadGrid(void) {
     GFL_HeapFree(pixels);
 }
 
+// Hides the grid under its gaps' colour (its first character), or draws it again
+static void HabitatDex_SetGridShown(HabitatDex *dex, BOOL shown) {
+    if (shown == !dex->gridHidden) {
+        return;
+    }
+    if (shown) {
+        PaperWhite2_HabitatDex_LoadGrid();
+    } else {
+        GFL_BGSysFillScrArea(BAR_BG, GRID_CHAR_OFFSET, GRID_TILE_X, GRID_TILE_Y, GRID_TILES_ACROSS, GRID_TILES_DOWN,
+                             GRID_PALETTE);
+        GFL_BGSysQueueScrLoad(BAR_BG);
+    }
+    dex->gridHidden = !shown;
+}
+
 // ------------------------------------------------------------------------------------------------ The bar
 
 // Shows an icon (its grey copy's if grey) in one of the bar's OBJs, with its top left corner at x, y: its place in the
@@ -532,7 +595,30 @@ static void HabitatDex_ShowIcon(HabitatDex *dex, u32 slot, u32 icon, BOOL grey, 
     ClActor_SetVisible(actor, TRUE);
 }
 
+// A filter's dots under its icon, whose left edge is at x
+static void HabitatDex_DrawDots(GFLBitmap *bitmap, int x, u32 count, u32 chosen) {
+    int left = x + (ICON_WIDTH - (int)(count * DOT_SIZE + (count - 1) * DOT_GAP)) / 2;
+    u32 i;
+
+    GFL_BitmapFillArea(bitmap, x, DOT_Y, ICON_WIDTH, DOT_SIZE, 0);
+    for (i = 0; i < count; i++) {
+        GFL_BitmapFillArea(bitmap, left + i * (DOT_SIZE + DOT_GAP), DOT_Y, DOT_SIZE, DOT_SIZE,
+                           i == chosen ? DOT_COLOR_CHOSEN : DOT_COLOR_OTHER);
+    }
+}
+
+// The dots' tile row of the window, from its bitmap to its characters
+static void HabitatDex_LoadDots(PokedexHabitatGraphic *graphic) {
+    BmpWin *window = graphic->windows[POKEDEX_HABITAT_WIN_MAIN];
+    u32 across = BmpWin_GetSizeX(window);
+
+    GFL_BGSysLoadChar(BmpWin_GetBGIndex(window),
+                      GFL_BitmapGetPixelData(BmpWin_GetBitmap(window)) + DOT_TILE_ROW * across * TILE_SIZE,
+                      across * TILE_SIZE, BmpWin_GetCharPos(window) + DOT_TILE_ROW * across);
+}
+
 void PaperWhite2_HabitatDex_Print(HabitatDex *dex, PokedexHabitatGraphic *graphic) {
+    GFLBitmap *bitmap = BmpWin_GetBitmap(graphic->windows[POKEDEX_HABITAT_WIN_MAIN]);
     u32 i;
 
     // The methods, the chosen one in colour, spread evenly over the top row's width
@@ -556,7 +642,8 @@ void PaperWhite2_HabitatDex_Print(HabitatDex *dex, PokedexHabitatGraphic *graphi
         HabitatDex_ShowIcon(dex, HABITAT_DEX_METHOD_COUNT + i, icon, FALSE, FILTER_X + FILTER_PITCH * i,
                             ROW_HEIGHT + ICON_INSET_Y);
     }
-    // The page between the arrows
+    // The page between the arrows, and the grid's note cleared, both sent with the page's place
+    GFL_BitmapFillArea(bitmap, NOTE_LEFT, NOTE_Y, NOTE_WIDTH, LINE_HEIGHT, 0);
     PokedexHabitatGraphic_ClearArea(WINDOW_MAIN, graphic, PAGE_X - PAGE_WIDTH / 2, ROW_HEIGHT + ICON_INSET_Y,
                                     PAGE_WIDTH, LINE_HEIGHT);
     if (dex->pageCount > 1) {
@@ -575,6 +662,22 @@ void PaperWhite2_HabitatDex_Print(HabitatDex *dex, PokedexHabitatGraphic *graphi
         GFL_WordSetSystemFree(wordSet);
         GFL_StrBufFree(text);
     }
+    // The note where the grid is empty
+    if (dex->note != HABITAT_DEX_NOTE_NONE) {
+        StrBuf *note = GFL_MsgDataLoadStrbufNew(dex->msgData, dex->note == HABITAT_DEX_NOTE_UNDISCOVERED
+                                                                  ? Dexnav_Text_Undiscovered
+                                                                  : Dexnav_Text_NoneUnderConditions);
+        u32 width = GFL_FontGetBlockWidth(note, graphic->font, 0);
+
+        PokedexHabitatGraphic_Print(WINDOW_MAIN, note, graphic, NOTE_LEFT + (NOTE_WIDTH - width) / 2, NOTE_Y, width,
+                                    LINE_HEIGHT, COLOR_NOTE);
+        GFL_StrBufFree(note);
+    }
+    // The filters' dots, sent in the VBlank with their icons
+    for (i = 0; i < HABITAT_DEX_FILTER_COUNT; i++) {
+        HabitatDex_DrawDots(bitmap, FILTER_X + FILTER_PITCH * i, sFilterCounts[i], dex->filters[i]);
+    }
+    dex->dotsPending = TRUE;
 }
 
 u32 PaperWhite2_HabitatDex_Touch(HabitatDex *dex, u32 x, u32 y) {
