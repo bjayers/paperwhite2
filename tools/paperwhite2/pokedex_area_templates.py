@@ -531,13 +531,13 @@ def habitat_dots(bar, filters, chosen=(0, 0, 0)):
 
 
 def habitat_places():
-    """The bar's places from the C file: (top-row icon lefts for 1 to 5 methods, icon y of each row, filter lefts,
-    page centre, row height, top row's left and width)."""
+    """The bar's places from the C file: (top-row icon lefts for 1 to 5 methods, the top row's icon y, the filters'
+    icon y and the page's y, filter lefts, page centre, row height, top row's left and width)."""
     d = pt.defines(HABITAT_C)
     left, width, row, inset = d["TOP_LEFT"], d["TOP_WIDTH"], d["ROW_HEIGHT"], d["ICON_INSET_Y"]
     tops = {n: [left + width * (2 * i + 1) // (2 * n) - ICON_W // 2 for i in range(n)] for n in range(1, 6)}
     filters = [d["FILTER_X"] + d["FILTER_PITCH"] * i for i in range(3)]
-    return tops, (inset, row + inset), filters, d["PAGE_X"], row, (left, width)
+    return tops, (inset, d["FILTER_Y"], row + inset), filters, d["PAGE_X"], row, (left, width)
 
 
 def habitat_art():
@@ -561,7 +561,7 @@ def sheet_icons():
 
 
 def habitat_bar(out, font):
-    tops, (top_y, bottom_y), filters, page_x, row, (left, width) = habitat_places()
+    tops, (top_y, bottom_y, page_y), filters, page_x, row, (left, width) = habitat_places()
     art = habitat_art()
     icons_rgb, greys_rgb = sheet_icons()
     mark = (255, 0, 255)
@@ -575,7 +575,7 @@ def habitat_bar(out, font):
         canvas.outline(x, bottom_y, ICON_W, ICON_H, mark, dashed=True)
     for x in (page_x - ARROW_OFFSET, page_x + ARROW_OFFSET):
         canvas.outline(x - ARROW_SIZE // 2, row + row // 2 - ARROW_SIZE // 2, ARROW_SIZE, ARROW_SIZE, mark, dashed=True)
-    canvas.outline(page_x - 16, bottom_y, 32, 16, mark, dashed=True)
+    canvas.outline(page_x - 16, page_y, 32, 16, mark, dashed=True)
     canvas.outline(STAMP_X - STAMP_SIZE // 2, 0, STAMP_SIZE, art.h, mark, dashed=True)
     habitat_dots(canvas, filters)
     canvas.indexed(out / "habitat_bar_canvas.png")
@@ -592,7 +592,7 @@ def habitat_bar(out, font):
         habitat_dots(bar, filters, SAMPLE_VALUES)
         for x in (page_x - ARROW_OFFSET, page_x + ARROW_OFFSET):
             bar.outline(x - ARROW_SIZE // 2, row + row // 2 - ARROW_SIZE // 2, ARROW_SIZE, ARROW_SIZE, mark)
-        bar.text(font, "1/3", page_x, bottom_y, align="center")
+        bar.text(font, "1/3", page_x, page_y, align="center")
         layouts.blit(bar, 0, (n - 1) * (art.h + 4))
     layouts.rgba(out / "habitat_bar_layouts.png")
 

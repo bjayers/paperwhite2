@@ -117,14 +117,16 @@ static const u8 sFilterIcons[HABITAT_DEX_FILTER_COUNT] = { ICON_SPRING, ICON_MOR
 // y 4) holds the methods the area has, spread evenly over x TOP_LEFT to TOP_LEFT + TOP_WIDTH (8 px clear of the
 // screen's left edge, as the bottom row, and of the stamp's x 192): the i-th of n centred at
 // TOP_LEFT + TOP_WIDTH * (2i + 1) / 2n, and a touch at x belongs to the ((x - TOP_LEFT) * n / TOP_WIDTH)-th. The
-// bottom row (y 24-47, the icons at y 28) holds the season, time and weather filters at FILTER_X + FILTER_PITCH i, then
-// the page arrows (the list's actors, pokedex_habitat_graphic.c) and the page between them, centred at PAGE_X. The
-// stamp shows to the right of both, centred at x 224, y 24
+// bottom row (y 24-47, the filters' icons at y 24, clear of their dots at y 41, the user's choice) holds the season,
+// time and weather filters at FILTER_X + FILTER_PITCH i, then the page arrows (the list's actors,
+// pokedex_habitat_graphic.c) and the page between them, centred at PAGE_X. The stamp shows to the right of both,
+// centred at x 224, y 24
 #define TOP_LEFT 8
 #define TOP_WIDTH 176
 #define ROW_HEIGHT 24
 #define ICON_INSET_Y 4
 #define FILTER_X 8
+#define FILTER_Y 24
 #define FILTER_PITCH 40
 #define PAGE_X 160
 #define PAGE_WIDTH 32
@@ -639,8 +641,7 @@ void PaperWhite2_HabitatDex_Print(HabitatDex *dex, PokedexHabitatGraphic *graphi
     for (i = 0; i < HABITAT_DEX_FILTER_COUNT; i++) {
         u32 icon = dex->filters[i] == 0 ? ICON_ANY : sFilterIcons[i] + dex->filters[i] - 1;
 
-        HabitatDex_ShowIcon(dex, HABITAT_DEX_METHOD_COUNT + i, icon, FALSE, FILTER_X + FILTER_PITCH * i,
-                            ROW_HEIGHT + ICON_INSET_Y);
+        HabitatDex_ShowIcon(dex, HABITAT_DEX_METHOD_COUNT + i, icon, FALSE, FILTER_X + FILTER_PITCH * i, FILTER_Y);
     }
     // The page between the arrows, and the grid's note cleared, both sent with the page's place
     GFL_BitmapFillArea(bitmap, NOTE_LEFT, NOTE_Y, NOTE_WIDTH, LINE_HEIGHT, 0);
