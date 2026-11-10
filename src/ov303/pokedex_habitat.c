@@ -1052,7 +1052,8 @@ static void PokedexHabitat_SeqChangeArea(PokedexHabitatWork *wk) {
         wk->season = PokedexHabitatSave_GetSeason(wk->habitat);
         wk->type = wk->chosenType;
 #ifdef PAPERWHITE2
-        PaperWhite2_HabitatDex_Reset(&wk->dex);
+        // Paper White 2: another area starts on its first page, every filter on any
+        PaperWhite2_HabitatDex_NewArea(&wk->dex);
 #endif
         if (wk->action == ACTION_UP) {
             wk->area--;

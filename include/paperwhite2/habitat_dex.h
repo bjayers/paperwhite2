@@ -104,6 +104,14 @@ enum {
 #define HABITAT_DEX_CELL_HEIGHT (HABITAT_DEX_ROW_HEIGHT - 2 * HABITAT_DEX_CELL_INSET)
 // The most Pokémon of one list
 #define HABITAT_DEX_LIST_MAX 160
+// Why the grid is empty, said in its place: none (it isn't, or the area has no Pokémon), every Pokémon that the
+// method and the filters list unseen, or none under the filters
+enum {
+    HABITAT_DEX_NOTE_NONE,
+    HABITAT_DEX_NOTE_UNDISCOVERED,
+    HABITAT_DEX_NOTE_NO_MATCH,
+};
+
 // The bar's icons: a top row's for each method, and the filters'
 #define HABITAT_DEX_BAR_ICONS (HABITAT_DEX_METHOD_COUNT + HABITAT_DEX_FILTER_COUNT)
 
@@ -124,6 +132,9 @@ typedef struct {
     u16 count;
     u16 unseen;
     const HabitatDexEntry *list[HABITAT_DEX_LIST_MAX];
+    // Why the list is empty (a HABITAT_DEX_NOTE_*), and whether the grid is hidden for it
+    u8 note;
+    BOOL gridHidden;
     // The bar: the Area icons' member (its palette rows, each icon's row and their tiles), their OBJ resources and
     // actors, and whether the VBlank is to load the rows' colours
     void *icons;
@@ -132,24 +143,28 @@ typedef struct {
     u32 iconCellAnims;
     ClActor *iconActors[HABITAT_DEX_BAR_ICONS];
     BOOL iconRowsPending;
+    // Whether the VBlank is to send the filters' dots
+    BOOL dotsPending;
 } HabitatDex;
 
 // Reads the lists and the text, with every filter on any and all the methods
 void PaperWhite2_HabitatDex_Init(HabitatDex *dex, HeapID heapId);
 void PaperWhite2_HabitatDex_Free(HabitatDex *dex);
-// The bar, once the screen's graphics are made: its art on the list's BG above the grid, and its icons; the season
-// and time filters start on the player's season and time of day
+// The bar, once the screen's graphics are made: its art on the list's BG above the grid, and its icons; every filter
+// starts on any
 void PaperWhite2_HabitatDex_InitBar(HabitatDex *dex, PokedexHabitatGraphic *graphic);
 // The grid's cells on the list's BG (2), as the screen loads its BGs (pokedex_habitat_graphic.c)
 void PaperWhite2_HabitatDex_LoadGrid(void);
 // Before the screen's graphics go
 void PaperWhite2_HabitatDex_FreeBar(HabitatDex *dex);
-// In the VBlank: the icons' palette rows
+// In the VBlank: the icons' palette rows, and the filters' dots
 void PaperWhite2_HabitatDex_VBlank(HabitatDex *dex, PokedexHabitatGraphic *graphic);
-// Back to the first page, for another area or method
+// Back to the first page, for another method
 void PaperWhite2_HabitatDex_Reset(HabitatDex *dex);
+// For another area: the first page, and every filter on any
+void PaperWhite2_HabitatDex_NewArea(HabitatDex *dex);
 // Builds the list of an area (its Habitat List file) by the chosen method (all where the area hasn't it), with the
-// methods it has and the pages
+// methods it has and the pages; an empty list hides the grid for a note (HABITAT_DEX_NOTE_*)
 void PaperWhite2_HabitatDex_Fill(HabitatDex *dex, u32 file, PokeDexSave *pokedex);
 // The kind of habitat of the chosen method (0 land, 1 water, 2 fishing), for the grid's colours and the stamps; all
 // the methods' is the first kind that the area has
