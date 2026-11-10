@@ -46,6 +46,21 @@ export const WEATHERS: { id: string; label: string }[] = [
   { id: "WEATHER_FLUTTER", label: "Flutter" },
 ];
 
+/** The weather groups (include/paperwhite2/weather_groups.h, which tests/weather-groups.test.ts checks this against): a
+ * habitat's weather matches any weather of its weathers' groups, as the game's conditions compile it. */
+export const WEATHER_GROUPS: Record<string, string[]> = {
+  clear: ["WEATHER_SUNNY", "WEATHER_TINT_9", "WEATHER_TINT_10", "WEATHER_TINT_11", "WEATHER_TINT_13", "WEATHER_TINT_14"],
+  rain: ["WEATHER_RAIN", "WEATHER_GUSTY_RAIN"],
+  thunderstorm: ["WEATHER_THUNDERSTORM"],
+  snow: ["WEATHER_FLAKE", "WEATHER_BLIZZARD", "WEATHER_FLUTTER", "WEATHER_DIAMOND_DUST"],
+  sandstorm: ["WEATHER_SANDSTORM", "WEATHER_SANDSTORM_2"],
+};
+
+/** A weather's group, or the weather itself if it is in none. */
+export function weatherGroup(weather: string): string {
+  return Object.keys(WEATHER_GROUPS).find((g) => WEATHER_GROUPS[g].includes(weather)) ?? weather;
+}
+
 export interface RarityTier {
   id: string;
   name: string;

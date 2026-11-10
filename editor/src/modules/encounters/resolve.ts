@@ -13,7 +13,7 @@
 //   range.
 // The habitats' extra conditions (`when`) need the game's state, so the preview doesn't evaluate them.
 
-import { SEASONS, type Area, type AreaGroup, type Battles, type Context, type EncounterSettings, type Habitat, type Method,
+import { SEASONS, weatherGroup, type Area, type AreaGroup, type Battles, type Context, type EncounterSettings, type Habitat, type Method,
   type Season, type Slot, type SpeciesEncounters } from "./model.ts";
 
 /** What the evaluation reads: the draft's species, groups and areas. */
@@ -101,7 +101,7 @@ export function namesArea(h: Habitat, area: string, groups: AreaGroup[]): boolea
 }
 
 export function slotMatches(slot: Slot | null, method: Method, ctx: Context): slot is Slot {
-  return !!slot && slot.methods.includes(method) && slot.times.includes(ctx.time) && (!slot.weather.length || slot.weather.includes(ctx.weather));
+  return !!slot && slot.methods.includes(method) && slot.times.includes(ctx.time) && (!slot.weather.length || slot.weather.some((w) => weatherGroup(w) === weatherGroup(ctx.weather)));
 }
 
 type Match = Omit<Odds, "share">;
