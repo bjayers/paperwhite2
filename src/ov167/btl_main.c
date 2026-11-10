@@ -53,6 +53,9 @@
 #include "system/text_speed.h"
 #include "system/time_icon.h"
 #include "text/system/ability_handlers_btl_main.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/battle_weather.h"
+#endif
 
 // The name shown for a link opponent whose name is hidden: the other version's
 #ifdef BLACK2
@@ -216,6 +219,11 @@ BOOL BtlMain_ProcMain(GameProc *proc, u32 *state, void *param, void *work) {
     if (mainModule->mainFunc(mainModule)) {
         if (!IsRecPlayMode(mainModule)) {
             result = BtlMain_DetermineResult(mainModule);
+#ifdef PAPERWHITE2
+            // Paper White 2: the weather the battle ends with, for the field (paperwhite2_battle_weather.c). The
+            // server's field holds it, and a machine without the server has none
+            PaperWhite2_BattleWeather_SetBattleEnd(mainModule->server != NULL ? GetFieldWeather() : BTL_WEATHER_NONE);
+#endif
             BtlMain_StoreRecData(mainModule);
             BtlMain_StoreResultStats(mainModule);
             BtlMain_StorePartiesToSetup(mainModule);

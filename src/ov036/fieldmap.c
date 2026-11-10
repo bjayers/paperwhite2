@@ -92,6 +92,7 @@
 #include "system/zone_weather.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/ambients.h"
+#include "paperwhite2/battle_weather.h"
 #include "paperwhite2/camera_areas.h"
 #include "paperwhite2/field.h"
 #include "paperwhite2/following_field.h"
@@ -531,6 +532,13 @@ u32 FieldRoutine_Run(GameSystem *gsys, Field *field) {
     if (!GSYS_GetEventRunningFlag(gsys)) {
         field->ctrlVTable->update(field, &field->playerPos);
         EvTime_Update(field->gameData);
+#ifdef PAPERWHITE2
+        // Paper White 2: a battle's weather whose time is up gives the zone its own back, with the transition of a
+        // zone change (paperwhite2_battle_weather.c)
+        if (PaperWhite2_BattleWeather_HasExpired()) {
+            Field_SwapWeather(field, Field_GetPlayerStateZoneID(field));
+        }
+#endif
     }
     if (field->placeName != NULL) {
         PlaceName_Main(field->placeName);

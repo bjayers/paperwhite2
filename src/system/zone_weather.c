@@ -14,6 +14,7 @@
 #include "system/version.h"
 
 #ifdef PAPERWHITE2
+#include "paperwhite2/battle_weather.h"
 #include "paperwhite2/season.h"
 #endif
 #ifdef PAPERWHITE2_DEBUG_MENU
@@ -61,6 +62,13 @@ u8 GetWeatherAll(GameSystem *gsys, u32 zoneId) {
     if (weather != WEATHER_NONE) {
         return weather;
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the weather a battle here ended with, for a while (paperwhite2_battle_weather.c)
+    weather = PaperWhite2_BattleWeather_Get(zoneId);
+    if (weather != WEATHER_NONE) {
+        return weather;
+    }
+#endif
     weather = GetEntralinkWeatherIfApplicable(gsys, gameData, zoneId);
     if (weather != WEATHER_NONE) {
         return weather;
