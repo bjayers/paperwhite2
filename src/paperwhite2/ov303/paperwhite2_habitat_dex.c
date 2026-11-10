@@ -136,13 +136,20 @@ static const u8 sFilterIcons[HABITAT_DEX_FILTER_COUNT] = { ICON_SPRING, ICON_MOR
 #define COLOR_NOTE PRINT_COLOR(15, 1, 0)
 // The window's (POKEDEX_HABITAT_WIN_MAIN), which covers the main screen from its corner
 #define WINDOW_MAIN 0
-// Under each filter's icon, a dot for each of its values in the order a touch takes them (any first), the chosen one
-// yellow and the others grey: DOT_SIZE px square, DOT_GAP px apart, centred under the icon at y DOT_Y, in the
-// window's tile row DOT_TILE_ROW, which the VBlank sends with the icons (the font's palette row: 7 yellow, 2 grey)
-#define DOT_SIZE 3
-#define DOT_GAP 2
-#define DOT_Y 41
-#define DOT_TILE_ROW (DOT_Y / 8)
+// Right of each filter's icon, a column of dots, one for each of its values in the order a touch takes them (any at
+// the top), the chosen one yellow and the others grey, as the user drew them (2026-11-10): DOT_WIDTH by DOT_HEIGHT px,
+// DOT_PITCH px apart, DOT_OFFSET_X px from the icon's left, centred on y DOT_CENTER_Y (6 dots y 25-35), in the
+// window's tile rows from DOT_TILE_ROW, which the VBlank sends with the icons (the font's palette row: 7 yellow, 2
+// grey)
+#define DOT_WIDTH 3
+#define DOT_HEIGHT 1
+#define DOT_PITCH 2
+#define DOT_OFFSET_X 33
+#define DOT_CENTER_Y 30
+#define DOT_AREA_Y 24
+#define DOT_AREA_HEIGHT 16
+#define DOT_TILE_ROW (DOT_AREA_Y / 8)
+#define DOT_TILE_ROWS (DOT_AREA_HEIGHT / 8)
 #define DOT_COLOR_CHOSEN 7
 #define DOT_COLOR_OTHER 2
 // Where the grid is, a note on why it is empty: centred across the box, in the middle of its height
@@ -599,24 +606,24 @@ static void HabitatDex_ShowIcon(HabitatDex *dex, u32 slot, u32 icon, BOOL grey, 
 
 // A filter's dots under its icon, whose left edge is at x
 static void HabitatDex_DrawDots(GFLBitmap *bitmap, int x, u32 count, u32 chosen) {
-    int left = x + (ICON_WIDTH - (int)(count * DOT_SIZE + (count - 1) * DOT_GAP)) / 2;
+    int top = DOT_CENTER_Y - (int)((count - 1) * DOT_PITCH + DOT_HEIGHT) / 2;
     u32 i;
 
-    GFL_BitmapFillArea(bitmap, x, DOT_Y, ICON_WIDTH, DOT_SIZE, 0);
+    GFL_BitmapFillArea(bitmap, x + DOT_OFFSET_X, DOT_AREA_Y, DOT_WIDTH, DOT_AREA_HEIGHT, 0);
     for (i = 0; i < count; i++) {
-        GFL_BitmapFillArea(bitmap, left + i * (DOT_SIZE + DOT_GAP), DOT_Y, DOT_SIZE, DOT_SIZE,
+        GFL_BitmapFillArea(bitmap, x + DOT_OFFSET_X, top + i * DOT_PITCH, DOT_WIDTH, DOT_HEIGHT,
                            i == chosen ? DOT_COLOR_CHOSEN : DOT_COLOR_OTHER);
     }
 }
 
-// The dots' tile row of the window, from its bitmap to its characters
+// The dots' tile rows of the window, from its bitmap to its characters
 static void HabitatDex_LoadDots(PokedexHabitatGraphic *graphic) {
     BmpWin *window = graphic->windows[POKEDEX_HABITAT_WIN_MAIN];
     u32 across = BmpWin_GetSizeX(window);
 
     GFL_BGSysLoadChar(BmpWin_GetBGIndex(window),
                       GFL_BitmapGetPixelData(BmpWin_GetBitmap(window)) + DOT_TILE_ROW * across * TILE_SIZE,
-                      across * TILE_SIZE, BmpWin_GetCharPos(window) + DOT_TILE_ROW * across);
+                      DOT_TILE_ROWS * across * TILE_SIZE, BmpWin_GetCharPos(window) + DOT_TILE_ROW * across);
 }
 
 void PaperWhite2_HabitatDex_Print(HabitatDex *dex, PokedexHabitatGraphic *graphic) {
