@@ -117,7 +117,7 @@ static const u8 sFilterIcons[HABITAT_DEX_FILTER_COUNT] = { ICON_SPRING, ICON_MOR
 // y 4) holds the methods the area has, spread evenly over x TOP_LEFT to TOP_LEFT + TOP_WIDTH (8 px clear of the
 // screen's left edge, as the bottom row, and of the stamp's x 192): the i-th of n centred at
 // TOP_LEFT + TOP_WIDTH * (2i + 1) / 2n, and a touch at x belongs to the ((x - TOP_LEFT) * n / TOP_WIDTH)-th. The
-// bottom row (y 24-47, the filters' icons at y 24, clear of their dots at y 41, the user's choice) holds the season,
+// bottom row (y 24-47, the filters' icons at y 22, their dots right of them, the user's choice) holds the season,
 // time and weather filters at FILTER_X + FILTER_PITCH i, then the page arrows (the list's actors,
 // pokedex_habitat_graphic.c) and the page between them, centred at PAGE_X. The stamp shows to the right of both,
 // centred at x 224, y 24
@@ -126,7 +126,9 @@ static const u8 sFilterIcons[HABITAT_DEX_FILTER_COUNT] = { ICON_SPRING, ICON_MOR
 #define ROW_HEIGHT 24
 #define ICON_INSET_Y 4
 #define FILTER_X 8
-#define FILTER_Y 24
+#define FILTER_Y 22
+// The page's text, on the user's bar (the arrows at y 33, pokedex_habitat_graphic.c)
+#define PAGE_Y 25
 #define FILTER_PITCH 40
 #define PAGE_X 160
 #define PAGE_WIDTH 32
@@ -137,20 +139,20 @@ static const u8 sFilterIcons[HABITAT_DEX_FILTER_COUNT] = { ICON_SPRING, ICON_MOR
 // The window's (POKEDEX_HABITAT_WIN_MAIN), which covers the main screen from its corner
 #define WINDOW_MAIN 0
 // Right of each filter's icon, a column of dots, one for each of its values in the order a touch takes them (any at
-// the top), the chosen one yellow and the others grey, as the user drew them (2026-11-10): DOT_WIDTH by DOT_HEIGHT px,
-// DOT_PITCH px apart, DOT_OFFSET_X px from the icon's left, centred on y DOT_CENTER_Y (6 dots y 25-35), in the
-// window's tile rows from DOT_TILE_ROW, which the VBlank sends with the icons (the font's palette row: 7 yellow, 2
+// the top), the chosen one red and the others grey, as the user drew them (2026-11-10): DOT_WIDTH by DOT_HEIGHT px,
+// DOT_PITCH px apart, DOT_OFFSET_X px from the icon's left, centred on y DOT_CENTER_Y (6 dots y 23-33), in the
+// window's tile rows from DOT_TILE_ROW, which the VBlank sends with the icons (the font's palette row: 3 red, 2
 // grey)
 #define DOT_WIDTH 3
 #define DOT_HEIGHT 1
 #define DOT_PITCH 2
 #define DOT_OFFSET_X 33
-#define DOT_CENTER_Y 30
-#define DOT_AREA_Y 24
-#define DOT_AREA_HEIGHT 16
+#define DOT_CENTER_Y 28
+#define DOT_AREA_Y 16
+#define DOT_AREA_HEIGHT 24
 #define DOT_TILE_ROW (DOT_AREA_Y / 8)
 #define DOT_TILE_ROWS (DOT_AREA_HEIGHT / 8)
-#define DOT_COLOR_CHOSEN 7
+#define DOT_COLOR_CHOSEN 3
 #define DOT_COLOR_OTHER 2
 // Where the grid is, a note on why it is empty: centred across the box, in the middle of its height
 #define NOTE_LEFT 16
@@ -652,8 +654,7 @@ void PaperWhite2_HabitatDex_Print(HabitatDex *dex, PokedexHabitatGraphic *graphi
     }
     // The page between the arrows, and the grid's note cleared, both sent with the page's place
     GFL_BitmapFillArea(bitmap, NOTE_LEFT, NOTE_Y, NOTE_WIDTH, LINE_HEIGHT, 0);
-    PokedexHabitatGraphic_ClearArea(WINDOW_MAIN, graphic, PAGE_X - PAGE_WIDTH / 2, ROW_HEIGHT + ICON_INSET_Y,
-                                    PAGE_WIDTH, LINE_HEIGHT);
+    PokedexHabitatGraphic_ClearArea(WINDOW_MAIN, graphic, PAGE_X - PAGE_WIDTH / 2, PAGE_Y, PAGE_WIDTH, LINE_HEIGHT);
     if (dex->pageCount > 1) {
         StrBuf *text = GFL_StrBufCreate(0x20, dex->heapId);
         WordSet *wordSet = GFL_WordSetSystemCreateDefault(dex->heapId);
@@ -664,8 +665,8 @@ void PaperWhite2_HabitatDex_Print(HabitatDex *dex, PokedexHabitatGraphic *graphi
         WordSetNumber(wordSet, 1, dex->pageCount, 2, 0, TRUE);
         GFL_WordSetFormatStrbuf(wordSet, text, format);
         width = GFL_FontGetBlockWidth(text, graphic->font, 0);
-        PokedexHabitatGraphic_Print(WINDOW_MAIN, text, graphic, PAGE_X - width / 2, ROW_HEIGHT + ICON_INSET_Y, width,
-                                    LINE_HEIGHT, COLOR_PLAIN);
+        PokedexHabitatGraphic_Print(WINDOW_MAIN, text, graphic, PAGE_X - width / 2, PAGE_Y, width, LINE_HEIGHT,
+                                    COLOR_PLAIN);
         GFL_StrBufFree(format);
         GFL_WordSetSystemFree(wordSet);
         GFL_StrBufFree(text);

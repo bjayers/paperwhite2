@@ -501,6 +501,8 @@ def icons(out, small):
 HABITAT_C = ROOT / "src/paperwhite2/ov303/paperwhite2_habitat_dex.c"
 HABITAT_BAR = ROOT / "res/paperwhite2/pokedex_art/habitat_bar.png"
 ARROW_OFFSET, ARROW_SIZE = 24, 16
+# The arrows' centre's y (pokedex_habitat_graphic.c)
+ARROW_Y = 33
 STAMP_X, STAMP_Y, STAMP_SIZE = 224, 20, 64
 # Each method count's outline colour in the guide, 1 to 5
 COUNT_COLORS = [(230, 60, 60), (240, 150, 30), (60, 170, 60), (40, 120, 230), (170, 70, 210)]
@@ -512,7 +514,7 @@ METHOD_ICONS = (23, 15, 16, 20, 22)
 # colours (the font's palette row, 7 and 2)
 FILTER_COUNTS = (5, 6, 6)
 SAMPLE_VALUES = (1, 2, 0)
-DOT_CHOSEN, DOT_OTHER = (232, 224, 0), (160, 160, 168)
+DOT_CHOSEN, DOT_OTHER = (197, 0, 0), (164, 164, 172)
 
 
 def habitat_dots(bar, filters, chosen=(0, 0, 0)):
@@ -538,7 +540,7 @@ def habitat_places():
     left, width, row, inset = d["TOP_LEFT"], d["TOP_WIDTH"], d["ROW_HEIGHT"], d["ICON_INSET_Y"]
     tops = {n: [left + width * (2 * i + 1) // (2 * n) - ICON_W // 2 for i in range(n)] for n in range(1, 6)}
     filters = [d["FILTER_X"] + d["FILTER_PITCH"] * i for i in range(3)]
-    return tops, (inset, d["FILTER_Y"], row + inset), filters, d["PAGE_X"], row, (left, width)
+    return tops, (inset, d["FILTER_Y"], d["PAGE_Y"]), filters, d["PAGE_X"], row, (left, width)
 
 
 def habitat_art():
@@ -575,7 +577,7 @@ def habitat_bar(out, font):
     for x in filters:
         canvas.outline(x, bottom_y, ICON_W, ICON_H, mark, dashed=True)
     for x in (page_x - ARROW_OFFSET, page_x + ARROW_OFFSET):
-        canvas.outline(x - ARROW_SIZE // 2, row + row // 2 - ARROW_SIZE // 2, ARROW_SIZE, ARROW_SIZE, mark, dashed=True)
+        canvas.outline(x - ARROW_SIZE // 2, ARROW_Y - ARROW_SIZE // 2, ARROW_SIZE, ARROW_SIZE, mark, dashed=True)
     canvas.outline(page_x - 16, page_y, 32, 16, mark, dashed=True)
     canvas.outline(STAMP_X - STAMP_SIZE // 2, 0, STAMP_SIZE, art.h, mark, dashed=True)
     habitat_dots(canvas, filters)
@@ -592,7 +594,7 @@ def habitat_bar(out, font):
             bar.blit(icons_rgb[icon], x, bottom_y)
         habitat_dots(bar, filters, SAMPLE_VALUES)
         for x in (page_x - ARROW_OFFSET, page_x + ARROW_OFFSET):
-            bar.outline(x - ARROW_SIZE // 2, row + row // 2 - ARROW_SIZE // 2, ARROW_SIZE, ARROW_SIZE, mark)
+            bar.outline(x - ARROW_SIZE // 2, ARROW_Y - ARROW_SIZE // 2, ARROW_SIZE, ARROW_SIZE, mark)
         bar.text(font, "1/3", page_x, page_y, align="center")
         layouts.blit(bar, 0, (n - 1) * (art.h + 4))
     layouts.rgba(out / "habitat_bar_layouts.png")
@@ -620,7 +622,7 @@ def habitat_bar(out, font):
     for x in filters:
         guide.outline(x * k, bottom_y * k, ICON_W * k, ICON_H * k, (255, 255, 255))
     for x in (page_x - ARROW_OFFSET, page_x + ARROW_OFFSET):
-        guide.outline((x - ARROW_SIZE // 2) * k, (row + row // 2 - ARROW_SIZE // 2) * k, ARROW_SIZE * k,
+        guide.outline((x - ARROW_SIZE // 2) * k, (ARROW_Y - ARROW_SIZE // 2) * k, ARROW_SIZE * k,
                       ARROW_SIZE * k, (255, 255, 255))
     guide.outline((page_x - 16) * k, bottom_y * k, 32 * k, 16 * k, (255, 220, 60))
     guide.outline((STAMP_X - STAMP_SIZE // 2) * k, 0, STAMP_SIZE * k, art.h * k, (255, 220, 60), dashed=True)
