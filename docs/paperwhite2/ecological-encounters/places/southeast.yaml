@@ -1,0 +1,270 @@
+# Southeast Unova (regions.md, 3): Routes 1 to 3, Striaton City, Wellspring Cave, the Dreamyard and Pinwheel Forest.
+# Draft of 2026-11-13 from the user's descriptions, for review. The layout is southwest.yaml's. No Pokémon NPCs are
+# placed here (the user's NPCs stop at Castelia), and nothing has weather yet (weather.md).
+
+region:
+  id: southeast
+  name: Southeast Unova
+  feel: >-
+    Suburbs with farmland, parks and nearby landmarks, and the original games' "start of an adventure" feel, round
+    the old starting towns (Nuvema, Accumula, Striaton, Nacrene). It holds Pinwheel Forest, the region's premier
+    forest. Mild winters, without the Southwest's snow.
+  towns: >-
+    No encounters, mood only. Nuvema Town: the original starting town and the professor's lab, so the region's
+    Pokémon should feel like a start (whole families still, at their levels). Accumula Town: quiet, with vines on its
+    white walls. Nacrene City: the museum and many artists; old, with a railway through the town.
+  real_world: >-
+    The suburbs and shore of Long Island and New Jersey: seaside pines and dunes, old fields and flower meadows,
+    suburban parks and ponds, lakes; and old-growth broadleaf forest, damp and mossy, with fallen logs, fungi,
+    salamanders, frogs and an abundance of insects. Spring and autumn migrants pass along the coast.
+  basculin: Red-Striped (the Southeast is east of the Castelia, Nimbasa and Opelucid line)
+
+places:
+
+  - id: route_1
+    name: Route 1
+    maps: [route_1]
+    used: confirmed
+    facts:
+      tiles: { grass: 177, dark_grass: 155, surf: 132 }
+      methods: [grass, dark_grass, rustling (shaking grass), surf, fishing]
+      weather: none
+    picture: >-
+      Normal grass on the main route between Nuvema and Accumula, with strong seasonal imagery: pink flowers in
+      spring, yellow sunflowers in summer, cotton- or wheat-like plants in autumn, and dried plants in winter. A strong
+      candidate for seasonal inhabitants: Sunkern and Sunflora in summer, Cottonee and Whimsicott in autumn, Cherubi
+      in spring, perhaps another flower Pokémon. Across a short stretch of water (in Black and White it kept the
+      player from the endgame routes), the dark grass: hills and a seaside with pine trees.
+    habitats: [meadow, flower_field, hills, conifer_forest, beach, coastal_sea]
+    parts:
+      grass: >-
+        the main route's meadow, its flowers changing by season: pink blossom in spring, sunflowers in summer, cotton
+        or wheat in autumn, dry stems in winter
+      dark_grass: >-
+        hills of wild grass among seaside pines, across the water from the main route: a separate environment
+        (another family's place, not the main route's tougher version)
+      water: the stretch of water between them, and the sea along the west
+    human_presence: rural
+    climate:
+      spring: mild, blossom
+      summer: warm, sunflowers
+      autumn: mild, seed heads
+      winter: cool, dry stems, no snow
+    features: [flowers, berries]
+    real_world: >-
+      Meadows managed for flowers, and seaside pine and dune behind them: bees and butterflies in spring and summer,
+      seed-eating birds in autumn, rabbits and voles in the grass, hawks hunting them; on the pine hills, foxes,
+      snakes, owls, and pine-loving birds.
+    suggestions:
+      - >-
+        The meadow by season, after its flowers: Cherubi (and another flower) in spring, Sunkern and Sunflora in summer
+        (Sunflora strict to the day: rules 7), Cottonee and Whimsicott in autumn, little in winter.
+      - >-
+        The pine hills (dark grass) as their own world: pine and seaside Pokémon, unchanged by the meadow's seasons.
+
+  - id: route_2
+    name: Route 2
+    maps: [route_2]
+    used: confirmed
+    facts:
+      tiles: { grass: 165 }
+      methods: [grass, rustling (shaking grass)]
+      weather: none
+    picture: >-
+      A typical, mildly forested route: a dirt road with patches of grass beside it.
+    habitats: [woodland_edge, deciduous_forest]
+    parts:
+      grass: patches of grass along a dirt road through light woods
+    human_presence: rural
+    climate:
+      spring: mild
+      summer: warm
+      autumn: mild
+      winter: cool
+    real_world: >-
+      Roadside woodland edge: songbirds, squirrels, rabbits, garter snakes; a corridor between towns that common
+      generalists use.
+
+  - id: striaton_city
+    name: Striaton City
+    maps: [striaton_city]
+    used: confirmed
+    facts:
+      tiles: { surf: 75 }
+      methods: [surf, fishing]
+      weather: none
+    picture: >-
+      A nice city with the restaurant, and a park to the west (between the city and Route 3) with seemingly man-made
+      ponds and a fountain; the encounters are the ponds, fresh water. The city connects to the Dreamyard in the east.
+    habitats: [park, pond, suburb]
+    parts:
+      ponds: ornamental freshwater ponds round a fountain, in a formal park with hedges and an arbour
+    human_presence: suburban
+    climate:
+      spring: mild
+      summer: warm
+      autumn: mild
+      winter: cool
+    features: [flowers]
+    real_world: >-
+      Ornamental park ponds: goldfish and carp (some released pets), ducks, frogs, dragonflies.
+    suggestions:
+      - Ornamental fish, released pets among them (Goldeen, Magikarp, Feebas perhaps as a trophy).
+
+  - id: route_3
+    name: Route 3
+    maps: [route_3]
+    used: confirmed
+    facts:
+      tiles: { grass: 346, dark_grass: 90, surf: 287 }
+      methods: [grass, dark_grass, rustling (shaking grass), surf, fishing]
+      weather: none
+    picture: >-
+      The Day Care, Wellspring Cave and a decent-sized lake in the middle. Peaceful and serene.
+    habitats: [meadow, woodland_edge, lake, suburb]
+    parts:
+      grass: open grass round the Day Care and the road
+      dark_grass: wilder grass along the route's edges
+      lake: a decent-sized freshwater lake in the middle
+    human_presence: rural
+    climate:
+      spring: mild
+      summer: warm
+      autumn: mild
+      winter: cool
+    features: [flowers]
+    real_world: >-
+      A lake in quiet countryside: frogs, turtles, ducks and herons, dragonflies, fish; meadow life round it.
+    suggestions:
+      - >-
+        Lake life: frogs and tadpoles (Tympole's family), ducks (Ducklett), lake fish. The Day Care's nearness could
+        explain an odd released or escaped Pokémon now and then (a stray).
+
+  - id: wellspring_cave
+    name: Wellspring Cave
+    maps: [wellspring_cave, wellspring_cave_2]
+    used: confirmed (two floors of one cave; neither is an outside entrance)
+    facts:
+      tiles: { cave_floor: 237, surf: 149 }  # map 1
+      tiles_2: { cave_floor: 512, surf: 207 }  # map 2
+      methods: [walking (cave floor), rustling (dust clouds), surf, fishing]
+      weather: none (indoors)
+    picture: A cave off Route 3, two floors.
+    habitats: [cave, underground_water]
+    parts:
+      floor: rock floors of a small cave
+      spring: the cave's spring-fed pools
+    human_presence: remote
+    climate:
+      all_year: cool, damp, dark
+    features: [rocks, cold_water]
+    real_world: >-
+      A spring cave: bats, cave salamanders, blind fish and crayfish in cold, clear spring water.
+    suggestions:
+      - The common cave Pokémon of the south (bats, rock dwellers), and spring-water life in the pools.
+
+  - id: dreamyard
+    name: Dreamyard
+    maps: [dreamyard, dreamyard_2]
+    used: confirmed
+    facts:
+      tiles: { grass: 75, dark_grass: 152 }  # the ruins outside
+      tiles_2: { dark_grass: 18 }  # the basement: two 3 by 3 patches of dark grass
+      methods: [grass, dark_grass, rustling (shaking grass), dark_grass (the basement)]
+      weather: none (the basement is indoors)
+    picture: >-
+      East of Striaton; the place for psychics (rules C7). The basement under the ruins has two small 3 by 3 patches
+      of dark grass.
+    habitats: [ruins, meadow, woodland_edge]
+    parts:
+      grass: overgrown ground round the ruined research site
+      dark_grass: wild grass among the ruins
+      basement: two small patches of dark grass in the ruins' basement
+    human_presence: remote
+    climate:
+      spring: mild
+      summer: warm
+      autumn: mild
+      winter: cool
+    features: [psychic_energy, ruins]
+    real_world: >-
+      An abandoned industrial site gone wild: weeds and scrub, foxes and rats, owls and bats in the empty buildings.
+    suggestions:
+      - >-
+        Dream Mist and psychic research: the dream Pokémon (Munna's family) and other psychics, at night above all; the
+        basement as the place for a psychic trophy.
+
+  - id: pinwheel_forest_outskirts
+    name: Pinwheel Forest (the outskirts)
+    maps: [pinwheel_forest]
+    used: confirmed
+    facts:
+      tiles: { grass: 191, dark_grass: 74 }
+      methods: [grass, dark_grass, rustling (shaking grass)]
+      weather: none
+    picture: >-
+      A short road west of Nacrene, between the city and the forest proper. South of the road, many puddles (only
+      cosmetic, no encounters) with ample grass, and a raised cliff with more grass and puddles; small flowers dotted
+      round; the railway continues partly onto the map. A breeding ground for mosquitoes, dragonflies and the like, so
+      near the forest.
+    habitats: [meadow, marsh, woodland_edge, cliff]
+    parts:
+      grass: grass among shallow puddles south of the road
+      dark_grass: grass on the raised cliff, with more puddles
+    human_presence: rural
+    climate:
+      spring: mild, wet
+      summer: warm, humid
+      autumn: mild
+      winter: cool
+    features: [flowers]
+    real_world: >-
+      Wet meadow at a forest's edge: mosquitoes and midges breeding in the pools, dragonflies hunting them, frogs, and
+      the birds and bats that feed on the insects at dusk.
+    suggestions:
+      - >-
+        The insects' nursery: biting and buzzing bugs and their hunters (dragonflies, Yanma's family; frogs), busiest
+        in summer and after rain. Not water Pokémon: the puddles have no encounters.
+
+  - id: pinwheel_forest
+    name: Pinwheel Forest
+    maps: [pinwheel_forest_2]
+    used: confirmed
+    facts:
+      tiles: { grass: 804, dark_grass: 295, surf: 186 }
+      methods: [grass, dark_grass, rustling (shaking grass), surf, fishing]
+      weather: none
+    picture: >-
+      The big, dark forest of the region, another of the user's favourites: under a canopy, with dappled light. A road
+      runs through from Nacrene to Skyarrow Bridge, over a small pond littered with fallen leaves. The grass by the
+      road is normal; further into the forest it turns dark green and mossy, with fallen trees to walk through and
+      stumps. The Moss Rock is here (Eevee evolves into Leafeon). Across the road, the mystic clearing where Virizion
+      was found in Black and White, now a story event. A living forest that lives and breathes like its Pokémon, whose
+      inhabitants change and grow through the seasons.
+    habitats: [dense_forest, deciduous_forest, pond]
+    parts:
+      grass: grass by the road, in the forest's lighter parts
+      dark_grass: dark, mossy undergrowth deep in the forest, among fallen trees and stumps
+      pond: a small, still pond under the road, covered in fallen leaves
+      clearing: the mystic clearing across the road (Virizion's story event; not wild)
+    human_presence: wild
+    climate:
+      spring: mild, damp, budding
+      summer: warm, humid, deep shade
+      autumn: cool, leaf fall
+      winter: cold, bare, quiet
+    features: [dead_wood, fallen_leaves, mushrooms, tall_trees, leaf_influence]
+    real_world: >-
+      Old-growth broadleaf forest: a life cycle through the year: caterpillars and blossom in spring, insects at their
+      height in summer, fungi and leaf litter in autumn, quiet hibernation in winter. Woodpeckers and owls in the big
+      trees, salamanders and snails under the logs, deer and foxes, beetles in dead wood; a leaf-choked pond for frogs
+      and newts.
+    suggestions:
+      - >-
+        The bug families through their life cycle across the seasons (larvae in spring, adults in summer, cocoons and
+        late broods in autumn, few in winter), the forest's grass and fungus Pokémon, its owls and woodpeckers, and the
+        dark-grass depths for the bigger, shyer forest Pokémon.
+      - >-
+        The Moss Rock's influence (rules 5, stone evolutions where the environment causes them): a rare wild Leafeon in
+        the mossy depths, if you like the idea; otherwise Eevee evolves here only in the player's hands.
+      - The leafy pond: frogs and still-water life, little else.
