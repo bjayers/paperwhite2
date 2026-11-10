@@ -2,6 +2,16 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-09: Pokédex Area sub-page done
+
+The Info page has six sub-pages (Area between Evo and Matchups, plugins.md and design/pokedex-area.md "As built"):
+the town map on top with season-coloured glows and the current Pokémon's box, and on the bottom the seasons, up to
+four method rows by terrain (walking, dark grass, surf, fishing; a special version shakes the icon, special-only greys
+it except bridges) and the time and weather rows, the user's art and icons (sprites, four palette rows, importable in
+the editor's Graphics & Palettes > Sprite sheets). Areas without a town-map place (only the Nature Preserve) are
+left out; how to add a place is in the design doc. The detail screen's page tabs are gone (always Info), and the
+top screen's sprite fades with the rest. Next: the Habitat Dex and DexNav UIs reusing the Area icons.
+
 ## 2026-11-08: quality of life batch
 
 Merged and tested in DeSmuME (plugins.md has each): Pokédex Info from the party menu and the summary (INFO button,
