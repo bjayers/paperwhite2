@@ -128,10 +128,12 @@
 #define SPRITE_BG 0
 
 // What an opening panel or a new move puts in VRAM in the next VBlank (PokedexMovePanel_VBlank): the art's tiles and
-// palette, the windows' characters, and the dimming with the hidden sprite
+// palette, the windows' characters, and the dimming with the hidden sprite; or, as it closes, its cleared screen and
+// the end of the dimming
 #define PENDING_ART (1 << 0)
 #define PENDING_WINDOWS (1 << 1)
 #define PENDING_DIM (1 << 2)
+#define PENDING_CLOSE (1 << 3)
 
 // A power of 1 or less is a move's own rule (PML_MoveGetParam), shown as a dash, as the relearner shows it
 #define POWER_NONE 1
@@ -194,9 +196,11 @@ struct PokedexMovePanel {
     GXRgb headbarDimmed[PALETTE_COLORS];
     BmpWin *windows[WINDOW_COUNT];
     BOOL open;
-    // What waits for the next VBlank (PENDING_*), with the screen, which is loaded then, and the icons' OAM
+    // What waits for the next VBlank (PENDING_*), with the screen, which is loaded then, and the icons' OAM; and the
+    // entry that a closing panel gives the screen back to
     TCB *vblankTcb;
     u32 pending;
+    PokedexInfo *entry;
     // The icons, and the characters each shows, loaded for each move
     u32 iconPalette;
     u32 iconCellAnims;
@@ -207,6 +211,7 @@ struct PokedexMovePanel {
 };
 
 static void PokedexMovePanel_VBlank(TCB *tcb, void *data);
+static void PokedexMovePanel_ShowEntry(PokedexMovePanel *panel);
 static void PokedexMovePanel_ReadArt(PokedexMovePanel *panel);
 static void PokedexMovePanel_Open(PokedexMovePanel *panel, PokedexInfo *entry);
 static void PokedexMovePanel_DimHeadbar(PokedexMovePanel *panel);
@@ -265,9 +270,13 @@ PokedexMovePanel *PokedexMovePanel_Create(HeapID heapId, Font *font, ClActUnit *
     return panel;
 }
 
-// The page closes the panel before it frees the entry
+// The page closes the panel before it frees the entry; a close still waiting for its VBlank is done at once, the screen
+// dark
 void PokedexMovePanel_Free(PokedexMovePanel *panel) {
     GFL_TCBRemove(panel->vblankTcb);
+    if (panel->pending & PENDING_CLOSE) {
+        PokedexMovePanel_ShowEntry(panel);
+    }
     ClActor_Delete(panel->categoryIcon);
     ClActor_Delete(panel->typeIcon);
     ClActSys_FreeChars(panel->categoryChars);
@@ -291,19 +300,24 @@ void PokedexMovePanel_Free(PokedexMovePanel *panel) {
 // cleared), its tiles and palette, its windows' characters, the dimming and the hidden sprite
 // (PokedexMovePanel_VBlank), and its icons' OAM, so that no frame shows half of it, the entry's old screen over the
 // panel's characters, or the text before its icons. Done at once, as before, the characters and screen landed while the
-// frame was being drawn and the icons a frame later
+// frame was being drawn and the icons a frame later. The icons' characters are loaded before the entry frees its type
+// icons', which show until that VBlank: loaded after, they went where those were, and the entry's type icons showed the
+// panel's icons' pieces for that frame. A panel opening again before its close reached the screen is still shown,
+// dimmed, so the close is undone
 void PokedexMovePanel_Show(PokedexMovePanel *panel, PokedexInfo *entry, u16 move) {
     BOOL opening = !panel->open;
 
+    PokedexMovePanel_SetIcons(panel, move);
     if (opening) {
         PokedexMovePanel_Open(panel, entry);
     }
     PokedexMovePanel_DrawMove(panel, move);
-    PokedexMovePanel_SetIcons(panel, move);
     if (opening) {
         GFL_BGSysQueueScrLoad(PANEL_BG);
-        PokedexMovePanel_DimHeadbar(panel);
-        panel->pending |= PENDING_DIM;
+        if (!(panel->pending & PENDING_CLOSE)) {
+            PokedexMovePanel_DimHeadbar(panel);
+        }
+        panel->pending = (panel->pending & ~PENDING_CLOSE) | PENDING_DIM;
     }
 }
 
@@ -328,7 +342,27 @@ static void PokedexMovePanel_VBlank(TCB *tcb, void *data) {
                                   panel->headbarPalette * 0x20);
         GFL_BGSysSetBGEnabled(SPRITE_BG, FALSE);
     }
+    if (panel->pending & PENDING_CLOSE) {
+        PokedexMovePanel_ShowEntry(panel);
+    }
     panel->pending = 0;
+}
+
+// The panel's screen cleared, which GFL_VBlankUpdate loads after this task with the entry's windows, whose characters
+// the entry loads over the panel's in the same VBlank (PokedexInfo_VBlankTask), the head bar's colors, and the end of
+// the dimming, with the sprite shown, unless Area's map took the entry's place (its VBlank came first, hiding the
+// sprite and setting its own blending), or the page's fade has the blending
+static void PokedexMovePanel_ShowEntry(PokedexMovePanel *panel) {
+    GFL_BGSysFillScrArea(PANEL_BG, 0, PANEL_TILE_X, PANEL_TILE_Y, PANEL_TILE_WIDTH, PANEL_TILE_HEIGHT, 0);
+    GFL_BGSysQueueScrLoad(PANEL_BG);
+    GFL_BGSysUploadStdPalette(PANEL_BG, panel->headbarColors, sizeof(panel->headbarColors),
+                              panel->headbarPalette * 0x20);
+    if (!PokedexInfo_IsTextFreed(panel->entry)) {
+        if (!PokedexDetailBlend_IsActive(panel->blend)) {
+            PokedexDetailBlend_SetIn(0, panel->blend);
+        }
+        GFL_BGSysSetBGEnabled(SPRITE_BG, TRUE);
+    }
 }
 
 // The head bar's colors darkened as DIM_BRIGHTNESS darkens the other BGs, loaded in the next VBlank. Its tiles all
@@ -352,9 +386,10 @@ static void PokedexMovePanel_DimHeadbar(PokedexMovePanel *panel) {
     }
 }
 
-// The panel's screen is cleared at once, as the entry's windows will take its characters, and the entry is printed
-// again; the dimming ends as the page's blend leaves the screen, shown, and the sprite
-// shows again
+// The entry's windows take the panel's characters' place and the entry is printed again, while the panel shows; the
+// next VBlank shows the entry whole in its place (PokedexMovePanel_ShowEntry), with the icons' OAM. Cleared at once, as
+// it was, the panel's screen and the dimming's end landed while a frame was being drawn, and the entry showed without
+// its text, under the panel's icons, until the page's new sub-page was ready
 void PokedexMovePanel_Close(PokedexMovePanel *panel, PokedexInfo *entry, u32 language) {
     u32 i;
 
@@ -362,21 +397,16 @@ void PokedexMovePanel_Close(PokedexMovePanel *panel, PokedexInfo *entry, u32 lan
         return;
     }
     panel->open = FALSE;
-    // What the panel had for the next VBlank is undone below at once
-    panel->pending = 0;
+    // What the panel had for the next VBlank shows no more
+    panel->pending = PENDING_CLOSE;
+    panel->entry = entry;
     for (i = 0; i < WINDOW_COUNT; i++) {
         BmpWin_Free(panel->windows[i]);
         panel->windows[i] = NULL;
     }
-    GFL_BGSysFillScrArea(PANEL_BG, 0, PANEL_TILE_X, PANEL_TILE_Y, PANEL_TILE_WIDTH, PANEL_TILE_HEIGHT, 0);
-    GFL_BGSysLoadScr(PANEL_BG);
     GFL_BGSysFreeCharMemory(PANEL_BG, panel->tilePos, panel->artTileCount * TILE_SIZE);
     ClActor_SetVisible(panel->typeIcon, FALSE);
     ClActor_SetVisible(panel->categoryIcon, FALSE);
-    PokedexDetailBlend_SetIn(0, panel->blend);
-    GFL_BGSysUploadStdPalette(PANEL_BG, panel->headbarColors, sizeof(panel->headbarColors),
-                              panel->headbarPalette * 0x20);
-    GFL_BGSysSetBGEnabled(SPRITE_BG, TRUE);
     PokedexInfo_RestoreText(entry, language);
 }
 

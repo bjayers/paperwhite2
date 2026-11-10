@@ -191,6 +191,11 @@ struct PokedexInfo {
 #ifdef PAPERWHITE2
     // Paper White 2: whether the info page shows its own text in the text window, which the entry leaves alone then
     BOOL otherText;
+    // Paper White 2: on the detail screen's top, the windows printed since the last VBlank, whose characters go to VRAM
+    // in the next (a bit for each), whether the label's go too, and whether the text is freed (PokedexInfo_FreeText)
+    u32 vblankFlush;
+    BOOL labelFlush;
+    BOOL textFreed;
 #endif
 };
 
@@ -845,11 +850,25 @@ void PokedexInfo_FreeText(PokedexInfo *info) {
     PokedexInfo_SetFootprintsVisible(info, FALSE);
     // The text comes back with the description
     info->otherText = FALSE;
+    info->textFreed = TRUE;
 }
 
 void PokedexInfo_RestoreText(PokedexInfo *info, u32 language) {
+    info->textFreed = FALSE;
     PokedexInfo_InitWindows(info);
     PokedexInfo_SetLanguage(info, language);
+}
+
+BOOL PokedexInfo_IsTextFreed(PokedexInfo *info) {
+    return info->textFreed;
+}
+
+// Paper White 2: prints the queued text at once, which the next VBlank shows
+void PokedexInfo_PrintQueued(PokedexInfo *info) {
+    while (!PrintQueue_IsEmpty(info->printQueue)) {
+        PrintQueue_Main(info->printQueue);
+    }
+    PokedexInfo_FlushWindows(info);
 }
 
 u32 PokedexInfo_GetPanelChars(PokedexInfo *info, u32 *chars) {
@@ -900,6 +919,23 @@ static void PokedexInfo_VBlankTask(TCB *tcb, void *data) {
     }
     info->unk38 = 0;
     info->scrollRequest = 0;
+#ifdef PAPERWHITE2
+    // Paper White 2: the printed windows' characters with their screen, which GFL_VBlankUpdate loads after this task
+    if (info->vblankFlush != 0) {
+        int i;
+
+        for (i = 0; i < POKEDEX_INFO_WINDOW_COUNT; i++) {
+            if (info->vblankFlush & (1 << i)) {
+                BmpWin_Transfer(info->windows[i]);
+            }
+        }
+        info->vblankFlush = 0;
+    }
+    if (info->labelFlush) {
+        info->labelFlush = FALSE;
+        BmpWin_Transfer(info->labelWindows[info->caught ? 0 : 1]);
+    }
+#endif
 }
 
 static void PokedexInfo_InitWindows(PokedexInfo *info) {
@@ -956,6 +992,9 @@ static void PokedexInfo_FreeWindows(PokedexInfo *info) {
     int i;
 
     PrintQueue_Clear(info->printQueue);
+#ifdef PAPERWHITE2
+    info->vblankFlush = 0;
+#endif
     for (i = 0; i < POKEDEX_INFO_WINDOW_COUNT; i++) {
         info->flushed[i] = TRUE;
         BmpWin_Free(info->windows[i]);
@@ -1255,6 +1294,8 @@ static void PokedexInfo_ClearWindows(PokedexInfo *info) {
         if (i == POKEDEX_INFO_WINDOW_TEXT && info->otherText) {
             continue;
         }
+        // Paper White 2: a window cleared to print again keeps what VRAM has until it is printed
+        info->vblankFlush &= ~(1 << i);
 #endif
         GFL_BitmapFill(BmpWin_GetBitmap(info->windows[i]), 0);
     }
@@ -1265,7 +1306,18 @@ static void PokedexInfo_FlushWindows(PokedexInfo *info) {
 
     for (i = 0; i < POKEDEX_INFO_WINDOW_COUNT; i++) {
         if (!info->flushed[i] && !PrintQueue_IsBitmapPending(info->printQueue, BmpWin_GetBitmap(info->windows[i]))) {
+#ifdef PAPERWHITE2
+            // Paper White 2: the info page's printed windows go to VRAM whole in the next VBlank, with what the page
+            // changes there (PokedexInfo_VBlankTask): loaded at once, their characters landed while the frame was being
+            // drawn, half of the new text over the old, and over the move panel's art as it closed
+            if (PokedexInfo_IsDetailTop(info)) {
+                info->vblankFlush |= 1 << i;
+            } else {
+                BmpWin_Transfer(info->windows[i]);
+            }
+#else
             BmpWin_Transfer(info->windows[i]);
+#endif
             info->flushed[i] = TRUE;
         }
     }
@@ -1297,6 +1349,14 @@ static void PokedexInfo_FreeLabelWindows(PokedexInfo *info) {
 }
 
 static void PokedexInfo_FlushLabelWindow(PokedexInfo *info) {
+#ifdef PAPERWHITE2
+    // Paper White 2: in the next VBlank on the info page, with the windows, as Area's map has its characters' place on
+    // BG 2 until that VBlank gives it back
+    if (PokedexInfo_IsDetailTop(info)) {
+        info->labelFlush = TRUE;
+        return;
+    }
+#endif
     if (info->caught) {
         BmpWin_Transfer(info->labelWindows[0]);
     } else {

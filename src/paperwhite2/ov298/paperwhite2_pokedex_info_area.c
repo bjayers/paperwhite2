@@ -458,7 +458,8 @@ struct PokedexInfoArea {
     u8 seasonSteps;
     u8 glowSeason;
     // The current Pokémon's box: its OBJs' characters, palette and cells, its OBJs and the icon's, its bitmap, the
-    // art (its colors, then its tiles), and the party icons' palettes' file and colors
+    // art (its colors, then its tiles), and the party icons' palettes' file and colors; and the characters (from the
+    // heap's tail) and the icon's colors that the next VBlank loads (PokedexInfoArea_ShowPokemon)
     u32 boxChars;
     u32 boxPalette;
     u32 boxCellAnims;
@@ -468,6 +469,8 @@ struct PokedexInfoArea {
     u8 *boxArt;
     void *iconPaletteFile;
     const GXRgb *iconColors;
+    u8 *boxPending;
+    const GXRgb *boxPendingColors;
 };
 
 static void PokedexInfoArea_Load(PokedexInfoArea *area, u16 species);
@@ -970,6 +973,12 @@ static void PokedexInfoArea_VBlank(TCB *tcb, void *data) {
     if (area->iconRowsPending || area->iconRowsLoaded != area->iconsLoaded) {
         PokedexInfoArea_SwapIconRows(area);
     }
+    if (area->boxPending != NULL) {
+        ClActSys_WriteCharData(area->boxChars, area->boxPending, BOX_CHARS_SIZE, 0, CLACT_VRAM_MAIN);
+        GX_LoadOBJPltt(area->boxPendingColors, BOX_ICON_ROW * 0x20, GLOW_COLORS * sizeof(GXRgb));
+        GFL_HeapFree(area->boxPending);
+        area->boxPending = NULL;
+    }
     switch (area->vblankRequest) {
     case VBLANK_OPEN:
         PokedexInfoArea_ShowMapBGs(area);
@@ -1319,6 +1328,10 @@ static void PokedexInfoArea_FreeBox(PokedexInfoArea *area) {
     }
     ClActor_Delete(area->boxIcon);
     area->boxIcon = NULL;
+    if (area->boxPending != NULL) {
+        GFL_HeapFree(area->boxPending);
+        area->boxPending = NULL;
+    }
     for (i = 0; i < BOX_OBJS; i++) {
         ClActor_Delete(area->boxObjs[i]);
     }
@@ -1331,7 +1344,9 @@ static void PokedexInfoArea_FreeBox(PokedexInfoArea *area) {
 }
 
 // The box of the Pokémon shown, while the map is open: the art with its name (in font 1 if font 0's is too long),
-// its tiles into the OBJs' order, and its party icon in its form and sex with its palette, as Evo's
+// its tiles into the OBJs' order, and its party icon in its form and sex with its palette, as Evo's. They go to VRAM in
+// the next VBlank (PokedexInfoArea_VBlank), with the map's places and the bottom screen's rows: loaded at once, the box
+// showed the new Pokémon a frame before the rest, and its icon in the new palette
 void PokedexInfoArea_ShowPokemon(PokedexInfoArea *area, u16 species, u16 form, u16 sex) {
     GFLBitmap *bitmap = area->boxBitmap;
     Font *font = area->font;
@@ -1354,8 +1369,11 @@ void PokedexInfoArea_ShowPokemon(PokedexInfoArea *area, u16 species, u16 form, u
     GFL_TextRendererDrawToBitmapEx(bitmap, BOX_NAME_X - BOX_OBJ_X, nameY, area->text, font, BOX_TEXT_COLOR);
 
     pixels = GFL_BitmapGetPixelData(bitmap);
-    chars = GFL_HeapAllocate(HEAPID_TAIL(area->heapId), BOX_OBJS * BOX_OBJ_SIZE, FALSE,
-                             "paperwhite2_pokedex_info_area.c", __LINE__);
+    if (area->boxPending == NULL) {
+        area->boxPending = GFL_HeapAllocate(HEAPID_TAIL(area->heapId), BOX_CHARS_SIZE, FALSE,
+                                            "paperwhite2_pokedex_info_area.c", __LINE__);
+    }
+    chars = area->boxPending;
     for (i = 0; i < BOX_OBJS * BOX_OBJ_TILES; i++) {
         u32 obj = i / BOX_OBJ_TILES;
         u32 tile = i % BOX_OBJ_TILES;
@@ -1364,14 +1382,11 @@ void PokedexInfoArea_ShowPokemon(PokedexInfoArea *area, u16 species, u16 form, u
 
         MI_CpuCopy32(pixels + source * TILE_SIZE, chars + i * TILE_SIZE, TILE_SIZE);
     }
-    ClActSys_WriteCharData(area->boxChars, chars, BOX_OBJS * BOX_OBJ_SIZE, 0, CLACT_VRAM_MAIN);
-    GFL_HeapFree(chars);
 
     file = GFL_ArcSysReadHeapNew(ARCID_POKEICON, PokeParty_GetIconIndex(species, form, sex, FALSE),
                                  HEAPID_TAIL(area->heapId));
     NNS_G2dGetUnpackedCharacterData(file, &icon);
-    ClActSys_WriteCharData(area->boxChars, icon->pRawData, BOX_ICON_SIZE, BOX_OBJS * BOX_OBJ_SIZE, CLACT_VRAM_MAIN);
+    MI_CpuCopy32(icon->pRawData, chars + BOX_OBJS * BOX_OBJ_SIZE, BOX_ICON_SIZE);
     GFL_HeapFree(file);
-    GX_LoadOBJPltt(area->iconColors + PokeIcon_GetPalette(species, form, sex, FALSE) * GLOW_COLORS, BOX_ICON_ROW * 0x20,
-                   GLOW_COLORS * sizeof(GXRgb));
+    area->boxPendingColors = area->iconColors + PokeIcon_GetPalette(species, form, sex, FALSE) * GLOW_COLORS;
 }

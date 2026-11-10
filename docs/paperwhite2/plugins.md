@@ -1677,7 +1677,10 @@ Area, Cry and Forms pages are still built, unreachable. **Bottom** (sub
 engine): the grid on BG 4, the bar of sub-pages and the panels drawn into two windows on BG 7 (palette 3, a table in
 the panels' file until there is art), and on Stats the buttons Abilities, Cry, Turn, Form, Shiny and Language on BG 6
 (`AppTaskMenuWin`, palettes 4 and 5, 9 by 3 tiles from tile row 3 at a 3-row pitch, shown 2 px higher, so a sixth
-is y 142-165, off the touch bar), hidden when they can do nothing (Abilities until the species is caught), the shown
+is y 142-165, off the touch bar; a change of sub-page or Pokémon makes the new buttons, prints them and loads their
+characters before it frees the old ones, `PokedexInfoPage_ResetButtons`: freed first, the new characters went over
+the old buttons', whose screen showed until the VBlank, so Matchups' Default showed pieces of Abilities for a frame
+going to Stats), hidden when they can do nothing (Abilities until the species is caught), the shown
 ones stacked from the top in that order with no gaps (`PokedexInfoPage_GetButtonPlace` counts the shown ones before
 a button, for its window and its touch). **The buttons' lift**: they are
 tile-aligned windows on the art's BG, so a sub-page lifts them by scrolling BG 6 up (`sSubpageLift` beside
@@ -1775,8 +1778,20 @@ screen in one VBlank** (`PokedexMovePanel_VBlank`): as it opens, its tiles' plac
 entry's windows cleared) queued, and the art's tiles and palette, the windows' characters, the dimming, the head bar's
 dimmed palette and BG 0 off are loaded in the VBlank, with the screen and the icons' OAM; a new move's windows too. They
 were loaded at once before, so the opening frame showed the panel's tiles under the entry's screen and the dimming
-from the line it was set at, and the icons a frame later. Closing is still at once (the entry's windows take the
-panel's characters as it closes).
+from the line it was set at, and the icons a frame later. The icons' characters are loaded before the entry frees its
+type icons' (`PokedexMovePanel_Show`): loaded after, they went into the type icons' freed place while those still
+showed, so the frame before the panel showed NORMAL as FLYING and FLYING as the category's star (Evo to Moves).
+**Closing lands in one VBlank too** (`PENDING_CLOSE`, `PokedexMovePanel_ShowEntry`): the panel's windows and tiles are
+freed for the entry's windows, the entry is printed again at once (`PokedexInfo_PrintQueued`) while the panel still
+shows, and the next VBlank clears the panel's screen, restores the head bar's colours and ends the dimming with BG 0
+shown, as the entry's windows and label go to VRAM in the same VBlank (`PokedexInfo_VBlankTask`, below). Area's map,
+if it took the entry's place in that VBlank (Moves to Area), keeps BG 0 and its blending (`PokedexInfo_IsTextFreed`),
+and a running fade keeps the blending. Closed at once, as before, the panel's lower half and the dimming went from the
+line they were written at, and the entry showed without its text under the panel's icons until the new sub-page was
+ready (four frames in the emulator going to Stats, ten to Area). **The entry's text on the info page** goes to VRAM
+in the VBlank after it is printed, each window whole, and its caught label too (`vblankFlush`, `labelFlush`, under
+`PAPERWHITE2` in `src/ov296/pokedex_info.c`), and the page prints it at once at each change of sub-page or Pokémon
+(`PokedexInfoPage_ShowSubpage`), form or language, so it lands with the rest.
 
 **Evo** (`paperwhite2_pokedex_info_evo.c`, drawn into the panels' content window, which shows sub BG palette row 12
 there, the balls' palette, the art's colours: rows 6-11 are the arts' (Stats, Data, Moves, Evo, Area, Matchups), 12
@@ -1911,9 +1926,10 @@ affine BGs (`G2_SetBG2Control256x16Pltt`, mode 5, BG 0's 3D hidden), 24 px down 
 offset), so the map, its OBJs and the cleared text change in one frame. Copying all 62 KB in the VBlank ran into the
 next frame in the emulator (its first frame showed the old BG settings over a band of half-copied tiles). Leaving
 Area puts the entry's panels' characters back, its caught label's (`PokedexInfo_ReloadLabel`), their screens from the
-BG system's buffers, BGs 2 and 3 as 16-colour text BGs, mode 0 and the 3D, in one VBlank, and prints the entry again;
-of the Pokémon shown now if it changed on Area, a frame later (`PokedexInfoPage_RefreshEntry`), as the entry loads its
-label's characters at once, which would have shown on the map. The page's end closes it at once, the screen dark.
+BG system's buffers, BGs 2 and 3 as 16-colour text BGs, mode 0 and the 3D, in one VBlank, and prints the entry again,
+of the Pokémon shown now if it changed on Area, whose label and windows go to VRAM in that VBlank. It was printed a
+frame later before, as its label's characters went to BG 2 at once then, over the map: the frames between showed the
+entry of the Pokémon before (four in the emulator). The page's end closes it at once, the screen dark.
 Each of the species' places is an OBJ (`ARCID_POKEDEX_GRA` characters 15, cells 29, animations 46, at the place's area
 position and animation from the index), semi-transparent, glowing as the original's (the alpha pulse of
 `PokedexCommon_StepGlow`, 64 frames, over every layer); its palette row (main OBJ, rows the info page leaves free) is
@@ -1931,7 +1947,9 @@ x 129-255, y 0-31: a slanted left edge with a gold line, a light grid inside), w
 tiles; it fails on a pixel outside x 128-255, y 0-31 or more than 16 colours). Over it, right of the slant, the party
 icon (32 by 32 at x 156, its two frames animated as Evo's) and the species' name at x 190, y 8 in font 0 (font 1,
 y 10, for a name that would pass x 252), in the art's dark (11) with its light grey (6) as the shadow. The box is a
-128 by 32 bitmap, the art copied in and the name drawn again as the Pokémon changes, cut into four 32 by 32 OBJs from
+128 by 32 bitmap, the art copied in and the name drawn again as the Pokémon changes (its characters and the icon's
+colours go to VRAM in Area's VBlank task with the places and the bottom rows: loaded at once, the box showed the new
+Pokémon a frame early), cut into four 32 by 32 OBJs from
 x 128, made with the party icons' cells (`PokeIcon_GetCellFile_Main`); the four and the icon share one character
 resource of 3 KB. Its palettes: main OBJ rows 12 (the icon's: the shown Pokémon's row of the party icons' three,
 written as it changes) and 13 (the art's 16 colours), measured unchanged and unused by any OBJ while Area shows. It

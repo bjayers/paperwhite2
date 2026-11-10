@@ -56,6 +56,10 @@ void PokedexInfo_Show(PokedexInfo *info);
 // entry in a language (as PokedexInfo_SetLanguage), for the detail screen's info page's move panel and Area map
 void PokedexInfo_FreeText(PokedexInfo *info);
 void PokedexInfo_RestoreText(PokedexInfo *info, u32 language);
+// Whether the text is freed (between PokedexInfo_FreeText and PokedexInfo_RestoreText)
+BOOL PokedexInfo_IsTextFreed(PokedexInfo *info);
+// The queued text printed at once; on the info page, its windows go to VRAM in the next VBlank
+void PokedexInfo_PrintQueued(PokedexInfo *info);
 // Paper White 2: the info page's Area map takes the top entry's panels' VRAM on BGs 2 and 3 while it shows and puts
 // their characters back as it closes: the ARCID_POKEDEX_GRA file they are, and where the BGs have them and the caught
 // label's two windows (the mid BG's), each as CHAR_POS and CHAR_SIZE give them, by POKEDEX_INFO_PANEL_CHARS_*; their

@@ -197,10 +197,8 @@ typedef struct {
     PokedexMovePanel *movePanel;
     // Whether Moves shows the panel: on as Moves is entered, by A and by a touch on a row, off by B
     BOOL movePanelOn;
-    // The shown Pokémon's entry, under the open panel or Area's map, is changed only as they close, and after the map
-    // the frame after (PokedexInfoPage_RefreshEntry)
+    // The shown Pokémon's entry, under the open panel or Area's map, is changed only as they close
     BOOL entryStale;
-    BOOL entryRefresh;
     // A touch held on the scroll bar scrolls the list, and the panel shows the cursor's move as it lets go
     BOOL draggingKnob;
 } PokedexInfoPageWork;
@@ -232,7 +230,6 @@ static void PokedexInfoPage_UpdateMovePanel(PokedexInfoPageWork *wk, PokedexDeta
 static void PokedexInfoPage_CloseMovePanel(PokedexInfoPageWork *wk);
 static void PokedexInfoPage_ShowAreaMap(PokedexInfoPageWork *wk, PokedexDetailCommon *common);
 static void PokedexInfoPage_CloseAreaMap(PokedexInfoPageWork *wk, BOOL now);
-static void PokedexInfoPage_RefreshEntry(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk);
 static BOOL PokedexInfoPage_IsEntryHidden(PokedexInfoPageWork *wk);
 static void PokedexInfoPage_TakeTouchbarKeys(PokedexInfoPageWork *wk, PokedexDetailCommon *common);
 static void PokedexInfoPage_LoadAbilities(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk);
@@ -243,8 +240,12 @@ static void PokedexInfoPage_SwapSprite(PokedexInfoPageWork *wk);
 static void PokedexInfoPage_RemoveSprites(PokedexInfoPageWork *wk);
 static void PokedexInfoPage_ResetButtons(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                          PokedexDetailCommon *common);
+static void PokedexInfoPage_CreateStatsButtons(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
+                                               PokedexDetailCommon *common);
 static void PokedexInfoPage_CreateAbilityButtons(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk);
+static void PokedexInfoPage_PrintButtons(PokedexDetailCommon *common);
 static void PokedexInfoPage_FreeButtons(PokedexInfoPageWork *wk, PokedexDetailCommon *common);
+static void PokedexInfoPage_EndPush(PokedexInfoPageWork *wk, PokedexDetailCommon *common);
 static void PokedexInfoPage_UpdateButtons(PokedexInfoPageWork *wk, PokedexDetailCommon *common);
 static BOOL PokedexInfoPage_CheckButtons(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                          PokedexDetailCommon *common);
@@ -457,7 +458,6 @@ BOOL PokedexInfoPage_Main(PokedexDetailProcSys *sys, int *seq, void *param_, voi
         // Keys that the page gave back go back to the bar only now, after the frame that the page took them in, so
         // that the bar doesn't also see the key that closed the move panel
         PokedexInfoPage_TakeTouchbarKeys(wk, common);
-        PokedexInfoPage_RefreshEntry(param, wk);
         if (wk->exit != EXIT_NONE) {
             PokedexInfoPage_CloseMovePanel(wk);
             *seq = SEQ_WAIT_FADE_OUT;
@@ -760,7 +760,8 @@ static void PokedexInfoPage_SetMoveSet(PokedexDetailInfoParam *param, PokedexInf
 // Draws the sub-page of the shown Pokémon and form, with its buttons; Moves loads its set again, its cursor at the top,
 // and the move panel shows its first move or closes, before the top screen's text window shows what the sub-page has
 // there, as a closing panel gives the window back. Area's map closes before the move panel opens, and opens after it
-// closes, as each takes the entry's text
+// closes, as each takes the entry's text. The entry's text is printed at once, so that the next VBlank shows it with
+// the rest
 static void PokedexInfoPage_ShowSubpage(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                         PokedexDetailCommon *common) {
     wk->draggingKnob = FALSE;
@@ -778,6 +779,7 @@ static void PokedexInfoPage_ShowSubpage(PokedexDetailInfoParam *param, PokedexIn
         PokedexInfoPage_ShowAreaMap(wk, common);
     }
     PokedexInfoPage_ShowTopText(param, wk);
+    PokedexInfo_PrintQueued(wk->entry);
 }
 
 // Area shows its map over the entry, with the shown Pokémon's places and its box
@@ -794,8 +796,10 @@ static void PokedexInfoPage_ShowAreaMap(PokedexInfoPageWork *wk, PokedexDetailCo
     PokedexInfoArea_ShowPokemon(area, wk->species, wk->form, wk->sex);
 }
 
-// Leaving Area gives the entry back, of the Pokémon shown now if it changed meanwhile; now while the screen is dark, at
-// the page's end
+// Leaving Area gives the entry back, of the Pokémon shown now if it changed meanwhile, which the VBlank that puts the
+// entry's panels back shows (its label and windows go to VRAM in that VBlank, PokedexInfo_VBlankTask). It was printed
+// a frame later, as its label's characters on BG 2, loaded at once then, would have shown on the map: the frames
+// between showed the entry of the Pokémon before. Now while the screen is dark, at the page's end
 static void PokedexInfoPage_CloseAreaMap(PokedexInfoPageWork *wk, BOOL now) {
     PokedexInfoArea *area = PokedexInfoPanels_GetArea(wk->panels);
 
@@ -804,31 +808,10 @@ static void PokedexInfoPage_CloseAreaMap(PokedexInfoPageWork *wk, BOOL now) {
     }
     PokedexInfoArea_CloseMap(area, wk->entry, wk->language, now);
     if (wk->entryStale) {
-        if (now) {
-            wk->entryStale = FALSE;
-            PokedexInfo_SetPokemonInLanguage(wk->entry, wk->species, wk->form, wk->sex, wk->rare, wk->personality,
-                                             wk->caught, wk->language);
-        } else {
-            wk->entryRefresh = TRUE;
-        }
+        wk->entryStale = FALSE;
+        PokedexInfo_SetPokemonInLanguage(wk->entry, wk->species, wk->form, wk->sex, wk->rare, wk->personality,
+                                         wk->caught, wk->language);
     }
-}
-
-// The entry of the Pokémon shown now, the frame after Area's map gave BGs 2 and 3 back: the entry loads its label's
-// characters on BG 2 at once, which would have shown on the map until that VBlank. Unless the move panel opened in
-// between, which prints it as it closes
-static void PokedexInfoPage_RefreshEntry(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk) {
-    if (!wk->entryRefresh) {
-        return;
-    }
-    wk->entryRefresh = FALSE;
-    if (PokedexMovePanel_IsOpen(wk->movePanel) || !wk->entryStale) {
-        return;
-    }
-    wk->entryStale = FALSE;
-    PokedexInfo_SetPokemonInLanguage(wk->entry, wk->species, wk->form, wk->sex, wk->rare, wk->personality, wk->caught,
-                                     wk->language);
-    PokedexInfoPage_ShowTopText(param, wk);
 }
 
 // Whether the entry's text is freed, by the move panel or Area's map, so that it is printed only as they close
@@ -973,7 +956,8 @@ static void PokedexInfoPage_UpdateMovePanel(PokedexInfoPageWork *wk, PokedexDeta
     }
 }
 
-// The entry is printed again as the panel closes, of the Pokémon shown now if it changed while the panel was open
+// The entry is printed again as the panel closes, of the Pokémon shown now if it changed while the panel was open, all
+// of it at once, so that the next VBlank shows it whole in the panel's place
 static void PokedexInfoPage_CloseMovePanel(PokedexInfoPageWork *wk) {
     if (!PokedexMovePanel_IsOpen(wk->movePanel)) {
         return;
@@ -984,6 +968,7 @@ static void PokedexInfoPage_CloseMovePanel(PokedexInfoPageWork *wk) {
         PokedexInfo_SetPokemonInLanguage(wk->entry, wk->species, wk->form, wk->sex, wk->rare, wk->personality,
                                          wk->caught, wk->language);
     }
+    PokedexInfo_PrintQueued(wk->entry);
 }
 
 // The touch bar's keys that the page takes: Left and Right always, as they step through the sub-pages; Up and Down
@@ -1130,22 +1115,44 @@ static void PokedexInfoPage_RemoveSprites(PokedexInfoPageWork *wk) {
     }
 }
 
-// Makes the buttons of the shown sub-page again: on Stats, those that can do something for the Pokémon
+// Makes the buttons of the shown sub-page again: on Stats, those that can do something for the Pokémon. The new buttons
+// are made, printed and loaded before the old ones are freed, so that their characters don't go where the old ones'
+// are: the old buttons' screen shows until the next VBlank loads the art's with the new buttons', and loading the new
+// characters over the old ones showed those garbled for that frame. The art's screen replaces the old buttons'
 static void PokedexInfoPage_ResetButtons(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                          PokedexDetailCommon *common) {
+    AppTaskMenuWin *oldButtons[BUTTON_COUNT];
     u32 i;
 
-    PokedexInfoPage_FreeButtons(wk, common);
+    PokedexInfoPage_PrintButtons(common);
+    for (i = 0; i < BUTTON_COUNT; i++) {
+        oldButtons[i] = wk->buttons[i];
+        wk->buttons[i] = NULL;
+    }
     // The art first, as it replaces the buttons' BG's screen
     PokedexInfoPanels_LoadArt(wk->panels, wk->subpage);
     if (wk->subpage == POKEDEX_INFO_SUBPAGE_MATCHUPS) {
         PokedexInfoPage_CreateAbilityButtons(param, wk);
-        return;
+    } else if (wk->subpage == POKEDEX_INFO_SUBPAGE_STATS) {
+        PokedexInfoPage_CreateStatsButtons(param, wk, common);
     }
-    if (wk->subpage != POKEDEX_INFO_SUBPAGE_STATS) {
-        return;
+    PokedexInfoPage_PrintButtons(common);
+    for (i = 0; i < BUTTON_COUNT; i++) {
+        if (wk->buttons[i] != NULL) {
+            AppTaskMenuWin_Update(wk->buttons[i]);
+        }
+        if (oldButtons[i] != NULL) {
+            AppTaskMenuWin_FreeKeepScreen(oldButtons[i]);
+        }
     }
-    // In order, so that each one's place counts the shown ones above it (PokedexInfoPage_GetButtonPlace)
+    PokedexInfoPage_EndPush(wk, common);
+}
+
+// Stats' buttons, in order, so that each one's place counts the shown ones above it (PokedexInfoPage_GetButtonPlace)
+static void PokedexInfoPage_CreateStatsButtons(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
+                                               PokedexDetailCommon *common) {
+    u32 i;
+
     for (i = 0; i < BUTTON_COUNT; i++) {
         if (PokedexInfoPage_IsButtonUsable(wk, common, i)) {
             AppTaskMenuItem item;
@@ -1198,14 +1205,20 @@ static void PokedexInfoPage_CreateAbilityButtons(PokedexDetailInfoParam *param, 
     GFL_MsgDataFree(names);
 }
 
-// Frees the buttons once their text is printed, and ends a push
-static void PokedexInfoPage_FreeButtons(PokedexInfoPageWork *wk, PokedexDetailCommon *common) {
+// Prints the queued text, the buttons' with it
+static void PokedexInfoPage_PrintButtons(PokedexDetailCommon *common) {
     PrintQueue *queue = PokedexDetailCommon_GetPrintQueue(common);
-    u32 i;
 
     while (!PrintQueue_IsEmpty(queue)) {
         PrintQueue_Main(queue);
     }
+}
+
+// Frees the buttons once their text is printed, and ends a push
+static void PokedexInfoPage_FreeButtons(PokedexInfoPageWork *wk, PokedexDetailCommon *common) {
+    u32 i;
+
+    PokedexInfoPage_PrintButtons(common);
     for (i = 0; i < BUTTON_COUNT; i++) {
         if (wk->buttons[i] != NULL) {
             AppTaskMenuWin_Free(wk->buttons[i]);
@@ -1213,6 +1226,10 @@ static void PokedexInfoPage_FreeButtons(PokedexInfoPageWork *wk, PokedexDetailCo
         }
     }
     GFL_BGSysQueueScrLoad(POKEDEX_INFO_BUTTON_BG);
+    PokedexInfoPage_EndPush(wk, common);
+}
+
+static void PokedexInfoPage_EndPush(PokedexInfoPageWork *wk, PokedexDetailCommon *common) {
     if (wk->pushed != BUTTON_NONE) {
         wk->pushed = BUTTON_NONE;
         PokedexDetailTouchbar_SetActive(PokedexDetailCommon_GetTouchbar(common), TRUE);
@@ -1330,6 +1347,7 @@ static void PokedexInfoPage_PressButton(PokedexDetailInfoParam *param, PokedexIn
         PokedexInfoPage_EndOtherText(wk);
         PokedexInfo_SetPokemonInLanguage(wk->entry, wk->species, wk->form, wk->sex, wk->rare, wk->personality,
                                          wk->caught, wk->language);
+        PokedexInfo_PrintQueued(wk->entry);
         // A new form's abilities start from its first again
         wk->chosenAbility = 0;
         PokedexInfoPage_LoadAbilities(param, wk);
@@ -1354,6 +1372,7 @@ static void PokedexInfoPage_PressButton(PokedexDetailInfoParam *param, PokedexIn
         wk->shownAbility = ABILITY_MAX;
         PokedexInfoPage_EndOtherText(wk);
         PokedexInfo_SetLanguage(wk->entry, wk->language);
+        PokedexInfo_PrintQueued(wk->entry);
         GFL_SndSEPlay(SEQ_SE_SELECT3);
         return;
     }
