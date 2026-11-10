@@ -43,7 +43,11 @@ Nimbasa City, Route 5, Route 16, Lostlorn Forest, Route 15, Black City or White 
   the sporty atmosphere); Route 5 the tailgate outside it (lots of people, the camper; Munchlax, Trubbish, Cinccino,
   Gulpin and the like). Route 15 and Lostlorn Forest are the wilderness just outside civilization. The eastern places
   belong here rather than with the beachy coast.
-- **Maps:** `route_5`, `route_16`, `lostlorn_forest`, `route_15`, `route_14`, `abundant_shrine`.
+- **Maps:** `route_5`, `route_16`, `lostlorn_forest`, `route_15`, `marvelous_bridge` (bridge shadows only),
+  `route_14`, `abundant_shrine`.
+- Route 15 runs from Marvelous Bridge to Black City or White Forest. Route 14 and Abundant Shrine lie between that and
+  Undella but don't feel coastal: Route 14 touches Undella's coast at its top (no encounters there) and is otherwise a
+  mountainous riverland hike, with waterfalls, leading back inland.
 
 ## 5. Western Unova
 
@@ -52,8 +56,10 @@ Twist Mountain (not the mountain itself).
 
 - **Feel:** the mid-game, rougher and wilder, and a little melancholy (Celestial Tower, Route 7). Often rainy and
   gloomy, in a good way; more weather likely here.
-- **Maps:** `route_6`, `route_7`, `chargestone_cave` to `_3`, `mistralton_cave`, `mistralton_cave_2`,
-  `celestial_tower` to `_4`.
+- **Maps:** `driftveil_drawbridge` (bridge shadows only; with Driftveil, the border with Central Unova), `route_6`,
+  `route_7`, `chargestone_cave` to `_3`, `mistralton_cave`, `mistralton_cave_2`, `guidance_chamber` (part of
+  Mistralton Cave), `celestial_tower` to `_4`. Twist Mountain's entrance is here physically but goes with the
+  mountain in The Rest (it has no encounters of its own).
 
 ## 6. Icirrus
 
@@ -87,17 +93,14 @@ Routes 13, 21 and 22, Undella Town and Bay, Humilau City and Seaside Cave.
 ## The Rest
 
 Special places that don't fit their regions, taken one at a time: Reversal Mountain (Exterior, Black 2, White 2),
-Lentimas Town, the Strange House, Clay Tunnel, the Underground Ruins, Relic Passage, P2 Laboratory, the Nature
-Preserve and the Regi chambers.
+Lentimas Town, Twist Mountain, the Strange House, Clay Tunnel, the Underground Ruins, Relic Passage, P2 Laboratory
+with Routes 17 and 18, the Nature Preserve and the Regi chambers. Routes 17 and 18 feel marine, almost tropical, but
+more distant and unknown than the east coast (Tropius, Exeggcute and the like).
 
 - **Maps:** `reversal_mountain` to `_13` (1 the outside, 2–7 Black 2's Damp Caves, 8–13 White 2's Fiery Caves),
   `strange_house` to `_10`, `clay_tunnel` to `_3`, `underground_ruins` to `_3`, `relic_passage` to `_3`,
-  `p2_laboratory`, `nature_preserve`, `iron_chamber`, `iceberg_chamber`, `rock_peak_chamber`.
-
-## Not placed yet
-
-`driftveil_drawbridge`, `marvelous_bridge`, `route_17`, `route_18`, `guidance_chamber`, and `twist_mountain` to
-`_4` (the entrance in the West, the rest in The Rest?).
+  `twist_mountain` to `_4`, `p2_laboratory`, `route_17`, `route_18`, `nature_preserve`, `iron_chamber`,
+  `iceberg_chamber`, `rock_peak_chamber`.
 
 ## Reachability
 
@@ -105,3 +108,11 @@ From Aspertia, by walking and warps (seamless routes, doors and stairs), 129 of 
 that can't are reached by scripts only: the Iron, Iceberg and Rock Peak Chambers, the Nature Preserve, and Underground
 Ruins 2 and 3. This can't tell leftover maps that are still connected (Relic Castle's deep floors), so the user's
 knowledge decides which maps are used.
+
+## Tiles
+
+`tiles.json` (made by `tools/tiles.py` in this folder) counts each encounter map's tiles where wild Pokémon appear,
+from its terrain: grass, dark grass (the double battles' grass classes), surf water, and other walking tiles by their
+class (cave floor 0xa, deep sand 0xc, swamp puddles 0x1c, indoor floors 0x16 and 0x23...), with water and bridges
+that have no encounters. It reads the maps as they are, without the seasons' and the versions' replacements (Black 2's
+Route 4 is one of those, so it shows no tiles), and can't tell a leftover map from a used one.
