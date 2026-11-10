@@ -25,3 +25,9 @@ Dictionaries are structured data (YAML) the generator reads, each with a readabl
 - 2026-10-31: areas and the 7 methods stay as they are. Every family is obtainable; legendaries and mythicals only
   by events; some special Pokémon by static encounters, gifts or trades; some species only by evolution or breeding.
   Season-, time- and weather-limited Pokémon are encouraged. A clean slate, the ported tables only as ideas.
+- 2026-11-10: Pokécology notes are complete (in the questionnaire). Hidden Grottoes are set by hand; the generator
+  only counts them as a source. Trade evolutions are mostly not wild (a Link Cable item will evolve them). Audino keeps
+  its 30% of shaking grass; rustling spots make rare to exotic Pokémon more common, with their own species only where
+  a story calls for it. No "moving in later". Placement reasons are for review only. The old tables are a loose
+  source: deliberate-looking placements and bird migration, when nothing tells a better story. `system.md` sums up
+  what the encounter system can and can't do.
