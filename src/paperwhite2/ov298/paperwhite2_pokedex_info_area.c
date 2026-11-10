@@ -49,9 +49,9 @@
 
 // ARCID_POKEDEX_GRA's members that tools/paperwhite2/pokedex_evo.py adds after Evo's: the index, the icons and the
 // current Pokémon's box
-#define AREA_INDEX_FILE 158
-#define AREA_ICONS_FILE 159
-#define AREA_BOX_FILE 160
+#define AREA_INDEX_FILE 159
+#define AREA_ICONS_FILE 160
+#define AREA_BOX_FILE 161
 #define AREA_INDEX_MAGIC 0x45524150 // "PARE"
 #define AREA_INDEX_VERSION 3
 // A species' part of the index is at most this long, as encounters.py checks (AREA_BLOCK_MAX)
@@ -252,6 +252,8 @@ static const s8 sShakeOffsets[] = { 0, 2, -2, 2, -2, 0 };
 #define ROW_LEVELS_X 86
 #define ROW_TIER_X 157
 #define ROW_TIER_OFFSET_Y 4
+// "Not found in the wild" and "Not found on the map", on Area's other art (info_area_empty.png,
+// PokedexInfoArea_IsEmpty), centred in its box (x 48-208, y 64-102): font 0's line from y 76
 #define UNKNOWN_X 128
 #define UNKNOWN_Y 76
 
@@ -634,6 +636,12 @@ void PokedexInfoArea_Draw(PokedexInfoArea *area, GFLBitmap *bitmap, int top, u16
         PokedexInfoArea_ShowConditions(area, ICON_CLEAR, AREA_WEATHER_COUNT, entry->weathers, sConditionIconX,
                                        WEATHERS_Y);
     }
+}
+
+// Whether the species drawn last has neither places nor methods to show, only its message: never met in the wild, or
+// only in areas off the map. The panels show Area's other art for it, with one box for the message
+BOOL PokedexInfoArea_IsEmpty(PokedexInfoArea *area) {
+    return !area->found || (PokedexInfoArea_GetSpecies(area)->flags & AREA_FLAG_OFF_MAP) != 0;
 }
 
 // A row of the seasons', times' or weathers' icons at their places across, grey where it isn't met

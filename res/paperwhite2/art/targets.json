@@ -196,7 +196,7 @@
         {
             "name": "pokedex_info_area",
             "title": "Pokédex Info: Area",
-            "description": "The bottom screen of the Pokédex's Info page on its Area sub-page, under the page's text and icons and over the grid (src/paperwhite2/ov298/paperwhite2_pokedex_info_panels.c, paperwhite2_pokedex_info_area.c): sub BG 6 in palette row 10. Its source is res/paperwhite2/pokedex_art/info_area.png.",
+            "description": "The bottom screen of the Pokédex's Info page on its Area sub-page, under the page's text and icons and over the grid (src/paperwhite2/ov298/paperwhite2_pokedex_info_panels.c, paperwhite2_pokedex_info_area.c): sub BG 6 in palette row 10. Its source is res/paperwhite2/pokedex_art/info_area.png. The second screen, info_area_empty.png, shows instead for a species not found in the wild or only off the map, its message centred in its box; it shares the first's tiles and palette row.",
             "palette": "res/graphics/pokedex_gra/152.pal",
             "colors": 16,
             "depth": 4,
@@ -207,6 +207,12 @@
                     "title": "Touch screen",
                     "chars": "res/graphics/pokedex_gra/153.png",
                     "screen": "res/graphics/pokedex_gra/154.nscr"
+                },
+                {
+                    "name": "empty",
+                    "title": "Touch screen, not found",
+                    "chars": "res/graphics/pokedex_gra/153.png",
+                    "screen": "res/graphics/pokedex_gra/155.nscr"
                 }
             ]
         },

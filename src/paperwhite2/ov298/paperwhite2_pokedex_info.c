@@ -62,7 +62,7 @@
 // ARCID_POKEDEX_GRA's member that tools/paperwhite2/pokedex_sprites.py makes (after Evo's, pokedex_evo.py): a u8 for
 // each member of the battle sprites' archive, for a sprite's characters how far above its feet its visible pixels'
 // middle is on its first frame
-#define SPRITE_MIDDLES_FILE 157
+#define SPRITE_MIDDLES_FILE 158
 // The size of a pixel at the sprites' depth: the detail screen's camera (pokedex_detail_graphic.c), 70 units away with
 // a 40 degree field of view, shows 2 * 70 * tan(20 degrees) units in the screen's 192 pixels
 #define SPRITE_PIXEL_SIZE FX32_CONST(0.2654)

@@ -495,6 +495,9 @@ typedef struct {
 static const PanelsArt sSubpageArt[POKEDEX_INFO_SUBPAGE_COUNT] = {
     { 131, 132, 133 }, { 134, 135, 136 }, { 140, 141, 142 }, { 146, 147, 148 }, { 152, 153, 154 }, { 149, 150, 151 },
 };
+// Area's other screen (info_area_empty.png), its tab bar and one box for the message, in the Area art's tiles and
+// palette row, shown while the species has only the message (PokedexInfoArea_IsEmpty)
+#define AREA_EMPTY_SCREEN 155
 
 // How many pixels each sub-page scrolls BG_ART up while it shows, to lift its buttons off the tile grid (Stats' last
 // one off the touch bar, Matchups' centred between the chart's panel and the bar): its art is converted as many pixels
@@ -735,15 +738,20 @@ static void PokedexInfoPanels_CreateBanner(PokedexInfoPanels *panels, ArcTool *a
 // lift is set in the same VBlank, and the rows below the art, which it shows under the touch bar, are cleared
 void PokedexInfoPanels_LoadArt(PokedexInfoPanels *panels, u32 subpage) {
     const PanelsArt *art = &sSubpageArt[subpage];
+    u32 screen = art->screen;
 
+    // Paper White 2: Area's other art for a species with only a message. The page draws the sub-page before it loads
+    // the art, so this is the shown species', and loads the art again as the Pokémon changes
+    if (subpage == POKEDEX_INFO_SUBPAGE_AREA && screen != ART_NONE && PokedexInfoArea_IsEmpty(panels->area)) {
+        screen = AREA_EMPTY_SCREEN;
+    }
     GFL_BGSysFillScrArea(BG_ART, 0, 0, 0, ART_TILES_ACROSS, ART_BG_TILES_DOWN, 0);
     GFL_BGSysMoveBGReq(BG_ART, BG_MOVE_SET_Y, sSubpageLift[subpage]);
-    if (art->screen != ART_NONE) {
+    if (screen != ART_NONE) {
         ArcTool *arc = GFL_ArcSysCreateFileHandle(ARCID_POKEDEX_GRA, panels->heapId);
 
         // The screen's entries are the art's own tiles in its palette's first row, moved to where they are loaded
-        GFL_G2DIOLoadNSCRAsync(arc, art->screen, BG_ART, 0, CHAR_POS(panels->artChars[subpage]), 0, FALSE,
-                               panels->heapId);
+        GFL_G2DIOLoadNSCRAsync(arc, screen, BG_ART, 0, CHAR_POS(panels->artChars[subpage]), 0, FALSE, panels->heapId);
         GFL_BGSysSetScrPaletteNo(BG_ART, 0, 0, ART_TILES_ACROSS, ART_TILES_DOWN, PALETTE_ART + subpage);
         GFL_ArcToolFree(arc);
     }

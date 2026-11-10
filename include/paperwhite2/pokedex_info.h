@@ -166,6 +166,8 @@ void PokedexInfoArea_Free(PokedexInfoArea *area);
 // Draws the species' places and methods into bitmap, a window whose top is top pixels down the screen, and shows its
 // icons, loading their resources if they aren't
 void PokedexInfoArea_Draw(PokedexInfoArea *area, GFLBitmap *bitmap, int top, u16 species);
+// Whether the species drawn last shows only a message, not found in the wild or not on the map
+BOOL PokedexInfoArea_IsEmpty(PokedexInfoArea *area);
 // Frees the icons and their resources, while another sub-page shows
 void PokedexInfoArea_Hide(PokedexInfoArea *area);
 // The map on the top screen, over the entry, whose text it frees until it closes; it shows from the next VBlank. now
