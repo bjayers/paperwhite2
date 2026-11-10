@@ -449,14 +449,15 @@ static const u16 sSubpageNames[POKEDEX_INFO_SUBPAGE_COUNT] = {
 };
 
 // Moves' sets' names, where each starts, and the area touching each, halfway to the next one's: Level Up on the left
-// of the shown tab (x 98-125 in the six-tab bar), the other three spaced evenly on its right (the user's choice)
+// of the shown tab (x 98-125 in the six-tab bar), as far from it as TM/HM is on its right, the other three spaced
+// evenly on its right (the user's choice)
 static const u16 sMoveSetNames[POKEDEX_INFO_MOVES_SET_COUNT] = {
     PokedexData_Text_LevelUp,
     PokedexData_Text_Machines,
     PokedexData_Text_Tutor,
     PokedexData_Text_EggMoves,
 };
-static const u8 sMoveSetX[POKEDEX_INFO_MOVES_SET_COUNT] = { 10, 143, 184, 223 };
+static const u8 sMoveSetX[POKEDEX_INFO_MOVES_SET_COUNT] = { 45, 143, 184, 223 };
 
 static const TouchRect sMoveSetRects[] = {
     { MOVES_SET_TOUCH_TOP, MOVES_SET_TOUCH_BOTTOM, MOVES_SET_TOUCH_LEFT, 97 },
