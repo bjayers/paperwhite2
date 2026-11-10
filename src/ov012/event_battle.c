@@ -53,6 +53,7 @@
 #include "system/game_system.h"
 #include "system/zone_weather.h"
 #ifdef PAPERWHITE2
+#include "paperwhite2/battle_weather.h"
 #include "paperwhite2/difficulty.h"
 #include "paperwhite2/shiny_candy.h"
 #endif
@@ -661,6 +662,11 @@ static void EventBattleCall_SyncGameDataOnReturn(EventBattleCallWork *work, Game
     GameData_SetLastBtlResult(gameData, work->setup->result);
     EventBattleCall_BroadcastBattleResult(work);
     EventBattleCall_RecordEnemyFled(work);
+#ifdef PAPERWHITE2
+    // Paper White 2: a weather that a move or an ability set stays in the zone after the battle
+    PaperWhite2_BattleWeather_OnBattleReturn(PlayerState_GetZoneID(GameData_GetPlayerState(gameData)),
+                                             work->setup->fieldSituation.env.weather);
+#endif
     ResetWeather(work->gsys, PlayerState_GetZoneID(GameData_GetPlayerState(gameData)));
 }
 

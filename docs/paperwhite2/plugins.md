@@ -627,6 +627,44 @@ season: the pick is a real date of the season's months, the same on every call, 
 dates picked 347 to 459 times against a mean of 397 to 406, a chi-squared test passes). The Season app (below) sets the
 mode and the hemisphere.
 
+### Battle weather
+
+A battle that ends with a weather that a move or an ability set (Rain Dance, Sunny Day, Sandstorm, Hail, Drizzle,
+Drought, Sand Stream, Snow Warning) leaves it in the zone: for `BATTLE_WEATHER_SECONDS` (5 minutes of real time,
+`include/paperwhite2/battle_weather.h`), until the player is in another zone, or until another battle ends with another
+weather, which replaces it. It goes over the zone's own weather (the calendar's or the header's) and under the debug
+menu's Force weather. Design and the weathers: `docs/paperwhite2/design/weather-editor.md`, "Battle weather".
+
+| Battle's weather | Field weather |
+| --- | --- |
+| rain | `WEATHER_RAIN` |
+| sun | `WEATHER_SUNNY`: the field has no harsh sun, so sun clears the sky |
+| sandstorm | `WEATHER_SANDSTORM` |
+| hail | `WEATHER_FLUTTER`, the snow that `ConvFieldWeatherToBtl` gives hail for, so the next battle there has hail again |
+
+**How.** The battle server's own field (`sField`, `btl_field.c`) holds the weather to the end; `BtlMain_ProcMain`
+gives it to `PaperWhite2_BattleWeather_SetBattleEnd` with the result, or none on a machine without the server (link
+battles). After the battle, `EventBattleCall_SyncGameDataOnReturn` (`event_battle.c`) calls
+`PaperWhite2_BattleWeather_OnBattleReturn` before the original's `ResetWeather`: it starts the weather in the player's
+zone when the end weather isn't none, isn't the one the field gave the battle (`fieldSituation.env.weather`, so a
+battle in the zone's own rain changes nothing) and the zone is an exterior (`AreaData_IsExterior`) outside the
+Entralink. `GetWeatherAll` (`zone_weather.c`) then returns it, so `ResetWeather` sets `GetNowWeather` to it and the
+field opens with it (`SetWeatherInit`), and the encounter engine's conditions (`GetNowWeather`), the next battle's
+weather (`ConvFieldWeatherToBtl`, the field's shown weather), the DexNav and the readouts all see it: a Pokémon whose
+habitat lists `WEATHER_RAIN` can appear after Rain Dance. A zone change asks `GetWeatherAll` for the new zone, which
+ends it (the map change's `ResetWeather`, the seamless `Field_SwapWeather`). When its time is up, the field's frame
+(`FieldRoutine_Run`, outside events) calls `Field_SwapWeather` for the zone, which fades to the zone's own weather as
+a zone change does. The state is a static in main, never saved: loading a save, or a reset, starts without it.
+
+**Cost.** Main about 190 bytes (`src/paperwhite2/main/paperwhite2_battle_weather.c` and the hook), overlay 12 about
+170 (`src/paperwhite2/ov012/paperwhite2_battle_weather_event.c`), overlays 36 and 167 about 20 each; no heap but a
+10-byte `AreaData` for a moment on `HEAPID_GAMEEVENT`'s tail.
+
+**Tested (DeSmuME, 2026-11-10):** a trainer battle on Route 6 with Rain Dance (and a Damp Rock) ended in rain, and the
+field rained after it (state: `WEATHER_RAIN`, zone 331); with its start time moved back, the rain faded out to the
+zone's clear sky within a few frames; and a warp to Castelia ended it there. Not tested: a seamless zone change (the
+same `GetWeatherAll` path), sun, sandstorm and hail.
+
 ### Season app
 
 The Pokémon Centers' globe opens a touch-screen app that sets the season setting, in Geonet's place: hack builds have
