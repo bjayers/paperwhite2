@@ -1,8 +1,10 @@
-// What changed in the checkout since the last commit, with each file's diff. The Commit button stays disabled until
-// commitEnabled is turned on in editor/settings.local.json; until then the Claude sessions commit.
+// What changed in the checkout since the last commit, with each file's diff, and Push to GitHub, which commits the
+// files, merges origin/main in and pushes to main so the cloud session (which sees only GitHub) gets them. Commit and
+// Push stay disabled until commitEnabled is turned on in editor/settings.local.json; until then the Claude sessions
+// commit.
 
 import { useEffect, useMemo, useState } from "react";
-import type { GitState } from "../../shared/api.ts";
+import { neverPushed, pushMessage, type GitState, type PushResult } from "../../shared/api.ts";
 import { api } from "../api.ts";
 
 const STATUS: Record<string, string> = { M: "changed", A: "added", D: "deleted", R: "renamed", "?": "new", U: "conflict" };
@@ -24,6 +26,10 @@ export function GitPanel({ state, commitEnabled, onOpen, onClose, onRefresh }: {
   const [message, setMessage] = useState("");
   const [result, setResult] = useState<string | null>(null);
   const [onlyRes, setOnlyRes] = useState(true);
+  // Push to GitHub: the files it will push and its message while it is being looked over, then what it did
+  const [push, setPush] = useState<{ files: string[]; left: string[]; message: string } | null>(null);
+  const [pushing, setPushing] = useState(false);
+  const [pushed, setPushed] = useState<PushResult | null>(null);
 
   const changes = useMemo(() => (state?.changes ?? []).filter((c) => !onlyRes || c.path.startsWith("res/")), [state, onlyRes]);
 
@@ -55,6 +61,29 @@ export function GitPanel({ state, commitEnabled, onOpen, onClose, onRefresh }: {
       onRefresh();
     } catch (e) {
       setResult(`Not committed: ${(e as Error).message}`);
+    }
+  };
+
+  // The checked files, or every one shown when none is checked
+  const reviewPush = () => {
+    const paths = chosen.size ? [...chosen] : changes.map((c) => c.path);
+    const files = paths.filter((p) => !neverPushed(p));
+    setPushed(null);
+    setPush({ files, left: paths.filter((p) => neverPushed(p)), message: pushMessage(files) });
+  };
+  const startPush = async () => {
+    if (!push) return;
+    setPushing(true);
+    try {
+      const done = await api.push(push.files, push.message);
+      setPushed(done);
+      if (done.commit) setChosen(new Set());
+      setPush(null);
+    } catch (e) {
+      setPushed({ commit: null, merged: false, pushed: false, conflicts: [], error: (e as Error).message, log: [] });
+    } finally {
+      setPushing(false);
+      onRefresh();
     }
   };
 
@@ -110,6 +139,44 @@ export function GitPanel({ state, commitEnabled, onOpen, onClose, onRefresh }: {
         </button>
         {!commitEnabled && <p className="muted small">Committing is turned off for now: the Claude sessions commit.</p>}
         {result && <p className="small">{result}</p>}
+      </footer>
+      <footer className="commit">
+        <strong className="small">GitHub</strong>
+        {!push && (
+          <button disabled={!commitEnabled || pushing || (!changes.length && !chosen.size && !state?.ahead)} onClick={reviewPush}
+                  title={commitEnabled ? "Commit the checked files (or every one shown), merge origin/main in and push to main, for the cloud session" :
+                    "Turned off while the Claude sessions are still adding features: set commitEnabled to true in editor/settings.local.json to use it"}>
+            Push to GitHub{chosen.size ? ` (${chosen.size} file${chosen.size > 1 ? "s" : ""})` : ""}…
+          </button>
+        )}
+        {push && (
+          <>
+            <p className="small">{push.files.length
+              ? `Commits these ${push.files.length} file${push.files.length > 1 ? "s" : ""}, merges origin/main in and pushes to main:`
+              : `Nothing to commit: merges origin/main in and pushes the ${state?.ahead ?? 0} commit(s) not yet on GitHub.`}</p>
+            {push.files.length > 0 && <ul className="push-files small">{push.files.map((p) => <li key={p}>{p}</li>)}</ul>}
+            {push.left.length > 0 && <p className="muted small">Never pushed, so left out: {push.left.join(", ")}</p>}
+            {push.files.length > 0 && (
+              <input value={push.message} placeholder="Commit message" onChange={(e) => setPush({ ...push, message: e.target.value })} />
+            )}
+            <span className="push-actions">
+              <button className="primary" disabled={pushing || (push.files.length > 0 && !push.message.trim())} onClick={startPush}>
+                {pushing ? "Pushing…" : "Push"}
+              </button>
+              <button disabled={pushing} onClick={() => setPush(null)}>Cancel</button>
+            </span>
+          </>
+        )}
+        {pushed && (
+          <div className="small">
+            <p className={pushed.pushed ? "" : "error"}>
+              {pushed.pushed ? `Pushed${pushed.commit ? ` ${pushed.commit}` : ""} to GitHub (origin main).` :
+                `${pushed.commit ? `Committed ${pushed.commit} here, but not pushed` : "Not pushed"}: ${pushed.error}`}
+            </p>
+            {pushed.conflicts.length > 0 && <ul className="push-files">{pushed.conflicts.map((p) => <li key={p}>{p}</li>)}</ul>}
+            {pushed.log.length > 0 && <p className="muted">{pushed.log.join(" · ")}</p>}
+          </div>
+        )}
       </footer>
     </aside>
   );

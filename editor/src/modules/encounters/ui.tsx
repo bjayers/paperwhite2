@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { api } from "../../api.ts";
 import { constantLabel } from "../schema-form/form.tsx";
 import type { EditorState } from "./EncounterEditor.tsx";
-import { METHODS, SEASONS, TIME_GROUPS, TIMES, WEATHERS, type Context, type EncounterSettings, type Method, type Slot, type SpeciesInfo,
+import { METHODS, SEASONS, sortedGroups, TIME_GROUPS, TIMES, WEATHERS, type Context, type EncounterSettings, type Method, type Slot, type SpeciesInfo,
   type Time } from "./model.ts";
 import { scaledLevel } from "./resolve.ts";
 
@@ -150,7 +150,7 @@ export function PlacesPicker({ state, places, onChange }: { state: EditorState; 
       <select value="" onChange={(e) => add(e.target.value)} title="Add a place">
         <option value="">+ place</option>
         <optgroup label="Groups (every area)">
-          {groups.map((g) => <option key={g.id} value={g.id} disabled={places.includes(g.id)}>{g.name} ({g.areas.length})</option>)}
+          {sortedGroups(groups).map((g) => <option key={g.id} value={g.id} disabled={places.includes(g.id)}>{g.name} ({g.areas.length})</option>)}
         </optgroup>
         <optgroup label="Areas">
           {sorted.map((a) => <option key={a.id} value={a.id} disabled={places.includes(a.id)}>{a.name}</option>)}

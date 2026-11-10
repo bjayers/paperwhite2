@@ -1,6 +1,6 @@
 // Requests to the editor's server, and its live events.
 
-import { WRITE_HEADER, type BuildState, type DataFile, type Entry, type ScanMatch, type FileContent, type GitState, type ProjectInfo,
+import { WRITE_HEADER, type BuildState, type DataFile, type Entry, type ScanMatch, type FileContent, type GitState, type ProjectInfo, type PushResult,
   type SaveRequest, type SaveResult, type ServerEvent } from "../shared/api.ts";
 import { schemaPart, splitSchemaId, type Schema } from "../shared/schema.ts";
 import type { Usage, UsageKind } from "../server/usage.ts";
@@ -187,6 +187,8 @@ export const api = {
   /** Puts changed files back as the last commit has them; new files are removed. */
   discard: (paths: string[]) => request<{ discarded: number }>("POST", "/api/git/discard", { paths }),
   commit: (paths: string[], message: string) => request<{ commit: string }>("POST", "/api/git/commit", { paths, message }),
+  /** Commits the files, merges origin/main in and pushes to main (Push to GitHub). */
+  push: (paths: string[], message: string) => request<PushResult>("POST", "/api/git/push", { paths, message }),
 };
 
 export type ConnectionListener = (connected: boolean) => void;

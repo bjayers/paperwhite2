@@ -146,6 +146,14 @@ export interface AreaGroup {
   custom: boolean;
 }
 
+/** The groups in alphabetical order, ignoring case, with numbers in number order ("Route 2" before "Route 10"), for
+ * every list of them. The import's and the user's sort together: editing one of the import's makes it the user's, and
+ * the import's own names are already in this order. */
+export function sortedGroups(groups: readonly AreaGroup[]): AreaGroup[] {
+  return [...groups].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }) ||
+    a.id.localeCompare(b.id, undefined, { numeric: true }));
+}
+
 /** What an area's rustling spots are, which decides what they give besides Pokémon (Settings' rustling). */
 export const SPOTS = [
   { id: "grass", label: "Shaking grass" },

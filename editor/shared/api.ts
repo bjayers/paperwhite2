@@ -95,6 +95,39 @@ export interface GitState {
   changes: GitChange[];
 }
 
+/** What Push to GitHub did (POST /api/git/push): its commit (none when there was nothing to commit and the branch was
+ * only ahead), whether origin/main merged in and the push went through, and why not. */
+export interface PushResult {
+  commit: string | null;
+  merged: boolean;
+  pushed: boolean;
+  /** The files that conflicted when origin/main merged in (the merge was aborted). */
+  conflicts: string[];
+  error: string | null;
+  /** Each git step and its outcome, in order. */
+  log: string[];
+}
+
+/** Files Push to GitHub never stages: the ROMs and what is extracted or built from them, the Script Editor's own notes,
+ * and the local settings. (Files git ignores are left out too, by the server.) */
+const NEVER_PUSHED = [/^(orig|extract|build)\//, /\.(nds|srl|dsi)$/i, /(^|\/)bios[79]\.bin$/i, /^res\/paperwhite2\/scripts\/notes\.json$/,
+  /(^|\/)settings\.local\.json$/, /(^|\/)node_modules\//];
+
+export function neverPushed(path: string): boolean {
+  return NEVER_PUSHED.some((re) => re.test(path));
+}
+
+/** The default message of a push: "Editor: " and the parts of the data its files are in ("encounters, scripts"). */
+export function pushMessage(paths: string[]): string {
+  const areas = [...new Set(paths.map((p) => {
+    const parts = p.split("/");
+    if (parts[0] === "res") return (parts[1] === "paperwhite2" && parts.length > 2 ? parts[2] : parts[1]).replace(/\.json$/, "");
+    return parts.length > 1 ? parts[0] : p;
+  }).map((a) => a.replace(/_/g, " ")))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  if (!areas.length) return "Editor: changes";
+  return `Editor: ${areas.length > 4 ? `${areas.slice(0, 4).join(", ")} and ${areas.length - 4} more` : areas.join(", ")}`;
+}
+
 /** Sent on /api/events as server-sent events. */
 export type ServerEvent =
   | { type: "files"; paths: string[] }

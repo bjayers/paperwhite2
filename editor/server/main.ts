@@ -622,6 +622,15 @@ const routes: Record<string, Handler> = {
     if (!paths?.length || !message?.trim()) return error(res, 400, "Choose files and write a message");
     json(res, { commit: await git.commit(paths, message.trim()) });
   },
+  // Push to GitHub, for the cloud session: the files committed by name, origin/main merged in, HEAD pushed to main
+  "POST /api/git/push": async (req, res) => {
+    if (!settings.commitEnabled) return error(res, 403, "Committing is turned off in settings.local.json");
+    const { paths, message } = (await readJson(req)) as { paths: string[]; message: string };
+    if (!Array.isArray(paths) || (paths.length && !message?.trim())) return error(res, 400, "Choose files and write a message");
+    const result = await git.push(paths, message?.trim() ?? "");
+    send({ type: "git" });
+    json(res, result);
+  },
   "POST /api/git/discard": async (req, res) => {
     // Changed files put back as the last commit has them, new ones removed: only files git lists as changed
     if (!settings.commitEnabled) return error(res, 403, "Committing is turned off in settings.local.json");

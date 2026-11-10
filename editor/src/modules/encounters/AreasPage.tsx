@@ -6,7 +6,7 @@
 
 import { Fragment, useMemo, useState } from "react";
 import type { EditorState } from "./EncounterEditor.tsx";
-import { METHODS, SEASONS, SPOTS, type Area, type AreaGroup, type Spots } from "./model.ts";
+import { METHODS, SEASONS, SPOTS, sortedGroups, type Area, type AreaGroup, type Spots } from "./model.ts";
 import { measure, namesArea, placeOdds } from "./resolve.ts";
 import { Icon, label, percent } from "./ui.tsx";
 
@@ -32,7 +32,7 @@ export function AreasPage({ state, selected, select }: { state: EditorState; sel
     })).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
   }, [draft.areas]);
   const visible = rows.map((r) => ({ ...r, areas: r.areas.filter(matches) })).filter((r) => r.areas.length);
-  const groups = draft.groups.filter((g) => !q || g.name.toLowerCase().includes(q));
+  const groups = sortedGroups(draft.groups).filter((g) => !q || g.name.toLowerCase().includes(q));
   const current: Selected | null = group ? { kind: "group", id: group } :
     (selected ?? visible[0]?.areas[0]?.id) ? { kind: "area", id: selected ?? visible[0].areas[0].id } : null;
   const showArea = (id: string) => {
@@ -153,7 +153,7 @@ function GroupEditor({ state, group, onDeleted, showArea }: { state: EditorState
 
 function AreaDetail({ state, area, showGroup }: { state: EditorState; area: Area; showGroup(id: string): void }) {
   const { draft, settings, ctx, loaded } = state;
-  const inGroups = draft.groups.filter((g) => g.areas.includes(area.id));
+  const inGroups = sortedGroups(draft.groups).filter((g) => g.areas.includes(area.id));
   const seasonsDiffer = SEASONS.some((s) => JSON.stringify(area.rates[s]) !== JSON.stringify(area.rates.spring));
   const methods = METHODS.filter((m) => SEASONS.some((s) => area.rates[s][m.id]) ||
     [...draft.species.values()].some((e) => e.habitats.some((h) => namesArea(h, area.id, draft.groups) && SEASONS.some((s) => h.seasons[s]?.methods.includes(m.id)))));

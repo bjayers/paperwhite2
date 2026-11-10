@@ -9,6 +9,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { chunkLoader } from "../overworld/MapView.tsx";
 import { TILE, TILE_FLAG_COLLISION, TILE_FLAG_ENCOUNT, TILE_FLAG_WATER, tileFlags, type ZoneMap } from "../overworld/terrain.ts";
+import { disposeGizmo } from "./gizmo.ts";
 import type { PlacedObject } from "./painting.ts";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
@@ -128,6 +129,7 @@ export class ChunkScene {
   /** Bumped when a chunk's GLB changes on disk, so it loads again. */
   versions = new Map<string, number>();
   private frame = 0;
+  private resizes: ResizeObserver;
   private loadKey = "";
   onPick: (result: PickResult, ev: PointerEvent) => void = () => {};
   onLoaded: () => void = () => {};
@@ -178,7 +180,8 @@ export class ChunkScene {
     dom.addEventListener("pointermove", this.move);
     window.addEventListener("pointerup", this.up);
     dom.addEventListener("contextmenu", (e) => e.preventDefault());
-    new ResizeObserver(() => this.resize()).observe(host);
+    this.resizes = new ResizeObserver(() => this.resize());
+    this.resizes.observe(host);
     this.resize();
     const loop = () => {
       this.frame = requestAnimationFrame(loop);
@@ -282,8 +285,10 @@ export class ChunkScene {
   dispose() {
     cancelAnimationFrame(this.frame);
     window.removeEventListener("pointerup", this.up);
+    this.resizes.disconnect();
     this.controls.dispose();
-    this.gizmo.dispose();
+    // (not the gizmo's own dispose(), which throws in three 0.169 and blanked the page when the tab closed: gizmo.ts)
+    disposeGizmo(this.gizmo);
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }

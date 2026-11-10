@@ -38,6 +38,11 @@ If Edge can't reach it, WSL isn't forwarding the port: check that `localhostForw
 - **Files changed elsewhere** (by you, or a Claude session) reload in their tabs; one with unsaved changes asks first.
 - **Build** (Ctrl+B) runs `python3 configure.py w2_us --hack && ninja` and shows the log; the hack build copies the
   ROM to your playtest folder. **Changes** lists what changed since the last commit, with each file's diff.
+  **Push to GitHub** (under Changes) publishes edits for the cloud session, which sees only GitHub: it lists the checked
+  files (or every one shown), commits them by name with a message you can change ("Editor: encounters, text"), merges
+  `origin/main` in and pushes to `main`, trying again when the network fails. A conflict aborts the merge and lists its
+  files; it never forces or rebases. ROMs, `orig/`, `extract/`, `build/`, the Script Editor's `notes.json` and files git
+  ignores are never staged. It doesn't build.
 
 Keys: Ctrl+S save, Ctrl+Shift+S save all, Ctrl+Z / Ctrl+Y undo and redo, Ctrl+P open a file by name, Ctrl+B build.
 
@@ -48,7 +53,7 @@ Keys: Ctrl+S save, Ctrl+Shift+S save all, Ctrl+Z / Ctrl+Y undo and redo, Ctrl+P 
 | Setting | Default | |
 | --- | --- | --- |
 | `buildCommand` | `python3 configure.py w2_us --hack && ninja` | Run in the repository by the Build button |
-| `commitEnabled` | `false` | The Commit button stays disabled until this is `true`; the Claude sessions commit for now |
+| `commitEnabled` | `false` | Commit, Discard and Push to GitHub stay disabled until this is `true` |
 | `port` | `7420` | |
 
 Restart the editor after changing them. `PAPERWHITE_PORT` overrides the port for one run, so a second copy (a Claude
