@@ -176,6 +176,8 @@ export const api = {
   usage: (kind: UsageKind, again = false) => request<Usage>("GET", `/api/usage?kind=${kind}${again ? "&again=1" : ""}`),
   save: (save: SaveRequest) => request<SaveResult>("PUT", "/api/file", save),
   /** Removes a species' encounter file (the only kind the server lets go). */
+  /** How many zones the weather calendar holds, and where that limit was read. */
+  weatherCalendarLimit: () => request<{ max: number; source: string }>("GET", "/api/weather-calendar/limit"),
   removeFile: (path: string) => request<{ removed: boolean }>("DELETE", `/api/file?path=${encodeURIComponent(path)}`),
   build: () => request<BuildState>("GET", "/api/build"),
   startBuild: () => request<{ started: boolean }>("POST", "/api/build"),

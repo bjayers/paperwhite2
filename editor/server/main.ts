@@ -17,6 +17,7 @@ import { Project, versionOf } from "./project.ts";
 import { Python, pythonFor } from "./python.ts";
 import { loadSettings } from "./settings.ts";
 import { UsageCache } from "./usage.ts";
+import { removable, weatherCalendarLimit } from "./weather.ts";
 
 // The checkout this folder is in; PAPERWHITE_ROOT points it at another, as the tests do with a scratch copy.
 const ROOT = resolve(process.env.PAPERWHITE_ROOT ?? join(import.meta.dirname, "../.."));
@@ -25,6 +26,7 @@ const DEV = process.argv.includes("--dev");
 
 const settings = loadSettings();
 const started = Date.now();
+const WEATHER_CALENDAR_LIMIT = weatherCalendarLimit(ROOT);
 const project = new Project(ROOT);
 const python = new Python(ROOT);
 const usage = new UsageCache(ROOT);
@@ -279,6 +281,8 @@ const routes: Record<string, Handler> = {
     }
   },
   "GET /api/constants": (_req, res) => json(res, python.constants()),
+  // How many zones the weather calendar's table holds (the packer's CALENDAR_ZONE_MAX, read at start)
+  "GET /api/weather-calendar/limit": (_req, res) => json(res, WEATHER_CALENDAR_LIMIT),
   // Every flag or variable with its name, status, uses and documentation (server/usage.ts); again=1 runs the tools again
   "GET /api/usage": async (_req, res, url) => {
     const kind = url.searchParams.get("kind");
@@ -346,10 +350,10 @@ const routes: Record<string, Handler> = {
     json(res, { ok: true });
   },
   // Removes a data file that a specialty editor no longer needs: only a species' encounter file (one taken out of
-  // the wild), so nothing else can be removed from here
+  // the wild) or a zone's weather calendar (the Weather Editor's Remove), so nothing else can be removed from here
   "DELETE /api/file": (_req, res, url) => {
     const path = project.checkPath(url.searchParams.get("path") ?? "");
-    if (!path || !/^res\/paperwhite2\/encounters\/species\/[a-z0-9_]+\.json$/.test(path)) return error(res, 403, "Not a file that can be removed");
+    if (!path || !removable(path)) return error(res, 403, "Not a file that can be removed");
     if (existsSync(project.abs(path))) rmSync(project.abs(path));
     json(res, { removed: true });
   },

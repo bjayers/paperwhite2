@@ -21,7 +21,7 @@ If Edge can't reach it, WSL isn't forwarding the port: check that `localhostForw
 ## What it does
 
 - **Specialty editors** at the top of the sidebar, under **Editors**: everything about one subject in one place. The
-  first are the **Encounter Editor**, **Graphics & Palettes**, the **Follower Editor**, the **Text Editor**, the **Script Editor**, the **Pokémon Editor** and the **Trainer Editor** (below). The per-file editors are under **Data files**, which folds away. A page
+  first are the **Encounter Editor**, **Graphics & Palettes**, the **Follower Editor**, the **Text Editor**, the **Script Editor**, the **Pokémon Editor**, the **Trainer Editor** and the **Weather Editor** (below). The per-file editors are under **Data files**, which folds away. A page
   of a tool can be linked to: `http://localhost:7420/#tool/encounters`.
 - **Every kind of data in `res/`, found by itself.** Each data file names its schema in `"$schema"`; the editor groups
   the files by schema, so a new kind of data, a new field or a new file shows up without changing the editor.
@@ -386,6 +386,34 @@ drops one (their texts stay in the bank). An owner's ID must be theirs alone, si
 owners by ID; the original's visitors share some. An owner's **own lines** say what they say while waiting, when telling their dream, when invited and in their shop,
 each with its talk window preview; **Use the usual line** gives a moment back to the avenue's generic line. A look
 past the first 256 object codes is flagged: the avenue keeps looks in a byte. Save (Ctrl+S) writes the bank, then the table.
+
+## The Weather Editor
+
+Each location's weather (`src/modules/weather/`, `docs/paperwhite2/design/weather-editor.md`). The list has the zones
+with a calendar (`res/field/weather_calendar/<zone>.json`), boxed together where zones share all their dates (Virbank
+City and both Virbank Complex zones), then the other outdoor zones, then the indoor ones (folded; no weather). A zone
+is outdoors when its zone header's area (`res/field/areas/<area>.json`) has `"exterior": true`; the others are offered
+no weather, since the game would draw it inside.
+
+- **Default weather:** the zone header's `weather` (`res/field/zones/<zone>.json`), the weather of a zone without a
+  calendar, and of a calendar zone while the game's season isn't the current one.
+- **Calendar:** each season as a strip of its 90–92 dates, its three months in order (spring is January, May and
+  September). Choose a weather in the brush row (each with what it does in battle) and click or drag dates; Clear is
+  the eraser. A painted month is written as the packer writes it (runs of a weather as `"first-last"`); an untouched
+  month stays as it was. **Paint all** paints every zone that shares the dates, so they keep sharing. Under each
+  season, each weather's share ("Rain 24 / 92 days (26%)").
+- **Quick fill:** "N days of W" in a season puts W on exactly N dates spread evenly (the same each time, and nested: 10
+  rainy dates are among the 20-day choice's), replacing what those dates had; **Make sunny** clears a season; **Copy
+  every date** takes another zone's year, which puts the zone in its group.
+- **Add a calendar** (sunny, or a copy of another zone's dates) and **Remove calendar** change the zone's file and
+  `order.json`; the header shows the count against the table's limit, `CALENDAR_ZONE_MAX` in
+  `tools/data/weather_calendar_data.py` (read when the server starts; 24, the original table, where it isn't there).
+  Adding past it is refused. Special zones (the Entralink's forest, Route 7's event, Routes 14 and 15 on the birthday)
+  say which rule of the game wins over their calendar.
+
+Save (Ctrl+S) checks every calendar against the packer's rules first (days in their month, no day twice, weathers of
+the enum, the table's zones and limit), then writes the files with the build's validator; a removed calendar's file
+goes on Save. Ctrl+Z and Ctrl+Y undo and redo a stroke or fill (every zone it painted).
 
 ## Dragging values
 
