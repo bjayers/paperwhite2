@@ -502,7 +502,7 @@ HABITAT_C = ROOT / "src/paperwhite2/ov303/paperwhite2_habitat_dex.c"
 HABITAT_BAR = ROOT / "res/paperwhite2/pokedex_art/habitat_bar.png"
 ARROW_OFFSET, ARROW_SIZE = 24, 16
 # The arrows' centre's y (pokedex_habitat_graphic.c)
-ARROW_Y = 33
+ARROW_Y = 30
 STAMP_X, STAMP_Y, STAMP_SIZE = 224, 20, 64
 # Each method count's outline colour in the guide, 1 to 5
 COUNT_COLORS = [(230, 60, 60), (240, 150, 30), (60, 170, 60), (40, 120, 230), (170, 70, 210)]

@@ -1334,8 +1334,8 @@ redesigned on 2026-11-09 with the Area icons:
   top: 5 for the season, 6 for the time and the weather), the current one red and the others grey (the font's
   palette row, colours 3 and 2), as the user drew them (2026-11-10): 3 by 1 px, 2 px apart, 33 px right of the icon's
   left (x 41, 81, 121), centred on y 28 (six at y 23-33, five at 24-32). They are pixels of the text window (BG 0,
-  `HabitatDex_DrawDots`), whose tile rows 2 to 4 the VBlank sends with the icons (`HabitatDex_LoadDots`). Then the page arrows (the season arrows' actors, at x 136 and 184, y 33) and
-  the page between them, centred at x 160, y 25; the stamp at x 224, y 21. Left, Right and Select step through the
+  `HabitatDex_DrawDots`), whose tile rows 2 to 4 the VBlank sends with the icons (`HabitatDex_LoadDots`). Then the page arrows (the season arrows' actors, at x 136 and 184, y 30) and
+  the page between them, centred at x 160, y 22; the stamp at x 224, y 21. Left, Right and Select step through the
   methods.
 - **An empty grid says why:** where the chosen method's list (only the Pokémon the player has seen) is empty, the
   grid's boxes are hidden under the gaps' colour (the grid's first character, `HabitatDex_SetGridShown`) and a note

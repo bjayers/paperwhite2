@@ -127,8 +127,8 @@ static const u8 sFilterIcons[HABITAT_DEX_FILTER_COUNT] = { ICON_SPRING, ICON_MOR
 #define ICON_INSET_Y 4
 #define FILTER_X 8
 #define FILTER_Y 22
-// The page's text, on the user's bar (the arrows at y 33, pokedex_habitat_graphic.c)
-#define PAGE_Y 25
+// The page's text, on the user's bar (the arrows at y 30, pokedex_habitat_graphic.c)
+#define PAGE_Y 22
 #define FILTER_PITCH 40
 #define PAGE_X 160
 #define PAGE_WIDTH 32

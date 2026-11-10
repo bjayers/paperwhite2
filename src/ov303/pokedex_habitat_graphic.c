@@ -524,7 +524,7 @@ static void PokedexHabitatGraphic_CreateActors(PokedexHabitatGraphic *graphic) {
 #ifdef PAPERWHITE2
     // Paper White 2: the arrows turn the Habitat Dex's pages, in the filter bar's bottom row either side of the page
     graphic->actors[POKEDEX_HABITAT_OBJ_SEASON_LEFT] =
-        UIObjRes_CreateActor(&graphic->objRes, graphic->unit, 136, 33, 24, HEAPID_POKEDEX_HABITAT);
+        UIObjRes_CreateActor(&graphic->objRes, graphic->unit, 136, 30, 24, HEAPID_POKEDEX_HABITAT);
 #else
     graphic->actors[POKEDEX_HABITAT_OBJ_SEASON_LEFT] =
         UIObjRes_CreateActor(&graphic->objRes, graphic->unit, 20, 60, 24, HEAPID_POKEDEX_HABITAT);
@@ -534,7 +534,7 @@ static void PokedexHabitatGraphic_CreateActors(PokedexHabitatGraphic *graphic) {
 
 #ifdef PAPERWHITE2
     graphic->actors[POKEDEX_HABITAT_OBJ_SEASON_RIGHT] =
-        UIObjRes_CreateActor(&graphic->objRes, graphic->unit, 184, 33, 22, HEAPID_POKEDEX_HABITAT);
+        UIObjRes_CreateActor(&graphic->objRes, graphic->unit, 184, 30, 22, HEAPID_POKEDEX_HABITAT);
 #else
     graphic->actors[POKEDEX_HABITAT_OBJ_SEASON_RIGHT] =
         UIObjRes_CreateActor(&graphic->objRes, graphic->unit, 236, 60, 22, HEAPID_POKEDEX_HABITAT);
