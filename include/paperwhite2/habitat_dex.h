@@ -166,9 +166,12 @@ void PaperWhite2_HabitatDex_NewArea(HabitatDex *dex);
 // Builds the list of an area (its Habitat List file) by the chosen method (all where the area hasn't it), with the
 // methods it has and the pages; an empty list hides the grid for a note (HABITAT_DEX_NOTE_*)
 void PaperWhite2_HabitatDex_Fill(HabitatDex *dex, u32 file, PokeDexSave *pokedex);
-// The kind of habitat of the chosen method (0 land, 1 water, 2 fishing), for the grid's colours and the stamps; all
-// the methods' is the first kind that the area has
+// The kind of habitat of the chosen method (0 land, 1 water, 2 fishing), for the stamps; all the methods' is the first
+// kind that the area has
 u32 PaperWhite2_HabitatDex_GetKind(HabitatDex *dex);
+// The grid's colours for the chosen method: its kind's (0 to 2, the original's), or All's grey or Dark Grass's darker
+// green (PokedexHabitatGraphic_RequestPalette's type)
+u32 PaperWhite2_HabitatDex_GetGridColors(HabitatDex *dex);
 // The entry of a cell of the page, or NULL
 const HabitatDexEntry *PaperWhite2_HabitatDex_GetCell(HabitatDex *dex, u32 cell);
 // The Pokémon on the page

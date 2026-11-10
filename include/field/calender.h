@@ -19,7 +19,13 @@ struct Calendar {
     HeapID heapId;
     GameData *gameData;
     ArcTool *arc;
+#ifdef PAPERWHITE2
+    // Paper White 2: the table's count of zones, whose entries each query reads from the archive (calender.c), in
+    // place of the original's 24 entries in RAM
+    u16 zoneCount;
+#else
     CalendarZone zones[24];
+#endif
 };
 
 Calendar *Calendar_Create(GameData *gameData, HeapID heapId);

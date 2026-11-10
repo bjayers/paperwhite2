@@ -179,6 +179,12 @@ void PokedexHabitatGraphic_StartActorAnim(PokedexHabitatGraphic *graphic, u32 ac
 void PokedexHabitatGraphic_UpdatePlayerMarker(PokedexHabitatGraphic *graphic);
 // Moves the main screen's buttons down, or else the sub screen's BGs up
 void PokedexHabitatGraphic_Scroll(PokedexHabitatGraphic *graphic, int value, BOOL objects);
+#ifdef PAPERWHITE2
+// Paper White 2: the grid's colours past the original's three kinds' (0 land, 1 water, 2 fishing), the All method's
+// grey and Dark Grass's darker green (paperwhite2_habitat_dex.c, ARCID_POKEDEX_GRA's GRID_COLORS_FILE)
+#define POKEDEX_HABITAT_GRID_ALL 3
+#define POKEDEX_HABITAT_GRID_DARK_GRASS 4
+#endif
 void PokedexHabitatGraphic_RequestPalette(PokedexHabitatGraphic *graphic, u32 type);
 BOOL PokedexHabitatGraphic_IsPaletteRequested(PokedexHabitatGraphic *graphic);
 void PokedexHabitatGraphic_SetBlinkStopped(PokedexHabitatGraphic *graphic, BOOL stopped);

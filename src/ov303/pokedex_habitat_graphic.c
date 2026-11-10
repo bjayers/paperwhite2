@@ -36,6 +36,10 @@
 #include "system/text_speed.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/habitat_dex.h"
+
+// Paper White 2: the grid's colours of All and Dark Grass, rows 0-2 and 3-5 as file 50's for water and fishing, a
+// member that tools/paperwhite2/pokedex_evo.py adds (habitat_grid.py derives it from file 49's green)
+#define GRID_COLORS_FILE 165
 #endif
 
 // What the Pokédex's Habitat List draws. The ROM has no name for this file; pokedex_habitat_graphic.c is a guess after
@@ -155,6 +159,16 @@ void PokedexHabitatGraphic_VBlank(PokedexHabitatGraphic *graphic) {
         case 2:
             GFL_G2DIOLoadNCLR(ARCID_POKEDEX_GRA, 50, PALTYPE_MAIN_BG, 0x60, 0x120, 0x60, HEAPID_POKEDEX_HABITAT);
             break;
+#ifdef PAPERWHITE2
+        case POKEDEX_HABITAT_GRID_ALL:
+            GFL_G2DIOLoadNCLR(ARCID_POKEDEX_GRA, GRID_COLORS_FILE, PALTYPE_MAIN_BG, 0, 0x120, 0x60,
+                              HEAPID_POKEDEX_HABITAT);
+            break;
+        case POKEDEX_HABITAT_GRID_DARK_GRASS:
+            GFL_G2DIOLoadNCLR(ARCID_POKEDEX_GRA, GRID_COLORS_FILE, PALTYPE_MAIN_BG, 0x60, 0x120, 0x60,
+                              HEAPID_POKEDEX_HABITAT);
+            break;
+#endif
         }
         PokedexHabitatGraphic_ReloadBlink(graphic, graphic->paletteType);
         PaletteFade_LoadFromVRAM(graphic->paletteFade, PALFADE_BUFFER_MAIN_BG, 0, 0x200);
@@ -1063,6 +1077,14 @@ static void PokedexHabitatGraphic_ReloadBlink(PokedexHabitatGraphic *graphic, u3
     case 2:
         BlinkPalAnm_SetPalBufferArc(graphic->blink[0], ARCID_POKEDEX_GRA, 50, 0x30, 0x40);
         break;
+#ifdef PAPERWHITE2
+    case POKEDEX_HABITAT_GRID_ALL:
+        BlinkPalAnm_SetPalBufferArc(graphic->blink[0], ARCID_POKEDEX_GRA, GRID_COLORS_FILE, 0, 0x10);
+        break;
+    case POKEDEX_HABITAT_GRID_DARK_GRASS:
+        BlinkPalAnm_SetPalBufferArc(graphic->blink[0], ARCID_POKEDEX_GRA, GRID_COLORS_FILE, 0x30, 0x40);
+        break;
+#endif
     }
 }
 

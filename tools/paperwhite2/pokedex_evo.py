@@ -2,7 +2,7 @@
 """Paper White 2: the Pokédex Info page's Evo data, its sprites' places and its Area data, members of the Pokédex's
 graphics archive (ARCID_POKEDEX_GRA, a/1/5/7) after its own (docs/paperwhite2/plugins.md, Pokédex).
 
-    pokedex_evo.py archive ARCHIVE_IN ARCHIVE_OUT   # the build: the archive with the six members after its own
+    pokedex_evo.py archive ARCHIVE_IN ARCHIVE_OUT   # the build: the archive with the seven members after its own
     pokedex_evo.py check                            # print the largest families
 
 The game's evolution data (a/0/1/9, res/pokemon/*/data.json's "evolutions") only names what each species evolves
@@ -24,6 +24,8 @@ into, so the page needs each species' family root to draw its tree from (paperwh
 - AREA_ICONS_MEMBER: the Area sub-page's icons and their palette rows (pokedex_area.py, from area_icons.png).
 - AREA_BOX_MEMBER: the Area sub-page's box of the current Pokémon on the top screen (pokedex_area.py's box_member,
   from area_top_box.png).
+- HABITAT_GRID_MEMBER: the Habitat List grid's colours for the All method (grey) and Dark Grass (a darker green),
+  derived from the archive's own green (habitat_grid.py; GRID_COLORS_FILE in src/ov303/pokedex_habitat_graphic.c).
 
 A family has at most FAMILY_MAX species (Eevee's 8), the rows the page has room for; check fails past it.
 """
@@ -40,6 +42,8 @@ from tools.data.narc import read_narc, write_narc  # noqa: E402
 from tools.data.nitro_2d import read_indexed_png  # noqa: E402
 from tools.data.datajson import DataError  # noqa: E402
 from tools.paperwhite2.encounters import area_index  # noqa: E402
+from tools.paperwhite2.habitat_grid import GREEN_MEMBER  # noqa: E402
+from tools.paperwhite2.habitat_grid import member as habitat_grid_member  # noqa: E402
 from tools.paperwhite2.pokedex_area import IconError  # noqa: E402
 from tools.paperwhite2.pokedex_area import box_member as area_box_member  # noqa: E402
 from tools.paperwhite2.pokedex_area import member as area_icons_member  # noqa: E402
@@ -60,6 +64,9 @@ MIDDLES_MEMBER = ARCHIVE_MEMBERS + 2
 AREA_INDEX_MEMBER = ARCHIVE_MEMBERS + 3
 AREA_ICONS_MEMBER = ARCHIVE_MEMBERS + 4
 AREA_BOX_MEMBER = ARCHIVE_MEMBERS + 5
+# The Habitat List grid's colours of All and Dark Grass (habitat_grid.py), GRID_COLORS_FILE in
+# src/ov303/pokedex_habitat_graphic.c
+HABITAT_GRID_MEMBER = ARCHIVE_MEMBERS + 6
 # POKEDEX_INFO_EVO_FAMILY_MAX in include/paperwhite2/pokedex_info.h
 FAMILY_MAX = 8
 BALL_SIZE = 16
@@ -149,7 +156,7 @@ def archive(source, output):
                        f"AREA_INDEX_FILE, AREA_ICONS_FILE and AREA_BOX_FILE in paperwhite2_pokedex_info_area.c, and "
                        f"ICONS_FILE in paperwhite2_habitat_dex.c)")
     files += [family_member(), balls_member(), middles_member(), area_index(), area_icons_member(),
-              area_box_member()]
+              area_box_member(), habitat_grid_member(files[GREEN_MEMBER])]
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_bytes(write_narc(files))
 

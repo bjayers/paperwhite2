@@ -1676,7 +1676,12 @@ static void PokedexHabitat_UpdateTabs(PokedexHabitatWork *wk) {
         PokedexHabitatGraphic_SetTab(&wk->graphic, TYPE_FISHING, POKEDEX_HABITAT_TAB_HIDDEN);
     }
 #endif
+#ifdef PAPERWHITE2
+    // Paper White 2: the grid's colours by the chosen method, All grey and Dark Grass a darker green
+    PokedexHabitatGraphic_RequestPalette(&wk->graphic, PaperWhite2_HabitatDex_GetGridColors(&wk->dex));
+#else
     PokedexHabitatGraphic_RequestPalette(&wk->graphic, wk->type);
+#endif
     PokedexHabitat_UpdateNewMarks(wk);
     PokedexHabitat_PrintHabitat(wk);
 }

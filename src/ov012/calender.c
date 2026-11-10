@@ -9,7 +9,16 @@
 #include "paperwhite2/weather.h"
 #endif
 
+#ifdef PAPERWHITE2
+// Paper White 2: up to 179 zones with weather by date, all that the table's u16 offsets reach (179 years of 366 days
+// end at byte 65514), in place of 24; tools/data/weather_calendar_data.py's CALENDAR_ZONE_MAX. The table stays in the
+// archive, read a part at a time by each query, so more zones cost no RAM
+#define CALENDAR_ZONE_MAX 179
+// The table's entries read at a time, on the stack
+#define CALENDAR_ZONES_PER_READ 16
+#else
 #define CALENDAR_ZONE_MAX 24
+#endif
 // The weather of a zone with no weather by date
 #define CALENDAR_NO_OFFSET 0xffff
 
@@ -87,9 +96,41 @@ static u16 Calendar_ReadWeatherValue(Calendar *calendar, u16 zoneId, u8 month, u
 }
 
 static void Calendar_Preload(Calendar *calendar) {
+#ifdef PAPERWHITE2
+    // Paper White 2: only the table's count, as many zones as it lists up to CALENDAR_ZONE_MAX
+    GFL_ArcToolReadRange(calendar->arc, 1, 0, sizeof(calendar->zoneCount), &calendar->zoneCount);
+    if (calendar->zoneCount > CALENDAR_ZONE_MAX) {
+        calendar->zoneCount = CALENDAR_ZONE_MAX;
+    }
+#else
     GFL_ArcToolReadRange(calendar->arc, 1, 2, sizeof(calendar->zones), calendar->zones);
+#endif
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: the zone's entry is looked up in the archive's table, CALENDAR_ZONES_PER_READ entries at a time,
+// rather than in RAM
+static u16 Calendar_GetOffsetForZone(Calendar *calendar, u16 zoneId) {
+    CalendarZone zones[CALENDAR_ZONES_PER_READ];
+    int first;
+    int count;
+    int i;
+
+    for (first = 0; first < calendar->zoneCount; first += count) {
+        count = calendar->zoneCount - first;
+        if (count > CALENDAR_ZONES_PER_READ) {
+            count = CALENDAR_ZONES_PER_READ;
+        }
+        GFL_ArcToolReadRange(calendar->arc, 1, 2 + first * sizeof(CalendarZone), count * sizeof(CalendarZone), zones);
+        for (i = 0; i < count; i++) {
+            if (zoneId == zones[i].zoneId) {
+                return zones[i].offset;
+            }
+        }
+    }
+    return CALENDAR_NO_OFFSET;
+}
+#else
 static u16 Calendar_GetOffsetForZone(Calendar *calendar, u16 zoneId) {
     int i;
     u16 offset = CALENDAR_NO_OFFSET;
@@ -102,6 +143,7 @@ static u16 Calendar_GetOffsetForZone(Calendar *calendar, u16 zoneId) {
     }
     return offset;
 }
+#endif
 
 static u16 Calendar_GetDayOfYear(u8 month, u8 day) {
     u8 days[13] = { 0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };

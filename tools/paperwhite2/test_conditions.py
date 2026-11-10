@@ -210,9 +210,15 @@ class MatcherTest(unittest.TestCase):
         for season, name in enumerate(conditions.SEASONS):
             self.check({"season": [name]}, [({"season": s}, s == season) for s in range(4)])
         self.check({"time": ["night", "late_night"]}, [({"period": p}, p >= 3) for p in range(5)])
-        rain = conditions.weathers()["WEATHER_RAIN"]
-        self.check({"weather": ["WEATHER_RAIN"]}, [({"weather": w}, w == rain) for w in range(15)] +
+        # A weather stands for its group: rain is gusty rain too, flutter every snow, the thunderstorm only itself
+        weathers = conditions.weathers()
+        rains = {weathers["WEATHER_RAIN"], weathers["WEATHER_GUSTY_RAIN"]}
+        snows = {weathers[w] for w in ("WEATHER_FLAKE", "WEATHER_BLIZZARD", "WEATHER_FLUTTER", "WEATHER_DIAMOND_DUST")}
+        self.check({"weather": ["WEATHER_RAIN"]}, [({"weather": w}, w in rains) for w in range(15)] +
                    [({"weather": 0xFFFF}, False)])
+        self.check({"weather": ["WEATHER_FLUTTER"]}, [({"weather": w}, w in snows) for w in range(15)])
+        self.check({"weather": ["WEATHER_THUNDERSTORM"]},
+                   [({"weather": w}, w == weathers["WEATHER_THUNDERSTORM"]) for w in range(15)])
         self.check({"nature": ["NATURE_BOLD"]}, [({"nature": n}, n == constants()["NATURE_BOLD"]) for n in range(25)])
         self.check({"status": ["any"]}, [({"status": s}, s != 0) for s in range(6)])
         self.check({"status": ["none", "burn"]}, [({"status": s}, s in (0, 3)) for s in range(6)])

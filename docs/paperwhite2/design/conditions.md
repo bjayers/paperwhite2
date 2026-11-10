@@ -56,6 +56,9 @@ Facts below are from the code at this date, with file and function. "Unverified"
 - **Constants:** `include/system/zone_weather.h` has `WEATHER_SUNNY` 0, `FLAKE` 1, `RAIN` 2, `SANDSTORM` 3,
   `BLIZZARD` 4, `FLUTTER` 5, `THUNDERSTORM` 6, `GUSTY_RAIN` 7, `DIAMOND_DUST` 8, `TINT_9`–`TINT_11`,
   `SANDSTORM_2` 12, `TINT_13`, `TINT_14`, `WEATHER_MAX` 15.
+- **Groups (decided 2026-11-10):** a condition's weather stands for its group, `include/paperwhite2/weather_groups.h`
+  (clear: sunny and the tints; rain: rain and gusty rain; thunderstorm; snow: flake, blizzard, flutter, diamond dust;
+  sandstorm: both), compiled into the clause's mask (plugins.md, Conditions).
 - **The zone's weather:** `GetWeatherAll(GameSystem*, zoneId)` (`src/system/zone_weather.c`, main) tries these
   sources in order:
   1. the forced weather;

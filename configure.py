@@ -369,17 +369,22 @@ HACK_MEMBER_EXTRA_SOURCES = {"a/1/2/7": ["res/paperwhite2/conditions", "res/poke
                              "a/1/5/7": ["res/pokemon/*/data.json", "res/pokemon/**/front*", "res/pokemon/**/back*",
                                          "res/paperwhite2/encounters", "res/paperwhite2/conditions",
                                          "res/paperwhite2/level_scaling.json", "res/town_map", "res/field/zones/*.json",
-                                         "include/system/zone_weather.h"],
+                                         "include/system/zone_weather.h", "include/paperwhite2/weather_groups.h"],
                              "a/1/2/6": ["res/paperwhite2/conditions", "res/field/events"]}
 # Paper White 2: data that the hack's build makes from other data before packing it: the data directory, and the tool,
 # its command (which writes the directory given) and what it reads. The Pokédex's Habitat List comes from the wild
 # encounters' data, with res/pokedex/habitats/ as its template (encounters.py habitats)
 HACK_GENERATED_DATA = {"res/pokedex/habitats": ("tools/paperwhite2/encounters.py", "habitats",
                                                 ["res/pokedex/habitats", "res/paperwhite2/encounters",
-                                                 "res/paperwhite2/conditions", "res/field/zones"])}
-# What the conditions' compiler reads besides its data: the zones' parents, and the kinds, tile classes and weathers
+                                                 "res/paperwhite2/conditions", "res/field/zones",
+                                                 "include/paperwhite2/weather_groups.h"])}
+# Paper White 2: the hack's build's options of a packer's pack command: the weather calendar takes more zones
+# (weather_calendar_data.py's CALENDAR_ZONE_MAX, calender.c under PAPERWHITE2)
+HACK_PACK_FLAGS = {"tools/data/weather_calendar_data.py": "--hack"}
+# What the conditions' compiler reads besides its data: the zones' parents, and the kinds, tile classes, weathers and
+# weather groups
 HACK_MEMBER_SOURCES = ["res/field/zones", "include/paperwhite2/conditions.h", "include/field/field_map.h",
-                       "include/system/zone_weather.h"]
+                       "include/system/zone_weather.h", "include/paperwhite2/weather_groups.h"]
 # The archives of Nitro resources and data, each a directory named after its ARCID_* constant, which gives its file, in
 # the root for what it holds (graphics_archive.ARCHIVE_ROOTS)
 DATA_PACKS += [("tools/data/graphics_archive.py", str(directory.relative_to(ROOT)), [directory_archive(directory)], True)
@@ -826,14 +831,16 @@ def add_version(n: Writer, version: str, dsd: Path, bugfix: bool, shift: int,
             tool, command, reads = HACK_GENERATED_DATA[data_dir]
             pack_dir = str(build_dir / "paperwhite2" / "generated" / Path(data_dir).name)
             stamp = Path(pack_dir) / ".stamp"
-            inputs = sorted(str(p.relative_to(ROOT)) for d in reads for p in (ROOT / d).rglob("*") if p.is_file())
+            inputs = sorted(str(p.relative_to(ROOT)) for d in reads
+                            for p in ([ROOT / d] if (ROOT / d).is_file() else (ROOT / d).rglob("*")) if p.is_file())
             n.build([stamp], "hack_generate", inputs, implicit=[tool, *script_imports(tool), *constant_sources,
                                                                 source_list(build_dir, f"generate_{Path(data_dir).name}",
                                                                             inputs)],
                     order_only=[files_ok], variables={"tool": tool, "subcommand": command, "dir": pack_dir})
             sources = [str(stamp)]
-        n.build(packed, "data_pack", sources, implicit=dependencies,
-                order_only=[files_ok], variables={"script": script, "dir": pack_dir, "game": game})
+        n.build(packed, "data_pack", sources, implicit=dependencies, order_only=[files_ok],
+                variables={"script": script, "dir": pack_dir, "game": game,
+                           "pack_flags": HACK_PACK_FLAGS.get(script, "") if hack else ""})
         for path, source, output in zip(paths, packed, outputs):
             if source != output:
                 tool, member_dir = HACK_ARCHIVE_MEMBERS[path]
@@ -1062,7 +1069,7 @@ def main():
     n.rule("objcopy_bin", f"{shlex.quote(llvm_objcopy)} -O binary $in $out", "Converting $in")
     n.rule("narc", "$python tools/data/narc.py pack $out $in", "Packing $out")
     n.rule("text_pack", "$python tools/text/text_data.py pack $dir $out", "Packing $out")
-    n.rule("data_pack", "$python $script pack $dir $game $out", "Packing $dir")
+    n.rule("data_pack", "$python $script pack $pack_flags $dir $game $out", "Packing $dir")
     n.rule("hack_members", "$python $tool archive $in $out", "Adding the hack's members to $out")
     n.rule("hack_generate", "$python $tool $subcommand $dir && touch $out", "Making $dir")
     n.rule("check_file", "cmp $in $original && mkdir -p $$(dirname $out) && touch $out", "Checking $in")

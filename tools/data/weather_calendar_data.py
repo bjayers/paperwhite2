@@ -3,7 +3,7 @@
 pack builds the archive (a/0/9/6, which overlay 12's calender.c opens as archive 96) from them, which the build does.
 
     weather_calendar_data.py dump extract/w2_us/files res/field/weather_calendar
-    weather_calendar_data.py pack res/field/weather_calendar ARCHIVE
+    weather_calendar_data.py pack [--hack] res/field/weather_calendar ARCHIVE
 
 The archive has two files (src/ov012/calender.c). File 1 is a u16 count of zones, 24, then for each zone its ID and
 the offset in file 0 where its year starts, two u16s (CalendarZone); Calendar_Preload reads 24 of them from byte 2,
@@ -15,8 +15,10 @@ has its zone header's weather on every day.
 Each zone's source is named after its ZONE_ constant, lowercased without the prefix (virbank_city.json for
 ZONE_VIRBANK_CITY), and gives the days with weather of each month, by "day" or "first-last", every other day being
 WEATHER_SUNNY. order.json lists the zones in the table's order; a zone file it doesn't list comes after them, by zone
-ID. weather_calendar.schema.json describes the files. The table can't hold more than 24 zones without a change to
-calender.c; with fewer, the rest of its 24 entries name no zone.
+ID. weather_calendar.schema.json describes the files. The original's table holds 24 zones; with fewer, the rest of its
+24 entries name no zone. Paper White 2's build (pack --hack, from configure.py --hack) takes up to CALENDAR_ZONE_MAX,
+179, as its calender.c reads (the count's entries, from the archive on each query); with 24 or fewer zones its archive
+is the original's layout.
 """
 import argparse
 import json
@@ -37,8 +39,12 @@ MONTHS = ["january", "february", "march", "april", "may", "june", "july", "augus
 # The calendar's days of each month, as Calendar_GetDayOfYear counts them
 MONTH_DAYS = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 DAYS_PER_YEAR = sum(MONTH_DAYS)
-# CALENDAR_ZONE_MAX, the entries Calendar_Preload reads, and the value of an entry that names no zone
+# The original's CALENDAR_ZONE_MAX, the entries Calendar_Preload reads, and the least the table has, the rest naming no
+# zone (NO_ZONE)
 ZONE_MAX = 24
+# Paper White 2: the most zones the hack's calender.c reads (its CALENDAR_ZONE_MAX under PAPERWHITE2), all that the
+# u16 offsets reach (65535 // DAYS_PER_YEAR); the Weather Editor reads it
+CALENDAR_ZONE_MAX = 179
 NO_ZONE = 0xFFFF
 ENTRY = struct.Struct("<HH")
 DAYS = re.compile(r"(\d+)(?:-(\d+))?")
@@ -139,7 +145,7 @@ def year_bytes(source: dict, where: str, weathers: list[str]) -> bytes:
     return bytes(year)
 
 
-def pack(root: Path, output: Path):
+def pack(root: Path, output: Path, hack: bool = False):
     schema = load_schema(root / "weather_calendar.schema.json")
     ids = zone_ids()
     order_path = root / "order.json"
@@ -161,8 +167,10 @@ def pack(root: Path, output: Path):
             raise DataError(f"{label(path)}: no ZONE_{path.stem.upper()} in generated/zones.txt")
         others.append(stems[path.stem])
     zones = order + sorted(others, key=lambda zone: ids[zone])
-    if len(zones) > ZONE_MAX:
-        raise DataError(f"{len(zones)} zones in {label(root)}, but calender.c's table holds {ZONE_MAX}")
+    limit = CALENDAR_ZONE_MAX if hack else ZONE_MAX
+    if len(zones) > limit:
+        raise DataError(f"{len(zones)} zones in {label(root)}, but calender.c's table holds {limit}"
+                        + ("" if hack else " (Paper White 2's build takes more)"))
     weathers = weather_names()
     days_file = bytearray()
     zones_file = bytearray(struct.pack("<H", len(zones)))
@@ -170,7 +178,7 @@ def pack(root: Path, output: Path):
         path = root / f"{file_stem(zone)}.json"
         zones_file += ENTRY.pack(ids[zone], len(days_file))
         days_file += year_bytes(load(path, schema), label(path), weathers)
-    zones_file += ENTRY.pack(NO_ZONE, NO_ZONE) * (ZONE_MAX - len(zones))
+    zones_file += ENTRY.pack(NO_ZONE, NO_ZONE) * max(ZONE_MAX - len(zones), 0)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_bytes(write_narc([bytes(days_file), bytes(zones_file)]))
 
@@ -182,6 +190,8 @@ def main():
     dump_parser.add_argument("files", type=Path, help="the extracted files/ directory")
     dump_parser.add_argument("output", type=Path)
     pack_parser = commands.add_parser("pack", help="build the weather calendar's archive from its sources")
+    pack_parser.add_argument("--hack", action="store_true",
+                             help=f"Paper White 2's limit of {CALENDAR_ZONE_MAX} zones, not the original's {ZONE_MAX}")
     pack_parser.add_argument("root", type=Path)
     pack_parser.add_argument("output", type=Path)
     args = parser.parse_args()
@@ -189,7 +199,7 @@ def main():
         if args.command == "dump":
             dump(args.files, args.output)
         else:
-            pack(args.root, args.output)
+            pack(args.root, args.output, args.hack)
     except DataError as error:
         sys.exit(f"error: {error}")
 

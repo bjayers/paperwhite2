@@ -15,12 +15,12 @@
 #include "nitro/hw.h"
 #include "nitro/mi.h"
 #include "paperwhite2/habitat_dex.h"
+#include "paperwhite2/weather_groups.h"
 #include "system/app_menu_common.h"
 #include "system/palanm.h"
 #include "system/printsys.h"
 #include "system/rtc.h"
 #include "system/wordset.h"
-#include "system/zone_weather.h"
 #include "text/system/dexnav.h"
 
 // Paper White 2: the Habitat Dex's lists and its filter bar (paperwhite2/habitat_dex.h)
@@ -39,20 +39,17 @@ static const u8 sMethodKinds[HABITAT_DEX_METHOD_COUNT] = { 0, 0, 0, 1, 2 };
 // Each filter's values: any, then its values
 #define SEASON_FILTERS 5
 #define TIME_FILTERS (DAY_PERIOD_COUNT + 1)
-#define WEATHER_FILTERS 6
+#define WEATHER_FILTERS (WEATHER_GROUP_COUNT + 1)
 static const u8 sFilterCounts[HABITAT_DEX_FILTER_COUNT] = { SEASON_FILTERS, TIME_FILTERS, WEATHER_FILTERS };
 
-// The weathers of each weather filter, as the DexNav names a zone's weather
-#define WEATHER_BIT(weather) (1 << (weather))
+// The weathers of each weather filter: any, then each weather group's (paperwhite2/weather_groups.h)
 static const u32 sWeatherFilterBits[WEATHER_FILTERS] = {
     0,
-    WEATHER_BIT(WEATHER_SUNNY) | WEATHER_BIT(WEATHER_FLUTTER) | WEATHER_BIT(WEATHER_TINT_9) |
-        WEATHER_BIT(WEATHER_TINT_10) | WEATHER_BIT(WEATHER_TINT_11) | WEATHER_BIT(WEATHER_TINT_13) |
-        WEATHER_BIT(WEATHER_TINT_14),
-    WEATHER_BIT(WEATHER_RAIN) | WEATHER_BIT(WEATHER_GUSTY_RAIN),
-    WEATHER_BIT(WEATHER_THUNDERSTORM),
-    WEATHER_BIT(WEATHER_FLAKE) | WEATHER_BIT(WEATHER_BLIZZARD) | WEATHER_BIT(WEATHER_DIAMOND_DUST),
-    WEATHER_BIT(WEATHER_SANDSTORM) | WEATHER_BIT(WEATHER_SANDSTORM_2),
+    WEATHER_GROUP_CLEAR_WEATHERS,
+    WEATHER_GROUP_RAIN_WEATHERS,
+    WEATHER_GROUP_THUNDERSTORM_WEATHERS,
+    WEATHER_GROUP_SNOW_WEATHERS,
+    WEATHER_GROUP_SANDSTORM_WEATHERS,
 };
 
 // The Area icons (tools/paperwhite2/pokedex_area.py, as paperwhite2_pokedex_info_area.c reads them), each 32 by 16:
@@ -388,6 +385,16 @@ void PaperWhite2_HabitatDex_Fill(HabitatDex *dex, u32 file, PokeDexSave *pokedex
         dex->note = HABITAT_DEX_NOTE_NO_MATCH;
     }
     HabitatDex_SetGridShown(dex, dex->note == HABITAT_DEX_NOTE_NONE);
+}
+
+u32 PaperWhite2_HabitatDex_GetGridColors(HabitatDex *dex) {
+    if (dex->method == HABITAT_DEX_METHOD_ALL) {
+        return POKEDEX_HABITAT_GRID_ALL;
+    }
+    if (dex->method == HABITAT_DEX_METHOD_DARK_GRASS) {
+        return POKEDEX_HABITAT_GRID_DARK_GRASS;
+    }
+    return sMethodKinds[dex->method];
 }
 
 u32 PaperWhite2_HabitatDex_GetKind(HabitatDex *dex) {

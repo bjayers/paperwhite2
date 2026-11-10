@@ -971,6 +971,21 @@ The shared conditions engine of `design/conditions.md` (phase 1: the engine, the
 readout; no consumer uses it yet). It answers "does this apply right now?" for the encounters, the NPC spawns, the
 follower's rules and the Dexnav to come, with one condition format, one binary encoding and one matcher.
 
+**Weather groups.** Every field weather is in one group (`include/paperwhite2/weather_groups.h`, the user's choice of
+2026-11-10), and a weather in a condition or a habitat stands for its whole group: `conditions.py` compiles a
+`weather` list to the mask of every weather of the listed ones' groups (`weather_mask`), so a rain habitat or rule
+also holds in gusty rain, and a snow one in flutter, blizzard and diamond dust. The matcher still tests the zone's
+exact weather against the mask, so nothing changes at runtime. The Habitat List's filter, the Area page and the
+DexNav's readout use the same groups, from the same header; the battle weather's mapping is apart (Battle weather).
+
+| Group | Weathers |
+| --- | --- |
+| clear | `SUNNY`, `TINT_9` (Giant Chasm's and Routes 14/15's mist), `TINT_10`, `TINT_11`, `TINT_13`, `TINT_14` (the Entralink's tints) |
+| rain | `RAIN`, `GUSTY_RAIN` (the heavy rain with gusts) |
+| thunderstorm | `THUNDERSTORM` |
+| snow | `FLAKE`, `BLIZZARD`, `FLUTTER`, `DIAMOND_DUST` |
+| sandstorm | `SANDSTORM`, `SANDSTORM_2` |
+
 **The format.** `res/paperwhite2/conditions/condition.schema.json` defines `$defs/condition` (every field optional,
 all of them must hold, a list is any of its items), `$defs/rule` (`when`, `priority` 0-255, default 0, `weight`
 1-65535, default 1), `$defs/rule_set` (a table's `share` and named `rules`), and the files beside it:
@@ -979,7 +994,7 @@ all of them must hold, a list is any of its items), `$defs/rule` (`when`, `prior
 | --- | --- | --- |
 | `season` | the field's season, `GameData_GetSeason` | `["spring", "summer"]` |
 | `time` | `GetRealTimeDayPeriod(season)`: morning, day, evening, night, late_night | `["night", "late_night"]` |
-| `weather` | the zone's computed weather, `GetNowWeather` | `["WEATHER_RAIN"]` |
+| `weather` | the zone's computed weather, `GetNowWeather`, by its group (below) | `["WEATHER_RAIN"]` |
 | `flags` | `set` and `unset` lists of event flags | `{"set": ["EVENT_FLAG_DEBUG_ALWAYS_SHINY"]}` |
 | `vars` | saved variables against values, `=`, `!=`, `>=`, `<=`, `>`, `<` | `[{"var": "EVENT_WORK_...", "op": ">=", "value": 3}]` |
 | `zone`, `zone_group` | the zone; a group of `zone_groups.json` (zones whose header's parent is listed, plus `zones`) | `["castelia"]` |
@@ -1381,9 +1396,14 @@ redesigned on 2026-11-09 with the Area icons:
   20's fishing), "None under these conditions" where the filters leave none (only walking in winter in the Moor of
   Icirrus and Icirrus City, 2026-11-10). A list with some Pokémon unseen shows only the seen ones and gives no hint
   of the others.
-- **The grid's colours** follow the chosen method's kind of habitat as the tabs' did (`PaperWhite2_HabitatDex_GetKind`:
-  green for all, walking and dark grass, blue for surfing, dark blue for fishing); the stamps still count the
-  original list. The touch bar's tabs and their "new" marks are hidden.
+- **The grid's colours** follow the chosen method (`PaperWhite2_HabitatDex_GetGridColors`): the original's green for
+  walking, blue for surfing and dark blue for fishing, as the tabs' did, and the hack's grey for all and a darker green
+  for dark grass. Those two are `ARCID_POKEDEX_GRA`'s member 165 (`GRID_COLORS_FILE` in `pokedex_habitat_graphic.c`,
+  member 50's layout: rows 0-2 all's, 3-5 dark grass's), which `pokedex_evo.py` adds and `habitat_grid.py` derives
+  from member 49's green rows 9-11 at build time: colours 1-4 of each row (the cell's line, the gaps, the shade, the
+  box) become the grey of their luma for all, and the green times 0.72 for dark grass, so each keeps the green's
+  shades and the cursor's contrast (it fades between rows 9 and 10). The stamps still count the
+  original list (`PaperWhite2_HabitatDex_GetKind`). The touch bar's tabs and their "new" marks are hidden.
 - **A touched Pokémon** opens its page at once (through the Info button's animation), and the Info page opens on
   Area (`PaperWhite2_HabitatDex_TakeInfoArea`, in main beside the list it leaves, taken once by
   `paperwhite2_pokedex_info.c`); every other way in opens on Stats. A then A on the cursor does the same.
@@ -1795,13 +1815,14 @@ The rows must be opaque and repeat across with a period that divides 256 (the us
 a seam (`pokedex_templates.py` prints the period). Touching an icon's column of the strip or a row opens
 that species' page through the detail screen's list (as the touch bar's arrows do, `common->index`) if it has been seen
 and is in the list, else it beeps; Up and Down change the Pokémon as on the other sub-pages. **The family table**:
-`tools/paperwhite2/pokedex_evo.py` adds six members to `ARCID_POKEDEX_GRA` in the hack's build (`HACK_ARCHIVE_MEMBERS`,
+`tools/paperwhite2/pokedex_evo.py` adds seven members to `ARCID_POKEDEX_GRA` in the hack's build (`HACK_ARCHIVE_MEMBERS`,
 rebuilt when `res/pokemon/*/data.json`, the balls, the wild encounters, the town map or the Area icons change), after
 the archive's own 159 (the arts' included, the Habitat List bar's 156-158 last): 159, each species' family root as a u16 by species
 (SPECIES_NONE to Genesect, 1300 bytes: a child's parent is the first species whose evolutions name it), of which the
 page reads the one entry, then the tree from the root down through the game's own evolution data (`ARCID_EVOLUTIONS`,
 three stages); 160, the balls' 16 colours and their 4bpp tiles (416 bytes); 161, the sprites' middles (below); 162,
-163 and 164, Area's index, icons and box (below). Forms have no evolutions of their own (the
+163 and 164, Area's index, icons and box (below); 165, the Habitat List grid's colours of all and dark grass
+(Habitat Dex). Forms have no evolutions of their own (the
 game reads them by species), so Burmy's and Wormadam's forms evolve as their species. About 3.2 KB of ov298.
 
 **Area** (`paperwhite2_pokedex_info_area.c`; `docs/paperwhite2/design/pokedex-area.md`): where the species is met in the
@@ -1830,8 +1851,8 @@ Blissey) gets a block without places or rows, flagged off-map (`AREA_FLAG_OFF_MA
 the map". The species' levels and the union of every context's
 seasons, times and weathers (the special versions' too) head the block. The rates are the runtime's slots
 (`method_candidates` and `slot_shares`, which `encounters.py odds` uses too), computed for every area, method, season
-(where the area's rate for it isn't 0), period and weather group (clear, rain, thunderstorm, snow, sandstorm as the
-Habitat Dex groups them), with the level gate ignored (a party high enough); shaking grass's own species (Audino) has
+(where the area's rate for it isn't 0), period and weather group (clear, rain, thunderstorm, snow, sandstorm, of
+`weather_groups.h`, Conditions), with the level gate ignored (a party high enough); shaking grass's own species (Audino) has
 no tier ("Special"), and an outbreak counts as its method at the outbreak share, with its flag ("Outbreak" where it
 has no tier; there is no outbreak badge). The preferred times and weathers are those where the species' best share,
 summed over its rows, is the highest; the index keeps them (and the rates), but the page shows neither. The page reads

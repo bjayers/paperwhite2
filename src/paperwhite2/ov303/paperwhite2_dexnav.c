@@ -24,6 +24,7 @@
 #include "nitro/mi.h"
 #include "nnsys/g2d.h"
 #include "paperwhite2/dexnav.h"
+#include "paperwhite2/weather_groups.h"
 #include "pml/personal.h"
 #include "system/game_data.h"
 #include "system/gf_font.h"
@@ -31,7 +32,6 @@
 #include "system/printsys.h"
 #include "system/wipe.h"
 #include "system/wordset.h"
-#include "system/zone_weather.h"
 #include "text/system/dexnav.h"
 
 // Paper White 2: the DexNav's screens (paperwhite2/dexnav.h), on Geonet's grid as the Season app is. The top screen
@@ -203,6 +203,12 @@ static const u32 sMethodNames[DEXNAV_METHOD_COUNT] = {
 static const u32 sSeasonNames[] = { Dexnav_Text_Spring, Dexnav_Text_Summer, Dexnav_Text_Autumn, Dexnav_Text_Winter };
 static const u32 sPeriodNames[] = { Dexnav_Text_Morning, Dexnav_Text_Day, Dexnav_Text_Evening, Dexnav_Text_Night,
                                     Dexnav_Text_LateNight };
+// The zone's weather by its group (paperwhite2/weather_groups.h): each group's weathers and name
+static const u32 sWeatherGroupWeathers[WEATHER_GROUP_COUNT] = WEATHER_GROUP_WEATHERS_INIT;
+static const u32 sWeatherGroupNames[WEATHER_GROUP_COUNT] = {
+    Dexnav_Text_WeatherClear, Dexnav_Text_WeatherRain,      Dexnav_Text_WeatherThunderstorm,
+    Dexnav_Text_WeatherSnow,  Dexnav_Text_WeatherSandstorm,
+};
 
 const GameProcFunctions DEXNAV_PROC_FUNCTIONS = { DexnavProc_Init, DexnavProc_Main, DexnavProc_End };
 
@@ -335,24 +341,13 @@ static void Dexnav_DrawTitle(DexnavWork *work) {
 static void Dexnav_DrawConditions(DexnavWork *work) {
     const ConditionContext *ctx = &work->param->ctx;
     u32 weather = Dexnav_Text_WeatherClear;
+    int i;
 
-    switch (ctx->weather) {
-    case WEATHER_RAIN:
-    case WEATHER_GUSTY_RAIN:
-        weather = Dexnav_Text_WeatherRain;
-        break;
-    case WEATHER_THUNDERSTORM:
-        weather = Dexnav_Text_WeatherThunderstorm;
-        break;
-    case WEATHER_FLAKE:
-    case WEATHER_BLIZZARD:
-    case WEATHER_DIAMOND_DUST:
-        weather = Dexnav_Text_WeatherSnow;
-        break;
-    case WEATHER_SANDSTORM:
-    case WEATHER_SANDSTORM_2:
-        weather = Dexnav_Text_WeatherSandstorm;
-        break;
+    for (i = 0; i < WEATHER_GROUP_COUNT; i++) {
+        if (sWeatherGroupWeathers[i] & WEATHER_BIT(ctx->weather)) {
+            weather = sWeatherGroupNames[i];
+            break;
+        }
     }
     Dexnav_Clear(work->conditions);
     GFL_MsgDataLoadStrbuf(work->msgData, sSeasonNames[ctx->season % NELEMS(sSeasonNames)], work->format);

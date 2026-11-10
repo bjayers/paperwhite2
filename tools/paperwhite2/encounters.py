@@ -198,7 +198,6 @@ def candidates(data: Data) -> dict[str, list[tuple[tuple, dict | None]]]:
     """Each area's candidates: the CANDIDATE fields but the rule, and the habitat's extra condition."""
     by_area: dict[str, list[tuple[tuple, dict | None]]] = {area: [] for area in data.areas}
     defaults = data.settings["battles"]
-    weathers = conditions.weathers()
     for folder, entry in data.species.items():
         where = label(SOURCE / "species" / f"{folder}.json")
         number = data.species_number(folder)
@@ -220,11 +219,8 @@ def candidates(data: Data) -> dict[str, list[tuple[tuple, dict | None]]]:
             for seasons, slot in slots:
                 if slot["rarity"] not in data.tiers:
                     raise DataError(f"{at}: no tier {slot['rarity']!r}")
-                weather = 0
-                for name in slot.get("weather", []):
-                    if name not in weathers:
-                        raise DataError(f"{at}: no {name}")
-                    weather |= 1 << weathers[name]
+                # A weather stands for its group (conditions.weather_mask)
+                weather = conditions.weather_mask(slot.get("weather", []), f"{at}: weather")
                 fields = (number, family, weather, habitat.get("form", 0), data.tiers.index(slot["rarity"]),
                           bits(slot["methods"], METHODS, at), bits(seasons, SEASONS, at), bits(slot["times"], TIMES, at),
                           levels["min"], levels["max"], hidden, *styles)
@@ -498,13 +494,9 @@ AREA_SAND = ["route_4", "desert_resort"]
 AREA_PUDDLES = ["icirrus_city", "moor_of_icirrus", "route_8"]
 AREA_FLOORS = ["castelia_sewers", "celestial_tower", "dragonspiral_tower_3", "dragonspiral_tower_4", "relic_castle",
                "strange_house"]
-# The weather groups, as the Habitat Dex's filters have them (paperwhite2_habitat_dex.c's sWeatherFilterBits); each is
-# computed in its first weather
-AREA_WEATHERS = {"clear": ["WEATHER_SUNNY", "WEATHER_FLUTTER", "WEATHER_TINT_9", "WEATHER_TINT_10", "WEATHER_TINT_11",
-                           "WEATHER_TINT_13", "WEATHER_TINT_14"],
-                 "rain": ["WEATHER_RAIN", "WEATHER_GUSTY_RAIN"], "thunderstorm": ["WEATHER_THUNDERSTORM"],
-                 "snow": ["WEATHER_FLAKE", "WEATHER_BLIZZARD", "WEATHER_DIAMOND_DUST"],
-                 "sandstorm": ["WEATHER_SANDSTORM", "WEATHER_SANDSTORM_2"]}
+# The weather groups (include/paperwhite2/weather_groups.h, as the Habitat Dex's filters and the Area page have them),
+# each its weathers; each is computed in its first weather, which a habitat's weathers match as the whole group
+AREA_WEATHERS = conditions.weather_groups()
 # A row's tier for an outbreak's or shaking grass's own species, which have none
 AREA_TIER_NONE = 0xFF
 # A row's flags: met in outbreaks, under a rule, wandering the overworld, met by the row's special version too, and

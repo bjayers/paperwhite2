@@ -30,7 +30,8 @@ They are the same in the editor (`resolve.ts`), the packer's `odds` command and 
 can appear by a method when all of these hold:
 - its methods include that method;
 - its seasons and periods include the current ones;
-- its weathers do too, if it lists any;
+- its weathers do too, if it lists any: a weather means its whole group (`include/paperwhite2/weather_groups.h`,
+  plugins.md's Conditions), so `WEATHER_RAIN` is gusty rain too and `WEATHER_FLAKE` every snow;
 - the level gate reaches its minimum;
 - its extra conditions hold.
 

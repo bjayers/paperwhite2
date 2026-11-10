@@ -22,7 +22,9 @@ Only the hack's build runs it (configure.py --hack). The format (docs/paperwhite
 
 How the fields compile, each to one clause, so a rule's clauses are all of its fields:
 
-- season, time, weather, terrain, type, nature, status and facing are a bit mask in value (CONDITION_OP_MASK);
+- season, time, weather, terrain, type, nature, status and facing are a bit mask in value (CONDITION_OP_MASK); a
+  weather stands for its whole group (include/paperwhite2/weather_groups.h, weather_mask), so WEATHER_RAIN also
+  matches WEATHER_GUSTY_RAIN;
 - flags: a clause per flag, SET or UNSET; vars: a clause per comparison, the variable in arg and the value in value;
 - zone and species, and follower's species: one is EQ with it in arg, several are IN_LIST with arg the list's number;
 - zone_group: the zones of the named groups (zone_groups.json: every zone whose header's parent is one of "parent",
@@ -53,6 +55,7 @@ LEVEL_SCALING = ROOT / "res" / "paperwhite2" / "level_scaling.json"
 HEADER = ROOT / "include" / "paperwhite2" / "conditions.h"
 FIELD_MAP_HEADER = ROOT / "include" / "field" / "field_map.h"
 WEATHER_HEADER = ROOT / "include" / "system" / "zone_weather.h"
+WEATHER_GROUPS_HEADER = ROOT / "include" / "paperwhite2" / "weather_groups.h"
 ZONES = ROOT / "res" / "field" / "zones"
 # The calendar's archive (ARCID_CALENDAR), its two files, and the tables after them by their member, as
 # CONDITION_TABLE_MEMBER_* of the header names them
@@ -120,6 +123,46 @@ def weathers() -> dict[str, int]:
     body = re.search(r"enum \{(.*?)\};", WEATHER_HEADER.read_text(), re.S)
     names = re.findall(r"\b(WEATHER_\w+),", body.group(1))
     return {name: i for i, name in enumerate(names) if name != "WEATHER_MAX"}
+
+
+@cache
+def weather_groups() -> dict[str, list[str]]:
+    """The weather groups of include/paperwhite2/weather_groups.h in WEATHER_GROUP_* order, each its weathers in value
+    order, by its name lowercased without the prefix (clear, rain, thunderstorm, snow, sandstorm). Every weather is in
+    exactly one."""
+    text = WEATHER_GROUPS_HEADER.read_text()
+    body = re.search(r"enum \{(.*?)\};", text, re.S)
+    names = re.findall(r"\bWEATHER_GROUP_(\w+),", body.group(1)) if body else []
+    if not names or names[-1] != "COUNT":
+        raise DataError(f"{label(WEATHER_GROUPS_HEADER)}: no WEATHER_GROUP_ enum ending in WEATHER_GROUP_COUNT")
+    defines = {m.group(1): re.findall(r"\bWEATHER_BIT\((WEATHER_\w+)\)", m.group(2))
+               for m in re.finditer(r"#define WEATHER_GROUP_(\w+)_WEATHERS\b((?:[^\n]*\\\n)*[^\n]*)", text)}
+    groups, seen = {}, {}
+    for name in names[:-1]:
+        if name not in defines:
+            raise DataError(f"{label(WEATHER_GROUPS_HEADER)}: no WEATHER_GROUP_{name}_WEATHERS")
+        for weather in defines[name]:
+            if weather not in weathers():
+                raise DataError(f"{label(WEATHER_GROUPS_HEADER)}: {weather} is not a weather of {label(WEATHER_HEADER)}")
+            if weather in seen:
+                raise DataError(f"{label(WEATHER_GROUPS_HEADER)}: {weather} is in {seen[weather]} and {name}")
+            seen[weather] = name
+        groups[name.lower()] = sorted(defines[name], key=weathers().get)
+    missing = [weather for weather in weathers() if weather not in seen]
+    if missing:
+        raise DataError(f"{label(WEATHER_GROUPS_HEADER)}: {', '.join(missing)} in no group")
+    return groups
+
+
+def weather_mask(items, where: str) -> int:
+    """The weather bits of a list of weathers: every weather of each one's group."""
+    bits = 0
+    for item in items:
+        group = next((g for g in weather_groups().values() if item in g), None)
+        if group is None:
+            raise DataError(f"{where}: {item!r} is not one of {list(weathers())}")
+        bits |= mask(group, weathers(), where)
+    return bits
 
 
 @cache
@@ -206,10 +249,12 @@ class Compiler:
     def compile(self, condition: dict, where: str) -> list[tuple[int, int, int, int]]:
         """The clauses of a condition, (kind, op, arg, value) each, CHANCE last."""
         clauses = []
-        masks = {"season": ("SEASON", SEASONS), "time": ("PERIOD", PERIODS), "weather": ("WEATHER", weathers())}
+        masks = {"season": ("SEASON", SEASONS), "time": ("PERIOD", PERIODS)}
         for field, (clause_kind, names) in masks.items():
             if field in condition:
                 clauses.append((kind(clause_kind), op("MASK"), 0, mask(condition[field], names, f"{where}.{field}")))
+        if "weather" in condition:
+            clauses.append((kind("WEATHER"), op("MASK"), 0, weather_mask(condition["weather"], f"{where}.weather")))
         for state in ("set", "unset"):
             for flag in condition.get("flags", {}).get(state, []):
                 clauses.append((kind("FLAG"), op(state.upper()), value(flag, f"{where}.flags"), 0))

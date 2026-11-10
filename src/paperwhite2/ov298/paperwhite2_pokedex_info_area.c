@@ -24,6 +24,7 @@
 #include "nitro/os.h"
 #include "nnsys/g2d.h"
 #include "paperwhite2/pokedex_info.h"
+#include "paperwhite2/weather_groups.h"
 #include "pml/species_names.h"
 #include "system/app_menu_common.h"
 #include "system/bmp_winframe.h"
@@ -155,7 +156,8 @@ enum {
 
 #define AREA_SEASON_COUNT 4
 #define AREA_TIME_COUNT 5
-#define AREA_WEATHER_COUNT 5
+// The weather groups (paperwhite2/weather_groups.h), the order of the Area index's weather bits
+#define AREA_WEATHER_COUNT WEATHER_GROUP_COUNT
 #define AREA_ALL_SEASONS ((1 << AREA_SEASON_COUNT) - 1)
 #define AREA_ALL_TIMES ((1 << AREA_TIME_COUNT) - 1)
 #define AREA_ALL_WEATHERS ((1 << AREA_WEATHER_COUNT) - 1)
