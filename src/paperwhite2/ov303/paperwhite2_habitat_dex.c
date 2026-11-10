@@ -113,12 +113,14 @@ static const u8 sFilterIcons[HABITAT_DEX_FILTER_COUNT] = { ICON_SPRING, ICON_MOR
 #define BAR_TILES_DOWN 6
 
 // The bar, in pixels (pokedex_area_templates.py's habitat templates draw the same). The top row (y 0-23, the icons at
-// y 4) holds the methods the area has, spread evenly over its width: the i-th of n centred at
-// TOP_WIDTH * (2i + 1) / 2n, and a touch at x belongs to the (x * n / TOP_WIDTH)-th. The bottom row (y 24-47, the
-// icons at y 28) holds the season, time and weather filters at FILTER_X + FILTER_PITCH i, then the page arrows (the
-// list's actors, pokedex_habitat_graphic.c) and the page between them, centred at PAGE_X. The stamp shows to the right
-// of both, centred at x 224, y 24
-#define TOP_WIDTH 192
+// y 4) holds the methods the area has, spread evenly over x TOP_LEFT to TOP_LEFT + TOP_WIDTH (8 px clear of the
+// screen's left edge, as the bottom row, and of the stamp's x 192): the i-th of n centred at
+// TOP_LEFT + TOP_WIDTH * (2i + 1) / 2n, and a touch at x belongs to the ((x - TOP_LEFT) * n / TOP_WIDTH)-th. The
+// bottom row (y 24-47, the icons at y 28) holds the season, time and weather filters at FILTER_X + FILTER_PITCH i, then
+// the page arrows (the list's actors, pokedex_habitat_graphic.c) and the page between them, centred at PAGE_X. The
+// stamp shows to the right of both, centred at x 224, y 24
+#define TOP_LEFT 8
+#define TOP_WIDTH 176
 #define ROW_HEIGHT 24
 #define ICON_INSET_Y 4
 #define FILTER_X 8
@@ -411,50 +413,98 @@ BOOL PaperWhite2_HabitatDex_StepMethod(HabitatDex *dex, int direction) {
 
 // ------------------------------------------------------------------------------------------------ The grid
 
-// The grid on the list's BG, from the original's tiles (screen 128's) in palette row 9:
-// 6 by 5 of its 4 by 3 tile cells, 5 tiles apart across from tile 1 and touching down from tile row 6, between the
-// frame's columns (tiles 0 and 31). The rows above are the filter bar's (below), the touch bar's
-// below stay the original's
+// The grid on the list's BG over the inside of the original's box (screen 128's tiles 2-29 of rows 6-20; its frame,
+// tiles 0-1 and 30-31, stays), at the cells' places (paperwhite2/habitat_dex.h), drawn into characters of its own after
+// the bar's in palette row 9 as the original's. A cell's box has the original's look (screen 128's characters 35, 36,
+// 40 and 41): a corner pixel cut, a light line one pixel in with a shaded pixel at each corner, and the box's colour
+// within. The gaps' colour is the same in rows 9 to 11, so a cell's palette (its state) leaves its tiles' gap alone
+#define GRID_TILE_X 2
 #define GRID_TILE_Y 6
+#define GRID_TILES_ACROSS 28
 #define GRID_TILES_DOWN 15
-#define GRID_TILES_ACROSS 32
+#define GRID_TILES (GRID_TILES_ACROSS * GRID_TILES_DOWN)
+#define GRID_CHAR_OFFSET (BAR_CHAR_OFFSET + BAR_TILES_ACROSS * BAR_TILES_DOWN)
 #define GRID_PALETTE 9
-#define GRID_ENTRY(tile, flip) ((tile) | (flip) << 10 | GRID_PALETTE << 12)
-#define FLIP_H 1
-#define FLIP_V 2
-#define TILE_FRAME 31
-#define TILE_GAP 32
+#define TILE_ROWS 8
+#define TILE_SIZE (TILE_ROWS * sizeof(u32))
+#define COLOR_LINE 1
+#define COLOR_GAP 2
+#define COLOR_SHADE 3
+#define COLOR_BOX 4
 
-// A cell's tiles, its rows top to bottom
-static const u16 sGridCell[3][4] = {
-    { GRID_ENTRY(35, 0), GRID_ENTRY(36, 0), GRID_ENTRY(36, FLIP_H), GRID_ENTRY(35, FLIP_H) },
-    { GRID_ENTRY(40, 0), GRID_ENTRY(41, 0), GRID_ENTRY(41, 0), GRID_ENTRY(40, FLIP_H | FLIP_V) },
-    { GRID_ENTRY(35, FLIP_V), GRID_ENTRY(36, FLIP_V), GRID_ENTRY(36, FLIP_H | FLIP_V),
-      GRID_ENTRY(35, FLIP_H | FLIP_V) },
-};
+// The colour of the grid at x, y
+static u32 HabitatDex_GetGridColor(int x, int y) {
+    int column = (x - HABITAT_DEX_CELL_X(0)) / (HABITAT_DEX_CELL_WIDTH + HABITAT_DEX_CELL_GAP);
+    int row = (y - HABITAT_DEX_ROW_Y(0)) / HABITAT_DEX_ROW_HEIGHT;
+    int dx = x - HABITAT_DEX_CELL_X(column);
+    int dy = y - HABITAT_DEX_ROW_Y(row) - HABITAT_DEX_CELL_INSET;
+    int edge;
+
+    if (x < HABITAT_DEX_CELL_X(0) || column >= POKEDEX_HABITAT_COLUMNS || dx >= HABITAT_DEX_CELL_WIDTH || dy < 0 ||
+        dy >= HABITAT_DEX_CELL_HEIGHT) {
+        return COLOR_GAP;
+    }
+    // How far in from the box's nearest side across and down, and from its nearest side
+    if (dx >= HABITAT_DEX_CELL_WIDTH / 2) {
+        dx = HABITAT_DEX_CELL_WIDTH - 1 - dx;
+    }
+    if (dy >= HABITAT_DEX_CELL_HEIGHT / 2) {
+        dy = HABITAT_DEX_CELL_HEIGHT - 1 - dy;
+    }
+    edge = dx < dy ? dx : dy;
+    if (edge == 0) {
+        return dx == dy ? COLOR_GAP : COLOR_BOX;
+    }
+    if (dx == dy && edge <= 2) {
+        return COLOR_SHADE;
+    }
+    return edge == 1 ? COLOR_LINE : COLOR_BOX;
+}
 
 void PaperWhite2_HabitatDex_LoadGrid(void) {
-    u16 *entries = GFL_HeapAllocate(HEAPID_POKEDEX_HABITAT, GRID_TILES_ACROSS * GRID_TILES_DOWN * sizeof(u16), FALSE,
+    u32 *pixels =
+        GFL_HeapAllocate(HEAPID_POKEDEX_HABITAT, GRID_TILES * TILE_SIZE, FALSE, "paperwhite2_habitat_dex.c", __LINE__);
+    u16 *entries = GFL_HeapAllocate(HEAPID_POKEDEX_HABITAT, GRID_TILES * sizeof(u16), FALSE,
                                     "paperwhite2_habitat_dex.c", __LINE__);
-    u32 x, y;
+    u32 count = 0;
+    u32 tile;
 
-    for (y = 0; y < GRID_TILES_DOWN; y++) {
-        u16 *row = &entries[y * GRID_TILES_ACROSS];
+    for (tile = 0; tile < GRID_TILES; tile++) {
+        u32 *rows = &pixels[count * TILE_ROWS];
+        int left = (GRID_TILE_X + tile % GRID_TILES_ACROSS) * 8;
+        int top = (GRID_TILE_Y + tile / GRID_TILES_ACROSS) * 8;
+        u32 i;
+        u32 x;
 
-        for (x = 0; x < GRID_TILES_ACROSS; x++) {
-            row[x] = GRID_ENTRY(TILE_GAP, 0);
-        }
-        row[0] = GRID_ENTRY(TILE_FRAME, 0);
-        row[GRID_TILES_ACROSS - 1] = GRID_ENTRY(TILE_FRAME, FLIP_H);
-        for (x = 0; x < POKEDEX_HABITAT_COLUMNS * 5; x++) {
-            if (x % 5 != 4) {
-                row[1 + x] = sGridCell[y % 3][x % 5];
+        // The tile, then the first of the same (or it, a new character)
+        for (i = 0; i < TILE_ROWS; i++) {
+            rows[i] = 0;
+            for (x = 0; x < 8; x++) {
+                rows[i] |= HabitatDex_GetGridColor(left + x, top + i) << (x * 4);
             }
         }
+        for (i = 0; i < count; i++) {
+            u32 row;
+
+            for (row = 0; row < TILE_ROWS; row++) {
+                if (pixels[i * TILE_ROWS + row] != rows[row]) {
+                    break;
+                }
+            }
+            if (row == TILE_ROWS) {
+                break;
+            }
+        }
+        if (i == count) {
+            count++;
+        }
+        entries[tile] = (GRID_CHAR_OFFSET + i) | GRID_PALETTE << 12;
     }
-    GFL_BGSysLoadScrAreaAll(2, entries, 0, GRID_TILE_Y, GRID_TILES_ACROSS, GRID_TILES_DOWN);
+    GFL_BGSysLoadChar(2, pixels, count * TILE_SIZE, GRID_CHAR_OFFSET);
+    GFL_BGSysLoadScrAreaAll(2, entries, GRID_TILE_X, GRID_TILE_Y, GRID_TILES_ACROSS, GRID_TILES_DOWN);
     GFL_BGSysQueueScrLoad(2);
     GFL_HeapFree(entries);
+    GFL_HeapFree(pixels);
 }
 
 // ------------------------------------------------------------------------------------------------ The bar
@@ -485,7 +535,7 @@ static void HabitatDex_ShowIcon(HabitatDex *dex, u32 slot, u32 icon, BOOL grey, 
 void PaperWhite2_HabitatDex_Print(HabitatDex *dex, PokedexHabitatGraphic *graphic) {
     u32 i;
 
-    // The methods, the chosen one in colour, spread evenly over the top row
+    // The methods, the chosen one in colour, spread evenly over the top row's width
     for (i = 0; i < HABITAT_DEX_METHOD_COUNT; i++) {
         u32 method;
         u32 icon;
@@ -497,7 +547,7 @@ void PaperWhite2_HabitatDex_Print(HabitatDex *dex, PokedexHabitatGraphic *graphi
         method = dex->shownMethods[i];
         icon = method == HABITAT_DEX_METHOD_WALKING ? sTerrainIcons[dex->terrain] : sMethodIcons[method];
         HabitatDex_ShowIcon(dex, i, icon, method != dex->method,
-                            TOP_WIDTH * (2 * i + 1) / (2 * dex->shownCount) - ICON_WIDTH / 2, ICON_INSET_Y);
+                            TOP_LEFT + TOP_WIDTH * (2 * i + 1) / (2 * dex->shownCount) - ICON_WIDTH / 2, ICON_INSET_Y);
     }
     // The filters, "any" or their value
     for (i = 0; i < HABITAT_DEX_FILTER_COUNT; i++) {
@@ -531,8 +581,8 @@ u32 PaperWhite2_HabitatDex_Touch(HabitatDex *dex, u32 x, u32 y) {
     u32 i;
 
     if (y < ROW_HEIGHT) {
-        if (x < TOP_WIDTH) {
-            u32 method = dex->shownMethods[x * dex->shownCount / TOP_WIDTH];
+        if (x >= TOP_LEFT && x < TOP_LEFT + TOP_WIDTH) {
+            u32 method = dex->shownMethods[(x - TOP_LEFT) * dex->shownCount / TOP_WIDTH];
 
             if (method != dex->method) {
                 dex->method = method;

@@ -260,10 +260,13 @@ static const PokedexHabitatSeqFunc sPokedexHabitatSequences[SEQ_COUNT + 1] = {
 // clang-format on
 
 #ifdef PAPERWHITE2
-// Paper White 2: the Habitat Dex's 6 by 5 grid of 32 by 24 cells, 40 px apart across from x 8 and touching down from
-// y 48 (pokedex_habitat_graphic.c); the page arrows in the bar's bottom row, the tabs gone (a rectangle under the
-// screen). Both tables end with TOUCH_RECT_END
-#define CELL_RECT(row, column) { 48 + 24 * (row), 71 + 24 * (row), 8 + 40 * (column), 47 + 40 * (column) }
+// Paper White 2: the Habitat Dex's 6 by 5 grid (paperwhite2/habitat_dex.h), each cell's box and half the gaps beside
+// it across, and its row down; the page arrows in the bar's bottom row, the tabs gone (a rectangle under the screen).
+// Both tables end with TOUCH_RECT_END
+#define CELL_RECT(row, column)                                                                                         \
+    { HABITAT_DEX_ROW_Y(row), HABITAT_DEX_ROW_Y(row) + HABITAT_DEX_ROW_HEIGHT - 1,                                     \
+      HABITAT_DEX_CELL_X(column) - HABITAT_DEX_CELL_GAP / 2,                                                           \
+      HABITAT_DEX_CELL_X(column) + HABITAT_DEX_CELL_WIDTH + HABITAT_DEX_CELL_GAP / 2 }
 #define CELL_ROW_RECTS(row)                                                                                            \
     CELL_RECT(row, 0), CELL_RECT(row, 1), CELL_RECT(row, 2), CELL_RECT(row, 3), CELL_RECT(row, 4), CELL_RECT(row, 5)
 #define NO_RECT { 192, 192, 0, 0 }

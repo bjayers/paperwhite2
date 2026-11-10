@@ -849,15 +849,17 @@ void PokedexHabitatGraphic_SetIconVisible(PokedexHabitatGraphic *graphic, u8 cel
 }
 
 #ifdef PAPERWHITE2
-// Paper White 2: the Habitat Dex's grid's cells (PokedexHabitatGraphic_LoadGrid), the cell alone
-#define CELL_TILE_X(cell) ((cell) % POKEDEX_HABITAT_COLUMNS * 5 + 1)
-#define CELL_TILE_Y(cell) ((cell) / POKEDEX_HABITAT_COLUMNS * 3 + 6)
-#define CELL_TILES_ACROSS 4
-#define CELL_TILES_DOWN 3
+// Paper White 2: the Habitat Dex's grid's cells (PaperWhite2_HabitatDex_LoadGrid), each box's own tiles: 4 or 5
+// across, as its column lies on the tiles
+#define CELL_LEFT(cell) HABITAT_DEX_CELL_X((cell) % POKEDEX_HABITAT_COLUMNS)
+#define CELL_TILE_X(cell) (CELL_LEFT(cell) / 8)
+#define CELL_TILE_Y(cell) (HABITAT_DEX_ROW_Y((cell) / POKEDEX_HABITAT_COLUMNS) / 8)
+#define CELL_TILES_ACROSS(cell) ((CELL_LEFT(cell) + HABITAT_DEX_CELL_WIDTH - 1) / 8 - CELL_TILE_X(cell) + 1)
+#define CELL_TILES_DOWN (HABITAT_DEX_ROW_HEIGHT / 8)
 #else
 #define CELL_TILE_X(cell) ((cell) % POKEDEX_HABITAT_COLUMNS * 5 + 4)
 #define CELL_TILE_Y(cell) ((cell) / POKEDEX_HABITAT_COLUMNS * 4 + 6)
-#define CELL_TILES_ACROSS 5
+#define CELL_TILES_ACROSS(cell) 5
 #define CELL_TILES_DOWN 4
 #endif
 
@@ -866,20 +868,21 @@ void PokedexHabitatGraphic_SetCellPalette(PokedexHabitatGraphic *graphic, u8 cel
     u8 y = CELL_TILE_Y(cell);
 
     if (state == POKEDEX_HABITAT_CELL_CURSOR) {
-        GFL_BGSysSetScrPaletteNo(2, x, y, CELL_TILES_ACROSS, CELL_TILES_DOWN, 10);
+        GFL_BGSysSetScrPaletteNo(2, x, y, CELL_TILES_ACROSS(cell), CELL_TILES_DOWN, 10);
     } else if (state == POKEDEX_HABITAT_CELL_FILLED) {
-        GFL_BGSysSetScrPaletteNo(2, x, y, CELL_TILES_ACROSS, CELL_TILES_DOWN, 9);
+        GFL_BGSysSetScrPaletteNo(2, x, y, CELL_TILES_ACROSS(cell), CELL_TILES_DOWN, 9);
     } else if (state == POKEDEX_HABITAT_CELL_EMPTY) {
-        GFL_BGSysSetScrPaletteNo(2, x, y, CELL_TILES_ACROSS, CELL_TILES_DOWN, 11);
+        GFL_BGSysSetScrPaletteNo(2, x, y, CELL_TILES_ACROSS(cell), CELL_TILES_DOWN, 11);
     }
     GFL_BGSysQueueScrLoad(2);
 }
 
 static void PokedexHabitatGraphic_GetCellPos(u8 cell, ClActorPos *pos) {
 #ifdef PAPERWHITE2
-    // Paper White 2: the Habitat Dex's grid, its icons over its cells as the original's
-    pos->x = cell % POKEDEX_HABITAT_COLUMNS * 40 + 24;
-    pos->y = cell / POKEDEX_HABITAT_COLUMNS * 24 + 56;
+    // Paper White 2: the Habitat Dex's grid, each icon centred across its cell's box and 8 below its row's top, as the
+    // original's
+    pos->x = HABITAT_DEX_CELL_X(cell % POKEDEX_HABITAT_COLUMNS) + HABITAT_DEX_CELL_WIDTH / 2;
+    pos->y = HABITAT_DEX_ROW_Y(cell / POKEDEX_HABITAT_COLUMNS) + 8;
 #else
     pos->x = cell % POKEDEX_HABITAT_COLUMNS * 40 + 48;
     pos->y = cell / POKEDEX_HABITAT_COLUMNS * 32 + 56;

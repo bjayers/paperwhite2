@@ -1304,16 +1304,25 @@ The Pokédex's Habitat List (overlay 303, `src/ov303/pokedex_habitat.c` and `pok
 redesigned on 2026-11-09 with the Area icons:
 
 - **The grid** is 6 by 5 (`POKEDEX_HABITAT_COLUMNS` 6, all 30 of the original's icon slots, a page of
-  `HABITAT_DEX_PAGE_SIZE` 30): the original's 32 by 24 cells (screen 128's tiles, built by
-  `PaperWhite2_HabitatDex_LoadGrid` on BG 2 in palette row 9) 40 px apart across from x 8 and touching down from y 48,
-  each icon centred 16 px right of its cell's left and 8 below its top as the original's. A party icon's pixels are in
-  its rows 7-31 (every icon in `res/pokemon`, measured), so a 24 px pitch keeps the icons apart. More than 30 turn the
+  `HABITAT_DEX_PAGE_SIZE` 30), inside the original's green box (screen 128: its frame in tiles 1 and 30, its inside
+  x 14-241, from y 48 under its top border, the bar art's y 46-47, down to the touch bar at y 168), with the box's
+  frame left as it is. The cells (`HABITAT_DEX_CELL_*` in `habitat_dex.h`) are boxes of 30 by 20 with the original
+  cell's look, 37 px apart across from x 20 (x 20-234: 7 px between them, 6 and 7 inside the box's sides) and in rows
+  24 px apart from y 48, each box 2 px down its row (y 50-69 ... 146-165: 4 px between the rows, 2 inside the box's
+  top and bottom). `PaperWhite2_HabitatDex_LoadGrid` draws them on BG 2 in palette row 9 into characters of their own
+  after the bar's (448 on), as many as differ (a box doesn't sit on whole tiles); a tile's edge falls in every gap, so
+  each cell has its own 4 or 5 tiles across and 3 down for its state's palette (`PokedexHabitatGraphic_SetCellPalette`;
+  the gaps' colour, index 2, is the same in rows 9-11). Each icon is centred across its box and 8 below its row's top
+  as the original's; a touch takes the box and half the gaps beside it (x-3 to x+33). A party icon's pixels are in its
+  rows 7-31 (every icon in `res/pokemon`, measured), so a 24 px pitch keeps the icons apart. The rows can't be further
+  apart: 5 rows of whole tiles fill the box's 120 px. More than 30 turn the
   pages: L and R, the arrows, or the cursor past the first or last row; the touch tables end with `TOUCH_RECT_END`.
 - **The filter bar** (y 0-47, the original's text box) is the user's art (`pokedex_habitat_bar`, `docs/paperwhite2/art.md`)
   on BG 2 after its 256 characters, in main BG row 13 (row 12 is the stamps' message box's), with the Area icons
   (`pokedex_area.py`'s member, main OBJ rows 2, 4, 14 and 15, which no OBJ of the screen uses, loaded in the VBlank
-  and added to the fade's mask). Its **top row** shows the methods the area has, spread evenly over x 0-191 (the i-th
-  of n centred at 192 (2i + 1) / 2n, a touch at x the (x n / 192)-th): "List All" as the walking icon, always first;
+  and added to the fade's mask). Its **top row** shows the methods the area has, spread evenly over x 8-183, 8 px
+  clear of the screen's left edge as the bottom row and of the stamp (the i-th of n centred at 8 + 176 (2i + 1) / 2n, a
+  touch at x the ((x - 8) n / 176)-th): "List All" as the walking icon, always first;
   walking as the area's terrain (grass, cave floor, sand or puddles, `encounters.py`'s `habitat_terrain`, by most of
   its encounter areas with walking Pokémon); dark grass; surfing; fishing. The chosen method is in colour, the others
   their grey copies; a method the area hasn't isn't shown. No special methods (shaking grass, dust clouds, bridge

@@ -511,12 +511,12 @@ METHOD_ICONS = (23, 15, 16, 20, 22)
 
 def habitat_places():
     """The bar's places from the C file: (top-row icon lefts for 1 to 5 methods, icon y of each row, filter lefts,
-    page centre, row height, top row width)."""
+    page centre, row height, top row's left and width)."""
     d = pt.defines(HABITAT_C)
-    width, row, inset = d["TOP_WIDTH"], d["ROW_HEIGHT"], d["ICON_INSET_Y"]
-    tops = {n: [width * (2 * i + 1) // (2 * n) - ICON_W // 2 for i in range(n)] for n in range(1, 6)}
+    left, width, row, inset = d["TOP_LEFT"], d["TOP_WIDTH"], d["ROW_HEIGHT"], d["ICON_INSET_Y"]
+    tops = {n: [left + width * (2 * i + 1) // (2 * n) - ICON_W // 2 for i in range(n)] for n in range(1, 6)}
     filters = [d["FILTER_X"] + d["FILTER_PITCH"] * i for i in range(3)]
-    return tops, (inset, row + inset), filters, d["PAGE_X"], row, width
+    return tops, (inset, row + inset), filters, d["PAGE_X"], row, (left, width)
 
 
 def habitat_art():
@@ -540,7 +540,7 @@ def sheet_icons():
 
 
 def habitat_bar(out, font):
-    tops, (top_y, bottom_y), filters, page_x, row, width = habitat_places()
+    tops, (top_y, bottom_y), filters, page_x, row, (left, width) = habitat_places()
     art = habitat_art()
     icons_rgb, greys_rgb = sheet_icons()
     mark = (255, 0, 255)
@@ -584,8 +584,8 @@ def habitat_bar(out, font):
         for i, x in enumerate(tops[n]):
             guide.outline(x * k + n - 1, (top_y - 1) * k + n - 1, ICON_W * k - 2 * (n - 1), ICON_H * k + 6 - 2 * (n - 1),
                           c)
-        for i in range(1, n):
-            edge = width * i // n * k
+        for i in range(n + 1):
+            edge = (left + width * i // n) * k
             for y in range(0, row * k, 2):
                 guide.put(edge, y + (n - 1) * 3 % 6, c)
         guide.text(font, f"{n}", 4 + (n - 1) * 60, art.h * k + 6, color=c, shadow=None)
@@ -599,7 +599,7 @@ def habitat_bar(out, font):
     guide.outline((STAMP_X - STAMP_SIZE // 2) * k, 0, STAMP_SIZE * k, art.h * k, (255, 220, 60), dashed=True)
     guide.text(font, "season, time, weather filters (white); arrows (white); page and stamp (gold); top row: dashes are",
                4, art.h * k + 26, color=(220, 220, 230), shadow=None)
-    guide.text(font, "the touch areas' edges for each count, x * n / " + str(width), 4, art.h * k + 42,
+    guide.text(font, f"the touch areas' edges for each count, (x - {left}) * n / {width}", 4, art.h * k + 42,
                color=(220, 220, 230), shadow=None)
     guide.rgba(out / "habitat_bar_guide.png")
 

@@ -91,6 +91,17 @@ enum {
 
 // A page of the list: the grid's cells, in rows of POKEDEX_HABITAT_COLUMNS
 #define HABITAT_DEX_PAGE_SIZE POKEDEX_HABITAT_ICON_COUNT
+// The grid's cells inside the original's box (x 14-241 within its border, y 48-167 down to the touch bar): boxes of
+// HABITAT_DEX_CELL_WIDTH by HABITAT_DEX_CELL_HEIGHT, 37 px apart across from x 20 (7 px between them, a tile's edge
+// in each gap, so that each cell has its own tiles for its palette), in rows of 3 tiles from y 48, each box
+// HABITAT_DEX_CELL_INSET px down its row (4 px between the rows)
+#define HABITAT_DEX_CELL_X(column) (20 + 37 * (column))
+#define HABITAT_DEX_CELL_WIDTH 30
+#define HABITAT_DEX_CELL_GAP 7
+#define HABITAT_DEX_ROW_Y(row) (48 + 24 * (row))
+#define HABITAT_DEX_ROW_HEIGHT 24
+#define HABITAT_DEX_CELL_INSET 2
+#define HABITAT_DEX_CELL_HEIGHT (HABITAT_DEX_ROW_HEIGHT - 2 * HABITAT_DEX_CELL_INSET)
 // The most Pokémon of one list
 #define HABITAT_DEX_LIST_MAX 160
 // The bar's icons: a top row's for each method, and the filters'

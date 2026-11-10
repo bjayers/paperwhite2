@@ -237,7 +237,7 @@
         {
             "name": "pokedex_habitat_bar",
             "title": "Pokédex Habitat List: filter bar",
-            "description": "The Pokédex Habitat List's filter bar, above its grid of Pokémon (src/paperwhite2/ov303/paperwhite2_habitat_dex.c): main BG 2's top 48 rows in palette row 13, under the bar's icons, page and arrows. Its top row (y 0-23) has the methods the area has, 1 to 5 icons of 32 by 16 at y 4 spread evenly over x 0-191 (the chosen one in colour, the others grey); its bottom row (y 24-47) the season, time and weather icons at x 8, 48 and 88, y 28, then the page arrows centred at x 136 and 184 with the page between them; the area's stamp shows at the right (x 192-255). Its source is res/paperwhite2/pokedex_art/habitat_bar.png; the templates (pokedex_area_templates.py) show every slot for 1 to 5 methods.",
+            "description": "The Pokédex Habitat List's filter bar, above its grid of Pokémon (src/paperwhite2/ov303/paperwhite2_habitat_dex.c): main BG 2's top 48 rows in palette row 13, under the bar's icons, page and arrows. Its top row (y 0-23) has the methods the area has, 1 to 5 icons of 32 by 16 at y 4 spread evenly over x 8-183 (the chosen one in colour, the others grey); its bottom row (y 24-47) the season, time and weather icons at x 8, 48 and 88, y 28, then the page arrows centred at x 136 and 184 with the page between them; the area's stamp shows at the right (x 192-255). Its source is res/paperwhite2/pokedex_art/habitat_bar.png; the templates (pokedex_area_templates.py) show every slot for 1 to 5 methods.",
             "palette": "res/graphics/pokedex_gra/156.pal",
             "colors": 16,
             "depth": 4,
