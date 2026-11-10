@@ -1548,7 +1548,17 @@ characters written at once from the page's TCB manager, mid-frame and over the t
 sprite's polygons, sent the frame before) was drawing, its palette a frame later and the sprite not drawn between:
 Form's work before it (the entry, the panels) moved the write into the drawn frame, so it scrambled; Shiny's
 characters are the same, and Turn's write came early in the VBlank. BG 1 fades with the page there, so the
-head bar is shown at once and fades in and out with it, and slides out only once the screen is dark. **Bottom** (sub
+head bar is shown at once and fades in and out with it, and slides out only once the screen is dark. The
+top screen's fade (`PokedexDetailBlend`, brightness down) has no second targets (`plane2` none): BG 0's 3D takes no
+brightness where it is over a second target, as the hardware blends a 3D pixel over one by its alpha whatever
+BLDCNT's effect (as it does a translucent OBJ), so with the original's planes the sprite stayed whole as the screen
+faded out, and vanished only as the page ended; the top screen has no translucent OBJ that needs one. The fade-in
+waits for the sprite to load (`SEQ_FADE_IN` until `wk->mcss`), so that it shows with the rest, not a few frames late.
+**Only the Info page** (2026-11-09): the touch bar's page tabs (Info, Area, Cry, Forms) are hidden, and so can't be
+touched (`PokedexDetailTouchbar_CreateGeneral`), and Left and Right push no tab (`_UpdateGeneral`); the arrows, the
+check, X and return stay. `PokedexDetail_StartPage` (`pokedex_detail.c`) starts the Info page whatever page the
+caller (the list, the habitat list, the shortcuts, `POKEDEX_START_MAP` and the rest) or a page asked for. The old
+Area, Cry and Forms pages are still built, unreachable. **Bottom** (sub
 engine): the grid on BG 4, the bar of sub-pages and the panels drawn into two windows on BG 7 (palette 3, a table in
 the panels' file until there is art), and on Stats the buttons Abilities, Cry, Turn, Form, Shiny and Language on BG 6
 (`AppTaskMenuWin`, palettes 4 and 5, 9 by 3 tiles from tile row 3 at a 3-row pitch, shown 2 px higher, so a sixth
@@ -1567,7 +1577,7 @@ tab's column (y 0-17, x 32-223) switches to it. A sub-page without art shows a d
 Left and Right step through the six sub-pages, wrapping (Moves keeps the set it showed last); L and R step through one
 ring of the sub-pages and Moves' sets, wrapping: Stats, Data, Moves' Level Up, TM/HM, Tutor, Egg, Evo, Area, Matchups
 (`PokedexInfoPage_Cycle`; back into Moves enters at Egg, forward at Level Up): the touch bar takes Left and Right no more while the page runs (`PokedexDetailTouchbar_SetDisabledKeys`, `pokedex_detail_touchbar.c`,
-under `PAPERWHITE2`; Area, Cry and Forms are still there by touch), and the page gives the keys back as it ends. The text is `res/text/system/pokedex_data.txt` (`TEXT_BANK_POKEDEX_DATA`). Every place is a constant at
+under `PAPERWHITE2`), and the page gives the keys back as it ends. The text is `res/text/system/pokedex_data.txt` (`TEXT_BANK_POKEDEX_DATA`). Every place is a constant at
 the top of the two files.
 
 **Matchups** (shown once seen): the 17 attacking types in 3 rows of 6 (the 18th place free for a Fairy type), each the

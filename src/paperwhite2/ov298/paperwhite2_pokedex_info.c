@@ -311,7 +311,10 @@ BOOL PokedexInfoPage_Init(PokedexDetailProcSys *sys, int *seq, void *param_, voi
     PokedexDetailBlend_InitPlanes(wk->blendSub);
     // The entry's text shares BG 1 with the head bar, so BG 1 fades with the page on the top screen, the bar with it
     wk->blendMain->plane1 |= GX_BLEND_PLANEMASK_BG1;
-    wk->blendMain->plane2 |= GX_BLEND_PLANEMASK_BG1;
+    // and with no second targets, as BG 0's 3D (the sprite) takes no brightness over a second target: the hardware
+    // blends a 3D pixel over one by its alpha whatever BLDCNT's effect, as it does a translucent OBJ, so with the
+    // original's second targets the sprite stayed whole as the rest faded. The top screen has no translucent OBJ
+    wk->blendMain->plane2 = GX_BLEND_PLANEMASK_NONE;
     PokedexDetailBlend_SetOut(0, wk->blendMain);
     PokedexDetailBlend_SetOut(1, wk->blendSub);
     wk->exit = EXIT_NONE;
@@ -429,6 +432,10 @@ BOOL PokedexInfoPage_Main(PokedexDetailProcSys *sys, int *seq, void *param_, voi
         break;
     }
     case SEQ_FADE_IN:
+        // The fade waits for the sprite, which loads in the VBlanks after it is added, so it shows with the rest
+        if (wk->mcss == NULL) {
+            break;
+        }
         *seq = SEQ_WAIT_FADE_IN;
         PokedexDetailBlend_StartIn(wk->blendMain);
         PokedexDetailBlend_StartIn(wk->blendSub);
