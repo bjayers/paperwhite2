@@ -1039,17 +1039,17 @@ A blend of Nimbasa's city edge and Lostlorn's forest: the city's Patrat, Pidove 
 
 **Grass**
 
-- Spring: **common:** Spinda; **uncommon:** Combee (day only; never in rain, gusty rain, thunderstorm), Emolga (more at night), Foongus/Amoonguss, Hoothoot/Noctowl (night only), Sewaddle/Swadloon; **rare:** Kecleon, Misdreavus (night only), Murkrow/Honchkrow (night only); **exotic:** Panpour (more by day), Pansage (more by day), Pansear (more by day; never in rain, gusty rain, thunderstorm)
-- Summer: **common:** Spinda; **uncommon:** Combee (day only; never in rain, gusty rain, thunderstorm), Emolga (more at night), Foongus/Amoonguss, Hoothoot/Noctowl (night only), Sewaddle/Swadloon; **rare:** Kecleon, Misdreavus (night only), Murkrow/Honchkrow (night only); **exotic:** Panpour (more by day), Pansage (more by day), Pansear (more by day; never in rain, gusty rain, thunderstorm)
-- Autumn: **common:** Spinda; **uncommon:** Emolga (more at night), Foongus/Amoonguss, Hoothoot/Noctowl (night only), Ledyba/Ledian (more by day), Sewaddle/Swadloon; **rare:** Kecleon, Misdreavus (night only), Murkrow/Honchkrow (night only), Paras/Parasect (more at night); **exotic:** Panpour (more by day), Pansage (more by day), Pansear (more by day; never in rain, gusty rain, thunderstorm)
-- Winter: **common:** Spinda; **uncommon:** Emolga (more at night), Foongus/Amoonguss, Hoothoot/Noctowl (night only); **rare:** Kecleon, Misdreavus (night only), Murkrow/Honchkrow (night only); **exotic:** Panpour (more by day), Pansage (more by day), Pansear (more by day; never in rain, gusty rain, thunderstorm)
+- Spring: **common:** Spinda; **uncommon:** Combee (day only; never in rain, gusty rain, thunderstorm), Emolga (more at night), Foongus/Amoonguss, Hoothoot/Noctowl (night only), Sewaddle/Swadloon; **rare:** Kecleon, Misdreavus (night only), Murkrow/Honchkrow (night only), Sudowoodo (never in rain, gusty rain, thunderstorm); **exotic:** Panpour (more by day), Pansage (more by day), Pansear (more by day; never in rain, gusty rain, thunderstorm)
+- Summer: **common:** Spinda; **uncommon:** Combee (day only; never in rain, gusty rain, thunderstorm), Emolga (more at night), Foongus/Amoonguss, Hoothoot/Noctowl (night only), Sewaddle/Swadloon; **rare:** Kecleon, Misdreavus (night only), Murkrow/Honchkrow (night only); **very rare:** Sudowoodo (never in rain, gusty rain, thunderstorm); **exotic:** Panpour (more by day), Pansage (more by day), Pansear (more by day; never in rain, gusty rain, thunderstorm)
+- Autumn: **common:** Spinda; **uncommon:** Emolga (more at night), Foongus/Amoonguss, Hoothoot/Noctowl (night only), Ledyba/Ledian (more by day), Sewaddle/Swadloon, Sudowoodo (never in rain, gusty rain, thunderstorm); **rare:** Kecleon, Misdreavus (night only), Murkrow/Honchkrow (night only), Paras/Parasect (more at night); **exotic:** Panpour (more by day), Pansage (more by day), Pansear (more by day; never in rain, gusty rain, thunderstorm)
+- Winter: **common:** Spinda; **uncommon:** Emolga (more at night), Foongus/Amoonguss, Hoothoot/Noctowl (night only), Sudowoodo (never in rain, gusty rain, thunderstorm); **rare:** Kecleon, Misdreavus (night only), Murkrow/Honchkrow (night only); **exotic:** Panpour (more by day), Pansage (more by day), Pansear (more by day; never in rain, gusty rain, thunderstorm)
 
 **Dark grass**
 
-- Spring: **common:** Spinda; **uncommon:** Emolga (more at night); **rare:** Kecleon, Misdreavus (night only), Murkrow/Honchkrow (night only); **exotic:** Panpour (more by day), Pansage (more by day), Pansear (more by day; never in rain, gusty rain, thunderstorm)
-- Summer: **common:** Spinda; **uncommon:** Emolga (more at night), Spinarak/Ariados (more at night), Venipede/Whirlipede/Scolipede (more at night); **rare:** Kecleon, Misdreavus (night only), Murkrow/Honchkrow (night only); **exotic:** Panpour (more by day), Pansage (more by day), Pansear (more by day; never in rain, gusty rain, thunderstorm)
-- Autumn: **common:** Spinda; **uncommon:** Emolga (more at night), Ledyba/Ledian (more by day), Spinarak/Ariados (more at night), Venipede/Whirlipede/Scolipede (more at night); **rare:** Kecleon, Misdreavus (night only), Murkrow/Honchkrow (night only); **exotic:** Panpour (more by day), Pansage (more by day), Pansear (more by day; never in rain, gusty rain, thunderstorm)
-- Winter: **common:** Spinda; **uncommon:** Emolga (more at night), Sawsbuck (winter form); **rare:** Kecleon, Misdreavus (night only), Murkrow/Honchkrow (night only); **exotic:** Panpour (more by day), Pansage (more by day), Pansear (more by day; never in rain, gusty rain, thunderstorm)
+- Spring: **common:** Spinda; **uncommon:** Emolga (more at night); **rare:** Kecleon, Misdreavus (night only), Murkrow/Honchkrow (night only), Sudowoodo (never in rain, gusty rain, thunderstorm); **exotic:** Panpour (more by day), Pansage (more by day), Pansear (more by day; never in rain, gusty rain, thunderstorm)
+- Summer: **common:** Spinda; **uncommon:** Emolga (more at night), Spinarak/Ariados (more at night), Venipede/Whirlipede/Scolipede (more at night); **rare:** Kecleon, Misdreavus (night only), Murkrow/Honchkrow (night only); **very rare:** Sudowoodo (never in rain, gusty rain, thunderstorm); **exotic:** Panpour (more by day), Pansage (more by day), Pansear (more by day; never in rain, gusty rain, thunderstorm)
+- Autumn: **common:** Spinda; **uncommon:** Emolga (more at night), Ledyba/Ledian (more by day), Spinarak/Ariados (more at night), Sudowoodo (never in rain, gusty rain, thunderstorm), Venipede/Whirlipede/Scolipede (more at night); **rare:** Kecleon, Misdreavus (night only), Murkrow/Honchkrow (night only); **exotic:** Panpour (more by day), Pansage (more by day), Pansear (more by day; never in rain, gusty rain, thunderstorm)
+- Winter: **common:** Spinda; **uncommon:** Emolga (more at night), Sawsbuck (winter form), Sudowoodo (never in rain, gusty rain, thunderstorm); **rare:** Kecleon, Misdreavus (night only), Murkrow/Honchkrow (night only); **exotic:** Panpour (more by day), Pansage (more by day), Pansear (more by day; never in rain, gusty rain, thunderstorm)
 
 **Rustling spots (shaking grass)**
 
@@ -1084,6 +1084,7 @@ The forest where something isn't right: Spinda tottering about, all three elemen
 *Discussed with the user:*
 
 - 2026-11-14, done: the three elemental monkeys are trophies here too, in both grasses; Ditto is out of the pools (perhaps a special Ditto hidden in any overworld encounter, undecided); Ledyba in autumn; Kecleon, Misdreavus and Murkrow in both grasses, since the dark grass needs Waterfall and the off feel should be in both.
+- 2026-11-14, done: Sudowoodo in both grasses, a mimic in the off forest, uncommon in autumn and winter (its disguise fails when the leaves turn and fall), rare in spring, very rare in summer.
 
 ### Marvelous Bridge (`marvelous_bridge`)
 
@@ -1122,7 +1123,7 @@ A long bridge over the sea: gulls and Pelipper in its shadows all year, and Swan
 
 - Spring: **common:** Geodude/Graveler, Spearow/Fearow (more by day); **uncommon:** Mareep/Flaaffy/Ampharos, Swablu/Altaria (more by day); **rare:** Doduo/Dodrio (more by day), Girafarig, Murkrow/Honchkrow (night only), Nidoran♀/Nidorina, Nidoran♂/Nidorino, Sudowoodo (never in rain, gusty rain, thunderstorm)
 - Summer: **common:** Geodude/Graveler, Spearow/Fearow (more by day); **uncommon:** Hoppip/Skiploom/Jumpluff (day only; never in gusty rain, thunderstorm), Mareep/Flaaffy/Ampharos, Swablu/Altaria (more by day); **rare:** Doduo/Dodrio (more by day), Girafarig, Murkrow/Honchkrow (night only), Nidoran♀/Nidorina, Nidoran♂/Nidorino, Sudowoodo (never in rain, gusty rain, thunderstorm)
-- Autumn: **common:** Geodude/Graveler, Spearow/Fearow (more by day); **uncommon:** Mareep/Flaaffy/Ampharos, Swablu/Altaria (more by day); **rare:** Doduo/Dodrio (more by day), Girafarig, Murkrow/Honchkrow (night only), Nidoran♀/Nidorina, Nidoran♂/Nidorino, Sudowoodo (never in rain, gusty rain, thunderstorm), Whimsicott (more by day; never in gusty rain, thunderstorm)
+- Autumn: **common:** Geodude/Graveler, Spearow/Fearow (more by day); **uncommon:** Mareep/Flaaffy/Ampharos, Sudowoodo (never in rain, gusty rain, thunderstorm), Swablu/Altaria (more by day); **rare:** Doduo/Dodrio (more by day), Girafarig, Murkrow/Honchkrow (night only), Nidoran♀/Nidorina, Nidoran♂/Nidorino, Whimsicott (more by day; never in gusty rain, thunderstorm)
 - Winter: **common:** Geodude/Graveler, Spearow/Fearow (more by day); **uncommon:** Mareep/Flaaffy/Ampharos, Sudowoodo (never in rain, gusty rain, thunderstorm); **rare:** Doduo/Dodrio (more by day), Girafarig, Murkrow/Honchkrow (night only), Nidoran♀/Nidorina, Nidoran♂/Nidorino
 
 **Dark grass**
@@ -1305,17 +1306,17 @@ The original's Ducklett bridge: Ducklett and gulls in the shadows all year, and 
 
 **Grass**
 
-- Spring: **common:** Deerling/Sawsbuck (spring form), Hoothoot/Noctowl (night only), Oddish/Gloom (more at night), Swellow (day only); **uncommon:** Emolga (more at night), Karrablast, Sewaddle, Shelmet, Taillow (day only), Wurmple/Silcoon/Cascoon/Beautifly/Dustox; **rare:** Pachirisu (more by day), Pikachu
-- Summer: **common:** Deerling/Sawsbuck (summer form), Hoothoot/Noctowl (night only), Oddish/Gloom (more at night), Swellow (day only); **uncommon:** Emolga (more at night), Karrablast, Sewaddle, Shelmet, Taillow (day only), Wurmple/Silcoon/Cascoon/Beautifly/Dustox; **rare:** Pachirisu (more by day), Pikachu, Yanma/Yanmega (more by day)
-- Autumn: **common:** Deerling/Sawsbuck (autumn form), Foongus/Amoonguss, Hoothoot/Noctowl (night only), Ledyba/Ledian (more by day); **uncommon:** Emolga (more at night), Karrablast, Shelmet; **rare:** Pachirisu (more by day), Pikachu
-- Winter: **common:** Hoothoot/Noctowl (night only); **uncommon:** Deerling (winter form), Emolga (more at night), Ledyba/Ledian (more by day), Snover/Abomasnow; **rare:** Castform (only in snow), Pachirisu (more by day), Pikachu
+- Spring: **common:** Deerling/Sawsbuck (spring form), Hoothoot/Noctowl (night only), Oddish/Gloom (more at night), Swellow (day only); **uncommon:** Emolga (more at night), Karrablast, Sewaddle, Shelmet, Taillow (day only), Wurmple/Silcoon/Cascoon/Beautifly/Dustox; **rare:** Pachirisu (more by day), Pikachu, Sudowoodo (never in rain, gusty rain, thunderstorm)
+- Summer: **common:** Deerling/Sawsbuck (summer form), Hoothoot/Noctowl (night only), Oddish/Gloom (more at night), Swellow (day only); **uncommon:** Emolga (more at night), Karrablast, Sewaddle, Shelmet, Taillow (day only), Wurmple/Silcoon/Cascoon/Beautifly/Dustox; **rare:** Pachirisu (more by day), Pikachu, Yanma/Yanmega (more by day); **very rare:** Sudowoodo (never in rain, gusty rain, thunderstorm)
+- Autumn: **common:** Deerling/Sawsbuck (autumn form), Foongus/Amoonguss, Hoothoot/Noctowl (night only), Ledyba/Ledian (more by day); **uncommon:** Emolga (more at night), Karrablast, Shelmet, Sudowoodo (never in rain, gusty rain, thunderstorm); **rare:** Pachirisu (more by day), Pikachu
+- Winter: **common:** Hoothoot/Noctowl (night only); **uncommon:** Deerling (winter form), Emolga (more at night), Ledyba/Ledian (more by day), Snover/Abomasnow, Sudowoodo (never in rain, gusty rain, thunderstorm); **rare:** Castform (only in snow), Pachirisu (more by day), Pikachu
 
 **Dark grass**
 
-- Spring: **common:** Deerling/Sawsbuck (spring form), Hoothoot/Noctowl (night only); **uncommon:** Emolga (more at night), Foongus/Amoonguss; **rare:** Shinx/Luxio/Luxray
-- Summer: **common:** Deerling/Sawsbuck (summer form), Hoothoot/Noctowl (night only); **uncommon:** Emolga (more at night), Foongus/Amoonguss; **rare:** Shinx/Luxio/Luxray, Teddiursa/Ursaring (more by day); **very rare:** Heracross (more by day), Pinsir (more at night)
-- Autumn: **common:** Deerling/Sawsbuck (autumn form), Foongus/Amoonguss, Hoothoot/Noctowl (night only); **uncommon:** Emolga (more at night), Seedot/Nuzleaf/Shiftry, Spinarak/Ariados (more at night), Swadloon; **rare:** Shinx/Luxio/Luxray, Teddiursa/Ursaring (more by day)
-- Winter: **common:** Hoothoot/Noctowl (night only); **uncommon:** Deerling (winter form), Emolga (more at night), Swinub/Piloswine/Mamoswine; **rare:** Shinx/Luxio/Luxray
+- Spring: **common:** Deerling/Sawsbuck (spring form), Hoothoot/Noctowl (night only); **uncommon:** Emolga (more at night), Foongus/Amoonguss; **rare:** Shinx/Luxio/Luxray, Sudowoodo (never in rain, gusty rain, thunderstorm)
+- Summer: **common:** Deerling/Sawsbuck (summer form), Hoothoot/Noctowl (night only); **uncommon:** Emolga (more at night), Foongus/Amoonguss; **rare:** Shinx/Luxio/Luxray, Teddiursa/Ursaring (more by day); **very rare:** Heracross (more by day), Pinsir (more at night), Sudowoodo (never in rain, gusty rain, thunderstorm)
+- Autumn: **common:** Deerling/Sawsbuck (autumn form), Foongus/Amoonguss, Hoothoot/Noctowl (night only); **uncommon:** Emolga (more at night), Seedot/Nuzleaf/Shiftry, Spinarak/Ariados (more at night), Sudowoodo (never in rain, gusty rain, thunderstorm), Swadloon; **rare:** Shinx/Luxio/Luxray, Teddiursa/Ursaring (more by day)
+- Winter: **common:** Hoothoot/Noctowl (night only); **uncommon:** Deerling (winter form), Emolga (more at night), Sudowoodo (never in rain, gusty rain, thunderstorm), Swinub/Piloswine/Mamoswine; **rare:** Shinx/Luxio/Luxray
 
 **Rustling spots (shaking grass)**
 
@@ -1361,6 +1362,7 @@ An Appalachian river valley: Deerling and Sawsbuck in the season's form (your re
 *Discussed with the user:*
 
 - 2026-11-14, done: Delibird gone; it comes down only to the very snowiest places in winter (Dragonspiral's entrance, Giant Chasm's outside). Pikachu stays.
+- 2026-11-14, done: Sudowoodo added with the same seasons as Lostlorn's; Teddiursa only in summer and autumn here.
 
 ### Chargestone Cave (`chargestone_cave`)
 
@@ -1778,10 +1780,10 @@ Opelucid's outskirts by the mall: scavengers at the trash and food stands (Zigza
 
 **Dark grass**
 
-- Spring: **uncommon:** Hoothoot/Noctowl (night only), Sawk, Teddiursa/Ursaring (more by day); **rare:** Hitmonchan, Tyrogue; **very rare:** Hitmontop
+- Spring: **uncommon:** Hoothoot/Noctowl (night only), Sawk; **rare:** Hitmonchan, Teddiursa/Ursaring (more by day), Tyrogue; **very rare:** Hitmontop
 - Summer: **uncommon:** Hoothoot/Noctowl (night only), Sawk, Teddiursa/Ursaring (more by day); **rare:** Hitmonchan, Tyrogue; **very rare:** Hitmontop
 - Autumn: **uncommon:** Hoothoot/Noctowl (night only), Sawk, Teddiursa/Ursaring (more by day); **rare:** Hitmonchan, Tyrogue; **very rare:** Hitmontop
-- Winter: **uncommon:** Hoothoot/Noctowl (night only), Sawk; **rare:** Hitmonchan, Stantler, Tyrogue; **very rare:** Hitmontop, Ursaring (more by day)
+- Winter: **uncommon:** Hoothoot/Noctowl (night only), Sawk; **rare:** Hitmonchan, Stantler, Tyrogue; **very rare:** Hitmontop
 
 **Rustling spots (shaking grass)**
 
@@ -1821,7 +1823,7 @@ Fighters training by the waterfalls (your request): Throh above, Sawk below, Tyr
 **Grass**
 
 - Spring: **uncommon:** Igglybuff/Jigglypuff (more at night), Lillipup/Herdier/Stoutland, Pidove/Tranquill/Unfezant (more by day), Starly/Staravia/Staraptor (more by day)
-- Summer: **common:** Kricketot/Kricketune; **uncommon:** Igglybuff/Jigglypuff (more at night), Lillipup/Herdier/Stoutland, Pidgey/Pidgeotto/Pidgeot (more by day), Pidove/Tranquill/Unfezant (more by day), Venonat/Venomoth (night only); **very rare:** Chatot (day only)
+- Summer: **common:** Kricketot/Kricketune; **uncommon:** Igglybuff/Jigglypuff (more at night), Lillipup/Herdier/Stoutland, Pidgey/Pidgeotto/Pidgeot (more by day), Pidove/Tranquill/Unfezant (more by day), Venonat/Venomoth (night only); **very rare:** Chatot (morning only)
 - Autumn: **common:** Kricketot/Kricketune; **uncommon:** Igglybuff/Jigglypuff (more at night), Lillipup/Herdier/Stoutland, Pidove/Tranquill/Unfezant (more by day)
 - Winter: **uncommon:** Buneary, Igglybuff/Jigglypuff (more at night), Lillipup/Herdier/Stoutland, Pidove/Tranquill/Unfezant (more by day), Swablu/Altaria (more by day); **rare:** Kricketune
 
@@ -1878,6 +1880,10 @@ A quiet village of music (reviewed with you): Kricketot singing at dusk, Jigglyp
 
 - Spring's field has no common family (four uncommons).
 
+*Discussed with the user:*
+
+- 2026-11-14, done: Chatot's very rare summer visit is a dawn song (mornings only).
+
 ### Route 12 (`route_12`)
 
 *The place:* Hills covered in white and yellow flowers, with a green, overgrown grass road through them; dark grass in the north, grass by the road. Like Floaroma Town and its surroundings in Sinnoh: a honey tree would be at home here. Many bees (Combee, requested) and pollinators. Spring more than anything.
@@ -1891,7 +1897,7 @@ A quiet village of music (reviewed with you): Kricketot singing at dusk, Jigglyp
 
 **Dark grass**
 
-- Spring: **uncommon:** Aipom/Ambipom (more by day), Burmy/Wormadam/Mothim (Plant Cloak), Nidoran♀/Nidorina, Nidoran♂/Nidorino, Teddiursa/Ursaring (more by day); **exotic:** Heracross (more by day), Vespiquen (day only; never in rain, gusty rain, thunderstorm)
+- Spring: **uncommon:** Aipom/Ambipom (more by day), Burmy/Wormadam/Mothim (Plant Cloak), Nidoran♀/Nidorina, Nidoran♂/Nidorino; **rare:** Teddiursa/Ursaring (more by day); **exotic:** Heracross (more by day), Vespiquen (day only; never in rain, gusty rain, thunderstorm)
 - Summer: **common:** Hoppip/Skiploom/Jumpluff (day only; never in gusty rain, thunderstorm), Pidgey/Pidgeotto/Pidgeot (more by day); **uncommon:** Aipom/Ambipom (more by day), Burmy/Wormadam/Mothim (Plant Cloak), Nidoran♀/Nidorina, Nidoran♂/Nidorino, Ninjask (more by day), Sunflora (day only), Teddiursa/Ursaring (more by day); **exotic:** Heracross (more by day), Vespiquen (day only; never in rain, gusty rain, thunderstorm)
 - Autumn: **uncommon:** Aipom/Ambipom (more by day), Burmy/Wormadam/Mothim (Plant Cloak), Nidoran♀/Nidorina, Nidoran♂/Nidorino, Sunflora (day only), Teddiursa/Ursaring (more by day); **exotic:** Heracross (more by day)
 - Winter: **uncommon:** Burmy/Wormadam/Mothim (Plant Cloak), Deerling (winter form), Nidoran♀/Nidorina, Nidoran♂/Nidorino, Poochyena/Mightyena (more at night); **rare:** Vespiquen (day only; never in rain, gusty rain, thunderstorm)
@@ -2121,14 +2127,14 @@ The League's mountain, for the evolved and powerful: Graveler, Donphan, Rhydon, 
 
 **Grass**
 
-- Spring: **common:** Pineco/Forretress; **uncommon:** Hoothoot/Noctowl (night only), Stantler, Ursaring (more by day); **rare:** Luxio/Luxray
+- Spring: **common:** Pineco/Forretress; **uncommon:** Hoothoot/Noctowl (night only), Stantler; **rare:** Luxio/Luxray, Ursaring (more by day)
 - Summer: **common:** Pineco/Forretress; **uncommon:** Beedrill (more by day), Hoothoot/Noctowl (night only), Stantler, Ursaring (more by day); **rare:** Luxio/Luxray
 - Autumn: **common:** Pineco/Forretress; **uncommon:** Beedrill (more by day), Hoothoot/Noctowl (night only), Stantler, Ursaring (more by day); **rare:** Luxio/Luxray
 - Winter: **common:** Pineco/Forretress; **uncommon:** Hoothoot/Noctowl (night only), Sneasel (more at night), Snover/Abomasnow; **rare:** Luxio/Luxray
 
 **Dark grass**
 
-- Spring: **common:** Pineco/Forretress; **uncommon:** Hariyama, Hoothoot/Noctowl (night only), Ursaring (more by day); **rare:** Luxio/Luxray
+- Spring: **common:** Pineco/Forretress; **uncommon:** Hariyama, Hoothoot/Noctowl (night only); **rare:** Luxio/Luxray, Ursaring (more by day)
 - Summer: **common:** Pineco/Forretress; **uncommon:** Hariyama, Hoothoot/Noctowl (night only), Ursaring (more by day); **rare:** Luxio/Luxray
 - Autumn: **common:** Pineco/Forretress; **uncommon:** Hariyama, Hoothoot/Noctowl (night only), Ursaring (more by day); **rare:** Luxio/Luxray
 - Winter: **common:** Pineco/Forretress; **uncommon:** Hariyama, Hoothoot/Noctowl (night only), Snover/Abomasnow; **rare:** Luxio/Luxray
@@ -2513,14 +2519,14 @@ The windswept upland between the coast and the chasm, as a savanna: herds (Tauro
 
 **Grass**
 
-- All year: **common:** Spearow/Fearow (more by day); **uncommon:** Gastly/Haunter (night only), Geodude/Graveler, Gligar (more at night), Murkrow/Honchkrow (night only), Numel/Camerupt (never in rain, gusty rain, thunderstorm), Ponyta/Rapidash (more by day; never in rain, gusty rain, thunderstorm), Vullaby/Mandibuzz (more by day); **rare:** Bonsly (never in rain, gusty rain, thunderstorm), Pansear (more by day; never in rain, gusty rain, thunderstorm); **exotic:** Charmander (never in rain, gusty rain, thunderstorm)
+- All year: **common:** Spearow/Fearow (more by day); **uncommon:** Gastly/Haunter (night only), Geodude/Graveler, Gligar (more at night), Murkrow/Honchkrow (night only), Numel/Camerupt (never in rain, gusty rain, thunderstorm), Ponyta/Rapidash (more by day; never in rain, gusty rain, thunderstorm), Vullaby/Mandibuzz (more by day); **rare:** Bonsly (never in rain, gusty rain, thunderstorm), Misdreavus (night only), Pansear (more by day; never in rain, gusty rain, thunderstorm), Shuppet/Banette (night only); **exotic:** Charmander (never in rain, gusty rain, thunderstorm)
 
 **Dark grass**
 
-- Spring: **uncommon:** Durant, Gligar (more at night), Houndour/Houndoom (night only; never in rain, gusty rain, thunderstorm), Rhyhorn/Rhydon, Vullaby/Mandibuzz (more by day); **rare:** Doduo/Dodrio (more by day), Drifloon/Drifblim (night only), Girafarig, Heatmor, Skarmory, Sudowoodo (never in rain, gusty rain, thunderstorm); **exotic:** Charmander (never in rain, gusty rain, thunderstorm)
-- Summer: **uncommon:** Durant, Gligar (more at night), Houndour/Houndoom (night only; never in rain, gusty rain, thunderstorm), Rhyhorn/Rhydon, Vullaby/Mandibuzz (more by day); **rare:** Doduo/Dodrio (more by day), Drifloon/Drifblim (night only), Girafarig, Heatmor, Skarmory; **very rare:** Sudowoodo (never in rain, gusty rain, thunderstorm); **exotic:** Charmander (never in rain, gusty rain, thunderstorm)
-- Autumn: **uncommon:** Durant, Gligar (more at night), Houndour/Houndoom (night only; never in rain, gusty rain, thunderstorm), Rhyhorn/Rhydon, Vullaby/Mandibuzz (more by day); **rare:** Doduo/Dodrio (more by day), Drifloon/Drifblim (night only), Girafarig, Heatmor, Skarmory, Sudowoodo (never in rain, gusty rain, thunderstorm); **exotic:** Charmander (never in rain, gusty rain, thunderstorm)
-- Winter: **uncommon:** Durant, Gligar (more at night), Houndour/Houndoom (night only; never in rain, gusty rain, thunderstorm), Rhyhorn/Rhydon, Sudowoodo (never in rain, gusty rain, thunderstorm), Vullaby/Mandibuzz (more by day); **rare:** Doduo/Dodrio (more by day), Drifloon/Drifblim (night only), Girafarig, Heatmor, Skarmory; **exotic:** Charmander (never in rain, gusty rain, thunderstorm)
+- Spring: **uncommon:** Durant, Gligar (more at night), Houndour/Houndoom (night only; never in rain, gusty rain, thunderstorm), Rhyhorn/Rhydon, Vullaby/Mandibuzz (more by day); **rare:** Doduo/Dodrio (more by day), Drifloon/Drifblim (night only), Girafarig, Heatmor, Misdreavus (night only), Skarmory, Sudowoodo (never in rain, gusty rain, thunderstorm); **exotic:** Charmander (never in rain, gusty rain, thunderstorm)
+- Summer: **uncommon:** Durant, Gligar (more at night), Houndour/Houndoom (night only; never in rain, gusty rain, thunderstorm), Rhyhorn/Rhydon, Vullaby/Mandibuzz (more by day); **rare:** Doduo/Dodrio (more by day), Drifloon/Drifblim (night only), Girafarig, Heatmor, Misdreavus (night only), Skarmory; **very rare:** Sudowoodo (never in rain, gusty rain, thunderstorm); **exotic:** Charmander (never in rain, gusty rain, thunderstorm)
+- Autumn: **uncommon:** Durant, Gligar (more at night), Houndour/Houndoom (night only; never in rain, gusty rain, thunderstorm), Rhyhorn/Rhydon, Sudowoodo (never in rain, gusty rain, thunderstorm), Vullaby/Mandibuzz (more by day); **rare:** Doduo/Dodrio (more by day), Drifloon/Drifblim (night only), Girafarig, Heatmor, Misdreavus (night only), Skarmory; **exotic:** Charmander (never in rain, gusty rain, thunderstorm)
+- Winter: **uncommon:** Durant, Gligar (more at night), Houndour/Houndoom (night only; never in rain, gusty rain, thunderstorm), Rhyhorn/Rhydon, Sudowoodo (never in rain, gusty rain, thunderstorm), Vullaby/Mandibuzz (more by day); **rare:** Doduo/Dodrio (more by day), Drifloon/Drifblim (night only), Girafarig, Heatmor, Misdreavus (night only), Skarmory; **exotic:** Charmander (never in rain, gusty rain, thunderstorm)
 
 **Rustling spots (shaking grass)**
 
@@ -2598,7 +2604,7 @@ Moisture-loving cave dwellers instead of fire (your request): Paras's fungi, She
 
 **Walking (the floor)**
 
-- All year: **common:** Gastly/Haunter (night only), Shuppet/Banette (more at night); **uncommon:** Misdreavus (night only); **rare:** Duskull/Dusclops (more at night), Litwick/Lampent (never in rain, gusty rain, thunderstorm), Woobat
+- All year: **common:** Gastly/Haunter, Shuppet/Banette (more at night); **uncommon:** Misdreavus; **rare:** Duskull/Dusclops (more at night), Litwick/Lampent (never in rain, gusty rain, thunderstorm), Woobat
 
 **What I think**
 
@@ -2611,6 +2617,10 @@ A haunted house's pranksters (your request): Gastly, Shuppet and Banette as thro
 *Not satisfied, or unsure:*
 
 - By day it's Shuppet (more at night) and the rares, since Gastly and Misdreavus are night only. A haunted house by day may be right to feel empty, but it's very thin.
+
+*Discussed with the user:*
+
+- 2026-11-14: its ghosts are there all day (Gastly and Misdreavus too), since it's haunted; at night some come out onto Reversal Mountain's pass (Shuppet and Misdreavus added there). More to discuss when we reach it.
 
 ### Twist Mountain (`twist_mountain`)
 
@@ -2823,7 +2833,7 @@ A remote tropical island: Exeggcute and Exeggutor (your request), Tropius among 
 
 **Dark grass**
 
-- Spring: **uncommon:** Hoothoot/Noctowl (night only), Tangela/Tangrowth, Teddiursa/Ursaring (more by day); **rare:** Aipom/Ambipom (more by day), Slakoth/Vigoroth/Slaking
+- Spring: **uncommon:** Hoothoot/Noctowl (night only), Tangela/Tangrowth; **rare:** Aipom/Ambipom (more by day), Slakoth/Vigoroth/Slaking, Teddiursa/Ursaring (more by day)
 - Summer: **uncommon:** Hoothoot/Noctowl (night only), Tangela/Tangrowth, Teddiursa/Ursaring (more by day); **rare:** Aipom/Ambipom (more by day), Heracross (more by day), Pinsir (more at night), Slakoth/Vigoroth/Slaking
 - Autumn: **uncommon:** Hoothoot/Noctowl (night only), Tangela/Tangrowth, Teddiursa/Ursaring (more by day); **rare:** Aipom/Ambipom (more by day), Slakoth/Vigoroth/Slaking
 - Winter: **uncommon:** Hoothoot/Noctowl (night only), Tangela/Tangrowth; **rare:** Aipom/Ambipom (more by day), Slakoth/Vigoroth/Slaking

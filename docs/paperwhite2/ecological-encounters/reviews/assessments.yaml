@@ -389,6 +389,8 @@ lostlorn_forest:
   discussed:
     - >-
       2026-11-14, done: the three elemental monkeys are trophies here too, in both grasses; Ditto is out of the pools (perhaps a special Ditto hidden in any overworld encounter, undecided); Ledyba in autumn; Kecleon, Misdreavus and Murkrow in both grasses, since the dark grass needs Waterfall and the off feel should be in both.
+    - >-
+      2026-11-14, done: Sudowoodo in both grasses, a mimic in the off forest, uncommon in autumn and winter (its disguise fails when the leaves turn and fall), rare in spring, very rare in summer.
 
 marvelous_bridge:
   vision: >-
@@ -482,6 +484,8 @@ route_6:
   discussed:
     - >-
       2026-11-14, done: Delibird gone; it comes down only to the very snowiest places in winter (Dragonspiral's entrance, Giant Chasm's outside). Pikachu stays.
+    - >-
+      2026-11-14, done: Sudowoodo added with the same seasons as Lostlorn's; Teddiursa only in summer and autumn here.
 
 chargestone_cave:
   vision: >-
@@ -643,6 +647,9 @@ village_bridge:
     - It's as we discussed, serene and rustic, with Whismur gone.
   unsure:
     - Spring's field has no common family (four uncommons).
+  discussed:
+    - >-
+      2026-11-14, done: Chatot's very rare summer visit is a dawn song (mornings only).
 
 route_12:
   vision: >-
@@ -855,6 +862,9 @@ strange_house:
     - >-
       By day it's Shuppet (more at night) and the rares, since Gastly and Misdreavus are night only. A haunted house
       by day may be right to feel empty, but it's very thin.
+  discussed:
+    - >-
+      2026-11-14: its ghosts are there all day (Gastly and Misdreavus too), since it's haunted; at night some come out onto Reversal Mountain's pass (Shuppet and Misdreavus added there). More to discuss when we reach it.
 
 twist_mountain:
   vision: >-

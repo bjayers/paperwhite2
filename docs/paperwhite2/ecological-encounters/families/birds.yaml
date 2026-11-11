@@ -428,7 +428,7 @@ families:
     wanderer: {appears: both, wanders: random, grass: float}
     homes:
       - {place: route_18, methods: [grass, dark_grass], seasons: [spring, summer], tier: uncommon, why: "the island in its season (the user's request)"}
-      - {place: village_bridge, methods: [grass], seasons: [summer], tier: very_rare, why: "drawn by the village's music in summer"}
+      - {place: village_bridge, methods: [grass], seasons: [summer], tier: very_rare, times: [morning], why: "drawn by the village's music in summer: a dawn song"}
     review:
       - "Its season (spring and summer) is my guess. Castelia's feral colony was dropped (2026-11-14: one trophy for the park, Eevee)."
 
