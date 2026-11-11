@@ -11,7 +11,7 @@
 # - Larvitar born deep under Victory Road, Pupitar and Tyranitar on its mountain; Beldum's line at Giant Chasm (the
 #   user's request).
 # - Absol comes out of the mountains with the storms (weather-only homes on Routes 14 and Abundant Shrine).
-# - Bouffalant herds on the north's open hills (Route 12) and by Route 9.
+# - Bouffalant herds on the rugged slopes of Victory Road, the original's Route 10 country.
 # - Review: the number of trophies at Victory Road; Dragonite wild at all.
 
 families:
@@ -250,8 +250,9 @@ families:
     lore:
       - "Pokédex (B2W2): it charges so wildly a train in its territory would be sent flying."
       - "In the game: a Hidden Grotto Bouffalant on Route 9."
-      - "Real world: bison herds on the open grassland."
-    habitats: {hills: 3, meadow: 3, pasture: 2}
+      - "In the original games: Route 10, the rugged road to Victory Road."
+      - "Real world: bison and wild cattle of rough upland and mountain grassland."
+    habitats: {mountain: 3, cliff: 2, hills: 2}
     time: {periods: day, strength: none}
     seasons: all year
     migration: resident
@@ -263,6 +264,5 @@ families:
     levels: {bouffalant: [20, 100]}
     wanderer: {appears: both, wanders: aggressive, grass: stand}
     homes:
-      - {place: route_12, methods: [dark_grass], seasons: all, tier: uncommon, why: "herds on the north's open hills"}
-      - {place: route_9, methods: [dark_grass], seasons: all, tier: rare, why: "by the tracks at the town's edge (its Hidden Grotto)"}
+      - {place: victory_road_mountainside, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "herds on the rough slopes by the League, as in the original's Route 10"}
     review: []

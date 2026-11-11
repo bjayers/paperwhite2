@@ -825,7 +825,6 @@ families:
       - {place: giant_chasm_crater, methods: [grass, dark_grass], seasons: all, tier: common, why: "the crater's cold"}
       - {place: twist_mountain, methods: [grass], seasons: all, tier: uncommon, why: "the cold caves"}
       - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: uncommon, why: "the winter's icicles"}
-      - {place: route_12, methods: [grass], seasons: [winter], tier: rare, stages: [vanillite], why: "a few with the winter's cold"}
     review: []
 
   - id: snorunt
@@ -874,7 +873,6 @@ families:
       - {place: victory_road_forest, methods: [grass, dark_grass], seasons: [winter], tier: uncommon, why: "the snowy mountain forest"}
       - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: uncommon, why: "following footprints on the cliffside"}
       - {place: route_6, methods: [grass], seasons: [winter], tier: uncommon, stages: [snover], why: "the snowy valley"}
-      - {place: route_12, methods: [dark_grass], seasons: [winter], tier: uncommon, why: "the snowy hills"}
       - {place: dragonspiral_grounds, methods: [grass], seasons: [winter], tier: uncommon, why: "the snowy bank"}
       - {place: route_7, methods: [grass, dark_grass], seasons: [winter], tier: uncommon, why: "the snowy marsh's tall grass"}
     review: []

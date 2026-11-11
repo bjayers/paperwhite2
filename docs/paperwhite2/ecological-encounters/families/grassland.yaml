@@ -500,6 +500,7 @@ families:
       - {place: route_7, methods: [dark_grass], seasons: all, tier: uncommon, why: "stalking in the very tall grass"}
       - {place: route_1, methods: [dark_grass], seasons: all, tier: rare, why: "the pine hills"}
       - {place: giant_chasm_outside, methods: [dark_grass], seasons: all, tier: uncommon, why: "packs at the woodland edge"}
+      - {place: route_12, methods: [dark_grass], seasons: [winter], tier: uncommon, why: "hunting the hills' Nidoran and Buneary in winter"}
     review: []
 
   - id: zigzagoon
@@ -749,6 +750,7 @@ families:
       - {place: route_16, methods: [dark_grass], seasons: all, tier: uncommon, why: "the forest edge"}
       - {place: pinwheel_forest_outskirts, methods: [grass], seasons: all, tier: uncommon, why: "the woodland edge's rabbits"}
       - {place: pinwheel_forest_outskirts, methods: [dark_grass], seasons: all, tier: uncommon, why: "the cliff's grass"}
+      - {place: route_12, methods: [grass], seasons: [winter], tier: uncommon, why: "hares on the open hills once the flowers are over"}
     review: []
 
   - id: glameow
@@ -942,6 +944,7 @@ families:
       - {place: abundant_shrine, methods: [grass], seasons: all, tier: uncommon, why: "the hill farms' dogs"}
       - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: rare, stages: [stoutland], why: "warm in its fur on the snowy cliffside"}
       - {place: giant_chasm_outside, methods: [grass], seasons: all, tier: uncommon, why: "the countryside's dogs"}
+      - {place: route_12, methods: [grass, dark_grass], seasons: [winter], tier: uncommon, why: "hill dogs from the farms round Lacunosa"}
     review: []
 
   - id: purrloin
@@ -1088,6 +1091,7 @@ families:
     homes:
       - {place: route_1, methods: [grass], seasons: [autumn], tier: common, why: "the autumn meadow (the places' suggestion)"}
       - {place: route_15, methods: [grass], seasons: [autumn], tier: rare, stages: [whimsicott], why: "whirlwinds on the windy ridge"}
+      - {place: route_12, methods: [grass], seasons: [autumn], tier: uncommon, stages: [cottonee], why: "drifting off the flower hills on the autumn wind"}
     review: []
 
   - id: petilil
