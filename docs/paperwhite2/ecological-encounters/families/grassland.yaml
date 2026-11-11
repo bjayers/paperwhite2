@@ -632,7 +632,6 @@ families:
     levels: {minun: [5, 100]}
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
-      - {place: route_16, methods: [grass], seasons: all, tier: rare, why: "with Plusle by Nimbasa"}
       - {place: route_16, methods: [grass], seasons: all, tier: uncommon, why: "with Plusle by Nimbasa's stadiums"}
     review: []
 
