@@ -110,7 +110,7 @@ export interface PushResult {
 
 /** Files Push to GitHub never stages: the ROMs and what is extracted or built from them, the Script Editor's own notes,
  * and the local settings. (Files git ignores are left out too, by the server.) */
-const NEVER_PUSHED = [/^(orig|extract|build)\//, /\.(nds|srl|dsi)$/i, /(^|\/)bios[79]\.bin$/i, /^res\/paperwhite2\/scripts\/notes\.json$/,
+const NEVER_PUSHED = [/^(orig|extract|build)(\/|$)/, /\.(nds|srl|dsi|gb|gbc|gba|sav|dsv)$/i, /(^|\/)bios[79]\.bin$/i, /^res\/paperwhite2\/scripts\/notes\.json$/,
   /(^|\/)settings\.local\.json$/, /(^|\/)node_modules\//];
 
 export function neverPushed(path: string): boolean {

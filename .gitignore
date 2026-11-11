@@ -1,8 +1,16 @@
-# Base ROMs and anything extracted from them are never committed
-orig/*.nds
-orig/*.bin
+# Base ROMs and anything extracted from them are never committed: all of orig/ (the base ROM, the BIOS, the other
+# games' ROMs that the Pokédex's Flavour reads at build time), and ROMs and saves of any kind anywhere
+/orig
 *.nds
+*.srl
+*.dsi
+*.gb
+*.gbc
+*.gba
+*.sav
+*.dsv
 extract/
+/extract
 /build/
 
 # Tools downloaded or built by configure
