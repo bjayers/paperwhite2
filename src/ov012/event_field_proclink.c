@@ -40,10 +40,12 @@
 #include "system/game_system.h"
 
 #ifdef PAPERWHITE2
+#include "constants/items.h"
 #include "paperwhite2/dexnav.h"
 #include "paperwhite2/dexnav_event.h"
 #include "paperwhite2/encounters.h"
 #include "paperwhite2/field_moves.h"
+#include "paperwhite2/link_cord.h"
 #include "paperwhite2/pokedex_shortcut.h"
 #include "paperwhite2/version_key.h"
 #endif
@@ -1028,13 +1030,34 @@ void *script_evo(FieldAppCallWork *work, s32 appParam, s32 prevAppId, const void
         param->method = method;
         param->unkC = 1;
         param->canCancel = TRUE;
+#ifdef PAPERWHITE2
+        // Paper White 2: the Link Cord's evolution keeps the trade's method, which the demo lets B stop; the cord is
+        // used up already, as a stone is, so it can't be stopped either
+        if (partyParam->result == 8 && partyParam->item == ITEM_LINK_CORD) {
+            param->canCancel = FALSE;
+            PaperWhite2_LinkCord_SetUpPartner(work, party, pkm, method, GameData_GetSeason(gameData));
+        }
+#endif
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the Link Cord's partner's evolution, after the first one's demo
+    else if (prevAppId == FIELD_APP_EVOLUTION_DEMO) {
+        param = PaperWhite2_LinkCord_CreatePartnerDemoParam(work);
+    }
+#endif
     return param;
 }
 
 u32 FieldAppCall_GetEvolutionDemoResult(FieldAppCallWork *work, void *param) {
     GSYS_GetGameData(work->input->gameSystem);
     if (work->subMode == 3) {
+#ifdef PAPERWHITE2
+        // Paper White 2: the Link Cord evolves Karrablast's or Shelmet's partner after it
+        if (PaperWhite2_LinkCord_HasPartnerDemo(work)) {
+            work->nextAppId = FIELD_APP_EVOLUTION_DEMO;
+            return FIELD_APP_RESULT_NEXT;
+        }
+#endif
         work->nextAppId = FIELD_APP_BAG;
         return FIELD_APP_RESULT_NEXT;
     }

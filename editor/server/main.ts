@@ -8,7 +8,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import { extname, join, resolve, sep } from "node:path";
 import { fileText, parseJson, setIn, JsonSyntaxError } from "../shared/json.ts";
 import { splitSchemaId } from "../shared/schema.ts";
-import { WRITE_HEADER, type DataFile, type SpriteSheet, type ProjectInfo, type SaveRequest, type SaveResult, type ServerEvent } from "../shared/api.ts";
+import { WRITE_HEADER, type DataFile, type ItemIconCheck, type SpriteSheet, type ProjectInfo, type SaveRequest, type SaveResult, type ServerEvent } from "../shared/api.ts";
 import { Builder } from "./build.ts";
 import { narcMember } from "./narc.ts";
 import { Git } from "./git.ts";
@@ -287,6 +287,34 @@ const routes: Record<string, Handler> = {
         written = true;
       }
       json(res, { ok, message, written, preview: existsSync(preview) ? readFileSync(preview).toString("base64") : null });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  },
+  // Every item's icon and palette files as the hack's build gives them (item_icons.py), the hack's items first
+  "GET /api/item-icons": async (_req, res) => {
+    const run = await python.itemIcons(["list"]);
+    if (run.code !== 0) return error(res, 500, run.stderr.trim() || "item_icons.py failed");
+    json(res, JSON.parse(run.stdout));
+  },
+  // A PNG checked as an item's icon ({ item, data: base64 PNG, write? }): whether it makes one and its preview; with
+  // write and an icon that it makes, its icon and palette replace the item's files (shared ones for every item)
+  "POST /api/item-icons/check": async (req, res) => {
+    const body = (await readJson(req)) as { item: string; data: string; write?: boolean };
+    if (!/^ITEM_[A-Z0-9_]+$/.test(body.item ?? "")) return error(res, 400, "No such item");
+    const dir = mkdtempSync(join(tmpdir(), "paperwhite-item-icon-"));
+    try {
+      const png = join(dir, "import.png");
+      writeFileSync(png, Buffer.from(body.data ?? "", "base64"));
+      const run = await python.itemIcons(["check", body.item, png, ...(body.write ? [dir] : [])]);
+      if (run.code !== 0) return error(res, 400, run.stderr.trim().split("\n").pop() || "item_icons.py failed");
+      const result = JSON.parse(run.stdout) as ItemIconCheck & { iconPath?: string; palettePath?: string };
+      if (body.write && result.ok && result.iconPath && result.palettePath) {
+        await project.writeAtomic(result.iconPath, readFileSync(join(dir, "icon.png")));
+        await project.writeAtomic(result.palettePath, readFileSync(join(dir, "icon.pal")));
+        result.written = true;
+      }
+      json(res, { ok: result.ok, message: result.message, written: result.written, preview: result.preview });
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

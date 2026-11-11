@@ -159,6 +159,32 @@ export interface SpriteSheetCheck {
   preview: string | null;
 }
 
+/** An item's icon (GET /api/item-icons): the icon and palette members it shows in the hack's build, their files, the
+ * other items that show them, and the icon as the game shows it (base64 PNG). */
+export interface ItemIcon {
+  constant: string;
+  id: number;
+  name: string;
+  /** One of the hack's items (docs/paperwhite2/items.md's table) */
+  hack: boolean;
+  icon: string;
+  palette: string;
+  iconPath: string;
+  palettePath: string;
+  iconSharedWith: string[];
+  paletteSharedWith: string[];
+  preview: string | null;
+}
+
+export interface ItemIcons {
+  size: number;
+  colors: number;
+  items: ItemIcon[];
+}
+
+/** A PNG checked as an item's icon (POST /api/item-icons/check), and whether it was written. */
+export type ItemIconCheck = SpriteSheetCheck;
+
 /** What the art converter (tools/paperwhite2/screen_art.py) says about art for a target (POST /api/art/convert). */
 export interface ArtReport {
   target: string;

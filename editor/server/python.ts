@@ -110,6 +110,17 @@ export class Python {
     });
   }
 
+  /** Runs item_icons.py (the item icons' list, and a PNG checked and converted into an item's icon) on this checkout. */
+  itemIcons(args: string[]): Promise<{ code: number; stdout: string; stderr: string }> {
+    return new Promise((resolve) => {
+      const child = spawn(pythonFor(this.root), ["-I", join(HERE, "item_icons.py"), ...args], { cwd: this.root });
+      let stdout = "", stderr = "";
+      child.stdout.on("data", (c) => (stdout += c));
+      child.stderr.on("data", (c) => (stderr += c));
+      child.on("close", (code) => resolve({ code: code ?? 1, stdout, stderr }));
+    });
+  }
+
   stop() {
     this.validator?.kill();
   }
