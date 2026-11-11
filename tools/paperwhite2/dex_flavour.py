@@ -3,48 +3,64 @@
 time from the user's own ROMs (docs/paperwhite2/design/pokedex-flavour.md, docs/paperwhite2/plugins.md's Pokédex).
 
     dex_flavour.py build OUT [--roms DIR] [--font FONT]   # the build: the member that pokedex_evo.py adds
-    dex_flavour.py report [--roms DIR] [--font FONT]      # the counts per game and every entry re-wrapped or left out
+    dex_flavour.py report [--roms DIR] [--font FONT]      # the counts per game, the labels, and every entry in the
+                                                          # small font or left out
     dex_flavour.py template [OUT_DIR] [--font FONT]       # the version tab's templates (write_templates)
 
 pokedex_evo.py adds the member and the tab's (tab_member) to ARCID_POKEDEX_GRA; the build's step that runs this
 depends on the ROMs present when configure.py ran, so run it again after adding one.
 
 Nothing extracted is kept in res/ or git: the ROMs are read from orig/ (ignored), and the member is written into
-build/. A ROM that isn't there is skipped, and with none the member has no entries. The games, in the order that an
-entry two of them share is kept for (the first's), each with its ROM, the message archive and the bank of its own
-entries (US/English ROMs; the other banks there are the other version's entries, or the English ones that another
-language's game shows):
+build/. A ROM that isn't there is skipped, and with none the member has no entries. The games, in the order they came
+out, which is the order the page shows them in and the order that an entry two of them share is kept for (the
+first's), each with its ROM and, for the DS games, the message archive and the bank of its own entries (US/English
+ROMs; the other banks there are the other version's entries, or the English ones that another language's game shows):
 
-    Black       dex_black.nds       a/0/0/2              236 (the 650 species' entries, Gen 5's message format)
-    White       dex_white.nds       a/0/0/2              235
-    Black 2     dex_black2.nds      a/0/0/2              442
-    Diamond     dex_diamond.nds     msgdata/msg.narc     615 (the 494 species' entries, Gen 4's format)
+    Red         dex_red.gb          (Gen 1, dex_flavour_gb.py: Pokédex numbers 1-151)
+    Blue        dex_blue.gb
+    Yellow      dex_yellow.gb
+    Gold        dex_gold.gbc        (Gen 2: 1-251)
+    Silver      dex_silver.gbc
+    Crystal     dex_crystal.gbc
+    Ruby        dex_ruby.gba        (Gen 3: 1-386)
+    Sapphire    dex_sapphire.gba
+    FireRed     dex_firered.gba
+    LeafGreen   dex_leafgreen.gba
+    Emerald     dex_emerald.gba
+    Diamond     dex_diamond.nds     msgdata/msg.narc     615 (the 494 species' entries, Gen 4's message format)
     Pearl       dex_pearl.nds       msgdata/msg.narc     616
     Platinum    dex_platinum.nds    msgdata/pl_msg.narc  700
     HeartGold   dex_heartgold.nds   a/0/2/7              803
     SoulSilver  dex_soulsilver.nds  a/0/2/7              804
+    Black       dex_black.nds       a/0/0/2              236 (the 650 species' entries, Gen 5's message format)
+    White       dex_white.nds       a/0/0/2              235
+    Black 2     dex_black2.nds      a/0/0/2              442
 
-Each bank is checked by its size and by Bulbasaur's entry (it mentions the seed on its back), so a ROM of another
-language or revision is refused rather than read wrong. Black's and White's banks are told apart by their version
-mascots: each game's own mascot has the entry that begins "This Pokémon appears in legends."
+Each DS bank is checked by its size and by Bulbasaur's entry (it mentions the seed on its back), so a ROM of another
+language or revision is refused rather than read wrong; the Game Boy and Game Boy Advance games' entries are found from
+Bulbasaur's (dex_flavour_gb.py). Black's and White's banks are told apart by their version mascots: each game's own
+mascot has the entry that begins "This Pokémon appears in legends."
 
 Gen 4's messages are encrypted per entry (a key from the bank's seed for the table of offsets and lengths, and one
 from the entry's number for its characters) and use Gen 4's character table (GEN4_CHARS, 0xE000 a new line); they are
 converted to White 2's encoding, which is UTF-16 with 0xFFFE for a new line. Typographic quotes and apostrophes become
-the straight ones White 2's English entries use.
+the straight ones White 2's English entries use. The older games' narrow lines are joined (a word they broke over two
+lines with a hyphen is joined again unless the entries write it with one, unbreak) and wrapped for White 2's window.
 
 An entry is kept when it differs from White 2's own (res/pokemon/<species>/data.json's pokedex entry; same_entry: case,
 punctuation, accents and line breaks set aside, words at least SAME_ENTRY alike), and when no game before it has the
-same entry; the games sharing it
-are a bit mask, which the page's tab names. It must fit the Info page's text window as PokedexInfo prints it
-(pokedex_info.c): LINE_COUNT lines of at most LINE_WIDTH pixels in font 0 (the font's own widths, as
-GFL_FontGetLineWidth adds them). An entry whose lines are too wide is re-wrapped at its spaces; one that still needs
-more lines is left out, and the report names it.
+same entry; the games sharing it are a bit mask, which the page's tab names. It must fit the Info page's text window as
+PokedexInfo prints it (pokedex_info.c): LINE_COUNT lines of at most LINE_WIDTH pixels in font 0 (the font's own widths,
+as GFL_FontGetLineWidth adds them), as it is or wrapped at its spaces; else SMALL_LINE_COUNT lines of the same width in
+font 1, the small font, which the page draws a line every SMALL_LINE_STEP pixels from SMALL_TEXT_DY lower (the entry's
+SMALL_FONT flag); one that fits neither is left out, and the report names it.
 
-The member (FLAVOUR_FILE in paperwhite2_pokedex_info.c), read by range for one species:
+The member (FLAVOUR_FILE in paperwhite2_pokedex_info_flavour.c), read by range for one species:
 
+    u32 version                      FORMAT_VERSION; the page shows no entries from a member of another
     u32 offsets[SPECIES_COUNT + 1]   for species 0 to the last, where its entries start, and the end after the last
-    per entry: u16 games (bit i for GAMES[i]), u16 characters (the text's, its 0xFFFF terminator included), the text
+    per entry: u16 games, low and high (bit i for GAMES[i]), u16 flags (SMALL_FONT), u16 characters (the text's, its
+               0xFFFF terminator included), the text
 
 A species' entries run from its offset to the next species'; species 0 and those without an entry have none.
 """
@@ -62,6 +78,7 @@ sys.path.insert(0, str(ROOT))
 from tools.data.datajson import constants  # noqa: E402
 from tools.data.narc import read_narc  # noqa: E402
 from tools.data.nitro_2d import read_indexed_png  # noqa: E402
+from tools.paperwhite2.dex_flavour_gb import BROKEN_WORD, GbError, read_entries  # noqa: E402
 from tools.text.msgdata import CONTROL, LINE_END, NEWLINE, decompress, decrypt  # noqa: E402
 
 ROMS = ROOT / "orig"
@@ -73,38 +90,69 @@ LINE_COUNT = 3
 LINE_WIDTH = 28 * 8 - 2
 # The page's font for the entry (font 0, ARCID_FONT's member 0)
 ENTRY_FONT = 0
+# An entry too long for that is in font 1, the page's small font: drawn SMALL_TEXT_DY lower than font 0's text (the
+# glyphs' tops level with font 0's), its glyphs and their shadow the top SMALL_GLYPH_ROWS of its 10, as many lines as
+# end inside the box, the dark panel's rows of the window (BOX_ROWS, its last 2 rows the art's border). At the font's
+# line feed (10) that is 4, which leaves out 151 of Ruby's and Sapphire's two-page entries; a line every SMALL_LINE_STEP
+# of 9 (a blank row between the lines' shadows and the next glyphs) makes it 5, which none needs more than
+# (paperwhite2_pokedex_info_flavour.c's SMALL_*)
+SMALL_FONT_ID = 1
+SMALL_TEXT_DY = 2
+SMALL_LINE_STEP = 9
+SMALL_GLYPH_ROWS = 8
+BOX_ROWS = 7 * 8 - 2
+TEXT_Y = 5
+SMALL_LINE_COUNT = (BOX_ROWS - TEXT_Y - SMALL_TEXT_DY - SMALL_GLYPH_ROWS) // SMALL_LINE_STEP + 1
+# The entry's flags
+SMALL_FONT = 1
+FORMAT_VERSION = 2
 # The version tab on the top screen while another game's entry shows (paperwhite2_pokedex_info_flavour.c's TAB_*):
 # the user's art, res/paperwhite2/pokedex_art/version_flavour.png, a whole top screen whose tab is drawn in the region
-# of the TAB_OBJS OBJs of 32 by 32 from TAB_X, TAB_Y. Its label, the game's name or the games' short names with the
-# separator between, is in font 1 from TAB_TEXT_X (TAB_TEXT_Y down the region), or further left to end by
-# TAB_TEXT_RIGHT, but not left of TAB_TEXT_MIN_X
+# of the TAB_OBJS OBJs of 32 by 32 from TAB_X, TAB_Y. Its label, the game's name or the games' short names a LABEL_GAP
+# apart, is in font 1 on LABEL_OBJS OBJs of their own in front of those, from TAB_TEXT_X (TAB_TEXT_Y down the region),
+# or further left to end by TAB_TEXT_RIGHT, but not left of TAB_TEXT_MIN_X; the art must be the plain tab there and for
+# TAB_STRIPE_MARGIN pixels after (its stripes start further right)
 TAB_ART = ROOT / "res" / "paperwhite2" / "pokedex_art" / "version_flavour.png"
 TAB_X = 0
 TAB_Y = 120
-TAB_OBJS = 3
+TAB_OBJS = 4
+LABEL_OBJS = 3
 TAB_WIDTH = TAB_OBJS * 32
+LABEL_WIDTH = LABEL_OBJS * 32
 TAB_HEIGHT = 32
 TAB_TEXT_X = 11
-TAB_TEXT_RIGHT = 64
+TAB_TEXT_RIGHT = 89
+TAB_STRIPE_MARGIN = 4
 TAB_TEXT_Y = 8
 TAB_TEXT_MIN_X = 2
+LABEL_GAP = 2
 LABEL_FONT = 1
 SCREEN_WIDTH = 256
 SCREEN_HEIGHT = 192
 PAGE_TEXT = ROOT / "res" / "text" / "system" / "pokedex_data.txt"
-# The label's messages there, in GAMES' order
-GAME_NAMES = ["Black", "White", "Black2", "Diamond", "Pearl", "Platinum", "HeartGold", "SoulSilver"]
 
-# (name, ROM, archive, bank, generation, last species)
+# (name, ROM, archive, bank, generation, last species, the label's messages' name): the DS games'
+# entries in their message archive's bank, the others' where dex_flavour_gb.py finds them
 GAMES = [
-    ("Black", "dex_black.nds", "a/0/0/2", 236, 5, 649),
-    ("White", "dex_white.nds", "a/0/0/2", 235, 5, 649),
-    ("Black 2", "dex_black2.nds", "a/0/0/2", 442, 5, 649),
-    ("Diamond", "dex_diamond.nds", "msgdata/msg.narc", 615, 4, 493),
-    ("Pearl", "dex_pearl.nds", "msgdata/msg.narc", 616, 4, 493),
-    ("Platinum", "dex_platinum.nds", "msgdata/pl_msg.narc", 700, 4, 493),
-    ("HeartGold", "dex_heartgold.nds", "a/0/2/7", 803, 4, 493),
-    ("SoulSilver", "dex_soulsilver.nds", "a/0/2/7", 804, 4, 493),
+    ("Red", "dex_red.gb", None, None, 1, 151, "Red"),
+    ("Blue", "dex_blue.gb", None, None, 1, 151, "Blue"),
+    ("Yellow", "dex_yellow.gb", None, None, 1, 151, "Yellow"),
+    ("Gold", "dex_gold.gbc", None, None, 2, 251, "Gold"),
+    ("Silver", "dex_silver.gbc", None, None, 2, 251, "Silver"),
+    ("Crystal", "dex_crystal.gbc", None, None, 2, 251, "Crystal"),
+    ("Ruby", "dex_ruby.gba", None, None, 3, 386, "Ruby"),
+    ("Sapphire", "dex_sapphire.gba", None, None, 3, 386, "Sapphire"),
+    ("FireRed", "dex_firered.gba", None, None, 3, 386, "FireRed"),
+    ("LeafGreen", "dex_leafgreen.gba", None, None, 3, 386, "LeafGreen"),
+    ("Emerald", "dex_emerald.gba", None, None, 3, 386, "Emerald"),
+    ("Diamond", "dex_diamond.nds", "msgdata/msg.narc", 615, 4, 493, "Diamond"),
+    ("Pearl", "dex_pearl.nds", "msgdata/msg.narc", 616, 4, 493, "Pearl"),
+    ("Platinum", "dex_platinum.nds", "msgdata/pl_msg.narc", 700, 4, 493, "Platinum"),
+    ("HeartGold", "dex_heartgold.nds", "a/0/2/7", 803, 4, 493, "HeartGold"),
+    ("SoulSilver", "dex_soulsilver.nds", "a/0/2/7", 804, 4, 493, "SoulSilver"),
+    ("Black", "dex_black.nds", "a/0/0/2", 236, 5, 649, "Black"),
+    ("White", "dex_white.nds", "a/0/0/2", 235, 5, 649, "White"),
+    ("Black 2", "dex_black2.nds", "a/0/0/2", 442, 5, 649, "Black2"),
 ]
 LAST_SPECIES = 649
 
@@ -284,10 +332,11 @@ class Font:
         return sum(self.width(ord(ch)) for ch in line)
 
 
-def fit(text: str, font: Font) -> str | None:
-    """The entry as its lines if they fit the window, else re-wrapped at its spaces, or None if it can't fit."""
+def wrap(text: str, font: Font, count: int) -> str | None:
+    """The entry as its lines if they fit count lines of LINE_WIDTH in the font, else wrapped at its spaces, or None if
+    it can't fit."""
     lines = text.split("\n")
-    if len(lines) <= LINE_COUNT and all(font.line_width(line) <= LINE_WIDTH for line in lines):
+    if len(lines) <= count and all(font.line_width(line) <= LINE_WIDTH for line in lines):
         return text
     lines = [""]
     for word in normalised(text).split(" "):
@@ -296,9 +345,18 @@ def fit(text: str, font: Font) -> str | None:
             lines[-1] = candidate
         else:
             lines.append(word)
-    if len(lines) > LINE_COUNT or any(font.line_width(line) > LINE_WIDTH for line in lines):
+    if len(lines) > count or any(font.line_width(line) > LINE_WIDTH for line in lines):
         return None
     return "\n".join(lines)
+
+
+def fit(text: str, font: Font, small: Font) -> tuple[str, int] | None:
+    """The entry's lines and flags for the window: in font 0 if it fits, else in the small font, else None."""
+    fitted = wrap(text, font, LINE_COUNT)
+    if fitted is not None:
+        return fitted, 0
+    fitted = wrap(text, small, SMALL_LINE_COUNT)
+    return None if fitted is None else (fitted, SMALL_FONT)
 
 
 def white2_entries() -> dict[int, str]:
@@ -315,10 +373,18 @@ def white2_entries() -> dict[int, str]:
 
 def game_entries(rom_dir: Path, game: int) -> list[str] | None:
     """The game's entries by species number from its ROM, as White 2's text, or None without the ROM."""
-    name, rom_name, archive, bank, generation, last = GAMES[game]
+    name, rom_name, archive, bank, generation, last, _ = GAMES[game]
     path = rom_dir / rom_name
     if not path.is_file():
         return None
+    if generation <= 3:
+        try:
+            entries = read_entries(path, generation, name)
+        except GbError as error:
+            raise FlavourError(str(error)) from error
+        if len(entries) != last + 1:
+            raise FlavourError(f"{path}: {len(entries) - 1} entries, not {last}")
+        return entries
     files = nitrofs(path.read_bytes())
     if archive not in files:
         raise FlavourError(f"{path}: no {archive}; is it a US {name}?")
@@ -336,24 +402,45 @@ def game_entries(rom_dir: Path, game: int) -> list[str] | None:
     return [to_text(m) for m in messages[:last + 1]]
 
 
+def unbreak(text: str, words: set[str], report: list) -> str:
+    """The older games' words broken over two lines with a hyphen (BROKEN_WORD) joined again ("sur-roundings" is
+    "surroundings"), or kept with their hyphen where the entries write the word with one and never without, or where
+    both halves are words and the whole isn't ("DNA-engineering")."""
+    def join(match):
+        first, second = match.group(1), match.group(2)
+        whole = f"{first}{second}".lower()
+        known = whole in words or re.sub(r"(e?s|ed)$", "", whole) in words
+        hyphenated = not known and (f"{first}-{second}".lower() in words or
+                                    (first.lower() in words and second.lower() in words))
+        report.append(f"{first}-{second}" if hyphenated else f"{first}|{second}")
+        return f"{first}-{second}" if hyphenated else f"{first}{second}"
+    return re.sub(rf"(\w+){BROKEN_WORD}(\w+)", join, text)
+
+
 def collect(rom_dir: Path, font_path: Path):
-    """Each species' kept entries as (games mask, text), with what the report says."""
-    font = Font(read_narc(font_path.read_bytes())[ENTRY_FONT])
+    """Each species' kept entries as (games mask, flags, text), with what the report says."""
+    fonts = read_narc(font_path.read_bytes())
+    font, small = Font(fonts[ENTRY_FONT]), Font(fonts[SMALL_FONT_ID])
     white2 = white2_entries()
+    games = [game_entries(rom_dir, game) for game in range(len(GAMES))]
+    # The words the entries write, for joining the older games' broken words: White 2's, and every game's but where
+    # a word was broken
+    words = {word.lower() for text in [*white2.values(), *(t for g in games if g for t in g)]
+             for word in re.findall(r"[\w-]+", re.sub(rf"\w*{BROKEN_WORD}\w*", " ", text))}
     kept: dict[int, list[list]] = {}
     # White 2's own entries fit as they are, the widest line exactly LINE_WIDTH; the report names any that the measure
     # says don't, which would mean an edited entry too long for the window, or a wrong measure
-    report = {"games": [], "rewrapped": [], "unfit": [],
-              "white2": [species for species, text in sorted(white2.items()) if fit(text, font) != text]}
-    for game in range(len(GAMES)):
-        entries = game_entries(rom_dir, game)
+    report = {"games": [], "small": [], "unfit": [], "unbroken": [],
+              "white2": [species for species, text in sorted(white2.items()) if wrap(text, font, LINE_COUNT) != text]}
+    for game, entries in enumerate(games):
         if entries is None:
             report["games"].append((GAMES[game][0], None))
             continue
-        counts = {"read": 0, "differ": 0, "kept": 0, "shared": 0, "unfit": 0}
+        counts = {"read": 0, "differ": 0, "kept": 0, "shared": 0, "small font": 0, "left out": 0}
         for species in range(1, len(entries)):
             # Straight quotes, and no spaces at the lines' ends
-            text = "\n".join(line.strip() for line in entries[species].strip().split("\n"))
+            text = unbreak(entries[species], words, report["unbroken"])
+            text = "\n".join(line.strip() for line in text.strip().split("\n"))
             text = "".join(QUOTES.get(ch, ch) for ch in text)
             if not text:
                 continue
@@ -361,19 +448,20 @@ def collect(rom_dir: Path, font_path: Path):
             if same_entry(text, white2.get(species, "")):
                 continue
             counts["differ"] += 1
-            earlier = next((e for e in kept.get(species, []) if same_entry(e[1], text)), None)
+            earlier = next((e for e in kept.get(species, []) if same_entry(e[2], text)), None)
             if earlier is not None:
                 earlier[0] |= 1 << game
                 counts["shared"] += 1
                 continue
-            fitted = fit(text, font)
+            fitted = fit(text, font, small)
             if fitted is None:
-                counts["unfit"] += 1
+                counts["left out"] += 1
                 report["unfit"].append((GAMES[game][0], species, text))
                 continue
-            if fitted != text:
-                report["rewrapped"].append((GAMES[game][0], species, fitted))
-            kept.setdefault(species, []).append([1 << game, fitted])
+            if fitted[1] & SMALL_FONT:
+                counts["small font"] += 1
+                report["small"].append((GAMES[game][0], species, fitted[0]))
+            kept.setdefault(species, []).append([1 << game, fitted[1], fitted[0]])
             counts["kept"] += 1
         report["games"].append((GAMES[game][0], counts))
     return kept, report
@@ -388,53 +476,64 @@ def page_messages() -> dict[str, str]:
     return out
 
 
-def label(games: int, messages: dict[str, str]) -> str:
-    """The tab's label, as the page makes it (PokedexInfoFlavour_MakeLabel): one game's name, or the short names of
-    the games sharing the entry with the separator between."""
+def label(games: int, messages: dict[str, str]) -> list[tuple[str, int]]:
+    """The tab's label, as the page makes it (PokedexInfoFlavour_MakeLabel), as its pieces and their games: one game's
+    name, or the short names of the games sharing the entry, LABEL_GAP apart."""
     shown = [i for i in range(len(GAMES)) if games >> i & 1]
     if len(shown) == 1:
-        return messages[f"PokedexData_Text_Game{GAME_NAMES[shown[0]]}"]
-    return messages["PokedexData_Text_GameSeparator"].join(
-        messages[f"PokedexData_Text_GameShort{GAME_NAMES[i]}"] for i in shown)
+        return [(messages[f"PokedexData_Text_Game{GAMES[shown[0]][6]}"], shown[0])]
+    return [(messages[f"PokedexData_Text_GameShort{GAMES[i][6]}"], i) for i in shown]
+
+
+def label_width(pieces: list[tuple[str, int]], font) -> int:
+    width = getattr(font, "line_width", None) or font.text_width
+    return sum(width(text) for text, _ in pieces) + LABEL_GAP * (len(pieces) - 1)
 
 
 def check_labels(kept: dict[int, list[list]], font_path: Path):
     font = Font(read_narc(font_path.read_bytes())[LABEL_FONT])
     messages = page_messages()
-    for games in {games for entries in kept.values() for games, _ in entries}:
-        text = label(games, messages)
-        if font.line_width(text) > TAB_TEXT_RIGHT - TAB_TEXT_MIN_X:
-            raise FlavourError(f"the tab's label {text!r} is {font.line_width(text)} pixels, wider than its "
-                               f"{TAB_TEXT_RIGHT - TAB_TEXT_MIN_X}; shorten the games' names in {PAGE_TEXT.name}")
+    for games in {games for entries in kept.values() for games, _, _ in entries}:
+        pieces = label(games, messages)
+        if label_width(pieces, font) > TAB_TEXT_RIGHT - TAB_TEXT_MIN_X:
+            raise FlavourError(f"the tab's label {' '.join(p for p, _ in pieces)!r} is {label_width(pieces, font)} "
+                               f"pixels, wider than its {TAB_TEXT_RIGHT - TAB_TEXT_MIN_X}; shorten the games' names in "
+                               f"{PAGE_TEXT.name}")
 
 
-# The label's colours, in palette slots the art's pixels don't use (the page prints each game's name, and the separator,
-# in its own, over shadow slot 9): the user's choice of 2026-11-11, Platinum's ours
-LABEL_SLOTS = {
-    "Black": (1, (128, 128, 136)),
-    "White": (2, (248, 248, 248)),
-    "Black 2": (4, (238, 238, 238)),
-    "Diamond": (5, (104, 160, 248)),
-    "Pearl": (6, (248, 136, 192)),
-    "Platinum": (7, (200, 196, 224)),
-    "HeartGold": (8, (240, 200, 40)),
-    "SoulSilver": (12, (176, 180, 188)),
-    "separator": (13, (88, 88, 96)),
-}
+# The label's palette, its OBJs' own row (LABEL_ROW in the C file): 0 clear, LABEL_SHADOW the shadow under every name,
+# then the games' colours, each game's slot in LABEL_COLORS (sGameColors in the C file). Games of the same colour have
+# names that tell them apart and are never next to each other in a label (the report says if they are)
+LABEL_SHADOW = 1
+LABEL_PALETTE = [
+    (0, 0, 0),
+    (40, 40, 48),     # 1 the shadow
+    (232, 56, 48),    # 2 Red, FireRed
+    (64, 144, 248),   # 3 Blue, Diamond
+    (248, 216, 48),   # 4 Yellow, HeartGold
+    (200, 144, 32),   # 5 Gold
+    (152, 160, 176),  # 6 Silver
+    (88, 216, 232),   # 7 Crystal
+    (224, 48, 104),   # 8 Ruby
+    (96, 96, 240),    # 9 Sapphire
+    (64, 200, 80),    # 10 LeafGreen, Emerald
+    (248, 136, 192),  # 11 Pearl
+    (192, 176, 232),  # 12 Platinum
+    (216, 220, 232),  # 13 SoulSilver
+    (112, 112, 120),  # 14 Black, Black 2
+    (248, 248, 248),  # 15 White
+]
+LABEL_COLORS = {"Red": 2, "Blue": 3, "Yellow": 4, "Gold": 5, "Silver": 6, "Crystal": 7, "Ruby": 8, "Sapphire": 9,
+                "FireRed": 2, "LeafGreen": 10, "Emerald": 10, "Diamond": 3, "Pearl": 11, "Platinum": 12,
+                "HeartGold": 4, "SoulSilver": 13, "Black": 14, "White": 15, "Black 2": 14}
 
 
-def tab_palette(pixels: list[int], colors: list) -> list:
-    """The tab's 16 colours: the art's, with the label's in LABEL_SLOTS, which the art mustn't use."""
-    palette = (list(colors) + [(0, 0, 0)] * 16)[:16]
-    for name, (slot, rgb) in LABEL_SLOTS.items():
-        if slot in pixels:
-            raise FlavourError(f"{TAB_ART.name}: palette slot {slot} is the label's {name} colour; draw with another")
-        palette[slot] = rgb
-    return palette
+def palette_bytes(colors: list) -> bytes:
+    return b"".join(struct.pack("<H", round(r * 31 / 255) | round(g * 31 / 255) << 5 | round(b * 31 / 255) << 10)
+                    for r, g, b in colors)
 
 
-def tab_member() -> bytes:
-    """The tab's 16 colours (BGR555), then its region's tiles (4bpp) across and down, as the page's bitmap has them."""
+def read_art():
     try:
         width, height, pixels, colors = read_indexed_png(TAB_ART)
     except ValueError as error:
@@ -446,9 +545,20 @@ def tab_member() -> bytes:
         if value and not (TAB_X <= x < TAB_X + TAB_WIDTH and TAB_Y <= y < TAB_Y + TAB_HEIGHT):
             raise FlavourError(f"{TAB_ART.name}: a pixel at x {x}, y {y}, outside the tab's x {TAB_X}-"
                                f"{TAB_X + TAB_WIDTH - 1}, y {TAB_Y}-{TAB_Y + TAB_HEIGHT - 1}")
-    out = bytearray()
-    for r, g, b in tab_palette(pixels, colors):
-        out += struct.pack("<H", round(r * 31 / 255) | round(g * 31 / 255) << 5 | round(b * 31 / 255) << 10)
+    # The label's place must be the plain tab, its stripes at least TAB_STRIPE_MARGIN after it
+    for y in range(TAB_Y + TAB_TEXT_Y, TAB_Y + TAB_TEXT_Y + SMALL_GLYPH_ROWS):
+        row = pixels[y * width + TAB_TEXT_MIN_X:y * width + TAB_TEXT_RIGHT + TAB_STRIPE_MARGIN]
+        if len(set(row)) != 1:
+            raise FlavourError(f"{TAB_ART.name}: the label's place (x {TAB_TEXT_MIN_X}-{TAB_TEXT_RIGHT - 1} and "
+                               f"{TAB_STRIPE_MARGIN} pixels after it, y {y}) isn't one colour; move TAB_TEXT_RIGHT")
+    return width, pixels, colors
+
+
+def tab_member() -> bytes:
+    """The tab's 16 colours and the label's (BGR555), then the tab's region's tiles (4bpp) across and down, as the
+    page's bitmap has them."""
+    width, pixels, colors = read_art()
+    out = bytearray(palette_bytes((list(colors) + [(0, 0, 0)] * 16)[:16]) + palette_bytes(LABEL_PALETTE))
     for tile_y in range(TAB_Y, TAB_Y + TAB_HEIGHT, 8):
         for tile_x in range(TAB_X, TAB_X + TAB_WIDTH, 8):
             for y in range(8):
@@ -461,17 +571,22 @@ def member(kept: dict[int, list[list]]) -> bytes:
     blocks = []
     for species in range(LAST_SPECIES + 1):
         block = bytearray()
-        for games, text in kept.get(species, []):
+        for games, flags, text in kept.get(species, []):
             chars = from_text(text) + [LINE_END]
-            block += struct.pack(f"<HH{len(chars)}H", games, len(chars), *chars)
+            block += struct.pack(f"<HHHH{len(chars)}H", games & 0xFFFF, games >> 16, flags, len(chars), *chars)
         blocks.append(bytes(block))
     offsets = []
-    position = 4 * (len(blocks) + 1)
+    position = 4 * (len(blocks) + 2)
     for block in blocks:
         offsets.append(position)
         position += len(block)
     offsets.append(position)
-    return struct.pack(f"<{len(offsets)}I", *offsets) + b"".join(blocks)
+    return struct.pack(f"<I{len(offsets)}I", FORMAT_VERSION, *offsets) + b"".join(blocks)
+
+
+# The widest labels for the templates: one game's (SoulSilver) and the most games' sharing an entry in use with all the
+# ROMs (dex_flavour.py report's "games sharing an entry")
+TEMPLATE_SHARED = ("Diamond", "Pearl", "Platinum", "Black", "White")
 
 
 def write_templates(out: Path, small):
@@ -479,31 +594,30 @@ def write_templates(out: Path, small):
     over (version_flavour_canvas.png, the art itself), version_flavour_guide.png (the art with the OBJs' region
     outlined in red and the label's in green, from TAB_TEXT_MIN_X to TAB_TEXT_RIGHT on the text's rows), and
     version_flavour_reference_<label>.png, the tab as the page shows it with the widest labels: one game's (SoulSilver)
-    and the five games' sharing an entry (B/W/D/P/Pt)."""
+    and TEMPLATE_SHARED's."""
     from tools.paperwhite2.pokedex_templates import Canvas
-    width, height, pixels, colors = read_indexed_png(TAB_ART)
+    width, pixels, colors = read_art()
     (out / "version_flavour_canvas.png").write_bytes(TAB_ART.read_bytes())
-    palette = tab_palette(pixels, colors) + [(255, 0, 0), (0, 200, 0)]
-    red, green = 16, 17
+    # The art's colours, the label's after them, then the guide's
+    palette = (list(colors) + [(0, 0, 0)] * 16)[:16] + LABEL_PALETTE + [(255, 0, 0), (0, 200, 0)]
+    red, green = 32, 33
     guide = Canvas()
     guide.pixels = bytearray(pixels)
     guide.outline(TAB_X, TAB_Y, TAB_WIDTH, TAB_HEIGHT, red)
     guide.outline(TAB_TEXT_MIN_X, TAB_Y + TAB_TEXT_Y, TAB_TEXT_RIGHT - TAB_TEXT_MIN_X, small.height, green)
     guide.write(out / "version_flavour_guide.png", palette)
     messages = page_messages()
-    for name, games in (("soulsilver", 1 << 7), ("shared", 0b111011)):
-        text = label(games, messages)
-        x = max(TAB_TEXT_MIN_X, min(TAB_TEXT_X, TAB_TEXT_RIGHT - small.text_width(text)))
+    names = [game[0] for game in GAMES]
+    for name, games in (("soulsilver", 1 << names.index("SoulSilver")),
+                        ("shared", sum(1 << names.index(game) for game in TEMPLATE_SHARED))):
+        pieces = label(games, messages)
+        x = max(TAB_TEXT_MIN_X, min(TAB_TEXT_X, TAB_TEXT_RIGHT - label_width(pieces, small)))
         canvas = Canvas()
         canvas.pixels = bytearray(pixels)
-        shown = [i for i in range(len(GAMES)) if games >> i & 1]
-        pieces = ([(text, LABEL_SLOTS[GAMES[shown[0]][0]][0])] if len(shown) == 1 else
-                  [p for n, i in enumerate(shown) for p in
-                   ([(messages["PokedexData_Text_GameSeparator"], LABEL_SLOTS["separator"][0])] if n else []) +
-                   [(messages[f"PokedexData_Text_GameShort{GAME_NAMES[i]}"], LABEL_SLOTS[GAMES[i][0]][0])]])
-        for piece, slot in pieces:
-            canvas.text(small, piece, x, TAB_Y + TAB_TEXT_Y, letter=slot, shadow=9)
-            x += small.text_width(piece)
+        for piece, game in pieces:
+            canvas.text(small, piece, x, TAB_Y + TAB_TEXT_Y, letter=16 + LABEL_COLORS[GAMES[game][0]],
+                        shadow=16 + LABEL_SHADOW)
+            x += small.text_width(piece) + LABEL_GAP
         canvas.write(out / f"version_flavour_reference_{name}.png", palette)
 
 
@@ -537,19 +651,25 @@ def main():
               ", ".join(f"{key} {value}" for key, value in counts.items()))
     combos = {}
     for entries in kept.values():
-        for games, _ in entries:
+        for games, _, _ in entries:
             combos[games] = combos.get(games, 0) + 1
     print("species with entries:", len(kept), "; entries:", sum(len(e) for e in kept.values()),
           "; most for a species:", max((len(e) for e in kept.values()), default=0),
           "; bytes:", len(member(kept)))
-    print("games sharing an entry:", {"/".join(GAMES[i][0] for i in range(len(GAMES)) if games >> i & 1): count
-                                       for games, count in sorted(combos.items())})
-    for name, species, text in report["rewrapped"]:
-        print(f"re-wrapped: {name} {species}: {text!r}")
+    messages = page_messages()
+    font = Font(read_narc(args.font.read_bytes())[LABEL_FONT])
+    print("games sharing an entry (label, its width, entries):")
+    for games, count in sorted(combos.items(), key=lambda item: -label_width(label(item[0], messages), font)):
+        pieces = label(games, messages)
+        same = [f"{a}+{b}" for (a, i), (b, j) in zip(pieces, pieces[1:])
+                if LABEL_COLORS[GAMES[i][0]] == LABEL_COLORS[GAMES[j][0]]]
+        print(f"  {' '.join(p for p, _ in pieces):24} {label_width(pieces, font):3} {count:4}",
+              f"(same colour side by side: {', '.join(same)})" if same else "")
+    print("broken words joined:", sorted(set(report["unbroken"])))
+    for name, species, text in report["small"]:
+        print(f"small font: {name} {species}: {text!r}")
     for name, species, text in report["unfit"]:
         print(f"left out (too long): {name} {species}: {text!r}")
-    messages = page_messages()
-    print("labels:", sorted({label(games, messages) for games in combos}))
     print("White 2's own entries that don't fit the window:", report["white2"] or "none")
 
 

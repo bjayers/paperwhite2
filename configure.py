@@ -378,7 +378,7 @@ HACK_MEMBER_EXTRA_SOURCES = {"a/1/2/7": ["res/paperwhite2/conditions", "res/poke
 # tools/paperwhite2/dex_flavour.py takes from the ROMs in orig/ that are there (DEX_FLAVOUR_ROMS) into build/, never
 # into res/ or the repository. A ROM added later needs configure.py to run again
 HACK_MEMBER_BUILT = {"a/1/5/7": ("--flavour", "dex_flavour.bin")}
-DEX_FLAVOUR_ROMS = "orig/dex_*.nds"
+DEX_FLAVOUR_ROMS = ["orig/dex_*.nds", "orig/dex_*.gba", "orig/dex_*.gbc", "orig/dex_*.gb"]
 DEX_FLAVOUR_SOURCES = ["res/pokemon/*/data.json", "res/text/system/pokedex_data.txt",
                        "res/paperwhite2/pokedex_art/version_flavour.png"]
 # Paper White 2: data that the hack's build makes from other data before packing it: the data directory, and the tool,
@@ -870,7 +870,7 @@ def add_version(n: Writer, version: str, dsd: Path, bugfix: bool, shift: int,
                     flags = f"{option} {built[0]}"
                     # The Flavour's entries from the ROMs present, measured in the game's own fonts
                     flavour_tool = "tools/paperwhite2/dex_flavour.py"
-                    inputs = sorted(str(p.relative_to(ROOT)) for pattern in [DEX_FLAVOUR_ROMS, *DEX_FLAVOUR_SOURCES]
+                    inputs = sorted(str(p.relative_to(ROOT)) for pattern in [*DEX_FLAVOUR_ROMS, *DEX_FLAVOUR_SOURCES]
                                     for p in ROOT.glob(pattern) if p.is_file())
                     font = extract_dir / "files" / "a" / "0" / "2" / "3"
                     n.build(built, "dex_flavour", inputs,

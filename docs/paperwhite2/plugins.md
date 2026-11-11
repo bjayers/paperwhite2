@@ -1857,26 +1857,32 @@ first button cycles the entry's description through the other games' entries of 
 own; Select now does what the Language button did (the Pokédex's other languages, where it has the entry in them),
 and resets Flavour to White 2's entry, as does Flavour's own press to the game's language. Another Pokémon starts on
 White 2's entry; another form keeps the shown game's. The entries come from the user's own ROMs at build time
-(`tools/paperwhite2/dex_flavour.py`, `orig/dex_{black,white,black2,diamond,pearl,platinum,heartgold,soulsilver}.nds`,
-each skipped when it isn't there): only those that differ from White 2's (`res/pokemon/*/data.json`, line breaks and
-spaces normalised), one per wording, in the order Black, White, Black 2, Diamond, Pearl, Platinum, HeartGold,
-SoulSilver, with a bit for each game sharing it; each fits the text window's 3 lines of 222 px in font 0 (re-wrapped
-at its spaces if not, left out if it still doesn't). With all eight ROMs: 1,614 entries, every species 1-649 has at
-least one, at most 5 (326,796 bytes, `build/w2_us/paperwhite2/dex_flavour.bin`, never committed). They are
-`ARCID_POKEDEX_GRA`'s member 166 (`FLAVOUR_FILE`; `pokedex_evo.py` adds it, an empty one without the file), read by
-range for the shown species (its two offsets, then its entries, about 1 KB at most). The page draws the entry into
-the text window as its other text (`PokedexInfo_BeginOtherText`, as Abilities and Data's items), again as the move
-panel or Area's map closes and for another form. **The version tab**: while another game's entry shows (not on Data,
-an ability, the move panel or the map), the user's art (`res/paperwhite2/pokedex_art/version_flavour.png`, member 167,
-`TAB_FILE`) shows at x 0-77, y 123-139 as three main OBJs of 32 by 32 from x 0, y 120 (the party icons' cells), in
-main OBJ row 8, which nothing on the page uses, in front of BGs 1-3; its label (the game's name, or the short names
-of the games sharing the entry with "/": "HG/SS", "B/W/D/P/Pt") is drawn in font 1 over the art, each game in its colour
-(dex_flavour.py's `LABEL_SLOTS`: Black dark grey, White white, Diamond blue, Pearl pink, Platinum lavender,
-HeartGold gold, SoulSilver grey, the separator darker grey, in slots the art doesn't use) over a dark grey shadow, from x 11 or further left to end by x 64 (the art's stripes, the user's wider tab of 2026-11-11), into the OBJs' characters, which go to
-VRAM in the VBlank (`PokedexInfoFlavour_VBlank`) that shows the entry's text, the OBJs shown or hidden in that VBlank's
-OAM (`PokedexInfoFlavour_ShowTab`, each frame from the page's state). `dex_flavour.py template` (and
-`pokedex_templates.py`) writes the tab's canvas, a guide with its OBJs' and label's regions, and references with the
-widest labels.
+(`tools/paperwhite2/dex_flavour.py`, and `dex_flavour_gb.py` for the Game Boy and GBA games:
+`orig/dex_{red,blue,yellow}.gb`, `dex_{gold,silver,crystal}.gbc`, `dex_{ruby,sapphire,firered,leafgreen,emerald}.gba`,
+`dex_{diamond,pearl,platinum,heartgold,soulsilver,black,white,black2}.nds`, each skipped when it isn't there; the old
+games' entries found from Bulbasaur's, in the disassemblies' formats): only those that differ from White 2's
+(`res/pokemon/*/data.json`; `same_entry`, case and punctuation aside, 95% alike), one per wording, in the games' order
+of release (Red to Black 2), with a bit for each game sharing it; each fits the text window's 3 lines of 222 px in
+font 0 (wrapped at its spaces), or else 5 lines of 222 px in font 1, the small font (the entry's flag), drawn 2 px
+lower with its lines 9 px apart; one that fits neither is left out (none with all nineteen ROMs). With all of them:
+3,541 entries (969 small), every species 1-649 has at least one, at most 13 (864,942 bytes,
+`build/w2_us/paperwhite2/dex_flavour.bin`, never committed). They are `ARCID_POKEDEX_GRA`'s member 166
+(`FLAVOUR_FILE`, format version 2 in its first word; `pokedex_evo.py` adds it, an empty one without the file), read by
+range for the shown species (its two offsets, then its entries, a few KB at most). The page draws the entry into the
+text window as its other text (`PokedexInfo_BeginOtherText`, as Abilities and Data's items), a small-font entry line
+by line, again as the move panel or Area's map closes and for another form. **The version tab**: while another game's
+entry shows (not on Data, an ability, the move panel or the map), the user's art
+(`res/paperwhite2/pokedex_art/version_flavour.png`, member 167, `TAB_FILE`) shows at x 0-111, y 123-139 as four main
+OBJs of 32 by 32 from x 0, y 120 (the party icons' cells), in main OBJ row 8, which nothing on the page uses, in front
+of BGs 1-3; its label is on three OBJs of their own in front of those, in row 13 (Area's map has it only while open,
+when the tab is hidden), with a palette of the shadow and 14 colours for the games (dex_flavour.py's `LABEL_PALETTE`
+and `LABEL_COLORS`, `sGameColors` in the C file; a colour shared only by games whose names differ and which no label
+puts side by side): the game's name, or the short names of the games sharing the entry 2 px apart ("HG SS",
+"D P Pt B W"), in font 1, from x 11 or further left to end by x 89 (before the art's stripes). The label's characters
+go to VRAM in the VBlank (`PokedexInfoFlavour_VBlank`) that shows the entry's text, with both rows' colours, the OBJs
+shown or hidden in that VBlank's OAM (`PokedexInfoFlavour_ShowTab`, each frame from the page's state).
+`dex_flavour.py template` (and `pokedex_templates.py`) writes the tab's canvas, a guide with its OBJs' and label's
+regions, and references with the widest labels.
 
 **Matchups** (shown once seen): the 17 attacking types in 3 rows of 6 (the 18th place free for a Fairy type), each the
 game's type icon (`a/0/8/2` palette 0x21, chars 0x22+type, cells and animations 0x3d and 0x40 for the 1D 128 KB
