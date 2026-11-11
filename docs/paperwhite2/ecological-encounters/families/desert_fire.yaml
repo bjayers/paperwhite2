@@ -1,0 +1,469 @@
+# Batch 6: desert, fire and heat (20 families). Draft of 2026-11-14 for review.
+#
+# Summary
+# - The desert (Route 4, the Desert Resort and its canyon path, Relic Castle and Relic Passage): burrowers and pit
+#   trappers (Sandshrew, Trapinch, Hippopotas, Sandile), cacti (Cacnea, Maractus, with the birds' Natu), night hunters
+#   (Cacturne, Skorupi, Krokorok), Darumaka by day. Sandstorm Pokémon (Pokécology, the user's request): Flygon raises
+#   the storms and Krookodile hides in them, both sandstorm-only in the desert; Route 4's are White 2's only, as its
+#   sandstorm is, unless the user adds sandstorms to Black 2's (weather.md).
+# - Sandile in Castelia's sewers in the dry autumn and winter, in from Relic Passage (the user's request).
+# - Reversal Mountain's Fiery Caves are Unova's home for fire Pokémon (the user's request): Slugma, Numel, Torkoal,
+#   Magmar, Houndour, Heatmor hunting Durant; a few fire Pokémon outside (Charmander the trophy, Ponyta as wild
+#   mustangs, Houndour's night packs, Numel).
+# - Virbank Complex's machines (the user's request): Magby in summer and autumn, Elekid in winter and spring, Growlithe
+#   the trophy in winter and spring.
+# - Cubone in the canyons and at the tomb (Relic Castle) and the graves (Celestial Tower).
+# - Not wild: Ninetales and Arcanine (Fire Stones: Ninetales as the shrine's thousand-year fox would make a fine
+#   special encounter, report.md), Magmortar and Electivire (trades), Charmeleon and Charizard.
+# - Review: "Charmander rarely outside Reversal Mountain" read as Reversal Mountain's outside; Vulpix as Abundant
+#   Shrine's fox.
+
+families:
+
+  - id: charmander
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Charmander): the flame on its tail is a measure of its life."
+      - "Pokédex (B2W2, Charmeleon): in the rocky mountains where they live, their tails shine at night like stars."
+      - "The user: Charmander rarely outside Reversal Mountain."
+      - "In the game: a Hidden Grotto Charmander on Route 13."
+    habitats: {mountain: 3, badlands: 2, volcanic: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [rain, gusty_rain, thunderstorm], only: []}
+    abundance: exotic
+    trophy: [reversal_mountain_outside]
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {charmander: wild, charmeleon: {wild: false, note: "a starter: grown only with a trainer"}, charizard: {wild: false}}
+    levels: {charmander: [5, 19]}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: reversal_mountain_outside, methods: [grass, dark_grass], seasons: all, tier: exotic, why: "the red-rock mountain by the fires (the user's request): the trophy"}
+    review:
+      - "Read as 'on Reversal Mountain's outside'. If it meant 'mostly in the mountain, rarely elsewhere', the Fiery Caves would be its home instead."
+
+  - id: sandshrew
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Sandshrew): it digs deep burrows and rolls up when in danger."
+      - "Real world: armadillos and pangolins of dry country, out at night."
+    habitats: {desert: 3, badlands: 2, cave: 1}
+    time: {periods: night, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [sandstorm], less: [rain], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {sandshrew: wild, sandslash: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_4, methods: [grass], seasons: all, tier: common, why: "burrows in the road's sand"}
+      - {place: desert_resort, methods: [grass], seasons: all, tier: uncommon, why: "the dunes"}
+      - {place: desert_resort_path, methods: [grass], seasons: all, tier: uncommon, why: "the canyon's sand"}
+      - {place: relic_passage, methods: [rustling], seasons: all, tier: uncommon, why: "the passage's dust clouds"}
+    review: []
+
+  - id: vulpix
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Vulpix): as each tail grows, its fur grows lustrous; held, it feels warm."
+      - "Pokédex (B2W2, Ninetales): it can live for a thousand years."
+      - "The places: Abundant Shrine's shrine fox; its Hidden Grotto has Vulpix and Ninetales."
+      - "Real world: foxes at Japan's Inari shrines, the kitsune's legends."
+    habitats: {farmland: 2, conifer_forest: 2, volcanic: 2}
+    time: {periods: [evening, night], strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [rain], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {vulpix: wild, ninetales: {wild: false, note: "a Fire Stone's (a special encounter, report.md)"}}
+    levels: {vulpix: [5, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: abundant_shrine, methods: [dark_grass], seasons: all, tier: rare, why: "the shrine's fox in the grove at dusk"}
+      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: rare, why: "warm by the lava"}
+    review: []
+
+  - id: growlithe
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Growlithe): extremely loyal, it barks at strangers and runs them out of town."
+      - "The user: Growlithe the trophy at Virbank Complex in winter and spring; its NPC is there."
+    habitats: {industrial: 2, badlands: 2, volcanic: 1}
+    time: {periods: any, strength: none}
+    seasons: all year; at Virbank in winter and spring, by the machines' warmth
+    migration: resident
+    weather: {more: [], less: [rain], only: []}
+    abundance: rare
+    trophy: [virbank_complex]
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {growlithe: wild, arcanine: {wild: false, note: "a Fire Stone's"}}
+    levels: {growlithe: [5, 100]}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: virbank_complex, methods: [grass, dark_grass], seasons: [winter, spring], tier: exotic, why: "warm by the machines: the trophy (the user's request)"}
+      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: rare, why: "the fire Pokémon's home"}
+    review: []
+
+  - id: ponyta
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Ponyta): newborn it can barely stand; galloping makes its legs strong."
+      - "Real world: wild mustangs of the American Southwest's red-rock country; horses on ranches."
+    habitats: {badlands: 3, scrub: 2, pasture: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [rain], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: family}
+    stages: {ponyta: wild, rapidash: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: uncommon, why: "wild mustangs on the red-rock pass"}
+      - {place: floccesy_ranch, methods: [grass], seasons: all, tier: rare, stages: [ponyta], why: "the ranch's horses"}
+    review: []
+
+  - id: magby
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Magby): its body is over 1,100 °F; embers escape when it breathes."
+      - "Pokédex (B2W2, Magmar): its fire makes heat waves round it."
+      - "The user: Magby at Virbank Complex in summer and autumn (the machines' seasons); its NPC is there."
+    habitats: {volcanic: 3, industrial: 2}
+    time: {periods: any, strength: none}
+    seasons: Magby at Virbank in summer and autumn; Magmar in the Fiery Caves all year
+    migration: resident
+    weather: {more: [], less: [rain], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {magby: wild, magmar: wild, magmortar: {wild: false, note: "a trade's"}}
+    levels: {magby: [2, 33], magmar: [30, 100]}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: virbank_complex, methods: [grass, dark_grass], seasons: [summer, autumn], tier: uncommon, stages: [magby], why: "the hot machines (the user's request)"}
+      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: uncommon, why: "the lava lake"}
+    review: []
+
+  - id: elekid
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Elekid): spinning its arms makes electricity."
+      - "Pokédex (B2W2, Electabuzz): research is under way on storing lightning in it."
+      - "The user: Elekid at Virbank Complex in winter and spring; its NPC is there."
+      - "Other games: Kanto's Power Plant."
+    habitats: {industrial: 3}
+    time: {periods: any, strength: none}
+    seasons: winter and spring at Virbank
+    migration: resident
+    weather: {more: [thunderstorm], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {elekid: wild, electabuzz: {wild: true, note: "rare, by the power"}, electivire: {wild: false, note: "a trade's"}}
+    levels: {elekid: [2, 33], electabuzz: [30, 100]}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: virbank_complex, methods: [grass, dark_grass], seasons: [winter, spring], tier: uncommon, stages: [elekid], why: "the complex's power (the user's request)"}
+      - {place: virbank_complex, methods: [dark_grass], seasons: [winter, spring], tier: very_rare, stages: [electabuzz], why: "the grown ones by the generators"}
+    review: []
+
+  - id: slugma
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Slugma): its body is magma; if it stops moving it cools and hardens."
+      - "Pokédex (B2W2, Magcargo): flames spout from its hardened shell."
+    habitats: {volcanic: 3}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {slugma: wild, magcargo: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: common, why: "the lava lake's magma dwellers (the user's fire home)"}
+    review: []
+
+  - id: houndour
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Houndour): smart enough to hunt in packs, with many cries."
+      - "Pokédex (B2W2, Houndoom): its angry flames carry toxins."
+    habitats: {badlands: 3, volcanic: 3, mountain: 2}
+    time: {periods: night, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [rain], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: family}
+    stages: {houndour: wild, houndoom: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: uncommon, why: "dens in the fiery caves"}
+      - {place: reversal_mountain_outside, methods: [dark_grass], seasons: all, tier: uncommon, times: night, why: "night packs on the pass"}
+    review: []
+
+  - id: numel
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Numel): its magma reaches 2,200 °F."
+      - "Pokédex (B2W2, Camerupt): the volcanoes on its back erupt every ten years."
+    habitats: {volcanic: 3, badlands: 2, mountain: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [sandstorm], less: [rain], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {numel: wild, camerupt: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: common, why: "the fiery caves"}
+      - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: uncommon, stages: [numel], why: "the warm pass by the fires"}
+    review: []
+
+  - id: torkoal
+    origin: native
+    lore:
+      - "Pokédex (B2W2): it burns coal in its shell and blows out soot when in danger."
+      - "Other games: Hoenn's Fiery Path."
+    habitats: {volcanic: 3, cave: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {torkoal: wild}
+    levels: {torkoal: [10, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: uncommon, why: "the fiery caves, as Hoenn's Fiery Path"}
+    review: []
+
+  - id: trapinch
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Trapinch): it digs a conical pit and waits at the bottom."
+      - "Pokédex (B2W2, Flygon): 'the Desert Spirit', it hides in the sandstorms it raises with its wings."
+      - "Pokécology (the user's notes): Flygon's family makes the whirlwinds Krookodile hides in."
+    habitats: {desert: 3}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [sandstorm], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {trapinch: wild, vibrava: wild, flygon: {wild: true, note: "in sandstorms only"}}
+    levels: {}
+    wanderer: {appears: steps, wanders: passive, grass: stand}
+    homes:
+      - {place: desert_resort, methods: [grass], seasons: all, tier: common, stages: [trapinch], why: "pits in the dunes"}
+      - {place: desert_resort, methods: [grass], seasons: all, tier: uncommon, stages: [vibrava], why: "over the dunes"}
+      - {place: desert_resort, methods: [grass], seasons: all, tier: rare, stages: [flygon], weather: [sandstorm], why: "the Desert Spirit, hidden in the sandstorm it raises (Pokécology)"}
+      - {place: route_4, methods: [grass], seasons: all, tier: rare, stages: [flygon], weather: [sandstorm], why: "in Route 4's sandstorms (the user's request)"}
+      - {place: desert_resort_path, methods: [grass], seasons: all, tier: uncommon, stages: [trapinch], why: "pits in the canyon's sand"}
+    review:
+      - "Met by a step only (it waits in its pit); Flygon is the wanderer of the family, but the family shares one setting."
+
+  - id: cacnea
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Cacnea): it stores water and lasts 30 days without it."
+      - "Pokédex (B2W2, Cacturne): active at night, it hunts prey worn out by the day's heat."
+    habitats: {desert: 3, scrub: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {cacnea: wild, cacturne: {wild: true, note: "at night"}}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: desert_resort, methods: [grass], seasons: all, tier: common, stages: [cacnea], times: day, why: "the desert's cacti by day"}
+      - {place: desert_resort, methods: [grass], seasons: all, tier: uncommon, stages: [cacturne], times: night, why: "hunting the heat-worn at night"}
+      - {place: desert_resort_path, methods: [grass], seasons: all, tier: uncommon, why: "the canyon"}
+    review: []
+
+  - id: hippopotas
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Hippopotas): it travels through sand with its nostrils shut; colonies of about ten."
+      - "Pokédex (B2W2, Hippowdon): quick to anger, it holds its mouth agape."
+    habitats: {desert: 3}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [sandstorm], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: family}
+    stages: {hippopotas: wild, hippowdon: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: desert_resort, methods: [grass], seasons: all, tier: uncommon, why: "colonies in the dunes"}
+      - {place: route_4, methods: [grass], seasons: all, tier: rare, stages: [hippopotas], why: "the road's deep sand"}
+    review: []
+
+  - id: skorupi
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Skorupi): it lives in arid places and can wait a year for prey."
+      - "In the game: a Hidden Grotto Skorupi on Route 13."
+      - "Real world: scorpions out on desert nights."
+    habitats: {desert: 3, badlands: 2}
+    time: {periods: night, strength: strict}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {skorupi: wild, drapion: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: desert_resort, methods: [grass], seasons: all, tier: uncommon, why: "the desert at night"}
+      - {place: desert_resort_path, methods: [grass], seasons: all, tier: uncommon, why: "the canyon's rocks at night"}
+      - {place: relic_castle, methods: [grass], seasons: all, tier: rare, why: "the castle's sand-filled halls"}
+    review: []
+
+  - id: sandile
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Sandile): it lives hidden under hot sand to keep warm."
+      - "Pokédex (B2W2, Krokorok): its eyes see in the dead of night; groups of a few."
+      - "Pokécology (the user's notes): Krookodile hides in sandstorms (in Flygon's whirlwinds)."
+      - "The user: Sandile in Castelia's sewers in autumn and winter, in from Relic Passage."
+    habitats: {desert: 3, sewer: 1, cave: 1}
+    time: {periods: any, strength: none}
+    seasons: all year in the desert; in the sewers in autumn and winter, when they're dry
+    migration: resident
+    weather: {more: [sandstorm], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {sandile: wild, krokorok: wild, krookodile: {wild: true, note: "in sandstorms only"}}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: desert_resort, methods: [grass], seasons: all, tier: common, stages: [sandile, krokorok], why: "under the hot sand"}
+      - {place: desert_resort, methods: [grass], seasons: all, tier: rare, stages: [krookodile], weather: [sandstorm], why: "hidden in the sandstorm (Pokécology, the user's request)"}
+      - {place: route_4, methods: [grass], seasons: all, tier: common, stages: [sandile], why: "the road's sand"}
+      - {place: route_4, methods: [grass], seasons: all, tier: rare, stages: [krookodile], weather: [sandstorm], why: "in Route 4's sandstorms"}
+      - {place: relic_castle, methods: [grass], seasons: all, tier: uncommon, why: "the castle's sand"}
+      - {place: relic_passage, methods: [grass], seasons: all, tier: uncommon, stages: [sandile], why: "the sandy passage, toward the sewers"}
+      - {place: castelia_sewers, methods: [grass], seasons: [autumn, winter], tier: uncommon, stages: [sandile], why: "in the dry sewers from Relic Passage (the user's request)"}
+    review: []
+
+  - id: darumaka
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Darumaka): asleep, it pulls in its limbs and its fire drops to 1,100 °F."
+      - "Pokédex (B2W2, Darmanitan): injured, it hardens to stone and meditates."
+      - "In the original games: Route 4 and the Desert Resort."
+    habitats: {desert: 3, ruins: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [rain], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {darumaka: wild, darmanitan: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: route_4, methods: [grass], seasons: all, tier: uncommon, why: "the desert road, as in the original"}
+      - {place: desert_resort, methods: [grass], seasons: all, tier: uncommon, why: "the desert by day"}
+      - {place: relic_castle, methods: [grass], seasons: all, tier: rare, stages: [darmanitan], why: "still as a statue in the ruins"}
+    review: []
+
+  - id: maractus
+    origin: native
+    lore:
+      - "Pokédex (B2W2): it moves rhythmically and sounds like maracas."
+      - "In the original games: the Desert Resort."
+    habitats: {desert: 3, scrub: 1}
+    time: {periods: day, strength: none}
+    seasons: all year, flowering in spring
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {maractus: wild}
+    levels: {maractus: [10, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: desert_resort, methods: [grass], seasons: all, tier: uncommon, why: "the desert's cactus, as in the original"}
+      - {place: desert_resort_path, methods: [grass], seasons: all, tier: rare, why: "cacti in the canyon"}
+    review: []
+
+  - id: heatmor
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Heatmor): it turns air into fire and uses it like a tongue; it melts Durant and eats them."
+      - "Pokédex (B2W2, Durant): its colonies drive off Heatmor, their natural predator."
+    habitats: {badlands: 3, cave: 2, volcanic: 2, mountain: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {heatmor: wild}
+    levels: {heatmor: [15, 100]}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: victory_road_caves, methods: [grass], seasons: all, tier: uncommon, why: "hunting the Durant colonies"}
+      - {place: victory_road_mountainside, methods: [dark_grass], seasons: all, tier: rare, why: "the Durant's anthills"}
+      - {place: reversal_mountain_outside, methods: [dark_grass], seasons: all, tier: rare, why: "the badlands' anthills"}
+      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: uncommon, why: "the fiery caves, with Durant"}
+    review: []
+
+  - id: cubone
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Cubone): thinking of its dead mother, it cries and its skull rattles."
+      - "Pokédex (B2W2, Marowak): from birth it holds bones, skilled in their use."
+      - "Other games: Kanto's Rock Tunnel and the Pokémon Tower's graves (Marowak's ghost)."
+    habitats: {badlands: 3, ruins: 2, desert: 2, tower: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {cubone: wild, marowak: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: desert_resort_path, methods: [grass], seasons: all, tier: uncommon, why: "bones in the canyon"}
+      - {place: relic_castle, methods: [grass], seasons: all, tier: uncommon, why: "the tomb's bones"}
+      - {place: celestial_tower, methods: [grass], seasons: all, tier: rare, stages: [cubone], why: "mourning among the graves, as at Lavender's tower"}
+    review: []
