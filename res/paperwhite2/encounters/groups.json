@@ -34,8 +34,9 @@
         },
         {
             "id": "desert_resort",
-            "name": "Desert Resort",
-            "areas": [ "desert_resort", "desert_resort_2" ]
+            "name": "Desert Resort (Desert)",
+            "areas": [ "desert_resort_2" ],
+            "custom": true
         },
         {
             "id": "dragonspiral_tower",
@@ -51,7 +52,8 @@
         {
             "id": "floccesy_ranch",
             "name": "Floccesy Ranch",
-            "areas": [ "floccesy_ranch", "floccesy_ranch_2" ]
+            "areas": [ "floccesy_ranch_2" ],
+            "custom": true
         },
         {
             "id": "giant_chasm",
@@ -66,8 +68,9 @@
         },
         {
             "id": "pinwheel_forest",
-            "name": "Pinwheel Forest",
-            "areas": [ "pinwheel_forest", "pinwheel_forest_2" ]
+            "name": "Pinwheel Forest (Forest)",
+            "areas": [ "pinwheel_forest_2" ],
+            "custom": true
         },
         {
             "id": "relic_castle",
@@ -213,6 +216,18 @@
             "id": "custom_10",
             "name": "Victory Road (Ruins)",
             "areas": [ "victory_road_2", "victory_road_9" ],
+            "custom": true
+        },
+        {
+            "id": "custom_11",
+            "name": "Pinwheel Forest (Outside)",
+            "areas": [ "pinwheel_forest" ],
+            "custom": true
+        },
+        {
+            "id": "custom_12",
+            "name": "Desert Resort (Entrance)",
+            "areas": [ "desert_resort" ],
             "custom": true
         }
     ]
