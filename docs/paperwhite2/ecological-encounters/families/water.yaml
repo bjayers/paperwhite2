@@ -51,6 +51,7 @@ families:
       - {place: victory_road_caves, methods: [surf], seasons: all, tier: common, stages: [golduck], why: "the deep caves' pool"}
       - {place: victory_road_mountainside, methods: [surf], seasons: all, tier: uncommon, stages: [golduck], why: "cold mountain water"}
       - {place: route_22, methods: [surf], seasons: all, tier: common, why: "the upland's pond, all year"}
+      - {place: striaton_city, methods: [surf], seasons: all, tier: uncommon, why: "a duck of the park's ponds, there in winter too"}
     review: []
 
   - id: poliwag
@@ -78,6 +79,7 @@ families:
       - {place: moor_of_icirrus, methods: [surf], seasons: all, tier: uncommon, why: "the moor's pools; in winter under the ice's edge"}
       - {place: route_22, methods: [surf], seasons: [spring, summer, autumn], tier: uncommon, why: "the upland's freshwater pond"}
       - {place: route_23, methods: [surf], seasons: [spring, summer, autumn], tier: rare, why: "the still pond"}
+      - {place: striaton_city, methods: [surf], seasons: [spring, summer, autumn], tier: uncommon, why: "the park's ponds"}
     review: []
 
   - id: tentacool
@@ -723,7 +725,7 @@ families:
     migration: resident
     weather: {more: [], less: [], only: []}
     abundance: exotic
-    trophy: [striaton_city, abundant_shrine, route_23]
+    trophy: [striaton_city, abundant_shrine, route_23, route_14]
     battles: {single: 100, double: 0, triple: 0, partners: family}
     stages: {feebas: wild, milotic: {wild: false, note: "by beauty"}}
     levels: {}
@@ -732,6 +734,7 @@ families:
       - {place: striaton_city, methods: [fishing], seasons: all, tier: exotic, why: "the park's ponds: the trophy (the user's request)"}
       - {place: abundant_shrine, methods: [fishing], seasons: all, tier: exotic, why: "the shrine's still, reflective ponds"}
       - {place: route_23, methods: [fishing], seasons: all, tier: exotic, why: "the still, reflective pond to the west"}
+      - {place: route_14, methods: [fishing], seasons: all, tier: exotic, why: "the clear, cold mountain rivers (the user)"}
     review: []
 
   - id: spheal

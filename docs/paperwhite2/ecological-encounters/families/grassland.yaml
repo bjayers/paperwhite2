@@ -457,7 +457,7 @@ families:
     levels: {smeargle: [10, 100]}
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
-      - {place: dreamyard, methods: [dark_grass], seasons: all, tier: rare, why: "marks on the ruins' walls"}
+      - {place: relic_passage, methods: [grass], seasons: all, tier: rare, areas: [relic_passage_3], why: "painting the walls deep in the cave, like cave paintings (the user)"}
     review: []
 
   - id: miltank
@@ -506,6 +506,7 @@ families:
       - {place: route_12, methods: [dark_grass], seasons: [winter], tier: uncommon, why: "hunting the hills' Nidoran and Buneary in winter"}
       - {place: floccesy_ranch, methods: [grass], seasons: [spring, summer], tier: uncommon, why: "its NPCs, hunting the ranch's Furret in the warm months (Pokécology, the user)"}
       - {place: floccesy_ranch, methods: [grass], seasons: [autumn, winter], tier: rare, why: "a few packs stay round the ranch in the cold months"}
+      - {place: route_2, methods: [grass], seasons: all, tier: uncommon, why: "hunting the woodland edge's rabbits (the user)"}
     review: []
 
   - id: zigzagoon
@@ -802,6 +803,7 @@ families:
       - {place: route_16, methods: [grass], seasons: all, tier: uncommon, why: "the suburb's bins"}
       - {place: route_5, methods: [dark_grass], seasons: all, tier: uncommon, why: "the road's leavings"}
       - {place: castelia_sewers, methods: [grass], seasons: all, tier: uncommon, why: "scavenging the tunnels at night"}
+      - {place: route_1, methods: [dark_grass], seasons: all, tier: uncommon, why: "the pine hills at night"}
     review: []
 
   - id: shinx
@@ -945,7 +947,6 @@ families:
     homes:
       - {place: floccesy_ranch, methods: [grass], seasons: all, tier: common, why: "the ranch's herding dogs"}
       - {place: route_19, methods: [grass], seasons: all, tier: rare, why: "its NPCs (rare, the places say)"}
-      - {place: route_2, methods: [grass], seasons: all, tier: uncommon, why: "the farms between towns"}
       - {place: route_3, methods: [grass], seasons: all, tier: uncommon, why: "the Day Care's fields"}
       - {place: abundant_shrine, methods: [grass], seasons: all, tier: uncommon, why: "the hill farms' dogs"}
       - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: rare, stages: [stoutland], why: "warm in its fur on the snowy cliffside"}
@@ -999,7 +1000,7 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
-      - {place: route_3, methods: [dark_grass], seasons: all, tier: uncommon, why: "the wild grass at the edges, as in the original"}
+      - {place: route_3, methods: [dark_grass], seasons: all, tier: common, why: "the wild grass at the edges, as in the original"}
       - {place: route_22, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "herds on the upland"}
     review: []
 
@@ -1101,6 +1102,7 @@ families:
       - {place: route_1, methods: [grass], seasons: [autumn], tier: common, why: "the autumn meadow (the places' suggestion)"}
       - {place: route_15, methods: [grass], seasons: [autumn], tier: rare, stages: [whimsicott], why: "whirlwinds on the windy ridge"}
       - {place: route_12, methods: [grass], seasons: [autumn], tier: uncommon, why: "drifting off the flower hills on the autumn wind"}
+      - {place: dreamyard, methods: [grass], seasons: [autumn], tier: uncommon, why: "drifting over the overgrown meadow in autumn"}
     review: []
 
   - id: petilil

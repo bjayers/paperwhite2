@@ -212,6 +212,7 @@ families:
       - {place: lostlorn_forest, methods: [dark_grass], seasons: all, tier: rare, why: "something's not right in the forest at night"}
       - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: uncommon, why: "mountain trails by the Strange House"}
       - {place: route_15, methods: [grass], seasons: all, tier: rare, why: "the mountain trails it loses its pursuers on"}
+      - {place: route_1, methods: [dark_grass], seasons: all, tier: uncommon, why: "roosting in the seaside pines at night"}
     review:
       - "Honchkrow wild by a Dusk Stone's evolution: only as Route 7's trophy at night. Say if it should stay evolve-only."
 
@@ -256,7 +257,7 @@ families:
     trophy: []
     battles: {single: 100, double: 0, triple: 0, partners: family}
     stages: {skarmory: wild}
-    levels: {skarmory: [25, 100]}
+    levels: {skarmory: [15, 100]}
     wanderer: {appears: both, wanders: aggressive, grass: float}
     homes:
       - {place: virbank_complex, methods: [dark_grass], seasons: all, tier: rare, why: "its NPC; nesting in the complex's steel and thorny scrub"}

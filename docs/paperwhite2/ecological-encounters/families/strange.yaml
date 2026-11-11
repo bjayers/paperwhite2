@@ -143,7 +143,7 @@ families:
     migration: resident
     weather: {more: [], less: [], only: []}
     abundance: exotic
-    trophy: [route_2]
+    trophy: [route_2, route_16]
     battles: {single: 100, double: 0, triple: 0, partners: family}
     stages: {ralts: wild, kirlia: wild, gardevoir: {wild: true, note: "very rare"}, gallade: {wild: false, note: "a Dawn Stone's"}}
     levels: {}
@@ -151,6 +151,7 @@ families:
     homes:
       - {place: route_2, methods: [grass], seasons: all, tier: exotic, why: "an early route's sought-after Pokémon, as Route 102 by Petalburg: the trophy"}
       - {place: dreamyard, methods: [dark_grass], seasons: all, tier: very_rare, why: "drawn by the research's psychic power"}
+      - {place: route_16, methods: [grass], seasons: all, tier: exotic, why: "a trophy before the post-game (the user)"}
     review:
       - "Route 2 as Ralts's trophy home is my pick for the Petalburg homage; say if another place should have it."
 
