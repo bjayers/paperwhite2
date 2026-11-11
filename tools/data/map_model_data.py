@@ -46,6 +46,8 @@ FALLBACK_ERRORS = ("triangle count changed", "triangle topology or shared vertex
                    "this shape has no Nitro texture commands", "this UV has no editable Nitro texture command",
                    "UV before the first Nitro texture command", "changes an axis omitted by Nitro opcode",
                    "vertex coordinate is not representable", "vertex coordinate exceeds Nitro command range")
+# A material's polygon attributes: the fog applies to its polygons only with this bit
+POLYGON_FOG = 1 << 15
 SBC_PARAMS = {0x00: 0, 0x01: 0, 0x02: 2, 0x03: 1, 0x04: 1, 0x05: 1,
               0x06: 3, 0x07: 1, 0x08: 1, 0x0b: 0, 0x0c: 2, 0x0d: 2,
               0x24: 1, 0x26: 4, 0x2b: 0, 0x40: 0, 0x44: 1, 0x46: 4,
@@ -530,6 +532,28 @@ def patch_materials(chunk, doc, primitives, name):
             if any(abs(a - b) > 0.00001 for a, b in zip(emission, color5(spe_emi >> 16))):
                 spe_emi = (spe_emi & 0x8000ffff) | (pack_color5(emission, name) << 16)
             struct.pack_into("<I", data, entry + 8, spe_emi)
+    return bytes(data)
+
+
+def patch_material_fog(chunk, fog, name):
+    """Sets or clears the fog bit of the materials that data.json's material_fog names."""
+    if not fog:
+        return chunk
+    data = bytearray(chunk)
+    model_start = u32(data, 4)
+    block = model_start + u32(data, model_start + 16)
+    model = block + dictionary_offsets(data, block + 8)[0]
+    material_dict = model + u32(data, model + 8)
+    names, records = nitro_model_writer.read_dictionary(data, material_dict + 4)
+    for material, enabled in fog.items():
+        if material not in names:
+            raise ValueError(f"{name}: material_fog names {material}, which the model has no material of")
+        if not isinstance(enabled, bool):
+            raise ValueError(f"{name}: material_fog's {material} must be true or false")
+        entry = material_dict + struct.unpack_from("<I", records[names.index(material)])[0]
+        polygon = u32(data, entry + 12)
+        polygon = polygon | POLYGON_FOG if enabled else polygon & ~POLYGON_FOG
+        struct.pack_into("<I", data, entry + 12, polygon)
     return bytes(data)
 
 
@@ -1364,6 +1388,7 @@ def pack(directory, game, output):
                 edited = rebuild_topology(bound, doc, primitives, binary, mapping, name)
         archive[chunk_id] = edited
         archive[chunk_id] = patch_materials(archive[chunk_id], doc, primitives, name)
+        archive[chunk_id] = patch_material_fog(archive[chunk_id], data.get("material_fog"), name)
         archive[chunk_id] = patch_terrains(archive[chunk_id], model_dir)
         archive[chunk_id] = patch_props(archive[chunk_id], doc)
     dest = Path(output)

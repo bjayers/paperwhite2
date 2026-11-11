@@ -1,4 +1,8 @@
 {
     "$schema": "../map_model.schema.json",
-    "texture_set": "MAP_TEXTURE_SET_CASTELIA_CITY_2"
+    "texture_set": "MAP_TEXTURE_SET_CASTELIA_CITY_2",
+    "material_fog": {
+        "bench": true,
+        "h_kage": true
+    }
 }

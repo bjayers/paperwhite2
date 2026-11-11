@@ -27,6 +27,13 @@ BOOL FieldFog_IsAnimationRunning(FieldFog *fog);
 FieldFog *FieldFog_Create(HeapID heapId);
 void FieldFog_Free(FieldFog *fog);
 void FieldFog_Update(FieldFog *fog);
+#ifdef PAPERWHITE2
+// Paper White 2: whether the fog's shift and offset are a weather's, which the flush maps to the camera so that they
+// follow the player (paperwhite2/weather_fog.h); FieldFog_SetDepthShift and FieldFog_SetOffset clear it
+void FieldFog_SetPlayerRelative(FieldFog *fog, BOOL playerRelative);
+// Every frame: has a weather's fog flushed again when the camera moved where it falls
+void FieldFog_UpdatePlayerRelative(FieldFog *fog);
+#endif
 // field_zonefog.c: loads the zone's fog file, delay frames after a request
 FieldFogCtrl *FieldFogCtrl_Create(HeapID heapId);
 void FieldFogCtrl_Free(FieldFogCtrl *ctrl);

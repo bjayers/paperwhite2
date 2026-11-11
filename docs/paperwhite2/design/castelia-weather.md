@@ -149,3 +149,25 @@ offset.
   `DISP3DCNT` (0x04000060) each frame shows the scene without fog, and clearing bit 8 of `DISPCNT` shows the OBJ drops
   alone.
 - The waterfront's fog must be judged on hardware or melonDS (section 3).
+
+## As built (2026-11-10)
+
+The user chose C, D and E, and for the fog, fog relative to the player in place of B. Details, values and tests:
+`docs/paperwhite2/plugins.md`, "Weather".
+
+- **Fog relative to the player** (instead of B): a falling weather's fog shift and offset are mapped at each flush from
+  a normal town's camera to the current one, so the density at the camera's target (the player) is a normal town's
+  (rain 41%, thunderstorm 31%) and the ramp around it about as long. It reads the camera every frame, so rails, camera
+  areas and zone changes are covered, and a normal town's camera keeps the original's values exactly. The Z-buffer
+  values it gives have the B table's shifts and offsets near its (it keeps the density at the target, where B kept
+  fixed start and end distances). The plaza now fogs (it had none), and Route 4's camera area by the gate keeps a normal town's sandstorm
+  as the camera pulls back. The waterfront's W-buffer values (shift 4 / 5, offsets near `0x1300`-`0x1770`) rest on
+  depth = 8 x distance and need a hardware or melonDS check.
+- **C**: `material_fog` in the map models' `data.json` (a new packer field) turns the fog on for the roads, floor
+  tiles, trees, manholes, dust, benches, shadows and the waterfront's `building4_2`; the sea, `gra_w*` and `h_mado_1`
+  stay unfogged.
+- **D**: rear-plane fog on the clear colour in Castelia's outdoor zones, which equals the fog's colour wherever the fog
+  is full at the far plane (every weather's ramp here) and does nothing without fog.
+- **E**: the sheets move past the near plane by its distance where they'd lie in front of it (waterfront and Entree
+  Forest only).
+- Not done yet: adding Castelia to the weather calendar.
