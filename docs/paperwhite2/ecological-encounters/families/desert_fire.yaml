@@ -234,7 +234,7 @@ families:
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
       - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: common, why: "the fiery caves"}
-      - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: uncommon, stages: [numel], why: "the warm pass by the fires"}
+      - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: uncommon, why: "the warm pass by the fires"}
     review: []
 
   - id: torkoal
@@ -323,7 +323,7 @@ families:
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
       - {place: desert_resort, methods: [grass], seasons: all, tier: uncommon, why: "colonies in the dunes"}
-      - {place: route_4, methods: [grass], seasons: all, tier: rare, stages: [hippopotas], why: "the road's deep sand"}
+      - {place: route_4, methods: [grass], seasons: all, tier: rare, why: "the road's deep sand"}
     review: []
 
   - id: skorupi
@@ -370,11 +370,11 @@ families:
     homes:
       - {place: desert_resort, methods: [grass], seasons: all, tier: common, stages: [sandile, krokorok], why: "under the hot sand"}
       - {place: desert_resort, methods: [grass], seasons: all, tier: rare, stages: [krookodile], weather: [sandstorm], why: "hidden in the sandstorm (Pokécology, the user's request)"}
-      - {place: route_4, methods: [grass], seasons: all, tier: common, stages: [sandile], why: "the road's sand"}
+      - {place: route_4, methods: [grass], seasons: all, tier: common, stages: [sandile, krokorok], why: "the road's sand"}
       - {place: route_4, methods: [grass], seasons: all, tier: rare, stages: [krookodile], weather: [sandstorm], why: "in Route 4's sandstorms"}
       - {place: relic_castle, methods: [grass], seasons: all, tier: uncommon, why: "the castle's sand"}
-      - {place: relic_passage, methods: [grass], seasons: all, tier: uncommon, stages: [sandile], why: "the sandy passage, toward the sewers"}
-      - {place: castelia_sewers, methods: [grass], seasons: [autumn, winter], tier: uncommon, stages: [sandile], why: "in the dry sewers from Relic Passage (the user's request)"}
+      - {place: relic_passage, methods: [grass], seasons: all, tier: uncommon, stages: [sandile, krokorok], why: "the sandy passage, toward the sewers"}
+      - {place: castelia_sewers, methods: [grass], seasons: [autumn, winter], tier: uncommon, stages: [sandile, krokorok], why: "in the dry sewers from Relic Passage (the user's request)"}
     review: []
 
   - id: darumaka
@@ -464,5 +464,5 @@ families:
     homes:
       - {place: desert_resort_path, methods: [grass], seasons: all, tier: uncommon, why: "bones in the canyon"}
       - {place: relic_castle, methods: [grass], seasons: all, tier: uncommon, why: "the tomb's bones"}
-      - {place: celestial_tower, methods: [grass], seasons: all, tier: rare, stages: [cubone], why: "mourning among the graves, as at Lavender's tower"}
+      - {place: celestial_tower, methods: [grass], seasons: all, tier: rare, why: "mourning among the graves, as at Lavender's tower"}
     review: []

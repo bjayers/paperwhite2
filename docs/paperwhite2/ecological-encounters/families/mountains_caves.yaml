@@ -96,7 +96,6 @@ families:
     wanderer: {appears: steps, wanders: passive, grass: stand}
     homes:
       - {place: abundant_shrine, methods: [grass], seasons: all, tier: common, why: "tilling the terraced fields (the user's request, Pokécology)"}
-      - {place: floccesy_ranch, methods: [grass], seasons: all, tier: uncommon, stages: [diglett], why: "the ranch's fields (Pokécology)"}
       - {place: clay_tunnel, methods: [rustling], seasons: all, tier: common, why: "the dust clouds, with Dunsparce and Onix"}
       - {place: wellspring_cave, methods: [rustling], seasons: all, tier: uncommon, why: "the dust clouds"}
     review:
@@ -331,7 +330,6 @@ families:
     levels: {mamoswine: [40, 100]}
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
-      - {place: route_19, methods: [grass], seasons: [winter], tier: common, stages: [swinub], why: "its NPCs; under the snow where the mushrooms were (Pokécology, the user's request)"}
       - {place: route_20, methods: [grass, dark_grass], seasons: [winter], tier: common, why: "its NPCs; the woods' buried mushrooms"}
       - {place: floccesy_ranch, methods: [grass], seasons: [winter], tier: uncommon, why: "its NPCs; the forest's edge in winter"}
       - {place: twist_mountain, methods: [grass], seasons: all, tier: uncommon, why: "the cold caves (the user's ice Pokémon)"}
@@ -339,6 +337,7 @@ families:
       - {place: route_6, methods: [dark_grass], seasons: [winter], tier: uncommon, why: "the valley's autumn mushrooms, in winter"}
       - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: uncommon, stages: [piloswine], why: "the crater's unending winter"}
       - {place: giant_chasm_crater, methods: [dark_grass], seasons: all, tier: exotic, stages: [mamoswine], why: "an ice age's last herd: the trophy"}
+      - {place: route_19, methods: [grass], seasons: [winter], tier: rare, stages: [swinub, piloswine], why: "its NPCs; under the snow where the mushrooms were (Pokécology): a winter rarity (the user)"}
     review:
       - "Mamoswine wild (a move evolution) as Giant Chasm's trophy."
 
@@ -445,7 +444,7 @@ families:
     homes:
       - {place: mistralton_cave, methods: [grass], seasons: all, tier: uncommon, why: "the rocky cave's ore"}
       - {place: twist_mountain, methods: [grass], seasons: all, tier: uncommon, why: "the mine's ore and tracks"}
-      - {place: chargestone_cave, methods: [grass], seasons: all, tier: rare, stages: [aron], why: "the magnetite"}
+      - {place: chargestone_cave, methods: [grass], seasons: all, tier: rare, stages: [aron, lairon], why: "the magnetite"}
       - {place: victory_road_caves, methods: [grass], seasons: all, tier: uncommon, stages: [lairon, aggron], why: "Aggron claims the League's mountain"}
     review: []
 
@@ -710,7 +709,7 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: random, grass: float}
     homes:
-      - {place: virbank_complex, methods: [grass, dark_grass], seasons: all, tier: common, why: "the complex's machinery (the user's request)"}
+      - {place: virbank_complex, methods: [grass, dark_grass], seasons: all, tier: common, areas: [virbank_complex_2], why: "deeper among the complex's machinery (the user's request; map 2 only, the user)"}
       - {place: chargestone_cave, methods: [grass], seasons: all, tier: uncommon, why: "the charged cave, as in the original"}
     review: []
 
@@ -776,7 +775,7 @@ families:
     homes:
       - {place: twist_mountain, methods: [grass], seasons: all, tier: common, why: "the cold caves (the user's ice Pokémon)"}
       - {place: dragonspiral_entrance, methods: [grass, dark_grass], seasons: [winter], tier: common, why: "the winter's cliffside, as in the original"}
-      - {place: route_7, methods: [grass], seasons: [winter], tier: uncommon, stages: [cubchoo], why: "the snowy marsh (its Hidden Grotto)"}
+      - {place: route_7, methods: [grass], seasons: [winter], tier: uncommon, why: "the snowy marsh (its Hidden Grotto)"}
       - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: uncommon, why: "the crater's cold"}
     review: []
 
@@ -848,7 +847,7 @@ families:
     homes:
       - {place: twist_mountain, methods: [grass], seasons: all, tier: uncommon, why: "the family's home (the user's request)"}
       - {place: dragonspiral_entrance, methods: [dark_grass], seasons: [winter], tier: rare, stages: [glalie], why: "down from Twist Mountain to hunt Piplup (the user's request)"}
-      - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: rare, stages: [snorunt], why: "the crater's cold"}
+      - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: rare, why: "the crater's cold"}
     review: []
 
   - id: snover
@@ -872,7 +871,7 @@ families:
       - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: uncommon, why: "the crater's winter, all year"}
       - {place: victory_road_forest, methods: [grass, dark_grass], seasons: [winter], tier: uncommon, why: "the snowy mountain forest"}
       - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: uncommon, why: "following footprints on the cliffside"}
-      - {place: route_6, methods: [grass], seasons: [winter], tier: uncommon, stages: [snover], why: "the snowy valley"}
+      - {place: route_6, methods: [grass], seasons: [winter], tier: uncommon, why: "the snowy valley"}
       - {place: dragonspiral_grounds, methods: [grass], seasons: [winter], tier: uncommon, why: "the snowy bank"}
       - {place: route_7, methods: [grass, dark_grass], seasons: [winter], tier: uncommon, why: "the snowy marsh's tall grass"}
     review: []

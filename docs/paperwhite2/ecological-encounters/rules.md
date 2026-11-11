@@ -58,6 +58,10 @@ Hidden Grottoes are set by hand; the generator counts them as a source but never
   or moon sites; Raichu in Chargestone Cave); friendship and trade evolutions not wild.
 - Branches (Eevee, Tyrogue, Wurmple, Snorunt...) can be wild where an area has clear counterpart places (Route 11's
   upper grass and lower dark grass).
+- **Later stages live wherever their family does** (2026-11-14): with level scaling, an early route still has its
+  evolved forms at high levels (a level 20 Pidove capped at its maximum, beside a level 75 Unfezant). A home limits
+  itself to some stages only where a story says so (Swanna only in winter, Gyarados only in vast waters, a trophy's
+  base form).
 - **Levels don't decide placement.** A whole line can live on one route: only the base form appears at first, and the
   others as the party's level reaches their minimums. Placements follow ecology; levels follow the party.
 - **Level ranges:** a basic form from about level 1 to its evolution level + about 3; an evolved form from about its
@@ -70,7 +74,8 @@ Hidden Grottoes are set by hand; the generator counts them as a source but never
 
 - **Loose targets** per area and method, before seasons and times: grass 8–14 species over the year (5–8 at one
   moment); dark grass a similar number; surf and fishing as many as fit (fewer water Pokémon exist, so it balances
-  itself). The Pokémon's habitats come first; the targets only warn.
+  itself). The Pokémon's habitats come first; the targets only warn. A crowded table is fine now and then where it's believable (a forest at
+  the height of summer), as long as it doesn't go overboard and the commons don't become rare (2026-11-14).
 - **Grass and dark grass** are usually split for gameplay, to keep each list from getting too long; they're the same
   ground side by side (Route 5). Where they're separate places that differ (Route 1's meadow and its pine hills
   across the water), they're different habitats. Each place's entry says which (2026-11-13).
@@ -97,6 +102,8 @@ Hidden Grottoes are set by hand; the generator counts them as a source but never
 
 - **Season** is Unova's gimmick and almost always matters: some Pokémon only in one or two seasons, others all year
   with different rarities, others the same all year.
+  - **Almost every exterior feels a bit different in each season while keeping its identity** (2026-11-14): a few
+    families come and go, or change their rarity, with each season, round a core that stays all year.
   - Migration is a centrepiece, birds above all: some live in warm parts in one season and cold parts in another;
     some only visit; residents shift within the region following their prey; town birds (Pidove, Murkrow) stay all
     year but change with the season, time and weather.

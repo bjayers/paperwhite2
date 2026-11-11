@@ -262,7 +262,7 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
-      - {place: striaton_city, methods: [fishing], seasons: all, tier: common, stages: [goldeen], why: "ornamental fish in the park's ponds"}
+      - {place: striaton_city, methods: [fishing], seasons: all, tier: common, why: "ornamental fish in the park's ponds"}
       - {place: route_3, methods: [fishing], seasons: all, tier: common, why: "the lake's fish"}
       - {place: route_6, methods: [fishing], seasons: all, tier: common, why: "the river"}
       - {place: route_6, methods: [rippling_fishing, rippling_surf], seasons: [autumn], tier: common, stages: [seaking], why: "spawning at the bridges in autumn (Pokécology)"}
@@ -274,6 +274,7 @@ families:
       - {place: floccesy_ranch, methods: [fishing], seasons: all, tier: uncommon, why: "the ranch's river"}
       - {place: lostlorn_forest, methods: [fishing], seasons: all, tier: uncommon, why: "the stream"}
       - {place: wellspring_cave, methods: [fishing], seasons: all, tier: uncommon, why: "spring water"}
+      - {place: virbank_city, methods: [fishing], seasons: all, tier: uncommon, why: "the river's fish where it meets the harbour"}
     review: []
 
   - id: staryu
@@ -862,9 +863,9 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
-      - {place: floccesy_ranch, methods: [grass], seasons: all, tier: common, stages: [bidoof], why: "its NPCs, by the river"}
+      - {place: floccesy_ranch, methods: [grass], seasons: all, tier: common, why: "its NPCs, by the river"}
       - {place: floccesy_ranch, methods: [surf], seasons: all, tier: uncommon, why: "dams on the ranch's river"}
-      - {place: route_20, methods: [grass], seasons: all, tier: uncommon, stages: [bidoof], why: "its NPCs, by the stream"}
+      - {place: route_20, methods: [grass], seasons: all, tier: uncommon, why: "its NPCs, by the stream"}
       - {place: route_20, methods: [surf], seasons: all, tier: uncommon, why: "the stream's dams"}
       - {place: route_6, methods: [surf], seasons: all, tier: uncommon, why: "the river upstream"}
       - {place: route_3, methods: [surf], seasons: all, tier: uncommon, stages: [bibarel], why: "the lake (its Hidden Grotto here)"}
@@ -894,8 +895,7 @@ families:
       - {place: route_11, methods: [surf], seasons: all, tier: uncommon, why: "the river between the falls"}
       - {place: village_bridge, methods: [surf], seasons: all, tier: uncommon, why: "the village's river"}
       - {place: undella, methods: [surf], seasons: [summer], tier: uncommon, stages: [floatzel], why: "rescuing swimmers at the resort in summer"}
-      - {place: virbank_city, methods: [surf], seasons: all, tier: uncommon, stages: [floatzel], why: "a fishing port's familiar"}
-      - {place: route_13, methods: [surf], seasons: all, tier: uncommon, stages: [buizel], why: "the coast"}
+      - {place: route_13, methods: [surf], seasons: all, tier: uncommon, why: "the coast"}
       - {place: victory_road_mountainside, methods: [surf], seasons: all, tier: uncommon, why: "otters of the mountain water"}
     review: []
 
@@ -1000,8 +1000,8 @@ families:
     homes:
       - {place: route_3, methods: [surf], seasons: [spring, summer, autumn], tier: common, why: "the lake's frogs and tadpoles"}
       - {place: route_3, methods: [rippling_surf], seasons: [spring, summer], tier: common, why: "a chorus: a school of tadpoles"}
-      - {place: aspertia_city, methods: [surf], seasons: [spring, summer, autumn], tier: common, stages: [tympole], why: "the garden pond's tadpoles"}
-      - {place: route_19, methods: [surf], seasons: [spring, summer, autumn], tier: common, stages: [tympole], why: "the pond's tadpoles"}
+      - {place: aspertia_city, methods: [surf], seasons: [spring, summer, autumn], tier: common, stages: [tympole, palpitoad], why: "the garden pond's tadpoles"}
+      - {place: route_19, methods: [surf], seasons: [spring, summer, autumn], tier: common, stages: [tympole, palpitoad], why: "the pond's tadpoles"}
       - {place: pinwheel_forest, methods: [surf], seasons: all, tier: common, why: "the forest pond (the Southeast's mild winters)"}
       - {place: icirrus_city, methods: [grass], seasons: [spring, summer, autumn], tier: common, why: "the fens' puddles"}
       - {place: route_8, methods: [grass], seasons: [spring, summer, autumn], tier: common, why: "the fens' puddles"}
@@ -1042,6 +1042,7 @@ families:
       - {place: route_23, methods: [fishing], seasons: all, tier: common, form: 0, why: "the gorge's river (Red-Striped)"}
       - {place: victory_road_mountainside, methods: [fishing], seasons: all, tier: common, form: 0, why: "cold mountain water (Red-Striped)"}
       - {place: nature_preserve, methods: [fishing], seasons: all, tier: uncommon, form: 0, why: "the preserve's river (Red-Striped)"}
+      - {place: virbank_city, methods: [fishing], seasons: all, tier: uncommon, form: 1, why: "the river's Blue-Striped fish where it comes in"}
     review:
       - "Route 3's lake and the Nature Preserve count as east (Red-Striped); the Nature Preserve's side of the line is a guess."
 

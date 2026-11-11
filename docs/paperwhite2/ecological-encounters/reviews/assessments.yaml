@@ -16,6 +16,9 @@ aspertia_city:
       Winter leaves only Ducklett to surf (Lotad and Tympole sleep), which is right ecologically but bare; rippling water
       then falls back to Ducklett and Swanna.
     - Fishing is Magikarp alone all year. Fine for a garden pond, but Goldeen (released pets) would give a second bite.
+  discussed:
+    - >-
+      2026-11-14: no change asked; Goldeen as a second bite is still open.
 
 route_19:
   vision: >-
@@ -34,6 +37,9 @@ route_19:
       Sentret). Seedot and Sentret could drop to uncommon so the starting pool feels like Patrat, Purrloin and the birds.
   ideas:
     - Hoppip in spring could go, since Route 1 and Floccesy have the spring winds already.
+  discussed:
+    - >-
+      2026-11-14, done: Buneary a spring rarity, Seedot in autumn (rare into winter), Shroomish in autumn only, Swinub a winter rarity, as the user had them. Crowding is acceptable where it's believable. Evolved stages now appear here too at high levels.
 
 floccesy_ranch:
   vision: >-
@@ -53,6 +59,9 @@ floccesy_ranch:
     - Azurill in the grass by the river is a small stretch; it could stay in the water as Marill only.
   ideas:
     - If the NPC seasons should rule, Seedot and Shroomish autumn-only here would also thin the crowd.
+  discussed:
+    - >-
+      2026-11-14, done: Diglett gone (a ranch grows no crops), Mareep common (it's a Mareep ranch), Seedot in autumn (rare into winter), Poochyena uncommon in spring and summer and rare in the cold months.
 
 route_20:
   vision: >-
@@ -70,6 +79,9 @@ route_20:
       could hold the shyer things more clearly (Paras, Foongus and Swadloon already are).
   ideas:
     - Weedle or Venipede's evolved forms deeper in, or a rare Pinsir or Heracross in summer, for the dark grass.
+  discussed:
+    - >-
+      2026-11-14: the user likes it as it is, and may move the dark grass deeper in the woods, past Surf, among the brightest autumn leaves (places/southwest.yaml, plans); then its dark grass gets its own, later and wilder habitat.
 
 virbank_city:
   vision: >-
@@ -81,6 +93,9 @@ virbank_city:
     - Only one fishing family (Corphish) all year; the harbour where the river comes in could also have the river's
       fish (Goldeen, Basculin) as the places' suggestion said.
     - Tentacool only in summer is fine, but the harbour is otherwise the same in every season.
+  discussed:
+    - >-
+      2026-11-14, done: Floatzel gone (it wouldn't like the murky water); the river's Goldeen and Blue-Striped Basculin fish where it comes in.
 
 virbank_complex:
   vision: >-
@@ -97,6 +112,9 @@ virbank_complex:
       2's only, which is how Riolu is now.
   ideas:
     - Drop one or two of the commons to uncommon (Koffing or Klink), or keep Klink to map 2, deeper among the machines.
+  discussed:
+    - >-
+      2026-11-14, done: Klink only deeper inside (map 2).
 
 # --- Castelia and the desert ---
 

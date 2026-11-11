@@ -128,7 +128,7 @@ families:
     homes:
       - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: rare, stages: [smoochum], why: "the crater's cold"}
       - {place: giant_chasm_crater, methods: [dark_grass], seasons: all, tier: rare, stages: [jynx], why: "singing strange words in the crater"}
-      - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: rare, stages: [smoochum], why: "the winter's cold"}
+      - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: rare, why: "the winter's cold"}
     review: []
 
   - id: ralts
@@ -241,7 +241,7 @@ families:
     homes:
       - {place: celestial_tower, methods: [grass], seasons: all, tier: uncommon, why: "guiding the tower's lost spirits"}
       - {place: route_7, methods: [grass, dark_grass], seasons: all, tier: uncommon, times: night, why: "chasing will-o'-the-wisps over the marsh (the user: ghosts at night)"}
-      - {place: strange_house, methods: [grass], seasons: all, tier: rare, stages: [duskull], why: "startling bad children"}
+      - {place: strange_house, methods: [grass], seasons: all, tier: rare, stages: [duskull, dusclops], why: "startling bad children"}
     review: []
 
   - id: chingling
@@ -374,7 +374,7 @@ families:
     wanderer: {appears: both, wanders: passive, grass: float}
     homes:
       - {place: relic_castle, methods: [grass], seasons: all, tier: common, why: "the tomb, as in the original"}
-      - {place: celestial_tower, methods: [grass], seasons: all, tier: uncommon, stages: [yamask], why: "the spirits of the tower's graves"}
+      - {place: celestial_tower, methods: [grass], seasons: all, tier: uncommon, why: "the spirits of the tower's graves"}
     review: []
 
   - id: gothita
@@ -462,8 +462,8 @@ families:
     wanderer: {appears: both, wanders: random, grass: float}
     homes:
       - {place: celestial_tower, methods: [grass], seasons: all, tier: common, why: "the tower's candles (the user's request)"}
-      - {place: route_7, methods: [dark_grass], seasons: all, tier: rare, stages: [litwick], times: night, why: "a will-o'-the-wisp over the marsh"}
-      - {place: strange_house, methods: [grass], seasons: all, tier: rare, stages: [litwick], why: "a candle left burning in the haunted house"}
+      - {place: route_7, methods: [dark_grass], seasons: all, tier: rare, stages: [litwick, lampent], times: night, why: "a will-o'-the-wisp over the marsh"}
+      - {place: strange_house, methods: [grass], seasons: all, tier: rare, stages: [litwick, lampent], why: "a candle left burning in the haunted house"}
     review: []
 
   - id: golett

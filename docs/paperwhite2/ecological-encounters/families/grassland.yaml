@@ -260,7 +260,7 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
-      - {place: route_19, methods: [grass], seasons: all, tier: common, stages: [sentret], why: "its NPCs, on the lookout"}
+      - {place: route_19, methods: [grass], seasons: all, tier: common, why: "its NPCs, on the lookout"}
       - {place: floccesy_ranch, methods: [grass], seasons: all, tier: common, why: "its NPCs and Furret's, hunted by Mightyena"}
       - {place: route_1, methods: [grass], seasons: all, tier: uncommon, why: "the meadow"}
       - {place: route_3, methods: [grass], seasons: all, tier: uncommon, why: "the old fields"}
@@ -342,6 +342,7 @@ families:
       - {place: route_22, methods: [dark_grass], seasons: all, tier: rare, stages: [ampharos], why: "a beacon on the headland, over the sea"}
       - {place: route_15, methods: [grass], seasons: all, tier: uncommon, why: "the ridge's hill grazing"}
       - {place: dragonspiral_entrance, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "grazing the cliffside meadow"}
+      - {place: floccesy_ranch, methods: [grass], seasons: all, tier: common, why: "a Mareep ranch: the flock and its strays in the pastures (the user)"}
     review: []
 
   - id: sunkern
@@ -496,12 +497,13 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: aggressive, grass: stand}
     homes:
-      - {place: floccesy_ranch, methods: [grass], seasons: all, tier: uncommon, why: "its NPCs, hunting the ranch's Furret (Pokécology)"}
       - {place: route_22, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "packs hunting the upland's grass"}
       - {place: route_7, methods: [dark_grass], seasons: all, tier: uncommon, why: "stalking in the very tall grass"}
       - {place: route_1, methods: [dark_grass], seasons: all, tier: rare, why: "the pine hills"}
       - {place: giant_chasm_outside, methods: [dark_grass], seasons: all, tier: uncommon, why: "packs at the woodland edge"}
       - {place: route_12, methods: [dark_grass], seasons: [winter], tier: uncommon, why: "hunting the hills' Nidoran and Buneary in winter"}
+      - {place: floccesy_ranch, methods: [grass], seasons: [spring, summer], tier: uncommon, why: "its NPCs, hunting the ranch's Furret in the warm months (Pokécology, the user)"}
+      - {place: floccesy_ranch, methods: [grass], seasons: [autumn, winter], tier: rare, why: "a few packs stay round the ranch in the cold months"}
     review: []
 
   - id: zigzagoon
@@ -744,7 +746,6 @@ families:
     levels: {buneary: [2, 100]}
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
-      - {place: route_19, methods: [grass], seasons: all, tier: uncommon, why: "its NPCs"}
       - {place: route_2, methods: [grass], seasons: all, tier: uncommon, why: "rabbits at the woodland edge"}
       - {place: route_3, methods: [grass], seasons: all, tier: uncommon, why: "the old fields"}
       - {place: route_16, methods: [dark_grass], seasons: all, tier: uncommon, why: "the forest edge"}
@@ -752,6 +753,7 @@ families:
       - {place: pinwheel_forest_outskirts, methods: [dark_grass], seasons: all, tier: uncommon, why: "the cliff's grass"}
       - {place: route_12, methods: [grass], seasons: [winter], tier: uncommon, why: "hares on the open hills once the flowers are over"}
       - {place: village_bridge, methods: [grass], seasons: [winter], tier: uncommon, why: "hares in the winter field"}
+      - {place: route_19, methods: [grass], seasons: [spring], tier: rare, why: "its NPCs; a spring rarity (the user)"}
     review: []
 
   - id: glameow
@@ -939,7 +941,7 @@ families:
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
       - {place: floccesy_ranch, methods: [grass], seasons: all, tier: common, why: "the ranch's herding dogs"}
-      - {place: route_19, methods: [grass], seasons: all, tier: rare, stages: [lillipup], why: "its NPCs (rare, the places say)"}
+      - {place: route_19, methods: [grass], seasons: all, tier: rare, why: "its NPCs (rare, the places say)"}
       - {place: route_2, methods: [grass], seasons: all, tier: uncommon, why: "the farms between towns"}
       - {place: route_3, methods: [grass], seasons: all, tier: uncommon, why: "the Day Care's fields"}
       - {place: abundant_shrine, methods: [grass], seasons: all, tier: uncommon, why: "the hill farms' dogs"}
@@ -1094,7 +1096,7 @@ families:
     homes:
       - {place: route_1, methods: [grass], seasons: [autumn], tier: common, why: "the autumn meadow (the places' suggestion)"}
       - {place: route_15, methods: [grass], seasons: [autumn], tier: rare, stages: [whimsicott], why: "whirlwinds on the windy ridge"}
-      - {place: route_12, methods: [grass], seasons: [autumn], tier: uncommon, stages: [cottonee], why: "drifting off the flower hills on the autumn wind"}
+      - {place: route_12, methods: [grass], seasons: [autumn], tier: uncommon, why: "drifting off the flower hills on the autumn wind"}
     review: []
 
   - id: petilil
