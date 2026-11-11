@@ -115,7 +115,9 @@ and SoulSilver often repeat Gold's and Silver's, LeafGreen Red's and Blue's.
   user's example, further left for a wide label so that it ends by x 89 (4 px before the art's stripes, which start at
   x 93 on the label's rows; `dex_flavour.py` checks the art is plain there), never left of x 2. The label's characters
   load in the VBlank that shows the entry's text, so the tab and the text change together, and both rows' colours with
-  them (Area's map, which hides the tab, uses row 13 while it is open).
+  them (Area's map, which hides the tab, uses row 13 while it is open). The tab's and the label's characters are one
+  ClAct character resource (0xE00 bytes, the label's after the tab's): the system has 32, and going from Area's map to
+  Evo the page uses 30 at most with it (31 when they were two, 2026-11-11).
 - **Templates** (`dex_flavour.py template`, also from `pokedex_templates.py`, into `build/pokedex_templates/`):
   `version_flavour_canvas.png` (the art), `version_flavour_guide.png` (the OBJs' region in red, the label's in green),
   `version_flavour_reference_soulsilver.png` and `_shared.png` (the widest labels as the page draws them, "SoulSilver"

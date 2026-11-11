@@ -1874,7 +1874,8 @@ by line, again as the move panel or Area's map closes and for another form. **Th
 entry shows (not on Data, an ability, the move panel or the map), the user's art
 (`res/paperwhite2/pokedex_art/version_flavour.png`, member 167, `TAB_FILE`) shows at x 0-111, y 123-139 as four main
 OBJs of 32 by 32 from x 0, y 120 (the party icons' cells), in main OBJ row 8, which nothing on the page uses, in front
-of BGs 1-3; its label is on three OBJs of their own in front of those, in row 13 (Area's map has it only while open,
+of BGs 1-3; its label is on three OBJs of their own in front of those (both in one character resource, as the page's ClAct
+character resources are few), in row 13 (Area's map has it only while open,
 when the tab is hidden), with a palette of the shadow and 14 colours for the games (dex_flavour.py's `LABEL_PALETTE`
 and `LABEL_COLORS`, `sGameColors` in the C file; a colour shared only by games whose names differ and which no label
 puts side by side): the game's name, or the short names of the games sharing the entry 2 px apart ("HG SS",
