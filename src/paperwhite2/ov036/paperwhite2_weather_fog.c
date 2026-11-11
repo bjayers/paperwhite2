@@ -72,29 +72,43 @@ static struct {
     GXRgb fogColor;
 } sWeatherFog;
 
-// Castelia's gate, a white light box: castelia_city_4's gate_4 at the street's north end and castelia_city_5's
-// c3_gate_2. Their shapes have no normals, so no light reaches them: their display lists give each vertex its colour
-// (white, and greys for the shading), and they stood out of a weather's fog beside the player. While the sky's light
-// is the fog's colour, those colours are scaled by it, as a material lit by the sky's light alone would be
-static const NNSG3dResName sGateMaterials[] = {
-    { "gate_4" },
-    { "c3_gate_2" },
+// Castelia's gates, which stood out of a weather's fog beside the player, by material and, where the material draws
+// other things too, shape (an empty name: every shape of it):
+// - castelia_city_4's gate_4 at the street's north end and castelia_city_5's c3_gate_2, white light boxes. Their
+//   shapes have no normals, so no light reaches them: their display lists give each vertex its colour (white, and
+//   greys for the shading)
+// - the waterfront's green gate to Skyarrow Bridge by Thumb Pier, castelia_city_c3_00_01's c3_kanban shape polygon11
+//   (the rest of c3_kanban is the waterfront's signboards). It is lit by light 0, whose colour a weather's light file
+//   leaves as bright as Castelia's own by day, and with the material's full ambient it stays saturated white
+// While the sky's light is the fog's colour, their colour commands are scaled by it and their normal commands become
+// colour commands of the fog's colour, as if they were lit by the sky's light alone; otherwise they are their own
+typedef struct {
+    NNSG3dResName material;
+    NNSG3dResName shape;
+} WeatherFogGate;
+
+static const WeatherFogGate sGates[] = {
+    { { "gate_4" }, { "" } },
+    { { "c3_gate_2" }, { "" } },
+    { { "c3_kanban" }, { "polygon11" } },
 };
 
-// The most colour commands a gate material's display lists have (gate_4 has 26)
-#define GATE_COLOR_MAX 32
+// The most colour and normal commands a gate's display lists have (gate_4 has 28 colours)
+#define GATE_COMMAND_MAX 32
 
-// A gate material's colour commands in the model last drawn with it, their own colours, and the fog's colour they are
-// scaled by (0x8000: their own)
+// A gate's colour and normal commands in the model last drawn with it: each one's opcode and parameter and their own
+// values, and the fog's colour they are scaled by (0x8000: their own)
 typedef struct {
     NNSG3dResMdl *mdl;
     u32 count;
-    u32 *commands[GATE_COLOR_MAX];
-    GXRgb colors[GATE_COLOR_MAX];
+    u8 *opcodes[GATE_COMMAND_MAX];
+    u32 *params[GATE_COMMAND_MAX];
+    u8 ownOpcodes[GATE_COMMAND_MAX];
+    u32 ownParams[GATE_COMMAND_MAX];
     u32 scale;
-} WeatherFogGateColors;
+} WeatherFogGateCommands;
 
-static WeatherFogGateColors sGateColors[NELEMS(sGateMaterials)];
+static WeatherFogGateCommands sGateCommands[NELEMS(sGates)];
 
 #define GATE_SCALE_NONE 0x8000
 
@@ -158,27 +172,31 @@ static s32 WeatherFog_GxParams(u8 op) {
     return -1;
 }
 
-// Notes the colour commands of a shape's display list
-static void WeatherFog_ReadShapeColors(WeatherFogGateColors *gate, NNSG3dResShpData *shape) {
+// The geometry commands a gate's colours are in: a vertex's colour, and a normal, from which the lights give it one
+#define GX_OP_COLOR 0x20
+#define GX_OP_NORMAL 0x21
+
+// Notes the colour and normal commands of a shape's display list
+static void WeatherFog_ReadShapeCommands(WeatherFogGateCommands *gate, NNSG3dResShpData *shape) {
     u32 *cursor = (u32 *)((u8 *)shape + shape->ofsDL);
     u32 *end = (u32 *)((u8 *)cursor + shape->sizeDL);
-    u32 ops;
-    u8 op;
+    u8 *ops;
     s32 params;
     u32 i;
 
     // Four opcodes packed in a word, then their parameters
     while (cursor < end) {
-        ops = *cursor++;
+        ops = (u8 *)cursor++;
         for (i = 0; i < 4; i++) {
-            op = ops >> (i * 8);
-            params = WeatherFog_GxParams(op);
+            params = WeatherFog_GxParams(ops[i]);
             if (params < 0) {
                 return;
             }
-            if (op == 0x20 && gate->count < GATE_COLOR_MAX) {
-                gate->commands[gate->count] = cursor;
-                gate->colors[gate->count] = *cursor & 0x7fff;
+            if ((ops[i] == GX_OP_COLOR || ops[i] == GX_OP_NORMAL) && gate->count < GATE_COMMAND_MAX) {
+                gate->opcodes[gate->count] = &ops[i];
+                gate->params[gate->count] = cursor;
+                gate->ownOpcodes[gate->count] = ops[i];
+                gate->ownParams[gate->count] = *cursor;
                 gate->count++;
             }
             cursor += params;
@@ -186,8 +204,21 @@ static void WeatherFog_ReadShapeColors(WeatherFogGateColors *gate, NNSG3dResShpD
     }
 }
 
-// Notes the colour commands of the shapes a model draws with a material, walking its render commands
-static void WeatherFog_ReadGateColors(WeatherFogGateColors *gate, NNSG3dResMdl *mdl, int matIndex) {
+// Whether a shape is a gate's: any shape of its material, or the one it names
+static BOOL WeatherFog_IsGateShape(const WeatherFogGate *gate, NNSG3dResShp *shp, u32 index) {
+    const NNSG3dResName *name;
+
+    if (gate->shape.val[0] == 0) {
+        return TRUE;
+    }
+    name = NNS_G3dGetResNameByIdx(&shp->dict, index);
+    return name->val[0] == gate->shape.val[0] && name->val[1] == gate->shape.val[1] &&
+           name->val[2] == gate->shape.val[2] && name->val[3] == gate->shape.val[3];
+}
+
+// Notes the colour and normal commands of a gate's shapes in a model, walking its render commands
+static void WeatherFog_ReadGateCommands(WeatherFogGateCommands *gate, const WeatherFogGate *data, NNSG3dResMdl *mdl,
+                                        int matIndex) {
     u8 *cursor = (u8 *)mdl + mdl->ofsSbc;
     NNSG3dResShp *shp = NNS_G3dGetShp(mdl);
     int material = -1;
@@ -204,8 +235,8 @@ static void WeatherFog_ReadGateColors(WeatherFogGateColors *gate, NNSG3dResMdl *
         }
         if (op == 0x04 || op == 0x24 || op == 0x44) {
             material = cursor[0];
-        } else if (op == 0x05 && material == matIndex) {
-            WeatherFog_ReadShapeColors(gate, NNS_G3dGetShpDataByIdx(shp, cursor[0]));
+        } else if (op == 0x05 && material == matIndex && WeatherFog_IsGateShape(data, shp, cursor[0])) {
+            WeatherFog_ReadShapeCommands(gate, NNS_G3dGetShpDataByIdx(shp, cursor[0]));
         }
         cursor += params;
     }
@@ -397,7 +428,7 @@ BOOL PaperWhite2_WeatherFog_IsSkyFogged(FieldFog *fog) {
 
 void PaperWhite2_WeatherFog_UpdateMapModel(NNSG3dResMdl *mdl) {
     NNSG3dResMat *mat;
-    WeatherFogGateColors *gate;
+    WeatherFogGateCommands *gate;
     int index;
     u32 scale;
     u32 i;
@@ -407,23 +438,31 @@ void PaperWhite2_WeatherFog_UpdateMapModel(NNSG3dResMdl *mdl) {
         return;
     }
     scale = sWeatherFog.skyFogged ? sWeatherFog.fogColor : GATE_SCALE_NONE;
-    for (i = 0; i < NELEMS(sGateMaterials); i++) {
-        index = NNS_G3dGetResDictIdxByName(&mat->dict, &sGateMaterials[i]);
+    for (i = 0; i < NELEMS(sGates); i++) {
+        index = NNS_G3dGetResDictIdxByName(&mat->dict, &sGates[i].material);
         if (index < 0) {
             continue;
         }
-        gate = &sGateColors[i];
+        gate = &sGateCommands[i];
         if (gate->mdl != mdl) {
-            // A model loaded again has its own colours
-            WeatherFog_ReadGateColors(gate, mdl, index);
+            // A model loaded again has its own commands
+            WeatherFog_ReadGateCommands(gate, &sGates[i], mdl, index);
         }
-        if (gate->scale != scale) {
-            gate->scale = scale;
-            for (j = 0; j < gate->count; j++) {
-                *gate->commands[j] =
-                    scale == GATE_SCALE_NONE ? gate->colors[j] : WeatherFog_ScaleColor(gate->colors[j], scale);
-                DC_FlushRange(gate->commands[j], sizeof(u32));
+        if (gate->scale == scale) {
+            continue;
+        }
+        gate->scale = scale;
+        for (j = 0; j < gate->count; j++) {
+            if (scale == GATE_SCALE_NONE) {
+                *gate->opcodes[j] = gate->ownOpcodes[j];
+                *gate->params[j] = gate->ownParams[j];
+            } else {
+                *gate->opcodes[j] = GX_OP_COLOR;
+                *gate->params[j] = WeatherFog_ScaleColor(
+                    gate->ownOpcodes[j] == GX_OP_COLOR ? gate->ownParams[j] & 0x7fff : GX_RGB(31, 31, 31), scale);
             }
+            DC_FlushRange(gate->opcodes[j], sizeof(u8));
+            DC_FlushRange(gate->params[j], sizeof(u32));
         }
     }
 }

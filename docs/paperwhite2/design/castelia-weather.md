@@ -179,4 +179,7 @@ The user chose C, D and E, and for the fog, fog relative to the player in place 
   never reached it; its vertex colours are scaled by the fog's colour at runtime while the weather fog is on in
   Castelia (the `material_lights` change was dropped). The doorway glows (`gra_w*`) get the fog, and the waterfront's
   extra steps are 8.
+- After the third 3DS test (streets, doorways and the street gate right): the bright gate was the waterfront's green
+  one to Skyarrow Bridge, `castelia_city_c3_00_01`'s `c3_kanban` shape `polygon11`, lit by light 0, which a weather
+  doesn't dim by day; in a weather its normals become colour commands of the fog's colour at runtime.
 - Not done yet: adding Castelia to the weather calendar.

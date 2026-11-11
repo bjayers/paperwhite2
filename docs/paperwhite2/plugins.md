@@ -747,6 +747,19 @@ was cleared. The game's other unlit materials with their own colours (vending ma
 `gra_w` glows) are lights and keep theirs. `data.json`'s `material_lights` (`map_model.schema.json`) still sets any
 material's lights, though no model uses it now.
 
+The waterfront's green gate to Skyarrow Bridge, by Thumb Pier, is the same hook's third entry (`sGates`): it is
+`castelia_city_c3_00_01`'s `c3_kanban` shape `polygon11` (the material's other shapes are the waterfront's signboards,
+which keep their look): 12 vertices at x 836-883, y 7-91, z -194 to -93 of the chunk, textured from `c3_kanban`'s
+green-and-white gate panel (the same design as the streets' `gate_1`). Unlike `gate_4` it is lit: each vertex follows a
+normal command, with light 0 only, and the material's full ambient (31) and diffuse (25). A weather's light file
+leaves light 0 by day as bright as Castelia's own ((22, 22, 20) in rain against (24, 22, 20)), so the gate stays
+saturated white in rain as in sun; the fog, which is all that greys Castelia's lit walls in a weather, wasn't enough
+beside the player for a near-white panel. While the sky's light is the fog's colour, its normal commands become colour
+commands of the fog's colour (and its colour commands are scaled), as if lit by the sky's light alone, and they are put
+back after. In DeSmuME (rain, waterfront) the hook found its 16 commands (6 colours, 10 normals) and rewrote them to
+the fog's colour `0x4a52`; DeSmuME doesn't draw the waterfront usably from the fly spot (all but the edges in the clear
+colour, with or without fog), so how it looks is for the 3DS.
+
 **Fog on Castelia's roads, trees and benches** (data): `res/field/maps/models/<model>/data.json`'s `material_fog`
 (`map_model.schema.json`, `tools/data/map_model_data.py`'s `patch_material_attributes`) sets or clears a Nitro
 material's fog bit (bit 15 of its polygon attributes) by name. Castelia's street, pier and waterfront models turn it on
@@ -764,7 +777,7 @@ camera. A camera whose near plane is at least that far (Castelia's waterfront at
 them away; they now move past the near plane by its distance (180 and 188, or 192 and 200), which keeps their order and
 still fills the screen, since the quad scales with its distance. Other cameras are unchanged (near 1 or 19).
 
-**Cost.** Overlay 36 about 1.8 KB of code and 0.45 KB of BSS (`paperwhite2_weather_fog.c`) and about 0.2 KB of hooks;
+**Cost.** Overlay 36 about 2.1 KB of code and 1.3 KB of BSS (`paperwhite2_weather_fog.c`) and about 0.2 KB of hooks;
 per frame one distance (a square root) and a few 64-bit divisions.
 
 **Tested (DeSmuME, 2026-11-10):** forced thunderstorm and rain from the debug menu. On the Route 4 street south of
@@ -787,6 +800,9 @@ work out); all of it wants the 3DS.
 `0x14c3` at 834 units). The gate stayed bright (the light box above, now scaled), and the doorway glows were turned
 foggy. Reached in DeSmuME this time by walking from the save's spot on Route 4 south through Castelia Gate into
 `castelia_city_4`.
+
+**After the third 3DS test:** the streets, the doorways and `castelia_city_4`'s gate looked right; the gate the user
+meant was the waterfront's green one to Skyarrow Bridge, now the hook's third entry (above).
 
 ### Season app
 

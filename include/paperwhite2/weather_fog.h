@@ -35,8 +35,9 @@ BOOL PaperWhite2_WeatherFog_IsRearPlaneFog(void);
 // 22)), so in a weather those stood out blue against the grey fog
 BOOL PaperWhite2_WeatherFog_IsSkyFogged(FieldFog *fog);
 
-// Before a map model is drawn: in the same zones, the colours of Castelia's gate (a white light box that no light
-// reaches) are scaled by the fog's colour while the sky's light is the fog's, and are their own otherwise
+// Before a map model is drawn: in the same zones, the colours of Castelia's gates (the streets' white light boxes,
+// which no light reaches, and the waterfront's green gate to Skyarrow Bridge) are scaled by the fog's colour while the
+// sky's light is the fog's, and are their own otherwise
 void PaperWhite2_WeatherFog_UpdateMapModel(NNSG3dResMdl *mdl);
 
 #endif // PAPERWHITE2_WEATHER_FOG_H
