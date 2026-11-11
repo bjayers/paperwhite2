@@ -73,7 +73,7 @@ families:
       - "Pokédex (B2W2, Hypno): its swinging pendulum makes one sleep in three seconds."
       - "The places: the Dreamyard's Dream Mist."
     habitats: {ruins: 3, suburb: 2, meadow: 2}
-    time: {periods: night, strength: preferred}
+    time: {periods: night, strength: strict}
     seasons: all year
     migration: resident
     weather: {more: [], less: [], only: []}
@@ -323,7 +323,7 @@ families:
       - "In the original games: the Dreamyard (Musharna's story)."
       - "The places: the Dreamyard's basement as the place for a psychic trophy."
     habitats: {ruins: 3, meadow: 2}
-    time: {periods: night, strength: preferred}
+    time: {periods: night, strength: strict}
     seasons: all year
     migration: resident
     weather: {more: [], less: [], only: []}

@@ -361,7 +361,7 @@ families:
       - "Pokécology (the user's notes): Krookodile hides in sandstorms (in Flygon's whirlwinds)."
       - "The user: Sandile in Castelia's sewers in autumn and winter, in from Relic Passage."
     habitats: {desert: 3, sewer: 1, cave: 1}
-    time: {periods: any, strength: none}
+    time: {periods: night, strength: preferred}
     seasons: all year in the desert; in the sewers in autumn and winter, when they're dry
     migration: resident
     weather: {more: [sandstorm], less: [], only: []}

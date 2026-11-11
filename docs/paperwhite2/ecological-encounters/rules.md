@@ -129,6 +129,10 @@ Hidden Grottoes are set by hand; the generator counts them as a source but never
   are about in summer and autumn; Beartic's line is the cold-loving exception.
 - **Sudowoodo** (the user, 2026-11-14) is commoner in autumn and winter wherever it lives, when the leaves turn and
   fall and its tree disguise fails, and rarer in spring and summer.
+- **Nocturnal Pokémon** (2026-11-14): night only for Hoothoot, Murkrow, Venonat, Spinarak, Drowzee, Munna, Gastly,
+  Misdreavus, Drifloon, Stunky, Skorupi, the fireflies, Clefairy and Lunatone, and for the night stages Ledian
+  (starlight), Mothim and Dustox (moths) and Cacturne; more at night for many others (rats, cats, raccoons, Sandile's
+  line, the cave and sea Pokémon, Lombre at the fishing spots). Emolga stays as it is (the user).
 - **Times:** "night" is both night and late night, so the nocturnal Pokémon (Hoothoot, Venonat, Murkrow...) are there
   through both. Single periods are rare and deliberate: Sunkern in the morning, Vanillite at Dragonspiral's entrance
   in the morning sun.
