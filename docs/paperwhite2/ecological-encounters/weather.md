@@ -51,3 +51,12 @@ anyway. Routes 14 and 15 are treated as usual.
 | Route 15 | mist on 73–85% of days, all seasons | keep the mist (scenery, not a condition) |
 | Route 14 | mist as Route 15 | **Suggestion:** a rare thunderstorm or gusty rain (the Forces of Nature's storms) |
 | Abundant Shrine | none | **Suggestion:** rain in spring and summer (the paddies' growing season); a rare thunderstorm or gusty rain, as Route 14 |
+
+## Western Unova
+
+| Place | Now | Suggestions |
+| --- | --- | --- |
+| Driftveil Drawbridge | none | none needed |
+| Route 6 | spring rain 26%, summer clear, autumn rain 26%, winter snow 42% and light snow 23% | **Suggestion:** a little summer rain for the puddles; a rare summer thunderstorm (near Chargestone Cave) |
+| Route 7 | spring rain 52%, summer rain 13%, autumn rain 52%, winter as Route 6 | already the gloomy, rainy route; perhaps a rare thunderstorm in summer |
+| Mistralton City | (the calendar's) | the rainy airport city: no encounters, so weather is mood only |

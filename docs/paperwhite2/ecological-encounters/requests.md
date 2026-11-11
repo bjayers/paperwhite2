@@ -38,6 +38,11 @@ Each keeps its date. A request isn't a whole placement: the rest of the family a
   monkeys and the like; the usual forest Pokémon too, perhaps Combee.
 - 2026-11-13: Basculin is Red-Striped in Central Unova.
 
+- 2026-11-13: Seaking at bridges (spawning in autumn, Pokécology): Route 6's bridges, Village Bridge and Route 14.
+- 2026-11-13: Tynamo, Eelektrik and Eelektross only in Chargestone Cave, as a trophy (exotic).
+- 2026-11-13: Route 7: ghosts at night (near Celestial Tower).
+- 2026-11-13: Route 6's river may be Route 20's and Floccesy Ranch's, upstream (the user likes to think so).
+
 **Reading these requests:** the user's "rare" and "very rare" are loose; "very rare" usually means the exotic tier
 (the trophies). Most Pokémon can live anywhere they make sense: few are limited to one place.
 
