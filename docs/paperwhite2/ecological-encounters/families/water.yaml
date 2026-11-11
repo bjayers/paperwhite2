@@ -47,6 +47,10 @@ families:
       - {place: route_23, methods: [surf], seasons: all, tier: uncommon, why: "the still pond to the west"}
       - {place: victory_road_ruins, methods: [surf], seasons: all, tier: rare, stages: [golduck], why: "the ruins' still water"}
       - {place: lostlorn_forest, methods: [surf], seasons: all, tier: uncommon, why: "the stream's pools"}
+      - {place: clay_tunnel, methods: [surf], seasons: all, tier: common, why: "the tunnel's underground water"}
+      - {place: victory_road_caves, methods: [surf], seasons: all, tier: common, stages: [golduck], why: "the deep caves' pool"}
+      - {place: victory_road_mountainside, methods: [surf], seasons: all, tier: uncommon, stages: [golduck], why: "cold mountain water"}
+      - {place: route_22, methods: [surf], seasons: all, tier: common, why: "the upland's pond, all year"}
     review: []
 
   - id: poliwag
@@ -184,6 +188,8 @@ families:
       - {place: route_21, methods: [fishing], seasons: all, tier: uncommon, why: "among the rocks"}
       - {place: route_1, methods: [fishing], seasons: all, tier: uncommon, why: "the rocky inlet"}
       - {place: route_17, methods: [fishing], seasons: [winter], tier: uncommon, why: "the cold sea"}
+      - {place: p2_laboratory, methods: [fishing], seasons: all, tier: common, why: "the island's cool sea"}
+      - {place: route_18, methods: [fishing], seasons: all, tier: uncommon, why: "the island's cool sea"}
     review: []
 
   - id: krabby
@@ -209,6 +215,8 @@ families:
       - {place: route_1, methods: [fishing], seasons: all, tier: common, why: "the rocky inlet"}
       - {place: route_13, methods: [fishing], seasons: all, tier: uncommon, why: "the shallows off the beach"}
       - {place: route_21, methods: [rippling_fishing], seasons: all, tier: uncommon, stages: [kingler], why: "big Kingler among the rocks"}
+      - {place: route_18, methods: [fishing], seasons: all, tier: uncommon, why: "the island's shallows"}
+      - {place: route_13, methods: [dark_grass], seasons: all, tier: uncommon, why: "crabs on the island, left alone by people"}
     review: []
 
   - id: horsea
@@ -429,6 +437,7 @@ families:
       - {place: moor_of_icirrus, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the moor's mud"}
       - {place: moor_of_icirrus, methods: [surf], seasons: all, tier: uncommon, why: "the moor's pools, all year"}
       - {place: abundant_shrine, methods: [surf], seasons: all, tier: uncommon, why: "the paddies' ponds, like axolotls"}
+      - {place: giant_chasm_caves, methods: [surf], seasons: all, tier: common, why: "the cave's cold water (it lives in cold water)"}
     review: []
 
   - id: qwilfish
@@ -666,10 +675,11 @@ families:
       - {place: icirrus_city, methods: [rippling_fishing], seasons: all, tier: uncommon, stages: [whiscash], why: "the fens' big catfish"}
       - {place: abundant_shrine, methods: [fishing], seasons: all, tier: uncommon, why: "the paddies' mud"}
       - {place: route_3, methods: [fishing], seasons: all, tier: uncommon, why: "the lake's bottom"}
-      - {place: relic_passage, methods: [surf], seasons: all, tier: uncommon, why: "an underground pool: born from hardened mud"}
+      - {place: relic_passage, methods: [surf, fishing], seasons: all, tier: uncommon, why: "an underground pool: born from hardened mud"}
       - {place: clay_tunnel, methods: [fishing], seasons: all, tier: uncommon, why: "the tunnel's muddy water"}
       - {place: giant_chasm_caves, methods: [fishing], seasons: all, tier: uncommon, why: "the cave's cold water"}
-      - {place: victory_road_ruins, methods: [rippling_fishing], seasons: all, tier: uncommon, stages: [whiscash], why: "old water among the ruins"}
+      - {place: victory_road_ruins, methods: [fishing, rippling_fishing], seasons: all, tier: uncommon, why: "old water among the ruins"}
+      - {place: victory_road_caves, methods: [fishing], seasons: all, tier: common, why: "the deep caves' pool"}
     review: []
 
   - id: corphish
@@ -886,6 +896,7 @@ families:
       - {place: undella, methods: [surf], seasons: [summer], tier: uncommon, stages: [floatzel], why: "rescuing swimmers at the resort in summer"}
       - {place: virbank_city, methods: [surf], seasons: all, tier: uncommon, stages: [floatzel], why: "a fishing port's familiar"}
       - {place: route_13, methods: [surf], seasons: all, tier: uncommon, stages: [buizel], why: "the coast"}
+      - {place: victory_road_mountainside, methods: [surf], seasons: all, tier: uncommon, why: "otters of the mountain water"}
     review: []
 
   - id: shellos
@@ -939,6 +950,8 @@ families:
       - {place: route_4, methods: [fishing], seasons: all, tier: uncommon, why: "the bay by the road"}
       - {place: undella, methods: [rippling_fishing], seasons: all, tier: uncommon, stages: [lumineon], why: "the bay's depths"}
       - {place: route_13, methods: [rippling_surf], seasons: all, tier: uncommon, why: "a shining school"}
+      - {place: p2_laboratory, methods: [fishing], seasons: all, tier: uncommon, why: "the island's sea"}
+      - {place: route_18, methods: [fishing], seasons: all, tier: common, why: "the island's sea"}
     review: []
 
   - id: mantyke
@@ -989,7 +1002,7 @@ families:
       - {place: route_3, methods: [rippling_surf], seasons: [spring, summer], tier: common, why: "a chorus: a school of tadpoles"}
       - {place: aspertia_city, methods: [surf], seasons: [spring, summer, autumn], tier: common, stages: [tympole], why: "the garden pond's tadpoles"}
       - {place: route_19, methods: [surf], seasons: [spring, summer, autumn], tier: common, stages: [tympole], why: "the pond's tadpoles"}
-      - {place: pinwheel_forest, methods: [surf], seasons: [spring, summer, autumn], tier: common, why: "the forest pond"}
+      - {place: pinwheel_forest, methods: [surf], seasons: all, tier: common, why: "the forest pond (the Southeast's mild winters)"}
       - {place: icirrus_city, methods: [grass], seasons: [spring, summer, autumn], tier: common, why: "the fens' puddles"}
       - {place: route_8, methods: [grass], seasons: [spring, summer, autumn], tier: common, why: "the fens' puddles"}
       - {place: moor_of_icirrus, methods: [grass], seasons: [spring, summer, autumn], tier: common, why: "the moor's puddles"}

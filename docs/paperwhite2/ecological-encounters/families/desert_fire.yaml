@@ -128,7 +128,6 @@ families:
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
       - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: uncommon, why: "wild mustangs on the red-rock pass"}
-      - {place: floccesy_ranch, methods: [grass], seasons: all, tier: rare, stages: [ponyta], why: "the ranch's horses"}
     review: []
 
   - id: magby

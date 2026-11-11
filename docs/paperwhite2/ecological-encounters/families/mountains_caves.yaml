@@ -48,7 +48,6 @@ families:
       - {place: giant_chasm_caves, methods: [grass], seasons: all, tier: common, why: "the cold caves"}
       - {place: victory_road_caves, methods: [grass], seasons: all, tier: common, stages: [golbat], why: "the deep caves"}
       - {place: reversal_mountain_damp, methods: [grass], seasons: all, tier: common, why: "the damp caves' bats"}
-      - {place: twist_mountain, methods: [grass], seasons: all, tier: uncommon, why: "bats in the mine"}
     review: []
 
   - id: woobat
@@ -75,6 +74,7 @@ families:
       - {place: mistralton_cave, methods: [grass], seasons: all, tier: common, why: "as in the original"}
       - {place: twist_mountain, methods: [grass], seasons: all, tier: common, why: "the mine's bats"}
       - {place: celestial_tower, methods: [grass], seasons: all, tier: rare, why: "bats of the old tower"}
+      - {place: strange_house, methods: [grass], seasons: all, tier: rare, why: "bats in the haunted houses rafters"}
     review: []
 
   - id: diglett
@@ -145,7 +145,6 @@ families:
     homes:
       - {place: clay_tunnel, methods: [grass], seasons: all, tier: uncommon, why: "its tunnels, with Dunsparce and Excadrill"}
       - {place: victory_road_caves, methods: [grass], seasons: all, tier: uncommon, why: "the deep caves"}
-      - {place: twist_mountain, methods: [grass], seasons: all, tier: rare, why: "the mine's tunnels"}
     review: []
 
   - id: machop
@@ -305,6 +304,9 @@ families:
       - {place: giant_chasm_caves, methods: [grass], seasons: all, tier: uncommon, stages: [sneasel], why: "the cold caves"}
       - {place: dragonspiral_entrance, methods: [dark_grass], seasons: [winter], tier: uncommon, stages: [sneasel], why: "the winter's deep snow"}
       - {place: route_23, methods: [grass], seasons: [winter], tier: rare, stages: [sneasel], why: "stalking the conifer wood in winter"}
+      - {place: dragonspiral_grounds, methods: [dark_grass], seasons: [winter], tier: uncommon, stages: [sneasel], why: "the cold bank in winter"}
+      - {place: giant_chasm_outside, methods: [dark_grass], seasons: all, tier: rare, stages: [sneasel], why: "the chasm's cold at its rim"}
+      - {place: victory_road_forest, methods: [grass], seasons: [winter], tier: uncommon, stages: [sneasel], why: "the snowy mountain forest"}
     review:
       - "Weavile wild though it evolves by a held item at night: only where Pokécology has it hunting."
 
@@ -401,7 +403,6 @@ families:
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
       - {place: victory_road_caves, methods: [grass], seasons: all, tier: rare, why: "the deep caves' gems"}
-      - {place: twist_mountain, methods: [grass], seasons: all, tier: rare, why: "gems in the mine"}
     review: []
 
   - id: mawile
@@ -422,7 +423,6 @@ families:
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
       - {place: virbank_complex, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "its NPC; chewing the complex's iron beams"}
-      - {place: twist_mountain, methods: [grass], seasons: all, tier: rare, why: "the mine's iron"}
     review: []
 
   - id: aron
@@ -641,6 +641,7 @@ families:
       - {place: route_4, methods: [grass], seasons: all, tier: uncommon, why: "gangs by the desert road, as in the original"}
       - {place: desert_resort_path, methods: [grass], seasons: all, tier: uncommon, why: "the canyon"}
       - {place: route_18, methods: [grass], seasons: all, tier: rare, why: "the island's beaches, as in the original"}
+      - {place: route_13, methods: [dark_grass], seasons: all, tier: rare, why: "lizards of the dry island"}
     review: []
 
   - id: mienfoo
@@ -664,6 +665,7 @@ families:
       - {place: route_14, methods: [dark_grass], seasons: all, tier: uncommon, why: "as in the original"}
       - {place: dragonspiral_grounds, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "training by the ancient tower"}
       - {place: route_22, methods: [dark_grass], seasons: all, tier: rare, why: "the upland (its Hidden Grotto)"}
+      - {place: dragonspiral_entrance, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "training on the cliffs below the ancient tower"}
     review: []
 
   - id: dwebble
@@ -688,7 +690,6 @@ families:
       - {place: seaside_cave, methods: [grass], seasons: all, tier: uncommon, why: "the sea cave's floors (its static Crustle)"}
       - {place: route_18, methods: [grass], seasons: all, tier: common, why: "the island's beaches"}
       - {place: route_13, methods: [grass], seasons: all, tier: uncommon, why: "the beach under the cliffs"}
-      - {place: desert_resort, methods: [grass], seasons: all, tier: uncommon, why: "as in the original"}
     review: []
 
   - id: klink
@@ -752,7 +753,6 @@ families:
     wanderer: {appears: steps, wanders: passive, grass: stand}
     homes:
       - {place: chargestone_cave, methods: [grass], seasons: all, tier: uncommon, why: "the magnetite's iron, as in the original"}
-      - {place: twist_mountain, methods: [grass], seasons: all, tier: rare, why: "the mine's iron"}
     review:
       - "Met by a step only (it hangs from the ceiling)."
 
@@ -875,6 +875,8 @@ families:
       - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: uncommon, why: "following footprints on the cliffside"}
       - {place: route_6, methods: [grass], seasons: [winter], tier: uncommon, stages: [snover], why: "the snowy valley"}
       - {place: route_12, methods: [dark_grass], seasons: [winter], tier: uncommon, why: "the snowy hills"}
+      - {place: dragonspiral_grounds, methods: [grass], seasons: [winter], tier: uncommon, why: "the snowy bank"}
+      - {place: route_7, methods: [grass, dark_grass], seasons: [winter], tier: uncommon, why: "the snowy marsh's tall grass"}
     review: []
 
   - id: piplup

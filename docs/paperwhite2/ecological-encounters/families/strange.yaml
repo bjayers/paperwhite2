@@ -64,7 +64,6 @@ families:
     homes:
       - {place: dreamyard, methods: [grass], seasons: all, tier: uncommon, stages: [abra], why: "asleep by the psychic research site"}
       - {place: dreamyard, methods: [dark_grass], seasons: all, tier: rare, stages: [kadabra], why: "the ruins"}
-      - {place: route_16, methods: [grass], seasons: all, tier: rare, stages: [abra], why: "Nimbasa's edge"}
     review: []
 
   - id: drowzee
@@ -86,7 +85,6 @@ families:
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
       - {place: dreamyard, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the dream research site"}
-      - {place: route_9, methods: [grass], seasons: all, tier: rare, why: "sniffing the town's dreams at night"}
     review: []
 
   - id: misdreavus
@@ -220,7 +218,6 @@ families:
     wanderer: {appears: both, wanders: random, grass: float}
     homes:
       - {place: strange_house, methods: [grass], seasons: all, tier: common, why: "the haunted house's abandoned toys (the user's request)"}
-      - {place: castelia_park, methods: [grass], seasons: all, tier: rare, stages: [shuppet], times: night, why: "feeding on the city's dark moods at night"}
     review: []
 
   - id: duskull
@@ -466,6 +463,7 @@ families:
     homes:
       - {place: celestial_tower, methods: [grass], seasons: all, tier: common, why: "the tower's candles (the user's request)"}
       - {place: route_7, methods: [dark_grass], seasons: all, tier: rare, stages: [litwick], times: night, why: "a will-o'-the-wisp over the marsh"}
+      - {place: strange_house, methods: [grass], seasons: all, tier: rare, stages: [litwick], why: "a candle left burning in the haunted house"}
     review: []
 
   - id: golett
@@ -539,6 +537,7 @@ families:
       - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: uncommon, stages: [cleffa, clefairy], why: "dancing under the moon where the star fell"}
       - {place: giant_chasm_crater, methods: [dark_grass], seasons: all, tier: very_rare, stages: [clefable], why: "the crater's Moon Stone"}
       - {place: giant_chasm_caves, methods: [grass], seasons: all, tier: rare, stages: [clefairy], why: "the caves round the crater, as Mt. Moon"}
+      - {place: giant_chasm_outside, methods: [grass], seasons: all, tier: rare, stages: [clefairy], why: "a hint of the crater's strangeness at night"}
     review: []
 
   - id: lunatone
@@ -603,7 +602,6 @@ families:
     wanderer: {appears: both, wanders: random, grass: float}
     homes:
       - {place: relic_castle, methods: [grass], seasons: all, tier: uncommon, why: "ancient figurines in the castle"}
-      - {place: desert_resort, methods: [grass], seasons: all, tier: rare, stages: [baltoy], why: "the desert, as Hoenn's"}
       - {place: clay_tunnel, methods: [grass], seasons: all, tier: uncommon, areas: [underground_ruins], why: "clay figurines in the Underground Ruins"}
     review: []
 
@@ -669,7 +667,6 @@ families:
     homes:
       - {place: route_18, methods: [dark_grass], seasons: all, tier: rare, why: "the island's jungle, as Hoenn's rainforest"}
       - {place: lostlorn_forest, methods: [dark_grass], seasons: all, tier: rare, why: "a trickster unseen"}
-      - {place: pinwheel_forest, methods: [dark_grass], seasons: all, tier: very_rare, why: "the old forest's depths"}
     review:
       - "Met by a step only: it's invisible as a wanderer."
 

@@ -76,6 +76,7 @@ families:
       - {place: castelia_sewers, methods: [surf], seasons: [spring, summer], tier: common, why: "the sewers' water"}
       - {place: virbank_complex, methods: [grass], seasons: all, tier: uncommon, why: "its NPCs; the complex's waste"}
       - {place: virbank_city, methods: [surf], seasons: all, tier: uncommon, why: "the polluted harbour"}
+      - {place: virbank_complex, methods: [surf], seasons: all, tier: common, why: "the complex's polluted water"}
     review: []
 
   - id: koffing
@@ -121,7 +122,6 @@ families:
       - {place: route_5, methods: [grass], seasons: all, tier: common, why: "following the road's litterers"}
       - {place: route_9, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the mall's trash"}
       - {place: castelia_park, methods: [dark_grass], seasons: all, tier: uncommon, why: "the city's rubbish"}
-      - {place: virbank_complex, methods: [grass], seasons: all, tier: uncommon, why: "the complex's scrap"}
     review: []
 
   - id: gulpin

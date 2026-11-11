@@ -44,13 +44,14 @@ families:
       - {place: route_2, methods: [grass], seasons: [autumn, winter, spring], tier: common, why: "wintering at the woodland edge, in the mild Southeast"}
       - {place: route_3, methods: [grass], seasons: [autumn, winter], tier: uncommon, why: "wintering flocks in the fields by the lake"}
       - {place: dreamyard, methods: [grass], seasons: [winter], tier: uncommon, why: "wintering in the Dreamyard's overgrown meadow"}
-      - {place: route_5, methods: [grass], seasons: [spring, autumn], tier: uncommon, why: "the central passage"}
       - {place: route_16, methods: [grass], seasons: [spring, autumn], tier: uncommon, why: "the central passage along the forest edge"}
       - {place: route_22, methods: [grass], seasons: [autumn], tier: uncommon, why: "the east coast's autumn passage south"}
       - {place: route_12, methods: [grass, dark_grass], seasons: [summer], tier: common, why: "breeding on the north's flower hills"}
       - {place: route_11, methods: [grass], seasons: [summer], tier: uncommon, why: "breeding in the north's riverside meadows"}
       - {place: route_9, methods: [grass], seasons: [summer], tier: uncommon, why: "breeding at the north's edge of town"}
       - {place: village_bridge, methods: [grass], seasons: [summer], tier: uncommon, why: "breeding in the village's meadows"}
+      - {place: route_1, methods: [dark_grass], seasons: [winter], tier: uncommon, why: "sheltering in the pine hills for winter"}
+      - {place: route_3, methods: [dark_grass], seasons: [winter], tier: uncommon, why: "wintering at the wild edges"}
     review:
       - "A migrant rather than native: Pidgey isn't Unovan; making it the region's classic migrant uses that. Its summer and winter ranges are mine."
 
@@ -74,7 +75,6 @@ families:
     wanderer: {appears: both, wanders: aggressive, grass: float}
     homes:
       - {place: route_19, methods: [grass], seasons: all, tier: uncommon, why: "its NPCs; the short grass of the starting meadow"}
-      - {place: virbank_complex, methods: [grass], seasons: all, tier: uncommon, why: "scrub on the complex's waste ground"}
       - {place: route_15, methods: [grass], seasons: all, tier: uncommon, why: "dry scrub on the ridge"}
       - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: common, why: "the badlands' dry scrub is its best ground"}
       - {place: desert_resort_path, methods: [grass], seasons: all, tier: rare, why: "at the desert's edge, hunting the canyon's insects"}
@@ -125,7 +125,6 @@ families:
       - {place: route_22, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the windswept upland grass: open running ground"}
       - {place: route_15, methods: [grass], seasons: all, tier: rare, why: "the ridge's hills and scrub"}
       - {place: reversal_mountain_outside, methods: [dark_grass], seasons: all, tier: rare, why: "the badlands' scrub, like emus' dry country"}
-      - {place: floccesy_ranch, methods: [grass], seasons: all, tier: rare, why: "farmed on the ranch like ostriches, and loose in its pastures"}
     review:
       - "Floccesy Ranch's Doduo as farmed birds: a fun touch, but optional."
 
@@ -182,8 +181,8 @@ families:
       - {place: desert_resort, methods: [grass], seasons: all, tier: uncommon, why: "the desert's cacti feed it (with Maractus)"}
       - {place: desert_resort_path, methods: [grass], seasons: all, tier: rare, why: "the canyon's cacti"}
       - {place: relic_castle, methods: [grass], seasons: all, tier: rare, why: "sun-watchers at an ancient ruin, as at the Ruins of Alph"}
-      - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: rare, why: "the badlands' scrub and cacti"}
       - {place: dreamyard, methods: [dark_grass], seasons: all, tier: rare, why: "the ruins' mystic watchers"}
+      - {place: dragonspiral_grounds, methods: [grass, dark_grass], seasons: all, tier: rare, why: "watchers by the ancient tower, on the bank reached only by water"}
     review:
       - "Natu in the desert follows its Pokédex entry (cactus food); Relic Castle's floors are sand inside a ruin, so a stretch."
 
@@ -242,7 +241,7 @@ families:
       - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: uncommon, why: "the snowy cliffside in winter"}
       - {place: route_12, methods: [grass], seasons: [winter], tier: rare, why: "down from the mountains with the snow"}
       - {place: route_6, methods: [grass], seasons: [winter], tier: rare, why: "the snowy valley"}
-      - {place: floccesy_ranch, methods: [grass], seasons: [winter], tier: very_rare, why: "the Southwest's snowy farms, bringing food"}
+      - {place: route_7, methods: [grass], seasons: [winter], tier: rare, why: "the snowy marsh, bringing food"}
     review: []
 
   - id: skarmory
@@ -331,6 +330,7 @@ families:
       - {place: marvelous_bridge, methods: [rustling], seasons: all, tier: common, why: "seabirds in the bridge's shadows"}
       - {place: route_13, methods: [surf], seasons: all, tier: common, why: "the clear coastal sea"}
       - {place: route_13, methods: [dark_grass], seasons: [spring, summer], tier: common, stages: [wingull], why: "the island's seabird colony"}
+      - {place: route_13, methods: [dark_grass], seasons: [autumn, winter], tier: uncommon, stages: [pelipper], why: "the island's seabirds out of the nesting season"}
       - {place: route_13, methods: [grass], seasons: all, tier: uncommon, why: "the beach under the cliffs"}
       - {place: undella, methods: [surf], seasons: all, tier: common, why: "the bay"}
       - {place: route_21, methods: [surf], seasons: all, tier: common, why: "the rocks out at sea"}
@@ -398,7 +398,6 @@ families:
       - {place: route_16, methods: [grass], seasons: [winter], tier: uncommon, why: "winter flocks at the city's edge"}
       - {place: abundant_shrine, methods: [grass], seasons: [autumn, winter], tier: common, why: "flocks on the harvested paddies"}
       - {place: floccesy_ranch, methods: [grass], seasons: [winter], tier: uncommon, why: "winter flocks on the ranch's pastures"}
-      - {place: route_19, methods: [grass], seasons: [autumn], tier: uncommon, why: "arriving through the valley"}
       - {place: route_12, methods: [grass], seasons: [autumn, spring], tier: uncommon, why: "arriving and leaving across the north's hills"}
       - {place: village_bridge, methods: [grass], seasons: [spring], tier: uncommon, why: "leaving north in spring"}
     review: []
@@ -451,10 +450,8 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
-      - {place: castelia_park, methods: [grass], seasons: all, tier: common, why: "the city's pigeons in the park"}
       - {place: route_19, methods: [grass], seasons: all, tier: common, why: "its NPCs, by Aspertia"}
       - {place: route_20, methods: [grass], seasons: all, tier: uncommon, why: "its ambients"}
-      - {place: floccesy_ranch, methods: [grass], seasons: all, tier: uncommon, why: "the farm's yards and fields"}
       - {place: route_2, methods: [grass], seasons: all, tier: uncommon, why: "between towns"}
       - {place: route_3, methods: [grass], seasons: all, tier: uncommon, why: "Striaton's edge"}
       - {place: route_5, methods: [grass], seasons: all, tier: common, why: "plazas and crowds by Nimbasa"}
@@ -463,6 +460,9 @@ families:
       - {place: village_bridge, methods: [grass], seasons: all, tier: uncommon, why: "the village's square and fields"}
       - {place: abundant_shrine, methods: [grass], seasons: all, tier: uncommon, stages: [tranquill, unfezant], why: "the farm country's pheasants"}
       - {place: route_12, methods: [grass], seasons: all, tier: uncommon, stages: [tranquill, unfezant], why: "the open hills"}
+      - {place: dragonspiral_entrance, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, stages: [tranquill, unfezant], why: "the northern meadow below the tower"}
+      - {place: pinwheel_forest_outskirts, methods: [dark_grass], seasons: [autumn, winter], tier: uncommon, why: "the cliff by the road in the cold months"}
+      - {place: giant_chasm_outside, methods: [grass], seasons: all, tier: uncommon, why: "the countryside round the chasm"}
     review: []
 
   - id: ducklett
@@ -531,6 +531,7 @@ families:
       - {place: route_15, methods: [dark_grass], seasons: all, tier: rare, why: "the ridge"}
       - {place: giant_chasm_outside, methods: [dark_grass], seasons: all, tier: rare, why: "the chasm's rim"}
       - {place: desert_resort_path, methods: [grass], seasons: all, tier: rare, stages: [braviary], why: "hunting the desert from the canyon's ledges, as in the original"}
+      - {place: dragonspiral_entrance, methods: [grass], seasons: [spring, summer, autumn], tier: rare, why: "the cliffside's eagles"}
     review: []
 
   - id: vullaby
@@ -602,7 +603,6 @@ families:
       - {place: route_16, methods: [dark_grass], seasons: all, tier: uncommon, why: "the forest edge, as in the original"}
       - {place: lostlorn_forest, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the forest's gliders"}
       - {place: route_5, methods: [dark_grass], seasons: all, tier: rare, why: "the woods by the road, as in the original"}
-      - {place: pinwheel_forest, methods: [dark_grass], seasons: all, tier: rare, why: "the old forest's canopy"}
       - {place: village_bridge, methods: [dark_grass], seasons: all, tier: rare, why: "the riverside woods"}
     review: []
 
@@ -633,7 +633,6 @@ families:
       - {place: route_12, methods: [grass, dark_grass], seasons: [summer], tier: common, why: "blooming over the north's flower hills"}
       - {place: route_22, methods: [grass], seasons: [summer], tier: uncommon, why: "the windy upland in summer"}
       - {place: route_15, methods: [grass], seasons: [summer], tier: uncommon, why: "the windy ridge"}
-      - {place: route_5, methods: [grass], seasons: [autumn], tier: uncommon, stages: [jumpluff], why: "drifting south on the autumn wind"}
       - {place: route_16, methods: [grass], seasons: [autumn], tier: uncommon, stages: [jumpluff], why: "drifting south"}
       - {place: route_13, methods: [grass], seasons: [autumn], tier: uncommon, stages: [jumpluff], why: "drifting down the coast"}
     review:

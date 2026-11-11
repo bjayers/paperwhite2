@@ -45,7 +45,6 @@ families:
     homes:
       - {place: castelia_park, methods: [grass, dark_grass], seasons: all, tier: common, why: "the city's rats"}
       - {place: castelia_sewers, methods: [grass], seasons: all, tier: common, why: "the sewers' walkways"}
-      - {place: virbank_complex, methods: [grass], seasons: all, tier: uncommon, why: "the industrial yards"}
       - {place: route_4, methods: [grass], seasons: all, tier: rare, why: "the road by Castelia"}
     review: []
 
@@ -72,8 +71,6 @@ families:
       - {place: route_1, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "hunting the meadow's Patrat"}
       - {place: route_3, methods: [dark_grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the wild edges"}
       - {place: route_2, methods: [grass], seasons: [summer], tier: rare, why: "warm days on the dirt road"}
-      - {place: reversal_mountain_outside, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "basking in the badlands"}
-      - {place: route_16, methods: [grass], seasons: [summer], tier: rare, why: "snakes on the warm road (the places)"}
     review: []
 
   - id: nidoran_f
@@ -142,7 +139,6 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
-      - {place: castelia_park, methods: [grass], seasons: all, tier: uncommon, why: "a city stray after shiny things"}
       - {place: route_5, methods: [grass], seasons: all, tier: uncommon, why: "the busy road's leavings at night"}
       - {place: route_9, methods: [dark_grass], seasons: all, tier: rare, stages: [persian], why: "the mall's haughty strays"}
     review: []
@@ -209,7 +205,6 @@ families:
     wanderer: {appears: both, wanders: aggressive, grass: stand}
     homes:
       - {place: route_22, methods: [dark_grass], seasons: all, tier: uncommon, why: "herds on the upland"}
-      - {place: floccesy_ranch, methods: [grass], seasons: all, tier: rare, why: "the ranch's cattle"}
     review: []
 
   - id: eevee
@@ -321,7 +316,6 @@ families:
     homes:
       - {place: village_bridge, methods: [grass], seasons: all, tier: uncommon, why: "singing in the village of music"}
       - {place: route_3, methods: [grass], seasons: all, tier: rare, why: "the old fields at night"}
-      - {place: route_12, methods: [grass], seasons: [spring, summer], tier: rare, why: "the flower hills"}
     review:
       - "Jigglypuff wild though it comes by friendship."
 
@@ -348,7 +342,7 @@ families:
       - {place: route_22, methods: [dark_grass], seasons: all, tier: rare, stages: [ampharos], why: "a beacon on the headland, over the sea"}
       - {place: route_12, methods: [grass], seasons: [autumn, winter], tier: uncommon, why: "the hills' pasture in the cold"}
       - {place: route_15, methods: [grass], seasons: all, tier: uncommon, why: "the ridge's hill grazing"}
-      - {place: floccesy_ranch, methods: [grass], seasons: all, tier: rare, stages: [mareep], why: "strays from the ranch's flock"}
+      - {place: dragonspiral_entrance, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "grazing the cliffside meadow"}
     review: []
 
   - id: sunkern
@@ -372,7 +366,6 @@ families:
       - {place: route_1, methods: [grass], seasons: [summer], tier: common, times: [morning], stages: [sunkern], why: "falling from the sky in the morning"}
       - {place: route_1, methods: [grass], seasons: [summer], tier: uncommon, times: [day, evening], stages: [sunkern], why: "the summer meadow"}
       - {place: route_1, methods: [grass], seasons: [summer], tier: uncommon, stages: [sunflora], why: "the meadow's sunflowers, facing the sun"}
-      - {place: route_12, methods: [grass], seasons: [summer], tier: uncommon, stages: [sunkern], why: "the flower hills in summer"}
     review:
       - "Route 1's summer meadow as a Sun Stone site (Sunflora and Whimsicott wild there)."
 
@@ -393,8 +386,6 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
-      - {place: castelia_park, methods: [grass], seasons: all, tier: rare, why: "a lost pet in the park"}
-      - {place: route_16, methods: [grass], seasons: all, tier: rare, why: "the suburb's strays"}
       - {place: route_9, methods: [grass], seasons: all, tier: rare, why: "dog walkers' strays by the mall"}
     review: []
 
@@ -440,6 +431,8 @@ families:
       - {place: route_23, methods: [grass], seasons: all, tier: uncommon, why: "the old conifer wood"}
       - {place: giant_chasm_outside, methods: [grass], seasons: [winter], tier: uncommon, why: "down to the chasm's woodland in winter"}
       - {place: route_11, methods: [grass], seasons: [winter], tier: rare, why: "down from the heights in winter"}
+      - {place: dragonspiral_grounds, methods: [grass, dark_grass], seasons: [spring, summer, autumn], tier: uncommon, why: "shy deer on the bank across the lake"}
+      - {place: route_11, methods: [dark_grass], seasons: [winter], tier: rare, why: "down from the heights in winter"}
     review:
       - "Dawn and dusk preferred (deer feed then): two single periods, used sparingly."
 
@@ -460,7 +453,6 @@ families:
     levels: {smeargle: [10, 100]}
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
-      - {place: route_5, methods: [grass], seasons: all, tier: rare, why: "painting among the road's performers and artists"}
       - {place: dreamyard, methods: [dark_grass], seasons: all, tier: rare, why: "marks on the ruins' walls"}
     review: []
 
@@ -482,7 +474,6 @@ families:
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
       - {place: floccesy_ranch, methods: [grass], seasons: all, tier: uncommon, why: "the ranch's dairy herd"}
-      - {place: route_12, methods: [grass], seasons: [spring, summer, autumn], tier: rare, why: "the hill pastures"}
       - {place: abundant_shrine, methods: [grass], seasons: all, tier: rare, why: "the hill farms"}
     review: []
 
@@ -508,6 +499,7 @@ families:
       - {place: route_22, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "packs hunting the upland's grass"}
       - {place: route_7, methods: [dark_grass], seasons: all, tier: uncommon, why: "stalking in the very tall grass"}
       - {place: route_1, methods: [dark_grass], seasons: all, tier: rare, why: "the pine hills"}
+      - {place: giant_chasm_outside, methods: [dark_grass], seasons: all, tier: uncommon, why: "packs at the woodland edge"}
     review: []
 
   - id: zigzagoon
@@ -576,7 +568,6 @@ families:
     homes:
       - {place: castelia_park, methods: [grass], seasons: all, tier: uncommon, why: "a pet cat gone feral"}
       - {place: route_3, methods: [grass], seasons: all, tier: rare, why: "a stray by the Day Care"}
-      - {place: route_16, methods: [grass], seasons: all, tier: rare, why: "the suburb's cats"}
     review: []
 
   - id: electrike
@@ -621,7 +612,6 @@ families:
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
       - {place: route_16, methods: [grass], seasons: all, tier: uncommon, why: "cheering by Nimbasa's stadiums, on the poles' power"}
-      - {place: route_5, methods: [grass], seasons: all, tier: rare, why: "Nimbasa's other edge"}
     review:
       - "Partners 'area' so that Minun can join."
 
@@ -642,7 +632,7 @@ families:
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
       - {place: route_16, methods: [grass], seasons: all, tier: rare, why: "with Plusle by Nimbasa"}
-      - {place: route_5, methods: [grass], seasons: all, tier: uncommon, why: "Nimbasa's other edge (the pair's balance across the two routes)"}
+      - {place: route_16, methods: [grass], seasons: all, tier: uncommon, why: "with Plusle by Nimbasa's stadiums"}
     review: []
 
   - id: spinda
@@ -732,7 +722,6 @@ families:
       - {place: route_1, methods: [grass], seasons: [spring], tier: common, stages: [budew], why: "the meadow's spring flowers"}
       - {place: route_12, methods: [grass], seasons: [spring, summer], tier: common, why: "the flower hills"}
       - {place: village_bridge, methods: [dark_grass], seasons: [spring, summer], tier: uncommon, stages: [roselia], why: "the flowery clearing"}
-      - {place: castelia_park, methods: [grass], seasons: [spring], tier: uncommon, stages: [budew], why: "the park's garden"}
     review:
       - "Roselia wild though it comes by friendship."
 
@@ -758,6 +747,8 @@ families:
       - {place: route_2, methods: [grass], seasons: all, tier: uncommon, why: "rabbits at the woodland edge"}
       - {place: route_3, methods: [grass], seasons: all, tier: uncommon, why: "the old fields"}
       - {place: route_16, methods: [dark_grass], seasons: all, tier: uncommon, why: "the forest edge"}
+      - {place: pinwheel_forest_outskirts, methods: [grass], seasons: all, tier: uncommon, why: "the woodland edge's rabbits"}
+      - {place: pinwheel_forest_outskirts, methods: [dark_grass], seasons: all, tier: uncommon, why: "the cliff's grass"}
     review: []
 
   - id: glameow
@@ -780,7 +771,6 @@ families:
     homes:
       - {place: castelia_park, methods: [grass], seasons: all, tier: uncommon, why: "an alley cat in the park"}
       - {place: route_9, methods: [grass], seasons: all, tier: uncommon, why: "the mall's alley cats"}
-      - {place: virbank_complex, methods: [grass], seasons: all, tier: rare, stages: [purugly], why: "fat on the complex's scraps"}
     review: []
 
   - id: stunky
@@ -802,7 +792,6 @@ families:
     homes:
       - {place: route_9, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the mall's trash at night"}
       - {place: route_16, methods: [grass], seasons: all, tier: uncommon, why: "the suburb's bins"}
-      - {place: route_2, methods: [grass], seasons: all, tier: rare, why: "the woodland edge at night"}
       - {place: route_5, methods: [dark_grass], seasons: all, tier: uncommon, why: "the road's leavings"}
     review: []
 
@@ -827,6 +816,7 @@ families:
       - {place: floccesy_ranch, methods: [grass], seasons: [winter], tier: exotic, stages: [shinx], why: "down to the ranch in winter: the trophy (the user's request)"}
       - {place: route_6, methods: [dark_grass], seasons: all, tier: rare, why: "the valley's woods, near Chargestone"}
       - {place: victory_road_forest, methods: [dark_grass], seasons: all, tier: rare, stages: [luxio, luxray], why: "the mountain forest's lynx"}
+      - {place: victory_road_forest, methods: [grass], seasons: all, tier: rare, stages: [luxio, luxray], why: "the mountain forest's clearings"}
     review: []
 
   - id: pachirisu
@@ -894,7 +884,6 @@ families:
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
       - {place: route_5, methods: [grass, dark_grass], seasons: all, tier: exotic, why: "the cook's food by the road: the trophy (the user's request)"}
-      - {place: route_12, methods: [dark_grass], seasons: [spring, summer], tier: very_rare, why: "drawn by the honey trees"}
     review: []
 
   - id: patrat
@@ -920,11 +909,11 @@ families:
       - {place: route_1, methods: [grass], seasons: all, tier: common, why: "the meadow"}
       - {place: route_2, methods: [grass], seasons: all, tier: common, why: "between the towns"}
       - {place: route_3, methods: [grass], seasons: all, tier: common, why: "the fields round the Day Care"}
-      - {place: castelia_park, methods: [grass], seasons: all, tier: uncommon, why: "the park's lawn"}
       - {place: route_5, methods: [grass], seasons: all, tier: uncommon, why: "by the road"}
       - {place: route_16, methods: [grass], seasons: all, tier: common, why: "the verges"}
       - {place: dreamyard, methods: [grass], seasons: all, tier: uncommon, why: "the overgrown ground"}
       - {place: floccesy_ranch, methods: [grass], seasons: all, tier: uncommon, why: "the barns' rodents"}
+      - {place: pinwheel_forest_outskirts, methods: [grass], seasons: all, tier: uncommon, why: "the meadow south of the road"}
     review: []
 
   - id: lillipup
@@ -952,6 +941,7 @@ families:
       - {place: route_3, methods: [grass], seasons: all, tier: uncommon, why: "the Day Care's fields"}
       - {place: abundant_shrine, methods: [grass], seasons: all, tier: uncommon, why: "the hill farms' dogs"}
       - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: rare, stages: [stoutland], why: "warm in its fur on the snowy cliffside"}
+      - {place: giant_chasm_outside, methods: [grass], seasons: all, tier: uncommon, why: "the countryside's dogs"}
     review: []
 
   - id: purrloin
@@ -978,6 +968,8 @@ families:
       - {place: route_5, methods: [grass], seasons: all, tier: uncommon, why: "by the busy road"}
       - {place: route_9, methods: [dark_grass], seasons: all, tier: uncommon, why: "the outskirts at night (its Hidden Grotto)"}
       - {place: dreamyard, methods: [grass], seasons: all, tier: uncommon, why: "the ruins"}
+      - {place: pinwheel_forest_outskirts, methods: [dark_grass], seasons: all, tier: uncommon, why: "the raised cliff by the road"}
+      - {place: route_3, methods: [dark_grass], seasons: all, tier: uncommon, why: "the wild edges by the town"}
     review: []
 
   - id: blitzle
@@ -1000,7 +992,6 @@ families:
     homes:
       - {place: route_3, methods: [dark_grass], seasons: all, tier: uncommon, why: "the wild grass at the edges, as in the original"}
       - {place: route_22, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "herds on the upland"}
-      - {place: route_12, methods: [dark_grass], seasons: all, tier: rare, why: "the open hills"}
     review: []
 
   - id: audino
@@ -1096,9 +1087,7 @@ families:
     wanderer: {appears: both, wanders: random, grass: float}
     homes:
       - {place: route_1, methods: [grass], seasons: [autumn], tier: common, why: "the autumn meadow (the places' suggestion)"}
-      - {place: route_5, methods: [grass], seasons: [autumn], tier: uncommon, stages: [cottonee], why: "blown along the road"}
       - {place: route_15, methods: [grass], seasons: [autumn], tier: rare, stages: [whimsicott], why: "whirlwinds on the windy ridge"}
-      - {place: route_12, methods: [grass], seasons: [summer], tier: uncommon, stages: [cottonee], why: "late summer on the hills"}
     review: []
 
   - id: petilil
@@ -1121,5 +1110,4 @@ families:
     homes:
       - {place: village_bridge, methods: [dark_grass], seasons: all, tier: uncommon, why: "the clearing's flowers all year"}
       - {place: route_12, methods: [grass], seasons: [spring, summer], tier: uncommon, why: "the flower hills"}
-      - {place: castelia_park, methods: [grass], seasons: [spring, summer], tier: rare, why: "the garden's flowers"}
     review: []

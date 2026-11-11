@@ -44,8 +44,6 @@ families:
       - {place: route_12, methods: [grass], seasons: [spring, summer], tier: common, why: "the flower hills"}
       - {place: village_bridge, methods: [dark_grass], seasons: all, tier: uncommon, stages: [butterfree], why: "the flautist's clearing, yellow flowers all year"}
       - {place: route_20, methods: [grass], seasons: [autumn], tier: uncommon, stages: [butterfree], why: "passing south down the valley in autumn"}
-      - {place: route_19, methods: [grass], seasons: [autumn], tier: uncommon, stages: [butterfree], why: "the valley's autumn passage"}
-      - {place: castelia_park, methods: [grass], seasons: [summer], tier: rare, stages: [butterfree], why: "the park's flowers"}
     review: []
 
   - id: weedle
@@ -190,7 +188,7 @@ families:
     wanderer: {appears: both, wanders: passive, grass: float}
     homes:
       - {place: route_20, methods: [grass, dark_grass], seasons: [autumn], tier: common, why: "its NPCs; the valley's autumn leaves"}
-      - {place: route_20, methods: [grass], seasons: [winter], tier: uncommon, why: "the leaf litter in winter"}
+      - {place: route_20, methods: [grass, dark_grass], seasons: [winter], tier: uncommon, why: "the leaf litter in winter"}
       - {place: floccesy_ranch, methods: [grass], seasons: [autumn, winter], tier: uncommon, why: "its NPCs; the forest's leaves"}
       - {place: route_6, methods: [grass], seasons: [autumn], tier: common, why: "the valley's autumn woods"}
       - {place: route_6, methods: [grass], seasons: [winter], tier: uncommon, why: "winter leaves"}
@@ -271,8 +269,8 @@ families:
     wanderer: {appears: both, wanders: aggressive, grass: stand}
     homes:
       - {place: route_12, methods: [dark_grass], seasons: [spring, summer, autumn], tier: exotic, why: "the honey trees: the trophy"}
-      - {place: pinwheel_forest, methods: [dark_grass], seasons: [summer], tier: very_rare, why: "the old forest's sap"}
       - {place: route_6, methods: [dark_grass], seasons: [summer], tier: very_rare, why: "the valley's old trees"}
+      - {place: nature_preserve, methods: [dark_grass], seasons: [summer], tier: rare, why: "the preserve's old trees"}
     review: []
 
   - id: yanma
@@ -325,7 +323,7 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
-      - {place: route_20, methods: [grass], seasons: [spring, summer], tier: common, stages: [wurmple], why: "its NPCs; caterpillars in the clearings"}
+      - {place: route_20, methods: [grass, dark_grass], seasons: [spring, summer], tier: common, stages: [wurmple], why: "its NPCs; caterpillars in the woods"}
       - {place: route_20, methods: [grass, dark_grass], seasons: [autumn], tier: common, stages: [silcoon, cascoon, beautifly, dustox], why: "the route's autumn: cocoons, butterflies and moths"}
       - {place: route_2, methods: [grass], seasons: [spring, summer], tier: common, why: "light woods"}
       - {place: pinwheel_forest, methods: [grass], seasons: [spring, summer, autumn], tier: common, why: "the bugs' life cycle"}
@@ -353,11 +351,9 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
-      - {place: route_2, methods: [grass], seasons: [spring, summer], tier: uncommon, stages: [nincada], why: "coming up from the woodland soil"}
       - {place: route_16, methods: [grass], seasons: [summer], tier: uncommon, why: "cicadas along the road"}
       - {place: route_12, methods: [dark_grass], seasons: [summer], tier: uncommon, stages: [ninjask], why: "round the honey trees' sap"}
       - {place: pinwheel_forest, methods: [grass], seasons: [summer], tier: uncommon, why: "the forest's summer song"}
-      - {place: castelia_park, methods: [grass], seasons: [summer], tier: rare, why: "cicadas in the city's trees"}
     review: []
 
   - id: volbeat
@@ -454,7 +450,6 @@ families:
       - {place: pinwheel_forest, methods: [grass], seasons: all, tier: uncommon, form: 0, why: "a Plant Cloak in the forest"}
       - {place: route_4, methods: [grass], seasons: all, tier: rare, form: 1, stages: [burmy, wormadam], why: "a Sandy Cloak from the road's sand"}
       - {place: virbank_complex, methods: [grass], seasons: all, tier: uncommon, form: 2, stages: [burmy, wormadam], why: "a Trash Cloak from the complex's scrap"}
-      - {place: castelia_park, methods: [grass], seasons: all, tier: rare, form: 2, stages: [burmy, wormadam], why: "a Trash Cloak in the city"}
     review:
       - "Burmy's cloak by place (Plant 0, Sandy 1, Trash 2): check the form numbers in-game."
 
@@ -678,6 +673,7 @@ families:
       - {place: pinwheel_forest, methods: [dark_grass], seasons: all, tier: uncommon, stages: [nuzleaf], why: "deep in the forest"}
       - {place: pinwheel_forest, methods: [dark_grass], seasons: all, tier: very_rare, stages: [shiftry], why: "the old forest's Leaf Stone influence"}
       - {place: route_6, methods: [dark_grass], seasons: [autumn], tier: uncommon, why: "the valley's oaks"}
+      - {place: route_20, methods: [dark_grass], seasons: all, tier: uncommon, stages: [seedot, nuzleaf], why: "deeper in the oak woods"}
     review: []
 
   - id: shroomish
@@ -725,7 +721,6 @@ families:
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
       - {place: route_18, methods: [dark_grass], seasons: all, tier: uncommon, why: "the island's tropical treetops"}
-      - {place: pinwheel_forest, methods: [dark_grass], seasons: all, tier: rare, why: "the old forest's canopy"}
       - {place: nature_preserve, methods: [dark_grass], seasons: all, tier: rare, why: "untouched forest"}
     review: []
 
@@ -749,6 +744,7 @@ families:
     homes:
       - {place: route_18, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the island's treetops"}
       - {place: route_12, methods: [dark_grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the honey trees (Sinnoh's)"}
+      - {place: nature_preserve, methods: [dark_grass], seasons: all, tier: rare, why: "the preserve's treetops"}
     review: []
 
   - id: pansage
@@ -842,6 +838,9 @@ families:
       - {place: route_6, methods: [dark_grass], seasons: [summer, autumn], tier: rare, why: "the valley's woods"}
       - {place: victory_road_forest, methods: [dark_grass], seasons: [spring, summer, autumn], tier: uncommon, stages: [ursaring], why: "the mountain forest's bears"}
       - {place: route_23, methods: [grass], seasons: [summer, autumn], tier: rare, stages: [ursaring], why: "the conifer wood's stalkers"}
+      - {place: nature_preserve, methods: [dark_grass], seasons: [spring, summer, autumn], tier: uncommon, why: "bears safe in the preserve"}
+      - {place: route_11, methods: [dark_grass], seasons: [winter], tier: very_rare, stages: [ursaring], why: "a bear woken from its winter sleep"}
+      - {place: victory_road_forest, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, stages: [ursaring], why: "the mountain forest's clearings"}
     review: []
 
   - id: tangela
@@ -957,7 +956,7 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
-      - {place: route_20, methods: [grass], seasons: [spring, summer], tier: common, why: "its NPCs"}
+      - {place: route_20, methods: [grass, dark_grass], seasons: [spring, summer], tier: common, why: "its NPCs"}
       - {place: route_2, methods: [grass], seasons: [spring, summer], tier: uncommon, why: "light woods at night"}
       - {place: route_6, methods: [grass], seasons: [spring, summer], tier: common, why: "the valley's clearings"}
       - {place: route_16, methods: [dark_grass], seasons: [spring, summer], tier: uncommon, why: "the forest edge"}
@@ -984,7 +983,6 @@ families:
     homes:
       - {place: route_18, methods: [grass, dark_grass], seasons: all, tier: uncommon, stages: [bellsprout, weepinbell], why: "the hot, humid island"}
       - {place: route_18, methods: [dark_grass], seasons: all, tier: very_rare, stages: [victreebel], why: "the jungle's Leaf Stone influence"}
-      - {place: pinwheel_forest, methods: [dark_grass], seasons: [summer], tier: uncommon, why: "the forest's humid summer"}
       - {place: route_7, methods: [grass], seasons: [summer], tier: uncommon, why: "the warm, wet marsh"}
       - {place: pinwheel_forest_outskirts, methods: [dark_grass], seasons: [summer], tier: uncommon, why: "the humid cliffs' puddles"}
     review: []

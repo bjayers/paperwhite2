@@ -9,7 +9,7 @@ the generator (still to write) turns them, with `exceptions.yaml` and the places
 - `batches.yaml`: which batch file holds each family; every family is in exactly one list.
 - `migration.md`: the birds' region-wide map of who is where in each season, which other batches follow too.
 - `<batch>.yaml`: the entries, with a summary at the top.
-- `report.md`: the balance pass, the review list and the special-encounter suggestions (written last).
+- `report.md`: the balance pass, the review list and the special-encounter suggestions.
 
 ## An entry
 
@@ -53,6 +53,9 @@ the generator (still to write) turns them, with `exceptions.yaml` and the places
 - `areas: [...]` in a home limits it to some of the place's maps (Virbank Complex 2 only).
 - `homes_by: settings` marks a wild family placed by the settings rather than homes (Audino's share of shaking
   grass).
+- **Rippling water**: a rippling table with nothing of its own in a season and time takes the same water's plain
+  table (surf or fishing) then, favouring the later stages (a generator rule drafted 2026-11-14, for the user's
+  approval). Rippling homes of a family's own come first.
 - **Stages** that aren't wild stay out of every home. **Partners** `area` means any Pokémon of that area may join a
   double or triple.
 - **Levels,** by default (rules.md, 5): a first stage from 2 to its evolution level + 3; a later stage from the level
@@ -60,5 +63,6 @@ the generator (still to write) turns them, with `exceptions.yaml` and the places
   evolution, a guess at the level a wild one would have it (stated in `levels`). Babies cap lower.
 - **Tiers:** common, uncommon, rare, very_rare, exotic (`system.md`). Exotic is the trophy tier (rules.md, 8).
 - Check the files with `python3 tools/dictionary_check.py` (from this folder); `--counts` and `--report` print, per
-  place and method, how many families and which live there in each season.
+  place and method, how many families and which live there in each season. `python3 tools/balance.py` is the balance
+  pass (empty, crowded and sparse tables by season and day or night, type mix, the Nature Preserve rule).
 - `review` lists every uncertain call; `report.md` gathers them for the morning.
