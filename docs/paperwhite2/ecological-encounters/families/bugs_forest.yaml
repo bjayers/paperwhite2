@@ -464,7 +464,7 @@ families:
       - "Real world: honeybee colonies forage flowers from spring to autumn and cluster in the hive in winter."
     habitats: {flower_field: 3, meadow: 2, woodland_edge: 2}
     time: {periods: day, strength: strict}
-    seasons: spring to autumn; in the hive (not found) in winter
+    seasons: spring to autumn; in winter the colony clusters in the hive, and only the queen (Vespiquen) is found, rarely
     migration: resident
     weather: {more: [], less: [rain, gusty_rain, thunderstorm], only: []}
     abundance: common
@@ -479,6 +479,7 @@ families:
       - {place: lostlorn_forest, methods: [grass], seasons: [spring, summer], tier: uncommon, stages: [combee], why: "the forest's clearing of flowers"}
       - {place: village_bridge, methods: [dark_grass], seasons: [spring, summer, autumn], tier: uncommon, stages: [combee], why: "the flautist's flowery clearing"}
       - {place: route_1, methods: [grass], seasons: [spring], tier: uncommon, stages: [combee], why: "the meadow's spring blossom"}
+      - {place: route_12, methods: [dark_grass], seasons: [winter], tier: rare, stages: [vespiquen], why: "the queen alone by the hive in winter, guarding it while the colony clusters"}
     review: []
 
   - id: sewaddle

@@ -1051,8 +1051,9 @@ families:
     habitats: {deciduous_forest: 3, woodland_edge: 3, meadow: 2}
     time: {periods: [morning, evening, night], strength: preferred}
     seasons: >-
-      Deerling on Route 6 all year in the season's form; Sawsbuck arrive with spring (the harbingers), stay to autumn,
-      and winter in Lostlorn's sheltered forest.
+      Deerling on Route 6 all year in the season's form, and on Route 12's snowless hills in winter (Deerling only:
+      Sawsbuck's winter coat looks too snowy for them, the user); Sawsbuck arrive with spring (the harbingers), stay to
+      autumn, and winter in Lostlorn's sheltered forest.
     migration: partial
     weather: {more: [], less: [], only: []}
     abundance: common
@@ -1069,6 +1070,7 @@ families:
       - {place: lostlorn_forest, methods: [dark_grass], seasons: [winter], tier: uncommon, form: 3, stages: [sawsbuck], why: "wintering in the forest's shelter"}
       - {place: route_7, methods: [grass], seasons: [summer], tier: uncommon, form: 1, stages: [deerling], why: "grazing the marsh's edge in summer"}
       - {place: route_7, methods: [grass], seasons: [autumn], tier: uncommon, form: 2, stages: [deerling], why: "autumn on the marsh's edge"}
+      - {place: route_12, methods: [grass, dark_grass], seasons: [winter], tier: uncommon, form: 3, stages: [deerling], why: "the young graze the bare, snowless hills in winter (Sawsbuck's snowy coat belongs to snowier places: the user)"}
     review: []
 
   - id: cottonee
