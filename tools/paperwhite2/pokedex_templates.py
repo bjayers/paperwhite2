@@ -77,7 +77,7 @@ TEXT = ROOT / "res/text/system/pokedex_data.txt"
 ART = ROOT / "res/paperwhite2/pokedex_art"
 ART_TARGETS = ROOT / "res/paperwhite2/art/targets.json"
 # The sub-pages in the page's order (POKEDEX_INFO_SUBPAGE_*)
-PAGES = ("stats", "data", "moves", "evo", "matchups")
+PAGES = ("stats", "data", "moves", "evo", "area", "matchups")
 FONTS = "files/a/0/2/3"
 # The menus' common graphics: the type icons' palette (three rows) and each type's 32 by 16 characters
 MENU_COMMON = "files/a/0/8/2"
