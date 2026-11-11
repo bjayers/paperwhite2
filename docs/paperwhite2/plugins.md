@@ -1828,12 +1828,13 @@ check, X and return stay. `PokedexDetail_StartPage` (`pokedex_detail.c`) starts 
 caller (the list, the habitat list, the shortcuts, `POKEDEX_START_MAP` and the rest) or a page asked for. The old
 Area, Cry and Forms pages are still built, unreachable. **Bottom** (sub
 engine): the grid on BG 4, the bar of sub-pages and the panels drawn into two windows on BG 7 (palette 3, a table in
-the panels' file until there is art), and on Stats the buttons Abilities, Cry, Turn, Form, Shiny and Language on BG 6
+the panels' file until there is art), and on Stats the buttons Flavour, Turn, Cry, Form, Shiny and Abilities on BG 6
 (`AppTaskMenuWin`, palettes 4 and 5, 9 by 3 tiles from tile row 3 at a 3-row pitch, shown 2 px higher, so a sixth
 is y 142-165, off the touch bar; a change of sub-page or Pokémon makes the new buttons, prints them and loads their
 characters before it frees the old ones, `PokedexInfoPage_ResetButtons`: freed first, the new characters went over
 the old buttons', whose screen showed until the VBlank, so Matchups' Default showed pieces of Abilities for a frame
-going to Stats), hidden when they can do nothing (Abilities until the species is caught), the shown
+going to Stats), hidden when they can do nothing (Abilities until the species is caught, Flavour until then or
+without another game's entry), the shown
 ones stacked from the top in that order with no gaps (`PokedexInfoPage_GetButtonPlace` counts the shown ones before
 a button, for its window and its touch). **The buttons' lift**: they are
 tile-aligned windows on the art's BG, so a sub-page lifts them by scrolling BG 6 up (`sSubpageLift` beside
@@ -1850,6 +1851,31 @@ ring of the sub-pages and Moves' sets, wrapping: Stats, Data, Moves' Level Up, T
 (`PokedexInfoPage_Cycle`; back into Moves enters at Egg, forward at Level Up): the touch bar takes Left and Right no more while the page runs (`PokedexDetailTouchbar_SetDisabledKeys`, `pokedex_detail_touchbar.c`,
 under `PAPERWHITE2`), and the page gives the keys back as it ends. The text is `res/text/system/pokedex_data.txt` (`TEXT_BANK_POKEDEX_DATA`). Every place is a constant at
 the top of the two files.
+
+**Flavour** (2026-11-11, `paperwhite2_pokedex_info_flavour.c`, `docs/paperwhite2/design/pokedex-flavour.md`): Stats'
+first button cycles the entry's description through the other games' entries of the species and back to White 2's
+own; Select now does what the Language button did (the Pokédex's other languages, where it has the entry in them),
+and resets Flavour to White 2's entry, as does Flavour's own press to the game's language. Another Pokémon starts on
+White 2's entry; another form keeps the shown game's. The entries come from the user's own ROMs at build time
+(`tools/paperwhite2/dex_flavour.py`, `orig/dex_{black,white,black2,diamond,pearl,platinum,heartgold,soulsilver}.nds`,
+each skipped when it isn't there): only those that differ from White 2's (`res/pokemon/*/data.json`, line breaks and
+spaces normalised), one per wording, in the order Black, White, Black 2, Diamond, Pearl, Platinum, HeartGold,
+SoulSilver, with a bit for each game sharing it; each fits the text window's 3 lines of 222 px in font 0 (re-wrapped
+at its spaces if not, left out if it still doesn't). With all eight ROMs: 1,614 entries, every species 1-649 has at
+least one, at most 5 (326,796 bytes, `build/w2_us/paperwhite2/dex_flavour.bin`, never committed). They are
+`ARCID_POKEDEX_GRA`'s member 166 (`FLAVOUR_FILE`; `pokedex_evo.py` adds it, an empty one without the file), read by
+range for the shown species (its two offsets, then its entries, about 1 KB at most). The page draws the entry into
+the text window as its other text (`PokedexInfo_BeginOtherText`, as Abilities and Data's items), again as the move
+panel or Area's map closes and for another form. **The version tab**: while another game's entry shows (not on Data,
+an ability, the move panel or the map), the user's art (`res/paperwhite2/pokedex_art/version_flavour.png`, member 167,
+`TAB_FILE`) shows at x 0-77, y 123-139 as three main OBJs of 32 by 32 from x 0, y 120 (the party icons' cells), in
+main OBJ row 8, which nothing on the page uses, in front of BGs 1-3; its label (the game's name, or the short names
+of the games sharing the entry with "/": "HG/SS", "B/W/D/P/Pt") is drawn in font 1 over the art, its light grey with a
+dark grey shadow, from x 11 or further left to end by x 57 (the art's stripes), into the OBJs' characters, which go to
+VRAM in the VBlank (`PokedexInfoFlavour_VBlank`) that shows the entry's text, the OBJs shown or hidden in that VBlank's
+OAM (`PokedexInfoFlavour_ShowTab`, each frame from the page's state). `dex_flavour.py template` (and
+`pokedex_templates.py`) writes the tab's canvas, a guide with its OBJs' and label's regions, and references with the
+widest labels.
 
 **Matchups** (shown once seen): the 17 attacking types in 3 rows of 6 (the 18th place free for a Fairy type), each the
 game's type icon (`a/0/8/2` palette 0x21, chars 0x22+type, cells and animations 0x3d and 0x40 for the 1D 128 KB

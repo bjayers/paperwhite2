@@ -2,8 +2,8 @@
 """Paper White 2: the Pokédex Info page's Evo data, its sprites' places and its Area data, members of the Pokédex's
 graphics archive (ARCID_POKEDEX_GRA, a/1/5/7) after its own (docs/paperwhite2/plugins.md, Pokédex).
 
-    pokedex_evo.py archive ARCHIVE_IN ARCHIVE_OUT   # the build: the archive with the seven members after its own
-    pokedex_evo.py check                            # print the largest families
+    pokedex_evo.py archive ARCHIVE_IN ARCHIVE_OUT [--flavour FILE]   # the build: the archive with its nine members
+    pokedex_evo.py check                                             # print the largest families
 
 The game's evolution data (a/0/1/9, res/pokemon/*/data.json's "evolutions") only names what each species evolves
 into, so the page needs each species' family root to draw its tree from (paperwhite2_pokedex_info_evo.c):
@@ -26,6 +26,11 @@ into, so the page needs each species' family root to draw its tree from (paperwh
   from area_top_box.png).
 - HABITAT_GRID_MEMBER: the Habitat List grid's colours for the All method (grey) and Dark Grass (a darker green),
   derived from the archive's own green (habitat_grid.py; GRID_COLORS_FILE in src/ov303/pokedex_habitat_graphic.c).
+- FLAVOUR_MEMBER: the other games' Pokédex entries for the Info page's Flavour, the file that dex_flavour.py's build
+  command wrote from the user's ROMs (FLAVOUR_FILE in paperwhite2_pokedex_info_flavour.c); without one, a member with
+  no entries.
+- TAB_MEMBER: the version tab that names the game of the entry shown (dex_flavour.py's tab_member, from
+  version_flavour.png; TAB_FILE there).
 
 A family has at most FAMILY_MAX species (Eevee's 8), the rows the page has room for; check fails past it.
 """
@@ -41,6 +46,8 @@ from tools.data.datajson import constants  # noqa: E402
 from tools.data.narc import read_narc, write_narc  # noqa: E402
 from tools.data.nitro_2d import read_indexed_png  # noqa: E402
 from tools.data.datajson import DataError  # noqa: E402
+from tools.paperwhite2.dex_flavour import FlavourError, tab_member  # noqa: E402
+from tools.paperwhite2.dex_flavour import member as flavour_member  # noqa: E402
 from tools.paperwhite2.encounters import area_index  # noqa: E402
 from tools.paperwhite2.habitat_grid import GREEN_MEMBER  # noqa: E402
 from tools.paperwhite2.habitat_grid import member as habitat_grid_member  # noqa: E402
@@ -67,6 +74,10 @@ AREA_BOX_MEMBER = ARCHIVE_MEMBERS + 5
 # The Habitat List grid's colours of All and Dark Grass (habitat_grid.py), GRID_COLORS_FILE in
 # src/ov303/pokedex_habitat_graphic.c
 HABITAT_GRID_MEMBER = ARCHIVE_MEMBERS + 6
+# The Info page's Flavour: the other games' entries and the version tab (dex_flavour.py), FLAVOUR_FILE and TAB_FILE in
+# paperwhite2_pokedex_info_flavour.c
+FLAVOUR_MEMBER = ARCHIVE_MEMBERS + 7
+TAB_MEMBER = ARCHIVE_MEMBERS + 8
 # POKEDEX_INFO_EVO_FAMILY_MAX in include/paperwhite2/pokedex_info.h
 FAMILY_MAX = 8
 BALL_SIZE = 16
@@ -147,7 +158,7 @@ def balls_member():
     return struct.pack("<16H", *palette) + bytes(tiles)
 
 
-def archive(source, output):
+def archive(source, output, flavour=None):
     files = read_narc(source.read_bytes())
     if len(files) != ARCHIVE_MEMBERS:
         raise EvoError(f"{source}: {len(files)} members, not the {ARCHIVE_MEMBERS} that the Evo members follow "
@@ -156,7 +167,8 @@ def archive(source, output):
                        f"AREA_INDEX_FILE, AREA_ICONS_FILE and AREA_BOX_FILE in paperwhite2_pokedex_info_area.c, and "
                        f"ICONS_FILE in paperwhite2_habitat_dex.c)")
     files += [family_member(), balls_member(), middles_member(), area_index(), area_icons_member(),
-              area_box_member(), habitat_grid_member(files[GREEN_MEMBER])]
+              area_box_member(), habitat_grid_member(files[GREEN_MEMBER]),
+              flavour.read_bytes() if flavour is not None else flavour_member({}), tab_member()]
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_bytes(write_narc(files))
 
@@ -167,16 +179,17 @@ def main():
     command = commands.add_parser("archive")
     command.add_argument("source", type=Path)
     command.add_argument("output", type=Path)
+    command.add_argument("--flavour", type=Path)
     commands.add_parser("check")
     args = parser.parse_args()
     try:
         if args.command == "archive":
-            archive(args.source, args.output)
+            archive(args.source, args.output, args.flavour)
         else:
             _, sizes = roots()
             largest = sorted(sizes.items(), key=lambda item: -item[1])[:5]
             print("largest families (root species, size):", largest, "; balls", len(balls_member()), "bytes")
-    except (EvoError, SpriteError, DataError, IconError) as error:
+    except (EvoError, SpriteError, DataError, IconError, FlavourError) as error:
         sys.exit(f"pokedex_evo.py: {error}")
 
 

@@ -373,6 +373,14 @@ HACK_MEMBER_EXTRA_SOURCES = {"a/1/2/7": ["res/paperwhite2/conditions", "res/poke
                                          "res/paperwhite2/level_scaling.json", "res/town_map", "res/field/zones/*.json",
                                          "include/system/zone_weather.h", "include/paperwhite2/weather_groups.h"],
                              "a/1/2/6": ["res/paperwhite2/conditions", "res/field/events"]}
+# Paper White 2: a file the hack's build makes from the user's own ROMs for an archive's members, with the option that
+# hands it to the members' tool: the Pokédex Info page's Flavour, the other games' Pokédex entries, which
+# tools/paperwhite2/dex_flavour.py takes from the ROMs in orig/ that are there (DEX_FLAVOUR_ROMS) into build/, never
+# into res/ or the repository. A ROM added later needs configure.py to run again
+HACK_MEMBER_BUILT = {"a/1/5/7": ("--flavour", "dex_flavour.bin")}
+DEX_FLAVOUR_ROMS = "orig/dex_*.nds"
+DEX_FLAVOUR_SOURCES = ["res/pokemon/*/data.json", "res/text/system/pokedex_data.txt",
+                       "res/paperwhite2/pokedex_art/version_flavour.png"]
 # Paper White 2: data that the hack's build makes from other data before packing it: the data directory, and the tool,
 # its command (which writes the directory given) and what it reads. The Pokédex's Habitat List comes from the wild
 # encounters' data, with res/pokedex/habitats/ as its template (encounters.py habitats)
@@ -854,10 +862,25 @@ def add_version(n: Writer, version: str, dsd: Path, bugfix: bool, shift: int,
                                             [ROOT / pattern] if (ROOT / pattern).is_file() else
                                             (ROOT / pattern).rglob("*"))
                                   if p.is_file())
+                built = []
+                flags = ""
+                if path in HACK_MEMBER_BUILT:
+                    option, name = HACK_MEMBER_BUILT[path]
+                    built = [build_dir / "paperwhite2" / name]
+                    flags = f"{option} {built[0]}"
+                    # The Flavour's entries from the ROMs present, measured in the game's own fonts
+                    flavour_tool = "tools/paperwhite2/dex_flavour.py"
+                    inputs = sorted(str(p.relative_to(ROOT)) for pattern in [DEX_FLAVOUR_ROMS, *DEX_FLAVOUR_SOURCES]
+                                    for p in ROOT.glob(pattern) if p.is_file())
+                    font = extract_dir / "files" / "a" / "0" / "2" / "3"
+                    n.build(built, "dex_flavour", inputs,
+                            implicit=[flavour_tool, *script_imports(flavour_tool), str(font),
+                                      source_list(build_dir, "dex_flavour", inputs)],
+                            order_only=[files_ok], variables={"font": str(font)})
                 n.build([output], "hack_members", [source],
-                        implicit=[tool, *members, *script_imports(tool), *constant_sources,
+                        implicit=[tool, *members, *built, *script_imports(tool), *constant_sources,
                                   source_list(build_dir, f"members_{path.replace('/', '_')}", members)],
-                        order_only=[files_ok], variables={"tool": tool})
+                        order_only=[files_ok], variables={"tool": tool, "member_flags": flags})
         for path, archive in zip(paths, outputs):
             archive_ok = stamp_dir / "files" / f"{path.replace('/', '_')}.ok"
             n.build([archive_ok], "check_file", [archive], implicit=[extract_dir / "config.yaml"],
@@ -1072,7 +1095,9 @@ def main():
     n.rule("narc", "$python tools/data/narc.py pack $out $in", "Packing $out")
     n.rule("text_pack", "$python tools/text/text_data.py pack $dir $out", "Packing $out")
     n.rule("data_pack", "$python $script pack $pack_flags $dir $game $out", "Packing $dir")
-    n.rule("hack_members", "$python $tool archive $in $out", "Adding the hack's members to $out")
+    n.rule("hack_members", "$python $tool archive $in $out $member_flags", "Adding the hack's members to $out")
+    n.rule("dex_flavour", "$python tools/paperwhite2/dex_flavour.py build $out --font $font",
+           "Taking the other games' Pokédex entries from their ROMs")
     n.rule("hack_generate", "$python $tool $subcommand $dir && touch $out", "Making $dir")
     n.rule("check_file", "cmp $in $original && mkdir -p $$(dirname $out) && touch $out", "Checking $in")
     n.rule("files_tree", "$python tools/build/files_tree.py $source $output $built --stamp $out",

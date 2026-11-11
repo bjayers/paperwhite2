@@ -43,15 +43,17 @@
 // shows the main engine on the top screen while this page runs (pokedex_detail.c), so the top has the 3D: the
 // Pokémon's entry from overlay 296, as the original's bottom screen showed it, with the battle's animated sprite (MCSS,
 // on BG 0) where the still one was. The bottom screen, the sub engine's, has the sub-pages Stats, Data, Moves, Evo and
-// Matchups (paperwhite2_pokedex_info_panels.c), and, on Stats, the buttons Abilities, Cry, Turn, Form, Shiny and
-// Language in the menus' style. A button that can't do anything for the Pokémon is hidden, and the others close up
-// from the top. Abilities shows the species' abilities in turn in the entry's text window, in place of its description,
-// and on Data that window shows the species' wild held items. On Matchups, a button for each of the species' abilities
-// picks the one whose effect the type chart shows. Moves lists a set of the Pokémon's moves, with a panel of the
-// cursor's move over the top screen (paperwhite2_pokedex_move_panel.c). Evo shows the Pokémon's family, and touching
-// one of it opens its page. Left and Right step through the sub-pages, L and R through the sub-pages and Moves' sets in
-// one ring; the touch bar's Left and Right (to Area, Cry and Forms, still there by touch) are the page's while it runs,
-// and on Moves its Up and Down and, while the panel is open, its B
+// Matchups (paperwhite2_pokedex_info_panels.c), and, on Stats, the buttons Flavour, Turn, Cry, Form, Shiny and
+// Abilities in the menus' style. A button that can't do anything for the Pokémon is hidden, and the others close up
+// from the top. Flavour shows the other games' entries of the species in turn in place of this game's, with a tab
+// naming the game (paperwhite2_pokedex_info_flavour.c), and Select the entry in the Pokédex's other languages, as the
+// original's Language did. Abilities shows the species' abilities in turn in the entry's text window, in place of its
+// description, and on Data that window shows the species' wild held items. On Matchups, a button for each of the
+// species' abilities picks the one whose effect the type chart shows. Moves lists a set of the Pokémon's moves, with a
+// panel of the cursor's move over the top screen (paperwhite2_pokedex_move_panel.c). Evo shows the Pokémon's family,
+// and touching one of it opens its page. Left and Right step through the sub-pages, L and R through the sub-pages and
+// Moves' sets in one ring; the touch bar's Left and Right (to Area, Cry and Forms, still there by touch) are the page's
+// while it runs, and on Moves its Up and Down and, while the panel is open, its B
 
 // Where the sprite stands on the top screen, in pixels, in the entry's left panel, where the original's still sprite
 // had its 96 by 96 frame centered at 50, 72: its middle at SPRITE_X, and its visible pixels' middle at y 72, its feet
@@ -137,12 +139,12 @@ enum {
 
 // The buttons, top to bottom
 enum {
-    BUTTON_ABILITIES,
-    BUTTON_CRY,
+    BUTTON_FLAVOUR,
     BUTTON_TURN,
+    BUTTON_CRY,
     BUTTON_FORM,
     BUTTON_SHINY,
-    BUTTON_LANGUAGE,
+    BUTTON_ABILITIES,
     BUTTON_COUNT,
 };
 #define BUTTON_NONE BUTTON_COUNT
@@ -189,9 +191,15 @@ typedef struct {
     u32 abilityCount;
     u32 chosenAbility;
     // The ability that the top screen's text window shows on Stats, by its place in sAbilityParams, or ABILITY_MAX for
-    // the description, and whether the window shows the page's text (an ability or the held items)
+    // the description, and whether the window shows the page's text (an ability, the held items or another game's
+    // entry)
     u32 shownAbility;
     BOOL otherText;
+    // The other games' entries of the species, the one shown in place of the description (from 1), or 0 for this
+    // game's own, and whether the window shows it, which shows its tab
+    PokedexInfoFlavour *flavour;
+    u32 flavourEntry;
+    BOOL flavourShown;
     // Moves' set, which it keeps when another sub-page shows, and the top screen's panel of its moves
     PokedexInfoMoves moves;
     PokedexMovePanel *movePanel;
@@ -259,6 +267,9 @@ static BOOL PokedexInfoPage_FindLook(PokeDexSave *pokedex, u16 species, u32 form
 static u32 PokedexInfoPage_CountSeenLooks(PokeDexSave *pokedex, u16 species);
 static void PokedexInfoPage_NextForm(PokeDexSave *pokedex, PokedexInfoPageWork *wk);
 static BOOL PokedexInfoPage_HasLanguage(PokeDexSave *pokedex, u16 species, u32 language);
+static BOOL PokedexInfoPage_HasOtherLanguage(PokeDexSave *pokedex, u16 species);
+static void PokedexInfoPage_NextLanguage(PokedexDetailInfoParam *param, PokeDexSave *pokedex, PokedexInfoPageWork *wk);
+static void PokedexInfoPage_DrawFlavour(PokedexInfoPageWork *wk);
 static void PokedexInfoPage_NextShownAbility(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk);
 static void PokedexInfoPage_ShowTopText(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk);
 static void PokedexInfoPage_EndOtherText(PokedexInfoPageWork *wk);
@@ -282,8 +293,8 @@ static const u8 sAbilityParams[ABILITY_MAX] = {
 };
 
 static const u16 sButtonLabels[BUTTON_COUNT] = {
-    PokedexData_Text_Abilities, PokedexData_Text_Cry,   PokedexData_Text_Turn,
-    PokedexData_Text_Form,      PokedexData_Text_Shiny, PokedexData_Text_Language,
+    PokedexData_Text_Flavour, PokedexData_Text_Turn,  PokedexData_Text_Cry,
+    PokedexData_Text_Form,    PokedexData_Text_Shiny, PokedexData_Text_Abilities,
 };
 
 // Which of the species' abilities the top screen shows, by its place in sAbilityParams
@@ -330,6 +341,7 @@ BOOL PokedexInfoPage_Exit(PokedexDetailProcSys *sys, int *seq, void *param_, voi
     PokedexInfoPageWork *wk = work;
 
     PokedexInfoPage_FreeButtons(wk, common);
+    PokedexInfoFlavour_Free(wk->flavour);
     AppTaskMenuRes_Free(wk->smallButtonRes);
     AppTaskMenuRes_Free(wk->buttonRes);
     // The panel and Area's map have the entry's text until they close, as the page's end closes them
@@ -429,6 +441,9 @@ BOOL PokedexInfoPage_Main(PokedexDetailProcSys *sys, int *seq, void *param_, voi
         wk->smallButtonRes = AppTaskMenuRes_Create(POKEDEX_INFO_BUTTON_BG, POKEDEX_INFO_BUTTON_PALETTE,
                                                    PokedexInfoPanels_GetSmallFont(wk->panels),
                                                    PokedexDetailCommon_GetPrintQueue(common), param->heapId);
+        wk->flavour = PokedexInfoFlavour_Create(param->heapId, PokedexInfoPanels_GetSmallFont(wk->panels),
+                                                PokedexDetailGraphic_GetClActUnit(graphic));
+        PokedexInfoFlavour_LoadSpecies(wk->flavour, wk->species);
         GFL_BGSysSetBGPriority(POKEDEX_INFO_BUTTON_BG, POKEDEX_INFO_ART_PRIORITY);
         GFL_BGSysSetBGEnabled(POKEDEX_INFO_BUTTON_BG, TRUE);
         // Area after the Habitat List's Pokémon, else Stats
@@ -500,6 +515,9 @@ BOOL PokedexInfoPage_Main(PokedexDetailProcSys *sys, int *seq, void *param_, voi
         PokedexInfo_Update(wk->entry);
         PokedexInfoPanels_Update(wk->panels);
         PokedexInfoPage_UpdateButtons(wk, common);
+        // The tab of the entry the window shows, which lands in the VBlank that the entry's text does
+        PokedexInfoFlavour_ShowTab(wk->flavour,
+                                   wk->flavourShown && !PokedexInfoPage_IsEntryHidden(wk) ? wk->flavourEntry : 0);
     }
     if (wk->mcssSys != NULL) {
         GFL_TCBMgrUpdate(wk->tcbMgr);
@@ -608,7 +626,7 @@ void PokedexInfoPage_Draw(PokedexDetailProcSys *sys, int *seq, void *param, void
 }
 
 // The Pokémon the list is at, as the Pokédex shows it, or a party Pokémon as it is (paperwhite2/pokedex_shortcut.h),
-// from the front. The entry stays in its language if the Pokédex has the Pokémon's entry in it
+// from the front, with this game's entry. The entry stays in its language if the Pokédex has the Pokémon's entry in it
 static void PokedexInfoPage_LoadPokemon(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                         PokedexDetailCommon *common) {
     PokeDexSave *pokedex = GameData_GetPokedex(PokedexDetailCommon_GetGameData(common));
@@ -639,6 +657,8 @@ static void PokedexInfoPage_LoadPokemon(PokedexDetailInfoParam *param, PokedexIn
     wk->back = FALSE;
     wk->chosenAbility = 0;
     wk->shownAbility = ABILITY_MAX;
+    wk->flavourEntry = 0;
+    wk->flavourShown = FALSE;
     if (!PokedexInfoPage_HasLanguage(pokedex, wk->species, wk->language)) {
         wk->language = LANGUAGE_GAME;
     }
@@ -649,6 +669,7 @@ static void PokedexInfoPage_LoadPokemon(PokedexDetailInfoParam *param, PokedexIn
 static void PokedexInfoPage_ChangePokemon(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                           PokedexDetailCommon *common) {
     PokedexInfoPage_LoadPokemon(param, wk, common);
+    PokedexInfoFlavour_LoadSpecies(wk->flavour, wk->species);
     if (PokedexInfoPage_IsEntryHidden(wk)) {
         wk->entryStale = TRUE;
     } else {
@@ -663,7 +684,8 @@ static void PokedexInfoPage_ChangePokemon(PokedexDetailInfoParam *param, Pokedex
 }
 
 // Touching a sub-page's tab switches to it, Moves takes its own touches and keys, and on Stats and Matchups touching a
-// button pushes it; Left and Right step through the sub-pages, L and R through the sub-pages and Moves' sets
+// button pushes it; Left and Right step through the sub-pages, L and R through the sub-pages and Moves' sets, and
+// Select through the languages the Pokédex has the entry in
 static void PokedexInfoPage_CheckInput(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk,
                                        PokedexDetailCommon *common) {
     u32 typed = GCTX_HIDGetTypedKeys();
@@ -689,6 +711,13 @@ static void PokedexInfoPage_CheckInput(PokedexDetailInfoParam *param, PokedexInf
     } else if (typed & PAD_KEY_LEFT) {
         GCTX_HIDSetUsingTouch(FALSE);
         PokedexInfoPage_Step(param, wk, common, FALSE);
+    } else if (typed & PAD_BUTTON_SELECT) {
+        PokeDexSave *pokedex = GameData_GetPokedex(PokedexDetailCommon_GetGameData(common));
+
+        if (PokedexInfoPage_HasOtherLanguage(pokedex, wk->species) && !PokedexInfoPage_IsEntryHidden(wk)) {
+            GCTX_HIDSetUsingTouch(FALSE);
+            PokedexInfoPage_NextLanguage(param, pokedex, wk);
+        }
     }
 }
 
@@ -812,6 +841,7 @@ static void PokedexInfoPage_CloseAreaMap(PokedexInfoPageWork *wk, BOOL now) {
         PokedexInfo_SetPokemonInLanguage(wk->entry, wk->species, wk->form, wk->sex, wk->rare, wk->personality,
                                          wk->caught, wk->language);
     }
+    PokedexInfoPage_DrawFlavour(wk);
 }
 
 // Whether the entry's text is freed, by the move panel or Area's map, so that it is printed only as they close
@@ -969,6 +999,7 @@ static void PokedexInfoPage_CloseMovePanel(PokedexInfoPageWork *wk) {
                                          wk->caught, wk->language);
     }
     PokedexInfo_PrintQueued(wk->entry);
+    PokedexInfoPage_DrawFlavour(wk);
 }
 
 // The touch bar's keys that the page takes: Left and Right always, as they step through the sub-pages; Up and Down
@@ -1348,6 +1379,8 @@ static void PokedexInfoPage_PressButton(PokedexDetailInfoParam *param, PokedexIn
         PokedexInfo_SetPokemonInLanguage(wk->entry, wk->species, wk->form, wk->sex, wk->rare, wk->personality,
                                          wk->caught, wk->language);
         PokedexInfo_PrintQueued(wk->entry);
+        // The species' other entry stays over it
+        PokedexInfoPage_DrawFlavour(wk);
         // A new form's abilities start from its first again
         wk->chosenAbility = 0;
         PokedexInfoPage_LoadAbilities(param, wk);
@@ -1356,26 +1389,21 @@ static void PokedexInfoPage_PressButton(PokedexDetailInfoParam *param, PokedexIn
     case BUTTON_SHINY:
         wk->rare = !wk->rare;
         break;
-    case BUTTON_LANGUAGE: {
-        u32 i;
-
-        // The next language the Pokédex has the entry in, the game's own after the others
-        for (i = 1; i <= LANGUAGE_COUNT; i++) {
-            u32 language = (wk->language + i) % (LANGUAGE_COUNT + 1);
-
-            if (PokedexInfoPage_HasLanguage(pokedex, wk->species, language)) {
-                wk->language = language;
-                break;
-            }
-        }
-        // With the description, if an ability showed
+    case BUTTON_FLAVOUR:
+        // The next of the other games' entries, this game's own after the last, in this game's language, in place of
+        // an ability if one showed
+        wk->flavourEntry = (wk->flavourEntry + 1) % (PokedexInfoFlavour_GetCount(wk->flavour) + 1);
         wk->shownAbility = ABILITY_MAX;
-        PokedexInfoPage_EndOtherText(wk);
-        PokedexInfo_SetLanguage(wk->entry, wk->language);
+        if (wk->language != LANGUAGE_GAME) {
+            wk->language = LANGUAGE_GAME;
+            PokedexInfoPage_EndOtherText(wk);
+            PokedexInfo_SetLanguage(wk->entry, wk->language);
+            PokedexInfo_PrintQueued(wk->entry);
+        }
+        PokedexInfoPage_ShowTopText(param, wk);
         PokedexInfo_PrintQueued(wk->entry);
         GFL_SndSEPlay(SEQ_SE_SELECT3);
         return;
-    }
     case BUTTON_ABILITIES:
         PokedexInfoPage_NextShownAbility(param, wk);
         PokedexInfoPage_ShowTopText(param, wk);
@@ -1386,14 +1414,16 @@ static void PokedexInfoPage_PressButton(PokedexDetailInfoParam *param, PokedexIn
     GFL_SndSEPlay(SEQ_SE_SELECT3);
 }
 
-// Abilities once the species is caught; Cry and Turn always; Form once two looks (forms, or a male's and a female's
-// that differ) have been seen, Shiny once a shiny one has, and Language once the Pokédex has the entry in another
-// language
+// Flavour once the species is caught (the entry shows only then) if another game's entry differs from this game's;
+// Abilities once it is caught; Cry and Turn always; Form once two looks (forms, or a male's and a female's that
+// differ) have been seen, and Shiny once a shiny one has
 static BOOL PokedexInfoPage_IsButtonUsable(PokedexInfoPageWork *wk, PokedexDetailCommon *common, u32 button) {
     PokeDexSave *pokedex = GameData_GetPokedex(PokedexDetailCommon_GetGameData(common));
     u32 i;
 
     switch (button) {
+    case BUTTON_FLAVOUR:
+        return wk->caught && PokedexInfoFlavour_GetCount(wk->flavour) != 0;
     case BUTTON_ABILITIES:
         return wk->caught;
     case BUTTON_FORM:
@@ -1401,13 +1431,6 @@ static BOOL PokedexInfoPage_IsButtonUsable(PokedexInfoPageWork *wk, PokedexDetai
     case BUTTON_SHINY:
         for (i = 0; i < getNumberOfForms(wk->species); i++) {
             if (PokedexInfoPage_HasSeenForm(pokedex, wk->species, i, SEX_ANY, TRUE)) {
-                return TRUE;
-            }
-        }
-        return FALSE;
-    case BUTTON_LANGUAGE:
-        for (i = 0; i < LANGUAGE_COUNT; i++) {
-            if (PokedexInfoPage_HasLanguage(pokedex, wk->species, i)) {
                 return TRUE;
             }
         }
@@ -1502,6 +1525,40 @@ static BOOL PokedexInfoPage_HasLanguage(PokeDexSave *pokedex, u16 species, u32 l
     return PokeDex_HasLanguage(pokedex, species, sLanguageCodes[language]);
 }
 
+// Whether the Pokédex has the species' entry in a language other than the game's
+static BOOL PokedexInfoPage_HasOtherLanguage(PokeDexSave *pokedex, u16 species) {
+    u32 i;
+
+    for (i = 0; i < LANGUAGE_COUNT; i++) {
+        if (PokedexInfoPage_HasLanguage(pokedex, species, i)) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+// Select, as the original page's Language button: the next language the Pokédex has the entry in, the game's own after
+// the others, with the description in place of an ability or another game's entry, but on Data, whose held items stay
+static void PokedexInfoPage_NextLanguage(PokedexDetailInfoParam *param, PokeDexSave *pokedex, PokedexInfoPageWork *wk) {
+    u32 i;
+
+    for (i = 1; i <= LANGUAGE_COUNT; i++) {
+        u32 language = (wk->language + i) % (LANGUAGE_COUNT + 1);
+
+        if (PokedexInfoPage_HasLanguage(pokedex, wk->species, language)) {
+            wk->language = language;
+            break;
+        }
+    }
+    wk->shownAbility = ABILITY_MAX;
+    wk->flavourEntry = 0;
+    PokedexInfoPage_EndOtherText(wk);
+    PokedexInfo_SetLanguage(wk->entry, wk->language);
+    PokedexInfoPage_ShowTopText(param, wk);
+    PokedexInfo_PrintQueued(wk->entry);
+    GFL_SndSEPlay(SEQ_SE_SELECT3);
+}
+
 // The next of the shown form's abilities that the top screen shows, after the shown one, or the description after the
 // last: the first, the second if it is another, then the hidden one if it is another, or, until the species is caught,
 // if it has one at all
@@ -1525,8 +1582,8 @@ static void PokedexInfoPage_NextShownAbility(PokedexDetailInfoParam *param, Poke
 }
 
 // The top screen's text window: on Data the species' held items, on Stats the ability that Abilities shows, else the
-// entry's description, printed again in the entry's language if the page's text was there. Never while the move panel
-// or Area's map has freed the entry's windows
+// other game's entry that Flavour shows, or the entry's description, printed again in the entry's language if the
+// page's text was there. Never while the move panel or Area's map has freed the entry's windows
 static void PokedexInfoPage_ShowTopText(PokedexDetailInfoParam *param, PokedexInfoPageWork *wk) {
     if (PokedexInfoPage_IsEntryHidden(wk)) {
         return;
@@ -1534,9 +1591,13 @@ static void PokedexInfoPage_ShowTopText(PokedexDetailInfoParam *param, PokedexIn
     if (wk->subpage == POKEDEX_INFO_SUBPAGE_DATA) {
         PokedexInfoPage_DrawHeldItems(param, wk, PokedexInfo_BeginOtherText(wk->entry));
         wk->otherText = TRUE;
+        wk->flavourShown = FALSE;
     } else if (wk->shownAbility != ABILITY_MAX) {
         PokedexInfoPage_DrawAbility(param, wk, PokedexInfo_BeginOtherText(wk->entry));
         wk->otherText = TRUE;
+        wk->flavourShown = FALSE;
+    } else if (wk->flavourEntry != 0) {
+        PokedexInfoPage_DrawFlavour(wk);
     } else if (wk->otherText) {
         PokedexInfoPage_EndOtherText(wk);
         PokedexInfo_SetLanguage(wk->entry, wk->language);
@@ -1547,6 +1608,20 @@ static void PokedexInfoPage_ShowTopText(PokedexDetailInfoParam *param, PokedexIn
 static void PokedexInfoPage_EndOtherText(PokedexInfoPageWork *wk) {
     PokedexInfo_EndOtherText(wk->entry);
     wk->otherText = FALSE;
+    wk->flavourShown = FALSE;
+}
+
+// The other game's entry that Flavour shows, in place of the description where it would show (as the entry's text is
+// printed again after the move panel or Area's map, or for another form), drawn as PokedexInfo prints the description
+static void PokedexInfoPage_DrawFlavour(PokedexInfoPageWork *wk) {
+    if (wk->flavourEntry == 0 || wk->subpage == POKEDEX_INFO_SUBPAGE_DATA || wk->shownAbility != ABILITY_MAX ||
+        PokedexInfoPage_IsEntryHidden(wk)) {
+        return;
+    }
+    PokedexInfoFlavour_DrawEntry(wk->flavour, wk->flavourEntry, PokedexInfo_BeginOtherText(wk->entry), wk->font,
+                                 TOP_TEXT_X, TOP_TEXT_Y, TOP_TEXT_WHITE);
+    wk->otherText = TRUE;
+    wk->flavourShown = TRUE;
 }
 
 // The shown ability's name in gold on the first line, with which of the species' abilities it is right-aligned there,
