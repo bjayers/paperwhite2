@@ -79,7 +79,9 @@ habitat with a new import of the original tables (until saved). Its pages:
 - **Areas**: the groups of areas (one per parent zone from the import, and your own), which you can add, rename,
   change and remove; then every area by parent zone with its number of Pokémon, its rates, its kind of rustling spots
   (shaking grass, dust clouds, bridge shadows) and its Pokémon by method under the preview.
-- **Map**: the game's town map art (`GET /api/screen` draws it from `res/graphics/townmap_gra/`) under the places,
+- **Map**: the town map as the Pokédex's area page draws it (`GET /api/town-map`, `server/python/town_map.py`: both BGs of
+  `res/graphics/townmap_gra/` with the route lines, circles and dots, and each place's glow shape from the area OBJs of
+  `res/graphics/pokedex_gra/`, coloured by the page; a place without one is a pill or circle), the places
   shaded by species, diversity, one Pokémon's share, or methods with nothing to meet (with methods to leave out), in
   three colour schemes. Clicking a place lists its Pokémon beside the map, with a button to open its area.
 - **Settings**: the rarity tiers, level scaling and its gate, the hidden ability's chance, default battles, the

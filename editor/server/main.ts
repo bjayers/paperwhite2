@@ -171,6 +171,17 @@ const routes: Record<string, Handler> = {
     res.writeHead(200, { "Content-Type": "image/png", "Cache-Control": "no-cache" });
     res.end(image);
   },
+  // The town map as the Pokédex's area page draws it, and its places' highlight shapes (server/python/town_map.py)
+  "GET /api/town-map": (_req, res) => {
+    let json: Buffer;
+    try {
+      json = python.townMap();
+    } catch (e) {
+      return error(res, 500, `The town map could not be drawn: ${(e as Error).message}`);
+    }
+    res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-cache" });
+    res.end(json);
+  },
   // A screen of an art target (res/paperwhite2/art/targets.json) as an indexed PNG in its palette, to draw over
   "GET /api/art/render": async (_req, res, url) => {
     const [target, screen] = ["target", "screen"].map((k) => url.searchParams.get(k) ?? "");

@@ -27,12 +27,6 @@ export const SCHEMAS = {
   grottoes: "res/field/grottoes/grotto.schema.json",
 };
 
-/** The town map's art: its characters, the screen of the map and the palette (res/graphics/townmap_gra/). */
-export const TOWN_MAP_ART = {
-  chars: "res/graphics/townmap_gra/07.png",
-  screen: "res/graphics/townmap_gra/16.nscr",
-  palette: "res/graphics/townmap_gra/00.pal",
-};
 
 /** The scripts' commands that give a Pokémon or start a battle with one, and the species argument they take. */
 const SCRIPTS = "res/field/scripts/*.s";
@@ -59,6 +53,8 @@ export interface Place {
   type: number;
   position: { x: number; y: number };
   hit: { start: { x: number; y: number }; end: { x: number; y: number }; radius: number };
+  /** The highlight the Pokédex's area page lights the place with: an animation of its area OBJs, and where. */
+  area?: { animation: number; x: number; y: number };
 }
 
 export interface Loaded {
@@ -80,7 +76,7 @@ export async function load(constants: Constants): Promise<Loaded> {
     api.data(SCHEMAS.encounters),
     api.data(SCHEMAS.zones, ZONE_KEYS),
     api.data(SCHEMAS.species, SPECIES_KEYS),
-    api.data(SCHEMAS.places, ["zone", "type", "position", "hit"]),
+    api.data(SCHEMAS.places, ["zone", "type", "position", "hit", "area"]),
     api.data(SCHEMAS.trades, ["species"]),
     api.data(SCHEMAS.grottoes, ["white2"]),
     api.scan(SCRIPTS, "PokePartyAdd|CallWildBattle|WorkSetConst"),

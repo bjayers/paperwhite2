@@ -67,6 +67,13 @@ function normalize(path: string): string {
 }
 
 /** Faces of a GLB by primitive and triangle number, deleted or drawn with another texture (server/glb.ts). */
+/** A row of pixels of a town map highlight: x, y (from the OBJ's origin) and length. */
+export type TownMapRun = [number, number, number];
+/** GET /api/town-map: the map's art as a data: URL, and each area animation's highlight by the red's shades. */
+export interface TownMap {
+  image: string;
+  shapes: Record<string, { light: TownMapRun[]; mid: TownMapRun[]; dark: TownMapRun[] }>;
+}
 export interface GlbFaceSet { primitive: number; triangles: number[] }
 export interface GlbFaceEdits { remove?: GlbFaceSet[]; retexture?: { faces: GlbFaceSet[]; image: string }[] }
 
@@ -158,6 +165,8 @@ export const api = {
   /** The address of a 2D screen of res/ drawn as a PNG, from its character PNG, screen and palette. */
   screenUrl: (chars: string, screen: string, palette: string) =>
     `/api/screen?chars=${encodeURIComponent(chars)}&screen=${encodeURIComponent(screen)}&palette=${encodeURIComponent(palette)}`,
+  /** The town map's art (with its route lines, circles and dots) and each area highlight's pixels by shade. */
+  townMap: () => request<TownMap>("GET", "/api/town-map"),
   /** The address of an image under res/. */
   assetUrl: (path: string) => `/api/asset?path=${encodeURIComponent(path)}`,
   constants: () => request<Record<string, number>>("GET", "/api/constants"),

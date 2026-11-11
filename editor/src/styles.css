@@ -176,10 +176,13 @@ kbd { border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 
 .document { flex: 1; display: flex; flex-direction: column; min-height: 0; background: var(--panel); }
 .doc-toolbar { display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-bottom: 1px solid var(--border); }
 .doc-toolbar .path { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.view-switch { display: flex; }
-.view-switch button { border-radius: 0; margin-left: -1px; }
-.view-switch button:first-child { border-radius: 6px 0 0 6px; }
-.view-switch button:last-child { border-radius: 0 6px 6px 0; }
+/* A segmented group: the outline is the group's own border, so it is one box whose edges land on whole pixels (the
+   buttons' own, at fractional offsets after text of fractional width, blurred away at 125% scaling), with a divider
+   before each button but the first and the selected one ringed inside, clipped to the group's corners */
+.view-switch { display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.view-switch button { border: none; border-radius: 0; margin: 0; }
+.view-switch button + button { border-left: 1px solid var(--border); }
+.view-switch button.active { box-shadow: inset 0 0 0 1px var(--accent); }
 .doc-body { flex: 1; overflow: auto; min-height: 0; }
 textarea.raw {
   width: 100%; height: 100%; border: none; border-radius: 0; resize: none; padding: 12px 16px;

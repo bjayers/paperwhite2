@@ -96,10 +96,18 @@
 
 .enc-region { width: 100%; display: block; border: 1px solid var(--border); border-radius: 8px; background: var(--panel-2); }
 .enc-map-bg { fill: var(--panel-2); }
-.enc-map-art { opacity: 0.85; }
+.enc-map-art { opacity: 1; }
 .enc-place { fill: var(--accent); stroke: var(--accent); stroke-width: 0.6; cursor: pointer; }
 .enc-place.empty { fill: var(--panel); fill-opacity: 0.6; stroke: var(--muted); stroke-opacity: 0.6; }
 .enc-place.hover { stroke: var(--text) !important; stroke-opacity: 1 !important; stroke-width: 1.2; }
+.enc-glow { cursor: pointer; }
+.enc-glow path { shape-rendering: crispEdges; }
+.enc-glow-fill { fill: var(--accent); }
+.enc-glow.empty .enc-glow-fill { fill: #000; fill-opacity: 0; }
+.enc-glow-light { fill: #fff; pointer-events: none; }
+.enc-glow-dark { fill: #000; pointer-events: none; }
+.enc-glow.hover { filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px rgba(0, 0, 0, 0.8)); }
+.enc-glow.empty.hover .enc-glow-fill { fill: #fff; fill-opacity: 0.35; }
 .enc-map-label { font-size: 3.6px; fill: #fff; paint-order: stroke; stroke: rgba(0, 0, 0, 0.75); stroke-width: 0.9px; pointer-events: none; }
 
 .enc-map-page { flex: 1; display: flex; flex-direction: column; min-height: 0; padding: 10px 14px; gap: 8px; overflow-y: scroll; scrollbar-gutter: stable; }

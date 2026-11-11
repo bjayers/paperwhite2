@@ -19,6 +19,7 @@ export class Python {
   private validator: ChildProcessWithoutNullStreams | null = null;
   private waiting: ((result: { ok: boolean; error?: string }) => void)[] = [];
   private screens = new Map<string, Buffer>();
+  private townMapCache: { key: string; json: Buffer } | null = null;
 
   constructor(private root: string) {}
 
@@ -71,6 +72,18 @@ export class Python {
       this.screens.set(key, image);
     }
     return image;
+  }
+
+  /** The town map's art and its places' highlight shapes as JSON (town_map.py), cached while its files are unchanged. */
+  townMap(): Buffer {
+    const files = ["07.png", "16.nscr", "05.png", "17.nscr", "00.pal"].map((f) => `res/graphics/townmap_gra/${f}`)
+      .concat(["015.png", "029.ncer", "046.nanr"].map((f) => `res/graphics/pokedex_gra/${f}`));
+    const key = files.map((f) => `${f}@${statSync(join(this.root, f)).mtimeMs}`).join("|");
+    if (this.townMapCache?.key !== key) {
+      const json = execFileSync(pythonFor(this.root), [join(HERE, "town_map.py")], { cwd: this.root, maxBuffer: 16 << 20 });
+      this.townMapCache = { key, json };
+    }
+    return this.townMapCache.json;
   }
 
   /** Runs the art converter (tools/paperwhite2/screen_art.py) on this checkout; it exits 1 when the art has problems. */
