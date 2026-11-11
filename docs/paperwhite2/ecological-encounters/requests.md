@@ -61,6 +61,15 @@ Each keeps its date. A request isn't a whole placement: the rest of the family a
   Humilau for winter.
 - 2026-11-13: Undella Town's water and Undella Bay are one place (a group of both maps to make).
 
+- 2026-11-13: **The Nature Preserve** is unlocked by completing Pokédex numbers 494 to 649: no Pokémon of Unova may be
+  found only there; only generations 1 to 4 may be exclusive to it.
+- 2026-11-13: Reversal Mountain: the Fiery Caves (White 2) are Unova's home for fire Pokémon; the Damp Caves (Black
+  2) have moisture-loving cave dwellers instead, not water Pokémon (their water is cosmetic); a few fire Pokémon on
+  the outside whichever caves are in use; ghosts at night outside, near the Strange House.
+- 2026-11-13: The Strange House: ghosts that don't fit Celestial Tower.
+- 2026-11-13: P2 Laboratory's island: Porygon and the like, escaped from the lab (Genesect's event there).
+- 2026-11-13: Route 18: Exeggcute and Exeggutor, Tropius, Chatot in its season.
+
 **Reading these requests:** the user's "rare" and "very rare" are loose; "very rare" usually means the exotic tier
 (the trophies). Most Pokémon can live anywhere they make sense: few are limited to one place.
 

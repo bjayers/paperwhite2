@@ -87,3 +87,12 @@ In winter the puddles freeze, so Icirrus City, Route 8 and the Moor have only wa
 | Route 13, Undella Town and Bay, Route 21 | none | **Agreed:** thunderstorms along the coast in summer; gusty rain (squalls) out at sea; gentle rain in spring and autumn |
 | Humilau City | none | rare tropical showers and summer thunderstorms; it barely changes otherwise |
 | Route 22 | none | rain with the coast; perhaps gusty rain (a windswept headland) |
+
+## The Rest
+
+| Place | Now | Suggestions |
+| --- | --- | --- |
+| Reversal Mountain (outside), Lentimas Town | sandstorm: spring 47%, summer 53%, autumn clear, winter 15% | keep |
+| Route 17 | none | gusty rain and squalls (the currents' sea) |
+| Route 18, P2 Laboratory | none | rain now and then; a remote island's storms |
+| Nature Preserve | none | rain in spring and autumn (a river forest) |

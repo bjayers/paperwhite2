@@ -1,0 +1,301 @@
+# The Rest (regions.md): special places that fit no region. Reversal Mountain (its outside, White 2's Fiery Caves and
+# Black 2's Damp Caves), the Strange House, Twist Mountain, Clay Tunnel (with the Underground Ruins and the Regi
+# chambers), P2 Laboratory, Routes 17 and 18, and the Nature Preserve. Draft of 2026-11-13 from the user's
+# descriptions, for review. The layout is southwest.yaml's. No Pokémon NPCs are placed here yet.
+
+region:
+  id: rest
+  name: The Rest
+  feel: >-
+    Places of their own: the red-rock country of Lentimas (a Pueblo feel, as the user reads it) with its two-faced
+    mountain and its clay house of ghosts; mines; a far-off island and its laboratory across a sea of currents; and a
+    nature preserve reached only by plane.
+  towns: >-
+    Lentimas Town has no encounters: red rock, clay houses, often in a sandstorm.
+
+places:
+
+  - id: reversal_mountain_outside
+    name: Reversal Mountain (the outside)
+    maps: [reversal_mountain]
+    used: confirmed (the same in both versions)
+    facts:
+      tiles: { grass: 71, dark_grass: 44 }
+      methods: [grass, dark_grass, rustling (shaking grass)]
+      weather: { spring: sandstorm 47%, summer: sandstorm 53%, autumn: clear, winter: sandstorm 15% }
+    picture: >-
+      The red-rock mountain pass near Lentimas Town, often in a sandstorm; the same in both versions. Different
+      Pokémon from the desert's, and a few fire Pokémon even when the Damp Caves are the ones in use. A Pueblo feel,
+      like Lentimas and the Strange House (clay buildings). Ghosts at night here, so near the Strange House.
+    habitats: [badlands, mountain, scrub, cliff]
+    parts:
+      grass: dry grass and scrub on the red-rock pass
+      dark_grass: thicker scrub among the rocks
+    human_presence: rural (Lentimas)
+    climate:
+      spring: warm, dry, windy, sandstorms
+      summer: hot, dry, sandstorms most days
+      autumn: warm, clear
+      winter: cool, dry
+    features: [rocks, fire_influence, spirits]
+    real_world: >-
+      The red-rock country of the American Southwest (the Pueblos' land): mesas and canyons, juniper and scrub,
+      lizards, rattlesnakes, roadrunners, ravens, coyotes, hawks; warm volcanic ground.
+    suggestions:
+      - >-
+        Red-rock and badland Pokémon (not the sand desert's), a few heat-lovers from the mountain's fires, sandstorm
+        Pokémon in its seasons, and ghosts at night from the Strange House.
+
+  - id: reversal_mountain_fiery
+    name: Reversal Mountain (White 2, the Fiery Caves)
+    maps: [reversal_mountain_8, reversal_mountain_9, reversal_mountain_10, reversal_mountain_11, reversal_mountain_12,
+           reversal_mountain_13]
+    used: confirmed (White 2's caves, the default for new saves; switched at any Pokémon Center)
+    facts:
+      tiles: { cave_floor: [142, 199, 1447, 68, 45, 100] }
+      methods: [walking (cave floor), rustling (dust clouds)]
+      weather: none (indoors)
+    picture: >-
+      The focus of the two: Unova has few fiery places for fire Pokémon. The main interior has a large bed of lava in
+      the centre and a warm glow from the heat; little glowing red seams in the walls and floors, as though lava is
+      near.
+    habitats: [cave, volcanic, deep_cave]
+    parts:
+      floors: hot cave floors round a lava lake, with glowing seams
+    human_presence: remote
+    climate:
+      all_year: hot, dry, glowing
+    features: [fire_influence, rocks]
+    real_world: >-
+      Volcanic caves and lava tubes: heat-tolerant life at the margins, bats in the cooler passages, minerals.
+    suggestions:
+      - >-
+        Unova's home for fire Pokémon: lava and magma dwellers, heat-lovers and fire-breathers, with the cave's rock
+        dwellers. A charred, hot cave.
+
+  - id: reversal_mountain_damp
+    name: Reversal Mountain (Black 2, the Damp Caves)
+    maps: [reversal_mountain_2, reversal_mountain_3, reversal_mountain_4, reversal_mountain_5, reversal_mountain_6,
+           reversal_mountain_7]
+    used: confirmed (Black 2's caves; switched at any Pokémon Center)
+    facts:
+      tiles: { cave_floor: [145, 133, 1461, 68, 45, 100] }
+      methods: [walking (cave floor), rustling (dust clouds)]
+      weather: none (indoors)
+      water: >-
+        The water replaces the lava visually and can't be surfed or fished (no encounter tiles): cosmetic.
+    picture: >-
+      The same caves with water in place of the lava: the central lava lake an unreachable pool, water dripping round
+      the cave. Not water Pokémon as such, but cave dwellers who like the damp and wouldn't live in a fiery cave.
+    habitats: [cave, deep_cave]
+    parts:
+      floors: damp cave floors round a still pool, dripping
+    human_presence: remote
+    climate:
+      all_year: cool, damp, dripping
+    features: [rocks]
+    real_world: >-
+      Wet limestone caves: bats, cave salamanders on damp walls, slugs and snails, moss and fungi near the light.
+    suggestions:
+      - >-
+        Moisture-loving cave dwellers (damp-cave amphibians, slugs, fungi, moss) where the Fiery Caves have their fire
+        Pokémon.
+
+  - id: strange_house
+    name: Strange House
+    maps: [strange_house, strange_house_2, strange_house_3, strange_house_4, strange_house_5, strange_house_6,
+           strange_house_7, strange_house_8, strange_house_9, strange_house_10]
+    used: confirmed (the same Pokémon throughout; some rooms are identical maps, probably the house's story states)
+    facts:
+      tiles: { indoor_floor: 455 }  # rooms 1, 3 and 6; the others 125 to 150
+      methods: [walking (floor)]
+      weather: none (indoors)
+    picture: >-
+      A house that looks made of clay, like Lentimas's, entered from Reversal Mountain's outside. The best place for
+      ghosts that don't fit Celestial Tower.
+    habitats: [building, ruins]
+    parts:
+      rooms: the rooms of a haunted house
+    human_presence: remote
+    climate:
+      all_year: still, cold, uneasy
+    features: [spirits]
+    real_world: >-
+      Haunted-house folklore: poltergeists, possessed objects, abandoned dolls, lights in empty rooms.
+    suggestions:
+      - >-
+        The house's ghosts, not the tower's mourning ones: haunted objects and pranksters (Rotom in the appliances,
+        Banette the abandoned doll, Shuppet, Misdreavus), mischief rather than grief.
+
+  - id: twist_mountain
+    name: Twist Mountain
+    maps: [twist_mountain, twist_mountain_2, twist_mountain_3, twist_mountain_4]  # the zones twist_mountain_3 to _6
+    used: >-
+      confirmed. The mountain's caves are the zones twist_mountain_3 to _6 (the four tables). The entrance from Route 7
+      (zone 1) and the open pit (zone 2, the "exterior" that fills with snow in winter) have no encounter tables: no
+      wild Pokémon there in any season.
+    facts:
+      tiles: { cave_floor: [455, 782, 437, 268] }
+      methods: [walking (cave floor), rustling (dust clouds)]
+      weather: none (the caves are indoors)
+    picture: >-
+      A mountain being strip-mined. The open pit in its middle (zone 2) has caves all round it, a couple of buildings
+      for the workers and the business, and excavation equipment; in winter it fills with snow, so ledges out of reach
+      become reachable (no encounters there). The caves round it are much like Clay Tunnel: mines, with more mining
+      equipment. Glalie comes down from here to hunt Piplup at Dragonspiral's entrance in winter (Pokécology).
+    habitats: [mine, cave, mountain]
+    parts:
+      mines: worked tunnels round the pit
+    human_presence: industrial (miners)
+    climate:
+      all_year: cold, colder in winter
+    features: [rocks, machinery, ice]
+    real_world: >-
+      A mountain mine: bats in old workings, rock and mineral life; ice in the cold tunnels.
+    suggestions:
+      - >-
+        Miners' companions and mine dwellers (Timburr's line, Roggenrola's, Drilbur), cold-cave Pokémon, and the Glalie
+        that comes down to Icirrus in winter (Snorunt's family living here).
+    questions:
+      - >-
+        Should the open pit get an encounter table (the ROM session), so its snow in winter can have Pokémon? Now it
+        has none.
+
+  - id: clay_tunnel
+    name: Clay Tunnel
+    maps: [clay_tunnel, clay_tunnel_2, clay_tunnel_3, underground_ruins, underground_ruins_2, underground_ruins_3,
+           iron_chamber, iceberg_chamber, rock_peak_chamber]
+    used: >-
+      confirmed (the user's group, the same Pokémon throughout; a map can leave the group later). Underground Ruins 2 and
+      3 and the chambers are reached by script; the Regi chambers are swapped by an event to come.
+    facts:
+      tiles: { cave_floor: [601, 649, 882], surf: [0, 91, 91] }  # the tunnel's three maps
+      ruins_tiles: { cave_floor: [299, 563, 564] }
+      chamber_tiles: { cave_floor: 457 }  # each chamber
+      methods: [walking (cave floor), rustling (dust clouds), surf and fishing (tunnel 2 and 3)]
+      weather: none (indoors)
+    picture: >-
+      Pretty straightforward: some mining equipment, but mostly a big, typical cave in many pieces.
+    habitats: [cave, mine, underground_water, ruins]
+    parts:
+      tunnels: a big cave with mining equipment
+      water: underground water (tunnel 2 and 3)
+      ruins: the Underground Ruins and the Regi chambers
+    human_presence: remote (miners)
+    climate:
+      all_year: cool, damp
+    features: [rocks, machinery, ancient]
+    real_world: >-
+      Clay and mineral mines: cave life, bats, underground pools.
+    suggestions:
+      - The common cave and mine Pokémon, underground water life, a little of the ancient near the ruins.
+
+  - id: p2_laboratory
+    name: P2 Laboratory
+    maps: [p2_laboratory]  # the island outside the lab (the building, zone p2_laboratory_2, has no table)
+    used: confirmed
+    facts:
+      tiles: { grass: 41, surf: 139 }
+      methods: [grass, rustling (shaking grass), surf, fishing]
+      weather: none
+    picture: >-
+      On Route 17; Genesect's event will be here. Grass on the island in front of the lab: Porygon and the like, as
+      though they broke out of the lab and roam the island.
+    habitats: [meadow, coastal_sea, building]
+    parts:
+      grass: the island's grass in front of the lab
+      water: the sea round it
+    human_presence: remote (an abandoned lab)
+    climate:
+      all_year: mild, sea winds
+    features: [machinery]
+    real_world: >-
+      An island research station: escaped and released specimens, seabirds, cool sea.
+    suggestions:
+      - >-
+        Artificial and lab-born Pokémon loose on the island (Porygon's family, perhaps Magnemite or Voltorb from the
+        lab's machines); cool-sea life in the water, blue Shellos among it.
+
+  - id: route_17
+    name: Route 17
+    maps: [route_17]
+    used: confirmed
+    facts:
+      tiles: { surf: 699 }
+      methods: [surf, fishing]
+      weather: none
+    picture: >-
+      The open-water route with riptides and currents: all sea water.
+    habitats: [open_sea]
+    parts:
+      sea: open sea with strong currents
+    human_presence: wild
+    climate:
+      all_year: cool sea, rough
+    real_world: >-
+      Cool, current-swept open sea: strong-swimming fish, seals, seabirds riding the wind, jellyfish carried by the
+      currents.
+    suggestions:
+      - >-
+        Strong swimmers that ride currents, and drifters carried by them; the cool sea's Pokémon (blue Shellos, the
+        user's suggestion).
+
+  - id: route_18
+    name: Route 18
+    maps: [route_18]
+    used: confirmed
+    facts:
+      tiles: { grass: 546, dark_grass: 92, surf: 860 }
+      methods: [grass, dark_grass, rustling (shaking grass), surf, fishing]
+      weather: none
+    picture: >-
+      The island: not exactly tropical, but a faraway, deserted-island feel. A good place for Exeggcute and Exeggutor,
+      Tropius, Chatot in whatever season it comes to Unova, and the like.
+    habitats: [beach, meadow, coastal_sea, woodland_edge]
+    parts:
+      grass: the island's open grass
+      dark_grass: its wilder interior
+      sea: the sea round the island
+    human_presence: wild
+    climate:
+      all_year: mild, sea winds, little change
+    features: [berries, flowers, tall_trees]
+    real_world: >-
+      A remote island: species found nowhere else, fruit trees and the animals that feed on them, seabird colonies,
+      migrants that stop on the way.
+    suggestions:
+      - >-
+        The island's own (Exeggcute's family, Tropius), a migrant stopover (Chatot in its season, other birds), shore
+        life; cool sea round it.
+
+  - id: nature_preserve
+    name: Nature Preserve
+    maps: [nature_preserve]
+    used: confirmed
+    rule: >-
+      Unlocked by completing numbers 494 to 649 of the Pokédex, so no Pokémon of Unova (494-649) may be found only
+      here; only Pokémon of generations 1 to 4 may be exclusive to it.
+    facts:
+      tiles: { grass: 116, dark_grass: 25, surf: 234 }
+      methods: [grass, dark_grass, rustling (shaking grass), surf, fishing]
+      weather: none
+    picture: >-
+      Far off, reached only by plane: a fairly standard map with forest and a river round it, many waterfalls (for show;
+      none reachable), and a shiny Haxorus in the central clearing.
+    habitats: [deciduous_forest, river, waterfall, meadow]
+    parts:
+      grass: forest clearings
+      dark_grass: thicker forest growth
+      river: a river round the preserve
+    human_presence: wild (protected)
+    climate:
+      spring: mild
+      summer: warm
+      autumn: cool
+      winter: cold
+    features: [tall_trees, cold_water, flowers]
+    real_world: >-
+      A wildlife refuge: species protected from hunting and people, the rare and the shy.
+    suggestions:
+      - >-
+        The preserve as a refuge for rare Pokémon of other regions (generations 1 to 4), a reward for the Unova Dex.

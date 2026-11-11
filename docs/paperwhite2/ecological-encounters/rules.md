@@ -29,6 +29,13 @@ The placement rules the dictionaries and the generator follow, from the user's a
   fits; they can live elsewhere too if that makes sense.
 - **Ancient** Pokémon and relics (Unown and the like) live in fitting ruins and old places.
 
+## 3a. Places with conditions of their own
+
+- **The Nature Preserve** is unlocked by completing Pokédex numbers 494 to 649 (2026-11-13). No Pokémon of Unova
+  (494-649) may be found only there; only Pokémon of generations 1 to 4 may be exclusive to it.
+- **Reversal Mountain's two cave sets** are switched at any Pokémon Center, any number of times; new saves start as
+  White 2 (the Fiery Caves).
+
 ## 4. Who is never wild
 
 - Legendaries and mythicals (events).
