@@ -115,6 +115,8 @@ virbank_complex:
   discussed:
     - >-
       2026-11-14, done: Klink only deeper inside (map 2).
+    - >-
+      2026-11-14: Skarmory stays at its low levels here, the user's hand-placed counter to the second gym (it has an NPC there).
 
 # --- Castelia and the desert ---
 
@@ -241,6 +243,9 @@ route_1:
       Spring is busy (ten families, six common) and winter quiet (four). Spring could lose Combee (Route 12's) or
       Ekans.
     - The pine hills have only four families; Murkrow, Spinarak or Stunky would fit the pines at night.
+  discussed:
+    - >-
+      2026-11-14, done: the pine hills gain Murkrow and Stunky at night all year and Spinarak in summer and autumn. The Southeast is post-game in B2W2, so no level limits are needed here.
 
 route_2:
   vision: >-
@@ -252,6 +257,9 @@ route_2:
     - >-
       It's grass only (no dark grass), so twelve families share one table, and nine are uncommon: Lillipup, Seedot or
       Oddish could go to keep it simple and let Ralts stand out.
+  discussed:
+    - >-
+      2026-11-14, done: Lillipup gone and Poochyena added; Ralts also a trophy on Route 16's grass, before the post-game (the user).
 
 striaton_city:
   vision: >-
@@ -261,6 +269,9 @@ striaton_city:
     - Small and gentle, with Feebas where you asked.
   unsure:
     - Surfing is only Ducklett and Lotad (Ducklett alone in winter); a Poliwag or Psyduck would help.
+  discussed:
+    - >-
+      2026-11-14, done: Poliwag (spring to autumn) and Psyduck (all year) in the ponds. Feebas is also a trophy on Route 14 now (the user).
 
 route_3:
   vision: >-
@@ -273,6 +284,9 @@ route_3:
     - The dark grass (the route's wild edges) has only four families and no common one; Ekans, Poochyena or Scyther
       (very rare now) could lead it.
     - The grass is busy in summer (twelve families).
+  discussed:
+    - >-
+      2026-11-14, done: Blitzle common in the dark grass, as in the original (Zebstrika's grotto here too); its only other home is Route 22's upland.
 
 wellspring_cave:
   vision: >-
@@ -294,6 +308,9 @@ dreamyard:
   unsure:
     - The grass has no common family; the day is only Abra and Patrat. Fine for an eerie place, or too empty?
     - Check that dreamyard_2 is the basement (Musharna is limited to it).
+  discussed:
+    - >-
+      2026-11-14, done: Cottonee drifting through in autumn and Venonat on summer nights; Smeargle moved to the deepest part of Relic Passage, painting its walls.
 
 pinwheel_forest_outskirts:
   vision: >-
@@ -306,6 +323,9 @@ pinwheel_forest_outskirts:
       It doesn't feel like a nursery of biting and buzzing bugs yet: only Yanma and Surskit are bugs. Venonat
       (mosquito-like, drawn at night), Nincada or Combee would make it buzz.
     - Winter is the sparsest table in the game (two families in the grass).
+  discussed:
+    - >-
+      2026-11-14, done: Venonat at night from spring to autumn, Combee and Nincada in summer, Sewaddle in spring.
 
 pinwheel_forest:
   vision: >-
@@ -318,6 +338,9 @@ pinwheel_forest:
     - The pond fishing is Magikarp only.
     - Winter grass is quiet (Hoothoot, Burmy, Ledyba, Pansage); right for a sleeping forest.
     - Throh and Sawk lived here in the original; I moved them to Route 11's falls as the places asked.
+  discussed:
+    - >-
+      2026-11-14, done: all three elemental monkeys as trophies all year in the grass; Aipom, Mankey and Slakoth rare in the dark grass in winter, very rare otherwise. Hoothoot and Venonat stay night-only everywhere.
 
 # --- Central Unova ---
 

@@ -197,6 +197,8 @@ families:
       - {place: route_14, methods: [dark_grass], seasons: all, tier: uncommon, why: "troops on the cliffs above the falls"}
       - {place: route_23, methods: [grass], seasons: all, tier: uncommon, why: "the gorge's woods"}
       - {place: route_15, methods: [dark_grass], seasons: all, tier: rare, why: "the ridge's ledges"}
+      - {place: pinwheel_forest, methods: [dark_grass], seasons: [winter], tier: rare, why: "a troop in the bare forest in winter (the user)"}
+      - {place: pinwheel_forest, methods: [dark_grass], seasons: [spring, summer, autumn], tier: very_rare, why: "the forest's treetops"}
     review: []
 
   - id: rhyhorn
