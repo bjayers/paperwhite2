@@ -102,7 +102,6 @@ Every entry's `review` notes, by batch.
 
 - **Pidgey**: A migrant rather than native: Pidgey isn't Unovan; making it the region's classic migrant uses that. Its summer and winter ranges are mine.
 - **Farfetch'd**: Very rare everywhere, as the Pokédex has it hunted; only two homes.
-- **Doduo**: Floccesy Ranch's Doduo as farmed birds: a fun touch, but optional.
 - **Natu**: Natu in the desert follows its Pokédex entry (cactus food); Relic Castle's floors are sand inside a ruin, so a stretch.
 - **Murkrow**: Honchkrow wild by a Dusk Stone's evolution: only as Route 7's trophy at night. Say if it should stay evolve-only.
 - **Chatot**: Its season (spring and summer) is my guess; Castelia's feral colony is an introduced population, as the rules allow.

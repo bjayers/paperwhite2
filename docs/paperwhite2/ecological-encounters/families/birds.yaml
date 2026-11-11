@@ -13,7 +13,7 @@
 # - Trophies: Farfetch'd at Abundant Shrine; Honchkrow at Route 7 at night; Altaria on Victory Road; Chatot in
 #   Castelia's park.
 # - Review: Pidgey as a migrant (non-native to Unova); Honchkrow wild (a Dusk Stone evolution); Natu in the desert;
-#   Doduo on Floccesy Ranch as a farmed bird; Chatot's seasons; Swanna breeding at Dragonspiral's lake.
+#   Chatot's seasons; Swanna breeding at Dragonspiral's lake.
 
 families:
 
@@ -125,8 +125,7 @@ families:
       - {place: route_22, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the windswept upland grass: open running ground"}
       - {place: route_15, methods: [grass], seasons: all, tier: rare, why: "the ridge's hills and scrub"}
       - {place: reversal_mountain_outside, methods: [dark_grass], seasons: all, tier: rare, why: "the badlands' scrub, like emus' dry country"}
-    review:
-      - "Floccesy Ranch's Doduo as farmed birds: a fun touch, but optional."
+    review: []
 
   - id: hoothoot
     origin: native
