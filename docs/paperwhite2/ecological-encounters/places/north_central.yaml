@@ -1,5 +1,5 @@
 # Northern Central Unova (regions.md, 7): Route 9, Route 11, Village Bridge, Route 12, Giant Chasm (its outside, its
-# caves and its crater) and Route 23. Victory Road is taken separately (2026-11-13). Draft of 2026-11-13 from the
+# caves and its crater), Route 23 and Victory Road (its mountainside, forest, caves and ruins). Draft of 2026-11-13 from the
 # user's descriptions, for review. The layout is southwest.yaml's. No Pokémon NPCs are placed here yet.
 
 region:
@@ -209,7 +209,9 @@ places:
   - id: giant_chasm_crater
     name: Giant Chasm (the crater)
     maps: [giant_chasm_3, giant_chasm_4]
-    used: confirmed (zones 3 and 4, both the crater; one has the Plasma Frigate)
+    used: >-
+      confirmed: zones 3 and 4 are two versions of the same crater map (one for Team Plasma's story event), sharing
+      their Pokémon
     facts:
       tiles: { grass: 215, dark_grass: 260 }  # zone 3
       tiles_4: { grass: 111, dark_grass: 108 }
@@ -268,3 +270,111 @@ places:
         An identity for the western maze: an old conifer wood among boulders where forest predators hunt (a labyrinth of
         trees suits stalkers and ambushers), so the route has the gorge, the river and the wood.
       - Cliff and mountain Pokémon on the heights, river fish below, still-water life in the pond.
+
+  # Victory Road: its 11 tables are zones 16 to 26 in order. Tables 2 and 9 (zones 17 and 24) are Black 2's and White
+  # 2's versions of one room, and so are tables 4 and 10 (zones 19 and 25); each pair shares its Pokémon, so whichever
+  # the game uses doesn't matter. Three environments: the rocky mountainside, the forest, the caves and the ruins (the
+  # user's four groups).
+
+  - id: victory_road_mountainside
+    name: Victory Road (the mountainside)
+    maps: [victory_road_4, victory_road_10, victory_road_7]  # zones 19 and 25 (Black 2's and White 2's), 22 (the hub)
+    used: confirmed
+    facts:
+      tiles: { grass: 158, dark_grass: 194, surf: 330 }  # zone 19 (zone 25 has grass 95, dark grass 132, water 274)
+      tiles_hub: { grass: 270, dark_grass: 16 }  # zone 22
+      methods: [grass, dark_grass, rustling (shaking grass), surf, fishing]
+      weather: none
+    picture: >-
+      Rocky mountainside, as Victory Road should be.
+    habitats: [mountain, cliff, river]
+    parts:
+      grass: rough grass on rocky slopes
+      dark_grass: thicker grass among the rocks
+      water: mountain water
+    human_presence: wild (trainers on their way to the League)
+    climate:
+      spring: cold, thin air
+      summer: cool
+      autumn: cold
+      winter: very cold
+    features: [rocks, cold_water]
+    real_world: >-
+      High mountains: raptors and ravens, mountain goats and sheep, marmots, hardy rock dwellers; the toughest of each.
+    suggestions:
+      - >-
+        Strong mountain and cliff Pokémon, the evolved and the powerful (the League's road), with cold mountain water.
+
+  - id: victory_road_forest
+    name: Victory Road (the forest)
+    maps: [victory_road_3]  # zone 18
+    used: confirmed
+    facts:
+      tiles: { grass: 109, dark_grass: 50 }
+      methods: [grass, dark_grass, rustling (shaking grass)]
+      weather: none
+    picture: >-
+      A forested area among the mountainside.
+    habitats: [conifer_forest, mountain]
+    parts:
+      grass: a mountain forest's clearings
+      dark_grass: its thick undergrowth
+    human_presence: wild
+    climate:
+      spring: cold
+      summer: cool
+      autumn: cold
+      winter: very cold
+    features: [tall_trees, dead_wood]
+    real_world: >-
+      High-altitude conifer forest: owls, woodpeckers, martens, and the bigger forest predators.
+    suggestions:
+      - A mountain forest's Pokémon, strong ones among them.
+
+  - id: victory_road_caves
+    name: Victory Road (the caves)
+    maps: [victory_road, victory_road_5, victory_road_6, victory_road_8, victory_road_11]  # zones 16, 20, 21, 23, 26
+    used: confirmed (zone 26 is the passage to the ruins of N's Castle, the same environment)
+    facts:
+      tiles: { cave_floor: [78, 469, 221, 142, 161] }
+      water: { surf: 43 }  # zone 21
+      methods: [walking (cave floor), rustling (dust clouds), surf and fishing (zone 21)]
+      weather: none (indoors)
+    picture: >-
+      The caves through the mountain, and the passage to the ruins of N's Castle.
+    habitats: [cave, deep_cave, underground_water]
+    parts:
+      floors: deep mountain caves
+      water: an underground pool (zone 21)
+    human_presence: wild
+    climate:
+      all_year: cold, dark
+    features: [rocks]
+    real_world: >-
+      Deep mountain caves: bats, cave dwellers, and minerals.
+    suggestions:
+      - The strongest cave dwellers (rock and steel, dragons in the dark).
+
+  - id: victory_road_ruins
+    name: Victory Road (the ruins)
+    maps: [victory_road_2, victory_road_9]  # zones 17 and 24 (Black 2's and White 2's): to confirm
+    used: confirmed (which tables are the ruins is the cloud session's reading of the tiles, for the user to confirm)
+    facts:
+      tiles: { indoor_floor: 808, cave_floor: 197, surf: 228 }
+      methods: [walking (floor), rustling (dust clouds), surf, fishing]
+      weather: none (indoors)
+    picture: >-
+      Ruins inside the mountain, a different environment from the caves, with different Pokémon.
+    habitats: [ruins, cave, underground_water]
+    parts:
+      halls: ancient stone halls and floors
+      water: water among the ruins
+    human_presence: remote
+    climate:
+      all_year: cold, still, ancient
+    features: [ancient, spirits, rocks]
+    real_world: >-
+      Ruins in mountain caves: bats, and the guardians and spirits of legend.
+    suggestions:
+      - Ancient guardians and spirits, ruin dwellers (Golett's family, Sigilyph's kin, ghosts), different from the caves.
+

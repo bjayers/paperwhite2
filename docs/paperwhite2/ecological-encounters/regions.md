@@ -89,8 +89,11 @@ the Pokémon League.
 - **Giant Chasm:** three places: the outside (`giant_chasm`, zone 1, by Route 13 and Lacunosa), the caves
   (`giant_chasm_2`, the ring round the crater to Routes 22 and 23; `giant_chasm_5`, the cave with water) and the
   crater (`giant_chasm_3` and `_4`). Kyurem's inner cave (zone 6) has no encounter table.
-- **Victory Road** (taken separately): its 11 tables are zones 16 to 26 in order; zones 1 to 15 and 27 have none
-  (3 to 15 use a Black City matrix).
+- **Victory Road:** its 11 tables are zones 16 to 26 in order; zones 1 to 15 and 27 have none (3 to 15 use a Black City
+  matrix). Tables 2 and 9 (zones 17 and 24) are Black 2's and White 2's versions of one room, as are tables 4 and 10
+  (zones 19 and 25). Four places, the user's groups: the mountainside (4, 10, 7), the forest (3), the caves (1, 5,
+  6, 8, 11, with the passage to N's Castle) and the ruins (2 and 9, to confirm).
+- **Giant Chasm's crater:** zones 3 and 4 are two versions of one map (Team Plasma's event), sharing their Pokémon.
 
 ## 8. The east coast
 
