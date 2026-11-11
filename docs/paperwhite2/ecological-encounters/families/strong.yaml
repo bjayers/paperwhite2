@@ -1,0 +1,268 @@
+# Batch 8: strong lines, pseudo-legendaries and trophies (11 families). Draft of 2026-11-14 for review.
+#
+# Summary
+# - Never common (rules.md, 8) and mostly late in the game, where their ecology allows: the north's mountains, the
+#   League's road and its caves, Giant Chasm, a dragon's lake.
+# - Dragons: Dratini in Dragonspiral's clear, deep lake (rippling water: the places' suggestion), Dragonite at sea
+#   guiding the shipwrecked (Route 17's currents); Deino and Druddigon in Victory Road's dark caves (Druddigon running
+#   the tunnels Onix and Excadrill dig, its Pokédex says, so Clay Tunnel too); Bagon leaping off Route 23's cliffs;
+#   Gible in Relic Passage's sandy caves; Axew in Mistralton Cave (the original's), Fraxure with Bisharp on Route 23
+#   (Pokécology: same place), sharpening its tusks on the river's rocks.
+# - Larvitar born deep under Victory Road, Pupitar and Tyranitar on its mountain; Beldum's line at Giant Chasm (the
+#   user's request).
+# - Absol comes out of the mountains with the storms (weather-only homes on Routes 14 and Abundant Shrine).
+# - Bouffalant herds on the north's open hills (Route 12) and by Route 9.
+# - Review: the number of trophies at Victory Road; Dragonite wild at all.
+
+families:
+
+  - id: dratini
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Dratini): the 'Mirage Pokémon', so few have seen it; its shed skin has been found."
+      - "Pokédex (B2W2, Dragonair): said to live in seas and lakes; its aura changes the weather."
+      - "Pokédex (B2W2, Dragonite): it lives somewhere in the sea and guides shipwrecked crews to shore."
+      - "The places: Dragonspiral's clear, deep, cold lake as a dragon's water (Johto's Dragon's Den is a sacred lake)."
+      - "In the game: a gift Dratini at Floccesy Town; a Hidden Grotto Dragonite on Route 18."
+    habitats: {lake: 3, open_sea: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [rain], less: [], only: []}
+    abundance: exotic
+    trophy: [dragonspiral_grounds, route_17]
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {dratini: wild, dragonair: wild, dragonite: {wild: true, note: "at sea only, very late"}}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: dragonspiral_grounds, methods: [rippling_fishing, rippling_surf], seasons: all, tier: exotic, stages: [dratini, dragonair], why: "the Mirage Pokémon in the dragons' lake: the trophy"}
+      - {place: route_17, methods: [rippling_surf], seasons: all, tier: exotic, stages: [dragonite], why: "guiding the shipwrecked through the currents"}
+    review:
+      - "Dragonite wild only at sea and at its own evolution level (55)."
+
+  - id: larvitar
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Larvitar): born deep underground, it surfaces and becomes a pupa once it has eaten the soil round it."
+      - "Pokédex (B2W2, Tyranitar): its steps make great mountains crumble."
+      - "Other games: Mt. Silver."
+    habitats: {deep_cave: 3, mountain: 3}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [sandstorm], less: [], only: []}
+    abundance: exotic
+    trophy: [victory_road_caves]
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {larvitar: wild, pupitar: wild, tyranitar: {wild: true, note: "very rare"}}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: victory_road_caves, methods: [grass], seasons: all, tier: exotic, stages: [larvitar], why: "born deep under the League's mountain: the trophy"}
+      - {place: victory_road_mountainside, methods: [dark_grass], seasons: all, tier: very_rare, stages: [pupitar, tyranitar], why: "on the mountain it reshapes"}
+    review: []
+
+  - id: bagon
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Bagon): dreaming of flight, it leaps off cliffs every day."
+      - "Pokédex (B2W2, Salamence): its long dream changed its cells, and wings grew."
+    habitats: {cliff: 3, mountain: 2}
+    time: {periods: day, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: exotic
+    trophy: [route_23]
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {bagon: wild, shelgon: wild, salamence: {wild: true, note: "very rare, over the heights"}}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: route_23, methods: [dark_grass], seasons: all, tier: exotic, stages: [bagon], why: "leaping off the cliff island: the trophy"}
+      - {place: victory_road_mountainside, methods: [dark_grass], seasons: all, tier: very_rare, stages: [shelgon, salamence], why: "the high cliffs"}
+    review: []
+
+  - id: beldum
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Beldum): its cells are magnetic; it talks with magnetic pulses."
+      - "Pokédex (B2W2, Metang): two Beldum joined."
+      - "The user: Giant Chasm's space Pokémon (Beldum among them); a Hidden Grotto Metang there."
+    habitats: {snowfield: 2, cave: 2, dense_forest: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: exotic
+    trophy: [giant_chasm_caves]
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {beldum: wild, metang: wild, metagross: {wild: true, note: "very rare"}}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: giant_chasm_caves, methods: [grass], seasons: all, tier: exotic, stages: [beldum], why: "the meteorite's caves (the user's request): the trophy"}
+      - {place: giant_chasm_crater, methods: [dark_grass], seasons: all, tier: very_rare, stages: [metang, metagross], why: "the crater"}
+    review: []
+
+  - id: gible
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Gabite): it loves sparkly things and hoards treasure from caves in its nest."
+      - "Pokédex (B2W2, Garchomp): at speed, its wings make blades of wind."
+      - "Other games: Sinnoh's Wayward Cave, sandy and hidden."
+      - "In the game: a gift Gible at Floccesy Town."
+    habitats: {cave: 3, desert: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [sandstorm], less: [], only: []}
+    abundance: exotic
+    trophy: [relic_passage]
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {gible: wild, gabite: wild, garchomp: {wild: true, note: "very rare"}}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: relic_passage, methods: [grass], seasons: all, tier: exotic, stages: [gible], why: "the sandy caves toward Relic Castle, as Wayward Cave: the trophy"}
+      - {place: relic_castle, methods: [grass], seasons: all, tier: very_rare, stages: [gabite], why: "after the castle's treasure"}
+      - {place: victory_road_caves, methods: [grass], seasons: all, tier: very_rare, stages: [garchomp], why: "the deep caves"}
+    review:
+      - "Gible early (Relic Passage) as a trophy: the level gate keeps its later stages late."
+
+  - id: deino
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Deino): blind, it bumps into things and eats anything that moves."
+      - "Pokédex (B2W2, Hydreigon): it devours everything in its path."
+      - "In the original games: Victory Road."
+    habitats: {deep_cave: 3}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: exotic
+    trophy: [victory_road_caves]
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {deino: wild, zweilous: wild, hydreigon: {wild: false, note: "only by evolving (level 64)"}}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: victory_road_caves, methods: [grass], seasons: all, tier: exotic, why: "the dragons in the dark (the places), as in the original"}
+    review:
+      - "Victory Road's caves have two trophies (Larvitar, Deino); one could move."
+
+  - id: axew
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Axew): its tusks break and grow back harder."
+      - "Pokédex (B2W2, Fraxure): a broken tusk won't grow back, so it sharpens them on river rocks."
+      - "Pokécology (the user's notes): Bisharp and Fraxure in the same place."
+      - "In the original games: Mistralton Cave (the places: a young dragon of the cave, rare)."
+    habitats: {cave: 3, river: 2, conifer_forest: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: rare
+    trophy: [mistralton_cave]
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {axew: wild, fraxure: wild, haxorus: {wild: true, note: "very rare"}}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: mistralton_cave, methods: [grass], seasons: all, tier: exotic, stages: [axew], why: "the original's young dragon: the trophy"}
+      - {place: route_23, methods: [grass], seasons: all, tier: rare, stages: [fraxure], why: "sharpening its tusks on the river's rocks, with Bisharp (Pokécology)"}
+      - {place: victory_road_mountainside, methods: [dark_grass], seasons: all, tier: very_rare, stages: [haxorus], why: "the League's mountain"}
+    review: []
+
+  - id: druddigon
+    origin: native
+    lore:
+      - "Pokédex (B2W2): it runs through the narrow tunnels Excadrill and Onix make."
+      - "In the original games: Dragonspiral Tower and Victory Road."
+    habitats: {cave: 3, deep_cave: 3, tower: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {druddigon: wild}
+    levels: {druddigon: [25, 100]}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: dragonspiral_tower, methods: [grass], seasons: all, tier: rare, why: "the dragons' tower, as in the original"}
+      - {place: clay_tunnel, methods: [grass], seasons: all, tier: rare, why: "Onix's and Excadrill's tunnels"}
+      - {place: victory_road_caves, methods: [grass], seasons: all, tier: rare, why: "the deep tunnels"}
+    review: []
+
+  - id: pawniard
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Pawniard): groups ignore their wounds and sink their blades into prey."
+      - "Pokédex (B2W2, Bisharp): it commands a group of Pawniard to hound prey."
+      - "Pokécology (the user's notes): Bisharp and Fraxure in the same place."
+      - "The places: Route 23's labyrinth of trees suits stalkers and ambushers."
+    habitats: {conifer_forest: 3, mountain: 2, cliff: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: family}
+    stages: {pawniard: wild, bisharp: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: route_23, methods: [grass], seasons: all, tier: rare, why: "packs ambushing in the conifer maze, with Fraxure (Pokécology)"}
+      - {place: victory_road_mountainside, methods: [grass], seasons: all, tier: rare, why: "the League's mountain"}
+    review: []
+
+  - id: absol
+    origin: native
+    lore:
+      - "Pokédex (B2W2): it comes from deep in the mountains to warn people of disasters it senses."
+      - "The places: the Forces of Nature's storms at Abundant Shrine and on Route 14."
+    habitats: {mountain: 3, cliff: 2, hills: 1}
+    time: {periods: any, strength: none}
+    seasons: all year, whenever the storms come
+    migration: resident
+    weather: {more: [], less: [], only: [thunderstorm, gusty_rain, blizzard]}
+    abundance: rare
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {absol: wild}
+    levels: {absol: [20, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_14, methods: [dark_grass], seasons: all, tier: rare, weather: [thunderstorm, gusty_rain], why: "down from the mountains before the storms"}
+      - {place: abundant_shrine, methods: [dark_grass], seasons: all, tier: rare, weather: [thunderstorm, gusty_rain], why: "warning the shrine of the Forces of Nature's storms"}
+      - {place: dragonspiral_entrance, methods: [dark_grass], seasons: [winter], tier: rare, weather: [blizzard], why: "out of the blizzard on the cliffside"}
+    review:
+      - "Weather-only: the user would add rare storms to Route 14 and Abundant Shrine (weather.md)."
+
+  - id: bouffalant
+    origin: native
+    lore:
+      - "Pokédex (B2W2): it charges so wildly a train in its territory would be sent flying."
+      - "In the game: a Hidden Grotto Bouffalant on Route 9."
+      - "Real world: bison herds on the open grassland."
+    habitats: {hills: 3, meadow: 3, pasture: 2}
+    time: {periods: day, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: family}
+    stages: {bouffalant: wild}
+    levels: {bouffalant: [20, 100]}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: route_12, methods: [dark_grass], seasons: all, tier: uncommon, why: "herds on the north's open hills"}
+      - {place: route_9, methods: [dark_grass], seasons: all, tier: rare, why: "by the tracks at the town's edge (its Hidden Grotto)"}
+    review: []

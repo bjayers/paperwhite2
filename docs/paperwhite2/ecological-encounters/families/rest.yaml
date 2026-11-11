@@ -1,0 +1,146 @@
+# Batch 9: the rest: industry, pollution and trash (6 families). Draft of 2026-11-14 for review.
+#
+# Summary
+# - Virbank Complex keeps close to its NPCs (the user's request): Magnemite, Voltorb, Grimer and Koffing among the
+#   machinery; P2 Laboratory's machines leak Magnemite and Voltorb onto the island (the places' suggestion).
+# - Pollution and litter: Grimer in Castelia's sewers and Virbank's harbour; Trubbish following litterers along Route 5
+#   and at Route 9's mall; Gulpin at the food stands.
+# - Magnezone only by Chargestone's magnetic field, very rarely.
+
+families:
+
+  - id: magnemite
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Magnemite): its units' waves expel antigravity, so it floats."
+      - "In the game: Magnemite NPCs at Virbank Complex; Magnemite evolves into Magnezone in Chargestone's magnetic field."
+      - "The places: P2 Laboratory's machines."
+    habitats: {industrial: 3, cave: 2, building: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [thunderstorm], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: family}
+    stages: {magnemite: wild, magneton: wild, magnezone: {wild: true, note: "Chargestone's magnetic field only"}}
+    levels: {magnezone: [35, 100]}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: virbank_complex, methods: [grass, dark_grass], seasons: all, tier: common, why: "its NPCs; the machinery"}
+      - {place: chargestone_cave, methods: [grass], seasons: all, tier: uncommon, stages: [magnemite, magneton], why: "the magnetized cave"}
+      - {place: chargestone_cave, methods: [grass], seasons: all, tier: very_rare, stages: [magnezone], why: "evolved by the cave's own field"}
+      - {place: p2_laboratory, methods: [grass], seasons: all, tier: uncommon, why: "loose from the lab's machines"}
+    review: []
+
+  - id: voltorb
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Voltorb): it looks just like a Poké Ball and may explode on contact."
+      - "Pokédex (B2W2, Electrode): bloated with electricity, it drifts on the wind."
+      - "In the game: Voltorb NPCs at Virbank Complex."
+    habitats: {industrial: 3, building: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [thunderstorm], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {voltorb: wild, electrode: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: virbank_complex, methods: [grass], seasons: all, tier: uncommon, why: "its NPCs; the complex's power"}
+      - {place: p2_laboratory, methods: [grass], seasons: all, tier: uncommon, why: "loose from the lab"}
+    review: []
+
+  - id: grimer
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Grimer): born from sludge, they gather in polluted places."
+      - "In the game: Grimer NPCs at Virbank Complex; a Hidden Grotto Muk on Route 9."
+    habitats: {sewer: 3, industrial: 3, estuary: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {grimer: wild, muk: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: castelia_sewers, methods: [grass], seasons: all, tier: common, why: "the sewers' sludge"}
+      - {place: castelia_sewers, methods: [surf], seasons: [spring, summer], tier: common, why: "the sewers' water"}
+      - {place: virbank_complex, methods: [grass], seasons: all, tier: uncommon, why: "its NPCs; the complex's waste"}
+      - {place: virbank_city, methods: [surf], seasons: all, tier: uncommon, why: "the polluted harbour"}
+    review: []
+
+  - id: koffing
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Koffing): its thin body holds toxic gas and can explode."
+      - "Pokédex (B2W2, Weezing): it mixes fumes from trash inside itself."
+      - "In the game: Koffing NPCs at Virbank Complex."
+    habitats: {industrial: 3, city: 2, sewer: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {koffing: wild, weezing: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: virbank_complex, methods: [grass, dark_grass], seasons: all, tier: common, why: "its NPCs; the complex's fumes"}
+      - {place: castelia_sewers, methods: [grass], seasons: all, tier: uncommon, why: "the sewers' gas"}
+    review: []
+
+  - id: trubbish
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Trubbish): wanting more garbage, they follow people who litter."
+      - "In the game: a Hidden Grotto Garbodor on Route 9."
+      - "The places: Route 5 is littered; Route 9's mall has a trash can."
+    habitats: {city: 3, suburb: 3, industrial: 2, park: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {trubbish: wild, garbodor: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: route_5, methods: [grass], seasons: all, tier: common, why: "following the road's litterers"}
+      - {place: route_9, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the mall's trash"}
+      - {place: castelia_park, methods: [dark_grass], seasons: all, tier: uncommon, why: "the city's rubbish"}
+      - {place: virbank_complex, methods: [grass], seasons: all, tier: uncommon, why: "the complex's scrap"}
+    review: []
+
+  - id: gulpin
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Gulpin): almost all stomach, it dissolves anything it swallows."
+      - "Pokédex (B2W2, Swalot): it swallows anything whole."
+    habitats: {suburb: 2, park: 2, city: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {gulpin: wild, swalot: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_9, methods: [grass], seasons: all, tier: uncommon, why: "the mall's food stands"}
+      - {place: route_5, methods: [dark_grass], seasons: all, tier: rare, why: "the cook's leftovers by the road"}
+    review: []
