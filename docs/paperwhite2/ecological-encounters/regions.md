@@ -118,7 +118,13 @@ knowledge decides which maps are used.
 ## Tiles
 
 `tiles.json` (made by `tools/tiles.py` in this folder) counts each encounter map's tiles where wild Pokémon appear,
-from its terrain: grass, dark grass (the double battles' grass classes), surf water, and other walking tiles by their
-class (cave floor 0xa, deep sand 0xc, swamp puddles 0x1c, indoor floors 0x16 and 0x23...), with water and bridges
-that have no encounters. It reads the maps as they are, without the seasons' and the versions' replacements (Black 2's
-Route 4 is one of those, so it shows no tiles), and can't tell a leftover map from a used one.
+from its terrain, in each season and version: the season's and the version's map replacements are applied
+(`res/field/map_replacements/replacements.json`; a version's first value is Black 2's, and the base maps are Black
+2's). An area with the same tiles all year has `tiles`; one that changes has `by_season` (or `by_version_season`).
+Grass, dark grass (the step code's double-battle grass classes), surf water, and other ground by its class (cave
+floor, deep sand, swamp puddles, indoor floors...), with water and bridges that have no encounters. It can't tell a
+leftover map from a used one, and events' replacements are left as before the event.
+
+What changes by season (2026-11-13): the Castelia Sewers are dry in autumn and winter (no water); the swamp puddles of
+Icirrus City, the Moor of Icirrus and Route 8 freeze in winter (no walking encounters), their water staying;
+Dragonspiral Tower's outside gains dark grass in winter.
