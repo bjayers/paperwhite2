@@ -201,4 +201,22 @@ void PokedexMovePanel_Show(PokedexMovePanel *panel, PokedexInfo *entry, u16 move
 void PokedexMovePanel_Close(PokedexMovePanel *panel, PokedexInfo *entry, u32 language);
 BOOL PokedexMovePanel_IsOpen(PokedexMovePanel *panel);
 
+// Flavour (paperwhite2_pokedex_info_flavour.c): the other games' Pokédex entries of the shown species that differ from
+// this game's, taken from the user's ROMs at build time (tools/paperwhite2/dex_flavour.py), and the version tab on the
+// top screen that names the game of the one shown
+
+typedef struct PokedexInfoFlavour PokedexInfoFlavour;
+
+// smallFont is font 1, for the tab's label; unit is the page's, for the tab's OBJs
+PokedexInfoFlavour *PokedexInfoFlavour_Create(HeapID heapId, Font *smallFont, ClActUnit *unit);
+void PokedexInfoFlavour_Free(PokedexInfoFlavour *flavour);
+// Reads the species' entries, which PokedexInfoFlavour_GetCount counts and the others number from 1
+void PokedexInfoFlavour_LoadSpecies(PokedexInfoFlavour *flavour, u16 species);
+u32 PokedexInfoFlavour_GetCount(PokedexInfoFlavour *flavour);
+// Draws the entry into bitmap at x, y, as PokedexInfo prints the description
+void PokedexInfoFlavour_DrawEntry(PokedexInfoFlavour *flavour, u32 index, GFLBitmap *bitmap, Font *font, int x, int y,
+                                  u16 color);
+// Shows the entry's tab from the next VBlank, or hides it for 0
+void PokedexInfoFlavour_ShowTab(PokedexInfoFlavour *flavour, u32 index);
+
 #endif // POKEBW2_PAPERWHITE2_POKEDEX_INFO_H
