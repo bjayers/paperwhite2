@@ -79,3 +79,11 @@ In winter the puddles freeze, so Icirrus City, Route 8 and the Moor have only wa
 | Route 9, Route 11, Village Bridge, Route 23 | none | rain now and then (Route 11's and Route 23's gorges could have mist, as scenery) |
 | Route 12 | spring rain 26%, summer clear, autumn rain 26%, winter rain 55% | **Wish:** perhaps a few snowy days in winter; spring above all |
 | Giant Chasm (outside, crater) | none | **Suggestion:** snow all year on some days (Kyurem's unnatural cold), so its ice Pokémon can follow the snow even in summer |
+
+## The east coast
+
+| Place | Now | Suggestions |
+| --- | --- | --- |
+| Route 13, Undella Town and Bay, Route 21 | none | **Agreed:** thunderstorms along the coast in summer; gusty rain (squalls) out at sea; gentle rain in spring and autumn |
+| Humilau City | none | rare tropical showers and summer thunderstorms; it barely changes otherwise |
+| Route 22 | none | rain with the coast; perhaps gusty rain (a windswept headland) |
