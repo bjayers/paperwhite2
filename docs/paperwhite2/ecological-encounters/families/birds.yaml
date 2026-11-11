@@ -256,7 +256,7 @@ families:
     trophy: []
     battles: {single: 100, double: 0, triple: 0, partners: family}
     stages: {skarmory: wild}
-    levels: {skarmory: [15, 100]}
+    levels: {skarmory: [25, 100]}
     wanderer: {appears: both, wanders: aggressive, grass: float}
     homes:
       - {place: virbank_complex, methods: [dark_grass], seasons: all, tier: rare, why: "its NPC; nesting in the complex's steel and thorny scrub"}

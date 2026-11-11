@@ -63,7 +63,9 @@ Hidden Grottoes are set by hand; the generator counts them as a source but never
   itself to some stages only where a story says so (Swanna only in winter, Gyarados only in vast waters, a trophy's
   base form).
 - **Powerful Pokémon met early** (2026-11-14) can have a raised minimum level (about 40) to keep them off the tables
-  until later (Gible in Relic Passage); most first stages still start at about 1.
+  until later (Gible in Relic Passage); most first stages still start at about 1. Only places before Driftveil need
+  this (the Southwest, Castelia and its sewers, Route 4, the desert, Relic Passage, Nimbasa and Route 5): later
+  places are past the fifth badge, where wild levels are over 33 anyway.
 - **Older stages deeper** (2026-11-14): a family can show its young near a cave's surface and its older stages only
   deeper in (Gible in Relic Passage, Gabite in Relic Castle's deepest rooms, Garchomp in Victory Road's caves), so
   it stays one family across places with some flair in where the old ones live.

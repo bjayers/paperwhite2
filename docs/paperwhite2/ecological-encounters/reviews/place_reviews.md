@@ -364,10 +364,10 @@ A small walled garden in the middle of the city: crows and rats, strays and scav
 
 **Walking (the floor)**
 
-- Spring: **common:** Grimer/Muk, Rattata/Raticate (more at night); **uncommon:** Koffing/Weezing, Stunky/Skuntank (night only), Trubbish/Garbodor, Zubat/Golbat
-- Summer: **common:** Grimer/Muk, Rattata/Raticate (more at night); **uncommon:** Koffing/Weezing, Stunky/Skuntank (night only), Trubbish/Garbodor, Zubat/Golbat
-- Autumn: **common:** Grimer/Muk, Rattata/Raticate (more at night); **uncommon:** Corphish/Crawdaunt (more at night), Koffing/Weezing, Sandile/Krokorok, Stunky/Skuntank (night only), Trubbish/Garbodor, Zubat/Golbat
-- Winter: **common:** Grimer/Muk, Rattata/Raticate (more at night); **uncommon:** Corphish/Crawdaunt (more at night), Koffing/Weezing, Sandile/Krokorok, Stunky/Skuntank (night only), Trubbish/Garbodor, Zubat/Golbat
+- Spring: **common:** Grimer/Muk, Rattata/Raticate (more at night); **uncommon:** Koffing/Weezing, Stunky/Skuntank (night only), Trubbish/Garbodor, Zubat; **rare:** Golbat (only in castelia_sewers_2, castelia_sewers_3, castelia_sewers_4, castelia_sewers_5)
+- Summer: **common:** Grimer/Muk, Rattata/Raticate (more at night); **uncommon:** Koffing/Weezing, Stunky/Skuntank (night only), Trubbish/Garbodor, Zubat; **rare:** Golbat (only in castelia_sewers_2, castelia_sewers_3, castelia_sewers_4, castelia_sewers_5)
+- Autumn: **common:** Grimer/Muk, Rattata/Raticate (more at night); **uncommon:** Corphish/Crawdaunt (more at night), Koffing/Weezing, Sandile/Krokorok, Stunky/Skuntank (night only), Trubbish/Garbodor, Zubat; **rare:** Golbat (only in castelia_sewers_2, castelia_sewers_3, castelia_sewers_4, castelia_sewers_5)
+- Winter: **common:** Grimer/Muk, Rattata/Raticate (more at night); **uncommon:** Corphish/Crawdaunt (more at night), Koffing/Weezing, Sandile/Krokorok, Stunky/Skuntank (night only), Trubbish/Garbodor, Zubat; **rare:** Golbat (only in castelia_sewers_2, castelia_sewers_3, castelia_sewers_4, castelia_sewers_5)
 
 **Surfing**
 
@@ -1875,7 +1875,7 @@ The countryside round the chasm, touched by its cold and strangeness: Pidove, do
 
 **Walking (the floor)**
 
-- All year: **common:** Zubat/Golbat; **uncommon:** Lunatone (night only), Roggenrola/Boldore, Sneasel (more at night), Solrock (day only); **rare:** Clefairy (night only), Cryogonal, Wobbuffet; **exotic:** Beldum
+- All year: **common:** Zubat; **uncommon:** Golbat (only in giant_chasm_5), Lunatone (night only), Roggenrola/Boldore, Sneasel (more at night), Solrock (day only); **rare:** Clefairy (night only), Cryogonal, Wobbuffet; **exotic:** Beldum
 
 **Rustling spots (dust clouds)**
 
@@ -2076,7 +2076,7 @@ A high mountain forest: Pineco, Stantler, Ursaring and Hariyama, owls, Beedrill,
 
 **Walking (the floor)**
 
-- All year: **common:** Durant, Golbat; **uncommon:** Boldore, Heatmor, Lairon/Aggron, Onix; **rare:** Druddigon, Sableye; **very rare:** Garchomp; **exotic:** Deino/Zweilous, Larvitar
+- All year: **common:** Durant, Golbat (only in victory_road_5, victory_road_6, victory_road_8, victory_road_11), Zubat (only in victory_road); **uncommon:** Boldore, Heatmor, Lairon/Aggron, Onix; **rare:** Druddigon, Sableye; **very rare:** Garchomp; **exotic:** Deino (only in victory_road, victory_road_5), Larvitar, Zweilous (only in victory_road_6, victory_road_8, victory_road_11)
 
 **Rustling spots (dust clouds)**
 
@@ -2254,7 +2254,7 @@ The resort's bay: pink Shellos, gulls, jellyfish in late summer with Tentacruel'
 
 **Walking (the floor)**
 
-- All year: **common:** Krabby/Kingler (more at night), Zubat/Golbat; **uncommon:** Dwebble/Crustle; **rare:** Shuckle
+- All year: **common:** Krabby/Kingler (more at night), Zubat; **uncommon:** Dwebble/Crustle, Golbat (only in seaside_cave_2); **rare:** Shuckle
 
 **Rustling spots (dust clouds)**
 
@@ -2491,7 +2491,7 @@ Unova's home for fire Pokémon (your request): Slugma and Numel by the lava lake
 
 **Walking (the floor)**
 
-- All year: **common:** Paras/Parasect (more at night), Zubat/Golbat; **uncommon:** Shelmet
+- All year: **common:** Paras/Parasect (more at night), Zubat; **uncommon:** Golbat (only in reversal_mountain_5, reversal_mountain_6, reversal_mountain_7), Shelmet
 
 **Rustling spots (dust clouds)**
 
@@ -2566,7 +2566,7 @@ A strip mine: the miners' companions (Timburr, Machop, Drilbur), Roggenrola and 
 
 **Walking (the floor)**
 
-- All year: **common:** Roggenrola/Boldore, Zubat/Golbat; **uncommon:** Baltoy/Claydol (only in underground_ruins), Excadrill, Machop/Machoke, Onix, Timburr/Gurdurr (more by day); **rare:** Druddigon, Dunsparce, Golett/Golurk (only in underground_ruins), Whismur/Loudred/Exploud
+- All year: **common:** Roggenrola/Boldore, Zubat; **uncommon:** Baltoy/Claydol (only in underground_ruins), Excadrill, Golbat (only in clay_tunnel_3), Machop/Machoke, Onix, Timburr/Gurdurr (more by day); **rare:** Druddigon, Dunsparce, Golett/Golurk (only in underground_ruins), Whismur/Loudred/Exploud
 
 **Rustling spots (dust clouds)**
 

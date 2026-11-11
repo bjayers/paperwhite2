@@ -43,13 +43,20 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: random, grass: float}
     homes:
-      - {place: seaside_cave, methods: [grass], seasons: all, tier: common, why: "bats in the sea cave's dark"}
-      - {place: clay_tunnel, methods: [grass], seasons: all, tier: common, why: "the old workings"}
-      - {place: giant_chasm_caves, methods: [grass], seasons: all, tier: common, why: "the cold caves"}
-      - {place: victory_road_caves, methods: [grass], seasons: all, tier: common, stages: [golbat], why: "the deep caves"}
-      - {place: reversal_mountain_damp, methods: [grass], seasons: all, tier: common, why: "the damp caves' bats"}
-      - {place: castelia_sewers, methods: [grass], seasons: all, tier: uncommon, why: "bats in the dark tunnels"}
-    review: []
+      - {place: seaside_cave, methods: [grass], seasons: all, tier: common, stages: [zubat], why: "bats in the sea cave's dark"}
+      - {place: seaside_cave, methods: [grass], seasons: all, tier: uncommon, stages: [golbat], areas: [seaside_cave_2], why: "the older bats deeper in"}
+      - {place: clay_tunnel, methods: [grass], seasons: all, tier: common, stages: [zubat], why: "the old workings"}
+      - {place: clay_tunnel, methods: [grass], seasons: all, tier: uncommon, stages: [golbat], areas: [clay_tunnel_3], why: "the older bats in the deepest tunnel"}
+      - {place: giant_chasm_caves, methods: [grass], seasons: all, tier: common, stages: [zubat], why: "the cold caves"}
+      - {place: giant_chasm_caves, methods: [grass], seasons: all, tier: uncommon, stages: [golbat], areas: [giant_chasm_5], why: "the older bats in the inner cave with water"}
+      - {place: victory_road_caves, methods: [grass], seasons: all, tier: common, stages: [zubat], areas: [victory_road], why: "near the caves' entrance"}
+      - {place: victory_road_caves, methods: [grass], seasons: all, tier: common, stages: [golbat], areas: [victory_road_5, victory_road_6, victory_road_8, victory_road_11], why: "the deep caves"}
+      - {place: reversal_mountain_damp, methods: [grass], seasons: all, tier: common, stages: [zubat], why: "the damp caves' bats"}
+      - {place: reversal_mountain_damp, methods: [grass], seasons: all, tier: uncommon, stages: [golbat], areas: [reversal_mountain_5, reversal_mountain_6, reversal_mountain_7], why: "the older bats deeper in"}
+      - {place: castelia_sewers, methods: [grass], seasons: all, tier: uncommon, stages: [zubat], why: "bats in the dark tunnels"}
+      - {place: castelia_sewers, methods: [grass], seasons: all, tier: rare, stages: [golbat], areas: [castelia_sewers_2, castelia_sewers_3, castelia_sewers_4, castelia_sewers_5], why: "the older bats in the sewer's rooms"}
+    review:
+      - "Golbat only deeper in each cave (the user, 2026-11-14); which maps are deeper is my guess from their order, to check in-game."
 
   - id: woobat
     origin: native

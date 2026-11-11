@@ -149,7 +149,8 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: aggressive, grass: stand}
     homes:
-      - {place: victory_road_caves, methods: [grass], seasons: all, tier: exotic, why: "the dragons in the dark (the places), as in the original"}
+      - {place: victory_road_caves, methods: [grass], seasons: all, tier: exotic, stages: [deino], areas: [victory_road, victory_road_5], why: "the young dragons nearer the entrance, as in the original"}
+      - {place: victory_road_caves, methods: [grass], seasons: all, tier: exotic, stages: [zweilous], areas: [victory_road_6, victory_road_8, victory_road_11], why: "the older dragons deeper in the dark"}
     review:
       - "Victory Road's caves have two trophies (Larvitar, Deino); one could move."
 

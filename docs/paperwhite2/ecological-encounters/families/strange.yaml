@@ -347,7 +347,7 @@ families:
     trophy: []
     battles: {single: 100, double: 0, triple: 0, partners: family}
     stages: {sigilyph: wild}
-    levels: {sigilyph: [15, 100]}
+    levels: {sigilyph: [22, 100]}
     wanderer: {appears: both, wanders: aggressive, grass: float}
     homes:
       - {place: desert_resort, methods: [grass], seasons: all, tier: uncommon, why: "the guardian statues' desert, as in the original"}
