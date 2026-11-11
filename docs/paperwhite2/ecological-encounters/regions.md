@@ -86,6 +86,11 @@ the Pokémon League.
   Sinnoh, full of Combee.
 - **Maps:** `route_9`, `route_11`, `village_bridge`, `route_12`, `route_23`, `giant_chasm` to `_5`, `victory_road` to
   `_11`.
+- **Giant Chasm:** three places: the outside (`giant_chasm`, zone 1, by Route 13 and Lacunosa), the caves
+  (`giant_chasm_2`, the ring round the crater to Routes 22 and 23; `giant_chasm_5`, the cave with water) and the
+  crater (`giant_chasm_3` and `_4`). Kyurem's inner cave (zone 6) has no encounter table.
+- **Victory Road** (taken separately): its 11 tables are zones 16 to 26 in order; zones 1 to 15 and 27 have none
+  (3 to 15 use a Black City matrix).
 
 ## 8. The east coast
 

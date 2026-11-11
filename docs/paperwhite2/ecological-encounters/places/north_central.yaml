@@ -1,0 +1,270 @@
+# Northern Central Unova (regions.md, 7): Route 9, Route 11, Village Bridge, Route 12, Giant Chasm (its outside, its
+# caves and its crater) and Route 23. Victory Road is taken separately (2026-11-13). Draft of 2026-11-13 from the
+# user's descriptions, for review. The layout is southwest.yaml's. No Pokémon NPCs are placed here yet.
+
+region:
+  id: north_central
+  name: Northern Central Unova
+  feel: >-
+    Rugged endgame territory, wild and sometimes mysterious: from Opelucid's outskirts to rustic Village Bridge, the
+    flowery hills of Route 12, the mysterious Giant Chasm and the rugged cliffs of Route 23.
+  towns: >-
+    No encounters, mood only: Opelucid City, and Lacunosa Town by Giant Chasm.
+  real_world: >-
+    River country and hill pasture, then mountains: waterfalls and gorges, wildflower hills with bees, a river village,
+    and the cold and strange of a crater.
+  basculin: >-
+    Red-Striped wherever it lives here (Route 9 is west of Opelucid but has no water)
+
+places:
+
+  - id: route_9
+    name: Route 9
+    maps: [route_9]
+    used: confirmed
+    facts:
+      tiles: { grass: 81, dark_grass: 52 }
+      methods: [grass, dark_grass, rustling (shaking grass)]
+      weather: none
+    picture: >-
+      Opelucid's outskirts and the Shopping Mall: between Route 5 and Route 16 in feel, not as much the wilderness's
+      edge as Route 16, not as busy as Route 5; full of roughnecks and bikers. A road from Opelucid to Tubeline Bridge;
+      north of it the mall and a small rest area with flower bushes, vending machines and a trash can; the south full
+      of both grasses and some trees, behind a short white fence. (The Challenger's Cave was reached from here; it's
+      blocked off in Black 2 and White 2, its maps unused placeholders.)
+    habitats: [suburb, meadow, woodland_edge]
+    parts:
+      grass: the grass and trees south of the road, grass and dark grass side by side
+      rest_area: flower bushes, vending machines and a trash can by the mall (scenery)
+    human_presence: suburban
+    climate:
+      spring: mild
+      summer: warm
+      autumn: cool
+      winter: cold
+    features: [garbage, flowers]
+    real_world: >-
+      Shopping-centre edges and verges: scavengers at the bins, pigeons and crows, feral cats, and meadow life in the
+      rough ground beyond the fence.
+    suggestions:
+      - Scavengers drawn by the mall and the rest area, and the outskirts' meadow life.
+
+  - id: route_11
+    name: Route 11
+    maps: [route_11]
+    used: confirmed
+    facts:
+      tiles: { grass: 156, dark_grass: 124, surf: 335 }
+      methods: [grass, dark_grass, rustling (shaking grass), surf, fishing]
+      weather: none
+    picture: >-
+      Many cliffs and waterfalls, and another camper. A lower level below the waterfall to the east: the grass above,
+      the dark grass below (separate places). The user sees it as a place for fighting Pokémon by the waterfalls: Throh
+      and Sawk in the two different grasses now, perhaps Tyrogue's evolutions.
+    habitats: [river, waterfall, cliff, conifer_forest, meadow]
+    parts:
+      grass: up on the cliffs above the waterfall
+      dark_grass: the lower level below the waterfall, to the east (a different habitat)
+      water: rivers and waterfalls between cliffs
+    human_presence: rural
+    climate:
+      spring: cool, snowmelt
+      summer: mild
+      autumn: cool
+      winter: cold
+    features: [cold_water, rocks]
+    real_world: >-
+      Waterfalls are where martial artists train in Japanese tradition (takigyō, meditation under the falls); and a
+      gorge's cold water, dippers, otters and trout.
+    suggestions:
+      - >-
+        Fighting Pokémon training by the falls, split between the two levels as counterparts (rules 5's branches):
+        Throh above and Sawk below, Hitmonlee and Hitmonchan the same way from Tyrogue (Tyrogue in both).
+      - Cold-water river life (Red-Striped Basculin).
+
+  - id: village_bridge
+    name: Village Bridge
+    maps: [village_bridge]
+    used: confirmed
+    facts:
+      tiles: { grass: 132, dark_grass: 78, surf: 828 }
+      methods: [grass, dark_grass, rustling (bridge shadows), surf, fishing]
+      weather: none
+    picture: >-
+      One of the user's favourites: a large, quaint stone bridge over a sizable river with a whole village on it,
+      parks, forest clearings, a basketball court and a tennis court round it, cobblestone paths and a stone room
+      under the bridge. Musicians round the area each add an instrument to the music when spoken to: a folksy music
+      theme. A fisherman under the bridge: a great spot for fishing. Northwest, the basketball court (vending machine,
+      trash can, the guitarist); southwest, a field of grass; northeast, a small clearing with a flautist, covered in
+      yellow flowers all year and ringed by dark grass (a separate habitat); southeast, the tennis court; under the
+      bridge on the west bank, a man by a barrel, the singer, who seems to live there; and a small patch of dark grass
+      on a cobblestone island in the river north of the bridge.
+    habitats: [river, meadow, park, deciduous_forest, suburb]
+    parts:
+      grass: the open field to the southwest
+      dark_grass: >-
+        the woods ringing the flowery clearing to the northeast (a different habitat from the field), and a patch on a
+        cobblestone island in the river
+      clearing: yellow flowers all year, round the flautist
+      river: a big river under the stone bridge, a fishing spot
+      shadows: birds under and over the bridge
+    human_presence: rural (a village)
+    climate:
+      spring: mild
+      summer: warm
+      autumn: cool
+      winter: cold
+    features: [flowers, garbage]
+    real_world: >-
+      A river village: swallows and martins nesting under the arches, pigeons, kingfishers, river fish and the anglers
+      who come for them; and crickets and birdsong for the music.
+    requests:
+      - Seaking spawning at the bridge in autumn (Pokécology).
+    suggestions:
+      - >-
+        The music theme: Pokémon that sing or chirp (Kricketot's family singing at dusk, Chatot, the Whismur line), with
+        the flautist's flowery clearing for pollinators.
+      - The river's fish at the fishing spot, swallows under the bridge (the shadows).
+
+  - id: route_12
+    name: Route 12
+    maps: [route_12]
+    used: confirmed
+    facts:
+      tiles: { grass: 132, dark_grass: 100 }
+      methods: [grass, dark_grass, rustling (shaking grass)]
+      weather: { spring: rain 26%, summer: clear, autumn: rain 26%, winter: rain 55% }
+    picture: >-
+      Hills covered in white and yellow flowers, with a green, overgrown grass road through them; dark grass in the
+      north, grass by the road. Like Floaroma Town and its surroundings in Sinnoh: a honey tree would be at home here.
+      Many bees (Combee, requested) and pollinators. Spring more than anything.
+    habitats: [flower_field, hills, meadow]
+    parts:
+      grass: flowery grass by the road
+      dark_grass: wilder grass on the hills to the north
+    human_presence: rural
+    climate:
+      spring: mild, flowers
+      summer: warm, flowers
+      autumn: mild, rainy
+      winter: cool, rainy (the user may add a few snowy days)
+    features: [flowers, berries]
+    real_world: >-
+      Wildflower hills: bees and their hives, butterflies and moths, hummingbirds, and the predators of bees (bears
+      after the honey, wasps).
+    requests:
+      - Combee (its family).
+    suggestions:
+      - >-
+        The honey tree's Pokémon (Sinnoh): Combee, Burmy and Mothim (which steals Combee's honey, Pokécology), Heracross,
+        Aipom, Cherubi, Wurmple; Munchlax and Teddiursa drawn by the honey; and pollinators (Butterfree with flowers,
+        Pokécology).
+
+  - id: giant_chasm_outside
+    name: Giant Chasm (the outside)
+    maps: [giant_chasm]
+    used: confirmed
+    facts:
+      tiles: { grass: 25, dark_grass: 36 }
+      methods: [grass, dark_grass, rustling (shaking grass)]
+      weather: none
+    picture: >-
+      The outer approach near Route 13 and Lacunosa Town: more normal, but still cold and touched by space.
+    habitats: [woodland_edge, cliff]
+    parts:
+      grass: grass at the approach, grass and dark grass side by side
+    human_presence: remote
+    climate:
+      all_year: cold for the place (Kyurem's influence), unnaturally so
+    features: [space, rocks]
+    real_world: A cold forest edge by a crater.
+    suggestions:
+      - The surrounding countryside's Pokémon, touched by the chasm's cold and a hint of its strangeness.
+
+  - id: giant_chasm_caves
+    name: Giant Chasm (the caves)
+    maps: [giant_chasm_2, giant_chasm_5]
+    used: >-
+      confirmed: zone 2 the cave ringing the crater (to Routes 22 and 23), zone 5 the cave with water. Zone 6, Kyurem's
+      inner cave, has no encounter table.
+    facts:
+      tiles: { cave_floor: 584, surf: 48 }  # zone 2
+      tiles_5: { cave_floor: 171, surf: 79 }  # zone 5
+      methods: [walking (cave floor), rustling (dust clouds), surf, fishing]
+      weather: none (indoors)
+    picture: The caves round and under the crater; cold.
+    habitats: [cave, deep_cave, underground_water]
+    parts:
+      ring: the cave ringing the crater
+      water: the cave with water
+    human_presence: remote
+    climate:
+      all_year: cold, unnaturally
+    features: [space, rocks, ice]
+    real_world: >-
+      Cold caves: bats, ice formations.
+    suggestions:
+      - Cave dwellers of the cold, and space-touched rock Pokémon (Lunatone and Solrock's kin).
+
+  - id: giant_chasm_crater
+    name: Giant Chasm (the crater)
+    maps: [giant_chasm_3, giant_chasm_4]
+    used: confirmed (zones 3 and 4, both the crater; one has the Plasma Frigate)
+    facts:
+      tiles: { grass: 215, dark_grass: 260 }  # zone 3
+      tiles_4: { grass: 111, dark_grass: 108 }
+      methods: [grass, dark_grass, rustling (shaking grass)]
+      weather: none
+    picture: >-
+      The most mysterious part: cold and wintry by Kyurem's influence, but unnatural, unlike Icirrus's or the
+      Southwest's winters. The place for otherworldly and space Pokémon: Clefairy, Solrock, Beldum and the like;
+      perhaps Deoxys's event in the crater; Ditto a candidate (perhaps Lostlorn too).
+    habitats: [dense_forest, meadow, snowfield]
+    parts:
+      grass: the crater floor's forest and clearings
+      dark_grass: thick growth in the crater
+    human_presence: wild
+    climate:
+      all_year: cold and wintry, unnaturally (Kyurem)
+    features: [space, ice, ancient]
+    real_world: >-
+      A meteorite crater: the lore of things from the sky, and a forest growing where nothing should be cold.
+    suggestions:
+      - >-
+        Space and otherworldly Pokémon: Clefairy's family (the moon), Solrock and Lunatone, Beldum's family, Elgyem and
+        Beheeyem (sightings of things from space), Minior; Ditto; unnatural cold (Cryogonal, Vanillite's family).
+
+  - id: route_23
+    name: Route 23
+    maps: [route_23]
+    used: confirmed
+    facts:
+      tiles: { grass: 388, dark_grass: 77, surf: 263 }
+      methods: [grass, dark_grass, rustling (shaking grass), surf, fishing]
+      weather: none
+    picture: >-
+      A large route ringed by cliffs. It starts on cobblestone paths by the river and follows it north over a few short
+      bridges, then climbs onto the cliffs with bridges hung high in the air. The western part lacks an identity: partly
+      woodsy, partly rocky, with maze-like paths through the trees. Mostly grass, with a patch of dark grass high on a
+      small island of rock cliffs, mostly ringed by trees. The water is mostly the river between the cliffs, with a
+      still, reflective pond to the west.
+    habitats: [river, cliff, mountain, conifer_forest, pond]
+    parts:
+      grass: by the river and through the western woods and rocks
+      dark_grass: a patch high on a small island of cliffs, ringed by trees
+      river: the river between the cliffs, under bridges
+      pond: a still, reflective pond to the west
+    human_presence: remote
+    climate:
+      spring: cool
+      summer: mild
+      autumn: cool
+      winter: cold
+    features: [rocks, cold_water, tall_trees]
+    real_world: >-
+      A gorge and its rim: cliff-nesting raptors, rock dwellers, cold river fish; the high country before the League.
+    suggestions:
+      - >-
+        An identity for the western maze: an old conifer wood among boulders where forest predators hunt (a labyrinth of
+        trees suits stalkers and ambushers), so the route has the gorge, the river and the wood.
+      - Cliff and mountain Pokémon on the heights, river fish below, still-water life in the pond.
