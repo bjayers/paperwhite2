@@ -46,8 +46,10 @@ FALLBACK_ERRORS = ("triangle count changed", "triangle topology or shared vertex
                    "this shape has no Nitro texture commands", "this UV has no editable Nitro texture command",
                    "UV before the first Nitro texture command", "changes an axis omitted by Nitro opcode",
                    "vertex coordinate is not representable", "vertex coordinate exceeds Nitro command range")
-# A material's polygon attributes: the fog applies to its polygons only with this bit
+# A material's polygon attributes: the fog applies to its polygons only with this bit, and the lights that light them
+# are these (light 0 the lowest)
 POLYGON_FOG = 1 << 15
+POLYGON_LIGHTS = 0xf
 SBC_PARAMS = {0x00: 0, 0x01: 0, 0x02: 2, 0x03: 1, 0x04: 1, 0x05: 1,
               0x06: 3, 0x07: 1, 0x08: 1, 0x0b: 0, 0x0c: 2, 0x0d: 2,
               0x24: 1, 0x26: 4, 0x2b: 0, 0x40: 0, 0x44: 1, 0x46: 4,
@@ -535,9 +537,9 @@ def patch_materials(chunk, doc, primitives, name):
     return bytes(data)
 
 
-def patch_material_fog(chunk, fog, name):
-    """Sets or clears the fog bit of the materials that data.json's material_fog names."""
-    if not fog:
+def patch_material_attributes(chunk, fog, lights, name):
+    """Sets the fog bit and the lights of the materials that data.json's material_fog and material_lights name."""
+    if not fog and not lights:
         return chunk
     data = bytearray(chunk)
     model_start = u32(data, 4)
@@ -545,15 +547,29 @@ def patch_material_fog(chunk, fog, name):
     model = block + dictionary_offsets(data, block + 8)[0]
     material_dict = model + u32(data, model + 8)
     names, records = nitro_model_writer.read_dictionary(data, material_dict + 4)
-    for material, enabled in fog.items():
+
+    def entry(field, material):
         if material not in names:
-            raise ValueError(f"{name}: material_fog names {material}, which the model has no material of")
+            raise ValueError(f"{name}: {field} names {material}, which the model has no material of")
+        return material_dict + struct.unpack_from("<I", records[names.index(material)])[0]
+
+    for material, enabled in (fog or {}).items():
         if not isinstance(enabled, bool):
             raise ValueError(f"{name}: material_fog's {material} must be true or false")
-        entry = material_dict + struct.unpack_from("<I", records[names.index(material)])[0]
-        polygon = u32(data, entry + 12)
+        offset = entry("material_fog", material) + 12
+        polygon = u32(data, offset)
         polygon = polygon | POLYGON_FOG if enabled else polygon & ~POLYGON_FOG
-        struct.pack_into("<I", data, entry + 12, polygon)
+        struct.pack_into("<I", data, offset, polygon)
+    for material, enabled in (lights or {}).items():
+        if (not isinstance(enabled, list) or len(set(enabled)) != len(enabled)
+                or any(not isinstance(light, int) or isinstance(light, bool) or not 0 <= light <= 3
+                       for light in enabled)):
+            raise ValueError(f"{name}: material_lights's {material} must list distinct lights 0 to 3")
+        offset = entry("material_lights", material) + 12
+        polygon = u32(data, offset) & ~POLYGON_LIGHTS
+        for light in enabled:
+            polygon |= 1 << light
+        struct.pack_into("<I", data, offset, polygon)
     return bytes(data)
 
 
@@ -1388,7 +1404,8 @@ def pack(directory, game, output):
                 edited = rebuild_topology(bound, doc, primitives, binary, mapping, name)
         archive[chunk_id] = edited
         archive[chunk_id] = patch_materials(archive[chunk_id], doc, primitives, name)
-        archive[chunk_id] = patch_material_fog(archive[chunk_id], data.get("material_fog"), name)
+        archive[chunk_id] = patch_material_attributes(archive[chunk_id], data.get("material_fog"),
+                                                      data.get("material_lights"), name)
         archive[chunk_id] = patch_terrains(archive[chunk_id], model_dir)
         archive[chunk_id] = patch_props(archive[chunk_id], doc)
     dest = Path(output)

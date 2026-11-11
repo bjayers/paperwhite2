@@ -28,4 +28,10 @@ void PaperWhite2_WeatherFog_Map(u32 *depthShift, s32 *offset);
 // the fog is off
 BOOL PaperWhite2_WeatherFog_IsRearPlaneFog(void);
 
+// Whether light 2 takes the fog's colour: in the same zones, while the fog is on. Castelia's own light file gives light
+// 2 the sky's colour (its clear colour) in every period, for its sky, its skyline billboards, its doorways' and street
+// ends' gradients (gra_w) and its shadows; a weather's light file gives light 2 a blue (night (8, 3, 29), day (11, 15,
+// 22)), so in a weather those stood out blue against the grey fog
+BOOL PaperWhite2_WeatherFog_IsSkyFogged(FieldFog *fog);
+
 #endif // PAPERWHITE2_WEATHER_FOG_H

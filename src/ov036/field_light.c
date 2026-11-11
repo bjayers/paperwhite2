@@ -224,7 +224,17 @@ static void FieldLight_FlushCore(const FieldLight *light, FieldFog *fog, G3DLigh
         for (i = 0; i < 4; i++) {
             if (light->current.enabled[i]) {
                 GFL_G3DLightSetDirVector(lights, i, &light->current.dirs[i]);
+#ifdef PAPERWHITE2
+                // Paper White 2: in Castelia, in a weather, the sky's light is the fog's colour
+                // (paperwhite2/weather_fog.h)
+                if (i == 2 && PaperWhite2_WeatherFog_IsSkyFogged(fog)) {
+                    GFL_G3DLightSetColor(lights, i, &light->current.materials[4]);
+                } else {
+                    GFL_G3DLightSetColor(lights, i, &light->current.colors[i]);
+                }
+#else
                 GFL_G3DLightSetColor(lights, i, &light->current.colors[i]);
+#endif
             } else {
                 GFL_G3DLightSetDirVector(lights, i, &zeroDir);
                 GFL_G3DLightSetColor(lights, i, &zeroColor);

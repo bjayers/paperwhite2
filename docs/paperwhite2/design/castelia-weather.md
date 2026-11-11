@@ -170,4 +170,9 @@ The user chose C, D and E, and for the fog, fog relative to the player in place 
   is full at the far plane (every weather's ramp here) and does nothing without fog.
 - **E**: the sheets move past the near plane by its distance where they'd lie in front of it (waterfront and Entree
   Forest only).
+- After the 3DS test (normal routes right): the blue skyline and the blue gradients at the streets' ends were
+  Castelia's light 2, the sky's light in its own light file, taking the weather light file's blue: it is the fog's
+  colour now while the fog is on. The bright gate was two unlit materials, lit by light 0 now. A shop doorway's
+  `h_mado_1` had the fog off. The waterfront's fog is 6 steps thicker (a tunable constant), as the 3DS showed it a bit
+  far; whether the W-buffer's depth is really 8 a unit stays for the 3DS to tell.
 - Not done yet: adding Castelia to the weather calendar.

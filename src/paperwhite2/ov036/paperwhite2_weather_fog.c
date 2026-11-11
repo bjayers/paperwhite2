@@ -32,6 +32,15 @@
 // How far the target's distance may be from the reference's on the reference's planes and keep the weather's values
 #define REF_DISTANCE_SLACK FX32_ONE
 
+// The W-buffer's depth a unit of distance, in the 15 bits the fog compares: the 24-bit depth is w, which the
+// projection (W scale 1) makes the distance in 1/4096 units (GBATEK), so 4096 / 512. DeSmuME's W-buffer fog doesn't
+// follow it, so only hardware can check it: a lower value puts a W-buffered camera's fog closer
+#define W_BUFFER_DEPTH_PER_UNIT 8
+// How many of the 32 steps of density a W-buffered camera's fog is thicker at its target than a normal town's. Paper
+// White 2's choice, after the 3DS showed the waterfront's fog (Castelia's only W-buffered weather camera) a bit far: 6
+// is about a fifth more (rain 41% to 59%, thunderstorm 31% to 50%); 0 matches a normal town
+#define W_BUFFER_FOG_EXTRA_STEPS 6
+
 #define FOG_DEPTH_MAX 0x7fff
 #define FOG_SHIFT_MAX 10
 // The highest offset a weather fogs at (the thunderstorm's); higher ones are its fades' ends
@@ -56,6 +65,8 @@ static struct {
     // The power of two the steps scale by
     s32 stepScale;
     BOOL rearPlaneFog;
+    // Whether light 2 is the fog's colour (PaperWhite2_WeatherFog_IsSkyFogged)
+    BOOL skyFogged;
 } sWeatherFog;
 
 static const u16 sRearPlaneFogZones[] = {
@@ -76,8 +87,7 @@ static s64 WeatherFog_ZScale(fx32 near, fx32 far) {
 }
 
 // The depth the fog compares at a distance in front of the camera: the Z-buffer's 0x7fff f (d - n) / (d (f - n)), or
-// the W-buffer's w, which the projection (W scale 1) makes the distance, in the top 15 bits of the 24-bit depth (8 a
-// unit)
+// the W-buffer's, W_BUFFER_DEPTH_PER_UNIT a unit
 static s32 WeatherFog_Depth(BOOL wBuffer, fx32 near, fx32 far, fx32 distance) {
     s32 depth;
 
@@ -85,7 +95,7 @@ static s32 WeatherFog_Depth(BOOL wBuffer, fx32 near, fx32 far, fx32 distance) {
         return 0;
     }
     if (wBuffer) {
-        depth = distance >> 9;
+        depth = distance * W_BUFFER_DEPTH_PER_UNIT >> FX32_SHIFT;
     } else {
         depth = WeatherFog_ZScale(near, far) * (distance - near) / distance >> 16;
     }
@@ -98,7 +108,7 @@ static s32 WeatherFog_Depth(BOOL wBuffer, fx32 near, fx32 far, fx32 distance) {
 // How fast the depth grows with distance there, in depth a unit, 16.16: the Z-buffer's 0x7fff f n / (d^2 (f - n))
 static s64 WeatherFog_DepthSlope(BOOL wBuffer, fx32 near, fx32 far, fx32 distance) {
     if (wBuffer) {
-        return 8 << 16;
+        return W_BUFFER_DEPTH_PER_UNIT << 16;
     }
     if (distance <= near) {
         distance = near;
@@ -162,20 +172,26 @@ void PaperWhite2_WeatherFog_Update(Field *field) {
             break;
         }
     }
-    if (sWeatherFog.rearPlaneFog != rearPlaneFog) {
+    if (sWeatherFog.rearPlaneFog != rearPlaneFog ||
+        sWeatherFog.skyFogged != PaperWhite2_WeatherFog_IsSkyFogged(field->fog)) {
         sWeatherFog.rearPlaneFog = rearPlaneFog;
+        sWeatherFog.skyFogged = PaperWhite2_WeatherFog_IsSkyFogged(field->fog);
         FieldLight_Flush(field->lightSystem, TRUE);
     }
 }
 
-// An offset on the reference camera mapped to this one, through the depths at the target
-static s32 WeatherFog_MapOffset(s32 offset, s32 stepScale) {
+// An offset on the reference camera mapped to this one, through the depths at the target, and a W-buffered camera's
+// extra steps of density
+static s32 WeatherFog_MapOffset(s32 offset, s32 shift, s32 stepScale) {
     s32 fromTarget = sWeatherFog.refTargetDepth - offset;
 
     if (stepScale >= 0) {
         fromTarget <<= stepScale;
     } else {
         fromTarget /= 1 << -stepScale;
+    }
+    if (sWeatherFog.wBuffer) {
+        fromTarget += W_BUFFER_FOG_EXTRA_STEPS * (0x400 >> shift);
     }
     return sWeatherFog.targetDepth - fromTarget;
 }
@@ -197,12 +213,12 @@ void PaperWhite2_WeatherFog_Map(u32 *depthShift, s32 *offset) {
         shift = FOG_SHIFT_MAX;
     }
     stepScale = (s32)*depthShift - shift;
-    mapped = WeatherFog_MapOffset(*offset, stepScale);
+    mapped = WeatherFog_MapOffset(*offset, shift, stepScale);
     if (*offset > WEATHER_FOG_OFFSET_MAX) {
         // A fade's end: from the highest weather offset's place on to no fog at all
-        top = WeatherFog_MapOffset(FOG_DEPTH_MAX, stepScale);
+        top = WeatherFog_MapOffset(FOG_DEPTH_MAX, shift, stepScale);
         if (top < FOG_DEPTH_MAX) {
-            knee = WeatherFog_MapOffset(WEATHER_FOG_OFFSET_MAX, stepScale);
+            knee = WeatherFog_MapOffset(WEATHER_FOG_OFFSET_MAX, shift, stepScale);
             mapped = knee + (*offset - WEATHER_FOG_OFFSET_MAX) * (FOG_DEPTH_MAX - knee) /
                                 (FOG_DEPTH_MAX - WEATHER_FOG_OFFSET_MAX);
         }
@@ -218,4 +234,8 @@ void PaperWhite2_WeatherFog_Map(u32 *depthShift, s32 *offset) {
 
 BOOL PaperWhite2_WeatherFog_IsRearPlaneFog(void) {
     return sWeatherFog.rearPlaneFog;
+}
+
+BOOL PaperWhite2_WeatherFog_IsSkyFogged(FieldFog *fog) {
+    return sWeatherFog.rearPlaneFog && FieldFog_IsEnabled(fog);
 }

@@ -27,6 +27,13 @@
             "type": "object", "additionalProperties": { "type": "boolean" },
             "description": "Whether the fog applies to a material's polygons (bit 15 of its polygon attributes), by the Nitro material's name, for the materials this changes from the game's model. The game leaves it off for some materials, which then stay unfogged in a weather's or a zone's fog"
         },
+        "material_lights": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 3 }, "maxItems": 4
+            },
+            "description": "The lights (0 to 3) that light a material's polygons (bits 0 to 3 of its polygon attributes), by the Nitro material's name, for the materials this changes from the game's model. An unlit material ([]) keeps its own colour whatever the light file gives, so the time of day and a weather's light don't change it"
+        },
         "transformed": {
             "enum": [ true ],
             "description": "Set when the GLB's positions went through the model's node transforms on export, which the packer reverses"

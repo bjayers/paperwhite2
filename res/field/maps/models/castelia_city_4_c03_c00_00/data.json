@@ -4,5 +4,10 @@
     "material_fog": {
         "c3_yuka": true,
         "c3bay_yuka1": true
+    },
+    "material_lights": {
+        "gate_4": [
+            0
+        ]
     }
 }
