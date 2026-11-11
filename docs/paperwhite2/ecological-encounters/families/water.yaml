@@ -1,0 +1,1131 @@
+# Batch 2: water (42 families). Draft of 2026-11-14 for review.
+#
+# Summary
+# - Fresh water by kind: small ponds (Magikarp, Poliwag, Lotad, Surskit, Tympole; Feebas the trophy of Striaton's),
+#   lakes (Psyduck, Goldeen, Barboach, Marill, Red-Striped Basculin on Route 3), cold clear rivers (Basculin by side of
+#   the Castelia-Nimbasa-Opelucid line, Bidoof's dams, Buizel's otters, Marill in strong currents, Seaking spawning at
+#   the bridges in autumn), Icirrus's fens (Tympole, Wooper, Stunfisk, Croagunk and Barboach in the mud; only the
+#   water's Pokémon in winter).
+# - The sea by temperature, from the cool open sea of Routes 17 and 21 (Seel and Spheal in winter, Wailmer feeding in
+#   summer, Carvanha, Frillish, Chinchou in the deep) to Humilau's warm reef (Corsola, Luvdisc, Horsea, Remoraid with
+#   Mantyke and Mantine, Lileep very rarely in the shallows). Shellos by temperature: pink in Humilau and Undella, blue
+#   round Routes 17 and 18. Lapras crowd Humilau and Undella in summer, when the reef fish there drop a tier.
+# - Rippling water holds the big ones: Gyarados in the vast waters, Wailord, Sharpedo, Jellicent, Alomomola,
+#   Whiscash, Seaking, Golduck, Floatzel; Basculin schools in rippling surf; Relicanth by Undella's dive spots.
+# - Trophies: Totodile in Castelia's sewers (spring and summer), Feebas (Striaton's ponds, Abundant Shrine, Route 23's
+#   pond), Relicanth (Undella), Lileep (Humilau).
+# - Not wild: Poliwrath and Starmie and Cloyster and Ludicolo (stones), Politoed, Slowking, Kingdra, Huntail and
+#   Gorebyss (trades), Milotic (beauty), Croconaw and Feraligatr; Cradily is wild only as Lileep evolves (no).
+# - Review: Corphish as introduced; Lombre at fishing spots; Seel and Spheal as winter visitors to a sea without ice;
+#   whales calving in the warm east in winter.
+
+families:
+
+  - id: psyduck
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Psyduck): headaches wake a mysterious power in its usually idle brain."
+      - "Other games: lakes and ponds throughout Kanto and Johto."
+      - "Real world: ducks and loons on lakes and slow rivers."
+    habitats: {lake: 3, pond: 2, river: 2, underground_water: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [rain], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {psyduck: wild, golduck: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_3, methods: [surf], seasons: all, tier: common, why: "the lake"}
+      - {place: route_3, methods: [rippling_surf], seasons: all, tier: uncommon, stages: [golduck], why: "the lake's bigger swimmers"}
+      - {place: wellspring_cave, methods: [surf], seasons: all, tier: common, why: "the cave's spring pools"}
+      - {place: dragonspiral_grounds, methods: [surf], seasons: all, tier: uncommon, why: "the clear, deep lake"}
+      - {place: dragonspiral_grounds, methods: [rippling_surf], seasons: all, tier: uncommon, stages: [golduck], why: "the deep lake's strong swimmers"}
+      - {place: route_23, methods: [surf], seasons: all, tier: uncommon, why: "the still pond to the west"}
+      - {place: victory_road_ruins, methods: [surf], seasons: all, tier: rare, stages: [golduck], why: "the ruins' still water"}
+      - {place: lostlorn_forest, methods: [surf], seasons: all, tier: uncommon, why: "the stream's pools"}
+    review: []
+
+  - id: poliwag
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Poliwag): its skin is so thin its organs show; it has trouble walking on its new feet."
+      - "Pokécology (the user's notes): Poliwhirl eats bugs."
+      - "In the game: a Hidden Grotto Poliwhirl in Pinwheel Forest's outskirts."
+      - "Real world: tadpoles in still ponds; frogs out at night and after rain, eating insects."
+    habitats: {pond: 3, marsh: 3, swamp: 2, lake: 2}
+    time: {periods: night, strength: preferred}
+    seasons: spring to autumn; few in winter (frogs sleep in the mud)
+    migration: resident
+    weather: {more: [rain], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {poliwag: wild, poliwhirl: wild, poliwrath: {wild: false, note: "a Water Stone's"}, politoed: {wild: false, note: "a trade's"}}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: pinwheel_forest, methods: [surf], seasons: [spring, summer, autumn], tier: common, why: "the still, leafy pond, rich in bugs"}
+      - {place: abundant_shrine, methods: [surf], seasons: [spring, summer, autumn], tier: uncommon, why: "the paddies' ponds"}
+      - {place: icirrus_city, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the fens' puddles at night, hunting bugs"}
+      - {place: moor_of_icirrus, methods: [surf], seasons: all, tier: uncommon, why: "the moor's pools; in winter under the ice's edge"}
+      - {place: route_22, methods: [surf], seasons: [spring, summer, autumn], tier: uncommon, why: "the upland's freshwater pond"}
+      - {place: route_23, methods: [surf], seasons: [spring, summer, autumn], tier: rare, why: "the still pond"}
+    review: []
+
+  - id: tentacool
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Tentacool): mostly water, it shrivels if washed ashore."
+      - "Pokécology (the user's notes): when Tentacruel's outbreaks come, the sea clears of other Pokémon."
+      - "Real world: jellyfish blooms in late summer on warm coasts."
+    habitats: {coastal_sea: 3, open_sea: 3, estuary: 1}
+    time: {periods: any, strength: none}
+    seasons: all year, at its peak in late summer and autumn; few in winter
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {tentacool: wild, tentacruel: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: route_13, methods: [surf], seasons: [summer, autumn], tier: common, why: "the late-summer bloom along the beaches"}
+      - {place: route_13, methods: [surf], seasons: [spring, winter], tier: uncommon, why: "the coast out of season"}
+      - {place: undella, methods: [surf], seasons: [summer, autumn], tier: common, why: "jellyfish in the bay late in summer"}
+      - {place: undella, methods: [surf], seasons: [spring, winter], tier: uncommon, why: "the bay out of season"}
+      - {place: route_21, methods: [surf], seasons: all, tier: common, why: "the open sea"}
+      - {place: route_17, methods: [surf], seasons: all, tier: common, why: "carried on the currents"}
+      - {place: route_18, methods: [surf], seasons: all, tier: uncommon, why: "the island's sea"}
+      - {place: route_4, methods: [surf], seasons: [summer, autumn], tier: uncommon, why: "the bay by the road"}
+      - {place: route_1, methods: [surf], seasons: [summer, autumn], tier: uncommon, why: "the inlet in summer"}
+      - {place: virbank_city, methods: [surf], seasons: [summer], tier: uncommon, why: "the harbour in summer"}
+      - {place: route_21, methods: [rippling_surf], seasons: [summer, autumn], tier: common, stages: [tentacruel], why: "the open sea's big ones"}
+    outbreaks:
+      - {places: [undella, route_13], seasons: [summer], stages: [tentacruel], why: "Tentacruel's outbreak clears the bay (Pokécology)"}
+    review: []
+
+  - id: slowpoke
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Slowpoke): slow, but skilled at fishing with its tail; it doesn't feel a bite on it."
+      - "Pokédex (B2W2, Slowbro): it seems inspired when the Shellder on its tail bites down."
+      - "Other games: Slowpoke Well, a cave with spring water."
+      - "Real world: seals and sea lions lazing at rocky inlets."
+    habitats: {underground_water: 3, rocky_shore: 3, coastal_sea: 2, estuary: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {slowpoke: wild, slowbro: wild, slowking: {wild: false, note: "a trade's"}}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: wellspring_cave, methods: [surf, fishing], seasons: all, tier: uncommon, why: "a spring cave, Unova's Slowpoke Well"}
+      - {place: route_1, methods: [surf], seasons: all, tier: uncommon, why: "the rocky inlet, fishing with its tail"}
+      - {place: seaside_cave, methods: [surf], seasons: all, tier: uncommon, why: "the sea cave's pools"}
+      - {place: seaside_cave, methods: [rippling_surf], seasons: all, tier: rare, stages: [slowbro], why: "bitten by the cave's Shellder"}
+    review: []
+
+  - id: seel
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Seel): the colder the better; it swims joyfully in oceans full of floating ice."
+      - "Pokédex (B2W2, Dewgong): it swims cold oceans at eight knots."
+      - "Real world: seals hauling out on rocks and in sea caves; northern seals move south in winter."
+    habitats: {open_sea: 3, rocky_shore: 3, coastal_sea: 1}
+    time: {periods: any, strength: none}
+    seasons: >-
+      All year in the cool currents round Routes 17 and 18; in winter, when the sea cools, out to Route 21's rocks and
+      Seaside Cave.
+    migration: partial
+    weather: {more: [snow, blizzard], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {seel: wild, dewgong: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: route_17, methods: [surf], seasons: all, tier: uncommon, why: "the cool, current-swept sea"}
+      - {place: p2_laboratory, methods: [surf], seasons: all, tier: uncommon, why: "the island's cool sea"}
+      - {place: route_21, methods: [surf], seasons: [winter], tier: uncommon, why: "hauling out on the rocks in winter"}
+      - {place: seaside_cave, methods: [surf], seasons: [autumn, winter], tier: uncommon, why: "seals in the sea cave in the cold seasons"}
+      - {place: route_17, methods: [rippling_surf], seasons: [winter], tier: uncommon, stages: [dewgong], why: "the cold sea's big swimmers"}
+    review:
+      - "Unova has no icy sea; Seel take the coolest water (Routes 17 and 18) and spread in winter."
+
+  - id: shellder
+    origin: native
+    lore:
+      - "Pokédex (B2W2): it swims backward by clapping its shells."
+      - "Slowbro and Slowking have a Shellder on them: it lives where Slowpoke fish."
+      - "Real world: scallops and clams in rocky coastal water and sea caves."
+    habitats: {rocky_shore: 3, coastal_sea: 2, open_sea: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {shellder: wild, cloyster: {wild: false, note: "a Water Stone's"}}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: seaside_cave, methods: [fishing], seasons: all, tier: common, why: "the sea cave's pools, with the Slowpoke"}
+      - {place: route_21, methods: [fishing], seasons: all, tier: uncommon, why: "among the rocks"}
+      - {place: route_1, methods: [fishing], seasons: all, tier: uncommon, why: "the rocky inlet"}
+      - {place: route_17, methods: [fishing], seasons: [winter], tier: uncommon, why: "the cold sea"}
+    review: []
+
+  - id: krabby
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Krabby): it lives in burrows dug on sandy beaches."
+      - "Real world: ghost and fiddler crabs on beaches; crabs in sea caves and tide pools."
+    habitats: {beach: 3, rocky_shore: 3, coastal_sea: 2}
+    time: {periods: night, strength: preferred}
+    seasons: all year; fewer in winter
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {krabby: wild, kingler: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: route_13, methods: [grass], seasons: all, tier: uncommon, why: "burrows on the beach under the cliffs"}
+      - {place: seaside_cave, methods: [grass], seasons: all, tier: common, why: "crabs on the sea cave's floors"}
+      - {place: route_18, methods: [grass], seasons: all, tier: uncommon, why: "the island's beaches"}
+      - {place: route_1, methods: [fishing], seasons: all, tier: common, why: "the rocky inlet"}
+      - {place: route_13, methods: [fishing], seasons: all, tier: uncommon, why: "the shallows off the beach"}
+      - {place: route_21, methods: [rippling_fishing], seasons: all, tier: uncommon, stages: [kingler], why: "big Kingler among the rocks"}
+    review: []
+
+  - id: horsea
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Horsea): it nests in the shade of corals and spits ink when in danger."
+      - "Pokédex (B2W2, Seadra): its fins and bones are prized as traditional medicine (so rarer near people)."
+    habitats: {reef: 3, coastal_sea: 2, rocky_shore: 1}
+    time: {periods: any, strength: none}
+    seasons: all year; fewer at Humilau in summer, when the Lapras hunt there
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {horsea: wild, seadra: wild, kingdra: {wild: false, note: "a trade's"}}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: humilau_city, methods: [fishing], seasons: [spring, autumn, winter], tier: common, why: "nests in the corals"}
+      - {place: humilau_city, methods: [fishing], seasons: [summer], tier: uncommon, why: "fewer when the Lapras hunt the reef"}
+      - {place: humilau_city, methods: [rippling_fishing], seasons: all, tier: uncommon, stages: [seadra], why: "the reef's bigger ones"}
+      - {place: undella, methods: [fishing], seasons: [summer], tier: uncommon, why: "following the corals in summer"}
+      - {place: route_21, methods: [fishing], seasons: all, tier: uncommon, why: "kelp among the rocks"}
+    review: []
+
+  - id: goldeen
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Seaking): in autumn it grows fatty and colourful to court a mate."
+      - "Pokécology (the user's notes): Seaking lay eggs in autumn, near bridges."
+      - "The user: Seaking at bridges on Route 6, Village Bridge and Route 14; ornamental fish in Striaton's ponds."
+      - "Real world: salmon spawning runs in autumn; goldfish in ornamental ponds."
+    habitats: {river: 3, lake: 3, pond: 2, stream: 2, underground_water: 1}
+    time: {periods: any, strength: none}
+    seasons: all year; Seaking gather at the bridges to spawn in autumn
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {goldeen: wild, seaking: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: striaton_city, methods: [fishing], seasons: all, tier: common, stages: [goldeen], why: "ornamental fish in the park's ponds"}
+      - {place: route_3, methods: [fishing], seasons: all, tier: common, why: "the lake's fish"}
+      - {place: route_6, methods: [fishing], seasons: all, tier: common, why: "the river"}
+      - {place: route_6, methods: [rippling_fishing, rippling_surf], seasons: [autumn], tier: common, stages: [seaking], why: "spawning at the bridges in autumn (Pokécology)"}
+      - {place: village_bridge, methods: [fishing], seasons: all, tier: common, why: "the village's fishing spot"}
+      - {place: village_bridge, methods: [rippling_fishing, rippling_surf], seasons: [autumn], tier: common, stages: [seaking], why: "spawning under the bridge in autumn"}
+      - {place: route_14, methods: [fishing], seasons: all, tier: uncommon, why: "the mountain river"}
+      - {place: route_14, methods: [rippling_fishing], seasons: [autumn], tier: common, stages: [seaking], why: "spawning at the bridges in autumn"}
+      - {place: route_20, methods: [fishing], seasons: all, tier: uncommon, why: "the clear stream"}
+      - {place: floccesy_ranch, methods: [fishing], seasons: all, tier: uncommon, why: "the ranch's river"}
+      - {place: lostlorn_forest, methods: [fishing], seasons: all, tier: uncommon, why: "the stream"}
+      - {place: wellspring_cave, methods: [fishing], seasons: all, tier: uncommon, why: "spring water"}
+    review: []
+
+  - id: staryu
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Staryu): while its red core remains, it regrows its body."
+      - "Pokédex (B2W2, Starmie): its core sends radio signals into space."
+      - "Other Pokédex entries (paraphrased): on summer nights Staryu gather on sandy shores, their cores flashing."
+    habitats: {beach: 3, coastal_sea: 3, reef: 2}
+    time: {periods: night, strength: preferred}
+    seasons: all year; most on summer nights
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {staryu: wild, starmie: {wild: false, note: "a Water Stone's"}}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: route_13, methods: [surf], seasons: [summer], tier: common, why: "summer nights on the sandy shore"}
+      - {place: route_13, methods: [surf], seasons: [spring, autumn, winter], tier: uncommon, why: "the clear coastal sea"}
+      - {place: undella, methods: [surf], seasons: all, tier: uncommon, why: "the bay's shallows"}
+      - {place: humilau_city, methods: [surf], seasons: all, tier: uncommon, why: "the reef"}
+      - {place: route_18, methods: [surf], seasons: [summer], tier: uncommon, why: "the island's beaches"}
+    review:
+      - "Starmie not wild (a Water Stone); it could be a rippling-surf rarity if you'd like one."
+
+  - id: magikarp
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Magikarp): one living many years can leap a mountain with Splash."
+      - "Pokécology (the user's notes): Magikarp in small ponds and puddles; Gyarados in vast seas and lakes."
+      - "In the game: a gift Magikarp at Marvelous Bridge."
+    habitats: {pond: 3, lake: 3, river: 2, stream: 2, marsh: 2, coastal_sea: 2, underground_water: 2, sewer: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {magikarp: wild, gyarados: {wild: true, note: "the vast waters' rippling spots only"}}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: aspertia_city, methods: [fishing], seasons: all, tier: common, stages: [magikarp], why: "the garden pond (Pokécology's small ponds)"}
+      - {place: route_19, methods: [fishing], seasons: all, tier: common, stages: [magikarp], why: "the pond under the cliff"}
+      - {place: striaton_city, methods: [fishing], seasons: all, tier: common, stages: [magikarp], why: "the park's ponds, released pets among them"}
+      - {place: pinwheel_forest, methods: [fishing], seasons: all, tier: common, stages: [magikarp], why: "the leafy pond"}
+      - {place: route_22, methods: [fishing], seasons: all, tier: common, stages: [magikarp], why: "the upland pond"}
+      - {place: abundant_shrine, methods: [fishing], seasons: all, tier: common, stages: [magikarp], why: "the paddies' ponds"}
+      - {place: castelia_sewers, methods: [fishing], seasons: [spring, summer], tier: common, stages: [magikarp], why: "the sewers' water, hardy carp"}
+      - {place: icirrus_city, methods: [fishing], seasons: all, tier: common, stages: [magikarp], why: "the marsh water"}
+      - {place: route_8, methods: [fishing], seasons: all, tier: common, stages: [magikarp], why: "the marsh water"}
+      - {place: route_3, methods: [fishing], seasons: all, tier: common, stages: [magikarp], why: "the lake"}
+      - {place: village_bridge, methods: [fishing], seasons: all, tier: common, stages: [magikarp], why: "the big river"}
+      - {place: wellspring_cave, methods: [fishing], seasons: all, tier: common, stages: [magikarp], why: "the cave's pools"}
+      - {place: clay_tunnel, methods: [fishing], seasons: all, tier: common, stages: [magikarp], why: "underground water"}
+      - {place: route_1, methods: [fishing], seasons: all, tier: uncommon, stages: [magikarp], why: "the inlet: it lives in salt water too"}
+      - {place: route_3, methods: [rippling_fishing], seasons: all, tier: rare, stages: [gyarados], why: "the lake is big enough"}
+      - {place: dragonspiral_grounds, methods: [rippling_fishing], seasons: all, tier: uncommon, stages: [gyarados], why: "the deep lake"}
+      - {place: village_bridge, methods: [rippling_fishing], seasons: all, tier: rare, stages: [gyarados], why: "the big river"}
+      - {place: undella, methods: [rippling_fishing], seasons: all, tier: uncommon, stages: [gyarados], why: "the open bay (Pokécology's vast seas)"}
+      - {place: route_21, methods: [rippling_fishing], seasons: all, tier: uncommon, stages: [gyarados], why: "the open sea"}
+      - {place: route_17, methods: [rippling_fishing], seasons: all, tier: uncommon, stages: [gyarados], why: "the open sea's currents"}
+    review: []
+
+  - id: lapras
+    origin: native
+    lore:
+      - "Pokédex (B2W2): very intelligent, it loves to swim in the sea with people on its back."
+      - "Pokécology (the user's notes): Lapras eat fish; abundant near Humilau in summer, with fewer fish then."
+      - "The user: people bring their Lapras to Humilau and Undella in summer."
+    habitats: {open_sea: 3, reef: 2, coastal_sea: 2}
+    time: {periods: day, strength: preferred}
+    seasons: >-
+      Rare out in the cool open sea most of the year; in summer it crowds Humilau's reef and Undella's bay (with the
+      tourists), and the reef's fish drop a tier there.
+    migration: partial
+    weather: {more: [], less: [], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {lapras: wild}
+    levels: {lapras: [20, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: humilau_city, methods: [surf], seasons: [summer], tier: common, why: "summer's overhunting of the reef (Pokécology)"}
+      - {place: undella, methods: [surf], seasons: [summer], tier: uncommon, why: "summer at the resort with the tourists"}
+      - {place: route_21, methods: [rippling_surf], seasons: [spring, autumn, winter], tier: rare, why: "the open sea out of season"}
+      - {place: route_17, methods: [rippling_surf], seasons: all, tier: rare, why: "the cool open sea"}
+    review: []
+
+  - id: totodile
+    origin: introduced
+    lore:
+      - "Pokédex (B2W2): it bites anything with its developed jaws."
+      - "The user: Totodile a very rare trophy in Castelia's sewers in spring and summer (the sewer alligator)."
+      - "Real world: New York's legend of pet alligators flushed into the sewers and grown big in the dark."
+    habitats: {sewer: 3}
+    time: {periods: any, strength: none}
+    seasons: spring and summer, when the sewers have water
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: exotic
+    trophy: [castelia_sewers]
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {totodile: wild, croconaw: {wild: false, note: "grown only with a trainer"}, feraligatr: {wild: false}}
+    levels: {totodile: [5, 21]}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: castelia_sewers, methods: [surf], seasons: [spring, summer], tier: exotic, why: "the sewer alligator: the trophy (the user's request)"}
+    review: []
+
+  - id: chinchou
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Lanturn): its light shines up from great depths: 'the Deep-Sea Star'."
+      - "Pokédex (B2W2, Lumineon): it competes with Lanturn for food (they share the deep)."
+      - "Real world: anglerfish and lanternfish rise toward the surface at night."
+    habitats: {open_sea: 3, coastal_sea: 1}
+    time: {periods: night, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {chinchou: wild, lanturn: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: route_17, methods: [fishing], seasons: all, tier: uncommon, why: "the deep open sea, rising at night"}
+      - {place: route_21, methods: [fishing], seasons: all, tier: uncommon, why: "deep water among the rocks"}
+      - {place: undella, methods: [fishing], seasons: all, tier: rare, why: "the dive spots' depths"}
+      - {place: route_17, methods: [rippling_fishing], seasons: all, tier: uncommon, stages: [lanturn], why: "the Deep-Sea Star"}
+      - {place: humilau_city, methods: [rippling_fishing], seasons: all, tier: rare, stages: [lanturn], why: "the shelf's edge, where the deep begins"}
+    review: []
+
+  - id: wooper
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Wooper): on land it covers itself in a poisonous film to keep from drying out."
+      - "Other Pokédex entries (paraphrased): it lives in cold water and comes out on land at night to feed."
+      - "Real world: axolotls and salamanders in cold marshes and paddies."
+    habitats: {marsh: 3, swamp: 3, pond: 2, farmland: 1}
+    time: {periods: night, strength: preferred}
+    seasons: all year in the water; on the fens' puddles from spring to autumn
+    migration: resident
+    weather: {more: [rain], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {wooper: wild, quagsire: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: icirrus_city, methods: [grass], seasons: [spring, summer, autumn], tier: common, why: "the fens' cold mud"}
+      - {place: route_8, methods: [grass], seasons: [spring, summer, autumn], tier: common, why: "the fens' cold mud"}
+      - {place: moor_of_icirrus, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the moor's mud"}
+      - {place: moor_of_icirrus, methods: [surf], seasons: all, tier: uncommon, why: "the moor's pools, all year"}
+      - {place: abundant_shrine, methods: [surf], seasons: all, tier: uncommon, why: "the paddies' ponds, like axolotls"}
+    review: []
+
+  - id: qwilfish
+    origin: native
+    lore:
+      - "Pokédex (B2W2): it shoots its poison spines in all directions; its round form makes it a poor swimmer."
+      - "Real world: pufferfish on warm reefs and coasts."
+    habitats: {reef: 3, coastal_sea: 2}
+    time: {periods: any, strength: none}
+    seasons: all year; more in summer along the coast
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {qwilfish: wild}
+    levels: {qwilfish: [10, 100]}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: humilau_city, methods: [fishing], seasons: [spring, autumn, winter], tier: uncommon, why: "the reef"}
+      - {place: humilau_city, methods: [fishing], seasons: [summer], tier: rare, why: "fewer while the Lapras hunt"}
+      - {place: undella, methods: [fishing], seasons: [summer, autumn], tier: uncommon, why: "the warm bay in summer"}
+      - {place: route_13, methods: [fishing], seasons: [summer], tier: uncommon, why: "the coast's summer"}
+    review: []
+
+  - id: corsola
+    origin: native
+    lore:
+      - "Pokédex (B2W2): they prefer unpolluted southern seas; their branches lose colour in dirty water."
+      - "Pokécology (the user's notes): Corsola gather in warm seas, hiding smaller Pokémon, and move to warmer seas in the cold seasons."
+      - "The user: Corsola in Humilau all year, spreading to Undella and Route 13 in summer, back to Humilau in winter."
+    habitats: {reef: 3, coastal_sea: 2}
+    time: {periods: any, strength: none}
+    seasons: Humilau all year (most in winter, when all gather there); Undella and Route 13 in summer
+    migration: partial
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: area}
+    stages: {corsola: wild}
+    levels: {corsola: [5, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: humilau_city, methods: [surf], seasons: [autumn, winter, spring], tier: common, why: "the warm reef where all gather for the cold (the user's request)"}
+      - {place: humilau_city, methods: [surf], seasons: [summer], tier: uncommon, why: "some spread out in summer"}
+      - {place: humilau_city, methods: [fishing], seasons: all, tier: uncommon, why: "the reef"}
+      - {place: undella, methods: [surf], seasons: [summer], tier: uncommon, why: "spreading to the warm bay in summer"}
+      - {place: route_13, methods: [surf], seasons: [summer], tier: rare, why: "the edge of its summer range"}
+    review:
+      - "Partners 'area': the reef's small Pokémon hiding among Corsola join its battles (Pokécology)."
+
+  - id: remoraid
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Remoraid): it shoots water at prey over 300 feet away."
+      - "Pokédex (B2W2, Mantyke): it often swims in a school of Remoraid."
+      - "Pokédex (B2W2, Octillery): it likes holes, rock crags and pots."
+    habitats: {reef: 3, coastal_sea: 2, rocky_shore: 2}
+    time: {periods: any, strength: none}
+    seasons: all year; fewer in Humilau in summer
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: area}
+    stages: {remoraid: wild, octillery: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: humilau_city, methods: [fishing], seasons: [spring, autumn, winter], tier: common, why: "schools with the Mantyke on the reef"}
+      - {place: humilau_city, methods: [fishing], seasons: [summer], tier: uncommon, why: "fewer while the Lapras hunt"}
+      - {place: route_21, methods: [fishing], seasons: all, tier: uncommon, why: "the rocks"}
+      - {place: route_21, methods: [rippling_fishing], seasons: all, tier: uncommon, stages: [octillery], why: "in the rock crags"}
+      - {place: seaside_cave, methods: [rippling_fishing], seasons: all, tier: uncommon, stages: [octillery], why: "the cave's holes"}
+    review:
+      - "Partners 'area': Mantyke swim with its schools."
+
+  - id: lotad
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Lotad): it looks like a water plant and ferries Pokémon that can't swim."
+      - "Pokédex (B2W2, Lombre): it tugs anglers' lines to interfere."
+      - "Real world: water lilies, from spring to autumn; gone below in winter."
+    habitats: {pond: 3, lake: 2, marsh: 2, river: 1}
+    time: {periods: any, strength: none}
+    seasons: spring to autumn (it sinks to the bottom in winter)
+    migration: resident
+    weather: {more: [rain], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {lotad: wild, lombre: {wild: true, note: "at fishing spots, tugging lines"}, ludicolo: {wild: false, note: "a Water Stone's"}}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: pinwheel_forest, methods: [surf], seasons: [spring, summer, autumn], tier: common, stages: [lotad], why: "lily pads on the leafy pond"}
+      - {place: aspertia_city, methods: [surf], seasons: [spring, summer, autumn], tier: common, stages: [lotad], why: "the garden pond"}
+      - {place: route_19, methods: [surf], seasons: [spring, summer, autumn], tier: common, stages: [lotad], why: "the pond"}
+      - {place: striaton_city, methods: [surf], seasons: [spring, summer, autumn], tier: uncommon, stages: [lotad], why: "the ornamental ponds"}
+      - {place: abundant_shrine, methods: [surf], seasons: [spring, summer, autumn], tier: common, stages: [lotad], why: "the still ponds"}
+      - {place: route_3, methods: [surf], seasons: [spring, summer, autumn], tier: uncommon, stages: [lotad], why: "the lake's edge"}
+      - {place: route_3, methods: [fishing], seasons: [spring, summer, autumn], tier: rare, stages: [lombre], why: "tugging anglers' lines"}
+      - {place: village_bridge, methods: [fishing], seasons: [spring, summer, autumn], tier: rare, stages: [lombre], why: "pranks at the fishing spot"}
+      - {place: abundant_shrine, methods: [fishing], seasons: [spring, summer, autumn], tier: rare, stages: [lombre], why: "the ponds' prankster"}
+    review:
+      - "Lombre on fishing rods is the Pokédex's joke made real; say if it's too odd."
+
+  - id: surskit
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Surskit): it seems to skate on the water and draws prey with a sweet scent."
+      - "Other games: Surskit appear in Hoenn's ponds when it rains."
+      - "Real world: pond skaters on still water and puddles in spring and summer."
+    habitats: {pond: 3, marsh: 3, lake: 2}
+    time: {periods: day, strength: preferred}
+    seasons: spring and summer; a few in autumn
+    migration: resident
+    weather: {more: [rain], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {surskit: wild, masquerain: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: pinwheel_forest_outskirts, methods: [grass], seasons: [spring, summer], tier: uncommon, why: "skating on the outskirts' puddles"}
+      - {place: route_7, methods: [grass], seasons: [spring, summer], tier: uncommon, why: "the marsh's pools"}
+      - {place: icirrus_city, methods: [grass], seasons: [spring, summer], tier: uncommon, why: "the fens' puddles"}
+      - {place: route_3, methods: [surf], seasons: [spring, summer, autumn], tier: uncommon, why: "the lake's still edges"}
+      - {place: abundant_shrine, methods: [surf], seasons: [spring, summer], tier: uncommon, why: "the paddies' ponds"}
+    review: []
+
+  - id: azurill
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Marill): its oil-filled tail is a buoy, fine even in strong currents."
+      - "Pokédex (B2W2, Azumarill): its ears sense what moves in the water."
+      - "In the game: a Hidden Grotto Marill at Floccesy Ranch."
+    habitats: {river: 3, stream: 3, lake: 2, pond: 2, underground_water: 1}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [rain], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {azurill: {wild: true, note: "the young, on the banks, rarer"}, marill: wild, azumarill: wild}
+    levels: {azurill: [2, 12], marill: [5, 21]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: floccesy_ranch, methods: [surf], seasons: all, tier: common, why: "the river from the mountains"}
+      - {place: floccesy_ranch, methods: [grass], seasons: [spring, summer], tier: rare, stages: [azurill], why: "the young on the riverbank"}
+      - {place: route_20, methods: [surf], seasons: all, tier: common, why: "the clear stream and its waterfall"}
+      - {place: route_6, methods: [surf], seasons: all, tier: common, why: "the river"}
+      - {place: route_14, methods: [surf], seasons: all, tier: uncommon, why: "strong mountain currents"}
+      - {place: lostlorn_forest, methods: [surf], seasons: all, tier: uncommon, why: "the stream"}
+      - {place: route_3, methods: [surf], seasons: all, tier: uncommon, why: "the lake"}
+      - {place: route_3, methods: [grass], seasons: [spring, summer], tier: rare, stages: [azurill], why: "the young by the lake, near the Day Care"}
+      - {place: route_20, methods: [rippling_surf], seasons: all, tier: uncommon, stages: [azumarill], why: "the stream's pools"}
+    review: []
+
+  - id: carvanha
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Carvanha): they swarm any intruder; their fangs tear boat hulls."
+      - "Pokédex (B2W2, Sharpedo): it swims at 75 mph, 'the Bully of the Sea'."
+    habitats: {open_sea: 3, coastal_sea: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: family}
+    stages: {carvanha: wild, sharpedo: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: route_17, methods: [surf], seasons: all, tier: uncommon, why: "swarms in the open sea"}
+      - {place: route_21, methods: [surf], seasons: all, tier: rare, why: "the open sea among the rocks"}
+      - {place: route_18, methods: [surf], seasons: all, tier: uncommon, why: "the island's sea"}
+      - {place: route_17, methods: [rippling_surf], seasons: all, tier: uncommon, stages: [sharpedo], why: "the Bully of the Sea"}
+      - {place: route_21, methods: [rippling_surf], seasons: all, tier: rare, stages: [sharpedo], why: "the open sea's hunters"}
+    review: []
+
+  - id: wailmer
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Wailmer): it eats a ton of food a day and plays by spouting from its blowholes."
+      - "Pokédex (B2W2, Wailord): it breaches and crashes down on the water."
+      - "Real world: humpback whales feed in cool water in summer and calve in warm water in winter."
+    habitats: {open_sea: 3, coastal_sea: 1}
+    time: {periods: any, strength: none}
+    seasons: feeding in the cool sea (Route 17) in summer; calving in the warm east (Undella, Route 21, Humilau's shelf) in winter
+    migration: partial
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {wailmer: wild, wailord: {wild: true, note: "rippling water only"}}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_17, methods: [surf], seasons: [spring, summer, autumn], tier: common, stages: [wailmer], why: "feeding in the cool currents"}
+      - {place: route_17, methods: [rippling_surf], seasons: [summer], tier: uncommon, stages: [wailord], why: "breaching in the summer feeding ground"}
+      - {place: undella, methods: [surf], seasons: [winter], tier: uncommon, stages: [wailmer], why: "calving in the warm bay"}
+      - {place: route_21, methods: [surf], seasons: [autumn, winter], tier: uncommon, stages: [wailmer], why: "on the way to warm water"}
+      - {place: route_21, methods: [rippling_surf], seasons: [winter], tier: uncommon, stages: [wailord], why: "the great whales passing"}
+      - {place: humilau_city, methods: [rippling_surf], seasons: [winter], tier: rare, stages: [wailord], why: "off the reef's edge in winter"}
+    review:
+      - "The whales' seasonal route is real-world humpback behaviour; check it suits."
+
+  - id: barboach
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Barboach): its slimy body is hard to grasp; one region says it was born from hardened mud."
+      - "Pokédex (B2W2, Whiscash): it guards its territory with tremors."
+      - "Real world: catfish and loaches in the mud of fens, paddies and slow rivers."
+    habitats: {marsh: 3, swamp: 3, lake: 2, river: 2, underground_water: 2, pond: 1}
+    time: {periods: night, strength: preferred}
+    seasons: all year (it winters in the mud under the ice, so it's there in winter)
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {barboach: wild, whiscash: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: icirrus_city, methods: [fishing], seasons: all, tier: common, why: "the fens' mud, all year"}
+      - {place: route_8, methods: [fishing], seasons: all, tier: common, why: "the fens' mud"}
+      - {place: moor_of_icirrus, methods: [fishing], seasons: all, tier: common, why: "the moor's mud"}
+      - {place: moor_of_icirrus, methods: [rippling_fishing], seasons: all, tier: common, stages: [whiscash], why: "the moor's big catfish"}
+      - {place: icirrus_city, methods: [rippling_fishing], seasons: all, tier: uncommon, stages: [whiscash], why: "the fens' big catfish"}
+      - {place: abundant_shrine, methods: [fishing], seasons: all, tier: uncommon, why: "the paddies' mud"}
+      - {place: route_3, methods: [fishing], seasons: all, tier: uncommon, why: "the lake's bottom"}
+      - {place: relic_passage, methods: [surf], seasons: all, tier: uncommon, why: "an underground pool: born from hardened mud"}
+      - {place: clay_tunnel, methods: [fishing], seasons: all, tier: uncommon, why: "the tunnel's muddy water"}
+      - {place: giant_chasm_caves, methods: [fishing], seasons: all, tier: uncommon, why: "the cave's cold water"}
+      - {place: victory_road_ruins, methods: [rippling_fishing], seasons: all, tier: uncommon, stages: [whiscash], why: "old water among the ruins"}
+    review: []
+
+  - id: corphish
+    origin: introduced
+    lore:
+      - "Pokédex (B2W2, Corphish): however dirty the river's water, it adapts and thrives."
+      - "Other Pokédex entries (paraphrased): it was brought from abroad as a pet, then escaped and spread."
+      - "Real world: American crayfish, introduced, now overrun city canals and Japan's rice paddies."
+    habitats: {sewer: 3, pond: 2, farmland: 2, estuary: 2, lake: 1}
+    time: {periods: night, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {corphish: wild, crawdaunt: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: castelia_sewers, methods: [fishing], seasons: [spring, summer], tier: common, why: "thriving in the sewers' dirty water"}
+      - {place: castelia_sewers, methods: [grass], seasons: [autumn, winter], tier: uncommon, why: "crawling the dry tunnels when the water's gone"}
+      - {place: virbank_city, methods: [fishing], seasons: all, tier: common, why: "the polluted harbour"}
+      - {place: virbank_complex, methods: [fishing], seasons: all, tier: uncommon, why: "the complex's water"}
+      - {place: abundant_shrine, methods: [fishing], seasons: all, tier: uncommon, why: "crayfish in the paddies, as in Japan's"}
+      - {place: striaton_city, methods: [fishing], seasons: all, tier: rare, why: "released pets in the park's ponds"}
+      - {place: virbank_city, methods: [rippling_fishing], seasons: all, tier: uncommon, stages: [crawdaunt], why: "the harbour's big ones"}
+    review:
+      - "Introduced (escaped pets), so near people. On the sewers' dry floors in autumn and winter: say if that's a stretch."
+
+  - id: feebas
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Feebas): shabby and ugly, but very hardy; it survives on little water."
+      - "Other games: hidden in a few spots of a weedy river (Hoenn's Route 119)."
+      - "The user: a trophy (exotic) in Striaton's park ponds, and wherever else it fits."
+    habitats: {pond: 3, lake: 2, river: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: exotic
+    trophy: [striaton_city, abundant_shrine, route_23]
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {feebas: wild, milotic: {wild: false, note: "by beauty"}}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: striaton_city, methods: [fishing], seasons: all, tier: exotic, why: "the park's ponds: the trophy (the user's request)"}
+      - {place: abundant_shrine, methods: [fishing], seasons: all, tier: exotic, why: "the shrine's still, reflective ponds"}
+      - {place: route_23, methods: [fishing], seasons: all, tier: exotic, why: "the still, reflective pond to the west"}
+    review: []
+
+  - id: spheal
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Spheal): it rolls faster than it swims, and claps its fins when happy."
+      - "Pokédex (B2W2, Walrein): its blubber keeps it warm; it shatters ice with its tusks."
+      - "Real world: ringed seals and walruses of cold seas; young seals on the rocks in winter."
+    habitats: {open_sea: 3, rocky_shore: 3}
+    time: {periods: any, strength: none}
+    seasons: a winter visitor to the coolest seas (Routes 17 and 21, P2 Laboratory's island), from autumn to spring
+    migration: winter
+    weather: {more: [snow, blizzard], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {spheal: wild, sealeo: wild, walrein: {wild: true, note: "rippling water only"}}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: route_17, methods: [surf], seasons: [autumn, winter, spring], tier: uncommon, stages: [spheal, sealeo], why: "the cool currents in the cold seasons"}
+      - {place: p2_laboratory, methods: [surf], seasons: [winter], tier: uncommon, stages: [spheal, sealeo], why: "the island's cool sea in winter"}
+      - {place: route_21, methods: [surf], seasons: [winter], tier: rare, stages: [spheal, sealeo], why: "the rocks in winter"}
+      - {place: route_17, methods: [rippling_surf], seasons: [winter], tier: rare, stages: [walrein], why: "the cold sea's tusked giants"}
+    review: []
+
+  - id: clamperl
+    origin: native
+    lore:
+      - "Pokédex (B2W2): it makes a single pearl in its lifetime, said to amplify psychic power."
+      - "Huntail and Gorebyss (by trades) live deep in the sea."
+    habitats: {open_sea: 2, reef: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {clamperl: wild, huntail: {wild: false, note: "a trade's"}, gorebyss: {wild: false, note: "a trade's"}}
+    levels: {clamperl: [10, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: undella, methods: [fishing], seasons: all, tier: rare, why: "the deep water of the dive spots"}
+      - {place: humilau_city, methods: [rippling_fishing], seasons: all, tier: uncommon, why: "the shelf's edge"}
+      - {place: seaside_cave, methods: [fishing], seasons: all, tier: rare, why: "the sea cave's deep pools"}
+    review: []
+
+  - id: relicanth
+    origin: ancient
+    lore:
+      - "Pokédex (B2W2): found on a deep-sea expedition; unchanged in over 100 million years."
+      - "The places: something old near Undella's dive spots to the Abyssal Ruins (relics in the rippling water)."
+    habitats: {open_sea: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: exotic
+    trophy: [undella]
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {relicanth: wild}
+    levels: {relicanth: [20, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: undella, methods: [rippling_fishing, rippling_surf], seasons: all, tier: exotic, why: "risen from the Abyssal Ruins' depths: the trophy"}
+    review: []
+
+  - id: luvdisc
+    origin: native
+    lore:
+      - "Pokédex (B2W2): it lives in warm seas; a couple who find one are blessed with eternal love."
+      - "Other games: coral-reef routes (Hoenn's Route 128)."
+    habitats: {reef: 3, coastal_sea: 1}
+    time: {periods: any, strength: none}
+    seasons: all year in Humilau, fewer in summer (the Lapras); in Undella in summer, with the holiday couples
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: family}
+    stages: {luvdisc: wild}
+    levels: {luvdisc: [5, 100]}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: humilau_city, methods: [fishing], seasons: [spring, autumn, winter], tier: common, why: "the warm lagoon over coral"}
+      - {place: humilau_city, methods: [fishing], seasons: [summer], tier: uncommon, why: "fewer while the Lapras hunt"}
+      - {place: humilau_city, methods: [surf], seasons: all, tier: uncommon, why: "schools over the reef"}
+      - {place: undella, methods: [fishing], seasons: [summer], tier: uncommon, why: "the warm bay in the holiday season"}
+    review: []
+
+  - id: lileep
+    origin: ancient
+    lore:
+      - "Pokédex (B2W2, Cradily): it lives in the shallows of warm seas and digs up prey from the beach at low tide."
+      - "Pokécology (the user's notes): Lileep and Cradily in shallow sea water."
+      - "The user: fossils not wild except a very rare few from Pokécology, such as Lileep in shallow sea."
+    habitats: {reef: 3, coastal_sea: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: exotic
+    trophy: [humilau_city]
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {lileep: wild, cradily: {wild: false, note: "only by evolving"}}
+    levels: {lileep: [20, 43]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: humilau_city, methods: [surf], seasons: all, tier: exotic, why: "a living fossil in the warm, shallow lagoon (Pokécology): the trophy"}
+    review:
+      - "One home only; Undella's walkable shallows could be a second."
+
+  - id: bidoof
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Bibarel): a river it dams never floods, which people appreciate."
+      - "Pokécology (the user's notes): Bidoof and Bibarel on the water's surface (beavers)."
+      - "In the game: Bidoof NPCs at Floccesy Ranch and on Route 20; a Hidden Grotto Bibarel on Route 3."
+    habitats: {river: 3, stream: 3, lake: 2, woodland_edge: 2, pond: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {bidoof: wild, bibarel: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: floccesy_ranch, methods: [grass], seasons: all, tier: common, stages: [bidoof], why: "its NPCs, by the river"}
+      - {place: floccesy_ranch, methods: [surf], seasons: all, tier: uncommon, why: "dams on the ranch's river"}
+      - {place: route_20, methods: [grass], seasons: all, tier: uncommon, stages: [bidoof], why: "its NPCs, by the stream"}
+      - {place: route_20, methods: [surf], seasons: all, tier: uncommon, why: "the stream's dams"}
+      - {place: route_6, methods: [surf], seasons: all, tier: uncommon, why: "the river upstream"}
+      - {place: route_3, methods: [surf], seasons: all, tier: uncommon, stages: [bibarel], why: "the lake (its Hidden Grotto here)"}
+      - {place: nature_preserve, methods: [surf], seasons: all, tier: uncommon, why: "the preserve's river"}
+    review: []
+
+  - id: buizel
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Buizel): it inflates its flotation sac to look about."
+      - "Pokédex (B2W2, Floatzel): common round fishing ports; it rescues people."
+      - "The places: Route 14 as trout country with otters."
+      - "Real world: river otters in cold rivers; sea otters and lifeguards on the coast."
+    habitats: {river: 3, coastal_sea: 3, estuary: 2, waterfall: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {buizel: wild, floatzel: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: route_14, methods: [surf], seasons: all, tier: uncommon, why: "otters of the cold mountain river"}
+      - {place: route_11, methods: [surf], seasons: all, tier: uncommon, why: "the river between the falls"}
+      - {place: village_bridge, methods: [surf], seasons: all, tier: uncommon, why: "the village's river"}
+      - {place: undella, methods: [surf], seasons: [summer], tier: uncommon, stages: [floatzel], why: "rescuing swimmers at the resort in summer"}
+      - {place: virbank_city, methods: [surf], seasons: all, tier: uncommon, stages: [floatzel], why: "a fishing port's familiar"}
+      - {place: route_13, methods: [surf], seasons: all, tier: uncommon, stages: [buizel], why: "the coast"}
+    review: []
+
+  - id: shellos
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Gastrodon): long ago its whole back had a shell."
+      - "Pokécology (the user's notes): the West Sea form in warmer waters, the East Sea form in cooler."
+      - "The user: pink (West Sea) in Humilau and Undella; blue (East Sea) in cooler seas, perhaps round Routes 17 and 18."
+      - "In the game: two Shellos trades."
+    habitats: {coastal_sea: 3, beach: 2, reef: 2, rocky_shore: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [rain], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {shellos: wild, gastrodon: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: humilau_city, methods: [surf], seasons: all, tier: uncommon, form: 0, why: "the West Sea form in the warm lagoon"}
+      - {place: undella, methods: [surf], seasons: all, tier: common, form: 0, why: "the West Sea form in the warm bay"}
+      - {place: route_13, methods: [surf], seasons: [summer], tier: uncommon, form: 0, why: "the warm form's summer edge"}
+      - {place: route_17, methods: [surf], seasons: all, tier: uncommon, form: 1, why: "the East Sea form in the cool currents"}
+      - {place: route_18, methods: [surf], seasons: all, tier: common, form: 1, why: "the East Sea form round the island"}
+      - {place: p2_laboratory, methods: [surf], seasons: all, tier: common, form: 1, why: "the East Sea form in the cool sea"}
+    review: []
+
+  - id: finneon
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Finneon): the line along its side stores sunlight and shines at night."
+      - "Pokédex (B2W2, Lumineon): it crawls the seafloor and competes with Lanturn for food."
+    habitats: {coastal_sea: 3, open_sea: 2, reef: 2}
+    time: {periods: night, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: family}
+    stages: {finneon: wild, lumineon: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: route_13, methods: [fishing], seasons: all, tier: common, why: "the clear coastal sea"}
+      - {place: undella, methods: [fishing], seasons: all, tier: common, why: "the bay"}
+      - {place: route_21, methods: [fishing], seasons: all, tier: uncommon, why: "the open sea"}
+      - {place: humilau_city, methods: [fishing], seasons: [spring, autumn, winter], tier: uncommon, why: "the reef"}
+      - {place: route_4, methods: [fishing], seasons: all, tier: uncommon, why: "the bay by the road"}
+      - {place: undella, methods: [rippling_fishing], seasons: all, tier: uncommon, stages: [lumineon], why: "the bay's depths"}
+      - {place: route_13, methods: [rippling_surf], seasons: all, tier: uncommon, why: "a shining school"}
+    review: []
+
+  - id: mantyke
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Mantyke): it often swims in a school of Remoraid."
+      - "Pokédex (B2W2, Mantine): at speed it can fly 300 feet out of the water."
+      - "Real world: manta rays over reefs and offshore."
+    habitats: {reef: 3, open_sea: 2, coastal_sea: 2}
+    time: {periods: day, strength: none}
+    seasons: all year in Humilau; Mantine off Undella in summer
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: area}
+    stages: {mantyke: wild, mantine: wild}
+    levels: {mantyke: [2, 30], mantine: [20, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: humilau_city, methods: [surf], seasons: all, tier: uncommon, stages: [mantyke], why: "with the Remoraid schools on the reef"}
+      - {place: humilau_city, methods: [rippling_surf], seasons: all, tier: common, stages: [mantine], why: "the reef's rays"}
+      - {place: route_21, methods: [rippling_surf], seasons: all, tier: uncommon, stages: [mantine], why: "rays offshore"}
+      - {place: undella, methods: [rippling_surf], seasons: [summer], tier: uncommon, stages: [mantine], why: "rays in the bay in summer"}
+    review:
+      - "Mantine evolves by a Remoraid in the party, so wild levels are a guess."
+
+  - id: tympole
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Tympole): it warns others of danger with sound waves humans can't hear."
+      - "Pokédex (B2W2, Palpitoad): it lives in the water and on land."
+      - "The places: frogs and tadpoles at Route 3's lake after rain; Icirrus's fens."
+      - "Real world: frog choruses in spring and summer; they sleep in the mud in winter."
+    habitats: {pond: 3, lake: 3, marsh: 3, swamp: 3, underground_water: 1}
+    time: {periods: any, strength: none}
+    seasons: spring to autumn, at its peak in spring; few in winter
+    migration: resident
+    weather: {more: [rain], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {tympole: wild, palpitoad: wild, seismitoad: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_3, methods: [surf], seasons: [spring, summer, autumn], tier: common, why: "the lake's frogs and tadpoles"}
+      - {place: route_3, methods: [rippling_surf], seasons: [spring, summer], tier: common, why: "a chorus: a school of tadpoles"}
+      - {place: aspertia_city, methods: [surf], seasons: [spring, summer, autumn], tier: common, stages: [tympole], why: "the garden pond's tadpoles"}
+      - {place: route_19, methods: [surf], seasons: [spring, summer, autumn], tier: common, stages: [tympole], why: "the pond's tadpoles"}
+      - {place: pinwheel_forest, methods: [surf], seasons: [spring, summer, autumn], tier: common, why: "the forest pond"}
+      - {place: icirrus_city, methods: [grass], seasons: [spring, summer, autumn], tier: common, why: "the fens' puddles"}
+      - {place: route_8, methods: [grass], seasons: [spring, summer, autumn], tier: common, why: "the fens' puddles"}
+      - {place: moor_of_icirrus, methods: [grass], seasons: [spring, summer, autumn], tier: common, why: "the moor's puddles"}
+      - {place: moor_of_icirrus, methods: [rippling_surf], seasons: [spring, summer, autumn], tier: uncommon, stages: [seismitoad], why: "the moor's big toads"}
+      - {place: abundant_shrine, methods: [surf], seasons: [spring, summer, autumn], tier: common, why: "the paddies' frogs"}
+      - {place: wellspring_cave, methods: [surf], seasons: all, tier: uncommon, why: "the cave's pools, warmer in winter"}
+    review: []
+
+  - id: basculin
+    origin: native
+    lore:
+      - "Pokédex (B2W2): the red- and blue-striped are violent, always fighting, and remarkably tasty."
+      - "The user: the Red-Striped Form only in Unova's eastern rivers, the Blue-Striped in the western; the line runs through Castelia, Nimbasa and Opelucid (the Southwest, Icirrus and the West are west; the Southeast and Central and the north's rivers east)."
+    habitats: {river: 3, stream: 3, lake: 2, waterfall: 2, underground_water: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: family}
+    stages: {basculin: wild}
+    levels: {basculin: [5, 100]}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: route_20, methods: [fishing], seasons: all, tier: common, form: 1, why: "the west's clear stream (Blue-Striped)"}
+      - {place: floccesy_ranch, methods: [fishing], seasons: all, tier: common, form: 1, why: "the west's river (Blue-Striped)"}
+      - {place: route_6, methods: [fishing], seasons: all, tier: common, form: 1, why: "the west's river (Blue-Striped)"}
+      - {place: route_6, methods: [rippling_surf], seasons: all, tier: common, form: 1, why: "a fighting school"}
+      - {place: dragonspiral_grounds, methods: [fishing], seasons: all, tier: uncommon, form: 1, why: "round Icirrus (Blue-Striped)"}
+      - {place: route_3, methods: [fishing], seasons: all, tier: uncommon, form: 0, why: "the Southeast's lake (Red-Striped)"}
+      - {place: lostlorn_forest, methods: [fishing], seasons: all, tier: common, form: 0, why: "the cold stream (Red-Striped)"}
+      - {place: route_14, methods: [fishing], seasons: all, tier: common, form: 0, why: "trout country (Red-Striped)"}
+      - {place: route_14, methods: [rippling_surf], seasons: all, tier: common, form: 0, why: "a fighting school"}
+      - {place: route_11, methods: [fishing], seasons: all, tier: common, form: 0, why: "the river by the falls (Red-Striped)"}
+      - {place: village_bridge, methods: [fishing], seasons: all, tier: uncommon, form: 0, why: "the big river (Red-Striped)"}
+      - {place: route_23, methods: [fishing], seasons: all, tier: common, form: 0, why: "the gorge's river (Red-Striped)"}
+      - {place: victory_road_mountainside, methods: [fishing], seasons: all, tier: common, form: 0, why: "cold mountain water (Red-Striped)"}
+      - {place: nature_preserve, methods: [fishing], seasons: all, tier: uncommon, form: 0, why: "the preserve's river (Red-Striped)"}
+    review:
+      - "Route 3's lake and the Nature Preserve count as east (Red-Striped); the Nature Preserve's side of the line is a guess."
+
+  - id: frillish
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Frillish): it drags a foe miles below the surface, never to return."
+      - "Pokédex (B2W2, Jellicent): there's said to be a castle of ships it has sunk on the seafloor."
+      - "In the game: a static Jellicent in Undella Bay."
+      - "In the original games: Routes 4, 17, 18 and 21, Undella and Humilau."
+    habitats: {open_sea: 3, coastal_sea: 2}
+    time: {periods: night, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {frillish: wild, jellicent: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: route_17, methods: [surf], seasons: all, tier: common, why: "the currents' drifters"}
+      - {place: route_21, methods: [surf], seasons: all, tier: common, why: "the open sea"}
+      - {place: undella, methods: [surf], seasons: all, tier: uncommon, why: "the bay, with its sunken legends"}
+      - {place: route_4, methods: [surf], seasons: all, tier: uncommon, why: "the bay, as in the original"}
+      - {place: route_18, methods: [surf], seasons: all, tier: uncommon, why: "the island's sea"}
+      - {place: route_17, methods: [rippling_surf], seasons: all, tier: uncommon, stages: [jellicent], why: "a ship-sinker"}
+      - {place: undella, methods: [rippling_surf], seasons: all, tier: uncommon, stages: [jellicent], why: "over the dive spots"}
+    review: []
+
+  - id: alomomola
+    origin: native
+    lore:
+      - "Pokédex (B2W2): it holds injured and weak Pokémon in its fins and heals them."
+      - "Real world: the ocean sunfish, a solitary wanderer of the open sea."
+    habitats: {open_sea: 3, reef: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {alomomola: wild}
+    levels: {alomomola: [15, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_17, methods: [rippling_surf], seasons: all, tier: uncommon, why: "the open sea's gentle giant"}
+      - {place: route_21, methods: [rippling_surf], seasons: all, tier: uncommon, why: "the open sea"}
+      - {place: humilau_city, methods: [rippling_surf], seasons: all, tier: rare, why: "at the reef's edge"}
+    review: []
+
+  - id: stunfisk
+    origin: native
+    lore:
+      - "Pokédex (B2W2): when it can't paralyse a foe, it flops away with unexpected speed."
+      - "In the original games: Icirrus City's mud and puddles."
+    habitats: {marsh: 3, swamp: 3}
+    time: {periods: any, strength: none}
+    seasons: spring to autumn on the fens; under the ice in winter (not found then)
+    migration: resident
+    weather: {more: [rain], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {stunfisk: wild}
+    levels: {stunfisk: [10, 100]}
+    wanderer: {appears: steps, wanders: passive, grass: stand}
+    homes:
+      - {place: icirrus_city, methods: [grass], seasons: [spring, summer, autumn], tier: common, why: "Icirrus's mud, as in the original"}
+      - {place: route_8, methods: [grass], seasons: [spring, summer, autumn], tier: common, why: "the fens' mud"}
+      - {place: moor_of_icirrus, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the moor's mud"}
+      - {place: route_7, methods: [grass], seasons: [spring, summer, autumn], tier: rare, why: "the marsh's mud below the tower"}
+    review:
+      - "Met by a step only (it lies hidden in the mud): no wanderer."
+
+  - id: croagunk
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Croagunk): it inflates its poison sacs and fills the place with an odd sound."
+      - "Other games: Sinnoh's Great Marsh."
+      - "Real world: poison frogs and toads in marshes."
+    habitats: {marsh: 3, swamp: 3, pond: 1}
+    time: {periods: any, strength: none}
+    seasons: spring to autumn
+    migration: resident
+    weather: {more: [rain], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {croagunk: wild, toxicroak: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: route_7, methods: [grass, dark_grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the marsh under the walkways"}
+      - {place: moor_of_icirrus, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the moor's wilder marsh"}
+      - {place: pinwheel_forest_outskirts, methods: [dark_grass], seasons: [spring, summer, autumn], tier: rare, why: "the outskirts' marsh"}
+      - {place: route_8, methods: [grass], seasons: [spring, summer, autumn], tier: rare, why: "the fens"}
+    review: []

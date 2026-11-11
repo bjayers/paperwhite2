@@ -46,7 +46,10 @@ the generator (still to write) turns them, with `exceptions.yaml` and the places
   list; left out, it's the family's `time` (the generator applies its strength: strict keeps it to its periods,
   preferred makes it a tier rarer outside them). `tier` is the family's tier there as a whole: the generator gives a
   later stage one tier lower than its base unless the entry says otherwise, and splits by level through the level
-  gate. A `stages:` list in a home limits it to those members (Swanna only, in winter). `weather` in a home makes it weather-only there.
+  gate. A `stages:` list in a home limits it to those members (Swanna only, in winter). `weather` in a home makes it weather-only there; `form` sets the form (Basculin 0 Red-Striped, 1
+  Blue-Striped; Shellos 0 West Sea, 1 East Sea).
+- **Outbreaks** (optional): `outbreaks: [{places, seasons, stages, why}]`, a day when the family takes the outbreak
+  share of those places (rules.md, 10, still tentative).
 - **Stages** that aren't wild stay out of every home. **Partners** `area` means any Pokémon of that area may join a
   double or triple.
 - **Levels,** by default (rules.md, 5): a first stage from 2 to its evolution level + 3; a later stage from the level
