@@ -2,6 +2,16 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-11: Pokédex Flavour, a crash to watch
+
+Flavour shows other games' Pokédex entries (Red to Black 2, taken at build time from the user's ROMs in `orig/`,
+never committed; plugins.md and design/pokedex-flavour.md). On hardware, cycling all of Magnemite's or Charizard's
+entries a few times and then switching Area and Evo garbled sprites and then crashed (crash watch: a data abort in
+OS_SaveContext). Never reproduced in DeSmuME; the likely cause was the page's ClAct character slots (31 of 32 at the
+Area to Evo switch after the Gen 1-3 change), so the tab and label now share one resource (30 of 32). The user could no
+longer reproduce it after that; still being tested on a real 3DS. If it comes back: the species, the steps, DS or DSi
+mode, and the save.
+
 ## 2026-11-09: Pokédex Area sub-page done
 
 The Info page has six sub-pages (Area between Evo and Matchups, plugins.md and design/pokedex-area.md "As built"):
