@@ -33,6 +33,8 @@ void FieldFog_Update(FieldFog *fog);
 void FieldFog_SetPlayerRelative(FieldFog *fog, BOOL playerRelative);
 // Every frame: has a weather's fog flushed again when the camera moved where it falls
 void FieldFog_UpdatePlayerRelative(FieldFog *fog);
+// The fog's colour
+GXRgb FieldFog_GetColor(FieldFog *fog);
 #endif
 // field_zonefog.c: loads the zone's fog file, delay frames after a request
 FieldFogCtrl *FieldFogCtrl_Create(HeapID heapId);

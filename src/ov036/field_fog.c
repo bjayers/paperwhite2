@@ -212,6 +212,10 @@ void FieldFog_SetPlayerRelative(FieldFog *fog, BOOL playerRelative) {
     fog->dirty = TRUE;
 }
 
+GXRgb FieldFog_GetColor(FieldFog *fog) {
+    return fog->color;
+}
+
 void FieldFog_UpdatePlayerRelative(FieldFog *fog) {
     u32 depthShift;
     s32 offset;

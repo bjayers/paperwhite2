@@ -3,6 +3,7 @@
     "texture_set": "MAP_TEXTURE_SET_CASTELIA_CITY_2",
     "material_fog": {
         "c3_yuka": true,
-        "c3bay_yuka1": true
+        "c3bay_yuka1": true,
+        "gra_w": true
     }
 }

@@ -7,6 +7,9 @@
 #include "gfl/heap.h"
 #include "nitro/fx.h"
 #include "nitro/gx.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/weather_fog.h"
+#endif
 
 const VecFx32 FIELD_CHUNK_TRANSLATION_IDENTITY = { 0, 0, 0 };
 const VecFx32 FIELD_CHUNK_SCALE_IDENTITY = { FX32_ONE, FX32_ONE, FX32_ONE };
@@ -306,6 +309,10 @@ BOOL FieldChunk_RenderMap(FieldChunk *chunk) {
         NNS_G3dGeLoadMtx43(&NNS_G3dGlb.cameraMtx);
         NNS_G3dGeTranslateVec(&chunk->worldPos);
         if (FieldChunk_CheckModelBBox(chunk->model->resMdl) == TRUE) {
+#ifdef PAPERWHITE2
+            // Paper White 2: Castelia's gate takes a weather's light (paperwhite2/weather_fog.h)
+            PaperWhite2_WeatherFog_UpdateMapModel(chunk->model->resMdl);
+#endif
             GFL_G3DSysDispatchDraw(chunk->model);
             drawn = TRUE;
         }
