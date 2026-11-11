@@ -1,0 +1,742 @@
+# Batch 7: ghosts, psychic, space and the strange (32 families). Draft of 2026-11-14 for review.
+#
+# Summary
+# - Celestial Tower's ghosts of mourning (Litwick's family, the user's request; Yamask from the graves, Duskull who
+#   guides the lost; Chingling and Chimecho at the bell on the top floor). The Strange House's mischief instead (the
+#   user's request): Gastly, Misdreavus, Shuppet and Banette, none only there. Route 7's will-o'-the-wisp marsh at
+#   night (the user: ghosts at night near the tower), and Reversal Mountain's pass at night by the Strange House.
+# - The Dreamyard's dream research: Munna at night, Drowzee, Abra; Musharna the trophy of the basement.
+# - Ancient guardians: Relic Castle's tomb (Yamask, Sigilyph, Bronzor, Baltoy), Dragonspiral Tower and Victory
+#   Road's ruins (Golett, Bronzor), Clay Tunnel's Underground Ruins (Golett, Baltoy: clay).
+# - Space (the user's request): Giant Chasm, a meteor crater, holds Cleffa and Clefairy (where shooting stars fall),
+#   Lunatone at night and Solrock by day, Elgyem (with the desert's UFO story), Solosis, Ditto; the chasm is this
+#   dictionary's Moon Stone site, so Clefable is wild there, very rarely.
+# - Others: Ralts as Route 2's trophy (the user's Petalburg memory), Gothita and Solosis on Route 5 (the user's
+#   request), Mime Jr. and Mr. Mime among Route 5's street performers, Porygon loose on P2 Laboratory's island (the
+#   user's request), Kecleon unseen (met by a step only), Castform only in the weather.
+# - Not wild: Spiritomb (an Odd Keystone: a special encounter, report.md) and Togepi's family (an egg to be given:
+#   report.md); Gengar, Alakazam, Dusknoir, Porygon2 and Porygon-Z (trades); Mismagius, Chandelure, Gallade (stones).
+# - Review: Musharna and Clefable by place; Chimecho and Clefairy and Mr. Mime wild though they come by friendship or a
+#   move (natural adults); Ralts as a trophy.
+
+families:
+
+  - id: gastly
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Gastly): born from gas; its poisonous body makes anyone faint."
+      - "Pokédex (B2W2, Haunter): it lurks in the dark and taps shoulders with a gaseous hand."
+      - "The user: the Strange House's ghosts, not exclusive to it; ghosts at night outside it."
+    habitats: {building: 3, tower: 2, ruins: 2, marsh: 1}
+    time: {periods: night, strength: strict}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {gastly: wild, haunter: wild, gengar: {wild: false, note: "a trade's"}}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: strange_house, methods: [grass], seasons: all, tier: common, why: "a prankster in the haunted house (the user's request)"}
+      - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: uncommon, why: "night by the Strange House (the user's request)"}
+      - {place: dreamyard, methods: [dark_grass], seasons: all, tier: uncommon, why: "the ruins at night"}
+      - {place: celestial_tower, methods: [grass], seasons: all, tier: rare, why: "a few among the graves"}
+    review: []
+
+  - id: abra
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Abra): its psychic power strains its brain so that it sleeps 18 hours a day."
+      - "The places: the Dreamyard's psychic research."
+    habitats: {ruins: 3, meadow: 2, park: 1}
+    time: {periods: day, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {abra: wild, kadabra: wild, alakazam: {wild: false, note: "a trade's"}}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: dreamyard, methods: [grass], seasons: all, tier: uncommon, stages: [abra], why: "asleep by the psychic research site"}
+      - {place: dreamyard, methods: [dark_grass], seasons: all, tier: rare, stages: [kadabra], why: "the ruins"}
+      - {place: route_16, methods: [grass], seasons: all, tier: rare, stages: [abra], why: "Nimbasa's edge"}
+    review: []
+
+  - id: drowzee
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Drowzee): it smells people's dreams with its nose and loves fun ones."
+      - "Pokédex (B2W2, Hypno): its swinging pendulum makes one sleep in three seconds."
+      - "The places: the Dreamyard's Dream Mist."
+    habitats: {ruins: 3, suburb: 2, meadow: 2}
+    time: {periods: night, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {drowzee: wild, hypno: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: dreamyard, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the dream research site"}
+      - {place: route_9, methods: [grass], seasons: all, tier: rare, why: "sniffing the town's dreams at night"}
+    review: []
+
+  - id: misdreavus
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Misdreavus): it startles people at night, gathering fear for energy."
+      - "The user: the Strange House's ghosts are pranksters (Misdreavus among them), mischief rather than grief."
+    habitats: {building: 3, deciduous_forest: 1, ruins: 2}
+    time: {periods: night, strength: strict}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {misdreavus: wild, mismagius: {wild: false, note: "a Dusk Stone's"}}
+    levels: {misdreavus: [10, 100]}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: strange_house, methods: [grass], seasons: all, tier: uncommon, why: "startling visitors (the user's request)"}
+      - {place: lostlorn_forest, methods: [dark_grass], seasons: all, tier: rare, why: "something not right at night"}
+    review: []
+
+  - id: smoochum
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Smoochum): it tests everything with its lips."
+      - "Pokédex (B2W2, Jynx): its cries sound like human speech, but no one can tell what it says."
+      - "Other games: Kanto's Seafoam Islands and Johto's Ice Path."
+    habitats: {snowfield: 3, cave: 2}
+    time: {periods: any, strength: none}
+    seasons: all year in Giant Chasm; at Dragonspiral's entrance in winter
+    migration: partial
+    weather: {more: [snow, blizzard], less: [], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {smoochum: wild, jynx: wild}
+    levels: {smoochum: [2, 33], jynx: [30, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: rare, stages: [smoochum], why: "the crater's cold"}
+      - {place: giant_chasm_crater, methods: [dark_grass], seasons: all, tier: rare, stages: [jynx], why: "singing strange words in the crater"}
+      - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: rare, stages: [smoochum], why: "the winter's cold"}
+    review: []
+
+  - id: ralts
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Ralts): when its horns catch warm feelings, its body warms."
+      - "The user: searching for the Ralts near Petalburg in Emerald, the sought-after Pokémon in an iconic place that the trophy tier is for."
+      - "In the game: two Ralts trades."
+    habitats: {meadow: 2, woodland_edge: 2, ruins: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: exotic
+    trophy: [route_2]
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {ralts: wild, kirlia: wild, gardevoir: {wild: true, note: "very rare"}, gallade: {wild: false, note: "a Dawn Stone's"}}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_2, methods: [grass], seasons: all, tier: exotic, why: "an early route's sought-after Pokémon, as Route 102 by Petalburg: the trophy"}
+      - {place: dreamyard, methods: [dark_grass], seasons: all, tier: very_rare, why: "drawn by the research's psychic power"}
+    review:
+      - "Route 2 as Ralts's trophy home is my pick for the Petalburg homage; say if another place should have it."
+
+  - id: spoink
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Spoink): it bounces on its tail to keep its heart beating; if it stops, it dies."
+      - "Pokédex (B2W2, Grumpig): it uses black pearls to amplify its power."
+      - "Other games: mountain slopes (Hoenn's Jagged Pass)."
+    habitats: {cliff: 2, mountain: 2, woodland_edge: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {spoink: wild, grumpig: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: giant_chasm_outside, methods: [grass], seasons: all, tier: uncommon, why: "bouncing on the chasm's rim"}
+      - {place: route_23, methods: [dark_grass], seasons: all, tier: rare, why: "the cliff island"}
+    review: []
+
+  - id: wynaut
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Wynaut): they grow strong pushing against each other en masse, and love sweet fruit."
+      - "Pokédex (B2W2, Wobbuffet): it hides its black tail, said to hide a secret."
+      - "Other games: Hoenn's Mirage Island (Wynaut); dark caves (Wobbuffet)."
+      - "In the game: two Wobbuffet trades."
+    habitats: {woodland_edge: 2, cave: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: family}
+    stages: {wynaut: wild, wobbuffet: wild}
+    levels: {wynaut: [2, 18], wobbuffet: [15, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_18, methods: [grass], seasons: all, tier: rare, stages: [wynaut], why: "a remote island's sweet fruit, as Mirage Island"}
+      - {place: giant_chasm_caves, methods: [grass], seasons: all, tier: rare, stages: [wobbuffet], why: "the dark caves"}
+    review: []
+
+  - id: shuppet
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Shuppet): it feeds on sadness and hatred."
+      - "Pokédex (B2W2, Banette): a thrown-away doll that became a Pokémon, seeking the child who disowned it."
+      - "The user: the Strange House's haunted objects (Banette the abandoned doll, Shuppet)."
+    habitats: {building: 3, city: 1}
+    time: {periods: night, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {shuppet: wild, banette: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: strange_house, methods: [grass], seasons: all, tier: common, why: "the haunted house's abandoned toys (the user's request)"}
+      - {place: castelia_park, methods: [grass], seasons: all, tier: rare, stages: [shuppet], times: night, why: "feeding on the city's dark moods at night"}
+    review: []
+
+  - id: duskull
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Duskull): it loves children's crying."
+      - "Pokédex (B2W2, Dusclops): it sucks in drifting will-o'-the-wisps."
+      - "Pokédex (B2W2, Dusknoir): it takes lost spirits and guides them home."
+      - "The places: Route 7's marsh, with fog and will-o'-the-wisp folklore, below Celestial Tower."
+    habitats: {tower: 3, marsh: 2, building: 2}
+    time: {periods: night, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {duskull: wild, dusclops: wild, dusknoir: {wild: false, note: "a trade's"}}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: celestial_tower, methods: [grass], seasons: all, tier: uncommon, why: "guiding the tower's lost spirits"}
+      - {place: route_7, methods: [grass, dark_grass], seasons: all, tier: uncommon, times: night, why: "chasing will-o'-the-wisps over the marsh (the user: ghosts at night)"}
+      - {place: strange_house, methods: [grass], seasons: all, tier: rare, stages: [duskull], why: "startling bad children"}
+    review: []
+
+  - id: chingling
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Chimecho): its cries echo in its hollow body as beautiful notes."
+      - "Pokédex (B2W2, Chingling): the orb in its mouth rings as it hops."
+      - "Other games: Mt. Pyre's summit, Hoenn's mountain of graves."
+      - "The places: the bell at the top of Celestial Tower."
+    habitats: {tower: 3, mountain: 1}
+    time: {periods: night, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {chingling: wild, chimecho: {wild: true, note: "the natural adult (by friendship in the game)"}}
+    levels: {chingling: [5, 20], chimecho: [15, 100]}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: celestial_tower, methods: [grass], seasons: all, tier: rare, areas: [celestial_tower], why: "ringing by the bell on the top floor, as Mt. Pyre's summit"}
+    review:
+      - "The top floor's table needs checking in-game (STATUS.md's open item)."
+
+  - id: bronzor
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Bronzor): found in ancient tombs; its back's patterns hold mysterious power."
+      - "Pokédex (B2W2, Bronzong): revered as a bringer of rain, it was found buried."
+    habitats: {ruins: 3, tower: 2, cave: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {bronzor: wild, bronzong: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: relic_castle, methods: [grass], seasons: all, tier: uncommon, why: "an ancient tomb"}
+      - {place: victory_road_ruins, methods: [grass], seasons: all, tier: uncommon, why: "the ancient halls"}
+      - {place: dragonspiral_tower, methods: [grass], seasons: all, tier: rare, why: "the ancient tower"}
+    review: []
+
+  - id: spiritomb
+    origin: native
+    lore:
+      - "Pokédex (B2W2): bound to an Odd Keystone for its misdeeds."
+      - "In the game: two Spiritomb trades."
+    habitats: {ruins: 2}
+    time: {periods: night, strength: strict}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: exotic
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {spiritomb: {wild: false, note: "bound to an Odd Keystone: a special encounter (report.md)"}}
+    levels: {}
+    wanderer: {appears: overworld, wanders: passive, grass: float}
+    homes: []
+    review:
+      - "Not wild: an Odd Keystone event suits it (Sinnoh's Hallowed Tower)."
+
+  - id: munna
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Munna): it appears to those with nightmares and eats the dreams."
+      - "Pokédex (B2W2, Musharna): its forehead's Dream Mist changes colour with the dream it ate."
+      - "In the original games: the Dreamyard (Musharna's story)."
+      - "The places: the Dreamyard's basement as the place for a psychic trophy."
+    habitats: {ruins: 3, meadow: 2}
+    time: {periods: night, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: [dreamyard]
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {munna: wild, musharna: {wild: true, note: "the Dreamyard's basement only (its Dream Mist)"}}
+    levels: {musharna: [25, 100]}
+    wanderer: {appears: both, wanders: passive, grass: float}
+    homes:
+      - {place: dreamyard, methods: [grass, dark_grass], seasons: all, tier: uncommon, stages: [munna], why: "eating dreams at the research site, as in the original"}
+      - {place: dreamyard, methods: [dark_grass], seasons: all, tier: exotic, stages: [musharna], areas: [dreamyard_2], why: "in the Dream Mist of the basement: the trophy"}
+    review:
+      - "Musharna wild (a Moon Stone's) only in the basement, by the Dream Mist; check dreamyard_2 is the basement."
+
+  - id: sigilyph
+    origin: native
+    lore:
+      - "Pokédex (B2W2): guardians of an ancient city, they always fly the same route watching for invaders."
+      - "The places: Sigilyph's lore is the Desert Resort's guardian statues, between the desert and Relic Castle."
+    habitats: {desert: 3, ruins: 3}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [sandstorm], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {sigilyph: wild}
+    levels: {sigilyph: [15, 100]}
+    wanderer: {appears: both, wanders: aggressive, grass: float}
+    homes:
+      - {place: desert_resort, methods: [grass], seasons: all, tier: uncommon, why: "the guardian statues' desert, as in the original"}
+      - {place: relic_castle, methods: [grass], seasons: all, tier: rare, why: "the ancient city it guards"}
+      - {place: victory_road_ruins, methods: [grass], seasons: all, tier: rare, why: "Sigilyph's kin in the ruins (the places)"}
+    review: []
+
+  - id: yamask
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Yamask): risen from the spirits of people in graves, each with memories of its life."
+      - "Pokédex (B2W2, Cofagrigus): grave robbers who take it for a coffin get trapped."
+      - "In the original games: Relic Castle."
+    habitats: {ruins: 3, tower: 3}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {yamask: wild, cofagrigus: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: float}
+    homes:
+      - {place: relic_castle, methods: [grass], seasons: all, tier: common, why: "the tomb, as in the original"}
+      - {place: celestial_tower, methods: [grass], seasons: all, tier: uncommon, stages: [yamask], why: "the spirits of the tower's graves"}
+    review: []
+
+  - id: gothita
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Gothorita): old tales say it makes friends by controlling sleeping children on starry nights."
+      - "Pokédex (B2W2, Gothitelle): it sees the future in the stars."
+      - "The user: Gothita rarely on Route 5."
+    habitats: {park: 2, suburb: 2, woodland_edge: 1}
+    time: {periods: night, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {gothita: wild, gothorita: wild, gothitelle: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_5, methods: [grass, dark_grass], seasons: all, tier: rare, why: "the user's request"}
+      - {place: route_16, methods: [dark_grass], seasons: all, tier: very_rare, why: "starry nights at the forest's edge"}
+    review: []
+
+  - id: solosis
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Solosis): its special liquid keeps it fine in any environment, however severe."
+      - "The user: Solosis rarely on Route 5; Giant Chasm's otherworldly Pokémon."
+    habitats: {park: 2, snowfield: 2, meadow: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {solosis: wild, duosion: wild, reuniclus: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: route_5, methods: [grass, dark_grass], seasons: all, tier: rare, why: "the user's request"}
+      - {place: giant_chasm_crater, methods: [dark_grass], seasons: all, tier: rare, why: "fine even in the crater's severe cold: something from space"}
+    review: []
+
+  - id: elgyem
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Elgyem): rumours tie its origin to a UFO crash site in the desert 50 years ago."
+      - "Pokédex (B2W2, Beheeyem): it talks by flashing its fingers, in patterns no one has decoded."
+      - "The user: Giant Chasm's otherworldly and space Pokémon."
+    habitats: {snowfield: 2, desert: 2, dense_forest: 1}
+    time: {periods: night, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {elgyem: wild, beheeyem: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: giant_chasm_crater, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "sightings in the crater (the places)"}
+      - {place: desert_resort, methods: [grass], seasons: all, tier: very_rare, stages: [elgyem], times: night, why: "the desert crash site of its rumours"}
+    review: []
+
+  - id: litwick
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Litwick): its flame lights when it absorbs life force."
+      - "Pokédex (B2W2, Lampent): it hangs about hospitals waiting for people to pass on."
+      - "The user: Litwick in Celestial Tower, its family at its levels."
+      - "The places: Route 7's will-o'-the-wisp folklore."
+    habitats: {tower: 3, marsh: 2, building: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {litwick: wild, lampent: wild, chandelure: {wild: false, note: "a Dusk Stone's"}}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: celestial_tower, methods: [grass], seasons: all, tier: common, why: "the tower's candles (the user's request)"}
+      - {place: route_7, methods: [dark_grass], seasons: all, tier: rare, stages: [litwick], times: night, why: "a will-o'-the-wisp over the marsh"}
+    review: []
+
+  - id: golett
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Golett): ancient science made it from clay; it's been active for thousands of years."
+      - "Pokédex (B2W2, Golurk): made to protect people and Pokémon."
+      - "In the original games: Dragonspiral Tower and Victory Road's ruins."
+    habitats: {ruins: 3, tower: 3, cave: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {golett: wild, golurk: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: dragonspiral_tower, methods: [grass], seasons: all, tier: common, why: "the tower's guardians, as in the original"}
+      - {place: victory_road_ruins, methods: [grass], seasons: all, tier: common, why: "the ruins' guardians"}
+      - {place: clay_tunnel, methods: [grass], seasons: all, tier: rare, areas: [underground_ruins], why: "clay guardians of the Underground Ruins"}
+    review: []
+
+  - id: drifloon
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Drifloon): the 'Signpost for Wandering Spirits'; children holding them sometimes vanish."
+      - "Pokédex (B2W2, Drifblim): the wind carries it with no fixed destination."
+      - "In the game: a Hidden Grotto Drifloon on Route 13."
+    habitats: {marsh: 2, hills: 2, badlands: 1}
+    time: {periods: night, strength: strict}
+    seasons: all year
+    migration: nomad
+    weather: {more: [gusty_rain], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {drifloon: wild, drifblim: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: route_7, methods: [grass], seasons: all, tier: uncommon, why: "a signpost for the tower's wandering spirits"}
+      - {place: route_22, methods: [grass], seasons: all, tier: rare, why: "blown over the windswept headland"}
+      - {place: reversal_mountain_outside, methods: [dark_grass], seasons: all, tier: rare, why: "night by the Strange House"}
+    review: []
+
+  - id: cleffa
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Cleffa): rumour says it's often seen where shooting stars have fallen."
+      - "Pokédex (B2W2, Clefairy): on full-moon nights they gather and dance; moonlight makes them float."
+      - "The user: Giant Chasm's space Pokémon (Clefairy among them); a Hidden Grotto Clefairy there."
+      - "Real world: Giant Chasm is a meteor crater."
+    habitats: {snowfield: 2, meadow: 3, cave: 2}
+    time: {periods: night, strength: strict}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: family}
+    stages:
+      cleffa: {wild: true, note: "where the star fell"}
+      clefairy: {wild: true, note: "the natural adult (by friendship in the game)"}
+      clefable: {wild: true, note: "very rare: the crater is this dictionary's Moon Stone site"}
+    levels: {cleffa: [2, 15], clefairy: [10, 100], clefable: [30, 100]}
+    wanderer: {appears: both, wanders: passive, grass: float}
+    homes:
+      - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: uncommon, stages: [cleffa, clefairy], why: "dancing under the moon where the star fell"}
+      - {place: giant_chasm_crater, methods: [dark_grass], seasons: all, tier: very_rare, stages: [clefable], why: "the crater's Moon Stone"}
+      - {place: giant_chasm_caves, methods: [grass], seasons: all, tier: rare, stages: [clefairy], why: "the caves round the crater, as Mt. Moon"}
+    review: []
+
+  - id: lunatone
+    origin: native
+    lore:
+      - "Pokédex (B2W2): the moon's phase affects its power; it's active on full-moon nights."
+      - "Other games: Hoenn's Meteor Falls."
+      - "The user: Giant Chasm's space Pokémon."
+    habitats: {cave: 3, snowfield: 2}
+    time: {periods: night, strength: strict}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {lunatone: wild}
+    levels: {lunatone: [15, 100]}
+    wanderer: {appears: both, wanders: passive, grass: float}
+    homes:
+      - {place: giant_chasm_caves, methods: [grass], seasons: all, tier: uncommon, why: "a meteorite's caves, as Meteor Falls"}
+      - {place: giant_chasm_crater, methods: [dark_grass], seasons: all, tier: rare, why: "the crater at night"}
+    review: []
+
+  - id: solrock
+    origin: native
+    lore:
+      - "Pokédex (B2W2): solar energy powers it, so it's strong by day; it shines as it spins."
+      - "The user: Giant Chasm's space Pokémon (Solrock among them)."
+    habitats: {cave: 3, snowfield: 2}
+    time: {periods: day, strength: strict}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {solrock: wild}
+    levels: {solrock: [15, 100]}
+    wanderer: {appears: both, wanders: passive, grass: float}
+    homes:
+      - {place: giant_chasm_caves, methods: [grass], seasons: all, tier: uncommon, why: "a meteorite's caves by day"}
+      - {place: giant_chasm_crater, methods: [dark_grass], seasons: all, tier: rare, why: "the crater by day"}
+    review: []
+
+  - id: baltoy
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Baltoy): found in ancient ruins, it spins and forms groups."
+      - "Pokédex (B2W2, Claydol): an ancient clay figurine over 20,000 years old."
+      - "Other games: Hoenn's desert."
+    habitats: {ruins: 3, desert: 2, cave: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [sandstorm], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {baltoy: wild, claydol: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: relic_castle, methods: [grass], seasons: all, tier: uncommon, why: "ancient figurines in the castle"}
+      - {place: desert_resort, methods: [grass], seasons: all, tier: rare, stages: [baltoy], why: "the desert, as Hoenn's"}
+      - {place: clay_tunnel, methods: [grass], seasons: all, tier: uncommon, areas: [underground_ruins], why: "clay figurines in the Underground Ruins"}
+    review: []
+
+  - id: ditto
+    origin: native
+    lore:
+      - "Pokédex (B2W2): it reshapes itself into what it sees and returns to normal when it relaxes."
+      - "The user: Ditto a candidate for Giant Chasm, perhaps Lostlorn too."
+    habitats: {snowfield: 2, deciduous_forest: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {ditto: wild}
+    levels: {ditto: [10, 100]}
+    wanderer: {appears: steps, wanders: passive, grass: stand}
+    homes:
+      - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: rare, why: "something otherworldly (the user's request)"}
+      - {place: lostlorn_forest, methods: [grass], seasons: all, tier: rare, why: "a mimic in the forest of the 'off' (the user's request)"}
+    review:
+      - "Met by a step only: it looks like something else until it's met."
+
+  - id: porygon
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Porygon): man-made, it moves freely in cyberspace."
+      - "The user: P2 Laboratory's island has Porygon and the like, escaped from the lab."
+    habitats: {building: 3, meadow: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {porygon: wild, porygon2: {wild: false, note: "a trade's"}, porygon_z: {wild: false, note: "a trade's"}}
+    levels: {porygon: [10, 100]}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: p2_laboratory, methods: [grass], seasons: all, tier: uncommon, why: "escaped from the lab (the user's request)"}
+    review: []
+
+  - id: kecleon
+    origin: native
+    lore:
+      - "Pokédex (B2W2): it changes its colour freely; only its belly's zigzag stays."
+      - "The rules: camouflaged Pokémon are rarer (Kecleon)."
+      - "Other games: Hoenn's rainforest routes."
+    habitats: {dense_forest: 3, deciduous_forest: 2, woodland_edge: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [rain], less: [], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {kecleon: wild}
+    levels: {kecleon: [10, 100]}
+    wanderer: {appears: steps, wanders: passive, grass: stand}
+    homes:
+      - {place: route_18, methods: [dark_grass], seasons: all, tier: rare, why: "the island's jungle, as Hoenn's rainforest"}
+      - {place: lostlorn_forest, methods: [dark_grass], seasons: all, tier: rare, why: "a trickster unseen"}
+      - {place: pinwheel_forest, methods: [dark_grass], seasons: all, tier: very_rare, why: "the old forest's depths"}
+    review:
+      - "Met by a step only: it's invisible as a wanderer."
+
+  - id: castform
+    origin: native
+    lore:
+      - "Pokédex (B2W2): temperature and weather change its cells, so its form follows the weather."
+      - "Other games: Hoenn's Weather Institute."
+    habitats: {marsh: 2, meadow: 2}
+    time: {periods: any, strength: none}
+    seasons: whenever its weather comes
+    migration: nomad
+    weather: {more: [], less: [], only: [rain, gusty_rain, thunderstorm, snow]}
+    abundance: rare
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {castform: wild}
+    levels: {castform: [10, 100]}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: route_7, methods: [grass], seasons: [spring, summer, autumn], tier: rare, weather: [rain, gusty_rain, thunderstorm], why: "born of the gloomy route's rain"}
+      - {place: route_6, methods: [grass], seasons: [winter], tier: rare, weather: [snow], why: "with the valley's snow"}
+      - {place: abundant_shrine, methods: [grass], seasons: all, tier: rare, weather: [thunderstorm, gusty_rain], why: "with the Forces of Nature's storms"}
+    review:
+      - "Weather-only everywhere; its battle form follows the weather by itself."
+
+  - id: mime_jr
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Mime Jr.): it mimics others' expressions to understand their feelings."
+      - "Pokédex (B2W2, Mr. Mime): it shapes invisible walls by vibrating its fingertips."
+      - "In the original games: Route 5's street performers."
+    habitats: {park: 3, suburb: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {mime_jr: wild, mr_mime: {wild: true, note: "the natural adult (by learning Mimic in the game)"}}
+    levels: {mime_jr: [2, 20], mr_mime: [15, 100]}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: route_5, methods: [grass], seasons: all, tier: rare, why: "miming among the road's street performers"}
+    review: []
+
+  - id: togepi
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Togepi): it turns others' kindness and joy into happiness, stored in its shell."
+      - "Pokédex (B2W2, Togetic): it flies the world seeking kind-hearted people."
+      - "In the game: two Togepi trades; in other games, a gift egg."
+    habitats: {meadow: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: exotic
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages:
+      togepi: {wild: false, note: "a gift egg suits it (report.md)"}
+      togetic: {wild: false, note: "by friendship"}
+      togekiss: {wild: false, note: "a Shiny Stone's"}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: float}
+    homes: []
+    review:
+      - "Not wild: an egg given by someone kind (a gift) suits its lore; or Togetic as a rare visitor to Village Bridge, if you'd like it wild."
