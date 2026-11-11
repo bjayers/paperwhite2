@@ -35,7 +35,7 @@ places:
       candidate for seasonal inhabitants: Sunkern and Sunflora in summer, Cottonee and Whimsicott in autumn, Cherubi
       in spring, perhaps another flower Pokémon. Across a short stretch of water (in Black and White it kept the
       player from the endgame routes), the dark grass: hills and a seaside with pine trees.
-    habitats: [meadow, flower_field, hills, conifer_forest, beach, coastal_sea]
+    habitats: [meadow, flower_field, hills, conifer_forest, coastal_sea, rocky_shore]
     parts:
       grass: >-
         the main route's meadow, its flowers changing by season: pink blossom in spring, sunflowers in summer, cotton
@@ -43,7 +43,9 @@ places:
       dark_grass: >-
         hills of wild grass among seaside pines, across the water from the main route: a separate environment
         (another family's place, not the main route's tougher version)
-      water: the stretch of water between them, and the sea along the west
+      water: >-
+        the rocky inlet between them, part of the sea (salt water); the strip of sea along the west edge can't be
+        reached (Route 17 is through the green gate)
     human_presence: rural
     climate:
       spring: mild, blossom
@@ -109,7 +111,9 @@ places:
     real_world: >-
       Ornamental park ponds: goldfish and carp (some released pets), ducks, frogs, dragonflies.
     suggestions:
-      - Ornamental fish, released pets among them (Goldeen, Magikarp, Feebas perhaps as a trophy).
+      - Ornamental fish, released pets among them (Goldeen, Magikarp).
+    requests:
+      - Feebas as a trophy (exotic) in the ponds; Feebas is a trophy wherever it fits, not only here.
 
   - id: route_3
     name: Route 3
@@ -264,7 +268,7 @@ places:
         The bug families through their life cycle across the seasons (larvae in spring, adults in summer, cocoons and
         late broods in autumn, few in winter), the forest's grass and fungus Pokémon, its owls and woodpeckers, and the
         dark-grass depths for the bigger, shyer forest Pokémon.
+    requests:
       - >-
-        The Moss Rock's influence (rules 5, stone evolutions where the environment causes them): a rare wild Leafeon in
-        the mossy depths, if you like the idea; otherwise Eevee evolves here only in the player's hands.
+        Leafeon as a trophy (exotic) in the mossy depths in spring and summer: the Moss Rock's influence (rules 5).
       - The leafy pond: frogs and still-water life, little else.

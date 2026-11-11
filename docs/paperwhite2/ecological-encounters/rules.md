@@ -78,7 +78,9 @@ Hidden Grottoes are set by hand; the generator counts them as a source but never
   overhunting (Lapras abundant near Humilau in summer, fewer fish then).
 - **Widespread versus local:** a few generalists widespread and common, never too ubiquitous; most species in a few
   neighbouring areas of their habitat; specialists in one or two places. Neighbouring areas of one biome share
-  species, so the land changes gradually.
+  species, so the land changes gradually. With so many conditions, there's no need to be strict: most Pokémon can be
+  anywhere they make sense, and only a few are limited to one place (2026-11-13). A trophy can be a trophy in several
+  places (Feebas).
 
 ## 7. Seasons, times and weather
 
