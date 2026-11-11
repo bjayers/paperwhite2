@@ -114,7 +114,7 @@ def main(argv):
             wild = [m for m in members if m in stages and (stages[m] == "wild" or (isinstance(stages[m], dict) and stages[m].get("wild")))]
             if not wild and e.get("homes"):
                 errors.append(f"{where}: homes but no wild stage")
-            if wild and not e.get("homes"):
+            if wild and not e.get("homes") and not e.get("homes_by"):
                 errors.append(f"{where}: wild but no homes")
             for key, ws in (e.get("weather") or {}).items():
                 for w in ws or []:

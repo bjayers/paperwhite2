@@ -50,6 +50,8 @@ the generator (still to write) turns them, with `exceptions.yaml` and the places
   Blue-Striped; Shellos 0 West Sea, 1 East Sea).
 - **Outbreaks** (optional): `outbreaks: [{places, seasons, stages, why}]`, a day when the family takes the outbreak
   share of those places (rules.md, 10, still tentative).
+- `homes_by: settings` marks a wild family placed by the settings rather than homes (Audino's share of shaking
+  grass).
 - **Stages** that aren't wild stay out of every home. **Partners** `area` means any Pokémon of that area may join a
   double or triple.
 - **Levels,** by default (rules.md, 5): a first stage from 2 to its evolution level + 3; a later stage from the level

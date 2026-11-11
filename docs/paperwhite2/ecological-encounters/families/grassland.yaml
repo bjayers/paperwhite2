@@ -1,0 +1,1125 @@
+# Batch 4: grassland, farm and town edge (46 families). Draft of 2026-11-14 for review.
+#
+# Summary
+# - The generalists (rules.md, 6): Patrat, Lillipup, Purrloin and Pidove's ground counterparts, common through the
+#   south and middle, never everywhere; Ekans follows Patrat (Pokécology); Rattata in the city.
+# - The city (Castelia's park and the routes at Nimbasa's and Opelucid's edges): scavengers (Zigzagoon, Stunky,
+#   Meowth, Rattata), introduced pets (Skitty, Glameow, Snubbull), Pachirisu as the park's squirrel; Eevee as the
+#   park's trophy, a lost pet.
+# - Farms: Floccesy Ranch's herding dogs (Lillipup), Furret hunted by Mightyena (Pokécology; its NPCs are both),
+#   Miltank and Tauros as farm herds, Chansey with Happiny (the user's request), Shinx the winter trophy.
+# - Route 22 as the savanna upland: herds (Tauros, Blitzle), burrowers (Nidoran), hunters (Poochyena), Electrike's
+#   thunderclouds, Mareep with Ampharos as the headland's beacon.
+# - Route 1's meadow by its flowers (the places' plan): Sunkern and Sunflora in summer (Sunkern falls from the sky in
+#   the morning), Cottonee and Whimsicott in autumn, Budew and Roselia in spring. Route 1's summer meadow is this
+#   dictionary's Sun Stone site, so Sunflora and Whimsicott are wild there (rules.md, 5).
+# - Seasonal: Deerling and Sawsbuck by their season's form on Route 6 (the user's request), Sawsbuck wintering in
+#   Lostlorn's shelter; reptiles (Ekans, Seviper) scarce in winter.
+# - Trophies: Eevee in Castelia's park, Leafeon in Pinwheel's depths in spring and summer (the user's request),
+#   Glaceon in Twist Mountain's caves in winter, Shinx at Floccesy in winter, Pichu at Virbank Complex in summer and
+#   autumn (the user's request), Munchlax on Route 5 (the user's request).
+# - Not wild: the other Eeveelutions, Nidoqueen and Nidoking, Wigglytuff, Delcatty, Lopunny, Roserade, Blissey,
+#   Snorlax (a special sleeping encounter would suit it: report.md), Lickilicky, Cinccino, Lilligant.
+# - Review: Pikachu, Jigglypuff and Roselia wild though they come by friendship (they're the natural adults); the
+#   Sun Stone site; Route 22's crowd.
+
+families:
+
+  - id: rattata
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Rattata): it searches for food all day and gnaws hard things to wear down its fangs."
+      - "Pokédex (B2W2, Raticate): it can gnaw through thick concrete."
+      - "The places: Rattata in Virbank's streets (mood) and Castelia's; rats in Manhattan's parks."
+    habitats: {city: 3, sewer: 3, industrial: 2, park: 2, farmland: 1}
+    time: {periods: night, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {rattata: wild, raticate: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: castelia_park, methods: [grass, dark_grass], seasons: all, tier: common, why: "the city's rats"}
+      - {place: castelia_sewers, methods: [grass], seasons: all, tier: common, why: "the sewers' walkways"}
+      - {place: virbank_complex, methods: [grass], seasons: all, tier: uncommon, why: "the industrial yards"}
+      - {place: route_4, methods: [grass], seasons: all, tier: rare, why: "the road by Castelia"}
+    review: []
+
+  - id: ekans
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Ekans): it sneaks through grass and strikes prey from behind."
+      - "Pokécology (the user's notes): Ekans hunt Patrat."
+      - "In the game: Ekans NPCs and a scripted Ekans on Route 19."
+      - "Real world: snakes bask in spring and summer and sleep through the winter."
+    habitats: {meadow: 3, scrub: 2, woodland_edge: 2, farmland: 2}
+    time: {periods: day, strength: preferred}
+    seasons: spring to autumn, following Patrat; none in winter
+    migration: resident
+    weather: {more: [], less: [rain, snow], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {ekans: wild, arbok: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: route_19, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "its NPCs and scripted battle, hunting Patrat"}
+      - {place: route_1, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "hunting the meadow's Patrat"}
+      - {place: route_3, methods: [dark_grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the wild edges"}
+      - {place: route_2, methods: [grass], seasons: [summer], tier: rare, why: "warm days on the dirt road"}
+      - {place: reversal_mountain_outside, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "basking in the badlands"}
+      - {place: route_16, methods: [grass], seasons: [summer], tier: rare, why: "snakes on the warm road (the places)"}
+    review: []
+
+  - id: nidoran_f
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Nidoqueen): it protects the young in its burrow with its life."
+      - "The places: Route 22's tall grass suits burrowers and hidden prey."
+      - "Real world: rabbits and hares of open grassland, with burrows."
+    habitats: {hills: 3, meadow: 3, scrub: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {nidoran_f: wild, nidorina: wild, nidoqueen: {wild: false, note: "a Moon Stone's"}}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_22, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "burrows on the windswept upland"}
+      - {place: route_12, methods: [dark_grass], seasons: all, tier: uncommon, why: "the wild hills"}
+      - {place: route_15, methods: [grass], seasons: all, tier: rare, why: "the ridge's slopes"}
+      - {place: nature_preserve, methods: [grass], seasons: all, tier: uncommon, why: "the preserve's clearings"}
+    review: []
+
+  - id: nidoran_m
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Nidoran♂): it raises its ears out of the grass to scan about."
+      - "Pokédex (B2W2, Nidorino): it has a violent disposition."
+    habitats: {hills: 3, meadow: 3, scrub: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: area}
+    stages: {nidoran_m: wild, nidorino: wild, nidoking: {wild: false, note: "a Moon Stone's"}}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: route_22, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "with Nidoran♀ on the upland"}
+      - {place: route_12, methods: [dark_grass], seasons: all, tier: uncommon, why: "the wild hills"}
+      - {place: route_15, methods: [grass], seasons: all, tier: rare, why: "the ridge's slopes"}
+      - {place: nature_preserve, methods: [grass], seasons: all, tier: uncommon, why: "the preserve's clearings"}
+    review:
+      - "Partners 'area' so that the two Nidoran meet together."
+
+  - id: meowth
+    origin: introduced
+    lore:
+      - "Pokédex (B2W2, Meowth): nocturnal; its eyes glitter at anything shiny."
+      - "The rules: other regions' cats introduced in Castelia (rules.md, 3)."
+      - "In the game: a Meowth trade."
+    habitats: {city: 3, park: 2, suburb: 2}
+    time: {periods: night, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [rain], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {meowth: wild, persian: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: castelia_park, methods: [grass], seasons: all, tier: uncommon, why: "a city stray after shiny things"}
+      - {place: route_5, methods: [grass], seasons: all, tier: uncommon, why: "the busy road's leavings at night"}
+      - {place: route_9, methods: [dark_grass], seasons: all, tier: rare, stages: [persian], why: "the mall's haughty strays"}
+    review: []
+
+  - id: lickitung
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Lickitung): its long tongue's lick leaves a tingling."
+      - "The places: Route 5's food-lovers by the road; Abundant Shrine's ponds and bugs."
+    habitats: {farmland: 2, pond: 2, park: 2}
+    time: {periods: any, strength: none}
+    seasons: spring to autumn
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {lickitung: wild, lickilicky: {wild: false, note: "by learning Rollout"}}
+    levels: {lickitung: [10, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_5, methods: [dark_grass], seasons: [spring, summer, autumn], tier: rare, why: "licking up leftovers by the road"}
+      - {place: abundant_shrine, methods: [grass], seasons: [summer], tier: rare, why: "catching bugs by the paddies with its tongue"}
+    review:
+      - "Little lore to place it by; two quiet homes."
+
+  - id: kangaskhan
+    origin: native
+    lore:
+      - "Pokédex (B2W2): it raises its young in its pouch and lets them out only where it feels safe."
+      - "Other games: Kanto's Safari Zone."
+      - "Real world: kangaroos of open grassland and scrub."
+    habitats: {meadow: 3, scrub: 2, hills: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {kangaskhan: wild}
+    levels: {kangaskhan: [15, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: nature_preserve, methods: [grass], seasons: all, tier: uncommon, why: "a protected place, safe for its young"}
+      - {place: route_15, methods: [dark_grass], seasons: all, tier: rare, why: "the ridge's scrub"}
+    review: []
+
+  - id: tauros
+    origin: native
+    lore:
+      - "Pokédex (B2W2): once it takes aim, it charges headlong; famous for its violence."
+      - "Real world: wild cattle and bison herds on open grassland; cattle on ranches."
+    habitats: {pasture: 3, hills: 3, meadow: 2}
+    time: {periods: day, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: family}
+    stages: {tauros: wild}
+    levels: {tauros: [10, 100]}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: route_22, methods: [dark_grass], seasons: all, tier: uncommon, why: "herds on the upland"}
+      - {place: floccesy_ranch, methods: [grass], seasons: all, tier: rare, why: "the ranch's cattle"}
+    review: []
+
+  - id: eevee
+    origin: introduced
+    lore:
+      - "Pokédex (B2W2, Eevee): its unstable genes conceal many possible evolutions."
+      - "In the game: a gift Eevee in Castelia; Hidden Grottoes for most Eeveelutions."
+      - "The places: Castelia's park for lost and released pets, Eevee perhaps the trophy."
+      - "The user: Leafeon a trophy in Pinwheel's mossy depths in spring and summer (the Moss Rock)."
+      - "In the game: the Ice Rock is in Twist Mountain, whose caves hold its ice Pokémon (the user)."
+    habitats: {park: 2, dense_forest: 2, cave: 1}
+    time: {periods: any, strength: none}
+    seasons: Eevee all year in the park; Leafeon in spring and summer; Glaceon in winter
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: exotic
+    trophy: [castelia_park, pinwheel_forest, twist_mountain]
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages:
+      eevee: wild
+      leafeon: {wild: true, note: "by the Moss Rock only"}
+      glaceon: {wild: true, note: "by the Ice Rock only"}
+      vaporeon: {wild: false, note: "a stone's (a Hidden Grotto's)"}
+      jolteon: {wild: false, note: "a stone's (a Hidden Grotto's)"}
+      flareon: {wild: false, note: "a stone's (a Hidden Grotto's)"}
+      espeon: {wild: false, note: "by friendship (a Hidden Grotto's)"}
+      umbreon: {wild: false, note: "by friendship (a Hidden Grotto's)"}
+    levels: {eevee: [5, 100], leafeon: [20, 100], glaceon: [20, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: castelia_park, methods: [grass], seasons: all, tier: exotic, stages: [eevee], why: "a lost pet in the city's garden: the trophy"}
+      - {place: pinwheel_forest, methods: [dark_grass], seasons: [spring, summer], tier: exotic, stages: [leafeon], why: "the Moss Rock's mossy depths (the user's request)"}
+      - {place: twist_mountain, methods: [grass], seasons: [winter], tier: exotic, stages: [glaceon], why: "the Ice Rock's caves in winter"}
+    review:
+      - "Glaceon at Twist Mountain mirrors the user's Leafeon; say if it should stay a grotto only."
+
+  - id: sentret
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Sentret): very nervous, it stands on its tail to scan wide areas."
+      - "Pokécology (the user's notes): Mightyena hunt Furret, on prairies or grassland."
+      - "In the game: Sentret NPCs on Route 19 and at Floccesy Ranch (and Furret NPCs there); a scripted Sentret at Floccesy."
+      - "Real world: prairie dogs and ferrets on open grassland."
+    habitats: {meadow: 3, pasture: 3, farmland: 2, hills: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {sentret: wild, furret: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_19, methods: [grass], seasons: all, tier: common, stages: [sentret], why: "its NPCs, on the lookout"}
+      - {place: floccesy_ranch, methods: [grass], seasons: all, tier: common, why: "its NPCs and Furret's, hunted by Mightyena"}
+      - {place: route_1, methods: [grass], seasons: all, tier: uncommon, why: "the meadow"}
+      - {place: route_3, methods: [grass], seasons: all, tier: uncommon, why: "the old fields"}
+    review: []
+
+  - id: pichu
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Pichu): its cheeks' sacs are small; a little leak shocks it."
+      - "The user: Pichu the trophy at Virbank Complex in summer and autumn; Raichu a rare wild evolution in Chargestone Cave (the charged stones)."
+      - "In the game: a Spiky-eared Pichu NPC at Virbank Complex."
+    habitats: {industrial: 2, woodland_edge: 2, cave: 2, deciduous_forest: 2}
+    time: {periods: any, strength: none}
+    seasons: all year; Pichu at Virbank in summer and autumn
+    migration: resident
+    weather: {more: [thunderstorm], less: [], only: []}
+    abundance: rare
+    trophy: [virbank_complex, chargestone_cave]
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages:
+      pichu: wild
+      pikachu: {wild: true, note: "the natural adult (its friendship evolution is the game's)"}
+      raichu: {wild: true, note: "Chargestone's charged stones only"}
+    levels: {pichu: [2, 15], pikachu: [10, 100], raichu: [30, 100]}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: virbank_complex, methods: [grass, dark_grass], seasons: [summer, autumn], tier: exotic, stages: [pichu], why: "drawn to the machines' power: the trophy (the user's request)"}
+      - {place: route_6, methods: [grass], seasons: all, tier: rare, stages: [pikachu], why: "the woods by Chargestone Cave"}
+      - {place: chargestone_cave, methods: [grass], seasons: all, tier: rare, stages: [pikachu], why: "living off the cave's charge"}
+      - {place: chargestone_cave, methods: [grass], seasons: all, tier: exotic, stages: [raichu], why: "the charged stones' influence (rules.md, 5): the trophy"}
+    review:
+      - "Pikachu wild though it comes by friendship. The NPC's Spiky-eared form could be the wild Pichu's (it can't evolve)."
+
+  - id: igglybuff
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Jigglypuff): looking into its eyes, it starts a song that puts listeners to sleep."
+      - "The places: Village Bridge's music theme."
+    habitats: {meadow: 3, flower_field: 2, park: 1}
+    time: {periods: night, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages:
+      igglybuff: {wild: true, note: "the young, rare"}
+      jigglypuff: {wild: true, note: "the natural adult (by friendship in the game)"}
+      wigglytuff: {wild: false, note: "a Moon Stone's"}
+    levels: {igglybuff: [2, 12], jigglypuff: [8, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: village_bridge, methods: [grass], seasons: all, tier: uncommon, why: "singing in the village of music"}
+      - {place: route_3, methods: [grass], seasons: all, tier: rare, why: "the old fields at night"}
+      - {place: route_12, methods: [grass], seasons: [spring, summer], tier: rare, why: "the flower hills"}
+    review:
+      - "Jigglypuff wild though it comes by friendship."
+
+  - id: mareep
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Mareep): in cold weather its wool doubles with static."
+      - "Pokédex (B2W2, Ampharos): its tail's light is a sea beacon to distant shores."
+      - "The places: Floccesy Ranch's own Mareep are NPCs."
+      - "Real world: sheep on upland pasture and moor."
+    habitats: {pasture: 3, hills: 3, meadow: 2, cliff: 1}
+    time: {periods: any, strength: none}
+    seasons: all year; more in winter (static in the cold)
+    migration: resident
+    weather: {more: [thunderstorm], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {mareep: wild, flaaffy: wild, ampharos: {wild: true, note: "the headland's beacon"}}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_22, methods: [grass], seasons: all, tier: uncommon, why: "the upland's sheep"}
+      - {place: route_22, methods: [dark_grass], seasons: all, tier: rare, stages: [ampharos], why: "a beacon on the headland, over the sea"}
+      - {place: route_12, methods: [grass], seasons: [autumn, winter], tier: uncommon, why: "the hills' pasture in the cold"}
+      - {place: route_15, methods: [grass], seasons: all, tier: uncommon, why: "the ridge's hill grazing"}
+      - {place: floccesy_ranch, methods: [grass], seasons: all, tier: rare, stages: [mareep], why: "strays from the ranch's flock"}
+    review: []
+
+  - id: sunkern
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Sunkern): it suddenly falls out of the sky in the morning."
+      - "Pokédex (B2W2, Sunflora): it always faces the sun."
+      - "The places: Route 1's meadow has Sunkern and Sunflora in summer, Sunflora strict to the day."
+    habitats: {meadow: 3, flower_field: 3, farmland: 1}
+    time: {periods: [morning, day, evening], strength: strict}
+    seasons: summer
+    migration: resident
+    weather: {more: [], less: [rain], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {sunkern: wild, sunflora: {wild: true, note: "Route 1's summer meadow only (a Sun Stone site)"}}
+    levels: {sunflora: [20, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_1, methods: [grass], seasons: [summer], tier: common, times: [morning], stages: [sunkern], why: "falling from the sky in the morning"}
+      - {place: route_1, methods: [grass], seasons: [summer], tier: uncommon, times: [day, evening], stages: [sunkern], why: "the summer meadow"}
+      - {place: route_1, methods: [grass], seasons: [summer], tier: uncommon, stages: [sunflora], why: "the meadow's sunflowers, facing the sun"}
+      - {place: route_12, methods: [grass], seasons: [summer], tier: uncommon, stages: [sunkern], why: "the flower hills in summer"}
+    review:
+      - "Route 1's summer meadow as a Sun Stone site (Sunflora and Whimsicott wild there)."
+
+  - id: snubbull
+    origin: introduced
+    lore:
+      - "Pokédex (B2W2, Snubbull): small Pokémon flee its face, but people find it cute."
+      - "Real world: bulldogs, pets walked in city parks."
+    habitats: {park: 3, suburb: 3, city: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {snubbull: wild, granbull: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: castelia_park, methods: [grass], seasons: all, tier: rare, why: "a lost pet in the park"}
+      - {place: route_16, methods: [grass], seasons: all, tier: rare, why: "the suburb's strays"}
+      - {place: route_9, methods: [grass], seasons: all, tier: rare, why: "dog walkers' strays by the mall"}
+    review: []
+
+  - id: girafarig
+    origin: native
+    lore:
+      - "Pokédex (B2W2): the head on its tail has a small brain and fights even facing backward."
+      - "Real world: giraffes of dry savanna and scrub."
+    habitats: {scrub: 3, hills: 2, badlands: 1}
+    time: {periods: day, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {girafarig: wild}
+    levels: {girafarig: [15, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_15, methods: [grass, dark_grass], seasons: all, tier: rare, why: "the ridge's dry scrub"}
+      - {place: reversal_mountain_outside, methods: [dark_grass], seasons: all, tier: rare, why: "the badlands' thicker scrub"}
+    review: []
+
+  - id: stantler
+    origin: native
+    lore:
+      - "Pokédex (B2W2): staring at its antlers draws one into their centres."
+      - "Real world: reindeer and elk of northern conifer forest, moving down in winter."
+    habitats: {conifer_forest: 3, mountain: 2, woodland_edge: 2, snowfield: 1}
+    time: {periods: [morning, evening], strength: preferred}
+    seasons: all year in the north's high forests; down to the chasm's edge in winter
+    migration: partial
+    weather: {more: [snow], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {stantler: wild}
+    levels: {stantler: [15, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: victory_road_forest, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the high conifer forest"}
+      - {place: route_23, methods: [grass], seasons: all, tier: uncommon, why: "the old conifer wood"}
+      - {place: giant_chasm_outside, methods: [grass], seasons: [winter], tier: uncommon, why: "down to the chasm's woodland in winter"}
+      - {place: route_11, methods: [grass], seasons: [winter], tier: rare, why: "down from the heights in winter"}
+    review:
+      - "Dawn and dusk preferred (deer feed then): two single periods, used sparingly."
+
+  - id: smeargle
+    origin: native
+    lore:
+      - "Pokédex (B2W2): it marks its territory with its tail like a paintbrush."
+      - "In the original games: Route 5's street performers and artists."
+    habitats: {park: 2, ruins: 2, suburb: 1}
+    time: {periods: day, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [rain], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {smeargle: wild}
+    levels: {smeargle: [10, 100]}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: route_5, methods: [grass], seasons: all, tier: rare, why: "painting among the road's performers and artists"}
+      - {place: dreamyard, methods: [dark_grass], seasons: all, tier: rare, why: "marks on the ruins' walls"}
+    review: []
+
+  - id: miltank
+    origin: native
+    lore:
+      - "Pokédex (B2W2): children who drink its milk grow up hearty."
+      - "Other games: Moomoo Farm."
+    habitats: {pasture: 3, farmland: 2, hills: 2}
+    time: {periods: day, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {miltank: wild}
+    levels: {miltank: [10, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: floccesy_ranch, methods: [grass], seasons: all, tier: uncommon, why: "the ranch's dairy herd"}
+      - {place: route_12, methods: [grass], seasons: [spring, summer, autumn], tier: rare, why: "the hill pastures"}
+      - {place: abundant_shrine, methods: [grass], seasons: all, tier: rare, why: "the hill farms"}
+    review: []
+
+  - id: poochyena
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Mightyena): it chases prey in a pack."
+      - "Pokécology (the user's notes): Mightyena hunt Furret, on prairie or grassland."
+      - "In the game: Poochyena NPCs at Floccesy Ranch (with Furret's)."
+    habitats: {meadow: 3, hills: 3, pasture: 2, woodland_edge: 2}
+    time: {periods: night, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: family}
+    stages: {poochyena: wild, mightyena: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: floccesy_ranch, methods: [grass], seasons: all, tier: uncommon, why: "its NPCs, hunting the ranch's Furret (Pokécology)"}
+      - {place: route_22, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "packs hunting the upland's grass"}
+      - {place: route_7, methods: [dark_grass], seasons: all, tier: uncommon, why: "stalking in the very tall grass"}
+      - {place: route_1, methods: [dark_grass], seasons: all, tier: rare, why: "the pine hills"}
+    review: []
+
+  - id: zigzagoon
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Zigzagoon): it zigzags and is good at finding items in the grass and ground."
+      - "The places: Castelia's park has raccoons on people's leavings; Route 5 and Route 9's trash."
+      - "Real world: raccoons in city parks and suburbs, out at night."
+    habitats: {park: 3, suburb: 3, city: 2, woodland_edge: 2}
+    time: {periods: night, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {zigzagoon: wild, linoone: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: castelia_park, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the park's raccoons"}
+      - {place: route_5, methods: [grass, dark_grass], seasons: all, tier: common, why: "trash and leftovers by the road"}
+      - {place: route_9, methods: [grass], seasons: all, tier: common, why: "the mall's trash"}
+      - {place: route_16, methods: [grass], seasons: all, tier: uncommon, why: "the suburb"}
+    review: []
+
+  - id: whismur
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Whismur): it murmurs, but shrieks like a jet when frightened."
+      - "The places: Village Bridge's music theme (the Whismur line)."
+      - "Other games: Rusturf Tunnel, a cave where its cries echo."
+    habitats: {cave: 2, meadow: 2, park: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {whismur: wild, loudred: wild, exploud: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: village_bridge, methods: [grass], seasons: all, tier: uncommon, why: "the village of song"}
+      - {place: wellspring_cave, methods: [grass], seasons: all, tier: uncommon, why: "an echoing cave, as Rusturf Tunnel"}
+      - {place: clay_tunnel, methods: [grass], seasons: all, tier: rare, why: "the tunnel's echoes"}
+    review: []
+
+  - id: skitty
+    origin: introduced
+    lore:
+      - "Pokédex (B2W2, Skitty): it chases its own tail until it's dizzy."
+      - "The rules: other regions' cats introduced in Castelia (rules.md, 3)."
+    habitats: {park: 3, suburb: 3, city: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [rain], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {skitty: wild, delcatty: {wild: false, note: "a Moon Stone's"}}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: castelia_park, methods: [grass], seasons: all, tier: uncommon, why: "a pet cat gone feral"}
+      - {place: route_3, methods: [grass], seasons: all, tier: rare, why: "a stray by the Day Care"}
+      - {place: route_16, methods: [grass], seasons: all, tier: rare, why: "the suburb's cats"}
+    review: []
+
+  - id: electrike
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Manectric): it makes a thundercloud overhead and drops lightning."
+      - "In the game: a Hidden Grotto Manectric on Route 3."
+      - "The places: Abundant Shrine and Route 14 get the Forces of Nature's storms."
+    habitats: {hills: 3, meadow: 3, farmland: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [thunderstorm], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {electrike: wild, manectric: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: route_22, methods: [grass], seasons: all, tier: uncommon, why: "running the upland under the storms"}
+      - {place: abundant_shrine, methods: [dark_grass], seasons: all, tier: uncommon, why: "the shrine of the storms"}
+      - {place: route_14, methods: [grass], seasons: all, tier: rare, why: "the storms' route"}
+      - {place: route_14, methods: [grass, dark_grass], seasons: all, tier: uncommon, weather: [thunderstorm], why: "out with the Forces of Nature's thunderstorms"}
+    review: []
+
+  - id: plusle
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Plusle): it cheers on friends with pom-poms of sparks and drains power from telephone poles."
+      - "The places: Nimbasa's edge: stadiums, theme park and power."
+    habitats: {suburb: 3, park: 2, meadow: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [thunderstorm], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: area}
+    stages: {plusle: wild}
+    levels: {plusle: [5, 100]}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: route_16, methods: [grass], seasons: all, tier: uncommon, why: "cheering by Nimbasa's stadiums, on the poles' power"}
+      - {place: route_5, methods: [grass], seasons: all, tier: rare, why: "Nimbasa's other edge"}
+    review:
+      - "Partners 'area' so that Minun can join."
+
+  - id: minun
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Minun): it cheers on friends; when they're losing, it sparks more."
+    habitats: {suburb: 3, park: 2, meadow: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [thunderstorm], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: area}
+    stages: {minun: wild}
+    levels: {minun: [5, 100]}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: route_16, methods: [grass], seasons: all, tier: rare, why: "with Plusle by Nimbasa"}
+      - {place: route_5, methods: [grass], seasons: all, tier: uncommon, why: "Nimbasa's other edge (the pair's balance across the two routes)"}
+    review: []
+
+  - id: spinda
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Spinda): no two have the same spots; its tottering step fouls foes' aim."
+      - "The user: Lostlorn Forest's 'off' Pokémon: Spinda's dizzy wandering."
+      - "In the game: two Spinda trades."
+    habitats: {deciduous_forest: 2, meadow: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {spinda: wild}
+    levels: {spinda: [5, 100]}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: lostlorn_forest, methods: [grass, dark_grass], seasons: all, tier: common, why: "tottering through the forest where something's not right (the user's request)"}
+    review: []
+
+  - id: zangoose
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Zangoose): Seviper's archrival."
+      - "In the game: Hidden Grottoes on Routes 7 and 23, with Seviper."
+      - "Real world: mongooses hunt snakes in tall grass by day."
+    habitats: {meadow: 3, marsh: 2, conifer_forest: 1}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {zangoose: wild}
+    levels: {zangoose: [15, 100]}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: route_7, methods: [grass, dark_grass], seasons: all, tier: rare, why: "hunting Seviper in the very tall grass"}
+      - {place: route_23, methods: [grass], seasons: all, tier: rare, why: "the conifer wood, with its rival"}
+    review: []
+
+  - id: seviper
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Seviper): it polishes its tail's blade; Zangoose's archrival."
+      - "Real world: snakes hunt at night and sleep through the winter."
+    habitats: {meadow: 3, marsh: 2, conifer_forest: 1}
+    time: {periods: night, strength: preferred}
+    seasons: spring to autumn
+    migration: resident
+    weather: {more: [], less: [snow], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {seviper: wild}
+    levels: {seviper: [15, 100]}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: route_7, methods: [grass, dark_grass], seasons: [spring, summer, autumn], tier: rare, why: "in the tall grass with Zangoose"}
+      - {place: route_23, methods: [grass], seasons: [spring, summer, autumn], tier: rare, why: "the conifer wood, with its rival"}
+    review: []
+
+  - id: budew
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Budew): it blooms when it's warm, releasing toxic pollen."
+      - "Pokédex (B2W2, Roselia): the stronger its aroma, the healthier it is."
+    habitats: {flower_field: 3, meadow: 2, park: 2}
+    time: {periods: day, strength: preferred}
+    seasons: Budew in spring, Roselia spring and summer
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages:
+      budew: wild
+      roselia: {wild: true, note: "the bloom (by friendship in the game)"}
+      roserade: {wild: false, note: "a Shiny Stone's"}
+    levels: {budew: [2, 20], roselia: [15, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_1, methods: [grass], seasons: [spring], tier: common, stages: [budew], why: "the meadow's spring flowers"}
+      - {place: route_12, methods: [grass], seasons: [spring, summer], tier: common, why: "the flower hills"}
+      - {place: village_bridge, methods: [dark_grass], seasons: [spring, summer], tier: uncommon, stages: [roselia], why: "the flowery clearing"}
+      - {place: castelia_park, methods: [grass], seasons: [spring], tier: uncommon, stages: [budew], why: "the park's garden"}
+    review:
+      - "Roselia wild though it comes by friendship."
+
+  - id: buneary
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Buneary): striking the ground with its ears, it bounds high."
+      - "In the game: Buneary NPCs on Route 19."
+      - "Real world: rabbits of old fields and woodland edges."
+    habitats: {meadow: 3, woodland_edge: 3, suburb: 1}
+    time: {periods: [evening, night], strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {buneary: wild, lopunny: {wild: false, note: "by friendship"}}
+    levels: {buneary: [2, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_19, methods: [grass], seasons: all, tier: uncommon, why: "its NPCs"}
+      - {place: route_2, methods: [grass], seasons: all, tier: uncommon, why: "rabbits at the woodland edge"}
+      - {place: route_3, methods: [grass], seasons: all, tier: uncommon, why: "the old fields"}
+      - {place: route_16, methods: [dark_grass], seasons: all, tier: uncommon, why: "the forest edge"}
+    review: []
+
+  - id: glameow
+    origin: introduced
+    lore:
+      - "Pokédex (B2W2, Glameow): it hooks its claws in its trainer's nose if not fed."
+      - "Pokédex (B2W2, Purugly): it binds itself with its tails to look bigger."
+      - "The rules: other regions' cats introduced in Castelia."
+    habitats: {city: 3, suburb: 3, park: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [rain], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {glameow: wild, purugly: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: castelia_park, methods: [grass], seasons: all, tier: uncommon, why: "an alley cat in the park"}
+      - {place: route_9, methods: [grass], seasons: all, tier: uncommon, why: "the mall's alley cats"}
+      - {place: virbank_complex, methods: [grass], seasons: all, tier: rare, stages: [purugly], why: "fat on the complex's scraps"}
+    review: []
+
+  - id: stunky
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Stunky): its stench spreads over a mile."
+      - "Real world: skunks raid suburban trash at night."
+    habitats: {suburb: 3, woodland_edge: 3, park: 2}
+    time: {periods: night, strength: strict}
+    seasons: all year, fewer in winter
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {stunky: wild, skuntank: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_9, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the mall's trash at night"}
+      - {place: route_16, methods: [grass], seasons: all, tier: uncommon, why: "the suburb's bins"}
+      - {place: route_2, methods: [grass], seasons: all, tier: rare, why: "the woodland edge at night"}
+      - {place: route_5, methods: [dark_grass], seasons: all, tier: uncommon, why: "the road's leavings"}
+    review: []
+
+  - id: shinx
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Luxray): it sees through walls to find prey and its lost young."
+      - "The user: Shinx a winter trophy at Floccesy Ranch (its NPCs are there)."
+      - "Real world: lynx come down to farms in hard winters."
+    habitats: {woodland_edge: 3, meadow: 2, deciduous_forest: 2, conifer_forest: 2}
+    time: {periods: any, strength: none}
+    seasons: all year in the north's forests; down to the Southwest's farms in winter
+    migration: partial
+    weather: {more: [thunderstorm], less: [], only: []}
+    abundance: rare
+    trophy: [floccesy_ranch]
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {shinx: wild, luxio: wild, luxray: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: floccesy_ranch, methods: [grass], seasons: [winter], tier: exotic, stages: [shinx], why: "down to the ranch in winter: the trophy (the user's request)"}
+      - {place: route_6, methods: [dark_grass], seasons: all, tier: rare, why: "the valley's woods, near Chargestone"}
+      - {place: victory_road_forest, methods: [dark_grass], seasons: all, tier: rare, stages: [luxio, luxray], why: "the mountain forest's lynx"}
+    review: []
+
+  - id: pachirisu
+    origin: native
+    lore:
+      - "Pokédex (B2W2): a pair rubs their cheek pouches to share electricity."
+      - "In the game: a Hidden Grotto Pachirisu on Route 3."
+      - "The places: squirrels in Manhattan's parks and the woodland edges."
+    habitats: {park: 3, woodland_edge: 3, deciduous_forest: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year, fewer in winter
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {pachirisu: wild}
+    levels: {pachirisu: [5, 100]}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: castelia_park, methods: [grass], seasons: all, tier: uncommon, why: "the park's squirrel round its tree"}
+      - {place: route_2, methods: [grass], seasons: all, tier: uncommon, why: "light woods"}
+      - {place: route_3, methods: [dark_grass], seasons: all, tier: rare, why: "the route's edges (its Hidden Grotto)"}
+      - {place: route_6, methods: [grass], seasons: all, tier: rare, why: "the valley's woods"}
+    review: []
+
+  - id: happiny
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Chansey): it shares its nutritious eggs with the injured."
+      - "The user: Chansey where Happiny is, at its levels; both NPCs at Floccesy Ranch."
+      - "In the game: a gift Happiny."
+    habitats: {pasture: 2, meadow: 2, woodland_edge: 1}
+    time: {periods: day, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {happiny: wild, chansey: wild, blissey: {wild: false, note: "by friendship"}}
+    levels: {happiny: [2, 25], chansey: [15, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: floccesy_ranch, methods: [grass], seasons: all, tier: rare, why: "its NPCs (the user's request)"}
+      - {place: route_3, methods: [grass], seasons: all, tier: very_rare, why: "by the Day Care, caring for eggs"}
+    review: []
+
+  - id: munchlax
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Munchlax): it forgets the food it has hidden under its fur."
+      - "The user: Munchlax rarely on Route 5."
+      - "The places: Route 5's food by the road and the cook's sweets; Route 12's honey."
+    habitats: {park: 2, flower_field: 2, woodland_edge: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: exotic
+    trophy: [route_5]
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {munchlax: wild, snorlax: {wild: false, note: "a special sleeping encounter would suit it (report.md)"}}
+    levels: {munchlax: [5, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_5, methods: [grass, dark_grass], seasons: all, tier: exotic, why: "the cook's food by the road: the trophy (the user's request)"}
+      - {place: route_12, methods: [dark_grass], seasons: [spring, summer], tier: very_rare, why: "drawn by the honey trees"}
+    review: []
+
+  - id: patrat
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Patrat): one is always on the lookout, but it won't notice a foe behind it."
+      - "Pokécology (the user's notes): Ekans hunt Patrat."
+      - "In the game: Patrat NPCs and a scripted battle on Route 19."
+      - "Real world: prairie dogs and ground squirrels on open grass, sentries up."
+    habitats: {meadow: 3, suburb: 3, park: 2, farmland: 2, woodland_edge: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {patrat: wild, watchog: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_19, methods: [grass], seasons: all, tier: common, why: "its NPCs; the city's edge"}
+      - {place: route_1, methods: [grass], seasons: all, tier: common, why: "the meadow"}
+      - {place: route_2, methods: [grass], seasons: all, tier: common, why: "between the towns"}
+      - {place: route_3, methods: [grass], seasons: all, tier: common, why: "the fields round the Day Care"}
+      - {place: castelia_park, methods: [grass], seasons: all, tier: uncommon, why: "the park's lawn"}
+      - {place: route_5, methods: [grass], seasons: all, tier: uncommon, why: "by the road"}
+      - {place: route_16, methods: [grass], seasons: all, tier: common, why: "the verges"}
+      - {place: dreamyard, methods: [grass], seasons: all, tier: uncommon, why: "the overgrown ground"}
+      - {place: floccesy_ranch, methods: [grass], seasons: all, tier: uncommon, why: "the barns' rodents"}
+    review: []
+
+  - id: lillipup
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Herdier): loyal, it helps trainers and looks after other Pokémon."
+      - "Pokédex (B2W2, Stoutland): its fur would keep a person fine overnight on a wintry mountain."
+      - "In the game: Lillipup NPCs and a scripted battle on Route 19 (rare there, the places say)."
+      - "The places: Floccesy Ranch's herding and farm dogs."
+    habitats: {pasture: 3, meadow: 2, suburb: 2, farmland: 2, mountain: 1}
+    time: {periods: day, strength: none}
+    seasons: all year; Stoutland on the snowy heights in winter
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {lillipup: wild, herdier: wild, stoutland: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: floccesy_ranch, methods: [grass], seasons: all, tier: common, why: "the ranch's herding dogs"}
+      - {place: route_19, methods: [grass], seasons: all, tier: rare, stages: [lillipup], why: "its NPCs (rare, the places say)"}
+      - {place: route_2, methods: [grass], seasons: all, tier: uncommon, why: "the farms between towns"}
+      - {place: route_3, methods: [grass], seasons: all, tier: uncommon, why: "the Day Care's fields"}
+      - {place: abundant_shrine, methods: [grass], seasons: all, tier: uncommon, why: "the hill farms' dogs"}
+      - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: rare, stages: [stoutland], why: "warm in its fur on the snowy cliffside"}
+    review: []
+
+  - id: purrloin
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Purrloin): its cute act is a ruse to steal people's valuables."
+      - "Pokédex (B2W2, Liepard): it runs silently in the night."
+      - "In the game: Purrloin NPCs on Route 19 and at Virbank Complex; a Hidden Grotto Liepard on Route 9."
+    habitats: {city: 3, suburb: 3, industrial: 2, park: 2, woodland_edge: 2}
+    time: {periods: night, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [rain], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {purrloin: wild, liepard: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: route_19, methods: [grass], seasons: all, tier: uncommon, why: "its NPCs, by the city"}
+      - {place: virbank_complex, methods: [grass, dark_grass], seasons: all, tier: common, why: "its NPCs; on the pipes"}
+      - {place: castelia_park, methods: [grass], seasons: all, tier: uncommon, why: "Unova's city cat"}
+      - {place: route_5, methods: [grass], seasons: all, tier: uncommon, why: "by the busy road"}
+      - {place: route_9, methods: [dark_grass], seasons: all, tier: uncommon, why: "the outskirts at night (its Hidden Grotto)"}
+      - {place: dreamyard, methods: [grass], seasons: all, tier: uncommon, why: "the ruins"}
+    review: []
+
+  - id: blitzle
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Blitzle): its flashing mane's rhythm is how they talk."
+      - "In the game: a Hidden Grotto Zebstrika on Route 3."
+      - "Real world: zebra herds on open grassland."
+    habitats: {meadow: 3, hills: 3, pasture: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [thunderstorm], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: family}
+    stages: {blitzle: wild, zebstrika: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: route_3, methods: [dark_grass], seasons: all, tier: uncommon, why: "the wild grass at the edges, as in the original"}
+      - {place: route_22, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "herds on the upland"}
+      - {place: route_12, methods: [dark_grass], seasons: all, tier: rare, why: "the open hills"}
+    review: []
+
+  - id: audino
+    origin: native
+    lore:
+      - "Pokédex (B2W2): it senses how someone feels and when an egg will hatch."
+      - "The settings: Audino keeps 30% of every shaking grass."
+    habitats: {meadow: 2, woodland_edge: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {audino: wild}
+    levels: {audino: [5, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes_by: settings
+    homes: []
+    review: []
+
+  - id: minccino
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Minccino): they greet each other by grooming with their tails."
+      - "In the original games: Routes 5, 9 and 16; a Hidden Grotto on Route 5."
+      - "Real world: chinchillas, tidy and social."
+    habitats: {suburb: 2, park: 2, woodland_edge: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {minccino: wild, cinccino: {wild: false, note: "a Shiny Stone's"}}
+    levels: {minccino: [5, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_5, methods: [grass], seasons: all, tier: uncommon, why: "as in the original"}
+      - {place: route_9, methods: [grass], seasons: all, tier: uncommon, why: "as in the original"}
+      - {place: route_16, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "as in the original"}
+    review: []
+
+  - id: deerling
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Deerling): its colour changes with the seasons."
+      - "Pokédex (B2W2, Sawsbuck): they migrate with the seasons; some call them the harbingers of spring."
+      - "The user: Deerling and Sawsbuck on Route 6, in their season's form."
+      - "Real world: white-tailed deer in Appalachian valleys; they yard up in sheltered woods in winter."
+    habitats: {deciduous_forest: 3, woodland_edge: 3, meadow: 2}
+    time: {periods: [morning, evening, night], strength: preferred}
+    seasons: >-
+      Deerling on Route 6 all year in the season's form; Sawsbuck arrive with spring (the harbingers), stay to autumn,
+      and winter in Lostlorn's sheltered forest.
+    migration: partial
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: family}
+    stages: {deerling: wild, sawsbuck: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_6, methods: [grass, dark_grass], seasons: [spring], tier: common, form: 0, why: "spring's form (the user's request)"}
+      - {place: route_6, methods: [grass, dark_grass], seasons: [summer], tier: common, form: 1, why: "summer's form"}
+      - {place: route_6, methods: [grass, dark_grass], seasons: [autumn], tier: common, form: 2, why: "autumn's form"}
+      - {place: route_6, methods: [grass, dark_grass], seasons: [winter], tier: uncommon, form: 3, stages: [deerling], why: "the young stay in the valley in winter"}
+      - {place: lostlorn_forest, methods: [dark_grass], seasons: [winter], tier: uncommon, form: 3, stages: [sawsbuck], why: "wintering in the forest's shelter"}
+      - {place: route_7, methods: [grass], seasons: [summer], tier: uncommon, form: 1, stages: [deerling], why: "grazing the marsh's edge in summer"}
+      - {place: route_7, methods: [grass], seasons: [autumn], tier: uncommon, form: 2, stages: [deerling], why: "autumn on the marsh's edge"}
+    review: []
+
+  - id: cottonee
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Cottonee): they stick to others and end up looking like a cloud."
+      - "Pokédex (B2W2, Whimsicott): they come with whirlwinds and pull pranks."
+      - "The places: Cottonee and Whimsicott on Route 1's meadow in autumn."
+      - "In the game: a Cottonee trade."
+    habitats: {meadow: 3, hills: 2, flower_field: 2}
+    time: {periods: day, strength: preferred}
+    seasons: autumn, drifting on the wind; a few in summer
+    migration: nomad
+    weather: {more: [gusty_rain], less: [rain], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: family}
+    stages: {cottonee: wild, whimsicott: {wild: true, note: "Route 1's meadow (a Sun Stone site) and the windy uplands"}}
+    levels: {whimsicott: [25, 100]}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: route_1, methods: [grass], seasons: [autumn], tier: common, why: "the autumn meadow (the places' suggestion)"}
+      - {place: route_5, methods: [grass], seasons: [autumn], tier: uncommon, stages: [cottonee], why: "blown along the road"}
+      - {place: route_15, methods: [grass], seasons: [autumn], tier: rare, stages: [whimsicott], why: "whirlwinds on the windy ridge"}
+      - {place: route_12, methods: [grass], seasons: [summer], tier: uncommon, stages: [cottonee], why: "late summer on the hills"}
+    review: []
+
+  - id: petilil
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Petilil): its bitter leaves grow back and refresh those who eat them."
+      - "Pokédex (B2W2, Lilligant): its garland relaxes, but it's hard to care for (a garden flower)."
+      - "In the game: a Petilil trade."
+    habitats: {flower_field: 3, park: 2, meadow: 2}
+    time: {periods: day, strength: preferred}
+    seasons: spring and summer; all year in Village Bridge's clearing
+    migration: resident
+    weather: {more: [rain], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {petilil: wild, lilligant: {wild: false, note: "a Sun Stone's"}}
+    levels: {petilil: [5, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: village_bridge, methods: [dark_grass], seasons: all, tier: uncommon, why: "the clearing's flowers all year"}
+      - {place: route_12, methods: [grass], seasons: [spring, summer], tier: uncommon, why: "the flower hills"}
+      - {place: castelia_park, methods: [grass], seasons: [spring, summer], tier: rare, why: "the garden's flowers"}
+    review: []
