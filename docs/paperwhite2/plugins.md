@@ -665,6 +665,80 @@ field rained after it (state: `WEATHER_RAIN`, zone 331); with its start time mov
 zone's clear sky within a few frames; and a warp to Castelia ended it there. Not tested: a seamless zone change (the
 same `GetWeatherAll` path), sun, sandstorm and hail.
 
+### Weather
+
+Weather that looks right under any camera, made for Castelia (research and options:
+`docs/paperwhite2/design/castelia-weather.md`). Four parts:
+
+**Fog that follows the player** (`src/paperwhite2/ov036/paperwhite2_weather_fog.c`, `include/paperwhite2/weather_fog.h`).
+A weather's fog shift and offset are depth-buffer values that suit a normal town's camera (defaults 0: Z-buffered, near
+1, far 1024, its target 237 units away). The weathers keep setting and animating them as in the original, and
+`FieldFog_Flush` maps them to the current camera when the fog is a falling weather's (rain, thunderstorm, gusty rain,
+snow, blizzard, flutter, speck, sandstorm; `PaperWhite2_WeatherFog_FollowsPlayer`): the depth at the camera's target
+on the reference camera goes to the depth at the target on this one, and the fog's steps scale by the power of two
+nearest the ratio of how fast depth grows with distance at the target on the two (W-buffering: 8 a unit; Z-buffering:
+`0x7fff f n / (d^2 (f - n))`). So the density at the target is the same as in a normal town (rain 41%, thunderstorm
+31%) and the ramp around it is as long within a factor of 1.4. Offsets above the thunderstorm's `0x7f80`, the fades'
+ends, run on to `0x7fff`, so a fade still ends with no fog on a far plane past 1024. The target stands in for the
+player: it follows the player, and where the camera stops at a map's edge a normal town's fog stays with the camera
+too. Each frame (`fieldmap.c`'s `FieldG3D_Update`, after `FieldFog_Update`) `PaperWhite2_WeatherFog_Update` reads the
+camera (its near and far planes and buffering from its defaults, read again only when the defaults index changes; the
+eye-to-target distance) and has the fog flushed again when the mapped values change, so rail cameras, camera areas and
+event cameras move the fog with them. A camera on the reference's planes within 1 unit of 237 keeps the weather's
+values untouched, so normal towns write the same fog registers as the original. The hooks: `field_fog.c` (the flag,
+the flushed values, `FieldFog_SetPlayerRelative`, `FieldFog_UpdatePlayerRelative`; `FieldFog_SetDepthShift` and
+`FieldFog_SetOffset` clear the flag, so a gym's or a zone's fog is untouched), `weather_task.c` (`WeatherTask_InitFog`,
+`WeatherTask_ChangeFog`, `WeatherTask_ChangeFogOffset` and a crossfade's queued change set it by the weather). The
+sunny weather's zone fog and the tints (weathers 9-14, which already pick theirs by camera) aren't mapped.
+
+| Camera | Rain (shift / offset) | Thunderstorm |
+| --- | --- | --- |
+| normal town (0) | 8 / `0x7f5f` (unchanged) | 9 / `0x7f80` (unchanged) |
+| `castelia_city` waterfront (2, W; target 680-790 on its rail) | 4 / `0x1290`-`0x1558` | 5 / `0x14a0`-`0x1768` |
+| `castelia_city_2` plaza (7) | 8 / `0x7f17` | 9 / `0x7f38` |
+| `castelia_city_3` (8) | 9 / `0x7f9c` | 10 / `0x7fac` |
+| `castelia_city_4`, `_5` (13, 15) | 8 / `0x7f54`, `0x7f48` | 9 / `0x7f75`, `0x7f69` |
+| `castelia_city_6` (14) | 9 / `0x7fa7` | 10 / `0x7fb7` |
+| `castelia_city_7` (6) | 7 / `0x7eda` | 8 / `0x7f1c` |
+| piers `_8`-`_12` (25) | 9 / `0x7fae` | 10 / `0x7fbe` |
+
+Other places it changes: any zone whose camera isn't 237 units from its target on near 1 / far 1024 / Z when a falling
+weather fogs there. Of the zones the original gives weather, that is chiefly Route 4's camera area by the Castelia gate
+(the camera pulls back from 237 to 397: its sandstorm no longer thickens there) and any camera area or event camera
+that zooms while it rains. Indoor cameras never have weather.
+
+**Sky gaps take the fog** (`field_light.c`'s `FieldLight_FlushCore`): in Castelia's outdoor zones (`castelia_city`,
+`_2`-`_12`, `_31`, `_32`, `sRearPlaneFogZones`) the clear colour has rear-plane fog on, so where no polygon is drawn
+(past a street's end) the screen is the fog's colour in a weather, not the light file's sky blue. It does nothing while
+the fog is off, so sunny Castelia is as before. `PaperWhite2_WeatherFog_Update` flushes the light again when the zone
+enters or leaves the list.
+
+**Fog on Castelia's roads, trees and benches** (data): `res/field/maps/models/<model>/data.json`'s `material_fog`
+(`map_model.schema.json`, `tools/data/map_model_data.py`'s `patch_material_fog`) sets or clears a Nitro material's fog
+bit (bit 15 of its polygon attributes) by name. Castelia's street, pier and waterfront models turn it on for
+`c3_road1`, `c3_yuka`, `c3bay_yuka1`, `c3_test_1`, `c3_tree3`, `c3_manhole`, `c3_g_dust2`, `bench`, `h_kage` and
+`building4_2` (14 models; the packed archive differs from the original in those bits alone). The translucent sea
+(`sea_mizu1_1`), the window glows (`gra_w*`) and the windows `h_mado_1` stay unfogged, as lights.
+
+**The rain sheet past the near plane** (`field_3dbg.c`'s `Field3DBG_CalcQuadGeometry`): the weather's two 3D sheets
+(the thunderstorm's, gusty rain's, sandstorm's and blizzard's dense layer) are drawn 80 and 88 units in front of the
+camera. A camera whose near plane is at least that far (Castelia's waterfront at 100, Entree Forest's at 112) clipped
+them away; they now move past the near plane by its distance (180 and 188, or 192 and 200), which keeps their order and
+still fills the screen, since the quad scales with its distance. Other cameras are unchanged (near 1 or 19).
+
+**Cost.** Overlay 36 about 0.8 KB of code and 40 bytes of BSS (`paperwhite2_weather_fog.c`) and about 0.2 KB of hooks;
+per frame one distance (a square root) and a few 64-bit divisions.
+
+**Tested (DeSmuME, 2026-11-10):** forced thunderstorm and rain from the debug menu. On the Route 4 street south of
+Castelia (camera 0) the fog registers were the original's (shift 9, `FOG_OFFSET` `0x7f80`; clear colour without
+rear-plane fog). On the waterfront (camera 2) the thunderstorm wrote shift 5 and an offset that followed the rail camera
+(`0x1403`-`0x151a` as it moved from 680 to 715 units), the clear colour had rear-plane fog, and the fine diagonal sheet
+showed, which it didn't before. In `castelia_city_6` the thunderstorm wrote 10 / `0x7fb7` and the rain 9 / `0x7fa7`, as
+computed; the player stands in light fog with the street's end grey, and the pink tiles and planters are fogged with the
+rest. **Needs a hardware (or melonDS) check:** the waterfront's W-buffer fog, since DeSmuME's W-buffer fog isn't the
+hardware's (the design note's section 3); the W depth assumed is 8 a unit (GBATEK, the projection's W scale 1). Not
+tested: the piers, the plaza, Entree Forest's sheet, a crossfade between two falling weathers.
+
 ### Season app
 
 The Pokémon Centers' globe opens a touch-screen app that sets the season setting, in Geonet's place: hack builds have

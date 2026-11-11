@@ -5,6 +5,9 @@
 #include "gfl/std.h"
 #include "nitro/gx.h"
 #include "system/aeabi.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/weather_fog.h"
+#endif
 
 typedef struct FieldFogAnimation {
     u16 frame;
@@ -28,6 +31,13 @@ struct FieldFog {
     } table;
     FieldFogAnimation animation;
     BOOL dirty;
+#ifdef PAPERWHITE2
+    // Paper White 2: whether the shift and offset are a weather's, which follow the player (paperwhite2/weather_fog.h),
+    // and what was last flushed of them
+    BOOL playerRelative;
+    u32 flushedDepthShift;
+    s32 flushedOffset;
+#endif
 };
 
 BOOL FieldFogAnimation_IsRunning(FieldFogAnimation *animation);
@@ -61,8 +71,24 @@ void FieldFog_Update(FieldFog *fog) {
 }
 
 void FieldFog_Flush(FieldFog *fog) {
+#ifdef PAPERWHITE2
+    u32 depthShift;
+    s32 offset;
+
+    if (fog->dirty) {
+        // Paper White 2: a weather's fog mapped to the current camera
+        depthShift = fog->depthShift;
+        offset = fog->offset;
+        if (fog->playerRelative) {
+            PaperWhite2_WeatherFog_Map(&depthShift, &offset);
+        }
+        fog->flushedDepthShift = depthShift;
+        fog->flushedOffset = offset;
+        G3X_SetFog(fog->enabled, fog->alphaMode, depthShift, offset);
+#else
     if (fog->dirty) {
         G3X_SetFog(fog->enabled, fog->alphaMode, fog->depthShift, fog->offset);
+#endif
         G3X_SetFogColor(fog->color, fog->alpha);
         G3X_SetFogTable(fog->table.words);
         fog->dirty = FALSE;
@@ -81,11 +107,19 @@ void FieldFog_SetAlphaMode(FieldFog *fog, u32 alphaMode) {
 
 void FieldFog_SetDepthShift(FieldFog *fog, u32 depthShift) {
     fog->depthShift = depthShift;
+#ifdef PAPERWHITE2
+    // Paper White 2: a fog set directly (a gym's, a zone's) is the camera's own; WeatherTask_InitFog marks a weather's
+    fog->playerRelative = FALSE;
+#endif
     fog->dirty = TRUE;
 }
 
 void FieldFog_SetOffset(FieldFog *fog, u32 offset) {
     fog->offset = offset;
+#ifdef PAPERWHITE2
+    // Paper White 2: as FieldFog_SetDepthShift
+    fog->playerRelative = FALSE;
+#endif
     fog->dirty = TRUE;
 }
 
@@ -170,3 +204,25 @@ u16 FieldFogAnimation_CalcFogDepthShift(FieldFogAnimation *animation) {
     depthShift += animation->depthShiftStart;
     return depthShift;
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: weather fog that follows the player (paperwhite2/weather_fog.h)
+void FieldFog_SetPlayerRelative(FieldFog *fog, BOOL playerRelative) {
+    fog->playerRelative = playerRelative;
+    fog->dirty = TRUE;
+}
+
+void FieldFog_UpdatePlayerRelative(FieldFog *fog) {
+    u32 depthShift;
+    s32 offset;
+
+    if (fog->playerRelative && !fog->dirty) {
+        depthShift = fog->depthShift;
+        offset = fog->offset;
+        PaperWhite2_WeatherFog_Map(&depthShift, &offset);
+        if (depthShift != fog->flushedDepthShift || offset != fog->flushedOffset) {
+            fog->dirty = TRUE;
+        }
+    }
+}
+#endif

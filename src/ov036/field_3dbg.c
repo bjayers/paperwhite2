@@ -177,10 +177,25 @@ static void Field3DBG_CalcQuadGeometry(Field3DBgQuad *quad, const Field3DBg *bg,
     MtxFx33 scaling;
     fx32 u;
     fx32 v;
+#ifdef PAPERWHITE2
+    G3DCameraProjection projection;
+    fx32 distance = bg->distance;
 
+    // Paper White 2: a weather's sheets (80 and 88 units away) lay in front of a camera whose near plane is farther
+    // (Castelia's waterfront, at 100) and were clipped away. They move past it by its distance, keeping their order,
+    // and still fill the screen, since the quad scales with its distance
+    GFL_G3DSysMtxGetProjection(&projection);
+    if (distance <= projection.near) {
+        distance += projection.near;
+    }
+    quad->halfHeight = FX_Div(distance, proj->m[1][1]);
+    quad->halfWidth = FX_Div(distance, proj->m[0][0]);
+    quad->depth = distance;
+#else
     quad->halfHeight = FX_Div(bg->distance, proj->m[1][1]);
     quad->halfWidth = FX_Div(bg->distance, proj->m[0][0]);
     quad->depth = bg->distance;
+#endif
     if (quad->halfHeight > quad->halfWidth) {
         if (quad->halfHeight > quad->depth) {
             quad->scale = FX_Div(quad->halfHeight, FX32_CONST(4));

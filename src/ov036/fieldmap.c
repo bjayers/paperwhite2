@@ -98,6 +98,7 @@
 #include "paperwhite2/following_field.h"
 #include "paperwhite2/sprites.h"
 #include "paperwhite2/wanderers.h"
+#include "paperwhite2/weather_fog.h"
 #ifdef PAPERWHITE2_DEBUG_MENU
 #include "paperwhite2/debug.h"
 #include "paperwhite2/vram_stats.h"
@@ -1030,6 +1031,10 @@ void FieldG3D_Update(Field *field) {
     FieldWeather_Update(field->weatherSystem, HEAPID_FIELD_WEATHER);
     FieldLensFlare_Update(field->lensFlare, field->cameraSystem);
     FieldFog_Update(field->fog);
+#ifdef PAPERWHITE2
+    // Paper White 2: a weather's fog follows the player as the camera moves (paperwhite2/weather_fog.h)
+    PaperWhite2_WeatherFog_Update(field);
+#endif
 #ifdef PAPERWHITE2_DEBUG_MENU
     // Paper White 2: the lights of the debug menu's time of day override
     FieldLight_Update(field->lightSystem, PaperWhite2_Debug_GetDaySeconds(GameData_GetSeason(field->gameData),

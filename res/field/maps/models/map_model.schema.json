@@ -23,6 +23,10 @@
             "type": "string", "x-constant": "MAP_MODEL_",
             "description": "For a map model the hack adds (after the game's in generated/map_models.txt): the game's map model whose container it copies (its type, its collision's size and layers), whose model name its GLB's mesh has. The model is written whole (\"written\": true)"
         },
+        "material_fog": {
+            "type": "object", "additionalProperties": { "type": "boolean" },
+            "description": "Whether the fog applies to a material's polygons (bit 15 of its polygon attributes), by the Nitro material's name, for the materials this changes from the game's model. The game leaves it off for some materials, which then stay unfogged in a weather's or a zone's fog"
+        },
         "transformed": {
             "enum": [ true ],
             "description": "Set when the GLB's positions went through the model's node transforms on export, which the packer reverses"

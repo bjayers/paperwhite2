@@ -12,6 +12,9 @@
 #include "nnsys/g3d.h"
 #include "system/palanm.h"
 #include "system/rtc.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/weather_fog.h"
+#endif
 
 // The field's lights (field_light.c, after the file name that its allocation passes): the light setups of the times of
 // day, which it fades between, and flashes to a color. Also the color filter of the field's textures. Function names
@@ -230,7 +233,12 @@ static void FieldLight_FlushCore(const FieldLight *light, FieldFog *fog, G3DLigh
         NNS_G3dGlbMaterialColorDiffAmb(light->current.materials[0], light->current.materials[1], TRUE);
         NNS_G3dGlbMaterialColorSpecEmi(light->current.materials[2], light->current.materials[3], FALSE);
         FieldFog_SetColor(fog, light->current.materials[4]);
+#ifdef PAPERWHITE2
+        // Paper White 2: in Castelia, the sky gaps take a weather's fog (paperwhite2/weather_fog.h)
+        G3X_SetClearColor(light->current.materials[5], 31, 0x7fff, 0, PaperWhite2_WeatherFog_IsRearPlaneFog());
+#else
         G3X_SetClearColor(light->current.materials[5], 31, 0x7fff, 0, FALSE);
+#endif
     }
 }
 

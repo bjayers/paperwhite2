@@ -16,6 +16,9 @@
 #include "gfl/std.h"
 #include "nitro/fx.h"
 #include "nnsys/g3d.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/weather_fog.h"
+#endif
 
 // The weather's graphics, which the particles use
 typedef struct {
@@ -446,6 +449,10 @@ void WeatherTask_InitFog(WeatherTask *task, u32 depthShift, u32 offset, u32 mode
         FieldFog_SetOffset(task->fog, offset);
         FieldFog_SetDefaultTable(task->fog);
         FieldFog_SetEnabled(task->fog, TRUE);
+#ifdef PAPERWHITE2
+        // Paper White 2: a falling weather's fog follows the player whatever the camera (paperwhite2/weather_fog.h)
+        FieldFog_SetPlayerRelative(task->fog, PaperWhite2_WeatherFog_FollowsPlayer(task->data));
+#endif
     }
 }
 
@@ -458,11 +465,19 @@ void WeatherTask_DisableFog(WeatherTask *task, u32 mode) {
 void WeatherTask_ChangeFog(WeatherTask *task, u32 depthShift, u32 color, int duration, u32 mode) {
     int half;
     if (mode == WEATHER_MODE_ALONE) {
+#ifdef PAPERWHITE2
+        // Paper White 2: as in WeatherTask_InitFog
+        FieldFog_SetPlayerRelative(task->fog, PaperWhite2_WeatherFog_FollowsPlayer(task->data));
+#endif
         FieldFog_Animate(task->fog, color, depthShift, duration);
         return;
     }
     if (mode == WEATHER_MODE_CROSSFADE) {
         if (depthShift == FieldFog_GetDepthShift(task->fog)) {
+#ifdef PAPERWHITE2
+            // Paper White 2: as in WeatherTask_InitFog; with another shift, when the queued change applies
+            FieldFog_SetPlayerRelative(task->fog, PaperWhite2_WeatherFog_FollowsPlayer(task->data));
+#endif
             FieldFog_Animate(task->fog, color, depthShift, duration);
             return;
         }
@@ -1026,6 +1041,10 @@ static BOOL WeatherTask_HasFogChange(WeatherTask *task) {
 }
 
 static void WeatherTask_ApplyFogChange(WeatherTask *task) {
+#ifdef PAPERWHITE2
+    // Paper White 2: as in WeatherTask_InitFog
+    FieldFog_SetPlayerRelative(task->fog, PaperWhite2_WeatherFog_FollowsPlayer(task->data));
+#endif
     FieldFog_AnimateEx(task->fog, 0x7fdf, task->fogColor, task->fogDepthShift, task->fogDepthShift, task->fogDuration);
 }
 
