@@ -1043,6 +1043,7 @@ families:
       - {place: victory_road_mountainside, methods: [fishing], seasons: all, tier: common, form: 0, why: "cold mountain water (Red-Striped)"}
       - {place: nature_preserve, methods: [fishing], seasons: all, tier: uncommon, form: 0, why: "the preserve's river (Red-Striped)"}
       - {place: virbank_city, methods: [fishing], seasons: all, tier: uncommon, form: 1, why: "the river's Blue-Striped fish where it comes in"}
+      - {place: relic_passage, methods: [surf, fishing], seasons: all, tier: uncommon, form: 1, why: "the underground pool, west of the line (Blue-Striped)"}
     review:
       - "Route 3's lake and the Nature Preserve count as east (Red-Striped); the Nature Preserve's side of the line is a guess."
 

@@ -72,7 +72,7 @@ with `python3 tools/dictionary_check.py` and `python3 tools/balance.py` from thi
 - **Sandstorm-only**: Flygon and Krookodile (Pokécology); **other weather-only**: Castform (rain, storms, snow), Absol
   (storms and blizzards), Cryogonal at Dragonspiral's entrance in diamond dust, Electrike more on Route 14 in storms.
   Most of these need the weather the user would add (weather.md).
-- **Trophies (exotic)**, by place: Abundant Shrine (Farfetch'd, Feebas), Castelia's park (Eevee, Chatot), Castelia's
+- **Trophies (exotic)**, by place: Abundant Shrine (Farfetch'd, Feebas), Castelia's park (Eevee), Castelia's
   sewers (Totodile), Chargestone Cave (Raichu, Probopass, Tynamo's line), Dragonspiral's lake (Dratini), the Dreamyard
   (Musharna), Floccesy Ranch (Riolu, Shinx), Giant Chasm (Beldum in the caves, Mamoswine in the crater), Humilau
   (Lileep), Mistralton Cave (Axew), the Moor of Icirrus (Carnivine), Pinwheel Forest (Pinsir, Leafeon), Relic Passage

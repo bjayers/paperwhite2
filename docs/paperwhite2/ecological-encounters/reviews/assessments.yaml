@@ -130,6 +130,9 @@ castelia_park:
       put Minccino here) to keep the garden small. I'd put your list back and take out what you didn't name
       (Pachirisu, and Chatot unless you like the feral colony) instead.
     - Two trophies in one tiny garden may be one too many.
+  discussed:
+    - >-
+      2026-11-14, done: the user's list back (Pidove common, Snubbull, Meowth, Minccino); Pachirisu and Chatot gone (Pachirisu lives on Routes 2, 3 and 6; Chatot on Route 18 and at Village Bridge), so Eevee is the one trophy; seasons: Budew in spring, Nincada and Venonat at the lights in summer, Starly murmurations in autumn and winter.
 
 castelia_sewers:
   vision: >-
@@ -143,6 +146,9 @@ castelia_sewers:
       The walkways have only three to five families. The sewers are big (five maps), so that's thin; Trubbish (trash),
       Zubat or Woobat, and Stunky would fit the dark, dirty tunnels.
     - Corphish on the dry floors in autumn and winter is my stretch; say if it should stay in the water only.
+  discussed:
+    - >-
+      2026-11-14, done: Trubbish, Zubat and Stunky (at night) on the walkways all year.
 
 route_4:
   vision: >-
@@ -156,6 +162,9 @@ route_4:
       adding an occasional one). White 2's always has a sandstorm, so there they're just rare Pokémon.
     - Fishing is Finneon alone; the bay could take Krabby or Shellos too.
     - The vanilla Braviary is only on the path and in the static battle, not on Route 4 itself.
+  discussed:
+    - >-
+      2026-11-14, done: a little seasonal change (Hippopotas more in summer, Darumaka common in winter, Mandibuzz wintering). The user will give Black 2's Route 4 the odd sandstorm, so its Flygon and Krookodile appear there sometimes. Fishing (Krabby, pink Shellos) still open.
 
 desert_resort_path:
   vision: >-
@@ -167,6 +176,9 @@ desert_resort_path:
     - >-
       Nothing is common, so everything is equally likely: it reads as "rough and wild", but there's no signature
       Pokémon. Sandshrew or Cubone could be common here.
+  discussed:
+    - >-
+      2026-11-14, done: Cubone and Gligar common as the canyon's own; Vullaby common in spring (nesting); Spearow passing in spring and autumn.
 
 desert_resort:
   vision: >-
@@ -181,6 +193,9 @@ desert_resort:
     - >-
       It's always a sandstorm today, so Flygon and Krookodile are simply rare until you add clear days (your wish in
       weather.md).
+  discussed:
+    - >-
+      2026-11-14, done: Maractus common in spring with a very rare Combee in the bloom; Skorupi, Cacturne and Hippopotas common in summer; Darumaka common and Mandibuzz uncommon in winter; Elgyem only in Giant Chasm now.
 
 relic_castle:
   vision: >-
@@ -191,6 +206,9 @@ relic_castle:
   unsure:
     - Unown is on hold; this would be a fine home if it comes back.
     - It's the same in all eight maps; the deeper floors could hold the rarer ones (Darmanitan, Gabite) only.
+  discussed:
+    - >-
+      2026-11-14: no seasons, as the user agrees; Gabite only in its deepest rooms (relic_castle_6 to _8, if those are the deepest: to check).
 
 relic_passage:
   vision: >-
@@ -203,6 +221,9 @@ relic_passage:
       Gible here is early in the game; the level gate holds Gabite and Garchomp back, but even Gible is a pseudo-
       legendary. A good trophy, or too early?
     - Barboach is the pool's only Pokémon.
+  discussed:
+    - >-
+      2026-11-14, done: Gible kept here from level 40; Blue-Striped Basculin in the pool.
 
 # --- Southeast Unova ---
 

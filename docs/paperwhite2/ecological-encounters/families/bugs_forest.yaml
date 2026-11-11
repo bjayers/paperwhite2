@@ -121,6 +121,7 @@ families:
       - {place: route_5, methods: [grass], seasons: [summer], tier: uncommon, why: "the road's lights"}
       - {place: village_bridge, methods: [grass], seasons: [summer], tier: uncommon, why: "the village's lamps"}
       - {place: pinwheel_forest, methods: [grass], seasons: [summer], tier: uncommon, why: "the road through the forest"}
+      - {place: castelia_park, methods: [grass], seasons: [summer], tier: uncommon, why: "moths drawn to the park's lights at night"}
     review: []
 
   - id: scyther
@@ -355,6 +356,7 @@ families:
       - {place: route_16, methods: [grass], seasons: [summer], tier: uncommon, why: "cicadas along the road"}
       - {place: route_12, methods: [dark_grass], seasons: [summer], tier: uncommon, stages: [ninjask], why: "round the honey trees' sap"}
       - {place: pinwheel_forest, methods: [grass], seasons: [summer], tier: uncommon, why: "the forest's summer song"}
+      - {place: castelia_park, methods: [grass], seasons: [summer], tier: uncommon, why: "cicadas in the city's trees"}
     review: []
 
   - id: volbeat
@@ -481,6 +483,7 @@ families:
       - {place: village_bridge, methods: [dark_grass], seasons: [spring, summer, autumn], tier: uncommon, stages: [combee], why: "the flautist's flowery clearing"}
       - {place: route_1, methods: [grass], seasons: [spring], tier: uncommon, stages: [combee], why: "the meadow's spring blossom"}
       - {place: route_12, methods: [dark_grass], seasons: [winter], tier: rare, stages: [vespiquen], why: "the queen alone by the hive in winter, guarding it while the colony clusters"}
+      - {place: desert_resort, methods: [grass], seasons: [spring], tier: very_rare, stages: [combee], why: "the desert's spring bloom"}
     review: []
 
   - id: sewaddle

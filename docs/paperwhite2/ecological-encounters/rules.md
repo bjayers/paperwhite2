@@ -62,6 +62,11 @@ Hidden Grottoes are set by hand; the generator counts them as a source but never
   evolved forms at high levels (a level 20 Pidove capped at its maximum, beside a level 75 Unfezant). A home limits
   itself to some stages only where a story says so (Swanna only in winter, Gyarados only in vast waters, a trophy's
   base form).
+- **Powerful Pokémon met early** (2026-11-14) can have a raised minimum level (about 40) to keep them off the tables
+  until later (Gible in Relic Passage); most first stages still start at about 1.
+- **Older stages deeper** (2026-11-14): a family can show its young near a cave's surface and its older stages only
+  deeper in (Gible in Relic Passage, Gabite in Relic Castle's deepest rooms, Garchomp in Victory Road's caves), so
+  it stays one family across places with some flair in where the old ones live.
 - **Levels don't decide placement.** A whole line can live on one route: only the base form appears at first, and the
   others as the party's level reaches their minimums. Placements follow ecology; levels follow the party.
 - **Level ranges:** a basic form from about level 1 to its evolution level + about 3; an evolved form from about its
@@ -74,7 +79,7 @@ Hidden Grottoes are set by hand; the generator counts them as a source but never
 
 - **Loose targets** per area and method, before seasons and times: grass 8–14 species over the year (5–8 at one
   moment); dark grass a similar number; surf and fishing as many as fit (fewer water Pokémon exist, so it balances
-  itself). The Pokémon's habitats come first; the targets only warn. A crowded table is fine now and then where it's believable (a forest at
+  itself). The Pokémon's habitats come first; the targets only warn. Counts are of families, not species, since a family shows its stages by the level gate (2026-11-14). A crowded table is fine now and then where it's believable (a forest at
   the height of summer), as long as it doesn't go overboard and the commons don't become rare (2026-11-14).
 - **Grass and dark grass** are usually split for gameplay, to keep each list from getting too long; they're the same
   ground side by side (Route 5). Where they're separate places that differ (Route 1's meadow and its pine hills

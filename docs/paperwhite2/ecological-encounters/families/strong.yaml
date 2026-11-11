@@ -122,14 +122,14 @@ families:
     trophy: [relic_passage]
     battles: {single: 100, double: 0, triple: 0, partners: family}
     stages: {gible: wild, gabite: wild, garchomp: {wild: true, note: "very rare"}}
-    levels: {}
+    levels: {gible: [40, 50], gabite: [45, 100]}
     wanderer: {appears: both, wanders: aggressive, grass: stand}
     homes:
       - {place: relic_passage, methods: [grass], seasons: all, tier: exotic, stages: [gible], why: "the sandy caves toward Relic Castle, as Wayward Cave: the trophy"}
-      - {place: relic_castle, methods: [grass], seasons: all, tier: very_rare, stages: [gabite], why: "after the castle's treasure"}
+      - {place: relic_castle, methods: [grass], seasons: all, tier: very_rare, stages: [gabite], areas: [relic_castle_6, relic_castle_7, relic_castle_8], why: "after the treasure in the castle's deepest rooms"}
       - {place: victory_road_caves, methods: [grass], seasons: all, tier: very_rare, stages: [garchomp], why: "the deep caves"}
     review:
-      - "Gible early (Relic Passage) as a trophy: the level gate keeps its later stages late."
+      - "Gible stays in Relic Passage, but from level 40 (the user, 2026-11-14), so it's off the tables until later; Gabite only in Relic Castle's deepest rooms (the zones 21 to 23, if those are the deepest), Garchomp in Victory Road's deep caves."
 
   - id: deino
     origin: native
