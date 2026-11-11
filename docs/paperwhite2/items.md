@@ -17,6 +17,7 @@ registrable item needs a larger save.
 | Shiny Candy | `ITEM_SHINY_CANDY` (unused item 113) | Medicine | no | `include/paperwhite2/shiny_candy.h` |
 | DexNav | `ITEM_POKE_RADAR` (the Poké Radar) | Key Items | yes | `include/paperwhite2/dexnav.h` |
 | Version Key | `ITEM_GALACTIC_KEY` (the Galactic Key) | Key Items | yes | `include/paperwhite2/version_key.h` |
+| Link Cord | `ITEM_LINK_CORD` (unused item 114) | Items | no | `include/paperwhite2/link_cord.h` |
 
 ## Exp. Share
 
@@ -83,7 +84,7 @@ A test item: switches every place Unova has as Black 2 or as White 2 at once, al
   rails, cycling, surfing, in the Union Room or the Entralink it says it can't be used (script 2822) and switches
   nothing.
 - **Description:** ends with "It's set to Black 2." or "White 2.".
-- **Icon:** the GB Sounds' for now.
+- **Icon:** its own, in the Galactic Key's files (`res/items/galactic_key/`), for now a copy of the GB Sounds'.
 - **Obtained:** the debug menu for now.
 - **Rebuilt by place (2026-11-04), to test.** The shelved version's problems: the white textures came from the gates'
   warps, which chose Route 4 by the game's version (now Route 4's flag), and the Kyurem freeze's and the Desert
@@ -92,3 +93,22 @@ A test item: switches every place Unova has as Black 2 or as White 2 at once, al
   player's tile), the globe's page, and Unova Link's key screen.
 - **Scripts:** 2820-2822 are past `global_2800.s`'s original last ID, so its row of `GLOBAL_SCRIPT_TABLE`
   (`src/ov012/script_sys.c`) ends at 2822 under `PAPERWHITE2`.
+
+## Link Cord
+
+Evolves the Pokémon that evolve by trade, as Legends: Arceus' Linking Cord does, since the hack has no trading. It is
+used from the bag on a party Pokémon as an evolution stone is (`effects.evolve`, so the bag opens the party list's
+evolution mode and the field plays the evolution demo), and it is used up.
+
+- **What evolves:** the evolution check's item mode (`CheckEvolveSpecies`, `src/system/evolution_check.c`) asks
+  `PaperWhite2_LinkCordEvolves` (`src/paperwhite2/main/paperwhite2_link_cord.c`) for each evolution: a plain trade
+  evolves; a trade holding an item (Metal Coat, King's Rock, Up-Grade...) only while the Pokémon holds it, and the
+  demo removes it, as after the trade; Karrablast and Shelmet only while the other, not an egg, is in the party, and
+  then both evolve, the partner's demo right after the first (`src/paperwhite2/ov012/paperwhite2_link_cord_event.c`,
+  from `src/ov012/event_field_proclink.c`; the partner is noted before the first evolves). Otherwise "It won't have
+  any effect." The trades' own evolutions are unchanged, for a trade the hack may add.
+- **Everstone:** ignored, as for the stones: the item mode never checks it.
+- **Demo:** can't be stopped with B, as a stone's can't: the cord is used before it (the demo's method stays the
+  trade's, so the app call clears `canCancel`).
+- **Icon:** its own, in `res/items/link_cord/`, for now a copy of the Destiny Knot's.
+- **Obtained:** the debug menu's Give item (item 114) for now.

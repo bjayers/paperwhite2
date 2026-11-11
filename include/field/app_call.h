@@ -97,6 +97,12 @@ struct FieldAppCallWork {
     u32 subMode;
     BOOL unk74;
     u32 unk78;
+#ifdef PAPERWHITE2
+    // Paper White 2: the Pokémon that evolves next by the Link Cord, after the one it was used on, as a trade for
+    // each other evolves both (Karrablast and Shelmet): its party slot and the species it evolves into, or 0
+    u8 linkCordPartnerSlot;
+    u16 linkCordPartnerSpecies;
+#endif
 };
 
 // An app that the field app call can open: its proc, and how to start it, read what it left and free its param
