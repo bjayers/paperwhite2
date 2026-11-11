@@ -1016,6 +1016,7 @@ families:
       - {place: abundant_shrine, methods: [surf], seasons: [spring, summer, autumn], tier: common, why: "the farm ponds' frogs"}
       - {place: wellspring_cave, methods: [surf], seasons: all, tier: uncommon, why: "the cave's pools, warmer in winter"}
       - {place: abundant_shrine, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, stages: [palpitoad, seismitoad], weather: [rain, gusty_rain, thunderstorm], why: "toads on land in the rain"}
+      - {place: route_7, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, stages: [palpitoad, seismitoad], weather: [rain, gusty_rain, thunderstorm], why: "toads on land in the marsh's rain"}
     review: []
 
   - id: basculin

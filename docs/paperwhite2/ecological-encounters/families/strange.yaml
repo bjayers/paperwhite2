@@ -107,6 +107,8 @@ families:
       - {place: strange_house, methods: [grass], seasons: all, tier: uncommon, why: "startling visitors (the user's request)"}
       - {place: lostlorn_forest, methods: [dark_grass], seasons: all, tier: rare, why: "something not right at night"}
       - {place: lostlorn_forest, methods: [grass], seasons: all, tier: rare, why: "something not right at night (in both grasses: the user)"}
+      - {place: celestial_tower, methods: [grass], seasons: all, tier: uncommon, why: "a ghost of the tower at night (the user)"}
+      - {place: route_7, methods: [grass, dark_grass], seasons: all, tier: very_rare, why: "drifting from the tower at night (the user)"}
     review: []
 
   - id: smoochum
@@ -376,7 +378,6 @@ families:
     wanderer: {appears: both, wanders: passive, grass: float}
     homes:
       - {place: relic_castle, methods: [grass], seasons: all, tier: common, why: "the tomb, as in the original"}
-      - {place: celestial_tower, methods: [grass], seasons: all, tier: uncommon, why: "the spirits of the tower's graves"}
     review: []
 
   - id: gothita
@@ -454,7 +455,7 @@ families:
     time: {periods: any, strength: none}
     seasons: all year
     migration: resident
-    weather: {more: [], less: [], only: []}
+    weather: {more: [], less: [], only: [], never: [rain, gusty_rain, thunderstorm]}
     abundance: common
     trophy: []
     battles: {single: 85, double: 12, triple: 3, partners: family}
@@ -462,9 +463,10 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: random, grass: float}
     homes:
-      - {place: celestial_tower, methods: [grass], seasons: all, tier: common, why: "the tower's candles (the user's request)"}
-      - {place: route_7, methods: [dark_grass], seasons: all, tier: rare, stages: [litwick, lampent], times: night, why: "a will-o'-the-wisp over the marsh"}
       - {place: strange_house, methods: [grass], seasons: all, tier: rare, stages: [litwick, lampent], why: "a candle left burning in the haunted house"}
+      - {place: celestial_tower, methods: [grass], seasons: all, tier: common, stages: [litwick], why: "the tower's candles (the user's request)"}
+      - {place: celestial_tower, methods: [grass], seasons: all, tier: uncommon, stages: [lampent], areas: [celestial_tower_4, celestial_tower], why: "the older lamps on the upper floors"}
+      - {place: route_7, methods: [dark_grass], seasons: all, tier: very_rare, stages: [litwick, lampent], times: night, why: "a will-o'-the-wisp over the marsh, rarely, and never in the rain (the user)"}
     review: []
 
   - id: golett

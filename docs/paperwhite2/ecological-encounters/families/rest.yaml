@@ -24,7 +24,7 @@ families:
     trophy: []
     battles: {single: 70, double: 20, triple: 10, partners: family}
     stages: {magnemite: wild, magneton: wild, magnezone: {wild: true, note: "Chargestone's magnetic field only"}}
-    levels: {magnezone: [35, 100]}
+    levels: {magnezone: [48, 100]}
     wanderer: {appears: both, wanders: random, grass: float}
     homes:
       - {place: virbank_complex, methods: [grass, dark_grass], seasons: all, tier: common, why: "its NPCs; the machinery"}

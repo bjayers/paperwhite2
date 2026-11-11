@@ -309,6 +309,7 @@ families:
       - {place: route_20, methods: [grass], seasons: [summer], tier: uncommon, why: "its NPCs, over the stream"}
       - {place: route_6, methods: [grass], seasons: [summer], tier: rare, why: "fewer where the Swellow hunt (Pokécology)"}
       - {place: route_7, methods: [grass], seasons: [summer], tier: uncommon, why: "hatching over the marsh, hunted by Swellow"}
+      - {place: route_7, methods: [grass], seasons: [spring], tier: uncommon, why: "the first dragonflies over the marsh"}
     review: []
 
   - id: wurmple
@@ -375,7 +376,7 @@ families:
     time: {periods: night, strength: strict}
     seasons: early to late summer
     migration: resident
-    weather: {more: [], less: [rain], only: []}
+    weather: {more: [], less: [], only: [], never: [rain, gusty_rain, thunderstorm]}
     abundance: common
     trophy: []
     battles: {single: 70, double: 20, triple: 10, partners: area}
@@ -399,7 +400,7 @@ families:
     time: {periods: night, strength: strict}
     seasons: early to late summer
     migration: resident
-    weather: {more: [], less: [rain], only: []}
+    weather: {more: [], less: [], only: [], never: [rain, gusty_rain, thunderstorm]}
     abundance: common
     trophy: []
     battles: {single: 70, double: 20, triple: 10, partners: area}
@@ -476,7 +477,7 @@ families:
     time: {periods: day, strength: strict}
     seasons: spring to autumn; in winter the colony clusters in the hive, and only the queen (Vespiquen) is found, rarely
     migration: resident
-    weather: {more: [], less: [rain, gusty_rain, thunderstorm], only: []}
+    weather: {more: [], less: [], only: [], never: [rain, gusty_rain, thunderstorm]}
     abundance: common
     trophy: [route_12]
     battles: {single: 70, double: 20, triple: 10, partners: family}
@@ -639,8 +640,9 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
-      - {place: chargestone_cave, methods: [grass], seasons: all, tier: common, why: "feeding on the charged stones' field"}
       - {place: virbank_complex, methods: [dark_grass], seasons: all, tier: rare, why: "static from the complex's machines"}
+      - {place: chargestone_cave, methods: [grass], seasons: all, tier: common, stages: [joltik], why: "feeding on the charged stones' field"}
+      - {place: chargestone_cave, methods: [grass], seasons: all, tier: uncommon, stages: [galvantula], areas: [chargestone_cave_2, chargestone_cave_3], why: "electrified webs deeper in (older stages deeper: the user)"}
     review:
       - "Partners 'area': it clings to the cave's bigger Pokémon."
 
@@ -805,7 +807,7 @@ families:
     time: {periods: day, strength: preferred}
     seasons: all year
     migration: resident
-    weather: {more: [], less: [rain], only: []}
+    weather: {more: [], less: [], only: [], never: [rain, gusty_rain, thunderstorm]}
     abundance: uncommon
     trophy: [pinwheel_forest, lostlorn_forest]
     battles: {single: 85, double: 12, triple: 3, partners: family}

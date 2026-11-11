@@ -121,6 +121,13 @@ Hidden Grottoes are set by hand; the generator counts them as a source but never
 - **Time** is mostly Day (morning, day, evening) or Night (night, late night). Three strengths per family: *strict*
   (only in its periods: Hoothoot, perhaps Sunflora), *preferred* (more common in its periods, rarer outside), *none*.
   Single periods (only morning, only late night) sparingly.
+- **Weather can also hide Pokémon** (2026-11-14): `never` keeps a family away in a weather where its story says so,
+  conservatively: fire Pokémon outdoors in the rain (Charmander, Litwick, Growlithe, Ponyta...), Sudowoodo fleeing
+  the rain, bees and fireflies in the rain, Hoppip and Cottonee in gusty rain and storms. Conditions should be few
+  enough to matter and to tell stories.
+- **Times:** "night" is both night and late night, so the nocturnal Pokémon (Hoothoot, Venonat, Murkrow...) are there
+  through both. Single periods are rare and deliberate: Sunkern in the morning, Vanillite at Dragonspiral's entrance
+  in the morning sun.
 - **Mist** (`WEATHER_TINT_9`) is never a condition: the Habitat Dex shows it as clear (2026-11-13).
 - **Weather** shifts rarity by about a tier (rain: water, bug, grass; thunderstorms: electric; snow and blizzards:
   ice; sandstorms: ground and rock), and a few Pokémon appear only in a weather. Weather can be added to any area

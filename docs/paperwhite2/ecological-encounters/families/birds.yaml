@@ -228,7 +228,8 @@ families:
     habitats: {snowfield: 3, mountain: 3, cliff: 2, meadow: 1}
     time: {periods: any, strength: none}
     seasons: >-
-      All year in the Giant Chasm's unnatural cold; in winter it comes down with the snow to the region's snowy places.
+      All year in the Giant Chasm's unnatural cold; in winter it comes down to the very snowiest places only
+      (Dragonspiral's entrance, the chasm's outside: the user).
     migration: partial
     weather: {more: [snow, blizzard], less: [], only: []}
     abundance: rare
@@ -241,8 +242,6 @@ families:
       - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: uncommon, why: "the crater's unnatural, unending winter"}
       - {place: giant_chasm_outside, methods: [grass], seasons: [winter], tier: rare, why: "down from the crater in winter"}
       - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: uncommon, why: "the snowy cliffside in winter"}
-      - {place: route_6, methods: [grass], seasons: [winter], tier: rare, why: "the snowy valley"}
-      - {place: route_7, methods: [grass], seasons: [winter], tier: rare, why: "the snowy marsh, bringing food"}
     review: []
 
   - id: skarmory
@@ -629,7 +628,7 @@ families:
       On the seasonal winds: Hoppip gather on the south's meadows in spring, Skiploom bloom on the north's hills in
       summer, Jumpluff drift south in autumn, and none are seen in winter.
     migration: nomad
-    weather: {more: [], less: [rain, gusty_rain, thunderstorm], only: []}
+    weather: {more: [], less: [rain], only: [], never: [gusty_rain, thunderstorm]}
     abundance: common
     trophy: []
     battles: {single: 70, double: 20, triple: 10, partners: family}

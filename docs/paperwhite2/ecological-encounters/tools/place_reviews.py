@@ -112,6 +112,9 @@ def main():
             p = (e.get("time") or {}).get("periods")
             if p in ("day", "night"):
                 notes.append(f"more by {p}" if p == "day" else "more at night")
+        never = (e.get("weather") or {}).get("never") or []
+        if never and not h.get("weather"):
+            notes.append("never in " + ", ".join(w.replace("_", " ") for w in never))
         if h.get("weather"):
             notes.append("only in " + ", ".join(w.replace("_", " ") for w in h["weather"]))
         if h.get("areas"):

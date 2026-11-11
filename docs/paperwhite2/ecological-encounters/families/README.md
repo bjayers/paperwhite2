@@ -24,7 +24,8 @@ the generator (still to write) turns them, with `exceptions.yaml` and the places
   seasons: all year              # a sentence: when, and how it changes
   migration: resident            # resident | partial | summer | winter | passage | nomad
   weather: {more: [], less: [rain], only: []}   # rain, gusty_rain, thunderstorm, snow, light_snow, blizzard,
-                                 # diamond_dust, sandstorm: a tier up or down (rules.md, 7); only = weather-only
+                                 # diamond_dust, sandstorm: a tier up or down (rules.md, 7); only = weather-only;
+                                 # never = hidden in that weather (fire in the rain)
   abundance: common              # its tier in its best homes
   trophy: []                     # places where it's the exotic (trophy) Pokémon
   battles: {single: 85, double: 12, triple: 3, partners: family}   # partners: family | area

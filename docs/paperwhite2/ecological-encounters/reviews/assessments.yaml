@@ -461,6 +461,9 @@ driftveil_drawbridge:
   unsure:
     - Three families, and the same two commons every season; a raptor (Braviary) in the shadows now and then would
       surprise.
+  discussed:
+    - >-
+      2026-11-14: kept as it is, Ducklett and Swanna (the user).
 
 route_6:
   vision: >-
@@ -476,6 +479,9 @@ route_6:
       all common or near it.
     - Pikachu is rare in the grass and in Chargestone; fine, but it's one of the few routes where a starter-famous
       Pokémon turns up.
+  discussed:
+    - >-
+      2026-11-14, done: Delibird gone; it comes down only to the very snowiest places in winter (Dragonspiral's entrance, Giant Chasm's outside). Pikachu stays.
 
 chargestone_cave:
   vision: >-
@@ -489,6 +495,9 @@ chargestone_cave:
       Four exotics or near-exotics (Raichu, Probopass, Tynamo's line, Magnezone very rare) in one cave dilutes Tynamo
       as your trophy. I'd make Probopass and Magnezone very rare rather than exotic, and keep Tynamo and Raichu as the
       trophies, or Tynamo alone.
+  discussed:
+    - >-
+      2026-11-14, done: Probopass very rare from level 50 and Raichu from 46 (Magnezone from 48), so before then Tynamo's line is the cave's one exotic; Joltik everywhere and Galvantula deeper (maps 2 and 3); Tynamo and Eelektrik deeper, Eelektross deepest (map 3).
 
 mistralton_cave:
   vision: >-
@@ -498,6 +507,9 @@ mistralton_cave:
     - Simple and in keeping with the original.
   unsure:
     - Three maps share five families; the deeper maps (the Guidance Chamber) could hold Axew only, deeper in.
+  discussed:
+    - >-
+      2026-11-14, done: Onix added; Boldore was already there with Roggenrola's family. Axew and Aggron only in the deepest map (the Guidance Chamber) is still open.
 
 route_7:
   vision: >-
@@ -512,6 +524,9 @@ route_7:
       By day it's thin: Murkrow and the ghosts are night only, so a daytime spring has Croagunk, Surskit and a few
       rares. A day-active marsh resident (Yanma in spring too, or Pidove's rain birds) would help.
     - Two trophies here as well (Honchkrow, Scyther).
+  discussed:
+    - >-
+      2026-11-14, done: Litwick very rare at night and never in the rain; Misdreavus very rare at night; Yanma in spring and Palpitoad on land in the rain, for the daytime. Both trophies kept.
 
 celestial_tower:
   vision: >-
@@ -522,6 +537,9 @@ celestial_tower:
   unsure:
     - Chimecho needs the top floor's table to be real (STATUS.md's open item).
     - The three floors are the same; Lampent could be limited to the upper floors.
+  discussed:
+    - >-
+      2026-11-14, done: Yamask gone (it stays in Relic Castle); Misdreavus uncommon at night; Litwick on every floor and Lampent on the upper floors.
 
 # --- Icirrus ---
 
