@@ -1,0 +1,57 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "A zone's street crowd: res/field/castelia_rush/<zone>.json",
+    "description": "The passers-by and speech balloons of a zone whose scripts run CasteliaRushInit (script command 0x134), from archive a/1/8/3: the first 0x32 bytes of CasteliaRushConfig in src/ov121/castelia_rush.c, which CasteliaRushConfig_Load reads. Named after the zone's ZONE_ constant, lowercased without the prefix. order.json lists the zones in the archive's order. tools/data/castelia_rush_data.py packs them. A string value is the name of a constant from generated/ or include/constants/.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "intervals", "unk_a", "lane_count", "obj_codes", "obj_code_count", "msg_base", "msg_count", "step_frames", "unk19", "lanes" ],
+    "properties": {
+        "$schema": { "type": "string", "description": "This schema, for editors" },
+        "intervals": {
+            "type": "object", "additionalProperties": false,
+            "required": [ "morning", "day", "evening", "night", "midnight" ],
+            "description": "By day period (DAY_PERIOD_ of src/system/rtc.h): the frames between a lane's passers-by, and the modulus of the frames between balloons (a balloon comes every rand % interval + 16 frames). Must not be 0",
+            "properties": {
+                "morning": { "$ref": "#/$defs/interval" },
+                "day": { "$ref": "#/$defs/interval" },
+                "evening": { "$ref": "#/$defs/interval" },
+                "night": { "$ref": "#/$defs/interval" },
+                "midnight": { "$ref": "#/$defs/interval" }
+            }
+        },
+        "unk_a": { "$ref": "#/$defs/u16", "description": "CasteliaRushConfig.unkA, which no code reads; 0 in every zone" },
+        "lane_count": { "type": "integer", "minimum": 0, "maximum": 2, "description": "How many of the lanes passers-by walk" },
+        "obj_codes": {
+            "type": "array", "minItems": 4, "maxItems": 4,
+            "items": { "type": [ "string", "integer" ], "x-constant": "OBJ_CODE_", "minimum": 0, "maximum": 65535 },
+            "description": "The passers-by's object codes, each picked at random; only the first obj_code_count are used, and the rest are leftovers (255)"
+        },
+        "obj_code_count": { "type": "integer", "minimum": 1, "maximum": 4, "description": "How many of obj_codes are used (a modulus)" },
+        "msg_base": { "$ref": "#/$defs/u8", "description": "The first message of the balloons, in res/text/script/global_10350.txt (SCRIPT_TEXT_GLOBAL_10350)" },
+        "msg_count": { "type": "integer", "minimum": 1, "maximum": 255, "description": "How many messages from msg_base the balloons pick from; msg_base + msg_count is at most 256. Paper White 2's build skips the empty ones" },
+        "step_frames": { "type": "integer", "enum": [ 2, 4, 6, 8, 16 ], "description": "The frames a passer-by takes for a step, which picks its walking animation (CasteliaRushConfig_GetWalkAcmd)" },
+        "unk19": { "$ref": "#/$defs/u8", "description": "CasteliaRushConfig.unk19, which no code reads; 0 in every zone" },
+        "lanes": {
+            "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/lane" },
+            "description": "The lanes, of which the first lane_count are walked"
+        }
+    },
+    "$defs": {
+        "lane": {
+            "type": "object", "additionalProperties": false,
+            "required": [ "z_min", "z_max", "x_min", "x_max", "dir", "steps" ],
+            "description": "A lane (CasteliaRushLane), in tiles: passers-by start on its edge at x_min (dir left or right) or z_min (dir up or down), at a random place across it, and walk in dir for steps; stepping aside keeps them within the bounds",
+            "properties": {
+                "z_min": { "$ref": "#/$defs/u16" },
+                "z_max": { "$ref": "#/$defs/u16" },
+                "x_min": { "$ref": "#/$defs/u16" },
+                "x_max": { "$ref": "#/$defs/u16" },
+                "dir": { "type": [ "string", "integer" ], "x-constant": "DIR_", "minimum": 0, "maximum": 3 },
+                "steps": { "$ref": "#/$defs/u16" }
+            }
+        },
+        "interval": { "type": "integer", "minimum": 1, "maximum": 32767 },
+        "u8": { "type": "integer", "minimum": 0, "maximum": 255 },
+        "u16": { "type": "integer", "minimum": 0, "maximum": 65535 }
+    }
+}

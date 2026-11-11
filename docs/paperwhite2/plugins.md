@@ -1532,6 +1532,17 @@ stays up under the "Make the person a resident" menu and so ends without a pause
 invited; and 80, their welcome in their shop (`Script_3`). `{0100:0}` is their name in each. The eight placeholders
 have lines of their own (`Global10685_Text_Owner*Line*`).
 
+### Street chatter
+
+The research and limits: `docs/paperwhite2/design/street-chatter.md`. Castelia's street crowds come from
+`res/field/castelia_rush/` (archive a/1/8/3, `tools/data/castelia_rush_data.py`). The three streets (zones 32, 33 and
+34) and the unused Tubeline Bridge entry show balloon lines from message 28 (`Wooooo!`) to 255 of
+`res/text/script/global_10350.txt` (`msg_base` 28, `msg_count` 228), and the bank has empty messages up to 255 to fill
+in. `CasteliaRushBalloons_FindLines` (`src/ov121/castelia_rush.c`, from `CasteliaRushBalloons_Init`) lists the range's
+messages that aren't empty when the crowd starts, and `CasteliaRushBalloon_Show` picks one of them at random, so an
+empty message is never shown, and a crowd whose range has none shows no balloons. To add a line, write it into an empty
+message from 58 on; keep it to the balloon's one line of 64 pixels (the design note has the widths).
+
 ### HMs by learners
 
 The HMs' field moves (Cut, Fly, Surf, Strength, Waterfall, Dive: HM01 to HM06, `TM_MOVE_LIST` in

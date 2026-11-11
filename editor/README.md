@@ -176,7 +176,16 @@ and shown in the talk window as the game draws it: the bottom balloon of `talkms
 is the A button: it finishes the text up to the next wait, or goes on after one. `{be01}` waits and the next line
 scrolls, `{be00}` waits and starts a new box, `{ff00:n}` colors (1 red, 2 blue, 0 back), and a script's words
 (`{0100:n}` and the like) show as `Word0`; a line that runs past the window is reported. Save (Ctrl+S) writes every
-changed bank; Ctrl+Z and Ctrl+Y undo and redo outside the text box.
+changed bank; Ctrl+Z and Ctrl+Y undo and redo outside the text box. A message shows its line and, where no `\from`
+line stands for several, its number in the bank, which code and data use.
+
+**Add line** appends an empty message after the bank's last one, with a new ID in the bank's style
+(`<Bank>_Text_Empty_N`, as unpacking names empty messages), and **Remove last line** removes the last message if no
+script, data file or code (`res/**/*.s`, `res/**/*.json`, `src/`, `include/`) names its ID. Messages are never
+inserted in the middle: what names a message by its ID follows it, since the build rebuilds the IDs' header, but code
+and data that give a message by its number (a range such as the Castelia crowds' `msg_base`, a C table, a bank read by
+species) don't, and no search finds those for certain. `tests/text-banks.test.ts` checks that adding and removing a
+message gives every bank back byte for byte.
 
 The font isn't in `res/`: `GET /api/font` reads it from the user's extracted ROM (`extract/w2_us/files/a/0/2/3`, or the
 build's copy), and it is only shown. Without it, the preview says so.

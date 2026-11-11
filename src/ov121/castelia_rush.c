@@ -30,6 +30,10 @@
 #define BALLOON_COUNT 16
 // How many frames a balloon stays up
 #define BALLOON_FRAMES 16
+#ifdef PAPERWHITE2
+// Paper White 2: the most messages a crowd's balloons pick from, as msgBase + msgCount is at most 256
+#define BALLOON_LINE_MAX 256
+#endif
 
 // The script of a passer-by that talks to no one
 #define SCRID_PASSERBY_NONE 2000
@@ -115,6 +119,11 @@ typedef struct {
     MsgData *msgData;
     FieldMsgBG *msgBGSys;
     CasteliaRushBalloon balloons[BALLOON_COUNT];
+#ifdef PAPERWHITE2
+    // Paper White 2: the messages of the zone's range that aren't empty, which the balloons pick from
+    u16 lineCount;
+    u8 lines[BALLOON_LINE_MAX];
+#endif
 } CasteliaRushBalloons;
 
 struct CasteliaRush {
@@ -164,8 +173,14 @@ static void CasteliaRushBalloons_Free(CasteliaRushBalloons *balloons);
 static void CasteliaRushBalloons_Clear(CasteliaRushBalloons *balloons);
 static void CasteliaRushBalloons_Update(CasteliaRushBalloons *balloons, const CasteliaRushConfig *config, Field *field);
 static void CasteliaRushBalloon_Init(CasteliaRushBalloon *balloon, u16 index);
+#ifdef PAPERWHITE2
+static void CasteliaRushBalloons_FindLines(CasteliaRushBalloons *balloons, const CasteliaRushConfig *config);
+static void CasteliaRushBalloon_Show(CasteliaRushBalloon *balloon, FieldMsgBG *msgBGSys, MsgData *msgData,
+                                     const u8 *lines, u32 lineCount);
+#else
 static void CasteliaRushBalloon_Show(CasteliaRushBalloon *balloon, FieldMsgBG *msgBGSys, MsgData *msgData, u32 msgBase,
                                      u32 msgCount);
+#endif
 static void CasteliaRushBalloon_Update(CasteliaRushBalloon *balloon, FieldMsgBG *msgBGSys);
 static void CasteliaRushBalloon_Reset(CasteliaRushBalloon *balloon);
 static void CasteliaRushBalloon_Hide(CasteliaRushBalloon *balloon, FieldMsgBG *msgBGSys);
@@ -698,7 +713,33 @@ static void CasteliaRushBalloons_Init(CasteliaRushBalloons *balloons, FieldMsgBG
     for (i = 0; i < BALLOON_COUNT; i++) {
         CasteliaRushBalloon_Init(&balloons->balloons[i], i);
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the balloons skip the empty messages of the range, so a range can run past the bank's lines
+    CasteliaRushBalloons_FindLines(balloons, config);
+#endif
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: lists the messages from msgBase to msgBase + msgCount - 1 that have text, up to the end of the bank
+static void CasteliaRushBalloons_FindLines(CasteliaRushBalloons *balloons, const CasteliaRushConfig *config) {
+    u32 msgId;
+    u32 end = config->msgBase + config->msgCount;
+    StrBuf *strbuf;
+
+    if (end > GFL_MsgDataGetLineCount(balloons->msgData)) {
+        end = GFL_MsgDataGetLineCount(balloons->msgData);
+    }
+    balloons->lineCount = 0;
+    for (msgId = config->msgBase; msgId < end; msgId++) {
+        strbuf = GFL_MsgDataLoadStrbufNew(balloons->msgData, msgId);
+        if (GFL_StrBufGetCharCount(strbuf) != 0) {
+            balloons->lines[balloons->lineCount] = msgId;
+            balloons->lineCount++;
+        }
+        GFL_StrBufFree(strbuf);
+    }
+}
+#endif
 
 static void CasteliaRushBalloons_Free(CasteliaRushBalloons *balloons) {
     int i;
@@ -728,8 +769,16 @@ static void CasteliaRushBalloons_Update(CasteliaRushBalloons *balloons, const Ca
     if (!Field_IsEventRunning(field)) {
         balloons->timer++;
         if (balloons->timer >= balloons->interval) {
+#ifdef PAPERWHITE2
+            // Paper White 2: a pick among the range's messages that have text, and no balloon if none has
+            if (balloons->lineCount != 0) {
+                CasteliaRushBalloon_Show(&balloons->balloons[balloons->next], balloons->msgBGSys, balloons->msgData,
+                                         balloons->lines, balloons->lineCount);
+            }
+#else
             CasteliaRushBalloon_Show(&balloons->balloons[balloons->next], balloons->msgBGSys, balloons->msgData,
                                      config->msgBase, config->msgCount);
+#endif
             balloons->timer = 0;
             balloons->next = (balloons->next + 1) % BALLOON_COUNT;
             balloons->interval = rand % config->intervals[dayPeriod] + BALLOON_FRAMES;
@@ -752,6 +801,18 @@ static void CasteliaRushBalloon_Init(CasteliaRushBalloon *balloon, u16 index) {
     balloon->timer = 0;
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: picks one of the listed messages rather than one of a range
+static void CasteliaRushBalloon_Show(CasteliaRushBalloon *balloon, FieldMsgBG *msgBGSys, MsgData *msgData,
+                                     const u8 *lines, u32 lineCount) {
+    u32 rand = GFL_RandomLC(0);
+
+    balloon->active = TRUE;
+    balloon->timer = 0;
+    MsgBGPrinter_AddSubMsgWinMsg(msgBGSys, msgData, lines[rand % lineCount], balloon->index, balloon->x, balloon->y, 8,
+                                 2);
+}
+#else
 static void CasteliaRushBalloon_Show(CasteliaRushBalloon *balloon, FieldMsgBG *msgBGSys, MsgData *msgData, u32 msgBase,
                                      u32 msgCount) {
     u32 rand = GFL_RandomLC(0);
@@ -761,6 +822,7 @@ static void CasteliaRushBalloon_Show(CasteliaRushBalloon *balloon, FieldMsgBG *m
     MsgBGPrinter_AddSubMsgWinMsg(msgBGSys, msgData, msgBase + rand % msgCount, balloon->index, balloon->x, balloon->y,
                                  8, 2);
 }
+#endif
 
 static void CasteliaRushBalloon_Update(CasteliaRushBalloon *balloon, FieldMsgBG *msgBGSys) {
     if (balloon->active) {

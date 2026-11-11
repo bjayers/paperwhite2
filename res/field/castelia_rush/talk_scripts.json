@@ -1,0 +1,25 @@
+{
+    "$schema": "talk_scripts.schema.json",
+    "obj_codes": [
+        {
+            "obj_code": "OBJ_CODE_CLERK_M_67",
+            "scripts": [ 10350, 10351, 10352, 10353, 10370, 10371 ]
+        },
+        {
+            "obj_code": "OBJ_CODE_CLERK_F",
+            "scripts": [ 10354, 10355, 10356, 10357, 10372, 10373 ]
+        },
+        {
+            "obj_code": "OBJ_CODE_GENTLEMAN",
+            "scripts": [ 10358, 10359, 10360, 10361, 10374, 10375 ]
+        },
+        {
+            "obj_code": "OBJ_CODE_WORKER_26",
+            "scripts": [ 10362, 10363, 10364, 10365, 10376, 10377 ]
+        },
+        {
+            "obj_code": "OBJ_CODE_BIKER",
+            "scripts": [ 10366, 10367, 10368, 10369, 10366, 10367 ]
+        }
+    ]
+}

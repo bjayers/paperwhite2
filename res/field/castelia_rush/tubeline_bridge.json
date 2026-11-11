@@ -1,0 +1,36 @@
+{
+    "$schema": "crowd.schema.json",
+    "intervals": {
+        "morning": 50,
+        "day": 50,
+        "evening": 50,
+        "night": 50,
+        "midnight": 50
+    },
+    "unk_a": 0,
+    "lane_count": 2,
+    "obj_codes": [ "OBJ_CODE_BIKER", 255, 255, 255 ],
+    "obj_code_count": 1,
+    "msg_base": 28,
+    "msg_count": 228,
+    "step_frames": 2,
+    "unk19": 0,
+    "lanes": [
+        {
+            "z_min": 27,
+            "z_max": 27,
+            "x_min": 11,
+            "x_max": 13,
+            "dir": "DIR_DOWN",
+            "steps": 143
+        },
+        {
+            "z_min": 170,
+            "z_max": 170,
+            "x_min": 17,
+            "x_max": 19,
+            "dir": "DIR_UP",
+            "steps": 143
+        }
+    ]
+}

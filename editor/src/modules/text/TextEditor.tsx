@@ -7,7 +7,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../../api.ts";
 import { documents, useDocuments } from "../../documents.ts";
 import type { ScanMatch } from "../../../shared/api.ts";
-import { listBanks, parseBank, setMessage, MISC, STORY, type Bank, type Message } from "./banks.ts";
+import {
+  appendMessage, ID_REFERENCE_GLOBS, lastMessage, listBanks, messageNumber, newMessageId, parseBank, removeLastMessage, setMessage,
+  MISC, STORY, type Bank, type Message,
+} from "./banks.ts";
 import { fromEditable, toEditable } from "./message.ts";
 import { TextBox } from "./TextBox.tsx";
 import type { Constants } from "../../../shared/schema.ts";
@@ -32,6 +35,41 @@ export function useBank(path: string | null): { messages: Message[] | null; text
 export function editMessage(path: string, line: number, editable: string) {
   const doc = documents.get(path);
   if (doc) documents.editText(path, setMessage(doc.text, line, fromEditable(editable)));
+}
+
+/** Adds an empty message after a held bank's last one, as one undo step, and returns its line. */
+export function addMessage(path: string): number | null {
+  const doc = documents.get(path);
+  if (!doc) return null;
+  const name = path.slice(path.lastIndexOf("/") + 1, -4);
+  const { text, line } = appendMessage(doc.text, newMessageId(parseBank(doc.text), name));
+  documents.editText(path, text);
+  return line;
+}
+
+/** Where a message's ID is named outside its bank: the scripts, data and code (ID_REFERENCE_GLOBS). */
+async function idReferences(id: string): Promise<ScanMatch[]> {
+  const pattern = `\\b${id}\\b`;
+  return (await Promise.all(ID_REFERENCE_GLOBS.map((glob) => api.scan(glob, pattern, { limit: 20 })))).flat();
+}
+
+/** Removes a held bank's last message if nothing names its ID, after asking; returns whether it did. */
+export async function removeMessage(path: string): Promise<boolean> {
+  const doc = documents.get(path);
+  const last = doc ? lastMessage(parseBank(doc.text)) : null;
+  if (!doc || !last?.id) return false;
+  const found = await idReferences(last.id);
+  if (found.length) {
+    alert(`${last.id} is used, so it stays:\n\n${found.slice(0, 10).map((r) => `${r.path}:${r.line}`).join("\n")}`);
+    return false;
+  }
+  if (!confirm(`Remove the last message, ${last.id}${last.text ? ` (“${last.text}”)` : " (empty)"}?\n\n` +
+    "No script, data file or code names it. Code or data that reads it by its number (a range of messages, a table) " +
+    "gets an empty message instead.")) return false;
+  const text = removeLastMessage(documents.get(path)!.text);
+  if (text === null) return false;
+  documents.editText(path, text);
+  return true;
 }
 
 /** One message's editor and its preview, by its bank and line: for other editors' pages. */
@@ -72,6 +110,7 @@ export function TextEditor({ bank: initialBank, line: initialLine, constants, op
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<ScanMatch[] | null>(null);
   const [searching, setSearching] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const { messages, dirty, error } = useBank(path);
   const { docs } = useDocuments();
   const [sort, setSort] = useState<"name" | "number">(() => {
@@ -222,6 +261,14 @@ export function TextEditor({ bank: initialBank, line: initialLine, constants, op
                   {constants && <span className="muted">#{constants.get(textBankConstantOf(path)) ?? "?"}</span>}
                   {dirty && <span className="muted"> · unsaved</span>}
                   <input className="filter" placeholder="Filter this bank…" value={lineFilter} onChange={(e) => setLineFilter(e.target.value)} />
+                  <button title="Add an empty message after the last one. Messages are only added at the end, so no other message's number changes"
+                          onClick={() => { const line = addMessage(path); if (line) { setLineFilter(""); setChosen(line); } }}>Add line</button>
+                  <button title="Remove the last message, if no script, data file or code names its ID"
+                          disabled={removing || !messages || !lastMessage(messages)}
+                          onClick={async () => {
+                            setRemoving(true);
+                            try { if (await removeMessage(path)) setChosen(null); } finally { setRemoving(false); }
+                          }}>{removing ? "Checking…" : "Remove last line"}</button>
                 </div>
                 {usedBy.length > 0 && (
                   <div className="txt-used-by">
@@ -247,7 +294,9 @@ export function TextEditor({ bank: initialBank, line: initialLine, constants, op
               <div className="txt-detail">
                 {message && message.id ? (
                   <>
-                    <div className="muted txt-where">Line {message.line}: <code>{message.id}</code></div>
+                    <div className="muted txt-where">Line {message.line}
+                      {messages && messageNumber(messages, message.line) !== null && <>, message {messageNumber(messages, message.line)}</>}
+                      : <code>{message.id}</code></div>
                     <textarea className="txt-edit" value={toEditable(message.text)}
                               rows={Math.max(4, toEditable(message.text).split("\n").length + 1)}
                               onChange={(e) => editMessage(path, message.line, e.target.value)} spellCheck />

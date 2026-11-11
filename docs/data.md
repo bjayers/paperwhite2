@@ -21,7 +21,7 @@ res/
     maps/{models,textures}/
     props/{exterior,interior}/{models,textures}/
     actors/                 the overworld's people and objects, with pokemon/ and models/ for its Pokémon and 3D models
-    trades/  places/  grottoes/  weather_calendar/
+    trades/  places/  grottoes/  weather_calendar/  castelia_rush/
   pokedex/habitats/         the Pokédex's habitat lists, an area each
   lighting/{field,battle}/
   town_map/
@@ -84,6 +84,7 @@ which documents the format and can write them again.
 | `a/0/1/3` | `res/field/areas/<area>.json` | Area records | `tools/data/area_data.py` |
 | `a/2/7/3` | `res/field/grottoes/` (JSON) | The Hidden Grottoes' Pokémon (a set for each version) and items | `tools/data/grotto_data.py` |
 | `a/0/9/6` | `res/field/weather_calendar/` (JSON) | The weather calendar: the weather by date of the 24 zones that have one, each month's days with weather | `tools/data/weather_calendar_data.py` |
+| `a/1/8/3` | `res/field/castelia_rush/` (JSON) | Castelia's street crowds: each zone's passers-by, lanes, intervals and balloon lines, and the passers-by's talk scripts | `tools/data/castelia_rush_data.py` |
 | `a/2/9/6` | `res/pokedex/habitats/` (JSON) | The Pokédex's habitat lists: each area's species by season and habitat | `tools/data/habitat_data.py` |
 | `a/1/2/6` | `res/field/events/` (JSON) | Zone events: signs, NPCs, warps, triggers and init scripts | `tools/data/event_data.py` |
 | `a/0/7/8`, `a/1/1/0` | `res/field/rails/` (JSON, CSV) | Field rails: points, lines, cameras, curves and tile attributes, and the rail maps | `tools/data/rail_data.py` |
