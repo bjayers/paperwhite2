@@ -532,7 +532,7 @@ families:
     origin: native
     lore:
       - "Pokédex (B2W2, Whismur): it murmurs, but shrieks like a jet when frightened."
-      - "The places: Village Bridge's music theme (the Whismur line)."
+      - "The user: too noisy for Village Bridge's quiet music; its echoing caves suit it."
       - "Other games: Rusturf Tunnel, a cave where its cries echo."
     habitats: {cave: 2, meadow: 2, park: 1}
     time: {periods: any, strength: none}
@@ -546,7 +546,6 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
-      - {place: village_bridge, methods: [grass], seasons: all, tier: uncommon, why: "the village of song"}
       - {place: wellspring_cave, methods: [grass], seasons: all, tier: uncommon, why: "an echoing cave, as Rusturf Tunnel"}
       - {place: clay_tunnel, methods: [grass], seasons: all, tier: rare, why: "the tunnel's echoes"}
     review: []
@@ -753,6 +752,7 @@ families:
       - {place: pinwheel_forest_outskirts, methods: [grass], seasons: all, tier: uncommon, why: "the woodland edge's rabbits"}
       - {place: pinwheel_forest_outskirts, methods: [dark_grass], seasons: all, tier: uncommon, why: "the cliff's grass"}
       - {place: route_12, methods: [grass], seasons: [winter], tier: uncommon, why: "hares on the open hills once the flowers are over"}
+      - {place: village_bridge, methods: [grass], seasons: [winter], tier: uncommon, why: "hares in the winter field"}
     review: []
 
   - id: glameow
@@ -946,6 +946,7 @@ families:
       - {place: abundant_shrine, methods: [grass], seasons: all, tier: uncommon, why: "the hill farms' dogs"}
       - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: rare, stages: [stoutland], why: "warm in its fur on the snowy cliffside"}
       - {place: giant_chasm_outside, methods: [grass], seasons: all, tier: uncommon, why: "the countryside's dogs"}
+      - {place: village_bridge, methods: [grass], seasons: all, tier: uncommon, why: "the village's dogs in the field"}
     review: []
 
   - id: purrloin

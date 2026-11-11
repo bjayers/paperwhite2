@@ -350,7 +350,8 @@ families:
     time: {periods: day, strength: preferred}
     seasons: >-
       All year, moving with the season: on the heights in summer (Route 15, Route 23, Victory Road), the high hills in
-      spring and autumn, and down to the low hills for winter (Route 22, Route 14); passing Route 12 in autumn.
+      spring and autumn, and down to the low hills for winter (Route 22, Route 14, and Village Bridge's mild valley);
+      passing Route 12 in autumn.
     migration: partial
     weather: {more: [], less: [rain, gusty_rain, thunderstorm, snow, blizzard], only: []}
     abundance: uncommon
@@ -367,6 +368,7 @@ families:
       - {place: route_14, methods: [grass], seasons: [winter], tier: rare, why: "down in the valley for winter"}
       - {place: route_22, methods: [grass], seasons: [autumn, winter], tier: uncommon, why: "the coast's mild upland in winter"}
       - {place: route_12, methods: [grass], seasons: [autumn], tier: rare, why: "passing over the hills on its way down from the heights"}
+      - {place: village_bridge, methods: [grass], seasons: [winter], tier: uncommon, why: "wintering low in the mild river valley; Altaria's soprano suits the village of music"}
     review: []
 
   - id: starly
@@ -462,6 +464,7 @@ families:
       - {place: dragonspiral_entrance, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, stages: [tranquill, unfezant], why: "the northern meadow below the tower"}
       - {place: pinwheel_forest_outskirts, methods: [dark_grass], seasons: [autumn, winter], tier: uncommon, why: "the cliff by the road in the cold months"}
       - {place: giant_chasm_outside, methods: [grass], seasons: all, tier: uncommon, why: "the countryside round the chasm"}
+      - {place: village_bridge, methods: [rustling], seasons: all, tier: common, why: "pigeons on the old bridge's arches: the shadows"}
     review: []
 
   - id: ducklett

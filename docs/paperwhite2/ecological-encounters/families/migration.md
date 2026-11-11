@@ -36,7 +36,7 @@ Drafted 2026-11-13 for the birds' batch (`birds.yaml`); other batches follow it 
 | **Winter visitor**: arrives in autumn, leaves in spring | Starly | leaving north (Routes 12, 11, Village Bridge) | gone | arriving in flocks: Routes 1, 3, 5, 16, Abundant Shrine, Floccesy | flocks on the open land of the south and middle, and Route 12's snowless hills |
 | **Winter visitor** (waterfowl) | Swanna (Ducklett stay) | leaving: the bridges' shadows | Dragonspiral's cold lake (a few breed) | arriving: the bridges' shadows | Icirrus, Route 8, the Moor |
 | **Down from the mountains for winter** | Delibird | (crater only) | (crater only) | (crater only) | Dragonspiral's entrance, Routes 6 and 7 (with the snow) |
-| **Up and down the mountains** | Swablu | the high hills | the heights: Routes 15, 23, Victory Road | coming down (passing Route 12) | the low hills: Routes 22, 14 |
+| **Up and down the mountains** | Swablu | the high hills | the heights: Routes 15, 23, Victory Road | coming down (passing Route 12) | the low hills: Routes 22, 14, Village Bridge |
 | **Seasonal winds** | Hoppip | the south's meadows: Routes 1, 19, Floccesy | the north's hills: Route 12, Routes 22 and 15 | Jumpluff drifting south: Routes 16, 13 | gone |
 | **Tropical summer visitor** | Chatot | Route 18 | Route 18; Village Bridge (rare, the music) | — | — (Castelia's feral colony stays all year) |
 | **Seabirds**, resident with a summer peak | Wingull | all coasts | colonies on Route 13's island; more on the east coast | all coasts | all coasts, fewer in the north's sea |
