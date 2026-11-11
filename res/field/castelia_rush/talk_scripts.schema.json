@@ -1,0 +1,26 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "The street crowds' talk scripts: res/field/castelia_rush/talk_scripts.json",
+    "description": "The scripts of the passers-by who stop to talk to the player, by object code (CasteliaRushScripts in src/ov121/castelia_rush.c, the last file of archive a/1/8/3), shared by every zone. Passerby_Init gives a passer-by one of its object code's six scripts at random; an object code that isn't listed gets none. tools/data/castelia_rush_data.py packs it.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "obj_codes" ],
+    "properties": {
+        "$schema": { "type": "string", "description": "This schema, for editors" },
+        "obj_codes": {
+            "type": "array",
+            "description": "The object codes and their scripts; the first entry of an object code wins",
+            "items": {
+                "type": "object", "additionalProperties": false, "required": [ "obj_code", "scripts" ],
+                "properties": {
+                    "obj_code": { "type": [ "string", "integer" ], "x-constant": "OBJ_CODE_", "minimum": 0, "maximum": 4294967295 },
+                    "scripts": {
+                        "type": "array", "minItems": 6, "maxItems": 6,
+                        "items": { "type": "integer", "minimum": 0, "maximum": 65535 },
+                        "description": "Six script IDs (the global scripts 10350 to 10377 of res/field/scripts/global_10350.s), one picked at random"
+                    }
+                }
+            }
+        }
+    }
+}

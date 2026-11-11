@@ -346,6 +346,8 @@ DATA_PACKS = [
     ("tools/data/habitat_data.py", "res/pokedex/habitats", ["a/2/9/6"], False),
     # Paper White 2: the weather calendar, the weather by date of the zones that have one
     ("tools/data/weather_calendar_data.py", "res/field/weather_calendar", ["a/0/9/6"], False),
+    # Paper White 2: the street crowds of Castelia (src/ov121/castelia_rush.c): passers-by, lanes, balloon lines
+    ("tools/data/castelia_rush_data.py", "res/field/castelia_rush", ["a/1/8/3"], False),
 ]
 # Paper White 2: archives that the hack's build gives members after their own: the archive, the tool whose archive
 # command writes it from the one packed apart, and the data it reads. The conditions' tables follow the weather

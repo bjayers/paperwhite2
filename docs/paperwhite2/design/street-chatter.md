@@ -1,7 +1,8 @@
 # Street chatter: Castelia's passer-by balloons
 
-Research note (2026-11-10). Nothing changed yet. It covers where the short balloon lines ("Wooooo!", "Huh?") come
-from, the code that shows them, and how to edit them or add more.
+Research note (2026-11-10), then what was done (the last section). It covers where the short balloon lines
+("Wooooo!", "Huh?") come from, the code that shows them, and how to edit them or add more. The tables below describe
+the original game; the hack's values are in "Done".
 
 ## The lines
 
@@ -70,3 +71,29 @@ from, the code that shows them, and how to edit them or add more.
     the originals (11 characters at most, "Is that so?"). Test longer lines in game.
   - The string buffer holds 0x40 characters (`MSGBG_NUMBERED_STRBUF_LEN`, `field_msgbg.c:71`).
   - The text uses the normal field font and the bank's usual character set and control codes.
+
+## Done (2026-11-10)
+
+- **The data:** `res/field/castelia_rush/` holds archive 183 (`tools/data/castelia_rush_data.py`, in `DATA_PACKS`):
+  a file per crowd zone named after its `ZONE_` constant (`crowd.schema.json`: the intervals by day period, lanes,
+  object codes, `msg_base`/`msg_count`, `step_frames`; the fields no code reads stay as `unk_a` and `unk19`),
+  `order.json` (the files' order), and `talk_scripts.json` (file 6). The packer appends the all-zero entry for zone 0
+  that ends the list. The dumped data packs byte for byte the same as the ROM's archive (checked by the matching
+  build's `check_file`).
+- **The range:** the three streets and Tubeline Bridge have `msg_base` 28 and `msg_count` 228, messages 28 to 255.
+  `global_10350.txt` has empty messages 58 to 255 (`Global10350_Text_Empty_3` to `_200`) to fill in. The biker lines
+  48 to 57 are now in the streets' range too; blank them (or overwrite them) if they don't suit the streets.
+- **The pick:** under `PAPERWHITE2`, `CasteliaRushBalloons_FindLines` lists the range's non-empty messages when the
+  crowd starts (a message past the bank's end loads as empty), and `CasteliaRushBalloon_Show` picks uniformly among
+  them; with none, no balloon shows. It costs 258 bytes of the crowd's work and reads up to 228 messages once.
+- **How long a line can be:** the balloon is 8 x 2 tiles, one line of the field font (font 0 of a/0/2/3) in 64 pixels.
+  Summing the font's advances: "Is that so?" is 62 pixels, the longest original; "One, two..." 60, "I love you!" 59,
+  "What's up?" 57, "Wooooo!" 41. So about 11 characters of average letters; wide letters (W is 6 pixels, "WWWWWWWW" 48)
+  take fewer, and a line of "i" more. Keep a line at or under 62 pixels to be safe; the text isn't wrapped or
+  shrunk, so a longer one is cut off. This wasn't checked in game: the emulator save available isn't near the
+  streets, and the debug warp needs a zone with a fly spot.
+- **The editor:** the Text panel adds a message after the bank's last one ("Add line", an empty
+  `<Bank>_Text_Empty_N` message) and removes the last one ("Remove last line") when no script, data file or code names
+  its ID. It never inserts in the middle: scripts and code that name a message by its ID would follow it (the IDs'
+  header is rebuilt), but data and code that give messages by number, such as this range, would not, and no search
+  can find those for certain.
