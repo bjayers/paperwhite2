@@ -66,7 +66,9 @@ Each keeps its date. A request isn't a whole placement: the rest of the family a
 - 2026-11-13: Reversal Mountain: the Fiery Caves (White 2) are Unova's home for fire Pokémon; the Damp Caves (Black
   2) have moisture-loving cave dwellers instead, not water Pokémon (their water is cosmetic); a few fire Pokémon on
   the outside whichever caves are in use; ghosts at night outside, near the Strange House.
-- 2026-11-13: The Strange House: ghosts that don't fit Celestial Tower.
+- 2026-11-13: The Strange House: ghosts that don't fit Celestial Tower (not exclusive to it). Rotom isn't wild: it
+  will have a special place of its own.
+- 2026-11-13: Twist Mountain's ice Pokémon live in its caves (the open pit has no encounters).
 - 2026-11-13: P2 Laboratory's island: Porygon and the like, escaped from the lab (Genesect's event there).
 - 2026-11-13: Route 18: Exeggcute and Exeggutor, Tropius, Chatot in its season.
 

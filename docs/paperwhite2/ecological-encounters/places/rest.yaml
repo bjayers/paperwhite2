@@ -111,8 +111,10 @@ places:
       methods: [walking (floor)]
       weather: none (indoors)
     picture: >-
-      A house that looks made of clay, like Lentimas's, entered from Reversal Mountain's outside. The best place for
-      ghosts that don't fit Celestial Tower.
+      A house that looks made of clay, like Lentimas's, entered from Reversal Mountain's outside, and rustic inside:
+      very Southwestern. The best place for ghosts that don't fit Celestial Tower. Rotom will have a special place of
+      its own (not here); the other ghosts aren't exclusive to the house and can be elsewhere at night, in winter or
+      wherever they fit.
     habitats: [building, ruins]
     parts:
       rooms: the rooms of a haunted house
@@ -124,8 +126,8 @@ places:
       Haunted-house folklore: poltergeists, possessed objects, abandoned dolls, lights in empty rooms.
     suggestions:
       - >-
-        The house's ghosts, not the tower's mourning ones: haunted objects and pranksters (Rotom in the appliances,
-        Banette the abandoned doll, Shuppet, Misdreavus), mischief rather than grief.
+        The house's ghosts, not the tower's mourning ones: haunted objects and pranksters (Banette the abandoned doll,
+        Shuppet, Misdreavus), mischief rather than grief; none of them only here.
 
   - id: twist_mountain
     name: Twist Mountain
@@ -156,10 +158,8 @@ places:
       - >-
         Miners' companions and mine dwellers (Timburr's line, Roggenrola's, Drilbur), cold-cave Pokémon, and the Glalie
         that comes down to Icirrus in winter (Snorunt's family living here).
-    questions:
-      - >-
-        Should the open pit get an encounter table (the ROM session), so its snow in winter can have Pokémon? Now it
-        has none.
+    note: >-
+      The open pit keeps no table (the user, 2026-11-13): the mountain's ice Pokémon live in its caves.
 
   - id: clay_tunnel
     name: Clay Tunnel

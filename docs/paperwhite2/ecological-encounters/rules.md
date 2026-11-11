@@ -90,7 +90,8 @@ Hidden Grottoes are set by hand; the generator counts them as a source but never
   neighbouring areas of their habitat; specialists in one or two places. Neighbouring areas of one biome share
   species, so the land changes gradually. With so many conditions, there's no need to be strict: most Pokémon can be
   anywhere they make sense, and only a few are limited to one place (2026-11-13). A trophy can be a trophy in several
-  places (Feebas).
+  places (Feebas). A Pokémon suggested for one place isn't exclusive to it: it lives wherever it fits (at
+  night, in winter...), unless it's meant to be very rare or to have one home (2026-11-13).
 
 ## 7. Seasons, times and weather
 
