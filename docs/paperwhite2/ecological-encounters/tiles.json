@@ -1,9 +1,8 @@
 {
  "abundant_shrine": {
   "zone": "abundant_shrine",
-  "models": 4,
   "tiles": {
-   "water_noenc": 67,
+   "water_no_encounters": 67,
    "surf": 56,
    "dark_grass": 135,
    "grass": 97
@@ -11,15 +10,13 @@
  },
  "aspertia_city": {
   "zone": "aspertia_city",
-  "models": 2,
   "tiles": {
-   "water_noenc": 22,
+   "water_no_encounters": 22,
    "surf": 20
   }
  },
  "castelia_city": {
   "zone": "castelia_city_31",
-  "models": 1,
   "tiles": {
    "grass": 16,
    "dark_grass": 16
@@ -27,167 +24,173 @@
  },
  "castelia_sewers": {
   "zone": "castelia_sewers",
-  "models": 9,
-  "tiles": {
-   "walk_cls0x16": 1357,
-   "surf": 619,
-   "water_noenc": 122,
-   "walk_cls0xa": 1
+  "by_season": {
+   "spring": {
+    "indoor_floor": 1357,
+    "surf": 619,
+    "water_no_encounters": 122,
+    "cave_floor": 1
+   },
+   "summer": {
+    "indoor_floor": 1357,
+    "surf": 619,
+    "water_no_encounters": 122,
+    "cave_floor": 1
+   },
+   "autumn": {
+    "indoor_floor": 1816,
+    "water_no_encounters": 15
+   },
+   "winter": {
+    "indoor_floor": 1816,
+    "water_no_encounters": 15
+   }
   }
  },
  "castelia_sewers_2": {
   "zone": "castelia_sewers_2",
-  "models": 1,
   "tiles": {
-   "walk_cls0x16": 92
+   "indoor_floor": 92
   }
  },
  "castelia_sewers_3": {
   "zone": "castelia_sewers_3",
-  "models": 1,
   "tiles": {
-   "walk_cls0x16": 92
+   "indoor_floor": 92
   }
  },
  "castelia_sewers_4": {
   "zone": "castelia_sewers_4",
-  "models": 1,
   "tiles": {
-   "walk_cls0x16": 199
+   "indoor_floor": 199
   }
  },
  "castelia_sewers_5": {
   "zone": "castelia_sewers_5",
-  "models": 1,
   "tiles": {
-   "walk_cls0x16": 199
+   "indoor_floor": 199
   }
  },
  "celestial_tower_4": {
   "zone": "celestial_tower",
-  "models": 1,
   "tiles": {
-   "walk_cls0x16": 98
+   "indoor_floor": 98
   }
  },
  "celestial_tower": {
   "zone": "celestial_tower_3",
-  "models": 1,
   "tiles": {
-   "walk_cls0x16": 151
+   "indoor_floor": 151
   }
  },
  "celestial_tower_2": {
   "zone": "celestial_tower_4",
-  "models": 1,
   "tiles": {
-   "walk_cls0x16": 79
+   "indoor_floor": 79
   }
  },
  "celestial_tower_3": {
   "zone": "celestial_tower_5",
-  "models": 1,
   "tiles": {
-   "walk_cls0x16": 77
+   "indoor_floor": 77
   }
  },
  "chargestone_cave": {
   "zone": "chargestone_cave_2",
-  "models": 6,
   "tiles": {
-   "walk_cls0xa": 945,
-   "walk_cls0x30": 111
+   "cave_floor": 945,
+   "electric_field": 111
   }
  },
  "chargestone_cave_2": {
   "zone": "chargestone_cave_3",
-  "models": 4,
   "tiles": {
-   "walk_cls0x30": 54,
-   "walk_cls0xa": 426
+   "electric_field": 54,
+   "cave_floor": 426
   }
  },
  "chargestone_cave_3": {
   "zone": "chargestone_cave_4",
-  "models": 2,
   "tiles": {
-   "walk_cls0xa": 276,
-   "walk_cls0x30": 70
+   "cave_floor": 276,
+   "electric_field": 70
   }
  },
  "clay_tunnel": {
   "zone": "clay_tunnel",
-  "models": 2,
   "tiles": {
-   "walk_cls0xa": 601
+   "cave_floor": 601
   }
  },
  "clay_tunnel_2": {
   "zone": "clay_tunnel_2",
-  "models": 2,
   "tiles": {
-   "walk_cls0xa": 649,
-   "water_noenc": 55,
+   "cave_floor": 649,
+   "water_no_encounters": 55,
    "surf": 91
   }
  },
  "clay_tunnel_3": {
   "zone": "clay_tunnel_3",
-  "models": 6,
   "tiles": {
-   "walk_cls0xa": 882,
-   "water_noenc": 84,
+   "cave_floor": 882,
+   "water_no_encounters": 84,
    "surf": 91
   }
  },
  "desert_resort": {
   "zone": "desert_resort",
-  "models": 2,
   "tiles": {
-   "walk_cls0xc": 138
+   "deep_sand": 138
   }
  },
  "desert_resort_2": {
   "zone": "desert_resort_2",
-  "models": 9,
   "tiles": {
-   "walk_cls0xc": 1529
+   "deep_sand": 1529
   }
  },
  "dragonspiral_tower": {
   "zone": "dragonspiral_tower",
-  "models": 1,
-  "tiles": {
-   "grass": 33
+  "by_season": {
+   "spring": {
+    "grass": 33
+   },
+   "summer": {
+    "grass": 33
+   },
+   "autumn": {
+    "grass": 33
+   },
+   "winter": {
+    "grass": 33,
+    "dark_grass": 33
+   }
   }
  },
  "dragonspiral_tower_2": {
   "zone": "dragonspiral_tower_2",
-  "models": 4,
   "tiles": {
    "surf": 181,
-   "water_noenc": 25,
+   "water_no_encounters": 25,
    "grass": 47,
    "dark_grass": 48
   }
  },
  "dragonspiral_tower_3": {
   "zone": "dragonspiral_tower_3",
-  "models": 1,
   "tiles": {
-   "walk_cls0x16": 119
+   "indoor_floor": 119
   }
  },
  "dragonspiral_tower_4": {
   "zone": "dragonspiral_tower_4",
-  "models": 1,
   "tiles": {
-   "walk_cls0x16": 784
+   "indoor_floor": 784
   }
  },
  "dreamyard": {
   "zone": "dreamyard",
-  "models": 4,
   "tiles": {
    "grass": 75,
    "dark_grass": 152
@@ -195,38 +198,33 @@
  },
  "dreamyard_2": {
   "zone": "dreamyard_2",
-  "models": 1,
   "tiles": {
    "dark_grass": 18
   }
  },
  "driftveil_drawbridge": {
   "zone": "driftveil_drawbridge",
-  "models": 24,
   "tiles": {
    "bridge": 1176
   }
  },
  "floccesy_ranch": {
   "zone": "floccesy_ranch",
-  "models": 1,
   "tiles": {
-   "water_noenc": 18,
+   "water_no_encounters": 18,
    "surf": 15
   }
  },
  "floccesy_ranch_2": {
   "zone": "floccesy_ranch_2",
-  "models": 4,
   "tiles": {
    "grass": 330,
-   "water_noenc": 108,
+   "water_no_encounters": 108,
    "surf": 139
   }
  },
  "giant_chasm": {
   "zone": "giant_chasm",
-  "models": 1,
   "tiles": {
    "dark_grass": 36,
    "grass": 25
@@ -234,16 +232,14 @@
  },
  "giant_chasm_2": {
   "zone": "giant_chasm_2",
-  "models": 4,
   "tiles": {
-   "walk_cls0xa": 584,
-   "water_noenc": 6,
+   "cave_floor": 584,
+   "water_no_encounters": 6,
    "surf": 48
   }
  },
  "giant_chasm_3": {
   "zone": "giant_chasm_3",
-  "models": 9,
   "tiles": {
    "dark_grass": 260,
    "grass": 215
@@ -251,7 +247,6 @@
  },
  "giant_chasm_4": {
   "zone": "giant_chasm_4",
-  "models": 9,
   "tiles": {
    "dark_grass": 108,
    "grass": 111
@@ -259,95 +254,115 @@
  },
  "giant_chasm_5": {
   "zone": "giant_chasm_5",
-  "models": 1,
   "tiles": {
-   "water_noenc": 80,
-   "walk_cls0xa": 171,
+   "water_no_encounters": 80,
+   "cave_floor": 171,
    "surf": 79
   }
  },
  "guidance_chamber": {
   "zone": "guidance_chamber",
-  "models": 1,
   "tiles": {
-   "walk_cls0xa": 394
+   "cave_floor": 394
   }
  },
  "humilau_city": {
   "zone": "humilau_city",
-  "models": 2,
   "tiles": {
    "surf": 294
   }
  },
  "iceberg_chamber": {
   "zone": "iceberg_chamber",
-  "models": 2,
   "tiles": {
-   "walk_cls0xa": 457
+   "cave_floor": 457
   }
  },
  "icirrus_city": {
   "zone": "icirrus_city",
-  "models": 3,
-  "tiles": {
-   "walk_cls0x1c": 485,
-   "water_noenc": 70,
-   "surf": 34
+  "by_season": {
+   "spring": {
+    "swamp_puddle": 485,
+    "water_no_encounters": 70,
+    "surf": 34
+   },
+   "summer": {
+    "swamp_puddle": 485,
+    "water_no_encounters": 70,
+    "surf": 34
+   },
+   "autumn": {
+    "swamp_puddle": 485,
+    "water_no_encounters": 70,
+    "surf": 34
+   },
+   "winter": {
+    "water_no_encounters": 50,
+    "surf": 26
+   }
   }
  },
  "iron_chamber": {
   "zone": "iron_chamber",
-  "models": 2,
   "tiles": {
-   "walk_cls0xa": 457
+   "cave_floor": 457
   }
  },
  "lostlorn_forest": {
   "zone": "lostlorn_forest",
-  "models": 2,
   "tiles": {
    "grass": 93,
    "dark_grass": 74,
-   "water_noenc": 37,
+   "water_no_encounters": 37,
    "surf": 22
   }
  },
  "marvelous_bridge": {
   "zone": "marvelous_bridge",
-  "models": 12,
   "tiles": {
    "bridge": 924
   }
  },
  "mistralton_cave": {
   "zone": "mistralton_cave",
-  "models": 1,
   "tiles": {
-   "walk_cls0xa": 329
+   "cave_floor": 329
   }
  },
  "mistralton_cave_2": {
   "zone": "mistralton_cave_2",
-  "models": 1,
   "tiles": {
-   "walk_cls0xa": 364
+   "cave_floor": 364
   }
  },
  "moor_of_icirrus": {
   "zone": "moor_of_icirrus",
-  "models": 4,
-  "tiles": {
-   "walk_cls0x1c": 452,
-   "water_noenc": 106,
-   "surf": 134
+  "by_season": {
+   "spring": {
+    "swamp_puddle": 452,
+    "water_no_encounters": 106,
+    "surf": 134
+   },
+   "summer": {
+    "swamp_puddle": 452,
+    "water_no_encounters": 106,
+    "surf": 134
+   },
+   "autumn": {
+    "swamp_puddle": 452,
+    "water_no_encounters": 106,
+    "surf": 134
+   },
+   "winter": {
+    "water_no_encounters": 106,
+    "surf": 134
+   }
   }
  },
  "nature_preserve": {
   "zone": "nature_preserve",
-  "models": 4,
   "tiles": {
-   "water_noenc": 200,
+   "water_no_encounters": 200,
    "surf": 234,
    "dark_grass": 25,
    "grass": 116
@@ -355,16 +370,14 @@
  },
  "p2_laboratory": {
   "zone": "p2_laboratory",
-  "models": 1,
   "tiles": {
    "surf": 139,
-   "water_noenc": 139,
+   "water_no_encounters": 139,
    "grass": 41
   }
  },
  "pinwheel_forest": {
   "zone": "pinwheel_forest",
-  "models": 3,
   "tiles": {
    "grass": 191,
    "dark_grass": 74
@@ -372,100 +385,87 @@
  },
  "pinwheel_forest_2": {
   "zone": "pinwheel_forest_2",
-  "models": 12,
   "tiles": {
    "dark_grass": 295,
    "grass": 804,
-   "water_noenc": 146,
+   "water_no_encounters": 146,
    "surf": 186
   }
  },
  "relic_castle": {
   "zone": "relic_castle",
-  "models": 1,
   "tiles": {
-   "walk_cls0xc": 7,
-   "walk_cls0x23": 149,
-   "walk_cls0x16": 9
+   "deep_sand": 7,
+   "sand_floor": 149,
+   "indoor_floor": 9
   }
  },
  "relic_castle_3": {
   "zone": "relic_castle_16",
-  "models": 1,
   "tiles": {
-   "walk_cls0x16": 88
+   "indoor_floor": 88
   }
  },
  "relic_castle_4": {
   "zone": "relic_castle_17",
-  "models": 1,
   "tiles": {
-   "walk_cls0x16": 88
+   "indoor_floor": 88
   }
  },
  "relic_castle_5": {
   "zone": "relic_castle_19",
-  "models": 1,
   "tiles": {
-   "walk_cls0x23": 78,
-   "walk_cls0x16": 20
+   "sand_floor": 78,
+   "indoor_floor": 20
   }
  },
  "relic_castle_2": {
   "zone": "relic_castle_2",
-  "models": 1,
   "tiles": {
-   "walk_cls0x23": 227
+   "sand_floor": 227
   }
  },
  "relic_castle_6": {
   "zone": "relic_castle_21",
-  "models": 1,
   "tiles": {
-   "walk_cls0x23": 56,
-   "walk_cls0x16": 51
+   "sand_floor": 56,
+   "indoor_floor": 51
   }
  },
  "relic_castle_7": {
   "zone": "relic_castle_22",
-  "models": 1,
   "tiles": {
-   "walk_cls0x16": 96
+   "indoor_floor": 96
   }
  },
  "relic_castle_8": {
   "zone": "relic_castle_23",
-  "models": 1,
   "tiles": {
-   "walk_cls0x16": 213
+   "indoor_floor": 213
   }
  },
  "relic_passage": {
   "zone": "relic_passage",
-  "models": 4,
   "tiles": {
-   "walk_cls0xa": 762
+   "cave_floor": 762
   }
  },
  "relic_passage_2": {
   "zone": "relic_passage_2",
-  "models": 6,
   "tiles": {
-   "walk_cls0xa": 884,
-   "water_noenc": 55,
+   "cave_floor": 884,
+   "water_no_encounters": 55,
    "surf": 107
   }
  },
  "relic_passage_3": {
   "zone": "relic_passage_3",
-  "models": 2,
   "tiles": {
-   "walk_cls0xa": 399
+   "cave_floor": 399
   }
  },
  "reversal_mountain": {
   "zone": "reversal_mountain",
-  "models": 2,
   "tiles": {
    "grass": 71,
    "dark_grass": 44
@@ -473,119 +473,103 @@
  },
  "reversal_mountain_10": {
   "zone": "reversal_mountain_10",
-  "models": 6,
   "tiles": {
-   "walk_cls0xa": 1447
+   "cave_floor": 1447
   }
  },
  "reversal_mountain_11": {
   "zone": "reversal_mountain_11",
-  "models": 1,
   "tiles": {
-   "walk_cls0xa": 68
+   "cave_floor": 68
   }
  },
  "reversal_mountain_12": {
   "zone": "reversal_mountain_12",
-  "models": 1,
   "tiles": {
-   "walk_cls0xa": 45
+   "cave_floor": 45
   }
  },
  "reversal_mountain_13": {
   "zone": "reversal_mountain_13",
-  "models": 1,
   "tiles": {
-   "walk_cls0xa": 100
+   "cave_floor": 100
   }
  },
  "reversal_mountain_2": {
   "zone": "reversal_mountain_2",
-  "models": 1,
   "tiles": {
-   "walk_cls0xa": 145
+   "cave_floor": 145
   }
  },
  "reversal_mountain_3": {
   "zone": "reversal_mountain_3",
-  "models": 1,
   "tiles": {
-   "walk_cls0xa": 133
+   "cave_floor": 133
   }
  },
  "reversal_mountain_4": {
   "zone": "reversal_mountain_4",
-  "models": 6,
   "tiles": {
-   "walk_cls0xa": 1461,
-   "water_noenc": 57
+   "cave_floor": 1461,
+   "water_no_encounters": 57
   }
  },
  "reversal_mountain_5": {
   "zone": "reversal_mountain_5",
-  "models": 1,
   "tiles": {
-   "walk_cls0xa": 68
+   "cave_floor": 68
   }
  },
  "reversal_mountain_6": {
   "zone": "reversal_mountain_6",
-  "models": 1,
   "tiles": {
-   "walk_cls0xa": 45
+   "cave_floor": 45
   }
  },
  "reversal_mountain_7": {
   "zone": "reversal_mountain_7",
-  "models": 1,
   "tiles": {
-   "walk_cls0xa": 100
+   "cave_floor": 100
   }
  },
  "reversal_mountain_8": {
   "zone": "reversal_mountain_8",
-  "models": 1,
   "tiles": {
-   "walk_cls0xa": 142
+   "cave_floor": 142
   }
  },
  "reversal_mountain_9": {
   "zone": "reversal_mountain_9",
-  "models": 1,
   "tiles": {
-   "walk_cls0xa": 199
+   "cave_floor": 199
   }
  },
  "rock_peak_chamber": {
   "zone": "rock_peak_chamber",
-  "models": 2,
   "tiles": {
-   "walk_cls0xa": 457
+   "cave_floor": 457
   }
  },
  "route_1": {
   "zone": "route_1",
-  "models": 4,
   "tiles": {
    "grass": 177,
    "surf": 132,
-   "water_noenc": 27,
+   "water_no_encounters": 27,
    "dark_grass": 155
   }
  },
  "route_11": {
   "zone": "route_11",
-  "models": 2,
   "tiles": {
    "surf": 335,
-   "water_noenc": 202,
+   "water_no_encounters": 202,
    "grass": 156,
    "dark_grass": 124
   }
  },
  "route_12": {
   "zone": "route_12",
-  "models": 2,
   "tiles": {
    "dark_grass": 100,
    "grass": 132
@@ -593,19 +577,17 @@
  },
  "route_13": {
   "zone": "route_13",
-  "models": 8,
   "tiles": {
    "grass": 343,
    "surf": 1566,
-   "water_noenc": 238,
+   "water_no_encounters": 238,
    "dark_grass": 226
   }
  },
  "route_14": {
   "zone": "route_14",
-  "models": 4,
   "tiles": {
-   "water_noenc": 159,
+   "water_no_encounters": 159,
    "surf": 424,
    "grass": 134,
    "dark_grass": 61
@@ -613,7 +595,6 @@
  },
  "route_15": {
   "zone": "route_15",
-  "models": 2,
   "tiles": {
    "grass": 199,
    "dark_grass": 73
@@ -621,7 +602,6 @@
  },
  "route_16": {
   "zone": "route_16",
-  "models": 2,
   "tiles": {
    "grass": 33,
    "dark_grass": 68
@@ -629,123 +609,135 @@
  },
  "route_17": {
   "zone": "route_17",
-  "models": 3,
   "tiles": {
-   "water_noenc": 621,
+   "water_no_encounters": 621,
    "surf": 699
   }
  },
  "route_18": {
   "zone": "route_18",
-  "models": 4,
   "tiles": {
    "dark_grass": 92,
    "grass": 546,
    "surf": 860,
-   "water_noenc": 9,
-   "walk_cls0x16": 1
+   "water_no_encounters": 9,
+   "indoor_floor": 1
   }
  },
  "route_19": {
   "zone": "route_19",
-  "models": 2,
   "tiles": {
-   "water_noenc": 66,
+   "water_no_encounters": 66,
    "surf": 68,
    "grass": 137
   }
  },
  "route_2": {
   "zone": "route_2",
-  "models": 3,
   "tiles": {
    "grass": 165
   }
  },
  "route_20": {
   "zone": "route_20",
-  "models": 4,
-  "tiles": {
-   "water_noenc": 312,
-   "surf": 512,
-   "grass": 94,
-   "dark_grass": 102
+  "by_season": {
+   "spring": {
+    "water_no_encounters": 312,
+    "surf": 512,
+    "grass": 94,
+    "dark_grass": 102
+   },
+   "summer": {
+    "water_no_encounters": 312,
+    "surf": 512,
+    "grass": 94,
+    "dark_grass": 102
+   },
+   "autumn": {
+    "water_no_encounters": 301,
+    "surf": 512,
+    "grass": 94,
+    "dark_grass": 102
+   },
+   "winter": {
+    "water_no_encounters": 312,
+    "surf": 512,
+    "grass": 94,
+    "dark_grass": 102
+   }
   }
  },
  "route_21": {
   "zone": "route_21",
-  "models": 4,
   "tiles": {
    "surf": 862,
-   "water_noenc": 34
+   "water_no_encounters": 34
   }
  },
  "route_22": {
   "zone": "route_22",
-  "models": 2,
   "tiles": {
    "dark_grass": 234,
    "grass": 317,
-   "water_noenc": 10,
+   "water_no_encounters": 10,
    "surf": 62
   }
  },
  "route_23": {
   "zone": "route_23",
-  "models": 6,
   "tiles": {
    "grass": 388,
-   "water_noenc": 294,
+   "water_no_encounters": 294,
    "surf": 263,
    "dark_grass": 77
   }
  },
  "route_3": {
   "zone": "route_3",
-  "models": 5,
   "tiles": {
    "grass": 346,
    "surf": 287,
-   "water_noenc": 45,
+   "water_no_encounters": 45,
    "dark_grass": 90
   }
  },
  "route_4": {
   "zone": "route_4",
-  "models": 7,
+  "version": "black2",
   "tiles": {
-   "walk_cls0xc": 392,
-   "water_noenc": 50,
+   "deep_sand": 392,
+   "water_no_encounters": 50,
    "surf": 80
   }
  },
  "route_4_2": {
   "zone": "route_4_16",
-  "models": 0,
-  "tiles": {}
+  "version": "white2",
+  "tiles": {
+   "deep_sand": 173,
+   "water_no_encounters": 38,
+   "surf": 80
+  }
  },
  "route_5": {
   "zone": "route_5",
-  "models": 2,
   "tiles": {
    "dark_grass": 42,
    "grass": 74,
-   "water_noenc": 6
+   "water_no_encounters": 6
   }
  },
  "route_6": {
   "zone": "route_6",
-  "models": 3,
   "tiles": {
    "dark_grass": 64,
    "grass": 380,
-   "water_noenc": 191,
+   "water_no_encounters": 191,
    "surf": 237
   }
  },
  "route_7": {
   "zone": "route_7",
-  "models": 3,
   "tiles": {
    "grass": 919,
    "dark_grass": 149
@@ -753,200 +745,189 @@
  },
  "route_8": {
   "zone": "route_8",
-  "models": 2,
-  "tiles": {
-   "walk_cls0x1c": 358,
-   "water_noenc": 47,
-   "surf": 57
+  "by_season": {
+   "spring": {
+    "swamp_puddle": 358,
+    "water_no_encounters": 47,
+    "surf": 57
+   },
+   "summer": {
+    "swamp_puddle": 358,
+    "water_no_encounters": 47,
+    "surf": 57
+   },
+   "autumn": {
+    "swamp_puddle": 358,
+    "water_no_encounters": 47,
+    "surf": 57
+   },
+   "winter": {
+    "water_no_encounters": 51,
+    "surf": 57
+   }
   }
  },
  "route_9": {
   "zone": "route_9",
-  "models": 2,
   "tiles": {
    "dark_grass": 52,
-   "water_noenc": 10,
+   "water_no_encounters": 10,
    "grass": 81
   }
  },
  "seaside_cave": {
   "zone": "seaside_cave",
-  "models": 2,
   "tiles": {
-   "walk_cls0xa": 711,
-   "water_noenc": 56,
+   "cave_floor": 711,
+   "water_no_encounters": 56,
    "surf": 186
   }
  },
  "seaside_cave_2": {
   "zone": "seaside_cave_2",
-  "models": 1,
   "tiles": {
-   "walk_cls0xa": 241
+   "cave_floor": 241
   }
  },
  "strange_house": {
   "zone": "strange_house",
-  "models": 2,
   "tiles": {
-   "walk_cls0x16": 455
+   "indoor_floor": 455
   }
  },
  "strange_house_10": {
   "zone": "strange_house_10",
-  "models": 1,
   "tiles": {
-   "walk_cls0x16": 138
+   "indoor_floor": 138
   }
  },
  "strange_house_2": {
   "zone": "strange_house_2",
-  "models": 1,
   "tiles": {
-   "walk_cls0x16": 149
+   "indoor_floor": 149
   }
  },
  "strange_house_3": {
   "zone": "strange_house_3",
-  "models": 2,
   "tiles": {
-   "walk_cls0x16": 455
+   "indoor_floor": 455
   }
  },
  "strange_house_4": {
   "zone": "strange_house_4",
-  "models": 1,
   "tiles": {
-   "walk_cls0x16": 150
+   "indoor_floor": 150
   }
  },
  "strange_house_5": {
   "zone": "strange_house_5",
-  "models": 1,
   "tiles": {
-   "walk_cls0x16": 125
+   "indoor_floor": 125
   }
  },
  "strange_house_6": {
   "zone": "strange_house_6",
-  "models": 2,
   "tiles": {
-   "walk_cls0x16": 455
+   "indoor_floor": 455
   }
  },
  "strange_house_7": {
   "zone": "strange_house_7",
-  "models": 1,
   "tiles": {
-   "walk_cls0x16": 138
+   "indoor_floor": 138
   }
  },
  "strange_house_8": {
   "zone": "strange_house_8",
-  "models": 1,
   "tiles": {
-   "walk_cls0x16": 138
+   "indoor_floor": 138
   }
  },
  "strange_house_9": {
   "zone": "strange_house_9",
-  "models": 1,
   "tiles": {
-   "walk_cls0x16": 138
+   "indoor_floor": 138
   }
  },
  "striaton_city": {
   "zone": "striaton_city",
-  "models": 3,
   "tiles": {
-   "water_noenc": 55,
+   "water_no_encounters": 55,
    "surf": 75
   }
  },
  "twist_mountain": {
   "zone": "twist_mountain_3",
-  "models": 4,
   "tiles": {
-   "walk_cls0xa": 455
+   "cave_floor": 455
   }
  },
  "twist_mountain_2": {
   "zone": "twist_mountain_4",
-  "models": 4,
   "tiles": {
-   "walk_cls0xa": 782
+   "cave_floor": 782
   }
  },
  "twist_mountain_3": {
   "zone": "twist_mountain_5",
-  "models": 4,
   "tiles": {
-   "walk_cls0xa": 437
+   "cave_floor": 437
   }
  },
  "twist_mountain_4": {
   "zone": "twist_mountain_6",
-  "models": 1,
   "tiles": {
-   "walk_cls0xa": 268
+   "cave_floor": 268
   }
  },
  "undella_bay": {
   "zone": "undella_bay",
-  "models": 4,
   "tiles": {
    "surf": 1612,
-   "water_noenc": 4
+   "water_no_encounters": 4
   }
  },
  "undella_town": {
   "zone": "undella_town",
-  "models": 2,
   "tiles": {
    "surf": 344
   }
  },
  "underground_ruins": {
   "zone": "underground_ruins",
-  "models": 1,
   "tiles": {
-   "walk_cls0xa": 299
+   "cave_floor": 299
   }
  },
  "underground_ruins_2": {
   "zone": "underground_ruins_2",
-  "models": 2,
   "tiles": {
-   "walk_cls0xa": 563
+   "cave_floor": 563
   }
  },
  "underground_ruins_3": {
   "zone": "underground_ruins_3",
-  "models": 2,
   "tiles": {
-   "walk_cls0xa": 564
+   "cave_floor": 564
   }
  },
  "victory_road": {
   "zone": "victory_road_16",
-  "models": 1,
   "tiles": {
-   "walk_cls0xa": 78
+   "cave_floor": 78
   }
  },
  "victory_road_2": {
   "zone": "victory_road_17",
-  "models": 4,
   "tiles": {
-   "walk_cls0xa": 197,
+   "cave_floor": 197,
    "surf": 228,
-   "water_noenc": 16,
-   "walk_cls0x16": 808
+   "water_no_encounters": 16,
+   "indoor_floor": 808
   }
  },
  "victory_road_3": {
   "zone": "victory_road_18",
-  "models": 1,
   "tiles": {
    "grass": 109,
    "dark_grass": 50
@@ -954,33 +935,29 @@
  },
  "victory_road_4": {
   "zone": "victory_road_19",
-  "models": 3,
   "tiles": {
    "dark_grass": 194,
    "surf": 330,
-   "water_noenc": 221,
+   "water_no_encounters": 221,
    "grass": 158
   }
  },
  "victory_road_5": {
   "zone": "victory_road_20",
-  "models": 2,
   "tiles": {
-   "walk_cls0xa": 469
+   "cave_floor": 469
   }
  },
  "victory_road_6": {
   "zone": "victory_road_21",
-  "models": 1,
   "tiles": {
-   "walk_cls0xa": 221,
-   "water_noenc": 22,
+   "cave_floor": 221,
+   "water_no_encounters": 22,
    "surf": 43
   }
  },
  "victory_road_7": {
   "zone": "victory_road_22",
-  "models": 4,
   "tiles": {
    "grass": 270,
    "dark_grass": 16
@@ -988,43 +965,38 @@
  },
  "victory_road_8": {
   "zone": "victory_road_23",
-  "models": 1,
   "tiles": {
-   "walk_cls0xa": 142
+   "cave_floor": 142
   }
  },
  "victory_road_9": {
   "zone": "victory_road_24",
-  "models": 4,
   "tiles": {
-   "walk_cls0xa": 197,
+   "cave_floor": 197,
    "surf": 228,
-   "water_noenc": 16,
-   "walk_cls0x16": 811
+   "water_no_encounters": 16,
+   "indoor_floor": 811
   }
  },
  "victory_road_10": {
   "zone": "victory_road_25",
-  "models": 3,
   "tiles": {
    "dark_grass": 132,
    "surf": 274,
-   "water_noenc": 175,
+   "water_no_encounters": 175,
    "grass": 95
   }
  },
  "victory_road_11": {
   "zone": "victory_road_26",
-  "models": 1,
   "tiles": {
-   "walk_cls0xa": 161
+   "cave_floor": 161
   }
  },
  "village_bridge": {
   "zone": "village_bridge",
-  "models": 6,
   "tiles": {
-   "water_noenc": 115,
+   "water_no_encounters": 115,
    "surf": 828,
    "dark_grass": 78,
    "grass": 132
@@ -1032,24 +1004,21 @@
  },
  "virbank_city": {
   "zone": "virbank_city",
-  "models": 2,
   "tiles": {
-   "water_noenc": 67,
+   "water_no_encounters": 67,
    "surf": 177
   }
  },
  "virbank_complex": {
   "zone": "virbank_complex",
-  "models": 1,
   "tiles": {
-   "water_noenc": 16,
+   "water_no_encounters": 16,
    "surf": 44,
    "grass": 44
   }
  },
  "virbank_complex_2": {
   "zone": "virbank_complex_2",
-  "models": 2,
   "tiles": {
    "dark_grass": 64,
    "grass": 215
@@ -1057,19 +1026,17 @@
  },
  "wellspring_cave": {
   "zone": "wellspring_cave",
-  "models": 1,
   "tiles": {
-   "walk_cls0xa": 237,
+   "cave_floor": 237,
    "surf": 149,
-   "water_noenc": 33
+   "water_no_encounters": 33
   }
  },
  "wellspring_cave_2": {
   "zone": "wellspring_cave_2",
-  "models": 2,
   "tiles": {
-   "walk_cls0xa": 512,
-   "water_noenc": 40,
+   "cave_floor": 512,
+   "water_no_encounters": 40,
    "surf": 207
   }
  }

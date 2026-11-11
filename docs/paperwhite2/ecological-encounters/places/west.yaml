@@ -1,0 +1,197 @@
+# Western Unova (regions.md, 5): Driftveil Drawbridge, Route 6, Chargestone Cave, Mistralton Cave, Route 7 and Celestial
+# Tower. Draft of 2026-11-13 from the user's descriptions, for review. The layout is southwest.yaml's. No Pokémon NPCs
+# are placed here yet. Twist Mountain is The Rest's.
+
+region:
+  id: west
+  name: Western Unova
+  feel: >-
+    The mid-game: rougher and wilder, and a little melancholy (Celestial Tower, Route 7). Often rainy and gloomy, in a
+    good way.
+  towns: >-
+    No encounters, mood only. Driftveil City: based on Union City; a marketplace and the PWT. Mistralton City: the
+    rainy airport city.
+  real_world: >-
+    Appalachian river valleys with deer in the woods; caves of magnetite and lodestone; boggy lowland marsh with
+    boardwalks, fog and will-o'-wisp folklore; an old memorial tower over graves.
+  basculin: Blue-Striped (west of the Castelia, Nimbasa and Opelucid line)
+
+places:
+
+  - id: driftveil_drawbridge
+    name: Driftveil Drawbridge
+    maps: [driftveil_drawbridge]
+    used: confirmed
+    facts:
+      tiles: { bridge: 1176 }
+      methods: [rustling (bridge shadows)]
+      weather: none
+    picture: >-
+      The border with Central Unova, between Route 5 and Driftveil. Ducklett and Swanna on it at some time of the
+      year; the birds' seasons are the migration plan's.
+    habitats: [estuary, coastal_sea]
+    parts:
+      shadows: >-
+        birds' shadows on a long drawbridge over the water by Driftveil
+    human_presence: rural (a road)
+    climate:
+      all_year: >-
+        open and windy over the water
+    real_world: >-
+      Big bridges over estuaries: swans and ducks on the water below, gulls and cormorants on the structure.
+    suggestions:
+      - >-
+        Waterbirds and seabirds by season: Ducklett and Swanna's season here (the migration plan).
+
+  - id: route_6
+    name: Route 6
+    maps: [route_6]
+    used: confirmed
+    facts:
+      tiles: { grass: 380, dark_grass: 64, surf: 237 }
+      methods: [grass, dark_grass, rustling (shaking grass), surf, fishing]
+      weather: { spring: rain 26%, summer: clear, autumn: rain 26%, winter: snow 42%, light snow 23% }
+    picture: >-
+      Not much change by season, but a strong seasonal appeal through Deerling and Sawsbuck (requested). A river runs
+      through it, and the path crosses it on several bridges; it may be the same river as Route 20's and Floccesy
+      Ranch's (the user likes to think so). The northern part has the cave entrances, Mistralton Cave and Chargestone
+      Cave. Cosmetic puddles in the western part (no encounters), so it should rain here now and then by season.
+    habitats: [deciduous_forest, woodland_edge, river, meadow]
+    parts:
+      grass: woods and clearings along the winding path
+      dark_grass: thicker growth off the path
+      river: a river crossed by several bridges, perhaps Route 20's river upstream
+    human_presence: rural
+    climate:
+      spring: mild, rainy
+      summer: warm, dry
+      autumn: cool, rainy, autumn colour
+      winter: cold, snow on two thirds of the days
+    features: [tall_trees, fallen_leaves, berries, cold_water]
+    real_world: >-
+      A wooded river valley: deer browsing in the woods and clearings by season, river fish and their spawning at the
+      bridges, herons, otters, kingfishers.
+    suggestions:
+      - >-
+        Deerling and Sawsbuck in their season's form, the river's fish with Seaking spawning at the bridges in autumn
+        (Pokécology), and the valley's woodland life.
+
+  - id: chargestone_cave
+    name: Chargestone Cave
+    maps: [chargestone_cave, chargestone_cave_2, chargestone_cave_3]
+    used: >-
+      confirmed. The areas are the zones chargestone_cave_2 (the top floor), _3 and _4 (lower floors). The zone
+      chargestone_cave is the entrance north of Route 6 and _5 is unused or a cutscene's; neither has an encounter
+      table.
+    facts:
+      tiles: { cave_floor: 945, electric_field: 111 }  # area 1 (zone 2, the top floor)
+      tiles_2: { cave_floor: 426, electric_field: 54 }
+      tiles_3: { cave_floor: 276, electric_field: 70 }
+      methods: [walking (cave floor), rustling (dust clouds)]
+      weather: none (indoors)
+    picture: >-
+      A charged, magnetic field throughout: home to the many electric Pokémon that fit it. The electric tiles are round
+      the charged floating stones. Tynamo's family lives only here, as a trophy.
+    habitats: [cave, deep_cave]
+    parts:
+      floors: cave floors among floating charged stones and magnetized ground
+    human_presence: remote
+    climate:
+      all_year: >-
+        cool, dark, crackling with static
+    features: [electric_field, magnetic_field, rocks, thunder_influence]
+    real_world: >-
+      Lodestone and magnetite deposits; in the fiction, charged stones that float. Cave life, and the electric and
+      magnetic Pokémon that feed on or align with the field.
+    requests:
+      - Tynamo, Eelektrik and Eelektross only here, as a trophy (exotic).
+    suggestions:
+      - >-
+        Electric, magnetic and steel Pokémon that thrive in the field, with ordinary cave life (bats, rock dwellers);
+        Raichu as a rare wild evolution (the charged stones' influence, rules 5).
+
+  - id: mistralton_cave
+    name: Mistralton Cave
+    maps: [mistralton_cave, mistralton_cave_2, guidance_chamber]
+    used: confirmed (all three; the Guidance Chamber the deepest; the same Pokémon throughout)
+    facts:
+      tiles: { cave_floor: 329 }
+      tiles_2: { cave_floor: 364 }
+      tiles_guidance_chamber: { cave_floor: 394 }
+      methods: [walking (cave floor), rustling (dust clouds)]
+      weather: none (indoors)
+    picture: >-
+      The cave north of Route 6, near Mistralton; the Guidance Chamber is its deepest part, with no special encounters.
+    habitats: [cave, deep_cave]
+    parts:
+      floors: rocky cave floors down to the Guidance Chamber
+    human_presence: remote
+    climate:
+      all_year: >-
+        cool, dark, dry
+    features: [rocks, dragons]
+    real_world: >-
+      Limestone caves: bats, cave crickets, rock-dwelling reptiles.
+    suggestions:
+      - >-
+        Rock and cave dwellers; and the original games' Axew, a young dragon of this cave (a strong line, so rare).
+
+  - id: route_7
+    name: Route 7
+    maps: [route_7]
+    used: confirmed
+    facts:
+      tiles: { grass: 919, dark_grass: 149 }  # the grass includes the very tall grass, which hides the player
+      methods: [grass, dark_grass, rustling (shaking grass)]
+      weather: { spring: rain 52%, summer: rain 13%, autumn: rain 52%, winter: snow 42%, light snow 23% }
+    picture: >-
+      The special very tall grass and very tall dark grass, with wooden walkways over it. Gloomy marshland, with ghost
+      Pokémon at night, so near Celestial Tower.
+    habitats: [marsh, meadow]
+    parts:
+      grass: very tall grass, over the head, below wooden walkways
+      dark_grass: very tall dark grass
+    human_presence: rural
+    climate:
+      spring: cool, rainy half the days
+      summer: mild
+      autumn: cool, rainy half the days, gloomy
+      winter: cold, snow on two thirds of the days
+    features: [reeds, spirits]
+    real_world: >-
+      Tall-grass marsh and bog crossed by boardwalks: hidden rails and bitterns, frogs, snakes, voles, harriers hunting
+      low over the reeds, owls; will-o'-wisps (marsh gas) in folklore.
+    suggestions:
+      - >-
+        Tall-grass dwellers that hide (the grass hides the player too); marsh life in the rain; ghosts at night drifting
+        from Celestial Tower.
+
+  - id: celestial_tower
+    name: Celestial Tower
+    maps: [celestial_tower, celestial_tower_2, celestial_tower_3, celestial_tower_4]
+    used: >-
+      confirmed (one group). The areas are the zones celestial_tower_3, _4 and _5 (floors) and celestial_tower (the top
+      floor with the bell). The ground floor (zone celestial_tower_2) has no encounter table.
+    facts:
+      tiles: { indoor_floor: [151, 79, 77] }  # the floors (zones 3 to 5)
+      top_floor_tiles: { indoor_floor: 98 }  # zone celestial_tower: encounter tiles on the bell floor too
+      methods: [walking (floor)]
+      weather: none (indoors)
+    picture: >-
+      The melancholy tower of graves. Litwick here (requested).
+    habitats: [tower, building]
+    parts:
+      floors: the tower's floors among the graves
+      top: the bell at the top
+    human_presence: remote (mourners)
+    climate:
+      all_year: >-
+        still, cool, quiet
+    features: [spirits]
+    real_world: >-
+      A memorial tower over graves: bats, owls and crows; and the spirits of folklore.
+    requests:
+      - Litwick (its family, at its levels).
+    suggestions:
+      - >-
+        Ghosts of the dead and of mourning, candle and lamp spirits, and the birds and bats of old towers.

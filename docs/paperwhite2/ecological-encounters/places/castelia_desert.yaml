@@ -56,7 +56,7 @@ places:
     used: >-
       confirmed: map 1 the main sewer, 2 to 5 its rooms (reachable; whatever they have, the same as map 1)
     facts:
-      tiles: { indoor_floor: 1357, surf: 619 }  # map 1
+      tiles: { spring_summer: { indoor_floor: 1357, surf: 619 }, autumn_winter: { indoor_floor: 1816 } }  # map 1
       room_tiles: { indoor_floor: [92, 92, 199, 199] }  # maps 2 to 5
       methods: [walking (floor), surf, fishing]
       weather: none
@@ -90,7 +90,7 @@ places:
     maps: [route_4, route_4_2]  # route_4 Black 2's City Route, route_4_2 (the zone route_4_16) White 2's Desert Route
     used: confirmed (one version at a time, switched at any Pokémon Center)
     facts:
-      tiles: { deep_sand: 392, surf: 80 }  # the base map (White 2's); Black 2's pieces are swapped in by the flag
+      tiles: { route_4: { deep_sand: 392, surf: 80 }, route_4_2: { deep_sand: 173, surf: 80 } }  # Black 2's, White 2's
       methods: [walking (sand), surf, fishing]
       weather: { route_4: none, route_4_2: always sandstorm (zone header) }
       npc_pokemon: [Braviary (route_4_2)]
