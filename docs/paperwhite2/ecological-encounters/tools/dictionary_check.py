@@ -145,6 +145,9 @@ def main(argv):
                 for s in h.get("stages", []) or []:
                     if s not in wild:
                         errors.append(f"{where}: {pid}: stage {s} isn't wild")
+                for a in h.get("areas", []) or []:
+                    if a not in places[pid].get("maps", []):
+                        errors.append(f"{where}: {pid}: area {a} isn't one of its maps")
                 for w in h.get("weather", []) or []:
                     if w not in WEATHERS:
                         errors.append(f"{where}: {pid}: weather {w} unknown")

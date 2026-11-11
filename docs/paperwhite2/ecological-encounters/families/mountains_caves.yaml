@@ -1,0 +1,946 @@
+# Batch 5: mountains, caves and mines, with the ice Pokémon (39 families). Draft of 2026-11-14 for review.
+#
+# Summary
+# - Caves by kind: the south's small caves (Wellspring Cave, Relic Passage) with Woobat, Roggenrola and Drilbur; the
+#   mines (Twist Mountain, Clay Tunnel) with the miners' Pokémon (Timburr, Machop), iron-eaters (Aron) and gems
+#   (Sableye); Chargestone Cave's magnetic life (Joltik in the bugs' batch, Ferroseed, Klink, Nosepass and Probopass,
+#   Tynamo the trophy); the deep, strong caves of Victory Road (Onix, Excadrill, Aggron); Giant Chasm's cold caves.
+#   Dust clouds hold the burrowers (Drilbur, Diglett), as the rules say.
+# - Zubat and Woobat split the bats: Woobat the south's and the tower's, Zubat the north's and the deep caves'.
+# - Pokécology: Dunsparce with Onix and Excadrill (Clay Tunnel); Diglett tilling the farms (Abundant Shrine, the user's
+#   request; Floccesy Ranch); Swinub digging mushrooms under the snow where they grew in autumn (Routes 19 and 20,
+#   Floccesy, where its NPCs are); Weavile hunting Mamoswine (Giant Chasm, whose unnatural cold keeps an ice age's
+#   relic alive); Glalie down from Twist Mountain to hunt Piplup at Dragonspiral's entrance in winter (the user's
+#   request); Sudowoodo easier to find in winter, when its tree disguise fails.
+# - Ice: Twist Mountain's caves hold the ice Pokémon all year (the user's request), spreading in winter to the snowy
+#   places (Dragonspiral's entrance, Routes 6, 7 and 12); Giant Chasm's crater has them all year.
+# - Fighters: Route 11's falls (Throh above, Sawk below; Tyrogue in both, Hitmonlee above and Hitmonchan below), monks
+#   under Route 14's waterfalls (Meditite), sumo at Abundant Shrine (Makuhita), Mienfoo on Route 14 and 22.
+# - Trophies: Riolu (Floccesy in summer and autumn, Virbank Complex 2 in winter and spring: the user's request),
+#   Tynamo's line in Chargestone (the user's request), Probopass in Chargestone, Mamoswine in Giant Chasm.
+# - Not wild: Crobat, Swoobat, Golem, Steelix, Machamp, Rhyperior, Gliscor, Conkeldurr, Gigalith, Froslass, Lucario,
+#   Prinplup and Empoleon (trades, friendship, items or stones).
+# - Review: Weavile and Mamoswine wild (item and move evolutions, kept to Giant Chasm); Probopass; Eelektross by a
+#   Thunderstone in Chargestone; Piplup's tier.
+
+families:
+
+  - id: zubat
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Zubat): it needs no eyes; it checks its surroundings with ultrasound."
+      - "Pokédex (B2W2, Golbat): it flits about in the dead of night, draining blood."
+      - "Other games: nearly every cave of Kanto, Johto, Hoenn and Sinnoh."
+    habitats: {cave: 3, deep_cave: 3, mine: 2, underground_water: 2}
+    time: {periods: any, strength: none}
+    seasons: all year (bats roost in caves)
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: family}
+    stages: {zubat: wild, golbat: wild, crobat: {wild: false, note: "by friendship"}}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: seaside_cave, methods: [grass], seasons: all, tier: common, why: "bats in the sea cave's dark"}
+      - {place: clay_tunnel, methods: [grass], seasons: all, tier: common, why: "the old workings"}
+      - {place: giant_chasm_caves, methods: [grass], seasons: all, tier: common, why: "the cold caves"}
+      - {place: victory_road_caves, methods: [grass], seasons: all, tier: common, stages: [golbat], why: "the deep caves"}
+      - {place: reversal_mountain_damp, methods: [grass], seasons: all, tier: common, why: "the damp caves' bats"}
+      - {place: twist_mountain, methods: [grass], seasons: all, tier: uncommon, why: "bats in the mine"}
+    review: []
+
+  - id: woobat
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Woobat): the heart-shaped mark it leaves is said to bring good fortune."
+      - "In the original games: Wellspring Cave, Chargestone Cave, Twist Mountain, Mistralton Cave, Relic Passage."
+      - "The places: the bats of old towers at Celestial Tower."
+    habitats: {cave: 3, tower: 2, mine: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: family}
+    stages: {woobat: wild, swoobat: {wild: false, note: "by friendship"}}
+    levels: {woobat: [2, 100]}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: wellspring_cave, methods: [grass], seasons: all, tier: common, why: "the south's cave bats"}
+      - {place: relic_passage, methods: [grass], seasons: all, tier: common, why: "the passage's bats"}
+      - {place: chargestone_cave, methods: [grass], seasons: all, tier: uncommon, why: "as in the original"}
+      - {place: mistralton_cave, methods: [grass], seasons: all, tier: common, why: "as in the original"}
+      - {place: twist_mountain, methods: [grass], seasons: all, tier: common, why: "the mine's bats"}
+      - {place: celestial_tower, methods: [grass], seasons: all, tier: rare, why: "bats of the old tower"}
+    review: []
+
+  - id: diglett
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Diglett): it lives underground and is repelled by bright sunlight."
+      - "Pokécology (the user's notes): farms raise Diglett to till the soil; Diglett with Dunsparce, Onix and Excadrill in caves."
+      - "The user: Diglett in Abundant Shrine."
+    habitats: {farmland: 3, cave: 2, pasture: 2}
+    time: {periods: night, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: family}
+    stages: {diglett: wild, dugtrio: wild}
+    levels: {}
+    wanderer: {appears: steps, wanders: passive, grass: stand}
+    homes:
+      - {place: abundant_shrine, methods: [grass], seasons: all, tier: common, why: "tilling the terraced fields (the user's request, Pokécology)"}
+      - {place: floccesy_ranch, methods: [grass], seasons: all, tier: uncommon, stages: [diglett], why: "the ranch's fields (Pokécology)"}
+      - {place: clay_tunnel, methods: [rustling], seasons: all, tier: common, why: "the dust clouds, with Dunsparce and Onix"}
+      - {place: wellspring_cave, methods: [rustling], seasons: all, tier: uncommon, why: "the dust clouds"}
+    review:
+      - "Met by a step only (it's underground)."
+
+  - id: geodude
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Geodude): at rest it looks just like a rock."
+      - "Pokédex (B2W2, Graveler): it rolls along mountain paths."
+    habitats: {mountain: 3, cliff: 2, volcanic: 2, cave: 2, badlands: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [sandstorm], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {geodude: wild, graveler: wild, golem: {wild: false, note: "a trade's"}}
+    levels: {}
+    wanderer: {appears: steps, wanders: passive, grass: stand}
+    homes:
+      - {place: route_15, methods: [grass], seasons: all, tier: common, why: "a rock among the boulders"}
+      - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: uncommon, why: "the red-rock pass"}
+      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: uncommon, why: "the fiery caves' rocks"}
+      - {place: victory_road_mountainside, methods: [grass], seasons: all, tier: uncommon, stages: [graveler], why: "rolling down the mountain paths"}
+    review:
+      - "Met by a step only (it looks like a rock)."
+
+  - id: onix
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Onix): it swallows soil and makes long tunnels."
+      - "Pokécology (the user's notes): Dunsparce in caves with Onix and Excadrill."
+    habitats: {cave: 3, deep_cave: 3, mine: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {onix: wild, steelix: {wild: false, note: "a trade's"}}
+    levels: {onix: [10, 100]}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: clay_tunnel, methods: [grass], seasons: all, tier: uncommon, why: "its tunnels, with Dunsparce and Excadrill"}
+      - {place: victory_road_caves, methods: [grass], seasons: all, tier: uncommon, why: "the deep caves"}
+      - {place: twist_mountain, methods: [grass], seasons: all, tier: rare, why: "the mine's tunnels"}
+    review: []
+
+  - id: machop
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Machoke): it carries heavy cargo and willingly does hard work for people."
+      - "The places: Twist Mountain and Clay Tunnel are worked mines."
+    habitats: {mine: 3, mountain: 2, industrial: 1}
+    time: {periods: day, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {machop: wild, machoke: wild, machamp: {wild: false, note: "a trade's"}}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: twist_mountain, methods: [grass], seasons: all, tier: uncommon, why: "helping the miners"}
+      - {place: clay_tunnel, methods: [grass], seasons: all, tier: uncommon, why: "the mine's workers"}
+      - {place: victory_road_mountainside, methods: [grass], seasons: all, tier: rare, stages: [machoke], why: "training on the mountain"}
+    review: []
+
+  - id: mankey
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Mankey): it lives in treetop colonies; one enraged, the whole colony rampages."
+      - "Real world: Japan's snow monkeys of mountain forests and gorges."
+      - "In the game: a Mankey trade."
+    habitats: {mountain: 2, conifer_forest: 2, cliff: 2, woodland_edge: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: family}
+    stages: {mankey: wild, primeape: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: route_14, methods: [dark_grass], seasons: all, tier: uncommon, why: "troops on the cliffs above the falls"}
+      - {place: route_23, methods: [grass], seasons: all, tier: uncommon, why: "the gorge's woods"}
+      - {place: route_15, methods: [dark_grass], seasons: all, tier: rare, why: "the ridge's ledges"}
+    review: []
+
+  - id: rhyhorn
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Rhyhorn): its tackles destroy anything, but it's too slow-witted to help people."
+      - "In the game: two Rhyhorn trades."
+      - "Real world: rhinos of dry, rocky scrub."
+    habitats: {badlands: 3, scrub: 2, mountain: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [sandstorm], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {rhyhorn: wild, rhydon: wild, rhyperior: {wild: false, note: "a trade's"}}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: reversal_mountain_outside, methods: [dark_grass], seasons: all, tier: uncommon, why: "the badlands' rocks"}
+      - {place: victory_road_mountainside, methods: [dark_grass], seasons: all, tier: uncommon, stages: [rhydon], why: "the strong of the mountain"}
+    review: []
+
+  - id: phanpy
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Phanpy): small but strong, it can carry a person."
+      - "Pokédex (B2W2, Donphan): it curls up and rolls into foes."
+      - "Other games: mountain routes (Johto's Route 45)."
+      - "In the game: a Phanpy trade."
+    habitats: {mountain: 3, river: 2, hills: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {phanpy: wild, donphan: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: route_23, methods: [grass], seasons: all, tier: uncommon, why: "by the gorge's river, as Johto's Route 45"}
+      - {place: victory_road_mountainside, methods: [grass], seasons: all, tier: uncommon, stages: [donphan], why: "rolling down the mountain"}
+    review: []
+
+  - id: dunsparce
+    origin: native
+    lore:
+      - "Pokédex (B2W2): it makes mazes in dark places and digs away with its tail when seen."
+      - "Pokécology (the user's notes): Dunsparce in caves with Onix and Excadrill (and some Diglett)."
+    habitats: {cave: 3, deep_cave: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {dunsparce: wild}
+    levels: {dunsparce: [10, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: clay_tunnel, methods: [grass, rustling], seasons: all, tier: rare, why: "with Onix and Excadrill (Pokécology)"}
+      - {place: victory_road_caves, methods: [rustling], seasons: all, tier: rare, why: "mazes in the deep caves' dust"}
+    review: []
+
+  - id: gligar
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Gligar): it clamps onto prey and jabs it with its tail's stinger."
+      - "Other games: cliffs and canyons (Johto's Route 45)."
+    habitats: {cliff: 3, badlands: 2, desert: 2, mountain: 2}
+    time: {periods: night, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {gligar: wild, gliscor: {wild: false, note: "by a held Razor Fang"}}
+    levels: {gligar: [10, 100]}
+    wanderer: {appears: both, wanders: aggressive, grass: float}
+    homes:
+      - {place: desert_resort_path, methods: [grass], seasons: all, tier: uncommon, why: "gliding from the canyon's cliffs"}
+      - {place: reversal_mountain_outside, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the red-rock cliffs"}
+      - {place: route_15, methods: [dark_grass], seasons: all, tier: rare, why: "the ridge's ledges"}
+    review: []
+
+  - id: sneasel
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Sneasel): smart and sneaky, it flashes its hidden claws."
+      - "Pokédex (B2W2, Weavile): they claw signs in boulders and work together to surround foes."
+      - "Pokécology (the user's notes): Weavile hunt Mamoswine in the snow."
+      - "In the game: a Hidden Grotto Sneasel at Giant Chasm."
+    habitats: {snowfield: 3, mountain: 2, cave: 2, conifer_forest: 2}
+    time: {periods: night, strength: preferred}
+    seasons: all year in Giant Chasm's cold; in winter on the snowy places
+    migration: partial
+    weather: {more: [snow, blizzard], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {sneasel: wild, weavile: {wild: true, note: "Giant Chasm only, hunting Mamoswine"}}
+    levels: {weavile: [35, 100]}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: giant_chasm_crater, methods: [dark_grass], seasons: all, tier: uncommon, why: "the crater's unnatural winter"}
+      - {place: giant_chasm_crater, methods: [dark_grass], seasons: all, tier: rare, stages: [weavile], times: night, why: "packs hunting Mamoswine (Pokécology)"}
+      - {place: giant_chasm_caves, methods: [grass], seasons: all, tier: uncommon, stages: [sneasel], why: "the cold caves"}
+      - {place: dragonspiral_entrance, methods: [dark_grass], seasons: [winter], tier: uncommon, stages: [sneasel], why: "the winter's deep snow"}
+      - {place: route_23, methods: [grass], seasons: [winter], tier: rare, stages: [sneasel], why: "stalking the conifer wood in winter"}
+    review:
+      - "Weavile wild though it evolves by a held item at night: only where Pokécology has it hunting."
+
+  - id: swinub
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Piloswine): it smells out mushrooms buried under frozen ground."
+      - "Pokédex (B2W2, Mamoswine): most disappeared when the ice age ended."
+      - "Pokécology (the user's notes): Swinub digs mushrooms from under the ice; in winter it's where the mushrooms were in autumn."
+      - "The user: Swinub on Routes 19 and 20 in winter; its NPCs on Routes 19 and 20 and at Floccesy Ranch."
+    habitats: {snowfield: 3, deciduous_forest: 2, woodland_edge: 2, cave: 2}
+    time: {periods: any, strength: none}
+    seasons: >-
+      Winter in the Southwest's woods (after the autumn mushrooms) and the snowy places; all year in Twist Mountain's
+      caves and Giant Chasm, where the last Mamoswine live on in an ice age's cold.
+    migration: partial
+    weather: {more: [snow, blizzard], less: [], only: []}
+    abundance: common
+    trophy: [giant_chasm_crater]
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {swinub: wild, piloswine: wild, mamoswine: {wild: true, note: "Giant Chasm only, an ice age's relic"}}
+    levels: {mamoswine: [40, 100]}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: route_19, methods: [grass], seasons: [winter], tier: common, stages: [swinub], why: "its NPCs; under the snow where the mushrooms were (Pokécology, the user's request)"}
+      - {place: route_20, methods: [grass, dark_grass], seasons: [winter], tier: common, why: "its NPCs; the woods' buried mushrooms"}
+      - {place: floccesy_ranch, methods: [grass], seasons: [winter], tier: uncommon, why: "its NPCs; the forest's edge in winter"}
+      - {place: twist_mountain, methods: [grass], seasons: all, tier: uncommon, why: "the cold caves (the user's ice Pokémon)"}
+      - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: uncommon, why: "the snowy cliffside"}
+      - {place: route_6, methods: [dark_grass], seasons: [winter], tier: uncommon, why: "the valley's autumn mushrooms, in winter"}
+      - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: uncommon, stages: [piloswine], why: "the crater's unending winter"}
+      - {place: giant_chasm_crater, methods: [dark_grass], seasons: all, tier: exotic, stages: [mamoswine], why: "an ice age's last herd: the trophy"}
+    review:
+      - "Mamoswine wild (a move evolution) as Giant Chasm's trophy."
+
+  - id: makuhita
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Makuhita): it toughens up slamming into thick trees; snapped trees mark its nest."
+      - "Real world: sumo at Shinto shrines."
+    habitats: {conifer_forest: 2, mountain: 2, deciduous_forest: 2}
+    time: {periods: day, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {makuhita: wild, hariyama: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: abundant_shrine, methods: [dark_grass], seasons: all, tier: uncommon, why: "sumo among the shrine's trees"}
+      - {place: victory_road_forest, methods: [dark_grass], seasons: all, tier: uncommon, stages: [hariyama], why: "snapped trees in the mountain forest"}
+    review: []
+
+  - id: nosepass
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Nosepass): its magnetic nose always faces north."
+      - "In the game: Nosepass evolves in a magnetic field (Chargestone Cave); a Hidden Grotto Nosepass on Route 6."
+    habitats: {cave: 3, deep_cave: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: [chargestone_cave]
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {nosepass: wild, probopass: {wild: true, note: "Chargestone's magnetic field only"}}
+    levels: {nosepass: [10, 100], probopass: [30, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: chargestone_cave, methods: [grass], seasons: all, tier: uncommon, stages: [nosepass], why: "the magnetized cave"}
+      - {place: chargestone_cave, methods: [grass], seasons: all, tier: exotic, stages: [probopass], why: "evolved by the cave's own field: a trophy"}
+      - {place: mistralton_cave, methods: [grass], seasons: all, tier: rare, stages: [nosepass], why: "the rocky cave"}
+    review: []
+
+  - id: sableye
+    origin: native
+    lore:
+      - "Pokédex (B2W2): it hides in caves' darkness; eating gems turned its eyes to gemstones."
+      - "In the game: a Sableye trade."
+    habitats: {cave: 3, deep_cave: 3, mine: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {sableye: wild}
+    levels: {sableye: [15, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: victory_road_caves, methods: [grass], seasons: all, tier: rare, why: "the deep caves' gems"}
+      - {place: twist_mountain, methods: [grass], seasons: all, tier: rare, why: "gems in the mine"}
+    review: []
+
+  - id: mawile
+    origin: native
+    lore:
+      - "Pokédex (B2W2): its horn jaws chew through iron beams."
+      - "In the game: a Mawile NPC at Virbank Complex; a Mawile trade."
+    habitats: {industrial: 3, cave: 2, mine: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {mawile: wild}
+    levels: {mawile: [10, 100]}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: virbank_complex, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "its NPC; chewing the complex's iron beams"}
+      - {place: twist_mountain, methods: [grass], seasons: all, tier: rare, why: "the mine's iron"}
+    review: []
+
+  - id: aron
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Aron): it eats iron ore and even railroad tracks."
+      - "Pokédex (B2W2, Aggron): it claims a whole mountain as its own."
+      - "The places: Chargestone's magnetite and lodestone; the mines."
+    habitats: {cave: 3, mine: 3, mountain: 2, deep_cave: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {aron: wild, lairon: wild, aggron: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: mistralton_cave, methods: [grass], seasons: all, tier: uncommon, why: "the rocky cave's ore"}
+      - {place: twist_mountain, methods: [grass], seasons: all, tier: uncommon, why: "the mine's ore and tracks"}
+      - {place: chargestone_cave, methods: [grass], seasons: all, tier: rare, stages: [aron], why: "the magnetite"}
+      - {place: victory_road_caves, methods: [grass], seasons: all, tier: uncommon, stages: [lairon, aggron], why: "Aggron claims the League's mountain"}
+    review: []
+
+  - id: meditite
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Meditite): it always trains deep in the mountains, levitating in meditation."
+      - "In the game: a Hidden Grotto Medicham in Pinwheel's outskirts."
+      - "Real world: mountain ascetics meditating under waterfalls (Japan's takigyo)."
+    habitats: {waterfall: 3, mountain: 3, cliff: 2}
+    time: {periods: [morning, day, evening], strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {meditite: wild, medicham: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: float}
+    homes:
+      - {place: route_14, methods: [grass], seasons: all, tier: uncommon, why: "meditating under the waterfalls"}
+      - {place: route_11, methods: [grass], seasons: all, tier: rare, why: "training by the falls"}
+      - {place: victory_road_mountainside, methods: [dark_grass], seasons: all, tier: rare, stages: [medicham], why: "deep in the mountains"}
+    review: []
+
+  - id: bonsly
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Bonsly): it prefers an arid atmosphere."
+      - "Pokédex (B2W2, Sudowoodo): it mimics a tree, hates water and flees the rain."
+      - "Pokécology (the user's notes): Sudowoodo camouflages in summer and has less luck in winter, so it's easier to find then."
+    habitats: {scrub: 3, badlands: 3, hills: 1}
+    time: {periods: any, strength: none}
+    seasons: all year; Sudowoodo rare in summer (hidden among the leaves), commoner in winter (a bare tree stands out)
+    migration: resident
+    weather: {more: [], less: [rain, gusty_rain, thunderstorm], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {bonsly: {wild: true, note: "the young, rare"}, sudowoodo: {wild: true, note: "the natural adult (by learning Mimic in the game)"}}
+    levels: {bonsly: [2, 20], sudowoodo: [15, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: reversal_mountain_outside, methods: [dark_grass], seasons: [winter], tier: uncommon, stages: [sudowoodo], why: "a fake tree among bare scrub (Pokécology)"}
+      - {place: reversal_mountain_outside, methods: [dark_grass], seasons: [spring, autumn], tier: rare, stages: [sudowoodo], why: "the dry scrub"}
+      - {place: reversal_mountain_outside, methods: [dark_grass], seasons: [summer], tier: very_rare, stages: [sudowoodo], why: "hidden in summer's leaves"}
+      - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: rare, stages: [bonsly], why: "the arid pass"}
+      - {place: route_15, methods: [grass], seasons: [winter], tier: uncommon, stages: [sudowoodo], why: "standing out on the ridge in winter"}
+      - {place: route_15, methods: [grass], seasons: [spring, summer, autumn], tier: rare, stages: [sudowoodo], why: "the ridge's dry scrub"}
+    review:
+      - "Sudowoodo wild though it evolves by a move (it's the natural adult)."
+
+  - id: roggenrola
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Roggenrola): its hexagonal hole is an ear; it walks toward sounds."
+      - "In the original games: most of Unova's caves."
+    habitats: {cave: 3, deep_cave: 3, mine: 3, mountain: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {roggenrola: wild, boldore: wild, gigalith: {wild: false, note: "a trade's"}}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: wellspring_cave, methods: [grass], seasons: all, tier: common, why: "the south's small cave"}
+      - {place: relic_passage, methods: [grass], seasons: all, tier: uncommon, why: "the passage's rock"}
+      - {place: chargestone_cave, methods: [grass], seasons: all, tier: uncommon, stages: [boldore], why: "the cave's crystals"}
+      - {place: mistralton_cave, methods: [grass], seasons: all, tier: common, why: "a rocky cave"}
+      - {place: twist_mountain, methods: [grass], seasons: all, tier: common, why: "the mine"}
+      - {place: clay_tunnel, methods: [grass], seasons: all, tier: common, why: "the tunnels"}
+      - {place: giant_chasm_caves, methods: [grass], seasons: all, tier: uncommon, why: "the chasm's caves"}
+      - {place: victory_road_caves, methods: [grass], seasons: all, tier: uncommon, stages: [boldore], why: "the deep caves"}
+      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: uncommon, why: "the hot caves' rock dwellers"}
+    review: []
+
+  - id: drilbur
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Drilbur): spinning, it digs at 30 mph."
+      - "Pokécology (the user's notes): Excadrill with Onix and Dunsparce in caves."
+      - "In the original games: the dust clouds of Unova's caves."
+    habitats: {cave: 3, mine: 3, deep_cave: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {drilbur: wild, excadrill: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: wellspring_cave, methods: [rustling], seasons: all, tier: common, why: "burrowing in the dust clouds"}
+      - {place: relic_passage, methods: [rustling], seasons: all, tier: common, why: "the dust clouds for burrowers"}
+      - {place: chargestone_cave, methods: [rustling], seasons: all, tier: common, why: "the dust clouds"}
+      - {place: mistralton_cave, methods: [rustling], seasons: all, tier: common, why: "the dust clouds"}
+      - {place: twist_mountain, methods: [grass, rustling], seasons: all, tier: uncommon, why: "the miners' companion (the places)"}
+      - {place: clay_tunnel, methods: [grass, rustling], seasons: all, tier: uncommon, stages: [excadrill], why: "with Onix and Dunsparce (Pokécology)"}
+      - {place: victory_road_caves, methods: [rustling], seasons: all, tier: common, stages: [excadrill], why: "the deep caves' dust"}
+    review: []
+
+  - id: timburr
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Timburr): carrying squared logs, they help with construction."
+      - "Pokédex (B2W2, Gurdurr): they wield steel beams to take down buildings."
+      - "The user: Klink and the Timburr family wild at Virbank Complex."
+    habitats: {industrial: 3, mine: 3, city: 1}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {timburr: wild, gurdurr: wild, conkeldurr: {wild: false, note: "a trade's"}}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: virbank_complex, methods: [grass, dark_grass], seasons: all, tier: common, why: "the complex's construction (the user's request)"}
+      - {place: twist_mountain, methods: [grass], seasons: all, tier: common, why: "the mine's workers (the places)"}
+      - {place: clay_tunnel, methods: [grass], seasons: all, tier: uncommon, why: "the mining equipment"}
+    review: []
+
+  - id: throh
+    origin: native
+    lore:
+      - "Pokédex (B2W2): it wants to throw any foe bigger than itself, and changes belts as it gets stronger."
+      - "The user: Throh and Sawk in Route 11's two grasses, by the waterfalls."
+    habitats: {waterfall: 3, meadow: 2, mountain: 2}
+    time: {periods: day, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {throh: wild}
+    levels: {throh: [10, 100]}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: route_11, methods: [grass], seasons: all, tier: uncommon, why: "training above the falls (the user's request)"}
+      - {place: route_14, methods: [dark_grass], seasons: all, tier: rare, why: "the falls' cliffs"}
+    review: []
+
+  - id: sawk
+    origin: native
+    lore:
+      - "Pokédex (B2W2): seeking the strongest karate chop, they seclude themselves in mountains and train without sleep."
+      - "The user: Throh and Sawk in Route 11's two grasses."
+    habitats: {waterfall: 3, mountain: 3, conifer_forest: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {sawk: wild}
+    levels: {sawk: [10, 100]}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: route_11, methods: [dark_grass], seasons: all, tier: uncommon, why: "below the falls (the user's request)"}
+      - {place: route_23, methods: [dark_grass], seasons: all, tier: rare, why: "secluded on the cliff island"}
+    review: []
+
+  - id: scraggy
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Scraggy): it headbutts everything with its sturdy skull."
+      - "Pokédex (B2W2, Scrafty): the bigger its crest, the more respected."
+      - "In the original games: Route 4 and the Desert Resort, Route 18."
+      - "Real world: agamid lizards of deserts and dry coasts, which shed their skin."
+    habitats: {desert: 3, scrub: 2, beach: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [sandstorm], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {scraggy: wild, scrafty: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: route_4, methods: [grass], seasons: all, tier: uncommon, why: "gangs by the desert road, as in the original"}
+      - {place: desert_resort_path, methods: [grass], seasons: all, tier: uncommon, why: "the canyon"}
+      - {place: route_18, methods: [grass], seasons: all, tier: rare, why: "the island's beaches, as in the original"}
+    review: []
+
+  - id: mienfoo
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Mienfoo): it makes up in speed for what it lacks in power."
+      - "In the game: a Hidden Grotto Mienfoo on Route 22."
+      - "In the original games: Dragonspiral Tower's grounds and Route 14."
+    habitats: {mountain: 2, waterfall: 2, ruins: 2, hills: 2}
+    time: {periods: day, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {mienfoo: wild, mienshao: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: route_14, methods: [dark_grass], seasons: all, tier: uncommon, why: "as in the original"}
+      - {place: dragonspiral_grounds, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "training by the ancient tower"}
+      - {place: route_22, methods: [dark_grass], seasons: all, tier: rare, why: "the upland (its Hidden Grotto)"}
+    review: []
+
+  - id: dwebble
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Dwebble): it bores a hole in a stone of the right size to crawl into."
+      - "In the game: a static Crustle in Seaside Cave."
+      - "In the original games: the Desert Resort and Route 18."
+      - "Real world: hermit crabs on beaches and rocky shores."
+    habitats: {beach: 3, rocky_shore: 3, desert: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {dwebble: wild, crustle: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: seaside_cave, methods: [grass], seasons: all, tier: uncommon, why: "the sea cave's floors (its static Crustle)"}
+      - {place: route_18, methods: [grass], seasons: all, tier: common, why: "the island's beaches"}
+      - {place: route_13, methods: [grass], seasons: all, tier: uncommon, why: "the beach under the cliffs"}
+      - {place: desert_resort, methods: [grass], seasons: all, tier: uncommon, why: "as in the original"}
+    review: []
+
+  - id: klink
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Klink): two bodies, a fixed pair, spin to make energy."
+      - "The user: Klink wild at Virbank Complex."
+      - "In the original games: Chargestone Cave."
+    habitats: {industrial: 3, cave: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [thunderstorm], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {klink: wild, klang: wild, klinklang: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: virbank_complex, methods: [grass, dark_grass], seasons: all, tier: common, why: "the complex's machinery (the user's request)"}
+      - {place: chargestone_cave, methods: [grass], seasons: all, tier: uncommon, why: "the charged cave, as in the original"}
+    review: []
+
+  - id: tynamo
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Tynamo): one alone gives a trickle; a group gathers for a powerful shock."
+      - "The user: Tynamo, Eelektrik and Eelektross only in Chargestone Cave, as a trophy."
+    habitats: {cave: 3}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: exotic
+    trophy: [chargestone_cave]
+    battles: {single: 70, double: 20, triple: 10, partners: family}
+    stages: {tynamo: wild, eelektrik: wild, eelektross: {wild: true, note: "the charged stones' Thunderstone influence"}}
+    levels: {eelektross: [45, 100]}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: chargestone_cave, methods: [grass, rustling], seasons: all, tier: exotic, why: "the only home (the user's request)"}
+    review:
+      - "Eelektross wild by the charged stones' influence, as Raichu (the user listed all three)."
+
+  - id: ferroseed
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Ferroseed): clinging to the ceiling, it absorbs the rock's iron."
+      - "In the original games: Chargestone Cave."
+    habitats: {cave: 3, mine: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {ferroseed: wild, ferrothorn: wild}
+    levels: {}
+    wanderer: {appears: steps, wanders: passive, grass: stand}
+    homes:
+      - {place: chargestone_cave, methods: [grass], seasons: all, tier: uncommon, why: "the magnetite's iron, as in the original"}
+      - {place: twist_mountain, methods: [grass], seasons: all, tier: rare, why: "the mine's iron"}
+    review:
+      - "Met by a step only (it hangs from the ceiling)."
+
+  - id: cubchoo
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Cubchoo): its snot is a barometer of its health."
+      - "Pokédex (B2W2, Beartic): it loves the cold northern seas."
+      - "In the original games: Twist Mountain and Dragonspiral Tower in winter; a Hidden Grotto Cubchoo on Route 7."
+    habitats: {snowfield: 3, cave: 2, mountain: 2}
+    time: {periods: any, strength: none}
+    seasons: all year in Twist Mountain's caves; in winter on the snowy places
+    migration: partial
+    weather: {more: [snow, blizzard], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {cubchoo: wild, beartic: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: twist_mountain, methods: [grass], seasons: all, tier: common, why: "the cold caves (the user's ice Pokémon)"}
+      - {place: dragonspiral_entrance, methods: [grass, dark_grass], seasons: [winter], tier: common, why: "the winter's cliffside, as in the original"}
+      - {place: route_7, methods: [grass], seasons: [winter], tier: uncommon, stages: [cubchoo], why: "the snowy marsh (its Hidden Grotto)"}
+      - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: uncommon, why: "the crater's cold"}
+    review: []
+
+  - id: cryogonal
+    origin: native
+    lore:
+      - "Pokédex (B2W2): made of ice crystals, it catches prey with chains of ice."
+      - "In the original games: Twist Mountain and Giant Chasm."
+    habitats: {cave: 2, snowfield: 3}
+    time: {periods: any, strength: none}
+    seasons: all year in the caves and the crater
+    migration: resident
+    weather: {more: [snow, blizzard, diamond_dust], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {cryogonal: wild}
+    levels: {cryogonal: [15, 100]}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: twist_mountain, methods: [grass], seasons: all, tier: uncommon, why: "the cold caves"}
+      - {place: giant_chasm_crater, methods: [dark_grass], seasons: all, tier: uncommon, why: "the unnatural cold (the places)"}
+      - {place: giant_chasm_caves, methods: [grass], seasons: all, tier: rare, why: "the cold caves"}
+      - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: rare, weather: [diamond_dust], why: "only in Icirrus's rare diamond dust"}
+    review:
+      - "A weather-only home: Dragonspiral's entrance in diamond dust (1% of winter days)."
+
+  - id: vanillite
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Vanillite): formed, in theory, from icicles bathed in the morning sun's energy."
+      - "Pokédex (B2W2, Vanilluxe): when angry, it causes violent blizzards."
+      - "In the original games: Dragonspiral Tower, Giant Chasm, Cold Storage, Twist Mountain."
+    habitats: {snowfield: 3, cave: 2, mountain: 1}
+    time: {periods: any, strength: none}
+    seasons: all year in the crater and the caves; in winter on the snowy places
+    migration: partial
+    weather: {more: [snow, blizzard], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {vanillite: wild, vanillish: wild, vanilluxe: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: giant_chasm_crater, methods: [grass, dark_grass], seasons: all, tier: common, why: "the crater's cold"}
+      - {place: twist_mountain, methods: [grass], seasons: all, tier: uncommon, why: "the cold caves"}
+      - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: uncommon, why: "the winter's icicles"}
+      - {place: route_12, methods: [grass], seasons: [winter], tier: rare, stages: [vanillite], why: "a few with the winter's cold"}
+    review: []
+
+  - id: snorunt
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Snorunt): several gather under giant leaves and live in harmony."
+      - "Pokédex (B2W2, Glalie): it freezes the air's moisture to stop prey escaping."
+      - "Pokécology (the user's notes): Glalie hunts Piplup."
+      - "The user: Snorunt's family lives in Twist Mountain; Glalie comes down to Dragonspiral's entrance in winter to hunt Piplup."
+    habitats: {cave: 3, snowfield: 3, mountain: 2}
+    time: {periods: any, strength: none}
+    seasons: all year in Twist Mountain's caves; Glalie hunts at Dragonspiral's entrance in winter
+    migration: partial
+    weather: {more: [snow, blizzard], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {snorunt: wild, glalie: wild, froslass: {wild: false, note: "a Dawn Stone's"}}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: twist_mountain, methods: [grass], seasons: all, tier: uncommon, why: "the family's home (the user's request)"}
+      - {place: dragonspiral_entrance, methods: [dark_grass], seasons: [winter], tier: rare, stages: [glalie], why: "down from Twist Mountain to hunt Piplup (the user's request)"}
+      - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: rare, stages: [snorunt], why: "the crater's cold"}
+    review: []
+
+  - id: snover
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Snover): curious about people, they gather round footprints on snowy mountains."
+      - "Pokédex (B2W2, Abomasnow): they appear when the snow flowers bloom, and leave when the petals fall."
+    habitats: {snowfield: 3, conifer_forest: 3, mountain: 2}
+    time: {periods: any, strength: none}
+    seasons: winter in the snowy places; all year in Giant Chasm
+    migration: partial
+    weather: {more: [snow, blizzard], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {snover: wild, abomasnow: {wild: true, note: "with the snow flowers, rarer"}}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: giant_chasm_outside, methods: [grass, dark_grass], seasons: [winter], tier: common, why: "the chasm's snowy woods"}
+      - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: uncommon, why: "the crater's winter, all year"}
+      - {place: victory_road_forest, methods: [grass, dark_grass], seasons: [winter], tier: uncommon, why: "the snowy mountain forest"}
+      - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: uncommon, why: "following footprints on the cliffside"}
+      - {place: route_6, methods: [grass], seasons: [winter], tier: uncommon, stages: [snover], why: "the snowy valley"}
+      - {place: route_12, methods: [dark_grass], seasons: [winter], tier: uncommon, why: "the snowy hills"}
+    review: []
+
+  - id: piplup
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Piplup): a poor walker, it falls over often, but puffs up its chest with pride."
+      - "Pokécology (the user's notes): Glalie hunts Piplup."
+      - "The user: Piplup at Dragonspiral's entrance in winter, with Glalie hunting it (Icirrus's marshes have no walking encounters in winter)."
+      - "In the game: a Hidden Grotto Piplup on Route 6."
+    habitats: {snowfield: 3, cliff: 1}
+    time: {periods: any, strength: none}
+    seasons: winter only
+    migration: winter
+    weather: {more: [snow, blizzard], less: [], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {piplup: wild, prinplup: {wild: false, note: "a starter: grown only with a trainer"}, empoleon: {wild: false}}
+    levels: {piplup: [5, 19]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: dragonspiral_entrance, methods: [grass, dark_grass], seasons: [winter], tier: rare, why: "the user's request, with Glalie hunting it"}
+    review:
+      - "Rare rather than exotic; the predator (Glalie) is rare too."
+
+  - id: riolu
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Riolu): it talks with others by the shapes of their auras."
+      - "The user: Riolu rarely at Floccesy Ranch in summer and autumn, and in Virbank Complex 2 in winter and spring, as though it moves round: a trophy in both."
+      - "In the game: Riolu NPCs at Floccesy Ranch and Virbank Complex."
+    habitats: {woodland_edge: 2, industrial: 2, mountain: 2}
+    time: {periods: any, strength: none}
+    seasons: Floccesy Ranch in summer and autumn; Virbank Complex 2 in winter and spring
+    migration: partial
+    weather: {more: [], less: [], only: []}
+    abundance: exotic
+    trophy: [floccesy_ranch, virbank_complex]
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {riolu: wild, lucario: {wild: false, note: "by friendship"}}
+    levels: {riolu: [5, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: floccesy_ranch, methods: [grass], seasons: [summer, autumn], tier: exotic, why: "the user's request"}
+      - {place: virbank_complex, methods: [grass, dark_grass], seasons: [winter, spring], tier: exotic, areas: [virbank_complex_2], why: "the user's request (Complex 2 only)"}
+    review: []
+
+  - id: tyrogue
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Tyrogue): eager to fight, it always nurses injuries from larger foes."
+      - "The places: Route 11's fighters by the falls; Tyrogue in both grasses, Hitmonlee above and Hitmonchan below (rules.md, 5's branches)."
+    habitats: {waterfall: 3, mountain: 2, meadow: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {tyrogue: wild, hitmonlee: wild, hitmonchan: wild, hitmontop: {wild: true, note: "very rare, in both"}}
+    levels: {tyrogue: [5, 23], hitmonlee: [20, 100], hitmonchan: [20, 100], hitmontop: [20, 100]}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: route_11, methods: [grass, dark_grass], seasons: all, tier: rare, stages: [tyrogue], why: "the young fighters in both grasses"}
+      - {place: route_11, methods: [grass], seasons: all, tier: rare, stages: [hitmonlee], why: "kickers above the falls"}
+      - {place: route_11, methods: [dark_grass], seasons: all, tier: rare, stages: [hitmonchan], why: "punchers below the falls"}
+      - {place: route_11, methods: [grass, dark_grass], seasons: all, tier: very_rare, stages: [hitmontop], why: "the spinners, in both"}
+    review: []
