@@ -60,3 +60,14 @@ anyway. Routes 14 and 15 are treated as usual.
 | Route 6 | spring rain 26%, summer clear, autumn rain 26%, winter snow 42% and light snow 23% | **Suggestion:** a little summer rain for the puddles; a rare summer thunderstorm (near Chargestone Cave) |
 | Route 7 | spring rain 52%, summer rain 13%, autumn rain 52%, winter as Route 6 | already the gloomy, rainy route; perhaps a rare thunderstorm in summer |
 | Mistralton City | (the calendar's) | the rainy airport city: no encounters, so weather is mood only |
+
+## Icirrus
+
+| Place | Now | Wishes and suggestions |
+| --- | --- | --- |
+| Icirrus City | spring rain 64%, summer 26%, autumn 65%; winter snow 55%, blizzard 17%, diamond dust 1% | keep |
+| Route 8 | rain 64–65% spring to autumn; winter snow 56%, blizzard 17% | keep |
+| Moor of Icirrus | none | **Wish:** rain and snow (perhaps others), as Route 8 |
+| Dragonspiral Tower (the entrance and the grounds) | as Icirrus | keep |
+
+In winter the puddles freeze, so Icirrus City, Route 8 and the Moor have only water encounters then.

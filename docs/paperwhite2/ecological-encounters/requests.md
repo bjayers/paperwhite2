@@ -11,6 +11,8 @@ Each keeps its date. A request isn't a whole placement: the rest of the family a
 - 2026-11-10: Munchlax rarely on Route 5.
 - 2026-11-10: Charmander rarely outside Reversal Mountain.
 - 2026-11-10: Piplup near Icirrus City in winter, near Glalie, which comes down from Twist Mountain to hunt it.
+  2026-11-13: in winter, on Dragonspiral Tower's entrance (the cliffside north of Icirrus), both of them: Icirrus's
+  marshes have no walking encounters in winter.
 - 2026-11-10: Deerling and Sawsbuck on Route 6.
 - 2026-11-10: Litwick in Celestial Tower.
 - 2026-11-10: Diglett in Abundant Shrine.
@@ -42,6 +44,9 @@ Each keeps its date. A request isn't a whole placement: the rest of the family a
 - 2026-11-13: Tynamo, Eelektrik and Eelektross only in Chargestone Cave, as a trophy (exotic).
 - 2026-11-13: Route 7: ghosts at night (near Celestial Tower).
 - 2026-11-13: Route 6's river may be Route 20's and Floccesy Ranch's, upstream (the user likes to think so).
+
+- 2026-11-13: Dragonspiral Tower's entrance, grounds and tower are three places with mostly different Pokémon.
+- 2026-11-13: Basculin is Blue-Striped round Icirrus.
 
 **Reading these requests:** the user's "rare" and "very rare" are loose; "very rare" usually means the exotic tier
 (the trophies). Most Pokémon can live anywhere they make sense: few are limited to one place.

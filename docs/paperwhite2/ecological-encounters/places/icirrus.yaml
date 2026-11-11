@@ -1,0 +1,196 @@
+# Icirrus (regions.md, 6): Icirrus City, Route 8, the Moor of Icirrus and Dragonspiral Tower (its entrance, its grounds,
+# and the tower). Draft of 2026-11-13 from the user's descriptions, for review. The layout is southwest.yaml's. No
+# Pokémon NPCs are placed here yet.
+
+region:
+  id: icirrus
+  name: Icirrus
+  feel: >-
+    A quaint town among windmills and marshes for most of the year; in winter, a winter wonderland: the wetlands
+    freeze over, heavy snow covers everything, and places out of reach the rest of the year can be reached over the
+    snow piles.
+  winter: >-
+    The swamp puddles of Icirrus City, Route 8 and the Moor freeze: the player slides on the ice, and walking gives no
+    encounters there in winter (tiles.json). The surfable water stays open, for surfing and fishing as usual.
+    Dragonspiral Tower's entrance gains dark grass.
+  real_world: >-
+    Fen and bog country with windmills, like the Dutch polders: reeds, sedge and peat pools, frogs and newts,
+    dragonflies, waders, herons, ducks; catfish and eels in the mud. In winter the fens freeze hard: animals sleep
+    under the ice or in the mud, and northern birds arrive. Above it, an ancient tower by a deep, clear, cold lake.
+  basculin: Blue-Striped (west of the Castelia, Nimbasa and Opelucid line)
+
+places:
+
+  - id: icirrus_city
+    name: Icirrus City
+    maps: [icirrus_city]
+    used: confirmed
+    facts:
+      tiles: { spring_to_autumn: { swamp_puddle: 485, surf: 34 }, winter: { surf: 26 } }
+      methods: >-
+        walking (swamp puddles, spring to autumn), surf, fishing; in winter only surf and fishing
+      weather: { spring: rain 64%, summer: rain 26%, autumn: rain 65%, winter: snow 55%, blizzard 17%, diamond dust 1% }
+    picture: >-
+      An idyllic town with windmills round it, on raised ground surrounded by puddles and marshland.
+    habitats: [marsh, swamp, pond, suburb]
+    parts:
+      puddles: shallow swamp puddles and marsh round the town (frozen in winter)
+      water: deeper marsh water (open all year)
+    human_presence: rural
+    climate:
+      spring: cool, very rainy
+      summer: mild
+      autumn: cool, very rainy
+      winter: cold, heavy snow, blizzards, the puddles frozen
+    features: [reeds]
+    real_world: >-
+      A town in the fens: frogs and toads, newts, snails, mud-dwelling fish, dragonflies, herons.
+    suggestions:
+      - >-
+        Marsh and mud Pokémon in the puddles from spring to autumn (Stunfisk, which lives in Icirrus's mud in the
+        original games), mud-dwelling fish in the water all year, which in winter are the only Pokémon to be had here.
+
+  - id: route_8
+    name: Route 8
+    maps: [route_8]
+    used: confirmed
+    facts:
+      tiles: { spring_to_autumn: { swamp_puddle: 358, surf: 57 }, winter: { surf: 57 } }
+      methods: >-
+        walking (swamp puddles, spring to autumn), surf, fishing; in winter only surf and fishing
+      weather: { spring: rain 64%, summer: rain 65%, autumn: rain 65%, winter: snow 56%, blizzard 17% }
+    picture: >-
+      Marshland leading to the bridge, much like the Moor, with an entrance to the Moor to the north. Flowers dotted
+      round the grassy parts in spring and summer, leafy tiles in autumn, and stumps jutting just above the water.
+    habitats: [marsh, swamp]
+    parts:
+      puddles: swamp puddles among grassy hummocks (frozen in winter)
+      water: open marsh water with stumps
+    human_presence: rural
+    climate:
+      spring: cool, very rainy, flowers
+      summer: mild, very rainy, flowers
+      autumn: cool, very rainy, fallen leaves
+      winter: cold, heavy snow, blizzards, the puddles frozen
+    features: [reeds, flowers, fallen_leaves, dead_wood]
+    real_world: >-
+      Wooded swamp and fen: frogs and salamanders, snapping turtles and catfish, mosquitoes and dragonflies, herons,
+      and snakes on the hummocks.
+    suggestions:
+      - The Moor's Pokémon, sharing most (the same marsh).
+
+  - id: moor_of_icirrus
+    name: Moor of Icirrus
+    maps: [moor_of_icirrus]
+    used: confirmed
+    facts:
+      tiles: { spring_to_autumn: { swamp_puddle: 452, surf: 134 }, winter: { surf: 134 } }
+      methods: >-
+        walking (swamp puddles, spring to autumn), surf, fishing; in winter only surf and fishing
+      weather: none yet (the user will add rain and snow, perhaps more)
+    picture: >-
+      Much the same as Route 8: marshland with a few hills, stumps jutting above the water, flowers in spring and
+      summer, leaves in autumn.
+    habitats: [marsh, swamp, hills]
+    parts:
+      puddles: swamp puddles among low hills (frozen in winter)
+      water: open moorland pools with stumps
+    human_presence: remote
+    climate:
+      spring: cool, wet, flowers
+      summer: mild, flowers
+      autumn: cool, fallen leaves
+      winter: cold, snow, the puddles frozen
+    features: [reeds, flowers, fallen_leaves, dead_wood]
+    real_world: >-
+      Moorland bog: peat pools, sphagnum, carnivorous plants, frogs, dragonflies, curlews and harriers.
+    suggestions:
+      - >-
+        The marsh's deeper, wilder part: the bigger mud and water Pokémon, and bog oddities (carnivorous plants,
+        Carnivine perhaps).
+
+  - id: dragonspiral_entrance
+    name: Dragonspiral Tower (the entrance)
+    maps: [dragonspiral_tower]
+    used: confirmed
+    facts:
+      tiles: { spring_to_autumn: { grass: 33 }, winter: { grass: 33, dark_grass: 33 } }
+      methods: [grass, dark_grass (winter), rustling (shaking grass)]
+      weather: { spring: rain 64%, summer: rain 26%, autumn: rain 65%, winter: snow 56%, blizzard 17% }
+    picture: >-
+      The cliffside just north of Icirrus City, before Dragonspiral proper: an entrance, like Pinwheel Forest's
+      outskirts. Piplup and Glalie here in winter (requested): Glalie comes down from Twist Mountain to hunt it.
+    habitats: [cliff, meadow, snowfield]
+    parts:
+      grass: grass on the cliffside
+      dark_grass: winter only, deep grass among the snow
+    human_presence: remote
+    climate:
+      spring: cool, rainy
+      summer: mild
+      autumn: cool, rainy
+      winter: cold, heavy snow
+    features: [rocks, snow_cover]
+    real_world: >-
+      A cold cliffside: in winter the place where the hunter and the hunted meet in the snow.
+    requests:
+      - Piplup and Glalie in winter, Glalie hunting Piplup (Pokécology).
+    suggestions:
+      - Winter is the entrance's season; the rest of the year, hardy cliff and meadow Pokémon.
+
+  - id: dragonspiral_grounds
+    name: Dragonspiral Tower (the grounds)
+    maps: [dragonspiral_tower_2]
+    used: confirmed
+    facts:
+      tiles: { grass: 47, dark_grass: 48, surf: 181 }
+      methods: [grass, dark_grass, rustling (shaking grass), surf, fishing]
+      weather: { spring: rain 64%, summer: rain 26%, autumn: rain 65%, winter: snow 56%, blizzard 17% }
+    picture: >-
+      Outside, round the tower itself. The water round the tower is unique: very clear, and you can see deep down
+      through it. The grass and dark grass are on the eastern bank, right by each other, reached by surfing over the
+      lake.
+    habitats: [lake, ruins, meadow]
+    parts:
+      lake: a very clear, deep, cold lake round the tower
+      bank: grass and dark grass side by side on the eastern bank, across the water
+    human_presence: remote
+    climate:
+      spring: cool, rainy
+      summer: mild
+      autumn: cool, rainy
+      winter: cold, heavy snow
+    features: [cold_water, ancient, dragons]
+    real_world: >-
+      A deep, clear glacial lake: cold-water fish, few nutrients, and great visibility; and a sacred site.
+    suggestions:
+      - >-
+        The clear, deep lake as a dragon's water: Dratini's family as a trophy in the rippling water (the dragons'
+        tower; Johto's Dragon's Den is a clear, sacred lake too).
+      - The isolated bank, reached only by water, for shy or rare Pokémon.
+
+  - id: dragonspiral_tower
+    name: Dragonspiral Tower
+    maps: [dragonspiral_tower_3, dragonspiral_tower_4]
+    used: >-
+      confirmed. The tower's floors are zones 3 to 9; two have encounter tables (areas 3 and 4). The user set up the
+      tower's tables in 3 groups (the entrance, the grounds, the tower).
+    facts:
+      tiles: { indoor_floor: [119, 784] }
+      methods: [walking (floor)]
+      weather: none (indoors)
+    picture: >-
+      The ancient tower of dragons, its floors climbing to the top.
+    habitats: [tower, ruins]
+    parts:
+      floors: the old tower's halls
+    human_presence: remote
+    climate:
+      all_year: cold, still, ancient
+    features: [ancient, dragons, spirits]
+    real_world: >-
+      An ancient tower: bats and owls, and the guardians and dragons of its legend.
+    suggestions:
+      - >-
+        Dragons and the tower's guardians: Druddigon (the original games' tower dragon), Golett's family (ancient
+        guardians), and cold-loving residents.
