@@ -1,0 +1,200 @@
+# The east coast (regions.md, 8): Route 13, Undella Town and Bay, Seaside Cave, Route 21, Humilau City and Route 22.
+# Draft of 2026-11-13 from the user's descriptions, for review. The layout is southwest.yaml's. No Pokémon NPCs are
+# placed here yet, and nothing has weather yet.
+
+region:
+  id: east_coast
+  name: The east coast
+  feel: >-
+    Beachy, almost tropical: crystal-clear blue sea, beaches under cliffs, an upscale holiday town, and a Hawaiian
+    lagoon at Humilau. Little change in winter on land; the sea's life and the birds change with the seasons, and
+    tourism peaks in summer (people bring their Lapras to Humilau and Undella then).
+  real_world: >-
+    From a temperate holiday coast to the tropics: sandy beaches and dune grass, rocky islets with seabird colonies,
+    open sea with dolphins, rays and jellyfish, a warm coral lagoon on the edge of a reef shelf, with sea turtles, reef
+    fish and coral; and summer crowds that disturb the shallows.
+  sea: >-
+    A gradient of water: Route 13's and Undella's clear coastal sea, the open sea of Undella Bay and Route 21 (rocky
+    and maze-like on Route 21), and Humilau's warm, shallow lagoon over coral, with a rocky shelf beyond.
+  pokecology: >-
+    Corsola gather in warm seas and hide smaller Pokémon, moving to warmer seas in the cold seasons; Lapras overhunt
+    the fish in summer near Humilau, and the fish return when they're fewer; Tentacruel's outbreaks clear the seas;
+    Shellos: the West Sea form in warmer waters, the East Sea form in cooler; Lileep in shallow sea.
+
+places:
+
+  - id: route_13
+    name: Route 13
+    maps: [route_13]
+    used: confirmed
+    facts:
+      tiles: { grass: 343, dark_grass: 226, surf: 1566 }
+      methods: [grass, dark_grass, rustling (shaking grass), surf, fishing]
+      weather: none
+    picture: >-
+      The coastal route: cliffs above, beaches below along crystal-clear blue sea, a few beachside houses and condos
+      along the shore. The grass mostly inland; a large island in the sea holds all the dark grass (a separate
+      habitat).
+    habitats: [beach, cliff, coastal_sea, meadow]
+    parts:
+      grass: inland grass under the cliffs, by the beach houses
+      dark_grass: a large island out in the sea, wilder (a different habitat)
+      sea: clear coastal sea along the beaches
+    human_presence: rural (beach houses)
+    climate:
+      spring: mild
+      summer: warm, sunny, beach season
+      autumn: mild
+      winter: cool
+    features: [rocks, sand_dunes]
+    real_world: >-
+      Beach and dune grass: crabs, gulls and terns, sandpipers; on an offshore island, a seabird colony and creatures
+      left alone by people; clear coastal water with fish and rays.
+    suggestions:
+      - >-
+        Shore and beach Pokémon on the inland grass, the island as a seabird and wild refuge, coastal sea life in the
+        water; migrants along the coast by season.
+
+  - id: undella
+    name: Undella Town and Bay
+    maps: [undella_town, undella_bay]
+    used: confirmed
+    facts:
+      tiles: { undella_town: { surf: 344 }, undella_bay: { surf: 1612 } }
+      methods: [surf, fishing]
+      weather: none
+    picture: >-
+      Undella Bay is the open water east of Undella Town, with Seaside Cave to the north and four dark spots leading
+      down to the Abyssal Ruins. Swimmers, and a few shallow spots that can be walked on. A very tropical, relaxed,
+      upscale holiday feel, like Undella itself.
+    habitats: [coastal_sea, open_sea, beach]
+    parts:
+      town_water: the town's shore and shallows
+      bay: open water of the bay, with shallows and the dive spots to the Abyssal Ruins
+    human_presence: suburban (a resort)
+    climate:
+      spring: mild
+      summer: warm, the holiday season
+      autumn: mild
+      winter: cool
+    features: [ancient, warm_water]
+    real_world: >-
+      A holiday bay: dolphins and rays offshore, jellyfish in late summer, seabirds; the shallows disturbed by
+      swimmers in summer. Ruins underwater draw their own legends.
+    suggestions:
+      - >-
+        Summer brings people and their Lapras (fewer fish then); jellyfish late in summer, Tentacruel's outbreak
+        clearing the bay; something old near the dive spots (relics in the rippling water).
+    note: >-
+      The town's water is the same as the bay's (the user, 2026-11-13), so one place, both maps.
+
+  - id: seaside_cave
+    name: Seaside Cave
+    maps: [seaside_cave, seaside_cave_2]
+    used: confirmed (two interior areas; no water in the second)
+    facts:
+      tiles: { cave_floor: 711, surf: 186 }  # map 1
+      tiles_2: { cave_floor: 241 }
+      methods: [walking (cave floor), rustling (dust clouds), surf, fishing (map 1)]
+      weather: none (indoors)
+    picture: >-
+      Between Undella Bay and Route 21: a typical cave with ocean creatures inside.
+    habitats: [cave, rocky_shore, underground_water]
+    parts:
+      floors: a sea cave's floors
+      water: sea water in the cave
+    human_presence: remote
+    climate:
+      all_year: cool, damp, salty
+    features: [rocks]
+    real_world: >-
+      Sea caves: crabs, anemones and limpets in the pools, bats and seabirds nesting in the dark, seals hauling out.
+    suggestions:
+      - Shore and tide-pool Pokémon in the cave's water, crabs and shellfish on the floor, cave bats.
+
+  - id: route_21
+    name: Route 21
+    maps: [route_21]
+    used: confirmed
+    facts:
+      tiles: { surf: 862 }
+      methods: [surf, fishing]
+      weather: none
+    picture: >-
+      Fairly open water like Undella Bay, but with many more rocks and a bit maze-like; many swimmers; two entrances to
+      Seaside Cave on the island between it and the bay.
+    habitats: [open_sea, rocky_shore]
+    parts:
+      sea: open sea among many rocks
+    human_presence: rural (swimmers)
+    climate:
+      all_year: open sea, windy
+    features: [rocks]
+    real_world: >-
+      Rocky open sea: seabirds on the rocks, seals, kelp and the fish among it.
+    suggestions:
+      - >-
+        Rock-loving sea life (kelp and reef fish among the rocks), seabirds; the open sea's bigger hunters in the
+        rippling water.
+
+  - id: humilau_city
+    name: Humilau City
+    maps: [humilau_city]
+    used: confirmed
+    facts:
+      tiles: { surf: 294 }
+      methods: [surf, fishing]
+      weather: none
+    picture: >-
+      Rather Hawaiian: a tropical lagoon that barely changes through the year, though tourism grows in summer, which
+      might affect the fish by season. Lapras overhunt the fish (Pokécology), and people would bring Lapras round
+      Humilau and Undella in summer. Large rocks in the sea to the northeast, and a shelf underwater, likely with coral.
+      The water a beautiful, clear sea blue, unlike most of the region.
+    habitats: [reef, coastal_sea]
+    parts:
+      lagoon: a warm, shallow, clear lagoon over coral
+      shelf: the edge of the shelf, rocky sea beyond, to the northeast
+    human_presence: suburban (a resort city)
+    climate:
+      all_year: warm, barely changing; busier in summer
+    features: [warm_water, rocks]
+    real_world: >-
+      A coral lagoon: reef fish, sea turtles, rays, octopus, sea urchins and coral; the reef's edge drops to deeper,
+      rougher water with bigger fish.
+    suggestions:
+      - >-
+        The reef: Corsola all year (the warm sea it moves to in the cold), Luvdisc, Mantyke and Mantine, reef fish and
+        shellfish; Lapras abundant in summer with fewer fish, the fish back in the other seasons; the shelf's edge in
+        the rippling water.
+
+  - id: route_22
+    name: Route 22
+    maps: [route_22]
+    used: confirmed
+    facts:
+      tiles: { grass: 317, dark_grass: 234, surf: 62 }
+      methods: [grass, dark_grass, rustling (shaking grass), surf, fishing]
+      weather: none
+    picture: >-
+      Between Humilau and Giant Chasm, an odd place ecologically: reached by the beach west of Humilau, but mostly up
+      on a cliff, on raised land. Grass and dark grass mostly mixed, with the same wooden walkways as Route 7, and a
+      small freshwater pond. The user isn't sure what it's meant to be.
+    habitats: [hills, meadow, cliff, pond]
+    parts:
+      grass: grass and dark grass mixed on the high ground, under wooden walkways
+      pond: a small freshwater pond
+    human_presence: remote
+    climate:
+      spring: mild, windy
+      summer: warm
+      autumn: mild, windy
+      winter: cool
+    features: [rocks]
+    real_world: >-
+      Coastal upland grassland on a headland: wind-pruned grass and heath, burrowing animals, birds of prey hunting
+      over it, seabirds nesting on the cliffs.
+    suggestions:
+      - >-
+        An identity: the windswept upland between two worlds. Grassland hunters and burrowers in the grass (the
+        walkways over tall grass suit hidden prey and stalking predators, like Route 7's), the warm coast's Pokémon at
+        its lower edge, and a rare wanderer from Giant Chasm at its upper edge.
