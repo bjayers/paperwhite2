@@ -54,6 +54,13 @@ Each keeps its date. A request isn't a whole placement: the rest of the family a
   crater; Ditto a candidate (perhaps Lostlorn too). Its outside, caves and crater are three places.
 - 2026-11-13: Route 12 as Floaroma: Combee and pollinators, the honey tree's Pokémon.
 
+- 2026-11-13: **Shellos** by water temperature (Pokécology), not by east and west: the West Sea (pink) form in the warm
+  waters of Humilau and Undella; the East Sea (blue) form in cooler seas, perhaps round P2 Laboratory (Routes 17 and
+  18).
+- 2026-11-13: **Corsola** lives in Humilau all year, spreads to Undella and Route 13 in summer, and pulls back to
+  Humilau for winter.
+- 2026-11-13: Undella Town's water and Undella Bay are one place (a group of both maps to make).
+
 **Reading these requests:** the user's "rare" and "very rare" are loose; "very rare" usually means the exotic tier
 (the trophies). Most Pokémon can live anywhere they make sense: few are limited to one place.
 

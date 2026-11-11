@@ -85,8 +85,8 @@ places:
       - >-
         Summer brings people and their Lapras (fewer fish then); jellyfish late in summer, Tentacruel's outbreak
         clearing the bay; something old near the dive spots (relics in the rippling water).
-    questions:
-      - Is the town's water the same as the bay's, or calmer shore water? (One place for now.)
+    note: >-
+      The town's water is the same as the bay's (the user, 2026-11-13), so one place, both maps.
 
   - id: seaside_cave
     name: Seaside Cave
