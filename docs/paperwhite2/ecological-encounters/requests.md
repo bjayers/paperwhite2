@@ -33,6 +33,11 @@ Each keeps its date. A request isn't a whole placement: the rest of the family a
 - 2026-11-13: Leafeon a trophy (exotic) in Pinwheel Forest's mossy depths, in spring and summer (the Moss Rock).
 - 2026-11-13: Basculin in the Southeast is Red-Striped.
 
+- 2026-11-13: Zorua and Zoroark are never wild: NPCs under illusions (a child in Nimbasa, from Lostlorn).
+- 2026-11-13: Lostlorn Forest's Pokémon are mostly "off" ones (illusions, something not right): Spinda, the elemental
+  monkeys and the like; the usual forest Pokémon too, perhaps Combee.
+- 2026-11-13: Basculin is Red-Striped in Central Unova.
+
 **Reading these requests:** the user's "rare" and "very rare" are loose; "very rare" usually means the exotic tier
 (the trophies). Most Pokémon can live anywhere they make sense: few are limited to one place.
 

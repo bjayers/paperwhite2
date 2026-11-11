@@ -1,0 +1,240 @@
+# Central Unova (regions.md, 4): Route 5, Route 16, Lostlorn Forest, Marvelous Bridge, Route 15, Route 14 and Abundant
+# Shrine. Draft of 2026-11-13 from the user's descriptions, for review. The layout is southwest.yaml's. No Pokémon NPCs
+# are placed here yet.
+
+region:
+  id: central
+  name: Central Unova
+  feel: >-
+    The plains round Nimbasa: civilization, but wild. Nimbasa itself is Coney Island: amusement parks and sports, always
+    a celebration with an upbeat, competitive air, where much could fly under the radar (a Zorua from Lostlorn hiding
+    in plain sight as a child: an NPC, never wild). East of the plains, rugged mountain country with mist, rivers and
+    waterfalls, rising toward Black City or White Forest, and mountain farmland round Abundant Shrine.
+  towns: >-
+    No encounters, mood only. Nimbasa City (above). Black City and White Forest: no wild Pokémon, and too unlike their
+    surroundings to shape them.
+  real_world: >-
+    The edge of a big city's sprawl (litter, scavengers, park pests), then northeastern woodland and Appalachian
+    mountain country: misty ridges, boulder fields, cold streams with trout and salamanders, and terraced hill farms
+    (for Abundant Shrine, the Japanese satoyama: rice terraces and still paddies, frogs and dragonflies, fireflies,
+    foxes at the shrine).
+  basculin: Red-Striped (east of the Castelia, Nimbasa and Opelucid line)
+
+places:
+
+  - id: route_5
+    name: Route 5
+    maps: [route_5]
+    used: confirmed
+    facts:
+      tiles: { grass: 74, dark_grass: 42 }
+      methods: [grass, dark_grass, rustling (shaking grass)]
+      weather: none
+    picture: >-
+      An autumn tailgate, the feel of a college homecoming: a wide paved road with many people, a lot of litter where
+      they are, Munchlax and the like roaming for leftovers. A camper with a cook outside it (beaten, she talks about
+      baking and her Pokémon helping her). To the north, a narrow wooded strip at the foot of a cliff; to the west,
+      the Driftveil Drawbridge. The user's requests: Gothita and Solosis rarely, Munchlax rarely.
+    habitats: [park, woodland_edge, cliff]
+    parts:
+      grass: grass by the busy road, littered
+      dark_grass: the narrow wooded strip at the foot of the cliff
+    human_presence: suburban (crowds)
+    climate:
+      spring: mild
+      summer: warm
+      autumn: cool, the tailgate season
+      winter: cold
+    features: [garbage, berries]
+    real_world: >-
+      Event grounds and roadsides: scavengers drawn by food waste (raccoons, crows, gulls, rats), feral cats, and wildlife
+      at the woods' edge.
+    suggestions:
+      - >-
+        Scavengers and food-lovers by the road (trash and leftovers), more at busy times; the cook's sweet-loving
+        Pokémon as strays; the wooded strip quieter, with woodland edge life.
+
+  - id: route_16
+    name: Route 16
+    maps: [route_16]
+    used: confirmed
+    facts:
+      tiles: { grass: 33, dark_grass: 68 }
+      methods: [grass, dark_grass, rustling (shaking grass)]
+      weather: none
+    picture: >-
+      Between Nimbasa and Marvelous Bridge: buildings on the west side as Nimbasa's urban area ends, a paved road with
+      bikers, and a tall fence between it and the wooded forest edge to the north, which leads to Lostlorn Forest.
+      Paved road right at the edge of the forest.
+    habitats: [woodland_edge, suburb]
+    parts:
+      grass: verges of the road
+      dark_grass: the forest edge behind the fence, toward Lostlorn
+    human_presence: suburban
+    climate:
+      spring: mild
+      summer: warm
+      autumn: cool
+      winter: cold
+    real_world: >-
+      A road along a forest edge: edge species (rabbits, foxes, songbirds, snakes on warm tarmac), and forest animals
+      venturing out at dusk.
+    suggestions:
+      - A blend of Nimbasa's city edge and Lostlorn's forest, the forest's side stronger in the dark grass.
+
+  - id: lostlorn_forest
+    name: Lostlorn Forest
+    maps: [lostlorn_forest]
+    used: confirmed
+    facts:
+      tiles: { grass: 93, dark_grass: 74, surf: 22 }
+      methods: [grass, dark_grass, rustling (shaking grass), surf, fishing]
+      weather: none
+    picture: >-
+      A small forest where everything feels a bit off: the home of Zorua and Zoroark (never wild: NPCs under
+      illusions), and so of illusions and a sense that something's not quite right (not the Dreamyard's dreams). The
+      entry crosses a small stream with a waterfall; on the cliff above the waterfall, the dark grass; on the forest
+      floor, grass round a stump; in the north, a clearing with a few trees, many flowers and stumps. The usual forest
+      Pokémon (perhaps some Combee), but most are the "off" ones: Spinda, the elemental monkeys (Pansage, Pansear,
+      Panpour), things like that.
+    habitats: [deciduous_forest, stream, waterfall, meadow]
+    parts:
+      grass: the forest floor round a stump
+      dark_grass: wild grass on the cliff above the waterfall
+      clearing: a clearing with flowers and stumps in the north
+      stream: a small stream with a waterfall at the entry
+    human_presence: remote (a camper lives there in the original)
+    climate:
+      spring: mild, flowers
+      summer: warm
+      autumn: cool
+      winter: cold
+    features: [flowers, dead_wood, berries, spirits]
+    real_world: >-
+      A small forest with a stream and a flowery clearing: the usual forest life, and the folklore of forests where
+      travellers lose their way, tricksters and will-o'-wisps.
+    suggestions:
+      - >-
+        Tricksters, mimics and the strange: Spinda's dizzy wandering, the monkeys, Pokémon that disguise themselves or
+        look like something else, and things seen only at night. The usual forest life beside them, as a backdrop.
+      - The stream: a little cold-water life (Red-Striped Basculin).
+
+  - id: marvelous_bridge
+    name: Marvelous Bridge
+    maps: [marvelous_bridge]
+    used: confirmed
+    facts:
+      tiles: { bridge: 924 }
+      methods: [rustling (bridge shadows)]
+      weather: none
+    picture: >-
+      Bridge inhabitants: probably birds, if any.
+    habitats: [coastal_sea]
+    parts:
+      shadows: birds' shadows on the bridge
+    human_presence: rural (a road)
+    climate:
+      all_year: open, windy
+    real_world: >-
+      Big bridges: gulls and cormorants on the cables, falcons nesting on the towers, swallows under the deck.
+    suggestions:
+      - Seabirds and raptors in the shadows, by season (the migration plan).
+
+  - id: route_15
+    name: Route 15
+    maps: [route_15]
+    used: confirmed
+    facts:
+      tiles: { grass: 199, dark_grass: 73 }
+      methods: [grass, dark_grass, rustling (shaking grass)]
+      weather: { all seasons: white mist (WEATHER_TINT_9) on 73% to 85% of days }
+    picture: >-
+      A rugged mountain route between Marvelous Bridge and Black City or White Forest: many Strength boulders and
+      rocks, varied rugged terrain, sandy ledges and patches of grass.
+    habitats: [mountain, cliff, scrub, hills]
+    parts:
+      grass: grass among boulders on rugged slopes
+      dark_grass: thicker grass on the ledges
+    human_presence: remote
+    climate:
+      spring: cool, misty
+      summer: mild, misty
+      autumn: cool, misty
+      winter: cold, misty
+    features: [rocks]
+    real_world: >-
+      Misty mountain boulder fields: marmots and pikas among the rocks, snakes basking, ravens and eagles, mountain
+      goats and sheep on the slopes.
+    suggestions:
+      - >-
+        Rock and mountain Pokémon among the boulders, with fog-lovers in the mist (the mist is a weather the encounters
+        can name, though the Habitat Dex shows it as clear, so a mist Pokémon stays a discovery).
+
+  - id: route_14
+    name: Route 14
+    maps: [route_14]
+    used: confirmed
+    facts:
+      tiles: { grass: 134, dark_grass: 61, surf: 424 }
+      methods: [grass, dark_grass, rustling (shaking grass), surf, fishing]
+      weather: { all seasons: white mist (WEATHER_TINT_9) on 73% to 85% of days }
+    picture: >-
+      A mountain path from the coast (Undella's coast at its very top, without encounters) up to White Forest or Black
+      City: numerous rivers of clear, fresh mountain water, overgrown paths, waterfalls leading up onto the many cliffs,
+      and a path inland to Abundant Shrine. A mountainous riverland hike.
+    habitats: [river, waterfall, mountain, cliff, woodland_edge]
+    parts:
+      grass: overgrown paths between the rivers
+      dark_grass: thick growth on the cliffs above the falls
+      rivers: clear, cold mountain rivers and waterfalls
+    human_presence: remote
+    climate:
+      spring: cool, misty, snowmelt
+      summer: mild, misty
+      autumn: cool, misty
+      winter: cold, misty
+    features: [cold_water, rocks, tall_trees]
+    real_world: >-
+      Appalachian cascades: trout and salamanders in cold, clear water, dippers and kingfishers, otters, herons;
+      mosses and ferns in the spray; black bears along the streams.
+    suggestions:
+      - >-
+        Cold-water river life (trout country: Red-Striped Basculin, salamanders, otters), birds of fast water, and mist
+        Pokémon on the paths.
+
+  - id: abundant_shrine
+    name: Abundant Shrine
+    maps: [abundant_shrine]
+    used: confirmed
+    facts:
+      tiles: { grass: 97, dark_grass: 135, surf: 56 }
+      methods: [grass, dark_grass, rustling (shaking grass), surf, fishing]
+      weather: none
+    picture: >-
+      Mountain farmland: terraced fields and still, reflective ponds round the farms, with a shrine on the hill: almost
+      the Japanese countryside (the user may give Celebi an event at the shrine; not wild). Diglett tills the soil here
+      (Pokécology), besides its caves. Dark grass further up the hill than the grass.
+    habitats: [farmland, hills, pond, conifer_forest]
+    parts:
+      grass: the lower terraces among the fields
+      dark_grass: higher up the hill, wilder
+      ponds: still, reflective ponds among the fields
+      shrine: the shrine at the top of the hill
+    human_presence: rural
+    climate:
+      spring: mild, planting
+      summer: warm, humid, green
+      autumn: cool, harvest
+      winter: cold, fallow
+    features: [berries, flowers, spirits]
+    real_world: >-
+      Satoyama: terraced fields and paddies kept for centuries, still water full of frogs and tadpoles, dragonflies over
+      it, fireflies on summer nights, crickets in autumn, herons and egrets, foxes at the shrine (Inari's messengers),
+      carp in the ponds. The original games' shrine of the Forces of Nature: the harvest, and the storms.
+    suggestions:
+      - >-
+        Diglett tilling the fields (requested); frogs, dragonflies and fireflies at the ponds (fireflies on summer
+        nights: Volbeat and Illumise), crickets in autumn, a shrine fox.
+      - >-
+        The Forces of Nature's storms (Tornadus and Thundurus, not wild) as weather: a rare thunderstorm or gusty rain
+        here and on Route 14, with the Pokémon such storms bring.
