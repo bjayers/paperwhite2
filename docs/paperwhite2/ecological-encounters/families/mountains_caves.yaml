@@ -152,6 +152,7 @@ families:
     homes:
       - {place: clay_tunnel, methods: [grass], seasons: all, tier: uncommon, why: "its tunnels, with Dunsparce and Excadrill"}
       - {place: victory_road_caves, methods: [grass], seasons: all, tier: uncommon, why: "the deep caves"}
+      - {place: mistralton_cave, methods: [grass], seasons: all, tier: uncommon, why: "tunnels in the rocky cave, late enough in the game for it (the user)"}
     review: []
 
   - id: machop
@@ -383,14 +384,14 @@ families:
     migration: resident
     weather: {more: [], less: [], only: []}
     abundance: uncommon
-    trophy: [chargestone_cave]
+    trophy: []
     battles: {single: 100, double: 0, triple: 0, partners: family}
     stages: {nosepass: wild, probopass: {wild: true, note: "Chargestone's magnetic field only"}}
-    levels: {nosepass: [10, 100], probopass: [30, 100]}
+    levels: {nosepass: [10, 100], probopass: [50, 100]}
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
       - {place: chargestone_cave, methods: [grass], seasons: all, tier: uncommon, stages: [nosepass], why: "the magnetized cave"}
-      - {place: chargestone_cave, methods: [grass], seasons: all, tier: exotic, stages: [probopass], why: "evolved by the cave's own field: a trophy"}
+      - {place: chargestone_cave, methods: [grass], seasons: all, tier: very_rare, stages: [probopass], why: "evolved by the cave's own field, from level 50 (the user)"}
       - {place: mistralton_cave, methods: [grass], seasons: all, tier: rare, stages: [nosepass], why: "the rocky cave"}
     review: []
 
@@ -489,9 +490,9 @@ families:
       - "Pokécology (the user's notes): Sudowoodo camouflages in summer and has less luck in winter, so it's easier to find then."
     habitats: {scrub: 3, badlands: 3, hills: 1}
     time: {periods: any, strength: none}
-    seasons: all year; Sudowoodo rare in summer (hidden among the leaves), commoner in winter (a bare tree stands out)
+    seasons: all year; Sudowoodo hidden among spring and summer leaves (rare to very rare), commoner in autumn and winter, when the leaves turn and fall and its disguise fails (the user)
     migration: resident
-    weather: {more: [], less: [rain, gusty_rain, thunderstorm], only: []}
+    weather: {more: [], less: [], only: [], never: [rain, gusty_rain, thunderstorm]}
     abundance: uncommon
     trophy: []
     battles: {single: 100, double: 0, triple: 0, partners: family}
@@ -499,12 +500,18 @@ families:
     levels: {bonsly: [2, 20], sudowoodo: [15, 100]}
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
-      - {place: reversal_mountain_outside, methods: [dark_grass], seasons: [winter], tier: uncommon, stages: [sudowoodo], why: "a fake tree among bare scrub (Pokécology)"}
-      - {place: reversal_mountain_outside, methods: [dark_grass], seasons: [spring, autumn], tier: rare, stages: [sudowoodo], why: "the dry scrub"}
+      - {place: reversal_mountain_outside, methods: [dark_grass], seasons: [autumn, winter], tier: uncommon, stages: [sudowoodo], why: "a fake tree among the bare autumn and winter scrub (Pokécology, the user)"}
+      - {place: reversal_mountain_outside, methods: [dark_grass], seasons: [spring], tier: rare, stages: [sudowoodo], why: "the dry scrub"}
       - {place: reversal_mountain_outside, methods: [dark_grass], seasons: [summer], tier: very_rare, stages: [sudowoodo], why: "hidden in summer's leaves"}
       - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: rare, stages: [bonsly], why: "the arid pass"}
-      - {place: route_15, methods: [grass], seasons: [winter], tier: uncommon, stages: [sudowoodo], why: "standing out on the ridge in winter"}
-      - {place: route_15, methods: [grass], seasons: [spring, summer, autumn], tier: rare, stages: [sudowoodo], why: "the ridge's dry scrub"}
+      - {place: route_15, methods: [grass], seasons: [autumn, winter], tier: uncommon, stages: [sudowoodo], why: "standing out on the ridge once the leaves turn and fall"}
+      - {place: route_15, methods: [grass], seasons: [spring, summer], tier: rare, stages: [sudowoodo], why: "the ridge's dry scrub, hidden among the leaves"}
+      - {place: lostlorn_forest, methods: [grass, dark_grass], seasons: [autumn, winter], tier: uncommon, stages: [sudowoodo], why: "a tree that isn't, in the forest where something's not right; easier to spot once the leaves turn (the user)"}
+      - {place: lostlorn_forest, methods: [grass, dark_grass], seasons: [spring], tier: rare, stages: [sudowoodo], why: "a mimic among the trees"}
+      - {place: lostlorn_forest, methods: [grass, dark_grass], seasons: [summer], tier: very_rare, stages: [sudowoodo], why: "lost among summer's leaves"}
+      - {place: route_6, methods: [grass, dark_grass], seasons: [autumn, winter], tier: uncommon, stages: [sudowoodo], why: "a fake tree among the valley's turning and bare trees (the user)"}
+      - {place: route_6, methods: [grass, dark_grass], seasons: [spring], tier: rare, stages: [sudowoodo], why: "hidden among the valley's young leaves"}
+      - {place: route_6, methods: [grass, dark_grass], seasons: [summer], tier: very_rare, stages: [sudowoodo], why: "lost among summer's leaves"}
     review:
       - "Sudowoodo wild though it evolves by a move (it's the natural adult)."
 
@@ -740,7 +747,8 @@ families:
     levels: {eelektross: [45, 100]}
     wanderer: {appears: both, wanders: random, grass: float}
     homes:
-      - {place: chargestone_cave, methods: [grass, rustling], seasons: all, tier: exotic, why: "the only home (the user's request)"}
+      - {place: chargestone_cave, methods: [grass, rustling], seasons: all, tier: exotic, stages: [tynamo, eelektrik], areas: [chargestone_cave_2, chargestone_cave_3], why: "the only home (the user's request), deeper in"}
+      - {place: chargestone_cave, methods: [grass, rustling], seasons: all, tier: exotic, stages: [eelektross], areas: [chargestone_cave_3], why: "the oldest in the deepest part"}
     review:
       - "Eelektross wild by the charged stones' influence, as Raichu (the user listed all three)."
 
@@ -833,7 +841,7 @@ families:
     homes:
       - {place: giant_chasm_crater, methods: [grass, dark_grass], seasons: all, tier: common, why: "the crater's cold"}
       - {place: twist_mountain, methods: [grass], seasons: all, tier: uncommon, why: "the cold caves"}
-      - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: uncommon, why: "the winter's icicles"}
+      - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: uncommon, times: [morning], why: "the winter's icicles in the morning sun (its Pokédex: formed from icicles bathed in the morning sun)"}
     review: []
 
   - id: snorunt

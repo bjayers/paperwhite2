@@ -191,17 +191,28 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: passive, grass: float}
     homes:
-      - {place: route_20, methods: [grass, dark_grass], seasons: [autumn], tier: common, why: "its NPCs; the valley's autumn leaves"}
-      - {place: route_20, methods: [grass, dark_grass], seasons: [winter], tier: uncommon, why: "the leaf litter in winter"}
-      - {place: floccesy_ranch, methods: [grass], seasons: [autumn, winter], tier: uncommon, why: "its NPCs; the forest's leaves"}
-      - {place: route_6, methods: [grass], seasons: [autumn], tier: common, why: "the valley's autumn woods"}
-      - {place: route_6, methods: [grass], seasons: [winter], tier: uncommon, why: "winter leaves"}
-      - {place: route_2, methods: [grass], seasons: [autumn, winter], tier: uncommon, why: "light woods"}
-      - {place: route_16, methods: [dark_grass], seasons: [autumn], tier: uncommon, why: "the forest edge"}
-      - {place: village_bridge, methods: [dark_grass], seasons: [autumn], tier: uncommon, why: "the woods round the clearing"}
-      - {place: pinwheel_forest, methods: [grass], seasons: [autumn, winter], tier: uncommon, why: "the forest's leaves"}
-      - {place: lostlorn_forest, methods: [grass, dark_grass], seasons: [autumn], tier: uncommon, why: "the forest's autumn leaves"}
-      - {place: route_14, methods: [grass], seasons: [autumn], tier: uncommon, why: "the paths' autumn leaves"}
+      - {place: route_20, methods: [grass, dark_grass], seasons: [autumn], tier: common, stages: [ledyba], why: "its NPCs; the valley's autumn leaves"}
+      - {place: route_20, methods: [grass, dark_grass], seasons: [autumn], tier: common, stages: [ledian], times: night, why: "its NPCs; the valley's autumn leaves; Ledian by starlight, at night"}
+      - {place: route_20, methods: [grass, dark_grass], seasons: [winter], tier: uncommon, stages: [ledyba], why: "the leaf litter in winter"}
+      - {place: route_20, methods: [grass, dark_grass], seasons: [winter], tier: uncommon, stages: [ledian], times: night, why: "the leaf litter in winter; Ledian by starlight, at night"}
+      - {place: floccesy_ranch, methods: [grass], seasons: [autumn, winter], tier: uncommon, stages: [ledyba], why: "its NPCs; the forest's leaves"}
+      - {place: floccesy_ranch, methods: [grass], seasons: [autumn, winter], tier: uncommon, stages: [ledian], times: night, why: "its NPCs; the forest's leaves; Ledian by starlight, at night"}
+      - {place: route_6, methods: [grass], seasons: [autumn], tier: common, stages: [ledyba], why: "the valley's autumn woods"}
+      - {place: route_6, methods: [grass], seasons: [autumn], tier: common, stages: [ledian], times: night, why: "the valley's autumn woods; Ledian by starlight, at night"}
+      - {place: route_6, methods: [grass], seasons: [winter], tier: uncommon, stages: [ledyba], why: "winter leaves"}
+      - {place: route_6, methods: [grass], seasons: [winter], tier: uncommon, stages: [ledian], times: night, why: "winter leaves; Ledian by starlight, at night"}
+      - {place: route_2, methods: [grass], seasons: [autumn, winter], tier: uncommon, stages: [ledyba], why: "light woods"}
+      - {place: route_2, methods: [grass], seasons: [autumn, winter], tier: uncommon, stages: [ledian], times: night, why: "light woods; Ledian by starlight, at night"}
+      - {place: route_16, methods: [dark_grass], seasons: [autumn], tier: uncommon, stages: [ledyba], why: "the forest edge"}
+      - {place: route_16, methods: [dark_grass], seasons: [autumn], tier: uncommon, stages: [ledian], times: night, why: "the forest edge; Ledian by starlight, at night"}
+      - {place: village_bridge, methods: [dark_grass], seasons: [autumn], tier: uncommon, stages: [ledyba], why: "the woods round the clearing"}
+      - {place: village_bridge, methods: [dark_grass], seasons: [autumn], tier: uncommon, stages: [ledian], times: night, why: "the woods round the clearing; Ledian by starlight, at night"}
+      - {place: pinwheel_forest, methods: [grass], seasons: [autumn, winter], tier: uncommon, stages: [ledyba], why: "the forest's leaves"}
+      - {place: pinwheel_forest, methods: [grass], seasons: [autumn, winter], tier: uncommon, stages: [ledian], times: night, why: "the forest's leaves; Ledian by starlight, at night"}
+      - {place: lostlorn_forest, methods: [grass, dark_grass], seasons: [autumn], tier: uncommon, stages: [ledyba], why: "the forest's autumn leaves"}
+      - {place: lostlorn_forest, methods: [grass, dark_grass], seasons: [autumn], tier: uncommon, stages: [ledian], times: night, why: "the forest's autumn leaves; Ledian by starlight, at night"}
+      - {place: route_14, methods: [grass], seasons: [autumn], tier: uncommon, stages: [ledyba], why: "the paths' autumn leaves"}
+      - {place: route_14, methods: [grass], seasons: [autumn], tier: uncommon, stages: [ledian], times: night, why: "the paths' autumn leaves; Ledian by starlight, at night"}
     review: []
 
   - id: spinarak
@@ -211,7 +222,7 @@ families:
       - "Pokédex (B2W2, Ariados): it tracks the silk it ties to prey to find the prey's friends."
       - "In the game: Spinarak NPCs on Route 20; the places make autumn its spiders' peak."
     habitats: {deciduous_forest: 3, woodland_edge: 2, dense_forest: 2}
-    time: {periods: night, strength: preferred}
+    time: {periods: night, strength: strict}
     seasons: summer and autumn, at its peak in autumn
     migration: resident
     weather: {more: [], less: [], only: []}
@@ -309,6 +320,7 @@ families:
       - {place: route_20, methods: [grass], seasons: [summer], tier: uncommon, why: "its NPCs, over the stream"}
       - {place: route_6, methods: [grass], seasons: [summer], tier: rare, why: "fewer where the Swellow hunt (Pokécology)"}
       - {place: route_7, methods: [grass], seasons: [summer], tier: uncommon, why: "hatching over the marsh, hunted by Swellow"}
+      - {place: route_7, methods: [grass], seasons: [spring], tier: uncommon, why: "the first dragonflies over the marsh"}
     review: []
 
   - id: wurmple
@@ -331,11 +343,16 @@ families:
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
       - {place: route_20, methods: [grass, dark_grass], seasons: [spring, summer], tier: common, stages: [wurmple], why: "its NPCs; caterpillars in the woods"}
-      - {place: route_20, methods: [grass, dark_grass], seasons: [autumn], tier: common, stages: [silcoon, cascoon, beautifly, dustox], why: "the route's autumn: cocoons, butterflies and moths"}
-      - {place: route_2, methods: [grass], seasons: [spring, summer], tier: common, why: "light woods"}
-      - {place: pinwheel_forest, methods: [grass], seasons: [spring, summer, autumn], tier: common, why: "the bugs' life cycle"}
-      - {place: route_6, methods: [grass], seasons: [spring, summer], tier: uncommon, why: "the valley's woods"}
-      - {place: route_12, methods: [grass], seasons: [spring, summer], tier: uncommon, why: "the honey trees (Sinnoh's)"}
+      - {place: route_20, methods: [grass, dark_grass], seasons: [autumn], tier: common, stages: [silcoon, cascoon, beautifly], why: "the route's autumn: cocoons, butterflies and moths"}
+      - {place: route_20, methods: [grass, dark_grass], seasons: [autumn], tier: common, stages: [dustox], times: night, why: "the route's autumn: cocoons, butterflies and moths; Dustox at night"}
+      - {place: route_2, methods: [grass], seasons: [spring, summer], tier: common, stages: [wurmple, silcoon, cascoon, beautifly], why: "light woods"}
+      - {place: route_2, methods: [grass], seasons: [spring, summer], tier: common, stages: [dustox], times: night, why: "light woods; Dustox at night"}
+      - {place: pinwheel_forest, methods: [grass], seasons: [spring, summer, autumn], tier: common, stages: [wurmple, silcoon, cascoon, beautifly], why: "the bugs' life cycle"}
+      - {place: pinwheel_forest, methods: [grass], seasons: [spring, summer, autumn], tier: common, stages: [dustox], times: night, why: "the bugs' life cycle; Dustox at night"}
+      - {place: route_6, methods: [grass], seasons: [spring, summer], tier: uncommon, stages: [wurmple, silcoon, cascoon, beautifly], why: "the valley's woods"}
+      - {place: route_6, methods: [grass], seasons: [spring, summer], tier: uncommon, stages: [dustox], times: night, why: "the valley's woods; Dustox at night"}
+      - {place: route_12, methods: [grass], seasons: [spring, summer], tier: uncommon, stages: [wurmple, silcoon, cascoon, beautifly], why: "the honey trees (Sinnoh's)"}
+      - {place: route_12, methods: [grass], seasons: [spring, summer], tier: uncommon, stages: [dustox], times: night, why: "the honey trees (Sinnoh's); Dustox at night"}
       - {place: route_9, methods: [grass], seasons: [summer, autumn], tier: uncommon, stages: [dustox], times: night, why: "stripping the leaves of the road's trees at night"}
       - {place: route_16, methods: [grass], seasons: [summer, autumn], tier: uncommon, stages: [dustox], times: night, why: "the city's boulevards at night"}
     review: []
@@ -375,7 +392,7 @@ families:
     time: {periods: night, strength: strict}
     seasons: early to late summer
     migration: resident
-    weather: {more: [], less: [rain], only: []}
+    weather: {more: [], less: [], only: [], never: [rain, gusty_rain, thunderstorm]}
     abundance: common
     trophy: []
     battles: {single: 70, double: 20, triple: 10, partners: area}
@@ -399,7 +416,7 @@ families:
     time: {periods: night, strength: strict}
     seasons: early to late summer
     migration: resident
-    weather: {more: [], less: [rain], only: []}
+    weather: {more: [], less: [], only: [], never: [rain, gusty_rain, thunderstorm]}
     abundance: common
     trophy: []
     battles: {single: 70, double: 20, triple: 10, partners: area}
@@ -458,8 +475,10 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
-      - {place: route_12, methods: [grass, dark_grass], seasons: all, tier: uncommon, form: 0, why: "the honey trees (a Plant Cloak); Mothim stealing Combee's honey"}
-      - {place: pinwheel_forest, methods: [grass], seasons: all, tier: uncommon, form: 0, why: "a Plant Cloak in the forest"}
+      - {place: route_12, methods: [grass, dark_grass], seasons: all, tier: uncommon, stages: [burmy, wormadam], form: 0, why: "the honey trees (a Plant Cloak); Mothim stealing Combee's honey"}
+      - {place: route_12, methods: [grass, dark_grass], seasons: all, tier: uncommon, stages: [mothim], times: night, why: "the honey trees (a Plant Cloak); Mothim stealing Combee's honey; Mothim, a moth, at night"}
+      - {place: pinwheel_forest, methods: [grass], seasons: all, tier: uncommon, stages: [burmy, wormadam], form: 0, why: "a Plant Cloak in the forest"}
+      - {place: pinwheel_forest, methods: [grass], seasons: all, tier: uncommon, stages: [mothim], times: night, why: "a Plant Cloak in the forest; Mothim, a moth, at night"}
       - {place: route_4, methods: [grass], seasons: all, tier: rare, form: 1, stages: [burmy, wormadam], why: "a Sandy Cloak from the road's sand"}
       - {place: virbank_complex, methods: [grass], seasons: all, tier: uncommon, form: 2, stages: [burmy, wormadam], why: "a Trash Cloak from the complex's scrap"}
     review:
@@ -476,7 +495,7 @@ families:
     time: {periods: day, strength: strict}
     seasons: spring to autumn; in winter the colony clusters in the hive, and only the queen (Vespiquen) is found, rarely
     migration: resident
-    weather: {more: [], less: [rain, gusty_rain, thunderstorm], only: []}
+    weather: {more: [], less: [], only: [], never: [rain, gusty_rain, thunderstorm]}
     abundance: common
     trophy: [route_12]
     battles: {single: 70, double: 20, triple: 10, partners: family}
@@ -639,8 +658,9 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
-      - {place: chargestone_cave, methods: [grass], seasons: all, tier: common, why: "feeding on the charged stones' field"}
       - {place: virbank_complex, methods: [dark_grass], seasons: all, tier: rare, why: "static from the complex's machines"}
+      - {place: chargestone_cave, methods: [grass], seasons: all, tier: common, stages: [joltik], why: "feeding on the charged stones' field"}
+      - {place: chargestone_cave, methods: [grass], seasons: all, tier: uncommon, stages: [galvantula], areas: [chargestone_cave_2, chargestone_cave_3], why: "electrified webs deeper in (older stages deeper: the user)"}
     review:
       - "Partners 'area': it clings to the cave's bigger Pokémon."
 
@@ -805,7 +825,7 @@ families:
     time: {periods: day, strength: preferred}
     seasons: all year
     migration: resident
-    weather: {more: [], less: [rain], only: []}
+    weather: {more: [], less: [], only: [], never: [rain, gusty_rain, thunderstorm]}
     abundance: uncommon
     trophy: [pinwheel_forest, lostlorn_forest]
     battles: {single: 85, double: 12, triple: 3, partners: family}
@@ -850,7 +870,7 @@ families:
       - "Real world: bears sleep through the winter."
     habitats: {deciduous_forest: 3, conifer_forest: 2, flower_field: 2, mountain: 1}
     time: {periods: day, strength: preferred}
-    seasons: spring to autumn; asleep in winter
+    seasons: summer and autumn, rarer in spring as it wakes; asleep in winter (the user)
     migration: resident
     weather: {more: [], less: [], only: []}
     abundance: uncommon
@@ -860,14 +880,18 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: aggressive, grass: stand}
     homes:
-      - {place: route_12, methods: [dark_grass], seasons: [spring, summer, autumn], tier: uncommon, why: "drawn by the honey trees"}
-      - {place: route_11, methods: [dark_grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the woods below the falls"}
+      - {place: route_12, methods: [dark_grass], seasons: [summer, autumn], tier: uncommon, why: "drawn by the honey trees"}
+      - {place: route_12, methods: [dark_grass], seasons: [spring], tier: rare, why: "drawn by the honey trees, just out of its winter sleep"}
+      - {place: route_11, methods: [dark_grass], seasons: [summer, autumn], tier: uncommon, why: "the woods below the falls"}
+      - {place: route_11, methods: [dark_grass], seasons: [spring], tier: rare, why: "the woods below the falls, just out of its winter sleep"}
       - {place: route_6, methods: [dark_grass], seasons: [summer, autumn], tier: rare, why: "the valley's woods"}
-      - {place: victory_road_forest, methods: [dark_grass], seasons: [spring, summer, autumn], tier: uncommon, stages: [ursaring], why: "the mountain forest's bears"}
+      - {place: victory_road_forest, methods: [dark_grass], seasons: [summer, autumn], tier: uncommon, stages: [ursaring], why: "the mountain forest's bears"}
+      - {place: victory_road_forest, methods: [dark_grass], seasons: [spring], tier: rare, stages: [ursaring], why: "the mountain forest's bears, just out of its winter sleep"}
       - {place: route_23, methods: [grass], seasons: [summer, autumn], tier: rare, stages: [ursaring], why: "the conifer wood's stalkers"}
-      - {place: nature_preserve, methods: [dark_grass], seasons: [spring, summer, autumn], tier: uncommon, why: "bears safe in the preserve"}
-      - {place: route_11, methods: [dark_grass], seasons: [winter], tier: very_rare, stages: [ursaring], why: "a bear woken from its winter sleep"}
-      - {place: victory_road_forest, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, stages: [ursaring], why: "the mountain forest's clearings"}
+      - {place: nature_preserve, methods: [dark_grass], seasons: [summer, autumn], tier: uncommon, why: "bears safe in the preserve"}
+      - {place: nature_preserve, methods: [dark_grass], seasons: [spring], tier: rare, why: "bears safe in the preserve, just out of its winter sleep"}
+      - {place: victory_road_forest, methods: [grass], seasons: [summer, autumn], tier: uncommon, stages: [ursaring], why: "the mountain forest's clearings"}
+      - {place: victory_road_forest, methods: [grass], seasons: [spring], tier: rare, stages: [ursaring], why: "the mountain forest's clearings, just out of its winter sleep"}
     review: []
 
   - id: tangela

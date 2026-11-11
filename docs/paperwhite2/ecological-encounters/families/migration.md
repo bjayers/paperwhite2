@@ -35,7 +35,7 @@ Drafted 2026-11-13 for the birds' batch (`birds.yaml`); other batches follow it 
 | **Summer visitor**: arrives in spring, leaves in autumn | Taillow | arriving: Routes 19, 1, Floccesy, Route 20 | Floccesy's barns; following Yanma on Routes 6 and 7, Route 3's lake, Pinwheel's outskirts, Village Bridge's shadows | leaving: Routes 19, 1, 13 | gone from the mainland; a few on Route 18 |
 | **Winter visitor**: arrives in autumn, leaves in spring | Starly | leaving north (Routes 12, 11, Village Bridge) | gone | arriving in flocks: Routes 1, 3, 5, 16, Abundant Shrine, Floccesy | flocks on the open land of the south and middle, and Route 12's snowless hills |
 | **Winter visitor** (waterfowl) | Swanna (Ducklett stay) | leaving: the bridges' shadows | Dragonspiral's cold lake (a few breed) | arriving: the bridges' shadows | Icirrus, Route 8, the Moor |
-| **Down from the mountains for winter** | Delibird | (crater only) | (crater only) | (crater only) | Dragonspiral's entrance, Routes 6 and 7 (with the snow) |
+| **Down from the mountains for winter** | Delibird | (crater only) | (crater only) | (crater only) | Dragonspiral's entrance and the chasm's outside (the very snowiest places only) |
 | **Up and down the mountains** | Swablu | the high hills | the heights: Routes 15, 23, Victory Road | coming down (passing Route 12) | the low hills: Routes 22, 14, Village Bridge |
 | **Seasonal winds** | Hoppip | the south's meadows: Routes 1, 19, Floccesy | the north's hills: Route 12, Routes 22 and 15 | Jumpluff drifting south: Routes 16, 13 | gone |
 | **Tropical summer visitor** | Chatot | Route 18 | Route 18; Village Bridge (rare, the music) | — | — (Castelia's feral colony stays all year) |

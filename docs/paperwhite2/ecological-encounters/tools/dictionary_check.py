@@ -116,6 +116,9 @@ def main(argv):
                 errors.append(f"{where}: homes but no wild stage")
             if wild and not e.get("homes") and not e.get("homes_by"):
                 errors.append(f"{where}: wild but no homes")
+            for key in (e.get("weather") or {}):
+                if key not in ("more", "less", "only", "never"):
+                    errors.append(f"{where}: weather key {key} unknown")
             for key, ws in (e.get("weather") or {}).items():
                 for w in ws or []:
                     if w not in WEATHERS:

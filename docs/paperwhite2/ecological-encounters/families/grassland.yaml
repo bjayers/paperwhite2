@@ -285,7 +285,7 @@ families:
       pichu: wild
       pikachu: {wild: true, note: "the natural adult (its friendship evolution is the game's)"}
       raichu: {wild: true, note: "Chargestone's charged stones only"}
-    levels: {pichu: [2, 15], pikachu: [10, 100], raichu: [30, 100]}
+    levels: {pichu: [2, 15], pikachu: [10, 100], raichu: [46, 100]}
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
       - {place: virbank_complex, methods: [grass, dark_grass], seasons: [summer, autumn], tier: exotic, stages: [pichu], why: "drawn to the machines' power: the trophy (the user's request)"}
@@ -1091,7 +1091,7 @@ families:
     time: {periods: day, strength: preferred}
     seasons: autumn, drifting on the wind; a few in summer
     migration: nomad
-    weather: {more: [gusty_rain], less: [rain], only: []}
+    weather: {more: [gusty_rain], less: [rain], only: [], never: [gusty_rain, thunderstorm]}
     abundance: common
     trophy: []
     battles: {single: 70, double: 20, triple: 10, partners: family}

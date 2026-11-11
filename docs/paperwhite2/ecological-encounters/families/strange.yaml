@@ -39,7 +39,7 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: random, grass: float}
     homes:
-      - {place: strange_house, methods: [grass], seasons: all, tier: common, why: "a prankster in the haunted house (the user's request)"}
+      - {place: strange_house, methods: [grass], seasons: all, tier: common, times: any, why: "a prankster in the haunted house (the user's request)"}
       - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: uncommon, why: "night by the Strange House (the user's request)"}
       - {place: dreamyard, methods: [dark_grass], seasons: all, tier: uncommon, why: "the ruins at night"}
       - {place: celestial_tower, methods: [grass], seasons: all, tier: rare, why: "a few among the graves"}
@@ -73,7 +73,7 @@ families:
       - "Pokédex (B2W2, Hypno): its swinging pendulum makes one sleep in three seconds."
       - "The places: the Dreamyard's Dream Mist."
     habitats: {ruins: 3, suburb: 2, meadow: 2}
-    time: {periods: night, strength: preferred}
+    time: {periods: night, strength: strict}
     seasons: all year
     migration: resident
     weather: {more: [], less: [], only: []}
@@ -104,9 +104,12 @@ families:
     levels: {misdreavus: [10, 100]}
     wanderer: {appears: both, wanders: random, grass: float}
     homes:
-      - {place: strange_house, methods: [grass], seasons: all, tier: uncommon, why: "startling visitors (the user's request)"}
+      - {place: strange_house, methods: [grass], seasons: all, tier: uncommon, times: any, why: "startling visitors (the user's request)"}
       - {place: lostlorn_forest, methods: [dark_grass], seasons: all, tier: rare, why: "something not right at night"}
       - {place: lostlorn_forest, methods: [grass], seasons: all, tier: rare, why: "something not right at night (in both grasses: the user)"}
+      - {place: celestial_tower, methods: [grass], seasons: all, tier: uncommon, why: "a ghost of the tower at night (the user)"}
+      - {place: route_7, methods: [grass, dark_grass], seasons: all, tier: very_rare, why: "drifting from the tower at night (the user)"}
+      - {place: reversal_mountain_outside, methods: [grass, dark_grass], seasons: all, tier: rare, why: "out of the Strange House at night"}
     review: []
 
   - id: smoochum
@@ -220,6 +223,7 @@ families:
     wanderer: {appears: both, wanders: random, grass: float}
     homes:
       - {place: strange_house, methods: [grass], seasons: all, tier: common, why: "the haunted house's abandoned toys (the user's request)"}
+      - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: rare, times: night, why: "out of the Strange House at night"}
     review: []
 
   - id: duskull
@@ -319,7 +323,7 @@ families:
       - "In the original games: the Dreamyard (Musharna's story)."
       - "The places: the Dreamyard's basement as the place for a psychic trophy."
     habitats: {ruins: 3, meadow: 2}
-    time: {periods: night, strength: preferred}
+    time: {periods: night, strength: strict}
     seasons: all year
     migration: resident
     weather: {more: [], less: [], only: []}
@@ -376,7 +380,6 @@ families:
     wanderer: {appears: both, wanders: passive, grass: float}
     homes:
       - {place: relic_castle, methods: [grass], seasons: all, tier: common, why: "the tomb, as in the original"}
-      - {place: celestial_tower, methods: [grass], seasons: all, tier: uncommon, why: "the spirits of the tower's graves"}
     review: []
 
   - id: gothita
@@ -454,7 +457,7 @@ families:
     time: {periods: any, strength: none}
     seasons: all year
     migration: resident
-    weather: {more: [], less: [], only: []}
+    weather: {more: [], less: [], only: [], never: [rain, gusty_rain, thunderstorm]}
     abundance: common
     trophy: []
     battles: {single: 85, double: 12, triple: 3, partners: family}
@@ -462,9 +465,10 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: random, grass: float}
     homes:
-      - {place: celestial_tower, methods: [grass], seasons: all, tier: common, why: "the tower's candles (the user's request)"}
-      - {place: route_7, methods: [dark_grass], seasons: all, tier: rare, stages: [litwick, lampent], times: night, why: "a will-o'-the-wisp over the marsh"}
       - {place: strange_house, methods: [grass], seasons: all, tier: rare, stages: [litwick, lampent], why: "a candle left burning in the haunted house"}
+      - {place: celestial_tower, methods: [grass], seasons: all, tier: common, stages: [litwick], why: "the tower's candles (the user's request)"}
+      - {place: celestial_tower, methods: [grass], seasons: all, tier: uncommon, stages: [lampent], areas: [celestial_tower_4, celestial_tower], why: "the older lamps on the upper floors"}
+      - {place: route_7, methods: [dark_grass], seasons: all, tier: very_rare, stages: [litwick, lampent], times: night, why: "a will-o'-the-wisp over the marsh, rarely, and never in the rain (the user)"}
     review: []
 
   - id: golett
