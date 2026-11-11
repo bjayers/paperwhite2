@@ -54,7 +54,8 @@ with `python3 tools/dictionary_check.py` and `python3 tools/balance.py` from thi
 
 - **Stone and special evolutions wild only where a place explains them** (rules.md, 5):
   - Leaf Stone: Pinwheel Forest's depths (Shiftry) and Route 18's jungle (Exeggutor, the user's request; Victreebel);
-  - Sun Stone: Route 1's summer meadow (Sunflora, the places' plan; Whimsicott in autumn);
+  - Sun Stone: Route 1's summer meadow (Sunflora, the places' plan; Whimsicott in autumn) and Route 12's flower hills
+    (Sunflora in summer and autumn);
   - Moon Stone: Giant Chasm, a meteor crater (Clefable); the Dreamyard's basement for Musharna (its Dream Mist);
   - Chargestone's charged stones and magnetic field: Raichu (the places' plan), Eelektross (the user's list),
     Probopass and Magnezone;
@@ -141,7 +142,7 @@ Every entry's `review` notes, by batch.
 - **Eevee**: Glaceon at Twist Mountain mirrors the user's Leafeon; say if it should stay a grotto only.
 - **Pikachu**: Pikachu wild though it comes by friendship. The NPC's Spiky-eared form could be the wild Pichu's (it can't evolve).
 - **Jigglypuff**: Jigglypuff wild though it comes by friendship.
-- **Sunkern**: Route 1's summer meadow as a Sun Stone site (Sunflora and Whimsicott wild there).
+- **Sunkern**: Route 1's summer meadow and Route 12's flower hills as Sun Stone sites (Sunflora wild in both, Whimsicott on Route 1).
 - **Stantler**: Dawn and dusk preferred (deer feed then): two single periods, used sparingly.
 - **Plusle**: Partners 'area' so that Minun can join.
 - **Roselia**: Roselia wild though it comes by friendship.

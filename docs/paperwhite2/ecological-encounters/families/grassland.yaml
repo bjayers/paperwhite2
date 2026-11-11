@@ -12,7 +12,7 @@
 #   thunderclouds, Mareep with Ampharos as the headland's beacon.
 # - Route 1's meadow by its flowers (the places' plan): Sunkern and Sunflora in summer (Sunkern falls from the sky in
 #   the morning), Cottonee and Whimsicott in autumn, Budew and Roselia in spring. Route 1's summer meadow is this
-#   dictionary's Sun Stone site, so Sunflora and Whimsicott are wild there (rules.md, 5).
+#   dictionary's Sun Stone site with Route 12's flower hills, so Sunflora and Whimsicott are wild there (rules.md, 5).
 # - Seasonal: Deerling and Sawsbuck by their season's form on Route 6 (the user's request), Sawsbuck wintering in
 #   Lostlorn's shelter; reptiles (Ekans, Seviper) scarce in winter.
 # - Trophies: Eevee in Castelia's park, Leafeon in Pinwheel's depths in spring and summer (the user's request),
@@ -340,7 +340,6 @@ families:
     homes:
       - {place: route_22, methods: [grass], seasons: all, tier: uncommon, why: "the upland's sheep"}
       - {place: route_22, methods: [dark_grass], seasons: all, tier: rare, stages: [ampharos], why: "a beacon on the headland, over the sea"}
-      - {place: route_12, methods: [grass], seasons: [autumn, winter], tier: uncommon, why: "the hills' pasture in the cold"}
       - {place: route_15, methods: [grass], seasons: all, tier: uncommon, why: "the ridge's hill grazing"}
       - {place: dragonspiral_entrance, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "grazing the cliffside meadow"}
     review: []
@@ -359,15 +358,17 @@ families:
     abundance: common
     trophy: []
     battles: {single: 85, double: 12, triple: 3, partners: family}
-    stages: {sunkern: wild, sunflora: {wild: true, note: "Route 1's summer meadow only (a Sun Stone site)"}}
+    stages: {sunkern: wild, sunflora: {wild: true, note: "Route 1's summer meadow and Route 12's flower hills only (the Sun Stone sites)"}}
     levels: {sunflora: [20, 100]}
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
       - {place: route_1, methods: [grass], seasons: [summer], tier: common, times: [morning], stages: [sunkern], why: "falling from the sky in the morning"}
       - {place: route_1, methods: [grass], seasons: [summer], tier: uncommon, times: [day, evening], stages: [sunkern], why: "the summer meadow"}
       - {place: route_1, methods: [grass], seasons: [summer], tier: uncommon, stages: [sunflora], why: "the meadow's sunflowers, facing the sun"}
+      - {place: route_12, methods: [grass], seasons: [summer], tier: uncommon, stages: [sunkern], why: "falling onto the flower hills on summer mornings"}
+      - {place: route_12, methods: [grass, dark_grass], seasons: [summer, autumn], tier: uncommon, stages: [sunflora], why: "sunflowers among the hills' flowers (a Sun Stone site, with Route 1)"}
     review:
-      - "Route 1's summer meadow as a Sun Stone site (Sunflora and Whimsicott wild there)."
+      - "Route 1's summer meadow and Route 12's flower hills as Sun Stone sites (Sunflora wild in both, Whimsicott on Route 1)."
 
   - id: snubbull
     origin: introduced
@@ -723,6 +724,7 @@ families:
       - {place: route_1, methods: [grass], seasons: [spring], tier: common, stages: [budew], why: "the meadow's spring flowers"}
       - {place: route_12, methods: [grass], seasons: [spring, summer], tier: common, why: "the flower hills"}
       - {place: village_bridge, methods: [dark_grass], seasons: [spring, summer], tier: uncommon, stages: [roselia], why: "the flowery clearing"}
+      - {place: route_12, methods: [grass], seasons: [autumn], tier: uncommon, stages: [roselia], why: "the hills' late roses"}
     review:
       - "Roselia wild though it comes by friendship."
 
@@ -944,7 +946,6 @@ families:
       - {place: abundant_shrine, methods: [grass], seasons: all, tier: uncommon, why: "the hill farms' dogs"}
       - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: rare, stages: [stoutland], why: "warm in its fur on the snowy cliffside"}
       - {place: giant_chasm_outside, methods: [grass], seasons: all, tier: uncommon, why: "the countryside's dogs"}
-      - {place: route_12, methods: [grass, dark_grass], seasons: [winter], tier: uncommon, why: "hill dogs from the farms round Lacunosa"}
     review: []
 
   - id: purrloin

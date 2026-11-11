@@ -44,6 +44,7 @@ families:
       - {place: route_12, methods: [grass], seasons: [spring, summer], tier: common, why: "the flower hills"}
       - {place: village_bridge, methods: [dark_grass], seasons: all, tier: uncommon, stages: [butterfree], why: "the flautist's clearing, yellow flowers all year"}
       - {place: route_20, methods: [grass], seasons: [autumn], tier: uncommon, stages: [butterfree], why: "passing south down the valley in autumn"}
+      - {place: route_12, methods: [grass], seasons: [autumn], tier: uncommon, stages: [butterfree], why: "the last flowers before the butterflies go south"}
     review: []
 
   - id: weedle
