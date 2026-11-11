@@ -65,9 +65,9 @@ D/Pt, D/P/Pt, HG/SS, B/W/D/P/Pt.
   shows the chosen entry again. Another form keeps it; another Pokémon starts on White 2's.
 - **Select**: the Pokédex's other languages, as Language did (only where it has the entry in another language), back
   to White 2's entry.
-- **The tab**: the user's art, `res/paperwhite2/pokedex_art/version_flavour.png` (256 by 192, the tab at x 0-77,
-  y 123-139, 16 colours in the top screen's art palette), converted at build time; the game's name in font 1 (the art's
-  colour 4, shadow 9), from x 11 as the user's example, further left for a wide label so that it ends by x 64, before
+- **The tab**: the user's art, `res/paperwhite2/pokedex_art/version_flavour.png` (256 by 192, the tab at x 0-86,
+  y 123-139, 16 colours in the top screen's art palette), converted at build time; the game's name in font 1, each game in
+  its colour (`LABEL_SLOTS`, palette slots the art doesn't use) over shadow 9, from x 11 as the user's example, further left for a wide label so that it ends by x 64, before
   the stripes. Three main OBJs (32 by 32, x 0-95, y 120-151), main OBJ palette row 8; the label is drawn into their
   characters, which load in the VBlank that shows the entry's text, so the tab and the text change together.
 - **Templates** (`dex_flavour.py template`, also from `pokedex_templates.py`, into `build/pokedex_templates/`):

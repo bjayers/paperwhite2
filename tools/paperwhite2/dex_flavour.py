@@ -408,6 +408,31 @@ def check_labels(kept: dict[int, list[list]], font_path: Path):
                                f"{TAB_TEXT_RIGHT - TAB_TEXT_MIN_X}; shorten the games' names in {PAGE_TEXT.name}")
 
 
+# The label's colours, in palette slots the art's pixels don't use (the page prints each game's name, and the separator,
+# in its own, over shadow slot 9): the user's choice of 2026-11-11, Platinum's ours
+LABEL_SLOTS = {
+    "Black": (1, (128, 128, 136)),
+    "White": (2, (248, 248, 248)),
+    "Black 2": (4, (238, 238, 238)),
+    "Diamond": (5, (104, 160, 248)),
+    "Pearl": (6, (248, 136, 192)),
+    "Platinum": (7, (200, 196, 224)),
+    "HeartGold": (8, (240, 200, 40)),
+    "SoulSilver": (12, (176, 180, 188)),
+    "separator": (13, (88, 88, 96)),
+}
+
+
+def tab_palette(pixels: list[int], colors: list) -> list:
+    """The tab's 16 colours: the art's, with the label's in LABEL_SLOTS, which the art mustn't use."""
+    palette = (list(colors) + [(0, 0, 0)] * 16)[:16]
+    for name, (slot, rgb) in LABEL_SLOTS.items():
+        if slot in pixels:
+            raise FlavourError(f"{TAB_ART.name}: palette slot {slot} is the label's {name} colour; draw with another")
+        palette[slot] = rgb
+    return palette
+
+
 def tab_member() -> bytes:
     """The tab's 16 colours (BGR555), then its region's tiles (4bpp) across and down, as the page's bitmap has them."""
     try:
@@ -422,7 +447,7 @@ def tab_member() -> bytes:
             raise FlavourError(f"{TAB_ART.name}: a pixel at x {x}, y {y}, outside the tab's x {TAB_X}-"
                                f"{TAB_X + TAB_WIDTH - 1}, y {TAB_Y}-{TAB_Y + TAB_HEIGHT - 1}")
     out = bytearray()
-    for r, g, b in (list(colors) + [(0, 0, 0)] * 16)[:16]:
+    for r, g, b in tab_palette(pixels, colors):
         out += struct.pack("<H", round(r * 31 / 255) | round(g * 31 / 255) << 5 | round(b * 31 / 255) << 10)
     for tile_y in range(TAB_Y, TAB_Y + TAB_HEIGHT, 8):
         for tile_x in range(TAB_X, TAB_X + TAB_WIDTH, 8):
@@ -458,7 +483,7 @@ def write_templates(out: Path, small):
     from tools.paperwhite2.pokedex_templates import Canvas
     width, height, pixels, colors = read_indexed_png(TAB_ART)
     (out / "version_flavour_canvas.png").write_bytes(TAB_ART.read_bytes())
-    palette = (list(colors) + [(0, 0, 0)] * 16)[:16] + [(255, 0, 0), (0, 200, 0)]
+    palette = tab_palette(pixels, colors) + [(255, 0, 0), (0, 200, 0)]
     red, green = 16, 17
     guide = Canvas()
     guide.pixels = bytearray(pixels)
@@ -471,7 +496,14 @@ def write_templates(out: Path, small):
         x = max(TAB_TEXT_MIN_X, min(TAB_TEXT_X, TAB_TEXT_RIGHT - small.text_width(text)))
         canvas = Canvas()
         canvas.pixels = bytearray(pixels)
-        canvas.text(small, text, x, TAB_Y + TAB_TEXT_Y, letter=4, shadow=9)
+        shown = [i for i in range(len(GAMES)) if games >> i & 1]
+        pieces = ([(text, LABEL_SLOTS[GAMES[shown[0]][0]][0])] if len(shown) == 1 else
+                  [p for n, i in enumerate(shown) for p in
+                   ([(messages["PokedexData_Text_GameSeparator"], LABEL_SLOTS["separator"][0])] if n else []) +
+                   [(messages[f"PokedexData_Text_GameShort{GAME_NAMES[i]}"], LABEL_SLOTS[GAMES[i][0]][0])]])
+        for piece, slot in pieces:
+            canvas.text(small, piece, x, TAB_Y + TAB_TEXT_Y, letter=slot, shadow=9)
+            x += small.text_width(piece)
         canvas.write(out / f"version_flavour_reference_{name}.png", palette)
 
 

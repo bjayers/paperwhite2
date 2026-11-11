@@ -50,8 +50,8 @@ enum {
 
 // The tab: the OBJs' region of the screen (the art's tab is x 0-86, y 123-139), the party icons' cells making each
 // OBJ, and its label in font 1 from TAB_TEXT_X, or as far left as it must to end by TAB_TEXT_RIGHT (left of the art's
-// stripes), but not left of TAB_TEXT_MIN_X, as dex_flavour.py checks the labels: the art's light grey with its dark
-// grey shadow, as the user's example has it
+// stripes), but not left of TAB_TEXT_MIN_X, as dex_flavour.py checks the labels, each game in its colour over a dark
+// grey shadow
 #define TAB_X 0
 #define TAB_Y 120
 #define TAB_OBJS 3
@@ -68,7 +68,10 @@ enum {
 #define TAB_TEXT_RIGHT 64
 #define TAB_TEXT_MIN_X 2
 #define TAB_TEXT_Y 8
-#define TAB_TEXT_COLOR PRINT_COLOR(4, 9, 0)
+// The label's colours, slots of the tab's palette that its art doesn't use (dex_flavour.py's LABEL_SLOTS): each game's
+// name in its own over the shadow, and the separator dark grey (the user's choice)
+#define TAB_TEXT_SHADOW 9
+#define TAB_SEPARATOR_COLOR 13
 // In front of the entry's BGs (its panels on BG 2 and 3, its text on BG 1)
 #define TAB_BG_PRIORITY 0
 #define TAB_PRIORITY 1
@@ -103,7 +106,7 @@ struct PokedexInfoFlavour {
 
 static void PokedexInfoFlavour_VBlank(TCB *tcb, void *data);
 static void PokedexInfoFlavour_CreateTab(PokedexInfoFlavour *flavour, ClActUnit *unit);
-static void PokedexInfoFlavour_MakeLabel(PokedexInfoFlavour *flavour, u32 games);
+static u32 PokedexInfoFlavour_MakeLabel(PokedexInfoFlavour *flavour, u32 games, GFLBitmap *bitmap, int x);
 static void PokedexInfoFlavour_DrawTab(PokedexInfoFlavour *flavour, u32 games);
 
 // Each game's name, for an entry of its own, and its short name, for one that games share
@@ -261,27 +264,37 @@ static void PokedexInfoFlavour_CreateTab(PokedexInfoFlavour *flavour, ClActUnit 
     }
 }
 
-// The tab's label of the games sharing an entry: the game's name, or each game's short name with the separator between
-static void PokedexInfoFlavour_MakeLabel(PokedexInfoFlavour *flavour, u32 games) {
+// Each game's colour of the label (dex_flavour.py's LABEL_SLOTS)
+static const u8 sGameColors[FLAVOUR_GAME_COUNT] = { 1, 2, 4, 5, 6, 7, 8, 12 };
+
+// The tab's label of the games sharing an entry: the game's name, or each game's short name with the separator between,
+// each in its colour. With no bitmap it only measures the label; returns its width
+static u32 PokedexInfoFlavour_MakeLabel(PokedexInfoFlavour *flavour, u32 games, GFLBitmap *bitmap, int x) {
+    u32 width = 0;
+    BOOL first = TRUE;
     u32 i;
 
-    GFL_StrBufClear(flavour->text);
     for (i = 0; i < FLAVOUR_GAME_COUNT; i++) {
-        if (games == 1u << i) {
-            GFL_MsgDataLoadStrbuf(flavour->msgData, sGameNames[i], flavour->text);
-            return;
+        if (!(games & (1u << i))) {
+            continue;
         }
-    }
-    for (i = 0; i < FLAVOUR_GAME_COUNT; i++) {
-        if (games & (1u << i)) {
-            if (GFL_StrBufGetCharCount(flavour->text) != 0) {
-                GFL_MsgDataLoadStrbuf(flavour->msgData, PokedexData_Text_GameSeparator, flavour->word);
-                GFL_StrBufConcat(flavour->text, flavour->word);
+        if (!first) {
+            GFL_MsgDataLoadStrbuf(flavour->msgData, PokedexData_Text_GameSeparator, flavour->word);
+            if (bitmap != NULL) {
+                GFL_TextRendererDrawToBitmapEx(bitmap, x + width - TAB_X, TAB_TEXT_Y, flavour->word, flavour->smallFont,
+                                               PRINT_COLOR(TAB_SEPARATOR_COLOR, TAB_TEXT_SHADOW, 0));
             }
-            GFL_MsgDataLoadStrbuf(flavour->msgData, sGameShortNames[i], flavour->word);
-            GFL_StrBufConcat(flavour->text, flavour->word);
+            width += GFL_FontGetBlockWidth(flavour->word, flavour->smallFont, 0);
         }
+        first = FALSE;
+        GFL_MsgDataLoadStrbuf(flavour->msgData, games == 1u << i ? sGameNames[i] : sGameShortNames[i], flavour->word);
+        if (bitmap != NULL) {
+            GFL_TextRendererDrawToBitmapEx(bitmap, x + width - TAB_X, TAB_TEXT_Y, flavour->word, flavour->smallFont,
+                                           PRINT_COLOR(sGameColors[i], TAB_TEXT_SHADOW, 0));
+        }
+        width += GFL_FontGetBlockWidth(flavour->word, flavour->smallFont, 0);
     }
+    return width;
 }
 
 // The art with the games' label drawn over it, its tiles into the OBJs' order, for the next VBlank
@@ -292,14 +305,13 @@ static void PokedexInfoFlavour_DrawTab(PokedexInfoFlavour *flavour, u32 games) {
     u32 i;
 
     MI_CpuCopy32(flavour->art + TAB_COLORS * sizeof(GXRgb), GFL_BitmapGetPixelData(bitmap), TAB_CHARS_SIZE);
-    PokedexInfoFlavour_MakeLabel(flavour, games);
-    x = TAB_TEXT_RIGHT - (int)GFL_FontGetBlockWidth(flavour->text, flavour->smallFont, 0);
+    x = TAB_TEXT_RIGHT - (int)PokedexInfoFlavour_MakeLabel(flavour, games, NULL, 0);
     if (x > TAB_TEXT_X) {
         x = TAB_TEXT_X;
     } else if (x < TAB_TEXT_MIN_X) {
         x = TAB_TEXT_MIN_X;
     }
-    GFL_TextRendererDrawToBitmapEx(bitmap, x - TAB_X, TAB_TEXT_Y, flavour->text, flavour->smallFont, TAB_TEXT_COLOR);
+    PokedexInfoFlavour_MakeLabel(flavour, games, bitmap, x);
 
     pixels = GFL_BitmapGetPixelData(bitmap);
     if (flavour->pending == NULL) {
