@@ -71,3 +71,11 @@ anyway. Routes 14 and 15 are treated as usual.
 | Dragonspiral Tower (the entrance and the grounds) | as Icirrus | keep |
 
 In winter the puddles freeze, so Icirrus City, Route 8 and the Moor have only water encounters then.
+
+## Northern Central Unova
+
+| Place | Now | Wishes and suggestions |
+| --- | --- | --- |
+| Route 9, Route 11, Village Bridge, Route 23 | none | rain now and then (Route 11's and Route 23's gorges could have mist, as scenery) |
+| Route 12 | spring rain 26%, summer clear, autumn rain 26%, winter rain 55% | **Wish:** perhaps a few snowy days in winter; spring above all |
+| Giant Chasm (outside, crater) | none | **Suggestion:** snow all year on some days (Kyurem's unnatural cold), so its ice Pokémon can follow the snow even in summer |
