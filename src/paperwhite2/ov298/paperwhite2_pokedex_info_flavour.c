@@ -48,7 +48,7 @@ enum {
     FLAVOUR_GAME_COUNT,
 };
 
-// The tab: the OBJs' region of the screen (the art's tab is x 0-77, y 123-139), the party icons' cells making each
+// The tab: the OBJs' region of the screen (the art's tab is x 0-86, y 123-139), the party icons' cells making each
 // OBJ, and its label in font 1 from TAB_TEXT_X, or as far left as it must to end by TAB_TEXT_RIGHT (left of the art's
 // stripes), but not left of TAB_TEXT_MIN_X, as dex_flavour.py checks the labels: the art's light grey with its dark
 // grey shadow, as the user's example has it
@@ -65,7 +65,7 @@ enum {
 #define TAB_CHARS_SIZE (TAB_OBJS * TAB_OBJ_SIZE)
 #define TAB_COLORS 16
 #define TAB_TEXT_X 11
-#define TAB_TEXT_RIGHT 57
+#define TAB_TEXT_RIGHT 64
 #define TAB_TEXT_MIN_X 2
 #define TAB_TEXT_Y 8
 #define TAB_TEXT_COLOR PRINT_COLOR(4, 9, 0)

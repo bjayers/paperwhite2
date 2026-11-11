@@ -33,8 +33,9 @@ from the entry's number for its characters) and use Gen 4's character table (GEN
 converted to White 2's encoding, which is UTF-16 with 0xFFFE for a new line. Typographic quotes and apostrophes become
 the straight ones White 2's English entries use.
 
-An entry is kept when it differs from White 2's own (res/pokemon/<species>/data.json's pokedex entry, after the line
-breaks and spaces are normalised), and when no game before it has the same (normalised) entry; the games sharing it
+An entry is kept when it differs from White 2's own (res/pokemon/<species>/data.json's pokedex entry; same_entry: case,
+punctuation, accents and line breaks set aside, words at least SAME_ENTRY alike), and when no game before it has the
+same entry; the games sharing it
 are a bit mask, which the page's tab names. It must fit the Info page's text window as PokedexInfo prints it
 (pokedex_info.c): LINE_COUNT lines of at most LINE_WIDTH pixels in font 0 (the font's own widths, as
 GFL_FontGetLineWidth adds them). An entry whose lines are too wide is re-wrapped at its spaces; one that still needs
@@ -48,10 +49,12 @@ The member (FLAVOUR_FILE in paperwhite2_pokedex_info.c), read by range for one s
 A species' entries run from its offset to the next species'; species 0 and those without an entry have none.
 """
 import argparse
+import difflib
 import json
 import re
 import struct
 import sys
+import unicodedata
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -82,7 +85,7 @@ TAB_OBJS = 3
 TAB_WIDTH = TAB_OBJS * 32
 TAB_HEIGHT = 32
 TAB_TEXT_X = 11
-TAB_TEXT_RIGHT = 57
+TAB_TEXT_RIGHT = 64
 TAB_TEXT_Y = 8
 TAB_TEXT_MIN_X = 2
 LABEL_FONT = 1
@@ -204,6 +207,24 @@ def normalised(text: str) -> str:
     for curly, straight in QUOTES.items():
         text = text.replace(curly, straight)
     return " ".join(text.split())
+
+
+# How alike two entries' words must be to count as the same entry: with case, punctuation and accents set aside,
+# a word-by-word likeness (difflib's ratio) of at least this, so that an added comma or a name in capitals (Gen 4's
+# "SHELLDER") doesn't keep an entry that says nothing new; different words do (the user's choice, 2026-11-11)
+SAME_ENTRY = 0.95
+
+
+def loose_words(text: str) -> list[str]:
+    """The entry's words for a loose comparison: lower case, accents and punctuation dropped."""
+    text = unicodedata.normalize("NFKD", normalised(text).lower())
+    return "".join(ch if ch.isalnum() or ch.isspace() else " " for ch in text if not unicodedata.combining(ch)).split()
+
+
+def same_entry(a: str, b: str) -> bool:
+    """Whether two entries say the same, as SAME_ENTRY has it."""
+    words_a, words_b = loose_words(a), loose_words(b)
+    return words_a == words_b or difflib.SequenceMatcher(None, words_a, words_b).ratio() >= SAME_ENTRY
 
 
 class Font:
@@ -337,11 +358,10 @@ def collect(rom_dir: Path, font_path: Path):
             if not text:
                 continue
             counts["read"] += 1
-            key = normalised(text)
-            if key == normalised(white2.get(species, "")):
+            if same_entry(text, white2.get(species, "")):
                 continue
             counts["differ"] += 1
-            earlier = next((e for e in kept.get(species, []) if normalised(e[1]) == key), None)
+            earlier = next((e for e in kept.get(species, []) if same_entry(e[1], text)), None)
             if earlier is not None:
                 earlier[0] |= 1 << game
                 counts["shared"] += 1

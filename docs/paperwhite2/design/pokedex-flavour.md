@@ -67,7 +67,7 @@ D/Pt, D/P/Pt, HG/SS, B/W/D/P/Pt.
   to White 2's entry.
 - **The tab**: the user's art, `res/paperwhite2/pokedex_art/version_flavour.png` (256 by 192, the tab at x 0-77,
   y 123-139, 16 colours in the top screen's art palette), converted at build time; the game's name in font 1 (the art's
-  colour 4, shadow 9), from x 11 as the user's example, further left for a wide label so that it ends by x 57, before
+  colour 4, shadow 9), from x 11 as the user's example, further left for a wide label so that it ends by x 64, before
   the stripes. Three main OBJs (32 by 32, x 0-95, y 120-151), main OBJ palette row 8; the label is drawn into their
   characters, which load in the VBlank that shows the entry's text, so the tab and the text change together.
 - **Templates** (`dex_flavour.py template`, also from `pokedex_templates.py`, into `build/pokedex_templates/`):
@@ -79,3 +79,11 @@ D/Pt, D/P/Pt, HG/SS, B/W/D/P/Pt.
 
 - Gen 4's capitalised names could be written as White 2 writes them, if the user prefers.
 - Forms: only species' entries are compared and shown (Gen 4 has no form entries in these banks).
+
+## Looser matching (2026-11-11)
+
+The user found entries kept for an added comma (Murkrow's B/W entry against White 2's) or a name in Gen 4's capitals
+(Slowking's "SHELLDER" in D/P/Pt). `same_entry` now compares entries with case, punctuation and accents set aside, and
+counts them the same when their words are at least `SAME_ENTRY` (95%) alike by difflib's ratio, both against White 2's
+entry and between games. That left 1,582 entries (from 1,614): Black 304, White 156, Diamond 217, Pearl 156,
+HeartGold 493, SoulSilver 256; Black 2 and Platinum add none of their own.

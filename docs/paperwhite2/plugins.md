@@ -1871,7 +1871,7 @@ an ability, the move panel or the map), the user's art (`res/paperwhite2/pokedex
 `TAB_FILE`) shows at x 0-77, y 123-139 as three main OBJs of 32 by 32 from x 0, y 120 (the party icons' cells), in
 main OBJ row 8, which nothing on the page uses, in front of BGs 1-3; its label (the game's name, or the short names
 of the games sharing the entry with "/": "HG/SS", "B/W/D/P/Pt") is drawn in font 1 over the art, its light grey with a
-dark grey shadow, from x 11 or further left to end by x 57 (the art's stripes), into the OBJs' characters, which go to
+dark grey shadow, from x 11 or further left to end by x 64 (the art's stripes, the user's wider tab of 2026-11-11), into the OBJs' characters, which go to
 VRAM in the VBlank (`PokedexInfoFlavour_VBlank`) that shows the entry's text, the OBJs shown or hidden in that VBlank's
 OAM (`PokedexInfoFlavour_ShowTab`, each frame from the page's state). `dex_flavour.py template` (and
 `pokedex_templates.py`) writes the tab's canvas, a guide with its OBJs' and label's regions, and references with the
