@@ -125,11 +125,11 @@ struct PokedexInfoFlavour {
     u16 *entries;
     const u16 *starts[FLAVOUR_GAME_COUNT];
     u32 count;
-    // The tab: its OBJs' and the label's characters, their palettes and cells, the OBJs, the member with the art's and
+    // The tab: its OBJs' characters, the tab's then the label's in one resource (the page's character resources are
+    // few: Area's map going to Evo leaves one free), their palettes and cells, the OBJs, the member with the art's and
     // the label's colors, the bitmap the label is drawn in, its characters waiting for the VBlank, and the games whose
     // label it shows, 0 while it is hidden
-    u32 tabChars;
-    u32 labelChars;
+    u32 chars;
     u32 palette;
     u32 cellAnims;
     ClActor *tabObjs[TAB_OBJS];
@@ -143,7 +143,7 @@ struct PokedexInfoFlavour {
 
 static void PokedexInfoFlavour_VBlank(TCB *tcb, void *data);
 static void PokedexInfoFlavour_LoadColors(PokedexInfoFlavour *flavour);
-static ClActor *PokedexInfoFlavour_CreateObj(PokedexInfoFlavour *flavour, ClActUnit *unit, u32 chars, u32 i,
+static ClActor *PokedexInfoFlavour_CreateObj(PokedexInfoFlavour *flavour, ClActUnit *unit, u32 offset, u32 i,
                                              u8 priority);
 static void PokedexInfoFlavour_CreateTab(PokedexInfoFlavour *flavour, ClActUnit *unit);
 static void PokedexInfoFlavour_ToObjOrder(const u8 *pixels, u32 tilesAcross, u32 objs, u8 *chars);
@@ -204,8 +204,7 @@ void PokedexInfoFlavour_Free(PokedexInfoFlavour *flavour) {
     }
     GFL_BitmapFree(flavour->bitmap);
     GFL_HeapFree(flavour->art);
-    ClActSys_FreeChars(flavour->labelChars);
-    ClActSys_FreeChars(flavour->tabChars);
+    ClActSys_FreeChars(flavour->chars);
     ClActSys_FreeCellAnims(flavour->cellAnims);
     ClActSys_FreePltt(flavour->palette);
     if (flavour->entries != NULL) {
@@ -304,7 +303,7 @@ static void PokedexInfoFlavour_VBlank(TCB *tcb, void *data) {
     PokedexInfoFlavour *flavour = data;
 
     if (flavour->pending != NULL) {
-        ClActSys_WriteCharData(flavour->labelChars, flavour->pending, LABEL_CHARS_SIZE, 0, CLACT_VRAM_MAIN);
+        ClActSys_WriteCharData(flavour->chars, flavour->pending, LABEL_CHARS_SIZE, TAB_CHARS_SIZE, CLACT_VRAM_MAIN);
         PokedexInfoFlavour_LoadColors(flavour);
         GFL_HeapFree(flavour->pending);
         flavour->pending = NULL;
@@ -318,8 +317,9 @@ static void PokedexInfoFlavour_LoadColors(PokedexInfoFlavour *flavour) {
     GX_LoadOBJPltt(flavour->art + TAB_COLORS, LABEL_ROW * 0x20, TAB_COLORS * sizeof(GXRgb));
 }
 
-// The tab's or the label's OBJ i, hidden, on the party icons' cells, its characters the ith 32 by 32 of chars
-static ClActor *PokedexInfoFlavour_CreateObj(PokedexInfoFlavour *flavour, ClActUnit *unit, u32 chars, u32 i,
+// The tab's or the label's OBJ i, hidden, on the party icons' cells, its characters the ith 32 by 32 from offset in
+// the characters
+static ClActor *PokedexInfoFlavour_CreateObj(PokedexInfoFlavour *flavour, ClActUnit *unit, u32 offset, u32 i,
                                              u8 priority) {
     NNSG2dImageProxy proxy;
     ClActorSetup setup;
@@ -330,10 +330,10 @@ static ClActor *PokedexInfoFlavour_CreateObj(PokedexInfoFlavour *flavour, ClActU
     setup.y = TAB_Y + TAB_HEIGHT / 2;
     setup.bgPriority = TAB_BG_PRIORITY;
     setup.priority = priority;
-    obj =
-        ClActor_Create(unit, chars, flavour->palette, flavour->cellAnims, &setup, CLACT_SURFACE_MAIN, flavour->heapId);
-    ClActSys_GetCharProxy(chars, &proxy);
-    proxy.vramLocation.baseAddrOfVram[NNS_G2D_VRAM_TYPE_2DMAIN] += i * TAB_OBJ_SIZE;
+    obj = ClActor_Create(unit, flavour->chars, flavour->palette, flavour->cellAnims, &setup, CLACT_SURFACE_MAIN,
+                         flavour->heapId);
+    ClActSys_GetCharProxy(flavour->chars, &proxy);
+    proxy.vramLocation.baseAddrOfVram[NNS_G2D_VRAM_TYPE_2DMAIN] += offset + i * TAB_OBJ_SIZE;
     ClActor_SetImageProxy(obj, &proxy);
     ClActor_SetVisible(obj, FALSE);
     return obj;
@@ -351,8 +351,7 @@ static void PokedexInfoFlavour_CreateTab(PokedexInfoFlavour *flavour, ClActUnit 
     flavour->cellAnims =
         ClActSys_LoadCellAnims(arc, PokeIcon_GetCellFile_Main(), getOBJTileMapping_MainEng(), flavour->heapId);
     GFL_ArcToolFree(arc);
-    flavour->tabChars = ClActSys_AllocChars(TAB_CHARS_SIZE, CLACT_VRAM_MAIN, flavour->heapId);
-    flavour->labelChars = ClActSys_AllocChars(LABEL_CHARS_SIZE, CLACT_VRAM_MAIN, flavour->heapId);
+    flavour->chars = ClActSys_AllocChars(TAB_CHARS_SIZE + LABEL_CHARS_SIZE, CLACT_VRAM_MAIN, flavour->heapId);
     flavour->bitmap = GFL_BitmapCreate(LABEL_TILES_ACROSS, TAB_HEIGHT / 8, TILE_SIZE, flavour->heapId);
     flavour->art = GFL_ArcSysReadHeapNew(ARCID_POKEDEX_GRA, TAB_FILE, flavour->heapId);
     DC_FlushRange(flavour->art, 2 * TAB_COLORS * sizeof(GXRgb));
@@ -362,15 +361,15 @@ static void PokedexInfoFlavour_CreateTab(PokedexInfoFlavour *flavour, ClActUnit 
                              __LINE__);
     PokedexInfoFlavour_ToObjOrder((const u8 *)(flavour->art + 2 * TAB_COLORS), TAB_TILES_ACROSS, TAB_OBJS, chars);
     DC_FlushRange(chars, TAB_CHARS_SIZE);
-    ClActSys_WriteCharData(flavour->tabChars, chars, TAB_CHARS_SIZE, 0, CLACT_VRAM_MAIN);
+    ClActSys_WriteCharData(flavour->chars, chars, TAB_CHARS_SIZE, 0, CLACT_VRAM_MAIN);
     GFL_HeapFree(chars);
 
     for (i = 0; i < TAB_OBJS; i++) {
-        flavour->tabObjs[i] = PokedexInfoFlavour_CreateObj(flavour, unit, flavour->tabChars, i, TAB_PRIORITY);
+        flavour->tabObjs[i] = PokedexInfoFlavour_CreateObj(flavour, unit, 0, i, TAB_PRIORITY);
         ClActor_SetPalette(flavour->tabObjs[i], 0, TRUE);
     }
     for (i = 0; i < LABEL_OBJS; i++) {
-        flavour->labelObjs[i] = PokedexInfoFlavour_CreateObj(flavour, unit, flavour->labelChars, i, LABEL_PRIORITY);
+        flavour->labelObjs[i] = PokedexInfoFlavour_CreateObj(flavour, unit, TAB_CHARS_SIZE, i, LABEL_PRIORITY);
         ClActor_SetPalette(flavour->labelObjs[i], LABEL_ROW - TAB_ROW, TRUE);
     }
 }
