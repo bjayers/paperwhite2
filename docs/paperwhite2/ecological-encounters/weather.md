@@ -40,13 +40,14 @@ Nothing here has weather yet (all zone headers clear, none in the calendar).
 
 ## Central Unova
 
-`WEATHER_TINT_9` is a white mist, like fog (the user, 2026-11-13). The encounters can name it; the Habitat Dex counts it
-as clear, so a mist Pokémon stays a discovery.
+`WEATHER_TINT_9` is a white mist, like fog (the user, 2026-11-13). It isn't a condition for encounters: the Habitat Dex
+shows it as clear, so a mist-only Pokémon would look findable on clear days and not be; and it's misty most days
+anyway. Routes 14 and 15 are treated as usual.
 
 | Place | Now | Suggestions |
 | --- | --- | --- |
 | Route 5, Route 16 | none | none needed (or rare rain) |
 | Lostlorn Forest | none | **Suggestion:** mist now and then, for its "something's not right" feel |
-| Route 15 | mist on 73–85% of days, all seasons | keep the mist; perhaps fewer misty days, so mist Pokémon are a condition rather than the norm |
+| Route 15 | mist on 73–85% of days, all seasons | keep the mist (scenery, not a condition) |
 | Route 14 | mist as Route 15 | **Suggestion:** a rare thunderstorm or gusty rain (the Forces of Nature's storms) |
 | Abundant Shrine | none | **Suggestion:** rain in spring and summer (the paddies' growing season); a rare thunderstorm or gusty rain, as Route 14 |

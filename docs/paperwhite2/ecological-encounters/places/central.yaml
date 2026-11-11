@@ -37,8 +37,8 @@ places:
       the Driftveil Drawbridge. The user's requests: Gothita and Solosis rarely, Munchlax rarely.
     habitats: [park, woodland_edge, cliff]
     parts:
-      grass: grass by the busy road, littered
-      dark_grass: the narrow wooded strip at the foot of the cliff
+      grass: grass by the busy road, littered, and the narrow wooded strip at the foot of the cliff
+      dark_grass: side by side with the grass, the same ground (the split is for gameplay, rules 6)
     human_presence: suburban (crowds)
     climate:
       spring: mild
@@ -52,7 +52,7 @@ places:
     suggestions:
       - >-
         Scavengers and food-lovers by the road (trash and leftovers), more at busy times; the cook's sweet-loving
-        Pokémon as strays; the wooded strip quieter, with woodland edge life.
+        Pokémon as strays; woodland edge life from the strip under the cliff.
 
   - id: route_16
     name: Route 16
@@ -167,8 +167,7 @@ places:
       goats and sheep on the slopes.
     suggestions:
       - >-
-        Rock and mountain Pokémon among the boulders, with fog-lovers in the mist (the mist is a weather the encounters
-        can name, though the Habitat Dex shows it as clear, so a mist Pokémon stays a discovery).
+        Rock and mountain Pokémon among the boulders. The mist is the usual weather here, not a condition (weather.md).
 
   - id: route_14
     name: Route 14
@@ -199,8 +198,7 @@ places:
       mosses and ferns in the spray; black bears along the streams.
     suggestions:
       - >-
-        Cold-water river life (trout country: Red-Striped Basculin, salamanders, otters), birds of fast water, and mist
-        Pokémon on the paths.
+        Cold-water river life (trout country: Red-Striped Basculin, salamanders, otters) and birds of fast water.
 
   - id: abundant_shrine
     name: Abundant Shrine

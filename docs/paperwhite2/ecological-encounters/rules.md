@@ -64,6 +64,9 @@ Hidden Grottoes are set by hand; the generator counts them as a source but never
 - **Loose targets** per area and method, before seasons and times: grass 8–14 species over the year (5–8 at one
   moment); dark grass a similar number; surf and fishing as many as fit (fewer water Pokémon exist, so it balances
   itself). The Pokémon's habitats come first; the targets only warn.
+- **Grass and dark grass** are usually split for gameplay, to keep each list from getting too long; they're the same
+  ground side by side (Route 5). Where they're separate places that differ (Route 1's meadow and its pine hills
+  across the water), they're different habitats. Each place's entry says which (2026-11-13).
 - **Dark grass** is the "wilder" grass: taller, thicker, rougher, less maintained. It holds stronger (higher base
   stat) and different species, and keeps the grass from getting crowded. It isn't for doubles, higher levels or
   nocturnal Pokémon as such. **A family isn't split between grass and dark grass in one area:** it's in one or both.
@@ -94,6 +97,7 @@ Hidden Grottoes are set by hand; the generator counts them as a source but never
 - **Time** is mostly Day (morning, day, evening) or Night (night, late night). Three strengths per family: *strict*
   (only in its periods: Hoothoot, perhaps Sunflora), *preferred* (more common in its periods, rarer outside), *none*.
   Single periods (only morning, only late night) sparingly.
+- **Mist** (`WEATHER_TINT_9`) is never a condition: the Habitat Dex shows it as clear (2026-11-13).
 - **Weather** shifts rarity by about a tier (rain: water, bug, grass; thunderstorms: electric; snow and blizzards:
   ice; sandstorms: ground and rock), and a few Pokémon appear only in a weather. Weather can be added to any area
   where it makes sense (the user will make it easy to edit); the area dictionary suggests where, conservatively, and
