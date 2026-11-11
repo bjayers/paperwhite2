@@ -733,32 +733,31 @@ those blue against the grey fog: the blue skyline in the waterfront's distance a
 bottom of each street (seen in DeSmuME at `castelia_city_5`'s south end in a night rain). So in the same zones, while
 the fog is on, light 2 is the fog's colour; the light is flushed again when that changes.
 
-**The gate's light box** (`PaperWhite2_WeatherFog_UpdateMapModel`, called by `field_g3d_map.c`'s
-`FieldChunk_RenderMap` before each map model is drawn): the glowing white glass of the gate at `castelia_city_4`'s
-north end (`gate_4`; also `castelia_city_5`'s `c3_gate_2`) stood out of the rain beside the player. Its shapes have no
-normal commands, so no light reaches them however the material's lights are set (giving it light 0, the first
-follow-up, changed nothing): their display lists give each vertex its colour, white (31) and greys for the shading, so
-the glass drew at 240 in DeSmuME whatever the weather (the same pixel with the light-0 build and the light-2 test).
-In Castelia's zones, while the sky's light is the fog's colour, those colour commands are scaled by the fog's colour,
-as a material lit by the sky's light alone would be, and put back when it isn't: the walk finds the shapes drawn with
-the material through the model's render commands and keeps each command's own colour, read again when the model is
-loaded again. In DeSmuME's day rain the glass then drew at 160, the fog's colour, and at 240 again once the weather
-was cleared. The game's other unlit materials with their own colours (vending machines, the ice cream stand, the
-`gra_w` glows) are lights and keep theirs. `data.json`'s `material_lights` (`map_model.schema.json`) still sets any
-material's lights, though no model uses it now.
+**The waterfront's green gate** (`PaperWhite2_WeatherFog_UpdateMapModel`, called by `field_g3d_map.c`'s
+`FieldChunk_RenderMap` before each map model is drawn). The gate to Skyarrow Bridge by Thumb Pier is part of
+`castelia_city_c3_00_01`'s `c3_kanban` shape `polygon3`, which also draws the waterfront's signboards: its frame and
+green panel are the vertices at x 802-906, y 8-82, z -380 to -219 of the chunk textured left of texel 128 of
+`c3_kanban` (the green-and-grey panel, the same design as the streets' `gate_1`), and its glass, the doorway's light, the
+ones from texel 128 (the texture's white glass column). It is lit: each vertex follows a normal command, with light 0
+only and the material's full ambient (31) and diffuse (25). A weather's light file leaves light 0 by day as bright as
+Castelia's own ((22, 22, 20) in rain against (24, 22, 20)), so the gate stays saturated white in rain as in sun, and the
+fog, which is all that greys Castelia's lit walls in a weather, wasn't enough beside the player. In Castelia's zones,
+while the sky's light is the fog's colour, the normal commands before the frame's and panel's vertices become colour
+commands of the fog's colour and the colour commands there are scaled by it, as if lit by the sky's light alone; they
+are put back when it isn't. The walk finds the shape through the model's render commands, follows the display list's
+vertex and texture commands to tell whose each command is (a box in the list's own units, the position scale being
+128), and keeps each command's own value, read again when the model is loaded again. The glass keeps the game's light
+and fades with the fog only, as the doorway glows do. In DeSmuME (rain, waterfront) the hook found the 50 commands and
+rewrote them to the fog's colour `0x4a52` (and black to black); DeSmuME doesn't draw the waterfront usably from the fly
+spot (all but the edges in the clear colour, with or without fog), so how it looks is for the 3DS.
 
-The waterfront's green gate to Skyarrow Bridge, by Thumb Pier, is the same hook's third entry (`sGates`): it is
-`castelia_city_c3_00_01`'s `c3_kanban` shape `polygon11` (the material's other shapes are the waterfront's signboards,
-which keep their look): 12 vertices at x 836-883, y 7-91, z -194 to -93 of the chunk, textured from `c3_kanban`'s
-green-and-white gate panel (the same design as the streets' `gate_1`). Unlike `gate_4` it is lit: each vertex follows a
-normal command, with light 0 only, and the material's full ambient (31) and diffuse (25). A weather's light file
-leaves light 0 by day as bright as Castelia's own ((22, 22, 20) in rain against (24, 22, 20)), so the gate stays
-saturated white in rain as in sun; the fog, which is all that greys Castelia's lit walls in a weather, wasn't enough
-beside the player for a near-white panel. While the sky's light is the fog's colour, its normal commands become colour
-commands of the fog's colour (and its colour commands are scaled), as if lit by the sky's light alone, and they are put
-back after. In DeSmuME (rain, waterfront) the hook found its 16 commands (6 colours, 10 normals) and rewrote them to
-the fog's colour `0x4a52`; DeSmuME doesn't draw the waterfront usably from the fly spot (all but the edges in the clear
-colour, with or without fog), so how it looks is for the 3DS.
+Earlier rounds, for the record: the first lit the streets' gate light boxes (`castelia_city_4`'s `gate_4`,
+`castelia_city_5`'s `c3_gate_2`) by light 0 through `data.json`'s `material_lights`, which changed nothing, since their
+shapes have no normals (their display lists give each vertex its colour); the second scaled those colours by the fog's
+colour, which made the north gate's doorway light dark in rain; the third tinted `polygon11` of `c3_kanban`, which is a
+signboard on posts beside the green gate (a picture panel at texels 64-128 by 192-244), not the gate. All three are
+undone: `gate_4` and `c3_gate_2` keep their colours and, with the fog bit on as the game has it, glow up close and fade
+with distance. `material_lights` (`map_model.schema.json`) still sets any material's lights, though no model uses it.
 
 **Fog on Castelia's roads, trees and benches** (data): `res/field/maps/models/<model>/data.json`'s `material_fog`
 (`map_model.schema.json`, `tools/data/map_model_data.py`'s `patch_material_attributes`) sets or clears a Nitro
@@ -777,7 +776,7 @@ camera. A camera whose near plane is at least that far (Castelia's waterfront at
 them away; they now move past the near plane by its distance (180 and 188, or 192 and 200), which keeps their order and
 still fills the screen, since the quad scales with its distance. Other cameras are unchanged (near 1 or 19).
 
-**Cost.** Overlay 36 about 2.1 KB of code and 1.3 KB of BSS (`paperwhite2_weather_fog.c`) and about 0.2 KB of hooks;
+**Cost.** Overlay 36 about 2.5 KB of code and 0.9 KB of BSS (`paperwhite2_weather_fog.c`) and about 0.2 KB of hooks;
 per frame one distance (a square root) and a few 64-bit divisions.
 
 **Tested (DeSmuME, 2026-11-10):** forced thunderstorm and rain from the debug menu. On the Route 4 street south of
@@ -802,7 +801,11 @@ foggy. Reached in DeSmuME this time by walking from the save's spot on Route 4 s
 `castelia_city_4`.
 
 **After the third 3DS test:** the streets, the doorways and `castelia_city_4`'s gate looked right; the gate the user
-meant was the waterfront's green one to Skyarrow Bridge, now the hook's third entry (above).
+meant was the waterfront's green one to Skyarrow Bridge.
+
+**After the fourth 3DS test:** the north gate's doorway light was dark in rain under the tint, so the streets' gates
+keep their own colours again; the waterfront's tint moved from the signboard `polygon11` to the gate itself in
+`polygon3`, its frame and panel only (above).
 
 ### Season app
 

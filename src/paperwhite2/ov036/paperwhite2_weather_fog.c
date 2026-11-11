@@ -72,29 +72,31 @@ static struct {
     GXRgb fogColor;
 } sWeatherFog;
 
-// Castelia's gates, which stood out of a weather's fog beside the player, by material and, where the material draws
-// other things too, shape (an empty name: every shape of it):
-// - castelia_city_4's gate_4 at the street's north end and castelia_city_5's c3_gate_2, white light boxes. Their
-//   shapes have no normals, so no light reaches them: their display lists give each vertex its colour (white, and
-//   greys for the shading)
-// - the waterfront's green gate to Skyarrow Bridge by Thumb Pier, castelia_city_c3_00_01's c3_kanban shape polygon11
-//   (the rest of c3_kanban is the waterfront's signboards). It is lit by light 0, whose colour a weather's light file
-//   leaves as bright as Castelia's own by day, and with the material's full ambient it stays saturated white
-// While the sky's light is the fog's colour, their colour commands are scaled by it and their normal commands become
-// colour commands of the fog's colour, as if they were lit by the sky's light alone; otherwise they are their own
+// Castelia's gates, which stood out of a weather's fog beside the player: the waterfront's green gate to Skyarrow
+// Bridge by Thumb Pier, part of castelia_city_c3_00_01's c3_kanban shape polygon3, which also draws the waterfront's
+// signboards. It is lit by light 0, whose colour a weather's light file leaves as bright as Castelia's own by day, and
+// with the material's full ambient it stays saturated white. So it is told apart by where its vertices are (a box in
+// the display list's own units: the model's position scale is 128, so a unit of the map is 32) and by its texture:
+// its frame and green panel (texels left of 128) take the fog, while its glass, the doorway's light (texels from 128,
+// the texture's first column again), keeps the game's light as the streets' doorway glows do.
+// While the sky's light is the fog's colour, the colour commands before those vertices are scaled by it and the normal
+// commands become colour commands of the fog's colour, as if lit by the sky's light alone; otherwise they are their own
 typedef struct {
     NNSG3dResName material;
     NNSG3dResName shape;
+    s16 min[3];
+    s16 max[3];
+    // The texture coordinate (12.4) from which a vertex keeps its light
+    s16 lightU;
 } WeatherFogGate;
 
 static const WeatherFogGate sGates[] = {
-    { { "gate_4" }, { "" } },
-    { { "c3_gate_2" }, { "" } },
-    { { "c3_kanban" }, { "polygon11" } },
+    { { "c3_kanban" }, { "polygon3" }, { 790 * 32, -0x8000, -390 * 32 }, { 915 * 32, 0x7fff, -210 * 32 }, 128 * 16 },
 };
 
-// The most colour and normal commands a gate's display lists have (gate_4 has 28 colours)
-#define GATE_COMMAND_MAX 32
+// The most colour and normal commands a gate's display list has before its vertices (the waterfront's gate: 50 before
+// its frame's and panel's)
+#define GATE_COMMAND_MAX 64
 
 // A gate's colour and normal commands in the model last drawn with it: each one's opcode and parameter and their own
 // values, and the fog's colour they are scaled by (0x8000: their own)
@@ -176,13 +178,60 @@ static s32 WeatherFog_GxParams(u8 op) {
 #define GX_OP_COLOR 0x20
 #define GX_OP_NORMAL 0x21
 
-// Notes the colour and normal commands of a shape's display list
-static void WeatherFog_ReadShapeCommands(WeatherFogGateCommands *gate, NNSG3dResShpData *shape) {
+// A signed field of a display list's parameter
+static s32 WeatherFog_Signed(u32 value, u32 shift, u32 bits) {
+    return (s32)(value << (32 - shift - bits)) >> (32 - bits);
+}
+
+// Moves the current vertex as a vertex command does (the display list's own units, 4.12)
+static void WeatherFog_MoveVertex(s32 *pos, u8 op, const u32 *params) {
+    u32 i;
+
+    switch (op) {
+    case 0x23:
+        pos[0] = WeatherFog_Signed(params[0], 0, 16);
+        pos[1] = WeatherFog_Signed(params[0], 16, 16);
+        pos[2] = WeatherFog_Signed(params[1], 0, 16);
+        break;
+    case 0x24:
+        for (i = 0; i < 3; i++) {
+            pos[i] = WeatherFog_Signed(params[0], i * 10, 10) << 6;
+        }
+        break;
+    case 0x25:
+        pos[0] = WeatherFog_Signed(params[0], 0, 16);
+        pos[1] = WeatherFog_Signed(params[0], 16, 16);
+        break;
+    case 0x26:
+        pos[0] = WeatherFog_Signed(params[0], 0, 16);
+        pos[2] = WeatherFog_Signed(params[0], 16, 16);
+        break;
+    case 0x27:
+        pos[1] = WeatherFog_Signed(params[0], 0, 16);
+        pos[2] = WeatherFog_Signed(params[0], 16, 16);
+        break;
+    case 0x28:
+        for (i = 0; i < 3; i++) {
+            pos[i] += WeatherFog_Signed(params[0], i * 10, 10);
+        }
+        break;
+    }
+}
+
+// Notes the colour and normal commands of a shape's display list that come before a gate's vertices
+static void WeatherFog_ReadShapeCommands(WeatherFogGateCommands *gate, const WeatherFogGate *data,
+                                         NNSG3dResShpData *shape) {
     u32 *cursor = (u32 *)((u8 *)shape + shape->ofsDL);
     u32 *end = (u32 *)((u8 *)cursor + shape->sizeDL);
+    u8 *pendingOps[2];
+    u32 *pendingParams[2];
+    u32 pending = 0;
+    s32 pos[3] = { 0, 0, 0 };
+    s32 texU = 0;
     u8 *ops;
     s32 params;
     u32 i;
+    u32 j;
 
     // Four opcodes packed in a word, then their parameters
     while (cursor < end) {
@@ -192,12 +241,29 @@ static void WeatherFog_ReadShapeCommands(WeatherFogGateCommands *gate, NNSG3dRes
             if (params < 0) {
                 return;
             }
-            if ((ops[i] == GX_OP_COLOR || ops[i] == GX_OP_NORMAL) && gate->count < GATE_COMMAND_MAX) {
-                gate->opcodes[gate->count] = &ops[i];
-                gate->params[gate->count] = cursor;
-                gate->ownOpcodes[gate->count] = ops[i];
-                gate->ownParams[gate->count] = *cursor;
-                gate->count++;
+            if (ops[i] == GX_OP_COLOR || ops[i] == GX_OP_NORMAL) {
+                // The colour of the vertices after it, which the next one tells whose they are
+                if (pending < NELEMS(pendingOps)) {
+                    pendingOps[pending] = &ops[i];
+                    pendingParams[pending] = cursor;
+                    pending++;
+                }
+            } else if (ops[i] == 0x22) {
+                texU = WeatherFog_Signed(*cursor, 0, 16);
+            } else if (ops[i] >= 0x23 && ops[i] <= 0x28) {
+                WeatherFog_MoveVertex(pos, ops[i], cursor);
+                if (pending != 0 && texU < data->lightU && pos[0] >= data->min[0] && pos[0] <= data->max[0] &&
+                    pos[1] >= data->min[1] && pos[1] <= data->max[1] && pos[2] >= data->min[2] &&
+                    pos[2] <= data->max[2]) {
+                    for (j = 0; j < pending && gate->count < GATE_COMMAND_MAX; j++) {
+                        gate->opcodes[gate->count] = pendingOps[j];
+                        gate->params[gate->count] = pendingParams[j];
+                        gate->ownOpcodes[gate->count] = *pendingOps[j];
+                        gate->ownParams[gate->count] = *pendingParams[j];
+                        gate->count++;
+                    }
+                }
+                pending = 0;
             }
             cursor += params;
         }
@@ -236,7 +302,7 @@ static void WeatherFog_ReadGateCommands(WeatherFogGateCommands *gate, const Weat
         if (op == 0x04 || op == 0x24 || op == 0x44) {
             material = cursor[0];
         } else if (op == 0x05 && material == matIndex && WeatherFog_IsGateShape(data, shp, cursor[0])) {
-            WeatherFog_ReadShapeCommands(gate, NNS_G3dGetShpDataByIdx(shp, cursor[0]));
+            WeatherFog_ReadShapeCommands(gate, data, NNS_G3dGetShpDataByIdx(shp, cursor[0]));
         }
         cursor += params;
     }

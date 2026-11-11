@@ -182,4 +182,8 @@ The user chose C, D and E, and for the fog, fog relative to the player in place 
 - After the third 3DS test (streets, doorways and the street gate right): the bright gate was the waterfront's green
   one to Skyarrow Bridge, `castelia_city_c3_00_01`'s `c3_kanban` shape `polygon11`, lit by light 0, which a weather
   doesn't dim by day; in a weather its normals become colour commands of the fog's colour at runtime.
+- After the fourth 3DS test: the north gate's doorway light (`gate_4`, and `c3_gate_2`) went dark under the tint, so
+  they keep their colours (fog on, as the game has them) and glow up close. `polygon11` turned out to be a signboard
+  beside the waterfront gate; the gate is part of `c3_kanban`'s `polygon3`, and only its frame and panel (by position
+  and texture) take the fog's colour, its glass keeping its light.
 - Not done yet: adding Castelia to the weather calendar.
