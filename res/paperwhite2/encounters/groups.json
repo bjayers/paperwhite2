@@ -39,8 +39,9 @@
         },
         {
             "id": "dragonspiral_tower",
-            "name": "Dragonspiral Tower",
-            "areas": [ "dragonspiral_tower", "dragonspiral_tower_2", "dragonspiral_tower_3", "dragonspiral_tower_4" ]
+            "name": "Dragonspiral (Interior)",
+            "areas": [ "dragonspiral_tower_3", "dragonspiral_tower_4" ],
+            "custom": true
         },
         {
             "id": "dreamyard",
@@ -180,6 +181,18 @@
             "id": "custom_3",
             "name": "Route 20",
             "areas": [ "route_20", "floccesy_ranch" ],
+            "custom": true
+        },
+        {
+            "id": "custom_4",
+            "name": "Dragonspiral (Entrance)",
+            "areas": [ "dragonspiral_tower" ],
+            "custom": true
+        },
+        {
+            "id": "custom_5",
+            "name": "Dragonspiral (Exterior)",
+            "areas": [ "dragonspiral_tower_2" ],
             "custom": true
         }
     ]
