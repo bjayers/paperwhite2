@@ -1,0 +1,1014 @@
+# Batch 3: bugs and forest (40 families). Draft of 2026-11-14 for review.
+#
+# Summary
+# - The bugs' year: caterpillars and larvae in spring, adults in summer, cocoons, spiders and late broods in autumn,
+#   few in winter (Ledyba the exception: autumn and winter leaves, Pokécology). Route 20 peaks in autumn (cocoons,
+#   moths, spiders, mushrooms, as its NPCs show); Pinwheel Forest is the bugs' life cycle through the year.
+# - Mushrooms (Shroomish, Foongus, Paras) peak in autumn in the Southwest's woods, where Swinub dig in winter
+#   (Pokécology; the mountains batch); Paras also in Reversal Mountain's Damp Caves.
+# - Route 12 is Floaroma's honey trees (the user's request): Combee, Burmy and Mothim, Heracross, Aipom, Cherubi,
+#   Wurmple, Teddiursa, Butterfree. The night lights of Route 9's mall and Route 16 draw Venonat and Dustox.
+# - Route 18 is the tropical island: Exeggcute and Exeggutor (the user's request), Bellsprout, Aipom, Slakoth,
+#   Tangela. Its jungle and Pinwheel Forest's depths are this dictionary's Leaf Stone sites (rules.md, 5): Exeggutor,
+#   Victreebel and Shiftry are wild only there, and rarely.
+# - Predators and prey: Yanma is rarer where Swellow hunt it (Routes 6 and 7 in summer); Durant's colonies share their
+#   places with Heatmor (the desert batch); Mothim with Combee.
+# - Lostlorn Forest's "off" Pokémon: the elemental monkeys (all three, the user's request), Foongus's Poké Ball mimicry.
+# - Trophies: Heracross on Route 12, Pinsir in Pinwheel's depths, Scyther in Route 7's tall grass, Vespiquen on Route 12.
+# - Not wild: Scizor, Escavalier, Accelgor (trades), Shedinja, Leavanny and the Simi monkeys (stones), Bellossom and
+#   Vileplume (stones, outside the two sites), Cherrim's sunshine form (it's a battle form).
+# - Review: the two Leaf Stone sites; Burmy's cloaks by place; Tangrowth wild; the Tangrowth-Cubone note (unused).
+
+families:
+
+  - id: caterpie
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Butterfree): it loves flowers' honey and finds patches with the least pollen."
+      - "Pokécology (the user's notes): Butterfree where there are flowers."
+      - "Real world: butterflies on spring and summer meadows; monarchs pass south in autumn (Route 20's valley)."
+    habitats: {flower_field: 3, meadow: 3, woodland_edge: 2, park: 1}
+    time: {periods: day, strength: preferred}
+    seasons: Caterpie in spring, Metapod in early summer, Butterfree summer and autumn; passing south in autumn
+    migration: resident
+    weather: {more: [], less: [rain, gusty_rain], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {caterpie: wild, metapod: wild, butterfree: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_1, methods: [grass], seasons: [spring, summer], tier: common, why: "the flower meadow"}
+      - {place: route_2, methods: [grass], seasons: [spring], tier: uncommon, stages: [caterpie, metapod], why: "caterpillars at the woodland edge"}
+      - {place: route_12, methods: [grass], seasons: [spring, summer], tier: common, why: "the flower hills"}
+      - {place: village_bridge, methods: [dark_grass], seasons: all, tier: uncommon, stages: [butterfree], why: "the flautist's clearing, yellow flowers all year"}
+      - {place: route_20, methods: [grass], seasons: [autumn], tier: uncommon, stages: [butterfree], why: "passing south down the valley in autumn"}
+      - {place: route_19, methods: [grass], seasons: [autumn], tier: uncommon, stages: [butterfree], why: "the valley's autumn passage"}
+      - {place: castelia_park, methods: [grass], seasons: [summer], tier: rare, stages: [butterfree], why: "the park's flowers"}
+    review: []
+
+  - id: weedle
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Kakuna): it hides from predators under leaves and in nooks of branches."
+      - "Pokédex (B2W2, Beedrill): it strikes with poison needles at high speed and flies off."
+      - "Real world: hornets and wasps; Japan's giant hornets in the satoyama's woods; sawflies in pines."
+    habitats: {conifer_forest: 3, woodland_edge: 2, farmland: 1}
+    time: {periods: day, strength: preferred}
+    seasons: Weedle in spring, Kakuna in early summer, Beedrill summer and autumn; none in winter
+    migration: resident
+    weather: {more: [], less: [rain], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {weedle: wild, kakuna: wild, beedrill: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: route_1, methods: [dark_grass], seasons: [spring, summer, autumn], tier: common, why: "the seaside pines"}
+      - {place: abundant_shrine, methods: [dark_grass], seasons: [spring, summer, autumn], tier: uncommon, why: "hornets in the shrine's conifer grove"}
+      - {place: route_11, methods: [grass], seasons: [summer, autumn], tier: uncommon, why: "the conifers above the falls"}
+      - {place: victory_road_forest, methods: [grass], seasons: [summer, autumn], tier: uncommon, stages: [beedrill], why: "the mountain forest's nests"}
+      - {place: route_23, methods: [grass], seasons: [spring, summer], tier: uncommon, why: "the old conifer wood"}
+    review: []
+
+  - id: paras
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Paras): tochukaso mushrooms grow on its back."
+      - "Pokédex (B2W2, Parasect): the mushroom controls the host."
+      - "The places: Reversal Mountain's Damp Caves hold moisture-lovers, fungi among them."
+      - "Real world: cordyceps in damp, dark forest floors and caves."
+    habitats: {dense_forest: 3, cave: 2, deciduous_forest: 2}
+    time: {periods: night, strength: preferred}
+    seasons: all year in the caves; in the forests at its peak in autumn
+    migration: resident
+    weather: {more: [rain], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {paras: wild, parasect: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: reversal_mountain_damp, methods: [grass], seasons: all, tier: common, why: "the Damp Caves' fungi (the user's moisture-lovers)"}
+      - {place: pinwheel_forest, methods: [dark_grass], seasons: [summer, autumn], tier: uncommon, why: "the mossy depths among fallen logs"}
+      - {place: route_20, methods: [dark_grass], seasons: [autumn], tier: uncommon, why: "the woods' mushroom season"}
+      - {place: lostlorn_forest, methods: [grass], seasons: [autumn], tier: rare, why: "the forest floor round the stump"}
+      - {place: wellspring_cave, methods: [grass], seasons: all, tier: rare, why: "the damp cave"}
+    review: []
+
+  - id: venonat
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Venonat): at night its kind is drawn by light."
+      - "Pokédex (B2W2, Venomoth): its scales leach toxins."
+      - "Real world: moths round street lights and lit buildings on summer nights."
+    habitats: {woodland_edge: 3, suburb: 3, deciduous_forest: 2, meadow: 1}
+    time: {periods: night, strength: strict}
+    seasons: late spring to autumn, at its peak in summer
+    migration: resident
+    weather: {more: [], less: [rain], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {venonat: wild, venomoth: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: route_9, methods: [grass, dark_grass], seasons: [spring, summer, autumn], tier: common, why: "drawn to the mall's lights at night"}
+      - {place: route_16, methods: [grass], seasons: [summer, autumn], tier: common, why: "the city edge's lights"}
+      - {place: route_5, methods: [grass], seasons: [summer], tier: uncommon, why: "the road's lights"}
+      - {place: village_bridge, methods: [grass], seasons: [summer], tier: uncommon, why: "the village's lamps"}
+      - {place: pinwheel_forest, methods: [grass], seasons: [summer], tier: uncommon, why: "the road through the forest"}
+    review: []
+
+  - id: scyther
+    origin: native
+    lore:
+      - "Pokédex (B2W2): its scythes grow sharper by cutting through hard things."
+      - "Other games: tall grass of the Safari Zone and the National Park."
+      - "The places: Route 7's very tall grass hides stalkers (and the player); Route 22's walkways over tall grass suit them too."
+      - "Real world: mantises, adult in late summer, hunting from tall grass."
+    habitats: {meadow: 3, marsh: 2, hills: 1}
+    time: {periods: day, strength: preferred}
+    seasons: summer and autumn
+    migration: resident
+    weather: {more: [], less: [rain], only: []}
+    abundance: rare
+    trophy: [route_7]
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {scyther: wild, scizor: {wild: false, note: "a trade's"}}
+    levels: {scyther: [15, 100]}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: route_7, methods: [dark_grass], seasons: [summer, autumn], tier: exotic, why: "a stalker in the very tall grass: the trophy"}
+      - {place: route_22, methods: [dark_grass], seasons: [summer, autumn], tier: rare, why: "the tall grass under the walkways"}
+      - {place: route_3, methods: [dark_grass], seasons: [summer], tier: very_rare, why: "the route's wild edges"}
+    review: []
+
+  - id: pinsir
+    origin: native
+    lore:
+      - "Pokédex (B2W2): it grips prey and won't let go until it's torn in half."
+      - "Real world: stag beetles in old broadleaf forest, in fallen logs and on sap, in summer."
+    habitats: {dense_forest: 3, deciduous_forest: 2, conifer_forest: 1}
+    time: {periods: night, strength: preferred}
+    seasons: summer
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: rare
+    trophy: [pinwheel_forest]
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {pinsir: wild}
+    levels: {pinsir: [15, 100]}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: pinwheel_forest, methods: [dark_grass], seasons: [summer], tier: exotic, why: "the old forest's fallen logs: the trophy"}
+      - {place: route_6, methods: [dark_grass], seasons: [summer], tier: very_rare, why: "the valley's old trees"}
+      - {place: nature_preserve, methods: [dark_grass], seasons: [summer], tier: rare, why: "untouched forest"}
+    review: []
+
+  - id: ledyba
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Ledyba): so timid it can't move without a swarm."
+      - "Pokédex (B2W2, Ledian): it uses starlight as energy."
+      - "Pokécology (the user's notes): Ledyba in autumn and winter leaves: common in leafy autumn places, less in winter, none in spring and summer."
+      - "In the game: Ledyba NPCs on Route 20 and at Floccesy Ranch."
+    habitats: {deciduous_forest: 3, woodland_edge: 3, park: 1}
+    time: {periods: day, strength: preferred}
+    seasons: autumn (common) and winter (less); none in spring and summer
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: family}
+    stages: {ledyba: wild, ledian: {wild: true, note: "at night, by starlight"}}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: float}
+    homes:
+      - {place: route_20, methods: [grass, dark_grass], seasons: [autumn], tier: common, why: "its NPCs; the valley's autumn leaves"}
+      - {place: route_20, methods: [grass], seasons: [winter], tier: uncommon, why: "the leaf litter in winter"}
+      - {place: floccesy_ranch, methods: [grass], seasons: [autumn, winter], tier: uncommon, why: "its NPCs; the forest's leaves"}
+      - {place: route_6, methods: [grass], seasons: [autumn], tier: common, why: "the valley's autumn woods"}
+      - {place: route_6, methods: [grass], seasons: [winter], tier: uncommon, why: "winter leaves"}
+      - {place: route_2, methods: [grass], seasons: [autumn, winter], tier: uncommon, why: "light woods"}
+      - {place: route_16, methods: [dark_grass], seasons: [autumn], tier: uncommon, why: "the forest edge"}
+      - {place: village_bridge, methods: [dark_grass], seasons: [autumn], tier: uncommon, why: "the woods round the clearing"}
+      - {place: pinwheel_forest, methods: [grass], seasons: [autumn, winter], tier: uncommon, why: "the forest's leaves"}
+    review: []
+
+  - id: spinarak
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Spinarak): it waits motionless on its web for prey."
+      - "Pokédex (B2W2, Ariados): it tracks the silk it ties to prey to find the prey's friends."
+      - "In the game: Spinarak NPCs on Route 20; the places make autumn its spiders' peak."
+    habitats: {deciduous_forest: 3, woodland_edge: 2, dense_forest: 2}
+    time: {periods: night, strength: preferred}
+    seasons: summer and autumn, at its peak in autumn
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {spinarak: wild, ariados: wild}
+    levels: {}
+    wanderer: {appears: steps, wanders: passive, grass: stand}
+    homes:
+      - {place: route_20, methods: [grass, dark_grass], seasons: [autumn], tier: common, why: "its NPCs; autumn webs"}
+      - {place: route_20, methods: [dark_grass], seasons: [summer], tier: uncommon, why: "webs in the woods"}
+      - {place: pinwheel_forest, methods: [grass, dark_grass], seasons: [summer, autumn], tier: uncommon, why: "the forest's webs"}
+      - {place: route_2, methods: [grass], seasons: [autumn], tier: uncommon, why: "webs between the light woods"}
+      - {place: lostlorn_forest, methods: [dark_grass], seasons: [summer, autumn], tier: uncommon, why: "the forest at night"}
+      - {place: route_6, methods: [dark_grass], seasons: [autumn], tier: uncommon, why: "off the path"}
+    review:
+      - "Met by a step only (it waits on its web)."
+
+  - id: pineco
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Pineco): it looks like a pinecone; birds peck it by mistake."
+      - "Real world: pine and spruce forests, cones falling in autumn."
+    habitats: {conifer_forest: 3, mountain: 1}
+    time: {periods: any, strength: none}
+    seasons: all year, most in autumn
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {pineco: wild, forretress: wild}
+    levels: {}
+    wanderer: {appears: steps, wanders: passive, grass: stand}
+    homes:
+      - {place: route_1, methods: [dark_grass], seasons: all, tier: common, why: "the seaside pines"}
+      - {place: abundant_shrine, methods: [dark_grass], seasons: all, tier: common, why: "the shrine's conifer grove"}
+      - {place: route_11, methods: [grass], seasons: all, tier: uncommon, why: "the conifers"}
+      - {place: route_23, methods: [grass], seasons: all, tier: common, why: "the old conifer wood"}
+      - {place: victory_road_forest, methods: [grass, dark_grass], seasons: all, tier: common, why: "the mountain forest"}
+    review:
+      - "Met by a step only: it hangs in the trees like a cone."
+
+  - id: heracross
+    origin: native
+    lore:
+      - "Pokédex (B2W2): it flings heavy foes far with its horn."
+      - "Other games: Sinnoh's honey trees; tree sap in Johto's forests."
+      - "The places: Route 12 as Floaroma's honey trees (the user's request)."
+    habitats: {flower_field: 2, deciduous_forest: 3, woodland_edge: 2}
+    time: {periods: day, strength: preferred}
+    seasons: summer, a few in late spring and early autumn
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: rare
+    trophy: [route_12]
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {heracross: wild}
+    levels: {heracross: [15, 100]}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: route_12, methods: [dark_grass], seasons: [spring, summer, autumn], tier: exotic, why: "the honey trees: the trophy"}
+      - {place: pinwheel_forest, methods: [dark_grass], seasons: [summer], tier: very_rare, why: "the old forest's sap"}
+      - {place: route_6, methods: [dark_grass], seasons: [summer], tier: very_rare, why: "the valley's old trees"}
+    review: []
+
+  - id: yanma
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Yanma): it flies freely and stops dead in the air."
+      - "Pokécology (the user's notes): Swellow prey on Yanma."
+      - "In the game: Yanma NPCs on Route 20; the places: dragonflies over Pinwheel's outskirts, Abundant Shrine's ponds, Route 3's lake."
+      - "Real world: dragonflies hatch over marshes and ponds in summer."
+    habitats: {marsh: 3, pond: 3, lake: 2, stream: 2}
+    time: {periods: day, strength: preferred}
+    seasons: >-
+      Summer, a few in late spring and early autumn; rarer where Swellow hunt them (Routes 6 and 7 in summer: the
+      birds' batch).
+    migration: resident
+    weather: {more: [], less: [rain], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {yanma: wild, yanmega: {wild: true, note: "the big ones, rare"}}
+    levels: {yanmega: [33, 100]}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: pinwheel_forest_outskirts, methods: [grass, dark_grass], seasons: [summer], tier: common, why: "the insects' nursery over the puddles"}
+      - {place: pinwheel_forest_outskirts, methods: [grass], seasons: [spring, autumn], tier: uncommon, why: "the first and last of them"}
+      - {place: abundant_shrine, methods: [grass], seasons: [summer], tier: common, why: "dragonflies over the paddies' ponds"}
+      - {place: route_3, methods: [grass], seasons: [summer], tier: common, why: "the lake's shore"}
+      - {place: icirrus_city, methods: [grass], seasons: [summer], tier: common, why: "the fens in summer"}
+      - {place: route_20, methods: [grass], seasons: [summer], tier: uncommon, why: "its NPCs, over the stream"}
+      - {place: route_6, methods: [grass], seasons: [summer], tier: rare, why: "fewer where the Swellow hunt (Pokécology)"}
+      - {place: route_7, methods: [grass], seasons: [summer], tier: uncommon, why: "hatching over the marsh, hunted by Swellow"}
+    review: []
+
+  - id: wurmple
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Wurmple): often targeted by birds, it resists with poison from its tail."
+      - "Pokédex (B2W2, Silcoon): it drinks rainwater on its silk."
+      - "Pokédex (B2W2, Dustox): at night it strips the leaves of trees lining boulevards."
+      - "In the game: Wurmple, Silcoon, Cascoon, Beautifly and Dustox NPCs on Route 20 (its autumn peak)."
+    habitats: {deciduous_forest: 3, woodland_edge: 3, flower_field: 2, suburb: 1}
+    time: {periods: any, strength: none}
+    seasons: Wurmple in spring and summer, the cocoons in summer and autumn, Beautifly by day and Dustox by night in summer and autumn
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {wurmple: wild, silcoon: wild, beautifly: {wild: true, note: "by day"}, cascoon: wild, dustox: {wild: true, note: "by night"}}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_20, methods: [grass], seasons: [spring, summer], tier: common, stages: [wurmple], why: "its NPCs; caterpillars in the clearings"}
+      - {place: route_20, methods: [grass, dark_grass], seasons: [autumn], tier: common, stages: [silcoon, cascoon, beautifly, dustox], why: "the route's autumn: cocoons, butterflies and moths"}
+      - {place: route_2, methods: [grass], seasons: [spring, summer], tier: common, why: "light woods"}
+      - {place: pinwheel_forest, methods: [grass], seasons: [spring, summer, autumn], tier: common, why: "the bugs' life cycle"}
+      - {place: route_6, methods: [grass], seasons: [spring, summer], tier: uncommon, why: "the valley's woods"}
+      - {place: route_12, methods: [grass], seasons: [spring, summer], tier: uncommon, why: "the honey trees (Sinnoh's)"}
+      - {place: route_9, methods: [grass], seasons: [summer, autumn], tier: uncommon, stages: [dustox], times: night, why: "stripping the leaves of the road's trees at night"}
+      - {place: route_16, methods: [grass], seasons: [summer, autumn], tier: uncommon, stages: [dustox], times: night, why: "the city's boulevards at night"}
+    review: []
+
+  - id: nincada
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Nincada): it grows underground, sensing with its antennae."
+      - "Pokédex (B2W2, Ninjask): so quick it can't be seen; it gathers round tree sap."
+      - "Real world: cicadas: years underground, then a summer of song in the trees."
+    habitats: {deciduous_forest: 3, woodland_edge: 2, park: 1}
+    time: {periods: day, strength: preferred}
+    seasons: Nincada in spring and summer (coming up), Ninjask in summer
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {nincada: wild, ninjask: {wild: true, note: "summer's sap trees"}, shedinja: {wild: false, note: "made only by evolution"}}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: route_2, methods: [grass], seasons: [spring, summer], tier: uncommon, stages: [nincada], why: "coming up from the woodland soil"}
+      - {place: route_16, methods: [grass], seasons: [summer], tier: uncommon, why: "cicadas along the road"}
+      - {place: route_12, methods: [dark_grass], seasons: [summer], tier: uncommon, stages: [ninjask], why: "round the honey trees' sap"}
+      - {place: pinwheel_forest, methods: [grass], seasons: [summer], tier: uncommon, why: "the forest's summer song"}
+      - {place: castelia_park, methods: [grass], seasons: [summer], tier: rare, why: "cicadas in the city's trees"}
+    review: []
+
+  - id: volbeat
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Volbeat): it signals with its glowing tail at night and loves Illumise's sweet aroma."
+      - "The places: fireflies on summer nights at Abundant Shrine's ponds (a satoyama's fireflies)."
+    habitats: {pond: 3, farmland: 3, meadow: 2, marsh: 2}
+    time: {periods: night, strength: strict}
+    seasons: early to late summer
+    migration: resident
+    weather: {more: [], less: [rain], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: area}
+    stages: {volbeat: wild}
+    levels: {volbeat: [5, 100]}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: abundant_shrine, methods: [grass, dark_grass], seasons: [summer], tier: common, why: "fireflies over the paddies on summer nights"}
+      - {place: route_3, methods: [grass], seasons: [summer], tier: uncommon, why: "the lake's edge at night"}
+      - {place: pinwheel_forest_outskirts, methods: [grass], seasons: [summer], tier: uncommon, why: "the outskirts' marsh"}
+      - {place: route_12, methods: [grass], seasons: [summer], tier: rare, why: "the hills' summer nights"}
+    review:
+      - "Partners 'area' so that Illumise joins Volbeat (and the reverse), as they display together."
+
+  - id: illumise
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Illumise): its sweet aroma guides Volbeat to draw signs in the night sky."
+      - "The places: the fireflies of Abundant Shrine's summer nights."
+    habitats: {pond: 3, farmland: 3, meadow: 2, marsh: 2}
+    time: {periods: night, strength: strict}
+    seasons: early to late summer
+    migration: resident
+    weather: {more: [], less: [rain], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: area}
+    stages: {illumise: wild}
+    levels: {illumise: [5, 100]}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: abundant_shrine, methods: [grass, dark_grass], seasons: [summer], tier: common, why: "with Volbeat over the paddies"}
+      - {place: route_3, methods: [grass], seasons: [summer], tier: uncommon, why: "with Volbeat at the lake"}
+      - {place: pinwheel_forest_outskirts, methods: [grass], seasons: [summer], tier: uncommon, why: "with Volbeat in the marsh"}
+      - {place: route_12, methods: [grass], seasons: [summer], tier: rare, why: "with Volbeat on the hills"}
+    review: []
+
+  - id: kricketot
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Kricketune): a village holds a contest for its variable cries."
+      - "The places: Village Bridge's music theme (Kricketot singing at dusk); crickets in autumn at Abundant Shrine."
+      - "Real world: crickets sing on late-summer and autumn evenings."
+    habitats: {meadow: 3, farmland: 2, woodland_edge: 2}
+    time: {periods: [evening, night], strength: preferred}
+    seasons: late summer and autumn
+    migration: resident
+    weather: {more: [], less: [rain], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {kricketot: wild, kricketune: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: village_bridge, methods: [grass], seasons: [summer, autumn], tier: common, why: "the village of song: singing at dusk"}
+      - {place: abundant_shrine, methods: [grass], seasons: [autumn], tier: common, why: "crickets in the autumn fields"}
+      - {place: route_1, methods: [grass], seasons: [autumn], tier: uncommon, why: "the autumn meadow"}
+      - {place: route_9, methods: [grass], seasons: [autumn], tier: uncommon, why: "the outskirts' meadow"}
+      - {place: route_3, methods: [grass], seasons: [autumn], tier: uncommon, why: "the old fields"}
+    review: []
+
+  - id: burmy
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Burmy): wherever it's born, it ends up with a cloak (from what's round it)."
+      - "Pokédex (B2W2, Mothim): it steals honey from Combee rather than gather it (Pokécology too)."
+      - "Other games: Sinnoh's honey trees."
+    habitats: {flower_field: 3, deciduous_forest: 2, industrial: 1, desert: 1}
+    time: {periods: any, strength: none}
+    seasons: spring to autumn; the cocoon-like Burmy all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {burmy: wild, wormadam: wild, mothim: {wild: true, note: "where Combee are"}}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_12, methods: [grass, dark_grass], seasons: all, tier: uncommon, form: 0, why: "the honey trees (a Plant Cloak); Mothim stealing Combee's honey"}
+      - {place: pinwheel_forest, methods: [grass], seasons: all, tier: uncommon, form: 0, why: "a Plant Cloak in the forest"}
+      - {place: route_4, methods: [grass], seasons: all, tier: rare, form: 1, stages: [burmy, wormadam], why: "a Sandy Cloak from the road's sand"}
+      - {place: virbank_complex, methods: [grass], seasons: all, tier: uncommon, form: 2, stages: [burmy, wormadam], why: "a Trash Cloak from the complex's scrap"}
+      - {place: castelia_park, methods: [grass], seasons: all, tier: rare, form: 2, stages: [burmy, wormadam], why: "a Trash Cloak in the city"}
+    review:
+      - "Burmy's cloak by place (Plant 0, Sandy 1, Trash 2): check the form numbers in-game."
+
+  - id: combee
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Combee): a set of three; asleep, 100 gather into a hive."
+      - "Pokédex (B2W2, Vespiquen): it houses its colony in its body."
+      - "The user: Combee on Route 12 (as Floaroma); perhaps in Lostlorn Forest (its Hidden Grotto is there)."
+      - "Real world: honeybee colonies forage flowers from spring to autumn and cluster in the hive in winter."
+    habitats: {flower_field: 3, meadow: 2, woodland_edge: 2}
+    time: {periods: day, strength: strict}
+    seasons: spring to autumn; in the hive (not found) in winter
+    migration: resident
+    weather: {more: [], less: [rain, gusty_rain, thunderstorm], only: []}
+    abundance: common
+    trophy: [route_12]
+    battles: {single: 70, double: 20, triple: 10, partners: family}
+    stages: {combee: wild, vespiquen: {wild: true, note: "the queen, very rare"}}
+    levels: {vespiquen: [21, 100]}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: route_12, methods: [grass], seasons: [spring, summer, autumn], tier: common, stages: [combee], why: "the honey trees and flower hills (the user's request)"}
+      - {place: route_12, methods: [dark_grass], seasons: [spring, summer], tier: exotic, stages: [vespiquen], why: "the queen by her hive: the trophy"}
+      - {place: lostlorn_forest, methods: [grass], seasons: [spring, summer], tier: uncommon, stages: [combee], why: "the forest's clearing of flowers"}
+      - {place: village_bridge, methods: [dark_grass], seasons: [spring, summer, autumn], tier: uncommon, stages: [combee], why: "the flautist's flowery clearing"}
+      - {place: route_1, methods: [grass], seasons: [spring], tier: uncommon, stages: [combee], why: "the meadow's spring blossom"}
+    review: []
+
+  - id: sewaddle
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Sewaddle): it makes its own clothes out of leaves."
+      - "Pokédex (B2W2, Swadloon): it prefers dark, damp places, eating fallen leaves all day."
+      - "In the original games: Pinwheel Forest, Routes 6 and 12, Lostlorn Forest."
+    habitats: {deciduous_forest: 3, dense_forest: 3, woodland_edge: 2}
+    time: {periods: any, strength: none}
+    seasons: Sewaddle in spring and summer, Swadloon in autumn and winter (in the leaf litter)
+    migration: resident
+    weather: {more: [rain], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {sewaddle: wild, swadloon: wild, leavanny: {wild: false, note: "by friendship"}}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: pinwheel_forest, methods: [grass], seasons: [spring, summer], tier: common, stages: [sewaddle], why: "the original's caterpillar"}
+      - {place: pinwheel_forest, methods: [dark_grass], seasons: [autumn, winter], tier: common, stages: [swadloon], why: "the damp, dark depths' leaf litter"}
+      - {place: route_6, methods: [grass], seasons: [spring, summer], tier: uncommon, stages: [sewaddle], why: "the valley's woods"}
+      - {place: route_6, methods: [dark_grass], seasons: [autumn], tier: uncommon, stages: [swadloon], why: "the woods' leaves"}
+      - {place: lostlorn_forest, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the forest floor"}
+      - {place: route_20, methods: [dark_grass], seasons: [autumn], tier: uncommon, stages: [swadloon], why: "the deep woods' autumn leaves"}
+    review: []
+
+  - id: venipede
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Venipede): its feelers pick up vibrations to find prey."
+      - "Pokédex (B2W2, Scolipede): it holds prey with its neck's claws until it stops moving."
+      - "In the game: Venipede NPCs on Route 20."
+      - "Real world: centipedes in damp leaf litter, out at night."
+    habitats: {deciduous_forest: 3, dense_forest: 3, woodland_edge: 2}
+    time: {periods: night, strength: preferred}
+    seasons: spring to autumn; few in winter
+    migration: resident
+    weather: {more: [rain], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {venipede: wild, whirlipede: wild, scolipede: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: route_20, methods: [grass, dark_grass], seasons: [spring, summer, autumn], tier: common, why: "its NPCs; damp woods"}
+      - {place: pinwheel_forest, methods: [grass, dark_grass], seasons: [spring, summer, autumn], tier: common, why: "the original's centipedes, in the logs"}
+      - {place: lostlorn_forest, methods: [dark_grass], seasons: [summer, autumn], tier: uncommon, why: "the forest's floor"}
+      - {place: route_2, methods: [grass], seasons: [summer], tier: uncommon, why: "the woodland's leaf litter"}
+    review: []
+
+  - id: karrablast
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Karrablast): they evolve when they receive electricity while attacking Shelmet."
+      - "In the original games: Route 6 and the like, with Shelmet."
+      - "Real world: beetles that prey on snails in damp woods."
+    habitats: {deciduous_forest: 3, woodland_edge: 2}
+    time: {periods: day, strength: none}
+    seasons: spring to autumn
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: area}
+    stages: {karrablast: wild, escavalier: {wild: false, note: "a trade's"}}
+    levels: {karrablast: [5, 100]}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: route_6, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "hunting Shelmet in the valley's woods, as in the original"}
+      - {place: pinwheel_forest, methods: [dark_grass], seasons: [spring, summer, autumn], tier: uncommon, why: "where the Shelmet are"}
+      - {place: route_20, methods: [grass], seasons: [summer], tier: rare, why: "the damp woods"}
+    review:
+      - "Partners 'area' so that Shelmet can join (they're always together)."
+
+  - id: shelmet
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Shelmet): with Karrablast, both evolve from an electric stimulus."
+      - "Pokédex (B2W2, Accelgor): it weakens when it dries out."
+      - "Real world: snails in damp woods, out after rain."
+    habitats: {deciduous_forest: 3, dense_forest: 3, cave: 1}
+    time: {periods: any, strength: none}
+    seasons: spring to autumn, out after rain
+    migration: resident
+    weather: {more: [rain], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: area}
+    stages: {shelmet: wild, accelgor: {wild: false, note: "a trade's"}}
+    levels: {shelmet: [5, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_6, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "with Karrablast in the valley's woods"}
+      - {place: pinwheel_forest, methods: [dark_grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the damp depths"}
+      - {place: reversal_mountain_damp, methods: [grass], seasons: all, tier: uncommon, why: "the Damp Caves' slugs and snails (the user's moisture-lovers)"}
+    review: []
+
+  - id: durant
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Durant): each plays a role in driving Heatmor, its natural predator, from the colony."
+      - "In the original games: Victory Road."
+      - "Real world: ant colonies in dry, rocky ground; anteaters follow them."
+    habitats: {cave: 3, badlands: 3, mountain: 2, deep_cave: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: family}
+    stages: {durant: wild}
+    levels: {durant: [10, 100]}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: victory_road_caves, methods: [grass], seasons: all, tier: common, why: "the colonies of the original's Victory Road"}
+      - {place: victory_road_mountainside, methods: [dark_grass], seasons: all, tier: uncommon, why: "anthills among the rocks"}
+      - {place: reversal_mountain_outside, methods: [dark_grass], seasons: all, tier: uncommon, why: "the badlands' anthills (Heatmor nearby)"}
+      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: rare, why: "the colony's deep tunnels, Heatmor's hunting ground"}
+    review:
+      - "Heatmor (the desert batch) shares these four places, a tier rarer."
+
+  - id: joltik
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Joltik): it can't make electricity, so it clings to big Pokémon for their static."
+      - "Pokédex (B2W2, Galvantula): it spins electrified silk barriers."
+      - "In the original games: Chargestone Cave."
+    habitats: {cave: 3, deep_cave: 2, industrial: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [thunderstorm], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: area}
+    stages: {joltik: wild, galvantula: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: chargestone_cave, methods: [grass], seasons: all, tier: common, why: "feeding on the charged stones' field"}
+      - {place: virbank_complex, methods: [dark_grass], seasons: all, tier: rare, stages: [joltik], why: "static from the complex's machines"}
+    review:
+      - "Partners 'area': it clings to the cave's bigger Pokémon."
+
+  - id: shuckle
+    origin: native
+    lore:
+      - "Pokédex (B2W2): the berries it stores in its shell turn to juice."
+      - "Other games: under rocks by the sea and in caves (Johto's Route 40, Cianwood)."
+    habitats: {rocky_shore: 3, cave: 2, mountain: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {shuckle: wild}
+    levels: {shuckle: [10, 100]}
+    wanderer: {appears: steps, wanders: passive, grass: stand}
+    homes:
+      - {place: seaside_cave, methods: [grass, rustling], seasons: all, tier: rare, why: "under the sea cave's rocks"}
+      - {place: route_15, methods: [dark_grass], seasons: all, tier: rare, why: "among the boulders"}
+      - {place: route_13, methods: [rustling], seasons: all, tier: rare, why: "under the beach cliffs' rocks, in the shaking grass"}
+    review: []
+
+  - id: seedot
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Seedot): hanging from a branch it looks just like an acorn."
+      - "Pokédex (B2W2, Nuzleaf): it lives deep in forests."
+      - "In the game: Seedot NPCs on Route 19 and at Floccesy Ranch, and a scripted Seedot on Route 19."
+      - "Real world: oak woods; acorns fall in autumn."
+    habitats: {deciduous_forest: 3, woodland_edge: 3, dense_forest: 2}
+    time: {periods: any, strength: none}
+    seasons: all year, most in autumn (acorn time)
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {seedot: wild, nuzleaf: wild, shiftry: {wild: true, note: "Pinwheel's depths only (a Leaf Stone site)"}}
+    levels: {shiftry: [32, 100]}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: route_19, methods: [grass], seasons: all, tier: common, stages: [seedot], why: "its NPCs and scripted battle, among the trees"}
+      - {place: floccesy_ranch, methods: [grass], seasons: all, tier: uncommon, why: "its NPCs; the forest's oaks"}
+      - {place: route_20, methods: [grass], seasons: [autumn], tier: common, why: "the oak woods' acorns"}
+      - {place: route_2, methods: [grass], seasons: all, tier: uncommon, stages: [seedot], why: "light woods"}
+      - {place: pinwheel_forest, methods: [dark_grass], seasons: all, tier: uncommon, stages: [nuzleaf], why: "deep in the forest"}
+      - {place: pinwheel_forest, methods: [dark_grass], seasons: all, tier: very_rare, stages: [shiftry], why: "the old forest's Leaf Stone influence"}
+      - {place: route_6, methods: [dark_grass], seasons: [autumn], tier: uncommon, why: "the valley's oaks"}
+    review: []
+
+  - id: shroomish
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Breloom): its technique equals a pro boxer's."
+      - "In the game: Shroomish NPCs on Routes 19 and 20 and at Floccesy Ranch."
+      - "Pokécology (the user's notes): Swinub digs up mushrooms from under the snow, so the Southwest's autumn mushroom places are its winter places."
+    habitats: {deciduous_forest: 3, dense_forest: 3, woodland_edge: 2}
+    time: {periods: any, strength: none}
+    seasons: autumn at its peak, spring and summer after rain; under the snow in winter
+    migration: resident
+    weather: {more: [rain], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {shroomish: wild, breloom: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_19, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, stages: [shroomish], why: "its NPCs"}
+      - {place: route_20, methods: [grass, dark_grass], seasons: [autumn], tier: common, why: "its NPCs; the woods' mushroom season"}
+      - {place: route_20, methods: [grass], seasons: [spring, summer], tier: uncommon, why: "after rain"}
+      - {place: floccesy_ranch, methods: [grass], seasons: [summer, autumn], tier: uncommon, why: "its NPCs; the forest's edge"}
+      - {place: pinwheel_forest, methods: [dark_grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the mossy depths"}
+    review: []
+
+  - id: slakoth
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Slakoth): three leaves a day suffice; it sleeps 20 hours."
+      - "Pokédex (B2W2, Vigoroth): it can't sit still."
+      - "Other games: Petalburg Woods."
+      - "Real world: sloths of tropical treetops."
+    habitats: {dense_forest: 3, woodland_edge: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {slakoth: wild, vigoroth: wild, slaking: {wild: true, note: "very rare, lying in the deepest grass"}}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_18, methods: [dark_grass], seasons: all, tier: uncommon, why: "the island's tropical treetops"}
+      - {place: pinwheel_forest, methods: [dark_grass], seasons: all, tier: rare, why: "the old forest's canopy"}
+      - {place: nature_preserve, methods: [dark_grass], seasons: all, tier: rare, why: "untouched forest"}
+    review: []
+
+  - id: aipom
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Aipom): it lives high in the treetops and uses its tail like a hand."
+      - "Other games: Sinnoh's honey trees."
+      - "In the game: an Ambipom trade."
+    habitats: {woodland_edge: 3, deciduous_forest: 2, dense_forest: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year on Route 18; spring to autumn at Route 12's honey trees
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {aipom: wild, ambipom: {wild: true, note: "very rare"}}
+    levels: {ambipom: [32, 100]}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: route_18, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the island's treetops"}
+      - {place: route_12, methods: [dark_grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the honey trees (Sinnoh's)"}
+    review: []
+
+  - id: pansage
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Pansage): good at finding berries, it shares them with friends."
+      - "The user: Lostlorn Forest's 'off' Pokémon include the elemental monkeys."
+      - "In the original games: Pinwheel Forest and Lostlorn Forest."
+    habitats: {deciduous_forest: 3, dense_forest: 2, woodland_edge: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {pansage: wild, simisage: {wild: false, note: "a Leaf Stone's"}}
+    levels: {pansage: [5, 100]}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: lostlorn_forest, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the elemental monkeys' forest (the user's request)"}
+      - {place: pinwheel_forest, methods: [grass], seasons: all, tier: uncommon, why: "berries in the old forest"}
+    review: []
+
+  - id: pansear
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Pansear): it roasts berries before eating them and likes to help people."
+      - "Pokédex (B2W2, Simisear): for some reason, it loves sweets."
+      - "The user: the elemental monkeys in Lostlorn Forest."
+    habitats: {deciduous_forest: 2, badlands: 2, volcanic: 1}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [rain], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {pansear: wild, simisear: {wild: false, note: "a Fire Stone's"}}
+    levels: {pansear: [5, 100]}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: lostlorn_forest, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the elemental monkeys' forest (the user's request)"}
+      - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: rare, why: "warm ground by the fiery mountain"}
+      - {place: route_5, methods: [dark_grass], seasons: all, tier: rare, why: "the wooded strip by the road, after the cook's sweets"}
+    review: []
+
+  - id: panpour
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Panpour): it waters plants with the nutrient-rich water in its tuft."
+      - "Pokédex (B2W2, Simipour): it prefers places with clean water."
+      - "The user: the elemental monkeys in Lostlorn Forest."
+    habitats: {stream: 3, river: 2, deciduous_forest: 2, waterfall: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [rain], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {panpour: wild, simipour: {wild: false, note: "a Water Stone's"}}
+    levels: {panpour: [5, 100]}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: lostlorn_forest, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the elemental monkeys' forest, by its clean stream (the user's request)"}
+      - {place: route_14, methods: [grass], seasons: all, tier: rare, why: "the clean mountain rivers"}
+    review: []
+
+  - id: teddiursa
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Teddiursa): it soaks its paws in honey to lick them."
+      - "Pokédex (B2W2, Ursaring): it marks trees bearing good fruit with scratches."
+      - "The places: Teddiursa drawn by Route 12's honey."
+      - "Real world: bears sleep through the winter."
+    habitats: {deciduous_forest: 3, conifer_forest: 2, flower_field: 2, mountain: 1}
+    time: {periods: day, strength: preferred}
+    seasons: spring to autumn; asleep in winter
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {teddiursa: wild, ursaring: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: stand}
+    homes:
+      - {place: route_12, methods: [dark_grass], seasons: [spring, summer, autumn], tier: uncommon, stages: [teddiursa], why: "drawn by the honey trees"}
+      - {place: route_11, methods: [dark_grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the woods below the falls"}
+      - {place: route_6, methods: [dark_grass], seasons: [summer, autumn], tier: rare, why: "the valley's woods"}
+      - {place: victory_road_forest, methods: [dark_grass], seasons: [spring, summer, autumn], tier: uncommon, stages: [ursaring], why: "the mountain forest's bears"}
+      - {place: route_23, methods: [grass], seasons: [summer, autumn], tier: rare, stages: [ursaring], why: "the conifer wood's stalkers"}
+    review: []
+
+  - id: tangela
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Tangela): its vines hide what it really is."
+      - "Pokédex (B2W2, Tangrowth): an arm eaten, it regrows."
+      - "Pokécology (the user's notes): Tangrowth preys on Cubone? (left aside: they share no habitat)."
+    habitats: {dense_forest: 3, woodland_edge: 2, marsh: 1}
+    time: {periods: any, strength: none}
+    seasons: all year, fewer in winter
+    migration: resident
+    weather: {more: [rain], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {tangela: wild, tangrowth: {wild: true, note: "very rare"}}
+    levels: {tangrowth: [33, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_18, methods: [dark_grass], seasons: all, tier: uncommon, why: "the island's jungle"}
+      - {place: pinwheel_forest, methods: [dark_grass], seasons: [spring, summer, autumn], tier: rare, why: "the mossy depths"}
+      - {place: nature_preserve, methods: [dark_grass], seasons: all, tier: uncommon, why: "untouched forest"}
+    review:
+      - "The Tangrowth-Cubone note isn't used: Cubone lives in dry badlands and canyons."
+
+  - id: foongus
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Foongus): its pattern looks just like a Poké Ball, to lure Pokémon."
+      - "Pokédex (B2W2, Amoonguss): it prefers damp places."
+      - "In the game: Hidden Grottoes on Routes 6, 13 and 22, Abundant Shrine and Pinwheel Forest; a static Foongus disguised as an item."
+    habitats: {deciduous_forest: 3, dense_forest: 3, woodland_edge: 2, marsh: 1}
+    time: {periods: any, strength: none}
+    seasons: all year, most in autumn and after rain
+    migration: resident
+    weather: {more: [rain], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {foongus: wild, amoonguss: wild}
+    levels: {}
+    wanderer: {appears: steps, wanders: passive, grass: stand}
+    homes:
+      - {place: lostlorn_forest, methods: [grass], seasons: all, tier: uncommon, why: "a Poké Ball that isn't: the forest's tricksters"}
+      - {place: route_6, methods: [grass, dark_grass], seasons: [autumn], tier: common, why: "the valley's damp autumn woods"}
+      - {place: route_6, methods: [dark_grass], seasons: [spring, summer], tier: uncommon, why: "damp woods"}
+      - {place: pinwheel_forest, methods: [dark_grass], seasons: all, tier: uncommon, why: "the mossy depths"}
+      - {place: route_20, methods: [dark_grass], seasons: [autumn], tier: uncommon, why: "the mushroom season"}
+      - {place: route_7, methods: [grass], seasons: [autumn], tier: uncommon, why: "the rainy marsh's edges"}
+    review:
+      - "Met by a step only (it lies still and looks like an item)."
+
+  - id: carnivine
+    origin: native
+    lore:
+      - "Pokédex (B2W2): it lashes itself to trees and lures prey with sweet-smelling drool."
+      - "The places: the Moor of Icirrus's bog oddities (carnivorous plants)."
+      - "Real world: pitcher plants and sundews on peat bogs."
+    habitats: {marsh: 3, swamp: 3}
+    time: {periods: any, strength: none}
+    seasons: spring to autumn
+    migration: resident
+    weather: {more: [rain], less: [], only: []}
+    abundance: rare
+    trophy: [moor_of_icirrus]
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {carnivine: wild}
+    levels: {carnivine: [10, 100]}
+    wanderer: {appears: steps, wanders: passive, grass: stand}
+    homes:
+      - {place: moor_of_icirrus, methods: [grass], seasons: [spring, summer, autumn], tier: exotic, why: "the bog's carnivorous plant: the trophy"}
+      - {place: route_7, methods: [dark_grass], seasons: [summer], tier: very_rare, why: "the marsh's tall grass"}
+    review: []
+
+  - id: cherubi
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Cherubi): its small ball is tasty; Starly try to peck it off."
+      - "Pokédex (B2W2, Cherrim): it opens its petals in strong sunlight."
+      - "The places: Route 1's meadow in spring, its pink blossom; Route 12's honey trees."
+    habitats: {flower_field: 3, meadow: 2, woodland_edge: 1}
+    time: {periods: day, strength: preferred}
+    seasons: spring (after the Starly flocks leave), a few in early summer
+    migration: resident
+    weather: {more: [], less: [rain], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {cherubi: wild, cherrim: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_1, methods: [grass], seasons: [spring], tier: common, why: "the meadow's pink blossom (the places' suggestion)"}
+      - {place: route_12, methods: [grass], seasons: [spring, summer], tier: uncommon, why: "the honey trees and flowers"}
+      - {place: route_3, methods: [grass], seasons: [spring], tier: uncommon, why: "spring on the old fields"}
+    review: []
+
+  - id: oddish
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Oddish): it plants its roots by day and walks about sowing seeds at night."
+      - "In the game: Oddish and Gloom NPCs on Route 20 (Oddish in spring and summer, the places say)."
+    habitats: {deciduous_forest: 2, woodland_edge: 3, meadow: 2, farmland: 1}
+    time: {periods: night, strength: preferred}
+    seasons: spring and summer
+    migration: resident
+    weather: {more: [rain], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {oddish: wild, gloom: wild, vileplume: {wild: false, note: "a Leaf Stone's"}, bellossom: {wild: false, note: "a Sun Stone's"}}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_20, methods: [grass], seasons: [spring, summer], tier: common, why: "its NPCs"}
+      - {place: route_2, methods: [grass], seasons: [spring, summer], tier: uncommon, why: "light woods at night"}
+      - {place: route_6, methods: [grass], seasons: [spring, summer], tier: common, why: "the valley's clearings"}
+      - {place: route_16, methods: [dark_grass], seasons: [spring, summer], tier: uncommon, why: "the forest edge"}
+      - {place: route_1, methods: [grass], seasons: [summer], tier: uncommon, stages: [oddish], why: "the summer meadow at night"}
+    review: []
+
+  - id: bellsprout
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Bellsprout): it prefers hot and humid places."
+      - "Pokédex (B2W2, Victreebel): it pools a honey-scented acid in its mouth."
+      - "Real world: pitcher plants of humid tropical forest and warm marsh."
+    habitats: {dense_forest: 3, marsh: 2, woodland_edge: 2}
+    time: {periods: any, strength: none}
+    seasons: all year on Route 18; summer elsewhere (the heat and humidity)
+    migration: resident
+    weather: {more: [rain], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {bellsprout: wild, weepinbell: wild, victreebel: {wild: true, note: "Route 18's jungle only (a Leaf Stone site)"}}
+    levels: {victreebel: [32, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_18, methods: [grass, dark_grass], seasons: all, tier: uncommon, stages: [bellsprout, weepinbell], why: "the hot, humid island"}
+      - {place: route_18, methods: [dark_grass], seasons: all, tier: very_rare, stages: [victreebel], why: "the jungle's Leaf Stone influence"}
+      - {place: pinwheel_forest, methods: [dark_grass], seasons: [summer], tier: uncommon, why: "the forest's humid summer"}
+      - {place: route_7, methods: [grass], seasons: [summer], tier: uncommon, why: "the warm, wet marsh"}
+      - {place: pinwheel_forest_outskirts, methods: [dark_grass], seasons: [summer], tier: uncommon, why: "the humid cliffs' puddles"}
+    review: []
+
+  - id: exeggcute
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Exeggcute): its six eggs talk by telepathy and gather when separated."
+      - "Pokédex (B2W2, Exeggutor): 'the Walking Jungle'; a head that falls off becomes an Exeggcute."
+      - "The user: Route 18 has Exeggcute and Exeggutor."
+      - "Other games: Alola's tropical islands."
+    habitats: {woodland_edge: 3, beach: 2, meadow: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {exeggcute: wild, exeggutor: {wild: true, note: "Route 18 only (a Leaf Stone site)"}}
+    levels: {exeggutor: [30, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_18, methods: [grass], seasons: all, tier: common, stages: [exeggcute], why: "the island's own (the user's request)"}
+      - {place: route_18, methods: [dark_grass], seasons: all, tier: uncommon, stages: [exeggutor], why: "the Walking Jungle in the interior (the user's request)"}
+      - {place: p2_laboratory, methods: [grass], seasons: all, tier: rare, stages: [exeggcute], why: "the next island"}
+    review: []
