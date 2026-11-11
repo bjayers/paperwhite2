@@ -29,6 +29,13 @@ Each keeps its date. A request isn't a whole placement: the rest of the family a
 - 2026-11-12: Krookodile hides in the desert's sandstorms that Flygon's family makes (Pokécology): both as sandstorm
   Pokémon there. A few sandstorm Pokémon on Route 4 are fine (White 2's only, as its sandstorm is).
 
+- 2026-11-13: Feebas a trophy (exotic) in Striaton's park ponds, and wherever else it fits.
+- 2026-11-13: Leafeon a trophy (exotic) in Pinwheel Forest's mossy depths, in spring and summer (the Moss Rock).
+- 2026-11-13: Basculin in the Southeast is Red-Striped.
+
+**Reading these requests:** the user's "rare" and "very rare" are loose; "very rare" usually means the exotic tier
+(the trophies). Most Pokémon can live anywhere they make sense: few are limited to one place.
+
 ## Weather the user may add
 
 The user tunes weather in the Weather Editor; `weather.md` has every place's weather, wishes and suggestions.
