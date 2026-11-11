@@ -38,7 +38,7 @@ places:
     habitats: [park, woodland_edge, cliff]
     parts:
       grass: grass by the busy road, littered, and the narrow wooded strip at the foot of the cliff
-      dark_grass: side by side with the grass, the same ground (the split is for gameplay: rules 6)
+      dark_grass: side by side with the grass, the same ground (the split is for gameplay, rules 6)
     human_presence: suburban (crowds)
     climate:
       spring: mild
