@@ -7,7 +7,7 @@
 #   down the mountains), Hoppip (the seasonal winds: spring in the south, summer in the north, gone in winter), Chatot
 #   (Route 18 in spring and summer).
 # - Residents: Pidove (towns and farms), Murkrow (towns at night, mountain trails), Hoothoot (forests at night),
-#   Spearow (dry scrub), Doduo (upland grass), Farfetch'd (Abundant Shrine's paddies, rare everywhere), Skarmory
+#   Spearow (dry scrub), Doduo (upland grass), Farfetch'd (Abundant Shrine's leek fields, its identity), Skarmory
 #   (thorny scrub and Virbank's steel), Rufflet and Vullaby (canyons and badlands), Natu (the desert's cacti, the
 #   Dreamyard's ruins), Wingull (every coast), Ducklett (ponds and lakes), Tropius (Route 18), Emolga (forest gliders).
 # - Trophies: Farfetch'd at Abundant Shrine; Honchkrow at Route 7 at night; Altaria on Victory Road.
@@ -51,6 +51,7 @@ families:
       - {place: village_bridge, methods: [grass], seasons: [summer], tier: uncommon, why: "breeding in the village's meadows"}
       - {place: route_1, methods: [dark_grass], seasons: [winter], tier: uncommon, why: "sheltering in the pine hills for winter"}
       - {place: route_3, methods: [dark_grass], seasons: [winter], tier: uncommon, why: "wintering at the wild edges"}
+      - {place: route_5, methods: [grass], seasons: [spring, autumn], tier: uncommon, why: "the central passage"}
     review:
       - "A migrant rather than native: Pidgey isn't Unovan; making it the region's classic migrant uses that. Its summer and winter ranges are mine."
 
@@ -74,17 +75,17 @@ families:
     wanderer: {appears: both, wanders: aggressive, grass: float}
     homes:
       - {place: route_19, methods: [grass], seasons: all, tier: uncommon, why: "its NPCs; the short grass of the starting meadow"}
-      - {place: route_15, methods: [grass], seasons: all, tier: uncommon, why: "dry scrub on the ridge"}
       - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: common, why: "the badlands' dry scrub is its best ground"}
       - {place: route_22, methods: [grass], seasons: all, tier: rare, why: "the windswept upland's short grass"}
       - {place: desert_resort_path, methods: [grass], seasons: [spring, autumn], tier: rare, why: "passing through the canyon in spring and autumn"}
+      - {place: route_15, methods: [grass], seasons: all, tier: common, why: "dry scrub on the ridge, sharing it with Geodude"}
     review: []
 
   - id: farfetchd
     origin: native
     lore:
       - "Pokédex (B2W2): it can't live without the stalk it holds, and defends it with its life."
-      - "Its Japanese name (Kamonegi) is from the saying 'a duck coming with a leek': a satoyama's paddies and leek fields."
+      - "Its Japanese name (Kamonegi) is from the saying 'a duck coming with a leek': a farm's leek fields."
       - "Other Pokédex entries (paraphrased): its numbers dwindled because it was hunted; it lives where the plants it carries grow."
     habitats: {farmland: 3, marsh: 2, pond: 2}
     time: {periods: day, strength: none}
@@ -92,14 +93,14 @@ families:
     migration: resident
     weather: {more: [], less: [], only: []}
     abundance: rare
-    trophy: [abundant_shrine]
+    trophy: []
     battles: {single: 100, double: 0, triple: 0, partners: family}
     stages: {farfetchd: wild}
     levels: {farfetchd: [5, 100]}
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
-      - {place: abundant_shrine, methods: [grass], seasons: all, tier: exotic, why: "the paddies and leek fields of a satoyama shrine, where it's protected: the trophy"}
       - {place: route_7, methods: [grass], seasons: [spring, summer, autumn], tier: very_rare, why: "the marsh's reeds and stalks, a last wild few"}
+      - {place: abundant_shrine, methods: [grass], seasons: all, tier: rare, why: "the leek fields of a farming shrine, where it's protected: part of its identity (the user)"}
     review:
       - "Very rare everywhere, as the Pokédex has it hunted; only two homes."
 
@@ -156,6 +157,7 @@ families:
       - {place: route_11, methods: [dark_grass], seasons: all, tier: uncommon, why: "the conifers above the falls"}
       - {place: victory_road_forest, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the high conifer forest"}
       - {place: nature_preserve, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "an untouched river forest"}
+      - {place: route_16, methods: [dark_grass], seasons: all, tier: uncommon, why: "the forest edge at night"}
     review: []
 
   - id: natu
@@ -213,6 +215,7 @@ families:
       - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: uncommon, why: "mountain trails by the Strange House"}
       - {place: route_15, methods: [grass], seasons: all, tier: rare, why: "the mountain trails it loses its pursuers on"}
       - {place: route_1, methods: [dark_grass], seasons: all, tier: uncommon, why: "roosting in the seaside pines at night"}
+      - {place: lostlorn_forest, methods: [grass], seasons: all, tier: rare, why: "something's not right in the forest at night"}
     review:
       - "Honchkrow wild by a Dusk Stone's evolution: only as Route 7's trophy at night. Say if it should stay evolve-only."
 
@@ -300,6 +303,7 @@ families:
       - {place: village_bridge, methods: [rustling], seasons: [spring, summer], tier: common, why: "nesting under the bridge: the shadows"}
       - {place: route_13, methods: [grass], seasons: [autumn], tier: uncommon, why: "leaving down the east coast"}
       - {place: route_18, methods: [grass], seasons: [winter], tier: uncommon, why: "the few that winter on a warm island"}
+      - {place: marvelous_bridge, methods: [rustling], seasons: [summer], tier: uncommon, stages: [swellow], why: "hunting under the bridge in summer"}
     review: []
 
   - id: wingull
@@ -396,7 +400,7 @@ families:
       - {place: route_3, methods: [grass], seasons: [autumn, winter], tier: common, why: "flocks on the old fields"}
       - {place: route_5, methods: [grass, dark_grass], seasons: [autumn, winter], tier: common, why: "flocks by the city's crowds"}
       - {place: route_16, methods: [grass], seasons: [winter], tier: uncommon, why: "winter flocks at the city's edge"}
-      - {place: abundant_shrine, methods: [grass], seasons: [autumn, winter], tier: common, why: "flocks on the harvested paddies"}
+      - {place: abundant_shrine, methods: [grass], seasons: [autumn, winter], tier: common, why: "flocks on the harvested fields"}
       - {place: floccesy_ranch, methods: [grass], seasons: [winter], tier: uncommon, why: "winter flocks on the ranch's pastures"}
       - {place: route_12, methods: [grass], seasons: [autumn, spring], tier: uncommon, why: "arriving and leaving across the north's hills"}
       - {place: village_bridge, methods: [grass], seasons: [spring], tier: uncommon, why: "leaving north in spring"}
@@ -504,6 +508,7 @@ families:
       - {place: driftveil_drawbridge, methods: [rustling], seasons: [autumn, spring], tier: uncommon, stages: [swanna], why: "swans passing on their way to and from Icirrus"}
       - {place: marvelous_bridge, methods: [rustling], seasons: [autumn, spring], tier: uncommon, stages: [swanna], why: "swans passing the central crossing"}
       - {place: village_bridge, methods: [surf], seasons: all, tier: uncommon, stages: [ducklett], why: "the river by the village"}
+      - {place: marvelous_bridge, methods: [rustling], seasons: all, tier: uncommon, stages: [ducklett], why: "ducks in the bridge's shadows, as at Driftveil's"}
     review:
       - "Swanna winter at Icirrus (the polders), not the south: the reverse of a simple 'south for winter'."
 
@@ -533,6 +538,7 @@ families:
       - {place: giant_chasm_outside, methods: [dark_grass], seasons: all, tier: rare, why: "the chasm's rim"}
       - {place: desert_resort_path, methods: [grass], seasons: all, tier: rare, stages: [braviary], why: "hunting the desert from the canyon's ledges, as in the original"}
       - {place: dragonspiral_entrance, methods: [grass], seasons: [spring, summer, autumn], tier: rare, why: "the cliffside's eagles"}
+      - {place: marvelous_bridge, methods: [rustling], seasons: all, tier: rare, stages: [braviary], why: "a raptor over the crossing"}
     review: []
 
   - id: vullaby
@@ -639,5 +645,6 @@ families:
       - {place: route_15, methods: [grass], seasons: [summer], tier: uncommon, why: "the windy ridge"}
       - {place: route_16, methods: [grass], seasons: [autumn], tier: uncommon, stages: [jumpluff], why: "drifting south"}
       - {place: route_13, methods: [grass], seasons: [autumn], tier: uncommon, stages: [jumpluff], why: "drifting down the coast"}
+      - {place: route_5, methods: [grass], seasons: [autumn], tier: uncommon, stages: [jumpluff], why: "drifting south on the autumn wind"}
     review:
       - "Strict to the day, since it rides the sun's warmth; say if it should be found at night too."

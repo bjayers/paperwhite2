@@ -200,6 +200,8 @@ families:
       - {place: route_16, methods: [dark_grass], seasons: [autumn], tier: uncommon, why: "the forest edge"}
       - {place: village_bridge, methods: [dark_grass], seasons: [autumn], tier: uncommon, why: "the woods round the clearing"}
       - {place: pinwheel_forest, methods: [grass], seasons: [autumn, winter], tier: uncommon, why: "the forest's leaves"}
+      - {place: lostlorn_forest, methods: [grass, dark_grass], seasons: [autumn], tier: uncommon, why: "the forest's autumn leaves"}
+      - {place: route_14, methods: [grass], seasons: [autumn], tier: uncommon, why: "the paths' autumn leaves"}
     review: []
 
   - id: spinarak
@@ -301,7 +303,7 @@ families:
     homes:
       - {place: pinwheel_forest_outskirts, methods: [grass, dark_grass], seasons: [summer], tier: common, why: "the insects' nursery over the puddles"}
       - {place: pinwheel_forest_outskirts, methods: [grass], seasons: [spring, autumn], tier: uncommon, why: "the first and last of them"}
-      - {place: abundant_shrine, methods: [grass], seasons: [summer], tier: common, why: "dragonflies over the paddies' ponds"}
+      - {place: abundant_shrine, methods: [grass], seasons: [summer], tier: common, why: "dragonflies over the ponds among the fields"}
       - {place: route_3, methods: [grass], seasons: [summer], tier: common, why: "the lake's shore"}
       - {place: icirrus_city, methods: [grass], seasons: [summer], tier: common, why: "the fens in summer"}
       - {place: route_20, methods: [grass], seasons: [summer], tier: uncommon, why: "its NPCs, over the stream"}
@@ -361,6 +363,7 @@ families:
       - {place: pinwheel_forest, methods: [grass], seasons: [summer], tier: uncommon, why: "the forest's summer song"}
       - {place: castelia_park, methods: [grass], seasons: [summer], tier: uncommon, why: "cicadas in the city's trees"}
       - {place: pinwheel_forest_outskirts, methods: [dark_grass], seasons: [summer], tier: uncommon, why: "cicadas on the wooded cliff in summer"}
+      - {place: route_5, methods: [dark_grass], seasons: [summer], tier: uncommon, why: "cicadas in the wooded strip"}
     review: []
 
   - id: volbeat
@@ -380,7 +383,7 @@ families:
     levels: {volbeat: [5, 100]}
     wanderer: {appears: both, wanders: random, grass: float}
     homes:
-      - {place: abundant_shrine, methods: [grass, dark_grass], seasons: [summer], tier: common, why: "fireflies over the paddies on summer nights"}
+      - {place: abundant_shrine, methods: [grass, dark_grass], seasons: [summer], tier: common, why: "fireflies over the fields on summer nights"}
       - {place: route_3, methods: [grass], seasons: [summer], tier: uncommon, why: "the lake's edge at night"}
       - {place: pinwheel_forest_outskirts, methods: [grass], seasons: [summer], tier: uncommon, why: "the outskirts' marsh"}
       - {place: route_12, methods: [grass], seasons: [summer], tier: rare, why: "the hills' summer nights"}
@@ -404,7 +407,7 @@ families:
     levels: {illumise: [5, 100]}
     wanderer: {appears: both, wanders: random, grass: float}
     homes:
-      - {place: abundant_shrine, methods: [grass, dark_grass], seasons: [summer], tier: common, why: "with Volbeat over the paddies"}
+      - {place: abundant_shrine, methods: [grass, dark_grass], seasons: [summer], tier: common, why: "with Volbeat over the fields"}
       - {place: route_3, methods: [grass], seasons: [summer], tier: uncommon, why: "with Volbeat at the lake"}
       - {place: pinwheel_forest_outskirts, methods: [grass], seasons: [summer], tier: uncommon, why: "with Volbeat in the marsh"}
       - {place: route_12, methods: [grass], seasons: [summer], tier: rare, why: "with Volbeat on the hills"}
@@ -489,6 +492,7 @@ families:
       - {place: route_12, methods: [dark_grass], seasons: [winter], tier: rare, stages: [vespiquen], why: "the queen alone by the hive in winter, guarding it while the colony clusters"}
       - {place: desert_resort, methods: [grass], seasons: [spring], tier: very_rare, stages: [combee], why: "the desert's spring bloom"}
       - {place: pinwheel_forest_outskirts, methods: [grass], seasons: [summer], tier: uncommon, stages: [combee], why: "buzzing over the outskirts in summer"}
+      - {place: route_14, methods: [grass], seasons: [spring], tier: uncommon, stages: [combee], why: "spring flowers along the paths"}
     review: []
 
   - id: sewaddle
@@ -516,6 +520,8 @@ families:
       - {place: lostlorn_forest, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the forest floor"}
       - {place: route_20, methods: [dark_grass], seasons: [autumn], tier: uncommon, stages: [swadloon], why: "the deep woods' autumn leaves"}
       - {place: pinwheel_forest_outskirts, methods: [grass], seasons: [spring], tier: uncommon, stages: [sewaddle], why: "caterpillars at the forest's edge in spring"}
+      - {place: route_16, methods: [dark_grass], seasons: [spring], tier: uncommon, stages: [sewaddle], why: "caterpillars from Lostlorn at the forest's edge"}
+      - {place: route_16, methods: [dark_grass], seasons: [winter], tier: uncommon, stages: [swadloon], why: "wrapped in the edge's leaf litter in winter"}
     review: []
 
   - id: venipede
@@ -689,6 +695,7 @@ families:
       - {place: route_19, methods: [grass], seasons: [winter], tier: rare, stages: [seedot, nuzleaf], why: "the last acorns into winter"}
       - {place: floccesy_ranch, methods: [grass], seasons: [autumn], tier: uncommon, stages: [seedot, nuzleaf], why: "its NPCs; the forest's oaks in acorn time (the user)"}
       - {place: floccesy_ranch, methods: [grass], seasons: [winter], tier: rare, stages: [seedot, nuzleaf], why: "the last acorns into winter"}
+      - {place: route_14, methods: [grass], seasons: all, tier: uncommon, stages: [seedot, nuzleaf], why: "the woods along the rivers"}
     review: []
 
   - id: shroomish
@@ -778,14 +785,14 @@ families:
     migration: resident
     weather: {more: [], less: [], only: []}
     abundance: uncommon
-    trophy: [pinwheel_forest]
+    trophy: [pinwheel_forest, lostlorn_forest]
     battles: {single: 85, double: 12, triple: 3, partners: family}
     stages: {pansage: wild, simisage: {wild: false, note: "a Leaf Stone's"}}
     levels: {pansage: [5, 100]}
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
-      - {place: lostlorn_forest, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the elemental monkeys' forest (the user's request)"}
       - {place: pinwheel_forest, methods: [grass], seasons: all, tier: exotic, why: "an elemental monkey picking berries by the road: a trophy (the user)"}
+      - {place: lostlorn_forest, methods: [grass, dark_grass], seasons: all, tier: exotic, why: "the elemental monkeys' forest: a trophy (the user)"}
     review: []
 
   - id: pansear
@@ -800,16 +807,16 @@ families:
     migration: resident
     weather: {more: [], less: [rain], only: []}
     abundance: uncommon
-    trophy: [pinwheel_forest]
+    trophy: [pinwheel_forest, lostlorn_forest]
     battles: {single: 85, double: 12, triple: 3, partners: family}
     stages: {pansear: wild, simisear: {wild: false, note: "a Fire Stone's"}}
     levels: {pansear: [5, 100]}
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
-      - {place: lostlorn_forest, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the elemental monkeys' forest (the user's request)"}
       - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: rare, why: "warm ground by the fiery mountain"}
       - {place: route_5, methods: [dark_grass], seasons: all, tier: rare, why: "the wooded strip by the road, after the cook's sweets"}
       - {place: pinwheel_forest, methods: [grass], seasons: all, tier: exotic, why: "an elemental monkey roasting berries: a trophy (the user)"}
+      - {place: lostlorn_forest, methods: [grass, dark_grass], seasons: all, tier: exotic, why: "the elemental monkeys' forest: a trophy (the user)"}
     review: []
 
   - id: panpour
@@ -824,15 +831,14 @@ families:
     migration: resident
     weather: {more: [rain], less: [], only: []}
     abundance: uncommon
-    trophy: [pinwheel_forest]
+    trophy: [pinwheel_forest, lostlorn_forest]
     battles: {single: 85, double: 12, triple: 3, partners: family}
     stages: {panpour: wild, simipour: {wild: false, note: "a Water Stone's"}}
     levels: {panpour: [5, 100]}
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
-      - {place: lostlorn_forest, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the elemental monkeys' forest, by its clean stream (the user's request)"}
-      - {place: route_14, methods: [grass], seasons: all, tier: rare, why: "the clean mountain rivers"}
       - {place: pinwheel_forest, methods: [grass], seasons: all, tier: exotic, why: "an elemental monkey watering the forest: a trophy (the user)"}
+      - {place: lostlorn_forest, methods: [grass, dark_grass], seasons: all, tier: exotic, why: "the elemental monkeys' forest, by its clean stream: a trophy (the user)"}
     review: []
 
   - id: teddiursa
@@ -912,6 +918,7 @@ families:
       - {place: pinwheel_forest, methods: [dark_grass], seasons: all, tier: uncommon, why: "the mossy depths"}
       - {place: route_20, methods: [dark_grass], seasons: [autumn], tier: uncommon, why: "the mushroom season"}
       - {place: route_7, methods: [grass], seasons: [autumn], tier: uncommon, why: "the rainy marsh's edges"}
+      - {place: route_16, methods: [dark_grass], seasons: [autumn], tier: uncommon, why: "the forest edge's autumn mushrooms"}
     review:
       - "Met by a step only (it lies still and looks like an item)."
 
