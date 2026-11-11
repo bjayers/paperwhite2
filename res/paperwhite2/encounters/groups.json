@@ -55,8 +55,9 @@
         },
         {
             "id": "giant_chasm",
-            "name": "Giant Chasm",
-            "areas": [ "giant_chasm", "giant_chasm_2", "giant_chasm_3", "giant_chasm_4", "giant_chasm_5" ]
+            "name": "Giant Chasm (Exterior)",
+            "areas": [ "giant_chasm" ],
+            "custom": true
         },
         {
             "id": "mistralton_cave",
@@ -133,20 +134,9 @@
         },
         {
             "id": "victory_road",
-            "name": "Victory Road",
-            "areas": [
-                "victory_road",
-                "victory_road_2",
-                "victory_road_3",
-                "victory_road_4",
-                "victory_road_5",
-                "victory_road_6",
-                "victory_road_7",
-                "victory_road_8",
-                "victory_road_9",
-                "victory_road_10",
-                "victory_road_11"
-            ]
+            "name": "Victory Road (Caves)",
+            "areas": [ "victory_road", "victory_road_5", "victory_road_6", "victory_road_8", "victory_road_11" ],
+            "custom": true
         },
         {
             "id": "virbank_complex",
@@ -193,6 +183,36 @@
             "id": "custom_5",
             "name": "Dragonspiral (Exterior)",
             "areas": [ "dragonspiral_tower_2" ],
+            "custom": true
+        },
+        {
+            "id": "custom_6",
+            "name": "Giant Chasm (Caves)",
+            "areas": [ "giant_chasm_2", "giant_chasm_5" ],
+            "custom": true
+        },
+        {
+            "id": "custom_7",
+            "name": "Giant Chasm (Crater)",
+            "areas": [ "giant_chasm_3", "giant_chasm_4" ],
+            "custom": true
+        },
+        {
+            "id": "custom_8",
+            "name": "Victory Road (Mountainside)",
+            "areas": [ "victory_road_4", "victory_road_7", "victory_road_10" ],
+            "custom": true
+        },
+        {
+            "id": "custom_9",
+            "name": "Victory Road (Forest)",
+            "areas": [ "victory_road_3" ],
+            "custom": true
+        },
+        {
+            "id": "custom_10",
+            "name": "Victory Road (Ruins)",
+            "areas": [ "victory_road_2", "victory_road_9" ],
             "custom": true
         }
     ]
