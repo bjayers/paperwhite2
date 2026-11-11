@@ -196,9 +196,9 @@ families:
     homes:
       - {place: route_14, methods: [dark_grass], seasons: all, tier: uncommon, why: "troops on the cliffs above the falls"}
       - {place: route_23, methods: [grass], seasons: all, tier: uncommon, why: "the gorge's woods"}
-      - {place: route_15, methods: [dark_grass], seasons: all, tier: rare, why: "the ridge's ledges"}
       - {place: pinwheel_forest, methods: [dark_grass], seasons: [winter], tier: rare, why: "a troop in the bare forest in winter (the user)"}
       - {place: pinwheel_forest, methods: [dark_grass], seasons: [spring, summer, autumn], tier: very_rare, why: "the forest's treetops"}
+      - {place: route_15, methods: [dark_grass], seasons: all, tier: uncommon, why: "the ridge's ledges: its own"}
     review: []
 
   - id: rhyhorn
@@ -285,8 +285,8 @@ families:
     wanderer: {appears: both, wanders: aggressive, grass: float}
     homes:
       - {place: reversal_mountain_outside, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the red-rock cliffs"}
-      - {place: route_15, methods: [dark_grass], seasons: all, tier: rare, why: "the ridge's ledges"}
       - {place: desert_resort_path, methods: [grass], seasons: all, tier: common, why: "gliding from the canyon's cliffs: its own"}
+      - {place: route_15, methods: [dark_grass], seasons: all, tier: uncommon, why: "the ridge's ledges: its own"}
     review: []
 
   - id: sneasel

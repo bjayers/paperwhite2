@@ -356,6 +356,9 @@ route_5:
       Still crowded (thirteen families in the grass), with four commons in autumn and winter. Starly could stay in the
       dark grass only, and Minccino go to Routes 9 and 16.
     - Munchlax is exotic in both grasses; your "rarely" might want only one.
+  discussed:
+    - >-
+      2026-11-14, done: Pidgey passing in spring and autumn, Cottonee and Jumpluff drifting in autumn, Budew in the wooded strip in spring, Nincada in summer; Munchlax the trophy in the grass only.
 
 route_16:
   vision: >-
@@ -367,6 +370,9 @@ route_16:
   unsure:
     - The grass is busy (twelve at a summer night); the dark grass, the forest's side, has no common and only five.
     - Some of the forest's Lostlorn neighbours (Sewaddle, Pansage) could cross into the dark grass.
+  discussed:
+    - >-
+      2026-11-14, done: the forest edge gains Sewaddle in spring, Foongus in autumn, Swadloon in winter and Hoothoot at night.
 
 lostlorn_forest:
   vision: >-
@@ -380,6 +386,9 @@ lostlorn_forest:
       Spinda is common in both grasses all year; with three monkeys uncommon in both, the two grasses are nearly the
       same. The dark grass (above the waterfall) could keep the strangest ones (Kecleon, Ditto, Misdreavus) and the
       grass the ordinary forest.
+  discussed:
+    - >-
+      2026-11-14, done: the three elemental monkeys are trophies here too, in both grasses; Ditto is out of the pools (perhaps a special Ditto hidden in any overworld encounter, undecided); Ledyba in autumn; Kecleon, Misdreavus and Murkrow in both grasses, since the dark grass needs Waterfall and the off feel should be in both.
 
 marvelous_bridge:
   vision: >-
@@ -389,6 +398,9 @@ marvelous_bridge:
     - It's a crossing, and the shadows show the swans' passage.
   unsure:
     - Only two families. Raptors (Braviary, Mandibuzz) or Ducklett would make the shadows less predictable.
+  discussed:
+    - >-
+      2026-11-14, done: Ducklett all year, Swellow in summer and a rare Braviary in the shadows.
 
 route_15:
   vision: >-
@@ -401,6 +413,9 @@ route_15:
     - >-
       Geodude is the only common, so it dominates; Spearow or Mareep could share it.
     - The dark grass has seven families, all rare; it reads as a list of rarities rather than a place.
+  discussed:
+    - >-
+      2026-11-14, done: Spearow common beside Geodude; Mankey and Gligar uncommon as the ledges' own. Mareep stays as a wild herd (Ampharos suits this later, higher-level place).
 
 route_14:
   vision: >-
@@ -414,6 +429,9 @@ route_14:
       The grass (overgrown paths between the rivers) is too thin: Meditite, a rare Panpour and Electrike, with more
       Electrike only in storms. It needs a few ordinary residents: Pidove, Buneary, Seedot, or the river's Bidoof.
     - Until the storms are added, Absol and the storm Electrike never appear here.
+  discussed:
+    - >-
+      2026-11-14, done: Panpour gone (a trophy in the two forests); the grass gains Bidoof, Seedot and Buneary all year, Combee in spring and Ledyba in autumn.
 
 abundant_shrine:
   vision: >-
@@ -428,6 +446,9 @@ abundant_shrine:
       Two trophies (Farfetch'd, Feebas) plus a rare Vulpix and Absol; that's a lot of prizes for one shrine, though
       they're on different methods.
     - Lillipup and Miltank are generic farm animals; the paddies could do without them.
+  discussed:
+    - >-
+      2026-11-14, done: Farfetch'd rare rather than exotic, part of the place's identity; it's farmland, not paddies (texts fixed), so soil-dwellers lead, with Wooper, Poliwag and Palpitoad coming out on the fields only in the rain or storms; Lillipup and Miltank gone.
 
 # --- Western Unova ---
 

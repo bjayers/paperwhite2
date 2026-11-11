@@ -162,7 +162,7 @@ families:
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
       - {place: route_5, methods: [dark_grass], seasons: [spring, summer, autumn], tier: rare, why: "licking up leftovers by the road"}
-      - {place: abundant_shrine, methods: [grass], seasons: [summer], tier: rare, why: "catching bugs by the paddies with its tongue"}
+      - {place: abundant_shrine, methods: [grass], seasons: [summer], tier: rare, why: "catching bugs by the fields with its tongue"}
     review:
       - "Little lore to place it by; two quiet homes."
 
@@ -478,7 +478,6 @@ families:
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
       - {place: floccesy_ranch, methods: [grass], seasons: all, tier: uncommon, why: "the ranch's dairy herd"}
-      - {place: abundant_shrine, methods: [grass], seasons: all, tier: rare, why: "the hill farms"}
     review: []
 
   - id: poochyena
@@ -729,6 +728,7 @@ families:
       - {place: village_bridge, methods: [dark_grass], seasons: [spring, summer], tier: uncommon, stages: [roselia], why: "the flowery clearing"}
       - {place: route_12, methods: [grass], seasons: [autumn], tier: uncommon, stages: [roselia], why: "the hills' late roses"}
       - {place: castelia_park, methods: [grass], seasons: [spring], tier: uncommon, why: "the garden's spring flowers"}
+      - {place: route_5, methods: [dark_grass], seasons: [spring], tier: uncommon, why: "the wooded strip's spring flowers"}
     review:
       - "Roselia wild though it comes by friendship."
 
@@ -758,6 +758,7 @@ families:
       - {place: route_12, methods: [grass], seasons: [winter], tier: uncommon, why: "hares on the open hills once the flowers are over"}
       - {place: village_bridge, methods: [grass], seasons: [winter], tier: uncommon, why: "hares in the winter field"}
       - {place: route_19, methods: [grass], seasons: [spring], tier: rare, why: "its NPCs; a spring rarity (the user)"}
+      - {place: route_14, methods: [grass], seasons: all, tier: uncommon, why: "the overgrown paths between the rivers"}
     review: []
 
   - id: glameow
@@ -893,7 +894,7 @@ families:
     levels: {munchlax: [5, 100]}
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
-      - {place: route_5, methods: [grass, dark_grass], seasons: all, tier: exotic, why: "the cook's food by the road: the trophy (the user's request)"}
+      - {place: route_5, methods: [grass], seasons: all, tier: exotic, why: "the cook's food by the road: the trophy (the user's request)"}
     review: []
 
   - id: patrat
@@ -948,7 +949,6 @@ families:
       - {place: floccesy_ranch, methods: [grass], seasons: all, tier: common, why: "the ranch's herding dogs"}
       - {place: route_19, methods: [grass], seasons: all, tier: rare, why: "its NPCs (rare, the places say)"}
       - {place: route_3, methods: [grass], seasons: all, tier: uncommon, why: "the Day Care's fields"}
-      - {place: abundant_shrine, methods: [grass], seasons: all, tier: uncommon, why: "the hill farms' dogs"}
       - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: rare, stages: [stoutland], why: "warm in its fur on the snowy cliffside"}
       - {place: giant_chasm_outside, methods: [grass], seasons: all, tier: uncommon, why: "the countryside's dogs"}
       - {place: village_bridge, methods: [grass], seasons: all, tier: uncommon, why: "the village's dogs in the field"}
@@ -1103,6 +1103,7 @@ families:
       - {place: route_15, methods: [grass], seasons: [autumn], tier: rare, stages: [whimsicott], why: "whirlwinds on the windy ridge"}
       - {place: route_12, methods: [grass], seasons: [autumn], tier: uncommon, why: "drifting off the flower hills on the autumn wind"}
       - {place: dreamyard, methods: [grass], seasons: [autumn], tier: uncommon, why: "drifting over the overgrown meadow in autumn"}
+      - {place: route_5, methods: [grass], seasons: [autumn], tier: uncommon, why: "blown along the road in autumn"}
     review: []
 
   - id: petilil

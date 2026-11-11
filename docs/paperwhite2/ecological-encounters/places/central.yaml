@@ -16,7 +16,7 @@ region:
   real_world: >-
     The edge of a big city's sprawl (litter, scavengers, park pests), then northeastern woodland and Appalachian
     mountain country: misty ridges, boulder fields, cold streams with trout and salamanders, and terraced hill farms
-    (for Abundant Shrine, the Japanese satoyama: rice terraces and still paddies, frogs and dragonflies, fireflies,
+    (for Abundant Shrine, farmland with a satoyama's feel: terraced fields and still ponds, frogs and dragonflies, fireflies,
     foxes at the shrine).
   basculin: Red-Striped (east of the Castelia, Nimbasa and Opelucid line)
 
@@ -226,7 +226,7 @@ places:
       winter: cold, fallow
     features: [berries, flowers, spirits]
     real_world: >-
-      Satoyama: terraced fields and paddies kept for centuries, still water full of frogs and tadpoles, dragonflies over
+      Satoyama-like farmland (fields, not paddies: the user, 2026-11-14): terraced fields kept for centuries, still water full of frogs and tadpoles, dragonflies over
       it, fireflies on summer nights, crickets in autumn, herons and egrets, foxes at the shrine (Inari's messengers),
       carp in the ponds. The original games' shrine of the Forces of Nature: the harvest, and the storms.
     suggestions:

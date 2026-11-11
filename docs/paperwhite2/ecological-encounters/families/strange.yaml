@@ -106,6 +106,7 @@ families:
     homes:
       - {place: strange_house, methods: [grass], seasons: all, tier: uncommon, why: "startling visitors (the user's request)"}
       - {place: lostlorn_forest, methods: [dark_grass], seasons: all, tier: rare, why: "something not right at night"}
+      - {place: lostlorn_forest, methods: [grass], seasons: all, tier: rare, why: "something not right at night (in both grasses: the user)"}
     review: []
 
   - id: smoochum
@@ -618,14 +619,12 @@ families:
     abundance: rare
     trophy: []
     battles: {single: 100, double: 0, triple: 0, partners: family}
-    stages: {ditto: wild}
+    stages: {ditto: {wild: false, note: "perhaps a special: very rarely, any overworld encounter turns out to be a Ditto blending in (the user, undecided)"}}
     levels: {ditto: [10, 100]}
     wanderer: {appears: steps, wanders: passive, grass: stand}
-    homes:
-      - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: rare, why: "something otherworldly (the user's request)"}
-      - {place: lostlorn_forest, methods: [grass], seasons: all, tier: rare, why: "a mimic in the forest of the 'off' (the user's request)"}
+    homes: []
     review:
-      - "Met by a step only: it looks like something else until it's met."
+      - "Out of the encounter pools (the user, 2026-11-14); a special idea: any overworld Pokémon may very rarely be a Ditto in disguise."
 
   - id: porygon
     origin: native
@@ -667,6 +666,7 @@ families:
     homes:
       - {place: route_18, methods: [dark_grass], seasons: all, tier: rare, why: "the island's jungle, as Hoenn's rainforest"}
       - {place: lostlorn_forest, methods: [dark_grass], seasons: all, tier: rare, why: "a trickster unseen"}
+      - {place: lostlorn_forest, methods: [grass], seasons: all, tier: rare, why: "a trickster unseen (the off feel in both grasses: the user)"}
     review:
       - "Met by a step only: it's invisible as a wanderer."
 

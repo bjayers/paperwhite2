@@ -85,6 +85,8 @@ with `python3 tools/dictionary_check.py` and `python3 tools/balance.py` from thi
 
 Non-wild ideas, for the exceptions or later events:
 
+- **Ditto** out of the pools: any overworld Pokémon could very rarely turn out to be a Ditto in disguise (the user is
+  undecided, 2026-11-14).
 - **Snorlax** asleep across a path (a static encounter), as its own legend; Munchlax stays Route 5's trophy.
 - **Ninetales**, Abundant Shrine's thousand-year fox, met at night at the shrine (a static encounter); Vulpix is wild
   there.
