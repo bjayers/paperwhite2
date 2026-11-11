@@ -5,13 +5,12 @@
 #   that follows Yanma; a few winter on Route 18), Starly (winter flocks from the north), Swanna (winters on Icirrus's
 #   fens, as whooper swans on the Dutch polders), Delibird (down from the mountains with the snow), Swablu (up and
 #   down the mountains), Hoppip (the seasonal winds: spring in the south, summer in the north, gone in winter), Chatot
-#   (Route 18 in spring and summer; Castelia's feral colony all year).
+#   (Route 18 in spring and summer).
 # - Residents: Pidove (towns and farms), Murkrow (towns at night, mountain trails), Hoothoot (forests at night),
 #   Spearow (dry scrub), Doduo (upland grass), Farfetch'd (Abundant Shrine's paddies, rare everywhere), Skarmory
 #   (thorny scrub and Virbank's steel), Rufflet and Vullaby (canyons and badlands), Natu (the desert's cacti, the
 #   Dreamyard's ruins), Wingull (every coast), Ducklett (ponds and lakes), Tropius (Route 18), Emolga (forest gliders).
-# - Trophies: Farfetch'd at Abundant Shrine; Honchkrow at Route 7 at night; Altaria on Victory Road; Chatot in
-#   Castelia's park.
+# - Trophies: Farfetch'd at Abundant Shrine; Honchkrow at Route 7 at night; Altaria on Victory Road.
 # - Review: Pidgey as a migrant (non-native to Unova); Honchkrow wild (a Dusk Stone evolution); Natu in the desert;
 #   Chatot's seasons; Swanna breeding at Dragonspiral's lake.
 
@@ -77,8 +76,8 @@ families:
       - {place: route_19, methods: [grass], seasons: all, tier: uncommon, why: "its NPCs; the short grass of the starting meadow"}
       - {place: route_15, methods: [grass], seasons: all, tier: uncommon, why: "dry scrub on the ridge"}
       - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: common, why: "the badlands' dry scrub is its best ground"}
-      - {place: desert_resort_path, methods: [grass], seasons: all, tier: rare, why: "at the desert's edge, hunting the canyon's insects"}
       - {place: route_22, methods: [grass], seasons: all, tier: rare, why: "the windswept upland's short grass"}
+      - {place: desert_resort_path, methods: [grass], seasons: [spring, autumn], tier: rare, why: "passing through the canyon in spring and autumn"}
     review: []
 
   - id: farfetchd
@@ -401,6 +400,7 @@ families:
       - {place: route_12, methods: [grass], seasons: [autumn, spring], tier: uncommon, why: "arriving and leaving across the north's hills"}
       - {place: village_bridge, methods: [grass], seasons: [spring], tier: uncommon, why: "leaving north in spring"}
       - {place: route_12, methods: [grass], seasons: [winter], tier: common, why: "winter flocks over the wet, snowless hills"}
+      - {place: castelia_park, methods: [grass], seasons: [autumn, winter], tier: uncommon, why: "murmurations over the city, as New York's starlings"}
     review: []
 
   - id: chatot
@@ -413,23 +413,20 @@ families:
       - "Real world: parrots of the tropics, and the feral parrot colonies of northern cities (Brooklyn's monk parakeets, from escaped pets)."
     habitats: {woodland_edge: 3, meadow: 2, park: 2}
     time: {periods: day, strength: strict}
-    seasons: >-
-      Route 18 in spring and summer, its breeding season; a summer stray at Village Bridge; and a small feral colony in
-      Castelia's park all year, from escaped pets.
+    seasons: Route 18 in spring and summer, its breeding season; a summer stray at Village Bridge
     migration: summer
     weather: {more: [], less: [rain], only: []}
     abundance: uncommon
-    trophy: [castelia_park]
+    trophy: []
     battles: {single: 85, double: 12, triple: 3, partners: family}
     stages: {chatot: wild}
     levels: {chatot: [5, 100]}
     wanderer: {appears: both, wanders: random, grass: float}
     homes:
       - {place: route_18, methods: [grass, dark_grass], seasons: [spring, summer], tier: uncommon, why: "the island in its season (the user's request)"}
-      - {place: castelia_park, methods: [grass], seasons: all, tier: exotic, why: "a feral colony of escaped pets, singing the city's tunes: the trophy"}
       - {place: village_bridge, methods: [grass], seasons: [summer], tier: very_rare, why: "drawn by the village's music in summer"}
     review:
-      - "Its season (spring and summer) is my guess; Castelia's feral colony is an introduced population, as the rules allow."
+      - "Its season (spring and summer) is my guess. Castelia's feral colony was dropped (2026-11-14: one trophy for the park, Eevee)."
 
   - id: pidove
     origin: native
@@ -465,6 +462,7 @@ families:
       - {place: pinwheel_forest_outskirts, methods: [dark_grass], seasons: [autumn, winter], tier: uncommon, why: "the cliff by the road in the cold months"}
       - {place: giant_chasm_outside, methods: [grass], seasons: all, tier: uncommon, why: "the countryside round the chasm"}
       - {place: village_bridge, methods: [rustling], seasons: all, tier: common, why: "pigeons on the old bridge's arches: the shadows"}
+      - {place: castelia_park, methods: [grass], seasons: all, tier: common, why: "the city's pigeons in the park (the user's list)"}
     review: []
 
   - id: ducklett
@@ -555,10 +553,13 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: random, grass: float}
     homes:
-      - {place: desert_resort_path, methods: [grass], seasons: all, tier: uncommon, why: "cliff nests in the canyon, with the young that can't fly"}
-      - {place: desert_resort, methods: [grass], seasons: all, tier: rare, stages: [mandibuzz], why: "circling the desert for the weak"}
-      - {place: route_4, methods: [grass], seasons: all, tier: rare, stages: [mandibuzz], why: "the road's edge, as in the original"}
       - {place: reversal_mountain_outside, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the badlands' cliffs"}
+      - {place: desert_resort_path, methods: [grass], seasons: [spring], tier: common, why: "nesting on the canyon's cliffs, the young that can't fly yet"}
+      - {place: desert_resort_path, methods: [grass], seasons: [summer, autumn, winter], tier: uncommon, why: "the canyon's cliff nests"}
+      - {place: desert_resort, methods: [grass], seasons: [winter], tier: uncommon, stages: [mandibuzz], why: "wintering vultures circling the dunes"}
+      - {place: desert_resort, methods: [grass], seasons: [spring, summer, autumn], tier: rare, stages: [mandibuzz], why: "circling the desert for the weak"}
+      - {place: route_4, methods: [grass], seasons: [winter], tier: uncommon, stages: [mandibuzz], why: "wintering vultures at the road's edge"}
+      - {place: route_4, methods: [grass], seasons: [spring, summer, autumn], tier: rare, stages: [mandibuzz], why: "the road's edge, as in the original"}
     review: []
 
   - id: tropius

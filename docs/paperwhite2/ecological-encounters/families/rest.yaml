@@ -122,6 +122,7 @@ families:
       - {place: route_5, methods: [grass], seasons: all, tier: common, why: "following the road's litterers"}
       - {place: route_9, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the mall's trash"}
       - {place: castelia_park, methods: [dark_grass], seasons: all, tier: uncommon, why: "the city's rubbish"}
+      - {place: castelia_sewers, methods: [grass], seasons: all, tier: uncommon, why: "the sewers' trash"}
     review: []
 
   - id: gulpin

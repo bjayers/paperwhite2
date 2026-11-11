@@ -439,7 +439,6 @@ families:
     wanderer: {appears: both, wanders: random, grass: float}
     homes:
       - {place: giant_chasm_crater, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "sightings in the crater (the places)"}
-      - {place: desert_resort, methods: [grass], seasons: all, tier: very_rare, stages: [elgyem], times: night, why: "the desert crash site of its rumours"}
     review: []
 
   - id: litwick

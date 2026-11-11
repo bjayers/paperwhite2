@@ -326,7 +326,10 @@ The industrial complex kept close to its NPCs: Klink, Magnemite, Koffing, Voltor
 
 **Grass**
 
-- All year: **common:** Murkrow/Honchkrow (night only), Rattata/Raticate (more at night); **uncommon:** Glameow/Purugly, Pachirisu (more by day), Purrloin/Liepard (more at night), Skitty (more by day), Zigzagoon/Linoone (more at night); **exotic:** Chatot (day only), Eevee
+- Spring: **common:** Murkrow/Honchkrow (night only), Pidove/Tranquill/Unfezant (more by day), Rattata/Raticate (more at night); **uncommon:** Budew/Roselia (more by day), Glameow/Purugly, Meowth/Persian (more at night), Minccino (more by day), Purrloin/Liepard (more at night), Skitty (more by day), Snubbull/Granbull (more by day), Zigzagoon/Linoone (more at night); **exotic:** Eevee
+- Summer: **common:** Murkrow/Honchkrow (night only), Pidove/Tranquill/Unfezant (more by day), Rattata/Raticate (more at night); **uncommon:** Glameow/Purugly, Meowth/Persian (more at night), Minccino (more by day), Nincada/Ninjask (more by day), Purrloin/Liepard (more at night), Skitty (more by day), Snubbull/Granbull (more by day), Venonat/Venomoth (night only), Zigzagoon/Linoone (more at night); **exotic:** Eevee
+- Autumn: **common:** Murkrow/Honchkrow (night only), Pidove/Tranquill/Unfezant (more by day), Rattata/Raticate (more at night); **uncommon:** Glameow/Purugly, Meowth/Persian (more at night), Minccino (more by day), Purrloin/Liepard (more at night), Skitty (more by day), Snubbull/Granbull (more by day), Starly/Staravia/Staraptor (more by day), Zigzagoon/Linoone (more at night); **exotic:** Eevee
+- Winter: **common:** Murkrow/Honchkrow (night only), Pidove/Tranquill/Unfezant (more by day), Rattata/Raticate (more at night); **uncommon:** Glameow/Purugly, Meowth/Persian (more at night), Minccino (more by day), Purrloin/Liepard (more at night), Skitty (more by day), Snubbull/Granbull (more by day), Starly/Staravia/Staraptor (more by day), Zigzagoon/Linoone (more at night); **exotic:** Eevee
 
 **Dark grass**
 
@@ -351,16 +354,20 @@ A small walled garden in the middle of the city: crows and rats, strays and scav
 - Your picture names Snubbull, Meowth, Minccino and Cinccino too, and I trimmed Snubbull and Meowth out (and never put Minccino here) to keep the garden small. I'd put your list back and take out what you didn't name (Pachirisu, and Chatot unless you like the feral colony) instead.
 - Two trophies in one tiny garden may be one too many.
 
+*Discussed with the user:*
+
+- 2026-11-14, done: the user's list back (Pidove common, Snubbull, Meowth, Minccino); Pachirisu and Chatot gone (Pachirisu lives on Routes 2, 3 and 6; Chatot on Route 18 and at Village Bridge), so Eevee is the one trophy; seasons: Budew in spring, Nincada and Venonat at the lights in summer, Starly murmurations in autumn and winter.
+
 ### Castelia Sewers (`castelia_sewers`)
 
 *The place:* The city's underbelly, with trainers looking for a fight. Mostly trash-based Pokémon and those that like the dark in human places; fish and other water Pokémon in the canals, perhaps Poison types; on the walkways sludge and trash Pokémon, rats and the like.
 
 **Walking (the floor)**
 
-- Spring: **common:** Grimer/Muk, Rattata/Raticate (more at night); **uncommon:** Koffing/Weezing
-- Summer: **common:** Grimer/Muk, Rattata/Raticate (more at night); **uncommon:** Koffing/Weezing
-- Autumn: **common:** Grimer/Muk, Rattata/Raticate (more at night); **uncommon:** Corphish/Crawdaunt (more at night), Koffing/Weezing, Sandile/Krokorok
-- Winter: **common:** Grimer/Muk, Rattata/Raticate (more at night); **uncommon:** Corphish/Crawdaunt (more at night), Koffing/Weezing, Sandile/Krokorok
+- Spring: **common:** Grimer/Muk, Rattata/Raticate (more at night); **uncommon:** Koffing/Weezing, Stunky/Skuntank (night only), Trubbish/Garbodor, Zubat/Golbat
+- Summer: **common:** Grimer/Muk, Rattata/Raticate (more at night); **uncommon:** Koffing/Weezing, Stunky/Skuntank (night only), Trubbish/Garbodor, Zubat/Golbat
+- Autumn: **common:** Grimer/Muk, Rattata/Raticate (more at night); **uncommon:** Corphish/Crawdaunt (more at night), Koffing/Weezing, Sandile/Krokorok, Stunky/Skuntank (night only), Trubbish/Garbodor, Zubat/Golbat
+- Winter: **common:** Grimer/Muk, Rattata/Raticate (more at night); **uncommon:** Corphish/Crawdaunt (more at night), Koffing/Weezing, Sandile/Krokorok, Stunky/Skuntank (night only), Trubbish/Garbodor, Zubat/Golbat
 
 **Surfing**
 
@@ -403,13 +410,20 @@ Sludge, gas and rats on the walkways; carp and invasive crayfish in the canals w
 - The walkways have only three to five families. The sewers are big (five maps), so that's thin; Trubbish (trash), Zubat or Woobat, and Stunky would fit the dark, dirty tunnels.
 - Corphish on the dry floors in autumn and winter is my stretch; say if it should stay in the water only.
 
+*Discussed with the user:*
+
+- 2026-11-14, done: Trubbish, Zubat and Stunky (at night) on the walkways all year.
+
 ### Route 4 (`route_4`)
 
 *The place:* A desert road out of Castelia, with ruins; the sea just off the main road outside Castelia's exit, with two fishermen. It changes a little with the version but stays desert, with the same Pokémon in both (unlike Reversal Mountain). The vanilla games have Braviary and Mandibuzz here as overworld encounters; with no version exclusives, both families live here.
 
 **Walking (the floor)**
 
-- All year: **common:** Sandile/Krokorok, Sandshrew/Sandslash (more at night); **uncommon:** Darumaka/Darmanitan (more by day), Scraggy/Scrafty (more by day); **rare:** Burmy/Wormadam (Sandy Cloak), Flygon (only in sandstorm), Hippopotas/Hippowdon (more by day), Krookodile (only in sandstorm), Mandibuzz (more by day), Rattata/Raticate (more at night)
+- Spring: **common:** Sandile/Krokorok, Sandshrew/Sandslash (more at night); **uncommon:** Darumaka/Darmanitan (more by day), Scraggy/Scrafty (more by day); **rare:** Burmy/Wormadam (Sandy Cloak), Flygon (only in sandstorm), Hippopotas/Hippowdon (more by day), Krookodile (only in sandstorm), Mandibuzz (more by day), Rattata/Raticate (more at night)
+- Summer: **common:** Sandile/Krokorok, Sandshrew/Sandslash (more at night); **uncommon:** Darumaka/Darmanitan (more by day), Hippopotas/Hippowdon (more by day), Scraggy/Scrafty (more by day); **rare:** Burmy/Wormadam (Sandy Cloak), Flygon (only in sandstorm), Krookodile (only in sandstorm), Mandibuzz (more by day), Rattata/Raticate (more at night)
+- Autumn: **common:** Sandile/Krokorok, Sandshrew/Sandslash (more at night); **uncommon:** Darumaka/Darmanitan (more by day), Scraggy/Scrafty (more by day); **rare:** Burmy/Wormadam (Sandy Cloak), Flygon (only in sandstorm), Hippopotas/Hippowdon (more by day), Krookodile (only in sandstorm), Mandibuzz (more by day), Rattata/Raticate (more at night)
+- Winter: **common:** Darumaka/Darmanitan (more by day), Sandile/Krokorok, Sandshrew/Sandslash (more at night); **uncommon:** Mandibuzz (more by day), Scraggy/Scrafty (more by day); **rare:** Burmy/Wormadam (Sandy Cloak), Flygon (only in sandstorm), Hippopotas/Hippowdon (more by day), Krookodile (only in sandstorm), Rattata/Raticate (more at night)
 
 **Surfing**
 
@@ -440,13 +454,20 @@ A desert road at the city's edge: Sandile and Sandshrew in the sand, Darumaka an
 - Fishing is Finneon alone; the bay could take Krabby or Shellos too.
 - The vanilla Braviary is only on the path and in the static battle, not on Route 4 itself.
 
+*Discussed with the user:*
+
+- 2026-11-14, done: a little seasonal change (Hippopotas more in summer, Darumaka common in winter, Mandibuzz wintering). The user will give Black 2's Route 4 the odd sandstorm, so its Flygon and Krookodile appear there sometimes. Fishing (Krabby, pink Shellos) still open.
+
 ### Desert Resort (the path) (`desert_resort_path`)
 
 *The place:* The path from Route 4 to the Desert Resort proper, between cliffs and covered in sand: wilder and rougher than even Route 4's ruins. A mix of Route 4's and the Desert Resort's Pokémon.
 
 **Grass**
 
-- All year: **uncommon:** Cacnea/Cacturne, Cubone/Marowak, Gligar (more at night), Sandshrew/Sandslash (more at night), Scraggy/Scrafty (more by day), Skorupi/Drapion (night only), Trapinch, Vullaby/Mandibuzz (more by day); **rare:** Braviary (more by day), Maractus, Natu/Xatu (more by day), Spearow/Fearow (more by day)
+- Spring: **common:** Cubone/Marowak, Gligar (more at night), Vullaby/Mandibuzz (more by day); **uncommon:** Cacnea/Cacturne, Sandshrew/Sandslash (more at night), Scraggy/Scrafty (more by day), Skorupi/Drapion (night only), Trapinch; **rare:** Braviary (more by day), Maractus, Natu/Xatu (more by day), Spearow/Fearow (more by day)
+- Summer: **common:** Cubone/Marowak, Gligar (more at night); **uncommon:** Cacnea/Cacturne, Sandshrew/Sandslash (more at night), Scraggy/Scrafty (more by day), Skorupi/Drapion (night only), Trapinch, Vullaby/Mandibuzz (more by day); **rare:** Braviary (more by day), Maractus, Natu/Xatu (more by day)
+- Autumn: **common:** Cubone/Marowak, Gligar (more at night); **uncommon:** Cacnea/Cacturne, Sandshrew/Sandslash (more at night), Scraggy/Scrafty (more by day), Skorupi/Drapion (night only), Trapinch, Vullaby/Mandibuzz (more by day); **rare:** Braviary (more by day), Maractus, Natu/Xatu (more by day), Spearow/Fearow (more by day)
+- Winter: **common:** Cubone/Marowak, Gligar (more at night); **uncommon:** Cacnea/Cacturne, Sandshrew/Sandslash (more at night), Scraggy/Scrafty (more by day), Skorupi/Drapion (night only), Trapinch, Vullaby/Mandibuzz (more by day); **rare:** Braviary (more by day), Maractus, Natu/Xatu (more by day)
 
 **What I think**
 
@@ -460,13 +481,20 @@ The canyon between Route 4 and the dunes: cliff-nesting vultures and Gligar, Cub
 
 - Nothing is common, so everything is equally likely: it reads as "rough and wild", but there's no signature Pokémon. Sandshrew or Cubone could be common here.
 
+*Discussed with the user:*
+
+- 2026-11-14, done: Cubone and Gligar common as the canyon's own; Vullaby common in spring (nesting); Spearow passing in spring and autumn.
+
 ### Desert Resort (`desert_resort`)
 
 *The place:* A large, open desert with dunes and the entrance to Relic Castle; crowded with trainers, so wild but a popular spot. The usual desert Pokémon and Unova's own, like Darumaka and Maractus; cacti as overworld NPCs later. Pokécology: Flygon's family makes whirlwinds for Krookodile, which hides in sandstorms (in whirlwinds).
 
 **Grass**
 
-- All year: **common:** Cacnea (day only), Sandile/Krokorok, Trapinch; **uncommon:** Cacturne (night only), Darumaka/Darmanitan (more by day), Hippopotas/Hippowdon (more by day), Maractus, Natu/Xatu (more by day), Sandshrew/Sandslash (more at night), Sigilyph, Skorupi/Drapion (night only), Vibrava; **rare:** Flygon (only in sandstorm), Krookodile (only in sandstorm), Mandibuzz (more by day); **very rare:** Elgyem (night only)
+- Spring: **common:** Cacnea (day only), Maractus, Sandile/Krokorok, Trapinch; **uncommon:** Cacturne (night only), Darumaka/Darmanitan (more by day), Hippopotas/Hippowdon (more by day), Natu/Xatu (more by day), Sandshrew/Sandslash (more at night), Sigilyph, Skorupi/Drapion (night only), Vibrava; **rare:** Flygon (only in sandstorm), Krookodile (only in sandstorm), Mandibuzz (more by day); **very rare:** Combee (day only)
+- Summer: **common:** Cacnea (day only), Cacturne (night only), Hippopotas/Hippowdon (more by day), Sandile/Krokorok, Skorupi/Drapion (night only), Trapinch; **uncommon:** Darumaka/Darmanitan (more by day), Maractus, Natu/Xatu (more by day), Sandshrew/Sandslash (more at night), Sigilyph, Vibrava; **rare:** Flygon (only in sandstorm), Krookodile (only in sandstorm), Mandibuzz (more by day)
+- Autumn: **common:** Cacnea (day only), Sandile/Krokorok, Trapinch; **uncommon:** Cacturne (night only), Darumaka/Darmanitan (more by day), Hippopotas/Hippowdon (more by day), Maractus, Natu/Xatu (more by day), Sandshrew/Sandslash (more at night), Sigilyph, Skorupi/Drapion (night only), Vibrava; **rare:** Flygon (only in sandstorm), Krookodile (only in sandstorm), Mandibuzz (more by day)
+- Winter: **common:** Cacnea (day only), Darumaka/Darmanitan (more by day), Sandile/Krokorok, Trapinch; **uncommon:** Cacturne (night only), Hippopotas/Hippowdon (more by day), Mandibuzz (more by day), Maractus, Natu/Xatu (more by day), Sandshrew/Sandslash (more at night), Sigilyph, Skorupi/Drapion (night only), Vibrava; **rare:** Flygon (only in sandstorm), Krookodile (only in sandstorm)
 
 **What I think**
 
@@ -481,13 +509,17 @@ The open dunes: pit traps and burrowers by day, cacti that hunt at night, Hippop
 - Fifteen families, the second most crowded table. Natu and Mandibuzz could leave the dunes (they have the path and the badlands), and Elgyem could go to Giant Chasm only.
 - It's always a sandstorm today, so Flygon and Krookodile are simply rare until you add clear days (your wish in weather.md).
 
+*Discussed with the user:*
+
+- 2026-11-14, done: Maractus common in spring with a very rare Combee in the bloom; Skorupi, Cacturne and Hippopotas common in summer; Darumaka common and Mandibuzz uncommon in winter; Elgyem only in Giant Chasm now.
+
 ### Relic Castle (`relic_castle`)
 
 *The place:* Not fully decided: probably where the desert, ancient and ruin Pokémon dwell, where they fit. Yamask, above all. Unown on hold (perhaps placed by hand later, or overworld Unown spelling words as a puzzle).
 
 **Walking (the floor)**
 
-- All year: **common:** Yamask/Cofagrigus; **uncommon:** Baltoy/Claydol, Bronzor/Bronzong, Cubone/Marowak, Sandile/Krokorok/Krookodile; **rare:** Darmanitan (more by day), Natu/Xatu (more by day), Sigilyph, Skorupi/Drapion (night only); **very rare:** Gabite
+- All year: **common:** Yamask/Cofagrigus; **uncommon:** Baltoy/Claydol, Bronzor/Bronzong, Cubone/Marowak, Sandile/Krokorok/Krookodile; **rare:** Darmanitan (more by day), Natu/Xatu (more by day), Sigilyph, Skorupi/Drapion (night only); **very rare:** Gabite (only in relic_castle_6, relic_castle_7, relic_castle_8)
 
 **What I think**
 
@@ -501,6 +533,10 @@ The sinking tomb: Yamask and Cofagrigus above all, Cubone mourning among the bon
 
 - Unown is on hold; this would be a fine home if it comes back.
 - It's the same in all eight maps; the deeper floors could hold the rarer ones (Darmanitan, Gabite) only.
+
+*Discussed with the user:*
+
+- 2026-11-14: no seasons, as the user agrees; Gabite only in its deepest rooms (relic_castle_6 to _8, if those are the deepest: to check).
 
 ### Relic Passage (`relic_passage`)
 
@@ -518,13 +554,13 @@ Besides what's listed, rustling spots fill themselves from the grass's rare, ver
 
 **Surfing**
 
-- All year: **uncommon:** Barboach/Whiscash (more at night)
+- All year: **uncommon:** Barboach/Whiscash (more at night), Basculin (Blue-Striped)
 
 **Rippling water (surfing):** nothing of its own: the generator's rule fills it from surfing, favouring the later stages.
 
 **Fishing**
 
-- All year: **uncommon:** Barboach/Whiscash (more at night)
+- All year: **uncommon:** Barboach/Whiscash (more at night), Basculin (Blue-Striped)
 
 **Rippling water (fishing):** nothing of its own: the generator's rule fills it from fishing, favouring the later stages.
 
@@ -540,6 +576,10 @@ A desert cave: bats and rock dwellers, Sandile thinning out toward the sewers, b
 
 - Gible here is early in the game; the level gate holds Gabite and Garchomp back, but even Gible is a pseudo- legendary. A good trophy, or too early?
 - Barboach is the pool's only Pokémon.
+
+*Discussed with the user:*
+
+- 2026-11-14, done: Gible kept here from level 40; Blue-Striped Basculin in the pool.
 
 ## Southeast Unova
 

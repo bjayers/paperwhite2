@@ -301,7 +301,8 @@ families:
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
       - {place: desert_resort, methods: [grass], seasons: all, tier: common, stages: [cacnea], times: day, why: "the desert's cacti by day"}
-      - {place: desert_resort, methods: [grass], seasons: all, tier: uncommon, stages: [cacturne], times: night, why: "hunting the heat-worn at night"}
+      - {place: desert_resort, methods: [grass], seasons: [summer], tier: common, stages: [cacturne], times: night, why: "hunting the heat-worn on summer nights"}
+      - {place: desert_resort, methods: [grass], seasons: [spring, autumn, winter], tier: uncommon, stages: [cacturne], times: night, why: "hunting the heat-worn at night"}
       - {place: desert_resort_path, methods: [grass], seasons: all, tier: uncommon, why: "the canyon"}
     review: []
 
@@ -322,8 +323,10 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
-      - {place: desert_resort, methods: [grass], seasons: all, tier: uncommon, why: "colonies in the dunes"}
-      - {place: route_4, methods: [grass], seasons: all, tier: rare, why: "the road's deep sand"}
+      - {place: desert_resort, methods: [grass], seasons: [summer], tier: common, why: "colonies in the dunes at the height of summer"}
+      - {place: desert_resort, methods: [grass], seasons: [spring, autumn, winter], tier: uncommon, why: "colonies in the dunes"}
+      - {place: route_4, methods: [grass], seasons: [summer], tier: uncommon, why: "the road's deep sand in summer"}
+      - {place: route_4, methods: [grass], seasons: [spring, autumn, winter], tier: rare, why: "the road's deep sand"}
     review: []
 
   - id: skorupi
@@ -344,9 +347,10 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: aggressive, grass: stand}
     homes:
-      - {place: desert_resort, methods: [grass], seasons: all, tier: uncommon, why: "the desert at night"}
       - {place: desert_resort_path, methods: [grass], seasons: all, tier: uncommon, why: "the canyon's rocks at night"}
       - {place: relic_castle, methods: [grass], seasons: all, tier: rare, why: "the castle's sand-filled halls"}
+      - {place: desert_resort, methods: [grass], seasons: [summer], tier: common, why: "the desert's hot nights"}
+      - {place: desert_resort, methods: [grass], seasons: [spring, autumn, winter], tier: uncommon, why: "the desert at night"}
     review: []
 
   - id: sandile
@@ -395,9 +399,11 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
-      - {place: route_4, methods: [grass], seasons: all, tier: uncommon, why: "the desert road, as in the original"}
-      - {place: desert_resort, methods: [grass], seasons: all, tier: uncommon, why: "the desert by day"}
       - {place: relic_castle, methods: [grass], seasons: all, tier: rare, stages: [darmanitan], why: "still as a statue in the ruins"}
+      - {place: desert_resort, methods: [grass], seasons: [winter], tier: common, why: "out by day in the cool season"}
+      - {place: desert_resort, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the desert by day"}
+      - {place: route_4, methods: [grass], seasons: [winter], tier: common, why: "the desert road in the cool season"}
+      - {place: route_4, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the desert road, as in the original"}
     review: []
 
   - id: maractus
@@ -417,8 +423,9 @@ families:
     levels: {maractus: [10, 100]}
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
-      - {place: desert_resort, methods: [grass], seasons: all, tier: uncommon, why: "the desert's cactus, as in the original"}
       - {place: desert_resort_path, methods: [grass], seasons: all, tier: rare, why: "cacti in the canyon"}
+      - {place: desert_resort, methods: [grass], seasons: [spring], tier: common, why: "the cactus bloom"}
+      - {place: desert_resort, methods: [grass], seasons: [summer, autumn, winter], tier: uncommon, why: "the desert's cactus, as in the original"}
     review: []
 
   - id: heatmor
@@ -462,7 +469,7 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
-      - {place: desert_resort_path, methods: [grass], seasons: all, tier: uncommon, why: "bones in the canyon"}
       - {place: relic_castle, methods: [grass], seasons: all, tier: uncommon, why: "the tomb's bones"}
       - {place: celestial_tower, methods: [grass], seasons: all, tier: rare, why: "mourning among the graves, as at Lavender's tower"}
+      - {place: desert_resort_path, methods: [grass], seasons: all, tier: common, why: "bones in the canyon: its own"}
     review: []

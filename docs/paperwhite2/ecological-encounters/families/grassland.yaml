@@ -141,6 +141,7 @@ families:
     homes:
       - {place: route_5, methods: [grass], seasons: all, tier: uncommon, why: "the busy road's leavings at night"}
       - {place: route_9, methods: [dark_grass], seasons: all, tier: rare, stages: [persian], why: "the mall's haughty strays"}
+      - {place: castelia_park, methods: [grass], seasons: all, tier: uncommon, why: "a city stray after shiny things (the user's list)"}
     review: []
 
   - id: lickitung
@@ -389,6 +390,7 @@ families:
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
       - {place: route_9, methods: [grass], seasons: all, tier: rare, why: "dog walkers' strays by the mall"}
+      - {place: castelia_park, methods: [grass], seasons: all, tier: uncommon, why: "a pet bulldog gone stray (the user's list)"}
     review: []
 
   - id: girafarig
@@ -725,6 +727,7 @@ families:
       - {place: route_12, methods: [grass], seasons: [spring, summer], tier: common, why: "the flower hills"}
       - {place: village_bridge, methods: [dark_grass], seasons: [spring, summer], tier: uncommon, stages: [roselia], why: "the flowery clearing"}
       - {place: route_12, methods: [grass], seasons: [autumn], tier: uncommon, stages: [roselia], why: "the hills' late roses"}
+      - {place: castelia_park, methods: [grass], seasons: [spring], tier: uncommon, why: "the garden's spring flowers"}
     review:
       - "Roselia wild though it comes by friendship."
 
@@ -798,6 +801,7 @@ families:
       - {place: route_9, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the mall's trash at night"}
       - {place: route_16, methods: [grass], seasons: all, tier: uncommon, why: "the suburb's bins"}
       - {place: route_5, methods: [dark_grass], seasons: all, tier: uncommon, why: "the road's leavings"}
+      - {place: castelia_sewers, methods: [grass], seasons: all, tier: uncommon, why: "scavenging the tunnels at night"}
     review: []
 
   - id: shinx
@@ -842,7 +846,6 @@ families:
     levels: {pachirisu: [5, 100]}
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
-      - {place: castelia_park, methods: [grass], seasons: all, tier: uncommon, why: "the park's squirrel round its tree"}
       - {place: route_2, methods: [grass], seasons: all, tier: uncommon, why: "light woods"}
       - {place: route_3, methods: [dark_grass], seasons: all, tier: rare, why: "the route's edges (its Hidden Grotto)"}
       - {place: route_6, methods: [grass], seasons: all, tier: rare, why: "the valley's woods"}
@@ -1041,6 +1044,7 @@ families:
       - {place: route_5, methods: [grass], seasons: all, tier: uncommon, why: "as in the original"}
       - {place: route_9, methods: [grass], seasons: all, tier: uncommon, why: "as in the original"}
       - {place: route_16, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "as in the original"}
+      - {place: castelia_park, methods: [grass], seasons: all, tier: uncommon, why: "a tidy pet gone feral in the garden (the user's list)"}
     review: []
 
   - id: deerling

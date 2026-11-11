@@ -48,6 +48,7 @@ families:
       - {place: giant_chasm_caves, methods: [grass], seasons: all, tier: common, why: "the cold caves"}
       - {place: victory_road_caves, methods: [grass], seasons: all, tier: common, stages: [golbat], why: "the deep caves"}
       - {place: reversal_mountain_damp, methods: [grass], seasons: all, tier: common, why: "the damp caves' bats"}
+      - {place: castelia_sewers, methods: [grass], seasons: all, tier: uncommon, why: "bats in the dark tunnels"}
     review: []
 
   - id: woobat
@@ -274,9 +275,9 @@ families:
     levels: {gligar: [10, 100]}
     wanderer: {appears: both, wanders: aggressive, grass: float}
     homes:
-      - {place: desert_resort_path, methods: [grass], seasons: all, tier: uncommon, why: "gliding from the canyon's cliffs"}
       - {place: reversal_mountain_outside, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the red-rock cliffs"}
       - {place: route_15, methods: [dark_grass], seasons: all, tier: rare, why: "the ridge's ledges"}
+      - {place: desert_resort_path, methods: [grass], seasons: all, tier: common, why: "gliding from the canyon's cliffs: its own"}
     review: []
 
   - id: sneasel
