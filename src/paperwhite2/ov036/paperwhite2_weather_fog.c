@@ -9,6 +9,8 @@
 #include "field/weather_sandstorm.h"
 #include "nitro/fx.h"
 #include "nitro/gx.h"
+#include "nitro/os.h"
+#include "nnsys/g3d.h"
 #include "paperwhite2/weather_fog.h"
 
 // Paper White 2: weather fog that follows the player (paperwhite2/weather_fog.h, docs/paperwhite2/plugins.md's
@@ -37,9 +39,9 @@
 // follow it, so only hardware can check it: a lower value puts a W-buffered camera's fog closer
 #define W_BUFFER_DEPTH_PER_UNIT 8
 // How many of the 32 steps of density a W-buffered camera's fog is thicker at its target than a normal town's. Paper
-// White 2's choice, after the 3DS showed the waterfront's fog (Castelia's only W-buffered weather camera) a bit far: 6
-// is about a fifth more (rain 41% to 59%, thunderstorm 31% to 50%); 0 matches a normal town
-#define W_BUFFER_FOG_EXTRA_STEPS 6
+// White 2's choice, after the 3DS showed the waterfront's fog (Castelia's only W-buffered weather camera) a bit far,
+// then a tad far at 6: 8 is a quarter more (rain 41% to 66%, thunderstorm 31% to 56%); 0 matches a normal town
+#define W_BUFFER_FOG_EXTRA_STEPS 8
 
 #define FOG_DEPTH_MAX 0x7fff
 #define FOG_SHIFT_MAX 10
@@ -65,9 +67,161 @@ static struct {
     // The power of two the steps scale by
     s32 stepScale;
     BOOL rearPlaneFog;
-    // Whether light 2 is the fog's colour (PaperWhite2_WeatherFog_IsSkyFogged)
+    // Whether light 2 is the fog's colour (PaperWhite2_WeatherFog_IsSkyFogged), and the fog's colour
     BOOL skyFogged;
+    GXRgb fogColor;
 } sWeatherFog;
+
+// Castelia's gate, a white light box: castelia_city_4's gate_4 at the street's north end and castelia_city_5's
+// c3_gate_2. Their shapes have no normals, so no light reaches them: their display lists give each vertex its colour
+// (white, and greys for the shading), and they stood out of a weather's fog beside the player. While the sky's light
+// is the fog's colour, those colours are scaled by it, as a material lit by the sky's light alone would be
+static const NNSG3dResName sGateMaterials[] = {
+    { "gate_4" },
+    { "c3_gate_2" },
+};
+
+// The most colour commands a gate material's display lists have (gate_4 has 26)
+#define GATE_COLOR_MAX 32
+
+// A gate material's colour commands in the model last drawn with it, their own colours, and the fog's colour they are
+// scaled by (0x8000: their own)
+typedef struct {
+    NNSG3dResMdl *mdl;
+    u32 count;
+    u32 *commands[GATE_COLOR_MAX];
+    GXRgb colors[GATE_COLOR_MAX];
+    u32 scale;
+} WeatherFogGateColors;
+
+static WeatherFogGateColors sGateColors[NELEMS(sGateMaterials)];
+
+#define GATE_SCALE_NONE 0x8000
+
+// The parameters a model's render commands (SBC) take, by opcode with its flags, as the map models use them
+// (tools/data/map_model_data.py's SBC_PARAMS); -1 for one the walk doesn't know
+static s32 WeatherFog_SbcParams(u8 op) {
+    switch (op) {
+    case 0x00:
+    case 0x01:
+    case 0x0b:
+    case 0x2b:
+    case 0x40:
+    case 0x80:
+        return 0;
+    case 0x03:
+    case 0x04:
+    case 0x05:
+    case 0x07:
+    case 0x08:
+    case 0x24:
+    case 0x44:
+        return 1;
+    case 0x02:
+    case 0x0c:
+    case 0x0d:
+    case 0x47:
+        return 2;
+    case 0x06:
+        return 3;
+    case 0x26:
+    case 0x46:
+        return 4;
+    case 0x66:
+        return 5;
+    }
+    return -1;
+}
+
+// The parameters of a geometry command of a display list, as the map models use them; -1 for one it doesn't know
+static s32 WeatherFog_GxParams(u8 op) {
+    switch (op) {
+    case 0x00:
+    case 0x41:
+        return 0;
+    case 0x14:
+    case 0x20:
+    case 0x21:
+    case 0x22:
+    case 0x24:
+    case 0x25:
+    case 0x26:
+    case 0x27:
+    case 0x28:
+    case 0x40:
+        return 1;
+    case 0x23:
+        return 2;
+    case 0x1b:
+        return 3;
+    }
+    return -1;
+}
+
+// Notes the colour commands of a shape's display list
+static void WeatherFog_ReadShapeColors(WeatherFogGateColors *gate, NNSG3dResShpData *shape) {
+    u32 *cursor = (u32 *)((u8 *)shape + shape->ofsDL);
+    u32 *end = (u32 *)((u8 *)cursor + shape->sizeDL);
+    u32 ops;
+    u8 op;
+    s32 params;
+    u32 i;
+
+    // Four opcodes packed in a word, then their parameters
+    while (cursor < end) {
+        ops = *cursor++;
+        for (i = 0; i < 4; i++) {
+            op = ops >> (i * 8);
+            params = WeatherFog_GxParams(op);
+            if (params < 0) {
+                return;
+            }
+            if (op == 0x20 && gate->count < GATE_COLOR_MAX) {
+                gate->commands[gate->count] = cursor;
+                gate->colors[gate->count] = *cursor & 0x7fff;
+                gate->count++;
+            }
+            cursor += params;
+        }
+    }
+}
+
+// Notes the colour commands of the shapes a model draws with a material, walking its render commands
+static void WeatherFog_ReadGateColors(WeatherFogGateColors *gate, NNSG3dResMdl *mdl, int matIndex) {
+    u8 *cursor = (u8 *)mdl + mdl->ofsSbc;
+    NNSG3dResShp *shp = NNS_G3dGetShp(mdl);
+    int material = -1;
+    s32 params;
+    u8 op;
+
+    gate->mdl = mdl;
+    gate->count = 0;
+    gate->scale = GATE_SCALE_NONE;
+    while ((op = *cursor++) != 0x01) {
+        params = op == 0x09 ? 2 + 3 * cursor[1] : WeatherFog_SbcParams(op);
+        if (params < 0) {
+            return;
+        }
+        if (op == 0x04 || op == 0x24 || op == 0x44) {
+            material = cursor[0];
+        } else if (op == 0x05 && material == matIndex) {
+            WeatherFog_ReadShapeColors(gate, NNS_G3dGetShpDataByIdx(shp, cursor[0]));
+        }
+        cursor += params;
+    }
+}
+
+// A colour scaled by another, as a light of that colour lights it
+static GXRgb WeatherFog_ScaleColor(GXRgb color, u32 scale) {
+    u32 r = (color & GX_RGB_R_MASK) >> GX_RGB_R_SHIFT;
+    u32 g = (color & GX_RGB_G_MASK) >> GX_RGB_G_SHIFT;
+    u32 b = (color & GX_RGB_B_MASK) >> GX_RGB_B_SHIFT;
+
+    r = r * ((scale & GX_RGB_R_MASK) >> GX_RGB_R_SHIFT) / 31;
+    g = g * ((scale & GX_RGB_G_MASK) >> GX_RGB_G_SHIFT) / 31;
+    b = b * ((scale & GX_RGB_B_MASK) >> GX_RGB_B_SHIFT) / 31;
+    return GX_RGB(r, g, b);
+}
 
 static const u16 sRearPlaneFogZones[] = {
     ZONE_CASTELIA_CITY,    ZONE_CASTELIA_CITY_2,  ZONE_CASTELIA_CITY_3,  ZONE_CASTELIA_CITY_4,  ZONE_CASTELIA_CITY_5,
@@ -178,6 +332,7 @@ void PaperWhite2_WeatherFog_Update(Field *field) {
         sWeatherFog.skyFogged = PaperWhite2_WeatherFog_IsSkyFogged(field->fog);
         FieldLight_Flush(field->lightSystem, TRUE);
     }
+    sWeatherFog.fogColor = FieldFog_GetColor(field->fog);
 }
 
 // An offset on the reference camera mapped to this one, through the depths at the target, and a W-buffered camera's
@@ -238,4 +393,37 @@ BOOL PaperWhite2_WeatherFog_IsRearPlaneFog(void) {
 
 BOOL PaperWhite2_WeatherFog_IsSkyFogged(FieldFog *fog) {
     return sWeatherFog.rearPlaneFog && FieldFog_IsEnabled(fog);
+}
+
+void PaperWhite2_WeatherFog_UpdateMapModel(NNSG3dResMdl *mdl) {
+    NNSG3dResMat *mat;
+    WeatherFogGateColors *gate;
+    int index;
+    u32 scale;
+    u32 i;
+    u32 j;
+
+    if (!sWeatherFog.rearPlaneFog || (mat = NNS_G3dGetMat(mdl)) == NULL) {
+        return;
+    }
+    scale = sWeatherFog.skyFogged ? sWeatherFog.fogColor : GATE_SCALE_NONE;
+    for (i = 0; i < NELEMS(sGateMaterials); i++) {
+        index = NNS_G3dGetResDictIdxByName(&mat->dict, &sGateMaterials[i]);
+        if (index < 0) {
+            continue;
+        }
+        gate = &sGateColors[i];
+        if (gate->mdl != mdl) {
+            // A model loaded again has its own colours
+            WeatherFog_ReadGateColors(gate, mdl, index);
+        }
+        if (gate->scale != scale) {
+            gate->scale = scale;
+            for (j = 0; j < gate->count; j++) {
+                *gate->commands[j] =
+                    scale == GATE_SCALE_NONE ? gate->colors[j] : WeatherFog_ScaleColor(gate->colors[j], scale);
+                DC_FlushRange(gate->commands[j], sizeof(u32));
+            }
+        }
+    }
 }

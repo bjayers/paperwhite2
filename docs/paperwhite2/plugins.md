@@ -694,7 +694,7 @@ sunny weather's zone fog and the tints (weathers 9-14, which already pick theirs
 | Camera | Rain (shift / offset) | Thunderstorm |
 | --- | --- | --- |
 | normal town (0) | 8 / `0x7f5f` (unchanged) | 9 / `0x7f80` (unchanged) |
-| `castelia_city` waterfront (2, W; target 680-840 on its rail) | 4 / `0x1110`-`0x1543` | 5 / `0x13e0`-`0x16d3` |
+| `castelia_city` waterfront (2, W; target 680-840 on its rail) | 4 / `0x1090`-`0x14c3` | 5 / `0x13a0`-`0x1693` |
 | `castelia_city_2` plaza (7) | 8 / `0x7f17` | 9 / `0x7f38` |
 | `castelia_city_3` (8) | 9 / `0x7f9c` | 10 / `0x7fac` |
 | `castelia_city_4`, `_5` (13, 15) | 8 / `0x7f54`, `0x7f48` | 9 / `0x7f75`, `0x7f69` |
@@ -711,8 +711,8 @@ that zooms while it rains. Indoor cameras never have weather.
 `paperwhite2_weather_fog.c`). The W-buffer's depth is taken as 8 a unit of distance (GBATEK: the 24-bit depth is w,
 which the projection makes the distance in 1/4096 units). DeSmuME's W-buffer fog doesn't follow any one scale (it fogs
 the waterfront wholly or not at all from one place to the next), so only hardware tells. The 3DS showed the waterfront's
-fog visible but a bit far, so a W-buffered camera's fog is 6 of the 32 steps thicker at its target than a normal
-town's (rain 59%, thunderstorm 50%). To tune it: more extra steps bring the fog closer a little (0 is a normal town's
+fog visible but a bit far, then (at 6) a tad far, so a W-buffered camera's fog is 8 of the 32 steps thicker at its
+target than a normal town's (rain 66%, thunderstorm 56%). To tune it: more extra steps bring the fog closer a little (0 is a normal town's
 density); if the fog is still far by much more than a few steps, the depth scale is what's off, and a lower
 `W_BUFFER_DEPTH_PER_UNIT` (4 halves every distance) brings all of it in. Besides the waterfront this affects the
 W-buffered bridges' weather (Skyarrow, Tubeline, Marvelous is Z) and Victory Road's and Marine Tube's cameras when a
@@ -733,19 +733,28 @@ those blue against the grey fog: the blue skyline in the waterfront's distance a
 bottom of each street (seen in DeSmuME at `castelia_city_5`'s south end in a night rain). So in the same zones, while
 the fog is on, light 2 is the fog's colour; the light is flushed again when that changes.
 
-**Unlit gate** (data, `material_lights`): the gate's materials `gate_4` (`castelia_city_4`) and `c3_gate_2`
-(`castelia_city_5`) had no light on, so they kept their own colour whatever the time of day or a weather's light gave
-(every Castelia material has its own diffuse and ambient, so the light file reaches a material only through its
-lights). They are lit by light 0 now, as the rest of the gate (`gate_1`) is. The same field in `data.json`
-(`map_model.schema.json`) lists any material's lights.
+**The gate's light box** (`PaperWhite2_WeatherFog_UpdateMapModel`, called by `field_g3d_map.c`'s
+`FieldChunk_RenderMap` before each map model is drawn): the glowing white glass of the gate at `castelia_city_4`'s
+north end (`gate_4`; also `castelia_city_5`'s `c3_gate_2`) stood out of the rain beside the player. Its shapes have no
+normal commands, so no light reaches them however the material's lights are set (giving it light 0, the first
+follow-up, changed nothing): their display lists give each vertex its colour, white (31) and greys for the shading, so
+the glass drew at 240 in DeSmuME whatever the weather (the same pixel with the light-0 build and the light-2 test).
+In Castelia's zones, while the sky's light is the fog's colour, those colour commands are scaled by the fog's colour,
+as a material lit by the sky's light alone would be, and put back when it isn't: the walk finds the shapes drawn with
+the material through the model's render commands and keeps each command's own colour, read again when the model is
+loaded again. In DeSmuME's day rain the glass then drew at 160, the fog's colour, and at 240 again once the weather
+was cleared. The game's other unlit materials with their own colours (vending machines, the ice cream stand, the
+`gra_w` glows) are lights and keep theirs. `data.json`'s `material_lights` (`map_model.schema.json`) still sets any
+material's lights, though no model uses it now.
 
 **Fog on Castelia's roads, trees and benches** (data): `res/field/maps/models/<model>/data.json`'s `material_fog`
 (`map_model.schema.json`, `tools/data/map_model_data.py`'s `patch_material_attributes`) sets or clears a Nitro
 material's fog bit (bit 15 of its polygon attributes) by name. Castelia's street, pier and waterfront models turn it on
 for `c3_road1`, `c3_yuka`, `c3bay_yuka1`, `c3_test_1`, `c3_tree3`, `c3_manhole`, `c3_g_dust2`, `bench`, `h_kage`,
 `building4_2` and `castelia_city_6`'s `h_mado_1` (a shop's doorway: in DeSmuME its dark inside and red mat were the
-same with and without fog, while the street around greyed). The translucent sea (`sea_mizu1_1`) and the unlit
-doorway glows (`gra_w_1`, `gra_w_4`, `castelia_city_4`'s `gra_w`) stay unfogged, as lights. The field props of
+same with and without fog, while the street around greyed) and the unlit doorway glows (`gra_w_1`, `gra_w_4`,
+`castelia_city_4`'s `gra_w`), which stay bright up close and fade into the fog with distance as the user asked after
+the second 3DS test. The translucent sea (`sea_mizu1_1`) is the only material left without the fog. The field props of
 Castelia's bundles (doors, lamps, ships, signs) already have the fog on, but the warp gradients `outwarp01`-`03`, which
 Castelia's maps don't place.
 
@@ -755,7 +764,7 @@ camera. A camera whose near plane is at least that far (Castelia's waterfront at
 them away; they now move past the near plane by its distance (180 and 188, or 192 and 200), which keeps their order and
 still fills the screen, since the quad scales with its distance. Other cameras are unchanged (near 1 or 19).
 
-**Cost.** Overlay 36 about 0.9 KB of code and 40 bytes of BSS (`paperwhite2_weather_fog.c`) and about 0.2 KB of hooks;
+**Cost.** Overlay 36 about 1.8 KB of code and 0.45 KB of BSS (`paperwhite2_weather_fog.c`) and about 0.2 KB of hooks;
 per frame one distance (a square root) and a few 64-bit divisions.
 
 **Tested (DeSmuME, 2026-11-10):** forced thunderstorm and rain from the debug menu. On the Route 4 street south of
@@ -773,6 +782,11 @@ lights, `h_mado_1`'s fog, the W-buffer's extra steps) are built; in DeSmuME the 
 and `0x1543` at a target 834 units away (the extra steps' 384 below `0x16c3`). Not seen yet in the emulator: the
 street ends and the gate with the change (DeSmuME's debug warp reaches only the waterfront, and walking to them didn't
 work out); all of it wants the 3DS.
+
+**After the second 3DS test:** the blue skyline was gone and the waterfront's fog worked (now 8 extra steps, rain 4 /
+`0x14c3` at 834 units). The gate stayed bright (the light box above, now scaled), and the doorway glows were turned
+foggy. Reached in DeSmuME this time by walking from the save's spot on Route 4 south through Castelia Gate into
+`castelia_city_4`.
 
 ### Season app
 

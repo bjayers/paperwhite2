@@ -3,6 +3,7 @@
 
 #include "types.h"
 #include "field/field_weather.h"
+#include "nnsys/g3d.h"
 #include "struct_decls.h"
 
 // Paper White 2: weather fog that follows the player (src/paperwhite2/ov036/paperwhite2_weather_fog.c). A weather's
@@ -33,5 +34,9 @@ BOOL PaperWhite2_WeatherFog_IsRearPlaneFog(void);
 // ends' gradients (gra_w) and its shadows; a weather's light file gives light 2 a blue (night (8, 3, 29), day (11, 15,
 // 22)), so in a weather those stood out blue against the grey fog
 BOOL PaperWhite2_WeatherFog_IsSkyFogged(FieldFog *fog);
+
+// Before a map model is drawn: in the same zones, the colours of Castelia's gate (a white light box that no light
+// reaches) are scaled by the fog's colour while the sky's light is the fog's, and are their own otherwise
+void PaperWhite2_WeatherFog_UpdateMapModel(NNSG3dResMdl *mdl);
 
 #endif // PAPERWHITE2_WEATHER_FOG_H

@@ -175,4 +175,8 @@ The user chose C, D and E, and for the fog, fog relative to the player in place 
   colour now while the fog is on. The bright gate was two unlit materials, lit by light 0 now. A shop doorway's
   `h_mado_1` had the fog off. The waterfront's fog is 6 steps thicker (a tunable constant), as the 3DS showed it a bit
   far; whether the W-buffer's depth is really 8 a unit stays for the 3DS to tell.
+- After the second 3DS test (skyline fixed, waterfront fog decent): the gate's white glass has no normals, so lights
+  never reached it; its vertex colours are scaled by the fog's colour at runtime while the weather fog is on in
+  Castelia (the `material_lights` change was dropped). The doorway glows (`gra_w*`) get the fog, and the waterfront's
+  extra steps are 8.
 - Not done yet: adding Castelia to the weather calendar.
