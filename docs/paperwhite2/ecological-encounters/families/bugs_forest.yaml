@@ -625,7 +625,7 @@ families:
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
       - {place: chargestone_cave, methods: [grass], seasons: all, tier: common, why: "feeding on the charged stones' field"}
-      - {place: virbank_complex, methods: [dark_grass], seasons: all, tier: rare, stages: [joltik], why: "static from the complex's machines"}
+      - {place: virbank_complex, methods: [dark_grass], seasons: all, tier: rare, why: "static from the complex's machines"}
     review:
       - "Partners 'area': it clings to the cave's bigger Pokémon."
 
@@ -670,14 +670,16 @@ families:
     levels: {shiftry: [32, 100]}
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
-      - {place: route_19, methods: [grass], seasons: all, tier: common, stages: [seedot], why: "its NPCs and scripted battle, among the trees"}
-      - {place: floccesy_ranch, methods: [grass], seasons: all, tier: uncommon, why: "its NPCs; the forest's oaks"}
       - {place: route_20, methods: [grass], seasons: [autumn], tier: common, why: "the oak woods' acorns"}
-      - {place: route_2, methods: [grass], seasons: all, tier: uncommon, stages: [seedot], why: "light woods"}
+      - {place: route_2, methods: [grass], seasons: all, tier: uncommon, stages: [seedot, nuzleaf], why: "light woods"}
       - {place: pinwheel_forest, methods: [dark_grass], seasons: all, tier: uncommon, stages: [nuzleaf], why: "deep in the forest"}
       - {place: pinwheel_forest, methods: [dark_grass], seasons: all, tier: very_rare, stages: [shiftry], why: "the old forest's Leaf Stone influence"}
       - {place: route_6, methods: [dark_grass], seasons: [autumn], tier: uncommon, why: "the valley's oaks"}
       - {place: route_20, methods: [dark_grass], seasons: all, tier: uncommon, stages: [seedot, nuzleaf], why: "deeper in the oak woods"}
+      - {place: route_19, methods: [grass], seasons: [autumn], tier: uncommon, stages: [seedot, nuzleaf], why: "its NPCs and scripted battle; acorn time (the user)"}
+      - {place: route_19, methods: [grass], seasons: [winter], tier: rare, stages: [seedot, nuzleaf], why: "the last acorns into winter"}
+      - {place: floccesy_ranch, methods: [grass], seasons: [autumn], tier: uncommon, stages: [seedot, nuzleaf], why: "its NPCs; the forest's oaks in acorn time (the user)"}
+      - {place: floccesy_ranch, methods: [grass], seasons: [winter], tier: rare, stages: [seedot, nuzleaf], why: "the last acorns into winter"}
     review: []
 
   - id: shroomish
@@ -698,11 +700,11 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
-      - {place: route_19, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, stages: [shroomish], why: "its NPCs"}
       - {place: route_20, methods: [grass, dark_grass], seasons: [autumn], tier: common, why: "its NPCs; the woods' mushroom season"}
       - {place: route_20, methods: [grass], seasons: [spring, summer], tier: uncommon, why: "after rain"}
       - {place: floccesy_ranch, methods: [grass], seasons: [summer, autumn], tier: uncommon, why: "its NPCs; the forest's edge"}
       - {place: pinwheel_forest, methods: [dark_grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the mossy depths"}
+      - {place: route_19, methods: [grass], seasons: [autumn], tier: uncommon, why: "its NPCs; the mushroom season (the user)"}
     review: []
 
   - id: slakoth
@@ -837,7 +839,7 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: aggressive, grass: stand}
     homes:
-      - {place: route_12, methods: [dark_grass], seasons: [spring, summer, autumn], tier: uncommon, stages: [teddiursa], why: "drawn by the honey trees"}
+      - {place: route_12, methods: [dark_grass], seasons: [spring, summer, autumn], tier: uncommon, why: "drawn by the honey trees"}
       - {place: route_11, methods: [dark_grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the woods below the falls"}
       - {place: route_6, methods: [dark_grass], seasons: [summer, autumn], tier: rare, why: "the valley's woods"}
       - {place: victory_road_forest, methods: [dark_grass], seasons: [spring, summer, autumn], tier: uncommon, stages: [ursaring], why: "the mountain forest's bears"}
@@ -964,7 +966,7 @@ families:
       - {place: route_2, methods: [grass], seasons: [spring, summer], tier: uncommon, why: "light woods at night"}
       - {place: route_6, methods: [grass], seasons: [spring, summer], tier: common, why: "the valley's clearings"}
       - {place: route_16, methods: [dark_grass], seasons: [spring, summer], tier: uncommon, why: "the forest edge"}
-      - {place: route_1, methods: [grass], seasons: [summer], tier: uncommon, stages: [oddish], why: "the summer meadow at night"}
+      - {place: route_1, methods: [grass], seasons: [summer], tier: uncommon, why: "the summer meadow at night"}
     review: []
 
   - id: bellsprout

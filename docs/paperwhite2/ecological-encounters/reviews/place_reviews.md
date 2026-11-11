@@ -27,9 +27,9 @@ Every place's Pokémon by method and season, from the family dictionary, with my
 
 **Surfing**
 
-- Spring: **common:** Lotad, Tympole; **uncommon:** Ducklett (more by day)
-- Summer: **common:** Lotad, Tympole; **uncommon:** Ducklett (more by day)
-- Autumn: **common:** Lotad, Tympole; **uncommon:** Ducklett (more by day)
+- Spring: **common:** Lotad, Tympole/Palpitoad; **uncommon:** Ducklett (more by day)
+- Summer: **common:** Lotad, Tympole/Palpitoad; **uncommon:** Ducklett (more by day)
+- Autumn: **common:** Lotad, Tympole/Palpitoad; **uncommon:** Ducklett (more by day)
 - Winter: **uncommon:** Ducklett (more by day)
 
 **Rippling water (surfing):** nothing of its own: the generator's rule fills it from surfing, favouring the later stages.
@@ -53,16 +53,20 @@ A garden pond by the player's house: a gentle, familiar start with lily pads, ta
 - Winter leaves only Ducklett to surf (Lotad and Tympole sleep), which is right ecologically but bare; rippling water then falls back to Ducklett and Swanna.
 - Fishing is Magikarp alone all year. Fine for a garden pond, but Goldeen (released pets) would give a second bite.
 
+*Discussed with the user:*
+
+- 2026-11-14: no change asked; Goldeen as a second bite is still open.
+
 ### Route 19 (`route_19`)
 
 *The place:* A short route between Aspertia and the much smaller, rural Floccesy. North of a small starting area of grass and a few trees, a small lake at the foot of a fairly tall cliff. Starter Pokémon: Purrloin and Patrat, with Ekans hunting Patrat; Lillipup rare; Pidove common, near a city; other birds migrating through the year; Swinub rarely in winter only (the snow skiffs), and Shroomish rarely (Pokécology: Swinub digs up mushrooms).
 
 **Grass**
 
-- Spring: **common:** Patrat/Watchog (more by day), Pidgey/Pidgeotto/Pidgeot (more by day), Pidove/Tranquill/Unfezant (more by day), Seedot, Sentret (more by day); **uncommon:** Buneary, Ekans/Arbok (more by day), Hoppip/Skiploom/Jumpluff (day only), Purrloin/Liepard (more at night), Shroomish, Spearow/Fearow (more by day), Taillow/Swellow (day only); **rare:** Lillipup
-- Summer: **common:** Patrat/Watchog (more by day), Pidove/Tranquill/Unfezant (more by day), Seedot, Sentret (more by day); **uncommon:** Buneary, Ekans/Arbok (more by day), Purrloin/Liepard (more at night), Shroomish, Spearow/Fearow (more by day); **rare:** Lillipup
-- Autumn: **common:** Patrat/Watchog (more by day), Pidgey/Pidgeotto/Pidgeot (more by day), Pidove/Tranquill/Unfezant (more by day), Seedot, Sentret (more by day); **uncommon:** Buneary, Ekans/Arbok (more by day), Purrloin/Liepard (more at night), Shroomish, Spearow/Fearow (more by day), Taillow/Swellow (day only); **rare:** Lillipup
-- Winter: **common:** Patrat/Watchog (more by day), Pidove/Tranquill/Unfezant (more by day), Seedot, Sentret (more by day), Swinub; **uncommon:** Buneary, Purrloin/Liepard (more at night), Spearow/Fearow (more by day); **rare:** Lillipup
+- Spring: **common:** Patrat/Watchog (more by day), Pidgey/Pidgeotto/Pidgeot (more by day), Pidove/Tranquill/Unfezant (more by day), Sentret/Furret (more by day); **uncommon:** Ekans/Arbok (more by day), Hoppip/Skiploom/Jumpluff (day only), Purrloin/Liepard (more at night), Spearow/Fearow (more by day), Taillow/Swellow (day only); **rare:** Buneary, Lillipup/Herdier/Stoutland
+- Summer: **common:** Patrat/Watchog (more by day), Pidove/Tranquill/Unfezant (more by day), Sentret/Furret (more by day); **uncommon:** Ekans/Arbok (more by day), Purrloin/Liepard (more at night), Spearow/Fearow (more by day); **rare:** Lillipup/Herdier/Stoutland
+- Autumn: **common:** Patrat/Watchog (more by day), Pidgey/Pidgeotto/Pidgeot (more by day), Pidove/Tranquill/Unfezant (more by day), Sentret/Furret (more by day); **uncommon:** Ekans/Arbok (more by day), Purrloin/Liepard (more at night), Seedot/Nuzleaf, Shroomish/Breloom, Spearow/Fearow (more by day), Taillow/Swellow (day only); **rare:** Lillipup/Herdier/Stoutland
+- Winter: **common:** Patrat/Watchog (more by day), Pidove/Tranquill/Unfezant (more by day), Sentret/Furret (more by day); **uncommon:** Purrloin/Liepard (more at night), Spearow/Fearow (more by day); **rare:** Lillipup/Herdier/Stoutland, Seedot/Nuzleaf, Swinub/Piloswine
 
 **Rustling spots (shaking grass)**
 
@@ -72,9 +76,9 @@ Besides what's listed, rustling spots fill themselves from the grass's rare, ver
 
 **Surfing**
 
-- Spring: **common:** Lotad, Tympole; **uncommon:** Ducklett (more by day)
-- Summer: **common:** Lotad, Tympole; **uncommon:** Ducklett (more by day)
-- Autumn: **common:** Lotad, Tympole; **uncommon:** Ducklett (more by day)
+- Spring: **common:** Lotad, Tympole/Palpitoad; **uncommon:** Ducklett (more by day)
+- Summer: **common:** Lotad, Tympole/Palpitoad; **uncommon:** Ducklett (more by day)
+- Autumn: **common:** Lotad, Tympole/Palpitoad; **uncommon:** Ducklett (more by day)
 - Winter: **uncommon:** Ducklett (more by day)
 
 **Rippling water (surfing):** nothing of its own: the generator's rule fills it from surfing, favouring the later stages.
@@ -103,16 +107,20 @@ The gateway: Patrat with Ekans hunting them, Purrloin and Pidove by the city, th
 
 - Hoppip in spring could go, since Route 1 and Floccesy have the spring winds already.
 
+*Discussed with the user:*
+
+- 2026-11-14, done: Buneary a spring rarity, Seedot in autumn (rare into winter), Shroomish in autumn only, Swinub a winter rarity, as the user had them. Crowding is acceptable where it's believable. Evolved stages now appear here too at high levels.
+
 ### Floccesy Ranch (`floccesy_ranch`)
 
 *The place:* A rustic ranch north of Route 20 and Floccesy Town, with the ranch's Mareep (NPCs), a forest in the north, and a river on the east side flowing from the mountains between the ranch and Driftveil, through Route 20 and into the sea at Virbank. The owners have two Herdier, so that family lives on the route. Riolu is the ranch's known trophy, in summer and autumn; Shinx a trophy in winter. The user's NPCs: Ledyba in autumn, Sentret in spring, Furret in summer, Seedot in autumn, Poochyena in summer, Shroomish in autumn, Happiny in summer (Chansey with it, at its levels), Bidoof all year.
 
 **Grass**
 
-- Spring: **common:** Bidoof, Lillipup/Herdier/Stoutland, Sentret/Furret (more by day), Taillow/Swellow (day only); **uncommon:** Diglett (more at night), Hoothoot/Noctowl (night only), Hoppip/Skiploom/Jumpluff (day only), Miltank, Patrat/Watchog (more by day), Pidgey/Pidgeotto/Pidgeot (more by day), Poochyena/Mightyena (more at night), Seedot/Nuzleaf/Shiftry; **rare:** Azurill (more by day), Happiny/Chansey
-- Summer: **common:** Bidoof, Lillipup/Herdier/Stoutland, Sentret/Furret (more by day), Taillow/Swellow (day only); **uncommon:** Diglett (more at night), Hoothoot/Noctowl (night only), Miltank, Patrat/Watchog (more by day), Poochyena/Mightyena (more at night), Seedot/Nuzleaf/Shiftry, Shroomish/Breloom; **rare:** Azurill (more by day), Happiny/Chansey; **exotic:** Riolu
-- Autumn: **common:** Bidoof, Lillipup/Herdier/Stoutland, Sentret/Furret (more by day); **uncommon:** Diglett (more at night), Hoothoot/Noctowl (night only), Ledyba/Ledian (more by day), Miltank, Patrat/Watchog (more by day), Pidgey/Pidgeotto/Pidgeot (more by day), Poochyena/Mightyena (more at night), Seedot/Nuzleaf/Shiftry, Shroomish/Breloom; **rare:** Happiny/Chansey; **exotic:** Riolu
-- Winter: **common:** Bidoof, Lillipup/Herdier/Stoutland, Sentret/Furret (more by day); **uncommon:** Diglett (more at night), Hoothoot/Noctowl (night only), Ledyba/Ledian (more by day), Miltank, Patrat/Watchog (more by day), Poochyena/Mightyena (more at night), Seedot/Nuzleaf/Shiftry, Starly/Staravia/Staraptor (more by day), Swinub/Piloswine/Mamoswine; **rare:** Happiny/Chansey; **exotic:** Shinx
+- Spring: **common:** Bidoof/Bibarel, Lillipup/Herdier/Stoutland, Mareep/Flaaffy/Ampharos, Sentret/Furret (more by day), Taillow/Swellow (day only); **uncommon:** Hoothoot/Noctowl (night only), Hoppip/Skiploom/Jumpluff (day only), Miltank, Patrat/Watchog (more by day), Pidgey/Pidgeotto/Pidgeot (more by day), Poochyena/Mightyena (more at night); **rare:** Azurill (more by day), Happiny/Chansey
+- Summer: **common:** Bidoof/Bibarel, Lillipup/Herdier/Stoutland, Mareep/Flaaffy/Ampharos, Sentret/Furret (more by day), Taillow/Swellow (day only); **uncommon:** Hoothoot/Noctowl (night only), Miltank, Patrat/Watchog (more by day), Poochyena/Mightyena (more at night), Shroomish/Breloom; **rare:** Azurill (more by day), Happiny/Chansey; **exotic:** Riolu
+- Autumn: **common:** Bidoof/Bibarel, Lillipup/Herdier/Stoutland, Mareep/Flaaffy/Ampharos, Sentret/Furret (more by day); **uncommon:** Hoothoot/Noctowl (night only), Ledyba/Ledian (more by day), Miltank, Patrat/Watchog (more by day), Pidgey/Pidgeotto/Pidgeot (more by day), Seedot/Nuzleaf, Shroomish/Breloom; **rare:** Happiny/Chansey, Poochyena/Mightyena (more at night); **exotic:** Riolu
+- Winter: **common:** Bidoof/Bibarel, Lillipup/Herdier/Stoutland, Mareep/Flaaffy/Ampharos, Sentret/Furret (more by day); **uncommon:** Hoothoot/Noctowl (night only), Ledyba/Ledian (more by day), Miltank, Patrat/Watchog (more by day), Starly/Staravia/Staraptor (more by day), Swinub/Piloswine/Mamoswine; **rare:** Happiny/Chansey, Poochyena/Mightyena (more at night), Seedot/Nuzleaf; **exotic:** Shinx
 
 **Rustling spots (shaking grass)**
 
@@ -151,16 +159,20 @@ A working ranch: herding dogs, Furret hunted by Mightyena, the dairy herd, barn 
 
 - If the NPC seasons should rule, Seedot and Shroomish autumn-only here would also thin the crowd.
 
+*Discussed with the user:*
+
+- 2026-11-14, done: Diglett gone (a ranch grows no crops), Mareep common (it's a Mareep ranch), Seedot in autumn (rare into winter), Poochyena uncommon in spring and summer and rare in the cold months.
+
 ### Route 20 (`route_20`)
 
 *The place:* Almost a forest, with rich autumn leaves: the definitive autumn route, the user's favourite. Bugs, spiders and mushrooms in autumn; leaves fall and fly through the air, and even fill gaps so parts of the route are reached only in autumn. A stream from the (unreachable) mountains north of Floccesy Ranch, with one waterfall, flowing on to the sea through Virbank City to the east. The user's NPCs: Spinarak, Wurmple, Ledyba and Shroomish in autumn; Oddish in spring and summer; Taillow in spring; Swinub in winter; Hoothoot and Noctowl at night, perhaps more in winter.
 
 **Grass**
 
-- Spring: **common:** Hoothoot/Noctowl (night only), Oddish/Gloom (more at night), Venipede/Whirlipede/Scolipede (more at night), Wurmple; **uncommon:** Bidoof, Pidove/Tranquill/Unfezant (more by day), Shroomish/Breloom, Taillow/Swellow (day only)
-- Summer: **common:** Hoothoot/Noctowl (night only), Oddish/Gloom (more at night), Venipede/Whirlipede/Scolipede (more at night), Wurmple; **uncommon:** Bidoof, Pidove/Tranquill/Unfezant (more by day), Shroomish/Breloom, Yanma/Yanmega (more by day); **rare:** Karrablast
-- Autumn: **common:** Hoothoot/Noctowl (night only), Ledyba/Ledian (more by day), Seedot/Nuzleaf/Shiftry, Shroomish/Breloom, Silcoon/Cascoon/Beautifly/Dustox, Spinarak/Ariados (more at night), Venipede/Whirlipede/Scolipede (more at night); **uncommon:** Bidoof, Butterfree (more by day), Pidove/Tranquill/Unfezant (more by day)
-- Winter: **common:** Hoothoot/Noctowl (night only), Swinub/Piloswine/Mamoswine; **uncommon:** Bidoof, Ledyba/Ledian (more by day), Pidove/Tranquill/Unfezant (more by day)
+- Spring: **common:** Hoothoot/Noctowl (night only), Oddish/Gloom (more at night), Venipede/Whirlipede/Scolipede (more at night), Wurmple; **uncommon:** Bidoof/Bibarel, Pidove/Tranquill/Unfezant (more by day), Shroomish/Breloom, Taillow/Swellow (day only)
+- Summer: **common:** Hoothoot/Noctowl (night only), Oddish/Gloom (more at night), Venipede/Whirlipede/Scolipede (more at night), Wurmple; **uncommon:** Bidoof/Bibarel, Pidove/Tranquill/Unfezant (more by day), Shroomish/Breloom, Yanma/Yanmega (more by day); **rare:** Karrablast
+- Autumn: **common:** Hoothoot/Noctowl (night only), Ledyba/Ledian (more by day), Seedot/Nuzleaf/Shiftry, Shroomish/Breloom, Silcoon/Cascoon/Beautifly/Dustox, Spinarak/Ariados (more at night), Venipede/Whirlipede/Scolipede (more at night); **uncommon:** Bidoof/Bibarel, Butterfree (more by day), Pidove/Tranquill/Unfezant (more by day)
+- Winter: **common:** Hoothoot/Noctowl (night only), Swinub/Piloswine/Mamoswine; **uncommon:** Bidoof/Bibarel, Ledyba/Ledian (more by day), Pidove/Tranquill/Unfezant (more by day)
 
 **Dark grass**
 
@@ -207,22 +219,26 @@ The autumn route: in spring and summer caterpillars, Oddish and centipedes; in a
 
 - Weedle or Venipede's evolved forms deeper in, or a rare Pinsir or Heracross in summer, for the dark grass.
 
+*Discussed with the user:*
+
+- 2026-11-14: the user likes it as it is, and may move the dark grass deeper in the woods, past Surf, among the brightest autumn leaves (places/southwest.yaml, plans); then its dark grass gets its own, later and wilder habitat.
+
 ### Virbank City (`virbank_city`)
 
 *The place:* Almost New England: darker and gloomier than other places, with its Poison-type Gym Leader. Rattata, Murkrow and Pidove in the streets and on the buildings, Wingull out at sea, perhaps Purrloin on the pipes (mood only: the city has only water encounters).
 
 **Surfing**
 
-- Spring: **common:** Wingull/Pelipper (more by day); **uncommon:** Floatzel (more by day), Grimer/Muk
-- Summer: **common:** Wingull/Pelipper (more by day); **uncommon:** Floatzel (more by day), Grimer/Muk, Tentacool/Tentacruel
-- Autumn: **common:** Wingull/Pelipper (more by day); **uncommon:** Floatzel (more by day), Grimer/Muk
-- Winter: **common:** Wingull/Pelipper (more by day); **uncommon:** Floatzel (more by day), Grimer/Muk
+- Spring: **common:** Wingull/Pelipper (more by day); **uncommon:** Grimer/Muk
+- Summer: **common:** Wingull/Pelipper (more by day); **uncommon:** Grimer/Muk, Tentacool/Tentacruel
+- Autumn: **common:** Wingull/Pelipper (more by day); **uncommon:** Grimer/Muk
+- Winter: **common:** Wingull/Pelipper (more by day); **uncommon:** Grimer/Muk
 
 **Rippling water (surfing):** nothing of its own: the generator's rule fills it from surfing, favouring the later stages.
 
 **Fishing**
 
-- All year: **common:** Corphish/Crawdaunt (more at night)
+- All year: **common:** Corphish/Crawdaunt (more at night); **uncommon:** Basculin (Blue-Striped), Goldeen/Seaking
 
 **Rippling water (fishing)**
 
@@ -241,23 +257,27 @@ A gloomy industrial harbour: gulls over it, Grimer in the polluted water, Floatz
 - Only one fishing family (Corphish) all year; the harbour where the river comes in could also have the river's fish (Goldeen, Basculin) as the places' suggestion said.
 - Tentacool only in summer is fine, but the harbour is otherwise the same in every season.
 
+*Discussed with the user:*
+
+- 2026-11-14, done: Floatzel gone (it wouldn't like the murky water); the river's Goldeen and Blue-Striped Basculin fish where it comes in.
+
 ### Virbank Complex (`virbank_complex`)
 
 *The place:* The industrial complex, which has the encounters: Koffing, Klink, Magnemite, Purrloin, Skarmory and the like; Magby in summer and autumn, Elekid in winter and spring; Pichu the trophy in summer and autumn, Growlithe in winter and spring, and Riolu a trophy in winter and spring; some Grimer; the Timburr family helping with the work. Maps 1 and 2 share most Pokémon, perhaps with a trophy only in map 2.
 
 **Grass**
 
-- Spring: **common:** Klink/Klang/Klinklang, Koffing/Weezing, Magnemite/Magneton/Magnezone, Purrloin/Liepard (more at night), Timburr/Gurdurr (more by day); **uncommon:** Burmy/Wormadam (Trash Cloak), Elekid, Grimer/Muk, Mawile, Voltorb/Electrode; **exotic:** Growlithe, Riolu (only in virbank_complex_2)
-- Summer: **common:** Klink/Klang/Klinklang, Koffing/Weezing, Magnemite/Magneton/Magnezone, Purrloin/Liepard (more at night), Timburr/Gurdurr (more by day); **uncommon:** Burmy/Wormadam (Trash Cloak), Grimer/Muk, Magby, Mawile, Voltorb/Electrode; **exotic:** Pichu
-- Autumn: **common:** Klink/Klang/Klinklang, Koffing/Weezing, Magnemite/Magneton/Magnezone, Purrloin/Liepard (more at night), Timburr/Gurdurr (more by day); **uncommon:** Burmy/Wormadam (Trash Cloak), Grimer/Muk, Magby, Mawile, Voltorb/Electrode; **exotic:** Pichu
-- Winter: **common:** Klink/Klang/Klinklang, Koffing/Weezing, Magnemite/Magneton/Magnezone, Purrloin/Liepard (more at night), Timburr/Gurdurr (more by day); **uncommon:** Burmy/Wormadam (Trash Cloak), Elekid, Grimer/Muk, Mawile, Voltorb/Electrode; **exotic:** Growlithe, Riolu (only in virbank_complex_2)
+- Spring: **common:** Klink/Klang/Klinklang (only in virbank_complex_2), Koffing/Weezing, Magnemite/Magneton/Magnezone, Purrloin/Liepard (more at night), Timburr/Gurdurr (more by day); **uncommon:** Burmy/Wormadam (Trash Cloak), Elekid, Grimer/Muk, Mawile, Voltorb/Electrode; **exotic:** Growlithe, Riolu (only in virbank_complex_2)
+- Summer: **common:** Klink/Klang/Klinklang (only in virbank_complex_2), Koffing/Weezing, Magnemite/Magneton/Magnezone, Purrloin/Liepard (more at night), Timburr/Gurdurr (more by day); **uncommon:** Burmy/Wormadam (Trash Cloak), Grimer/Muk, Magby, Mawile, Voltorb/Electrode; **exotic:** Pichu
+- Autumn: **common:** Klink/Klang/Klinklang (only in virbank_complex_2), Koffing/Weezing, Magnemite/Magneton/Magnezone, Purrloin/Liepard (more at night), Timburr/Gurdurr (more by day); **uncommon:** Burmy/Wormadam (Trash Cloak), Grimer/Muk, Magby, Mawile, Voltorb/Electrode; **exotic:** Pichu
+- Winter: **common:** Klink/Klang/Klinklang (only in virbank_complex_2), Koffing/Weezing, Magnemite/Magneton/Magnezone, Purrloin/Liepard (more at night), Timburr/Gurdurr (more by day); **uncommon:** Burmy/Wormadam (Trash Cloak), Elekid, Grimer/Muk, Mawile, Voltorb/Electrode; **exotic:** Growlithe, Riolu (only in virbank_complex_2)
 
 **Dark grass**
 
-- Spring: **common:** Klink/Klang/Klinklang, Koffing/Weezing, Magnemite/Magneton/Magnezone, Purrloin/Liepard (more at night), Timburr/Gurdurr (more by day); **uncommon:** Elekid, Mawile; **rare:** Joltik, Skarmory; **very rare:** Electabuzz; **exotic:** Growlithe, Riolu (only in virbank_complex_2)
-- Summer: **common:** Klink/Klang/Klinklang, Koffing/Weezing, Magnemite/Magneton/Magnezone, Purrloin/Liepard (more at night), Timburr/Gurdurr (more by day); **uncommon:** Magby, Mawile; **rare:** Joltik, Skarmory; **exotic:** Pichu
-- Autumn: **common:** Klink/Klang/Klinklang, Koffing/Weezing, Magnemite/Magneton/Magnezone, Purrloin/Liepard (more at night), Timburr/Gurdurr (more by day); **uncommon:** Magby, Mawile; **rare:** Joltik, Skarmory; **exotic:** Pichu
-- Winter: **common:** Klink/Klang/Klinklang, Koffing/Weezing, Magnemite/Magneton/Magnezone, Purrloin/Liepard (more at night), Timburr/Gurdurr (more by day); **uncommon:** Elekid, Mawile; **rare:** Joltik, Skarmory; **very rare:** Electabuzz; **exotic:** Growlithe, Riolu (only in virbank_complex_2)
+- Spring: **common:** Klink/Klang/Klinklang (only in virbank_complex_2), Koffing/Weezing, Magnemite/Magneton/Magnezone, Purrloin/Liepard (more at night), Timburr/Gurdurr (more by day); **uncommon:** Elekid, Mawile; **rare:** Joltik/Galvantula, Skarmory; **very rare:** Electabuzz; **exotic:** Growlithe, Riolu (only in virbank_complex_2)
+- Summer: **common:** Klink/Klang/Klinklang (only in virbank_complex_2), Koffing/Weezing, Magnemite/Magneton/Magnezone, Purrloin/Liepard (more at night), Timburr/Gurdurr (more by day); **uncommon:** Magby, Mawile; **rare:** Joltik/Galvantula, Skarmory; **exotic:** Pichu
+- Autumn: **common:** Klink/Klang/Klinklang (only in virbank_complex_2), Koffing/Weezing, Magnemite/Magneton/Magnezone, Purrloin/Liepard (more at night), Timburr/Gurdurr (more by day); **uncommon:** Magby, Mawile; **rare:** Joltik/Galvantula, Skarmory; **exotic:** Pichu
+- Winter: **common:** Klink/Klang/Klinklang (only in virbank_complex_2), Koffing/Weezing, Magnemite/Magneton/Magnezone, Purrloin/Liepard (more at night), Timburr/Gurdurr (more by day); **uncommon:** Elekid, Mawile; **rare:** Joltik/Galvantula, Skarmory; **very rare:** Electabuzz; **exotic:** Growlithe, Riolu (only in virbank_complex_2)
 
 **Rustling spots (shaking grass)**
 
@@ -293,6 +313,10 @@ The industrial complex kept close to its NPCs: Klink, Magnemite, Koffing, Voltor
 *Ideas:*
 
 - Drop one or two of the commons to uncommon (Koffing or Klink), or keep Klink to map 2, deeper among the machines.
+
+*Discussed with the user:*
+
+- 2026-11-14, done: Klink only deeper inside (map 2).
 
 ## Castelia and the desert
 
@@ -335,8 +359,8 @@ A small walled garden in the middle of the city: crows and rats, strays and scav
 
 - Spring: **common:** Grimer/Muk, Rattata/Raticate (more at night); **uncommon:** Koffing/Weezing
 - Summer: **common:** Grimer/Muk, Rattata/Raticate (more at night); **uncommon:** Koffing/Weezing
-- Autumn: **common:** Grimer/Muk, Rattata/Raticate (more at night); **uncommon:** Corphish/Crawdaunt (more at night), Koffing/Weezing, Sandile
-- Winter: **common:** Grimer/Muk, Rattata/Raticate (more at night); **uncommon:** Corphish/Crawdaunt (more at night), Koffing/Weezing, Sandile
+- Autumn: **common:** Grimer/Muk, Rattata/Raticate (more at night); **uncommon:** Corphish/Crawdaunt (more at night), Koffing/Weezing, Sandile/Krokorok
+- Winter: **common:** Grimer/Muk, Rattata/Raticate (more at night); **uncommon:** Corphish/Crawdaunt (more at night), Koffing/Weezing, Sandile/Krokorok
 
 **Surfing**
 
@@ -385,7 +409,7 @@ Sludge, gas and rats on the walkways; carp and invasive crayfish in the canals w
 
 **Walking (the floor)**
 
-- All year: **common:** Sandile, Sandshrew/Sandslash (more at night); **uncommon:** Darumaka/Darmanitan (more by day), Scraggy/Scrafty (more by day); **rare:** Burmy/Wormadam (Sandy Cloak), Flygon (only in sandstorm), Hippopotas (more by day), Krookodile (only in sandstorm), Mandibuzz (more by day), Rattata/Raticate (more at night)
+- All year: **common:** Sandile/Krokorok, Sandshrew/Sandslash (more at night); **uncommon:** Darumaka/Darmanitan (more by day), Scraggy/Scrafty (more by day); **rare:** Burmy/Wormadam (Sandy Cloak), Flygon (only in sandstorm), Hippopotas/Hippowdon (more by day), Krookodile (only in sandstorm), Mandibuzz (more by day), Rattata/Raticate (more at night)
 
 **Surfing**
 
@@ -484,7 +508,7 @@ The sinking tomb: Yamask and Cofagrigus above all, Cubone mourning among the bon
 
 **Walking (the floor)**
 
-- All year: **common:** Woobat; **uncommon:** Roggenrola/Boldore, Sandile; **exotic:** Gible
+- All year: **common:** Woobat; **uncommon:** Roggenrola/Boldore, Sandile/Krokorok; **exotic:** Gible
 
 **Rustling spots (dust clouds)**
 
@@ -526,7 +550,7 @@ A desert cave: bats and rock dwellers, Sandile thinning out toward the sewers, b
 **Grass**
 
 - Spring: **common:** Budew (more by day), Caterpie/Metapod/Butterfree (more by day), Cherubi/Cherrim (more by day), Hoppip/Skiploom/Jumpluff (day only), Patrat/Watchog (more by day), Pidgey/Pidgeotto/Pidgeot (more by day); **uncommon:** Combee (day only), Ekans/Arbok (more by day), Sentret/Furret (more by day), Taillow/Swellow (day only)
-- Summer: **common:** Caterpie/Metapod/Butterfree (more by day), Patrat/Watchog (more by day), Sunkern (morning only); **uncommon:** Ekans/Arbok (more by day), Oddish (more at night), Sentret/Furret (more by day), Sunflora (day only), Sunkern (day only)
+- Summer: **common:** Caterpie/Metapod/Butterfree (more by day), Patrat/Watchog (more by day), Sunkern (morning only); **uncommon:** Ekans/Arbok (more by day), Oddish/Gloom (more at night), Sentret/Furret (more by day), Sunflora (day only), Sunkern (day only)
 - Autumn: **common:** Cottonee/Whimsicott (more by day), Patrat/Watchog (more by day), Pidgey/Pidgeotto/Pidgeot (more by day), Starly/Staravia/Staraptor (more by day); **uncommon:** Ekans/Arbok (more by day), Kricketot/Kricketune, Sentret/Furret (more by day), Taillow/Swellow (day only)
 - Winter: **common:** Patrat/Watchog (more by day), Pidgey/Pidgeotto/Pidgeot (more by day), Starly/Staravia/Staraptor (more by day); **uncommon:** Sentret/Furret (more by day)
 
@@ -578,10 +602,10 @@ Two worlds across an inlet. The meadow changes with its flowers: Cherubi, Budew,
 
 **Grass**
 
-- Spring: **common:** Patrat/Watchog (more by day), Pidgey/Pidgeotto/Pidgeot (more by day), Wurmple/Silcoon/Cascoon/Beautifly/Dustox; **uncommon:** Buneary, Caterpie/Metapod (more by day), Hoothoot/Noctowl (night only), Lillipup/Herdier/Stoutland, Oddish/Gloom (more at night), Pachirisu (more by day), Pidove/Tranquill/Unfezant (more by day), Seedot; **exotic:** Ralts/Kirlia/Gardevoir
-- Summer: **common:** Patrat/Watchog (more by day), Wurmple/Silcoon/Cascoon/Beautifly/Dustox; **uncommon:** Buneary, Hoothoot/Noctowl (night only), Lillipup/Herdier/Stoutland, Oddish/Gloom (more at night), Pachirisu (more by day), Pidove/Tranquill/Unfezant (more by day), Seedot, Venipede/Whirlipede/Scolipede (more at night); **rare:** Ekans/Arbok (more by day); **exotic:** Ralts/Kirlia/Gardevoir
-- Autumn: **common:** Patrat/Watchog (more by day), Pidgey/Pidgeotto/Pidgeot (more by day); **uncommon:** Buneary, Hoothoot/Noctowl (night only), Ledyba/Ledian (more by day), Lillipup/Herdier/Stoutland, Pachirisu (more by day), Pidove/Tranquill/Unfezant (more by day), Seedot, Spinarak/Ariados (more at night); **exotic:** Ralts/Kirlia/Gardevoir
-- Winter: **common:** Patrat/Watchog (more by day), Pidgey/Pidgeotto/Pidgeot (more by day); **uncommon:** Buneary, Hoothoot/Noctowl (night only), Ledyba/Ledian (more by day), Lillipup/Herdier/Stoutland, Pachirisu (more by day), Pidove/Tranquill/Unfezant (more by day), Seedot; **exotic:** Ralts/Kirlia/Gardevoir
+- Spring: **common:** Patrat/Watchog (more by day), Pidgey/Pidgeotto/Pidgeot (more by day), Wurmple/Silcoon/Cascoon/Beautifly/Dustox; **uncommon:** Buneary, Caterpie/Metapod (more by day), Hoothoot/Noctowl (night only), Lillipup/Herdier/Stoutland, Oddish/Gloom (more at night), Pachirisu (more by day), Pidove/Tranquill/Unfezant (more by day), Seedot/Nuzleaf; **exotic:** Ralts/Kirlia/Gardevoir
+- Summer: **common:** Patrat/Watchog (more by day), Wurmple/Silcoon/Cascoon/Beautifly/Dustox; **uncommon:** Buneary, Hoothoot/Noctowl (night only), Lillipup/Herdier/Stoutland, Oddish/Gloom (more at night), Pachirisu (more by day), Pidove/Tranquill/Unfezant (more by day), Seedot/Nuzleaf, Venipede/Whirlipede/Scolipede (more at night); **rare:** Ekans/Arbok (more by day); **exotic:** Ralts/Kirlia/Gardevoir
+- Autumn: **common:** Patrat/Watchog (more by day), Pidgey/Pidgeotto/Pidgeot (more by day); **uncommon:** Buneary, Hoothoot/Noctowl (night only), Ledyba/Ledian (more by day), Lillipup/Herdier/Stoutland, Pachirisu (more by day), Pidove/Tranquill/Unfezant (more by day), Seedot/Nuzleaf, Spinarak/Ariados (more at night); **exotic:** Ralts/Kirlia/Gardevoir
+- Winter: **common:** Patrat/Watchog (more by day), Pidgey/Pidgeotto/Pidgeot (more by day); **uncommon:** Buneary, Hoothoot/Noctowl (night only), Ledyba/Ledian (more by day), Lillipup/Herdier/Stoutland, Pachirisu (more by day), Pidove/Tranquill/Unfezant (more by day), Seedot/Nuzleaf; **exotic:** Ralts/Kirlia/Gardevoir
 
 **Rustling spots (shaking grass)**
 
@@ -616,7 +640,7 @@ A dirt road through light woods between towns: the woodland edge's rabbits, squi
 
 **Fishing**
 
-- All year: **common:** Goldeen, Magikarp; **rare:** Corphish/Crawdaunt (more at night); **exotic:** Feebas
+- All year: **common:** Goldeen/Seaking, Magikarp; **rare:** Corphish/Crawdaunt (more at night); **exotic:** Feebas
 
 **Rippling water (fishing):** nothing of its own: the generator's rule fills it from fishing, favouring the later stages.
 
@@ -1183,7 +1207,7 @@ The original's Ducklett bridge: Ducklett and gulls in the shadows all year, and 
 - Spring: **common:** Deerling/Sawsbuck (spring form), Hoothoot/Noctowl (night only), Oddish/Gloom (more at night), Swellow (day only); **uncommon:** Emolga (more at night), Karrablast, Sewaddle, Shelmet, Taillow (day only), Wurmple/Silcoon/Cascoon/Beautifly/Dustox; **rare:** Pachirisu (more by day), Pikachu
 - Summer: **common:** Deerling/Sawsbuck (summer form), Hoothoot/Noctowl (night only), Oddish/Gloom (more at night), Swellow (day only); **uncommon:** Emolga (more at night), Karrablast, Sewaddle, Shelmet, Taillow (day only), Wurmple/Silcoon/Cascoon/Beautifly/Dustox; **rare:** Pachirisu (more by day), Pikachu, Yanma/Yanmega (more by day)
 - Autumn: **common:** Deerling/Sawsbuck (autumn form), Foongus/Amoonguss, Hoothoot/Noctowl (night only), Ledyba/Ledian (more by day); **uncommon:** Emolga (more at night), Karrablast, Shelmet; **rare:** Pachirisu (more by day), Pikachu
-- Winter: **common:** Hoothoot/Noctowl (night only); **uncommon:** Deerling (winter form), Emolga (more at night), Ledyba/Ledian (more by day), Snover; **rare:** Castform (only in snow), Delibird, Pachirisu (more by day), Pikachu
+- Winter: **common:** Hoothoot/Noctowl (night only); **uncommon:** Deerling (winter form), Emolga (more at night), Ledyba/Ledian (more by day), Snover/Abomasnow; **rare:** Castform (only in snow), Delibird, Pachirisu (more by day), Pikachu
 
 **Dark grass**
 
@@ -1239,7 +1263,7 @@ An Appalachian river valley: Deerling and Sawsbuck in the season's form (your re
 
 **Walking (the floor)**
 
-- All year: **common:** Joltik/Galvantula; **uncommon:** Boldore, Ferroseed/Ferrothorn, Klink/Klang/Klinklang, Magnemite/Magneton, Nosepass, Woobat; **rare:** Aron, Pikachu; **very rare:** Magnezone; **exotic:** Probopass, Raichu, Tynamo/Eelektrik/Eelektross
+- All year: **common:** Joltik/Galvantula; **uncommon:** Boldore, Ferroseed/Ferrothorn, Klink/Klang/Klinklang, Magnemite/Magneton, Nosepass, Woobat; **rare:** Aron/Lairon, Pikachu; **very rare:** Magnezone; **exotic:** Probopass, Raichu, Tynamo/Eelektrik/Eelektross
 
 **Rustling spots (dust clouds)**
 
@@ -1294,14 +1318,14 @@ A rocky cave down to the Guidance Chamber: rock dwellers and bats, Aron on the o
 - Spring: **common:** Murkrow/Honchkrow (night only); **uncommon:** Croagunk/Toxicroak, Drifloon/Drifblim (night only), Duskull/Dusclops (night only), Surskit/Masquerain (more by day); **rare:** Castform (only in rain, gusty rain, thunderstorm), Seviper (more at night), Stunfisk, Zangoose (more by day); **very rare:** Farfetch'd
 - Summer: **common:** Murkrow/Honchkrow (night only), Taillow/Swellow (day only); **uncommon:** Bellsprout/Weepinbell/Victreebel, Croagunk/Toxicroak, Deerling (summer form), Drifloon/Drifblim (night only), Duskull/Dusclops (night only), Surskit/Masquerain (more by day), Yanma/Yanmega (more by day); **rare:** Castform (only in rain, gusty rain, thunderstorm), Seviper (more at night), Stunfisk, Zangoose (more by day); **very rare:** Farfetch'd
 - Autumn: **common:** Murkrow/Honchkrow (night only); **uncommon:** Croagunk/Toxicroak, Deerling (autumn form), Drifloon/Drifblim (night only), Duskull/Dusclops (night only), Foongus/Amoonguss; **rare:** Castform (only in rain, gusty rain, thunderstorm), Seviper (more at night), Stunfisk, Zangoose (more by day); **very rare:** Farfetch'd
-- Winter: **common:** Murkrow/Honchkrow (night only); **uncommon:** Cubchoo, Drifloon/Drifblim (night only), Duskull/Dusclops (night only), Snover/Abomasnow; **rare:** Delibird, Zangoose (more by day)
+- Winter: **common:** Murkrow/Honchkrow (night only); **uncommon:** Cubchoo/Beartic, Drifloon/Drifblim (night only), Duskull/Dusclops (night only), Snover/Abomasnow; **rare:** Delibird, Zangoose (more by day)
 
 **Dark grass**
 
-- Spring: **common:** Murkrow/Honchkrow (night only); **uncommon:** Croagunk/Toxicroak, Duskull/Dusclops (night only), Poochyena/Mightyena (more at night); **rare:** Litwick (night only), Seviper (more at night), Zangoose (more by day); **exotic:** Honchkrow (night only)
-- Summer: **common:** Murkrow/Honchkrow (night only); **uncommon:** Croagunk/Toxicroak, Duskull/Dusclops (night only), Poochyena/Mightyena (more at night); **rare:** Litwick (night only), Seviper (more at night), Zangoose (more by day); **very rare:** Carnivine; **exotic:** Honchkrow (night only), Scyther (more by day)
-- Autumn: **common:** Murkrow/Honchkrow (night only); **uncommon:** Croagunk/Toxicroak, Duskull/Dusclops (night only), Poochyena/Mightyena (more at night); **rare:** Litwick (night only), Seviper (more at night), Zangoose (more by day); **exotic:** Honchkrow (night only), Scyther (more by day)
-- Winter: **common:** Murkrow/Honchkrow (night only); **uncommon:** Duskull/Dusclops (night only), Poochyena/Mightyena (more at night), Snover/Abomasnow; **rare:** Litwick (night only), Zangoose (more by day); **exotic:** Honchkrow (night only)
+- Spring: **common:** Murkrow/Honchkrow (night only); **uncommon:** Croagunk/Toxicroak, Duskull/Dusclops (night only), Poochyena/Mightyena (more at night); **rare:** Litwick/Lampent (night only), Seviper (more at night), Zangoose (more by day); **exotic:** Honchkrow (night only)
+- Summer: **common:** Murkrow/Honchkrow (night only); **uncommon:** Croagunk/Toxicroak, Duskull/Dusclops (night only), Poochyena/Mightyena (more at night); **rare:** Litwick/Lampent (night only), Seviper (more at night), Zangoose (more by day); **very rare:** Carnivine; **exotic:** Honchkrow (night only), Scyther (more by day)
+- Autumn: **common:** Murkrow/Honchkrow (night only); **uncommon:** Croagunk/Toxicroak, Duskull/Dusclops (night only), Poochyena/Mightyena (more at night); **rare:** Litwick/Lampent (night only), Seviper (more at night), Zangoose (more by day); **exotic:** Honchkrow (night only), Scyther (more by day)
+- Winter: **common:** Murkrow/Honchkrow (night only); **uncommon:** Duskull/Dusclops (night only), Poochyena/Mightyena (more at night), Snover/Abomasnow; **rare:** Litwick/Lampent (night only), Zangoose (more by day); **exotic:** Honchkrow (night only)
 
 **Rustling spots (shaking grass)**
 
@@ -1328,7 +1352,7 @@ The gloomy marsh below Celestial Tower, with tall grass over the head: Murkrow a
 
 **Walking (the floor)**
 
-- All year: **common:** Litwick/Lampent; **uncommon:** Duskull/Dusclops (more at night), Yamask; **rare:** Chingling/Chimecho (more at night; only in celestial_tower), Cubone, Gastly/Haunter (night only), Woobat
+- All year: **common:** Litwick/Lampent; **uncommon:** Duskull/Dusclops (more at night), Yamask/Cofagrigus; **rare:** Chingling/Chimecho (more at night; only in celestial_tower), Cubone/Marowak, Gastly/Haunter (night only), Woobat
 
 **What I think**
 
@@ -1477,7 +1501,7 @@ The marsh's deeper, wilder part: the bigger toads (Seismitoad in the rippling wa
 - Spring: **uncommon:** Mareep/Flaaffy/Ampharos, Mienfoo/Mienshao, Tranquill/Unfezant (more by day); **rare:** Rufflet/Braviary (more by day)
 - Summer: **uncommon:** Mareep/Flaaffy/Ampharos, Mienfoo/Mienshao, Tranquill/Unfezant (more by day); **rare:** Rufflet/Braviary (more by day)
 - Autumn: **uncommon:** Mareep/Flaaffy/Ampharos, Mienfoo/Mienshao, Tranquill/Unfezant (more by day); **rare:** Rufflet/Braviary (more by day)
-- Winter: **common:** Cubchoo/Beartic; **uncommon:** Delibird, Snover/Abomasnow, Swinub/Piloswine/Mamoswine, Vanillite/Vanillish/Vanilluxe; **rare:** Cryogonal (only in diamond dust), Piplup, Smoochum, Stoutland
+- Winter: **common:** Cubchoo/Beartic; **uncommon:** Delibird, Snover/Abomasnow, Swinub/Piloswine/Mamoswine, Vanillite/Vanillish/Vanilluxe; **rare:** Cryogonal (only in diamond dust), Piplup, Smoochum/Jynx, Stoutland
 
 **Dark grass**
 
@@ -1741,14 +1765,14 @@ A quiet village of music (reviewed with you): Kricketot singing at dusk, Jigglyp
 
 - Spring: **common:** Budew/Roselia (more by day), Caterpie/Metapod/Butterfree (more by day), Combee (day only); **uncommon:** Burmy/Wormadam/Mothim (Plant Cloak), Cherubi/Cherrim (more by day), Petilil (more by day), Starly/Staravia/Staraptor (more by day), Tranquill/Unfezant (more by day), Wurmple/Silcoon/Cascoon/Beautifly/Dustox
 - Summer: **common:** Budew/Roselia (more by day), Caterpie/Metapod/Butterfree (more by day), Combee (day only), Hoppip/Skiploom/Jumpluff (day only), Pidgey/Pidgeotto/Pidgeot (more by day); **uncommon:** Burmy/Wormadam/Mothim (Plant Cloak), Cherubi/Cherrim (more by day), Petilil (more by day), Sunflora (day only), Sunkern (day only), Tranquill/Unfezant (more by day), Wurmple/Silcoon/Cascoon/Beautifly/Dustox; **rare:** Illumise (night only), Volbeat (night only)
-- Autumn: **common:** Combee (day only), Kricketot/Kricketune; **uncommon:** Burmy/Wormadam/Mothim (Plant Cloak), Butterfree (more by day), Cottonee (more by day), Roselia (more by day), Starly/Staravia/Staraptor (more by day), Sunflora (day only), Tranquill/Unfezant (more by day); **rare:** Swablu/Altaria (more by day)
+- Autumn: **common:** Combee (day only), Kricketot/Kricketune; **uncommon:** Burmy/Wormadam/Mothim (Plant Cloak), Butterfree (more by day), Cottonee/Whimsicott (more by day), Roselia (more by day), Starly/Staravia/Staraptor (more by day), Sunflora (day only), Tranquill/Unfezant (more by day); **rare:** Swablu/Altaria (more by day)
 - Winter: **common:** Starly/Staravia/Staraptor (more by day); **uncommon:** Buneary, Burmy/Wormadam/Mothim (Plant Cloak), Deerling (winter form), Tranquill/Unfezant (more by day)
 
 **Dark grass**
 
-- Spring: **uncommon:** Aipom/Ambipom (more by day), Burmy/Wormadam/Mothim (Plant Cloak), Nidoran♀/Nidorina, Nidoran♂/Nidorino, Teddiursa (more by day); **exotic:** Heracross (more by day), Vespiquen (day only)
-- Summer: **common:** Hoppip/Skiploom/Jumpluff (day only), Pidgey/Pidgeotto/Pidgeot (more by day); **uncommon:** Aipom/Ambipom (more by day), Burmy/Wormadam/Mothim (Plant Cloak), Nidoran♀/Nidorina, Nidoran♂/Nidorino, Ninjask (more by day), Sunflora (day only), Teddiursa (more by day); **exotic:** Heracross (more by day), Vespiquen (day only)
-- Autumn: **uncommon:** Aipom/Ambipom (more by day), Burmy/Wormadam/Mothim (Plant Cloak), Nidoran♀/Nidorina, Nidoran♂/Nidorino, Sunflora (day only), Teddiursa (more by day); **exotic:** Heracross (more by day)
+- Spring: **uncommon:** Aipom/Ambipom (more by day), Burmy/Wormadam/Mothim (Plant Cloak), Nidoran♀/Nidorina, Nidoran♂/Nidorino, Teddiursa/Ursaring (more by day); **exotic:** Heracross (more by day), Vespiquen (day only)
+- Summer: **common:** Hoppip/Skiploom/Jumpluff (day only), Pidgey/Pidgeotto/Pidgeot (more by day); **uncommon:** Aipom/Ambipom (more by day), Burmy/Wormadam/Mothim (Plant Cloak), Nidoran♀/Nidorina, Nidoran♂/Nidorino, Ninjask (more by day), Sunflora (day only), Teddiursa/Ursaring (more by day); **exotic:** Heracross (more by day), Vespiquen (day only)
+- Autumn: **uncommon:** Aipom/Ambipom (more by day), Burmy/Wormadam/Mothim (Plant Cloak), Nidoran♀/Nidorina, Nidoran♂/Nidorino, Sunflora (day only), Teddiursa/Ursaring (more by day); **exotic:** Heracross (more by day)
 - Winter: **uncommon:** Burmy/Wormadam/Mothim (Plant Cloak), Deerling (winter form), Nidoran♀/Nidorina, Nidoran♂/Nidorino, Poochyena/Mightyena (more at night); **rare:** Vespiquen (day only)
 
 **Rustling spots (shaking grass)**
@@ -1849,7 +1873,7 @@ A meteorite's caves round the crater: Lunatone at night and Solrock by day, Clef
 
 **Grass**
 
-- All year: **common:** Vanillite/Vanillish/Vanilluxe; **uncommon:** Cleffa/Clefairy (night only), Cubchoo/Beartic, Delibird, Elgyem/Beheeyem (more at night), Piloswine, Snover/Abomasnow; **rare:** Ditto, Smoochum, Snorunt
+- All year: **common:** Vanillite/Vanillish/Vanilluxe; **uncommon:** Cleffa/Clefairy (night only), Cubchoo/Beartic, Delibird, Elgyem/Beheeyem (more at night), Piloswine, Snover/Abomasnow; **rare:** Ditto, Smoochum, Snorunt/Glalie
 
 **Dark grass**
 
@@ -2112,10 +2136,10 @@ Besides what's listed, rustling spots fill themselves from the grass's rare, ver
 
 **Surfing**
 
-- Spring: **common:** Wingull/Pelipper (more by day); **uncommon:** Buizel (more by day), Staryu (more at night), Tentacool/Tentacruel
-- Summer: **common:** Staryu (more at night), Tentacool/Tentacruel, Wingull/Pelipper (more by day); **uncommon:** Buizel (more by day), Shellos/Gastrodon (West Sea); **rare:** Corsola
-- Autumn: **common:** Tentacool/Tentacruel, Wingull/Pelipper (more by day); **uncommon:** Buizel (more by day), Staryu (more at night)
-- Winter: **common:** Wingull/Pelipper (more by day); **uncommon:** Buizel (more by day), Staryu (more at night), Tentacool/Tentacruel
+- Spring: **common:** Wingull/Pelipper (more by day); **uncommon:** Buizel/Floatzel (more by day), Staryu (more at night), Tentacool/Tentacruel
+- Summer: **common:** Staryu (more at night), Tentacool/Tentacruel, Wingull/Pelipper (more by day); **uncommon:** Buizel/Floatzel (more by day), Shellos/Gastrodon (West Sea); **rare:** Corsola
+- Autumn: **common:** Tentacool/Tentacruel, Wingull/Pelipper (more by day); **uncommon:** Buizel/Floatzel (more by day), Staryu (more at night)
+- Winter: **common:** Wingull/Pelipper (more by day); **uncommon:** Buizel/Floatzel (more by day), Staryu (more at night), Tentacool/Tentacruel
 
 **Rippling water (surfing)**
 
@@ -2368,7 +2392,7 @@ The windswept upland between the coast and the chasm, as a savanna: herds (Tauro
 
 **Grass**
 
-- All year: **common:** Spearow/Fearow (more by day); **uncommon:** Gastly/Haunter (night only), Geodude/Graveler, Gligar (more at night), Murkrow/Honchkrow (night only), Numel, Ponyta/Rapidash (more by day), Vullaby/Mandibuzz (more by day); **rare:** Bonsly, Pansear (more by day); **exotic:** Charmander
+- All year: **common:** Spearow/Fearow (more by day); **uncommon:** Gastly/Haunter (night only), Geodude/Graveler, Gligar (more at night), Murkrow/Honchkrow (night only), Numel/Camerupt, Ponyta/Rapidash (more by day), Vullaby/Mandibuzz (more by day); **rare:** Bonsly, Pansear (more by day); **exotic:** Charmander
 
 **Dark grass**
 
@@ -2453,7 +2477,7 @@ Moisture-loving cave dwellers instead of fire (your request): Paras's fungi, She
 
 **Walking (the floor)**
 
-- All year: **common:** Gastly/Haunter (night only), Shuppet/Banette (more at night); **uncommon:** Misdreavus (night only); **rare:** Duskull (more at night), Litwick, Woobat
+- All year: **common:** Gastly/Haunter (night only), Shuppet/Banette (more at night); **uncommon:** Misdreavus (night only); **rare:** Duskull/Dusclops (more at night), Litwick/Lampent, Woobat
 
 **What I think**
 

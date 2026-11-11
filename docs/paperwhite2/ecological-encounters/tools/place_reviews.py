@@ -202,7 +202,8 @@ def main():
                 if a.get("vision"):
                     out.append(" ".join(a["vision"].split()))
                     out.append("")
-                for key, title2 in (("good", "Satisfied with"), ("unsure", "Not satisfied, or unsure"), ("ideas", "Ideas")):
+                for key, title2 in (("good", "Satisfied with"), ("unsure", "Not satisfied, or unsure"), ("ideas", "Ideas"),
+                            ("discussed", "Discussed with the user")):
                     if a.get(key):
                         out.append(f"*{title2}:*")
                         out.append("")
