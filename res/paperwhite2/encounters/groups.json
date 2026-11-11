@@ -8,8 +8,9 @@
         },
         {
             "id": "celestial_tower_2",
-            "name": "Celestial Tower 2",
-            "areas": [ "celestial_tower", "celestial_tower_2", "celestial_tower_3", "celestial_tower_4" ]
+            "name": "Celestial Tower",
+            "areas": [ "celestial_tower", "celestial_tower_2", "celestial_tower_3", "celestial_tower_4" ],
+            "custom": true
         },
         {
             "id": "chargestone_cave",
