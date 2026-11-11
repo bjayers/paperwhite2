@@ -1,0 +1,50 @@
+# Which batch file holds each family (families/<batch>.yaml), in the order they're drafted. Every family of
+# skeleton.yaml is in exactly one list: tools/dictionary_check.py checks it.
+
+birds: [pidgey, spearow, farfetchd, doduo, hoothoot, natu, murkrow, delibird, skarmory, taillow, wingull, swablu,
+  starly, chatot, pidove, ducklett, rufflet, vullaby, tropius, emolga, hoppip]
+
+water: [psyduck, poliwag, tentacool, slowpoke, seel, shellder, krabby, horsea, goldeen, staryu, magikarp, lapras,
+  totodile, chinchou, wooper, qwilfish, corsola, remoraid, lotad, surskit, azurill, carvanha, wailmer, barboach,
+  corphish, feebas, spheal, clamperl, relicanth, luvdisc, lileep, bidoof, buizel, shellos, finneon, mantyke, tympole,
+  basculin, frillish, alomomola, stunfisk, croagunk]
+
+bugs_forest: [caterpie, weedle, paras, venonat, scyther, pinsir, ledyba, spinarak, pineco, heracross, yanma, wurmple,
+  nincada, volbeat, illumise, kricketot, burmy, combee, sewaddle, venipede, karrablast, shelmet, durant, joltik,
+  shuckle, seedot, shroomish, slakoth, aipom, pansage, pansear, panpour, teddiursa, tangela, foongus, carnivine,
+  cherubi, oddish, bellsprout, exeggcute]
+
+grassland: [rattata, ekans, nidoran_f, nidoran_m, meowth, lickitung, kangaskhan, tauros, eevee, sentret, pichu,
+  igglybuff, mareep, sunkern, snubbull, girafarig, stantler, smeargle, miltank, poochyena, zigzagoon, whismur, skitty,
+  electrike, plusle, minun, spinda, zangoose, seviper, budew, buneary, glameow, stunky, shinx, pachirisu, happiny,
+  munchlax, patrat, lillipup, purrloin, blitzle, audino, minccino, deerling, cottonee, petilil]
+
+mountains_caves: [zubat, woobat, diglett, geodude, onix, machop, mankey, rhyhorn, phanpy, dunsparce, gligar, sneasel,
+  swinub, makuhita, nosepass, sableye, mawile, aron, meditite, bonsly, roggenrola, drilbur, timburr, throh, sawk,
+  scraggy, mienfoo, dwebble, klink, tynamo, ferroseed, cubchoo, cryogonal, vanillite, snorunt, snover, piplup, riolu, tyrogue]
+
+desert_fire: [charmander, sandshrew, vulpix, growlithe, ponyta, magby, elekid, slugma, houndour, numel, torkoal,
+  trapinch, cacnea, hippopotas, skorupi, sandile, darumaka, maractus, heatmor, cubone]
+
+strange: [gastly, abra, drowzee, misdreavus, smoochum, ralts, spoink, wynaut, shuppet, duskull, chingling, bronzor,
+  spiritomb, munna, sigilyph, yamask, gothita, solosis, elgyem, litwick, golett, drifloon, cleffa, lunatone, solrock,
+  baltoy, ditto, porygon, kecleon, castform, mime_jr, togepi]
+
+strong: [dratini, larvitar, bagon, beldum, gible, deino, axew, druddigon, pawniard, absol, bouffalant]
+
+rest: [magnemite, voltorb, grimer, koffing, trubbish, gulpin]
+
+# Not wild (the user's decisions, 2026-11-13): legendaries and mythicals (events); the starters but Charmander,
+# Piplup and Totodile (Hidden Grottoes, set by hand); the fossils but Lileep (revived); Zorua (illusion NPCs), Rotom
+# (a special place), Larvesta (a special Pokémon); Unown on hold.
+not_wild:
+  starters: [bulbasaur, squirtle, chikorita, cyndaquil, treecko, torchic, mudkip, turtwig, chimchar, snivy, tepig,
+    oshawott]
+  fossils: [omanyte, kabuto, aerodactyl, anorith, cranidos, shieldon, tirtouga, archen]
+  special: [zorua, rotom, larvesta]
+  on_hold: [unown]
+  legendary: [articuno, zapdos, moltres, mewtwo, raikou, entei, suicune, lugia, ho_oh, regirock, regice, registeel,
+    latias, latios, kyogre, groudon, rayquaza, uxie, mesprit, azelf, dialga, palkia, heatran, regigigas, giratina,
+    cresselia, cobalion, terrakion, virizion, tornadus, thundurus, reshiram, zekrom, landorus, kyurem]
+  mythical: [mew, celebi, jirachi, deoxys, phione, manaphy, darkrai, shaymin, arceus, victini, keldeo, meloetta,
+    genesect]

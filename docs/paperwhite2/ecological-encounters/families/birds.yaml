@@ -1,0 +1,640 @@
+# Batch 1: birds and other fliers (21 families). Draft of 2026-11-14 for review; migration.md is their seasonal map.
+#
+# Summary
+# - Movers: Pidgey (summers in the north, winters in the Southeast, passing between), Taillow (a summer visitor
+#   that follows Yanma; a few winter on Route 18), Starly (winter flocks from the north), Swanna (winters on Icirrus's
+#   fens, as whooper swans on the Dutch polders), Delibird (down from the mountains with the snow), Swablu (up and
+#   down the mountains), Hoppip (the seasonal winds: spring in the south, summer in the north, gone in winter), Chatot
+#   (Route 18 in spring and summer; Castelia's feral colony all year).
+# - Residents: Pidove (towns and farms), Murkrow (towns at night, mountain trails), Hoothoot (forests at night),
+#   Spearow (dry scrub), Doduo (upland grass), Farfetch'd (Abundant Shrine's paddies, rare everywhere), Skarmory
+#   (thorny scrub and Virbank's steel), Rufflet and Vullaby (canyons and badlands), Natu (the desert's cacti, the
+#   Dreamyard's ruins), Wingull (every coast), Ducklett (ponds and lakes), Tropius (Route 18), Emolga (forest gliders).
+# - Trophies: Farfetch'd at Abundant Shrine; Honchkrow at Route 7 at night; Altaria on Victory Road; Chatot in
+#   Castelia's park.
+# - Review: Pidgey as a migrant (non-native to Unova); Honchkrow wild (a Dusk Stone evolution); Natu in the desert;
+#   Doduo on Floccesy Ranch as a farmed bird; Chatot's seasons; Swanna breeding at Dragonspiral's lake.
+
+families:
+
+  - id: pidgey
+    origin: migrant
+    lore:
+      - "Pokédex (B2W2, Pidgeotto): it flies over its wide territory in search of prey."
+      - "Pokédex (B2W2, Pidgeot): its wingbeats make a gust that can bend tall trees."
+      - "In the game: Route 19 has Pidgey NPCs and a scripted Pidgey battle (the user's)."
+      - "Real world: a hawk-and-songbird flyway (the Hudson Valley, the Atlantic coast): broad-winged hawks pass south in autumn and north in spring."
+    habitats: {meadow: 3, woodland_edge: 3, farmland: 2, flower_field: 2, hills: 2, suburb: 1}
+    time: {periods: day, strength: preferred}
+    seasons: >-
+      A classic migrant: it breeds in the north's meadows in summer, winters in the mild Southeast, and passes through
+      the Southwest and the middle in spring and autumn. Pidgeot lead the flocks; Pidgeotto hunt along the way.
+    migration: partial
+    weather: {more: [], less: [rain, thunderstorm], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {pidgey: wild, pidgeotto: wild, pidgeot: {wild: true, note: "the flocks' leaders, rarer"}}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: route_19, methods: [grass], seasons: [spring, autumn], tier: common, why: "the valley flyway's gateway; its NPCs and scripted battle are Pidgey"}
+      - {place: floccesy_ranch, methods: [grass], seasons: [spring, autumn], tier: uncommon, why: "passage over the ranch's fields"}
+      - {place: route_1, methods: [grass], seasons: [autumn, winter, spring], tier: common, why: "the coastal flyway and the mainland's wintering meadows"}
+      - {place: route_2, methods: [grass], seasons: [autumn, winter, spring], tier: common, why: "wintering at the woodland edge, in the mild Southeast"}
+      - {place: route_3, methods: [grass], seasons: [autumn, winter], tier: uncommon, why: "wintering flocks in the fields by the lake"}
+      - {place: dreamyard, methods: [grass], seasons: [winter], tier: uncommon, why: "wintering in the Dreamyard's overgrown meadow"}
+      - {place: route_5, methods: [grass], seasons: [spring, autumn], tier: uncommon, why: "the central passage"}
+      - {place: route_16, methods: [grass], seasons: [spring, autumn], tier: uncommon, why: "the central passage along the forest edge"}
+      - {place: route_22, methods: [grass], seasons: [autumn], tier: uncommon, why: "the east coast's autumn passage south"}
+      - {place: route_12, methods: [grass, dark_grass], seasons: [summer], tier: common, why: "breeding on the north's flower hills"}
+      - {place: route_11, methods: [grass], seasons: [summer], tier: uncommon, why: "breeding in the north's riverside meadows"}
+      - {place: route_9, methods: [grass], seasons: [summer], tier: uncommon, why: "breeding at the north's edge of town"}
+      - {place: village_bridge, methods: [grass], seasons: [summer], tier: uncommon, why: "breeding in the village's meadows"}
+    review:
+      - "A migrant rather than native: Pidgey isn't Unovan; making it the region's classic migrant uses that. Its summer and winter ranges are mine."
+
+  - id: spearow
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Spearow): it flaps its small wings busily and searches the grass for prey with its beak."
+      - "Pokédex (B2W2, Fearow): it can fly all day on its broad wings."
+      - "In the game: Route 19 has Spearow NPCs."
+      - "Real world: shrikes and kingbirds of dry, open scrub: noisy, quarrelsome, hunting insects in short grass."
+    habitats: {scrub: 3, badlands: 3, meadow: 2, hills: 2, desert: 1}
+    time: {periods: day, strength: preferred}
+    seasons: all year, a little scarcer in winter on the snowy Route 19
+    migration: resident
+    weather: {more: [], less: [rain, snow], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {spearow: wild, fearow: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: float}
+    homes:
+      - {place: route_19, methods: [grass], seasons: all, tier: uncommon, why: "its NPCs; the short grass of the starting meadow"}
+      - {place: virbank_complex, methods: [grass], seasons: all, tier: uncommon, why: "scrub on the complex's waste ground"}
+      - {place: route_15, methods: [grass], seasons: all, tier: uncommon, why: "dry scrub on the ridge"}
+      - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: common, why: "the badlands' dry scrub is its best ground"}
+      - {place: desert_resort_path, methods: [grass], seasons: all, tier: rare, why: "at the desert's edge, hunting the canyon's insects"}
+      - {place: route_22, methods: [grass], seasons: all, tier: rare, why: "the windswept upland's short grass"}
+    review: []
+
+  - id: farfetchd
+    origin: native
+    lore:
+      - "Pokédex (B2W2): it can't live without the stalk it holds, and defends it with its life."
+      - "Its Japanese name (Kamonegi) is from the saying 'a duck coming with a leek': a satoyama's paddies and leek fields."
+      - "Other Pokédex entries (paraphrased): its numbers dwindled because it was hunted; it lives where the plants it carries grow."
+    habitats: {farmland: 3, marsh: 2, pond: 2}
+    time: {periods: day, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: rare
+    trophy: [abundant_shrine]
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {farfetchd: wild}
+    levels: {farfetchd: [5, 100]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: abundant_shrine, methods: [grass], seasons: all, tier: exotic, why: "the paddies and leek fields of a satoyama shrine, where it's protected: the trophy"}
+      - {place: route_7, methods: [grass], seasons: [spring, summer, autumn], tier: very_rare, why: "the marsh's reeds and stalks, a last wild few"}
+    review:
+      - "Very rare everywhere, as the Pokédex has it hunted; only two homes."
+
+  - id: doduo
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Dodrio): it runs at nearly 40 mph."
+      - "Other Pokédex entries (paraphrased): it lives on open plains, where its long legs make up for wings it barely uses."
+      - "Real world: ostriches and emus on open grassland and dry scrub, and ostrich farms."
+    habitats: {hills: 3, meadow: 3, scrub: 2, pasture: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year (it doesn't fly away)
+    migration: resident
+    weather: {more: [], less: [rain], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {doduo: wild, dodrio: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: route_22, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the windswept upland grass: open running ground"}
+      - {place: route_15, methods: [grass], seasons: all, tier: rare, why: "the ridge's hills and scrub"}
+      - {place: reversal_mountain_outside, methods: [dark_grass], seasons: all, tier: rare, why: "the badlands' scrub, like emus' dry country"}
+      - {place: floccesy_ranch, methods: [grass], seasons: all, tier: rare, why: "farmed on the ranch like ostriches, and loose in its pastures"}
+    review:
+      - "Floccesy Ranch's Doduo as farmed birds: a fun touch, but optional."
+
+  - id: hoothoot
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Noctowl): its eyes see clearly in murky darkness."
+      - "In the game: Route 20's ambients are Hoothoot and Noctowl at night (the user's)."
+      - "The user: Hoothoot is strictly nocturnal."
+      - "Real world: owls hunt the fields' and barns' rodents at night and don't migrate."
+    habitats: {deciduous_forest: 3, conifer_forest: 3, dense_forest: 3, woodland_edge: 2, farmland: 1}
+    time: {periods: night, strength: strict}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [rain], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {hoothoot: wild, noctowl: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: route_20, methods: [grass, dark_grass], seasons: all, tier: common, why: "its ambients; an oak and hemlock forest"}
+      - {place: floccesy_ranch, methods: [grass], seasons: all, tier: uncommon, why: "barn owls hunting the ranch's rodents"}
+      - {place: route_1, methods: [dark_grass], seasons: all, tier: uncommon, why: "the owls of the pine hills"}
+      - {place: route_2, methods: [grass], seasons: all, tier: uncommon, why: "the woodland edge at night"}
+      - {place: pinwheel_forest, methods: [grass, dark_grass], seasons: all, tier: common, why: "the old forest's owls"}
+      - {place: lostlorn_forest, methods: [grass], seasons: all, tier: uncommon, why: "a quiet forest"}
+      - {place: route_6, methods: [grass, dark_grass], seasons: all, tier: common, why: "the river valley's woods"}
+      - {place: abundant_shrine, methods: [dark_grass], seasons: all, tier: uncommon, why: "the shrine's conifer grove"}
+      - {place: route_11, methods: [dark_grass], seasons: all, tier: uncommon, why: "the conifers above the falls"}
+      - {place: victory_road_forest, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the high conifer forest"}
+      - {place: nature_preserve, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "an untouched river forest"}
+    review: []
+
+  - id: natu
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Natu): it picks food from cactus plants, avoiding the buds and spines, and skips about."
+      - "Pokédex (B2W2, Xatu): it sees the past and the future, and eyes the sun's movement all day."
+      - "Other games: Natu and Xatu by ancient ruins (the Ruins of Alph); Xatu as a totem."
+    habitats: {desert: 3, ruins: 3, badlands: 2, scrub: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [rain], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {natu: wild, xatu: {wild: true, note: "stands still all day, watching the sun"}}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: desert_resort, methods: [grass], seasons: all, tier: uncommon, why: "the desert's cacti feed it (with Maractus)"}
+      - {place: desert_resort_path, methods: [grass], seasons: all, tier: rare, why: "the canyon's cacti"}
+      - {place: relic_castle, methods: [grass], seasons: all, tier: rare, why: "sun-watchers at an ancient ruin, as at the Ruins of Alph"}
+      - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: rare, why: "the badlands' scrub and cacti"}
+      - {place: dreamyard, methods: [dark_grass], seasons: all, tier: rare, why: "the ruins' mystic watchers"}
+    review:
+      - "Natu in the desert follows its Pokédex entry (cactus food); Relic Castle's floors are sand inside a ruin, so a stretch."
+
+  - id: murkrow
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Murkrow): it lures an unwary person into chasing it, then loses them on mountain trails."
+      - "Pokédex (B2W2, Honchkrow): with a deep cry it gathers many Murkrow: the 'Summoner of Night'."
+      - "The user: Murkrow at night, and around people all year."
+      - "Real world: crows roost in towns by the thousand in winter, and scavenge by roads and graveyards."
+    habitats: {city: 3, park: 3, suburb: 2, woodland_edge: 2, marsh: 1, mountain: 1}
+    time: {periods: night, strength: strict}
+    seasons: all year; bigger roosts in autumn and winter
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: common
+    trophy: [route_7]
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {murkrow: wild, honchkrow: {wild: true, note: "the flocks' bosses, at the gloomiest places only"}}
+    levels: {honchkrow: [30, 100]}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: castelia_park, methods: [grass, dark_grass], seasons: all, tier: common, why: "the city's crows in the park at night"}
+      - {place: route_16, methods: [grass], seasons: all, tier: uncommon, why: "the city's edge"}
+      - {place: route_5, methods: [grass], seasons: [autumn, winter], tier: uncommon, why: "winter roosts by the crowds' leavings"}
+      - {place: route_9, methods: [grass], seasons: all, tier: uncommon, why: "Opelucid's edge"}
+      - {place: route_7, methods: [grass, dark_grass], seasons: all, tier: common, why: "the gloomy marsh below Celestial Tower"}
+      - {place: route_7, methods: [dark_grass], seasons: all, tier: exotic, stages: [honchkrow], why: "the Summoner of Night by the graves: the trophy"}
+      - {place: lostlorn_forest, methods: [dark_grass], seasons: all, tier: rare, why: "something's not right in the forest at night"}
+      - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: uncommon, why: "mountain trails by the Strange House"}
+      - {place: route_15, methods: [grass], seasons: all, tier: rare, why: "the mountain trails it loses its pursuers on"}
+    review:
+      - "Honchkrow wild by a Dusk Stone's evolution: only as Route 7's trophy at night. Say if it should stay evolve-only."
+
+  - id: delibird
+    origin: native
+    lore:
+      - "Pokédex (B2W2): it carries food all day, and shares it with people lost in the mountains."
+      - "Other games: Ice Path and snowy mountains."
+      - "Real world: mountain birds that come down to the valleys in hard winters."
+    habitats: {snowfield: 3, mountain: 3, cliff: 2, meadow: 1}
+    time: {periods: any, strength: none}
+    seasons: >-
+      All year in the Giant Chasm's unnatural cold; in winter it comes down with the snow to the region's snowy places.
+    migration: partial
+    weather: {more: [snow, blizzard], less: [], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {delibird: wild}
+    levels: {delibird: [10, 100]}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: uncommon, why: "the crater's unnatural, unending winter"}
+      - {place: giant_chasm_outside, methods: [grass], seasons: [winter], tier: rare, why: "down from the crater in winter"}
+      - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: uncommon, why: "the snowy cliffside in winter"}
+      - {place: route_12, methods: [grass], seasons: [winter], tier: rare, why: "down from the mountains with the snow"}
+      - {place: route_6, methods: [grass], seasons: [winter], tier: rare, why: "the snowy valley"}
+      - {place: floccesy_ranch, methods: [grass], seasons: [winter], tier: very_rare, why: "the Southwest's snowy farms, bringing food"}
+    review: []
+
+  - id: skarmory
+    origin: native
+    lore:
+      - "Pokédex (B2W2): its iron body is thin and light; it flies at over 180 mph."
+      - "Other Pokédex entries (paraphrased): it nests in thickets of thorny bushes, and its wings are honed by those thorns."
+      - "In the game: Virbank Complex has a Skarmory NPC (the user's)."
+    habitats: {scrub: 3, mountain: 2, cliff: 2, badlands: 2, industrial: 2}
+    time: {periods: day, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {skarmory: wild}
+    levels: {skarmory: [15, 100]}
+    wanderer: {appears: both, wanders: aggressive, grass: float}
+    homes:
+      - {place: virbank_complex, methods: [dark_grass], seasons: all, tier: rare, why: "its NPC; nesting in the complex's steel and thorny scrub"}
+      - {place: route_15, methods: [dark_grass], seasons: all, tier: rare, why: "thorny scrub on the ridge"}
+      - {place: reversal_mountain_outside, methods: [dark_grass], seasons: all, tier: rare, why: "thorn thickets in the badlands"}
+      - {place: victory_road_mountainside, methods: [dark_grass], seasons: all, tier: rare, why: "the high mountain's cliffs"}
+    review: []
+
+  - id: taillow
+    origin: migrant
+    lore:
+      - "Pokédex (B2W2, Taillow): it flies in search of warm climates."
+      - "Pokédex (B2W2, Swellow): it circles the sky in search of prey and dives steeply on it."
+      - "Pokécology (the user's notes): Swellow prey on Yanma; Swellow on Route 6 in spring and summer."
+      - "In the game: Route 20's ambients have Taillow in spring; Virbank's have Swellow (the user's)."
+      - "Real world: barn swallows arrive in spring, nest in barns and under bridges, hunt dragonflies over water, and leave for the tropics in autumn."
+    habitats: {farmland: 3, marsh: 3, pond: 2, river: 2, meadow: 2, pasture: 2}
+    time: {periods: day, strength: strict}
+    seasons: >-
+      A summer visitor: it arrives in spring along the flyways, nests and hunts dragonflies (Yanma) in summer, and leaves
+      in autumn; on the mainland none winter, but a few winter on Route 18's warm island.
+    migration: summer
+    weather: {more: [], less: [rain, thunderstorm], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {taillow: wild, swellow: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: float}
+    homes:
+      - {place: route_19, methods: [grass], seasons: [spring, autumn], tier: uncommon, why: "arriving and leaving through the valley's gateway"}
+      - {place: route_20, methods: [grass], seasons: [spring], tier: uncommon, why: "its spring ambients"}
+      - {place: floccesy_ranch, methods: [grass], seasons: [spring, summer], tier: common, why: "barn swallows nesting in the ranch's barns"}
+      - {place: route_1, methods: [grass], seasons: [spring, autumn], tier: uncommon, why: "the coastal flyway"}
+      - {place: route_3, methods: [grass], seasons: [summer], tier: uncommon, why: "hunting dragonflies over the lake"}
+      - {place: pinwheel_forest_outskirts, methods: [grass], seasons: [summer], tier: uncommon, why: "following Yanma over the outskirts' puddles"}
+      - {place: route_6, methods: [grass], seasons: [spring, summer], tier: common, stages: [swellow], why: "Swellow hunting Yanma (Pokécology, the user's request)"}
+      - {place: route_6, methods: [grass], seasons: [spring, summer], tier: uncommon, stages: [taillow], why: "the young with the hunters"}
+      - {place: route_7, methods: [grass], seasons: [summer], tier: common, why: "Yanma hatching over the marsh"}
+      - {place: village_bridge, methods: [rustling], seasons: [spring, summer], tier: common, why: "nesting under the bridge: the shadows"}
+      - {place: route_13, methods: [grass], seasons: [autumn], tier: uncommon, why: "leaving down the east coast"}
+      - {place: route_18, methods: [grass], seasons: [winter], tier: uncommon, why: "the few that winter on a warm island"}
+    review: []
+
+  - id: wingull
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Wingull): it nests on sheer cliffs and rides the sea breeze."
+      - "Pokédex (B2W2, Pelipper): it skims the sea's surface, scooping up food in its bill."
+      - "The user: birds in the bridge shadows (Wingull, Pelipper)."
+      - "Other games: Pelipper appear with the rain (Hoenn's Route 119 and 120)."
+    habitats: {coastal_sea: 3, open_sea: 3, cliff: 3, beach: 2, estuary: 2, rocky_shore: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year on every coast; colonies on the east coast's cliffs and islands in summer
+    migration: resident
+    weather: {more: [rain, gusty_rain], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {wingull: wild, pelipper: {wild: true, note: "more in the rain"}}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: virbank_city, methods: [surf], seasons: all, tier: common, why: "the estuary's gulls, as in its ambients' picture"}
+      - {place: route_4, methods: [surf], seasons: all, tier: common, why: "the bay by the road"}
+      - {place: route_1, methods: [surf], seasons: all, tier: common, why: "the shore below the meadow"}
+      - {place: driftveil_drawbridge, methods: [rustling], seasons: all, tier: common, why: "seabirds in the bridge's shadows"}
+      - {place: marvelous_bridge, methods: [rustling], seasons: all, tier: common, why: "seabirds in the bridge's shadows"}
+      - {place: route_13, methods: [surf], seasons: all, tier: common, why: "the clear coastal sea"}
+      - {place: route_13, methods: [dark_grass], seasons: [spring, summer], tier: common, stages: [wingull], why: "the island's seabird colony"}
+      - {place: route_13, methods: [grass], seasons: all, tier: uncommon, why: "the beach under the cliffs"}
+      - {place: undella, methods: [surf], seasons: all, tier: common, why: "the bay"}
+      - {place: route_21, methods: [surf], seasons: all, tier: common, why: "the rocks out at sea"}
+      - {place: humilau_city, methods: [surf], seasons: all, tier: uncommon, why: "the lagoon"}
+      - {place: route_22, methods: [grass], seasons: [spring, summer], tier: uncommon, why: "nesting on the headland's cliffs"}
+      - {place: route_17, methods: [surf], seasons: all, tier: common, why: "riding the wind over the currents"}
+      - {place: route_18, methods: [surf], seasons: all, tier: common, why: "the island's shore"}
+      - {place: p2_laboratory, methods: [surf], seasons: all, tier: common, why: "the island's sea"}
+    review: []
+
+  - id: swablu
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Altaria): on sunny days it flies freely and blends into the clouds, singing in a soprano."
+      - "Pokédex (B2W2, Swablu): it likes to land softly on people's heads."
+      - "Other games: Hoenn's mountain routes and Sky Pillar; a Hidden Grotto at Abundant Shrine in B2W2."
+      - "Real world: birds that move up the mountains in summer and down in winter."
+    habitats: {hills: 3, mountain: 3, meadow: 2, cliff: 2, flower_field: 1}
+    time: {periods: day, strength: preferred}
+    seasons: >-
+      All year, moving with the season: on the heights in summer (Route 15, Route 23, Victory Road), the high hills in
+      spring and autumn, and down to the low hills for winter (Route 12, Route 22, Route 14).
+    migration: partial
+    weather: {more: [], less: [rain, gusty_rain, thunderstorm, snow, blizzard], only: []}
+    abundance: uncommon
+    trophy: [victory_road_mountainside]
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {swablu: wild, altaria: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: route_15, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the high ridge in the warm seasons"}
+      - {place: route_23, methods: [grass], seasons: [summer], tier: uncommon, why: "the mountain heights in summer"}
+      - {place: victory_road_mountainside, methods: [grass], seasons: [summer, autumn], tier: uncommon, why: "the heights in summer"}
+      - {place: victory_road_mountainside, methods: [dark_grass], seasons: [summer], tier: exotic, stages: [altaria], why: "Altaria singing among the clouds at the top: the trophy"}
+      - {place: route_14, methods: [grass], seasons: [winter], tier: rare, why: "down in the valley for winter"}
+      - {place: route_12, methods: [grass], seasons: [winter, spring], tier: uncommon, why: "the low hills in winter"}
+      - {place: route_22, methods: [grass], seasons: [autumn, winter], tier: uncommon, why: "the coast's mild upland in winter"}
+    review: []
+
+  - id: starly
+    origin: migrant
+    lore:
+      - "Pokédex (B2W2, Starly): weak alone, they form groups, and bicker when a group grows too big."
+      - "Pokédex (B2W2, Staravia): they always live in a group; alone, one cries noisily."
+      - "Pokédex (B2W2, Staraptor): it never stops attacking, even injured."
+      - "Real world: starlings winter in vast flocks (murmurations) over fields and towns."
+    habitats: {meadow: 3, farmland: 3, pasture: 2, park: 2, suburb: 1}
+    time: {periods: day, strength: preferred}
+    seasons: >-
+      A winter visitor from Sinnoh's cold: flocks arrive in autumn, fill the south's and the middle's open land in
+      winter, and leave north through the north's meadows in spring. None in summer.
+    migration: winter
+    weather: {more: [], less: [rain], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: family}
+    stages: {starly: wild, staravia: wild, staraptor: {wild: true, note: "it leaves the flock: rarer, alone"}}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: route_1, methods: [grass], seasons: [autumn, winter], tier: common, why: "flocks on the open meadow"}
+      - {place: route_3, methods: [grass], seasons: [autumn, winter], tier: common, why: "flocks on the old fields"}
+      - {place: route_5, methods: [grass, dark_grass], seasons: [autumn, winter], tier: common, why: "flocks by the city's crowds"}
+      - {place: route_16, methods: [grass], seasons: [winter], tier: uncommon, why: "winter flocks at the city's edge"}
+      - {place: abundant_shrine, methods: [grass], seasons: [autumn, winter], tier: common, why: "flocks on the harvested paddies"}
+      - {place: floccesy_ranch, methods: [grass], seasons: [winter], tier: uncommon, why: "winter flocks on the ranch's pastures"}
+      - {place: route_19, methods: [grass], seasons: [autumn], tier: uncommon, why: "arriving through the valley"}
+      - {place: route_12, methods: [grass], seasons: [autumn, spring], tier: uncommon, why: "arriving and leaving across the north's hills"}
+      - {place: village_bridge, methods: [grass], seasons: [spring], tier: uncommon, why: "leaving north in spring"}
+    review: []
+
+  - id: chatot
+    origin: migrant
+    lore:
+      - "Pokédex (B2W2): its tongue is like a human's, so it can mimic speech."
+      - "Other Pokédex entries (paraphrased): a group learns the same song; it keeps the rhythm with its tail."
+      - "The user: Chatot on Route 18 in its season; Village Bridge's music theme suggests it."
+      - "In the game: a Hidden Grotto Pokémon on Route 18."
+      - "Real world: parrots of the tropics, and the feral parrot colonies of northern cities (Brooklyn's monk parakeets, from escaped pets)."
+    habitats: {woodland_edge: 3, meadow: 2, park: 2}
+    time: {periods: day, strength: strict}
+    seasons: >-
+      Route 18 in spring and summer, its breeding season; a summer stray at Village Bridge; and a small feral colony in
+      Castelia's park all year, from escaped pets.
+    migration: summer
+    weather: {more: [], less: [rain], only: []}
+    abundance: uncommon
+    trophy: [castelia_park]
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {chatot: wild}
+    levels: {chatot: [5, 100]}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: route_18, methods: [grass, dark_grass], seasons: [spring, summer], tier: uncommon, why: "the island in its season (the user's request)"}
+      - {place: castelia_park, methods: [grass], seasons: all, tier: exotic, why: "a feral colony of escaped pets, singing the city's tunes: the trophy"}
+      - {place: village_bridge, methods: [grass], seasons: [summer], tier: very_rare, why: "drawn by the village's music in summer"}
+    review:
+      - "Its season (spring and summer) is my guess; Castelia's feral colony is an introduced population, as the rules allow."
+
+  - id: pidove
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Tranquill): wherever it goes, it knows where its nest is."
+      - "Pokédex (B2W2, Unfezant): males swing their head plumage to threaten others."
+      - "Pokédex (BW, Pidove; paraphrased): it lives in cities, used to people; flocks gather in parks and plazas."
+      - "In the game: Pidove NPCs on Route 19 and ambients on Route 20 and in Virbank."
+      - "Real world: feral pigeons in the cities; homing pigeons; pheasants on farms and old fields."
+    habitats: {city: 3, park: 3, suburb: 3, farmland: 2, meadow: 2, woodland_edge: 2, pasture: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year near people; more in the towns in winter (fed by people), fewer in the rain
+    migration: resident
+    weather: {more: [], less: [rain, thunderstorm], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {pidove: wild, tranquill: wild, unfezant: {wild: true, note: "the countryside's proud ones"}}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: castelia_park, methods: [grass], seasons: all, tier: common, why: "the city's pigeons in the park"}
+      - {place: route_19, methods: [grass], seasons: all, tier: common, why: "its NPCs, by Aspertia"}
+      - {place: route_20, methods: [grass], seasons: all, tier: uncommon, why: "its ambients"}
+      - {place: floccesy_ranch, methods: [grass], seasons: all, tier: uncommon, why: "the farm's yards and fields"}
+      - {place: route_2, methods: [grass], seasons: all, tier: uncommon, why: "between towns"}
+      - {place: route_3, methods: [grass], seasons: all, tier: uncommon, why: "Striaton's edge"}
+      - {place: route_5, methods: [grass], seasons: all, tier: common, why: "plazas and crowds by Nimbasa"}
+      - {place: route_16, methods: [grass], seasons: all, tier: common, why: "the city's edge"}
+      - {place: route_9, methods: [grass], seasons: all, tier: common, why: "Opelucid's edge"}
+      - {place: village_bridge, methods: [grass], seasons: all, tier: uncommon, why: "the village's square and fields"}
+      - {place: abundant_shrine, methods: [grass], seasons: all, tier: uncommon, stages: [tranquill, unfezant], why: "the farm country's pheasants"}
+      - {place: route_12, methods: [grass], seasons: all, tier: uncommon, stages: [tranquill, unfezant], why: "the open hills"}
+    review: []
+
+  - id: ducklett
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Ducklett): better at swimming than flying; it dives for its favourite food, peat moss."
+      - "Pokédex (B2W2, Swanna): it can fly for thousands of miles."
+      - "In the original games: Ducklett and Swanna in Driftveil Drawbridge's shadows."
+      - "Real world: whooper swans breed in the far north and winter on the Dutch polders; ducks on every pond."
+    habitats: {lake: 3, pond: 3, marsh: 3, swamp: 2, river: 2, estuary: 2}
+    time: {periods: day, strength: preferred}
+    seasons: >-
+      Ducklett all year on the ponds and lakes, on Icirrus's peat fens from spring to autumn (until the fens freeze).
+      Swanna winter on Icirrus's open water, pass the bridges in spring and autumn, and a few breed at Dragonspiral's cold
+      lake in summer.
+    migration: partial
+    weather: {more: [rain], less: [], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 85, double: 12, triple: 3, partners: family}
+    stages: {ducklett: wild, swanna: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: float}
+    homes:
+      - {place: route_3, methods: [surf], seasons: all, tier: common, stages: [ducklett], why: "the lake's ducks"}
+      - {place: striaton_city, methods: [surf], seasons: all, tier: uncommon, stages: [ducklett], why: "the park's ponds"}
+      - {place: aspertia_city, methods: [surf], seasons: all, tier: uncommon, stages: [ducklett], why: "the town pond"}
+      - {place: route_19, methods: [surf], seasons: all, tier: uncommon, stages: [ducklett], why: "the pond under the cliff"}
+      - {place: lostlorn_forest, methods: [surf], seasons: all, tier: uncommon, stages: [ducklett], why: "the forest stream's pools"}
+      - {place: icirrus_city, methods: [surf], seasons: [spring, summer, autumn], tier: common, stages: [ducklett], why: "diving for peat moss in the fens"}
+      - {place: route_8, methods: [surf], seasons: [spring, summer, autumn], tier: common, stages: [ducklett], why: "the fens' peat moss"}
+      - {place: moor_of_icirrus, methods: [surf], seasons: [spring, summer, autumn], tier: common, stages: [ducklett], why: "the moor's peat pools"}
+      - {place: icirrus_city, methods: [surf], seasons: [winter], tier: common, stages: [swanna], why: "the northern swans' winter on the polders"}
+      - {place: route_8, methods: [surf], seasons: [winter], tier: common, stages: [swanna], why: "wintering swans"}
+      - {place: moor_of_icirrus, methods: [surf], seasons: [winter], tier: uncommon, stages: [swanna], why: "wintering swans"}
+      - {place: dragonspiral_grounds, methods: [surf], seasons: [summer], tier: uncommon, why: "a few pairs breed at the cold lake"}
+      - {place: driftveil_drawbridge, methods: [rustling], seasons: all, tier: common, stages: [ducklett], why: "the original games' Ducklett in the bridge's shadows"}
+      - {place: driftveil_drawbridge, methods: [rustling], seasons: [autumn, spring], tier: uncommon, stages: [swanna], why: "swans passing on their way to and from Icirrus"}
+      - {place: marvelous_bridge, methods: [rustling], seasons: [autumn, spring], tier: uncommon, stages: [swanna], why: "swans passing the central crossing"}
+      - {place: village_bridge, methods: [surf], seasons: all, tier: uncommon, stages: [ducklett], why: "the river by the village"}
+    review:
+      - "Swanna winter at Icirrus (the polders), not the south: the reverse of a simple 'south for winter'."
+
+  - id: rufflet
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Rufflet): it stands up to massive opponents out of recklessness, and so grows stronger."
+      - "Pokédex (B2W2, Braviary): this brave warrior of the sky won't stop battling for its friends."
+      - "In the game: a Braviary NPC and a static battle on Route 4 (White 2's), where the original had Braviary overhead."
+      - "Real world: bald and golden eagles of canyons, mountains and big rivers."
+    habitats: {cliff: 3, mountain: 3, river: 2, desert: 2, waterfall: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [rain, snow], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {rufflet: wild, braviary: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: aggressive, grass: float}
+    homes:
+      - {place: route_23, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the gorge's cliffs"}
+      - {place: victory_road_mountainside, methods: [grass], seasons: all, tier: uncommon, why: "the high mountain"}
+      - {place: route_14, methods: [dark_grass], seasons: all, tier: rare, why: "the waterfall's cliffs, fishing the river"}
+      - {place: route_15, methods: [dark_grass], seasons: all, tier: rare, why: "the ridge"}
+      - {place: giant_chasm_outside, methods: [dark_grass], seasons: all, tier: rare, why: "the chasm's rim"}
+      - {place: desert_resort_path, methods: [grass], seasons: all, tier: rare, stages: [braviary], why: "hunting the desert from the canyon's ledges, as in the original"}
+    review: []
+
+  - id: vullaby
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Vullaby): its wings are too small to fly; it wears bones gathered by Mandibuzz."
+      - "Pokédex (B2W2, Mandibuzz): they circle the sky and carry prey to their nest."
+      - "In the game: a Mandibuzz static battle on Route 4 (Black 2's), where the original had it overhead."
+      - "Real world: vultures of the deserts and badlands, nesting on cliffs."
+    habitats: {desert: 3, badlands: 3, cliff: 2, scrub: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [rain], only: []}
+    abundance: rare
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {vullaby: wild, mandibuzz: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: desert_resort_path, methods: [grass], seasons: all, tier: uncommon, why: "cliff nests in the canyon, with the young that can't fly"}
+      - {place: desert_resort, methods: [grass], seasons: all, tier: rare, stages: [mandibuzz], why: "circling the desert for the weak"}
+      - {place: route_4, methods: [grass], seasons: all, tier: rare, stages: [mandibuzz], why: "the road's edge, as in the original"}
+      - {place: reversal_mountain_outside, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the badlands' cliffs"}
+    review: []
+
+  - id: tropius
+    origin: native
+    lore:
+      - "Pokédex (B2W2): it flies with its broad leaves and gives the sweet fruit round its neck to children."
+      - "Other Pokédex entries (paraphrased): it lives in tropical jungles; the fruit grows twice a year."
+      - "The user: Tropius on Route 18."
+    habitats: {woodland_edge: 3, meadow: 2, beach: 1}
+    time: {periods: day, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {tropius: wild}
+    levels: {tropius: [10, 100]}
+    wanderer: {appears: both, wanders: passive, grass: float}
+    homes:
+      - {place: route_18, methods: [dark_grass], seasons: all, tier: uncommon, why: "the island's own, among its fruit trees (the user's request)"}
+      - {place: p2_laboratory, methods: [grass], seasons: all, tier: rare, why: "the next island, a short flight"}
+    review: []
+
+  - id: emolga
+    origin: native
+    lore:
+      - "Pokédex (B2W2): it glides on its membrane, shocking foes with the electricity in its cheeks."
+      - "In the original games: Routes 5, 6 and 16 and Lostlorn Forest."
+      - "Real world: flying squirrels glide between trees at night in eastern broadleaf forest."
+    habitats: {deciduous_forest: 3, woodland_edge: 2, dense_forest: 2, conifer_forest: 1}
+    time: {periods: night, strength: preferred}
+    seasons: all year; fewer in winter (it stays in its nest)
+    migration: resident
+    weather: {more: [thunderstorm], less: [], only: []}
+    abundance: uncommon
+    trophy: []
+    battles: {single: 95, double: 5, triple: 0, partners: family}
+    stages: {emolga: wild}
+    levels: {emolga: [5, 100]}
+    wanderer: {appears: both, wanders: random, grass: float}
+    homes:
+      - {place: route_6, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the valley's broadleaf woods, near Chargestone's charge"}
+      - {place: route_16, methods: [dark_grass], seasons: all, tier: uncommon, why: "the forest edge, as in the original"}
+      - {place: lostlorn_forest, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the forest's gliders"}
+      - {place: route_5, methods: [dark_grass], seasons: all, tier: rare, why: "the woods by the road, as in the original"}
+      - {place: pinwheel_forest, methods: [dark_grass], seasons: all, tier: rare, why: "the old forest's canopy"}
+      - {place: village_bridge, methods: [dark_grass], seasons: all, tier: rare, why: "the riverside woods"}
+    review: []
+
+  - id: hoppip
+    origin: native
+    lore:
+      - "Pokédex (B2W2, Hoppip): when Hoppip gather in fields and mountains, spring is on the way."
+      - "Pokédex (B2W2, Skiploom): it blooms when the weather warms, floating up to soak in sunlight."
+      - "Pokédex (B2W2, Jumpluff): blown by seasonal winds, it circles the globe, scattering cotton spores."
+      - "Real world: dandelion and cottonwood seeds on spring and summer winds."
+    habitats: {flower_field: 3, meadow: 3, hills: 2, pasture: 1}
+    time: {periods: day, strength: strict}
+    seasons: >-
+      On the seasonal winds: Hoppip gather on the south's meadows in spring, Skiploom bloom on the north's hills in
+      summer, Jumpluff drift south in autumn, and none are seen in winter.
+    migration: nomad
+    weather: {more: [], less: [rain, gusty_rain, thunderstorm], only: []}
+    abundance: common
+    trophy: []
+    battles: {single: 70, double: 20, triple: 10, partners: family}
+    stages: {hoppip: wild, skiploom: wild, jumpluff: wild}
+    levels: {}
+    wanderer: {appears: both, wanders: passive, grass: float}
+    homes:
+      - {place: route_1, methods: [grass], seasons: [spring], tier: common, why: "spring's on the way: the flower meadow"}
+      - {place: route_19, methods: [grass], seasons: [spring], tier: uncommon, why: "the valley's spring meadow"}
+      - {place: floccesy_ranch, methods: [grass], seasons: [spring], tier: uncommon, why: "the ranch's spring pastures"}
+      - {place: route_12, methods: [grass, dark_grass], seasons: [summer], tier: common, why: "blooming over the north's flower hills"}
+      - {place: route_22, methods: [grass], seasons: [summer], tier: uncommon, why: "the windy upland in summer"}
+      - {place: route_15, methods: [grass], seasons: [summer], tier: uncommon, why: "the windy ridge"}
+      - {place: route_5, methods: [grass], seasons: [autumn], tier: uncommon, stages: [jumpluff], why: "drifting south on the autumn wind"}
+      - {place: route_16, methods: [grass], seasons: [autumn], tier: uncommon, stages: [jumpluff], why: "drifting south"}
+      - {place: route_13, methods: [grass], seasons: [autumn], tier: uncommon, stages: [jumpluff], why: "drifting down the coast"}
+    review:
+      - "Strict to the day, since it rides the sun's warmth; say if it should be found at night too."
