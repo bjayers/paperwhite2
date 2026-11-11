@@ -77,7 +77,7 @@ TEXT = ROOT / "res/text/system/pokedex_data.txt"
 ART = ROOT / "res/paperwhite2/pokedex_art"
 ART_TARGETS = ROOT / "res/paperwhite2/art/targets.json"
 # The sub-pages in the page's order (POKEDEX_INFO_SUBPAGE_*)
-PAGES = ("stats", "data", "moves", "evo", "matchups")
+PAGES = ("stats", "data", "moves", "evo", "area", "matchups")
 FONTS = "files/a/0/2/3"
 # The menus' common graphics: the type icons' palette (three rows) and each type's 32 by 16 characters
 MENU_COMMON = "files/a/0/8/2"
@@ -1273,7 +1273,7 @@ def main():
 
     def stats(canvas):
         stats_text(canvas, d, m, font)
-        buttons(canvas, d, m, font, ["Cry", "Turn", "Form", "Shiny", "Language", "Abilities"], lift["stats"])
+        buttons(canvas, d, m, font, ["Flavour", "Turn", "Cry", "Form", "Shiny", "Abilities"], lift["stats"])
     write("stats", art, stats, palette)
 
     # The other sub-pages: the user's art once there is some, else a canvas in the Stats art's palette with its tab
@@ -1341,6 +1341,9 @@ def main():
     # The planned Area sub-page's templates (docs/paperwhite2/design/pokedex-area.md)
     from tools.paperwhite2 import pokedex_area_templates
     pokedex_area_templates.write(args.out, font, small)
+    # The version tab of the Info page's Flavour (tools/paperwhite2/dex_flavour.py)
+    from tools.paperwhite2 import dex_flavour
+    dex_flavour.write_templates(args.out, small)
     print(f"wrote the templates to {args.out}")
 
 
