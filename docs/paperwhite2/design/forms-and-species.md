@@ -169,6 +169,10 @@ Other Pokédex data:
 
 ## 4. Save data capacity
 
+**Superseded (2026-11-12):** the Pokédex's save is now the hack's own area in the Pal Pad's block, with room for 1504
+species and 1024 forms a list, and its form directory is generated from `res/pokemon` and remapped in old saves on
+load (`save-expansion.md` section 11). What follows is the original block, which the area mirrors at each save.
+
 `PokeDexSave` (`include/save/pokedex_savedata.h`, 0x4dc bytes, `SAVE_BLOCK_POKEDEX` in `src/system/save_table.c:122`):
 
 | Field | Size | Use | Free |
@@ -526,7 +530,8 @@ other archive checks fail as on main, from the hack's data).
 - `PML_PersonalLoadRegionalDexTable` (`poke_personal.c`) reads the archive's last file instead of 709, so form records
   can be added.
 - `pokemonFormList` (`pokedex_savedata.c`): `{ SPECIES_PICHU, 2 }` after Landorus: bits 83 and 84 of `seenForms` and
-  `shownForms`. **3 bits are left** in each list.
+  `shownForms`. **3 bits are left** in each list. (Since replaced by the generated directory and the hack's save area,
+  save-expansion.md section 11: the Pichu's bits are 0 and 1 there, and the original block keeps 83 and 84.)
 
 ### 11.4 The Spiky-eared Pichu
 
@@ -567,8 +572,10 @@ For species `S` getting form `n` (its `forms.count` before):
    constants after the last follower in `generated/obj_codes.txt`, and `GetIndexOfObjID`'s last follower code
    (`src/system/field_actor_savedata.c`) moved to the new last one (or the editor leaves followers out: form 0's rows
    are used).
-5. A `pokemonFormList` row in `src/system/pokedex_savedata.c` for the Pokédex to list the form: a code edit, appended at
-   the end, at most 3 more bits before the save must grow. The editor should say so rather than write C.
+5. Nothing for the Pokédex: `forms.count` puts the species in the generated form directory (`POKEDEX_FORM_LIST`,
+   `tools/paperwhite2/pokemon_forms.py`), in species order, and the game remaps old saves' form bits on load
+   (save-expansion.md section 11). The generator stops past 128 species with forms or 1024 forms. `forms.pokedex: false`
+   keeps a species' forms out of the Pokédex, as Arceus's and Genesect's are.
 
 `species_data.py` validates the result (the schema), and the packers stop on a missing file or a gap in the groups.
 

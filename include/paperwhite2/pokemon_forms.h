@@ -12,8 +12,9 @@
 // Arceus' palettes, from the archive's original end, POKEMON_FORMS_SPRITE_FILES (GetPokemonDataIDBase,
 // tools/data/pokemon_graphics.py). The icons' original form groups end at their archive's end, so the hack's icons
 // follow them where PokeParty_GetIconIndex already looks, and only their palettes need a table of their own, past
-// sPokeIconPalettes' end (PokeIcon_GetPalette). The Pokédex's form bits are pokemonFormList's
-// (src/system/pokedex_savedata.c), where the hack's forms are appended so that old saves keep theirs.
+// sPokeIconPalettes' end (PokeIcon_GetPalette). The Pokédex's form bits follow its form directory, POKEDEX_FORM_LIST,
+// which tools/paperwhite2/pokemon_forms.py generates from the same data; the save remaps them when it changes
+// (include/paperwhite2/pokedex_save.h).
 #define POKEMON_FORMS_ORIGINAL_GROUPS 66
 #define POKEMON_FORMS_SPRITE_FILES 15065
 

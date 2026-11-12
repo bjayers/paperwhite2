@@ -405,8 +405,8 @@ leftovers from the other games.
 `src/system/pokedex_savedata.c`, since the bits' setters are that file's statics) does for every species 1-649 what
 catching one of each kind would (`addPkmToDex`'s steps): caught, seen in each sex it can have (by its sex ratio:
 male-only and genderless species in the male lists alone, as `PokeDex_SetSeenSex` puts them, female-only in the female
-ones), normal and shiny, in every form of `pokemonFormList` (83 bits each), and in the seven languages for the 493
-species that have them. A species not seen before shows its first form, normal, in its first sex; one seen keeps what
+ones), normal and shiny, in every form of the Pokédex's form directory (85 bits each), and in the seven languages
+(all 649 species, in the hack's Pokédex save, Save expansion below). A species not seen before shows its first form, normal, in its first sex; one seen keeps what
 it shows. Spinda's personality is set (a random one) only when unset. It changes no flag, variable or story state, and
 not the National Pokédex: without that bit the list only shows Unova's, and the seen and caught counts it shows are
 Unova's. **Give National Pokédex** sets it as Aspertia's script does after the story (`PokeDexGiveNational` then
@@ -2413,8 +2413,9 @@ The hack's own forms of existing species, first the Spiky-eared Pichu (Pichu's f
   `paperwhite2/pokemon_forms_config.h`). `tools/data/pokemon_graphics.py` appends the files.
 - **Pokédex:** `a/0/9/7` is packed by `tools/data/pokedex_data.py` from the species' `pokedex.forms` (the next-form
   table, the shapes, the height and weight orders), and the form names are the species' data, so a form keeps every
-  later form's text in step. A form the Pokédex lists needs a row of `pokemonFormList` (`pokedex_savedata.c`), appended
-  at the end so old saves keep their bits: the Pichu's are 83 and 84, 3 of 88 are left.
+  later form's text in step. The Pokédex lists the forms of every species with `forms.count` above 1, unless
+  `forms.pokedex` is false (Arceus and Genesect): `tools/paperwhite2/pokemon_forms.py` generates its form directory,
+  and old saves' bits are remapped on load (Save expansion, below), so no C changes.
 - **No evolution:** `forms.no_evolution` in a species' `data.json`; `CheckEvolveSpecies` (`evolution_check.c`) returns
   none for those forms, whatever the way of evolving, and the Info page's Evo shows them alone.
 - **Personal data:** the regional Pokédex table is the personal archive's last file (`PML_PersonalLoadRegionalDexTable`,
@@ -2422,6 +2423,41 @@ The hack's own forms of existing species, first the Spiky-eared Pichu (Pichu's f
 - **Followers:** a form's rows are followers with `"form"`; their object codes go after the last follower code in
   `generated/obj_codes.txt`, which `GetIndexOfObjID` (`field_actor_savedata.c`) names as its last (now
   `OBJ_CODE_FOLLOWER_PICHU_FORM_1_FEMALE_SHINY`). A form without rows follows as its form 0.
+
+### Save expansion: the Pokédex for 1500 species
+
+The hack's Pokédex save (`docs/paperwhite2/design/save-expansion.md`, built in its section 11;
+`include/paperwhite2/pokedex_save.h`, `src/paperwhite2/main/paperwhite2_pokedex_save.c`). **No block's size and no
+block's place changes**, so the save's layout is the original's and every old save loads:
+
+| Block | Card offset (main, backup) | Size | What it holds in the hack |
+| --- | --- | --- | --- |
+| 0x1f, the Pal Pad's (`SAVE_BLOCK_PAPERWHITE2_POKEDEX`) | 0x1b200, 0x41200 | 0xd54 | **The Pokédex** (`struct PokeDexSave`): "PW2D" magic, version 1, the header's fields, `caught`, `seen` ×4 and `shown` ×4 for species 1-1504 (0xbc each), 1024 form bits ×4 (seen, seen shiny, shown, shown shiny), the form directory (128 `u16`: species in bits 0-10, count - 1 in 11-15), languages for species 1-649, 352 bytes free |
+| 0x36, the original Pokédex (`PokeDexVanillaSave`) | 0x21400, 0x47400 | 0x4dc | The area's **mirror** for species 1-649 (languages 1-493), its form bits in the old order (the original 21, then the Pichu), written before every save, so PKHeX and older builds read the Pokédex |
+
+- **On load** (`SaveControl_Create` and `SaveControl_Reload`, `PaperWhite2_PokedexSave_Sync`): a Pal Pad without the
+  magic is an old save's, so the area is built from block 0x36; an area whose directory isn't the ROM's
+  (`POKEDEX_FORM_LIST`, generated from `res/pokemon` by `tools/paperwhite2/pokemon_forms.py`) has its form bits remapped.
+  All in memory: nothing reaches the card until the player saves.
+- **On save** (`SaveControl_StartSave`, `SaveControl_StartExtraSave`, `PaperWhite2_PokedexSave_Mirror`): the area into
+  block 0x36.
+- **New game:** the table's init of block 0x1f is `initPokedex` (the area: magic, version, directory, `given`), of 0x36
+  the original's (`PaperWhite2_PokedexVanillaSave_Init`).
+- **The Pal Pad** (`getPalPadFriendListAddress`) is a list in `.bss` (3.4 KB of the budget), for the link trade, the GTS
+  and Wi-Fi battles while they remain; it lasts until the power goes off.
+- **Every Pokédex access** goes through `getPokedexSaveAddress` and `pokedex_savedata.c`'s functions; Easy Chat's
+  (`pmsi_param.c`) took block 0x36 by ID and now goes through it too. Code must never take either block by ID.
+- **Bounds:** `PML_PkmIsBadMonsNo` and the national counts stop at `POKEDEX_SPECIES_MAX` (the generated last species,
+  649); the completion numbers, the evaluations and the bounds outside the save stay the original's until new species
+  exist.
+- **A form added in `res/pokemon`** needs nothing else: the directory follows `forms.count` (not for `forms.pokedex:
+  false`), and saves remap on load. A species removed from the directory loses its form bits but form 0's.
+- **Tool:** `python3 tools/paperwhite2/pokedex_save.py inspect|verify SAV` reads both copies, their CRCs and the
+  Pokédex from either block (and says whether 0x36 is the area's mirror); `upgrade SAV OUT` does what the game does on
+  load and at the next save, into a new file. Standard library only.
+
+Never change a block's size: a block whose size differs from the card's fails its CRC in both copies, and the game
+then loses the whole save (design doc section 2.4).
 
 ## Adding global scripts
 

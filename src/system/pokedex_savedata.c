@@ -9,6 +9,10 @@
 #include "save/pokedex_savedata.h"
 #include "save/save_control.h"
 #include "system/game_data.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/pokedex_save.h"
+#include "paperwhite2/pokemon_forms_config.h"
+#endif
 
 // The Pokédex's save block: the species caught, the ones seen by sex, shininess and form, which of them the Pokédex
 // shows, and the languages of the entries. The ROM has no string for the file, so the name is a guess. The names
@@ -24,12 +28,13 @@
 #endif
 // A species that isn't in the regional Pokédex, in its table
 #define REGIONAL_DEX_NONE 999
-
-// A species with forms and the count of them
-typedef struct {
-    u16 species;
-    u16 count;
-} PokeDexFormEntry;
+#ifdef PAPERWHITE2
+// Paper White 2: the Pokédex's last species, generated from res/pokemon (Genesect's 649 until species are added). The
+// completion counts and the evaluations stay the original's until then (docs/paperwhite2/design/save-expansion.md)
+#define POKEDEX_LAST_SPECIES POKEDEX_SPECIES_MAX
+#else
+#define POKEDEX_LAST_SPECIES SPECIES_GENESECT
+#endif
 
 // The professor's evaluation for up to max Pokémon. The list ends with a max of 0, for any count
 typedef struct {
@@ -68,6 +73,15 @@ static const u16 NATIONAL_DEX_COMPLETION_EXCLUSIONS[] = {
 // clang-format on
 
 // clang-format off
+#ifdef PAPERWHITE2
+// Paper White 2: the form directory generated from res/pokemon's forms, in species order. The area records the
+// directory its bits were written in, and the game remaps them on load when this one differs
+// (PaperWhite2_PokedexSave_Sync), so a form can be added to any species
+static const PokeDexFormEntry pokemonFormList[] = {
+    POKEDEX_FORM_LIST,
+    { 0, 0 },
+};
+#else
 static const PokeDexFormEntry pokemonFormList[] = {
     { SPECIES_UNOWN, 28 },     { SPECIES_DEOXYS, 4 },   { SPECIES_SHAYMIN, 2 },  { SPECIES_GIRATINA, 2 },
     { SPECIES_ROTOM, 6 },      { SPECIES_SHELLOS, 2 },  { SPECIES_GASTRODON, 2 }, { SPECIES_BURMY, 3 },
@@ -75,13 +89,9 @@ static const PokeDexFormEntry pokemonFormList[] = {
     { SPECIES_SAWSBUCK, 4 },   { SPECIES_MELOETTA, 2 }, { SPECIES_DARMANITAN, 2 }, { SPECIES_BASCULIN, 2 },
     { SPECIES_KYUREM, 3 },     { SPECIES_KELDEO, 2 },   { SPECIES_THUNDURUS, 2 }, { SPECIES_TORNADUS, 2 },
     { SPECIES_LANDORUS, 2 },
-#ifdef PAPERWHITE2
-    // Paper White 2: the hack's forms, appended so that every species before keeps its bits of seenForms and
-    // shownForms in old saves (they have 88 bits each, and these take 83 and 84): the Spiky-eared Pichu
-    { SPECIES_PICHU, 2 },
-#endif
     { 0, 0 },
 };
+#endif
 
 // clang-format on
 
@@ -139,7 +149,7 @@ static inline BOOL CheckShown(const PokeDexSave *pokedex, u16 kind, u16 species)
 }
 
 static BOOL PML_PkmIsBadMonsNo(u16 species) {
-    if (species == 0 || species > SPECIES_GENESECT) {
+    if (species == 0 || species > POKEDEX_LAST_SPECIES) {
         return TRUE;
     }
     return FALSE;
@@ -286,12 +296,24 @@ u32 getSizeofPokedexData(void) {
 
 void initPokedex(PokeDexSave *pokedex) {
     MI_CpuFill8(pokedex, 0, sizeof(PokeDexSave));
+#ifdef PAPERWHITE2
+    // Paper White 2: the hack's area, which records the ROM's form directory (PaperWhite2_PokedexSave_Sync)
+    pokedex->magic = POKEDEX_SAVE_MAGIC;
+    pokedex->version = POKEDEX_SAVE_VERSION;
+    pokedex->formEntryCount = PaperWhite2_PokedexSave_GetFormDirectory(pokedex->formEntries);
+#else
     pokedex->magic = POKEDEX_MAGIC;
+#endif
     givePlayerPokedex(pokedex);
 }
 
 PokeDexSave *getPokedexSaveAddress(SaveControl *save) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the hack's area in the Pal Pad's block, not the original block (save-expansion.md)
+    return SaveControl_GetBlockPtr(save, SAVE_BLOCK_PAPERWHITE2_POKEDEX);
+#else
     return SaveControl_GetBlockPtr(save, SAVE_BLOCK_POKEDEX);
+#endif
 }
 
 PokeDexSave *GameData_GetPokedex(GameData *gameData) {
@@ -517,7 +539,7 @@ u16 PokeDex_GetCaughtNoNational(PokeDexSave *pokedex) {
     int count = 0;
     int i;
 
-    for (i = 1; i <= SPECIES_GENESECT; i++) {
+    for (i = 1; i <= POKEDEX_LAST_SPECIES; i++) {
         if (PokeDex_IsCaught(pokedex, i) == TRUE) {
             count++;
         }
@@ -604,7 +626,7 @@ u16 PokeDex_GetSeenNoNational(PokeDexSave *pokedex) {
     int count = 0;
     int i;
 
-    for (i = 1; i <= SPECIES_GENESECT; i++) {
+    for (i = 1; i <= POKEDEX_LAST_SPECIES; i++) {
         if (PokeDex_IsSeen(pokedex, i) == TRUE) {
             count++;
         }
@@ -705,7 +727,7 @@ static u16 PokeDex_GetCaughtNoPermissive(PokeDexSave *pokedex) {
     int i;
     u16 count = 0;
 
-    for (i = 1; i <= SPECIES_GENESECT; i++) {
+    for (i = 1; i <= POKEDEX_LAST_SPECIES; i++) {
         if (PokeDex_IsCaught(pokedex, i) == TRUE && PML_PkmIsNationalDexExclude(i) == TRUE) {
             count++;
         }
@@ -866,6 +888,12 @@ void PokeDex_GetEvaluationParams(PokeDexSave *pokedex, u16 mode, HeapID heapId, 
     }
 }
 
+#ifdef PAPERWHITE2
+const PokeDexFormEntry *PokeDex_PaperWhite2_GetFormList(void) {
+    return pokemonFormList;
+}
+#endif
+
 #ifdef PAPERWHITE2_DEBUG_MENU
 // Paper White 2: the debug menu's Fill Pokédex. Every species as if Pokémon of it had been caught in each sex it can
 // have, normal and shiny, in every form and every language (addPkmToDex's steps): a single-sex species is seen in its
@@ -880,7 +908,7 @@ void PokeDex_PaperWhite2_FillAll(PokeDexSave *pokedex, u32 spindaPersonality) {
     u32 language;
     BOOL rare;
 
-    for (species = 1; species <= SPECIES_GENESECT; species++) {
+    for (species = 1; species <= POKEDEX_LAST_SPECIES; species++) {
         ratio = PML_PersonalGetParamSingle(species, 0, PERSONAL_SEX_RATIO);
         if (ratio == GENDER_RATIO_GENDERLESS) {
             sex = GENDER_UNKNOWN;

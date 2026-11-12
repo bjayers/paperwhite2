@@ -9,6 +9,9 @@
 #include "save/player_info.h"
 #include "save/save_control.h"
 #include "save/wifi_list.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/pokedex_save.h"
+#endif
 
 // The Pal Pad: the player's DWC account with the friends' data and records, block 0x1e, and the list of the
 // players traded with, block 0x1f. The file's name is the ROM's; the function names from swan are marked in
@@ -389,5 +392,10 @@ void PalPadFriendList_IncrementTradeCount(PalPadFriendList *list) {
 }
 
 PalPadFriendList *getPalPadFriendListAddress(SaveControl *save) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the block is the hack's Pokédex, so the remaining wireless features get a list in memory
+    return PaperWhite2_GetPalPadFriendList();
+#else
     return SaveControl_GetBlockPtr(save, SAVE_BLOCK_PAL_PAD);
+#endif
 }

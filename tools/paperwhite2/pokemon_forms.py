@@ -9,9 +9,15 @@ The header has, for src/paperwhite2/main/paperwhite2_pokemon_forms.c (include/pa
   species' forms.sprite_offset and forms.count give, and each group's icon palettes: the bank of
   res/pokemon/shared/icon_palettes.pal that its form_<n>/icon.png is drawn in (pokemon_graphics.icon_bank) in the low
   nibble, and its icon_female.png's, or the same where it has none, in the high one, as sPokeIconPalettes has them;
-- the forms that never evolve, every species' forms.no_evolution.
+- the forms that never evolve, every species' forms.no_evolution;
+- the Pokédex's form directory, POKEDEX_FORM_LIST: { species, count } for every species with more than one form
+  (forms.count) that the Pokédex lists (forms.pokedex isn't false), in species order, whose form bits follow one
+  another in the save's form lists (src/system/pokedex_savedata.c, src/paperwhite2/main/paperwhite2_pokedex_save.c);
+  and POKEDEX_SPECIES_MAX, the national Pokédex's last species. The save keeps the directory it was written with and
+  the game remaps its bits on load when this one differs, so forms can be added anywhere
+  (docs/paperwhite2/design/save-expansion.md).
 
-Only the hack's build runs this (configure.py --hack).
+Only the hack's build runs this (configure.py --hack). tools/paperwhite2/pokedex_save.py reads the same list.
 """
 import json
 import sys
@@ -25,6 +31,12 @@ from tools.data.pokemon_graphics import (ORIGINAL_FORM_GROUPS, form_names, icon_
                                          species_names)
 
 POKEMON = ROOT / "res" / "pokemon"
+# The save's capacities (include/save/pokedex_savedata.h): species bits, form bits a list, directory entries, and the
+# box data's 5-bit form field. A directory entry keeps the species in 11 bits
+POKEDEX_SPECIES_CAPACITY = 1504
+POKEDEX_FORM_BITS = 1024
+POKEDEX_FORM_ENTRY_MAX = 128
+POKEDEX_FORM_COUNT_MAX = 32
 
 
 class FormsError(Exception):
@@ -59,9 +71,39 @@ def no_evolution() -> list[tuple[str, int]]:
     return forms
 
 
+def pokedex_species_max() -> int:
+    """The national Pokédex's last species, the one before SPECIES_EGG."""
+    last = national_species() - 1
+    if last > POKEDEX_SPECIES_CAPACITY:
+        raise FormsError(f"the Pokédex's {last} species pass the save's {POKEDEX_SPECIES_CAPACITY}")
+    return last
+
+
+def pokedex_form_list() -> list[tuple[int, str, int]]:
+    """The Pokédex's form directory: (species number, directory name, form count) of every species with forms that
+    the Pokédex lists, in species order. Stops if it passes the save's capacity."""
+    entries = []
+    for number, species in enumerate(species_names()[:national_species()]):
+        if number == 0:
+            continue
+        forms = json.loads((POKEMON / species / "data.json").read_text())["forms"]
+        if forms["count"] <= 1 or not forms.get("pokedex", True):
+            continue
+        if forms["count"] > POKEDEX_FORM_COUNT_MAX:
+            raise FormsError(f"res/pokemon/{species}/data.json: {forms['count']} forms pass the "
+                             f"{POKEDEX_FORM_COUNT_MAX} that a Pokémon's form field holds")
+        entries.append((number, species, forms["count"]))
+    bits = sum(count for _, _, count in entries)
+    if len(entries) > POKEDEX_FORM_ENTRY_MAX or bits > POKEDEX_FORM_BITS:
+        raise FormsError(f"the Pokédex's forms ({len(entries)} species, {bits} forms) pass the save's "
+                         f"{POKEDEX_FORM_ENTRY_MAX} species and {POKEDEX_FORM_BITS} forms")
+    return entries
+
+
 def header() -> str:
     palettes = icon_palettes()
     forms = no_evolution()
+    dex_forms = pokedex_form_list()
     lines = [
         "#ifndef POKEBW2_PAPERWHITE2_POKEMON_FORMS_CONFIG_H",
         "#define POKEBW2_PAPERWHITE2_POKEMON_FORMS_CONFIG_H",
@@ -76,6 +118,12 @@ def header() -> str:
         "// The forms that never evolve, as { species, form }, until SPECIES_NONE's",
         "#define POKEMON_FORMS_NO_EVOLUTION " + ", ".join(
             f"{{ {species}, {form} }}" for species, form in [*forms, ("SPECIES_NONE", 0)]),
+        "// The Pokédex's form directory, { species, count } of each species whose forms it lists, in species order,",
+        f"// {sum(count for _, _, count in dex_forms)} forms; and its last species",
+        "#define POKEDEX_FORM_LIST " + ", ".join(
+            f"{{ SPECIES_{species.upper()}, {count} }}" for _, species, count in dex_forms),
+        f"#define POKEDEX_FORM_ENTRY_COUNT {len(dex_forms)}",
+        f"#define POKEDEX_SPECIES_MAX {pokedex_species_max()}",
         "",
         "#endif // POKEBW2_PAPERWHITE2_POKEMON_FORMS_CONFIG_H",
     ]

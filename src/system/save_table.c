@@ -50,6 +50,9 @@
 #include "save/wifi_list.h"
 #include "save/worldtrade_data.h"
 #include "system/pms_word.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/pokedex_save.h"
+#endif
 
 // The tables of the saves' blocks: the main save's, and the one block of each extra save. The file has no code and no
 // name in the ROM; save_table.c is a guess. That it is a file apart from save_control.c shows in the order of its
@@ -95,7 +98,12 @@ static const SaveBlockDef SAVEDATA_INIT[SAVE_BLOCK_MAX] = {
     { SAVE_BLOCK_PLAYER, PlayerSave_GetBlockSize, (SaveBlockInit)PlayerSave_Init },
     { SAVE_BLOCK_UNITY_TOWER_SURVEY, UnityTower_GetSurveySaveSize, (SaveBlockInit)UnityTower_InitSurveySave },
     { SAVE_BLOCK_WIFI_LIST, getSizeofWifiData, (SaveBlockInit)initWifi },
+#ifdef PAPERWHITE2
+    // Paper White 2: the Pal Pad's block, of the same size, holds the hack's Pokédex (save-expansion.md)
+    { SAVE_BLOCK_PAL_PAD, getSizeofPokedexData, (SaveBlockInit)initPokedex },
+#else
     { SAVE_BLOCK_PAL_PAD, PalPadFriendList_GetSize, (SaveBlockInit)PalPadFriendList_Init },
+#endif
     { SAVE_BLOCK_CGEAR, CGearSave_GetSize, (SaveBlockInit)CGearSave_Init },
     { SAVE_BLOCK_TIMESIG, TimeSigSave_GetSize, (SaveBlockInit)TimeSigSave_Init },
     { SAVE_BLOCK_MYSTERY_GIFT, MysteryGiftSaveData_GetSize, (SaveBlockInit)MysteryGiftSaveData_Init },
@@ -119,7 +127,12 @@ static const SaveBlockDef SAVEDATA_INIT[SAVE_BLOCK_MAX] = {
     { SAVE_BLOCK_STRENGTH_ROCKS, StrengthRockSave_GetSize, (SaveBlockInit)StrengthRockSave_Init },
     { SAVE_BLOCK_TRAINER_GAME_INFO, TrainerGameInfo_GetSize, (SaveBlockInit)TrainerGameInfo_Init },
     { SAVE_BLOCK_HIGH_LINK, getSizeofProbabilityTable, (SaveBlockInit)probability },
+#ifdef PAPERWHITE2
+    // Paper White 2: the original Pokédex block keeps its layout, an old save's upgrade source and the area's mirror
+    { SAVE_BLOCK_POKEDEX, PaperWhite2_PokedexVanillaSave_GetSize, (SaveBlockInit)PaperWhite2_PokedexVanillaSave_Init },
+#else
     { SAVE_BLOCK_POKEDEX, getSizeofPokedexData, (SaveBlockInit)initPokedex },
+#endif
     { SAVE_BLOCK_ENCOUNT, EncountSave_GetBlockSize, (SaveBlockInit)EncountSave_Init },
     { SAVE_BLOCK_BSUBWAY_PLAY, BSubwayPlayData_GetSize, (SaveBlockInit)BSubwayPlayData_Init },
     { SAVE_BLOCK_BSUBWAY_SCORE, BSubwayScoreData_GetSize, (SaveBlockInit)BSubwayScoreData_Init },
