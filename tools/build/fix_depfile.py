@@ -2,17 +2,23 @@
 """Convert a dependency file that mwccarm wrote under wibo to Unix paths, for ninja.
 
 mwccarm's `-gccdep -MD` writes paths like `Z:\\home\\...\\include\\types.h`. This rewrites the file in place with the
-drive letter removed and forward slashes, keeping the backslashes that continue lines.
+drive letter removed and forward slashes, and paths inside the checkout relative to it (ninja runs from its root),
+keeping the backslashes that continue lines.
 
     fix_depfile.py build/b2_us/src/gfl/vm.d
 """
+import os
 import re
 import sys
 from pathlib import Path
 
 
 def unix_path(path: str) -> str:
-    return re.sub(r"^[A-Za-z]:", "", path).replace("\\", "/")
+    path = re.sub(r"^[A-Za-z]:", "", path).replace("\\", "/")
+    # A path inside the checkout is made relative to it, as ninja names the files it generates: an absolute
+    # build/include/generated/... header is another node to ninja, so a change to it would only be seen a build later
+    root = os.getcwd() + "/"
+    return path[len(root):] if path.startswith(root) else path
 
 
 def main():
