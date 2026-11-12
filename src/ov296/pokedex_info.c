@@ -1687,16 +1687,28 @@ static void PokedexInfo_FreeTypeActors(PokedexInfo *info, u32 slot) {
 
 static void PokedexInfo_HideOtherTypes(PokedexInfo *info) {
     u8 slot;
+#ifndef PAPERWHITE2
     u8 i;
+#endif
 
     if (!info->allTypesLoaded) {
         for (slot = 0; slot < 2; slot++) {
             if (slot != info->typeSlot) {
+#ifdef PAPERWHITE2
+                // Paper White 2: the previous Pokémon's type icons are freed, not only hidden. They were never shown
+                // again, only freed at the change after next, so they kept two of the ClAct system's 32 character
+                // slots (and its footprint a third, PokedexInfo_HideOtherFootprints) after each change of the
+                // Pokémon, its form or the entry's language. The info page's sub-pages then ran out of slots: Evo's
+                // icons got CLACT_RES_NONE, drew other OBJs' characters, and freed slot -1 as Evo closed, over the
+                // ClAct system's data (docs/paperwhite2/plugins.md, Pokédex)
+                PokedexInfo_FreeTypeActors(info, slot);
+#else
                 for (i = 0; i < 2; i++) {
                     if (info->typeChars[slot][i] != -1) {
                         ClActor_SetVisible(info->typeActors[slot][i], FALSE);
                     }
                 }
+#endif
             }
         }
     }
@@ -1787,7 +1799,12 @@ static void PokedexInfo_HideOtherFootprints(PokedexInfo *info) {
 
     for (i = 0; i < 2; i++) {
         if (i != info->footprintSlot && info->footprints[i] != NULL) {
+#ifdef PAPERWHITE2
+            // Paper White 2: freed, as the previous Pokémon's type icons are (PokedexInfo_HideOtherTypes)
+            PokedexInfo_UnloadFootprint(info, i);
+#else
             ClActor_SetVisible(info->footprints[i], FALSE);
+#endif
         }
     }
 }
