@@ -4,7 +4,7 @@ Research and design for a hack-owned Pokédex save area with room for **1500 spe
 replacing the lists of the original `PokeDexSave` (`include/save/pokedex_savedata.h`, `src/system/pokedex_savedata.c`),
 with the form-bit list generated from `res/pokemon` so that the editor's "Add form" needs no C edit. Everything here
 was read from the source or measured on a copy of the user's save (`paperwhite2.sav`, melonDS, 524,288 bytes);
-what is inferred and not traced is marked so. Not built.
+what is inferred and not traced is marked so. **Built on 2026-11-12, with the user's decisions: section 11.**
 
 ## 1. Summary
 
@@ -450,3 +450,86 @@ the tests.
 4. **Form capacity:** 1024 bits per list and 128 species, against 85 bits and 22 species today; less frees room for
    languages (each 64 bits per list and 32 species is 96 bytes).
 5. **The Pal Pad block** rather than another (section 3).
+
+## 11. Built (2026-11-12)
+
+**The user's decisions** on section 10: languages for species 1-649 only; Arceus's and Genesect's forms stay out of
+the Pokédex (`forms.pokedex: false`); **mirror the area into the original block at each save**; 1024 form bits a list
+and 128 directory entries; the game upgrades the save itself, in the Pal Pad block, with a Pal Pad in memory for the
+remaining wireless callers.
+
+### 11.1 What was built
+
+| Part | Where |
+| --- | --- |
+| The layout of section 8, `PokeDexVanillaSave` (the original block's), the constants and the directory's entry macros (`POKEDEX_FORM_ENTRY`) | `include/save/pokedex_savedata.h`, `#ifdef PAPERWHITE2` |
+| The upgrade, the remap, the mirror, the original block's own init and size, the RAM-only Pal Pad, the size checks | `src/paperwhite2/main/paperwhite2_pokedex_save.c`, `include/paperwhite2/pokedex_save.h` |
+| `getPokedexSaveAddress` on the Pal Pad block (`SAVE_BLOCK_PAPERWHITE2_POKEDEX`); `initPokedex` writes the magic, version 1, the ROM's directory and `given`; `pokemonFormList` is `POKEDEX_FORM_LIST`; `PML_PkmIsBadMonsNo` and the national loops (the counts, the fill) use `POKEDEX_LAST_SPECIES` (the generated `POKEDEX_SPECIES_MAX`); `PokeDex_PaperWhite2_GetFormList` | `src/system/pokedex_savedata.c` |
+| The Pal Pad entry takes `getSizeofPokedexData`/`initPokedex` (0xd54, the size it had); the Pokédex entry `PaperWhite2_PokedexVanillaSave_GetSize`/`_Init` (0x4dc) | `src/system/save_table.c` |
+| The sync after a load in `SaveControl_Create` and `SaveControl_Reload`; the mirror in `SaveControl_StartSave` and `SaveControl_StartExtraSave` (the only two starts of a main save) | `src/system/save_control.c` |
+| `getPalPadFriendListAddress` returns the RAM-only list | `src/system/wifilist.c` |
+| Easy Chat's Pokédex took the original block by ID (missed in section 7); it takes `getPokedexSaveAddress` | `src/system/pmsi_param.c` |
+| `POKEDEX_FORM_LIST`, `POKEDEX_FORM_ENTRY_COUNT`, `POKEDEX_SPECIES_MAX`, with the capacity checks (128 species, 1024 forms, 32 a species, 1504 species) | `tools/paperwhite2/pokemon_forms.py` (`pokedex_form_list`) |
+| `forms.pokedex` (boolean, absent is true); false on `arceus` and `genesect` | `res/pokemon/species.schema.json` and the two `data.json` |
+| `inspect`, `verify`, `upgrade`, standard library only, the same algorithm as the C | `tools/paperwhite2/pokedex_save.py` |
+
+The trade's copy of the Pokédex (`pokemontrade_save.c`) needed no change: it copies `getSizeofPokedexData()` bytes
+from `GameData_GetPokedex`, both the area's now, and the Pal Pad copy beside it copies the RAM-only list.
+
+**The generated directory** is in species order: Pichu (2), Unown (28), Castform, Deoxys, Burmy, Wormadam, Cherrim,
+Shellos, Gastrodon, Rotom, Giratina, Shaymin, Basculin, Darmanitan, Deerling, Sawsbuck, Tornadus, Thundurus, Landorus,
+Kyurem, Keldeo, Meloetta: 22 species, 85 forms. The original block keeps the old order (the original 21, then the
+Pichu), `sPokedexVanillaFormList`, and every save's upgrade and mirror go through the remap between the two.
+
+**The remap** (`PokedexSave_RemapForms`, one function for the upgrade, a directory change and the mirror) is section
+5's four steps, with step 2's shown form folded into step 4: a species new to the directory gets form 0 seen in the
+normal and/or shiny list by its seen kinds, and any seen species without a shown form bit gets form 0 in the list of
+its shown kind. **The mirror** writes the header (`lastSpecies` only up to 649, else 0), the first 0x54 bytes of each
+species list with the bits past Genesect cleared, the first 0x1b0 bytes of the languages with the bits past species
+493 cleared, and the form bits remapped to the old list; `unused4_22` is left as it was. A species in the old list but
+gone from the ROM's (none today) would be seeded as form 0.
+
+**Cost:** ARM9 main grows about 2.2 KB of code and data and 3.4 KB of `.bss` (the RAM-only Pal Pad): the DS arena's
+headroom went from 76 KB to 70 KB. Heap 7, which holds the save control, has no room for the Pal Pad (0x27000 for the
+0x26000 save buffer), hence the `.bss`.
+
+**Not changed** (as section 7 says, for the new-species project): `NATIONAL_DEX_COMPLETE` 636, the completion
+exclusions, the evaluation tables, the Unova-native loops (`SPECIES_VICTINI` to `SPECIES_GENESECT`), and the bounds
+outside the save (`POKEDEX_LIST_SPECIES_COUNT`, `NATIONAL_COUNT`, the scripts' `SPECIES_EGG - 1`, and every
+`i <= SPECIES_GENESECT` loop outside `pokedex_savedata.c`).
+
+### 11.2 Tested (py-desmume, copies of the user's save)
+
+| Test | Result |
+| --- | --- |
+| `pokedex_save.py inspect` of the user's copy | original block: seen 61, caught 14 (highest 647), seen by kind 47/34/1/0, shown 36/25/0/0, Keldeo's forms at bits 75 (seen, shown) and 76 (seen), 9 language bits, mode 2, last species 498; Pal Pad all zeros |
+| Boot, title, Continue | the sync ran twice, each with the area's magic 0 at entry (once after `SaveControl_Create`, once after `SaveControl_Reload`, which read the card again); the Continue screen says Pokédex 61; the area in memory is **byte for byte** `pokedex_save.py upgrade`'s; Keldeo's bits at 81 and 82 (the new directory's) |
+| Pokédex screens against the build before the change (same save) | the national list (SEEN 61, OBTAINED 14, on Tepig) and Keldeo's Info page with its Resolute Form pixel-identical |
+| Quit without saving | the card byte for byte the imported file |
+| Save from the field menu | `verify`: every CRC right in both copies, footer count 154 to 155; the area on the card equals the tool's upgrade; **the original block unchanged** (the mirror of a fresh upgrade is the original); other blocks changed as any save changes them |
+| Reload that save | magic at entry, no remap; the area in memory equals the card's; quitting leaves the card as it was |
+| A save with the Spiky-eared Pichu (Pichu seen, form 1 seen and shown at old bit 84, form 0 seen shiny at old bit 83), Unown D and ? and a French Pichu entry, made with the tool | game and tool agree byte for byte: the Pichu's bits at 0 and 1, Unown's at 5 and 29; the Info page has Form and Shiny |
+| Fill Pokédex (debug menu), then save | 649 seen and caught, 85 form bits each way, 4543 language bits (all 649) in the area; the original block 3451 (to 493), and `inspect` finds it exactly the area's mirror in both copies |
+| Remap: a test build with a 2-form Bulbasaur first, a 4th Burmy form and no Shaymin, on the filled save | game and tool byte for byte: Bulbasaur's form 0 seeded seen, seen shiny and shown, Burmy's 4th form empty, Shaymin's two bits gone, the other 83 forms moved with their bits unchanged, species lists and languages untouched; on the user's save Keldeo moved from 81/82 to 82/83 and its Info page and Resolute Form stayed pixel-identical. Reverted |
+| New game on an empty card | the intro's first save (no sync: nothing to load) mirrored; `inspect`: the area with its magic, version 1, the ROM's directory and `given` 1, the original block initialized as before, both copies valid |
+
+Not tested live: a wild battle or a catch on the new build (the Fill Pokédex writes the area through the same
+functions, `addToDex`, `PokeDex_SetSeenSex`, `getForm`, the language and caught bits); a link trade (the wireless
+features are off); one copy damaged (the original save code, unchanged). The screenshots are in the session's
+scratchpad (`savex/shots/`).
+
+### 11.3 Open
+
+- **A build before this one** reading a mirrored save shows the right Pokédex; if it then saves, the new build keeps
+  its area and loses what was registered in between, as section 6 says. If an old build's link trade wrote a friend
+  over the block, the area's magic is gone and the new build upgrades again from the original block, which the old
+  build kept current.
+- **A form removed and added back** loses the bits past form 0 (the remap drops a species gone from the directory),
+  and a species that leaves the directory and comes back starts from form 0.
+- **Ninja and generated headers (found here, not fixed):** the compilers' depfiles name a generated header by its
+  absolute path (`ninja -t deps build/w2_us/src/system/pokedex_savedata.o`) and its rule by a relative one, so ninja
+  sees two files. Reproduced: after a change to `pokemon_forms_config.h`'s text, the first `ninja` regenerated it and
+  compiled nothing, the second compiled `pokedex_savedata.c` and `paperwhite2_pokemon_forms.c`. Inferred, not
+  checked: the other generated headers behave the same. The save stays consistent (it records whatever directory the ROM was built with), but a first
+  build after "Add form" can have the old `POKEDEX_FORM_LIST`: run `ninja` again until the build is fixed.
+- The trade's backup copy of the Pokédex grew from 0x4dc to 0xd54 bytes of its heap.

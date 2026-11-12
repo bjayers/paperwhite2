@@ -2,6 +2,46 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-12: the save expansion, a Pokédex for 1500 species (ROM session)
+
+Built as design/save-expansion.md designed it, with the user's decisions (its section 11; plugins.md "Save expansion"):
+
+- **The Pokédex lives in the Pal Pad's block** (0x1f, 0xd54 bytes, its size unchanged, so the save's layout is the
+  original's): species 1-1504, 1024 form bits a list, a form directory of 128 species, languages 1-649.
+- **The game upgrades old saves itself** on load (the title and Continue): an old save's Pokédex is copied in, the form
+  bits remapped to the new order; nothing is written until the player saves. A later change of forms remaps too.
+- **Each save mirrors the Pokédex into the original block** for species 1-649, so PKHeX and older builds read it.
+- **Forms come from `res/pokemon`**: `POKEDEX_FORM_LIST` is generated (`forms.count` > 1, minus `forms.pokedex: false`
+  on Arceus and Genesect). "Add form" needs no C edit any more.
+- The wireless features left get a Pal Pad in memory. `tools/paperwhite2/pokedex_save.py inspect|verify|upgrade` reads,
+  checks and upgrades a `.sav` offline.
+
+Tested headless on copies of the user's save (numbers in the design doc, 11.2): the in-game upgrade equals the tool's
+byte for byte (seen 61, caught 14, Keldeo's forms, 9 language bits, mode, last species), the Pokédex list and Keldeo's
+Info page pixel-identical to the build before, a save from the field menu valid in both copies with the original block
+unchanged, a reload with no change, quitting without saving leaves the card as it was, the Spiky-eared Pichu's marks
+carried over, a full (debug-filled) Pokédex saved and mirrored, a test build with forms inserted and removed remapping
+every mark to its new place, and a new game's first save initializing both blocks. `--hack` builds with no warnings,
+`verify_dsi_rom.py` intact, the plain build's modules match, the editor's tests 72 of 72.
+
+**To test on the 3DS (TWiLight Menu++):**
+1. **Back up the save first.** Copy the game's `.sav` from the SD card (TWiLight keeps it in a `saves` folder beside
+   the ROM, named like the ROM) to the PC, and keep that copy untouched. If the new ROM's file name differs, copy the
+   save to the new name too.
+2. Put the new `paperwhite2.nds` on the card, start it, and look at the Continue screen's Pokédex number: it should be
+   the one the last build showed.
+3. Continue, open the Pokédex (C-Gear), switch to National: seen and obtained as before; open a species with forms
+   you've seen (Keldeo, if seen) and press Form.
+4. Turning off without saving changes nothing on the card. To keep the new Pokédex, save from the menu, turn the
+   console off, start again and check the Pokédex once more.
+5. If anything looks wrong, put the backed-up `.sav` back and tell me; a copy of the `.sav` lets me check it with
+   `pokedex_save.py inspect`.
+
+Open: a wild battle or catch on the new build wasn't run live (the debug fill writes through the same functions);
+the link trade can't be reached. **Found:** the compilers' depfiles name generated headers by absolute path, so the
+first `ninja` after a generated header changes doesn't recompile its includers (the second does); after "Add form", run
+`ninja` twice until that is fixed (design doc 11.3).
+
 ## 2026-11-12: new forms, the foundation, and the Spiky-eared Pichu (ROM session)
 
 Steps 1 and 3 of design/forms-and-species.md's build order ("Built" there and in battle-sprites.md section 6, plugins.md
