@@ -1,0 +1,183 @@
+{
+    "$schema": "encounters.schema.json",
+    "spring": {
+        "rates": {
+            "grass": 7,
+            "dark_grass": 0,
+            "shaking_grass": 1,
+            "surf": 0,
+            "rippling_surf": 0,
+            "fishing": 0,
+            "rippling_fishing": 0,
+            "flags": 1
+        },
+        "grass": [
+            [ "SPECIES_MACHAMP", 54, 54 ],
+            [ "SPECIES_CONKELDURR", 55, 55 ],
+            [ "SPECIES_STEELIX", 55, 55 ],
+            [ "SPECIES_GIGALITH", 54, 54 ],
+            [ "SPECIES_MACHAMP", 56, 56 ],
+            [ "SPECIES_CONKELDURR", 56, 56 ],
+            [ "SPECIES_MACHOKE", 56, 56 ],
+            [ "SPECIES_MACHOP", 57, 57 ],
+            [ "SPECIES_GURDURR", 57, 57 ],
+            [ "SPECIES_TIMBURR", 57, 57 ],
+            [ "SPECIES_HEATMOR", 57, 57 ],
+            [ "SPECIES_LARVITAR", 57, 57 ]
+        ],
+        "dark_grass": [],
+        "shaking_grass": [
+            [ "SPECIES_EXCADRILL", 54, 54 ],
+            [ "SPECIES_LARVITAR", 54, 54 ],
+            [ "SPECIES_HEATMOR", 55, 55 ],
+            [ "SPECIES_LARVITAR", 55, 55 ],
+            [ "SPECIES_GIGALITH", 61, 61 ],
+            [ "SPECIES_MACHAMP", 61, 61 ],
+            [ "SPECIES_LARVITAR", 57, 57 ],
+            [ "SPECIES_HEATMOR", 57, 57 ],
+            [ "SPECIES_GIGALITH", 62, 62 ],
+            [ "SPECIES_MACHAMP", 62, 62 ],
+            [ "SPECIES_PUPITAR", 62, 62 ],
+            [ "SPECIES_TYRANITAR", 54, 62 ]
+        ],
+        "surf": [],
+        "rippling_surf": [],
+        "fishing": [],
+        "rippling_fishing": []
+    },
+    "summer": {
+        "rates": {
+            "grass": 7,
+            "dark_grass": 0,
+            "shaking_grass": 1,
+            "surf": 0,
+            "rippling_surf": 0,
+            "fishing": 0,
+            "rippling_fishing": 0,
+            "flags": 1
+        },
+        "grass": [
+            [ "SPECIES_MACHAMP", 54, 54 ],
+            [ "SPECIES_CONKELDURR", 55, 55 ],
+            [ "SPECIES_STEELIX", 55, 55 ],
+            [ "SPECIES_GIGALITH", 54, 54 ],
+            [ "SPECIES_MACHAMP", 56, 56 ],
+            [ "SPECIES_CONKELDURR", 56, 56 ],
+            [ "SPECIES_MACHOKE", 56, 56 ],
+            [ "SPECIES_MACHOP", 57, 57 ],
+            [ "SPECIES_GURDURR", 57, 57 ],
+            [ "SPECIES_TIMBURR", 57, 57 ],
+            [ "SPECIES_HEATMOR", 57, 57 ],
+            [ "SPECIES_LARVITAR", 57, 57 ]
+        ],
+        "dark_grass": [],
+        "shaking_grass": [
+            [ "SPECIES_EXCADRILL", 54, 54 ],
+            [ "SPECIES_LARVITAR", 54, 54 ],
+            [ "SPECIES_HEATMOR", 55, 55 ],
+            [ "SPECIES_LARVITAR", 55, 55 ],
+            [ "SPECIES_GIGALITH", 61, 61 ],
+            [ "SPECIES_MACHAMP", 61, 61 ],
+            [ "SPECIES_LARVITAR", 57, 57 ],
+            [ "SPECIES_HEATMOR", 57, 57 ],
+            [ "SPECIES_GIGALITH", 62, 62 ],
+            [ "SPECIES_MACHAMP", 62, 62 ],
+            [ "SPECIES_PUPITAR", 62, 62 ],
+            [ "SPECIES_TYRANITAR", 54, 62 ]
+        ],
+        "surf": [],
+        "rippling_surf": [],
+        "fishing": [],
+        "rippling_fishing": []
+    },
+    "autumn": {
+        "rates": {
+            "grass": 7,
+            "dark_grass": 0,
+            "shaking_grass": 1,
+            "surf": 0,
+            "rippling_surf": 0,
+            "fishing": 0,
+            "rippling_fishing": 0,
+            "flags": 1
+        },
+        "grass": [
+            [ "SPECIES_MACHAMP", 54, 54 ],
+            [ "SPECIES_CONKELDURR", 55, 55 ],
+            [ "SPECIES_STEELIX", 55, 55 ],
+            [ "SPECIES_GIGALITH", 54, 54 ],
+            [ "SPECIES_MACHAMP", 56, 56 ],
+            [ "SPECIES_CONKELDURR", 56, 56 ],
+            [ "SPECIES_MACHOKE", 56, 56 ],
+            [ "SPECIES_MACHOP", 57, 57 ],
+            [ "SPECIES_GURDURR", 57, 57 ],
+            [ "SPECIES_TIMBURR", 57, 57 ],
+            [ "SPECIES_HEATMOR", 57, 57 ],
+            [ "SPECIES_LARVITAR", 57, 57 ]
+        ],
+        "dark_grass": [],
+        "shaking_grass": [
+            [ "SPECIES_EXCADRILL", 54, 54 ],
+            [ "SPECIES_LARVITAR", 54, 54 ],
+            [ "SPECIES_HEATMOR", 55, 55 ],
+            [ "SPECIES_LARVITAR", 55, 55 ],
+            [ "SPECIES_GIGALITH", 61, 61 ],
+            [ "SPECIES_MACHAMP", 61, 61 ],
+            [ "SPECIES_LARVITAR", 57, 57 ],
+            [ "SPECIES_HEATMOR", 57, 57 ],
+            [ "SPECIES_GIGALITH", 62, 62 ],
+            [ "SPECIES_MACHAMP", 62, 62 ],
+            [ "SPECIES_PUPITAR", 62, 62 ],
+            [ "SPECIES_TYRANITAR", 54, 62 ]
+        ],
+        "surf": [],
+        "rippling_surf": [],
+        "fishing": [],
+        "rippling_fishing": []
+    },
+    "winter": {
+        "rates": {
+            "grass": 7,
+            "dark_grass": 0,
+            "shaking_grass": 1,
+            "surf": 0,
+            "rippling_surf": 0,
+            "fishing": 0,
+            "rippling_fishing": 0,
+            "flags": 1
+        },
+        "grass": [
+            [ "SPECIES_MACHAMP", 54, 54 ],
+            [ "SPECIES_CONKELDURR", 55, 55 ],
+            [ "SPECIES_STEELIX", 55, 55 ],
+            [ "SPECIES_GIGALITH", 54, 54 ],
+            [ "SPECIES_MACHAMP", 56, 56 ],
+            [ "SPECIES_CONKELDURR", 56, 56 ],
+            [ "SPECIES_MACHOKE", 56, 56 ],
+            [ "SPECIES_MACHOP", 57, 57 ],
+            [ "SPECIES_GURDURR", 57, 57 ],
+            [ "SPECIES_TIMBURR", 57, 57 ],
+            [ "SPECIES_HEATMOR", 57, 57 ],
+            [ "SPECIES_LARVITAR", 57, 57 ]
+        ],
+        "dark_grass": [],
+        "shaking_grass": [
+            [ "SPECIES_EXCADRILL", 54, 54 ],
+            [ "SPECIES_LARVITAR", 54, 54 ],
+            [ "SPECIES_HEATMOR", 55, 55 ],
+            [ "SPECIES_LARVITAR", 55, 55 ],
+            [ "SPECIES_GIGALITH", 61, 61 ],
+            [ "SPECIES_MACHAMP", 61, 61 ],
+            [ "SPECIES_LARVITAR", 57, 57 ],
+            [ "SPECIES_HEATMOR", 57, 57 ],
+            [ "SPECIES_GIGALITH", 62, 62 ],
+            [ "SPECIES_MACHAMP", 62, 62 ],
+            [ "SPECIES_PUPITAR", 62, 62 ],
+            [ "SPECIES_TYRANITAR", 54, 62 ]
+        ],
+        "surf": [],
+        "rippling_surf": [],
+        "fishing": [],
+        "rippling_fishing": []
+    }
+}
