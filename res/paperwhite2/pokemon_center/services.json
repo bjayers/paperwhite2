@@ -1,7 +1,11 @@
 {
     "$schema": "services.schema.json",
+    "champion_discount_percent": 50,
+    "champion_discount_battle_points": false,
+    "champion_discount_items": false,
     "daycare": {
-        "transfer_fee": 500
+        "transfer_fee": 500,
+        "required_badges": 1
     },
     "training": {
         "name_rater": {
@@ -109,6 +113,40 @@
             "second_stage": 20,
             "third_stage": 30
         },
+        "forms": [
+            {
+                "species": "SPECIES_UNOWN",
+                "weights": [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
+            },
+            {
+                "species": "SPECIES_BURMY",
+                "weights": [ 1, 1, 1 ]
+            },
+            {
+                "species": "SPECIES_WORMADAM",
+                "weights": [ 1, 1, 1 ]
+            },
+            {
+                "species": "SPECIES_SHELLOS",
+                "weights": [ 1, 1 ]
+            },
+            {
+                "species": "SPECIES_GASTRODON",
+                "weights": [ 1, 1 ]
+            },
+            {
+                "species": "SPECIES_BASCULIN",
+                "weights": [ 1, 1 ]
+            },
+            {
+                "species": "SPECIES_DEERLING",
+                "season": true
+            },
+            {
+                "species": "SPECIES_SAWSBUCK",
+                "season": true
+            }
+        ],
         "languages": [
             {
                 "language": "english",

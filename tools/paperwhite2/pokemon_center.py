@@ -9,9 +9,10 @@ The file (its schema beside it) has the fees, rates and lists of the Centers' up
 header has the fees that the script command PokemonCenter reads
 (src/paperwhite2/ov012/paperwhite2_pokemon_center_commands.c), in the order of include/paperwhite2/pokemon_center.h's
 POKEMON_CENTER_FEE_* IDs, which this checks, Training Services' other values (the Move Relearner's item, Hyper
-Training's requirements and the grooming courses' friendship), and the Wonder Trade's generator
-(src/paperwhite2/ov012/paperwhite2_wonder_trade.c): its rates, languages, balls and item tiers, the excluded species as
-bits, and for every species its pre-evolution and least level, worked out from res/pokemon/*/data.json's evolutions.
+Training's requirements and the grooming courses' friendship), the Champion's discount, the Day Care attendant's Gym
+Badges, and the Wonder Trade's generator (src/paperwhite2/ov012/paperwhite2_wonder_trade.c): its rates, languages,
+balls, item tiers and forms, the excluded species as bits, and for every species its pre-evolution and least level,
+worked out from res/pokemon/*/data.json's evolutions.
 The trainers' names and nicknames go into the system text bank wonder_trade_names (a line `\\from{wonder_trade.names}`,
 tools/text/text_sources.py, from name_lines here), in the order whose first lines the header's language rows give.
 Only the hack's build runs this (configure.py --hack).
@@ -69,6 +70,8 @@ LEVEL_METHODS = {"EVO_METHOD_LEVEL", "EVO_METHOD_LEVEL_ATK_GT_DEF", "EVO_METHOD_
 LAST_SPECIES = "SPECIES_GENESECT"
 # The special reward's IVs, in the order of PKM_PARAM_IV_HP's fields
 STATS = ("hp", "attack", "defense", "speed", "special_attack", "special_defense")
+# The seasons, each a form of Deerling and Sawsbuck (season_form.c)
+SEASON_COUNT = 4
 
 
 class DataError(Exception):
@@ -90,6 +93,7 @@ def load(path: Path = SOURCE) -> dict:
         raise DataError(f"{datajson.label(path)}: wonder_trade.item_tiers' weights are all 0")
     if not any(ball["weight"] for ball in data["wonder_trade"]["balls"]):
         raise DataError(f"{datajson.label(path)}: wonder_trade.balls' weights are all 0")
+    check_forms(path, data["wonder_trade"])
     for entry in data["wonder_trade"]["languages"]:
         for key, length in NAME_LENGTH.items():
             if entry["language"] in SHORT_LANGUAGES:
@@ -99,6 +103,36 @@ def load(path: Path = SOURCE) -> dict:
                     raise DataError(f"{datajson.label(path)}: wonder_trade.languages' {entry['language']} {key}: "
                                     f"{name!r} is longer than {length} characters or has a control code")
     return data
+
+
+def form_count(species: str) -> int:
+    """A species' number of forms, res/pokemon/*/data.json's forms.count (1 without forms)."""
+    path = ROOT / "res" / "pokemon" / species.removeprefix("SPECIES_").lower() / "data.json"
+    forms = json.loads(path.read_text()).get("forms")
+    return forms["count"] if isinstance(forms, dict) else 1
+
+
+def check_forms(path: Path, trade: dict):
+    """wonder_trade.forms: each species once, not excluded, with weights for each of its forms or the season's."""
+    seen = set()
+    for entry in trade["forms"]:
+        species = entry["species"]
+        where = f"{datajson.label(path)}: wonder_trade.forms' {species}"
+        if species in seen:
+            raise DataError(f"{where} is listed twice")
+        seen.add(species)
+        if species in trade["excluded_species"]:
+            raise DataError(f"{where} is an excluded species")
+        if ("weights" in entry) == ("season" in entry):
+            raise DataError(f"{where} needs either weights or season, not both")
+        count = form_count(species)
+        if "season" in entry and count != SEASON_COUNT:
+            raise DataError(f"{where} has {count} forms, not one a season")
+        if "weights" in entry:
+            if len(entry["weights"]) != count:
+                raise DataError(f"{where} has {len(entry['weights'])} weights for its {count} forms")
+            if not any(entry["weights"]):
+                raise DataError(f"{where}'s weights are all 0")
 
 
 def name_lines(path: Path = SOURCE) -> list[str]:
@@ -189,6 +223,12 @@ def header(path: Path) -> str:
         "// The grooming courses' friendship, in their order",
         f"#define POKEMON_CENTER_GROOMING_COUNT {len(training['grooming'])}",
         f"#define POKEMON_CENTER_GROOMING_FRIENDSHIP {friendship}",
+        "// The Champion's discount in percent, and whether it applies to Battle Points and to items too",
+        f"#define POKEMON_CENTER_CHAMPION_DISCOUNT_PERCENT {data['champion_discount_percent']}",
+        f"#define POKEMON_CENTER_CHAMPION_DISCOUNT_BP {1 if data['champion_discount_battle_points'] else 0}",
+        f"#define POKEMON_CENTER_CHAMPION_DISCOUNT_ITEMS {1 if data['champion_discount_items'] else 0}",
+        "// The Gym Badges the Day Care attendant needs",
+        f"#define POKEMON_CENTER_DAYCARE_REQUIRED_BADGES {data['daycare']['required_badges']}",
         "",
         *wonder_trade_lines(data),
         "", f"#endif // {GUARD}", "",
@@ -227,6 +267,16 @@ def wonder_trade_lines(data: dict) -> list[str]:
         tiers.append(f"    {{ {tier['weight']}, {len(items)}, {len(tier['items'])} }}, /* {tier['name']} */ \\")
         for item in tier["items"]:
             items.append((item, 1) if isinstance(item, str) else (item["item"], item["weight"]))
+    form_rows = []
+    form_weights = []
+    for entry in trade["forms"]:
+        weights = entry.get("weights", [])
+        form_rows.append(f"    {{ {entry['species']}, {1 if entry.get('season') else 0}, {len(form_weights)}, "
+                         f"{len(weights)} }}, \\")
+        form_weights.extend(weights)
+    if not form_rows:
+        # C has no empty arrays: a row for species 0, never received
+        form_rows.append("    { 0, 0, 0, 0 }, \\")
     special = trade["special_reward"]
     ivs = ", ".join(str(special["ivs"][stat]) for stat in STATS)
     moves = special["moves"] + ["MOVE_NONE"] * (4 - len(special["moves"]))
@@ -247,6 +297,12 @@ def wonder_trade_lines(data: dict) -> list[str]:
         "// Each species' pre-evolution (0 for none) and least level, below which a received one is its pre-evolution",
         *array("WONDER_TRADE_PRE_EVOLUTIONS", pre),
         *array("WONDER_TRADE_LEAST_LEVELS", least, 32),
+        "// The species received in other forms: { species, whether its form is the season's, first, count } of",
+        "// WONDER_TRADE_FORM_WEIGHTS, a weight a form",
+        f"#define WONDER_TRADE_FORM_SPECIES_COUNT {len(form_rows)}",
+        "#define WONDER_TRADE_FORM_SPECIES \\", *form_rows, "",
+        f"#define WONDER_TRADE_FORM_WEIGHT_COUNT {max(len(form_weights), 1)}",
+        *array("WONDER_TRADE_FORM_WEIGHTS", form_weights or [0]),
         "// The languages: { language, its species names' bank, weight, { first line, count } in the bank",
         "// wonder_trade_names of the male names, the female names and the nicknames }",
         f"#define WONDER_TRADE_LANGUAGE_COUNT {len(rows)}",

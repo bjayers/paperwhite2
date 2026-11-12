@@ -228,9 +228,8 @@ The field's list menus scroll (they keep a top row and a cursor row: `MsgBGPrint
 - **Open:** the special reward's trade scene shows the player as the other trainer, so it says "Pichu came back from
   (the player)! Welcome back, Pichu!" (the scene's words for one's own Pokémon); its own dialogue and the form wait for
   the user. Trading away the Pokémon that follows the player leaves no follower until the Following Pokémon picks one
-  again (its own rule when the followed Pokémon leaves the party). Received Pokémon are always form 0 (Unown,
-  Shellos, Burmy, Deerling and the others with forms come as their first). The Pokédex keeps languages only up to
-  Arceus, as the game does.
+  again (its own rule when the followed Pokémon leaves the party). Received Pokémon come in random forms now (the
+  follow-ups below). The Pokédex keeps languages only up to Arceus, as the game does.
 
 #### Item odds in practice
 
@@ -270,9 +269,9 @@ The field's list menus scroll (they keep a top row and a cursor row: `MsgBGPrint
   suits the trades). Each counter has the same glass tube with a red top right behind the attendant, so all three
   can use the walk.
 - **The script:** `Script_2` under `#ifdef PAPERWHITE2` (the Union Room's code in `#else`), its text appended to
-  `res/text/script/global_2100.txt` (`Global2100_Text_DayCare*`). Until the player has met the Day-Care Lady
-  (`EVENT_FLAG_0x0069`, which her first greeting sets) she only explains where the tube goes. The first visit after
-  that explains the counter and the fee once (`EVENT_FLAG_DAYCARE_COUNTER_EXPLAINED`, 0x936). Then a menu, built from
+  `res/text/script/global_2100.txt` (`Global2100_Text_DayCare*`). Until the player has the first Gym Badge
+  (`daycare.required_badges`; it was meeting the Day-Care Lady until the follow-ups below) she only explains where the
+  tube goes. The first visit after that explains the counter and the fee once (`EVENT_FLAG_DAYCARE_COUNTER_EXPLAINED`, 0x936). Then a menu, built from
   the Day Care's state, loops until Cancel: **Send a Pokémon** (while it has fewer than two; the Day Care's checks:
   not the only Pokémon that can battle, not the last two with empty boxes, not an Egg), **Bring one home** (the
   Day Care's list with levels; its level gain, then the Day Care's fee and the tube's and their total; party room),
@@ -300,6 +299,72 @@ The field's list menus scroll (they keep a top row and a cursor row: `MsgBGPrint
   sending Swinub and Pignite (₽500 each), the pair's compatibility, bringing Swinub home (₽100 + ₽500), an Egg
   forced ready (declined and kept, then collected for ₽500, in the party), and too little money (nothing taken).
 - **Open:** the sound is a guess (the PC's login); the attendant's stand-in OBJ is the Union Room's woman.
+
+### Follow-ups (2026-11-12)
+
+The user's requests after trying the three attendants.
+
+- **The trade scene's sent Pokémon from behind:** vanilla, left as it is. The Wonder Trade runs the in-game trade's
+  own demo (overlay 194's `data_ov194_021c63ac`, `PokemonTrade_StartRequest4`) with the same parameter as
+  `fld_trade.c` (`FieldTradeStart`): the player's Pokémon first, the other second. The demo adds both with their front
+  sprites (`PokemonTrade_SetupMcssPokemon`), then for a Pokémon that isn't its partner's own (`IsTrainerOT`, the
+  "returning" case) makes a back sprite (`PokemonTradeIrcDemo_StateMoves`, `Poketrade3D_AddPokemonMcssPlain(wk, 2,
+  FALSE, ...)`) and swaps it in six frames into the farewell (`PokemonTradeIrcDemo_StateMessage`): the Pokémon shows
+  its front only while the scene fades in, then turns its back and hops into its ball. A test build whose Wonder
+  Trade script ran the game's own `FieldTradeStart 29` (the Ambipom trade's data) gave the same frames as the Wonder
+  Trade, front then back (`scratchpad/pcfollow/shots/van2_sheet.png` and `wt2_sheet.png`, `scene_compare.png`).
+  Earlier generations' trade animations showed the front; Black and White's turn it around.
+- **Hyper Training shows Battle Points:** the money window shows the player's BP from choosing Hyper Training until
+  it is done (`PokemonCenter POKEMON_CENTER_ACTION_BP_WIN_DISP, 31, 1`, the BP shop's own `ScrcmdShop_Text_Bp_2` in
+  the money window's place, with its own word set), refreshed after the party screen and after paying, and the money
+  comes back after (`MoneyWinDisp`). No script command shows BP; the BP shop draws its own window.
+- **The Day Care counter opens after the first Gym Badge** (`daycare.required_badges`, 1; the Route 3 Day Care opens
+  only after the Hall of Fame in White 2). Before that, she explains the tube and says to come back once the player
+  has earned their first Badge (with another number, "N Gym Badges"). The couple don't have to be met: the Day Care's
+  save, steps, Egg and compatibility don't read the Day-Care Lady's flag (`EVENT_FLAG_0x0069`), which only picks her
+  first greeting; the counter's first visit sets it, so the Lady on Route 3 greets the player as a customer.
+- **Forms in the Wonder Trade:** `wonder_trade.forms`, a weight for each form of a species, or `season` for the ones
+  that follow it: Unown's 28 letters (A-Z, ! and ?), Burmy's and Wormadam's three cloaks, Shellos' and Gastrodon's two
+  seas and Basculin's two stripes, evenly; Deerling and Sawsbuck in the season's form, as the game turns those in the
+  party (`TransformVsPokePartyBySeason`). Not listed, so always the first form: Castform, Cherrim, Darmanitan (their
+  forms are battle-only), Rotom (its appliance forms come from an event with their own move,
+  `PML_ChangeRotomForme`, and a received one couldn't change back without it), the Pichu's special form, Arceus and
+  Genesect (by item) and the excluded legendaries and mythicals (Giratina, Shaymin, Deoxys, Meloetta, Keldeo, Kyurem,
+  the Forces of Nature). The species falls back to its pre-evolution first, then the form is picked for it. The
+  Pokémon is made as the game makes a wild one of a form (`enc_pokeset.c`): `PokeParty_ChangeForme` (the form's
+  ability from the PID's slot, its sex and stats), then the form's level-up moves (`PokeParty_SetDefaultMoves`,
+  Wormadam's differ), a hidden ability for the form, and the PID for the form (`PML_GenPID`). Evolution keeps the
+  form, as the game does (`setNameChangedPkm` changes only the species); none of these species evolves by trade. The
+  Pokédex registers the form seen (`PokeDex_RegistPkm`'s `getForm`).
+- **The Champion's discount:** after the Hall of Fame (`EVENT_FLAG_0x0960`), `champion_discount_percent` (50) off every
+  attendant's fee in money, rounded in the player's favour: the tube's fee (not the Day Care's own fee for a
+  withdrawal, which is the couple's), the Wonder Trade's fee, and every Training Services price, the relearner's
+  money included. `champion_discount_battle_points` and `champion_discount_items` (both false) would take it off
+  Hyper Training's BP and the relearner's Heart Scales too (at least one); BP is left out because Hyper Training needs
+  the Hall of Fame anyway, so the discount would always apply and the price would just be half. The discount is in
+  `PokemonCenter`'s fee itself, so every amount shown (`GET_FEE`, `WORD_SET_FEE`, the relearner's words) is the one
+  charged (`PAY_FEE`, `HAS_FEE`, the relearner's). Each attendant says so once a visit, before the greeting ("Oh, if
+  it isn't our Champion! The tube's fee is 50% off for you!", "Trades are...", "Our fees are...";
+  `GET_CHAMPION_DISCOUNT`).
+- **Fixed on the way:** a received species after Arceus (Basculin, Deerling, any of Black and White's) in a foreign
+  language without a nickname stopped the game: the US ROM's foreign species-name banks (`species_names_ja.txt` and
+  the others, `\from{species.pokedex.ja.name}`) end at Arceus, and the name was read past the bank's end. Such a
+  Pokémon keeps the game's (English) name now; earlier tests had only met earlier species in foreign languages.
+- **Tested** in DeSmuME on a copy of the user's save (Castelia's Center): the vanilla and Wonder Trade scenes frame by
+  frame; Hyper Training as Champion (50 BP shown at the party screen and stat list, 24 BP paid, 26 BP shown, the money
+  back at the menu); the Day Care counter with no badges (the "first Gym Badge" line), and with the couple never met
+  (flag 0x0069 cleared): the first visit (the flag set after), Swinub and Pignite sent (₽500 each), their
+  compatibility ("don't really seem to like each other much", the 20 of two species of one trainer), a forced Egg
+  collected (₽500, a Swinub Egg from the Day Care's place); as Champion, the discount's line and bringing Swinub home
+  for ₽100 + ₽250 = ₽350, charged 350; Training's line, Nature Services for ₽15,000 (charged), the relearner's "1 Heart
+  Scale and ₽1500"; the Wonder Trade's line and ₽500 fee (charged); forced trades of each species with forms, their
+  forms, abilities, moves and stats, and the Pokédex's form bits (Unown M, K, C and !, Trash Wormadam with its own
+  stats and moves, the blue-striped Basculin's Rock Head, East Shellos, summer Deerling and autumn Sawsbuck when the
+  season was forced, the Korean Basculin that used to stop the game); and through the trade's own evolution path (its
+  check made a level-up one by a test hook, since none of these evolves by trade) Trash Burmy to Trash Wormadam, Plant
+  Burmy to Plant Wormadam and West Shellos to West Gastrodon, both forms in the Pokédex. 200,000 plans a
+  season of the real planner on the PC: every Unown letter, the cloaks, seas and stripes evenly, Deerling and Sawsbuck
+  always the season's, no other species with a form.
 
 ### Order
 

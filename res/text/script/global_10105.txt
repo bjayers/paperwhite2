@@ -188,3 +188,4 @@ Global10105_Text_TrainingNatureEntryNow = {0108:4} (now)
 Global10105_Text_TrainingNatureSame = {0102:0}'s nature is\nalready {0108:4}!{be01}
 Global10105_Text_TrainingNatureCost = Change it to {0108:4}? That will\nbe ${0204:2}. Shall I?
 Global10105_Text_TrainingNatureDone = There we are! {0102:0}'s\nnature is now {0108:4}.{be01}
+Global10105_Text_TrainingDiscount = Oh, if it isn't our Champion!\nOur fees are {0201:4}% off for you!{be01}

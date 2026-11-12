@@ -5436,7 +5436,7 @@
     "any",
     "var"
    ],
-   "hack": "the Pokémon Center attendants': runs one of their actions (POKEMON_CENTER_ACTION_*, paperwhite2/pokemon_center.h) with two arguments and puts the result in a variable: a fee of res/paperwhite2/pokemon_center/services.json, paying it, Training Services' changes to a party Pokémon, or the Wonder Trade's check, Box pick and trade, which the script waits for (include/paperwhite2/pokemon_center_commands.h)"
+   "hack": "the Pokémon Center attendants': runs one of their actions (POKEMON_CENTER_ACTION_*, paperwhite2/pokemon_center.h) with two arguments and puts the result in a variable: a fee of res/paperwhite2/pokemon_center/services.json, paying it, Training Services' changes to a party Pokémon, or the Wonder Trade's check, Box pick and trade, which the script waits for; the Battle Points' window, the Champion's discount and the Day Care counter's badges (include/paperwhite2/pokemon_center_commands.h)"
   },
   "760": {
    "handler": "Scrcmd_PaperWhite2_Debug",

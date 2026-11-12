@@ -9,6 +9,8 @@
 // paperwhite2/pokemon_center_config.h in this file's order. "The Pokémon" is the party's Pokémon in slot arg1; an
 // action on a slot past the party's end does nothing and returns 0
 
+// A fee is its services.json value less the Champion's discount (GET_CHAMPION_DISCOUNT); arg2 added to one is not
+// discounted (the Day Care's own fee).
 // Puts fee arg1 (a POKEMON_CENTER_FEE_*) plus arg2 in the result, at most 0xffff, for a message's number
 #define POKEMON_CENTER_ACTION_GET_FEE 0
 // Takes fee arg1 plus arg2 from the money and returns TRUE if the player has that much; else takes nothing and
@@ -91,6 +93,17 @@
 // evolution, the Pokédex. Counts the trade. Puts the species received (after an evolution) in the result, its name in
 // word 1 and its trainer's in word 3
 #define POKEMON_CENTER_ACTION_WONDER_TRADE_START 29
+
+// Shows the player's Battle Points in the money window's place, its right edge at tile arg1 and top at tile arg2 as
+// MoneyWinDisp takes them; MoneyWinDisp brings the money back. Its own words, so it changes none of the script's
+#define POKEMON_CENTER_ACTION_BP_WIN_DISP 30
+// Returns the Champion's discount in percent (services.json's champion_discount_percent) once the player has entered
+// the Hall of Fame, else 0, and puts it in word arg2. Every fee the actions above show or take is discounted then:
+// money always, Battle Points and the relearner's items when services.json says so
+#define POKEMON_CENTER_ACTION_GET_CHAMPION_DISCOUNT 31
+// Returns how many Gym Badges the Day Care attendant needs before she opens her counter (services.json's
+// daycare.required_badges)
+#define POKEMON_CENTER_ACTION_GET_DAYCARE_BADGES 32
 
 // The fees, by their paths in services.json. The Battle Points of Hyper Training are a fee too, paid with PAY_BP
 #define POKEMON_CENTER_FEE_DAYCARE_TRANSFER 0

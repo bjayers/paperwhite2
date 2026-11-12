@@ -2,6 +2,34 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-12: the Pokémon Center attendants, the user's follow-ups (ROM session)
+
+Five requests after the user tried the three attendants (design/pokemon-center.md, "Follow-ups"):
+
+- **The trade scene shows the sent Pokémon from behind:** vanilla. The Wonder Trade runs the in-game trade's demo with
+  the same parameters as `FieldTradeStart`; the demo shows the sent Pokémon's front while the scene fades in and swaps
+  in its back sprite for the farewell. A test build running the game's own `FieldTradeStart 29` gave the same frames.
+  Left as it is.
+- **Hyper Training shows BP** in the money window's place while it runs (new action `BP_WIN_DISP`, the BP shop's own
+  text), and the money comes back after.
+- **The Day Care counter opens after the first Gym Badge** (`daycare.required_badges`), not after meeting the couple;
+  before that she says to come back with the first Badge. Everything works with the couple never met (tested: first
+  visit, two Pokémon sent, compatibility, an Egg); her first visit now sets the Day-Care Lady's flag 0x0069.
+- **Random forms in the Wonder Trade** (`wonder_trade.forms`): Unown's 28, Burmy, Wormadam, Shellos, Gastrodon,
+  Basculin evenly; Deerling and Sawsbuck in the season's form. Rotom's appliances and the battle-only forms are left
+  out (why in the design doc).
+- **The Champion's discount:** after the Hall of Fame, 50% off every attendant's money fee (`champion_discount_percent`;
+  BP and items optional, off by default), inside the fee itself so shown and charged always match; the Day Care's own
+  withdrawal fee isn't discounted. Each attendant says so once before the greeting.
+
+Found and fixed on the way: a Wonder Trade Pokémon of a species after Arceus in a foreign language without a nickname
+stopped the game (the US ROM's foreign species-name banks end at Arceus); it keeps its English name now.
+
+`--hack` builds with no warnings, `verify_dsi_rom.py` intact, the editor's script round trip 7 of 7. Tested headless on
+a copy of the user's save (the design doc's list). To test on hardware: as Champion, each attendant's line and halved
+prices; Hyper Training's BP window; the Day Care counter on a save with no badges; Wonder Trades for Unown and the others
+(rare, so best with patience). Open: a received Rotom is always its normal form (the user may want appliances).
+
 ## 2026-11-12: the Pokémon Centers' Wonder Trade (ROM session)
 
 The third upstairs attendant (design/pokemon-center.md, Wonder Trade, "Built"): the middle counter, the Wi-Fi Club's

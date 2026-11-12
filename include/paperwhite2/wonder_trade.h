@@ -13,6 +13,7 @@
 // What the generator picks for one Pokémon received, before it is made: only random numbers and the data's tables
 typedef struct {
     u16 species;
+    u8 form;
     u8 level;
     // The row of the data's languages, and its LANGUAGE_*
     u8 languageIndex;
@@ -34,8 +35,8 @@ typedef struct {
 
 #define WONDER_TRADE_PLAN_NO_NICKNAME 0xffff
 
-// Picks the Pokémon received for one sent at sentLevel
-void WonderTrade_Plan(WonderTradePlan *plan, u32 sentLevel);
+// Picks the Pokémon received for one sent at sentLevel, in the season (GameData_GetSeason) for the forms that follow it
+void WonderTrade_Plan(WonderTradePlan *plan, u32 sentLevel, u32 season);
 // Whether the species is one the Wonder Trade never sends nor receives, a legendary or a mythical
 BOOL WonderTrade_IsExcluded(u32 species);
 
