@@ -1803,7 +1803,13 @@ its panels on BG 2 and its grid on BG 3, and no still sprite (`PokedexInfo_IsDet
 mirrored by a negative X scale, as the trade's sprites (`Poketrade3D_AddPokemonMcss`; `MCSS_DrawQuad` mirrors each
 quad and its texture for it), so that it faces right, into the page, as the original page's flat sprite does, except a
 species whose personal `PERSONAL_NO_FLIP` is set (as the original's sprite actor); the back isn't mirrored, as it
-already faces right. **The sprite's place**: x 50 less the bin file's offsetX (plus it when mirrored), as the forms
+already faces right. Every front the page adds (`PokedexInfoPage_AddSprite`: the first, Form, Shiny, Turn, another
+Pokémon) goes through that check, with the shown form's own personal data (`PML_PersonalGetParamSingle(species,
+form, ...)`; the forms with personal files of their own have their own flag, `asymmetric` in
+`res/pokemon/*/form_N.json`). Vanilla's data sets it for Keldeo's Resolute Form, Shaymin's Sky Forme, Wash Rotom,
+Snowy Castform, Black and White Kyurem and Meloetta's Pirouette Forme, so those face left, unmirrored, as the original
+page's flat sprite of them does (checked 2026-11-11: Keldeo's Ordinary Form and Shaymin's Land Forme mirrored, their
+other forms not). **The sprite's place**: x 50 less the bin file's offsetX (plus it when mirrored), as the forms
 page's; vertically, its visible pixels' middle on its first frame at y 72, the
 original's still sprite's frame centre and the middle of the panel's track between its dashed rows (y 45-46 and
 97-98; the grey stripe around them, y 33-100, is deeper above, and its middle, 67, looked high), from member 161 of `ARCID_POKEDEX_GRA` that `tools/paperwhite2/pokedex_sprites.py`
@@ -2004,7 +2010,7 @@ Bad Egg's "?" for one not seen, centred on x 128, 32 px apart or `224 / count` (
 written into one character resource (`ClActSys_AllocChars`, 8 icons of 0x400 bytes, each actor showing its part through
 `ClActor_SetImageProxy`), which with the icons' palette and cells is loaded as Evo shows and freed as another sub-page
 shows: Evo takes 3 of the screen's OBJ resources (a character slot, a palette slot, a cell slot) only while it shows,
-so the characters' 32 slots hold the other sub-pages' 29-30 and Evo's one. **The tree** (the panel x 20-236, y 64-161):
+so the characters' 32 slots hold the other sub-pages' and Evo's one, 29 at most (the slots, below). **The tree** (the panel x 20-236, y 64-161):
 the root, then each species' evolutions under it in the data's order, each a row of the user's ball (16 by 16,
 `res/paperwhite2/pokedex_art/evo_ball_{caught,seen,unknown}.png`, copied into the window), centred at x 34, 54 or 74 by
 stage and at y 78 + 15 a row, the name 10 px right of it in font 0 (gold for the shown species, white, "????" if not
@@ -2205,6 +2211,20 @@ shown language's name (`PokedexInfo_PrintSexSymbol`, in both `PokedexInfo_PrintE
 the detail screen's top only), with the name's shadow, in the Data panel's blue (56, 136, 248) and pink (248, 96, 168),
 which are colours 6 and 7 of the font's row (`POKEDEX_INFO_TEXT_BLUE` and `_PINK`, after the page's 3 to 5 in
 `sPageTextColors`); a species without sex differences, a genderless one and no sex show none.
+
+**The ClAct slots** (2026-11-11, the crash after a form change): the ClAct system has 32 character slots for both
+screens' OBJs (`ClAct_FindFreeChar`), and the page uses 26-27 on Stats and 29 at most (Area's map opening, its icons,
+box and markers before the entry's type icons go). Overlay 296's entry kept two copies of its type icons and footprint,
+one per slot (`typeSlot`, `footprintSlot`): each change of the Pokémon, its form or the entry's language loaded the
+new ones into the other slot and only hid the previous ones, freed at the change after next, so after the first change
+the page held 3 slots more (30 on Stats). Area then filled all 32, and Evo's `ClActSys_AllocChars` returned
+`CLACT_RES_NONE`: its icons drew other OBJs' characters (the garbled strip), and leaving Evo freed slot -1
+(`ClActSys_FreeChars(CLACT_RES_NONE)` writes the entry before the slots' array), which wrecked the ClAct system's data
+and ended in a jump to a wild address (DeSmuME, Keldeo: Form, Area, Evo, Moves; traced slot by slot). Under
+`PAPERWHITE2`, `PokedexInfo_HideOtherTypes` and `_HideOtherFootprints` (`src/ov296/pokedex_info.c`) free the previous
+ones instead of hiding them, which the screen can't tell apart (they were never shown again). Checked: those steps,
+and Keldeo, Shaymin, Deoxys, Rotom and Deerling each through 12 Form changes with Shiny and Turn and every sub-page
+60 times or more (and Swinub's page the same way, without forms): never more than 29 slots, no failed allocation, no exception.
 
 ### Pokédex shortcuts from the party and the summary
 
