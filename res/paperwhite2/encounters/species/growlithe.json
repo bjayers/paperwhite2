@@ -1,30 +1,94 @@
 {
     "$schema": "../species.schema.json",
     "levels": {
-        "min": 10,
-        "max": 36
+        "min": 5,
+        "max": 100
+    },
+    "battles": {
+        "single": 95,
+        "double": 5,
+        "triple": 0,
+        "partners": "family"
     },
     "habitats": [
         {
-            "places": [ "reversal_mountain" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "grass", "dark_grass" ],
-            "rarity": "uncommon",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "places": [
+                "reversal_mountain_10",
+                "reversal_mountain_11",
+                "reversal_mountain_12",
+                "reversal_mountain_13",
+                "reversal_mountain_8",
+                "reversal_mountain_9"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
         },
         {
-            "places": [ "group:virbank_complex" ],
-            "seasons": [ "spring", "winter" ],
-            "methods": [ "grass" ],
+            "places": [
+                "virbank_complex",
+                "virbank_complex_2"
+            ],
+            "seasons": [
+                "spring",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
             "rarity": "exotic",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_SUNNY",
+                "WEATHER_FLAKE"
+            ]
         },
         {
-            "places": [ "group:virbank_complex" ],
-            "seasons": [ "spring", "winter" ],
-            "methods": [ "rustling" ],
-            "rarity": "uncommon",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "places": [
+                "virbank_complex_2"
+            ],
+            "seasons": [
+                "spring",
+                "winter"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
+            "rarity": "exotic",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_SUNNY",
+                "WEATHER_FLAKE"
+            ]
         }
-    ]
+    ],
+    "overworld": {
+        "wanders": "aggressive"
+    }
 }

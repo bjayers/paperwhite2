@@ -1,0 +1,91 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 40,
+        "max": 100
+    },
+    "habitats": [
+        {
+            "places": [
+                "desert_resort"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "desert_resort_2"
+            ],
+            "seasons": [
+                "spring",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "desert_resort_2"
+            ],
+            "seasons": [
+                "summer"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "relic_castle",
+                "relic_castle_2",
+                "relic_castle_3",
+                "relic_castle_4",
+                "relic_castle_5",
+                "relic_castle_6",
+                "relic_castle_7",
+                "relic_castle_8"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "very_rare",
+            "times": [
+                "night",
+                "late_night"
+            ]
+        }
+    ],
+    "overworld": {
+        "wanders": "aggressive"
+    }
+}

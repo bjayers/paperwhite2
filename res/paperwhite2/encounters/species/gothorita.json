@@ -2,22 +2,91 @@
     "$schema": "../species.schema.json",
     "levels": {
         "min": 32,
-        "max": 40
+        "max": 44
     },
     "habitats": [
         {
-            "places": [ "route_5" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "rustling" ],
+            "places": [
+                "route_16",
+                "route_5"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
             "rarity": "exotic",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
         },
         {
-            "places": [ "route_9" ],
-            "seasons": [ "autumn", "winter" ],
-            "methods": [ "grass" ],
-            "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "places": [
+                "route_16"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
+            "rarity": "exotic",
+            "times": [
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "route_5"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass",
+                "dark_grass"
+            ],
+            "rarity": "very_rare",
+            "times": [
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "route_5"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "exotic",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
         }
-    ]
+    ],
+    "overworld": {
+        "wanders": "passive"
+    }
 }

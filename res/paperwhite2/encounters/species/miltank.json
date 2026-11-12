@@ -1,30 +1,40 @@
 {
     "$schema": "../species.schema.json",
     "levels": {
-        "min": 4,
-        "max": 59
+        "min": 10,
+        "max": 100
+    },
+    "battles": {
+        "single": 85,
+        "double": 12,
+        "triple": 3,
+        "partners": "family"
     },
     "habitats": [
         {
-            "places": [ "floccesy_ranch_2" ],
-            "seasons": [ "spring", "summer" ],
-            "methods": [ "rustling" ],
-            "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
-        },
-        {
-            "places": [ "nature_preserve" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "grass" ],
-            "rarity": "exotic",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
-        },
-        {
-            "places": [ "nature_preserve" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "rustling" ],
+            "places": [
+                "floccesy_ranch_2"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
             "rarity": "uncommon",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
         }
-    ]
+    ],
+    "overworld": {
+        "wanders": "passive"
+    }
 }

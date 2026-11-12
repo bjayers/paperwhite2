@@ -1,23 +1,39 @@
 {
     "$schema": "../species.schema.json",
     "levels": {
-        "min": 44,
-        "max": 52
+        "min": 2,
+        "max": 15
+    },
+    "battles": {
+        "single": 70,
+        "double": 20,
+        "triple": 10,
+        "partners": "family"
     },
     "habitats": [
         {
-            "places": [ "giant_chasm", "giant_chasm_3" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "grass", "dark_grass" ],
-            "rarity": "very_rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
-        },
-        {
-            "places": [ "giant_chasm", "giant_chasm_3" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "rustling" ],
+            "places": [
+                "giant_chasm_3",
+                "giant_chasm_4"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
             "rarity": "uncommon",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "night",
+                "late_night"
+            ]
         }
-    ]
+    ],
+    "overworld": {
+        "wanders": "passive",
+        "grass": false
+    }
 }

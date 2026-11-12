@@ -1,16 +1,93 @@
 {
     "$schema": "../species.schema.json",
     "levels": {
-        "min": 15,
-        "max": 15
+        "min": 2,
+        "max": 26
+    },
+    "battles": {
+        "single": 95,
+        "double": 5,
+        "triple": 0,
+        "partners": "family"
     },
     "habitats": [
         {
-            "places": [ "castelia_city" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "grass" ],
+            "places": [
+                "castelia_city"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
             "rarity": "uncommon",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
+        },
+        {
+            "places": [
+                "castelia_city"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "route_9"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
+        },
+        {
+            "places": [
+                "route_9"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "very_rare",
+            "times": [
+                "night",
+                "late_night"
+            ]
         }
     ]
 }

@@ -1,186 +1,459 @@
 {
     "$schema": "../species.schema.json",
     "levels": {
-        "min": 15,
-        "max": 27
+        "min": 2,
+        "max": 28
+    },
+    "battles": {
+        "single": 85,
+        "double": 12,
+        "triple": 3,
+        "partners": "family"
     },
     "habitats": [
         {
-            "places": [ "driftveil_drawbridge" ],
-            "by_season": {
-                "spring": {
-                    "methods": [ "rustling" ],
-                    "rarity": "common",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                },
-                "summer": {
-                    "methods": [ "rustling" ],
-                    "rarity": "common",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                },
-                "autumn": {
-                    "methods": [ "rustling" ],
-                    "rarity": "uncommon",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                },
-                "winter": {
-                    "methods": [ "rustling" ],
-                    "rarity": "uncommon",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                }
-            }
-        },
-        {
-            "places": [ "humilau_city" ],
-            "by_season": {
-                "spring": {
-                    "methods": [ "surf" ],
-                    "rarity": "common",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                },
-                "summer": {
-                    "methods": [ "surf" ],
-                    "rarity": "exotic",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                },
-                "autumn": {
-                    "methods": [ "surf" ],
-                    "rarity": "common",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                },
-                "winter": {
-                    "methods": [ "surf" ],
-                    "rarity": "common",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                }
-            }
-        },
-        {
-            "places": [ "p2_laboratory" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "surf" ],
+            "places": [
+                "driftveil_drawbridge",
+                "marvelous_bridge"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "rustling"
+            ],
             "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
         },
         {
-            "places": [ "route_13" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "grass", "surf" ],
-            "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
-        },
-        {
-            "places": [ "route_17" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "surf" ],
-            "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
-        },
-        {
-            "places": [ "route_18" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "grass", "dark_grass" ],
-            "rarity": "rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
-        },
-        {
-            "places": [ "route_18" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "surf" ],
-            "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
-        },
-        {
-            "places": [ "route_21" ],
-            "seasons": [ "spring", "autumn", "winter" ],
-            "methods": [ "surf" ],
-            "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
-        },
-        {
-            "places": [ "route_22" ],
-            "by_season": {
-                "spring": {
-                    "methods": [ "grass" ],
-                    "rarity": "common",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                },
-                "summer": {
-                    "methods": [ "grass" ],
-                    "rarity": "uncommon",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                },
-                "autumn": {
-                    "methods": [ "grass" ],
-                    "rarity": "common",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                },
-                "winter": {
-                    "methods": [ "grass" ],
-                    "rarity": "common",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                }
-            }
-        },
-        {
-            "places": [ "route_22" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "surf" ],
-            "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
-        },
-        {
-            "places": [ "seaside_cave" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "surf" ],
+            "places": [
+                "driftveil_drawbridge",
+                "marvelous_bridge"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "rustling"
+            ],
             "rarity": "uncommon",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "night",
+                "late_night"
+            ]
         },
         {
-            "places": [ "undella_bay" ],
-            "seasons": [ "spring", "autumn", "winter" ],
-            "methods": [ "surf" ],
+            "places": [
+                "humilau_city"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "surf"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
+        },
+        {
+            "places": [
+                "humilau_city"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "surf"
+            ],
+            "rarity": "rare",
+            "times": [
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "p2_laboratory",
+                "route_1",
+                "route_18",
+                "route_4",
+                "route_4_2"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "rippling_surf"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
+        },
+        {
+            "places": [
+                "p2_laboratory",
+                "route_1",
+                "route_18",
+                "route_4",
+                "route_4_2"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "rippling_surf"
+            ],
+            "rarity": "rare",
+            "times": [
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "p2_laboratory",
+                "route_1",
+                "route_13",
+                "route_17",
+                "route_18",
+                "route_21",
+                "route_4",
+                "route_4_2",
+                "undella_bay",
+                "undella_town"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "surf"
+            ],
             "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
         },
         {
-            "places": [ "undella_town" ],
-            "by_season": {
-                "spring": {
-                    "methods": [ "surf" ],
-                    "rarity": "common",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                },
-                "summer": {
-                    "methods": [ "surf" ],
-                    "rarity": "exotic",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                },
-                "autumn": {
-                    "methods": [ "surf" ],
-                    "rarity": "common",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                },
-                "winter": {
-                    "methods": [ "surf" ],
-                    "rarity": "common",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                }
-            }
+            "places": [
+                "p2_laboratory",
+                "route_1",
+                "route_13",
+                "route_17",
+                "route_18",
+                "route_21",
+                "route_4",
+                "route_4_2",
+                "undella_bay",
+                "undella_town"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "surf"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "night",
+                "late_night"
+            ]
         },
         {
-            "places": [ "virbank_city" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "surf" ],
+            "places": [
+                "route_13"
+            ],
+            "seasons": [
+                "spring",
+                "summer"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
             "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
         },
         {
-            "places": [ "virbank_complex" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "surf" ],
+            "places": [
+                "route_13"
+            ],
+            "seasons": [
+                "spring",
+                "summer"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "route_13"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
+        },
+        {
+            "places": [
+                "route_13"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "route_22"
+            ],
+            "seasons": [
+                "spring",
+                "summer"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
+        },
+        {
+            "places": [
+                "route_22"
+            ],
+            "seasons": [
+                "spring",
+                "summer"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "virbank_city"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "rippling_surf"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_SUNNY",
+                "WEATHER_FLAKE"
+            ]
+        },
+        {
+            "places": [
+                "virbank_city"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "rippling_surf"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_RAIN"
+            ]
+        },
+        {
+            "places": [
+                "virbank_city"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "rippling_surf"
+            ],
+            "rarity": "rare",
+            "times": [
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_SUNNY",
+                "WEATHER_FLAKE"
+            ]
+        },
+        {
+            "places": [
+                "virbank_city"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "surf"
+            ],
             "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_SUNNY",
+                "WEATHER_FLAKE"
+            ]
+        },
+        {
+            "places": [
+                "virbank_city"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "surf"
+            ],
+            "rarity": "common",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_RAIN"
+            ]
+        },
+        {
+            "places": [
+                "virbank_city"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "surf"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_SUNNY",
+                "WEATHER_FLAKE"
+            ]
         }
-    ]
+    ],
+    "overworld": {
+        "grass": false
+    }
 }

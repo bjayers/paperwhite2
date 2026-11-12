@@ -1,23 +1,88 @@
 {
     "$schema": "../species.schema.json",
     "levels": {
-        "min": 36,
-        "max": 57
+        "min": 31,
+        "max": 100
+    },
+    "battles": {
+        "single": 95,
+        "double": 5,
+        "triple": 0,
+        "partners": "family"
     },
     "habitats": [
         {
-            "places": [ "pinwheel_forest_2" ],
-            "seasons": [ "winter" ],
-            "methods": [ "rustling" ],
-            "rarity": "very_rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "places": [
+                "abundant_shrine",
+                "route_1",
+                "victory_road_3"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
         },
         {
-            "places": [ "route_14" ],
-            "seasons": [ "winter" ],
-            "methods": [ "rustling" ],
+            "places": [
+                "route_11"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
             "rarity": "rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "route_23",
+                "victory_road_3"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
         }
-    ]
+    ],
+    "overworld": {
+        "appears": "steps",
+        "wanders": "passive"
+    }
 }

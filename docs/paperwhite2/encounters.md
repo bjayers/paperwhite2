@@ -84,7 +84,8 @@ of `a/1/2/7` (`configure.py`'s `HACK_ARCHIVE_MEMBERS`). Its docstring has the by
 `include/paperwhite2/encounters.h` has its structs.
 
 - `encounters.py check` prints the sizes against the runtime's limits: 4 KB per area block, 64 candidates per method
-  and area, 128 outbreak entries, 8 tiers.
+  and area at one moment (the busiest season, time and weather group, as the runtime filters them before taking its
+  slots), 128 outbreak entries, 8 tiers.
 - `encounters.py odds AREA METHOD SEASON PERIOD WEATHER SCALED [PARTY]` prints a place's odds from the packed member.
 
 `encounters.py habitats DIR` writes the Pokédex's Habitat List from this data, and the hack's build packs `a/2/9/6`

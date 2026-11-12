@@ -1,16 +1,60 @@
 {
     "$schema": "../species.schema.json",
     "levels": {
-        "min": 16,
-        "max": 35
+        "min": 10,
+        "max": 100
     },
     "habitats": [
         {
-            "places": [ "group:relic_passage" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "rustling" ],
+            "places": [
+                "chargestone_cave",
+                "chargestone_cave_2",
+                "chargestone_cave_3"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "guidance_chamber",
+                "mistralton_cave",
+                "mistralton_cave_2"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
             "rarity": "rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
         }
-    ]
+    ],
+    "overworld": {
+        "wanders": "passive"
+    }
 }

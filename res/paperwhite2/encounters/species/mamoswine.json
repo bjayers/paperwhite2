@@ -1,37 +1,220 @@
 {
     "$schema": "../species.schema.json",
     "levels": {
-        "min": 30,
-        "max": 64
+        "min": 40,
+        "max": 100
+    },
+    "battles": {
+        "single": 85,
+        "double": 12,
+        "triple": 3,
+        "partners": "family"
     },
     "habitats": [
         {
-            "places": [ "dragonspiral_tower" ],
-            "seasons": [ "winter" ],
-            "methods": [ "grass" ],
-            "rarity": "very_rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
-        },
-        {
-            "places": [ "dragonspiral_tower" ],
-            "seasons": [ "winter" ],
-            "methods": [ "dark_grass" ],
-            "rarity": "uncommon",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
-        },
-        {
-            "places": [ "dragonspiral_tower_2" ],
-            "seasons": [ "winter" ],
-            "methods": [ "grass", "dark_grass" ],
-            "rarity": "uncommon",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
-        },
-        {
-            "places": [ "route_6" ],
-            "seasons": [ "winter" ],
-            "methods": [ "rustling" ],
+            "places": [
+                "dragonspiral_tower",
+                "floccesy_ranch_2"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
             "rarity": "rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_FLAKE"
+            ]
+        },
+        {
+            "places": [
+                "dragonspiral_tower",
+                "floccesy_ranch_2"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "very_rare",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_SUNNY",
+                "WEATHER_RAIN"
+            ]
+        },
+        {
+            "places": [
+                "giant_chasm_3",
+                "giant_chasm_4"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
+            "rarity": "exotic",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "route_20"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "grass",
+                "dark_grass"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_FLAKE"
+            ]
+        },
+        {
+            "places": [
+                "route_20"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "grass",
+                "dark_grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_SUNNY",
+                "WEATHER_RAIN"
+            ]
+        },
+        {
+            "places": [
+                "route_6"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_FLAKE"
+            ]
+        },
+        {
+            "places": [
+                "route_6"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
+            "rarity": "very_rare",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_SUNNY",
+                "WEATHER_RAIN"
+            ]
+        },
+        {
+            "places": [
+                "twist_mountain",
+                "twist_mountain_2"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "very_rare",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "twist_mountain_3",
+                "twist_mountain_4"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "very_rare",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
         }
     ]
 }

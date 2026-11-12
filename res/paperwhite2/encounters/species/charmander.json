@@ -1,23 +1,32 @@
 {
     "$schema": "../species.schema.json",
     "levels": {
-        "min": 31,
-        "max": 31
+        "min": 5,
+        "max": 19
     },
     "habitats": [
         {
-            "places": [ "reversal_mountain" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "grass", "dark_grass" ],
+            "places": [
+                "reversal_mountain"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass",
+                "dark_grass"
+            ],
             "rarity": "exotic",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
-        },
-        {
-            "places": [ "reversal_mountain" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "rustling" ],
-            "rarity": "uncommon",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
         }
     ]
 }

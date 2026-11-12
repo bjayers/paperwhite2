@@ -2,22 +2,74 @@
     "$schema": "../species.schema.json",
     "levels": {
         "min": 40,
-        "max": 45
+        "max": 100
+    },
+    "battles": {
+        "single": 85,
+        "double": 12,
+        "triple": 3,
+        "partners": "family"
     },
     "habitats": [
         {
-            "places": [ "route_21" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "surf" ],
-            "rarity": "exotic",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "places": [
+                "humilau_city"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "rippling_surf"
+            ],
+            "rarity": "rare",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
         },
         {
-            "places": [ "undella_bay" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "surf" ],
-            "rarity": "exotic",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "places": [
+                "route_17"
+            ],
+            "seasons": [
+                "summer"
+            ],
+            "methods": [
+                "rippling_surf"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "route_21"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "rippling_surf"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
         }
-    ]
+    ],
+    "overworld": {
+        "wanders": "passive"
+    }
 }

@@ -190,5 +190,6 @@ Every entry's `review` notes, by batch.
    batch files, and the checks run again.
 2. `exceptions.yaml` from `requests.md` and the decisions above (the static and gift ideas, the Hidden Grottoes as
    sources).
-3. The generator: homes to `res/paperwhite2/encounters/species/*.json`, with the default levels, the tiers' later-stage
-   step, the time strengths, the weather shifts, the rippling rule, and the limits (64 candidates, 4 KB an area).
+3. Done (2026-11-12): `tools/generate.py --install` writes `res/paperwhite2/encounters/species/*.json` from the
+   dictionary (482 species, 2586 habitats, 5229 candidates; busiest moment Route 5's grass, 35 of 64; largest block
+   Route 12, 2956 of 4096 bytes), with the original game's mass outbreaks kept (`imported_outbreaks.yaml`).

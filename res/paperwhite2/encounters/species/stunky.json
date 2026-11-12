@@ -1,23 +1,58 @@
 {
     "$schema": "../species.schema.json",
     "levels": {
-        "min": 39,
-        "max": 39
+        "min": 2,
+        "max": 37
     },
     "habitats": [
         {
-            "places": [ "route_9" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "grass" ],
+            "places": [
+                "castelia_sewers",
+                "castelia_sewers_2",
+                "castelia_sewers_3",
+                "castelia_sewers_4",
+                "castelia_sewers_5",
+                "route_16",
+                "route_9"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
             "rarity": "uncommon",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "night",
+                "late_night"
+            ]
         },
         {
-            "places": [ "route_9" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "dark_grass" ],
-            "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "places": [
+                "route_1",
+                "route_5",
+                "route_9"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "night",
+                "late_night"
+            ]
         }
-    ]
+    ],
+    "overworld": {
+        "wanders": "passive"
+    }
 }

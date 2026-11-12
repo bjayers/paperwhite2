@@ -2,28 +2,40 @@
     "$schema": "../species.schema.json",
     "levels": {
         "min": 38,
-        "max": 38
+        "max": 100
+    },
+    "battles": {
+        "single": 95,
+        "double": 5,
+        "triple": 0,
+        "partners": "family"
     },
     "habitats": [
         {
             "places": [
-                "reversal_mountain_2",
-                "reversal_mountain_3",
-                "reversal_mountain_4",
-                "reversal_mountain_5",
-                "reversal_mountain_6",
-                "reversal_mountain_7",
-                "reversal_mountain_8",
-                "reversal_mountain_9",
-                "reversal_mountain_10",
                 "reversal_mountain_11",
-                "reversal_mountain_12",
-                "reversal_mountain_13"
+                "reversal_mountain_9"
             ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "grass", "rustling" ],
-            "rarity": "rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
         }
-    ]
+    ],
+    "overworld": {
+        "wanders": "passive"
+    }
 }

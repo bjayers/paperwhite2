@@ -1,23 +1,54 @@
 {
     "$schema": "../species.schema.json",
     "levels": {
-        "min": 57,
-        "max": 57
+        "min": 2,
+        "max": 29
+    },
+    "battles": {
+        "single": 95,
+        "double": 5,
+        "triple": 0,
+        "partners": "family"
     },
     "habitats": [
         {
-            "places": [ "dreamyard" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "grass", "dark_grass" ],
-            "rarity": "rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "places": [
+                "dreamyard",
+                "dreamyard_2"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "night",
+                "late_night"
+            ]
         },
         {
-            "places": [ "dreamyard_2" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "dark_grass" ],
-            "rarity": "rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "places": [
+                "dreamyard"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "night",
+                "late_night"
+            ]
         }
     ]
 }

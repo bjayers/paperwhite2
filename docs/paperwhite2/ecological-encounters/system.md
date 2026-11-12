@@ -78,10 +78,11 @@ are the authority; this is what the generator and the dictionaries need from the
 
 ## Limits
 
-- 64 candidates per method per area at one time (most now: Route 7's grass, 36). A candidate is one habitat in one
-  area for one season or for all of its seasons.
-- 4 KB per area's block (largest now: Pinwheel Forest 2, 2016 bytes). About 20 bytes a candidate, so roughly 190
-  candidates an area.
+- 64 candidates per method per area at one time: the runtime takes its slots from the candidates that fit the
+  season, the time and the weather, so `check` counts the busiest season, time and weather group (most now: Route 5's
+  grass, 35). A candidate is one habitat in one area, its seasons, methods and times bit masks.
+- 4 KB per area's block (largest now: Route 12, 2956 bytes). About 20 bytes a candidate, so roughly 190 candidates an
+  area.
 - 128 outbreak entries (an entry is an outbreak's area); 8 tiers.
 - `encounters.py check` reports all of these, and `odds` a place's odds.
 

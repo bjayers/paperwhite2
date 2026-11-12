@@ -1,16 +1,35 @@
 {
     "$schema": "../species.schema.json",
     "levels": {
-        "min": 25,
-        "max": 40
+        "min": 20,
+        "max": 43
     },
     "habitats": [
         {
-            "places": [ "route_13" ],
-            "seasons": [ "summer" ],
-            "methods": [ "surf" ],
+            "places": [
+                "humilau_city",
+                "route_13"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "surf"
+            ],
             "rarity": "exotic",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
         }
-    ]
+    ],
+    "overworld": {
+        "wanders": "passive"
+    }
 }

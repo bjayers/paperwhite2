@@ -1,83 +1,168 @@
 {
     "$schema": "../species.schema.json",
     "levels": {
-        "min": 36,
-        "max": 67
+        "min": 10,
+        "max": 100
     },
     "habitats": [
         {
-            "places": [ "route_11" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "grass" ],
+            "places": [
+                "desert_resort"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
             "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
         },
         {
-            "places": [ "route_18" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "grass", "dark_grass" ],
-            "rarity": "very_rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "places": [
+                "reversal_mountain"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass",
+                "dark_grass"
+            ],
+            "rarity": "common",
+            "times": [
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_SANDSTORM"
+            ]
         },
         {
-            "places": [ "route_18" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "rustling" ],
+            "places": [
+                "reversal_mountain"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass",
+                "dark_grass"
+            ],
             "rarity": "uncommon",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_SUNNY"
+            ]
         },
         {
-            "places": [ "route_23" ],
-            "by_season": {
-                "spring": {
-                    "methods": [ "grass" ],
-                    "rarity": "very_rare",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                },
-                "summer": {
-                    "methods": [ "grass" ],
-                    "rarity": "very_rare",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                },
-                "autumn": {
-                    "methods": [ "grass" ],
-                    "rarity": "very_rare",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                },
-                "winter": {
-                    "methods": [ "grass" ],
-                    "rarity": "rare",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                }
-            }
+            "places": [
+                "reversal_mountain"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass",
+                "dark_grass"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ],
+            "weather": [
+                "WEATHER_SANDSTORM"
+            ]
         },
         {
-            "places": [ "route_23" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "dark_grass" ],
-            "rarity": "exotic",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
-        },
-        {
-            "places": [ "route_23" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "rustling" ],
+            "places": [
+                "reversal_mountain"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass",
+                "dark_grass"
+            ],
             "rarity": "rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ],
+            "weather": [
+                "WEATHER_SUNNY"
+            ]
         },
         {
-            "places": [ "victory_road" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "grass" ],
-            "rarity": "very_rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "places": [
+                "route_15"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "night",
+                "late_night"
+            ]
         },
         {
-            "places": [ "victory_road" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "rustling" ],
-            "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "places": [
+                "route_15"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
         }
-    ]
+    ],
+    "overworld": {
+        "wanders": "aggressive",
+        "grass": false
+    }
 }

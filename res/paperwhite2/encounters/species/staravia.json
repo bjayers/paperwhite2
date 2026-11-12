@@ -1,37 +1,435 @@
 {
     "$schema": "../species.schema.json",
     "levels": {
-        "min": 39,
-        "max": 39
+        "min": 14,
+        "max": 37
+    },
+    "battles": {
+        "single": 70,
+        "double": 20,
+        "triple": 10,
+        "partners": "family"
     },
     "habitats": [
         {
-            "places": [ "route_13" ],
-            "seasons": [ "spring", "summer", "autumn" ],
-            "methods": [ "dark_grass" ],
-            "rarity": "very_rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
-        },
-        {
-            "places": [ "route_22" ],
-            "seasons": [ "summer" ],
-            "methods": [ "grass" ],
-            "rarity": "very_rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
-        },
-        {
-            "places": [ "route_22" ],
-            "seasons": [ "spring", "summer", "autumn" ],
-            "methods": [ "dark_grass" ],
-            "rarity": "rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
-        },
-        {
-            "places": [ "route_22" ],
-            "seasons": [ "summer" ],
-            "methods": [ "rustling" ],
+            "places": [
+                "abundant_shrine",
+                "route_1",
+                "route_3",
+                "route_5"
+            ],
+            "seasons": [
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
             "rarity": "uncommon",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
+        },
+        {
+            "places": [
+                "abundant_shrine",
+                "route_1",
+                "route_3",
+                "route_5"
+            ],
+            "seasons": [
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "castelia_city"
+            ],
+            "seasons": [
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
+        },
+        {
+            "places": [
+                "castelia_city"
+            ],
+            "seasons": [
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "very_rare",
+            "times": [
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "floccesy_ranch_2"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ],
+            "weather": [
+                "WEATHER_SUNNY",
+                "WEATHER_FLAKE"
+            ]
+        },
+        {
+            "places": [
+                "floccesy_ranch_2"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "very_rare",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ],
+            "weather": [
+                "WEATHER_RAIN"
+            ]
+        },
+        {
+            "places": [
+                "floccesy_ranch_2"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "very_rare",
+            "times": [
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_SUNNY",
+                "WEATHER_FLAKE"
+            ]
+        },
+        {
+            "places": [
+                "floccesy_ranch_2"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "exotic",
+            "times": [
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_RAIN"
+            ]
+        },
+        {
+            "places": [
+                "route_12"
+            ],
+            "seasons": [
+                "spring",
+                "autumn"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ],
+            "weather": [
+                "WEATHER_SUNNY"
+            ]
+        },
+        {
+            "places": [
+                "route_12"
+            ],
+            "seasons": [
+                "spring",
+                "autumn"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "very_rare",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ],
+            "weather": [
+                "WEATHER_RAIN"
+            ]
+        },
+        {
+            "places": [
+                "route_12"
+            ],
+            "seasons": [
+                "spring",
+                "autumn"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "very_rare",
+            "times": [
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_SUNNY"
+            ]
+        },
+        {
+            "places": [
+                "route_12"
+            ],
+            "seasons": [
+                "spring",
+                "autumn"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "exotic",
+            "times": [
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_RAIN"
+            ]
+        },
+        {
+            "places": [
+                "route_12"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ],
+            "weather": [
+                "WEATHER_SUNNY"
+            ]
+        },
+        {
+            "places": [
+                "route_12"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ],
+            "weather": [
+                "WEATHER_RAIN"
+            ]
+        },
+        {
+            "places": [
+                "route_12"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_SUNNY"
+            ]
+        },
+        {
+            "places": [
+                "route_12"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "very_rare",
+            "times": [
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_RAIN"
+            ]
+        },
+        {
+            "places": [
+                "route_16"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
+        },
+        {
+            "places": [
+                "route_16"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "very_rare",
+            "times": [
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "route_5"
+            ],
+            "seasons": [
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
+        },
+        {
+            "places": [
+                "route_5"
+            ],
+            "seasons": [
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "village_bridge"
+            ],
+            "seasons": [
+                "spring"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
+        },
+        {
+            "places": [
+                "village_bridge"
+            ],
+            "seasons": [
+                "spring"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "very_rare",
+            "times": [
+                "night",
+                "late_night"
+            ]
         }
-    ]
+    ],
+    "overworld": {
+        "grass": false
+    }
 }

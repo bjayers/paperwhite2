@@ -1,23 +1,117 @@
 {
     "$schema": "../species.schema.json",
     "levels": {
-        "min": 54,
-        "max": 57
+        "min": 10,
+        "max": 100
+    },
+    "battles": {
+        "single": 70,
+        "double": 20,
+        "triple": 10,
+        "partners": "family"
     },
     "habitats": [
         {
-            "places": [ "iron_chamber" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "grass" ],
-            "rarity": "exotic",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "places": [
+                "reversal_mountain"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
         },
         {
-            "places": [ "iron_chamber" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "rustling" ],
+            "places": [
+                "reversal_mountain_10",
+                "reversal_mountain_11",
+                "reversal_mountain_12",
+                "reversal_mountain_13",
+                "reversal_mountain_8",
+                "reversal_mountain_9"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "victory_road",
+                "victory_road_11",
+                "victory_road_5",
+                "victory_road_6",
+                "victory_road_8"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
             "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "victory_road_10",
+                "victory_road_4",
+                "victory_road_7"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
+            "rarity": "common",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
         }
-    ]
+    ],
+    "overworld": {
+        "wanders": "aggressive"
+    }
 }

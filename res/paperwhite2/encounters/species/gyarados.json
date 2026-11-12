@@ -1,30 +1,58 @@
 {
     "$schema": "../species.schema.json",
     "levels": {
-        "min": 50,
-        "max": 70
+        "min": 20,
+        "max": 100
     },
     "habitats": [
         {
-            "places": [ "route_8" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "rippling_fishing" ],
-            "rarity": "very_rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "places": [
+                "dragonspiral_tower_2",
+                "route_17",
+                "route_21",
+                "undella_bay",
+                "undella_town"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "rippling_fishing"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
         },
         {
-            "places": [ "route_11" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "rippling_fishing" ],
-            "rarity": "very_rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
-        },
-        {
-            "places": [ "village_bridge" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "rippling_fishing" ],
-            "rarity": "very_rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "places": [
+                "route_3",
+                "village_bridge"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "rippling_fishing"
+            ],
+            "rarity": "rare",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
         }
     ]
 }

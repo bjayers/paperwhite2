@@ -1,44 +1,93 @@
 {
     "$schema": "../species.schema.json",
     "levels": {
-        "min": 35,
-        "max": 46
+        "min": 32,
+        "max": 47
+    },
+    "battles": {
+        "single": 85,
+        "double": 12,
+        "triple": 3,
+        "partners": "family"
     },
     "habitats": [
         {
-            "places": [ "giant_chasm_5" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "rustling" ],
-            "rarity": "exotic",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "places": [
+                "p2_laboratory"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "rippling_surf"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
         },
         {
-            "places": [ "giant_chasm_5" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "rippling_surf" ],
-            "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "places": [
+                "p2_laboratory"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "surf"
+            ],
+            "rarity": "rare",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
         },
         {
-            "places": [ "icirrus_city" ],
-            "seasons": [ "winter" ],
-            "methods": [ "rippling_surf" ],
-            "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "places": [
+                "route_17"
+            ],
+            "seasons": [
+                "spring",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "surf"
+            ],
+            "rarity": "rare",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
         },
         {
-            "places": [ "moor_of_icirrus" ],
-            "seasons": [ "winter" ],
-            "methods": [ "rippling_surf" ],
-            "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
-        },
-        {
-            "places": [ "route_8" ],
-            "seasons": [ "winter" ],
-            "methods": [ "rippling_surf" ],
-            "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "places": [
+                "route_21"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "surf"
+            ],
+            "rarity": "very_rare",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
         }
     ]
 }

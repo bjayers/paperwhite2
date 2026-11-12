@@ -1,96 +1,295 @@
 {
     "$schema": "../species.schema.json",
     "levels": {
-        "min": 9,
-        "max": 23
+        "min": 2,
+        "max": 24
+    },
+    "battles": {
+        "single": 85,
+        "double": 12,
+        "triple": 3,
+        "partners": "family"
     },
     "habitats": [
         {
-            "places": [ "lostlorn_forest" ],
-            "seasons": [ "spring", "summer" ],
-            "methods": [ "grass" ],
+            "places": [
+                "moor_of_icirrus"
+            ],
+            "seasons": [
+                "autumn"
+            ],
+            "methods": [
+                "grass"
+            ],
             "rarity": "uncommon",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "night",
+                "late_night"
+            ]
         },
         {
-            "places": [ "lostlorn_forest" ],
-            "seasons": [ "spring", "summer" ],
-            "methods": [ "dark_grass" ],
+            "places": [
+                "moor_of_icirrus"
+            ],
+            "seasons": [
+                "autumn"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
+        },
+        {
+            "places": [
+                "route_1"
+            ],
+            "seasons": [
+                "summer"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "route_1"
+            ],
+            "seasons": [
+                "summer"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
+        },
+        {
+            "places": [
+                "route_16"
+            ],
+            "seasons": [
+                "spring",
+                "summer"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "route_16"
+            ],
+            "seasons": [
+                "spring",
+                "summer"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
+        },
+        {
+            "places": [
+                "route_2"
+            ],
+            "seasons": [
+                "spring",
+                "summer"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "route_2"
+            ],
+            "seasons": [
+                "spring",
+                "summer"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
+        },
+        {
+            "places": [
+                "route_20"
+            ],
+            "seasons": [
+                "spring",
+                "summer"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
             "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_SUNNY",
+                "WEATHER_FLAKE"
+            ]
         },
         {
-            "places": [ "pinwheel_forest_2" ],
-            "seasons": [ "spring", "summer" ],
-            "methods": [ "dark_grass" ],
-            "rarity": "very_rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
-        },
-        {
-            "places": [ "route_3" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "dark_grass" ],
-            "rarity": "very_rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
-        },
-        {
-            "places": [ "route_12" ],
-            "seasons": [ "spring", "autumn" ],
-            "methods": [ "dark_grass" ],
+            "places": [
+                "route_20"
+            ],
+            "seasons": [
+                "spring",
+                "summer"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
             "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_RAIN"
+            ]
         },
         {
-            "places": [ "route_14" ],
-            "by_season": {
-                "spring": {
-                    "methods": [ "grass" ],
-                    "rarity": "common",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                },
-                "summer": {
-                    "methods": [ "grass" ],
-                    "rarity": "common",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                },
-                "autumn": {
-                    "methods": [ "grass" ],
-                    "rarity": "uncommon",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                },
-                "winter": {
-                    "methods": [ "grass" ],
-                    "rarity": "uncommon",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                }
-            }
+            "places": [
+                "route_20"
+            ],
+            "seasons": [
+                "spring",
+                "summer"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ],
+            "weather": [
+                "WEATHER_SUNNY",
+                "WEATHER_FLAKE"
+            ]
         },
         {
-            "places": [ "route_14" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "dark_grass" ],
+            "places": [
+                "route_20",
+                "route_6"
+            ],
+            "seasons": [
+                "spring",
+                "summer"
+            ],
+            "methods": [
+                "grass"
+            ],
             "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_SUNNY",
+                "WEATHER_FLAKE"
+            ]
         },
         {
-            "places": [ "route_20" ],
-            "by_season": {
-                "spring": {
-                    "methods": [ "dark_grass" ],
-                    "rarity": "common",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                },
-                "summer": {
-                    "methods": [ "dark_grass" ],
-                    "rarity": "common",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                },
-                "autumn": {
-                    "methods": [ "dark_grass" ],
-                    "rarity": "uncommon",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                }
-            }
+            "places": [
+                "route_20",
+                "route_6"
+            ],
+            "seasons": [
+                "spring",
+                "summer"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "common",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_RAIN"
+            ]
+        },
+        {
+            "places": [
+                "route_20",
+                "route_6"
+            ],
+            "seasons": [
+                "spring",
+                "summer"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ],
+            "weather": [
+                "WEATHER_SUNNY",
+                "WEATHER_FLAKE"
+            ]
         }
-    ]
+    ],
+    "overworld": {
+        "wanders": "passive"
+    }
 }

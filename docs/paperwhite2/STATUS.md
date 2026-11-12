@@ -2,6 +2,28 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-12: the ecological wild encounters are in `res/` (ROM session: build and test)
+
+The family dictionary (`docs/paperwhite2/ecological-encounters/families/*.yaml`, reviewed region by region with the
+user) now generates every species file: `python3 docs/paperwhite2/ecological-encounters/tools/generate.py --install`
+replaced `res/paperwhite2/encounters/species/` (482 species, 2586 habitats, 5229 candidates, 20 outbreaks: the
+original game's 19 mass outbreaks, `families/imported_outbreaks.yaml`, and Tentacruel's in Undella and Route 13). Hand
+edits to species files will be lost at the next generation: change the dictionary and regenerate. Also:
+- `encounters.py check` now counts the 64 slots as the runtime fills them: the busiest season, time and weather group
+  of a method (IsCandidateNow filters before taking slots), not every candidate with the method's bit. Busiest now:
+  Route 5's grass, 35 of 64; largest block Route 12, 2956 of 4096 bytes.
+- `res/paperwhite2/encounters/areas/twist_mountain_5.json` (Twist Mountain's pit) has a dark grass rate (3), for the
+  dark grass the user added there.
+- Weather splits follow each area's possible weather (its zone's default and its weather calendar). Homes waiting on
+  weather the user plans to add have no effect yet: Absol, Castform, Poliwag, Tympole and Wooper at the Abundant
+  Shrine (rain or storms), Absol and Electrike on Route 14, Sandile and Trapinch on Route 4 (Black 2's odd sandstorm).
+  Rerun the generator after adding a calendar.
+
+To test (ROM session): `python3 configure.py w2_us --hack && ninja`, `tools/build/verify_dsi_rom.py
+build/paperwhite2.nds`, then the `paperwhite2.local` copy in RetroArch: Route 1 and Route 2 early (Oshawott in Route
+1's dark grass, Tepig on Route 2, both exotic), the season changes (Route 12 and Village Bridge differ by season), night
+on Route 7 (Misdreavus and a Litwick wisp in the dark grass, very rare; no Litwick in rain), a rainy day on a calendar route, and an outbreak.
+
 ## 2026-11-11: Pokédex Flavour, a crash to watch (found and fixed)
 
 Flavour shows other games' Pokédex entries (Red to Black 2, taken at build time from the user's ROMs in `orig/`,

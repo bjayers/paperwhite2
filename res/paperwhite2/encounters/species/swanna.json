@@ -2,42 +2,292 @@
     "$schema": "../species.schema.json",
     "levels": {
         "min": 35,
-        "max": 60
+        "max": 100
+    },
+    "battles": {
+        "single": 85,
+        "double": 12,
+        "triple": 3,
+        "partners": "family"
     },
     "habitats": [
         {
-            "places": [ "driftveil_drawbridge" ],
-            "by_season": {
-                "spring": {
-                    "methods": [ "rustling" ],
-                    "rarity": "uncommon",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                },
-                "autumn": {
-                    "methods": [ "rustling" ],
-                    "rarity": "common",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                },
-                "winter": {
-                    "methods": [ "rustling" ],
-                    "rarity": "common",
-                    "times": [ "morning", "day", "evening", "night", "late_night" ]
-                }
-            }
+            "places": [
+                "dragonspiral_tower_2"
+            ],
+            "seasons": [
+                "summer"
+            ],
+            "methods": [
+                "surf"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ],
+            "weather": [
+                "WEATHER_RAIN"
+            ]
         },
         {
-            "places": [ "moor_of_icirrus" ],
-            "seasons": [ "summer" ],
-            "methods": [ "grass", "rippling_surf" ],
-            "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "places": [
+                "dragonspiral_tower_2"
+            ],
+            "seasons": [
+                "summer"
+            ],
+            "methods": [
+                "surf"
+            ],
+            "rarity": "rare",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ],
+            "weather": [
+                "WEATHER_SUNNY",
+                "WEATHER_FLAKE"
+            ]
         },
         {
-            "places": [ "route_8" ],
-            "seasons": [ "summer" ],
-            "methods": [ "grass", "rippling_surf" ],
+            "places": [
+                "dragonspiral_tower_2"
+            ],
+            "seasons": [
+                "summer"
+            ],
+            "methods": [
+                "surf"
+            ],
+            "rarity": "rare",
+            "times": [
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_RAIN"
+            ]
+        },
+        {
+            "places": [
+                "dragonspiral_tower_2"
+            ],
+            "seasons": [
+                "summer"
+            ],
+            "methods": [
+                "surf"
+            ],
+            "rarity": "very_rare",
+            "times": [
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_SUNNY",
+                "WEATHER_FLAKE"
+            ]
+        },
+        {
+            "places": [
+                "driftveil_drawbridge",
+                "marvelous_bridge"
+            ],
+            "seasons": [
+                "spring",
+                "autumn"
+            ],
+            "methods": [
+                "rustling"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
+        },
+        {
+            "places": [
+                "driftveil_drawbridge",
+                "marvelous_bridge"
+            ],
+            "seasons": [
+                "spring",
+                "autumn"
+            ],
+            "methods": [
+                "rustling"
+            ],
+            "rarity": "rare",
+            "times": [
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "icirrus_city",
+                "route_8"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "rippling_surf"
+            ],
             "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_SUNNY",
+                "WEATHER_FLAKE"
+            ]
+        },
+        {
+            "places": [
+                "icirrus_city",
+                "route_8"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "surf",
+                "rippling_surf"
+            ],
+            "rarity": "common",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_SUNNY",
+                "WEATHER_FLAKE"
+            ]
+        },
+        {
+            "places": [
+                "icirrus_city",
+                "route_8"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "surf",
+                "rippling_surf"
+            ],
+            "rarity": "common",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_RAIN"
+            ]
+        },
+        {
+            "places": [
+                "icirrus_city",
+                "route_8"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "surf"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_SUNNY",
+                "WEATHER_FLAKE"
+            ]
+        },
+        {
+            "places": [
+                "moor_of_icirrus"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "rippling_surf"
+            ],
+            "rarity": "common",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
+        },
+        {
+            "places": [
+                "moor_of_icirrus"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "rippling_surf"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "moor_of_icirrus"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "surf"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
+        },
+        {
+            "places": [
+                "moor_of_icirrus"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "surf"
+            ],
+            "rarity": "rare",
+            "times": [
+                "night",
+                "late_night"
+            ]
         }
-    ]
+    ],
+    "overworld": {
+        "wanders": "passive",
+        "grass": false
+    }
 }

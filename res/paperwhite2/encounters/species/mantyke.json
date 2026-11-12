@@ -1,16 +1,40 @@
 {
     "$schema": "../species.schema.json",
     "levels": {
-        "min": 35,
-        "max": 45
+        "min": 2,
+        "max": 30
+    },
+    "battles": {
+        "single": 85,
+        "double": 12,
+        "triple": 3,
+        "partners": "area"
     },
     "habitats": [
         {
-            "places": [ "humilau_city" ],
-            "seasons": [ "spring", "autumn", "winter" ],
-            "methods": [ "rippling_surf" ],
-            "rarity": "exotic",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "places": [
+                "humilau_city"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "surf"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
         }
-    ]
+    ],
+    "overworld": {
+        "wanders": "passive"
+    }
 }

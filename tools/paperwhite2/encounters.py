@@ -258,10 +258,29 @@ def area_block(data: Data, area: str, entries: list[tuple[tuple, dict | None]]) 
     if len(block) > BLOCK_MAX:
         raise DataError(f"{where}: its block is {len(block)} bytes, more than the runtime's {BLOCK_MAX}")
     for method in range(len(METHODS)):
-        count = sum(1 for fields, _ in entries if fields[5] & (1 << method))
+        count, moment = busiest(entries, method)
         if count > SLOT_MAX:
-            raise DataError(f"{where}: {count} candidates for {METHODS[method]}, more than the runtime's {SLOT_MAX}")
+            raise DataError(f"{where}: {count} candidates for {METHODS[method]} at once ({moment}), more than the "
+                            f"runtime's {SLOT_MAX}")
     return block
+
+
+def busiest(entries: list[tuple[tuple, dict | None]], method: int) -> tuple[int, str]:
+    """The most candidates of a method that can be in the game's slots at one moment, and that moment. The runtime
+    takes up to SLOT_MAX of those that fit the season, the time and the weather (IsCandidateNow), so the count is the
+    largest over every season, time and weather group; level gates and rules can only lower it."""
+    weather_bits = conditions.weathers()
+    best = (0, "")
+    for season in range(len(SEASONS)):
+        for time in range(len(TIMES)):
+            for group, names in conditions.weather_groups().items():
+                bit = 1 << weather_bits[names[0]]
+                count = sum(1 for fields, _ in entries
+                            if fields[5] & (1 << method) and fields[6] & (1 << season) and fields[7] & (1 << time)
+                            and (fields[2] == 0 or fields[2] & bit))
+                if count > best[0]:
+                    best = (count, f"{SEASONS[season]}, {TIMES[time]}, {group}")
+    return best
 
 
 def outbreaks(data: Data) -> tuple[list[bytes], int]:
@@ -343,7 +362,7 @@ def check():
     by_area = candidates(data)
     blocks = {area: area_block(data, area, entries) for area, entries in by_area.items()}
     largest = max(blocks, key=lambda a: len(blocks[a]))
-    most = max(((sum(1 for f, _ in e if f[5] & (1 << m)), a, METHODS[m]) for a, e in by_area.items() for m in range(7)))
+    most = max(((busiest(e, m)[0], a, METHODS[m]) for a, e in by_area.items() for m in range(len(METHODS))))
     entries, number = outbreaks(data)
     print(f"{len(data.species)} species, {len(data.areas)} areas, {sum(len(e) for e in by_area.values())} candidates, "
           f"{number} outbreaks ({len(entries)} entries); the member is {len(member())} bytes")

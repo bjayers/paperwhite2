@@ -1,23 +1,195 @@
 {
     "$schema": "../species.schema.json",
     "levels": {
-        "min": 54,
-        "max": 64
+        "min": 15,
+        "max": 100
     },
     "habitats": [
         {
-            "places": [ "pinwheel_forest_2" ],
-            "seasons": [ "summer" ],
-            "methods": [ "grass", "dark_grass" ],
-            "rarity": "very_rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "places": [
+                "nature_preserve"
+            ],
+            "seasons": [
+                "spring"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
         },
         {
-            "places": [ "pinwheel_forest_2" ],
-            "seasons": [ "summer" ],
-            "methods": [ "rustling" ],
+            "places": [
+                "nature_preserve"
+            ],
+            "seasons": [
+                "spring"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
+            "rarity": "very_rare",
+            "times": [
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "nature_preserve"
+            ],
+            "seasons": [
+                "summer",
+                "autumn"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
             "rarity": "uncommon",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
+        },
+        {
+            "places": [
+                "nature_preserve"
+            ],
+            "seasons": [
+                "summer",
+                "autumn"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "route_22"
+            ],
+            "seasons": [
+                "summer",
+                "autumn"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
+        },
+        {
+            "places": [
+                "route_22"
+            ],
+            "seasons": [
+                "summer",
+                "autumn"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
+            "rarity": "very_rare",
+            "times": [
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "route_3"
+            ],
+            "seasons": [
+                "summer"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
+            "rarity": "very_rare",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
+        },
+        {
+            "places": [
+                "route_3"
+            ],
+            "seasons": [
+                "summer"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
+            "rarity": "exotic",
+            "times": [
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "route_7"
+            ],
+            "seasons": [
+                "summer",
+                "autumn"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
+            "rarity": "exotic",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_SUNNY",
+                "WEATHER_FLAKE"
+            ]
+        },
+        {
+            "places": [
+                "route_7"
+            ],
+            "seasons": [
+                "summer",
+                "autumn"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
+            "rarity": "exotic",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_RAIN"
+            ]
         }
-    ]
+    ],
+    "overworld": {
+        "wanders": "aggressive"
+    }
 }

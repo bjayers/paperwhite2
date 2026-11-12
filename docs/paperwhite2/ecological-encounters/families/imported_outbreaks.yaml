@@ -1,0 +1,23 @@
+# The original game's mass outbreaks (one per area, met in its grass), carried over from the first import of the
+# hack's data. tools/generate.py adds them to each species' file unless the family's own `outbreaks` names that
+# species. Areas, not places, as the runtime has them.
+outbreaks:
+  - {species: cacturne, areas: [reversal_mountain], methods: [grass]}
+  - {species: doduo, areas: [route_12], methods: [grass]}
+  - {species: farfetchd, areas: [route_1], methods: [grass]}
+  - {species: fearow, areas: [route_15], methods: [grass]}
+  - {species: furret, areas: [route_7], methods: [grass]}
+  - {species: hippowdon, areas: [desert_resort_2], methods: [grass]}
+  - {species: hoppip, areas: [route_18], methods: [grass]}
+  - {species: hypno, areas: [dreamyard], methods: [grass]}
+  - {species: illumise, areas: [route_3], methods: [grass]}
+  - {species: ledian, areas: [route_22], methods: [grass]}
+  - {species: masquerain, areas: [route_11], methods: [grass]}
+  - {species: minun, areas: [route_6], methods: [grass]}
+  - {species: mr_mime, areas: [route_20], methods: [grass]}
+  - {species: natu, areas: [route_5], methods: [grass]}
+  - {species: pineco, areas: [route_16], methods: [grass]}
+  - {species: quagsire, areas: [route_8], methods: [grass]}
+  - {species: slowpoke, areas: [abundant_shrine], methods: [grass]}
+  - {species: swalot, areas: [route_9], methods: [grass]}
+  - {species: swellow, areas: [route_13], methods: [grass]}

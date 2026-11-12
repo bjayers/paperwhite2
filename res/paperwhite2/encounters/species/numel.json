@@ -1,43 +1,95 @@
 {
     "$schema": "../species.schema.json",
     "levels": {
-        "min": 31,
-        "max": 35
+        "min": 2,
+        "max": 36
+    },
+    "battles": {
+        "single": 85,
+        "double": 12,
+        "triple": 3,
+        "partners": "family"
     },
     "habitats": [
         {
-            "places": [ "reversal_mountain" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "grass", "dark_grass" ],
-            "rarity": "exotic",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
-        },
-        {
-            "places": [ "reversal_mountain" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "rustling" ],
+            "places": [
+                "reversal_mountain"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
             "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_SANDSTORM"
+            ]
         },
         {
             "places": [
-                "reversal_mountain_2",
-                "reversal_mountain_3",
-                "reversal_mountain_4",
-                "reversal_mountain_5",
-                "reversal_mountain_6",
-                "reversal_mountain_7",
-                "reversal_mountain_8",
-                "reversal_mountain_9",
+                "reversal_mountain"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ],
+            "weather": [
+                "WEATHER_SUNNY"
+            ]
+        },
+        {
+            "places": [
                 "reversal_mountain_10",
                 "reversal_mountain_11",
                 "reversal_mountain_12",
-                "reversal_mountain_13"
+                "reversal_mountain_13",
+                "reversal_mountain_8",
+                "reversal_mountain_9"
             ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "grass" ],
-            "rarity": "uncommon",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "common",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
         }
-    ]
+    ],
+    "overworld": {
+        "wanders": "passive"
+    }
 }

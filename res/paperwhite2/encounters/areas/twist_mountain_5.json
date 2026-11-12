@@ -3,6 +3,7 @@
     "rates": {
         "all_year": {
             "grass": 7,
+            "dark_grass": 3,
             "rustling": 1
         }
     },

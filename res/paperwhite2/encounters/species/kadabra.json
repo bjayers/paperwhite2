@@ -1,16 +1,35 @@
 {
     "$schema": "../species.schema.json",
     "levels": {
-        "min": 66,
-        "max": 66
+        "min": 16,
+        "max": 100
     },
     "habitats": [
         {
-            "places": [ "dreamyard_2" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "dark_grass" ],
+            "places": [
+                "dreamyard",
+                "dreamyard_2"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "dark_grass"
+            ],
             "rarity": "rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
         }
-    ]
+    ],
+    "overworld": {
+        "wanders": "passive"
+    }
 }

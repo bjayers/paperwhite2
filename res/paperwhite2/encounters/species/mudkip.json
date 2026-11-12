@@ -1,0 +1,74 @@
+{
+    "$schema": "../species.schema.json",
+    "levels": {
+        "min": 5,
+        "max": 19
+    },
+    "habitats": [
+        {
+            "places": [
+                "moor_of_icirrus"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "exotic",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "moor_of_icirrus"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "rippling_surf"
+            ],
+            "rarity": "exotic",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "moor_of_icirrus"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "surf"
+            ],
+            "rarity": "exotic",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
+        }
+    ],
+    "overworld": {
+        "wanders": "passive"
+    }
+}

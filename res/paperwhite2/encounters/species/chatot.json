@@ -1,23 +1,52 @@
 {
     "$schema": "../species.schema.json",
     "levels": {
-        "min": 57,
-        "max": 66
+        "min": 5,
+        "max": 100
+    },
+    "battles": {
+        "single": 85,
+        "double": 12,
+        "triple": 3,
+        "partners": "family"
     },
     "habitats": [
         {
-            "places": [ "route_18" ],
-            "seasons": [ "summer" ],
-            "methods": [ "grass", "dark_grass" ],
-            "rarity": "exotic",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "places": [
+                "route_18"
+            ],
+            "seasons": [
+                "spring",
+                "summer"
+            ],
+            "methods": [
+                "grass",
+                "dark_grass"
+            ],
+            "rarity": "uncommon",
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
         },
         {
-            "places": [ "route_18" ],
-            "seasons": [ "summer" ],
-            "methods": [ "rustling" ],
-            "rarity": "uncommon",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "places": [
+                "village_bridge"
+            ],
+            "seasons": [
+                "summer"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "very_rare",
+            "times": [
+                "morning"
+            ]
         }
-    ]
+    ],
+    "overworld": {
+        "grass": false
+    }
 }

@@ -1,31 +1,79 @@
 {
     "$schema": "../species.schema.json",
     "levels": {
-        "min": 36,
-        "max": 44
+        "min": 5,
+        "max": 100
     },
     "habitats": [
         {
-            "places": [ "village_bridge" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "grass" ],
-            "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "places": [
+                "abundant_shrine",
+                "nature_preserve"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
         },
         {
-            "places": [ "village_bridge" ],
-            "seasons": [ "spring", "summer", "autumn" ],
-            "methods": [ "rustling" ],
+            "places": [
+                "route_7"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn"
+            ],
+            "methods": [
+                "grass"
+            ],
             "rarity": "very_rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
         }
     ],
+    "overworld": {
+        "wanders": "passive"
+    },
     "outbreaks": [
         {
-            "places": [ "route_1" ],
-            "methods": [ "grass" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "places": [
+                "route_1"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
         }
     ]
 }

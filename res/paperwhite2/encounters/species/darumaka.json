@@ -1,70 +1,93 @@
 {
     "$schema": "../species.schema.json",
     "levels": {
-        "min": 17,
-        "max": 37
+        "min": 2,
+        "max": 38
+    },
+    "battles": {
+        "single": 95,
+        "double": 5,
+        "triple": 0,
+        "partners": "family"
     },
     "habitats": [
         {
-            "places": [ "reversal_mountain" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "grass", "dark_grass" ],
-            "rarity": "very_rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
-        },
-        {
-            "places": [ "reversal_mountain" ],
-            "seasons": [ "spring", "autumn" ],
-            "methods": [ "rustling" ],
+            "places": [
+                "desert_resort_2",
+                "route_4",
+                "route_4_2"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn"
+            ],
+            "methods": [
+                "grass"
+            ],
             "rarity": "uncommon",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
         },
         {
             "places": [
-                "reversal_mountain_2",
-                "reversal_mountain_3",
-                "reversal_mountain_4",
-                "reversal_mountain_5",
-                "reversal_mountain_6",
-                "reversal_mountain_7",
-                "reversal_mountain_8",
-                "reversal_mountain_9",
-                "reversal_mountain_10",
-                "reversal_mountain_11",
-                "reversal_mountain_12",
-                "reversal_mountain_13"
+                "desert_resort_2",
+                "route_4",
+                "route_4_2"
             ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "grass" ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "rare",
+            "times": [
+                "night",
+                "late_night"
+            ]
+        },
+        {
+            "places": [
+                "desert_resort_2",
+                "route_4",
+                "route_4_2"
+            ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
             "rarity": "common",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
         },
         {
             "places": [
-                "reversal_mountain_2",
-                "reversal_mountain_3",
-                "reversal_mountain_4",
-                "reversal_mountain_5",
-                "reversal_mountain_6",
-                "reversal_mountain_7",
-                "reversal_mountain_8",
-                "reversal_mountain_9",
-                "reversal_mountain_10",
-                "reversal_mountain_11",
-                "reversal_mountain_12",
-                "reversal_mountain_13"
+                "desert_resort_2",
+                "route_4",
+                "route_4_2"
             ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "rustling" ],
+            "seasons": [
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
             "rarity": "uncommon",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
-        },
-        {
-            "places": [ "group:route_4" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "methods": [ "grass" ],
-            "rarity": "exotic",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "night",
+                "late_night"
+            ]
         }
     ]
 }

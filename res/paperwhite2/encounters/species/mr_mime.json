@@ -1,24 +1,71 @@
 {
     "$schema": "../species.schema.json",
     "levels": {
-        "min": 44,
-        "max": 44
+        "min": 15,
+        "max": 100
     },
     "habitats": [
         {
-            "places": [ "village_bridge" ],
-            "seasons": [ "winter" ],
-            "methods": [ "rustling" ],
+            "places": [
+                "route_5"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
             "rarity": "very_rare",
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "times": [
+                "morning",
+                "day",
+                "evening"
+            ]
+        },
+        {
+            "places": [
+                "route_5"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "rarity": "exotic",
+            "times": [
+                "night",
+                "late_night"
+            ]
         }
     ],
     "outbreaks": [
         {
-            "places": [ "route_20" ],
-            "methods": [ "grass" ],
-            "seasons": [ "spring", "summer", "autumn", "winter" ],
-            "times": [ "morning", "day", "evening", "night", "late_night" ]
+            "places": [
+                "route_20"
+            ],
+            "methods": [
+                "grass"
+            ],
+            "seasons": [
+                "spring",
+                "summer",
+                "autumn",
+                "winter"
+            ],
+            "times": [
+                "morning",
+                "day",
+                "evening",
+                "night",
+                "late_night"
+            ]
         }
     ]
 }
