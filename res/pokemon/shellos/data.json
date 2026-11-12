@@ -6,11 +6,15 @@
         "entry": "Beware of pushing strongly on\nits squishy body, as it makes a\nmysterious purple fluid ooze out.",
         "height": "1'00\"",
         "weight": "13.9 lbs.",
+        "shape": 3,
+        "form_name": "West Sea",
         "forms": [
             {
+                "name": "East Sea",
                 "entry": "Beware of pushing strongly on\nits squishy body, as it makes a\nmysterious purple fluid ooze out.",
                 "height": "1'00\"",
-                "weight": "13.9 lbs."
+                "weight": "13.9 lbs.",
+                "shape": 3
             }
         ],
         "languages": {

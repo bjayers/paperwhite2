@@ -6,6 +6,7 @@
         "entry": "It marks time precisely. Some\ncountries consider it to be a wise\nfriend, versed in the world's ways.",
         "height": "2'04\"",
         "weight": "46.7 lbs.",
+        "shape": 11,
         "languages": {
             "en": {
                 "name": "Hoothoot",

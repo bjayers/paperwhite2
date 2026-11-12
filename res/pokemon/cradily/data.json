@@ -6,6 +6,7 @@
         "entry": "It lives in the shallows of warm\nseas. When the tide goes out, it\ndigs up prey from beaches.",
         "height": "4'11\"",
         "weight": "133.2 lbs.",
+        "shape": 8,
         "languages": {
             "en": {
                 "name": "Cradily",

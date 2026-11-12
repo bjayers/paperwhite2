@@ -6,6 +6,7 @@
         "entry": "It flies by flapping its broad leaves\nand gives the sweet, delicious\nfruit around its neck to children.",
         "height": "6'07\"",
         "weight": "220.5 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Tropius",

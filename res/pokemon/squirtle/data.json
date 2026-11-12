@@ -6,6 +6,7 @@
         "entry": "It shelters itself in its shell\nthen strikes back with spouts of\nwater at every opportunity.",
         "height": "1'08\"",
         "weight": "19.8 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Squirtle",

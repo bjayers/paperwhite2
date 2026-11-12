@@ -6,21 +6,29 @@
         "entry": "An alien virus that fell to earth\non a meteor underwent a DNA\nmutation to become this Pokémon.",
         "height": "5'07\"",
         "weight": "134.0 lbs.",
+        "shape": 10,
+        "form_name": "Normal Forme",
         "forms": [
             {
+                "name": "Attack Forme",
                 "entry": "An alien virus that fell to earth\non a meteor underwent a DNA\nmutation to become this Pokémon.",
                 "height": "5'07\"",
-                "weight": "134.0 lbs."
+                "weight": "134.0 lbs.",
+                "shape": 10
             },
             {
+                "name": "Defense Forme",
                 "entry": "An alien virus that fell to earth\non a meteor underwent a DNA\nmutation to become this Pokémon.",
                 "height": "5'07\"",
-                "weight": "134.0 lbs."
+                "weight": "134.0 lbs.",
+                "shape": 10
             },
             {
+                "name": "Speed Forme",
                 "entry": "An alien virus that fell to earth\non a meteor underwent a DNA\nmutation to become this Pokémon.",
                 "height": "5'07\"",
-                "weight": "134.0 lbs."
+                "weight": "134.0 lbs.",
+                "shape": 10
             }
         ],
         "languages": {

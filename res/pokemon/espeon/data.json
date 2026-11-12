@@ -6,6 +6,7 @@
         "entry": "Its fur is so sensitive, it can feel\nminute shifts in the air and predict the\nweather...and its foes' thoughts.",
         "height": "2'11\"",
         "weight": "58.4 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Espeon",

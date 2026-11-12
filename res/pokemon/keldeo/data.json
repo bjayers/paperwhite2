@@ -6,11 +6,15 @@
         "entry": "When it is resolute, its body fills\nwith power and it becomes swifter.\nIts jumps are then too fast to follow.",
         "height": "4'07\"",
         "weight": "106.9 lbs.",
+        "shape": 4,
+        "form_name": "Ordinary Form",
         "forms": [
             {
+                "name": "Resolute Form",
                 "entry": "When it is resolute, its body fills\nwith power and it becomes swifter.\nIts jumps are then too fast to follow.",
                 "height": "4'07\"",
-                "weight": "106.9 lbs."
+                "weight": "106.9 lbs.",
+                "shape": 4
             }
         ],
         "languages": {

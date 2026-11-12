@@ -6,6 +6,7 @@
         "entry": "It is so timid, it can't move if it\nisn't with a swarm of others. It\nconveys its feelings with scent.",
         "height": "3'03\"",
         "weight": "23.8 lbs.",
+        "shape": 11,
         "languages": {
             "en": {
                 "name": "Ledyba",

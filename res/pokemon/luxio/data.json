@@ -6,6 +6,7 @@
         "entry": "Strong electricity courses through\nthe tips of its sharp claws. A light\nscratch causes fainting in foes.",
         "height": "2'11\"",
         "weight": "67.2 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Luxio",

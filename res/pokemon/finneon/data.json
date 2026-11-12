@@ -6,6 +6,7 @@
         "entry": "The line running down its side can\nstore sunlight. It shines vividly at\nnight.",
         "height": "1'04\"",
         "weight": "15.4 lbs.",
+        "shape": 2,
         "languages": {
             "en": {
                 "name": "Finneon",

@@ -6,6 +6,7 @@
         "entry": "A rare Pokémon discovered during\na deep-sea exploration. It has not\nchanged in over 100 million years.",
         "height": "3'03\"",
         "weight": "51.6 lbs.",
+        "shape": 2,
         "languages": {
             "en": {
                 "name": "Relicanth",

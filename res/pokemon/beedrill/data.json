@@ -6,6 +6,7 @@
         "entry": "Its best attack involves flying\naround at high speed, striking with\npoison needles, then flying off.",
         "height": "3'03\"",
         "weight": "65.0 lbs.",
+        "shape": 5,
         "languages": {
             "en": {
                 "name": "Beedrill",

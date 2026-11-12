@@ -6,6 +6,7 @@
         "entry": "They communicate by clawing\nsigns in boulders and work\ntogether to surround enemies.",
         "height": "3'07\"",
         "weight": "75.0 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Weavile",

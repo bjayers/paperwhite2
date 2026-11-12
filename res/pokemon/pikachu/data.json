@@ -6,6 +6,7 @@
         "entry": "It occasionally uses an electric\nshock to recharge a fellow Pikachu\nthat is in a weakened state.",
         "height": "1'04\"",
         "weight": "13.2 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Pikachu",

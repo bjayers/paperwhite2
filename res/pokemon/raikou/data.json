@@ -6,6 +6,7 @@
         "entry": "It is said to have fallen with\nlightning. It can fire thunderbolts\nfrom the rain clouds on its back.",
         "height": "6'03\"",
         "weight": "392.4 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Raikou",

@@ -6,6 +6,7 @@
         "entry": "It can see clearly through walls\nto track down its prey and seek\nits lost young.",
         "height": "4'07\"",
         "weight": "92.6 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Luxray",

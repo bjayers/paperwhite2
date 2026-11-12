@@ -6,6 +6,7 @@
         "entry": "Not only does its thick blubber keep it\nwarm, it also protects it from attacks.\nIt shatters ice with its prized tusks.",
         "height": "4'07\"",
         "weight": "332.0 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Walrein",

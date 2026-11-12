@@ -6,11 +6,15 @@
         "entry": "The melodies sung by Meloetta have\nthe power to make Pokémon that\nhear them happy or sad.",
         "height": "2'00\"",
         "weight": "14.3 lbs.",
+        "shape": 10,
+        "form_name": "Aria Forme",
         "forms": [
             {
+                "name": "Pirouette Forme",
                 "entry": "The melodies sung by Meloetta have\nthe power to make Pokémon that\nhear them happy or sad.",
                 "height": "2'00\"",
-                "weight": "14.3 lbs."
+                "weight": "14.3 lbs.",
+                "shape": 10
             }
         ],
         "languages": {

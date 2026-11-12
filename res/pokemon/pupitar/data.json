@@ -6,6 +6,7 @@
         "entry": "This pupa flies around wildly\nby venting with great force the\ngas pressurized inside its body.",
         "height": "3'11\"",
         "weight": "335.1 lbs.",
+        "shape": 12,
         "languages": {
             "en": {
                 "name": "Pupitar",

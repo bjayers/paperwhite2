@@ -6,6 +6,7 @@
         "entry": "Sensitive to changing temperatures,\nthe bud blooms when it's warm,\nreleasing toxic pollen.",
         "height": "0'08\"",
         "weight": "2.6 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Budew",

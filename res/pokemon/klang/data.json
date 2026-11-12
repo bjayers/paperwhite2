@@ -6,6 +6,7 @@
         "entry": "A minigear and big gear comprise its\nbody. If the minigear it launches at\na foe doesn't return, it will die.",
         "height": "2'00\"",
         "weight": "112.4 lbs.",
+        "shape": 6,
         "languages": {
             "ja": {
                 "name": "ギギアル",

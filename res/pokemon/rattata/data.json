@@ -6,6 +6,7 @@
         "entry": "It searches for food all day. It gnaws\non hard objects to wear down its fangs,\nwhich grow constantly during its lifetime.",
         "height": "1'00\"",
         "weight": "7.7 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Rattata",

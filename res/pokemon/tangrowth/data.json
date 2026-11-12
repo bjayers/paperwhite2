@@ -6,6 +6,7 @@
         "entry": "Even if one of its arms is eaten,\nit's fine. The Pokémon regenerates\nquickly and will go right back to normal.",
         "height": "6'07\"",
         "weight": "283.5 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Tangrowth",

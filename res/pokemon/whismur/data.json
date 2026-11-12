@@ -6,6 +6,7 @@
         "entry": "Usually, its cries are like quiet\nmurmurs. If frightened, it shrieks\nat the same volume as a jet plane.",
         "height": "2'00\"",
         "weight": "35.9 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Whismur",

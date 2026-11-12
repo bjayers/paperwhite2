@@ -284,6 +284,8 @@ DATA_PACKS = [
     ("tools/data/pokemon_graphics.py", "res/pokemon",
      ["a/0/0/4", "a/0/0/7", "a/0/5/1", "a/1/6/5", "a/2/2/9"], True),
     ("tools/data/pokemon_cries.py", "res/pokemon", ["a/1/9/1"], True),  # The cries' volumes
+    # The Pokédex's table of next forms, shapes and height and weight orders, made from the species' forms
+    ("tools/data/pokedex_data.py", "res/pokemon", ["a/0/9/7"], True),
     # The sound archive: sequences, banks, wave archives, players, groups and streams, and the Pokémon's cries
     ("tools/data/sound_data.py", "res/sound", ["swan_sound_data.sdat"], False, ["res/pokemon"]),
     ("tools/data/move_data.py", "res/moves", ["a/0/2/1"], False),  # Move data
@@ -1216,6 +1218,17 @@ def main():
                           "generated/moves.txt", "generated/natures.txt",
                           # (the Wonder Trade's pre-evolutions and least levels)
                           *sorted(str(path) for path in Path("res/pokemon").glob("*/data.json"))])
+        constant_headers.append(output)
+        # Paper White 2: the hack's forms' sprite groups, icon palettes and forms that never evolve, from res/pokemon
+        # (include/paperwhite2/pokemon_forms.h)
+        n.rule("pokemon_forms", "$python tools/paperwhite2/pokemon_forms.py $out", "Generating $out", restat="1")
+        output = Path(GENERATED_INCLUDE_DIR) / "paperwhite2" / "pokemon_forms_config.h"
+        forms_tool = "tools/paperwhite2/pokemon_forms.py"
+        n.build([output], "pokemon_forms",
+                sorted(str(path) for pattern in ["*/data.json", "*/form_*/icon*.png"]
+                       for path in Path("res/pokemon").glob(pattern)),
+                implicit=[forms_tool, *script_imports(forms_tool), "res/pokemon/shared/icon_palettes.pal",
+                          "generated/species.txt"])
         constant_headers.append(output)
         # Paper White 2: the conditions' generated headers, the terrain groups, the level scaling and CheckCondition's
         # IDs (tools/paperwhite2/conditions.py, docs/paperwhite2/plugins.md's Conditions)

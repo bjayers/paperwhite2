@@ -6,6 +6,7 @@
         "entry": "Its body is made of rugged steel.\nHowever, it is partially melted in\nspots because of its own heat.",
         "height": "5'07\"",
         "weight": "948.0 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Heatran",

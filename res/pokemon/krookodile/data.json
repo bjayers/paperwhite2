@@ -6,6 +6,7 @@
         "entry": "Very violent Pokémon, they try\nto clamp down on anything that\nmoves in front of their eyes.",
         "height": "4'11\"",
         "weight": "212.3 lbs.",
+        "shape": 9,
         "languages": {
             "ja": {
                 "name": "ワルビアル",

@@ -6,6 +6,7 @@
         "entry": "Lacking sight, it's unaware of its\nsurroundings, so it bumps into things\nand eats anything that moves.",
         "height": "2'07\"",
         "weight": "38.1 lbs.",
+        "shape": 4,
         "languages": {
             "ja": {
                 "name": "モノズ",

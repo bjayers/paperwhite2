@@ -6,6 +6,7 @@
         "entry": "Its kicking mastery lets it loose\n10 kicks per second. It emits\nsharp cries to intimidate foes.",
         "height": "2'11\"",
         "weight": "43.0 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Combusken",

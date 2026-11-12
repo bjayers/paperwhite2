@@ -6,6 +6,7 @@
         "entry": "It sleeps in a deep-sea trench.\nIf it flaps its wings, it is said to\ncause a 40-day storm.",
         "height": "17'01\"",
         "weight": "476.2 lbs.",
+        "shape": 11,
         "languages": {
             "en": {
                 "name": "Lugia",

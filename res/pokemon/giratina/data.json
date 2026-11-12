@@ -6,11 +6,15 @@
         "entry": "It was banished for its violence.\nIt silently gazed upon the old\nworld from the Distortion World.",
         "height": "14'09\"",
         "weight": "1653.5 lbs.",
+        "shape": 7,
+        "form_name": "Altered Forme",
         "forms": [
             {
+                "name": "Origin Forme",
                 "entry": "It was banished for its violence.\nIt silently gazed upon the old\nworld from the Distortion World.",
                 "height": "22'08\"",
-                "weight": "1433.0 lbs."
+                "weight": "1433.0 lbs.",
+                "shape": 12
             }
         ],
         "languages": {

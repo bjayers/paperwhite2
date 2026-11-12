@@ -6,6 +6,7 @@
         "entry": "It happily carries heavy cargo to\ntoughen up. It willingly does hard\nwork for people.",
         "height": "4'11\"",
         "weight": "155.4 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Machoke",

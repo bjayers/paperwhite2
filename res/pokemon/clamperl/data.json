@@ -6,6 +6,7 @@
         "entry": "It makes a single pearl during\nits lifetime. The pearl is said\nto amplify psychic power.",
         "height": "1'04\"",
         "weight": "115.7 lbs.",
+        "shape": 0,
         "languages": {
             "en": {
                 "name": "Clamperl",

@@ -6,6 +6,7 @@
         "entry": "A highly intelligent Pokémon.\nBy folding back its wings in flight,\nit can overtake jet planes.",
         "height": "6'07\"",
         "weight": "132.3 lbs.",
+        "shape": 11,
         "languages": {
             "en": {
                 "name": "Latios",

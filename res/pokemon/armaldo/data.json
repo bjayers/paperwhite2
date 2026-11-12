@@ -6,6 +6,7 @@
         "entry": "It went ashore after evolving.\nIts entire body is clad in a sturdy\narmor.",
         "height": "4'11\"",
         "weight": "150.4 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Armaldo",

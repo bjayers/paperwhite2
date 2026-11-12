@@ -6,6 +6,7 @@
         "entry": "It attacks using blasts of fire.\nIt creates heat shimmers with\nintense fire to hide itself.",
         "height": "5'07\"",
         "weight": "175.3 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Typhlosion",

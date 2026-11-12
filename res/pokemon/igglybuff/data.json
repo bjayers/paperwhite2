@@ -6,6 +6,7 @@
         "entry": "Its body has a faintly sweet scent\nand is bouncy and soft. If it bounces\neven once, it cannot stop.",
         "height": "1'00\"",
         "weight": "2.2 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Igglybuff",

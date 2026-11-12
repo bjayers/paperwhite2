@@ -6,6 +6,7 @@
         "entry": "Its slimy body is hard to grasp. In\none region, it is said to have been\nborn from hardened mud.",
         "height": "1'04\"",
         "weight": "4.2 lbs.",
+        "shape": 2,
         "languages": {
             "en": {
                 "name": "Barboach",

@@ -6,6 +6,7 @@
         "entry": "Some Pokémon are born on a\nTorterra's back and spend their\nentire life there.",
         "height": "7'03\"",
         "weight": "683.4 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Torterra",

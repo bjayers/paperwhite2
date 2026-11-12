@@ -6,6 +6,7 @@
         "entry": "Its flame is usually out, but it starts\nshining when it absorbs life force\nfrom people or Pokémon.",
         "height": "1'00\"",
         "weight": "6.8 lbs.",
+        "shape": 8,
         "languages": {
             "ja": {
                 "name": "ヒトモシ",

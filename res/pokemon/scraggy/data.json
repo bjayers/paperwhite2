@@ -6,6 +6,7 @@
         "entry": "Proud of its sturdy skull,\nit suddenly headbutts everything,\nbut its weight makes it unstable, too.",
         "height": "2'00\"",
         "weight": "26.0 lbs.",
+        "shape": 9,
         "languages": {
             "ja": {
                 "name": "ズルッグ",

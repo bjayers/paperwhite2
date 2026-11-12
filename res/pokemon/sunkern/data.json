@@ -6,6 +6,7 @@
         "entry": "It suddenly falls out of the sky in\nthe morning. Knowing it's weak, it\nsimply feeds until it evolves.",
         "height": "1'00\"",
         "weight": "4.0 lbs.",
+        "shape": 0,
         "languages": {
             "en": {
                 "name": "Sunkern",

@@ -6,6 +6,7 @@
         "entry": "There is a village that hosts a\ncontest based on the amazingly\nvariable cries of this Pokémon.",
         "height": "3'03\"",
         "weight": "56.2 lbs.",
+        "shape": 5,
         "languages": {
             "en": {
                 "name": "Kricketune",

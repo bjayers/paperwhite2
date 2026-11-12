@@ -6,6 +6,7 @@
         "entry": "The minigear spins at high speed. Then\nthe energy from the red core charges\nthe minigear to make it ready to fire.",
         "height": "2'00\"",
         "weight": "178.6 lbs.",
+        "shape": 6,
         "languages": {
             "ja": {
                 "name": "ギギギアル",

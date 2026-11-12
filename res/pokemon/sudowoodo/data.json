@@ -6,6 +6,7 @@
         "entry": "To avoid being attacked, it does\nnothing but mimic a tree. It hates\nwater and flees from rain.",
         "height": "3'11\"",
         "weight": "83.8 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Sudowoodo",

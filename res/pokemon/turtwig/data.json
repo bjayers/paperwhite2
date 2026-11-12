@@ -6,6 +6,7 @@
         "entry": "The shell on its back is made of\nsoil. On a very healthy Turtwig,\nthe shell should feel moist.",
         "height": "1'04\"",
         "weight": "22.5 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Turtwig",

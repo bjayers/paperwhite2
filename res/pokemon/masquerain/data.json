@@ -6,6 +6,7 @@
         "entry": "Its antennae have eye patterns\non them. Its four wings enable it\nto hover and fly in any direction.",
         "height": "2'07\"",
         "weight": "7.9 lbs.",
+        "shape": 5,
         "languages": {
             "en": {
                 "name": "Masquerain",

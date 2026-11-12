@@ -6,6 +6,7 @@
         "entry": "The sound of its grass flute makes\nits listeners uneasy. It lives deep\nin forests.",
         "height": "3'03\"",
         "weight": "61.7 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Nuzleaf",

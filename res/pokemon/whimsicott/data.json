@@ -6,6 +6,7 @@
         "entry": "They appear along with whirlwinds. They\npull pranks, such as moving furniture\nand leaving balls of cotton in homes.",
         "height": "2'04\"",
         "weight": "14.6 lbs.",
+        "shape": 10,
         "languages": {
             "ja": {
                 "name": "エルフーン",

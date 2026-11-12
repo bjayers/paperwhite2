@@ -15,6 +15,7 @@
 #ifdef PAPERWHITE2
 #include "constants/items.h"
 #include "paperwhite2/link_cord.h"
+#include "paperwhite2/pokemon_forms.h"
 #endif
 
 // Whether a Pokémon evolves, by its species' evolution table. The ROM's string names the file shinka_check.c. The
@@ -51,6 +52,13 @@ u16 CheckEvolveSpecies(PokeParty *party, PartyPkm *pkm, u32 mode, u32 a3, u8 sea
         return 0;
     }
     species = PokeParty_GetParam(pkm, PKM_PARAM_SPECIES, NULL);
+#ifdef PAPERWHITE2
+    // Paper White 2: some forms never evolve, whatever their species' evolutions say (the Spiky-eared Pichu, as in
+    // HeartGold and SoulSilver), and every way of evolving asks here
+    if (PaperWhite2_FormCannotEvolve(species, PokeParty_GetParam(pkm, PKM_PARAM_FORM, NULL))) {
+        return 0;
+    }
+#endif
     item = PokeParty_GetParam(pkm, PKM_PARAM_ITEM, NULL);
     pid = PokeParty_GetParam(pkm, PKM_PARAM_PID, NULL);
     beauty = PokeParty_GetParam(pkm, PKM_PARAM_CONTEST_BEAUTY, NULL);

@@ -6,6 +6,7 @@
         "entry": "Having four wings allows it to fly more\nquickly and quietly so it can sneak up\non prey without its noticing.",
         "height": "5'11\"",
         "weight": "165.3 lbs.",
+        "shape": 5,
         "languages": {
             "en": {
                 "name": "Crobat",

@@ -6,6 +6,7 @@
         "entry": "It communicates with others by\nlighting up its rear at night. It\nloves Illumise's sweet aroma.",
         "height": "2'04\"",
         "weight": "39.0 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Volbeat",

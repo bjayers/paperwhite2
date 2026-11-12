@@ -6,31 +6,43 @@
         "entry": "Its electric-like body can enter\nsome kinds of machines and take\ncontrol in order to make mischief.",
         "height": "1'00\"",
         "weight": "0.7 lbs.",
+        "shape": 0,
+        "form_name": "Rotom",
         "forms": [
             {
+                "name": "Heat Rotom",
                 "entry": "Its electric-like body can enter\nsome kinds of machines and take\ncontrol in order to make mischief.",
                 "height": "1'00\"",
-                "weight": "0.7 lbs."
+                "weight": "0.7 lbs.",
+                "shape": 0
             },
             {
+                "name": "Wash Rotom",
                 "entry": "Its electric-like body can enter\nsome kinds of machines and take\ncontrol in order to make mischief.",
                 "height": "1'00\"",
-                "weight": "0.7 lbs."
+                "weight": "0.7 lbs.",
+                "shape": 0
             },
             {
+                "name": "Frost Rotom",
                 "entry": "Its electric-like body can enter\nsome kinds of machines and take\ncontrol in order to make mischief.",
                 "height": "1'00\"",
-                "weight": "0.7 lbs."
+                "weight": "0.7 lbs.",
+                "shape": 0
             },
             {
+                "name": "Fan Rotom",
                 "entry": "Its electric-like body can enter\nsome kinds of machines and take\ncontrol in order to make mischief.",
                 "height": "1'00\"",
-                "weight": "0.7 lbs."
+                "weight": "0.7 lbs.",
+                "shape": 0
             },
             {
+                "name": "Mow Rotom",
                 "entry": "Its electric-like body can enter\nsome kinds of machines and take\ncontrol in order to make mischief.",
                 "height": "1'00\"",
-                "weight": "0.7 lbs."
+                "weight": "0.7 lbs.",
+                "shape": 0
             }
         ],
         "languages": {

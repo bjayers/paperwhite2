@@ -6,6 +6,7 @@
         "entry": "This Pokémon lives lying on its side.\nIt only rolls over and moves when\nthere is no more grass to eat.",
         "height": "6'07\"",
         "weight": "287.7 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Slaking",

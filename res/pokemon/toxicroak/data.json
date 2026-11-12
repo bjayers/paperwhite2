@@ -6,6 +6,7 @@
         "entry": "The croaking that Toxicroak produces\nbefore a battle is for churning the\npoison it has stored in its poison sac.",
         "height": "4'03\"",
         "weight": "97.9 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Toxicroak",

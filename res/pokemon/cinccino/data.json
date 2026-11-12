@@ -6,6 +6,7 @@
         "entry": "Cinccino's body is coated\nin a special oil that helps it\ndeflect attacks, such as punches.",
         "height": "1'08\"",
         "weight": "16.5 lbs.",
+        "shape": 4,
         "languages": {
             "ja": {
                 "name": "チラチーノ",

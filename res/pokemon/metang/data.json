@@ -6,6 +6,7 @@
         "entry": "It is formed by two Beldum joining\ntogether. Its two brains are linked,\namplifying its psychic power.",
         "height": "3'11\"",
         "weight": "446.4 lbs.",
+        "shape": 13,
         "languages": {
             "en": {
                 "name": "Metang",

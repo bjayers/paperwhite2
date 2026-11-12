@@ -6,6 +6,7 @@
         "entry": "Sometimes the magnetism emitted by\nMagnezone is too strong, making them\nattract each other so they cannot move.",
         "height": "3'11\"",
         "weight": "396.8 lbs.",
+        "shape": 13,
         "languages": {
             "en": {
                 "name": "Magnezone",

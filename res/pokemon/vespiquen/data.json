@@ -6,6 +6,7 @@
         "entry": "It houses its colony in cells in its body\nand releases various pheromones to\nmake those grubs do its bidding.",
         "height": "3'11\"",
         "weight": "84.9 lbs.",
+        "shape": 5,
         "languages": {
             "en": {
                 "name": "Vespiquen",

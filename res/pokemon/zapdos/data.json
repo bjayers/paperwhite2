@@ -6,6 +6,7 @@
         "entry": "A legendary Pokémon that is said\nto live in thunderclouds. It freely\ncontrols lightning bolts.",
         "height": "5'03\"",
         "weight": "116.0 lbs.",
+        "shape": 11,
         "languages": {
             "en": {
                 "name": "Zapdos",

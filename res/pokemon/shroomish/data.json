@@ -6,6 +6,7 @@
         "entry": "It spouts poison spores from the\ntop of its head. These spores\ncause pain all over if inhaled.",
         "height": "1'04\"",
         "weight": "9.9 lbs.",
+        "shape": 1,
         "languages": {
             "en": {
                 "name": "Shroomish",

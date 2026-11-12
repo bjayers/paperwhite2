@@ -6,6 +6,7 @@
         "entry": "It picks food from cactus plants,\ndeftly avoiding buds and spines.\nIt seems to skip about to move.",
         "height": "0'08\"",
         "weight": "4.4 lbs.",
+        "shape": 11,
         "languages": {
             "en": {
                 "name": "Natu",

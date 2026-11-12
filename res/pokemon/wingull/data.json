@@ -6,6 +6,7 @@
         "entry": "It makes its nest on sheer cliffs.\nRiding the sea breeze, it glides\nup into the expansive skies.",
         "height": "2'00\"",
         "weight": "20.9 lbs.",
+        "shape": 11,
         "languages": {
             "en": {
                 "name": "Wingull",

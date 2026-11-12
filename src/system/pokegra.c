@@ -13,6 +13,10 @@
 #include "pml/poke_party.h"
 #include "system/app_menu_common.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/pokemon_forms.h"
+#endif
+
 // The files of Pokémon and trainer sprites, and loading them as cell actor resources. Named after the file name its
 // allocations give. Names from swan (https://github.com/ds-pokemon-hacking/swan, GPL-3.0), except PokeGra_*, TrGra_*,
 // MakeTrGraArcHandle, LoadSingleCellSpindaGraphicsByBoxData, the data and the constants
@@ -293,7 +297,19 @@ static void GetPokemonDataIDBase(u32 arcId, int species, int form, u32 sex, BOOL
                 *formPalette = POKEGRA_FORM_PALETTES + (spriteOffset + form - 1) * 2 + rare;
             }
         } else if (form != 0) {
+#ifdef PAPERWHITE2
+            // Paper White 2: the hack's forms' sprite groups follow the Substitute's files and Arceus' palettes, at
+            // the archive's original end, since the original form groups end where the Substitute's files start
+            u32 group = spriteOffset + form - 1;
+
+            if (group >= POKEMON_FORMS_ORIGINAL_GROUPS) {
+                file = POKEMON_FORMS_SPRITE_FILES + (group - POKEMON_FORMS_ORIGINAL_GROUPS) * POKEGRA_FILE_COUNT;
+            } else {
+                file = POKEGRA_FORM_FILES + group * POKEGRA_FILE_COUNT;
+            }
+#else
             file = POKEGRA_FORM_FILES + (spriteOffset + form - 1) * POKEGRA_FILE_COUNT;
+#endif
         }
     } else if (species > SPECIES_EGG + 1) {
         // No sprites for the egg and the bad egg

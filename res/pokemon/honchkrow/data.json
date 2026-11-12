@@ -6,6 +6,7 @@
         "entry": "If one utters a deep cry, many\nMurkrow gather quickly. For this,\nit is called “Summoner of Night.\"",
         "height": "2'11\"",
         "weight": "60.2 lbs.",
+        "shape": 11,
         "languages": {
             "en": {
                 "name": "Honchkrow",

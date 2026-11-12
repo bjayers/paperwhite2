@@ -6,6 +6,7 @@
         "entry": "With its sweet aroma, it guides\nVolbeat to draw signs with light in\nthe night sky.",
         "height": "2'00\"",
         "weight": "39.0 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Illumise",

@@ -6,6 +6,7 @@
         "entry": "Its body is mostly seawater.\nIt's said there's a castle of ships\nJellicent have sunk on the seafloor.",
         "height": "7'03\"",
         "weight": "297.6 lbs.",
+        "shape": 7,
         "languages": {
             "ja": {
                 "name": "ブルンゲル",

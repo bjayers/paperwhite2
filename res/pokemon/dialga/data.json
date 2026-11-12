@@ -6,6 +6,7 @@
         "entry": "A legendary Pokémon of Sinnoh.\nIt is said that time flows when\nDialga's heart beats.",
         "height": "17'09\"",
         "weight": "1505.8 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Dialga",

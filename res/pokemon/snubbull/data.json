@@ -6,6 +6,7 @@
         "entry": "Small Pokémon flee from its scary\nface. It is, however, considered\nby women to be cute.",
         "height": "2'00\"",
         "weight": "17.2 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Snubbull",

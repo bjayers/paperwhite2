@@ -6,6 +6,7 @@
         "entry": "It has a gutsy spirit that makes\nit bravely take on tough foes. It\nflies in search of warm climates.",
         "height": "1'00\"",
         "weight": "5.1 lbs.",
+        "shape": 11,
         "languages": {
             "en": {
                 "name": "Taillow",

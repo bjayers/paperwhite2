@@ -6,6 +6,7 @@
         "entry": "It has the habit of biting anything\nwith its developed jaws. Even its\nTrainer needs to be careful.",
         "height": "2'00\"",
         "weight": "20.9 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Totodile",

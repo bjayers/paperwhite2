@@ -6,6 +6,7 @@
         "entry": "Its short arms stretch when it\nthrows punches. Its technique is\nequal to that of pro boxers.",
         "height": "3'11\"",
         "weight": "86.4 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Breloom",

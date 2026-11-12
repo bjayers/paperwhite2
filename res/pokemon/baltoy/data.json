@@ -6,6 +6,7 @@
         "entry": "Discovered in ancient ruins, it moves\nby spinning around and forms a group\nwhen it finds others.",
         "height": "1'08\"",
         "weight": "47.4 lbs.",
+        "shape": 13,
         "languages": {
             "en": {
                 "name": "Baltoy",

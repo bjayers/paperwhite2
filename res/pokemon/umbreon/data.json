@@ -6,6 +6,7 @@
         "entry": "When exposed to the moon's aura,\nthe rings on its body glow faintly\nand it's filled with a mysterious power.",
         "height": "3'03\"",
         "weight": "59.5 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Umbreon",

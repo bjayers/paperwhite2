@@ -6,6 +6,7 @@
         "entry": "It wraps itself around its prey and\nparalyzes it with electricity from the\nround spots on its sides. Then it chomps.",
         "height": "3'11\"",
         "weight": "48.5 lbs.",
+        "shape": 2,
         "languages": {
             "ja": {
                 "name": "シビビール",

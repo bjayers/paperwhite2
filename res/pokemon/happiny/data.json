@@ -6,6 +6,7 @@
         "entry": "It likes to carry around a small\nrock. It may wander around others'\nfeet and cause them to stumble.",
         "height": "2'00\"",
         "weight": "53.8 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Happiny",

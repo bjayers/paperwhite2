@@ -6,6 +6,7 @@
         "entry": "It can swim while towing a large\nship. It bashes down foes with a\nswing of its thick arms.",
         "height": "4'11\"",
         "weight": "180.6 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Swampert",

@@ -6,6 +6,7 @@
         "entry": "The instant it presses the tips of its\ntails onto an opponent, it sends over\n20,000 volts of electricity into the foe.",
         "height": "5'11\"",
         "weight": "305.6 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Electivire",

@@ -6,6 +6,7 @@
         "entry": "It lures Pokémon with its pattern\nthat looks just like a Poké Ball\nthen releases poison spores.",
         "height": "0'08\"",
         "weight": "2.2 lbs.",
+        "shape": 13,
         "languages": {
             "ja": {
                 "name": "タマゲタケ",

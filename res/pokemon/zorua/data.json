@@ -6,6 +6,7 @@
         "entry": "It changes so it looks just\nlike its foe, tricks it, and then\nuses that opportunity to flee.",
         "height": "2'04\"",
         "weight": "27.6 lbs.",
+        "shape": 4,
         "languages": {
             "ja": {
                 "name": "ゾロア",

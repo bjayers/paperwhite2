@@ -6,6 +6,7 @@
         "entry": "A Pokémon that roamed the skies\nin the dinosaur era. Its teeth are\nlike saw blades.",
         "height": "5'11\"",
         "weight": "130.1 lbs.",
+        "shape": 11,
         "languages": {
             "en": {
                 "name": "Aerodactyl",

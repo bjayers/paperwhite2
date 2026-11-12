@@ -6,6 +6,7 @@
         "entry": "At rest, it looks just like a rock.\nCarelessly stepping on it will make\nit swing its fists angrily.",
         "height": "1'04\"",
         "weight": "44.1 lbs.",
+        "shape": 13,
         "languages": {
             "en": {
                 "name": "Geodude",

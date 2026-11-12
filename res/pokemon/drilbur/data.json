@@ -6,6 +6,7 @@
         "entry": "By spinning its body, it can dig\nstraight through the ground\nat a speed of 30 mph.",
         "height": "1'00\"",
         "weight": "18.7 lbs.",
+        "shape": 9,
         "languages": {
             "ja": {
                 "name": "モグリュー",

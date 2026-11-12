@@ -6,6 +6,7 @@
         "entry": "It crawls along the seafloor using\nits long front fins like legs. It\ncompetes for food with Lanturn.",
         "height": "3'11\"",
         "weight": "52.9 lbs.",
+        "shape": 2,
         "languages": {
             "en": {
                 "name": "Lumineon",

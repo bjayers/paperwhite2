@@ -6,6 +6,7 @@
         "entry": "Born from gases, anyone would\nfaint if engulfed by its gaseous\nbody, which contains poison.",
         "height": "4'03\"",
         "weight": "0.2 lbs.",
+        "shape": 0,
         "languages": {
             "en": {
                 "name": "Gastly",

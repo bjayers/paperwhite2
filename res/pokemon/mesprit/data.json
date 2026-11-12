@@ -6,6 +6,7 @@
         "entry": "When Mesprit flew, people learned\nthe joy and sadness of living.\nIt was the birth of emotions.",
         "height": "1'00\"",
         "weight": "0.7 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Mesprit",

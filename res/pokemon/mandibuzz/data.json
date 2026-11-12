@@ -6,6 +6,7 @@
         "entry": "They fly in circles around the sky.\nWhen they spot prey, they attack and\ncarry it back to their nest with ease.",
         "height": "3'11\"",
         "weight": "87.1 lbs.",
+        "shape": 11,
         "languages": {
             "ja": {
                 "name": "バルジーナ",

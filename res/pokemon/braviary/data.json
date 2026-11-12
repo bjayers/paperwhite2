@@ -6,6 +6,7 @@
         "entry": "For the sake of its friends, this brave\nwarrior of the sky will not stop battling,\neven if injured.",
         "height": "4'11\"",
         "weight": "90.4 lbs.",
+        "shape": 11,
         "languages": {
             "ja": {
                 "name": "ウォーグル",

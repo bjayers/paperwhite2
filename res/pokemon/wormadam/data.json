@@ -6,16 +6,22 @@
         "entry": "When evolving, its body takes in\nsurrounding materials. As a result,\nthere are many body variations.",
         "height": "1'08\"",
         "weight": "14.3 lbs.",
+        "shape": 12,
+        "form_name": "Plant Cloak",
         "forms": [
             {
+                "name": "Sandy Cloak",
                 "entry": "When evolving, its body takes in\nsurrounding materials. As a result,\nthere are many body variations.",
                 "height": "1'08\"",
-                "weight": "14.3 lbs."
+                "weight": "14.3 lbs.",
+                "shape": 12
             },
             {
+                "name": "Trash Cloak",
                 "entry": "When evolving, its body takes in\nsurrounding materials. As a result,\nthere are many body variations.",
                 "height": "1'08\"",
-                "weight": "14.3 lbs."
+                "weight": "14.3 lbs.",
+                "shape": 12
             }
         ],
         "languages": {

@@ -6,6 +6,7 @@
         "entry": "It is said that kids who drink\nMiltank's milk grow up to become\nhearty, healthy adults.",
         "height": "3'11\"",
         "weight": "166.4 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Miltank",

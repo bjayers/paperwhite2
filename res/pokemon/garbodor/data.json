@@ -6,6 +6,7 @@
         "entry": "Consuming garbage makes\nnew kinds of poison gases\nand liquids inside their bodies.",
         "height": "6'03\"",
         "weight": "236.6 lbs.",
+        "shape": 10,
         "languages": {
             "ja": {
                 "name": "ダストダス",

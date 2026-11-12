@@ -6,6 +6,7 @@
         "entry": "This Pokémon appears before people\nand Pokémon who are having nightmares\nand eats those dreams.",
         "height": "2'00\"",
         "weight": "51.4 lbs.",
+        "shape": 4,
         "languages": {
             "ja": {
                 "name": "ムンナ",

@@ -6,6 +6,7 @@
         "entry": "A doll that became a Pokémon over\nits grudge of being thrown away. It\nseeks the child who disowned it.",
         "height": "3'07\"",
         "weight": "27.6 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Banette",

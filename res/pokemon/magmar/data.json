@@ -6,6 +6,7 @@
         "entry": "The scorching fire exhaled by Magmar\nforms heat waves around its body, making\nit hard to see the Pokémon clearly.",
         "height": "4'03\"",
         "weight": "98.1 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Magmar",

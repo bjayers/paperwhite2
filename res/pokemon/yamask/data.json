@@ -6,6 +6,7 @@
         "entry": "These Pokémon arose from the spirits of\npeople interred in graves. Each retains\nmemories of its former life.",
         "height": "1'08\"",
         "weight": "3.3 lbs.",
+        "shape": 13,
         "languages": {
             "ja": {
                 "name": "デスマス",

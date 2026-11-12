@@ -6,6 +6,7 @@
         "entry": "To protect itself, it afflicts those\naround it with nightmares. However,\nit means no harm.",
         "height": "4'11\"",
         "weight": "111.3 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Darkrai",

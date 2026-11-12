@@ -6,16 +6,22 @@
         "entry": "Even if it is born where there are\nno cocooning materials, it somehow\nalways ends up with a cloak.",
         "height": "0'08\"",
         "weight": "7.5 lbs.",
+        "shape": 12,
+        "form_name": "Plant Cloak",
         "forms": [
             {
+                "name": "Sandy Cloak",
                 "entry": "Even if it is born where there are\nno cocooning materials, it somehow\nalways ends up with a cloak.",
                 "height": "0'08\"",
-                "weight": "7.5 lbs."
+                "weight": "7.5 lbs.",
+                "shape": 12
             },
             {
+                "name": "Trash Cloak",
                 "entry": "Even if it is born where there are\nno cocooning materials, it somehow\nalways ends up with a cloak.",
                 "height": "0'08\"",
-                "weight": "7.5 lbs."
+                "weight": "7.5 lbs.",
+                "shape": 12
             }
         ],
         "languages": {

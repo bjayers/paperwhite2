@@ -6,6 +6,7 @@
         "entry": "The water stored inside the tuft\non its head is full of nutrients.\nIt waters plants with it using its tail.",
         "height": "2'00\"",
         "weight": "29.8 lbs.",
+        "shape": 9,
         "languages": {
             "ja": {
                 "name": "ヒヤップ",

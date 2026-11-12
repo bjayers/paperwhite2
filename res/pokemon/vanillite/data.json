@@ -6,6 +6,7 @@
         "entry": "Theoretically, this Pokémon formed from\nicicles bathed in energy from the morning\nsun. Their breath is -58° F.",
         "height": "1'04\"",
         "weight": "12.6 lbs.",
+        "shape": 8,
         "languages": {
             "ja": {
                 "name": "バニプッチ",

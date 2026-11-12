@@ -6,6 +6,7 @@
         "entry": "A Pokémon with a persistent\nnature, it chases its chosen prey\nuntil the prey becomes exhausted.",
         "height": "1'08\"",
         "weight": "30.0 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Poochyena",

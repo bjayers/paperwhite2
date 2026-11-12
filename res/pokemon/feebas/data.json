@@ -6,6 +6,7 @@
         "entry": "It is a shabby and ugly Pokémon.\nHowever, it is very hardy and\ncan survive on little water.",
         "height": "2'00\"",
         "weight": "16.3 lbs.",
+        "shape": 2,
         "languages": {
             "en": {
                 "name": "Feebas",

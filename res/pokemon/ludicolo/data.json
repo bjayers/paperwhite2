@@ -6,6 +6,7 @@
         "entry": "If it hears festive music, all its\nmuscles fill with energy. It can't\nhelp breaking out into a dance.",
         "height": "4'11\"",
         "weight": "121.3 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Ludicolo",

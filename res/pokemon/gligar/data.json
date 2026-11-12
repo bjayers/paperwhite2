@@ -6,6 +6,7 @@
         "entry": "It clamps on to its chosen prey then\njabs the stinger on its tail into the\nprey while it's stunned with surprise.",
         "height": "3'07\"",
         "weight": "142.9 lbs.",
+        "shape": 11,
         "languages": {
             "en": {
                 "name": "Gligar",

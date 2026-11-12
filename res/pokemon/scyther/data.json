@@ -6,6 +6,7 @@
         "entry": "The sharp scythes on its forearms\nbecome increasingly sharp by\ncutting through hard objects.",
         "height": "4'11\"",
         "weight": "123.5 lbs.",
+        "shape": 5,
         "languages": {
             "en": {
                 "name": "Scyther",

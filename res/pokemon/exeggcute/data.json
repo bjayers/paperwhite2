@@ -6,6 +6,7 @@
         "entry": "Its six eggs converse using\ntelepathy. They can quickly gather\nif they become separated.",
         "height": "1'04\"",
         "weight": "5.5 lbs.",
+        "shape": 6,
         "languages": {
             "en": {
                 "name": "Exeggcute",

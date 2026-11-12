@@ -6,6 +6,7 @@
         "entry": "It inflates the flotation sac around\nits neck and pokes its head out of\nthe water to see what is going on.",
         "height": "2'04\"",
         "weight": "65.0 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Buizel",

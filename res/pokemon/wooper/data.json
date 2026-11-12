@@ -6,6 +6,7 @@
         "entry": "When walking on land, it covers its\nbody with a poisonous film that\nkeeps its skin from dehydrating.",
         "height": "1'04\"",
         "weight": "18.7 lbs.",
+        "shape": 1,
         "languages": {
             "en": {
                 "name": "Wooper",

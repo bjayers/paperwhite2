@@ -6,6 +6,7 @@
         "entry": "It looks just like a Poké Ball.\nIt is dangerous because it may\nelectrocute or explode on contact.",
         "height": "1'08\"",
         "weight": "22.9 lbs.",
+        "shape": 0,
         "languages": {
             "en": {
                 "name": "Voltorb",

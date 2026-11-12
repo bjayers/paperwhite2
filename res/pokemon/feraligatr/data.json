@@ -6,6 +6,7 @@
         "entry": "It usually moves slowly, but it\ngoes at blinding speed when it\nattacks and bites prey.",
         "height": "7'07\"",
         "weight": "195.8 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Feraligatr",

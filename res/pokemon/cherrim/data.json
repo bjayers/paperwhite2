@@ -6,11 +6,15 @@
         "entry": "If it senses strong sunlight, it\nopens its folded petals to absorb\nthe sun's rays with its whole body.",
         "height": "1'08\"",
         "weight": "20.5 lbs.",
+        "shape": 1,
+        "form_name": "Overcast Form",
         "forms": [
             {
+                "name": "Sunshine Form",
                 "entry": "If it senses strong sunlight, it\nopens its folded petals to absorb\nthe sun's rays with its whole body.",
                 "height": "1'08\"",
-                "weight": "20.5 lbs."
+                "weight": "20.5 lbs.",
+                "shape": 1
             }
         ],
         "languages": {

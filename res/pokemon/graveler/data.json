@@ -6,6 +6,7 @@
         "entry": "It rolls on mountain paths to move.\nOnce it builds momentum, no Pokémon\ncan stop it without difficulty.",
         "height": "3'03\"",
         "weight": "231.5 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Graveler",

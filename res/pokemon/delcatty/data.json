@@ -6,6 +6,7 @@
         "entry": "The reason it does not have a nest\nis that it simply searches for a clean,\ncomfortable place then sleeps there.",
         "height": "3'07\"",
         "weight": "71.9 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Delcatty",

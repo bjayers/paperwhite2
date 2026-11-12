@@ -6,6 +6,7 @@
         "entry": "They swarm any foe that invades\ntheir territory. Their sharp fangs\ncan tear out boat hulls.",
         "height": "2'07\"",
         "weight": "45.9 lbs.",
+        "shape": 2,
         "languages": {
             "en": {
                 "name": "Carvanha",

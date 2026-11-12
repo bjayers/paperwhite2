@@ -6,6 +6,7 @@
         "entry": "Thought to be an embodiment of the sun,\nit appeared during a bitterly cold winter\nand saved Pokémon from freezing.",
         "height": "5'03\"",
         "weight": "101.4 lbs.",
+        "shape": 5,
         "languages": {
             "ja": {
                 "name": "ウルガモス",

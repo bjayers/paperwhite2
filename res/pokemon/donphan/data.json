@@ -6,6 +6,7 @@
         "entry": "It attacks by curling up then\nrolling into its foe. It can blow\napart a house in one hit.",
         "height": "3'07\"",
         "weight": "264.6 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Donphan",

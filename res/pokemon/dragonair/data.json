@@ -6,6 +6,7 @@
         "entry": "If its body takes on an aura, the\nweather changes instantly. It is\nsaid to live in seas and lakes.",
         "height": "13'01\"",
         "weight": "36.4 lbs.",
+        "shape": 12,
         "languages": {
             "en": {
                 "name": "Dragonair",

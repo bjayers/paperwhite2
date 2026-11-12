@@ -6,6 +6,7 @@
         "entry": "It lives in burrows dug on sandy\nbeaches. Its pincers fully grow\nback if they are broken in battle.",
         "height": "1'04\"",
         "weight": "14.3 lbs.",
+        "shape": 3,
         "languages": {
             "en": {
                 "name": "Krabby",

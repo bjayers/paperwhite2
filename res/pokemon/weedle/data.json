@@ -6,6 +6,7 @@
         "entry": "It eats its weight in leaves every\nday. It fends off attackers with\nthe needle on its head.",
         "height": "1'00\"",
         "weight": "7.1 lbs.",
+        "shape": 12,
         "languages": {
             "en": {
                 "name": "Weedle",

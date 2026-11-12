@@ -6,6 +6,7 @@
         "entry": "Blown by seasonal winds, it\ncircles the globe, scattering\ncotton spores as it goes.",
         "height": "2'07\"",
         "weight": "6.6 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Jumpluff",

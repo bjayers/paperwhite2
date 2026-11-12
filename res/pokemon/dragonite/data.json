@@ -6,6 +6,7 @@
         "entry": "It is said to make its home\nsomewhere in the sea. It guides\ncrews of shipwrecks to shore.",
         "height": "7'03\"",
         "weight": "463.0 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Dragonite",

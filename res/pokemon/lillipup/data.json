@@ -6,6 +6,7 @@
         "entry": "Though it is a very brave Pokémon,\nit's also smart enough to check its\nfoe's strength and avoid battle.",
         "height": "1'04\"",
         "weight": "9.0 lbs.",
+        "shape": 4,
         "languages": {
             "ja": {
                 "name": "ヨーテリー",

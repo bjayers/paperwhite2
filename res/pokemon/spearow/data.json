@@ -6,6 +6,7 @@
         "entry": "It flaps its small wings busily to\nfly. Using its beak, it searches\nin grass for prey.",
         "height": "1'00\"",
         "weight": "4.4 lbs.",
+        "shape": 11,
         "languages": {
             "en": {
                 "name": "Spearow",

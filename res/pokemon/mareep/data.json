@@ -6,6 +6,7 @@
         "entry": "When cold weather increases static\nelectricity, its wool doubles in size\nand the tip of its tail glows slightly.",
         "height": "2'00\"",
         "weight": "17.2 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Mareep",

@@ -6,6 +6,7 @@
         "entry": "The arm-twisting punches it throws\npulverize even concrete. It rests\nafter three minutes of fighting.",
         "height": "4'07\"",
         "weight": "110.7 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Hitmonchan",

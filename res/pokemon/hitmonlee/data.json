@@ -6,6 +6,7 @@
         "entry": "Its legs can stretch double.\nFirst-time foes are startled by\nits extensible reach.",
         "height": "4'11\"",
         "weight": "109.8 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Hitmonlee",

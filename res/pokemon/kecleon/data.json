@@ -6,6 +6,7 @@
         "entry": "It can freely change its body's\ncolor. The zigzag pattern on its\nbelly doesn't change, however.",
         "height": "3'03\"",
         "weight": "48.5 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Kecleon",

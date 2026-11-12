@@ -6,6 +6,7 @@
         "entry": "Forming a drill with its steel claws\nand head, it can bore through a steel\nplate, no matter how thick it is.",
         "height": "2'04\"",
         "weight": "89.1 lbs.",
+        "shape": 10,
         "languages": {
             "ja": {
                 "name": "ドリュウズ",

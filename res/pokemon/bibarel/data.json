@@ -6,6 +6,7 @@
         "entry": "A river dammed by Bibarel will\nnever overflow its banks, which\nis appreciated by people nearby.",
         "height": "3'03\"",
         "weight": "69.4 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Bibarel",

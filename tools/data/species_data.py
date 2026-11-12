@@ -48,6 +48,12 @@ GROWTH_RATES = "growth_rates.csv"
 NAMES, NAMES_WITH_ARTICLE, CATEGORIES, POKEDEX_ENTRIES = 90, 483, 464, 442
 # The Pokédex's heights and weights as it shows them, a line per species, an empty one, then the alternate forms'
 HEIGHTS, WEIGHTS = 451, 471
+# The forms page's names of the forms (TEXT_BANK_POKEDEX_DETAIL_FORM): a line per species, its first form's, an empty
+# one, then the alternate forms', as the heights and weights
+FORM_NAMES = 450
+# The Pokédex search's shapes (a/0/9/7 file 2, pokedex_data.py): a byte per species, then the alternate forms', as the
+# form names
+POKEDEX_DATA, POKEDEX_SHAPES = "a/0/9/7", 2
 # The Pokédex text the game keeps in other languages, for the species up to Arceus (LANGUAGE_SPECIES), which a Pokémon
 # from a game in that language shows: each language's files of names, categories, entries, heights and weights. The
 # heights and weights end with LANGUAGE_FORMS' first alternate forms; the Japanese categories are of every species
@@ -203,8 +209,10 @@ def dump(files: Path, output: Path):
         return data
 
     text = files / "a/0/0/2"
-    names, with_article, categories, entries, heights, weights = (
-        message_lines(text, n) for n in (NAMES, NAMES_WITH_ARTICLE, CATEGORIES, POKEDEX_ENTRIES, HEIGHTS, WEIGHTS))
+    names, with_article, categories, entries, heights, weights, form_names = (
+        message_lines(text, n) for n in (NAMES, NAMES_WITH_ARTICLE, CATEGORIES, POKEDEX_ENTRIES, HEIGHTS, WEIGHTS,
+                                         FORM_NAMES))
+    shapes = read_narc((files / POKEDEX_DATA).read_bytes())[POKEDEX_SHAPES]
     # After the species' entries, heights and weights, an empty one and then the alternate forms', in species order
     form_lines = national + 1
     languages = {language: [message_lines(text, n) for n in files_] for language, files_ in LANGUAGES.items()}
@@ -226,12 +234,15 @@ def dump(files: Path, output: Path):
         if index and f"{{bd01}}{article(species_text)} {{ff00:255}}{names[index]}" != with_article[index]:
             species_text["name_article"] = with_article[index].removeprefix("{bd01}").split(" ")[0]
         pokedex = {"category": to_json(categories[index]), "entry": to_json(entries[index]),
-                   "height": to_json(heights[index]), "weight": to_json(weights[index])}
+                   "height": to_json(heights[index]), "weight": to_json(weights[index]), "shape": shapes[index]}
+        if form_names[index]:
+            pokedex["form_name"] = to_json(form_names[index])
         if data["forms"]["count"] > 1:
             pokedex["forms"] = []
             for _ in range(data["forms"]["count"] - 1):
-                pokedex["forms"].append({"entry": to_json(entries[form_lines]), "height": to_json(heights[form_lines]),
-                                         "weight": to_json(weights[form_lines])})
+                pokedex["forms"].append({"name": to_json(form_names[form_lines]),
+                                         "entry": to_json(entries[form_lines]), "height": to_json(heights[form_lines]),
+                                         "weight": to_json(weights[form_lines]), "shape": shapes[form_lines]})
                 form_lines += 1
         pokedex["languages"] = {}
         for language, (l_names, l_categories, l_entries, l_heights, l_weights) in languages.items():

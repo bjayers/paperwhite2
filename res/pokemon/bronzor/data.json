@@ -6,6 +6,7 @@
         "entry": "They are found in ancient tombs.\nThe patterns on their backs are\nsaid to be imbued with mysterious power.",
         "height": "1'08\"",
         "weight": "133.4 lbs.",
+        "shape": 0,
         "languages": {
             "en": {
                 "name": "Bronzor",

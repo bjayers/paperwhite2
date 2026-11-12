@@ -6,6 +6,7 @@
         "entry": "It is born with a wondrous power\nthat lets it bond with any kind of\nPokémon.",
         "height": "1'00\"",
         "weight": "3.1 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Manaphy",

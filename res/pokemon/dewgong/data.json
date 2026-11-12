@@ -6,6 +6,7 @@
         "entry": "Its streamlined body has low resistance,\nand it swims around cold oceans at\na speed of eight knots.",
         "height": "5'07\"",
         "weight": "264.6 lbs.",
+        "shape": 2,
         "languages": {
             "en": {
                 "name": "Dewgong",

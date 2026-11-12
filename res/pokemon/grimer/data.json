@@ -6,6 +6,7 @@
         "entry": "Born from sludge, these Pokémon now\ngather in polluted places and increase\nthe bacteria in their bodies.",
         "height": "2'11\"",
         "weight": "66.1 lbs.",
+        "shape": 13,
         "languages": {
             "en": {
                 "name": "Grimer",

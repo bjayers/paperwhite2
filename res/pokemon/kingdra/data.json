@@ -6,6 +6,7 @@
         "entry": "It lives in caves on the seafloor\nand creates giant whirlpools\nevery time it moves.",
         "height": "5'11\"",
         "weight": "335.1 lbs.",
+        "shape": 8,
         "languages": {
             "en": {
                 "name": "Kingdra",

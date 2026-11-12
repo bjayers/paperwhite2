@@ -7,6 +7,12 @@
 Images are indexed PNGs: their pixel indices select colors in the adjacent
 JASC palette. Nitro cell, animation, and other binary resources remain separate
 files so every archive member has a source without inventing lossy metadata.
+
+Packing walks the original archive's files and builds each from its source. Paper White 2's own form sprite groups
+(a species' forms.sprite_offset + form - 1 from ORIGINAL_FORM_GROUPS, res/pokemon/<species>/form_<n>/) are appended:
+the battle sprites' 20 files a group after the Substitute's files and Arceus' palettes (ADDED_FORM_FILES,
+include/paperwhite2/pokemon_forms.h), the icons' two a group after the original ones, each made in the format of its
+species' own file of the same kind. Without such forms the archives are the original's.
 """
 
 import json
@@ -18,7 +24,7 @@ from pathlib import Path
 
 from narc import read_narc, write_narc
 from species_data import directory
-from nitro_2d import (character_pixels, palette_colors, palette_indices, patch_characters, patch_palette,
+from nitro_2d import (character_pixels, color5, palette_colors, palette_indices, patch_characters, patch_palette,
                       read_indexed_png, read_palette, write_indexed_png, write_palette)
 
 
@@ -59,7 +65,8 @@ def form_names(musical=False):
     """Returns the species and form of each form sprite group, from its species' forms (sprite_offset and count) in
     res/pokemon. The musical sprites follow Black and White's species data instead (ARCID_PERSONAL_BW1, a/3/0/2,
     which MusicalMcss_GetDataIDBase reads), whose offsets differ and which has no source. Forms told apart only by
-    their palette (palette_forms, Arceus) have no groups."""
+    their palette (palette_forms, Arceus) have no groups. Paper White 2's form groups, from ORIGINAL_FORM_GROUPS,
+    must follow the original ones without gaps, since the archives append them in order."""
     records = read_narc((EXTRACTED / "a/3/0/2").read_bytes()) if musical else None
     result = {}
     for number, species in enumerate(species_names()[:national_species()]):
@@ -73,14 +80,37 @@ def form_names(musical=False):
         if count <= 1 or palette_only:
             continue
         for form in range(1, count):
-            result[sprite_offset + form - 1] = (species, form)
+            group = sprite_offset + form - 1
+            if group in result:
+                raise ValueError(f"res/pokemon/{species}: form {form}'s sprite group {group} is also "
+                                 f"{result[group][0]}'s form {result[group][1]}'s (forms.sprite_offset)")
+            result[group] = (species, form)
+    added = sorted(group for group in result if group >= ORIGINAL_FORM_GROUPS)
+    if not musical and added != list(range(ORIGINAL_FORM_GROUPS, ORIGINAL_FORM_GROUPS + len(added))):
+        missing = next(group for group in range(ORIGINAL_FORM_GROUPS, added[-1]) if group not in result)
+        raise ValueError(f"no form has sprite group {missing}: the groups from {ORIGINAL_FORM_GROUPS} must follow "
+                         "each other (forms.sprite_offset)")
     return result
+
+
+def added_form_groups():
+    """Returns the number of Paper White 2's form sprite groups, from ORIGINAL_FORM_GROUPS."""
+    return sum(1 for group in form_names() if group >= ORIGINAL_FORM_GROUPS)
 
 
 # Each sprite archive's groups of files (20 to a battle or musical group, 2 to an icon group): the egg's, the next
 # Manaphy's egg's, and the first form's. Before them, a group is a species' (in a/0/0/4, of the species two after it
 # past the bad egg, which has no sprites of its own, GetPokemonDataIDBase)
 GROUPS = {"battle": (683, 685), "icons": (683, 685), "musical": (650, 652)}
+# Paper White 2: the original game's form groups, 0 to 65 (sprite_offset + form - 1). The battle sprites' 66 form
+# groups end where the Substitute's files start (SUBSTITUTE_FILES), so the hack's form groups, from 66, follow Arceus'
+# palettes, at the archive's original end (ADDED_FORM_FILES, PaperWhite2_GetFormSpriteFile); the icons' form groups
+# end at the archive's end, so theirs follow them as they are (PokeParty_GetIconIndex)
+ORIGINAL_FORM_GROUPS = 66
+SUBSTITUTE_FILES = 15020
+FORM_PALETTE_FILES = 15033
+ADDED_FORM_FILES = 15065
+GROUP_FILES = 20
 
 
 def group_folder(root, group, kind):
@@ -109,10 +139,21 @@ EXTENSIONS = {"cells": ".ncer", "animations": ".nanr.lz11", "multi_cells": ".nmc
               "info": ".bin"}
 
 
+def battle_group(index, musical):
+    """Returns a battle or musical sprite file's group and its slot in the group, or None where the file is the
+    Substitute's or a form's palette. Past those come Paper White 2's form groups, in group order."""
+    if not musical and index >= ADDED_FORM_FILES:
+        group, slot = divmod(index - ADDED_FORM_FILES, GROUP_FILES)
+        return GROUPS["battle"][1] + ORIGINAL_FORM_GROUPS + group, slot
+    if index >= (14240 if musical else SUBSTITUTE_FILES):
+        return None
+    return divmod(index, GROUP_FILES)
+
+
 def battle_file(root, index, musical):
-    end = 14240 if musical else 15020
-    if index >= end:
-        palette_start = 14253 if musical else 15033
+    end = 14240 if musical else SUBSTITUTE_FILES
+    if battle_group(index, musical) is None:
+        palette_start = 14253 if musical else FORM_PALETTE_FILES
         if index >= palette_start:
             offset = index - palette_start
             folder = root / "arceus" / f"form_{offset // 2 + 1}"
@@ -130,7 +171,7 @@ def battle_file(root, index, musical):
             return (folder / f"{name}_single.png" if musical else folder / f"{name}.png"), "char", {
                 "single_cell": musical, "linear": not musical}
         return folder / (name + EXTENSIONS[name.split("_", 1)[1]]), "raw", None
-    group, slot = divmod(index, 20)
+    group, slot = battle_group(index, musical)
     folder = group_folder(root, group, "musical" if musical else "battle")
     name = SLOT_NAMES[slot]
     if slot in CHAR_SLOTS:
@@ -165,10 +206,27 @@ def icon_file(root, index):
     if group == national_species():
         # SPECIES_EGG's own icon, a copy of SPECIES_NONE's: an egg shows the egg's, icon.png (PokeParty_GetIconIndex)
         path = path.with_name("species_icon_female.png" if female else "species_icon.png")
+    if group >= GROUPS["icons"][1] + ORIGINAL_FORM_GROUPS:
+        # Paper White 2's forms: past sPokeIconPalettes' entries, so the bank is the one the icon is drawn in
+        return path, "char", {"size": (32, 64), "palette_bank": icon_bank(root, path) if path.exists() else 0}
     palette_index = group if group < GROUPS["icons"][0] else group + 2
     table = icon_palettes()
     bank = (table[palette_index] >> (4 if female else 0)) & 15 if palette_index < len(table) else 0
     return path, "char", {"size": (32, 64), "palette_bank": bank}
+
+
+def icon_bank(root, path):
+    """Returns the bank of res/pokemon/shared/icon_palettes.pal whose colors an icon's PNG has at the indices that it
+    draws with: an icon exported or copied from another keeps its bank's colors in its PNG's palette. Paper White 2's
+    forms' icons have their banks so (tools/paperwhite2/pokemon_forms.py writes them for PokeIcon_GetPalette)."""
+    _, _, pixels, png_colors = read_indexed_png(path)
+    colors = read_palette(root / "shared" / ICON_FILES[0])
+    used = sorted(set(pixels) - {0})
+    for bank in range(len(colors) // 16):
+        if all(i < len(png_colors) and i < 16 and color5(png_colors[i]) == color5(colors[bank * 16 + i])
+               for i in used):
+            return bank
+    raise ValueError(f"{path}: its palette is none of shared/{ICON_FILES[0]}'s banks; draw it in one of them")
 
 
 # The footprints' shared files (pokedex_info.c): the palette, then the animations and cells of the species up to
@@ -198,8 +256,11 @@ def source_file(root, archive_name, index):
 
 def palette_member(kind, index):
     """Returns the file of a battle or musical sprite's palette: its group's normal.pal, or the Substitute's."""
-    end = 14240 if kind == "musical" else 15020
-    return end + SUBSTITUTE_SLOTS.index("normal") if index >= end else index // 20 * 20 + 18
+    end = 14240 if kind == "musical" else SUBSTITUTE_FILES
+    group = battle_group(index, kind == "musical")
+    if group is None:
+        return end + SUBSTITUTE_SLOTS.index("normal")
+    return index - group[1] + SLOT_NAMES.index("normal")
 
 
 def colors_for(root, archive_name, archive, index, options):
@@ -263,6 +324,32 @@ def export(root):
             path.unlink()
 
 
+def pack_file(root, archive_name, archive, index, original, path, kind, options):
+    """Returns a file of the archive from its source, as the original file where they are the same: raw files as they
+    are, palettes and images patched into the original's format."""
+    if kind == "raw":
+        return path.read_bytes()
+    if kind == "palette":
+        edited_colors = read_palette(path)
+        original_colors = palette_colors(original)
+        return (original if all(round(a * 31 / 255) == round(b * 31 / 255)
+                                for left, right in zip(edited_colors, original_colors)
+                                for a, b in zip(left, right)) and len(edited_colors) == len(original_colors)
+                else patch_palette(original, edited_colors))
+    width, height, pixels, png_colors = read_indexed_png(path)
+    pixels = palette_indices(path, pixels, png_colors, current_colors(root, archive_name, archive, index, options))
+    expected_width, expected_height, original_pixels = character_pixels(
+        original, *(options.get("size", (None, None)) if options else (None, None)),
+        single_cell=options.get("single_cell", False) if options else False,
+        linear=options.get("linear", False) if options else False)
+    if (width, height) != (expected_width, expected_height):
+        raise ValueError(f"{path}: expected {expected_width} by {expected_height} pixels")
+    return (original if pixels == original_pixels else
+            patch_characters(original, width, height, pixels,
+                             single_cell=options.get("single_cell", False) if options else False,
+                             linear=options.get("linear", False) if options else False))
+
+
 def pack(root, game, output):
     archive_name = Path(output).as_posix().split("/files/", 1)[-1]
     if archive_name not in ARCHIVES:
@@ -281,29 +368,32 @@ def pack(root, game, output):
             continue
         if archive_name == "a/0/5/1" and not path.exists() and path.parent.name == "musical":
             path = path.parent.parent / path.name
-        if kind == "raw":
-            edited = path.read_bytes()
-        elif kind == "palette":
-            edited_colors = read_palette(path)
-            original_colors = palette_colors(original)
-            edited = (original if all(round(a * 31 / 255) == round(b * 31 / 255)
-                                      for left, right in zip(edited_colors, original_colors)
-                                      for a, b in zip(left, right)) and len(edited_colors) == len(original_colors)
-                      else patch_palette(original, edited_colors))
+        result.append(pack_file(root, archive_name, archive, index, original, path, kind, options))
+    # Paper White 2's form groups, after the archive's files: each file made from its source, in the format of its
+    # species' own file of the same kind (the male's, the normal palette's), which it is where the two are the same
+    added = added_form_groups() if ARCHIVES[archive_name] in ("battle", "icons") else 0
+    if ARCHIVES[archive_name] == "battle" and added and len(result) != ADDED_FORM_FILES:
+        raise ValueError(f"{archive_name} has {len(result)} files, not the {ADDED_FORM_FILES} that the hack's form "
+                         "groups follow")
+    for _ in range(added * (GROUP_FILES if ARCHIVES[archive_name] == "battle" else 2)):
+        index = len(result)
+        path, kind, options = source_file(root, archive_name, index)
+        species = species_names().index(path.parent.parent.name if path.parent.name.startswith("form_") else
+                                        path.parent.name)
+        if ARCHIVES[archive_name] == "battle":
+            slot = (index - ADDED_FORM_FILES) % GROUP_FILES
+            template_slot = 18 if slot in PALETTE_SLOTS else slot - 1 if slot in (1, 3, 10, 12) else slot
+            template = archive[species * GROUP_FILES + template_slot]
+            optional = slot in (1, 3, 10, 12)
         else:
-            width, height, pixels, png_colors = read_indexed_png(path)
-            pixels = palette_indices(path, pixels, png_colors, current_colors(root, archive_name, archive, index, options))
-            expected_width, expected_height, original_pixels = character_pixels(
-                original, *(options.get("size", (None, None)) if options else (None, None)),
-                single_cell=options.get("single_cell", False) if options else False,
-                linear=options.get("linear", False) if options else False)
-            if (width, height) != (expected_width, expected_height):
-                raise ValueError(f"{path}: expected {expected_width} by {expected_height} pixels")
-            edited = (original if pixels == original_pixels else
-                      patch_characters(original, width, height, pixels,
-                                       single_cell=options.get("single_cell", False) if options else False,
-                                       linear=options.get("linear", False) if options else False))
-        result.append(edited)
+            template = archive[len(ICON_FILES) + species * 2]
+            optional = (index - len(ICON_FILES)) % 2 == 1
+        if not path.exists():
+            if not optional:
+                raise ValueError(f"{path}: missing, and the form's sprite group needs it")
+            result.append(b"")
+            continue
+        result.append(pack_file(root, archive_name, archive, index, template, path, kind, options))
     target = Path(output)
     target.parent.mkdir(parents=True, exist_ok=True)
     target.unlink(missing_ok=True)

@@ -6,6 +6,7 @@
         "entry": "It is called the “Mirage Pokémon\"\nbecause so few have seen it.\nIts shed skin has been found.",
         "height": "5'11\"",
         "weight": "7.3 lbs.",
+        "shape": 12,
         "languages": {
             "en": {
                 "name": "Dratini",

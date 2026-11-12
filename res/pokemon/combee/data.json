@@ -6,6 +6,7 @@
         "entry": "This Pokémon is a set of three.\nWhen they sleep, they gather up\nand form a giant hive of 100 Combee.",
         "height": "1'00\"",
         "weight": "12.1 lbs.",
+        "shape": 6,
         "languages": {
             "en": {
                 "name": "Combee",

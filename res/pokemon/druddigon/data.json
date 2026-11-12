@@ -6,6 +6,7 @@
         "entry": "It runs through the narrow tunnels\nformed by Excadrill and Onix.\nIt uses its sharp claws to catch prey.",
         "height": "5'03\"",
         "weight": "306.4 lbs.",
+        "shape": 9,
         "languages": {
             "ja": {
                 "name": "クリムガン",

@@ -6,6 +6,7 @@
         "entry": "It attaches silk to its prey and\nsets it free. Later, it tracks the\nsilk to the prey and its friends.",
         "height": "3'07\"",
         "weight": "73.9 lbs.",
+        "shape": 3,
         "languages": {
             "en": {
                 "name": "Ariados",

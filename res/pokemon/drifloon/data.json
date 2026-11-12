@@ -6,6 +6,7 @@
         "entry": "These Pokémon are called the\n“Signpost for Wandering Spirits.\"\nChildren holding them sometimes vanish.",
         "height": "1'04\"",
         "weight": "2.6 lbs.",
+        "shape": 13,
         "languages": {
             "en": {
                 "name": "Drifloon",

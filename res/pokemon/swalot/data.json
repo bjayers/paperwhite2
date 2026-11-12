@@ -6,6 +6,7 @@
         "entry": "It swallows anything whole.\nIt sweats toxic fluids from its\nfollicles to douse foes.",
         "height": "5'07\"",
         "weight": "176.4 lbs.",
+        "shape": 13,
         "languages": {
             "en": {
                 "name": "Swalot",

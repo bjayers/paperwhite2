@@ -6,6 +6,7 @@
         "entry": "The spirits it absorbs fuel its baleful\nfire. It hangs around hospitals waiting\nfor people to pass on.",
         "height": "2'00\"",
         "weight": "28.7 lbs.",
+        "shape": 13,
         "languages": {
             "ja": {
                 "name": "ランプラー",

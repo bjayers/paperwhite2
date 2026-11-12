@@ -6,6 +6,7 @@
         "entry": "It responds to movement by attacking.\nThis scary, three-headed Pokémon\ndevours everything in its path!",
         "height": "5'11\"",
         "weight": "352.7 lbs.",
+        "shape": 9,
         "languages": {
             "ja": {
                 "name": "サザンドラ",

@@ -6,6 +6,7 @@
         "entry": "It attacks using its huge mouth.\nWhile its attacks are powerful, it\nhurts itself out of clumsiness, too.",
         "height": "2'04\"",
         "weight": "45.2 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Gible",

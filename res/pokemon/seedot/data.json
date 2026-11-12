@@ -6,6 +6,7 @@
         "entry": "When it dangles from a tree\nbranch, it looks just like an acorn.\nIt enjoys scaring other Pokémon.",
         "height": "1'08\"",
         "weight": "8.8 lbs.",
+        "shape": 1,
         "languages": {
             "en": {
                 "name": "Seedot",

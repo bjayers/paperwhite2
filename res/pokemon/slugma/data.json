@@ -6,6 +6,7 @@
         "entry": "Its body is made of magma.\nIf it doesn't keep moving, its\nbody will cool and harden.",
         "height": "2'04\"",
         "weight": "77.2 lbs.",
+        "shape": 12,
         "languages": {
             "en": {
                 "name": "Slugma",

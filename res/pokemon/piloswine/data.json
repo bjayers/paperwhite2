@@ -6,6 +6,7 @@
         "entry": "With its excellent sense of smell,\nit's even able to find mushrooms that\nare buried under frozen ground.",
         "height": "3'07\"",
         "weight": "123.0 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Piloswine",

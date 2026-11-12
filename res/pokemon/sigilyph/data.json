@@ -6,6 +6,7 @@
         "entry": "The guardians of an ancient city, they\nalways fly the same route while\nkeeping watch for invaders.",
         "height": "4'07\"",
         "weight": "30.9 lbs.",
+        "shape": 11,
         "languages": {
             "ja": {
                 "name": "シンボラー",

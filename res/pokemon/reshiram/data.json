@@ -6,6 +6,7 @@
         "entry": "This legendary Pokémon can scorch\nthe world with fire. It helps those\nwho want to build a world of truth.",
         "height": "10'06\"",
         "weight": "727.5 lbs.",
+        "shape": 11,
         "languages": {
             "ja": {
                 "name": "レシラム",

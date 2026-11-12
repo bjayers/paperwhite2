@@ -6,6 +6,7 @@
         "entry": "It mimics the expressions and\nmotions of those it sees to\nunderstand the feelings of others.",
         "height": "2'00\"",
         "weight": "28.7 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Mime Jr.",

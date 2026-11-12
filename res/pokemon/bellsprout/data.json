@@ -6,6 +6,7 @@
         "entry": "It prefers hot and humid\nenvironments. It is quick at\ncapturing prey with its vines.",
         "height": "2'04\"",
         "weight": "8.8 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Bellsprout",

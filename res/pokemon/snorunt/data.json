@@ -6,6 +6,7 @@
         "entry": "It is said that several Snorunt\ngather under giant leaves and\nlive together in harmony.",
         "height": "2'04\"",
         "weight": "37.0 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Snorunt",

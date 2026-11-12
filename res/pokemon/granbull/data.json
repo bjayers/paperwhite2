@@ -6,6 +6,7 @@
         "entry": "It is timid in spite of its looks.\nIf it becomes enraged, however,\nit will strike with its huge fangs.",
         "height": "4'07\"",
         "weight": "107.4 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Granbull",

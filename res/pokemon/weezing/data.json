@@ -6,6 +6,7 @@
         "entry": "Inhaling toxic fumes from trash\nand mixing them inside its body\nlets it spread an even fouler stench.",
         "height": "3'11\"",
         "weight": "20.9 lbs.",
+        "shape": 6,
         "languages": {
             "en": {
                 "name": "Weezing",

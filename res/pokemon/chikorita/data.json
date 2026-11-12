@@ -6,6 +6,7 @@
         "entry": "It uses the leaf on its head to\ndetermine the temperature and\nhumidity. It loves to sunbathe.",
         "height": "2'11\"",
         "weight": "14.1 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Chikorita",

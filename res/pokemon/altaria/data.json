@@ -6,6 +6,7 @@
         "entry": "On sunny days, it flies freely through\nthe sky and blends into the clouds.\nIt sings in a beautiful soprano.",
         "height": "3'07\"",
         "weight": "45.4 lbs.",
+        "shape": 11,
         "languages": {
             "en": {
                 "name": "Altaria",

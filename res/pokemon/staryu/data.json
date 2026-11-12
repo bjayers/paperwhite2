@@ -6,6 +6,7 @@
         "entry": "As long as its red core remains,\nit can regenerate its body instantly,\neven if it's torn apart.",
         "height": "2'07\"",
         "weight": "76.1 lbs.",
+        "shape": 8,
         "languages": {
             "en": {
                 "name": "Staryu",

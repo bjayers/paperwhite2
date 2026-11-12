@@ -6,6 +6,7 @@
         "entry": "Its tusks are incredibly destructive.\nThey can easily slice through a thick,\nsturdy steel column every time.",
         "height": "5'11\"",
         "weight": "232.6 lbs.",
+        "shape": 9,
         "languages": {
             "ja": {
                 "name": "オノノクス",

@@ -6,6 +6,7 @@
         "entry": "It discharges positive and\nnegative electricity from its\nantenna tips to shock its foes.",
         "height": "1'08\"",
         "weight": "26.5 lbs.",
+        "shape": 2,
         "languages": {
             "en": {
                 "name": "Chinchou",

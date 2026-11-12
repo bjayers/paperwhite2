@@ -6,6 +6,7 @@
         "entry": "It has a mischievous spirit. If it\nspots an angler, it will tug on the\nfishing line to interfere.",
         "height": "3'11\"",
         "weight": "71.6 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Lombre",

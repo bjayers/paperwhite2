@@ -6,6 +6,7 @@
         "entry": "It has the power to travel across\ntime, but it is said to appear only\nin peaceful times.",
         "height": "2'00\"",
         "weight": "11.0 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Celebi",

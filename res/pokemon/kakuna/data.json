@@ -6,6 +6,7 @@
         "entry": "While awaiting evolution, it\nhides from predators under\nleaves and in nooks of branches.",
         "height": "2'00\"",
         "weight": "22.0 lbs.",
+        "shape": 12,
         "languages": {
             "en": {
                 "name": "Kakuna",

@@ -6,6 +6,7 @@
         "entry": "It is thought that this Pokémon\nbecame extinct because its spiral\nshell grew too large.",
         "height": "3'03\"",
         "weight": "77.2 lbs.",
+        "shape": 7,
         "languages": {
             "en": {
                 "name": "Omastar",

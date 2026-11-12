@@ -6,11 +6,15 @@
         "entry": "From the forces of lightning and wind,\nit creates energy to give nutrients to\nthe soil and make the land abundant.",
         "height": "4'11\"",
         "weight": "149.9 lbs.",
+        "shape": 13,
+        "form_name": "Incarnate Forme",
         "forms": [
             {
+                "name": "Therian Forme",
                 "entry": "From the forces of lightning and wind,\nit creates energy to give nutrients to\nthe soil and make the land abundant.",
                 "height": "4'03\"",
-                "weight": "149.9 lbs."
+                "weight": "149.9 lbs.",
+                "shape": 13
             }
         ],
         "languages": {

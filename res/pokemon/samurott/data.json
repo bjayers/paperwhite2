@@ -6,6 +6,7 @@
         "entry": "In the time it takes a foe to blink,\nit can draw and sheathe the seamitars\nattached to its front legs.",
         "height": "4'11\"",
         "weight": "208.6 lbs.",
+        "shape": 4,
         "languages": {
             "ja": {
                 "name": "ダイケンキ",

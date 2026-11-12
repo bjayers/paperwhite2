@@ -6,6 +6,7 @@
         "entry": "Though small in stature, it is\npowerful enough to easily heft and\nthrow a number of Geodude at once.",
         "height": "2'07\"",
         "weight": "43.0 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Machop",

@@ -165,11 +165,14 @@ def trainer_messages() -> list[str]:
 def pokedex_lines(path: list[str]) -> list[str]:
     """species.pokedex.<field>, species.pokedex.forms.<field>, species.pokedex.<language>.<field> and
     species.pokedex.<language>.forms.<field>: a field of every species' Pokédex text, of their alternate forms', in
-    species order, of the species that have it in a language, which come first, or of their forms in the language."""
+    species order, of the species that have it in a language, which come first, or of their forms in the language.
+    species.pokedex.form_name, the first form's name, is empty for a species that has none."""
     lines = []
     for i, data in enumerate(species()):
         pokedex = field(data, "pokedex", f"species {i}")
-        if path[0] == "forms":
+        if path == ["form_name"]:
+            lines.append(to_line(pokedex.get("form_name", "")))
+        elif path[0] == "forms":
             # SPECIES_NONE has a count of 0
             alternate_forms = max(data["forms"]["count"] - 1, 0)
             forms = pokedex.get("forms", [])

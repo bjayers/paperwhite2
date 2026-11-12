@@ -6,6 +6,7 @@
         "entry": "It lives in treetop colonies.\nIf one becomes enraged, the whole\ncolony rampages for no reason.",
         "height": "1'08\"",
         "weight": "61.7 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Mankey",

@@ -6,6 +6,7 @@
         "entry": "Being wrapped in its long fur is so\ncomfortable that a person would be fine\neven overnight on a wintry mountain.",
         "height": "3'11\"",
         "weight": "134.5 lbs.",
+        "shape": 4,
         "languages": {
             "ja": {
                 "name": "ムーランド",

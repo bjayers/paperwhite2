@@ -6,6 +6,7 @@
         "entry": "Despite their elegant appearance,\nthey can flap their wings strongly\nand fly for thousands of miles.",
         "height": "4'03\"",
         "weight": "53.4 lbs.",
+        "shape": 11,
         "languages": {
             "ja": {
                 "name": "スワンナ",

@@ -6,6 +6,7 @@
         "entry": "It absorbs the iron it finds in the\nrock while clinging to the ceiling.\nIt shoots spikes when in danger.",
         "height": "2'00\"",
         "weight": "41.4 lbs.",
+        "shape": 0,
         "languages": {
             "ja": {
                 "name": "テッシード",

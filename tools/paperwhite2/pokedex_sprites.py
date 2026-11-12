@@ -6,9 +6,9 @@ in the top screen's grey stripe. pokedex_evo.py adds the table to ARCID_POKEDEX_
     pokedex_sprites.py check [SPECIES...]   # print the sprites' visible boxes and the table's values
 
 MIDDLES_MEMBER: a u8 for each member of the battle sprites' archive (a/0/0/4, ARCID_POKEGRA) up to the Substitute's,
-by its number: for a sprite's characters (front, back and their female versions, of every species, form and egg), how
-far above its feet, in pixels, the middle of the sprite's visible pixels is; 0 for the archive's other members. The
-page reads the one byte at its sprite's characters' number (MCSSLoadInfo.character).
+or with the hack's own form groups (pokemon_graphics.ADDED_FORM_FILES) up to their end, by its number: for a
+sprite's characters (front, back and their female versions, of every species, form and egg), how far above its feet,
+in pixels, the middle of the sprite's visible pixels is; 0 for the archive's other members. The page reads the one byte at its sprite's characters' number (MCSSLoadInfo.character).
 
 The sprite is measured as MCSS draws it on its first frame (src/system/mcss.c, MCSSSys_Draw and MCSS_DrawQuad): the
 multi-cell animation's sequence 0 at frame 0 gives a multi-cell and its SRT; each of that multi-cell's nodes plays its
@@ -29,9 +29,11 @@ sys.path.insert(0, str(ROOT))
 # pokemon_graphics imports its siblings by name
 sys.path.insert(1, str(ROOT / "tools" / "data"))
 from tools.data.nitro_2d import decompress, read_indexed_png  # noqa: E402
-from tools.data.pokemon_graphics import battle_file  # noqa: E402
+from tools.data.pokemon_graphics import ADDED_FORM_FILES, added_form_groups, battle_file  # noqa: E402
 
-# The battle archive's members before the Substitute's (pokemon_graphics.battle_file), 20 to a group
+# The battle archive's members before the Substitute's (pokemon_graphics.battle_file), 20 to a group. Paper White 2's
+# form groups follow the Substitute's files and Arceus' palettes, from ADDED_FORM_FILES; the table then runs to their
+# end, with 0 for the files between
 SPRITE_MEMBERS = 15020
 GROUP_SIZE = 20
 # The slots of a group's characters that MCSS draws (the "linear" images), and which side's files go with them
@@ -130,10 +132,11 @@ def visible_box(folder, side, image):
 
 def middles():
     """Each battle archive member's value of MIDDLES_MEMBER, and the boxes measured, by member."""
-    table = bytearray(SPRITE_MEMBERS)
+    added = added_form_groups() * GROUP_SIZE
+    table = bytearray(ADDED_FORM_FILES + added if added else SPRITE_MEMBERS)
     boxes = {}
-    for index in range(SPRITE_MEMBERS):
-        side = CHARACTER_SLOTS.get(index % GROUP_SIZE)
+    for index in [*range(SPRITE_MEMBERS), *range(ADDED_FORM_FILES, ADDED_FORM_FILES + added)]:
+        side = CHARACTER_SLOTS.get((index - ADDED_FORM_FILES if index >= ADDED_FORM_FILES else index) % GROUP_SIZE)
         if side is None:
             continue
         image, _, _ = battle_file(ROOT / "res" / "pokemon", index, False)

@@ -6,6 +6,7 @@
         "entry": "It creates mazes in dark locations.\nWhen spotted, it flees into the\nground by digging with its tail.",
         "height": "4'11\"",
         "weight": "30.9 lbs.",
+        "shape": 12,
         "languages": {
             "en": {
                 "name": "Dunsparce",

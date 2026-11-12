@@ -6,6 +6,7 @@
         "entry": "By flapping its wings at high speed,\nit can fly freely through the air.\nEven sudden stops are no problem.",
         "height": "3'11\"",
         "weight": "83.8 lbs.",
+        "shape": 5,
         "languages": {
             "en": {
                 "name": "Yanma",

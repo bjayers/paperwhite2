@@ -6,6 +6,7 @@
         "entry": "A poor walker, it often falls down.\nHowever, its strong pride makes it\npuff up its chest without a care.",
         "height": "1'04\"",
         "weight": "11.5 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Piplup",

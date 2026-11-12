@@ -165,8 +165,15 @@ BOOL isGenderlessOrSetGender(u32 genderRatio) {
 u16 *PML_PersonalLoadRegionalDexTable(HeapID heapId, u16 *count) {
     u32 size;
     u16 found = 0;
+#ifdef PAPERWHITE2
+    // Paper White 2: the table is the archive's last file, after the form records, which the hack's forms can add to
+    // (tools/data/species_data.py), so it isn't always PERSONAL_FILE_REGIONAL_DEX
+    u16 *table = GFL_ArcToolReadHeapNewLZGetLen(
+        g_PMLPersonalArcBW2[0], GFL_ArcToolGetDataMax(g_PMLPersonalArcBW2[0]) - 1, FALSE, heapId, &size);
+#else
     u16 *table =
         GFL_ArcToolReadHeapNewLZGetLen(g_PMLPersonalArcBW2[0], PERSONAL_FILE_REGIONAL_DEX, FALSE, heapId, &size);
+#endif
     u16 entries = size / sizeof(u16);
 
     if (count != NULL) {

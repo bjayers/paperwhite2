@@ -6,6 +6,7 @@
         "entry": "Opening its large mouth, it ingests\nmassive amounts of soil and creates\nlong tunnels.",
         "height": "28'10\"",
         "weight": "463.0 lbs.",
+        "shape": 12,
         "languages": {
             "en": {
                 "name": "Onix",

@@ -6,6 +6,7 @@
         "entry": "It always trains deep in mountains.\nIt levitates when it heightens its\nspiritual power through meditation.",
         "height": "2'00\"",
         "weight": "24.7 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Meditite",

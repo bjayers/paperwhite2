@@ -6,6 +6,7 @@
         "entry": "Because it moves so quickly, it\nsometimes becomes unseeable. It\ncongregates around tree sap.",
         "height": "2'07\"",
         "weight": "26.5 lbs.",
+        "shape": 5,
         "languages": {
             "en": {
                 "name": "Ninjask",

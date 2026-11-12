@@ -6,6 +6,7 @@
         "entry": "It lives in arid regions and\ncan go without food for a year\nwhile waiting for prey.",
         "height": "2'07\"",
         "weight": "26.5 lbs.",
+        "shape": 3,
         "languages": {
             "en": {
                 "name": "Skorupi",

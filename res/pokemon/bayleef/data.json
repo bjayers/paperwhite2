@@ -6,6 +6,7 @@
         "entry": "The buds that ring its neck give\noff a spicy aroma that perks\npeople up.",
         "height": "3'11\"",
         "weight": "34.8 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Bayleef",

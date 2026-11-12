@@ -6,6 +6,7 @@
         "entry": "As a newborn, it can barely stand.\nHowever, through galloping, its\nlegs are made tougher and faster.",
         "height": "3'03\"",
         "weight": "66.1 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Ponyta",

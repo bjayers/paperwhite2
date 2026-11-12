@@ -6,6 +6,7 @@
         "entry": "Able to understand human speech\nand very intelligent, it loves to swim\nin the sea with people on its back.",
         "height": "8'02\"",
         "weight": "485.0 lbs.",
+        "shape": 2,
         "languages": {
             "en": {
                 "name": "Lapras",

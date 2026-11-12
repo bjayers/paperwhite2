@@ -6,6 +6,7 @@
         "entry": "Attached to its head is a huge\nset of jaws formed by horns.\nIt can chew through iron beams.",
         "height": "2'00\"",
         "weight": "25.4 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Mawile",

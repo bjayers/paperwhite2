@@ -6,11 +6,15 @@
         "entry": "In every direction it flies,\ncreating winds so powerful,\nthey blow everything away.",
         "height": "4'11\"",
         "weight": "138.9 lbs.",
+        "shape": 13,
+        "form_name": "Incarnate Forme",
         "forms": [
             {
+                "name": "Therian Forme",
                 "entry": "In every direction it flies,\ncreating winds so powerful,\nthey blow everything away.",
                 "height": "4'07\"",
-                "weight": "138.9 lbs."
+                "weight": "138.9 lbs.",
+                "shape": 13
             }
         ],
         "languages": {

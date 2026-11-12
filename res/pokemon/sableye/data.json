@@ -6,6 +6,7 @@
         "entry": "It hides in the darkness of caves.\nIts diet of gems has transformed\nits eyes into gemstones.",
         "height": "1'08\"",
         "weight": "24.3 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Sableye",

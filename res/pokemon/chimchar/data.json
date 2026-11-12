@@ -6,6 +6,7 @@
         "entry": "It is very agile. Before going to\nsleep, it extinguishes the flame\non its tail to prevent fires.",
         "height": "1'08\"",
         "weight": "13.7 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Chimchar",

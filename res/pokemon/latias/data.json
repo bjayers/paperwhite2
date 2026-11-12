@@ -6,6 +6,7 @@
         "entry": "Its body is covered with a down\nthat can refract light in such a\nway that it becomes invisible.",
         "height": "4'07\"",
         "weight": "88.2 lbs.",
+        "shape": 11,
         "languages": {
             "en": {
                 "name": "Latias",

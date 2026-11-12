@@ -6,6 +6,7 @@
         "entry": "Its entire body is armored with\nhard scales. It will protect the\nyoung in its burrow with its life.",
         "height": "4'03\"",
         "weight": "132.3 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Nidoqueen",

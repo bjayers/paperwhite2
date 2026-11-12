@@ -6,6 +6,7 @@
         "entry": "It dances silently through the sky.\nWhen it approaches prey, it can\nland a critical hit in an instant.",
         "height": "6'07\"",
         "weight": "93.7 lbs.",
+        "shape": 11,
         "languages": {
             "en": {
                 "name": "Gliscor",

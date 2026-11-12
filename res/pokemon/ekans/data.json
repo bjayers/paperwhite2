@@ -6,6 +6,7 @@
         "entry": "It sneaks through grass without\nmaking a sound and strikes\nunsuspecting prey from behind.",
         "height": "6'07\"",
         "weight": "15.2 lbs.",
+        "shape": 12,
         "languages": {
             "en": {
                 "name": "Ekans",

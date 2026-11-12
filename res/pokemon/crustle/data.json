@@ -6,6 +6,7 @@
         "entry": "When its boulder is broken\nin battles for territory, it feels\nunsure and begins to weaken.",
         "height": "4'07\"",
         "weight": "440.9 lbs.",
+        "shape": 3,
         "languages": {
             "ja": {
                 "name": "イワパレス",

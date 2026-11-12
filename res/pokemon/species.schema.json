@@ -21,19 +21,28 @@
             "description": "The article of the name where it isn't \"an\" before a vowel and \"a\" before anything else, as for Uxie"
         },
         "pokedex": {
-            "type": "object", "additionalProperties": false, "required": [ "category", "entry", "height", "weight", "languages" ],
-            "description": "The species' Pokédex text, which the text files take with \\from{species.pokedex.<field>} and the like. Species only",
+            "type": "object", "additionalProperties": false, "required": [ "category", "entry", "height", "weight", "shape", "languages" ],
+            "description": "The species' Pokédex text, which the text files take with \\from{species.pokedex.<field>} and the like, and its search shape. Species only",
             "properties": {
                 "category": { "type": "string", "description": "The category, such as \"Seed Pokémon\"" },
                 "entry": { "type": "string", "description": "The entry, with its line breaks" },
                 "height": { "type": "string", "description": "The height as the Pokédex shows it; the record's height is the number the game uses" },
                 "weight": { "type": "string", "description": "The weight as the Pokédex shows it, rounded as the game's text has it; the record's weight is the number the game uses" },
+                "shape": { "$ref": "#/$defs/pokedex_shape" },
+                "form_name": {
+                    "type": "string",
+                    "description": "The first form's name on the Pokédex's forms page and the Info page's tab (pokedex_detail_form.txt), such as \"Plant Cloak\", for a species with forms; empty when left out"
+                },
                 "forms": {
                     "type": "array",
-                    "description": "The alternate forms' entries, heights and weights, one for each form after the first (forms.count - 1), Unown's and Arceus' too",
+                    "description": "The alternate forms' names, entries, heights, weights and shapes, one for each form after the first (forms.count - 1), Unown's and Arceus' too. tools/data/pokedex_data.py links them to their species in this order, so a form added here keeps every other form's text",
                     "items": {
-                        "type": "object", "additionalProperties": false, "required": [ "entry", "height", "weight" ],
-                        "properties": { "entry": { "type": "string" }, "height": { "type": "string" }, "weight": { "type": "string" } }
+                        "type": "object", "additionalProperties": false, "required": [ "name", "entry", "height", "weight", "shape" ],
+                        "properties": {
+                            "name": { "type": "string", "description": "The form's name, as form_name, such as \"Sandy Cloak\"" },
+                            "entry": { "type": "string" }, "height": { "type": "string" }, "weight": { "type": "string" },
+                            "shape": { "$ref": "#/$defs/pokedex_shape" }
+                        }
                     }
                 },
                 "languages": {
@@ -104,7 +113,11 @@
                 "count": { "$ref": "#/$defs/u8", "description": "The number of forms, 1 for a species without forms" },
                 "sprite_offset": {
                     "$ref": "#/$defs/u16",
-                    "description": "Where the forms' sprites start among the alternate forms' sprites, 0 for none"
+                    "description": "Where the forms' sprites start among the alternate forms' sprites: form n's sprite group is sprite_offset + n - 1, its art res/pokemon/<species>/form_<n>/. Groups 0 to 65 are the original game's; from 66 they are Paper White 2's, which the battle sprites' archive appends after the Substitute's files and Arceus' palettes, and which must follow 65 without gaps (tools/data/pokemon_graphics.py). 0 for none, and for forms told apart only by their palette (palette_forms) an index of the palettes instead"
+                },
+                "no_evolution": {
+                    "type": "array", "items": { "type": "integer", "minimum": 1, "maximum": 31 },
+                    "description": "Paper White 2: the forms that never evolve, whatever the species' evolutions say, such as the Spiky-eared Pichu's 1 (CheckEvolveSpecies, and the Pokédex Info page's Evo shows them alone). The hack's build only (tools/paperwhite2/pokemon_forms.py)"
                 }
             }
         },
@@ -174,6 +187,10 @@
         }
     },
     "$defs": {
+        "pokedex_shape": {
+            "type": "integer", "minimum": 0, "maximum": 13,
+            "description": "The body shape that the Pokédex's search finds it by, one of its 14 shape icons (a/0/9/7 file 2, PokedexSearchEngine_GetShape)"
+        },
         "language": {
             "type": "object", "additionalProperties": false,
             "properties": {

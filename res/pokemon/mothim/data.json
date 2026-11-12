@@ -6,6 +6,7 @@
         "entry": "While it loves floral honey, it won't\ngather any itself. Instead, it\nplots to steal some from Combee.",
         "height": "2'11\"",
         "weight": "51.4 lbs.",
+        "shape": 5,
         "languages": {
             "en": {
                 "name": "Mothim",

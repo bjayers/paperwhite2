@@ -6,6 +6,7 @@
         "entry": "It appears as if it is skating on\nwater. It draws prey with a sweet\nscent from the tip of its head.",
         "height": "1'08\"",
         "weight": "3.7 lbs.",
+        "shape": 3,
         "languages": {
             "en": {
                 "name": "Surskit",

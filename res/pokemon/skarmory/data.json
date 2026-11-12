@@ -6,6 +6,7 @@
         "entry": "Its heavy-looking iron body is\nactually thin and light, so it can\nfly at speeds over 180 mph.",
         "height": "5'07\"",
         "weight": "111.3 lbs.",
+        "shape": 11,
         "languages": {
             "en": {
                 "name": "Skarmory",

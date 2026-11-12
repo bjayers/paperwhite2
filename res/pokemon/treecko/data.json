@@ -6,6 +6,7 @@
         "entry": "The soles of its feet are covered\nby countless tiny spikes, enabling\nit to walk on walls and ceilings.",
         "height": "1'08\"",
         "weight": "11.0 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Treecko",

@@ -6,6 +6,7 @@
         "entry": "Since this Pokémon makes its own\nclothes out of leaves, it is a popular\nmascot for fashion designers.",
         "height": "1'00\"",
         "weight": "5.5 lbs.",
+        "shape": 3,
         "languages": {
             "ja": {
                 "name": "クルミル",

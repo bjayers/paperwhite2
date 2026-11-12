@@ -6,6 +6,7 @@
         "entry": "It binds its body with its tails to\nmake itself look bigger. If it locks\neyes, it will glare ceaselessly.",
         "height": "3'03\"",
         "weight": "96.6 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Purugly",

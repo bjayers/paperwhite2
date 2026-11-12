@@ -6,6 +6,7 @@
         "entry": "Extremely loyal to its Trainer, it will\nbark at those who approach the Trainer\nunexpectedly and run them out of town.",
         "height": "2'04\"",
         "weight": "41.9 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Growlithe",

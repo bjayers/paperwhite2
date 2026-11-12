@@ -6,6 +6,7 @@
         "entry": "It walks in zigzag fashion. It is\ngood at finding items in the\ngrass and even in the ground.",
         "height": "1'04\"",
         "weight": "38.6 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Zigzagoon",

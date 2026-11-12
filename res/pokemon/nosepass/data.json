@@ -6,6 +6,7 @@
         "entry": "Its magnetic nose always faces north\nand draws iron objects to its body\nto protect itself better.",
         "height": "3'03\"",
         "weight": "213.8 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Nosepass",

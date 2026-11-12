@@ -6,6 +6,7 @@
         "entry": "It's good at finding berries and gathers\nthem from all over. It's kind enough\nto share them with friends.",
         "height": "2'00\"",
         "weight": "23.1 lbs.",
+        "shape": 9,
         "languages": {
             "ja": {
                 "name": "ヤナップ",

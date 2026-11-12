@@ -6,6 +6,7 @@
         "entry": "This legendary Pokémon can scorch\nthe world with lightning. It assists\nthose who want to build an ideal world.",
         "height": "9'06\"",
         "weight": "760.6 lbs.",
+        "shape": 9,
         "languages": {
             "ja": {
                 "name": "ゼクロム",

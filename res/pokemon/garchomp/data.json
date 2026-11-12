@@ -6,6 +6,7 @@
         "entry": "It is said that when one runs at\nhigh speed, its wings create blades\nof wind that can fell nearby trees.",
         "height": "6'03\"",
         "weight": "209.4 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Garchomp",

@@ -6,6 +6,7 @@
         "entry": "It digs deep burrows to live in.\nWhen in danger, it rolls up its\nbody to withstand attacks.",
         "height": "2'00\"",
         "weight": "26.5 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Sandshrew",

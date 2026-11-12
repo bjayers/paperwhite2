@@ -6,6 +6,7 @@
         "entry": "It swings its large, nutrient-filled\ntail around to fight opponents\nbigger than itself.",
         "height": "0'08\"",
         "weight": "4.4 lbs.",
+        "shape": 1,
         "languages": {
             "en": {
                 "name": "Azurill",

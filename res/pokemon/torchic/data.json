@@ -6,6 +6,7 @@
         "entry": "A fire burns inside, so it feels\nvery warm to hug. It launches\nfireballs of 1,800 degrees F.",
         "height": "1'04\"",
         "weight": "5.5 lbs.",
+        "shape": 1,
         "languages": {
             "en": {
                 "name": "Torchic",

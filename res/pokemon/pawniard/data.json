@@ -6,6 +6,7 @@
         "entry": "Ignoring their injuries, groups attack\nby sinking the blades that cover their\nbodies into their prey.",
         "height": "1'08\"",
         "weight": "22.5 lbs.",
+        "shape": 10,
         "languages": {
             "ja": {
                 "name": "コマタナ",

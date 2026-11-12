@@ -6,6 +6,7 @@
         "entry": "It prefers to battle by biting\napart foes' heads instantly\nwhile flying by at high speed.",
         "height": "6'03\"",
         "weight": "113.5 lbs.",
+        "shape": 5,
         "languages": {
             "en": {
                 "name": "Yanmega",

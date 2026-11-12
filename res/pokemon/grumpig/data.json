@@ -6,6 +6,7 @@
         "entry": "It uses black pearls to amplify its\npsychic power. It does a strange\ndance to control foes' minds.",
         "height": "2'11\"",
         "weight": "157.6 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Grumpig",

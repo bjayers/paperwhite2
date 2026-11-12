@@ -6,6 +6,7 @@
         "entry": "It lowers its body heat to freeze its\nfur. The hairs then become like needles\nit can fire.",
         "height": "2'07\"",
         "weight": "57.1 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Glaceon",

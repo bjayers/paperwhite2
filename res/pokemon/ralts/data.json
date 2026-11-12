@@ -6,6 +6,7 @@
         "entry": "If its horns capture the warm\nfeelings of people or Pokémon,\nits body warms up slightly.",
         "height": "1'04\"",
         "weight": "14.6 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Ralts",

@@ -6,6 +6,7 @@
         "entry": "Legends say this Pokémon\nconfounded opponents with\nits swift movements.",
         "height": "6'07\"",
         "weight": "440.9 lbs.",
+        "shape": 4,
         "languages": {
             "ja": {
                 "name": "ビリジオン",

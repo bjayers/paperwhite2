@@ -6,6 +6,7 @@
         "entry": "Its powerful tackles can destroy\nanything. However, it is too\nslow witted to help people work.",
         "height": "3'03\"",
         "weight": "253.5 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Rhyhorn",

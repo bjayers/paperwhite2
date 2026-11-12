@@ -6,6 +6,7 @@
         "entry": "It is outstandingly armored. As a\nresult, it can eat grass and\nberries without having to fight.",
         "height": "1'08\"",
         "weight": "125.7 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Shieldon",

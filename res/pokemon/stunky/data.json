@@ -6,6 +6,7 @@
         "entry": "It sprays a foul fluid from its\nrear. Its stench spreads over a\nmile radius, driving Pokémon away.",
         "height": "1'04\"",
         "weight": "42.3 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Stunky",

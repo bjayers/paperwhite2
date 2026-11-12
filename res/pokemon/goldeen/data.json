@@ -6,6 +6,7 @@
         "entry": "Though it appears very elegant\nwhen swimming with fins unfurled, it\ncan jab powerfully with its horn.",
         "height": "2'00\"",
         "weight": "33.1 lbs.",
+        "shape": 2,
         "languages": {
             "en": {
                 "name": "Goldeen",

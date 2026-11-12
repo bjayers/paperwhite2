@@ -6,6 +6,7 @@
         "entry": "It lives in dense jungles. While\nclosing in on its prey, it leaps\nfrom branch to branch.",
         "height": "2'11\"",
         "weight": "47.6 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Grovyle",

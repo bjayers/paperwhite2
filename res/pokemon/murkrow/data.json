@@ -6,6 +6,7 @@
         "entry": "If spotted, it will lure an unwary\nperson into chasing it then lose\nthe pursuer on mountain trails.",
         "height": "1'08\"",
         "weight": "4.6 lbs.",
+        "shape": 11,
         "languages": {
             "en": {
                 "name": "Murkrow",

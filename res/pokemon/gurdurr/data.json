@@ -6,6 +6,7 @@
         "entry": "With strengthened bodies,\nthey skillfully wield steel beams\nto take down buildings.",
         "height": "3'11\"",
         "weight": "88.2 lbs.",
+        "shape": 10,
         "languages": {
             "ja": {
                 "name": "ドテッコツ",

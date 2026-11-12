@@ -6,6 +6,7 @@
         "entry": "It claims an entire mountain as its own.\nThe more wounds it has, the more it has\nbattled, so don't take it lightly.",
         "height": "6'11\"",
         "weight": "793.7 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Aggron",

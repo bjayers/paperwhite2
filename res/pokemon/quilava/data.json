@@ -6,6 +6,7 @@
         "entry": "It intimidates foes with the heat\nof its flames. The fire burns more\nstrongly when it readies to fight.",
         "height": "2'11\"",
         "weight": "41.9 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Quilava",

@@ -6,6 +6,7 @@
         "entry": "When its belly is full, it becomes\ntoo lethargic to even lift a finger,\nso it is safe to bounce on its belly.",
         "height": "6'11\"",
         "weight": "1014.1 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Snorlax",

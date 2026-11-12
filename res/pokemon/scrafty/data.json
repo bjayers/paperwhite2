@@ -6,6 +6,7 @@
         "entry": "It pulls up its shed skin to protect\nitself while it kicks. The bigger the\ncrest, the more respected it is.",
         "height": "3'07\"",
         "weight": "66.1 lbs.",
+        "shape": 9,
         "languages": {
             "ja": {
                 "name": "ズルズキン",

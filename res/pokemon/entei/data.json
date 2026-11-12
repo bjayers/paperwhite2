@@ -6,6 +6,7 @@
         "entry": "It is said that when it roars, a\nvolcano erupts somewhere around\nthe globe.",
         "height": "6'11\"",
         "weight": "436.5 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Entei",

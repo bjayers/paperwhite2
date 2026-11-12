@@ -6,11 +6,15 @@
         "entry": "The flowers all over its body burst\ninto bloom if it is lovingly hugged\nand senses gratitude.",
         "height": "0'08\"",
         "weight": "4.6 lbs.",
+        "shape": 4,
+        "form_name": "Land Forme",
         "forms": [
             {
+                "name": "Sky Forme",
                 "entry": "The flowers all over its body burst\ninto bloom if it is lovingly hugged\nand senses gratitude.",
                 "height": "1'04\"",
-                "weight": "11.5 lbs."
+                "weight": "11.5 lbs.",
+                "shape": 4
             }
         ],
         "languages": {

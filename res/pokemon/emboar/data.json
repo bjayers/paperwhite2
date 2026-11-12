@@ -6,6 +6,7 @@
         "entry": "A flaring beard of fire is proof\nthat it is fired up. It is adept at\nusing many different moves.",
         "height": "5'03\"",
         "weight": "330.7 lbs.",
+        "shape": 9,
         "languages": {
             "ja": {
                 "name": "エンブオー",

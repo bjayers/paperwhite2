@@ -6,6 +6,7 @@
         "entry": "It discharges electricity from its\nmane. It creates a thundercloud\noverhead to drop lightning bolts.",
         "height": "4'11\"",
         "weight": "88.6 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Manectric",

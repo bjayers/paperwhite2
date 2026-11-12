@@ -6,6 +6,7 @@
         "entry": "Its cells are all magnetic,\nand it communicates with others\nby using magnetic pulses.",
         "height": "2'00\"",
         "weight": "209.9 lbs.",
+        "shape": 8,
         "languages": {
             "en": {
                 "name": "Beldum",

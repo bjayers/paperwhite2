@@ -6,6 +6,7 @@
         "entry": "When it senses danger, it raises\nall the barbs on its body. These\nbarbs grow slower than Nidorino's.",
         "height": "2'07\"",
         "weight": "44.1 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Nidorina",

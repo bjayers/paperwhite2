@@ -6,11 +6,15 @@
         "entry": "When one is injured in a fierce battle,\nit hardens into a stone-like form.\nThen it meditates and sharpens its mind.",
         "height": "4'03\"",
         "weight": "204.8 lbs.",
+        "shape": 4,
+        "form_name": "Standard Mode",
         "forms": [
             {
+                "name": "Zen Mode",
                 "entry": "When one is injured in a fierce battle,\nit hardens into a stone-like form.\nThen it meditates and sharpens its mind.",
                 "height": "4'03\"",
-                "weight": "204.8 lbs."
+                "weight": "204.8 lbs.",
+                "shape": 4
             }
         ],
         "languages": {

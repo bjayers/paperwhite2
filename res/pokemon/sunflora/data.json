@@ -6,6 +6,7 @@
         "entry": "Since it converts sunlight\ninto energy, it is always looking\nin the direction of the sun.",
         "height": "2'07\"",
         "weight": "18.7 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Sunflora",

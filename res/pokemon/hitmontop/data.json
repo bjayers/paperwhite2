@@ -6,6 +6,7 @@
         "entry": "It fights while spinning like a top.\nThe centrifugal force boosts its\ndestructive power by 10.",
         "height": "4'07\"",
         "weight": "105.8 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Hitmontop",

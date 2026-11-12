@@ -6,6 +6,7 @@
         "entry": "This very forgetful Pokémon will\nwait for a new order from its Trainer\neven though it already has one.",
         "height": "1'00\"",
         "weight": "4.6 lbs.",
+        "shape": 11,
         "languages": {
             "ja": {
                 "name": "マメパト",

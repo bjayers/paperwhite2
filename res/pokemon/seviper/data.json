@@ -6,6 +6,7 @@
         "entry": "Constant polishing makes the edge\nof the blade on its tail extremely sharp.\nIt's Zangoose's archrival.",
         "height": "8'10\"",
         "weight": "115.7 lbs.",
+        "shape": 12,
         "languages": {
             "en": {
                 "name": "Seviper",

@@ -6,6 +6,7 @@
         "entry": "Luring prey with a sweet scent, it\nuses poison whips on its arms\nto poison, bind, and finish off the prey.",
         "height": "2'11\"",
         "weight": "32.0 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Roserade",

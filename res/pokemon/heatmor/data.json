@@ -6,6 +6,7 @@
         "entry": "It draws in air through its tail,\ntransforms it into fire, and uses it like\na tongue. It melts Durant and eats them.",
         "height": "4'07\"",
         "weight": "127.9 lbs.",
+        "shape": 9,
         "languages": {
             "ja": {
                 "name": "クイタラン",

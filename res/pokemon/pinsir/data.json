@@ -6,6 +6,7 @@
         "entry": "It grips prey with its powerful\npincers and will not let go\nuntil the prey is torn in half.",
         "height": "4'11\"",
         "weight": "121.3 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Pinsir",

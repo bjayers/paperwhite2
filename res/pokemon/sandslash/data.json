@@ -6,6 +6,7 @@
         "entry": "The spikes on its body are made\nup of its hardened hide. It rolls up\nand attacks foes with its spikes.",
         "height": "3'03\"",
         "weight": "65.0 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Sandslash",

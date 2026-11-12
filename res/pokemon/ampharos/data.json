@@ -6,6 +6,7 @@
         "entry": "The tip of its tail shines so brightly it\ncan be used to send sea-navigation\nbeacons to distant foreign shores.",
         "height": "4'07\"",
         "weight": "135.6 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Ampharos",

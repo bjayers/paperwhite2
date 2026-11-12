@@ -6,6 +6,7 @@
         "entry": "Since it can't generate its own\nelectricity, it sticks onto large-bodied\nPokémon and absorbs static electricity.",
         "height": "0'04\"",
         "weight": "1.3 lbs.",
+        "shape": 3,
         "languages": {
             "ja": {
                 "name": "バチュル",

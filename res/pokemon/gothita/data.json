@@ -6,6 +6,7 @@
         "entry": "It stares intently at everything.\nIt can become so obsessed with\nwatching that it doesn't notice attacks.",
         "height": "1'04\"",
         "weight": "12.8 lbs.",
+        "shape": 10,
         "languages": {
             "ja": {
                 "name": "ゴチム",

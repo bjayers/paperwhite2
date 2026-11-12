@@ -6,6 +6,7 @@
         "entry": "Their wings are too tiny to allow them to\nfly. They guard their posteriors with\nbones that were gathered by Mandibuzz.",
         "height": "1'08\"",
         "weight": "19.8 lbs.",
+        "shape": 11,
         "languages": {
             "ja": {
                 "name": "バルチャイ",

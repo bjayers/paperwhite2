@@ -6,6 +6,7 @@
         "entry": "They cool down the surrounding air\nand create ice particles, which\nthey use to freeze their foes.",
         "height": "3'07\"",
         "weight": "90.4 lbs.",
+        "shape": 8,
         "languages": {
             "ja": {
                 "name": "バニリッチ",

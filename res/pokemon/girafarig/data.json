@@ -6,6 +6,7 @@
         "entry": "The head on its tail contains a\nsmall brain. It can instinctively\nfight even while facing backward.",
         "height": "4'11\"",
         "weight": "91.5 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Girafarig",

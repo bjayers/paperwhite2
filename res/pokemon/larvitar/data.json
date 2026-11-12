@@ -6,6 +6,7 @@
         "entry": "Born deep underground, it comes\naboveground and becomes a pupa once it\nhas finished eating the surrounding soil.",
         "height": "2'00\"",
         "weight": "158.7 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Larvitar",

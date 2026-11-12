@@ -6,6 +6,7 @@
         "entry": "Because their bodies are enveloped\nin a special liquid, they are fine in any\nenvironment, no matter how severe.",
         "height": "1'00\"",
         "weight": "2.2 lbs.",
+        "shape": 0,
         "languages": {
             "ja": {
                 "name": "ユニラン",

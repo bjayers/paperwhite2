@@ -6,21 +6,29 @@
         "entry": "Their coloring changes according to the\nseasons and can be slightly affected by\nthe temperature and humidity as well.",
         "height": "2'00\"",
         "weight": "43.0 lbs.",
+        "shape": 4,
+        "form_name": "Spring Form",
         "forms": [
             {
+                "name": "Summer Form",
                 "entry": "Their coloring changes according to the\nseasons and can be slightly affected by\nthe temperature and humidity as well.",
                 "height": "2'00\"",
-                "weight": "43.0 lbs."
+                "weight": "43.0 lbs.",
+                "shape": 4
             },
             {
+                "name": "Autumn Form",
                 "entry": "Their coloring changes according to the\nseasons and can be slightly affected by\nthe temperature and humidity as well.",
                 "height": "2'00\"",
-                "weight": "43.0 lbs."
+                "weight": "43.0 lbs.",
+                "shape": 4
             },
             {
+                "name": "Winter Form",
                 "entry": "Their coloring changes according to the\nseasons and can be slightly affected by\nthe temperature and humidity as well.",
                 "height": "2'00\"",
-                "weight": "43.0 lbs."
+                "weight": "43.0 lbs.",
+                "shape": 4
             }
         ],
         "languages": {

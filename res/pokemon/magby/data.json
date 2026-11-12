@@ -6,6 +6,7 @@
         "entry": "It's small, but its body temperature\nis over 1,100 degrees F. Embers escape\nits mouth and nose when it breathes.",
         "height": "2'04\"",
         "weight": "47.2 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Magby",

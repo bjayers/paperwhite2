@@ -6,6 +6,7 @@
         "entry": "Its body is made of ice from the\nice age. It controls frigid air of\n-328 degrees Fahrenheit.",
         "height": "5'11\"",
         "weight": "385.8 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Regice",

@@ -6,6 +6,7 @@
         "entry": "It releases a stench from its red\nantenna to repel enemies. It\ngrows by molting repeatedly.",
         "height": "1'00\"",
         "weight": "6.4 lbs.",
+        "shape": 12,
         "languages": {
             "en": {
                 "name": "Caterpie",

@@ -6,6 +6,7 @@
         "entry": "It fights by keeping its shell\ntightly shut for protection and\nby shooting spikes to repel foes.",
         "height": "4'11\"",
         "weight": "292.1 lbs.",
+        "shape": 0,
         "languages": {
             "en": {
                 "name": "Cloyster",

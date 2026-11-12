@@ -6,6 +6,7 @@
         "entry": "Extremely cautious, one of them\nwill always be on the lookout, but it\nwon't notice a foe coming from behind.",
         "height": "1'08\"",
         "weight": "25.6 lbs.",
+        "shape": 4,
         "languages": {
             "ja": {
                 "name": "ミネズミ",

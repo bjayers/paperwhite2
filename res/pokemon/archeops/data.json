@@ -6,6 +6,7 @@
         "entry": "It runs better than it flies.\nIt takes off into the sky by\nrunning at a speed of 25 mph.",
         "height": "4'07\"",
         "weight": "70.5 lbs.",
+        "shape": 11,
         "languages": {
             "ja": {
                 "name": "アーケオス",

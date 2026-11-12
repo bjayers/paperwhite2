@@ -6,6 +6,7 @@
         "entry": "Solar energy is the source of its power,\nso it is strong during the daytime.\nWhen it spins, its body shines.",
         "height": "3'11\"",
         "weight": "339.5 lbs.",
+        "shape": 0,
         "languages": {
             "en": {
                 "name": "Solrock",

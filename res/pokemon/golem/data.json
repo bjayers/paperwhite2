@@ -6,6 +6,7 @@
         "entry": "Even dynamite can't harm its hard,\nboulder-like body. It sheds its hide\njust once a year.",
         "height": "4'07\"",
         "weight": "661.4 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Golem",

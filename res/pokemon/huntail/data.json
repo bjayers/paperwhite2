@@ -6,6 +6,7 @@
         "entry": "It lives deep in the sea. With a\ntail shaped like a small fish, it\nattracts unsuspecting prey.",
         "height": "5'07\"",
         "weight": "59.5 lbs.",
+        "shape": 12,
         "languages": {
             "en": {
                 "name": "Huntail",

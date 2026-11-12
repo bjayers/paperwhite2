@@ -6,6 +6,7 @@
         "entry": "A broken tusk will not grow back, so\nit diligently sharpens its tusks on\nriver rocks after the end of a battle.",
         "height": "3'03\"",
         "weight": "79.4 lbs.",
+        "shape": 9,
         "languages": {
             "ja": {
                 "name": "オノンド",

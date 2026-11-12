@@ -6,6 +6,7 @@
         "entry": "To protect its Trainer, it will\nexpend all its psychic power\nto create a small black hole.",
         "height": "5'03\"",
         "weight": "106.7 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Gardevoir",

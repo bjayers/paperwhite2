@@ -6,6 +6,7 @@
         "entry": "Although slow, it is skilled at\nfishing with its tail. It does not\nfeel pain if its tail is bitten.",
         "height": "3'11\"",
         "weight": "79.4 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Slowpoke",

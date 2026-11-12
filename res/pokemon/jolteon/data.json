@@ -6,6 +6,7 @@
         "entry": "By storing electricity in its body,\nit can shoot its bristlelike fur\nlike a barrage of missiles.",
         "height": "2'07\"",
         "weight": "54.0 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Jolteon",

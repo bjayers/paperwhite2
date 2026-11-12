@@ -6,6 +6,7 @@
         "entry": "A steel-hard shell protects its\ntender body. It quietly endures\nhardships while awaiting evolution.",
         "height": "2'04\"",
         "weight": "21.8 lbs.",
+        "shape": 12,
         "languages": {
             "en": {
                 "name": "Metapod",

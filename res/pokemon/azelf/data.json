@@ -6,6 +6,7 @@
         "entry": "When Azelf flew, people gained the\ndetermination to do things.\nIt was the birth of willpower.",
         "height": "1'00\"",
         "weight": "0.7 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Azelf",

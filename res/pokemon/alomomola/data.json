@@ -6,6 +6,7 @@
         "entry": "It gently holds injured and weak\nPokémon in its fins. Its special\nmembrane heals their wounds.",
         "height": "3'11\"",
         "weight": "69.7 lbs.",
+        "shape": 2,
         "languages": {
             "ja": {
                 "name": "ママンボウ",

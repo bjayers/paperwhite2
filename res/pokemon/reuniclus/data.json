@@ -6,6 +6,7 @@
         "entry": "They use psychic power to control their\narms, which are made of a special liquid.\nThey can crush boulders psychically.",
         "height": "3'03\"",
         "weight": "44.3 lbs.",
+        "shape": 13,
         "languages": {
             "ja": {
                 "name": "ランクルス",

@@ -6,6 +6,7 @@
         "entry": "It uses the different poisons in each\nhand separately when it attacks. The\nstronger its aroma, the healthier it is.",
         "height": "1'00\"",
         "weight": "4.4 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Roselia",

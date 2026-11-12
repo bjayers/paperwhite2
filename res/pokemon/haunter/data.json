@@ -6,6 +6,7 @@
         "entry": "It likes to lurk in the dark and tap\nshoulders with a gaseous hand. Its\ntouch causes endless shuddering.",
         "height": "5'03\"",
         "weight": "0.2 lbs.",
+        "shape": 13,
         "languages": {
             "en": {
                 "name": "Haunter",

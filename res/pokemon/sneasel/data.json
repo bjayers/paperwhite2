@@ -6,6 +6,7 @@
         "entry": "A smart and sneaky Pokémon,\nit makes its opponents flinch by suddenly\nshowing the claws hidden in its paws.",
         "height": "2'11\"",
         "weight": "61.7 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Sneasel",

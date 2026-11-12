@@ -6,6 +6,7 @@
         "entry": "Often targeted by bird Pokémon,\nit desperately resists by releasing\npoison from its tail spikes.",
         "height": "1'00\"",
         "weight": "7.9 lbs.",
+        "shape": 12,
         "languages": {
             "en": {
                 "name": "Wurmple",

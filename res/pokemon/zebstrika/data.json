@@ -6,6 +6,7 @@
         "entry": "When this ill-tempered Pokémon\nruns wild, it shoots lightning\nfrom its mane in all directions.",
         "height": "5'03\"",
         "weight": "175.3 lbs.",
+        "shape": 4,
         "languages": {
             "ja": {
                 "name": "ゼブライカ",

@@ -6,6 +6,7 @@
         "entry": "There is an orb inside its mouth.\nWhen it hops, the orb bounces all\nover and makes a ringing sound.",
         "height": "0'08\"",
         "weight": "1.3 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Chingling",

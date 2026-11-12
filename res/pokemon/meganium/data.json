@@ -6,6 +6,7 @@
         "entry": "Its breath has the fantastic\nability to revive dead plants and\nflowers.",
         "height": "5'11\"",
         "weight": "221.6 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Meganium",

@@ -6,6 +6,7 @@
         "entry": "The more it eats, the more fuel it has\nto make the fire in its stomach stronger.\nThis fills it with even more power.",
         "height": "3'03\"",
         "weight": "122.4 lbs.",
+        "shape": 9,
         "languages": {
             "ja": {
                 "name": "チャオブー",

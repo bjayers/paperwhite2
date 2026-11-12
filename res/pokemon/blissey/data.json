@@ -6,6 +6,7 @@
         "entry": "The eggs it lays are filled with\nhappiness. Eating even one bite\nwill bring a smile to anyone.",
         "height": "4'11\"",
         "weight": "103.2 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Blissey",

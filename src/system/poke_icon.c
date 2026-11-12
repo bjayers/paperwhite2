@@ -8,6 +8,10 @@
 #include "pml/poke_party.h"
 #include "system/poke_icon.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/pokemon_forms.h"
+#endif
+
 // The Pokémon icons of ARCID_POKEICON: the file and the palette of a Pokémon's icon, the files of the icons' palette,
 // cells and animations, and a species packed with its form and sex. The ROM has no string for this file, so its name
 // is a guess; the functions' names are swan's where they have one. The functions that pick the cells and animations
@@ -155,6 +159,13 @@ u8 PokeIcon_GetPalette(u32 species, u32 form, u32 sex, BOOL egg) {
             form = 0;
         }
         if (!paletteForms && form != 0) {
+#ifdef PAPERWHITE2
+            // Paper White 2: the hack's forms' icons are past sPokeIconPalettes' entries, so their palettes are in a
+            // table of their own (their icons follow the original ones, where PokeParty_GetIconIndex looks)
+            if (formOffset + form - 1 >= POKEMON_FORMS_ORIGINAL_GROUPS) {
+                return PaperWhite2_GetFormIconPalette(formOffset + form - 1, sex != 0);
+            }
+#endif
             species = formOffset + form + POKEICON_PALETTE_FORMS;
         }
     }

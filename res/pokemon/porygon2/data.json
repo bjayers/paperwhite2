@@ -6,6 +6,7 @@
         "entry": "It was upgraded to enable the\nexploration of other planets.\nHowever, it failed to measure up.",
         "height": "2'00\"",
         "weight": "71.6 lbs.",
+        "shape": 1,
         "languages": {
             "en": {
                 "name": "Porygon2",

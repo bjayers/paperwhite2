@@ -6,6 +6,7 @@
         "entry": "When it moves rhythmically,\nit makes a sound similar to maracas,\nmaking the surprised Pokémon flee.",
         "height": "3'03\"",
         "weight": "61.7 lbs.",
+        "shape": 8,
         "languages": {
             "ja": {
                 "name": "マラカッチ",

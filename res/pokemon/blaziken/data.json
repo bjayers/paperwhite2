@@ -6,6 +6,7 @@
         "entry": "Flames spout from its wrists,\nenveloping its knuckles. Its\npunches scorch its foes.",
         "height": "6'03\"",
         "weight": "114.6 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Blaziken",

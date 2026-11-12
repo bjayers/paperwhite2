@@ -6,6 +6,7 @@
         "entry": "It lives at the bottom of the sea.\nIn the springtime, its pink body\nturns more vivid for some reason.",
         "height": "5'11\"",
         "weight": "49.8 lbs.",
+        "shape": 12,
         "languages": {
             "en": {
                 "name": "Gorebyss",

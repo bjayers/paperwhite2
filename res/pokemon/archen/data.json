@@ -6,6 +6,7 @@
         "entry": "It was revived from an ancient fossil.\nNot able to fly, it lived in treetops and\nhopped from one branch to another.",
         "height": "1'08\"",
         "weight": "20.9 lbs.",
+        "shape": 11,
         "languages": {
             "ja": {
                 "name": "アーケン",

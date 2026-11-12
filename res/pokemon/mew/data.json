@@ -6,6 +6,7 @@
         "entry": "Because it can use all kinds of\nmoves, many scientists believe Mew\nto be the ancestor of Pokémon.",
         "height": "1'04\"",
         "weight": "8.8 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Mew",

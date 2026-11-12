@@ -6,6 +6,7 @@
         "entry": "It loves sparkly things. It seeks\ntreasures in caves and hoards the\nloot in its nest.",
         "height": "4'07\"",
         "weight": "123.5 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Gabite",

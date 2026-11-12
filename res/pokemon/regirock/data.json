@@ -6,6 +6,7 @@
         "entry": "Its entire body is made of rock.\nIf any part chips off in battle, it\nattaches rocks to repair itself.",
         "height": "5'07\"",
         "weight": "507.1 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Regirock",

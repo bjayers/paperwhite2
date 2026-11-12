@@ -6,6 +6,7 @@
         "entry": "It becomes active at night,\nseeking prey that is exhausted\nfrom the day's desert heat.",
         "height": "4'03\"",
         "weight": "170.6 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Cacturne",

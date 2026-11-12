@@ -6,16 +6,22 @@
         "entry": "This legendary ice Pokémon waits for\na hero to fill in the missing parts\nof its body with truth or ideals.",
         "height": "9'10\"",
         "weight": "716.5 lbs.",
+        "shape": 9,
+        "form_name": "Kyurem",
         "forms": [
             {
+                "name": "White Kyurem",
                 "entry": "This legendary ice Pokémon waits for\na hero to fill in the missing parts\nof its body with truth or ideals.",
                 "height": "11'10\"",
-                "weight": "716.5 lbs."
+                "weight": "716.5 lbs.",
+                "shape": 9
             },
             {
+                "name": "Black Kyurem",
                 "entry": "This legendary ice Pokémon waits for\na hero to fill in the missing parts\nof its body with truth or ideals.",
                 "height": "10'10\"",
-                "weight": "716.5 lbs."
+                "weight": "716.5 lbs.",
+                "shape": 9
             }
         ],
         "languages": {

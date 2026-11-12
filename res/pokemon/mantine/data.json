@@ -6,6 +6,7 @@
         "entry": "If it builds up enough speed swimming, it\ncan fly over 300 feet out of the water\nfrom the surface of the ocean.",
         "height": "6'11\"",
         "weight": "485.0 lbs.",
+        "shape": 11,
         "languages": {
             "en": {
                 "name": "Mantine",

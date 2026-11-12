@@ -6,6 +6,7 @@
         "entry": "Its legs are short. Whenever it\nstumbles, its stiff antennae clack\nwith a xylophone-like sound.",
         "height": "1'00\"",
         "weight": "4.9 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Kricketot",

@@ -6,6 +6,7 @@
         "entry": "Spinning its arms around\nto generate electricity makes the area\nbetween its horns shine light blue.",
         "height": "2'00\"",
         "weight": "51.8 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Elekid",

@@ -6,26 +6,36 @@
         "entry": "This Pokémon existed 300 million years\nago. Team Plasma altered it and\nattached a cannon to its back.",
         "height": "4'11\"",
         "weight": "181.9 lbs.",
+        "shape": 10,
+        "form_name": "Genesect",
         "forms": [
             {
+                "name": "Genesect",
                 "entry": "This Pokémon existed 300 million years\nago. Team Plasma altered it and\nattached a cannon to its back.",
                 "height": "4'11\"",
-                "weight": "181.9 lbs."
+                "weight": "181.9 lbs.",
+                "shape": 10
             },
             {
+                "name": "Genesect",
                 "entry": "This Pokémon existed 300 million years\nago. Team Plasma altered it and\nattached a cannon to its back.",
                 "height": "4'11\"",
-                "weight": "181.9 lbs."
+                "weight": "181.9 lbs.",
+                "shape": 10
             },
             {
+                "name": "Genesect",
                 "entry": "This Pokémon existed 300 million years\nago. Team Plasma altered it and\nattached a cannon to its back.",
                 "height": "4'11\"",
-                "weight": "181.9 lbs."
+                "weight": "181.9 lbs.",
+                "shape": 10
             },
             {
+                "name": "Genesect",
                 "entry": "This Pokémon existed 300 million years\nago. Team Plasma altered it and\nattached a cannon to its back.",
                 "height": "4'11\"",
-                "weight": "181.9 lbs."
+                "weight": "181.9 lbs.",
+                "shape": 10
             }
         ],
         "languages": {

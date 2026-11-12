@@ -6,6 +6,7 @@
         "entry": "By flapping its leafy fan, it can\nwhip up gusts of 100 ft/second\nthat can level houses.",
         "height": "4'03\"",
         "weight": "131.4 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Shiftry",

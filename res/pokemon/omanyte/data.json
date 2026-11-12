@@ -6,6 +6,7 @@
         "entry": "A Pokémon that was resurrected\nfrom a fossil using modern science.\nIt swam in ancient seas.",
         "height": "1'04\"",
         "weight": "16.5 lbs.",
+        "shape": 7,
         "languages": {
             "en": {
                 "name": "Omanyte",

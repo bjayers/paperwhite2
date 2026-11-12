@@ -6,6 +6,7 @@
         "entry": "It creates barriers from electrified silk\nthat stun foes. This works as a weapon\nas well as a defense.",
         "height": "2'07\"",
         "weight": "31.5 lbs.",
+        "shape": 3,
         "languages": {
             "ja": {
                 "name": "デンチュラ",

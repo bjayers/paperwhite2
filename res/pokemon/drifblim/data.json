@@ -6,6 +6,7 @@
         "entry": "They carry people and Pokémon,\nbut the wind can catch them, so\nthere can't be a fixed destination.",
         "height": "3'11\"",
         "weight": "33.1 lbs.",
+        "shape": 13,
         "languages": {
             "en": {
                 "name": "Drifblim",

@@ -6,6 +6,7 @@
         "entry": "Being exposed to sunlight makes\nits movements swifter. It uses\nvines more adeptly than its hands.",
         "height": "2'00\"",
         "weight": "17.9 lbs.",
+        "shape": 9,
         "languages": {
             "ja": {
                 "name": "ツタージャ",

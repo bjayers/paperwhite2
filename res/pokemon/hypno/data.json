@@ -6,6 +6,7 @@
         "entry": "Seeing its swinging pendulum can\ninduce sleep in three seconds,\neven in someone who just woke up.",
         "height": "5'03\"",
         "weight": "166.7 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Hypno",

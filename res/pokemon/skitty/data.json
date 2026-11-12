@@ -6,6 +6,7 @@
         "entry": "It shows its cute side\nby chasing its own tail\nuntil it gets dizzy.",
         "height": "2'00\"",
         "weight": "24.3 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Skitty",

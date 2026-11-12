@@ -6,6 +6,7 @@
         "entry": "A Pokémon that appears to be a\nplant. It captures unwary prey by\ndousing them with a toxic powder.",
         "height": "3'03\"",
         "weight": "14.1 lbs.",
+        "shape": 8,
         "languages": {
             "en": {
                 "name": "Weepinbell",

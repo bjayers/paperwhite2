@@ -6,6 +6,7 @@
         "entry": "It is encased in a steel shell. Its\npeering eyes are all that can be\nseen of its mysterious innards.",
         "height": "3'11\"",
         "weight": "277.3 lbs.",
+        "shape": 0,
         "languages": {
             "en": {
                 "name": "Forretress",

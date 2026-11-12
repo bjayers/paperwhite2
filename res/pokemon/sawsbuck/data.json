@@ -6,21 +6,29 @@
         "entry": "They migrate according to the seasons,\nso some people call Sawsbuck\nthe harbingers of spring.",
         "height": "6'03\"",
         "weight": "203.9 lbs.",
+        "shape": 4,
+        "form_name": "Spring Form",
         "forms": [
             {
+                "name": "Summer Form",
                 "entry": "They migrate according to the seasons,\nso some people call Sawsbuck\nthe harbingers of spring.",
                 "height": "6'03\"",
-                "weight": "203.9 lbs."
+                "weight": "203.9 lbs.",
+                "shape": 4
             },
             {
+                "name": "Autumn Form",
                 "entry": "They migrate according to the seasons,\nso some people call Sawsbuck\nthe harbingers of spring.",
                 "height": "6'03\"",
-                "weight": "203.9 lbs."
+                "weight": "203.9 lbs.",
+                "shape": 4
             },
             {
+                "name": "Winter Form",
                 "entry": "They migrate according to the seasons,\nso some people call Sawsbuck\nthe harbingers of spring.",
                 "height": "6'03\"",
-                "weight": "203.9 lbs."
+                "weight": "203.9 lbs.",
+                "shape": 4
             }
         ],
         "languages": {

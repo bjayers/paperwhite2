@@ -6,6 +6,7 @@
         "entry": "The electric sacs in its cheeks are\nsmall. If even a little electricity\nleaks, it becomes shocked.",
         "height": "1'00\"",
         "weight": "4.4 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Pichu",

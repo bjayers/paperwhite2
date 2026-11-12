@@ -6,6 +6,7 @@
         "entry": "Its petals are the largest in the\nworld. As it walks, it scatters\nextremely allergenic pollen.",
         "height": "3'11\"",
         "weight": "41.0 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Vileplume",

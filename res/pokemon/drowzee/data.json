@@ -6,6 +6,7 @@
         "entry": "It can tell what people are\ndreaming by sniffing with its big\nnose. It loves fun dreams.",
         "height": "3'03\"",
         "weight": "71.4 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Drowzee",

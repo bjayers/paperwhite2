@@ -6,11 +6,15 @@
         "entry": "Red- and blue-striped Basculin are\nvery violent and always fighting.\nThey are also remarkably tasty.",
         "height": "3'03\"",
         "weight": "39.7 lbs.",
+        "shape": 2,
+        "form_name": "Red-Striped Form",
         "forms": [
             {
+                "name": "Blue-Striped Form",
                 "entry": "Red- and blue-striped Basculin are\nvery violent and always fighting.\nThey are also remarkably tasty.",
                 "height": "3'03\"",
-                "weight": "39.7 lbs."
+                "weight": "39.7 lbs.",
+                "shape": 2
             }
         ],
         "languages": {

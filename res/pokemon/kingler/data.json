@@ -6,6 +6,7 @@
         "entry": "The larger pincer has 10,000-\nhorsepower strength. However, it\nis so heavy, it is difficult to aim.",
         "height": "4'03\"",
         "weight": "132.3 lbs.",
+        "shape": 3,
         "languages": {
             "en": {
                 "name": "Kingler",

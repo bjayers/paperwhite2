@@ -6,6 +6,7 @@
         "entry": "It is said to live 10,000 years.\nIts furry tail is popular as a\nsymbol of longevity.",
         "height": "3'03\"",
         "weight": "49.6 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Wartortle",

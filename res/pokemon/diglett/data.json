@@ -6,6 +6,7 @@
         "entry": "A Pokémon that lives underground.\nBecause of its dark habitat, it is\nrepelled by bright sunlight.",
         "height": "0'08\"",
         "weight": "1.8 lbs.",
+        "shape": 8,
         "languages": {
             "en": {
                 "name": "Diglett",

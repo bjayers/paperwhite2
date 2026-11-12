@@ -6,6 +6,7 @@
         "entry": "It is said that Charizard's fire\nburns hotter if it has\nexperienced harsh battles.",
         "height": "5'07\"",
         "weight": "199.5 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Charizard",

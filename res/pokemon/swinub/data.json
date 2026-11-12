@@ -6,6 +6,7 @@
         "entry": "Rooting the tip of its snout\ninto the ground, it searches for food.\nSometimes it even digs up a hot spring.",
         "height": "1'04\"",
         "weight": "14.3 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Swinub",

@@ -6,6 +6,7 @@
         "entry": "Its howls can be heard over six\nmiles away. It emits all sorts of\nnoises from the ports on its body.",
         "height": "4'11\"",
         "weight": "185.2 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Exploud",

@@ -6,6 +6,7 @@
         "entry": "On nights with a full moon, Clefairy\ngather from all over and dance.\nBathing in moonlight makes them float.",
         "height": "2'00\"",
         "weight": "16.5 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Clefairy",

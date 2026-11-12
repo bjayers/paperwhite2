@@ -6,6 +6,7 @@
         "entry": "This very loyal Pokémon\nhelps Trainers, and it also\ntakes care of other Pokémon.",
         "height": "2'11\"",
         "weight": "32.4 lbs.",
+        "shape": 4,
         "languages": {
             "ja": {
                 "name": "ハーデリア",

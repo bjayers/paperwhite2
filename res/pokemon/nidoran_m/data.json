@@ -6,6 +6,7 @@
         "entry": "It scans its surroundings by\nraising its ears out of the grass.\nIts toxic horn is for protection.",
         "height": "1'08\"",
         "weight": "19.8 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Nidoran⑭",

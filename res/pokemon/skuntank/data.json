@@ -6,6 +6,7 @@
         "entry": "It attacks by spraying a horribly\nsmelly fluid from the tip of its tail.\nAttacks from above confound it.",
         "height": "3'03\"",
         "weight": "83.8 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Skuntank",

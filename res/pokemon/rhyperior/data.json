@@ -6,6 +6,7 @@
         "entry": "It can launch a rock held in its\nhand like a missile by tightening\nthen expanding muscles instantly.",
         "height": "7'10\"",
         "weight": "623.5 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Rhyperior",

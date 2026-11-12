@@ -6,6 +6,7 @@
         "entry": "It loves to eat roasted berries,\nbut sometimes it gets too excited\nand burns them to a crisp.",
         "height": "1'08\"",
         "weight": "21.8 lbs.",
+        "shape": 4,
         "languages": {
             "ja": {
                 "name": "ポカブ",

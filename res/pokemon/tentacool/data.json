@@ -6,6 +6,7 @@
         "entry": "Because its body is almost entirely\ncomposed of water, it shrivels up if\nit is washed ashore.",
         "height": "2'11\"",
         "weight": "100.3 lbs.",
+        "shape": 7,
         "languages": {
             "en": {
                 "name": "Tentacool",

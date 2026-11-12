@@ -6,6 +6,7 @@
         "entry": "It moves the caps on both arms\nand does a dance to lure prey.\nIt prefers damp places.",
         "height": "2'00\"",
         "weight": "23.1 lbs.",
+        "shape": 13,
         "languages": {
             "ja": {
                 "name": "モロバレル",

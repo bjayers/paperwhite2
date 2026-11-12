@@ -6,6 +6,7 @@
         "entry": "When Doduo evolves into this odd\nbreed, one of its heads splits into\ntwo. It runs at nearly 40 mph.",
         "height": "5'11\"",
         "weight": "187.8 lbs.",
+        "shape": 1,
         "languages": {
             "en": {
                 "name": "Dodrio",

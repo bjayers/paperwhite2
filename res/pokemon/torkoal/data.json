@@ -6,6 +6,7 @@
         "entry": "It burns coal inside its shell for\nenergy. It blows out black soot if\nit is endangered.",
         "height": "1'08\"",
         "weight": "177.2 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Torkoal",

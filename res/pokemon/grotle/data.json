@@ -6,6 +6,7 @@
         "entry": "It knows where pure water wells\nup. It carries fellow Pokémon there\non its back.",
         "height": "3'07\"",
         "weight": "213.8 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Grotle",

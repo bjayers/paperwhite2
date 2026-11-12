@@ -6,6 +6,7 @@
         "entry": "This mysterious Pokémon started life\nas an ancient clay figurine made over\n20,000 years ago.",
         "height": "4'11\"",
         "weight": "238.1 lbs.",
+        "shape": 13,
         "languages": {
             "en": {
                 "name": "Claydol",

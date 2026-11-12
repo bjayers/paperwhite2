@@ -6,6 +6,7 @@
         "entry": "This Pokémon was restored from a fossil.\nIt swam skillfully and dove\nto depths beyond half a mile.",
         "height": "2'04\"",
         "weight": "36.4 lbs.",
+        "shape": 4,
         "languages": {
             "ja": {
                 "name": "プロトーガ",

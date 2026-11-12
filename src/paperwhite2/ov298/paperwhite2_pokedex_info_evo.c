@@ -15,6 +15,7 @@
 #include "nitro/mi.h"
 #include "nnsys/g2d.h"
 #include "paperwhite2/pokedex_info.h"
+#include "paperwhite2/pokemon_forms.h"
 #include "pml/evolution.h"
 #include "pml/species_names.h"
 #include "save/pokedex_savedata.h"
@@ -205,7 +206,7 @@ struct PokedexInfoEvo {
     ClActor *icons[POKEDEX_INFO_EVO_FAMILY_MAX];
 };
 
-static void PokedexInfoEvo_LoadFamily(PokedexInfoEvo *evo, u16 species);
+static void PokedexInfoEvo_LoadFamily(PokedexInfoEvo *evo, u16 species, u16 form);
 static void PokedexInfoEvo_AddEvolutions(PokedexInfoEvo *evo, u32 row);
 static void PokedexInfoEvo_DrawRow(PokedexInfoEvo *evo, GFLBitmap *bitmap, int top, u32 row);
 static void PokedexInfoEvo_DrawMethod(PokedexInfoEvo *evo, GFLBitmap *bitmap, int top, u32 row);
@@ -268,7 +269,7 @@ void PokedexInfoEvo_Free(PokedexInfoEvo *evo) {
 void PokedexInfoEvo_Show(PokedexInfoEvo *evo, GFLBitmap *bitmap, int top, u16 species, u16 form, u16 sex) {
     u32 i;
 
-    PokedexInfoEvo_LoadFamily(evo, species);
+    PokedexInfoEvo_LoadFamily(evo, species, form);
     // The lines first, so that the balls cover their ends
     for (i = 1; i < evo->count; i++) {
         u32 parent = evo->rows[i].parent;
@@ -333,17 +334,22 @@ u16 PokedexInfoEvo_GetTouchedSpecies(PokedexInfoEvo *evo) {
 }
 
 // The family of the species, from its root down: each species followed by its evolutions and theirs. A species past
-// the family table (none has evolutions) is its own root
-static void PokedexInfoEvo_LoadFamily(PokedexInfoEvo *evo, u16 species) {
+// the family table (none has evolutions) is its own root, and a form that never evolves (the Spiky-eared Pichu) is
+// shown alone, since nothing evolves into it either (an egg is always the first form)
+static void PokedexInfoEvo_LoadFamily(PokedexInfoEvo *evo, u16 species, u16 form) {
+    BOOL alone = PaperWhite2_FormCannotEvolve(species, form);
+
     evo->species = species;
     evo->root = species;
-    if (species <= SPECIES_GENESECT) {
+    if (species <= SPECIES_GENESECT && !alone) {
         GFL_ArcSysReadRange(&evo->root, ARCID_POKEDEX_GRA, EVO_FAMILY_FILE, species * sizeof(u16), sizeof(u16));
     }
     MI_CpuFill8(evo->rows, 0, sizeof(evo->rows));
     evo->rows[0].species = evo->root;
     evo->count = 1;
-    PokedexInfoEvo_AddEvolutions(evo, 0);
+    if (!alone) {
+        PokedexInfoEvo_AddEvolutions(evo, 0);
+    }
 }
 
 // Adds the species that a row's species evolves into after it, each followed by its own evolutions. A species that the

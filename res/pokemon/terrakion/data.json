@@ -6,6 +6,7 @@
         "entry": "Spoken of in legend, this Pokémon used\nits phenomenal power to destroy a castle\nin its effort to protect Pokémon.",
         "height": "6'03\"",
         "weight": "573.2 lbs.",
+        "shape": 4,
         "languages": {
             "ja": {
                 "name": "テラキオン",

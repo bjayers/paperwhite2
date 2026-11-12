@@ -6,6 +6,7 @@
         "entry": "It makes its nest in the shade of\ncorals. If it senses danger, it\nspits murky ink and flees.",
         "height": "1'04\"",
         "weight": "17.6 lbs.",
+        "shape": 8,
         "languages": {
             "en": {
                 "name": "Horsea",

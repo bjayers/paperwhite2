@@ -6,6 +6,7 @@
         "entry": "Their ears are sensitive enough to hear\na pin drop from over a mile away,\nso they're usually found in quiet places.",
         "height": "4'03\"",
         "weight": "88.2 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Clefable",

@@ -6,6 +6,7 @@
         "entry": "Always carrying squared logs,\nthey help out with construction.\nAs they grow, they carry bigger logs.",
         "height": "2'00\"",
         "weight": "27.6 lbs.",
+        "shape": 10,
         "languages": {
             "ja": {
                 "name": "ドッコラー",

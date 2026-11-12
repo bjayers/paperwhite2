@@ -6,6 +6,7 @@
         "entry": "It blooms when the weather warms.\nIt floats in the sky to soak up as\nmuch sunlight as possible.",
         "height": "2'00\"",
         "weight": "2.2 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Skiploom",

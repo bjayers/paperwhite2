@@ -6,6 +6,7 @@
         "entry": "The pattern on its belly is for\nintimidation. It constricts foes\nwhile they are frozen in fear.",
         "height": "11'06\"",
         "weight": "143.3 lbs.",
+        "shape": 12,
         "languages": {
             "en": {
                 "name": "Arbok",

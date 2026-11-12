@@ -6,6 +6,7 @@
         "entry": "The mother puts its offspring to\nsleep by curling up around them.\nIt corners foes with speed.",
         "height": "5'11\"",
         "weight": "71.6 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Furret",

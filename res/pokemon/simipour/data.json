@@ -6,6 +6,7 @@
         "entry": "It prefers places with clean water.\nWhen its tuft runs low, it replenishes\nit by siphoning up water with its tail.",
         "height": "3'03\"",
         "weight": "63.9 lbs.",
+        "shape": 9,
         "languages": {
             "ja": {
                 "name": "ヒヤッキー",

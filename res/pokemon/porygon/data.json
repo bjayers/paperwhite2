@@ -6,6 +6,7 @@
         "entry": "A man-made Pokémon created using\nadvanced scientific means. It can\nmove freely in cyberspace.",
         "height": "2'07\"",
         "weight": "80.5 lbs.",
+        "shape": 1,
         "languages": {
             "en": {
                 "name": "Porygon",

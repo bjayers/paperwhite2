@@ -6,6 +6,7 @@
         "entry": "Lanturn's light can shine up from\ngreat depths. It is nicknamed\n“The Deep-Sea Star.\"",
         "height": "3'11\"",
         "weight": "49.6 lbs.",
+        "shape": 2,
         "languages": {
             "en": {
                 "name": "Lanturn",

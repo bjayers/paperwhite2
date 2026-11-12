@@ -6,6 +6,7 @@
         "entry": "It drifts on winds. It is said that\nwhen Hoppip gather in fields and\nmountains, spring is on the way.",
         "height": "1'04\"",
         "weight": "1.1 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Hoppip",

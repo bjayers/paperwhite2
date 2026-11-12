@@ -6,6 +6,7 @@
         "entry": "It has the stamina to fly all\nday on its broad wings. It\nfights by using its sharp beak.",
         "height": "3'11\"",
         "weight": "83.8 lbs.",
+        "shape": 11,
         "languages": {
             "en": {
                 "name": "Fearow",

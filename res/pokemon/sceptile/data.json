@@ -6,6 +6,7 @@
         "entry": "The leaves that grow on its arms\ncan slice down thick trees. It is\nwithout peer in jungle combat.",
         "height": "5'07\"",
         "weight": "115.1 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Sceptile",

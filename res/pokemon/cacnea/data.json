@@ -6,6 +6,7 @@
         "entry": "By storing water in its body, this\ndesert dweller can survive for 30\ndays without water.",
         "height": "1'04\"",
         "weight": "113.1 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Cacnea",

@@ -6,6 +6,7 @@
         "entry": "It looks just like a pinecone.\nIts shell protects it from bird\nPokémon that peck it by mistake.",
         "height": "2'00\"",
         "weight": "15.9 lbs.",
+        "shape": 0,
         "languages": {
             "en": {
                 "name": "Pineco",

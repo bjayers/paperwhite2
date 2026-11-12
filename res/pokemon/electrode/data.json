@@ -6,6 +6,7 @@
         "entry": "It is known to drift on winds if it\nis bloated to bursting with stored\nelectricity.",
         "height": "3'11\"",
         "weight": "146.8 lbs.",
+        "shape": 0,
         "languages": {
             "en": {
                 "name": "Electrode",

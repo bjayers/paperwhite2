@@ -6,6 +6,7 @@
         "entry": "Its cries sound like human speech.\nHowever, it is impossible to tell\nwhat it is trying to say.",
         "height": "4'07\"",
         "weight": "89.5 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Jynx",

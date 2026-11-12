@@ -6,6 +6,7 @@
         "entry": "No two Spinda have the same\npattern of spots. Its tottering\nstep fouls the aim of foes.",
         "height": "3'07\"",
         "weight": "11.0 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Spinda",

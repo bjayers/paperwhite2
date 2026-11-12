@@ -6,6 +6,7 @@
         "entry": "If its veil-like arms stun and wrap\na foe, that foe will be dragged miles\nbelow the surface, never to return.",
         "height": "3'11\"",
         "weight": "72.8 lbs.",
+        "shape": 7,
         "languages": {
             "ja": {
                 "name": "プルリル",

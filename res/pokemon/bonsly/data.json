@@ -6,6 +6,7 @@
         "entry": "It prefers an arid atmosphere. It\nleaks water that looks like tears\nwhen adjusting its moisture level.",
         "height": "1'08\"",
         "weight": "33.1 lbs.",
+        "shape": 1,
         "languages": {
             "en": {
                 "name": "Bonsly",

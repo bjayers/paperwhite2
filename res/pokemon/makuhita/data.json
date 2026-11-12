@@ -6,6 +6,7 @@
         "entry": "It toughens its body by slamming\ninto thick trees. Many snapped\ntrees can be found near its nest.",
         "height": "3'03\"",
         "weight": "190.5 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Makuhita",

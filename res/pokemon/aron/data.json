@@ -6,6 +6,7 @@
         "entry": "In order to build up its steel body,\nit eats iron ore. This pesky Pokémon\nis known to eat railroad tracks.",
         "height": "1'04\"",
         "weight": "132.3 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Aron",

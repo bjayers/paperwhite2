@@ -6,6 +6,7 @@
         "entry": "It is nocturnal in nature. If it\nspots something shiny, its eyes\nglitter brightly.",
         "height": "1'04\"",
         "weight": "9.3 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Meowth",

@@ -6,6 +6,7 @@
         "entry": "Its body temperature is roughly\n18,000 degrees F. Flames spout\nfrom gaps in its hardened shell.",
         "height": "2'07\"",
         "weight": "121.3 lbs.",
+        "shape": 12,
         "languages": {
             "en": {
                 "name": "Magcargo",

@@ -6,6 +6,7 @@
         "entry": "The phase of the moon apparently\nhas some effect on its power.\nIt's active on the night of a full moon.",
         "height": "3'03\"",
         "weight": "370.4 lbs.",
+        "shape": 0,
         "languages": {
             "en": {
                 "name": "Lunatone",

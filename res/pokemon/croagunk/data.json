@@ -6,6 +6,7 @@
         "entry": "Inflating its poison sacs, it fills the\narea with an odd sound and hits\nflinching opponents with a poison jab.",
         "height": "2'04\"",
         "weight": "50.7 lbs.",
+        "shape": 10,
         "languages": {
             "en": {
                 "name": "Croagunk",

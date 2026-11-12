@@ -6,6 +6,7 @@
         "entry": "Two bodies comprise a fixed pair.\nThey spin around each other\nto generate energy.",
         "height": "1'00\"",
         "weight": "46.3 lbs.",
+        "shape": 6,
         "languages": {
             "ja": {
                 "name": "ギアル",

@@ -6,6 +6,7 @@
         "entry": "Its eyes are specially developed\nto enable it to see clearly even in\nmurky darkness and minimal light.",
         "height": "5'03\"",
         "weight": "89.9 lbs.",
+        "shape": 11,
         "languages": {
             "en": {
                 "name": "Noctowl",

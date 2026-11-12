@@ -6,6 +6,7 @@
         "entry": "It shoots the poison spines on its\nbody in all directions. Its round\nform makes it a poor swimmer.",
         "height": "1'08\"",
         "weight": "8.6 lbs.",
+        "shape": 2,
         "languages": {
             "en": {
                 "name": "Qwilfish",

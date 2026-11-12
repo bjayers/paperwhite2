@@ -6,6 +6,7 @@
         "entry": "It lives in warm seas. It is said\nthat a couple finding this Pokémon\nwill be blessed with eternal love.",
         "height": "2'00\"",
         "weight": "19.2 lbs.",
+        "shape": 2,
         "languages": {
             "en": {
                 "name": "Luvdisc",

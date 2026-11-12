@@ -6,6 +6,7 @@
         "entry": "It skillfully controls the intensity\nof the fire on its tail to keep its\nfoes at an ideal distance.",
         "height": "2'11\"",
         "weight": "48.5 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Monferno",

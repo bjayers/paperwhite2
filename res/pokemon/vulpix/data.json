@@ -6,6 +6,7 @@
         "entry": "As each tail grows, its fur becomes\nmore lustrous. When held, it feels\nslightly warm.",
         "height": "2'00\"",
         "weight": "21.8 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Vulpix",

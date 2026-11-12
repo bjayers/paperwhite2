@@ -6,6 +6,7 @@
         "entry": "It is thought that this Pokémon\ncame onto land because its\nprey adapted to life on land.",
         "height": "4'03\"",
         "weight": "89.3 lbs.",
+        "shape": 9,
         "languages": {
             "en": {
                 "name": "Kabutops",

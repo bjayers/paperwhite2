@@ -6,6 +6,7 @@
         "entry": "When at an all-out gallop, its\nblazing mane sparkles, enhancing\nits beautiful appearance.",
         "height": "5'07\"",
         "weight": "209.4 lbs.",
+        "shape": 4,
         "languages": {
             "en": {
                 "name": "Rapidash",
