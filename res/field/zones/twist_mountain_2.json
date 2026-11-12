@@ -7,7 +7,7 @@
     "scripts": "SCRIPTS_TWIST_MOUNTAIN_2",
     "text": "SCRIPT_TEXT_TWIST_MOUNTAIN_2",
     "bgm": "SEQ_BGM_D_03",
-    "encounters": null,
+    "encounters": "ENCOUNTERS_TWIST_MOUNTAIN_5",
     "enc_slot": 2,
     "parent": "ZONE_TWIST_MOUNTAIN",
     "place": "PLACE_TWIST_MOUNTAIN",
