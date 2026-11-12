@@ -556,6 +556,9 @@ icirrus_city:
     - The winter freeze leaves only the water, as the place says, and the swans make winter worth visiting.
   unsure:
     - Surfing is a single family per season (Ducklett, then Swanna); Poliwag or Wooper in the water too would help.
+  discussed:
+    - >-
+      2026-11-12, done (Icirrus is post-game, so no level limits): Poliwag common in spring (the frog chorus), Croagunk in autumn, and Wooper and Poliwag surfing all year beside the ducks and swans.
 
 route_8:
   vision: >-
@@ -565,6 +568,9 @@ route_8:
     - It shares the Moor's and the town's marsh, as the place says.
   unsure:
     - It's nearly a copy of Icirrus City; Carnivine or Yanma rarely would set it apart.
+  discussed:
+    - >-
+      2026-11-12, done: kept close to the city (they merge), a little wilder: Croagunk uncommon, Surskit in spring, Yanma in summer, Wooper surfing. Carnivine stays the Moor's alone.
 
 moor_of_icirrus:
   vision: >-
@@ -574,6 +580,11 @@ moor_of_icirrus:
     - The bog oddity (Carnivine) gives it its own prize.
   unsure:
     - The puddles have only five families; the moor's low hills could add a land Pokémon or two (Stantler, Mareep).
+  discussed:
+    - >-
+      2026-11-12, done: a marsh of puddles, no grass, so no deer or Mareep; Croagunk's spring chorus, Surskit in spring and summer, Yanma in summer. More marsh oddities proposed (Bellsprout's pitcher plants, Lotad, Venonat).
+    - >-
+      2026-11-12, done: Bellsprout's pitcher plants (spring to autumn) beside Carnivine, Venonat on summer nights, Gloom's family in autumn among the scattered leaves, and Lotad on the open pools.
 
 dragonspiral_entrance:
   vision: >-
@@ -588,6 +599,9 @@ dragonspiral_entrance:
       Spring to autumn is thin and generic (four families, nothing common); the cliff meadow needs a resident with
       more character, or one common Pokémon.
     - Winter is now crowded (nine in the grass).
+  discussed:
+    - >-
+      2026-11-12, done: Mienfoo common outside winter as its own; Swablu passing in spring and autumn; Cryogonal with the snow or blizzards, not diamond dust.
 
 dragonspiral_grounds:
   vision: >-
@@ -599,6 +613,9 @@ dragonspiral_grounds:
   unsure:
     - The two grasses are identical and thin (three families), and nothing is common.
     - Surfing has a single family most of the year.
+  discussed:
+    - >-
+      2026-11-12, done: Deerling and Sawsbuck by the lake in their seasons' forms; Bronzor rare in the dark grass; a very rare Lapras in the cold, deep lake (Loch Ness). Golett stays in the tower.
 
 dragonspiral_tower:
   vision: >-
@@ -609,6 +626,9 @@ dragonspiral_tower:
     - >-
       Only three families over four floors, with no cold-loving residents yet (the places suggest them): Vanillite,
       Sneasel or Cryogonal in winter, Woobat, or Mienfoo inside.
+  discussed:
+    - >-
+      2026-11-12, done: Woobat, Sneasel in winter and a rare Fraxure; Golett on every floor, Golurk and Druddigon only on the upper floors. Vanillite isn't in the tower: it's a special one (an ice cream), now also in winter near people (Castelia's park, Routes 5 and 9).
 
 # --- Northern Central Unova ---
 

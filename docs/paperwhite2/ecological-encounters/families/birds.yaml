@@ -372,6 +372,7 @@ families:
       - {place: route_22, methods: [grass], seasons: [autumn, winter], tier: uncommon, why: "the coast's mild upland in winter"}
       - {place: route_12, methods: [grass], seasons: [autumn], tier: rare, why: "passing over the hills on its way down from the heights"}
       - {place: village_bridge, methods: [grass], seasons: [winter], tier: uncommon, why: "wintering low in the mild river valley; Altaria's soprano suits the village of music"}
+      - {place: dragonspiral_entrance, methods: [grass], seasons: [spring, autumn], tier: uncommon, why: "passing up to the heights and down again"}
     review: []
 
   - id: starly

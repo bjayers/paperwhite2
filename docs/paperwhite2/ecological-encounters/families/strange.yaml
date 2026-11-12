@@ -293,6 +293,7 @@ families:
       - {place: relic_castle, methods: [grass], seasons: all, tier: uncommon, why: "an ancient tomb"}
       - {place: victory_road_ruins, methods: [grass], seasons: all, tier: uncommon, why: "the ancient halls"}
       - {place: dragonspiral_tower, methods: [grass], seasons: all, tier: rare, why: "the ancient tower"}
+      - {place: dragonspiral_grounds, methods: [dark_grass], seasons: all, tier: rare, why: "an ancient relic strayed from the tower"}
     review: []
 
   - id: spiritomb
@@ -489,9 +490,10 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
-      - {place: dragonspiral_tower, methods: [grass], seasons: all, tier: common, why: "the tower's guardians, as in the original"}
       - {place: victory_road_ruins, methods: [grass], seasons: all, tier: common, why: "the ruins' guardians"}
       - {place: clay_tunnel, methods: [grass], seasons: all, tier: rare, areas: [underground_ruins], why: "clay guardians of the Underground Ruins"}
+      - {place: dragonspiral_tower, methods: [grass], seasons: all, tier: common, stages: [golett], why: "the tower's guardians, as in the original"}
+      - {place: dragonspiral_tower, methods: [grass], seasons: all, tier: uncommon, stages: [golurk], areas: [dragonspiral_tower_3, dragonspiral_tower_4], why: "the old guardians near the top"}
     review: []
 
   - id: drifloon

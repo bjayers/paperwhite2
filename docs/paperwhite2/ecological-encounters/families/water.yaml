@@ -75,12 +75,14 @@ families:
     homes:
       - {place: pinwheel_forest, methods: [surf], seasons: [spring, summer, autumn], tier: common, why: "the still, leafy pond, rich in bugs"}
       - {place: abundant_shrine, methods: [surf], seasons: [spring, summer, autumn], tier: uncommon, why: "the ponds among the fields"}
-      - {place: icirrus_city, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the fens' puddles at night, hunting bugs"}
       - {place: moor_of_icirrus, methods: [surf], seasons: all, tier: uncommon, why: "the moor's pools; in winter under the ice's edge"}
       - {place: route_22, methods: [surf], seasons: [spring, summer, autumn], tier: uncommon, why: "the upland's freshwater pond"}
       - {place: route_23, methods: [surf], seasons: [spring, summer, autumn], tier: rare, why: "the still pond"}
       - {place: striaton_city, methods: [surf], seasons: [spring, summer, autumn], tier: uncommon, why: "the park's ponds"}
       - {place: abundant_shrine, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, weather: [rain, gusty_rain, thunderstorm], why: "frogs out on the fields after rain"}
+      - {place: icirrus_city, methods: [grass], seasons: [spring], tier: common, why: "the spring frog chorus in the fens' puddles"}
+      - {place: icirrus_city, methods: [grass], seasons: [summer, autumn], tier: uncommon, why: "the fens' puddles at night, hunting bugs"}
+      - {place: icirrus_city, methods: [surf], seasons: all, tier: uncommon, why: "the deeper marsh water"}
     review: []
 
   - id: tentacool
@@ -370,6 +372,7 @@ families:
       - {place: undella, methods: [surf], seasons: [summer], tier: uncommon, why: "summer at the resort with the tourists"}
       - {place: route_21, methods: [rippling_surf], seasons: [spring, autumn, winter], tier: rare, why: "the open sea out of season"}
       - {place: route_17, methods: [rippling_surf], seasons: all, tier: rare, why: "the cool open sea"}
+      - {place: dragonspiral_grounds, methods: [rippling_surf], seasons: all, tier: very_rare, why: "a legend in the cold, deep lake, as Loch Ness's (the user)"}
     review: []
 
   - id: totodile
@@ -443,6 +446,8 @@ families:
       - {place: abundant_shrine, methods: [surf], seasons: all, tier: uncommon, why: "the ponds among the fields, like axolotls"}
       - {place: giant_chasm_caves, methods: [surf], seasons: all, tier: common, why: "the cave's cold water (it lives in cold water)"}
       - {place: abundant_shrine, methods: [grass], seasons: all, tier: uncommon, weather: [rain, gusty_rain, thunderstorm], why: "out on the fields in the rain"}
+      - {place: icirrus_city, methods: [surf], seasons: all, tier: uncommon, why: "the deeper marsh water, all year"}
+      - {place: route_8, methods: [surf], seasons: all, tier: uncommon, why: "the open marsh water"}
     review: []
 
   - id: qwilfish
@@ -550,6 +555,7 @@ families:
       - {place: village_bridge, methods: [fishing], seasons: [spring, summer, autumn], tier: very_rare, stages: [lombre], times: day, why: "pranks at the fishing spot"}
       - {place: abundant_shrine, methods: [fishing], seasons: [spring, summer, autumn], tier: rare, stages: [lombre], times: night, why: "the ponds' prankster"}
       - {place: abundant_shrine, methods: [fishing], seasons: [spring, summer, autumn], tier: very_rare, stages: [lombre], times: day, why: "the ponds' prankster"}
+      - {place: moor_of_icirrus, methods: [surf], seasons: [spring, summer, autumn], tier: uncommon, stages: [lotad], why: "lily pads on the moor's open pools"}
     review:
       - "Lombre on fishing rods is the Pokédex's joke made real; say if it's too odd."
 
@@ -576,6 +582,8 @@ families:
       - {place: icirrus_city, methods: [grass], seasons: [spring, summer], tier: uncommon, why: "the fens' puddles"}
       - {place: route_3, methods: [surf], seasons: [spring, summer, autumn], tier: uncommon, why: "the lake's still edges"}
       - {place: abundant_shrine, methods: [surf], seasons: [spring, summer], tier: uncommon, why: "the ponds among the fields"}
+      - {place: route_8, methods: [grass], seasons: [spring], tier: uncommon, why: "skating on the fens' spring puddles"}
+      - {place: moor_of_icirrus, methods: [grass], seasons: [spring, summer], tier: uncommon, why: "pond skaters on the moor's pools"}
     review: []
 
   - id: azurill
@@ -1151,7 +1159,9 @@ families:
     wanderer: {appears: both, wanders: aggressive, grass: stand}
     homes:
       - {place: route_7, methods: [grass, dark_grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the marsh under the walkways"}
-      - {place: moor_of_icirrus, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the moor's wilder marsh"}
       - {place: pinwheel_forest_outskirts, methods: [dark_grass], seasons: [spring, summer, autumn], tier: rare, why: "the outskirts' marsh"}
-      - {place: route_8, methods: [grass], seasons: [spring, summer, autumn], tier: rare, why: "the fens"}
+      - {place: icirrus_city, methods: [grass], seasons: [autumn], tier: uncommon, why: "croaking in the town's autumn fens"}
+      - {place: route_8, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the wilder fens toward the Moor"}
+      - {place: moor_of_icirrus, methods: [grass], seasons: [spring], tier: common, why: "the spring croaking chorus on the moor"}
+      - {place: moor_of_icirrus, methods: [grass], seasons: [summer, autumn], tier: uncommon, why: "the moor's wilder marsh"}
     review: []
