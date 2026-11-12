@@ -60,6 +60,9 @@ void PokedexInfo_RestoreText(PokedexInfo *info, u32 language);
 BOOL PokedexInfo_IsTextFreed(PokedexInfo *info);
 // The queued text printed at once; on the info page, its windows go to VRAM in the next VBlank
 void PokedexInfo_PrintQueued(PokedexInfo *info);
+// Frees the previous Pokémon's hidden type icons and footprint if PokedexInfo_Update has run since the change that hid
+// them, so that the screen no longer shows them: for the start of a frame, before what it can load
+void PokedexInfo_FreeHiddenSlots(PokedexInfo *info);
 // Paper White 2: the info page's Area map takes the top entry's panels' VRAM on BGs 2 and 3 while it shows and puts
 // their characters back as it closes: the ARCID_POKEDEX_GRA file they are, and where the BGs have them and the caught
 // label's two windows (the mid BG's), each as CHAR_POS and CHAR_SIZE give them, by POKEDEX_INFO_PANEL_CHARS_*; their
