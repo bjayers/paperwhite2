@@ -3,6 +3,7 @@
 #include "constants/species.h"
 #include "constants/text_banks.h"
 #include "gfl/arc.h"
+#include "gfl/arc_util.h"
 #include "gfl/bmp.h"
 #include "gfl/clact.h"
 #include "gfl/heap.h"
@@ -14,17 +15,20 @@
 #include "nitro/os.h"
 #include "nnsys/g2d.h"
 #include "paperwhite2/pokedex_info.h"
+#include "save/pokedex_savedata.h"
 #include "system/gf_font.h"
 #include "system/poke_icon.h"
 #include "system/printsys.h"
 #include "text/system/pokedex_data.h"
+#include "text/system/pokedex_detail_form.h"
 
 // Paper White 2: the Pokédex Info page's Flavour (docs/paperwhite2/design/pokedex-flavour.md): the other games'
 // Pokédex entries of the shown species, from the member that tools/paperwhite2/dex_flavour.py makes from the user's own
 // ROMs at build time, and the version tab on the top screen that names the game of the entry shown. Only the shown
 // species' entries are read, by range; the tab is the user's art (res/paperwhite2/pokedex_art/version_flavour.png) as
 // TAB_OBJS main OBJs of 32 by 32, and its label LABEL_OBJS OBJs of their own in front of them, whose characters go to
-// VRAM in the VBlank with the entry's text (PokedexInfo's VBlank task)
+// VRAM in the VBlank with the entry's text (PokedexInfo's VBlank task). While this game's own description shows, the
+// tab names the shown form instead, for a species whose forms have names of their own
 
 // ARCID_POKEDEX_GRA's members that tools/paperwhite2/pokedex_evo.py adds (FLAVOUR_MEMBER and TAB_MEMBER there): the
 // entries, FLAVOUR_VERSION, then a u32 for each species from SPECIES_NONE to SPECIES_GENESECT where its entries start
@@ -101,6 +105,12 @@ enum {
 #define LABEL_GAP 2
 // The label's palette's shadow (dex_flavour.py's LABEL_SHADOW)
 #define LABEL_SHADOW 1
+// The forms' names, the forms page's (pokedex_detail_form.c): TEXT_BANK_POKEDEX_DETAIL_FORM's message of a species'
+// first form is the species', and each next form's follows the last's through the table of next forms (its member 0).
+// The widest, "Blue-Striped Form", is 78 pixels in font 1, the label's room from TAB_TEXT_X to TAB_TEXT_RIGHT
+#define ARCID_FORM_NAME_TABLE 97
+// No form's name on the tab: message 0 is SPECIES_NONE's, never a form's
+#define FORM_TEXT_NONE 0
 // In front of the entry's BGs (its panels on BG 2 and 3, its text on BG 1), the label in front of the tab
 #define TAB_BG_PRIORITY 0
 #define TAB_PRIORITY 2
@@ -139,6 +149,14 @@ struct PokedexInfoFlavour {
     u8 *pending;
     u32 shownGames;
     TCB *vblankTcb;
+    // The forms' names and the table of next forms, the shown species, whether its forms have names that tell them
+    // apart (not Unown's "One form" or Arceus's "Arceus" for each), and the form's name the tab shows, FORM_TEXT_NONE
+    // while it shows the games or is hidden
+    MsgData *formMsgData;
+    u16 *formNameTable;
+    u16 species;
+    BOOL formsNamed;
+    u32 shownFormText;
 };
 
 static void PokedexInfoFlavour_VBlank(TCB *tcb, void *data);
@@ -148,7 +166,9 @@ static ClActor *PokedexInfoFlavour_CreateObj(PokedexInfoFlavour *flavour, ClActU
 static void PokedexInfoFlavour_CreateTab(PokedexInfoFlavour *flavour, ClActUnit *unit);
 static void PokedexInfoFlavour_ToObjOrder(const u8 *pixels, u32 tilesAcross, u32 objs, u8 *chars);
 static u32 PokedexInfoFlavour_MakeLabel(PokedexInfoFlavour *flavour, u32 games, GFLBitmap *bitmap, int x);
-static void PokedexInfoFlavour_DrawLabel(PokedexInfoFlavour *flavour, u32 games);
+static void PokedexInfoFlavour_DrawLabel(PokedexInfoFlavour *flavour, u32 games, u32 formText);
+static int PokedexInfoFlavour_GetLabelX(u32 width);
+static u32 PokedexInfoFlavour_GetFormText(PokedexInfoFlavour *flavour, u32 form);
 
 // Each game's name, for an entry of its own, and its short name, for one that games share
 static const u16 sGameNames[FLAVOUR_GAME_COUNT] = {
@@ -176,12 +196,15 @@ static const u8 sGameColors[FLAVOUR_GAME_COUNT] = { 2, 3, 4, 5, 6, 7, 8, 9, 2, 1
 PokedexInfoFlavour *PokedexInfoFlavour_Create(HeapID heapId, Font *smallFont, ClActUnit *unit) {
     PokedexInfoFlavour *flavour =
         GFL_HeapAllocate(heapId, sizeof(PokedexInfoFlavour), TRUE, "paperwhite2_pokedex_info_flavour.c", __LINE__);
+    u32 size;
 
     flavour->heapId = heapId;
     flavour->smallFont = smallFont;
     flavour->msgData = GFL_MsgSysLoadData(FALSE, ARCID_SYSTEM_MESSAGE, TEXT_BANK_POKEDEX_DATA, heapId);
     flavour->text = GFL_StrBufCreate(0x100, heapId);
     flavour->word = GFL_StrBufCreate(0x20, heapId);
+    flavour->formMsgData = GFL_MsgSysLoadData(FALSE, ARCID_SYSTEM_MESSAGE, TEXT_BANK_POKEDEX_DETAIL_FORM, heapId);
+    flavour->formNameTable = GFL_ArcSysReadHeapNewLZGetLen(ARCID_FORM_NAME_TABLE, 0, FALSE, heapId, &size);
     GFL_ArcSysReadRange(flavour->range, ARCID_POKEDEX_GRA, FLAVOUR_FILE, 0, sizeof(u32));
     flavour->valid = flavour->range[0] == FLAVOUR_VERSION;
     PokedexInfoFlavour_CreateTab(flavour, unit);
@@ -210,17 +233,27 @@ void PokedexInfoFlavour_Free(PokedexInfoFlavour *flavour) {
     if (flavour->entries != NULL) {
         GFL_HeapFree(flavour->entries);
     }
+    GFL_HeapFree(flavour->formNameTable);
+    GFL_MsgDataFree(flavour->formMsgData);
     GFL_StrBufFree(flavour->word);
     GFL_StrBufFree(flavour->text);
     GFL_MsgDataFree(flavour->msgData);
     GFL_HeapFree(flavour);
 }
 
-// Reads the species' entries, the other games' that differ from this game's
+// Reads the species' entries, the other games' that differ from this game's, and whether its forms' names tell them
+// apart: a species of forms has them all named the same or each its own (the first two say which)
 void PokedexInfoFlavour_LoadSpecies(PokedexInfoFlavour *flavour, u16 species) {
     const u16 *entry;
     const u16 *end;
 
+    flavour->species = species;
+    flavour->formsNamed = FALSE;
+    if (species <= SPECIES_GENESECT && getNumberOfForms(species) >= 2) {
+        GFL_MsgDataLoadStrbuf(flavour->formMsgData, PokedexInfoFlavour_GetFormText(flavour, 0), flavour->word);
+        GFL_MsgDataLoadStrbuf(flavour->formMsgData, PokedexInfoFlavour_GetFormText(flavour, 1), flavour->text);
+        flavour->formsNamed = !GFL_StrBufCmp(flavour->word, flavour->text);
+    }
     if (flavour->entries != NULL) {
         GFL_HeapFree(flavour->entries);
         flavour->entries = NULL;
@@ -275,28 +308,33 @@ void PokedexInfoFlavour_DrawEntry(PokedexInfoFlavour *flavour, u32 index, GFLBit
     }
 }
 
-// Shows the tab of the entry (from 1), or hides it for 0. The OBJs show or hide with the OAM, and a new label's
-// characters load, in the next VBlank, with the entry's text
-void PokedexInfoFlavour_ShowTab(PokedexInfoFlavour *flavour, u32 index) {
+// Shows the tab of the entry (from 1); for 0, the form's name while the description shows, if the species' forms have
+// names, else hides it. The OBJs show or hide with the OAM, and a new label's characters load, in the next VBlank, with
+// the entry's text
+void PokedexInfoFlavour_ShowTab(PokedexInfoFlavour *flavour, u32 index, BOOL description, u16 form) {
     const u16 *entry = index != 0 ? flavour->starts[index - 1] : NULL;
     u32 games = entry != NULL ? entry[ENTRY_GAMES_LOW] | entry[ENTRY_GAMES_HIGH] << 16 : 0;
+    u32 formText = games == 0 && description && flavour->formsNamed ? PokedexInfoFlavour_GetFormText(flavour, form)
+                                                                    : FORM_TEXT_NONE;
+    BOOL shown = games != 0 || formText != FORM_TEXT_NONE;
     u32 i;
 
-    if (games == flavour->shownGames) {
+    if (games == flavour->shownGames && formText == flavour->shownFormText) {
         return;
     }
-    if (games != 0) {
-        PokedexInfoFlavour_DrawLabel(flavour, games);
+    if (shown) {
+        PokedexInfoFlavour_DrawLabel(flavour, games, formText);
     }
-    if ((games != 0) != (flavour->shownGames != 0)) {
+    if (shown != (flavour->shownGames != 0 || flavour->shownFormText != FORM_TEXT_NONE)) {
         for (i = 0; i < TAB_OBJS; i++) {
-            ClActor_SetVisible(flavour->tabObjs[i], games != 0);
+            ClActor_SetVisible(flavour->tabObjs[i], shown);
         }
         for (i = 0; i < LABEL_OBJS; i++) {
-            ClActor_SetVisible(flavour->labelObjs[i], games != 0);
+            ClActor_SetVisible(flavour->labelObjs[i], shown);
         }
     }
     flavour->shownGames = games;
+    flavour->shownFormText = formText;
 }
 
 static void PokedexInfoFlavour_VBlank(TCB *tcb, void *data) {
@@ -411,19 +449,22 @@ static u32 PokedexInfoFlavour_MakeLabel(PokedexInfoFlavour *flavour, u32 games, 
     return width;
 }
 
-// The games' label, its tiles into the OBJs' order, for the next VBlank
-static void PokedexInfoFlavour_DrawLabel(PokedexInfoFlavour *flavour, u32 games) {
+// The games' label, or with no games the form's name in Black's colour, its tiles into the OBJs' order, for the next
+// VBlank
+static void PokedexInfoFlavour_DrawLabel(PokedexInfoFlavour *flavour, u32 games, u32 formText) {
     GFLBitmap *bitmap = flavour->bitmap;
     int x;
 
     GFL_BitmapFill(bitmap, 0);
-    x = TAB_TEXT_RIGHT - (int)PokedexInfoFlavour_MakeLabel(flavour, games, NULL, 0);
-    if (x > TAB_TEXT_X) {
-        x = TAB_TEXT_X;
-    } else if (x < TAB_TEXT_MIN_X) {
-        x = TAB_TEXT_MIN_X;
+    if (games != 0) {
+        x = PokedexInfoFlavour_GetLabelX(PokedexInfoFlavour_MakeLabel(flavour, games, NULL, 0));
+        PokedexInfoFlavour_MakeLabel(flavour, games, bitmap, x);
+    } else {
+        GFL_MsgDataLoadStrbuf(flavour->formMsgData, formText, flavour->word);
+        x = PokedexInfoFlavour_GetLabelX(GFL_FontGetBlockWidth(flavour->word, flavour->smallFont, 0));
+        GFL_TextRendererDrawToBitmapEx(bitmap, x - TAB_X, TAB_TEXT_Y, flavour->word, flavour->smallFont,
+                                       PRINT_COLOR(sGameColors[FLAVOUR_GAME_BLACK], LABEL_SHADOW, 0));
     }
-    PokedexInfoFlavour_MakeLabel(flavour, games, bitmap, x);
 
     if (flavour->pending == NULL) {
         flavour->pending = GFL_HeapAllocate(HEAPID_TAIL(flavour->heapId), LABEL_CHARS_SIZE, FALSE,
@@ -431,4 +472,32 @@ static void PokedexInfoFlavour_DrawLabel(PokedexInfoFlavour *flavour, u32 games)
     }
     PokedexInfoFlavour_ToObjOrder(GFL_BitmapGetPixelData(bitmap), LABEL_TILES_ACROSS, LABEL_OBJS, flavour->pending);
     DC_FlushRange(flavour->pending, LABEL_CHARS_SIZE);
+}
+
+// A label's left, for its width: from TAB_TEXT_X, or as far left as it must to end by TAB_TEXT_RIGHT, but not left of
+// TAB_TEXT_MIN_X
+static int PokedexInfoFlavour_GetLabelX(u32 width) {
+    int x = TAB_TEXT_RIGHT - (int)width;
+
+    if (x > TAB_TEXT_X) {
+        x = TAB_TEXT_X;
+    } else if (x < TAB_TEXT_MIN_X) {
+        x = TAB_TEXT_MIN_X;
+    }
+    return x;
+}
+
+// The form's name's message, as the forms page finds it (PokedexDetailForm's entries' names): the species', then each
+// next form's through the table, the species' again past the table's end
+static u32 PokedexInfoFlavour_GetFormText(PokedexInfoFlavour *flavour, u32 form) {
+    u32 message = flavour->species;
+    u32 i;
+
+    for (i = 0; i != form; i++) {
+        message = flavour->formNameTable[message];
+        if (message == 0) {
+            return flavour->species;
+        }
+    }
+    return message;
 }

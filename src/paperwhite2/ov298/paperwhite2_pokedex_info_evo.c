@@ -85,9 +85,10 @@ enum {
 #define EVO_NAME_OFFSET_X 10
 #define EVO_METHOD_RIGHT 226
 #define EVO_METHOD_GAP 4
-// From a row's center to its text's top, in font 0 and font 1 (a raised method's from half a row above its row's)
+// From a row's center to its text's top, in font 0 and font 1 (a raised method's from half a row above its row's):
+// font 1's glyphs sit higher in their cell than font 0's, so its text starts lower to stand level with font 0's
 #define EVO_TEXT_OFFSET_Y 8
-#define EVO_SMALL_TEXT_OFFSET_Y 5
+#define EVO_SMALL_TEXT_OFFSET_Y 3
 // The lines from a parent to its evolutions, as thick as this
 #define EVO_LINE_WIDTH 2
 // The stages a family has at most: a root, its evolutions and theirs

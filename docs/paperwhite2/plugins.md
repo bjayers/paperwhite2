@@ -1797,8 +1797,12 @@ every page (`pokedex_detail_graphic.c`): main OBJ E (64 KB), sub OBJ D (128 KB, 
 `pokedex_detail_info.c` keeps the original page outside `PAPERWHITE2` and points `POKEDEX_DETAIL_INFO_PROC_FUNCS` at the
 hack's). **Top** (main engine): overlay 296's entry (`PokedexInfo`, engine 0) with its text on BG 1 beside the head bar,
 its panels on BG 2 and its grid on BG 3, and no still sprite (`PokedexInfo_IsDetailTop`); the battle's animated sprite
-(MCSS) on BG 0 in 3D, which the page turns on at its start and off at its end. **The sprite's place**: x 50 less the
-bin file's offsetX, as the forms page's; vertically, its visible pixels' middle on its first frame at y 72, the
+(MCSS) on BG 0 in 3D, which the page turns on at its start and off at its end. **Facing** (2026-11-11): the front is
+mirrored by a negative X scale, as the trade's sprites (`Poketrade3D_AddPokemonMcss`; `MCSS_DrawQuad` mirrors each
+quad and its texture for it), so that it faces right, into the page, as the original page's flat sprite does, except a
+species whose personal `PERSONAL_NO_FLIP` is set (as the original's sprite actor); the back isn't mirrored, as it
+already faces right. **The sprite's place**: x 50 less the bin file's offsetX (plus it when mirrored), as the forms
+page's; vertically, its visible pixels' middle on its first frame at y 72, the
 original's still sprite's frame centre and the middle of the panel's track between its dashed rows (y 45-46 and
 97-98; the grey stripe around them, y 33-100, is deeper above, and its middle, 67, looked high), from member 161 of `ARCID_POKEDEX_GRA` that `tools/paperwhite2/pokedex_sprites.py`
 makes from `res/pokemon` at build time (a u8 for each battle sprite archive member, 15020 bytes, read by range at the
@@ -1881,7 +1885,15 @@ and `LABEL_COLORS`, `sGameColors` in the C file; a colour shared only by games w
 puts side by side): the game's name, or the short names of the games sharing the entry 2 px apart ("HG SS",
 "D P Pt B W"), in font 1, from x 11 or further left to end by x 89 (before the art's stripes). The label's characters
 go to VRAM in the VBlank (`PokedexInfoFlavour_VBlank`) that shows the entry's text, with both rows' colours, the OBJs
-shown or hidden in that VBlank's OAM (`PokedexInfoFlavour_ShowTab`, each frame from the page's state).
+shown or hidden in that VBlank's OAM (`PokedexInfoFlavour_ShowTab`, each frame from the page's state). **The form's
+name** (2026-11-11): while White 2's own description shows (the species caught, not on Data, an ability, the move
+panel or the map), the tab names the shown form in Black's label colour (14, the dark grey), the forms page's names
+(`TEXT_BANK_POKEDEX_DETAIL_FORM`, from the species' message through `ARCID_FORM_NAME_TABLE`'s table of next forms, as
+`pokedex_detail_form.c` and overlay 296's entry find them): "Land Forme", "Sky Forme", "Blue-Striped Form". Only for a
+species of two forms or more whose first two forms' names differ, so not for Unown ("One form" for each), Arceus or
+Genesect (the species' name for each), nor male and female looks, which the sex icon shows. The widest,
+"Blue-Striped Form", is 78 px in font 1, exactly the label's room from x 11 to 89, so none is shortened. It changes
+with Form, another Pokémon and Flavour, landing in the VBlank with the entry's text as the games' label does.
 `dex_flavour.py template` (and `pokedex_templates.py`) writes the tab's canvas, a guide with its OBJs' and label's
 regions, and references with the widest labels.
 
@@ -1994,7 +2006,8 @@ so the characters' 32 slots hold the other sub-pages' 29-30 and Evo's one. **The
 the root, then each species' evolutions under it in the data's order, each a row of the user's ball (16 by 16,
 `res/paperwhite2/pokedex_art/evo_ball_{caught,seen,unknown}.png`, copied into the window), centred at x 34, 54 or 74 by
 stage and at y 78 + 15 a row, the name 10 px right of it in font 0 (gold for the shown species, white, "????" if not
-seen) and how it evolves from its parent in font 1, right-aligned at x 226: half a row up, between the row and its
+seen) and how it evolves from its parent in font 1 (its text's top 3 px above the row's centre, against font 0's 8,
+so that its glyphs stand level with font 0's), right-aligned at x 226: half a row up, between the row and its
 parent, where the row above is its parent and that row's own method (if any) is raised too
 (`PokedexInfoEvo_IsMethodRaised`: Pignite under Tepig; not Dustox under Cascoon, whose method stays on its row), else
 on its own row (under a sibling or another branch, as in Eevee's and Wurmple's families); where it fits after the

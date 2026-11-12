@@ -515,9 +515,11 @@ BOOL PokedexInfoPage_Main(PokedexDetailProcSys *sys, int *seq, void *param_, voi
         PokedexInfo_Update(wk->entry);
         PokedexInfoPanels_Update(wk->panels);
         PokedexInfoPage_UpdateButtons(wk, common);
-        // The tab of the entry the window shows, which lands in the VBlank that the entry's text does
+        // The tab of the entry the window shows, or of the form while the window has the caught species'
+        // description, which lands in the VBlank that the entry's text does
         PokedexInfoFlavour_ShowTab(wk->flavour,
-                                   wk->flavourShown && !PokedexInfoPage_IsEntryHidden(wk) ? wk->flavourEntry : 0);
+                                   wk->flavourShown && !PokedexInfoPage_IsEntryHidden(wk) ? wk->flavourEntry : 0,
+                                   wk->caught && !wk->otherText && !PokedexInfoPage_IsEntryHidden(wk), wk->form);
     }
     if (wk->mcssSys != NULL) {
         GFL_TCBMgrUpdate(wk->tcbMgr);
@@ -1110,10 +1112,20 @@ static void PokedexInfoPage_AddSprite(PokedexInfoPageWork *wk) {
                        (SCREEN_CENTER_Y - (SPRITE_MIDDLE_Y + wk->spriteMiddle)) * SPRITE_PIXEL_SIZE, 0, &info);
     MCSSSys_SetTCBManager(wk->mcssSys, wk->tcbMgr);
     MCSS_SetNoShadow(mcss, 1);
+    // The front mirrored by a negative width (as the trade's sprites, Poketrade3D_AddPokemonMcss), so that it faces
+    // into the page, right, as the original page's flat sprite does, except for a species whose sprite is never
+    // mirrored (PokedexInfo's sprite actor); the back already faces right
+    if (!wk->back && !PML_PersonalGetParamSingle(wk->species, wk->form, PERSONAL_NO_FLIP)) {
+        scale.x = -scale.x;
+    }
     MCSS_SetScale(mcss, &scale);
     MCSS_SetLoopAnimation(mcss);
-    // Centered on its frame, as the forms page's sprites (PokedexDetailForm_SetShadow)
+    // Centered on its frame, as the forms page's sprites (PokedexDetailForm_SetShadow); mirrored, the frame is on the
+    // other side of the sprite's origin
     offset.x = -MCSS_GetOffsetX(mcss) * (FX32_ONE / 4);
+    if (scale.x < 0) {
+        offset.x = -offset.x;
+    }
     offset.y = 0;
     offset.z = 0;
     MCSS_SetPositionOffset(mcss, &offset);
