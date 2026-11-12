@@ -253,8 +253,10 @@ export function PokemonEditor({ constants }: ToolProps) {
 
   useEffect(() => {
     api.data(SCHEMA, ["name", "evolutions"]).then((files) => {
+      // A species is <species>/data.json; a form's record is <species>/form_<n>.json, with its art in <species>/form_<n>/
       const out: Listed[] = files.map(({ path, data }) => {
-        const folder = path.slice("res/pokemon/".length, -"/data.json".length);
+        const relative = path.slice("res/pokemon/".length);
+        const folder = relative.endsWith("/data.json") ? relative.slice(0, -"/data.json".length) : relative.slice(0, -".json".length);
         const species = `SPECIES_${folder.split("/")[0].toUpperCase()}`;
         return {
           path, folder, species,
@@ -263,6 +265,12 @@ export function PokemonEditor({ constants }: ToolProps) {
           evolutions: ((data.evolutions as Listed["evolutions"] | undefined) ?? []),
         };
       });
+      // A form's record has no name of its own: it takes its species', as "Castform (form 1)"
+      const names = new Map(out.filter((l) => !l.folder.includes("/")).map((l) => [l.folder, l.name]));
+      for (const l of out) {
+        const form = /^([^/]+)\/form_(\d+)$/.exec(l.folder);
+        if (form) l.name = `${names.get(form[1]) ?? form[1]} (form ${form[2]})`;
+      }
       out.sort((a, b) => (a.number || 1e9) - (b.number || 1e9) || a.folder.localeCompare(b.folder));
       setList(out);
     });
