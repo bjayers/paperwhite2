@@ -10,7 +10,7 @@
 #   Spearow (dry scrub), Doduo (upland grass), Farfetch'd (Abundant Shrine's leek fields, its identity), Skarmory
 #   (thorny scrub and Virbank's steel), Rufflet and Vullaby (canyons and badlands), Natu (the desert's cacti, the
 #   Dreamyard's ruins), Wingull (every coast), Ducklett (ponds and lakes), Tropius (Route 18), Emolga (forest gliders).
-# - Trophies: Farfetch'd at Abundant Shrine; Honchkrow at Route 7 at night; Altaria on Victory Road.
+# - Trophies: Honchkrow at Route 7 at night (Farfetch'd is rare at Abundant Shrine, its identity).
 # - Review: Pidgey as a migrant (non-native to Unova); Honchkrow wild (a Dusk Stone evolution); Natu in the desert;
 #   Chatot's seasons; Swanna breeding at Dragonspiral's lake.
 
@@ -358,7 +358,7 @@ families:
     migration: partial
     weather: {more: [], less: [rain, gusty_rain, thunderstorm, snow, blizzard], only: []}
     abundance: uncommon
-    trophy: [victory_road_mountainside]
+    trophy: []
     battles: {single: 95, double: 5, triple: 0, partners: family}
     stages: {swablu: wild, altaria: wild}
     levels: {}
@@ -367,7 +367,6 @@ families:
       - {place: route_15, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the high ridge in the warm seasons"}
       - {place: route_23, methods: [grass], seasons: [summer], tier: uncommon, why: "the mountain heights in summer"}
       - {place: victory_road_mountainside, methods: [grass], seasons: [summer, autumn], tier: uncommon, why: "the heights in summer"}
-      - {place: victory_road_mountainside, methods: [dark_grass], seasons: [summer], tier: exotic, stages: [altaria], why: "Altaria singing among the clouds at the top: the trophy"}
       - {place: route_14, methods: [grass], seasons: [winter], tier: rare, why: "down in the valley for winter"}
       - {place: route_22, methods: [grass], seasons: [autumn, winter], tier: uncommon, why: "the coast's mild upland in winter"}
       - {place: route_12, methods: [grass], seasons: [autumn], tier: rare, why: "passing over the hills on its way down from the heights"}
@@ -465,7 +464,6 @@ families:
       - {place: route_12, methods: [grass], seasons: all, tier: uncommon, stages: [tranquill, unfezant], why: "the open hills"}
       - {place: dragonspiral_entrance, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, stages: [tranquill, unfezant], why: "the northern meadow below the tower"}
       - {place: pinwheel_forest_outskirts, methods: [dark_grass], seasons: [autumn, winter], tier: uncommon, why: "the cliff by the road in the cold months"}
-      - {place: giant_chasm_outside, methods: [grass], seasons: all, tier: uncommon, why: "the countryside round the chasm"}
       - {place: village_bridge, methods: [rustling], seasons: all, tier: common, why: "pigeons on the old bridge's arches: the shadows"}
       - {place: castelia_park, methods: [grass], seasons: all, tier: common, why: "the city's pigeons in the park (the user's list)"}
     review: []
@@ -539,6 +537,7 @@ families:
       - {place: desert_resort_path, methods: [grass], seasons: all, tier: rare, stages: [braviary], why: "hunting the desert from the canyon's ledges, as in the original"}
       - {place: dragonspiral_entrance, methods: [grass], seasons: [spring, summer, autumn], tier: rare, why: "the cliffside's eagles"}
       - {place: marvelous_bridge, methods: [rustling], seasons: all, tier: rare, stages: [braviary], why: "a raptor over the crossing"}
+      - {place: twist_mountain_pit, methods: [dark_grass], seasons: [spring, summer, autumn], tier: rare, why: "eagles on the pit's cliffs"}
     review: []
 
   - id: vullaby

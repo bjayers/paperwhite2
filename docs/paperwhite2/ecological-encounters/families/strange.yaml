@@ -444,7 +444,8 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: random, grass: float}
     homes:
-      - {place: giant_chasm_crater, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "sightings in the crater (the places)"}
+      - {place: giant_chasm_crater, methods: [dark_grass], seasons: all, tier: common, why: "sightings in the crater's thick growth (the places): its space side"}
+      - {place: giant_chasm_outside, methods: [grass], seasons: all, tier: rare, stages: [elgyem], times: night, why: "sightings at the chasm's rim at night"}
     review: []
 
   - id: litwick
@@ -541,7 +542,7 @@ families:
     levels: {cleffa: [2, 15], clefairy: [10, 100], clefable: [30, 100]}
     wanderer: {appears: both, wanders: passive, grass: float}
     homes:
-      - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: uncommon, stages: [cleffa, clefairy], why: "dancing under the moon where the star fell"}
+      - {place: giant_chasm_crater, methods: [dark_grass], seasons: all, tier: uncommon, stages: [cleffa, clefairy], why: "dancing under the moon where the star fell"}
       - {place: giant_chasm_crater, methods: [dark_grass], seasons: all, tier: very_rare, stages: [clefable], why: "the crater's Moon Stone"}
       - {place: giant_chasm_caves, methods: [grass], seasons: all, tier: rare, stages: [clefairy], why: "the caves round the crater, as Mt. Moon"}
       - {place: giant_chasm_outside, methods: [grass], seasons: all, tier: rare, stages: [clefairy], why: "a hint of the crater's strangeness at night"}

@@ -214,6 +214,8 @@ families:
       - {place: lostlorn_forest, methods: [grass, dark_grass], seasons: [autumn], tier: uncommon, stages: [ledian], times: night, why: "the forest's autumn leaves; Ledian by starlight, at night"}
       - {place: route_14, methods: [grass], seasons: [autumn], tier: uncommon, stages: [ledyba], why: "the paths' autumn leaves"}
       - {place: route_14, methods: [grass], seasons: [autumn], tier: uncommon, stages: [ledian], times: night, why: "the paths' autumn leaves; Ledian by starlight, at night"}
+      - {place: route_9, methods: [grass], seasons: [autumn], tier: uncommon, stages: [ledyba], why: "the woodland edge's autumn leaves"}
+      - {place: route_9, methods: [grass], seasons: [autumn], tier: uncommon, stages: [ledian], times: night, why: "the woodland edge's autumn leaves; Ledian by starlight, at night"}
     review: []
 
   - id: spinarak
@@ -458,6 +460,7 @@ families:
       - {place: route_3, methods: [grass], seasons: [autumn], tier: uncommon, why: "the old fields"}
       - {place: route_12, methods: [grass], seasons: [autumn], tier: common, why: "singing on the autumn hills"}
       - {place: village_bridge, methods: [grass], seasons: [winter], tier: rare, stages: [kricketune], why: "the last singers into early winter"}
+      - {place: route_9, methods: [grass], seasons: [summer], tier: uncommon, why: "the outskirts' meadow in summer"}
     review: []
 
   - id: burmy
@@ -637,7 +640,7 @@ families:
     wanderer: {appears: both, wanders: aggressive, grass: stand}
     homes:
       - {place: victory_road_caves, methods: [grass], seasons: all, tier: common, why: "the colonies of the original's Victory Road"}
-      - {place: victory_road_mountainside, methods: [dark_grass], seasons: all, tier: uncommon, why: "anthills among the rocks"}
+      - {place: victory_road_mountainside, methods: [dark_grass], seasons: all, tier: common, why: "anthills among the rocks"}
       - {place: reversal_mountain_outside, methods: [dark_grass], seasons: all, tier: uncommon, why: "the badlands' anthills (Heatmor nearby)"}
       - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: rare, why: "the colony's deep tunnels, Heatmor's hunting ground"}
     review:

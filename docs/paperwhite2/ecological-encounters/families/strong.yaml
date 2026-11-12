@@ -8,7 +8,7 @@
 #   the tunnels Onix and Excadrill dig, its Pokédex says, so Clay Tunnel too); Bagon leaping off Route 23's cliffs;
 #   Gible in Relic Passage's sandy caves; Axew in Mistralton Cave (the original's), Fraxure with Bisharp on Route 23
 #   (Pokécology: same place), sharpening its tusks on the river's rocks.
-# - Larvitar born deep under Victory Road, Pupitar and Tyranitar on its mountain; Beldum's line at Giant Chasm (the
+# - Larvitar's whole line as Victory Road's mountainside trophy (the user); Beldum's line at Giant Chasm (the
 #   user's request).
 # - Absol comes out of the mountains with the storms (weather-only homes on Routes 14 and Abundant Shrine).
 # - Bouffalant herds on the rugged slopes of Victory Road, the original's Route 10 country.
@@ -53,14 +53,13 @@ families:
     migration: resident
     weather: {more: [sandstorm], less: [], only: []}
     abundance: exotic
-    trophy: [victory_road_caves]
+    trophy: [victory_road_mountainside]
     battles: {single: 100, double: 0, triple: 0, partners: family}
     stages: {larvitar: wild, pupitar: wild, tyranitar: {wild: true, note: "very rare"}}
     levels: {}
     wanderer: {appears: both, wanders: aggressive, grass: stand}
     homes:
-      - {place: victory_road_caves, methods: [grass], seasons: all, tier: exotic, stages: [larvitar], why: "born deep under the League's mountain: the trophy"}
-      - {place: victory_road_mountainside, methods: [dark_grass], seasons: all, tier: very_rare, stages: [pupitar, tyranitar], why: "on the mountain it reshapes"}
+      - {place: victory_road_mountainside, methods: [dark_grass], seasons: all, tier: exotic, why: "born under the League's mountain, reshaping it: the trophy, the whole line (the user)"}
     review: []
 
   - id: bagon
@@ -222,6 +221,8 @@ families:
     homes:
       - {place: route_23, methods: [grass], seasons: all, tier: rare, why: "packs ambushing in the conifer maze, with Fraxure (Pokécology)"}
       - {place: victory_road_mountainside, methods: [grass], seasons: all, tier: rare, why: "the League's mountain"}
+      - {place: route_9, methods: [dark_grass], seasons: all, tier: rare, why: "a troublemaker's gang at the town's edge, as in the original"}
+      - {place: route_11, methods: [dark_grass], seasons: all, tier: rare, why: "blades below the falls, as in the original"}
     review: []
 
   - id: absol
@@ -266,5 +267,6 @@ families:
     levels: {bouffalant: [20, 100]}
     wanderer: {appears: both, wanders: aggressive, grass: stand}
     homes:
-      - {place: victory_road_mountainside, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "herds on the rough slopes by the League, as in the original's Route 10"}
+      - {place: victory_road_mountainside, methods: [grass], seasons: all, tier: common, why: "herds on the rough slopes by the League, as in the original's Route 10 (the user: common)"}
+      - {place: victory_road_mountainside, methods: [dark_grass], seasons: all, tier: uncommon, why: "herds among the rocks"}
     review: []

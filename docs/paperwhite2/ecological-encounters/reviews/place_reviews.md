@@ -1764,17 +1764,17 @@ The ancient tower: Golett as its guardians, Druddigon as the original's dragon, 
 
 **Grass**
 
-- Spring: **common:** Pidove/Tranquill/Unfezant (more by day), Venonat/Venomoth (night only), Zigzagoon/Linoone (more at night); **uncommon:** Glameow/Purugly, Gulpin/Swalot, Minccino (more by day), Murkrow/Honchkrow (night only), Stunky/Skuntank (night only), Trubbish/Garbodor; **rare:** Snubbull/Granbull (more by day)
-- Summer: **common:** Pidove/Tranquill/Unfezant (more by day), Venonat/Venomoth (night only), Zigzagoon/Linoone (more at night); **uncommon:** Dustox (night only), Glameow/Purugly, Gulpin/Swalot, Minccino (more by day), Murkrow/Honchkrow (night only), Pidgey/Pidgeotto/Pidgeot (more by day), Stunky/Skuntank (night only), Trubbish/Garbodor; **rare:** Snubbull/Granbull (more by day)
-- Autumn: **common:** Pidove/Tranquill/Unfezant (more by day), Venonat/Venomoth (night only), Zigzagoon/Linoone (more at night); **uncommon:** Dustox (night only), Glameow/Purugly, Gulpin/Swalot, Kricketot/Kricketune, Minccino (more by day), Murkrow/Honchkrow (night only), Stunky/Skuntank (night only), Trubbish/Garbodor; **rare:** Snubbull/Granbull (more by day)
-- Winter: **common:** Pidove/Tranquill/Unfezant (more by day), Zigzagoon/Linoone (more at night); **uncommon:** Glameow/Purugly, Gulpin/Swalot, Minccino (more by day), Murkrow/Honchkrow (night only), Stunky/Skuntank (night only), Trubbish/Garbodor; **rare:** Snubbull/Granbull (more by day), Vanillite/Vanillish/Vanilluxe
+- Spring: **common:** Pidove/Tranquill/Unfezant (more by day), Venonat/Venomoth (night only), Zigzagoon/Linoone (more at night); **uncommon:** Buneary, Glameow/Purugly, Gulpin/Swalot, Minccino (more by day), Murkrow/Honchkrow (night only), Stunky/Skuntank (night only), Trubbish/Garbodor; **rare:** Snubbull/Granbull (more by day)
+- Summer: **common:** Pidove/Tranquill/Unfezant (more by day), Venonat/Venomoth (night only), Zigzagoon/Linoone (more at night); **uncommon:** Buneary, Dustox (night only), Glameow/Purugly, Gulpin/Swalot, Kricketot/Kricketune, Minccino (more by day), Murkrow/Honchkrow (night only), Pidgey/Pidgeotto/Pidgeot (more by day), Stunky/Skuntank (night only), Trubbish/Garbodor; **rare:** Snubbull/Granbull (more by day)
+- Autumn: **common:** Pidove/Tranquill/Unfezant (more by day), Venonat/Venomoth (night only), Zigzagoon/Linoone (more at night); **uncommon:** Buneary, Dustox (night only), Glameow/Purugly, Gulpin/Swalot, Kricketot/Kricketune, Ledian (night only), Ledyba (more by day), Minccino (more by day), Murkrow/Honchkrow (night only), Stunky/Skuntank (night only), Trubbish/Garbodor; **rare:** Snubbull/Granbull (more by day)
+- Winter: **common:** Pidove/Tranquill/Unfezant (more by day), Zigzagoon/Linoone (more at night); **uncommon:** Buneary, Glameow/Purugly, Gulpin/Swalot, Minccino (more by day), Murkrow/Honchkrow (night only), Stunky/Skuntank (night only), Trubbish/Garbodor; **rare:** Snubbull/Granbull (more by day), Vanillite/Vanillish/Vanilluxe
 
 **Dark grass**
 
-- Spring: **common:** Venonat/Venomoth (night only); **uncommon:** Purrloin/Liepard (more at night), Stunky/Skuntank (night only), Trubbish/Garbodor; **rare:** Persian (more at night)
-- Summer: **common:** Venonat/Venomoth (night only); **uncommon:** Purrloin/Liepard (more at night), Stunky/Skuntank (night only), Trubbish/Garbodor; **rare:** Persian (more at night)
-- Autumn: **common:** Venonat/Venomoth (night only); **uncommon:** Purrloin/Liepard (more at night), Stunky/Skuntank (night only), Trubbish/Garbodor; **rare:** Persian (more at night)
-- Winter: **uncommon:** Purrloin/Liepard (more at night), Stunky/Skuntank (night only), Trubbish/Garbodor; **rare:** Persian (more at night)
+- Spring: **common:** Venonat/Venomoth (night only); **uncommon:** Purrloin/Liepard (more at night), Stunky/Skuntank (night only), Trubbish/Garbodor; **rare:** Pawniard/Bisharp, Persian (more at night)
+- Summer: **common:** Venonat/Venomoth (night only); **uncommon:** Purrloin/Liepard (more at night), Stunky/Skuntank (night only), Trubbish/Garbodor; **rare:** Pawniard/Bisharp, Persian (more at night)
+- Autumn: **common:** Venonat/Venomoth (night only); **uncommon:** Purrloin/Liepard (more at night), Stunky/Skuntank (night only), Trubbish/Garbodor; **rare:** Pawniard/Bisharp, Persian (more at night)
+- Winter: **uncommon:** Purrloin/Liepard (more at night), Stunky/Skuntank (night only), Trubbish/Garbodor; **rare:** Pawniard/Bisharp, Persian (more at night)
 
 **Rustling spots (shaking grass)**
 
@@ -1795,23 +1795,27 @@ Opelucid's outskirts by the mall: scavengers at the trash and food stands (Zigza
 - It's very close to Route 5 in feel (both scavenger routes). Route 9's meadow and woodland edge could take a little more countryside (Buneary, Kricketot all summer, Sentret).
 - Night and day differ a lot; by day it's Pidove, Zigzagoon, Minccino and the trash Pokémon.
 
+*Discussed with the user:*
+
+- 2026-11-12, done: Buneary all year, Kricketot from summer, Ledyba in autumn at the woodland edge, and Pawniard rare in the dark grass, as in the original; its darker troublemakers (Stunky, Snubbull) set it apart from Route 5.
+
 ### Route 11 (`route_11`)
 
 *The place:* Many cliffs and waterfalls, and another camper. A lower level below the waterfall to the east: the grass above, the dark grass below (separate places). The user sees it as a place for fighting Pokémon by the waterfalls: Throh and Sawk in the two different grasses now, perhaps Tyrogue's evolutions.
 
 **Grass**
 
-- Spring: **uncommon:** Pineco/Forretress, Throh; **rare:** Hitmonlee, Meditite/Medicham, Tyrogue; **very rare:** Hitmontop
-- Summer: **uncommon:** Pidgey/Pidgeotto/Pidgeot (more by day), Pineco/Forretress, Throh, Weedle/Kakuna/Beedrill (more by day); **rare:** Hitmonlee, Meditite/Medicham, Tyrogue; **very rare:** Hitmontop
-- Autumn: **uncommon:** Pineco/Forretress, Throh, Weedle/Kakuna/Beedrill (more by day); **rare:** Hitmonlee, Meditite/Medicham, Tyrogue; **very rare:** Hitmontop
-- Winter: **uncommon:** Pineco/Forretress, Throh; **rare:** Hitmonlee, Meditite/Medicham, Stantler, Tyrogue; **very rare:** Hitmontop
+- Spring: **common:** Throh, Tyrogue; **uncommon:** Pineco/Forretress; **rare:** Hitmonlee, Meditite/Medicham; **very rare:** Hitmontop
+- Summer: **common:** Throh, Tyrogue; **uncommon:** Pidgey/Pidgeotto/Pidgeot (more by day), Pineco/Forretress, Weedle/Kakuna/Beedrill (more by day); **rare:** Hitmonlee, Meditite/Medicham; **very rare:** Hitmontop
+- Autumn: **common:** Throh, Tyrogue; **uncommon:** Pineco/Forretress, Weedle/Kakuna/Beedrill (more by day); **rare:** Hitmonlee, Meditite/Medicham; **very rare:** Hitmontop
+- Winter: **common:** Throh, Tyrogue; **uncommon:** Pineco/Forretress; **rare:** Hitmonlee, Meditite/Medicham, Stantler; **very rare:** Hitmontop
 
 **Dark grass**
 
-- Spring: **uncommon:** Hoothoot/Noctowl (night only), Sawk; **rare:** Hitmonchan, Teddiursa/Ursaring (more by day), Tyrogue; **very rare:** Hitmontop
-- Summer: **uncommon:** Hoothoot/Noctowl (night only), Sawk, Teddiursa/Ursaring (more by day); **rare:** Hitmonchan, Tyrogue; **very rare:** Hitmontop
-- Autumn: **uncommon:** Hoothoot/Noctowl (night only), Sawk, Teddiursa/Ursaring (more by day); **rare:** Hitmonchan, Tyrogue; **very rare:** Hitmontop
-- Winter: **uncommon:** Hoothoot/Noctowl (night only), Sawk; **rare:** Hitmonchan, Stantler, Tyrogue; **very rare:** Hitmontop
+- Spring: **common:** Sawk, Tyrogue; **uncommon:** Hoothoot/Noctowl (night only); **rare:** Hitmonchan, Pawniard/Bisharp, Teddiursa/Ursaring (more by day); **very rare:** Hitmontop
+- Summer: **common:** Sawk, Tyrogue; **uncommon:** Hoothoot/Noctowl (night only), Teddiursa/Ursaring (more by day); **rare:** Hitmonchan, Pawniard/Bisharp; **very rare:** Hitmontop
+- Autumn: **common:** Sawk, Tyrogue; **uncommon:** Hoothoot/Noctowl (night only), Teddiursa/Ursaring (more by day); **rare:** Hitmonchan, Pawniard/Bisharp; **very rare:** Hitmontop
+- Winter: **common:** Sawk, Tyrogue; **uncommon:** Hoothoot/Noctowl (night only); **rare:** Hitmonchan, Pawniard/Bisharp, Stantler; **very rare:** Hitmontop
 
 **Rustling spots (shaking grass)**
 
@@ -1821,13 +1825,13 @@ Besides what's listed, rustling spots fill themselves from the grass's rare, ver
 
 **Surfing**
 
-- All year: **uncommon:** Buizel/Floatzel (more by day)
+- All year: **uncommon:** Buizel/Floatzel (more by day), Marill/Azumarill (more by day)
 
 **Rippling water (surfing):** nothing of its own: the generator's rule fills it from surfing, favouring the later stages.
 
 **Fishing**
 
-- All year: **common:** Basculin (Red-Striped)
+- All year: **common:** Basculin (Red-Striped); **uncommon:** Goldeen/Seaking
 
 **Rippling water (fishing):** nothing of its own: the generator's rule fills it from fishing, favouring the later stages.
 
@@ -1843,6 +1847,10 @@ Fighters training by the waterfalls (your request): Throh above, Sawk below, Tyr
 
 - Nothing is common anywhere, and the fighting families are all rare or uncommon, so encounters spread thinly. Pineco (above) and Teddiursa (below) could be common to anchor them.
 - The river has only two families.
+
+*Discussed with the user:*
+
+- 2026-11-12, done: Throh, Sawk and Tyrogue common, the falls' identity; Pawniard rare in the dark grass, as in the original; Marill and Azumarill in the strong currents, Goldeen fishing.
 
 ### Village Bridge (`village_bridge`)
 
@@ -1954,17 +1962,14 @@ The flower hills, as Floaroma (reviewed with you): Combee and the honey trees' P
 
 **Grass**
 
-- Spring: **uncommon:** Lillipup/Herdier/Stoutland, Pidove/Tranquill/Unfezant (more by day), Spoink/Grumpig; **rare:** Clefairy (night only)
-- Summer: **uncommon:** Lillipup/Herdier/Stoutland, Pidove/Tranquill/Unfezant (more by day), Spoink/Grumpig; **rare:** Clefairy (night only)
-- Autumn: **uncommon:** Lillipup/Herdier/Stoutland, Pidove/Tranquill/Unfezant (more by day), Spoink/Grumpig; **rare:** Clefairy (night only)
-- Winter: **common:** Snover/Abomasnow; **uncommon:** Lillipup/Herdier/Stoutland, Pidove/Tranquill/Unfezant (more by day), Spoink/Grumpig, Stantler; **rare:** Clefairy (night only), Delibird
+- Spring: **uncommon:** Buneary, Spoink/Grumpig; **rare:** Clefairy (night only), Elgyem (night only)
+- Summer: **uncommon:** Buneary, Spoink/Grumpig; **rare:** Clefairy (night only), Elgyem (night only)
+- Autumn: **uncommon:** Buneary, Spoink/Grumpig; **rare:** Clefairy (night only), Elgyem (night only)
+- Winter: **uncommon:** Buneary, Spoink/Grumpig, Stantler; **rare:** Clefairy (night only), Delibird, Elgyem (night only)
 
 **Dark grass**
 
-- Spring: **uncommon:** Poochyena/Mightyena (more at night); **rare:** Rufflet/Braviary (more by day), Sneasel (more at night)
-- Summer: **uncommon:** Poochyena/Mightyena (more at night); **rare:** Rufflet/Braviary (more by day), Sneasel (more at night)
-- Autumn: **uncommon:** Poochyena/Mightyena (more at night); **rare:** Rufflet/Braviary (more by day), Sneasel (more at night)
-- Winter: **common:** Snover/Abomasnow; **uncommon:** Poochyena/Mightyena (more at night); **rare:** Rufflet/Braviary (more by day), Sneasel (more at night)
+- All year: **uncommon:** Poochyena/Mightyena (more at night); **rare:** Rufflet/Braviary (more by day), Sneasel (more at night)
 
 **Rustling spots (shaking grass)**
 
@@ -1983,6 +1988,10 @@ The countryside round the chasm, touched by its cold and strangeness: Pidove, do
 *Not satisfied, or unsure:*
 
 - It was empty before the balance pass and is still filled with fairly generic Pokémon (Lillipup, Pidove, Poochyena). A stronger idea for it would help: the woodland edge's own residents or the crater's spillover.
+
+*Discussed with the user:*
+
+- 2026-11-12, done: Lillipup, Pidove and Snover gone (Snover belongs somewhere snowier); Buneary at the woodland edge; a rare Elgyem at night.
 
 ### Giant Chasm (the caves) (`giant_chasm_caves`)
 
@@ -2028,11 +2037,11 @@ A meteorite's caves round the crater: Lunatone at night and Solrock by day, Clef
 
 **Grass**
 
-- All year: **common:** Vanillite/Vanillish/Vanilluxe; **uncommon:** Cleffa/Clefairy (night only), Cubchoo/Beartic, Delibird, Elgyem/Beheeyem (more at night), Piloswine, Snover/Abomasnow; **rare:** Smoochum, Snorunt/Glalie
+- All year: **common:** Vanillite/Vanillish/Vanilluxe; **uncommon:** Cryogonal, Cubchoo/Beartic, Delibird, Piloswine, Snover/Abomasnow; **rare:** Smoochum, Snorunt/Glalie
 
 **Dark grass**
 
-- All year: **common:** Vanillite/Vanillish/Vanilluxe; **uncommon:** Cryogonal, Elgyem/Beheeyem (more at night), Sneasel/Weavile (more at night); **rare:** Jynx, Lunatone (night only), Solosis/Duosion/Reuniclus, Solrock (day only), Weavile (night only); **very rare:** Clefable (night only), Metang/Metagross; **exotic:** Mamoswine
+- All year: **common:** Elgyem/Beheeyem (more at night); **uncommon:** Cleffa/Clefairy (night only), Sneasel/Weavile (more at night); **rare:** Jynx, Lunatone (night only), Solosis/Duosion/Reuniclus, Solrock (day only), Weavile (night only); **very rare:** Clefable (night only), Metang/Metagross; **exotic:** Mamoswine
 
 **Rustling spots (shaking grass)**
 
@@ -2052,6 +2061,10 @@ An unnatural winter all year (Kyurem's cold) and a meteor crater: ice Pokémon (
 
 - It's crowded (ten in each grass) and the two themes (ice, space) compete. The ice could lead the grass and the space Pokémon the dark grass, or the reverse.
 - Your Deoxys event in the crater is untouched by this.
+
+*Discussed with the user:*
+
+- 2026-11-12, done: split lightly by its themes, the ice in the grass (Vanillite, Cryogonal, Cubchoo, Snover...) and the space Pokémon and hunters in the dark grass (Elgyem common, Clefairy's line, Lunatone, Solrock, Solosis, Metang, Weavile, Mamoswine). Little or no seasonal change, as Kyurem's cold has it.
 
 ### Route 23 (`route_23`)
 
@@ -2101,23 +2114,24 @@ The western maze: an old conifer wood among boulders where stalkers hunt (Pawnia
 
 - The grass is crowded (twelve families) and the cliff island's dark grass has only four.
 
+*Discussed with the user:*
+
+- 2026-11-12: just as the user expects; no change.
+
 ### Victory Road (the mountainside) (`victory_road_mountainside`)
 
 *The place:* Rocky mountainside, as Victory Road should be.
 
 **Grass**
 
-- Spring: **uncommon:** Bouffalant, Donphan, Graveler, Rufflet/Braviary (more by day); **rare:** Machoke, Pawniard/Bisharp
-- Summer: **uncommon:** Bouffalant, Donphan, Graveler, Rufflet/Braviary (more by day), Swablu/Altaria (more by day); **rare:** Machoke, Pawniard/Bisharp
-- Autumn: **uncommon:** Bouffalant, Donphan, Graveler, Rufflet/Braviary (more by day), Swablu/Altaria (more by day); **rare:** Machoke, Pawniard/Bisharp
-- Winter: **uncommon:** Bouffalant, Donphan, Graveler, Rufflet/Braviary (more by day); **rare:** Machoke, Pawniard/Bisharp
+- Spring: **common:** Bouffalant, Phanpy/Donphan; **uncommon:** Graveler, Rufflet/Braviary (more by day); **rare:** Machoke, Pawniard/Bisharp
+- Summer: **common:** Bouffalant, Phanpy/Donphan; **uncommon:** Graveler, Rufflet/Braviary (more by day), Swablu/Altaria (more by day); **rare:** Machoke, Pawniard/Bisharp
+- Autumn: **common:** Bouffalant, Phanpy/Donphan; **uncommon:** Graveler, Rufflet/Braviary (more by day), Swablu/Altaria (more by day); **rare:** Machoke, Pawniard/Bisharp
+- Winter: **common:** Bouffalant, Phanpy/Donphan; **uncommon:** Graveler, Rufflet/Braviary (more by day); **rare:** Machoke, Pawniard/Bisharp
 
 **Dark grass**
 
-- Spring: **uncommon:** Bouffalant, Durant, Rhydon; **rare:** Heatmor, Medicham, Skarmory; **very rare:** Haxorus, Pupitar/Tyranitar, Shelgon/Salamence
-- Summer: **uncommon:** Bouffalant, Durant, Rhydon; **rare:** Heatmor, Medicham, Skarmory; **very rare:** Haxorus, Pupitar/Tyranitar, Shelgon/Salamence; **exotic:** Altaria (more by day)
-- Autumn: **uncommon:** Bouffalant, Durant, Rhydon; **rare:** Heatmor, Medicham, Skarmory; **very rare:** Haxorus, Pupitar/Tyranitar, Shelgon/Salamence
-- Winter: **uncommon:** Bouffalant, Durant, Rhydon; **rare:** Heatmor, Medicham, Skarmory; **very rare:** Haxorus, Pupitar/Tyranitar, Shelgon/Salamence
+- All year: **common:** Durant; **uncommon:** Bouffalant, Rhydon; **rare:** Heatmor, Medicham, Skarmory; **very rare:** Haxorus, Shelgon/Salamence; **exotic:** Larvitar/Pupitar/Tyranitar
 
 **Rustling spots (shaking grass)**
 
@@ -2149,23 +2163,27 @@ The League's mountain, for the evolved and powerful: Graveler, Donphan, Rhydon, 
 
 - Nothing is common, and the dark grass has three very rare pseudo-legendary lines at once; that's a lot of power in one table.
 
+*Discussed with the user:*
+
+- 2026-11-12, done: Bouffalant and Phanpy common in the grass, Durant common in the dark grass; Larvitar's whole line is the trophy here now, and Altaria is no trophy. Little changes in winter here (the maps), so no winter Pokémon.
+
 ### Victory Road (the forest) (`victory_road_forest`)
 
 *The place:* A forested area among the mountainside.
 
 **Grass**
 
-- Spring: **common:** Pineco/Forretress; **uncommon:** Hoothoot/Noctowl (night only), Stantler; **rare:** Luxio/Luxray, Ursaring (more by day)
-- Summer: **common:** Pineco/Forretress; **uncommon:** Beedrill (more by day), Hoothoot/Noctowl (night only), Stantler, Ursaring (more by day); **rare:** Luxio/Luxray
-- Autumn: **common:** Pineco/Forretress; **uncommon:** Beedrill (more by day), Hoothoot/Noctowl (night only), Stantler, Ursaring (more by day); **rare:** Luxio/Luxray
-- Winter: **common:** Pineco/Forretress; **uncommon:** Hoothoot/Noctowl (night only), Sneasel (more at night), Snover/Abomasnow; **rare:** Luxio/Luxray
+- Spring: **common:** Pineco/Forretress; **uncommon:** Hoothoot/Noctowl (night only), Stantler; **rare:** Ursaring (more by day)
+- Summer: **common:** Pineco/Forretress; **uncommon:** Beedrill (more by day), Hoothoot/Noctowl (night only), Stantler, Ursaring (more by day)
+- Autumn: **common:** Pineco/Forretress; **uncommon:** Beedrill (more by day), Hoothoot/Noctowl (night only), Stantler, Ursaring (more by day)
+- Winter: **common:** Pineco/Forretress; **uncommon:** Hoothoot/Noctowl (night only), Sneasel (more at night)
 
 **Dark grass**
 
 - Spring: **common:** Pineco/Forretress; **uncommon:** Hariyama, Hoothoot/Noctowl (night only); **rare:** Luxio/Luxray, Ursaring (more by day)
 - Summer: **common:** Pineco/Forretress; **uncommon:** Hariyama, Hoothoot/Noctowl (night only), Ursaring (more by day); **rare:** Luxio/Luxray
 - Autumn: **common:** Pineco/Forretress; **uncommon:** Hariyama, Hoothoot/Noctowl (night only), Ursaring (more by day); **rare:** Luxio/Luxray
-- Winter: **common:** Pineco/Forretress; **uncommon:** Hariyama, Hoothoot/Noctowl (night only), Snover/Abomasnow; **rare:** Luxio/Luxray
+- Winter: **common:** Pineco/Forretress; **uncommon:** Hariyama, Hoothoot/Noctowl (night only); **rare:** Luxio/Luxray
 
 **Rustling spots (shaking grass)**
 
@@ -2185,13 +2203,17 @@ A high mountain forest: Pineco, Stantler, Ursaring and Hariyama, owls, Beedrill,
 
 - The grass and dark grass are almost the same; the dark grass could hold the strongest (Ursaring, Luxray, Hariyama) and the grass the rest.
 
+*Discussed with the user:*
+
+- 2026-11-12, done: no Snover (little changes in winter); Ursaring and Luxray only in the dark grass now, with Hariyama.
+
 ### Victory Road (the caves) (`victory_road_caves`)
 
 *The place:* The caves through the mountain, and the passage to the ruins of N's Castle.
 
 **Walking (the floor)**
 
-- All year: **common:** Durant, Golbat (only in victory_road_5, victory_road_6, victory_road_8, victory_road_11), Zubat (only in victory_road); **uncommon:** Boldore, Heatmor, Lairon/Aggron, Onix; **rare:** Druddigon, Sableye; **very rare:** Garchomp; **exotic:** Deino (only in victory_road, victory_road_5), Larvitar, Zweilous (only in victory_road_6, victory_road_8, victory_road_11)
+- All year: **common:** Durant, Golbat (only in victory_road_5, victory_road_6, victory_road_8, victory_road_11), Zubat (only in victory_road); **uncommon:** Boldore, Heatmor, Lairon/Aggron, Onix; **rare:** Druddigon, Sableye; **very rare:** Garchomp; **exotic:** Deino (only in victory_road, victory_road_5), Zweilous (only in victory_road_6, victory_road_8, victory_road_11)
 
 **Rustling spots (dust clouds)**
 
@@ -2222,6 +2244,10 @@ The deep caves: Durant's colonies and Heatmor hunting them, Golbat, Boldore, Oni
 *Not satisfied, or unsure:*
 
 - Two trophies and a very rare Garchomp in one cave; Deino alone (as in the original) would be cleaner.
+
+*Discussed with the user:*
+
+- 2026-11-12, done: Larvitar moved to the mountainside, so Deino is the caves' one trophy, as in the original.
 
 ### Victory Road (the ruins) (`victory_road_ruins`)
 
@@ -2678,6 +2704,36 @@ A strip mine: the miners' companions (Timburr, Machop, Drilbur), Roggenrola and 
 *Not satisfied, or unsure:*
 
 - Eleven families at once on every floor; the four cave tables could split the mine (the upper tunnels) from the ice (the deep, cold ones).
+
+*Discussed with the user:*
+
+- 2026-11-12: the user added grass and dark grass to the open pit (zone twist_mountain_2), which is now its own place, twist_mountain_pit, with Snover in winter.
+
+### Twist Mountain (the open pit) (`twist_mountain_pit`)
+
+*The place:* The open pit at the heart of the strip mine, ringed by the caves, with workers' buildings and excavation equipment; in winter it fills with snow. A little grass and dark grass now grow round it.
+
+**Walking (the floor)**
+
+- Spring: **common:** Timburr/Gurdurr (more by day); **uncommon:** Geodude/Graveler, Machop/Machoke
+- Summer: **common:** Timburr/Gurdurr (more by day); **uncommon:** Geodude/Graveler, Machop/Machoke
+- Autumn: **common:** Timburr/Gurdurr (more by day); **uncommon:** Geodude/Graveler, Machop/Machoke
+- Winter: **common:** Snover/Abomasnow; **uncommon:** Cubchoo/Beartic, Swinub/Piloswine
+
+**Dark grass**
+
+- Spring: **uncommon:** Machop/Machoke; **rare:** Rufflet/Braviary (more by day)
+- Summer: **uncommon:** Machop/Machoke; **rare:** Rufflet/Braviary (more by day)
+- Autumn: **uncommon:** Machop/Machoke; **rare:** Rufflet/Braviary (more by day)
+- Winter: **common:** Snover/Abomasnow; **uncommon:** Cubchoo/Beartic; **rare:** Sneasel (more at night)
+
+**What I think**
+
+The strip mine's open pit, newly grassy (the user, 2026-11-12): the miners' Pokémon and rocks outside winter (Timburr, Machop, Geodude, Rufflet on the cliffs); in winter the snow fills it, and Snover, Cubchoo, Swinub and Sneasel come out.
+
+*Not satisfied, or unsure:*
+
+- The zone (twist_mountain_2) has no encounter table yet, so it needs one before any of this can appear (the ROM session or the editor).
 
 ### Clay Tunnel (`clay_tunnel`)
 
