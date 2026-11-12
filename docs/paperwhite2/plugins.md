@@ -2342,13 +2342,21 @@ The player has the National Pokédex from Bianca's gift in Aspertia (`PokeDexGiv
 
 The Centers' upstairs counters become local services (design/pokemon-center.md, which has the details). The first is
 the Day Care attendant at the left counter, the Union Room's: `global_2100.s`'s `Script_2` under `PAPERWHITE2`, with
-the Day Care's own commands. The attendants share:
+the Day Care's own commands. The second is Training Services at the right counter, the Global Terminal's:
+`global_10105.s`'s `Script_1` under `PAPERWHITE2`, nine services for a party Pokémon in a scrolling list (Name Rater,
+Move Relearner, Move Deleter, Hyper Training, Effort, Ability, Grooming, Poké Ball and Nature Services), with the
+vanilla screens where the game has them and `PokemonCenter`'s actions for the rest. The attendants share:
 
 | What | Where |
 | --- | --- |
-| Their fees, rates and lists, which the user edits | `res/paperwhite2/pokemon_center/services.json` (schema beside it), written by `tools/paperwhite2/pokemon_center.py` into the generated `paperwhite2/pokemon_center_config.h` at build time; only the Day Care's fee is read so far |
-| Their script command, `PokemonCenter action, arg1, arg2, result` (0x2f7) | `src/paperwhite2/ov012/paperwhite2_pokemon_center_commands.c`; actions and fee IDs in `include/paperwhite2/pokemon_center.h` (the scripts include it): `GET_FEE` for a message, `PAY_FEE` to pay in 32 bits |
+| Their fees, rates and lists, which the user edits | `res/paperwhite2/pokemon_center/services.json` (schema beside it), written by `tools/paperwhite2/pokemon_center.py` into the generated `paperwhite2/pokemon_center_config.h` at build time; the Day Care's fee and Training Services' prices and requirements are read, the Wonder Trade's not yet |
+| Their script command, `PokemonCenter action, arg1, arg2, result` (0x2f7) | `src/paperwhite2/ov012/paperwhite2_pokemon_center_commands.c`; actions and fee IDs in `include/paperwhite2/pokemon_center.h` (the scripts include it): `GET_FEE` for a message, `WORD_SET_FEE` for one past 65535, `PAY_FEE` to pay in 32 bits, `PAY_BP`, and Training Services' changes to the party Pokémon in slot arg1. Word 2 is the money window's (`MoneyWinDisp`, `MoneyWinUpdate`), so a message can't keep a word there across them |
 | The walk to the tube behind the counter and back | global script 2111, `RTCallGlobal SCRID_POKEMON_CENTER_ATTENDANT_TUBE`, for the attendant talked to (0x8011) |
+
+An ability swap changes the PID: evolution, form changes and breeding read the ability slot from its bit 16 (bit 0 for
+Pokémon from before Black and White), so `CHANGE_ABILITY` flips that bit and moves the data's four blocks to the order
+the new PID gives (`PML_PkmGetParamBlockCore` orders them by bits 13-17), as anything else that changes a PID must; the
+Shiny Candy keeps those bits instead (`paperwhite2_shiny_pid.c`). The flip keeps shininess and, for bit 16, the sex.
 
 ## Adding global scripts
 

@@ -3824,7 +3824,7 @@
     .2byte \a1
     .endm
 
-    // Paper White 2: the Pokémon Center attendants': runs one of their actions (POKEMON_CENTER_ACTION_*, paperwhite2/pokemon_center.h) with two arguments and puts the result in a variable: a fee of res/paperwhite2/pokemon_center/services.json, or paying it (include/paperwhite2/pokemon_center_commands.h)
+    // Paper White 2: the Pokémon Center attendants': runs one of their actions (POKEMON_CENTER_ACTION_*, paperwhite2/pokemon_center.h) with two arguments and puts the result in a variable: a fee of res/paperwhite2/pokemon_center/services.json, paying it, or Training Services' changes to a party Pokémon (include/paperwhite2/pokemon_center_commands.h)
     .macro PokemonCenter a0, a1, a2, a3
     FieldCommand 759
     .2byte \a0
