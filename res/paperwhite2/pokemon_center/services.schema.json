@@ -169,7 +169,7 @@
         "special_reward": {
           "type": "object", "additionalProperties": false,
           "required": [ "enabled", "percent", "guaranteed_at", "species", "form", "level", "moves", "nature", "ivs", "ability_slot", "ball", "held_item" ],
-          "description": "The one-time special reward (the Spiky-eared Pichu), off until its form and sprite exist: a fixed Pokémon, never shiny, with the player as its trainer, received once (EVENT_FLAG_WONDER_TRADE_SPECIAL_RECEIVED) with the attendant's own dialogue",
+          "description": "The one-time special reward (the Spiky-eared Pichu, Pichu's form 1), off until its own art replaces the placeholder copy of Pichu's: a fixed Pokémon, never shiny, with the player as its trainer, received once (EVENT_FLAG_WONDER_TRADE_SPECIAL_RECEIVED) with the attendant's own dialogue",
           "properties": {
             "enabled": { "type": "boolean" },
             "percent": { "$ref": "#/$defs/percent", "description": "Chance a trade until it is received" },

@@ -3589,6 +3589,11 @@ OBJ_CODE_FOLLOWER_GENESECT_FORM_3
 OBJ_CODE_FOLLOWER_GENESECT_FORM_3_SHINY
 OBJ_CODE_FOLLOWER_GENESECT_FORM_4
 OBJ_CODE_FOLLOWER_GENESECT_FORM_4_SHINY
+# Paper White 2: the followers of the hack's own forms, after the imported ones (GetIndexOfObjID's last follower code)
+OBJ_CODE_FOLLOWER_PICHU_FORM_1
+OBJ_CODE_FOLLOWER_PICHU_FORM_1_SHINY
+OBJ_CODE_FOLLOWER_PICHU_FORM_1_FEMALE
+OBJ_CODE_FOLLOWER_PICHU_FORM_1_FEMALE_SHINY
 # Paper White 2: walking Pokémon that the original game has no sprite for, the user's sprites (which the hack
 # first drew in place of Unown's forms), as rows after the followers' (GetIndexOfObjID)
 OBJ_CODE_POKEMON_PURRLOIN = 0x4000

@@ -192,14 +192,15 @@ u32 GetIndexOfObjID(u16 objCode) {
     }
 #ifdef PAPERWHITE2
     // Paper White 2: the Following Pokémon's codes (res/field/actors/followers/) are the table's rows after the 3D
-    // models', as Pokeweb's runtime maps them (docs/paperwhite2/following-pokemon.md, object-code-lookup)
-    if (objCode >= OBJ_CODE_FOLLOWER_BULBASAUR && objCode <= OBJ_CODE_FOLLOWER_GENESECT_FORM_4_SHINY) {
+    // models', as Pokeweb's runtime maps them (docs/paperwhite2/following-pokemon.md, object-code-lookup): the imported
+    // ones, then the hack's own forms', whose last is the last follower code
+    if (objCode >= OBJ_CODE_FOLLOWER_BULBASAUR && objCode <= OBJ_CODE_FOLLOWER_PICHU_FORM_1_FEMALE_SHINY) {
         return (u16)(objCode - OBJ_CODE_FOLLOWER_BULBASAUR + 0x3f0);
     }
     // Paper White 2: the walking Pokémon that the original game has no sprite for, the rows after the followers'
     if (objCode >= OBJ_CODE_POKEMON_PURRLOIN && objCode <= OBJ_CODE_POKEMON_DIPPLIN) {
         return (u16)(objCode - OBJ_CODE_POKEMON_PURRLOIN + 0x3f0 +
-                     (OBJ_CODE_FOLLOWER_GENESECT_FORM_4_SHINY - OBJ_CODE_FOLLOWER_BULBASAUR + 1));
+                     (OBJ_CODE_FOLLOWER_PICHU_FORM_1_FEMALE_SHINY - OBJ_CODE_FOLLOWER_BULBASAUR + 1));
     }
 #endif
     return 10;

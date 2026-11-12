@@ -74,7 +74,13 @@ static const PokeDexFormEntry pokemonFormList[] = {
     { SPECIES_WORMADAM, 3 },   { SPECIES_CASTFORM, 4 }, { SPECIES_CHERRIM, 2 },  { SPECIES_DEERLING, 4 },
     { SPECIES_SAWSBUCK, 4 },   { SPECIES_MELOETTA, 2 }, { SPECIES_DARMANITAN, 2 }, { SPECIES_BASCULIN, 2 },
     { SPECIES_KYUREM, 3 },     { SPECIES_KELDEO, 2 },   { SPECIES_THUNDURUS, 2 }, { SPECIES_TORNADUS, 2 },
-    { SPECIES_LANDORUS, 2 },   { 0, 0 },
+    { SPECIES_LANDORUS, 2 },
+#ifdef PAPERWHITE2
+    // Paper White 2: the hack's forms, appended so that every species before keeps its bits of seenForms and
+    // shownForms in old saves (they have 88 bits each, and these take 83 and 84): the Spiky-eared Pichu
+    { SPECIES_PICHU, 2 },
+#endif
+    { 0, 0 },
 };
 
 // clang-format on

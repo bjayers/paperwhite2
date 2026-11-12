@@ -7,6 +7,16 @@
         "height": "1'00\"",
         "weight": "4.4 lbs.",
         "shape": 4,
+        "form_name": "Normal",
+        "forms": [
+            {
+                "name": "Spiky-eared",
+                "entry": "The electric sacs in its cheeks are\nsmall. If even a little electricity\nleaks, it becomes shocked.",
+                "height": "1'00\"",
+                "weight": "4.4 lbs.",
+                "shape": 4
+            }
+        ],
         "languages": {
             "en": {
                 "name": "Pichu",
@@ -93,8 +103,9 @@
     "hidden_ability": "ABILITY_LIGHTNINGROD",
     "flee_rate": 0,
     "forms": {
-        "count": 1,
-        "sprite_offset": 0
+        "count": 2,
+        "sprite_offset": 66,
+        "no_evolution": [ 1 ]
     },
     "color": "COLOR_YELLOW",
     "asymmetric": false,

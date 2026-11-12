@@ -901,7 +901,7 @@
             "percent": 2,
             "guaranteed_at": 30,
             "species": "SPECIES_PICHU",
-            "form": 0,
+            "form": 1,
             "level": 30,
             "moves": [ "MOVE_HELPING_HAND", "MOVE_VOLT_TACKLE", "MOVE_SWAGGER", "MOVE_PAIN_SPLIT" ],
             "nature": "NATURE_NAUGHTY",

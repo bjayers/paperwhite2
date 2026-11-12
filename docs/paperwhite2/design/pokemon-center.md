@@ -198,8 +198,8 @@ The field's list menus scroll (they keep a top row and a cursor row: `MsgBGPrint
   - Met in an in-game trade (`LOCATION_IN_GAME_TRADE`) at its level, today, in this game; its friendship the
     species' base. Obedience follows the game's rules for a Pokémon with another trainer's ID.
 - **The special reward** (the Spiky-eared Pichu's foundation): `special_reward` has the rate (2%), the trade that
-  guarantees it (30th), the species, form, level, four moves, nature, IVs, ability slot, ball and held item (a plain
-  Pichu as a placeholder until the form and sprite exist), and `enabled` (false). When enabled and not yet received
+  guarantees it (30th), the species, form, level, four moves, nature, IVs, ability slot, ball and held item (form 1,
+  the Spiky-eared Pichu, whose art is a copy of Pichu's until the user draws its own), and `enabled` (false). When enabled and not yet received
   (`EVENT_FLAG_WONDER_TRADE_SPECIAL_RECEIVED`, 0x938), each trade rolls it before the walk (`WONDER_TRADE_ROLL_SPECIAL`,
   guaranteed once the trade count reaches `guaranteed_at`); then the attendant says "Huh? That's odd... Something
   strange just came through the tube!" after the walk, the trade's scene shows the player as the other side, and "X...
