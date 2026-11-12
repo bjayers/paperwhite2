@@ -83,6 +83,7 @@ families:
       - {place: twist_mountain, methods: [grass], seasons: all, tier: common, why: "the mine's bats"}
       - {place: celestial_tower, methods: [grass], seasons: all, tier: rare, why: "bats of the old tower"}
       - {place: strange_house, methods: [grass], seasons: all, tier: rare, why: "bats in the haunted houses rafters"}
+      - {place: dragonspiral_tower, methods: [grass], seasons: all, tier: uncommon, why: "bats of the old tower"}
     review: []
 
   - id: diglett
@@ -317,6 +318,7 @@ families:
       - {place: dragonspiral_grounds, methods: [dark_grass], seasons: [winter], tier: uncommon, stages: [sneasel], why: "the cold bank in winter"}
       - {place: giant_chasm_outside, methods: [dark_grass], seasons: all, tier: rare, stages: [sneasel], why: "the chasm's cold at its rim"}
       - {place: victory_road_forest, methods: [grass], seasons: [winter], tier: uncommon, stages: [sneasel], why: "the snowy mountain forest"}
+      - {place: dragonspiral_tower, methods: [grass], seasons: [winter], tier: uncommon, stages: [sneasel], why: "the cold tower in winter"}
     review:
       - "Weavile wild though it evolves by a held item at night: only where Pokécology has it hunting."
 
@@ -681,7 +683,7 @@ families:
       - {place: route_14, methods: [dark_grass], seasons: all, tier: uncommon, why: "as in the original"}
       - {place: dragonspiral_grounds, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "training by the ancient tower"}
       - {place: route_22, methods: [dark_grass], seasons: all, tier: rare, why: "the upland (its Hidden Grotto)"}
-      - {place: dragonspiral_entrance, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "training on the cliffs below the ancient tower"}
+      - {place: dragonspiral_entrance, methods: [grass], seasons: [spring, summer, autumn], tier: common, why: "training on the cliffs below the ancient tower: the entrance's own"}
     review: []
 
   - id: dwebble
@@ -817,9 +819,9 @@ families:
       - {place: twist_mountain, methods: [grass], seasons: all, tier: uncommon, why: "the cold caves"}
       - {place: giant_chasm_crater, methods: [dark_grass], seasons: all, tier: uncommon, why: "the unnatural cold (the places)"}
       - {place: giant_chasm_caves, methods: [grass], seasons: all, tier: rare, why: "the cold caves"}
-      - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: rare, weather: [diamond_dust], why: "only in Icirrus's rare diamond dust"}
+      - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: rare, weather: [snow, blizzard], why: "with Icirrus's snow (the user)"}
     review:
-      - "A weather-only home: Dragonspiral's entrance in diamond dust (1% of winter days)."
+      - "A weather-only home: Dragonspiral's entrance in snow or blizzards (not diamond dust, too rare: the user)."
 
   - id: vanillite
     origin: native
@@ -842,6 +844,9 @@ families:
       - {place: giant_chasm_crater, methods: [grass, dark_grass], seasons: all, tier: common, why: "the crater's cold"}
       - {place: twist_mountain, methods: [grass], seasons: all, tier: uncommon, why: "the cold caves"}
       - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: uncommon, times: [morning], why: "the winter's icicles in the morning sun (its Pokédex: formed from icicles bathed in the morning sun)"}
+      - {place: castelia_park, methods: [grass], seasons: [winter], tier: uncommon, why: "an ice cream in the city, only when it's cold (the user)"}
+      - {place: route_5, methods: [grass], seasons: [winter], tier: rare, why: "by the road's stands, only in the cold (the user)"}
+      - {place: route_9, methods: [grass], seasons: [winter], tier: rare, why: "by the mall, only in the cold (the user)"}
     review: []
 
   - id: snorunt

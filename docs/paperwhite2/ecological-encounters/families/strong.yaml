@@ -176,6 +176,7 @@ families:
       - {place: mistralton_cave, methods: [grass], seasons: all, tier: exotic, stages: [axew], why: "the original's young dragon: the trophy"}
       - {place: route_23, methods: [grass], seasons: all, tier: rare, stages: [fraxure], why: "sharpening its tusks on the river's rocks, with Bisharp (Pokécology)"}
       - {place: victory_road_mountainside, methods: [dark_grass], seasons: all, tier: very_rare, stages: [haxorus], why: "the League's mountain"}
+      - {place: dragonspiral_tower, methods: [grass], seasons: all, tier: rare, stages: [fraxure], why: "a dragon in the dragons' tower"}
     review: []
 
   - id: druddigon
@@ -195,9 +196,9 @@ families:
     levels: {druddigon: [25, 100]}
     wanderer: {appears: both, wanders: aggressive, grass: stand}
     homes:
-      - {place: dragonspiral_tower, methods: [grass], seasons: all, tier: rare, why: "the dragons' tower, as in the original"}
       - {place: clay_tunnel, methods: [grass], seasons: all, tier: rare, why: "Onix's and Excadrill's tunnels"}
       - {place: victory_road_caves, methods: [grass], seasons: all, tier: rare, why: "the deep tunnels"}
+      - {place: dragonspiral_tower, methods: [grass], seasons: all, tier: rare, areas: [dragonspiral_tower_3, dragonspiral_tower_4], why: "the dragons' tower, near the top, as in the original"}
     review: []
 
   - id: pawniard

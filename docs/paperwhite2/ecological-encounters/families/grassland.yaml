@@ -1078,6 +1078,9 @@ families:
       - {place: route_7, methods: [grass], seasons: [summer], tier: uncommon, form: 1, stages: [deerling], why: "grazing the marsh's edge in summer"}
       - {place: route_7, methods: [grass], seasons: [autumn], tier: uncommon, form: 2, stages: [deerling], why: "autumn on the marsh's edge"}
       - {place: route_12, methods: [grass, dark_grass], seasons: [winter], tier: uncommon, form: 3, stages: [deerling], why: "the young graze the bare, snowless hills in winter (Sawsbuck's snowy coat belongs to snowier places: the user)"}
+      - {place: dragonspiral_grounds, methods: [grass], seasons: [spring], tier: uncommon, form: 0, why: "shy deer by the lake (spring form)"}
+      - {place: dragonspiral_grounds, methods: [grass], seasons: [summer], tier: uncommon, form: 1, why: "shy deer by the lake (summer form)"}
+      - {place: dragonspiral_grounds, methods: [grass], seasons: [autumn], tier: uncommon, form: 2, why: "shy deer by the lake (autumn form)"}
     review: []
 
   - id: cottonee

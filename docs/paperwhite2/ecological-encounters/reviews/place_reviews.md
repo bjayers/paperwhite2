@@ -330,7 +330,7 @@ The industrial complex kept close to its NPCs: Klink, Magnemite, Koffing, Voltor
 - Spring: **common:** Murkrow/Honchkrow (night only), Pidove/Tranquill/Unfezant (more by day), Rattata/Raticate (more at night); **uncommon:** Budew/Roselia (more by day), Glameow/Purugly, Meowth/Persian (more at night), Minccino (more by day), Purrloin/Liepard (more at night), Skitty (more by day), Snubbull/Granbull (more by day), Zigzagoon/Linoone (more at night); **exotic:** Eevee
 - Summer: **common:** Murkrow/Honchkrow (night only), Pidove/Tranquill/Unfezant (more by day), Rattata/Raticate (more at night); **uncommon:** Glameow/Purugly, Meowth/Persian (more at night), Minccino (more by day), Nincada/Ninjask (more by day), Purrloin/Liepard (more at night), Skitty (more by day), Snubbull/Granbull (more by day), Venonat/Venomoth (night only), Zigzagoon/Linoone (more at night); **exotic:** Eevee
 - Autumn: **common:** Murkrow/Honchkrow (night only), Pidove/Tranquill/Unfezant (more by day), Rattata/Raticate (more at night); **uncommon:** Glameow/Purugly, Meowth/Persian (more at night), Minccino (more by day), Purrloin/Liepard (more at night), Skitty (more by day), Snubbull/Granbull (more by day), Starly/Staravia/Staraptor (more by day), Zigzagoon/Linoone (more at night); **exotic:** Eevee
-- Winter: **common:** Murkrow/Honchkrow (night only), Pidove/Tranquill/Unfezant (more by day), Rattata/Raticate (more at night); **uncommon:** Glameow/Purugly, Meowth/Persian (more at night), Minccino (more by day), Purrloin/Liepard (more at night), Skitty (more by day), Snubbull/Granbull (more by day), Starly/Staravia/Staraptor (more by day), Zigzagoon/Linoone (more at night); **exotic:** Eevee
+- Winter: **common:** Murkrow/Honchkrow (night only), Pidove/Tranquill/Unfezant (more by day), Rattata/Raticate (more at night); **uncommon:** Glameow/Purugly, Meowth/Persian (more at night), Minccino (more by day), Purrloin/Liepard (more at night), Skitty (more by day), Snubbull/Granbull (more by day), Starly/Staravia/Staraptor (more by day), Vanillite/Vanillish/Vanilluxe, Zigzagoon/Linoone (more at night); **exotic:** Eevee
 
 **Dark grass**
 
@@ -960,7 +960,7 @@ The old forest: the bugs' life cycle by season in its lighter grass, the element
 - Spring: **common:** Pidove/Tranquill/Unfezant (more by day), Trubbish/Garbodor, Zigzagoon/Linoone (more at night); **uncommon:** Meowth/Persian (more at night), Minccino (more by day), Patrat/Watchog (more by day), Pidgey/Pidgeotto/Pidgeot (more by day), Purrloin/Liepard (more at night); **rare:** Gothita/Gothorita/Gothitelle (more at night), Mime Jr./Mr. Mime (more by day), Solosis/Duosion/Reuniclus; **exotic:** Munchlax
 - Summer: **common:** Pidove/Tranquill/Unfezant (more by day), Trubbish/Garbodor, Zigzagoon/Linoone (more at night); **uncommon:** Meowth/Persian (more at night), Minccino (more by day), Patrat/Watchog (more by day), Purrloin/Liepard (more at night), Venonat/Venomoth (night only); **rare:** Gothita/Gothorita/Gothitelle (more at night), Mime Jr./Mr. Mime (more by day), Solosis/Duosion/Reuniclus; **exotic:** Munchlax
 - Autumn: **common:** Pidove/Tranquill/Unfezant (more by day), Starly/Staravia/Staraptor (more by day), Trubbish/Garbodor, Zigzagoon/Linoone (more at night); **uncommon:** Cottonee/Whimsicott (more by day; never in gusty rain, thunderstorm), Jumpluff (day only; never in gusty rain, thunderstorm), Meowth/Persian (more at night), Minccino (more by day), Murkrow/Honchkrow (night only), Patrat/Watchog (more by day), Pidgey/Pidgeotto/Pidgeot (more by day), Purrloin/Liepard (more at night); **rare:** Gothita/Gothorita/Gothitelle (more at night), Mime Jr./Mr. Mime (more by day), Solosis/Duosion/Reuniclus; **exotic:** Munchlax
-- Winter: **common:** Pidove/Tranquill/Unfezant (more by day), Starly/Staravia/Staraptor (more by day), Trubbish/Garbodor, Zigzagoon/Linoone (more at night); **uncommon:** Meowth/Persian (more at night), Minccino (more by day), Murkrow/Honchkrow (night only), Patrat/Watchog (more by day), Purrloin/Liepard (more at night); **rare:** Gothita/Gothorita/Gothitelle (more at night), Mime Jr./Mr. Mime (more by day), Solosis/Duosion/Reuniclus; **exotic:** Munchlax
+- Winter: **common:** Pidove/Tranquill/Unfezant (more by day), Starly/Staravia/Staraptor (more by day), Trubbish/Garbodor, Zigzagoon/Linoone (more at night); **uncommon:** Meowth/Persian (more at night), Minccino (more by day), Murkrow/Honchkrow (night only), Patrat/Watchog (more by day), Purrloin/Liepard (more at night); **rare:** Gothita/Gothorita/Gothitelle (more at night), Mime Jr./Mr. Mime (more by day), Solosis/Duosion/Reuniclus, Vanillite/Vanillish/Vanilluxe; **exotic:** Munchlax
 
 **Dark grass**
 
@@ -1498,17 +1498,17 @@ The melancholy tower of graves: Litwick's candles (your request), Yamask from th
 
 **Grass**
 
-- Spring: **common:** Stunfisk, Tympole/Palpitoad/Seismitoad, Wooper/Quagsire (more at night); **uncommon:** Poliwag/Poliwhirl (more at night), Surskit/Masquerain (more by day)
+- Spring: **common:** Poliwag/Poliwhirl (more at night), Stunfisk, Tympole/Palpitoad/Seismitoad, Wooper/Quagsire (more at night); **uncommon:** Surskit/Masquerain (more by day)
 - Summer: **common:** Stunfisk, Tympole/Palpitoad/Seismitoad, Wooper/Quagsire (more at night), Yanma/Yanmega (more by day); **uncommon:** Poliwag/Poliwhirl (more at night), Surskit/Masquerain (more by day)
-- Autumn: **common:** Stunfisk, Tympole/Palpitoad/Seismitoad, Wooper/Quagsire (more at night); **uncommon:** Poliwag/Poliwhirl (more at night)
+- Autumn: **common:** Stunfisk, Tympole/Palpitoad/Seismitoad, Wooper/Quagsire (more at night); **uncommon:** Croagunk/Toxicroak, Poliwag/Poliwhirl (more at night)
 - Winter: no tiles this season
 
 **Surfing**
 
-- Spring: **common:** Ducklett (more by day)
-- Summer: **common:** Ducklett (more by day)
-- Autumn: **common:** Ducklett (more by day)
-- Winter: **common:** Swanna (more by day)
+- Spring: **common:** Ducklett (more by day); **uncommon:** Poliwag/Poliwhirl (more at night), Wooper/Quagsire (more at night)
+- Summer: **common:** Ducklett (more by day); **uncommon:** Poliwag/Poliwhirl (more at night), Wooper/Quagsire (more at night)
+- Autumn: **common:** Ducklett (more by day); **uncommon:** Poliwag/Poliwhirl (more at night), Wooper/Quagsire (more at night)
+- Winter: **common:** Swanna (more by day); **uncommon:** Poliwag/Poliwhirl (more at night), Wooper/Quagsire (more at night)
 
 **Rippling water (surfing):** nothing of its own: the generator's rule fills it from surfing, favouring the later stages.
 
@@ -1532,23 +1532,27 @@ Dutch polders round a town: frogs, Wooper, Stunfisk (as in the original) and pon
 
 - Surfing is a single family per season (Ducklett, then Swanna); Poliwag or Wooper in the water too would help.
 
+*Discussed with the user:*
+
+- 2026-11-12, done (Icirrus is post-game, so no level limits): Poliwag common in spring (the frog chorus), Croagunk in autumn, and Wooper and Poliwag surfing all year beside the ducks and swans.
+
 ### Route 8 (`route_8`)
 
 *The place:* Marshland leading to the bridge, much like the Moor, with an entrance to the Moor to the north. Flowers dotted round the grassy parts in spring and summer, leafy tiles in autumn, and stumps jutting just above the water.
 
 **Grass**
 
-- Spring: **common:** Stunfisk, Tympole/Palpitoad/Seismitoad, Wooper/Quagsire (more at night); **rare:** Croagunk/Toxicroak
-- Summer: **common:** Stunfisk, Tympole/Palpitoad/Seismitoad, Wooper/Quagsire (more at night); **rare:** Croagunk/Toxicroak
-- Autumn: **common:** Stunfisk, Tympole/Palpitoad/Seismitoad, Wooper/Quagsire (more at night); **rare:** Croagunk/Toxicroak
+- Spring: **common:** Stunfisk, Tympole/Palpitoad/Seismitoad, Wooper/Quagsire (more at night); **uncommon:** Croagunk/Toxicroak, Surskit/Masquerain (more by day)
+- Summer: **common:** Stunfisk, Tympole/Palpitoad/Seismitoad, Wooper/Quagsire (more at night), Yanma/Yanmega (more by day); **uncommon:** Croagunk/Toxicroak
+- Autumn: **common:** Stunfisk, Tympole/Palpitoad/Seismitoad, Wooper/Quagsire (more at night); **uncommon:** Croagunk/Toxicroak
 - Winter: no tiles this season
 
 **Surfing**
 
-- Spring: **common:** Ducklett (more by day)
-- Summer: **common:** Ducklett (more by day)
-- Autumn: **common:** Ducklett (more by day)
-- Winter: **common:** Swanna (more by day)
+- Spring: **common:** Ducklett (more by day); **uncommon:** Wooper/Quagsire (more at night)
+- Summer: **common:** Ducklett (more by day); **uncommon:** Wooper/Quagsire (more at night)
+- Autumn: **common:** Ducklett (more by day); **uncommon:** Wooper/Quagsire (more at night)
+- Winter: **common:** Swanna (more by day); **uncommon:** Wooper/Quagsire (more at night)
 
 **Rippling water (surfing):** nothing of its own: the generator's rule fills it from surfing, favouring the later stages.
 
@@ -1570,14 +1574,18 @@ The same fens as the town, a little wilder: Stunfisk, Tympole and Wooper in the 
 
 - It's nearly a copy of Icirrus City; Carnivine or Yanma rarely would set it apart.
 
+*Discussed with the user:*
+
+- 2026-11-12, done: kept close to the city (they merge), a little wilder: Croagunk uncommon, Surskit in spring, Yanma in summer, Wooper surfing. Carnivine stays the Moor's alone.
+
 ### Moor of Icirrus (`moor_of_icirrus`)
 
 *The place:* Much the same as Route 8: marshland with a few hills, stumps jutting above the water, flowers in spring and summer, leaves in autumn.
 
 **Grass**
 
-- Spring: **common:** Tympole/Palpitoad/Seismitoad; **uncommon:** Croagunk/Toxicroak, Stunfisk, Wooper/Quagsire (more at night); **exotic:** Carnivine
-- Summer: **common:** Tympole/Palpitoad/Seismitoad; **uncommon:** Croagunk/Toxicroak, Stunfisk, Wooper/Quagsire (more at night); **exotic:** Carnivine
+- Spring: **common:** Croagunk/Toxicroak, Tympole/Palpitoad/Seismitoad; **uncommon:** Stunfisk, Surskit/Masquerain (more by day), Wooper/Quagsire (more at night); **exotic:** Carnivine
+- Summer: **common:** Tympole/Palpitoad/Seismitoad, Yanma/Yanmega (more by day); **uncommon:** Croagunk/Toxicroak, Stunfisk, Surskit/Masquerain (more by day), Wooper/Quagsire (more at night); **exotic:** Carnivine
 - Autumn: **common:** Tympole/Palpitoad/Seismitoad; **uncommon:** Croagunk/Toxicroak, Stunfisk, Wooper/Quagsire (more at night); **exotic:** Carnivine
 - Winter: no tiles this season
 
@@ -1615,16 +1623,20 @@ The marsh's deeper, wilder part: the bigger toads (Seismitoad in the rippling wa
 
 - The puddles have only five families; the moor's low hills could add a land Pokémon or two (Stantler, Mareep).
 
+*Discussed with the user:*
+
+- 2026-11-12, done: a marsh of puddles, no grass, so no deer or Mareep; Croagunk's spring chorus, Surskit in spring and summer, Yanma in summer. More marsh oddities proposed (Bellsprout's pitcher plants, Lotad, Venonat).
+
 ### Dragonspiral Tower (the entrance) (`dragonspiral_entrance`)
 
 *The place:* The cliffside just north of Icirrus City, before Dragonspiral proper: an entrance, like Pinwheel Forest's outskirts. Piplup and Glalie here in winter (requested): Glalie comes down from Twist Mountain to hunt it.
 
 **Grass**
 
-- Spring: **uncommon:** Mareep/Flaaffy/Ampharos, Mienfoo/Mienshao, Tranquill/Unfezant (more by day); **rare:** Rufflet/Braviary (more by day)
-- Summer: **uncommon:** Mareep/Flaaffy/Ampharos, Mienfoo/Mienshao, Tranquill/Unfezant (more by day); **rare:** Rufflet/Braviary (more by day)
-- Autumn: **uncommon:** Mareep/Flaaffy/Ampharos, Mienfoo/Mienshao, Tranquill/Unfezant (more by day); **rare:** Rufflet/Braviary (more by day)
-- Winter: **common:** Cubchoo/Beartic; **uncommon:** Delibird, Snover/Abomasnow, Swinub/Piloswine/Mamoswine, Vanillite/Vanillish/Vanilluxe (morning only); **rare:** Cryogonal (only in diamond dust), Piplup, Smoochum/Jynx, Stoutland
+- Spring: **common:** Mienfoo/Mienshao; **uncommon:** Mareep/Flaaffy/Ampharos, Swablu/Altaria (more by day), Tranquill/Unfezant (more by day); **rare:** Rufflet/Braviary (more by day)
+- Summer: **common:** Mienfoo/Mienshao; **uncommon:** Mareep/Flaaffy/Ampharos, Tranquill/Unfezant (more by day); **rare:** Rufflet/Braviary (more by day)
+- Autumn: **common:** Mienfoo/Mienshao; **uncommon:** Mareep/Flaaffy/Ampharos, Swablu/Altaria (more by day), Tranquill/Unfezant (more by day); **rare:** Rufflet/Braviary (more by day)
+- Winter: **common:** Cubchoo/Beartic; **uncommon:** Delibird, Snover/Abomasnow, Swinub/Piloswine/Mamoswine, Vanillite/Vanillish/Vanilluxe (morning only); **rare:** Cryogonal (only in snow, blizzard), Piplup, Smoochum/Jynx, Stoutland
 
 **Dark grass**
 
@@ -1652,23 +1664,27 @@ The cliffside below the tower: a quiet meadow from spring to autumn (Mienfoo tra
 - Spring to autumn is thin and generic (four families, nothing common); the cliff meadow needs a resident with more character, or one common Pokémon.
 - Winter is now crowded (nine in the grass).
 
+*Discussed with the user:*
+
+- 2026-11-12, done: Mienfoo common outside winter as its own; Swablu passing in spring and autumn; Cryogonal with the snow or blizzards, not diamond dust.
+
 ### Dragonspiral Tower (the grounds) (`dragonspiral_grounds`)
 
 *The place:* Outside, round the tower itself. The water round the tower is unique: very clear, and you can see deep down through it. The grass and dark grass are on the eastern bank, right by each other, reached by surfing over the lake.
 
 **Grass**
 
-- Spring: **uncommon:** Mienfoo/Mienshao, Stantler; **rare:** Natu/Xatu (more by day)
-- Summer: **uncommon:** Mienfoo/Mienshao, Stantler; **rare:** Natu/Xatu (more by day)
-- Autumn: **uncommon:** Mienfoo/Mienshao, Stantler; **rare:** Natu/Xatu (more by day)
+- Spring: **uncommon:** Deerling/Sawsbuck (spring form), Mienfoo/Mienshao, Stantler; **rare:** Natu/Xatu (more by day)
+- Summer: **uncommon:** Deerling/Sawsbuck (summer form), Mienfoo/Mienshao, Stantler; **rare:** Natu/Xatu (more by day)
+- Autumn: **uncommon:** Deerling/Sawsbuck (autumn form), Mienfoo/Mienshao, Stantler; **rare:** Natu/Xatu (more by day)
 - Winter: **uncommon:** Mienfoo/Mienshao, Snover/Abomasnow; **rare:** Natu/Xatu (more by day)
 
 **Dark grass**
 
-- Spring: **uncommon:** Mienfoo/Mienshao, Stantler; **rare:** Natu/Xatu (more by day)
-- Summer: **uncommon:** Mienfoo/Mienshao, Stantler; **rare:** Natu/Xatu (more by day)
-- Autumn: **uncommon:** Mienfoo/Mienshao, Stantler; **rare:** Natu/Xatu (more by day)
-- Winter: **uncommon:** Mienfoo/Mienshao, Sneasel (more at night); **rare:** Natu/Xatu (more by day)
+- Spring: **uncommon:** Mienfoo/Mienshao, Stantler; **rare:** Bronzor/Bronzong, Natu/Xatu (more by day)
+- Summer: **uncommon:** Mienfoo/Mienshao, Stantler; **rare:** Bronzor/Bronzong, Natu/Xatu (more by day)
+- Autumn: **uncommon:** Mienfoo/Mienshao, Stantler; **rare:** Bronzor/Bronzong, Natu/Xatu (more by day)
+- Winter: **uncommon:** Mienfoo/Mienshao, Sneasel (more at night); **rare:** Bronzor/Bronzong, Natu/Xatu (more by day)
 
 **Rustling spots (shaking grass)**
 
@@ -1685,7 +1701,7 @@ Besides what's listed, rustling spots fill themselves from the grass's rare, ver
 
 **Rippling water (surfing)**
 
-- All year: **uncommon:** Golduck; **exotic:** Dratini/Dragonair
+- All year: **uncommon:** Golduck; **very rare:** Lapras (more by day); **exotic:** Dratini/Dragonair
 
 **Fishing**
 
@@ -1708,13 +1724,20 @@ A clear, deep, cold lake round the tower: Dratini as the dragons' trophy in the 
 - The two grasses are identical and thin (three families), and nothing is common.
 - Surfing has a single family most of the year.
 
+*Discussed with the user:*
+
+- 2026-11-12, done: Deerling and Sawsbuck by the lake in their seasons' forms; Bronzor rare in the dark grass; a very rare Lapras in the cold, deep lake (Loch Ness). Golett stays in the tower.
+
 ### Dragonspiral Tower (`dragonspiral_tower`)
 
 *The place:* The ancient tower of dragons, its floors climbing to the top.
 
 **Walking (the floor)**
 
-- All year: **common:** Golett/Golurk; **rare:** Bronzor/Bronzong, Druddigon
+- Spring: **common:** Golett; **uncommon:** Golurk (only in dragonspiral_tower_3, dragonspiral_tower_4), Woobat; **rare:** Bronzor/Bronzong, Druddigon (only in dragonspiral_tower_3, dragonspiral_tower_4), Fraxure
+- Summer: **common:** Golett; **uncommon:** Golurk (only in dragonspiral_tower_3, dragonspiral_tower_4), Woobat; **rare:** Bronzor/Bronzong, Druddigon (only in dragonspiral_tower_3, dragonspiral_tower_4), Fraxure
+- Autumn: **common:** Golett; **uncommon:** Golurk (only in dragonspiral_tower_3, dragonspiral_tower_4), Woobat; **rare:** Bronzor/Bronzong, Druddigon (only in dragonspiral_tower_3, dragonspiral_tower_4), Fraxure
+- Winter: **common:** Golett; **uncommon:** Golurk (only in dragonspiral_tower_3, dragonspiral_tower_4), Sneasel (more at night), Woobat; **rare:** Bronzor/Bronzong, Druddigon (only in dragonspiral_tower_3, dragonspiral_tower_4), Fraxure
 
 **What I think**
 
@@ -1728,6 +1751,10 @@ The ancient tower: Golett as its guardians, Druddigon as the original's dragon, 
 
 - Only three families over four floors, with no cold-loving residents yet (the places suggest them): Vanillite, Sneasel or Cryogonal in winter, Woobat, or Mienfoo inside.
 
+*Discussed with the user:*
+
+- 2026-11-12, done: Woobat, Sneasel in winter and a rare Fraxure; Golett on every floor, Golurk and Druddigon only on the upper floors. Vanillite isn't in the tower: it's a special one (an ice cream), now also in winter near people (Castelia's park, Routes 5 and 9).
+
 ## Northern Central Unova
 
 ### Route 9 (`route_9`)
@@ -1739,7 +1766,7 @@ The ancient tower: Golett as its guardians, Druddigon as the original's dragon, 
 - Spring: **common:** Pidove/Tranquill/Unfezant (more by day), Venonat/Venomoth (night only), Zigzagoon/Linoone (more at night); **uncommon:** Glameow/Purugly, Gulpin/Swalot, Minccino (more by day), Murkrow/Honchkrow (night only), Stunky/Skuntank (night only), Trubbish/Garbodor; **rare:** Snubbull/Granbull (more by day)
 - Summer: **common:** Pidove/Tranquill/Unfezant (more by day), Venonat/Venomoth (night only), Zigzagoon/Linoone (more at night); **uncommon:** Dustox (night only), Glameow/Purugly, Gulpin/Swalot, Minccino (more by day), Murkrow/Honchkrow (night only), Pidgey/Pidgeotto/Pidgeot (more by day), Stunky/Skuntank (night only), Trubbish/Garbodor; **rare:** Snubbull/Granbull (more by day)
 - Autumn: **common:** Pidove/Tranquill/Unfezant (more by day), Venonat/Venomoth (night only), Zigzagoon/Linoone (more at night); **uncommon:** Dustox (night only), Glameow/Purugly, Gulpin/Swalot, Kricketot/Kricketune, Minccino (more by day), Murkrow/Honchkrow (night only), Stunky/Skuntank (night only), Trubbish/Garbodor; **rare:** Snubbull/Granbull (more by day)
-- Winter: **common:** Pidove/Tranquill/Unfezant (more by day), Zigzagoon/Linoone (more at night); **uncommon:** Glameow/Purugly, Gulpin/Swalot, Minccino (more by day), Murkrow/Honchkrow (night only), Stunky/Skuntank (night only), Trubbish/Garbodor; **rare:** Snubbull/Granbull (more by day)
+- Winter: **common:** Pidove/Tranquill/Unfezant (more by day), Zigzagoon/Linoone (more at night); **uncommon:** Glameow/Purugly, Gulpin/Swalot, Minccino (more by day), Murkrow/Honchkrow (night only), Stunky/Skuntank (night only), Trubbish/Garbodor; **rare:** Snubbull/Granbull (more by day), Vanillite/Vanillish/Vanilluxe
 
 **Dark grass**
 

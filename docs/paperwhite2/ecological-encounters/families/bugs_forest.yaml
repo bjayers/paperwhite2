@@ -321,6 +321,8 @@ families:
       - {place: route_6, methods: [grass], seasons: [summer], tier: rare, why: "fewer where the Swellow hunt (Pokécology)"}
       - {place: route_7, methods: [grass], seasons: [summer], tier: uncommon, why: "hatching over the marsh, hunted by Swellow"}
       - {place: route_7, methods: [grass], seasons: [spring], tier: uncommon, why: "the first dragonflies over the marsh"}
+      - {place: route_8, methods: [grass], seasons: [summer], tier: common, why: "dragonflies over the fens in summer"}
+      - {place: moor_of_icirrus, methods: [grass], seasons: [summer], tier: common, why: "dragonflies over the moor in summer"}
     review: []
 
   - id: wurmple
