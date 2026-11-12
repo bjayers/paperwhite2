@@ -571,3 +571,12 @@ For species `S` getting form `n` (its `forms.count` before):
    the end, at most 3 more bits before the save must grow. The editor should say so rather than write C.
 
 `species_data.py` validates the result (the schema), and the packers stop on a missing file or a gap in the groups.
+
+## 12. New species' Pokédex numbers (the user's direction, 2026-11-12)
+
+The National Pokédex keeps its gaps for 1–649 (a "???" row for each number not yet seen). A new species' Pokédex
+number is separate from its internal species ID (which is wherever the renumbering puts it, past the egg and Pokéstar
+IDs): each new species gets an optional display number in its data, e.g. Applin's 840, or none for the user's own
+creations, which show "???". After 649 the list holds only the species that exist, in display-number order with the
+unnumbered ones last, without placeholder rows for the numbers between them (no 650–839 gap before Applin). The save's
+Pokédex bits stay keyed by the internal ID (save-expansion.md).
