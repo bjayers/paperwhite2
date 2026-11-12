@@ -2388,7 +2388,8 @@ A Pokémon of a form is made as the game makes a wild one (`enc_pokeset.c`): `Po
 `PokeParty_ChangeForme` (the form's ability by the PID's slot, sex and stats) and `PokeParty_SetDefaultMoves` (the
 form's level-up moves), and its PID with the form (`PML_GenPID`). The US game's foreign species-name banks
 (`species_names_ja.txt` and the others) stop at Arceus, so a later species keeps its English name in another language
-(reading past a bank's end stopped the game).
+(reading past a bank's end stopped the game); the hack adds Japanese names for Black and White's species
+(`pokedex.languages.ja.name` in `res/pokemon/*/data.json`), so the Japanese bank goes to Genesect.
 
 The Wonder Trade makes its Pokémon's PID with the game's own `PML_GenPID` for the generated trainer ID (shiny with
 `PID_RARE_ALWAYS`, else `PID_RARE_NEVER`, so never shiny by accident), a random ability bit (bit 16) and the sex from the

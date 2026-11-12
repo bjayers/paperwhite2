@@ -350,6 +350,11 @@ The user's requests after trying the three attendants.
   language without a nickname stopped the game: the US ROM's foreign species-name banks (`species_names_ja.txt` and
   the others, `\from{species.pokedex.ja.name}`) end at Arceus, and the name was read past the bank's end. Such a
   Pokémon keeps the game's (English) name now; earlier tests had only met earlier species in foreign languages.
+- **Japanese names of Black and White's species (2026-11-12):** the user asked for Japanese Gen 5 Pokémon. The 156
+  Japanese names, Victini to Genesect, are `pokedex.languages.ja.name` in their `res/pokemon/*/data.json`, which
+  extends the Japanese names bank to 650 lines (`\from` stops at the first species without the field), so a Japanese
+  Gen 5 Pokémon is named in Japanese (tested: a forced Japanese Minccino arrived as チラーミィ, shown in the trade scene,
+  the messages and the party). The other languages still stop at Arceus. The Pokédex's language marks stop at Arceus.
 - **Tested** in DeSmuME on a copy of the user's save (Castelia's Center): the vanilla and Wonder Trade scenes frame by
   frame; Hyper Training as Champion (50 BP shown at the party screen and stat list, 24 BP paid, 26 BP shown, the money
   back at the menu); the Day Care counter with no badges (the "first Gym Badge" line), and with the couple never met
