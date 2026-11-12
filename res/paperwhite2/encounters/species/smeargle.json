@@ -6,26 +6,11 @@
     },
     "habitats": [
         {
-            "places": [
-                "relic_passage_3"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "relic_passage_3" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
             "rarity": "rare",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         }
     ]
 }

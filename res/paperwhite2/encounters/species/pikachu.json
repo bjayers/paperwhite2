@@ -12,29 +12,11 @@
     },
     "habitats": [
         {
-            "places": [
-                "chargestone_cave",
-                "chargestone_cave_2",
-                "chargestone_cave_3",
-                "route_6"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "chargestone_cave", "chargestone_cave_2", "chargestone_cave_3", "route_6" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
             "rarity": "rare",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         }
     ]
 }

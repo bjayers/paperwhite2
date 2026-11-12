@@ -12,24 +12,11 @@
     },
     "habitats": [
         {
-            "places": [
-                "giant_chasm_3",
-                "giant_chasm_4"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "dark_grass"
-            ],
+            "places": [ "giant_chasm_3", "giant_chasm_4" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "dark_grass" ],
             "rarity": "very_rare",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         }
     ],
     "overworld": {

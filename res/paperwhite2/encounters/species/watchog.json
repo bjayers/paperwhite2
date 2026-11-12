@@ -12,96 +12,32 @@
     },
     "habitats": [
         {
-            "places": [
-                "dreamyard",
-                "floccesy_ranch_2",
-                "pinwheel_forest",
-                "route_5"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "dreamyard", "floccesy_ranch_2", "pinwheel_forest", "route_5" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
             "rarity": "rare",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
-            "places": [
-                "dreamyard",
-                "floccesy_ranch_2",
-                "pinwheel_forest",
-                "route_5"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "dreamyard", "floccesy_ranch_2", "pinwheel_forest", "route_5" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
             "rarity": "very_rare",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         },
         {
-            "places": [
-                "route_1",
-                "route_16",
-                "route_19",
-                "route_2",
-                "route_3"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "route_1", "route_16", "route_19", "route_2", "route_3" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
-            "places": [
-                "route_1",
-                "route_16",
-                "route_19",
-                "route_2",
-                "route_3"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "route_1", "route_16", "route_19", "route_2", "route_3" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
             "rarity": "rare",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         }
     ],
     "overworld": {

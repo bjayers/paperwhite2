@@ -12,50 +12,19 @@
     },
     "habitats": [
         {
-            "places": [
-                "celestial_tower",
-                "celestial_tower_4"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "celestial_tower", "celestial_tower_4" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "route_7"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "dark_grass"
-            ],
+            "places": [ "route_7" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "dark_grass" ],
             "rarity": "exotic",
-            "times": [
-                "night",
-                "late_night"
-            ],
-            "weather": [
-                "WEATHER_SUNNY",
-                "WEATHER_FLAKE"
-            ]
+            "times": [ "night", "late_night" ],
+            "weather": [ "WEATHER_SUNNY", "WEATHER_FLAKE" ]
         },
         {
             "places": [
@@ -70,23 +39,10 @@
                 "strange_house_8",
                 "strange_house_9"
             ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
             "rarity": "very_rare",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         }
     ],
     "overworld": {

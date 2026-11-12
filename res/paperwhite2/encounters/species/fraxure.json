@@ -6,50 +6,18 @@
     },
     "habitats": [
         {
-            "places": [
-                "dragonspiral_tower_3",
-                "dragonspiral_tower_4",
-                "route_23"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "dragonspiral_tower_3", "dragonspiral_tower_4", "route_23" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
             "rarity": "rare",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "nature_preserve"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "dark_grass"
-            ],
+            "places": [ "nature_preserve" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "dark_grass" ],
             "rarity": "very_rare",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         }
     ],
     "overworld": {

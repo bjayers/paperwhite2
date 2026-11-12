@@ -12,64 +12,25 @@
     },
     "habitats": [
         {
-            "places": [
-                "giant_chasm"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "giant_chasm" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
             "rarity": "rare",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         },
         {
-            "places": [
-                "giant_chasm_3",
-                "giant_chasm_4"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "dark_grass"
-            ],
+            "places": [ "giant_chasm_3", "giant_chasm_4" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "dark_grass" ],
             "rarity": "common",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         },
         {
-            "places": [
-                "giant_chasm_3",
-                "giant_chasm_4"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "dark_grass"
-            ],
+            "places": [ "giant_chasm_3", "giant_chasm_4" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "dark_grass" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         }
     ],
     "overworld": {

@@ -12,43 +12,18 @@
     },
     "habitats": [
         {
-            "places": [
-                "castelia_city"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "dark_grass"
-            ],
+            "places": [ "castelia_city" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "dark_grass" ],
             "rarity": "common",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         },
         {
-            "places": [
-                "castelia_city"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "dark_grass"
-            ],
+            "places": [ "castelia_city" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "dark_grass" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
             "places": [
@@ -59,20 +34,10 @@
                 "castelia_sewers_4",
                 "castelia_sewers_5"
             ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
             "rarity": "common",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         },
         {
             "places": [
@@ -83,62 +48,24 @@
                 "castelia_sewers_4",
                 "castelia_sewers_5"
             ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
-            "places": [
-                "route_4",
-                "route_4_2"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "route_4", "route_4_2" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
             "rarity": "rare",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         },
         {
-            "places": [
-                "route_4",
-                "route_4_2"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "route_4", "route_4_2" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
             "rarity": "very_rare",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         }
     ],
     "overworld": {

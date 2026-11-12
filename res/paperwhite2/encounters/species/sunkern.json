@@ -12,76 +12,34 @@
     },
     "habitats": [
         {
-            "places": [
-                "route_1"
-            ],
-            "seasons": [
-                "summer"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "route_1" ],
+            "seasons": [ "summer" ],
+            "methods": [ "grass" ],
             "rarity": "common",
-            "times": [
-                "morning"
-            ]
+            "times": [ "morning" ]
         },
         {
-            "places": [
-                "route_1"
-            ],
-            "seasons": [
-                "summer"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "route_1" ],
+            "seasons": [ "summer" ],
+            "methods": [ "grass" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
-            "places": [
-                "route_12"
-            ],
-            "seasons": [
-                "summer"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "route_12" ],
+            "seasons": [ "summer" ],
+            "methods": [ "grass" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ],
-            "weather": [
-                "WEATHER_SUNNY"
-            ]
+            "times": [ "morning", "day", "evening" ],
+            "weather": [ "WEATHER_SUNNY" ]
         },
         {
-            "places": [
-                "route_12"
-            ],
-            "seasons": [
-                "summer"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "route_12" ],
+            "seasons": [ "summer" ],
+            "methods": [ "grass" ],
             "rarity": "rare",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ],
-            "weather": [
-                "WEATHER_RAIN"
-            ]
+            "times": [ "morning", "day", "evening" ],
+            "weather": [ "WEATHER_RAIN" ]
         }
     ],
     "overworld": {

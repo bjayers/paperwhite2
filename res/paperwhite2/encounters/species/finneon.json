@@ -12,254 +12,88 @@
     },
     "habitats": [
         {
-            "places": [
-                "humilau_city"
-            ],
-            "seasons": [
-                "spring",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "fishing"
-            ],
+            "places": [ "humilau_city" ],
+            "seasons": [ "spring", "autumn", "winter" ],
+            "methods": [ "fishing" ],
             "rarity": "uncommon",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         },
         {
-            "places": [
-                "humilau_city"
-            ],
-            "seasons": [
-                "spring",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "fishing"
-            ],
+            "places": [ "humilau_city" ],
+            "seasons": [ "spring", "autumn", "winter" ],
+            "methods": [ "fishing" ],
             "rarity": "rare",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
-            "places": [
-                "p2_laboratory",
-                "route_21",
-                "route_4",
-                "route_4_2"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "fishing"
-            ],
+            "places": [ "p2_laboratory", "route_21", "route_4", "route_4_2" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "fishing" ],
             "rarity": "uncommon",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         },
         {
-            "places": [
-                "p2_laboratory",
-                "route_21",
-                "route_4",
-                "route_4_2"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "fishing"
-            ],
+            "places": [ "p2_laboratory", "route_21", "route_4", "route_4_2" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "fishing" ],
             "rarity": "rare",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
-            "places": [
-                "p2_laboratory",
-                "route_4",
-                "route_4_2"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "rippling_fishing"
-            ],
+            "places": [ "p2_laboratory", "route_4", "route_4_2" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "rippling_fishing" ],
             "rarity": "rare",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         },
         {
-            "places": [
-                "p2_laboratory",
-                "route_4",
-                "route_4_2"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "rippling_fishing"
-            ],
+            "places": [ "p2_laboratory", "route_4", "route_4_2" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "rippling_fishing" ],
             "rarity": "very_rare",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
-            "places": [
-                "route_13",
-                "route_18",
-                "undella_bay",
-                "undella_town"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "fishing"
-            ],
+            "places": [ "route_13", "route_18", "undella_bay", "undella_town" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "fishing" ],
             "rarity": "common",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         },
         {
-            "places": [
-                "route_13",
-                "route_18",
-                "undella_bay",
-                "undella_town"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "fishing"
-            ],
+            "places": [ "route_13", "route_18", "undella_bay", "undella_town" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "fishing" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
-            "places": [
-                "route_13",
-                "route_18"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "rippling_fishing"
-            ],
+            "places": [ "route_13", "route_18" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "rippling_fishing" ],
             "rarity": "uncommon",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         },
         {
-            "places": [
-                "route_13",
-                "route_18"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "rippling_fishing"
-            ],
+            "places": [ "route_13", "route_18" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "rippling_fishing" ],
             "rarity": "rare",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
-            "places": [
-                "route_13"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "rippling_surf"
-            ],
+            "places": [ "route_13" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "rippling_surf" ],
             "rarity": "uncommon",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         },
         {
-            "places": [
-                "route_13"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "rippling_surf"
-            ],
+            "places": [ "route_13" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "rippling_surf" ],
             "rarity": "rare",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         }
     ]
 }

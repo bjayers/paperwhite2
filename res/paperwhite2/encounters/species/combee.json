@@ -12,115 +12,47 @@
     },
     "habitats": [
         {
-            "places": [
-                "desert_resort_2"
-            ],
-            "seasons": [
-                "spring"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "desert_resort_2" ],
+            "seasons": [ "spring" ],
+            "methods": [ "grass" ],
             "rarity": "very_rare",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
-            "places": [
-                "lostlorn_forest"
-            ],
-            "seasons": [
-                "spring",
-                "summer"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "lostlorn_forest" ],
+            "seasons": [ "spring", "summer" ],
+            "methods": [ "grass" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
-            "places": [
-                "pinwheel_forest"
-            ],
-            "seasons": [
-                "summer"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "pinwheel_forest" ],
+            "seasons": [ "summer" ],
+            "methods": [ "grass" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
-            "places": [
-                "route_1",
-                "route_14"
-            ],
-            "seasons": [
-                "spring"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "route_1", "route_14" ],
+            "seasons": [ "spring" ],
+            "methods": [ "grass" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
-            "places": [
-                "route_12"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "route_12" ],
+            "seasons": [ "spring", "summer", "autumn" ],
+            "methods": [ "grass" ],
             "rarity": "common",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ],
-            "weather": [
-                "WEATHER_SUNNY"
-            ]
+            "times": [ "morning", "day", "evening" ],
+            "weather": [ "WEATHER_SUNNY" ]
         },
         {
-            "places": [
-                "village_bridge"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn"
-            ],
-            "methods": [
-                "dark_grass"
-            ],
+            "places": [ "village_bridge" ],
+            "seasons": [ "spring", "summer", "autumn" ],
+            "methods": [ "dark_grass" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         }
     ],
     "overworld": {

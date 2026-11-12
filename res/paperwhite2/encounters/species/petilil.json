@@ -12,125 +12,50 @@
     },
     "habitats": [
         {
-            "places": [
-                "route_12"
-            ],
-            "seasons": [
-                "spring",
-                "summer"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "route_12" ],
+            "seasons": [ "spring", "summer" ],
+            "methods": [ "grass" ],
             "rarity": "common",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ],
-            "weather": [
-                "WEATHER_RAIN"
-            ]
+            "times": [ "morning", "day", "evening" ],
+            "weather": [ "WEATHER_RAIN" ]
         },
         {
-            "places": [
-                "route_12"
-            ],
-            "seasons": [
-                "spring",
-                "summer"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "route_12" ],
+            "seasons": [ "spring", "summer" ],
+            "methods": [ "grass" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ],
-            "weather": [
-                "WEATHER_SUNNY"
-            ]
+            "times": [ "morning", "day", "evening" ],
+            "weather": [ "WEATHER_SUNNY" ]
         },
         {
-            "places": [
-                "route_12"
-            ],
-            "seasons": [
-                "spring",
-                "summer"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "route_12" ],
+            "seasons": [ "spring", "summer" ],
+            "methods": [ "grass" ],
             "rarity": "uncommon",
-            "times": [
-                "night",
-                "late_night"
-            ],
-            "weather": [
-                "WEATHER_RAIN"
-            ]
+            "times": [ "night", "late_night" ],
+            "weather": [ "WEATHER_RAIN" ]
         },
         {
-            "places": [
-                "route_12"
-            ],
-            "seasons": [
-                "spring",
-                "summer"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "route_12" ],
+            "seasons": [ "spring", "summer" ],
+            "methods": [ "grass" ],
             "rarity": "rare",
-            "times": [
-                "night",
-                "late_night"
-            ],
-            "weather": [
-                "WEATHER_SUNNY"
-            ]
+            "times": [ "night", "late_night" ],
+            "weather": [ "WEATHER_SUNNY" ]
         },
         {
-            "places": [
-                "village_bridge"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "dark_grass"
-            ],
+            "places": [ "village_bridge" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "dark_grass" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
-            "places": [
-                "village_bridge"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "dark_grass"
-            ],
+            "places": [ "village_bridge" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "dark_grass" ],
             "rarity": "rare",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         }
     ],
     "overworld": {

@@ -12,121 +12,39 @@
     },
     "habitats": [
         {
-            "places": [
-                "route_1",
-                "wellspring_cave",
-                "wellspring_cave_2"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "rippling_surf"
-            ],
+            "places": [ "route_1", "wellspring_cave", "wellspring_cave_2" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "rippling_surf" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "route_1",
-                "seaside_cave",
-                "wellspring_cave",
-                "wellspring_cave_2"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "surf"
-            ],
+            "places": [ "route_1", "seaside_cave", "wellspring_cave", "wellspring_cave_2" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "surf" ],
             "rarity": "rare",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "seaside_cave"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "rippling_surf"
-            ],
+            "places": [ "seaside_cave" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "rippling_surf" ],
             "rarity": "rare",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "wellspring_cave",
-                "wellspring_cave_2"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "fishing"
-            ],
+            "places": [ "wellspring_cave", "wellspring_cave_2" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "fishing" ],
             "rarity": "rare",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "wellspring_cave",
-                "wellspring_cave_2"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "rippling_fishing"
-            ],
+            "places": [ "wellspring_cave", "wellspring_cave_2" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "rippling_fishing" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         }
     ],
     "overworld": {

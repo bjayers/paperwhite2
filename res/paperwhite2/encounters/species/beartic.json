@@ -12,209 +12,73 @@
     },
     "habitats": [
         {
-            "places": [
-                "dragonspiral_tower"
-            ],
-            "seasons": [
-                "winter"
-            ],
-            "methods": [
-                "grass",
-                "dark_grass"
-            ],
+            "places": [ "dragonspiral_tower" ],
+            "seasons": [ "winter" ],
+            "methods": [ "grass", "dark_grass" ],
             "rarity": "common",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ],
-            "weather": [
-                "WEATHER_FLAKE"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ],
+            "weather": [ "WEATHER_FLAKE" ]
         },
         {
-            "places": [
-                "dragonspiral_tower"
-            ],
-            "seasons": [
-                "winter"
-            ],
-            "methods": [
-                "grass",
-                "dark_grass"
-            ],
+            "places": [ "dragonspiral_tower" ],
+            "seasons": [ "winter" ],
+            "methods": [ "grass", "dark_grass" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ],
-            "weather": [
-                "WEATHER_SUNNY",
-                "WEATHER_RAIN"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ],
+            "weather": [ "WEATHER_SUNNY", "WEATHER_RAIN" ]
         },
         {
-            "places": [
-                "giant_chasm_3",
-                "giant_chasm_4"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "giant_chasm_3", "giant_chasm_4" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
             "rarity": "rare",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "route_7",
-                "twist_mountain_5"
-            ],
-            "seasons": [
-                "winter"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "route_7", "twist_mountain_5" ],
+            "seasons": [ "winter" ],
+            "methods": [ "grass" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ],
-            "weather": [
-                "WEATHER_FLAKE"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ],
+            "weather": [ "WEATHER_FLAKE" ]
         },
         {
-            "places": [
-                "route_7",
-                "twist_mountain_5"
-            ],
-            "seasons": [
-                "winter"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "route_7", "twist_mountain_5" ],
+            "seasons": [ "winter" ],
+            "methods": [ "grass" ],
             "rarity": "rare",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ],
-            "weather": [
-                "WEATHER_SUNNY",
-                "WEATHER_RAIN"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ],
+            "weather": [ "WEATHER_SUNNY", "WEATHER_RAIN" ]
         },
         {
-            "places": [
-                "twist_mountain",
-                "twist_mountain_2"
-            ],
-            "seasons": [
-                "winter"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "twist_mountain", "twist_mountain_2" ],
+            "seasons": [ "winter" ],
+            "methods": [ "grass" ],
             "rarity": "rare",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "twist_mountain_3",
-                "twist_mountain_4"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "twist_mountain_3", "twist_mountain_4" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "twist_mountain_5"
-            ],
-            "seasons": [
-                "winter"
-            ],
-            "methods": [
-                "dark_grass"
-            ],
+            "places": [ "twist_mountain_5" ],
+            "seasons": [ "winter" ],
+            "methods": [ "dark_grass" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ],
-            "weather": [
-                "WEATHER_FLAKE"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ],
+            "weather": [ "WEATHER_FLAKE" ]
         },
         {
-            "places": [
-                "twist_mountain_5"
-            ],
-            "seasons": [
-                "winter"
-            ],
-            "methods": [
-                "dark_grass"
-            ],
+            "places": [ "twist_mountain_5" ],
+            "seasons": [ "winter" ],
+            "methods": [ "dark_grass" ],
             "rarity": "rare",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ],
-            "weather": [
-                "WEATHER_SUNNY",
-                "WEATHER_RAIN"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ],
+            "weather": [ "WEATHER_SUNNY", "WEATHER_RAIN" ]
         }
     ]
 }

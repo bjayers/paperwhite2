@@ -6,115 +6,46 @@
     },
     "habitats": [
         {
-            "places": [
-                "desert_resort"
-            ],
-            "seasons": [
-                "spring"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "desert_resort" ],
+            "seasons": [ "spring" ],
+            "methods": [ "grass" ],
             "rarity": "common",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
-            "places": [
-                "desert_resort"
-            ],
-            "seasons": [
-                "spring"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "desert_resort" ],
+            "seasons": [ "spring" ],
+            "methods": [ "grass" ],
             "rarity": "uncommon",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         },
         {
-            "places": [
-                "desert_resort"
-            ],
-            "seasons": [
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "desert_resort" ],
+            "seasons": [ "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
-            "places": [
-                "desert_resort"
-            ],
-            "seasons": [
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "desert_resort" ],
+            "seasons": [ "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
             "rarity": "rare",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         },
         {
-            "places": [
-                "reversal_mountain"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "grass",
-                "dark_grass"
-            ],
+            "places": [ "reversal_mountain" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass", "dark_grass" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
-            "places": [
-                "reversal_mountain"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "grass",
-                "dark_grass"
-            ],
+            "places": [ "reversal_mountain" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "grass", "dark_grass" ],
             "rarity": "rare",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         }
     ],
     "overworld": {

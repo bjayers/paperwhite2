@@ -12,82 +12,32 @@
     },
     "habitats": [
         {
-            "places": [
-                "desert_resort_2",
-                "route_4",
-                "route_4_2"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "desert_resort_2", "route_4", "route_4_2" ],
+            "seasons": [ "spring", "summer", "autumn" ],
+            "methods": [ "grass" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
-            "places": [
-                "desert_resort_2",
-                "route_4",
-                "route_4_2"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "desert_resort_2", "route_4", "route_4_2" ],
+            "seasons": [ "spring", "summer", "autumn" ],
+            "methods": [ "grass" ],
             "rarity": "rare",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         },
         {
-            "places": [
-                "desert_resort_2",
-                "route_4",
-                "route_4_2"
-            ],
-            "seasons": [
-                "winter"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "desert_resort_2", "route_4", "route_4_2" ],
+            "seasons": [ "winter" ],
+            "methods": [ "grass" ],
             "rarity": "common",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
-            "places": [
-                "desert_resort_2",
-                "route_4",
-                "route_4_2"
-            ],
-            "seasons": [
-                "winter"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "desert_resort_2", "route_4", "route_4_2" ],
+            "seasons": [ "winter" ],
+            "methods": [ "grass" ],
             "rarity": "uncommon",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         }
     ]
 }

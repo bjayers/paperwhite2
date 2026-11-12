@@ -12,45 +12,18 @@
     },
     "habitats": [
         {
-            "places": [
-                "virbank_complex",
-                "virbank_complex_2"
-            ],
-            "seasons": [
-                "summer",
-                "autumn"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "virbank_complex", "virbank_complex_2" ],
+            "seasons": [ "summer", "autumn" ],
+            "methods": [ "grass" ],
             "rarity": "exotic",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "virbank_complex_2"
-            ],
-            "seasons": [
-                "summer",
-                "autumn"
-            ],
-            "methods": [
-                "dark_grass"
-            ],
+            "places": [ "virbank_complex_2" ],
+            "seasons": [ "summer", "autumn" ],
+            "methods": [ "dark_grass" ],
             "rarity": "exotic",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         }
     ]
 }

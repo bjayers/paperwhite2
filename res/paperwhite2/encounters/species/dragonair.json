@@ -6,80 +6,27 @@
     },
     "habitats": [
         {
-            "places": [
-                "dragonspiral_tower_2"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "rippling_surf",
-                "rippling_fishing"
-            ],
+            "places": [ "dragonspiral_tower_2" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "rippling_surf", "rippling_fishing" ],
             "rarity": "very_rare",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ],
-            "weather": [
-                "WEATHER_RAIN"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ],
+            "weather": [ "WEATHER_RAIN" ]
         },
         {
-            "places": [
-                "dragonspiral_tower_2"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "rippling_surf",
-                "rippling_fishing"
-            ],
+            "places": [ "dragonspiral_tower_2" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "rippling_surf", "rippling_fishing" ],
             "rarity": "exotic",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ],
-            "weather": [
-                "WEATHER_SUNNY",
-                "WEATHER_FLAKE"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ],
+            "weather": [ "WEATHER_SUNNY", "WEATHER_FLAKE" ]
         },
         {
-            "places": [
-                "nature_preserve"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "rippling_surf",
-                "rippling_fishing"
-            ],
+            "places": [ "nature_preserve" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "rippling_surf", "rippling_fishing" ],
             "rarity": "very_rare",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         }
     ],
     "overworld": {

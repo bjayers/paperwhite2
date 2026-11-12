@@ -12,112 +12,39 @@
     },
     "habitats": [
         {
-            "places": [
-                "humilau_city"
-            ],
-            "seasons": [
-                "spring",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "fishing"
-            ],
+            "places": [ "humilau_city" ],
+            "seasons": [ "spring", "autumn", "winter" ],
+            "methods": [ "fishing" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "humilau_city"
-            ],
-            "seasons": [
-                "summer"
-            ],
-            "methods": [
-                "fishing"
-            ],
+            "places": [ "humilau_city" ],
+            "seasons": [ "summer" ],
+            "methods": [ "fishing" ],
             "rarity": "rare",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "route_21"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "fishing"
-            ],
+            "places": [ "route_21" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "fishing" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "route_21",
-                "seaside_cave"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "rippling_fishing"
-            ],
+            "places": [ "route_21", "seaside_cave" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "rippling_fishing" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "undella_bay",
-                "undella_town"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "fishing"
-            ],
+            "places": [ "undella_bay", "undella_town" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "fishing" ],
             "rarity": "rare",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         }
     ]
 }

@@ -12,38 +12,18 @@
     },
     "habitats": [
         {
-            "places": [
-                "route_18"
-            ],
-            "seasons": [
-                "spring",
-                "summer"
-            ],
-            "methods": [
-                "grass",
-                "dark_grass"
-            ],
+            "places": [ "route_18" ],
+            "seasons": [ "spring", "summer" ],
+            "methods": [ "grass", "dark_grass" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
-            "places": [
-                "village_bridge"
-            ],
-            "seasons": [
-                "summer"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "village_bridge" ],
+            "seasons": [ "summer" ],
+            "methods": [ "grass" ],
             "rarity": "very_rare",
-            "times": [
-                "morning"
-            ]
+            "times": [ "morning" ]
         }
     ],
     "overworld": {

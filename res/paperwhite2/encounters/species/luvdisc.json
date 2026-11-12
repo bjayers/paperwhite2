@@ -12,68 +12,25 @@
     },
     "habitats": [
         {
-            "places": [
-                "humilau_city"
-            ],
-            "seasons": [
-                "spring",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "fishing"
-            ],
+            "places": [ "humilau_city" ],
+            "seasons": [ "spring", "autumn", "winter" ],
+            "methods": [ "fishing" ],
             "rarity": "common",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "humilau_city",
-                "undella_bay",
-                "undella_town"
-            ],
-            "seasons": [
-                "summer"
-            ],
-            "methods": [
-                "fishing"
-            ],
+            "places": [ "humilau_city", "undella_bay", "undella_town" ],
+            "seasons": [ "summer" ],
+            "methods": [ "fishing" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "humilau_city"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "surf"
-            ],
+            "places": [ "humilau_city" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "surf" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         }
     ]
 }

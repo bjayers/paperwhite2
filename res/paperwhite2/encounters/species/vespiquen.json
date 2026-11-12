@@ -12,45 +12,20 @@
     },
     "habitats": [
         {
-            "places": [
-                "route_12"
-            ],
-            "seasons": [
-                "spring",
-                "summer"
-            ],
-            "methods": [
-                "dark_grass"
-            ],
+            "places": [ "route_12" ],
+            "seasons": [ "spring", "summer" ],
+            "methods": [ "dark_grass" ],
             "rarity": "exotic",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ],
-            "weather": [
-                "WEATHER_SUNNY"
-            ]
+            "times": [ "morning", "day", "evening" ],
+            "weather": [ "WEATHER_SUNNY" ]
         },
         {
-            "places": [
-                "route_12"
-            ],
-            "seasons": [
-                "winter"
-            ],
-            "methods": [
-                "dark_grass"
-            ],
+            "places": [ "route_12" ],
+            "seasons": [ "winter" ],
+            "methods": [ "dark_grass" ],
             "rarity": "rare",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ],
-            "weather": [
-                "WEATHER_SUNNY"
-            ]
+            "times": [ "morning", "day", "evening" ],
+            "weather": [ "WEATHER_SUNNY" ]
         }
     ],
     "overworld": {

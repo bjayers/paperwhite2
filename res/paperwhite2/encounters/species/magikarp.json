@@ -22,23 +22,10 @@
                 "wellspring_cave",
                 "wellspring_cave_2"
             ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "fishing"
-            ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "fishing" ],
             "rarity": "common",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
             "places": [
@@ -59,21 +46,10 @@
                 "wellspring_cave",
                 "wellspring_cave_2"
             ],
-            "seasons": [
-                "spring",
-                "summer"
-            ],
-            "methods": [
-                "rippling_fishing"
-            ],
+            "seasons": [ "spring", "summer" ],
+            "methods": [ "rippling_fishing" ],
             "rarity": "common",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
             "places": [
@@ -89,68 +65,24 @@
                 "wellspring_cave",
                 "wellspring_cave_2"
             ],
-            "seasons": [
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "rippling_fishing"
-            ],
+            "seasons": [ "autumn", "winter" ],
+            "methods": [ "rippling_fishing" ],
             "rarity": "common",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "castelia_sewers",
-                "castelia_sewers_2",
-                "castelia_sewers_3",
-                "castelia_sewers_4",
-                "castelia_sewers_5"
-            ],
-            "seasons": [
-                "spring",
-                "summer"
-            ],
-            "methods": [
-                "fishing"
-            ],
+            "places": [ "castelia_sewers", "castelia_sewers_2", "castelia_sewers_3", "castelia_sewers_4", "castelia_sewers_5" ],
+            "seasons": [ "spring", "summer" ],
+            "methods": [ "fishing" ],
             "rarity": "common",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "route_1"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "fishing",
-                "rippling_fishing"
-            ],
+            "places": [ "route_1" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "fishing", "rippling_fishing" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         }
     ]
 }

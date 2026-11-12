@@ -12,82 +12,32 @@
     },
     "habitats": [
         {
-            "places": [
-                "abundant_shrine",
-                "route_3",
-                "village_bridge"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn"
-            ],
-            "methods": [
-                "fishing"
-            ],
+            "places": [ "abundant_shrine", "route_3", "village_bridge" ],
+            "seasons": [ "spring", "summer", "autumn" ],
+            "methods": [ "fishing" ],
             "rarity": "rare",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         },
         {
-            "places": [
-                "abundant_shrine",
-                "route_3",
-                "village_bridge"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn"
-            ],
-            "methods": [
-                "fishing"
-            ],
+            "places": [ "abundant_shrine", "route_3", "village_bridge" ],
+            "seasons": [ "spring", "summer", "autumn" ],
+            "methods": [ "fishing" ],
             "rarity": "very_rare",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
-            "places": [
-                "abundant_shrine"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn"
-            ],
-            "methods": [
-                "rippling_fishing"
-            ],
+            "places": [ "abundant_shrine" ],
+            "seasons": [ "spring", "summer", "autumn" ],
+            "methods": [ "rippling_fishing" ],
             "rarity": "uncommon",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         },
         {
-            "places": [
-                "abundant_shrine"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn"
-            ],
-            "methods": [
-                "rippling_fishing"
-            ],
+            "places": [ "abundant_shrine" ],
+            "seasons": [ "spring", "summer", "autumn" ],
+            "methods": [ "rippling_fishing" ],
             "rarity": "rare",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         }
     ],
     "overworld": {

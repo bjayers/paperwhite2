@@ -6,89 +6,39 @@
     },
     "habitats": [
         {
-            "places": [
-                "nature_preserve"
-            ],
-            "seasons": [
-                "summer",
-                "autumn"
-            ],
-            "methods": [
-                "dark_grass"
-            ],
+            "places": [ "nature_preserve" ],
+            "seasons": [ "summer", "autumn" ],
+            "methods": [ "dark_grass" ],
             "rarity": "uncommon",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         },
         {
-            "places": [
-                "nature_preserve"
-            ],
-            "seasons": [
-                "summer",
-                "autumn"
-            ],
-            "methods": [
-                "dark_grass"
-            ],
+            "places": [ "nature_preserve" ],
+            "seasons": [ "summer", "autumn" ],
+            "methods": [ "dark_grass" ],
             "rarity": "rare",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
-            "places": [
-                "pinwheel_forest_2"
-            ],
-            "seasons": [
-                "summer"
-            ],
-            "methods": [
-                "dark_grass"
-            ],
+            "places": [ "pinwheel_forest_2" ],
+            "seasons": [ "summer" ],
+            "methods": [ "dark_grass" ],
             "rarity": "exotic",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         },
         {
-            "places": [
-                "pinwheel_forest_2",
-                "route_6"
-            ],
-            "seasons": [
-                "summer"
-            ],
-            "methods": [
-                "dark_grass"
-            ],
+            "places": [ "pinwheel_forest_2", "route_6" ],
+            "seasons": [ "summer" ],
+            "methods": [ "dark_grass" ],
             "rarity": "exotic",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
-            "places": [
-                "route_6"
-            ],
-            "seasons": [
-                "summer"
-            ],
-            "methods": [
-                "dark_grass"
-            ],
+            "places": [ "route_6" ],
+            "seasons": [ "summer" ],
+            "methods": [ "dark_grass" ],
             "rarity": "very_rare",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         }
     ],
     "overworld": {

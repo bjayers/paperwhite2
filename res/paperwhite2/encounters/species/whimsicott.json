@@ -12,113 +12,48 @@
     },
     "habitats": [
         {
-            "places": [
-                "dreamyard",
-                "route_15",
-                "route_5"
-            ],
-            "seasons": [
-                "autumn"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "dreamyard", "route_15", "route_5" ],
+            "seasons": [ "autumn" ],
+            "methods": [ "grass" ],
             "rarity": "rare",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
-            "places": [
-                "dreamyard",
-                "route_15",
-                "route_5"
-            ],
-            "seasons": [
-                "autumn"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "dreamyard", "route_15", "route_5" ],
+            "seasons": [ "autumn" ],
+            "methods": [ "grass" ],
             "rarity": "very_rare",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         },
         {
-            "places": [
-                "route_1"
-            ],
-            "seasons": [
-                "autumn"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "route_1" ],
+            "seasons": [ "autumn" ],
+            "methods": [ "grass" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
-            "places": [
-                "route_1"
-            ],
-            "seasons": [
-                "autumn"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "route_1" ],
+            "seasons": [ "autumn" ],
+            "methods": [ "grass" ],
             "rarity": "rare",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         },
         {
-            "places": [
-                "route_12"
-            ],
-            "seasons": [
-                "autumn"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "route_12" ],
+            "seasons": [ "autumn" ],
+            "methods": [ "grass" ],
             "rarity": "rare",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ],
-            "weather": [
-                "WEATHER_SUNNY"
-            ]
+            "times": [ "morning", "day", "evening" ],
+            "weather": [ "WEATHER_SUNNY" ]
         },
         {
-            "places": [
-                "route_12"
-            ],
-            "seasons": [
-                "autumn"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "route_12" ],
+            "seasons": [ "autumn" ],
+            "methods": [ "grass" ],
             "rarity": "very_rare",
-            "times": [
-                "night",
-                "late_night"
-            ],
-            "weather": [
-                "WEATHER_SUNNY"
-            ]
+            "times": [ "night", "late_night" ],
+            "weather": [ "WEATHER_SUNNY" ]
         }
     ],
     "overworld": {

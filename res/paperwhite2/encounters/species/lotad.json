@@ -12,73 +12,25 @@
     },
     "habitats": [
         {
-            "places": [
-                "abundant_shrine",
-                "aspertia_city",
-                "pinwheel_forest_2",
-                "route_19"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn"
-            ],
-            "methods": [
-                "surf",
-                "rippling_surf"
-            ],
+            "places": [ "abundant_shrine", "aspertia_city", "pinwheel_forest_2", "route_19" ],
+            "seasons": [ "spring", "summer", "autumn" ],
+            "methods": [ "surf", "rippling_surf" ],
             "rarity": "common",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "moor_of_icirrus",
-                "route_3",
-                "striaton_city"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn"
-            ],
-            "methods": [
-                "surf"
-            ],
+            "places": [ "moor_of_icirrus", "route_3", "striaton_city" ],
+            "seasons": [ "spring", "summer", "autumn" ],
+            "methods": [ "surf" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "striaton_city"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn"
-            ],
-            "methods": [
-                "rippling_surf"
-            ],
+            "places": [ "striaton_city" ],
+            "seasons": [ "spring", "summer", "autumn" ],
+            "methods": [ "rippling_surf" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         }
     ],
     "overworld": {

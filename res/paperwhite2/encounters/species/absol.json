@@ -6,26 +6,12 @@
     },
     "habitats": [
         {
-            "places": [
-                "dragonspiral_tower"
-            ],
-            "seasons": [
-                "winter"
-            ],
-            "methods": [
-                "dark_grass"
-            ],
+            "places": [ "dragonspiral_tower" ],
+            "seasons": [ "winter" ],
+            "methods": [ "dark_grass" ],
             "rarity": "rare",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ],
-            "weather": [
-                "WEATHER_FLAKE"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ],
+            "weather": [ "WEATHER_FLAKE" ]
         }
     ],
     "overworld": {

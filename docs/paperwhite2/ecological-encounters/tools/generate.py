@@ -33,12 +33,16 @@ import os
 import re
 import shutil
 import sys
+from pathlib import Path
 
 import yaml
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import dictionary_check as dc  # noqa: E402
+
+sys.path.insert(0, os.path.abspath(os.path.join(HERE, "../../../../tools/data")))
+import datajson  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(HERE, "../../../.."))
 ENC = os.path.join(ROOT, "res/paperwhite2/encounters")
@@ -416,9 +420,8 @@ def main(argv):
         shutil.rmtree(staging)
     os.makedirs(staging)
     for sp, data in sorted(files.items()):
-        with open(os.path.join(staging, f"{sp}.json"), "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=4, ensure_ascii=False)
-            f.write("\n")
+        # The repository's writer, whose layout the editor saves too (tools/data/datajson.py)
+        datajson.write(Path(staging) / f"{sp}.json", data)
     habitats = sum(len(d["habitats"]) for d in files.values())
     print(f"{len(files)} species, {habitats} habitats written to generated/species")
     for w in sorted(set(gen.warnings)):

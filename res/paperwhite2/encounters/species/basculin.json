@@ -12,272 +12,87 @@
     },
     "habitats": [
         {
-            "places": [
-                "dragonspiral_tower_2",
-                "relic_passage_2",
-                "virbank_city"
-            ],
+            "places": [ "dragonspiral_tower_2", "relic_passage_2", "virbank_city" ],
             "form": 1,
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "fishing"
-            ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "fishing" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "floccesy_ranch",
-                "floccesy_ranch_2",
-                "route_20",
-                "route_6"
-            ],
+            "places": [ "floccesy_ranch", "floccesy_ranch_2", "route_20", "route_6" ],
             "form": 1,
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "fishing"
-            ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "fishing" ],
             "rarity": "common",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "floccesy_ranch",
-                "floccesy_ranch_2",
-                "route_20",
-                "route_6"
-            ],
+            "places": [ "floccesy_ranch", "floccesy_ranch_2", "route_20", "route_6" ],
             "form": 1,
-            "seasons": [
-                "spring",
-                "summer",
-                "winter"
-            ],
-            "methods": [
-                "rippling_fishing"
-            ],
+            "seasons": [ "spring", "summer", "winter" ],
+            "methods": [ "rippling_fishing" ],
             "rarity": "common",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "floccesy_ranch",
-                "floccesy_ranch_2",
-                "route_20"
-            ],
+            "places": [ "floccesy_ranch", "floccesy_ranch_2", "route_20" ],
             "form": 1,
-            "seasons": [
-                "autumn"
-            ],
-            "methods": [
-                "rippling_fishing"
-            ],
+            "seasons": [ "autumn" ],
+            "methods": [ "rippling_fishing" ],
             "rarity": "common",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "lostlorn_forest",
-                "route_11",
-                "route_14",
-                "route_23",
-                "victory_road_10",
-                "victory_road_4"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "fishing"
-            ],
+            "places": [ "lostlorn_forest", "route_11", "route_14", "route_23", "victory_road_10", "victory_road_4" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "fishing" ],
             "rarity": "common",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "lostlorn_forest",
-                "route_11",
-                "route_14",
-                "route_23",
-                "victory_road_10",
-                "victory_road_4"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "winter"
-            ],
-            "methods": [
-                "rippling_fishing"
-            ],
+            "places": [ "lostlorn_forest", "route_11", "route_14", "route_23", "victory_road_10", "victory_road_4" ],
+            "seasons": [ "spring", "summer", "winter" ],
+            "methods": [ "rippling_fishing" ],
             "rarity": "common",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "lostlorn_forest",
-                "route_11",
-                "route_23",
-                "victory_road_10",
-                "victory_road_4"
-            ],
-            "seasons": [
-                "autumn"
-            ],
-            "methods": [
-                "rippling_fishing"
-            ],
+            "places": [ "lostlorn_forest", "route_11", "route_23", "victory_road_10", "victory_road_4" ],
+            "seasons": [ "autumn" ],
+            "methods": [ "rippling_fishing" ],
             "rarity": "common",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "nature_preserve",
-                "route_3",
-                "village_bridge"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "fishing"
-            ],
+            "places": [ "nature_preserve", "route_3", "village_bridge" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "fishing" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "relic_passage_2"
-            ],
+            "places": [ "relic_passage_2" ],
             "form": 1,
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "surf",
-                "rippling_surf",
-                "rippling_fishing"
-            ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "surf", "rippling_surf", "rippling_fishing" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "route_14"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "rippling_surf"
-            ],
+            "places": [ "route_14" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "rippling_surf" ],
             "rarity": "common",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "route_6"
-            ],
+            "places": [ "route_6" ],
             "form": 1,
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "rippling_surf"
-            ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "rippling_surf" ],
             "rarity": "common",
-            "times": [
-                "morning",
-                "day",
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "morning", "day", "evening", "night", "late_night" ]
         }
     ],
     "overworld": {

@@ -6,43 +6,18 @@
     },
     "habitats": [
         {
-            "places": [
-                "abundant_shrine"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "dark_grass"
-            ],
+            "places": [ "abundant_shrine" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "dark_grass" ],
             "rarity": "rare",
-            "times": [
-                "evening",
-                "night",
-                "late_night"
-            ]
+            "times": [ "evening", "night", "late_night" ]
         },
         {
-            "places": [
-                "abundant_shrine"
-            ],
-            "seasons": [
-                "spring",
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "dark_grass"
-            ],
+            "places": [ "abundant_shrine" ],
+            "seasons": [ "spring", "summer", "autumn", "winter" ],
+            "methods": [ "dark_grass" ],
             "rarity": "very_rare",
-            "times": [
-                "morning",
-                "day"
-            ]
+            "times": [ "morning", "day" ]
         }
     ],
     "overworld": {

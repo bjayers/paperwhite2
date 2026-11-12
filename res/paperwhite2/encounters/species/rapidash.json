@@ -12,74 +12,32 @@
     },
     "habitats": [
         {
-            "places": [
-                "reversal_mountain"
-            ],
-            "seasons": [
-                "spring"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "reversal_mountain" ],
+            "seasons": [ "spring" ],
+            "methods": [ "grass" ],
             "rarity": "uncommon",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
-            "places": [
-                "reversal_mountain"
-            ],
-            "seasons": [
-                "spring"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "reversal_mountain" ],
+            "seasons": [ "spring" ],
+            "methods": [ "grass" ],
             "rarity": "rare",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         },
         {
-            "places": [
-                "reversal_mountain"
-            ],
-            "seasons": [
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "reversal_mountain" ],
+            "seasons": [ "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
             "rarity": "rare",
-            "times": [
-                "morning",
-                "day",
-                "evening"
-            ]
+            "times": [ "morning", "day", "evening" ]
         },
         {
-            "places": [
-                "reversal_mountain"
-            ],
-            "seasons": [
-                "summer",
-                "autumn",
-                "winter"
-            ],
-            "methods": [
-                "grass"
-            ],
+            "places": [ "reversal_mountain" ],
+            "seasons": [ "summer", "autumn", "winter" ],
+            "methods": [ "grass" ],
             "rarity": "very_rare",
-            "times": [
-                "night",
-                "late_night"
-            ]
+            "times": [ "night", "late_night" ]
         }
     ]
 }

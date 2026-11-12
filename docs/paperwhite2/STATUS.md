@@ -91,6 +91,9 @@ edits to species files will be lost at the next generation: change the dictionar
   weather the user plans to add have no effect yet: Absol, Castform, Poliwag, Tympole and Wooper at the Abundant
   Shrine (rain or storms), Absol and Electrike on Route 14, Sandile and Trapinch on Route 4 (Black 2's odd sandstorm).
   Rerun the generator after adding a calendar.
+- Update: the generator now writes with `tools/data/datajson.py`'s `write`, the layout the editor saves, so the
+  editor's format test passes (`cd editor && npx tsx --test tests/format.test.ts`); same data. The weather to add and
+  the maps to check for depth are in `docs/paperwhite2/ecological-encounters/to-check.md`.
 
 To test (ROM session): `python3 configure.py w2_us --hack && ninja`, `tools/build/verify_dsi_rom.py
 build/paperwhite2.nds`, then the `paperwhite2.local` copy in RetroArch: Route 1 and Route 2 early (Oshawott in Route
