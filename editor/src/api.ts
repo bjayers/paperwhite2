@@ -77,6 +77,31 @@ export interface TownMap {
 export interface GlbFaceSet { primitive: number; triangles: number[] }
 export interface GlbFaceEdits { remove?: GlbFaceSet[]; retexture?: { faces: GlbFaceSet[]; image: string }[] }
 
+/** What tools/paperwhite2/pokemon_form.py info says. */
+export interface PokemonFormsInfo {
+  /** Each species' number of forms in the original game, where it has more than one, by its folder. */
+  original: Record<string, number>;
+  /** The species whose forms have data records in the original game. */
+  originalRecords: string[];
+  /** The species whose forms the packers moved to the hack's sprite groups, with the offset they give the game. */
+  moved: Record<string, number>;
+  nextFreeGroup: number;
+  formMax: number;
+}
+
+/** What a change of pokemon_form.py did, or with check would do. */
+export interface PokemonFormChange {
+  ok: boolean;
+  check: boolean;
+  message: string;
+  changed: string[];
+  removed: string[];
+  form?: number;
+  bank?: number;
+  /** An RGBA PNG in base64. */
+  preview?: string;
+}
+
 export const api = {
   project: () => request<ProjectInfo>("GET", "/api/project"),
   entries: (schema: string) => request<Entry[]>("GET", `/api/entries?schema=${encodeURIComponent(schema)}`),
@@ -180,6 +205,20 @@ export const api = {
   /** Checks a PNG (base64) as an item's icon; with write, saves its icon and palette over the item's files. */
   itemIconCheck: (item: string, data: string, write = false) =>
     request<ItemIconCheck>("POST", "/api/item-icons/check", { item, data, write }),
+  /** The original game's form counts and the species whose forms have records there (tools/paperwhite2/pokemon_form.py). */
+  pokemonForms: () => request<PokemonFormsInfo>("GET", "/api/pokemon-forms"),
+  /** Adds a form to a species, copied from its form `from` (0 the species); check only says what it would change. */
+  addPokemonForm: (b: { species: string; from: number; name?: string; record?: boolean; check?: boolean }) =>
+    request<PokemonFormChange>("POST", "/api/pokemon-forms/add", b),
+  /** Removes a species' last form, one the hack added. */
+  removePokemonForm: (b: { species: string; form: number; check?: boolean }) =>
+    request<PokemonFormChange>("POST", "/api/pokemon-forms/remove", b),
+  /** Gives a form a data record of its own (on), or its species' forms none (off). */
+  pokemonFormRecord: (b: { species: string; form: number; on: boolean; check?: boolean }) =>
+    request<PokemonFormChange>("POST", "/api/pokemon-forms/record", b),
+  /** Checks a PNG (base64) as a form's icon or still, with a preview; with write, writes it into the form's art. */
+  pokemonFormArt: (b: { species: string; form: number; kind: "icon" | "icon_female" | "front" | "back"; data: string; write?: boolean }) =>
+    request<PokemonFormChange>("POST", "/api/pokemon-forms/art", b),
   /** Converts a PNG or .cgb into a C-Gear picture and adds it; the tool's report. */
   cgearPictureImport: (name: string, file: string, data: string) =>
     request<{ message: string }>("POST", "/api/cgear-pictures/import", { name, file, data }),
