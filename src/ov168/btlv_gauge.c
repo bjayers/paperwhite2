@@ -1286,8 +1286,8 @@ static void BtlvGauge_DrawLevel(BtlvGauge *gauge, BtlvGaugeEntry *entry) {
 
     GFL_BitmapFill(bitmap, 0);
     if (entry->nameActor != NULL) {
-        GFL_TextRndGetGlobalColors(&letter, &shadow, &background);
 #ifdef PAPERWHITE2
+        GFL_TextRndGetGlobalColors(&letter, &shadow, &background);
         // Paper White 2: a prestige level in the gauge's gold, the HP bar's, with its near-black shadow
         if (entry->mon.prestigeLevel != 0) {
             GFL_WordSetFormatNumber(str, entry->mon.prestigeLevel, 3, 0, FALSE);
@@ -1298,6 +1298,7 @@ static void BtlvGauge_DrawLevel(BtlvGauge *gauge, BtlvGaugeEntry *entry) {
         }
 #else
         GFL_WordSetFormatNumber(str, entry->mon.level, 3, 0, FALSE);
+        GFL_TextRndGetGlobalColors(&letter, &shadow, &background);
         GFL_TextRndUpdateColorIndexLUT(1, 4, 0);
 #endif
         GFL_TextRendererDrawToBitmap(bitmap, 0, 5, str, gauge->font);
