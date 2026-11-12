@@ -964,10 +964,10 @@ The old forest: the bugs' life cycle by season in its lighter grass, the element
 
 **Dark grass**
 
-- Spring: **common:** Zigzagoon/Linoone (more at night); **uncommon:** Budew/Roselia (more by day), Stunky/Skuntank (night only); **rare:** Emolga (more at night), Gothita/Gothorita/Gothitelle (more at night), Gulpin/Swalot, Lickitung, Pansear (more by day; never in rain, gusty rain, thunderstorm), Solosis/Duosion/Reuniclus
-- Summer: **common:** Zigzagoon/Linoone (more at night); **uncommon:** Nincada/Ninjask (more by day), Stunky/Skuntank (night only); **rare:** Emolga (more at night), Gothita/Gothorita/Gothitelle (more at night), Gulpin/Swalot, Lickitung, Pansear (more by day; never in rain, gusty rain, thunderstorm), Solosis/Duosion/Reuniclus
-- Autumn: **common:** Starly/Staravia/Staraptor (more by day), Zigzagoon/Linoone (more at night); **uncommon:** Stunky/Skuntank (night only); **rare:** Emolga (more at night), Gothita/Gothorita/Gothitelle (more at night), Gulpin/Swalot, Lickitung, Pansear (more by day; never in rain, gusty rain, thunderstorm), Solosis/Duosion/Reuniclus
-- Winter: **common:** Starly/Staravia/Staraptor (more by day), Zigzagoon/Linoone (more at night); **uncommon:** Stunky/Skuntank (night only); **rare:** Emolga (more at night), Gothita/Gothorita/Gothitelle (more at night), Gulpin/Swalot, Pansear (more by day; never in rain, gusty rain, thunderstorm), Solosis/Duosion/Reuniclus
+- Spring: **common:** Zigzagoon/Linoone (more at night); **uncommon:** Budew/Roselia (more by day), Stunky/Skuntank (night only); **rare:** Emolga (more at night), Gothita/Gothorita/Gothitelle (more at night), Gulpin/Swalot, Lickitung, Solosis/Duosion/Reuniclus
+- Summer: **common:** Zigzagoon/Linoone (more at night); **uncommon:** Nincada/Ninjask (more by day), Stunky/Skuntank (night only); **rare:** Emolga (more at night), Gothita/Gothorita/Gothitelle (more at night), Gulpin/Swalot, Lickitung, Solosis/Duosion/Reuniclus
+- Autumn: **common:** Starly/Staravia/Staraptor (more by day), Zigzagoon/Linoone (more at night); **uncommon:** Stunky/Skuntank (night only); **rare:** Emolga (more at night), Gothita/Gothorita/Gothitelle (more at night), Gulpin/Swalot, Lickitung, Solosis/Duosion/Reuniclus
+- Winter: **common:** Starly/Staravia/Staraptor (more by day), Zigzagoon/Linoone (more at night); **uncommon:** Stunky/Skuntank (night only); **rare:** Emolga (more at night), Gothita/Gothorita/Gothitelle (more at night), Gulpin/Swalot, Solosis/Duosion/Reuniclus
 
 **Rustling spots (shaking grass)**
 
@@ -1123,10 +1123,10 @@ A long bridge over the sea: gulls and Pelipper in its shadows all year, and Swan
 
 **Grass**
 
-- Spring: **common:** Geodude/Graveler, Spearow/Fearow (more by day); **uncommon:** Mareep/Flaaffy/Ampharos, Swablu/Altaria (more by day); **rare:** Doduo/Dodrio (more by day), Girafarig, Murkrow/Honchkrow (night only), Nidoran♀/Nidorina, Nidoran♂/Nidorino, Sudowoodo (never in rain, gusty rain, thunderstorm)
-- Summer: **common:** Geodude/Graveler, Spearow/Fearow (more by day); **uncommon:** Hoppip/Skiploom/Jumpluff (day only; never in gusty rain, thunderstorm), Mareep/Flaaffy/Ampharos, Swablu/Altaria (more by day); **rare:** Doduo/Dodrio (more by day), Girafarig, Murkrow/Honchkrow (night only), Nidoran♀/Nidorina, Nidoran♂/Nidorino, Sudowoodo (never in rain, gusty rain, thunderstorm)
-- Autumn: **common:** Geodude/Graveler, Spearow/Fearow (more by day); **uncommon:** Mareep/Flaaffy/Ampharos, Sudowoodo (never in rain, gusty rain, thunderstorm), Swablu/Altaria (more by day); **rare:** Doduo/Dodrio (more by day), Girafarig, Murkrow/Honchkrow (night only), Nidoran♀/Nidorina, Nidoran♂/Nidorino, Whimsicott (more by day; never in gusty rain, thunderstorm)
-- Winter: **common:** Geodude/Graveler, Spearow/Fearow (more by day); **uncommon:** Mareep/Flaaffy/Ampharos, Sudowoodo (never in rain, gusty rain, thunderstorm); **rare:** Doduo/Dodrio (more by day), Girafarig, Murkrow/Honchkrow (night only), Nidoran♀/Nidorina, Nidoran♂/Nidorino
+- Spring: **common:** Geodude/Graveler, Spearow/Fearow (more by day); **uncommon:** Mareep/Flaaffy/Ampharos, Swablu/Altaria (more by day); **rare:** Bonsly (never in rain, gusty rain, thunderstorm), Doduo/Dodrio (more by day), Girafarig, Murkrow/Honchkrow (night only), Nidoran♀/Nidorina, Nidoran♂/Nidorino, Sudowoodo (never in rain, gusty rain, thunderstorm)
+- Summer: **common:** Geodude/Graveler, Spearow/Fearow (more by day); **uncommon:** Hoppip/Skiploom/Jumpluff (day only; never in gusty rain, thunderstorm), Mareep/Flaaffy/Ampharos, Swablu/Altaria (more by day); **rare:** Bonsly (never in rain, gusty rain, thunderstorm), Doduo/Dodrio (more by day), Girafarig, Murkrow/Honchkrow (night only), Nidoran♀/Nidorina, Nidoran♂/Nidorino, Sudowoodo (never in rain, gusty rain, thunderstorm)
+- Autumn: **common:** Geodude/Graveler, Spearow/Fearow (more by day); **uncommon:** Mareep/Flaaffy/Ampharos, Sudowoodo (never in rain, gusty rain, thunderstorm), Swablu/Altaria (more by day); **rare:** Bonsly (never in rain, gusty rain, thunderstorm), Doduo/Dodrio (more by day), Girafarig, Murkrow/Honchkrow (night only), Nidoran♀/Nidorina, Nidoran♂/Nidorino, Whimsicott (more by day; never in gusty rain, thunderstorm)
+- Winter: **common:** Geodude/Graveler, Spearow/Fearow (more by day); **uncommon:** Mareep/Flaaffy/Ampharos, Sudowoodo (never in rain, gusty rain, thunderstorm); **rare:** Bonsly (never in rain, gusty rain, thunderstorm), Doduo/Dodrio (more by day), Girafarig, Murkrow/Honchkrow (night only), Nidoran♀/Nidorina, Nidoran♂/Nidorino
 
 **Dark grass**
 
@@ -2326,7 +2326,7 @@ Besides what's listed, rustling spots fill themselves from the grass's rare, ver
 
 **Rippling water (surfing)**
 
-- All year: **uncommon:** Finneon/Lumineon (more at night)
+- All year: **uncommon:** Finneon/Lumineon (more at night); **rare:** Alomomola
 
 **Fishing**
 
@@ -2367,10 +2367,10 @@ The holiday coast: crabs and hermit crabs on the beach under the cliffs, gulls e
 
 **Rippling water (surfing)**
 
-- Spring: **uncommon:** Jellicent (more at night); **exotic:** Relicanth
-- Summer: **uncommon:** Jellicent (more at night), Mantine; **exotic:** Relicanth
-- Autumn: **uncommon:** Jellicent (more at night); **exotic:** Relicanth
-- Winter: **uncommon:** Jellicent (more at night); **exotic:** Relicanth
+- Spring: **uncommon:** Jellicent (more at night); **rare:** Alomomola; **exotic:** Relicanth
+- Summer: **uncommon:** Jellicent (more at night), Mantine; **rare:** Alomomola; **exotic:** Relicanth
+- Autumn: **uncommon:** Jellicent (more at night); **rare:** Alomomola; **exotic:** Relicanth
+- Winter: **uncommon:** Jellicent (more at night); **rare:** Alomomola; **exotic:** Relicanth
 
 **Fishing**
 
@@ -2599,14 +2599,14 @@ The windswept upland between the coast and the chasm, as a savanna: herds (Tauro
 
 **Grass**
 
-- All year: **common:** Spearow/Fearow (more by day); **uncommon:** Gastly/Haunter (night only), Geodude/Graveler, Gligar (more at night), Murkrow/Honchkrow (night only), Numel/Camerupt (never in rain, gusty rain, thunderstorm), Ponyta/Rapidash (more by day; never in rain, gusty rain, thunderstorm), Vullaby/Mandibuzz (more by day); **rare:** Bonsly (never in rain, gusty rain, thunderstorm), Misdreavus (night only), Pansear (more by day; never in rain, gusty rain, thunderstorm), Shuppet/Banette (night only); **exotic:** Charmander (never in rain, gusty rain, thunderstorm)
+- Spring: **common:** Ponyta/Rapidash (more by day; never in rain, gusty rain, thunderstorm), Spearow/Fearow (more by day); **uncommon:** Gastly/Haunter (night only), Geodude/Graveler, Gligar (more at night), Murkrow/Honchkrow (night only), Numel/Camerupt (never in rain, gusty rain, thunderstorm), Sandshrew/Sandslash (more at night; only in sandstorm), Vullaby/Mandibuzz (more by day); **rare:** Misdreavus (night only), Shuppet/Banette (night only); **exotic:** Charmander (never in rain, gusty rain, thunderstorm)
+- Summer: **common:** Spearow/Fearow (more by day); **uncommon:** Gastly/Haunter (night only), Geodude/Graveler, Gligar (more at night), Murkrow/Honchkrow (night only), Numel/Camerupt (never in rain, gusty rain, thunderstorm), Ponyta/Rapidash (more by day; never in rain, gusty rain, thunderstorm), Sandshrew/Sandslash (more at night; only in sandstorm), Vullaby/Mandibuzz (more by day); **rare:** Misdreavus (night only), Shuppet/Banette (night only); **exotic:** Charmander (never in rain, gusty rain, thunderstorm)
+- Autumn: **common:** Spearow/Fearow (more by day); **uncommon:** Gastly/Haunter (night only), Geodude/Graveler, Gligar (more at night), Murkrow/Honchkrow (night only), Numel/Camerupt (never in rain, gusty rain, thunderstorm), Ponyta/Rapidash (more by day; never in rain, gusty rain, thunderstorm), Sandshrew/Sandslash (more at night; only in sandstorm), Vullaby/Mandibuzz (more by day); **rare:** Misdreavus (night only), Shuppet/Banette (night only); **exotic:** Charmander (never in rain, gusty rain, thunderstorm)
+- Winter: **common:** Spearow/Fearow (more by day); **uncommon:** Gastly/Haunter (night only), Geodude/Graveler, Gligar (more at night), Murkrow/Honchkrow (night only), Numel/Camerupt (never in rain, gusty rain, thunderstorm), Ponyta/Rapidash (more by day; never in rain, gusty rain, thunderstorm), Sandshrew/Sandslash (more at night; only in sandstorm), Vullaby/Mandibuzz (more by day); **rare:** Misdreavus (night only), Shuppet/Banette (night only); **exotic:** Charmander (never in rain, gusty rain, thunderstorm)
 
 **Dark grass**
 
-- Spring: **uncommon:** Durant, Gligar (more at night), Houndour/Houndoom (night only; never in rain, gusty rain, thunderstorm), Rhyhorn/Rhydon, Vullaby/Mandibuzz (more by day); **rare:** Doduo/Dodrio (more by day), Drifloon/Drifblim (night only), Girafarig, Heatmor, Misdreavus (night only), Skarmory, Sudowoodo (never in rain, gusty rain, thunderstorm); **exotic:** Charmander (never in rain, gusty rain, thunderstorm)
-- Summer: **uncommon:** Durant, Gligar (more at night), Houndour/Houndoom (night only; never in rain, gusty rain, thunderstorm), Rhyhorn/Rhydon, Vullaby/Mandibuzz (more by day); **rare:** Doduo/Dodrio (more by day), Drifloon/Drifblim (night only), Girafarig, Heatmor, Misdreavus (night only), Skarmory; **very rare:** Sudowoodo (never in rain, gusty rain, thunderstorm); **exotic:** Charmander (never in rain, gusty rain, thunderstorm)
-- Autumn: **uncommon:** Durant, Gligar (more at night), Houndour/Houndoom (night only; never in rain, gusty rain, thunderstorm), Rhyhorn/Rhydon, Sudowoodo (never in rain, gusty rain, thunderstorm), Vullaby/Mandibuzz (more by day); **rare:** Doduo/Dodrio (more by day), Drifloon/Drifblim (night only), Girafarig, Heatmor, Misdreavus (night only), Skarmory; **exotic:** Charmander (never in rain, gusty rain, thunderstorm)
-- Winter: **uncommon:** Durant, Gligar (more at night), Houndour/Houndoom (night only; never in rain, gusty rain, thunderstorm), Rhyhorn/Rhydon, Sudowoodo (never in rain, gusty rain, thunderstorm), Vullaby/Mandibuzz (more by day); **rare:** Doduo/Dodrio (more by day), Drifloon/Drifblim (night only), Girafarig, Heatmor, Misdreavus (night only), Skarmory; **exotic:** Charmander (never in rain, gusty rain, thunderstorm)
+- All year: **uncommon:** Durant, Gligar (more at night), Houndour/Houndoom (night only; never in rain, gusty rain, thunderstorm), Rhyhorn/Rhydon, Vullaby/Mandibuzz (more by day); **rare:** Doduo/Dodrio (more by day), Drifloon/Drifblim (night only), Girafarig, Heatmor, Hippopotas/Hippowdon (more by day; only in sandstorm), Misdreavus (night only), Skarmory; **exotic:** Charmander (never in rain, gusty rain, thunderstorm)
 
 **Rustling spots (shaking grass)**
 
@@ -2626,19 +2626,23 @@ A red-rock pass in Pueblo country: Spearow, vultures, Gligar and Skarmory in the
 
 - Still crowded (eleven in the grass, twelve in the dark grass). The grass is the same all year; the sandstorms of spring and summer could bring something (Sandshrew, Hippopotas) as weather Pokémon.
 
+*Discussed with the user:*
+
+- 2026-11-12, done: Sandshrew and Hippopotas blown in only with the sandstorms, Gligar and Rhyhorn more common in them; Ponyta common in spring with its foals; Pansear gone (the elemental monkeys live only in Lostlorn and Pinwheel now); Sudowoodo and Bonsly gone (no trees here, only dried weeds), Bonsly moved to Route 15 beside its Sudowoodo.
+
 ### Reversal Mountain (White 2, the Fiery Caves) (`reversal_mountain_fiery`)
 
 *The place:* The focus of the two: Unova has few fiery places for fire Pokémon. The main interior has a large bed of lava in the centre and a warm glow from the heat; little glowing red seams in the walls and floors, as though lava is near.
 
 **Walking (the floor)**
 
-- All year: **common:** Numel/Camerupt (never in rain, gusty rain, thunderstorm), Slugma/Magcargo; **uncommon:** Geodude/Graveler, Heatmor, Houndour/Houndoom (more at night; never in rain, gusty rain, thunderstorm), Magby/Magmar (never in rain, gusty rain, thunderstorm), Roggenrola/Boldore, Torkoal; **rare:** Durant, Growlithe (never in rain, gusty rain, thunderstorm), Vulpix (never in rain, gusty rain, thunderstorm)
+- All year: **common:** Numel (never in rain, gusty rain, thunderstorm), Slugma; **uncommon:** Camerupt (never in rain, gusty rain, thunderstorm; only in reversal_mountain_11, reversal_mountain_12, reversal_mountain_13), Geodude/Graveler, Heatmor, Houndour/Houndoom (more at night; never in rain, gusty rain, thunderstorm), Magby (never in rain, gusty rain, thunderstorm), Magcargo (only in reversal_mountain_11, reversal_mountain_12, reversal_mountain_13), Magmar (never in rain, gusty rain, thunderstorm; only in reversal_mountain_11, reversal_mountain_12, reversal_mountain_13), Roggenrola/Boldore, Torkoal; **rare:** Durant, Growlithe (never in rain, gusty rain, thunderstorm)
 
 **Rustling spots (dust clouds)**
 
 Besides what's listed, rustling spots fill themselves from the grass's rare, very rare and exotic Pokémon (items 30% of the time).
 
-- All year: (nothing of its own)
+- All year: **common:** Drilbur/Excadrill; **uncommon:** Torkoal
 
 **What I think**
 
@@ -2652,13 +2656,17 @@ Unova's home for fire Pokémon (your request): Slugma and Numel by the lava lake
 
 - Thirteen maps with the same table; the deeper ones could hold the rarer fire Pokémon.
 
+*Discussed with the user:*
+
+- 2026-11-12, done: Vulpix gone (it keeps Abundant Shrine); Camerupt, Magcargo and Magmar only in the deep caves (maps 11 to 13, my guess at the deepest); Drilbur and Torkoal in the dust clouds.
+
 ### Reversal Mountain (Black 2, the Damp Caves) (`reversal_mountain_damp`)
 
 *The place:* The same caves with water in place of the lava: the central lava lake an unreachable pool, water dripping round the cave. Not water Pokémon as such, but cave dwellers who like the damp and wouldn't live in a fiery cave.
 
 **Walking (the floor)**
 
-- All year: **common:** Paras/Parasect (more at night), Zubat; **uncommon:** Golbat (only in reversal_mountain_5, reversal_mountain_6, reversal_mountain_7), Shelmet
+- All year: **common:** Paras/Parasect (more at night), Zubat; **uncommon:** Croagunk/Toxicroak, Ferroseed/Ferrothorn, Foongus/Amoonguss, Geodude/Graveler, Golbat (only in reversal_mountain_5, reversal_mountain_6, reversal_mountain_7), Roggenrola/Boldore, Shelmet, Venipede/Whirlipede/Scolipede (more at night), Woobat; **rare:** Sableye, Shuckle
 
 **Rustling spots (dust clouds)**
 
@@ -2678,13 +2686,17 @@ Moisture-loving cave dwellers instead of fire (your request): Paras's fungi, She
 
 - Only three families for eight maps: too thin. Foongus, Croagunk (not a water type), Ferroseed on the wet ceilings, Sableye in the dark, Woobat, or Venipede in the damp would fill it.
 
+*Discussed with the user:*
+
+- 2026-11-12, done: Foongus, Croagunk, Ferroseed, Venipede, Woobat and Sableye, with Geodude, Roggenrola and Shuckle (the user), beside Paras, Zubat and Shelmet.
+
 ### Strange House (`strange_house`)
 
 *The place:* A house that looks made of clay, like Lentimas's, entered from Reversal Mountain's outside, and rustic inside: very Southwestern. The best place for ghosts that don't fit Celestial Tower. Rotom will have a special place of its own (not here); the other ghosts aren't exclusive to the house and can be elsewhere at night, in winter or wherever they fit.
 
 **Walking (the floor)**
 
-- All year: **common:** Gastly/Haunter, Shuppet/Banette (more at night); **uncommon:** Misdreavus; **rare:** Duskull/Dusclops (more at night), Litwick/Lampent (never in rain, gusty rain, thunderstorm), Woobat
+- All year: **common:** Gastly, Shuppet (more at night); **uncommon:** Banette (more at night; only in strange_house_2, strange_house_4, strange_house_5, strange_house_7, strange_house_8, strange_house_9, strange_house_10), Haunter (only in strange_house_2, strange_house_4, strange_house_5, strange_house_7, strange_house_8, strange_house_9, strange_house_10), Misdreavus; **rare:** Duskull/Dusclops (more at night), Litwick/Lampent (never in rain, gusty rain, thunderstorm), Woobat
 
 **What I think**
 
@@ -2701,6 +2713,7 @@ A haunted house's pranksters (your request): Gastly, Shuppet and Banette as thro
 *Discussed with the user:*
 
 - 2026-11-14: its ghosts are there all day (Gastly and Misdreavus too), since it's haunted; at night some come out onto Reversal Mountain's pass (Shuppet and Misdreavus added there). More to discuss when we reach it.
+- 2026-11-12, done: Haunter and Banette only in the inner rooms (every map but 1, 3 and 6, the main hall: the user).
 
 ### Twist Mountain (`twist_mountain`)
 
@@ -2708,10 +2721,10 @@ A haunted house's pranksters (your request): Gastly, Shuppet and Banette as thro
 
 **Walking (the floor)**
 
-- Spring: **common:** Cubchoo/Beartic, Roggenrola/Boldore, Timburr/Gurdurr (more by day), Woobat; **uncommon:** Aron/Lairon/Aggron, Cryogonal, Drilbur/Excadrill, Machop/Machoke, Snorunt/Glalie, Swinub/Piloswine/Mamoswine, Vanillite/Vanillish/Vanilluxe
-- Summer: **common:** Cubchoo/Beartic, Roggenrola/Boldore, Timburr/Gurdurr (more by day), Woobat; **uncommon:** Aron/Lairon/Aggron, Cryogonal, Drilbur/Excadrill, Machop/Machoke, Snorunt/Glalie, Swinub/Piloswine/Mamoswine, Vanillite/Vanillish/Vanilluxe
-- Autumn: **common:** Cubchoo/Beartic, Roggenrola/Boldore, Timburr/Gurdurr (more by day), Woobat; **uncommon:** Aron/Lairon/Aggron, Cryogonal, Drilbur/Excadrill, Machop/Machoke, Snorunt/Glalie, Swinub/Piloswine/Mamoswine, Vanillite/Vanillish/Vanilluxe
-- Winter: **common:** Cubchoo/Beartic, Roggenrola/Boldore, Timburr/Gurdurr (more by day), Woobat; **uncommon:** Aron/Lairon/Aggron, Cryogonal, Drilbur/Excadrill, Machop/Machoke, Snorunt/Glalie, Swinub/Piloswine/Mamoswine, Vanillite/Vanillish/Vanilluxe; **exotic:** Glaceon
+- Spring: **common:** Cryogonal (only in twist_mountain_4), Cubchoo/Beartic (only in twist_mountain_3, twist_mountain_4), Roggenrola/Boldore, Snorunt/Glalie (only in twist_mountain_4), Timburr/Gurdurr (more by day), Woobat; **uncommon:** Aron/Lairon/Aggron, Cryogonal (only in twist_mountain_3), Drilbur/Excadrill, Machop/Machoke, Snorunt/Glalie (only in twist_mountain_3), Swinub/Piloswine/Mamoswine (only in twist_mountain_3, twist_mountain_4), Vanillite/Vanillish/Vanilluxe (only in twist_mountain_3, twist_mountain_4); **exotic:** Glaceon (only in twist_mountain_4)
+- Summer: **common:** Cryogonal (only in twist_mountain_4), Cubchoo/Beartic (only in twist_mountain_3, twist_mountain_4), Roggenrola/Boldore, Snorunt/Glalie (only in twist_mountain_4), Timburr/Gurdurr (more by day), Woobat; **uncommon:** Aron/Lairon/Aggron, Cryogonal (only in twist_mountain_3), Drilbur/Excadrill, Machop/Machoke, Snorunt/Glalie (only in twist_mountain_3), Swinub/Piloswine/Mamoswine (only in twist_mountain_3, twist_mountain_4), Vanillite/Vanillish/Vanilluxe (only in twist_mountain_3, twist_mountain_4); **exotic:** Glaceon (only in twist_mountain_4)
+- Autumn: **common:** Cryogonal (only in twist_mountain_4), Cubchoo/Beartic (only in twist_mountain_3, twist_mountain_4), Roggenrola/Boldore, Snorunt/Glalie (only in twist_mountain_4), Timburr/Gurdurr (more by day), Woobat; **uncommon:** Aron/Lairon/Aggron, Cryogonal (only in twist_mountain_3), Drilbur/Excadrill, Machop/Machoke, Snorunt/Glalie (only in twist_mountain_3), Swinub/Piloswine/Mamoswine (only in twist_mountain_3, twist_mountain_4), Vanillite/Vanillish/Vanilluxe (only in twist_mountain_3, twist_mountain_4); **exotic:** Glaceon (only in twist_mountain_4)
+- Winter: **common:** Cryogonal (only in twist_mountain_4), Cubchoo/Beartic (only in twist_mountain_3, twist_mountain_4), Roggenrola/Boldore, Snorunt/Glalie (only in twist_mountain_4), Timburr/Gurdurr (more by day), Woobat; **uncommon:** Aron/Lairon/Aggron, Cryogonal (only in twist_mountain_3), Cubchoo/Beartic (only in twist_mountain, twist_mountain_2), Drilbur/Excadrill, Machop/Machoke, Sneasel (more at night; only in twist_mountain_3, twist_mountain_4), Snorunt/Glalie (only in twist_mountain_3), Swinub/Piloswine/Mamoswine (only in twist_mountain, twist_mountain_2), Swinub/Piloswine/Mamoswine (only in twist_mountain_3, twist_mountain_4), Vanillite/Vanillish/Vanilluxe (only in twist_mountain_3, twist_mountain_4); **rare:** Snorunt/Glalie (only in twist_mountain, twist_mountain_2); **exotic:** Glaceon (only in twist_mountain_4)
 
 **Rustling spots (dust clouds)**
 
@@ -2734,6 +2747,7 @@ A strip mine: the miners' companions (Timburr, Machop, Drilbur), Roggenrola and 
 *Discussed with the user:*
 
 - 2026-11-12: the user added grass and dark grass to the open pit (zone twist_mountain_2), which is now its own place, twist_mountain_pit, with Snover in winter.
+- 2026-11-12, done: the mine's Pokémon throughout; the ice Pokémon in the deep, cold caves (twist_mountain_3 and _4, the zones 5 and 6), commonest in the deepest (_4, with the Ice Rock), and up into the mine's tunnels in winter, with Sneasel hunting the cold caves then; Glaceon exotic all year, only in the deepest cave.
 
 ### Twist Mountain (the open pit) (`twist_mountain_pit`)
 
@@ -2799,6 +2813,10 @@ A mining cave with the Underground Ruins: miners' Pokémon, Roggenrola, Onix wit
 
 - The Regi chambers are in this place's maps too; they get the ruins' Pokémon only if they have tables at all.
 
+*Discussed with the user:*
+
+- 2026-11-12: kept as it is, the game's most average cave; the Regi chambers share its Pokémon (perhaps Unown later).
+
 ### P2 Laboratory (`p2_laboratory`)
 
 *The place:* On Route 17; Genesect's event will be here. Grass on the island in front of the lab: Porygon and the like, as though they broke out of the lab and roam the island.
@@ -2839,6 +2857,10 @@ An island research station: Porygon escaped from the lab (your request), Magnemi
 *Not satisfied, or unsure:*
 
 - The grass (41 tiles) has nothing common; Porygon could be common, as the lab's own.
+
+*Discussed with the user:*
+
+- 2026-11-12: kept as it is.
 
 ### Route 17 (`route_17`)
 
@@ -2882,16 +2904,20 @@ The current-swept open sea: jellyfish and Frillish, whales feeding in summer, Ca
 - Fishing is Chinchou alone most of the year.
 - Dragonite is a very late trophy here; fine if you like a dragon at sea.
 
+*Discussed with the user:*
+
+- 2026-11-12: kept. Alomomola is also on Routes 21 and 13, in Undella Bay and at Humilau now (the east coast's seas, the user).
+
 ### Route 18 (`route_18`)
 
 *The place:* The island: not exactly tropical, but a faraway, deserted-island feel. A good place for Exeggcute and Exeggutor, Tropius, Chatot in whatever season it comes to Unova, and the like.
 
 **Grass**
 
-- Spring: **common:** Dwebble/Crustle, Exeggcute (more by day); **uncommon:** Aipom/Ambipom (more by day), Bellsprout/Weepinbell, Chatot (day only), Krabby/Kingler (more at night); **rare:** Scraggy/Scrafty (more by day), Wynaut
-- Summer: **common:** Dwebble/Crustle, Exeggcute (more by day); **uncommon:** Aipom/Ambipom (more by day), Bellsprout/Weepinbell, Chatot (day only), Krabby/Kingler (more at night); **rare:** Scraggy/Scrafty (more by day), Wynaut
-- Autumn: **common:** Dwebble/Crustle, Exeggcute (more by day); **uncommon:** Aipom/Ambipom (more by day), Bellsprout/Weepinbell, Krabby/Kingler (more at night); **rare:** Scraggy/Scrafty (more by day), Wynaut
-- Winter: **common:** Dwebble/Crustle, Exeggcute (more by day); **uncommon:** Aipom/Ambipom (more by day), Bellsprout/Weepinbell, Krabby/Kingler (more at night), Taillow/Swellow (day only); **rare:** Scraggy/Scrafty (more by day), Wynaut
+- Spring: **common:** Dwebble/Crustle, Exeggcute (more by day); **uncommon:** Aipom/Ambipom (more by day), Bellsprout/Weepinbell, Chatot (day only), Krabby/Kingler (more at night); **rare:** Wynaut
+- Summer: **common:** Dwebble/Crustle, Exeggcute (more by day); **uncommon:** Aipom/Ambipom (more by day), Bellsprout/Weepinbell, Chatot (day only), Krabby/Kingler (more at night); **rare:** Wynaut
+- Autumn: **common:** Dwebble/Crustle, Exeggcute (more by day); **uncommon:** Aipom/Ambipom (more by day), Bellsprout/Weepinbell, Krabby/Kingler (more at night); **rare:** Wynaut
+- Winter: **common:** Dwebble/Crustle, Exeggcute (more by day); **uncommon:** Aipom/Ambipom (more by day), Bellsprout/Weepinbell, Krabby/Kingler (more at night), Taillow/Swellow (day only); **rare:** Wynaut
 
 **Dark grass**
 
@@ -2933,20 +2959,24 @@ A remote tropical island: Exeggcute and Exeggutor (your request), Tropius among 
 
 - Your places note calls the sea round it cool, but the land is tropical; I kept both (blue Shellos in the water, jungle on land). Is that the feel you want?
 
+*Discussed with the user:*
+
+- 2026-11-12, done: Scraggy gone.
+
 ### Nature Preserve (`nature_preserve`)
 
 *The place:* Far off, reached only by plane: a fairly standard map with forest and a river round it, many waterfalls (for show; none reachable), and a shiny Haxorus in the central clearing.
 
 **Grass**
 
-- All year: **uncommon:** Hoothoot/Noctowl (night only), Kangaskhan, Nidoran♀/Nidorina, Nidoran♂/Nidorino
+- All year: **common:** Kangaskhan; **uncommon:** Happiny/Chansey, Hoothoot/Noctowl (night only), Nidoran♀/Nidorina, Nidoran♂/Nidorino, Tauros; **rare:** Eevee, Farfetch'd
 
 **Dark grass**
 
-- Spring: **uncommon:** Hoothoot/Noctowl (night only), Tangela/Tangrowth; **rare:** Aipom/Ambipom (more by day), Slakoth/Vigoroth/Slaking, Teddiursa/Ursaring (more by day)
-- Summer: **uncommon:** Hoothoot/Noctowl (night only), Tangela/Tangrowth, Teddiursa/Ursaring (more by day); **rare:** Aipom/Ambipom (more by day), Heracross (more by day), Pinsir (more at night), Slakoth/Vigoroth/Slaking
-- Autumn: **uncommon:** Hoothoot/Noctowl (night only), Tangela/Tangrowth, Teddiursa/Ursaring (more by day); **rare:** Aipom/Ambipom (more by day), Slakoth/Vigoroth/Slaking
-- Winter: **uncommon:** Hoothoot/Noctowl (night only), Tangela/Tangrowth; **rare:** Aipom/Ambipom (more by day), Slakoth/Vigoroth/Slaking
+- Spring: **uncommon:** Hoothoot/Noctowl (night only), Tangela/Tangrowth; **rare:** Aipom/Ambipom (more by day), Axew/Fraxure/Haxorus, Scyther (more by day), Slakoth/Vigoroth/Slaking, Teddiursa/Ursaring (more by day); **very rare:** Bagon/Shelgon/Salamence, Gible/Gabite/Garchomp, Larvitar/Pupitar/Tyranitar
+- Summer: **uncommon:** Heracross (more by day), Hoothoot/Noctowl (night only), Pinsir (more at night), Scyther (more by day), Tangela/Tangrowth, Teddiursa/Ursaring (more by day); **rare:** Aipom/Ambipom (more by day), Axew/Fraxure/Haxorus, Slakoth/Vigoroth/Slaking; **very rare:** Bagon/Shelgon/Salamence, Gible/Gabite/Garchomp, Larvitar/Pupitar/Tyranitar
+- Autumn: **uncommon:** Heracross (more by day), Hoothoot/Noctowl (night only), Pinsir (more at night), Scyther (more by day), Tangela/Tangrowth, Teddiursa/Ursaring (more by day); **rare:** Aipom/Ambipom (more by day), Axew/Fraxure/Haxorus, Slakoth/Vigoroth/Slaking; **very rare:** Bagon/Shelgon/Salamence, Gible/Gabite/Garchomp, Larvitar/Pupitar/Tyranitar
+- Winter: **uncommon:** Hoothoot/Noctowl (night only), Tangela/Tangrowth; **rare:** Aipom/Ambipom (more by day), Axew/Fraxure/Haxorus, Slakoth/Vigoroth/Slaking; **very rare:** Bagon/Shelgon/Salamence, Gible/Gabite/Garchomp, Larvitar/Pupitar/Tyranitar
 
 **Rustling spots (shaking grass)**
 
@@ -2956,15 +2986,19 @@ Besides what's listed, rustling spots fill themselves from the grass's rare, ver
 
 **Surfing**
 
-- All year: **uncommon:** Bidoof/Bibarel
+- All year: **uncommon:** Bidoof/Bibarel, Marill/Azumarill (more by day), Psyduck/Golduck
 
-**Rippling water (surfing):** nothing of its own: the generator's rule fills it from surfing, favouring the later stages.
+**Rippling water (surfing)**
+
+- All year: **rare:** Dratini/Dragonair/Dragonite
 
 **Fishing**
 
-- All year: **uncommon:** Basculin (Red-Striped)
+- All year: **common:** Goldeen/Seaking; **uncommon:** Basculin (Red-Striped)
 
-**Rippling water (fishing):** nothing of its own: the generator's rule fills it from fishing, favouring the later stages.
+**Rippling water (fishing)**
+
+- All year: **rare:** Dratini/Dragonair/Dragonite
 
 **What I think**
 
@@ -2977,3 +3011,7 @@ A protected river forest, unlocked by the Unova Dex: Kangaskhan safe with its yo
 *Not satisfied, or unsure:*
 
 - It's not yet a reward. It should be the refuge for rare Pokémon of other regions (generations 1 to 4), and most of what's here lives elsewhere too. This is the place I'm least satisfied with: it could gather the game's hard-to-find foreign Pokémon (Kangaskhan, Tauros, Chansey, Scyther, Pinsir, Heracross, Eevee, Dratini in the river, Larvitar, Bagon or Gible very rarely), more common here than anywhere, as a late reward.
+
+*Discussed with the user:*
+
+- 2026-11-12, done: the refuge for other regions' hard-to-find Pokémon, commoner here than anywhere: Kangaskhan common, Tauros, Chansey, Eevee and Farfetch'd in the clearings; Scyther, Pinsir and Heracross in summer and autumn, Axew's line (the shiny Haxorus is here, the user), and very rarely Larvitar's, Bagon's and Gible's lines in the thick growth; Dratini's line in the river's rippling water, with Marill, Psyduck and Goldeen.

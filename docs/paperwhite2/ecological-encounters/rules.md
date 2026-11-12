@@ -133,6 +133,8 @@ Hidden Grottoes are set by hand; the generator counts them as a source but never
   Misdreavus, Drifloon, Stunky, Skorupi, the fireflies, Clefairy and Lunatone, and for the night stages Ledian
   (starlight), Mothim and Dustox (moths) and Cacturne; more at night for many others (rats, cats, raccoons, Sandile's
   line, the cave and sea Pokémon, Lombre at the fishing spots). Emolga stays as it is (the user).
+- **The elemental monkeys** (Pansage, Pansear, Panpour) live only in Lostlorn Forest and Pinwheel Forest, as their
+  trophies (2026-11-12).
 - **Times:** "night" is both night and late night, so the nocturnal Pokémon (Hoothoot, Venonat, Murkrow...) are there
   through both. Single periods are rare and deliberate: Sunkern in the morning, Vanillite at Dragonspiral's entrance
   in the morning sun.

@@ -101,6 +101,7 @@ families:
     homes:
       - {place: route_7, methods: [grass], seasons: [spring, summer, autumn], tier: very_rare, why: "the marsh's reeds and stalks, a last wild few"}
       - {place: abundant_shrine, methods: [grass], seasons: all, tier: rare, why: "the leek fields of a farming shrine, where it's protected: part of its identity (the user)"}
+      - {place: nature_preserve, methods: [grass], seasons: all, tier: rare, why: "protected from the hunting that made it rare"}
     review:
       - "Very rare everywhere, as the Pokédex has it hunted; only two homes."
 

@@ -184,8 +184,8 @@ families:
     levels: {kangaskhan: [15, 100]}
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
-      - {place: nature_preserve, methods: [grass], seasons: all, tier: uncommon, why: "a protected place, safe for its young"}
       - {place: route_15, methods: [dark_grass], seasons: all, tier: rare, why: "the ridge's scrub"}
+      - {place: nature_preserve, methods: [grass], seasons: all, tier: common, why: "a protected place, safe for its young: the refuge's own"}
     review: []
 
   - id: tauros
@@ -206,6 +206,7 @@ families:
     wanderer: {appears: both, wanders: aggressive, grass: stand}
     homes:
       - {place: route_22, methods: [dark_grass], seasons: all, tier: common, why: "herds on the upland (the user)"}
+      - {place: nature_preserve, methods: [grass], seasons: all, tier: uncommon, why: "a wild herd kept safe in the refuge"}
     review: []
 
   - id: eevee
@@ -238,7 +239,8 @@ families:
     homes:
       - {place: castelia_park, methods: [grass], seasons: all, tier: exotic, stages: [eevee], why: "a lost pet in the city's garden: the trophy"}
       - {place: pinwheel_forest, methods: [dark_grass], seasons: [spring, summer], tier: exotic, stages: [leafeon], why: "the Moss Rock's mossy depths (the user's request)"}
-      - {place: twist_mountain, methods: [grass], seasons: [winter], tier: exotic, stages: [glaceon], why: "the Ice Rock's caves in winter"}
+      - {place: twist_mountain, methods: [grass], seasons: all, tier: exotic, stages: [glaceon], areas: [twist_mountain_4], why: "by the Ice Rock in the coldest, deepest cave, all year (the user)"}
+      - {place: nature_preserve, methods: [grass], seasons: all, tier: rare, stages: [eevee], why: "wild Eevee, safe in the refuge"}
     review:
       - "Glaceon at Twist Mountain mirrors the user's Leafeon; say if it should stay a grotto only."
 
@@ -877,6 +879,7 @@ families:
     homes:
       - {place: floccesy_ranch, methods: [grass], seasons: all, tier: rare, why: "its NPCs (the user's request)"}
       - {place: route_3, methods: [grass], seasons: all, tier: very_rare, why: "by the Day Care, caring for eggs"}
+      - {place: nature_preserve, methods: [grass], seasons: all, tier: uncommon, why: "the refuge for other regions' hard-to-find Pokémon"}
     review: []
 
   - id: munchlax

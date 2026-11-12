@@ -64,6 +64,7 @@ families:
       - {place: desert_resort, methods: [grass], seasons: all, tier: uncommon, why: "the dunes"}
       - {place: desert_resort_path, methods: [grass], seasons: all, tier: uncommon, why: "the canyon's sand"}
       - {place: relic_passage, methods: [rustling], seasons: all, tier: uncommon, why: "the passage's dust clouds"}
+      - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: uncommon, weather: [sandstorm], why: "blown in with the pass's sandstorms"}
     review: []
 
   - id: vulpix
@@ -86,7 +87,6 @@ families:
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
       - {place: abundant_shrine, methods: [dark_grass], seasons: all, tier: rare, why: "the shrine's fox in the grove at dusk"}
-      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: rare, why: "warm by the lava"}
     review: []
 
   - id: growlithe
@@ -127,7 +127,8 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
-      - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: uncommon, why: "wild mustangs on the red-rock pass"}
+      - {place: reversal_mountain_outside, methods: [grass], seasons: [spring], tier: common, why: "wild mustangs with their foals in spring"}
+      - {place: reversal_mountain_outside, methods: [grass], seasons: [summer, autumn, winter], tier: uncommon, why: "wild mustangs on the red-rock pass"}
     review: []
 
   - id: magby
@@ -149,7 +150,8 @@ families:
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
       - {place: virbank_complex, methods: [grass, dark_grass], seasons: [summer, autumn], tier: uncommon, stages: [magby], why: "the hot machines (the user's request)"}
-      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: uncommon, why: "the lava lake"}
+      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: uncommon, stages: [magby], why: "the hot caves"}
+      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: uncommon, stages: [magmar], areas: [reversal_mountain_11, reversal_mountain_12, reversal_mountain_13], why: "the deep caves round the lava lake"}
     review: []
 
   - id: elekid
@@ -192,7 +194,8 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
-      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: common, why: "the lava lake's magma dwellers (the user's fire home)"}
+      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: common, stages: [slugma], why: "the hot caves' magma dwellers (the user's fire home)"}
+      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: uncommon, stages: [magcargo], areas: [reversal_mountain_11, reversal_mountain_12, reversal_mountain_13], why: "the deep caves round the lava lake"}
     review: []
 
   - id: houndour
@@ -233,8 +236,9 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
-      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: common, why: "the fiery caves"}
       - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: uncommon, why: "the warm pass by the fires"}
+      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: common, stages: [numel], why: "the fiery caves"}
+      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: uncommon, stages: [camerupt], areas: [reversal_mountain_11, reversal_mountain_12, reversal_mountain_13], why: "the deep caves round the lava lake"}
     review: []
 
   - id: torkoal
@@ -255,6 +259,7 @@ families:
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
       - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: uncommon, why: "the fiery caves, as Hoenn's Fiery Path"}
+      - {place: reversal_mountain_fiery, methods: [rustling], seasons: all, tier: uncommon, why: "sooty clouds of its own making"}
     review: []
 
   - id: trapinch
@@ -327,6 +332,7 @@ families:
       - {place: desert_resort, methods: [grass], seasons: [spring, autumn, winter], tier: uncommon, why: "colonies in the dunes"}
       - {place: route_4, methods: [grass], seasons: [summer], tier: uncommon, why: "the road's deep sand in summer"}
       - {place: route_4, methods: [grass], seasons: [spring, autumn, winter], tier: rare, why: "the road's deep sand"}
+      - {place: reversal_mountain_outside, methods: [dark_grass], seasons: all, tier: rare, weather: [sandstorm], why: "travelling through the sandstorm"}
     review: []
 
   - id: skorupi
