@@ -190,7 +190,7 @@ families:
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
       - {place: seaside_cave, methods: [fishing], seasons: all, tier: common, why: "the sea cave's pools, with the Slowpoke"}
-      - {place: route_21, methods: [fishing], seasons: all, tier: uncommon, why: "among the rocks"}
+      - {place: route_21, methods: [fishing], seasons: all, tier: common, why: "among the rocks: their own"}
       - {place: route_1, methods: [fishing], seasons: all, tier: uncommon, why: "the rocky inlet"}
       - {place: route_17, methods: [fishing], seasons: [winter], tier: uncommon, why: "the cold sea"}
       - {place: p2_laboratory, methods: [fishing], seasons: all, tier: common, why: "the island's cool sea"}
@@ -214,7 +214,6 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
-      - {place: route_13, methods: [grass], seasons: all, tier: uncommon, why: "burrows on the beach under the cliffs"}
       - {place: seaside_cave, methods: [grass], seasons: all, tier: common, why: "crabs on the sea cave's floors"}
       - {place: route_18, methods: [grass], seasons: all, tier: uncommon, why: "the island's beaches"}
       - {place: route_1, methods: [fishing], seasons: all, tier: common, why: "the rocky inlet"}
@@ -222,6 +221,7 @@ families:
       - {place: route_21, methods: [rippling_fishing], seasons: all, tier: uncommon, stages: [kingler], why: "big Kingler among the rocks"}
       - {place: route_18, methods: [fishing], seasons: all, tier: uncommon, why: "the island's shallows"}
       - {place: route_13, methods: [dark_grass], seasons: all, tier: uncommon, why: "crabs on the island, left alone by people"}
+      - {place: route_13, methods: [grass], seasons: all, tier: common, why: "crabs out on the beach's sand, most at night"}
     review: []
 
   - id: horsea
@@ -520,9 +520,10 @@ families:
     homes:
       - {place: humilau_city, methods: [fishing], seasons: [spring, autumn, winter], tier: common, why: "schools with the Mantyke on the reef"}
       - {place: humilau_city, methods: [fishing], seasons: [summer], tier: uncommon, why: "fewer while the Lapras hunt"}
-      - {place: route_21, methods: [fishing], seasons: all, tier: uncommon, why: "the rocks"}
+      - {place: route_21, methods: [fishing], seasons: all, tier: common, why: "the rocks: their own"}
       - {place: route_21, methods: [rippling_fishing], seasons: all, tier: uncommon, stages: [octillery], why: "in the rock crags"}
       - {place: seaside_cave, methods: [rippling_fishing], seasons: all, tier: uncommon, stages: [octillery], why: "the cave's holes"}
+      - {place: undella, methods: [fishing], seasons: all, tier: uncommon, why: "by the dive spots, a second bite all year"}
     review:
       - "Partners 'area': Mantyke swim with its schools."
 
@@ -853,13 +854,14 @@ families:
     migration: resident
     weather: {more: [], less: [], only: []}
     abundance: exotic
-    trophy: [humilau_city]
+    trophy: [humilau_city, route_13]
     battles: {single: 100, double: 0, triple: 0, partners: family}
     stages: {lileep: wild, cradily: {wild: false, note: "only by evolving"}}
     levels: {lileep: [20, 43]}
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
       - {place: humilau_city, methods: [surf], seasons: all, tier: exotic, why: "a living fossil in the warm, shallow lagoon (Pokécology): the trophy"}
+      - {place: route_13, methods: [surf], seasons: all, tier: exotic, why: "the clear, shallow coastal sea (the user)"}
     review:
       - "One home only; Undella's walkable shallows could be a second."
 
@@ -1139,6 +1141,7 @@ families:
       - {place: route_8, methods: [grass], seasons: [spring, summer, autumn], tier: common, why: "the fens' mud"}
       - {place: moor_of_icirrus, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the moor's mud"}
       - {place: route_7, methods: [grass], seasons: [spring, summer, autumn], tier: rare, why: "the marsh's mud below the tower"}
+      - {place: route_13, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "lying flat in the beach's wet sand, mistaken for a stone by the crabs (the user, Pokécology)"}
     review:
       - "Met by a step only (it lies hidden in the mud): no wanderer."
 

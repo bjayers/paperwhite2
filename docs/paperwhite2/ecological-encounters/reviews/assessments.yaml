@@ -359,6 +359,8 @@ route_5:
   discussed:
     - >-
       2026-11-14, done: Pidgey passing in spring and autumn, Cottonee and Jumpluff drifting in autumn, Budew in the wooded strip in spring, Nincada in summer; Munchlax the trophy in the grass only.
+    - >-
+      2026-11-12, done: Drifloon rare at night, a balloon from Nimbasa's theme park that children follow (the user).
 
 route_16:
   vision: >-
@@ -373,6 +375,8 @@ route_16:
   discussed:
     - >-
       2026-11-14, done: the forest edge gains Sewaddle in spring, Foongus in autumn, Swadloon in winter and Hoothoot at night.
+    - >-
+      2026-11-12, done: Drifloon rare at night, drifting from Nimbasa (the user).
 
 lostlorn_forest:
   vision: >-
@@ -810,6 +814,9 @@ route_13:
       Wingull. It needs the beach-and-dune land animals the places mention (sandpipers, dune grass): Sentret? Spearow?
       Ducklett? I'm not sure what best fits Unova's beach grass, and would like your view.
     - Shuckle is the only thing in the shaking grass apart from the automatic fill.
+  discussed:
+    - >-
+      2026-11-12, done: the inland grass gains Krabby as its common (most at night), Buneary in the dune grass, Pidove and Zigzagoon round the beach houses, Volbeat, Illumise and Yanma in summer, and Stunfisk in the wet sand (a Krabby and Stunfisk pair, the user); Scraggy left the island (more desert than beach); Dwebble stays; Lileep exotic in the shallow sea too.
 
 undella:
   vision: >-
@@ -820,6 +827,9 @@ undella:
     - It follows the seasons of tourism and the warm sea, as you described.
   unsure:
     - Fishing outside summer is only Finneon (common) and two rares.
+  discussed:
+    - >-
+      2026-11-12, done: Remoraid by the dive spots as a second bite all year. Frillish stays all day, more at night (no source says it's nocturnal; real jellyfish rise at night).
 
 seaside_cave:
   vision: >-
@@ -829,6 +839,9 @@ seaside_cave:
     - The original's Crustle (a static) fits its Dwebble.
   unsure:
     - The second map (no water) has the same floor Pokémon; fine.
+  discussed:
+    - >-
+      2026-11-12: kept as it is.
 
 route_21:
   vision: >-
@@ -839,6 +852,9 @@ route_21:
     - It's the open sea's big-animal place.
   unsure:
     - Five fishing families all uncommon, so none stands out.
+  discussed:
+    - >-
+      2026-11-12, done: Remoraid and Shellder common for fishing, the rocks' own.
 
 humilau_city:
   vision: >-
@@ -849,6 +865,9 @@ humilau_city:
     - The Lapras summer and the fish's return follow your notes exactly.
   unsure:
     - Nothing.
+  discussed:
+    - >-
+      2026-11-12: kept as it is; Lileep is now exotic on Route 13 too.
 
 route_22:
   vision: >-
@@ -862,6 +881,9 @@ route_22:
       Nothing is common and the grass holds eleven families, the dark grass eight: it's a crowd of equals. Two or three
       should lead (Doduo and Blitzle, say).
     - Mareep is here too; after Route 12, is it still welcome on the upland?
+  discussed:
+    - >-
+      2026-11-12, done: Doduo and Blitzle common in the grass, Tauros in the dark grass, as the upland's herds; Wingull only in spring and summer, nesting.
 
 # --- The Rest ---
 
@@ -986,8 +1008,7 @@ twist_mountain_pit:
     The strip mine's open pit, newly grassy (the user, 2026-11-12): the miners' Pokémon and rocks outside winter
     (Timburr, Machop, Geodude, Rufflet on the cliffs); in winter the snow fills it, and Snover, Cubchoo, Swinub and
     Sneasel come out.
-  unsure:
+  discussed:
     - >-
-      The zone (twist_mountain_2) has no encounter table yet, so it needs one before any of this can appear (the ROM
-      session or the editor).
+      2026-11-12: the zone now has its own table, twist_mountain_5 (the user).
 

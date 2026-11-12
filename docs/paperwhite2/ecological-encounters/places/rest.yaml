@@ -163,11 +163,10 @@ places:
 
   - id: twist_mountain_pit
     name: Twist Mountain (the open pit)
-    maps: [twist_mountain_pit]  # a new area for the zone twist_mountain_2, which has no encounter table yet
+    maps: [twist_mountain_5]  # the area ENCOUNTERS_TWIST_MOUNTAIN_5, the 136th table, for the zone twist_mountain_2
     used: >-
       new (2026-11-12): the user added grass and dark grass to the open pit's maps (zone twist_mountain_2, the
-      dun0701 maps). The zone needs an encounter table of its own (twist_mountain_pit is this dictionary's name for
-      it); until then nothing here can appear.
+      dun0701 maps) and its own encounter table, twist_mountain_5.
     facts:
       tiles: { grass: a little, dark_grass: a little }
       methods: [grass, dark_grass]

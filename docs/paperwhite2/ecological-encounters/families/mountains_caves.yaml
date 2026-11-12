@@ -664,7 +664,6 @@ families:
       - {place: route_4, methods: [grass], seasons: all, tier: uncommon, why: "gangs by the desert road, as in the original"}
       - {place: desert_resort_path, methods: [grass], seasons: all, tier: uncommon, why: "the canyon"}
       - {place: route_18, methods: [grass], seasons: all, tier: rare, why: "the island's beaches, as in the original"}
-      - {place: route_13, methods: [dark_grass], seasons: all, tier: rare, why: "lizards of the dry island"}
     review: []
 
   - id: mienfoo

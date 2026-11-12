@@ -205,7 +205,7 @@ families:
     levels: {tauros: [10, 100]}
     wanderer: {appears: both, wanders: aggressive, grass: stand}
     homes:
-      - {place: route_22, methods: [dark_grass], seasons: all, tier: uncommon, why: "herds on the upland"}
+      - {place: route_22, methods: [dark_grass], seasons: all, tier: common, why: "herds on the upland (the user)"}
     review: []
 
   - id: eevee
@@ -530,6 +530,7 @@ families:
       - {place: route_5, methods: [grass, dark_grass], seasons: all, tier: common, why: "trash and leftovers by the road"}
       - {place: route_9, methods: [grass], seasons: all, tier: common, why: "the mall's trash"}
       - {place: route_16, methods: [grass], seasons: all, tier: uncommon, why: "the suburb"}
+      - {place: route_13, methods: [grass], seasons: all, tier: uncommon, why: "raiding the beach houses' bins"}
     review: []
 
   - id: whismur
@@ -761,6 +762,7 @@ families:
       - {place: route_14, methods: [grass], seasons: all, tier: uncommon, why: "the overgrown paths between the rivers"}
       - {place: giant_chasm_outside, methods: [grass], seasons: all, tier: uncommon, why: "hares at the woodland edge round the chasm"}
       - {place: route_9, methods: [grass], seasons: all, tier: uncommon, why: "the outskirts' meadow"}
+      - {place: route_13, methods: [grass], seasons: all, tier: uncommon, why: "rabbits in the dune grass"}
     review: []
 
   - id: glameow
@@ -1001,7 +1003,8 @@ families:
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
       - {place: route_3, methods: [dark_grass], seasons: all, tier: common, why: "the wild grass at the edges, as in the original"}
-      - {place: route_22, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "herds on the upland"}
+      - {place: route_22, methods: [grass], seasons: all, tier: common, why: "herds on the upland (the user)"}
+      - {place: route_22, methods: [dark_grass], seasons: all, tier: uncommon, why: "herds in the taller grass"}
     review: []
 
   - id: audino

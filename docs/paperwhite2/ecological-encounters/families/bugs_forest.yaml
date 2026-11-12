@@ -326,6 +326,7 @@ families:
       - {place: route_7, methods: [grass], seasons: [spring], tier: uncommon, why: "the first dragonflies over the marsh"}
       - {place: route_8, methods: [grass], seasons: [summer], tier: common, why: "dragonflies over the fens in summer"}
       - {place: moor_of_icirrus, methods: [grass], seasons: [summer], tier: common, why: "dragonflies over the moor in summer"}
+      - {place: route_13, methods: [grass], seasons: [summer], tier: uncommon, why: "dragonflies over the dune grass in summer"}
     review: []
 
   - id: wurmple
@@ -409,6 +410,7 @@ families:
       - {place: route_3, methods: [grass], seasons: [summer], tier: uncommon, why: "the lake's edge at night"}
       - {place: pinwheel_forest_outskirts, methods: [grass], seasons: [summer], tier: uncommon, why: "the outskirts' marsh"}
       - {place: route_12, methods: [grass], seasons: [summer], tier: rare, why: "the hills' summer nights"}
+      - {place: route_13, methods: [grass], seasons: [summer], tier: uncommon, why: "warm summer nights on the beach"}
     review:
       - "Partners 'area' so that Illumise joins Volbeat (and the reverse), as they display together."
 
@@ -433,6 +435,7 @@ families:
       - {place: route_3, methods: [grass], seasons: [summer], tier: uncommon, why: "with Volbeat at the lake"}
       - {place: pinwheel_forest_outskirts, methods: [grass], seasons: [summer], tier: uncommon, why: "with Volbeat in the marsh"}
       - {place: route_12, methods: [grass], seasons: [summer], tier: rare, why: "with Volbeat on the hills"}
+      - {place: route_13, methods: [grass], seasons: [summer], tier: uncommon, why: "with Volbeat on warm summer nights"}
     review: []
 
   - id: kricketot
