@@ -5,14 +5,19 @@
     pokemon_center.py --check                          # checks services.json alone
 
 The file (its schema beside it) has the fees, rates and lists of the Centers' upstairs attendants
-(docs/paperwhite2/design/pokemon-center.md): the Day Care attendant's, which the game reads, and Training Services' and
-Training Services', which the game reads too, and the Wonder Trade's, proposed and checked but not read until it is
-built. The header has the fees that the script command PokemonCenter reads
+(docs/paperwhite2/design/pokemon-center.md): the Day Care attendant's, Training Services' and the Wonder Trade's. The
+header has the fees that the script command PokemonCenter reads
 (src/paperwhite2/ov012/paperwhite2_pokemon_center_commands.c), in the order of include/paperwhite2/pokemon_center.h's
-POKEMON_CENTER_FEE_* IDs, which this checks, and Training Services' other values: the Move Relearner's item, Hyper
-Training's requirements and the grooming courses' friendship. Only the hack's build runs this (configure.py --hack).
+POKEMON_CENTER_FEE_* IDs, which this checks, Training Services' other values (the Move Relearner's item, Hyper
+Training's requirements and the grooming courses' friendship), and the Wonder Trade's generator
+(src/paperwhite2/ov012/paperwhite2_wonder_trade.c): its rates, languages, balls and item tiers, the excluded species as
+bits, and for every species its pre-evolution and least level, worked out from res/pokemon/*/data.json's evolutions.
+The trainers' names and nicknames go into the system text bank wonder_trade_names (a line `\\from{wonder_trade.names}`,
+tools/text/text_sources.py, from name_lines here), in the order whose first lines the header's language rows give.
+Only the hack's build runs this (configure.py --hack).
 """
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
@@ -40,7 +45,30 @@ FEES = [
     ("POKEMON_CENTER_FEE_GROOMING_3", ("training", "grooming", 2, "price")),
     ("POKEMON_CENTER_FEE_BALL_CHANGE", ("training", "ball_change", "price")),
     ("POKEMON_CENTER_FEE_NATURE_CHANGE", ("training", "nature_change", "price")),
+    ("POKEMON_CENTER_FEE_WONDER_TRADE", ("wonder_trade", "fee")),
 ]
+# The languages' IDs (constants/language.h) and their species names' text banks (the game's own for English)
+LANGUAGES = {
+    "japanese": ("LANGUAGE_JAPANESE", "TEXT_BANK_SPECIES_NAMES_JA"),
+    "english": ("LANGUAGE_ENGLISH", "TEXT_BANK_SPECIES_NAMES"),
+    "french": ("LANGUAGE_FRENCH", "TEXT_BANK_SPECIES_NAMES_FR"),
+    "italian": ("LANGUAGE_ITALIAN", "TEXT_BANK_SPECIES_NAMES_IT"),
+    "german": ("LANGUAGE_GERMAN", "TEXT_BANK_SPECIES_NAMES_DE"),
+    "spanish": ("LANGUAGE_SPANISH", "TEXT_BANK_SPECIES_NAMES_ES"),
+    "korean": ("LANGUAGE_KOREAN", "TEXT_BANK_SPECIES_NAMES_KO"),
+}
+# The most characters of a trainer's name and of a nickname (the Pokémon's fields hold 7 and 10 and a terminator),
+# and in Japanese and Korean, whose games allow 5
+NAME_LENGTH = {"male_names": 7, "female_names": 7, "nicknames": 10}
+SHORT_LANGUAGES = {"japanese", "korean"}
+SHORT_LENGTH = 5
+# The evolution methods whose parameter is the level they evolve at (constants/pokemon.h)
+LEVEL_METHODS = {"EVO_METHOD_LEVEL", "EVO_METHOD_LEVEL_ATK_GT_DEF", "EVO_METHOD_LEVEL_ATK_EQ_DEF",
+                 "EVO_METHOD_LEVEL_ATK_LT_DEF", "EVO_METHOD_LEVEL_PERSONALITY_LOW", "EVO_METHOD_LEVEL_PERSONALITY_HIGH",
+                 "EVO_METHOD_SHEDINJA", "EVO_METHOD_SHEDINJA_MADE", "EVO_METHOD_LEVEL_MALE", "EVO_METHOD_LEVEL_FEMALE"}
+LAST_SPECIES = "SPECIES_GENESECT"
+# The special reward's IVs, in the order of PKM_PARAM_IV_HP's fields
+STATS = ("hp", "attack", "defense", "speed", "special_attack", "special_defense")
 
 
 class DataError(Exception):
@@ -60,7 +88,58 @@ def load(path: Path = SOURCE) -> dict:
         raise DataError(f"{datajson.label(path)}: wonder_trade.languages' weights are all 0")
     if not any(tier["weight"] for tier in data["wonder_trade"]["item_tiers"]):
         raise DataError(f"{datajson.label(path)}: wonder_trade.item_tiers' weights are all 0")
+    if not any(ball["weight"] for ball in data["wonder_trade"]["balls"]):
+        raise DataError(f"{datajson.label(path)}: wonder_trade.balls' weights are all 0")
+    for entry in data["wonder_trade"]["languages"]:
+        for key, length in NAME_LENGTH.items():
+            if entry["language"] in SHORT_LANGUAGES:
+                length = SHORT_LENGTH
+            for name in entry[key]:
+                if len(name) > length or any(c in name for c in "{}\\"):
+                    raise DataError(f"{datajson.label(path)}: wonder_trade.languages' {entry['language']} {key}: "
+                                    f"{name!r} is longer than {length} characters or has a control code")
     return data
+
+
+def name_lines(path: Path = SOURCE) -> list[str]:
+    """The text bank wonder_trade_names: each language's male names, female names and nicknames, in the order of
+    wonder_trade.languages."""
+    return [name for entry in load(path)["wonder_trade"]["languages"]
+            for key in ("male_names", "female_names", "nicknames") for name in entry[key]]
+
+
+def species_tables(data: dict) -> tuple[list[int], list[int]]:
+    """Each National Pokédex species' pre-evolution (0 for none) and least level, from res/pokemon/*/data.json: a
+    species that evolves from another at a level needs that level, one that evolves by anything else
+    other_evolution_levels' level for its stage, and never less than its pre-evolution's."""
+    values = datajson.constants()
+    last = values[LAST_SPECIES]
+    names = {number: name for name, number in values.items() if name.startswith("SPECIES_") and 0 < number <= last}
+    pre = [0] * (last + 1)
+    method = [None] * (last + 1)
+    stage = [1] * (last + 1)
+    for number in range(1, last + 1):
+        path = ROOT / "res" / "pokemon" / names[number].removeprefix("SPECIES_").lower() / "data.json"
+        species = json.loads(path.read_text())
+        stage[number] = species["evolution_stage"]
+        for evolution in species.get("evolutions", []):
+            target = values[evolution["species"]]
+            if target <= last and not pre[target]:
+                pre[target] = number
+                method[target] = evolution
+    levels = data["wonder_trade"]["other_evolution_levels"]
+
+    def least_level(number: int) -> int:
+        if not pre[number]:
+            return 1
+        evolution = method[number]
+        if evolution["method"] in LEVEL_METHODS and isinstance(evolution["param"], int) and evolution["param"] > 0:
+            level = evolution["param"]
+        else:
+            level = levels["third_stage"] if stage[number] >= 3 else levels["second_stage"]
+        return max(level, least_level(pre[number]))
+
+    return pre, [least_level(number) if number else 1 for number in range(last + 1)]
 
 
 def fee_ids() -> dict[str, int]:
@@ -110,9 +189,92 @@ def header(path: Path) -> str:
         "// The grooming courses' friendship, in their order",
         f"#define POKEMON_CENTER_GROOMING_COUNT {len(training['grooming'])}",
         f"#define POKEMON_CENTER_GROOMING_FRIENDSHIP {friendship}",
+        "",
+        *wonder_trade_lines(data),
         "", f"#endif // {GUARD}", "",
     ]
     return "\n".join(lines)
+
+
+def array(name: str, values: list, per_line: int = 16) -> list[str]:
+    """A #define of a list of values, a line each per_line."""
+    rows = [", ".join(str(v) for v in values[i:i + per_line]) for i in range(0, len(values), per_line)]
+    return [f"#define {name} \\", *(f"    {row}, \\" for row in rows[:-1]), f"    {rows[-1]}"]
+
+
+def wonder_trade_lines(data: dict) -> list[str]:
+    trade = data["wonder_trade"]
+    values = datajson.constants()
+    last = values[LAST_SPECIES]
+    excluded = [0] * (last // 8 + 1)
+    for name in trade["excluded_species"]:
+        number = values[name]
+        if not 0 < number <= last:
+            raise DataError(f"wonder_trade.excluded_species: {name} isn't a National Pokédex species")
+        excluded[number // 8] |= 1 << (number % 8)
+    pre, least = species_tables(data)
+    rows = []
+    first = 0
+    for entry in trade["languages"]:
+        language, bank = LANGUAGES[entry["language"]]
+        counts = [len(entry[key]) for key in ("male_names", "female_names", "nicknames")]
+        ranges = ", ".join(f"{{ {first + sum(counts[:i])}, {counts[i]} }}" for i in range(3))
+        rows.append(f"    {{ {language}, {bank}, {entry['weight']}, {{ {ranges} }} }}, \\")
+        first += sum(counts)
+    tiers = []
+    items = []
+    for tier in trade["item_tiers"]:
+        tiers.append(f"    {{ {tier['weight']}, {len(items)}, {len(tier['items'])} }}, /* {tier['name']} */ \\")
+        for item in tier["items"]:
+            items.append((item, 1) if isinstance(item, str) else (item["item"], item["weight"]))
+    special = trade["special_reward"]
+    ivs = ", ".join(str(special["ivs"][stat]) for stat in STATS)
+    moves = special["moves"] + ["MOVE_NONE"] * (4 - len(special["moves"]))
+    return [
+        "// The Wonder Trade (paperwhite2_wonder_trade.c): the level's spread, and the rates in percent",
+        f"#define WONDER_TRADE_LEVEL_SPREAD {trade['level_spread']}",
+        f"#define WONDER_TRADE_FEMALE_TRAINER_PERCENT {trade['female_trainer_percent']}",
+        f"#define WONDER_TRADE_SHINY_ONE_IN {trade['shiny_one_in']}",
+        f"#define WONDER_TRADE_HIDDEN_ABILITY_PERCENT {trade['hidden_ability_percent']}",
+        f"#define WONDER_TRADE_PERFECT_IVS_PERCENT {trade['perfect_ivs_percent']}",
+        f"#define WONDER_TRADE_PERFECT_IV_COUNT {trade['perfect_iv_count']}",
+        f"#define WONDER_TRADE_POKERUS_PERCENT {trade['pokerus_percent']}",
+        f"#define WONDER_TRADE_NICKNAME_PERCENT {trade['nickname_percent']}",
+        f"#define WONDER_TRADE_HELD_ITEM_PERCENT {trade['held_item_percent']}",
+        "// The species never received nor sent, a bit each by species number",
+        *array("WONDER_TRADE_EXCLUDED_SPECIES", [f"0x{byte:02x}" for byte in excluded]),
+        f"#define WONDER_TRADE_SPECIES_COUNT {last + 1}",
+        "// Each species' pre-evolution (0 for none) and least level, below which a received one is its pre-evolution",
+        *array("WONDER_TRADE_PRE_EVOLUTIONS", pre),
+        *array("WONDER_TRADE_LEAST_LEVELS", least, 32),
+        "// The languages: { language, its species names' bank, weight, { first line, count } in the bank",
+        "// wonder_trade_names of the male names, the female names and the nicknames }",
+        f"#define WONDER_TRADE_LANGUAGE_COUNT {len(rows)}",
+        "#define WONDER_TRADE_LANGUAGES \\", *rows, "",
+        "// The balls: { item, weight }",
+        f"#define WONDER_TRADE_BALL_COUNT {len(trade['balls'])}",
+        "#define WONDER_TRADE_BALLS \\",
+        *(f"    {{ {ball['item']}, {ball['weight']} }}, \\" for ball in trade["balls"]), "",
+        "// The held items' tiers: { weight, first, count } of WONDER_TRADE_ITEMS' { item, weight }",
+        f"#define WONDER_TRADE_ITEM_TIER_COUNT {len(tiers)}",
+        "#define WONDER_TRADE_ITEM_TIERS \\", *tiers, "",
+        f"#define WONDER_TRADE_ITEM_COUNT {len(items)}",
+        "#define WONDER_TRADE_ITEMS \\", *(f"    {{ {item}, {weight} }}, \\" for item, weight in items), "",
+        "// The special reward, once, at a percent a trade until the trade WONDER_TRADE_SPECIAL_GUARANTEED_AT",
+        f"#define WONDER_TRADE_SPECIAL_ENABLED {1 if special['enabled'] else 0}",
+        f"#define WONDER_TRADE_SPECIAL_PERCENT {special['percent']}",
+        f"#define WONDER_TRADE_SPECIAL_GUARANTEED_AT {special['guaranteed_at']}",
+        f"#define WONDER_TRADE_SPECIAL_SPECIES {special['species']}",
+        f"#define WONDER_TRADE_SPECIAL_FORM {special['form']}",
+        f"#define WONDER_TRADE_SPECIAL_LEVEL {special['level']}",
+        f"#define WONDER_TRADE_SPECIAL_MOVES {', '.join(moves)}",
+        f"#define WONDER_TRADE_SPECIAL_NATURE {special['nature']}",
+        "// In the order of PKM_PARAM_IV_HP's fields: HP, Attack, Defense, Speed, Sp. Atk, Sp. Def",
+        f"#define WONDER_TRADE_SPECIAL_IVS {ivs}",
+        f"#define WONDER_TRADE_SPECIAL_ABILITY_SLOT {special['ability_slot']}",
+        f"#define WONDER_TRADE_SPECIAL_BALL {special['ball']}",
+        f"#define WONDER_TRADE_SPECIAL_ITEM {special['held_item']}",
+    ]
 
 
 def write_if_changed(path: Path, text: str):

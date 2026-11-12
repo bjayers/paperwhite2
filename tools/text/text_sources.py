@@ -224,7 +224,14 @@ SOURCES = {
     "trainers.name": lambda: [("\\c" if data.get("compress_name", True) else "") + to_line(data["name"])
                               for data in trainers().values()],
     "trainers.messages": trainer_messages,
+    # Paper White 2: the Wonder Trade's trainers' names and nicknames (tools/paperwhite2/pokemon_center.py)
+    "wonder_trade.names": lambda: wonder_trade_names(),
 }
+
+
+def wonder_trade_names() -> list[str]:
+    from tools.paperwhite2.pokemon_center import name_lines
+    return name_lines()
 
 
 def facility_lines(source: str) -> list[str] | None:

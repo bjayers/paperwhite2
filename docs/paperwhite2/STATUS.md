@@ -2,6 +2,38 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-12: the Pokémon Centers' Wonder Trade (ROM session)
+
+The third upstairs attendant (design/pokemon-center.md, Wonder Trade, "Built"): the middle counter, the Wi-Fi Club's
+(script 10100), is the Wonder Trade in every town's Center. A Pokémon from the party (the party screen) or a Box (the
+PC Box in a pick-only mode, the Dream World's with the trade's own title, button and messages) goes through the tube
+for ₽1,000, and a generated one comes back in its place with the in-game trade's scene, a trade evolution if it
+qualifies, and the Pokédex (with its language). Eggs, legendaries and mythicals, held items and the party's last
+Pokémon that can battle are refused. The generator (`src/paperwhite2/ov012/paperwhite2_wonder_trade.c`) reads
+everything from `services.json`'s `wonder_trade`, which now also has the excluded species, the least levels of
+evolutions by other methods (stage 2: 20, stage 3: 30), each language's 20 male and 20 female trainers' names and 20
+nicknames (packed into the new system bank `wonder_trade_names`), the female trainers' rate, the balls with weights,
+the perfect IVs' count, and the special reward's Pokémon (a plain Pichu placeholder, `enabled: false`). New save data:
+flags 0x937 `EVENT_FLAG_WONDER_TRADE_EXPLAINED` and 0x938 `EVENT_FLAG_WONDER_TRADE_SPECIAL_RECEIVED`, variable 0x405a
+`EVENT_WORK_WONDER_TRADE_COUNT` (plugins.md's Flags and new Variables table). Japanese and Korean names draw in the
+trade scene, the evolution, messages, the party and the summary, so Korean keeps its weight.
+
+`--hack` builds with no warnings, `verify_dsi_rom.py` says intact, 76 KB left in the arena (the Wonder Trade's code and
+tables are about 5.5 KB of overlay 12). Tested headless in DeSmuME on a copy of the user's save in Castelia's Center
+(the list in the design doc): party and Box trades, every refusal, the fee, the walk and scene, forced shiny, items
+and trade evolutions, the Pokédex bits, Japanese and Korean on screen, and the special reward with a test build; 100,000
+plans of the real planner code on the PC matched the data's rates with no illegal species or level. To test on
+hardware: talk to the middle upstairs attendant in any Center. Open: the special reward's scene says "came back from"
+the player (its dialogue and the Spiky-eared form wait for the user); trading the followed Pokémon leaves no follower
+until the Following Pokémon picks again.
+
+The editor's script round trip failed on `global_2100.s` script 11 because the Day Care helper put `#ifdef
+PAPERWHITE2`, a blank line and a comment between Script_11's movement data and `Script_12:`; the translator keeps
+those lines as a raw `asm {}` block, and reopening moves the blank line and the comment outside it. The script now has
+the `#ifdef` right after the data and the comment inside Script_12 (no change to what it runs), and every script of the
+game round trips again (`editor/tests/scriptlang.test.ts`, 7 of 7). The editor quirk is open (editor/'s session):
+a trailing raw block's blank and comment lines don't reopen inside it.
+
 ## 2026-11-12: the Pokémon Centers' Training Services (ROM session)
 
 The second upstairs attendant (design/pokemon-center.md, Training Services, "Built"): the right counter, the Global

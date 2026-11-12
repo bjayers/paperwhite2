@@ -452,7 +452,8 @@ def script_imports(script: str) -> list[str]:
 
 # The data in JSON that the text takes messages from, with \from{...} lines (tools/text/text_sources.py)
 TEXT_DATA_DIRS = ["res/pokemon", "res/moves", "res/items", "res/trainers/data", "res/abilities", "res/types",
-                  "res/field/trades", "res/trainers/facilities", "res/trainers/classes", "res/natures", "res/field/places"]
+                  "res/field/trades", "res/trainers/facilities", "res/trainers/classes", "res/natures",
+                  "res/field/places", "res/paperwhite2/pokemon_center"]
 
 # Text archives built from source, by tools/text/text_data.py: each maps its path under files/ to the directory of its
 # message files, one text file each, in archive order
@@ -1211,7 +1212,10 @@ def main():
         n.build([output], "pokemon_center", ["res/paperwhite2/pokemon_center/services.json"],
                 implicit=["tools/paperwhite2/pokemon_center.py",
                           "res/paperwhite2/pokemon_center/services.schema.json", "include/paperwhite2/pokemon_center.h",
-                          "tools/data/datajson.py", "generated/items.txt"])
+                          "tools/data/datajson.py", "generated/items.txt", "generated/species.txt",
+                          "generated/moves.txt", "generated/natures.txt",
+                          # (the Wonder Trade's pre-evolutions and least levels)
+                          *sorted(str(path) for path in Path("res/pokemon").glob("*/data.json"))])
         constant_headers.append(output)
         # Paper White 2: the conditions' generated headers, the terrain groups, the level scaling and CheckCondition's
         # IDs (tools/paperwhite2/conditions.py, docs/paperwhite2/plugins.md's Conditions)

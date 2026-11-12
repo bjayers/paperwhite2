@@ -520,13 +520,29 @@ used one is named with a `# Paper White 2:` comment). New features take theirs f
 | 0x41c-0x44b | free | |
 | 0x754 | free (was the old season NPC's) | |
 | 0x755-0x757 | free | |
-| 0x92f-0x95f | the hack's features | 0x92f `EVENT_FLAG_EXP_SHARE_OFF`, 0x930 `EVENT_FLAG_SPAWN_HIDDEN`, 0x931-0x935 `EVENT_FLAG_BLACK2_*` (the places as Black 2's, `paperwhite2/version_places.h`), 0x936 `EVENT_FLAG_DAYCARE_COUNTER_EXPLAINED` (the Centers' Day Care attendant, `design/pokemon-center.md`) |
+| 0x92f-0x95f | the hack's features | 0x92f `EVENT_FLAG_EXP_SHARE_OFF`, 0x930 `EVENT_FLAG_SPAWN_HIDDEN`, 0x931-0x935 `EVENT_FLAG_BLACK2_*` (the places as Black 2's, `paperwhite2/version_places.h`), 0x936 `EVENT_FLAG_DAYCARE_COUNTER_EXPLAINED` (the Centers' Day Care attendant, `design/pokemon-center.md`), 0x937 `EVENT_FLAG_WONDER_TRADE_EXPLAINED` and 0x938 `EVENT_FLAG_WONDER_TRADE_SPECIAL_RECEIVED` (the Wonder Trade's) |
 | 0xaef | the user's: the Wurmple daily-feeding mini-event (`route_20.s`), a daily flag | `EVENT_FLAG_DAILY_0x0aef`; don't touch |
 | 0xaf0 | the user's: the Pokémon Center lottery girl (`global_10850.s`, set in `aspertia_city.s` too), a daily flag | `EVENT_FLAG_DAILY_0x0af0`; don't touch |
 | 0xbd9-0xbf7 | the debug menu's toggles | 0xbd9 `EVENT_FLAG_DEBUG_ALWAYS_SHINY`, 0xbda `EVENT_FLAG_DEBUG_NO_WILD_ENCOUNTERS`, 0xbdb `EVENT_FLAG_DEBUG_WALK_THROUGH_WALLS`, 0xbdc `EVENT_FLAG_DEBUG_FEWER_WILD_ENCOUNTERS`, 0xbdd `EVENT_FLAG_DEBUG_NO_WANDERERS` |
 
 Flags elsewhere, even ones no text search finds, may be reached by a base plus an index (hidden items, trainers), so
 don't take them. 0x5d0, which the Exp. Share used first, is back to its original name.
+
+### Variables
+
+The saved event variables (0x4000-0x41ae) that the hack's own features use, each found unused by
+`tools/paperwhite2/var_usage.py` and named with a `# Paper White 2:` comment in `generated/vars.txt`. New features take
+the next unused one (`var_usage.py --check` says whether it is).
+
+| Variable | Name | Use |
+| --- | --- | --- |
+| 0x4050 | `EVENT_WORK_SEASON_SETTING` | the season's mode (Seasons) |
+| 0x4051 | `EVENT_WORK_ZONE_LOAD_COUNTER` | the zone loads, for the conditions' load seed (Conditions) |
+| 0x4052-0x4057 | `EVENT_WORK_FOLLOWER_TALK_DAY_0`-`_5` | the Following Pokémon's daily friendship from a talk |
+| 0x4058 | `EVENT_WORK_SPAWN_PICK` | the key the zone's NPC spawns were picked for (NPC spawns) |
+| 0x4059 | `EVENT_WORK_REGI_CHAMBER` | the Underground Ruins' chamber (Version places) |
+| 0x405a | `EVENT_WORK_WONDER_TRADE_COUNT` | the Wonder Trades made, at most 65535, the special reward's pity count (Pokémon Center attendants) |
+| 0x405b-0x406f | | free |
 
 ### Seasons
 
@@ -2345,18 +2361,33 @@ the Day Care attendant at the left counter, the Union Room's: `global_2100.s`'s 
 the Day Care's own commands. The second is Training Services at the right counter, the Global Terminal's:
 `global_10105.s`'s `Script_1` under `PAPERWHITE2`, nine services for a party Pokémon in a scrolling list (Name Rater,
 Move Relearner, Move Deleter, Hyper Training, Effort, Ability, Grooming, Poké Ball and Nature Services), with the
-vanilla screens where the game has them and `PokemonCenter`'s actions for the rest. The attendants share:
+vanilla screens where the game has them and `PokemonCenter`'s actions for the rest. The third is the Wonder Trade at
+the middle counter, the Wi-Fi Club's: `global_10100.s`'s `Script_1` under `PAPERWHITE2`, a party or Box Pokémon
+traded for a generated one with the in-game trade's scene (`src/paperwhite2/ov012/paperwhite2_wonder_trade.c`). The
+attendants share:
 
 | What | Where |
 | --- | --- |
-| Their fees, rates and lists, which the user edits | `res/paperwhite2/pokemon_center/services.json` (schema beside it), written by `tools/paperwhite2/pokemon_center.py` into the generated `paperwhite2/pokemon_center_config.h` at build time; the Day Care's fee and Training Services' prices and requirements are read, the Wonder Trade's not yet |
+| Their fees, rates and lists, which the user edits | `res/paperwhite2/pokemon_center/services.json` (schema beside it), written by `tools/paperwhite2/pokemon_center.py` into the generated `paperwhite2/pokemon_center_config.h` at build time; the Day Care's fee, Training Services' prices and requirements and the Wonder Trade's fee, rates and lists are read |
 | Their script command, `PokemonCenter action, arg1, arg2, result` (0x2f7) | `src/paperwhite2/ov012/paperwhite2_pokemon_center_commands.c`; actions and fee IDs in `include/paperwhite2/pokemon_center.h` (the scripts include it): `GET_FEE` for a message, `WORD_SET_FEE` for one past 65535, `PAY_FEE` to pay in 32 bits, `PAY_BP`, and Training Services' changes to the party Pokémon in slot arg1. Word 2 is the money window's (`MoneyWinDisp`, `MoneyWinUpdate`), so a message can't keep a word there across them |
 | The walk to the tube behind the counter and back | global script 2111, `RTCallGlobal SCRID_POKEMON_CENTER_ATTENDANT_TUBE`, for the attendant talked to (0x8011) |
+| The Wonder Trade's actions | `WONDER_TRADE_CHECK` (the refusals), `WONDER_TRADE_PICK_BOX` (the PC Box, which the script waits for), `WONDER_TRADE_ROLL_SPECIAL`, `WONDER_TRADE_START` (the trade, which the script waits for): a source `WONDER_TRADE_SOURCE_PARTY` with a party slot or `_BOX` with a Box position, tray × 30 + position |
+| The Wonder Trade's names and nicknames | `services.json`'s `wonder_trade.languages`, packed into the system text bank `wonder_trade_names` (`\\from{wonder_trade.names}`, the hack's last bank, `TEXT_BANK_WONDER_TRADE_NAMES`) |
+| The Wonder Trade's save data | flags `EVENT_FLAG_WONDER_TRADE_EXPLAINED` (0x937) and `EVENT_FLAG_WONDER_TRADE_SPECIAL_RECEIVED` (0x938), variable `EVENT_WORK_WONDER_TRADE_COUNT` (0x405a), the trades made |
 
 An ability swap changes the PID: evolution, form changes and breeding read the ability slot from its bit 16 (bit 0 for
 Pokémon from before Black and White), so `CHANGE_ABILITY` flips that bit and moves the data's four blocks to the order
 the new PID gives (`PML_PkmGetParamBlockCore` orders them by bits 13-17), as anything else that changes a PID must; the
 Shiny Candy keeps those bits instead (`paperwhite2_shiny_pid.c`). The flip keeps shininess and, for bit 16, the sex.
+
+The Wonder Trade makes its Pokémon's PID with the game's own `PML_GenPID` for the generated trainer ID (shiny with
+`PID_RARE_ALWAYS`, else `PID_RARE_NEVER`, so never shiny by accident), a random ability bit (bit 16) and the sex from the
+species' ratio; `PokeParty_CreatePkm` then takes the ability, the sex and the level-up moves from it, as the game's own
+generator does. A hidden ability sets its field (`PokeParty_SetHiddenAbil`) and keeps the PID. Its Box pick is the PC
+Box in the Dream World's mode (`BOX2_MODE_DREAM_WORLD`, which only picks), with `Box2Param`'s new `wonderTrade` set:
+the species flags it greys out by are every species but the excluded ones, and the title, the menu's Trade, the
+refusal and the question are the trade's (`box2_bmp.txt` and `btl_pokeparam_box_main_save_init.txt`'s appended lines;
+`scrcmd_proc_fld.c`'s PC clears the field, which its parameter doesn't).
 
 ## Adding global scripts
 

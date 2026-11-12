@@ -12,7 +12,8 @@
 // Command 0x2f7, PokemonCenter action, arg1, arg2, result: runs one of the attendants' actions
 // (POKEMON_CENTER_ACTION_*, paperwhite2/pokemon_center.h) with its two arguments, each a value or a variable, and
 // puts what it returns in the variable result. The fees are res/paperwhite2/pokemon_center/services.json's, and money
-// is counted in 32 bits, so a fee may be more than a variable holds
+// is counted in 32 bits, so a fee may be more than a variable holds. The Wonder Trade's PICK_BOX and START start an
+// event (the PC Box, the trade), which the script waits for and which sets the result when done
 BOOL Scrcmd_PaperWhite2_PokemonCenter(VM *vm, FieldScriptEnv *env);
 
 #endif // PAPERWHITE2_POKEMON_CENTER_COMMANDS_H

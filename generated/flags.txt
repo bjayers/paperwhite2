@@ -2363,8 +2363,11 @@ EVENT_FLAG_BLACK2_BLACK_CITY
 # Paper White 2: set once the Pokémon Centers' Day Care attendant has explained her counter (res/field/scripts/global_2100.s),
 # in the hack's block 0x92f-0x95f (docs/paperwhite2/plugins.md)
 EVENT_FLAG_DAYCARE_COUNTER_EXPLAINED
-EVENT_FLAG_0x0937
-EVENT_FLAG_0x0938
+# Paper White 2: set once the Pokémon Centers' Wonder Trade attendant has explained her counter, and once its one
+# special reward was received (res/field/scripts/global_10100.s, src/paperwhite2/ov012/paperwhite2_wonder_trade.c),
+# in the hack's block 0x92f-0x95f (docs/paperwhite2/plugins.md)
+EVENT_FLAG_WONDER_TRADE_EXPLAINED
+EVENT_FLAG_WONDER_TRADE_SPECIAL_RECEIVED
 EVENT_FLAG_0x0939
 EVENT_FLAG_0x093a
 EVENT_FLAG_0x093b

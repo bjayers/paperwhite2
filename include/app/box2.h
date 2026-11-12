@@ -31,6 +31,11 @@ typedef struct {
     // Where the chosen Pokemon is, 0xff for both if none was chosen
     u8 tray;
     u8 position;
+#ifdef PAPERWHITE2
+    // Paper White 2: set with BOX2_MODE_DREAM_WORLD, the pick is the Wonder Trade's
+    // (src/paperwhite2/ov012/paperwhite2_wonder_trade.c), whose title and messages it shows
+    BOOL wonderTrade;
+#endif
 } Box2Param;
 
 extern const GameProcFunctions BOX2_PROC_FUNCTIONS;

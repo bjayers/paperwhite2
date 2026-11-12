@@ -9,6 +9,7 @@
 #include "paperwhite2/pokemon_center.h"
 #include "paperwhite2/pokemon_center_commands.h"
 #include "paperwhite2/pokemon_center_config.h"
+#include "paperwhite2/wonder_trade.h"
 #include "pml/item.h"
 #include "pml/personal.h"
 #include "pml/poke_party.h"
@@ -21,7 +22,8 @@
 #include "system/wordset.h"
 
 // Paper White 2: the Pokémon Center attendants' script command, PokemonCenter, in overlay 12 beside the original's
-// commands. See include/paperwhite2/pokemon_center_commands.h, and its actions in include/paperwhite2/pokemon_center.h
+// commands. See include/paperwhite2/pokemon_center_commands.h, and its actions in include/paperwhite2/pokemon_center.h;
+// the Wonder Trade's are in paperwhite2_wonder_trade.c
 
 // The most a variable holds
 #define VAR_VALUE_MAX 0xffff
@@ -347,6 +349,10 @@ static u32 PokemonCenterCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, 
         }
         loadNatureToStrbuf(wordSet, arg2, arg1);
         return TRUE;
+    case POKEMON_CENTER_ACTION_WONDER_TRADE_CHECK:
+        return WonderTrade_Check(env, arg1, arg2);
+    case POKEMON_CENTER_ACTION_WONDER_TRADE_ROLL_SPECIAL:
+        return WonderTrade_RollSpecial(env) ? WONDER_TRADE_SPECIAL : 0;
     default:
         if (!CheckGetPartyPokemon(env, arg1, &pkm)) {
             return 0;
@@ -361,6 +367,15 @@ BOOL Scrcmd_PaperWhite2_PokemonCenter(VM *vm, FieldScriptEnv *env) {
     u16 arg2 = ScriptReadAny(vm, env);
     u16 *result = ScriptReadVar(vm, env);
 
+    // The Wonder Trade's Box and trade are events, which the script waits for and which set the result
+    switch (action) {
+    case POKEMON_CENTER_ACTION_WONDER_TRADE_PICK_BOX:
+        WonderTrade_CallBox(env, result);
+        return TRUE;
+    case POKEMON_CENTER_ACTION_WONDER_TRADE_START:
+        WonderTrade_CallTrade(env, arg1, arg2, result);
+        return TRUE;
+    }
     *result = PokemonCenterCommands_Run(env, action, arg1, arg2);
     return FALSE;
 }

@@ -1623,13 +1623,12 @@ L_10C0:
 Movement_10D0:
     Move 0, 1
     MoveEnd
-
 #ifdef PAPERWHITE2
-// Paper White 2: SCRID_POKEMON_CENTER_ATTENDANT_TUBE (paperwhite2/pokemon_center.h), the upstairs attendants' trip to
-// the tube behind their counter, for each transfer: the attendant the player talked to (0x8011) turns to the tube,
-// steps up to it, waits while it runs with its sound, and steps back facing the player. Called with RTCallGlobal with
-// the message window closed; it changes no variable, so any attendant's script can call it
 Script_12:
+    // Paper White 2: SCRID_POKEMON_CENTER_ATTENDANT_TUBE (paperwhite2/pokemon_center.h), the upstairs attendants' trip to
+    // the tube behind their counter, for each transfer: the attendant the player talked to (0x8011) turns to the tube,
+    // steps up to it, waits while it runs with its sound, and steps back facing the player. Called with RTCallGlobal with
+    // the message window closed; it changes no variable, so any attendant's script can call it
     ActorCmdExec 0x8011, Movement_AttendantToTube
     ActorCmdWait
     SEPlay SEQ_SE_PC_LOGIN

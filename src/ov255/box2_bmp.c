@@ -155,7 +155,16 @@ void Box2Bmp_PrintTitle(Box2SysWork *syswk) {
     GFL_BitmapFill(BmpWin_GetBitmap(app->windows[0].window), 0);
     msgData = LoadBoxMsgData();
     // The titles follow the modes, from Deposit Pokémon on
+#ifdef PAPERWHITE2
+    // Paper White 2: the Wonder Trade's pick (Box2Param's wonderTrade) has its own title
+    if (syswk->param->wonderTrade) {
+        PrintMsg(app, 0, msgData, Box2Bmp_Text_WonderTradeTitle, 0, 8, app->font, BOX2_COLOR_NORMAL);
+    } else {
+        PrintMsg(app, 0, msgData, syswk->param->mode + Box2Bmp_Text_DepositPokemon, 0, 8, app->font, BOX2_COLOR_NORMAL);
+    }
+#else
     PrintMsg(app, 0, msgData, syswk->param->mode + Box2Bmp_Text_DepositPokemon, 0, 8, app->font, BOX2_COLOR_NORMAL);
+#endif
     GFL_MsgDataFree(msgData);
     PushWindowScreen(&syswk->app->windows[0]);
 }
@@ -770,6 +779,13 @@ void Box2Bmp_PrintDenyMsg(Box2SysWork *syswk, u32 type, u32 index) {
         msgId = Box2Bmp_Text_EggsCannotSelected;
         break;
     case BOX2_MOVE_ERR_NOT_SLEEPY:
+#ifdef PAPERWHITE2
+        // Paper White 2: the Wonder Trade's pick refuses the species it doesn't take
+        if (syswk->param->wonderTrade) {
+            msgId = Box2Bmp_Text_WonderTradeCantTrade;
+            break;
+        }
+#endif
         msgId = Box2Bmp_Text_PokemonDoesntSeemSleepy;
         break;
     }
@@ -778,6 +794,13 @@ void Box2Bmp_PrintDenyMsg(Box2SysWork *syswk, u32 type, u32 index) {
 
 void Box2Bmp_PrintTuckIn(Box2SysWork *syswk) {
     loadBoxPokemonNameToStrbuf(syswk->app->wordSet, 0, Box2Main_GetBoxPkm(syswk, syswk->tray, syswk->pos));
+#ifdef PAPERWHITE2
+    // Paper White 2: the Wonder Trade's pick asks whether to trade it
+    if (syswk->param->wonderTrade) {
+        PrintBoxMsg(syswk, Box2Bmp_Text_WonderTradeOk, 27);
+        return;
+    }
+#endif
     PrintBoxMsg(syswk, Box2Bmp_Text_WillTuckedOk, 27);
 }
 

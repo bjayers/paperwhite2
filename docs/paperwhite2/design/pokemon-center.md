@@ -67,8 +67,8 @@ The field's list menus scroll (they keep a top row and a cursor row: `MsgBGPrint
 
 - **The counter:** the right of the three upstairs, the Global Terminal's (script 10105, `global_10105.s`'s
   `Script_1` under `#ifdef PAPERWHITE2`, the GTS's code in `#else`; the attendant keeps `OBJ_CODE_81`'s sprite). Its
-  text is appended to `res/text/script/global_10105.txt` (`Global10105_Text_Training*`). The middle counter stays the
-  Wi-Fi Club's, for the Wonder Trade.
+  text is appended to `res/text/script/global_10105.txt` (`Global10105_Text_Training*`). The middle counter is the
+  Wonder Trade's.
 - **The menu:** a greeting, then a list of the nine services and Cancel that scrolls (six rows show), looping with
   "anything else?" until Cancel or B. The money window stays up. A service with one price checks the money before
   the party screen; each picks a party Pokémon with the Name Rater's party screen (`CallPokeSelect`; an Egg is
@@ -149,6 +149,89 @@ The field's list menus scroll (they keep a top row and a cursor row: `MsgBGPrint
   received flag; the reward is an entry in a data table of special rewards, disabled until the form and the user's
   sprite exist.
 
+#### Built (2026-11-12)
+
+- **The counter:** the middle of the three upstairs, the Wi-Fi Club's (script 10100, `global_10100.s`'s `Script_1`
+  under `#ifdef PAPERWHITE2`, the Wi-Fi Club's code in `#else`; the attendant keeps `OBJ_CODE_82`'s sprite). Its text
+  is appended to `res/text/script/global_10100.txt` (`Global10100_Text_WonderTrade*`).
+- **The flow:** the first visit explains the trade and its fee once (`EVENT_FLAG_WONDER_TRADE_EXPLAINED`, 0x937),
+  later ones greet; the money window stays up. A menu: **From your party** (the Name Rater's party screen,
+  `CallPokeSelect`), **From a Box** (the PC Box in a mode that only picks: the Dream World's, with `Box2Param`'s new
+  `wonderTrade` giving it the title "SELECT A POKÉMON TO TRADE", a Trade button, "Trade X?", and "This Pokémon can't
+  go in the Wonder Trade." for the species it greys out, the excluded ones; Eggs are refused there as for the Dream
+  World), Cancel. The Pokémon picked is refused when it is an Egg, an excluded species ("far too special to trade"),
+  holds an item, or is the party's last Pokémon that can battle. Else the fee from the data (₽1,000), Yes/No, paid
+  (too little money says so and takes nothing), "I'll send X through the tube", the attendant's walk to the tube
+  (`SCRID_POKEMON_CENTER_ATTENDANT_TUBE`), and the in-game trade's scene (overlay 194's demo procs, as `fld_trade.c`
+  runs them) with both Pokémon and the trainer's name. The new Pokémon takes the old one's party slot or Box
+  position; a trade evolution follows as a trade does (`CheckEvolveSpecies` with `EVO_CHECK_TRADE` and the sent
+  Pokémon as the partner, so Karrablast and Shelmet evolve with each other too; the evolution demo takes a
+  trade-evolution item, as it does for any); a Box Pokémon evolves in a party of its own before it goes back. The
+  Pokédex registers it as seen and caught, with its language (`addPkmToDex`, up to Arceus, as the Pokédex keeps).
+  "X came from Y! Please take good care of it!", then "Would you like to trade another Pokémon?" and the menu again.
+- **The generator** (`src/paperwhite2/ov012/paperwhite2_wonder_trade.c`, `WonderTrade_Plan` for the picks, which use
+  only the random numbers and the data, then the Pokémon made with the game's own functions):
+  - A species from 1 to Genesect, any but `excluded_species` (the 48 legendaries and mythicals, Phione included;
+    starters and babies are allowed), evenly.
+  - The level: the sent one's plus or minus 1 to `level_spread` (10), clamped to 1-100. Then, while the level is below
+    the species' least level, its pre-evolution instead. The least levels are worked out at build time from
+    `res/pokemon/*/data.json`'s evolutions: an evolution at a level needs that level (Gabite 24, Garchomp 48); any
+    other (friendship, a stone, a trade, a move, a place) needs `other_evolution_levels`' level for its stage (20 for
+    the second, 30 for the third: Pikachu 20, Raichu 30, Alakazam 30, Crobat 30), never less than its pre-evolution's
+    (Mamoswine 33). It knows its level-up moves for its level (`PokeParty_CreatePkm`).
+  - Its trainer: a language by `languages`' weights (English 35, Japanese 20, French, German, Spanish, Italian and
+    Korean 9); a female trainer at `female_trainer_percent` (50); a name from that language's 20 male or 20 female
+    names; a random trainer ID and secret ID. The names and nicknames are in the data (`male_names`, `female_names`,
+    `nicknames`, 20 each a language; at most 7 characters, 10 for a nickname, 5 in Japanese and Korean), packed into
+    the system text bank `wonder_trade_names`.
+  - A foreign Pokémon is named in its language from the game's own banks (`species_names_ja.txt` and the others,
+    which the US ROM has for the Pokédex's foreign entries), and keeps it after a trade evolution (renamed from the
+    evolution's English); a nickname from its language's list at `nickname_percent` (25).
+  - The PID from `PML_GenPID` for the trainer's ID: shiny at 1 in `shiny_one_in` (256), never shiny by accident
+    otherwise; the ability bit random and the sex by the species' ratio, which `PokeParty_CreatePkm` reads. The
+    nature random (its own field). The hidden ability at `hidden_ability_percent` (10); `perfect_iv_count` (3)
+    different IVs at 31 at `perfect_ivs_percent` (10); Pokérus at `pokerus_percent` (1), a random strain and its days.
+  - A ball by `balls`' weights (Poké Ball 400 of 1000, Great 180, Ultra 120, Premier 40, Heal and Quick 30, Net,
+    Nest, Luxury and Dusk 25, Dive, Repeat and Timer 20, the Apricorn balls and the Dream Ball 5).
+  - A held item at `held_item_percent` (40): a tier by `item_tiers`' weights (the user's 500/300/195/5), then an item
+    of it, evenly or by its own weight (the Master Ball 14 of the ultra-rare tier's 56, a quarter).
+  - Met in an in-game trade (`LOCATION_IN_GAME_TRADE`) at its level, today, in this game; its friendship the
+    species' base. Obedience follows the game's rules for a Pokémon with another trainer's ID.
+- **The special reward** (the Spiky-eared Pichu's foundation): `special_reward` has the rate (2%), the trade that
+  guarantees it (30th), the species, form, level, four moves, nature, IVs, ability slot, ball and held item (a plain
+  Pichu as a placeholder until the form and sprite exist), and `enabled` (false). When enabled and not yet received
+  (`EVENT_FLAG_WONDER_TRADE_SPECIAL_RECEIVED`, 0x938), each trade rolls it before the walk (`WONDER_TRADE_ROLL_SPECIAL`,
+  guaranteed once the trade count reaches `guaranteed_at`); then the attendant says "Huh? That's odd... Something
+  strange just came through the tube!" after the walk, the trade's scene shows the player as the other side, and "X...
+  No Trainer sent it. It seems to want to stay with you!". It is never shiny, with the player's name, ID and
+  language, met here. Every trade counts in `EVENT_WORK_WONDER_TRADE_COUNT` (0x405a, at most 65535).
+- **The command:** `PokemonCenter`'s new actions `WONDER_TRADE_CHECK`, `_PICK_BOX`, `_ROLL_SPECIAL`, `_START`
+  (`include/paperwhite2/pokemon_center.h`), and the fee `POKEMON_CENTER_FEE_WONDER_TRADE`. `PICK_BOX` and `START` are
+  events the script waits for, as `CallPC` is.
+- **Tested** in DeSmuME on a copy of the user's save (Castelia's Center), reading the party's and the Box's decrypted
+  data: the first visit and later greetings; a party trade (Swinub Lv. 15 for Sarah's Ekans Lv. 25 in a Heal Ball,
+  Shed Skin from the PID's bit, its level-25 moves, ₽20,712 → ₽19,712) and Box trades (Trubbish Lv. 4 for a Klink
+  Lv. 1, Shinx for a German Eevee "Evoli", written back to its Box position, checksums valid); each refusal (Keldeo,
+  a held item, an Egg, the last Pokémon that can battle) and too little money, nothing taken; the walk to the tube and
+  the trade's scene; a forced shiny (PID shiny for its trainer's IDs); a forced item of each tier (Oran Berry, Dragon
+  Scale, Leftovers, Master Ball); trade evolutions, forced by species: Kadabra to Alakazam (Korean, renamed 후딘 after
+  the English evolution's name), from a Box too (Japanese フーディン, written back), and Onix holding a Metal Coat to
+  Steelix with the coat used up; the Pokédex's caught bit and language bit for the received and evolved species;
+  Japanese and Korean names in the trade's scene, the evolution, the messages, the party screen and the summary (the
+  font has kana and hangul); and, with a test build (Japanese and Korean only, the special reward on at 0% until the
+  3rd trade), the trade count 1 to 4, the special reward on the 3rd (its words, a Pichu Lv. 30 with the data's moves,
+  IVs and nature, the player's name and IDs, met in Castelia, not shiny) and none on the 4th. 100,000 plans of the
+  real planner code built on the PC (`WonderTrade_Plan` with the same random generator) gave no excluded species and
+  no species below its least level, levels within ±10, and the data's rates: shiny 0.38%, hidden ability 10.2%,
+  perfect IVs 10.0%, Pokérus 1.0%, nickname 25.0%, a held item 40.0% (tiers 49.5/30.1/19.9/0.5%, the Master Ball 24%
+  of the ultra-rare), the languages and balls to their weights.
+- **Open:** the special reward's trade scene shows the player as the other trainer, so it says "Pichu came back from
+  (the player)! Welcome back, Pichu!" (the scene's words for one's own Pokémon); its own dialogue and the form wait for
+  the user. Trading away the Pokémon that follows the player leaves no follower until the Following Pokémon picks one
+  again (its own rule when the followed Pokémon leaves the party). Received Pokémon are always form 0 (Unown,
+  Shellos, Burmy, Deerling and the others with forms come as their first). The Pokédex keeps languages only up to
+  Arceus, as the game does.
+
 #### Item odds in practice
 
 | Split of held items | Ultra-rare, per trade | Master Ball (a quarter of ultra-rare draws) | Seen in 100 trades |
@@ -204,8 +287,8 @@ The field's list menus scroll (they keep a top row and a cursor row: `MsgBGPrint
   message window closed; it changes no variable.
 - **The data:** `res/paperwhite2/pokemon_center/services.json` (schema beside it) holds all three attendants':
   `daycare.transfer_fee` (500), and the proposed values above for `training` and `wonder_trade` (prices, BP, item
-  tiers with weights, languages, rates, the special reward, off), checked but not read yet (Training Services' are
-  read now: its Built section above).
+  tiers with weights, languages, rates, the special reward, off), all read now (Training Services' and the Wonder
+  Trade's Built sections).
   `tools/paperwhite2/pokemon_center.py` writes `paperwhite2/pokemon_center_config.h` at build time with the fees the
   game reads, in the order of `include/paperwhite2/pokemon_center.h`'s `POKEMON_CENTER_FEE_*` IDs (it checks them); a
   new fee is a new ID there and a row of the tool's `FEES`. The item tiers use the user's split (50/30/19.5/0.5, as
@@ -216,8 +299,7 @@ The field's list menus scroll (they keep a top row and a cursor row: `MsgBGPrint
 - **Tested** in DeSmuME with a copy of the user's save (Castelia's Center): the not-yet message, the first visit,
   sending Swinub and Pignite (₽500 each), the pair's compatibility, bringing Swinub home (₽100 + ₽500), an Egg
   forced ready (declined and kept, then collected for ₽500, in the party), and too little money (nothing taken).
-- **Open:** the sound is a guess (the PC's login); the attendant's stand-in OBJ is the Union Room's woman; the
-  Wonder Trade's counter still shows the Wi-Fi Club's script.
+- **Open:** the sound is a guess (the PC's login); the attendant's stand-in OBJ is the Union Room's woman.
 
 ### Order
 

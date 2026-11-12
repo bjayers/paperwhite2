@@ -4,7 +4,7 @@
 // Paper White 2: the Pokémon Centers' upstairs attendants (docs/paperwhite2/design/pokemon-center.md): the actions of
 // their script command, PokemonCenter action, arg1, arg2, result (include/paperwhite2/pokemon_center_commands.h), the
 // fees it reads, and the attendants' shared global scripts. Only #defines, since the scripts include it
-// (res/field/scripts/global_2100.s, global_10105.s). The fees' values are
+// (res/field/scripts/global_2100.s, global_10100.s, global_10105.s). The fees' values are
 // res/paperwhite2/pokemon_center/services.json's, which tools/paperwhite2/pokemon_center.py writes into
 // paperwhite2/pokemon_center_config.h in this file's order. "The Pokémon" is the party's Pokémon in slot arg1; an
 // action on a slot past the party's end does nothing and returns 0
@@ -75,6 +75,23 @@
 // Puts the name of nature arg1 in word arg2
 #define POKEMON_CENTER_ACTION_WORD_SET_NATURE 25
 
+// The Wonder Trade's (the middle counter, res/field/scripts/global_10100.s; src/paperwhite2/ov012/
+// paperwhite2_wonder_trade.c). A Pokémon to send is a source, WONDER_TRADE_SOURCE_PARTY with its party slot or
+// WONDER_TRADE_SOURCE_BOX with its Box position (tray * BOX_MAX_POS + position), in arg1 and arg2
+// Returns whether the Pokémon can be sent, a WONDER_TRADE_CHECK_*, and puts its name in word 0
+#define POKEMON_CENTER_ACTION_WONDER_TRADE_CHECK 26
+// Opens the PC Box to pick a Pokémon, which the script waits for, and puts its Box position in the result, or
+// WONDER_TRADE_NONE when none was picked. Legendaries and mythicals can't be picked there, nor Eggs
+#define POKEMON_CENTER_ACTION_WONDER_TRADE_PICK_BOX 27
+// Returns WONDER_TRADE_SPECIAL when this trade gives the special reward (services.json's
+// wonder_trade.special_reward, if enabled and not received yet), else 0
+#define POKEMON_CENTER_ACTION_WONDER_TRADE_ROLL_SPECIAL 28
+// Trades the Pokémon of source arg1 and arg2, with WONDER_TRADE_SPECIAL added to arg1 for the special reward, for one
+// the generator makes, which the script waits for: the trade's scene, the new one in the old one's place, a trade
+// evolution, the Pokédex. Counts the trade. Puts the species received (after an evolution) in the result, its name in
+// word 1 and its trainer's in word 3
+#define POKEMON_CENTER_ACTION_WONDER_TRADE_START 29
+
 // The fees, by their paths in services.json. The Battle Points of Hyper Training are a fee too, paid with PAY_BP
 #define POKEMON_CENTER_FEE_DAYCARE_TRANSFER 0
 #define POKEMON_CENTER_FEE_NAME_RATER 1
@@ -92,6 +109,7 @@
 #define POKEMON_CENTER_FEE_GROOMING_3 11
 #define POKEMON_CENTER_FEE_BALL_CHANGE 12
 #define POKEMON_CENTER_FEE_NATURE_CHANGE 13
+#define POKEMON_CENTER_FEE_WONDER_TRADE 14
 
 // The stats, in the order of the game's summary screen
 #define TRAINING_STAT_HP 0
@@ -128,6 +146,24 @@
 #define ABILITY_RESULT_ALREADY_HIDDEN 4
 // A swap of a Pokémon from an earlier game, whose ability bit is the PID's lowest, would change its sex
 #define ABILITY_RESULT_SEX_WOULD_CHANGE 5
+
+// The Wonder Trade's sources, and the flag added to one for the special reward
+#define WONDER_TRADE_SOURCE_PARTY 0
+#define WONDER_TRADE_SOURCE_BOX 1
+#define WONDER_TRADE_SPECIAL 2
+// No Pokémon: PICK_BOX's result when the player picked none
+#define WONDER_TRADE_NONE 0xffff
+
+// What WONDER_TRADE_CHECK returns
+#define WONDER_TRADE_CHECK_OK 0
+// No Pokémon is there
+#define WONDER_TRADE_CHECK_NONE 1
+#define WONDER_TRADE_CHECK_EGG 2
+// A legendary or mythical, services.json's wonder_trade.excluded_species
+#define WONDER_TRADE_CHECK_EXCLUDED 3
+#define WONDER_TRADE_CHECK_ITEM 4
+// The party's last Pokémon that can battle
+#define WONDER_TRADE_CHECK_LAST_BATTLER 5
 
 // The attendant the player talked to (0x8011) turns to the tube behind the counter, steps up to it, waits while it
 // runs with its sound, and steps back facing the player; called with RTCallGlobal for each transfer. global_2100.s's

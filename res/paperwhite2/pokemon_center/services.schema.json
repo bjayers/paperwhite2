@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Pokémon Center services",
-  "description": "The fees, rates and lists of the Pokémon Centers' upstairs attendants (docs/paperwhite2/design/pokemon-center.md): the Day Care attendant, Training Services and the Wonder Trade. tools/paperwhite2/pokemon_center.py checks the whole file and writes the parts the game reads into paperwhite2/pokemon_center_config.h; so far that is the Day Care's, which is built. The other two sections are the design's proposed values, checked but not read by the game until their services are built.",
+  "description": "The fees, rates and lists of the Pokémon Centers' upstairs attendants (docs/paperwhite2/design/pokemon-center.md): the Day Care attendant, Training Services and the Wonder Trade. tools/paperwhite2/pokemon_center.py checks the whole file and writes the parts the game reads into paperwhite2/pokemon_center_config.h; all three attendants' sections are read.",
   "type": "object",
   "additionalProperties": false,
   "required": [ "daycare", "training", "wonder_trade" ],
@@ -73,27 +73,55 @@
     },
     "wonder_trade": {
       "type": "object", "additionalProperties": false,
-      "required": [ "fee", "level_spread", "languages", "shiny_one_in", "hidden_ability_percent", "perfect_ivs_percent", "pokerus_percent", "nickname_percent", "held_item_percent", "item_tiers", "special_reward" ],
-      "description": "The Wonder Trade (proposed, not built yet)",
+      "required": [ "fee", "level_spread", "excluded_species", "other_evolution_levels", "languages", "female_trainer_percent", "shiny_one_in", "hidden_ability_percent", "perfect_ivs_percent", "perfect_iv_count", "pokerus_percent", "nickname_percent", "balls", "held_item_percent", "item_tiers", "special_reward" ],
+      "description": "The Wonder Trade (the middle counter, res/field/scripts/global_10100.s): a party or Box Pokémon traded for one this generates (src/paperwhite2/ov012/paperwhite2_wonder_trade.c)",
       "properties": {
         "fee": { "$ref": "#/$defs/money" },
-        "level_spread": { "type": "integer", "minimum": 0, "maximum": 99, "description": "The received Pokémon's level is the sent one's plus or minus up to this, clamped to 1-100" },
+        "level_spread": { "type": "integer", "minimum": 0, "maximum": 99, "description": "The received Pokémon's level is the sent one's plus or minus 1 to this (0 for the same level), clamped to 1-100" },
+        "excluded_species": {
+          "type": "array", "maxItems": 649, "items": { "type": "string", "x-constant": "SPECIES_" },
+          "description": "The species that are never received nor can be sent: the legendaries and mythicals. Any other National Pokédex species can be received"
+        },
+        "other_evolution_levels": {
+          "type": "object", "additionalProperties": false, "required": [ "second_stage", "third_stage" ],
+          "description": "The least level of a species that evolves by anything but a level (friendship, a stone, a trade, a move, a place): by its evolution stage, and never below its pre-evolution's. A species that evolves at a level needs that level. A received species below its least level is its pre-evolution instead",
+          "properties": {
+            "second_stage": { "type": "integer", "minimum": 1, "maximum": 100 },
+            "third_stage": { "type": "integer", "minimum": 1, "maximum": 100 }
+          }
+        },
         "languages": {
           "type": "array", "minItems": 1, "maxItems": 7,
-          "description": "The original trainers' languages, each with its weight",
+          "description": "The original trainers' languages, each with its weight and its trainers' names and nicknames (packed into the system text bank wonder_trade_names). A foreign Pokémon is named in its language. Names are at most 7 characters (5 in Japanese and Korean), nicknames 10 (5)",
           "items": {
-            "type": "object", "additionalProperties": false, "required": [ "language", "weight" ],
+            "type": "object", "additionalProperties": false, "required": [ "language", "weight", "male_names", "female_names", "nicknames" ],
             "properties": {
               "language": { "enum": [ "japanese", "english", "french", "italian", "german", "spanish", "korean" ] },
+              "weight": { "type": "integer", "minimum": 0, "maximum": 1000 },
+              "male_names": { "$ref": "#/$defs/names" },
+              "female_names": { "$ref": "#/$defs/names" },
+              "nicknames": { "$ref": "#/$defs/names" }
+            }
+          }
+        },
+        "female_trainer_percent": { "$ref": "#/$defs/percent", "description": "Chance the original trainer is female, with a name from female_names" },
+        "shiny_one_in": { "type": "integer", "minimum": 1, "maximum": 65536, "description": "1 in this many is shiny" },
+        "hidden_ability_percent": { "$ref": "#/$defs/percent" },
+        "perfect_ivs_percent": { "$ref": "#/$defs/percent", "description": "Chance of perfect_iv_count IVs at 31" },
+        "perfect_iv_count": { "type": "integer", "minimum": 1, "maximum": 6, "description": "How many different stats get 31" },
+        "pokerus_percent": { "$ref": "#/$defs/percent" },
+        "nickname_percent": { "$ref": "#/$defs/percent" },
+        "balls": {
+          "type": "array", "minItems": 1, "maxItems": 32,
+          "description": "The balls the received Pokémon may be in, each with its weight out of their total",
+          "items": {
+            "type": "object", "additionalProperties": false, "required": [ "item", "weight" ],
+            "properties": {
+              "item": { "type": "string", "x-constant": "ITEM_" },
               "weight": { "type": "integer", "minimum": 0, "maximum": 1000 }
             }
           }
         },
-        "shiny_one_in": { "type": "integer", "minimum": 1, "maximum": 65536, "description": "1 in this many is shiny" },
-        "hidden_ability_percent": { "$ref": "#/$defs/percent" },
-        "perfect_ivs_percent": { "$ref": "#/$defs/percent", "description": "Chance of three perfect IVs" },
-        "pokerus_percent": { "$ref": "#/$defs/percent" },
-        "nickname_percent": { "$ref": "#/$defs/percent" },
         "held_item_percent": { "$ref": "#/$defs/percent" },
         "item_tiers": {
           "type": "array", "minItems": 1, "maxItems": 8,
@@ -122,12 +150,29 @@
           }
         },
         "special_reward": {
-          "type": "object", "additionalProperties": false, "required": [ "enabled", "percent", "guaranteed_at" ],
-          "description": "The one-time special reward (the Spiky-eared Pichu), off until its form and sprite exist",
+          "type": "object", "additionalProperties": false,
+          "required": [ "enabled", "percent", "guaranteed_at", "species", "form", "level", "moves", "nature", "ivs", "ability_slot", "ball", "held_item" ],
+          "description": "The one-time special reward (the Spiky-eared Pichu), off until its form and sprite exist: a fixed Pokémon, never shiny, with the player as its trainer, received once (EVENT_FLAG_WONDER_TRADE_SPECIAL_RECEIVED) with the attendant's own dialogue",
           "properties": {
             "enabled": { "type": "boolean" },
             "percent": { "$ref": "#/$defs/percent", "description": "Chance a trade until it is received" },
-            "guaranteed_at": { "type": "integer", "minimum": 1, "maximum": 65535, "description": "The trade that gives it at the latest" }
+            "guaranteed_at": { "type": "integer", "minimum": 1, "maximum": 65535, "description": "The trade that gives it at the latest, counting every trade (EVENT_WORK_WONDER_TRADE_COUNT)" },
+            "species": { "type": "string", "x-constant": "SPECIES_" },
+            "form": { "type": "integer", "minimum": 0, "maximum": 31 },
+            "level": { "type": "integer", "minimum": 1, "maximum": 100 },
+            "moves": { "type": "array", "minItems": 1, "maxItems": 4, "items": { "type": "string", "x-constant": "MOVE_" } },
+            "nature": { "type": "string", "x-constant": "NATURE_" },
+            "ivs": {
+              "type": "object", "additionalProperties": false,
+              "required": [ "hp", "attack", "defense", "speed", "special_attack", "special_defense" ],
+              "properties": {
+                "hp": { "$ref": "#/$defs/iv" }, "attack": { "$ref": "#/$defs/iv" }, "defense": { "$ref": "#/$defs/iv" },
+                "speed": { "$ref": "#/$defs/iv" }, "special_attack": { "$ref": "#/$defs/iv" }, "special_defense": { "$ref": "#/$defs/iv" }
+              }
+            },
+            "ability_slot": { "enum": [ 0, 1, 2 ], "description": "The first normal ability, the second, or 2 for the hidden one" },
+            "ball": { "type": "string", "x-constant": "ITEM_" },
+            "held_item": { "type": "string", "x-constant": "ITEM_" }
           }
         }
       }
@@ -139,6 +184,8 @@
       "type": "object", "additionalProperties": false, "required": [ "price" ],
       "properties": { "price": { "$ref": "#/$defs/money" } }
     },
-    "percent": { "type": "integer", "minimum": 0, "maximum": 100 }
+    "percent": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "iv": { "type": "integer", "minimum": 0, "maximum": 31 },
+    "names": { "type": "array", "minItems": 1, "maxItems": 100, "items": { "type": "string", "minLength": 1 } }
   }
 }

@@ -500,3 +500,6 @@ TEXT_BANK_SEASON_APP
 TEXT_BANK_DEXNAV
 # Paper White 2: the Pokédex info page's sub-pages (src/paperwhite2/ov298/paperwhite2_pokedex_info_panels.c)
 TEXT_BANK_POKEDEX_DATA
+# Paper White 2: the Wonder Trade's trainers' names and nicknames, from res/paperwhite2/pokemon_center/services.json
+# (src/paperwhite2/ov012/paperwhite2_wonder_trade.c)
+TEXT_BANK_WONDER_TRADE_NAMES

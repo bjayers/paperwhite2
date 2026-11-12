@@ -1,5 +1,8 @@
 #include "asm/field_script.inc"
 #include "text/script/global_10100.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/pokemon_center.h"
+#endif
 
     ScriptEntry Script_1
     ScriptEntriesEnd
@@ -7,6 +10,174 @@
     WorkSetConst 0x8021, 0
 
 Script_1:
+#ifdef PAPERWHITE2
+    // Paper White 2: the Wi-Fi Club's counter (the middle of the three upstairs) is the Wonder Trade's, in every
+    // Pokémon Center: a Pokémon from the party or a Box goes through the tube behind the counter, and one that
+    // src/paperwhite2/ov012/paperwhite2_wonder_trade.c makes comes back in its place, with the in-game trade's scene.
+    // The fee and the generator's rates and lists are res/paperwhite2/pokemon_center/services.json's wonder_trade.
+    // docs/paperwhite2/design/pokemon-center.md
+    // The variables: 0x8020 the source (WONDER_TRADE_SOURCE_*), 0x8021 the party slot or Box position, 0x8022 whether
+    // one was picked, 0x8023 a Yes/No, 0x8024 a menu's choice or an action's result, 0x8025 the special reward's
+    // WONDER_TRADE_SPECIAL, 0x8026 the trade's source with it, 0x8028 a result not read. Word 0 is the Pokémon sent,
+    // word 1 the fee and then the Pokémon received, word 3 its trainer; word 2 is the money window's
+    ActorsPauseAll
+    SEPlay SEQ_SE_MESSAGE
+    ActorSetEyeToEye
+    MoneyWinDisp 31, 1
+    PokemonCenter POKEMON_CENTER_ACTION_WORD_SET_FEE, POKEMON_CENTER_FEE_WONDER_TRADE, 1, 0x8028
+    VMStackPushFlag EVENT_FLAG_WONDER_TRADE_EXPLAINED
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMJumpIf CMP_STACK, L_WonderTradeFirstVisit
+    ActorMsg MSGFILE_SCRIPT, Global10100_Text_WonderTradeWelcome, 0x8011, 4, 0
+    VMJump L_WonderTradeMenu
+
+L_WonderTradeFirstVisit:
+    ActorMsg MSGFILE_SCRIPT, Global10100_Text_WonderTradeFirstVisit, 0x8011, 4, 0
+    FlagSet EVENT_FLAG_WONDER_TRADE_EXPLAINED
+
+L_WonderTradeMenu:
+    ListMenuAnchorTopRight 31, 5, 0, 1, 0x8024
+    ListMenuAdd Global10100_Text_WonderTradeMenuParty, 65535, 0
+    ListMenuAdd Global10100_Text_WonderTradeMenuBox, 65535, 1
+    ListMenuAdd Global10100_Text_Cancel, 65535, 2
+    ListMenuShow
+    WorkCmpConst 0x8024, 0
+    VMJumpIf CMP_NE, L_WonderTradeChoseNotParty
+    VMCall L_WonderTradeFromParty
+    VMJump L_WonderTradeAgain
+
+L_WonderTradeChoseNotParty:
+    WorkCmpConst 0x8024, 1
+    VMJumpIf CMP_NE, L_WonderTradeBye
+    VMCall L_WonderTradeFromBox
+
+L_WonderTradeAgain:
+    ActorMsg MSGFILE_SCRIPT, Global10100_Text_WonderTradeAgain, 0x8011, 4, 0
+    VMJump L_WonderTradeMenu
+
+L_WonderTradeBye:
+    ActorMsg MSGFILE_SCRIPT, Global10100_Text_PleaseVisitAgain, 0x8011, 4, 0
+    LastKeyWait
+    ActorMsgClose
+    MoneyWinClose
+    WorkSetConst 0x8020, 0
+    WorkSetConst 0x8021, 0
+    WorkSetConst 0x8022, 0
+    WorkSetConst 0x8023, 0
+    WorkSetConst 0x8024, 0
+    WorkSetConst 0x8025, 0
+    WorkSetConst 0x8026, 0
+    WorkSetConst 0x8028, 0
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+
+// The party screen (the Name Rater's), then the offer for the Pokémon picked
+L_WonderTradeFromParty:
+    ActorMsg MSGFILE_SCRIPT, Global10100_Text_WonderTradeWhichParty, 0x8011, 4, 0
+    ActorMsgClose
+    CallPokeSelect 0, 0x8022, 0x8021, 0
+    MoneyWinDisp 31, 1
+    WorkCmpConst 0x8022, 0
+    VMJumpIf CMP_EQ, L_WonderTradeFromPartyDone
+    WorkSetConst 0x8020, WONDER_TRADE_SOURCE_PARTY
+    VMCall L_WonderTradeOffer
+
+L_WonderTradeFromPartyDone:
+    VMReturn
+
+// The PC Box, which only picks a Pokémon the trade takes (WONDER_TRADE_PICK_BOX), then the offer for it
+L_WonderTradeFromBox:
+    ActorMsg MSGFILE_SCRIPT, Global10100_Text_WonderTradeWhichBox, 0x8011, 4, 0
+    ActorMsgClose
+    FadeOutBlackQ
+    FadeWait
+    PokemonCenter POKEMON_CENTER_ACTION_WONDER_TRADE_PICK_BOX, 0, 0, 0x8021
+    FadeInBlackQ
+    FadeWait
+    MoneyWinDisp 31, 1
+    WorkCmpConst 0x8021, WONDER_TRADE_NONE
+    VMJumpIf CMP_EQ, L_WonderTradeFromBoxDone
+    WorkSetConst 0x8020, WONDER_TRADE_SOURCE_BOX
+    VMCall L_WonderTradeOffer
+
+L_WonderTradeFromBoxDone:
+    VMReturn
+
+// Refuses the Pokémon of source 0x8020 and 0x8021 if it can't go, else asks for the fee, pays it, and trades: the
+// attendant takes it to the tube, the special reward has its own words, and the trade's scene shows both Pokémon
+L_WonderTradeOffer:
+    PokemonCenter POKEMON_CENTER_ACTION_WONDER_TRADE_CHECK, 0x8020, 0x8021, 0x8024
+    WorkCmpConst 0x8024, WONDER_TRADE_CHECK_OK
+    VMJumpIf CMP_EQ, L_WonderTradeOfferOk
+    WorkCmpConst 0x8024, WONDER_TRADE_CHECK_EGG
+    VMJumpIf CMP_NE, L_WonderTradeNotEgg
+    ActorMsg MSGFILE_SCRIPT, Global10100_Text_WonderTradeEgg, 0x8011, 4, 0
+    VMReturn
+
+L_WonderTradeNotEgg:
+    WorkCmpConst 0x8024, WONDER_TRADE_CHECK_EXCLUDED
+    VMJumpIf CMP_NE, L_WonderTradeNotExcluded
+    ActorMsg MSGFILE_SCRIPT, Global10100_Text_WonderTradeExcluded, 0x8011, 4, 0
+    VMReturn
+
+L_WonderTradeNotExcluded:
+    WorkCmpConst 0x8024, WONDER_TRADE_CHECK_ITEM
+    VMJumpIf CMP_NE, L_WonderTradeNotItem
+    ActorMsg MSGFILE_SCRIPT, Global10100_Text_WonderTradeItem, 0x8011, 4, 0
+    VMReturn
+
+L_WonderTradeNotItem:
+    WorkCmpConst 0x8024, WONDER_TRADE_CHECK_LAST_BATTLER
+    VMJumpIf CMP_NE, L_WonderTradeOfferDone
+    ActorMsg MSGFILE_SCRIPT, Global10100_Text_WonderTradeLastBattler, 0x8011, 4, 0
+    VMReturn
+
+L_WonderTradeOfferOk:
+    PokemonCenter POKEMON_CENTER_ACTION_WORD_SET_FEE, POKEMON_CENTER_FEE_WONDER_TRADE, 1, 0x8028
+    ActorMsg MSGFILE_SCRIPT, Global10100_Text_WonderTradeAskFee, 0x8011, 4, 0
+    YesNoWin 0x8023
+    WorkCmpConst 0x8023, 0
+    VMJumpIf CMP_NE, L_WonderTradeOfferDone
+    PokemonCenter POKEMON_CENTER_ACTION_PAY_FEE, POKEMON_CENTER_FEE_WONDER_TRADE, 0, 0x8024
+    WorkCmpConst 0x8024, 1
+    VMJumpIf CMP_EQ, L_WonderTradePaid
+    ActorMsg MSGFILE_SCRIPT, Global10100_Text_WonderTradeNoMoney, 0x8011, 4, 0
+    VMReturn
+
+L_WonderTradePaid:
+    MoneyWinUpdate
+    SEPlay SEQ_SE_SYS_22
+    ActorMsg MSGFILE_SCRIPT, Global10100_Text_WonderTradeSending, 0x8011, 4, 0
+    LastKeyWait
+    ActorMsgClose
+    PokemonCenter POKEMON_CENTER_ACTION_WONDER_TRADE_ROLL_SPECIAL, 0, 0, 0x8025
+    RTCallGlobal SCRID_POKEMON_CENTER_ATTENDANT_TUBE
+    WorkCmpConst 0x8025, 0
+    VMJumpIf CMP_EQ, L_WonderTradeStart
+    ActorMsg MSGFILE_SCRIPT, Global10100_Text_WonderTradeSpecial, 0x8011, 4, 0
+    LastKeyWait
+    ActorMsgClose
+
+L_WonderTradeStart:
+    WorkGet 0x8026, 0x8020
+    WorkAdd 0x8026, 0x8025
+    MoneyWinClose
+    MsgWinCloseAll
+    PokemonCenter POKEMON_CENTER_ACTION_WONDER_TRADE_START, 0x8026, 0x8021, 0x8024
+    MoneyWinDisp 31, 1
+    WorkCmpConst 0x8025, 0
+    VMJumpIf CMP_NE, L_WonderTradeSpecialDone
+    ActorMsg MSGFILE_SCRIPT, Global10100_Text_WonderTradeDone, 0x8011, 4, 0
+    VMReturn
+
+L_WonderTradeSpecialDone:
+    ActorMsg MSGFILE_SCRIPT, Global10100_Text_WonderTradeSpecialDone, 0x8011, 4, 0
+
+L_WonderTradeOfferDone:
+    VMReturn
+#else
     ActorsPauseAll
     SEPlay SEQ_SE_MESSAGE
     ActorSetEyeToEye
@@ -309,3 +480,4 @@ L_041E:
     .byte 0x21
     .byte 0x80
     .balign 4, 0
+#endif

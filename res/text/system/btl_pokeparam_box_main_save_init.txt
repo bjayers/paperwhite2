@@ -203,3 +203,4 @@ BtlPokeparamBoxMainSaveInit_Text_Empty_46 = ♀
 BtlPokeparamBoxMainSaveInit_Text_Unknown = Unknown
 BtlPokeparamBoxMainSaveInit_Text_HoldingItem = Holding Item
 BtlPokeparamBoxMainSaveInit_Text_NotHoldingItem = Not Holding Item
+BtlPokeparamBoxMainSaveInit_Text_WonderTrade = TRADE

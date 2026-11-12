@@ -36,6 +36,7 @@
 #include "constants/items.h"
 #include "paperwhite2/box2_pokedex.h"
 #include "paperwhite2/shiny_candy.h"
+#include "text/system/btl_pokeparam_box_main_save_init.h"
 #endif
 
 // The PC box's sequences: one function per state of the box, run each frame by Box2Seq_Main, each returning the
@@ -260,6 +261,10 @@ static const Box2MenuItem sMenu711c[] = { { 35, 0 }, { 36, 0 }, { 37, 0 }, { 38,
 static const Box2MenuItem sMenu7144[] = { { 41, 0 }, { 42, 0 }, { 43, 0 }, { 44, 0 }, { 66, 1 } };
 static const Box2MenuItem sMenu7158[] = { { 45, 0 }, { 46, 0 }, { 47, 0 }, { 48, 0 }, { 66, 1 } };
 static const Box2MenuItem sMenu716c[] = { { 49, 0 }, { 50, 0 }, { 51, 0 }, { 52, 0 }, { 66, 1 } };
+#ifdef PAPERWHITE2
+// Paper White 2: the Wonder Trade's pick (Box2Param's wonderTrade) offers Trade where the Dream World's has Tuck In
+static const Box2MenuItem sMenuWonderTrade[] = { { BtlPokeparamBoxMainSaveInit_Text_WonderTrade, 0 }, { 80, 1 } };
+#endif
 static const Box2MenuItem sMenu7194[] = { { 78, 0 }, { 74, 0 }, { 76, 0 }, { 77, 0 }, { 80, 1 } };
 static const Box2MenuItem sMenu71a8[] = { { 57, 0 }, { 35, 0 }, { 36, 0 }, { 37, 0 }, { 38, 0 }, { 66, 1 } };
 static const Box2MenuItem sMenu71c0[] = { { 58, 0 }, { 59, 0 }, { 60, 0 }, { 61, 0 }, { 68, 0 }, { 66, 1 } };
@@ -590,6 +595,13 @@ static int Box2Seq_OpenMenu(Box2SysWork *syswk) {
             break;
         case 5:
             Box2Bmp_ClearMsgWindow(syswk->app, 27);
+#ifdef PAPERWHITE2
+            // Paper White 2: the Wonder Trade's pick says Trade
+            if (syswk->param->wonderTrade) {
+                Box2Bmp_OpenMenu(syswk, sMenuWonderTrade, 2);
+                break;
+            }
+#endif
             Box2Bmp_OpenMenu(syswk, sMenu70cc, 2);
             break;
         }
@@ -5217,7 +5229,16 @@ static int Box2Seq_DreamWorldMain(Box2SysWork *syswk) {
         if (Box2Main_GetPokeParam(syswk, res, syswk->tray, PKM_PARAM_SPECIES_VALID, NULL) != 0) {
             GFL_SndSEPlay(SEQ_SE_DECIDE1);
             syswk->pos = res;
+#ifdef PAPERWHITE2
+            // Paper White 2: the Wonder Trade's pick says Trade
+            if (syswk->param->wonderTrade) {
+                Box2Bmp_OpenMenu(syswk, sMenuWonderTrade, 2);
+            } else {
+                Box2Bmp_OpenMenu(syswk, sMenu70cc, 2);
+            }
+#else
             Box2Bmp_OpenMenu(syswk, sMenu70cc, 2);
+#endif
             Box2Main_PokeInfoPut(syswk, res);
             Box2Obj_PutPokeOutline(syswk);
             CursorMove_SetPos(syswk->app->cursorMove, 34);

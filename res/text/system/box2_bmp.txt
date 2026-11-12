@@ -56,4 +56,7 @@ Box2Bmp_Text_BattleBoxLockedCannot = Your Battle Box is locked.\nYou cannot move
 Box2Bmp_Text_BattleBoxLockedItems = Your Battle Box is locked.\nItems cannot be given or taken.
 Box2Bmp_Text_ShinyCandyLeftBehind = {0102:0} left behind a Shiny Candy!
 Box2Bmp_Text_ShinyCandyBagFull = It left a Shiny Candy, but the Bag is full.
+Box2Bmp_Text_WonderTradeTitle = SELECT A POKÉMON TO TRADE
+Box2Bmp_Text_WonderTradeCantTrade = This Pokémon can't go\nin the Wonder Trade.
+Box2Bmp_Text_WonderTradeOk = Trade {0102:0}?
 \pad{b4}

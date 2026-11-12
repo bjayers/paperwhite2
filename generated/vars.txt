@@ -99,7 +99,9 @@ EVENT_WORK_SPAWN_PICK
 # tools/paperwhite2/var_usage.py): 0 as White 2 has it, 1 the Iron Chamber's key, 2 the Iceberg Chamber's
 # (Scrcmd_Keysystem_KeyInfoGetChamberKey; docs/paperwhite2/plugins.md, Version places)
 EVENT_WORK_REGI_CHAMBER
-EVENT_WORK_0x405a
+# Paper White 2: the Wonder Trades made, at most 65535, for its special reward's pity count (0x405a was unused,
+# tools/paperwhite2/var_usage.py; src/paperwhite2/ov012/paperwhite2_wonder_trade.c, docs/paperwhite2/plugins.md)
+EVENT_WORK_WONDER_TRADE_COUNT
 EVENT_WORK_0x405b
 EVENT_WORK_0x405c
 EVENT_WORK_0x405d
