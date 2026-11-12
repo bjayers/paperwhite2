@@ -27,6 +27,12 @@ Script_1:
     SEPlay SEQ_SE_MESSAGE
     ActorSetEyeToEye
     MoneyWinDisp 31, 1
+    PokemonCenter POKEMON_CENTER_ACTION_GET_CHAMPION_DISCOUNT, 0, 4, 0x8024
+    WorkCmpConst 0x8024, 0
+    VMJumpIf CMP_EQ, L_TrainingGreet
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingDiscount, 0x8011, 4, 0
+
+L_TrainingGreet:
     ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingWelcome, 0x8011, 4, 0
 
 L_TrainingMenu:
@@ -289,8 +295,15 @@ L_TrainingDeleterMoves:
 L_TrainingDeleterDone:
     VMReturn
 
-// One stat's IV to 31, for Battle Points, after the Hall of Fame and for a Pokémon of the least level
+// One stat's IV to 31, for Battle Points, after the Hall of Fame and for a Pokémon of the least level. The Battle
+// Points show in the money window's place meanwhile, and the money comes back after
 L_TrainingHyper:
+    PokemonCenter POKEMON_CENTER_ACTION_BP_WIN_DISP, 31, 1, 0x8024
+    VMCall L_TrainingHyperService
+    MoneyWinDisp 31, 1
+    VMReturn
+
+L_TrainingHyperService:
     // The Champion's check comes first, so the lead stands in for the Pokémon not yet picked
     PokemonCenter POKEMON_CENTER_ACTION_CHECK_HYPER_TRAINING, 0, 0, 0x8024
     WorkCmpConst 0x8024, HYPER_TRAINING_NOT_CHAMPION
@@ -301,6 +314,7 @@ L_TrainingHyper:
 L_TrainingHyperPick:
     ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingHyperWhich, 0x8011, 4, 0
     VMCall L_TrainingPick
+    PokemonCenter POKEMON_CENTER_ACTION_BP_WIN_DISP, 31, 1, 0x8024
     WorkCmpConst 0x8022, 1
     VMJumpIf CMP_NE, L_TrainingHyperDone
     PokemonCenter POKEMON_CENTER_ACTION_CHECK_HYPER_TRAINING, 0x8021, 0, 0x8024
@@ -361,6 +375,7 @@ L_TrainingHyperAsk:
     VMReturn
 
 L_TrainingHyperPaid:
+    PokemonCenter POKEMON_CENTER_ACTION_BP_WIN_DISP, 31, 1, 0x8024
     SEPlay SEQ_SE_SYS_22
     PokemonCenter POKEMON_CENTER_ACTION_MAX_IV, 0x8021, 0x8025, 0x8024
     PokePartyGetSpecies 0x8026, 0x8021

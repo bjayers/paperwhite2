@@ -4,14 +4,18 @@
   "description": "The fees, rates and lists of the Pokémon Centers' upstairs attendants (docs/paperwhite2/design/pokemon-center.md): the Day Care attendant, Training Services and the Wonder Trade. tools/paperwhite2/pokemon_center.py checks the whole file and writes the parts the game reads into paperwhite2/pokemon_center_config.h; all three attendants' sections are read.",
   "type": "object",
   "additionalProperties": false,
-  "required": [ "daycare", "training", "wonder_trade" ],
+  "required": [ "champion_discount_percent", "champion_discount_battle_points", "champion_discount_items", "daycare", "training", "wonder_trade" ],
   "properties": {
     "$schema": { "type": "string" },
+    "champion_discount_percent": { "$ref": "#/$defs/percent", "description": "Once the player has entered the Hall of Fame (EVENT_FLAG_0x0960), every attendant's fees in money cost this percent less (rounded in the player's favour), wherever they are shown and charged; each attendant says so once a visit. The Day Care's own fee for a withdrawal isn't the Center's, so it stays" },
+    "champion_discount_battle_points": { "type": "boolean", "description": "Whether the discount applies to Battle Points too (Hyper Training's, which needs the Hall of Fame anyway)" },
+    "champion_discount_items": { "type": "boolean", "description": "Whether the discount applies to items taken as a fee too (the Move Relearner's Heart Scales), at least one" },
     "daycare": {
-      "type": "object", "additionalProperties": false, "required": [ "transfer_fee" ],
+      "type": "object", "additionalProperties": false, "required": [ "transfer_fee", "required_badges" ],
       "description": "The Day Care attendant (the left counter): remote access to the Route 3 Day Care through the tube behind her",
       "properties": {
-        "transfer_fee": { "type": "integer", "minimum": 0, "maximum": 50000, "description": "The Center's fee in Pokédollars for each transfer through the tube: a deposit, a withdrawal or an Egg. A withdrawal also costs the Day Care's own fee (100 + 100 a level gained)" }
+        "transfer_fee": { "type": "integer", "minimum": 0, "maximum": 50000, "description": "The Center's fee in Pokédollars for each transfer through the tube: a deposit, a withdrawal or an Egg. A withdrawal also costs the Day Care's own fee (100 + 100 a level gained)" },
+        "required_badges": { "type": "integer", "minimum": 0, "maximum": 8, "description": "The Gym Badges the player needs before she opens the counter (0 for always); until then she explains where the tube goes" }
       }
     },
     "training": {
@@ -73,7 +77,7 @@
     },
     "wonder_trade": {
       "type": "object", "additionalProperties": false,
-      "required": [ "fee", "level_spread", "excluded_species", "other_evolution_levels", "languages", "female_trainer_percent", "shiny_one_in", "hidden_ability_percent", "perfect_ivs_percent", "perfect_iv_count", "pokerus_percent", "nickname_percent", "balls", "held_item_percent", "item_tiers", "special_reward" ],
+      "required": [ "fee", "level_spread", "excluded_species", "other_evolution_levels", "forms", "languages", "female_trainer_percent", "shiny_one_in", "hidden_ability_percent", "perfect_ivs_percent", "perfect_iv_count", "pokerus_percent", "nickname_percent", "balls", "held_item_percent", "item_tiers", "special_reward" ],
       "description": "The Wonder Trade (the middle counter, res/field/scripts/global_10100.s): a party or Box Pokémon traded for one this generates (src/paperwhite2/ov012/paperwhite2_wonder_trade.c)",
       "properties": {
         "fee": { "$ref": "#/$defs/money" },
@@ -88,6 +92,19 @@
           "properties": {
             "second_stage": { "type": "integer", "minimum": 1, "maximum": 100 },
             "third_stage": { "type": "integer", "minimum": 1, "maximum": 100 }
+          }
+        },
+        "forms": {
+          "type": "array", "maxItems": 32,
+          "description": "The species received in a form other than their first: each with a weight for each of its forms (as many as res/pokemon's forms.count; 0 for a form never received), or season for Deerling and Sawsbuck, whose form is the season's as the game gives them. A received species not listed is form 0. Left out: forms that change in battle or by an item or event (Castform, Cherrim, Darmanitan's Zen Mode, Rotom's appliances, which come with their own move, the Spiky-eared Pichu) and the excluded species'. A form stays through evolution, as in the game (Burmy's cloak, Shellos' sea)",
+          "items": {
+            "type": "object", "additionalProperties": false, "required": [ "species" ],
+            "properties": {
+              "species": { "type": "string", "x-constant": "SPECIES_" },
+              "weights": { "type": "array", "minItems": 2, "maxItems": 32, "items": { "type": "integer", "minimum": 0, "maximum": 1000 } },
+              "season": { "enum": [ true ], "description": "The form is the season's (spring, summer, autumn, winter)" }
+            },
+            "anyOf": [ { "required": [ "weights" ] }, { "required": [ "season" ] } ]
           }
         },
         "languages": {

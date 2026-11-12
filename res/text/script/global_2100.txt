@@ -31,7 +31,7 @@ Global2100_Text_ImSorrySystemsPower = I'm sorry!{be01}\nYour system's power was 
 Global2100_Text_HonorAchievementBattlePresent = In honor of your achievement in battle,\nI present you with these Battle Points!{be01}
 Global2100_Text_ReceivedBp = {0100:0} received {0201:1} BP!
 Global2100_Text_SavingDontTurnOff = Saving...\nDon't turn off the power.
-Global2100_Text_DayCareNotYet = Hello! I look after the Day Care counter.{be01}\nThe tube behind me runs all the way\nto the Day Care on Route 3.{be01}\nOnce you've met the Day Care couple,\ncome and see me. I'll be glad to help!
+Global2100_Text_DayCareNotYet = Hello! I look after the Day Care counter.{be01}\nThe tube behind me runs all the way\nto the Day Care on Route 3.{be01}\nCome back once you've earned your\nfirst Gym Badge. I'll be glad to help!
 Global2100_Text_DayCareFirstVisit = Hello! I look after the Day Care counter.{be01}\nThe tube behind me carries Poké Balls\nand Eggs to and from Route 3's Day Care.{be01}\nI'm in touch with the Day Care couple,\nso I can send your Pokémon to them,{be00}\nbring them home, or collect an Egg{be00}\nwithout you having to go all that way!{be01}\nEach trip through the tube is ${0204:0}.{be01}\nA Pokémon coming home also costs\nwhat the Day Care itself charges.{be01}\nNow, what can I do for you today?
 Global2100_Text_DayCareWelcome = Welcome to the Day Care counter!\nWhat can I do for you today?
 Global2100_Text_DayCareWelcomeEgg = Welcome to the Day Care counter!{be01}
@@ -70,4 +70,6 @@ Global2100_Text_DayCareAskVeryWell = Let me ask the couple...{be01}\nYour {0102:
 Global2100_Text_DayCareAskWell = Let me ask the couple...{be01}\nYour {0102:0} and {0102:1}\nare doing just fine.{be01}\nThey say the two seem to get along.{be01}
 Global2100_Text_DayCareAskNotMuch = Let me ask the couple...{be01}\nYour {0102:0} and {0102:1}\nare doing just fine.{be01}\nThey say the two don't really seem\nto like each other much.{be01}
 Global2100_Text_DayCareAskOthers = Let me ask the couple...{be01}\nYour {0102:0} and {0102:1}\nare doing just fine.{be01}\nThey say the two would rather play\nwith other Pokémon than each other.{be01}
+Global2100_Text_DayCareNotYetBadges = Hello! I look after the Day Care counter.{be01}\nThe tube behind me runs all the way\nto the Day Care on Route 3.{be01}\nCome back once you've earned\n{0200:0} Gym Badges. I'll be glad to help!
+Global2100_Text_DayCareDiscount = Oh, if it isn't our Champion!\nThe tube's fee is {0201:4}% off for you!{be01}
 \pad{da}

@@ -1,11 +1,17 @@
 #include "types.h"
+#include "constants/arc.h"
 #include "constants/flags.h"
 #include "constants/items.h"
 #include "constants/natures.h"
 #include "constants/pokemon.h"
+#include "constants/script_text_banks.h"
 #include "constants/version.h"
+#include "field/field.h"
+#include "field/field_msgbg.h"
 #include "field/field_script.h"
 #include "field/scrcmd_pokemon.h"
+#include "gfl/msg.h"
+#include "gfl/str.h"
 #include "paperwhite2/pokemon_center.h"
 #include "paperwhite2/pokemon_center_commands.h"
 #include "paperwhite2/pokemon_center_config.h"
@@ -18,8 +24,11 @@
 #include "save/event_work.h"
 #include "save/save_control.h"
 #include "system/game_data.h"
+#include "system/game_system.h"
+#include "system/str_tool.h"
 #include "system/vm.h"
 #include "system/wordset.h"
+#include "text/script/scrcmd_shop.h"
 
 // Paper White 2: the Pokémon Center attendants' script command, PokemonCenter, in overlay 12 beside the original's
 // commands. See include/paperwhite2/pokemon_center_commands.h, and its actions in include/paperwhite2/pokemon_center.h;
@@ -39,6 +48,13 @@
 #define PKM_BLOCK_COUNT 4
 // The Hall of Fame's flag, set the first time the player enters it (global_9600.s's Script_6)
 #define FLAG_CHAMPION EVENT_FLAG_0x0960
+#define PERCENT 100
+// The money window's size in tiles, as MoneyWinDisp makes it (scrcmd_msg.c)
+#define MONEY_WIN_WIDTH 9
+#define MONEY_WIN_HEIGHT 2
+// The Battle Points' digits, as the BP shop shows them, and the text's size
+#define BP_DIGITS 4
+#define BP_TEXT_SIZE 16
 
 // The fees, from res/paperwhite2/pokemon_center/services.json (paperwhite2/pokemon_center_config.h)
 static const u32 sFees[POKEMON_CENTER_FEE_COUNT] = { POKEMON_CENTER_FEES };
@@ -49,12 +65,38 @@ static const u8 sGroomingFriendship[POKEMON_CENTER_GROOMING_COUNT] = { POKEMON_C
 // TEXT_BANK_STAT_NAMES does
 static const u8 sStatParams[TRAINING_STAT_ALL] = { 0, 1, 2, 4, 5, 3 };
 
-// Fee id plus extra, or extra alone for an id that isn't a fee
-static u32 PokemonCenterCommands_GetFee(u16 id, u16 extra) {
+// The Champion's discount in percent, once the player has entered the Hall of Fame
+static u32 PokemonCenterCommands_GetDiscount(EventWork *eventWork) {
+    if (!EventWork_FlagGet(eventWork, FLAG_CHAMPION)) {
+        return 0;
+    }
+    return POKEMON_CENTER_CHAMPION_DISCOUNT_PERCENT;
+}
+
+// An amount less the Champion's discount, rounded in the player's favour: an amount of 1 or more stays at least 1
+// unless the discount is all of it
+static u32 PokemonCenterCommands_Discount(EventWork *eventWork, u32 amount) {
+    return amount - amount * PokemonCenterCommands_GetDiscount(eventWork) / PERCENT;
+}
+
+// Fee id, discounted, plus extra; or extra alone for an id that isn't a fee. Hyper Training's fee is in Battle Points,
+// which services.json may leave out of the discount
+static u32 PokemonCenterCommands_GetFee(EventWork *eventWork, u16 id, u16 extra) {
     if (id >= POKEMON_CENTER_FEE_COUNT) {
         return extra;
     }
-    return sFees[id] + extra;
+    if (id == POKEMON_CENTER_FEE_HYPER_TRAINING && !POKEMON_CENTER_CHAMPION_DISCOUNT_BP) {
+        return sFees[id] + extra;
+    }
+    return PokemonCenterCommands_Discount(eventWork, sFees[id]) + extra;
+}
+
+// How many of the Move Relearner's item it takes
+static u32 PokemonCenterCommands_GetRelearnerItemCount(EventWork *eventWork) {
+    if (!POKEMON_CENTER_CHAMPION_DISCOUNT_ITEMS) {
+        return POKEMON_CENTER_RELEARNER_ITEM_COUNT;
+    }
+    return PokemonCenterCommands_Discount(eventWork, POKEMON_CENTER_RELEARNER_ITEM_COUNT);
 }
 
 // How many digits the number has, for a message
@@ -72,12 +114,14 @@ static void PokemonCenterCommands_SetWordNumber(WordSet *wordSet, u32 index, u32
     WordSetNumber(wordSet, index, number, PokemonCenterCommands_CountDigits(number), 0, TRUE);
 }
 
-static BOOL PokemonCenterCommands_HasRelearnerFee(TrainerGameInfoSave *info, BagSave *bag, HeapID heapId) {
-    if (getCash(info) < sFees[POKEMON_CENTER_FEE_MOVE_RELEARNER]) {
+static BOOL PokemonCenterCommands_HasRelearnerFee(EventWork *eventWork, TrainerGameInfoSave *info, BagSave *bag,
+                                                  HeapID heapId) {
+    u32 count = PokemonCenterCommands_GetRelearnerItemCount(eventWork);
+
+    if (getCash(info) < PokemonCenterCommands_GetFee(eventWork, POKEMON_CENTER_FEE_MOVE_RELEARNER, 0)) {
         return FALSE;
     }
-    return POKEMON_CENTER_RELEARNER_ITEM_COUNT == 0 ||
-           BagSave_CheckAmount(bag, POKEMON_CENTER_RELEARNER_ITEM, POKEMON_CENTER_RELEARNER_ITEM_COUNT, heapId);
+    return count == 0 || BagSave_CheckAmount(bag, POKEMON_CENTER_RELEARNER_ITEM, count, heapId);
 }
 
 static u32 PokemonCenterCommands_CheckHyperTraining(EventWork *eventWork, PartyPkm *pkm) {
@@ -285,14 +329,41 @@ static u32 PokemonCenterCommands_PartyAction(FieldScriptEnv *env, u16 action, Pa
     }
 }
 
+// Shows the Battle Points in the money window's place, with the BP shop's words for them (scrcmd_shop.c's
+// ShopUI_UpdateMoneyDisp) in a word set of its own, as MoneyWinDisp shows the money (scrcmd_msg.c)
+static void PokemonCenterCommands_ShowBP(FieldScriptEnv *env, BSubwayScoreData *score, u16 right, u16 top) {
+    Field *field = GSYS_GetField(FieldScriptEnv_GetGameSystem(env));
+    MoneyWin *moneyWin = Field_GetMoneyWin(field);
+    HeapID heapId = Field_GetHeapID(field);
+    MsgData *msgData = GFL_MsgSysLoadData(FALSE, ARCID_SCRIPT_MESSAGE, SCRIPT_TEXT_SCRCMD_SHOP, heapId);
+    WordSet *wordSet = GFL_WordSetSystemCreateDefault(heapId);
+    StrBuf *format = GFL_MsgDataLoadStrbufNew(msgData, ScrcmdShop_Text_Bp_2);
+    StrBuf *text = GFL_StrBufCreate(BP_TEXT_SIZE, heapId);
+
+    if (moneyWin != NULL) {
+        MsgBGPrinter_DeleteMsgWin(moneyWin);
+    }
+    moneyWin = FieldMsgBG_CreateMoneyWin(Field_GetMsgBGSys(field), msgData, right - MONEY_WIN_WIDTH, top,
+                                         MONEY_WIN_WIDTH, MONEY_WIN_HEIGHT);
+    Field_SetMoneyWin(field, moneyWin);
+    WordSetNumber(wordSet, 0, BSubwayScoreData_GetBattlePoints(score), BP_DIGITS, NUM_PAD_SPACE, TRUE);
+    GFL_WordSetFormatStrbuf(wordSet, text, format);
+    MsgBGPrinter_MsgWinPrintStr(moneyWin, 0, 0, text);
+    GFL_StrBufFree(text);
+    GFL_StrBufFree(format);
+    GFL_WordSetSystemFree(wordSet);
+    GFL_MsgDataFree(msgData);
+}
+
 static u32 PokemonCenterCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2) {
     GameData *gameData = FieldScriptEnv_GetGameData(env);
+    EventWork *eventWork = GameData_GetEventWork(gameData);
     TrainerGameInfoSave *info = getTrainerCardDataBlkAddress(gameData);
     BSubwayScoreData *score = GameData_GetBSubwayScoreData(gameData);
     BagSave *bag = GameData_GetBag(gameData);
     WordSet *wordSet = ScriptWork_GetWordSet(FieldScriptEnv_GetScriptWork(env));
     HeapID heapId = FieldScriptEnv_GetHeapID(env);
-    u32 amount = PokemonCenterCommands_GetFee(arg1, arg2);
+    u32 amount = PokemonCenterCommands_GetFee(eventWork, arg1, arg2);
     PartyPkm *pkm;
 
     switch (action) {
@@ -305,7 +376,7 @@ static u32 PokemonCenterCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, 
         subCashFromTotal(info, amount);
         return TRUE;
     case POKEMON_CENTER_ACTION_WORD_SET_FEE:
-        PokemonCenterCommands_SetWordNumber(wordSet, arg2, PokemonCenterCommands_GetFee(arg1, 0));
+        PokemonCenterCommands_SetWordNumber(wordSet, arg2, PokemonCenterCommands_GetFee(eventWork, arg1, 0));
         return TRUE;
     case POKEMON_CENTER_ACTION_HAS_FEE:
         return getCash(info) >= amount;
@@ -318,20 +389,22 @@ static u32 PokemonCenterCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, 
     case POKEMON_CENTER_ACTION_GET_BP:
         return BSubwayScoreData_GetBattlePoints(score);
     case POKEMON_CENTER_ACTION_HAS_RELEARNER_FEE:
-        return PokemonCenterCommands_HasRelearnerFee(info, bag, heapId);
+        return PokemonCenterCommands_HasRelearnerFee(eventWork, info, bag, heapId);
     case POKEMON_CENTER_ACTION_PAY_RELEARNER_FEE:
-        if (!PokemonCenterCommands_HasRelearnerFee(info, bag, heapId)) {
+        if (!PokemonCenterCommands_HasRelearnerFee(eventWork, info, bag, heapId)) {
             return FALSE;
         }
-        subCashFromTotal(info, sFees[POKEMON_CENTER_FEE_MOVE_RELEARNER]);
-        if (POKEMON_CENTER_RELEARNER_ITEM_COUNT != 0) {
-            BagSave_SubItem(bag, POKEMON_CENTER_RELEARNER_ITEM, POKEMON_CENTER_RELEARNER_ITEM_COUNT, heapId);
+        subCashFromTotal(info, PokemonCenterCommands_GetFee(eventWork, POKEMON_CENTER_FEE_MOVE_RELEARNER, 0));
+        amount = PokemonCenterCommands_GetRelearnerItemCount(eventWork);
+        if (amount != 0) {
+            BagSave_SubItem(bag, POKEMON_CENTER_RELEARNER_ITEM, amount, heapId);
         }
         return TRUE;
     case POKEMON_CENTER_ACTION_WORD_SET_RELEARNER_FEE:
         loadItemNameToStrbuf(wordSet, arg2, POKEMON_CENTER_RELEARNER_ITEM);
-        PokemonCenterCommands_SetWordNumber(wordSet, arg2 + 1, POKEMON_CENTER_RELEARNER_ITEM_COUNT);
-        PokemonCenterCommands_SetWordNumber(wordSet, arg2 + 2, sFees[POKEMON_CENTER_FEE_MOVE_RELEARNER]);
+        PokemonCenterCommands_SetWordNumber(wordSet, arg2 + 1, PokemonCenterCommands_GetRelearnerItemCount(eventWork));
+        PokemonCenterCommands_SetWordNumber(
+            wordSet, arg2 + 2, PokemonCenterCommands_GetFee(eventWork, POKEMON_CENTER_FEE_MOVE_RELEARNER, 0));
         return TRUE;
     case POKEMON_CENTER_ACTION_WORD_SET_STAT:
         if (arg1 >= TRAINING_STAT_ALL) {
@@ -353,6 +426,14 @@ static u32 PokemonCenterCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, 
         return WonderTrade_Check(env, arg1, arg2);
     case POKEMON_CENTER_ACTION_WONDER_TRADE_ROLL_SPECIAL:
         return WonderTrade_RollSpecial(env) ? WONDER_TRADE_SPECIAL : 0;
+    case POKEMON_CENTER_ACTION_BP_WIN_DISP:
+        PokemonCenterCommands_ShowBP(env, score, arg1, arg2);
+        return TRUE;
+    case POKEMON_CENTER_ACTION_GET_CHAMPION_DISCOUNT:
+        PokemonCenterCommands_SetWordNumber(wordSet, arg2, PokemonCenterCommands_GetDiscount(eventWork));
+        return PokemonCenterCommands_GetDiscount(eventWork);
+    case POKEMON_CENTER_ACTION_GET_DAYCARE_BADGES:
+        return POKEMON_CENTER_DAYCARE_REQUIRED_BADGES;
     default:
         if (!CheckGetPartyPokemon(env, arg1, &pkm)) {
             return 0;

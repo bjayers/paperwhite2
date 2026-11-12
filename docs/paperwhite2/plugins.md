@@ -2374,11 +2374,21 @@ attendants share:
 | The Wonder Trade's actions | `WONDER_TRADE_CHECK` (the refusals), `WONDER_TRADE_PICK_BOX` (the PC Box, which the script waits for), `WONDER_TRADE_ROLL_SPECIAL`, `WONDER_TRADE_START` (the trade, which the script waits for): a source `WONDER_TRADE_SOURCE_PARTY` with a party slot or `_BOX` with a Box position, tray × 30 + position |
 | The Wonder Trade's names and nicknames | `services.json`'s `wonder_trade.languages`, packed into the system text bank `wonder_trade_names` (`\\from{wonder_trade.names}`, the hack's last bank, `TEXT_BANK_WONDER_TRADE_NAMES`) |
 | The Wonder Trade's save data | flags `EVENT_FLAG_WONDER_TRADE_EXPLAINED` (0x937) and `EVENT_FLAG_WONDER_TRADE_SPECIAL_RECEIVED` (0x938), variable `EVENT_WORK_WONDER_TRADE_COUNT` (0x405a), the trades made |
+| The Champion's discount | `services.json`'s `champion_discount_percent` (and `_battle_points`, `_items`), applied inside the fee (`PokemonCenterCommands_GetFee`) after the Hall of Fame (`EVENT_FLAG_0x0960`), so every action that shows a fee shows the one charged; arg2 added to a fee (the Day Care's own fee) isn't discounted. `GET_CHAMPION_DISCOUNT` returns it for each attendant's line |
+| The Day Care counter's opening | `daycare.required_badges` (1), `GET_DAYCARE_BADGES` against `TrainerCardGetBadgeCount`; her first visit sets `EVENT_FLAG_0x0069` (the Day-Care Lady's "met" flag, which only picks her first greeting) |
+| Battle Points in the money window | `BP_WIN_DISP` with `MoneyWinDisp`'s position: the window is the money window (`Field_SetMoneyWin`), so `MoneyWinDisp` or `MoneyWinClose` replaces it; it uses a word set of its own |
+| The Wonder Trade's forms | `wonder_trade.forms` (weights a form, or `season`), packed as `WONDER_TRADE_FORM_SPECIES`/`_WEIGHTS`; the plan takes the season (`GameData_GetSeason`) |
 
 An ability swap changes the PID: evolution, form changes and breeding read the ability slot from its bit 16 (bit 0 for
 Pokémon from before Black and White), so `CHANGE_ABILITY` flips that bit and moves the data's four blocks to the order
 the new PID gives (`PML_PkmGetParamBlockCore` orders them by bits 13-17), as anything else that changes a PID must; the
 Shiny Candy keeps those bits instead (`paperwhite2_shiny_pid.c`). The flip keeps shininess and, for bit 16, the sex.
+
+A Pokémon of a form is made as the game makes a wild one (`enc_pokeset.c`): `PokeParty_CreatePkm`, then
+`PokeParty_ChangeForme` (the form's ability by the PID's slot, sex and stats) and `PokeParty_SetDefaultMoves` (the
+form's level-up moves), and its PID with the form (`PML_GenPID`). The US game's foreign species-name banks
+(`species_names_ja.txt` and the others) stop at Arceus, so a later species keeps its English name in another language
+(reading past a bank's end stopped the game).
 
 The Wonder Trade makes its Pokémon's PID with the game's own `PML_GenPID` for the generated trainer ID (shiny with
 `PID_RARE_ALWAYS`, else `PID_RARE_NEVER`, so never shiny by accident), a random ability bit (bit 16) and the sex from the

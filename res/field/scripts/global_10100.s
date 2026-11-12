@@ -24,6 +24,12 @@ Script_1:
     SEPlay SEQ_SE_MESSAGE
     ActorSetEyeToEye
     MoneyWinDisp 31, 1
+    PokemonCenter POKEMON_CENTER_ACTION_GET_CHAMPION_DISCOUNT, 0, 4, 0x8028
+    WorkCmpConst 0x8028, 0
+    VMJumpIf CMP_EQ, L_WonderTradeGreet
+    ActorMsg MSGFILE_SCRIPT, Global10100_Text_WonderTradeDiscount, 0x8011, 4, 0
+
+L_WonderTradeGreet:
     PokemonCenter POKEMON_CENTER_ACTION_WORD_SET_FEE, POKEMON_CENTER_FEE_WONDER_TRADE, 1, 0x8028
     VMStackPushFlag EVENT_FLAG_WONDER_TRADE_EXPLAINED
     VMStackPushConst 1

@@ -91,6 +91,14 @@ typedef struct {
     u16 count;
 } ItemTier;
 
+// A species received in other forms than its first: its form the season's, or one by the weights from first
+typedef struct {
+    u16 species;
+    u8 season;
+    u8 first;
+    u8 count;
+} FormSpecies;
+
 static const u8 sExcluded[] = { WONDER_TRADE_EXCLUDED_SPECIES };
 static const u16 sPreEvolutions[WONDER_TRADE_SPECIES_COUNT] = { WONDER_TRADE_PRE_EVOLUTIONS };
 static const u8 sLeastLevels[WONDER_TRADE_SPECIES_COUNT] = { WONDER_TRADE_LEAST_LEVELS };
@@ -98,6 +106,8 @@ static const TradeLanguage sLanguages[WONDER_TRADE_LANGUAGE_COUNT] = { WONDER_TR
 static const WeightedItem sBalls[WONDER_TRADE_BALL_COUNT] = { WONDER_TRADE_BALLS };
 static const ItemTier sItemTiers[WONDER_TRADE_ITEM_TIER_COUNT] = { WONDER_TRADE_ITEM_TIERS };
 static const WeightedItem sItems[WONDER_TRADE_ITEM_COUNT] = { WONDER_TRADE_ITEMS };
+static const FormSpecies sFormSpecies[WONDER_TRADE_FORM_SPECIES_COUNT] = { WONDER_TRADE_FORM_SPECIES };
+static const u16 sFormWeights[WONDER_TRADE_FORM_WEIGHT_COUNT] = { WONDER_TRADE_FORM_WEIGHTS };
 static const u16 sSpecialMoves[MOVE_COUNT] = { WONDER_TRADE_SPECIAL_MOVES };
 // In the order of PKM_PARAM_IV_HP's fields
 static const u8 sSpecialIVs[STAT_COUNT] = { WONDER_TRADE_SPECIAL_IVS };
@@ -211,7 +221,39 @@ static u32 PickLevel(u32 sentLevel) {
     return level;
 }
 
-void WonderTrade_Plan(WonderTradePlan *plan, u32 sentLevel) {
+// The species' form: the season's for the species that follow it, one by its weights for the others listed, else 0
+static u32 PickForm(u32 species, u32 season) {
+    const FormSpecies *entry;
+    u32 total = 0;
+    u32 draw;
+    u32 i;
+
+    for (i = 0; i < WONDER_TRADE_FORM_SPECIES_COUNT; i++) {
+        if (sFormSpecies[i].species == species) {
+            break;
+        }
+    }
+    if (i == WONDER_TRADE_FORM_SPECIES_COUNT) {
+        return 0;
+    }
+    entry = &sFormSpecies[i];
+    if (entry->season) {
+        return season;
+    }
+    for (i = 0; i < entry->count; i++) {
+        total += sFormWeights[entry->first + i];
+    }
+    draw = GFL_RandomLC(total);
+    for (i = 0; i < entry->count - 1; i++) {
+        if (draw < sFormWeights[entry->first + i]) {
+            break;
+        }
+        draw -= sFormWeights[entry->first + i];
+    }
+    return i;
+}
+
+void WonderTrade_Plan(WonderTradePlan *plan, u32 sentLevel, u32 season) {
     const TradeLanguage *language;
     const NameRange *names;
     u32 species;
@@ -225,6 +267,7 @@ void WonderTrade_Plan(WonderTradePlan *plan, u32 sentLevel) {
         species = sPreEvolutions[species];
     }
     plan->species = species;
+    plan->form = PickForm(species, season);
 
     plan->languageIndex = PickLanguage();
     language = &sLanguages[plan->languageIndex];
@@ -261,6 +304,7 @@ static StrBuf *LoadName(u32 line, HeapID heapId) {
 // Names a Pokémon without a nickname as its species is in its own language, as its trainer's game would
 static void SetSpeciesNameInLanguage(PartyPkm *pkm, HeapID heapId) {
     u32 language = PokeParty_GetParam(pkm, PKM_PARAM_REGION, NULL);
+    u32 species = PokeParty_GetParam(pkm, PKM_PARAM_SPECIES, NULL);
     MsgData *msgData;
     StrBuf *name;
     u32 i;
@@ -277,9 +321,13 @@ static void SetSpeciesNameInLanguage(PartyPkm *pkm, HeapID heapId) {
         return;
     }
     msgData = GFL_MsgSysLoadData(FALSE, ARCID_SYSTEM_MESSAGE, sLanguages[i].speciesNames, heapId);
-    name = GFL_MsgDataLoadStrbufNew(msgData, PokeParty_GetParam(pkm, PKM_PARAM_SPECIES, NULL));
-    PokeParty_SetParam(pkm, PKM_PARAM_NICKNAME_KEEP_FLAG, (u32)name);
-    GFL_StrBufFree(name);
+    // The US game's foreign banks have the species up to Arceus only, for the Pokédex's foreign entries: a later one
+    // keeps the game's name
+    if (species < GFL_MsgDataGetLineCount(msgData)) {
+        name = GFL_MsgDataLoadStrbufNew(msgData, species);
+        PokeParty_SetParam(pkm, PKM_PARAM_NICKNAME_KEEP_FLAG, (u32)name);
+        GFL_StrBufFree(name);
+    }
     GFL_MsgDataFree(msgData);
 }
 
@@ -301,16 +349,22 @@ static void SetPerfectIVs(PartyPkm *pkm, u32 count) {
 // Makes the Pokémon of a plan, with its trainer, met in a trade
 static void MakePkm(PartyPkm *pkm, PlayerInfo *trainer, const WonderTradePlan *plan, GameData *gameData,
                     HeapID heapId) {
-    u32 pid = PML_GenPID(plan->trainerId, plan->species, 0, GENDER_UNKNOWN, GFL_RandomLC(2),
+    u32 pid = PML_GenPID(plan->trainerId, plan->species, plan->form, GENDER_UNKNOWN, GFL_RandomLC(2),
                          plan->shiny ? PID_RARE_ALWAYS : PID_RARE_NEVER);
     StrBuf *name;
     u32 strain;
     u32 days;
 
     PokeParty_CreatePkm(pkm, plan->species, plan->level, plan->trainerId, PKM_IVS_RANDOM, pid);
+    // As the game makes a wild Pokémon of a form (enc_pokeset.c): the form's ability, sex and stats, then the form's
+    // own level-up moves, which Wormadam's differ in
+    if (plan->form != 0) {
+        PokeParty_ChangeForme(pkm, plan->form);
+        PokeParty_SetDefaultMoves(pkm);
+    }
     PokeParty_SetParam(pkm, PKM_PARAM_REGION, plan->language);
     if (plan->hiddenAbility) {
-        PokeParty_SetHiddenAbil(pkm, plan->species, 0);
+        PokeParty_SetHiddenAbil(pkm, plan->species, plan->form);
     }
     if (plan->perfectIVs) {
         SetPerfectIVs(pkm, WONDER_TRADE_PERFECT_IV_COUNT);
@@ -608,7 +662,7 @@ void WonderTrade_CallTrade(FieldScriptEnv *env, u32 source, u32 index, u16 *resu
     if (work->special) {
         MakeSpecialPkm(work->received, work->trainer, gameData, HEAPID_GAMEEVENT);
     } else {
-        WonderTrade_Plan(&plan, PokeParty_GetParam(work->sent, PKM_PARAM_LEVEL, NULL));
+        WonderTrade_Plan(&plan, PokeParty_GetParam(work->sent, PKM_PARAM_LEVEL, NULL), GameData_GetSeason(gameData));
         MakePkm(work->received, work->trainer, &plan, gameData, HEAPID_GAMEEVENT);
     }
     ScriptWork_CallEvent(FieldScriptEnv_GetScriptWork(env), event);

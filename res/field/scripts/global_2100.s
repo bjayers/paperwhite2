@@ -506,11 +506,17 @@ Script_2:
     ActorsPauseAll
     SEPlay SEQ_SE_MESSAGE
     ActorSetEyeToEye
-    VMStackPushFlag EVENT_FLAG_0x0069
-    VMStackPushConst 1
-    VMStackCmp CMP_EQ
-    VMJumpIf CMP_STACK, L_DayCareNotYet
+    PokemonCenter POKEMON_CENTER_ACTION_GET_DAYCARE_BADGES, 0, 0, 0x8027
+    TrainerCardGetBadgeCount 0x8028
+    WorkCmpWork 0x8028, 0x8027
+    VMJumpIf CMP_LT, L_DayCareNotYet
     MoneyWinDisp 31, 1
+    PokemonCenter POKEMON_CENTER_ACTION_GET_CHAMPION_DISCOUNT, 0, 4, 0x8029
+    WorkCmpConst 0x8029, 0
+    VMJumpIf CMP_EQ, L_DayCareGreet
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareDiscount, 0x8011, 4, 0
+
+L_DayCareGreet:
     VMStackPushFlag EVENT_FLAG_DAYCARE_COUNTER_EXPLAINED
     VMStackPushConst 1
     VMStackCmp CMP_EQ
@@ -530,6 +536,9 @@ L_DayCareFirstVisit:
     WordSetNumber 0, 0x8029, 5
     ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareFirstVisit, 0x8011, 4, 0
     FlagSet EVENT_FLAG_DAYCARE_COUNTER_EXPLAINED
+    // The couple know the player through her, so the Day-Care Lady on Route 3 greets them as a customer, not with her
+    // first introduction (global_2200.s)
+    FlagSet EVENT_FLAG_0x0069
 
 L_DayCareGreeted:
     VMCall L_DayCareGetState
@@ -597,8 +606,18 @@ L_DayCareBye:
     MoneyWinClose
     VMJump L_DayCareEnd
 
+// Until the player has the Gym Badges services.json asks for (0x8027), she only explains where the tube goes
 L_DayCareNotYet:
+    WorkCmpConst 0x8027, 1
+    VMJumpIf CMP_NE, L_DayCareNotYetBadges
     ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareNotYet, 0x8011, 4, 0
+    VMJump L_DayCareNotYetSaid
+
+L_DayCareNotYetBadges:
+    WordSetNumber 0, 0x8027, 1
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareNotYetBadges, 0x8011, 4, 0
+
+L_DayCareNotYetSaid:
     LastKeyWait
     ActorMsgClose
 

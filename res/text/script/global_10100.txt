@@ -42,3 +42,4 @@ Global10100_Text_WonderTradeSpecial = Huh? That's odd... Something strange\njust
 Global10100_Text_WonderTradeDone = {0102:1} came from {0100:3}!\nPlease take good care of it!{be01}
 Global10100_Text_WonderTradeSpecialDone = {0102:1}... No Trainer sent it.{be01}\nIt seems to want to stay with you!{be01}
 Global10100_Text_WonderTradeAgain = Would you like to trade\nanother Pokémon?
+Global10100_Text_WonderTradeDiscount = Oh, if it isn't our Champion!\nTrades are {0201:4}% off for you!{be01}
