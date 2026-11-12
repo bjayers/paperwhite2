@@ -209,7 +209,8 @@
     "flee_rate": 0,
     "forms": {
         "count": 17,
-        "sprite_offset": 0
+        "sprite_offset": 0,
+        "pokedex": false
     },
     "color": "COLOR_GRAY",
     "asymmetric": false,

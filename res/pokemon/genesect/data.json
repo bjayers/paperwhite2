@@ -80,7 +80,8 @@
     "flee_rate": 0,
     "forms": {
         "count": 5,
-        "sprite_offset": 62
+        "sprite_offset": 62,
+        "pokedex": false
     },
     "color": "COLOR_PURPLE",
     "asymmetric": false,

@@ -118,6 +118,10 @@
                 "no_evolution": {
                     "type": "array", "items": { "type": "integer", "minimum": 1, "maximum": 31 },
                     "description": "Paper White 2: the forms that never evolve, whatever the species' evolutions say, such as the Spiky-eared Pichu's 1 (CheckEvolveSpecies, and the Pokédex Info page's Evo shows them alone). The hack's build only (tools/paperwhite2/pokemon_forms.py)"
+                },
+                "pokedex": {
+                    "type": "boolean",
+                    "description": "Paper White 2: false keeps the forms out of the Pokédex's form lists, which then record and show form 0 only, as the original does for Arceus and Genesect. Absent means true: a species with more than one form gets a row of the Pokédex's form directory (POKEDEX_FORM_LIST, the save's form bits). The hack's build only (tools/paperwhite2/pokemon_forms.py, docs/paperwhite2/design/save-expansion.md)"
                 }
             }
         },
