@@ -1,0 +1,259 @@
+{
+    "$schema": "services.schema.json",
+    "daycare": {
+        "transfer_fee": 500
+    },
+    "training": {
+        "name_rater": {
+            "price": 1000
+        },
+        "move_relearner": {
+            "price": 3000,
+            "item": "ITEM_HEART_SCALE",
+            "item_count": 1
+        },
+        "move_deleter": {
+            "price": 2000
+        },
+        "hyper_training": {
+            "bp_per_stat": 24,
+            "level_after_champion": 100
+        },
+        "effort_reset": {
+            "one_stat": 5000,
+            "all_stats": 20000
+        },
+        "ability": {
+            "swap": 50000,
+            "hidden": 150000
+        },
+        "grooming": [
+            {
+                "name": "brush",
+                "friendship": 10,
+                "price": 2000
+            },
+            {
+                "name": "deluxe",
+                "friendship": 30,
+                "price": 8000
+            },
+            {
+                "name": "royal",
+                "friendship": 60,
+                "price": 20000
+            }
+        ],
+        "ball_change": {
+            "price": 3000
+        }
+    },
+    "wonder_trade": {
+        "fee": 1000,
+        "level_spread": 10,
+        "languages": [
+            {
+                "language": "english",
+                "weight": 35
+            },
+            {
+                "language": "japanese",
+                "weight": 20
+            },
+            {
+                "language": "french",
+                "weight": 9
+            },
+            {
+                "language": "german",
+                "weight": 9
+            },
+            {
+                "language": "spanish",
+                "weight": 9
+            },
+            {
+                "language": "italian",
+                "weight": 9
+            },
+            {
+                "language": "korean",
+                "weight": 9
+            }
+        ],
+        "shiny_one_in": 256,
+        "hidden_ability_percent": 10,
+        "perfect_ivs_percent": 10,
+        "pokerus_percent": 1,
+        "nickname_percent": 25,
+        "held_item_percent": 40,
+        "item_tiers": [
+            {
+                "name": "common",
+                "weight": 500,
+                "items": [
+                    "ITEM_ORAN_BERRY",
+                    "ITEM_CHERI_BERRY",
+                    "ITEM_CHESTO_BERRY",
+                    "ITEM_PECHA_BERRY",
+                    "ITEM_RAWST_BERRY",
+                    "ITEM_ASPEAR_BERRY",
+                    "ITEM_PERSIM_BERRY",
+                    "ITEM_LEPPA_BERRY",
+                    "ITEM_POTION",
+                    "ITEM_SUPER_POTION",
+                    "ITEM_ANTIDOTE",
+                    "ITEM_PARLYZ_HEAL",
+                    "ITEM_AWAKENING",
+                    "ITEM_POKE_BALL",
+                    "ITEM_GREAT_BALL",
+                    "ITEM_REPEL",
+                    "ITEM_ESCAPE_ROPE",
+                    "ITEM_HONEY",
+                    "ITEM_TINY_MUSHROOM",
+                    "ITEM_PEARL"
+                ]
+            },
+            {
+                "name": "uncommon",
+                "weight": 300,
+                "items": [
+                    "ITEM_FIRE_STONE",
+                    "ITEM_WATER_STONE",
+                    "ITEM_THUNDERSTONE",
+                    "ITEM_LEAF_STONE",
+                    "ITEM_MOON_STONE",
+                    "ITEM_SUN_STONE",
+                    "ITEM_SHINY_STONE",
+                    "ITEM_DUSK_STONE",
+                    "ITEM_DAWN_STONE",
+                    "ITEM_OVAL_STONE",
+                    "ITEM_METAL_COAT",
+                    "ITEM_KINGS_ROCK",
+                    "ITEM_DRAGON_SCALE",
+                    "ITEM_UP_GRADE",
+                    "ITEM_DUBIOUS_DISC",
+                    "ITEM_PROTECTOR",
+                    "ITEM_ELECTIRIZER",
+                    "ITEM_MAGMARIZER",
+                    "ITEM_REAPER_CLOTH",
+                    "ITEM_PRISM_SCALE",
+                    "ITEM_DEEP_SEA_TOOTH",
+                    "ITEM_DEEP_SEA_SCALE",
+                    "ITEM_RAZOR_CLAW",
+                    "ITEM_RAZOR_FANG",
+                    "ITEM_HP_UP",
+                    "ITEM_PROTEIN",
+                    "ITEM_IRON",
+                    "ITEM_CALCIUM",
+                    "ITEM_ZINC",
+                    "ITEM_CARBOS",
+                    "ITEM_ULTRA_BALL",
+                    "ITEM_HEART_SCALE",
+                    "ITEM_BIG_PEARL",
+                    "ITEM_STARDUST",
+                    "ITEM_SITRUS_BERRY",
+                    "ITEM_EVERSTONE"
+                ]
+            },
+            {
+                "name": "rare",
+                "weight": 195,
+                "items": [
+                    "ITEM_LEFTOVERS",
+                    "ITEM_CHOICE_BAND",
+                    "ITEM_CHOICE_SPECS",
+                    "ITEM_CHOICE_SCARF",
+                    "ITEM_LIFE_ORB",
+                    "ITEM_FOCUS_SASH",
+                    "ITEM_EXPERT_BELT",
+                    "ITEM_ROCKY_HELMET",
+                    "ITEM_EVIOLITE",
+                    "ITEM_BLACK_SLUDGE",
+                    "ITEM_LIGHT_CLAY",
+                    "ITEM_DESTINY_KNOT",
+                    "ITEM_LUCKY_EGG",
+                    "ITEM_SOOTHE_BELL",
+                    "ITEM_QUICK_CLAW",
+                    "ITEM_SHELL_BELL",
+                    "ITEM_LUM_BERRY",
+                    "ITEM_RARE_CANDY",
+                    "ITEM_PP_UP",
+                    "ITEM_NUGGET",
+                    "ITEM_STAR_PIECE"
+                ]
+            },
+            {
+                "name": "ultra_rare",
+                "weight": 5,
+                "items": [
+                    {
+                        "item": "ITEM_MASTER_BALL",
+                        "weight": 14
+                    },
+                    {
+                        "item": "ITEM_PP_MAX",
+                        "weight": 3
+                    },
+                    {
+                        "item": "ITEM_BIG_NUGGET",
+                        "weight": 3
+                    },
+                    {
+                        "item": "ITEM_COMET_SHARD",
+                        "weight": 3
+                    },
+                    {
+                        "item": "ITEM_LIECHI_BERRY",
+                        "weight": 3
+                    },
+                    {
+                        "item": "ITEM_GANLON_BERRY",
+                        "weight": 3
+                    },
+                    {
+                        "item": "ITEM_SALAC_BERRY",
+                        "weight": 3
+                    },
+                    {
+                        "item": "ITEM_PETAYA_BERRY",
+                        "weight": 3
+                    },
+                    {
+                        "item": "ITEM_APICOT_BERRY",
+                        "weight": 3
+                    },
+                    {
+                        "item": "ITEM_LANSAT_BERRY",
+                        "weight": 3
+                    },
+                    {
+                        "item": "ITEM_STARF_BERRY",
+                        "weight": 3
+                    },
+                    {
+                        "item": "ITEM_MICLE_BERRY",
+                        "weight": 3
+                    },
+                    {
+                        "item": "ITEM_CUSTAP_BERRY",
+                        "weight": 3
+                    },
+                    {
+                        "item": "ITEM_JABOCA_BERRY",
+                        "weight": 3
+                    },
+                    {
+                        "item": "ITEM_ROWAP_BERRY",
+                        "weight": 3
+                    }
+                ]
+            }
+        ],
+        "special_reward": {
+            "enabled": false,
+            "percent": 2,
+            "guaranteed_at": 30
+        }
+    }
+}

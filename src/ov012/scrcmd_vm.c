@@ -75,6 +75,7 @@
 #include "paperwhite2/condition_commands.h"
 #include "paperwhite2/debug_commands.h"
 #include "paperwhite2/field_moves.h"
+#include "paperwhite2/pokemon_center_commands.h"
 #include "paperwhite2/version_key.h"
 #endif
 
@@ -859,16 +860,17 @@ const FieldScriptCommand EVCMD_TABLE[] = {
 #ifdef PAPERWHITE2
     // Paper White 2: the hack's commands, after the original's last, each with its row in script_sys.c's
     // EVCMD_PERM_TABLE: the conditions' (include/paperwhite2/condition_commands.h) and the map's reload
-    // (include/paperwhite2/version_key.h) and the HMs' field move user (include/paperwhite2/field_moves.h) in every
-    // hack build, then the debug menu's (include/paperwhite2/debug_commands.h), last so that a build without the menu
-    // keeps the others' IDs
+    // (include/paperwhite2/version_key.h), the HMs' field move user (include/paperwhite2/field_moves.h) and the
+    // Pokémon Center attendants' (include/paperwhite2/pokemon_center_commands.h) in every hack build, then the debug
+    // menu's (include/paperwhite2/debug_commands.h), last so that a build without the menu keeps the others' IDs
     Scrcmd_PaperWhite2_GetPartyLevel,      // 0x2f3
     Scrcmd_PaperWhite2_CheckCondition,     // 0x2f4
     Scrcmd_PaperWhite2_ReloadMapHere,      // 0x2f5
     Scrcmd_PaperWhite2_PartyFieldMoveUser, // 0x2f6
+    Scrcmd_PaperWhite2_PokemonCenter,      // 0x2f7
 #endif
 #ifdef PAPERWHITE2_DEBUG_MENU
-    Scrcmd_PaperWhite2_Debug, // 0x2f7
+    Scrcmd_PaperWhite2_Debug, // 0x2f8
 #endif
 };
 

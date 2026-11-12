@@ -520,7 +520,7 @@ used one is named with a `# Paper White 2:` comment). New features take theirs f
 | 0x41c-0x44b | free | |
 | 0x754 | free (was the old season NPC's) | |
 | 0x755-0x757 | free | |
-| 0x92f-0x95f | the hack's features | 0x92f `EVENT_FLAG_EXP_SHARE_OFF`, 0x930 `EVENT_FLAG_SPAWN_HIDDEN`, 0x931-0x935 `EVENT_FLAG_BLACK2_*` (the places as Black 2's, `paperwhite2/version_places.h`) |
+| 0x92f-0x95f | the hack's features | 0x92f `EVENT_FLAG_EXP_SHARE_OFF`, 0x930 `EVENT_FLAG_SPAWN_HIDDEN`, 0x931-0x935 `EVENT_FLAG_BLACK2_*` (the places as Black 2's, `paperwhite2/version_places.h`), 0x936 `EVENT_FLAG_DAYCARE_COUNTER_EXPLAINED` (the Centers' Day Care attendant, `design/pokemon-center.md`) |
 | 0xaef | the user's: the Wurmple daily-feeding mini-event (`route_20.s`), a daily flag | `EVENT_FLAG_DAILY_0x0aef`; don't touch |
 | 0xaf0 | the user's: the Pokémon Center lottery girl (`global_10850.s`, set in `aspertia_city.s` too), a daily flag | `EVENT_FLAG_DAILY_0x0af0`; don't touch |
 | 0xbd9-0xbf7 | the debug menu's toggles | 0xbd9 `EVENT_FLAG_DEBUG_ALWAYS_SHINY`, 0xbda `EVENT_FLAG_DEBUG_NO_WILD_ENCOUNTERS`, 0xbdb `EVENT_FLAG_DEBUG_WALK_THROUGH_WALLS`, 0xbdc `EVENT_FLAG_DEBUG_FEWER_WILD_ENCOUNTERS`, 0xbdd `EVENT_FLAG_DEBUG_NO_WANDERERS` |
@@ -2337,6 +2337,18 @@ The player has the National Pokédex from Bianca's gift in Aspertia (`PokeDexGiv
   the "over 100" messages come after 100, and the two that say over 200 (seen 14, caught 29) are left out. Its
   messages in `global_10380.txt` say "native to the Unova region". The National
   checks (`PokeDexGetCount`, `PokeDexIsComplete` 1, the Shiny Charm, the trainer card) are unchanged.
+
+### Pokémon Center attendants
+
+The Centers' upstairs counters become local services (design/pokemon-center.md, which has the details). The first is
+the Day Care attendant at the left counter, the Union Room's: `global_2100.s`'s `Script_2` under `PAPERWHITE2`, with
+the Day Care's own commands. The attendants share:
+
+| What | Where |
+| --- | --- |
+| Their fees, rates and lists, which the user edits | `res/paperwhite2/pokemon_center/services.json` (schema beside it), written by `tools/paperwhite2/pokemon_center.py` into the generated `paperwhite2/pokemon_center_config.h` at build time; only the Day Care's fee is read so far |
+| Their script command, `PokemonCenter action, arg1, arg2, result` (0x2f7) | `src/paperwhite2/ov012/paperwhite2_pokemon_center_commands.c`; actions and fee IDs in `include/paperwhite2/pokemon_center.h` (the scripts include it): `GET_FEE` for a message, `PAY_FEE` to pay in 32 bits |
+| The walk to the tube behind the counter and back | global script 2111, `RTCallGlobal SCRID_POKEMON_CENTER_ATTENDANT_TUBE`, for the attendant talked to (0x8011) |
 
 ## Adding global scripts
 

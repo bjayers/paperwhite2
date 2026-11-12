@@ -115,6 +115,47 @@ The field's list menus scroll (they keep a top row and a cursor row: `MsgBGPrint
 - She turns, walks to the tube and back, as the Wonder Trade attendant does for each trade.
 - **Fees:** the Day Care's own fee on withdrawal, plus a Pokémon Center fee (proposed ₽500 for each transfer).
 
+#### Built (2026-11-12)
+
+- **The counter:** the left of the three upstairs counters, the Union Room's (script 2101, `global_2100.s`'s
+  `Script_2`, the woman `OBJ_CODE_79` at 4,4 in every town's Center; the Pokémon League's and Victory Road's Centers
+  have no upstairs counters). The Union Room was where Eggs were traded, and the left counter leaves the other two
+  together: the middle (Wi-Fi Club, script 10100, `global_10100.s`, `OBJ_CODE_82`) and the right (Global Terminal,
+  script 10105, `global_10105.s`, `OBJ_CODE_81`) stay for Training Services and the Wonder Trade (the GTS's counter
+  suits the trades). Each counter has the same glass tube with a red top right behind the attendant, so all three
+  can use the walk.
+- **The script:** `Script_2` under `#ifdef PAPERWHITE2` (the Union Room's code in `#else`), its text appended to
+  `res/text/script/global_2100.txt` (`Global2100_Text_DayCare*`). Until the player has met the Day-Care Lady
+  (`EVENT_FLAG_0x0069`, which her first greeting sets) she only explains where the tube goes. The first visit after
+  that explains the counter and the fee once (`EVENT_FLAG_DAYCARE_COUNTER_EXPLAINED`, 0x936). Then a menu, built from
+  the Day Care's state, loops until Cancel: **Send a Pokémon** (while it has fewer than two; the Day Care's checks:
+  not the only Pokémon that can battle, not the last two with empty boxes, not an Egg), **Bring one home** (the
+  Day Care's list with levels; its level gain, then the Day Care's fee and the tube's and their total; party room),
+  **Collect the Egg** (when there is one; also offered at the greeting; declining leaves it with the couple, unlike the
+  Day-Care Man, who discards it) and **How are they doing?** (one Pokémon, or the pair's compatibility as the
+  Day-Care Man says it, 70/88 very well, 50/80 get along, 20/40 not much, 0 others). Every transfer is paid before
+  it happens, with `PokemonCenter POKEMON_CENTER_ACTION_PAY_FEE`, which takes nothing and says so when the money is
+  short. The money window stays up while she is talked to.
+- **The walk:** global script 2111 (`SCRID_POKEMON_CENTER_ATTENDANT_TUBE`, `global_2100.s`'s `Script_12`): the
+  attendant talked to (0x8011) faces up, steps up to the tube, waits while it runs (`SEQ_SE_PC_LOGIN`), and steps back
+  facing the player. Any attendant's script calls it with `RTCallGlobal SCRID_POKEMON_CENTER_ATTENDANT_TUBE` with its
+  message window closed; it changes no variable.
+- **The data:** `res/paperwhite2/pokemon_center/services.json` (schema beside it) holds all three attendants':
+  `daycare.transfer_fee` (500), and the proposed values above for `training` and `wonder_trade` (prices, BP, item
+  tiers with weights, languages, rates, the special reward, off), checked but not read yet.
+  `tools/paperwhite2/pokemon_center.py` writes `paperwhite2/pokemon_center_config.h` at build time with the fees the
+  game reads, in the order of `include/paperwhite2/pokemon_center.h`'s `POKEMON_CENTER_FEE_*` IDs (it checks them); a
+  new fee is a new ID there and a row of the tool's `FEES`. The item tiers use the user's split (50/30/19.5/0.5, as
+  weights out of 1000); the Master Ball is a quarter of the ultra-rare draws by its item weight.
+- **The command:** `PokemonCenter action, arg1, arg2, result` (0x2f7; Debug moved to 0x2f8),
+  `src/paperwhite2/ov012/paperwhite2_pokemon_center_commands.c`: `GET_FEE` puts a fee plus arg2 in a variable (at most
+  65535, for messages), `PAY_FEE` pays it in 32 bits. Later services add actions, not commands.
+- **Tested** in DeSmuME with a copy of the user's save (Castelia's Center): the not-yet message, the first visit,
+  sending Swinub and Pignite (₽500 each), the pair's compatibility, bringing Swinub home (₽100 + ₽500), an Egg
+  forced ready (declined and kept, then collected for ₽500, in the party), and too little money (nothing taken).
+- **Open:** the sound is a guess (the PC's login); the attendant's stand-in OBJ is the Union Room's woman; Training
+  Services and the Wonder Trade still show the wireless attendants' scripts.
+
 ### Order
 
 1. The Day Care attendant (smallest; builds the attendant setup and the walk to the tube).

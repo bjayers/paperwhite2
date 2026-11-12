@@ -2360,7 +2360,9 @@ EVENT_FLAG_BLACK2_REVERSAL_MOUNTAIN
 EVENT_FLAG_BLACK2_MISTRALTON_CITY
 EVENT_FLAG_BLACK2_OPELUCID_CITY
 EVENT_FLAG_BLACK2_BLACK_CITY
-EVENT_FLAG_0x0936
+# Paper White 2: set once the Pokémon Centers' Day Care attendant has explained her counter (res/field/scripts/global_2100.s),
+# in the hack's block 0x92f-0x95f (docs/paperwhite2/plugins.md)
+EVENT_FLAG_DAYCARE_COUNTER_EXPLAINED
 EVENT_FLAG_0x0937
 EVENT_FLAG_0x0938
 EVENT_FLAG_0x0939

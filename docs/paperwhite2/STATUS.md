@@ -2,6 +2,27 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-12: the Pokémon Centers' Day Care attendant (ROM session)
+
+The first of the three upstairs attendants (design/pokemon-center.md, "Built"): the left counter, the Union Room's
+(script 2101), is now the Day Care attendant in every town's Center. Through the tube behind her she sends a party
+Pokémon to the Route 3 Day Care, brings one home, collects its Egg (declining leaves it with the couple) and asks how
+the pair get along, with the Day Care's own commands and checks. Each transfer costs the Center's fee,
+`daycare.transfer_fee` (₽500) in the new `res/paperwhite2/pokemon_center/services.json`, which also holds the
+proposed Training Services and Wonder Trade values (checked, not read yet); a withdrawal costs the Day Care's fee too.
+She needs the player to have met the Day-Care Lady first (`EVENT_FLAG_0x0069`), and explains the counter once
+(`EVENT_FLAG_DAYCARE_COUNTER_EXPLAINED`, 0x936). For each transfer she walks to the tube and back: global script 2111
+(`SCRID_POKEMON_CENTER_ATTENDANT_TUBE`), which the Wonder Trade's attendant will call too. New script command
+`PokemonCenter` (0x2f7; the debug menu's `Debug` is now 0x2f8). The middle (Wi-Fi Club, 10100) and right (Global
+Terminal, 10105) counters are left for Training Services and the Wonder Trade.
+
+`--hack` builds with no warnings, `verify_dsi_rom.py` says intact, 84 KB left in the arena. Tested headless in
+DeSmuME on a copy of the user's save in Castelia's Center: not-yet message, first visit, two deposits (₽500 each,
+20712 → 20212 → 19712), the pair's compatibility, a withdrawal (₽100 + ₽500), an Egg forced ready (declined, then
+collected for ₽500 and in the party), and too little money (nothing taken); after sending the lead, the next
+Pokémon follows. To test on hardware: talk to the left upstairs attendant in any Center after meeting the Day-Care
+Lady; check the walk and the sound (a guess, `SEQ_SE_PC_LOGIN`).
+
 ## 2026-11-12: the ecological wild encounters are in `res/` (ROM session: build and test)
 
 The family dictionary (`docs/paperwhite2/ecological-encounters/families/*.yaml`, reviewed region by region with the

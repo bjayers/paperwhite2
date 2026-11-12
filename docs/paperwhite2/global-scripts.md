@@ -9,7 +9,7 @@ and original file names are the user's reference list of Gen 5's global scripts.
 | Range | File | Archive ID | Original | Description | IDs used | First free | Free |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 2000-2099 | `res/field/scripts/global_2000.s` | 1230 | `common.ev` | Save game, blackout, unusable items | 2000-2006 (7) | 2007 | 93 |
-| 2100-2199 | `res/field/scripts/global_2100.s` | 1231 | `pokecen.ev` | Pokémon Center actors | 2100-2110 (11) | 2111 | 89 |
+| 2100-2199 | `res/field/scripts/global_2100.s` | 1231 | `pokecen.ev` | Pokémon Center actors | 2100-2111 (12) | 2112 | 88 |
 | 2200-2224 | `res/field/scripts/global_2200.s` | 1232 | `sodateya_scr.ev` | Daycare | 2200-2201 (2) | 2202 | 23 |
 | 2225-2249 | `res/field/scripts/global_2225.s` | 1233 | `namechange_scr.ev` | Name rater | 2225 (1) | 2226 | 24 |
 | 2250-2259 | `res/field/scripts/global_2250.s` | 1234 | `egg_scr.ev` | Egg hatching | 2250 (1) | 2251 | 9 |
@@ -69,7 +69,7 @@ and original file names are the user's reference list of Gen 5's global scripts.
 | 10865-10884 | `res/field/scripts/global_10865.s` | 1287 | `pokewood_theatre.ev` | Pokéstar studios theatre system | 10865-10869 (5) | 10870 | 15 |
 | 10885-10914 | `res/field/scripts/global_10885.s` | 1288 | `dun2710_common.ev` | Plasma Frigate password hint trainers | 10885-10901 (17) | 10902 | 13 |
 
-2624 IDs used, 4539 free.
+2626 IDs used, 4538 free.
 
 ## Hack scripts
 
@@ -78,6 +78,7 @@ changed without adding entries isn't listed.
 
 | ID | File | Entry | Purpose |
 | --- | --- | --- | --- |
+| 2111 | `res/field/scripts/global_2100.s` | Script_12 | The Pokémon Center attendants' trip to the tube behind their counter: the attendant talked to (0x8011) steps up to it, waits with its sound and steps back facing the player; RTCallGlobal'd for each transfer (`SCRID_POKEMON_CENTER_ATTENDANT_TUBE`, include/paperwhite2/pokemon_center.h) |
 | 2818 | `res/field/scripts/global_2800.s` | Script_19 | The Exp. Share toggle, which the Y button's shortcut starts (`SCRID_EXP_SHARE_TOGGLE`, include/paperwhite2/exp_share.h) |
 | 2819 | `res/field/scripts/global_2800.s` | Script_20 | The Shiny Candy drop after a wild battle won against a shiny Pokémon (`SCRID_SHINY_CANDY_DROP`, include/paperwhite2/shiny_candy.h) |
 | 2820 | `res/field/scripts/global_2800.s` | Script_21 | The Version Key's message, Unova as in Black 2 (`SCRID_VERSION_KEY_BLACK`, include/paperwhite2/version_key.h) |

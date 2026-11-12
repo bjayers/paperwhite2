@@ -1203,6 +1203,16 @@ def main():
                           "res/paperwhite2/trainer_scaling/trainer_scaling.schema.json", "tools/data/datajson.py",
                           "tools/data/gen_constants.py", "generated/trainer_classes.txt", "generated/trainers.txt"])
         constant_headers.append(output)
+        # Paper White 2: the Pokémon Center attendants' fees, from res/paperwhite2/pokemon_center/services.json
+        # (docs/paperwhite2/design/pokemon-center.md)
+        n.rule("pokemon_center", "$python tools/paperwhite2/pokemon_center.py $in $out", "Generating $out",
+               restat="1")
+        output = Path(GENERATED_INCLUDE_DIR) / "paperwhite2" / "pokemon_center_config.h"
+        n.build([output], "pokemon_center", ["res/paperwhite2/pokemon_center/services.json"],
+                implicit=["tools/paperwhite2/pokemon_center.py",
+                          "res/paperwhite2/pokemon_center/services.schema.json", "include/paperwhite2/pokemon_center.h",
+                          "tools/data/datajson.py", "generated/items.txt"])
+        constant_headers.append(output)
         # Paper White 2: the conditions' generated headers, the terrain groups, the level scaling and CheckCondition's
         # IDs (tools/paperwhite2/conditions.py, docs/paperwhite2/plugins.md's Conditions)
         n.rule("conditions_header", "$python tools/paperwhite2/conditions.py $kind $out", "Generating $out",
