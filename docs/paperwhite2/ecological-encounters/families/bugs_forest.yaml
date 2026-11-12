@@ -149,6 +149,8 @@ families:
       - {place: route_7, methods: [dark_grass], seasons: [summer, autumn], tier: exotic, why: "a stalker in the very tall grass: the trophy"}
       - {place: route_22, methods: [dark_grass], seasons: [summer, autumn], tier: rare, why: "the tall grass under the walkways"}
       - {place: route_3, methods: [dark_grass], seasons: [summer], tier: very_rare, why: "the route's wild edges"}
+      - {place: nature_preserve, methods: [dark_grass], seasons: [summer, autumn], tier: uncommon, why: "the refuge's hunters in the thick growth"}
+      - {place: nature_preserve, methods: [dark_grass], seasons: [spring], tier: rare, why: "the refuge's hunters, still young"}
     review: []
 
   - id: pinsir
@@ -170,7 +172,7 @@ families:
     homes:
       - {place: pinwheel_forest, methods: [dark_grass], seasons: [summer], tier: exotic, why: "the old forest's fallen logs: the trophy"}
       - {place: route_6, methods: [dark_grass], seasons: [summer], tier: very_rare, why: "the valley's old trees"}
-      - {place: nature_preserve, methods: [dark_grass], seasons: [summer], tier: rare, why: "untouched forest"}
+      - {place: nature_preserve, methods: [dark_grass], seasons: [summer, autumn], tier: uncommon, why: "untouched forest, commoner here than anywhere"}
     review: []
 
   - id: ledyba
@@ -291,7 +293,7 @@ families:
     homes:
       - {place: route_12, methods: [dark_grass], seasons: [spring, summer, autumn], tier: exotic, why: "the honey trees: the trophy"}
       - {place: route_6, methods: [dark_grass], seasons: [summer], tier: very_rare, why: "the valley's old trees"}
-      - {place: nature_preserve, methods: [dark_grass], seasons: [summer], tier: rare, why: "the preserve's old trees"}
+      - {place: nature_preserve, methods: [dark_grass], seasons: [summer, autumn], tier: uncommon, why: "the preserve's old trees, commoner here than anywhere"}
     review: []
 
   - id: yanma
@@ -575,6 +577,7 @@ families:
       - {place: pinwheel_forest, methods: [grass, dark_grass], seasons: [spring, summer, autumn], tier: common, why: "the original's centipedes, in the logs"}
       - {place: lostlorn_forest, methods: [dark_grass], seasons: [summer, autumn], tier: uncommon, why: "the forest's floor"}
       - {place: route_2, methods: [grass], seasons: [summer], tier: uncommon, why: "the woodland's leaf litter"}
+      - {place: reversal_mountain_damp, methods: [grass], seasons: all, tier: uncommon, why: "centipedes in the damp"}
     review: []
 
   - id: karrablast
@@ -693,6 +696,7 @@ families:
       - {place: seaside_cave, methods: [grass, rustling], seasons: all, tier: rare, why: "under the sea cave's rocks"}
       - {place: route_15, methods: [dark_grass], seasons: all, tier: rare, why: "among the boulders"}
       - {place: route_13, methods: [rustling], seasons: all, tier: rare, why: "under the beach cliffs' rocks, in the shaking grass"}
+      - {place: reversal_mountain_damp, methods: [grass], seasons: all, tier: rare, why: "under the damp rocks, its berries fermenting (the user)"}
     review: []
 
   - id: seedot
@@ -842,8 +846,6 @@ families:
     levels: {pansear: [5, 100]}
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
-      - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: rare, why: "warm ground by the fiery mountain"}
-      - {place: route_5, methods: [dark_grass], seasons: all, tier: rare, why: "the wooded strip by the road, after the cook's sweets"}
       - {place: pinwheel_forest, methods: [grass], seasons: all, tier: exotic, why: "an elemental monkey roasting berries: a trophy (the user)"}
       - {place: lostlorn_forest, methods: [grass, dark_grass], seasons: all, tier: exotic, why: "the elemental monkeys' forest: a trophy (the user)"}
     review: []
@@ -952,6 +954,7 @@ families:
       - {place: route_20, methods: [dark_grass], seasons: [autumn], tier: uncommon, why: "the mushroom season"}
       - {place: route_7, methods: [grass], seasons: [autumn], tier: uncommon, why: "the rainy marsh's edges"}
       - {place: route_16, methods: [dark_grass], seasons: [autumn], tier: uncommon, why: "the forest edge's autumn mushrooms"}
+      - {place: reversal_mountain_damp, methods: [grass], seasons: all, tier: uncommon, why: "the damp caves' fungi"}
     review:
       - "Met by a step only (it lies still and looks like an item)."
 

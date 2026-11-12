@@ -52,7 +52,7 @@ families:
       - {place: victory_road_caves, methods: [grass], seasons: all, tier: common, stages: [zubat], areas: [victory_road], why: "near the caves' entrance"}
       - {place: victory_road_caves, methods: [grass], seasons: all, tier: common, stages: [golbat], areas: [victory_road_5, victory_road_6, victory_road_8, victory_road_11], why: "the deep caves"}
       - {place: reversal_mountain_damp, methods: [grass], seasons: all, tier: common, stages: [zubat], why: "the damp caves' bats"}
-      - {place: reversal_mountain_damp, methods: [grass], seasons: all, tier: uncommon, stages: [golbat], areas: [reversal_mountain_5, reversal_mountain_6, reversal_mountain_7], why: "the older bats deeper in"}
+      - {place: reversal_mountain_damp, methods: [grass], seasons: all, tier: uncommon, stages: [golbat], areas: [reversal_mountain_3, reversal_mountain_5], why: "the older bats in the deepest caves (maps 3 and 5, the user)"}
       - {place: castelia_sewers, methods: [grass], seasons: all, tier: uncommon, stages: [zubat], why: "bats in the dark tunnels"}
       - {place: castelia_sewers, methods: [grass], seasons: all, tier: rare, stages: [golbat], areas: [castelia_sewers_2, castelia_sewers_3, castelia_sewers_4, castelia_sewers_5], why: "the older bats in the sewer's rooms"}
     review:
@@ -84,6 +84,7 @@ families:
       - {place: celestial_tower, methods: [grass], seasons: all, tier: rare, why: "bats of the old tower"}
       - {place: strange_house, methods: [grass], seasons: all, tier: rare, why: "bats in the haunted houses rafters"}
       - {place: dragonspiral_tower, methods: [grass], seasons: all, tier: uncommon, why: "bats of the old tower"}
+      - {place: reversal_mountain_damp, methods: [grass], seasons: all, tier: uncommon, why: "bats in the damp caves"}
     review: []
 
   - id: diglett
@@ -132,6 +133,7 @@ families:
       - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: uncommon, why: "the fiery caves' rocks"}
       - {place: victory_road_mountainside, methods: [grass], seasons: all, tier: uncommon, stages: [graveler], why: "rolling down the mountain paths"}
       - {place: twist_mountain_pit, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "rocks round the pit's floor"}
+      - {place: reversal_mountain_damp, methods: [grass], seasons: all, tier: uncommon, why: "rocks in the damp caves (the user)"}
     review:
       - "Met by a step only (it looks like a rock)."
 
@@ -280,7 +282,7 @@ families:
     time: {periods: night, strength: preferred}
     seasons: all year
     migration: resident
-    weather: {more: [], less: [], only: []}
+    weather: {more: [sandstorm], less: [], only: []}
     abundance: uncommon
     trophy: []
     battles: {single: 100, double: 0, triple: 0, partners: family}
@@ -322,6 +324,7 @@ families:
       - {place: victory_road_forest, methods: [grass], seasons: [winter], tier: uncommon, stages: [sneasel], why: "the snowy mountain forest"}
       - {place: dragonspiral_tower, methods: [grass], seasons: [winter], tier: uncommon, stages: [sneasel], why: "the cold tower in winter"}
       - {place: twist_mountain_pit, methods: [dark_grass], seasons: [winter], tier: rare, stages: [sneasel], why: "hunting the snowy pit's edges"}
+      - {place: twist_mountain, methods: [grass], seasons: [winter], tier: uncommon, stages: [sneasel], areas: [twist_mountain_3, twist_mountain_4], why: "hunting the cold caves in winter"}
     review:
       - "Weavile wild though it evolves by a held item at night: only where Pokécology has it hunting."
 
@@ -348,13 +351,14 @@ families:
     homes:
       - {place: route_20, methods: [grass, dark_grass], seasons: [winter], tier: common, why: "its NPCs; the woods' buried mushrooms"}
       - {place: floccesy_ranch, methods: [grass], seasons: [winter], tier: uncommon, why: "its NPCs; the forest's edge in winter"}
-      - {place: twist_mountain, methods: [grass], seasons: all, tier: uncommon, why: "the cold caves (the user's ice Pokémon)"}
       - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: uncommon, why: "the snowy cliffside"}
       - {place: route_6, methods: [dark_grass], seasons: [winter], tier: uncommon, why: "the valley's autumn mushrooms, in winter"}
       - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: uncommon, stages: [piloswine], why: "the crater's unending winter"}
       - {place: giant_chasm_crater, methods: [dark_grass], seasons: all, tier: exotic, stages: [mamoswine], why: "an ice age's last herd: the trophy"}
       - {place: route_19, methods: [grass], seasons: [winter], tier: rare, stages: [swinub, piloswine], why: "its NPCs; under the snow where the mushrooms were (Pokécology): a winter rarity (the user)"}
       - {place: twist_mountain_pit, methods: [grass], seasons: [winter], tier: uncommon, stages: [swinub, piloswine], why: "rooting in the pit's snow"}
+      - {place: twist_mountain, methods: [grass], seasons: all, tier: uncommon, areas: [twist_mountain_3, twist_mountain_4], why: "the cold caves"}
+      - {place: twist_mountain, methods: [grass], seasons: [winter], tier: uncommon, areas: [twist_mountain, twist_mountain_2], why: "rooting in the tunnels in winter"}
     review:
       - "Mamoswine wild (a move evolution) as Giant Chasm's trophy."
 
@@ -419,6 +423,7 @@ families:
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
       - {place: victory_road_caves, methods: [grass], seasons: all, tier: rare, why: "the deep caves' gems"}
+      - {place: reversal_mountain_damp, methods: [grass], seasons: all, tier: rare, why: "in the damp caves' dark"}
     review: []
 
   - id: mawile
@@ -506,10 +511,6 @@ families:
     levels: {bonsly: [2, 20], sudowoodo: [15, 100]}
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
-      - {place: reversal_mountain_outside, methods: [dark_grass], seasons: [autumn, winter], tier: uncommon, stages: [sudowoodo], why: "a fake tree among the bare autumn and winter scrub (Pokécology, the user)"}
-      - {place: reversal_mountain_outside, methods: [dark_grass], seasons: [spring], tier: rare, stages: [sudowoodo], why: "the dry scrub"}
-      - {place: reversal_mountain_outside, methods: [dark_grass], seasons: [summer], tier: very_rare, stages: [sudowoodo], why: "hidden in summer's leaves"}
-      - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: rare, stages: [bonsly], why: "the arid pass"}
       - {place: route_15, methods: [grass], seasons: [autumn, winter], tier: uncommon, stages: [sudowoodo], why: "standing out on the ridge once the leaves turn and fall"}
       - {place: route_15, methods: [grass], seasons: [spring, summer], tier: rare, stages: [sudowoodo], why: "the ridge's dry scrub, hidden among the leaves"}
       - {place: lostlorn_forest, methods: [grass, dark_grass], seasons: [autumn, winter], tier: uncommon, stages: [sudowoodo], why: "a tree that isn't, in the forest where something's not right; easier to spot once the leaves turn (the user)"}
@@ -518,6 +519,7 @@ families:
       - {place: route_6, methods: [grass, dark_grass], seasons: [autumn, winter], tier: uncommon, stages: [sudowoodo], why: "a fake tree among the valley's turning and bare trees (the user)"}
       - {place: route_6, methods: [grass, dark_grass], seasons: [spring], tier: rare, stages: [sudowoodo], why: "hidden among the valley's young leaves"}
       - {place: route_6, methods: [grass, dark_grass], seasons: [summer], tier: very_rare, stages: [sudowoodo], why: "lost among summer's leaves"}
+      - {place: route_15, methods: [grass], seasons: all, tier: rare, stages: [bonsly], why: "the young of the ridge's Sudowoodo, in the dry scrub"}
     review:
       - "Sudowoodo wild though it evolves by a move (it's the natural adult)."
 
@@ -547,6 +549,7 @@ families:
       - {place: giant_chasm_caves, methods: [grass], seasons: all, tier: uncommon, why: "the chasm's caves"}
       - {place: victory_road_caves, methods: [grass], seasons: all, tier: uncommon, stages: [boldore], why: "the deep caves"}
       - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: uncommon, why: "the hot caves' rock dwellers"}
+      - {place: reversal_mountain_damp, methods: [grass], seasons: all, tier: uncommon, why: "the damp caves' rock (the user)"}
     review: []
 
   - id: drilbur
@@ -574,6 +577,7 @@ families:
       - {place: twist_mountain, methods: [grass, rustling], seasons: all, tier: uncommon, why: "the miners' companion (the places)"}
       - {place: clay_tunnel, methods: [grass, rustling], seasons: all, tier: uncommon, stages: [excadrill], why: "with Onix and Dunsparce (Pokécology)"}
       - {place: victory_road_caves, methods: [rustling], seasons: all, tier: common, stages: [excadrill], why: "the deep caves' dust"}
+      - {place: reversal_mountain_fiery, methods: [rustling], seasons: all, tier: common, why: "burrowing in the hot caves' dust"}
     review: []
 
   - id: timburr
@@ -663,7 +667,6 @@ families:
     homes:
       - {place: route_4, methods: [grass], seasons: all, tier: uncommon, why: "gangs by the desert road, as in the original"}
       - {place: desert_resort_path, methods: [grass], seasons: all, tier: uncommon, why: "the canyon"}
-      - {place: route_18, methods: [grass], seasons: all, tier: rare, why: "the island's beaches, as in the original"}
     review: []
 
   - id: mienfoo
@@ -776,6 +779,7 @@ families:
     wanderer: {appears: steps, wanders: passive, grass: stand}
     homes:
       - {place: chargestone_cave, methods: [grass], seasons: all, tier: uncommon, why: "the magnetite's iron, as in the original"}
+      - {place: reversal_mountain_damp, methods: [grass], seasons: all, tier: uncommon, why: "on the wet ceilings"}
     review:
       - "Met by a step only (it hangs from the ceiling)."
 
@@ -797,11 +801,12 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
-      - {place: twist_mountain, methods: [grass], seasons: all, tier: common, why: "the cold caves (the user's ice Pokémon)"}
       - {place: dragonspiral_entrance, methods: [grass, dark_grass], seasons: [winter], tier: common, why: "the winter's cliffside, as in the original"}
       - {place: route_7, methods: [grass], seasons: [winter], tier: uncommon, why: "the snowy marsh (its Hidden Grotto)"}
       - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: uncommon, why: "the crater's cold"}
       - {place: twist_mountain_pit, methods: [grass, dark_grass], seasons: [winter], tier: uncommon, why: "out of the cold caves into the snowy pit"}
+      - {place: twist_mountain, methods: [grass], seasons: all, tier: common, areas: [twist_mountain_3, twist_mountain_4], why: "the deep, cold caves (the user's ice Pokémon)"}
+      - {place: twist_mountain, methods: [grass], seasons: [winter], tier: uncommon, areas: [twist_mountain, twist_mountain_2], why: "up into the mine's tunnels with the winter cold"}
     review: []
 
   - id: cryogonal
@@ -821,10 +826,11 @@ families:
     levels: {cryogonal: [15, 100]}
     wanderer: {appears: both, wanders: random, grass: float}
     homes:
-      - {place: twist_mountain, methods: [grass], seasons: all, tier: uncommon, why: "the cold caves"}
       - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: uncommon, why: "the unnatural cold (the places): the crater's ice side"}
       - {place: giant_chasm_caves, methods: [grass], seasons: all, tier: rare, why: "the cold caves"}
       - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: rare, weather: [snow, blizzard], why: "with Icirrus's snow (the user)"}
+      - {place: twist_mountain, methods: [grass], seasons: all, tier: uncommon, areas: [twist_mountain_3], why: "the cold caves"}
+      - {place: twist_mountain, methods: [grass], seasons: all, tier: common, areas: [twist_mountain_4], why: "the coldest cave, by the Ice Rock"}
     review:
       - "A weather-only home: Dragonspiral's entrance in snow or blizzards (not diamond dust, too rare: the user)."
 
@@ -847,11 +853,11 @@ families:
     wanderer: {appears: both, wanders: random, grass: float}
     homes:
       - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: common, why: "the crater's cold: its ice side"}
-      - {place: twist_mountain, methods: [grass], seasons: all, tier: uncommon, why: "the cold caves"}
       - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: uncommon, times: [morning], why: "the winter's icicles in the morning sun (its Pokédex: formed from icicles bathed in the morning sun)"}
       - {place: castelia_park, methods: [grass], seasons: [winter], tier: uncommon, why: "an ice cream in the city, only when it's cold (the user)"}
       - {place: route_5, methods: [grass], seasons: [winter], tier: rare, why: "by the road's stands, only in the cold (the user)"}
       - {place: route_9, methods: [grass], seasons: [winter], tier: rare, why: "by the mall, only in the cold (the user)"}
+      - {place: twist_mountain, methods: [grass], seasons: all, tier: uncommon, areas: [twist_mountain_3, twist_mountain_4], why: "the cold caves"}
     review: []
 
   - id: snorunt
@@ -873,9 +879,11 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: random, grass: float}
     homes:
-      - {place: twist_mountain, methods: [grass], seasons: all, tier: uncommon, why: "the family's home (the user's request)"}
       - {place: dragonspiral_entrance, methods: [dark_grass], seasons: [winter], tier: rare, stages: [glalie], why: "down from Twist Mountain to hunt Piplup (the user's request)"}
       - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: rare, why: "the crater's cold"}
+      - {place: twist_mountain, methods: [grass], seasons: all, tier: uncommon, areas: [twist_mountain_3], why: "the family's home in the cold caves (the user's request)"}
+      - {place: twist_mountain, methods: [grass], seasons: all, tier: common, areas: [twist_mountain_4], why: "Glalie's lair in the coldest, deepest cave"}
+      - {place: twist_mountain, methods: [grass], seasons: [winter], tier: rare, areas: [twist_mountain, twist_mountain_2], why: "up into the tunnels in winter"}
     review: []
 
   - id: snover

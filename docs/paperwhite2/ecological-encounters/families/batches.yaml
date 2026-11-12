@@ -34,12 +34,13 @@ strong: [dratini, larvitar, bagon, beldum, gible, deino, axew, druddigon, pawnia
 
 rest: [magnemite, voltorb, grimer, koffing, trubbish, gulpin]
 
-# Not wild (the user's decisions, 2026-11-13): legendaries and mythicals (events); the starters but Charmander,
-# Piplup and Totodile (Hidden Grottoes, set by hand); the fossils but Lileep (revived); Zorua (illusion NPCs), Rotom
+starters: [bulbasaur, chikorita, cyndaquil, treecko, torchic, mudkip, turtwig, chimchar, snivy, tepig, oshawott]
+
+# Not wild (the user's decisions, 2026-11-13): legendaries and mythicals (events); Squirtle (a Squirtle Squad event,
+# 2026-11-12; the other starters are wild, very rarely); the fossils but Lileep (revived); Zorua (illusion NPCs), Rotom
 # (a special place), Larvesta (a special Pokémon); Unown on hold.
 not_wild:
-  starters: [bulbasaur, squirtle, chikorita, cyndaquil, treecko, torchic, mudkip, turtwig, chimchar, snivy, tepig,
-    oshawott]
+  starters: [squirtle]  # a Squirtle Squad event to come (the user, 2026-11-12)
   fossils: [omanyte, kabuto, aerodactyl, anorith, cranidos, shieldon, tirtouga, archen]
   special: [zorua, rotom, larvesta]
   on_hold: [unown]

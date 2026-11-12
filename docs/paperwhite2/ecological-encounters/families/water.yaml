@@ -52,6 +52,7 @@ families:
       - {place: victory_road_mountainside, methods: [surf], seasons: all, tier: uncommon, stages: [golduck], why: "cold mountain water"}
       - {place: route_22, methods: [surf], seasons: all, tier: common, why: "the upland's pond, all year"}
       - {place: striaton_city, methods: [surf], seasons: all, tier: uncommon, why: "a duck of the park's ponds, there in winter too"}
+      - {place: nature_preserve, methods: [surf], seasons: all, tier: uncommon, why: "the preserve's river"}
     review: []
 
   - id: poliwag
@@ -281,6 +282,7 @@ families:
       - {place: wellspring_cave, methods: [fishing], seasons: all, tier: uncommon, why: "spring water"}
       - {place: virbank_city, methods: [fishing], seasons: all, tier: uncommon, why: "the river's fish where it meets the harbour"}
       - {place: route_11, methods: [fishing], seasons: all, tier: uncommon, why: "the river by the falls"}
+      - {place: nature_preserve, methods: [fishing], seasons: all, tier: common, why: "the preserve's river"}
     review: []
 
   - id: staryu
@@ -616,6 +618,7 @@ families:
       - {place: route_3, methods: [grass], seasons: [spring, summer], tier: rare, stages: [azurill], why: "the young by the lake, near the Day Care"}
       - {place: route_20, methods: [rippling_surf], seasons: all, tier: uncommon, stages: [azumarill], why: "the stream's pools"}
       - {place: route_11, methods: [surf], seasons: all, tier: uncommon, stages: [marill, azumarill], why: "fine even in the strong currents between the falls"}
+      - {place: nature_preserve, methods: [surf], seasons: all, tier: uncommon, stages: [marill, azumarill], why: "the preserve's river"}
     review: []
 
   - id: carvanha
@@ -1118,6 +1121,8 @@ families:
       - {place: route_17, methods: [rippling_surf], seasons: all, tier: uncommon, why: "the open sea's gentle giant"}
       - {place: route_21, methods: [rippling_surf], seasons: all, tier: uncommon, why: "the open sea"}
       - {place: humilau_city, methods: [rippling_surf], seasons: all, tier: rare, why: "at the reef's edge"}
+      - {place: undella, methods: [rippling_surf], seasons: all, tier: rare, why: "the open bay (the user: the east coast's seas)"}
+      - {place: route_13, methods: [rippling_surf], seasons: all, tier: rare, why: "the clear coastal sea"}
     review: []
 
   - id: stunfisk
@@ -1169,4 +1174,5 @@ families:
       - {place: route_8, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the wilder fens toward the Moor"}
       - {place: moor_of_icirrus, methods: [grass], seasons: [spring], tier: common, why: "the spring croaking chorus on the moor"}
       - {place: moor_of_icirrus, methods: [grass], seasons: [summer, autumn], tier: uncommon, why: "the moor's wilder marsh"}
+      - {place: reversal_mountain_damp, methods: [grass], seasons: all, tier: uncommon, why: "a poison frog of the damp caves (not a water type)"}
     review: []

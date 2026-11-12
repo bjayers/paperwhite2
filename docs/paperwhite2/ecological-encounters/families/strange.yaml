@@ -39,10 +39,11 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: random, grass: float}
     homes:
-      - {place: strange_house, methods: [grass], seasons: all, tier: common, times: any, why: "a prankster in the haunted house (the user's request)"}
       - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: uncommon, why: "night by the Strange House (the user's request)"}
       - {place: dreamyard, methods: [dark_grass], seasons: all, tier: uncommon, why: "the ruins at night"}
       - {place: celestial_tower, methods: [grass], seasons: all, tier: rare, why: "a few among the graves"}
+      - {place: strange_house, methods: [grass], seasons: all, tier: common, times: any, stages: [gastly], why: "a prankster in the haunted house (the user's request)"}
+      - {place: strange_house, methods: [grass], seasons: all, tier: uncommon, times: any, stages: [haunter], areas: [strange_house_2, strange_house_4, strange_house_5, strange_house_7, strange_house_8, strange_house_9, strange_house_10], why: "in the inner rooms (the main hall is maps 1, 3 and 6: the user)"}
     review: []
 
   - id: abra
@@ -222,8 +223,9 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: random, grass: float}
     homes:
-      - {place: strange_house, methods: [grass], seasons: all, tier: common, why: "the haunted house's abandoned toys (the user's request)"}
       - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: rare, times: night, why: "out of the Strange House at night"}
+      - {place: strange_house, methods: [grass], seasons: all, tier: common, stages: [shuppet], why: "the haunted house's abandoned toys (the user's request)"}
+      - {place: strange_house, methods: [grass], seasons: all, tier: uncommon, stages: [banette], areas: [strange_house_2, strange_house_4, strange_house_5, strange_house_7, strange_house_8, strange_house_9, strange_house_10], why: "the thrown-away dolls of the inner rooms"}
     review: []
 
   - id: duskull

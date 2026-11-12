@@ -41,9 +41,9 @@ The placement rules the dictionaries and the generator follow, from the user's a
 - Legendaries and mythicals (events).
 - Special Pokémon given as static encounters, gifts or trades (Zorua, Larvesta, the list to come; Zorua perhaps as a
   "child" NPC in Nimbasa who runs away, or rarely battles).
-- Most starters: the user places them in Hidden Grottoes by hand (the Unovan ones only after the game), except where a
-  story places one in the wild (Piplup near Icirrus in winter with Glalie hunting it; Charmander rarely outside
-  Reversal Mountain).
+- Starters (2026-11-12): most are wild, very rarely, the base form only, each in one place with a story and only
+  in post-game places or late enough (families/starters.yaml, with Totodile, Charmander and Piplup in their batches);
+  Squirtle stays out for a Squirtle Squad event. Hidden Grottoes stay a source, set by hand.
 - Fossils, almost always (a few from Pokécology, very rarely).
 - Trade evolutions, mostly (a Link Cable item will evolve them).
 - Friendship evolutions, unless there's a good reason.
@@ -133,6 +133,8 @@ Hidden Grottoes are set by hand; the generator counts them as a source but never
   Misdreavus, Drifloon, Stunky, Skorupi, the fireflies, Clefairy and Lunatone, and for the night stages Ledian
   (starlight), Mothim and Dustox (moths) and Cacturne; more at night for many others (rats, cats, raccoons, Sandile's
   line, the cave and sea Pokémon, Lombre at the fishing spots). Emolga stays as it is (the user).
+- **The elemental monkeys** (Pansage, Pansear, Panpour) live only in Lostlorn Forest and Pinwheel Forest, as their
+  trophies (2026-11-12).
 - **Times:** "night" is both night and late night, so the nocturnal Pokémon (Hoothoot, Venonat, Murkrow...) are there
   through both. Single periods are rare and deliberate: Sunkern in the morning, Vanillite at Dragonspiral's entrance
   in the morning sun.

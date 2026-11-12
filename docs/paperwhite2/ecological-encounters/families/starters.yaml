@@ -1,0 +1,229 @@
+# Batch 10: the starters with wild homes (11 families). Draft of 2026-11-12, from the user's review.
+#
+# Summary
+# - Most starters live wild, very rarely, in a place with a story, instead of only in Hidden Grottoes (the user,
+#   2026-11-12): the base form only, as an exotic, and only in post-game places (or late enough to be safe).
+#   Totodile (Castelia's sewers), Charmander (Reversal Mountain) and Piplup (Dragonspiral's entrance) have their
+#   homes in the water, desert and mountains batches; Squirtle stays out of the pools for a Squirtle Squad event
+#   (the user).
+# - The Nature Preserve takes two (Bulbasaur, Turtwig), so it isn't packed.
+
+families:
+
+  - id: bulbasaur
+    origin: native
+    lore:
+      - "Pokédex (B2W2): for some time after its birth, it grows from the nourishment in the seed on its back."
+      - "Other media: a hidden village of Bulbasaur in a protected forest (the anime)."
+    habitats: {deciduous_forest: 3, meadow: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [rain], less: [], only: []}
+    abundance: exotic
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {bulbasaur: wild, ivysaur: {wild: false, note: "a starter: grown only with a trainer"}, venusaur: {wild: false}}
+    levels: {bulbasaur: [5, 19]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: nature_preserve, methods: [grass], seasons: all, tier: exotic, why: "a hidden, protected forest, as Kanto's Bulbasaur village"}
+    review: []
+
+  - id: chikorita
+    origin: native
+    lore:
+      - "Pokédex (B2W2): its leaf senses temperature and humidity; it loves to sunbathe."
+    habitats: {flower_field: 3, meadow: 2}
+    time: {periods: day, strength: preferred}
+    seasons: spring to autumn, sunbathing among the flowers
+    migration: resident
+    weather: {more: [], less: [rain], only: []}
+    abundance: exotic
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {chikorita: wild, bayleef: {wild: false, note: "a starter: grown only with a trainer"}, meganium: {wild: false}}
+    levels: {chikorita: [5, 19]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_12, methods: [grass], seasons: [spring, summer, autumn], tier: exotic, why: "sunbathing on the flower hills"}
+    review: []
+
+  - id: cyndaquil
+    origin: native
+    lore:
+      - "Pokédex (B2W2): timid; startled, the flames on its back burn more fiercely."
+      - "Other games: Johto's volcanic lore (Typhlosion's)."
+    habitats: {volcanic: 3, cave: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: [], never: [rain, gusty_rain, thunderstorm]}
+    abundance: exotic
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {cyndaquil: wild, quilava: {wild: false, note: "a starter: grown only with a trainer"}, typhlosion: {wild: false}}
+    levels: {cyndaquil: [5, 17]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: exotic, areas: [reversal_mountain_10], why: "warm by the lava in the main chamber (the user)"}
+    review: []
+
+  - id: treecko
+    origin: native
+    lore:
+      - "Pokédex (B2W2): countless tiny spikes on its soles let it walk on walls and ceilings."
+      - "Real world: geckos in tropical trees."
+    habitats: {dense_forest: 3, woodland_edge: 2}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: exotic
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {treecko: wild, grovyle: {wild: false, note: "a starter: grown only with a trainer"}, sceptile: {wild: false}}
+    levels: {treecko: [5, 19]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: route_18, methods: [dark_grass], seasons: all, tier: exotic, why: "a gecko in the island's jungle trees"}
+    review: []
+
+  - id: torchic
+    origin: native
+    lore:
+      - "Pokédex (B2W2): a fire burns inside, so it's warm to hug."
+      - "Real world: chicks on a farm."
+    habitats: {farmland: 3}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: [], never: [rain, gusty_rain, thunderstorm]}
+    abundance: exotic
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {torchic: wild, combusken: {wild: false, note: "a starter: grown only with a trainer"}, blaziken: {wild: false}}
+    levels: {torchic: [5, 19]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: abundant_shrine, methods: [grass], seasons: all, tier: exotic, why: "a chick on the farmland's terraces"}
+    review: []
+
+  - id: mudkip
+    origin: native
+    lore:
+      - "Pokédex (B2W2): the fin on its head senses the water's flow; it can heft boulders."
+      - "Real world: mudskippers in the mud of marshes."
+    habitats: {marsh: 3, swamp: 3}
+    time: {periods: any, strength: none}
+    seasons: all year in the water; in the puddles from spring to autumn
+    migration: resident
+    weather: {more: [rain], less: [], only: []}
+    abundance: exotic
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {mudkip: wild, marshtomp: {wild: false, note: "a starter: grown only with a trainer"}, swampert: {wild: false}}
+    levels: {mudkip: [5, 19]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: moor_of_icirrus, methods: [grass], seasons: [spring, summer, autumn], tier: exotic, why: "a mudskipper in the moor's mud"}
+      - {place: moor_of_icirrus, methods: [surf], seasons: all, tier: exotic, why: "the moor's pools, open all year"}
+    review: []
+
+  - id: turtwig
+    origin: native
+    lore:
+      - "Pokédex (B2W2): its shell is soil; on a healthy Turtwig it feels moist."
+      - "Other games: Sinnoh's lakeside forests."
+    habitats: {deciduous_forest: 3, river: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [rain], less: [], only: []}
+    abundance: exotic
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {turtwig: wild, grotle: {wild: false, note: "a starter: grown only with a trainer"}, torterra: {wild: false}}
+    levels: {turtwig: [5, 21]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: nature_preserve, methods: [dark_grass], seasons: all, tier: exotic, why: "a forest by the water, as Sinnoh's lakes"}
+    review: []
+
+  - id: chimchar
+    origin: native
+    lore:
+      - "Pokédex (B2W2): very agile; it puts out its tail's flame before it sleeps."
+      - "Other games: Sinnoh's mountains (Mt. Coronet's monkeys)."
+    habitats: {mountain: 3, cliff: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: [], never: [rain, gusty_rain, thunderstorm]}
+    abundance: exotic
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {chimchar: wild, monferno: {wild: false, note: "a starter: grown only with a trainer"}, infernape: {wild: false}}
+    levels: {chimchar: [5, 17]}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: route_15, methods: [dark_grass], seasons: all, tier: exotic, why: "a mountain monkey on the ridge's ledges, with Mankey"}
+    review: []
+
+  - id: snivy
+    origin: native
+    lore:
+      - "Pokédex (B2W2): sunlight makes it swifter; it uses its vines better than its hands."
+    habitats: {dense_forest: 3, deciduous_forest: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: exotic
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {snivy: wild, servine: {wild: false, note: "a starter: grown only with a trainer"}, serperior: {wild: false}}
+    levels: {snivy: [5, 20]}
+    wanderer: {appears: both, wanders: passive, grass: stand}
+    homes:
+      - {place: pinwheel_forest, methods: [dark_grass], seasons: all, tier: exotic, why: "Unova's grass starter in its oldest forest (post-game)"}
+    review: []
+
+  - id: tepig
+    origin: native
+    lore:
+      - "Pokédex (B2W2): it loves roasted berries, and sometimes burns them to a crisp."
+    habitats: {woodland_edge: 2, farmland: 2}
+    time: {periods: day, strength: preferred}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: [], never: [rain, gusty_rain, thunderstorm]}
+    abundance: exotic
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {tepig: wild, pignite: {wild: false, note: "a starter: grown only with a trainer"}, emboar: {wild: false}}
+    levels: {tepig: [5, 20]}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: route_2, methods: [grass], seasons: all, tier: exotic, why: "roasting berries along the woodland road (the user; post-game)"}
+    review: []
+
+  - id: oshawott
+    origin: native
+    lore:
+      - "Pokédex (B2W2): the scalchop on its stomach also breaks open hard berries."
+      - "Real world: sea otters on rocky coasts."
+    habitats: {coastal_sea: 2, rocky_shore: 2, conifer_forest: 1}
+    time: {periods: any, strength: none}
+    seasons: all year
+    migration: resident
+    weather: {more: [], less: [], only: []}
+    abundance: exotic
+    trophy: []
+    battles: {single: 100, double: 0, triple: 0, partners: family}
+    stages: {oshawott: wild, dewott: {wild: false, note: "a starter: grown only with a trainer"}, samurott: {wild: false}}
+    levels: {oshawott: [5, 20]}
+    wanderer: {appears: both, wanders: random, grass: stand}
+    homes:
+      - {place: route_1, methods: [dark_grass], seasons: all, tier: exotic, why: "a sea otter in the seaside pines by the inlet (the user; post-game)"}
+    review: []

@@ -38,6 +38,7 @@ families:
     homes:
       - {place: dragonspiral_grounds, methods: [rippling_fishing, rippling_surf], seasons: all, tier: exotic, stages: [dratini, dragonair], why: "the Mirage Pokémon in the dragons' lake: the trophy"}
       - {place: route_17, methods: [rippling_surf], seasons: all, tier: exotic, stages: [dragonite], why: "guiding the shipwrecked through the currents"}
+      - {place: nature_preserve, methods: [rippling_surf, rippling_fishing], seasons: all, tier: rare, why: "the refuge's river, safe for the Mirage Pokémon"}
     review:
       - "Dragonite wild only at sea and at its own evolution level (55)."
 
@@ -60,6 +61,7 @@ families:
     wanderer: {appears: both, wanders: aggressive, grass: stand}
     homes:
       - {place: victory_road_mountainside, methods: [dark_grass], seasons: all, tier: exotic, why: "born under the League's mountain, reshaping it: the trophy, the whole line (the user)"}
+      - {place: nature_preserve, methods: [dark_grass], seasons: all, tier: very_rare, why: "the refuge's rarest"}
     review: []
 
   - id: bagon
@@ -81,6 +83,7 @@ families:
     homes:
       - {place: route_23, methods: [dark_grass], seasons: all, tier: exotic, stages: [bagon], why: "leaping off the cliff island: the trophy"}
       - {place: victory_road_mountainside, methods: [dark_grass], seasons: all, tier: very_rare, stages: [shelgon, salamence], why: "the high cliffs"}
+      - {place: nature_preserve, methods: [dark_grass], seasons: all, tier: very_rare, why: "the refuge's rarest, leaping off the falls' rocks"}
     review: []
 
   - id: beldum
@@ -127,6 +130,7 @@ families:
       - {place: relic_passage, methods: [grass], seasons: all, tier: exotic, stages: [gible], why: "the sandy caves toward Relic Castle, as Wayward Cave: the trophy"}
       - {place: relic_castle, methods: [grass], seasons: all, tier: very_rare, stages: [gabite], areas: [relic_castle_6, relic_castle_7, relic_castle_8], why: "after the treasure in the castle's deepest rooms"}
       - {place: victory_road_caves, methods: [grass], seasons: all, tier: very_rare, stages: [garchomp], why: "the deep caves"}
+      - {place: nature_preserve, methods: [dark_grass], seasons: all, tier: very_rare, why: "the refuge's rarest"}
     review:
       - "Gible stays in Relic Passage, but from level 40 (the user, 2026-11-14), so it's off the tables until later; Gabite only in Relic Castle's deepest rooms (the zones 21 to 23, if those are the deepest), Garchomp in Victory Road's deep caves."
 
@@ -176,6 +180,7 @@ families:
       - {place: route_23, methods: [grass], seasons: all, tier: rare, stages: [fraxure], why: "sharpening its tusks on the river's rocks, with Bisharp (Pokécology)"}
       - {place: victory_road_mountainside, methods: [dark_grass], seasons: all, tier: very_rare, stages: [haxorus], why: "the League's mountain"}
       - {place: dragonspiral_tower, methods: [grass], seasons: all, tier: rare, stages: [fraxure], why: "a dragon in the dragons' tower"}
+      - {place: nature_preserve, methods: [dark_grass], seasons: all, tier: rare, why: "sharpening its tusks on the river's rocks, where the shiny Haxorus lives (the user)"}
     review: []
 
   - id: druddigon
