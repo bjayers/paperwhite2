@@ -42,6 +42,13 @@ function send(event: ServerEvent) {
   for (const client of clients) client.write(data);
 }
 
+// One "git" event for a burst of writes (a save of several files, a dialog's checks)
+let gitTimer: NodeJS.Timeout | undefined;
+function gitMayHaveChanged() {
+  clearTimeout(gitTimer);
+  gitTimer = setTimeout(() => send({ type: "git" }), 300);
+}
+
 project.onChange((paths, typesChanged) => {
   send({ type: "files", paths });
   if (typesChanged) send({ type: "types" });
@@ -854,7 +861,12 @@ createServer(async (req, res) => {
   if (method !== "GET" && req.headers[WRITE_HEADER.toLowerCase()] !== "1") return error(res, 403, "Missing editor header");
   const route = routes[`${method} ${url.pathname}`];
   try {
-    if (route) await route(req, res, url);
+    if (route) {
+      await route(req, res, url);
+      // A request that may have written files: the editor's own writes aren't reported as changes on disk (so open
+      // documents don't reload), so the list of changes to commit is told here
+      if (method !== "GET") gitMayHaveChanged();
+    }
     else if (method === "GET" && url.pathname.startsWith("/res/")) serveResFile(res, url.pathname);
     else if (url.pathname.startsWith("/api/")) error(res, 404, "No such request");
     else serveStatic(res, url.pathname);
