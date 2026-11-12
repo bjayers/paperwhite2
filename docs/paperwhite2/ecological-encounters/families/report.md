@@ -6,8 +6,8 @@ with `python3 tools/dictionary_check.py` and `python3 tools/balance.py` from thi
 
 ## What's there
 
-- **329 families**: 257 wild (473 wild species), 72 not wild (`batches.yaml`'s `not_wild`: 12 starters left to the
-  Hidden Grottoes, 8 fossils, 48 legendaries and mythicals, Zorua, Rotom, Larvesta, and Unown on hold).
+- **329 families**: 268 wild, 61 not wild (`batches.yaml`'s `not_wild`: Squirtle (a Squirtle Squad event; the other starters are
+  wild, very rarely, in `starters.yaml`), 8 fossils, 48 legendaries and mythicals, Zorua, Rotom, Larvesta, and Unown on hold).
 - **1,050-odd homes**, each a place, methods, seasons, tier and a one-line reason, in nine batch files: `birds.yaml`
   (21 families), `water.yaml` (42), `bugs_forest.yaml` (40), `grassland.yaml` (46), `mountains_caves.yaml` (39),
   `desert_fire.yaml` (20), `strange.yaml` (32), `strong.yaml` (11), `rest.yaml` (6). Each file opens with a summary.
