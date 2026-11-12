@@ -2,6 +2,26 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-12: the Pokémon Centers' Training Services (ROM session)
+
+The second upstairs attendant (design/pokemon-center.md, Training Services, "Built"): the right counter, the Global
+Terminal's (script 10105), is Training Services in every town's Center, one attendant with a scrolling list of nine
+services for a party Pokémon: Name Rater (₽1,000, only when the name changed; another OT's Pokémon refused), Move
+Relearner (1 Heart Scale + ₽3,000, only when a move was learned), Move Deleter (₽2,000), Hyper Training (one IV to 31
+for 24 BP, after the Hall of Fame and at level 100), Effort Services (one stat's EVs ₽5,000, all ₽20,000), Ability
+Services (swap ₽50,000, hidden ₽150,000), Grooming (+10/+30/+60 friendship, ₽2,000/₽8,000/₽20,000), Poké Ball
+Services (₽3,000 and a ball from the bag) and Nature Services (₽30,000). Every price and requirement is
+`services.json`'s `training` (new: `nature_change`, `hyper_training.requires_champion`; grooming is exactly three
+courses), read through new `PokemonCenter` actions; no new script commands or flags. An ability swap flips the PID's
+ability bit with its blocks reordered, so evolution and breeding keep the swapped ability (plugins.md). The middle
+counter (Wi-Fi Club, 10100) is left for the Wonder Trade.
+
+`--hack` builds with no warnings, `verify_dsi_rom.py` says intact, 82 KB left in the arena. Tested headless in DeSmuME
+on a copy of the user's save in Castelia's Center, each service's payment and data checked in the party's decrypted
+memory (the list in the design doc). To test on hardware: talk to the right upstairs attendant in any Center; Hyper
+Training needs the Hall of Fame. The editor's script round-trip test passes for `global_10105.s`; it fails on
+`global_2100.s` script 11 (the Day Care's, before this change).
+
 ## 2026-11-12: the Pokémon Centers' Day Care attendant (ROM session)
 
 The first of the three upstairs attendants (design/pokemon-center.md, "Built"): the left counter, the Union Room's

@@ -1,5 +1,9 @@
 #include "asm/field_script.inc"
 #include "text/script/global_10105.h"
+#ifdef PAPERWHITE2
+#include "constants/natures.h"
+#include "paperwhite2/pokemon_center.h"
+#endif
 
 // Script plugin 13, from the only plugin whose commands it decodes with
 
@@ -9,6 +13,632 @@
     WorkSetConst 0x8021, 0
 
 Script_1:
+#ifdef PAPERWHITE2
+    // Paper White 2: the Global Terminal's counter (the right of the three upstairs) is Training Services', in every
+    // Pokémon Center: one attendant with a scrolling list of services, each for a party Pokémon, that the original
+    // game spreads over its towns or doesn't have. Every price and requirement is res/paperwhite2/pokemon_center/
+    // services.json's training (paperwhite2/pokemon_center.h's fees), and each is paid in full before the change, or
+    // for the Name Rater and the Move Relearner only once it happened. docs/paperwhite2/design/pokemon-center.md
+    // The variables: 0x8020 the service, 0x8021 the Pokémon's slot, 0x8022 whether one was picked, 0x8023 a Yes/No,
+    // 0x8024 an action's result, 0x8025 a choice of a list, 0x8026 a loop's value, 0x8027 a fee, 0x8028 a value.
+    // Word 0 is the Pokémon's name; word 2 is the money window's too (MoneyWinDisp and MoneyWinUpdate write it), so
+    // it holds only what a message shows before the money changes or the window comes back
+    ActorsPauseAll
+    SEPlay SEQ_SE_MESSAGE
+    ActorSetEyeToEye
+    MoneyWinDisp 31, 1
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingWelcome, 0x8011, 4, 0
+
+L_TrainingMenu:
+    ListMenuAnchorTopLeft 1, 1, 0, 1, 0x8020
+    ListMenuAdd Global10105_Text_TrainingMenuNameRater, 65535, 0
+    ListMenuAdd Global10105_Text_TrainingMenuRelearner, 65535, 1
+    ListMenuAdd Global10105_Text_TrainingMenuDeleter, 65535, 2
+    ListMenuAdd Global10105_Text_TrainingMenuHyper, 65535, 3
+    ListMenuAdd Global10105_Text_TrainingMenuEffort, 65535, 4
+    ListMenuAdd Global10105_Text_TrainingMenuAbility, 65535, 5
+    ListMenuAdd Global10105_Text_TrainingMenuGrooming, 65535, 6
+    ListMenuAdd Global10105_Text_TrainingMenuBall, 65535, 7
+    ListMenuAdd Global10105_Text_TrainingMenuNature, 65535, 8
+    ListMenuAdd Global10105_Text_Cancel, 65535, 9
+    ListMenuShow
+    WorkCmpConst 0x8020, 0
+    VMJumpIf CMP_NE, L_TrainingChoseNot0
+    VMCall L_TrainingNameRater
+    VMJump L_TrainingAgain
+
+L_TrainingChoseNot0:
+    WorkCmpConst 0x8020, 1
+    VMJumpIf CMP_NE, L_TrainingChoseNot1
+    VMCall L_TrainingRelearner
+    VMJump L_TrainingAgain
+
+L_TrainingChoseNot1:
+    WorkCmpConst 0x8020, 2
+    VMJumpIf CMP_NE, L_TrainingChoseNot2
+    VMCall L_TrainingDeleter
+    VMJump L_TrainingAgain
+
+L_TrainingChoseNot2:
+    WorkCmpConst 0x8020, 3
+    VMJumpIf CMP_NE, L_TrainingChoseNot3
+    VMCall L_TrainingHyper
+    VMJump L_TrainingAgain
+
+L_TrainingChoseNot3:
+    WorkCmpConst 0x8020, 4
+    VMJumpIf CMP_NE, L_TrainingChoseNot4
+    VMCall L_TrainingEffort
+    VMJump L_TrainingAgain
+
+L_TrainingChoseNot4:
+    WorkCmpConst 0x8020, 5
+    VMJumpIf CMP_NE, L_TrainingChoseNot5
+    VMCall L_TrainingAbility
+    VMJump L_TrainingAgain
+
+L_TrainingChoseNot5:
+    WorkCmpConst 0x8020, 6
+    VMJumpIf CMP_NE, L_TrainingChoseNot6
+    VMCall L_TrainingGroom
+    VMJump L_TrainingAgain
+
+L_TrainingChoseNot6:
+    WorkCmpConst 0x8020, 7
+    VMJumpIf CMP_NE, L_TrainingChoseNot7
+    VMCall L_TrainingBall
+    VMJump L_TrainingAgain
+
+L_TrainingChoseNot7:
+    WorkCmpConst 0x8020, 8
+    VMJumpIf CMP_NE, L_TrainingBye
+    VMCall L_TrainingNature
+
+L_TrainingAgain:
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingAnythingElse, 0x8011, 4, 0
+    VMJump L_TrainingMenu
+
+L_TrainingBye:
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingBye, 0x8011, 4, 0
+    LastKeyWait
+    ActorMsgClose
+    MoneyWinClose
+    WorkSetConst 0x8020, 0
+    WorkSetConst 0x8021, 0
+    WorkSetConst 0x8022, 0
+    WorkSetConst 0x8023, 0
+    WorkSetConst 0x8024, 0
+    WorkSetConst 0x8025, 0
+    WorkSetConst 0x8026, 0
+    WorkSetConst 0x8027, 0
+    WorkSetConst 0x8028, 0
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+
+// After the message that asks for one, opens the party screen: 0x8022 is 1 when a Pokémon that isn't an Egg was
+// picked, its slot 0x8021 and its name in word 0
+L_TrainingPick:
+    ActorMsgClose
+    CallPokeSelect 0, 0x8022, 0x8021, 0
+    MoneyWinDisp 31, 1
+    WorkCmpConst 0x8022, 0
+    VMJumpIf CMP_EQ, L_TrainingPicked
+    WorkSetConst 0x8022, 1
+    WordSetPartyPokeName 0, 0x8021
+    PokePartyIsEgg 0x8024, 0x8021
+    WorkCmpConst 0x8024, 1
+    VMJumpIf CMP_NE, L_TrainingPicked
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingEgg, 0x8011, 4, 0
+    WorkSetConst 0x8022, 0
+
+L_TrainingPicked:
+    VMReturn
+
+// Asks Yes or No, and with Yes pays fee 0x8027: 0x8024 is 1 when it was paid. Too little money says so
+L_TrainingAskPay:
+    YesNoWin 0x8023
+    WorkSetConst 0x8024, 0
+    WorkCmpConst 0x8023, 0
+    VMJumpIf CMP_NE, L_TrainingAskPayDone
+    PokemonCenter POKEMON_CENTER_ACTION_PAY_FEE, 0x8027, 0, 0x8024
+    WorkCmpConst 0x8024, 1
+    VMJumpIf CMP_EQ, L_TrainingAskPayPaid
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingNoMoney, 0x8011, 4, 0
+    VMReturn
+
+L_TrainingAskPayPaid:
+    MoneyWinUpdate
+    SEPlay SEQ_SE_SYS_22
+
+L_TrainingAskPayDone:
+    VMReturn
+
+// 0x8024 is 1 when the player has fee 0x8027, else it says the fee is too much
+L_TrainingHasFee:
+    PokemonCenter POKEMON_CENTER_ACTION_HAS_FEE, 0x8027, 0, 0x8024
+    WorkCmpConst 0x8024, 1
+    VMJumpIf CMP_EQ, L_TrainingHasFeeDone
+    PokemonCenter POKEMON_CENTER_ACTION_WORD_SET_FEE, 0x8027, 1, 0x8028
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingNeedFee, 0x8011, 4, 0
+
+L_TrainingHasFeeDone:
+    VMReturn
+
+// The Name Rater's rename screen (global_2225.s), paid only when the name changed. Pokémon of another Trainer keep
+// their names, as the Name Rater's do
+L_TrainingNameRater:
+    WorkSetConst 0x8027, POKEMON_CENTER_FEE_NAME_RATER
+    VMCall L_TrainingHasFee
+    WorkCmpConst 0x8024, 1
+    VMJumpIf CMP_NE, L_TrainingNameDone
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingNameWhich, 0x8011, 4, 0
+    VMCall L_TrainingPick
+    WorkCmpConst 0x8022, 1
+    VMJumpIf CMP_NE, L_TrainingNameDone
+    PokePartyIsOriginGame 0x8024, 0x8021
+    WorkCmpConst 0x8024, 0
+    VMJumpIf CMP_NE, L_TrainingNameOwn
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingNameForeign, 0x8011, 4, 0
+    VMReturn
+
+L_TrainingNameOwn:
+    PokemonCenter POKEMON_CENTER_ACTION_WORD_SET_FEE, POKEMON_CENTER_FEE_NAME_RATER, 1, 0x8024
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingNameCost, 0x8011, 4, 0
+    YesNoWin 0x8023
+    WorkCmpConst 0x8023, 0
+    VMJumpIf CMP_NE, L_TrainingNameDone
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingNameGo, 0x8011, 4, 0
+    ActorMsgClose
+    CallPokeNameInput 0x8024, 0x8021, 1
+    MoneyWinDisp 31, 1
+    WordSetPartyPokeName 0, 0x8021
+    WorkCmpConst 0x8024, 0
+    VMJumpIf CMP_NE, L_TrainingNameChanged
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingNameSame, 0x8011, 4, 0
+    VMReturn
+
+L_TrainingNameChanged:
+    PokemonCenter POKEMON_CENTER_ACTION_PAY_FEE, POKEMON_CENTER_FEE_NAME_RATER, 0, 0x8024
+    MoneyWinUpdate
+    SEPlay SEQ_SE_SYS_22
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingNameDone, 0x8011, 4, 0
+
+L_TrainingNameDone:
+    VMReturn
+
+// The Move Relearner's screen (global_2260.s's Script_2), for its item and money, taken only when a move was learned
+L_TrainingRelearner:
+    PokemonCenter POKEMON_CENTER_ACTION_WORD_SET_RELEARNER_FEE, 0, 3, 0x8024
+    PokemonCenter POKEMON_CENTER_ACTION_HAS_RELEARNER_FEE, 0, 0, 0x8024
+    WorkCmpConst 0x8024, 1
+    VMJumpIf CMP_EQ, L_TrainingRelearnerPick
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingRelearnerFee, 0x8011, 4, 0
+    VMReturn
+
+L_TrainingRelearnerPick:
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingRelearnerWhich, 0x8011, 4, 0
+    VMCall L_TrainingPick
+    WorkCmpConst 0x8022, 1
+    VMJumpIf CMP_NE, L_TrainingRelearnerDone
+    MoveReminderCheckPkm 0x8024, 0x8021
+    WorkCmpConst 0x8024, 0
+    VMJumpIf CMP_NE, L_TrainingRelearnerHasMoves
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingRelearnerNone, 0x8011, 4, 0
+    VMReturn
+
+L_TrainingRelearnerHasMoves:
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingRelearnerCost, 0x8011, 4, 0
+    YesNoWin 0x8023
+    WorkCmpConst 0x8023, 0
+    VMJumpIf CMP_NE, L_TrainingRelearnerDone
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingRelearnerChoose, 0x8011, 4, 0
+    ActorMsgClose
+    MoveReminderCallMoveSelect 0x8024, 0x8021
+    MoneyWinDisp 31, 1
+    WorkCmpConst 0x8024, 0
+    VMJumpIf CMP_EQ, L_TrainingRelearnerLearned
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingRelearnerCancel, 0x8011, 4, 0
+    VMReturn
+
+L_TrainingRelearnerLearned:
+    PokemonCenter POKEMON_CENTER_ACTION_PAY_RELEARNER_FEE, 0, 0, 0x8024
+    MoneyWinUpdate
+    SEPlay SEQ_SE_SYS_22
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingRelearnerPaid, 0x8011, 4, 0
+
+L_TrainingRelearnerDone:
+    VMReturn
+
+// The Move Deleter's screen (global_2260.s's Script_1), which can delete HMs too, for a Pokémon that knows two moves
+// or more
+L_TrainingDeleter:
+    WorkSetConst 0x8027, POKEMON_CENTER_FEE_MOVE_DELETER
+    VMCall L_TrainingHasFee
+    WorkCmpConst 0x8024, 1
+    VMJumpIf CMP_NE, L_TrainingDeleterDone
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingDeleterWhich, 0x8011, 4, 0
+    VMCall L_TrainingPick
+    WorkCmpConst 0x8022, 1
+    VMJumpIf CMP_NE, L_TrainingDeleterDone
+    PokePartyGetMoveCount 0x8024, 0x8021
+    WorkCmpConst 0x8024, 2
+    VMJumpIf CMP_GE, L_TrainingDeleterMoves
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingDeleterOneMove, 0x8011, 4, 0
+    VMReturn
+
+L_TrainingDeleterMoves:
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingDeleterChoose, 0x8011, 4, 0
+    ActorMsgClose
+    CallPokeMoveReplace 0x8024, 0x8025, 0x8021, 0
+    MoneyWinDisp 31, 1
+    WorkCmpConst 0x8024, 1
+    VMJumpIf CMP_NE, L_TrainingDeleterDone
+    PokePartyGetMove 0x8026, 0x8021, 0x8025
+    WordSetMoveName 1, 0x8026
+    PokemonCenter POKEMON_CENTER_ACTION_WORD_SET_FEE, POKEMON_CENTER_FEE_MOVE_DELETER, 2, 0x8024
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingDeleterCost, 0x8011, 4, 0
+    VMCall L_TrainingAskPay
+    WorkCmpConst 0x8024, 1
+    VMJumpIf CMP_NE, L_TrainingDeleterDone
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingDeleterDone, 0x8011, 4, 0
+    MEPlay SEQ_ME_WASURE
+    MEWait
+    PokePartyLearnMove 0x8021, 0x8025, 0
+
+L_TrainingDeleterDone:
+    VMReturn
+
+// One stat's IV to 31, for Battle Points, after the Hall of Fame and for a Pokémon of the least level
+L_TrainingHyper:
+    // The Champion's check comes first, so the lead stands in for the Pokémon not yet picked
+    PokemonCenter POKEMON_CENTER_ACTION_CHECK_HYPER_TRAINING, 0, 0, 0x8024
+    WorkCmpConst 0x8024, HYPER_TRAINING_NOT_CHAMPION
+    VMJumpIf CMP_NE, L_TrainingHyperPick
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingHyperChampion, 0x8011, 4, 0
+    VMReturn
+
+L_TrainingHyperPick:
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingHyperWhich, 0x8011, 4, 0
+    VMCall L_TrainingPick
+    WorkCmpConst 0x8022, 1
+    VMJumpIf CMP_NE, L_TrainingHyperDone
+    PokemonCenter POKEMON_CENTER_ACTION_CHECK_HYPER_TRAINING, 0x8021, 0, 0x8024
+    WorkCmpConst 0x8024, HYPER_TRAINING_LEVEL_LOW
+    VMJumpIf CMP_NE, L_TrainingHyperLevelOk
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingHyperLevel, 0x8011, 4, 0
+    VMReturn
+
+L_TrainingHyperLevelOk:
+    WorkCmpConst 0x8024, HYPER_TRAINING_ALL_MAX
+    VMJumpIf CMP_NE, L_TrainingHyperStats
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingHyperAllMax, 0x8011, 4, 0
+    VMReturn
+
+L_TrainingHyperStats:
+    PokemonCenter POKEMON_CENTER_ACTION_WORD_SET_FEE, POKEMON_CENTER_FEE_HYPER_TRAINING, 2, 0x8024
+    PokemonCenter POKEMON_CENTER_ACTION_GET_BP, 0, 0, 0x8028
+    WordSetNumber 3, 0x8028, 5
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingHyperChoose, 0x8011, 4, 0
+    ListMenuAnchorTopLeft 1, 1, 0, 1, 0x8025
+    WorkSetConst 0x8026, TRAINING_STAT_HP
+
+L_TrainingHyperList:
+    PokemonCenter POKEMON_CENTER_ACTION_WORD_SET_STAT, 0x8026, 4, 0x8024
+    PokemonCenter POKEMON_CENTER_ACTION_GET_IV, 0x8021, 0x8026, 0x8024
+    WorkCmpConst 0x8024, 31
+    VMJumpIf CMP_LT, L_TrainingHyperListOpen
+    ListMenuAdd Global10105_Text_TrainingHyperStatMax, 65535, 0x8026
+    VMJump L_TrainingHyperListNext
+
+L_TrainingHyperListOpen:
+    ListMenuAdd Global10105_Text_TrainingHyperStat, 65535, 0x8026
+
+L_TrainingHyperListNext:
+    WorkAdd 0x8026, 1
+    WorkCmpConst 0x8026, TRAINING_STAT_ALL
+    VMJumpIf CMP_LT, L_TrainingHyperList
+    ListMenuAdd Global10105_Text_Cancel, 65535, TRAINING_STAT_ALL
+    ListMenuShow
+    WorkCmpConst 0x8025, TRAINING_STAT_ALL
+    VMJumpIf CMP_GE, L_TrainingHyperDone
+    PokemonCenter POKEMON_CENTER_ACTION_WORD_SET_STAT, 0x8025, 4, 0x8024
+    PokemonCenter POKEMON_CENTER_ACTION_GET_IV, 0x8021, 0x8025, 0x8024
+    WorkCmpConst 0x8024, 31
+    VMJumpIf CMP_LT, L_TrainingHyperAsk
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingHyperStatIsMax, 0x8011, 4, 0
+    VMReturn
+
+L_TrainingHyperAsk:
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingHyperCost, 0x8011, 4, 0
+    YesNoWin 0x8023
+    WorkCmpConst 0x8023, 0
+    VMJumpIf CMP_NE, L_TrainingHyperDone
+    PokemonCenter POKEMON_CENTER_ACTION_PAY_BP, POKEMON_CENTER_FEE_HYPER_TRAINING, 0, 0x8024
+    WorkCmpConst 0x8024, 1
+    VMJumpIf CMP_EQ, L_TrainingHyperPaid
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingHyperNoBP, 0x8011, 4, 0
+    VMReturn
+
+L_TrainingHyperPaid:
+    SEPlay SEQ_SE_SYS_22
+    PokemonCenter POKEMON_CENTER_ACTION_MAX_IV, 0x8021, 0x8025, 0x8024
+    PokePartyGetSpecies 0x8026, 0x8021
+    PokePartyGetForme 0x8028, 0x8021
+    PokeVoicePlay 0x8026, 0x8028
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingHyperDone, 0x8011, 4, 0
+
+L_TrainingHyperDone:
+    VMReturn
+
+// Resets one stat's EVs or all, each with its fee, and recalculates the stats
+L_TrainingEffort:
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingEffortWhich, 0x8011, 4, 0
+    VMCall L_TrainingPick
+    WorkCmpConst 0x8022, 1
+    VMJumpIf CMP_NE, L_TrainingEffortDone
+    PokemonCenter POKEMON_CENTER_ACTION_GET_EV, 0x8021, TRAINING_STAT_ALL, 0x8024
+    WorkCmpConst 0x8024, 0
+    VMJumpIf CMP_NE, L_TrainingEffortStats
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingEffortNone, 0x8011, 4, 0
+    VMReturn
+
+L_TrainingEffortStats:
+    PokemonCenter POKEMON_CENTER_ACTION_WORD_SET_FEE, POKEMON_CENTER_FEE_EFFORT_ONE, 1, 0x8024
+    PokemonCenter POKEMON_CENTER_ACTION_WORD_SET_FEE, POKEMON_CENTER_FEE_EFFORT_ALL, 2, 0x8024
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingEffortChoose, 0x8011, 4, 0
+    ListMenuAnchorTopLeft 1, 1, 0, 1, 0x8025
+    ListMenuAdd Global10105_Text_TrainingEffortAll, 65535, TRAINING_STAT_ALL
+    WorkSetConst 0x8026, TRAINING_STAT_HP
+
+L_TrainingEffortList:
+    PokemonCenter POKEMON_CENTER_ACTION_WORD_SET_STAT, 0x8026, 4, 0x8024
+    ListMenuAdd Global10105_Text_TrainingHyperStat, 65535, 0x8026
+    WorkAdd 0x8026, 1
+    WorkCmpConst 0x8026, TRAINING_STAT_ALL
+    VMJumpIf CMP_LT, L_TrainingEffortList
+    ListMenuAdd Global10105_Text_Cancel, 65535, 7
+    ListMenuShow
+    WorkCmpConst 0x8025, TRAINING_STAT_ALL
+    VMJumpIf CMP_GT, L_TrainingEffortDone
+    VMJumpIf CMP_EQ, L_TrainingEffortAll
+    PokemonCenter POKEMON_CENTER_ACTION_WORD_SET_STAT, 0x8025, 4, 0x8024
+    PokemonCenter POKEMON_CENTER_ACTION_GET_EV, 0x8021, 0x8025, 0x8024
+    WorkCmpConst 0x8024, 0
+    VMJumpIf CMP_NE, L_TrainingEffortOne
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingEffortStatZero, 0x8011, 4, 0
+    VMReturn
+
+L_TrainingEffortOne:
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingEffortCostOne, 0x8011, 4, 0
+    WorkSetConst 0x8027, POKEMON_CENTER_FEE_EFFORT_ONE
+    VMCall L_TrainingAskPay
+    WorkCmpConst 0x8024, 1
+    VMJumpIf CMP_NE, L_TrainingEffortDone
+    PokemonCenter POKEMON_CENTER_ACTION_RESET_EV, 0x8021, 0x8025, 0x8024
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingEffortDoneOne, 0x8011, 4, 0
+    VMReturn
+
+L_TrainingEffortAll:
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingEffortCostAll, 0x8011, 4, 0
+    WorkSetConst 0x8027, POKEMON_CENTER_FEE_EFFORT_ALL
+    VMCall L_TrainingAskPay
+    WorkCmpConst 0x8024, 1
+    VMJumpIf CMP_NE, L_TrainingEffortDone
+    PokemonCenter POKEMON_CENTER_ACTION_RESET_EV, 0x8021, TRAINING_STAT_ALL, 0x8024
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingEffortDoneAll, 0x8011, 4, 0
+
+L_TrainingEffortDone:
+    VMReturn
+
+// Swaps the two normal abilities, or gives the hidden one, each with its fee
+L_TrainingAbility:
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingAbilityWhich, 0x8011, 4, 0
+    VMCall L_TrainingPick
+    WorkCmpConst 0x8022, 1
+    VMJumpIf CMP_NE, L_TrainingAbilityDone
+    // Its ability's name, in word 1
+    PokemonCenter POKEMON_CENTER_ACTION_CHECK_ABILITY, 0x8021, ABILITY_CHANGE_SWAP, 0x8024
+    PokemonCenter POKEMON_CENTER_ACTION_WORD_SET_FEE, POKEMON_CENTER_FEE_ABILITY_SWAP, 3, 0x8024
+    PokemonCenter POKEMON_CENTER_ACTION_WORD_SET_FEE, POKEMON_CENTER_FEE_ABILITY_HIDDEN, 4, 0x8024
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingAbilityChoose, 0x8011, 4, 0
+    ListMenuAnchorTopRight 31, 5, 0, 1, 0x8025
+    ListMenuAdd Global10105_Text_TrainingAbilitySwap, 65535, ABILITY_CHANGE_SWAP
+    ListMenuAdd Global10105_Text_TrainingAbilityHidden, 65535, ABILITY_CHANGE_HIDDEN
+    ListMenuAdd Global10105_Text_Cancel, 65535, 2
+    ListMenuShow
+    WorkCmpConst 0x8025, ABILITY_CHANGE_HIDDEN
+    VMJumpIf CMP_GT, L_TrainingAbilityDone
+    PokemonCenter POKEMON_CENTER_ACTION_CHECK_ABILITY, 0x8021, 0x8025, 0x8024
+    WorkSetConst 0x8028, Global10105_Text_TrainingAbilityOnlyOne
+    WorkCmpConst 0x8024, ABILITY_RESULT_ONLY_ONE
+    VMJumpIf CMP_EQ, L_TrainingAbilityRefuse
+    WorkSetConst 0x8028, Global10105_Text_TrainingAbilityHasHidden
+    WorkCmpConst 0x8024, ABILITY_RESULT_HAS_HIDDEN
+    VMJumpIf CMP_EQ, L_TrainingAbilityRefuse
+    WorkSetConst 0x8028, Global10105_Text_TrainingAbilityNoHidden
+    WorkCmpConst 0x8024, ABILITY_RESULT_NO_HIDDEN
+    VMJumpIf CMP_EQ, L_TrainingAbilityRefuse
+    WorkSetConst 0x8028, Global10105_Text_TrainingAbilityAlready
+    WorkCmpConst 0x8024, ABILITY_RESULT_ALREADY_HIDDEN
+    VMJumpIf CMP_EQ, L_TrainingAbilityRefuse
+    WorkSetConst 0x8028, Global10105_Text_TrainingAbilitySex
+    WorkCmpConst 0x8024, ABILITY_RESULT_OK
+    VMJumpIf CMP_NE, L_TrainingAbilityRefuse
+    WorkSetConst 0x8027, POKEMON_CENTER_FEE_ABILITY_SWAP
+    WorkSetConst 0x8028, Global10105_Text_TrainingAbilityCostSwap
+    WorkCmpConst 0x8025, ABILITY_CHANGE_SWAP
+    VMJumpIf CMP_EQ, L_TrainingAbilityAsk
+    WorkSetConst 0x8027, POKEMON_CENTER_FEE_ABILITY_HIDDEN
+    WorkSetConst 0x8028, Global10105_Text_TrainingAbilityCostHidden
+
+L_TrainingAbilityAsk:
+    ActorMsg MSGFILE_SCRIPT, 0x8028, 0x8011, 4, 0
+    VMCall L_TrainingAskPay
+    WorkCmpConst 0x8024, 1
+    VMJumpIf CMP_NE, L_TrainingAbilityDone
+    PokemonCenter POKEMON_CENTER_ACTION_CHANGE_ABILITY, 0x8021, 0x8025, 0x8024
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingAbilityDone, 0x8011, 4, 0
+    VMReturn
+
+L_TrainingAbilityRefuse:
+    ActorMsg MSGFILE_SCRIPT, 0x8028, 0x8011, 4, 0
+
+L_TrainingAbilityDone:
+    VMReturn
+
+// Raises friendship by a grooming course, to at most 255
+L_TrainingGroom:
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingGroomWhich, 0x8011, 4, 0
+    VMCall L_TrainingPick
+    WorkCmpConst 0x8022, 1
+    VMJumpIf CMP_NE, L_TrainingGroomDone
+    PokemonCenter POKEMON_CENTER_ACTION_GET_FRIENDSHIP, 0x8021, 0, 0x8024
+    WorkCmpConst 0x8024, 255
+    VMJumpIf CMP_LT, L_TrainingGroomCourses
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingGroomMax, 0x8011, 4, 0
+    VMReturn
+
+L_TrainingGroomCourses:
+    PokemonCenter POKEMON_CENTER_ACTION_WORD_SET_FEE, POKEMON_CENTER_FEE_GROOMING, 1, 0x8024
+    PokemonCenter POKEMON_CENTER_ACTION_WORD_SET_FEE, POKEMON_CENTER_FEE_GROOMING_2, 2, 0x8024
+    PokemonCenter POKEMON_CENTER_ACTION_WORD_SET_FEE, POKEMON_CENTER_FEE_GROOMING_3, 3, 0x8024
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingGroomChoose, 0x8011, 4, 0
+    ListMenuAnchorTopRight 31, 5, 0, 1, 0x8025
+    ListMenuAdd Global10105_Text_TrainingGroomBrush, 65535, 0
+    ListMenuAdd Global10105_Text_TrainingGroomDeluxe, 65535, 1
+    ListMenuAdd Global10105_Text_TrainingGroomRoyal, 65535, 2
+    ListMenuAdd Global10105_Text_Cancel, 65535, 3
+    ListMenuShow
+    WorkCmpConst 0x8025, 2
+    VMJumpIf CMP_GT, L_TrainingGroomDone
+    WorkSetConst 0x8027, POKEMON_CENTER_FEE_GROOMING
+    WorkAdd 0x8027, 0x8025
+    PokemonCenter POKEMON_CENTER_ACTION_WORD_SET_FEE, 0x8027, 5, 0x8024
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingGroomCost, 0x8011, 4, 0
+    VMCall L_TrainingAskPay
+    WorkCmpConst 0x8024, 1
+    VMJumpIf CMP_NE, L_TrainingGroomDone
+    PokemonCenter POKEMON_CENTER_ACTION_GROOM, 0x8021, 0x8025, 0x8024
+    PokePartyGetSpecies 0x8026, 0x8021
+    PokePartyGetForme 0x8028, 0x8021
+    PokeVoicePlay 0x8026, 0x8028
+    WorkSetConst 0x8028, Global10105_Text_TrainingGroomDoneBrush
+    WorkAdd 0x8028, 0x8025
+    ActorMsg MSGFILE_SCRIPT, 0x8028, 0x8011, 4, 0
+
+L_TrainingGroomDone:
+    VMReturn
+
+// Moves the Pokémon into a Poké Ball of the bag, which is taken, and the old one is gone
+L_TrainingBall:
+    PokemonCenter POKEMON_CENTER_ACTION_NEXT_BALL, 0, 0, 0x8024
+    WorkCmpConst 0x8024, 0
+    VMJumpIf CMP_NE, L_TrainingBallFee
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingBallNone, 0x8011, 4, 0
+    VMReturn
+
+L_TrainingBallFee:
+    WorkSetConst 0x8027, POKEMON_CENTER_FEE_BALL_CHANGE
+    VMCall L_TrainingHasFee
+    WorkCmpConst 0x8024, 1
+    VMJumpIf CMP_NE, L_TrainingBallDone
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingBallWhich, 0x8011, 4, 0
+    VMCall L_TrainingPick
+    WorkCmpConst 0x8022, 1
+    VMJumpIf CMP_NE, L_TrainingBallDone
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingBallChoose, 0x8011, 4, 0
+    ListMenuAnchorTopLeft 1, 1, 0, 1, 0x8025
+    WorkSetConst 0x8026, 0
+
+L_TrainingBallList:
+    PokemonCenter POKEMON_CENTER_ACTION_NEXT_BALL, 0x8026, 0, 0x8026
+    WorkCmpConst 0x8026, 0
+    VMJumpIf CMP_EQ, L_TrainingBallListed
+    WordSetItemName 4, 0x8026
+    ListMenuAdd Global10105_Text_TrainingBallEntry, 65535, 0x8026
+    VMJump L_TrainingBallList
+
+L_TrainingBallListed:
+    ListMenuAdd Global10105_Text_Cancel, 65535, 0
+    ListMenuShow
+    WorkCmpConst 0x8025, 0
+    VMJumpIf CMP_EQ, L_TrainingBallDone
+    WorkCmpConst 0x8025, 0xfffe
+    VMJumpIf CMP_EQ, L_TrainingBallDone
+    WordSetItemName 4, 0x8025
+    PokemonCenter POKEMON_CENTER_ACTION_IS_BALL, 0x8021, 0x8025, 0x8024
+    WorkCmpConst 0x8024, 0
+    VMJumpIf CMP_EQ, L_TrainingBallAsk
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingBallSame, 0x8011, 4, 0
+    VMReturn
+
+L_TrainingBallAsk:
+    PokemonCenter POKEMON_CENTER_ACTION_WORD_SET_FEE, POKEMON_CENTER_FEE_BALL_CHANGE, 1, 0x8024
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingBallCost, 0x8011, 4, 0
+    WorkSetConst 0x8027, POKEMON_CENTER_FEE_BALL_CHANGE
+    VMCall L_TrainingAskPay
+    WorkCmpConst 0x8024, 1
+    VMJumpIf CMP_NE, L_TrainingBallDone
+    PokemonCenter POKEMON_CENTER_ACTION_SET_BALL, 0x8021, 0x8025, 0x8024
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingBallDone, 0x8011, 4, 0
+
+L_TrainingBallDone:
+    VMReturn
+
+// Changes the nature, its own field, and recalculates the stats
+L_TrainingNature:
+    WorkSetConst 0x8027, POKEMON_CENTER_FEE_NATURE_CHANGE
+    VMCall L_TrainingHasFee
+    WorkCmpConst 0x8024, 1
+    VMJumpIf CMP_NE, L_TrainingNatureDone
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingNatureWhich, 0x8011, 4, 0
+    VMCall L_TrainingPick
+    WorkCmpConst 0x8022, 1
+    VMJumpIf CMP_NE, L_TrainingNatureDone
+    PokemonCenter POKEMON_CENTER_ACTION_GET_NATURE, 0x8021, 0, 0x8028
+    PokemonCenter POKEMON_CENTER_ACTION_WORD_SET_NATURE, 0x8028, 1, 0x8024
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingNatureChoose, 0x8011, 4, 0
+    ListMenuAnchorTopLeft 1, 1, 0, 1, 0x8025
+    WorkSetConst 0x8026, NATURE_HARDY
+
+L_TrainingNatureList:
+    PokemonCenter POKEMON_CENTER_ACTION_WORD_SET_NATURE, 0x8026, 4, 0x8024
+    WorkCmpWork 0x8026, 0x8028
+    VMJumpIf CMP_EQ, L_TrainingNatureListNow
+    ListMenuAdd Global10105_Text_TrainingNatureEntry, 65535, 0x8026
+    VMJump L_TrainingNatureListNext
+
+L_TrainingNatureListNow:
+    ListMenuAdd Global10105_Text_TrainingNatureEntryNow, 65535, 0x8026
+
+L_TrainingNatureListNext:
+    WorkAdd 0x8026, 1
+    WorkCmpConst 0x8026, NATURE_QUIRKY
+    VMJumpIf CMP_LE, L_TrainingNatureList
+    ListMenuAdd Global10105_Text_Cancel, 65535, 0x8026
+    ListMenuShow
+    WorkCmpConst 0x8025, NATURE_QUIRKY
+    VMJumpIf CMP_GT, L_TrainingNatureDone
+    PokemonCenter POKEMON_CENTER_ACTION_WORD_SET_NATURE, 0x8025, 4, 0x8024
+    WorkCmpWork 0x8025, 0x8028
+    VMJumpIf CMP_NE, L_TrainingNatureAsk
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingNatureSame, 0x8011, 4, 0
+    VMReturn
+
+L_TrainingNatureAsk:
+    PokemonCenter POKEMON_CENTER_ACTION_WORD_SET_FEE, POKEMON_CENTER_FEE_NATURE_CHANGE, 2, 0x8024
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingNatureCost, 0x8011, 4, 0
+    VMCall L_TrainingAskPay
+    WorkCmpConst 0x8024, 1
+    VMJumpIf CMP_NE, L_TrainingNatureDone
+    PokemonCenter POKEMON_CENTER_ACTION_SET_NATURE, 0x8021, 0x8025, 0x8024
+    ActorMsg MSGFILE_SCRIPT, Global10105_Text_TrainingNatureDone, 0x8011, 4, 0
+
+L_TrainingNatureDone:
+    VMReturn
+    .balign 4, 0
+#else
     ActorsPauseAll
     SEPlay SEQ_SE_MESSAGE
     ActorSetEyeToEye
@@ -1459,3 +2089,4 @@ L_1670:
     RTCallGlobal 2106
     VMReturn
     .balign 4, 0
+#endif

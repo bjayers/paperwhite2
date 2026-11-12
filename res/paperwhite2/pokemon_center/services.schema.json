@@ -16,8 +16,8 @@
     },
     "training": {
       "type": "object", "additionalProperties": false,
-      "required": [ "name_rater", "move_relearner", "move_deleter", "hyper_training", "effort_reset", "ability", "grooming", "ball_change" ],
-      "description": "Training Services (proposed, not built yet): one attendant with a scrolling list of services",
+      "required": [ "name_rater", "move_relearner", "move_deleter", "hyper_training", "effort_reset", "ability", "grooming", "ball_change", "nature_change" ],
+      "description": "Training Services: one attendant with a scrolling list of services (res/field/scripts/global_10105.s)",
       "properties": {
         "name_rater": { "$ref": "#/$defs/price", "description": "Renaming a Pokémon; ones with another OT are refused" },
         "move_relearner": {
@@ -31,11 +31,12 @@
         },
         "move_deleter": { "$ref": "#/$defs/price", "description": "The deleter's screen" },
         "hyper_training": {
-          "type": "object", "additionalProperties": false, "required": [ "bp_per_stat", "level_after_champion" ],
+          "type": "object", "additionalProperties": false, "required": [ "bp_per_stat", "requires_champion", "level_after_champion" ],
           "description": "One stat's IV to 31, for Battle Points",
           "properties": {
             "bp_per_stat": { "type": "integer", "minimum": 0, "maximum": 9999 },
-            "level_after_champion": { "type": "integer", "minimum": 1, "maximum": 100, "description": "The least level once the player is Champion" }
+            "requires_champion": { "type": "boolean", "description": "Whether the player must have entered the Hall of Fame (EVENT_FLAG_0x0960)" },
+            "level_after_champion": { "type": "integer", "minimum": 1, "maximum": 100, "description": "The least level" }
           }
         },
         "effort_reset": {
@@ -55,8 +56,8 @@
           }
         },
         "grooming": {
-          "type": "array", "minItems": 1, "maxItems": 8,
-          "description": "The grooming courses, each raising friendship",
+          "type": "array", "minItems": 3, "maxItems": 3,
+          "description": "The three grooming courses, each raising friendship to at most 255; the menu names them Brush, Deluxe and Royal (res/text/script/global_10105.txt)",
           "items": {
             "type": "object", "additionalProperties": false, "required": [ "name", "friendship", "price" ],
             "properties": {
@@ -66,7 +67,8 @@
             }
           }
         },
-        "ball_change": { "$ref": "#/$defs/price", "description": "Moving a Pokémon into a ball from the bag, which is taken too" }
+        "ball_change": { "$ref": "#/$defs/price", "description": "Moving a Pokémon into a ball from the bag, which is taken too" },
+        "nature_change": { "$ref": "#/$defs/price", "description": "Changing the nature, which Gen 5 keeps in a field of its own, so the PID stays" }
       }
     },
     "wonder_trade": {

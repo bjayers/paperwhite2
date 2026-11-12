@@ -17,6 +17,7 @@
         },
         "hyper_training": {
             "bp_per_stat": 24,
+            "requires_champion": true,
             "level_after_champion": 100
         },
         "effort_reset": {
@@ -46,6 +47,9 @@
         ],
         "ball_change": {
             "price": 3000
+        },
+        "nature_change": {
+            "price": 30000
         }
     },
     "wonder_trade": {

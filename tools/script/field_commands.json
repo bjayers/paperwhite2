@@ -5436,7 +5436,7 @@
     "any",
     "var"
    ],
-   "hack": "the Pokémon Center attendants': runs one of their actions (POKEMON_CENTER_ACTION_*, paperwhite2/pokemon_center.h) with two arguments and puts the result in a variable: a fee of res/paperwhite2/pokemon_center/services.json, or paying it (include/paperwhite2/pokemon_center_commands.h)"
+   "hack": "the Pokémon Center attendants': runs one of their actions (POKEMON_CENTER_ACTION_*, paperwhite2/pokemon_center.h) with two arguments and puts the result in a variable: a fee of res/paperwhite2/pokemon_center/services.json, paying it, or Training Services' changes to a party Pokémon (include/paperwhite2/pokemon_center_commands.h)"
   },
   "760": {
    "handler": "Scrcmd_PaperWhite2_Debug",

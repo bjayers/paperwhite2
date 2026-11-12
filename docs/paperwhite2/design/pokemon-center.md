@@ -63,6 +63,67 @@ The field's list menus scroll (they keep a top row and a cursor row: `MsgBGPrint
 - The user approved every price, rate and list here (2026-11-11), and wants all of them (fees, BP costs, odds, the
   item tiers and their items) in a data file editable in the editor.
 
+#### Built (2026-11-12)
+
+- **The counter:** the right of the three upstairs, the Global Terminal's (script 10105, `global_10105.s`'s
+  `Script_1` under `#ifdef PAPERWHITE2`, the GTS's code in `#else`; the attendant keeps `OBJ_CODE_81`'s sprite). Its
+  text is appended to `res/text/script/global_10105.txt` (`Global10105_Text_Training*`). The middle counter stays the
+  Wi-Fi Club's, for the Wonder Trade.
+- **The menu:** a greeting, then a list of the nine services and Cancel that scrolls (six rows show), looping with
+  "anything else?" until Cancel or B. The money window stays up. A service with one price checks the money before
+  the party screen; each picks a party Pokémon with the Name Rater's party screen (`CallPokeSelect`; an Egg is
+  refused), shows the price, asks Yes/No and pays before the change, saying so when the money is short. The long lists (services, stats, Poké Balls, natures) are at the top left, under
+  nothing; the short ones (abilities, grooming) at the top right under the money window.
+- **Name Rater:** the vanilla rename screen (`CallPokeNameInput`), refusing a Pokémon whose OT isn't the player
+  (`PokePartyIsOriginGame`, as `global_2225.s` does) with praise for its name. Paid only when the name changed.
+- **Move Relearner:** `MoveReminderCheckPkm` and the vanilla screen (`MoveReminderCallMoveSelect`), for the
+  relearner's item and money (1 Heart Scale + ₽3,000), checked first and taken only when a move was learned.
+- **Move Deleter:** the vanilla screen (`CallPokeMoveReplace` with HMs allowed, as `global_2260.s`), refusing a
+  Pokémon with one move; ₽2,000, paid at the confirmation, after the move was chosen.
+- **Hyper Training:** after the Hall of Fame (`EVENT_FLAG_0x0960`, set by `global_9600.s`'s `Script_6` the first
+  time, which the game's own postgame checks read) and at level 100, both from the data; explains which is missing. A
+  list of the six stats marks those at 31 "(best)" and refuses them; 24 BP a stat from the Battle Subway's BP
+  (`BSubwayScoreData`), and the message says how many the player has. Sets the real IV and recalculates the stats.
+- **Effort Services:** "All stats" or one stat (₽20,000 / ₽5,000); refuses a Pokémon with no EVs, or a stat at 0.
+  Recalculates the stats.
+- **Ability Services:** shows the ability; Swap (₽50,000) or Hidden (₽150,000). A swap needs two different normal
+  abilities and no hidden ability; it flips the PID's ability bit (bit 16, or bit 0 for Pokémon from before Black and
+  White) and sets the other ability, because evolution, form changes (`setAbilityForForm`) and breeding
+  (`getPkmAbilSlotNumber`) read the slot from the PID; the PID's blocks are moved to the new order (bits 13-17 order
+  them), and the flip keeps shininess (the threshold is even) and the sex (bit 16 isn't in the low byte; a bit-0 flip
+  that would change the sex is refused). Wurmple, whose evolution reads the PID's high half, has one ability, so it is
+  never swapped. The hidden ability sets `PKM_PARAM_ABILITY` and `PKM_PARAM_HIDDEN_ABILITY`, as the game's
+  `PokeParty_SetHiddenAbil` does; refused when the species has none different from its normal ones, or it has it.
+- **Grooming:** Brush, Deluxe, Royal with their prices in the list (+10, +30, +60 friendship, at most 255);
+  refuses a Pokémon at 255.
+- **Poké Ball Services:** refuses with no Poké Balls in the bag; lists the bag's balls (every ball item, by ID, that
+  `PML_ItemGetMonsBallID` knows); refuses the ball the Pokémon is already in; ₽3,000 and one ball from the bag; the
+  old ball is gone.
+- **Nature Services:** the 25 natures in a list, the current one "(now)" and refused; ₽30,000; `PokeParty_SetNature`
+  (the nature's own field, which the stat calculation reads) and the stats; the PID, so shininess, sex and ability,
+  stays.
+- **The data:** `services.json`'s `training`, now read: the prices, the relearner's item and count, Hyper Training's
+  BP, level and `requires_champion`, the three grooming courses (friendship and price; the schema keeps exactly three,
+  named in the text), and the new `nature_change` (₽30,000). `pokemon_center.py` writes them as fees
+  (`POKEMON_CENTER_FEE_*`) and defines.
+- **The command:** `PokemonCenter`'s new actions (`include/paperwhite2/pokemon_center.h`): a fee in full in a word
+  (32-bit, for ₽150,000), checking money, paying BP, the relearner's fee, and the party Pokémon's IVs, EVs, ability,
+  friendship, ball and nature. Word 2 is the money window's (`MoneyWinDisp` and `MoneyWinUpdate` write it), so the
+  script never keeps anything there across them.
+- **Tested** in DeSmuME on a copy of the user's save (Castelia's Center), each service with the data read from the
+  party's decrypted memory: a rename (₽1,000) and a kept name (no charge), a foreign OT refused, too little money;
+  Tackle relearned (Heart Scale 2 → 1, ₽3,000), a cancelled relearn (nothing taken), no Heart Scale; Arm Thrust
+  deleted (₽2,000, the moves moved up), one move refused; Hyper Training before the Hall of Fame, below level 100,
+  a stat at 31, no BP, then HP 0 → 31 (50 → 26 BP, HP recalculated), all at 31; one stat's EVs and all (₽5,000,
+  ₽20,000, stats recalculated), no EVs, a stat at 0; Swinub's swap Oblivious → Snow Cloak (PID 0x8cb0c90d →
+  0x8cb1c90d, the data intact and checksummed), too little money, Pignite's and Swinub's hidden Thick Fat (₽150,000,
+  the flag set), one ability, already hidden, hidden then swap, Keldeo without one; brush 100 → 110, royal 230 → 255,
+  at 255, too little money; Luxury Ball (17 → 11, the ball taken, ₽3,000), the same ball, no balls; Naive → Adamant
+  (₽30,000, PID kept, Attack up and Sp. Atk down), the same nature; an Egg refused; Cancel and B. The service, stat,
+  ball and nature lists scroll.
+- **Open:** the evolution after a swap is reasoned from the code, not played; the Move Relearner's "nothing to
+  remember" refusal wasn't reached (every Pokémon tried had moves to relearn).
+
 ### Wonder Trade
 
 - **Fee:** ₽1,000 a trade (proposed), so sending worthless Pokémon for a chance at good ones still costs something.
@@ -143,7 +204,8 @@ The field's list menus scroll (they keep a top row and a cursor row: `MsgBGPrint
   message window closed; it changes no variable.
 - **The data:** `res/paperwhite2/pokemon_center/services.json` (schema beside it) holds all three attendants':
   `daycare.transfer_fee` (500), and the proposed values above for `training` and `wonder_trade` (prices, BP, item
-  tiers with weights, languages, rates, the special reward, off), checked but not read yet.
+  tiers with weights, languages, rates, the special reward, off), checked but not read yet (Training Services' are
+  read now: its Built section above).
   `tools/paperwhite2/pokemon_center.py` writes `paperwhite2/pokemon_center_config.h` at build time with the fees the
   game reads, in the order of `include/paperwhite2/pokemon_center.h`'s `POKEMON_CENTER_FEE_*` IDs (it checks them); a
   new fee is a new ID there and a row of the tool's `FEES`. The item tiers use the user's split (50/30/19.5/0.5, as
@@ -154,8 +216,8 @@ The field's list menus scroll (they keep a top row and a cursor row: `MsgBGPrint
 - **Tested** in DeSmuME with a copy of the user's save (Castelia's Center): the not-yet message, the first visit,
   sending Swinub and Pignite (₽500 each), the pair's compatibility, bringing Swinub home (₽100 + ₽500), an Egg
   forced ready (declined and kept, then collected for ₽500, in the party), and too little money (nothing taken).
-- **Open:** the sound is a guess (the PC's login); the attendant's stand-in OBJ is the Union Room's woman; Training
-  Services and the Wonder Trade still show the wireless attendants' scripts.
+- **Open:** the sound is a guess (the PC's login); the attendant's stand-in OBJ is the Union Room's woman; the
+  Wonder Trade's counter still shows the Wi-Fi Club's script.
 
 ### Order
 
