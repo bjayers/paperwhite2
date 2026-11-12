@@ -52,7 +52,7 @@ families:
       - {place: victory_road_caves, methods: [grass], seasons: all, tier: common, stages: [zubat], areas: [victory_road], why: "near the caves' entrance"}
       - {place: victory_road_caves, methods: [grass], seasons: all, tier: common, stages: [golbat], areas: [victory_road_5, victory_road_6, victory_road_8, victory_road_11], why: "the deep caves"}
       - {place: reversal_mountain_damp, methods: [grass], seasons: all, tier: common, stages: [zubat], why: "the damp caves' bats"}
-      - {place: reversal_mountain_damp, methods: [grass], seasons: all, tier: uncommon, stages: [golbat], areas: [reversal_mountain_5, reversal_mountain_6, reversal_mountain_7], why: "the older bats deeper in"}
+      - {place: reversal_mountain_damp, methods: [grass], seasons: all, tier: uncommon, stages: [golbat], areas: [reversal_mountain_3, reversal_mountain_5], why: "the older bats in the deepest caves (maps 3 and 5, the user)"}
       - {place: castelia_sewers, methods: [grass], seasons: all, tier: uncommon, stages: [zubat], why: "bats in the dark tunnels"}
       - {place: castelia_sewers, methods: [grass], seasons: all, tier: rare, stages: [golbat], areas: [castelia_sewers_2, castelia_sewers_3, castelia_sewers_4, castelia_sewers_5], why: "the older bats in the sewer's rooms"}
     review:

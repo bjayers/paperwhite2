@@ -151,7 +151,7 @@ families:
     homes:
       - {place: virbank_complex, methods: [grass, dark_grass], seasons: [summer, autumn], tier: uncommon, stages: [magby], why: "the hot machines (the user's request)"}
       - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: uncommon, stages: [magby], why: "the hot caves"}
-      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: uncommon, stages: [magmar], areas: [reversal_mountain_11, reversal_mountain_12, reversal_mountain_13], why: "the deep caves round the lava lake"}
+      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: uncommon, stages: [magmar], areas: [reversal_mountain_9, reversal_mountain_11], why: "the deepest caves round the lava lake (maps 9 and 11, the user)"}
     review: []
 
   - id: elekid
@@ -195,7 +195,7 @@ families:
     wanderer: {appears: both, wanders: passive, grass: stand}
     homes:
       - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: common, stages: [slugma], why: "the hot caves' magma dwellers (the user's fire home)"}
-      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: uncommon, stages: [magcargo], areas: [reversal_mountain_11, reversal_mountain_12, reversal_mountain_13], why: "the deep caves round the lava lake"}
+      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: uncommon, stages: [magcargo], areas: [reversal_mountain_9, reversal_mountain_11], why: "the deepest caves round the lava lake (maps 9 and 11, the user)"}
     review: []
 
   - id: houndour
@@ -238,7 +238,7 @@ families:
     homes:
       - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: uncommon, why: "the warm pass by the fires"}
       - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: common, stages: [numel], why: "the fiery caves"}
-      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: uncommon, stages: [camerupt], areas: [reversal_mountain_11, reversal_mountain_12, reversal_mountain_13], why: "the deep caves round the lava lake"}
+      - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: uncommon, stages: [camerupt], areas: [reversal_mountain_9, reversal_mountain_11], why: "the deepest caves round the lava lake (maps 9 and 11, the user)"}
     review: []
 
   - id: torkoal
