@@ -1,0 +1,43 @@
+{
+    "$schema": "../map_style.schema.json",
+    "name": "MAP_TEXTURE_SET_TWIST_MOUNTAIN_2 (learned)",
+    "texture_set": "MAP_TEXTURE_SET_TWIST_MOUNTAIN_2",
+    "wall": {
+        "texture": "ashiba_001_2",
+        "repeat": 1,
+        "alpha": "MASK"
+    },
+    "edges": [],
+    "terrains": [
+        {
+            "key": "a",
+            "name": "yuka_002",
+            "color": "hsl(71, 50%, 55%)",
+            "ground": {
+                "texture": "yuka_002",
+                "repeat": 4
+            },
+            "tile_type": 8454145
+        },
+        {
+            "key": "b",
+            "name": "yuka_001",
+            "color": "hsl(34, 50%, 55%)",
+            "ground": {
+                "texture": "yuka_001",
+                "repeat": 4
+            },
+            "tile_type": 8388608
+        },
+        {
+            "key": "c",
+            "name": "yuka_002_2",
+            "color": "hsl(36, 50%, 55%)",
+            "ground": {
+                "texture": "yuka_002_2",
+                "repeat": 4
+            },
+            "tile_type": 8454145
+        }
+    ]
+}

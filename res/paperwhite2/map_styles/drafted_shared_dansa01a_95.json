@@ -1,0 +1,53 @@
+{
+    "$schema": "../map_style.schema.json",
+    "name": "MAP_TEXTURE_SET_SHARED_DANSA01A_95 (learned)",
+    "texture_set": "MAP_TEXTURE_SET_SHARED_DANSA01A_95",
+    "wall": {
+        "texture": "iriguti002",
+        "repeat": 1,
+        "alpha": "MASK"
+    },
+    "edges": [],
+    "terrains": [
+        {
+            "key": "a",
+            "name": "w_yuka_002",
+            "color": "hsl(69, 50%, 55%)",
+            "ground": {
+                "texture": "w_yuka_002",
+                "repeat": 4
+            },
+            "tile_type": 8454145
+        },
+        {
+            "key": "b",
+            "name": "grass01ax",
+            "color": "hsl(66, 50%, 55%)",
+            "ground": {
+                "texture": "grass01ax",
+                "repeat": 4
+            },
+            "tile_type": 524302
+        },
+        {
+            "key": "c",
+            "name": "w_yuka_002_2",
+            "color": "hsl(34, 50%, 55%)",
+            "ground": {
+                "texture": "w_yuka_002_2",
+                "repeat": 4
+            },
+            "tile_type": 8454145
+        },
+        {
+            "key": "d",
+            "name": "w_ashiba_007",
+            "color": "hsl(212, 50%, 55%)",
+            "ground": {
+                "texture": "w_ashiba_007",
+                "repeat": 4
+            },
+            "tile_type": 524302
+        }
+    ]
+}

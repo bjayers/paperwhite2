@@ -1,4 +1,5 @@
 {
     "$schema": "../map_model.schema.json",
-    "texture_set": "MAP_TEXTURE_SET_SHARED_DANSA01A_95"
+    "texture_set": "MAP_TEXTURE_SET_SHARED_DANSA01A_95",
+    "written": true
 }
