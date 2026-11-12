@@ -280,6 +280,7 @@ families:
       - {place: lostlorn_forest, methods: [fishing], seasons: all, tier: uncommon, why: "the stream"}
       - {place: wellspring_cave, methods: [fishing], seasons: all, tier: uncommon, why: "spring water"}
       - {place: virbank_city, methods: [fishing], seasons: all, tier: uncommon, why: "the river's fish where it meets the harbour"}
+      - {place: route_11, methods: [fishing], seasons: all, tier: uncommon, why: "the river by the falls"}
     review: []
 
   - id: staryu
@@ -613,6 +614,7 @@ families:
       - {place: route_3, methods: [surf], seasons: all, tier: uncommon, why: "the lake"}
       - {place: route_3, methods: [grass], seasons: [spring, summer], tier: rare, stages: [azurill], why: "the young by the lake, near the Day Care"}
       - {place: route_20, methods: [rippling_surf], seasons: all, tier: uncommon, stages: [azumarill], why: "the stream's pools"}
+      - {place: route_11, methods: [surf], seasons: all, tier: uncommon, stages: [marill, azumarill], why: "fine even in the strong currents between the falls"}
     review: []
 
   - id: carvanha

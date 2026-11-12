@@ -78,7 +78,7 @@ with `python3 tools/dictionary_check.py` and `python3 tools/balance.py` from thi
   (Lileep), Mistralton Cave (Axew), the Moor of Icirrus (Carnivine), Pinwheel Forest (Pinsir, Leafeon), Relic Passage
   (Gible), Reversal Mountain (Charmander), Route 2 (Ralts: your Petalburg memory), Route 5 (Munchlax), Route 7
   (Honchkrow, Scyther), Route 12 (Heracross, Vespiquen), Route 17 (Dragonite), Route 23 (Feebas, Bagon), Striaton
-  (Feebas), Twist Mountain (Glaceon), Undella (Relicanth), Victory Road (Larvitar, Deino in the caves; Altaria on the
+  (Feebas), Twist Mountain (Glaceon), Undella (Relicanth), Victory Road (Deino in the caves; Larvitar's line on the
   mountainside), Virbank Complex (Pichu, Riolu, Growlithe, by season).
 
 ## Special encounters to consider

@@ -161,6 +161,38 @@ places:
     note: >-
       The open pit keeps no table (the user, 2026-11-13): the mountain's ice Pokémon live in its caves.
 
+  - id: twist_mountain_pit
+    name: Twist Mountain (the open pit)
+    maps: [twist_mountain_pit]  # a new area for the zone twist_mountain_2, which has no encounter table yet
+    used: >-
+      new (2026-11-12): the user added grass and dark grass to the open pit's maps (zone twist_mountain_2, the
+      dun0701 maps). The zone needs an encounter table of its own (twist_mountain_pit is this dictionary's name for
+      it); until then nothing here can appear.
+    facts:
+      tiles: { grass: a little, dark_grass: a little }
+      methods: [grass, dark_grass]
+      weather: none (the zone header); it fills with snow in winter
+    picture: >-
+      The open pit at the heart of the strip mine, ringed by the caves, with workers' buildings and excavation
+      equipment; in winter it fills with snow. A little grass and dark grass now grow round it.
+    habitats: [mine, mountain, snowfield]
+    parts:
+      grass: patches round the pit's floor and the workings
+      dark_grass: thicker patches at the pit's edges
+    human_presence: industrial (miners)
+    climate:
+      spring: cold
+      summer: cool
+      autumn: cold
+      winter: snowy, the pit filled with snow
+    features: [rocks, machinery, snow]
+    real_world: >-
+      An open-pit mine's edges: hardy pioneer plants, rock-dwellers and the miners' animals; deep snow in winter.
+    suggestions:
+      - >-
+        The mine's workers and rock Pokémon outside winter; in winter the snow brings Snover (the user) and the cold
+        caves' Pokémon out into the pit.
+
   - id: clay_tunnel
     name: Clay Tunnel
     maps: [clay_tunnel, clay_tunnel_2, clay_tunnel_3, underground_ruins, underground_ruins_2, underground_ruins_3,

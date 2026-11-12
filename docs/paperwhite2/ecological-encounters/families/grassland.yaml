@@ -759,6 +759,8 @@ families:
       - {place: village_bridge, methods: [grass], seasons: [winter], tier: uncommon, why: "hares in the winter field"}
       - {place: route_19, methods: [grass], seasons: [spring], tier: rare, why: "its NPCs; a spring rarity (the user)"}
       - {place: route_14, methods: [grass], seasons: all, tier: uncommon, why: "the overgrown paths between the rivers"}
+      - {place: giant_chasm_outside, methods: [grass], seasons: all, tier: uncommon, why: "hares at the woodland edge round the chasm"}
+      - {place: route_9, methods: [grass], seasons: all, tier: uncommon, why: "the outskirts' meadow"}
     review: []
 
   - id: glameow
@@ -828,7 +830,6 @@ families:
       - {place: floccesy_ranch, methods: [grass], seasons: [winter], tier: exotic, stages: [shinx], why: "down to the ranch in winter: the trophy (the user's request)"}
       - {place: route_6, methods: [dark_grass], seasons: all, tier: rare, why: "the valley's woods, near Chargestone"}
       - {place: victory_road_forest, methods: [dark_grass], seasons: all, tier: rare, stages: [luxio, luxray], why: "the mountain forest's lynx"}
-      - {place: victory_road_forest, methods: [grass], seasons: all, tier: rare, stages: [luxio, luxray], why: "the mountain forest's clearings"}
     review: []
 
   - id: pachirisu
@@ -950,7 +951,6 @@ families:
       - {place: route_19, methods: [grass], seasons: all, tier: rare, why: "its NPCs (rare, the places say)"}
       - {place: route_3, methods: [grass], seasons: all, tier: uncommon, why: "the Day Care's fields"}
       - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: rare, stages: [stoutland], why: "warm in its fur on the snowy cliffside"}
-      - {place: giant_chasm_outside, methods: [grass], seasons: all, tier: uncommon, why: "the countryside's dogs"}
       - {place: village_bridge, methods: [grass], seasons: all, tier: uncommon, why: "the village's dogs in the field"}
     review: []
 

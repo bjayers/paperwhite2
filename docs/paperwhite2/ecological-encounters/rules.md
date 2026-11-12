@@ -149,6 +149,8 @@ Hidden Grottoes are set by hand; the generator counts them as a source but never
 - The tiers replace the old fixed slots and scale with what's there (`system.md`).
 - What makes a Pokémon rarer: being a predator or an overhunter, shy, camouflaged (Kecleon), specialised, at the edge
   of its range, or strong (strength sets a ceiling: a pseudo-legendary is never common; ecology sets the rest).
+- **A trophy is generally a whole line** (2026-11-12), not one stage of it: Larvitar's line on Victory Road's
+  mountainside, not Altaria where Swablu is common.
 - **Exotic is the trophy tier:** sought-after Pokémon in iconic places (the Ralts near Petalburg), very rare in grass and
   more common in the area's rustling spots (which draw on it automatically). It can also hold a stray with a good
   explanation.

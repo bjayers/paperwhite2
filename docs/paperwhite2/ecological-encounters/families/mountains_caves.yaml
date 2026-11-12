@@ -131,6 +131,7 @@ families:
       - {place: reversal_mountain_outside, methods: [grass], seasons: all, tier: uncommon, why: "the red-rock pass"}
       - {place: reversal_mountain_fiery, methods: [grass], seasons: all, tier: uncommon, why: "the fiery caves' rocks"}
       - {place: victory_road_mountainside, methods: [grass], seasons: all, tier: uncommon, stages: [graveler], why: "rolling down the mountain paths"}
+      - {place: twist_mountain_pit, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, why: "rocks round the pit's floor"}
     review:
       - "Met by a step only (it looks like a rock)."
 
@@ -176,6 +177,7 @@ families:
       - {place: twist_mountain, methods: [grass], seasons: all, tier: uncommon, why: "helping the miners"}
       - {place: clay_tunnel, methods: [grass], seasons: all, tier: uncommon, why: "the mine's workers"}
       - {place: victory_road_mountainside, methods: [grass], seasons: all, tier: rare, stages: [machoke], why: "training on the mountain"}
+      - {place: twist_mountain_pit, methods: [grass, dark_grass], seasons: [spring, summer, autumn], tier: uncommon, why: "hauling the pit's rock"}
     review: []
 
   - id: mankey
@@ -245,7 +247,7 @@ families:
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
       - {place: route_23, methods: [grass], seasons: all, tier: uncommon, why: "by the gorge's river, as Johto's Route 45"}
-      - {place: victory_road_mountainside, methods: [grass], seasons: all, tier: uncommon, stages: [donphan], why: "rolling down the mountain"}
+      - {place: victory_road_mountainside, methods: [grass], seasons: all, tier: common, why: "rolling down the mountain (the user: common)"}
     review: []
 
   - id: dunsparce
@@ -319,6 +321,7 @@ families:
       - {place: giant_chasm_outside, methods: [dark_grass], seasons: all, tier: rare, stages: [sneasel], why: "the chasm's cold at its rim"}
       - {place: victory_road_forest, methods: [grass], seasons: [winter], tier: uncommon, stages: [sneasel], why: "the snowy mountain forest"}
       - {place: dragonspiral_tower, methods: [grass], seasons: [winter], tier: uncommon, stages: [sneasel], why: "the cold tower in winter"}
+      - {place: twist_mountain_pit, methods: [dark_grass], seasons: [winter], tier: rare, stages: [sneasel], why: "hunting the snowy pit's edges"}
     review:
       - "Weavile wild though it evolves by a held item at night: only where Pokécology has it hunting."
 
@@ -351,6 +354,7 @@ families:
       - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: uncommon, stages: [piloswine], why: "the crater's unending winter"}
       - {place: giant_chasm_crater, methods: [dark_grass], seasons: all, tier: exotic, stages: [mamoswine], why: "an ice age's last herd: the trophy"}
       - {place: route_19, methods: [grass], seasons: [winter], tier: rare, stages: [swinub, piloswine], why: "its NPCs; under the snow where the mushrooms were (Pokécology): a winter rarity (the user)"}
+      - {place: twist_mountain_pit, methods: [grass], seasons: [winter], tier: uncommon, stages: [swinub, piloswine], why: "rooting in the pit's snow"}
     review:
       - "Mamoswine wild (a move evolution) as Giant Chasm's trophy."
 
@@ -593,6 +597,7 @@ families:
       - {place: virbank_complex, methods: [grass, dark_grass], seasons: all, tier: common, why: "the complex's construction (the user's request)"}
       - {place: twist_mountain, methods: [grass], seasons: all, tier: common, why: "the mine's workers (the places)"}
       - {place: clay_tunnel, methods: [grass], seasons: all, tier: uncommon, why: "the mining equipment"}
+      - {place: twist_mountain_pit, methods: [grass], seasons: [spring, summer, autumn], tier: common, why: "the pit's workers"}
     review: []
 
   - id: throh
@@ -612,7 +617,7 @@ families:
     levels: {throh: [10, 100]}
     wanderer: {appears: both, wanders: aggressive, grass: stand}
     homes:
-      - {place: route_11, methods: [grass], seasons: all, tier: uncommon, why: "training above the falls (the user's request)"}
+      - {place: route_11, methods: [grass], seasons: all, tier: common, why: "training above the falls (the user's request)"}
       - {place: route_14, methods: [dark_grass], seasons: all, tier: rare, why: "the falls' cliffs"}
     review: []
 
@@ -633,7 +638,7 @@ families:
     levels: {sawk: [10, 100]}
     wanderer: {appears: both, wanders: aggressive, grass: stand}
     homes:
-      - {place: route_11, methods: [dark_grass], seasons: all, tier: uncommon, why: "below the falls (the user's request)"}
+      - {place: route_11, methods: [dark_grass], seasons: all, tier: common, why: "below the falls (the user's request)"}
       - {place: route_23, methods: [dark_grass], seasons: all, tier: rare, why: "secluded on the cliff island"}
     review: []
 
@@ -797,6 +802,7 @@ families:
       - {place: dragonspiral_entrance, methods: [grass, dark_grass], seasons: [winter], tier: common, why: "the winter's cliffside, as in the original"}
       - {place: route_7, methods: [grass], seasons: [winter], tier: uncommon, why: "the snowy marsh (its Hidden Grotto)"}
       - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: uncommon, why: "the crater's cold"}
+      - {place: twist_mountain_pit, methods: [grass, dark_grass], seasons: [winter], tier: uncommon, why: "out of the cold caves into the snowy pit"}
     review: []
 
   - id: cryogonal
@@ -817,7 +823,7 @@ families:
     wanderer: {appears: both, wanders: random, grass: float}
     homes:
       - {place: twist_mountain, methods: [grass], seasons: all, tier: uncommon, why: "the cold caves"}
-      - {place: giant_chasm_crater, methods: [dark_grass], seasons: all, tier: uncommon, why: "the unnatural cold (the places)"}
+      - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: uncommon, why: "the unnatural cold (the places): the crater's ice side"}
       - {place: giant_chasm_caves, methods: [grass], seasons: all, tier: rare, why: "the cold caves"}
       - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: rare, weather: [snow, blizzard], why: "with Icirrus's snow (the user)"}
     review:
@@ -841,7 +847,7 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: random, grass: float}
     homes:
-      - {place: giant_chasm_crater, methods: [grass, dark_grass], seasons: all, tier: common, why: "the crater's cold"}
+      - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: common, why: "the crater's cold: its ice side"}
       - {place: twist_mountain, methods: [grass], seasons: all, tier: uncommon, why: "the cold caves"}
       - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: uncommon, times: [morning], why: "the winter's icicles in the morning sun (its Pokédex: formed from icicles bathed in the morning sun)"}
       - {place: castelia_park, methods: [grass], seasons: [winter], tier: uncommon, why: "an ice cream in the city, only when it's cold (the user)"}
@@ -890,13 +896,12 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
-      - {place: giant_chasm_outside, methods: [grass, dark_grass], seasons: [winter], tier: common, why: "the chasm's snowy woods"}
       - {place: giant_chasm_crater, methods: [grass], seasons: all, tier: uncommon, why: "the crater's winter, all year"}
-      - {place: victory_road_forest, methods: [grass, dark_grass], seasons: [winter], tier: uncommon, why: "the snowy mountain forest"}
       - {place: dragonspiral_entrance, methods: [grass], seasons: [winter], tier: uncommon, why: "following footprints on the cliffside"}
       - {place: route_6, methods: [grass], seasons: [winter], tier: uncommon, why: "the snowy valley"}
       - {place: dragonspiral_grounds, methods: [grass], seasons: [winter], tier: uncommon, why: "the snowy bank"}
       - {place: route_7, methods: [grass, dark_grass], seasons: [winter], tier: uncommon, why: "the snowy marsh's tall grass"}
+      - {place: twist_mountain_pit, methods: [grass, dark_grass], seasons: [winter], tier: common, why: "the pit filled with snow (the user)"}
     review: []
 
   - id: piplup
@@ -961,7 +966,7 @@ families:
     levels: {tyrogue: [5, 23], hitmonlee: [20, 100], hitmonchan: [20, 100], hitmontop: [20, 100]}
     wanderer: {appears: both, wanders: aggressive, grass: stand}
     homes:
-      - {place: route_11, methods: [grass, dark_grass], seasons: all, tier: rare, stages: [tyrogue], why: "the young fighters in both grasses"}
+      - {place: route_11, methods: [grass, dark_grass], seasons: all, tier: common, stages: [tyrogue], why: "the young fighters in both grasses"}
       - {place: route_11, methods: [grass], seasons: all, tier: rare, stages: [hitmonlee], why: "kickers above the falls"}
       - {place: route_11, methods: [dark_grass], seasons: all, tier: rare, stages: [hitmonchan], why: "punchers below the falls"}
       - {place: route_11, methods: [grass, dark_grass], seasons: all, tier: very_rare, stages: [hitmontop], why: "the spinners, in both"}
