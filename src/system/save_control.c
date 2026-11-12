@@ -12,6 +12,9 @@
 #include "save/save_outside.h"
 #include "save/save_table.h"
 #include "save/trainer_data_savedata.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/pokedex_save.h"
+#endif
 
 // The game's save: loading it when the game starts, saving it a step at a time, and the extra saves. The name is the
 // ROM's string, and SaveControlWork, ctrl, sv_extra and extra_id are the names its assertions keep. The tables of the
@@ -65,6 +68,10 @@ SaveControl *SaveControl_Create(HeapID heapId) {
     case SAVE_LOAD_RESULT_OK_PARTIAL:
         ctrl->newGame = FALSE;
         ctrl->dataExists = TRUE;
+#ifdef PAPERWHITE2
+        // Paper White 2: an old save's Pokédex is upgraded into the hack's area, in memory (save-expansion.md)
+        PaperWhite2_PokedexSave_Sync(ctrl);
+#endif
         if (result == SAVE_LOAD_RESULT_OK_PARTIAL) {
             ctrl->errors |= SAVE_CONTROL_ERROR_PARTIAL;
         }
@@ -157,6 +164,10 @@ u32 SaveControl_Reload(SaveControl *save) {
     case SAVE_LOAD_RESULT_OK:
     case SAVE_LOAD_RESULT_OK_PARTIAL:
         save->dataExists = TRUE;
+#ifdef PAPERWHITE2
+        // Paper White 2: as in SaveControl_Create, since the save in memory is the card's again
+        PaperWhite2_PokedexSave_Sync(save);
+#endif
         musical = getAddressOfMusicalDataInfo(save);
         MusicalSave_SetHasDistProgram(musical, FALSE);
         if (TrainerDataSave_IsMarkerSet(save, SAVE_EXTRA_ID_MUSICAL_DIST) == TRUE) {
@@ -184,6 +195,10 @@ u32 SaveControl_Reload(SaveControl *save) {
 void SaveControl_StartSave(SaveControl *save) {
     save->wasIntroSave = TrainerDataSave_IsIntroSave(save);
     TrainerDataSave_ClearIntroSave(save);
+#ifdef PAPERWHITE2
+    // Paper White 2: the hack's Pokédex into the original block, for tools and older builds (save-expansion.md)
+    PaperWhite2_PokedexSave_Mirror(save);
+#endif
     SaveData_SaveStart(save->sv);
 }
 
@@ -341,6 +356,10 @@ void freeIntermediateSaveExtraBlksAfterLoad2(SaveControl *ctrl, u32 extra_id) {
 void SaveControl_StartExtraSave(SaveControl *ctrl, u32 extra_id) {
     GFL_ASSERT(ctrl->sv_extra[extra_id] != NULL);
     TrainerDataSave_SetMarker(ctrl, extra_id);
+#ifdef PAPERWHITE2
+    // Paper White 2: as in SaveControl_StartSave, since the main save is written too
+    PaperWhite2_PokedexSave_Mirror(ctrl);
+#endif
     SaveData_DualSaveStart(ctrl->sv, ctrl->sv_extra[extra_id], TrainerDataSave_GetExtraSaveCount(ctrl, extra_id));
 }
 

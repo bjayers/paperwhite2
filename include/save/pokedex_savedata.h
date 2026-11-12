@@ -5,6 +5,35 @@
 #include "gfl/heap.h"
 #include "struct_decls.h"
 
+#ifdef PAPERWHITE2
+// Paper White 2: the Pokédex's save is the hack's own area, the whole of the Pal Pad's block 0x1f
+// (SAVE_BLOCK_PAPERWHITE2_POKEDEX, docs/paperwhite2/design/save-expansion.md), with room for 1504 species and 1024
+// forms a list; the original block 0x36 keeps its layout, PokeDexVanillaSave, as the source of an old save's upgrade
+// and a mirror of the area that each save writes (src/paperwhite2/main/paperwhite2_pokedex_save.c). The lists of bits
+// are by species - 1, and the ones of forms by the form's place in the ROM's form directory (POKEDEX_FORM_LIST,
+// generated from res/pokemon), which the area records in formEntries
+#define POKEDEX_SPECIES_CAPACITY 1504
+#define POKEDEX_SPECIES_BYTES (POKEDEX_SPECIES_CAPACITY / 8)
+#define POKEDEX_FORM_BYTES 0x80
+// The directory's entries: the species in bits 0 to 10, its count of forms less 1 in bits 11 to 15
+#define POKEDEX_FORM_ENTRY_MAX 128
+#define POKEDEX_FORM_ENTRY(species, count) ((u16)((species) | (((count) - 1) << 11)))
+#define POKEDEX_FORM_ENTRY_SPECIES(entry) ((entry) & 0x7ff)
+#define POKEDEX_FORM_ENTRY_FORMS(entry) (((entry) >> 11) + 1)
+// The species that the Pokédex keeps the languages of: added species have no entries in other languages
+#define POKEDEX_LANGUAGE_SPECIES_MAX 649
+#define POKEDEX_LANGUAGE_COUNT 7
+#define POKEDEX_LANGUAGE_BYTES 0x238
+#define POKEDEX_SAVE_MAGIC 0x44325750
+#define POKEDEX_SAVE_VERSION 1
+
+// The original block's layout and its constants
+#define POKEDEX_VANILLA_SPECIES_BYTES 0x54
+#define POKEDEX_VANILLA_FORM_BYTES 0xb
+#define POKEDEX_VANILLA_LANGUAGE_SPECIES_MAX 493
+#define POKEDEX_VANILLA_LANGUAGE_BYTES 0x1b0
+#define POKEDEX_MAGIC 0xbeefcafe
+#else
 // The Pokédex's save block 0x36 (swan's getPokedexSaveAddress). The lists of bits are by species - 1, and the ones of
 // forms by the form's place in pokemonFormList
 
@@ -15,6 +44,7 @@
 #define POKEDEX_LANGUAGE_COUNT 7
 #define POKEDEX_LANGUAGE_BYTES 0x1b0
 #define POKEDEX_MAGIC 0xbeefcafe
+#endif
 
 // The lists of species seen and shown: by sex, and then the same of shiny Pokémon
 enum {
@@ -25,6 +55,67 @@ enum {
     POKEDEX_KIND_COUNT,
 };
 
+// A species with forms and the count of them, a row of the Pokédex's form list
+typedef struct {
+    u16 species;
+    u16 count;
+} PokeDexFormEntry;
+
+#ifdef PAPERWHITE2
+typedef struct PokeDexVanillaSave {
+    u32 magic;
+    u32 nationalObtained : 1;
+    u32 habitatListEnabled : 1;
+    u32 given : 8;
+    u32 mode : 2;
+    u32 lastSpecies : 10;
+    u32 unused4_22 : 10;
+    u8 caught[POKEDEX_VANILLA_SPECIES_BYTES];
+    u8 seen[POKEDEX_KIND_COUNT * POKEDEX_VANILLA_SPECIES_BYTES];
+    u8 shown[POKEDEX_KIND_COUNT * POKEDEX_VANILLA_SPECIES_BYTES];
+    // By the place in the original game's form list and the hack's Pichu after it (sPokedexVanillaFormList)
+    u8 seenForms[2 * POKEDEX_VANILLA_FORM_BYTES];
+    u8 shownForms[2 * POKEDEX_VANILLA_FORM_BYTES];
+    u8 languages[POKEDEX_VANILLA_LANGUAGE_BYTES];
+    u32 spindaPersonality;
+} PokeDexVanillaSave; // size: 0x4dc
+
+struct PokeDexSave {
+    // POKEDEX_SAVE_MAGIC ("PW2D") and POKEDEX_SAVE_VERSION once the area holds a Pokédex; an old save's Pal Pad has
+    // neither
+    u32 magic;
+    u16 version;
+    // The entries of formEntries in use
+    u16 formEntryCount;
+    u32 nationalObtained : 1;
+    u32 habitatListEnabled : 1;
+    // Set to 1 when the player is given the Pokédex, which the list's search and the detail screen check
+    u32 given : 8;
+    // Which Pokédex the list shows and the detail screen counts, a DEX_* value (PokeDex_GetMode)
+    u32 mode : 2;
+    u32 unused8_12 : 20;
+    // The species that the Pokédex's list was last on
+    u16 lastSpecies;
+    u16 unusedE;
+    // The personality of the first Spinda seen
+    u32 spindaPersonality;
+    u8 unused14[12];
+    u8 caught[POKEDEX_SPECIES_BYTES];
+    // A list of POKEDEX_SPECIES_BYTES for each kind
+    u8 seen[POKEDEX_KIND_COUNT * POKEDEX_SPECIES_BYTES];
+    // Which of them the Pokédex shows of a species: one bit set among the four lists
+    u8 shown[POKEDEX_KIND_COUNT * POKEDEX_SPECIES_BYTES];
+    // The forms seen and the form shown: a list of POKEDEX_FORM_BYTES for the normal ones, then one for the shiny
+    u8 seenForms[2 * POKEDEX_FORM_BYTES];
+    u8 shownForms[2 * POKEDEX_FORM_BYTES];
+    // The form directory the form bits were written in, POKEDEX_FORM_ENTRY values in bit order
+    u16 formEntries[POKEDEX_FORM_ENTRY_MAX];
+    // The languages a species was caught in, POKEDEX_LANGUAGE_COUNT bits a species
+    u8 languages[POKEDEX_LANGUAGE_BYTES];
+    // Free, zero: the block's size is the Pal Pad's, which an old save has
+    u8 reserved[0x160];
+}; // size: 0xd54
+#else
 struct PokeDexSave {
     u32 magic;
     u32 nationalObtained : 1;
@@ -49,6 +140,7 @@ struct PokeDexSave {
     // The personality of the first Spinda seen
     u32 spindaPersonality;
 }; // size: 0x4dc
+#endif
 
 BOOL PokeDex_IsNationalObtained(PokeDexSave *pokedex);
 u32 getSizeofPokedexData(void);
@@ -111,6 +203,11 @@ enum {
 };
 
 void PokeDex_GetEvaluationParams(PokeDexSave *pokedex, u16 mode, HeapID heapId, u16 *message, u16 *count, u16 *unk);
+
+#ifdef PAPERWHITE2
+// Paper White 2: the ROM's form directory (POKEDEX_FORM_LIST, generated from res/pokemon), which a { 0, 0 } ends
+const PokeDexFormEntry *PokeDex_PaperWhite2_GetFormList(void);
+#endif
 
 #ifdef PAPERWHITE2_DEBUG_MENU
 // Paper White 2: the debug menu's Fill Pokédex: every species seen and caught in each sex, normal and shiny, form and

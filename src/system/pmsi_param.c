@@ -38,7 +38,12 @@ PMSIParam *PMSIParam_Create(u32 mode, u32 unused, const PMSData *sentence, BOOL 
     int i;
 
     param->mode = mode;
+#ifdef PAPERWHITE2
+    // Paper White 2: the Pokédex is the hack's area, which getPokedexSaveAddress returns (save-expansion.md)
+    param->pokedex = getPokedexSaveAddress(save);
+#else
     param->pokedex = SaveControl_GetBlockPtr(save, SAVE_BLOCK_POKEDEX);
+#endif
     param->wordSave = getDexBlkAddress(save);
     param->movesEnabled = EventWork_FlagGet(getConstDataBlock(save), 0x960);
     param->flag1 = FALSE;
