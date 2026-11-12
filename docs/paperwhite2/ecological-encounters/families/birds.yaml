@@ -122,9 +122,10 @@ families:
     levels: {}
     wanderer: {appears: both, wanders: random, grass: stand}
     homes:
-      - {place: route_22, methods: [grass, dark_grass], seasons: all, tier: uncommon, why: "the windswept upland grass: open running ground"}
       - {place: route_15, methods: [grass], seasons: all, tier: rare, why: "the ridge's hills and scrub"}
       - {place: reversal_mountain_outside, methods: [dark_grass], seasons: all, tier: rare, why: "the badlands' scrub, like emus' dry country"}
+      - {place: route_22, methods: [grass], seasons: all, tier: common, why: "the windswept upland, open running ground: the herds (the user)"}
+      - {place: route_22, methods: [dark_grass], seasons: all, tier: uncommon, why: "the upland's taller grass"}
     review: []
 
   - id: hoothoot
@@ -336,10 +337,10 @@ families:
       - {place: undella, methods: [surf], seasons: all, tier: common, why: "the bay"}
       - {place: route_21, methods: [surf], seasons: all, tier: common, why: "the rocks out at sea"}
       - {place: humilau_city, methods: [surf], seasons: all, tier: uncommon, why: "the lagoon"}
-      - {place: route_22, methods: [grass], seasons: [spring, summer], tier: uncommon, why: "nesting on the headland's cliffs"}
       - {place: route_17, methods: [surf], seasons: all, tier: common, why: "riding the wind over the currents"}
       - {place: route_18, methods: [surf], seasons: all, tier: common, why: "the island's shore"}
       - {place: p2_laboratory, methods: [surf], seasons: all, tier: common, why: "the island's sea"}
+      - {place: route_22, methods: [grass], seasons: [spring, summer], tier: uncommon, why: "nesting on the headland's cliffs"}
     review: []
 
   - id: swablu
@@ -466,6 +467,7 @@ families:
       - {place: pinwheel_forest_outskirts, methods: [dark_grass], seasons: [autumn, winter], tier: uncommon, why: "the cliff by the road in the cold months"}
       - {place: village_bridge, methods: [rustling], seasons: all, tier: common, why: "pigeons on the old bridge's arches: the shadows"}
       - {place: castelia_park, methods: [grass], seasons: all, tier: common, why: "the city's pigeons in the park (the user's list)"}
+      - {place: route_13, methods: [grass], seasons: all, tier: uncommon, why: "round the beach houses"}
     review: []
 
   - id: ducklett

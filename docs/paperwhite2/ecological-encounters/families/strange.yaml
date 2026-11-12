@@ -518,6 +518,8 @@ families:
       - {place: route_7, methods: [grass], seasons: all, tier: uncommon, why: "a signpost for the tower's wandering spirits"}
       - {place: route_22, methods: [grass], seasons: all, tier: rare, why: "blown over the windswept headland"}
       - {place: reversal_mountain_outside, methods: [dark_grass], seasons: all, tier: rare, why: "night by the Strange House"}
+      - {place: route_5, methods: [grass], seasons: all, tier: rare, why: "a balloon from Nimbasa's theme park, after dark, that children follow and don't come back (the user)"}
+      - {place: route_16, methods: [grass], seasons: all, tier: rare, why: "drifting from Nimbasa at night (the user)"}
     review: []
 
   - id: cleffa
