@@ -22,8 +22,8 @@ measures every sprite in `res/pokemon/`, renders and dumps in `out/`). They are 
 - A species, form or egg is a **group of 20 files** in `a/0/0/4` (`ARCID_POKEGRA`); `GetPokemonDataIDBase`
   (`pokegra.c`) picks the group. Female and shiny change only the image or the palette, never the rig.
 - `res/pokemon/<species>/` holds all of it today: the images as indexed PNGs and the Nitro files as they are stored.
-  The packer (`tools/data/pokemon_graphics.py`) can replace any existing sprite, rig included, but **can't add a
-  group**: a new form or species needs the packer and the index formula changed (section 6).
+  The packer (`tools/data/pokemon_graphics.py`) can replace any existing sprite, rig included, and since 2026-11-12
+  appends the hack's own form groups (section 6); a new species still needs a base of its own.
 - Rules for new art (section 5): one 256×128 sheet per side, 16 colours (index 0 transparent) shared by front and
   back, the shiny palette indexing the same pixels, at most 64 parts in practice, feet at the origin.
 - Proposed: a `rig.json` plus part PNGs per side as the editable source, a converter that writes the six game files,
@@ -291,8 +291,8 @@ sprite needs nothing; new groups past 15,020 need the table (and `SPRITE_MEMBERS
 - `pack` walks the **original** archive's members: PNGs must keep their sizes (256×128, 96×96), palettes are patched,
   and the Nitro files and bin are copied as they are (`raw`). So **replacing an existing sprite works now**, rig and
   all, if the converter writes the six files in place (the NANR must be LZ11-compressed as `.nanr.lz11`).
-- It **can't add members**, and it refuses a file where the original has none (`"the archive has no file for this"`),
-  so it can't give a species a female sprite it lacked.
+- Besides the hack's form groups (below) it adds no members, and it refuses a file where the original has none
+  (`"the archive has no file for this"`), so it can't give a species a female sprite it lacked.
 - **A new form** (Spiky-eared Pichu as Pichu's form 1) needs a group at 751, where the Substitute is. Two options:
   move the Substitute and Arceus's palettes up (change `POKEGRA_FORM_PALETTES` in `pokegra.c`, the 0x3aac/0x3ab2 and
   other Substitute members in `BtlvMcss_SetSubstitute`, and the packer's 15,020/15,033), or leave them and put the
@@ -300,6 +300,14 @@ sprite needs nothing; new groups past 15,020 need the table (and `SPRITE_MEMBERS
   `sprite_offset ≥ 66`. The second touches less. Either way Pichu's `data.json` gets `forms.count` 2 and
   `sprite_offset` 66, the form needs its own personal record, icon (`a/0/0/7`, same group layout), and footprint
   forms entry (`a/2/2/9`), and the musical keeps form 0.
+- **Built (2026-11-12), the second option:** the hack's form groups (`sprite_offset + form − 1` from 66) follow the
+  Arceus palettes, from member 15,065 (`POKEMON_FORMS_SPRITE_FILES`, `include/paperwhite2/pokemon_forms.h`, used by
+  `GetPokemonDataIDBase` under `PAPERWHITE2`), 20 files a group in group order; the Substitute and the palettes stay
+  where they are. `pokemon_graphics.py pack` appends them after walking the original archive, each file in the format
+  of its species' own (so a copy of Pichu's art packs to Pichu's bytes), and the icons' after the original ones at
+  1,510 (no index change; their banks come from the icon PNGs' palettes into a generated table). The middles table
+  (section 5.4) runs to the groups' end. The Spiky-eared Pichu is group 66 with copies of Pichu's files; no form
+  record, so no personal record, and its footprint is Pichu's. See forms-and-species.md section 11.
 - **A new species** past the Pokéstar ones would be group species − 2 = 683, the egg's: the egg and the forms would
   have to move, or new species get their own base. This is part of the larger new-species work, not just sprites.
 - `tools/data/trainer_graphics.py` is the model: its sources are a list of constants plus directories, it builds
@@ -407,8 +415,7 @@ round-trip test, as the other packers have.
 
 ## 12. Open questions
 
-- New form placement: move the Substitute and palettes, or a hack base for new form groups (section 6)? Same for new
-  species.
+- New form placement: decided and built, a hack base after the palettes (section 6). New species are still open.
 - Should the rig be the only source for edited sprites (the packer builds from it) or a source that writes the Nitro
   files (two copies in git)? The trainer packer's approach suggests the former once the converter round-trips.
 - The stop-flags byte as "airborne": check in a battle effect that reads work value 44 – 52.

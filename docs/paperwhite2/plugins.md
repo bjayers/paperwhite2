@@ -2400,6 +2400,29 @@ the species flags it greys out by are every species but the excluded ones, and t
 refusal and the question are the trade's (`box2_bmp.txt` and `btl_pokeparam_box_main_save_init.txt`'s appended lines;
 `scrcmd_proc_fld.c`'s PC clears the field, which its parameter doesn't).
 
+### Forms
+
+The hack's own forms of existing species, first the Spiky-eared Pichu (Pichu's form 1), from `res/pokemon` alone
+(`docs/paperwhite2/design/forms-and-species.md` section 11, `include/paperwhite2/pokemon_forms.h`,
+`src/paperwhite2/main/paperwhite2_pokemon_forms.c`):
+
+- **Sprites:** a form's group is `forms.sprite_offset + form - 1`; the hack's are 66 on, without gaps. Their battle
+  files follow the Substitute's and Arceus' palettes from member 15,065 (`GetPokemonDataIDBase`, `pokegra.c`), their
+  icons the original ones (no index change), their icon palettes a table generated from the icons' PNGs
+  (`PokeIcon_GetPalette`, `poke_icon.c`; `tools/paperwhite2/pokemon_forms.py` writes
+  `paperwhite2/pokemon_forms_config.h`). `tools/data/pokemon_graphics.py` appends the files.
+- **Pokédex:** `a/0/9/7` is packed by `tools/data/pokedex_data.py` from the species' `pokedex.forms` (the next-form
+  table, the shapes, the height and weight orders), and the form names are the species' data, so a form keeps every
+  later form's text in step. A form the Pokédex lists needs a row of `pokemonFormList` (`pokedex_savedata.c`), appended
+  at the end so old saves keep their bits: the Pichu's are 83 and 84, 3 of 88 are left.
+- **No evolution:** `forms.no_evolution` in a species' `data.json`; `CheckEvolveSpecies` (`evolution_check.c`) returns
+  none for those forms, whatever the way of evolving, and the Info page's Evo shows them alone.
+- **Personal data:** the regional Pokédex table is the personal archive's last file (`PML_PersonalLoadRegionalDexTable`,
+  `poke_personal.c`), so form records can be added before it.
+- **Followers:** a form's rows are followers with `"form"`; their object codes go after the last follower code in
+  `generated/obj_codes.txt`, which `GetIndexOfObjID` (`field_actor_savedata.c`) names as its last (now
+  `OBJ_CODE_FOLLOWER_PICHU_FORM_1_FEMALE_SHINY`). A form without rows follows as its form 0.
+
 ## Adding global scripts
 
 A global script file's IDs are limited by its row in `GLOBAL_SCRIPT_TABLE` (`src/ov012/script_sys.c`), e.g.

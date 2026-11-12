@@ -337,6 +337,16 @@ species up to Arceus, which a Pokémon from a game in that language shows, with 
 sizes, and the Japanese category of every species. Existing species' graphics and cries are built from the files
 beside `data.json`.
 
+The Pokédex's forms are the species' data too: `pokedex.form_name` is the first form's name on the forms page (such as
+"Plant Cloak"), and each of `pokedex.forms` has the form's `name`, entry, height, weight and `shape`; `pokedex.shape`
+is the species' shape, one of the search's 14 shape icons. `tools/data/pokedex_data.py` packs the Pokédex's data
+archive (`a/0/9/7`) from them: its table that links each species to its forms' lines of the text, in the order the
+`\from` lines give them, the shapes by species and form, and every species and form ordered by height and by weight
+(the form's record's numbers, or its species'); the archive's other files (the initials and the national lists) are the
+original's. So a form added to a species keeps every later form's name, entry and size. An unchanged `res/pokemon`
+packs the original archive. The hack's own sprite forms and `forms.no_evolution` are in
+`docs/paperwhite2/plugins.md` ("Forms").
+
 ### Pokémon graphics and cries
 
 Each species folder now keeps its battle graphics, icon, footprint, and cry next to its gameplay data, following the

@@ -390,47 +390,47 @@ fix the list's path parsing so the new form shows under its species.
 ## 8. Checklist: add one form (the Spiky-eared Pichu)
 
 Data (`res/`):
-- [ ] `res/pokemon/pichu/data.json`:
+- [x] `res/pokemon/pichu/data.json`:
   - `forms.count` 2;
   - `forms.sprite_offset` 66, the next free; Pichu's own offset 0 is unused while its count is 1;
   - a `pokedex.forms` entry: entry, height `1'00"`, weight `4.4 lbs.`, the same as Pichu's.
 - [ ] Optional `res/pokemon/pichu/form_1.json` and a `["SPECIES_PICHU", 1]` row **appended** to
   `res/pokemon/forms.json`. Needed only if the form differs in data (egg groups, evolution stage). Without them the
   form uses Pichu's record.
-- [ ] `res/pokemon/pichu/form_1/`: `front.png`, `back.png`, `front_single.png`, `back_single.png`, and female
+- [x] `res/pokemon/pichu/form_1/`: `front.png`, `back.png`, `front_single.png`, `back_single.png`, and female
   variants only if the form has them. Also `normal.pal`, `shiny.pal`, `icon.png`, the cells, animations, multi-cells,
   multi-animations and `*_info.bin` (copied from Pichu, then redrawn).
-- [ ] The form name: Pichu's form 0 name and "Spiky-eared" in `res/text/system/pokedex_detail_form.txt`, at the slot
+- [x] The form name: Pichu's form 0 name and "Spiky-eared" in `res/text/system/pokedex_detail_form.txt`, at the slot
   the rebuilt chain gives it.
-- [ ] `res/field/actors/followers/pichu_form_1[_female][_shiny]/` with `"form": 1`.
+- [x] `res/field/actors/followers/pichu_form_1[_female][_shiny]/` with `"form": 1`.
 - [ ] `res/paperwhite2/pokemon_center/services.json`: `special_reward.form` 1, `enabled` true, when the user wants
   it.
 - [ ] Encounters: `"form": 1` where it should appear (`res/paperwhite2/encounters/species/pichu.json`).
 
 Code (`#ifdef PAPERWHITE2`, marked `// Paper White 2:`):
-- [ ] `src/system/pokedex_savedata.c` `pokemonFormList`: `{ SPECIES_PICHU, 2 }` appended before `{ 0, 0 }`.
-- [ ] `src/system/evolution_check.c` `CheckEvolveSpecies`: Pichu form 1 doesn't evolve.
+- [x] `src/system/pokedex_savedata.c` `pokemonFormList`: `{ SPECIES_PICHU, 2 }` appended before `{ 0, 0 }`.
+- [x] `src/system/evolution_check.c` `CheckEvolveSpecies`: Pichu form 1 doesn't evolve.
   - Mirror it in the hack's Evo page (`paperwhite2_pokedex_info_evo.c`).
-- [ ] `src/system/pokegra.c` `GetPokemonDataIDBase`: a hack base for `sprite_offset + form - 1 >= 66`, past the
+- [x] `src/system/pokegra.c` `GetPokemonDataIDBase`: a hack base for `sprite_offset + form - 1 >= 66`, past the
   Arceus palettes (15,065). Or move the Substitute and palettes ([battle-sprites.md](battle-sprites.md) section 6).
-- [ ] `src/system/poke_icon.c` `sPokeIconPalettes`: the form's bank at index 753, inside the table's 756 bytes.
-- [ ] `src/system/poke_personal.c` `PERSONAL_FILE_REGIONAL_DEX` 710, only if a form record is added. Better: a
+- [x] `src/system/poke_icon.c` `sPokeIconPalettes`: the form's bank at index 753, inside the table's 756 bytes.
+- [x] `src/system/poke_personal.c` `PERSONAL_FILE_REGIONAL_DEX` 710, only if a form record is added. Better: a
   generated constant from the packer.
 - [ ] Debug menu: give a Pokémon in a form, for testing.
 
 Tools:
-- [ ] `tools/data/pokemon_graphics.py`: append members past the original archive, for `a/0/0/4` (the new group, at
+- [x] `tools/data/pokemon_graphics.py`: append members past the original archive, for `a/0/0/4` (the new group, at
   the hack base) and `a/0/0/7` (two icon members at 1,510). `trainer_graphics.py` is the model.
-- [ ] A packer for `a/0/9/7` files 0, 2 and 6-9 from `res/pokemon` (chain slots in species order, shapes, the
+- [x] A packer for `a/0/9/7` files 0, 2 and 6-9 from `res/pokemon` (chain slots in species order, shapes, the
   height and weight orders with forms), replacing the raw copy.
   - Then `pokedex_detail_form.txt`'s form lines should come from the species' data (a `form_name` per form) rather
     than a hand-kept file, so they can't drift from the chain.
-- [ ] `tools/paperwhite2/pokedex_sprites.py`: `SPRITE_MEMBERS` follows the new layout and measures the new group.
-- [ ] `configure.py`: the new packers' inputs and outputs.
-- [ ] After the build: `tools/build/verify_dsi_rom.py build/paperwhite2.nds`.
+- [x] `tools/paperwhite2/pokedex_sprites.py`: `SPRITE_MEMBERS` follows the new layout and measures the new group.
+- [x] `configure.py`: the new packers' inputs and outputs.
+- [x] After the build: `tools/build/verify_dsi_rom.py build/paperwhite2.nds`.
 
 Editor:
-- [ ] Fix the species list's path parsing for `form_<n>.json`, and list forms under their species.
+- [x] Fix the species list's path parsing for `form_<n>.json`, and list forms under their species.
 - [ ] "Add form": a server route that runs a Python tool (as New Map does) to copy the record, art and follower
   folders and update `forms.json`, `forms.count`, `sprite_offset`, `pokedex.forms` and the form name. Then open the
   form in the panel.
@@ -481,3 +481,93 @@ Editor:
    - decide option 1 (non-Pokédex, roguelike) or option 2 (move the egg and Pokéstar IDs, fresh save);
    - inventory the bounds again;
    - start with one species end to end.
+
+## 11. Built (2026-11-12): the foundation and the Spiky-eared Pichu
+
+Steps 1 and 3 of section 10. The checklist in section 8 is ticked where done; what follows is how.
+
+### 11.1 The data, all in `res/pokemon`
+
+- **A form's sprite group** is `forms.sprite_offset + form - 1`, as in the original. Groups 0 to 65 are the original
+  game's; the hack's start at **66** and must follow one another without gaps (the packer stops on a gap or on two
+  forms with one group). The editor matches a species to its forms from `data.json` alone: `forms.count`,
+  `sprite_offset`, `palette_forms` and the `form_<n>/` folders. No index file is kept.
+- **The Pokédex's form text**: `pokedex.form_name` (the first form's name, such as "Plant Cloak") and
+  `pokedex.forms[]` with `name`, `entry`, `height`, `weight` and `shape`. `res/text/system/pokedex_detail_form.txt` is
+  now three lines (`\from{species.pokedex.form_name}`, the empty slot, `\from{species.pokedex.forms.name}`).
+- **`pokedex.shape`** (0 to 13, the search's 14 shape icons) for every species, so `a/0/9/7` file 2 has a source.
+- **`forms.no_evolution`**: the forms that never evolve, such as Pichu's `[ 1 ]`.
+- `species_data.py dump` writes all of it from a ROM (`a/0/9/7` file 2 and text bank 450).
+
+### 11.2 The packers
+
+| Packer | What it now does | Unchanged sources |
+| --- | --- | --- |
+| `tools/data/pokedex_data.py` (new, `a/0/9/7`) | File 0, the next-form table: a slot per alternate form in species and form order, from 651, linked from the species. File 2, the shapes by species and slot (the empty slot repeats the last species', as the original). Files 6 to 9, every species and form by height and weight, down and up, ties by species then form, each form's record's numbers (the species' when it has none). Files 1, 3, 4, 5 copied. | The original archive, byte for byte |
+| `tools/data/pokemon_graphics.py` (`a/0/0/4`, `a/0/0/7`) | After the original files, the hack's groups: 20 battle files a group from member 15,065 (`ADDED_FORM_FILES`), 2 icon files a group from 1,510. Each file is built in the format of its species' own file of the same kind (the male's slot for a female one, the normal palette for both palettes), and is that file's bytes where the art is the same. A missing female file is empty; any other missing file stops the build. An icon's bank is the one of `shared/icon_palettes.pal` its PNG's colours match (`icon_bank`). | The same archives as before |
+| `tools/paperwhite2/pokedex_sprites.py` (`a/1/5/7` member 161) | The middles table runs to the end of the hack's groups (15,020 bytes without them) | The same member |
+| `tools/paperwhite2/pokemon_forms.py` (new, `paperwhite2/pokemon_forms_config.h`, hack only) | The number of hack groups, their icon palettes (male low nibble, female high) and the `no_evolution` list | |
+| Text (`species_data`'s `\from` sources) | The form names from the species' data | Bank 450 byte for byte |
+
+**Regression proof:** with only the data moved into `res/` (no new form), a `--hack` build's 181 packed files in
+`build/w2_us/files` were compared with a build of main before the change: all identical, and `a/0/9/7` is identical to
+the extracted original. A plain `configure.py w2_us` build passes the module checks and `a/0/9/7`'s check (the
+other archive checks fail as on main, from the hack's data).
+
+### 11.3 The code (`#ifdef PAPERWHITE2`, `include/paperwhite2/pokemon_forms.h`)
+
+- `GetPokemonDataIDBase` (`pokegra.c`): a group from 66 is at `POKEMON_FORMS_SPRITE_FILES` (15,065) +
+  (group - 66) × 20. Every sprite user goes through it (battle, summary, Pokédex, trade, evolution, boxes' stills).
+- `PokeParty_GetIconIndex` needs nothing: the hack's icons follow the original ones where it already looks.
+  `PokeIcon_GetPalette` (`poke_icon.c`) reads a group from 66 from the generated table
+  (`PaperWhite2_GetFormIconPalette`), since `sPokeIconPalettes` has room for 3 more only.
+- `CheckEvolveSpecies` (`evolution_check.c`) returns 0 for a `no_evolution` form (`PaperWhite2_FormCannotEvolve`), which
+  covers level-up, items, trades and the Link Cord. The Info page's Evo shows such a form alone.
+- `PML_PersonalLoadRegionalDexTable` (`poke_personal.c`) reads the archive's last file instead of 709, so form records
+  can be added.
+- `pokemonFormList` (`pokedex_savedata.c`): `{ SPECIES_PICHU, 2 }` after Landorus: bits 83 and 84 of `seenForms` and
+  `shownForms`. **3 bits are left** in each list.
+
+### 11.4 The Spiky-eared Pichu
+
+- `res/pokemon/pichu/data.json`: `forms` `{ count 2, sprite_offset 66, no_evolution [1] }`, `form_name` "Normal",
+  `forms[0]` "Spiky-eared" with Pichu's entry, height, weight and shape. No form record: it is Pichu in data, cry and
+  footprint.
+- `res/pokemon/pichu/form_1/`: copies of Pichu's 17 battle sprite files, palettes and icon, as placeholders.
+- Followers `pichu_form_1`, `_shiny`, `_female`, `_female_shiny` with the original game's walking sprite
+  `OBJ_CODE_POKEMON_PICHU_FORM_1`, four codes after the imported followers (`GetIndexOfObjID`'s last follower code is
+  now `OBJ_CODE_FOLLOWER_PICHU_FORM_1_FEMALE_SHINY`).
+- The Wonder Trade's `special_reward.form` is 1, `enabled` still false.
+
+Tested headless (the scratchpad's `forms/` harness), with the form's palettes tinted and icon mirrored in a test build so
+that its group could be told from Pichu's: party icon, summary, a wild battle's back sprite, the Pokédex Info page (the
+Form button between "Normal" and "Spiky-eared", entry, height and weight, Evo alone), the follower, no evolution by Rare
+Candy or a battle's level-up at 255 friendship (a plain Pichu evolves both ways), and Unown's, Rotom's and Giratina's
+forms' names, entries and sizes as before.
+
+### 11.5 What "Add form" in the editor will write
+
+For species `S` getting form `n` (its `forms.count` before):
+
+1. `res/pokemon/S/data.json`: `forms.count` + 1; `forms.sprite_offset`, if the species had no sprite forms, the next
+   free group (the highest `sprite_offset + count - 2` over the species with sprite forms, not `palette_forms`, + 1;
+   67 after the Pichu); `pokedex.forms`
+   gains `{ name, entry, height, weight, shape }` (copied from the species); `pokedex.form_name` if it had none.
+   A species that already has sprite forms can't take another in place, since its groups are consecutive and the next
+   group is another species'. If its groups are the hack's (66 on), give it a new `sprite_offset` at the end and close
+   the gap it leaves by moving the species after it down (their groups are only renumbered: the packer builds them
+   from the folders). If they are the original game's (Unown, Rotom, Kyurem...), refuse for now: the packer takes the
+   original groups from the original archive by number and needs each of 0 to 65 to stay some species' form.
+2. `res/pokemon/S/form_n/`: copies of the species' 17 battle files (`front*`, `back*`, `normal.pal`, `shiny.pal`;
+   female ones only if the species has them) and `icon.png` (`icon_female.png` likewise).
+3. Optionally `res/pokemon/S/form_n.json` (the species' record minus `name`, `pokedex`, `baby_species`,
+   `regional_dex_number`, `cry_volume`, `egg_moves`) and `["SPECIES_S", n]` appended to `res/pokemon/forms.json`, for a
+   form with its own types, stats or moves. Nothing else changes for it now.
+4. `res/field/actors/followers/S_form_n[_female][_shiny]/data.json` and their `OBJ_CODE_FOLLOWER_S_FORM_N...`
+   constants after the last follower in `generated/obj_codes.txt`, and `GetIndexOfObjID`'s last follower code
+   (`src/system/field_actor_savedata.c`) moved to the new last one (or the editor leaves followers out: form 0's rows
+   are used).
+5. A `pokemonFormList` row in `src/system/pokedex_savedata.c` for the Pokédex to list the form: a code edit, appended at
+   the end, at most 3 more bits before the save must grow. The editor should say so rather than write C.
+
+`species_data.py` validates the result (the schema), and the packers stop on a missing file or a gap in the groups.

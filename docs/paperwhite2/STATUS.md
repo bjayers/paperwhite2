@@ -2,6 +2,31 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-12: new forms, the foundation, and the Spiky-eared Pichu (ROM session)
+
+Steps 1 and 3 of design/forms-and-species.md's build order ("Built" there and in battle-sprites.md section 6, plugins.md
+"Forms"):
+
+- **Packers from `res/` that can add forms.** `a/0/9/7` (the Pokédex's next-form table, shapes and height/weight
+  orders) is packed by `tools/data/pokedex_data.py` from the species' `pokedex.forms`, and the form names are the
+  species' data (`pokedex.form_name`, `pokedex.forms[].name`) through `\from` lines, so a form added anywhere keeps every
+  later form's text. The battle sprites and icons append the hack's form groups (`sprite_offset` 66 on) after the
+  Substitute's files and Arceus' palettes (battle) and the original icons; the icon banks come from the icon PNGs'
+  palettes into a generated table; the Info page's sprite middles follow. The regional Pokédex table is read as the
+  personal archive's last file. **With no new forms every packed file was byte-identical to a build of main before,
+  and `a/0/9/7` to the original's.**
+- **The Spiky-eared Pichu** is Pichu's form 1 with placeholder art (copies of Pichu's battle sprites, palettes and icon
+  in `res/pokemon/pichu/form_1/`): Pichu's data, "Spiky-eared" in the Pokédex (Pichu's first form is "Normal"), never
+  evolves (`forms.no_evolution`), seen bits 83 and 84 of `pokemonFormList` (3 of 88 left), followers with the original
+  game's Spiky-eared field sprite. The Wonder Trade's special reward is form 1, still off.
+
+Tested headless on a copy of the user's save, with the form's palettes and icon tinted and mirrored in a test build so
+the hack's group could be told from Pichu's: party icon, summary, a wild battle's back sprite, the Pokédex Info page
+(Form button, "Spiky-eared" tab, entry, Evo showing it alone), the follower, no evolution by Rare Candy or a battle's
+level-up at 255 friendship (a plain Pichu evolves both ways), and Unown's, Rotom's and Giratina's forms' names and
+sizes unchanged. To do: the user draws the real art (`form_1/`'s files, rig format later); then `enabled` on the
+special reward; encounters where it should appear.
+
 ## 2026-11-12: the Pokémon Center attendants, the user's follow-ups (ROM session)
 
 Five requests after the user tried the three attendants (design/pokemon-center.md, "Follow-ups"):
