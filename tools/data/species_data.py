@@ -36,6 +36,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from tools.data.form_groups import sprite_offset  # noqa: E402
 from tools.data.datajson import DataError, label, load, load_schema, name, value, write  # noqa: E402
 from tools.data.gen_constants import load as load_list  # noqa: E402
 from tools.data.narc import read_narc, write_narc  # noqa: E402
@@ -354,6 +355,10 @@ def pack(root: Path, outputs: list[Path]):
             raise DataError(f"{where}: a species has baby_species and regional_dex_number, and a form has neither")
         species_name = f"SPECIES_{path.parent.name.upper()}"
         first_form = first_forms.get(species_name, 0) if path.name == "data.json" else 0
+        if path.name == "data.json" and index < national:
+            # Paper White 2: a species with more forms than its original sprite groups has them moved to the hack's
+            # (tools/data/form_groups.py); its record gives the game the moved offset
+            data["forms"]["sprite_offset"] = sprite_offset(directory(species_name), data["forms"], root.resolve())
         personal.append(record_bytes(data, first_form, tutors_by_bit, where))
         levelup.append(b"".join(struct.pack("<HH", value(move, where), level)
                                 for level, move in data["learnset"]["by_level"]) + b"\xff\xff\xff\xff")

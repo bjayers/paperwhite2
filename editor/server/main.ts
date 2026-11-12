@@ -114,7 +114,7 @@ const routes: Record<string, Handler> = {
       } catch {
         continue;
       }
-      if (keys) data = Object.fromEntries(keys.filter((k) => k in data).map((k) => [k, data[k]]));
+      if (keys) data = pick(data, keys);
       files.push({ path, data });
     }
     json(res, files);
@@ -647,6 +647,52 @@ const routes: Record<string, Handler> = {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(result.output.split("\n").pop());
   },
+  // A species' alternate forms (tools/paperwhite2/pokemon_form.py): the original game's form counts and which species
+  // have records there, then adding, removing and a form's own record, each writing res/ itself (its art, followers and
+  // obj_codes.txt besides the JSON), and the art a form imports
+  "GET /api/pokemon-forms": async (_req, res) => {
+    const run = await python.tool(POKEMON_FORM_TOOL, ["info"]);
+    if (run.code !== 0) return error(res, 500, toolMessage(run) || "pokemon_form.py info failed");
+    res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+    res.end(run.stdout);
+  },
+  "POST /api/pokemon-forms/add": async (req, res) => {
+    const b = (await readJson(req)) as { species: string; from?: number; name?: string; record?: boolean; check?: boolean };
+    if (!/^SPECIES_[A-Z0-9_]+$/.test(b.species ?? "")) return error(res, 400, "Name a species");
+    const args = ["add", b.species, "--from", String(Number.isInteger(b.from) ? b.from : 0)];
+    if (typeof b.name === "string" && b.name.trim()) args.push("--name", b.name.trim());
+    if (b.record) args.push("--record");
+    if (b.check) args.push("--check");
+    await formTool(res, args);
+  },
+  "POST /api/pokemon-forms/remove": async (req, res) => {
+    const b = (await readJson(req)) as { species: string; form: number; check?: boolean };
+    if (!/^SPECIES_[A-Z0-9_]+$/.test(b.species ?? "") || !Number.isInteger(b.form)) return error(res, 400, "Name a species and its form");
+    await formTool(res, ["remove", b.species, String(b.form), ...(b.check ? ["--check"] : [])]);
+  },
+  "POST /api/pokemon-forms/record": async (req, res) => {
+    const b = (await readJson(req)) as { species: string; form: number; on: boolean; check?: boolean };
+    if (!/^SPECIES_[A-Z0-9_]+$/.test(b.species ?? "") || !Number.isInteger(b.form)) return error(res, 400, "Name a species and its form");
+    await formTool(res, ["record", b.species, String(b.form), b.on ? "on" : "off", ...(b.check ? ["--check"] : [])]);
+  },
+  "POST /api/pokemon-forms/art": async (req, res) => {
+    // A PNG for a form's icon (kind icon or icon_female) or 96 by 96 still (front or back): checked and previewed, and
+    // written with write
+    const b = (await readJson(req)) as { species: string; form: number; kind: string; data: string; write?: boolean };
+    if (!/^SPECIES_[A-Z0-9_]+$/.test(b.species ?? "") || !Number.isInteger(b.form) || !["icon", "icon_female", "front", "back"].includes(b.kind))
+      return error(res, 400, "Name a species, its form and the art");
+    const dir = mkdtempSync(join(tmpdir(), "paperwhite-form-art-"));
+    try {
+      const png = join(dir, "import.png");
+      writeFileSync(png, Buffer.from(b.data ?? "", "base64"));
+      const args = b.kind.startsWith("icon")
+        ? ["icon", b.species, String(b.form), png, ...(b.kind === "icon_female" ? ["--female"] : [])]
+        : ["still", b.species, String(b.form), b.kind, png];
+      await formTool(res, [...args, ...(b.write ? ["--write"] : [])]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  },
   "GET /api/build": (_req, res) => json(res, builder.state),
   "POST /api/build": (_req, res) => json(res, { started: builder.start(settings.buildCommand) }),
   "POST /api/build/stop": (_req, res) => {
@@ -807,6 +853,40 @@ async function importTextures(sets: string[], textures: string[]): Promise<{ add
     }
   }
   return { added };
+}
+
+/** The keys of a file's data that a listing asks for; "a.b" takes b of the object a, nested as it is. */
+function pick(data: Record<string, unknown>, keys: string[]): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const key of keys) {
+    const [head, ...rest] = key.split(".");
+    if (!(head in data)) continue;
+    if (!rest.length) out[head] = data[head];
+    else if (data[head] && typeof data[head] === "object" && !Array.isArray(data[head])) {
+      const inner = pick(data[head] as Record<string, unknown>, [rest.join(".")]);
+      out[head] = { ...(out[head] as Record<string, unknown> | undefined), ...inner };
+    }
+  }
+  return out;
+}
+
+const POKEMON_FORM_TOOL = "tools/paperwhite2/pokemon_form.py";
+
+/** A tool's message: the "message" of the JSON it printed, else its error output's last line. */
+function toolMessage(run: { stdout: string; stderr: string }): string {
+  try {
+    return String((JSON.parse(run.stdout.trim().split("\n").pop() ?? "") as { message?: string }).message ?? "");
+  } catch {
+    return run.stderr.trim().split("\n").pop() ?? "";
+  }
+}
+
+/** Runs pokemon_form.py and answers with its JSON, or its refusal as a 400. */
+async function formTool(res: ServerResponse, args: string[]) {
+  const run = await python.tool(POKEMON_FORM_TOOL, args);
+  if (run.code !== 0) return error(res, 400, toolMessage(run) || "pokemon_form.py failed");
+  res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+  res.end(run.stdout.trim().split("\n").pop());
 }
 
 function runTool(script: string, args: string[]): Promise<{ ok: boolean; output: string }> {

@@ -1,11 +1,12 @@
-// The Pokémon Editor: every species and form (res/pokemon/<species>/data.json and form_<n>/data.json, docs/data.md,
-// Species) with its sprite in its normal and shiny colors, its base stats as bars with their total, its types,
-// abilities and other settings, its Pokédex data, its learnset (by level, TMs, tutors, egg moves), and its evolutions,
-// with the whole family's tree. Every file is edited through the document store, so it is checked by the build's
-// validator on save.
+// The Pokémon Editor: every species (res/pokemon/<species>/data.json, docs/data.md, Species) with its sprite in its
+// normal and shiny colors, its base stats as bars with their total, its types, abilities and other settings, its
+// Pokédex data, its learnset (by level, TMs, tutors, egg moves), and its evolutions, with the whole family's tree; and
+// under each species its alternate forms (forms.ts), each with a page of its own (FormPage.tsx), and Add form. Every
+// file is edited through the document store, so it is checked by the build's validator on save; adding and removing
+// forms is tools/paperwhite2/pokemon_form.py's.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { api } from "../../api.ts";
+import { api, type PokemonFormsInfo } from "../../api.ts";
 import { documents, useDocuments } from "../../documents.ts";
 import type { JsonMap, JsonValue } from "../../../shared/json.ts";
 import type { Constants } from "../../../shared/schema.ts";
@@ -18,20 +19,12 @@ import { constantLabel, constantOptions } from "../schema-form/form.tsx";
 import { DocForm, useHeld } from "../followers/DocForm.tsx";
 import { SpeciesIcon, speciesFolder } from "./SpeciesIcon.tsx";
 import { useToolActive } from "../active.ts";
+import { FormIcon, FormPage, FormsCard, SERVICES, WonderTradeRow } from "./FormPage.tsx";
+import { isOriginalForm, listSpecies, type Listed } from "./forms.ts";
 
 const SCHEMA = "res/pokemon/species.schema.json";
 const STATS = [["hp", "HP"], ["attack", "Attack"], ["defense", "Defense"], ["special_attack", "Sp. Atk"],
   ["special_defense", "Sp. Def"], ["speed", "Speed"]] as const;
-
-interface Listed {
-  path: string;
-  /** "snivy", or "arceus/form_1". */
-  folder: string;
-  species: string;
-  name: string;
-  number: number;
-  evolutions: { method: string; param: unknown; species: string }[];
-}
 
 const map = (v: JsonValue | undefined) => (v instanceof Map ? v : new Map<string, JsonValue>());
 
@@ -155,10 +148,10 @@ function Evolutions({ path, data, constants }: { path: string; data: JsonMap; co
 
 /** The family: the first stage, found back through who evolves into whom, and every evolution from it. */
 function Family({ species, list, onOpen }: { species: string; list: Listed[]; onOpen(species: string): void }) {
-  const bySpecies = useMemo(() => new Map(list.filter((l) => !l.folder.includes("/")).map((l) => [l.species, l])), [list]);
+  const bySpecies = useMemo(() => new Map(list.filter((l) => l.form === 0).map((l) => [l.species, l])), [list]);
   const parents = useMemo(() => {
     const out = new Map<string, string>();
-    for (const l of list) if (!l.folder.includes("/")) for (const e of l.evolutions) if (e.species && !out.has(e.species)) out.set(e.species, l.species);
+    for (const l of list) if (l.form === 0) for (const e of l.evolutions) if (e.species && !out.has(e.species)) out.set(e.species, l.species);
     return out;
   }, [list]);
   let root = species;
@@ -186,58 +179,94 @@ function Family({ species, list, onOpen }: { species: string; list: Listed[]; on
   return <div className="pkm-family">{node(root, 0)}</div>;
 }
 
-function SpeciesPage({ entry, list, constants, onOpen }: { entry: Listed; list: Listed[]; constants: Constants; onOpen(species: string): void }) {
-  const { data, error } = useHeld(entry.path);
+/** A record's data sections: stats, abilities and the rest, evolutions (with the family for a species), learnset. */
+function RecordSections({ path, entry, list, constants, onOpen }: {
+  path: string; entry: Listed; list: Listed[]; constants: Constants; onOpen(species: string): void;
+}) {
+  const { data, error } = useHeld(path);
   if (error) return <p className="pkm-error">{error}</p>;
   if (!(data instanceof Map)) return <p className="muted pkm-empty">Reading…</p>;
+  const form = entry.form > 0;
   const field = (key: string, label?: string) => data.has(key) && (
     <div key={key} className="pkm-field">
       <span className="muted">{label ?? key.replace(/_/g, " ")}</span>
-      <DocForm path={entry.path} at={[key]} constants={constants} hideDescription />
+      <DocForm path={path} at={[key]} constants={constants} hideDescription />
     </div>
   );
   return (
-    <div className="pkm-page">
-      <div className="pkm-top">
-        <Sprite folder={entry.folder} />
-        <div>
-          <h2><span className="muted">#{entry.number}</span> {String(data.get("name") ?? entry.name)}</h2>
-          <p className="muted pkm-note">{entry.path}</p>
-          <div className="pkm-top-fields">{field("name")}{field("types")}</div>
-        </div>
-      </div>
+    <>
+      {form && (
+        <section className="pkm-card">
+          <h3>Its own data <span className="muted">{path}</span></h3>
+          <div className="pkm-top-fields">{field("types")}</div>
+        </section>
+      )}
       <section className="pkm-card pkm-stats-card">
-        <Stats path={entry.path} data={data} label="Base stats" max={255} />
-        <Stats path={entry.path} data={data} label="EV yields" max={3} />
+        <Stats path={path} data={data} label="Base stats" max={255} />
+        <Stats path={path} data={data} label="EV yields" max={3} />
       </section>
       <section className="pkm-card">
         <h3>Abilities, breeding and the rest</h3>
         <div className="pkm-fields">
           {["abilities", "hidden_ability", "held_items", "gender_ratio", "catch_rate", "base_exp", "growth_rate", "egg_groups",
             "hatch_cycles", "base_friendship", "flee_rate", "color", "height", "weight", "evolution_stage", "baby_species",
-            "regional_dex_number", "forms", "asymmetric", "palette_forms", "cry_volume", "underground", "name_article"].map((k) => field(k))}
+            "regional_dex_number", "asymmetric", "palette_forms", "cry_volume", "underground", "name_article"].map((k) => field(k))}
         </div>
       </section>
       <section className="pkm-card">
         <h3>Evolutions</h3>
-        <Evolutions path={entry.path} data={data} constants={constants} />
-        {!entry.folder.includes("/") && <><h4>The family</h4><Family species={entry.species} list={list} onOpen={onOpen} /></>}
+        {form && <p className="muted pkm-note">The game reads evolutions by species (CheckEvolveSpecies), so a form's own are
+          packed but not used yet: this form evolves as its species does, unless it can't evolve.</p>}
+        <Evolutions path={path} data={data} constants={constants} />
+        {!form && <><h4>The family</h4><Family species={entry.species} list={list} onOpen={onOpen} /></>}
       </section>
       <section className="pkm-card">
         <h3>Learnset</h3>
         <div className="pkm-learnset">
-          <div><h4>By level</h4><LevelMoves path={entry.path} data={data} constants={constants} /></div>
+          <div><h4>By level</h4><LevelMoves path={path} data={data} constants={constants} /></div>
           <div>
-            <h4>TMs and HMs</h4><DocForm path={entry.path} at={["learnset", "by_tm"]} constants={constants} hideDescription />
-            <h4>Tutors</h4><DocForm path={entry.path} at={["learnset", "by_tutor"]} constants={constants} hideDescription />
-            {map(data.get("learnset")).has("egg_moves") && <><h4>Egg moves</h4><DocForm path={entry.path} at={["learnset", "egg_moves"]} constants={constants} hideDescription /></>}
+            <h4>TMs and HMs</h4><DocForm path={path} at={["learnset", "by_tm"]} constants={constants} hideDescription />
+            <h4>Tutors</h4><DocForm path={path} at={["learnset", "by_tutor"]} constants={constants} hideDescription />
+            {map(data.get("learnset")).has("egg_moves") && <><h4>Egg moves</h4><DocForm path={path} at={["learnset", "egg_moves"]} constants={constants} hideDescription /></>}
           </div>
         </div>
       </section>
+    </>
+  );
+}
+
+function SpeciesPage({ entry, list, info, constants, onOpen, onSelect, onChanged }: {
+  entry: Listed; list: Listed[]; info: PokemonFormsInfo | null; constants: Constants;
+  onOpen(species: string): void; onSelect(key: string): void; onChanged(select?: string): void;
+}) {
+  const { data, error } = useHeld(entry.speciesPath);
+  if (error) return <p className="pkm-error">{error}</p>;
+  if (!(data instanceof Map)) return <p className="muted pkm-empty">Reading…</p>;
+  const forms = list.filter((l) => l.folder === entry.folder && l.form > 0);
+  return (
+    <div className="pkm-page">
+      <div className="pkm-top">
+        <Sprite folder={entry.folder} />
+        <div>
+          <h2><span className="muted">#{entry.number}</span> {String(data.get("name") ?? entry.name)}</h2>
+          <p className="muted pkm-note">{entry.speciesPath}</p>
+          <div className="pkm-top-fields">
+            {(["name", "types"] as const).map((key) => data.has(key) && (
+              <div key={key} className="pkm-field">
+                <span className="muted">{key}</span>
+                <DocForm path={entry.speciesPath} at={[key]} constants={constants} hideDescription />
+              </div>
+            ))}
+          </div>
+          {entry.number > 0 && <div className="pkm-rows pkm-top-rows"><WonderTradeRow entry={entry} original={info?.original ?? {}} /></div>}
+        </div>
+      </div>
+      {entry.number > 0 && <FormsCard entry={entry} forms={forms} info={info} onOpen={onSelect} onChanged={onChanged} />}
+      <RecordSections path={entry.speciesPath} entry={entry} list={list} constants={constants} onOpen={onOpen} />
       {data.has("pokedex") && (
         <section className="pkm-card">
           <h3>Pokédex</h3>
-          <DocForm path={entry.path} at={["pokedex"]} constants={constants} hideDescription />
+          <DocForm path={entry.speciesPath} at={["pokedex"]} constants={constants} hideDescription />
         </section>
       )}
     </div>
@@ -247,63 +276,64 @@ function SpeciesPage({ entry, list, constants, onOpen }: { entry: Listed; list: 
 export function PokemonEditor({ constants }: ToolProps) {
   const toolActive = useToolActive();
   const [list, setList] = useState<Listed[] | null>(null);
+  const [info, setInfo] = useState<PokemonFormsInfo | null>(null);
   const [filter, setFilter] = useState("");
   const [chosen, setChosen] = useState<string | null>(null);
+  const [epoch, setEpoch] = useState(0);
   const { docs } = useDocuments();
 
   useEffect(() => {
-    api.data(SCHEMA, ["name", "evolutions"]).then((files) => {
-      // A species is <species>/data.json; a form's record is <species>/form_<n>.json, with its art in <species>/form_<n>/
-      const out: Listed[] = files.map(({ path, data }) => {
-        const relative = path.slice("res/pokemon/".length);
-        const folder = relative.endsWith("/data.json") ? relative.slice(0, -"/data.json".length) : relative.slice(0, -".json".length);
-        const species = `SPECIES_${folder.split("/")[0].toUpperCase()}`;
-        return {
-          path, folder, species,
-          name: String(data.name ?? folder) + (folder.includes("/") ? ` (${folder.split("/").slice(1).join(" ").replace(/_/g, " ")})` : ""),
-          number: constants.get(species) ?? 0,
-          evolutions: ((data.evolutions as Listed["evolutions"] | undefined) ?? []),
-        };
-      });
-      // A form's record has no name of its own: it takes its species', as "Castform (form 1)"
-      const names = new Map(out.filter((l) => !l.folder.includes("/")).map((l) => [l.folder, l.name]));
-      for (const l of out) {
-        const form = /^([^/]+)\/form_(\d+)$/.exec(l.folder);
-        if (form) l.name = `${names.get(form[1]) ?? form[1]} (form ${form[2]})`;
-      }
-      out.sort((a, b) => (a.number || 1e9) - (b.number || 1e9) || a.folder.localeCompare(b.folder));
-      setList(out);
+    let live = true;
+    api.data(SCHEMA, ["name", "evolutions", "forms", "pokedex.form_name", "pokedex.forms"]).then((files) => {
+      if (live) setList(listSpecies(files, constants));
     });
-  }, [constants]);
-
-  const unsaved = [...docs.values()].filter((d) => d.dirty && d.path.startsWith("res/pokemon/"));
-  const save = useCallback(async () => {
-    for (const p of documents.dirtyPaths().filter((p) => p.startsWith("res/pokemon/"))) await documents.save(p);
+    api.pokemonForms().then((i) => live && setInfo(i), () => live && setInfo(null));
+    return () => { live = false; };
+  }, [constants, epoch]);
+  // A species' or form's file changed on disk (the server's poll: a form change's files, a save, a commit undone): the
+  // list read again, since the server lists a new form_<n>.json only once its poll has seen it
+  useEffect(() => documents.onFiles((paths) => {
+    if (paths.some((p) => /^res\/pokemon\/.+\.json$/.test(p))) setEpoch((n) => n + 1);
+  }), []);
+  /** After a form change: the list and the forms' facts read again, and the page given chosen. */
+  const changed = useCallback((select?: string) => {
+    setEpoch((n) => n + 1);
+    if (select) setChosen(select);
   }, []);
+
+  const editable = (p: string) => p.startsWith("res/pokemon/") || p === SERVICES;
+  const unsaved = [...docs.values()].filter((d) => d.dirty && editable(d.path));
+  const save = useCallback(async () => {
+    const paths = documents.dirtyPaths().filter(editable);
+    for (const p of paths) await documents.save(p);
+    if (paths.some((p) => p.endsWith("/data.json"))) setEpoch((n) => n + 1);
+  }, []);
+  const entry = list?.find((l) => l.key === chosen) ?? null;
+  const undoPath = entry ? (entry.form && entry.recordPath ? entry.recordPath : entry.speciesPath) : null;
   useEffect(() => {
     if (!toolActive) return;
     const onKey = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey)) return;
       const key = e.key.toLowerCase();
       if (key === "s") { e.preventDefault(); e.stopPropagation(); save(); }
-      else if ((key === "z" || key === "y") && chosen && !["INPUT", "TEXTAREA"].includes((e.target as HTMLElement).tagName)) {
+      else if ((key === "z" || key === "y") && undoPath && !["INPUT", "TEXTAREA"].includes((e.target as HTMLElement).tagName)) {
         e.preventDefault(); e.stopPropagation();
-        if (key === "y" || e.shiftKey) documents.redo(chosen); else documents.undo(chosen);
+        if (key === "y" || e.shiftKey) documents.redo(undoPath); else documents.undo(undoPath);
       }
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [save, chosen, toolActive]);
+  }, [save, undoPath, toolActive]);
 
   const shown = useMemo(() => {
     const q = filter.trim().toLowerCase();
     return (list ?? []).filter((l) => !q || l.name.toLowerCase().includes(q) || String(l.number) === q || l.folder.includes(q));
   }, [list, filter]);
-  const entry = list?.find((l) => l.path === chosen) ?? null;
   const openSpecies = (species: string) => {
-    const found = list?.find((l) => l.folder === speciesFolder(species));
-    if (found) setChosen(found.path);
+    const found = list?.find((l) => l.form === 0 && l.folder === speciesFolder(species));
+    if (found) setChosen(found.key);
   };
+  const dirtyMark = (l: Listed) => (docs.get(l.form ? l.recordPath ?? "" : l.speciesPath)?.dirty ? " •" : "");
 
   return (
     <div className="pkm-editor">
@@ -320,17 +350,24 @@ export function PokemonEditor({ constants }: ToolProps) {
           <input className="filter" placeholder={`Filter ${list?.length ?? 0} species and forms…`} value={filter} onChange={(e) => setFilter(e.target.value)} />
           <div className="pkm-list-items">
             {shown.map((l) => (
-              <button key={l.path} className={`pkm-item${l.path === chosen ? " selected" : ""}`} onClick={() => setChosen(l.path)}>
-                <SpeciesIcon species={l.species} size={24} />
-                <span className="muted pkm-number">{l.number || ""}</span>
-                <span className="pkm-name">{l.name}{docs.get(l.path)?.dirty ? " •" : ""}</span>
+              <button key={l.key} className={`pkm-item${l.form ? " pkm-item-form" : ""}${l.key === chosen ? " selected" : ""}`} onClick={() => setChosen(l.key)}>
+                {l.form ? <FormIcon entry={l} size={24} epoch={epoch} /> : <SpeciesIcon species={l.species} size={24} />}
+                <span className="muted pkm-number">{l.form ? "" : l.number || ""}</span>
+                <span className="pkm-name">{l.form ? l.name.slice(l.name.indexOf(":") + 2) : l.name}{dirtyMark(l)}</span>
+                {l.form > 0 && info && !isOriginalForm(info.original, l.folder, l.form) && <span className="pkm-tag">added</span>}
               </button>
             ))}
           </div>
         </div>
         <div className="pkm-detail">
-          {entry ? <SpeciesPage key={entry.path} entry={entry} list={list ?? []} constants={constants} onOpen={openSpecies} />
-            : <p className="muted pkm-empty">Choose a Pokémon.</p>}
+          {entry && entry.form > 0 ? (
+            <FormPage key={`${entry.key}@${entry.recordPath ?? ""}`} entry={entry} info={info} constants={constants} onChanged={changed}
+              sprite={(folder, e) => <Sprite key={`${folder}@${e}`} folder={folder} />}
+              record={(path) => <RecordSections path={path} entry={entry} list={list ?? []} constants={constants} onOpen={openSpecies} />} />
+          ) : entry ? (
+            <SpeciesPage key={entry.key} entry={entry} list={list ?? []} info={info} constants={constants} onOpen={openSpecies}
+              onSelect={setChosen} onChanged={changed} />
+          ) : <p className="muted pkm-empty">Choose a Pokémon.</p>}
         </div>
       </div>
     </div>

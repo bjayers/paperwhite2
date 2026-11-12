@@ -49,3 +49,30 @@
 .pkm-learnset { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .pkm-level-moves { display: flex; flex-direction: column; gap: 4px; }
 .pkm-level-move { display: grid; grid-template-columns: 64px 1fr 28px; gap: 6px; align-items: center; }
+
+/* Forms: under their species in the list, the species page's Forms card, a form's page */
+.pkm-item-form { padding-left: 26px; }
+.pkm-item-form .pkm-number { width: 6px; }
+.pkm-tag { font-size: 10px; padding: 0 5px; border-radius: 6px; background: var(--selected); color: var(--accent); }
+.pkm-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.pkm-card-head h3 { margin: 0; }
+.pkm-card-head .spacer { flex: 1; }
+.pkm-forms { display: flex; flex-wrap: wrap; gap: 6px; }
+.pkm-form-chip { display: inline-flex; align-items: center; gap: 6px; }
+.pkm-form-chip .muted { font-size: 11px; }
+.pkm-form-chip.current { border-color: var(--accent); }
+.pkm-add-form { margin-top: 12px; padding: 10px 12px; border: 1px dashed var(--border); border-radius: 8px; display: flex; flex-direction: column; gap: 6px; max-width: 720px; }
+.pkm-add-form h4 { margin: 0 0 4px; }
+.pkm-add-form .pkm-field { grid-template-columns: 90px 1fr; align-items: center; }
+.pkm-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.pkm-rows { display: grid; grid-template-columns: 120px 1fr; gap: 12px 14px; align-items: start; font-size: 13px; }
+.pkm-row-label { color: var(--muted); padding-top: 3px; }
+.pkm-row-control select, .pkm-row-control input:not([type="checkbox"]) { min-width: 260px; }
+.pkm-hint { font-size: 12px; margin-top: 3px; }
+.pkm-top-rows { margin-top: 10px; }
+.pkm-art input[type="file"] { max-width: 100%; font-size: 12px; }
+button.danger { color: var(--error); border-color: var(--error); }
+.pkm-art-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.pkm-art h4 { margin-top: 0; }
+.pkm-art-images { display: flex; align-items: center; gap: 8px; min-height: 64px; }
+.pkm-pixel { image-rendering: pixelated; background: var(--panel-2); border-radius: 4px; max-width: 96px; }

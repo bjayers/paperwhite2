@@ -13,6 +13,11 @@ Training's requirements and the grooming courses' friendship), the Champion's di
 Badges, and the Wonder Trade's generator (src/paperwhite2/ov012/paperwhite2_wonder_trade.c): its rates, languages,
 balls, item tiers and forms, the excluded species as bits, and for every species its pre-evolution and least level,
 worked out from res/pokemon/*/data.json's evolutions.
+The forms the hack adds to a species (past the original game's forms.count, tools/data/form_groups.py's
+original_form_counts) are received without being listed: a species with such forms and no wonder_trade.forms entry
+gets one, with weight 1 for its first form and each added form and 0 for its other original ones. A form in
+wonder_trade.excluded_forms is never received (weight 0, in a listed species' weights too); a species in
+excluded_species never at all, which is how a new species is left out.
 The trainers' names and nicknames go into the system text bank wonder_trade_names (a line `\\from{wonder_trade.names}`,
 tools/text/text_sources.py, from name_lines here), in the order whose first lines the header's language rows give.
 Only the hack's build runs this (configure.py --hack).
@@ -26,6 +31,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from tools.data import datajson  # noqa: E402
+from tools.data.form_groups import original_form_counts  # noqa: E402
 
 SOURCE = ROOT / "res" / "paperwhite2" / "pokemon_center" / "services.json"
 IDS_HEADER = ROOT / "include" / "paperwhite2" / "pokemon_center.h"
@@ -94,6 +100,7 @@ def load(path: Path = SOURCE) -> dict:
     if not any(ball["weight"] for ball in data["wonder_trade"]["balls"]):
         raise DataError(f"{datajson.label(path)}: wonder_trade.balls' weights are all 0")
     check_forms(path, data["wonder_trade"])
+    check_excluded_forms(path, data["wonder_trade"])
     for entry in data["wonder_trade"]["languages"]:
         for key, length in NAME_LENGTH.items():
             if entry["language"] in SHORT_LANGUAGES:
@@ -133,6 +140,42 @@ def check_forms(path: Path, trade: dict):
                 raise DataError(f"{where} has {len(entry['weights'])} weights for its {count} forms")
             if not any(entry["weights"]):
                 raise DataError(f"{where}'s weights are all 0")
+
+
+def check_excluded_forms(path: Path, trade: dict):
+    """wonder_trade.excluded_forms: each an alternate form of its species, once."""
+    seen = set()
+    for entry in trade["excluded_forms"]:
+        key = (entry["species"], entry["form"])
+        where = f"{datajson.label(path)}: wonder_trade.excluded_forms' {entry['species']} form {entry['form']}"
+        if key in seen:
+            raise DataError(f"{where} is listed twice")
+        seen.add(key)
+        if entry["form"] >= form_count(entry["species"]):
+            raise DataError(f"{where} isn't a form of the species' {form_count(entry['species'])}")
+
+
+def form_entries(trade: dict) -> list[tuple[str, bool, list[int]]]:
+    """The species received in other forms than their first, (species, season, weights): wonder_trade.forms, then in
+    species order every species with forms the hack added that isn't listed (weight 1 for its first form and each
+    added one), each with the excluded forms' weights 0. A species whose forms are then all 0 but its first is left
+    out, since it is received as its first form anyway."""
+    excluded = {(entry["species"], entry["form"]) for entry in trade["excluded_forms"]}
+    listed = {entry["species"] for entry in trade["forms"]}
+    entries = []
+    for entry in trade["forms"]:
+        weights = [0 if (entry["species"], form) in excluded else weight
+                   for form, weight in enumerate(entry.get("weights", []))]
+        entries.append((entry["species"], bool(entry.get("season")), weights))
+    for species, original in original_form_counts().items():
+        name = f"SPECIES_{species.upper()}"
+        count = form_count(name)
+        if count <= original or name in listed or name in trade["excluded_species"]:
+            continue
+        weights = [1] + [0] * (original - 1) + [0 if (name, form) in excluded else 1 for form in range(original, count)]
+        if any(weights[1:]):
+            entries.append((name, False, weights))
+    return entries
 
 
 def name_lines(path: Path = SOURCE) -> list[str]:
@@ -269,10 +312,10 @@ def wonder_trade_lines(data: dict) -> list[str]:
             items.append((item, 1) if isinstance(item, str) else (item["item"], item["weight"]))
     form_rows = []
     form_weights = []
-    for entry in trade["forms"]:
-        weights = entry.get("weights", [])
-        form_rows.append(f"    {{ {entry['species']}, {1 if entry.get('season') else 0}, {len(form_weights)}, "
-                         f"{len(weights)} }}, \\")
+    for species, season, weights in form_entries(trade):
+        if len(form_weights) > 255:
+            raise DataError(f"wonder_trade: {species}'s form weights start past the 255 that FormSpecies.first holds")
+        form_rows.append(f"    {{ {species}, {1 if season else 0}, {len(form_weights)}, {len(weights)} }}, \\")
         form_weights.extend(weights)
     if not form_rows:
         # C has no empty arrays: a row for species 0, never received

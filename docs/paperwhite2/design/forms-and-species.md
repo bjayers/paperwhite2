@@ -347,6 +347,8 @@ name the form directly.
 
 ## 7. The editor today
 
+**Superseded (2026-11-12):** what follows is the editor before Add form; section 11.6 is the editor as built.
+
 - **One panel edits species:** `editor/src/modules/pokemon/PokemonEditor.tsx`.
   - It has dedicated sections for:
     - `base_stats` and `ev_yields`;
@@ -435,9 +437,9 @@ Tools:
 
 Editor:
 - [x] Fix the species list's path parsing for `form_<n>.json`, and list forms under their species.
-- [ ] "Add form": a server route that runs a Python tool (as New Map does) to copy the record, art and follower
+- [x] "Add form": a server route that runs a Python tool (as New Map does) to copy the record, art and follower
   folders and update `forms.json`, `forms.count`, `sprite_offset`, `pokedex.forms` and the form name. Then open the
-  form in the panel.
+  form in the panel. (Section 11.6.)
 
 ## 9. Open risks
 
@@ -550,34 +552,116 @@ Form button between "Normal" and "Spiky-eared", entry, height and weight, Evo al
 Candy or a battle's level-up at 255 friendship (a plain Pichu evolves both ways), and Unown's, Rotom's and Giratina's
 forms' names, entries and sizes as before.
 
-### 11.5 What "Add form" in the editor will write
+### 11.5 What "Add form" writes (built 2026-11-12)
 
-For species `S` getting form `n` (its `forms.count` before):
+`tools/paperwhite2/pokemon_form.py add SPECIES [--from FORM] [--name NAME] [--record] [--check]`, which the editor's
+Add form runs. For species `S` getting form `n` (its `forms.count` before), copied from the species or its form `--from`:
 
-1. `res/pokemon/S/data.json`: `forms.count` + 1; `forms.sprite_offset`, if the species had no sprite forms, the next
-   free group (the highest `sprite_offset + count - 2` over the species with sprite forms, not `palette_forms`, + 1;
-   67 after the Pichu); `pokedex.forms`
-   gains `{ name, entry, height, weight, shape }` (copied from the species); `pokedex.form_name` if it had none.
-   A species that already has sprite forms can't take another in place, since its groups are consecutive and the next
-   group is another species'. If its groups are the hack's (66 on), give it a new `sprite_offset` at the end and close
-   the gap it leaves by moving the species after it down (their groups are only renumbered: the packer builds them
-   from the folders). If they are the original game's (Unown, Rotom, Kyurem...), refuse for now: the packer takes the
-   original groups from the original archive by number and needs each of 0 to 65 to stay some species' form.
-2. `res/pokemon/S/form_n/`: copies of the species' 17 battle files (`front*`, `back*`, `normal.pal`, `shiny.pal`;
-   female ones only if the species has them) and `icon.png` (`icon_female.png` likewise).
-3. Optionally `res/pokemon/S/form_n.json` (the species' record minus `name`, `pokedex`, `baby_species`,
-   `regional_dex_number`, `cry_volume`, `egg_moves`) and `["SPECIES_S", n]` appended to `res/pokemon/forms.json`, for a
-   form with its own types, stats or moves. Nothing else changes for it now.
-4. `res/field/actors/followers/S_form_n[_female][_shiny]/data.json` and their `OBJ_CODE_FOLLOWER_S_FORM_N...`
-   constants after the last follower in `generated/obj_codes.txt`, and `GetIndexOfObjID`'s last follower code
-   (`src/system/field_actor_savedata.c`) moved to the new last one (or the editor leaves followers out: form 0's rows
-   are used).
-5. Nothing for the Pokédex: `forms.count` puts the species in the generated form directory (`POKEDEX_FORM_LIST`,
-   `tools/paperwhite2/pokemon_forms.py`), in species order, and the game remaps old saves' form bits on load
-   (save-expansion.md section 11). The generator stops past 128 species with forms or 1024 forms. `forms.pokedex: false`
-   keeps a species' forms out of the Pokédex, as Arceus's and Genesect's are.
+1. `res/pokemon/S/data.json`: `forms.count` + 1; `pokedex.forms` gains `{ name, entry, height, weight, shape }`
+   (the template's, the name `--name` or "Form n"); `pokedex.form_name` the species' name if it had none.
+   `forms.sprite_offset`:
+   - a species with no sprite forms takes the next free group after the hack's own (67 after the Pichu);
+   - a species whose groups are the hack's (66 on) keeps its place, and every hack species' offset is laid out again
+     from 66 in the order of their offsets, so its new group is its own and the ones after it move up one (they are
+     only renumbered: the packer builds them from the folders);
+   - a species whose groups are the original game's (Unown, Rotom, Kyurem...) keeps its offset: the packers move its
+     forms (section 11.7).
+2. `res/pokemon/S/form_n/`: copies of the template's battle files (`front*`, `back*`, female ones where it has them),
+   `normal.pal`, `shiny.pal`, `icon.png` and `icon_female.png`. Not its cry, footprint or musical sprites, which the
+   form shares with its species.
+3. `res/pokemon/S/form_n.json` (the template's record minus `name`, `name_article`, `pokedex`, `baby_species`,
+   `regional_dex_number`, `cry_volume` and `learnset.egg_moves`; `forms` `{ count, sprite_offset 0 }`) and
+   `["SPECIES_S", n]` in `res/pokemon/forms.json` after the species' last row, with `--record`, **or always when the
+   species' forms have records**: `PML_PersonalGetDatID` reads a form's record at `formFile + form - 1` for every form
+   below the count, so a species' forms have records all or none (Rotom's 7th form without one would read Castform's).
+   Records missing for the species' other forms are made as copies of the species', and its records' `forms.count`
+   follows.
+4. The followers: `res/field/actors/followers/S_form_n[_female][_shiny]/`, copies of the template's (its own sprite
+   files too, where it has them) with `"form": n`, and their `OBJ_CODE_FOLLOWER_S_FORM_N...` constants after the last
+   follower code in `generated/obj_codes.txt`. `GetIndexOfObjID`'s range now ends at `FOLLOWING_LAST_OBJ_CODE`, which
+   `tools/paperwhite2/pokemon_forms.py` generates from the list, so the C never changes.
+5. The Wonder Trade: a species listed in `wonder_trade.forms` gets a weight for the form (its first form's); one not
+   listed receives the form anyway (section 11.8).
+6. Nothing for the Pokédex: `forms.count` puts the species in the generated form directory, and the game remaps old
+   saves' form bits on load (save-expansion.md section 11).
 
-`species_data.py` validates the result (the schema), and the packers stop on a missing file or a gap in the groups.
+`remove S n` undoes it, for the species' last form only and never an original game's form (the original counts are
+the extracted personal archive's): the folder, record, row, followers and their codes, the `pokedex.forms` entry, the
+`no_evolution` entry, the `excluded_forms` row and the form's Wonder Trade weight; `sprite_offset` 0 when no sprite
+form is left, else the hack groups laid out again; `form_name` dropped when one form is left and the original game had
+none. A middle form can't be removed (later forms would change number in saves and data): remove the forms after it
+first. `record S n on|off` gives the form (and any of the species' forms without one) a record, or removes every form
+record of a species whose forms have none in the original game. `icon` and `still` import art (section 11.6).
+
+Proven: adding a Vulpix form with a record and a 7th Rotom form, then removing both (from the tool and from the
+editor), leaves `res/` and `generated/` as they were, and the `--hack` ROM byte for byte the one before
+(`d11fd024...`).
+
+### 11.6 The editor (built 2026-11-12)
+
+- **The list** has every species and, under it, each of its `forms.count` forms by its Pokédex name (`pokedex.forms`),
+  whether or not it has a record: Pichu's Spiky-eared, Rotom's six, Castform's four, Unown's 27, with the form's icon
+  and an "added" tag on the hack's (`editor/src/modules/pokemon/forms.ts`, tested against `res/`).
+- **A species' page** has a Forms card (its forms, the sprite groups they take, "moved" for a moved species) with
+  **Add form**: copy of the species or one of its forms, the name, and "Own stats, types, abilities and moves" (forced
+  on where the species' forms have records); a dry run (`--check`) says what it will write before Add. Its Wonder
+  Trade row switches the species in and out of `excluded_species`.
+- **A form's page** (`FormPage.tsx`): its sprite (its `form_n/` art, or its species'); a Form section with Remove form
+  (the hack's last form, with a confirm listing what goes), Data ("Own stats, types, abilities and moves": on runs
+  `record on`; off, with a confirm, `record off`), Evolution ("Can't evolve", `forms.no_evolution`) and Wonder Trade
+  ("In the random pool", `excluded_forms`; an original form shows its `wonder_trade.forms` weight); its Pokédex entry
+  (name, entry, height, weight, shape); its Art (the battle sprite says "copy of <species>'s" while its `front.png` is
+  the species' file, "the rig importer, for the animated sprite, comes later"; the icon and the 96x96 front and back
+  stills import as PNGs, checked and previewed first: an icon must be 32x64 in one bank of
+  `shared/icon_palettes.pal`'s colours, which picks its bank as the build does, a still in the form's `normal.pal`
+  colours); and with a record the species page's sections on `form_n.json` (types, stats, abilities and the rest,
+  evolutions, which the game doesn't read for forms yet, learnset).
+- **The server** runs the tool: `GET /api/pokemon-forms` (the original form counts, the species with original
+  records, the moved species), `POST /api/pokemon-forms/add`, `/remove`, `/record`, `/art`. The tool writes `res/`
+  itself, not the document store, because it copies binary art and follower folders and edits `obj_codes.txt` and
+  other species' offsets in one step; the editor refuses while any of those files has unsaved edits, then reads the
+  changed files again. Everything else on the pages (names, entries, types, Can't evolve, the Wonder Trade switches)
+  is an ordinary edit, saved with Save.
+
+### 11.7 Species whose forms outgrow their original groups
+
+`tools/data/form_groups.py` lays out the groups for every packer (`pokemon_graphics.py`, `species_data.py`,
+`pokemon_forms.py`, and through them `pokedex_sprites.py`): the original 0-65 by `sprite_offset + form - 1`, then the
+hack's own offsets from 66, then **every species with more forms than its original groups** (the original counts from
+`extract/.../a/0/1/6`), moved whole, in species order, after them. A moved species keeps its original `sprite_offset`
+in `data.json` and its original groups, still built from its `form_1/` to `form_k/` folders so the archives keep the
+original layout; `species_data.py` writes the moved offset into its personal record, so `GetPokemonDataIDBase`,
+`PokeParty_GetIconIndex` and the icon palettes find every form there with no code change. An original group left
+without its form (an original form removed) stops the packers.
+
+Proven: with nothing moved, the `--hack` ROM is byte for byte the build before. With a 7th Rotom form: every member of
+`a/0/0/4` (15,085) and `a/0/0/7` (1,512) is unchanged, Rotom's six groups are appended (its form 1's cells, animations
+and info files equal group 40's; the characters and palettes are encoded in Rotom's own files' format), and its record
+gives 67 for 40.
+
+### 11.8 The Wonder Trade
+
+The forms the hack adds join the random pool (`tools/paperwhite2/pokemon_center.py`): a species with forms past the
+original game's and no `wonder_trade.forms` entry gets a generated one, weight 1 for its first form and each added
+form, 0 for its other original forms. `wonder_trade.excluded_forms` (`{ species, form }`) leaves a form out, in a
+listed species too; the Spiky-eared Pichu (the special reward) is in it, so the header is the one before. New species
+are in the pool unless `excluded_species` lists them (`LAST_SPECIES` must rise with them, section 6).
+
+### 11.9 Tested in the ROM (py-desmume, a copy of the user's save)
+
+A test build with a Vulpix form 1 ("Alolan", own record, Ice/Ice) and a 7th Rotom form ("Stereo"), both with their
+palettes tinted and icons mirrored so their groups could be told apart:
+- the save's upgrade on load (the user's save has no area yet) equals `pokedex_save.py upgrade`'s byte for byte; the
+  directory has 23 species (Vulpix first), and Keldeo's marks (form 0 seen and shown, form 1 seen) moved to bits 84
+  and 85 with their values;
+- party icons (both mirrored, the plain Vulpix and Heat Rotom as before), the follower a Vulpix, summaries: Vulpix
+  form 1 Ice with the tinted sprite, Rotom form 6 Electric/Ghost with its tinted sprite, a plain Vulpix Fire, Heat
+  Rotom (from its moved group) as before;
+- after the debug Fill Pokédex, the Info page's Form button: "Alolan" (Ice) and "Vulpix" (Fire); Rotom's seven
+  ("Stereo", Rotom, Heat, Wash, Frost, Fan, Mow) with their names, types, entries and sizes. Against the baseline ROM on
+  the same save, Rotom's six original pages are the same apart from the animated background and the sprite's frame.
+
+Removing both forms gave back the baseline ROM (`d11fd024...`).
 
 ## 12. New species' Pokédex numbers (the user's direction, 2026-11-12)
 
