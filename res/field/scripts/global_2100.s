@@ -1,5 +1,8 @@
 #include "asm/field_script.inc"
 #include "text/script/global_2100.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/pokemon_center.h"
+#endif
 
 // Script plugin 13, from the zones that start its scripts
 
@@ -14,6 +17,9 @@
     ScriptEntry Script_9
     ScriptEntry Script_10
     ScriptEntry Script_11
+#ifdef PAPERWHITE2
+    ScriptEntry Script_12
+#endif
     ScriptEntriesEnd
 
 Script_3:
@@ -490,6 +496,372 @@ Movement_065C:
     MoveEnd
 
 Script_2:
+#ifdef PAPERWHITE2
+    // Paper White 2: the Union Room's counter (the left of the three upstairs) is the Day Care attendant's, in every
+    // Pokémon Center: through the tube behind her she sends Pokémon to the Route 3 Day Care, brings them home, collects
+    // its Egg and asks the couple how the pair get along, using the Day Care's own commands (global_2200.s). Each
+    // transfer costs the Center's fee (res/paperwhite2/pokemon_center/services.json, paperwhite2/pokemon_center.h) and
+    // a withdrawal the Day Care's fee too. She walks to the tube for each one (SCRID_POKEMON_CENTER_ATTENDANT_TUBE).
+    // docs/paperwhite2/design/pokemon-center.md
+    ActorsPauseAll
+    SEPlay SEQ_SE_MESSAGE
+    ActorSetEyeToEye
+    VMStackPushFlag EVENT_FLAG_0x0069
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMJumpIf CMP_STACK, L_DayCareNotYet
+    MoneyWinDisp 31, 1
+    VMStackPushFlag EVENT_FLAG_DAYCARE_COUNTER_EXPLAINED
+    VMStackPushConst 1
+    VMStackCmp CMP_EQ
+    VMJumpIf CMP_STACK, L_DayCareFirstVisit
+    VMCall L_DayCareGetState
+    WorkCmpConst 0x8020, 1
+    VMJumpIf CMP_EQ, L_DayCareWelcomeEgg
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareWelcome, 0x8011, 4, 0
+    VMJump L_DayCareGreeted
+
+L_DayCareWelcomeEgg:
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareWelcomeEgg, 0x8011, 4, 0
+    VMJump L_DayCareGreeted
+
+L_DayCareFirstVisit:
+    PokemonCenter POKEMON_CENTER_ACTION_GET_FEE, POKEMON_CENTER_FEE_DAYCARE_TRANSFER, 0, 0x8029
+    WordSetNumber 0, 0x8029, 5
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareFirstVisit, 0x8011, 4, 0
+    FlagSet EVENT_FLAG_DAYCARE_COUNTER_EXPLAINED
+
+L_DayCareGreeted:
+    VMCall L_DayCareGetState
+    WorkCmpConst 0x8020, 1
+    VMJumpIf CMP_NE, L_DayCareMenu
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareEggNews, 0x8011, 4, 0
+    VMCall L_DayCareEgg
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareAnythingElse, 0x8011, 4, 0
+
+L_DayCareMenu:
+    VMCall L_DayCareGetState
+    ListMenuAnchorTopRight 31, 5, 0, 1, 0x8024
+    WorkCmpConst 0x8021, 2
+    VMJumpIf CMP_GE, L_DayCareMenuNoSend
+    ListMenuAdd Global2100_Text_DayCareMenuSend, 65535, 0
+
+L_DayCareMenuNoSend:
+    WorkCmpConst 0x8021, 0
+    VMJumpIf CMP_EQ, L_DayCareMenuNoBring
+    ListMenuAdd Global2100_Text_DayCareMenuBring, 65535, 1
+
+L_DayCareMenuNoBring:
+    WorkCmpConst 0x8020, 1
+    VMJumpIf CMP_NE, L_DayCareMenuNoEgg
+    ListMenuAdd Global2100_Text_DayCareMenuEgg, 65535, 2
+
+L_DayCareMenuNoEgg:
+    WorkCmpConst 0x8021, 0
+    VMJumpIf CMP_EQ, L_DayCareMenuNoAsk
+    ListMenuAdd Global2100_Text_DayCareMenuAsk, 65535, 3
+
+L_DayCareMenuNoAsk:
+    ListMenuAdd Global2100_Text_Cancel, 65535, 4
+    ListMenuShow
+    WorkCmpConst 0x8024, 0
+    VMJumpIf CMP_NE, L_DayCareChoseNotSend
+    VMCall L_DayCareSend
+    VMJump L_DayCareAgain
+
+L_DayCareChoseNotSend:
+    WorkCmpConst 0x8024, 1
+    VMJumpIf CMP_NE, L_DayCareChoseNotBring
+    VMCall L_DayCareBring
+    VMJump L_DayCareAgain
+
+L_DayCareChoseNotBring:
+    WorkCmpConst 0x8024, 2
+    VMJumpIf CMP_NE, L_DayCareChoseNotEgg
+    VMCall L_DayCareEgg
+    VMJump L_DayCareAgain
+
+L_DayCareChoseNotEgg:
+    WorkCmpConst 0x8024, 3
+    VMJumpIf CMP_NE, L_DayCareBye
+    VMCall L_DayCareAsk
+
+L_DayCareAgain:
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareAnythingElse, 0x8011, 4, 0
+    VMJump L_DayCareMenu
+
+L_DayCareBye:
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_PleaseVisitAgain, 0x8011, 4, 0
+    LastKeyWait
+    ActorMsgClose
+    MoneyWinClose
+    VMJump L_DayCareEnd
+
+L_DayCareNotYet:
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareNotYet, 0x8011, 4, 0
+    LastKeyWait
+    ActorMsgClose
+
+L_DayCareEnd:
+    WorkSetConst 0x8020, 0
+    WorkSetConst 0x8021, 0
+    WorkSetConst 0x8022, 0
+    WorkSetConst 0x8023, 0
+    WorkSetConst 0x8024, 0
+    WorkSetConst 0x8025, 0
+    WorkSetConst 0x8026, 0
+    WorkSetConst 0x8027, 0
+    WorkSetConst 0x8028, 0
+    WorkSetConst 0x8029, 0
+    WorkSetConst 0x802a, 0
+    WorkSetConst 0x802b, 0
+    WorkSetConst 0x802c, 0
+    WorkSetConst 0x802d, 0
+    WorkSetConst 0x802e, 0
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+
+// The Day Care's state: 0x8020 1 if it has an Egg, 0x8021 how many Pokémon it has, and the party's Pokémon, 0x8022
+// with Eggs and 0x8023 without (global_2200.s's)
+L_DayCareGetState:
+    DayCareCheckSpawnFlag 0x8020
+    DayCareGetPkmCount 0x8021
+    PokePartyGetCount 0x8022, 0
+    PokePartyGetCount 0x8023, 2
+    VMReturn
+
+// Sends a Pokémon of the party to the Day Care, for the transfer fee
+L_DayCareSend:
+    WorkCmpConst 0x8023, 1
+    VMJumpIf CMP_NE, L_DayCareSendNotOnly
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareOnlyPokemon, 0x8011, 4, 0
+    VMReturn
+
+L_DayCareSendNotOnly:
+    WorkCmpConst 0x8023, 2
+    VMJumpIf CMP_GT, L_DayCareSendPick
+    BoxGetCount 0x8027, 1
+    WorkCmpConst 0x8027, 0
+    VMJumpIf CMP_NE, L_DayCareSendPick
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareLastTwo, 0x8011, 4, 0
+    VMReturn
+
+L_DayCareSendPick:
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareSendWhich, 0x8011, 4, 0
+    ActorMsgClose
+    DayCareCallPokeSelect 0x8026
+    MoneyWinDisp 31, 1
+    WorkCmpWork 0x8026, 0x8022
+    VMJumpIf CMP_LT, L_DayCareSendPicked
+    VMReturn
+
+L_DayCareSendPicked:
+    PokePartyIsEgg 0x8027, 0x8026
+    WorkCmpConst 0x8027, 1
+    VMJumpIf CMP_NE, L_DayCareSendNotEgg
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareThatsEgg, 0x8011, 4, 0
+    VMReturn
+
+L_DayCareSendNotEgg:
+    PokemonCenter POKEMON_CENTER_ACTION_GET_FEE, POKEMON_CENTER_FEE_DAYCARE_TRANSFER, 0, 0x8029
+    WordSetPartyPokeName 0, 0x8026
+    WordSetNumber 1, 0x8029, 5
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareSendCost, 0x8011, 4, 0
+    YesNoWin 0x8025
+    WorkCmpConst 0x8025, 0
+    VMJumpIf CMP_EQ, L_DayCareSendPay
+    VMReturn
+
+L_DayCareSendPay:
+    PokemonCenter POKEMON_CENTER_ACTION_PAY_FEE, POKEMON_CENTER_FEE_DAYCARE_TRANSFER, 0, 0x802a
+    WorkCmpConst 0x802a, 1
+    VMJumpIf CMP_EQ, L_DayCareSendPaid
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareNoMoney, 0x8011, 4, 0
+    VMReturn
+
+L_DayCareSendPaid:
+    MoneyWinUpdate
+    SEPlay SEQ_SE_SYS_22
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareSending, 0x8011, 4, 0
+    ActorMsgClose
+    PokePartyGetSpecies 0x802b, 0x8026
+    PokePartyGetForme 0x802c, 0x8026
+    PokeVoicePlay 0x802b, 0x802c
+    DayCareDeposit 0x8026
+    RecordAdd 24, 1
+    RTCallGlobal SCRID_POKEMON_CENTER_ATTENDANT_TUBE
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareSent, 0x8011, 4, 0
+    VMReturn
+
+// Brings a Pokémon home from the Day Care, for its fee and the transfer fee
+L_DayCareBring:
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareBringWhich, 0x8011, 4, 0
+    ListMenuAnchorTopRight 31, 5, 0, 1, 0x8026
+    WorkSetConst 0x802d, 0
+
+L_DayCareBringList:
+    WorkCmpWork 0x802d, 0x8021
+    VMJumpIf CMP_GE, L_DayCareBringListed
+    DayCareCalcNewLevel 0x8027, 0x802d
+    WordSetDaycarePokeName 0, 0x802d
+    WordSetNumber 1, 0x8027, 3
+    DayCareGetSexForNamePrint 0x802e, 0, 0x802d
+    WorkCmpConst 0x802e, 1
+    VMJumpIf CMP_NE, L_DayCareBringNotMale
+    ListMenuAdd Global2100_Text_DayCareLvMale, 65535, 0x802d
+    VMJump L_DayCareBringNext
+
+L_DayCareBringNotMale:
+    WorkCmpConst 0x802e, 2
+    VMJumpIf CMP_NE, L_DayCareBringNoSex
+    ListMenuAdd Global2100_Text_DayCareLvFemale, 65535, 0x802d
+    VMJump L_DayCareBringNext
+
+L_DayCareBringNoSex:
+    ListMenuAdd Global2100_Text_DayCareLv, 65535, 0x802d
+
+L_DayCareBringNext:
+    WorkAdd 0x802d, 1
+    VMJump L_DayCareBringList
+
+L_DayCareBringListed:
+    ListMenuAdd Global2100_Text_Cancel, 65535, 2
+    ListMenuShow
+    WorkCmpConst 0x8026, 2
+    VMJumpIf CMP_LT, L_DayCareBringPicked
+    VMReturn
+
+L_DayCareBringPicked:
+    DayCareCalcLevelGain 0x8027, 0x8026
+    DayCareCalcWithdrawCost 0x8028, 0x8026
+    WordSetDaycarePokeName 0, 0x8026
+    WorkCmpConst 0x8027, 0
+    VMJumpIf CMP_EQ, L_DayCareBringPrice
+    WorkCmpConst 0x8027, 1
+    VMJumpIf CMP_NE, L_DayCareBringGrown
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareGrownOne, 0x8011, 4, 0
+    VMJump L_DayCareBringPrice
+
+L_DayCareBringGrown:
+    WordSetNumber 1, 0x8027, 2
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareGrown, 0x8011, 4, 0
+
+L_DayCareBringPrice:
+    PokemonCenter POKEMON_CENTER_ACTION_GET_FEE, POKEMON_CENTER_FEE_DAYCARE_TRANSFER, 0, 0x8029
+    WordSetNumber 1, 0x8028, 5
+    WordSetNumber 2, 0x8029, 5
+    PokemonCenter POKEMON_CENTER_ACTION_GET_FEE, POKEMON_CENTER_FEE_DAYCARE_TRANSFER, 0x8028, 0x8029
+    WordSetNumber 3, 0x8029, 6
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareBringCost, 0x8011, 4, 0
+    YesNoWin 0x8025
+    WorkCmpConst 0x8025, 0
+    VMJumpIf CMP_EQ, L_DayCareBringRoom
+    VMReturn
+
+L_DayCareBringRoom:
+    PokePartyGetCount 0x8027, 5
+    WorkCmpConst 0x8027, 0
+    VMJumpIf CMP_NE, L_DayCareBringPay
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCarePartyFull, 0x8011, 4, 0
+    VMReturn
+
+L_DayCareBringPay:
+    PokemonCenter POKEMON_CENTER_ACTION_PAY_FEE, POKEMON_CENTER_FEE_DAYCARE_TRANSFER, 0x8028, 0x802a
+    WorkCmpConst 0x802a, 1
+    VMJumpIf CMP_EQ, L_DayCareBringPaid
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareNoMoney, 0x8011, 4, 0
+    VMReturn
+
+L_DayCareBringPaid:
+    MoneyWinUpdate
+    SEPlay SEQ_SE_SYS_22
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareBringing, 0x8011, 4, 0
+    ActorMsgClose
+    RTCallGlobal SCRID_POKEMON_CENTER_ATTENDANT_TUBE
+    DayCareGetSpecies 0x802b, 0x8026
+    DayCareGetForme 0x802c, 0x8026
+    PokeVoicePlay 0x802b, 0x802c
+    WordSetDaycarePokeName 0, 0x8026
+    WordSetPlayerName 1
+    SystemMsg Global2100_Text_DayCareBrought, 2
+    SystemMsgClose
+    DayCareWithdraw 0x8026
+    VMReturn
+
+// Collects the Day Care's Egg, for the transfer fee, or leaves it with the couple for later
+L_DayCareEgg:
+    PokemonCenter POKEMON_CENTER_ACTION_GET_FEE, POKEMON_CENTER_FEE_DAYCARE_TRANSFER, 0, 0x8029
+    WordSetNumber 1, 0x8029, 5
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareEggCost, 0x8011, 4, 0
+    YesNoWin 0x8025
+    WorkCmpConst 0x8025, 0
+    VMJumpIf CMP_EQ, L_DayCareEggRoom
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareEggLater, 0x8011, 4, 0
+    VMReturn
+
+L_DayCareEggRoom:
+    WorkCmpConst 0x8022, 6
+    VMJumpIf CMP_LT, L_DayCareEggPay
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareEggNoRoom, 0x8011, 4, 0
+    VMReturn
+
+L_DayCareEggPay:
+    PokemonCenter POKEMON_CENTER_ACTION_PAY_FEE, POKEMON_CENTER_FEE_DAYCARE_TRANSFER, 0, 0x802a
+    WorkCmpConst 0x802a, 1
+    VMJumpIf CMP_EQ, L_DayCareEggPaid
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareNoMoney, 0x8011, 4, 0
+    VMReturn
+
+L_DayCareEggPaid:
+    MoneyWinUpdate
+    SEPlay SEQ_SE_SYS_22
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareEggComing, 0x8011, 4, 0
+    ActorMsgClose
+    RTCallGlobal SCRID_POKEMON_CENTER_ATTENDANT_TUBE
+    DayCareBreed
+    WordSetPlayerName 0
+    MEPlay SEQ_ME_TAMAGO_GET
+    SystemMsg Global2100_Text_DayCareEggReceived, 0
+    MEWait
+    MsgWaitAdvance
+    SystemMsgClose
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareEggCare, 0x8011, 4, 0
+    VMReturn
+
+// Asks the couple how the Pokémon are doing, and how the two get along (global_2200.s's L_01E5)
+L_DayCareAsk:
+    WordSetDaycarePokeName 0, 0
+    WordSetDaycarePokeName 1, 1
+    WorkCmpConst 0x8021, 1
+    VMJumpIf CMP_NE, L_DayCareAskPair
+    ActorMsg MSGFILE_SCRIPT, Global2100_Text_DayCareAskOne, 0x8011, 4, 0
+    VMReturn
+
+L_DayCareAskPair:
+    // The chances are the Day Care's 70, 50, 20 and 0, or 88, 80, 40 and 0 with the Oval Charm
+    DayCareCalcEggSpawnChance 0x8027
+    WorkSetConst 0x8029, Global2100_Text_DayCareAskVeryWell
+    WorkCmpConst 0x8027, 88
+    VMJumpIf CMP_EQ, L_DayCareAskSay
+    WorkCmpConst 0x8027, 70
+    VMJumpIf CMP_EQ, L_DayCareAskSay
+    WorkSetConst 0x8029, Global2100_Text_DayCareAskWell
+    WorkCmpConst 0x8027, 80
+    VMJumpIf CMP_EQ, L_DayCareAskSay
+    WorkCmpConst 0x8027, 50
+    VMJumpIf CMP_EQ, L_DayCareAskSay
+    WorkSetConst 0x8029, Global2100_Text_DayCareAskNotMuch
+    WorkCmpConst 0x8027, 40
+    VMJumpIf CMP_EQ, L_DayCareAskSay
+    WorkCmpConst 0x8027, 20
+    VMJumpIf CMP_EQ, L_DayCareAskSay
+    WorkSetConst 0x8029, Global2100_Text_DayCareAskOthers
+
+L_DayCareAskSay:
+    ActorMsg MSGFILE_SCRIPT, 0x8029, 0x8011, 4, 0
+    VMReturn
+#else
     ActorsPauseAll
     WorkSetConst 0x802a, 0
     WorkSetConst 0x802b, 0
@@ -700,6 +1072,7 @@ L_09A1:
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
+#endif
 
 Script_6:
     VMCall L_09CD
@@ -1250,3 +1623,34 @@ L_10C0:
 Movement_10D0:
     Move 0, 1
     MoveEnd
+
+#ifdef PAPERWHITE2
+// Paper White 2: SCRID_POKEMON_CENTER_ATTENDANT_TUBE (paperwhite2/pokemon_center.h), the upstairs attendants' trip to
+// the tube behind their counter, for each transfer: the attendant the player talked to (0x8011) turns to the tube,
+// steps up to it, waits while it runs with its sound, and steps back facing the player. Called with RTCallGlobal with
+// the message window closed; it changes no variable, so any attendant's script can call it
+Script_12:
+    ActorCmdExec 0x8011, Movement_AttendantToTube
+    ActorCmdWait
+    SEPlay SEQ_SE_PC_LOGIN
+    SEWait
+    ActorCmdExec 0x8011, Movement_AttendantFromTube
+    ActorCmdWait
+    RTEndGlobal
+    VMHalt
+    .balign 4, 0
+
+Movement_AttendantToTube:
+    Move 0, 1
+    Move 63, 1
+    Move 8, 1
+    Move 0, 1
+    Move 65, 1
+    MoveEnd
+
+Movement_AttendantFromTube:
+    Move 65, 1
+    Move 9, 1
+    Move 1, 1
+    MoveEnd
+#endif

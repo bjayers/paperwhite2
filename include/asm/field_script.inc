@@ -3824,9 +3824,18 @@
     .2byte \a1
     .endm
 
+    // Paper White 2: the Pokémon Center attendants': runs one of their actions (POKEMON_CENTER_ACTION_*, paperwhite2/pokemon_center.h) with two arguments and puts the result in a variable: a fee of res/paperwhite2/pokemon_center/services.json, or paying it (include/paperwhite2/pokemon_center_commands.h)
+    .macro PokemonCenter a0, a1, a2, a3
+    FieldCommand 759
+    .2byte \a0
+    .2byte \a1
+    .2byte \a2
+    .2byte \a3
+    .endm
+
     // Paper White 2: the debug menu's, under PAPERWHITE2_DEBUG_MENU: runs one of its actions (DEBUG_ACTION_*, paperwhite2/debug_actions.h) with two arguments and puts the result in a variable (include/paperwhite2/debug_commands.h)
     .macro Debug a0, a1, a2, a3
-    FieldCommand 759
+    FieldCommand 760
     .2byte \a0
     .2byte \a1
     .2byte \a2

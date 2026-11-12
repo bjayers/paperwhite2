@@ -93,6 +93,9 @@ DESCRIPTIONS = {
 
 # What each script that the hack added does, by its ID
 HACK_SCRIPTS = {
+    2111: "The Pokémon Center attendants' trip to the tube behind their counter: the attendant talked to (0x8011) "
+          "steps up to it, waits with its sound and steps back facing the player; RTCallGlobal'd for each transfer "
+          "(`SCRID_POKEMON_CENTER_ATTENDANT_TUBE`, include/paperwhite2/pokemon_center.h)",
     2818: "The Exp. Share toggle, which the Y button's shortcut starts (`SCRID_EXP_SHARE_TOGGLE`, "
           "include/paperwhite2/exp_share.h)",
     2819: "The Shiny Candy drop after a wild battle won against a shiny Pokémon (`SCRID_SHINY_CANDY_DROP`, "
@@ -100,6 +103,8 @@ HACK_SCRIPTS = {
     2820: "The Version Key's message, Unova as in Black 2 (`SCRID_VERSION_KEY_BLACK`, include/paperwhite2/version_key.h)",
     2821: "The Version Key's message, Unova as in White 2 (`SCRID_VERSION_KEY_WHITE`, include/paperwhite2/version_key.h)",
     2822: "The Version Key's \"can't be used here\" (`SCRID_VERSION_KEY_NOT_HERE`, include/paperwhite2/version_key.h)",
+    2823: "Loads the map again where the player stands, after a script sets a place's flag or the Regi chamber "
+          "(`SCRID_RELOAD_MAP_HERE`; plugins.md, Version places)",
     9603: "The new game's starting flags, the original's subroutine of scripts 9600 and 9602 given an entry by the "
           "hack's data; nothing starts it by its ID",
     9604: "The survey's answers by the version and the player's sex, the original's subroutine of script 9600 given an "

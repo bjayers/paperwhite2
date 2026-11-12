@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Pokémon Center services",
+  "description": "The fees, rates and lists of the Pokémon Centers' upstairs attendants (docs/paperwhite2/design/pokemon-center.md): the Day Care attendant, Training Services and the Wonder Trade. tools/paperwhite2/pokemon_center.py checks the whole file and writes the parts the game reads into paperwhite2/pokemon_center_config.h; so far that is the Day Care's, which is built. The other two sections are the design's proposed values, checked but not read by the game until their services are built.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [ "daycare", "training", "wonder_trade" ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "daycare": {
+      "type": "object", "additionalProperties": false, "required": [ "transfer_fee" ],
+      "description": "The Day Care attendant (the left counter): remote access to the Route 3 Day Care through the tube behind her",
+      "properties": {
+        "transfer_fee": { "type": "integer", "minimum": 0, "maximum": 50000, "description": "The Center's fee in Pokédollars for each transfer through the tube: a deposit, a withdrawal or an Egg. A withdrawal also costs the Day Care's own fee (100 + 100 a level gained)" }
+      }
+    },
+    "training": {
+      "type": "object", "additionalProperties": false,
+      "required": [ "name_rater", "move_relearner", "move_deleter", "hyper_training", "effort_reset", "ability", "grooming", "ball_change" ],
+      "description": "Training Services (proposed, not built yet): one attendant with a scrolling list of services",
+      "properties": {
+        "name_rater": { "$ref": "#/$defs/price", "description": "Renaming a Pokémon; ones with another OT are refused" },
+        "move_relearner": {
+          "type": "object", "additionalProperties": false, "required": [ "price", "item", "item_count" ],
+          "description": "The relearner's screen, for money and an item",
+          "properties": {
+            "price": { "$ref": "#/$defs/money" },
+            "item": { "type": "string", "x-constant": "ITEM_", "description": "The item taken too (ITEM_HEART_SCALE)" },
+            "item_count": { "type": "integer", "minimum": 0, "maximum": 99 }
+          }
+        },
+        "move_deleter": { "$ref": "#/$defs/price", "description": "The deleter's screen" },
+        "hyper_training": {
+          "type": "object", "additionalProperties": false, "required": [ "bp_per_stat", "level_after_champion" ],
+          "description": "One stat's IV to 31, for Battle Points",
+          "properties": {
+            "bp_per_stat": { "type": "integer", "minimum": 0, "maximum": 9999 },
+            "level_after_champion": { "type": "integer", "minimum": 1, "maximum": 100, "description": "The least level once the player is Champion" }
+          }
+        },
+        "effort_reset": {
+          "type": "object", "additionalProperties": false, "required": [ "one_stat", "all_stats" ],
+          "description": "Resetting EVs",
+          "properties": {
+            "one_stat": { "$ref": "#/$defs/money" },
+            "all_stats": { "$ref": "#/$defs/money" }
+          }
+        },
+        "ability": {
+          "type": "object", "additionalProperties": false, "required": [ "swap", "hidden" ],
+          "description": "Swapping the two normal abilities, or changing to the hidden one",
+          "properties": {
+            "swap": { "$ref": "#/$defs/money" },
+            "hidden": { "$ref": "#/$defs/money" }
+          }
+        },
+        "grooming": {
+          "type": "array", "minItems": 1, "maxItems": 8,
+          "description": "The grooming courses, each raising friendship",
+          "items": {
+            "type": "object", "additionalProperties": false, "required": [ "name", "friendship", "price" ],
+            "properties": {
+              "name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+              "friendship": { "type": "integer", "minimum": 1, "maximum": 255 },
+              "price": { "$ref": "#/$defs/money" }
+            }
+          }
+        },
+        "ball_change": { "$ref": "#/$defs/price", "description": "Moving a Pokémon into a ball from the bag, which is taken too" }
+      }
+    },
+    "wonder_trade": {
+      "type": "object", "additionalProperties": false,
+      "required": [ "fee", "level_spread", "languages", "shiny_one_in", "hidden_ability_percent", "perfect_ivs_percent", "pokerus_percent", "nickname_percent", "held_item_percent", "item_tiers", "special_reward" ],
+      "description": "The Wonder Trade (proposed, not built yet)",
+      "properties": {
+        "fee": { "$ref": "#/$defs/money" },
+        "level_spread": { "type": "integer", "minimum": 0, "maximum": 99, "description": "The received Pokémon's level is the sent one's plus or minus up to this, clamped to 1-100" },
+        "languages": {
+          "type": "array", "minItems": 1, "maxItems": 7,
+          "description": "The original trainers' languages, each with its weight",
+          "items": {
+            "type": "object", "additionalProperties": false, "required": [ "language", "weight" ],
+            "properties": {
+              "language": { "enum": [ "japanese", "english", "french", "italian", "german", "spanish", "korean" ] },
+              "weight": { "type": "integer", "minimum": 0, "maximum": 1000 }
+            }
+          }
+        },
+        "shiny_one_in": { "type": "integer", "minimum": 1, "maximum": 65536, "description": "1 in this many is shiny" },
+        "hidden_ability_percent": { "$ref": "#/$defs/percent" },
+        "perfect_ivs_percent": { "$ref": "#/$defs/percent", "description": "Chance of three perfect IVs" },
+        "pokerus_percent": { "$ref": "#/$defs/percent" },
+        "nickname_percent": { "$ref": "#/$defs/percent" },
+        "held_item_percent": { "$ref": "#/$defs/percent" },
+        "item_tiers": {
+          "type": "array", "minItems": 1, "maxItems": 8,
+          "description": "The held items' tiers, each with its weight (out of the tiers' total) and items, drawn evenly unless an item has its own weight",
+          "items": {
+            "type": "object", "additionalProperties": false, "required": [ "name", "weight", "items" ],
+            "properties": {
+              "name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+              "weight": { "type": "integer", "minimum": 0, "maximum": 1000 },
+              "items": {
+                "type": "array", "minItems": 1,
+                "items": {
+                  "anyOf": [
+                    { "type": "string", "x-constant": "ITEM_" },
+                    {
+                      "type": "object", "additionalProperties": false, "required": [ "item", "weight" ],
+                      "properties": {
+                        "item": { "type": "string", "x-constant": "ITEM_" },
+                        "weight": { "type": "integer", "minimum": 1, "maximum": 1000 }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "special_reward": {
+          "type": "object", "additionalProperties": false, "required": [ "enabled", "percent", "guaranteed_at" ],
+          "description": "The one-time special reward (the Spiky-eared Pichu), off until its form and sprite exist",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "percent": { "$ref": "#/$defs/percent", "description": "Chance a trade until it is received" },
+            "guaranteed_at": { "type": "integer", "minimum": 1, "maximum": 65535, "description": "The trade that gives it at the latest" }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "money": { "type": "integer", "minimum": 0, "maximum": 999999, "description": "Pokédollars" },
+    "price": {
+      "type": "object", "additionalProperties": false, "required": [ "price" ],
+      "properties": { "price": { "$ref": "#/$defs/money" } }
+    },
+    "percent": { "type": "integer", "minimum": 0, "maximum": 100 }
+  }
+}
