@@ -368,13 +368,28 @@ map, to choose a chunk; the middle button orbits, the right pans and the wheel z
 
 ## The Pokémon Editor
 
-Every species and form (`src/modules/pokemon/`, `res/pokemon/<species>/data.json` and `form_<n>/data.json`), by number
-with their icons. A species' page has its front sprite (normal or shiny), its name and types, its base stats as bars
+Every species (`src/modules/pokemon/`, `res/pokemon/<species>/data.json`), by number with their icons, and under each
+its alternate forms, every one its `forms.count` gives, by its Pokédex name (`pokedex.forms`), whether or not it has a
+record (`form_<n>.json`); the hack's are tagged "added". A species' page has its front sprite (normal or shiny), its name and types, its base stats as bars
 with their total and its EV yields, its abilities, held items, breeding and the rest of its record, its evolutions
 (each method's parameter as an item, a move, a species or a number, as the method takes) with the family's tree, whose
 members open with a click, its learnset (by level, sorted; TMs and HMs; tutors; egg moves) and its Pokédex data. Save
 (Ctrl+S) checks each file with the build's validator. `<SpeciesIcon species={...} />` is a species' party icon in the
 colors poke_icon.c gives it, for any editor.
+
+Forms (`FormPage.tsx`, docs/paperwhite2/design/forms-and-species.md section 11.6):
+- A species' **Forms** card lists its forms and the sprite groups they take, and **Add form** makes a new one from the
+  species or one of its forms: a name, and "Own stats, types, abilities and moves" (a record of its own; always, where
+  the species' forms have records). A dry run says what it will write first. Its Wonder Trade row puts the species in
+  or out of the random pool (`excluded_species`).
+- A **form's page** has its sprite and icon, a Form section (Data: its own record on or off; Evolution: Can't evolve,
+  `forms.no_evolution`; Wonder Trade: in the random pool or not, `excluded_forms`; **Remove form** for the hack's last
+  form), its Pokédex entry, its Art (the icon and the 96x96 stills imported as PNGs, checked and previewed, the icon's
+  palette bank picked from its colours; the animated battle sprite waits for the rig importer) and, with a record, the
+  same data sections as a species.
+- Adding, removing and records run `tools/paperwhite2/pokemon_form.py` on the server (`/api/pokemon-forms`, `/add`,
+  `/remove`, `/record`, `/art`), which writes `res/` itself (art and follower folders, `obj_codes.txt`, other species'
+  offsets): the editor refuses while those files have unsaved edits, and reads the changed files again after.
 
 ## The Trainer Editor
 

@@ -2,6 +2,33 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-12: Add form in the editor (ROM session, which owns `editor/` for now)
+
+Built as design/forms-and-species.md section 11.5 planned it (now sections 11.5 to 11.9):
+
+- **The Pokémon Editor lists every form under its species** (Pichu's Spiky-eared, Rotom's six, Castform's four...),
+  each with a page: its Pokédex text, sprite and icon, "Own stats, types, abilities and moves" (a record of its own),
+  "Can't evolve", "In the random pool" (the Wonder Trade), its art, and with a record the species' data sections.
+- **Add form** on every species' page copies the species or one of its forms (data, Pokédex text, art, followers,
+  optional record) as a new form; **Remove form** undoes it for the hack's last form. Both run
+  `tools/paperwhite2/pokemon_form.py` (also `record`, `icon`, `still`; `--check` for a dry run), which the server calls.
+- **Any species can take a form:** one whose forms outgrow its original sprite groups (a 7th Rotom) has them moved to
+  the hack's groups by the packers (`tools/data/form_groups.py`), with no code change.
+- **No C edit for followers any more:** `GetIndexOfObjID`'s last follower code is generated (`FOLLOWING_LAST_OBJ_CODE`).
+- **Wonder Trade:** new forms are received unless `wonder_trade.excluded_forms` lists them (the Pichu's form is);
+  new species unless `excluded_species` does.
+- **Art import:** a form's icon (32x64 PNG; its palette bank picked from its colours) and 96x96 stills. The animated
+  battle sprite is a copy of the template's until the rig importer.
+
+Tested: the hack ROM is byte for byte the one before with no forms added, and again after adding and removing a Vulpix
+form and a 7th Rotom form (from the editor and from the tool). In py-desmume on a copy of the user's save, with a test
+build holding both: the save upgrade equals the tool's, Keldeo's marks kept; summary Ice type and the form's own
+sprite and icon; the Info page's Form button lists "Alolan" and Rotom's seven; Rotom's original pages as before.
+Editor: typecheck, 75 tests, build. Screenshots in the session scratchpad (`addform/shots/`).
+
+Open: only a species' last form can be removed; a form's own evolutions are packed but not read (evolutions are by
+species); the battle sprite needs the rig importer; Arceus's palette forms can't take a form.
+
 ## 2026-11-12: the save expansion, a Pokédex for 1500 species (ROM session)
 
 Built as design/save-expansion.md designed it, with the user's decisions (its section 11; plugins.md "Save expansion"):

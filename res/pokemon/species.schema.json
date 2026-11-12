@@ -113,7 +113,7 @@
                 "count": { "$ref": "#/$defs/u8", "description": "The number of forms, 1 for a species without forms" },
                 "sprite_offset": {
                     "$ref": "#/$defs/u16",
-                    "description": "Where the forms' sprites start among the alternate forms' sprites: form n's sprite group is sprite_offset + n - 1, its art res/pokemon/<species>/form_<n>/. Groups 0 to 65 are the original game's; from 66 they are Paper White 2's, which the battle sprites' archive appends after the Substitute's files and Arceus' palettes, and which must follow 65 without gaps (tools/data/pokemon_graphics.py). 0 for none, and for forms told apart only by their palette (palette_forms) an index of the palettes instead"
+                    "description": "Where the forms' sprites start among the alternate forms' sprites: form n's sprite group is sprite_offset + n - 1, its art res/pokemon/<species>/form_<n>/. Groups 0 to 65 are the original game's; from 66 they are Paper White 2's, which the battle sprites' archive appends after the Substitute's files and Arceus' palettes, and which must follow 65 without gaps (tools/data/pokemon_graphics.py). A species with more forms than its original groups keeps its original offset here, and the packers move all its forms after the hack's groups, giving its record the moved offset (tools/data/form_groups.py). 0 for none, and for forms told apart only by their palette (palette_forms) an index of the palettes instead"
                 },
                 "no_evolution": {
                     "type": "array", "items": { "type": "integer", "minimum": 1, "maximum": 31 },

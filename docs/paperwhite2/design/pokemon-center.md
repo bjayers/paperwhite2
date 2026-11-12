@@ -330,7 +330,14 @@ The user's requests after trying the three attendants.
   forms are battle-only), Rotom (its appliance forms come from an event with their own move,
   `PML_ChangeRotomForme`, and a received one couldn't change back without it), the Pichu's special form, Arceus and
   Genesect (by item) and the excluded legendaries and mythicals (Giratina, Shaymin, Deoxys, Meloetta, Keldeo, Kyurem,
-  the Forces of Nature). The species falls back to its pre-evolution first, then the form is picked for it. The
+  the Forces of Nature). **The forms the hack adds** (past the original game's `forms.count`, such as the editor's Add
+  form makes) are received without being listed: a species with such forms and no `wonder_trade.forms` entry gets a
+  generated one, weight 1 for its first form and each added form, 0 for its other original ones (2026-11-12,
+  `pokemon_center.py`'s `form_entries`). `wonder_trade.excluded_forms` (`{ species, form }`, the editor's "In the
+  random pool" switch on a form's page) leaves one out, in a listed species too; it holds the Spiky-eared Pichu, the
+  special reward. A form that changes only by an event or item (a new Rotom appliance) should be left out, as Rotom's
+  are. A new species is received unless `excluded_species` lists it (the species page's switch). The species falls
+  back to its pre-evolution first, then the form is picked for it. The
   Pokémon is made as the game makes a wild one of a form (`enc_pokeset.c`): `PokeParty_ChangeForme` (the form's
   ability from the PID's slot, its sex and stats), then the form's level-up moves (`PokeParty_SetDefaultMoves`,
   Wormadam's differ), a hidden ability for the form, and the PID for the form (`PML_GenPID`). Evolution keeps the

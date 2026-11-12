@@ -2421,8 +2421,17 @@ The hack's own forms of existing species, first the Spiky-eared Pichu (Pichu's f
 - **Personal data:** the regional Pokédex table is the personal archive's last file (`PML_PersonalLoadRegionalDexTable`,
   `poke_personal.c`), so form records can be added before it.
 - **Followers:** a form's rows are followers with `"form"`; their object codes go after the last follower code in
-  `generated/obj_codes.txt`, which `GetIndexOfObjID` (`field_actor_savedata.c`) names as its last (now
-  `OBJ_CODE_FOLLOWER_PICHU_FORM_1_FEMALE_SHINY`). A form without rows follows as its form 0.
+  `generated/obj_codes.txt`, which `tools/paperwhite2/pokemon_forms.py` generates as `FOLLOWING_LAST_OBJ_CODE`, the
+  end of `GetIndexOfObjID`'s followers (`field_actor_savedata.c`), so adding some changes no C. A form without rows
+  follows as its form 0.
+- **More forms than a species' original groups** (a 7th Rotom): `tools/data/form_groups.py` moves all the species'
+  forms after the hack's groups and `species_data.py` gives its personal record the moved `sprite_offset`; its
+  original groups stay, from the same folders, so nothing else moves. No code reads it.
+- **Add form** (the editor's Pokémon page, `tools/paperwhite2/pokemon_form.py add|remove|record|icon|still`): copies a
+  species or one of its forms as a new form (data, Pokédex text, art, optional record, followers), removes the hack's
+  last form, toggles a form's record and imports its icon and stills. The design doc's section 11.5 lists every file.
+- **Wonder Trade:** the forms the hack adds are received without being listed; `wonder_trade.excluded_forms` leaves one
+  out (`tools/paperwhite2/pokemon_center.py`).
 
 ### Save expansion: the Pokédex for 1500 species
 
