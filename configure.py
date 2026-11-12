@@ -1228,7 +1228,7 @@ def main():
                 sorted(str(path) for pattern in ["*/data.json", "*/form_*/icon*.png"]
                        for path in Path("res/pokemon").glob(pattern)),
                 implicit=[forms_tool, *script_imports(forms_tool), "res/pokemon/shared/icon_palettes.pal",
-                          "generated/species.txt"])
+                          "generated/species.txt", "generated/obj_codes.txt"])
         constant_headers.append(output)
         # Paper White 2: the conditions' generated headers, the terrain groups, the level scaling and CheckCondition's
         # IDs (tools/paperwhite2/conditions.py, docs/paperwhite2/plugins.md's Conditions)

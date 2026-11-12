@@ -6,6 +6,7 @@
 
 #ifdef PAPERWHITE2
 #include "constants/obj_codes.h"
+#include "paperwhite2/pokemon_forms_config.h"
 #endif
 
 // The save block of the field's actors, and the index of an object code's record, which the actors' system reads its
@@ -193,14 +194,15 @@ u32 GetIndexOfObjID(u16 objCode) {
 #ifdef PAPERWHITE2
     // Paper White 2: the Following Pokémon's codes (res/field/actors/followers/) are the table's rows after the 3D
     // models', as Pokeweb's runtime maps them (docs/paperwhite2/following-pokemon.md, object-code-lookup): the imported
-    // ones, then the hack's own forms', whose last is the last follower code
-    if (objCode >= OBJ_CODE_FOLLOWER_BULBASAUR && objCode <= OBJ_CODE_FOLLOWER_PICHU_FORM_1_FEMALE_SHINY) {
+    // ones, then the hack's own forms', whose last is the last follower code (generated from obj_codes.txt by
+    // tools/paperwhite2/pokemon_forms.py, so that a new form's followers need no change here)
+    if (objCode >= OBJ_CODE_FOLLOWER_BULBASAUR && objCode <= FOLLOWING_LAST_OBJ_CODE) {
         return (u16)(objCode - OBJ_CODE_FOLLOWER_BULBASAUR + 0x3f0);
     }
     // Paper White 2: the walking Pokémon that the original game has no sprite for, the rows after the followers'
     if (objCode >= OBJ_CODE_POKEMON_PURRLOIN && objCode <= OBJ_CODE_POKEMON_DIPPLIN) {
         return (u16)(objCode - OBJ_CODE_POKEMON_PURRLOIN + 0x3f0 +
-                     (OBJ_CODE_FOLLOWER_PICHU_FORM_1_FEMALE_SHINY - OBJ_CODE_FOLLOWER_BULBASAUR + 1));
+                     (FOLLOWING_LAST_OBJ_CODE - OBJ_CODE_FOLLOWER_BULBASAUR + 1));
     }
 #endif
     return 10;

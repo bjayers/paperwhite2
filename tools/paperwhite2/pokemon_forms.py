@@ -5,8 +5,9 @@
 
 The header has, for src/paperwhite2/main/paperwhite2_pokemon_forms.c (include/paperwhite2/pokemon_forms.h):
 
-- the number of the hack's form sprite groups, the groups from pokemon_graphics.ORIGINAL_FORM_GROUPS that the
-  species' forms.sprite_offset and forms.count give, and each group's icon palettes: the bank of
+- the number of the hack's form sprite groups, the groups from form_groups.ORIGINAL_FORM_GROUPS that the
+  species' forms.sprite_offset and forms.count give (tools/data/form_groups.py, which also moves a species with more
+  forms than its original groups there), and each group's icon palettes: the bank of
   res/pokemon/shared/icon_palettes.pal that its form_<n>/icon.png is drawn in (pokemon_graphics.icon_bank) in the low
   nibble, and its icon_female.png's, or the same where it has none, in the high one, as sPokeIconPalettes has them;
 - the forms that never evolve, every species' forms.no_evolution;
@@ -15,7 +16,10 @@ The header has, for src/paperwhite2/main/paperwhite2_pokemon_forms.c (include/pa
   another in the save's form lists (src/system/pokedex_savedata.c, src/paperwhite2/main/paperwhite2_pokedex_save.c);
   and POKEDEX_SPECIES_MAX, the national Pokédex's last species. The save keeps the directory it was written with and
   the game remaps its bits on load when this one differs, so forms can be added anywhere
-  (docs/paperwhite2/design/save-expansion.md).
+  (docs/paperwhite2/design/save-expansion.md);
+- FOLLOWING_LAST_OBJ_CODE, the last follower's object code in generated/obj_codes.txt (OBJ_CODE_FOLLOWER_*), the end of
+  the followers' range that GetIndexOfObjID (src/system/field_actor_savedata.c) maps, so that a form's followers
+  added after the others need no change to the C.
 
 Only the hack's build runs this (configure.py --hack). tools/paperwhite2/pokedex_save.py reads the same list.
 """
@@ -27,6 +31,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 # pokemon_graphics imports its siblings by name
 sys.path.insert(1, str(ROOT / "tools" / "data"))
+from tools.data.gen_constants import load as load_list  # noqa: E402
 from tools.data.pokemon_graphics import (ORIGINAL_FORM_GROUPS, form_names, icon_bank, national_species,  # noqa: E402
                                          species_names)
 
@@ -100,6 +105,14 @@ def pokedex_form_list() -> list[tuple[int, str, int]]:
     return entries
 
 
+def last_follower() -> str:
+    """The follower object code with the highest value, the last of the followers' rows."""
+    codes = {name: number for name, number in load_list("obj_codes").items() if name.startswith("OBJ_CODE_FOLLOWER_")}
+    if not codes:
+        raise FormsError("generated/obj_codes.txt has no OBJ_CODE_FOLLOWER_ codes")
+    return max(codes, key=lambda name: (codes[name], name))
+
+
 def header() -> str:
     palettes = icon_palettes()
     forms = no_evolution()
@@ -124,6 +137,8 @@ def header() -> str:
             f"{{ SPECIES_{species.upper()}, {count} }}" for _, species, count in dex_forms),
         f"#define POKEDEX_FORM_ENTRY_COUNT {len(dex_forms)}",
         f"#define POKEDEX_SPECIES_MAX {pokedex_species_max()}",
+        "// The last follower's object code (generated/obj_codes.txt), the end of GetIndexOfObjID's followers",
+        f"#define FOLLOWING_LAST_OBJ_CODE {last_follower()}",
         "",
         "#endif // POKEBW2_PAPERWHITE2_POKEMON_FORMS_CONFIG_H",
     ]

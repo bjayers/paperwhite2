@@ -9,13 +9,13 @@ JASC palette. Nitro cell, animation, and other binary resources remain separate
 files so every archive member has a source without inventing lossy metadata.
 
 Packing walks the original archive's files and builds each from its source. Paper White 2's own form sprite groups
-(a species' forms.sprite_offset + form - 1 from ORIGINAL_FORM_GROUPS, res/pokemon/<species>/form_<n>/) are appended:
+(a species' forms.sprite_offset + form - 1 from ORIGINAL_FORM_GROUPS, res/pokemon/<species>/form_<n>/, laid out by
+form_groups.py, which moves a species with more forms than its original groups there) are appended:
 the battle sprites' 20 files a group after the Substitute's files and Arceus' palettes (ADDED_FORM_FILES,
 include/paperwhite2/pokemon_forms.h), the icons' two a group after the original ones, each made in the format of its
 species' own file of the same kind. Without such forms the archives are the original's.
 """
 
-import json
 import re
 import struct
 import sys
@@ -24,6 +24,7 @@ from pathlib import Path
 
 from narc import read_narc, write_narc
 from species_data import directory
+from form_groups import ORIGINAL_FORM_GROUPS, form_groups
 from nitro_2d import (character_pixels, color5, palette_colors, palette_indices, patch_characters, patch_palette,
                       read_indexed_png, read_palette, write_indexed_png, write_palette)
 
@@ -62,34 +63,22 @@ def national_species():
 
 @lru_cache(maxsize=2)
 def form_names(musical=False):
-    """Returns the species and form of each form sprite group, from its species' forms (sprite_offset and count) in
-    res/pokemon. The musical sprites follow Black and White's species data instead (ARCID_PERSONAL_BW1, a/3/0/2,
-    which MusicalMcss_GetDataIDBase reads), whose offsets differ and which has no source. Forms told apart only by
-    their palette (palette_forms, Arceus) have no groups. Paper White 2's form groups, from ORIGINAL_FORM_GROUPS,
-    must follow the original ones without gaps, since the archives append them in order."""
-    records = read_narc((EXTRACTED / "a/3/0/2").read_bytes()) if musical else None
+    """Returns the species and form of each form sprite group: from res/pokemon's forms (form_groups.py, which moves
+    a species with more forms than its original groups to the hack's), or for the musical sprites from Black and
+    White's species data (ARCID_PERSONAL_BW1, a/3/0/2, which MusicalMcss_GetDataIDBase reads), whose offsets differ and
+    which has no source. Forms told apart only by their palette (palette_forms, Arceus) have no groups. Paper White
+    2's form groups, from ORIGINAL_FORM_GROUPS, follow the original ones without gaps, since the archives append them
+    in order."""
+    if not musical:
+        return form_groups(ROOT / "res/pokemon")
+    records = read_narc((EXTRACTED / "a/3/0/2").read_bytes())
     result = {}
     for number, species in enumerate(species_names()[:national_species()]):
-        if musical:
-            _, sprite_offset, count = struct.unpack_from("<HHB", records[number], 0x1C)
-            palette_only = records[number][0x21] >> 7 & 1
-        else:
-            data = json.loads((ROOT / "res/pokemon" / species / "data.json").read_text())
-            sprite_offset, count = data["forms"]["sprite_offset"], data["forms"]["count"]
-            palette_only = data["palette_forms"]
-        if count <= 1 or palette_only:
+        _, sprite_offset, count = struct.unpack_from("<HHB", records[number], 0x1C)
+        if count <= 1 or records[number][0x21] >> 7 & 1:
             continue
         for form in range(1, count):
-            group = sprite_offset + form - 1
-            if group in result:
-                raise ValueError(f"res/pokemon/{species}: form {form}'s sprite group {group} is also "
-                                 f"{result[group][0]}'s form {result[group][1]}'s (forms.sprite_offset)")
-            result[group] = (species, form)
-    added = sorted(group for group in result if group >= ORIGINAL_FORM_GROUPS)
-    if not musical and added != list(range(ORIGINAL_FORM_GROUPS, ORIGINAL_FORM_GROUPS + len(added))):
-        missing = next(group for group in range(ORIGINAL_FORM_GROUPS, added[-1]) if group not in result)
-        raise ValueError(f"no form has sprite group {missing}: the groups from {ORIGINAL_FORM_GROUPS} must follow "
-                         "each other (forms.sprite_offset)")
+            result[sprite_offset + form - 1] = (species, form)
     return result
 
 
@@ -102,11 +91,11 @@ def added_form_groups():
 # Manaphy's egg's, and the first form's. Before them, a group is a species' (in a/0/0/4, of the species two after it
 # past the bad egg, which has no sprites of its own, GetPokemonDataIDBase)
 GROUPS = {"battle": (683, 685), "icons": (683, 685), "musical": (650, 652)}
-# Paper White 2: the original game's form groups, 0 to 65 (sprite_offset + form - 1). The battle sprites' 66 form
-# groups end where the Substitute's files start (SUBSTITUTE_FILES), so the hack's form groups, from 66, follow Arceus'
-# palettes, at the archive's original end (ADDED_FORM_FILES, PaperWhite2_GetFormSpriteFile); the icons' form groups
-# end at the archive's end, so theirs follow them as they are (PokeParty_GetIconIndex)
-ORIGINAL_FORM_GROUPS = 66
+# Paper White 2: the original game's form groups are 0 to 65 (form_groups.ORIGINAL_FORM_GROUPS, sprite_offset + form
+# - 1). The battle sprites' 66 form groups end where the Substitute's files start (SUBSTITUTE_FILES), so the hack's
+# form groups, from 66, follow Arceus' palettes, at the archive's original end (ADDED_FORM_FILES,
+# PaperWhite2_GetFormSpriteFile); the icons' form groups end at the archive's end, so theirs follow them as they are
+# (PokeParty_GetIconIndex)
 SUBSTITUTE_FILES = 15020
 FORM_PALETTE_FILES = 15033
 ADDED_FORM_FILES = 15065
