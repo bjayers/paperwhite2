@@ -101,6 +101,8 @@ enum {
 #define EVO_ICON_PALETTE_COUNT 3
 #define EVO_ICON_SIZE 0x400
 #define EVO_ICON_SEQUENCE 1
+// What the ClAct system's loads give when no resource is left (clact.c's CLACT_RES_NONE)
+#define EVO_RES_NONE 0xffffffff
 
 // What an evolution's parameter is, for its text: a number (a level, a Beauty), an item, a move or a species; Shedinja
 // names its parent, and a trade for a species names the other of Karrablast and Shelmet
@@ -526,6 +528,9 @@ static void PokedexInfoEvo_ShowIcons(PokedexInfoEvo *evo, u16 form, u16 sex) {
     u32 i;
 
     PokedexInfoEvo_LoadIcons(evo);
+    if (!evo->iconsLoaded) {
+        return;
+    }
     arc = GFL_ArcSysCreateFileHandle(ARCID_POKEICON, evo->heapId);
     for (i = 0; i < POKEDEX_INFO_EVO_FAMILY_MAX; i++) {
         u16 species = evo->rows[i].species;
@@ -580,6 +585,20 @@ static void PokedexInfoEvo_LoadIcons(PokedexInfoEvo *evo) {
         ClActSys_LoadCellAnims(arc, PokeIcon_GetCellFile_Sub(), getOBJTileMapping_SubEng(), evo->heapId);
     GFL_ArcToolFree(arc);
     evo->iconChars = ClActSys_AllocChars(EVO_ICON_SIZE * POKEDEX_INFO_EVO_FAMILY_MAX, CLACT_VRAM_SUB, evo->heapId);
+    // With no OBJ resource left (the screen has 32 of each, which the page keeps under), the strip goes without its
+    // icons this time rather than having actors write and free a resource that isn't there
+    if (evo->iconPalette == EVO_RES_NONE || evo->iconCellAnims == EVO_RES_NONE || evo->iconChars == EVO_RES_NONE) {
+        if (evo->iconPalette != EVO_RES_NONE) {
+            ClActSys_FreePltt(evo->iconPalette);
+        }
+        if (evo->iconCellAnims != EVO_RES_NONE) {
+            ClActSys_FreeCellAnims(evo->iconCellAnims);
+        }
+        if (evo->iconChars != EVO_RES_NONE) {
+            ClActSys_FreeChars(evo->iconChars);
+        }
+        return;
+    }
     setup.x = EVO_STRIP_CENTER_X;
     setup.y = EVO_STRIP_ICON_Y;
     setup.sequence = EVO_ICON_SEQUENCE;
