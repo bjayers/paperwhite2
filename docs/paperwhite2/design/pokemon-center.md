@@ -55,12 +55,13 @@ The field's list menus scroll (they keep a top row and a cursor row: `MsgBGPrint
 | Ability Services | Swap the two normal abilities, or change to the hidden ability (its own field, `PKM_PARAM_HIDDEN_ABILITY`) | ₽50,000 swap, ₽150,000 hidden |
 | Grooming | Raise friendship: brush +10, deluxe +30, royal +60 | ₽2,000 / ₽8,000 / ₽20,000 |
 | Poké Ball Services | Move the Pokémon into a ball from the bag; the ball is taken and the old one destroyed | ₽3,000 + the ball |
+| Nature Services | Change the nature (its own field, `PKM_PARAM_NATURE`, so shininess, gender and ability stay) | ₽30,000 |
 
 - **Battle Points** come only from the Battle Subway and the PWT once wireless is gone (the Random Matchup's award,
   `res/field/scripts/global_2100.s`, is wireless). For scale, the BP shop (`src/ov036/scrcmd_shop.c`) sells
   vitamins for 1 BP, Choice items and Rare Candy for 24: Hyper Training a whole Pokémon is 144 BP.
-- Nature changes were in the first ideas but aren't in the list; the nature is its own field (`PKM_PARAM_NATURE`),
-  so it can be added any time without touching shininess, gender or ability.
+- The user approved every price, rate and list here (2026-11-11), and wants all of them (fees, BP costs, odds, the
+  item tiers and their items) in a data file editable in the editor.
 
 ### Wonder Trade
 
