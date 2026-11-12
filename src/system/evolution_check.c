@@ -12,6 +12,11 @@
 #include "pml/poke_party.h"
 #include "system/rtc.h"
 
+#ifdef PAPERWHITE2
+#include "constants/items.h"
+#include "paperwhite2/link_cord.h"
+#endif
+
 // Whether a Pokémon evolves, by its species' evolution table. The ROM's string names the file shinka_check.c. The
 // functions' and the zone lists' names are swan's (https://github.com/ds-pokemon-hacking/swan, GPL-3.0)
 
@@ -248,6 +253,13 @@ u16 CheckEvolveSpecies(PokeParty *party, PartyPkm *pkm, u32 mode, u32 a3, u8 sea
                 a3 == evo[i].param) {
                 result = evo[i].species;
             }
+#ifdef PAPERWHITE2
+            // Paper White 2: the Link Cord evolves a Pokémon that evolves by trade, as the trade would. The method
+            // stays the trade's, so the evolution demo removes the held item that a trade holding one needs
+            if (a3 == ITEM_LINK_CORD && PaperWhite2_LinkCordEvolves(party, pkm, evo[i].method, evo[i].param, item)) {
+                result = evo[i].species;
+            }
+#endif
             if (result != 0) {
                 *method = evo[i].method;
                 break;

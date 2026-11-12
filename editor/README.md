@@ -96,7 +96,7 @@ what it reads, including the scripts' gifts and static battles and the swarm tab
 
 ## Graphics & Palettes
 
-The game's 2D art (`src/modules/palettes/`), in four pages. The art itself is drawn in an image editor such as
+The game's 2D art (`src/modules/palettes/`), in five pages. The art itself is drawn in an image editor such as
 Aseprite; these turn it into the game's files and set its colors.
 
 ### Screens
@@ -118,6 +118,16 @@ copies) with its tool's check. **Download PNG** gives the sheet to draw over; **
 sheet's size and runs the tool's `check` on it (`POST /api/sprite-sheets/check`): it says how the colors fit the
 palette rows, or names the icons with too many colors; **Apply to the game's files** writes it over the sheet's PNG,
 and the next build packs it.
+
+### Item icons
+
+Every item's bag icon, the hack's items first (the constants of `docs/paperwhite2/items.md`'s table), then all by
+number, with a filter. An item shows the icon and palette that `src/system/pml_item.c`'s table gives it in the hack's
+build, files of `res/items/` (`server/python/item_icons.py`, with the packer's `tools/data/item_icon_data.py`).
+**Download PNG** gives the icon to draw over; **Import PNG** takes a 32×32 PNG, indexed with indices 0-15 (0
+transparent) or RGB(A) with at most 15 colors besides transparent pixels, and shows it as the game will
+(`POST /api/item-icons/check`); **Apply to the game's files** writes its icon and palette over the item's files, and
+the next build packs them. Files that other items show too are named, since Apply changes those items' icon as well.
 
 ### Palettes
 

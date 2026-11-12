@@ -114,7 +114,8 @@ ITEM_ODD_KEYSTONE
 ITEM_GRISEOUS_ORB
 # Paper White 2: the Shiny Candy, which makes a Pokémon shiny, takes unused item 113
 ITEM_SHINY_CANDY
-ITEM_UNUSED_114
+# Paper White 2: the Link Cord, which evolves the Pokémon that evolve by trade, takes unused item 114
+ITEM_LINK_CORD
 ITEM_UNUSED_115
 ITEM_DOUSE_DRIVE
 ITEM_SHOCK_DRIVE
