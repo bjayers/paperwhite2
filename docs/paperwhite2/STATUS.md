@@ -11,9 +11,13 @@ OS_SaveContext). The tab and label then shared one resource (30 of 32 ClAct char
 on Keldeo: Form, Area, Evo (garbled icons), Moves (crash). Reproduced in DeSmuME and proven slot by slot: overlay 296's
 entry kept the previous Pokémon's type icons and footprint (3 slots) after any change of Pokémon, form or language;
 Area then filled all 32, Evo's icon characters got `CLACT_RES_NONE`, and leaving Evo freed slot -1 over the ClAct
-system's data. The entry now frees them at once (plugins.md, Pokédex, "The ClAct slots"); the page peaks at 29, and
-the steps and long Form/sub-page runs on six species no longer garble or crash. To test on the 3DS: those steps, and a
-change of Pokémon (Up/Down) before Area and Evo. The form sprites that face left (Keldeo's Resolute, Shaymin's Sky)
+system's data. The entry first freed them at once, which the user confirmed ended the crash on hardware but made the
+type icons flicker at a change (the new footprint loaded into the old icons' characters while the screen, its OAM
+not yet rebuilt after the change's long frame, still showed them); now they are freed a frame later, after a VBlank
+has sent the OAM that hides them (plugins.md, Pokédex, "The ClAct slots"). Checked frame by frame on Form, Up/Down and
+held Down: no flicker; the page peaks at 31 of 32 for a frame (a change from Evo, its icons and both sets of type
+icons and footprint), 30 elsewhere, and long runs on six species don't garble or crash. To test on the
+3DS: Form and Up/Down for flicker, and the crash's steps. The form sprites that face left (Keldeo's Resolute, Shaymin's Sky)
 are vanilla's per-form no-flip flag, not a bug; mirroring them anyway is a one-line change if wanted.
 
 ## 2026-11-09: Pokédex Area sub-page done

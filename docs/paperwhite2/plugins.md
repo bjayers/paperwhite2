@@ -2221,10 +2221,24 @@ the page held 3 slots more (30 on Stats). Area then filled all 32, and Evo's `Cl
 `CLACT_RES_NONE`: its icons drew other OBJs' characters (the garbled strip), and leaving Evo freed slot -1
 (`ClActSys_FreeChars(CLACT_RES_NONE)` writes the entry before the slots' array), which wrecked the ClAct system's data
 and ended in a jump to a wild address (DeSmuME, Keldeo: Form, Area, Evo, Moves; traced slot by slot). Under
-`PAPERWHITE2`, `PokedexInfo_HideOtherTypes` and `_HideOtherFootprints` (`src/ov296/pokedex_info.c`) free the previous
-ones instead of hiding them, which the screen can't tell apart (they were never shown again). Checked: those steps,
-and Keldeo, Shaymin, Deoxys, Rotom and Deerling each through 12 Form changes with Shiny and Turn and every sub-page
-60 times or more (and Swinub's page the same way, without forms): never more than 29 slots, no failed allocation, no exception.
+`PAPERWHITE2` (`src/ov296/pokedex_info.c`) the previous ones are still hidden as the new ones load, and freed a frame
+later (`PokedexInfo_FreeOtherSlots`): by `PokedexInfo_Update` in the frame after the change's own update, or by
+`PokedexInfo_FreeHiddenSlots` at the start of that frame, which the page calls before its input can load a sub-page's
+OBJs. Freeing them at once, in the change's frame (the first fix), made the type icons flicker: a change takes about 8
+frames to load (the entry, the sprite's files), the OAM is built only at the end of it, and the new footprint's
+characters went where the old type icons' had been, which the screen still showed for those frames (traced: the old
+icons' OAM tiles 42 and 44 until frame 9, the footprint loaded at 42-43 in frame 1). Freed after the OAM that hides
+them has gone out in a VBlank, the screen never shows freed characters; a change before then frees the hidden set to
+load into its slot, as the original does, so no more than one hidden set is held, and only for a frame. Checked, frame
+by frame (each frame's types and footprint either the old Pokémon's or the new one's, whole): Form on Keldeo and Rotom,
+Form tapped every 8 frames, Up and Down, and Down held across many Pokémon; and the crash's steps, then Keldeo,
+Shaymin, Deoxys, Rotom, Deerling and Swinub each through Form, Shiny, Turn, Evo's family taps, Down and Up held across
+dozens of Pokémon, and every sub-page, about 100 actions each: no failed allocation, no exception, and never more than
+31 slots. That is the bound: a sub-page's own (27 at most, 28 with Evo's icons; Area's 29 meets no change, as its map
+hides the entry and the entry changes as it closes) and, for the frame before the old set
+goes, the new set's 3, as the original's two slots always had: 30 on Stats, 31 for a frame after touching one of Evo's
+family. A tab can't be taken within 20 frames of a change
+(the button's flash, the touch bar's arrow), so Area and Evo never load beside a hidden set.
 
 ### Pokédex shortcuts from the party and the summary
 

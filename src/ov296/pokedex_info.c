@@ -55,6 +55,12 @@
 #define ARCID_POKE_FOOTPRINT 165
 #define ARCID_POKE_FOOTPRINT_FORM 229
 
+#ifdef PAPERWHITE2
+// Paper White 2: the calls of PokedexInfo_Update, from the one in the frame that hid the previous Pokémon's type icons
+// and footprint, until they are freed (PokedexInfo_FreeOtherSlots)
+#define OTHER_SLOTS_FREE_WAIT 2
+#endif
+
 enum {
     POKEDEX_INFO_MODE_MAIN,
     POKEDEX_INFO_MODE_SUB,
@@ -196,6 +202,9 @@ struct PokedexInfo {
     u32 vblankFlush;
     BOOL labelFlush;
     BOOL textFreed;
+    // Paper White 2: the updates left before the previous Pokémon's hidden type icons and footprint are freed, or 0
+    // (PokedexInfo_FreeOtherSlots)
+    u32 otherSlotsFreeWait;
 #endif
 };
 
@@ -254,6 +263,9 @@ static void PokedexInfo_FreeFootprints(PokedexInfo *info);
 static void PokedexInfo_LoadFootprint(PokedexInfo *info, u32 species, u32 form, u32 slot);
 static void PokedexInfo_UnloadFootprint(PokedexInfo *info, u32 slot);
 static void PokedexInfo_HideOtherFootprints(PokedexInfo *info);
+#ifdef PAPERWHITE2
+static void PokedexInfo_FreeOtherSlots(PokedexInfo *info);
+#endif
 static void PokedexInfo_ShowEntry(PokedexInfo *info);
 static void PokedexInfo_ShowEntryInLanguage(PokedexInfo *info, u32 language);
 static void PokedexInfo_UpdateFootprintGlow(PokedexInfo *info);
@@ -556,6 +568,11 @@ void PokedexInfo_Update(PokedexInfo *info) {
     if (info->mode == POKEDEX_INFO_MODE_MAIN) {
         PokedexInfo_UpdateFootprintGlow(info);
     }
+#ifdef PAPERWHITE2
+    if (info->otherSlotsFreeWait != 0 && --info->otherSlotsFreeWait == 0) {
+        PokedexInfo_FreeOtherSlots(info);
+    }
+#endif
 
     info->tick++;
     if (info->tick == 4) {
@@ -1687,31 +1704,23 @@ static void PokedexInfo_FreeTypeActors(PokedexInfo *info, u32 slot) {
 
 static void PokedexInfo_HideOtherTypes(PokedexInfo *info) {
     u8 slot;
-#ifndef PAPERWHITE2
     u8 i;
-#endif
 
     if (!info->allTypesLoaded) {
         for (slot = 0; slot < 2; slot++) {
             if (slot != info->typeSlot) {
-#ifdef PAPERWHITE2
-                // Paper White 2: the previous Pokémon's type icons are freed, not only hidden. They were never shown
-                // again, only freed at the change after next, so they kept two of the ClAct system's 32 character
-                // slots (and its footprint a third, PokedexInfo_HideOtherFootprints) after each change of the
-                // Pokémon, its form or the entry's language. The info page's sub-pages then ran out of slots: Evo's
-                // icons got CLACT_RES_NONE, drew other OBJs' characters, and freed slot -1 as Evo closed, over the
-                // ClAct system's data (docs/paperwhite2/plugins.md, Pokédex)
-                PokedexInfo_FreeTypeActors(info, slot);
-#else
                 for (i = 0; i < 2; i++) {
                     if (info->typeChars[slot][i] != -1) {
                         ClActor_SetVisible(info->typeActors[slot][i], FALSE);
                     }
                 }
-#endif
             }
         }
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: freed once the screen no longer shows them (PokedexInfo_FreeOtherSlots)
+    info->otherSlotsFreeWait = OTHER_SLOTS_FREE_WAIT;
+#endif
 }
 
 static void PokedexInfo_InitFootprints(PokedexInfo *info) {
@@ -1799,15 +1808,47 @@ static void PokedexInfo_HideOtherFootprints(PokedexInfo *info) {
 
     for (i = 0; i < 2; i++) {
         if (i != info->footprintSlot && info->footprints[i] != NULL) {
-#ifdef PAPERWHITE2
-            // Paper White 2: freed, as the previous Pokémon's type icons are (PokedexInfo_HideOtherTypes)
-            PokedexInfo_UnloadFootprint(info, i);
-#else
             ClActor_SetVisible(info->footprints[i], FALSE);
+        }
+    }
+#ifdef PAPERWHITE2
+    // Paper White 2: freed once the screen no longer shows it (PokedexInfo_FreeOtherSlots)
+    info->otherSlotsFreeWait = OTHER_SLOTS_FREE_WAIT;
 #endif
+}
+
+#ifdef PAPERWHITE2
+// Paper White 2: the previous Pokémon's type icons and footprint, which a change of the Pokémon, its form or the
+// entry's language hid, are freed once the screen no longer shows them. The original kept them, hidden, until the
+// change after next freed them to load into their slot, so they held two of the ClAct system's 32 character slots, and
+// the footprint a third: the info page's sub-pages then ran out of slots, Evo's icons got CLACT_RES_NONE, drew other
+// OBJs' characters, and freed slot -1 as Evo closed, over the ClAct system's data. Freed at once, though, their
+// characters' place in VRAM was taken in the same frame (the new footprint's went there) while the screen still showed
+// them: the OAM is built at the end of the frame, after a change that can take several frames to load, so the old icons
+// showed the footprint's characters until then. They are freed in the frame after the update that follows the change
+// (PokedexInfo_Update, or PokedexInfo_FreeHiddenSlots at that frame's start), whose OAM, sent in a VBlank since, hides
+// them. A change before then frees the slot it loads into, as the original does, so no more than one hidden set is ever
+// held
+static void PokedexInfo_FreeOtherSlots(PokedexInfo *info) {
+    u32 i;
+
+    info->otherSlotsFreeWait = 0;
+    for (i = 0; i < 2; i++) {
+        if (i != info->typeSlot) {
+            PokedexInfo_FreeTypeActors(info, i);
+        }
+        if (i != info->footprintSlot) {
+            PokedexInfo_UnloadFootprint(info, i);
         }
     }
 }
+
+void PokedexInfo_FreeHiddenSlots(PokedexInfo *info) {
+    if (info->otherSlotsFreeWait == 1) {
+        PokedexInfo_FreeOtherSlots(info);
+    }
+}
+#endif
 
 static void PokedexInfo_ShowEntry(PokedexInfo *info) {
     PokedexInfo_ShowTypes(info, POKEDEX_INFO_LANGUAGE_GAME, info->typeSlot);

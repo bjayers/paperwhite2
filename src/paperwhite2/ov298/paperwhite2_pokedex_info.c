@@ -470,6 +470,9 @@ BOOL PokedexInfoPage_Main(PokedexDetailProcSys *sys, int *seq, void *param_, voi
         }
         break;
     case SEQ_MAIN:
+        // The previous Pokémon's type icons and footprint, once hidden on screen, go before this frame's input can load
+        // (a sub-page's OBJs: Area's map, Evo's icons)
+        PokedexInfo_FreeHiddenSlots(wk->entry);
         // Keys that the page gave back go back to the bar only now, after the frame that the page took them in, so
         // that the bar doesn't also see the key that closed the move panel
         PokedexInfoPage_TakeTouchbarKeys(wk, common);
