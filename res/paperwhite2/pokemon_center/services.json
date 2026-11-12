@@ -109,6 +109,12 @@
             "SPECIES_MELOETTA",
             "SPECIES_GENESECT"
         ],
+        "excluded_forms": [
+            {
+                "species": "SPECIES_PICHU",
+                "form": 1
+            }
+        ],
         "other_evolution_levels": {
             "second_stage": 20,
             "third_stage": 30

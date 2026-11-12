@@ -77,14 +77,25 @@
     },
     "wonder_trade": {
       "type": "object", "additionalProperties": false,
-      "required": [ "fee", "level_spread", "excluded_species", "other_evolution_levels", "forms", "languages", "female_trainer_percent", "shiny_one_in", "hidden_ability_percent", "perfect_ivs_percent", "perfect_iv_count", "pokerus_percent", "nickname_percent", "balls", "held_item_percent", "item_tiers", "special_reward" ],
+      "required": [ "fee", "level_spread", "excluded_species", "excluded_forms", "other_evolution_levels", "forms", "languages", "female_trainer_percent", "shiny_one_in", "hidden_ability_percent", "perfect_ivs_percent", "perfect_iv_count", "pokerus_percent", "nickname_percent", "balls", "held_item_percent", "item_tiers", "special_reward" ],
       "description": "The Wonder Trade (the middle counter, res/field/scripts/global_10100.s): a party or Box Pokémon traded for one this generates (src/paperwhite2/ov012/paperwhite2_wonder_trade.c)",
       "properties": {
         "fee": { "$ref": "#/$defs/money" },
         "level_spread": { "type": "integer", "minimum": 0, "maximum": 99, "description": "The received Pokémon's level is the sent one's plus or minus 1 to this (0 for the same level), clamped to 1-100" },
         "excluded_species": {
           "type": "array", "maxItems": 649, "items": { "type": "string", "x-constant": "SPECIES_" },
-          "description": "The species that are never received nor can be sent: the legendaries and mythicals. Any other National Pokédex species can be received"
+          "description": "The species that are never received nor can be sent: the legendaries and mythicals. Any other National Pokédex species can be received, a species the hack adds too unless it is listed here"
+        },
+        "excluded_forms": {
+          "type": "array", "maxItems": 1024,
+          "description": "The alternate forms never received. The forms the hack adds to a species (past the original game's) are received without being listed in forms, as often as the species' first form; one listed here isn't, and in a species listed in forms its weight is taken as 0. The editor's Pokémon page switches a form in and out of the Wonder Trade here",
+          "items": {
+            "type": "object", "additionalProperties": false, "required": [ "species", "form" ],
+            "properties": {
+              "species": { "type": "string", "x-constant": "SPECIES_" },
+              "form": { "type": "integer", "minimum": 1, "maximum": 31 }
+            }
+          }
         },
         "other_evolution_levels": {
           "type": "object", "additionalProperties": false, "required": [ "second_stage", "third_stage" ],
@@ -96,7 +107,7 @@
         },
         "forms": {
           "type": "array", "maxItems": 32,
-          "description": "The species received in a form other than their first: each with a weight for each of its forms (as many as res/pokemon's forms.count; 0 for a form never received), or season for Deerling and Sawsbuck, whose form is the season's as the game gives them. A received species not listed is form 0. Left out: forms that change in battle or by an item or event (Castform, Cherrim, Darmanitan's Zen Mode, Rotom's appliances, which come with their own move, the Spiky-eared Pichu) and the excluded species'. A form stays through evolution, as in the game (Burmy's cloak, Shellos' sea)",
+          "description": "The species received in a form other than their first: each with a weight for each of its forms (as many as res/pokemon's forms.count; 0 for a form never received), or season for Deerling and Sawsbuck, whose form is the season's as the game gives them. A received species not listed is form 0, or one of the forms the hack added to it (excluded_forms). Left out: forms that change in battle or by an item or event (Castform, Cherrim, Darmanitan's Zen Mode, Rotom's appliances, which come with their own move, the Spiky-eared Pichu) and the excluded species'. A form stays through evolution, as in the game (Burmy's cloak, Shellos' sea)",
           "items": {
             "type": "object", "additionalProperties": false, "required": [ "species" ],
             "properties": {
