@@ -259,6 +259,7 @@ DEBUG                           L_DebugMenu
   Player...
     Warp to last Pokémon Center     the town of the last Center used, at its fly spot, as Teleport
     Warp to zone...                 number (0-614, with its place name), at the zone's fly spot
+    Entralink                       the Pass Power app's warp in, and its refusal where vanilla refused (below)
     Walk through walls: ON/OFF      EVENT_FLAG_DEBUG_WALK_THROUGH_WALLS
     Money...                        Set money... (number, 0-9999999) / +100000
   Pokédex...
@@ -341,6 +342,7 @@ of the last number entry.
 | `SET_WILD_SPECIES` (23), `SET_WILD_LEVEL` (24) | | the override to the number, 0 for off |
 | `WARP_LAST_CENTER` (25) | | `EventMapChangeTeleport_Create`, chained after the script, which waits a frame and ends |
 | `WARP_ZONE` (26) | | the number's zone at its fly spot (`LoadZoneSpawnInfoCheckRail`, `EventMapChange_CreateForFly`); FALSE, without a warp, for a zone whose fly spot is 0, 0, 0 |
+| `WARP_ENTRALINK` (54) | | `func_ov033_021773e4` chained after the script, the Pass Power app's Entralink button: it waits for any connection to close, then `EventEntralinkWarpIn_Create` at (511, 32, 584), which saves where the player was and plays vanilla's "warped to the Entralink" script, or its "can't warp here" one where `EventEntralinkWarpIn_CheckAllowed` refuses (the zone's `entralink_warp` flag, surfing, on a trigger or an NPC) or with a partner. Walking south off the hub's walkway asks to go back (`entralink.s` Script_14) and returns there. FALSE in the Union Room's zones, whose field loads overlay 34 instead of 33 |
 | `MONEY_SET` (27), `MONEY_ADD_THOUSANDS` (28) | -, thousands | the money to the number, or plus arg1 thousand up to 9,999,999; in word 0 |
 | `INFO` (29) | | the Info message's words 0-9; whether the player is on rails |
 | `NUMBER_BEGIN` (30) | kind (`DEBUG_NUMBER_*`), start | starts a number entry; its first value (below) |

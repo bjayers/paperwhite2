@@ -160,6 +160,12 @@
 // the player had it
 #define DEBUG_ACTION_POKEDEX_NATIONAL 53
 
+// Warps into the Entralink as the Pass Power app's Entralink button did (func_ov033_021773e4, then
+// EventEntralinkWarpIn_Create), which refuses with its own message where the zone's entralink_warp flag is clear, on a
+// trigger or an NPC, surfing or with a partner. The hub's NPC warps back to where the player was. Returns FALSE, with
+// no warp, in the Union Room's zones, whose field has overlay 34 in place of overlay 33's warp code
+#define DEBUG_ACTION_WARP_ENTRALINK 54
+
 // The kinds of number entry: their ranges and messages are sDebugNumberKinds (paperwhite2_debug_commands.c)
 #define DEBUG_NUMBER_LEVEL 0
 #define DEBUG_NUMBER_NATURE 1

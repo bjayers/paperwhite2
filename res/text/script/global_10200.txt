@@ -207,3 +207,5 @@ Global10200_Text_DebugPokedexNational = Give National Pokédex
 Global10200_Text_DebugPokedexFillDone = Seen: {0200:0}, caught: {0200:1}.\nEvery sex, form and language too.{be01}The list shows only Unova's\nwithout the National Pokédex.
 Global10200_Text_DebugPokedexNationalDone = The National Pokédex is given,\nas Juniper gives it after the story.
 Global10200_Text_DebugPokedexNationalHad = You already have\nthe National Pokédex.
+Global10200_Text_DebugWarpEntralink = Entralink
+Global10200_Text_DebugNoEntralink = The Entralink can't be reached\nfrom the Union Room.

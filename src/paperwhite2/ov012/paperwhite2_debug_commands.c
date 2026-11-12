@@ -8,6 +8,7 @@
 #include "field/field.h"
 #include "field/field_actor.h"
 #include "field/field_environment.h"
+#include "field/field_event.h"
 #include "field/field_internal.h"
 #include "field/field_script.h"
 #include "field/field_weather.h"
@@ -382,6 +383,16 @@ static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2
         }
         *wait = DebugCommands_Warp(gsys, sDebugNumber.value);
         return *wait;
+    case DEBUG_ACTION_WARP_ENTRALINK: {
+        u16 zoneId = PlayerState_GetZoneID(GameData_GetPlayerState(gameData));
+
+        if (GetZoneIsUnionRoom(zoneId) == TRUE || IsZone150Or151(zoneId) == TRUE) {
+            return FALSE;
+        }
+        GameEvent_ChainNext(GSYS_GetNowEvent(gsys), func_ov033_021773e4(gsys, GSYS_GetField(gsys)));
+        *wait = TRUE;
+        return TRUE;
+    }
     case DEBUG_ACTION_MONEY_SET:
         DebugCommands_SetMoney(gameData, sDebugNumber.value);
         DebugCommands_SetWordNumber(env, 0, sDebugNumber.value);

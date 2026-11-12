@@ -676,6 +676,7 @@ L_DebugPlayer:
     ListMenuAnchorTopRight 31, 1, 0, 1, 0x8020
     ListMenuAdd Global10200_Text_DebugWarpCenter, 65535, 0
     ListMenuAdd Global10200_Text_DebugWarpZone, 65535, 1
+    ListMenuAdd Global10200_Text_DebugWarpEntralink, 65535, 4
     ListMenuAdd Global10200_Text_DebugWalkThroughWalls, 65535, 2
     ListMenuAdd Global10200_Text_DebugMoney, 65535, 3
     ListMenuAdd Global10200_Text_DebugBack, 65535, DEBUG_LIST_BACK
@@ -688,6 +689,8 @@ L_DebugPlayer:
     VMJumpIf CMP_EQ, L_DebugToggleWalls
     WorkCmpConst 0x8020, 3
     VMJumpIf CMP_EQ, L_DebugMoney
+    WorkCmpConst 0x8020, 4
+    VMJumpIf CMP_EQ, L_DebugWarpEntralink
     VMJump L_DebugMenu
 
 L_DebugWarpCenter:
@@ -713,6 +716,21 @@ L_DebugWarpZone:
 
 L_DebugNoFlySpot:
     SystemMsg Global10200_Text_DebugNoFlySpot, 2
+    LastKeyWait
+    VMJump L_DebugPlayer
+
+// Entralink: the Pass Power app's warp in (its message, or its refusal where the zone doesn't allow it); the hub's
+// NPC warps back
+L_DebugWarpEntralink:
+    SystemMsgClose
+    Debug DEBUG_ACTION_WARP_ENTRALINK, 0, 0, 0x8025
+    WorkCmpConst 0x8025, 0
+    VMJumpIf CMP_EQ, L_DebugNoEntralink
+    ActorsUnpauseAll
+    VMHalt
+
+L_DebugNoEntralink:
+    SystemMsg Global10200_Text_DebugNoEntralink, 2
     LastKeyWait
     VMJump L_DebugPlayer
 
