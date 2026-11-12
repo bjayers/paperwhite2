@@ -555,6 +555,7 @@ families:
       - {place: village_bridge, methods: [fishing], seasons: [spring, summer, autumn], tier: very_rare, stages: [lombre], times: day, why: "pranks at the fishing spot"}
       - {place: abundant_shrine, methods: [fishing], seasons: [spring, summer, autumn], tier: rare, stages: [lombre], times: night, why: "the ponds' prankster"}
       - {place: abundant_shrine, methods: [fishing], seasons: [spring, summer, autumn], tier: very_rare, stages: [lombre], times: day, why: "the ponds' prankster"}
+      - {place: moor_of_icirrus, methods: [surf], seasons: [spring, summer, autumn], tier: uncommon, stages: [lotad], why: "lily pads on the moor's open pools"}
     review:
       - "Lombre on fishing rods is the Pokédex's joke made real; say if it's too odd."
 

@@ -1584,16 +1584,16 @@ The same fens as the town, a little wilder: Stunfisk, Tympole and Wooper in the 
 
 **Grass**
 
-- Spring: **common:** Croagunk/Toxicroak, Tympole/Palpitoad/Seismitoad; **uncommon:** Stunfisk, Surskit/Masquerain (more by day), Wooper/Quagsire (more at night); **exotic:** Carnivine
-- Summer: **common:** Tympole/Palpitoad/Seismitoad, Yanma/Yanmega (more by day); **uncommon:** Croagunk/Toxicroak, Stunfisk, Surskit/Masquerain (more by day), Wooper/Quagsire (more at night); **exotic:** Carnivine
-- Autumn: **common:** Tympole/Palpitoad/Seismitoad; **uncommon:** Croagunk/Toxicroak, Stunfisk, Wooper/Quagsire (more at night); **exotic:** Carnivine
+- Spring: **common:** Croagunk/Toxicroak, Tympole/Palpitoad/Seismitoad; **uncommon:** Bellsprout/Weepinbell, Stunfisk, Surskit/Masquerain (more by day), Wooper/Quagsire (more at night); **exotic:** Carnivine
+- Summer: **common:** Tympole/Palpitoad/Seismitoad, Yanma/Yanmega (more by day); **uncommon:** Bellsprout/Weepinbell, Croagunk/Toxicroak, Stunfisk, Surskit/Masquerain (more by day), Venonat/Venomoth (night only), Wooper/Quagsire (more at night); **exotic:** Carnivine
+- Autumn: **common:** Tympole/Palpitoad/Seismitoad; **uncommon:** Bellsprout/Weepinbell, Croagunk/Toxicroak, Oddish/Gloom (more at night), Stunfisk, Wooper/Quagsire (more at night); **exotic:** Carnivine
 - Winter: no tiles this season
 
 **Surfing**
 
-- Spring: **common:** Ducklett (more by day); **uncommon:** Poliwag/Poliwhirl (more at night), Wooper/Quagsire (more at night)
-- Summer: **common:** Ducklett (more by day); **uncommon:** Poliwag/Poliwhirl (more at night), Wooper/Quagsire (more at night)
-- Autumn: **common:** Ducklett (more by day); **uncommon:** Poliwag/Poliwhirl (more at night), Wooper/Quagsire (more at night)
+- Spring: **common:** Ducklett (more by day); **uncommon:** Lotad, Poliwag/Poliwhirl (more at night), Wooper/Quagsire (more at night)
+- Summer: **common:** Ducklett (more by day); **uncommon:** Lotad, Poliwag/Poliwhirl (more at night), Wooper/Quagsire (more at night)
+- Autumn: **common:** Ducklett (more by day); **uncommon:** Lotad, Poliwag/Poliwhirl (more at night), Wooper/Quagsire (more at night)
 - Winter: **uncommon:** Poliwag/Poliwhirl (more at night), Swanna (more by day), Wooper/Quagsire (more at night)
 
 **Rippling water (surfing)**
@@ -1626,6 +1626,7 @@ The marsh's deeper, wilder part: the bigger toads (Seismitoad in the rippling wa
 *Discussed with the user:*
 
 - 2026-11-12, done: a marsh of puddles, no grass, so no deer or Mareep; Croagunk's spring chorus, Surskit in spring and summer, Yanma in summer. More marsh oddities proposed (Bellsprout's pitcher plants, Lotad, Venonat).
+- 2026-11-12, done: Bellsprout's pitcher plants (spring to autumn) beside Carnivine, Venonat on summer nights, Gloom's family in autumn among the scattered leaves, and Lotad on the open pools.
 
 ### Dragonspiral Tower (the entrance) (`dragonspiral_entrance`)
 

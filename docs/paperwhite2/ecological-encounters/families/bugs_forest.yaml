@@ -124,6 +124,7 @@ families:
       - {place: castelia_park, methods: [grass], seasons: [summer], tier: uncommon, why: "moths drawn to the park's lights at night"}
       - {place: dreamyard, methods: [grass], seasons: [summer], tier: uncommon, why: "summer nights over the overgrown meadow"}
       - {place: pinwheel_forest_outskirts, methods: [grass, dark_grass], seasons: [spring, summer, autumn], tier: uncommon, why: "the nursery's biting bugs at night"}
+      - {place: moor_of_icirrus, methods: [grass], seasons: [summer], tier: uncommon, why: "the marsh's mosquitoes on summer nights"}
     review: []
 
   - id: scyther
@@ -1015,6 +1016,7 @@ families:
       - {place: route_6, methods: [grass], seasons: [spring, summer], tier: common, why: "the valley's clearings"}
       - {place: route_16, methods: [dark_grass], seasons: [spring, summer], tier: uncommon, why: "the forest edge"}
       - {place: route_1, methods: [grass], seasons: [summer], tier: uncommon, why: "the summer meadow at night"}
+      - {place: moor_of_icirrus, methods: [grass], seasons: [autumn], tier: uncommon, why: "among the moor's scattered autumn leaves and rot (the user)"}
     review: []
 
   - id: bellsprout
@@ -1039,6 +1041,7 @@ families:
       - {place: route_18, methods: [dark_grass], seasons: all, tier: very_rare, stages: [victreebel], why: "the jungle's Leaf Stone influence"}
       - {place: route_7, methods: [grass], seasons: [summer], tier: uncommon, why: "the warm, wet marsh"}
       - {place: pinwheel_forest_outskirts, methods: [dark_grass], seasons: [summer], tier: uncommon, why: "the humid cliffs' puddles"}
+      - {place: moor_of_icirrus, methods: [grass], seasons: [spring, summer, autumn], tier: uncommon, stages: [bellsprout, weepinbell], why: "pitcher plants in the bog beside Carnivine"}
     review: []
 
   - id: exeggcute
