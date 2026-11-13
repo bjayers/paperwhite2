@@ -4,9 +4,9 @@ Research for drawing new Gen 5 battle sprites (first a Spiky-eared Pichu form, l
 that builds them from parts: import the parts, set each part's box, place and layer the parts, and animate them.
 Researched 2026-11-12 from the code (`src/system/mcss.c`, `src/system/mcss_tool.c`, `src/system/pokegra.c`,
 `src/ov168/btlv_mcss.c`, `lib/nnsys/src/g2d/g2d_MultiCellAnimation.c`) and the data (`res/pokemon/`, the White 2
-archive `a/0/0/4`). Built since: new form groups (section 6) and the art's export and import on the existing rig
-(section 14); the rig editor is not. "Verified" means read in the code or decoded from the data; "inferred"
-means reasoned and not checked in the game.
+archive `a/0/0/4`). Built since: new form groups (section 6), the art's export and import on the existing rig
+(section 14), and the rig's JSON form, writer and checks (section 15); the rig editor is not. "Verified" means read
+in the code or decoded from the data; "inferred" means reasoned and not checked in the game.
 
 The decoder and renderer that prove the decoding are in the ROM session's scratchpad
 (`.../scratchpad/mcss_research/`: `mcss_decode.py` decodes one side of a sprite to JSON and renders it, `survey.py`
@@ -137,7 +137,7 @@ MCSSCell cells[count]     48 bytes each: quad, quad2 (6 fx32 each: x, y, width, 
 --- aligned down to 4 ---
 u8  idleNodeCount         0xff: no idle (the sprite never stops)
 u8  stopFlags             MCSSSys_GetStopCellFlags; see below
-u8  idleNodes[]           cell animation indices that keep playing while idle
+u8  idleNodes[]           node numbers (of the playing multi-cell, 0 the front) that keep playing while idle
 ```
 
 - A **quad** is a rectangle of the sheet (`s`, `t`, `width`, `height`, in pixels as fx32) placed at `x`, `y` relative
@@ -257,7 +257,8 @@ The shadow is the same quads, flattened (`shadowRotX`, default 0xc400) with the 
 - **Polygon IDs:** a translucent sprite gives each node its own polygon ID, clamped at 63 (`MCSS_DrawQuad`), so keep
   nodes at 64 or fewer (the ROM's most is 35).
 - **Cells, sequences:** no fixed limit in the code beyond the file formats (u16 counts); the heap sizes of the screens
-  that show sprites are the real bound, so stay near the ROM's maxima (61 cells, 82 sequences).
+  that show sprites are the real bound, so stay near the ROM's maxima (61 cells, 82 sequences); sizes measured in
+  section 15.6.
 - **Quad 2:** at most two quads per cell; use a second cell or node for more.
 - **Spinda:** `mcss_tool.c` hard-codes Spinda's bin member (`POKEGRA_SPINDA_BIN` 6548) and draws spots into its sheet
   at fixed pixels; a Spinda redraw must keep the head where the spots go.
@@ -424,8 +425,8 @@ round-trip test, as the other packers have.
   files (two copies in git)? The trainer packer's approach suggests the former once the converter round-trips.
 - The stop-flags byte as "airborne": check in a battle effect that reads work value 44 – 52.
 - ~~Whether the originals' 96×96 stills are exactly frame 0~~: half are, the rest touched up (section 5.3).
-- Whether any screen's heap limits the cell or sequence counts below the ROM's maxima (test a large rig on the summary,
-  trade and Pokédex).
+- Whether any screen's heap limits the cell or sequence counts below the ROM's maxima (the battle's free heap is
+  measured, section 15.6; test a large rig on the summary, trade and Pokédex).
 - How a female sheet with different part sizes would work: it can't, since the rig is shared; the editor should
   force the female's pictures into the male's boxes.
 
@@ -526,5 +527,195 @@ visible box is the size of the current still's, at the same place, else centred 
 `mcss.read_rig` already gives the rig in the shape section 10 proposes to edit (cells with their quads, part names,
 cell animations with their frames, multi-cells with nodes, pivots and play modes, the animations, the box, idle nodes
 and stop flags), and `mcss.render` draws any frame of any animation; `battle_sprite.py`'s guide, checks and preview
-are the editor's "Pictures" step for a fixed layout. Next: write the rig back (NCER, NANR, NMCR, NMAR, bin) from
-`read_rig`'s shape, byte for byte for an unedited rig, then let pieces move and resize.
+are the editor's "Pictures" step for a fixed layout. The writer is built (section 15); next, let pieces move and resize.
+
+## 15. Built (2026-11-12): the rig writer and its JSON form
+
+The foundation of the rig editor: a side's rig as one flat JSON object that holds **everything** its five files hold,
+and a writer that turns it back into the files byte for byte. `tools/paperwhite2/mcss_rig.py` (stdlib only):
+
+```
+mcss_rig.py dump FOLDER front|back            the side's rig as JSON
+mcss_rig.py write RIG.json FOLDER front|back  checks it, then writes the side's files that change
+mcss_rig.py check FOLDER [front|back]         the checks (section 15.5)
+mcss_rig.py roundtrip [res/pokemon]           every side: files -> rig -> JSON -> rig -> files, compared
+```
+
+In Python: `read_side`, `rig_from_files`, `files_from_rig`, `write_side`, `check`, `generate_objs`, `compress_lz11`,
+`dumps` (the JSON with anything that fits on a line on one, for readable diffs). The schema is
+`tools/paperwhite2/mcss_rig.schema.json`; it moves to `res/pokemon/` with the rigs once the source format is decided.
+`mcss.read_rig` and `mcss.render` stay the reader and renderer of the files (a rig written by the writer reads and
+draws the same, tested).
+
+### 15.1 Proven
+
+- **All 1,506 sides** (the 753 rig folders of res/pokemon: every species, form, egg, Pokéstar group and the
+  Spiky-eared Pichu, front and back) round-trip **files → rig → JSON → rig → files byte for byte**, the NANR's LZ11
+  included: no exceptions. Female sprites have no rig of their own (section 2.1), so they are covered.
+- Every side's JSON is valid against the schema; `check` finds no error on any original (8 sides get warnings that
+  describe what the originals really do, section 15.5).
+- `python3 -m unittest tools.paperwhite2.test_mcss_rig` (10 tests, a quarter second): 13 groups chosen for each oddity
+  through the files and JSON, the JSON round trip, agreement with `mcss.read_rig`, a write that changes only the
+  edited files (a moved pivot, a new key) and reads back as edited, the compressor on originals and odd data, every
+  check's error, the schema catching a bad field, the OBJ generator on Pichu.
+- The ROM is not touched (no res/ change): the `--hack` build is as before.
+
+### 15.2 The JSON form ("the flat rig")
+
+The game's shape with clear names (the user's decisions of 2026-11-12: the art stays a full 256×128 sheet drawn in an
+image editor, and the editor draws rectangles over its pieces and sets pivots; front and back are separate rigs; the
+editor bakes its armature and curves into this, every 6 frames by default). Pichu's front, shortened:
+
+```json
+{
+  "format": 1,
+  "side": "front",
+  "box": {"width": 31, "height": 45, "x": 4, "y": 3},
+  "stop_flags": 0,
+  "idle_parts": [],
+  "pictures": [
+    {
+      "rectangles": [{"sheet": [56, 24], "size": [16, 16], "at": [-11, 0]}],
+      "objs": [{"x": -19, "y": -8, "size": [16, 16], "tile": 103, "attributes": [768, 0, 0]}],
+      "obj_attribute": 8
+    },
+    {
+      "rectangles": [
+        {"sheet": [24, 0], "size": [24, 24], "at": [-12, 12]},
+        {"sheet": [0, 8], "size": [16, 8], "at": [-10, 3]}
+      ],
+      "objs": [...], "obj_attribute": 10
+    }, ...
+  ],
+  "tracks": [
+    {"name": "body_a", "key_type": "move", "play": "loop", "keys": [
+        {"picture": 0, "frames": 6, "move": [0, 0]},
+        {"picture": 0, "frames": 6, "move": [0, 1]}, ...]},
+    {"name": "ear_r_a", "key_type": "srt", "play": "loop", "keys": [
+        {"picture": 2, "frames": 6, "rotation": 0, "scale": [1, 1], "move": [0, 0]}, ...]}, ...
+  ],
+  "poses": [
+    {"parts": [
+        {"track": 5, "pivot": [6, -9], "play": "restart"},
+        {"track": 3, "pivot": [7, -20], "play": "restart"}, ...]}, ...
+  ],
+  "sequences": [
+    {"name": "CellAnime0", "key_type": "plain", "play": "loop",
+     "keys": [{"pose": 0, "frames": 240}, {"pose": 1, "frames": 108}]}
+  ]
+}
+```
+
+| Rig | File | Meaning |
+| --- | --- | --- |
+| `box` | bin header | the box the egg hatching and evolution centre by |
+| `stop_flags` | bin tail | read by move effects; 1 = airborne (inferred) |
+| `idle_parts` | bin tail | node numbers of the playing pose that keep animating in the idle pause (`BtlvMcss_IdleNodeCallback` compares the traversal's node index); `null` = never pauses (0xff) |
+| `pictures[i].rectangles` | bin cell i's quads | `sheet` (s, t) and `size` on the sheet, `at`: the top left's place from the part's pivot, x right, **y up** (the bin's x, y over 256); the second drawn in front |
+| `pictures[i].objs`, `obj_attribute` | NCER cell i | OBJ x, y, size, tile and the rest of the attributes; the cell's attribute. MCSS never draws them |
+| `tracks[j]` | NANR sequence j | `name` (its label, which names the part: `head_a`), `key_type` (`plain`: picture only, `srt`, `move`), `play` (`once`, `loop`, `pingpong`, `pingpong_loop`) |
+| key | NANR frame + result | `picture`, `frames` (how long it's held, in game frames), `rotation` (65536ths of a turn), `scale` [x, y] (negative mirrors), `move` [x, y] pixels, y down |
+| `poses[k].parts` | NMCR multi-cell k's nodes | front to back (the layer order): `track`, `pivot` (from the feet, y down), `play` (`restart` the track with the pose or `continue` on the sequence's time) |
+| `sequences[n]` | NMAR sequence n | as tracks, keys show a `pose` (and may move, turn or scale the whole sprite); 0 is the loop ("stay"), 1 the idle pose ("stop") |
+
+The NCER's labels are the tracks' names again, so they aren't stored. Fields only where a file differs from the usual
+(the writer puts the usual back): `info_padding` (none), `obj_mapping` (≠ 4: species 0), `extension` (UEXT ≠ 1:
+species 0), `picture_labels` (none), a part's `instance` (≠ its place) and a pose's `instances` (≠ its part count:
+Crawdaunt's and Forretress's fronts and 4 Pokéstar groups' share instances), a part's `flags` (≠ 0x20), a key's `unused` and `marker`
+(≠ 0xBEEF: none), `loop_start`, `bank_type` (none), and `result_copy` (below). Fixed-point values are numbers in
+pixels (exact: multiples of 1/4096, 1/256 for `at`); all originals' are whole.
+
+### 15.3 What the files hold, exactly (verified on all 1,506 sides)
+
+- **Container:** byte order 0xFEFF, version 1.0, 16-byte header; NCER blocks CEBK, LABL, UEXT; NANR ABNK, LABL, UEXT;
+  NMCR MCBK; NMAR ABNK, LABL (no UEXT). LABL: the offsets, then the names, no padding.
+- **CEBK:** a 24-byte header (count, attribute 0, cells at 24, mapping 4, three zero words), 8 bytes a cell, then
+  the OBJs in cell order, padded with zeros to 4.
+- **MCBK:** count, 0xBEEF, multi-cells at 20, nodes after them, two zero words; nodes in order.
+- **ABNK:** sequences at 24, frames after them in order (each `result offset, duration, 0xBEEF`), then the results.
+  Results are **shared**: a frame whose result equals any earlier one in the bank points at it. A plain result is 2
+  bytes; an SRT (16) or move (8) result starts 4-aligned, each sequence's results start 4-aligned, and the bank ends
+  4-aligned, padded with 0xCCCC. 7 sides (Kyurem form 2's and Serperior's fronts and backs, Servine's front, Thundurus
+  form 1's front and back) hold a second copy of a result that later keys use: those keys have `"result_copy": 1`.
+- **Bin tail:** idle count (0xff none), stop flags, the idle parts, then zeros to the next multiple of 4 past them,
+  at least one (2 after an empty list).
+- Durations of 0 exist (Pichu's last key of each track), and 5 unplayed tracks (Marshtomp's and Shelgon's backs) show
+  pictures past the side's count.
+
+### 15.4 Compression
+
+`compress_lz11` is a match of the originals' compressor: **greedy, the longest match, the farthest distance among
+equal lengths, never distance 1**, window 4,096. It gives every one of the 1,506 original NANRs **byte for byte**
+(none stored differently), in about 0.1 s for a 200 KB bank. The game reads NANRs with `GFL_G2DIOReadNANR(...,
+TRUE)` (compressed is required) and `MI_UncompressLZ8`, which reads any valid LZ11, so an edited rig's NANR needs no
+in-game proof of the format; the originals' bytes are unchanged, so nothing changed in the ROM.
+
+### 15.5 The checks
+
+`check(rig)` returns `(level, message)` pairs; `write_side` refuses a rig with errors.
+
+- **Errors:** no pictures, poses or sequences; a picture without one or two rectangles; a second rectangle with no
+  size; a rectangle reaching past the sheet's mirrored copy (beyond 512×256) or negative; an OBJ of no OBJ size; a key
+  that holds a field its track's type can't store (a rotation on a move track: it would be lost) or lacks one it
+  must; a played track showing a picture past the count; a sequence key showing a pose past the count; a part playing
+  a track past the count, or a track instance past the pose's instances; more than 64 parts in a pose (polygon IDs);
+  an idle part past the poses' parts; rotation, scale, move, pivot, duration, box or flags out of their fields'
+  ranges; a sequence lasting no frames; an unknown play mode or key type.
+- **Warnings** (what some originals do): a rectangle past the 256×128 sheet's edge, which shows the sheet mirrored
+  (`GX_TEXREPEAT_ST | GX_TEXFLIP_ST`; 6 sides: Anorith, Armaldo, Sewaddle and Shedinja fronts, Barboach and Nincada
+  backs); an unplayed track showing missing pictures (Marshtomp's and Shelgon's backs); two tracks with one name; a
+  sequence 0 that doesn't loop.
+- Not checked here, because the rig doesn't hold them: colours (battle_sprite.py's import checks), the sheet's pixels
+  outside the rectangles, the female sheet (it shares the rig).
+
+### 15.6 Limits and sizes (measured)
+
+- **No fixed buffer.** Each file is read into a heap block of its own size (`GFL_ArcSysReadHeapNewLZ`: the NANR
+  first compressed at the heap's tail, then decompressed into a block of the size its header gives) and stays
+  resident while the sprite is shown, with the multi-cell work area (`NNS_G2dGetMCWorkAreaSize`, by node count).
+  MCSS's only fixed sizes are the sheet (0x4000 of texture VRAM) and the palette (0x20).
+- **Format limits:** a bank's total key count is a u16 (65,535 keys per NANR), a key's duration a u16, a sequence's
+  key count a u16; offsets are u32; LZ11 holds up to 16 MB.
+- **Heaps:** in a wild single battle (py-desmume, the battle's command menu) the battle view's heap (0x13, 705,736
+  bytes, `btl_main.c`, which the battle MCSS loads into) had **353,732 bytes free** in one block. A double or triple
+  battle loads up to 6 sprites, and move effects load into the same heap. Other screens' heaps hold the sprite with
+  everything else: summary 0x50000, Pokédex detail 0x90000 – 0xb0000, evolution 0x70000, egg 0x50000, Hall of Fame
+  0x60000 (not measured).
+- **The originals:** the largest NANR is Thundurus form 1's back, 26,779 bytes uncompressed; the largest side, all
+  five resident, 30,845 bytes.
+- **Baked animations** (35 parts, a 240-frame loop, an SRT key per part every N frames, rotations, scales and moves
+  all varying, so few results shared; the writer's output):
+
+  | Keyed every | Keys | NANR (resident) | Compressed (archive) | Side resident |
+  | --- | --- | --- | --- | --- |
+  | 6 frames, 1 pose | 1,400 | 34,673 | 15,366 | 36,223 |
+  | 3 frames | 2,800 | 68,273 | 29,286 | 69,823 |
+  | 2 frames | 4,200 | 101,777 | 40,058 | 103,327 |
+  | 1 frame | 8,400 | 202,353 | 79,066 | 203,903 |
+  | 6 frames, 2 poses | 2,800 | 69,278 | 30,296 | 71,569 |
+  | 1 frame, 2 poses | 16,800 | 362,782 | 142,226 | 365,073 |
+
+- **Practical ceiling:** every 6 frames (the default) is about the size of the largest originals, safe everywhere.
+  Every 2 or 3 frames triples it (70 to 100 KB a side): fine for one sprite in a single battle (the free 345 KB), a
+  risk with six in a triple battle or on the screens with smaller heaps, so test there first. Every frame (200 KB+)
+  doesn't fit beside other sprites and must not be used; 2 poses double everything. Stay at or under about 40 KB
+  resident per side unless a sprite is tested on every screen of section 2.2.
+
+### 15.7 OBJs
+
+`generate_objs(picture)` lays out a picture's OBJs as NITRO-CHARACTER did for **16,308 of the 16,903** original
+cells: the second rectangle's first (semi-transparent mode), each rectangle cut into rows and columns of 64, 32, 16 and
+8, affine and double size (placed half their size up and left), or (`double_size=False`) plain affine. The rest
+(4%) are hand-edited layouts; the writer keeps whatever the rig holds, so an editor regenerates a picture's OBJs only
+when its rectangles change. `obj_attribute` (the cell's bounding radius, inferred) isn't derived; keep the
+original's or the nearest similar picture's.
+
+### 15.8 What the editor step builds on
+
+- Load any sprite with `read_side` (or `dump`), edit the flat rig, save with `write_side` (checks first, writes only
+  what changes); `mcss.render` previews it after a write (or from the files `files_from_rig` returns).
+- The armature and curves sit above this: an armature bakes to each part's track (SRT keys every 6 frames), the
+  parts' pivots and layer order are a pose's parts, pictures are rectangles drawn over the sheet.
+- Open: where the rig JSON lives in res/ (beside the sheet, as the packer's source, with the five files built from
+  it, or written into res/ beside the Nitro files); whether a baked-heavy sprite works on the summary and Pokédex
+  screens (test a 100 KB rig there).

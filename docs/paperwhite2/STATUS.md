@@ -2,6 +2,31 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-12: battle sprite rig writer and JSON form (ROM session)
+
+The foundation of the approved rig editor (design/battle-sprites.md section 15), no editor UI yet:
+
+- `tools/paperwhite2/mcss_rig.py` (stdlib only): a side's rig as one flat JSON object (pictures as rectangles on the
+  sheet, tracks of held keys, poses of parts with pivots in layer order, sequences, idle parts, box, flags), holding
+  every byte of the five files, and a writer back to them; `dump`, `write`, `check`, `roundtrip`. Schema:
+  `tools/paperwhite2/mcss_rig.schema.json` (moves to res/ with the rigs once the source format is decided; no rig
+  JSON is in res/ yet).
+- **All 1,506 sides round-trip byte for byte** (files → rig → JSON → rig → files), the NANR included: its LZ11
+  compressor matches the originals' (greedy, farthest of the longest matches, never distance 1). The checks find no
+  error on any original; 8 sides get warnings for what they really do (rectangles past the sheet's edge, which shows
+  it mirrored; unplayed tracks with missing pictures).
+- Measured: no fixed buffer for the files (heap blocks by size); the battle view's heap had 353,732 bytes free in a
+  wild single battle; the largest original side is 30,845 bytes resident. A 35-part, 240-frame bake every 6 frames is
+  about 36 KB (as the largest originals), every 2 about 103 KB, every frame about 204 KB (too big). Keep to about
+  40 KB a side unless tested on every screen.
+- `generate_objs` lays out a picture's NCER OBJs as 96.5% of the originals' are, for pictures whose rectangles change.
+
+Tests: `python3 -m unittest tools.paperwhite2.test_mcss_rig` (10), `test_battle_sprite` (12), `mcss_rig.py
+roundtrip`. No res/ or ROM change.
+
+Next (the editor): load a sprite's flat rig, edit rectangles, pivots, layers and keys with the preview, save through
+`write_side`; then the armature and curves baked to it. Decide where the rig JSON lives in res/.
+
 ## 2026-11-12: form evolutions (ROM session)
 
 design/form-evolutions.md sections 11 and 12, as the user decided:

@@ -1,0 +1,202 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "A battle sprite's rig",
+    "description": "One side (front or back) of a battle sprite's MCSS rig as tools/paperwhite2/mcss_rig.py reads and writes it: the five files <side>_info.bin, _cells.ncer, _animations.nanr.lz11, _multi_cells.nmcr and _multi_animations.nmar, drawn from the side's 256 by 128 sheet. docs/paperwhite2/design/battle-sprites.md section 15. Fields marked 'only where a file differs' are left out when they hold the usual value, which the writer puts back.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["format", "side", "box", "stop_flags", "idle_parts", "pictures", "tracks", "poses", "sequences"],
+    "$defs": {
+        "pair": {"type": "array", "items": {"type": "integer"}, "minItems": 2, "maxItems": 2},
+        "fixed_pair": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2},
+        "play": {
+            "enum": ["once", "loop", "pingpong", "pingpong_loop"],
+            "description": "NNSG2dAnimationPlayMode: play once and hold the last key, loop, or forward then back"
+        },
+        "key_common": {
+            "frames": {"type": "integer", "minimum": 0, "maximum": 65535,
+                       "description": "How many game frames (60 a second) the key lasts; the game holds a key, never tweens"},
+            "rotation": {"type": "integer", "minimum": 0, "maximum": 65535,
+                         "description": "srt keys: the turn, in 65536ths of a full turn"},
+            "scale": {"$ref": "#/$defs/fixed_pair", "description": "srt keys: the x and y scale (1 is the picture's size; negative mirrors), multiples of 1/4096"},
+            "move": {"$ref": "#/$defs/pair", "description": "srt and move keys: the move in pixels, x right, y down"},
+            "unused": {"type": "integer", "description": "move keys: the result's unused half-word, only where a file differs from 0xBEEF"},
+            "marker": {"type": "integer", "description": "The frame's marker, only where a file differs from 0xBEEF"},
+            "result_copy": {"type": "integer", "minimum": 1, "description": "Which copy of an equal result the key points at, only in the 7 originals that hold second copies"}
+        }
+    },
+    "properties": {
+        "$schema": {"type": "string", "description": "This schema, for editors"},
+        "format": {"const": 1, "description": "The rig format's version"},
+        "side": {"enum": ["front", "back"]},
+        "box": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["width", "height", "x", "y"],
+            "description": "The sprite's box (MCSS_GetHeight, MCSS_GetOffsetY), which the egg hatching and evolution centre by",
+            "properties": {
+                "width": {"type": "integer", "minimum": 0, "maximum": 65535},
+                "height": {"type": "integer", "minimum": 0, "maximum": 65535},
+                "x": {"type": "integer", "minimum": -32768, "maximum": 32767},
+                "y": {"type": "integer", "minimum": -32768, "maximum": 32767}
+            }
+        },
+        "stop_flags": {"type": "integer", "minimum": 0, "maximum": 255,
+                       "description": "Read only by the move effects' scripts (MCSSSys_GetStopCellFlags); 1 for 166 flying or floating species' fronts, inferred to mean airborne"},
+        "idle_parts": {
+            "description": "The parts (by their place in the pose, 0 the front) that keep animating while the battle's idle pause stops the rest; null for a sprite that never pauses",
+            "oneOf": [{"type": "null"}, {"type": "array", "items": {"type": "integer", "minimum": 0, "maximum": 255}, "maxItems": 254}]
+        },
+        "info_padding": {"type": "string", "pattern": "^([0-9a-f]{2})*$", "description": "The bin's bytes after the idle parts, as hex, only where a file differs from zeros to the next multiple of 4"},
+        "obj_mapping": {"type": "integer", "description": "The NCER's OBJ mapping mode, only where a file differs from 4"},
+        "extension": {"type": "integer", "description": "The NCER's and NANR's UEXT word, only where a file differs from 1"},
+        "picture_labels": {"type": "array", "items": {"type": "string"}, "description": "The NCER's LABL names, only where they differ from the tracks' names"},
+        "pictures": {
+            "type": "array",
+            "minItems": 1,
+            "description": "The cells: what a part can show",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["rectangles", "objs", "obj_attribute"],
+                "properties": {
+                    "rectangles": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 2,
+                        "description": "The bin's quads: rectangles of the sheet, the second drawn in front of the first",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": ["sheet", "size", "at"],
+                            "properties": {
+                                "sheet": {"$ref": "#/$defs/fixed_pair", "description": "The rectangle's top left on the sheet, in pixels"},
+                                "size": {"$ref": "#/$defs/fixed_pair", "description": "Its width and height in pixels (0 in a first rectangle: nothing drawn)"},
+                                "at": {"$ref": "#/$defs/fixed_pair", "description": "Where its top left goes from the part's pivot, in pixels, x right, y up; multiples of 1/256"}
+                            }
+                        }
+                    },
+                    "objs": {
+                        "type": "array",
+                        "description": "The NCER's OBJs, which MCSS doesn't draw; mcss_rig.generate_objs makes them from the rectangles",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": ["x", "y", "size", "tile", "attributes"],
+                            "properties": {
+                                "x": {"type": "integer", "minimum": -256, "maximum": 255},
+                                "y": {"type": "integer", "minimum": -128, "maximum": 127},
+                                "size": {"$ref": "#/$defs/pair"},
+                                "tile": {"type": "integer", "minimum": 0, "maximum": 1023},
+                                "attributes": {"type": "array", "items": {"type": "integer"}, "minItems": 3, "maxItems": 3,
+                                               "description": "The rest of the three OBJ attributes (affine, double size, mode, palette...)"}
+                            }
+                        }
+                    },
+                    "obj_attribute": {"type": "integer", "minimum": 0, "maximum": 65535,
+                                      "description": "The NCER cell's attribute (its low bits a bounding radius, inferred)"}
+                }
+            }
+        },
+        "tracks": {
+            "type": "array",
+            "description": "The cell animations: a part's keys",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["name", "key_type", "play", "keys"],
+                "properties": {
+                    "name": {"type": "string", "description": "The label, which names the part (head_a: the head in pose a)"},
+                    "key_type": {"enum": ["plain", "srt", "move"], "description": "What each key holds besides its picture: nothing, a rotation, scale and move, or a move"},
+                    "play": {"$ref": "#/$defs/play"},
+                    "loop_start": {"type": "integer", "description": "Only where a file differs from 0"},
+                    "bank_type": {"type": "integer", "description": "Only where a file differs from 1"},
+                    "keys": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": ["picture", "frames"],
+                            "properties": {
+                                "picture": {"type": "integer", "minimum": 0, "description": "The picture shown"},
+                                "frames": {"$ref": "#/$defs/key_common/frames"},
+                                "rotation": {"$ref": "#/$defs/key_common/rotation"},
+                                "scale": {"$ref": "#/$defs/key_common/scale"},
+                                "move": {"$ref": "#/$defs/key_common/move"},
+                                "unused": {"$ref": "#/$defs/key_common/unused"},
+                                "marker": {"$ref": "#/$defs/key_common/marker"},
+                                "result_copy": {"$ref": "#/$defs/key_common/result_copy"}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "poses": {
+            "type": "array",
+            "minItems": 1,
+            "description": "The multi-cells: the whole Pokémon as parts",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["parts"],
+                "properties": {
+                    "instances": {"type": "integer", "description": "How many track instances the pose's parts use, only where a file differs from one per part"},
+                    "parts": {
+                        "type": "array",
+                        "maxItems": 64,
+                        "description": "The nodes, front to back (the layer order)",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": ["track", "pivot", "play"],
+                            "properties": {
+                                "track": {"type": "integer", "minimum": 0, "description": "The track the part plays"},
+                                "pivot": {"$ref": "#/$defs/pair", "description": "Where the part turns and scales about, from the feet, in pixels, x right, y down"},
+                                "play": {"enum": ["restart", "continue"], "description": "Whether the track restarts when the pose starts, or goes on from the sequence's time"},
+                                "instance": {"type": "integer", "minimum": 0, "maximum": 255, "description": "The track instance, only where a file differs from the part's place"},
+                                "flags": {"type": "integer", "description": "The node attribute's bits 4 to 7, only where a file differs from 0x20"}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "sequences": {
+            "type": "array",
+            "minItems": 1,
+            "description": "The multi-cell animations: 0 the loop the battle plays (stay), 1 the idle pause's pose (stop)",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["name", "key_type", "play", "keys"],
+                "properties": {
+                    "name": {"type": "string"},
+                    "key_type": {"enum": ["plain", "srt", "move"], "description": "What each key holds besides its pose: nothing, a rotation, scale and move of the whole sprite, or a move"},
+                    "play": {"$ref": "#/$defs/play"},
+                    "loop_start": {"type": "integer", "description": "Only where a file differs from 0"},
+                    "bank_type": {"type": "integer", "description": "Only where a file differs from 2"},
+                    "keys": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": ["pose", "frames"],
+                            "properties": {
+                                "pose": {"type": "integer", "minimum": 0, "description": "The pose shown"},
+                                "frames": {"$ref": "#/$defs/key_common/frames"},
+                                "rotation": {"$ref": "#/$defs/key_common/rotation"},
+                                "scale": {"$ref": "#/$defs/key_common/scale"},
+                                "move": {"$ref": "#/$defs/key_common/move"},
+                                "unused": {"$ref": "#/$defs/key_common/unused"},
+                                "marker": {"$ref": "#/$defs/key_common/marker"},
+                                "result_copy": {"$ref": "#/$defs/key_common/result_copy"}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
