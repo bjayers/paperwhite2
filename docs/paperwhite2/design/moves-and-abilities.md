@@ -538,3 +538,19 @@ the user's save.
 9. **New moves in Easy Chat:** left out, so saved words stay fixed (recommended), or added later after the existing
    words with a new category order?
 10. **Fairy type:** in scope at all, and if so after the move and ability work (recommended)?
+
+## 11. The user's decisions (2026-11-13)
+
+1. **Metronome, Assist, Sleep Talk and Copycat** can call the new moves (Gen-accurate).
+2. **"Sweet Syrup"** is the ability's name (fits 12 characters).
+3. **No field effect** for Sweet Syrup, as in Scarlet and Violet.
+4. **Dragon Cheer affects every ally** in triple battles (a new target kind), as a strategic twist.
+5. **Code the Applin line's rules in C for now.** Later, the user wants a way to design new effects quickly and
+   accessibly from the editor: something Scratch-like, or like the game's event scripts (blocks the battle engine
+   runs), not hand-written C each time. Keep the C written now easy to turn into such blocks.
+6. **No fix-on-load** for Pokémon saved with stand-in abilities (only a test Hydrapple exists; the user will trade it
+   away or restore an earlier save).
+7. **AI**: new moves borrow an existing effect for the trainer AI.
+8. **Easy Chat**: new moves and abilities are left out.
+9. **Fairy type: in scope**, after the moves and abilities foundation. The user's Pokeweb work has an injection plugin
+   that adds Fairy and new move effects; use it as a reference then (the decomp version is our own).
