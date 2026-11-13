@@ -15,7 +15,7 @@ typedef struct {
 } BattleEventList;
 
 #define BATTLE_EVENT_ITEM_MAX 0x84
-#define BATTLE_EVENT_VAR_MAX 0x60
+#define BATTLE_EVENT_VAR_STACK_SIZE 0x60
 
 BattleEventList data_ov167_021db194;
 BattleEventItem *data_ov167_021db1a0[BATTLE_EVENT_ITEM_MAX];
@@ -75,7 +75,8 @@ BattleEventItem *BattleEvent_AddItem(u32 factorType, u16 subId, u32 priority, u3
         item->callDepth = data_ov167_021db194.depth;
         item->active = TRUE;
         usesMon = FALSE;
-        if (factorType == 0 || factorType == 4 || factorType == 5) {
+        if (factorType == BATTLE_EVENT_FACTOR_MOVE || factorType == BATTLE_EVENT_FACTOR_ABILITY ||
+            factorType == BATTLE_EVENT_FACTOR_ITEM) {
             usesMon = TRUE;
         }
         if (usesMon) {
@@ -120,7 +121,7 @@ void BattleEvent_RemoveIsolatedItems(void) {
 
     while (item != NULL) {
         next = item->next;
-        if (item->factorType == 6) {
+        if (item->factorType == BATTLE_EVENT_FACTOR_ISOLATED) {
             BattleEventItem_Remove(item);
         }
         item = next;
@@ -148,11 +149,11 @@ void BattleEventItem_Remove(BattleEventItem *item) {
 }
 
 void BattleEventItem_ConvertToIsolated(BattleEventItem *item) {
-    item->factorType = 6;
+    item->factorType = BATTLE_EVENT_FACTOR_ISOLATED;
 }
 
 BOOL BattleEventItem_IsIsolated(BattleEventItem *item) {
-    if (item->factorType == 6) {
+    if (item->factorType == BATTLE_EVENT_FACTOR_ISOLATED) {
         return TRUE;
     }
     return FALSE;
@@ -185,11 +186,11 @@ void BattleEventItem_SetWorkValue(BattleEventItem *item, u8 index, u32 value) {
 }
 
 void BattleEvent_ForceCallHandlers(BtlServerFlow *flow, u32 event) {
-    BattleEvent_CallHandlersCore(flow, event, 7, FALSE);
+    BattleEvent_CallHandlersCore(flow, event, BATTLE_EVENT_FACTOR_ANY, FALSE);
 }
 
 void BattleEvent_CallHandlers(BtlServerFlow *flow, u32 event) {
-    BattleEvent_CallHandlersCore(flow, event, 7, TRUE);
+    BattleEvent_CallHandlersCore(flow, event, BATTLE_EVENT_FACTOR_ANY, TRUE);
 }
 
 void BattleEvent_CallFactorHandlers(BtlServerFlow *flow, u32 event, u32 factorType) {
@@ -222,9 +223,9 @@ void BattleEvent_CallHandlersSub(BtlServerFlow *flow, u32 event, u32 factorType,
     while (item != NULL) {
         next = item->next;
         if ((!item->running || item->recallEnable) && !item->unk25 && !item->sleeping &&
-            (factorType == 7 || item->factorType == factorType) &&
+            (factorType == BATTLE_EVENT_FACTOR_ANY || item->factorType == factorType) &&
             (item->callDepth == 0 || item->callDepth < data_ov167_021db194.depth) && item->active &&
-            (event != 0x73 || item->tempItem)) {
+            (event != BATTLE_EVENT_EQUIP_TEMP_ITEM || item->tempItem)) {
             handlers = item->handlers;
             for (i = 0; i < item->numHandlers; i++) {
                 const BattleEventHandlerEntry *entry = &handlers[i];
@@ -269,10 +270,10 @@ BOOL BattleEvent_CheckSkip(BtlServerFlow *flow, BattleEventItem *item, u32 event
     if (item->dependMonId != 0x1f) {
         mon = GetBattleMon(flow, item->dependMonId);
     }
-    if (item->factorType == 4 && mon != NULL && CheckCondition(mon, 0x10)) {
+    if (item->factorType == BATTLE_EVENT_FACTOR_ABILITY && mon != NULL && CheckCondition(mon, 0x10)) {
         return TRUE;
     }
-    if (item->factorType == 5) {
+    if (item->factorType == BATTLE_EVENT_FACTOR_ITEM) {
         if (IsFieldEffectActive(7)) {
             return TRUE;
         }
@@ -287,7 +288,7 @@ BOOL BattleEvent_CheckSkip(BtlServerFlow *flow, BattleEventItem *item, u32 event
         if (other->skipCheck == NULL) {
             continue;
         }
-        if (other->factorType == 4) {
+        if (other->factorType == BATTLE_EVENT_FACTOR_ABILITY) {
             otherMon = GetBattleMon(flow, other->dependMonId);
             if (otherMon != NULL && CheckCondition(otherMon, 0x10)) {
                 continue;
@@ -342,7 +343,8 @@ void BattleEvent_PausePersistentMoveItems(u8 monId) {
     BattleEventItem *item;
 
     for (item = data_ov167_021db194.first; item != NULL; item = item->next) {
-        if (item->factorType == 0 && item->dependMonId == monId && MoveEventItem_IsPersistent(item, item->work)) {
+        if (item->factorType == BATTLE_EVENT_FACTOR_MOVE && item->dependMonId == monId &&
+            MoveEventItem_IsPersistent(item, item->work)) {
             item->unk25 = TRUE;
         }
     }
@@ -352,7 +354,7 @@ void BattleEvent_ResumeMoveItems(u8 monId) {
     BattleEventItem *item;
 
     for (item = data_ov167_021db194.first; item != NULL; item = item->next) {
-        if (item->factorType == 0 && item->dependMonId == monId) {
+        if (item->factorType == BATTLE_EVENT_FACTOR_MOVE && item->dependMonId == monId) {
             item->unk25 = FALSE;
         }
     }
@@ -404,8 +406,8 @@ void BattleEventVar_Init(void) {
     u32 i;
 
     vars->sp = 0;
-    for (i = 0; i < BATTLE_EVENT_VAR_MAX; i++) {
-        vars->keys[i] = 0;
+    for (i = 0; i < BATTLE_EVENT_VAR_STACK_SIZE; i++) {
+        vars->keys[i] = BATTLE_EVENT_VAR_NULL;
     }
 }
 
@@ -417,13 +419,13 @@ void BattleEventVar_CheckReset(void) {
 
 void BattleEventVar_Push(u32 line) {
     BattleEventVarStack *vars = &data_ov167_021db3b0;
-    for (; vars->sp < BATTLE_EVENT_VAR_MAX; vars->sp++) {
-        if (vars->keys[vars->sp] == 0) {
+    for (; vars->sp < BATTLE_EVENT_VAR_STACK_SIZE; vars->sp++) {
+        if (vars->keys[vars->sp] == BATTLE_EVENT_VAR_NULL) {
             break;
         }
     }
-    if (vars->sp < BATTLE_EVENT_VAR_MAX - 1) {
-        vars->keys[vars->sp++] = 1;
+    if (vars->sp < BATTLE_EVENT_VAR_STACK_SIZE - 1) {
+        vars->keys[vars->sp++] = BATTLE_EVENT_VAR_FRAME_START;
     } else {
         GFL_ASSERT(0);
     }
@@ -434,15 +436,15 @@ void BattleEventVar_Pop(u32 line) {
     u16 i;
 
     if (vars->sp != 0) {
-        for (i = vars->sp; i < BATTLE_EVENT_VAR_MAX && vars->keys[i] != 0;) {
-            vars->keys[i++] = 0;
+        for (i = vars->sp; i < BATTLE_EVENT_VAR_STACK_SIZE && vars->keys[i] != BATTLE_EVENT_VAR_NULL;) {
+            vars->keys[i++] = BATTLE_EVENT_VAR_NULL;
         }
         vars->sp--;
-        vars->keys[vars->sp] = 0;
+        vars->keys[vars->sp] = BATTLE_EVENT_VAR_NULL;
         if (vars->sp != 0) {
             while (vars->sp != 0) {
                 vars->sp--;
-                if (vars->keys[vars->sp] == 1) {
+                if (vars->keys[vars->sp] == BATTLE_EVENT_VAR_FRAME_START) {
                     vars->sp++;
                     break;
                 }
@@ -519,11 +521,11 @@ u32 BattleEventVar_GetValue(u32 key) {
     BattleEventVarStack *vars = &data_ov167_021db3b0;
     u32 i;
 
-    for (i = vars->sp; i < BATTLE_EVENT_VAR_MAX; i++) {
+    for (i = vars->sp; i < BATTLE_EVENT_VAR_STACK_SIZE; i++) {
         if (key == vars->keys[i]) {
             return vars->values[i];
         }
-        if (vars->keys[i] == 0) {
+        if (vars->keys[i] == BATTLE_EVENT_VAR_NULL) {
             break;
         }
     }
@@ -534,12 +536,12 @@ BOOL BattleEventVar_GetValueIfExist(u16 key, s32 *value) {
     BattleEventVarStack *vars = &data_ov167_021db3b0;
     u32 i;
 
-    for (i = vars->sp; i < BATTLE_EVENT_VAR_MAX; i++) {
+    for (i = vars->sp; i < BATTLE_EVENT_VAR_STACK_SIZE; i++) {
         if (key == vars->keys[i]) {
             *value = vars->values[i];
             return TRUE;
         }
-        if (vars->keys[i] == 0) {
+        if (vars->keys[i] == BATTLE_EVENT_VAR_NULL) {
             break;
         }
     }
@@ -550,12 +552,12 @@ BOOL BattleEventVar_GetValueIfExist(u16 key, s32 *value) {
 u32 BattleEventVar_FindSetIndex(BattleEventVarStack *vars, u32 key) {
     u32 i;
 
-    for (i = vars->sp; i < BATTLE_EVENT_VAR_MAX; i++) {
-        if (vars->keys[i] == 0 || key == vars->keys[i]) {
+    for (i = vars->sp; i < BATTLE_EVENT_VAR_STACK_SIZE; i++) {
+        if (vars->keys[i] == BATTLE_EVENT_VAR_NULL || key == vars->keys[i]) {
             break;
         }
     }
-    if (i >= BATTLE_EVENT_VAR_MAX) {
+    if (i >= BATTLE_EVENT_VAR_STACK_SIZE) {
         i = 0;
     }
     return i;
@@ -564,7 +566,7 @@ u32 BattleEventVar_FindSetIndex(BattleEventVarStack *vars, u32 key) {
 s32 BattleEventVar_FindIndex(BattleEventVarStack *vars, u16 key) {
     u32 i;
 
-    for (i = vars->sp; i < BATTLE_EVENT_VAR_MAX && vars->keys[i] != 0; i++) {
+    for (i = vars->sp; i < BATTLE_EVENT_VAR_STACK_SIZE && vars->keys[i] != BATTLE_EVENT_VAR_NULL; i++) {
         if (key == vars->keys[i]) {
             return i;
         }

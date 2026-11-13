@@ -450,13 +450,13 @@ static u8 ServerEvent_DecideMoveTarget(BtlServerFlow *flow, BattleMon *mon, BtlF
     u8 monId;
 
     BattleEventVar_Push(0x27f);
-    BattleEventVar_SetConstValue(3, GetMonID(mon));
-    BattleEventVar_SetConstValue(0x16, param->type);
-    BattleEventVar_SetConstValue(0x12, param->move);
-    BattleEventVar_SetRewriteOnceValue(4, 0x1f);
-    BattleEventVar_SetRewriteOnceValue(0x50, FALSE);
-    BattleEvent_CallHandlers(flow, 0x29);
-    monId = BattleEventVar_GetValue(4);
+    BattleEventVar_SetConstValue(BATTLE_EVENT_VAR_ATTACKER, GetMonID(mon));
+    BattleEventVar_SetConstValue(BATTLE_EVENT_VAR_MOVE_TYPE, param->type);
+    BattleEventVar_SetConstValue(BATTLE_EVENT_VAR_MOVE, param->move);
+    BattleEventVar_SetRewriteOnceValue(BATTLE_EVENT_VAR_DEFENDER, 0x1f);
+    BattleEventVar_SetRewriteOnceValue(BATTLE_EVENT_VAR_TARGET_FLAG, FALSE);
+    BattleEvent_CallHandlers(flow, BATTLE_EVENT_DECIDE_MOVE_TARGET);
+    monId = BattleEventVar_GetValue(BATTLE_EVENT_VAR_DEFENDER);
     BattleEventVar_Pop(0x287);
     return monId;
 }
@@ -466,12 +466,12 @@ static u8 ServerEvent_BaitMoveTarget(BtlServerFlow *flow, BattleMon *mon, BtlFlo
     u8 newTarget;
 
     BattleEventVar_Push(0x298);
-    BattleEventVar_SetConstValue(3, GetMonID(mon));
-    BattleEventVar_SetConstValue(0x16, param->type);
-    BattleEventVar_SetConstValue(0x12, param->move);
-    BattleEventVar_SetRewriteOnceValue(4, targetId);
-    BattleEvent_CallHandlers(flow, 0x2a);
-    newTarget = BattleEventVar_GetValue(4);
+    BattleEventVar_SetConstValue(BATTLE_EVENT_VAR_ATTACKER, GetMonID(mon));
+    BattleEventVar_SetConstValue(BATTLE_EVENT_VAR_MOVE_TYPE, param->type);
+    BattleEventVar_SetConstValue(BATTLE_EVENT_VAR_MOVE, param->move);
+    BattleEventVar_SetRewriteOnceValue(BATTLE_EVENT_VAR_DEFENDER, targetId);
+    BattleEvent_CallHandlers(flow, BATTLE_EVENT_BAIT_MOVE_TARGET);
+    newTarget = BattleEventVar_GetValue(BATTLE_EVENT_VAR_DEFENDER);
     BattleEventVar_Pop(0x29f);
     if (newTarget == targetId) {
         newTarget = 0x1f;

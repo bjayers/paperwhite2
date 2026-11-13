@@ -43,7 +43,7 @@ BattleEventItem *FieldEffectEventAdd(u32 effect, u8 monId) {
     for (i = 0; i < NELEMS(sFieldEffectEventAddTable); i++) {
         if (effect == sFieldEffectEventAddTable[i].effect) {
             handlers = sFieldEffectEventAddTable[i].eventAdd(&numHandlers);
-            return BattleEvent_AddItem(3, effect, 3, 0, monId, handlers, numHandlers);
+            return BattleEvent_AddItem(BATTLE_EVENT_FACTOR_FIELD, effect, 3, 0, monId, handlers, numHandlers);
         }
     }
     return NULL;
@@ -54,7 +54,7 @@ void FieldEffectEventRemove(BattleEventItem *item) {
 }
 
 static const BattleEventHandlerEntry sHandlersFieldWeather[] = {
-    { 0x47, HandlerFieldWeather },
+    { BATTLE_EVENT_DAMAGE_RATIO, HandlerFieldWeather },
 };
 
 static const BattleEventHandlerEntry *EventAddFieldWeather(u32 *numHandlers) {
@@ -66,7 +66,7 @@ static void HandlerFieldWeather(BattleEventItem *item, BtlServerFlow *flow, u8 m
 }
 
 static const BattleEventHandlerEntry sHandlersFieldTrickRoom[] = {
-    { 0x13, HandlerFieldTrickRoom },
+    { BATTLE_EVENT_CALCULATE_SPEED, HandlerFieldTrickRoom },
 };
 
 static const BattleEventHandlerEntry *EventAddFieldTrickRoom(u32 *numHandlers) {
@@ -76,12 +76,12 @@ static const BattleEventHandlerEntry *EventAddFieldTrickRoom(u32 *numHandlers) {
 
 // Reverses the turn order
 static void HandlerFieldTrickRoom(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
-    BattleEventVar_RewriteValue(0x4a, TRUE);
+    BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_TRICK_ROOM_FLAG, TRUE);
 }
 
 static const BattleEventHandlerEntry sHandlersFieldGravity[] = {
-    { 0x34, HandlerFieldGravityAccuracy },
-    { 0x3e, HandlerFieldGravityGrounded },
+    { BATTLE_EVENT_GET_MOVE_ACCURACY, HandlerFieldGravityAccuracy },
+    { BATTLE_EVENT_CHECK_TYPE_EFFECTIVENESS, HandlerFieldGravityGrounded },
 };
 
 static const BattleEventHandlerEntry *EventAddFieldGravity(u32 *numHandlers) {
@@ -91,18 +91,18 @@ static const BattleEventHandlerEntry *EventAddFieldGravity(u32 *numHandlers) {
 
 // Raises accuracy by 5/3 (the ratio is in 4096ths)
 static void HandlerFieldGravityAccuracy(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
-    BattleEventVar_MulValue(0x35, 0x1ab8);
+    BattleEventVar_MulValue(BATTLE_EVENT_VAR_RATIO, 0x1ab8);
 }
 
 // Lets Ground moves hit Pokémon in the air
 static void HandlerFieldGravityGrounded(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
-    if (BattleEventVar_GetValue(0x16) == TYPE_GROUND) {
-        BattleEventVar_RewriteValue(0x4b, TRUE);
+    if (BattleEventVar_GetValue(BATTLE_EVENT_VAR_MOVE_TYPE) == TYPE_GROUND) {
+        BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_IGNORE_FLAG, TRUE);
     }
 }
 
 static const BattleEventHandlerEntry sHandlersFieldWaterSport[] = {
-    { 0x38, HandlerFieldWaterSport },
+    { BATTLE_EVENT_MOVE_POWER_RATIO, HandlerFieldWaterSport },
 };
 
 static const BattleEventHandlerEntry *EventAddFieldWaterSport(u32 *numHandlers) {
@@ -112,13 +112,13 @@ static const BattleEventHandlerEntry *EventAddFieldWaterSport(u32 *numHandlers) 
 
 // Weakens Fire moves to 0x548/4096 (about a third)
 static void HandlerFieldWaterSport(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
-    if (BattleEventVar_GetValue(0x16) == TYPE_FIRE) {
-        BattleEventVar_MulValue(0x31, 0x548);
+    if (BattleEventVar_GetValue(BATTLE_EVENT_VAR_MOVE_TYPE) == TYPE_FIRE) {
+        BattleEventVar_MulValue(BATTLE_EVENT_VAR_POWER_RATIO, 0x548);
     }
 }
 
 static const BattleEventHandlerEntry sHandlersFieldMudSport[] = {
-    { 0x38, HandlerFieldMudSport },
+    { BATTLE_EVENT_MOVE_POWER_RATIO, HandlerFieldMudSport },
 };
 
 static const BattleEventHandlerEntry *EventAddFieldMudSport(u32 *numHandlers) {
@@ -128,13 +128,13 @@ static const BattleEventHandlerEntry *EventAddFieldMudSport(u32 *numHandlers) {
 
 // Weakens Electric moves to 0x548/4096 (about a third)
 static void HandlerFieldMudSport(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
-    if (BattleEventVar_GetValue(0x16) == TYPE_ELECTRIC) {
-        BattleEventVar_MulValue(0x31, 0x548);
+    if (BattleEventVar_GetValue(BATTLE_EVENT_VAR_MOVE_TYPE) == TYPE_ELECTRIC) {
+        BattleEventVar_MulValue(BATTLE_EVENT_VAR_POWER_RATIO, 0x548);
     }
 }
 
 static const BattleEventHandlerEntry sHandlersFieldWonderRoom[] = {
-    { 0x3a, HandlerFieldWonderRoom },
+    { BATTLE_EVENT_BEFORE_DEFENSE_STAT, HandlerFieldWonderRoom },
 };
 
 static const BattleEventHandlerEntry *EventAddFieldWonderRoom(u32 *numHandlers) {
@@ -144,12 +144,13 @@ static const BattleEventHandlerEntry *EventAddFieldWonderRoom(u32 *numHandlers) 
 
 // Swaps Defense and Special Defense
 static void HandlerFieldWonderRoom(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
-    BattleEventVar_RewriteValue(0x3d, BattleEventVar_GetValue(0x3d) + 1);
+    BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_DEFENSE_SWAP,
+                                BattleEventVar_GetValue(BATTLE_EVENT_VAR_DEFENSE_SWAP) + 1);
 }
 
 // Imprison does its work elsewhere and shares Magic Room's empty handler
 static const BattleEventHandlerEntry sHandlersFieldImprison[] = {
-    { 0, HandlerFieldMagicRoom },
+    { BATTLE_EVENT_NULL, HandlerFieldMagicRoom },
 };
 
 static const BattleEventHandlerEntry *EventAddFieldImprison(u32 *numHandlers) {
@@ -158,7 +159,7 @@ static const BattleEventHandlerEntry *EventAddFieldImprison(u32 *numHandlers) {
 }
 
 static const BattleEventHandlerEntry sHandlersFieldMagicRoom[] = {
-    { 0, HandlerFieldMagicRoom },
+    { BATTLE_EVENT_NULL, HandlerFieldMagicRoom },
 };
 
 static const BattleEventHandlerEntry *EventAddFieldMagicRoom(u32 *numHandlers) {

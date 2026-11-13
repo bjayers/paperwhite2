@@ -44,7 +44,7 @@ BOOL PosEventAdd(u32 effect, u8 pos, u8 monId, const u32 *args, u8 argCount) {
                 break;
             }
             handlers = sPosEventAddTable[i].eventAdd(&numHandlers);
-            item = BattleEvent_AddItem(1, effect, 1, 0, pos, handlers, numHandlers);
+            item = BattleEvent_AddItem(BATTLE_EVENT_FACTOR_POS, effect, 1, 0, pos, handlers, numHandlers);
             if (item != NULL) {
                 for (j = 0; j < argCount; j++) {
                     BattleEventItem_SetWorkValue(item, j, args[j]);
@@ -65,7 +65,8 @@ BOOL IsPosEffectFree(u32 effect, u8 pos) {
 static BOOL IsPosEffectFreeCore(u32 effect, u8 pos) {
     BattleEventItem *item;
 
-    for (item = BattleEvent_SeekItem(1, pos); item != NULL; item = BattleEvent_GetNextItem(item)) {
+    for (item = BattleEvent_SeekItem(BATTLE_EVENT_FACTOR_POS, pos); item != NULL;
+         item = BattleEvent_GetNextItem(item)) {
         if (effect == BattleEventItem_GetSubID(item)) {
             return FALSE;
         }
@@ -74,7 +75,7 @@ static BOOL IsPosEffectFreeCore(u32 effect, u8 pos) {
 }
 
 static const BattleEventHandlerEntry sHandlersPosWish[] = {
-    { 0x76, HandlerPosWish },
+    { BATTLE_EVENT_TURN_CHECK_EARLY, HandlerPosWish },
 };
 
 static const BattleEventHandlerEntry *EventAddPosWish(u32 *numHandlers) {
@@ -88,7 +89,7 @@ static void HandlerPosWish(BattleEventItem *item, BtlServerFlow *flow, u8 pos, s
     u8 wisherId;
     u8 targetId;
 
-    if (BattleEventVar_GetValue(2) == 0x1f && !BtlServerFlow_CheckMatchup(flow)) {
+    if (BattleEventVar_GetValue(BATTLE_EVENT_VAR_MON) == 0x1f && !BtlServerFlow_CheckMatchup(flow)) {
         if (work[0] == 0) {
             work[1] = GetTurnCounter(flow);
             work[0] = 1;
@@ -112,8 +113,8 @@ static void HandlerPosWish(BattleEventItem *item, BtlServerFlow *flow, u8 pos, s
 }
 
 static const BattleEventHandlerEntry sHandlersPosLunarDance[] = {
-    { 0x55, HandlerPosLunarDance },
-    { 0xa4, HandlerPosLunarDance },
+    { BATTLE_EVENT_MEMBER_IN, HandlerPosLunarDance },
+    { BATTLE_EVENT_AFTER_MOVE, HandlerPosLunarDance },
 };
 
 static const BattleEventHandlerEntry *EventAddPosLunarDance(u32 *numHandlers) {
@@ -134,7 +135,7 @@ static void HandlerPosLunarDance(BattleEventItem *item, BtlServerFlow *flow, u8 
     BattleHandlerCureConditionParam *cure;
     BattleHandlerPPParam *pp;
 
-    monId = BattleEventVar_GetValue(2);
+    monId = BattleEventVar_GetValue(BATTLE_EVENT_VAR_MON);
     if (pos != BtlServerFlow_MonIDToPos(flow, monId)) {
         return;
     }
@@ -191,8 +192,8 @@ static void HandlerPosLunarDance(BattleEventItem *item, BtlServerFlow *flow, u8 
 }
 
 static const BattleEventHandlerEntry sHandlersPosHealingWish[] = {
-    { 0x55, HandlerPosHealingWish },
-    { 0xa4, HandlerPosHealingWish },
+    { BATTLE_EVENT_MEMBER_IN, HandlerPosHealingWish },
+    { BATTLE_EVENT_AFTER_MOVE, HandlerPosHealingWish },
 };
 
 static const BattleEventHandlerEntry *EventAddPosHealingWish(u32 *numHandlers) {
@@ -208,7 +209,7 @@ static void HandlerPosHealingWish(BattleEventItem *item, BtlServerFlow *flow, u8
     BattleHandlerRecoverHPParam *recover;
     BattleHandlerCureConditionParam *cure;
 
-    monId = BattleEventVar_GetValue(2);
+    monId = BattleEventVar_GetValue(BATTLE_EVENT_VAR_MON);
     if (pos != BtlServerFlow_MonIDToPos(flow, monId)) {
         return;
     }
@@ -247,7 +248,7 @@ static void HandlerPosHealingWish(BattleEventItem *item, BtlServerFlow *flow, u8
 }
 
 static const BattleEventHandlerEntry sHandlersPosFutureSight[] = {
-    { 0x76, HandlerPosFutureSight },
+    { BATTLE_EVENT_TURN_CHECK_EARLY, HandlerPosFutureSight },
 };
 
 static const BattleEventHandlerEntry *EventAddPosFutureSight(u32 *numHandlers) {
@@ -262,7 +263,7 @@ static void HandlerPosFutureSight(BattleEventItem *item, BtlServerFlow *flow, u8
     BattleHandlerMessageParam *msg;
     BattleHandlerDelayMoveDamageParam *damage;
 
-    if (BattleEventVar_GetValue(2) == 0x1f && !BtlServerFlow_CheckMatchup(flow)) {
+    if (BattleEventVar_GetValue(BATTLE_EVENT_VAR_MON) == 0x1f && !BtlServerFlow_CheckMatchup(flow)) {
         turn = GetTurnCounter(flow);
         if (turn >= work[0]) {
             targetId = BtlServerFlow_PosToMonID(flow, pos);
@@ -286,7 +287,7 @@ static void HandlerPosFutureSight(BattleEventItem *item, BtlServerFlow *flow, u8
 }
 
 static const BattleEventHandlerEntry sHandlersPosBatonPass[] = {
-    { 0x55, HandlerPosBatonPass },
+    { BATTLE_EVENT_MEMBER_IN, HandlerPosBatonPass },
 };
 
 static const BattleEventHandlerEntry *EventAddPosBatonPass(u32 *numHandlers) {
@@ -298,7 +299,7 @@ static void HandlerPosBatonPass(BattleEventItem *item, BtlServerFlow *flow, u8 p
     u8 monId;
     BattleHandlerBatonPassParam *param;
 
-    monId = BattleEventVar_GetValue(2);
+    monId = BattleEventVar_GetValue(BATTLE_EVENT_VAR_MON);
     if (monId == BtlServerFlow_PosToMonID(flow, pos)) {
         param = BattleHandler_PushWork(flow, 0x2a, 0x1f);
         param->sourceMonIndex = work[0];

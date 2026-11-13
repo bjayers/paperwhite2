@@ -493,37 +493,39 @@ void Condition_CheckTypeImmunity(BtlServerFlow *flow, BattleMon *target) {
     if (CheckCondition(target, CONDITION_FORESIGHT)) {
         cont = GetConditionContinuationParam(target, CONDITION_FORESIGHT);
         pos = Condition_GetParam(cont);
-        if (pos == (u8)BattleEventVar_GetValue(0x15)) {
+        if (pos == (u8)BattleEventVar_GetValue(BATTLE_EVENT_VAR_DEFENDER_TYPE)) {
             if (GetConditionFlag(cont) == 0) {
-                BattleEventVar_RewriteValue(0x4b, TRUE);
+                BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_IGNORE_FLAG, TRUE);
             } else {
-                BattleEventVar_RewriteValue(0x4c, TRUE);
+                BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_NEUTRAL_FLAG, TRUE);
             }
         }
     }
-    if (CheckCondition(target, CONDITION_INGRAIN) && BattleEventVar_GetValue(0x16) == TYPE_GROUND) {
-        BattleEventVar_RewriteValue(0x4b, TRUE);
+    if (CheckCondition(target, CONDITION_INGRAIN) &&
+        BattleEventVar_GetValue(BATTLE_EVENT_VAR_MOVE_TYPE) == TYPE_GROUND) {
+        BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_IGNORE_FLAG, TRUE);
     }
-    if (CheckCondition(target, CONDITION_SMACK_DOWN) && BattleEventVar_GetValue(0x16) == TYPE_GROUND) {
-        BattleEventVar_RewriteValue(0x4b, TRUE);
+    if (CheckCondition(target, CONDITION_SMACK_DOWN) &&
+        BattleEventVar_GetValue(BATTLE_EVENT_VAR_MOVE_TYPE) == TYPE_GROUND) {
+        BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_IGNORE_FLAG, TRUE);
     }
 }
 
 void Condition_CheckTrapped(BtlServerFlow *flow, BattleMon *mon) {
     if (CheckCondition(mon, CONDITION_MEAN_LOOK) || CheckCondition(mon, CONDITION_BIND)) {
-        BattleEventVar_RewriteValue(0x41, TRUE);
+        BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_FAIL_FLAG, TRUE);
     }
 }
 
 void Condition_CheckFloating(BtlServerFlow *flow, BattleMon *mon) {
     if (CheckCondition(mon, CONDITION_INGRAIN)) {
-        BattleEventVar_RewriteValue(0x41, TRUE);
+        BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_FAIL_FLAG, TRUE);
     }
     if (CheckCondition(mon, CONDITION_SMACK_DOWN)) {
-        BattleEventVar_RewriteValue(0x41, TRUE);
+        BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_FAIL_FLAG, TRUE);
     }
     if (CheckCondition(mon, CONDITION_TELEKINESIS) || CheckCondition(mon, CONDITION_MAGNET_RISE)) {
-        BattleEventVar_RewriteValue(0x51, TRUE);
+        BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_GENERAL_FLAG, TRUE);
     }
 }
 
@@ -531,7 +533,7 @@ void Condition_CheckIngrainForceSwitch(BtlServerFlow *flow, BattleMon *mon) {
     BattleHandlerMessageParam *message;
     u8 monId;
 
-    if (CheckCondition(mon, CONDITION_INGRAIN) && BattleEventVar_RewriteValue(0x41, TRUE)) {
+    if (CheckCondition(mon, CONDITION_INGRAIN) && BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_FAIL_FLAG, TRUE)) {
         monId = GetMonID(mon);
         message = BattleHandler_PushWork(flow, 4, monId);
         BattleHandler_StrSetup(&message->string, 2, 0x2e6);

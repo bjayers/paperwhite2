@@ -98,7 +98,7 @@ BattleEventItem *SideEffectEventAdd(u8 side, u32 effect, BattleCondition cont) {
         if (effect == sSideEffectEventAddTable[i].effect) {
             if (slot->layers == 0) {
                 handlers = sSideEffectEventAddTable[i].eventAdd(&numHandlers);
-                item = BattleEvent_AddItem(2, effect, 2, 0, side, handlers, numHandlers);
+                item = BattleEvent_AddItem(BATTLE_EVENT_FACTOR_SIDE, effect, 2, 0, side, handlers, numHandlers);
                 BattleEventItem_SetWorkValue(item, 6, cont.raw);
                 slot->layers = 1;
                 slot->turnsElapsed = 0;
@@ -172,7 +172,7 @@ static u8 GetSideEffectLayersOfItem(BattleEventItem *item, u32 side) {
 }
 
 static const BattleEventHandlerEntry sHandlersSideReflect[] = {
-    { 0x47, HandlerSideReflect },
+    { BATTLE_EVENT_DAMAGE_RATIO, HandlerSideReflect },
 };
 
 static const BattleEventHandlerEntry *EventAddSideReflect(u32 *numHandlers) {
@@ -185,7 +185,7 @@ static void HandlerSideReflect(BattleEventItem *item, BtlServerFlow *flow, u8 si
 }
 
 static const BattleEventHandlerEntry sHandlersSideLightScreen[] = {
-    { 0x47, HandlerSideLightScreen },
+    { BATTLE_EVENT_DAMAGE_RATIO, HandlerSideLightScreen },
 };
 
 static const BattleEventHandlerEntry *EventAddSideLightScreen(u32 *numHandlers) {
@@ -202,21 +202,22 @@ static void CommonScreenEffect(BtlServerFlow *flow, u8 side, u32 screen) {
     u32 battleType;
     u32 multiplier;
 
-    if (side == GetSideFromMonID(BattleEventVar_GetValue(4)) && screen == BattleEventVar_GetValue(0x1a) &&
-        BattleEventVar_GetValue(0x45) == 0) {
+    if (side == GetSideFromMonID(BattleEventVar_GetValue(BATTLE_EVENT_VAR_DEFENDER)) &&
+        screen == BattleEventVar_GetValue(BATTLE_EVENT_VAR_MOVE_CATEGORY) &&
+        BattleEventVar_GetValue(BATTLE_EVENT_VAR_CRITICAL_FLAG) == 0) {
         battleType = BtlServerFlow_GetBattleStyle(flow);
         if (battleType == 0 || battleType == 3) {
             multiplier = 0x800;
         } else {
             multiplier = 0xa8f;
         }
-        BattleEventVar_MulValue(0x35, multiplier);
+        BattleEventVar_MulValue(BATTLE_EVENT_VAR_RATIO, multiplier);
     }
 }
 
 static const BattleEventHandlerEntry sHandlersSideSafeguard[] = {
-    { 0x65, HandlerSideSafeguardCheckFail },
-    { 0x67, HandlerSideSafeguardFixFail },
+    { BATTLE_EVENT_MOVE_CONDITION_CHECK_FAIL, HandlerSideSafeguardCheckFail },
+    { BATTLE_EVENT_ADD_CONDITION_FAILED, HandlerSideSafeguardFixFail },
 };
 
 static const BattleEventHandlerEntry *EventAddSideSafeguard(u32 *numHandlers) {
@@ -228,11 +229,11 @@ static void HandlerSideSafeguardCheckFail(BattleEventItem *item, BtlServerFlow *
     u8 attackerId;
     u32 condition;
 
-    attackerId = BattleEventVar_GetValue(4);
-    if (side == GetSideFromMonID(attackerId) && attackerId != BattleEventVar_GetValue(3)) {
-        condition = BattleEventVar_GetValue(0x1d);
+    attackerId = BattleEventVar_GetValue(BATTLE_EVENT_VAR_DEFENDER);
+    if (side == GetSideFromMonID(attackerId) && attackerId != BattleEventVar_GetValue(BATTLE_EVENT_VAR_ATTACKER)) {
+        condition = BattleEventVar_GetValue(BATTLE_EVENT_VAR_CONDITION);
         if (IsBasicStatus(condition) || condition == 6 || condition == 0xe) {
-            work[0] = BattleEventVar_RewriteValue(0x41, 1);
+            work[0] = BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_FAIL_FLAG, 1);
         }
     }
 }
@@ -242,7 +243,7 @@ static void HandlerSideSafeguardFixFail(BattleEventItem *item, BtlServerFlow *fl
     u8 attackerId;
 
     if (work[0] != 0) {
-        attackerId = BattleEventVar_GetValue(4);
+        attackerId = BattleEventVar_GetValue(BATTLE_EVENT_VAR_DEFENDER);
         message = BattleHandler_PushWork(flow, 4, attackerId);
         BattleHandler_StrSetup(&message->string, 2, 0x347);
         BattleHandler_AddArg(&message->string, attackerId);
@@ -252,8 +253,8 @@ static void HandlerSideSafeguardFixFail(BattleEventItem *item, BtlServerFlow *fl
 }
 
 static const BattleEventHandlerEntry sHandlersSideMist[] = {
-    { 0x5b, HandlerSideMistCheckFail },
-    { 0x5c, HandlerSideMistFixFail },
+    { BATTLE_EVENT_CHECK_STAT_CHANGE, HandlerSideMistCheckFail },
+    { BATTLE_EVENT_STAT_CHANGE_FAILED, HandlerSideMistFixFail },
 };
 
 static const BattleEventHandlerEntry *EventAddSideMist(u32 *numHandlers) {
@@ -264,10 +265,10 @@ static const BattleEventHandlerEntry *EventAddSideMist(u32 *numHandlers) {
 static void HandlerSideMistCheckFail(BattleEventItem *item, BtlServerFlow *flow, u8 side, s32 *work) {
     u8 targetId;
 
-    targetId = BattleEventVar_GetValue(2);
-    if (side == GetSideFromMonID(targetId) && (s32)BattleEventVar_GetValue(0x20) < 0 &&
-        targetId != BattleEventVar_GetValue(3)) {
-        work[0] = BattleEventVar_RewriteValue(0x41, 1);
+    targetId = BattleEventVar_GetValue(BATTLE_EVENT_VAR_MON);
+    if (side == GetSideFromMonID(targetId) && (s32)BattleEventVar_GetValue(BATTLE_EVENT_VAR_VOLUME) < 0 &&
+        targetId != BattleEventVar_GetValue(BATTLE_EVENT_VAR_ATTACKER)) {
+        work[0] = BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_FAIL_FLAG, 1);
     }
 }
 
@@ -277,9 +278,9 @@ static void HandlerSideMistFixFail(BattleEventItem *item, BtlServerFlow *flow, u
     u8 targetId;
 
     if (work[0] != 0) {
-        move = BattleEventVar_GetValue(0x19);
+        move = BattleEventVar_GetValue(BATTLE_EVENT_VAR_STAT_CHANGE_MOVE);
         if (move == 0 || work[1] != move) {
-            targetId = BattleEventVar_GetValue(2);
+            targetId = BattleEventVar_GetValue(BATTLE_EVENT_VAR_MON);
             message = BattleHandler_PushWork(flow, 4, targetId);
             BattleHandler_StrSetup(&message->string, 2, 0x34a);
             BattleHandler_AddArg(&message->string, targetId);
@@ -291,7 +292,7 @@ static void HandlerSideMistFixFail(BattleEventItem *item, BtlServerFlow *flow, u
 }
 
 static const BattleEventHandlerEntry sHandlersSideTailwind[] = {
-    { 0x13, HandlerSideTailwind },
+    { BATTLE_EVENT_CALCULATE_SPEED, HandlerSideTailwind },
 };
 
 static const BattleEventHandlerEntry *EventAddSideTailwind(u32 *numHandlers) {
@@ -300,13 +301,13 @@ static const BattleEventHandlerEntry *EventAddSideTailwind(u32 *numHandlers) {
 }
 
 static void HandlerSideTailwind(BattleEventItem *item, BtlServerFlow *flow, u8 side, s32 *work) {
-    if (side == GetSideFromMonID(BattleEventVar_GetValue(2))) {
-        BattleEventVar_MulValue(0x35, 0x2000);
+    if (side == GetSideFromMonID(BattleEventVar_GetValue(BATTLE_EVENT_VAR_MON))) {
+        BattleEventVar_MulValue(BATTLE_EVENT_VAR_RATIO, 0x2000);
     }
 }
 
 static const BattleEventHandlerEntry sHandlersSideLuckyChant[] = {
-    { 0x36, HandlerSideLuckyChant },
+    { BATTLE_EVENT_CHECK_CRITICAL, HandlerSideLuckyChant },
 };
 
 static const BattleEventHandlerEntry *EventAddSideLuckyChant(u32 *numHandlers) {
@@ -315,13 +316,13 @@ static const BattleEventHandlerEntry *EventAddSideLuckyChant(u32 *numHandlers) {
 }
 
 static void HandlerSideLuckyChant(BattleEventItem *item, BtlServerFlow *flow, u8 side, s32 *work) {
-    if (side == GetSideFromMonID(BattleEventVar_GetValue(4))) {
-        BattleEventVar_RewriteValue(0x41, 1);
+    if (side == GetSideFromMonID(BattleEventVar_GetValue(BATTLE_EVENT_VAR_DEFENDER))) {
+        BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_FAIL_FLAG, 1);
     }
 }
 
 static const BattleEventHandlerEntry sHandlersSideStealthRock[] = {
-    { 0x55, HandlerSideStealthRock },
+    { BATTLE_EVENT_MEMBER_IN, HandlerSideStealthRock },
 };
 
 static const BattleEventHandlerEntry *EventAddSideStealthRock(u32 *numHandlers) {
@@ -336,7 +337,7 @@ static void HandlerSideStealthRock(BattleEventItem *item, BtlServerFlow *flow, u
     BattleHandlerDamageParam *damage;
 
     divisor = 2;
-    monId = BattleEventVar_GetValue(2);
+    monId = BattleEventVar_GetValue(BATTLE_EVENT_VAR_MON);
     if (side == GetSideFromMonID(monId)) {
         mon = GetBattleMon(flow, monId);
         switch (BtlCalc_GetTypePairEffectiveness(TYPE_ROCK, GetPokeType(mon))) {
@@ -367,7 +368,7 @@ static void HandlerSideStealthRock(BattleEventItem *item, BtlServerFlow *flow, u
 }
 
 static const BattleEventHandlerEntry sHandlersSideWideGuard[] = {
-    { 0x2c, HandlerSideWideGuard },
+    { BATTLE_EVENT_CHECK_NO_EFFECT, HandlerSideWideGuard },
 };
 
 static const BattleEventHandlerEntry *EventAddSideWideGuard(u32 *numHandlers) {
@@ -381,13 +382,13 @@ static void HandlerSideWideGuard(BattleEventItem *item, BtlServerFlow *flow, u8 
     u32 target;
     BattleHandlerString *string;
 
-    targetId = BattleEventVar_GetValue(4);
+    targetId = BattleEventVar_GetValue(BATTLE_EVENT_VAR_DEFENDER);
     if (side == GetSideFromMonID(targetId)) {
-        move = BattleEventVar_GetValue(0x12);
+        move = BattleEventVar_GetValue(BATTLE_EVENT_VAR_MOVE);
         target = PML_MoveGetParam(move, MOVE_PARAM_TARGET);
         if (PML_MoveIsDamaging(move) && (target == MOVE_TARGET_ALL_ADJACENT || target == MOVE_TARGET_ADJACENT_FOES) &&
-            BattleEventVar_RewriteValue(0x40, 1)) {
-            string = (BattleHandlerString *)BattleEventVar_GetValue(0x3f);
+            BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_NO_EFFECT, 1)) {
+            string = (BattleHandlerString *)BattleEventVar_GetValue(BATTLE_EVENT_VAR_STRING);
             BattleHandler_StrSetup(string, 2, 0x31d);
             BattleHandler_AddArg(string, targetId);
         }
@@ -395,7 +396,7 @@ static void HandlerSideWideGuard(BattleEventItem *item, BtlServerFlow *flow, u8 
 }
 
 static const BattleEventHandlerEntry sHandlersSideQuickGuard[] = {
-    { 0x2c, HandlerSideQuickGuard },
+    { BATTLE_EVENT_CHECK_NO_EFFECT, HandlerSideQuickGuard },
 };
 
 static const BattleEventHandlerEntry *EventAddSideQuickGuard(u32 *numHandlers) {
@@ -408,11 +409,12 @@ static void HandlerSideQuickGuard(BattleEventItem *item, BtlServerFlow *flow, u8
     u16 move;
     BattleHandlerString *string;
 
-    attackerId = BattleEventVar_GetValue(4);
-    if (side == GetSideFromMonID(attackerId) && attackerId != BattleEventVar_GetValue(3)) {
-        move = BattleEventVar_GetValue(0x12);
-        if (PML_MoveGetParam(move, MOVE_PARAM_PRIORITY) >= 1 && BattleEventVar_RewriteValue(0x40, 1)) {
-            string = (BattleHandlerString *)BattleEventVar_GetValue(0x3f);
+    attackerId = BattleEventVar_GetValue(BATTLE_EVENT_VAR_DEFENDER);
+    if (side == GetSideFromMonID(attackerId) && attackerId != BattleEventVar_GetValue(BATTLE_EVENT_VAR_ATTACKER)) {
+        move = BattleEventVar_GetValue(BATTLE_EVENT_VAR_MOVE);
+        if (PML_MoveGetParam(move, MOVE_PARAM_PRIORITY) >= 1 &&
+            BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_NO_EFFECT, 1)) {
+            string = (BattleHandlerString *)BattleEventVar_GetValue(BATTLE_EVENT_VAR_STRING);
             BattleHandler_StrSetup(string, 2, 0x320);
             BattleHandler_AddArg(string, attackerId);
         }
@@ -420,7 +422,7 @@ static void HandlerSideQuickGuard(BattleEventItem *item, BtlServerFlow *flow, u8
 }
 
 static const BattleEventHandlerEntry sHandlersSideSpikes[] = {
-    { 0x55, HandlerSideSpikes },
+    { BATTLE_EVENT_MEMBER_IN, HandlerSideSpikes },
 };
 
 static const BattleEventHandlerEntry *EventAddSideSpikes(u32 *numHandlers) {
@@ -434,7 +436,7 @@ static void HandlerSideSpikes(BattleEventItem *item, BtlServerFlow *flow, u8 sid
     u32 divisor;
     BattleHandlerDamageParam *damage;
 
-    monId = BattleEventVar_GetValue(2);
+    monId = BattleEventVar_GetValue(BATTLE_EVENT_VAR_MON);
     if (side == GetSideFromMonID(monId) && !BtlServerFlow_IsFloating(flow, monId)) {
         switch (GetSideEffectLayersOfItem(item, side)) {
         case 1:
@@ -459,7 +461,7 @@ static void HandlerSideSpikes(BattleEventItem *item, BtlServerFlow *flow, u8 sid
 }
 
 static const BattleEventHandlerEntry sHandlersSideToxicSpikes[] = {
-    { 0x55, HandlerSideToxicSpikes },
+    { BATTLE_EVENT_MEMBER_IN, HandlerSideToxicSpikes },
 };
 
 static const BattleEventHandlerEntry *EventAddSideToxicSpikes(u32 *numHandlers) {
@@ -473,7 +475,7 @@ static void HandlerSideToxicSpikes(BattleEventItem *item, BtlServerFlow *flow, u
     BattleHandlerRemoveSideEffectParam *remove;
     BattleHandlerAddConditionParam *condition;
 
-    monId = BattleEventVar_GetValue(2);
+    monId = BattleEventVar_GetValue(BATTLE_EVENT_VAR_MON);
     if (side == GetSideFromMonID(monId) && !BtlServerFlow_IsFloating(flow, monId)) {
         if (DoesMonHaveType(GetBattleMon(flow, monId), TYPE_POISON)) {
             remove = BattleHandler_PushWork(flow, 0x1a, monId);
@@ -496,9 +498,9 @@ static void HandlerSideToxicSpikes(BattleEventItem *item, BtlServerFlow *flow, u
 }
 
 static const BattleEventHandlerEntry sHandlersSideRainbow[] = {
-    { 0x64, HandlerSideRainbow },
-    { 0x51, HandlerSideRainbow },
-    { 0x6c, HandlerSideRainbowShrink },
+    { BATTLE_EVENT_CHECK_MOVE_ADD_CONDITION, HandlerSideRainbow },
+    { BATTLE_EVENT_ADDED_STAT_CHANGE_CHANCE, HandlerSideRainbow },
+    { BATTLE_EVENT_GET_FLINCH_CHANCE, HandlerSideRainbowShrink },
 };
 
 static const BattleEventHandlerEntry *EventAddSideRainbow(u32 *numHandlers) {
@@ -510,20 +512,20 @@ static const BattleEventHandlerEntry *EventAddSideRainbow(u32 *numHandlers) {
 static void HandlerSideRainbow(BattleEventItem *item, BtlServerFlow *flow, u8 side, s32 *work) {
     u16 chance;
 
-    if (side == GetSideFromMonID(BattleEventVar_GetValue(3))) {
-        chance = BattleEventVar_GetValue(0x26) * 2;
-        BattleEventVar_RewriteValue(0x26, chance);
+    if (side == GetSideFromMonID(BattleEventVar_GetValue(BATTLE_EVENT_VAR_ATTACKER))) {
+        chance = BattleEventVar_GetValue(BATTLE_EVENT_VAR_ADDED_EFFECT_CHANCE) * 2;
+        BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_ADDED_EFFECT_CHANCE, chance);
     }
 }
 
 static void HandlerSideRainbowShrink(BattleEventItem *item, BtlServerFlow *flow, u8 side, s32 *work) {
-    if (side == GetSideFromMonID(BattleEventVar_GetValue(3))) {
-        BattleEventVar_RewriteValue(0x45, 1);
+    if (side == GetSideFromMonID(BattleEventVar_GetValue(BATTLE_EVENT_VAR_ATTACKER))) {
+        BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_CRITICAL_FLAG, 1);
     }
 }
 
 static const BattleEventHandlerEntry sHandlersSideSeaOfFire[] = {
-    { 0x76, HandlerSideSeaOfFire },
+    { BATTLE_EVENT_TURN_CHECK_EARLY, HandlerSideSeaOfFire },
 };
 
 static const BattleEventHandlerEntry *EventAddSideSeaOfFire(u32 *numHandlers) {
@@ -537,7 +539,7 @@ static void HandlerSideSeaOfFire(BattleEventItem *item, BtlServerFlow *flow, u8 
     BattleHandlerEffectAtPosParam *effect;
     BattleHandlerDamageParam *damage;
 
-    monId = BattleEventVar_GetValue(2);
+    monId = BattleEventVar_GetValue(BATTLE_EVENT_VAR_MON);
     if (monId != 0x1f && BtlServerFlow_IsMonInBattle(flow, monId) && !BtlServerFlow_CheckMatchup(flow) &&
         side == GetSideFromMonID(monId)) {
         mon = GetBattleMon(flow, monId);
@@ -559,7 +561,7 @@ static void HandlerSideSeaOfFire(BattleEventItem *item, BtlServerFlow *flow, u8 
 }
 
 static const BattleEventHandlerEntry sHandlersSideSwamp[] = {
-    { 0x13, HandlerSideSwamp },
+    { BATTLE_EVENT_CALCULATE_SPEED, HandlerSideSwamp },
 };
 
 static const BattleEventHandlerEntry *EventAddSideSwamp(u32 *numHandlers) {
@@ -568,7 +570,7 @@ static const BattleEventHandlerEntry *EventAddSideSwamp(u32 *numHandlers) {
 }
 
 static void HandlerSideSwamp(BattleEventItem *item, BtlServerFlow *flow, u8 side, s32 *work) {
-    if (side == GetSideFromMonID(BattleEventVar_GetValue(2))) {
-        BattleEventVar_MulValue(0x35, 0x400);
+    if (side == GetSideFromMonID(BattleEventVar_GetValue(BATTLE_EVENT_VAR_MON))) {
+        BattleEventVar_MulValue(BATTLE_EVENT_VAR_RATIO, 0x400);
     }
 }
