@@ -24,6 +24,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 MOVES = ROOT / "res" / "moves"
+# The hack's battle handlers of the added moves whose rules are new, each built while its constant exists
+BATTLE_CODE = ROOT / "src" / "paperwhite2" / "ov167" / "paperwhite2_battle.c"
 MOVE_LIST = ROOT / "generated" / "moves.txt"
 # The original game's last move, and the first ID the hack adds
 LAST_ORIGINAL = "MOVE_FUSION_BOLT"
@@ -131,12 +133,22 @@ def added_table(root: Path = MOVES) -> list[tuple[str, int, int]]:
     return rows
 
 
+def has_own_handlers(move: str, code: Path = BATTLE_CODE) -> bool:
+    """Whether the hack's battle code has the move's own handlers (an #ifdef of its constant)."""
+    return code.exists() and f"#ifdef {move}\n" in code.read_text()
+
+
 def main():
     added = added_table()
     names = constants()
     print(f"{count()} move IDs: 1-{FIRST_ADDED - 1} the original game's, {len(added)} added")
     for number, (move, animation, handlers) in enumerate(added, FIRST_ADDED):
-        like = f", handlers like {names[handlers]}" if handlers else ""
+        if handlers:
+            like = f", handlers like {names[handlers]}"
+        elif has_own_handlers(move):
+            like = f", its own handlers in {BATTLE_CODE.relative_to(ROOT)}"
+        else:
+            like = ""
         print(f"{number:5} {move} (animation {names[animation]}{like})")
 
 

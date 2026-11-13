@@ -140,7 +140,17 @@ static const u16 sMoldBreakerIgnoredAbilities[] = {
     ABILITY_VOLT_ABSORB,  ABILITY_DRY_SKIN,     ABILITY_FLOWER_GIFT,  ABILITY_HEAVY_METAL,  ABILITY_LIGHT_METAL
 };
 
+#if defined(PAPERWHITE2) && defined(ABILITY_BULLETPROOF)
+// Paper White 2: the added abilities that Mold Breaker and its kin ignore
+static const u16 sMoldBreakerIgnoredAddedAbilities[] = { ABILITY_BULLETPROOF };
+#endif
+
 BOOL IsMoldBreakerIgnoredAbility(u16 ability) {
+#if defined(PAPERWHITE2) && defined(ABILITY_BULLETPROOF)
+    if (U16List_Contains(ability, sMoldBreakerIgnoredAddedAbilities, NELEMS(sMoldBreakerIgnoredAddedAbilities))) {
+        return TRUE;
+    }
+#endif
     return U16List_Contains(ability, sMoldBreakerIgnoredAbilities, 55);
 }
 

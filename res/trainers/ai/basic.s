@@ -65,7 +65,11 @@ Basic_CheckGrassAbsorption:
 
 Basic_CheckSoundproof:
     LoadBattlerAbility AI_BATTLER_DEFENDER
+#if defined(PAPERWHITE2) && defined(ABILITY_BULLETPROOF)
+    IfLoadedNotEqualTo ABILITY_SOUNDPROOF, Basic_CheckBulletproof
+#else
     IfLoadedNotEqualTo ABILITY_SOUNDPROOF, Basic_ScoreMoveEffect
+#endif
     LoadBattlerAbility AI_BATTLER_ATTACKER
     IfLoadedEqualTo ABILITY_MOLD_BREAKER, Basic_ScoreMoveEffect
     IfMoveEqualTo MOVE_GROWL, ScoreMinus10
@@ -83,6 +87,38 @@ Basic_CheckSoundproof:
     IfMoveEqualTo MOVE_ECHOED_VOICE, ScoreMinus10
     IfMoveEqualTo MOVE_RELIC_SONG, ScoreMinus10
     IfMoveEqualTo MOVE_SNARL, ScoreMinus10
+
+#if defined(PAPERWHITE2) && defined(ABILITY_BULLETPROOF)
+// Paper White 2: Bulletproof as Soundproof, for the ball and bomb moves (MOVE_FLAG_BALLISTIC in res/moves/,
+// which no command reads)
+Basic_CheckBulletproof:
+    LoadBattlerAbility AI_BATTLER_DEFENDER
+    IfLoadedNotEqualTo ABILITY_BULLETPROOF, Basic_ScoreMoveEffect
+    LoadBattlerAbility AI_BATTLER_ATTACKER
+    IfLoadedEqualTo ABILITY_MOLD_BREAKER, Basic_ScoreMoveEffect
+    IfMoveEqualTo MOVE_ACID_SPRAY, ScoreMinus10
+    IfMoveEqualTo MOVE_AURA_SPHERE, ScoreMinus10
+    IfMoveEqualTo MOVE_BARRAGE, ScoreMinus10
+    IfMoveEqualTo MOVE_BULLET_SEED, ScoreMinus10
+    IfMoveEqualTo MOVE_EGG_BOMB, ScoreMinus10
+    IfMoveEqualTo MOVE_ELECTRO_BALL, ScoreMinus10
+    IfMoveEqualTo MOVE_ENERGY_BALL, ScoreMinus10
+    IfMoveEqualTo MOVE_FOCUS_BLAST, ScoreMinus10
+    IfMoveEqualTo MOVE_GYRO_BALL, ScoreMinus10
+    IfMoveEqualTo MOVE_ICE_BALL, ScoreMinus10
+    IfMoveEqualTo MOVE_MAGNET_BOMB, ScoreMinus10
+    IfMoveEqualTo MOVE_MIST_BALL, ScoreMinus10
+    IfMoveEqualTo MOVE_MUD_BOMB, ScoreMinus10
+    IfMoveEqualTo MOVE_OCTAZOOKA, ScoreMinus10
+    IfMoveEqualTo MOVE_ROCK_BLAST, ScoreMinus10
+    IfMoveEqualTo MOVE_ROCK_WRECKER, ScoreMinus10
+    IfMoveEqualTo MOVE_SEARING_SHOT, ScoreMinus10
+    IfMoveEqualTo MOVE_SEED_BOMB, ScoreMinus10
+    IfMoveEqualTo MOVE_SHADOW_BALL, ScoreMinus10
+    IfMoveEqualTo MOVE_SLUDGE_BOMB, ScoreMinus10
+    IfMoveEqualTo MOVE_WEATHER_BALL, ScoreMinus10
+    IfMoveEqualTo MOVE_ZAP_CANNON, ScoreMinus10
+#endif
 
 Basic_ScoreMoveEffect:
     GoToByMoveEffect 0, 337, Basic_MoveEffectTable

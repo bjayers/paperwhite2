@@ -67,8 +67,16 @@
 #define MOVE_ATTRIBUTE_FIXED_DAMAGE (1 << 6)
 #define MOVE_ATTRIBUTE_DAMAGING (1 << 7)
 
-// getMoveFlag's bit of MOVE_FLAG_SOUND
+// getMoveFlag's bits of MOVE_FLAG_SOUND and MOVE_FLAG_BALLISTIC
 #define MOVE_FLAG_BIT_SOUND 8
+#define MOVE_FLAG_BIT_BALLISTIC 14
+
+// The last ability the preview knows: the added abilities after it are unknown until it learns them
+#ifdef ABILITY_BULLETPROOF
+#define MOVE_PREVIEW_LAST_ABILITY ABILITY_BULLETPROOF
+#else
+#define MOVE_PREVIEW_LAST_ABILITY ABILITY_TERAVOLT
+#endif
 
 // The types the preview reads matchups for: the game's 17 and 17 itself, a Fairy type in hacks that add one
 #define MOVE_PREVIEW_TYPE_COUNT 18
@@ -355,8 +363,7 @@ static int MovePreview_Affinity(BtlvInput *work, u32 move, u32 attributes, Battl
     }
     attackAbility = MovePreview_Ability(attacker);
     defenseAbility = MovePreview_Ability(target);
-    // The hack's added abilities, after Teravolt, are unknown until the preview learns them
-    if (attackAbility > ABILITY_TERAVOLT || defenseAbility > ABILITY_TERAVOLT) {
+    if (attackAbility > MOVE_PREVIEW_LAST_ABILITY || defenseAbility > MOVE_PREVIEW_LAST_ABILITY) {
         return AFFINITY_UNKNOWN;
     }
     field = GetBtlField(BtlvEffect_GetMainModule());
@@ -402,6 +409,10 @@ static int MovePreview_Affinity(BtlvInput *work, u32 move, u32 attributes, Battl
          (defense == ABILITY_VOLT_ABSORB || defense == ABILITY_LIGHTNINGROD || defense == ABILITY_MOTOR_DRIVE)) ||
         (type == TYPE_FIRE && defense == ABILITY_FLASH_FIRE) || (type == TYPE_GRASS && defense == ABILITY_SAP_SIPPER) ||
         (defense == ABILITY_SOUNDPROOF && (attributes & MOVE_ATTRIBUTE_SOUND)) ||
+#ifdef ABILITY_BULLETPROOF
+        // The move data cache holds the move, one of the four the game just drew
+        (defense == ABILITY_BULLETPROOF && getMoveFlag(move, MOVE_FLAG_BIT_BALLISTIC)) ||
+#endif
         (defense == ABILITY_WONDER_GUARD && affinity <= 0)) {
         return AFFINITY_IMMUNE;
     }

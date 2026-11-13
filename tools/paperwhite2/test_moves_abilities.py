@@ -14,15 +14,23 @@ from pathlib import Path
 from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from tools.data import ability_list, move_list  # noqa: E402
+from tools.data import ability_list, move_data, move_list  # noqa: E402
+from tools.data.datajson import constants  # noqa: E402
 from tools.paperwhite2 import abilities, moves  # noqa: E402
-from tools.text import pms_words  # noqa: E402
+from tools.text import pms_words, text_sources  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def original_lines(path: Path, last_original: str) -> str:
+    """A list file's text up to its last original constant: the repository's own added ones taken out."""
+    lines = path.read_text().splitlines(keepends=True)
+    return "".join(lines[:[line.strip() for line in lines].index(last_original) + 1])
+
+
 class Lists(unittest.TestCase):
-    """A copy of moves.txt, abilities.txt, res/moves and res/abilities that a test may append to."""
+    """A copy of moves.txt, abilities.txt, res/moves and res/abilities with only the original game's moves and
+    abilities, that a test may append to."""
 
     @classmethod
     def setUpClass(cls):
@@ -31,6 +39,10 @@ class Lists(unittest.TestCase):
         cls.pristine = base / "pristine"
         shutil.copytree(ROOT / "res" / "moves", cls.pristine / "moves")
         shutil.copytree(ROOT / "res" / "abilities", cls.pristine / "abilities")
+        for move in move_list.added_moves():
+            shutil.rmtree(cls.pristine / "moves" / move_list.directory(move))
+        for ability in ability_list.added_abilities():
+            (cls.pristine / "abilities" / ability_list.file_name(ability)).unlink()
 
     @classmethod
     def tearDownClass(cls):
@@ -44,8 +56,9 @@ class Lists(unittest.TestCase):
         shutil.copytree(self.pristine / "abilities", self.abilities)
         self.move_list_file = self.work / "moves.txt"
         self.ability_list_file = self.work / "abilities.txt"
-        shutil.copy(ROOT / "generated" / "moves.txt", self.move_list_file)
-        shutil.copy(ROOT / "generated" / "abilities.txt", self.ability_list_file)
+        self.move_list_file.write_text(original_lines(ROOT / "generated" / "moves.txt", move_list.LAST_ORIGINAL))
+        self.ability_list_file.write_text(original_lines(ROOT / "generated" / "abilities.txt",
+                                                         ability_list.LAST_ORIGINAL))
         patches = [mock.patch.object(move_list, "MOVE_LIST", self.move_list_file),
                    mock.patch.object(move_list, "MOVES", self.moves),
                    mock.patch.object(ability_list, "ABILITY_LIST", self.ability_list_file),
@@ -141,7 +154,7 @@ class MoveListTest(Lists):
             move_list.added_table()
 
     def test_list_checks(self):
-        text = (ROOT / "generated" / "moves.txt").read_text()
+        text = original_lines(ROOT / "generated" / "moves.txt", move_list.LAST_ORIGINAL)
         with self.assertRaisesRegex(move_list.MoveListError, "must be move 559"):
             move_list.parse(text.replace("MOVE_FUSION_BOLT\n", ""))
         with self.assertRaisesRegex(move_list.MoveListError, "numbered in order"):
@@ -171,10 +184,44 @@ class AbilityListTest(Lists):
         self.add_ability("ABILITY_SUPERSWEET_SYRUP", {"name": "Supersweet Syrup"})
         with self.assertRaisesRegex(ability_list.AbilityListError, "longer than 12"):
             ability_list.added_table()
-        text = (ROOT / "generated" / "abilities.txt").read_text()
+        text = original_lines(ROOT / "generated" / "abilities.txt", ability_list.LAST_ORIGINAL)
         with self.assertRaisesRegex(ability_list.AbilityListError, "in a byte"):
             ability_list.parse(text + "".join(f"ABILITY_TEST_{i}\n" for i in range(92)))
         self.assertEqual(len(ability_list.parse(text + "".join(f"ABILITY_TEST_{i}\n" for i in range(91)))), 256)
+
+
+class RepositoryTest(unittest.TestCase):
+    """The repository's own added moves and abilities (docs/paperwhite2/design/moves-and-abilities.md, section 13)."""
+
+    def test_added(self):
+        names = move_list.constants()
+        self.assertEqual(move_list.added_table(), [("MOVE_APPLE_ACID", names.index("MOVE_ENERGY_BALL"), 0),
+                                                   ("MOVE_GRAV_APPLE", names.index("MOVE_SEED_BOMB"), 0)])
+        self.assertEqual(ability_list.added_table(), [("ABILITY_BULLETPROOF", 0)])
+        # Their own handlers in the hack's battle code: Grav Apple's and Bulletproof's, not Apple Acid (data only)
+        self.assertTrue(move_list.has_own_handlers("MOVE_GRAV_APPLE"))
+        self.assertFalse(move_list.has_own_handlers("MOVE_APPLE_ACID"))
+        self.assertTrue(ability_list.has_own_handlers("ABILITY_BULLETPROOF"))
+
+    def test_ballistic_flag(self):
+        """MOVE_FLAG_BALLISTIC packs as bit 14, on the ball and bomb moves only."""
+        self.assertEqual(constants()["MOVE_FLAG_BALLISTIC"], 1 << 14)
+        flagged = sorted(move for move in move_list.constants()[1:]
+                         if "MOVE_FLAG_BALLISTIC" in move_list.move_data(move)["flags"])
+        self.assertEqual(len(flagged), 22)
+        self.assertIn("MOVE_SHADOW_BALL", flagged)
+        self.assertNotIn("MOVE_GRAV_APPLE", flagged)
+        for move, ballistic in (("MOVE_SEED_BOMB", True), ("MOVE_TACKLE", False)):
+            data = move_list.move_data(move)
+            flags = move_data.move_bytes(data, move)[-4:]
+            self.assertEqual(bool(int.from_bytes(flags, "little") & 1 << 14), ballistic)
+
+    def test_used_messages(self):
+        """Bank 16's "used" messages of the added moves, three each, after the originals'."""
+        self.assertEqual(text_sources.expand("added_moves.used")[:3],
+                         ["{0102:0} used\\nApple Acid!", "The wild {0102:0} used\\nApple Acid!",
+                          "The foe's {0102:0} used\\nApple Acid!"])
+        self.assertEqual(len(text_sources.expand("added_moves.used")), 3 * len(move_list.added_moves()))
 
 
 class EasyChatTest(unittest.TestCase):

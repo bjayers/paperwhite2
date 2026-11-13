@@ -19,6 +19,7 @@
 #include "pml/move.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/abilities.h"
+#include "paperwhite2/battle_handlers.h"
 #endif
 
 // The strongest moves Forewarn found, one entry per move
@@ -202,6 +203,10 @@ static const AbilityEventAddEntry sAbilityEventAddTable[] = {
     { ABILITY_VICTORY_STAR, EventAddVictoryStar },
     { ABILITY_TURBOBLAZE, EventAddMoldBreaker },
     { ABILITY_TERAVOLT, EventAddMoldBreaker },
+#if defined(PAPERWHITE2) && defined(ABILITY_BULLETPROOF)
+    // Paper White 2: the added abilities' own handlers (paperwhite2_battle.c)
+    { ABILITY_BULLETPROOF, PaperWhite2_EventAddBulletproof },
+#endif
 };
 
 BattleEventItem *AbilityEvent_AddItem(BattleMon *mon) {

@@ -24,6 +24,7 @@
 #include "pml/move.h"
 #include "pml/poke_party.h"
 #ifdef PAPERWHITE2
+#include "paperwhite2/battle_handlers.h"
 #include "paperwhite2/moves.h"
 #endif
 
@@ -866,6 +867,10 @@ static const MoveEventAddEntry sMoveEventAddTable[] = {
     { MOVE_GRASS_PLEDGE, EventAddWaterPledge },
     { MOVE_FUSION_FLARE, EventAddFusionFlare },
     { MOVE_FUSION_BOLT, EventAddFusionFlare },
+#if defined(PAPERWHITE2) && defined(MOVE_GRAV_APPLE)
+    // Paper White 2: the added moves' own handlers (paperwhite2_battle.c)
+    { MOVE_GRAV_APPLE, PaperWhite2_EventAddGravApple },
+#endif
 };
 
 // Doesn't match: the original keeps the status in a register, which MWCC does for an enum-typed local (see the

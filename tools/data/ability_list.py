@@ -19,6 +19,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 ABILITIES = ROOT / "res" / "abilities"
 ABILITY_LIST = ROOT / "generated" / "abilities.txt"
+# The hack's battle handlers of the added abilities whose rules are new, each built while its constant exists
+BATTLE_CODE = ROOT / "src" / "paperwhite2" / "ov167" / "paperwhite2_battle.c"
 # The original game's last ability, and the first ID the hack adds
 LAST_ORIGINAL = "ABILITY_TERAVOLT"
 FIRST_ADDED = 165
@@ -113,12 +115,22 @@ def added_table(root: Path = ABILITIES) -> list[tuple[str, int]]:
     return rows
 
 
+def has_own_handlers(ability: str, code: Path = BATTLE_CODE) -> bool:
+    """Whether the hack's battle code has the ability's own handlers (an #ifdef of its constant)."""
+    return code.exists() and f"#ifdef {ability}\n" in code.read_text()
+
+
 def main():
     added = added_table()
     names = constants()
     print(f"{count()} ability IDs: 1-{FIRST_ADDED - 1} the original game's, {len(added)} added")
     for number, (ability, handlers) in enumerate(added, FIRST_ADDED):
-        like = f"handlers like {names[handlers]}" if handlers else "no handlers yet (the hack's battle code)"
+        if handlers:
+            like = f"handlers like {names[handlers]}"
+        elif has_own_handlers(ability):
+            like = f"its own handlers in {BATTLE_CODE.relative_to(ROOT)}"
+        else:
+            like = "no handlers yet: it does nothing in battle"
         print(f"{number:5} {ability} ({like})")
 
 

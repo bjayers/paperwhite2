@@ -1,0 +1,5 @@
+{
+    "$schema": "ability.schema.json",
+    "name": "Bulletproof",
+    "description": "Shields the Pokémon from\nball and bomb moves."
+}
