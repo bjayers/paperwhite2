@@ -902,13 +902,13 @@ the followers' sprites.
 
 | ID | Constant | No. | Types | Abilities (slot 1 / slot 2 / hidden) | Evolves |
 | --- | --- | --- | --- | --- | --- |
-| 687 | `SPECIES_APPLIN` | 840 | Grass/Dragon | Harvest\* / Gluttony / Bulletproof | Tart Apple → Flapple, Sweet Apple → Appletun, Syrupy Apple → Dipplin (`EVO_METHOD_ITEM`) |
-| 688 | `SPECIES_FLAPPLE` | 841 | Grass/Dragon | Harvest\* / Gluttony / Hustle | |
-| 689 | `SPECIES_APPLETUN` | 842 | Grass/Dragon | Harvest\* / Gluttony / Thick Fat | |
-| 690 | `SPECIES_DIPPLIN` | 1011 | Grass/Dragon | Illuminate\* / Gluttony / Sticky Hold | → Hydrapple: level up knowing Focus Energy\* (`EVO_METHOD_KNOWS_MOVE`) |
-| 691 | `SPECIES_HYDRAPPLE` | 1019 | Grass/Dragon | Illuminate\* / Regenerator / Sticky Hold | |
+| 687 | `SPECIES_APPLIN` | 840 | Grass/Dragon | Ripen / Gluttony / Bulletproof | Tart Apple → Flapple, Sweet Apple → Appletun, Syrupy Apple → Dipplin (`EVO_METHOD_ITEM`) |
+| 688 | `SPECIES_FLAPPLE` | 841 | Grass/Dragon | Ripen / Gluttony / Hustle | |
+| 689 | `SPECIES_APPLETUN` | 842 | Grass/Dragon | Ripen / Gluttony / Thick Fat | |
+| 690 | `SPECIES_DIPPLIN` | 1011 | Grass/Dragon | Sweet Syrup / Gluttony / Sticky Hold | → Hydrapple: level up knowing Dragon Cheer (`EVO_METHOD_KNOWS_MOVE`) |
+| 691 | `SPECIES_HYDRAPPLE` | 1019 | Grass/Dragon | Sweet Syrup / Regenerator / Sticky Hold | |
 
-\* a stand-in (18.2).
+Every stand-in is replaced now (18.2).
 
 - **The game's numbers** are Sword/Shield's and Scarlet/Violet's in Gen 5's fields:
   - base stats (HP/Atk/Def/SpA/SpD/Spe): Applin 40/40/80/40/40/20, Flapple 70/110/80/95/60/70, Appletun
@@ -955,20 +955,20 @@ the followers' sprites.
 
 Gen 5 has none of the line's own moves and abilities (section 9). Each stand-in is the nearest Gen 5 thing; replace it
 when the real one exists. All are in the species' `data.json` (`abilities`, `hidden_ability`, `learnset.by_level`,
-`evolutions`). **Replaced** rows have the real one now (design/moves-and-abilities.md section 13).
+`evolutions`). **Replaced** rows have the real one now (design/moves-and-abilities.md sections 13 and 15): every row.
 
 | Real (Gen 8/9) | Who | Stand-in (Gen 5) | Why this one |
 | --- | --- | --- | --- |
-| Ripen (ability: doubles a Berry's effect) | Applin, Flapple, Appletun, slot 1 | Harvest | Gen 5's other Berry ability (may restore a used Berry): the nearest Berry effect |
+| Ripen (ability: doubles a Berry's effect) | Applin, Flapple, Appletun, slot 1 | **Replaced** (was Harvest) | ability 167, 2026-11-13 |
 | Bulletproof (ability, Gen 6: immune to ball and bomb moves) | Applin, hidden | **Replaced** (was Soundproof) | ability 165, 2026-11-13 |
-| Supersweet Syrup (ability: lowers the foes' evasion on entering, once a battle) | Dipplin, Hydrapple, slot 1 | Illuminate | no Gen 5 entry ability lowers evasion, and Intimidate would be far stronger; Illuminate does nothing in battle and raises wild encounters in the field, as Sweet Scent does, which the syrup echoes |
+| Supersweet Syrup (ability: lowers the foes' evasion on entering, once a battle) | Dipplin, Hydrapple, slot 1 | **Replaced** (was Illuminate) | ability 166, "Sweet Syrup" (12 characters), no field effect, 2026-11-13 |
 | Grav Apple (Grass, physical 80, lowers Defense) | Flapple, level 32 | **Replaced** (was Seed Bomb) | move 561, 2026-11-13 |
 | Apple Acid (Grass, special 80, lowers Sp. Def) | Appletun, level 28 | **Replaced** (was Energy Ball) | move 560, 2026-11-13 |
-| Body Press (Fighting, physical 80, uses Defense) | Appletun 24, Hydrapple 36 | Body Slam (Appletun), Heavy Slam (Hydrapple) | no Gen 5 move uses Defense; a bulky physical move at the same level |
-| Syrup Bomb (Grass, special 60, lowers Speed for 3 turns) | Dipplin, Hydrapple, level 24 | Magical Leaf | Grass, special, 60, without the Speed drop |
-| Dragon Cheer (Dragon status: raises the allies' critical-hit ratio) | Dipplin, Hydrapple, level 1 (Move Reminder) | Focus Energy | the same effect on itself, Gen 5's critical-hit move |
-| Fickle Beam (Dragon, special 80, sometimes double power) | Hydrapple, on evolving (level 1) | Dragon Pulse | Dragon, special, 85 |
-| Dipplin → Hydrapple: level up knowing Dragon Cheer | Dipplin's evolution | level up knowing Focus Energy (`EVO_METHOD_KNOWS_MOVE`) | the method exists (Aipom, Yanma); Focus Energy is Dragon Cheer's stand-in, and Dipplin learns it only at level 1, from the Move Reminder (Mistralton City, a Heart Scale), never by accident on levelling |
+| Body Press (Fighting, physical 80, uses Defense) | Appletun 24, Hydrapple 36 | **Replaced** (was Body Slam, Heavy Slam) | move 562, 2026-11-13 |
+| Syrup Bomb (Grass, special 60, lowers Speed for 3 turns) | Dipplin, Hydrapple, level 24 | **Replaced** (was Magical Leaf) | move 565, 2026-11-13 |
+| Dragon Cheer (Dragon status: raises the allies' critical-hit ratio) | Dipplin, Hydrapple, level 1 (Move Reminder) | **Replaced** (was Focus Energy) | move 564, 2026-11-13 |
+| Fickle Beam (Dragon, special 80, sometimes double power) | Hydrapple, on evolving (level 1) | **Replaced** (was Dragon Pulse) | move 563, at level 1 (the Move Reminder: Gen 5 has no evolution moves), 2026-11-13 |
+| Dipplin → Hydrapple: level up knowing Dragon Cheer | Dipplin's evolution | **Replaced** (was knowing Focus Energy) | `EVO_METHOD_KNOWS_MOVE` with `MOVE_DRAGON_CHEER`, which Dipplin learns only at level 1, from the Move Reminder (Mistralton City, a Heart Scale), 2026-11-13 |
 
 The apples aren't stand-ins but new items; their icons are placeholders (copies of the Rindo, Sitrus and Tamato
 Berries'), as are every species' art, icon, cry and footprint (Budew's) and Flapple's and Appletun's followers.

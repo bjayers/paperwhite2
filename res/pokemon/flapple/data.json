@@ -40,7 +40,7 @@
     "base_friendship": 70,
     "growth_rate": "GROWTH_ERRATIC",
     "egg_groups": [ "EGG_GROUP_GRASS", "EGG_GROUP_DRAGON" ],
-    "abilities": [ "ABILITY_HARVEST", "ABILITY_GLUTTONY" ],
+    "abilities": [ "ABILITY_RIPEN", "ABILITY_GLUTTONY" ],
     "hidden_ability": "ABILITY_HUSTLE",
     "flee_rate": 0,
     "forms": {

@@ -40,7 +40,7 @@
     "base_friendship": 70,
     "growth_rate": "GROWTH_ERRATIC",
     "egg_groups": [ "EGG_GROUP_GRASS", "EGG_GROUP_DRAGON" ],
-    "abilities": [ "ABILITY_HARVEST", "ABILITY_GLUTTONY" ],
+    "abilities": [ "ABILITY_RIPEN", "ABILITY_GLUTTONY" ],
     "hidden_ability": "ABILITY_THICK_FAT",
     "flee_rate": 0,
     "forms": {
@@ -64,7 +64,7 @@
             [ 12, "MOVE_STOMP" ],
             [ 16, "MOVE_SWEET_SCENT" ],
             [ 20, "MOVE_DRAGON_PULSE" ],
-            [ 24, "MOVE_BODY_SLAM" ],
+            [ 24, "MOVE_BODY_PRESS" ],
             [ 28, "MOVE_APPLE_ACID" ],
             [ 32, "MOVE_IRON_DEFENSE" ],
             [ 36, "MOVE_RECOVER" ],
