@@ -102,6 +102,106 @@ export interface PokemonFormChange {
   preview?: string;
 }
 
+/** A move Paper White 2 added, as tools/paperwhite2/moves.py json lists it. */
+export interface AddedMove {
+  move: string;
+  id: number;
+  name: string;
+  path: string;
+  /** The original move whose animation it plays. */
+  animation: string;
+  /** The original move whose battle handlers it takes, or null. */
+  handlersLike: string | null;
+  /** Whether the hack's battle code has handlers of its own for it (an #ifdef of its constant there). */
+  ownHandlers: boolean;
+  retired: boolean;
+  /** Whether it is the last added move, the only one that can be removed. */
+  last: boolean;
+}
+
+/** GET /api/moves: the added moves, the next ID, the limits and the moves' handler tables. */
+export interface MovesInfo {
+  firstAdded: number;
+  nextId: number;
+  maxId: number;
+  nameLength: number;
+  moves: AddedMove[];
+  /** sMoveEventAddTable's rows: each move with handlers and its EventAdd function. */
+  handlers: Record<string, string>;
+  /** The moves whose handlers tell them apart by ID, which no move can take. */
+  subIdCompared: string[];
+  /** The hack's battle code, and the original moves' handlers' file. */
+  battleCode: string;
+  handlersCode: string;
+  retired: string[];
+}
+
+/** An ability Paper White 2 added, as tools/paperwhite2/abilities.py json lists it. */
+export interface AddedAbility {
+  ability: string;
+  id: number;
+  name: string;
+  path: string;
+  handlersLike: string | null;
+  ownHandlers: boolean;
+  moldBreakerIgnores: boolean;
+  retired: boolean;
+  last: boolean;
+}
+
+/** GET /api/abilities: the added abilities, the next ID, the limits and the abilities' handler tables. */
+export interface AbilitiesInfo {
+  firstAdded: number;
+  nextId: number;
+  maxId: number;
+  nameLength: number;
+  abilities: AddedAbility[];
+  handlers: Record<string, string>;
+  /** The original abilities Mold Breaker ignores (sMoldBreakerIgnoredAbilities). */
+  moldBreakerIgnored: string[];
+  battleCode: string;
+  handlersCode: string;
+  retired: string[];
+}
+
+/** GET /api/moves/uses: who learns a move, and what else names it. */
+export interface MoveUses {
+  move: string;
+  id: number;
+  /** The TMs and HMs that teach it. */
+  tm: string[];
+  learners: { species: string; form: number; name: string; path: string; levels: number[]; tm: string[]; tutor: boolean; egg: boolean; evolution: boolean }[];
+  trainers: { trainer: string; name: string; path: string }[];
+  facilities: string[];
+  other: string[];
+  code: string[];
+}
+
+/** GET /api/abilities/uses: the species that have an ability, and what else names it. */
+export interface AbilityUses {
+  ability: string;
+  id: number;
+  species: { species: string; form: number; name: string; path: string; slots: string[] }[];
+  other: string[];
+  code: string[];
+}
+
+/** What Add move, Add ability, Remove or Retire did, or with check would do. */
+export interface EntryChange extends PokemonFormChange {
+  move?: string;
+  ability?: string;
+  id?: number;
+  path?: string;
+  warnings?: string[];
+  /** Whether the build's configure step ran again after the change. */
+  reconfigured?: boolean;
+}
+
+/** Add move's choices: from a move or "blank"; handlersLike a move or "none" (the template's when left out). */
+export interface NewMove { name: string; from: string; animation?: string; handlersLike?: string; effect?: string; description?: string; check?: boolean }
+/** Add ability's choices: from an ability or "blank"; moldBreakerIgnores the template's when left out. */
+export interface NewAbility { name: string; from: string; handlersLike?: string; moldBreakerIgnores?: boolean; description?: string; check?: boolean }
+
 /** A species Paper White 2 added, as tools/paperwhite2/pokemon_species.py info lists it. */
 export interface AddedSpecies {
   id: number;
@@ -299,6 +399,8 @@ export const api = {
   /** The address of an image under res/. */
   assetUrl: (path: string) => `/api/asset?path=${encodeURIComponent(path)}`,
   constants: () => request<Record<string, number>>("GET", "/api/constants"),
+  /** The comments that include/constants/ gives the constants of a prefix, by name. */
+  constantNotes: (prefix: string) => request<Record<string, string>>("GET", `/api/constant-notes?prefix=${encodeURIComponent(prefix)}`),
   /** The sprite sheets that build tools pack whole. */
   spriteSheets: () => request<SpriteSheet[]>("GET", "/api/sprite-sheets"),
   /** Checks a sheet by its tool: the PNG given (base64), or the one in res/ without data; with write, saves it. */
@@ -323,6 +425,17 @@ export const api = {
   /** Checks a PNG (base64) as a form's icon or still, with a preview; with write, writes it into the form's art. */
   pokemonFormArt: (b: { species: string; form: number; kind: "icon" | "icon_female" | "front" | "back"; data: string; write?: boolean }) =>
     request<PokemonFormChange>("POST", "/api/pokemon-forms/art", b),
+  /** The moves and abilities Paper White 2 added (tools/paperwhite2/moves.py and abilities.py). */
+  moves: () => request<MovesInfo>("GET", "/api/moves"),
+  moveUses: (move: string) => request<MoveUses>("GET", `/api/moves/uses?move=${encodeURIComponent(move)}`),
+  addMove: (b: NewMove) => request<EntryChange>("POST", "/api/moves/add", b),
+  removeMove: (b: { move: string; check?: boolean }) => request<EntryChange>("POST", "/api/moves/remove", b),
+  retireMove: (b: { move: string; retired: boolean; check?: boolean }) => request<EntryChange>("POST", "/api/moves/retire", b),
+  abilities: () => request<AbilitiesInfo>("GET", "/api/abilities"),
+  abilityUses: (ability: string) => request<AbilityUses>("GET", `/api/abilities/uses?ability=${encodeURIComponent(ability)}`),
+  addAbility: (b: NewAbility) => request<EntryChange>("POST", "/api/abilities/add", b),
+  removeAbility: (b: { ability: string; check?: boolean }) => request<EntryChange>("POST", "/api/abilities/remove", b),
+  retireAbility: (b: { ability: string; retired: boolean; check?: boolean }) => request<EntryChange>("POST", "/api/abilities/retire", b),
   /** The species Paper White 2 added, the next ID and the display numbers in use (tools/paperwhite2/pokemon_species.py). */
   pokemonSpecies: () => request<PokemonSpeciesInfo>("GET", "/api/pokemon-species"),
   /** Adds a species from a template; check only says what it would write. */

@@ -45,7 +45,20 @@ export function constantLabel(name: string, prefix: string): string {
   return humanize(name.startsWith(prefix) ? name.slice(prefix.length) : name).replace(/\b(\w)/g, (c) => c.toUpperCase());
 }
 
-const optionCache = new WeakMap<Constants, Map<string, Option[]>>();
+let optionCache = new WeakMap<Constants, Map<string, Option[]>>();
+let hiddenConstants: ReadonlySet<string> = new Set();
+
+/** The constants every picker leaves out: the retired moves and abilities ("retired": true in their files), which
+ * keep their IDs for saved Pokémon but shouldn't be given out. A field that already names one still shows it. */
+export function setHiddenConstants(names: Iterable<string>) {
+  hiddenConstants = new Set(names);
+  optionCache = new WeakMap();
+}
+
+/** Whether a constant is retired (hidden from the pickers). */
+export function isHiddenConstant(name: string): boolean {
+  return hiddenConstants.has(name);
+}
 
 export function constantOptions(constants: Constants, prefix: string): Option[] {
   let byPrefix = optionCache.get(constants);
@@ -53,7 +66,7 @@ export function constantOptions(constants: Constants, prefix: string): Option[] 
   let options = byPrefix.get(prefix);
   if (!options) {
     options = [...constants]
-      .filter(([name]) => name.startsWith(prefix))
+      .filter(([name]) => name.startsWith(prefix) && !hiddenConstants.has(name))
       .sort((a, b) => a[1] - b[1])
       .map(([name, value]) => ({ value: name, label: constantLabel(name, prefix), detail: String(value) }));
     byPrefix.set(prefix, options);

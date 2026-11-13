@@ -328,6 +328,19 @@ const routes: Record<string, Handler> = {
     }
   },
   "GET /api/constants": (_req, res) => json(res, python.constants()),
+  // The comments of include/constants/'s #defines of a prefix ("MOVE_QUALITY_INFLICT": "Inflicts a condition, as
+  // Thunder Wave"), for pickers to explain their choices
+  "GET /api/constant-notes": (_req, res, url) => {
+    const prefix = url.searchParams.get("prefix") ?? "";
+    if (!/^[A-Z][A-Z0-9_]*_$/.test(prefix)) return error(res, 400, "Give a constants' prefix, as MOVE_QUALITY_");
+    const notes: Record<string, string> = {};
+    const folder = join(ROOT, "include/constants");
+    for (const name of readdirSync(folder).filter((n) => n.endsWith(".h")).sort()) {
+      for (const m of readFileSync(join(folder, name), "utf8").matchAll(/^#define\s+([A-Z][A-Z0-9_]*)\b[^\n]*?\/\/\s*(.+)$/gm))
+        if (m[1].startsWith(prefix)) notes[m[1]] = m[2].trim();
+    }
+    json(res, notes);
+  },
   // How many zones the weather calendar's table holds (the packer's CALENDAR_ZONE_MAX, read at start)
   "GET /api/weather-calendar/limit": (_req, res) => json(res, WEATHER_CALENDAR_LIMIT),
   // Every flag or variable with its name, status, uses and documentation (server/usage.ts); again=1 runs the tools again
@@ -751,6 +764,66 @@ const routes: Record<string, Handler> = {
       rmSync(dir, { recursive: true, force: true });
     }
   },
+  // Added moves and abilities (tools/paperwhite2/moves.py and abilities.py, docs/paperwhite2/design/moves-and-abilities.md
+  // section 6): the added ones and what Add needs; who learns, has or names one; Add (from a template or blank), Remove
+  // (the last added only) and Retire. Each writes res/ and generated/ itself; a change of a list rereads the constants
+  // at once, and runs the build's configure step again (build.ninja depends on each move's folder)
+  "GET /api/moves": (_req, res) => entryTool(res, MOVES_TOOL, ["json"]),
+  "GET /api/moves/uses": (_req, res, url) => {
+    const move = url.searchParams.get("move") ?? "";
+    if (!MOVE.test(move)) return error(res, 400, "Name a move");
+    return entryTool(res, MOVES_TOOL, ["uses", move]);
+  },
+  "POST /api/moves/add": async (req, res) => {
+    const b = (await readJson(req)) as NewMoveBody;
+    if (typeof b.name !== "string" || !b.name || (b.from !== "blank" && !MOVE.test(b.from ?? ""))
+      || [b.animation, b.effect].some((v) => v !== undefined && !/^[A-Z][A-Z0-9_]+$/.test(v))
+      || (b.handlersLike !== undefined && b.handlersLike !== "none" && !MOVE.test(b.handlersLike))
+      || (b.description !== undefined && typeof b.description !== "string"))
+      return error(res, 400, "Name the move and its template (a move, or blank)");
+    await entryTool(res, MOVES_TOOL, ["add", b.name, ...(b.from === "blank" ? ["--blank"] : ["--from", b.from]),
+      ...(b.animation ? ["--animation", b.animation] : []), ...(b.handlersLike ? ["--handlers-like", b.handlersLike] : []),
+      ...(b.effect ? ["--effect", b.effect] : []), ...(b.description !== undefined ? ["--description", b.description] : []),
+      ...(b.check ? ["--check"] : [])]);
+  },
+  "POST /api/moves/remove": async (req, res) => {
+    const b = (await readJson(req)) as { move: string; check?: boolean };
+    if (!MOVE.test(b.move ?? "")) return error(res, 400, "Name a move");
+    await entryTool(res, MOVES_TOOL, ["remove", b.move, ...(b.check ? ["--check"] : [])]);
+  },
+  "POST /api/moves/retire": async (req, res) => {
+    const b = (await readJson(req)) as { move: string; retired: boolean; check?: boolean };
+    if (!MOVE.test(b.move ?? "") || typeof b.retired !== "boolean") return error(res, 400, "Name a move and whether it is retired");
+    await entryTool(res, MOVES_TOOL, [b.retired ? "retire" : "unretire", b.move, ...(b.check ? ["--check"] : [])]);
+  },
+  "GET /api/abilities": (_req, res) => entryTool(res, ABILITIES_TOOL, ["json"]),
+  "GET /api/abilities/uses": (_req, res, url) => {
+    const ability = url.searchParams.get("ability") ?? "";
+    if (!ABILITY.test(ability)) return error(res, 400, "Name an ability");
+    return entryTool(res, ABILITIES_TOOL, ["uses", ability]);
+  },
+  "POST /api/abilities/add": async (req, res) => {
+    const b = (await readJson(req)) as NewAbilityBody;
+    if (typeof b.name !== "string" || !b.name || (b.from !== "blank" && !ABILITY.test(b.from ?? ""))
+      || (b.handlersLike !== undefined && b.handlersLike !== "none" && !ABILITY.test(b.handlersLike))
+      || (b.moldBreakerIgnores !== undefined && typeof b.moldBreakerIgnores !== "boolean")
+      || (b.description !== undefined && typeof b.description !== "string"))
+      return error(res, 400, "Name the ability and its template (an ability, or blank)");
+    await entryTool(res, ABILITIES_TOOL, ["add", b.name, ...(b.from === "blank" ? ["--blank"] : ["--from", b.from]),
+      ...(b.handlersLike ? ["--handlers-like", b.handlersLike] : []),
+      ...(b.moldBreakerIgnores === undefined ? [] : [b.moldBreakerIgnores ? "--mold-breaker-ignores" : "--no-mold-breaker-ignores"]),
+      ...(b.description !== undefined ? ["--description", b.description] : []), ...(b.check ? ["--check"] : [])]);
+  },
+  "POST /api/abilities/remove": async (req, res) => {
+    const b = (await readJson(req)) as { ability: string; check?: boolean };
+    if (!ABILITY.test(b.ability ?? "")) return error(res, 400, "Name an ability");
+    await entryTool(res, ABILITIES_TOOL, ["remove", b.ability, ...(b.check ? ["--check"] : [])]);
+  },
+  "POST /api/abilities/retire": async (req, res) => {
+    const b = (await readJson(req)) as { ability: string; retired: boolean; check?: boolean };
+    if (!ABILITY.test(b.ability ?? "") || typeof b.retired !== "boolean") return error(res, 400, "Name an ability and whether it is retired");
+    await entryTool(res, ABILITIES_TOOL, [b.retired ? "retire" : "unretire", b.ability, ...(b.check ? ["--check"] : [])]);
+  },
   // A species' or form's battle sprite art (tools/paperwhite2/battle_sprite.py): its sheets, stills and palettes as a
   // zip to edit, with guides; and edited files checked (errors, warnings, the files they change, a preview of the
   // assembled sprite on its rig) or, with write, imported into res/
@@ -1019,6 +1092,51 @@ async function speciesTool(res: ServerResponse, args: string[]) {
   res.end(out);
 }
 const BATTLE_SPRITE_TOOL = "tools/paperwhite2/battle_sprite.py";
+const MOVES_TOOL = "tools/paperwhite2/moves.py";
+const ABILITIES_TOOL = "tools/paperwhite2/abilities.py";
+const MOVE = /^MOVE_[A-Z0-9_]+$/;
+const ABILITY = /^ABILITY_[A-Z0-9_]+$/;
+
+/** Add move's choices: from is a move's constant or "blank"; handlersLike a move, or "none" for no handlers. */
+interface NewMoveBody { name: string; from: string; animation?: string; handlersLike?: string; effect?: string; description?: string; check?: boolean }
+/** Add ability's choices: from is an ability's constant or "blank"; handlersLike an ability, or "none". */
+interface NewAbilityBody { name: string; from: string; handlersLike?: string; moldBreakerIgnores?: boolean; description?: string; check?: boolean }
+
+/** The build command's configure step ("python3 configure.py w2_us --hack"), or null when it has none. */
+function configureStep(command: string): string | null {
+  const first = command.split("&&")[0].trim();
+  return /\bconfigure\.py\b/.test(first) ? first : null;
+}
+
+/** Runs moves.py or abilities.py and answers with its JSON, or its refusal as a 400. After a change of a list the
+ * constants are read again and the page told at once, and the build's configure step runs again (build.ninja names
+ * each move's folder, so ninja alone stops at a removed one); not while a build runs, which would read it half
+ * written: the message says to build again, which configures first. */
+async function entryTool(res: ServerResponse, tool: string, args: string[]) {
+  const run = await python.tool(tool, args);
+  if (run.code !== 0) return error(res, 400, toolMessage(run) || `${basename(tool)} failed`);
+  const out = run.stdout.trim().split("\n").pop() ?? "{}";
+  const result = JSON.parse(out) as { check?: boolean; changed?: string[]; message?: string; reconfigured?: boolean };
+  // (a retirement changes no constant, but the pickers leave the retired out: the page reads both again)
+  if (result.check === false && result.changed?.length) {
+    python.invalidate();
+    constantsSeen = constantsStamp();
+    send({ type: "constants" });
+  }
+  if (result.check === false && result.changed?.some((p) => p.startsWith("generated/"))) {
+    const configure = configureStep(settings.buildCommand);
+    if (configure && existsSync(join(ROOT, "build.ninja")) && !builder.state.running) {
+      const done = await new Promise<boolean>((ok) => execFile("bash", ["-lc", configure], { cwd: ROOT, maxBuffer: 16 << 20 }, (e) => ok(!e)));
+      result.reconfigured = done;
+      if (!done) result.message = `${result.message}; the build's configure step failed: build again to see why`;
+    }
+    res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+    res.end(JSON.stringify(result));
+    return;
+  }
+  res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+  res.end(out);
+}
 
 /** A tool's message: the "message" of the JSON it printed, else its error output's last line. */
 function toolMessage(run: { stdout: string; stderr: string }): string {
