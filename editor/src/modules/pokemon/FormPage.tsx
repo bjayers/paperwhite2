@@ -24,16 +24,17 @@ const list = (v: JsonValue | undefined) => (Array.isArray(v) ? v : []);
 
 /** The files a form change can write: none may have unsaved edits, since the tool writes them on disk. */
 const touched = (path: string) => path.startsWith("res/pokemon/") || path.startsWith("res/field/actors/followers/")
-  || path === SERVICES || path === "generated/obj_codes.txt";
+  || path === SERVICES || path === "generated/obj_codes.txt" || path === "generated/species.txt";
 
-/** Runs a form change after checking nothing it may touch is unsaved, then reads its files again. */
-export async function applyFormChange(run: () => Promise<PokemonFormChange>): Promise<PokemonFormChange | null> {
+/** Runs a form change (or a species change, AddedSpecies.tsx) after checking nothing it may touch is unsaved, then
+ * reads its files again. */
+export async function applyFormChange<T extends PokemonFormChange>(run: () => Promise<T>): Promise<T | null> {
   const unsaved = documents.dirtyPaths().filter(touched);
   if (unsaved.length) {
     alert(`Save or revert your changes first (${unsaved.length} file${unsaved.length === 1 ? "" : "s"}: ${unsaved.slice(0, 3).join(", ")}${unsaved.length > 3 ? "…" : ""}): this writes the files on disk.`);
     return null;
   }
-  let result: PokemonFormChange;
+  let result: T;
   try {
     result = await run();
   } catch (e) {
@@ -227,7 +228,7 @@ export function FormsCard({ entry, forms, info, onOpen, onChanged }: {
   );
 }
 
-function summarize(paths: string[]): string {
+export function summarize(paths: string[]): string {
   const groups = new Map<string, number>();
   for (const p of paths) {
     const parts = p.split("/");
@@ -425,13 +426,14 @@ function FormArt({ entry, speciesName, onWritten, epoch }: { entry: Listed; spec
   );
 }
 
-function ArtImport({ entry, kind, label, hint, onWritten, epoch }: {
-  entry: Listed; kind: "icon" | "front" | "back"; label: string; hint: string; onWritten(): void; epoch: number;
+/** A PNG imported as a form's (or, form 0, an added species') icon or still: checked and previewed, then applied. */
+export function ArtImport({ entry, kind, label, hint, onWritten, epoch }: {
+  entry: Pick<Listed, "folder" | "form" | "species">; kind: "icon" | "front" | "back"; label: string; hint: string; onWritten(): void; epoch: number;
 }) {
   const [chosen, setChosen] = useState<{ name: string; base64: string } | null>(null);
   const [result, setResult] = useState<PokemonFormChange | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const file = `res/pokemon/${entry.folder}/form_${entry.form}/${kind === "icon" ? "icon.png" : `${kind}_single.png`}`;
+  const file = `res/pokemon/${entry.folder}/${entry.form ? `form_${entry.form}/` : ""}${kind === "icon" ? "icon.png" : `${kind}_single.png`}`;
   const current = useMemo(() => `${api.assetUrl(file)}&v=${epoch}`, [file, epoch]);
   const choose = async (f: File) => {
     const buffer = new Uint8Array(await f.arrayBuffer());

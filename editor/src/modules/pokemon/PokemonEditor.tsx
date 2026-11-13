@@ -1,12 +1,14 @@
 // The Pokémon Editor: every species (res/pokemon/<species>/data.json, docs/data.md, Species) with its sprite in its
 // normal and shiny colors, its base stats as bars with their total, its types, abilities and other settings, its
 // Pokédex data, its learnset (by level, TMs, tutors, egg moves), and its evolutions, with the whole family's tree; and
-// under each species its alternate forms (forms.ts), each with a page of its own (FormPage.tsx), and Add form. Every
-// file is edited through the document store, so it is checked by the build's validator on save; adding and removing
-// forms is tools/paperwhite2/pokemon_form.py's.
+// under each species its alternate forms (forms.ts), each with a page of its own (FormPage.tsx), and Add form; and the
+// whole new species Paper White 2 adds (AddedSpecies.tsx): Add Pokémon on the list, and an added species' card, cry,
+// icon and stills. Every file is edited through the document store, so it is checked by the build's validator on save;
+// adding and removing forms is tools/paperwhite2/pokemon_form.py's, and adding, retiring and removing species
+// tools/paperwhite2/pokemon_species.py's.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { api, type PokemonFormsInfo } from "../../api.ts";
+import { api, type AddedSpecies, type PokemonFormsInfo, type PokemonSpeciesInfo } from "../../api.ts";
 import { documents, useDocuments } from "../../documents.ts";
 import type { JsonMap, JsonValue } from "../../../shared/json.ts";
 import type { Constants } from "../../../shared/schema.ts";
@@ -20,9 +22,10 @@ import { evolutionText } from "./evolutionText.ts";
 import { DocForm, useHeld } from "../followers/DocForm.tsx";
 import { SpeciesIcon, speciesFolder } from "./SpeciesIcon.tsx";
 import { useToolActive } from "../active.ts";
-import { FormIcon, FormPage, FormsCard, SERVICES, WonderTradeRow } from "./FormPage.tsx";
+import { FormIcon, FormPage, FormsCard, Row, SERVICES, WonderTradeRow } from "./FormPage.tsx";
 import { BattleSpriteArt } from "./BattleSpriteArt.tsx";
 import { isOriginalForm, listSpecies, type Listed } from "./forms.ts";
+import { AddedSpeciesArt, AddedSpeciesCard, AddPokemonDialog, CryCard } from "./AddedSpecies.tsx";
 
 const SCHEMA = "res/pokemon/species.schema.json";
 const STATS = [["hp", "HP"], ["attack", "Attack"], ["defense", "Defense"], ["special_attack", "Sp. Atk"],
@@ -259,21 +262,29 @@ function RecordSections({ path, entry, list, constants, onOpen }: {
   );
 }
 
-function SpeciesPage({ entry, list, info, constants, onOpen, onSelect, onChanged }: {
-  entry: Listed; list: Listed[]; info: PokemonFormsInfo | null; constants: Constants;
-  onOpen(species: string): void; onSelect(key: string): void; onChanged(select?: string): void;
+/** The number a species shows: its Pokédex number, "???" for an added one without one, "—" out of the Pokédex. */
+export function shownNumber(l: Listed): string {
+  return l.display !== null ? String(l.display).padStart(3, "0") : !l.added ? "" : l.inDex ? "???" : "—";
+}
+
+function SpeciesPage({ entry, list, info, speciesInfo, constants, onOpen, onSelect, onChanged, onReuse }: {
+  entry: Listed; list: Listed[]; info: PokemonFormsInfo | null; speciesInfo: PokemonSpeciesInfo | null; constants: Constants;
+  onOpen(species: string): void; onSelect(key: string): void; onChanged(select?: string): void; onReuse(added: AddedSpecies): void;
 }) {
   const { data, error } = useHeld(entry.speciesPath);
   const [spriteEpoch, setSpriteEpoch] = useState(0);
   if (error) return <p className="pkm-error">{error}</p>;
   if (!(data instanceof Map)) return <p className="muted pkm-empty">Reading…</p>;
   const forms = list.filter((l) => l.folder === entry.folder && l.form > 0);
+  const added = speciesInfo?.species.find((s) => s.species === entry.species) ?? null;
   return (
     <div className="pkm-page">
       <div className="pkm-top">
         <Sprite key={spriteEpoch} folder={entry.folder} />
         <div>
-          <h2><span className="muted">#{entry.number}</span> {String(data.get("name") ?? entry.name)}</h2>
+          <h2><span className="muted">{entry.added ? `No. ${shownNumber(entry)}` : `#${entry.number}`}</span> {String(data.get("name") ?? entry.name)}
+            {entry.added && <span className="pkm-tag pkm-title-tag">added · ID {entry.number}</span>}
+            {entry.retired && <span className="pkm-tag pkm-tag-hidden pkm-title-tag">hidden</span>}</h2>
           <p className="muted pkm-note">{entry.speciesPath}</p>
           <div className="pkm-top-fields">
             {(["name", "types"] as const).map((key) => data.has(key) && (
@@ -283,12 +294,17 @@ function SpeciesPage({ entry, list, info, constants, onOpen, onSelect, onChanged
               </div>
             ))}
           </div>
-          {entry.number > 0 && <div className="pkm-rows pkm-top-rows"><WonderTradeRow entry={entry} original={info?.original ?? {}} /></div>}
+          {entry.number > 0 && <div className="pkm-rows pkm-top-rows">{entry.added && !entry.inDex
+            ? <Row label="Wonder Trade"><span className="muted">Never: {entry.retired ? "it is retired" : "it isn't in the Pokédex"}.</span></Row>
+            : <WonderTradeRow entry={entry} original={info?.original ?? {}} />}</div>}
         </div>
       </div>
+      {added && <AddedSpeciesCard entry={entry} added={added} info={speciesInfo} onChanged={onChanged} onReuse={() => onReuse(added)} />}
       {entry.number > 0 && <FormsCard entry={entry} forms={forms} info={info} onOpen={onSelect} onChanged={onChanged} />}
       {entry.number > 0 && <BattleSpriteArt species={entry.species} form={0} folder={entry.folder} speciesName={String(data.get("name") ?? entry.name)}
         onWritten={() => { setSpriteEpoch((n) => n + 1); onChanged(entry.key); }} />}
+      {entry.added && <AddedSpeciesArt entry={entry} onWritten={() => { setSpriteEpoch((n) => n + 1); onChanged(entry.key); }} />}
+      {entry.number > 0 && <CryCard entry={entry} added={added} constants={constants} onChanged={() => onChanged(entry.key)} />}
       <RecordSections path={entry.speciesPath} entry={entry} list={list} constants={constants} onOpen={onOpen} />
       {data.has("pokedex") && (
         <section className="pkm-card">
@@ -304,6 +320,9 @@ export function PokemonEditor({ constants }: ToolProps) {
   const toolActive = useToolActive();
   const [list, setList] = useState<Listed[] | null>(null);
   const [info, setInfo] = useState<PokemonFormsInfo | null>(null);
+  const [speciesInfo, setSpeciesInfo] = useState<PokemonSpeciesInfo | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [reusing, setReusing] = useState<AddedSpecies | null>(null);
   const [filter, setFilter] = useState("");
   const [chosen, setChosen] = useState<string | null>(null);
   const [epoch, setEpoch] = useState(0);
@@ -311,8 +330,12 @@ export function PokemonEditor({ constants }: ToolProps) {
 
   useEffect(() => {
     let live = true;
-    api.data(SCHEMA, ["name", "evolutions", "forms", "pokedex.form_name", "pokedex.forms"]).then((files) => {
-      if (live) setList(listSpecies(files, constants));
+    // (the added species' numbers, retirement and Pokédex flag from pokemon_species.py info, which reads them whole)
+    Promise.all([api.data(SCHEMA, ["name", "evolutions", "forms", "pokedex.form_name", "pokedex.forms"]),
+      api.pokemonSpecies().catch(() => null)]).then(([files, species]) => {
+      if (!live) return;
+      setSpeciesInfo(species);
+      setList(listSpecies(files, constants, species?.species ?? []));
     });
     api.pokemonForms().then((i) => live && setInfo(i), () => live && setInfo(null));
     return () => { live = false; };
@@ -320,7 +343,7 @@ export function PokemonEditor({ constants }: ToolProps) {
   // A species' or form's file changed on disk (the server's poll: a form change's files, a save, a commit undone): the
   // list read again, since the server lists a new form_<n>.json only once its poll has seen it
   useEffect(() => documents.onFiles((paths) => {
-    if (paths.some((p) => /^res\/pokemon\/.+\.json$/.test(p))) setEpoch((n) => n + 1);
+    if (paths.some((p) => /^res\/pokemon\/.+\.(json|wav)$/.test(p))) setEpoch((n) => n + 1);
   }), []);
   /** After a form change: the list and the forms' facts read again, and the page given chosen. */
   const changed = useCallback((select?: string) => {
@@ -354,7 +377,8 @@ export function PokemonEditor({ constants }: ToolProps) {
 
   const shown = useMemo(() => {
     const q = filter.trim().toLowerCase();
-    return (list ?? []).filter((l) => !q || l.name.toLowerCase().includes(q) || String(l.number) === q || l.folder.includes(q));
+    return (list ?? []).filter((l) => !q || l.name.toLowerCase().includes(q) || String(l.number) === q || String(l.display) === q
+      || l.folder.includes(q) || (q === "added" && l.added));
   }, [list, filter]);
   const openSpecies = (species: string) => {
     const found = list?.find((l) => l.form === 0 && l.folder === speciesFolder(species));
@@ -374,14 +398,18 @@ export function PokemonEditor({ constants }: ToolProps) {
       {unsaved.filter((d) => d.saveError).map((d) => <div key={d.path} className="pkm-error pkm-bar">{d.path}: {d.saveError}</div>)}
       <div className="pkm-split">
         <div className="pkm-list">
-          <input className="filter" placeholder={`Filter ${list?.length ?? 0} species and forms…`} value={filter} onChange={(e) => setFilter(e.target.value)} />
+          <div className="pkm-list-head">
+            <input className="filter" placeholder={`Filter ${list?.length ?? 0} species and forms…`} value={filter} onChange={(e) => setFilter(e.target.value)} />
+            <button className="primary" onClick={() => setAdding(true)} title="A whole new species, copied from a template">+ Add Pokémon</button>
+          </div>
           <div className="pkm-list-items">
             {shown.map((l) => (
               <button key={l.key} className={`pkm-item${l.form ? " pkm-item-form" : ""}${l.key === chosen ? " selected" : ""}`} onClick={() => setChosen(l.key)}>
                 {l.form ? <FormIcon entry={l} size={24} epoch={epoch} /> : <SpeciesIcon species={l.species} size={24} />}
-                <span className="muted pkm-number">{l.form ? "" : l.number || ""}</span>
+                <span className="muted pkm-number">{l.form ? "" : l.added ? shownNumber(l) : l.number || ""}</span>
                 <span className="pkm-name">{l.form ? l.name.slice(l.name.indexOf(":") + 2) : l.name}{dirtyMark(l)}</span>
-                {l.form > 0 && info && !isOriginalForm(info.original, l.folder, l.form) && <span className="pkm-tag">added</span>}
+                {((l.form > 0 && info && !isOriginalForm(info.original, l.folder, l.form)) || (!l.form && l.added)) && <span className="pkm-tag">added</span>}
+                {!l.form && l.retired && <span className="pkm-tag pkm-tag-hidden">hidden</span>}
               </button>
             ))}
           </div>
@@ -393,11 +421,16 @@ export function PokemonEditor({ constants }: ToolProps) {
               sprite={(folder, e) => <Sprite key={`${folder}@${e}`} folder={folder} />}
               record={(path) => <RecordSections path={path} entry={entry} list={list ?? []} constants={constants} onOpen={openSpecies} />} />
           ) : entry ? (
-            <SpeciesPage key={entry.key} entry={entry} list={list ?? []} info={info} constants={constants} onOpen={openSpecies}
-              onSelect={setChosen} onChanged={changed} />
+            <SpeciesPage key={entry.key} entry={entry} list={list ?? []} info={info} speciesInfo={speciesInfo} constants={constants} onOpen={openSpecies}
+              onSelect={setChosen} onChanged={changed} onReuse={setReusing} />
           ) : <p className="muted pkm-empty">Choose a Pokémon.</p>}
         </div>
       </div>
+      {(adding || reusing) && (
+        <AddPokemonDialog list={list ?? []} info={speciesInfo} reuse={reusing ?? undefined}
+          onClose={() => { setAdding(false); setReusing(null); }}
+          onDone={(folder) => { setAdding(false); setReusing(null); changed(folder || undefined); }} />
+      )}
     </div>
   );
 }

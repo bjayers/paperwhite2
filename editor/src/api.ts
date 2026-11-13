@@ -102,6 +102,64 @@ export interface PokemonFormChange {
   preview?: string;
 }
 
+/** A species Paper White 2 added, as tools/paperwhite2/pokemon_species.py info lists it. */
+export interface AddedSpecies {
+  id: number;
+  species: string;
+  folder: string;
+  name: string;
+  /** False for "pokedex": false (never in the Pokédex). */
+  pokedex: boolean;
+  retired: boolean;
+  /** The Pokédex's display number, null for "???". */
+  number: number | null;
+  artTemplate: string;
+  /** The species whose cry its cry.wav is a copy of, or null for a cry of its own. */
+  cryCopyOf: string | null;
+  forms: number;
+  /** Whether it is the last added species, the only one that can be removed. */
+  last: boolean;
+}
+
+/** GET /api/pokemon-species: the added species, the next ID and the rules of names and numbers. */
+export interface PokemonSpeciesInfo {
+  firstAdded: number;
+  nextId: number;
+  maxId: number;
+  nameLength: number;
+  numberMin: number;
+  numberMax: number;
+  numberNone: number;
+  nationalLast: number;
+  /** The display numbers in use, with the species' names. */
+  numbers: Record<string, string>;
+  species: AddedSpecies[];
+  cryRate: number;
+  cryMaxSamples: number;
+}
+
+/** Add Pokémon's (and reuse's) choices: from is a species' constant or "blank"; number null for "???". */
+export interface NewSpecies {
+  name: string;
+  from: string;
+  number?: number | null;
+  pokedex?: boolean;
+  wonderTrade?: boolean;
+  check?: boolean;
+}
+
+/** What a change of pokemon_species.py did, or with check would do; a cry's check gives its length and a preview. */
+export interface PokemonSpeciesChange extends PokemonFormChange {
+  species?: string;
+  folder?: string;
+  id?: number;
+  seconds?: number;
+  rate?: number;
+  samples?: number;
+  bytes?: number;
+  limit?: number;
+}
+
 /** A side's animation in the battle sprite importer's preview: strips of frames (RGBA PNGs in base64), a frame every
  * `step` game frames, each `width` by `height` with the sprite's feet at `origin`. */
 export interface BattleSpriteSide {
@@ -259,6 +317,23 @@ export const api = {
   /** Checks a PNG (base64) as a form's icon or still, with a preview; with write, writes it into the form's art. */
   pokemonFormArt: (b: { species: string; form: number; kind: "icon" | "icon_female" | "front" | "back"; data: string; write?: boolean }) =>
     request<PokemonFormChange>("POST", "/api/pokemon-forms/art", b),
+  /** The species Paper White 2 added, the next ID and the display numbers in use (tools/paperwhite2/pokemon_species.py). */
+  pokemonSpecies: () => request<PokemonSpeciesInfo>("GET", "/api/pokemon-species"),
+  /** Adds a species from a template; check only says what it would write. */
+  addPokemonSpecies: (b: NewSpecies) => request<PokemonSpeciesChange>("POST", "/api/pokemon-species/add", b),
+  /** Makes a retired species a new one at its ID. */
+  reusePokemonSpecies: (b: NewSpecies & { species: string }) => request<PokemonSpeciesChange>("POST", "/api/pokemon-species/reuse", b),
+  /** Removes the last added species, undoing everything Add Pokémon wrote. */
+  removePokemonSpecies: (b: { species: string; check?: boolean }) => request<PokemonSpeciesChange>("POST", "/api/pokemon-species/remove", b),
+  /** Retires an added species (hidden, keeping its ID), or brings it back. */
+  retirePokemonSpecies: (b: { species: string; retired: boolean; check?: boolean }) =>
+    request<PokemonSpeciesChange>("POST", "/api/pokemon-species/retire", b),
+  /** Sets an added species' display number (null: "???"). */
+  pokemonSpeciesNumber: (b: { species: string; number: number | null; check?: boolean }) =>
+    request<PokemonSpeciesChange>("POST", "/api/pokemon-species/number", b),
+  /** Checks a WAV (base64) as a species' cry, with the result as the game plays it; with write, writes its cry.wav. */
+  pokemonSpeciesCry: (b: { species: string; data: string; rate?: number; write?: boolean }) =>
+    request<PokemonSpeciesChange>("POST", "/api/pokemon-species/cry", b),
   /** A battle sprite's art as a zip to edit (its sheets, stills, palettes, guides and README). */
   battleSpriteExportUrl: (species: string, form: number) =>
     `/api/battle-sprite/export?species=${encodeURIComponent(species)}&form=${form}`,

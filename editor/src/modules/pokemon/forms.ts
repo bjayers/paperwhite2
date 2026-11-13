@@ -5,7 +5,7 @@
 // formEvolutions gives a form's as the game sees them. Pure, so tests/pokemon-forms.test.ts checks it against the
 // real res/.
 
-import { isRealSpecies } from "../../../shared/species.ts";
+import { isAddedSpecies, isRealSpecies } from "../../../shared/species.ts";
 
 export interface ListedFile {
   path: string;
@@ -43,15 +43,35 @@ export interface Listed {
   formNames: string[];
   /** The species' forms that never evolve (forms.no_evolution). */
   noEvolution: number[];
+  /** A species Paper White 2 added (from FIRST_ADDED_SPECIES), its forms too. */
+  added: boolean;
+  /** The number the Pokédex shows: the ID for 1 to Genesect, an added species' display number, null for "???" or one
+   * out of the Pokédex. */
+  display: number | null;
+  /** An added species retired (hidden, keeping its ID). */
+  retired: boolean;
+  /** Whether it enters the Pokédex: not "pokedex": false, nor retired. */
+  inDex: boolean;
+}
+
+/** What the list knows of an added species beyond its data.json's listed keys (tools/paperwhite2/pokemon_species.py
+ * info, AddedSpecies in api.ts). */
+export interface AddedFacts {
+  species: string;
+  number: number | null;
+  retired: boolean;
+  pokedex: boolean;
 }
 
 type Forms = { count?: number; sprite_offset?: number; no_evolution?: number[]; pokedex?: boolean };
 type Pokedex = { form_name?: string; forms?: { name?: string }[] };
 
-/** The list, the Pokémon species by ID, the hack's added ones after Genesect (shared/species.ts), then the others
- * (the eggs and the Pokéstar Studios props) by ID and folder, each followed by its forms. */
-export function listSpecies(files: ListedFile[], numbers: ReadonlyMap<string, number>): Listed[] {
+/** The list, the Pokémon species by ID, the hack's added ones after Genesect (shared/species.ts) in the National
+ * Pokédex's order (by display number, those without one after them by ID, and those out of the Pokédex last), then the
+ * others (the eggs and the Pokéstar Studios props) by ID and folder, each followed by its forms. */
+export function listSpecies(files: ListedFile[], numbers: ReadonlyMap<string, number>, addedFacts: AddedFacts[] = []): Listed[] {
   const records = new Set(files.map((f) => f.path));
+  const facts = new Map(addedFacts.map((f) => [f.species, f]));
   const out: Listed[] = [];
   for (const { path, data } of files) {
     const match = /^res\/pokemon\/(.+)\/data\.json$/.exec(path);
@@ -65,7 +85,13 @@ export function listSpecies(files: ListedFile[], numbers: ReadonlyMap<string, nu
     const evolutions = (data.evolutions as Listed["evolutions"] | undefined) ?? [];
     const formNames = namesOfForms(name, data.pokedex as Pokedex | undefined, count);
     const noEvolution = ((data.forms as Forms | undefined)?.no_evolution ?? []).map(Number);
-    const shared = { folder, species, number, speciesPath: path, count, evolutions, formNames, noEvolution };
+    const added = isAddedSpecies(number);
+    const fact = facts.get(species);
+    const retired = added && (fact?.retired ?? data.retired === true);
+    const inDex = isRealSpecies(number, numbers) && !retired && (fact?.pokedex ?? data.pokedex !== false);
+    const listedNumber = (data.pokedex as { display_number?: number | null } | undefined)?.display_number;
+    const display = !inDex ? null : added ? (fact ? fact.number : listedNumber ?? null) : number;
+    const shared = { folder, species, number, speciesPath: path, count, evolutions, formNames, noEvolution, added, display, retired, inDex };
     out.push({ key: folder, form: 0, name, recordPath: null, ...shared });
     for (let form = 1; form < count; form++) {
       const record = `res/pokemon/${folder}/form_${form}.json`;
@@ -75,7 +101,9 @@ export function listSpecies(files: ListedFile[], numbers: ReadonlyMap<string, nu
       });
     }
   }
-  const rank = (l: Listed) => (isRealSpecies(l.number, numbers) ? l.number : 1e6 + (l.number || 1e6));
+  // Originals by ID; added ones by display number (under 1e5), then unnumbered, then out of the Pokédex, each by ID
+  const rank = (l: Listed) => !isRealSpecies(l.number, numbers) ? 1e7 + (l.number || 1e6)
+    : !l.added ? l.number : l.display !== null ? 1e4 + l.display : (l.inDex ? 2e4 : 3e4) + l.number;
   out.sort((a, b) => rank(a) - rank(b) || a.folder.localeCompare(b.folder) || a.form - b.form);
   return out;
 }

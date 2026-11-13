@@ -90,7 +90,9 @@ export const ZONE_KEYS = ["encounters", "parent", "map_type", "battle_bg"];
 export const SCRIPT_PATTERN = "PokePartyAdd|CallWildBattle|WorkSetConst";
 export { SCRIPTS, SWARMS, SWARM_LINES };
 
-export const SPECIES_KEYS = ["name", "types", "forms", "hidden_ability", "baby_species", "evolutions"];
+// (pokedex.shape: the server lists a nested key only of an object, so an added species with "pokedex": false has no
+// pokedex here, and every species in the Pokédex has one)
+export const SPECIES_KEYS = ["name", "types", "forms", "hidden_ability", "baby_species", "evolutions", "pokedex.shape", "retired"];
 
 export interface Files {
   tables: DataFile[];
@@ -113,9 +115,10 @@ export function fromFiles(files: Files, constants: Constants): Loaded {
     const folder = parts[2];
     const id = `SPECIES_${folder.toUpperCase()}`;
     // Only the Pokédex's species (shared/species.ts): not SPECIES_NONE, the eggs or the Pokéstar Studios props after
-    // the national Pokédex, nor an added species that never enters it
+    // the national Pokédex, nor an added species that never enters it or is retired
     const dex = constants.get(id) ?? 0;
-    if (!isRealSpecies(dex, constants) || !inPokedex(data as { pokedex?: unknown })) continue;
+    const { pokedex, retired } = data as { pokedex?: unknown; retired?: unknown };
+    if (!isRealSpecies(dex, constants) || !inPokedex({ pokedex: pokedex ?? false, retired })) continue;
     const evolutions = (data.evolutions as { method: string; param: unknown; species: string }[] | undefined) ?? [];
     info.set(id, {
       species: id,

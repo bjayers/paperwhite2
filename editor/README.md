@@ -412,6 +412,30 @@ Forms (`FormPage.tsx`, docs/paperwhite2/design/forms-and-species.md section 11.6
   `/remove`, `/record`, `/art`), which writes `res/` itself (art and follower folders, `obj_codes.txt`, other species'
   offsets): the editor refuses while those files have unsaved edits, and reads the changed files again after.
 
+New species (`AddedSpecies.tsx`, docs/paperwhite2/design/new-species.md sections 4 and 16):
+- The list shows the species Paper White 2 added after Genesect in the National Pokédex's order (by display number,
+  then those without one, then those out of the Pokédex), tagged "added", and "hidden" when retired; their number
+  column is the display number, "???" or "—". The filter takes "added".
+- **+ Add Pokémon** on the list's header opens a dialog: the name (up to 10 characters, starting with a letter; its
+  constant and folder follow), the template ("Copy of": any species, or Blank, a "?" sprite with plain stats and
+  Bulbasaur's cry), "In the Pokédex" (off: `"pokedex": false`, the roguelike's creatures), the display number (blank
+  "???"; 999, a number in use or an original's refused) and "In the Wonder Trade" (on by default). Its dry run says
+  what it will write before Add.
+- An added species' page has an **Added species** card (its ID and constant, its status, the display number with Set,
+  the art formats' species; **Retire** hides it from the Pokédex, the Wonder Trade and the encounter pickers, keeping
+  its ID so saved Pokémon stay valid, and **Bring back** undoes it; a retired one's **Reuse ID…** opens the dialog
+  to make that ID a new species, warning that saved Pokémon of it become the new one; **Remove** only for the last
+  added species, undoing everything Add did), **Icon and stills** (PNG imports, as a form's), and its Wonder Trade row
+  says "Never" when it is retired or out of the Pokédex.
+- Every species' page has a **Cry** card: the cry played in the page, "Cry: a copy of X's" while an added species'
+  cry.wav is its template's, a WAV import (mono or stereo, 8 to 32 bits; mixed down and resampled to 13,379 Hz where
+  needed, refused past the game's 0x5c30-byte buffer, about 1.76 s) played as the game will play it before Apply,
+  and the volume (`cry_volume`).
+- These run `tools/paperwhite2/pokemon_species.py` on the server (`GET /api/pokemon-species`, `POST
+  /api/pokemon-species/add`, `/reuse`, `/remove`, `/retire`, `/number`, `/cry`), which writes `res/` and
+  `generated/species.txt` itself; after a change of the species list the server rereads the constants at once.
+  `/api/asset` also serves `.wav` for the cry player.
+
 ## The Rig Editor
 
 One side of a battle sprite's rig (`src/modules/rig/`, `res/pokemon/<folder>/<side>_rig.json`; the design is

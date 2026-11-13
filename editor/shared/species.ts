@@ -1,7 +1,7 @@
 // Which species IDs are Pokémon, as tools/data/species_list.py defines them for the build (docs/paperwhite2/design/
 // new-species.md, section 3.1): generated/species.txt has the national Pokédex's 1 to 649, then the egg, the bad egg
 // and the Pokéstar Studios props (650 to 684), then, from FIRST_ADDED_SPECIES, Paper White 2's added species (685 and
-// 686 are reserved). A species in the Pokédex is also one whose data.json hasn't "pokedex": false.
+// 686 are reserved). A species in the Pokédex is also one whose data.json hasn't "pokedex": false nor "retired": true.
 
 import type { Constants } from "./schema.ts";
 
@@ -23,7 +23,8 @@ export function isAddedSpecies(id: number): boolean {
   return id >= FIRST_ADDED_SPECIES;
 }
 
-/** Whether a species' data.json puts it in the Pokédex: all but "pokedex": false. */
-export function inPokedex(data: { pokedex?: unknown }): boolean {
-  return data.pokedex !== false;
+/** Whether a species' data.json puts it in the Pokédex: all but "pokedex": false and the retired ("retired": true,
+ * hidden but keeping their IDs). */
+export function inPokedex(data: { pokedex?: unknown; retired?: unknown }): boolean {
+  return data.pokedex !== false && data.retired !== true;
 }

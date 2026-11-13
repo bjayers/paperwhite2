@@ -107,3 +107,20 @@ button.danger { color: var(--error); border-color: var(--error); }
 .bsp-palette .muted { width: 44px; }
 .bsp-swatch { width: 18px; height: 18px; border: 1px solid var(--border); border-radius: 3px; display: inline-flex;
   align-items: center; justify-content: center; font-size: 10px; color: var(--muted); }
+
+/* Whole new species (AddedSpecies.tsx): the list's Add Pokémon, the dialog, an added species' cards */
+.pkm-list-head { display: flex; gap: 6px; align-items: center; margin: 8px 10px 6px; }
+.pkm-list-head .filter { flex: 1; min-width: 0; margin: 0; }
+.pkm-list-head button { white-space: nowrap; }
+.pkm-number { width: 34px; }
+.pkm-tag-hidden { background: var(--panel-2); color: var(--muted); }
+.pkm-title-tag { margin-left: 8px; font-size: 11px; vertical-align: middle; }
+.pkm-dialog { margin-top: 8vh; width: min(720px, 94vw); max-height: 84vh; overflow-y: auto; background: var(--panel);
+  border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); padding: 14px 18px; }
+.pkm-dialog h4 { margin: 14px 0 8px; font-size: 13px; }
+.pkm-dialog .pkm-rows { grid-template-columns: 130px 1fr; }
+.pkm-inline { display: flex; gap: 6px; align-items: center; }
+.pkm-inline input { min-width: 120px !important; width: 120px; }
+.pkm-audio { height: 32px; max-width: 100%; }
+.pkm-copy { color: var(--warning); }
+.pkm-cry-preview { margin-top: 8px; padding: 8px 10px; border: 1px dashed var(--border); border-radius: 8px; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }

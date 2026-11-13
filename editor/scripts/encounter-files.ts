@@ -9,8 +9,21 @@ const ROOT = resolve(import.meta.dirname, "../..");
 function files(pattern: string, keys?: string[]): DataFile[] {
   return globSync(pattern, { cwd: ROOT }).filter((f) => !f.endsWith(".schema.json")).map((path) => {
     const data = JSON.parse(readFileSync(join(ROOT, path), "utf8"));
-    return { path, data: keys && !Array.isArray(data) ? Object.fromEntries(keys.filter((k) => k in data).map((k) => [k, data[k]])) : data };
+    return { path, data: keys && !Array.isArray(data) ? pick(data, keys) : data };
   }).filter((f) => !Array.isArray(f.data) && "$schema" in JSON.parse(readFileSync(join(ROOT, f.path), "utf8")));
+}
+
+/** The keys of a file's data, as the server's listing picks them: "a.b" takes b of a only where a is an object. */
+function pick(data: Record<string, unknown>, keys: string[]): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const key of keys) {
+    const [head, ...rest] = key.split(".");
+    if (!(head in data)) continue;
+    if (!rest.length) out[head] = data[head];
+    else if (data[head] && typeof data[head] === "object" && !Array.isArray(data[head]))
+      out[head] = { ...(out[head] as Record<string, unknown> | undefined), ...pick(data[head] as Record<string, unknown>, [rest.join(".")]) };
+  }
+  return out;
 }
 
 function scan(pattern: string, regex: RegExp): ScanMatch[] {

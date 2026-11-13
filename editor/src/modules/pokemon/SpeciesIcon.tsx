@@ -6,6 +6,7 @@ import { useEffect, useRef } from "react";
 import { api } from "../../api.ts";
 import { parsePal, type Rgb } from "../palettes/pal.ts";
 import { readIndexedPng, type IndexedImage } from "../palettes/png.ts";
+import { isAddedSpecies } from "../../../shared/species.ts";
 
 /** "SPECIES_MR_MIME" as its folder, "mr_mime". */
 export const speciesFolder = (species: string) => species.replace(/^SPECIES_/, "").toLowerCase();
@@ -51,10 +52,13 @@ export function SpeciesIcon({ species, size = 32 }: { species: string; size?: nu
       const ctx = canvas.current?.getContext("2d");
       if (!live || !ctx) return;
       const bank = (c.banks[c.numbers[species] ?? 0] ?? 0) & 15;
+      // An added species (or one added since the table was read) is past the table: its icon.png carries its bank's
+      // colors, from which the build takes the bank (pokemon_graphics.icon_bank)
+      const own = !(species in c.numbers) || isAddedSpecies(c.numbers[species]);
       const data = ctx.createImageData(32, 32);
       for (let i = 0; i < 32 * 32; i++) {
         const v = image.pixels[i];
-        const color = c.colors[bank * 16 + v];
+        const color = own ? image.colors[v] : c.colors[bank * 16 + v];
         if (v && color) data.data.set([color[0], color[1], color[2], 255], i * 4);
       }
       ctx.putImageData(data, 0, 0);

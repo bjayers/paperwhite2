@@ -78,6 +78,23 @@ test("forms' names: form 0's form_name or the species' name, then pokedex.forms'
   assert.equal(rotom.formNames.length, rotom.count);
 });
 
+test("added species list after Genesect in the Pokédex's order: by display number, unnumbered, out of it, then the rest", () => {
+  const ids = new Map([["SPECIES_EGG", 650], ["SPECIES_GENESECT", 649], ["SPECIES_BULBASAUR", 1], ["SPECIES_POKESTAR_UFO", 652],
+    ["SPECIES_APPLIN", 687], ["SPECIES_DIPPLIN", 688], ["SPECIES_FLAPPLE", 689], ["SPECIES_SECRET", 690], ["SPECIES_OLDMON", 691],
+    ["SPECIES_NONAME", 692]]);
+  const file = (folder: string, data: Record<string, unknown> = {}): ListedFile =>
+    ({ path: `res/pokemon/${folder}/data.json`, data: { name: folder, forms: { count: 1 }, ...data } });
+  const order = listSpecies([
+    file("pokestar/ufo"), file("noname"), file("secret", { pokedex: false }), file("oldmon", { pokedex: { display_number: 900 }, retired: true }),
+    file("dipplin", { pokedex: { display_number: 1011 } }), file("flapple", { pokedex: { display_number: 841 } }), file("applin"),
+    file("genesect"), file("bulbasaur"),
+  ], ids, [{ species: "SPECIES_APPLIN", number: 840, retired: false, pokedex: true }]);
+  assert.deepEqual(order.map((l) => [l.folder, l.display]), [["bulbasaur", 1], ["genesect", 649], ["applin", 840], ["flapple", 841],
+    ["dipplin", 1011], ["noname", null], ["secret", null], ["oldmon", null], ["pokestar/ufo", null]]);
+  const oldmon = order.find((l) => l.folder === "oldmon")!;
+  assert.deepEqual([oldmon.added, oldmon.retired, oldmon.inDex], [true, true, false]);
+});
+
 test("no form's record has evolutions of its own: the game reads its species' (tools/data/species_data.py)", () => {
   for (const f of files()) if (/form_\d+\.json$/.test(f.path)) assert.deepEqual(f.data.evolutions, [], f.path);
 });

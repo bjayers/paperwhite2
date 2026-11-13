@@ -166,8 +166,9 @@ const routes: Record<string, Handler> = {
   // An image under res/, such as a Pokémon's icon, for modules to show.
   "GET /api/asset": (_req, res, url) => {
     const path = project.checkPath(url.searchParams.get("path") ?? "");
-    if (!path || extname(path) !== ".png" || !existsSync(project.abs(path))) return error(res, 404, "No such image under res/");
-    res.writeHead(200, { "Content-Type": "image/png", "Cache-Control": "no-cache" });
+    // (images, and the Pokémon's cries for the Pokémon Editor's player)
+    if (!path || ![".png", ".wav"].includes(extname(path)) || !existsSync(project.abs(path))) return error(res, 404, "No such image under res/");
+    res.writeHead(200, { "Content-Type": extname(path) === ".wav" ? "audio/wav" : "image/png", "Cache-Control": "no-cache" });
     createReadStream(project.abs(path)).pipe(res);
   },
   // A 2D screen of res/graphics drawn as the DS would (server/python/screen.py): ?chars=…png&screen=…nscr&palette=…pal
@@ -693,6 +694,57 @@ const routes: Record<string, Handler> = {
       rmSync(dir, { recursive: true, force: true });
     }
   },
+  // Whole new species (tools/paperwhite2/pokemon_species.py): the added species, the next ID and the display numbers in
+  // use; Add Pokémon, removing the last added species, retiring one (hidden, keeping its ID) and reusing a retired one's
+  // ID, a display number, and a cry imported from a WAV. Each writes res/ (and generated/species.txt) itself; a change
+  // of the species list rereads the constants at once rather than at the next poll
+  "GET /api/pokemon-species": async (_req, res) => {
+    const run = await python.tool(POKEMON_SPECIES_TOOL, ["info"]);
+    if (run.code !== 0) return error(res, 500, toolMessage(run) || "pokemon_species.py info failed");
+    res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+    res.end(run.stdout);
+  },
+  "POST /api/pokemon-species/add": async (req, res) => {
+    const b = (await readJson(req)) as NewSpeciesBody;
+    const args = newSpeciesArgs(b);
+    if (!args) return error(res, 400, "Name the species and its template (a species, or blank)");
+    await speciesTool(res, ["add", b.name, ...args]);
+  },
+  "POST /api/pokemon-species/reuse": async (req, res) => {
+    const b = (await readJson(req)) as NewSpeciesBody & { species: string };
+    const args = newSpeciesArgs(b);
+    if (!SPECIES.test(b.species ?? "") || !args) return error(res, 400, "Name the retired species, the new name and its template");
+    await speciesTool(res, ["reuse", b.species, b.name, ...args]);
+  },
+  "POST /api/pokemon-species/remove": async (req, res) => {
+    const b = (await readJson(req)) as { species: string; check?: boolean };
+    if (!SPECIES.test(b.species ?? "")) return error(res, 400, "Name a species");
+    await speciesTool(res, ["remove", b.species, ...(b.check ? ["--check"] : [])]);
+  },
+  "POST /api/pokemon-species/retire": async (req, res) => {
+    const b = (await readJson(req)) as { species: string; retired: boolean; check?: boolean };
+    if (!SPECIES.test(b.species ?? "") || typeof b.retired !== "boolean") return error(res, 400, "Name a species and whether it is retired");
+    await speciesTool(res, [b.retired ? "retire" : "unretire", b.species, ...(b.check ? ["--check"] : [])]);
+  },
+  "POST /api/pokemon-species/number": async (req, res) => {
+    const b = (await readJson(req)) as { species: string; number: number | null; check?: boolean };
+    if (!SPECIES.test(b.species ?? "") || !(b.number === null || Number.isInteger(b.number))) return error(res, 400, "Name a species and its number (or null)");
+    await speciesTool(res, ["number", b.species, b.number === null ? "none" : String(b.number), ...(b.check ? ["--check"] : [])]);
+  },
+  "POST /api/pokemon-species/cry": async (req, res) => {
+    // A WAV (base64) checked and converted for the game, with the result as the game plays it; with write, its cry.wav
+    const b = (await readJson(req)) as { species: string; data: string; rate?: number; write?: boolean };
+    if (!SPECIES.test(b.species ?? "") || typeof b.data !== "string") return error(res, 400, "Name a species and give the WAV");
+    const dir = mkdtempSync(join(tmpdir(), "paperwhite-cry-"));
+    try {
+      const wav = join(dir, "import.wav");
+      writeFileSync(wav, Buffer.from(b.data, "base64"));
+      await speciesTool(res, ["cry", b.species, wav, ...(Number.isInteger(b.rate) ? ["--rate", String(b.rate)] : []),
+        ...(b.write ? ["--write"] : [])]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  },
   // A species' or form's battle sprite art (tools/paperwhite2/battle_sprite.py): its sheets, stills and palettes as a
   // zip to edit, with guides; and edited files checked (errors, warnings, the files they change, a preview of the
   // assembled sprite on its rig) or, with write, imported into res/
@@ -926,6 +978,38 @@ function pick(data: Record<string, unknown>, keys: string[]): Record<string, unk
 }
 
 const POKEMON_FORM_TOOL = "tools/paperwhite2/pokemon_form.py";
+const POKEMON_SPECIES_TOOL = "tools/paperwhite2/pokemon_species.py";
+const SPECIES = /^SPECIES_[A-Z0-9_]+$/;
+
+/** Add Pokémon's and reuse's choices: the name, the template (a species, or "blank"), the display number (null:
+ * "???"), and whether it enters the Pokédex and the Wonder Trade. */
+interface NewSpeciesBody { name: string; from: string; number?: number | null; pokedex?: boolean; wonderTrade?: boolean; check?: boolean }
+
+/** The tool's options for a new species, or null when the body names no name or template. */
+function newSpeciesArgs(b: NewSpeciesBody): string[] | null {
+  if (typeof b.name !== "string" || !b.name || (b.from !== "blank" && !SPECIES.test(b.from ?? ""))) return null;
+  if (b.number !== undefined && b.number !== null && !Number.isInteger(b.number)) return null;
+  return [...(b.from === "blank" ? ["--blank"] : ["--from", b.from]),
+    ...(typeof b.number === "number" ? ["--number", String(b.number)] : []),
+    ...(b.pokedex === false ? ["--no-pokedex"] : []), ...(b.wonderTrade === false ? ["--no-wonder-trade"] : []),
+    ...(b.check ? ["--check"] : [])];
+}
+
+/** Runs pokemon_species.py and answers with its JSON, or its refusal as a 400. After a change of the species list the
+ * constants are read again and the page told at once, rather than at the next poll. */
+async function speciesTool(res: ServerResponse, args: string[]) {
+  const run = await python.tool(POKEMON_SPECIES_TOOL, args);
+  if (run.code !== 0) return error(res, 400, toolMessage(run) || "pokemon_species.py failed");
+  const out = run.stdout.trim().split("\n").pop() ?? "{}";
+  const result = JSON.parse(out) as { check?: boolean; changed?: string[] };
+  if (!result.check && result.changed?.includes("generated/species.txt")) {
+    python.invalidate();
+    constantsSeen = constantsStamp();
+    send({ type: "constants" });
+  }
+  res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+  res.end(out);
+}
 const BATTLE_SPRITE_TOOL = "tools/paperwhite2/battle_sprite.py";
 
 /** A tool's message: the "message" of the JSON it printed, else its error output's last line. */
