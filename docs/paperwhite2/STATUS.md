@@ -2,6 +2,24 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-13: editor follow-ups: the art zip's icon and follower, Follower cards, Don't mirror (ROM session, on a branch)
+
+- **Export art (.zip)** also has the party/box icon (`icon.png`, a 2x preview, `icon_palette.pal` and the README's note
+  on its bank) and the follower's walking sprite sheets (`follower/<code>.png`/`.pal`, 3x previews, the rows listed in
+  the README). Import takes the icon back (checked as the form icon import, an original group in its table's bank);
+  the follower sheets are export only (no checked overworld sprite import yet). battle-sprites.md section 14.
+- **Follower card** on every species' and form's page: the follower rows, the walking sprite each shows with a picker
+  and preview, and Open in the Follower Editor (`&form=N`). The Follower Editor draws walking sprites a row names.
+- **Don't mirror (asymmetric)** on species and form pages; a form without a record gets one first. Every reader of the
+  flag already loads the form's data (forms-and-species.md section 11.10); **the Spiky-eared Pichu has a record now,
+  asymmetric**: its Info page and list row show it as drawn, the plain Pichu still mirrored (py-desmume).
+- **Proof:** Python 16 battle-sprite tests, all 724 groups exported and imported unchanged; editor typecheck, tests,
+  vite build; CDP shots and an end-to-end on a scratch copy (a row's sprite picked and saved; Unown's form 1 toggle
+  made its records and set the flag). Shots in scratchpad `followup/shots/`, emulator shots in `followup/emu/shots/`.
+
+Open: the trade and the musical stage with the Spiky-eared Pichu weren't run; overworld sprite import (a checked PNG
+import for walking sprites) would let the zip's follower sheets come back.
+
 ## 2026-11-13: new moves and abilities, step 4: the Move Editor, the Ability Editor, Add move and Add ability (ROM session, on a branch)
 
 design/moves-and-abilities.md section 14 has the details; editor/README.md the pages.

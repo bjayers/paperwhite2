@@ -163,8 +163,9 @@ file changed on disk reloads.
 - **Pokémon**: the species that have followers, by number (filtered by name, or to those with their own dialogue). A
   species' page has each of its followers (form, sex, shininess) with its sprite in its palette, or the sprite it
   shares, and its settings: the "follower" object of its field actor (`res/field/actors/followers/<name>/data.json`),
-  its animation profile, art offset, side gap and walking gaps. `#tool/followers?species=SPECIES_X` opens on a
-  species (the Pokémon Editor's Follower card links there). Then its own dialogue
+  its animation profile, art offset, side gap and walking gaps (a walking sprite a row names is drawn too).
+  `#tool/followers?species=SPECIES_X` opens on a species, `&form=N` with that form's first row open (the Pokémon
+  Editor's Follower cards link there). Then its own dialogue
   (`res/paperwhite2/following/dialogue/species/<name>.json`), or a button that starts one, and the shared rules that
   name it.
 - **Shared dialogue**: `dialogue/shared.json`, the rules every follower has (talk, ambient, pickup), the talk's
@@ -398,7 +399,11 @@ Forms (`FormPage.tsx`, docs/paperwhite2/design/forms-and-species.md section 11.6
   from the sheets on its rig, front and back, female, normal or shiny. **Edit rig…** opens the Rig Editor on it (below).
   **Export art (.zip)** gives the sheets, stills,
   palettes, a shiny-coloured copy of each picture, a guide per sheet (each piece's rectangle numbered, with the parts it
-  belongs to) and a README of the rules. **Import art…** takes any of them back (PNGs, .pal files or the zip): the
+  belongs to) and a README of the rules, and also the party/box icon (`icon.png` as it is, a 2x preview and
+  `icon_palette.pal`, its bank of the shared icon palettes) and the follower's walking sprite sheets
+  (`follower/<code>.png` and `.pal`, each sheet its follower rows show, with a 3x preview; export only, as there is no
+  checked import for overworld sprites). **Import art…** takes any of them back (PNGs, .pal files or the zip; the icon
+  checked as the form icon import checks it, an original Pokémon's in the bank the game gives it): the
   errors, warnings (pixels outside the pieces, colours changed in one palette only) and the files it changes, and a
   preview of the new art animated on the rig, normal and shiny, with the stills, the sheets (changed pixels outside the
   pieces in red) and the palettes; **Apply** writes the res/ files. **Make stills from the sheets** draws the 96x96
@@ -409,6 +414,18 @@ Forms (`FormPage.tsx`, docs/paperwhite2/design/forms-and-species.md section 11.6
   `tools/paperwhite2/battle_sprite.py` (`export`, `check`, `import`) does the work, through `GET /api/battle-sprite/export`
   and `POST /api/battle-sprite/check` (with `write` to import); it writes res/ itself, so the card refuses while the
   group's files have unsaved edits.
+- **Follower** card (`FollowerSprites.tsx`, on every species' page and every form's; inside an added species' Follower
+  card): the follower rows of that species or form (normal, female, shiny, female shiny, each a field actor in
+  `res/field/actors/followers/`), the walking sprite each shows (its `"sprite"`, an `OBJ_CODE_POKEMON_` walking sprite
+  or a follower's own sheet) drawn facing down, left and right with its frame count, a picker of every such sheet
+  (picking one also sets the row's animation profile to the sheet's: 8 frames asymmetric, 6 mirrored), and **Open in
+  the Follower Editor** on that form's rows (`#tool/followers?species=…&form=N`). A row with a sheet of its own shows
+  it, without a picker. The rows save with the page's Save.
+- **Don't mirror (asymmetric)** under a species' or form's title: the personal data's `asymmetric` flag
+  (`PERSONAL_NO_FLIP`), which keeps the Pokédex's pages and list, the trade and the musical from flipping the sprite.
+  On a form with a record it is the record's; a form without one shows its species' ("· Pichu's"), and changing it
+  gives the form a record first (`/api/pokemon-forms/record`, a copy of the species' data, after a confirm that says
+  so and lists the files), then sets and saves the flag.
 - Adding, removing and records run `tools/paperwhite2/pokemon_form.py` on the server (`/api/pokemon-forms`, `/add`,
   `/remove`, `/record`, `/art`), which writes `res/` itself (art and follower folders, `obj_codes.txt`, other species'
   offsets): the editor refuses while those files have unsaved edits, and reads the changed files again after.
@@ -428,8 +445,8 @@ New species (`AddedSpecies.tsx`, docs/paperwhite2/design/new-species.md sections
   its ID so saved Pokémon stay valid, and **Bring back** undoes it; a retired one's **Reuse ID…** opens the dialog
   to make that ID a new species, warning that saved Pokémon of it become the new one; **Remove** only for the last
   added species, undoing everything Add did, its followers included), **Icon and stills** (PNG imports, as a
-  form's), a **Follower** card (its followers; **Copy from** another species' with **Copy**, **Remove**, and **Open in
-  the Follower Editor** on its page), and its Wonder Trade row says "Never" when it is retired or out of the Pokédex.
+  form's), a **Follower** card (its followers; **Copy from** another species' with **Copy**, **Remove**, **Open in
+  the Follower Editor** on its page, and each row's walking sprite with its picker, as above), and its Wonder Trade row says "Never" when it is retired or out of the Pokédex.
   Without a follower, the next party member follows while it leads.
 - Every species' page has a **Cry** card: the cry played in the page, "Cry: a copy of X's" while an added species'
   cry.wav is its template's, a WAV import (mono or stereo, 8 to 32 bits; mixed down and resampled to 13,379 Hz where

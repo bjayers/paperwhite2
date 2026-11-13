@@ -469,11 +469,29 @@ server (`GET /api/battle-sprite/export`, `POST /api/battle-sprite/check`, with `
 - `preview/<sheet>.png` and `_shiny.png`: the assembled first frame;
 - `README.txt`: the rules (keep each piece inside its rectangle; 16 colours, index 0 transparent, one palette for
   front, back, female and stills; the shiny palette recolours the same indices; the sizes; Spinda's spots; the
-  female's shared rig).
+  female's shared rig), and the icon's and the follower's parts below.
+- **The party/box icon** (added 2026-11-13): `icon.png` (and `icon_female.png`) as it is in res/, 32×64, its two
+  32×32 frames one above the other; `preview/icon.png` twice its size; `icon_palette.pal`, the 16 colours of its bank
+  of `res/pokemon/shared/icon_palettes.pal`. The README says the bank: an original game's group keeps the bank the
+  game's `sPokeIconPalettes` gives it, a hack form or added species takes the bank its colours are in.
+- **The follower's walking sprites** (added 2026-11-13): each sheet the species' or form's follower rows show
+  (`follower/<code>.png` and `.pal`, named after the object code, `pokemon_pichu_form_1` for
+  `OBJ_CODE_POKEMON_PICHU_FORM_1`, `follower_accelgor` for a follower's own sheet), once each, as they are in
+  `res/field/actors/`; `preview/follower_<code>.png` three times its size; and the README lists every row (normal,
+  female, shiny, placeholder) with its sheet and frames (up, up step, down, down step, left, left step, and right,
+  right step on an 8-frame sheet; 6 frames mirror the left ones). **Export only**: there is no checked import for
+  overworld sprites, which the README says (a sheet is replaced by hand; which sheet a row shows is the Pokémon page's
+  Follower card or the Follower Editor).
 
 ### 14.2 Import: the checks
 
-Any subset of those files, or the zip itself (`guide/` and `preview/` are skipped), named as the export names them:
+Any subset of those files, or the zip itself (`guide/`, `preview/` and `follower/` are skipped, and a loose
+`pokemon_*`/`follower_*` sheet or `icon_palette.pal` is noted as not imported), named as the export names them.
+`icon.png` and `icon_female.png` are checked apart, as `pokemon_form.py icon` checks a form's (`fit_icon`): 32×64, every
+colour in one bank of the icon palettes (an original group's: its table's bank, `original_icon_banks`, which the form
+icon import now keeps too, so an Unown form's icon can't change bank); written in that bank's colours, and not at all
+when its indices and bank are the icon's already; the preview's `icons` has it twice its size. The group must have the
+file already (no female icon is added). The rest:
 
 - **Errors** (nothing is written): a sheet not 256×128 or a still not 96×96; a female picture for a group without
   one (the packer can't add a member the original archive lacks); the front, back or stills giving one palette index
@@ -524,6 +542,13 @@ visible box is the size of the current still's, at the same place, else centred 
   `back.png`, `shiny.pal`; "Make stills from the sheets" then redrew both stills. In py-desmume on a copy of the user's
   save: the summary, a double battle's back sprites and the Info page show the red ears, and the shiny Pichu green ears
   and cheeks. Reverted after.
+
+- The icon and follower parts (2026-11-13): all 724 species' and forms' groups with a sheet exported and checked back
+  unchanged (724 with an icon, 722 with follower sheets; no errors, warnings or writes); `test_battle_sprite.py`'s
+  `IconAndFollower` (the Spiky-eared Pichu's zip has its icon, bank colours and `follower/pokemon_pichu_form_1.png`/`.pal`
+  byte for byte, Accelgor's own follower sheets; a colour outside Pichu's table bank is refused while a hack form takes
+  any bank; a mirrored icon is written and previewed while a follower sheet beside it is only noted; a wrong size or a
+  female icon the group lacks is refused). 16 tests.
 
 ### 14.6 What the rig editor builds on
 

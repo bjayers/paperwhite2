@@ -541,8 +541,8 @@ other archive checks fail as on main, from the hack's data).
 ### 11.4 The Spiky-eared Pichu
 
 - `res/pokemon/pichu/data.json`: `forms` `{ count 2, sprite_offset 66, no_evolution [1] }`, `form_name` "Normal",
-  `forms[0]` "Spiky-eared" with Pichu's entry, height, weight and shape. No form record: it is Pichu in data, cry and
-  footprint.
+  `forms[0]` "Spiky-eared" with Pichu's entry, height, weight and shape. It is Pichu in cry and footprint. Since
+  2026-11-13 it has a record, `form_1.json` (a copy of Pichu's data), for its `"asymmetric": true` (section 11.10).
 - `res/pokemon/pichu/form_1/`: copies of Pichu's 17 battle sprite files, palettes and icon, as placeholders.
 - Followers `pichu_form_1`, `_shiny`, `_female`, `_female_shiny` with the original game's walking sprite
   `OBJ_CODE_POKEMON_PICHU_FORM_1`, four codes after the imported followers (`GetIndexOfObjID`'s last follower code is
@@ -666,6 +666,35 @@ palettes tinted and icons mirrored so their groups could be told apart:
   the same save, Rotom's six original pages are the same apart from the animated background and the sprite's frame.
 
 Removing both forms gave back the baseline ROM (`d11fd024...`).
+
+### 11.10 Not mirroring a form, and a form's follower sprite (2026-11-13)
+
+**The flag.** The Pokédex flips a sprite to face right unless its personal data's `asymmetric` flag
+(`PERSONAL_NO_FLIP`) is set; the trade and the musical read the same flag. It is a record's, so a form without a record
+(`PML_PersonalGetDatID`: no `formFile`, or form 0) reads its species'. Every place that reads it loads the form's own
+data (species and form), so no code change was needed:
+
+| Reader | How it loads the data |
+| --- | --- |
+| `src/ov296/pokedex_info.c` `PokedexInfo_CreateSpriteActor` | `info->personal`, `PML_PersonalLoad(species, form)` in `PokedexInfo_SetPokemon` and `…InLanguage` |
+| `src/ov299/pokedex_list_obj.c` (the list's sprite) | `PML_PersonalLoad(species, form)`, the form from `PokeDex_GetShownSexRareForm` |
+| `src/ov194/pokemontrade_3d.c` `Poketrade3D_AddPokemonMcss` | `PML_PersonalLoad` with the Pokémon's `PKM_PARAM_FORM` |
+| `src/ov209/sta_act_poke.c` (the musical stage) | `PML_PersonalLoad(musPoke->species, musPoke->form)` |
+| `src/paperwhite2/ov298/paperwhite2_pokedex_info.c` | `PML_PersonalGetParamSingle(wk->species, wk->form, …)` |
+
+**The Spiky-eared Pichu** got a record (`pokemon_form.py record pichu 1 on`) with `"asymmetric": true`. In py-desmume on
+a copy of the user's save (Pokédex filled by the debug menu): its Info page draws it as `form_1/front_single.png` is
+drawn, and the Form button's plain Pichu still mirrored; the National list's row, with Pichu's shown form forced to 1
+at the list's sprite and personal loads (the shown form is 0 in that save), likewise un-mirrored against the plain one
+mirrored. The trade and the musical stage weren't reached; they load the form's data as above.
+
+**The editor:** "Don't mirror (asymmetric)" under the species' and each form's title; a form without a record shows
+its species' value, and changing it makes the record first (a confirm says it becomes the form's own copy of the
+species' stats, types, abilities and moves, and lists the files). A **Follower** card on every species' and form's page
+lists its follower rows and the walking sprite each shows, with a picker of every sheet and a preview, and opens the
+Follower Editor on that form. Add form's copied rows keep the template's sprite, so a new form walks as its template
+until its sheet is picked there (the Spiky-eared Pichu's rows show the original game's `OBJ_CODE_POKEMON_PICHU_FORM_1`).
+Shiny rows that point at a walking sprite stay placeholders in the normal colours (shiny-palettes.md).
 
 ## 12. New species' Pokédex numbers (the user's direction, 2026-11-12)
 
