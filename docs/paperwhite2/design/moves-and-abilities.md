@@ -47,7 +47,7 @@ What is inferred and not traced is marked *(inferred)*. Line numbers are from co
   1. appending packers and caps, byte-identical with nothing added;
   2. a data-only move in battle (Apple Acid) and the animation map (built, §13);
   3. an ability with handlers (Bulletproof) (built, §13);
-  4. Add move and Add ability in the editor;
+  4. Add move and Add ability in the editor (built, §14);
   5. the Applin line's real moves and abilities, replacing the stand-ins;
   6. later: blocks as needed, custom animations, Fairy.
 
@@ -487,7 +487,7 @@ the user's save.
      - a trainer's AI stops choosing Shadow Ball into it;
      - the Pokédex Info and summary show its name and description;
      - Skill Swap copies it.
-4. **Add move and Add ability in the editor**: the server routes, the Moves and Abilities pages.
+4. **Add move and Add ability in the editor**: the server routes, the Moves and Abilities pages (built, §14).
    - **Proof:**
      - adding and removing from the tool and from the editor leaves `res/` and `generated/` as they were, and the ROM
        byte-identical;
@@ -761,3 +761,92 @@ Applin line's stand-ins back), not committed:
   (`FieldEncount_CreateWildPkm`'s `PokeParty_SetDefaultMoves`), so set a forced wild's ability at its
   `PokeParty_RecalcStats`. Battle overlays share addresses with the field's: register exec hooks on ov167 only once
   the battle is up (scratchpad `moves2/bt.py`).
+
+## 14. Built: step 4, Add move and Add ability (2026-11-13)
+
+### 14.1 The tools
+
+| Tool | What |
+| --- | --- |
+| `tools/paperwhite2/moves.py` | `json` (the added moves with their animation, "works like", own C, retired and last; the next ID; `sMoveEventAddTable`'s rows; the refused templates), `uses MOVE` (the species and forms that learn it by level, TM or HM through `TM_MOVE_LIST`, tutor or egg, or evolve by it; trainers, facility sets, other files and code naming it), `add NAME --from MOVE \| --blank [--animation] [--handlers-like MOVE\|none] [--effect] [--description] [--check]`, `remove MOVE` (the last added only), `retire` / `unretire`; `info` and `header` as before |
+| `tools/paperwhite2/abilities.py` | the same: `json`, `uses ABILITY` (species and forms by slot), `add NAME --from ABILITY \| --blank [--handlers-like ABILITY\|none] [--[no-]mold-breaker-ignores] [--description] [--check]`, `remove`, `retire`, `unretire` |
+| `tools/paperwhite2/battle_entries.py` | what both share: name checks (12 characters, a letter first; the constant from the name, U-turn `MOVE_U_TURN`), list lines appended and removed byte for byte, the files of `res/` and the code naming a constant, `TM_MOVE_LIST`'s TMs and HMs, and the battle code's checks by ID. Changes go through `pokemon_species.py`'s `Changes`, one line of JSON a command |
+| `move_list.py` | `"retired"` a hack field; `SUB_ID_COMPARED`, the moves whose handlers compare their own ID (Circle Throw and Dragon Tail, Freeze Shock and Ice Burn, the Fusions, the pledges), refused as `handlers_like` by the tool and the build; `handler_rows()` |
+| `ability_list.py` | `"mold_breaker_ignores"` and `"retired"` hack fields; `mold_breaker_ignored()`; `handler_rows()`; `original_mold_breaker_ignored()` |
+| the schemas | `move.schema.json`: `retired`; `ability.schema.json`: `mold_breaker_ignores`, `retired` |
+
+**A copy** takes the template's whole record (an added template's animation and `handlers_like` too) and, from an original
+move with a row in `sMoveEventAddTable`, `"handlers_like": template`; from an original ability with a row, the same, and
+`mold_breaker_ignores` when the template is in `sMoldBreakerIgnoredAbilities`. `add` warns of what a copy doesn't get:
+an added template's own C, and the template's checks by ID in the battle overlays (ov167-ov170) beyond its handler row
+and the Mold Breaker list (Levitate: `btl_client.c`; Sky Drop: `item_handlers.c`, `btl_tables.c`; the pledges'
+combinations). A blank move is a Normal physical 40/100/35 with Pound's animation; a blank ability has no handlers and a
+warning that it does nothing in battle.
+
+**The Mold Breaker list is generated:** `abilities.py header` writes `PAPERWHITE2_ABILITY_MOLD_BREAKER_IGNORED_COUNT`
+and, with any, `PAPERWHITE2_ABILITY_MOLD_BREAKER_IGNORED`; `btl_tables.c` builds `sMoldBreakerIgnoredAddedAbilities`
+from it (including `paperwhite2/abilities.h` under `#ifdef PAPERWHITE2`), replacing step 3's hand-written Bulletproof
+entry; `bulletproof.json` has `"mold_breaker_ignores": true`. The ROM is unchanged, `d87b0aca…`. Role Play, Trace and the
+others' lists aren't generated yet (a `"copyable"` flag when an ability needs it).
+
+**Retired** moves and abilities keep their IDs and data and are built as before; only the editor's pickers leave them
+out.
+
+### 14.2 The editor
+
+- **Move Editor** and **Ability Editor** (`editor/src/modules/moves/`, `abilities/`; editor/README.md has the layout):
+  lists with filters, pages in headed sections, the added ones' card (Retire, Remove), **+ Add move** / **+ Add ability**
+  dialogs with a live dry run and the warnings. Grav Apple's and Bulletproof's pages say "This one has battle code in
+  src/paperwhite2/ov167/paperwhite2_battle.c", tagged "C", from `has_own_handlers`.
+- **Routes:** `GET /api/moves`, `/api/moves/uses?move=`, `POST /api/moves/add`, `/remove`, `/retire`, and the same under
+  `/api/abilities`; `GET /api/constant-notes?prefix=` (the comments of `include/constants/`'s defines, for the
+  qualities', flags' and targets' hints). After a change of a list the server rereads the constants and runs the build
+  command's configure step (section 13.5's trap: plain `ninja` after a Remove then works).
+- **Pickers:** every picker goes through `constantOptions`, which leaves out the retired constants (`setHiddenConstants`,
+  loaded with the constants): the learnsets by level, egg moves and tutors, evolutions' moves, trainers' moves and the
+  species' abilities. Added moves and abilities are in them with no change, as the design expected. TMs are C
+  (`TM_MOVE_LIST`) and the Encounter Editor picks no moves or abilities.
+- `#tool/pokemon?species=SPECIES_X[&form=N]` opens the Pokémon Editor on a species (the "who learns it" links).
+
+### 14.3 Proof
+
+- `python3 -m unittest tools.paperwhite2.test_moves_abilities` (21 tests: the hack fields, the refused handlers, the
+  handler rows, the Mold Breaker header with and without entries, names and constants, the TM table); editor `npm run
+  typecheck`, `npm test` (119: `tests/moves-abilities.test.ts` adds and removes moves and abilities in a scratch
+  checkout, `generated/`, `res/moves`, `res/abilities` and both generated headers byte-identical after; copies, blank,
+  retire, refusals, `uses`, the pickers' filter), `npx vite build`.
+- **End to end** (py-desmume, a copy of the user's save; scratchpad `moves4/`, shots in `moves4/shots/`): in the editor
+  (`e2e_*`), Add move "Test Move" from Tackle with Body Slam's animation (move 562), then Snorlax's learnset in the
+  Pokémon Editor: Test Move at level 30, saved. Built: ROM `6bd92f9d…`, `verify_dsi_rom.py` intact. On Route 6 the wild
+  Snorlax Lv. 30 was made knowing it from the learnset (its default moves 498, 156, 173, **562**); the lead Pignite with
+  Test Move: the summary lists it, Normal, 20/35 PP (`proof_e2e_summary`); in battle "Oinkums used Test Move!", the
+  effect VM started with **34** (Body Slam's script) for move 562, **13** damage (`proof_e2e_frames`, `logs/tm.log`).
+  Then Snorlax's learnset reverted, the editor's Remove (`POST /api/moves/remove`, reconfigured): plain `ninja` built
+  `d87b0aca8f374e14c4e96e27c6035c8faee9eb0b`, main's ROM, byte for byte.
+- Screenshots (`moves4/shots/`): `move-list`, `move-apple-acid`, `move-grav-apple` (the C note), `move-shadow-ball`
+  (247 learners by TM30), `ability-bulletproof`, `ability-levitate`, `add-move-dialog`, `add-move-dialog-pledge` (the
+  warnings), `add-ability-dialog`, `learnset-picker` (Apple Acid and Grav Apple in Appletun's level-up picker).
+
+### 14.4 For step 5 (the Applin line's remaining moves and abilities)
+
+- **Adding them:** `moves.py add` (or the editor) for Body Press (from Body Slam: Fighting, 80/100/10, contact),
+  Fickle Beam (from Dragon Pulse, 5 PP), Dragon Cheer (from Focus Energy, status), Syrup Bomb (from Mud Bomb, 60/85/10,
+  ballistic); `abilities.py add` for Sweet Syrup (`--handlers-like none`, its own C) and Ripen (blank). Give each its
+  animation (§4's table) and AI effect in the dialog. Their rules are C as Grav Apple's: a handler in
+  `paperwhite2_battle.c` under `#ifdef MOVE_X`, its declaration in `battle_handlers.h`, its row under
+  `#if defined(PAPERWHITE2) && defined(MOVE_X)`; the page then says "handlers: C".
+- **Don't take Focus Energy's handlers for Dragon Cheer** (`handlers_like`): its own handler replaces them; nor Intimidate's
+  for Sweet Syrup if the once-a-battle bit is wanted (a copy would intimidate at every entry).
+- **Dragon Cheer's "all allies" target** (§11.4) is a new `MOVE_TARGET_*`: the schema's `target` is a constant, so the
+  editor offers it once `include/constants/battle.h` defines it, with its comment as the hint.
+- **Syrup Bomb's condition** adds a `CONDITION_*` constant; the Move Editor's Condition picker offers it from the
+  constants, and the "Condition" row shows for `MOVE_QUALITY_DAMAGE_INFLICT`.
+- **Sweet Syrup and Ripen** don't change matchups: raise `MOVE_PREVIEW_LAST_ABILITY` (13.5). Mold Breaker: Sweet Syrup
+  isn't ignorable (it acts on entry), Ripen neither; leave their flags off.
+- **Dipplin's evolution** `EVO_METHOD_KNOWS_MOVE` with `MOVE_DRAGON_CHEER` is picked in the Pokémon Editor's evolutions
+  (the move picker shows added moves), and Dragon Cheer at level 1 in its learnset for the Move Reminder.
+- **Removing** an added move or ability is only possible for the last and refuses while learnsets or C name it, so add
+  all five moves before wiring their C, and retire rather than remove once they are in learnsets.
+- The editor's server reconfigures after Add and Remove; a command-line `moves.py add` still needs `python3 configure.py
+  w2_us --hack` before plain `ninja` sees the new folder's edits (the list file is a dependency, the new data.json isn't
+  until configure).

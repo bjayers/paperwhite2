@@ -2,6 +2,27 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-13: new moves and abilities, step 4: the Move Editor, the Ability Editor, Add move and Add ability (ROM session, on a branch)
+
+design/moves-and-abilities.md section 14 has the details; editor/README.md the pages.
+
+- **Move Editor** and **Ability Editor** under Editors: every move and ability in headed sections (basics; effect with
+  the fields the quality reads and the flags as checkboxes; battle: animation, "works like", AI effect, and "This one
+  has battle code in src/paperwhite2/ov167/paperwhite2_battle.c" for Grav Apple and Bulletproof; text; who learns or has
+  it, with links to the Pokémon and Trainer Editors).
+- **Add move / Add ability** from a template or blank, with a dry run and warnings (rules the battle checks by the
+  template's ID; the pledges' handlers refused); **Retire** (hidden from every picker) and **Remove** (last only).
+  Tools: `moves.py` and `abilities.py` `json`, `uses`, `add`, `remove`, `retire`, `unretire`
+  (`tools/paperwhite2/battle_entries.py` shared); the server reconfigures after a change of a list.
+- **Mold Breaker's added list is generated** from `"mold_breaker_ignores"` (Bulletproof's set), replacing the hand-written
+  one: ROM unchanged.
+- **Proof:** Python 21 tests, editor 119 tests, typecheck, vite build; end to end, Test Move (562) added in the editor from
+  Tackle with Body Slam's animation and given to Snorlax at level 30: the wild Snorlax knew it, the lead's summary
+  listed it, "Oinkums used Test Move!" with Body Slam's animation (effect 34) and 13 damage; removed in the editor, plain
+  `ninja` gave main's `d87b0aca…` again. Shots in scratchpad `moves4/shots/`.
+
+Next: step 5, the Applin line's remaining moves and abilities (section 14.4 says how to add them).
+
 ## 2026-11-13: new moves and abilities, steps 2 and 3: Apple Acid, Grav Apple, Bulletproof (ROM session, on a branch)
 
 design/moves-and-abilities.md section 13 has the details.
