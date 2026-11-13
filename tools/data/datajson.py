@@ -217,6 +217,37 @@ def dumps(data, indent: int = 0, width: int = 120) -> str:
     return "[\n" + ",\n".join(items) + "\n" + " " * indent + "]"
 
 
+def one_line(data) -> str:
+    """Writes JSON on one line with spaces inside the brackets, as dumps_compact() writes what fits."""
+    if isinstance(data, dict):
+        return ("{ " + ", ".join(f"{json.dumps(k, ensure_ascii=False)}: {one_line(v)}" for k, v in data.items()) + " }"
+                if data else "{}")
+    if isinstance(data, list):
+        return "[ " + ", ".join(one_line(v) for v in data) + " ]" if data else "[]"
+    return json.dumps(data, ensure_ascii=False)
+
+
+def dumps_compact(data, indent: int = 0, width: int = 120, step: int = 2) -> str:
+    """Writes JSON in the compact layout (the editor's shared/json.ts knows it): any object or array below the top that
+    fits in the width on one line, else a field or an item per line, so that a long list of small records (a rig's
+    keys) reads a record a line."""
+    if isinstance(data, (dict, list)) and data and indent > 0:
+        line = one_line(data)
+        if indent + len(line) <= width:
+            return line
+    if not isinstance(data, (dict, list)):
+        return json.dumps(data, ensure_ascii=False)
+    if not data:
+        return "{}" if isinstance(data, dict) else "[]"
+    inner = " " * (indent + step)
+    if isinstance(data, dict):
+        items = [f"{inner}{json.dumps(k, ensure_ascii=False)}: {dumps_compact(v, indent + step, width, step)}"
+                 for k, v in data.items()]
+        return "{\n" + ",\n".join(items) + "\n" + " " * indent + "}"
+    items = [inner + dumps_compact(item, indent + step, width, step) for item in data]
+    return "[\n" + ",\n".join(items) + "\n" + " " * indent + "]"
+
+
 def write(path: Path, data, width: int = 120):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(dumps(data, width=width) + "\n")
