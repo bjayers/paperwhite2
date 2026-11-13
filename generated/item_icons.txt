@@ -1034,3 +1034,10 @@ ITEM_ICON_PALETTE_SHINY_CANDY
 # Paper White 2: the Link Cord's icon and palette, for now a copy of the Destiny Knot's
 ITEM_ICON_LINK_CORD
 ITEM_ICON_PALETTE_LINK_CORD
+# Paper White 2: the apples' icons and palettes, for now copies of the Rindo, Sitrus and Tamato Berries'
+ITEM_ICON_TART_APPLE
+ITEM_ICON_PALETTE_TART_APPLE
+ITEM_ICON_SWEET_APPLE
+ITEM_ICON_PALETTE_SWEET_APPLE
+ITEM_ICON_SYRUPY_APPLE
+ITEM_ICON_PALETTE_SYRUPY_APPLE

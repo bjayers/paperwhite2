@@ -18,6 +18,7 @@ registrable item needs a larger save.
 | DexNav | `ITEM_POKE_RADAR` (the Poké Radar) | Key Items | yes | `include/paperwhite2/dexnav.h` |
 | Version Key | `ITEM_GALACTIC_KEY` (the Galactic Key) | Key Items | yes | `include/paperwhite2/version_key.h` |
 | Link Cord | `ITEM_LINK_CORD` (unused item 114) | Items | no | `include/paperwhite2/link_cord.h` |
+| Tart Apple, Sweet Apple, Syrupy Apple | `ITEM_TART_APPLE`, `ITEM_SWEET_APPLE`, `ITEM_SYRUPY_APPLE` (unused items 120-122) | Items | no | none (data only) |
 
 ## Exp. Share
 
@@ -112,3 +113,26 @@ evolution mode and the field plays the evolution demo), and it is used up.
   trade's, so the app call clears `canCancel`).
 - **Icon:** its own, in `res/items/link_cord/`, for now a copy of the Destiny Knot's.
 - **Obtained:** the debug menu's Give item (item 114) for now.
+
+## Tart Apple, Sweet Apple, Syrupy Apple
+
+Evolution items for the added Applin (`docs/paperwhite2/design/new-species.md` section 18): an Applin given the Tart
+Apple becomes Flapple, the Sweet Apple Appletun, the Syrupy Apple Dipplin (`EVO_METHOD_ITEM` entries in
+`res/pokemon/applin/data.json`). They need no code: like the stones, `effects.evolve` makes the bag open the party list
+in its evolution mode (ABLE/UNABLE), `CheckEvolveSpecies`' item mode finds the entry, the field plays the demo and the
+apple is used up; on anything else, "It won't have any effect."
+
+- **Added as the Link Cord was** (form-evolutions.md section 7): unused items 120, 121 and 122 renamed with
+  `tools/data/rename_constant.py` (`generated/items.txt`, `res/items/<name>/`, `sItemPockets`' comments), each
+  `data.json` the Link Cord's with its name, plural, description, price and `sort_index` (Items pocket, field use 20,
+  kind 2, fling 30); their icons' constants at the end of `generated/item_icons.txt` and their rows of
+  `ITEM_GRAPHICS_CHARS_AND_PALETTES` under `#ifdef PAPERWHITE2` (`src/system/pml_item.c`).
+- **Price** 220 (shown ×10: 2,200, Sword/Shield's), so they sell for 1,100.
+- **Descriptions** are short originals ("An apple so sour it makes your mouth pucker. It makes certain species of
+  Pokémon evolve." and the like), for the user to rewrite.
+- **Icons:** placeholders, copies of the Rindo (Tart), Sitrus (Sweet) and Tamato (Syrupy) Berries' icons, in
+  `res/items/<name>/icon.png` and `icon.pal`, for the user to draw (Graphics & Palettes, Item icons).
+- **Obtained:** nowhere yet; the debug menu's Give item (120, 121, 122). Places they could go: a shop (Castelia's or
+  the Shopping Mall Nine), hidden or visible items near where Applin will live (it lives in orchards and the like in
+  Galar), or an NPC who hands one over with an Applin.
+- **Free unused IDs left:** 115, 123-133, 426, 427 and 622.

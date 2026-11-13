@@ -2523,6 +2523,11 @@ Whole new species, appended to `generated/species.txt` from 687 after `SPECIES_P
   musical shows an added species with its art template's musical sprite (`PaperWhite2_GetMusicalSpecies`,
   `musical_mcss.c`).
 - The vanilla Area page (never started in the hack) reads Bulbasaur's empty habitat for an added species.
+- **The Applin line** (section 18 of the design doc): Applin 687 (No. 840), Flapple 688 (841), Appletun 689 (842),
+  Dipplin 690 (1011), Hydrapple 691 (1019), Grass/Dragon, made with Add Pokémon from Budew; Gen 8/9 moves and abilities
+  as Gen 5 stand-ins (the design doc's table). Its evolution items, the **Tart, Sweet and Syrupy Apples** (unused items
+  120-122), are data only, used from the bag as stones (`docs/paperwhite2/items.md`); Dipplin evolves into Hydrapple
+  levelling up knowing Focus Energy, Dragon Cheer's stand-in. The debug menu's Give item and Give Pokémon give them.
 
 ## Adding global scripts
 

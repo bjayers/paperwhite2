@@ -77,58 +77,60 @@ after(() => { if (scratch) rmSync(scratch, { recursive: true, force: true }); })
 
 test("adding species and removing them again leaves every file as it was", () => {
   const before = state();
-  const dry = run("add", "Applin", "--from", "SPECIES_BUDEW", "--number", "840", "--check");
+  const dry = run("add", "Testone", "--from", "SPECIES_BUDEW", "--number", "900", "--check");
   assert.equal(dry.check, true);
-  assert.ok(dry.changed.includes("generated/species.txt") && dry.changed.includes("res/pokemon/applin/data.json"));
+  assert.ok(dry.changed.includes("generated/species.txt") && dry.changed.includes("res/pokemon/testone/data.json"));
   assert.deepEqual(state(), before, "a dry run writes nothing");
 
-  const applin = run("add", "Applin", "--from", "SPECIES_BUDEW", "--number", "840");
-  assert.equal(applin.id, 687);
-  assert.match(readFileSync(join(scratch, "generated/species.txt"), "utf8"),
-    /SPECIES_PAPERWHITE2_RESERVED_685\nSPECIES_PAPERWHITE2_RESERVED_686\nSPECIES_APPLIN\n$/);
-  const data = JSON.parse(readFileSync(join(scratch, "res/pokemon/applin/data.json"), "utf8"));
-  assert.equal(data.name, "Applin");
-  assert.equal(data.pokedex.display_number, 840);
+  const { nextId, species: existing } = info();
+  const testone = run("add", "Testone", "--from", "SPECIES_BUDEW", "--number", "900");
+  assert.equal(testone.id, nextId);
+  // the reserved pair comes first only when res/ has no added species yet
+  assert.match(readFileSync(join(scratch, "generated/species.txt"), "utf8"), existing.length
+    ? /\nSPECIES_TESTONE\n$/ : /SPECIES_PAPERWHITE2_RESERVED_685\nSPECIES_PAPERWHITE2_RESERVED_686\nSPECIES_TESTONE\n$/);
+  const data = JSON.parse(readFileSync(join(scratch, "res/pokemon/testone/data.json"), "utf8"));
+  assert.equal(data.name, "Testone");
+  assert.equal(data.pokedex.display_number, 900);
   assert.deepEqual(data.pokedex.languages, {});
   assert.deepEqual(data.evolutions, []);
-  assert.equal(data.baby_species, "SPECIES_APPLIN");
+  assert.equal(data.baby_species, "SPECIES_TESTONE");
   assert.equal(data.art_template, "SPECIES_BUDEW");
-  assert.deepEqual(readFileSync(join(scratch, "res/pokemon/applin/cry.wav")), readFileSync(join(ROOT, "res/pokemon/budew/cry.wav")));
+  assert.deepEqual(readFileSync(join(scratch, "res/pokemon/testone/cry.wav")), readFileSync(join(ROOT, "res/pokemon/budew/cry.wav")));
 
-  assert.equal(run("add", "Secret", "--blank", "--no-pokedex").id, 688);
-  assert.equal(run("add", "Thirdmon", "--from", "SPECIES_APPLIN", "--no-wonder-trade").id, 689);
-  const listed = info();
+  assert.equal(run("add", "Secret", "--blank", "--no-pokedex").id, nextId + 1);
+  assert.equal(run("add", "Thirdmon", "--from", "SPECIES_TESTONE", "--no-wonder-trade").id, nextId + 2);
+  const listed = { ...info(), species: info().species.slice(existing.length) };
   assert.deepEqual(listed.species.map((s) => [s.species, s.number, s.pokedex, s.last]),
-    [["SPECIES_APPLIN", 840, true, false], ["SPECIES_SECRET", null, false, false], ["SPECIES_THIRDMON", null, true, true]]);
+    [["SPECIES_TESTONE", 900, true, false], ["SPECIES_SECRET", null, false, false], ["SPECIES_THIRDMON", null, true, true]]);
   assert.equal(listed.species[0].cryCopyOf, "Budew");
   // a copy of an added species takes its art template
   assert.equal(JSON.parse(readFileSync(join(scratch, "res/pokemon/thirdmon/data.json"), "utf8")).art_template, "SPECIES_BUDEW");
   assert.ok(readFileSync(join(scratch, "res/paperwhite2/pokemon_center/services.json"), "utf8").includes("SPECIES_THIRDMON"));
 
-  assert.match(refusal("remove", "SPECIES_APPLIN"), /Only the last added species/);
+  assert.match(refusal("remove", "SPECIES_TESTONE"), /Only the last added species/);
   run("remove", "SPECIES_THIRDMON");
   run("remove", "SPECIES_SECRET");
-  const last = run("remove", "SPECIES_APPLIN");
-  assert.match(last.message, /reserved IDs/);
+  const last = run("remove", "SPECIES_TESTONE");
+  if (!existing.length) assert.match(last.message, /reserved IDs/);
   assert.deepEqual(state(), before);
 });
 
 test("followers are copies of the template's, with their codes after the last, and go with the species", () => {
   const before = state();
   const last = followerCodes().at(-1)!;
-  const applin = run("add", "Applin", "--from", "SPECIES_BUDEW", "--number", "840");
-  assert.equal(applin.followers, 4);
-  assert.match(applin.message, /4 followers copied from Budew's/);
+  const testone = run("add", "Testone", "--from", "SPECIES_BUDEW", "--number", "900");
+  assert.equal(testone.followers, 4);
+  assert.match(testone.message, /4 followers copied from Budew's/);
   const codes = followerCodes();
-  assert.deepEqual(codes.slice(codes.indexOf(last) + 1), ["OBJ_CODE_FOLLOWER_APPLIN", "OBJ_CODE_FOLLOWER_APPLIN_SHINY",
-    "OBJ_CODE_FOLLOWER_APPLIN_FEMALE", "OBJ_CODE_FOLLOWER_APPLIN_FEMALE_SHINY"]);
+  assert.deepEqual(codes.slice(codes.indexOf(last) + 1), ["OBJ_CODE_FOLLOWER_TESTONE", "OBJ_CODE_FOLLOWER_TESTONE_SHINY",
+    "OBJ_CODE_FOLLOWER_TESTONE_FEMALE", "OBJ_CODE_FOLLOWER_TESTONE_FEMALE_SHINY"]);
   for (const suffix of ["", "_shiny", "_female", "_female_shiny"]) {
-    const copy = JSON.parse(readFileSync(join(scratch, FOLLOWERS, `applin${suffix}`, "data.json"), "utf8"));
+    const copy = JSON.parse(readFileSync(join(scratch, FOLLOWERS, `testone${suffix}`, "data.json"), "utf8"));
     const original = JSON.parse(readFileSync(join(ROOT, FOLLOWERS, `budew${suffix}`, "data.json"), "utf8"));
-    assert.equal(copy.follower.species, "SPECIES_APPLIN");
+    assert.equal(copy.follower.species, "SPECIES_TESTONE");
     assert.deepEqual({ ...copy, follower: { ...copy.follower, species: original.follower.species } }, original);
   }
-  assert.deepEqual(info().species[0].followers, ["applin", "applin_shiny", "applin_female", "applin_female_shiny"]);
+  assert.deepEqual(info().species.find((s) => s.species === "SPECIES_TESTONE")!.followers, ["testone", "testone_shiny", "testone_female", "testone_female_shiny"]);
 
   // a sprite named by another copied follower's code names that one's copy (Pignite's female shows its own sprite)
   run("add", "Testpig", "--from", "SPECIES_PIGNITE");
@@ -161,70 +163,71 @@ test("followers are copies of the template's, with their codes after the last, a
   const removed = run("remove", "SPECIES_TESTPIG");
   assert.ok(removed.removed.includes("res/paperwhite2/following/dialogue/species/testpig.json"));
   assert.ok(removed.removed.includes(`${FOLLOWERS}/testpig_female_shiny`));
-  run("remove", "SPECIES_APPLIN");
+  run("remove", "SPECIES_TESTONE");
   assert.deepEqual(state(), before);
 });
 
 test("retiring keeps the ID and frees the number; a retired ID is reused in place", () => {
   const before = state();
-  run("add", "Applin", "--from", "SPECIES_BUDEW", "--number", "840");
-  run("add", "Flapple", "--from", "SPECIES_BUDEW", "--number", "841");
-  const original = readFileSync(join(scratch, "res/pokemon/applin/data.json"));
-  run("retire", "SPECIES_APPLIN");
-  assert.equal(JSON.parse(readFileSync(join(scratch, "res/pokemon/applin/data.json"), "utf8")).retired, true);
-  assert.deepEqual(info().numbers, { 841: "Flapple" });
-  assert.match(refusal("retire", "SPECIES_APPLIN"), /already retired/);
-  run("unretire", "SPECIES_APPLIN");
-  assert.deepEqual(readFileSync(join(scratch, "res/pokemon/applin/data.json")), original);
+  const { nextId, numbers } = info();
+  run("add", "Testone", "--from", "SPECIES_BUDEW", "--number", "900");
+  run("add", "Testtwo", "--from", "SPECIES_BUDEW", "--number", "901");
+  const original = readFileSync(join(scratch, "res/pokemon/testone/data.json"));
+  run("retire", "SPECIES_TESTONE");
+  assert.equal(JSON.parse(readFileSync(join(scratch, "res/pokemon/testone/data.json"), "utf8")).retired, true);
+  assert.deepEqual(info().numbers, { ...numbers, 901: "Testtwo" });
+  assert.match(refusal("retire", "SPECIES_TESTONE"), /already retired/);
+  run("unretire", "SPECIES_TESTONE");
+  assert.deepEqual(readFileSync(join(scratch, "res/pokemon/testone/data.json")), original);
 
   // While retired its number is free; taken meanwhile, bringing it back is refused
-  run("retire", "SPECIES_APPLIN");
-  run("number", "SPECIES_FLAPPLE", "840");
-  assert.match(refusal("unretire", "SPECIES_APPLIN"), /840 is Flapple's/);
-  run("number", "SPECIES_FLAPPLE", "841");
+  run("retire", "SPECIES_TESTONE");
+  run("number", "SPECIES_TESTTWO", "900");
+  assert.match(refusal("unretire", "SPECIES_TESTONE"), /900 is Testtwo's/);
+  run("number", "SPECIES_TESTTWO", "901");
 
-  assert.match(refusal("reuse", "SPECIES_FLAPPLE", "Appletun", "--from", "SPECIES_BUDEW"), /isn't retired/);
-  const reused = run("reuse", "SPECIES_APPLIN", "Dipplin", "--blank", "--number", "1011");
-  assert.equal(reused.id, 687);
+  assert.match(refusal("reuse", "SPECIES_TESTTWO", "Testthree", "--from", "SPECIES_BUDEW"), /isn't retired/);
+  const reused = run("reuse", "SPECIES_TESTONE", "Testfour", "--blank", "--number", "1500");
+  assert.equal(reused.id, nextId);
   // the retired species' followers went with it (the blank template has none)
-  assert.ok(!readdirSync(join(scratch, FOLLOWERS)).some((name) => name.startsWith("applin")));
-  assert.ok(!followerCodes().some((code) => code.includes("APPLIN")));
+  assert.ok(!readdirSync(join(scratch, FOLLOWERS)).some((name) => name.startsWith("testone")));
+  assert.ok(!followerCodes().some((code) => code.includes("TESTONE")));
   const lines = readFileSync(join(scratch, "generated/species.txt"), "utf8").trimEnd().split("\n");
-  assert.deepEqual(lines.slice(-2), ["SPECIES_DIPPLIN", "SPECIES_FLAPPLE"]);
-  assert.ok(!readdirSync(join(scratch, "res/pokemon")).includes("applin"));
-  assert.equal(JSON.parse(readFileSync(join(scratch, "res/pokemon/dipplin/data.json"), "utf8")).retired, undefined);
+  assert.deepEqual(lines.slice(-2), ["SPECIES_TESTFOUR", "SPECIES_TESTTWO"]);
+  assert.ok(!readdirSync(join(scratch, "res/pokemon")).includes("testone"));
+  assert.equal(JSON.parse(readFileSync(join(scratch, "res/pokemon/testfour/data.json"), "utf8")).retired, undefined);
 
-  run("remove", "SPECIES_FLAPPLE");
-  run("remove", "SPECIES_DIPPLIN");
+  run("remove", "SPECIES_TESTTWO");
+  run("remove", "SPECIES_TESTFOUR");
   assert.deepEqual(state(), before);
 });
 
 test("numbers and names the build would stop on are refused", () => {
-  run("add", "Applin", "--from", "SPECIES_BUDEW", "--number", "840");
+  run("add", "Testone", "--from", "SPECIES_BUDEW", "--number", "900");
   try {
-    assert.match(refusal("add", "Flapple", "--from", "SPECIES_BUDEW", "--number", "840"), /840 is Applin's/);
-    assert.match(refusal("add", "Flapple", "--from", "SPECIES_BUDEW", "--number", "999"), /no number/);
-    assert.match(refusal("add", "Flapple", "--from", "SPECIES_BUDEW", "--number", "25"), /original game's/);
-    assert.match(refusal("add", "Flapple", "--from", "SPECIES_BUDEW", "--number", "10000"), /from 650 to 9999/);
-    assert.match(refusal("add", "Flapple", "--from", "SPECIES_BUDEW", "--number", "841", "--no-pokedex"), /no display number/);
-    assert.match(refusal("add", "Flapplecore", "--from", "SPECIES_BUDEW"), /holds 10/);
-    assert.match(refusal("add", "2pple", "--from", "SPECIES_BUDEW"), /start with a letter/);
+    assert.match(refusal("add", "Testtwo", "--from", "SPECIES_BUDEW", "--number", "900"), /900 is Testone's/);
+    assert.match(refusal("add", "Testtwo", "--from", "SPECIES_BUDEW", "--number", "999"), /no number/);
+    assert.match(refusal("add", "Testtwo", "--from", "SPECIES_BUDEW", "--number", "25"), /original game's/);
+    assert.match(refusal("add", "Testtwo", "--from", "SPECIES_BUDEW", "--number", "10000"), /from 650 to 9999/);
+    assert.match(refusal("add", "Testtwo", "--from", "SPECIES_BUDEW", "--number", "901", "--no-pokedex"), /no display number/);
+    assert.match(refusal("add", "Testtwocore", "--from", "SPECIES_BUDEW"), /holds 10/);
+    assert.match(refusal("add", "2estmon", "--from", "SPECIES_BUDEW"), /start with a letter/);
     assert.match(refusal("add", "Pikachu", "--from", "SPECIES_BUDEW"), /exists already/);
-    assert.match(refusal("add", "Flapple", "--from", "SPECIES_EGG"), /isn't a Pokémon species/);
-    assert.match(refusal("number", "SPECIES_PIKACHU", "840"), /original game's/);
-    assert.match(refusal("number", "SPECIES_APPLIN", "999"), /no number/);
-    assert.equal(run("number", "SPECIES_APPLIN", "none", "--check").message, "Applin shows No. ???");
+    assert.match(refusal("add", "Testtwo", "--from", "SPECIES_EGG"), /isn't a Pokémon species/);
+    assert.match(refusal("number", "SPECIES_PIKACHU", "900"), /original game's/);
+    assert.match(refusal("number", "SPECIES_TESTONE", "999"), /no number/);
+    assert.equal(run("number", "SPECIES_TESTONE", "none", "--check").message, "Testone shows No. ???");
     assert.match(refusal("remove", "SPECIES_BUDEW"), /original game's/);
-    // A species another file names (here Applin's evolution) can't be removed
-    run("add", "Flapple", "--from", "SPECIES_BUDEW");
-    const path = join(scratch, "res/pokemon/applin/data.json");
+    // A species another file names (here Testone's evolution) can't be removed
+    run("add", "Testtwo", "--from", "SPECIES_BUDEW");
+    const path = join(scratch, "res/pokemon/testone/data.json");
     const data = readFileSync(path, "utf8");
-    writeFileSync(path, data.replace('"evolutions": []', '"evolutions": [ { "method": "EVO_METHOD_LEVEL", "param": 30, "species": "SPECIES_FLAPPLE" } ]'));
-    assert.match(refusal("remove", "SPECIES_FLAPPLE"), /still named in res\/pokemon\/applin\/data\.json/);
+    writeFileSync(path, data.replace('"evolutions": []', '"evolutions": [ { "method": "EVO_METHOD_LEVEL", "param": 30, "species": "SPECIES_TESTTWO" } ]'));
+    assert.match(refusal("remove", "SPECIES_TESTTWO"), /still named in res\/pokemon\/testone\/data\.json/);
     writeFileSync(path, data);
-    run("remove", "SPECIES_FLAPPLE");
+    run("remove", "SPECIES_TESTTWO");
   } finally {
-    run("remove", "SPECIES_APPLIN");
+    run("remove", "SPECIES_TESTONE");
   }
 });
 

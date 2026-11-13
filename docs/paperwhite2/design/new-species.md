@@ -412,7 +412,8 @@ caught.
 
 Three new items (form-evolutions §7 is the recipe; `EVO_METHOD_ITEM` takes any item) or stand-ins such as existing
 stones. "Level up knowing a move" (`EVO_METHOD_MOVE`, Gen 4+) needs Dragon Cheer, or a stand-in move. Abilities and
-moves past Gen 5 are a separate expansion; until then, choose Gen 5 stand-ins. Each species needs:
+moves past Gen 5 are a separate expansion; until then, choose Gen 5 stand-ins (built in step 6 with the items Tart,
+Sweet and Syrupy Apple and Focus Energy for Dragon Cheer; section 18 lists every stand-in). Each species needs:
 - 2 sheets with their rigs, made in the Rig Editor;
 - an icon (32×64, one bank of `icon_palettes.pal`), a footprint and a cry;
 - optionally a follower sprite.
@@ -890,3 +891,119 @@ retired), Testnowt (691, No. 842, from Eevee, `--no-wonder-trade`); Testfol in R
   appended to `a/0/5/1` with a musical bin, section 3.5, would need that bin written).
 - Still open: the stage of a musical with an added species (only the dress-up was run); the Repeat Ball never boosts a
   `"pokedex": false` species (never "caught" in the Pokédex).
+
+## 18. Built: step 6, the Applin line (2026-11-13)
+
+### 18.1 What was added
+
+The five species with `pokemon_species.py add NAME --from SPECIES_BUDEW --number N`, in order, so the IDs follow the
+line; then their data written into each `data.json` (validated by the schema), their evolutions, three new items and
+the followers' sprites.
+
+| ID | Constant | No. | Types | Abilities (slot 1 / slot 2 / hidden) | Evolves |
+| --- | --- | --- | --- | --- | --- |
+| 687 | `SPECIES_APPLIN` | 840 | Grass/Dragon | Harvest\* / Gluttony / Soundproof\* | Tart Apple → Flapple, Sweet Apple → Appletun, Syrupy Apple → Dipplin (`EVO_METHOD_ITEM`) |
+| 688 | `SPECIES_FLAPPLE` | 841 | Grass/Dragon | Harvest\* / Gluttony / Hustle | |
+| 689 | `SPECIES_APPLETUN` | 842 | Grass/Dragon | Harvest\* / Gluttony / Thick Fat | |
+| 690 | `SPECIES_DIPPLIN` | 1011 | Grass/Dragon | Illuminate\* / Gluttony / Sticky Hold | → Hydrapple: level up knowing Focus Energy\* (`EVO_METHOD_KNOWS_MOVE`) |
+| 691 | `SPECIES_HYDRAPPLE` | 1019 | Grass/Dragon | Illuminate\* / Regenerator / Sticky Hold | |
+
+\* a stand-in (18.2).
+
+- **The game's numbers** are Sword/Shield's and Scarlet/Violet's in Gen 5's fields:
+  - base stats (HP/Atk/Def/SpA/SpD/Spe): Applin 40/40/80/40/40/20, Flapple 70/110/80/95/60/70, Appletun
+    110/85/80/100/80/30, Dipplin 80/80/110/95/80/40, Hydrapple 106/80/110/120/80/44;
+  - catch rates 255/45/45/45/10; EV yields Defense 1, Attack 2, HP 2, Defense 2, Sp. Atk 3; base experience
+    52/170/170/170/270;
+  - half male, egg groups Grass and Dragon, 20 hatch cycles, Erratic growth, colour green, no wild held items;
+  - height and weight 0.2 m 0.5 kg, 0.3 m 1.0 kg, 0.4 m 13.0 kg, 0.4 m 9.7 kg, 1.8 m 93.0 kg;
+  - base friendship 70 for the Gen 8 three, 50 for Dipplin and Hydrapple (Gen 9's);
+  - categories as the real ones ("Apple Core", "Apple Wing", "Apple Nectar", "Candy Apple", "Apple Hydra");
+  - Pokédex shapes chosen: Applin serpentine (12), Flapple one pair of wings (11), Appletun quadruped (4), Dipplin and
+    Hydrapple multiple bodies (1).
+
+  They were written from memory, not copied from a file: check them (and the learnset levels) against a reference
+  before a release.
+- **Pokédex entries are short original placeholders**, not the official text, for the user to rewrite (the editor's
+  Pokédex card, or `pokedex.entry`).
+- **Learnsets** follow the real level-up lists with Gen 5 moves, the post-Gen-5 moves replaced (18.2).
+  - Gen 5 has no "move learned on evolving", so the evolution moves (Flapple's Wing Attack, Appletun's Headbutt,
+    Dipplin's Double Hit, Hydrapple's Fickle Beam stand-in) are level-1 moves, which come from the Move Reminder.
+  - On evolving, a Pokémon learns its new species' move of its current level, as before (an Applin at 24 became a
+    Flapple that learned Dragon Dance).
+  - TM, HM and tutor compatibility is a Gen 5 approximation (Gen 5's TMs aren't Gen 8/9's).
+  - Applin's egg moves: Defense Curl, Dragon Rush, Recycle, Rollout and Sucker Punch; the line's eggs hatch as Applin.
+- **Art, icon, footprint, cry, musical:** Budew's copies (`"art_template": "SPECIES_BUDEW"`), placeholders until the
+  user draws them (the Rig Editor, Icon and stills, the Cry card, which says "a copy of Budew's").
+- **Followers:**
+  - Applin, Dipplin and Hydrapple's followers (all four of each: plain, shiny, female, female shiny) show the user's
+    walking sprites `OBJ_CODE_POKEMON_APPLIN`, `_DIPPLIN`, `_HYDRAPPLE`: 8 frames, so `"animation_profile":
+    "asymmetric"` and sprite controller 14, as the user's Purrloin. They have no shiny palette, so a shiny follower
+    looks plain.
+  - Flapple's and Appletun's followers are still Budew's copies.
+  - Hydrapple's sprite is tall and stands close behind the player: its `gap` may want raising in the Follower Editor.
+- **Pokédex and Wonder Trade:** in both (no `excluded_species`; the Wonder Trade's pre-evolutions give Applin for
+  Flapple, Appletun and Dipplin, and Dipplin for Hydrapple).
+- **No wild encounters:** each needs an encounters species file from the Encounter Editor
+  (`res/paperwhite2/encounters/species/<name>.json`) before the wild, the Habitat List, the Area tab and the DexNav
+  show it.
+- **The apples** (`docs/paperwhite2/items.md`): `ITEM_TART_APPLE`, `ITEM_SWEET_APPLE`, `ITEM_SYRUPY_APPLE`, unused
+  items 120-122, used from the bag as stones are (no code: `effects.evolve`). Not placed in the world; the debug menu's
+  Items... > Give item... (120, 121, 122) gives them, and Party... > Give Pokémon... (687-691) the species.
+
+### 18.2 The stand-ins
+
+Gen 5 has none of the line's own moves and abilities (section 9). Each stand-in is the nearest Gen 5 thing; replace it
+when the real one exists. All are in the species' `data.json` (`abilities`, `hidden_ability`, `learnset.by_level`,
+`evolutions`).
+
+| Real (Gen 8/9) | Who | Stand-in (Gen 5) | Why this one |
+| --- | --- | --- | --- |
+| Ripen (ability: doubles a Berry's effect) | Applin, Flapple, Appletun, slot 1 | Harvest | Gen 5's other Berry ability (may restore a used Berry): the nearest Berry effect |
+| Bulletproof (ability, Gen 6: immune to ball and bomb moves) | Applin, hidden | Soundproof | the same kind of effect, immunity to one class of moves |
+| Supersweet Syrup (ability: lowers the foes' evasion on entering, once a battle) | Dipplin, Hydrapple, slot 1 | Illuminate | no Gen 5 entry ability lowers evasion, and Intimidate would be far stronger; Illuminate does nothing in battle and raises wild encounters in the field, as Sweet Scent does, which the syrup echoes |
+| Grav Apple (Grass, physical 80, lowers Defense) | Flapple, level 32 | Seed Bomb | Grass, physical, 80 |
+| Apple Acid (Grass, special 80, lowers Sp. Def) | Appletun, level 28 | Energy Ball | Grass, special, 90, may lower Sp. Def |
+| Body Press (Fighting, physical 80, uses Defense) | Appletun 24, Hydrapple 36 | Body Slam (Appletun), Heavy Slam (Hydrapple) | no Gen 5 move uses Defense; a bulky physical move at the same level |
+| Syrup Bomb (Grass, special 60, lowers Speed for 3 turns) | Dipplin, Hydrapple, level 24 | Magical Leaf | Grass, special, 60, without the Speed drop |
+| Dragon Cheer (Dragon status: raises the allies' critical-hit ratio) | Dipplin, Hydrapple, level 1 (Move Reminder) | Focus Energy | the same effect on itself, Gen 5's critical-hit move |
+| Fickle Beam (Dragon, special 80, sometimes double power) | Hydrapple, on evolving (level 1) | Dragon Pulse | Dragon, special, 85 |
+| Dipplin → Hydrapple: level up knowing Dragon Cheer | Dipplin's evolution | level up knowing Focus Energy (`EVO_METHOD_KNOWS_MOVE`) | the method exists (Aipom, Yanma); Focus Energy is Dragon Cheer's stand-in, and Dipplin learns it only at level 1, from the Move Reminder (Mistralton City, a Heart Scale), never by accident on levelling |
+
+The apples aren't stand-ins but new items; their icons are placeholders (copies of the Rindo, Sitrus and Tamato
+Berries'), as are every species' art, icon, cry and footprint (Budew's) and Flapple's and Appletun's followers.
+
+### 18.3 Proof (py-desmume, a copy of the user's save; shots in the scratchpad's `newsp6/shots/`)
+
+- **Given by the debug menu:** Give Pokémon 687 ("Applin joined the party.", `debug_give_applin`) and 690
+  (`debug_give_dipplin_number`), both level 24; Give item 122 ("Item 122: Syrupy Apple", "Put Syrupy Apple x1 in the
+  Bag.", `debug_give_item_syrupy_apple`, `debug_gave_syrupy_apple`).
+- **Summary:** Applin, Dex No. 840, Grass/Dragon, Gluttony, Withdraw and Astonish, Budew's sprite
+  (`summary_applin_840`, `summary_applin_ability_moves`); the Dipplin, No. 1011, with DragonBreath, Protect, Bullet
+  Seed, Magical Leaf (`summary_dipplin_1011`).
+- **Apples**, from the bag, with three copies of the Applin in the party:
+  - the party list shows ABLE on the Applins only (`bag_tart_apple_party_able`; the description, `bag_tart_apple`);
+  - Tart Apple: "Your Applin evolved into Flapple!" (688), "Flapple learned Dragon Dance!"; Sweet Apple: Appletun (689,
+    Body Slam); Syrupy Apple: Dipplin (690, Magical Leaf); one apple used each time (`evolve_tart_apple_flapple`,
+    `evolve_sweet_apple_appletun`, `evolve_syrupy_apple_dipplin`);
+  - on Pignite (and every non-Applin UNABLE): "It won't have any effect.", none used (`apple_no_effect_pignite`).
+- **Dipplin → Hydrapple:** a Rare Candy on the Dipplin taught Focus Energy: level 25, "Your Cheery evolved into
+  Hydrapple!" (691; `CheckEvolveSpecies`' level mode); its summary No. 1019, Regenerator (the slot-2 ability carried
+  over), Focus Energy kept (`evolve_hydrapple_knows_focus_energy`, `summary_hydrapple_1019`,
+  `summary_hydrapple_ability_moves`). Rare Candies on the other Dipplin, without it: 24 → 28, four level-up checks, no
+  evolution (`dipplin_without_focus_energy_no_evolution`).
+- **Pokédex:** the evolutions set seen and caught for 687-691 (SEEN 66, OBTAINED 19); the National list ends 647
+  Keldeo, 648 ?????, 649 ?????, 840 Applin, 841 Flapple, 842 Appletun, 1011 Dipplin, 1019 Hydrapple
+  (`dex_list_840_1019`); the Info pages of 1019 Hydrapple (Apple Hydra Pokémon, 5'11", 205.0 lbs., BST 540), 1011
+  Dipplin and 842 Appletun (`dex_info_*`).
+- **Followers** (the lead's species set in turn): codes 0x3a12 Applin, 0x3a1e Dipplin, 0x3a22 Hydrapple with the user's
+  sprites, 0x3a16 Flapple and 0x3a1a Appletun with Budew's, then Pignite again (`followers_zoom`).
+- **Battle** (Route 6, the wild Pokémon forced to 687): a wild Applin Lv. 5 against the Hydrapple, Budew's sprites,
+  Applin's cry asked as wave archive 691; DragonBreath "It's super effective!" (Dragon on Grass/Dragon), "The wild
+  Applin fainted!" (`battle_hydrapple_vs_wild_applin`, `battle_super_effective`).
+
+ROM `ff789030223a1c4777c070fc539f03604e0c415b`; `verify_dsi_rom.py` intact. The editor's tool tests used Applin and
+Flapple as scratch names, which now exist: they use made-up names and numbers and take the next ID from `info`.
+
+Not run: the Pokédex Info page's Evo tab for the line (`pokedex_evo.py` builds it from the data), the Day Care, a Wonder
+Trade receiving one, the musical, the plain (matching) build.

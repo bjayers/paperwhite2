@@ -2,6 +2,34 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-13: new species, step 6, the Applin line (ROM session, branch from `new-species`)
+
+design/new-species.md section 18 has the details and the stand-ins table; items.md the apples.
+
+- Added with `pokemon_species.py add --from SPECIES_BUDEW`: Applin 687 (No. 840), Flapple 688 (841), Appletun 689
+  (842), Dipplin 690 (1011), Hydrapple 691 (1019), Grass/Dragon, their Gen 8/9 stats and data in Gen 5's fields,
+  learnsets, evolutions, in the Pokédex and the Wonder Trade.
+- New items: Tart Apple, Sweet Apple, Syrupy Apple (unused items 120-122), evolution items used from the bag like stones
+  (data only). Dipplin → Hydrapple: level up knowing Focus Energy (Dragon Cheer's stand-in).
+- Followers: Applin, Dipplin and Hydrapple use the user's walking sprites; Flapple and Appletun Budew's copies.
+- The editor's species tool tests no longer use Applin/Flapple as scratch names (they exist now).
+- Proven in py-desmume: debug Give Pokémon/Give item, summaries (840, 1011, 1019), the three apples (and "no effect"),
+  Hydrapple only with Focus Energy, the National list 840-842, 1011, 1019 and Info pages, followers, a battle. ROM
+  `ff789030...`.
+
+**For the user (placeholders and stand-ins to replace):**
+1. **Art:** battle sprites (front/back sheets and rigs in the Rig Editor), icons, stills and footprints for all five
+   (now Budew's); Flapple's and Appletun's walking sprites (their followers are Budew's); shiny palettes for the walking
+   sprites; the apples' icons (now the Rindo, Sitrus and Tamato Berries').
+2. **Cries:** each species plays Budew's (the Cry card's WAV import).
+3. **Text:** the five Pokédex entries and the apples' descriptions are short placeholders to rewrite; check the stats,
+   learnset levels and EV yields against a reference (written from memory).
+4. **Encounters:** none yet; make an encounters species file for each in the Encounter Editor and place them.
+5. **Item placement:** the apples are only in the debug menu; put them in a shop, as items in the field or as an NPC gift.
+6. **Real moves and abilities:** Ripen, Bulletproof, Supersweet Syrup, Grav Apple, Apple Acid, Body Press, Syrup Bomb,
+   Dragon Cheer and Fickle Beam have Gen 5 stand-ins (the table in section 18.2), Hydrapple's evolution included.
+7. Tune Hydrapple's follower `gap` in the Follower Editor if it crowds the player.
+
 ## 2026-11-13: new species, step 5, followers, encounters, the Wonder Trade and the musical (ROM session, branch from `new-species`)
 
 design/new-species.md section 17 has the details.
