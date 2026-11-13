@@ -13,16 +13,18 @@ import { currentText, documents, useDocuments, useFileEpoch } from "../../docume
 import { navigate, useToolParams } from "../../navigation.ts";
 import { useToolActive } from "../active.ts";
 import type { ToolProps } from "../types.ts";
-import { fromPlain, getIn } from "../../../shared/json.ts";
+import { fileText, fromPlain, getIn, type JsonValue, type Layout } from "../../../shared/json.ts";
 import { readIndexedPng } from "../palettes/png.ts";
 import { parsePal } from "../palettes/pal.ts";
 import { lengthOf, type Rig } from "./mcss.ts";
-import { dataOf, rigOf, sizeProblem, type Editor } from "./model.ts";
+import { dataOf, rigOf, sizeProblem, type Editor, type Phase } from "./model.ts";
+import { bake, convertToArmature, DEFAULT_STEP, sequenceStep, withBones, type Source } from "./armature.ts";
 import { Clock, SLOW } from "./player.ts";
-import { NO_SELECTION, useClock, type Art, type RigView, type Selection } from "./context.ts";
+import { NO_SELECTION, useClock, type Art, type RigView, type Selection, type SourceEditor } from "./context.ts";
 import { Preview, TOOLS, type Tool } from "./Preview.tsx";
 import { SheetView, uncovered } from "./SheetView.tsx";
 import { TimeReadout, Timeline } from "./Timeline.tsx";
+import { GraphEditor } from "./GraphEditor.tsx";
 import { Inspector } from "./Inspector.tsx";
 import "./rig.css";
 
@@ -32,6 +34,31 @@ type Side = (typeof SIDES)[number];
 const GUIDANCE = 40 * 1024;
 
 const rigPath = (folder: string, side: Side) => `res/pokemon/${folder}/${side}_rig.json`;
+/** A side's armature, beside its flat rig (armature.ts). */
+const sourcePathOf = (folder: string, side: Side) => `res/pokemon/${folder}/${side}_rig_source.json`;
+const SOURCE_SCHEMA = "res/pokemon/battle_sprite_rig_source.schema.json";
+/** The armature's file layout: the flat rig's (datajson.dumps_compact), a key pose a line. */
+const SOURCE_LAYOUT: Layout = { width: 120, indent: 2, compact: true };
+const sourceData = (source: Source, schema: unknown): JsonValue =>
+  fromPlain({ $schema: schema, ...Object.fromEntries(Object.entries(source).filter(([k]) => k !== "$schema")) });
+
+/** The docked panel's height, per viewer (localStorage, which may be missing or refuse). */
+const DOCK_KEY = "paperwhite2.rig.dockHeight";
+const DOCK_VIEW_KEY = "paperwhite2.rig.dockView";
+function stored(key: string): string | null {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+function store(key: string, value: string) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // (private windows, blocked storage: the panel just doesn't remember)
+  }
+}
 
 export function RigEditor(_props: ToolProps) {
   const params = useToolParams("rig");
@@ -103,15 +130,30 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
   const [message, setMessage] = useState<string | null>(null);
   const [check, setCheck] = useState<RigCheck | null>(null);
   const [checking, setChecking] = useState(false);
+  const [picking, setPicking] = useState<number | null>(null);
+  const [showBones, setShowBones] = useState(true);
+  const [dockHeight, setDockHeight] = useState(() => Number(stored(DOCK_KEY)) || 300);
+  const [dockView, setDockView] = useState<"timeline" | "graph" | "both">(() => (stored(DOCK_VIEW_KEY) as "timeline" | "graph" | "both") || "timeline");
   const clock = useRef<Clock>(null as unknown as Clock);
   if (!clock.current) clock.current = new Clock();
+  const sourcePath = sourcePathOf(folder, side);
+  const sourceDoc = docs.get(sourcePath);
+  // Which document each step of undo went to: the flat rig's or the armature's (one Ctrl+Z for the page)
+  const history = useRef<{ undo: string[]; redo: string[] }>({ undo: [], redo: [] });
+  const noteStep = (p: string, phase: Phase) => {
+    if (phase === "move" || phase === "end") return;
+    history.current.undo.push(p);
+    history.current.redo = [];
+  };
 
   useEffect(() => {
     let live = true;
     documents.hold(path).then(() => live && setLoadError(null), (e: Error) => live && setLoadError(e.message));
     documents.hold(other).catch(() => undefined);
+    // (no armature: the file isn't there, and the side edits flat)
+    documents.hold(sourcePath).catch(() => undefined);
     return () => { live = false; };
-  }, [path, other]);
+  }, [path, other, sourcePath]);
   useEffect(() => {
     let live = true;
     loadArt(folder, side).then((a) => live && setArt(a), (e: Error) => live && setLoadError(e.message));
@@ -119,7 +161,24 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
   }, [folder, side, artEpoch]);
 
   const data = doc?.data ?? null;
-  const rig = useMemo(() => (data ? rigOf(data) : null), [data]);
+  const flatRig = useMemo(() => (data ? rigOf(data) : null), [data]);
+  const sourceJson = sourceDoc?.data ?? null;
+  const source = useMemo(() => (sourceJson && flatRig ? withBones(rigOf(sourceJson) as unknown as Source, flatRig) : null), [sourceJson, flatRig]);
+  const baked = useMemo(() => (source && flatRig ? bake(source, flatRig) : null), [source, flatRig]);
+  const rig = baked?.rig ?? flatRig;
+
+  // The armature's bake kept in the flat rig's document (no step of its own), so the checks, the size, Save and the
+  // Build button all see what the game will get; and bones made for tracks added since
+  useEffect(() => {
+    if (!source || !sourceJson) return;
+    if ((rigOf(sourceJson) as unknown as Source).bones.length !== source.bones.length) documents.amend(sourcePath, [], sourceData(source, getIn(sourceJson, ["$schema"])));
+  }, [source, sourceJson, sourcePath]);
+  useEffect(() => {
+    const d = documents.get(path);
+    if (!baked || !d?.data || !d.layout) return;
+    const next = dataOf(baked.rig, getIn(d.data, ["$schema"]));
+    if (fileText(next, d.layout) !== currentText(d)) documents.amend(path, [], next);
+  }, [baked, path]);
 
   useEffect(() => {
     if (!rig) return;
@@ -134,18 +193,48 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
   const editor: Editor = useMemo(() => ({
     set(at, value, phase = "typed") {
       if (phase === "end") return;
+      noteStep(path, phase);
       const inner = value === undefined ? undefined : fromPlain(value);
       if (phase === "move") documents.amend(path, at, inner);
       else documents.edit(path, at, inner);
     },
     replace(next, phase = "typed") {
       if (phase === "end") return;
+      noteStep(path, phase);
       const d = documents.get(path);
       const sch = d?.data ? getIn(d.data, ["$schema"]) : undefined;
       if (phase === "move") documents.amend(path, [], dataOf(next, sch));
       else documents.replace(path, dataOf(next, sch));
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [path]);
+  const sourceEditor: SourceEditor = useMemo(() => ({
+    set(at, value, phase = "typed") {
+      if (phase === "end" || !documents.get(sourcePath)?.data) return;
+      noteStep(sourcePath, phase);
+      const inner = value === undefined ? undefined : fromPlain(value);
+      if (phase === "move") documents.amend(sourcePath, at, inner);
+      else documents.edit(sourcePath, at, inner);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [sourcePath]);
+
+  const convert = () => {
+    if (!flatRig || !doc?.data) return;
+    const schema = String(getIn(doc.data, ["$schema"]) ?? "../battle_sprite_rig.schema.json").replace("battle_sprite_rig.schema.json", "battle_sprite_rig_source.schema.json");
+    documents.create(sourcePath, SOURCE_SCHEMA, sourceData(convertToArmature(flatRig, DEFAULT_STEP), schema), SOURCE_LAYOUT);
+    setMessage(`Converted to an armature: every part a bone of the root's, its keys held key poses (it bakes to the rig as it was). Parent the bones and key them; Save writes ${side}_rig_source.json with the baked rig.`);
+  };
+  const removeArmature = async () => {
+    const d = documents.get(sourcePath);
+    if (!d || !confirm(`Remove this side's armature (${side}_rig_source.json)? The rig keeps its keys as they bake now, and edits flat again.`)) return;
+    if (d.savedText) await api.removeFile(sourcePath);
+    await documents.reload(sourcePath);
+    history.current.undo = history.current.undo.filter((p) => p !== sourcePath);
+    history.current.redo = history.current.redo.filter((p) => p !== sourcePath);
+    setSel((s) => ({ ...s, root: false, keyPose: null }));
+    setMessage(`Removed the armature. Save to keep the rig as it baked.`);
+  };
 
   const select = useCallback((next: Partial<Selection>) => setSel((s) => ({ ...s, ...next })), []);
 
@@ -162,20 +251,28 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
     return () => { live = false; clearTimeout(timer); };
   }, [text]);
 
-  const rigDocs = [path, other].map((p) => docs.get(p)).filter((d) => d !== undefined);
+  const rigDocs = [path, other, sourcePath].map((p) => docs.get(p)).filter((d) => d !== undefined);
   const dirty = rigDocs.filter((d) => d.dirty);
   const saveAll = useCallback(async () => {
     const out: string[] = [];
+    let refused = false;
     for (const d of [path, other].map((p) => documents.get(p)).filter((x) => x?.dirty)) {
       const result = await api.rigCheck(currentText(d!));
       if (result.errors.length) {
+        if (d!.path === path) refused = true;
         out.push(`${d!.path.split("/").pop()} not saved: ${result.errors[0]}${result.errors.length > 1 ? ` (and ${result.errors.length - 1} more)` : ""}`);
         continue;
       }
       out.push((await documents.save(d!.path)) ? `Saved ${d!.path.split("/").pop()}.` : `${d!.path.split("/").pop()} not saved: ${documents.get(d!.path)?.saveError}`);
     }
+    // The armature after the rig it bakes to, and only with it
+    const s = documents.get(sourcePath);
+    if (s?.dirty) {
+      if (refused) out.push(`${side}_rig_source.json not saved with it.`);
+      else out.push((await documents.save(sourcePath)) ? `Saved ${side}_rig_source.json.` : `${side}_rig_source.json not saved: ${documents.get(sourcePath)?.saveError}`);
+    }
     setMessage(out.join(" ") || "Nothing to save.");
-  }, [path, other]);
+  }, [path, other, sourcePath, side]);
   const revert = async () => {
     if (!dirty.length || !confirm(`Throw away the changes to ${dirty.map((d) => d.path.split("/").pop()).join(" and ")}?`)) return;
     for (const d of dirty) await documents.reload(d.path);
@@ -197,8 +294,16 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
         } else if ((key === "z" || key === "y") && !typing) {
           e.preventDefault();
           e.stopPropagation();
-          if (key === "y" || e.shiftKey) documents.redo(path);
-          else documents.undo(path);
+          const h = history.current;
+          if (key === "y" || e.shiftKey) {
+            const p = h.redo.pop() ?? path;
+            documents.redo(p);
+            h.undo.push(p);
+          } else {
+            const p = h.undo.pop() ?? path;
+            documents.undo(p);
+            h.redo.push(p);
+          }
         }
         return;
       }
@@ -232,13 +337,37 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
   if (!doc || !rig) return <div className="rig-page"><p className="muted">Reading {path}…</p></div>;
   if (doc.data === null) return <div className="rig-page"><p className="pkm-error">{path} isn't in a layout the editor writes back; edit it as text.</p></div>;
 
-  const view: RigView = { rig, editor, sel, select, clock: clock.current, art, sheet: art?.sheets[sheet] ? sheet : side, shiny };
+  const view: RigView = { rig, editor, sel, select, clock: clock.current, art, sheet: art?.sheets[sheet] ? sheet : side, shiny,
+                          source, sourceEditor: source ? sourceEditor : null, baked, picking, setPicking };
+  const resizeDock = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const startY = e.clientY, startHeight = dockHeight;
+    const page = (e.currentTarget as HTMLElement).closest(".rig-page") as HTMLElement | null;
+    const most = Math.max(160, (page?.clientHeight ?? window.innerHeight) - 160);
+    let height = startHeight;
+    const move = (ev: PointerEvent) => {
+      height = Math.round(Math.min(most, Math.max(120, startHeight + startY - ev.clientY)));
+      setDockHeight(height);
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      store(DOCK_KEY, String(height));
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
+  const chooseDockView = (v: "timeline" | "graph" | "both") => {
+    setDockView(v);
+    store(DOCK_VIEW_KEY, v);
+  };
   const part = sel.part !== null ? rig.poses[sel.pose]?.parts[sel.part] : undefined;
   const highlight = new Set<number>(part ? (rig.tracks[part.track]?.keys ?? []).map((k) => k.picture ?? 0) : []);
   const title = folder.split("/").map((s) => s.replace(/_/g, " ")).join(" · ");
 
   return (
-    <div className="rig-page">
+    <div className="rig-page rig-docked">
+      <div className="rig-upper">
       <header className="rig-head">
         <h2>Rig <span className="muted">{title}</span></h2>
         <span className="view-switch" title="Front and back are separate rigs">
@@ -251,7 +380,7 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
             {Object.keys(art.sheets).map((s) => <button key={s} className={view.sheet === s ? "active" : ""} onClick={() => setSheet(s)}>{s.endsWith("female") ? "Female" : "Male"}</button>)}
           </span>
         )}
-        <button onClick={copyFromOther} title={`Start this side from a copy of the ${side === "front" ? "back" : "front"} rig`}>Copy {side === "front" ? "back to front" : "front to back"}…</button>
+        <button onClick={copyFromOther} disabled={!!source} title={source ? "This side has an armature: remove it first (Armature, in the side panel) to start from a copy" : `Start this side from a copy of the ${side === "front" ? "back" : "front"} rig`}>Copy {side === "front" ? "back to front" : "front to back"}…</button>
         <button onClick={() => navigate("pokemon")} title="The Pokémon Editor">Pokémon Editor</button>
         <span className="spacer" />
         <SizeMeter check={check} checking={checking} rig={rig} />
@@ -272,7 +401,7 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
             </span>
           </div>
           <div className="rig-stage">
-            <Preview view={view} zoom={zoom} onion={onion} guides={guides} tool={tool} onMessage={setMessage} />
+            <Preview view={view} zoom={zoom} onion={onion} guides={guides} tool={tool} bones={showBones} onMessage={setMessage} />
           </div>
           <p className="muted ow-note">{TOOLS.find((t) => t.tool === tool)?.note} Click a part to choose it.</p>
           <Transport view={view} />
@@ -281,6 +410,7 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
             <label className="ow-check" title="The frames 6 before and 6 after, faded"><input type="checkbox" checked={onion} onChange={(e) => setOnion(e.target.checked)} /> Onion skin</label>
             <ClockToggles view={view} />
             <label className="ow-check"><input type="checkbox" checked={guides} onChange={(e) => setGuides(e.target.checked)} /> Feet</label>
+            {source && <label className="ow-check" title="The armature's bones and their links to their parents and the root"><input type="checkbox" checked={showBones} onChange={(e) => setShowBones(e.target.checked)} /> Bones</label>}
             <span className="view-switch">
               {[2, 3, 4].map((z) => <button key={z} className={zoom === z ? "active" : ""} onClick={() => setZoom(z)}>{z}×</button>)}
             </span>
@@ -303,13 +433,20 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
           <ChecksSection view={view} check={check} checking={checking} />
         </section>
 
-        <aside className="rig-side"><Inspector view={view} onTimeChanged={() => undefined} /></aside>
+        <aside className="rig-side"><Inspector view={view} onTimeChanged={() => undefined} onConvert={convert} onRemoveArmature={removeArmature} /></aside>
+      </div>
       </div>
 
-      <section className="rig-card rig-timeline-card">
+      <section className="rig-card rig-dock" style={{ height: dockHeight }}>
+        <div className="rig-dock-handle" onPointerDown={resizeDock} title="Drag to make the panel taller or shorter" />
         <div className="rig-card-head">
-          <h3>Timeline</h3>
+          <span className="view-switch" title="What the panel shows">
+            {([["timeline", "Timeline"], ["graph", "Graph Editor"], ["both", "Both"]] as const).map(([v, label]) => (
+              <button key={v} className={dockView === v ? "active" : ""} onClick={() => chooseDockView(v)}>{label}</button>
+            ))}
+          </span>
           <SequenceSwitch view={view} />
+          {source && <StepControl view={view} />}
           <span className="muted small">the pose shown:</span>
           <span className="view-switch">
             {rig.poses.map((_, i) => <button key={i} className={sel.pose === i ? "active" : ""} onClick={() => { setFollow(false); select({ pose: i, part: null, key: null }); }}>{i}</button>)}
@@ -321,11 +458,38 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
             {[1, 2, 3, 5, 8].map((z) => <button key={z} className={scale === z ? "active" : ""} onClick={() => setScale(z)}>{z}</button>)}
           </span>
         </div>
-        <Timeline view={view} scale={scale} follow={follow} />
-        <p className="muted ow-note">Drag a part's name to change the layers; click a key to choose it; drag its right edge to change how long it's held
-          (Shift: steps of 6 frames). Faded keys are a looping track's later passes.</p>
+        <div className={`rig-dock-body ${dockView}`}>
+          {dockView !== "graph" && (
+            <div className="rig-dock-pane">
+              <Timeline view={view} scale={scale} follow={follow} />
+              <p className="muted ow-note">{source
+                ? "Diamonds are the armature's key poses (drag one to move it in time, Shift: steps of 6; click to choose it); the blocks under them are the keys they bake to, as the game holds them. Drag a part's name to change the layers."
+                : "Drag a part's name to change the layers; click a key to choose it; drag its right edge to change how long it's held (Shift: steps of 6 frames). Faded keys are a looping track's later passes."}</p>
+            </div>
+          )}
+          {dockView !== "timeline" && <div className="rig-dock-pane"><GraphEditor view={view} /></div>}
+        </div>
       </section>
     </div>
+  );
+}
+
+/** The step the armature bakes the shown sequence's tracks at (Game Freak's 6 by default). */
+function StepControl({ view }: { view: RigView }) {
+  const { source, sourceEditor } = view;
+  const sequence = useClock(view.clock, (s) => Math.min(s.sequence, view.rig.sequences.length - 1));
+  if (!source || !sourceEditor) return null;
+  const own = source.sequences[sequence]?.step;
+  const step = sequenceStep(source, sequence);
+  return (
+    <span className="rig-step" title="The bake holds each sampled key this many frames (and starts one at every key pose). Game Freak keyed every 6; 2 or 3 roughly triples the size (see the meter), so test such a sprite on every screen.">
+      <span className="muted small">bake every</span>
+      <select value={own ?? 0} onChange={(e) => sourceEditor.set(["sequences", sequence, "step"], Number(e.target.value) || undefined)}>
+        <option value={0}>{source.step} frames (the sprite's)</option>
+        {[1, 2, 3, 4, 5, 6, 8, 10, 12].map((n) => <option key={n} value={n}>{n} frame{n > 1 ? "s" : ""}</option>)}
+      </select>
+      <span className="muted small">{step === 6 ? "Game Freak's rhythm" : step < 6 ? "finer than Game Freak's" : "coarser"}</span>
+    </span>
   );
 }
 
@@ -434,7 +598,8 @@ function ChecksSection({ view, check, checking }: { view: RigView; check: RigChe
     if (count) local.push(`${count} pixels of ${sheet}.png are outside every rectangle (red on the sheet): the game never draws them.`);
   }
   const errors = check?.errors ?? [];
-  const warnings = [...(check?.warnings ?? []), ...local];
+  // The armature's bake: shears it can't draw, parents keeping other clocks, unrolled loops
+  const warnings = [...(view.baked?.warnings ?? []), ...(check?.warnings ?? []), ...local];
   return (
     <section className="ow-panel-box ow-section">
       <h5>Checks <span className="muted">{checking ? "checking…" : errors.length ? `${errors.length} errors: Save refuses` : warnings.length ? `${warnings.length} warnings` : "the build takes it"}</span></h5>

@@ -3,9 +3,31 @@
 // pivot (the pose's), or the current key's move, turn or scale (the key the part shows at the playhead).
 
 import { useEffect, useMemo, useRef } from "react";
-import { compose, forward, frameQuads, loopCanvas, quadCorners, render, type Canvas, type Pair, type Srt } from "./mcss.ts";
+import { compose, forward, frameQuads, keyAt, loopCanvas, quadCorners, render, sequenceKeyAt, srtOf, type Canvas, type Pair, type Srt } from "./mcss.ts";
 import { fixedScale, keyAs, orderedKey, partKeyAt, type Phase } from "./model.ts";
 import { hue, paletteWords, useClock, type RigView } from "./context.ts";
+import { keyPoseAt, wouldCycle, type KeyPose } from "./armature.ts";
+import { animationOf, autoKey, localAt, setParent, type Target } from "./armatureEdit.ts";
+
+/** A gizmo drag keying an armature's bone or root: the key poses when it began, the key pose at the playhead. */
+interface ArmatureDrag {
+  tool: Tool;
+  target: Target;
+  start: Pair;
+  center: Pair;
+  /** Screen pixels (y up) to the bone's own move: back through the whole sprite's and the parent's turn and scale. */
+  inverse: [number, number, number, number];
+  base: KeyPose[];
+  frame: number;
+  key: KeyPose;
+  moved: boolean;
+}
+
+/** The whole sprite's movement at a time (the sequence key's: the root as baked). */
+function wholeAt(v: RigView, sequence: number, time: number): Srt {
+  const seq = v.rig.sequences[sequence];
+  return srtOf(sequenceKeyAt(seq, time).key, seq.key_type);
+}
 
 export type Tool = "pivot" | "move" | "rotate" | "scale";
 
@@ -33,21 +55,22 @@ interface Drag {
   moved: boolean;
 }
 
-export function Preview({ view, zoom, onion, guides, tool, onMessage }: {
-  view: RigView; zoom: number; onion: boolean; guides: boolean; tool: Tool; onMessage(message: string | null): void;
+export function Preview({ view, zoom, onion, guides, tool, bones = true, onMessage }: {
+  view: RigView; zoom: number; onion: boolean; guides: boolean; tool: Tool; bones?: boolean; onMessage(message: string | null): void;
 }) {
   const { rig, clock } = view;
   const sequence = useClock(clock, (s) => s.sequence);
   const stage: Canvas = useMemo(() => loopCanvas(rig, Math.min(sequence, rig.sequences.length - 1)), [rig, sequence]);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const latest = useRef({ view, zoom, onion, guides, tool, stage });
-  latest.current = { view, zoom, onion, guides, tool, stage };
+  const latest = useRef({ view, zoom, onion, guides, tool, stage, bones });
+  latest.current = { view, zoom, onion, guides, tool, stage, bones };
   const owners = useRef<Uint8Array | null>(null);
   const drag = useRef<Drag | null>(null);
+  const armature = useRef<ArmatureDrag | null>(null);
 
   const draw = () => {
     const el = canvas.current;
-    const { view: v, zoom: z, onion: o, guides: g, tool: tl, stage: st } = latest.current;
+    const { view: v, zoom: z, onion: o, guides: g, tool: tl, stage: st, bones: b } = latest.current;
     if (!el) return;
     const ctx = el.getContext("2d")!;
     ctx.imageSmoothingEnabled = false;
@@ -99,8 +122,25 @@ export function Preview({ view, zoom, onion, guides, tool, onMessage }: {
     const part = v.sel.part;
     delete el.dataset.center;
     delete el.dataset.pivot;
-    if (part === null || v.sel.pose !== state.pose) return;
+    delete el.dataset.root;
     const toScreen = ([x, y]: Pair): Pair => [(st.originX + x) * z, (st.originY - y) * z];
+    if (v.source && b) drawBones(ctx, v, seq, time, state.pose, toScreen, z);
+    if (v.source && v.sel.root) {
+      // The root's gizmo at the feet, where the whole sprite has moved them
+      const o = toScreen(forward(0, 0, wholeAt(v, seq, time)));
+      el.dataset.root = `${Math.round(o[0])},${Math.round(o[1])}`;
+      ctx.strokeStyle = "#f0c75e";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      if (tl === "rotate" || tl === "scale") ctx.arc(o[0], o[1], 30, 0, Math.PI * 2);
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        ctx.moveTo(o[0], o[1]);
+        ctx.lineTo(o[0] + dx * 18, o[1] + dy * 18);
+      }
+      ctx.stroke();
+      return;
+    }
+    if (part === null || v.sel.pose !== state.pose) return;
     ctx.lineWidth = 1;
     for (const quad of state.quads.filter((q) => q.part === part)) {
       const [a, b, c, d] = quadCorners(quad).map(toScreen);
@@ -177,19 +217,61 @@ export function Preview({ view, zoom, onion, guides, tool, onMessage }: {
     } catch {
       return;
     }
-    let part = v.sel.part !== null && v.sel.pose === state.pose ? v.sel.part : null;
+    // Choosing a bone's parent: the part clicked
+    if (v.picking !== null && v.source) {
+      if (hit) {
+        const parent = v.rig.poses[state.pose].parts[hit - 1].track;
+        if (parent === v.picking || wouldCycle(v.source, v.picking, parent)) onMessage(`${v.rig.tracks[parent].name} can't be ${v.rig.tracks[v.picking].name}'s parent: they'd go round in a circle.`);
+        else {
+          setParent(v, v.picking, parent);
+          onMessage(`${v.rig.tracks[v.picking].name} is now parented to ${v.rig.tracks[parent].name}.`);
+        }
+      }
+      v.setPicking(null);
+      return;
+    }
+    // The root's gizmo, at the feet as the whole sprite moves them
+    if (v.source && v.sel.root) {
+      const whole = wholeAt(v, seq, time);
+      const origin = forward(0, 0, whole);
+      const close = Math.hypot((st.originX + origin[0]) * z - at[0], (st.originY - origin[1]) * z - at[1]) <= (tl === "move" || tl === "pivot" ? 20 : 40);
+      if (close || !hit) {
+        if (tl === "pivot") return;
+        startArmatureDrag(e, { kind: "root", sequence: seq }, tl, at, [(st.originX + origin[0]) * z, (st.originY - origin[1]) * z], [1, 0, 0, 1]);
+        return;
+      }
+    }
+    let part = v.sel.part !== null && v.sel.pose === state.pose && !v.sel.root ? v.sel.part : null;
     // Another part's pixels choose it, but not near the chosen part's gizmo (its pivot often lies over another part)
     const handle = part !== null ? partGeometry(v, seq, time, state.pose, part) : null;
     const near = handle && [handle.center, handle.pivotPoint].some(([x, y]) =>
       Math.hypot((st.originX + x) * z - at[0], (st.originY - y) * z - at[1]) <= (tl === "rotate" || tl === "scale" ? 32 : 12));
     if (hit && hit - 1 !== part && !near) part = hit - 1;
     if (part === null) {
-      if (!hit) v.select({ part: null, key: null });
+      if (!hit) v.select({ part: null, key: null, root: false, keyPose: null });
       return;
     }
     const geometry = partGeometry(v, seq, time, state.pose, part);
     if (!geometry) return;
-    v.select({ pose: state.pose, part, key: { track: geometry.track, index: geometry.keyIndex }, picture: geometry.picture, sequenceKey: null });
+    const changedPart = part !== v.sel.part || v.sel.root;
+    v.select({ pose: state.pose, part, key: { track: geometry.track, index: geometry.keyIndex }, picture: geometry.picture, sequenceKey: null, root: false,
+               ...(changedPart ? { keyPose: null } : {}) });
+    if (v.source && tl !== "pivot") {
+      // The armature: the gizmo keys the bone at the playhead, in its parent's frame (as Blender poses a bone)
+      const parent = v.source.bones[geometry.track]?.parent ?? null;
+      let linear = compose([geometry.whole]);
+      if (parent !== null && v.rig.tracks[parent]) {
+        const pTrack = v.rig.tracks[parent];
+        const pPart = v.rig.poses[state.pose].parts.find((p) => p.track === parent);
+        const pk = keyAt(pTrack, pPart?.play === "continue" ? time : frameQuads(v.rig, seq, time).since);
+        linear = compose([srtOf(pk.key, pTrack.key_type), geometry.whole]);
+      }
+      const [a, b, c, d] = linear;
+      const det = a * d - b * c || 1;
+      startArmatureDrag(e, { kind: "bone", track: geometry.track }, tl, at, [(st.originX + geometry.center[0]) * z, (st.originY - geometry.center[1]) * z],
+                        [d / det, -b / det, -c / det, a / det]);
+      return;
+    }
     const type = v.rig.tracks[geometry.track].key_type;
     if (tl !== "pivot" && (type === "plain" || (type === "move" && tl !== "move"))) {
       onMessage(`This part's track (${v.rig.tracks[geometry.track].name}) keys ${type === "plain" ? "only a picture" : "only a move"}: give its keys turns and scales under Key (Key type: turn, scale and move) to ${tl} it.`);
@@ -208,7 +290,58 @@ export function Preview({ view, zoom, onion, guides, tool, onMessage }: {
     };
   };
 
+  /** Starts a gizmo drag that keys an armature's bone (or root) at the playhead. */
+  const startArmatureDrag = (e: React.PointerEvent, target: Target, tl: Tool, at: Pair, center: Pair, inverse: [number, number, number, number]) => {
+    const { view: v } = latest.current;
+    const anim = animationOf(v, target);
+    if (!anim) return;
+    onMessage(null);
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    const frame = localAt(v, target);
+    const base = anim.keys;
+    const existing = keyPoseAt(base, frame, anim.frames, anim.loop, (k) => k);
+    // In the window's coordinates: the canvas grows and shifts as the keyed sprite moves out of its loop's box
+    const r = canvas.current!.getBoundingClientRect();
+    armature.current = { tool: tl, target, start: [r.left + at[0], r.top + at[1]], center: [r.left + center[0], r.top + center[1]], inverse, base, frame,
+                         key: existing.keys[existing.index], moved: false };
+  };
+
+  const onArmatureMove = (e: React.PointerEvent, d: ArmatureDrag) => {
+    const { view: v, zoom: z } = latest.current;
+    const at: Pair = [e.clientX, e.clientY];
+    const sx = (at[0] - d.start[0]) / z, sy = -(at[1] - d.start[1]) / z;
+    const [ia, ib, ic, id] = d.inverse;
+    const dx = ia * sx + ib * sy, dy = ic * sx + id * sy;
+    const k = d.key;
+    let patch: Partial<KeyPose>;
+    if (d.tool === "move") {
+      const move = k.move ?? [0, 0];
+      const snap = (n: number) => (e.altKey ? Math.round(n * 10) / 10 : Math.round(n));
+      patch = { move: [snap(move[0] + dx), snap(move[1] - dy)] };
+    } else if (d.tool === "rotate") {
+      const a0 = Math.atan2(d.start[1] - d.center[1], d.start[0] - d.center[0]);
+      const a1 = Math.atan2(at[1] - d.center[1], at[0] - d.center[0]);
+      let degrees = ((a1 - a0) * 180) / Math.PI;
+      if (degrees > 180) degrees -= 360;
+      if (degrees < -180) degrees += 360;
+      if (e.shiftKey) degrees = Math.round(degrees / 5) * 5;
+      patch = { rotation: Math.round(((k.rotation ?? 0) + degrees) * 100) / 100 };
+    } else {
+      const r0 = Math.hypot(d.start[0] - d.center[0], d.start[1] - d.center[1]) || 1;
+      const ratio = Math.hypot(at[0] - d.center[0], at[1] - d.center[1]) / r0;
+      const scale = k.scale ?? [1, 1];
+      patch = { scale: [e.ctrlKey ? scale[0] : fixedScale(scale[0] * ratio), e.shiftKey ? scale[1] : fixedScale(scale[1] * ratio)] };
+    }
+    const index = autoKey(v, d.target, d.base, (key) => ({ ...key, ...patch }), d.moved ? "move" : "start", d.frame);
+    if (!d.moved) v.select({ keyPose: index });
+    d.moved = true;
+  };
+
   const onMove = (e: React.PointerEvent) => {
+    if (armature.current) {
+      onArmatureMove(e, armature.current);
+      return;
+    }
     const d = drag.current;
     if (!d) return;
     const { view: v, zoom: z } = latest.current;
@@ -250,6 +383,7 @@ export function Preview({ view, zoom, onion, guides, tool, onMessage }: {
 
   const onUp = () => {
     drag.current = null;
+    armature.current = null;
   };
 
   return (
@@ -284,4 +418,73 @@ export function partGeometry(v: RigView, sequence: number, time: number, pose: n
   };
   return { track: at.track, keyIndex: at.index, picture: at.key.picture ?? 0, center, pivotPoint, whole,
            rotation: keySrt[0], axes: [unit(ax), unit(ay)] as [Pair, Pair] };
+}
+
+/** An armature's bones over the preview, as Blender draws them: each from its joint (the pivot where its key has moved
+ * it) toward its picture's middle, a dashed line from each to its parent's tail (or to the root at the feet). */
+function drawBones(ctx: CanvasRenderingContext2D, v: RigView, sequence: number, time: number, pose: number, toScreen: (p: Pair) => Pair, z: number) {
+  const source = v.source;
+  if (!source) return;
+  const parts = v.rig.poses[pose]?.parts ?? [];
+  const state = frameQuads(v.rig, sequence, time, v.clock.idle());
+  const joints = new Map<number, { head: Pair; tail: Pair; part: number }>();
+  parts.forEach((p, k) => {
+    const g = partGeometry(v, sequence, time, pose, k);
+    if (!g) return;
+    const quad = state.quads.find((q) => q.part === k && q.rectangleIndex === 0);
+    const corners = quad ? quadCorners(quad) : [g.center];
+    const middle: Pair = [corners.reduce((n, c) => n + c[0], 0) / corners.length, corners.reduce((n, c) => n + c[1], 0) / corners.length];
+    joints.set(p.track, { head: toScreen(g.center), tail: toScreen(middle), part: k });
+  });
+  const root = toScreen(forward(0, 0, wholeAt(v, sequence, time)));
+  ctx.save();
+  // Links: to the parent's tail, or to the root
+  ctx.setLineDash([3, 3]);
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = "rgba(240, 199, 94, 0.75)";
+  for (const [track, j] of joints) {
+    const parent = source.bones[track]?.parent ?? null;
+    const to = parent !== null ? joints.get(parent)?.tail : root;
+    if (!to) continue;
+    ctx.beginPath();
+    ctx.moveTo(...j.head);
+    ctx.lineTo(...to);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  for (const [, j] of joints) {
+    const chosen = !v.sel.root && v.sel.part === j.part && v.sel.pose === pose;
+    const [hx, hy] = j.head;
+    let [dx, dy] = [j.tail[0] - hx, j.tail[1] - hy];
+    let length = Math.hypot(dx, dy);
+    if (length < 4 * z) {
+      // (a picture centred on its pivot: a short bone pointing up)
+      dx = 0; dy = -6 * z; length = 6 * z;
+    }
+    const ux = dx / length, uy = dy / length;
+    const w = Math.min(length * 0.16, 3 * z);
+    const mx = hx + dx * 0.22, my = hy + dy * 0.22;
+    ctx.beginPath();
+    ctx.moveTo(hx, hy);
+    ctx.lineTo(mx - uy * w, my + ux * w);
+    ctx.lineTo(hx + dx, hy + dy);
+    ctx.lineTo(mx + uy * w, my - ux * w);
+    ctx.closePath();
+    ctx.fillStyle = chosen ? "rgba(255, 211, 61, 0.55)" : "rgba(170, 200, 230, 0.35)";
+    ctx.strokeStyle = chosen ? "#ffd33d" : "rgba(20, 30, 40, 0.85)";
+    ctx.lineWidth = 1.2;
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(hx, hy, Math.max(2, w * 0.45), 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  }
+  // The root: a ring at the feet
+  ctx.beginPath();
+  ctx.arc(root[0], root[1], 5, 0, Math.PI * 2);
+  ctx.strokeStyle = v.sel.root ? "#ffd33d" : "rgba(240, 199, 94, 0.9)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.restore();
 }

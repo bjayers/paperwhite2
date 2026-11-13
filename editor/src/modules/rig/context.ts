@@ -2,7 +2,8 @@
 
 import { useSyncExternalStore } from "react";
 import type { Rig } from "./mcss.ts";
-import type { Editor } from "./model.ts";
+import type { Editor, Phase } from "./model.ts";
+import type { Baked, Source } from "./armature.ts";
 import type { Clock, ClockState } from "./player.ts";
 
 export interface Selection {
@@ -15,9 +16,18 @@ export interface Selection {
   /** A key of a track, or of the sequence played. */
   key: { track: number; index: number } | null;
   sequenceKey: number | null;
+  /** The armature's root (the whole sprite: the sequence's key poses) chosen instead of a part. */
+  root: boolean;
+  /** A key pose of the chosen bone (or the root), by its place in its key poses. */
+  keyPose: number | null;
 }
 
-export const NO_SELECTION: Selection = { picture: null, rectangle: 0, pose: 0, part: null, key: null, sequenceKey: null };
+export const NO_SELECTION: Selection = { picture: null, rectangle: 0, pose: 0, part: null, key: null, sequenceKey: null, root: false, keyPose: null };
+
+/** Where an armature's edits go: its document, a step for undo, a drag's later moves amending it. */
+export interface SourceEditor {
+  set(path: (string | number)[], value: unknown, phase?: Phase): void;
+}
 
 export interface Art {
   /** The sheets by name (front, front_female), as palette indices. */
@@ -27,7 +37,15 @@ export interface Art {
 }
 
 export interface RigView {
+  /** The flat rig: the file's, or with an armature what the armature bakes to. */
   rig: Rig;
+  /** The side's armature, if it has one (a bone for each of the flat rig's tracks). */
+  source: Source | null;
+  sourceEditor: SourceEditor | null;
+  baked: Baked | null;
+  /** A bone whose parent is being chosen by clicking a part on the preview. */
+  picking: number | null;
+  setPicking(bone: number | null): void;
   editor: Editor;
   sel: Selection;
   select(next: Partial<Selection>): void;

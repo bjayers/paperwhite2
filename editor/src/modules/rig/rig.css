@@ -76,3 +76,51 @@
 .rig-picker h2 { margin: 0; }
 .rig-filter { width: 320px; }
 .rig-picker-list { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* The docked panel at the page's bottom (the timeline, the graph editor), as tall as its top edge is dragged */
+.rig-page.rig-docked { overflow: hidden; padding-bottom: 8px; }
+.rig-upper { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 10px; }
+.rig-dock { flex: none; position: relative; display: flex; flex-direction: column; padding-top: 12px; }
+.rig-dock-handle { position: absolute; top: -5px; left: 0; right: 0; height: 12px; cursor: ns-resize; z-index: 5; }
+.rig-dock-handle::after { content: ""; position: absolute; left: calc(50% - 24px); top: 7px; width: 48px; height: 4px; border-radius: 2px; background: var(--border); }
+.rig-dock-handle:hover::after { background: var(--accent); }
+.rig-dock-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr; gap: 10px; }
+.rig-dock-body.both { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.rig-dock-pane { min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.rig-dock-pane .rig-timeline { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.rig-dock-pane .rig-tl-scroll { max-height: none; flex: 1; min-height: 0; }
+.rig-dock-pane > .ow-note { margin: 4px 0 0; }
+.rig-step { display: inline-flex; align-items: center; gap: 6px; }
+
+/* The armature: key poses as diamonds above the keys they bake to */
+.rig-tl-lane.with-poses, .rig-tl-name.with-poses { height: 38px; }
+.rig-tl-lane.with-poses > .rig-key { top: 15px; }
+.rig-diamond { position: absolute; top: 2px; width: 11px; height: 11px; margin-left: -5px; transform: rotate(45deg); background: #e6edf3; border: 1px solid #222;
+  box-sizing: border-box; cursor: ew-resize; z-index: 2; }
+.rig-diamond.curve-constant { background: #8b949e; }
+.rig-diamond.curve-bezier { background: #f0c75e; }
+.rig-diamond.curve-linear { background: #79c0ff; }
+.rig-diamond.curve-ease_in, .rig-diamond.curve-ease_out, .rig-diamond.curve-ease_in_out { background: #a5d6a7; }
+.rig-diamond.later { opacity: 0.4; }
+.rig-diamond.selected { outline: 2px solid #ffd33d; outline-offset: 1px; opacity: 1; }
+.rig-tl-seq { cursor: pointer; }
+.rig-tl-seq.selected { background: var(--selected); }
+.rig-bone-icon { color: #f0c75e; }
+.rig-parent-tag { color: var(--accent); font-size: 11px; }
+
+/* The outliner: bones as a tree from the root, dragged onto another to parent */
+.rig-outliner { display: flex; flex-direction: column; gap: 1px; font-size: 13px; max-height: 300px; overflow: auto; border: 1px solid var(--border); border-radius: 6px; padding: 4px; }
+.rig-outliner-row { display: flex; align-items: center; gap: 6px; padding: 2px 6px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+.rig-outliner-row:hover { background: var(--panel-2); }
+.rig-outliner-row.selected { background: var(--selected); }
+.rig-outliner-row.drop { outline: 2px dashed var(--accent); }
+.rig-outliner-row .muted { font-size: 11px; }
+.rig-tree-line { color: var(--muted); font-family: monospace; }
+
+/* The graph editor */
+.rig-graph { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.rig-graph-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+.rig-graph-canvas-wrap { flex: 1; min-height: 80px; position: relative; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; background: var(--panel-2); }
+.rig-graph-canvas { position: absolute; inset: 0; display: block; touch-action: none; user-select: none; }
+.rig-channel { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.rig-channel-swatch { width: 10px; height: 3px; border-radius: 2px; display: inline-block; }

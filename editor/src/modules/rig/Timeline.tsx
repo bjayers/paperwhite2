@@ -9,11 +9,60 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { lengthOf, sequenceKeyAt } from "./mcss.ts";
 import { moveLayer, partName, sequenceSegments, signedDegrees, trackSpans, type Span } from "./model.ts";
 import { hue, useClock, type RigView } from "./context.ts";
+import { keyPoseTimes, setKeys, type Target } from "./armatureEdit.ts";
+import { curveOf, type KeyPose } from "./armature.ts";
 
 const NAME_WIDTH = 210;
 
+/** An armature's key poses on a row: diamonds where they play, dragged in time (Shift: steps of 6), clicked to choose. */
+function Diamonds({ view, target, keys, frames, times, scale, chosen, onChoose }: {
+  view: RigView; target: Target; keys: KeyPose[]; frames: number; times: { index: number; at: number; later: boolean }[];
+  scale: number; chosen: number | null; onChoose(index: number, at: number): void;
+}) {
+  const drag = (e: React.PointerEvent, index: number, at: number) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onChoose(index, at);
+    const start = e.clientX;
+    const original = keys;
+    const moving = original[index];
+    let moved = false;
+    const move = (ev: PointerEvent) => {
+      let frame = moving.frame + Math.round((ev.clientX - start) / scale);
+      if (ev.shiftKey) frame = Math.round(frame / 6) * 6;
+      frame = Math.max(0, Math.min(frames, frame));
+      if (frame === moving.frame && !moved) return;
+      const next = original.map((k, i) => (i === index ? { ...k, frame } : k));
+      setKeys(view, target, next, moved ? "move" : "start");
+      moved = true;
+      // The key pose's place once sorted (setKeys keeps them in frame order)
+      const order = next.map((k, i) => [k, i] as const).sort((a, b) => a[0].frame - b[0].frame || a[1] - b[1]).map(([, i]) => i);
+      view.select({ keyPose: order.indexOf(index) });
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
+  return (
+    <>
+      {times.map(({ index, at, later }, i) => {
+        const key = keys[index];
+        const curve = curveOf(key, "move_x");
+        return (
+          <span key={i} className={`rig-diamond curve-${curve}${chosen === index ? " selected" : ""}${later ? " later" : ""}`} style={{ left: at * scale }}
+                title={`Key pose ${index} at frame ${key.frame} of ${frames}${key.picture !== undefined ? `: picture ${key.picture}` : key.pose !== undefined ? `: pose ${key.pose}` : ""}, ${curve} to the next. Drag to move it in time (Shift: steps of 6).`}
+                onPointerDown={(e) => drag(e, index, at)} />
+        );
+      })}
+    </>
+  );
+}
+
 export function Timeline({ view, scale, follow }: { view: RigView; scale: number; follow: boolean }) {
-  const { rig, sel, select, clock, editor } = view;
+  const { rig, sel, select, clock, editor, source } = view;
   const sequence = useClock(clock, (s) => Math.min(s.sequence, rig.sequences.length - 1));
   const seq = rig.sequences[sequence];
   const length = lengthOf(seq) || 1;
@@ -97,10 +146,19 @@ export function Timeline({ view, scale, follow }: { view: RigView; scale: number
             <Playhead view={view} scale={scale} length={length} />
           </div>
 
-          <div className="rig-tl-name rig-tl-seq">
-            <b>{seq.name}</b> <span className="muted small">sequence {sequence}</span>
+          <div className={`rig-tl-name rig-tl-seq${source ? " with-poses" : ""}${sel.root ? " selected" : ""}`}
+               onClick={source ? () => select({ root: true, part: null, key: null, keyPose: null, sequenceKey: null }) : undefined}
+               title={source ? "The root: the whole sprite's move, turn and scale, about the feet, and the pose each key shows. Click to choose it." : undefined}>
+            {source && <span className="rig-bone-icon">◆</span>}
+            <b>{source ? "Root" : seq.name}</b> <span className="muted small">{source ? `${seq.name} · ` : ""}sequence {sequence}</span>
           </div>
-          <div className="rig-tl-lane" style={{ width }} onMouseDown={(e) => { if (e.target === e.currentTarget) seek(e, e.currentTarget); }}>
+          <div className={`rig-tl-lane${source ? " with-poses" : ""}${sel.root ? " selected" : ""}`} style={{ width }} onMouseDown={(e) => { if (e.target === e.currentTarget) seek(e, e.currentTarget); }}>
+            {source?.sequences[sequence] && (
+              <Diamonds view={view} target={{ kind: "root", sequence }} keys={source.sequences[sequence].keys} frames={source.sequences[sequence].frames}
+                times={source.sequences[sequence].keys.map((k, index) => ({ index, at: k.frame, later: false }))} scale={scale}
+                chosen={sel.root ? sel.keyPose : null}
+                onChoose={(index, at) => { clock.play(false); clock.seek(Math.min(at, length - 1)); select({ root: true, part: null, key: null, keyPose: index, sequenceKey: null }); }} />
+            )}
             {segments.map((s) => (
               <div key={s.key} className={`rig-key rig-seq-key${sel.sequenceKey === s.key ? " selected" : ""}${s.pose === pose ? " shown" : ""}`}
                    style={{ left: s.from * scale, width: Math.max((s.to - s.from) * scale, 3), ["--hue" as string]: hue(s.pose + 3, 45, 45) }}
@@ -112,7 +170,7 @@ export function Timeline({ view, scale, follow }: { view: RigView; scale: number
                      select({ sequenceKey: s.key, key: null, pose: Math.min(s.pose, rig.poses.length - 1) });
                    }}>
                 <span className="rig-key-text">pose {s.pose} · {s.to - s.from}</span>
-                <span className="rig-key-edge" onPointerDown={(e) => edgeDrag(e, ["sequences", sequence, "keys", s.key], s.to - s.from)} />
+                {!source && <span className="rig-key-edge" onPointerDown={(e) => edgeDrag(e, ["sequences", sequence, "keys", s.key], s.to - s.from)} />}
               </div>
             ))}
             <Playhead view={view} scale={scale} length={length} />
@@ -140,12 +198,13 @@ export function Timeline({ view, scale, follow }: { view: RigView; scale: number
                      select({ part: k, key: null });
                      setDragging(null);
                    }}
-                   onClick={() => select({ part: k, key: null, picture: track?.keys[0]?.picture ?? null, rectangle: 0, sequenceKey: null })}
+                   onClick={() => select({ part: k, key: null, picture: track?.keys[0]?.picture ?? null, rectangle: 0, sequenceKey: null, root: false, keyPose: null })}
                    title={`Part ${k}: track ${part.track} (${track?.name}), pivot ${part.pivot.join(", ")}, ${part.play}s with the pose. Drag to reorder the layers.`}>
                 <span className="rig-grip">⠿</span>
                 <span className="rig-swatch" style={{ background: hue(k) }} />
                 <span className="rig-part-label">{partName(track)}</span>
                 <span className="muted small">{track?.name}</span>
+                {source && source.bones[part.track]?.parent != null && <span className="rig-parent-tag" title="Its parent bone">↳ {partName(rig.tracks[source.bones[part.track].parent!])}</span>}
                 <label className="rig-idle" title="Keeps animating in the battle's idle pause (an idle part)" onClick={(e) => e.stopPropagation()}>
                   <input type="checkbox" disabled={rig.idle_parts === null} checked={idle.has(k)}
                     onChange={(e) => {
@@ -157,8 +216,14 @@ export function Timeline({ view, scale, follow }: { view: RigView; scale: number
                   idle
                 </label>
               </div>,
-              <div key={`l${k}`} className={`rig-tl-lane${chosen ? " selected" : ""}`} style={{ width }}
-                   onMouseDown={(e) => { if (e.target === e.currentTarget) { seek(e, e.currentTarget); select({ part: k, sequenceKey: null }); } }}>
+              <div key={`l${k}`} className={`rig-tl-lane${chosen ? " selected" : ""}${source ? " with-poses" : ""}`} style={{ width }}
+                   onMouseDown={(e) => { if (e.target === e.currentTarget) { seek(e, e.currentTarget); select({ part: k, sequenceKey: null, root: false }); } }}>
+                {source?.bones[part.track] && (
+                  <Diamonds view={view} target={{ kind: "bone", track: part.track }} keys={source.bones[part.track].keys} frames={source.bones[part.track].frames}
+                    times={keyPoseTimes(pose, source.bones[part.track].frames, source.bones[part.track].keys, part.play === "restart", segments)} scale={scale}
+                    chosen={chosen && !sel.root ? sel.keyPose : null}
+                    onChoose={(index, at) => { clock.play(false); clock.seek(Math.min(at, length - 1)); select({ part: k, root: false, key: null, keyPose: index, sequenceKey: null, picture: source.bones[part.track].keys[index].picture ?? null }); }} />
+                )}
                 {track && spansOf(k).map((span, i) => {
                   const key = track.keys[span.key];
                   const picked = sel.key?.track === part.track && sel.key.index === span.key && chosen;
@@ -174,7 +239,7 @@ export function Timeline({ view, scale, follow }: { view: RigView; scale: number
                            select({ part: k, key: { track: part.track, index: span.key }, picture: key.picture ?? null, rectangle: 0, sequenceKey: null });
                          }}>
                       <span className="rig-key-text">{key.picture}{turn ? ` ${turn}` : ""}</span>
-                      {!span.pass && !span.held && <span className="rig-key-edge" onPointerDown={(e) => edgeDrag(e, ["tracks", part.track, "keys", span.key], key.frames)} />}
+                      {!source && !span.pass && !span.held && <span className="rig-key-edge" onPointerDown={(e) => edgeDrag(e, ["tracks", part.track, "keys", span.key], key.frames)} />}
                     </div>
                   );
                 })}
