@@ -726,6 +726,12 @@ const routes: Record<string, Handler> = {
     if (!SPECIES.test(b.species ?? "") || typeof b.retired !== "boolean") return error(res, 400, "Name a species and whether it is retired");
     await speciesTool(res, [b.retired ? "retire" : "unretire", b.species, ...(b.check ? ["--check"] : [])]);
   },
+  "POST /api/pokemon-species/follower": async (req, res) => {
+    // An added species' followers: copies of another species' (from), or none (from null)
+    const b = (await readJson(req)) as { species: string; from: string | null; check?: boolean };
+    if (!SPECIES.test(b.species ?? "") || !(b.from === null || SPECIES.test(b.from ?? ""))) return error(res, 400, "Name a species and the species to copy (or null)");
+    await speciesTool(res, ["follower", b.species, ...(b.from === null ? ["--none"] : ["--from", b.from]), ...(b.check ? ["--check"] : [])]);
+  },
   "POST /api/pokemon-species/number": async (req, res) => {
     const b = (await readJson(req)) as { species: string; number: number | null; check?: boolean };
     if (!SPECIES.test(b.species ?? "") || !(b.number === null || Number.isInteger(b.number))) return error(res, 400, "Name a species and its number (or null)");
@@ -983,7 +989,9 @@ const SPECIES = /^SPECIES_[A-Z0-9_]+$/;
 
 /** Add Pokémon's and reuse's choices: the name, the template (a species, or "blank"), the display number (null:
  * "???"), and whether it enters the Pokédex and the Wonder Trade. */
-interface NewSpeciesBody { name: string; from: string; number?: number | null; pokedex?: boolean; wonderTrade?: boolean; check?: boolean }
+interface NewSpeciesBody {
+  name: string; from: string; number?: number | null; pokedex?: boolean; wonderTrade?: boolean; follower?: boolean; check?: boolean;
+}
 
 /** The tool's options for a new species, or null when the body names no name or template. */
 function newSpeciesArgs(b: NewSpeciesBody): string[] | null {
@@ -992,7 +1000,7 @@ function newSpeciesArgs(b: NewSpeciesBody): string[] | null {
   return [...(b.from === "blank" ? ["--blank"] : ["--from", b.from]),
     ...(typeof b.number === "number" ? ["--number", String(b.number)] : []),
     ...(b.pokedex === false ? ["--no-pokedex"] : []), ...(b.wonderTrade === false ? ["--no-wonder-trade"] : []),
-    ...(b.check ? ["--check"] : [])];
+    ...(b.follower === false ? ["--no-follower"] : []), ...(b.check ? ["--check"] : [])];
 }
 
 /** Runs pokemon_species.py and answers with its JSON, or its refusal as a 400. After a change of the species list the

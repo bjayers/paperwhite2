@@ -1,8 +1,9 @@
 // Add Pokémon's tool (tools/paperwhite2/pokemon_species.py), as the Pokémon Editor calls it through the server: adding
-// and removing species leaves generated/species.txt, services.json and res/pokemon as they were, byte for byte;
-// retiring keeps the ID and frees the display number; numbers and names are refused as the build would; a retired ID
-// is reused in place; a cry is checked and converted. It runs in a scratch checkout (the tools and generated/ copied,
-// res/'s folders linked, the folders it writes copied), so the real res/ is only read.
+// and removing species leaves generated/species.txt and obj_codes.txt, services.json, res/pokemon and the followers as
+// they were, byte for byte; followers are copied with their codes and go with the species; retiring keeps the ID and
+// frees the display number; numbers and names are refused as the build would; a retired ID is reused in place; a cry
+// is checked and converted. It runs in a scratch checkout (the tools and generated/ copied, res/'s folders linked, the
+// folders it writes in made of links), so the real res/ is only read.
 import { after, before, test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
@@ -22,7 +23,8 @@ function scratchCheckout(): string {
     cpSync(join(ROOT, folder), join(dir, folder), { recursive: true, filter: (src) => !src.includes("__pycache__") });
   cpSync(join(ROOT, "tools/__init__.py"), join(dir, "tools/__init__.py"));
   symlinkSync(join(ROOT, "include"), join(dir, "include"));
-  // res/ linked folder by folder, down to the files the tool writes: res/pokemon/<new>/, services.json
+  // res/ linked folder by folder, down to the files the tool writes: res/pokemon/<new>/, services.json, the followers'
+  // folders and the follower dialogue files
   const linkAll = (from: string, to: string, keep: Record<string, ((a: string, b: string) => void) | null>) => {
     mkdirSync(to, { recursive: true });
     for (const name of readdirSync(from)) {
@@ -32,8 +34,10 @@ function scratchCheckout(): string {
   };
   linkAll(join(ROOT, "res"), join(dir, "res"), {
     pokemon: (a, b) => linkAll(a, b, {}),
+    field: (a, b) => linkAll(a, b, { actors: (c, d) => linkAll(c, d, { followers: (e, f) => linkAll(e, f, {}) }) }),
     paperwhite2: (a, b) => linkAll(a, b, {
       pokemon_center: (c, d) => linkAll(c, d, { "services.json": (e, f) => cpSync(e, f) }),
+      following: (c, d) => linkAll(c, d, { dialogue: (e, f) => linkAll(e, f, { species: (g, h) => linkAll(g, h, {}) }) }),
     }),
   });
   return dir;
@@ -56,11 +60,17 @@ function refusal(...args: string[]): string {
 }
 
 const info = () => run("info") as unknown as PokemonSpeciesInfo;
+const FOLLOWERS = "res/field/actors/followers";
 const state = () => ({
   species: readFileSync(join(scratch, "generated/species.txt")),
+  codes: readFileSync(join(scratch, "generated/obj_codes.txt")),
   services: readFileSync(join(scratch, "res/paperwhite2/pokemon_center/services.json")),
   folders: readdirSync(join(scratch, "res/pokemon")).sort().join(","),
+  followers: readdirSync(join(scratch, FOLLOWERS)).sort().join(","),
+  dialogue: readdirSync(join(scratch, "res/paperwhite2/following/dialogue/species")).sort().join(","),
 });
+const followerCodes = () => readFileSync(join(scratch, "generated/obj_codes.txt"), "utf8").split("\n")
+  .filter((line) => line.startsWith("OBJ_CODE_FOLLOWER_"));
 
 before(() => { scratch = scratchCheckout(); });
 after(() => { if (scratch) rmSync(scratch, { recursive: true, force: true }); });
@@ -103,6 +113,58 @@ test("adding species and removing them again leaves every file as it was", () =>
   assert.deepEqual(state(), before);
 });
 
+test("followers are copies of the template's, with their codes after the last, and go with the species", () => {
+  const before = state();
+  const last = followerCodes().at(-1)!;
+  const applin = run("add", "Applin", "--from", "SPECIES_BUDEW", "--number", "840");
+  assert.equal(applin.followers, 4);
+  assert.match(applin.message, /4 followers copied from Budew's/);
+  const codes = followerCodes();
+  assert.deepEqual(codes.slice(codes.indexOf(last) + 1), ["OBJ_CODE_FOLLOWER_APPLIN", "OBJ_CODE_FOLLOWER_APPLIN_SHINY",
+    "OBJ_CODE_FOLLOWER_APPLIN_FEMALE", "OBJ_CODE_FOLLOWER_APPLIN_FEMALE_SHINY"]);
+  for (const suffix of ["", "_shiny", "_female", "_female_shiny"]) {
+    const copy = JSON.parse(readFileSync(join(scratch, FOLLOWERS, `applin${suffix}`, "data.json"), "utf8"));
+    const original = JSON.parse(readFileSync(join(ROOT, FOLLOWERS, `budew${suffix}`, "data.json"), "utf8"));
+    assert.equal(copy.follower.species, "SPECIES_APPLIN");
+    assert.deepEqual({ ...copy, follower: { ...copy.follower, species: original.follower.species } }, original);
+  }
+  assert.deepEqual(info().species[0].followers, ["applin", "applin_shiny", "applin_female", "applin_female_shiny"]);
+
+  // a sprite named by another copied follower's code names that one's copy (Pignite's female shows its own sprite)
+  run("add", "Testpig", "--from", "SPECIES_PIGNITE");
+  const pignite = JSON.parse(readFileSync(join(ROOT, FOLLOWERS, "pignite_female/data.json"), "utf8"));
+  assert.equal(pignite.sprite, "OBJ_CODE_FOLLOWER_PIGNITE");
+  assert.equal(JSON.parse(readFileSync(join(scratch, FOLLOWERS, "testpig_female/data.json"), "utf8")).sprite,
+    "OBJ_CODE_FOLLOWER_TESTPIG");
+  assert.deepEqual(readFileSync(join(scratch, FOLLOWERS, "testpig/sprite.png")), readFileSync(join(ROOT, FOLLOWERS, "pignite/sprite.png")));
+
+  // none with --no-follower or the blank template; given and taken away later
+  assert.equal(run("add", "Nofollow", "--from", "SPECIES_BUDEW", "--no-follower").followers, 0);
+  assert.equal(run("add", "Blankmon", "--blank").followers, 0);
+  assert.ok(!readdirSync(join(scratch, FOLLOWERS)).some((name) => name.startsWith("nofollow") || name.startsWith("blankmon")));
+  assert.match(refusal("follower", "SPECIES_BLANKMON", "--none"), /has no follower/);
+  assert.equal(run("follower", "SPECIES_BLANKMON", "--from", "SPECIES_BUDEW").followers, 4);
+  assert.deepEqual(followerCodes().slice(-4), ["OBJ_CODE_FOLLOWER_BLANKMON", "OBJ_CODE_FOLLOWER_BLANKMON_SHINY",
+    "OBJ_CODE_FOLLOWER_BLANKMON_FEMALE", "OBJ_CODE_FOLLOWER_BLANKMON_FEMALE_SHINY"]);
+  run("follower", "SPECIES_BLANKMON", "--none");
+  assert.ok(!followerCodes().some((code) => code.includes("BLANKMON")));
+  assert.match(refusal("follower", "SPECIES_BULBASAUR", "--none"), /original game's/);
+
+  // a species' own dialogue file goes with it; another file naming its followers' codes stops its removal
+  writeFileSync(join(scratch, "res/paperwhite2/following/dialogue/species/testpig.json"), "{\n}\n");
+  const event = join(scratch, "res/paperwhite2/pokemon_center/uses_testpig.json");
+  writeFileSync(event, '{ "sprite": "OBJ_CODE_FOLLOWER_TESTPIG_SHINY" }\n');
+  run("remove", "SPECIES_BLANKMON");
+  run("remove", "SPECIES_NOFOLLOW");
+  assert.match(refusal("remove", "SPECIES_TESTPIG"), /still named in res\/paperwhite2\/pokemon_center\/uses_testpig\.json/);
+  rmSync(event);
+  const removed = run("remove", "SPECIES_TESTPIG");
+  assert.ok(removed.removed.includes("res/paperwhite2/following/dialogue/species/testpig.json"));
+  assert.ok(removed.removed.includes(`${FOLLOWERS}/testpig_female_shiny`));
+  run("remove", "SPECIES_APPLIN");
+  assert.deepEqual(state(), before);
+});
+
 test("retiring keeps the ID and frees the number; a retired ID is reused in place", () => {
   const before = state();
   run("add", "Applin", "--from", "SPECIES_BUDEW", "--number", "840");
@@ -124,6 +186,9 @@ test("retiring keeps the ID and frees the number; a retired ID is reused in plac
   assert.match(refusal("reuse", "SPECIES_FLAPPLE", "Appletun", "--from", "SPECIES_BUDEW"), /isn't retired/);
   const reused = run("reuse", "SPECIES_APPLIN", "Dipplin", "--blank", "--number", "1011");
   assert.equal(reused.id, 687);
+  // the retired species' followers went with it (the blank template has none)
+  assert.ok(!readdirSync(join(scratch, FOLLOWERS)).some((name) => name.startsWith("applin")));
+  assert.ok(!followerCodes().some((code) => code.includes("APPLIN")));
   const lines = readFileSync(join(scratch, "generated/species.txt"), "utf8").trimEnd().split("\n");
   assert.deepEqual(lines.slice(-2), ["SPECIES_DIPPLIN", "SPECIES_FLAPPLE"]);
   assert.ok(!readdirSync(join(scratch, "res/pokemon")).includes("applin"));

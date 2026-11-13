@@ -1,6 +1,7 @@
 // Whole new species in the Pokémon Editor (docs/paperwhite2/design/new-species.md): the Add Pokémon dialog (also the
 // one that reuses a retired species' ID), an added species' card (its ID, display number, Retire, Reuse and Remove),
-// the Cry card (play, a note while the cry is a copy of another species', and a WAV imported, checked and played as the
+// its Follower card (its followers, copied from another species' or removed, and a link to the Follower Editor), the
+// Cry card (play, a note while the cry is a copy of another species', and a WAV imported, checked and played as the
 // game will), and an added species' icon and stills. Every change is tools/paperwhite2/pokemon_species.py's, through
 // the server (/api/pokemon-species/*): it writes res/ and generated/species.txt itself, so the editor checks that
 // nothing it may touch is unsaved, then reads the files it changed again (applyFormChange).
@@ -9,6 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api, type AddedSpecies, type NewSpecies, type PokemonSpeciesChange, type PokemonSpeciesInfo } from "../../api.ts";
 import type { Constants } from "../../../shared/schema.ts";
 import { SearchSelect, type Option } from "../../shell/SearchSelect.tsx";
+import { navigate } from "../../navigation.ts";
 import { DocForm } from "../followers/DocForm.tsx";
 import { applyFormChange, ArtImport, Row, summarize } from "./FormPage.tsx";
 import type { Listed } from "./forms.ts";
@@ -47,7 +49,8 @@ export function AddPokemonDialog({ list, info, reuse, onClose, onDone }: {
   const [numberText, setNumberText] = useState("");
   const [pokedex, setPokedex] = useState(true);
   const [wonderTrade, setWonderTrade] = useState(true);
-  const [plan, setPlan] = useState<{ ok: boolean; text: string } | null>(null);
+  const [follower, setFollower] = useState(true);
+  const [plan, setPlan] = useState<{ ok: boolean; text: string; followers?: number } | null>(null);
   const [busy, setBusy] = useState(false);
   const number = parseNumber(numberText);
   const templates = useMemo<Option[]>(() => [
@@ -55,7 +58,9 @@ export function AddPokemonDialog({ list, info, reuse, onClose, onDone }: {
     ...list.filter((l) => l.form === 0 && (l.inDex || l.added) && l.species !== reuse?.species)
       .map((l) => ({ value: l.species, label: l.name, detail: l.added ? `added, ID ${l.number}` : `#${l.number}` })),
   ], [list, reuse]);
-  const body = (check: boolean): NewSpecies => ({ name: name.trim(), from, number: pokedex ? number : null, pokedex, wonderTrade, check });
+  const body = (check: boolean): NewSpecies => ({ name: name.trim(), from, number: pokedex ? number : null, pokedex, wonderTrade,
+    follower: from !== BLANK && follower, check });
+  const templateName = templates.find((t) => t.value === from)?.label ?? from;
 
   useEffect(() => {
     if (!name.trim()) { setPlan(null); return; }
@@ -63,11 +68,12 @@ export function AddPokemonDialog({ list, info, reuse, onClose, onDone }: {
     let live = true;
     const timer = setTimeout(() => {
       const run = reuse ? api.reusePokemonSpecies({ ...body(true), species: reuse.species }) : api.addPokemonSpecies(body(true));
-      run.then((r) => live && setPlan({ ok: true, text: planText(r) }), (e: Error) => live && setPlan({ ok: false, text: `Can't: ${e.message}` }));
+      run.then((r) => live && setPlan({ ok: true, text: planText(r), followers: r.followers }),
+        (e: Error) => live && setPlan({ ok: false, text: `Can't: ${e.message}` }));
     }, 250);
     return () => { live = false; clearTimeout(timer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, from, numberText, pokedex, wonderTrade, reuse]);
+  }, [name, from, numberText, pokedex, wonderTrade, follower, reuse]);
 
   const apply = async () => {
     if (reuse && !confirm(`Make ID ${reuse.id}, ${reuse.name} (retired), into ${name.trim()}? Its folder, data and art are replaced. `
@@ -116,11 +122,18 @@ export function AddPokemonDialog({ list, info, reuse, onClose, onDone }: {
           <Row label="Wonder Trade" hint={pokedex ? "On: received at random, as every species not left out (services.json's excluded_species)." : "Never: it isn't in the Pokédex."}>
             <label className="pkm-check"><input type="checkbox" checked={pokedex && wonderTrade} disabled={!pokedex} onChange={(e) => setWonderTrade(e.target.checked)} /> In the Wonder Trade</label>
           </Row>
+          <Row label="Follower" hint={from === BLANK ? "The blank template has no follower: the next party member follows while it leads, until you give it one (its page's Follower card)."
+            : follower && plan?.ok && plan.followers === 0 ? <span className="pkm-error">{templateName} has no follower to copy: it gets none, and the next party member follows while it leads.</span>
+            : follower ? `Copies of ${templateName}'s followers (each sex and shininess), showing its sprite until you draw the species' own in the Follower Editor.`
+            : "None: while it leads, the next party member follows. You can give it one later (its page's Follower card)."}>
+            <label className="pkm-check"><input type="checkbox" checked={from !== BLANK && follower} disabled={from === BLANK} onChange={(e) => setFollower(e.target.checked)} />
+              {" "}Follower: a copy of {from === BLANK ? "the template" : templateName}'s</label>
+          </Row>
         </div>
         <h4>Dry run</h4>
         <p className={`pkm-note${plan && !plan.ok ? " pkm-error" : ""}`}>{plan?.text ?? "Name the species to see what it will write."}</p>
         <p className="muted pkm-note">The build does the rest: its text lines, Pokédex rows and orders, sprite, icon and cry slots and the save's
-          Pokédex bits all follow from these files. Followers and encounters are separate (the Followers and Encounters editors).</p>
+          Pokédex bits all follow from these files. Encounters are separate (the Encounter Editor: the species' encounters file).</p>
       </div>
     </div>
   );
@@ -189,6 +202,55 @@ export function AddedSpeciesCard({ entry, added, info, onChanged, onReuse }: {
         )}
         <Row label="Art formats" hint="The packer writes its battle sprite and icon files in the formats of this original species' (art_template).">
           <span>{added.artTemplate.replace(/^SPECIES_/, "").toLowerCase().replace(/(^|_)(\w)/g, (_, s: string, c: string) => `${s ? " " : ""}${c.toUpperCase()}`)}</span>
+        </Row>
+      </div>
+      {message && <p className={`pkm-note${message.ok ? "" : " pkm-error"}`}>{message.text}</p>}
+    </section>
+  );
+}
+
+/** An added species' Follower card: its followers (copies of another species' until its own are drawn), copied again
+ * from any species that has followers, or removed; and a link to them in the Follower Editor. */
+export function FollowerCard({ list, added, onChanged }: { list: Listed[]; added: AddedSpecies; onChanged(): void }) {
+  const [from, setFrom] = useState<string>("");
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const options = useMemo<Option[]>(() => list.filter((l) => l.form === 0 && (l.inDex || l.added) && l.species !== added.species)
+    .map((l) => ({ value: l.species, label: l.name, detail: l.added ? `added, ID ${l.number}` : `#${l.number}` })), [list, added.species]);
+  const has = added.followers.length > 0;
+  const change = async (source: string | null) => {
+    let plan: PokemonSpeciesChange;
+    try {
+      plan = await api.pokemonSpeciesFollower({ species: added.species, from: source, check: true });
+    } catch (e) {
+      setMessage({ ok: false, text: (e as Error).message });
+      return;
+    }
+    if (has && !confirm(`${plan.message}? This deletes ${added.name}'s ${added.followers.length} follower${added.followers.length === 1 ? "" : "s"}`
+      + " and any changes made to them in the Follower Editor.")) return;
+    const result = await applyFormChange(() => api.pokemonSpeciesFollower({ species: added.species, from: source }));
+    if (result) {
+      setMessage({ ok: true, text: `${result.message}. Build to see it follow.` });
+      onChanged();
+    }
+  };
+  return (
+    <section className="pkm-card">
+      <div className="pkm-card-head">
+        <h3>Follower <span className="muted">{has ? `${added.followers.length} variant${added.followers.length === 1 ? "" : "s"}` : "none"}</span></h3>
+        <span className="spacer" />
+        {has && <button onClick={() => navigate("followers", { species: added.species })} title="Its sprites, placement and dialogue">Open in the Follower Editor</button>}
+        <button className="danger" disabled={!has} onClick={() => change(null)} title="No follower: while it leads, the next party member follows">Remove</button>
+      </div>
+      <div className="pkm-rows">
+        <Row label="Followers" hint={has ? "res/field/actors/followers/: each sex and shininess its own, with OBJ_CODE_FOLLOWER_ codes after the others'."
+          : "While it leads the party, the next party member follows (as for an Egg)."}>
+          <span>{has ? added.followers.join(", ") : "None"}</span>
+        </Row>
+        <Row label="Copy from" hint={`Replaces ${has ? "its followers" : "none"} with copies of that species' (its sprite until you draw ${added.name}'s own).`}>
+          <div className="pkm-inline">
+            <SearchSelect value={from} options={options} onChange={setFrom} />
+            <button disabled={!from} onClick={() => change(from)}>Copy</button>
+          </div>
         </Row>
       </div>
       {message && <p className={`pkm-note${message.ok ? "" : " pkm-error"}`}>{message.text}</p>}

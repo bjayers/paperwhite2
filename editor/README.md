@@ -163,7 +163,8 @@ file changed on disk reloads.
 - **Pokémon**: the species that have followers, by number (filtered by name, or to those with their own dialogue). A
   species' page has each of its followers (form, sex, shininess) with its sprite in its palette, or the sprite it
   shares, and its settings: the "follower" object of its field actor (`res/field/actors/followers/<name>/data.json`),
-  its animation profile, art offset, side gap and walking gaps. Then its own dialogue
+  its animation profile, art offset, side gap and walking gaps. `#tool/followers?species=SPECIES_X` opens on a
+  species (the Pokémon Editor's Follower card links there). Then its own dialogue
   (`res/paperwhite2/following/dialogue/species/<name>.json`), or a button that starts one, and the shared rules that
   name it.
 - **Shared dialogue**: `dialogue/shared.json`, the rules every follower has (talk, ambient, pickup), the talk's
@@ -419,20 +420,23 @@ New species (`AddedSpecies.tsx`, docs/paperwhite2/design/new-species.md sections
 - **+ Add Pokémon** on the list's header opens a dialog: the name (up to 10 characters, starting with a letter; its
   constant and folder follow), the template ("Copy of": any species, or Blank, a "?" sprite with plain stats and
   Bulbasaur's cry), "In the Pokédex" (off: `"pokedex": false`, the roguelike's creatures), the display number (blank
-  "???"; 999, a number in use or an original's refused) and "In the Wonder Trade" (on by default). Its dry run says
-  what it will write before Add.
+  "???"; 999, a number in use or an original's refused), "In the Wonder Trade" (on by default) and "Follower: a copy
+  of X's" (on by default: the template's followers copied with their codes; off for Blank, and the dry run says when
+  the template has none). Its dry run says what it will write before Add.
 - An added species' page has an **Added species** card (its ID and constant, its status, the display number with Set,
   the art formats' species; **Retire** hides it from the Pokédex, the Wonder Trade and the encounter pickers, keeping
   its ID so saved Pokémon stay valid, and **Bring back** undoes it; a retired one's **Reuse ID…** opens the dialog
   to make that ID a new species, warning that saved Pokémon of it become the new one; **Remove** only for the last
-  added species, undoing everything Add did), **Icon and stills** (PNG imports, as a form's), and its Wonder Trade row
-  says "Never" when it is retired or out of the Pokédex.
+  added species, undoing everything Add did, its followers included), **Icon and stills** (PNG imports, as a
+  form's), a **Follower** card (its followers; **Copy from** another species' with **Copy**, **Remove**, and **Open in
+  the Follower Editor** on its page), and its Wonder Trade row says "Never" when it is retired or out of the Pokédex.
+  Without a follower, the next party member follows while it leads.
 - Every species' page has a **Cry** card: the cry played in the page, "Cry: a copy of X's" while an added species'
   cry.wav is its template's, a WAV import (mono or stereo, 8 to 32 bits; mixed down and resampled to 13,379 Hz where
   needed, refused past the game's 0x5c30-byte buffer, about 1.76 s) played as the game will play it before Apply,
   and the volume (`cry_volume`).
 - These run `tools/paperwhite2/pokemon_species.py` on the server (`GET /api/pokemon-species`, `POST
-  /api/pokemon-species/add`, `/reuse`, `/remove`, `/retire`, `/number`, `/cry`), which writes `res/` and
+  /api/pokemon-species/add`, `/reuse`, `/remove`, `/retire`, `/follower`, `/number`, `/cry`), which writes `res/` and
   `generated/species.txt` itself; after a change of the species list the server rereads the constants at once.
   `/api/asset` also serves `.wav` for the cry player.
 

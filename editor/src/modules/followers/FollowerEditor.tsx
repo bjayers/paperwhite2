@@ -14,6 +14,7 @@ import { parsePal, type Rgb } from "../palettes/pal.ts";
 import { readIndexedPng, type IndexedImage } from "../palettes/png.ts";
 import { DocForm, useHeld } from "./DocForm.tsx";
 import { useToolActive } from "../active.ts";
+import { useToolParams } from "../../navigation.ts";
 import { FOLLOWERS, FOLLOWING, INTERACTIONS, POOLS, SHARED_DIALOGUE, dialoguePath, loadFollowers, speciesName, spriteFolder,
   variantLabel, type FollowerSpecies, type Variant } from "./data.ts";
 
@@ -181,6 +182,16 @@ export function FollowerEditor({ constants, open }: ToolProps) {
   const [chosen, setChosen] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const { docs } = useDocuments();
+  // A link to a species' followers (#tool/followers?species=SPECIES_X, the Pokémon Editor's Follower card)
+  const params = useToolParams("followers");
+  useEffect(() => {
+    const species = params.get("species");
+    if (species) {
+      setPage("pokemon");
+      setChosen(species);
+      setFilter("");
+    }
+  }, [params]);
 
   const reload = useCallback(() => {
     loadFollowers(constants).then((l) => {

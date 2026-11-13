@@ -119,6 +119,8 @@ export interface AddedSpecies {
   forms: number;
   /** Whether it is the last added species, the only one that can be removed. */
   last: boolean;
+  /** Its own followers' folders under res/field/actors/followers/ (none: no follower in the game). */
+  followers: string[];
 }
 
 /** GET /api/pokemon-species: the added species, the next ID and the rules of names and numbers. */
@@ -145,6 +147,8 @@ export interface NewSpecies {
   number?: number | null;
   pokedex?: boolean;
   wonderTrade?: boolean;
+  /** Copies of the template's followers (default on; the blank template has none). */
+  follower?: boolean;
   check?: boolean;
 }
 
@@ -153,6 +157,8 @@ export interface PokemonSpeciesChange extends PokemonFormChange {
   species?: string;
   folder?: string;
   id?: number;
+  /** How many followers it copied (add, reuse, follower). */
+  followers?: number;
   seconds?: number;
   rate?: number;
   samples?: number;
@@ -328,6 +334,9 @@ export const api = {
   /** Retires an added species (hidden, keeping its ID), or brings it back. */
   retirePokemonSpecies: (b: { species: string; retired: boolean; check?: boolean }) =>
     request<PokemonSpeciesChange>("POST", "/api/pokemon-species/retire", b),
+  /** An added species' followers replaced by copies of from's, or (from null) removed. */
+  pokemonSpeciesFollower: (b: { species: string; from: string | null; check?: boolean }) =>
+    request<PokemonSpeciesChange>("POST", "/api/pokemon-species/follower", b),
   /** Sets an added species' display number (null: "???"). */
   pokemonSpeciesNumber: (b: { species: string; number: number | null; check?: boolean }) =>
     request<PokemonSpeciesChange>("POST", "/api/pokemon-species/number", b),

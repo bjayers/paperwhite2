@@ -25,7 +25,7 @@ import { useToolActive } from "../active.ts";
 import { FormIcon, FormPage, FormsCard, Row, SERVICES, WonderTradeRow } from "./FormPage.tsx";
 import { BattleSpriteArt } from "./BattleSpriteArt.tsx";
 import { isOriginalForm, listSpecies, type Listed } from "./forms.ts";
-import { AddedSpeciesArt, AddedSpeciesCard, AddPokemonDialog, CryCard } from "./AddedSpecies.tsx";
+import { AddedSpeciesArt, AddedSpeciesCard, AddPokemonDialog, CryCard, FollowerCard } from "./AddedSpecies.tsx";
 
 const SCHEMA = "res/pokemon/species.schema.json";
 const STATS = [["hp", "HP"], ["attack", "Attack"], ["defense", "Defense"], ["special_attack", "Sp. Atk"],
@@ -304,6 +304,7 @@ function SpeciesPage({ entry, list, info, speciesInfo, constants, onOpen, onSele
       {entry.number > 0 && <BattleSpriteArt species={entry.species} form={0} folder={entry.folder} speciesName={String(data.get("name") ?? entry.name)}
         onWritten={() => { setSpriteEpoch((n) => n + 1); onChanged(entry.key); }} />}
       {entry.added && <AddedSpeciesArt entry={entry} onWritten={() => { setSpriteEpoch((n) => n + 1); onChanged(entry.key); }} />}
+      {added && <FollowerCard list={list} added={added} onChanged={() => onChanged(entry.key)} />}
       {entry.number > 0 && <CryCard entry={entry} added={added} constants={constants} onChanged={() => onChanged(entry.key)} />}
       <RecordSections path={entry.speciesPath} entry={entry} list={list} constants={constants} onOpen={onOpen} />
       {data.has("pokedex") && (
