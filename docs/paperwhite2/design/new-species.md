@@ -735,3 +735,88 @@ is ignored, as the counts show); the Japanese/other-language Info entry of an ad
 - Places that still print a species' ID as a number are none found beyond the five above; wireless screens (GTS, Game
   Sync) are left.
 - Step 5: DexNav and the Habitat Dex print no numbers; they need encounters of added species. The musical's hook.
+
+## 16. Built: step 4, Add Pokémon in the editor (2026-11-13)
+
+### 16.1 The tool
+
+`tools/paperwhite2/pokemon_species.py` (stdlib, JSON out like `pokemon_form.py`, `--check` for a dry run):
+
+| Command | What it writes |
+| --- | --- |
+| `info` | nothing: the added species (ID, constant, folder, name, display number, `pokedex`, `retired`, `art_template`, whose cry its cry.wav copies, forms, whether it is the last), the next ID, the numbers in use, the name, number and cry limits |
+| `add NAME --from SPECIES \| --blank [--number N] [--no-pokedex] [--no-wonder-trade]` | `generated/species.txt` (the reserved pair first, the first time), `res/pokemon/<name>/`: the template's top-level art files (sheets, stills, rigs, palettes, icon, footprint, cry; not `form_N/`, `form_N.json` or `musical/`) and its data.json (section 4.1: name, Pokédex text without languages, forms or form names, `display_number` or `"pokedex": false`, no evolutions or regional number, evolution stage 1, itself as baby, `art_template` the original species whose formats it uses, the template's own for a copy of an added species); services.json's `excluded_species` with `--no-wonder-trade`. The new data.json is validated against the schema first |
+| `remove SPECIES` | the last added species only: its folder, its line (and the reserved pair with the last one), its `excluded_species` entry. Refused while any other file in `res/` (`.json`, `.txt`, `.s`, `.csv`) names it, listing them, or while it has added forms |
+| `retire` / `unretire SPECIES` | `"retired": true` in data.json (new in the schema). `species_list.in_pokedex()` is false for it, so every packer, the generated C tables (`_NOT_IN_POKEDEX`), the Wonder Trade and the editor treat it as `"pokedex": false` while it keeps its data and ID. Unretire refuses a display number taken meanwhile |
+| `reuse SPECIES NAME --from \| --blank ...` | a retired species' line renamed in place (same ID), its folder replaced by a new one as `add` makes it; refused while referenced or with forms. Saved Pokémon of the ID become the new species |
+| `number SPECIES N\|none` | `pokedex.display_number` (schema order kept), with `species_list`'s rules: 650-9999 but 999, not an original's, not another species' |
+| `cry SPECIES WAV [--rate HZ] [--write]` | checks any uncompressed WAV (8-32 bits, mono or stereo, mixed down), resampled to 13,379 Hz (linear) where its rate is outside 4,000-65,535 Hz or it is too long at its own rate; refused past `sound_data.CRY_BUFFER` (23,524 samples: 1.76 s at 13,379 Hz). Prints the game's PCM8 version as a WAV in base64; `--write` writes cry.wav as mono PCM16 |
+
+Names: up to 10 characters, starting with a letter, letters, digits, space and `. ' - : é ♀ ♂`; the folder is the
+ASCII-folded lower-case name with underscores (`Mr. Mime` → `mr_mime`), the constant `SPECIES_` + its upper case.
+The blank template is `none/`'s "?" art with plain data (50s, Normal, Run Away, Tackle) and Bulbasaur's cry and formats.
+IDs end at `species_list.SPECIES_MAX` (1023, section 2.3).
+
+`pokemon_form.py icon|still SPECIES 0` now takes an added species' own icon and stills (its icon's bank comes from the
+PNG, as for the hack's forms; an original species' bank is the original table's, so it is still refused there).
+
+### 16.2 The server and the editor
+
+- Routes next to the forms': `GET /api/pokemon-species`, `POST /api/pokemon-species/add`, `/reuse`, `/remove`,
+  `/retire`, `/number`, `/cry` (WAV in base64). After a change of species.txt the server rereads the constants at once.
+  `/api/asset` serves `.wav` too (the cry player).
+- `AddedSpecies.tsx`: the **Add Pokémon** dialog (from **+ Add Pokémon** on the list's header; name, Copy of, In the
+  Pokédex, display number with the numbers in use, In the Wonder Trade, a live dry run); the **Added species** card (ID,
+  status, display number with Set, art formats; Retire / Bring back, Reuse ID…, Remove for the last one); the **Cry**
+  card on every species (player, "Cry: a copy of X's" while an added species' cry.wav is byte for byte its art
+  template's or Bulbasaur's, the WAV import with the game's version played before Apply, the volume); **Icon and
+  stills** for added species.
+- The list (`forms.ts`): added species after Genesect by display number, then unnumbered, then out of the Pokédex
+  (retired or `"pokedex": false`), each tagged "added" and "hidden" when retired; the number column shows the display
+  number, "???" or "—". `shared/species.ts`' `inPokedex` honours `retired`.
+- **A bug found and fixed:** the Encounter Editor's species listing (`SPECIES_KEYS`) never asked for `pokedex`, so
+  `inPokedex` saw every species as in the Pokédex: a `"pokedex": false` species was offered in the wild. It now asks
+  for `pokedex.shape` and `retired` (a nested key is listed only where `pokedex` is an object), and
+  `scripts/encounter-files.ts` picks nested keys as the server does.
+- Tests: `tests/pokemon-species.test.ts` runs the tool in a scratch checkout (tools and generated/ copied, res/'s
+  folders linked, services.json copied): add then remove leaves species.txt, services.json and res/pokemon's folders
+  byte-identical; retire/unretire round-trips the data.json, frees and re-checks the number; reuse renames in place;
+  refusals (999, a taken number, an original's, 10000, a number without the Pokédex, 11 characters, a digit first, an
+  existing name, the egg as a template, a middle species, a referenced species); a cry mixed down, resampled and
+  refused. `tests/pokemon-forms.test.ts` checks the list's order.
+
+### 16.3 Proof
+
+- The `--hack` ROM with only the tool's changes: `57cd9af0dfab0e720e9d82e3e12298a1c1cd904d`.
+- In the editor on the worktree (port 7480; screenshots in the scratchpad's `newsp4/shots/`): Add Pokémon "Applin",
+  Copy of Budew, No. 840 (`02-add-dialog-dry-run`; 999 refused in the dry run, `03`); its page (`04`), the list
+  after Genesect (`05`), the Cry card's note "a copy of Budew's" (`06`), Icon and stills (`07`), a stereo 44.1 kHz WAV
+  mixed down and resampled with its preview (`08-cry-import-chirp`) and a 2.5 s one refused (`08-cry-import-long`).
+  Built from the editor's Build: one ninja run picked up the header (configure re-runs when species.txt changes;
+  `ninja -n` after it had nothing to do), `verify_dsi_rom.py` intact.
+- py-desmume on a copy of the user's save, a party Pokémon made species 687: the summary's Dex No. 840, Applin,
+  Grass/Poison and Budew's sprite (`summary_applin`); the National list without it before it is seen
+  (`dex_list_before_seen`, SEEN 61) and "840 Applin" after Genesect once seen and caught (`dex_list_after_seen`, SEEN
+  62 / OBTAINED 15); its Info page, No. 840 with Budew's text (`dex_info_applin`).
+- Retire and Reuse in the editor: Flapple added from Applin (841, out of the Wonder Trade, `09`), Applin then not the
+  last (Remove disabled, `10`), retired (No. —, "hidden", Wonder Trade "Never", `11`), Reuse ID with Dipplin from
+  Bulbasaur, 1011, with its warning and dry run (`12`, cancelled), brought back (`13`), Flapple removed (`14`).
+- Applin removed in the editor (`15`): res/ and generated/ as before, and the ROM built from the editor is
+  `57cd9af0...` again. A blank-template species packs (a/0/0/4, a/0/0/7, a/1/6/5, a/0/1/6, a/0/9/7, the text and the
+  sound archive), not run in game.
+
+### 16.4 For the next steps
+
+- **Followers (step 5):** Add Pokémon writes none. A follower for an added species needs its folders under
+  `res/field/actors/followers/` and OBJ codes (`pokemon_form.add_obj_codes` is the model); once it has them, `remove`
+  and `reuse` refuse until they go, so step 5 should teach both to remove the species' own follower folders and codes
+  as `pokemon_form.remove` does.
+- **Encounters:** the Encounter Editor offers added species in the Pokédex (not retired, not `"pokedex": false`); an
+  encounters species file is made there. A retired species stays packed wherever data still names it.
+- **Wonder Trade:** in by default; `--no-wonder-trade` writes `excluded_species`; retired and `"pokedex": false`
+  species are excluded by `pokemon_center.py` without an entry.
+- **Musical:** still no hook (section 14.4).
+- **The Applin line (step 6):** Add Pokémon each from a Grass species (Budew was used here) with 840, 841, 842, 1011,
+  1019; then the art through Import art and the Rig Editor, Icon and stills, and the cry import; evolutions on the
+  species page with stand-in items and moves. Add them in order (Applin first) so the IDs follow the line.
+- Not tested live: a `"pokedex": false` or retired species' catch; the blank template in game.

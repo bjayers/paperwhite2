@@ -2,6 +2,26 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-13: new species, step 4, Add Pokémon in the editor (ROM session, on a branch from `new-species`)
+
+design/new-species.md section 16 has the details.
+
+- `tools/paperwhite2/pokemon_species.py`: `add` (from a template species or a blank "?" one; name, display number,
+  `--no-pokedex`, `--no-wonder-trade`), `remove` (the last added species only, refused while anything names it),
+  `retire`/`unretire` (the new `"retired": true`: out of the Pokédex, Wonder Trade and pickers, keeping the ID),
+  `reuse` (a retired ID made a new species), `number`, `cry` (a WAV checked, mixed down, resampled, previewed), `info`;
+  each with a `--check` dry run. Server routes `/api/pokemon-species/*`.
+- The editor: **+ Add Pokémon** on the Pokémon list's header and its dialog with the dry run; added species after
+  Genesect in Pokédex order, tagged "added"/"hidden"; an added species' card (number, Retire, Reuse ID, Remove), Icon
+  and stills, and a Cry card on every species (player, "a copy of X's" note, WAV import played as the game will).
+  Fixed on the way: the Encounter Editor offered `"pokedex": false` species (its listing never asked for `pokedex`).
+- Proof: `npm run typecheck`, `npm test` (new `pokemon-species.test.ts` in a scratch checkout: add/remove
+  byte-identical, retire/unretire, reuse, refusals, cries), `npx vite build`; Applin added in the editor from Budew as
+  No. 840, built from the editor (one ninja run is enough), and in py-desmume its summary (Dex No. 840) and, once
+  seen, the National list's "840 Applin" and its Info page; removed in the editor: the ROM is `57cd9af0...` again.
+
+Next: step 5, followers, encounters, the Wonder Trade and the musical for added species.
+
 ## 2026-11-13: new species, step 3, the Pokédex numbering (ROM session, on a branch from `new-species`)
 
 design/new-species.md section 15 has the details.
