@@ -208,6 +208,8 @@ Thundurus 2, Tornadus 2, Landorus 2 = 83). Arceus and Genesect aren't in it, so 
 ## 5. Code assumptions about forms
 
 ### 5.1 Evolution
+
+(Since built: an evolution's form condition, [form-evolutions.md](form-evolutions.md) section 12.)
 - **The table is per species:** `CheckEvolveSpecies` (`src/system/evolution_check.c:35`) reads `ARCID_EVOLUTIONS`
   by species (`getEvolutionInfoFile`, `:294`), whatever the form. The packer writes form entries that nothing reads.
 - **Every evolution goes through it:** level-up and battle return, trades (`pokemontrade_save.c:611`,

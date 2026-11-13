@@ -2418,6 +2418,14 @@ The hack's own forms of existing species, first the Spiky-eared Pichu (Pichu's f
   and old saves' bits are remapped on load (Save expansion, below), so no C changes.
 - **No evolution:** `forms.no_evolution` in a species' `data.json`; `CheckEvolveSpecies` (`evolution_check.c`) returns
   none for those forms, whatever the way of evolving, and the Info page's Evo shows them alone.
+- **Form evolutions:** an evolution of a species' list may have `"form": n`, so that only form n evolves that way (an
+  Alolan Vulpix by the Ice Rock, a plain one by the Fire Stone; packed in the method's high byte).
+  `PaperWhite2_FilterFormEvolutions` in `CheckEvolveSpecies` clears the other forms' for every way of evolving (an item
+  for another form has "no effect"); the evolved Pokémon keeps its form number. Eviolite (`CheckEvolution`) and the
+  Xtransceiver Professor ask the form's own evolutions (`PaperWhite2_GetFormEvolution`): no boost for a form that can't
+  evolve. The Info page's Evo filters each row by its form and names a one-form method's form; the Wonder Trade's
+  pre-evolutions and the Evo family table carry a form where only one leads on. A form's record has no evolutions of its
+  own. `docs/paperwhite2/design/form-evolutions.md`.
 - **Personal data:** the regional Pokédex table is the personal archive's last file (`PML_PersonalLoadRegionalDexTable`,
   `poke_personal.c`), so form records can be added before it.
 - **Followers:** a form's rows are followers with `"form"`; their object codes go after the last follower code in
