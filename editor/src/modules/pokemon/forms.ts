@@ -5,6 +5,8 @@
 // formEvolutions gives a form's as the game sees them. Pure, so tests/pokemon-forms.test.ts checks it against the
 // real res/.
 
+import { isRealSpecies } from "../../../shared/species.ts";
+
 export interface ListedFile {
   path: string;
   data: Record<string, unknown>;
@@ -46,7 +48,8 @@ export interface Listed {
 type Forms = { count?: number; sprite_offset?: number; no_evolution?: number[]; pokedex?: boolean };
 type Pokedex = { form_name?: string; forms?: { name?: string }[] };
 
-/** The list, species by National Pokédex number (then the others by folder), each followed by its forms. */
+/** The list, the Pokémon species by ID, the hack's added ones after Genesect (shared/species.ts), then the others
+ * (the eggs and the Pokéstar Studios props) by ID and folder, each followed by its forms. */
 export function listSpecies(files: ListedFile[], numbers: ReadonlyMap<string, number>): Listed[] {
   const records = new Set(files.map((f) => f.path));
   const out: Listed[] = [];
@@ -72,7 +75,8 @@ export function listSpecies(files: ListedFile[], numbers: ReadonlyMap<string, nu
       });
     }
   }
-  out.sort((a, b) => (a.number || 1e9) - (b.number || 1e9) || a.folder.localeCompare(b.folder) || a.form - b.form);
+  const rank = (l: Listed) => (isRealSpecies(l.number, numbers) ? l.number : 1e6 + (l.number || 1e6));
+  out.sort((a, b) => rank(a) - rank(b) || a.folder.localeCompare(b.folder) || a.form - b.form);
   return out;
 }
 

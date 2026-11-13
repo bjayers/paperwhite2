@@ -5,6 +5,7 @@
 
 import type { DataFile, ScanMatch } from "../../../shared/api.ts";
 import type { Constants } from "../../../shared/schema.ts";
+import { inPokedex, isRealSpecies } from "../../../shared/species.ts";
 import { api } from "../../api.ts";
 import { convert, readGrottoes, type Draft, type OldOutbreak, type OldTable, type OldZone } from "./convert.ts";
 import { LEVEL_SCALING, readDraft, readSettings, type EncounterFiles } from "./files.ts";
@@ -89,9 +90,6 @@ export const ZONE_KEYS = ["encounters", "parent", "map_type", "battle_bg"];
 export const SCRIPT_PATTERN = "PokePartyAdd|CallWildBattle|WorkSetConst";
 export { SCRIPTS, SWARMS, SWARM_LINES };
 
-/** The national Pokédex's species in Black 2 and White 2 (generated/species.txt continues with the eggs and props). */
-const NATIONAL_DEX_SIZE = 649;
-
 export const SPECIES_KEYS = ["name", "types", "forms", "hidden_ability", "baby_species", "evolutions"];
 
 export interface Files {
@@ -114,9 +112,10 @@ export function fromFiles(files: Files, constants: Constants): Loaded {
     if (parts.length !== 4) continue;
     const folder = parts[2];
     const id = `SPECIES_${folder.toUpperCase()}`;
-    // Only the national dex's species: not SPECIES_NONE, the eggs or the Pokéstar Studios props after them
+    // Only the Pokédex's species (shared/species.ts): not SPECIES_NONE, the eggs or the Pokéstar Studios props after
+    // the national Pokédex, nor an added species that never enters it
     const dex = constants.get(id) ?? 0;
-    if (dex < 1 || dex > NATIONAL_DEX_SIZE) continue;
+    if (!isRealSpecies(dex, constants) || !inPokedex(data as { pokedex?: unknown })) continue;
     const evolutions = (data.evolutions as { method: string; param: unknown; species: string }[] | undefined) ?? [];
     info.set(id, {
       species: id,
