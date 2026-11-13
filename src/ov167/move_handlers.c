@@ -23,6 +23,9 @@
 #include "pml/item.h"
 #include "pml/move.h"
 #include "pml/poke_party.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/moves.h"
+#endif
 
 // One move's handlers: the move and the function that returns its table
 typedef struct MoveEventAddEntry {
@@ -877,7 +880,13 @@ BOOL MoveEvent_AddItem(BattleMon *mon, u16 move, u32 subPriority) {
     u32 numHandlers;
 
     for (i = 0; i < NELEMS(sMoveEventAddTable); i++) {
+#ifdef PAPERWHITE2
+        // Paper White 2: an added move takes the handlers of the move it is made like ("handlers_like"), registered
+        // with its own ID, so the handlers that compare their item's sub ID with the move see it
+        if (PaperWhite2_GetMoveHandlersMove(move) == sMoveEventAddTable[i].move) {
+#else
         if (move == sMoveEventAddTable[i].move) {
+#endif
             monId = GetMonID(mon);
             found = FALSE;
             if (DoesMoveEventExist(monId, move, &found)) {

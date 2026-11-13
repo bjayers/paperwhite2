@@ -14,7 +14,16 @@
 #include "pml/personal.h"
 #include "pml/poke_party.h"
 #ifdef PAPERWHITE2
+#include "paperwhite2/moves.h"
 #include "paperwhite2/type_chart.h"
+#endif
+
+// The move IDs that Metronome picks from, MOVE_NONE's included
+#ifdef PAPERWHITE2
+// Paper White 2: the added moves too (the user's decision, docs/paperwhite2/design/moves-and-abilities.md section 11)
+#define METRONOME_MOVE_COUNT PAPERWHITE2_MOVE_COUNT
+#else
+#define METRONOME_MOVE_COUNT 0x230
 #endif
 
 // A numerator and a denominator
@@ -87,7 +96,7 @@ static inline u16 BtlCalc_GetUnkTableValue(u32 index) {
 }
 
 void BtlCalc_Init(const MATHRandContext32 *rand, HeapID heapId) {
-    data_ov167_021dd844.moves = GFL_HeapAllocate(heapId, 0x230 * sizeof(u16), TRUE, "btl_calc.c", 0x50);
+    data_ov167_021dd844.moves = GFL_HeapAllocate(heapId, METRONOME_MOVE_COUNT * sizeof(u16), TRUE, "btl_calc.c", 0x50);
     data_ov167_021dd844.rand = *rand;
 }
 
@@ -479,7 +488,7 @@ u16 BtlCalc_PickRandomMove(const u16 *excluded, u16 count) {
     u16 numMoves = 0;
     u16 index;
 
-    for (move = 1; move < 0x230; move++) {
+    for (move = 1; move < METRONOME_MOVE_COUNT; move++) {
         if (!BtlCalc_IsMoveInList(excluded, count, move)) {
             data_ov167_021dd844.moves[numMoves++] = move;
         }

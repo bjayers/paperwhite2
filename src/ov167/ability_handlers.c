@@ -17,6 +17,9 @@
 #include "constants/items.h"
 #include "pml/item.h"
 #include "pml/move.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/abilities.h"
+#endif
 
 // The strongest moves Forewarn found, one entry per move
 typedef struct ForewarnEntry {
@@ -211,8 +214,16 @@ BattleEventItem *AbilityEvent_AddItem(BattleMon *mon) {
     u32 priority;
 
     ability = GetBattleMonStat(mon, BATTLEMON_ABILITY);
+#ifdef PAPERWHITE2
+    // Paper White 2: the whole table, with the rows the hack adds (the original runs to its 0x9e rows), and an added
+    // ability takes the handlers of the ability it is made like ("handlers_like"), registered with its own ID, so its
+    // popup shows its name
+    for (i = 0; i < NELEMS(sAbilityEventAddTable); i++) {
+        if (PaperWhite2_GetAbilityHandlersAbility(ability) == sAbilityEventAddTable[i].ability) {
+#else
     for (i = 0; i < 0x9e; i++) {
         if (ability == sAbilityEventAddTable[i].ability) {
+#endif
             subPriority = calcAbilHandlerSubPriority(mon);
             monId = GetMonID(mon);
             handlers = sAbilityEventAddTable[i].eventAdd(&packed);

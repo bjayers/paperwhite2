@@ -202,7 +202,12 @@ static const u32 sConditionsAll[] = { 35,
                                       34 };
 
 u32 GetConditionByIndex(u32 index) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the whole list, with the conditions the hack adds to it (the original's 35)
+    if (index < NELEMS(sConditionsAll)) {
+#else
     if (index < 35) {
+#endif
         return sConditionsAll[index];
     }
     return 0;

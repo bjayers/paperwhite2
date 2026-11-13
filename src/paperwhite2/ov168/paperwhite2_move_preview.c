@@ -10,7 +10,8 @@
 // it lasts), abilities, items, conditions and field effects, but doesn't predict misses, Protect or redirection.
 // Hidden Power takes the attacker's type and Normalize makes every move Normal; Struggle, Weather Ball, Natural Gift,
 // Judgment and Techno Blast stay white, as do fixed-damage moves unless the opponent is immune. Abilities after
-// Teravolt, which a hack would add, leave the move white. The colors take the text palette's unused entries 11 to 13.
+// Teravolt, the ones the hack adds (generated/abilities.txt), leave the move white. The colors take the text palette's
+// unused entries 11 to 13.
 //
 // Differences from the plugin, which had to check that it was in the game it was built for: it reads the game's
 // structs instead of offsets, calls the game's functions directly, and doesn't check that pointers are in main RAM
@@ -354,6 +355,7 @@ static int MovePreview_Affinity(BtlvInput *work, u32 move, u32 attributes, Battl
     }
     attackAbility = MovePreview_Ability(attacker);
     defenseAbility = MovePreview_Ability(target);
+    // The hack's added abilities, after Teravolt, are unknown until the preview learns them
     if (attackAbility > ABILITY_TERAVOLT || defenseAbility > ABILITY_TERAVOLT) {
         return AFFINITY_UNKNOWN;
     }

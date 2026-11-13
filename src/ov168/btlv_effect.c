@@ -42,6 +42,7 @@
 #include "system/vm.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/battle_type_icons.h"
+#include "paperwhite2/moves.h"
 #endif
 
 // Built by BtlvEffect_Create (swan's name), 0x34 bytes, copied into the work by the init
@@ -454,7 +455,14 @@ void BtlvEffect_StartMove(const BtlvMoveEffectParam *param) {
         vmParam.unk0 = param->unk10;
         vmParam.variant = param->unk0C;
         vmParam.unk2 = param->unk0D;
+#ifdef PAPERWHITE2
+        // Paper White 2: an added move plays an original move's animation, since the effect VM takes an ID past 560
+        // for one of its own effects
+        BtlvEffvm_Start(sBtlvEffect->effvm, param->attackerPos, param->targetPos,
+                        PaperWhite2_GetMoveAnimation(param->move), &vmParam);
+#else
         BtlvEffvm_Start(sBtlvEffect->effvm, param->attackerPos, param->targetPos, param->move, &vmParam);
+#endif
         sBtlvEffect->executing = TRUE;
     } else {
         BtlvEffectQueued *queued =
@@ -463,7 +471,12 @@ void BtlvEffect_StartMove(const BtlvMoveEffectParam *param) {
         queued->param = GFL_HeapAllocate(sBtlvEffect->heapId, sizeof(BtlvEffvmParam), TRUE, "btlv_effect.c", 0x2dd);
         queued->atkPos = param->attackerPos;
         queued->defPos = param->targetPos;
+#ifdef PAPERWHITE2
+        // Paper White 2: the same for a queued move
+        queued->effNo = PaperWhite2_GetMoveAnimation(param->move);
+#else
         queued->effNo = param->move;
+#endif
         queued->param->unk0 = param->unk10;
         queued->param->variant = param->unk0C;
         queued->param->unk2 = param->unk0D;
