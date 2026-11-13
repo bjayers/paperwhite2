@@ -2,6 +2,27 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-13: new moves and abilities, steps 0 and 1, the foundation (ROM session, on a branch)
+
+design/moves-and-abilities.md section 12 has the details.
+
+- **Step 0:** the battle's events, event variables and factor types are named in `include/battle/btl_event.h`
+  (`BATTLE_EVENT_*` 146, `BATTLE_EVENT_VAR_*` 81, `BATTLE_EVENT_FACTOR_*` 8; swan has none, so the names are ours, from
+  the server functions that fire each and what handlers read), and every literal use in ov167 and ov169 spells them.
+  The objects of both versions are identical before and after; the plain `w2_us` modules match.
+- **Step 1:** moves append to `generated/moves.txt` from 560 and abilities to `generated/abilities.txt` from 165 (up to
+  255), with nothing hand-kept: `tools/data/move_list.py`, `ability_list.py`; `tools/paperwhite2/moves.py`,
+  `abilities.py` (`info`, and the generated `moves_config.h`/`abilities_config.h`); the hack's fields `animation`
+  (required for an added move) and `handlers_like`; Easy Chat's move and ability words stay the original 560 and 165.
+  Hooks: an added move's animation in `BtlvEffect_StartMove` (and its queue), "handlers like" in `MoveEvent_AddItem` and
+  `AbilityEvent_AddItem`, the ability table's whole length (was `0x9e`), Metronome over every move (was `0x230`), the
+  condition list's whole length (was 35). `CONDITION_ID_COUNT` is left to step 5 (it sizes `BattleMon`).
+- **Proof:** the `--hack` ROM is `ff789030223a1c4777c070fc539f03604e0c415b` before and after; `verify_dsi_rom.py`
+  intact; a dummy move (560, Energy Ball's) and ability (165, like Overgrow) packed and generated as expected and
+  removed again to `ff789030...`; `python3 -m unittest tools.paperwhite2.test_moves_abilities` (12 tests).
+
+Next: step 2, Apple Acid and Grav Apple (section 12.5).
+
 ## 2026-11-13: new species, step 6, the Applin line (ROM session, branch from `new-species`)
 
 design/new-species.md section 18 has the details and the stand-ins table; items.md the apples.

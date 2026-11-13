@@ -238,7 +238,19 @@ species', move's, type's or ability's word by its constant (`PMS_WORD_SPECIES(SP
 `PMS_WORD_MOVE(MOVE_THUNDERBOLT)`), and every other word by its category and message ID (`PMS_WORD_GREETINGS_HELLO`
 for `PmsWordsGreetings_Text_Hello`; rename a word by its ID). The input screen's lists of words by category and by
 initial (`pms_input_data.c`) and the code's other words use these names, so a word added to a file renumbers the words
-after it everywhere; the input screen's lists are still edited by hand to offer it.
+after it everywhere; the input screen's lists are still edited by hand to offer it. Paper White 2's added species,
+moves and abilities are no words: their names follow the original ones in the name files, and the species category
+ends at the Bad Egg and the move and ability categories at Fusion Bolt and Teravolt (`LAST_WORDS`, `WORD_COUNTS`), so
+the words of saves and of the plain build keep their numbers.
+
+### Paper White 2's added moves and abilities
+
+`generated/moves.txt` and `generated/abilities.txt` take the hack's moves after Fusion Bolt (from 560) and abilities
+after Teravolt (from 165, up to 255), each with its `res/moves/<move>/data.json` or `res/abilities/<ability>.json` as
+the others, so the move data, the name and description banks and the learnsets take them as any other.
+`tools/data/move_list.py` and `tools/data/ability_list.py` are the one definition for the tools (which IDs are added,
+the checks), and an added one's JSON has the hack's fields, which the packers leave out: a move's `animation` (required)
+and `handlers_like`, an ability's `handlers_like`. `docs/paperwhite2/design/moves-and-abilities.md` has the design.
 
 ## Species
 

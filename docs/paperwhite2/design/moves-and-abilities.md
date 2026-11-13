@@ -149,8 +149,10 @@ this design touches:
 | 0x55, 0x8a | a Pokémon enters | 2 its ID (Intimidate) |
 | 0xa0 | an "uncategorized" move's effect (Focus Energy, Soak) | 3 the user |
 
-Writing new handlers with these numbers would break the code standards. So step 0 names them (swan's
-`BattleEventType` and variable names) in `btl_event.h`. That changes no code, so the plain build still matches.
+Writing new handlers with these numbers would break the code standards. So step 0 names them in `btl_event.h`. That
+changes no code, so the plain build still matches. (Built: swan turned out to have no names for them, so the names are
+ours, §12.1; 0x37 is `BATTLE_EVENT_MOVE_BASE_POWER`, 0x38 `BATTLE_EVENT_MOVE_POWER_RATIO`, 0x2d
+`BATTLE_EVENT_CHECK_NO_EFFECT_AFTER_PROTECT`, 0x55 `BATTLE_EVENT_MEMBER_IN`, 0xa0 `BATTLE_EVENT_UNCATEGORIZED_MOVE`.)
 
 ### 2.5 The trainer AI
 
@@ -450,7 +452,8 @@ It is the largest of the three kinds, and independent of moves and abilities. Do
 Every hack build ends with `tools/build/verify_dsi_rom.py build/paperwhite2.nds`. Proofs in py-desmume with a copy of
 the user's save.
 
-0. **Name the battle events and variables** that steps 2-5 use, in `include/battle/btl_event.h`, from swan.
+0. **Name the battle events and variables** that steps 2-5 use, in `include/battle/btl_event.h` (built: all of them,
+   §12.1).
    - **Proof:** the plain build's SHA1s match.
 1. **Appending, with nothing added.**
    - `moves.py` and `abilities.py` `info`.
@@ -554,3 +557,103 @@ the user's save.
 8. **Easy Chat**: new moves and abilities are left out.
 9. **Fairy type: in scope**, after the moves and abilities foundation. The user's Pokeweb work has an injection plugin
    that adds Fairy and new move effects; use it as a reference then (the decomp version is our own).
+
+## 12. Built: steps 0 and 1 (2026-11-13)
+
+### 12.1 The battle's events and variables (step 0)
+
+swan has no names for them (its databases name the functions only), so the names are ours, in
+`include/battle/btl_event.h`, and every literal use in ov167 and ov169 now spells them:
+
+- **146 events**, `BATTLE_EVENT_*` (0x00-0xa4), each named after the server function that fires it
+  (`ServerEvent_GetMovePower` fires `BATTLE_EVENT_MOVE_BASE_POWER` and `BATTLE_EVENT_MOVE_POWER_RATIO`), or after what
+  its handlers do where one function fires several (the three no-effect checks, the five after-hit stages of
+  `ServerControl_DamageProcessEnd`, the three turn-end stages). 19 IDs are fired and registered nowhere and have no
+  name (0x0a, 0x10, 0x14, 0x16, 0x17, 0x20, 0x2f, 0x3f, 0x42, 0x43, 0x49, 0x52, 0x5f, 0x63, 0x66, 0x6f, 0x71, 0x8e,
+  0x92); 0x05, `BATTLE_EVENT_BYPASS_SUBSTITUTE`, is registered by six moves but fired nowhere.
+- **81 variables**, `BATTLE_EVENT_VAR_*` (0x00-0x53), from what the server sets and the handlers read: the mons
+  (`_MON`, `_ATTACKER`, `_DEFENDER`, `_TARGET_COUNT`, `_TARGET_1` to `_6`, written `BATTLE_EVENT_VAR_TARGET_1 + i`), the
+  move's (`_MOVE`, `_MOVE_TYPE`, `_MOVE_CATEGORY`, `_MOVE_POWER`, `_POWER_RATIO`), the stats' (`_ATTACK`, `_DEFENSE`,
+  `_ATTACK_STAT_MON`, `_DEFENSE_STAT`, `_DEFENSE_SWAP`), `_RATIO` (the general fx32 multiplier), and the flags that each
+  event uses for its own purpose (`_FAIL_FLAG`, `_GENERAL_FLAG`, `_IGNORE_FLAG`, `_NO_EFFECT`...). 0x00 and 0x01 are
+  the stack's free slot and frame start. Unused keys: 0x23, 0x43, 0x49, and anything from 0x54 (a key is any u16; the
+  stack holds 0x60 entries across its frames), so a hook can add its own (Body Press's stat, §4).
+- **8 factor types**, `BATTLE_EVENT_FACTOR_*` (move, position, side, field, ability, item, isolated, any).
+
+One function's name is odd but not changed here: `ServerEvent_CheckSubstituteInteraction` fires
+`BATTLE_EVENT_STAT_CHANGE_AMOUNT` (Simple, Contrary). The stack's size in `battle_event.c` is `BATTLE_EVENT_VAR_STACK_SIZE` (was
+`BATTLE_EVENT_VAR_MAX`, which read as a variable).
+
+**Proof:** the changed files' objects (code and data sections) are identical before and after for both versions
+(compiled with `-d BLACK2` and `-d WHITE2`; no Black 2 base ROM is here, so its modules can't be checked), and the
+plain `w2_us` build passes every module check.
+
+### 12.2 The lists and the packers (step 1)
+
+| Tool | What |
+| --- | --- |
+| `tools/data/move_list.py` | the one definition: `constants()` (checked: numbered from 0, `MOVE_FUSION_BOLT` 559, at most `MOVE_MAX` 1023 for Entree Forest's 10 bits), `count()`, `added_moves()` from `FIRST_ADDED` (560), `added_table()` (each added move's animation and "handlers like" IDs, checked: `animation` required and an original move, `handlers_like` an original move, the name at most 12 characters, no original move with the hack's fields) |
+| `tools/data/ability_list.py` | the same for abilities: `ABILITY_TERAVOLT` 164, `FIRST_ADDED` 165, at most `ABILITY_MAX` 255 (a byte in the box and species data), `handlers_like` optional |
+| `tools/paperwhite2/moves.py`, `abilities.py` | `info`, and `header`, which the hack's build runs for `paperwhite2/moves_config.h` (`PAPERWHITE2_MOVE_FIRST_ADDED`, `_ADDED_COUNT`, `_COUNT`, and with added moves `_ANIMATIONS` and `_HANDLERS_LIKE`) and `paperwhite2/abilities_config.h` (`PAPERWHITE2_ABILITY_FIRST_ADDED`, `_ADDED_COUNT`, `_HANDLERS_LIKE`) |
+| `move.schema.json`, `ability.schema.json` | the hack's fields `animation` and `handlers_like` (an ability's `handlers_like`); `move_data.py` packs the record's fields only, so it ignores them |
+| `tools/text/pms_words.py` | `WORD_COUNTS`: the move and ability categories end at 560 and 165 words, so the words after them never move |
+| unchanged | `move_data.py`, the text banks (`\from{moves.*}`, `\from{abilities.*}` follow the lists), `species_data.py`'s learnsets and egg moves and the species' abilities (by constant), the trainers, the TM and tutor tables (C, by constant), the editor (it reads `generated/`) |
+
+Without an added move "handlers like" gives the move itself, so a row the hack's battle code adds for an added move's
+own handlers matches it; the same for abilities. Abilities: an added ability without `handlers_like` and without a hack
+row does nothing in battle.
+
+### 12.3 The C (step 1)
+
+| Where | What |
+| --- | --- |
+| `include/paperwhite2/moves.h`, `abilities.h` | `PaperWhite2_IsAddedMove`/`_IsAddedAbility` (inline, `id - first < count`); `PaperWhite2_GetMoveAnimation`, `PaperWhite2_GetMoveHandlersMove`, `PaperWhite2_GetAbilityHandlersAbility`: functions with added ones, else macros that give the ID |
+| `src/paperwhite2/ov168/paperwhite2_move_animations.c` | the animation table and lookup, built only with added moves |
+| `src/paperwhite2/ov167/paperwhite2_battle.c` | the "handlers like" tables and lookups, built only with added moves or abilities; the hack's own move and ability handlers go here too |
+| `btlv_effect.c` | `BtlvEffect_StartMove` and its queued path start the mapped ID |
+| `move_handlers.c` | `MoveEvent_AddItem` compares the "handlers like" move with `sMoveEventAddTable`'s; the item keeps the move's own ID as its sub ID |
+| `ability_handlers.c` | `AbilityEvent_AddItem` runs to `NELEMS(sAbilityEventAddTable)` (the original's `0x9e`, which is its 158 rows) and compares the "handlers like" ability |
+| `btl_calc.c` | `METRONOME_MOVE_COUNT`: the buffer and the loop of `BtlCalc_PickRandomMove` (`0x230`) are `PAPERWHITE2_MOVE_COUNT`, so Metronome calls added moves (§11.1). Assist, Sleep Talk and Copycat pick from Pokémon's moves through exclusion lists, with no bound |
+| `btl_tables.c` | `GetConditionByIndex` runs to `NELEMS(sConditionsAll)` (the original's 35) |
+| `paperwhite2_move_preview.c` | unchanged code: an ability past Teravolt is already "unknown" (a `>= 165` spelling compiles to other instructions, so the original comparison stays) |
+
+**Left to step 5:** `CONDITION_ID_COUNT` (36, the size of `BattleMonCore.conditions[]` and `conditionCounters[]`) can't
+be prepared byte for byte: any new value changes `BattleMon`'s size. Syrup Bomb's condition raises it and adds its row
+to `sConditionsAll` under `#ifdef PAPERWHITE2`.
+
+**Byte identity:** without added moves and abilities each hook is the original expression (the macros give the ID
+itself), the bounds are the same numbers, and the two new files are empty. One trap: the preview's `>= 165` for
+`> 164` changed the compare and branch instructions.
+
+### 12.4 Proof
+
+- The `--hack` ROM of the branch's start (`6a4f9a4aaf`) and of steps 0-1: `ff789030223a1c4777c070fc539f03604e0c415b`
+  both; `verify_dsi_rom.py` intact; the plain `w2_us` build passes every module check (its archive checks fail as
+  before).
+- `python3 -m unittest tools.paperwhite2.test_moves_abilities`: the lists, their checks, both headers with and without
+  added entries, and Easy Chat's counts with longer name files (12 tests).
+- A dummy move and ability, not committed (scratchpad `dummy.py`): `MOVE_TEST_DUMMY` (560, Energy Ball's record,
+  `"animation": "MOVE_ENERGY_BALL"`) and `ABILITY_TEST_DUMMY` (165, "Dummy Grow", `"handlers_like": "ABILITY_OVERGROW"`),
+  Bulbasaur learning the move at level 1 and as an egg move and having the ability. The build packed a/0/2/1 with 561
+  members (560 Energy Ball's bytes), banks 403 and 402 with 561 lines ("Test Dummy" and its description), 374 and 375
+  with 166, Bulbasaur's learnset (560 at level 1), egg moves (0x230) and ability 2 (165); `moves_config.h` with
+  `PAPERWHITE2_MOVE_COUNT 561`, `_ANIMATIONS MOVE_ENERGY_BALL`, `_HANDLERS_LIKE MOVE_TEST_DUMMY`, `abilities_config.h`
+  with `ABILITY_OVERGROW`; the three lookups linked into ov167 and ov168; `pms_words.h` byte for byte the same; ROM
+  `7473ae44...`, `verify_dsi_rom.py` intact. Removed: `ff789030...` again.
+
+### 12.5 For step 2 (Apple Acid, Grav Apple)
+
+- **Adding:** append `MOVE_APPLE_ACID` and `MOVE_GRAV_APPLE` to `generated/moves.txt` and write their folders with
+  `"animation"` (Energy Ball's, Seed Bomb's) and the AI `effect`; `moves.py info` checks them. A name over 12
+  characters stops the build until it is tested on the summary and the battle menu.
+- **Grav Apple's handler** (`BATTLE_EVENT_MOVE_POWER_RATIO`: the attacker is `BATTLE_EVENT_VAR_ATTACKER`, the move
+  `BattleEventItem_GetSubID(item)`, then `BattleEventVar_MulValue(BATTLE_EVENT_VAR_POWER_RATIO, FX32_CONST(1.5))` under
+  `IsFieldEffectActive(FIELD_CONDITION_GRAVITY)`, Venoshock's shape) goes in `paperwhite2_battle.c`, and its row in
+  `sMoveEventAddTable` under `#ifdef PAPERWHITE2`. The table is `static` in `move_handlers.c` and its entries name
+  `static` EventAdd functions, so the hack's EventAdd function needs a declaration in a hack header that
+  `move_handlers.c` includes; the loop's `NELEMS` covers the row. Abilities the same way in step 3.
+- **Animation:** only `BtlvEffect_StartMove` takes a move ID; the effect commands of `btlv_core.c` take effect IDs. The
+  effvm's own per-move cases (Transform, Mirror Move, Nature Power) see the mapped ID.
+- **Not mapped:** an added ability with `handlers_like` isn't in `sMoldBreakerIgnoredAbilities` or the Role Play and
+  Skill Swap lists, which compare IDs; the generator's rows for them are step 3's (or step 4's flags).
+- **Free move flags:** bits 14-31 (Bulletproof's `MOVE_FLAG_BALLISTIC` in step 3).

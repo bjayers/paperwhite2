@@ -2529,6 +2529,33 @@ Whole new species, appended to `generated/species.txt` from 687 after `SPECIES_P
   120-122), are data only, used from the bag as stones (`docs/paperwhite2/items.md`); Dipplin evolves into Hydrapple
   levelling up knowing Focus Energy, Dragon Cheer's stand-in. The debug menu's Give item and Give Pokémon give them.
 
+### New moves and abilities (in progress)
+
+New moves appended to `generated/moves.txt` from 560 and abilities to `generated/abilities.txt` from 165
+(`docs/paperwhite2/design/moves-and-abilities.md`, section 12 for what is built; `include/paperwhite2/moves.h`,
+`include/paperwhite2/abilities.h`, `tools/data/move_list.py`, `tools/data/ability_list.py`):
+
+- **The battle's events are named** (`include/battle/btl_event.h`): `BATTLE_EVENT_*` (the event of a handler table's
+  row and of `BattleEvent_CallHandlers`), `BATTLE_EVENT_VAR_*` (the keys of `BattleEventVar_GetValue` and the
+  others), `BATTLE_EVENT_FACTOR_*`. New handlers use them, never the numbers.
+- **One definition.** `move_list.py`/`ability_list.py` for the tools, `PaperWhite2_IsAddedMove`/`_IsAddedAbility` and
+  the generated `PAPERWHITE2_MOVE_*`/`PAPERWHITE2_ABILITY_*` counts in C (`tools/paperwhite2/moves.py` and
+  `abilities.py` write `moves_config.h` and `abilities_config.h`; `info` prints the lists).
+- **Data from `res/` alone.** The move data, the names, descriptions and the learnsets take an added one as any other;
+  Easy Chat leaves them out, so saved words keep their numbers.
+- **The hooks** (each the original code without added moves or abilities: the lookups are macros that give the ID
+  itself, and their functions and tables are built only with added ones):
+  - `BtlvEffect_StartMove` and its queued path play an added move's `"animation"`, an original move
+    (`PaperWhite2_GetMoveAnimation`, `src/paperwhite2/ov168/paperwhite2_move_animations.c`): the effect VM takes a
+    move ID from 561 for one of its own effects;
+  - `MoveEvent_AddItem` and `AbilityEvent_AddItem` look up the handlers of an added one's `"handlers_like"`, or its
+    own (a row the hack adds to the table), registered with its own ID (`src/paperwhite2/ov167/paperwhite2_battle.c`);
+    `AbilityEvent_AddItem` runs over the whole table (the original's `0x9e`);
+  - Metronome picks from every move, the added ones too (`METRONOME_MOVE_COUNT`, `btl_calc.c`); Assist, Sleep Talk
+    and Copycat have no bound;
+  - `GetConditionByIndex` runs over the whole condition list (the original's 35), for a condition the hack adds;
+  - the Move Effectiveness Preview leaves a move white against an added ability.
+
 ## Adding global scripts
 
 A global script file's IDs are limited by its row in `GLOBAL_SCRIPT_TABLE` (`src/ov012/script_sys.c`), e.g.
