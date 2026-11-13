@@ -2514,8 +2514,15 @@ Whole new species, appended to `generated/species.txt` from 687 after `SPECIES_P
   - `"pokedex": false` species: never seen or caught (their bits are ignored), no list row, search or box-search entry,
     no POKéDEX in the party menu, no INFO/START in the summary, left out of the detail screen's party and box lists, no
     registration page after a catch; their number shows "???" in the summary and box.
-- **Not yet:** Add Pokémon in the editor (step 4), followers, encounters, the Wonder Trade and the musical (step 5). The
-  vanilla Area page (never started in the hack) reads Bulbasaur's empty habitat for an added species.
+- **Followers, encounters, the Wonder Trade and the musical** (section 17 of the design doc): Add Pokémon copies the
+  template's followers (`pokemon_species.py`, and `follower` to change them later), and remove and reuse delete them
+  with their codes; a party member without a follower is passed over as an Egg is (`SelectFollower`, only with added
+  species), where before it stopped every follower; wanderers use the follower's sprite. Encounters and the Wonder
+  Trade take added species from their data as any other (the Wonder Trade never gives `"pokedex": false`, retired or
+  excluded ones). A caught `"pokedex": false` species gets no "data was added" message (`btl_server_flow_sub.c`). The
+  musical shows an added species with its art template's musical sprite (`PaperWhite2_GetMusicalSpecies`,
+  `musical_mcss.c`).
+- The vanilla Area page (never started in the hack) reads Bulbasaur's empty habitat for an added species.
 
 ## Adding global scripts
 

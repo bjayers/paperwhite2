@@ -819,4 +819,74 @@ PNG, as for the hack's forms; an original species' bank is the original table's,
 - **The Applin line (step 6):** Add Pokémon each from a Grass species (Budew was used here) with 840, 841, 842, 1011,
   1019; then the art through Import art and the Rig Editor, Icon and stills, and the cry import; evolutions on the
   species page with stand-in items and moves. Add them in order (Applin first) so the IDs follow the line.
-- Not tested live: a `"pokedex": false` or retired species' catch; the blank template in game.
+- Not tested live: a `"pokedex": false` or retired species' catch; the blank template in game (both done in step 5,
+  section 17.2).
+
+## 17. Built: step 5, followers, encounters, the Wonder Trade and the musical (2026-11-13)
+
+### 17.1 What changed
+
+| Where | What |
+| --- | --- |
+| `pokemon_species.py add`/`reuse` | copy the template's followers (`res/field/actors/followers/<template>[_shiny][_female][_female_shiny]/`, every file) as `<name>…/` with `"species"` its own and form 0, and a `"sprite"` that names another copied follower's code (Pignite's female shows `OBJ_CODE_FOLLOWER_PIGNITE`) renamed to the copy's; their `OBJ_CODE_FOLLOWER_<NAME>…` codes go after the last follower code (`pokemon_form.add_obj_codes`). `--no-follower` copies none; the blank template has none. The report's `followers` says how many |
+| `pokemon_species.py remove`/`reuse` | delete the species' own followers, their codes and its follower dialogue file (`res/paperwhite2/following/dialogue/species/<name>.json`) instead of refusing; still refused while another file names the species or one of those codes, or while its encounters file (`res/paperwhite2/encounters/species/<name>.json`, which names it by file name) places it in the wild |
+| `pokemon_species.py follower SPECIES --from X \| --none` | an added species' followers replaced by copies of X's, or removed (with its dialogue file); `info` lists each added species' followers |
+| `paperwhite2_following_field.c` | **a lead without a follower stopped every follower** until the field was made again: `GetFollowerCode` gave 0, which the update took for an unreadable registry (`sConfigState = -1`). Now `SelectFollower` passes over a species without registry rows as it does an Egg (the next party member follows, L and R step past it). Only with added species (`PAPERWHITE2_SPECIES_ADDED_COUNT != 0`), so the ROM without them is unchanged |
+| `btl_server_flow_sub.c` | a caught `"pokedex": false` or retired species no longer gets "X's data was added to the Pokédex." (the battle's `isNew`); the registration page and the bits were already skipped |
+| `musical_mcss.c`, `PaperWhite2_GetMusicalSpecies` | the musical (`a/0/5/1`, Black and White's layout, with no record of an added species in their personal data) shows an added species with its art template's musical sprite (`PAPERWHITE2_SPECIES_MUSICAL_SPECIES`, generated from `"art_template"`), whose bin file places the props. Section 3.5's plan (a group built from the battle sprite's files) doesn't work: the musical's bin file has a layout of its own (each cell's quads and the prop markers), which a battle sprite's `_info.bin` isn't. Its forms show the same |
+| editor | the Add Pokémon dialog's **Follower: a copy of X's** (on by default, off and disabled for Blank; the dry run says when the template has none); the added species' **Follower** card (its followers, **Copy from** any species with **Copy**, **Remove**, **Open in the Follower Editor**, which opens on the species: `#tool/followers?species=`); `POST /api/pokemon-species/follower`. The Follower Editor already lists and edits an added species (#687 Testfol) |
+
+Encounters and the Wonder Trade needed no change.
+
+### 17.2 Proof (py-desmume, a copy of the user's save; shots in the scratchpad's `newsp5/shots/`)
+
+Test species added with the tool: Testfol (687, No. 840, from Pikachu, 4 followers copied), Testnof (688, No. 841,
+the blank template, no follower), Testhide (689, `"pokedex": false`, from Squirtle), Testret (690, from Charmander,
+retired), Testnowt (691, No. 842, from Eevee, `--no-wonder-trade`); Testfol in Route 6's grass (common, all year).
+
+- **Followers** (`follow_testfol_testnof_pignite_testnowt.png`): party lead Testfol: code 0x3a12, Pikachu's sprite
+  follows; Testnof: the next member (Klink) follows; Pignite again: Pignite; Testnowt: Eevee's. Before the fix
+  (`follow_before_fix_testfol_testnof_pignite_testnowt.png`), Testnof left `sConfigState` -1 and Pignite and Testnowt
+  got none after it.
+- **Wanderers:** in Route 6 the wanderer runtime asked `PaperWhite2_FollowingCodeFor(687)` and got 0x3a12, beside
+  Hoothoot, Pikachu and others (a species without a follower gets 0 and makes no wanderer).
+- **Wild:** Route 6's grass slots were `[585, 587, 163, 165, 417, 25, 459, 687]`
+  (`PaperWhite2_Encounters_PrepareSlots`), and the second battle picked 687, Testfol Lv. 12 with Pikachu's sprite;
+  caught: "Testfol's data was added to the Pokédex.", the registration page "No. 840 Testfol, Mouse Pokémon", its
+  caught and seen bits (`wild_testfol_caught_registered.png`). The Habitat List's Route 6 grid has it, its Info page's
+  Area tab gives grass, Lv. 5-30, Common, all seasons, times and weathers, and the DexNav's Route 6 grass lists
+  "Testfol, Electric, 27.7%, Lv. 11-17, Caught" (`dex_habitat_dexnav_area_testfol.png`).
+- **Forced catches:** Testhide and Testret: "Gotcha!", no "data was added" (after the fix), no registration page,
+  straight to the nickname question, to Box 1, no Pokédex bits, SEEN/OBTAINED unchanged
+  (`catch_testhide_no_dex_entry.png`, `catch_testret_no_dex_entry.png`). The blank template in battle: Testnof with
+  the "?" sprite (`blank_template_battle.png`).
+- **Wonder Trade:** with `PokeParty_CreatePkm` forced to 687 at Castelia's middle counter, Flaaffy traded for "Zippy"
+  from Jacob, a Testfol Lv. 9 with Pikachu's moves and Static, its caught bit set (`wonder_trade_testfol.png`). The
+  real planner (`WonderTrade_Plan`, built for the host) over 1,000,000 plans, sent levels 1-100: Testfol 1,625,
+  Testnof 1,640 (each about 1/603), Testhide, Testret and Testnowt 0, IDs 650-686 0, no problems (100,000: 164, 179,
+  0, 0, 0).
+- **Musical:** warped into the Musical Theater with Testfol leading; the first visit's dress-up loads it as Pikachu's
+  musical sprite (`PaperWhite2_GetMusicalSpecies(687)` = 25, character file 502), and three props dragged onto it
+  attach at its markers (kinds 4-15 reported), "Is this look OK?" (`musical_dressup_testfol.png`). The stage itself
+  wasn't run (the reception is a walk away); it uses the same loader.
+- **Editor** (port 7482): `ed01`-`ed05` (the dialog's Follower row with Budew, off, Blank; the Follower cards of
+  Testfol and Testnof; the Follower Editor on #687 Testfol). `npm run typecheck`, `npm test` (the new follower test:
+  copies, codes, Pignite's renamed sprite, `--no-follower`, Blank, `follower --from/--none`, the dialogue file and a
+  code's referrer, reuse dropping the old followers), `npx vite build`.
+- Removed with the tool (Testfol first refused for its encounters file): `res/` and `generated/` as before, and after
+  `configure.py w2_us --hack` (the deleted follower folders were `build.ninja`'s dependencies, so ninja alone stops;
+  the editor's Build runs configure) the ROM is `57cd9af0dfab0e720e9d82e3e12298a1c1cd904d`.
+
+### 17.3 For step 6 (the Applin line)
+
+- `generated/obj_codes.txt` already has walking sprites `OBJ_CODE_POKEMON_APPLIN`, `_DIPPLIN` and `_HYDRAPPLE` (the
+  user's, rows after the followers'): Applin's, Dipplin's and Hydrapple's followers can be added from a template and
+  their `"sprite"` pointed at those codes in the Follower Editor (Flapple and Appletun have none yet).
+- Add them in order from a Grass template that has followers (Budew), so the followers come with them; Remove refuses
+  while an evolution or encounters file names one, so take the line apart from the last.
+- Encounters: an encounters species file each (the Encounter Editor makes it); the wild, the Habitat List, the Area
+  tab and the DexNav then follow.
+- The musical shows each with its art template's musical sprite until musical art of its own is supported (a group
+  appended to `a/0/5/1` with a musical bin, section 3.5, would need that bin written).
+- Still open: the stage of a musical with an added species (only the dress-up was run); the Repeat Ball never boosts a
+  `"pokedex": false` species (never "caught" in the Pokédex).

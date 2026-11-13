@@ -2,6 +2,25 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-13: new species, step 5, followers, encounters, the Wonder Trade and the musical (ROM session, branch from `new-species`)
+
+design/new-species.md section 17 has the details.
+
+- `pokemon_species.py`: `add`/`reuse` copy the template's followers with their codes (`--no-follower`),
+  `remove`/`reuse` delete them (and the follower dialogue file), `follower SPECIES --from X | --none`; removal is
+  refused while the species' encounters file exists. Editor: the dialog's Follower row, the added species' Follower
+  card (Copy from, Remove, Open in the Follower Editor, which now takes `?species=`).
+- Fixed: a lead without a follower stopped every follower until the next field (now passed over as an Egg, only with
+  added species); a caught `"pokedex": false`/retired species got "data was added to the Pokédex"; the musical's hook
+  (an added species shows its art template's musical sprite: the battle sprite's files can't stand in, the musical's
+  bin has a layout of its own).
+- Proven in py-desmume: follower (Pikachu's copy), none (the next member follows), wanderer, wild in Route 6 from its
+  encounters file, catch with registration No. 840, Habitat List, Area tab, DexNav; Testhide/Testret caught with no
+  Pokédex trace; the Wonder Trade received one (forced) and the planner's 1,000,000 plans never gave the excluded ones;
+  the musical's dress-up with props. Without added species the ROM is `57cd9af0...`.
+
+Next: step 6, the Applin line (section 17.3).
+
 ## 2026-11-13: new species, step 4, Add Pokémon in the editor (ROM session, on a branch from `new-species`)
 
 design/new-species.md section 16 has the details.
