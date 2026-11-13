@@ -9,6 +9,9 @@
 #include "nnsys/snd.h"
 #include "save/chatter.h"
 #include "save/save_control.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/species.h"
+#endif
 
 // The cries of the Pokémon, each a wave archive of one 8-bit wave that is read whole and played through NitroSystem's
 // wave output, with a second channel for the chorus. Handle 0 has a buffer of its own; PokeVoice_AllocMulti gives
@@ -516,6 +519,14 @@ void getResIDFunc(u32 species, u32 form, u32 *waveArc) {
     const PokeVoiceFormEntry *entry;
     u32 i;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: the added species' cries follow the forms' (include/paperwhite2/species.h); their forms share
+    // them
+    if (PaperWhite2_IsAddedSpecies(species)) {
+        *waveArc = PAPERWHITE2_SPECIES_CRY_FIRST + species - PAPERWHITE2_SPECIES_FIRST_ADDED;
+        return;
+    }
+#endif
     if (species < 1 || species > POKE_VOICE_SPECIES_MAX) {
         *waveArc = 1;
         return;
@@ -540,7 +551,12 @@ BOOL getWaveInfoFunc(u32 species, u32 form, const PokeVoiceChatterInfo *chatterI
                      u32 *sampleRate, u32 *speed, s8 *volume) {
     PokeVoiceData data;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: an added species' volume is at its ID (include/paperwhite2/species.h)
+    if ((species < 1 || species > POKE_VOICE_SPECIES_MAX) && !PaperWhite2_IsAddedSpecies(species)) {
+#else
     if (species < 1 || species > POKE_VOICE_SPECIES_MAX) {
+#endif
         species = 1;
     }
     GFL_ArcSysRead(&data, ARCID_POKE_VOICE_DATA, species);

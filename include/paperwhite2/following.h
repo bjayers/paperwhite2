@@ -3,6 +3,7 @@
 
 #include "types.h"
 #include "nitro/fx.h"
+#include "paperwhite2/pokemon_forms_config.h"
 #include "struct_decls.h"
 
 // Paper White 2: the Following Pokémon's follower, its trail behind the player and the choice of the party member that
@@ -17,8 +18,9 @@
 #define FOLLOWING_CODE_BASE 0x3000
 #define FOLLOWING_STOCK_ROWS 1008
 
-// The highest species that can follow, and the most rows the registry can have
-#define FOLLOWING_MAX_SPECIES 649
+// The highest species that can follow, the last real one (Genesect, or the last added species,
+// include/paperwhite2/species.h), and the most rows the registry can have
+#define FOLLOWING_MAX_SPECIES PAPERWHITE2_SPECIES_LAST
 #define FOLLOWING_MAX_ROWS 4096
 
 #define FOLLOWING_TILE (16 * FX32_ONE)

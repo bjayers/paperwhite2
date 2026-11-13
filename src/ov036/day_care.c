@@ -29,6 +29,9 @@
 #include "save/pokedex_savedata.h"
 #include "system/game_data.h"
 #include "system/game_system.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/species.h"
+#endif
 
 // Default parameter tables copied into the local work arrays used by move and IV inheritance.
 typedef struct {
@@ -1055,7 +1058,12 @@ static BOOL canPkmLearnTMItemNumber(HeapID heapId, u16 species, u16 form, u16 it
     u32 bit;
     PersonalData *personal;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: an added species' egg learns TMs as the others' (include/paperwhite2/species.h)
+    if (species >= SPECIES_GENESECT && !PaperWhite2_IsAddedSpecies(species)) {
+#else
     if (species >= SPECIES_GENESECT) {
+#endif
         return FALSE;
     }
     if (!PML_ItemIsTMHM(item)) {
@@ -1082,7 +1090,12 @@ static BOOL canPkmLearnTMItemNumber(HeapID heapId, u16 species, u16 form, u16 it
 static u32 validateSpeciesAndGetOffspring(u32 species) {
     u16 baby;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: an added species lays its baby species' eggs, as the others (include/paperwhite2/species.h)
+    if (species < SPECIES_GENESECT || PaperWhite2_IsAddedSpecies(species)) {
+#else
     if (species < SPECIES_GENESECT) {
+#endif
         GFL_ArcSysReadRange(&baby, ARCID_BABYMONS, species, 0, 2);
         return baby;
     }

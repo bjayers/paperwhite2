@@ -2,6 +2,7 @@
 #define PAPERWHITE2_POKEMON_FORMS_H
 
 #include "types.h"
+#include "paperwhite2/species.h"
 #include "pml/evolution.h"
 #include "struct_decls.h"
 

@@ -33,6 +33,7 @@
 #include "paperwhite2/season.h"
 #include "paperwhite2/shiny_candy.h"
 #include "paperwhite2/spawns.h"
+#include "paperwhite2/species.h"
 #include "paperwhite2/terrain_groups.h"
 #include "paperwhite2/vram_stats.h"
 #include "paperwhite2/wanderers.h"
@@ -130,7 +131,7 @@ typedef struct {
 static const DebugNumberKind sDebugNumberKinds[DEBUG_NUMBER_KIND_COUNT] = {
     { 1, LEVEL_MAX, Global10200_Text_DebugNumberLevel, NUMBER_NAME_NONE },
     { 0, NATURE_COUNT - 1, Global10200_Text_DebugNumberNature, NUMBER_NAME_NATURE },
-    { 1, SPECIES_GENESECT, Global10200_Text_DebugNumberSpecies, NUMBER_NAME_SPECIES },
+    { 1, PAPERWHITE2_SPECIES_LAST, Global10200_Text_DebugNumberSpecies, NUMBER_NAME_SPECIES },
     { 1, ITEM_LAST, Global10200_Text_DebugNumberItem, NUMBER_NAME_ITEM },
     { 1, ITEM_COUNT_MAX, Global10200_Text_DebugNumberCount, NUMBER_NAME_NONE },
     { 1, FLAG_MAX, Global10200_Text_DebugNumberFlag, NUMBER_NAME_FLAG_HEX },
@@ -138,7 +139,7 @@ static const DebugNumberKind sDebugNumberKinds[DEBUG_NUMBER_KIND_COUNT] = {
     { 0, 0xffff, Global10200_Text_DebugNumberValue, NUMBER_NAME_HEX },
     { 0, MONEY_MAX, Global10200_Text_DebugNumberMoney, NUMBER_NAME_NONE },
     { 0, ZONE_MAX - 1, Global10200_Text_DebugNumberZone, NUMBER_NAME_PLACE },
-    { 0, SPECIES_GENESECT, Global10200_Text_DebugNumberWildSpecies, NUMBER_NAME_SPECIES_OR_OFF },
+    { 0, PAPERWHITE2_SPECIES_LAST, Global10200_Text_DebugNumberWildSpecies, NUMBER_NAME_SPECIES_OR_OFF },
     { 0, LEVEL_MAX, Global10200_Text_DebugNumberWildLevel, NUMBER_NAME_OFF },
 };
 

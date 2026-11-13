@@ -375,7 +375,7 @@ static void PokedexInfoEvo_LoadFamily(PokedexInfoEvo *evo, u16 species, u16 form
     u32 i;
 
     evo->species = species;
-    if (species <= SPECIES_GENESECT && !alone) {
+    if ((species <= SPECIES_GENESECT || PaperWhite2_IsAddedSpecies(species)) && !alone) { // the added species too
         GFL_ArcSysReadRange(&entry, ARCID_POKEDEX_GRA, EVO_FAMILY_FILE, species * sizeof(u16), sizeof(u16));
     }
     evo->root = entry & EVO_FAMILY_SPECIES_MASK;

@@ -10,6 +10,7 @@
 
 #ifdef PAPERWHITE2
 #include "paperwhite2/pokemon_forms.h"
+#include "paperwhite2/species.h"
 #endif
 
 // The Pokémon icons of ARCID_POKEICON: the file and the palette of a Pokémon's icon, the files of the icons' palette,
@@ -120,6 +121,13 @@ u32 PokeIcon_GetFileOfPkm(BoxPkm *pkm) {
 u32 PokeParty_GetIconIndex(u32 species, u32 form, u32 sex, BOOL egg) {
     u32 file = POKEICON_FILE_ICONS + species * 2;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: the added species' icons follow the hack's forms' (include/paperwhite2/species.h); their forms'
+    // are the hack's form groups, below
+    if (PaperWhite2_IsAddedSpecies(species)) {
+        file = PAPERWHITE2_SPECIES_ICON_FILES + (species - PAPERWHITE2_SPECIES_FIRST_ADDED) * 2;
+    }
+#endif
     if (egg) {
         file = POKEICON_FILE_ICONS + ((species == SPECIES_MANAPHY) + POKEICON_EGG) * 2;
     } else if (form != 0) {
@@ -149,6 +157,12 @@ u32 PokeParty_GetIconIndex(u32 species, u32 form, u32 sex, BOOL egg) {
 }
 
 u8 PokeIcon_GetPalette(u32 species, u32 form, u32 sex, BOOL egg) {
+#ifdef PAPERWHITE2
+    // Paper White 2: an added species' own icon is past sPokeIconPalettes' entries (its forms' are the hack's form
+    // groups', below, which never set species)
+    BOOL added = !egg && PaperWhite2_IsAddedSpecies(species);
+#endif
+
     if (egg) {
         species = (species == SPECIES_MANAPHY) + POKEICON_PALETTE_EGG;
     } else if (form != 0) {
@@ -169,6 +183,11 @@ u8 PokeIcon_GetPalette(u32 species, u32 form, u32 sex, BOOL egg) {
             species = formOffset + form + POKEICON_PALETTE_FORMS;
         }
     }
+#ifdef PAPERWHITE2
+    if (added) {
+        return PaperWhite2_GetSpeciesIconPalette(species, sex != 0);
+    }
+#endif
 
     if (sex != 0) {
         return (u8)((sPokeIconPalettes[species] & 0xf0) >> 4);

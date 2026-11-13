@@ -15,6 +15,7 @@
 
 #ifdef PAPERWHITE2
 #include "paperwhite2/pokemon_forms.h"
+#include "paperwhite2/species.h"
 #endif
 
 // The files of Pokémon and trainer sprites, and loading them as cell actor resources. Named after the file name its
@@ -281,6 +282,13 @@ static void GetPokemonDataIDBase(u32 arcId, int species, int form, u32 sex, BOOL
     } else {
         charsFile = dir == POKEGRA_DIR_FRONT ? POKEGRA_FILE_CHARS : POKEGRA_FILE_BACK + POKEGRA_FILE_CHARS;
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the added species' groups follow the hack's form groups (include/paperwhite2/species.h); their
+    // forms' are the hack's form groups, below
+    if (PaperWhite2_IsAddedSpecies(species)) {
+        file = PAPERWHITE2_SPECIES_SPRITE_FILES + (species - PAPERWHITE2_SPECIES_FIRST_ADDED) * POKEGRA_FILE_COUNT;
+    }
+#endif
 
     if (egg) {
         file = (POKEGRA_EGG + (species == SPECIES_MANAPHY)) * POKEGRA_FILE_COUNT;
@@ -311,7 +319,12 @@ static void GetPokemonDataIDBase(u32 arcId, int species, int form, u32 sex, BOOL
             file = POKEGRA_FORM_FILES + (spriteOffset + form - 1) * POKEGRA_FILE_COUNT;
 #endif
         }
-    } else if (species > SPECIES_EGG + 1) {
+    }
+#ifdef PAPERWHITE2
+    else if (species > SPECIES_EGG + 1 && !PaperWhite2_IsAddedSpecies(species)) {
+#else
+    else if (species > SPECIES_EGG + 1) {
+#endif
         // No sprites for the egg and the bad egg
         file = (species - 2) * POKEGRA_FILE_COUNT;
     }

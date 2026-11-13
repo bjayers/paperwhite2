@@ -12,6 +12,7 @@
 #ifdef PAPERWHITE2
 #include "paperwhite2/pokedex_save.h"
 #include "paperwhite2/pokemon_forms_config.h"
+#include "paperwhite2/species.h"
 #endif
 
 // The Pokédex's save block: the species caught, the ones seen by sex, shininess and form, which of them the Pokédex
@@ -29,8 +30,9 @@
 // A species that isn't in the regional Pokédex, in its table
 #define REGIONAL_DEX_NONE 999
 #ifdef PAPERWHITE2
-// Paper White 2: the Pokédex's last species, generated from res/pokemon (Genesect's 649 until species are added). The
-// completion counts and the evaluations stay the original's until then (docs/paperwhite2/design/save-expansion.md)
+// Paper White 2: the Pokédex's last species, generated from res/pokemon (Genesect's 649 until species are added, then
+// the last added one that enters the Pokédex; the IDs between are bad, PML_PkmIsBadMonsNo). The completion counts and
+// the evaluations stay the original's, on 1 to 649 (docs/paperwhite2/design/save-expansion.md, new-species.md)
 #define POKEDEX_LAST_SPECIES POKEDEX_SPECIES_MAX
 #else
 #define POKEDEX_LAST_SPECIES SPECIES_GENESECT
@@ -149,7 +151,13 @@ static inline BOOL CheckShown(const PokeDexSave *pokedex, u16 kind, u16 species)
 }
 
 static BOOL PML_PkmIsBadMonsNo(u16 species) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the Pokédex's species are 1 to Genesect and the added ones but those that never enter it
+    // (include/paperwhite2/species.h); the egg's IDs to the reserved ones stay bad
+    if (!PaperWhite2_IsPokedexSpecies(species)) {
+#else
     if (species == 0 || species > POKEDEX_LAST_SPECIES) {
+#endif
         return TRUE;
     }
     return FALSE;
@@ -909,6 +917,9 @@ void PokeDex_PaperWhite2_FillAll(PokeDexSave *pokedex, u32 spindaPersonality) {
     BOOL rare;
 
     for (species = 1; species <= POKEDEX_LAST_SPECIES; species++) {
+        if (PaperWhite2_IsSkippedPokedexSpecies(species)) {
+            continue;
+        }
         ratio = PML_PersonalGetParamSingle(species, 0, PERSONAL_SEX_RATIO);
         if (ratio == GENDER_RATIO_GENDERLESS) {
             sex = GENDER_UNKNOWN;

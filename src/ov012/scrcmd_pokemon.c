@@ -25,6 +25,9 @@
 #include "system/game_system.h"
 #include "system/version.h"
 #include "system/vm.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/species.h"
+#endif
 
 BOOL CheckGetPartyPokemon(FieldScriptEnv *env, u32 index, PartyPkm **pkm) {
     PokeParty *party = GameData_GetParty(FieldScriptEnv_GetGameData(env));
@@ -308,7 +311,12 @@ BOOL Scrcmd_Pokemon_PokePartyGetCountBySpecies(VM *vm, FieldScriptEnv *env) {
     u16 count = 0;
     int i;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: the added species too (include/paperwhite2/species.h)
+    if (PML_IsRealSpecies(species)) {
+#else
     if (species != 0 && species <= SPECIES_EGG - 1) {
+#endif
         for (i = 0; i < partyCount; i++) {
             PartyPkm *pkm = PokeParty_GetPkm(party, i);
             if (pkm != NULL && PokeParty_GetParam(pkm, PKM_PARAM_IS_EGG, NULL) == 0) {
@@ -368,7 +376,12 @@ BOOL Scrcmd_Pokemon_PokePartyFindBySpecies(VM *vm, FieldScriptEnv *env) {
     u16 count = PokeParty_GetPkmCount(party);
     int i;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: the added species too (include/paperwhite2/species.h)
+    if (PML_IsRealSpecies(species)) {
+#else
     if (species != 0 && species <= SPECIES_EGG - 1) {
+#endif
         for (i = 0; i < count; i++) {
             PartyPkm *pkm = PokeParty_GetPkm(party, i);
             if (pkm != NULL && PokeParty_GetParam(pkm, PKM_PARAM_IS_EGG, NULL) == 0) {

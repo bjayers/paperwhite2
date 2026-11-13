@@ -5,6 +5,7 @@
 #include "nitro/mi.h"
 #include "paperwhite2/pokemon_forms.h"
 #include "paperwhite2/pokemon_forms_config.h"
+#include "paperwhite2/species.h"
 
 // Paper White 2: the hack's own forms of existing species (include/paperwhite2/pokemon_forms.h). The tables are
 // generated from res/pokemon by tools/paperwhite2/pokemon_forms.py
@@ -79,3 +80,30 @@ BOOL PaperWhite2_FormCanEvolve(ArcTool *evolutionFile, u16 species, u16 form) {
     PaperWhite2_GetFormEvolution(evolutionFile, species, form, &evolution);
     return evolution.method != EVO_METHOD_NONE;
 }
+
+#if PAPERWHITE2_SPECIES_ADDED_COUNT != 0
+// The added species' tables (include/paperwhite2/species.h): their icons' palettes, as sFormIconPalettes, and those
+// that never enter the Pokédex, a bit each from the first. Without added species nothing calls these, so they aren't
+// built and the ROM is the one before them
+static const u8 sSpeciesIconPalettes[PAPERWHITE2_SPECIES_ADDED_COUNT + 1] = { PAPERWHITE2_SPECIES_ICON_PALETTES };
+static const u8 sHiddenSpecies[PAPERWHITE2_SPECIES_ADDED_COUNT / 8 + 1] = { PAPERWHITE2_SPECIES_NOT_IN_POKEDEX };
+
+BOOL PaperWhite2_IsHiddenSpecies(u32 species) {
+    u32 index = species - PAPERWHITE2_SPECIES_FIRST_ADDED;
+
+    if (!PaperWhite2_IsAddedSpecies(species)) {
+        return FALSE;
+    }
+    return (sHiddenSpecies[index / 8] >> (index % 8)) & 1;
+}
+
+u8 PaperWhite2_GetSpeciesIconPalette(u32 species, BOOL female) {
+    u8 palettes;
+
+    if (!PaperWhite2_IsAddedSpecies(species)) {
+        return 0;
+    }
+    palettes = sSpeciesIconPalettes[species - PAPERWHITE2_SPECIES_FIRST_ADDED];
+    return female ? palettes >> 4 : palettes & 0xf;
+}
+#endif

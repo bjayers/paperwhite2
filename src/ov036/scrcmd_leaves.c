@@ -35,6 +35,9 @@
 #include "system/game_system.h"
 #include "system/vm.h"
 #include "text/system/scrcmd_bsubway_wbt_party.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/species.h"
+#endif
 
 // clang-format off
 const WbtTournamentInfo PWT_TOURNAMENT_INFO[15] = {
@@ -418,7 +421,13 @@ void CheckResetKeldeoOrdinaryForme(GameSystem *gsys) {
                 PokeParty_ChangeForme(pkm, 0);
             }
         }
+#ifdef PAPERWHITE2
+        // Paper White 2: an added species is a real one, which this would make a bad egg
+        // (include/paperwhite2/species.h)
+        if (species > SPECIES_GENESECT && !PaperWhite2_IsAddedSpecies(species)) {
+#else
         if (species > SPECIES_GENESECT) {
+#endif
             pkm->base.contentBuffer.chunks[0].rawData[0x16] = 0xff;
             pkm->base.contentBuffer.chunks[0].rawData[0x17] = 0xff;
         }

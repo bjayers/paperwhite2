@@ -10,6 +10,9 @@
 #include "pml/poke_party.h"
 #include "save/save_control.h"
 #include "save/tournament_block.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/species.h"
+#endif
 #include <stddef.h>
 
 // The rules of a battle, and the save block of the competitions' regulations and the teams entered in them, which
@@ -167,7 +170,12 @@ void Regulation_SetParam(Regulation *regulation, u32 param, int value) {
         }
         break;
     case REGULATION_PARAM_REQUIRED_SPECIES:
+#ifdef PAPERWHITE2
+        // Paper White 2: an added species can be the required one too (include/paperwhite2/species.h)
+        if (value < 686 || PaperWhite2_IsAddedSpecies(value)) {
+#else
         if (value < 686) {
+#endif
             regulation->requiredSpecies = value;
         }
         break;
@@ -220,6 +228,13 @@ BOOL Regulation_CheckParamBit(Regulation *regulation, u32 param, int index) {
 
     switch (param) {
     case REGULATION_PARAM_BANNED_SPECIES:
+#ifdef PAPERWHITE2
+        // Paper White 2: the list has bits for the species to 655 only, so an added species, past them, is never
+        // banned, rather than read past its end (include/paperwhite2/species.h)
+        if (PaperWhite2_IsAddedSpecies(index)) {
+            break;
+        }
+#endif
         if (regulation->bannedSpecies[byte] & (1 << bit)) {
             return TRUE;
         }
