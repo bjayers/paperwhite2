@@ -1,13 +1,14 @@
 // A species' or form's battle sprite art in the Pokémon Editor (docs/paperwhite2/design/battle-sprites.md section 14):
 // the animated sprite as MCSS assembles it from its sheets and rig, Export (a zip of the sheets, stills, palettes,
 // shiny copies and guides to edit), and Import (edited files checked, previewed on the sprite's own rig, normal and
-// shiny, front and back, then applied). The rig itself (cells, parts, poses, animations) is kept; editing it is the rig
-// editor's, later. tools/paperwhite2/battle_sprite.py does the work through the server (/api/battle-sprite/*), and
+// shiny, front and back, then applied). The rig itself (cells, parts, poses, animations) is kept here; Edit rig… opens the
+// Rig Editor (src/modules/rig/) on it. tools/paperwhite2/battle_sprite.py does the work through the server (/api/battle-sprite/*), and
 // writes res/ itself, so this refuses while the group's files have unsaved edits and reads them again after.
 
 import { useEffect, useRef, useState } from "react";
 import { api, type BattleSpriteCheck, type BattleSpriteSide } from "../../api.ts";
 import { documents } from "../../documents.ts";
+import { navigate } from "../../navigation.ts";
 
 const SIDES = ["front", "back"] as const;
 /** The preview's frames are a game frame's 1/60 s times the strip's step. */
@@ -152,6 +153,8 @@ export function BattleSpriteArt({ species, form, folder, speciesName, onWritten 
       <div className="pkm-card-head">
         <h3>Battle sprite <span className="muted">{folder}/ · its art; the rig stays</span></h3>
         <span className="spacer" />
+        <button onClick={() => navigate("rig", { folder, side: "front" })}
+          title="The Rig Editor: the pictures' rectangles on the sheet, the parts' pivots and layers, and their keys, front and back">Edit rig…</button>
         <a className="bsp-link" href={api.battleSpriteExportUrl(species, form)} download
           title="A zip of the sheets, stills, palettes, shiny copies, guides to the pieces, and a README with the rules">Export art (.zip)</a>
         <button className="primary" onClick={() => input.current?.click()} disabled={busy}

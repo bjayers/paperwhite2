@@ -1,0 +1,78 @@
+/* The Rig Editor (RigEditor.tsx): the header, the preview, the sheet and the side panel in a row, the timeline under */
+.rig-page { display: flex; flex-direction: column; gap: 10px; padding: 12px 16px; height: 100%; overflow: auto; box-sizing: border-box; }
+.rig-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.rig-head h2 { margin: 0; font-size: 16px; }
+.rig-head h2 .muted { font-weight: normal; }
+.rig-head .spacer, .rig-card-head .spacer { flex: 1; }
+.rig-status { font-size: 12px; color: var(--muted); }
+.rig-status.dirty { color: var(--warning); }
+.rig-message { margin: 0; font-size: 13px; }
+
+.rig-main { display: grid; grid-template-columns: auto minmax(540px, 1fr) 380px; gap: 10px; align-items: start; }
+.rig-card { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; background: var(--panel); min-width: 0; }
+.rig-card-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
+.rig-card-head h3 { margin: 0; font-size: 14px; }
+.rig-side { max-height: calc(100vh - 160px); overflow: auto; }
+.rig-inspector .ow-section:first-child { margin-top: 0; }
+
+.rig-stage { display: flex; justify-content: center; background: repeating-conic-gradient(var(--panel-2) 0% 25%, var(--panel) 0% 50%) 50% / 16px 16px;
+  border: 1px solid var(--border); border-radius: 6px; padding: 8px; overflow: auto; max-width: 720px; }
+.rig-preview-canvas, .rig-sheet-canvas { image-rendering: pixelated; display: block; touch-action: none; user-select: none; }
+.rig-sheet-scroll { overflow: auto; border: 1px solid var(--border); border-radius: 6px; background: repeating-conic-gradient(var(--panel-2) 0% 25%, var(--panel) 0% 50%) 50% / 16px 16px; }
+.rig-transport { display: flex; align-items: center; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.rig-transport input[type=range] { flex: 1; min-width: 160px; }
+.rig-play { min-width: 40px; }
+.rig-readout { font-size: 12px; font-variant-numeric: tabular-nums; }
+.rig-pause { color: var(--warning); }
+.rig-toggles { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 8px; font-size: 13px; }
+
+.rig-size { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; }
+.rig-size-bar { width: 120px; height: 10px; border-radius: 5px; background: var(--border); overflow: hidden; }
+.rig-size-bar > span { display: block; height: 100%; border-radius: 5px; }
+.rig-size-bar.ok > span { background: #3fb950; }
+.rig-size-bar.near > span { background: #d29922; }
+.rig-size-bar.over > span { background: #e5534b; }
+
+.rig-rect { border-top: 1px solid var(--border); padding-top: 6px; margin-top: 6px; }
+.rig-rect.selected > .muted { color: var(--accent); }
+.rig-name-input { width: 160px; }
+.rig-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; flex: none; }
+
+/* The timeline: a name column that stays at the left, lanes of keys as wide as their frames */
+.rig-timeline { border: 1px solid var(--border); border-radius: 6px; }
+.rig-tl-scroll { overflow: auto; max-height: 420px; }
+.rig-tl-grid { display: grid; grid-template-columns: var(--name) 1fr; font-size: 12px; }
+.rig-tl-name { position: sticky; left: 0; z-index: 2; background: var(--panel); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 6px; padding: 0 8px; height: 26px; white-space: nowrap; overflow: hidden; }
+.rig-tl-head { height: 20px; }
+.rig-tl-lane { position: relative; height: 26px; border-bottom: 1px solid var(--border); cursor: text; }
+.rig-tl-lane.selected, .rig-part-name.selected { background: var(--selected); }
+.rig-tl-ruler { height: 20px; cursor: col-resize; background: var(--panel-2); }
+.rig-tl-pose { height: 20px; background: var(--panel-2); }
+.rig-pose-span { position: absolute; top: 6px; height: 8px; background: color-mix(in srgb, var(--accent) 35%, transparent); border-radius: 3px; }
+.rig-tick { position: absolute; top: 12px; width: 1px; height: 8px; background: var(--border); font-size: 10px; }
+.rig-tick.major { top: 0; height: 20px; background: var(--muted); }
+.rig-tick.major::after { content: attr(data-label); }
+.rig-tick { color: var(--muted); text-indent: 3px; line-height: 12px; overflow: visible; white-space: nowrap; }
+.rig-part-name { cursor: pointer; }
+.rig-part-name.dragging { opacity: 0.5; }
+.rig-part-label { font-weight: 600; }
+.rig-grip { cursor: grab; color: var(--muted); }
+.rig-idle { margin-left: auto; display: inline-flex; align-items: center; gap: 2px; color: var(--muted); }
+.rig-key { position: absolute; top: 3px; bottom: 3px; box-sizing: border-box; border-radius: 4px; background: var(--hue); color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.35); overflow: hidden; cursor: pointer; display: flex; align-items: center; }
+.rig-key.ghost { opacity: 0.4; }
+.rig-key.unplayed { opacity: 0.35; background: repeating-linear-gradient(45deg, var(--hue) 0 4px, transparent 4px 8px); color: inherit; }
+.rig-key.zero { background: #d29922; }
+.rig-key.selected { outline: 2px solid #ffd33d; outline-offset: -1px; z-index: 1; opacity: 1; }
+.rig-seq-key { opacity: 0.75; }
+.rig-seq-key.shown { opacity: 1; }
+.rig-key-text { padding: 0 4px; font-size: 11px; white-space: nowrap; pointer-events: none; text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5); }
+.rig-key-edge { position: absolute; right: 0; top: 0; bottom: 0; width: 5px; cursor: ew-resize; }
+.rig-key-edge:hover { background: rgba(255, 255, 255, 0.5); }
+.rig-playhead { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #e5534b; pointer-events: none; z-index: 3; }
+
+.rig-picker { padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+.rig-picker h2 { margin: 0; }
+.rig-filter { width: 320px; }
+.rig-picker-list { display: flex; flex-wrap: wrap; gap: 6px; }
