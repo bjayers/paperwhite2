@@ -115,6 +115,15 @@ export interface BattleSpriteSide {
 }
 
 /** What tools/paperwhite2/battle_sprite.py says of battle sprite art: check, or import with write. */
+/** A battle sprite rig's check (server/python/rig_check.py): its errors (the build refuses it) and warnings, and the
+ * sizes of the five files the build writes from it, in bytes (none while it has errors). */
+export interface RigCheck {
+  errors: string[];
+  warnings: string[];
+  sizes: { info: number; cells: number; animations: number; multi_cells: number; multi_animations: number;
+    resident: number; animations_compressed: number } | null;
+}
+
 export interface BattleSpriteCheck {
   ok: boolean;
   check: boolean;
@@ -256,6 +265,8 @@ export const api = {
   /** Checks battle sprite art (files in base64; none for the current art's preview); with write, imports it. */
   battleSpriteCheck: (b: { species: string; form: number; files: { name: string; data: string }[]; stillsFromSheets?: boolean; write?: boolean }) =>
     request<BattleSpriteCheck>("POST", "/api/battle-sprite/check", b),
+  /** A battle sprite rig's checks as the build runs them (mcss_rig.check) and the five files' sizes. */
+  rigCheck: (text: string) => request<RigCheck>("POST", "/api/battle-sprite/rig-check", { text }),
   /** Converts a PNG or .cgb into a C-Gear picture and adds it; the tool's report. */
   cgearPictureImport: (name: string, file: string, data: string) =>
     request<{ message: string }>("POST", "/api/cgear-pictures/import", { name, file, data }),

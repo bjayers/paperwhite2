@@ -737,6 +737,17 @@ const routes: Record<string, Handler> = {
       rmSync(dir, { recursive: true, force: true });
     }
   },
+  // The Rig Editor's check of a battle sprite's rig (server/python/rig_check.py): mcss_rig.check's errors and warnings,
+  // the game's limits that the schema can't say, and the five files' sizes as the build would write them
+  "POST /api/battle-sprite/rig-check": async (req, res) => {
+    const b = (await readJson(req)) as { text?: string };
+    if (typeof b.text !== "string") return error(res, 400, "Give the rig's text");
+    const run = await python.rigCheck(b.text);
+    const line = run.stdout.trim().split("\n").pop() ?? "";
+    if (!line.startsWith("{")) return error(res, 500, run.stderr.trim().split("\n").pop() || "rig_check.py failed");
+    res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+    res.end(line);
+  },
   "GET /api/build": (_req, res) => json(res, builder.state),
   "POST /api/build": (_req, res) => json(res, { started: builder.start(settings.buildCommand) }),
   "POST /api/build/stop": (_req, res) => {

@@ -110,6 +110,19 @@ export class Python {
     });
   }
 
+  /** Checks a battle sprite's rig as the build makes it (rig_check.py): mcss_rig.check's errors and warnings, and the
+   * five files' sizes. The rig's JSON text goes in on stdin. */
+  rigCheck(text: string): Promise<{ code: number; stdout: string; stderr: string }> {
+    return new Promise((resolve) => {
+      const child = spawn(pythonFor(this.root), ["-I", join(HERE, "rig_check.py")], { cwd: this.root });
+      let stdout = "", stderr = "";
+      child.stdout.on("data", (c) => (stdout += c));
+      child.stderr.on("data", (c) => (stderr += c));
+      child.on("close", (code) => resolve({ code: code ?? 1, stdout, stderr }));
+      child.stdin.end(text);
+    });
+  }
+
   /** Runs item_icons.py (the item icons' list, and a PNG checked and converted into an item's icon) on this checkout. */
   itemIcons(args: string[]): Promise<{ code: number; stdout: string; stderr: string }> {
     return new Promise((resolve) => {
