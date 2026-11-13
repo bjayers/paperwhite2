@@ -34,8 +34,9 @@ add makes form N, the species' forms.count, from the species (or from --from FOR
   receives the form anyway (pokemon_center.py), unless wonder_trade.excluded_forms lists it.
 The Pokédex needs nothing: its form directory and the save's remap follow forms.count (save-expansion.md section 11).
 
-remove undoes add for the species' last form, if the original game doesn't have it: also its no_evolution entry and
-excluded_forms row, the sprite_offset when no sprite form is left (0) or the hack groups laid out again, and the
+remove undoes add for the species' last form, if the original game doesn't have it: also its no_evolution entry, the
+species' evolutions for it (and every evolution's form condition when one form is left), its excluded_forms row, the
+sprite_offset when no sprite form is left (0) or the hack groups laid out again, and the
 form_name when the species is left with one form and had none in the original game.
 
 record on gives the form (and any of the species' forms without one) a record copied from the species'; off removes
@@ -360,6 +361,10 @@ def remove(name: str, form: int, check: bool) -> dict:
         forms["no_evolution"] = [f for f in forms["no_evolution"] if f != form]
         if not forms["no_evolution"]:
             del forms["no_evolution"]
+    # the evolutions for the form go, and with one form left, every evolution is for it: no condition is needed
+    data["evolutions"] = [e for e in data["evolutions"] if e.get("form") != form]
+    if form == 1:
+        data["evolutions"] = [{k: v for k, v in e.items() if k != "form"} for e in data["evolutions"]]
     pokedex = data["pokedex"]
     pokedex["forms"] = pokedex["forms"][:form - 1]
     if form == 1:
