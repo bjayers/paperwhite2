@@ -95,6 +95,10 @@
         "handlers_like": {
             "type": "string", "x-constant": "MOVE_",
             "description": "Paper White 2, an added move's only: the original move whose battle handlers it takes, registered with its own ID (tools/data/move_list.py). Not one whose handlers compare a literal move, such as the pledges. move_data.py doesn't pack it"
+        },
+        "retired": {
+            "type": "boolean",
+            "description": "Paper White 2, an added move's only: hidden from the editor's pickers (learnsets, trainers), keeping its ID and data, so Pokémon in saves that know it stay valid (tools/paperwhite2/moves.py retire). move_data.py doesn't pack it"
         }
     },
     "$defs": {

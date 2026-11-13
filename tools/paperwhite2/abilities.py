@@ -1,15 +1,39 @@
 #!/usr/bin/env python3
 """Paper White 2's added abilities (docs/paperwhite2/design/moves-and-abilities.md): what tools/data/ability_list.py
-reads from generated/abilities.txt and res/abilities/, and the header the hack's build generates from it.
+reads from generated/abilities.txt and res/abilities/, the header the hack's build generates from it, and the editor's
+Add ability (the Ability Editor).
 
     abilities.py info                                  # the ability IDs and the added abilities
     abilities.py header build/.../paperwhite2/abilities_config.h
+    abilities.py json                                  # JSON: the added abilities, the next ID, the limits
+    abilities.py uses ABILITY                          # JSON: the species that have it, the files naming it
+    abilities.py add NAME (--from ABILITY | --blank) [--handlers-like ABILITY | --handlers-like none]
+                          [--mold-breaker-ignores | --no-mold-breaker-ignores] [--description TEXT] [--check]
+    abilities.py remove ABILITY [--check]              # only the last added ability
+    abilities.py retire ABILITY [--check]              # hidden from the editor's pickers, keeping its ID
+    abilities.py unretire ABILITY [--check]
 
-The header (include/paperwhite2/abilities.h) gives PAPERWHITE2_ABILITY_FIRST_ADDED (165) and
-PAPERWHITE2_ABILITY_ADDED_COUNT, and with added abilities PAPERWHITE2_ABILITY_HANDLERS_LIKE from the first: the
-ability whose battle handlers each takes: its "handlers_like", or itself, whose row the hack's battle code may add.
-Without added abilities it has no table, and the hooks are the original code.
+The header (include/paperwhite2/abilities.h) gives PAPERWHITE2_ABILITY_FIRST_ADDED (165),
+PAPERWHITE2_ABILITY_ADDED_COUNT and PAPERWHITE2_ABILITY_MOLD_BREAKER_IGNORED_COUNT; with added abilities
+PAPERWHITE2_ABILITY_HANDLERS_LIKE from the first, the ability whose battle handlers each takes: its "handlers_like", or
+itself, whose row the hack's battle code may add; and with any whose JSON has "mold_breaker_ignores",
+PAPERWHITE2_ABILITY_MOLD_BREAKER_IGNORED, which src/ov169/btl_tables.c checks before the original list. Without added
+abilities it has no tables, and the hooks are the original code.
+
+add makes ABILITY_<NAME> at the next ID: its line appended to generated/abilities.txt and res/abilities/<name>.json
+with the name, the description (--description, else the template's) and the hack's fields: "handlers_like"
+(--handlers-like, else the template itself when it is an original ability with handlers in sAbilityEventAddTable, or
+an added template's) and "mold_breaker_ignores" (else as the template: in sMoldBreakerIgnoredAbilities, or its flag).
+--blank has no handlers: it does nothing in battle until the hack's battle code gives it some. Rules the battle code
+checks by an ability's ID, and an added template's own C handlers, don't come with a copy: add warns. Every command
+but info and header prints one line of JSON (tools/paperwhite2/battle_entries.py).
+
+remove undoes add for the last added ability only, and refuses while a file of res/ (but its own) or the code names it.
+retire sets "retired": true: it keeps its ID and text, so Pokémon in saves that have it stay valid, but the editor's
+pickers (the species' abilities) leave it out. unretire undoes it.
 """
+import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -22,6 +46,7 @@ GUARD = "POKEBW2_PAPERWHITE2_ABILITIES_CONFIG_H"
 def header() -> str:
     rows = ability_list.added_table()
     names = ability_list.constants()
+    ignored = ability_list.mold_breaker_ignored()
     lines = [
         f"#ifndef {GUARD}",
         f"#define {GUARD}",
@@ -31,7 +56,11 @@ def header() -> str:
         "",
         f"#define PAPERWHITE2_ABILITY_FIRST_ADDED {ability_list.FIRST_ADDED}",
         f"#define PAPERWHITE2_ABILITY_ADDED_COUNT {len(rows)}",
+        "// The added abilities that Mold Breaker and its kin ignore (\"mold_breaker_ignores\")",
+        f"#define PAPERWHITE2_ABILITY_MOLD_BREAKER_IGNORED_COUNT {len(ignored)}",
     ]
+    if ignored:
+        lines.append("#define PAPERWHITE2_ABILITY_MOLD_BREAKER_IGNORED " + ", ".join(ignored))
     if rows:
         lines += [
             "// From PAPERWHITE2_ABILITY_FIRST_ADDED: the ability whose handlers each added ability takes (its",
@@ -51,6 +80,188 @@ def write_header(output: Path):
         output.write_text(text)
 
 
+# The editor's commands (imports inside them, so that the header's build doesn't depend on what they use)
+
+SCHEMA_REF = "ability.schema.json"
+BLANK_DESCRIPTION = "A new ability."
+
+
+def resolve(name: str) -> tuple[int, str]:
+    """An ability given by its constant or file name: (ID, constant)."""
+    from tools.paperwhite2.battle_entries import EntryError
+    constant = name if name.startswith("ABILITY_") else "ABILITY_" + name.removesuffix(".json").upper()
+    names = ability_list.constants()
+    if constant not in names[1:]:
+        raise EntryError(f"{name} isn't an ability of generated/abilities.txt")
+    return names.index(constant), constant
+
+
+def added(name: str) -> tuple[int, str]:
+    from tools.paperwhite2.battle_entries import EntryError
+    number, constant = resolve(name)
+    if not ability_list.is_added(number):
+        raise EntryError(f"{constant} is the original game's: only abilities Paper White 2 added (from "
+                         f"{ability_list.FIRST_ADDED}) can be removed or retired")
+    return number, constant
+
+
+def path_of(ability: str) -> Path:
+    return ability_list.ABILITIES / ability_list.file_name(ability)
+
+
+def json_info() -> dict:
+    """The added abilities and what the editor needs to add one."""
+    from tools.paperwhite2.battle_entries import rel
+    names = ability_list.constants()
+    ignored = set(ability_list.mold_breaker_ignored())
+    out = []
+    for number, (ability, handlers) in enumerate(ability_list.added_table(), ability_list.FIRST_ADDED):
+        data = ability_list.ability_data(ability)
+        out.append({"ability": ability, "id": number, "name": data.get("name", ""), "path": rel(path_of(ability)),
+                    "handlersLike": names[handlers] if handlers else None,
+                    "ownHandlers": ability_list.has_own_handlers(ability), "moldBreakerIgnores": ability in ignored,
+                    "retired": data.get("retired") is True, "last": number == len(names) - 1})
+    return {"firstAdded": ability_list.FIRST_ADDED, "nextId": len(names), "maxId": ability_list.ABILITY_MAX,
+            "nameLength": ability_list.NAME_LENGTH, "abilities": out, "handlers": ability_list.handler_rows(),
+            "moldBreakerIgnored": sorted(ability_list.original_mold_breaker_ignored()),
+            "battleCode": rel(ability_list.BATTLE_CODE), "handlersCode": rel(ability_list.HANDLERS_CODE),
+            "retired": [a["ability"] for a in out if a["retired"]]}
+
+
+def uses(name: str) -> dict:
+    """The species and forms that have an ability (first, second or hidden), the other files of res/ and the code
+    that name it."""
+    from tools.paperwhite2.battle_entries import (POKEMON, code_files, naming, read, rel, res_files,
+                                                  species_constant, species_name)
+    number, ability = resolve(name)
+    files = naming(ability, res_files())
+    species = []
+    for path in files:
+        if not path.is_relative_to(POKEMON):
+            continue
+        data = read(path)
+        slots = [slot for slot, value in zip(("1", "2"), data.get("abilities", [])) if value == ability]
+        if data.get("hidden_ability") == ability:
+            slots.append("hidden")
+        if slots:
+            form = path.stem.removeprefix("form_")
+            species.append({"species": species_constant(path), "form": int(form) if form.isdigit() else 0,
+                            "name": species_name(path), "path": rel(path), "slots": slots})
+    own = path_of(ability)
+    other = [rel(path) for path in files if not path.is_relative_to(POKEMON) and path != own]
+    return {"ability": ability, "id": number, "species": species, "other": other,
+            "code": [rel(path) for path in naming(ability, code_files())]}
+
+
+def add(name: str, template: str | None, handlers_like: str | None, mold_breaker: bool | None,
+        description: str | None, check: bool) -> dict:
+    from tools.data.datajson import DataError, dumps, load_schema, validate
+    from tools.paperwhite2.battle_entries import (Changes, EntryError, appended, check_name, checks_by_id,
+                                                  constant_of)
+    check_name(name, "ability", ability_list.NAME_LENGTH)
+    ability = constant_of("ABILITY_", name)
+    names = ability_list.constants()
+    if ability in names:
+        raise EntryError(f"{ability} is already an ability")
+    path = path_of(ability)
+    if path.exists():
+        raise EntryError(f"{path.relative_to(ability_list.ROOT)} already exists")
+    number = len(names)
+    if number > ability_list.ABILITY_MAX:
+        raise EntryError(f"Ability {number} is past the last ability ID, {ability_list.ABILITY_MAX}: a Pokémon keeps "
+                         "its ability in a byte")
+    rows = ability_list.handler_rows()
+    warnings = []
+    own_handlers, own_mold, own_description = None, False, BLANK_DESCRIPTION
+    if template:
+        template_number, template_constant = resolve(template)
+        source = ability_list.ability_data(template_constant)
+        own_description = source.get("description", BLANK_DESCRIPTION)
+        if ability_list.is_added(template_number):
+            own_handlers = source.get("handlers_like")
+            own_mold = source.get("mold_breaker_ignores", False)
+            if ability_list.has_own_handlers(template_constant):
+                warnings.append(f"{template_constant}'s own rules are C in "
+                                f"{ability_list.BATTLE_CODE.relative_to(ability_list.ROOT)}: the copy has its text"
+                                + (f" and {own_handlers}'s handlers" if own_handlers else "") + ", not those")
+        else:
+            own_handlers = template_constant if template_constant in rows else None
+            own_mold = template_constant in ability_list.original_mold_breaker_ignored()
+            if not own_handlers:
+                warnings.append(f"{template_constant} has no battle handlers (what it does is elsewhere, such as the "
+                                "field's encounters)")
+            checks = checks_by_id(template_constant, {
+                ability_list.HANDLERS_CODE.name: 1 if own_handlers else 0,
+                ability_list.TABLES_CODE.name: ability_list.original_mold_breaker_ignored_count(template_constant)})
+            if checks:
+                warnings.append(f"The battle code also checks {template_constant} by its ID ({', '.join(checks)}): "
+                                "a copy doesn't get those rules")
+    data = {"$schema": SCHEMA_REF, "name": name,
+            "description": description if description is not None else own_description}
+    handlers = own_handlers if handlers_like is None else (None if handlers_like == "none" else handlers_like)
+    if handlers:
+        if handlers not in names[1:ability_list.FIRST_ADDED]:
+            raise EntryError(f"handlers_like {handlers} must be an original ability's constant")
+        data["handlers_like"] = handlers
+    if mold_breaker if mold_breaker is not None else own_mold:
+        data["mold_breaker_ignores"] = True
+    try:
+        validate(data, load_schema(ability_list.ABILITIES / "ability.schema.json"), path.name)
+    except DataError as error:
+        raise EntryError(str(error)) from None
+    if not handlers:
+        warnings.append("No handlers: it does nothing in battle until the hack's battle code gives it some")
+    changes = Changes()
+    changes.text(ability_list.ABILITY_LIST, appended(ability_list.ABILITY_LIST, ability))
+    changes.text(path, dumps(data) + "\n")
+    if not check:
+        changes.apply()
+    verb = "Would add" if check else "Added"
+    return changes.report(f"{verb} {name}, {ability} (ID {number})", check, ability=ability, id=number,
+                          path=path.relative_to(ability_list.ROOT).as_posix(), handlersLike=handlers,
+                          moldBreakerIgnores=data.get("mold_breaker_ignores", False), warnings=warnings)
+
+
+def remove(name: str, check: bool) -> dict:
+    from tools.paperwhite2.battle_entries import (Changes, EntryError, code_files, naming, rel, res_files,
+                                                  without_last)
+    number, ability = added(name)
+    if number != ability_list.count() - 1:
+        raise EntryError(f"Only the last added ability ({ability_list.constants()[-1]}) can be removed: removing "
+                         "another would renumber those after it. Retire it instead")
+    own = path_of(ability)
+    found = [rel(path) for path in naming(ability, res_files()) if path != own]
+    found += [rel(path) for path in naming(ability, code_files())]
+    if found:
+        raise EntryError(f"{ability} is still named by {', '.join(found[:8])}{'…' if len(found) > 8 else ''}: take it "
+                         "out of those first, or retire it")
+    changes = Changes()
+    changes.text(ability_list.ABILITY_LIST, without_last(ability_list.ABILITY_LIST, ability))
+    changes.remove(own)
+    if not check:
+        changes.apply()
+    verb = "Would remove" if check else "Removed"
+    return changes.report(f"{verb} {ability} (ID {number})", check, ability=ability, id=number)
+
+
+def retire(name: str, retired: bool, check: bool) -> dict:
+    from tools.data.datajson import dumps
+    from tools.paperwhite2.battle_entries import Changes, read
+    number, ability = added(name)
+    path = path_of(ability)
+    data = read(path)
+    if retired:
+        data["retired"] = True
+    else:
+        data.pop("retired", None)
+    changes = Changes()
+    changes.text(path, dumps(data) + "\n")
+    if not check:
+        changes.apply()
+    verb = ("Would retire" if check else "Retired") if retired else ("Would bring back" if check else "Brought back")
+    return changes.report(f"{verb} {ability} (ID {number})", check, ability=ability, id=number)
+
+
 def main():
     if len(sys.argv) == 2 and sys.argv[1] == "info":
         command = ability_list.main
@@ -58,11 +269,48 @@ def main():
         def command():
             write_header(Path(sys.argv[2]))
     else:
-        sys.exit(__doc__)
+        command = None
+    if command:
+        try:
+            command()
+        except ability_list.AbilityListError as error:
+            sys.exit(f"abilities.py: {error}")
+        return
+    from tools.paperwhite2.battle_entries import EntryError
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser("json")
+    commands.add_parser("uses").add_argument("ability")
+    p = commands.add_parser("add")
+    p.add_argument("name")
+    source = p.add_mutually_exclusive_group(required=True)
+    source.add_argument("--from", dest="template")
+    source.add_argument("--blank", action="store_true")
+    p.add_argument("--handlers-like")
+    p.add_argument("--mold-breaker-ignores", action=argparse.BooleanOptionalAction, default=None)
+    p.add_argument("--description")
+    p.add_argument("--check", action="store_true")
+    for command in ("remove", "retire", "unretire"):
+        p = commands.add_parser(command)
+        p.add_argument("ability")
+        p.add_argument("--check", action="store_true")
+    args = parser.parse_args()
     try:
-        command()
-    except ability_list.AbilityListError as error:
-        sys.exit(f"abilities.py: {error}")
+        if args.command == "json":
+            result = json_info()
+        elif args.command == "uses":
+            result = uses(args.ability)
+        elif args.command == "add":
+            result = add(args.name, args.template, args.handlers_like, args.mold_breaker_ignores, args.description,
+                         args.check)
+        elif args.command == "remove":
+            result = remove(args.ability, args.check)
+        else:
+            result = retire(args.ability, args.command == "retire", args.check)
+    except (EntryError, ability_list.AbilityListError, OSError) as error:
+        print(json.dumps({"ok": False, "message": str(error)}, ensure_ascii=False))
+        sys.exit(1)
+    print(json.dumps(result, ensure_ascii=False))
 
 
 if __name__ == "__main__":

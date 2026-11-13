@@ -11,13 +11,16 @@ the hack's fields, which move_data.py doesn't pack:
 - "animation": the original move whose animation it plays (required): the battle view takes a move ID from 561 for one
   of its own effect animations, so an added move's is always mapped (tools/paperwhite2/moves.py, the generated
   PAPERWHITE2_MOVE_ANIMATIONS);
-- "handlers_like": an original move whose battle handlers it takes (optional), registered with its own ID.
+- "handlers_like": an original move whose battle handlers it takes (optional), registered with its own ID, but none
+  of SUB_ID_COMPARED, whose handlers tell their moves apart by ID;
+- "retired": true hides it from the editor's pickers (tools/paperwhite2/moves.py retire); the build ignores it.
 
 Every tool loops over these rather than "up to MOVE_FUSION_BOLT", and stops on a list that doesn't number the moves
 in order or puts anything but Fusion Bolt last before the added ones. Without added moves the lists are the original
 game's.
 """
 import json
+import re
 import sys
 from functools import lru_cache
 from pathlib import Path
@@ -35,8 +38,17 @@ FIRST_ADDED = 560
 MOVE_MAX = 1023
 # The longest name the summary and the battle menu are known to fit: every original name is at most 12 characters
 NAME_LENGTH = 12
-# The hack's fields of a move's data.json
-HACK_FIELDS = ("animation", "handlers_like")
+# The hack's fields of a move's data.json ("retired" only hides it from the editor's pickers)
+HACK_FIELDS = ("animation", "handlers_like", "retired")
+# The original moves' handler tables, sMoveEventAddTable's rows { MOVE_X, EventAddX }
+HANDLERS_CODE = ROOT / "src" / "ov167" / "move_handlers.c"
+HANDLERS_TABLE = "sMoveEventAddTable[] = {"
+# The moves whose handlers tell them apart by their own ID (BattleEventItem_GetSubID compared with a literal move in
+# move_handlers.c), so a move taking their handlers would act as the wrong one: Circle Throw's and Dragon Tail's
+# switch effect (HandlerCircleThrow), Freeze Shock's and Ice Burn's charge message, the Fusions' doubled power, the
+# pledges' combinations
+SUB_ID_COMPARED = ("MOVE_CIRCLE_THROW", "MOVE_DRAGON_TAIL", "MOVE_FREEZE_SHOCK", "MOVE_ICE_BURN", "MOVE_FUSION_FLARE",
+                   "MOVE_FUSION_BOLT", "MOVE_FIRE_PLEDGE", "MOVE_GRASS_PLEDGE", "MOVE_WATER_PLEDGE")
 
 
 class MoveListError(ValueError):
@@ -129,6 +141,9 @@ def added_table(root: Path = MOVES) -> list[tuple[str, int, int]]:
             raise MoveListError(f"{directory(move)}: its name {name!r} is longer than {NAME_LENGTH} characters")
         animation = original_move(move, "animation", data["animation"])
         handlers = original_move(move, "handlers_like", data["handlers_like"]) if "handlers_like" in data else 0
+        if data.get("handlers_like") in SUB_ID_COMPARED:
+            raise MoveListError(f"{directory(move)}: handlers_like {data['handlers_like']}: its handlers compare the "
+                                "move's own ID with a literal one, so another move can't take them")
         rows.append((move, animation, handlers))
     return rows
 
@@ -136,6 +151,19 @@ def added_table(root: Path = MOVES) -> list[tuple[str, int, int]]:
 def has_own_handlers(move: str, code: Path = BATTLE_CODE) -> bool:
     """Whether the hack's battle code has the move's own handlers (an #ifdef of its constant)."""
     return code.exists() and f"#ifdef {move}\n" in code.read_text()
+
+
+def handler_rows(code: Path = HANDLERS_CODE) -> dict[str, str]:
+    """sMoveEventAddTable's rows: each move with handlers, and its EventAdd function (the hack's rows too)."""
+    text = code.read_text()
+    start = text.index(HANDLERS_TABLE)
+    table = text[start:text.index("\n};", start)]
+    return dict(re.findall(r"\{\s*(MOVE_\w+)\s*,\s*(\w+)\s*\}", table))
+
+
+def is_retired(move: str) -> bool:
+    """Whether an added move is retired: hidden from the editor's pickers, keeping its ID and data."""
+    return move_data(move).get("retired") is True
 
 
 def main():

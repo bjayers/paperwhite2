@@ -12,6 +12,14 @@
         "handlers_like": {
             "type": "string", "x-constant": "ABILITY_",
             "description": "Paper White 2, an added ability's only: the original ability whose battle handlers it takes, registered with its own ID, so its popup shows its own name (tools/data/ability_list.py)"
+        },
+        "mold_breaker_ignores": {
+            "type": "boolean",
+            "description": "Paper White 2, an added ability's only: Mold Breaker, Teravolt and Turboblaze ignore it, as they do Soundproof's and Levitate's (the generated PAPERWHITE2_ABILITY_MOLD_BREAKER_IGNORED, src/ov169/btl_tables.c)"
+        },
+        "retired": {
+            "type": "boolean",
+            "description": "Paper White 2, an added ability's only: hidden from the editor's pickers (the species' abilities), keeping its ID and text, so Pokémon in saves that have it stay valid (tools/paperwhite2/abilities.py retire)"
         }
     }
 }

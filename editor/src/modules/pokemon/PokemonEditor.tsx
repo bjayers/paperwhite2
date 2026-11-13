@@ -22,6 +22,7 @@ import { evolutionText } from "./evolutionText.ts";
 import { DocForm, useHeld } from "../followers/DocForm.tsx";
 import { SpeciesIcon, speciesFolder } from "./SpeciesIcon.tsx";
 import { useToolActive } from "../active.ts";
+import { useToolParams } from "../../navigation.ts";
 import { FormIcon, FormPage, FormsCard, Row, SERVICES, WonderTradeRow } from "./FormPage.tsx";
 import { BattleSpriteArt } from "./BattleSpriteArt.tsx";
 import { isOriginalForm, listSpecies, type Listed } from "./forms.ts";
@@ -385,6 +386,14 @@ export function PokemonEditor({ constants }: ToolProps) {
     const found = list?.find((l) => l.form === 0 && l.folder === speciesFolder(species));
     if (found) setChosen(found.key);
   };
+  // A link from another editor: #tool/pokemon?species=SPECIES_...[&form=N] (the Move and Ability Editors' lists)
+  const params = useToolParams("pokemon");
+  useEffect(() => {
+    const species = params.get("species");
+    const form = Number(params.get("form") ?? 0);
+    const hit = species && list?.find((l) => l.species === species && l.form === form);
+    if (hit) { setChosen(hit.key); setFilter(""); }
+  }, [params, list]);
   const dirtyMark = (l: Listed) => (docs.get(l.form ? l.recordPath ?? "" : l.speciesPath)?.dirty ? " •" : "");
 
   return (
