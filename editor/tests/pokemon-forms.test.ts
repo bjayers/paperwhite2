@@ -34,7 +34,8 @@ test("every form is listed after its species, by its Pokédex name", () => {
 });
 
 test("a form's record is found where it has one, and none where it is its species in data", () => {
-  assert.equal(formsOf("pichu")[0].recordPath, null);
+  // (the Spiky-eared Pichu has a record since 2026-11-13, for its "asymmetric" flag)
+  assert.equal(formsOf("pichu")[0].recordPath, "res/pokemon/pichu/form_1.json");
   assert.equal(formsOf("unown")[0].recordPath, null);
   assert.equal(formsOf("rotom")[0].recordPath, "res/pokemon/rotom/form_1.json");
   assert.equal(formsOf("castform")[2].recordPath, "res/pokemon/castform/form_3.json");
