@@ -1634,6 +1634,13 @@ static BOOL LoadConfig(MMSys *system) {
     return ok;
 }
 
+// Whether a species has rows in the registry, once it is loaded. Every original species has; an added species may
+// have no follower (docs/paperwhite2/design/new-species.md). Inline, so that without added species, where nothing
+// calls it, the ROM is the one before it
+static inline BOOL HasFollowerRows(u32 species) {
+    return species != 0 && species <= FOLLOWING_MAX_SPECIES && sIndex[species] < sIndex[species + 1];
+}
+
 // The best match of form, sex and shininess among a species' rows of the registry: its follower code (0 where the
 // registry can't be read, FOLLOWING_CODE_BASE where the species has no rows), with the row's bytes in found
 static u16 FindFollowerRow(MMSys *system, const FollowingPokemon *mon, u8 *found) {
@@ -1798,6 +1805,11 @@ static BOOL SelectFollower(GameData *gameData, FollowingPokemon *out, s32 direct
         mons[i].personality = PokeParty_GetParam(pkm, PKM_PARAM_PID, NULL);
         mons[i].trainer = PokeParty_GetParam(pkm, PKM_PARAM_ID, NULL);
         mons[i].shiny = PokeParty_IsRare(pkm);
+        // An added species without a follower is passed over as an Egg is: the next party member follows, and L and R
+        // step past it. Its code would be 0, which stops every follower as a registry that can't be read does
+        if (PAPERWHITE2_SPECIES_ADDED_COUNT != 0 && !HasFollowerRows(mons[i].species)) {
+            mons[i].egg = TRUE;
+        }
     }
     slot = FollowingParty_SelectSlot(mons, count);
     if (slot < 0) {

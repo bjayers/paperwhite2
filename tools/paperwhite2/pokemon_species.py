@@ -3,12 +3,14 @@
 docs/paperwhite2/design/new-species.md sections 4 and 16).
 
     pokemon_species.py info                                      # JSON: the added species, the next ID, the numbers
-    pokemon_species.py add NAME [--from SPECIES | --blank] [--number N] [--no-pokedex] [--no-wonder-trade] [--check]
+    pokemon_species.py add NAME [--from SPECIES | --blank] [--number N] [--no-pokedex] [--no-wonder-trade]
+                           [--no-follower] [--check]
     pokemon_species.py remove SPECIES [--check]                  # only the last added species
     pokemon_species.py retire SPECIES [--check]                  # hidden, keeping its ID
     pokemon_species.py unretire SPECIES [--check]
     pokemon_species.py reuse SPECIES NAME [--from SPECIES | --blank] [--number N] [--no-pokedex] [--no-wonder-trade]
-                             [--check]                           # a retired slot made a new species
+                             [--no-follower] [--check]           # a retired slot made a new species
+    pokemon_species.py follower SPECIES --from SPECIES | --none [--check]   # its followers copied, or removed
     pokemon_species.py number SPECIES N|none [--check]           # the Pokédex's display number ("none": "???")
     pokemon_species.py cry SPECIES WAV [--rate HZ] [--write]     # a WAV checked, converted and previewed
 
@@ -26,19 +28,29 @@ sprite's). Its data.json is the template's with the name, Pokédex text without 
 and the template's display number, its own display number (--number, or none: "???"), or "pokedex": false
 (--no-pokedex: never in the Pokédex, as the roguelike's creatures), no evolutions, regional number or name article,
 evolution stage 1, itself as its baby species, and "art_template": the original species whose files' formats the
-packers use (tools/data/pokemon_graphics.py). --no-wonder-trade lists it in services.json's excluded_species. The
+packers use (tools/data/pokemon_graphics.py). --no-wonder-trade lists it in services.json's excluded_species. Its
+followers are copies of the template's (unless --no-follower; the blank template has none): each of
+res/field/actors/followers/<template>[_shiny][_female][_female_shiny]/ copied to <name>... with "species" its own and a
+sprite named by another of the copied followers' codes renamed to the copy's, so they show the template's sprite
+until redrawn, and their OBJ_CODE_FOLLOWER_<NAME>... codes after the last follower code in generated/obj_codes.txt
+(pokemon_form.add_obj_codes). A species without followers has none in the game, and the others' are unchanged. The
 packers, the generated headers and the save follow from these (new-species.md section 14): nothing else is written.
 
 remove undoes add for the last added species only (removing another would renumber every later one, moving their
 Pokémon in saves and their references): its folder, its line of species.txt (and the reserved pair with the last),
-its excluded_species entry. It refuses while anything else in res/ names the species (evolutions, trainers,
-encounters, followers...), listing them, or while it has forms (Add form's, which have sprite groups of their own:
-remove them first).
+its excluded_species entry, its own followers and their object codes, and its follower dialogue file
+(res/paperwhite2/following/dialogue/species/<name>.json). It refuses while anything else in res/ names the species or
+its followers' codes (evolutions, trainers, events...) or places it in the wild (its encounters file,
+res/paperwhite2/encounters/species/<name>.json), listing them, or while it has forms (Add form's, which have sprite
+groups of their own: remove them first).
 
 retire sets "retired": true: the species keeps its ID and data, so Pokémon of it in saves stay valid, but is out of
 the Pokédex (as "pokedex": false), the Wonder Trade and the editor's encounter pickers; unretire undoes it. reuse turns
-a retired species into a new one at the same ID: its constant and folder renamed, its data and art replaced from a
-template as add makes them. Any Pokémon of that ID already in a save becomes the new species.
+a retired species into a new one at the same ID: its constant and folder renamed, its data, art and followers
+replaced from a template as add makes them. Any Pokémon of that ID already in a save becomes the new species.
+
+follower gives an added species copies of another species' followers (--from), replacing its own, or removes them
+(--none), as add and remove do.
 
 number sets pokedex.display_number (650 to 9999 but 999, the game's "no number"; never one another species shows).
 
@@ -68,11 +80,16 @@ from tools.data import species_list  # noqa: E402
 from tools.data.datajson import DataError, dumps, load_schema, validate  # noqa: E402
 from tools.data.pokemon_cries import wav_bytes  # noqa: E402
 from tools.data.sound_data import CRY_BUFFER, cry_swar  # noqa: E402
+from tools.paperwhite2.pokemon_form import (FOLLOWER_SUFFIXES, FOLLOWERS, OBJ_CODES, add_obj_codes,  # noqa: E402
+                                            remove_obj_codes)
 
 POKEMON = ROOT / "res/pokemon"
 SPECIES_TXT = ROOT / "generated/species.txt"
 SERVICES = ROOT / "res/paperwhite2/pokemon_center/services.json"
 SCHEMA = POKEMON / "species.schema.json"
+FOLLOWER_DIALOGUE = ROOT / "res/paperwhite2/following/dialogue/species"
+ENCOUNTERS = ROOT / "res/paperwhite2/encounters/species"
+FOLLOWER_CODE = "OBJ_CODE_FOLLOWER_"
 BLANK_ART = "none"
 BLANK_CRY = "bulbasaur"
 DEFAULT_ART_TEMPLATE = "SPECIES_BULBASAUR"
@@ -307,15 +324,34 @@ def wonder_trade(changes: Changes, remove: str | None, add: str | None):
         changes.json(SERVICES, services)
 
 
+def follower_folders(folder: str) -> list[Path]:
+    """The species' own followers (form 0's: an added species with forms is refused before this), in code order."""
+    return [FOLLOWERS / f"{folder}{suffix}" for suffix in FOLLOWER_SUFFIXES
+            if (FOLLOWERS / f"{folder}{suffix}" / "data.json").is_file()]
+
+
+def follower_code(follower: Path) -> str:
+    return f"{FOLLOWER_CODE}{follower.name.upper()}"
+
+
+def own_files(folder: str) -> list[Path]:
+    """What is the species' own and goes with it: its folder, its followers and its follower dialogue file."""
+    dialogue = FOLLOWER_DIALOGUE / f"{folder}.json"
+    return [POKEMON / folder, *follower_folders(folder), *([dialogue] if dialogue.is_file() else [])]
+
+
 def referrers(constant: str, folder: str) -> list[str]:
-    """The files of res/ that name the species, but its own folder and services.json's excluded_species."""
-    pattern = re.compile(rf"\b{re.escape(constant)}\b")
-    own = POKEMON / folder
+    """The files of res/ that name the species or its followers' codes, but its own (own_files) and services.json's
+    excluded_species."""
+    names = [constant, *(follower_code(f) for f in follower_folders(folder))]
+    pattern = re.compile(r"\b(" + "|".join(re.escape(name) for name in names) + r")\b")
+    own = own_files(folder)
     found = []
     # (os.walk following links: a test's scratch checkout links res/'s folders)
     paths = (Path(folder) / name for folder, _, names in os.walk(ROOT / "res", followlinks=True) for name in names)
     for path in sorted(paths):
-        if path.suffix not in REFERRER_SUFFIXES or not path.is_file() or path.is_relative_to(own):
+        if (path.suffix not in REFERRER_SUFFIXES or not path.is_file()
+                or any(path == mine or path.is_relative_to(mine) for mine in own)):
             continue
         text = path.read_text(errors="replace")
         if not pattern.search(text):
@@ -327,7 +363,11 @@ def referrers(constant: str, folder: str) -> list[str]:
             if not pattern.search(json.dumps(services)):
                 continue
         found.append(path.relative_to(ROOT).as_posix())
-    return found
+    # (an encounters file names its species by its file name: the species is still in the wild)
+    encounters = ENCOUNTERS / f"{folder}.json"
+    if encounters.is_file():
+        found.append(encounters.relative_to(ROOT).as_posix())
+    return sorted(found)
 
 
 def refuse_referred(constant: str, folder: str, what: str):
@@ -343,8 +383,46 @@ def refuse_forms(folder: str, data: dict, what: str):
                            "their own. Remove them first (Remove form on each form's page)")
 
 
+def drop_followers(changes: Changes, folder: str, codes: str, dialogue: bool = True) -> tuple[str, list[Path]]:
+    """The species' own followers deleted (and its follower dialogue file, with dialogue) and their codes taken out of
+    codes, obj_codes.txt's text: the new text and the followers deleted."""
+    followers = follower_folders(folder)
+    for follower in followers:
+        changes.remove(follower)
+    if dialogue and (FOLLOWER_DIALOGUE / f"{folder}.json").is_file():
+        changes.remove(FOLLOWER_DIALOGUE / f"{folder}.json")
+    return remove_obj_codes(codes, {follower_code(f) for f in followers}), followers
+
+
+def copy_followers(changes: Changes, source_folder: str, folder: str, constant: str, codes: str) -> tuple[str, int]:
+    """Copies of source_folder's followers for the species, and their codes after the last follower code: the new text
+    of obj_codes.txt and how many were copied. A copy names its own species and form 0, and a sprite that names another
+    of the copied followers' codes names that one's copy (so a female follower that shows the plain one's sprite keeps
+    doing so with the species' own)."""
+    sources = follower_folders(source_folder)
+    renamed = {follower_code(s): f"{FOLLOWER_CODE}{(folder + s.name[len(source_folder):]).upper()}" for s in sources}
+    for source in sources:
+        target = FOLLOWERS / f"{folder}{source.name[len(source_folder):]}"
+        for file in sorted(source.iterdir()):
+            if file.name == "data.json":
+                follower = read(file)
+                follower["follower"]["species"] = constant
+                follower["follower"]["form"] = 0
+                if follower.get("sprite") in renamed:
+                    follower["sprite"] = renamed[follower["sprite"]]
+                changes.json(target / "data.json", follower)
+            elif file.is_file():
+                changes.copy(file, target / file.name)
+    if sources:
+        codes = add_obj_codes(codes, list(renamed.values()))
+    return codes, len(sources)
+
+
 def make(changes: Changes, name: str, source: str | None, shown: int | None, pokedex: bool, trade: bool,
-         replacing: str | None = None, skip: int | None = None) -> tuple[str, str, dict]:
+         follower: bool, codes: str, replacing: str | None = None,
+         skip: int | None = None) -> tuple[str, str, str, int]:
+    """The new species' files, and with follower copies of the template's followers, whose codes go into codes
+    (obj_codes.txt's text): its constant, folder, the new codes and the number of followers copied."""
     constant, folder = check_name(name, replacing)
     if not pokedex and shown is not None:
         raise SpeciesError("A species out of the Pokédex has no display number")
@@ -353,14 +431,24 @@ def make(changes: Changes, name: str, source: str | None, shown: int | None, pok
     data = new_data(template, name, constant, art_template, shown, pokedex)
     write_species(changes, folder, data, art, cry)
     wonder_trade(changes, replacing, None if trade else constant)
-    return constant, folder, data
+    copied = 0
+    if follower and source is not None:
+        codes, copied = copy_followers(changes, resolve(source)[2], folder, constant, codes)
+    return constant, folder, codes, copied
+
+
+def followers_text(copied: int, source: str | None) -> str:
+    if not copied:
+        return ", without a follower"
+    return f", with {copied} follower{'s' if copied != 1 else ''} copied from {template_name(source)}'s"
 
 
 def template_name(source: str | None) -> str:
     return "the blank template" if source is None else read(POKEMON / resolve(source)[2] / "data.json")["name"]
 
 
-def add(name: str, source: str | None, shown: int | None, pokedex: bool, trade: bool, check: bool) -> dict:
+def add(name: str, source: str | None, shown: int | None, pokedex: bool, trade: bool, follower: bool,
+        check: bool) -> dict:
     changes = Changes()
     names = constants()
     lines = species_lines()
@@ -368,7 +456,10 @@ def add(name: str, source: str | None, shown: int | None, pokedex: bool, trade: 
     number = species_list.FIRST_ADDED if first else len(names)
     if number > species_list.SPECIES_MAX:
         raise SpeciesError(f"The species' IDs end at {species_list.SPECIES_MAX} (the Pokédex's 10-bit fields)")
-    constant, folder, _ = make(changes, name, source, shown, pokedex, trade)
+    codes = OBJ_CODES.read_text()
+    constant, folder, new_codes, copied = make(changes, name, source, shown, pokedex, trade, follower, codes)
+    if new_codes != codes:
+        changes.text(OBJ_CODES, new_codes)
     new_lines = [*(f"{reserved}\n" for reserved in species_list.RESERVED if first), f"{constant}\n"]
     if lines and not lines[-1].endswith("\n"):
         lines[-1] += "\n"
@@ -377,9 +468,9 @@ def add(name: str, source: str | None, shown: int | None, pokedex: bool, trade: 
         changes.apply()
     shown_text = "not in the Pokédex" if not pokedex else f"No. {shown}" if shown is not None else "No. ???"
     return changes.report(f"{name} ({constant}, ID {number}, {shown_text}), a copy of {template_name(source)}"
-                          + ("" if trade else ", out of the Wonder Trade")
+                          + ("" if trade else ", out of the Wonder Trade") + followers_text(copied, source)
                           + (", with the reserved IDs 685 and 686 first" if first else ""), check,
-                          species=constant, folder=folder, id=number)
+                          species=constant, folder=folder, id=number, followers=copied)
 
 
 def remove(name: str, check: bool) -> dict:
@@ -395,6 +486,10 @@ def remove(name: str, check: bool) -> dict:
     drop = {constant} | (set(species_list.RESERVED) if number == species_list.FIRST_ADDED else set())
     changes.text(SPECIES_TXT, "".join(line for line in species_lines() if line.split("#")[0].strip() not in drop))
     wonder_trade(changes, constant, None)
+    codes = OBJ_CODES.read_text()
+    new_codes, _ = drop_followers(changes, folder, codes)
+    if new_codes != codes:
+        changes.text(OBJ_CODES, new_codes)
     if not check:
         changes.apply()
     return changes.report(f"{data['name']} ({constant}, ID {number}) removed"
@@ -427,7 +522,7 @@ def retire(name: str, retired: bool, check: bool) -> dict:
 
 
 def reuse(name: str, new_name: str, source: str | None, shown: int | None, pokedex: bool, trade: bool,
-          check: bool) -> dict:
+          follower: bool, check: bool) -> dict:
     number, constant, folder = added(name)
     old = read(POKEMON / folder / "data.json")
     if not old.get("retired"):
@@ -436,15 +531,55 @@ def reuse(name: str, new_name: str, source: str | None, shown: int | None, poked
     refuse_referred(constant, folder, "Can't reuse it")
     changes = Changes()
     changes.remove(POKEMON / folder)
-    new_constant, new_folder, _ = make(changes, new_name, source, shown, pokedex, trade, replacing=constant,
-                                       skip=number)
+    codes = OBJ_CODES.read_text()
+    kept_codes, _ = drop_followers(changes, folder, codes)
+    new_constant, new_folder, new_codes, copied = make(changes, new_name, source, shown, pokedex, trade, follower,
+                                                       kept_codes, replacing=constant, skip=number)
+    if new_codes != codes:
+        changes.text(OBJ_CODES, new_codes)
     lines = [f"{new_constant}\n" if line.split("#")[0].strip() == constant else line for line in species_lines()]
     changes.text(SPECIES_TXT, "".join(lines))
     if not check:
         changes.apply()
     return changes.report(f"ID {number}, {old['name']} (retired), becomes {new_name} ({new_constant}), a copy of "
-                          f"{template_name(source)}. Any {old['name']} in a save becomes {new_name}", check,
-                          species=new_constant, folder=new_folder, id=number)
+                          f"{template_name(source)}{followers_text(copied, source)}. Any {old['name']} in a save "
+                          f"becomes {new_name}", check, species=new_constant, folder=new_folder, id=number,
+                          followers=copied)
+
+
+def set_followers(name: str, source: str | None, check: bool) -> dict:
+    """An added species' followers replaced by copies of source's, or (source None) removed with its dialogue file."""
+    number, constant, folder = added(name)
+    data = read(POKEMON / folder / "data.json")
+    refuse_forms(folder, data, "Can't change its followers here")
+    source_folder = None
+    if source is not None:
+        source_number, _, source_folder = resolve(source)
+        if not species_list.is_real(source_number) or source_folder == folder:
+            raise SpeciesError(f"{source_folder} has no followers to copy")
+        if not follower_folders(source_folder):
+            raise SpeciesError(f"{read(POKEMON / source_folder / 'data.json')['name']} has no follower to copy")
+    codes = {follower_code(f) for f in follower_folders(folder)}
+    pattern = re.compile(r"\b(" + "|".join(re.escape(code) for code in codes) + r")\b") if codes else None
+    found = [path for path in referrers(constant, folder) if pattern and pattern.search((ROOT / path).read_text())]
+    if found:
+        raise SpeciesError(f"Can't change them: its followers' codes are named in {', '.join(found[:8])}")
+    changes = Changes()
+    text = OBJ_CODES.read_text()
+    new_text, dropped = drop_followers(changes, folder, text, dialogue=source is None)
+    copied = 0
+    if source_folder is not None:
+        new_text, copied = copy_followers(changes, source_folder, folder, constant, new_text)
+    elif not dropped:
+        raise SpeciesError(f"{data['name']} has no follower")
+    if new_text != text:
+        changes.text(OBJ_CODES, new_text)
+    if not check:
+        changes.apply()
+    message = (f"{data['name']}'s followers: {copied} copied from {template_name(source)}'s"
+               if source_folder is not None
+               else f"{data['name']}'s {len(dropped)} follower{'s' if len(dropped) != 1 else ''} removed")
+    return changes.report(message, check, species=constant, followers=copied)
 
 
 def set_number(name: str, shown: int | None, check: bool) -> dict:
@@ -601,6 +736,7 @@ def info() -> dict:
             "number": pokedex.get("display_number") if isinstance(pokedex, dict) else None,
             "artTemplate": data.get("art_template", DEFAULT_ART_TEMPLATE), "cryCopyOf": cry_copy(folder, data),
             "forms": data["forms"]["count"], "last": number == last,
+            "followers": [f.name for f in follower_folders(folder)],
         })
     first = len(names) <= species_list.FIRST_ADDED - len(species_list.RESERVED)
     return {"firstAdded": species_list.FIRST_ADDED, "nextId": species_list.FIRST_ADDED if first else len(names),
@@ -632,6 +768,7 @@ def main():
         p.add_argument("--number", type=display)
         p.add_argument("--no-pokedex", action="store_true")
         p.add_argument("--no-wonder-trade", action="store_true")
+        p.add_argument("--no-follower", action="store_true")
         p.add_argument("--check", action="store_true")
 
     p = commands.add_parser("add")
@@ -645,6 +782,12 @@ def main():
     p.add_argument("species")
     p.add_argument("name")
     new_species_options(p)
+    p = commands.add_parser("follower")
+    p.add_argument("species")
+    source = p.add_mutually_exclusive_group(required=True)
+    source.add_argument("--from", dest="template")
+    source.add_argument("--none", action="store_true")
+    p.add_argument("--check", action="store_true")
     p = commands.add_parser("number")
     p.add_argument("species")
     p.add_argument("number", type=display)
@@ -661,13 +804,16 @@ def main():
         elif args.command in ("add", "reuse"):
             if not args.template and not args.blank:
                 raise SpeciesError("Give a template species (--from) or --blank")
-            options = (args.template, args.number, not args.no_pokedex, not args.no_wonder_trade, args.check)
+            options = (args.template, args.number, not args.no_pokedex, not args.no_wonder_trade,
+                       not args.no_follower, args.check)
             result = (add(args.name, *options) if args.command == "add"
                       else reuse(args.species, args.name, *options))
         elif args.command == "remove":
             result = remove(args.species, args.check)
         elif args.command in ("retire", "unretire"):
             result = retire(args.species, args.command == "retire", args.check)
+        elif args.command == "follower":
+            result = set_followers(args.species, None if args.none else args.template, args.check)
         elif args.command == "number":
             result = set_number(args.species, args.number, args.check)
         else:
