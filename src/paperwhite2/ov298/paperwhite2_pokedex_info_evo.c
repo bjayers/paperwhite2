@@ -4,6 +4,7 @@
 #include "constants/species.h"
 #include "constants/text_banks.h"
 #include "gfl/arc.h"
+#include "gfl/arc_util.h"
 #include "gfl/bg_sys.h"
 #include "gfl/bmp.h"
 #include "gfl/clact.h"
@@ -25,18 +26,33 @@
 #include "system/str_tool.h"
 #include "system/wordset.h"
 #include "text/system/pokedex_data.h"
+#include "text/system/pokedex_detail_form.h"
 
 // Paper White 2: the Pokédex Info page's Evo sub-page (docs/paperwhite2/design/pokedex.md): the shown species' whole
 // family, from its root, as a strip of their party icons (sub OBJs) under the tab bar and a tree below it, each row a
 // Poké Ball icon (caught, seen or not), the name and how it evolves from its parent, with gold lines from each parent
 // down and across to its evolutions. All but the icons is drawn into the panels' content window. The game's evolution
 // data only points forward, so tools/paperwhite2/pokedex_evo.py packs each species' family root as a member of
-// ARCID_POKEDEX_GRA, and the tree is read from the root down through the evolution data (ARCID_EVOLUTIONS)
+// ARCID_POKEDEX_GRA, and the tree is read from the root down through the evolution data (ARCID_EVOLUTIONS). Each row
+// has a form, the root's the shown Pokémon's (or the one its family entry names) and each evolution's its parent's,
+// as the game keeps the form number on evolving, and shows only the evolutions for its form (an evolution's form
+// condition, include/paperwhite2/pokemon_forms.h), with the form's name after a method that is for one form only
 
 // ARCID_POKEDEX_GRA's members that tools/paperwhite2/pokedex_evo.py adds after the art's: the family roots (a u16 for
 // each species by its number) and the tree's balls (their 16 colors, then each ball's 2 by 2 tiles of 4bpp)
 #define EVO_FAMILY_FILE 159
 #define EVO_BALLS_FILE 160
+// A family entry is the root's species in its low bits, and in its high ones the root's form plus one where only that
+// form evolves into the species (Sirfetch'd from a Galarian Farfetch'd), else 0 for the shown Pokémon's form
+#define EVO_FAMILY_FORM_SHIFT 11
+#define EVO_FAMILY_SPECIES_MASK ((1 << EVO_FAMILY_FORM_SHIFT) - 1)
+// A form for every form: the tree without its evolutions' form conditions, for a shown Pokémon that its own form's
+// tree leaves out (a form evolved before its species had a path for it)
+#define EVO_FORM_ANY 0xffff
+// The forms' names, as the Info page's tab finds them (paperwhite2_pokedex_info_flavour.c):
+// TEXT_BANK_POKEDEX_DETAIL_FORM's message of a species' first form is the species', each next form's follows the last's
+// through this archive's member 0
+#define ARCID_FORM_NAME_TABLE 97
 #define EVO_BALL_SIZE 16
 #define EVO_BALL_TILES 2
 #define EVO_PALETTE_SIZE 0x20
@@ -166,12 +182,15 @@ enum {
     EVO_WORDING_COUNT,
 };
 
-// A row of the tree: a species, its stage, its parent's row, and the evolution from the parent into it, with a second
-// one if the parent has another (EVO_METHOD_NONE if not)
+// A row of the tree: a species, its form, its stage, its parent's row, and the evolution from the parent into it, with
+// a second one if the parent has another (EVO_METHOD_NONE if not), and the first's form condition where it is for one
+// form other than the first (the form plus one, else 0), whose name the method shows
 typedef struct {
     u16 species;
+    u16 form;
     u8 depth;
     u8 parent;
+    u8 formCondition;
     Evolution evolution;
     Evolution other;
 } EvoRow;
@@ -188,6 +207,10 @@ struct PokedexInfoEvo {
     StrBuf *text;
     StrBuf *first;
     StrBuf *second;
+    StrBuf *formName;
+    // The forms' names (ARCID_FORM_NAME_TABLE)
+    MsgData *formMsgData;
+    u16 *formNameTable;
     // The balls' file, its colors then its pixels, and a bitmap of the pixels, the balls one under the other
     void *balls;
     GFLBitmap *ballBitmap;
@@ -207,6 +230,7 @@ struct PokedexInfoEvo {
 };
 
 static void PokedexInfoEvo_LoadFamily(PokedexInfoEvo *evo, u16 species, u16 form);
+static void PokedexInfoEvo_LoadTree(PokedexInfoEvo *evo, u16 form);
 static void PokedexInfoEvo_AddEvolutions(PokedexInfoEvo *evo, u32 row);
 static void PokedexInfoEvo_DrawRow(PokedexInfoEvo *evo, GFLBitmap *bitmap, int top, u32 row);
 static void PokedexInfoEvo_DrawMethod(PokedexInfoEvo *evo, GFLBitmap *bitmap, int top, u32 row);
@@ -215,7 +239,8 @@ static void PokedexInfoEvo_LoadName(PokedexInfoEvo *evo, u32 row);
 static int PokedexInfoEvo_GetNameRight(PokedexInfoEvo *evo, u32 row);
 static void PokedexInfoEvo_FormatMethod(PokedexInfoEvo *evo, u32 row, const Evolution *evolution, BOOL shortened,
                                         StrBuf *dest);
-static void PokedexInfoEvo_ShowIcons(PokedexInfoEvo *evo, u16 form, u16 sex);
+static void PokedexInfoEvo_LoadFormName(PokedexInfoEvo *evo, u16 species, u16 form);
+static void PokedexInfoEvo_ShowIcons(PokedexInfoEvo *evo, u16 sex);
 static void PokedexInfoEvo_LoadIcons(PokedexInfoEvo *evo);
 static BOOL PokedexInfoEvo_IsSmall(PokedexInfoEvo *evo);
 static int PokedexInfoEvo_GetRowX(PokedexInfoEvo *evo, u32 row);
@@ -228,6 +253,7 @@ PokedexInfoEvo *PokedexInfoEvo_Create(HeapID heapId, Font *font, Font *smallFont
                                       PokeDexSave *pokedex) {
     PokedexInfoEvo *evo =
         GFL_HeapAllocate(heapId, sizeof(PokedexInfoEvo), TRUE, "paperwhite2_pokedex_info_evo.c", __LINE__);
+    u32 size;
 
     evo->heapId = heapId;
     evo->font = font;
@@ -240,6 +266,9 @@ PokedexInfoEvo *PokedexInfoEvo_Create(HeapID heapId, Font *font, Font *smallFont
     evo->text = GFL_StrBufCreate(0x80, heapId);
     evo->first = GFL_StrBufCreate(0x80, heapId);
     evo->second = GFL_StrBufCreate(0x80, heapId);
+    evo->formName = GFL_StrBufCreate(0x40, heapId);
+    evo->formMsgData = GFL_MsgSysLoadData(FALSE, ARCID_SYSTEM_MESSAGE, TEXT_BANK_POKEDEX_DETAIL_FORM, heapId);
+    evo->formNameTable = GFL_ArcSysReadHeapNewLZGetLen(ARCID_FORM_NAME_TABLE, 0, FALSE, heapId, &size);
     evo->balls = GFL_ArcSysReadHeapNew(ARCID_POKEDEX_GRA, EVO_BALLS_FILE, heapId);
     evo->ballBitmap = GFL_BitmapWrap((u8 *)evo->balls + EVO_PALETTE_SIZE, EVO_BALL_TILES,
                                      EVO_BALL_TILES * EVO_BALL_COUNT, 0x20, heapId);
@@ -255,6 +284,9 @@ void PokedexInfoEvo_Free(PokedexInfoEvo *evo) {
     PokedexInfoEvo_Hide(evo);
     GFL_BitmapFree(evo->ballBitmap);
     GFL_HeapFree(evo->balls);
+    GFL_HeapFree(evo->formNameTable);
+    GFL_MsgDataFree(evo->formMsgData);
+    GFL_StrBufFree(evo->formName);
     GFL_StrBufFree(evo->second);
     GFL_StrBufFree(evo->first);
     GFL_StrBufFree(evo->text);
@@ -286,7 +318,7 @@ void PokedexInfoEvo_Show(PokedexInfoEvo *evo, GFLBitmap *bitmap, int top, u16 sp
     for (i = 0; i < evo->count; i++) {
         PokedexInfoEvo_DrawRow(evo, bitmap, top, i);
     }
-    PokedexInfoEvo_ShowIcons(evo, form, sex);
+    PokedexInfoEvo_ShowIcons(evo, sex);
 }
 
 void PokedexInfoEvo_Hide(PokedexInfoEvo *evo) {
@@ -335,35 +367,73 @@ u16 PokedexInfoEvo_GetTouchedSpecies(PokedexInfoEvo *evo) {
 
 // The family of the species, from its root down: each species followed by its evolutions and theirs. A species past
 // the family table (none has evolutions) is its own root, and a form that never evolves (the Spiky-eared Pichu) is
-// shown alone, since nothing evolves into it either (an egg is always the first form)
+// shown alone, since nothing evolves into it either (an egg is always the first form). The root has the form the
+// family entry names, else the shown Pokémon's; a shown Pokémon that its form's tree leaves out gets the whole tree
 static void PokedexInfoEvo_LoadFamily(PokedexInfoEvo *evo, u16 species, u16 form) {
     BOOL alone = PaperWhite2_FormCannotEvolve(species, form);
+    u16 entry = species;
+    u32 i;
 
     evo->species = species;
-    evo->root = species;
     if (species <= SPECIES_GENESECT && !alone) {
-        GFL_ArcSysReadRange(&evo->root, ARCID_POKEDEX_GRA, EVO_FAMILY_FILE, species * sizeof(u16), sizeof(u16));
+        GFL_ArcSysReadRange(&entry, ARCID_POKEDEX_GRA, EVO_FAMILY_FILE, species * sizeof(u16), sizeof(u16));
     }
+    evo->root = entry & EVO_FAMILY_SPECIES_MASK;
+    if (entry >> EVO_FAMILY_FORM_SHIFT != 0) {
+        form = (entry >> EVO_FAMILY_FORM_SHIFT) - 1;
+    }
+    if (alone) {
+        MI_CpuFill8(evo->rows, 0, sizeof(evo->rows));
+        evo->rows[0].species = evo->root;
+        evo->rows[0].form = form;
+        evo->count = 1;
+        return;
+    }
+    PokedexInfoEvo_LoadTree(evo, form);
+    for (i = 0; i < evo->count; i++) {
+        if (evo->rows[i].species == species) {
+            return;
+        }
+    }
+    PokedexInfoEvo_LoadTree(evo, EVO_FORM_ANY);
+}
+
+// The tree from the root, whose form is form
+static void PokedexInfoEvo_LoadTree(PokedexInfoEvo *evo, u16 form) {
     MI_CpuFill8(evo->rows, 0, sizeof(evo->rows));
     evo->rows[0].species = evo->root;
+    evo->rows[0].form = form;
     evo->count = 1;
-    if (!alone) {
-        PokedexInfoEvo_AddEvolutions(evo, 0);
-    }
+    PokedexInfoEvo_AddEvolutions(evo, 0);
 }
 
 // Adds the species that a row's species evolves into after it, each followed by its own evolutions. A species that the
-// row's evolves into twice (Feebas, by Beauty or by a trade) is one row with both evolutions
+// row's evolves into twice (Feebas, by Beauty or by a trade) is one row with both evolutions. Only the row's form's
+// evolutions count, as CheckEvolveSpecies sees them, and none of a form that never evolves
 static void PokedexInfoEvo_AddEvolutions(PokedexInfoEvo *evo, u32 row) {
     u32 depth = evo->rows[row].depth;
+    u16 form = evo->rows[row].form;
     Evolution *evolutions = evo->evolutions[depth];
+    u8 conditions[EVOLUTION_COUNT];
     u32 i;
     u32 j;
 
-    if (depth + 1 >= EVO_DEPTH_COUNT) {
+    if (depth + 1 >= EVO_DEPTH_COUNT || PaperWhite2_FormCannotEvolve(evo->rows[row].species, form)) {
         return;
     }
     GFL_ArcSysRead(evolutions, ARCID_EVOLUTIONS, evo->rows[row].species);
+    for (i = 0; i < EVOLUTION_COUNT; i++) {
+        conditions[i] = evolutions[i].method >> EVOLUTION_FORM_SHIFT;
+        if (conditions[i] == 1) {
+            conditions[i] = 0;
+        }
+        if (form == EVO_FORM_ANY) {
+            evolutions[i].method &= EVOLUTION_METHOD_MASK;
+        }
+    }
+    if (form != EVO_FORM_ANY) {
+        PaperWhite2_FilterFormEvolutions(evolutions, form);
+    }
     for (i = 0; i < EVOLUTION_COUNT; i++) {
         EvoRow *child = NULL;
 
@@ -386,8 +456,10 @@ static void PokedexInfoEvo_AddEvolutions(PokedexInfoEvo *evo, u32 row) {
         }
         child = &evo->rows[evo->count];
         child->species = evolutions[i].species;
+        child->form = form;
         child->depth = depth + 1;
         child->parent = row;
+        child->formCondition = conditions[i];
         child->evolution = evolutions[i];
         evo->count++;
         PokedexInfoEvo_AddEvolutions(evo, evo->count - 1);
@@ -421,12 +493,16 @@ static void PokedexInfoEvo_DrawRow(PokedexInfoEvo *evo, GFLBitmap *bitmap, int t
 }
 
 // The row's method in font 1, right-aligned at EVO_METHOD_RIGHT in the first wording that fits after the names beside
-// it, its row's and, raised between its row and its parent's, its parent's too; if none fits, the shortest from there
+// it, its row's and, raised between its row and its parent's, its parent's too; if none fits, the shortest from there.
+// An evolution for one form (other than the first) is tried first with the form's name after it, "Near an Ice Rock
+// (Alolan)", then without
 static void PokedexInfoEvo_DrawMethod(PokedexInfoEvo *evo, GFLBitmap *bitmap, int top, u32 row) {
     const EvoRow *evoRow = &evo->rows[row];
     int y = PokedexInfoEvo_GetRowY(evo, row) - EVO_SMALL_TEXT_OFFSET_Y - top;
     int left = PokedexInfoEvo_GetNameRight(evo, row);
-    u32 wording = evoRow->other.method != EVO_METHOD_NONE ? EVO_WORDING_BOTH : EVO_WORDING_FIRST;
+    u32 firstWording = evoRow->other.method != EVO_METHOD_NONE ? EVO_WORDING_BOTH : EVO_WORDING_FIRST;
+    u32 wording;
+    u32 pass;
     u32 width;
 
     if (PokedexInfoEvo_IsMethodRaised(evo, row)) {
@@ -436,25 +512,38 @@ static void PokedexInfoEvo_DrawMethod(PokedexInfoEvo *evo, GFLBitmap *bitmap, in
         }
     }
     left += EVO_METHOD_GAP;
+    if (evoRow->formCondition != 0) {
+        PokedexInfoEvo_LoadFormName(evo, evo->rows[evoRow->parent].species, evoRow->formCondition - 1);
+    }
 
-    for (; wording < EVO_WORDING_COUNT; wording++) {
-        BOOL shortened = wording == EVO_WORDING_BOTH_SHORT || wording == EVO_WORDING_FIRST_SHORT;
+    // The first pass with the form's name, the second without
+    for (pass = evoRow->formCondition != 0 ? 0 : 1; pass < 2; pass++) {
+        for (wording = firstWording; wording < EVO_WORDING_COUNT; wording++) {
+            BOOL shortened = wording == EVO_WORDING_BOTH_SHORT || wording == EVO_WORDING_FIRST_SHORT;
 
-        PokedexInfoEvo_FormatMethod(evo, row, &evoRow->evolution, shortened, evo->first);
-        if (wording < EVO_WORDING_FIRST) {
-            PokedexInfoEvo_FormatMethod(evo, row, &evoRow->other, shortened, evo->second);
-            GFL_WordSetSetStrbuf(evo->wordSet, 0, evo->first, 0, TRUE, 0);
-            GFL_WordSetSetStrbuf(evo->wordSet, 1, evo->second, 0, TRUE, 0);
-            GFL_MsgDataLoadStrbuf(evo->msgData, PokedexData_Text_EvoOr, evo->message);
-            GFL_WordSetFormatStrbuf(evo->wordSet, evo->text, evo->message);
-        } else {
-            GFL_StrBufCopy(evo->text, evo->first);
-        }
-        width = GFL_FontGetBlockWidth(evo->text, evo->smallFont, 0);
-        if (left + (int)width <= EVO_METHOD_RIGHT) {
-            GFL_TextRendererDrawToBitmapEx(bitmap, EVO_METHOD_RIGHT - width, y, evo->text, evo->smallFont,
-                                           EVO_TEXT_COLOR);
-            return;
+            PokedexInfoEvo_FormatMethod(evo, row, &evoRow->evolution, shortened, evo->first);
+            if (wording < EVO_WORDING_FIRST) {
+                PokedexInfoEvo_FormatMethod(evo, row, &evoRow->other, shortened, evo->second);
+                GFL_WordSetSetStrbuf(evo->wordSet, 0, evo->first, 0, TRUE, 0);
+                GFL_WordSetSetStrbuf(evo->wordSet, 1, evo->second, 0, TRUE, 0);
+                GFL_MsgDataLoadStrbuf(evo->msgData, PokedexData_Text_EvoOr, evo->message);
+                GFL_WordSetFormatStrbuf(evo->wordSet, evo->text, evo->message);
+            } else {
+                GFL_StrBufCopy(evo->text, evo->first);
+            }
+            if (pass == 0) {
+                GFL_StrBufCopy(evo->first, evo->text);
+                GFL_WordSetSetStrbuf(evo->wordSet, 0, evo->first, 0, TRUE, 0);
+                GFL_WordSetSetStrbuf(evo->wordSet, 1, evo->formName, 0, TRUE, 0);
+                GFL_MsgDataLoadStrbuf(evo->msgData, PokedexData_Text_EvoForm, evo->message);
+                GFL_WordSetFormatStrbuf(evo->wordSet, evo->text, evo->message);
+            }
+            width = GFL_FontGetBlockWidth(evo->text, evo->smallFont, 0);
+            if (left + (int)width <= EVO_METHOD_RIGHT) {
+                GFL_TextRendererDrawToBitmapEx(bitmap, EVO_METHOD_RIGHT - width, y, evo->text, evo->smallFont,
+                                               EVO_TEXT_COLOR);
+                return;
+            }
         }
     }
     GFL_TextRendererDrawToBitmapEx(bitmap, left, y, evo->text, evo->smallFont, EVO_TEXT_COLOR);
@@ -526,10 +615,27 @@ static void PokedexInfoEvo_FormatMethod(PokedexInfoEvo *evo, u32 row, const Evol
     GFL_WordSetFormatStrbuf(evo->wordSet, dest, evo->message);
 }
 
+// A species' form's name into evo->formName, as the Info page's tab finds it: the species', then each next form's
+// through the table, the species' again past the table's end
+static void PokedexInfoEvo_LoadFormName(PokedexInfoEvo *evo, u16 species, u16 form) {
+    u32 message = species;
+    u32 i;
+
+    for (i = 0; i != form; i++) {
+        message = evo->formNameTable[message];
+        if (message == 0) {
+            message = species;
+            break;
+        }
+    }
+    GFL_MsgDataLoadStrbuf(evo->formMsgData, message, evo->formName);
+}
+
 // Each species' party icon in the strip, or the "?" of the Bad Egg's for one not yet seen: its two frames written into
-// its place in the icons' characters, which its actor shows. The icons show in the shown species' form and sex where
-// they have them (Burmy's cloaks are Wormadam's), as the icons' files fall back to the first form and the male
-static void PokedexInfoEvo_ShowIcons(PokedexInfoEvo *evo, u16 form, u16 sex) {
+// its place in the icons' characters, which its actor shows. The icons show in their row's form and the shown
+// species' sex where they have them (Burmy's cloaks are Wormadam's), as the icons' files fall back to the first form
+// and the male
+static void PokedexInfoEvo_ShowIcons(PokedexInfoEvo *evo, u16 sex) {
     ArcTool *arc;
     u32 i;
 
@@ -540,7 +646,7 @@ static void PokedexInfoEvo_ShowIcons(PokedexInfoEvo *evo, u16 form, u16 sex) {
     arc = GFL_ArcSysCreateFileHandle(ARCID_POKEICON, evo->heapId);
     for (i = 0; i < POKEDEX_INFO_EVO_FAMILY_MAX; i++) {
         u16 species = evo->rows[i].species;
-        u16 iconForm = form;
+        u16 iconForm = evo->rows[i].form == EVO_FORM_ANY ? 0 : evo->rows[i].form;
         u16 iconSex = sex;
         NNSG2dImageProxy proxy;
         NNSG2dCharacterData *chars;

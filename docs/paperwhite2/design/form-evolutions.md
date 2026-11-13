@@ -7,6 +7,9 @@ the evolution methods themselves carry the form ("if form 1 and Ice Stone", "if 
 and Karrablast's conditions do? Read from the source and `res/`; anything inferred and not traced is marked so. It
 builds on [forms-and-species.md](forms-and-species.md) sections 5.1 and 11 and [items.md](../items.md)'s Link Cord.
 
+**Built 2026-11-12** (section 12): form conditions, with the Ice Rock instead of an Ice Stone and the form number kept
+(the user's decisions, section 11). Sections 2 to 9 are the research as it was.
+
 ## 1. Summary
 
 - **Today a form evolves by its species' list, and keeps its form number.** An Alolan Vulpix (Vulpix form 1) uses
@@ -268,7 +271,7 @@ tab, Eviolite, `pokedex_evo.py`) mask it. Not needed for Vulpix or Farfetch'd; d
 5. Docs: forms-and-species.md section 5.1 and 11.3, plugins.md's Forms, items.md, `pokedex_evo.py`'s docstring.
 6. Later: the explicit target form (section 6) when a species needs it; Sirfetch'd's method with new species.
 
-## 10. Open decisions for the user
+## 10. Open decisions for the user (answered in section 11)
 
 1. **Design A (form conditions in the species' list) or B (per-form lists)?** A is recommended.
 2. **Sirfetch'd's method:** level up holding a Leek, or a new critical-hits method (more work, closer to Gen 8)?
@@ -278,3 +281,56 @@ tab, Eviolite, `pokedex_evo.py`) mask it. Not needed for Vulpix or Farfetch'd; d
    (the original keeps 1). Fine? (Without it, an Alolan Vulpix evolved before Ninetales gets an Alolan form becomes an
    Alolan Ninetales later.)
 5. **Eviolite:** should it follow the form (no boost for a form without a path, such as the Spiky-eared Pichu)?
+
+## 11. The user's decisions (2026-11-12)
+
+1. **Design A**, form conditions in the species' own list.
+2. **No Ice Stone item.** An Alolan Vulpix evolves by the existing Ice Rock method (level up in Twist Mountain's Ice Rock
+   room, `ZONE_TWIST_MOUNTAIN_6`, Glaceon's Gen 5 method) with `"form": 1`; the location methods read the zone
+   (`a3`), which the filter doesn't touch. Section 7 stays as the recipe for a new item if one is ever wanted.
+3. **The target form is kept as in the original game** (Burmy into Mothim keeps its number): no reset hook in
+   `setNameChangedPkm`. An explicit target form (section 6) may come later; not built.
+4. **Eviolite** boosts only a Pokémon whose form can evolve: not a `no_evolution` form, nor one whose list is empty after
+   the filter (a Farfetch'd form 0 when only form 1 has an evolution).
+5. **Sirfetch'd** (with new species): level up holding a Leek. Gen 5 has no any-time held-item method, only
+   `EVO_METHOD_HELD_ITEM_DAY` and `_NIGHT`, so it takes two entries, both `"form": 1` (the Leek is used up, as Sneasel's
+   Razor Claw).
+
+## 12. Built (2026-11-12)
+
+- **Data:** `"form"` (0 to 30) on an evolution (`res/pokemon/species.schema.json`); `tools/data/species_data.py` packs it
+  as `method | (form + 1) << 8` and dumps it back (round trip checked), refuses a method past 255, a form past the
+  species' `forms.count`, and a form record with evolutions of its own (none has any; `pokemon_form.py` writes `[]` for a
+  new record, and `remove` drops the removed form's evolutions and, with one form left, every condition).
+- **Runtime** (`include/paperwhite2/pokemon_forms.h`, `paperwhite2_pokemon_forms.c`): `PaperWhite2_FilterFormEvolutions`
+  in `CheckEvolveSpecies` right after the list is read (every mode: level-up and its location methods, Rare Candy,
+  battle return, items and the party list's ABLE/UNABLE, trades, the Wonder Trade, the Link Cord), and
+  `PaperWhite2_GetFormEvolution` / `PaperWhite2_FormCanEvolve` (the form's first evolution, none for a `no_evolution`
+  form): Eviolite's `CheckEvolution` (`btl_server_flow.c`, by the battler's `BATTLEMON_FORM`) and the Xtransceiver
+  Professor (`local_tvt_person_doctor.c`, by the party Pokémon's form) use them.
+- **Pokédex Info Evo:** rows carry a form (the root's the shown Pokémon's, or the family entry's; children keep it),
+  each row's list filtered by it, icons in each row's form; a one-form method (form 1 on) is followed by the form's name
+  (`PokedexData_Text_EvoForm`, "Near an Ice Rock (Alolan)") and loses it before the shorter wordings if it doesn't fit; a
+  shown Pokémon that its form's tree leaves out gets the unfiltered tree. `pokedex_evo.py` packs a family entry as
+  `root | (form + 1) << 11` where only one form leads to a species (none in today's data).
+- **Wonder Trade:** `sPreEvolutions` carry `(form + 1) << 11` where only one form evolves into a species, and
+  `WonderTrade_Plan` gives that form (`WONDER_TRADE_PRE_EVOLUTION_FORM_SHIFT`; none in today's data).
+- **Editor:** each evolution row has **Only form** (Any or a form by name); a form's page lists the evolutions it takes
+  and says when it can't evolve (editor/README.md).
+- Not changed: `pokedex_templates.py` (the Evo art previews ignore the condition), Habitat and DexNav (their family is
+  `baby_species`), the encounters editor's level ranges.
+
+**Proof.** With no condition in `res/`, every data file of the `--hack` ROM equals a build of main (`e3f841fb...`) but
+text bank 497 (`pokedex_data`, the one new message); the code differs as expected (`57cd9af0...`). A test build
+(Vulpix and Ninetales form 1 "Alolan" with Ice records, Vulpix's Fire Stone `"form": 0` and an Ice Rock entry
+`"form": 1`, a Pikachu form 1 with Raichu's entry `"form": 0`), in py-desmume on a copy of the user's save:
+- the party list for a Fire Stone: plain Vulpix ABLE, Alolan UNABLE; on the Alolan, "It won't have any effect."; on the
+  plain one, Ninetales form 0;
+- Rare Candy in Opelucid: the Alolan doesn't evolve (`CheckEvolveSpecies` zone 126); in Twist Mountain (zone 203): the
+  Alolan becomes Ninetales **form 1**, the plain one doesn't evolve;
+- Eviolite in a wild battle (`PaperWhite2_FormCanEvolve`'s answer, then `BattleEventVar_MulValue(0x35, 1.5)` or not):
+  Pichu form 0 boosted, Spiky-eared Pichu not, Pikachu form 1 (no evolution for it) not, Pikachu form 0 boosted;
+- the Evo tab: Alolan Vulpix, "Vulpix → Ninetales, Near an Ice Rock (Alolan)"; plain Vulpix, "Use Fire Stone".
+
+Removing the test forms (`pokemon_form.py remove`) left `res/` and `generated/` clean and the ROM byte for byte the
+one before (`57cd9af0...`).

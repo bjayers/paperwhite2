@@ -25,6 +25,9 @@
 #include "save/pokedex_savedata.h"
 #include "save/save_control.h"
 #include "system/game_data.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/pokemon_forms.h"
+#endif
 
 // What the Professor says in a call on the Xtransceiver, named after the ROM's "local_tvt_person_doctor.c": how a
 // Pokémon of the party evolves, and how the Pokédex is coming along
@@ -59,7 +62,11 @@ static BOOL LocalTvtDoctor_Chat(LocalTvtPerson *person, const LocalTvtPersonSetu
 static BOOL LocalTvtDoctor_Evolution(LocalTvtPerson *person, const LocalTvtPersonSetup *setup, void *work);
 static BOOL LocalTvtDoctor_Pokedex(LocalTvtPerson *person, const LocalTvtPersonSetup *setup, void *work);
 static BOOL LocalTvtDoctor_Bye(LocalTvtPerson *person, const LocalTvtPersonSetup *setup, void *work);
+#ifdef PAPERWHITE2
+static u16 LocalTvtDoctor_GetEvolutionMsg(ArcTool *evolutionFile, u16 species, u16 form);
+#else
 static u16 LocalTvtDoctor_GetEvolutionMsg(ArcTool *evolutionFile, u16 species);
+#endif
 static BOOL LocalTvtDoctor_FindEvolutionMsg(const LocalTvtEvolutionMsg *table, u32 count, u32 key, u16 *messageId);
 static void LocalTvtDoctor_EvaluatePokedex(PokeDexSave *pokedex, EventWork *eventWork, HeapID heapId, u16 *startMsg,
                                            u16 *messageId, u16 *count, u16 *jingle, BOOL *award);
@@ -240,8 +247,15 @@ static BOOL LocalTvtDoctor_Evolution(LocalTvtPerson *person, const LocalTvtPerso
     case 6: {
         PartyPkm *pkm = LocalTvtPokeSelect_GetPkm(doctor->select);
 
+#ifdef PAPERWHITE2
+        // Paper White 2: the Pokémon's form's evolution (include/paperwhite2/pokemon_forms.h)
+        messageId =
+            LocalTvtDoctor_GetEvolutionMsg(doctor->evolutionFile, PokeParty_GetParam(pkm, PKM_PARAM_SPECIES, NULL),
+                                           PokeParty_GetParam(pkm, PKM_PARAM_FORM, NULL));
+#else
         messageId =
             LocalTvtDoctor_GetEvolutionMsg(doctor->evolutionFile, PokeParty_GetParam(pkm, PKM_PARAM_SPECIES, NULL));
+#endif
         LocalTvtMessage_SetPlayerName(setup->message, doctor->gameData);
         LocalTvtMessage_SetPokemonNickname(setup->message, pkm, 1);
         LocalTvtFace_Talk(face, doctor->evolutionMsgData, messageId);
@@ -356,7 +370,12 @@ static BOOL LocalTvtDoctor_Bye(LocalTvtPerson *person, const LocalTvtPersonSetup
 
 // The message of how a species evolves: one of its own, one for what its way to evolve needs, or the message of
 // the way itself
+#ifdef PAPERWHITE2
+static u16 LocalTvtDoctor_GetEvolutionMsg(ArcTool *evolutionFile, u16 species, u16 form) {
+    Evolution evolution;
+#else
 static u16 LocalTvtDoctor_GetEvolutionMsg(ArcTool *evolutionFile, u16 species) {
+#endif
     u16 messageId = 0;
     int method;
     int param;
@@ -364,8 +383,16 @@ static u16 LocalTvtDoctor_GetEvolutionMsg(ArcTool *evolutionFile, u16 species) {
     if (LocalTvtDoctor_FindEvolutionMsg(sLocalTvtSpeciesMsgs, NELEMS(sLocalTvtSpeciesMsgs), species, &messageId)) {
         return messageId;
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the first evolution the form takes, without its form condition, and none for a form that can't
+    // evolve, as for a species without evolutions
+    PaperWhite2_GetFormEvolution(evolutionFile, species, form, &evolution);
+    method = evolution.method;
+    param = evolution.param;
+#else
     method = getEvolutionInfoParam(evolutionFile, species, 0, 0);
     param = getEvolutionInfoParam(evolutionFile, species, 0, 1);
+#endif
     switch (method) {
     case EVO_METHOD_TRADE_WITH_ITEM:
         LocalTvtDoctor_FindEvolutionMsg(sLocalTvtTradeItemMsgs, NELEMS(sLocalTvtTradeItemMsgs), param, &messageId);

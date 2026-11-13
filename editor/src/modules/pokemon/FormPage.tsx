@@ -1,5 +1,6 @@
 // A species' alternate forms in the Pokémon Editor: the Forms card of a species' page (its forms, and Add form), a form's
-// own page (its Pokédex text, art, whether it has a data record of its own, Can't evolve, the Wonder Trade), and the
+// own page (its Pokédex text, art, whether it has a data record of its own, Can't evolve and the evolutions it takes,
+// the Wonder Trade), and the
 // art a form imports. Adding and removing forms and their records is tools/paperwhite2/pokemon_form.py's, through the
 // server (/api/pokemon-forms/*): it copies art and follower folders and writes obj_codes.txt besides the JSON, so it
 // writes res/ itself and the editor reads the files it changed again. Everything else on these pages is an edit of
@@ -14,7 +15,8 @@ import { DocForm, useHeld } from "../followers/DocForm.tsx";
 import { readIndexedPng, type IndexedImage } from "../palettes/png.ts";
 import { BattleSpriteArt } from "./BattleSpriteArt.tsx";
 import { SpeciesIcon } from "./SpeciesIcon.tsx";
-import { isOriginalForm, type Listed } from "./forms.ts";
+import { formEvolutions, isOriginalForm, type Evolution, type Listed } from "./forms.ts";
+import { evolutionText } from "./evolutionText.ts";
 
 export const SERVICES = "res/paperwhite2/pokemon_center/services.json";
 const map = (v: JsonValue | undefined) => (v instanceof Map ? v : new Map<string, JsonValue>());
@@ -237,8 +239,47 @@ function summarize(paths: string[]): string {
 }
 
 /** A form's own page. */
-export function FormPage({ entry, info, constants, sprite, record, onChanged }: {
-  entry: Listed; info: PokemonFormsInfo | null; constants: Constants;
+/** The evolutions a form takes, from its species' list as it is now (unsaved edits too), read only: what each makes
+ * of it (the form number is kept: the next species' form of that number, or its normal form where it has none), or
+ * why it can't evolve; they are edited on the species' page. */
+function FormEvolutions({ entry, evolutions, noEvolution, speciesName, formName, list, onOpen }: {
+  entry: Listed; evolutions: Evolution[]; noEvolution: number[]; speciesName: string; formName: string; list: Listed[];
+  onOpen(species: string): void;
+}) {
+  const takes = formEvolutions({ evolutions, noEvolution }, entry.form);
+  const edit = <button className="link" onClick={() => onOpen(entry.species)}>Edit {speciesName}'s evolutions</button>;
+  if (noEvolution.includes(entry.form)) {
+    return <p className="muted pkm-note pkm-form-evo-note">It never evolves (Can't evolve), and Eviolite doesn't boost it.</p>;
+  }
+  if (!takes.length) {
+    return (
+      <p className="pkm-note pkm-form-evo-note"><strong>It can't evolve:</strong> {evolutions.length
+        ? `none of ${speciesName}'s evolutions is for ${formName} (each has another Only form)`
+        : `${speciesName} has no evolutions`}, so Eviolite doesn't boost it. {edit}</p>
+    );
+  }
+  return (
+    <div className="pkm-form-evos">
+      {takes.map((e, i) => {
+        const target = list.find((l) => l.species === e.species && l.form === 0);
+        const targetForm = list.find((l) => l.species === e.species && l.form === entry.form);
+        return (
+          <div key={i} className="pkm-form-evo">
+            <SpeciesIcon species={e.species} size={24} />
+            <span>{evolutionText(e)}{e.form !== undefined ? ` (${formName} only)` : ""} → <strong>{targetForm ? targetForm.name : target?.name ?? e.species}</strong>
+              {!targetForm && <span className="muted"> (no {formName} form yet: it becomes the normal form, keeping form number {entry.form})</span>}</span>
+          </div>
+        );
+      })}
+      {edit}
+    </div>
+  );
+}
+
+export function FormPage({ entry, list: listed, info, constants, sprite, record, onChanged, onOpen }: {
+  entry: Listed; list: Listed[]; info: PokemonFormsInfo | null; constants: Constants;
+  /** Opens a species' page. */
+  onOpen(species: string): void;
   /** The species page's sprite viewer, for this form's art folder. */
   sprite(folder: string, epoch: number): JSX.Element;
   /** The data sections of the form's record (stats, abilities, evolutions, learnset). */
@@ -264,6 +305,10 @@ export function FormPage({ entry, info, constants, sprite, record, onChanged }: 
   const pokedex = map(data.get("pokedex"));
   const formName = String(map(list(pokedex.get("forms"))[entry.form - 1]).get("name") ?? `Form ${entry.form}`);
   const speciesName = String(data.get("name") ?? entry.folder);
+  const evolutions: Evolution[] = list(data.get("evolutions")).map(map).map((e) => ({
+    method: String(e.get("method") ?? ""), param: e.get("param"), species: String(e.get("species") ?? ""),
+    ...(typeof e.get("form") === "number" ? { form: Number(e.get("form")) } : {}),
+  }));
   const recordDirty = entry.recordPath ? docs.get(entry.recordPath)?.dirty : false;
 
   const setRecord = async (on: boolean) => {
@@ -315,14 +360,18 @@ export function FormPage({ entry, info, constants, sprite, record, onChanged }: 
               Own stats, types, abilities and moves
             </label>
           </Row>
-          <Row label="Evolution" hint={`forms.no_evolution: it never evolves, whatever ${speciesName}'s evolutions say, by level, item, trade or Link Cord.`}>
-            <label className="pkm-check">
-              <input type="checkbox" checked={noEvolution.includes(entry.form)} onChange={(e) => {
-                const next = e.target.checked ? [...noEvolution, entry.form].sort((a, b) => a - b) : noEvolution.filter((f) => f !== entry.form);
-                documents.edit(entry.speciesPath, ["forms", "no_evolution"], next.length ? next : undefined);
-              }} />
-              Can't evolve
-            </label>
+          <Row label="Evolution" hint={`Can't evolve is forms.no_evolution: it never evolves, whatever ${speciesName}'s evolutions say, by level, item, trade or Link Cord. Below it, the evolutions of ${speciesName}'s that this form takes (Only form Any or ${formName}).`}>
+            <div>
+              <label className="pkm-check">
+                <input type="checkbox" checked={noEvolution.includes(entry.form)} onChange={(e) => {
+                  const next = e.target.checked ? [...noEvolution, entry.form].sort((a, b) => a - b) : noEvolution.filter((f) => f !== entry.form);
+                  documents.edit(entry.speciesPath, ["forms", "no_evolution"], next.length ? next : undefined);
+                }} />
+                Can't evolve
+              </label>
+              <FormEvolutions entry={entry} evolutions={evolutions} noEvolution={noEvolution} speciesName={speciesName}
+                formName={formName} list={listed} onOpen={onOpen} />
+            </div>
           </Row>
           <WonderTradeRow entry={entry} original={info?.original ?? {}} />
         </div>

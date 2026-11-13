@@ -24,8 +24,9 @@ add makes form N, the species' forms.count, from the species (or from --from FOR
 - form_<N>.json and its forms.json row, with --record, or always when the species' forms have records (the game
   reads a form's record at formFile + form - 1, so a species' forms have records all or none): the template's record
   without what only a species has (name, name_article, pokedex, baby_species, regional_dex_number, cry_volume and
-  learnset.egg_moves). Records made for the species' other forms then too, as copies of the species'. The species'
-  form records' forms.count follows.
+  learnset.egg_moves), and with no evolutions: the game reads the species' for every form, and an evolution's form
+  says which form takes it. Records made for the species' other forms then too, as copies of the species'. The
+  species' form records' forms.count follows.
 - the followers: res/field/actors/followers/<species>_form_<N>[_female][_shiny]/, copies of the template's, with
   their OBJ_CODE_FOLLOWER_ constants after the last follower code in generated/obj_codes.txt (GetIndexOfObjID's range
   ends at the generated FOLLOWING_LAST_OBJ_CODE).
@@ -33,8 +34,9 @@ add makes form N, the species' forms.count, from the species (or from --from FOR
   receives the form anyway (pokemon_center.py), unless wonder_trade.excluded_forms lists it.
 The Pokédex needs nothing: its form directory and the save's remap follow forms.count (save-expansion.md section 11).
 
-remove undoes add for the species' last form, if the original game doesn't have it: also its no_evolution entry and
-excluded_forms row, the sprite_offset when no sprite form is left (0) or the hack groups laid out again, and the
+remove undoes add for the species' last form, if the original game doesn't have it: also its no_evolution entry, the
+species' evolutions for it (and every evolution's form condition when one form is left), its excluded_forms row, the
+sprite_offset when no sprite form is left (0) or the hack groups laid out again, and the
 form_name when the species is left with one form and had none in the original game.
 
 record on gives the form (and any of the species' forms without one) a record copied from the species'; off removes
@@ -165,10 +167,12 @@ def record_rows(folder: str) -> tuple[list, list[int]]:
 
 
 def form_record(template: dict, count: int) -> dict:
-    """A form's record from a species' or another form's: without what only a species has."""
+    """A form's record from a species' or another form's: without what only a species has, and evolutions."""
     record = {key: value for key, value in template.items() if key not in SPECIES_ONLY}
     record["forms"] = {"count": count, "sprite_offset": 0}
     record["learnset"] = {key: value for key, value in record["learnset"].items() if key != "egg_moves"}
+    # the game reads its species' evolutions (tools/data/species_data.py refuses a form's own)
+    record["evolutions"] = []
     return record
 
 
@@ -358,6 +362,10 @@ def remove(name: str, form: int, check: bool) -> dict:
         forms["no_evolution"] = [f for f in forms["no_evolution"] if f != form]
         if not forms["no_evolution"]:
             del forms["no_evolution"]
+    # the evolutions for the form go, and with one form left, every evolution is for it: no condition is needed
+    data["evolutions"] = [e for e in data["evolutions"] if e.get("form") != form]
+    if form == 1:
+        data["evolutions"] = [{k: v for k, v in e.items() if k != "form"} for e in data["evolutions"]]
     pokedex = data["pokedex"]
     pokedex["forms"] = pokedex["forms"][:form - 1]
     if form == 1:

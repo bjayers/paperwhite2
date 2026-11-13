@@ -73,6 +73,12 @@ u16 CheckEvolveSpecies(PokeParty *party, PartyPkm *pkm, u32 mode, u32 a3, u8 sea
     }
     evo = GFL_HeapAllocate(heapId, EVOLUTION_COUNT * sizeof(Evolution), FALSE, "shinka_check.c", 106);
     getEvolutionInfoFile(species, evo);
+#ifdef PAPERWHITE2
+    // Paper White 2: an evolution may be for one form only (an Alolan Vulpix by an Ice Rock, a plain one by a Fire
+    // Stone): the others' are cleared before every mode, so an item for another form has no effect, and *method is
+    // the original method
+    PaperWhite2_FilterFormEvolutions(evo, PokeParty_GetParam(pkm, PKM_PARAM_FORM, NULL));
+#endif
     switch (mode) {
     case EVO_CHECK_LEVEL_UP:
         level = PokeParty_GetParam(pkm, PKM_PARAM_LEVEL, NULL);

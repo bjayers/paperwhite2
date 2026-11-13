@@ -2,6 +2,31 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-12: form evolutions (ROM session)
+
+design/form-evolutions.md sections 11 and 12, as the user decided:
+
+- **An evolution may be for one form:** `"form": n` on an entry of a species' `evolutions`; the editor's **Only form**
+  picker on each row makes any existing method one form's (an Alolan Vulpix by the Ice Rock, a plain one by the Fire
+  Stone). One filter in `CheckEvolveSpecies` covers every way of evolving; an item for another form has no effect.
+- **No Ice Stone**: the Ice Rock (Twist Mountain) with a form condition. **The form number is kept** on evolving, as
+  before. A form's record has no evolutions of its own (the packer refuses them).
+- **Eviolite** follows the form: no boost for a `no_evolution` form or one with no evolution of its own; the
+  Xtransceiver Professor reads the form's evolution too.
+- **Pokédex Evo** filters by the row's form and names a one-form method's form ("Near an Ice Rock (Alolan)"); the
+  family table and the Wonder Trade's pre-evolutions carry a form where only one leads on (for Sirfetch'd later).
+- A form's page in the editor lists the evolutions it takes, or says it can't evolve.
+
+Tested: with no condition, every data file equals main's but the Pokédex text bank (one new message); a test build in
+py-desmume (Fire Stone no effect on the Alolan Vulpix, Ninetales from the plain one; the Alolan by Rare Candy in
+Twist Mountain into Ninetales form 1, not in Opelucid; Eviolite boost only for the forms that can evolve; the Evo tab's
+labels); removing the test forms gave the ROM back byte for byte. Editor: typecheck, 78 tests, build, screenshots in
+the session scratchpad (`formevo/shots/`).
+
+Open: Sirfetch'd waits for new species (two held-Leek entries, day and night: Gen 5 has no any-time held-item method);
+an explicit target form (Pikachu into an Alolan Raichu) isn't built; tapping a family member on the Evo tab opens it
+in its default form.
+
 ## 2026-11-12: battle sprite art, export and import (ROM session, which owns `editor/` for now)
 
 The user asked for a sprite importer and buttons to export the current sprite to edit and re-import; the rig editor

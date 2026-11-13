@@ -1,5 +1,8 @@
 #include "types.h"
+#include "constants/pokemon.h"
 #include "constants/species.h"
+#include "gfl/arc.h"
+#include "nitro/mi.h"
 #include "paperwhite2/pokemon_forms.h"
 #include "paperwhite2/pokemon_forms_config.h"
 
@@ -36,4 +39,43 @@ BOOL PaperWhite2_FormCannotEvolve(u16 species, u16 form) {
         }
     }
     return FALSE;
+}
+
+void PaperWhite2_FilterFormEvolutions(Evolution *evolutions, u16 form) {
+    u32 i;
+
+    for (i = 0; i < EVOLUTION_COUNT; i++) {
+        u32 condition = evolutions[i].method >> EVOLUTION_FORM_SHIFT;
+
+        if (condition != 0 && condition != form + 1) {
+            evolutions[i].method = EVO_METHOD_NONE;
+        } else {
+            evolutions[i].method &= EVOLUTION_METHOD_MASK;
+        }
+    }
+}
+
+void PaperWhite2_GetFormEvolution(ArcTool *evolutionFile, u16 species, u16 form, Evolution *dest) {
+    Evolution evolutions[EVOLUTION_COUNT];
+    u32 i;
+
+    MI_CpuFill8(dest, 0, sizeof(Evolution));
+    if (PaperWhite2_FormCannotEvolve(species, form)) {
+        return;
+    }
+    GFL_ArcToolRead(evolutionFile, species, evolutions);
+    PaperWhite2_FilterFormEvolutions(evolutions, form);
+    for (i = 0; i < EVOLUTION_COUNT; i++) {
+        if (evolutions[i].method != EVO_METHOD_NONE) {
+            *dest = evolutions[i];
+            return;
+        }
+    }
+}
+
+BOOL PaperWhite2_FormCanEvolve(ArcTool *evolutionFile, u16 species, u16 form) {
+    Evolution evolution;
+
+    PaperWhite2_GetFormEvolution(evolutionFile, species, form, &evolution);
+    return evolution.method != EVO_METHOD_NONE;
 }

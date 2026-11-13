@@ -4,7 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { isOriginalForm, listSpecies, type ListedFile } from "../src/modules/pokemon/forms.ts";
+import { formEvolutions, isOriginalForm, listSpecies, namesOfForms, type ListedFile } from "../src/modules/pokemon/forms.ts";
 
 const POKEMON = fileURLToPath(new URL("../../res/pokemon/", import.meta.url));
 
@@ -49,4 +49,35 @@ test("the original game's forms are told from the hack's", () => {
   assert.ok(!isOriginalForm(original, "rotom", 6));
   assert.ok(!isOriginalForm(original, "pichu", 1));
   assert.ok(isOriginalForm(original, "pichu", 0));
+});
+
+test("a form takes its species' evolutions without a form and those for it, none if it can't evolve", () => {
+  const pichu = listed.find((l) => l.key === "pichu#1")!;
+  assert.deepEqual(pichu.formNames, ["Normal", "Spiky-eared"]);
+  assert.deepEqual(pichu.noEvolution, [1]);
+  assert.equal(formEvolutions(pichu, 1).length, 0);
+  assert.deepEqual(formEvolutions(pichu, 0).map((e) => e.species), ["SPECIES_PIKACHU"]);
+  // An Alolan Vulpix by an Ice Rock, a plain one by a Fire Stone (docs/paperwhite2/design/form-evolutions.md)
+  const vulpix = {
+    noEvolution: [],
+    evolutions: [
+      { method: "EVO_METHOD_ITEM", param: "ITEM_FIRE_STONE", species: "SPECIES_NINETALES", form: 0 },
+      { method: "EVO_METHOD_LEVEL_ICE_ROCK", param: 0, species: "SPECIES_NINETALES", form: 1 },
+      { method: "EVO_METHOD_LEVEL", param: 99, species: "SPECIES_NINETALES" },
+    ],
+  };
+  assert.deepEqual(formEvolutions(vulpix, 0).map((e) => e.method), ["EVO_METHOD_ITEM", "EVO_METHOD_LEVEL"]);
+  assert.deepEqual(formEvolutions(vulpix, 1).map((e) => e.method), ["EVO_METHOD_LEVEL_ICE_ROCK", "EVO_METHOD_LEVEL"]);
+  assert.deepEqual(formEvolutions(vulpix, 2).map((e) => e.method), ["EVO_METHOD_LEVEL"]);
+});
+
+test("forms' names: form 0's form_name or the species' name, then pokedex.forms'", () => {
+  assert.deepEqual(namesOfForms("Vulpix", undefined, 1), ["Vulpix"]);
+  assert.deepEqual(namesOfForms("Vulpix", { forms: [{ name: "Alolan" }] }, 3), ["Vulpix", "Alolan", "Form 2"]);
+  const rotom = listed.find((l) => l.key === "rotom")!;
+  assert.equal(rotom.formNames.length, rotom.count);
+});
+
+test("no form's record has evolutions of its own: the game reads its species' (tools/data/species_data.py)", () => {
+  for (const f of files()) if (/form_\d+\.json$/.test(f.path)) assert.deepEqual(f.data.evolutions, [], f.path);
 });

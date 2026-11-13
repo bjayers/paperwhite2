@@ -372,8 +372,10 @@ Every species (`src/modules/pokemon/`, `res/pokemon/<species>/data.json`), by nu
 its alternate forms, every one its `forms.count` gives, by its Pokédex name (`pokedex.forms`), whether or not it has a
 record (`form_<n>.json`); the hack's are tagged "added". A species' page has its front sprite (normal or shiny), its name and types, its base stats as bars
 with their total and its EV yields, its abilities, held items, breeding and the rest of its record, its evolutions
-(each method's parameter as an item, a move, a species or a number, as the method takes) with the family's tree, whose
-members open with a click, its learnset (by level, sorted; TMs and HMs; tutors; egg moves) and its Pokédex data. Save
+(each method's parameter as an item, a move, a species or a number, as the method takes; for a species with forms, an
+**Only form** picker, Any or one of its forms by name, so that any method can be one form's, an Alolan Vulpix's Ice
+Rock beside a plain one's Fire Stone: the entry's `"form"`, docs/paperwhite2/design/form-evolutions.md) with the
+family's tree (a one-form evolution says "(Alolan only)"), whose members open with a click, its learnset (by level, sorted; TMs and HMs; tutors; egg moves) and its Pokédex data. Save
 (Ctrl+S) checks each file with the build's validator. `<SpeciesIcon species={...} />` is a species' party icon in the
 colors poke_icon.c gives it, for any editor.
 
@@ -383,10 +385,13 @@ Forms (`FormPage.tsx`, docs/paperwhite2/design/forms-and-species.md section 11.6
   the species' forms have records). A dry run says what it will write first. Its Wonder Trade row puts the species in
   or out of the random pool (`excluded_species`).
 - A **form's page** has its sprite and icon, a Form section (Data: its own record on or off; Evolution: Can't evolve,
-  `forms.no_evolution`; Wonder Trade: in the random pool or not, `excluded_forms`; **Remove form** for the hack's last
-  form), its Pokédex entry, its Battle sprite (below), its Art (whether its battle sprite is a copy of its species'
-  or its own; the icon and the 96x96 stills imported as PNGs, checked and previewed, the icon's palette bank picked
-  from its colours) and, with a record, the same data sections as a species.
+  `forms.no_evolution`, and under it the species' evolutions this form takes, read only, with what each makes of it,
+  "Ninetales: Alolan", or "(no Alolan form yet: it becomes the normal form)", a link to edit them on the species' page,
+  and a clear "It can't evolve" where none is for it, which Eviolite follows too; Wonder Trade: in the random pool or
+  not, `excluded_forms`; **Remove form** for the hack's last form), its Pokédex entry, its Battle sprite (below), its
+  Art (whether its battle sprite is a copy of its species' or its own; the icon and the 96x96 stills imported as PNGs,
+  checked and previewed, the icon's palette bank picked from its colours) and, with a record, the same data sections
+  as a species but evolutions (a form's record has none: the game reads its species').
 - **Battle sprite** (`BattleSpriteArt.tsx`, on every species' page and every form with art of its own;
   docs/paperwhite2/design/battle-sprites.md section 14): the sprite as the battle draws it, its "stay" animation played
   from the sheets on its rig, front and back, female, normal or shiny. **Export art (.zip)** gives the sheets, stills,

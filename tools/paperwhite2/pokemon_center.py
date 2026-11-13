@@ -74,6 +74,8 @@ LEVEL_METHODS = {"EVO_METHOD_LEVEL", "EVO_METHOD_LEVEL_ATK_GT_DEF", "EVO_METHOD_
                  "EVO_METHOD_LEVEL_ATK_LT_DEF", "EVO_METHOD_LEVEL_PERSONALITY_LOW", "EVO_METHOD_LEVEL_PERSONALITY_HIGH",
                  "EVO_METHOD_SHEDINJA", "EVO_METHOD_SHEDINJA_MADE", "EVO_METHOD_LEVEL_MALE", "EVO_METHOD_LEVEL_FEMALE"}
 LAST_SPECIES = "SPECIES_GENESECT"
+# A pre-evolution's species below this bit, and from it the form it must have plus one, or 0 for any
+PRE_EVOLUTION_FORM_SHIFT = 11
 # The special reward's IVs, in the order of PKM_PARAM_IV_HP's fields
 STATS = ("hp", "attack", "defense", "speed", "special_attack", "special_defense")
 # The seasons, each a form of Deerling and Sawsbuck (season_form.c)
@@ -188,11 +190,17 @@ def name_lines(path: Path = SOURCE) -> list[str]:
 def species_tables(data: dict) -> tuple[list[int], list[int]]:
     """Each National Pokédex species' pre-evolution (0 for none) and least level, from res/pokemon/*/data.json: a
     species that evolves from another at a level needs that level, one that evolves by anything else
-    other_evolution_levels' level for its stage, and never less than its pre-evolution's."""
+    other_evolution_levels' level for its stage, and never less than its pre-evolution's. A pre-evolution that evolves
+    into the species in one form only (its evolutions into it all have that "form") has the form plus one in the
+    high bits, PRE_EVOLUTION_FORM_SHIFT on, which WonderTrade_Plan gives the Pokémon (Sirfetch'd's Farfetch'd is a
+    Galarian one)."""
     values = datajson.constants()
     last = values[LAST_SPECIES]
+    if last >= 1 << PRE_EVOLUTION_FORM_SHIFT:
+        raise DataError(f"{LAST_SPECIES} is past the pre-evolutions' {1 << PRE_EVOLUTION_FORM_SHIFT} species")
     names = {number: name for name, number in values.items() if name.startswith("SPECIES_") and 0 < number <= last}
     pre = [0] * (last + 1)
+    pre_forms = [set() for _ in range(last + 1)]
     method = [None] * (last + 1)
     stage = [1] * (last + 1)
     for number in range(1, last + 1):
@@ -204,6 +212,8 @@ def species_tables(data: dict) -> tuple[list[int], list[int]]:
             if target <= last and not pre[target]:
                 pre[target] = number
                 method[target] = evolution
+            if target <= last and pre[target] == number:
+                pre_forms[target].add(evolution.get("form"))
     levels = data["wonder_trade"]["other_evolution_levels"]
 
     def least_level(number: int) -> int:
@@ -216,7 +226,9 @@ def species_tables(data: dict) -> tuple[list[int], list[int]]:
             level = levels["third_stage"] if stage[number] >= 3 else levels["second_stage"]
         return max(level, least_level(pre[number]))
 
-    return pre, [least_level(number) if number else 1 for number in range(last + 1)]
+    packed = [number | (next(iter(forms)) + 1) << PRE_EVOLUTION_FORM_SHIFT
+              if len(forms) == 1 and None not in forms else number for number, forms in zip(pre, pre_forms)]
+    return packed, [least_level(number) if number else 1 for number in range(last + 1)]
 
 
 def fee_ids() -> dict[str, int]:
@@ -337,7 +349,9 @@ def wonder_trade_lines(data: dict) -> list[str]:
         "// The species never received nor sent, a bit each by species number",
         *array("WONDER_TRADE_EXCLUDED_SPECIES", [f"0x{byte:02x}" for byte in excluded]),
         f"#define WONDER_TRADE_SPECIES_COUNT {last + 1}",
-        "// Each species' pre-evolution (0 for none) and least level, below which a received one is its pre-evolution",
+        "// Each species' pre-evolution (0 for none; its form plus one from WONDER_TRADE_PRE_EVOLUTION_FORM_SHIFT",
+        "// where only that form evolves into it) and least level, below which a received one is its pre-evolution",
+        f"#define WONDER_TRADE_PRE_EVOLUTION_FORM_SHIFT {PRE_EVOLUTION_FORM_SHIFT}",
         *array("WONDER_TRADE_PRE_EVOLUTIONS", pre),
         *array("WONDER_TRADE_LEAST_LEVELS", least, 32),
         "// The species received in other forms: { species, whether its form is the season's, first, count } of",
