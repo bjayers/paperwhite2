@@ -210,3 +210,4 @@ PokedexData_Text_GameShortSoulSilver = SS
 PokedexData_Text_GameShortBlack = B
 PokedexData_Text_GameShortWhite = W
 PokedexData_Text_GameShortBlack2 = B2
+PokedexData_Text_EvoForm = {0100:0} ({0100:1})

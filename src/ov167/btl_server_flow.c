@@ -38,6 +38,7 @@
 #include "system/game_beacon.h"
 #ifdef PAPERWHITE2
 #include "constants/pokemon.h"
+#include "paperwhite2/pokemon_forms.h"
 #include "paperwhite2/prestige.h"
 #include "text/system/0019.h"
 #endif
@@ -7526,6 +7527,13 @@ u32 BtlServerFlow_GetFrontPosCount(BtlServerFlow *flow) {
 
 // Whether a mon's species can evolve
 BOOL CheckEvolution(BtlServerFlow *flow, u8 monId) {
+#ifdef PAPERWHITE2
+    // Paper White 2: by its form too, so that Eviolite doesn't boost a form that never evolves (the Spiky-eared
+    // Pichu) or that none of its species' evolutions is for
+    BattleMon *mon = GetPokeParam(flow->pokeCon, monId);
+
+    return PaperWhite2_FormCanEvolve(flow->unk4A4, GetBattleMonSpecies(mon), GetBattleMonStat(mon, BATTLEMON_FORM));
+#else
     u16 species;
     u16 i;
 
@@ -7536,6 +7544,7 @@ BOOL CheckEvolution(BtlServerFlow *flow, u8 monId) {
         }
     }
     return FALSE;
+#endif
 }
 
 u16 BtlServerFlow_CalcSpeed(BtlServerFlow *flow, BattleMon *mon, BOOL flag) {

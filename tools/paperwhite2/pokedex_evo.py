@@ -10,9 +10,13 @@ into, so the page needs each species' family root to draw its tree from (paperwh
 
 - FAMILY_MEMBER: a u16 for each species by its number, from SPECIES_NONE to the last species (SPECIES_GENESECT): its
   family's root, the species that no other evolves into (itself for one that doesn't evolve, 0 for SPECIES_NONE). A
-  species is a child of the first species whose evolutions name it, in the species' order. Forms have no evolutions
-  of their own: the game reads a species' evolutions by its species alone (evolution_check.c), so a form evolves as
-  its base form does (Burmy's cloaks into Wormadam's).
+  species is a child of the first species whose evolutions name it, in the species' order. Forms have no evolution
+  lists of their own: the game reads a species' evolutions by its species (evolution_check.c), and an evolution may be
+  for one form only (its "form", docs/paperwhite2/design/form-evolutions.md), so a form evolves by its species' list
+  as the form condition allows and keeps its form number (Burmy's cloaks into Wormadam's). Where a species is reached
+  from its root only through evolutions for one form (Sirfetch'd from a Galarian Farfetch'd), the entry has that form
+  plus one in its high bits, FAMILY_FORM_SHIFT on, so that the page draws the root's tree in that form; else 0 there,
+  and the page uses the shown Pokémon's form.
 - BALLS_MEMBER: the tree's Poké Ball icons, res/paperwhite2/pokedex_art/evo_ball_{caught,seen,unknown}.png (16 by 16,
   indexed in the art's palette, the top screen's row 0, info_stats.png's): their 16 colors (BGR555, 32 bytes), then
   each one's 4 tiles of 4bpp, two across, in that order (3 times 128 bytes). The page loads the colors as the Evo
@@ -80,6 +84,9 @@ FLAVOUR_MEMBER = ARCHIVE_MEMBERS + 7
 TAB_MEMBER = ARCHIVE_MEMBERS + 8
 # POKEDEX_INFO_EVO_FAMILY_MAX in include/paperwhite2/pokedex_info.h
 FAMILY_MAX = 8
+# EVO_FAMILY_FORM_SHIFT in paperwhite2_pokedex_info_evo.c: a family entry's root species below it, the root's form
+# plus one from it, so species stay below 2048
+FAMILY_FORM_SHIFT = 11
 BALL_SIZE = 16
 
 
@@ -88,7 +95,8 @@ class EvoError(Exception):
 
 
 def evolutions():
-    """Each species' number with the numbers of the species it evolves into, in its data's order."""
+    """Each species' number with the numbers of the species it evolves into, in its data's order, each with the form
+    that evolves into it, or None where any form does (an evolution without a form condition, or ones for several)."""
     numbers = constants()
     out = {}
     for path in sorted(SPECIES.glob("*/data.json")):
@@ -96,31 +104,42 @@ def evolutions():
         if number is None:
             continue
         data = json.loads(path.read_text())
-        out[number] = [numbers[e["species"]] for e in data.get("evolutions") or [] if e["species"] in numbers]
+        forms = {}
+        for e in data.get("evolutions") or []:
+            if e["species"] in numbers:
+                forms.setdefault(numbers[e["species"]], set()).add(e.get("form"))
+        out[number] = [(child, next(iter(f)) if len(f) == 1 else None) for child, f in forms.items()]
     return out
 
 
 def roots():
-    """Each species' family root, from SPECIES_NONE to the last species."""
+    """Each species' family root, from SPECIES_NONE to the last species, with the root's form plus one in the high bits
+    where only that form leads to the species; and the families' sizes."""
     last = constants()["SPECIES_GENESECT"]
     children = evolutions()
     parent = {}
     for species in sorted(children):
-        for child in children[species]:
+        for child, form in children[species]:
             if child != species:
-                parent.setdefault(child, species)
+                parent.setdefault(child, (species, form))
     out = []
     for species in range(last + 1):
-        root, seen = species, set()
+        root, seen, root_form = species, set(), None
         while root in parent:
             if root in seen:
                 raise EvoError(f"species {species}'s evolutions loop")
             seen.add(root)
-            root = parent[root]
-        out.append(root)
+            root, form = parent[root]
+            # the condition nearest the root decides, as the form is kept from there on
+            if form is not None:
+                root_form = form
+        if root >= 1 << FAMILY_FORM_SHIFT:
+            raise EvoError(f"species {root} is past the family table's {1 << FAMILY_FORM_SHIFT} species")
+        out.append(root if root_form is None else root | (root_form + 1) << FAMILY_FORM_SHIFT)
     sizes = {}
-    for species, root in enumerate(out):
+    for species, entry in enumerate(out):
         if species:
+            root = entry & ((1 << FAMILY_FORM_SHIFT) - 1)
             sizes[root] = sizes.get(root, 0) + 1
     for root, size in sizes.items():
         if size > FAMILY_MAX:

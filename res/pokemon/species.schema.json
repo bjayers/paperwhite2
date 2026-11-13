@@ -168,7 +168,7 @@
         },
         "evolutions": {
             "type": "array", "maxItems": 7,
-            "description": "Up to seven evolutions",
+            "description": "Up to seven evolutions. A form's record (form_<n>.json) has none: the game reads a species' evolutions by species, for all its forms, and an entry's form says which form takes it",
             "items": {
                 "type": "object", "additionalProperties": false, "required": [ "method", "param", "species" ],
                 "properties": {
@@ -177,7 +177,11 @@
                         "type": [ "integer", "string" ], "minimum": 0, "maximum": 65535,
                         "description": "Depends on the method: a level, an item, a move, a species, or a value such as the friendship or beauty needed"
                     },
-                    "species": { "$ref": "#/$defs/species" }
+                    "species": { "$ref": "#/$defs/species" },
+                    "form": {
+                        "type": "integer", "minimum": 0, "maximum": 30,
+                        "description": "Paper White 2: only a Pokémon of this form evolves this way (such as an Alolan Vulpix, form 1, by an Ice Rock); without it, every form does. The evolved Pokémon keeps its form number. Packed in the method's high byte as form + 1 (PaperWhite2_FilterFormEvolutions in CheckEvolveSpecies)"
+                    }
                 }
             }
         },

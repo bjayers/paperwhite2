@@ -24,8 +24,9 @@ add makes form N, the species' forms.count, from the species (or from --from FOR
 - form_<N>.json and its forms.json row, with --record, or always when the species' forms have records (the game
   reads a form's record at formFile + form - 1, so a species' forms have records all or none): the template's record
   without what only a species has (name, name_article, pokedex, baby_species, regional_dex_number, cry_volume and
-  learnset.egg_moves). Records made for the species' other forms then too, as copies of the species'. The species'
-  form records' forms.count follows.
+  learnset.egg_moves), and with no evolutions: the game reads the species' for every form, and an evolution's form
+  says which form takes it. Records made for the species' other forms then too, as copies of the species'. The
+  species' form records' forms.count follows.
 - the followers: res/field/actors/followers/<species>_form_<N>[_female][_shiny]/, copies of the template's, with
   their OBJ_CODE_FOLLOWER_ constants after the last follower code in generated/obj_codes.txt (GetIndexOfObjID's range
   ends at the generated FOLLOWING_LAST_OBJ_CODE).
@@ -164,10 +165,12 @@ def record_rows(folder: str) -> tuple[list, list[int]]:
 
 
 def form_record(template: dict, count: int) -> dict:
-    """A form's record from a species' or another form's: without what only a species has."""
+    """A form's record from a species' or another form's: without what only a species has, and evolutions."""
     record = {key: value for key, value in template.items() if key not in SPECIES_ONLY}
     record["forms"] = {"count": count, "sprite_offset": 0}
     record["learnset"] = {key: value for key, value in record["learnset"].items() if key != "egg_moves"}
+    # the game reads its species' evolutions (tools/data/species_data.py refuses a form's own)
+    record["evolutions"] = []
     return record
 
 

@@ -257,17 +257,22 @@ void WonderTrade_Plan(WonderTradePlan *plan, u32 sentLevel, u32 season) {
     const TradeLanguage *language;
     const NameRange *names;
     u32 species;
+    u32 form = 0;
 
     do {
         species = 1 + GFL_RandomLC(WONDER_TRADE_SPECIES_COUNT - 1);
     } while (WonderTrade_IsExcluded(species));
     plan->level = PickLevel(sentLevel);
-    // No level 8 Garchomp: a species too evolved for the level is its pre-evolution
+    // No level 8 Garchomp: a species too evolved for the level is its pre-evolution, in the form that evolves into it
+    // where only one does (its form plus one in the entry's high bits), which it keeps down the family
     while (plan->level < sLeastLevels[species] && sPreEvolutions[species] != 0) {
-        species = sPreEvolutions[species];
+        if (sPreEvolutions[species] >> WONDER_TRADE_PRE_EVOLUTION_FORM_SHIFT != 0) {
+            form = sPreEvolutions[species] >> WONDER_TRADE_PRE_EVOLUTION_FORM_SHIFT;
+        }
+        species = sPreEvolutions[species] & ((1 << WONDER_TRADE_PRE_EVOLUTION_FORM_SHIFT) - 1);
     }
     plan->species = species;
-    plan->form = PickForm(species, season);
+    plan->form = form != 0 ? form - 1 : PickForm(species, season);
 
     plan->languageIndex = PickLanguage();
     language = &sLanguages[plan->languageIndex];

@@ -76,6 +76,11 @@ PARAM_PREFIXES = {
     "MOVE_": {21},
     "SPECIES_": {7, 22},
 }
+# Paper White 2: an evolution's "form", the only form that evolves that way, is the method's high byte, form + 1 (0 for
+# every form; PaperWhite2_FilterFormEvolutions in src/paperwhite2/main/paperwhite2_pokemon_forms.c). Methods stay below
+# 256, and a Pokémon's form below 31
+EVOLUTION_FORM_SHIFT = 8
+EVOLUTION_METHOD_MASK = 0xFF
 
 
 # The moves of the type move tutor, by their bit in the record's first tutor word: PokeParty_GetTutorMoveID tests bits 0
@@ -134,12 +139,17 @@ def record_json(record: bytes, levelup: bytes, evolutions: bytes, tutors_by_bit:
     evolution_list = []
     for method, param, species in (struct.unpack_from("<3H", evolutions, 6 * i) for i in range(EVOLUTIONS)):
         if method or param or species:
+            form = method >> EVOLUTION_FORM_SHIFT
+            method &= EVOLUTION_METHOD_MASK
             prefix = next((p for p, methods in PARAM_PREFIXES.items() if method in methods), None)
-            evolution_list.append({
+            evolution = {
                 "method": name("EVO_METHOD_", method),
                 "param": name(prefix, param) if prefix else param,
                 "species": name("SPECIES_", species),
-            })
+            }
+            if form:
+                evolution["form"] = form - 1
+            evolution_list.append(evolution)
     ratio_names = {0: "GENDER_RATIO_MALE_ONLY", 254: "GENDER_RATIO_FEMALE_ONLY", 255: "GENDER_RATIO_GENDERLESS"}
     return {
         "$schema": "../species.schema.json",
@@ -342,6 +352,19 @@ def record_bytes(data: dict, first_form: int, tutors_by_bit: list[list[str]], wh
     )
 
 
+def evolution_method(evolution: dict, form_count: int, where: str) -> int:
+    """An evolution's method, with its form condition, if any, in the high byte (EVOLUTION_FORM_SHIFT)."""
+    method = value(evolution["method"], where)
+    if method > EVOLUTION_METHOD_MASK:
+        raise DataError(f"{where}: evolution method {evolution['method']} is past {EVOLUTION_METHOD_MASK}, where the "
+                        "form condition starts")
+    if "form" in evolution:
+        if evolution["form"] >= form_count:
+            raise DataError(f"{where}: an evolution's form {evolution['form']} is past the species' {form_count} forms")
+        method |= (evolution["form"] + 1) << EVOLUTION_FORM_SHIFT
+    return method
+
+
 def pack(root: Path, outputs: list[Path]):
     schema = load_schema(root / "species.schema.json")
     files, with_babies, first_forms = record_files(root)
@@ -362,7 +385,11 @@ def pack(root: Path, outputs: list[Path]):
         personal.append(record_bytes(data, first_form, tutors_by_bit, where))
         levelup.append(b"".join(struct.pack("<HH", value(move, where), level)
                                 for level, move in data["learnset"]["by_level"]) + b"\xff\xff\xff\xff")
-        entries = [(value(e["method"], where), value(e["param"], where), value(e["species"], where))
+        if path.name != "data.json" and data["evolutions"]:
+            raise DataError(f"{where}: a form's record has no evolutions, since the game reads its species': give an "
+                            "evolution of the species a form for one form's")
+        form_count = data["forms"]["count"]
+        entries = [(evolution_method(e, form_count, where), value(e["param"], where), value(e["species"], where))
                    for e in data["evolutions"]]
         evolutions.append(b"".join(struct.pack("<3H", *e) for e in entries + [(0, 0, 0)] * (EVOLUTIONS - len(entries))))
         if index < national:
