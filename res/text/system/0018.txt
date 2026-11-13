@@ -1157,4 +1157,10 @@ Bank0018_Text_CompletelySynchronizedFoes = It is completely synchronized\nwith t
 Bank0018_Text_HurtBySeaFire = {0102:0} is hurt\nby the sea of fire!
 Bank0018_Text_WildHurtBySea = The wild {0102:0} is hurt\nby the sea of fire!
 Bank0018_Text_FoesHurtBySea = The foe's {0102:0} is hurt\nby the sea of fire!
+Bank0018_Text_CoveredInSyrup = {0102:0} got covered\nin sticky candy syrup!
+Bank0018_Text_WildCoveredInSyrup = The wild {0102:0} got covered\nin sticky candy syrup!
+Bank0018_Text_FoesCoveredInSyrup = The foe's {0102:0} got covered\nin sticky candy syrup!
+Bank0018_Text_GoingAllOut = {0102:0} is going all out\nfor this attack!
+Bank0018_Text_WildGoingAllOut = The wild {0102:0} is going all out\nfor this attack!
+Bank0018_Text_FoesGoingAllOut = The foe's {0102:0} is going all out\nfor this attack!
 \pad{54}

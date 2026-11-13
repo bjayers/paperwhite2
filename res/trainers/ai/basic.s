@@ -118,6 +118,9 @@ Basic_CheckBulletproof:
     IfMoveEqualTo MOVE_SLUDGE_BOMB, ScoreMinus10
     IfMoveEqualTo MOVE_WEATHER_BALL, ScoreMinus10
     IfMoveEqualTo MOVE_ZAP_CANNON, ScoreMinus10
+#ifdef MOVE_SYRUP_BOMB
+    IfMoveEqualTo MOVE_SYRUP_BOMB, ScoreMinus10
+#endif
 #endif
 
 Basic_ScoreMoveEffect:

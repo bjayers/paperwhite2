@@ -118,14 +118,14 @@ test("adding abilities and removing them again leaves every file as it was, and 
   assert.match(state().abilitiesHeader, /PAPERWHITE2_ABILITY_MOLD_BREAKER_IGNORED ABILITY_BULLETPROOF, ABILITY_TEST_GUARD\n/);
   assert.match(state().abilitiesHeader, /PAPERWHITE2_ABILITY_MOLD_BREAKER_IGNORED_COUNT 2\n/);
 
-  const syrup = run("abilities.py", "add", "Sweet Syrup", "--from", "ABILITY_INTIMIDATE", "--no-mold-breaker-ignores");
-  assert.equal(json("res/abilities/sweet_syrup.json").mold_breaker_ignores, undefined);
+  const syrup = run("abilities.py", "add", "Test Scare", "--from", "ABILITY_INTIMIDATE", "--no-mold-breaker-ignores");
+  assert.equal(json("res/abilities/test_scare.json").mold_breaker_ignores, undefined);
   assert.equal(syrup.id, info.nextId + 1);
   const blank = run("abilities.py", "add", "Test Blank", "--blank");
   assert.ok(blank.warnings?.some((w) => /does nothing in battle/.test(w)));
-  assert.match(state().abilitiesHeader, /PAPERWHITE2_ABILITY_HANDLERS_LIKE ABILITY_BULLETPROOF, ABILITY_LEVITATE, ABILITY_INTIMIDATE, ABILITY_TEST_BLANK\n/);
+  assert.match(state().abilitiesHeader, /PAPERWHITE2_ABILITY_HANDLERS_LIKE ABILITY_BULLETPROOF, ABILITY_SWEET_SYRUP, ABILITY_RIPEN, ABILITY_LEVITATE, ABILITY_INTIMIDATE, ABILITY_TEST_BLANK\n/);
 
-  for (const ability of ["ABILITY_TEST_BLANK", "ABILITY_SWEET_SYRUP", "ABILITY_TEST_GUARD"]) run("abilities.py", "remove", ability);
+  for (const ability of ["ABILITY_TEST_BLANK", "ABILITY_TEST_SCARE", "ABILITY_TEST_GUARD"]) run("abilities.py", "remove", ability);
   assert.deepEqual(state(), before);
 });
 
@@ -164,8 +164,8 @@ test("names, handlers, templates and removals are refused as the build would", (
   const pledge = run("moves.py", "add", "Test Pledge", "--from", "MOVE_FIRE_PLEDGE", "--check");
   assert.ok(pledge.warnings?.some((w) => /tell the moves apart/.test(w)));
   // Names in res/ or the code keep a move or ability
-  assert.match(refusal("moves.py", "remove", "MOVE_GRAV_APPLE"), /res\/pokemon\/flapple\/data\.json.*paperwhite2_battle\.c/);
-  assert.match(refusal("abilities.py", "remove", "ABILITY_BULLETPROOF"), /res\/pokemon\/applin\/data\.json/);
+  assert.match(refusal("moves.py", "remove", "MOVE_SYRUP_BOMB"), /res\/pokemon\/dipplin\/data\.json/);
+  assert.match(refusal("abilities.py", "remove", "ABILITY_RIPEN"), /res\/pokemon\/applin\/data\.json.*paperwhite2_battle\.c/);
   assert.deepEqual(state(), before);
 });
 
