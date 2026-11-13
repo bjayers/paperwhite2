@@ -2,6 +2,31 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-12: battle sprites, the armature and curves (ROM session, on a branch)
+
+The rig editor plan's step 3 (design/battle-sprites.md section 19; editor/README.md, The armature):
+
+- A side's armature is `<side>_rig_source.json` beside its flat rig (schema `res/pokemon/battle_sprite_rig_source.schema.json`):
+  each track's bone (parent, key poses with constant, linear, eased or Bézier curves per channel, loop, step) and each
+  sequence's pose keys with the root's key poses. The **editor** bakes it into the flat rig on every change; the flat
+  rig stays the build's only input (nothing in tools/ or the build changed), and `editor/tests/armature.test.ts` fails
+  if a committed flat rig isn't what its armature bakes.
+- The bake (`editor/src/modules/rig/armature.ts`): samples at the step (6 by default, per sequence or bone) and at each
+  key pose, composes children with their parents' baked keys, merges equal samples between key poses; the root goes
+  into the sequence's keys over continuing parts (as Game Freak's whole-sprite moves) and into the parts' tracks over
+  restarting ones (a sequence key change restarts them); shears warned of. Parenting keeps a part where it is
+  (Keep Transform).
+- Convert to armature bakes back byte for byte on all 1,506 sides; Pichu and Spiky-eared Pichu with head and ears
+  parented too. Tests: `npm test` 106 (13 new), typecheck, vite build.
+- UI: outliner (drag to parent), bones on the preview, auto-keying gizmos, key-pose diamonds on the timeline, a graph
+  editor with Bézier handles, the bake step, the shear warning in Checks, and the timeline docked at the page's bottom
+  in a resizable panel (height remembered per viewer).
+- End to end: Spiky-eared Pichu's front converted, head and ears parented, a root jump (0, 12, 24 frames, eased),
+  saved, built, `verify_dsi_rom.py` ok, and seen in py-desmume's summary jumping as the preview drew it; 8,463 bytes
+  resident (6,671 before). Reverted (res/ unchanged by these commits).
+
+Next: the user's own armature edits; a test of a heavier bake (step 2 or 3) on the battle and Pokédex screens.
+
 ## 2026-11-12: battle sprites, the Rig Editor (ROM session, on a branch)
 
 The rig editor plan's step 2 (design/battle-sprites.md section 18; editor/README.md, The Rig Editor):

@@ -450,6 +450,43 @@ files the build will write against the ~40 KB guidance (section 15.6) with the s
   pivot; a second rectangle; new, and remove when no key shows it, the later pictures renumbered) and the **Sequence
   key** (pose, frames). Under the sheet, the **Sprite** (whether the battle's idle pause stops it, the airborne flag,
   the box) and the **Checks**.
+- **The docked panel:** the timeline sits at the page's bottom, with the **Graph Editor** (Timeline, Graph Editor or
+  Both); drag its top edge to make it taller or shorter. The height and the choice are remembered per viewer
+  (`localStorage`, read and written in try/catch).
+
+### The armature (Blender-like bones and curves)
+
+A side can have an armature, `<side>_rig_source.json` beside its rig (`src/modules/rig/armature.ts`,
+`res/pokemon/battle_sprite_rig_source.schema.json`; docs/paperwhite2/design/battle-sprites.md section 19). The editor
+bakes it into the flat rig on every change, and the preview, the timeline's blocks, the checks and the size meter all
+show the bake, as the game will play it; Save writes the baked `<side>_rig.json` (checked first) and then the
+armature. The build reads only the flat rig, and `tests/armature.test.ts` fails if a flat rig in res/ isn't what its
+armature bakes.
+
+- **Convert to armature** (the side panel's Armature section): each part a bone of the root's, at its pivot, its keys
+  held key poses; it bakes back to the rig byte for byte (all 1,506 sides). **Remove armature** deletes the file (the
+  rig keeps what it baked).
+- **Outliner:** the Root (the whole sprite: the sequence's move, turn and scale about the feet, and the pose each key
+  shows) and the shown pose's bones as a tree. Drag a bone onto another to parent it, onto Root to unparent it; or
+  choose its parent under **Bone**, or **Pick parent on the preview**. Parenting keeps the part where it is (Blender's
+  Keep Transform): its key poses are written again relative to the parent, so only the parent's keys from then on
+  move it. A child follows its parent's turn, scale and move; rotation and even scale bake exactly, and a parent's
+  uneven scale over a turned child (a shear the game can't draw) is warned of under Checks.
+- **Posing:** with a bone (or the Root) chosen, the Move, Rotate and Scale gizmos key it at the playhead (auto-key:
+  the key pose there, or a new one with the curves' values there), in its parent's frame. **Key pose** in the side
+  panel: frame, picture (the root: pose), move, turn (degrees, not wrapped), scale, and the **curve** to the next key
+  pose (Constant, Linear, Ease in, Ease out, Ease in and out, Bézier); + Key at playhead, Delete, Go to. **Bone**:
+  parent, loop length, its own bake step, the key type it bakes to.
+- **Timeline:** key poses are diamonds (coloured by curve) above the keys they bake to; drag a diamond in time (Shift:
+  steps of 6), click to choose it. The baked blocks are read only. **Bake every** in the panel's header sets the shown
+  sequence's step (6 frames, Game Freak's rhythm, by default; finer steps show on the size meter).
+- **Graph Editor:** the chosen bone's or root's channels (move x and y, turn, scale x and y) as curves over its own
+  time, each in its own range (Normalize) or one; the held values the bake writes dashed under them. Click a key to
+  choose it and its channel, drag it in time and value (Shift: one direction), drag a Bézier key's handles (the other
+  follows; Alt breaks them), set the chosen channel's curve (or every channel's) from the menu; a click elsewhere moves
+  the playhead.
+- **Preview:** the bones, from each joint toward its picture, with dashed links to the parent (or to the root's ring
+  at the feet); the Bones toggle hides them. Ctrl+Z and Ctrl+Y undo across both files in one history.
 
 ## The Trainer Editor
 

@@ -5,7 +5,7 @@ that builds them from parts: import the parts, set each part's box, place and la
 Researched 2026-11-12 from the code (`src/system/mcss.c`, `src/system/mcss_tool.c`, `src/system/pokegra.c`,
 `src/ov168/btlv_mcss.c`, `lib/nnsys/src/g2d/g2d_MultiCellAnimation.c`) and the data (`res/pokemon/`, the White 2
 archive `a/0/0/4`). Built since: new form groups (section 6), the art's export and import on the existing rig
-(section 14), the rig's JSON form, writer and checks (section 15), the rig as source (section 17) and the editor's flat rig editing (section 18); the armature and curves are not. "Verified" means read
+(section 14), the rig's JSON form, writer and checks (section 15), the rig as source (section 17), the editor's flat rig editing (section 18) and the armature and curves (section 19). "Verified" means read
 in the code or decoded from the data; "inferred" means reasoned and not checked in the game.
 
 The decoder and renderer that prove the decoding are in the ROM session's scratchpad
@@ -742,8 +742,8 @@ The plan:
    parts' layer order, the per-part keyframe timeline (picture, move, rotation, scale, frames), sequences (stay, stop),
    idle parts, the live preview (a JavaScript port of `mcss.render`) with the battle's pauses, normal and shiny, and
    the checks; Copy front to back.
-3. **The armature and curves**: a source layer above the flat rig (parents, key poses, curves, the bake step) baked
-   into the flat rig on save, with the shear warning.
+3. **The armature and curves** (built, section 19): a source layer above the flat rig (parents, key poses, curves, the
+   bake step) baked into the flat rig as it is edited, with the shear warning.
 
 ## 17. Built (2026-11-12): the rig as source
 
@@ -897,10 +897,170 @@ bake: a 2- or 3-frame step is visible against the 40 KB guidance before saving.
 
 ### 18.3 Open
 
-- Not built: tweening, an armature and curves (step 3); hand-placing a rectangle's OBJs; editing the box (kept as it
+- Not built: hand-placing a rectangle's OBJs; editing the box (kept as it
   is; the egg hatching and evolution centre by it); adding sequences or poses (the original's are kept; a pose is
   edited part by part); a picture's `obj_attribute` (kept, or copied when a picture is added).
 - The preview doesn't draw rectangles past the sheet mirrored, as `mcss.render` doesn't (the game does; 6 original
   sides rely on it, a warning in the checks).
 - A pose's idle parts are positions, shared by every pose: reordering one pose's layers moves the idle flags with the
   part, which may change what they mean in another pose.
+
+## 19. Built (2026-11-12): the armature and curves
+
+Section 16's step 3. A side can have an **armature**: `<side>_rig_source.json` beside `<side>_rig.json`
+(`res/pokemon/battle_sprite_rig_source.schema.json`), which the Rig Editor bakes into the flat rig on every change.
+`editor/src/modules/rig/armature.ts` (the format, the bake, Convert to armature), `armatureEdit.ts` (the views' edits),
+`GraphEditor.tsx`; `editor/README.md`, The Rig Editor.
+
+### 19.1 Where the bake runs: in the editor; the flat rig stays the build's input
+
+The flat rig stays in res/ as the packer's only input, and is the armature's baked output; both files are committed.
+Why, over a Python bake at build time:
+
+- **Everything else reads the flat rig**: the packer, `mcss.read_rig`, `battle_sprite.py`'s export, check and import,
+  `pokedex_sprites.py` (the Pokédex Info page's middles), `pokemon_form.py`, the editor's preview and checks. A build-time
+  bake would have to sit in front of each of them, or they'd read a stale rig.
+- **One bake, not two kept equal.** The bake's floating point (turns composed through parents, curves sampled) would
+  need a Python twin proven equal to the last bit on every case; with the bake in the editor there is nothing to keep
+  in step, and the build stays the byte-for-byte path of section 17.
+- **What the game gets is in the diff**: `git diff w2-original -- res/` shows the keys the hack ships, not only the
+  curves that make them.
+- The guard: `editor/tests/armature.test.ts` checks that **every** `*_rig_source.json` in res/ bakes to its flat rig
+  exactly, so a flat rig edited by hand (or by a tool) without its armature fails the editor's tests. In the editor, a
+  side with an armature edits its keys only through it; Save writes the baked flat rig (after `mcss_rig.check`) and then
+  the armature.
+
+### 19.2 The format
+
+```json
+{
+  "$schema": "../../battle_sprite_rig_source.schema.json",
+  "format": 1, "side": "front", "step": 6,
+  "bones": [
+    {"parent": null, "key_type": "move", "frames": 120, "keys": [
+      {"frame": 0, "picture": 0, "move": [0, 0]},
+      {"frame": 6, "picture": 0, "move": [0, 1], "curve": "bezier", "handles": {"move_y": [[-2, 0], [2, 0.5]]}}, ...]},
+    {"parent": 0, ...}, ...
+  ],
+  "sequences": [
+    {"key_type": "plain", "frames": 348, "keys": [
+      {"frame": 0, "pose": 0, "curve": "ease_out"},
+      {"frame": 12, "pose": 0, "move": [0, -12], "rotation": 0, "scale": [1, 1], "curve": "ease_in"},
+      {"frame": 24, "pose": 0, "move": [0, 0]}, {"frame": 240, "pose": 1}]}
+  ]
+}
+```
+
+- A **bone** for each flat track, by number: its `parent` (another track's bone, or `null`: the root's), its loop
+  (`frames`), an optional `step`, the least `key_type` the bake writes, and its **key poses** on the track's own time
+  (from the pose's start for a part that restarts, the sequence's time for one that continues).
+- A **key pose**: `frame` (0 to `frames`; one at `frames` bakes to a key held 0 frames, as 4,773 originals end), the
+  `picture` (tracks) or `pose` (sequences), held to the next; `move` (pixels, y down), `rotation` (degrees, clockwise,
+  not wrapped), `scale`; `curve` to the next key pose (`constant`, `linear`, `ease_in`, `ease_out`, `ease_in_out` (sine),
+  `bezier`), `curves` per channel where they differ, Bézier `handles` per channel (frames and value from the key; none:
+  flat, a third of the way to the neighbours, which is an ease in and out), and `flat` (a key's `unused`, `marker`,
+  `result_copy`, kept for the originals). Two key poses at one frame make a 0-frame key.
+- A **sequence**: its pose keys and the **root**'s channels (the whole sprite's move, turn and scale about the feet).
+- Pictures, rectangles, poses (parts, pivots, layers, play modes), idle parts, the box and the flags stay in the flat
+  rig and are edited there as before; the bake reads the pivots and play modes from it.
+- The layout is the flat rig's (`dumps_compact`, two spaces, a key pose a line); `tests/format.test.ts` and
+  `validate.test.ts` cover it, and both validators accept the schema (no new keywords).
+
+### 19.3 The bake
+
+`bake(source, flat) -> {rig, warnings, shears}`, every change, in about a millisecond for Pichu:
+
+- **Sampling:** each key pose starts a key of its own; inside its span the channels are sampled at every multiple of
+  the step (the bone's `step`, else the finest of the sequences that show its pose, else the sprite's; 6 by default,
+  chosen per sequence in the timeline's header) and held to the next sample; equal samples inside a span merge. So
+  constant key poses bake to exactly the keys they came from, and a curve to Game Freak's held keys every 6 frames.
+  Rounding: turns to 65536ths, scales to 1/4096, moves to whole pixels. The picture is never tweened.
+- **Parents:** a child's key is its own movement about its pivot followed by its parent's **baked** key's movement
+  about the parent's pivot (so a child follows exactly what the game shows of its parent, cut also wherever the
+  parent's keys change), turned back into a key about the child's pivot. Rotation and uniform scale compose exactly; a
+  parent's uneven scale over a turned child leaves a shear MCSS can't draw: the bake keeps the nearest turn and scale
+  and warns with the count of keys (a quarter turn is exact, and is not warned). Parents bake first; a circle of
+  parents is broken and warned of.
+- **Loops:** a child whose loop isn't a multiple of its moving parent's is baked over both loops (their least common
+  multiple, at most 3,600 frames, warned of), so it follows exactly; parents and children keeping different clocks
+  (restart and continue), a parent missing from the child's pose, and an idle child of a moving parent that isn't idle
+  are warned of.
+- **The root** goes where Game Freak put a whole sprite's movement: into the **sequence's keys**, split at the step,
+  when the pose's parts continue on the sequence's time (185 + 155 original sides do this: Abra's 57 sequence keys of 6
+  frames). Every sequence key that changes restarts the parts that restart (NNS's `SetMCDataToMCInstanceImpl_` on
+  each key: `g2d_MultiCellAnimation.c`), so over a pose whose parts restart (Pichu's), the sequence key holds the root
+  where it starts and the root's movement from there is composed into the pose's root-level parts' tracks instead,
+  unrolled over that key's span; root key poses that move on one pose join one sequence key. A pose whose parts mix
+  the two is warned of.
+- **Key types** grow as the values need (plain, then move, then srt), never below the bone's `key_type`.
+
+### 19.4 Proven
+
+- **Convert to armature, then bake = the flat rig, byte for byte**, on **all 1,506 sides** (a one-off sweep,
+  `editor/tests/armature-sweep.mts`, 11 s), with no warnings; the test does Pichu, Spiky-eared Pichu, Charizard and
+  Kyurem form 2, front and back, through the source file's text.
+- `editor/tests/armature.test.ts` (13 tests): the conversion; parenting that keeps parts where they are (19.3); the source file through both validators (a bad curve
+  refused by both); a parent's 90° turn carrying a child 10 pixels away to the analytic place (turn 16384, move
+  −10, 10); for four turns and scales (30°, −45° × 1.5 with a turned child, 135° × 0.75, 200° mirrored), the baked
+  child's corners within the half pixel of rounding of the composed movement; constant, linear, sine eases and Bézier
+  (default handles symmetric and slow at both ends, an overshooting handle); step 6 against 3 against a sequence's 2;
+  equal key poses kept apart, equal samples merged; a picture swap at frame 9 between steps; key types growing; the
+  shear warned of (and a quarter turn not); the root split into the sequence over continuing parts and composed into
+  restarting parts' tracks, drawing the same quads at every frame tested; auto-key; every source in res/ against its
+  flat rig. `npm test` 104, typecheck, `vite build`.
+- **Parenting keeps a part where it is** (Blender's Keep Transform, `reparent`): the child's key poses are written
+  again relative to its new parent, at each of its baked keys and each of the parent's, so it bakes back to what it
+  showed. Pichu's and Spiky-eared Pichu's fronts with the head parented to the body and the ears to the head bake back
+  **byte for byte** (their parents only move); Charizard's front with six parts parented to its turning body stays
+  within the rounding of a move to whole pixels (every corner within 0.71 pixels, every third frame of the loop); a
+  parent's move afterwards carries its child (tested). Without it, a converted part, whose keys already follow its
+  parent's by hand, would get the parent's movement twice (seen in py-desmume: the head and ears flew off at Pichu's
+  hop).
+
+### 19.5 The UI (editor/README.md, The Rig Editor)
+
+- **Armature** (the side panel's first section): **Convert to armature** for a side without one; then the outliner:
+  Root and the shown pose's bones as a tree, dragged onto another to parent (onto Root to unparent), clicked to choose;
+  the sprite's bake step; **Remove armature** (the rig keeps what it baked). **Bone**: parent (a list, or **Pick parent
+  on the preview**), loop length, its own step, the key type it bakes to. **Key pose** (of the chosen bone or the root):
+  frame, picture or pose, move, turn, scale, the curve to the next; + Key at playhead, Delete, Go to.
+- **Preview**: bones drawn as Blender's (from each joint toward its picture's middle, dashed links to the parent's tail
+  or the root's ring at the feet; Bones toggle); the Move, Rotate and Scale gizmos **auto-key** the chosen bone at the
+  playhead (the key pose there changed, or one made with the curves' values there), moving in the parent's frame; the
+  root's gizmo at the feet when the Root is chosen.
+- **Timeline**: the root's and each part's key poses as diamonds (coloured by curve) above the baked keys, which are
+  read only; drag a diamond in time (Shift: steps of 6). The header's **bake every** sets the shown sequence's step.
+- **Graph Editor**: the chosen bone's or root's channels (move x and y, turn, scale x and y) as curves over its time,
+  normalized or not, the baked held values dashed under them, the step's lines; click and drag keys (Shift locks the
+  direction), drag Bézier handles (aligned, Alt breaks), the curve menu for the chosen channel or every channel; a
+  click elsewhere moves the playhead.
+- **The docked panel**: the timeline and graph editor at the page's bottom (Timeline, Graph Editor or Both), as tall
+  as its top edge is dragged, remembered per viewer (`localStorage`, `paperwhite2.rig.dockHeight`, in try/catch).
+- **Checks**: the bake's warnings (shears, clocks, unrolled loops, idle children) beside `mcss_rig.check`'s; the size
+  meter measures the baked rig. **Undo** is one history for the page across the two files.
+
+### 19.6 End to end
+
+In the editor (Playwright, the worktree's server on another port), Spiky-eared Pichu's front: Convert to armature, the
+head dragged onto the body and both ears onto the head in the outliner, the Root chosen, at frame 12 the root's Move
+gizmo dragged 12 pixels up (auto-key), at frame 24 + Key at playhead set to 0, the frame-0 key pose eased out and the
+frame-12 one eased in (an arc: up fast, slow at the top, down fast); a head turn keyed with the Rotate gizmo and undone
+with Ctrl+Z; Ctrl+S saved both files (`front_rig_source.json` 31,529 bytes). The bake: the root's movement went into
+pose 0's root-level parts (their pose restarts), unrolled to the 240 frames pose 0 shows, the head and ears following
+the body; 41 keys a track instead of 21. **Size: 8,463 bytes resident** (the NANR 7,254, 1,775 compressed) against
+6,671 before, far under the ~40 KB guidance. The `--hack` build passed `verify_dsi_rom.py`; in py-desmume (a fresh
+boot of a copy of the user's save, the summary captured every 2 frames over 760 frames) the Pichu jumps at the loop's
+start as the preview drew it, parts together, then goes on with its own hop; the edited rig fits every capture at
+least as well as the original (better on the 18 captures of the jump). Reverted after (res/ unchanged by these
+commits).
+
+### 19.7 Open
+
+- Key poses are per bone (all its channels at a frame), as "key poses" were asked for; the graph editor moves a key
+  pose's frame for every channel at once, unlike Blender's per-channel keys.
+- The root goes into restarting parts' tracks per sequence key; a pose shown by two sequence keys (or in the stop
+  sequence) with a moving root takes the first's movement (warned). A pose mixing restart and continue parts gets the
+  root only into its restarting parts (warned).
+- Copy front to back is off for a side with an armature (remove it first); Add form copies the flat rig only, so a new
+  form starts without an armature (convert it there).
+- Not tested on hardware or in battle (the summary only); the jump edit was about 8 KB.
