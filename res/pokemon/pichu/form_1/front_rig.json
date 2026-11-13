@@ -34,10 +34,12 @@
       "obj_attribute": 11
     },
     {
-      "rectangles": [ { "sheet": [ 64, 0 ], "size": [ 16, 24 ], "at": [ -4, 17 ] } ],
+      "rectangles": [ { "sheet": [ 64, 0 ], "size": [ 24, 24 ], "at": [ -4, 17 ] } ],
       "objs": [
         { "x": -12, "y": -25, "size": [ 16, 16 ], "tile": 8, "attributes": [ 768, 0, 0 ] },
-        { "x": -12, "y": -5, "size": [ 16, 8 ], "tile": 72, "attributes": [ 768, 0, 0 ] }
+        { "x": 8, "y": -25, "size": [ 8, 16 ], "tile": 10, "attributes": [ 768, 0, 0 ] },
+        { "x": -12, "y": -5, "size": [ 16, 8 ], "tile": 72, "attributes": [ 768, 0, 0 ] },
+        { "x": 8, "y": -5, "size": [ 8, 8 ], "tile": 74, "attributes": [ 768, 0, 0 ] }
       ],
       "obj_attribute": 10
     },

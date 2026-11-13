@@ -7,8 +7,13 @@
   "idle_parts": [],
   "pictures": [
     {
-      "rectangles": [ { "sheet": [ 0, 0 ], "size": [ 16, 16 ], "at": [ -13, 13 ] } ],
-      "objs": [ { "x": -21, "y": -21, "size": [ 16, 16 ], "tile": 0, "attributes": [ 768, 0, 0 ] } ],
+      "rectangles": [ { "sheet": [ 40, 8 ], "size": [ 24, 24 ], "at": [ -21, 21 ] } ],
+      "objs": [
+        { "x": -29, "y": -29, "size": [ 16, 16 ], "tile": 37, "attributes": [ 768, 0, 0 ] },
+        { "x": -9, "y": -29, "size": [ 8, 16 ], "tile": 39, "attributes": [ 768, 0, 0 ] },
+        { "x": -29, "y": -9, "size": [ 16, 8 ], "tile": 101, "attributes": [ 768, 0, 0 ] },
+        { "x": -9, "y": -9, "size": [ 8, 8 ], "tile": 103, "attributes": [ 768, 0, 0 ] }
+      ],
       "obj_attribute": 11
     },
     {
