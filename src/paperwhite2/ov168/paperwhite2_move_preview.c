@@ -71,8 +71,11 @@
 #define MOVE_FLAG_BIT_SOUND 8
 #define MOVE_FLAG_BIT_BALLISTIC 14
 
-// The last ability the preview knows: the added abilities after it are unknown until it learns them
-#ifdef ABILITY_BULLETPROOF
+// The last ability the preview knows: the added abilities after it are unknown until it learns them. Sweet Syrup and
+// Ripen change no matchup
+#if defined(ABILITY_RIPEN)
+#define MOVE_PREVIEW_LAST_ABILITY ABILITY_RIPEN
+#elif defined(ABILITY_BULLETPROOF)
 #define MOVE_PREVIEW_LAST_ABILITY ABILITY_BULLETPROOF
 #else
 #define MOVE_PREVIEW_LAST_ABILITY ABILITY_TERAVOLT

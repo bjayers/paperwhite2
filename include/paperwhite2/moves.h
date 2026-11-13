@@ -2,6 +2,7 @@
 #define PAPERWHITE2_MOVES_H
 
 #include "types.h"
+#include "constants/battle.h"
 #include "paperwhite2/moves_config.h"
 
 // Paper White 2: the moves the hack adds (docs/paperwhite2/design/moves-and-abilities.md). generated/moves.txt appends
@@ -14,6 +15,15 @@
 // Whether a move is one the hack adds
 static inline BOOL PaperWhite2_IsAddedMove(u32 move) {
     return move - PAPERWHITE2_MOVE_FIRST_ADDED < PAPERWHITE2_MOVE_ADDED_COUNT;
+}
+
+// The target the battle's view takes for a move's target: MOVE_TARGET_ALL_ALLIES, which its tables don't have (they
+// take 14 for a distant pick in a triple battle), as MOVE_TARGET_USER_SIDE, since no one is picked; any other itself
+static inline u32 PaperWhite2_GetMoveViewTarget(u32 target) {
+    if (target == MOVE_TARGET_ALL_ALLIES) {
+        return MOVE_TARGET_USER_SIDE;
+    }
+    return target;
 }
 
 #if PAPERWHITE2_MOVE_ADDED_COUNT != 0
