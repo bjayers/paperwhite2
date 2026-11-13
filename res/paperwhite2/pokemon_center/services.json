@@ -903,7 +903,7 @@
             }
         ],
         "special_reward": {
-            "enabled": false,
+            "enabled": true,
             "percent": 2,
             "guaranteed_at": 30,
             "species": "SPECIES_PICHU",
