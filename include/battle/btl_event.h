@@ -333,6 +333,9 @@ enum {
     BATTLE_EVENT_VAR_GENERAL_FLAG = 0x51,
     BATTLE_EVENT_VAR_SIDE = 0x52,
     BATTLE_EVENT_VAR_SIDE_EFFECT = 0x53,
+    // Paper White 2's own, from the first free key: the stat a move attacks with (BATTLEMON_ATTACK or
+    // BATTLEMON_SP_ATTACK), which BATTLE_EVENT_BEFORE_ATTACK_STAT's handlers may change (Body Press's Defense)
+    BATTLE_EVENT_VAR_ATTACK_STAT = 0x54,
 };
 
 // Checks whether an item's handlers are skipped for the item being run: the checking item, the server flow, the

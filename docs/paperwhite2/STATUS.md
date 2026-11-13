@@ -2,6 +2,26 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-13: new moves and abilities, step 5: the Applin line's real moves and abilities (ROM session, on a branch)
+
+design/moves-and-abilities.md section 15 has the details; new-species.md section 18.2 marks every stand-in replaced.
+
+- **Added:** Body Press 562 (attacks with Defense), Fickle Beam 563 (30%: double power, "…is going all out for this
+  attack!"), Dragon Cheer 564 (every ally's critical-hit stage +1, +2 for Dragons; a new target kind; fails without an
+  ally), Syrup Bomb 565 (a new condition: the Speed falls at 3 turn ends while the user stays in); Sweet Syrup 166 (the
+  adjacent foes' evasion -1 on entering, once a battle, no field effect) and Ripen 167 (Berries' HP, stat stages,
+  attacker damage doubled, resist Berries a quarter). Rules in `src/paperwhite2/ov167/paperwhite2_battle.c`, small
+  pieces for a later effect designer.
+- **Applin line:** Ripen / Sweet Syrup in slot 1, the real moves in the learnsets, Dipplin evolves knowing Dragon Cheer.
+  Pokémon saved before keep their stand-ins (no fix on load).
+- **Proof** (py-desmume, scratchpad `moves5/keep/`): each move and ability in battle with numbers (Body Press's attack
+  stat 150 = Defense, 300 at +2; Fickle Beam ×2 when forced; Dragon Cheer +1/+2 in doubles and triples, failing in
+  singles; the syrup's three Speed falls, none after a switch; Sweet Syrup once; Sitrus 250 vs 125, Oran 20, Liechi +2,
+  Occa 198 vs 396 damage), Metronome into each, and a Dipplin knowing Dragon Cheer evolving into Hydrapple. ROM
+  `905ca4cc…`, DSi intact; the plain build's modules match.
+
+Next: the user's playtest; later steps (section 9, step 6): blocks / an effect designer, custom animations, Fairy.
+
 ## 2026-11-13: the Spiky-eared Pichu: female, a Zap Plate, and never sent back (ROM session, on a branch)
 
 design/pokemon-center.md's "The Spiky-eared Pichu: female, its Zap Plate, and kept back" has the details.

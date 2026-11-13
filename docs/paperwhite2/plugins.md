@@ -2526,11 +2526,12 @@ Whole new species, appended to `generated/species.txt` from 687 after `SPECIES_P
 - The vanilla Area page (never started in the hack) reads Bulbasaur's empty habitat for an added species.
 - **The Applin line** (section 18 of the design doc): Applin 687 (No. 840), Flapple 688 (841), Appletun 689 (842),
   Dipplin 690 (1011), Hydrapple 691 (1019), Grass/Dragon, made with Add Pokémon from Budew; Gen 8/9 moves and abilities
-  as Gen 5 stand-ins (the design doc's table). Its evolution items, the **Tart, Sweet and Syrupy Apples** (unused items
-  120-122), are data only, used from the bag as stones (`docs/paperwhite2/items.md`); Dipplin evolves into Hydrapple
-  levelling up knowing Focus Energy, Dragon Cheer's stand-in. The debug menu's Give item and Give Pokémon give them.
+  are the real ones now (the hack's added moves and abilities, below). Its evolution items, the **Tart, Sweet and
+  Syrupy Apples** (unused items 120-122), are data only, used from the bag as stones (`docs/paperwhite2/items.md`);
+  Dipplin evolves into Hydrapple levelling up knowing Dragon Cheer. The debug menu's Give item and Give Pokémon give
+  them.
 
-### New moves and abilities (in progress)
+### New moves and abilities
 
 New moves appended to `generated/moves.txt` from 560 and abilities to `generated/abilities.txt` from 165
 (`docs/paperwhite2/design/moves-and-abilities.md`, section 12 for what is built; `include/paperwhite2/moves.h`,
@@ -2556,8 +2557,9 @@ New moves appended to `generated/moves.txt` from 560 and abilities to `generated
     and Copycat have no bound;
   - `GetConditionByIndex` runs over the whole condition list (the original's 35), for a condition the hack adds;
   - the Move Effectiveness Preview leaves a move white against an added ability past the last it knows
-    (`MOVE_PREVIEW_LAST_ABILITY`, Bulletproof now).
-- **Added so far** (section 13): Apple Acid 560 (data only), Grav Apple 561 and Bulletproof 165. A move or ability
+    (`MOVE_PREVIEW_LAST_ABILITY`, Ripen now).
+- **Added** (sections 13 and 15): Apple Acid 560 (data only), Grav Apple 561, Body Press 562, Fickle Beam 563, Dragon
+  Cheer 564, Syrup Bomb 565 (data only, with the hack's condition); Bulletproof 165, Sweet Syrup 166, Ripen 167. A move or ability
   whose rule is new has its handlers in `src/paperwhite2/ov167/paperwhite2_battle.c` under `#ifdef` of its constant,
   declared in `include/paperwhite2/battle_handlers.h`, with its row at the end of `sMoveEventAddTable` or
   `sAbilityEventAddTable` under `#if defined(PAPERWHITE2) && defined(<constant>)` (the plain build has the constants
@@ -2567,6 +2569,22 @@ New moves appended to `generated/moves.txt` from 560 and abilities to `generated
   `\from{added_moves.used}` writes from its name. Without those lines the battle shows no "X used Y!" message.
 - **Move flags:** `MOVE_FLAG_BALLISTIC` (bit 14) marks the ball and bomb moves for Bulletproof; bits 15-31 are free. A
   flag is data (`flags` in `data.json`); the code reads it with `getMoveFlag(move, bit)`.
+- **Engine pieces step 5 added** (section 15.2), each usable by later moves:
+  - `MOVE_TARGET_ALL_ALLIES` (14): every ally, none in a single battle (the server's `CollectTargets*`); the view shows
+    it as the user's side (`PaperWhite2_GetMoveViewTarget`), since its tables use 14 for a distant pick;
+  - `CONDITION_SYRUP` (37): `CONDITION_ID_COUNT` 38 in the hack, the hack's conditions after the original turn-end
+    list (`sConditionsAdded`, `btl_tables.c`), their messages and turn ends in `condition_effects.c` (a new condition
+    is a constant, a row there, its cases, and data);
+  - `BATTLE_EVENT_VAR_ATTACK_STAT` (0x54): the stat a move attacks with, which `BATTLE_EVENT_BEFORE_ATTACK_STAT`'s
+    handlers may change (Body Press);
+  - `BattleMon.critStage` (was `unk142`) is cleared on a switch or faint and passed by Baton Pass (a `// BUG:` fix the
+    hack needs for Dragon Cheer);
+  - `PaperWhite2_BattleServerStart` (from `BtlServerFlow_Create`) clears once-a-battle state (Sweet Syrup's bits);
+  - Ripen's hooks in `item_handlers.c`'s Berry handlers (`PaperWhite2_Ripen`, `_RipenBerry`, `_RipenEnd`,
+    `_RipenResistRatio`).
+- **New battle messages** are appended to bank 18 (the "set" messages, three per message: the player's, a wild and a
+  foe's Pokémon) and named in C by the generated `text/system/0018.h` (`Bank0018_Text_CoveredInSyrup`,
+  `Bank0018_Text_GoingAllOut`).
 - **An ability Mold Breaker ignores** goes in `sMoldBreakerIgnoredAddedAbilities` (`btl_tables.c`); one the AI should
   respect needs lines in `res/trainers/ai/basic.s` (Bulletproof's beside Soundproof's).
 

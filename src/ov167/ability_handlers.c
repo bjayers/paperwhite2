@@ -207,6 +207,9 @@ static const AbilityEventAddEntry sAbilityEventAddTable[] = {
     // Paper White 2: the added abilities' own handlers (paperwhite2_battle.c)
     { ABILITY_BULLETPROOF, PaperWhite2_EventAddBulletproof },
 #endif
+#if defined(PAPERWHITE2) && defined(ABILITY_SWEET_SYRUP)
+    { ABILITY_SWEET_SYRUP, PaperWhite2_EventAddSweetSyrup },
+#endif
 };
 
 BattleEventItem *AbilityEvent_AddItem(BattleMon *mon) {

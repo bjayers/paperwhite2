@@ -1,0 +1,5 @@
+{
+    "$schema": "ability.schema.json",
+    "name": "Ripen",
+    "description": "Ripens Berries, doubling\nthe effects they give."
+}

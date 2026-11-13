@@ -94,6 +94,9 @@
 #define MOVE_TARGET_FOE_SIDE 11     // The foes' side, as Spikes
 #define MOVE_TARGET_USER_SIDE 12    // The user's side, as Reflect
 #define MOVE_TARGET_DEPENDS 13      // Decided by the move, as Counter and Curse
+// Paper White 2: every ally of the user in a double or triple battle, and none in a single battle, as Dragon Cheer.
+// The battle's server collects them; its view takes it as MOVE_TARGET_USER_SIDE, since no one is picked
+#define MOVE_TARGET_ALL_ALLIES 14
 
 // The class of a move's effect, the quality of the move data, which the battle's move handling branches on. Named
 // after the moves that have each
@@ -180,5 +183,8 @@
 #define CONDITION_AQUA_RING 35
 // Any major status condition, which Natural Cure, Shed Skin and Hydration cure
 #define CONDITION_ANY_STATUS 36
+// Paper White 2: Syrup Bomb's sticky syrup, which lowers the Pokémon's Speed at the end of each turn while the user
+// stays in (the hack's battle build counts 38 conditions, 36 unused)
+#define CONDITION_SYRUP 37
 
 #endif // POKEBW2_CONSTANTS_BATTLE_H

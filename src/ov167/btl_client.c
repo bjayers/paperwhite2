@@ -41,6 +41,7 @@
 #include "save/player_info.h"
 #include "system/pms_data.h"
 #ifdef PAPERWHITE2
+#include "paperwhite2/moves.h"
 #include "paperwhite2/prestige.h"
 #endif
 
@@ -5279,7 +5280,12 @@ static BOOL BattleClient_ScMoveMsg(BtlClient *client, s32 *seq, const u32 *args)
 
 static s32 BattleClient_GetMoveAnimType(BtlClient *client, u16 move, u8 pos) {
     if (move != 0xae) {
+#ifdef PAPERWHITE2
+        // Paper White 2: Dragon Cheer's allies as the user's side (paperwhite2/moves.h)
+        return PaperWhite2_GetMoveViewTarget(PML_MoveGetParam(move, MOVE_PARAM_TARGET));
+#else
         return PML_MoveGetParam(move, MOVE_PARAM_TARGET);
+#endif
     } else {
         BattleMon *mon = PokeCon_GetPosMonInner(client->pokeCon, pos);
 

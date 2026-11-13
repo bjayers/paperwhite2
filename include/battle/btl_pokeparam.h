@@ -99,7 +99,12 @@ static inline void BattleMonDamageRecord_Init(BattleMonDamageRecord *record, u8 
 // A condition's ID. The CONDITION_* values are #defines in constants/battle.h, which tr_ai.inc includes too. MWCC
 // keeps a local of this type in a register where it folds an integer one into each use, as HandlerChatter's status
 typedef enum {
+#ifdef PAPERWHITE2
+    // Paper White 2: with its own after CONDITION_ANY_STATUS (36, unused here), Syrup Bomb's CONDITION_SYRUP
+    CONDITION_ID_COUNT = 38,
+#else
     CONDITION_ID_COUNT = 36,
+#endif
 } BattleConditionID;
 
 // The first part of a BattleMon, which TransformSet keeps while it copies the rest from the target
@@ -147,7 +152,9 @@ struct BattleMon {
     u16 weight;
     u8 moveCount;
     u8 form;
-    u8 unk142;
+    // The critical-hit stages added to the move's (BattleMon_AddCritStage: Dire Hit 2 and 3, Paper White 2's Dragon
+    // Cheer), up to 4
+    u8 critStage;
     u8 unk143;
     u8 unk144;
     u8 unk145;

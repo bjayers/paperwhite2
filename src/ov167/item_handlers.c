@@ -20,6 +20,10 @@
 #include "pml/item.h"
 #include "pml/move.h"
 #include "pml/poke_party.h"
+#ifdef PAPERWHITE2
+#include "constants/abilities.h"
+#include "paperwhite2/battle_handlers.h"
+#endif
 
 // One entry of the item lookup table at the end of the file: an item and the function that returns its handlers
 typedef struct ItemEventAddEntry {
@@ -1070,11 +1074,20 @@ static void HandlerOranBerryUse(BattleEventItem *item, BtlServerFlow *flow, u8 m
     if (BattleEventVar_GetValue(BATTLE_EVENT_VAR_MON) == monId) {
         param = BattleHandler_PushWork(flow, 5, monId);
         param->targetIndex = monId;
+#if defined(PAPERWHITE2) && defined(ABILITY_RIPEN)
+        // Paper White 2: Ripen doubles the HP, with its popup (paperwhite2_battle.c)
+        param->amount =
+            PaperWhite2_RipenBerry(flow, monId, BattleEventItem_GetSubID(item), CommonGetItemParam(item, 2));
+#else
         param->amount = CommonGetItemParam(item, 2);
+#endif
         BattleHandler_StrSetup(&param->string, 2, 0x38c);
         BattleHandler_AddArg(&param->string, monId);
         BattleHandler_AddArg(&param->string, BattleEventItem_GetSubID(item));
         BattleHandler_PopWork(flow, param);
+#if defined(PAPERWHITE2) && defined(ABILITY_RIPEN)
+        PaperWhite2_RipenEnd(flow, monId);
+#endif
     }
 }
 
@@ -1113,11 +1126,19 @@ static void HandlerSitrusBerryUse(BattleEventItem *item, BtlServerFlow *flow, u8
         ratio = CommonGetItemParam(item, 2);
         param = BattleHandler_PushWork(flow, 5, monId);
         param->targetIndex = monId;
+#if defined(PAPERWHITE2) && defined(ABILITY_RIPEN)
+        // Paper White 2: Ripen doubles the HP, with its popup (paperwhite2_battle.c)
+        param->amount = PaperWhite2_RipenBerry(flow, monId, BattleEventItem_GetSubID(item), maxHp * ratio / 100);
+#else
         param->amount = maxHp * ratio / 100;
+#endif
         BattleHandler_StrSetup(&param->string, 2, 0x38c);
         BattleHandler_AddArg(&param->string, monId);
         BattleHandler_AddArg(&param->string, BattleEventItem_GetSubID(item));
         BattleHandler_PopWork(flow, param);
+#if defined(PAPERWHITE2) && defined(ABILITY_RIPEN)
+        PaperWhite2_RipenEnd(flow, monId);
+#endif
     }
 }
 
@@ -1263,11 +1284,20 @@ static void CommonPinchBerry(BattleEventItem *item, BtlServerFlow *flow, u8 monI
         mon = GetBattleMon(flow, monId);
         param = BattleHandler_PushWork(flow, 5, monId);
         param->targetIndex = monId;
+#if defined(PAPERWHITE2) && defined(ABILITY_RIPEN)
+        // Paper White 2: Ripen doubles the HP, with its popup (paperwhite2_battle.c)
+        param->amount = PaperWhite2_RipenBerry(flow, monId, BattleEventItem_GetSubID(item),
+                                               DivideMaxHPZeroCheck(mon, CommonGetItemParam(item, 2)));
+#else
         param->amount = DivideMaxHPZeroCheck(mon, CommonGetItemParam(item, 2));
+#endif
         BattleHandler_StrSetup(&param->string, 2, 0x38c);
         BattleHandler_AddArg(&param->string, monId);
         BattleHandler_AddArg(&param->string, BattleEventItem_GetSubID(item));
         BattleHandler_PopWork(flow, param);
+#if defined(PAPERWHITE2) && defined(ABILITY_RIPEN)
+        PaperWhite2_RipenEnd(flow, monId);
+#endif
         if (doesNatureAffectStat(GetSrcData(mon), flavor) == -1) {
             confuse = BattleHandler_PushWork(flow, 0xc, monId);
             confuse->targetIndex = monId;
@@ -1436,10 +1466,18 @@ static void CommonStatBoostBerry(BtlServerFlow *flow, u8 monId, u32 stat, s8 cha
     if (BattleEventVar_GetValue(BATTLE_EVENT_VAR_MON) == monId) {
         param = BattleHandler_PushWork(flow, 0xe, monId);
         param->stat = stat;
+#if defined(PAPERWHITE2) && defined(ABILITY_RIPEN)
+        // Paper White 2: Ripen doubles the stages, with its popup (paperwhite2_battle.c)
+        param->change = PaperWhite2_Ripen(flow, monId, change);
+#else
         param->change = change;
+#endif
         param->count = 1;
         param->monIds[0] = monId;
         BattleHandler_PopWork(flow, param);
+#if defined(PAPERWHITE2) && defined(ABILITY_RIPEN)
+        PaperWhite2_RipenEnd(flow, monId);
+#endif
     }
 }
 
@@ -1472,8 +1510,17 @@ static void HandlerEnigmaBerryUse(BattleEventItem *item, BtlServerFlow *flow, u8
         ratio = CommonGetItemParam(item, 2);
         param = BattleHandler_PushWork(flow, 5, monId);
         param->targetIndex = monId;
+#if defined(PAPERWHITE2) && defined(ABILITY_RIPEN)
+        // Paper White 2: Ripen doubles the HP, with its popup (paperwhite2_battle.c)
+        param->amount =
+            PaperWhite2_RipenBerry(flow, monId, BattleEventItem_GetSubID(item), DivideMaxHPZeroCheck(mon, ratio));
+#else
         param->amount = DivideMaxHPZeroCheck(mon, ratio);
+#endif
         BattleHandler_PopWork(flow, param);
+#if defined(PAPERWHITE2) && defined(ABILITY_RIPEN)
+        PaperWhite2_RipenEnd(flow, monId);
+#endif
     }
 }
 
@@ -1721,7 +1768,12 @@ static BOOL CommonResistBerry(BattleEventItem *item, BtlServerFlow *flow, u8 mon
         BattleEventVar_GetValue(BATTLE_EVENT_VAR_MOVE_TYPE) == type) {
         if (anyEffectiveness || (s32)BattleEventVar_GetValue(BATTLE_EVENT_VAR_TYPE_EFFECTIVENESS) > 3) {
             if (!IsSubstituteActive(GetBattleMon(flow, monId))) {
+#if defined(PAPERWHITE2) && defined(ABILITY_RIPEN)
+                // Paper White 2: Ripen halves the damage twice (paperwhite2_battle.c)
+                BattleEventVar_MulValue(BATTLE_EVENT_VAR_RATIO, PaperWhite2_RipenResistRatio(flow, monId));
+#else
                 BattleEventVar_MulValue(BATTLE_EVENT_VAR_RATIO, FX32_CONST(0.5));
+#endif
                 if (!BtlServerFlow_IsSimulating(flow)) {
                     work[0] = 1;
                 }
@@ -1978,12 +2030,21 @@ static void HandlerJabocaRowapBerryUse(BattleEventItem *item, BtlServerFlow *flo
             ratio = CommonGetItemParam(item, 2);
             param = BattleHandler_PushWork(flow, 7, monId);
             param->targetIndex = attackerId;
+#if defined(PAPERWHITE2) && defined(ABILITY_RIPEN)
+            // Paper White 2: Ripen doubles the damage, with its popup (paperwhite2_battle.c)
+            param->amount = PaperWhite2_RipenBerry(flow, monId, BattleEventItem_GetSubID(item),
+                                                   DivideMaxHPZeroCheck(attacker, ratio));
+#else
             param->amount = DivideMaxHPZeroCheck(attacker, ratio);
+#endif
             BattleHandler_StrSetup(&param->string, 2, 0x407);
             BattleHandler_AddArg(&param->string, param->targetIndex);
             BattleHandler_AddArg(&param->string, monId);
             BattleHandler_AddArg(&param->string, BattleEventItem_GetSubID(item));
             BattleHandler_PopWork(flow, param);
+#if defined(PAPERWHITE2) && defined(ABILITY_RIPEN)
+            PaperWhite2_RipenEnd(flow, monId);
+#endif
         }
     }
 }

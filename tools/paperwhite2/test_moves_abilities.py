@@ -233,12 +233,21 @@ class RepositoryTest(unittest.TestCase):
     def test_added(self):
         names = move_list.constants()
         self.assertEqual(move_list.added_table(), [("MOVE_APPLE_ACID", names.index("MOVE_ENERGY_BALL"), 0),
-                                                   ("MOVE_GRAV_APPLE", names.index("MOVE_SEED_BOMB"), 0)])
-        self.assertEqual(ability_list.added_table(), [("ABILITY_BULLETPROOF", 0)])
-        # Their own handlers in the hack's battle code: Grav Apple's and Bulletproof's, not Apple Acid (data only)
-        self.assertTrue(move_list.has_own_handlers("MOVE_GRAV_APPLE"))
+                                                   ("MOVE_GRAV_APPLE", names.index("MOVE_SEED_BOMB"), 0),
+                                                   ("MOVE_BODY_PRESS", names.index("MOVE_BODY_SLAM"), 0),
+                                                   ("MOVE_FICKLE_BEAM", names.index("MOVE_DRAGON_PULSE"), 0),
+                                                   ("MOVE_DRAGON_CHEER", names.index("MOVE_FOCUS_ENERGY"), 0),
+                                                   ("MOVE_SYRUP_BOMB", names.index("MOVE_MUD_BOMB"), 0)])
+        self.assertEqual(ability_list.added_table(),
+                         [("ABILITY_BULLETPROOF", 0), ("ABILITY_SWEET_SYRUP", 0), ("ABILITY_RIPEN", 0)])
+        # Their own handlers in the hack's battle code; Apple Acid and Syrup Bomb are data only (the syrup is a
+        # condition, built whatever inflicts it)
+        for move in ("MOVE_GRAV_APPLE", "MOVE_BODY_PRESS", "MOVE_FICKLE_BEAM", "MOVE_DRAGON_CHEER"):
+            self.assertTrue(move_list.has_own_handlers(move), move)
         self.assertFalse(move_list.has_own_handlers("MOVE_APPLE_ACID"))
-        self.assertTrue(ability_list.has_own_handlers("ABILITY_BULLETPROOF"))
+        self.assertFalse(move_list.has_own_handlers("MOVE_SYRUP_BOMB"))
+        for ability in ("ABILITY_BULLETPROOF", "ABILITY_SWEET_SYRUP", "ABILITY_RIPEN"):
+            self.assertTrue(ability_list.has_own_handlers(ability), ability)
         # Bulletproof is the generated Mold Breaker list (it was hand-written in btl_tables.c until step 4)
         self.assertEqual(ability_list.mold_breaker_ignored(), ["ABILITY_BULLETPROOF"])
 
@@ -247,8 +256,10 @@ class RepositoryTest(unittest.TestCase):
         self.assertEqual(constants()["MOVE_FLAG_BALLISTIC"], 1 << 14)
         flagged = sorted(move for move in move_list.constants()[1:]
                          if "MOVE_FLAG_BALLISTIC" in move_list.move_data(move)["flags"])
-        self.assertEqual(len(flagged), 22)
+        # The 22 Gen 5 ones and Syrup Bomb
+        self.assertEqual(len(flagged), 23)
         self.assertIn("MOVE_SHADOW_BALL", flagged)
+        self.assertIn("MOVE_SYRUP_BOMB", flagged)
         self.assertNotIn("MOVE_GRAV_APPLE", flagged)
         for move, ballistic in (("MOVE_SEED_BOMB", True), ("MOVE_TACKLE", False)):
             data = move_list.move_data(move)

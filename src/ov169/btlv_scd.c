@@ -18,6 +18,9 @@
 #include "pml/poke_party.h"
 #include "system/game_data.h"
 #include "system/printsys.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/moves.h"
+#endif
 
 #define NUM_PROCS 4
 
@@ -1015,7 +1018,12 @@ static void BtlvScd_SetTargetScreen(const u8 *positions, u8 count, u32 kind, Btl
     MI_CpuClear16(&param, sizeof(param));
     param.attackerPos =
         BattlePosToViewPos(scd->mainModule, MonIDToBattlePos(scd->mainModule, scd->pokeCon, GetMonID(scd->mon)));
+#ifdef PAPERWHITE2
+    // Paper White 2: Dragon Cheer's allies as the user's side (paperwhite2/moves.h)
+    param.range = PaperWhite2_GetMoveViewTarget(PML_MoveGetParam(move, MOVE_PARAM_TARGET));
+#else
     param.range = PML_MoveGetParam(move, MOVE_PARAM_TARGET);
+#endif
     if (move == MOVE_CURSE) {
         param.range = BtlCalc_GetCurseTarget(scd->mon);
     }
@@ -1082,7 +1090,12 @@ static BOOL BtlvScd_TargetInit(s32 *seq, void *arg) {
     }
     BtlvScd_ShowTargetScreen(&scd->targets, scd);
     scd->targetChosen = FALSE;
+#ifdef PAPERWHITE2
+    // Paper White 2: Dragon Cheer's allies as the user's side (paperwhite2/moves.h)
+    scd->moveRange = PaperWhite2_GetMoveViewTarget(PML_MoveGetParam(scd->action->bits.move, MOVE_PARAM_TARGET));
+#else
     scd->moveRange = PML_MoveGetParam(scd->action->bits.move, MOVE_PARAM_TARGET);
+#endif
     if (scd->action->bits.move == MOVE_CURSE) {
         scd->moveRange = BtlCalc_GetCurseTarget(scd->mon);
     }
@@ -1135,7 +1148,12 @@ static BOOL BtlvScd_TargetMain(s32 *seq, void *arg) {
 
 static void BtlvScd_BuildTargetList(BtlvScdTargetList *list, BtlvScd *scd) {
     u16 move = scd->action->bits.move;
+#ifdef PAPERWHITE2
+    // Paper White 2: Dragon Cheer's allies as the user's side (paperwhite2/moves.h)
+    u32 range = PaperWhite2_GetMoveViewTarget(PML_MoveGetParam(move, MOVE_PARAM_TARGET));
+#else
     u32 range = PML_MoveGetParam(move, MOVE_PARAM_TARGET);
+#endif
     u8 pos = MonIDToBattlePos(scd->mainModule, scd->pokeCon, GetMonID(scd->mon));
 
     BtlvScd_ClearTargetList(list);

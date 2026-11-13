@@ -234,6 +234,16 @@ static u8 CollectTargetsDouble(BtlServerFlow *flow, BattleMon *mon, u8 target, B
     case 2:
         BtlMonSet_Add(targets, GetAllyMonAt(flow, pos));
         return 1;
+#ifdef PAPERWHITE2
+    // Paper White 2: the user's ally, if it has one (Dragon Cheer)
+    case MOVE_TARGET_ALL_ALLIES:
+        single = GetAllyMonAt(flow, pos);
+        if (single == NULL) {
+            return 0;
+        }
+        BtlMonSet_Add(targets, single);
+        return 1;
+#endif
     case 13:
         if (redirect != 0x1f) {
             single = GetPokeParam(flow->pokeCon, redirect);
@@ -325,6 +335,21 @@ static u8 CollectTargetsTriple(BtlServerFlow *flow, BattleMon *mon, u8 target, B
     case 2:
         BtlMonSet_Add(targets, PokeCon_GetPosMon(flow->pokeCon, targetPos));
         return 1;
+#ifdef PAPERWHITE2
+    // Paper White 2: both of the user's allies, near and far (Dragon Cheer)
+    case MOVE_TARGET_ALL_ALLIES:
+        count = 0;
+        for (i = 0; i < 3; i++) {
+            u8 allyPos = GetPosOnSameSide(pos, i);
+
+            single = PokeCon_GetPosMon(flow->pokeCon, allyPos);
+            if (allyPos != pos && single != NULL) {
+                BtlMonSet_Add(targets, single);
+                count++;
+            }
+        }
+        return count;
+#endif
     case 13:
         if (redirect != 0x1f) {
             single = GetPokeParam(flow->pokeCon, redirect);

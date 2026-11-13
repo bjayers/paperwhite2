@@ -48,7 +48,7 @@ What is inferred and not traced is marked *(inferred)*. Line numbers are from co
   2. a data-only move in battle (Apple Acid) and the animation map (built, §13);
   3. an ability with handlers (Bulletproof) (built, §13);
   4. Add move and Add ability in the editor (built, §14);
-  5. the Applin line's real moves and abilities, replacing the stand-ins;
+  5. the Applin line's real moves and abilities, replacing the stand-ins (built, §15);
   6. later: blocks as needed, custom animations, Fairy.
 
 ## 2. Moves today
@@ -850,3 +850,102 @@ out.
 - The editor's server reconfigures after Add and Remove; a command-line `moves.py add` still needs `python3 configure.py
   w2_us --hack` before plain `ninja` sees the new folder's edits (the list file is a dependency, the new data.json isn't
   until configure).
+
+## 15. Built: step 5, the Applin line's remaining moves and abilities (2026-11-13)
+
+Body Press 562, Fickle Beam 563, Dragon Cheer 564, Syrup Bomb 565 (`moves.py add`), Sweet Syrup 166 and Ripen 167
+(`abilities.py add --blank`), their rules in C, and every stand-in of new-species.md §18.2 replaced.
+
+### 15.1 The data
+
+| What | Where |
+| --- | --- |
+| Body Press | from Body Slam: Fighting, physical, 80/100/10, contact, quality `DAMAGE`, Body Slam's animation, AI `HIT` |
+| Fickle Beam | from Dragon Pulse: Dragon, special, 80/100/5, Dragon Pulse's animation, AI `HIT` |
+| Dragon Cheer | from Focus Energy: Dragon, status, 15 PP, quality `SPECIAL`, target **`MOVE_TARGET_ALL_ALLIES`** (14, new, `include/constants/battle.h`), `MOVE_FLAG_DISTANT` (it reaches a triple battle's far ally), Focus Energy's animation, AI `CRIT_UP_2`; no `handlers_like` (its own handler replaces Focus Energy's) |
+| Syrup Bomb | from Mud Bomb: Grass, special, 60/85/10, ballistic (Bulletproof blocks it; `basic.s` lists it), quality `DAMAGE_INFLICT` with **`CONDITION_SYRUP`** (37, new), 100%, duration kind 4 (Bind's: while the user stays in), 4-4 turns: the Speed falls at the end of 3 turns and the 4th ends it silently, as Bind's damage does. Data only; Mud Bomb's animation, AI `LOWER_SPEED_HIT` |
+| Sweet Syrup, Ripen | `res/abilities/sweet_syrup.json`, `ripen.json`; not ignored by Mold Breaker; no field effect (§11.3) |
+| Messages | bank 18 (`res/text/system/0018.txt`), two sets of three appended: `Bank0018_Text_CoveredInSyrup` (1159) "… got covered in sticky candy syrup!" and `Bank0018_Text_GoingAllOut` (1162) "… is going all out for this attack!". The others are the game's: Focus Energy's "… is getting pumped!" (0x411) and the stat changes' own |
+| The Applin line | slot 1 Ripen for Applin, Flapple and Appletun, Sweet Syrup for Dipplin and Hydrapple; Body Press at 24 for Appletun and 36 for Hydrapple; Syrup Bomb at 24 for Dipplin and Hydrapple; Dragon Cheer at level 1 for both (the Move Reminder); Fickle Beam at level 1 for Hydrapple (its evolution move; Gen 5 has none); Dipplin evolves levelling up knowing Dragon Cheer |
+
+Descriptions are our own words. `test_moves_abilities` checks the six added moves' and three abilities' tables and the
+23 ballistic moves; the editor's `moves-abilities.test.ts` uses made-up names now that Sweet Syrup exists.
+
+### 15.2 The C, piece by piece
+
+Each piece is small and self-contained, so it can become an effect-designer block later (§11.5). All in
+`src/paperwhite2/ov167/paperwhite2_battle.c` unless said, declared in `include/paperwhite2/battle_handlers.h`.
+
+| Piece | Engine hook | Handler |
+| --- | --- | --- |
+| **Attack with another stat** | `ServerEvent_GetAttackPower` (`btl_server_flow.c`), under `PAPERWHITE2 && MOVE_BODY_PRESS`: the stat goes in the new event variable `BATTLE_EVENT_VAR_ATTACK_STAT` (0x54, the first free key) before `BATTLE_EVENT_BEFORE_ATTACK_STAT` and is read back; a critical hit takes `PaperWhite2_GetCriticalAttack` (a defense used to attack ignores its drops and keeps its boosts; `CritAtkDefLevel` would treat it as the defender's) | `HandlerBodyPress`: the attacker's `ATTACK_STAT` is `BATTLEMON_DEFENSE` (Foul Play's shape) |
+| **A chance of double power, with a message** | none | `HandlerFickleBeamStart` on `MOVE_EXECUTE_START`: `BattleRandom(100) < 30` into `work[0]`, and the message; `HandlerFickleBeamPower` on `MOVE_POWER_RATIO`: ×2 |
+| **A new target: every ally** | `CollectTargetsDouble` and `CollectTargetsTriple` (`btl_server_flow_sub.c`) collect the ally, or both allies near and far; a single or rotation battle collects none, so the move fails as in Gen 9. The view (`btlv_scd.c`'s three reads, `BattleClient_GetMoveAnimType`) takes it as `MOVE_TARGET_USER_SIDE` through `PaperWhite2_GetMoveViewTarget` (`paperwhite2/moves.h`), since its tables use 14 for a triple battle's distant pick | |
+| **Raise the allies' critical-hit stage** | `BattleMon.unk142` is named `critStage` (Dire Hit 2 and 3 raise it); under `BUGFIX`, or `PAPERWHITE2 && MOVE_DRAGON_CHEER`, it is cleared on a switch or faint and passed on by Baton Pass (`btl_pokeparam.c`, a `// BUG:`: the original keeps it through switches) | `HandlerDragonCheer` on `UNCATEGORIZED_MOVE`: each target not yet pumped (Focus Energy's flag, or any stage) gets +1, +2 for a Dragon type, through `BattleMon_AddCritStage` and `SC_OP_ADD_CRIT_STAGE` (no handler command adds a stage; Dire Hit's path), and message 0x411; with none raised, "But it failed!" |
+| **A new condition** | `CONDITION_ID_COUNT` is 38 under `PAPERWHITE2` (`btl_pokeparam.h`; 36, `CONDITION_ANY_STATUS`, stays unused), and the loops over the arrays spell `CONDITION_ID_COUNT` (the same code in the plain build); `GetConditionByIndex` goes on to `sConditionsAdded` (`btl_tables.c`, the original list untouched), so the syrup ticks last at the turn's end, on the server and the client alike; `condition_effects.c` has its add message and its turn end | `PaperWhite2_ConditionEndTurnSyrup`: Speed -1. Built whatever inflicts it; not passed by Baton Pass; kind 4 ends it when the user leaves |
+| **An entry stat change, once a battle** | `BtlServerFlow_Create` calls `PaperWhite2_BattleServerStart` (under `PAPERWHITE2 && ABILITY_SWEET_SYRUP`) | `HandlerSweetSyrup` on `MEMBER_IN` and `CHANGE_ABILITY_AFTER`: Intimidate's handler with evasion, and a bit per Pokémon ID in `sSweetSyrupUsed` |
+| **Berries doubled** | `item_handlers.c`, under `PAPERWHITE2 && ABILITY_RIPEN`, in the Oran Berry's handler (not for Berry Juice, which shares it: `PaperWhite2_RipenBerry` checks `PML_ItemIsBerry`), the Sitrus Berry's, `CommonPinchBerry` (the five confusion Berries), the Enigma Berry's, `CommonStatBoostBerry` (Liechi to Starf), the Jaboca and Rowap Berries'; the type-resist Berries' 0.5 becomes 0.25 (`PaperWhite2_RipenResistRatio`) | `PaperWhite2_Ripen`: twice the amount, with the ability's popup, which `PaperWhite2_RipenEnd` removes after the Berry's work |
+
+`CommonGetItemParam`'s other callers are thresholds (the pinch reactions, Gluttony's), other items (the boosting items,
+Quick Claw, Shell Bell, Light Clay…) or Berries left as they are: the Micle Berry's accuracy, the Lansat Berry (already
++2), the Custap Berry, the Leppa Berry (its PP isn't read there), the status-curing Berries (nothing to double). The
+resist Berries show no Ripen popup: their ratio is taken in the damage calculation, which the AI also runs.
+
+Also: `MOVE_PREVIEW_LAST_ABILITY` is Ripen (neither ability changes a matchup); Metronome reaches all four moves through
+step 1's bound.
+
+### 15.3 Proof (py-desmume, a copy of the user's save; scratchpad `moves5/`, logs in `logs/`, shots in `keep/`)
+
+Route 6, the wild Pokémon forced (`bt5.py`: its species and level at `PokeParty_CreatePkm`, its moves at the wild
+generator's last `PokeParty_RecalcStats`; a single battle forced through `PaperWhite2_Encounters_RollPartner`'s `able`,
+a double or triple by setting the manager's `doubleBattle` and `pokeCount`), the damage roll at 100% and no critical
+hits; the lead's species, moves, ability, item and stats written into the party.
+
+- **Body Press** (Appletun with Attack 40 and Defense 150, against a wild Snorlax Lv. 100): the attacking stat the server
+  used (`BATTLE_EVENT_VAR_ATTACK`) **150**, 40 damage; Tackle **40**, 5 damage; after Iron Defense (+2) Body Press
+  **300**, 78 damage; Body Slam's animation (effect 34) (`logs/bp.log`).
+- **Fickle Beam**: forced all out, "Oinkums is going all out for this attack!" (set 0x48a), the power ratio ×0x2000 and
+  10 damage; forced not, no message, no multiplier and 6 damage; Dragon Pulse's animation (406)
+  (`keep/fickle_beam_all_out.png`).
+- **Dragon Cheer**: in a single battle "But it failed!" and no handler (`dragon_cheer_single_failed`). In a double battle
+  Klink (Steel) +1 (`BattleMon_AddCritStage` 1, the server's and the client's), "Klink is getting pumped!", and its Tackle
+  then rolled at critical-hit stage **1** while the user's rolled at 0; with a Dratini ally **+2**, its Tackle at stage
+  2; a second Dragon Cheer, "But it failed!" (`dragon_cheer_double_pumped`, `dragon_cheer_again_failed`). In a triple
+  battle (the user at the left) Dratini +2 and Keldeo, the far ally, +1, each with its message
+  (`dragon_cheer_triple_ally1`, `_ally2`). The target screen shows the user's side (`dragon_cheer_target_screen`).
+- **Syrup Bomb** (a No Guard user): "The wild Snorlax got covered in sticky candy syrup!", then "The wild Snorlax's
+  Speed fell!" at the end of turns 1, 2 and 3, and none at 4 (`syrup_covered`, `syrup_speed_fell`, `logs/sy.log`). With
+  the user switched out after the first turn: one fall, then none (`logs/syw.log`).
+- **Sweet Syrup**: on entering, the "Oinkums's Sweet Syrup" popup and "The wild Snorlax's evasiveness fell!"; switched
+  out and back in, the handler ran and changed nothing (`sweet_syrup_popup_evasion`, `logs/ss.log`).
+- **Ripen**: a Sitrus Berry at 200/500 HP restored **250** with Ripen and its popup, **125** without; an Oran Berry
+  **20** (10 without); a Liechi Berry Attack **+2**; an Occa Berry against Flamethrower, the damage ratio 0x400 and
+  **198** damage, 0x800 and **396** without (`ripen_sitrus_popup`, `ripen_liechi_popup`, `logs/rs`, `ns`, `ro`, `rl`,
+  `rr`, `nr`).
+- **Metronome** forced to each: Body Press (its handler, 12 damage), Fickle Beam (all out), Dragon Cheer ("Waggling a
+  finger let it use Dragon Cheer!", then "But it failed!" in a single battle), Syrup Bomb (the syrup and a Speed fall);
+  no crash (`metronome_dragon_cheer`, `logs/met.log`).
+- **Dipplin → Hydrapple**: a Dipplin knowing Dragon Cheer, an Exp. point short of level 25, beat a wild Caterpie: "What?
+  Oinkums is evolving!", "Congratulations! Your Oinkums evolved into Hydrapple!", species 691 (`dipplin_evolving`,
+  `evolved_hydrapple`); the same Dipplin without Dragon Cheer reached 25 and stayed 690.
+
+ROM `905ca4cc4a5e4b72875b40996c9604e17b0212aa`, `verify_dsi_rom.py` intact; the plain `w2_us` build passes every module
+check (its archive checks fail as before); `compile_all.py` reports nothing in the changed files; `test_moves_abilities`
+21 tests and the editor's `npm test` (119) pass.
+
+### 15.4 Left, and what repeats (for an effect designer)
+
+- **Not run:** a trainer's AI with the new moves; Ripen on the confusion Berries, the Enigma Berry and the
+  Jaboca/Rowap Berries (the Sitrus Berry's helper); Bug Bite or Fling eating a Ripen Pokémon's Berry; Baton Pass with
+  Dragon Cheer's stage; Skill Swap or Trace onto Sweet Syrup (it acts if that Pokémon's bit is clear); the summary and
+  Pokédex pages of the new entries.
+- **Behaviour notes:** Dragon Cheer's target screen highlights the whole own side, the user too; a Pokémon pumped by
+  Focus Energy or Dire Hit is passed over; Sweet Syrup's bit is set only when a foe was there to affect.
+- **Saves:** Pokémon made before this keep their stand-ins (§11.6).
+- **What repeats**, the effect designer's first blocks: a handler gated on "the attacker (or the mon) is this item's"
+  (every handler here); "rewrite an event variable" (Body Press's stat, as Foul Play's mon); "a random chance, then a
+  message and a flag for later in the move" (Fickle Beam); "multiply the power ratio" (Grav Apple, Fickle Beam); "for each
+  target, unless it already is, a change and a set message" (Dragon Cheer); "a stat change on the adjacent foes, with the
+  popup" (Sweet Syrup, Intimidate); "once a battle per Pokémon" (Sweet Syrup's bit); "a condition's turn end: a stat
+  change" (the syrup); "an amount ×2 for an ability, with the popup" (Ripen). The new mechanisms (the target kind, the
+  condition slot, the attack-stat variable, the critical-hit stage's reset) are engine pieces such blocks would call.

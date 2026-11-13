@@ -8,6 +8,10 @@
 #include "constants/battle.h"
 #include "constants/moves.h"
 #include "constants/types.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/battle_handlers.h"
+#include "text/system/0018.h"
+#endif
 
 // The message of a condition that ended: the one by default and the one with a second form, as negative when the
 // condition has none
@@ -73,6 +77,12 @@ static void ConditionEndTurnActive(BtlServerFlow *flow, BattleMon *mon, u8 monId
     case 0x17:
         ConditionEndTurnEncore(flow, mon, monId);
         break;
+#ifdef PAPERWHITE2
+    // Paper White 2: Syrup Bomb's syrup lowers the Speed (paperwhite2_battle.c)
+    case CONDITION_SYRUP:
+        PaperWhite2_ConditionEndTurnSyrup(flow, monId);
+        break;
+#endif
     }
 }
 
@@ -347,6 +357,12 @@ static s32 GetConditionAddMessage(s32 condition, BattleCondition value) {
     s32 message = -1;
 
     switch (condition) {
+#ifdef PAPERWHITE2
+    // Paper White 2: "[The Pokémon] got covered in sticky candy syrup!"
+    case CONDITION_SYRUP:
+        message = Bank0018_Text_CoveredInSyrup;
+        break;
+#endif
     case CONDITION_BURN:
         message = 0xff;
         break;

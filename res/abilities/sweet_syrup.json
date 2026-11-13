@@ -1,0 +1,5 @@
+{
+    "$schema": "ability.schema.json",
+    "name": "Sweet Syrup",
+    "description": "Lowers the foes' evasion\nonce, on first entering."
+}

@@ -871,6 +871,15 @@ static const MoveEventAddEntry sMoveEventAddTable[] = {
     // Paper White 2: the added moves' own handlers (paperwhite2_battle.c)
     { MOVE_GRAV_APPLE, PaperWhite2_EventAddGravApple },
 #endif
+#if defined(PAPERWHITE2) && defined(MOVE_BODY_PRESS)
+    { MOVE_BODY_PRESS, PaperWhite2_EventAddBodyPress },
+#endif
+#if defined(PAPERWHITE2) && defined(MOVE_FICKLE_BEAM)
+    { MOVE_FICKLE_BEAM, PaperWhite2_EventAddFickleBeam },
+#endif
+#if defined(PAPERWHITE2) && defined(MOVE_DRAGON_CHEER)
+    { MOVE_DRAGON_CHEER, PaperWhite2_EventAddDragonCheer },
+#endif
 };
 
 // Doesn't match: the original keeps the status in a register, which MWCC does for an enum-typed local (see the

@@ -38,6 +38,7 @@
 #include "system/game_beacon.h"
 #ifdef PAPERWHITE2
 #include "constants/pokemon.h"
+#include "paperwhite2/battle_handlers.h"
 #include "paperwhite2/pokemon_forms.h"
 #include "paperwhite2/prestige.h"
 #include "text/system/0019.h"
@@ -68,6 +69,10 @@ BtlServerFlow *BtlServerFlow_Create(BtlServer *server, BtlMainModule *mainModule
     flow->unk18 = a4;
     flow->unk4A4 = loadEvolutionFile(heapId);
     BtlServerFlow_InitWork(flow);
+#if defined(PAPERWHITE2) && defined(ABILITY_SWEET_SYRUP)
+    // Paper White 2: no Pokémon has used its once-a-battle ability yet (paperwhite2_battle.c)
+    PaperWhite2_BattleServerStart();
+#endif
     return flow;
 }
 
@@ -6872,7 +6877,15 @@ u16 ServerEvent_GetAttackPower(BtlServerFlow *flow, BattleMon *attacker, BattleM
     BattleEventVar_SetConstValue(BATTLE_EVENT_VAR_DEFENDER, GetMonID(defender));
     BattleEventVar_SetValue(BATTLE_EVENT_VAR_ATTACK_STAT_MON, 0x1f);
     BattleEventVar_SetValue(BATTLE_EVENT_VAR_GENERAL_FLAG, FALSE);
+#if defined(PAPERWHITE2) && defined(MOVE_BODY_PRESS)
+    // Paper White 2: the handlers may choose the stat the move attacks with, as Body Press its Defense
+    // (paperwhite2_battle.c)
+    BattleEventVar_SetValue(BATTLE_EVENT_VAR_ATTACK_STAT, stat);
+#endif
     BattleEvent_CallHandlers(flow, BATTLE_EVENT_BEFORE_ATTACK_STAT);
+#if defined(PAPERWHITE2) && defined(MOVE_BODY_PRESS)
+    stat = BattleEventVar_GetValue(BATTLE_EVENT_VAR_ATTACK_STAT);
+#endif
     // Foul Play attacks with the target's stat
     monId = BattleEventVar_GetValue(BATTLE_EVENT_VAR_ATTACK_STAT_MON);
     if (monId != 0x1f) {
@@ -6881,7 +6894,12 @@ u16 ServerEvent_GetAttackPower(BtlServerFlow *flow, BattleMon *attacker, BattleM
     if (BattleEventVar_GetValue(BATTLE_EVENT_VAR_GENERAL_FLAG)) {
         power = RawBattleMonStat(attacker, stat);
     } else if (critical) {
+#if defined(PAPERWHITE2) && defined(MOVE_BODY_PRESS)
+        // Paper White 2: a critical hit ignores the drops of the stat attacked with, a defense's too
+        power = PaperWhite2_GetCriticalAttack(attacker, stat);
+#else
         power = CritAtkDefLevel(attacker, stat);
+#endif
     } else {
         power = GetBattleMonStat(attacker, stat);
     }

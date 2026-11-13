@@ -9,6 +9,7 @@
 #include "constants/abilities.h"
 #include "constants/battle.h"
 #include "constants/items.h"
+#include "constants/moves.h"
 #include "constants/pokemon.h"
 #include "constants/species.h"
 #include "gfl/heap.h"
@@ -60,7 +61,7 @@ BattleMon *BattleMon_Create(PartyPkm *src, u8 monId, HeapID heapId) {
     mon->consecutiveMoveCount = 0;
     mon->comboMove = 0;
     mon->comboMonId = 0x1f;
-    mon->unk142 = 0;
+    mon->critStage = 0;
     MI_CpuFill8(mon->turnFlags, 0, sizeof(mon->turnFlags));
     MI_CpuFill8(mon->conditionFlags, 0, sizeof(mon->conditionFlags));
     BattleMon_ClearDamageRecords(mon);
@@ -1026,7 +1027,7 @@ void StatStageReset(BattleMon *mon) {
 }
 
 u8 BattleMon_GetCritStage(BattleMon *mon) {
-    u8 stage = mon->unk142;
+    u8 stage = mon->critStage;
 
     if (GetAdditionalConditionFlag(mon, 9)) {
         stage += 2;
@@ -1041,21 +1042,21 @@ BOOL BattleMon_AddCritStage(BattleMon *mon, s32 amount) {
     s32 decrease;
 
     if (amount > 0) {
-        if (mon->unk142 < 4) {
-            mon->unk142 += amount;
-            if (mon->unk142 > 4) {
-                mon->unk142 = 4;
+        if (mon->critStage < 4) {
+            mon->critStage += amount;
+            if (mon->critStage > 4) {
+                mon->critStage = 4;
             }
             return TRUE;
         }
     } else {
         decrease = amount;
         decrease *= -1;
-        if (mon->unk142 != 0) {
-            if (mon->unk142 > decrease) {
-                mon->unk142 -= decrease;
+        if (mon->critStage != 0) {
+            if (mon->critStage > decrease) {
+                mon->critStage -= decrease;
             } else {
-                mon->unk142 = 0;
+                mon->critStage = 0;
             }
             return TRUE;
         }
@@ -1235,7 +1236,7 @@ void BattleMon_CureConditionsFromMon(BattleMon *mon, u32 monId) {
     u32 i;
 
     if (monId != 0x1f) {
-        for (i = 0; i < 0x24; i++) {
+        for (i = 0; i < CONDITION_ID_COUNT; i++) {
             if (!Condition_IsNull(mon->core.conditions[i])) {
                 if (Condition_GetMonID(mon->core.conditions[i]) == monId) {
                     mon->core.conditions[i] = ZeroConditionTurns();
@@ -1313,11 +1314,11 @@ void ClearMoveStatusWork(BattleMon *mon, u32 flag) {
     if (flag == 0) {
         i = 6;
     }
-    for (; i < 0x24; i++) {
+    for (; i < CONDITION_ID_COUNT; i++) {
         mon->core.conditions[i].raw = 0;
         mon->core.conditions[i].common.type = 0;
     }
-    MI_CpuFill8(mon->core.conditionCounters, 0, 0x24);
+    MI_CpuFill8(mon->core.conditionCounters, 0, sizeof(mon->core.conditionCounters));
 }
 
 void BattleMon_SetAppearTurn(BattleMon *mon, u16 turn) {
@@ -1344,6 +1345,11 @@ void BattleMon_ClearTurnFlag(BattleMon *mon, u32 flag) {
 void Clear_ForFainted(BattleMon *mon) {
     MI_CpuFill8(mon->turnFlags, 0, sizeof(mon->turnFlags));
     MI_CpuFill8(mon->conditionFlags, 0, sizeof(mon->conditionFlags));
+#if defined(BUGFIX) || (defined(PAPERWHITE2) && defined(MOVE_DRAGON_CHEER))
+    // BUG: the critical-hit stages outlive the Pokémon's switch or fainting, as no other boost does (only Dire Hit 2
+    // and 3 add them in the original). Paper White 2's Dragon Cheer adds them too, so the hack clears them
+    mon->critStage = 0;
+#endif
     ClearFormChange(mon);
     MoveWork_ClearSurface(mon);
     ClearUsedMoveFlag(mon);
@@ -1372,6 +1378,10 @@ void Clear_ForSwitch(BattleMon *mon) {
         ClearMoveStatusWork(mon, 0);
         InitStatStages(&mon->statStages);
         MI_CpuFill8(mon->conditionFlags, 0, sizeof(mon->conditionFlags));
+#if defined(BUGFIX) || (defined(PAPERWHITE2) && defined(MOVE_DRAGON_CHEER))
+        // BUG: as in Clear_ForFainted
+        mon->critStage = 0;
+#endif
     }
     mon->form = mon->core.baseForm;
     mon->ability = mon->core.baseAbility;
@@ -1396,7 +1406,7 @@ void CopyBatonPassParams(BattleMon *target, BattleMon *source) {
 
     target->statStages = source->statStages;
     target->substituteHP = source->substituteHP;
-    for (i = 0; i < 36; i++) {
+    for (i = 0; i < CONDITION_ID_COUNT; i++) {
         if (GetConditionPtr(source, i)->common.type != 0 && Condition_IsPassedByBatonPass(i)) {
             *GetConditionPtr(target, i) = *GetConditionPtr(source, i);
             target->core.conditionCounters[i] = source->core.conditionCounters[i];
@@ -1412,6 +1422,11 @@ void CopyBatonPassParams(BattleMon *target, BattleMon *source) {
     if (GetAdditionalConditionFlag(source, 9)) {
         BattleMon_SetConditionFlag(target, 9);
     }
+#if defined(BUGFIX) || (defined(PAPERWHITE2) && defined(MOVE_DRAGON_CHEER))
+    // BUG: as in Clear_ForFainted; Baton Pass passes them on, as it does Focus Energy's
+    target->critStage = source->critStage;
+    source->critStage = 0;
+#endif
     ResetSpActPriority(source);
     ClearMoveStatusWork(source, 0);
     InitStatStages(&source->statStages);

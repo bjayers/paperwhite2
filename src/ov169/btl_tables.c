@@ -215,15 +215,25 @@ static const u32 sConditionsAll[] = { 35,
                                       33,
                                       34 };
 
+#ifdef PAPERWHITE2
+// Paper White 2: the hack's own conditions, at the end of the turn after the original's (Syrup Bomb's)
+static const u32 sConditionsAdded[] = { CONDITION_SYRUP };
+#endif
+
 u32 GetConditionByIndex(u32 index) {
 #ifdef PAPERWHITE2
-    // Paper White 2: the whole list, with the conditions the hack adds to it (the original's 35)
+    // Paper White 2: the whole list (the original's 35), then the hack's
     if (index < NELEMS(sConditionsAll)) {
 #else
     if (index < 35) {
 #endif
         return sConditionsAll[index];
     }
+#ifdef PAPERWHITE2
+    if (index - NELEMS(sConditionsAll) < NELEMS(sConditionsAdded)) {
+        return sConditionsAdded[index - NELEMS(sConditionsAll)];
+    }
+#endif
     return 0;
 }
 
