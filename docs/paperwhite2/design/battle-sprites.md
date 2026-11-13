@@ -719,3 +719,33 @@ original's or the nearest similar picture's.
 - Open: where the rig JSON lives in res/ (beside the sheet, as the packer's source, with the five files built from
   it, or written into res/ beside the Nitro files); whether a baked-heavy sprite works on the summary and Pokédex
   screens (test a 100 KB rig there).
+
+## 16. The rig editor: the user's decisions and the plan (2026-11-12)
+
+The user works in Blender and Aseprite and wants the result to look and feel as close to vanilla as possible.
+
+- **The art stays a full sheet**, as in vanilla, drawn in Aseprite and brought in by the art import (section 14). In
+  the editor the user draws or adjusts each picture's rectangles over the sheet and places pivots; there are no
+  separate per-piece PNGs.
+- **An armature**: parts can be parented (root, body, head, ears...), posed like Blender's bones; the editor bakes the
+  hierarchy into each part's own track, so the game still gets independent parts. The sprite's whole-sprite movement
+  (the sequence level) is the root. Rotation and uniform scale bake exactly; a non-uniform scale of a parent over a
+  rotated child would need a shear the game can't draw, so the editor warns or keeps parents' scale uniform.
+- **Curves**: key poses with linear, eased or Bézier interpolation between them, baked to the game's held keys at a
+  step, **every 6 frames by default** (Game Freak's rhythm), changeable per animation. The preview shows the baked
+  result. Section 15's measurements: a step of 6 is safe everywhere, 2-3 only with testing on every screen.
+- **Front and back** stay separate rigs; **Copy front to back** gives the back a starting point, fully editable after,
+  or the back is built on its own.
+- **No Blender import**: the editor alone.
+- Existing sprites open as flat rigs (no parents, their held keys as they are); the user can parent and re-key them.
+
+The plan:
+1. **The rig as source**: every side's flat rig JSON in res/ beside its sheet, the packer writing the five files from
+   it at build time (byte-identical, as section 15 proves), and the five binary files leave res/ (source only, as the
+   user wants, and one thing for the editor to edit).
+2. **The editor's flat rig editing**: the sheet with each picture's rectangles (drag, resize, add a second), pivots,
+   parts' layer order, the per-part keyframe timeline (picture, move, rotation, scale, frames), sequences (stay, stop),
+   idle parts, the live preview (a JavaScript port of `mcss.render`) with the battle's pauses, normal and shiny, and
+   the checks; Copy front to back.
+3. **The armature and curves**: a source layer above the flat rig (parents, key poses, curves, the bake step) baked
+   into the flat rig on save, with the shear warning.
