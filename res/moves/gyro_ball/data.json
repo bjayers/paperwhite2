@@ -27,5 +27,5 @@
     "heal": 0,
     "target": "MOVE_TARGET_SELECTED",
     "stat_changes": [],
-    "flags": [ "MOVE_FLAG_CONTACT", "MOVE_FLAG_PROTECT", "MOVE_FLAG_MIRROR_MOVE" ]
+    "flags": [ "MOVE_FLAG_CONTACT", "MOVE_FLAG_PROTECT", "MOVE_FLAG_MIRROR_MOVE", "MOVE_FLAG_BALLISTIC" ]
 }

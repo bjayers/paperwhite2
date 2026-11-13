@@ -33,5 +33,5 @@
             "chance": 50
         }
     ],
-    "flags": [ "MOVE_FLAG_PROTECT", "MOVE_FLAG_MIRROR_MOVE" ]
+    "flags": [ "MOVE_FLAG_PROTECT", "MOVE_FLAG_MIRROR_MOVE", "MOVE_FLAG_BALLISTIC" ]
 }

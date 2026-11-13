@@ -84,7 +84,7 @@
             "type": "array",
             "items": {
                 "type": [ "string", "integer" ], "x-constant": "MOVE_FLAG_", "minimum": 0,
-                "description": "A MOVE_FLAG_* constant, or the value of a flag that has none"
+                "description": "A MOVE_FLAG_* constant (include/constants/battle.h; MOVE_FLAG_BALLISTIC, bit 14, is the hack's: a ball or bomb move, which Bulletproof blocks), or the value of a flag that has none"
             },
             "description": "The move's flags"
         },

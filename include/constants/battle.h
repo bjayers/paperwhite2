@@ -127,6 +127,9 @@
 #define MOVE_FLAG_DISTANT (1 << 11)           // Reaches any Pokémon in a Triple Battle, as Fly and Aura Sphere
 #define MOVE_FLAG_HEAL (1 << 12)              // Heal Block prevents it
 #define MOVE_FLAG_BYPASS_SUBSTITUTE (1 << 13) // Hits through a Substitute, as Roar and Perish Song
+// Paper White 2: the first of the free bits (14-31), set in res/moves/ only: a ball or bomb move, which Bulletproof
+// blocks (Gen 6's), as Shadow Ball and Seed Bomb
+#define MOVE_FLAG_BALLISTIC (1 << 14)
 
 // Conditions of a battle Pokemon, which include the major status conditions. Named after the moves that inflict them
 // in the move data, or from how the AI checks for them
