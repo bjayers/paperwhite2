@@ -39,13 +39,15 @@ const isFollowerFile = (path: string) => path.startsWith(`${FOLLOWING}/`) || pat
 function Sprite({ variant }: { variant: Variant }) {
   const [image, setImage] = useState<{ image: IndexedImage; colors: Rgb[] } | null>(null);
   const [missing, setMissing] = useState(false);
-  const name = spriteFolder(variant);
+  // Its own sheet, another follower's, or a walking Pokémon's (OBJ_CODE_POKEMON_X: res/field/actors/pokemon/x)
+  const walking = variant.sprite?.startsWith("OBJ_CODE_POKEMON_") ? variant.sprite.slice("OBJ_CODE_POKEMON_".length).toLowerCase() : null;
+  const name = spriteFolder(variant) ?? (walking ? `pokemon/${walking}` : null);
   useEffect(() => {
     let live = true;
     setImage(null);
     setMissing(false);
     if (!name) return;
-    const folder = `${FOLLOWERS}/${name}`;
+    const folder = walking ? `res/field/actors/${name}` : `${FOLLOWERS}/${name}`;
     Promise.all([api.asset(`${folder}/sprite.png`).then(readIndexedPng), api.file(`${folder}/sprite.pal`)])
       .then(([img, pal]) => live && setImage({ image: img, colors: parsePal(pal.text) }))
       .catch(() => live && setMissing(true));
@@ -57,19 +59,23 @@ function Sprite({ variant }: { variant: Variant }) {
   return (
     <div className="flw-sprite">
       <PalettePreview image={image.image} colors={image.colors} offset={0} zoom={2} transparent highlight={null} />
-      {name !== variant.name && <p className="muted flw-note">{variant.name} shares {name}'s sprite ({variant.sprite}).</p>}
+      {walking ? <p className="muted flw-note">{variant.name} shows the walking sprite {variant.sprite} ({name}/sprite.png); the Pokémon Editor's Follower card picks it.</p>
+        : name !== variant.name && <p className="muted flw-note">{variant.name} shares {name}'s sprite ({variant.sprite}).</p>}
     </div>
   );
 }
 
 // ---------------------------------------------------------------- The Pokémon page
 
-function SpeciesPage({ entry, constants, onChanged, open }: {
+function SpeciesPage({ entry, constants, onChanged, open, focusForm = 0 }: {
   entry: FollowerSpecies;
   constants: ToolProps["constants"];
   onChanged(): void;
   open(path: string): void;
+  /** The form whose first row starts open (a link's form=). */
+  focusForm?: number;
 }) {
+  const first = Math.max(0, entry.variants.findIndex((v) => v.form === focusForm));
   const shared = useHeld(SHARED_DIALOGUE);
   const { docs } = useDocuments();
   const own = dialoguePath(entry.species);
@@ -106,7 +112,7 @@ function SpeciesPage({ entry, constants, onChanged, open }: {
         <p className="muted flw-note">Each form, sex and shininess is a follower of its own, a field actor under <code>{FOLLOWERS}/</code>:
           its sprite (colors in Graphics & Palettes, <code>sprite.pal</code>), and how it is drawn and keeps its distance.</p>
         {entry.variants.map((v, i) => (
-          <details key={v.name} className="flw-variant" open={i === 0}>
+          <details key={v.name} className="flw-variant" open={i === first}>
             <summary>
               <strong>{variantLabel(v)}</strong> <span className="muted">{v.name}{v.placeholder ? " · placeholder" : ""}</span>
               <button className="link flw-open" onClick={(e) => { e.preventDefault(); open(v.path); }}>open data.json</button>
@@ -182,13 +188,16 @@ export function FollowerEditor({ constants, open }: ToolProps) {
   const [chosen, setChosen] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const { docs } = useDocuments();
-  // A link to a species' followers (#tool/followers?species=SPECIES_X, the Pokémon Editor's Follower card)
+  // A link to a species' followers (#tool/followers?species=SPECIES_X[&form=N], the Pokémon Editor's Follower card),
+  // with that form's rows open
   const params = useToolParams("followers");
+  const [focusForm, setFocusForm] = useState(0);
   useEffect(() => {
     const species = params.get("species");
     if (species) {
       setPage("pokemon");
       setChosen(species);
+      setFocusForm(Number(params.get("form") ?? 0) || 0);
       setFilter("");
     }
   }, [params]);
@@ -279,7 +288,7 @@ export function FollowerEditor({ constants, open }: ToolProps) {
             <div className="flw-list-items">
               {!list && <p className="muted flw-note">Reading the followers…</p>}
               {shown.map((s) => (
-                <button key={s.species} className={`flw-item${s.species === chosen ? " selected" : ""}`} onClick={() => setChosen(s.species)}>
+                <button key={s.species} className={`flw-item${s.species === chosen ? " selected" : ""}`} onClick={() => { setChosen(s.species); setFocusForm(0); }}>
                   <span className="muted flw-number">{s.number}</span>
                   <span className="flw-name">{speciesName(s.species)}</span>
                   {s.dialogue && <span className="flw-badge" title="Has its own dialogue">💬</span>}
@@ -288,7 +297,7 @@ export function FollowerEditor({ constants, open }: ToolProps) {
             </div>
           </div>
           <div className="flw-detail">
-            {entry && <SpeciesPage key={entry.species} entry={entry} constants={constants} onChanged={reload} open={open} />}
+            {entry && <SpeciesPage key={`${entry.species}@${focusForm}`} entry={entry} constants={constants} onChanged={reload} open={open} focusForm={focusForm} />}
           </div>
         </div>
       )}

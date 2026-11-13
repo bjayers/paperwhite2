@@ -22,7 +22,8 @@ import { evolutionText } from "./evolutionText.ts";
 import { DocForm, useHeld } from "../followers/DocForm.tsx";
 import { SpeciesIcon, speciesFolder } from "./SpeciesIcon.tsx";
 import { useToolActive } from "../active.ts";
-import { FormIcon, FormPage, FormsCard, Row, SERVICES, WonderTradeRow } from "./FormPage.tsx";
+import { FormIcon, FormPage, FormsCard, MirrorToggle, Row, SERVICES, WonderTradeRow } from "./FormPage.tsx";
+import { FollowerSpritesCard } from "./FollowerSprites.tsx";
 import { BattleSpriteArt } from "./BattleSpriteArt.tsx";
 import { isOriginalForm, listSpecies, type Listed } from "./forms.ts";
 import { AddedSpeciesArt, AddedSpeciesCard, AddPokemonDialog, CryCard, FollowerCard } from "./AddedSpecies.tsx";
@@ -297,6 +298,7 @@ function SpeciesPage({ entry, list, info, speciesInfo, constants, onOpen, onSele
           {entry.number > 0 && <div className="pkm-rows pkm-top-rows">{entry.added && !entry.inDex
             ? <Row label="Wonder Trade"><span className="muted">Never: {entry.retired ? "it is retired" : "it isn't in the Pokédex"}.</span></Row>
             : <WonderTradeRow entry={entry} original={info?.original ?? {}} />}</div>}
+          {entry.number > 0 && <MirrorToggle entry={entry} speciesName={String(data.get("name") ?? entry.name)} onChanged={onChanged} />}
         </div>
       </div>
       {added && <AddedSpeciesCard entry={entry} added={added} info={speciesInfo} onChanged={onChanged} onReuse={() => onReuse(added)} />}
@@ -304,7 +306,8 @@ function SpeciesPage({ entry, list, info, speciesInfo, constants, onOpen, onSele
       {entry.number > 0 && <BattleSpriteArt species={entry.species} form={0} folder={entry.folder} speciesName={String(data.get("name") ?? entry.name)}
         onWritten={() => { setSpriteEpoch((n) => n + 1); onChanged(entry.key); }} />}
       {entry.added && <AddedSpeciesArt entry={entry} onWritten={() => { setSpriteEpoch((n) => n + 1); onChanged(entry.key); }} />}
-      {added && <FollowerCard list={list} added={added} onChanged={() => onChanged(entry.key)} />}
+      {added ? <FollowerCard list={list} added={added} onChanged={() => onChanged(entry.key)} />
+        : entry.number > 0 && <FollowerSpritesCard species={entry.species} form={0} name={String(data.get("name") ?? entry.name)} />}
       {entry.number > 0 && <CryCard entry={entry} added={added} constants={constants} onChanged={() => onChanged(entry.key)} />}
       <RecordSections path={entry.speciesPath} entry={entry} list={list} constants={constants} onOpen={onOpen} />
       {data.has("pokedex") && (
@@ -352,7 +355,8 @@ export function PokemonEditor({ constants }: ToolProps) {
     if (select) setChosen(select);
   }, []);
 
-  const editable = (p: string) => p.startsWith("res/pokemon/") || p === SERVICES;
+  // (the Follower cards' rows too, whose walking sprite is picked there)
+  const editable = (p: string) => p.startsWith("res/pokemon/") || p === SERVICES || p.startsWith("res/field/actors/followers/");
   const unsaved = [...docs.values()].filter((d) => d.dirty && editable(d.path));
   const save = useCallback(async () => {
     const paths = documents.dirtyPaths().filter(editable);

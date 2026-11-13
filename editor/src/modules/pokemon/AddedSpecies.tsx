@@ -14,6 +14,7 @@ import { navigate } from "../../navigation.ts";
 import { DocForm } from "../followers/DocForm.tsx";
 import { applyFormChange, ArtImport, Row, summarize } from "./FormPage.tsx";
 import type { Listed } from "./forms.ts";
+import { FollowerSprites } from "./FollowerSprites.tsx";
 
 const BLANK = "blank";
 
@@ -253,6 +254,7 @@ export function FollowerCard({ list, added, onChanged }: { list: Listed[]; added
           </div>
         </Row>
       </div>
+      {has && <><h4>Walking sprites</h4><FollowerSprites species={added.species} form={0} /></>}
       {message && <p className={`pkm-note${message.ok ? "" : " pkm-error"}`}>{message.text}</p>}
     </section>
   );

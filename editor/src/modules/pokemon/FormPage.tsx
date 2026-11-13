@@ -17,6 +17,7 @@ import { BattleSpriteArt } from "./BattleSpriteArt.tsx";
 import { SpeciesIcon } from "./SpeciesIcon.tsx";
 import { formEvolutions, isOriginalForm, type Evolution, type Listed } from "./forms.ts";
 import { evolutionText } from "./evolutionText.ts";
+import { FollowerSpritesCard } from "./FollowerSprites.tsx";
 
 export const SERVICES = "res/paperwhite2/pokemon_center/services.json";
 const map = (v: JsonValue | undefined) => (v instanceof Map ? v : new Map<string, JsonValue>());
@@ -130,6 +131,65 @@ export function WonderTradeRow({ entry, original }: { entry: Listed; original: R
         In the random pool
       </label>
     </Row>
+  );
+}
+
+const MIRROR_HINT = "The Pokédex's pages and list, the trade and the musical flip a Pokémon's sprite to face the other way unless "
+  + "it is asymmetric (PERSONAL_NO_FLIP): a Pokémon whose art isn't symmetric (a mark, a notched ear) keeps it as drawn.";
+
+/** "Don't mirror (asymmetric)": the personal data's asymmetric flag, on a species' page (its data.json) or a form's
+ * (its record; a form without one reads its species', and turning it on gives the form a record first: a copy of the
+ * species' data, as Add form's "Own stats" does). */
+export function MirrorToggle({ entry, speciesName, onChanged }: { entry: Listed; speciesName: string; onChanged(select?: string): void }) {
+  const own = entry.form === 0 ? entry.speciesPath : entry.recordPath;
+  const species = useHeld(entry.speciesPath);
+  const record = useHeld(own && own !== entry.speciesPath ? own : null);
+  const held = own === entry.speciesPath ? species : record;
+  const [busy, setBusy] = useState(false);
+  const value = (d: JsonValue | null) => (d instanceof Map ? d.get("asymmetric") === true : null);
+  const speciesValue = value(species.data);
+  const checked = own ? value(held.data) : speciesValue;
+  const formName = entry.name.slice(entry.name.indexOf(":") + 2);
+
+  const giveRecord = async (on: boolean) => {
+    let plan: PokemonFormChange;
+    try {
+      plan = await api.pokemonFormRecord({ species: entry.species, form: entry.form, on: true, check: true });
+    } catch (e) {
+      alert((e as Error).message);
+      return;
+    }
+    if (!confirm(`${formName} has no data record of its own: it reads ${speciesName}'s, so it is mirrored as ${speciesName} is. `
+      + `To ${on ? "stop mirroring it" : "mirror it"} alone, it gets a record first, a copy of ${speciesName}'s stats, types, abilities and moves `
+      + `(${summarize(plan.changed)}), which from then on are its own to change (and don't follow ${speciesName}'s edits). Go on?`)) return;
+    setBusy(true);
+    const result = await applyFormChange(() => api.pokemonFormRecord({ species: entry.species, form: entry.form, on: true }));
+    if (result) {
+      const path = `res/pokemon/${entry.folder}/form_${entry.form}.json`;
+      try {
+        await documents.hold(path);
+        documents.edit(path, ["asymmetric"], on);
+        await documents.save(path);
+      } catch (e) {
+        alert(`The record was made, but setting its flag failed: ${(e as Error).message}`);
+      }
+      onChanged(entry.key);
+    }
+    setBusy(false);
+  };
+  const hint = entry.form === 0
+    ? `${MIRROR_HINT} Its forms with a record of their own have their own flag (their pages); those without one take this.`
+    : own ? `${MIRROR_HINT} This form's own, in ${own}.`
+    : `${MIRROR_HINT} This form has no record: it takes ${speciesName}'s (${speciesValue ? "not mirrored" : "mirrored"}). Changing it gives the form a record of its own, a copy of ${speciesName}'s data.`;
+  return (
+    <div className="pkm-mirror">
+      <label className="pkm-check">
+        <input type="checkbox" checked={checked === true} disabled={checked === null || busy || (!own && entry.form > 0 && !!species.dirty)}
+          onChange={(e) => (own ? documents.edit(own, ["asymmetric"], e.target.checked) : void giveRecord(e.target.checked))} />
+        Don't mirror (asymmetric){!own && entry.form > 0 ? <span className="muted"> · {speciesName}'s</span> : null}
+      </label>
+      <span className="muted pkm-hint">{hint}</span>
+    </div>
   );
 }
 
@@ -340,6 +400,7 @@ export function FormPage({ entry, list: listed, info, constants, sprite, record,
           <h2><span className="muted">#{entry.number}</span> {speciesName}: {formName}</h2>
           <p className="muted pkm-note">res/pokemon/{entry.folder}/data.json, form {entry.form}{entry.recordPath ? ` · ${entry.recordPath}` : ""}
             {hasArt ? ` · art in form_${entry.form}/` : ""}</p>
+          <MirrorToggle entry={entry} speciesName={speciesName} onChanged={onChanged} />
         </div>
       </div>
       <section className="pkm-card">
@@ -382,6 +443,7 @@ export function FormPage({ entry, list: listed, info, constants, sprite, record,
         <DocForm path={entry.speciesPath} at={["pokedex", "forms", entry.form - 1]} constants={constants} hideDescription flat />
       </section>
       {hasArt && <FormArt entry={entry} speciesName={speciesName} onWritten={() => { setEpoch((n) => n + 1); onChanged(entry.key); }} epoch={epoch} />}
+      <FollowerSpritesCard species={entry.species} form={entry.form} name={`${speciesName} (${formName})`} />
       {entry.recordPath ? record(entry.recordPath) : (
         <section className="pkm-card"><p className="muted">This form has no record of its own: its stats, types, abilities, moves and evolutions
           are {speciesName}'s. Turn on "Own stats, types, abilities and moves" to give it a copy to change.</p></section>

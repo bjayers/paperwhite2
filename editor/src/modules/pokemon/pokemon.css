@@ -124,3 +124,10 @@ button.danger { color: var(--error); border-color: var(--error); }
 .pkm-audio { height: 32px; max-width: 100%; }
 .pkm-copy { color: var(--warning); }
 .pkm-cry-preview { margin-top: 8px; padding: 8px 10px; border: 1px dashed var(--border); border-radius: 8px; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+
+/* The Follower card (FollowerSprites.tsx) and the "Don't mirror" toggle */
+.pkm-follower-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pkm-follower-sheet { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 2px; font-size: 11px; }
+.pkm-follower-sheet canvas { image-rendering: pixelated; background: var(--panel-2); border-radius: 4px; }
+.pkm-mirror { margin-top: 8px; display: flex; flex-direction: column; gap: 2px; }
+.pkm-mirror .pkm-check { font-size: 13px; font-weight: 600; }
