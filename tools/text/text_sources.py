@@ -14,6 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from tools.data.datajson import ROOT, DataError, load, load_schema  # noqa: E402
 from tools.data.gen_constants import load as load_list  # noqa: E402
+from tools.data import species_list  # noqa: E402
 
 
 def to_json(line: str) -> str:
@@ -56,9 +57,28 @@ def ordered(list_name: str) -> list[str]:
 def species() -> list[dict]:
     """The national Pokédex species' data.json files, in the order of species.txt: the species before SPECIES_EGG,
     which have text (not the forms, nor the egg and the species after it, whose names are lines of their own)."""
-    national = load_list("species")["SPECIES_EGG"]
-    return [read(ROOT / "res/pokemon" / name.removeprefix("SPECIES_").lower() / "data.json")
-            for name in ordered("species")[:national]]
+    national = species_list.national_count()
+    return [read(ROOT / "res/pokemon" / species_list.directory(name) / "data.json")
+            for name in species_list.constants()[:national]]
+
+
+@cache
+def added_species() -> list[dict]:
+    """Paper White 2's added species' data.json files, in ID order (tools/data/species_list.py), from
+    species_list.FIRST_ADDED: their names follow the egg's lines of the name banks (\\from{added_species.name})."""
+    return [read(ROOT / "res/pokemon" / species_list.directory(name) / "data.json")
+            for name in species_list.added_species()]
+
+
+@cache
+def pokedex_species() -> list[dict | None]:
+    """The species whose lines the Pokédex's banks have, by ID: the national Pokédex's, then, where species are added,
+    None for each ID from SPECIES_EGG to the first added species (an empty line) and the added ones, None for one
+    that never enters the Pokédex ("pokedex": false). Without added species, the national Pokédex's alone."""
+    if not species_list.added_species():
+        return list(species())
+    pads = [None] * (species_list.FIRST_ADDED - species_list.national_count())
+    return [*species(), *pads, *(data if species_list.in_pokedex(data) else None for data in added_species())]
 
 
 @cache
@@ -166,9 +186,19 @@ def pokedex_lines(path: list[str]) -> list[str]:
     """species.pokedex.<field>, species.pokedex.forms.<field>, species.pokedex.<language>.<field> and
     species.pokedex.<language>.forms.<field>: a field of every species' Pokédex text, of their alternate forms', in
     species order, of the species that have it in a language, which come first, or of their forms in the language.
-    species.pokedex.form_name, the first form's name, is empty for a species that has none."""
+    species.pokedex.form_name, the first form's name, is empty for a species that has none. The species are
+    pokedex_species()'s: an ID that has no Pokédex text has an empty line, and no forms or languages."""
     lines = []
-    for i, data in enumerate(species()):
+    for i, data in enumerate(pokedex_species()):
+        if data is None:
+            # An ID without Pokédex text: an empty line, no forms, and the end of a language's lines, which only the
+            # original species have
+            if path[0] == "forms" or path[1:2] == ["forms"]:
+                continue
+            if len(path) > 1:
+                break
+            lines.append("")
+            continue
         pokedex = field(data, "pokedex", f"species {i}")
         if path == ["form_name"]:
             lines.append(to_line(pokedex.get("form_name", "")))
@@ -192,8 +222,15 @@ def pokedex_lines(path: list[str]) -> list[str]:
     return lines
 
 
-def species_lines(key: str, format_line=to_line) -> list[str]:
-    return [format_line(field(data, key, f"species {i}")) for i, data in enumerate(species())]
+def species_lines(key: str, format_line=to_line, of=species) -> list[str]:
+    return [format_line(field(data, key, f"species {i}")) for i, data in enumerate(of())]
+
+
+def check_added_names():
+    """Stops on an added species' name past the NAME_LENGTH characters of a Pokémon's nickname."""
+    for name, data in zip(species_list.added_species(), added_species()):
+        if len(field(data, "name", name)) > species_list.NAME_LENGTH:
+            raise DataError(f"{name}: its name {data['name']!r} is longer than {species_list.NAME_LENGTH} characters")
 
 
 SOURCES = {
@@ -202,6 +239,11 @@ SOURCES = {
     # From species 1: SPECIES_NONE's line is empty
     "species.name_with_article": lambda: [f"{{bd01}}{article(data)} {{ff00:255}}{to_line(data['name'])}"
                                           for data in species()[1:]],
+    # Paper White 2: the added species' names, at their IDs, after the egg's lines (tools/data/species_list.py)
+    "added_species.name": lambda: (check_added_names(), species_lines("name", of=added_species))[1],
+    "added_species.name_upper": lambda: species_lines("name", lambda name: upper(to_line(name)), added_species),
+    "added_species.name_with_article": lambda: [f"{{bd01}}{article(data)} {{ff00:255}}{to_line(data['name'])}"
+                                                for data in added_species()],
 
     "moves.name": lambda: [to_line(data["name"]) for data in moves()],
     "moves.name_upper": lambda: [upper(to_line(data["name"])) for data in moves()],

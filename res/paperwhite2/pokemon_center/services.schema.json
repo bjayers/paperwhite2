@@ -83,7 +83,7 @@
         "fee": { "$ref": "#/$defs/money" },
         "level_spread": { "type": "integer", "minimum": 0, "maximum": 99, "description": "The received Pokémon's level is the sent one's plus or minus 1 to this (0 for the same level), clamped to 1-100" },
         "excluded_species": {
-          "type": "array", "maxItems": 649, "items": { "type": "string", "x-constant": "SPECIES_" },
+          "type": "array", "maxItems": 1023, "items": { "type": "string", "x-constant": "SPECIES_" },
           "description": "The species that are never received nor can be sent: the legendaries and mythicals. Any other National Pokédex species can be received, a species the hack adds too unless it is listed here"
         },
         "excluded_forms": {

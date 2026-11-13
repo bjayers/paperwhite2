@@ -19,7 +19,11 @@ The header has, for src/paperwhite2/main/paperwhite2_pokemon_forms.c (include/pa
   (docs/paperwhite2/design/save-expansion.md);
 - FOLLOWING_LAST_OBJ_CODE, the last follower's object code in generated/obj_codes.txt (OBJ_CODE_FOLLOWER_*), the end of
   the followers' range that GetIndexOfObjID (src/system/field_actor_savedata.c) maps, so that a form's followers
-  added after the others need no change to the C.
+  added after the others need no change to the C;
+- the added species (tools/data/species_list.py, include/paperwhite2/species.h): their first ID, count and the last
+  real species, where their battle sprite groups and icons start (after the hack's form groups,
+  tools/data/pokemon_graphics.py) and their first cry (tools/data/pokemon_cries.py), their icons' palettes, and which
+  of them never enter the Pokédex, a bit each from the first.
 
 Only the hack's build runs this (configure.py --hack). tools/paperwhite2/pokedex_save.py reads the same list.
 """
@@ -32,8 +36,10 @@ sys.path.insert(0, str(ROOT))
 # pokemon_graphics imports its siblings by name
 sys.path.insert(1, str(ROOT / "tools" / "data"))
 from tools.data.gen_constants import load as load_list  # noqa: E402
-from tools.data.pokemon_graphics import (ORIGINAL_FORM_GROUPS, form_names, icon_bank, national_species,  # noqa: E402
-                                         species_names)
+from tools.data.pokemon_graphics import (ADDED_FORM_FILES, GROUP_FILES, GROUPS, ICON_FILES,  # noqa: E402
+                                         ORIGINAL_FORM_GROUPS, added_form_groups, form_names, icon_bank, species_names)
+from tools.data.pokemon_cries import ADDED_CRY_FIRST  # noqa: E402
+from tools.data import species_list  # noqa: E402
 
 POKEMON = ROOT / "res" / "pokemon"
 # The save's capacities (include/save/pokedex_savedata.h): species bits, form bits a list, directory entries, and the
@@ -66,7 +72,8 @@ def icon_palettes() -> list[int]:
 def no_evolution() -> list[tuple[str, int]]:
     """Every species' forms that never evolve, in species order."""
     forms = []
-    for species in species_names()[:national_species()]:
+    names = species_names()
+    for species in (names[number] for number in species_list.real_species()):
         data = json.loads((POKEMON / species / "data.json").read_text())
         for form in data["forms"].get("no_evolution", []):
             if not 0 < form < data["forms"]["count"]:
@@ -77,8 +84,8 @@ def no_evolution() -> list[tuple[str, int]]:
 
 
 def pokedex_species_max() -> int:
-    """The national Pokédex's last species, the one before SPECIES_EGG."""
-    last = national_species() - 1
+    """The Pokédex's last species: Genesect, or the last added species that enters it."""
+    last = species_list.last_pokedex_species(POKEMON)
     if last > POKEDEX_SPECIES_CAPACITY:
         raise FormsError(f"the Pokédex's {last} species pass the save's {POKEDEX_SPECIES_CAPACITY}")
     return last
@@ -88,9 +95,9 @@ def pokedex_form_list() -> list[tuple[int, str, int]]:
     """The Pokédex's form directory: (species number, directory name, form count) of every species with forms that
     the Pokédex lists, in species order. Stops if it passes the save's capacity."""
     entries = []
-    for number, species in enumerate(species_names()[:national_species()]):
-        if number == 0:
-            continue
+    names = species_names()
+    for number in species_list.pokedex_species(POKEMON):
+        species = names[number]
         forms = json.loads((POKEMON / species / "data.json").read_text())["forms"]
         if forms["count"] <= 1 or not forms.get("pokedex", True):
             continue
@@ -111,6 +118,43 @@ def last_follower() -> str:
     if not codes:
         raise FormsError("generated/obj_codes.txt has no OBJ_CODE_FOLLOWER_ codes")
     return max(codes, key=lambda name: (codes[name], name))
+
+
+def species_icon_palettes() -> list[int]:
+    """Each added species' icon palettes, as icon_palettes() gives the forms'."""
+    palettes = []
+    for name in species_list.added_species():
+        folder = POKEMON / species_list.directory(name)
+        if not (folder / "icon.png").is_file():
+            raise FormsError(f"{folder / 'icon.png'}: missing, and the species needs it")
+        male = icon_bank(POKEMON, folder / "icon.png")
+        female = icon_bank(POKEMON, folder / "icon_female.png") if (folder / "icon_female.png").is_file() else male
+        palettes.append(female << 4 | male)
+    return palettes
+
+
+def species_lines() -> list[str]:
+    """The added species' part of the header."""
+    added = species_list.added_species()
+    first = species_list.FIRST_ADDED
+    hidden = [0] * (len(added) // 8 + 1)
+    for number in species_list.hidden_species(POKEMON):
+        hidden[(number - first) // 8] |= 1 << ((number - first) % 8)
+    groups = ORIGINAL_FORM_GROUPS + added_form_groups()
+    return [
+        "// The added species (paperwhite2/species.h): the first, how many, and the last species a Pokémon can be",
+        f"#define PAPERWHITE2_SPECIES_FIRST_ADDED {first}",
+        f"#define PAPERWHITE2_SPECIES_ADDED_COUNT {len(added)}",
+        f"#define PAPERWHITE2_SPECIES_LAST {species_list.last_real_species()}",
+        "// Their battle sprites' first file, after the hack's form groups, their icons' first file, and their first cry",
+        f"#define PAPERWHITE2_SPECIES_SPRITE_FILES {ADDED_FORM_FILES + added_form_groups() * GROUP_FILES}",
+        f"#define PAPERWHITE2_SPECIES_ICON_FILES {len(ICON_FILES) + (GROUPS['icons'][1] + groups) * 2}",
+        f"#define PAPERWHITE2_SPECIES_CRY_FIRST {ADDED_CRY_FIRST}",
+        "// Their icons' palettes, as POKEMON_FORMS_ICON_PALETTES, then an unused 0",
+        "#define PAPERWHITE2_SPECIES_ICON_PALETTES " + ", ".join(f"0x{v:02x}" for v in [*species_icon_palettes(), 0]),
+        "// Those that never enter the Pokédex (\"pokedex\": false), a bit each from the first",
+        "#define PAPERWHITE2_SPECIES_NOT_IN_POKEDEX " + ", ".join(f"0x{v:02x}" for v in hidden),
+    ]
 
 
 def header() -> str:
@@ -139,6 +183,7 @@ def header() -> str:
         f"#define POKEDEX_SPECIES_MAX {pokedex_species_max()}",
         "// The last follower's object code (generated/obj_codes.txt), the end of GetIndexOfObjID's followers",
         f"#define FOLLOWING_LAST_OBJ_CODE {last_follower()}",
+        *species_lines(),
         "",
         "#endif // POKEBW2_PAPERWHITE2_POKEMON_FORMS_CONFIG_H",
     ]

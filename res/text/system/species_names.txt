@@ -36,3 +36,4 @@ SpeciesNames_Text_BlackBelt = Black Belt
 SpeciesNames_Text_Smeargle2 = Smeargle 2
 SpeciesNames_Text_Egg_2 = Egg
 SpeciesNames_Text_Egg_3 = Egg
+\from{added_species.name}

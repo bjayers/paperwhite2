@@ -1212,20 +1212,20 @@ def main():
                restat="1")
         output = Path(GENERATED_INCLUDE_DIR) / "paperwhite2" / "pokemon_center_config.h"
         n.build([output], "pokemon_center", ["res/paperwhite2/pokemon_center/services.json"],
-                implicit=["tools/paperwhite2/pokemon_center.py",
+                implicit=["tools/paperwhite2/pokemon_center.py", *script_imports("tools/paperwhite2/pokemon_center.py"),
                           "res/paperwhite2/pokemon_center/services.schema.json", "include/paperwhite2/pokemon_center.h",
                           "tools/data/datajson.py", "generated/items.txt", "generated/species.txt",
                           "generated/moves.txt", "generated/natures.txt",
                           # (the Wonder Trade's pre-evolutions and least levels)
                           *sorted(str(path) for path in Path("res/pokemon").glob("*/data.json"))])
         constant_headers.append(output)
-        # Paper White 2: the hack's forms' sprite groups, icon palettes and forms that never evolve, from res/pokemon
-        # (include/paperwhite2/pokemon_forms.h)
+        # Paper White 2: the hack's forms' sprite groups, icon palettes and forms that never evolve, and the added
+        # species' bases, from res/pokemon (include/paperwhite2/pokemon_forms.h, include/paperwhite2/species.h)
         n.rule("pokemon_forms", "$python tools/paperwhite2/pokemon_forms.py $out", "Generating $out", restat="1")
         output = Path(GENERATED_INCLUDE_DIR) / "paperwhite2" / "pokemon_forms_config.h"
         forms_tool = "tools/paperwhite2/pokemon_forms.py"
         n.build([output], "pokemon_forms",
-                sorted(str(path) for pattern in ["*/data.json", "*/form_*/icon*.png"]
+                sorted(str(path) for pattern in ["*/data.json", "*/icon*.png", "*/form_*/icon*.png"]
                        for path in Path("res/pokemon").glob(pattern)),
                 implicit=[forms_tool, *script_imports(forms_tool), "res/pokemon/shared/icon_palettes.pal",
                           "generated/species.txt", "generated/obj_codes.txt"])

@@ -6,7 +6,7 @@ in the top screen's grey stripe. pokedex_evo.py adds the table to ARCID_POKEDEX_
     pokedex_sprites.py check [SPECIES...]   # print the sprites' visible boxes and the table's values
 
 MIDDLES_MEMBER: a u8 for each member of the battle sprites' archive (a/0/0/4, ARCID_POKEGRA) up to the Substitute's,
-or with the hack's own form groups (pokemon_graphics.ADDED_FORM_FILES) up to their end, by its number: for a
+or with the hack's own form groups and added species (pokemon_graphics.ADDED_FORM_FILES) up to their end, by its number: for a
 sprite's characters (front, back and their female versions, of every species, form and egg), how far above its feet,
 in pixels, the middle of the sprite's visible pixels is; 0 for the archive's other members. The page reads the one byte at its sprite's characters' number (MCSSLoadInfo.character).
 
@@ -31,7 +31,7 @@ sys.path.insert(0, str(ROOT))
 # pokemon_graphics imports its siblings by name
 sys.path.insert(1, str(ROOT / "tools" / "data"))
 from tools.data.nitro_2d import read_indexed_png  # noqa: E402
-from tools.data.pokemon_graphics import ADDED_FORM_FILES, added_form_groups, battle_file  # noqa: E402
+from tools.data.pokemon_graphics import ADDED_FORM_FILES, added_form_groups, added_species, battle_file  # noqa: E402
 from tools.paperwhite2 import mcss_rig  # noqa: E402
 
 # The battle archive's members before the Substitute's (pokemon_graphics.battle_file), 20 to a group. Paper White 2's
@@ -145,7 +145,7 @@ def visible_box(folder, side, image):
 
 def middles():
     """Each battle archive member's value of MIDDLES_MEMBER, and the boxes measured, by member."""
-    added = added_form_groups() * GROUP_SIZE
+    added = (added_form_groups() + len(added_species())) * GROUP_SIZE
     table = bytearray(ADDED_FORM_FILES + added if added else SPRITE_MEMBERS)
     boxes = {}
     for index in [*range(SPRITE_MEMBERS), *range(ADDED_FORM_FILES, ADDED_FORM_FILES + added)]:

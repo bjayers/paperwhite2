@@ -21,41 +21,8 @@
             "description": "The article of the name where it isn't \"an\" before a vowel and \"a\" before anything else, as for Uxie"
         },
         "pokedex": {
-            "type": "object", "additionalProperties": false, "required": [ "category", "entry", "height", "weight", "shape", "languages" ],
-            "description": "The species' Pokédex text, which the text files take with \\from{species.pokedex.<field>} and the like, and its search shape. Species only",
-            "properties": {
-                "category": { "type": "string", "description": "The category, such as \"Seed Pokémon\"" },
-                "entry": { "type": "string", "description": "The entry, with its line breaks" },
-                "height": { "type": "string", "description": "The height as the Pokédex shows it; the record's height is the number the game uses" },
-                "weight": { "type": "string", "description": "The weight as the Pokédex shows it, rounded as the game's text has it; the record's weight is the number the game uses" },
-                "shape": { "$ref": "#/$defs/pokedex_shape" },
-                "form_name": {
-                    "type": "string",
-                    "description": "The first form's name on the Pokédex's forms page and the Info page's tab (pokedex_detail_form.txt), such as \"Plant Cloak\", for a species with forms; empty when left out"
-                },
-                "forms": {
-                    "type": "array",
-                    "description": "The alternate forms' names, entries, heights, weights and shapes, one for each form after the first (forms.count - 1), Unown's and Arceus' too. tools/data/pokedex_data.py links them to their species in this order, so a form added here keeps every other form's text",
-                    "items": {
-                        "type": "object", "additionalProperties": false, "required": [ "name", "entry", "height", "weight", "shape" ],
-                        "properties": {
-                            "name": { "type": "string", "description": "The form's name, as form_name, such as \"Sandy Cloak\"" },
-                            "entry": { "type": "string" }, "height": { "type": "string" }, "weight": { "type": "string" },
-                            "shape": { "$ref": "#/$defs/pokedex_shape" }
-                        }
-                    }
-                },
-                "languages": {
-                    "type": "object", "additionalProperties": false,
-                    "description": "The Pokédex text the game keeps in other languages, which a Pokémon from a game in that language shows: for the species up to Arceus, and the Japanese category of every species. The heights and weights of Giratina's and Shaymin's alternate forms follow the species' in the files, as their forms",
-                    "properties": {
-                        "en": { "$ref": "#/$defs/language" }, "fr": { "$ref": "#/$defs/language" },
-                        "de": { "$ref": "#/$defs/language" }, "it": { "$ref": "#/$defs/language" },
-                        "ko": { "$ref": "#/$defs/language" }, "es": { "$ref": "#/$defs/language" },
-                        "ja": { "$ref": "#/$defs/language" }
-                    }
-                }
-            }
+            "anyOf": [ { "$ref": "#/$defs/pokedex_text" }, { "title": "Not in the Pokédex", "enum": [ false ] } ],
+            "description": "The species' Pokédex text and search shape (species only), or false for an added species that never enters the Pokédex: no Pokédex bits, list row or Wonder Trade entry, as the Pokéstar Studios species (docs/paperwhite2/design/new-species.md, tools/data/species_list.py)"
         },
         "base_stats": { "$ref": "#/$defs/stats", "description": "Base stats, 0 to 255 each" },
         "types": {
@@ -195,6 +162,43 @@
         }
     },
     "$defs": {
+        "pokedex_text": {
+            "title": "In the Pokédex", "type": "object", "additionalProperties": false, "required": [ "category", "entry", "height", "weight", "shape", "languages" ],
+            "description": "The species' Pokédex text, which the text files take with \\from{species.pokedex.<field>} and the like, and its search shape. Species only",
+            "properties": {
+                "category": { "type": "string", "description": "The category, such as \"Seed Pokémon\"" },
+                "entry": { "type": "string", "description": "The entry, with its line breaks" },
+                "height": { "type": "string", "description": "The height as the Pokédex shows it; the record's height is the number the game uses" },
+                "weight": { "type": "string", "description": "The weight as the Pokédex shows it, rounded as the game's text has it; the record's weight is the number the game uses" },
+                "shape": { "$ref": "#/$defs/pokedex_shape" },
+                "form_name": {
+                    "type": "string",
+                    "description": "The first form's name on the Pokédex's forms page and the Info page's tab (pokedex_detail_form.txt), such as \"Plant Cloak\", for a species with forms; empty when left out"
+                },
+                "forms": {
+                    "type": "array",
+                    "description": "The alternate forms' names, entries, heights, weights and shapes, one for each form after the first (forms.count - 1), Unown's and Arceus' too. tools/data/pokedex_data.py links them to their species in this order, so a form added here keeps every other form's text",
+                    "items": {
+                        "type": "object", "additionalProperties": false, "required": [ "name", "entry", "height", "weight", "shape" ],
+                        "properties": {
+                            "name": { "type": "string", "description": "The form's name, as form_name, such as \"Sandy Cloak\"" },
+                            "entry": { "type": "string" }, "height": { "type": "string" }, "weight": { "type": "string" },
+                            "shape": { "$ref": "#/$defs/pokedex_shape" }
+                        }
+                    }
+                },
+                "languages": {
+                    "type": "object", "additionalProperties": false,
+                    "description": "The Pokédex text the game keeps in other languages, which a Pokémon from a game in that language shows: for the species up to Arceus, and the Japanese category of every species. The heights and weights of Giratina's and Shaymin's alternate forms follow the species' in the files, as their forms",
+                    "properties": {
+                        "en": { "$ref": "#/$defs/language" }, "fr": { "$ref": "#/$defs/language" },
+                        "de": { "$ref": "#/$defs/language" }, "it": { "$ref": "#/$defs/language" },
+                        "ko": { "$ref": "#/$defs/language" }, "es": { "$ref": "#/$defs/language" },
+                        "ja": { "$ref": "#/$defs/language" }
+                    }
+                }
+            }
+        },
         "pokedex_shape": {
             "type": "integer", "minimum": 0, "maximum": 13,
             "description": "The body shape that the Pokédex's search finds it by, one of its 14 shape icons (a/0/9/7 file 2, PokedexSearchEngine_GetShape)"

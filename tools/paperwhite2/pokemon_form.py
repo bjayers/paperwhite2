@@ -63,7 +63,8 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from tools.data.datajson import dumps  # noqa: E402
 from tools.data.form_groups import (ORIGINAL_FORM_GROUPS, FormGroupsError, layout, moved_species,  # noqa: E402
-                                    next_free_offset, national_species, original_form_counts, species_names)
+                                    data_species, national_species, next_free_offset, original_form_counts,
+                                    species_names)
 from tools.data.gen_constants import parse  # noqa: E402
 from tools.data.narc import read_narc  # noqa: E402
 from tools.data.nitro_2d import (color5, read_indexed_png, read_palette, read_rgba_png, write_indexed_png,  # noqa: E402
@@ -141,8 +142,8 @@ def read(path: Path):
 
 def species_dir(name: str) -> str:
     folder = name.removeprefix("SPECIES_").lower()
-    if folder not in species_names()[1:national_species()]:
-        raise FormError(f"{name} isn't a national Pokédex species")
+    if folder not in data_species()[1:]:
+        raise FormError(f"{name} isn't a Pokémon species")
     return folder
 
 
@@ -151,7 +152,10 @@ def constant(folder: str) -> str:
 
 
 def personal_original(folder: str) -> tuple[int, int]:
-    """The original game's (formFile, formCount) of a species, from the extracted personal archive."""
+    """The original game's (formFile, formCount) of a species, from the extracted personal archive; none for an added
+    species (tools/data/species_list.py)."""
+    if species_names().index(folder) >= national_species():
+        return 0, 1
     for version in ("w2_us", "b2_us"):
         path = ROOT / "extract" / version / "files/a/0/1/6"
         if path.is_file():
@@ -187,7 +191,7 @@ def hack_species_offsets(changed: dict[str, dict]) -> dict[str, int]:
     """Every species with the hack's own groups (a data.json sprite_offset from 66), laid out again from 66 in the
     order of their offsets, with changed's forms in place of their files'. Returns {species: new offset}."""
     found = []
-    for folder in species_names()[1:national_species()]:
+    for folder in data_species()[1:]:
         data = changed.get(folder) or read(POKEMON / folder / "data.json")
         forms = data["forms"]
         if forms["count"] > 1 and not data["palette_forms"] and forms["sprite_offset"] >= ORIGINAL_FORM_GROUPS:

@@ -5,6 +5,10 @@
     pokemon_cries.py pack res/pokemon black2|white2 VOLUME_ARCHIVE
 
 The cries' wave archives are packed into the sound archive by sound_data.py, which takes them from cry.wav.
+
+Paper White 2's added species (tools/data/species_list.py) have their cries after the forms', from ADDED_CRY_FIRST
+(PAPERWHITE2_SPECIES_CRY_FIRST, getResIDFunc in pm_voice.c), in the sound archive's empty slots before its music, and
+their volumes at their IDs, after entries for the reserved IDs copied from the egg's.
 """
 
 import io
@@ -16,22 +20,32 @@ from pathlib import Path
 
 from datajson import write
 from narc import read_narc, write_narc
-from pokemon_graphics import ROOT, species_names
+from pokemon_graphics import ROOT, added_species, species_names
 
 
 # The forms with cries of their own, after the species' (POKE_VOICE_EXTRA_ENTRIES, pm_voice.c)
 FORMS = (("shaymin", 1), ("kyurem", 1), ("kyurem", 2),
          ("tornadus", 1), ("thundurus", 1), ("landorus", 1))
+# The original game's cries: a species' at its ID up to the last Pokéstar Studios species, then the forms'
+ORIGINAL_SPECIES_CRIES = 685
+ADDED_CRY_FIRST = ORIGINAL_SPECIES_CRIES + len(FORMS)
+
+
+def cry_ids():
+    """Returns the cries' IDs, which are wave archive slots: the original game's, then the added species'."""
+    return range(1, ADDED_CRY_FIRST + len(added_species()))
 
 
 def cry_folder(root, cry_id):
     """Returns the directory of a cry: each species' its own, the egg's, the bad egg's and the Pokéstar Studios
-    species' too, then the forms'."""
+    species' too, then the forms', then the added species'."""
     names = species_names()
-    if cry_id < len(names):
+    if cry_id < ORIGINAL_SPECIES_CRIES:
         return root / names[cry_id]
-    species, form = FORMS[cry_id - len(names)]
-    return root / species / f"form_{form}"
+    if cry_id < ADDED_CRY_FIRST:
+        species, form = FORMS[cry_id - ORIGINAL_SPECIES_CRIES]
+        return root / species / f"form_{form}"
+    return root / added_species()[cry_id - ADDED_CRY_FIRST]
 
 
 def volume_path(root, cry_id):
@@ -117,6 +131,8 @@ def export(root):
 def pack(root, game, volume_output):
     version = {"black2": "b2_us", "white2": "w2_us"}[game]
     volume = read_narc((ROOT / "extract" / version / "files/a/1/9/1").read_bytes())
+    # Paper White 2: entries for the IDs to the last added species, the reserved ones' the egg's (species_list.py)
+    volume += [volume[-1]] * (len(species_names()) - len(volume))
     for cry_id in range(1, len(volume)):
         path = volume_path(root, cry_id)
         value = json.loads(path.read_text())["cry_volume"]

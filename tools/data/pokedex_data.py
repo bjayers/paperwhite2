@@ -5,16 +5,19 @@
 
 The archive's files (pokedex_search_engine.c, pokedex_detail_form.c, pokedex_info.c and the hack's Info page):
 
-0. The table of next forms: a u16 per species from SPECIES_NONE to Genesect, an empty slot, then a slot per alternate
-   form (form 1 of a species onward), in species order and form order. A species' entry is its form 1's slot and a
+0. The table of next forms: a u16 per species from SPECIES_NONE to Genesect (to the last added species, with 0 for
+   the IDs between and the species that never enter the Pokédex, where species are added: pokedex_rows()), an empty
+   slot, then a slot per alternate form (form 1 of a species onward), in species order and form order. A species' entry is its form 1's slot and a
    slot's entry the next form's, 0 after its species' last. The slots are the lines of the alternate forms in the
    text that \\from{species.pokedex.forms.<field>} writes (their names, entries, heights and weights), so the table is
    made from the same pokedex.forms lists, and a form added to a species keeps every other form's text.
-1. The species' initials' groups, a byte per species: the original's.
+1. The species' initials' groups, a byte per species: its English name's first letter, A as 0 to Z as 25, or 26
+   for none (SPECIES_NONE's, and the IDs that have no Pokédex row).
 2. The search's shapes (PokedexSearchEngine_GetShape): a byte per species, its pokedex.shape, then the empty slot's
    and the alternate forms', their pokedex.forms[].shape, by slot. The empty slot has the last species' shape, as the
    original's has, which nothing reads, since no form's slot is the empty one.
-3. 4. 5. Lists of the national Pokédex's species (the numbers, the national order, A to Z): the original's.
+3. 4. 5. Lists of the national Pokédex's species (the numbers, the national order, A to Z): the original's (the
+   added species' rows come with their display numbers, docs/paperwhite2/design/new-species.md section 5).
 6. 7. 8. 9. Every species and alternate form, as form << 10 | species, by height from the tallest, by height from the
    shortest, by weight from the heaviest and by weight from the lightest: the record's height and weight, the form's
    record's for a form that has one (res/pokemon/forms.json) and the species' for one that doesn't. Equal ones are in
@@ -24,16 +27,17 @@ An unchanged res/pokemon reproduces the original archive byte for byte.
 """
 
 import json
-import re
 import struct
 import sys
 from pathlib import Path
 
 from narc import read_narc, write_narc
-from species_data import directory
+import species_list
 
 ROOT = Path(__file__).resolve().parents[2]
-FILE_FORMS, FILE_SHAPES = 0, 2
+FILE_FORMS, FILE_INITIALS, FILE_SHAPES = 0, 1, 2
+# The initials' group of a name that starts with no letter
+NO_INITIAL = 26
 # The orders' files, each with its field and whether it starts from the greatest
 ORDERS = {6: ("height", True), 7: ("height", False), 8: ("weight", True), 9: ("weight", False)}
 FORM_SHIFT = 10
@@ -44,11 +48,17 @@ class PokedexDataError(Exception):
     pass
 
 
-def national_species() -> list[str]:
-    """The directories of the species from SPECIES_NONE to the national Pokédex's last, before SPECIES_EGG."""
-    names = [re.match(r"SPECIES_[A-Z0-9_]+", line).group(0)
-             for line in (ROOT / "generated/species.txt").read_text().splitlines() if line.startswith("SPECIES_")]
-    return [directory(name) for name in names[:names.index("SPECIES_EGG")]]
+def pokedex_rows() -> list[str | None]:
+    """The directories of the species that have a row in the archive's species tables, by ID: from SPECIES_NONE to the
+    national Pokédex's last, then, where species are added (tools/data/species_list.py), None for the IDs from
+    SPECIES_EGG to the first added species and the added species, None for one that never enters the Pokédex."""
+    names = species_list.directories()
+    rows: list[str | None] = names[:species_list.national_count()]
+    if species_list.added_species():
+        pokedex = set(species_list.pokedex_species())
+        rows += [names[number] if number in pokedex else None
+                 for number in range(species_list.national_count(), species_list.last_species() + 1)]
+    return rows
 
 
 def load(path: Path) -> dict:
@@ -58,13 +68,16 @@ def load(path: Path) -> dict:
         raise PokedexDataError(f"{path}: {error}") from None
 
 
-def species_forms(root: Path) -> tuple[list[dict], list[tuple[int, int, dict, dict]]]:
-    """The species' data, from SPECIES_NONE, and each alternate form in slot order as (species, form, its
-    pokedex.forms entry, its record: the form's own or else the species')."""
-    species = [load(root / name / "data.json") for name in national_species()]
+def species_forms(root: Path) -> tuple[list[dict | None], list[tuple[int, int, dict, dict]]]:
+    """The species' data by pokedex_rows(), from SPECIES_NONE (None for an ID without a row), and each alternate form in
+    slot order as (species, form, its pokedex.forms entry, its record: the form's own or else the species')."""
+    rows = pokedex_rows()
+    species = [None if name is None else load(root / name / "data.json") for name in rows]
     records = {(row[0], row[1]) for row in load(root / "forms.json")}
     forms = []
-    for number, (name, data) in enumerate(zip(national_species(), species)):
+    for number, (name, data) in enumerate(zip(rows, species)):
+        if data is None:
+            continue
         entries = data["pokedex"].get("forms", [])
         if len(entries) != max(data["forms"]["count"] - 1, 0):
             raise PokedexDataError(f"{name}: pokedex.forms has {len(entries)} forms for a forms.count of "
@@ -87,13 +100,20 @@ def forms_file(species: list[dict], forms: list) -> bytes:
     return struct.pack(f"<{len(table)}H", *table)
 
 
-def shapes_file(species: list[dict], forms: list) -> bytes:
-    shapes = [data["pokedex"]["shape"] for data in species]
+def shapes_file(species: list[dict | None], forms: list) -> bytes:
+    shapes = [0 if data is None else data["pokedex"]["shape"] for data in species]
     return bytes([*shapes, shapes[-1], *(entry["shape"] for _, _, entry, _ in forms)])
 
 
-def order_file(species: list[dict], forms: list, field: str, greatest_first: bool) -> bytes:
-    entries = [(data[field], number, 0) for number, data in enumerate(species) if number]
+def initials_file(species: list[dict | None]) -> bytes:
+    def initial(data: dict | None) -> int:
+        letter = data["name"][:1].upper() if data else ""
+        return ord(letter) - ord("A") if "A" <= letter <= "Z" else NO_INITIAL
+    return bytes(initial(data) for data in species)
+
+
+def order_file(species: list[dict | None], forms: list, field: str, greatest_first: bool) -> bytes:
+    entries = [(data[field], number, 0) for number, data in enumerate(species) if number and data is not None]
     entries += [(record[field], number, form) for number, form, _, record in forms]
     entries.sort(key=lambda entry: (-entry[0] if greatest_first else entry[0], entry[1], entry[2]))
     return struct.pack(f"<{len(entries)}H", *(form << FORM_SHIFT | number for _, number, form in entries))
@@ -105,6 +125,7 @@ def pack(root: Path, game: str, output: Path):
     species, forms = species_forms(root)
     files = list(original)
     files[FILE_FORMS] = forms_file(species, forms)
+    files[FILE_INITIALS] = initials_file(species)
     files[FILE_SHAPES] = shapes_file(species, forms)
     for number, (field, greatest_first) in ORDERS.items():
         files[number] = order_file(species, forms, field, greatest_first)

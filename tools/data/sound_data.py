@@ -16,6 +16,8 @@ record, which the schemas in res/sound/ describe, and its file: sequence.s, the 
 a wave archive is its waves, 000.wav and on, with data.json giving the looped waves' loop starts (swar.py). A sequence that plays another's file
 says so with "file". The Pokémon cries' wave archives, the first
 of wave_archives.txt after its empty first slot, are each species' cry.wav in res/pokemon/ (pokemon_cries.py).
+Paper White 2's added species' cries follow the original ones in the list's empty slots, named
+WAVE_ARC_PAPERWHITE2_CRY_<SPECIES> here rather than in the list, so that adding a species needs no other change.
 players.json, groups.json, stream_players.json and streams' are the small kinds' records, by their constants.
 
 The archive has the files of the sequences, banks, wave archives and streams, each kind in its list's order, and the
@@ -35,7 +37,8 @@ import tools.data.strm as strm  # noqa: E402
 import tools.data.swar as swar  # noqa: E402
 from tools.data.datajson import DataError, label, load, load_schema, write  # noqa: E402
 from tools.data.gen_constants import load as load_list  # noqa: E402
-from tools.data.pokemon_cries import cry_folder, read_wav, wav_bytes  # noqa: E402
+from tools.data.pokemon_cries import ADDED_CRY_FIRST, cry_folder, cry_ids, read_wav, wav_bytes  # noqa: E402
+from tools.data.pokemon_graphics import added_species  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 ARCHIVE = "swan_sound_data.sdat"
@@ -46,8 +49,9 @@ KIND_LISTS = {"sequences": "sound", "sequence_archives": None, "banks": "sound_b
               "stream_players": "sound_stream_players", "streams": "sound_streams"}
 FILE_KINDS = {"sequences": (("SEQ_",), "sequence.s"), "banks": (("BANK_",), None),
               "wave_archives": (("WAVE_",), None), "streams": (("STRM_",), "stream.wav")}
-# The wave archives of the Pokémon cries, the slots after the empty first, and the cries' wave format: PCM8, unlooped
-CRIES = range(1, 691)
+# The wave archives of the original game's Pokémon cries, the slots after the empty first (the added species' follow,
+# pokemon_cries.cry_ids), and the cries' wave format: PCM8, unlooped
+CRIES = range(1, ADDED_CRY_FIRST)
 CRY_FORMAT = 0
 # The buffer that the game plays a cry's wave archive from
 CRY_BUFFER = 0x5C30
@@ -273,6 +277,14 @@ def check_waves(path: Path, instruments: list, wave_counts: dict):
 
 def pack(root: Path, output: Path):
     names = {kind: slots(kind) for kind in sdat.KINDS}
+    cries = cry_ids()
+    # Paper White 2: the added species' cries, in the empty slots after the original ones
+    for cry_id, species in enumerate(added_species(), ADDED_CRY_FIRST):
+        wave_archives = names["wave_archives"]
+        wave_archives += [None] * (cry_id + 1 - len(wave_archives))
+        check(wave_archives[cry_id] is None, root / "wave_archives",
+              f"slot {cry_id}, an added species' cry, is {wave_archives[cry_id]}'s in sound_wave_archives.txt")
+        wave_archives[cry_id] = "WAVE_ARC_PAPERWHITE2_CRY_" + species.upper()
     numbers = {kind: {constant: index for index, constant in enumerate(slot) if constant}
                for kind, slot in names.items()}
 
@@ -290,7 +302,7 @@ def pack(root: Path, output: Path):
         for index, constant in enumerate(names[kind]):
             if constant is None:
                 continue
-            if kind == "wave_archives" and index in CRIES:
+            if kind == "wave_archives" and index in cries:
                 path = cry_folder(POKEMON, index) / "cry.wav"
                 check(path.is_file(), path, "missing")
                 try:

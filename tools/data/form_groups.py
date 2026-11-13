@@ -18,7 +18,6 @@ so a moved species is found from its data alone. Nothing changes where no specie
 groups: the groups are then sprite_offset + form - 1 for every form, as before.
 """
 import json
-import re
 import struct
 import sys
 from functools import lru_cache
@@ -27,6 +26,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from tools.data.narc import read_narc  # noqa: E402
+from tools.data import species_list  # noqa: E402
 
 POKEMON = ROOT / "res" / "pokemon"
 ORIGINAL_FORM_GROUPS = 66
@@ -38,22 +38,25 @@ class FormGroupsError(ValueError):
     pass
 
 
-def directory(species: str) -> str:
-    """A species' directory in res/pokemon/, as species_data.directory (which imports this module) has it."""
-    name = species.removeprefix("SPECIES_").lower()
-    return f"pokestar/{name.removeprefix('pokestar_')}" if name.startswith("pokestar_") else name
+directory = species_list.directory
 
 
 @lru_cache(maxsize=1)
 def species_names() -> list[str]:
     """The directories of generated/species.txt's species, in order."""
-    return [directory(re.match(r"SPECIES_[A-Z0-9_]+", line).group(0))
-            for line in (ROOT / "generated/species.txt").read_text().splitlines() if line.startswith("SPECIES_")]
+    return species_list.directories()
 
 
 def national_species() -> int:
     """The number of species up to the national Pokédex's last, the index of SPECIES_EGG."""
-    return species_names().index("egg")
+    return species_list.national_count()
+
+
+def data_species() -> list[str]:
+    """The directories of the species with a Pokémon's data, by ID: SPECIES_NONE, the national Pokédex's and the
+    added species (tools/data/species_list.py), not the egg, the bad egg, the Pokéstar Studios' or the reserved IDs."""
+    names = species_names()
+    return [names[0]] + [names[number] for number in species_list.real_species()]
 
 
 @lru_cache(maxsize=1)
@@ -70,9 +73,9 @@ def original_form_counts() -> dict[str, int]:
 
 
 def species_forms(root: Path = POKEMON) -> list[tuple[str, dict, bool]]:
-    """Every national species' (directory, forms, palette_forms), in species order."""
+    """Each species' (directory, forms, palette_forms), in species order: the national Pokédex's, then the added ones."""
     out = []
-    for species in species_names()[:national_species()]:
+    for species in data_species():
         data = json.loads((root / species / "data.json").read_text())
         out.append((species, data["forms"], data["palette_forms"]))
     return out
@@ -102,7 +105,8 @@ def layout(root: Path = POKEMON) -> tuple[dict[int, tuple[str, int]], dict[str, 
             for form in range(1, count):
                 claim(offset + form - 1, species, form)
             continue
-        original = original_form_counts()[species]
+        # An added species has no original groups
+        original = original_form_counts().get(species, 1)
         if original <= 1:
             # Forms on a species that had none, without an offset of the hack's: moved like the others
             moved.append((species, count))

@@ -45,16 +45,16 @@ CATEGORIES = [
 
 
 def constants_end(path: Path) -> int:
-    """The number of the first message after the file's last \\from line, which stands for the constants'."""
-    index = end = 0
+    """The number of the first message after the file's first \\from line, which stands for the constants' (a later
+    one, the species names' added species, comes after the words)."""
+    index = 0
     for line in path.read_text(encoding="utf-8").split("\n")[:-1]:
         match = FROM.fullmatch(line)
         if match:
-            index += len(expand(match[1]))
-            end = index
-        elif split_message(line)[0] is not None:
+            return index + len(expand(match[1]))
+        if split_message(line)[0] is not None:
             index += 1
-    return end
+    return 0
 
 
 def constant(message_id: str) -> str:

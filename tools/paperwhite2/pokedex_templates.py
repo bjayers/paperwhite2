@@ -60,6 +60,7 @@ from tools.data.nitro_2d import (  # noqa: E402
     character_pixels, palette_colors, read_indexed_png, read_palette, write_indexed_png, write_palette)
 from tools.paperwhite2.nitro_cells import CellBank  # noqa: E402
 from tools.paperwhite2.obj_remap import OBJ_TILES, tiles_of  # noqa: E402
+from tools.data import species_list  # noqa: E402
 
 WIDTH, HEIGHT = 256, 192
 PANELS = ROOT / "src/paperwhite2/ov298/paperwhite2_pokedex_info_panels.c"
@@ -1023,7 +1024,7 @@ def evo_family(species):
     parents = {}
     for number in sorted(names):
         path = ROOT / f"res/pokemon/{names[number]}/data.json"
-        if path.exists() and number <= numbers["SPECIES_GENESECT"]:
+        if path.exists() and species_list.is_real(number):
             for e in species_data(names[number]).get("evolutions") or []:
                 parents.setdefault(e["species"][len("SPECIES_"):].lower(), names[number])
     root = species
@@ -1196,7 +1197,7 @@ def evo_check(d, m, font, small):
     misfits = []
     for name, number in numbers.items():
         species = name[len("SPECIES_"):].lower()
-        if not 0 < number <= numbers["SPECIES_GENESECT"]:
+        if not species_list.is_real(number):
             continue
         rows = evo_family(species)
         if rows[0][0] != species:

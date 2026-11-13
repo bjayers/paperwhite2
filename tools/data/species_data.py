@@ -11,7 +11,9 @@ species.schema.json describes each field. The records are, in order:
 
 - the species of generated/species.txt, in res/pokemon/<species>/data.json, from SPECIES_NONE in none/: the
   national Pokédex's, then from SPECIES_EGG the egg, the bad egg and the Pokéstar Studios species, which have no text
-  here, since their names are lines of species_names.txt after the national Pokédex's and they have no Pokédex entry;
+  here, since their names are lines of species_names.txt after the national Pokédex's and they have no Pokédex entry,
+  then Paper White 2's added species at their IDs, after the two reserved ones, copies of the egg's record
+  (tools/data/species_list.py);
 - the forms that have records of their own, in res/pokemon/<species>/form_<n>.json, in the order of
   res/pokemon/forms.json. A species' first form record is set from where its forms are.
 
@@ -19,7 +21,8 @@ The species data archive ends with the Unova Pokédex numbers of the species, wh
 regional_dex_number; the baby species archive has no entries for the forms.
 
 A species' egg moves (a/1/2/4, one entry per species, a count and the moves) are its learnset's egg_moves;
-SPECIES_NONE's entry is empty, so its file has none; only the national Pokédex's species have entries.
+SPECIES_NONE's entry is empty, so its file has none; only the national Pokédex's species have entries, and the added
+species, after empty entries for the IDs between.
 Species records also keep cry_volume from a/1/9/1; pokemon_cries.py packs that archive.
 
 The experience tables of the growth rates (a/0/1/7) are res/pokemon/growth_rates.csv: a row per level from 0 to 100
@@ -37,6 +40,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from tools.data.form_groups import sprite_offset  # noqa: E402
+from tools.data import species_list  # noqa: E402
 from tools.data.datajson import DataError, label, load, load_schema, name, value, write  # noqa: E402
 from tools.data.gen_constants import load as load_list  # noqa: E402
 from tools.data.narc import read_narc, write_narc  # noqa: E402
@@ -109,11 +113,8 @@ def machine_name(bit: int) -> str:
     return f"TM{bit + 1:02d}" if bit < 95 else f"HM{bit - 94:02d}"
 
 
-def directory(species: str) -> str:
-    """Returns a species' directory in res/pokemon/: its name, or for a Pokéstar Studios species, which is no
-    Pokémon but a movie's prop or costume, pokestar/ and its name there."""
-    name = species.removeprefix("SPECIES_").lower()
-    return f"pokestar/{name.removeprefix('pokestar_')}" if name.startswith("pokestar_") else name
+# A species' directory in res/pokemon/ (pokestar/ for a Pokéstar Studios species, egg/ for the reserved IDs)
+directory = species_list.directory
 
 
 # Dumping
@@ -224,8 +225,9 @@ def dump(files: Path, output: Path):
         message_lines(text, n) for n in (NAMES, NAMES_WITH_ARTICLE, CATEGORIES, POKEDEX_ENTRIES, HEIGHTS, WEIGHTS,
                                          FORM_NAMES))
     shapes = read_narc((files / POKEDEX_DATA).read_bytes())[POKEDEX_SHAPES]
-    # After the species' entries, heights and weights, an empty one and then the alternate forms', in species order
-    form_lines = national + 1
+    # After the species' entries, heights and weights (and the added species', after empty lines for the IDs
+    # between), an empty one and then the alternate forms', in species order
+    form_lines = (len(species) if species_list.added_species() else national) + 1
     languages = {language: [message_lines(text, n) for n in files_] for language, files_ in LANGUAGES.items()}
     language_forms = {name_: i for i, name_ in enumerate(LANGUAGE_FORMS)}
     for name_, index in species:
@@ -236,7 +238,7 @@ def dump(files: Path, output: Path):
             count = struct.unpack_from("<H", egg_moves[index])[0]
             moves = struct.unpack_from(f"<{count}H", egg_moves[index], 2)
             data["learnset"]["egg_moves"] = [name("MOVE_", move) for move in moves]
-        if index >= national:
+        if not species_list.is_real(index) and index:
             data["$schema"] = "../" * (directory(name_).count("/") + 1) + "species.schema.json"
             write(output / directory(name_) / "data.json", data)
             continue
@@ -301,7 +303,7 @@ def growth_tables(path: Path) -> list[bytes]:
 
 def national_species() -> int:
     """Returns the number of the national Pokédex's species, from SPECIES_NONE: the species before SPECIES_EGG."""
-    return load_list("species")["SPECIES_EGG"]
+    return species_list.national_count()
 
 
 # Packing
@@ -378,7 +380,8 @@ def pack(root: Path, outputs: list[Path]):
             raise DataError(f"{where}: a species has baby_species and regional_dex_number, and a form has neither")
         species_name = f"SPECIES_{path.parent.name.upper()}"
         first_form = first_forms.get(species_name, 0) if path.name == "data.json" else 0
-        if path.name == "data.json" and index < national:
+        real = index < national or species_list.is_added(index)
+        if path.name == "data.json" and real:
             # Paper White 2: a species with more forms than its original sprite groups has them moved to the hack's
             # (tools/data/form_groups.py); its record gives the game the moved offset
             data["forms"]["sprite_offset"] = sprite_offset(directory(species_name), data["forms"], root.resolve())
@@ -392,12 +395,14 @@ def pack(root: Path, outputs: list[Path]):
         entries = [(evolution_method(e, form_count, where), value(e["param"], where), value(e["species"], where))
                    for e in data["evolutions"]]
         evolutions.append(b"".join(struct.pack("<3H", *e) for e in entries + [(0, 0, 0)] * (EVOLUTIONS - len(entries))))
-        if index < national:
+        if real and index < with_babies:
             moves = [value(move, where) for move in data["learnset"].get("egg_moves", [])]
             empty = "egg_moves" not in data["learnset"]
+            # Paper White 2: empty entries for the IDs from SPECIES_EGG to the added species', which nothing reads
+            egg_moves += [b""] * (index - len(egg_moves))
             egg_moves.append(b"" if empty else struct.pack(f"<H{len(moves)}H", len(moves), *moves))
         elif "egg_moves" in data["learnset"]:
-            raise DataError(f"{where}: only a national Pokédex species has egg_moves")
+            raise DataError(f"{where}: only a Pokémon species (no egg, Pokéstar or form record) has egg_moves")
         if index < with_babies:
             babies.append(struct.pack("<H", value(data["baby_species"], where)))
             number = data["regional_dex_number"]

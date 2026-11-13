@@ -48,6 +48,7 @@ sys.path.insert(0, str(ROOT))
 from tools.data.datajson import DataError, constants, label, load_schema, validate  # noqa: E402
 from tools.data.narc import read_narc, write_narc  # noqa: E402
 from tools.paperwhite2 import conditions  # noqa: E402
+from tools.data import species_list  # noqa: E402
 
 SOURCE = ROOT / "res" / "paperwhite2" / "encounters"
 LEVEL_SCALING = ROOT / "res" / "paperwhite2" / "level_scaling.json"
@@ -724,7 +725,7 @@ def area_index(data: Data | None = None) -> bytes:
     rows = area_rows(data, off_map)
     unplaced = set().union(*off_map.values()) - set(rows)
     names = constants()
-    count = names["SPECIES_GENESECT"] + 1
+    count = species_list.last_real_species() + 1
     levels = {data.species_number(folder): entry["levels"] for folder, entry in data.species.items()}
     rules = rules_from_data(data)
     levels.setdefault(rules.special, {"min": rules.special_min, "max": rules.special_max})

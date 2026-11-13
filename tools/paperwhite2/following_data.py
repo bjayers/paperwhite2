@@ -19,6 +19,8 @@ follower runtime (src/paperwhite2/ov036/) reads, in the formats that Pokeweb's r
 import struct
 import zlib
 
+from tools.data import species_list
+
 REGISTRY_VERSION = 3
 REGISTRY_ABI = 1
 POSITIONING_VERSION = 1
@@ -37,6 +39,10 @@ def members(followers: list[tuple[int, int, int, int, dict]], rows: int, resourc
     entries = []
     for code, row, resource, size, follower in followers:
         species = constants[follower["species"]]
+        if not species_list.is_real(species):
+            # The game rejects the whole registry for one row past FOLLOWING_MAX_SPECIES (the last real species), so
+            # every follower would go: stop here instead
+            raise ValueError(f"object code {code:#x}: {follower['species']} is no Pokémon species that can follow")
         sex = SEXES[follower["sex"]]
         key = species * 2048 + follower["form"] * 8 + sex * 2 + int(follower["shiny"])
         offset = follower["art_offset"]

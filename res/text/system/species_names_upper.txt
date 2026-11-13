@@ -36,3 +36,4 @@ SpeciesNamesUpper_Text_Empty_32 =      \x{ffff}
 SpeciesNamesUpper_Text_Empty_33 =      \x{ffff}
 SpeciesNamesUpper_Text_Empty_34 =     \x{ffff}
 SpeciesNamesUpper_Text_Empty_35 =     \x{ffff}
+\from{added_species.name_upper}

@@ -32,6 +32,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from tools.data import datajson  # noqa: E402
 from tools.data.form_groups import original_form_counts  # noqa: E402
+from tools.data import species_list  # noqa: E402
 
 SOURCE = ROOT / "res" / "paperwhite2" / "pokemon_center" / "services.json"
 IDS_HEADER = ROOT / "include" / "paperwhite2" / "pokemon_center.h"
@@ -73,7 +74,6 @@ SHORT_LENGTH = 5
 LEVEL_METHODS = {"EVO_METHOD_LEVEL", "EVO_METHOD_LEVEL_ATK_GT_DEF", "EVO_METHOD_LEVEL_ATK_EQ_DEF",
                  "EVO_METHOD_LEVEL_ATK_LT_DEF", "EVO_METHOD_LEVEL_PERSONALITY_LOW", "EVO_METHOD_LEVEL_PERSONALITY_HIGH",
                  "EVO_METHOD_SHEDINJA", "EVO_METHOD_SHEDINJA_MADE", "EVO_METHOD_LEVEL_MALE", "EVO_METHOD_LEVEL_FEMALE"}
-LAST_SPECIES = "SPECIES_GENESECT"
 # A pre-evolution's species below this bit, and from it the form it must have plus one, or 0 for any
 PRE_EVOLUTION_FORM_SHIFT = 11
 # The special reward's IVs, in the order of PKM_PARAM_IV_HP's fields
@@ -195,24 +195,24 @@ def species_tables(data: dict) -> tuple[list[int], list[int]]:
     high bits, PRE_EVOLUTION_FORM_SHIFT on, which WonderTrade_Plan gives the Pokémon (Sirfetch'd's Farfetch'd is a
     Galarian one)."""
     values = datajson.constants()
-    last = values[LAST_SPECIES]
+    # The last species a Pokémon can be (tools/data/species_list.py): Genesect, or the last added one. The IDs between
+    # are no Pokémon, and have no pre-evolution
+    last = species_list.last_real_species()
     if last >= 1 << PRE_EVOLUTION_FORM_SHIFT:
-        raise DataError(f"{LAST_SPECIES} is past the pre-evolutions' {1 << PRE_EVOLUTION_FORM_SHIFT} species")
-    names = {number: name for name, number in values.items() if name.startswith("SPECIES_") and 0 < number <= last}
+        raise DataError(f"species {last} is past the pre-evolutions' {1 << PRE_EVOLUTION_FORM_SHIFT} species")
     pre = [0] * (last + 1)
     pre_forms = [set() for _ in range(last + 1)]
     method = [None] * (last + 1)
     stage = [1] * (last + 1)
-    for number in range(1, last + 1):
-        path = ROOT / "res" / "pokemon" / names[number].removeprefix("SPECIES_").lower() / "data.json"
-        species = json.loads(path.read_text())
+    for number in species_list.real_species():
+        species = species_list.species_data(number)
         stage[number] = species["evolution_stage"]
         for evolution in species.get("evolutions", []):
             target = values[evolution["species"]]
-            if target <= last and not pre[target]:
+            if species_list.is_real(target) and not pre[target]:
                 pre[target] = number
                 method[target] = evolution
-            if target <= last and pre[target] == number:
+            if species_list.is_real(target) and pre[target] == number:
                 pre_forms[target].add(evolution.get("form"))
     levels = data["wonder_trade"]["other_evolution_levels"]
 
@@ -300,13 +300,19 @@ def array(name: str, values: list, per_line: int = 16) -> list[str]:
 def wonder_trade_lines(data: dict) -> list[str]:
     trade = data["wonder_trade"]
     values = datajson.constants()
-    last = values[LAST_SPECIES]
+    last = species_list.last_real_species()
     excluded = [0] * (last // 8 + 1)
     for name in trade["excluded_species"]:
         number = values[name]
-        if not 0 < number <= last:
-            raise DataError(f"wonder_trade.excluded_species: {name} isn't a National Pokédex species")
+        if not species_list.is_real(number):
+            raise DataError(f"wonder_trade.excluded_species: {name} isn't a Pokémon species")
         excluded[number // 8] |= 1 << (number % 8)
+    # The IDs that are no Pokémon (the egg's to the reserved ones) and the species that never enter the Pokédex are
+    # never received nor sent
+    pokedex = set(species_list.pokedex_species())
+    for number in range(1, last + 1):
+        if number not in pokedex:
+            excluded[number // 8] |= 1 << (number % 8)
     pre, least = species_tables(data)
     rows = []
     first = 0

@@ -15,7 +15,11 @@ Packing walks the original archive's files and builds each from its source. Pape
 form_groups.py, which moves a species with more forms than its original groups there) are appended:
 the battle sprites' 20 files a group after the Substitute's files and Arceus' palettes (ADDED_FORM_FILES,
 include/paperwhite2/pokemon_forms.h), the icons' two a group after the original ones, each made in the format of its
-species' own file of the same kind. Without such forms the archives are the original's.
+species' own file of the same kind. Paper White 2's added species (tools/data/species_list.py) follow, a group each in
+ID order, in the format of their "art_template" species' files (Bulbasaur's without one), where
+PAPERWHITE2_SPECIES_SPRITE_FILES and PAPERWHITE2_SPECIES_ICON_FILES (tools/paperwhite2/pokemon_forms.py) find them;
+the footprints archive gets the IDs from SPECIES_EGG to the added species', SPECIES_NONE's footprint for those that
+are no Pokémon. Without such forms and species the archives are the original's.
 """
 
 import re
@@ -27,6 +31,7 @@ from pathlib import Path
 from narc import read_narc, write_narc
 from species_data import directory
 from form_groups import ORIGINAL_FORM_GROUPS, form_groups
+import species_list
 from nitro_2d import (character_pixels, color5, palette_colors, palette_indices, patch_characters, patch_palette,
                       read_indexed_png, read_palette, write_indexed_png, write_palette)
 
@@ -59,15 +64,27 @@ FORM_FOOTPRINTS = (("giratina", 1), ("shaymin", 1), ("kyurem", 1), ("kyurem", 2)
 def species_names():
     """Returns the directories of the species of generated/species.txt, in order: the national Pokédex's, then
     the egg, the bad egg and the Pokéstar Studios species."""
-    return [directory(re.match(r"SPECIES_[A-Z0-9_]+", line).group(0))
-            for line in (ROOT / "generated/species.txt").read_text().splitlines()
-            if line.startswith("SPECIES_")]
+    return species_list.directories()
 
 
 @lru_cache(maxsize=1)
 def national_species():
     """Returns the number of species up to the national Pokédex's last, the index of SPECIES_EGG."""
-    return species_names().index("egg")
+    return species_list.national_count()
+
+
+def added_species():
+    """Returns the directories of Paper White 2's added species, in ID order (species_list.py)."""
+    return [directory(name) for name in species_list.added_species()]
+
+
+def template_species(number):
+    """Returns the species whose original files an added species' sprite and icon files are made in the format of:
+    its data.json's art_template, or Bulbasaur; for any other species, itself."""
+    if not species_list.is_added(number):
+        return number
+    template = species_list.species_data(number, ROOT / "res/pokemon").get("art_template", "SPECIES_BULBASAUR")
+    return species_list.constants().index(template)
 
 
 @lru_cache(maxsize=2)
@@ -114,10 +131,14 @@ GROUP_FILES = 20
 def group_folder(root, group, kind):
     egg, forms = GROUPS[kind]
     names = species_names()
+    first_added = forms + ORIGINAL_FORM_GROUPS + added_form_groups()
     if group == egg:
         path = root / "egg"
     elif group == egg + 1:
         path = root / "manaphy" / "egg"
+    elif kind != "musical" and group >= first_added and group - first_added < len(added_species()):
+        # Paper White 2's added species, after the hack's form groups
+        path = root / added_species()[group - first_added]
     elif group >= forms:
         if group - forms not in form_names(kind == "musical"):
             raise ValueError(f"{kind} group {group} is no species' form")
@@ -277,7 +298,11 @@ def footprint_file(root, index, forms=False):
     if index < len(FOOTPRINT_FILES):
         path = root / "shared" / FOOTPRINT_FILES[index]
         return (path, "palette", None) if path.suffix == ".pal" else (path, "raw", None)
-    return root / species_names()[index - len(FOOTPRINT_FILES)] / "footprint.png", "char", {"size": (16, 32)}
+    number = index - len(FOOTPRINT_FILES)
+    if number >= national_species() and not species_list.is_added(number):
+        # Paper White 2: the IDs between Genesect and the added species, which have no footprint, have SPECIES_NONE's
+        number = 0
+    return root / species_names()[number] / "footprint.png", "char", {"size": (16, 32)}
 
 
 def source_file(root, archive_name, index):
@@ -417,17 +442,18 @@ def pack(root, game, output):
             if kind == "raw" and not path.exists() and shared_rig_file(path):
                 path, kind, options = shared_rig_file(path)
         result.append(pack_file(root, archive_name, archive, index, original, path, kind, options))
-    # Paper White 2's form groups, after the archive's files: each file made from its source, in the format of its
-    # species' own file of the same kind (the male's, the normal palette's), which it is where the two are the same
-    added = added_form_groups() if ARCHIVES[archive_name] in ("battle", "icons") else 0
+    # Paper White 2's form groups, then its added species' groups, after the archive's files: each file made from its
+    # source, in the format of its species' own file of the same kind (the male's, the normal palette's; an added
+    # species' template's), which it is where the two are the same
+    added = added_form_groups() + len(added_species()) if ARCHIVES[archive_name] in ("battle", "icons") else 0
     if ARCHIVES[archive_name] == "battle" and added and len(result) != ADDED_FORM_FILES:
         raise ValueError(f"{archive_name} has {len(result)} files, not the {ADDED_FORM_FILES} that the hack's form "
                          "groups follow")
     for _ in range(added * (GROUP_FILES if ARCHIVES[archive_name] == "battle" else 2)):
         index = len(result)
         path, kind, options = source_file(root, archive_name, index)
-        species = species_names().index(path.parent.parent.name if path.parent.name.startswith("form_") else
-                                        path.parent.name)
+        species = template_species(species_names().index(path.parent.parent.name if path.parent.name.startswith(
+            "form_") else path.parent.name))
         if ARCHIVES[archive_name] == "battle":
             slot = (index - ADDED_FORM_FILES) % GROUP_FILES
             template_slot = 18 if slot in PALETTE_SLOTS else slot - 1 if slot in (1, 3, 10, 12) else slot
@@ -442,6 +468,13 @@ def pack(root, game, output):
             result.append(b"")
             continue
         result.append(pack_file(root, archive_name, archive, index, template, path, kind, options))
+    if ARCHIVES[archive_name] == "footprints" and added_species():
+        # Paper White 2: a footprint for each ID from SPECIES_EGG to the last added species, by footprint_file
+        template = archive[len(FOOTPRINT_FILES) + 1]
+        for number in range(len(archive) - len(FOOTPRINT_FILES), species_list.last_species() + 1):
+            index = len(FOOTPRINT_FILES) + number
+            path, kind, options = footprint_file(root, index)
+            result.append(pack_file(root, archive_name, archive, index, template, path, kind, options))
     target = Path(output)
     target.parent.mkdir(parents=True, exist_ok=True)
     target.unlink(missing_ok=True)

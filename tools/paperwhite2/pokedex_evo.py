@@ -8,7 +8,7 @@ graphics archive (ARCID_POKEDEX_GRA, a/1/5/7) after its own (docs/paperwhite2/pl
 The game's evolution data (a/0/1/9, res/pokemon/*/data.json's "evolutions") only names what each species evolves
 into, so the page needs each species' family root to draw its tree from (paperwhite2_pokedex_info_evo.c):
 
-- FAMILY_MEMBER: a u16 for each species by its number, from SPECIES_NONE to the last species (SPECIES_GENESECT): its
+- FAMILY_MEMBER: a u16 for each species by its number, from SPECIES_NONE to the last species (species_list.py): its
   family's root, the species that no other evolves into (itself for one that doesn't evolve, 0 for SPECIES_NONE). A
   species is a child of the first species whose evolutions name it, in the species' order. Forms have no evolution
   lists of their own: the game reads a species' evolutions by its species (evolution_check.c), and an evolution may be
@@ -50,6 +50,7 @@ from tools.data.datajson import constants  # noqa: E402
 from tools.data.narc import read_narc, write_narc  # noqa: E402
 from tools.data.nitro_2d import read_indexed_png  # noqa: E402
 from tools.data.datajson import DataError  # noqa: E402
+from tools.data import species_list  # noqa: E402
 from tools.paperwhite2.dex_flavour import FlavourError, tab_member  # noqa: E402
 from tools.paperwhite2.dex_flavour import member as flavour_member  # noqa: E402
 from tools.paperwhite2.encounters import area_index  # noqa: E402
@@ -115,7 +116,7 @@ def evolutions():
 def roots():
     """Each species' family root, from SPECIES_NONE to the last species, with the root's form plus one in the high bits
     where only that form leads to the species; and the families' sizes."""
-    last = constants()["SPECIES_GENESECT"]
+    last = species_list.last_real_species()
     children = evolutions()
     parent = {}
     for species in sorted(children):

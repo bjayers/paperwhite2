@@ -37,3 +37,4 @@ SpeciesNamesWithArticle_Text_Empty_33 =      \x{ffff}
 SpeciesNamesWithArticle_Text_Empty_34 =      \x{ffff}
 SpeciesNamesWithArticle_Text_Empty_35 =     \x{ffff}
 SpeciesNamesWithArticle_Text_Empty_36 =     \x{ffff}
+\from{added_species.name_with_article}
