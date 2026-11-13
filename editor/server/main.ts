@@ -2,10 +2,10 @@
 // only. Start it with `npm start` in editor/ (or ./start.sh), then open the address it prints in Edge.
 
 import { execFile } from "node:child_process";
-import { createReadStream, existsSync, globSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { createReadStream, existsSync, globSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { extname, join, resolve, sep } from "node:path";
+import { basename, extname, join, resolve, sep } from "node:path";
 import { fileText, parseJson, setIn, JsonSyntaxError } from "../shared/json.ts";
 import { splitSchemaId } from "../shared/schema.ts";
 import { WRITE_HEADER, type DataFile, type ItemIconCheck, type SpriteSheet, type ProjectInfo, type SaveRequest, type SaveResult, type ServerEvent } from "../shared/api.ts";
@@ -693,6 +693,50 @@ const routes: Record<string, Handler> = {
       rmSync(dir, { recursive: true, force: true });
     }
   },
+  // A species' or form's battle sprite art (tools/paperwhite2/battle_sprite.py): its sheets, stills and palettes as a
+  // zip to edit, with guides; and edited files checked (errors, warnings, the files they change, a preview of the
+  // assembled sprite on its rig) or, with write, imported into res/
+  "GET /api/battle-sprite/export": async (_req, res, url) => {
+    const species = url.searchParams.get("species") ?? "";
+    const form = Number(url.searchParams.get("form") ?? 0);
+    if (!/^SPECIES_[A-Z0-9_]+$/.test(species) || !Number.isInteger(form) || form < 0) return error(res, 400, "Name a species and its form");
+    const dir = mkdtempSync(join(tmpdir(), "paperwhite-sprite-"));
+    try {
+      const out = join(dir, "art.zip");
+      const run = await python.tool(BATTLE_SPRITE_TOOL, ["export", species, "--form", String(form), out]);
+      if (run.code !== 0) return error(res, 400, toolMessage(run) || "battle_sprite.py export failed");
+      const name = (JSON.parse(run.stdout.trim().split("\n").pop() ?? "{}") as { name?: string }).name ?? "battle_sprite.zip";
+      res.writeHead(200, { "Content-Type": "application/zip", "Content-Disposition": `attachment; filename="${name}"`, "Cache-Control": "no-store" });
+      res.end(readFileSync(out));
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  },
+  "POST /api/battle-sprite/check": async (req, res) => {
+    const b = (await readJson(req)) as { species: string; form?: number; files?: { name: string; data: string }[]; stillsFromSheets?: boolean; write?: boolean };
+    const form = b.form ?? 0;
+    if (!/^SPECIES_[A-Z0-9_]+$/.test(b.species ?? "") || !Number.isInteger(form) || form < 0) return error(res, 400, "Name a species and its form");
+    const files = Array.isArray(b.files) ? b.files : [];
+    if (files.some((f) => typeof f.name !== "string" || typeof f.data !== "string")) return error(res, 400, "Give each file a name and its data");
+    const dir = mkdtempSync(join(tmpdir(), "paperwhite-sprite-"));
+    try {
+      // Each file in a folder of its own, under its own name (which says what it is), so two may share a name
+      const paths = files.map((f, i) => {
+        mkdirSync(join(dir, String(i)));
+        const path = join(dir, String(i), basename(f.name).replace(/[^A-Za-z0-9_.-]/g, "_") || "file");
+        writeFileSync(path, Buffer.from(f.data, "base64"));
+        return path;
+      });
+      const args = [b.write ? "import" : "check", b.species, "--form", String(form), ...paths, ...(b.stillsFromSheets ? ["--stills-from-sheets"] : [])];
+      const run = await python.tool(BATTLE_SPRITE_TOOL, args);
+      const line = run.stdout.trim().split("\n").pop() ?? "";
+      if (!line.startsWith("{")) return error(res, 500, run.stderr.trim().split("\n").pop() || "battle_sprite.py failed");
+      res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+      res.end(line);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  },
   "GET /api/build": (_req, res) => json(res, builder.state),
   "POST /api/build": (_req, res) => json(res, { started: builder.start(settings.buildCommand) }),
   "POST /api/build/stop": (_req, res) => {
@@ -871,6 +915,7 @@ function pick(data: Record<string, unknown>, keys: string[]): Record<string, unk
 }
 
 const POKEMON_FORM_TOOL = "tools/paperwhite2/pokemon_form.py";
+const BATTLE_SPRITE_TOOL = "tools/paperwhite2/battle_sprite.py";
 
 /** A tool's message: the "message" of the JSON it printed, else its error output's last line. */
 function toolMessage(run: { stdout: string; stderr: string }): string {

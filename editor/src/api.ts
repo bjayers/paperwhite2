@@ -102,6 +102,37 @@ export interface PokemonFormChange {
   preview?: string;
 }
 
+/** A side's animation in the battle sprite importer's preview: strips of frames (RGBA PNGs in base64), a frame every
+ * `step` game frames, each `width` by `height` with the sprite's feet at `origin`. */
+export interface BattleSpriteSide {
+  width: number;
+  height: number;
+  origin: [number, number];
+  frames: number;
+  step: number;
+  /** By sheet (front, front_female): the new art's strip, normal and shiny, and the current art's first frame. */
+  sheets: Record<string, { normal: string; shiny: string; current: string }>;
+}
+
+/** What tools/paperwhite2/battle_sprite.py says of battle sprite art: check, or import with write. */
+export interface BattleSpriteCheck {
+  ok: boolean;
+  check: boolean;
+  message: string;
+  folder?: string;
+  given?: string[];
+  errors: string[];
+  warnings?: string[];
+  notes?: string[];
+  changed?: string[];
+  preview?: {
+    sides: Record<string, BattleSpriteSide>;
+    stills: Record<string, { normal: string; shiny: string; changed: boolean }>;
+    sheets: Record<string, { image: string; changed: boolean }>;
+    palettes: { normal: string[]; shiny: string[] };
+  };
+}
+
 export const api = {
   project: () => request<ProjectInfo>("GET", "/api/project"),
   entries: (schema: string) => request<Entry[]>("GET", `/api/entries?schema=${encodeURIComponent(schema)}`),
@@ -219,6 +250,12 @@ export const api = {
   /** Checks a PNG (base64) as a form's icon or still, with a preview; with write, writes it into the form's art. */
   pokemonFormArt: (b: { species: string; form: number; kind: "icon" | "icon_female" | "front" | "back"; data: string; write?: boolean }) =>
     request<PokemonFormChange>("POST", "/api/pokemon-forms/art", b),
+  /** A battle sprite's art as a zip to edit (its sheets, stills, palettes, guides and README). */
+  battleSpriteExportUrl: (species: string, form: number) =>
+    `/api/battle-sprite/export?species=${encodeURIComponent(species)}&form=${form}`,
+  /** Checks battle sprite art (files in base64; none for the current art's preview); with write, imports it. */
+  battleSpriteCheck: (b: { species: string; form: number; files: { name: string; data: string }[]; stillsFromSheets?: boolean; write?: boolean }) =>
+    request<BattleSpriteCheck>("POST", "/api/battle-sprite/check", b),
   /** Converts a PNG or .cgb into a C-Gear picture and adds it; the tool's report. */
   cgearPictureImport: (name: string, file: string, data: string) =>
     request<{ message: string }>("POST", "/api/cgear-pictures/import", { name, file, data }),

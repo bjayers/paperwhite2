@@ -76,3 +76,28 @@ button.danger { color: var(--error); border-color: var(--error); }
 .pkm-art h4 { margin-top: 0; }
 .pkm-art-images { display: flex; align-items: center; gap: 8px; min-height: 64px; }
 .pkm-pixel { image-rendering: pixelated; background: var(--panel-2); border-radius: 4px; max-width: 96px; }
+
+/* The battle sprite's art (BattleSpriteArt.tsx): the animated sprite, Export and Import with its preview */
+.bsp-link { display: inline-flex; align-items: center; padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px;
+  background: var(--panel-2); color: inherit; text-decoration: none; font-size: 13px; }
+.bsp-link:hover { background: var(--hover); }
+.bsp .pkm-card-head button, .bsp-link { white-space: nowrap; }
+.bsp-animations { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.bsp-side { display: flex; gap: 8px; align-items: flex-end; }
+.bsp-frame { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; }
+.bsp-strip { image-rendering: pixelated; background-repeat: no-repeat; background-color: var(--panel-2); border-radius: 4px; }
+.bsp-still { width: 96px; height: 96px; max-width: none; }
+.bsp-sheet { width: 512px; max-width: 100%; height: auto; image-rendering: pixelated;
+  background: repeating-conic-gradient(var(--panel-2) 0 25%, var(--panel) 0 50%) 0 0 / 16px 16px; }
+.bsp-controls { display: flex; gap: 12px; margin-top: 4px; }
+.bsp-import { margin-top: 12px; padding: 10px 12px; border: 1px dashed var(--border); border-radius: 8px; display: flex;
+  flex-direction: column; gap: 6px; }
+.bsp-import h4 { margin: 0; }
+.bsp-messages { margin: 0; padding-left: 18px; font-size: 12px; display: flex; flex-direction: column; gap: 2px; }
+.bsp-warning { color: var(--warning); list-style: none; padding-left: 0; }
+.bsp-pair { display: flex; flex-wrap: wrap; gap: 24px; }
+.bsp-row { display: flex; flex-wrap: wrap; gap: 16px; }
+.bsp-palette { display: flex; align-items: center; gap: 2px; font-size: 11px; margin-bottom: 4px; }
+.bsp-palette .muted { width: 44px; }
+.bsp-swatch { width: 18px; height: 18px; border: 1px solid var(--border); border-radius: 3px; display: inline-flex;
+  align-items: center; justify-content: center; font-size: 10px; color: var(--muted); }
