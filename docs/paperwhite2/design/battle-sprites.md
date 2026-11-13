@@ -4,7 +4,8 @@ Research for drawing new Gen 5 battle sprites (first a Spiky-eared Pichu form, l
 that builds them from parts: import the parts, set each part's box, place and layer the parts, and animate them.
 Researched 2026-11-12 from the code (`src/system/mcss.c`, `src/system/mcss_tool.c`, `src/system/pokegra.c`,
 `src/ov168/btlv_mcss.c`, `lib/nnsys/src/g2d/g2d_MultiCellAnimation.c`) and the data (`res/pokemon/`, the White 2
-archive `a/0/0/4`). Nothing here is built. "Verified" means read in the code or decoded from the data; "inferred"
+archive `a/0/0/4`). Built since: new form groups (section 6) and the art's export and import on the existing rig
+(section 14); the rig editor is not. "Verified" means read in the code or decoded from the data; "inferred"
 means reasoned and not checked in the game.
 
 The decoder and renderer that prove the decoding are in the ROM session's scratchpad
@@ -273,9 +274,12 @@ The shadow is the same quads, flattened (`shadowRotX`, default 0xc400) with the 
 
 Every group also needs `front_single.png` and `back_single.png` (and female ones when the sheet has them): 96×96,
 same palette, stored as four OBJs (64×64, 32×64, 64×32, 32×32: `SINGLE_CELL_96` in `nitro_2d.py`,
-`PokeGra_CellCharsToImage`). These are what the boxes and the other 2D screens show. The importer can render one from
-the rig's first frame for the artist to touch up (inferred: the originals look like the first frame, not checked
-pixel for pixel).
+`PokeGra_CellCharsToImage`). These are what the boxes and the other 2D screens show. **Measured (2026-11-12) over
+the 1,667 stills of res/pokemon (each side and sex):** a still is the "stay" animation's first frame with its visible
+pixels centred in the 96×96 (their box's middle at 47 to 48), 860 of them pixel for pixel; 359 have the same shape with
+up to 8 pixels' colours touched up (Pichu's front: 8, an eye's and a cheek's shading), 205 up to 16 pixels, and 243
+differ more (the larger sprites, whose still is cut or redrawn, and the Pokéstar props, which are bigger than 96). So
+a still can be drawn from the sheets (battle_sprite.py does, section 14) and touched up after.
 
 ### 5.4 The hack's measured middles
 
@@ -419,7 +423,7 @@ round-trip test, as the other packers have.
 - Should the rig be the only source for edited sprites (the packer builds from it) or a source that writes the Nitro
   files (two copies in git)? The trainer packer's approach suggests the former once the converter round-trips.
 - The stop-flags byte as "airborne": check in a battle effect that reads work value 44 – 52.
-- Whether the originals' 96×96 stills are exactly frame 0 (affects whether the still is generated or drawn).
+- ~~Whether the originals' 96×96 stills are exactly frame 0~~: half are, the rest touched up (section 5.3).
 - Whether any screen's heap limits the cell or sequence counts below the ROM's maxima (test a large rig on the summary,
   trade and Pokédex).
 - How a female sheet with different part sizes would work: it can't, since the rig is shared; the editor should
@@ -436,3 +440,91 @@ round-trip test, as the other packers have.
 4. Build the rig editor in this order: preview player, import from ROM files, pictures and nodes, keyframes and
    tweening, checks.
 5. New species, with the index formula for groups past the Pokéstar species.
+
+## 14. Built (2026-11-12): the art's export and import, on the existing rig
+
+The first step of the rig editor's road: a sprite's **art** can be taken out, redrawn in a pixel-art editor and put
+back, while its rig (cells, parts, poses, animations, info) stays as it is. `tools/paperwhite2/mcss.py` reads a side's
+rig from its five files and draws any frame as MCSS does (section 3.8; the prototype of `mcss_decode.py`, tested);
+`tools/paperwhite2/battle_sprite.py` exports, checks and imports; the Pokémon Editor's **Battle sprite** card, on every
+species' page and every form with art of its own (Spiky-eared Pichu's `form_1/` included), runs them through the
+server (`GET /api/battle-sprite/export`, `POST /api/battle-sprite/check`, with `write` to import).
+
+### 14.1 Export (a zip, `<species>[_form_<n>]_battle_sprite/`)
+
+- `front.png`, `back.png` (and `front_female.png`, `back_female.png` where the group has them): the 256×128 sheets,
+  the res/ files byte for byte (indexed PNGs whose palette is `normal.pal`, index 0 transparent);
+- `front_single.png`, `back_single.png` (and the female ones): the 96×96 stills, as they are;
+- `<image>_shiny.png`: a shiny-coloured copy of each (the same indices, `shiny.pal` as the PNG's palette), the easiest
+  way to see and edit the shiny palette in Aseprite, LibreSprite or GIMP: recolour its palette, import it;
+- `normal.pal`, `shiny.pal` (JASC, which Aseprite's Load Palette and GIMP read);
+- `guide/<sheet>.png`: the sheet three times its size with each cell's rectangle outlined in its own colour and
+  numbered (a second quad, drawn over the first, as `N+`), and a legend: each piece's rectangle (`x,y w x h`) and the
+  parts that show it, from the cell animations' labels (`head`, `ear_r`; Game Freak's romaji glossed: `atama (head)`,
+  `mimi_l (ear left)`);
+- `preview/<sheet>.png` and `_shiny.png`: the assembled first frame;
+- `README.txt`: the rules (keep each piece inside its rectangle; 16 colours, index 0 transparent, one palette for
+  front, back, female and stills; the shiny palette recolours the same indices; the sizes; Spinda's spots; the
+  female's shared rig).
+
+### 14.2 Import: the checks
+
+Any subset of those files, or the zip itself (`guide/` and `preview/` are skipped), named as the export names them:
+
+- **Errors** (nothing is written): a sheet not 256×128 or a still not 96×96; a female picture for a group without
+  one (the packer can't add a member the original archive lacks); the front, back or stills giving one palette index
+  two colours (they share the palette); more colours than the free indices allow (15 besides transparent); a shiny
+  copy whose pixels give one index two colours, or two shiny copies changing one shiny colour differently; a palette
+  file of fewer than 16 colours; stills both given and asked to be drawn.
+- **Colours:** an indexed PNG keeps its indices where its colours are the palette's; an index below 16 in a new colour
+  recolours that index (`normal.pal` changes, and every PNG of the group is written with the new palette, since the
+  packer reads a PNG's colours against the `.pal`); a palette an editor compacted or reordered on saving is matched
+  by colour; an RGB(A) PNG's colours take the palette's indices, a new colour a free one (with a warning to set its
+  shiny colour). Transparent: index 0, a tRNS-transparent index, alpha under 128, or in an RGB PNG the colour of index 0.
+- **Shiny:** `shiny.pal`, or a `*_shiny.png`: indexed, with the indices of the exported or the imported art, its
+  palette's colours; otherwise the colour under each index's pixels. Only the colours it changes count.
+- **Warnings:** changed pixels outside every piece's rectangle (the game never shows them; the preview marks them in
+  red), an empty sheet, a normal colour changed with its shiny one unchanged, a new colour's index, Spinda's head
+  (its spots are painted at fixed pixels), a still cut to 96×96.
+- **Notes:** the colours changed, the shiny colours changed, how many of the 15 colours the sprite uses.
+- With nothing changed nothing is written: an export imported unchanged leaves res/ byte for byte (the files are
+  compared with what would be written).
+
+### 14.3 The preview
+
+The tool draws the new art on the existing rig with `mcss.render`: for each side, each of its sheets (male, female),
+the "stay" animation (multi-cell animation sequence 0) a frame every 4 game frames over its loop (at most 90 frames),
+as a strip of frames on one canvas (the union of the frames' visible pixels), in the normal and the shiny palette,
+with the current art's first frame for comparison; the stills normal and shiny; and each sheet with its rectangles and
+the changed pixels outside them. The card plays the strips at the game's speed (2× zoom). Rendering composes the three
+SRTs (cell animation, node pivot, multi-cell animation) into one affine map per quad and samples each pixel's centre,
+nearest; a node with play mode 0 restarts its sequence with each multi-cell frame, mode 1 runs on the animation's time.
+About 1 to 2 seconds for a large sprite with a female (Abomasnow, Kyurem).
+
+### 14.4 Stills from the sheets
+
+"Make stills from the sheets" (`--stills-from-sheets`) draws each still as the first frame of the new sheets: where its
+visible box is the size of the current still's, at the same place, else centred (the originals' placement, section
+5.3). Pichu's back still comes out unchanged; its front loses the original's 8 touched-up pixels.
+
+### 14.5 Proven
+
+- Every one of the 752 groups with a battle sprite in res/pokemon (species, forms, egg, Pokéstar) exported and imported
+  unchanged: no errors, no warnings, nothing to write; and stills drawn from the sheets for all of them without error.
+- Pichu, Charizard, Abomasnow (female), Spinda, Unown's form 1 and the Spiky-eared Pichu through the CLI in write mode:
+  res/ unchanged, and the `--hack` ROM byte for byte the one before (`e3f841fb...`).
+- An RGBA re-encoding and a compacted, reordered indexed palette of Pichu's sheet import as nothing changed
+  (`tools/paperwhite2/test_battle_sprite.py`, 12 tests; `editor/tests/battle-sprite.test.ts`, 3).
+- An edited import in the editor (the Spiky-eared Pichu's ears recoloured to the cheeks' red on both sheets, a stray mark
+  outside the pieces, and the shiny copy's red made green): the preview warned of the mark, Apply wrote `front.png`,
+  `back.png`, `shiny.pal`; "Make stills from the sheets" then redrew both stills. In py-desmume on a copy of the user's
+  save: the summary, a double battle's back sprites and the Info page show the red ears, and the shiny Pichu green ears
+  and cheeks. Reverted after.
+
+### 14.6 What the rig editor builds on
+
+`mcss.read_rig` already gives the rig in the shape section 10 proposes to edit (cells with their quads, part names,
+cell animations with their frames, multi-cells with nodes, pivots and play modes, the animations, the box, idle nodes
+and stop flags), and `mcss.render` draws any frame of any animation; `battle_sprite.py`'s guide, checks and preview
+are the editor's "Pictures" step for a fixed layout. Next: write the rig back (NCER, NANR, NMCR, NMAR, bin) from
+`read_rig`'s shape, byte for byte for an unedited rig, then let pieces move and resize.
