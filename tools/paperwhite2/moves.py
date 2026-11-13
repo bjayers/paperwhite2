@@ -1,16 +1,43 @@
 #!/usr/bin/env python3
 """Paper White 2's added moves (docs/paperwhite2/design/moves-and-abilities.md): what tools/data/move_list.py reads
-from generated/moves.txt and res/moves/, and the header the hack's build generates from it.
+from generated/moves.txt and res/moves/, the header the hack's build generates from it, and the editor's Add move
+(the Move Editor).
 
     moves.py info                                  # the move IDs and the added moves
     moves.py header build/.../paperwhite2/moves_config.h
+    moves.py json                                  # JSON: the added moves, the next ID, the limits, the handlers
+    moves.py uses MOVE                             # JSON: the species that learn it, the trainers and files naming it
+    moves.py add NAME (--from MOVE | --blank) [--animation MOVE] [--handlers-like MOVE | --handlers-like none]
+                      [--effect BATTLE_EFFECT_X] [--description TEXT] [--check]
+    moves.py remove MOVE [--check]                 # only the last added move
+    moves.py retire MOVE [--check]                 # hidden from the editor's pickers, keeping its ID
+    moves.py unretire MOVE [--check]
 
 The header (include/paperwhite2/moves.h) gives PAPERWHITE2_MOVE_FIRST_ADDED (560), PAPERWHITE2_MOVE_ADDED_COUNT and
 PAPERWHITE2_MOVE_COUNT (the move IDs, MOVE_NONE's included, which Metronome picks from), and with added moves their
 tables from the first: PAPERWHITE2_MOVE_ANIMATIONS, the original move whose animation each plays, and
 PAPERWHITE2_MOVE_HANDLERS_LIKE, the move whose battle handlers each takes: its "handlers_like", or itself, whose rows
 the hack's battle code may add. Without added moves it has no tables, and the hooks are the original code.
+
+add makes MOVE_<NAME> at the next ID: its line appended to generated/moves.txt and res/moves/<name>/data.json, a copy
+of the template's record (--from, an original or added move) with the name, the description (--description, else the
+template's), the AI's effect (--effect, else the template's) and the hack's fields: "animation" (--animation, else
+the template's own for an original move or its animation for an added one) and "handlers_like" (--handlers-like,
+else the template itself when it is an original move with handlers in sMoveEventAddTable, or an added template's).
+--blank starts from a plain Normal move of 40 power with Pound's animation. A move whose handlers compare its own ID
+(move_list.SUB_ID_COMPARED, the pledges) can't be "handlers like". The text banks (the name, the description and
+bank 16's "used" lines) and the battle's tables follow from these files. Rules the battle code checks by a move's ID,
+and an added template's own C handlers (src/paperwhite2/ov167/paperwhite2_battle.c), don't come with a copy: add warns.
+
+remove undoes add for the last added move only (removing another would renumber the later ones, changing the moves
+Pokémon know in saves). It refuses while a file of res/ (but its own folder) or the code names it. Removing a folder
+needs configure.py again (build.ninja depends on each move's folder); the editor's Remove runs it.
+
+retire sets "retired": true: the move keeps its ID and data, so Pokémon in saves that know it stay valid, but the
+editor's pickers (learnsets, trainers) leave it out. unretire undoes it.
 """
+import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -18,6 +45,18 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from tools.data import move_list  # noqa: E402
 
 GUARD = "POKEBW2_PAPERWHITE2_MOVES_CONFIG_H"
+SCHEMA_REF = "../move.schema.json"
+# The record --blank starts from: a plain physical Normal move, Pound's animation
+BLANK = {
+    "type": "TYPE_NORMAL", "quality": "MOVE_QUALITY_DAMAGE", "category": "MOVE_CATEGORY_PHYSICAL", "power": 40,
+    "accuracy": 100, "pp": 35, "priority": 0, "hits": {"min": 0, "max": 0},
+    "inflicts": {"condition": "CONDITION_NONE", "chance": 0, "duration": 0, "min_turns": 0, "max_turns": 0},
+    "crit_stage": 0, "flinch_chance": 0, "effect": "BATTLE_EFFECT_HIT", "drain": 0, "heal": 0,
+    "target": "MOVE_TARGET_SELECTED", "stat_changes": [],
+    "flags": ["MOVE_FLAG_CONTACT", "MOVE_FLAG_PROTECT", "MOVE_FLAG_MIRROR_MOVE"],
+}
+BLANK_ANIMATION = "MOVE_POUND"
+BLANK_DESCRIPTION = "A new move."
 
 
 def header() -> str:
@@ -58,18 +97,260 @@ def write_header(output: Path):
         output.write_text(text)
 
 
+# The editor's commands (imports inside them, so that the header's build doesn't depend on what they use)
+
+def resolve(name: str) -> tuple[int, str]:
+    """A move given by its constant or folder: (ID, constant)."""
+    from tools.paperwhite2.battle_entries import EntryError
+    constant = name if name.startswith("MOVE_") else "MOVE_" + name.upper()
+    names = move_list.constants()
+    if constant not in names[1:]:
+        raise EntryError(f"{name} isn't a move of generated/moves.txt")
+    return names.index(constant), constant
+
+
+def added(name: str) -> tuple[int, str]:
+    from tools.paperwhite2.battle_entries import EntryError
+    number, constant = resolve(name)
+    if not move_list.is_added(number):
+        raise EntryError(f"{constant} is the original game's: only moves Paper White 2 added (from "
+                         f"{move_list.FIRST_ADDED}) can be removed or retired")
+    return number, constant
+
+
+def path_of(move: str) -> Path:
+    return move_list.MOVES / move_list.directory(move) / "data.json"
+
+
+def json_info() -> dict:
+    """The added moves and what the editor needs to add one."""
+    from tools.paperwhite2.battle_entries import rel
+    names = move_list.constants()
+    rows = move_list.added_table()
+    out = []
+    for number, (move, animation, handlers) in enumerate(rows, move_list.FIRST_ADDED):
+        data = move_list.move_data(move)
+        out.append({"move": move, "id": number, "name": data.get("name", ""), "path": rel(path_of(move)),
+                    "animation": names[animation], "handlersLike": names[handlers] if handlers else None,
+                    "ownHandlers": move_list.has_own_handlers(move), "retired": data.get("retired") is True,
+                    "last": number == len(names) - 1})
+    return {"firstAdded": move_list.FIRST_ADDED, "nextId": len(names), "maxId": move_list.MOVE_MAX,
+            "nameLength": move_list.NAME_LENGTH, "moves": out, "handlers": move_list.handler_rows(),
+            "subIdCompared": list(move_list.SUB_ID_COMPARED), "battleCode": rel(move_list.BATTLE_CODE),
+            "handlersCode": rel(move_list.HANDLERS_CODE), "retired": [m["move"] for m in out if m["retired"]]}
+
+
+def uses(name: str) -> dict:
+    """Who learns a move (level-up, TM or HM, tutor, egg) or evolves by it, the trainers and facility sets that use
+    it, the other files of res/ and the code that name it."""
+    from tools.paperwhite2.battle_entries import (FACILITIES, POKEMON, TRAINERS, naming, read, rel, res_files,
+                                                  code_files, species_constant, species_name, species_records,
+                                                  tm_moves, trainer_constant)
+    number, move = resolve(name)
+    tms = [label for label, tm_move in tm_moves() if tm_move == move]
+    files = naming(move, res_files())
+    named = set(files)
+    learners = []
+    for path in species_records():
+        if path not in named and not tms:
+            continue
+        data = read(path)
+        learnset = data.get("learnset", {})
+        entry = {
+            "levels": [level for level, learned in learnset.get("by_level", []) if learned == move],
+            "tm": [tm for tm in learnset.get("by_tm", []) if tm in tms],
+            "tutor": move in learnset.get("by_tutor", []),
+            "egg": move in learnset.get("egg_moves", []),
+            "evolution": any(evo.get("param") == move for evo in data.get("evolutions", [])),
+        }
+        if entry["levels"] or entry["tm"] or entry["tutor"] or entry["egg"] or entry["evolution"]:
+            form = path.stem.removeprefix("form_")
+            learners.append({"species": species_constant(path), "form": int(form) if form.isdigit() else 0,
+                             "name": species_name(path), "path": rel(path), **entry})
+    trainers = [{"trainer": trainer_constant(path), "name": str(read(path).get("name", "")), "path": rel(path)}
+                for path in files if path.parent == TRAINERS]
+    own = path_of(move).parent
+    other = [rel(path) for path in files
+             if not path.is_relative_to(POKEMON) and path.parent != TRAINERS and not path.is_relative_to(own)]
+    return {"move": move, "id": number, "tm": tms, "learners": learners, "trainers": trainers,
+            "facilities": [p for p in other if p.startswith(rel(FACILITIES) + "/")],
+            "other": [p for p in other if not p.startswith(rel(FACILITIES) + "/")],
+            "code": [rel(path) for path in naming(move, code_files())]}
+
+
+def template_record(template: str | None) -> tuple[dict, str | None, str | None]:
+    """The record a new move starts from, without the hack's fields, and the template's animation and handlers."""
+    from tools.paperwhite2.battle_entries import EntryError
+    if template is None:
+        return dict(BLANK), BLANK_ANIMATION, None
+    number, constant = resolve(template)
+    data = move_list.move_data(constant)
+    record = {k: v for k, v in data.items() if k not in move_list.HACK_FIELDS and k not in ("$schema", "name")}
+    if move_list.is_added(number):
+        return record, data.get("animation"), data.get("handlers_like")
+    if number == 0:
+        raise EntryError("MOVE_NONE is no template")
+    rows = move_list.handler_rows()
+    handlers = constant if constant in rows and constant not in move_list.SUB_ID_COMPARED else None
+    return record, constant, handlers
+
+
+def add(name: str, template: str | None, animation: str | None, handlers_like: str | None, effect: str | None,
+        description: str | None, check: bool) -> dict:
+    from tools.data.datajson import DataError, dumps, load_schema, validate
+    from tools.paperwhite2.battle_entries import (Changes, EntryError, appended, check_name, checks_by_id,
+                                                  constant_of)
+    check_name(name, "move", move_list.NAME_LENGTH)
+    move = constant_of("MOVE_", name)
+    names = move_list.constants()
+    if move in names:
+        raise EntryError(f"{move} is already a move")
+    folder = move_list.MOVES / move_list.directory(move)
+    if folder.exists():
+        raise EntryError(f"{folder.relative_to(move_list.ROOT)} already exists")
+    number = len(names)
+    if number > move_list.MOVE_MAX:
+        raise EntryError(f"Move {number} is past the last move ID, {move_list.MOVE_MAX}")
+    record, own_animation, own_handlers = template_record(template)
+    data = {"$schema": SCHEMA_REF, "name": name,
+            "description": description if description is not None else
+            (record.pop("description", BLANK_DESCRIPTION) if template else BLANK_DESCRIPTION)}
+    record.pop("description", None)
+    data.update(record)
+    if effect:
+        data["effect"] = effect
+    data["animation"] = animation or own_animation
+    handlers = own_handlers if handlers_like is None else (None if handlers_like == "none" else handlers_like)
+    if handlers:
+        data["handlers_like"] = handlers
+    # The checks the build makes: the animation and handlers an original move's, and the record the schema's
+    for field in ("animation", "handlers_like"):
+        if field in data:
+            move_list.original_move(move, field, data[field])
+    if data.get("handlers_like") in move_list.SUB_ID_COMPARED:
+        raise EntryError(f"{data['handlers_like']}'s handlers compare the move's own ID with a literal one, so another "
+                         "move can't take them")
+    try:
+        validate(data, load_schema(move_list.MOVES / "move.schema.json"), "data.json")
+    except DataError as error:
+        raise EntryError(str(error)) from None
+    warnings = []
+    if template:
+        _, template_constant = resolve(template)
+        if move_list.has_own_handlers(template_constant):
+            warnings.append(f"{template_constant}'s own rules are C in {move_list.BATTLE_CODE.relative_to(move_list.ROOT)}"
+                            ": the copy has its data, not those")
+        rows = move_list.handler_rows()
+        base = template_constant if not move_list.is_added(names.index(template_constant)) else None
+        if base:
+            checks = checks_by_id(base, {move_list.HANDLERS_CODE.name: 1 if base in rows else 0})
+            if checks:
+                warnings.append(f"The battle code also checks {base} by its ID ({', '.join(checks)}): a copy doesn't "
+                                "get those rules")
+            if base in rows and not handlers:
+                why = (" (they tell the moves apart by their IDs)" if base in move_list.SUB_ID_COMPARED
+                       and handlers_like is None else "")
+                warnings.append(f"{base}'s handlers ({rows[base]}) aren't taken{why}: the copy runs on its data alone")
+    changes = Changes()
+    changes.text(move_list.MOVE_LIST, appended(move_list.MOVE_LIST, move))
+    changes.text(folder / "data.json", dumps(data) + "\n")
+    if not check:
+        changes.apply()
+    verb = "Would add" if check else "Added"
+    return changes.report(f"{verb} {name}, {move} (ID {number})", check, move=move, id=number,
+                          path=(folder / "data.json").relative_to(move_list.ROOT).as_posix(),
+                          animation=data["animation"], handlersLike=data.get("handlers_like"), warnings=warnings)
+
+
+def remove(name: str, check: bool) -> dict:
+    from tools.paperwhite2.battle_entries import (Changes, EntryError, code_files, naming, rel, res_files,
+                                                  without_last)
+    number, move = added(name)
+    if number != move_list.count() - 1:
+        raise EntryError(f"Only the last added move ({move_list.constants()[-1]}) can be removed: removing another "
+                         "would renumber those after it. Retire it instead")
+    own = path_of(move).parent
+    found = [rel(path) for path in naming(move, res_files()) if not path.is_relative_to(own)]
+    found += [rel(path) for path in naming(move, code_files())]
+    if found:
+        raise EntryError(f"{move} is still named by {', '.join(found[:8])}{'…' if len(found) > 8 else ''}: take it out "
+                         "of those first, or retire it")
+    changes = Changes()
+    changes.text(move_list.MOVE_LIST, without_last(move_list.MOVE_LIST, move))
+    changes.remove(own)
+    if not check:
+        changes.apply()
+    verb = "Would remove" if check else "Removed"
+    return changes.report(f"{verb} {move} (ID {number})", check, move=move, id=number)
+
+
+def retire(name: str, retired: bool, check: bool) -> dict:
+    from tools.data.datajson import dumps
+    from tools.paperwhite2.battle_entries import Changes, read
+    number, move = added(name)
+    path = path_of(move)
+    data = read(path)
+    if retired:
+        data["retired"] = True
+    else:
+        data.pop("retired", None)
+    changes = Changes()
+    changes.text(path, dumps(data) + "\n")
+    if not check:
+        changes.apply()
+    verb = ("Would retire" if check else "Retired") if retired else ("Would bring back" if check else "Brought back")
+    return changes.report(f"{verb} {move} (ID {number})", check, move=move, id=number)
+
+
 def main():
     if len(sys.argv) == 2 and sys.argv[1] == "info":
-        command = info
-    elif len(sys.argv) == 3 and sys.argv[1] == "header":
-        def command():
+        try:
+            info()
+        except move_list.MoveListError as error:
+            sys.exit(f"moves.py: {error}")
+        return
+    if len(sys.argv) == 3 and sys.argv[1] == "header":
+        try:
             write_header(Path(sys.argv[2]))
-    else:
-        sys.exit(__doc__)
+        except move_list.MoveListError as error:
+            sys.exit(f"moves.py: {error}")
+        return
+    from tools.paperwhite2.battle_entries import EntryError
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser("json")
+    commands.add_parser("uses").add_argument("move")
+    p = commands.add_parser("add")
+    p.add_argument("name")
+    source = p.add_mutually_exclusive_group(required=True)
+    source.add_argument("--from", dest="template")
+    source.add_argument("--blank", action="store_true")
+    p.add_argument("--animation")
+    p.add_argument("--handlers-like")
+    p.add_argument("--effect")
+    p.add_argument("--description")
+    p.add_argument("--check", action="store_true")
+    for command in ("remove", "retire", "unretire"):
+        p = commands.add_parser(command)
+        p.add_argument("move")
+        p.add_argument("--check", action="store_true")
+    args = parser.parse_args()
     try:
-        command()
-    except move_list.MoveListError as error:
-        sys.exit(f"moves.py: {error}")
+        if args.command == "json":
+            result = json_info()
+        elif args.command == "uses":
+            result = uses(args.move)
+        elif args.command == "add":
+            result = add(args.name, args.template, args.animation, args.handlers_like, args.effect,
+                         args.description, args.check)
+        elif args.command == "remove":
+            result = remove(args.move, args.check)
+        else:
+            result = retire(args.move, args.command == "retire", args.check)
+    except (EntryError, move_list.MoveListError, OSError) as error:
+        print(json.dumps({"ok": False, "message": str(error)}, ensure_ascii=False))
+        sys.exit(1)
+    print(json.dumps(result, ensure_ascii=False))
 
 
 if __name__ == "__main__":

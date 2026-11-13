@@ -1,0 +1,25 @@
+/* The Move Editor and the Ability Editor (their lists, cards and dialogs are the Pokémon Editor's pkm-* classes). */
+
+.mv-top h2 { margin: 0; font-size: 20px; }
+.mv-section .pkm-card-head h3 .mv-summary { font-weight: normal; font-size: 12px; }
+.mv-rows { grid-template-columns: 130px 1fr; gap: 14px 16px; }
+.mv-rows .schema-form { padding: 0; }
+.mv-list-filters { display: flex; gap: 8px; align-items: center; margin: 0 10px 6px; }
+.mv-list-filters select { flex: 1; min-width: 0; }
+.mv-flags { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 4px 14px; }
+.mv-flag { align-items: flex-start; }
+.mv-flag input { margin-top: 2px; }
+.mv-uses { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.mv-use { text-align: left; }
+.mv-use .muted { text-decoration: none; display: inline-block; margin-left: 2px; }
+.mv-name { gap: 8px; }
+.mv-name input { width: 200px !important; min-width: 200px !important; }
+.mv-description { display: flex; flex-direction: column; gap: 3px; }
+.mv-description textarea { font-family: inherit; width: min(420px, 100%); resize: vertical; }
+.mv-code-note { border: 1px solid var(--accent); border-radius: 6px; padding: 6px 10px; margin: 0 0 10px; font-size: 13px;
+  background: var(--selected); }
+.mv-warning { color: var(--warning, var(--error)); }
+.mv-c-tag { background: var(--accent); color: var(--panel); }
+.mv-type { font-size: 10px; padding: 0 5px; border-radius: 6px; background: var(--panel-2); color: var(--muted); white-space: nowrap; }
+.mv-slots { display: flex; flex-direction: column; gap: 4px; }
+.mv-unread summary { cursor: pointer; font-size: 12px; padding-top: 3px; }

@@ -8,6 +8,7 @@ import { documents, useDocuments } from "./documents.ts";
 import { ToolActive } from "./modules/active.ts";
 import { tools } from "./modules/registry.ts";
 import { readHash } from "./navigation.ts";
+import { setHiddenConstants } from "./modules/schema-form/form.tsx";
 import { BuildPanel } from "./shell/BuildPanel.tsx";
 import { DocumentView } from "./shell/DocumentView.tsx";
 import { EntryList } from "./shell/EntryList.tsx";
@@ -78,7 +79,12 @@ export function App() {
   }, []);
 
   const loadProject = useCallback(() => api.project().then(setInfo, (e: Error) => setLoadError(e.message)), []);
-  const loadConstants = useCallback(() => api.constants().then((c) => setConstants(new Map(Object.entries(c)))), []);
+  // (with the retired moves and abilities, which the pickers leave out: setHiddenConstants)
+  const loadConstants = useCallback(() => Promise.all([api.constants(), api.moves().catch(() => null), api.abilities().catch(() => null)])
+    .then(([c, moves, abilities]) => {
+      setHiddenConstants([...(moves?.retired ?? []), ...(abilities?.retired ?? [])]);
+      setConstants(new Map(Object.entries(c)));
+    }), []);
   const loadGit = useCallback(() => api.git().then(setGit, () => setGit(null)), []);
 
   useEffect(() => {

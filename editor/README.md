@@ -21,7 +21,7 @@ If Edge can't reach it, WSL isn't forwarding the port: check that `localhostForw
 ## What it does
 
 - **Specialty editors** at the top of the sidebar, under **Editors**: everything about one subject in one place. The
-  first are the **Encounter Editor**, **Graphics & Palettes**, the **Follower Editor**, the **Text Editor**, the **Script Editor**, the **Pokémon Editor**, the **Rig Editor**, the **Trainer Editor** and the **Weather Editor** (below). The per-file editors are under **Data files**, which folds away. A page
+  first are the **Encounter Editor**, **Graphics & Palettes**, the **Follower Editor**, the **Text Editor**, the **Script Editor**, the **Pokémon Editor**, the **Move Editor**, the **Ability Editor**, the **Rig Editor**, the **Trainer Editor** and the **Weather Editor** (below). The per-file editors are under **Data files**, which folds away. A page
   of a tool can be linked to: `http://localhost:7420/#tool/encounters`.
 - **Every kind of data in `res/`, found by itself.** Each data file names its schema in `"$schema"`; the editor groups
   the files by schema, so a new kind of data, a new field or a new file shows up without changing the editor.
@@ -515,6 +515,44 @@ armature bakes.
   the playhead.
 - **Preview:** the bones, from each joint toward its picture, with dashed links to the parent (or to the root's ring
   at the feet); the Bones toggle hides them. Ctrl+Z and Ctrl+Y undo across both files in one history.
+
+## The Move Editor and the Ability Editor
+
+Every move (`src/modules/moves/`, `res/moves/<move>/data.json`) and every ability (`src/modules/abilities/`,
+`res/abilities/<ability>.json`), the original game's and those Paper White 2 adds after Fusion Bolt and Teravolt
+(docs/paperwhite2/design/moves-and-abilities.md), tagged "added" (and "hidden" when retired, "C" when the hack's battle
+code has rules of its own for it). The list filters by name, number, type (moves) and "Added"; `#tool/moves?move=MOVE_X`
+and `#tool/abilities?ability=ABILITY_X` open on one. Save (Ctrl+S) checks each file with the build's validator.
+
+- **A move's page**, in headed sections: **Basics** (type, category, power, accuracy, PP, priority, target, each with
+  what it means); **Effect** (the quality, with its comment from `include/constants/battle.h`, and the fields it reads:
+  stat changes and the condition, those it doesn't read folded away; hits, critical hits, flinch, drain, heal; the
+  flags as checkboxes with their comments, Ballistic among them); **Battle** (where its rules beyond the data are: "This
+  one has battle code in src/paperwhite2/ov167/paperwhite2_battle.c" for Grav Apple, an original move's EventAdd
+  function, or "no handlers"; an added move's **Animation**, the original move whose animation and sounds it plays,
+  and **Works like**, the original move whose handlers it takes; the **AI effect**); **Text** (the name against its 12
+  characters, the description with its line breaks); **Who learns it**, read only: the species and forms by level,
+  TM or HM (from `TM_MOVE_LIST`), tutor and egg, or evolving by it, each a link to the Pokémon Editor, the trainers
+  (links to the Trainer Editor), the facility sets, other files and the code that name it.
+- **An ability's page:** **Battle** ("handlers: C" with the same note for Bulletproof, an original ability's EventAdd
+  function, or a warning that an added ability without handlers does nothing in battle yet; an added ability's
+  **Works like** and its **Mold Breaker** checkbox, `"mold_breaker_ignores"`, which generates the list
+  `src/ov169/btl_tables.c` checks; an original ability's place in `sMoldBreakerIgnoredAbilities`, read only);
+  **Text**; **Who has it**: the species and forms by slot (first, second, hidden), with links.
+- **+ Add move** / **+ Add ability** on the list's header: a name (12 characters, starting with a letter; the constant
+  and file follow from it), a template (any move or ability, or Blank) and, for a move, its animation, "works like"
+  and AI effect, each "As the template" unless chosen; for an ability, "works like" and Mold Breaker. A dry run says
+  what it will write and warns of what a copy doesn't get: rules the battle code checks by the template's ID (Levitate's
+  in `btl_client.c`), an added template's own C, handlers that tell their moves apart by ID (the pledges, refused).
+- An added one's **Added move** / **Added ability** card: its ID and constant, **Retire** / **Bring back** (`"retired":
+  true`: it keeps its ID and data for saved Pokémon, but every picker of the editor, the learnsets', trainers' and
+  species' abilities, leaves it out) and **Remove**, for the last added only and refused while anything in `res/` or
+  the code names it.
+- Adding, removing and retiring are `tools/paperwhite2/moves.py` and `abilities.py` (`json`, `uses`, `add`, `remove`,
+  `retire`, `unretire`) through `/api/moves` and `/api/abilities` (`/uses`, `/add`, `/remove`, `/retire`); they write
+  `res/` and `generated/` themselves, so the editor refuses while those files have unsaved edits. After a change of a
+  list the server rereads the constants and runs the build command's configure step again (build.ninja names each
+  move's folder). `/api/constant-notes?prefix=` gives a prefix's comments from `include/constants/`.
 
 ## The Trainer Editor
 
