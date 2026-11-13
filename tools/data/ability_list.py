@@ -9,9 +9,13 @@ hack's added abilities from FIRST_ADDED (165), each with res/abilities/<ability>
 species keep their ability in 8 bits, so the last is ABILITY_MAX (255). An added ability's JSON has the hack's field
 "handlers_like" (optional): an original ability whose battle handlers it takes, registered with its own ID, so its
 popup shows its own name (tools/paperwhite2/abilities.py, the generated PAPERWHITE2_ABILITY_HANDLERS_LIKE). An added
-ability without it does nothing in battle until the hack's battle code adds its row to sAbilityEventAddTable.
+ability without it does nothing in battle until the hack's battle code adds its row to sAbilityEventAddTable. Its
+"mold_breaker_ignores": true puts it in the generated PAPERWHITE2_ABILITY_MOLD_BREAKER_IGNORED, which Mold Breaker,
+Teravolt and Turboblaze ignore as they do the abilities of sMoldBreakerIgnoredAbilities; "retired": true hides it from
+the editor's pickers (tools/paperwhite2/abilities.py retire), and the build ignores it.
 """
 import json
+import re
 import sys
 from functools import lru_cache
 from pathlib import Path
@@ -28,7 +32,14 @@ FIRST_ADDED = 165
 ABILITY_MAX = 255
 # The longest original name ("Lightningrod", "Compoundeyes"), which the summary and the battle popup fit
 NAME_LENGTH = 12
-HACK_FIELDS = ("handlers_like",)
+# The hack's fields of an ability's JSON ("retired" only hides it from the editor's pickers)
+HACK_FIELDS = ("handlers_like", "mold_breaker_ignores", "retired")
+# The original abilities' handler tables, sAbilityEventAddTable's rows { ABILITY_X, EventAddX }
+HANDLERS_CODE = ROOT / "src" / "ov167" / "ability_handlers.c"
+HANDLERS_TABLE = "sAbilityEventAddTable[] = {"
+# The original abilities that Mold Breaker, Teravolt and Turboblaze ignore
+TABLES_CODE = ROOT / "src" / "ov169" / "btl_tables.c"
+MOLD_BREAKER_TABLE = "sMoldBreakerIgnoredAbilities[] = {"
 
 
 class AbilityListError(ValueError):
@@ -118,6 +129,45 @@ def added_table(root: Path = ABILITIES) -> list[tuple[str, int]]:
 def has_own_handlers(ability: str, code: Path = BATTLE_CODE) -> bool:
     """Whether the hack's battle code has the ability's own handlers (an #ifdef of its constant)."""
     return code.exists() and f"#ifdef {ability}\n" in code.read_text()
+
+
+def mold_breaker_ignored() -> list[str]:
+    """The added abilities that Mold Breaker ignores ("mold_breaker_ignores": true), in ID order."""
+    found = []
+    for ability in added_abilities():
+        flag = ability_data(ability).get("mold_breaker_ignores", False)
+        if not isinstance(flag, bool):
+            raise AbilityListError(f"{file_name(ability)}: mold_breaker_ignores is true or false")
+        if flag:
+            found.append(ability)
+    return found
+
+
+def table_constants(code: Path, table: str, pattern: str) -> list[str]:
+    """The constants a C table names, in its order."""
+    text = code.read_text()
+    start = text.index(table)
+    return re.findall(pattern, text[start:text.index("\n};", start)])
+
+
+def handler_rows(code: Path = HANDLERS_CODE) -> dict[str, str]:
+    """sAbilityEventAddTable's rows: each ability with handlers, and its EventAdd function (the hack's rows too)."""
+    return dict(table_constants(code, HANDLERS_TABLE, r"\{\s*(ABILITY_\w+)\s*,\s*(\w+)\s*\}"))
+
+
+def original_mold_breaker_ignored(code: Path = TABLES_CODE) -> set[str]:
+    """The original abilities in sMoldBreakerIgnoredAbilities."""
+    return set(table_constants(code, MOLD_BREAKER_TABLE, r"ABILITY_\w+"))
+
+
+def original_mold_breaker_ignored_count(ability: str, code: Path = TABLES_CODE) -> int:
+    """How many times sMoldBreakerIgnoredAbilities names an ability (Lightningrod, Storm Drain and Big Pecks twice)."""
+    return table_constants(code, MOLD_BREAKER_TABLE, r"ABILITY_\w+").count(ability)
+
+
+def is_retired(ability: str) -> bool:
+    """Whether an added ability is retired: hidden from the editor's pickers, keeping its ID and text."""
+    return ability_data(ability).get("retired") is True
 
 
 def main():

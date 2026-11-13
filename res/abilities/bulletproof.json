@@ -1,5 +1,6 @@
 {
     "$schema": "ability.schema.json",
     "name": "Bulletproof",
-    "description": "Shields the Pokémon from\nball and bomb moves."
+    "description": "Shields the Pokémon from\nball and bomb moves.",
+    "mold_breaker_ignores": true
 }

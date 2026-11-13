@@ -153,6 +153,23 @@ class MoveListTest(Lists):
         with self.assertRaisesRegex(move_list.MoveListError, "only for added moves"):
             move_list.added_table()
 
+    def test_retired_and_handlers_refused(self):
+        """"retired" is an added move's field; no move takes the handlers of one that compares its own ID."""
+        self.add_move("MOVE_OLD", {"name": "Old", "animation": "MOVE_POUND", "retired": True})
+        self.assertEqual(len(move_list.added_table()), 1)
+        self.assertTrue(move_list.is_retired("MOVE_OLD"))
+        self.add_move("MOVE_PLEDGE_COPY", {"name": "Pledge Copy", "animation": "MOVE_POUND",
+                                           "handlers_like": "MOVE_FIRE_PLEDGE"})
+        with self.assertRaisesRegex(move_list.MoveListError, "compare the move's own ID"):
+            move_list.added_table()
+
+    def test_handler_rows(self):
+        rows = move_list.handler_rows()
+        self.assertEqual(rows["MOVE_DRAGON_TAIL"], "EventAddCircleThrow")
+        self.assertNotIn("MOVE_POUND", rows)
+        for move in move_list.SUB_ID_COMPARED:
+            self.assertIn(move, rows)
+
     def test_list_checks(self):
         text = original_lines(ROOT / "generated" / "moves.txt", move_list.LAST_ORIGINAL)
         with self.assertRaisesRegex(move_list.MoveListError, "must be move 559"):
@@ -180,6 +197,26 @@ class AbilityListTest(Lists):
         self.assertIn("#define PAPERWHITE2_ABILITY_ADDED_COUNT 2\n", text)
         self.assertIn("#define PAPERWHITE2_ABILITY_HANDLERS_LIKE ABILITY_BULLETPROOF, ABILITY_INTIMIDATE\n", text)
 
+    def test_mold_breaker_list(self):
+        """The added abilities with "mold_breaker_ignores", in ID order, make the header's list; none, no list."""
+        self.assertIn("#define PAPERWHITE2_ABILITY_MOLD_BREAKER_IGNORED_COUNT 0\n", abilities.header())
+        self.assertNotIn("PAPERWHITE2_ABILITY_MOLD_BREAKER_IGNORED ", abilities.header())
+        self.add_ability("ABILITY_BULLETPROOF", {"name": "Bulletproof", "mold_breaker_ignores": True})
+        self.add_ability("ABILITY_SWEET_SYRUP", {"name": "Sweet Syrup", "handlers_like": "ABILITY_INTIMIDATE"})
+        self.add_ability("ABILITY_TEST_GUARD", {"name": "Test Guard", "handlers_like": "ABILITY_LEVITATE",
+                                                "mold_breaker_ignores": True, "retired": True})
+        self.assertEqual(ability_list.mold_breaker_ignored(), ["ABILITY_BULLETPROOF", "ABILITY_TEST_GUARD"])
+        text = abilities.header()
+        self.assertIn("#define PAPERWHITE2_ABILITY_MOLD_BREAKER_IGNORED_COUNT 2\n", text)
+        self.assertIn("#define PAPERWHITE2_ABILITY_MOLD_BREAKER_IGNORED ABILITY_BULLETPROOF, ABILITY_TEST_GUARD\n",
+                      text)
+        self.assertTrue(ability_list.is_retired("ABILITY_TEST_GUARD"))
+
+    def test_original_tables(self):
+        self.assertIn("ABILITY_SOUNDPROOF", ability_list.original_mold_breaker_ignored())
+        self.assertEqual(ability_list.original_mold_breaker_ignored_count("ABILITY_BIG_PECKS"), 2)
+        self.assertEqual(ability_list.handler_rows()["ABILITY_WHITE_SMOKE"], "EventAddClearBody")
+
     def test_refused(self):
         self.add_ability("ABILITY_SUPERSWEET_SYRUP", {"name": "Supersweet Syrup"})
         with self.assertRaisesRegex(ability_list.AbilityListError, "longer than 12"):
@@ -202,6 +239,8 @@ class RepositoryTest(unittest.TestCase):
         self.assertTrue(move_list.has_own_handlers("MOVE_GRAV_APPLE"))
         self.assertFalse(move_list.has_own_handlers("MOVE_APPLE_ACID"))
         self.assertTrue(ability_list.has_own_handlers("ABILITY_BULLETPROOF"))
+        # Bulletproof is the generated Mold Breaker list (it was hand-written in btl_tables.c until step 4)
+        self.assertEqual(ability_list.mold_breaker_ignored(), ["ABILITY_BULLETPROOF"])
 
     def test_ballistic_flag(self):
         """MOVE_FLAG_BALLISTIC packs as bit 14, on the ball and bomb moves only."""
@@ -222,6 +261,28 @@ class RepositoryTest(unittest.TestCase):
                          ["{0102:0} used\\nApple Acid!", "The wild {0102:0} used\\nApple Acid!",
                           "The foe's {0102:0} used\\nApple Acid!"])
         self.assertEqual(len(text_sources.expand("added_moves.used")), 3 * len(move_list.added_moves()))
+
+
+class EntriesTest(unittest.TestCase):
+    """The names and constants of Add move and Add ability (tools/paperwhite2/battle_entries.py)."""
+
+    def test_names(self):
+        from tools.paperwhite2 import battle_entries
+        self.assertEqual(battle_entries.constant_of("MOVE_", "U-turn"), "MOVE_U_TURN")
+        self.assertEqual(battle_entries.constant_of("MOVE_", "King's Shield"), "MOVE_KINGS_SHIELD")
+        self.assertEqual(battle_entries.constant_of("ABILITY_", "Sweet Syrup"), "ABILITY_SWEET_SYRUP")
+        self.assertEqual(battle_entries.check_name("Body Press", "move", 12), "Body Press")
+        for name, message in (("Supersweet Syrup", "16 characters"), (" Pad", "spaces"), ("9Lives", "start with"),
+                              ("Bad/Name", "start with"), ("", "a name")):
+            with self.subTest(name=name), self.assertRaisesRegex(battle_entries.EntryError, message):
+                battle_entries.check_name(name, "ability", 12)
+
+    def test_tm_moves(self):
+        from tools.paperwhite2 import battle_entries
+        tms = dict(battle_entries.tm_moves())
+        self.assertEqual(len(tms), 101)
+        self.assertEqual((tms["TM01"], tms["TM30"], tms["HM01"], tms["HM06"], tms["TM95"]),
+                         ("MOVE_HONE_CLAWS", "MOVE_SHADOW_BALL", "MOVE_CUT", "MOVE_DIVE", "MOVE_SNARL"))
 
 
 class EasyChatTest(unittest.TestCase):

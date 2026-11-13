@@ -5,6 +5,9 @@
 #include "constants/items.h"
 #include "constants/moves.h"
 #include "constants/species.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/abilities.h"
+#endif
 
 static BOOL U16List_Contains(u16 value, const u16 *list, u32 count);
 static BOOL IsUncallableMove(u16 move);
@@ -140,13 +143,14 @@ static const u16 sMoldBreakerIgnoredAbilities[] = {
     ABILITY_VOLT_ABSORB,  ABILITY_DRY_SKIN,     ABILITY_FLOWER_GIFT,  ABILITY_HEAVY_METAL,  ABILITY_LIGHT_METAL
 };
 
-#if defined(PAPERWHITE2) && defined(ABILITY_BULLETPROOF)
-// Paper White 2: the added abilities that Mold Breaker and its kin ignore
-static const u16 sMoldBreakerIgnoredAddedAbilities[] = { ABILITY_BULLETPROOF };
+#if defined(PAPERWHITE2) && PAPERWHITE2_ABILITY_MOLD_BREAKER_IGNORED_COUNT != 0
+// Paper White 2: the added abilities that Mold Breaker and its kin ignore, those whose JSON has
+// "mold_breaker_ignores" (tools/paperwhite2/abilities.py)
+static const u16 sMoldBreakerIgnoredAddedAbilities[] = { PAPERWHITE2_ABILITY_MOLD_BREAKER_IGNORED };
 #endif
 
 BOOL IsMoldBreakerIgnoredAbility(u16 ability) {
-#if defined(PAPERWHITE2) && defined(ABILITY_BULLETPROOF)
+#if defined(PAPERWHITE2) && PAPERWHITE2_ABILITY_MOLD_BREAKER_IGNORED_COUNT != 0
     if (U16List_Contains(ability, sMoldBreakerIgnoredAddedAbilities, NELEMS(sMoldBreakerIgnoredAddedAbilities))) {
         return TRUE;
     }
