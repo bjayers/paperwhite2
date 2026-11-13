@@ -7,7 +7,7 @@
 // Step 3 (an armature and curves) will be a source layer above this flat rig, baked into it on save; the views here
 // read and write only the flat rig, through the Editor of model.ts, so that layer can sit between them and the file.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Component, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { api, type RigCheck } from "../../api.ts";
 import { currentText, documents, useDocuments, useFileEpoch } from "../../documents.ts";
 import { navigate, useToolParams } from "../../navigation.ts";
@@ -65,7 +65,42 @@ export function RigEditor(_props: ToolProps) {
   const folder = params.get("folder");
   const side = (params.get("side") === "back" ? "back" : "front") as Side;
   if (!folder) return <Picker />;
-  return <RigPage key={`${folder}/${side}`} folder={folder} side={side} />;
+  return (
+    <RigErrorBoundary key={`${folder}/${side}`}>
+      <RigPage folder={folder} side={side} />
+    </RigErrorBoundary>
+  );
+}
+
+/** An error in a part of the Rig Editor shows here instead of blanking the page; its remembered view (the docked panel's
+ * height and view) can be reset, since a bad one would otherwise come back with every sprite. */
+class RigErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null as Error | null };
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+  render() {
+    const { error } = this.state;
+    if (!error) return this.props.children;
+    const reset = () => {
+      try {
+        window.localStorage.removeItem(DOCK_KEY);
+        window.localStorage.removeItem(DOCK_VIEW_KEY);
+      } catch {
+        // (blocked storage: nothing was remembered)
+      }
+      this.setState({ error: null });
+    };
+    return (
+      <div className="rig-card">
+        <h3>The Rig Editor hit an error</h3>
+        <p className="muted">Nothing was saved or changed. Resetting its view (the docked panel's height and view) and
+          trying again usually helps; if it happens again, the message below says where.</p>
+        <pre className="muted">{error.message}</pre>
+        <button onClick={reset}>Reset the view and try again</button>
+      </div>
+    );
+  }
 }
 
 // ---------------------------------------------------------------- Choosing a sprite

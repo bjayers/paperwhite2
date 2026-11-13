@@ -65,7 +65,8 @@ export function GraphEditor({ view }: { view: RigView }) {
   const shown = CHANNELS.filter((c) => (picked ?? new Set(used)).has(c));
   const step = !target || !source ? 6 : target.kind === "root" ? sequenceStep(source, target.sequence) : boneStep(source, view.rig, target.track);
 
-  const valueAt = (c: Channel, t: number) => channelAt(keys, segmentAt(keys, t), c, t, frames, loop);
+  // No keys (a flat rig, or no target yet): the notes below are shown, and nothing is drawn
+  const valueAt = (c: Channel, t: number) => (keys.length ? channelAt(keys, segmentAt(keys, t), c, t, frames, loop) : 0);
   const rangeOf = (c: Channel): Range => {
     let lo = Infinity, hi = -Infinity;
     const add = (v: number) => { lo = Math.min(lo, v); hi = Math.max(hi, v); };
