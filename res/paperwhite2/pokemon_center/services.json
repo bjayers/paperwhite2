@@ -115,6 +115,12 @@
                 "form": 1
             }
         ],
+        "never_tradeable": [
+            {
+                "species": "SPECIES_PICHU",
+                "form": 1
+            }
+        ],
         "other_evolution_levels": {
             "second_stage": 20,
             "third_stage": 30
@@ -921,7 +927,8 @@
             },
             "ability_slot": 0,
             "ball": "ITEM_POKE_BALL",
-            "held_item": "ITEM_NONE"
+            "held_item": "ITEM_ZAP_PLATE",
+            "gender": "female"
         }
     }
 }

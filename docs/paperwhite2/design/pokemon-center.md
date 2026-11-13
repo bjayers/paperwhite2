@@ -159,8 +159,9 @@ The field's list menus scroll (they keep a top row and a cursor row: `MsgBGPrint
   `CallPokeSelect`), **From a Box** (the PC Box in a mode that only picks: the Dream World's, with `Box2Param`'s new
   `wonderTrade` giving it the title "SELECT A POKÉMON TO TRADE", a Trade button, "Trade X?", and "This Pokémon can't
   go in the Wonder Trade." for the species it greys out, the excluded ones; Eggs are refused there as for the Dream
-  World), Cancel. The Pokémon picked is refused when it is an Egg, an excluded species ("far too special to trade"),
-  holds an item, or is the party's last Pokémon that can battle. Else the fee from the data (₽1,000), Yes/No, paid
+  World), Cancel. The Pokémon picked is refused when it is an Egg, a form the attendant never sends
+  (`never_tradeable`, the Spiky-eared Pichu: below), an excluded species ("far too special to trade"), holds an item,
+  or is the party's last Pokémon that can battle. Else the fee from the data (₽1,000), Yes/No, paid
   (too little money says so and takes nothing), "I'll send X through the tube", the attendant's walk to the tube
   (`SCRID_POKEMON_CENTER_ATTENDANT_TUBE`), and the in-game trade's scene (overlay 194's demo procs, as `fld_trade.c`
   runs them) with both Pokémon and the trainer's name. The new Pokémon takes the old one's party slot or Box
@@ -198,8 +199,9 @@ The field's list menus scroll (they keep a top row and a cursor row: `MsgBGPrint
   - Met in an in-game trade (`LOCATION_IN_GAME_TRADE`) at its level, today, in this game; its friendship the
     species' base. Obedience follows the game's rules for a Pokémon with another trainer's ID.
 - **The special reward** (the Spiky-eared Pichu's foundation): `special_reward` has the rate (2%), the trade that
-  guarantees it (30th), the species, form, level, four moves, nature, IVs, ability slot, ball and held item (form 1,
-  the Spiky-eared Pichu, whose art is a copy of Pichu's until the user draws its own), and `enabled` (false). When enabled and not yet received
+  guarantees it (30th), the species, form, level, four moves, nature, IVs, ability slot, ball, held item and gender
+  (form 1, the Spiky-eared Pichu, female, holding a Zap Plate: below), and `enabled` (true since its art went in,
+  2026-11-13). When enabled and not yet received
   (`EVENT_FLAG_WONDER_TRADE_SPECIAL_RECEIVED`, 0x938), each trade rolls it before the walk (`WONDER_TRADE_ROLL_SPECIAL`,
   guaranteed once the trade count reaches `guaranteed_at`); then the attendant says "Huh? That's odd... Something
   strange just came through the tube!" after the walk, the trade's scene shows the player as the other side, and "X...
@@ -230,6 +232,28 @@ The field's list menus scroll (they keep a top row and a cursor row: `MsgBGPrint
   the user. Trading away the Pokémon that follows the player leaves no follower until the Following Pokémon picks one
   again (its own rule when the followed Pokémon leaves the party). Received Pokémon come in random forms now (the
   follow-ups below). The Pokédex keeps languages only up to Arceus, as the game does.
+
+#### The Spiky-eared Pichu: female, its Zap Plate, and kept back (2026-11-13)
+
+- **As in HeartGold and SoulSilver**, it is always female and holds a Zap Plate (`ITEM_ZAP_PLATE`, 300, the Electric
+  plate). `special_reward.gender` (`male`, `female` or `random`, the last by the species' ratio) is
+  `WONDER_TRADE_SPECIAL_SEX`, which `MakeSpecialPkm` passes to `PML_GenPID` as its sex: the game's own PID with a fixed
+  sex (its low byte below the form's ratio for a female, as `PML_PkmGetSex` reads it), then `PID_RARE_NEVER` as before,
+  whose shiny fix flips bit 28 and so keeps the sex. The generator refuses the other sex of a species that is always
+  one sex or none. `held_item` is `ITEM_ZAP_PLATE`, set on the Pokémon before the trade's scene, which keeps it.
+- **Never sent back:** `wonder_trade.never_tradeable` lists forms (species and form) the attendant refuses with her own
+  words, `WONDER_TRADE_CHECK_NEVER_TRADEABLE` (6), checked after the Egg's and before the excluded species' and the
+  held item's, so the Pichu holding its plate gets them; it holds Pichu form 1. The PC Box still offers it (it greys
+  out by species, and Pichu's first form can go). Her words (`Global10100_Text_WonderTradeNeverTradeable`): it is the
+  Pokémon that came through the tube that strange day; the tube reached into another time and it slipped through;
+  sending it again could be dangerous; it is meant to stay with the player.
+- **Tested** in py-desmume on a copy of the user's save with the real build (the trade count set to 29 in memory, so
+  the 30th trade gave it): from the party (Flaaffy sent) and from a Box, `PML_GenPID` was called with the player's ID,
+  Pichu, form 1 and sex 1 (female); the received Pichu was form 1, female (the stored sex and the PID's low byte, 17
+  and 31, below 127), held item 300, the player's OT, TID and SID, Naughty, the data's IVs and moves, not shiny, its
+  checksum valid, written to the party slot and to the Box position. Offered again from the party and from the Box: the
+  new words, no trade started, money and trade count unchanged, the Pichu and its plate still there. The same Pichu
+  made form 0 without an item got the fee question.
 
 #### Item odds in practice
 

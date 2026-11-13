@@ -2,6 +2,22 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-13: the Spiky-eared Pichu: female, a Zap Plate, and never sent back (ROM session, on a branch)
+
+design/pokemon-center.md's "The Spiky-eared Pichu: female, its Zap Plate, and kept back" has the details.
+
+- **Female with a Zap Plate**, as in HeartGold and SoulSilver: `special_reward.gender` (`male`/`female`/`random`, new in
+  the schema and generator, `WONDER_TRADE_SPECIAL_SEX`) goes to `PML_GenPID`'s sex, so the PID agrees with the sex;
+  still never shiny. `held_item` is `ITEM_ZAP_PLATE`.
+- **The easter egg:** `wonder_trade.never_tradeable` (species and form; Pichu form 1) gives
+  `WONDER_TRADE_CHECK_NEVER_TRADEABLE`, checked before the excluded species and the held item, and the attendant's new
+  lines `Global10100_Text_WonderTradeNeverTradeable` (the Pichu came from another time through the tube; sending it again
+  could be dangerous; it should stay with the player).
+- **Proof** in py-desmume on a copy of the user's save, real build: the 30th trade gave a female form-1 Pichu (PID low
+  byte below 127) holding the Zap Plate, the player's OT/TID/SID, not shiny, checksum valid, from the party and from a
+  Box; offered back from both, the new lines and nothing taken; a form-0 Pichu still gets the fee question. Shots in
+  scratchpad `spiky/shots/`.
+
 ## 2026-11-13: editor follow-ups: the art zip's icon and follower, Follower cards, Don't mirror (ROM session, on a branch)
 
 - **Export art (.zip)** also has the party/box icon (`icon.png`, a 2x preview, `icon_palette.pal` and the README's note

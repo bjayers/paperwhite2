@@ -77,7 +77,7 @@
     },
     "wonder_trade": {
       "type": "object", "additionalProperties": false,
-      "required": [ "fee", "level_spread", "excluded_species", "excluded_forms", "other_evolution_levels", "forms", "languages", "female_trainer_percent", "shiny_one_in", "hidden_ability_percent", "perfect_ivs_percent", "perfect_iv_count", "pokerus_percent", "nickname_percent", "balls", "held_item_percent", "item_tiers", "special_reward" ],
+      "required": [ "fee", "level_spread", "excluded_species", "excluded_forms", "never_tradeable", "other_evolution_levels", "forms", "languages", "female_trainer_percent", "shiny_one_in", "hidden_ability_percent", "perfect_ivs_percent", "perfect_iv_count", "pokerus_percent", "nickname_percent", "balls", "held_item_percent", "item_tiers", "special_reward" ],
       "description": "The Wonder Trade (the middle counter, res/field/scripts/global_10100.s): a party or Box Pokémon traded for one this generates (src/paperwhite2/ov012/paperwhite2_wonder_trade.c)",
       "properties": {
         "fee": { "$ref": "#/$defs/money" },
@@ -94,6 +94,17 @@
             "properties": {
               "species": { "type": "string", "x-constant": "SPECIES_" },
               "form": { "type": "integer", "minimum": 1, "maximum": 31 }
+            }
+          }
+        },
+        "never_tradeable": {
+          "type": "array", "maxItems": 64,
+          "description": "The forms the attendant refuses to send, with her own words (Global10100_Text_WonderTradeNeverTradeable), checked before an Egg's, an excluded species' or a held item's refusal: the Spiky-eared Pichu, which came through the tube from another time. The PC Box still offers them, since the species' other forms can go",
+          "items": {
+            "type": "object", "additionalProperties": false, "required": [ "species", "form" ],
+            "properties": {
+              "species": { "type": "string", "x-constant": "SPECIES_" },
+              "form": { "type": "integer", "minimum": 0, "maximum": 31 }
             }
           }
         },
@@ -179,7 +190,7 @@
         },
         "special_reward": {
           "type": "object", "additionalProperties": false,
-          "required": [ "enabled", "percent", "guaranteed_at", "species", "form", "level", "moves", "nature", "ivs", "ability_slot", "ball", "held_item" ],
+          "required": [ "enabled", "percent", "guaranteed_at", "species", "form", "level", "moves", "nature", "ivs", "ability_slot", "ball", "held_item", "gender" ],
           "description": "The one-time special reward (the Spiky-eared Pichu, Pichu's form 1; on since its art went in, 2026-11-13): a fixed Pokémon, never shiny, with the player as its trainer, received once (EVENT_FLAG_WONDER_TRADE_SPECIAL_RECEIVED) with the attendant's own dialogue",
           "properties": {
             "enabled": { "type": "boolean" },
@@ -200,7 +211,8 @@
             },
             "ability_slot": { "enum": [ 0, 1, 2 ], "description": "The first normal ability, the second, or 2 for the hidden one" },
             "ball": { "type": "string", "x-constant": "ITEM_" },
-            "held_item": { "type": "string", "x-constant": "ITEM_" }
+            "held_item": { "type": "string", "x-constant": "ITEM_", "description": "It keeps it through the trade's scene (the Spiky-eared Pichu's Zap Plate, as in HeartGold and SoulSilver)" },
+            "gender": { "enum": [ "male", "female", "random" ], "description": "Its sex, which its PID gives (PML_GenPID's sex): random goes by the species' ratio. A species that is always one sex or none is that whatever this says (the Spiky-eared Pichu is female, as in HeartGold and SoulSilver)" }
           }
         }
       }
