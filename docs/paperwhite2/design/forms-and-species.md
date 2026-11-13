@@ -407,7 +407,8 @@ Data (`res/`):
   form uses Pichu's record.
 - [x] `res/pokemon/pichu/form_1/`: `front.png`, `back.png`, `front_single.png`, `back_single.png`, and female
   variants only if the form has them. Also `normal.pal`, `shiny.pal`, `icon.png`, the cells, animations, multi-cells,
-  multi-animations and `*_info.bin` (copied from Pichu, then redrawn).
+  multi-animations and `*_info.bin` (copied from Pichu, then redrawn; since 2026-11-12 the rig is `front_rig.json`
+  and `back_rig.json`, battle-sprites.md section 17).
 - [x] The form name: Pichu's form 0 name and "Spiky-eared" in `res/text/system/pokedex_detail_form.txt`, at the slot
   the rebuilt chain gives it.
 - [x] `res/field/actors/followers/pichu_form_1[_female][_shiny]/` with `"form": 1`.

@@ -2,6 +2,29 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-12: battle sprites, the rig as source (ROM session)
+
+The rig editor plan's step 1 (design/battle-sprites.md sections 16 and 17):
+
+- Every battle sprite side in res/pokemon (1,506: species, forms, eggs, Pokéstar, the Substitute, the Spiky-eared
+  Pichu) is now `front_rig.json` / `back_rig.json` beside its sheet (compact JSON layout, `$schema` first:
+  `res/pokemon/battle_sprite_rig.schema.json`, moved from tools/). The 7,530 binary rig files are gone from res/;
+  `pokemon_graphics.py` builds them from the JSON at build time (checked against the schema and `mcss_rig.check`).
+  The musical's `musical/` folders keep their own files where they differ, and take the rest from the rig.
+- `mcss_rig.py`: `check`, `files`, `dump` (from five files), `convert` (what made the change, each side proven byte
+  for byte first), `roundtrip` (JSON -> files -> JSON, 1,506 of 1,506). `datajson.dumps_compact` writes the layout
+  the editor knows. Readers moved to the JSON: `mcss.read_rig` (battle_sprite.py), `pokedex_sprites.py`,
+  `pokemon_form.py` (Add form rewrites the copied rig's `$schema` path), `pokemon_graphics.py extract`.
+- **Byte-identical:** `--hack` ROM SHA1 unchanged (`57cd9af0...`), `a/0/0/4`, `a/0/0/7`, `a/0/5/1` byte for byte; the
+  plain build's five graphics archives byte for byte (its `a/0/0/4` check failed before too: the hack's form group
+  and two edited shiny palettes).
+- Tests: `test_mcss_rig` + `test_battle_sprite` (23), editor typecheck, `npm test` (81), vite build.
+- **Size:** res/pokemon 28.1 MB -> 71.3 MB on disk (the rig JSON is 47.6 MB, 11 times the binaries' 4.4 MB); git's
+  compressed size about the same (2.74 MB against 2.86 MB). Section 17.3 proposes a compact form (keys as rows, OBJs
+  only where not generated: about 19 MB) if the user wants it.
+
+Next: step 2, the editor's flat rig editing (section 16), on `read_side` / `write_side` and the JSON files.
+
 ## 2026-11-12: battle sprite rig writer and JSON form (ROM session)
 
 The foundation of the approved rig editor (design/battle-sprites.md section 15), no editor UI yet:

@@ -400,7 +400,10 @@ Forms (`FormPage.tsx`, docs/paperwhite2/design/forms-and-species.md section 11.6
   errors, warnings (pixels outside the pieces, colours changed in one palette only) and the files it changes, and a
   preview of the new art animated on the rig, normal and shiny, with the stills, the sheets (changed pixels outside the
   pieces in red) and the palettes; **Apply** writes the res/ files. **Make stills from the sheets** draws the 96x96
-  stills from the first frame. The rig itself stays; editing it is the rig editor's, later.
+  stills from the first frame. The rig itself stays; editing it is the rig editor's, later. Each side's rig is
+  `front_rig.json` / `back_rig.json` beside its sheet (battle-sprites.md section 17), which the build turns into the
+  game's five files; until the rig editor, it shows under Data files as "A battle sprite's rig" (1,506 files, the
+  compact JSON layout, written back byte for byte).
   `tools/paperwhite2/battle_sprite.py` (`export`, `check`, `import`) does the work, through `GET /api/battle-sprite/export`
   and `POST /api/battle-sprite/check` (with `write` to import); it writes res/ itself, so the card refuses while the
   group's files have unsaved edits.

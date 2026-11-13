@@ -22,7 +22,8 @@ measures every sprite in `res/pokemon/`, renders and dumps in `out/`). They are 
   the image and where they go. The game draws from the bin file's quads; the cells' OBJs are not drawn.
 - A species, form or egg is a **group of 20 files** in `a/0/0/4` (`ARCID_POKEGRA`); `GetPokemonDataIDBase`
   (`pokegra.c`) picks the group. Female and shiny change only the image or the palette, never the rig.
-- `res/pokemon/<species>/` holds all of it today: the images as indexed PNGs and the Nitro files as they are stored.
+- `res/pokemon/<species>/` holds all of it: the images as indexed PNGs and, since 2026-11-12, each side's rig as one
+  JSON file (`front_rig.json`, `back_rig.json`), which the build turns into the five files byte for byte (section 17).
   The packer (`tools/data/pokemon_graphics.py`) can replace any existing sprite, rig included, and since 2026-11-12
   appends the hack's own form groups (section 6); a new species still needs a base of its own.
 - Rules for new art (section 5): one 256×128 sheet per side, 16 colours (index 0 transparent) shared by front and
@@ -69,15 +70,17 @@ Then the side adds 0 (front) or 9 (`POKEGRA_FILE_BACK`), and the files are `GetP
 | 1 / 10 | female still, or empty | `front_single_female.png` | same |
 | 2 / 11 | 256×128 sheet, linear (bitmap) characters, LZ11 | `front.png` | `GetPokemonCharacterDataNo`, MCSS |
 | 3 / 12 | female sheet, or empty | `front_female.png` | same |
-| 4 / 13 | cells `NCER` | `front_cells.ncer` | `GetPokemonCellsDataNo` |
-| 5 / 14 | cell animations `NANR`, LZ11 | `front_animations.nanr.lz11` | `GetPokemonCellAnimeDataNo` |
-| 6 / 15 | multi-cells `NMCR` | `front_multi_cells.nmcr` | `GetPokemonMultiCellsDataNo` |
-| 7 / 16 | multi-cell animation `NMAR` | `front_multi_animations.nmar` | `GetPokemonMultiCellAnimeDataNo` |
-| 8 / 17 | MCSS bin file | `front_info.bin` | `GetPokemonBinFileDataNo` |
+| 4 / 13 | cells `NCER` | `front_rig.json` (built as `front_cells.ncer`) | `GetPokemonCellsDataNo` |
+| 5 / 14 | cell animations `NANR`, LZ11 | `front_rig.json` (`front_animations.nanr.lz11`) | `GetPokemonCellAnimeDataNo` |
+| 6 / 15 | multi-cells `NMCR` | `front_rig.json` (`front_multi_cells.nmcr`) | `GetPokemonMultiCellsDataNo` |
+| 7 / 16 | multi-cell animation `NMAR` | `front_rig.json` (`front_multi_animations.nmar`) | `GetPokemonMultiCellAnimeDataNo` |
+| 8 / 17 | MCSS bin file | `front_rig.json` (`front_info.bin`) | `GetPokemonBinFileDataNo` |
 | 18 | normal palette `NCLR`, 16 colours | `normal.pal` | `GetPokemonPaletteDataNo` |
 | 19 | shiny palette | `shiny.pal` | same, + shiny |
 
-Pichu is group 172, members 3,440 – 3,459 (sizes verified in `extract/w2_us/files/a/0/0/4`).
+Pichu is group 172, members 3,440 – 3,459 (sizes verified in `extract/w2_us/files/a/0/0/4`). The rig's five members
+of a side are built from its `<side>_rig.json` (section 17); the file names in parentheses are the members' as
+`mcss_rig.py files` writes them, and as the rest of this document calls them.
 
 - **Sex** moves only the characters (slots +1), and only when the female file isn't empty
   (`GFL_ArcSysGetDataLength`): a female sprite is a second image on the **same rig and palette**. 96 species have
@@ -532,20 +535,13 @@ are the editor's "Pictures" step for a fixed layout. The writer is built (sectio
 ## 15. Built (2026-11-12): the rig writer and its JSON form
 
 The foundation of the rig editor: a side's rig as one flat JSON object that holds **everything** its five files hold,
-and a writer that turns it back into the files byte for byte. `tools/paperwhite2/mcss_rig.py` (stdlib only):
+and a writer that turns it back into the files byte for byte. `tools/paperwhite2/mcss_rig.py` (stdlib only). Since
+section 17 the JSON is the source in res/ and the commands are those of section 17.1; when this section was built,
+`dump` read a side's five files in res/ and `write` wrote them, and the schema was `tools/paperwhite2/`'s.
 
-```
-mcss_rig.py dump FOLDER front|back            the side's rig as JSON
-mcss_rig.py write RIG.json FOLDER front|back  checks it, then writes the side's files that change
-mcss_rig.py check FOLDER [front|back]         the checks (section 15.5)
-mcss_rig.py roundtrip [res/pokemon]           every side: files -> rig -> JSON -> rig -> files, compared
-```
-
-In Python: `read_side`, `rig_from_files`, `files_from_rig`, `write_side`, `check`, `generate_objs`, `compress_lz11`,
-`dumps` (the JSON with anything that fits on a line on one, for readable diffs). The schema is
-`tools/paperwhite2/mcss_rig.schema.json`; it moves to `res/pokemon/` with the rigs once the source format is decided.
-`mcss.read_rig` and `mcss.render` stay the reader and renderer of the files (a rig written by the writer reads and
-draws the same, tested).
+In Python: `rig_from_files`, `files_from_rig`, `check`, `generate_objs`, `compress_lz11`, and (section 17)
+`read_side`, `write_side`, `loads`, `dumps`. `mcss.read_rig` and `mcss.render` read and draw the files the rig gives
+(a rig written by the writer reads and draws the same, tested).
 
 ### 15.1 Proven
 
@@ -716,8 +712,7 @@ original's or the nearest similar picture's.
   what changes); `mcss.render` previews it after a write (or from the files `files_from_rig` returns).
 - The armature and curves sit above this: an armature bakes to each part's track (SRT keys every 6 frames), the
   parts' pivots and layer order are a pose's parts, pictures are rectangles drawn over the sheet.
-- Open: where the rig JSON lives in res/ (beside the sheet, as the packer's source, with the five files built from
-  it, or written into res/ beside the Nitro files); whether a baked-heavy sprite works on the summary and Pokédex
+- Decided (section 17): the rig JSON lives in res/ beside the sheet, as the packer's source. Open: whether a baked-heavy sprite works on the summary and Pokédex
   screens (test a 100 KB rig there).
 
 ## 16. The rig editor: the user's decisions and the plan (2026-11-12)
@@ -740,12 +735,97 @@ The user works in Blender and Aseprite and wants the result to look and feel as 
 - Existing sprites open as flat rigs (no parents, their held keys as they are); the user can parent and re-key them.
 
 The plan:
-1. **The rig as source**: every side's flat rig JSON in res/ beside its sheet, the packer writing the five files from
-   it at build time (byte-identical, as section 15 proves), and the five binary files leave res/ (source only, as the
-   user wants, and one thing for the editor to edit).
+1. **The rig as source** (built, section 17): every side's flat rig JSON in res/ beside its sheet, the packer
+   writing the five files from it at build time (byte-identical, as section 15 proves), and the five binary files
+   leave res/ (source only, as the user wants, and one thing for the editor to edit).
 2. **The editor's flat rig editing**: the sheet with each picture's rectangles (drag, resize, add a second), pivots,
    parts' layer order, the per-part keyframe timeline (picture, move, rotation, scale, frames), sequences (stay, stop),
    idle parts, the live preview (a JavaScript port of `mcss.render`) with the battle's pauses, normal and shiny, and
    the checks; Copy front to back.
 3. **The armature and curves**: a source layer above the flat rig (parents, key poses, curves, the bake step) baked
    into the flat rig on save, with the shear warning.
+
+## 17. Built (2026-11-12): the rig as source
+
+Section 16's step 1. Each battle sprite side's rig is its source in res/: `<side>_rig.json` beside the side's sheet, in
+every rig folder of `res/pokemon` (the species, forms' `form_<n>/`, `egg/`, `manaphy/egg/`, the Pokéstar groups,
+`shared/substitute/` and the Spiky-eared Pichu's `pichu/form_1/`): 1,506 files. The five binary files of each side
+(`*_cells.ncer`, `*_animations.nanr.lz11`, `*_multi_cells.nmcr`, `*_multi_animations.nmar`, `*_info.bin`) are gone
+from res/; `tools/data/pokemon_graphics.py` builds them from the JSON at build time (`mcss_rig.files_from_rig`, after
+the schema's and `mcss_rig.check`'s errors), for the original groups and the hack's appended form groups alike.
+
+- **The file:** the flat rig of section 15.2 with `"$schema"` first (`res/pokemon/battle_sprite_rig.schema.json`,
+  relative: `../battle_sprite_rig.schema.json` in a species' folder, `../../` in a form's), in the **compact layout**
+  (`datajson.dumps_compact`, two-space indents, 120 columns: anything below the top that fits on a line on one, so a
+  key, a rectangle, an OBJ or a part a line). The editor knows the layout (`shared/json.ts`'s compact layout at
+  indent 2) and writes the files back byte for byte (`tests/format.test.ts`); its validator and the build's accept
+  them (`tests/validate.test.ts`), and its generic data list shows them as "A battle sprite's rig".
+- **The schema** moved from `tools/paperwhite2/mcss_rig.schema.json` to `res/pokemon/`, written in the keywords
+  both validators know (`enum` for `const`, `anyOf` for `oneOf`, a `$defs` entry for each key field).
+- **The musical's sprites** (`<group>/musical/`, archive `a/0/5/1`) keep the five files where they differ from the
+  battle sprite's (1,426 sides have an `_info.bin` of their own, for example); the members they share are built from
+  the battle sprite's rig, as the PNGs and palettes they share are taken from the battle sprite's folder. They aren't
+  rigs the editor edits: most hold only some of the five files, the rest being the battle sprite's.
+- **Female sheets** share the side's rig, as before.
+
+### 17.1 Commands
+
+```
+mcss_rig.py check FOLDER [front|back]              the checks (section 15.5) of a folder's rigs
+mcss_rig.py files FOLDER front|back OUTPUT         the side's five files, as the build makes them, into OUTPUT
+mcss_rig.py dump FILES front|back                  the rig of a folder of five files (an extracted group's) as JSON
+mcss_rig.py convert [res/pokemon]                  each side's five files to its rig JSON; removes the files
+mcss_rig.py roundtrip [res/pokemon]                every side: JSON -> rig -> files -> rig -> JSON, compared
+```
+
+`read_side(folder, side)` reads a rig (without its `$schema`), `write_side(rig, folder, side)` checks it and writes
+the JSON if it changes, `dumps(rig, folder)` gives the file's text, `files_from_rig(rig, compress=False)` the files
+with the NANR uncompressed for a reader. `convert` made the res/ change: it wrote each side's JSON only after proving
+that it gives the side's five files back byte for byte, then removed them. `pokemon_graphics.py extract` writes rigs.
+
+The readers read the JSON: `mcss.read_rig` (through the files the rig gives; `battle_sprite.py`'s export, check,
+import and preview), `pokedex_sprites.py` (the Pokédex Info page's middles, in the hack's build), `pokemon_form.py`
+(Add form copies a rig, its `$schema` rewritten for the form's folder; Remove form removes the folder). The editor's
+Battle sprite card runs `battle_sprite.py` and touches no rig file itself.
+
+### 17.2 Proven
+
+- **Byte-identical:** the `--hack` ROM's SHA1 is the one of the commit before (`57cd9af0dfab0e720e9d82e3e12298a1c1cd904d`),
+  with `a/0/0/4`, `a/0/0/7` and `a/0/5/1` byte for byte; the plain matching build's five graphics archives
+  (`a/0/0/4`, `a/0/0/7`, `a/0/5/1`, `a/1/6/5`, `a/2/2/9`) byte for byte the commit before's. Its `a/0/0/4` check
+  fails as it did before (the hack's appended form group and two edited shiny palettes, members 12,879 and 12,899);
+  every original rig member equals the ROM's.
+- `mcss_rig.py roundtrip`: 1,506 of 1,506 sides (about 20 seconds). `pokemon_graphics.py`'s export from White 2's
+  archives writes the same rigs (all but the `$schema` line, which names the schema from where it writes) and the
+  same musical files as res/ has.
+- Tests: `python3 -m unittest tools.paperwhite2.test_mcss_rig tools.paperwhite2.test_battle_sprite` (23); the
+  rig test reads the JSON of 13 groups chosen for their oddities through the files and back to the same text, checks
+  the built files against the original archive where `extract/w2_us` is (skipped elsewhere), validates with the
+  build's validator, and writes only a changed rig. The editor's `npm run typecheck`, `npm test` (81) and `npx vite
+  build` pass. Add form on Vulpix copied the rigs with `../../` schema paths; Remove form left res/ as it was.
+
+### 17.3 Size
+
+| | Before | After |
+| --- | --- | --- |
+| `res/pokemon` (bytes on disk, apparent) | 28,071,460 | 71,280,615 |
+| The rig sources (1,506 sides) | 4,380,367 (7,530 binary files) | 47,576,230 (1,506 JSON files) |
+| zlib-compressed, as git stores them | 2,863,061 | 2,739,025 |
+
+The checkout grows by about 43 MB (the JSON is 11 times the binaries), but the repository barely: git compresses
+the JSON a little smaller than the binaries (and the binaries stay in the history). 80% of the JSON is the tracks'
+keys (412,031 keys, about 90 bytes a line; 299,566 of them SRT keys, 69,699 of those holding no rotation, scale or
+move), 12% the pictures (8% their OBJs), 4% each the poses and the sequences.
+
+A more compact layout, if wanted (a format change, so not done here; each a few lines in `mcss_rig.py` and the
+schema, and the round trip proves it):
+
+1. **Keys as rows:** a track's keys as arrays in a fixed order by its `key_type` (`[picture, frames]`,
+   `[picture, frames, rotation, sx, sy, x, y]`, `[picture, frames, x, y]`), about 30 bytes a key instead of 90: the
+   JSON would be about 22 MB. Less readable as text, but the editor shows keys in its timeline, not as JSON.
+2. **Leave out the defaults:** rotation 0, scale [1, 1] and move [0, 0] left out of an SRT key (the writer puts them
+   back), about 3 MB less, keeping the named fields.
+3. **OBJs only where they aren't generated:** `generate_objs` gives 96.5% of the pictures' OBJs; storing `objs` only
+   where they differ from it saves most of the 3.6 MB of OBJs.
+
+1 and 3 together would bring the JSON to about 19 MB (4 times the binaries).

@@ -64,7 +64,7 @@ which documents the format and can write them again.
 | `a/0/1/2` | `res/field/zones/` (JSON) | Zone headers | `tools/data/zone_data.py` |
 | `a/0/1/6`, `a/0/1/8`, `a/0/1/9`, `a/0/2/0`, `a/1/2/4` | `res/pokemon/` (JSON) | Species data, level-up moves, evolutions, baby species, egg moves | `tools/data/species_data.py` |
 | `a/0/1/7` | `res/pokemon/growth_rates.csv` | Experience tables of the growth rates | `tools/data/species_data.py` |
-| `a/0/0/4`, `a/0/0/7`, `a/0/5/1`, `a/1/6/5`, `a/2/2/9` | `res/pokemon/<species>/` (PNG, palette, Nitro animation files) | Battle sprites, icons, musical sprites, and footprints | `tools/data/pokemon_graphics.py` |
+| `a/0/0/4`, `a/0/0/7`, `a/0/5/1`, `a/1/6/5`, `a/2/2/9` | `res/pokemon/<species>/` (PNG, palette, battle sprite rig JSON, Nitro animation files) | Battle sprites, icons, musical sprites, and footprints | `tools/data/pokemon_graphics.py` |
 | `a/1/9/1` | `res/pokemon/<species>/data.json` (`cry_volume`) | The Pokémon cries' playback volumes | `tools/data/pokemon_cries.py` |
 | `swan_sound_data.sdat` | `res/sound/`, `res/pokemon/<species>/cry.wav` | The sound archive: sequences, banks, wave archives, players, groups, streams and the Pokémon cries | `tools/data/sound_data.py` |
 | `a/0/2/1` | `res/moves/` (JSON) | Move data | `tools/data/move_data.py` |
@@ -355,9 +355,13 @@ per-species organization used by [pokeemerald expansion](https://github.com/rh-h
 `front.png` and `back.png` are 256×128 linear texture atlases for the animated sprite; their pieces are positioned
 by the Nitro cell and multi-cell animation data. Optional female variants have `_female` in their names. The indexed PNGs carry the
 original 4-bit color indices, while `normal.pal` and `shiny.pal` are the palettes used by the game. Edit palette
-colors in the JASC `.pal` file; the PNG palette is for viewing in an image editor. The game assembles characters
-into sprites using the adjacent `*_cells.ncer` and `*_animations.nanr.lz11` Nitro resources, so a raw PNG sheet can look
-fragmented. Those resources are preserved as separate source files and can be replaced with edited Nitro data.
+colors in the JASC `.pal` file; the PNG palette is for viewing in an image editor. The game assembles the sheet's
+pieces into the sprite by its **rig**, so a raw PNG sheet can look fragmented: `front_rig.json` and `back_rig.json`,
+each side's pictures (rectangles of the sheet), tracks of keys, poses of parts and sequences, in the compact JSON layout
+with `res/pokemon/battle_sprite_rig.schema.json` as their schema. The packer builds each side's five MCSS files from
+it, byte for byte for an unchanged rig (cells `NCER`, cell animations `NANR`, LZ11, multi-cells `NMCR`, multi-cell
+animations `NMAR` and MCSS's bin file; `tools/paperwhite2/mcss_rig.py`, which also checks a rig and turns five files
+back into one, and `docs/paperwhite2/design/battle-sprites.md` sections 15 and 17). The female sheets share the rig.
 
 `icon.png` is a 32×64 two-frame icon, using a bank in
 `res/pokemon/shared/icon_palettes.pal` (the PC boxes use `icon_palettes_box.pal`); the code in
@@ -366,7 +370,8 @@ fragmented. Those resources are preserved as separate source files and can be re
 `res/pokemon/shared/footprint_palette.pal`, with the cells and animations of `shared/footprint_*_old` for the species
 up to Arceus and `shared/footprint_*` for the rest (`pokedex_info.c`).
 The older musical sprite archive has its own `musical/` subfolder. Files identical to the regular sprite are omitted
-there; the packer uses the regular file for those entries, so an edit of one shows in both. Sprite forms have
+there; the packer uses the regular file for those entries (a cell or animation file it builds from the regular
+sprite's rig), so an edit of one shows in both. The musical sprites' own cells and animations stay Nitro files. Sprite forms have
 `form_<n>/` folders under their species, numbered by the forms' `sprite_offset` (`GetPokemonDataIDBase`); the musical
 sprites' follow Black and White's species data instead (`MusicalMcss_GetDataIDBase`), so a form's `musical/` is where
 it has one. `egg/` holds the egg's sprites and icon, which every egg shows, and `species_icon.png`, the icon file of
