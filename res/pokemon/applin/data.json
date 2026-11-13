@@ -41,7 +41,7 @@
     "growth_rate": "GROWTH_ERRATIC",
     "egg_groups": [ "EGG_GROUP_GRASS", "EGG_GROUP_DRAGON" ],
     "abilities": [ "ABILITY_HARVEST", "ABILITY_GLUTTONY" ],
-    "hidden_ability": "ABILITY_SOUNDPROOF",
+    "hidden_ability": "ABILITY_BULLETPROOF",
     "flee_rate": 0,
     "forms": {
         "count": 1,

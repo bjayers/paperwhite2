@@ -66,7 +66,7 @@
             [ 20, "MOVE_DRAGON_BREATH" ],
             [ 24, "MOVE_DRAGON_DANCE" ],
             [ 28, "MOVE_DRAGON_PULSE" ],
-            [ 32, "MOVE_SEED_BOMB" ],
+            [ 32, "MOVE_GRAV_APPLE" ],
             [ 36, "MOVE_IRON_DEFENSE" ],
             [ 40, "MOVE_FLY" ],
             [ 44, "MOVE_DRAGON_RUSH" ]
