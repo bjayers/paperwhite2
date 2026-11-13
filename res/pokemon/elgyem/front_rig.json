@@ -1,0 +1,414 @@
+{
+  "$schema": "../battle_sprite_rig.schema.json",
+  "format": 1,
+  "side": "front",
+  "box": { "width": 40, "height": 48, "x": -4, "y": -8 },
+  "stop_flags": 1,
+  "idle_parts": [],
+  "pictures": [
+    {
+      "rectangles": [
+        { "sheet": [ 24, 0 ], "size": [ 32, 40 ], "at": [ -24, 32 ] },
+        { "sheet": [ 0, 8 ], "size": [ 24, 8 ], "at": [ -16, 8 ] }
+      ],
+      "objs": [
+        { "x": -40, "y": -48, "size": [ 32, 32 ], "tile": 3, "attributes": [ 768, 0, 0 ] },
+        { "x": -40, "y": -4, "size": [ 32, 8 ], "tile": 131, "attributes": [ 768, 0, 0 ] },
+        { "x": -24, "y": -12, "size": [ 16, 8 ], "tile": 32, "attributes": [ 1792, 0, 0 ] },
+        { "x": -4, "y": -12, "size": [ 8, 8 ], "tile": 34, "attributes": [ 1792, 0, 0 ] }
+      ],
+      "obj_attribute": 22
+    },
+    {
+      "rectangles": [ { "sheet": [ 96, 40 ], "size": [ 16, 16 ], "at": [ -2, 8 ] } ],
+      "objs": [ { "x": -10, "y": -16, "size": [ 16, 16 ], "tile": 172, "attributes": [ 768, 0, 0 ] } ],
+      "obj_attribute": 8
+    },
+    {
+      "rectangles": [ { "sheet": [ 32, 40 ], "size": [ 16, 24 ], "at": [ -14, 7 ] } ],
+      "objs": [
+        { "x": -22, "y": -15, "size": [ 16, 16 ], "tile": 164, "attributes": [ 768, 0, 0 ] },
+        { "x": -22, "y": 5, "size": [ 16, 8 ], "tile": 228, "attributes": [ 768, 0, 0 ] }
+      ],
+      "obj_attribute": 10
+    },
+    {
+      "rectangles": [ { "sheet": [ 80, 40 ], "size": [ 16, 24 ], "at": [ 0, 8 ] } ],
+      "objs": [
+        { "x": -8, "y": -16, "size": [ 16, 16 ], "tile": 170, "attributes": [ 768, 0, 0 ] },
+        { "x": -8, "y": 4, "size": [ 16, 8 ], "tile": 234, "attributes": [ 768, 0, 0 ] }
+      ],
+      "obj_attribute": 7
+    },
+    {
+      "rectangles": [ { "sheet": [ 48, 48 ], "size": [ 8, 16 ], "at": [ -5, 8 ] } ],
+      "objs": [ { "x": -9, "y": -16, "size": [ 8, 16 ], "tile": 198, "attributes": [ 768, 0, 0 ] } ],
+      "obj_attribute": 7
+    },
+    {
+      "rectangles": [ { "sheet": [ 56, 48 ], "size": [ 8, 16 ], "at": [ -2, 8 ] } ],
+      "objs": [ { "x": -6, "y": -16, "size": [ 8, 16 ], "tile": 199, "attributes": [ 768, 0, 0 ] } ],
+      "obj_attribute": 7
+    },
+    {
+      "rectangles": [ { "sheet": [ 64, 40 ], "size": [ 16, 24 ], "at": [ -8, 8 ] } ],
+      "objs": [
+        { "x": -16, "y": -16, "size": [ 16, 16 ], "tile": 168, "attributes": [ 768, 0, 0 ] },
+        { "x": -16, "y": 4, "size": [ 16, 8 ], "tile": 232, "attributes": [ 768, 0, 0 ] }
+      ],
+      "obj_attribute": 9
+    },
+    {
+      "rectangles": [ { "sheet": [ 24, 72 ], "size": [ 16, 24 ], "at": [ -6, 8 ] } ],
+      "objs": [
+        { "x": -14, "y": -16, "size": [ 16, 16 ], "tile": 291, "attributes": [ 768, 0, 0 ] },
+        { "x": -14, "y": 4, "size": [ 16, 8 ], "tile": 355, "attributes": [ 768, 0, 0 ] }
+      ],
+      "obj_attribute": 8
+    }
+  ],
+  "tracks": [
+    {
+      "name": "head",
+      "key_type": "srt",
+      "play": "loop",
+      "keys": [
+        { "picture": 0, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 6, "rotation": 64990, "scale": [ 1, 1 ], "move": [ 0, -1 ] },
+        { "picture": 0, "frames": 6, "rotation": 64444, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 0, "frames": 6, "rotation": 63898, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 0, "frames": 6, "rotation": 64308, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 0, "frames": 6, "rotation": 64717, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 0, "frames": 6, "rotation": 65127, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 0, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 0, "frames": 6, "rotation": 364, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 0, "frames": 6, "rotation": 728, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 0, "frames": 6, "rotation": 1092, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 0, "frames": 6, "rotation": 1456, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 0, "frames": 6, "rotation": 1820, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 0, "frames": 6, "rotation": 1560, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 0, "frames": 6, "rotation": 1300, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 0, "frames": 6, "rotation": 1040, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 0, "frames": 6, "rotation": 780, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 0, "frames": 6, "rotation": 520, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 0, "frames": 6, "rotation": 260, "scale": [ 1, 1 ], "move": [ 0, -1 ] }
+      ]
+    },
+    {
+      "name": "tale",
+      "key_type": "srt",
+      "play": "loop",
+      "keys": [
+        { "picture": 1, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 1, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -1 ] },
+        { "picture": 1, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 1, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 1, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 1, "frames": 6, "rotation": 63716, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 1, "frames": 6, "rotation": 61896, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 1, "frames": 6, "rotation": 60075, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 1, "frames": 6, "rotation": 58255, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 1, "frames": 6, "rotation": 56434, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 1, "frames": 6, "rotation": 56434, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 1, "frames": 6, "rotation": 56434, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 1, "frames": 6, "rotation": 56434, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 1, "frames": 6, "rotation": 56434, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 1, "frames": 6, "rotation": 56434, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 1, "frames": 6, "rotation": 58255, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 1, "frames": 6, "rotation": 60075, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 1, "frames": 6, "rotation": 61896, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 1, "frames": 6, "rotation": 63716, "scale": [ 1, 1 ], "move": [ 0, -1 ] }
+      ]
+    },
+    {
+      "name": "Lhand",
+      "key_type": "srt",
+      "play": "loop",
+      "keys": [
+        { "picture": 2, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 2, "frames": 6, "rotation": 728, "scale": [ 1, 1 ], "move": [ 0, -1 ] },
+        { "picture": 2, "frames": 6, "rotation": 1456, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 2, "frames": 6, "rotation": 2184, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 2, "frames": 6, "rotation": 2912, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 2, "frames": 6, "rotation": 3640, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 2, "frames": 6, "rotation": 3640, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 2, "frames": 6, "rotation": 3094, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 2, "frames": 6, "rotation": 2366, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 2, "frames": 6, "rotation": 1820, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 2, "frames": 6, "rotation": 1820, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 2, "frames": 6, "rotation": 2366, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 2, "frames": 6, "rotation": 3094, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 2, "frames": 6, "rotation": 3640, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 2, "frames": 6, "rotation": 3640, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 2, "frames": 6, "rotation": 2912, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 2, "frames": 6, "rotation": 2184, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 2, "frames": 6, "rotation": 1456, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 2, "frames": 6, "rotation": 728, "scale": [ 1, 1 ], "move": [ 0, -1 ] }
+      ]
+    },
+    {
+      "name": "Rhand",
+      "key_type": "srt",
+      "play": "loop",
+      "keys": [
+        { "picture": 3, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 3, "frames": 6, "rotation": 64808, "scale": [ 1, 1 ], "move": [ 0, -1 ] },
+        { "picture": 3, "frames": 6, "rotation": 64080, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 3, "frames": 6, "rotation": 63352, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 3, "frames": 6, "rotation": 62624, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 3, "frames": 6, "rotation": 61896, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 3, "frames": 6, "rotation": 61896, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 3, "frames": 6, "rotation": 62442, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 3, "frames": 6, "rotation": 63170, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 3, "frames": 6, "rotation": 63716, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 3, "frames": 6, "rotation": 63716, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 3, "frames": 6, "rotation": 63170, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 3, "frames": 6, "rotation": 62442, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 3, "frames": 6, "rotation": 61896, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 3, "frames": 6, "rotation": 61896, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 3, "frames": 6, "rotation": 62624, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 3, "frames": 6, "rotation": 63352, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 3, "frames": 6, "rotation": 64080, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 3, "frames": 6, "rotation": 64808, "scale": [ 1, 1 ], "move": [ 0, -1 ] }
+      ]
+    },
+    {
+      "name": "Lfoot",
+      "key_type": "move",
+      "play": "loop",
+      "keys": [
+        { "picture": 4, "frames": 6, "move": [ 0, 0 ] },
+        { "picture": 4, "frames": 6, "move": [ 0, -1 ] },
+        { "picture": 4, "frames": 6, "move": [ 0, -2 ] },
+        { "picture": 4, "frames": 6, "move": [ 0, -3 ] },
+        { "picture": 4, "frames": 6, "move": [ 0, -4 ] },
+        { "picture": 4, "frames": 6, "move": [ 0, -5 ] },
+        { "picture": 4, "frames": 6, "move": [ 0, -5 ] },
+        { "picture": 4, "frames": 6, "move": [ 0, -4 ] },
+        { "picture": 4, "frames": 6, "move": [ 0, -3 ] },
+        { "picture": 4, "frames": 6, "move": [ 0, -2 ] },
+        { "picture": 4, "frames": 6, "move": [ 0, -2 ] },
+        { "picture": 4, "frames": 6, "move": [ 0, -3 ] },
+        { "picture": 4, "frames": 6, "move": [ 0, -4 ] },
+        { "picture": 4, "frames": 6, "move": [ 0, -5 ] },
+        { "picture": 4, "frames": 6, "move": [ 0, -5 ] },
+        { "picture": 4, "frames": 6, "move": [ 0, -4 ] },
+        { "picture": 4, "frames": 6, "move": [ 0, -3 ] },
+        { "picture": 4, "frames": 6, "move": [ 0, -2 ] },
+        { "picture": 4, "frames": 6, "move": [ 0, -1 ] }
+      ]
+    },
+    {
+      "name": "Rfoot",
+      "key_type": "move",
+      "play": "loop",
+      "keys": [
+        { "picture": 5, "frames": 6, "move": [ 0, 0 ] },
+        { "picture": 5, "frames": 6, "move": [ 0, -1 ] },
+        { "picture": 5, "frames": 6, "move": [ 0, -2 ] },
+        { "picture": 5, "frames": 6, "move": [ 0, -3 ] },
+        { "picture": 5, "frames": 6, "move": [ 0, -4 ] },
+        { "picture": 5, "frames": 6, "move": [ 0, -5 ] },
+        { "picture": 5, "frames": 6, "move": [ 0, -5 ] },
+        { "picture": 5, "frames": 6, "move": [ 0, -4 ] },
+        { "picture": 5, "frames": 6, "move": [ 0, -3 ] },
+        { "picture": 5, "frames": 6, "move": [ 0, -2 ] },
+        { "picture": 5, "frames": 6, "move": [ 0, -2 ] },
+        { "picture": 5, "frames": 6, "move": [ 0, -3 ] },
+        { "picture": 5, "frames": 6, "move": [ 0, -4 ] },
+        { "picture": 5, "frames": 6, "move": [ 0, -5 ] },
+        { "picture": 5, "frames": 6, "move": [ 0, -5 ] },
+        { "picture": 5, "frames": 6, "move": [ 0, -4 ] },
+        { "picture": 5, "frames": 6, "move": [ 0, -3 ] },
+        { "picture": 5, "frames": 6, "move": [ 0, -2 ] },
+        { "picture": 5, "frames": 6, "move": [ 0, -1 ] }
+      ]
+    },
+    {
+      "name": "body",
+      "key_type": "srt",
+      "play": "loop",
+      "keys": [
+        { "picture": 7, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 7, "frames": 6, "rotation": 64663, "scale": [ 1, 1 ], "move": [ 0, -1 ] },
+        { "picture": 7, "frames": 6, "rotation": 64226, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 7, "frames": 6, "rotation": 63789, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 7, "frames": 6, "rotation": 63352, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 7, "frames": 6, "rotation": 62915, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 7, "frames": 6, "rotation": 62478, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 7, "frames": 6, "rotation": 62041, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 7, "frames": 6, "rotation": 61604, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 7, "frames": 6, "rotation": 61167, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 7, "frames": 6, "rotation": 61167, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 7, "frames": 6, "rotation": 61653, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 7, "frames": 6, "rotation": 62138, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 7, "frames": 6, "rotation": 62624, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 7, "frames": 6, "rotation": 63109, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 7, "frames": 6, "rotation": 63595, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 7, "frames": 6, "rotation": 64080, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 7, "frames": 6, "rotation": 64566, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 7, "frames": 6, "rotation": 65051, "scale": [ 1, 1 ], "move": [ 0, -1 ] }
+      ]
+    },
+    {
+      "name": "tale1",
+      "key_type": "srt",
+      "play": "loop",
+      "keys": [
+        { "picture": 1, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 1, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -1 ] },
+        { "picture": 1, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 1, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 1, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 1, "frames": 6, "rotation": 1820, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 1, "frames": 6, "rotation": 3640, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 1, "frames": 6, "rotation": 5461, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 1, "frames": 6, "rotation": 7281, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 1, "frames": 6, "rotation": 9102, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 1, "frames": 6, "rotation": 9102, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 1, "frames": 6, "rotation": 9102, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 1, "frames": 6, "rotation": 9102, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 1, "frames": 6, "rotation": 9102, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 1, "frames": 6, "rotation": 9102, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 1, "frames": 6, "rotation": 7281, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 1, "frames": 6, "rotation": 5461, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 1, "frames": 6, "rotation": 3640, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 1, "frames": 6, "rotation": 1820, "scale": [ 1, 1 ], "move": [ 0, -1 ] }
+      ]
+    },
+    {
+      "name": "Lfoot1",
+      "key_type": "srt",
+      "play": "loop",
+      "keys": [
+        { "picture": 4, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 4, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -1 ] },
+        { "picture": 4, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 4, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 4, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 4, "frames": 6, "rotation": 1820, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 4, "frames": 6, "rotation": 3640, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 4, "frames": 6, "rotation": 5461, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 4, "frames": 6, "rotation": 7281, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 4, "frames": 6, "rotation": 9102, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 4, "frames": 6, "rotation": 9102, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 4, "frames": 6, "rotation": 9102, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 4, "frames": 6, "rotation": 9102, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 4, "frames": 6, "rotation": 9102, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 4, "frames": 6, "rotation": 9102, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 4, "frames": 6, "rotation": 7281, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 4, "frames": 6, "rotation": 5461, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 4, "frames": 6, "rotation": 3640, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 4, "frames": 6, "rotation": 1820, "scale": [ 1, 1 ], "move": [ 0, -1 ] }
+      ]
+    },
+    {
+      "name": "Rfoot1",
+      "key_type": "srt",
+      "play": "loop",
+      "keys": [
+        { "picture": 5, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 5, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -1 ] },
+        { "picture": 5, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 5, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 5, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 5, "frames": 6, "rotation": 1820, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 5, "frames": 6, "rotation": 3640, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 5, "frames": 6, "rotation": 5461, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 5, "frames": 6, "rotation": 7281, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 5, "frames": 6, "rotation": 9102, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 5, "frames": 6, "rotation": 9102, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 5, "frames": 6, "rotation": 9102, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 5, "frames": 6, "rotation": 9102, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 5, "frames": 6, "rotation": 9102, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 5, "frames": 6, "rotation": 9102, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 5, "frames": 6, "rotation": 7281, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 5, "frames": 6, "rotation": 5461, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 5, "frames": 6, "rotation": 3640, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 5, "frames": 6, "rotation": 1820, "scale": [ 1, 1 ], "move": [ 0, -1 ] }
+      ]
+    },
+    {
+      "name": "body1",
+      "key_type": "move",
+      "play": "loop",
+      "keys": [
+        { "picture": 6, "frames": 6, "move": [ 0, 0 ] },
+        { "picture": 6, "frames": 6, "move": [ 0, -1 ] },
+        { "picture": 6, "frames": 6, "move": [ 0, -2 ] },
+        { "picture": 6, "frames": 6, "move": [ 0, -3 ] },
+        { "picture": 6, "frames": 6, "move": [ 0, -4 ] },
+        { "picture": 6, "frames": 6, "move": [ 0, -5 ] },
+        { "picture": 6, "frames": 6, "move": [ 0, -5 ] },
+        { "picture": 6, "frames": 6, "move": [ 0, -4 ] },
+        { "picture": 6, "frames": 6, "move": [ 0, -3 ] },
+        { "picture": 6, "frames": 6, "move": [ 0, -2 ] },
+        { "picture": 6, "frames": 6, "move": [ 0, -2 ] },
+        { "picture": 6, "frames": 6, "move": [ 0, -3 ] },
+        { "picture": 6, "frames": 6, "move": [ 0, -4 ] },
+        { "picture": 6, "frames": 6, "move": [ 0, -5 ] },
+        { "picture": 6, "frames": 6, "move": [ 0, -5 ] },
+        { "picture": 6, "frames": 6, "move": [ 0, -4 ] },
+        { "picture": 6, "frames": 6, "move": [ 0, -3 ] },
+        { "picture": 6, "frames": 6, "move": [ 0, -2 ] },
+        { "picture": 6, "frames": 6, "move": [ 0, -1 ] }
+      ]
+    },
+    {
+      "name": "x",
+      "key_type": "srt",
+      "play": "loop",
+      "keys": [
+        { "picture": 0, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 6, "rotation": 546, "scale": [ 1, 1 ], "move": [ 0, -1 ] },
+        { "picture": 0, "frames": 6, "rotation": 1092, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 0, "frames": 6, "rotation": 1638, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 0, "frames": 6, "rotation": 1228, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 0, "frames": 6, "rotation": 819, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 0, "frames": 6, "rotation": 409, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 0, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 0, "frames": 6, "rotation": 65172, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 0, "frames": 6, "rotation": 64808, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 0, "frames": 6, "rotation": 64444, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 0, "frames": 6, "rotation": 64080, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 0, "frames": 6, "rotation": 63716, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 0, "frames": 6, "rotation": 63976, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 0, "frames": 6, "rotation": 64236, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 0, "frames": 6, "rotation": 64496, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 0, "frames": 6, "rotation": 64756, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 0, "frames": 6, "rotation": 65016, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 0, "frames": 6, "rotation": 65276, "scale": [ 1, 1 ], "move": [ 0, -1 ] }
+      ]
+    }
+  ],
+  "poses": [
+    {
+      "parts": [
+        { "track": 0, "pivot": [ 0, -24 ], "play": "restart" },
+        { "track": 3, "pivot": [ 0, -24 ], "play": "restart" },
+        { "track": 6, "pivot": [ -2, -24 ], "play": "restart" },
+        { "track": 2, "pivot": [ -2, -25 ], "play": "restart" },
+        { "track": 1, "pivot": [ 2, -16 ], "play": "restart" }
+      ]
+    },
+    {
+      "parts": [
+        { "track": 0, "pivot": [ 0, -24 ], "play": "restart" },
+        { "track": 9, "pivot": [ 2, -16 ], "play": "restart" },
+        { "track": 3, "pivot": [ 0, -24 ], "play": "restart" },
+        { "track": 10, "pivot": [ 0, -24 ], "play": "restart" },
+        { "track": 2, "pivot": [ -2, -25 ], "play": "restart" },
+        { "track": 8, "pivot": [ -3, -16 ], "play": "restart" },
+        { "track": 7, "pivot": [ 2, -16 ], "play": "restart" }
+      ]
+    }
+  ],
+  "sequences": [
+    {
+      "name": "CellAnime0",
+      "key_type": "plain",
+      "play": "loop",
+      "keys": [ { "pose": 0, "frames": 114 }, { "pose": 1, "frames": 114 }, { "pose": 0, "frames": 114 } ]
+    }
+  ]
+}

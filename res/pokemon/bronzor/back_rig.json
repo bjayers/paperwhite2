@@ -1,0 +1,119 @@
+{
+  "$schema": "../battle_sprite_rig.schema.json",
+  "format": 1,
+  "side": "back",
+  "box": { "width": 40, "height": 48, "x": 1, "y": -12 },
+  "stop_flags": 1,
+  "idle_parts": [],
+  "pictures": [
+    {
+      "rectangles": [ { "sheet": [ 0, 0 ], "size": [ 40, 48 ], "at": [ -19, 25 ] } ],
+      "objs": [
+        { "x": -35, "y": -41, "size": [ 32, 32 ], "tile": 0, "attributes": [ 768, 0, 0 ] },
+        { "x": 9, "y": -41, "size": [ 8, 32 ], "tile": 4, "attributes": [ 768, 0, 0 ] },
+        { "x": -35, "y": -1, "size": [ 32, 16 ], "tile": 128, "attributes": [ 768, 0, 0 ] },
+        { "x": 9, "y": -1, "size": [ 8, 16 ], "tile": 132, "attributes": [ 768, 0, 0 ] }
+      ],
+      "obj_attribute": 19
+    }
+  ],
+  "tracks": [
+    {
+      "name": "subete_1",
+      "key_type": "move",
+      "play": "loop",
+      "keys": [
+        { "picture": 0, "frames": 6, "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 6, "move": [ 1, -1 ] },
+        { "picture": 0, "frames": 6, "move": [ 2, -2 ] },
+        { "picture": 0, "frames": 6, "move": [ 1, -1 ] },
+        { "picture": 0, "frames": 6, "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 6, "move": [ -1, -1 ] },
+        { "picture": 0, "frames": 6, "move": [ -2, -2 ] },
+        { "picture": 0, "frames": 6, "move": [ -1, -1 ] },
+        { "picture": 0, "frames": 6, "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 6, "move": [ 1, -1 ] },
+        { "picture": 0, "frames": 6, "move": [ 2, -2 ] },
+        { "picture": 0, "frames": 6, "move": [ 1, -1 ] },
+        { "picture": 0, "frames": 6, "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 6, "move": [ -1, -1 ] },
+        { "picture": 0, "frames": 6, "move": [ -2, -2 ] },
+        { "picture": 0, "frames": 6, "move": [ -1, -1 ] },
+        { "picture": 0, "frames": 6, "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 6, "move": [ 1, -1 ] },
+        { "picture": 0, "frames": 6, "move": [ 2, -3 ] },
+        { "picture": 0, "frames": 6, "move": [ 1, -1 ] },
+        { "picture": 0, "frames": 6, "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 6, "move": [ -2, -2 ] },
+        { "picture": 0, "frames": 6, "move": [ -3, -4 ] },
+        { "picture": 0, "frames": 6, "move": [ -2, -2 ] }
+      ]
+    },
+    {
+      "name": "subete_2",
+      "key_type": "move",
+      "play": "loop",
+      "keys": [
+        { "picture": 0, "frames": 6, "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 6, "move": [ 2, -1 ] },
+        { "picture": 0, "frames": 6, "move": [ 3, -2 ] },
+        { "picture": 0, "frames": 6, "move": [ 4, -4 ] },
+        { "picture": 0, "frames": 6, "move": [ 2, -6 ] },
+        { "picture": 0, "frames": 6, "move": [ 0, -7 ] },
+        { "picture": 0, "frames": 6, "move": [ -2, -6 ] },
+        { "picture": 0, "frames": 6, "move": [ -4, -4 ] },
+        { "picture": 0, "frames": 6, "move": [ -3, -2 ] },
+        { "picture": 0, "frames": 6, "move": [ -2, -1 ] },
+        { "picture": 0, "frames": 6, "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 6, "move": [ 3, -1 ] },
+        { "picture": 0, "frames": 6, "move": [ 4, -3 ] },
+        { "picture": 0, "frames": 6, "move": [ 6, -6 ] },
+        { "picture": 0, "frames": 6, "move": [ 3, -9 ] },
+        { "picture": 0, "frames": 6, "move": [ 0, -10 ] },
+        { "picture": 0, "frames": 6, "move": [ -3, -9 ] },
+        { "picture": 0, "frames": 6, "move": [ -6, -6 ] },
+        { "picture": 0, "frames": 6, "move": [ -4, -3 ] },
+        { "picture": 0, "frames": 6, "move": [ -3, -1 ] },
+        { "picture": 0, "frames": 6, "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 6, "move": [ 4, -2 ] },
+        { "picture": 0, "frames": 6, "move": [ 6, -4 ] },
+        { "picture": 0, "frames": 6, "move": [ 8, -8 ] },
+        { "picture": 0, "frames": 6, "move": [ 4, -12 ] },
+        { "picture": 0, "frames": 6, "move": [ 0, -13 ] },
+        { "picture": 0, "frames": 6, "move": [ -4, -8 ] },
+        { "picture": 0, "frames": 6, "move": [ -8, -3 ] },
+        { "picture": 0, "frames": 6, "move": [ -6, 2 ] },
+        { "picture": 0, "frames": 6, "move": [ -3, 5 ] }
+      ]
+    },
+    {
+      "name": "subete_3",
+      "key_type": "move",
+      "play": "loop",
+      "keys": [
+        { "picture": 0, "frames": 6, "move": [ 2, 9 ] },
+        { "picture": 0, "frames": 6, "move": [ 1, 6 ] },
+        { "picture": 0, "frames": 6, "move": [ 0, 3 ] },
+        { "picture": 0, "frames": 6, "move": [ -1, 0 ] },
+        { "picture": 0, "frames": 6, "move": [ 0, -3 ] },
+        { "picture": 0, "frames": 6, "move": [ 0, -6 ] },
+        { "picture": 0, "frames": 6, "move": [ 0, -4 ] },
+        { "picture": 0, "frames": 6, "move": [ 0, -2 ] },
+        { "picture": 0, "frames": 6, "move": [ 0, 0 ] }
+      ]
+    }
+  ],
+  "poses": [
+    { "parts": [ { "track": 0, "pivot": [ 0, -35 ], "play": "restart" } ] },
+    { "parts": [ { "track": 1, "pivot": [ 0, -35 ], "play": "restart" } ] },
+    { "parts": [ { "track": 2, "pivot": [ 0, -35 ], "play": "restart" } ] }
+  ],
+  "sequences": [
+    {
+      "name": "CellAnime01",
+      "key_type": "plain",
+      "play": "loop",
+      "keys": [ { "pose": 0, "frames": 144 }, { "pose": 1, "frames": 180 }, { "pose": 2, "frames": 54 } ]
+    }
+  ]
+}

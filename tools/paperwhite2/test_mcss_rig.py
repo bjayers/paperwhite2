@@ -1,22 +1,28 @@
 #!/usr/bin/env python3
 """Tests of the battle sprite rig's JSON form, writer and checks (tools/paperwhite2/mcss_rig.py), on the real
-res/pokemon, read only. The whole archive's round trip is `mcss_rig.py roundtrip` (1,506 sides, a few seconds).
+res/pokemon, read only. The whole archive's round trip is `mcss_rig.py roundtrip` (1,506 sides, about 20 seconds).
 
     python3 -m unittest tools.paperwhite2.test_mcss_rig
 """
 import copy
-import json
 import os
+import shutil
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+sys.path.insert(1, str(Path(__file__).resolve().parents[2] / "tools" / "data"))
+from tools.data.datajson import DataError, load_schema, validate  # noqa: E402
+from tools.data.narc import read_narc  # noqa: E402
 from tools.data.nitro_2d import decompress  # noqa: E402
+from tools.data.pokemon_graphics import SUBSTITUTE_FILES, battle_file  # noqa: E402
 from tools.paperwhite2 import mcss, mcss_rig  # noqa: E402
 
 POKEMON = mcss_rig.ROOT / "res/pokemon"
+# The original archive, where it is extracted (the ROM session's checkout)
+ORIGINAL = mcss_rig.ROOT / "extract/w2_us/files/a/0/0/4"
 # Each one has something the rest don't: Pichu; Charizard's never-pausing flame; Kyurem's form 2 and Servine, second
 # copies of results; Crawdaunt and Forretress, parts sharing a track instance; species 0, the OBJ mapping and UEXT;
 # Shelgon's back, unplayed tracks showing missing pictures; Celebi, Gliscor and Accelgor, the bin's padding; Anorith,
@@ -25,76 +31,60 @@ ROUND_TRIP = ("pichu", "charizard", "kyurem/form_2", "servine", "crawdaunt", "fo
               "celebi", "gliscor", "accelgor", "anorith", "pichu/form_1")
 
 
-SCHEMA = json.loads((Path(mcss_rig.__file__).parent / "mcss_rig.schema.json").read_text())
+SCHEMA = load_schema(mcss_rig.SCHEMA)
 
 
 def errors(rig):
     return [message for level, message in mcss_rig.check(rig) if level == "error"]
 
 
-def schema_errors(value, schema=SCHEMA, where="rig") -> list[str]:
-    """The keywords of the schema that the rig's schema uses (no jsonschema in the venv)."""
-    if "$ref" in schema:
-        target = SCHEMA
-        for step in schema["$ref"].lstrip("#/").split("/"):
-            target = target[step]
-        return schema_errors(value, {**target, **{k: v for k, v in schema.items() if k != "$ref"}}, where)
-    out = []
-    kinds = {"object": dict, "array": list, "string": str, "null": type(None)}
-    kind = schema.get("type")
-    if kind == "integer" and not (isinstance(value, int) and not isinstance(value, bool)):
-        return [f"{where}: not an integer"]
-    if kind == "number" and not isinstance(value, (int, float)):
-        return [f"{where}: not a number"]
-    if kind in kinds and not isinstance(value, kinds[kind]):
-        return [f"{where}: not {kind}"]
-    if "const" in schema and value != schema["const"]:
-        out.append(f"{where}: not {schema['const']}")
-    if "enum" in schema and value not in schema["enum"]:
-        out.append(f"{where}: {value!r} not in {schema['enum']}")
-    if "minimum" in schema and value < schema["minimum"] or "maximum" in schema and value > schema["maximum"]:
-        out.append(f"{where}: {value} out of range")
-    if "oneOf" in schema and sum(not schema_errors(value, option, where) for option in schema["oneOf"]) != 1:
-        out.append(f"{where}: matches no one of oneOf")
-    if isinstance(value, dict):
-        for name in schema.get("required", []):
-            if name not in value:
-                out.append(f"{where}: no {name}")
-        for name, item in value.items():
-            if name in schema.get("properties", {}):
-                out += schema_errors(item, schema["properties"][name], f"{where}.{name}")
-            elif schema.get("additionalProperties") is False:
-                out.append(f"{where}: {name} isn't in the schema")
-    if isinstance(value, list):
-        if len(value) < schema.get("minItems", 0) or len(value) > schema.get("maxItems", len(value)):
-            out.append(f"{where}: {len(value)} items")
-        for number, item in enumerate(value):
-            out += schema_errors(item, schema.get("items", {}), f"{where}[{number}]")
-    return out
+def schema_error(rig) -> str | None:
+    """What the build's validator (tools/data/datajson.py) says of a rig, or None."""
+    try:
+        validate(rig, SCHEMA, "")
+    except DataError as error:
+        return str(error)
+    return None
 
 
 class RoundTrip(unittest.TestCase):
-    def test_files_json_files(self):
+    def test_json_files_json(self):
         for group in ROUND_TRIP:
             for side in mcss_rig.SIDES:
                 with self.subTest(group=group, side=side):
-                    files = mcss_rig.read_files(POKEMON / group, side)
-                    rig = json.loads(json.dumps(mcss_rig.rig_from_files(files, side)))
+                    folder = POKEMON / group
+                    text = mcss_rig.rig_path(folder, side).read_text()
+                    rig = mcss_rig.loads(text)
                     self.assertEqual(errors(rig), [])
-                    self.assertEqual(schema_errors(rig), [])
-                    self.assertEqual(mcss_rig.files_from_rig(rig), files)
+                    self.assertIsNone(schema_error(rig))
+                    files = mcss_rig.files_from_rig(rig)
+                    self.assertEqual(mcss_rig.dumps(mcss_rig.rig_from_files(files, side), folder), text)
+                    self.assertEqual(mcss_rig.rig_from_files(mcss_rig.files_from_rig(rig, compress=False), side),
+                                     rig)
 
-    def test_json_rig_json(self):
-        rig = mcss_rig.read_side(POKEMON / "pichu", "front")
-        text = json.dumps(rig, indent=1)
-        self.assertEqual(json.dumps(mcss_rig.rig_from_files(mcss_rig.files_from_rig(json.loads(text)), "front"),
-                                    indent=1), text)
+    @unittest.skipUnless(ORIGINAL.is_file(), "no extracted White 2 (extract/w2_us)")
+    def test_files_are_the_originals(self):
+        """The files built from the rigs are the original archive's members (the hack's own form, the Spiky-eared
+        Pichu's, after them, is left out)."""
+        archive = read_narc(ORIGINAL.read_bytes())
+        wanted = {POKEMON / group for group in ROUND_TRIP if group != "pichu/form_1"}
+        found = 0
+        for index in range(SUBSTITUTE_FILES):
+            path, kind, options = battle_file(POKEMON, index, False)
+            if kind == "rig" and path.parent in wanted:
+                rig = mcss_rig.read_side(path.parent, options["side"])
+                self.assertEqual(mcss_rig.files_from_rig(rig)[options["member"]], archive[index], path)
+                found += 1
+        self.assertEqual(found, 5 * 2 * len(wanted))
 
     def test_schema_catches(self):
         rig = mcss_rig.read_side(POKEMON / "pichu", "back")
-        rig["tracks"][0]["keys"][0]["angle"] = 3
-        rig["poses"][0]["parts"][0]["play"] = "again"
-        self.assertEqual(len(schema_errors(rig)), 2)
+        for edit in (lambda rig: rig["tracks"][0]["keys"][0].update(angle=3),
+                     lambda rig: rig["poses"][0]["parts"][0].update(play="again"),
+                     lambda rig: rig.update(format=2)):
+            edited = copy.deepcopy(rig)
+            edit(edited)
+            self.assertIsNotNone(schema_error(edited))
 
     def test_agrees_with_the_reader(self):
         """The rig holds what mcss.read_rig reads, so the renderer's view and the writer's are the same files."""
@@ -111,27 +101,32 @@ class RoundTrip(unittest.TestCase):
         self.assertEqual(rig["idle_parts"], old["idle_nodes"])
 
     def test_write_side_writes_only_changes(self):
-        rig = mcss_rig.read_side(POKEMON / "pichu", "front")
         with tempfile.TemporaryDirectory() as temp:
             folder = Path(temp)
-            for kind, blob in mcss_rig.read_files(POKEMON / "pichu", "front").items():
-                (folder / f"front{mcss_rig.FILES[kind]}").write_bytes(blob)
+            shutil.copy(mcss_rig.rig_path(POKEMON / "pichu", "front"), folder)
+            rig = mcss_rig.read_side(folder, "front")
+            # The copy names its schema from where it is
+            self.assertEqual(mcss_rig.write_side(rig, folder, "front"), [mcss_rig.rig_path(folder, "front")])
             self.assertEqual(mcss_rig.write_side(rig, folder, "front"), [])
             rig["poses"][0]["parts"][0]["pivot"] = [7, -9]
             rig["tracks"][2]["keys"].append({"picture": 0, "frames": 6, "rotation": 100, "scale": [1, 1.5],
                                              "move": [1, -1]})
-            written = mcss_rig.write_side(rig, folder, "front")
-            self.assertEqual(sorted(path.name for path in written),
-                             ["front_animations.nanr.lz11", "front_multi_cells.nmcr"])
+            self.assertEqual(mcss_rig.write_side(rig, folder, "front"), [mcss_rig.rig_path(folder, "front")])
             self.assertEqual(mcss_rig.read_side(folder, "front"), rig)
             # and the renderer draws the edited rig
             self.assertEqual(mcss.read_rig(folder, "front")["multi_cells"][0][0]["x"], 7)
 
+    def test_layout_and_schema_path(self):
+        text = mcss_rig.rig_path(POKEMON / "pichu" / "form_1", "back").read_text()
+        self.assertTrue(text.startswith('{\n  "$schema": "../../battle_sprite_rig.schema.json",\n  "format": 1,\n'))
+        self.assertIn('\n      "rectangles": [ { "sheet": [', text)
+
 
 class Compression(unittest.TestCase):
     def test_originals_byte_for_byte(self):
-        for group in ("pichu", "kyurem/form_2", "spinda"):
-            blob = (POKEMON / group / "back_animations.nanr.lz11").read_bytes()
+        # The musical sprites' own NANRs, which stay files, are originals
+        for group in ("pichu", "spinda", "charizard"):
+            blob = (POKEMON / group / "musical" / "back_animations.nanr.lz11").read_bytes()
             self.assertEqual(mcss_rig.compress_lz11(decompress(blob)), blob)
 
     def test_decompresses(self):

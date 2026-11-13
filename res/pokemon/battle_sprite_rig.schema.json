@@ -1,7 +1,7 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "title": "A battle sprite's rig",
-    "description": "One side (front or back) of a battle sprite's MCSS rig as tools/paperwhite2/mcss_rig.py reads and writes it: the five files <side>_info.bin, _cells.ncer, _animations.nanr.lz11, _multi_cells.nmcr and _multi_animations.nmar, drawn from the side's 256 by 128 sheet. docs/paperwhite2/design/battle-sprites.md section 15. Fields marked 'only where a file differs' are left out when they hold the usual value, which the writer puts back.",
+    "description": "One side (front or back) of a battle sprite's MCSS rig, <side>_rig.json beside the side's 256 by 128 sheet: the source of the five files the archive holds (<side>_info.bin, _cells.ncer, _animations.nanr.lz11, _multi_cells.nmcr and _multi_animations.nmar), which the build makes from it byte for byte with tools/paperwhite2/mcss_rig.py. docs/paperwhite2/design/battle-sprites.md sections 15 and 16. Fields marked 'only where a file differs' are left out when they hold the usual value, which the writer puts back.",
     "type": "object",
     "additionalProperties": false,
     "required": ["format", "side", "box", "stop_flags", "idle_parts", "pictures", "tracks", "poses", "sequences"],
@@ -12,21 +12,21 @@
             "enum": ["once", "loop", "pingpong", "pingpong_loop"],
             "description": "NNSG2dAnimationPlayMode: play once and hold the last key, loop, or forward then back"
         },
-        "key_common": {
-            "frames": {"type": "integer", "minimum": 0, "maximum": 65535,
+        "key_frames": {"type": "integer", "minimum": 0, "maximum": 65535,
                        "description": "How many game frames (60 a second) the key lasts; the game holds a key, never tweens"},
-            "rotation": {"type": "integer", "minimum": 0, "maximum": 65535,
+        "key_rotation": {"type": "integer", "minimum": 0, "maximum": 65535,
                          "description": "srt keys: the turn, in 65536ths of a full turn"},
-            "scale": {"$ref": "#/$defs/fixed_pair", "description": "srt keys: the x and y scale (1 is the picture's size; negative mirrors), multiples of 1/4096"},
-            "move": {"$ref": "#/$defs/pair", "description": "srt and move keys: the move in pixels, x right, y down"},
-            "unused": {"type": "integer", "description": "move keys: the result's unused half-word, only where a file differs from 0xBEEF"},
-            "marker": {"type": "integer", "description": "The frame's marker, only where a file differs from 0xBEEF"},
-            "result_copy": {"type": "integer", "minimum": 1, "description": "Which copy of an equal result the key points at, only in the 7 originals that hold second copies"}
-        }
+        "key_scale": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2,
+                      "description": "srt keys: the x and y scale (1 is the picture's size; negative mirrors), multiples of 1/4096"},
+        "key_move": {"type": "array", "items": {"type": "integer"}, "minItems": 2, "maxItems": 2,
+                     "description": "srt and move keys: the move in pixels, x right, y down"},
+        "key_unused": {"type": "integer", "description": "move keys: the result's unused half-word, only where a file differs from 0xBEEF"},
+        "key_marker": {"type": "integer", "description": "The frame's marker, only where a file differs from 0xBEEF"},
+        "key_result_copy": {"type": "integer", "minimum": 1, "description": "Which copy of an equal result the key points at, only in the 7 originals that hold second copies"}
     },
     "properties": {
         "$schema": {"type": "string", "description": "This schema, for editors"},
-        "format": {"const": 1, "description": "The rig format's version"},
+        "format": {"type": "integer", "enum": [1], "description": "The rig format's version"},
         "side": {"enum": ["front", "back"]},
         "box": {
             "type": "object",
@@ -44,7 +44,7 @@
                        "description": "Read only by the move effects' scripts (MCSSSys_GetStopCellFlags); 1 for 166 flying or floating species' fronts, inferred to mean airborne"},
         "idle_parts": {
             "description": "The parts (by their place in the pose, 0 the front) that keep animating while the battle's idle pause stops the rest; null for a sprite that never pauses",
-            "oneOf": [{"type": "null"}, {"type": "array", "items": {"type": "integer", "minimum": 0, "maximum": 255}, "maxItems": 254}]
+            "anyOf": [{"type": "null"}, {"type": "array", "items": {"type": "integer", "minimum": 0, "maximum": 255}, "maxItems": 254}]
         },
         "info_padding": {"type": "string", "pattern": "^([0-9a-f]{2})*$", "description": "The bin's bytes after the idle parts, as hex, only where a file differs from zeros to the next multiple of 4"},
         "obj_mapping": {"type": "integer", "description": "The NCER's OBJ mapping mode, only where a file differs from 4"},
@@ -119,13 +119,13 @@
                             "required": ["picture", "frames"],
                             "properties": {
                                 "picture": {"type": "integer", "minimum": 0, "description": "The picture shown"},
-                                "frames": {"$ref": "#/$defs/key_common/frames"},
-                                "rotation": {"$ref": "#/$defs/key_common/rotation"},
-                                "scale": {"$ref": "#/$defs/key_common/scale"},
-                                "move": {"$ref": "#/$defs/key_common/move"},
-                                "unused": {"$ref": "#/$defs/key_common/unused"},
-                                "marker": {"$ref": "#/$defs/key_common/marker"},
-                                "result_copy": {"$ref": "#/$defs/key_common/result_copy"}
+                                "frames": {"$ref": "#/$defs/key_frames"},
+                                "rotation": {"$ref": "#/$defs/key_rotation"},
+                                "scale": {"$ref": "#/$defs/key_scale"},
+                                "move": {"$ref": "#/$defs/key_move"},
+                                "unused": {"$ref": "#/$defs/key_unused"},
+                                "marker": {"$ref": "#/$defs/key_marker"},
+                                "result_copy": {"$ref": "#/$defs/key_result_copy"}
                             }
                         }
                     }
@@ -185,13 +185,13 @@
                             "required": ["pose", "frames"],
                             "properties": {
                                 "pose": {"type": "integer", "minimum": 0, "description": "The pose shown"},
-                                "frames": {"$ref": "#/$defs/key_common/frames"},
-                                "rotation": {"$ref": "#/$defs/key_common/rotation"},
-                                "scale": {"$ref": "#/$defs/key_common/scale"},
-                                "move": {"$ref": "#/$defs/key_common/move"},
-                                "unused": {"$ref": "#/$defs/key_common/unused"},
-                                "marker": {"$ref": "#/$defs/key_common/marker"},
-                                "result_copy": {"$ref": "#/$defs/key_common/result_copy"}
+                                "frames": {"$ref": "#/$defs/key_frames"},
+                                "rotation": {"$ref": "#/$defs/key_rotation"},
+                                "scale": {"$ref": "#/$defs/key_scale"},
+                                "move": {"$ref": "#/$defs/key_move"},
+                                "unused": {"$ref": "#/$defs/key_unused"},
+                                "marker": {"$ref": "#/$defs/key_marker"},
+                                "result_copy": {"$ref": "#/$defs/key_result_copy"}
                             }
                         }
                     }

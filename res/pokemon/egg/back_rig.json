@@ -1,0 +1,53 @@
+{
+  "$schema": "../battle_sprite_rig.schema.json",
+  "format": 1,
+  "side": "back",
+  "box": { "width": 32, "height": 32, "x": 0, "y": 0 },
+  "stop_flags": 0,
+  "idle_parts": [],
+  "pictures": [
+    {
+      "rectangles": [ { "sheet": [ 32, 32 ], "size": [ 32, 32 ], "at": [ -16, 16 ] } ],
+      "objs": [ { "x": -16, "y": -16, "size": [ 32, 32 ], "tile": 132, "attributes": [ 0, 0, 0 ] } ],
+      "obj_attribute": 6
+    }
+  ],
+  "tracks": [ { "name": "CellAnime0", "key_type": "plain", "play": "loop", "keys": [ { "picture": 0, "frames": 4 } ] } ],
+  "poses": [ { "parts": [ { "track": 0, "pivot": [ 0, -16 ], "play": "continue" } ] } ],
+  "sequences": [
+    {
+      "name": "egg_ani01",
+      "key_type": "srt",
+      "play": "loop",
+      "keys": [
+        { "pose": 0, "frames": 100, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "pose": 0, "frames": 3, "rotation": 0, "scale": [ 1, 0.93994140625 ], "move": [ 0, 0 ] },
+        { "pose": 0, "frames": 3, "rotation": 0, "scale": [ 1, 0.8798828125 ], "move": [ 0, 0 ] },
+        { "pose": 0, "frames": 3, "rotation": 0, "scale": [ 1, 0.820068359375 ], "move": [ 0, 0 ] },
+        { "pose": 0, "frames": 3, "rotation": 0, "scale": [ 1, 0.760009765625 ], "move": [ 0, 0 ] },
+        { "pose": 0, "frames": 3, "rotation": 0, "scale": [ 1, 0.699951171875 ], "move": [ 0, 0 ] },
+        { "pose": 0, "frames": 3, "rotation": 0, "scale": [ 1, 0.77490234375 ], "move": [ 0, 0 ] },
+        { "pose": 0, "frames": 3, "rotation": 0, "scale": [ 1, 0.85009765625 ], "move": [ 0, 0 ] },
+        { "pose": 0, "frames": 3, "rotation": 0, "scale": [ 1, 0.925048828125 ], "move": [ 0, 0 ] },
+        { "pose": 0, "frames": 3, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -1 ] },
+        { "pose": 0, "frames": 3, "rotation": 0, "scale": [ 1, 1.10009765625 ], "move": [ 0, -3 ] },
+        { "pose": 0, "frames": 3, "rotation": 0, "scale": [ 1, 1.066650390625 ], "move": [ 0, -5 ] },
+        { "pose": 0, "frames": 3, "rotation": 0, "scale": [ 1, 1.033447265625 ], "move": [ 0, -7 ] },
+        { "pose": 0, "frames": 2, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -8 ] },
+        { "pose": 0, "frames": 2, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -6 ] },
+        { "pose": 0, "frames": 2, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "pose": 0, "frames": 2, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "pose": 0, "frames": 2, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "pose": 0, "frames": 2, "rotation": 0, "scale": [ 1, 0.89990234375 ], "move": [ 0, 0 ] },
+        { "pose": 0, "frames": 2, "rotation": 0, "scale": [ 1, 0.800048828125 ], "move": [ 0, 0 ] },
+        { "pose": 0, "frames": 2, "rotation": 0, "scale": [ 1, 0.699951171875 ], "move": [ 0, 0 ] },
+        { "pose": 0, "frames": 2, "rotation": 0, "scale": [ 1, 0.840087890625 ], "move": [ 0, 0 ] },
+        { "pose": 0, "frames": 2, "rotation": 0, "scale": [ 1, 0.8798828125 ], "move": [ 0, 0 ] },
+        { "pose": 0, "frames": 2, "rotation": 0, "scale": [ 1, 0.919921875 ], "move": [ 0, 0 ] },
+        { "pose": 0, "frames": 2, "rotation": 0, "scale": [ 1, 0.9599609375 ], "move": [ 0, 0 ] },
+        { "pose": 0, "frames": 2, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] }
+      ]
+    },
+    { "name": "egg_ani02", "key_type": "plain", "play": "loop", "keys": [ { "pose": 0, "frames": 4 } ] }
+  ]
+}

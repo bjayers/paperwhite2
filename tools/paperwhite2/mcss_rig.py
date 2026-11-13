@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-"""Paper White 2: a battle sprite's rig (MCSS, src/system/mcss.c) as one flat JSON object, read from a side's five
-files and written back to them byte for byte, with the checks the rig editor runs before it writes
-(docs/paperwhite2/design/battle-sprites.md sections 3, 11 and 15).
+"""Paper White 2: a battle sprite's rig (MCSS, src/system/mcss.c) as one flat JSON object, the source of each side's
+five files: res/pokemon's <side>_rig.json beside the side's 256 by 128 sheet, which the build turns into the files
+byte for byte (tools/data/pokemon_graphics.py), with the checks the rig editor runs before it writes
+(docs/paperwhite2/design/battle-sprites.md sections 3, 11, 15 and 16).
 
-    mcss_rig.py dump FOLDER front|back                 the side's rig as JSON
-    mcss_rig.py write RIG.json FOLDER front|back       writes the five files of the side from a rig
     mcss_rig.py check FOLDER [front|back]              the rig's checks
-    mcss_rig.py roundtrip [res/pokemon]                every group's sides: files -> rig -> JSON -> rig -> files
+    mcss_rig.py files FOLDER front|back OUTPUT         writes the side's five files into OUTPUT, as the build makes them
+    mcss_rig.py dump FILES front|back                  the rig of a side's five files (an extracted group's) as JSON
+    mcss_rig.py convert [res/pokemon]                  each side's five files to its rig JSON, proven; removes the files
+    mcss_rig.py roundtrip [res/pokemon]                every side: JSON -> rig -> files -> rig -> JSON, compared
 
-The five files of a side (front or back) beside its 256 by 128 sheet:
+The five files of a side (front or back), as the archive a/0/0/4 holds them:
 - <side>_info.bin, MCSS's own (MCSSBin): the box, each cell's one or two quads, the idle parts and the stop flags;
 - <side>_cells.ncer: the cells as OBJs (MCSS draws the bin's quads, not these) and the cell animations' names again;
 - <side>_animations.nanr.lz11: the cell animations, LZ11-compressed;
@@ -21,16 +23,26 @@ optional rotation, scale and move; a **pose** is a multi-cell, its **parts** the
 track about its pivot; a **sequence** is a multi-cell animation sequence, of keys that each hold a pose. Nothing in the
 files is lost: values that are almost always the same (the OBJ mapping mode, a node's instance and flags, the bin's
 padding) are written only where a file differs, and the writer puts them back.
+
+The JSON is written in the compact layout (tools/data/datajson.py's dumps_compact, which the editor writes back byte for
+byte), with "$schema" first, pointing to res/pokemon/battle_sprite_rig.schema.json. The musical's sprites (a group's
+musical/ folder) keep the five files where they differ from the battle sprite's; the rest are built from its rig.
 """
 import bisect
 import json
+import os
 import struct
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
+from tools.data.datajson import dumps_compact  # noqa: E402
 from tools.data.nitro_2d import decompress  # noqa: E402
+
+SCHEMA = ROOT / "res/pokemon/battle_sprite_rig.schema.json"
+# A side's rig beside its sheet: front_rig.json, back_rig.json
+RIG_FILE = "_rig.json"
 
 FORMAT = 1
 SIDES = ("front", "back")
@@ -514,8 +526,8 @@ def rig_from_files(files: dict[str, bytes], side: str) -> dict:
     return rig
 
 
-def files_from_rig(rig: dict) -> dict[str, bytes]:
-    """The side's five files from a rig, the NANR LZ11-compressed."""
+def files_from_rig(rig: dict, compress: bool = True) -> dict[str, bytes]:
+    """The side's five files from a rig, the NANR LZ11-compressed (or not, for a reader that decompresses it)."""
     if rig.get("format") != FORMAT:
         raise RigError(f"a rig of format {rig.get('format')}, not {FORMAT}")
     names = [track["name"] for track in rig["tracks"]]
@@ -525,36 +537,75 @@ def files_from_rig(rig: dict) -> dict[str, bytes]:
     multi_animations = write_container("NMAR", [("ABNK", write_bank(rig["sequences"], "sequences")),
                                                 ("LABL", write_labels([s["name"] for s in rig["sequences"]]))])
     return {"info": write_info(rig), "cells": write_cells(rig, rig.get("picture_labels", names)),
-            "animations": compress_lz11(animations), "multi_cells": write_multi_cells(rig["poses"]),
-            "multi_animations": multi_animations}
+            "animations": compress_lz11(animations) if compress else animations,
+            "multi_cells": write_multi_cells(rig["poses"]), "multi_animations": multi_animations}
 
 
 def read_files(folder: Path, side: str) -> dict[str, bytes]:
+    """A side's five files from a folder of them (an extracted group, or a musical sprite's)."""
     try:
         return {kind: (folder / f"{side}{suffix}").read_bytes() for kind, suffix in FILES.items()}
     except OSError as error:
         raise RigError(f"{folder}: can't read the {side} rig ({error})") from error
 
 
-def read_side(folder: Path, side: str) -> dict:
+def files_side(folder: Path, side: str) -> dict:
+    """The rig of a folder's five files."""
     try:
         return rig_from_files(read_files(folder, side), side)
     except (struct.error, ValueError, IndexError, KeyError) as error:
         raise RigError(f"{folder}: can't read the {side} rig ({error})") from error
 
 
+def rig_path(folder: Path, side: str) -> Path:
+    return folder / f"{side}{RIG_FILE}"
+
+
+def loads(text: str, where: str = "the rig") -> dict:
+    """A rig from its JSON, without the "$schema"."""
+    try:
+        rig = json.loads(text)
+    except json.JSONDecodeError as error:
+        raise RigError(f"{where}: {error}") from None
+    if not isinstance(rig, dict):
+        raise RigError(f"{where}: not a JSON object")
+    rig.pop("$schema", None)
+    return rig
+
+
+def dumps(rig: dict, folder: Path) -> str:
+    """The text of a rig's file in a folder: its "$schema" (the schema relative to the folder) first, in the compact
+    layout, a key, a rectangle or a part a line."""
+    schema = Path(os.path.relpath(SCHEMA, folder.resolve())).as_posix()
+    return dumps_compact({"$schema": schema, **{k: v for k, v in rig.items() if k != "$schema"}}) + "\n"
+
+
+def read_side(folder: Path, side: str) -> dict:
+    """A side's rig from its folder's <side>_rig.json."""
+    path = rig_path(folder, side)
+    try:
+        text = path.read_text()
+    except OSError as error:
+        raise RigError(f"{folder}: can't read the {side} rig ({error})") from error
+    rig = loads(text, str(path))
+    if rig.get("side") != side:
+        raise RigError(f"{path}: the rig of side {rig.get('side')!r}, not {side}")
+    return rig
+
+
 def write_side(rig: dict, folder: Path, side: str) -> list[Path]:
-    """Writes the side's files that change, after the checks; returns them."""
+    """Writes the side's rig JSON after the checks, if it changes; returns it if written."""
     errors = [message for level, message in check(rig) if level == "error"]
     if errors:
         raise RigError("; ".join(errors))
-    written = []
-    for kind, blob in files_from_rig(rig).items():
-        path = folder / f"{side}{FILES[kind]}"
-        if not path.exists() or path.read_bytes() != blob:
-            path.write_bytes(blob)
-            written.append(path)
-    return written
+    if rig.get("side") != side:
+        raise RigError(f"the rig of side {rig.get('side')!r}, not {side}")
+    path = rig_path(folder, side)
+    text = dumps(rig, folder)
+    if path.is_file() and path.read_text() == text:
+        return []
+    path.write_text(text)
+    return [path]
 
 
 # The checks (section 11): errors stop a write; warnings are things the originals never do
@@ -678,33 +729,47 @@ def check_sequence(sequence: dict, where: str, pointer: str, count: int, things:
         error(f"{where} lasts no frames")
 
 
-def dumps(rig: dict, width: int = 118) -> str:
-    """The rig as JSON for a file and its diffs: anything that fits on a line (a key, a rectangle, a part) on one."""
-    def write(value, indent):
-        compact = json.dumps(value, separators=(", ", ": "))
-        if not isinstance(value, (dict, list)) or len(compact) + indent <= width or not value:
-            return compact
-        inner = " " * (indent + 2)
-        if isinstance(value, dict):
-            items = [f"{inner}{json.dumps(key)}: {write(item, indent + 2)}" for key, item in value.items()]
-            return "{\n" + ",\n".join(items) + "\n" + " " * indent + "}"
-        return "[\n" + ",\n".join(inner + write(item, indent + 2) for item in value) + "\n" + " " * indent + "]"
-    return write(rig, 0) + "\n"
-
-
 def groups(root: Path) -> list[Path]:
-    """Every folder of res/pokemon with a battle sprite (not the musical's)."""
-    return sorted({path.parent for path in root.rglob("front_info.bin") if "musical" not in path.parts})
+    """Every folder of res/pokemon with a battle sprite's rig (not the musical's)."""
+    return sorted({path.parent for path in root.rglob(f"front{RIG_FILE}") if "musical" not in path.parts})
+
+
+def convert(root: Path) -> int:
+    """Turns every side's five files below root (but the musical's) into its rig JSON, after proving that the JSON
+    gives the files back byte for byte, and removes the files. Returns how many sides it converted."""
+    folders = sorted({path.parent for path in root.rglob(f"front{FILES['info']}") if "musical" not in path.parts})
+    count = 0
+    for folder in folders:
+        for side in SIDES:
+            files = read_files(folder, side)
+            text = dumps(rig_from_files(files, side), folder)
+            rig = loads(text)
+            errors = [message for level, message in check(rig) if level == "error"]
+            if errors:
+                raise RigError(f"{folder} {side}: {'; '.join(errors)}")
+            differ = [kind for kind, blob in files_from_rig(rig).items() if blob != files[kind]]
+            if differ:
+                raise RigError(f"{folder} {side}: the JSON gives other {', '.join(differ)}")
+            rig_path(folder, side).write_text(text)
+            for suffix in FILES.values():
+                (folder / f"{side}{suffix}").unlink()
+            count += 1
+    return count
 
 
 def main():
     args = sys.argv[1:]
     if len(args) == 3 and args[0] == "dump" and args[2] in SIDES:
-        print(dumps(read_side(Path(args[1]), args[2])), end="")
-    elif len(args) == 4 and args[0] == "write" and args[3] in SIDES:
-        rig = json.loads(Path(args[1]).read_text())
-        for path in write_side(rig, Path(args[2]), args[3]):
-            print(f"wrote {path}")
+        print(dumps(files_side(Path(args[1]), args[2]), Path(args[1])), end="")
+    elif len(args) == 4 and args[0] == "files" and args[2] in SIDES:
+        rig = read_side(Path(args[1]), args[2])
+        errors = [message for level, message in check(rig) if level == "error"]
+        if errors:
+            raise SystemExit("; ".join(errors))
+        output = Path(args[3])
+        output.mkdir(parents=True, exist_ok=True)
+        for kind, blob in files_from_rig(rig).items():
+            (output / f"{args[2]}{FILES[kind]}").write_bytes(blob)
     elif len(args) in (2, 3) and args[0] == "check":
         failed = False
         for side in args[2:] or SIDES:
@@ -712,6 +777,8 @@ def main():
                 print(f"{side}: {level}: {message}")
                 failed |= level == "error"
         sys.exit(1 if failed else 0)
+    elif len(args) in (1, 2) and args[0] == "convert":
+        print(f"converted {convert(Path(args[1]) if len(args) == 2 else ROOT / 'res/pokemon')} sides")
     elif len(args) in (1, 2) and args[0] == "roundtrip":
         root = Path(args[1]) if len(args) == 2 else ROOT / "res/pokemon"
         sides = failures = 0
@@ -719,15 +786,15 @@ def main():
             for side in SIDES:
                 sides += 1
                 try:
-                    files = read_files(folder, side)
-                    rig = json.loads(dumps(rig_from_files(files, side)))
+                    text = rig_path(folder, side).read_text()
+                    rig = loads(text)
                     errors = [message for level, message in check(rig) if level == "error"]
                     if errors:
                         raise RigError("; ".join(errors))
-                    differ = [kind for kind, blob in files_from_rig(rig).items() if blob != files[kind]]
-                    if differ:
-                        raise RigError(f"differs in {', '.join(differ)}")
-                except (RigError, struct.error, ValueError, KeyError, IndexError) as error:
+                    again = dumps(rig_from_files(files_from_rig(rig), side), folder)
+                    if again != text:
+                        raise RigError("the files give another JSON")
+                except (RigError, OSError, struct.error, ValueError, KeyError, IndexError) as error:
                     failures += 1
                     print(f"{folder.relative_to(root)} {side}: {error}")
         print(f"{sides - failures} of {sides} sides round-trip")

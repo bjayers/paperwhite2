@@ -1,0 +1,241 @@
+{
+  "$schema": "../battle_sprite_rig.schema.json",
+  "format": 1,
+  "side": "front",
+  "box": { "width": 40, "height": 40, "x": 1, "y": 2 },
+  "stop_flags": 0,
+  "idle_parts": [],
+  "pictures": [
+    {
+      "rectangles": [
+        { "sheet": [ 24, 0 ], "size": [ 40, 40 ], "at": [ -19, 38 ] },
+        { "sheet": [ 0, 8 ], "size": [ 24, 16 ], "at": [ -12, 27 ] }
+      ],
+      "objs": [
+        { "x": -20, "y": -35, "size": [ 16, 16 ], "tile": 32, "attributes": [ 1792, 0, 0 ] },
+        { "x": 0, "y": -35, "size": [ 8, 16 ], "tile": 34, "attributes": [ 1792, 0, 0 ] },
+        { "x": -35, "y": -54, "size": [ 32, 32 ], "tile": 3, "attributes": [ 768, 0, 0 ] },
+        { "x": 9, "y": -54, "size": [ 8, 32 ], "tile": 7, "attributes": [ 768, 0, 0 ] },
+        { "x": -35, "y": -10, "size": [ 32, 8 ], "tile": 131, "attributes": [ 768, 0, 0 ] },
+        { "x": 9, "y": -10, "size": [ 8, 8 ], "tile": 135, "attributes": [ 768, 0, 0 ] }
+      ],
+      "obj_attribute": 22
+    },
+    {
+      "rectangles": [
+        { "sheet": [ 24, 40 ], "size": [ 40, 40 ], "at": [ -19, 38 ] },
+        { "sheet": [ 144, 48 ], "size": [ 24, 16 ], "at": [ -14, 26 ] }
+      ],
+      "objs": [
+        { "x": -22, "y": -34, "size": [ 16, 16 ], "tile": 210, "attributes": [ 1792, 0, 0 ] },
+        { "x": -2, "y": -34, "size": [ 8, 16 ], "tile": 212, "attributes": [ 1792, 0, 0 ] },
+        { "x": -35, "y": -54, "size": [ 32, 32 ], "tile": 163, "attributes": [ 768, 0, 0 ] },
+        { "x": 9, "y": -54, "size": [ 8, 32 ], "tile": 167, "attributes": [ 768, 0, 0 ] },
+        { "x": -35, "y": -10, "size": [ 32, 8 ], "tile": 291, "attributes": [ 768, 0, 0 ] },
+        { "x": 9, "y": -10, "size": [ 8, 8 ], "tile": 295, "attributes": [ 768, 0, 0 ] }
+      ],
+      "obj_attribute": 22
+    },
+    {
+      "rectangles": [ { "sheet": [ 104, 40 ], "size": [ 40, 40 ], "at": [ -19, 38 ] } ],
+      "objs": [
+        { "x": -35, "y": -54, "size": [ 32, 32 ], "tile": 173, "attributes": [ 768, 0, 0 ] },
+        { "x": 9, "y": -54, "size": [ 8, 32 ], "tile": 177, "attributes": [ 768, 0, 0 ] },
+        { "x": -35, "y": -10, "size": [ 32, 8 ], "tile": 301, "attributes": [ 768, 0, 0 ] },
+        { "x": 9, "y": -10, "size": [ 8, 8 ], "tile": 305, "attributes": [ 768, 0, 0 ] }
+      ],
+      "obj_attribute": 22
+    },
+    {
+      "rectangles": [ { "sheet": [ 64, 0 ], "size": [ 40, 40 ], "at": [ -19, 38 ] } ],
+      "objs": [
+        { "x": -35, "y": -54, "size": [ 32, 32 ], "tile": 8, "attributes": [ 768, 0, 0 ] },
+        { "x": 9, "y": -54, "size": [ 8, 32 ], "tile": 12, "attributes": [ 768, 0, 0 ] },
+        { "x": -35, "y": -10, "size": [ 32, 8 ], "tile": 136, "attributes": [ 768, 0, 0 ] },
+        { "x": 9, "y": -10, "size": [ 8, 8 ], "tile": 140, "attributes": [ 768, 0, 0 ] }
+      ],
+      "obj_attribute": 22
+    },
+    {
+      "rectangles": [ { "sheet": [ 104, 0 ], "size": [ 40, 40 ], "at": [ -19, 38 ] } ],
+      "objs": [
+        { "x": -35, "y": -54, "size": [ 32, 32 ], "tile": 13, "attributes": [ 768, 0, 0 ] },
+        { "x": 9, "y": -54, "size": [ 8, 32 ], "tile": 17, "attributes": [ 768, 0, 0 ] },
+        { "x": -35, "y": -10, "size": [ 32, 8 ], "tile": 141, "attributes": [ 768, 0, 0 ] },
+        { "x": 9, "y": -10, "size": [ 8, 8 ], "tile": 145, "attributes": [ 768, 0, 0 ] }
+      ],
+      "obj_attribute": 22
+    },
+    {
+      "rectangles": [
+        { "sheet": [ 64, 40 ], "size": [ 40, 40 ], "at": [ -19, 38 ] },
+        { "sheet": [ 168, 48 ], "size": [ 24, 16 ], "at": [ -9, 26 ] }
+      ],
+      "objs": [
+        { "x": -17, "y": -34, "size": [ 16, 16 ], "tile": 213, "attributes": [ 1792, 0, 0 ] },
+        { "x": 3, "y": -34, "size": [ 8, 16 ], "tile": 215, "attributes": [ 1792, 0, 0 ] },
+        { "x": -35, "y": -54, "size": [ 32, 32 ], "tile": 168, "attributes": [ 768, 0, 0 ] },
+        { "x": 9, "y": -54, "size": [ 8, 32 ], "tile": 172, "attributes": [ 768, 0, 0 ] },
+        { "x": -35, "y": -10, "size": [ 32, 8 ], "tile": 296, "attributes": [ 768, 0, 0 ] },
+        { "x": 9, "y": -10, "size": [ 8, 8 ], "tile": 300, "attributes": [ 768, 0, 0 ] }
+      ],
+      "obj_attribute": 22
+    },
+    {
+      "rectangles": [
+        { "sheet": [ 144, 0 ], "size": [ 40, 40 ], "at": [ -19, 38 ] },
+        { "sheet": [ 0, 8 ], "size": [ 24, 16 ], "at": [ -12, 26 ] }
+      ],
+      "objs": [
+        { "x": -20, "y": -34, "size": [ 16, 16 ], "tile": 32, "attributes": [ 1792, 0, 0 ] },
+        { "x": 0, "y": -34, "size": [ 8, 16 ], "tile": 34, "attributes": [ 1792, 0, 0 ] },
+        { "x": -35, "y": -54, "size": [ 32, 32 ], "tile": 18, "attributes": [ 768, 0, 0 ] },
+        { "x": 9, "y": -54, "size": [ 8, 32 ], "tile": 22, "attributes": [ 768, 0, 0 ] },
+        { "x": -35, "y": -10, "size": [ 32, 8 ], "tile": 146, "attributes": [ 768, 0, 0 ] },
+        { "x": 9, "y": -10, "size": [ 8, 8 ], "tile": 150, "attributes": [ 768, 0, 0 ] }
+      ],
+      "obj_attribute": 22
+    }
+  ],
+  "tracks": [
+    {
+      "name": "karada04",
+      "key_type": "plain",
+      "play": "loop",
+      "keys": [
+        { "picture": 0, "frames": 7 },
+        { "picture": 1, "frames": 7 },
+        { "picture": 2, "frames": 7 },
+        { "picture": 3, "frames": 7 },
+        { "picture": 4, "frames": 7 },
+        { "picture": 5, "frames": 7 }
+      ]
+    },
+    {
+      "name": "karada02",
+      "key_type": "plain",
+      "play": "loop",
+      "keys": [
+        { "picture": 0, "frames": 5 },
+        { "picture": 1, "frames": 5 },
+        { "picture": 2, "frames": 5 },
+        { "picture": 3, "frames": 5 },
+        { "picture": 4, "frames": 5 },
+        { "picture": 5, "frames": 5 }
+      ]
+    },
+    {
+      "name": "karada01",
+      "key_type": "plain",
+      "play": "loop",
+      "keys": [
+        { "picture": 0, "frames": 3 },
+        { "picture": 1, "frames": 3 },
+        { "picture": 2, "frames": 3 },
+        { "picture": 3, "frames": 3 },
+        { "picture": 4, "frames": 3 },
+        { "picture": 5, "frames": 3 }
+      ]
+    },
+    {
+      "name": "karada03",
+      "key_type": "plain",
+      "play": "loop",
+      "keys": [
+        { "picture": 0, "frames": 1 },
+        { "picture": 1, "frames": 1 },
+        { "picture": 2, "frames": 1 },
+        { "picture": 3, "frames": 1 },
+        { "picture": 4, "frames": 1 },
+        { "picture": 5, "frames": 1 }
+      ]
+    },
+    {
+      "name": "karada05",
+      "key_type": "srt",
+      "play": "loop",
+      "keys": [
+        { "picture": 0, "frames": 1, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 1, "frames": 1, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 2, "frames": 1, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 3, "frames": 1, "rotation": 0, "scale": [ 1, 0.89990234375 ], "move": [ 0, 0 ] },
+        { "picture": 4, "frames": 1, "rotation": 0, "scale": [ 1, 0.89990234375 ], "move": [ 0, 0 ] },
+        { "picture": 5, "frames": 1, "rotation": 0, "scale": [ 1, 0.89990234375 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 1, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -1 ] },
+        { "picture": 1, "frames": 1, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 2, "frames": 1, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 3, "frames": 1, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 4, "frames": 1, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 5, "frames": 1, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -6 ] },
+        { "picture": 0, "frames": 1, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -6 ] },
+        { "picture": 1, "frames": 1, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -5 ] },
+        { "picture": 2, "frames": 1, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -4 ] },
+        { "picture": 3, "frames": 1, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -3 ] },
+        { "picture": 4, "frames": 1, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -2 ] },
+        { "picture": 5, "frames": 1, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, -1 ] },
+        { "picture": 0, "frames": 1, "rotation": 0, "scale": [ 1, 0.89990234375 ], "move": [ 0, 0 ] },
+        { "picture": 1, "frames": 1, "rotation": 0, "scale": [ 1, 0.89990234375 ], "move": [ 0, 0 ] },
+        { "picture": 2, "frames": 1, "rotation": 0, "scale": [ 1, 0.89990234375 ], "move": [ 0, 0 ] },
+        { "picture": 3, "frames": 1, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 4, "frames": 1, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 5, "frames": 1, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] }
+      ]
+    },
+    {
+      "name": "karada06",
+      "key_type": "plain",
+      "play": "loop",
+      "keys": [
+        { "picture": 0, "frames": 30 },
+        { "picture": 6, "frames": 8 },
+        { "picture": 0, "frames": 8 },
+        { "picture": 0, "frames": 20 },
+        { "picture": 6, "frames": 8 },
+        { "picture": 0, "frames": 8 },
+        { "picture": 6, "frames": 8 },
+        { "picture": 0, "frames": 8 },
+        { "picture": 0, "frames": 30 }
+      ]
+    },
+    { "name": "CellAnime1", "key_type": "plain", "play": "loop", "keys": [ { "picture": 0, "frames": 4 } ] }
+  ],
+  "poses": [
+    { "parts": [ { "track": 0, "pivot": [ 0, 0 ], "play": "restart" } ] },
+    { "parts": [ { "track": 1, "pivot": [ 0, 0 ], "play": "restart" } ] },
+    { "parts": [ { "track": 2, "pivot": [ 0, 0 ], "play": "restart" } ] },
+    { "parts": [ { "track": 3, "pivot": [ 0, 0 ], "play": "restart" } ] },
+    { "parts": [ { "track": 4, "pivot": [ 0, 0 ], "play": "restart" } ] },
+    { "parts": [ { "track": 5, "pivot": [ 0, 0 ], "play": "restart" } ] }
+  ],
+  "sequences": [
+    {
+      "name": "CellAnime0",
+      "key_type": "plain",
+      "play": "loop",
+      "keys": [
+        { "pose": 5, "frames": 128 },
+        { "pose": 5, "frames": 128 },
+        { "pose": 0, "frames": 42 },
+        { "pose": 0, "frames": 42 },
+        { "pose": 1, "frames": 30 },
+        { "pose": 2, "frames": 18 },
+        { "pose": 3, "frames": 6 },
+        { "pose": 3, "frames": 6 },
+        { "pose": 3, "frames": 6 },
+        { "pose": 3, "frames": 6 },
+        { "pose": 4, "frames": 24 },
+        { "pose": 4, "frames": 24 },
+        { "pose": 4, "frames": 24 },
+        { "pose": 4, "frames": 24 },
+        { "pose": 3, "frames": 6 },
+        { "pose": 3, "frames": 6 },
+        { "pose": 3, "frames": 6 },
+        { "pose": 2, "frames": 18 },
+        { "pose": 1, "frames": 30 },
+        { "pose": 0, "frames": 42 },
+        { "pose": 0, "frames": 42 },
+        { "pose": 5, "frames": 128 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "$schema": "../../battle_sprite_rig.schema.json",
+  "format": 1,
+  "side": "front",
+  "box": { "width": 64, "height": 188, "x": 2, "y": -12 },
+  "stop_flags": 1,
+  "idle_parts": null,
+  "pictures": [
+    {
+      "rectangles": [ { "sheet": [ 0, 0 ], "size": [ 64, 64 ], "at": [ -32, 36 ] } ],
+      "objs": [ { "x": -32, "y": -36, "size": [ 64, 64 ], "tile": 0, "attributes": [ 0, 0, 0 ] } ],
+      "obj_attribute": 12
+    },
+    {
+      "rectangles": [ { "sheet": [ 64, 0 ], "size": [ 32, 40 ], "at": [ -16, 21 ] } ],
+      "objs": [
+        { "x": -16, "y": -21, "size": [ 32, 32 ], "tile": 8, "attributes": [ 0, 0, 0 ] },
+        { "x": -16, "y": 11, "size": [ 32, 8 ], "tile": 136, "attributes": [ 0, 0, 0 ] }
+      ],
+      "obj_attribute": 7
+    },
+    {
+      "rectangles": [ { "sheet": [ 96, 0 ], "size": [ 8, 128 ], "at": [ -3, 72 ] } ],
+      "objs": [
+        { "x": -3, "y": -72, "size": [ 8, 32 ], "tile": 12, "attributes": [ 0, 0, 0 ] },
+        { "x": -3, "y": -40, "size": [ 8, 32 ], "tile": 140, "attributes": [ 0, 0, 0 ] },
+        { "x": -3, "y": -8, "size": [ 8, 32 ], "tile": 268, "attributes": [ 0, 0, 0 ] },
+        { "x": -3, "y": 24, "size": [ 8, 32 ], "tile": 396, "attributes": [ 0, 0, 0 ] }
+      ],
+      "obj_attribute": 18
+    }
+  ],
+  "tracks": [
+    { "name": "body", "key_type": "plain", "play": "loop", "keys": [ { "picture": 0, "frames": 4 } ] },
+    { "name": "atama", "key_type": "plain", "play": "loop", "keys": [ { "picture": 1, "frames": 4 } ] },
+    { "name": "line", "key_type": "plain", "play": "loop", "keys": [ { "picture": 2, "frames": 4 } ] }
+  ],
+  "poses": [
+    {
+      "parts": [
+        { "track": 1, "pivot": [ 0, -44 ], "play": "continue" },
+        { "track": 0, "pivot": [ 2, -40 ], "play": "continue" },
+        { "track": 2, "pivot": [ 19, -128 ], "play": "continue" },
+        { "track": 2, "pivot": [ -16, -128 ], "play": "continue", "instance": 2 }
+      ],
+      "instances": 3
+    }
+  ],
+  "sequences": [
+    {
+      "name": "nonstop",
+      "key_type": "move",
+      "play": "loop",
+      "keys": [
+        { "pose": 0, "frames": 5, "move": [ 0, 0 ] },
+        { "pose": 0, "frames": 5, "move": [ 0, 1 ] },
+        { "pose": 0, "frames": 5, "move": [ 0, 2 ] },
+        { "pose": 0, "frames": 5, "move": [ 0, 3 ] },
+        { "pose": 0, "frames": 5, "move": [ 0, 5 ] },
+        { "pose": 0, "frames": 5, "move": [ 0, 6 ] },
+        { "pose": 0, "frames": 5, "move": [ 0, 7 ] },
+        { "pose": 0, "frames": 5, "move": [ 0, 8 ] },
+        { "pose": 0, "frames": 5, "move": [ 0, 7 ] },
+        { "pose": 0, "frames": 5, "move": [ 0, 6 ] },
+        { "pose": 0, "frames": 5, "move": [ 0, 5 ] },
+        { "pose": 0, "frames": 5, "move": [ 0, 4 ] },
+        { "pose": 0, "frames": 5, "move": [ 0, 3 ] },
+        { "pose": 0, "frames": 5, "move": [ 0, 2 ] },
+        { "pose": 0, "frames": 5, "move": [ 0, 1 ] },
+        { "pose": 0, "frames": 5, "move": [ 0, 0 ] }
+      ]
+    }
+  ]
+}

@@ -10,8 +10,8 @@ SPECIES is a species' directory in res/pokemon (pichu) or its constant (SPECIES_
 art. The art is a group's images, all in one 16-colour palette (index 0 transparent): the 256 by 128 sheets that MCSS
 draws the animated sprite from (front.png, back.png, and front_female.png, back_female.png where the group has them),
 the 96 by 96 stills of the 2D screens (front_single.png, back_single.png and their _female ones), normal.pal and
-shiny.pal, which recolours the same indices. The rig (the cells' rectangles, the parts, poses and animations: the
-.ncer, .nanr.lz11, .nmcr, .nmar and _info.bin files) is kept as it is.
+shiny.pal, which recolours the same indices. The rig (the cells' rectangles, the parts, poses and animations:
+front_rig.json and back_rig.json, mcss_rig.py) is kept as it is.
 
 export writes a zip of a folder: the images as they are in res/ (indexed PNGs whose palette is normal.pal), a
 shiny-coloured copy of each (<image>_shiny.png: the same pixels, shiny.pal as its palette), normal.pal and shiny.pal,
@@ -48,7 +48,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from tools.data.nitro_2d import (color5, read_indexed_png, read_palette, unfilter_png, write_indexed_png,  # noqa: E402
                                  write_palette, write_rgba_png)
-from tools.paperwhite2 import mcss  # noqa: E402
+from tools.paperwhite2 import mcss, mcss_rig  # noqa: E402
 
 POKEMON = ROOT / "res" / "pokemon"
 SHEETS = ("front", "back", "front_female", "back_female")
@@ -124,7 +124,7 @@ def folder_of(species: str, form: int) -> Path:
         folder = folder / f"form_{form}"
         if not (folder / "front.png").is_file():
             raise ArtError(f"{name}'s form {form} has no art of its own (form_{form}/): it is drawn as its species")
-    if not all((folder / f"{side}.png").is_file() and (folder / f"{side}_info.bin").is_file() for side in mcss.SIDES):
+    if not all((folder / f"{side}.png").is_file() and mcss_rig.rig_path(folder, side).is_file() for side in mcss.SIDES):
         raise ArtError(f"{folder.relative_to(POKEMON.parent.parent)} has no battle sprite")
     return folder
 

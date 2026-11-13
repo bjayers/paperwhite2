@@ -1,0 +1,469 @@
+{
+  "$schema": "../battle_sprite_rig.schema.json",
+  "format": 1,
+  "side": "back",
+  "box": { "width": 64, "height": 58, "x": 0, "y": -1 },
+  "stop_flags": 1,
+  "idle_parts": [],
+  "pictures": [
+    {
+      "rectangles": [ { "sheet": [ 16, 0 ], "size": [ 40, 40 ], "at": [ 5, 44 ] } ],
+      "objs": [
+        { "x": -11, "y": -60, "size": [ 32, 32 ], "tile": 2, "attributes": [ 768, 0, 0 ] },
+        { "x": 33, "y": -60, "size": [ 8, 32 ], "tile": 6, "attributes": [ 768, 0, 0 ] },
+        { "x": -11, "y": -16, "size": [ 32, 8 ], "tile": 130, "attributes": [ 768, 0, 0 ] },
+        { "x": 33, "y": -16, "size": [ 8, 8 ], "tile": 134, "attributes": [ 768, 0, 0 ] }
+      ],
+      "obj_attribute": 22
+    },
+    {
+      "rectangles": [ { "sheet": [ 16, 56 ], "size": [ 24, 24 ], "at": [ -6, 16 ] } ],
+      "objs": [
+        { "x": -14, "y": -24, "size": [ 16, 16 ], "tile": 226, "attributes": [ 768, 0, 0 ] },
+        { "x": 6, "y": -24, "size": [ 8, 16 ], "tile": 228, "attributes": [ 768, 0, 0 ] },
+        { "x": -14, "y": -4, "size": [ 16, 8 ], "tile": 290, "attributes": [ 768, 0, 0 ] },
+        { "x": 6, "y": -4, "size": [ 8, 8 ], "tile": 292, "attributes": [ 768, 0, 0 ] }
+      ],
+      "obj_attribute": 10
+    },
+    {
+      "rectangles": [ { "sheet": [ 56, 0 ], "size": [ 56, 48 ], "at": [ -50, 13 ] } ],
+      "objs": [
+        { "x": -66, "y": -29, "size": [ 32, 32 ], "tile": 7, "attributes": [ 768, 0, 0 ] },
+        { "x": -26, "y": -29, "size": [ 16, 32 ], "tile": 11, "attributes": [ 768, 0, 0 ] },
+        { "x": -6, "y": -29, "size": [ 8, 32 ], "tile": 13, "attributes": [ 768, 0, 0 ] },
+        { "x": -66, "y": 11, "size": [ 32, 16 ], "tile": 135, "attributes": [ 768, 0, 0 ] },
+        { "x": -26, "y": 11, "size": [ 16, 16 ], "tile": 139, "attributes": [ 768, 0, 0 ] },
+        { "x": -6, "y": 11, "size": [ 8, 16 ], "tile": 141, "attributes": [ 768, 0, 0 ] }
+      ],
+      "obj_attribute": 24
+    },
+    {
+      "rectangles": [ { "sheet": [ 40, 56 ], "size": [ 24, 24 ], "at": [ -6, 6 ] } ],
+      "objs": [
+        { "x": -14, "y": -14, "size": [ 16, 16 ], "tile": 229, "attributes": [ 768, 0, 0 ] },
+        { "x": 6, "y": -14, "size": [ 8, 16 ], "tile": 231, "attributes": [ 768, 0, 0 ] },
+        { "x": -14, "y": 6, "size": [ 16, 8 ], "tile": 293, "attributes": [ 768, 0, 0 ] },
+        { "x": 6, "y": 6, "size": [ 8, 8 ], "tile": 295, "attributes": [ 768, 0, 0 ] }
+      ],
+      "obj_attribute": 8
+    },
+    {
+      "rectangles": [ { "sheet": [ 64, 56 ], "size": [ 24, 24 ], "at": [ -13, 5 ] } ],
+      "objs": [
+        { "x": -21, "y": -13, "size": [ 16, 16 ], "tile": 232, "attributes": [ 768, 0, 0 ] },
+        { "x": -1, "y": -13, "size": [ 8, 16 ], "tile": 234, "attributes": [ 768, 0, 0 ] },
+        { "x": -21, "y": 7, "size": [ 16, 8 ], "tile": 296, "attributes": [ 768, 0, 0 ] },
+        { "x": -1, "y": 7, "size": [ 8, 8 ], "tile": 298, "attributes": [ 768, 0, 0 ] }
+      ],
+      "obj_attribute": 9
+    },
+    {
+      "rectangles": [ { "sheet": [ 88, 56 ], "size": [ 24, 24 ], "at": [ -17, 5 ] } ],
+      "objs": [
+        { "x": -25, "y": -13, "size": [ 16, 16 ], "tile": 235, "attributes": [ 768, 0, 0 ] },
+        { "x": -5, "y": -13, "size": [ 8, 16 ], "tile": 237, "attributes": [ 768, 0, 0 ] },
+        { "x": -25, "y": 7, "size": [ 16, 8 ], "tile": 299, "attributes": [ 768, 0, 0 ] },
+        { "x": -5, "y": 7, "size": [ 8, 8 ], "tile": 301, "attributes": [ 768, 0, 0 ] }
+      ],
+      "obj_attribute": 10
+    },
+    {
+      "rectangles": [ { "sheet": [ 112, 48 ], "size": [ 24, 32 ], "at": [ -18, 27 ] } ],
+      "objs": [
+        { "x": -26, "y": -43, "size": [ 16, 32 ], "tile": 206, "attributes": [ 768, 0, 0 ] },
+        { "x": -6, "y": -43, "size": [ 8, 32 ], "tile": 208, "attributes": [ 768, 0, 0 ] }
+      ],
+      "obj_attribute": 17
+    }
+  ],
+  "tracks": [
+    {
+      "name": "CellAnime01",
+      "key_type": "move",
+      "play": "loop",
+      "keys": [
+        { "picture": 0, "frames": 5, "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 5, "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 5, "move": [ 1, 0 ] },
+        { "picture": 0, "frames": 5, "move": [ 1, 0 ] },
+        { "picture": 0, "frames": 5, "move": [ 2, 0 ] },
+        { "picture": 0, "frames": 5, "move": [ 3, 0 ] },
+        { "picture": 0, "frames": 5, "move": [ 3, 0 ] },
+        { "picture": 0, "frames": 5, "move": [ 4, 0 ] },
+        { "picture": 0, "frames": 5, "move": [ 5, 0 ] },
+        { "picture": 0, "frames": 5, "move": [ 5, 0 ] },
+        { "picture": 0, "frames": 5, "move": [ 4, 0 ] },
+        { "picture": 0, "frames": 5, "move": [ 3, 0 ] },
+        { "picture": 0, "frames": 5, "move": [ 3, 0 ] },
+        { "picture": 0, "frames": 5, "move": [ 2, 0 ] },
+        { "picture": 0, "frames": 5, "move": [ 1, 0 ] },
+        { "picture": 0, "frames": 5, "move": [ 1, 0 ] },
+        { "picture": 0, "frames": 5, "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 5, "move": [ 0, 0 ] }
+      ]
+    },
+    {
+      "name": "CellAnime11",
+      "key_type": "move",
+      "play": "loop",
+      "keys": [
+        { "picture": 1, "frames": 5, "move": [ 0, 0 ] },
+        { "picture": 1, "frames": 5, "move": [ 0, 0 ] },
+        { "picture": 1, "frames": 5, "move": [ 1, 0 ] },
+        { "picture": 1, "frames": 5, "move": [ 1, 0 ] },
+        { "picture": 1, "frames": 5, "move": [ 2, 0 ] },
+        { "picture": 1, "frames": 5, "move": [ 3, 0 ] },
+        { "picture": 1, "frames": 5, "move": [ 3, 0 ] },
+        { "picture": 1, "frames": 5, "move": [ 4, 0 ] },
+        { "picture": 1, "frames": 5, "move": [ 5, 0 ] },
+        { "picture": 1, "frames": 5, "move": [ 5, 0 ] },
+        { "picture": 1, "frames": 5, "move": [ 4, 0 ] },
+        { "picture": 1, "frames": 5, "move": [ 3, 0 ] },
+        { "picture": 1, "frames": 5, "move": [ 3, 0 ] },
+        { "picture": 1, "frames": 5, "move": [ 2, 0 ] },
+        { "picture": 1, "frames": 5, "move": [ 1, 0 ] },
+        { "picture": 1, "frames": 5, "move": [ 1, 0 ] },
+        { "picture": 1, "frames": 5, "move": [ 0, 0 ] },
+        { "picture": 1, "frames": 5, "move": [ 0, 0 ] }
+      ]
+    },
+    {
+      "name": "CellAnime2",
+      "key_type": "srt",
+      "play": "loop",
+      "keys": [
+        { "picture": 2, "frames": 5, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 0, "scale": [ 0.987548828125, 1 ], "move": [ 0, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 0, "scale": [ 0.97509765625, 1 ], "move": [ 1, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 0, "scale": [ 0.96240234375, 1 ], "move": [ 1, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 0, "scale": [ 0.949951171875, 1 ], "move": [ 2, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 0, "scale": [ 0.9375, 1 ], "move": [ 3, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 0, "scale": [ 0.925048828125, 1 ], "move": [ 3, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 0, "scale": [ 0.91259765625, 1 ], "move": [ 4, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 0, "scale": [ 0.89990234375, 1 ], "move": [ 5, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 0, "scale": [ 0.89990234375, 1 ], "move": [ 5, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 0, "scale": [ 0.91259765625, 1 ], "move": [ 4, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 0, "scale": [ 0.925048828125, 1 ], "move": [ 3, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 0, "scale": [ 0.9375, 1 ], "move": [ 3, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 0, "scale": [ 0.949951171875, 1 ], "move": [ 2, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 0, "scale": [ 0.96240234375, 1 ], "move": [ 1, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 0, "scale": [ 0.97509765625, 1 ], "move": [ 1, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 0, "scale": [ 0.987548828125, 1 ], "move": [ 0, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] }
+      ]
+    },
+    {
+      "name": "CellAnime3",
+      "key_type": "srt",
+      "play": "loop",
+      "keys": [
+        { "picture": 3, "frames": 5, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 3, "frames": 5, "rotation": 455, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 3, "frames": 5, "rotation": 910, "scale": [ 1, 1 ], "move": [ 1, 0 ] },
+        { "picture": 3, "frames": 5, "rotation": 1365, "scale": [ 1, 1 ], "move": [ 1, 0 ] },
+        { "picture": 3, "frames": 5, "rotation": 1820, "scale": [ 1, 1 ], "move": [ 2, 0 ] },
+        { "picture": 3, "frames": 5, "rotation": 2275, "scale": [ 1, 1 ], "move": [ 3, 0 ] },
+        { "picture": 3, "frames": 5, "rotation": 2730, "scale": [ 1, 1 ], "move": [ 3, 0 ] },
+        { "picture": 3, "frames": 5, "rotation": 3185, "scale": [ 1, 1 ], "move": [ 4, 0 ] },
+        { "picture": 3, "frames": 5, "rotation": 3640, "scale": [ 1, 1 ], "move": [ 5, 0 ] },
+        { "picture": 3, "frames": 5, "rotation": 3640, "scale": [ 1, 1 ], "move": [ 5, 0 ] },
+        { "picture": 3, "frames": 5, "rotation": 3185, "scale": [ 1, 1 ], "move": [ 4, 0 ] },
+        { "picture": 3, "frames": 5, "rotation": 2730, "scale": [ 1, 1 ], "move": [ 3, 0 ] },
+        { "picture": 3, "frames": 5, "rotation": 2275, "scale": [ 1, 1 ], "move": [ 3, 0 ] },
+        { "picture": 3, "frames": 5, "rotation": 1820, "scale": [ 1, 1 ], "move": [ 2, 0 ] },
+        { "picture": 3, "frames": 5, "rotation": 1365, "scale": [ 1, 1 ], "move": [ 1, 0 ] },
+        { "picture": 3, "frames": 5, "rotation": 910, "scale": [ 1, 1 ], "move": [ 1, 0 ] },
+        { "picture": 3, "frames": 5, "rotation": 455, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 3, "frames": 5, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] }
+      ]
+    },
+    {
+      "name": "CellAnime4",
+      "key_type": "srt",
+      "play": "loop",
+      "keys": [
+        { "picture": 4, "frames": 5, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 4, "frames": 5, "rotation": 682, "scale": [ 1, 1 ], "move": [ 0, 1 ] },
+        { "picture": 4, "frames": 5, "rotation": 1365, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 4, "frames": 5, "rotation": 2047, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 4, "frames": 5, "rotation": 2730, "scale": [ 1, 1 ], "move": [ 2, 1 ] },
+        { "picture": 4, "frames": 5, "rotation": 3413, "scale": [ 1, 1 ], "move": [ 3, 1 ] },
+        { "picture": 4, "frames": 5, "rotation": 4095, "scale": [ 1, 1 ], "move": [ 3, 1 ] },
+        { "picture": 4, "frames": 5, "rotation": 4778, "scale": [ 1, 1 ], "move": [ 4, 2 ] },
+        { "picture": 4, "frames": 5, "rotation": 5461, "scale": [ 1, 1 ], "move": [ 5, 2 ] },
+        { "picture": 4, "frames": 5, "rotation": 5461, "scale": [ 1, 1 ], "move": [ 5, 2 ] },
+        { "picture": 4, "frames": 5, "rotation": 4778, "scale": [ 1, 1 ], "move": [ 4, 2 ] },
+        { "picture": 4, "frames": 5, "rotation": 4095, "scale": [ 1, 1 ], "move": [ 3, 1 ] },
+        { "picture": 4, "frames": 5, "rotation": 3413, "scale": [ 1, 1 ], "move": [ 3, 1 ] },
+        { "picture": 4, "frames": 5, "rotation": 2730, "scale": [ 1, 1 ], "move": [ 2, 1 ] },
+        { "picture": 4, "frames": 5, "rotation": 2047, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 4, "frames": 5, "rotation": 1365, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 4, "frames": 5, "rotation": 682, "scale": [ 1, 1 ], "move": [ 0, 1 ] },
+        { "picture": 4, "frames": 5, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] }
+      ]
+    },
+    {
+      "name": "CellAnime5",
+      "key_type": "srt",
+      "play": "loop",
+      "keys": [
+        { "picture": 5, "frames": 5, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 0, "scale": [ 1, 0.96240234375 ], "move": [ 0, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 0, "scale": [ 1, 0.925048828125 ], "move": [ 1, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 0, "scale": [ 1, 0.887451171875 ], "move": [ 2, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 0, "scale": [ 1, 0.85009765625 ], "move": [ 3, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 0, "scale": [ 1, 0.8125 ], "move": [ 3, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 0, "scale": [ 1, 0.77490234375 ], "move": [ 4, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 0, "scale": [ 1, 0.737548828125 ], "move": [ 5, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 0, "scale": [ 1, 0.699951171875 ], "move": [ 6, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 0, "scale": [ 1, 0.699951171875 ], "move": [ 6, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 0, "scale": [ 1, 0.737548828125 ], "move": [ 5, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 0, "scale": [ 1, 0.77490234375 ], "move": [ 4, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 0, "scale": [ 1, 0.8125 ], "move": [ 3, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 0, "scale": [ 1, 0.85009765625 ], "move": [ 3, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 0, "scale": [ 1, 0.887451171875 ], "move": [ 2, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 0, "scale": [ 1, 0.925048828125 ], "move": [ 1, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 0, "scale": [ 1, 0.96240234375 ], "move": [ 0, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] }
+      ]
+    },
+    {
+      "name": "CellAnime6",
+      "key_type": "srt",
+      "play": "loop",
+      "keys": [
+        { "picture": 6, "frames": 5, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 6, "frames": 5, "rotation": 0, "scale": [ 1, 0.96240234375 ], "move": [ 0, 0 ] },
+        { "picture": 6, "frames": 5, "rotation": 0, "scale": [ 1, 0.925048828125 ], "move": [ 1, 0 ] },
+        { "picture": 6, "frames": 5, "rotation": 0, "scale": [ 1, 0.887451171875 ], "move": [ 2, 0 ] },
+        { "picture": 6, "frames": 5, "rotation": 0, "scale": [ 1, 0.85009765625 ], "move": [ 3, -1 ] },
+        { "picture": 6, "frames": 5, "rotation": 0, "scale": [ 1, 0.8125 ], "move": [ 4, -1 ] },
+        { "picture": 6, "frames": 5, "rotation": 0, "scale": [ 1, 0.77490234375 ], "move": [ 5, -2 ] },
+        { "picture": 6, "frames": 5, "rotation": 0, "scale": [ 1, 0.737548828125 ], "move": [ 6, -2 ] },
+        { "picture": 6, "frames": 5, "rotation": 0, "scale": [ 1, 0.699951171875 ], "move": [ 8, -3 ] },
+        { "picture": 6, "frames": 5, "rotation": 0, "scale": [ 1, 0.699951171875 ], "move": [ 8, -3 ] },
+        { "picture": 6, "frames": 5, "rotation": 0, "scale": [ 1, 0.737548828125 ], "move": [ 6, -2 ] },
+        { "picture": 6, "frames": 5, "rotation": 0, "scale": [ 1, 0.77490234375 ], "move": [ 5, -2 ] },
+        { "picture": 6, "frames": 5, "rotation": 0, "scale": [ 1, 0.8125 ], "move": [ 4, -1 ] },
+        { "picture": 6, "frames": 5, "rotation": 0, "scale": [ 1, 0.85009765625 ], "move": [ 3, -1 ] },
+        { "picture": 6, "frames": 5, "rotation": 0, "scale": [ 1, 0.887451171875 ], "move": [ 2, 0 ] },
+        { "picture": 6, "frames": 5, "rotation": 0, "scale": [ 1, 0.925048828125 ], "move": [ 1, 0 ] },
+        { "picture": 6, "frames": 5, "rotation": 0, "scale": [ 1, 0.96240234375 ], "move": [ 0, 0 ] },
+        { "picture": 6, "frames": 5, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] }
+      ]
+    },
+    {
+      "name": "CellAnime011",
+      "key_type": "srt",
+      "play": "loop",
+      "keys": [
+        { "picture": 0, "frames": 5, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 5, "rotation": 65354, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 5, "rotation": 65172, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 5, "rotation": 64990, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 0, "frames": 5, "rotation": 64808, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 0, "frames": 5, "rotation": 64626, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 0, "frames": 5, "rotation": 64444, "scale": [ 1, 1 ], "move": [ 2, 2 ] },
+        { "picture": 0, "frames": 5, "rotation": 64262, "scale": [ 1, 1 ], "move": [ 2, 2 ] },
+        { "picture": 0, "frames": 5, "rotation": 64080, "scale": [ 1, 1 ], "move": [ 3, 3 ] },
+        { "picture": 0, "frames": 5, "rotation": 64080, "scale": [ 1, 1 ], "move": [ 3, 3 ] },
+        { "picture": 0, "frames": 5, "rotation": 64262, "scale": [ 1, 1 ], "move": [ 2, 2 ] },
+        { "picture": 0, "frames": 5, "rotation": 64444, "scale": [ 1, 1 ], "move": [ 2, 2 ] },
+        { "picture": 0, "frames": 5, "rotation": 64626, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 0, "frames": 5, "rotation": 64808, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 0, "frames": 5, "rotation": 64990, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 0, "frames": 5, "rotation": 65172, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 5, "rotation": 65354, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 5, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] }
+      ]
+    },
+    {
+      "name": "CellAnime111",
+      "key_type": "srt",
+      "play": "loop",
+      "keys": [
+        { "picture": 1, "frames": 5, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 1, "frames": 5, "rotation": 455, "scale": [ 1, 1 ], "move": [ -1, 0 ] },
+        { "picture": 1, "frames": 5, "rotation": 910, "scale": [ 1, 1 ], "move": [ -1, 0 ] },
+        { "picture": 1, "frames": 5, "rotation": 1365, "scale": [ 1, 1 ], "move": [ -1, 0 ] },
+        { "picture": 1, "frames": 5, "rotation": 1820, "scale": [ 1, 1 ], "move": [ -1, -1 ] },
+        { "picture": 1, "frames": 5, "rotation": 2275, "scale": [ 1, 1 ], "move": [ -1, -1 ] },
+        { "picture": 1, "frames": 5, "rotation": 2730, "scale": [ 1, 1 ], "move": [ -1, -1 ] },
+        { "picture": 1, "frames": 5, "rotation": 3185, "scale": [ 1, 1 ], "move": [ -1, -1 ] },
+        { "picture": 1, "frames": 5, "rotation": 3640, "scale": [ 1, 1 ], "move": [ -1, -2 ] },
+        { "picture": 1, "frames": 5, "rotation": 3640, "scale": [ 1, 1 ], "move": [ -1, -2 ] },
+        { "picture": 1, "frames": 5, "rotation": 3185, "scale": [ 1, 1 ], "move": [ -1, -1 ] },
+        { "picture": 1, "frames": 5, "rotation": 2730, "scale": [ 1, 1 ], "move": [ -1, -1 ] },
+        { "picture": 1, "frames": 5, "rotation": 2275, "scale": [ 1, 1 ], "move": [ -1, -1 ] },
+        { "picture": 1, "frames": 5, "rotation": 1820, "scale": [ 1, 1 ], "move": [ -1, -1 ] },
+        { "picture": 1, "frames": 5, "rotation": 1365, "scale": [ 1, 1 ], "move": [ -1, 0 ] },
+        { "picture": 1, "frames": 5, "rotation": 910, "scale": [ 1, 1 ], "move": [ -1, 0 ] },
+        { "picture": 1, "frames": 5, "rotation": 455, "scale": [ 1, 1 ], "move": [ -1, 0 ] },
+        { "picture": 1, "frames": 5, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] }
+      ]
+    },
+    {
+      "name": "CellAnime21",
+      "key_type": "srt",
+      "play": "loop",
+      "keys": [
+        { "picture": 2, "frames": 5, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 65354, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 65172, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 64990, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 64808, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 64626, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 64444, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 64262, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 64080, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 64080, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 64262, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 64444, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 64626, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 64808, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 64990, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 65172, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 65354, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 2, "frames": 5, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] }
+      ]
+    },
+    {
+      "name": "CellAnime31",
+      "key_type": "srt",
+      "play": "loop",
+      "keys": [
+        { "picture": 3, "frames": 5, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 3, "frames": 5, "rotation": 64558, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 3, "frames": 5, "rotation": 63580, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 3, "frames": 5, "rotation": 62601, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 3, "frames": 5, "rotation": 61623, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 3, "frames": 5, "rotation": 60644, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 3, "frames": 5, "rotation": 59666, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 3, "frames": 5, "rotation": 58687, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 3, "frames": 5, "rotation": 57709, "scale": [ 1, 1 ], "move": [ 2, 2 ] },
+        { "picture": 3, "frames": 5, "rotation": 57709, "scale": [ 1, 1 ], "move": [ 2, 2 ] },
+        { "picture": 3, "frames": 5, "rotation": 58687, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 3, "frames": 5, "rotation": 59666, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 3, "frames": 5, "rotation": 60644, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 3, "frames": 5, "rotation": 61623, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 3, "frames": 5, "rotation": 62601, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 3, "frames": 5, "rotation": 63580, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 3, "frames": 5, "rotation": 64558, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 3, "frames": 5, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] }
+      ]
+    },
+    {
+      "name": "CellAnime41",
+      "key_type": "srt",
+      "play": "loop",
+      "keys": [
+        { "picture": 4, "frames": 5, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 4, "frames": 5, "rotation": 455, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 4, "frames": 5, "rotation": 910, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 4, "frames": 5, "rotation": 1365, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 4, "frames": 5, "rotation": 1820, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 4, "frames": 5, "rotation": 2275, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 4, "frames": 5, "rotation": 2730, "scale": [ 1, 1 ], "move": [ 2, 2 ] },
+        { "picture": 4, "frames": 5, "rotation": 3185, "scale": [ 1, 1 ], "move": [ 2, 2 ] },
+        { "picture": 4, "frames": 5, "rotation": 3640, "scale": [ 1, 1 ], "move": [ 3, 3 ] },
+        { "picture": 4, "frames": 5, "rotation": 3640, "scale": [ 1, 1 ], "move": [ 3, 3 ] },
+        { "picture": 4, "frames": 5, "rotation": 3185, "scale": [ 1, 1 ], "move": [ 2, 2 ] },
+        { "picture": 4, "frames": 5, "rotation": 2730, "scale": [ 1, 1 ], "move": [ 2, 2 ] },
+        { "picture": 4, "frames": 5, "rotation": 2275, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 4, "frames": 5, "rotation": 1820, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 4, "frames": 5, "rotation": 1365, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 4, "frames": 5, "rotation": 910, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 4, "frames": 5, "rotation": 455, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 4, "frames": 5, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] }
+      ]
+    },
+    {
+      "name": "CellAnime51",
+      "key_type": "srt",
+      "play": "loop",
+      "keys": [
+        { "picture": 5, "frames": 5, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 65081, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 64626, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 64171, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 63716, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 63261, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 62806, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 62351, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 61896, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 61896, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 62351, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 62806, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 63261, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 63716, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 64171, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 64626, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 65081, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 5, "frames": 5, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] }
+      ]
+    },
+    {
+      "name": "CellAnime61",
+      "key_type": "srt",
+      "play": "loop",
+      "keys": [
+        { "picture": 6, "frames": 5, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 6, "frames": 5, "rotation": 65081, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 6, "frames": 5, "rotation": 64626, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 6, "frames": 5, "rotation": 64171, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 6, "frames": 5, "rotation": 63716, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 6, "frames": 5, "rotation": 63261, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 6, "frames": 5, "rotation": 62806, "scale": [ 1, 1 ], "move": [ 2, 2 ] },
+        { "picture": 6, "frames": 5, "rotation": 62351, "scale": [ 1, 1 ], "move": [ 2, 2 ] },
+        { "picture": 6, "frames": 5, "rotation": 61896, "scale": [ 1, 1 ], "move": [ 3, 3 ] },
+        { "picture": 6, "frames": 5, "rotation": 61896, "scale": [ 1, 1 ], "move": [ 3, 3 ] },
+        { "picture": 6, "frames": 5, "rotation": 62351, "scale": [ 1, 1 ], "move": [ 2, 2 ] },
+        { "picture": 6, "frames": 5, "rotation": 62806, "scale": [ 1, 1 ], "move": [ 2, 2 ] },
+        { "picture": 6, "frames": 5, "rotation": 63261, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 6, "frames": 5, "rotation": 63716, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 6, "frames": 5, "rotation": 64171, "scale": [ 1, 1 ], "move": [ 1, 1 ] },
+        { "picture": 6, "frames": 5, "rotation": 64626, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 6, "frames": 5, "rotation": 65081, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 6, "frames": 5, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] }
+      ]
+    }
+  ],
+  "poses": [
+    {
+      "parts": [
+        { "track": 6, "pivot": [ -5, -32 ], "play": "restart" },
+        { "track": 4, "pivot": [ 4, -22 ], "play": "restart" },
+        { "track": 3, "pivot": [ 7, -24 ], "play": "restart" },
+        { "track": 0, "pivot": [ -13, -13 ], "play": "restart" },
+        { "track": 1, "pivot": [ 14, -29 ], "play": "restart" },
+        { "track": 2, "pivot": [ 18, -39 ], "play": "restart" },
+        { "track": 5, "pivot": [ -4, -20 ], "play": "restart" }
+      ]
+    },
+    {
+      "parts": [
+        { "track": 13, "pivot": [ -5, -32 ], "play": "restart" },
+        { "track": 11, "pivot": [ 4, -22 ], "play": "restart" },
+        { "track": 10, "pivot": [ 7, -24 ], "play": "restart" },
+        { "track": 7, "pivot": [ -13, -13 ], "play": "restart" },
+        { "track": 8, "pivot": [ 14, -29 ], "play": "restart" },
+        { "track": 9, "pivot": [ 18, -39 ], "play": "restart" },
+        { "track": 12, "pivot": [ -4, -20 ], "play": "restart" }
+      ]
+    }
+  ],
+  "sequences": [
+    {
+      "name": "CellAnime0",
+      "key_type": "plain",
+      "play": "loop",
+      "keys": [
+        { "pose": 0, "frames": 90 },
+        { "pose": 0, "frames": 90 },
+        { "pose": 0, "frames": 90 },
+        { "pose": 1, "frames": 90 }
+      ]
+    }
+  ]
+}

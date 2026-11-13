@@ -1,0 +1,25 @@
+{
+  "$schema": "../battle_sprite_rig.schema.json",
+  "format": 1,
+  "side": "front",
+  "box": { "width": 96, "height": 96, "x": 0, "y": 8 },
+  "stop_flags": 0,
+  "idle_parts": [],
+  "pictures": [
+    {
+      "rectangles": [ { "sheet": [ 0, 0 ], "size": [ 96, 96 ], "at": [ -48, 48 ] } ],
+      "objs": [
+        { "x": -48, "y": -48, "size": [ 64, 64 ], "tile": 0, "attributes": [ 0, 0, 0 ] },
+        { "x": 16, "y": -48, "size": [ 32, 64 ], "tile": 32, "attributes": [ 0, 0, 0 ] },
+        { "x": -48, "y": 16, "size": [ 64, 32 ], "tile": 48, "attributes": [ 0, 0, 0 ] },
+        { "x": 16, "y": 16, "size": [ 32, 32 ], "tile": 64, "attributes": [ 0, 0, 0 ] }
+      ],
+      "obj_attribute": 17
+    }
+  ],
+  "tracks": [ { "name": "CellAnime0", "key_type": "plain", "play": "loop", "keys": [ { "picture": 0, "frames": 4 } ] } ],
+  "poses": [ { "parts": [ { "track": 0, "pivot": [ 0, -40 ], "play": "continue" } ] } ],
+  "sequences": [ { "name": "CellAnime0", "key_type": "plain", "play": "loop", "keys": [ { "pose": 0, "frames": 4 } ] } ],
+  "obj_mapping": 1,
+  "extension": 0
+}

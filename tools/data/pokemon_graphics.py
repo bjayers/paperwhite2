@@ -5,8 +5,10 @@
     pokemon_graphics.py pack res/pokemon black2|white2 OUTPUT...
 
 Images are indexed PNGs: their pixel indices select colors in the adjacent
-JASC palette. Nitro cell, animation, and other binary resources remain separate
-files so every archive member has a source without inventing lossy metadata.
+JASC palette. A battle sprite's side's five MCSS files (its cells, animations, multi-cells, multi-cell animations and
+info) are built from its rig, <side>_rig.json (tools/paperwhite2/mcss_rig.py, byte for byte); the musical's sprites
+keep those of their files that differ from the battle sprite's, and the icons' and footprints' Nitro cells and
+animations stay as they are.
 
 Packing walks the original archive's files and builds each from its source. Paper White 2's own form sprite groups
 (a species' forms.sprite_offset + form - 1 from ORIGINAL_FORM_GROUPS, res/pokemon/<species>/form_<n>/, laid out by
@@ -28,6 +30,10 @@ from form_groups import ORIGINAL_FORM_GROUPS, form_groups
 from nitro_2d import (character_pixels, color5, palette_colors, palette_indices, patch_characters, patch_palette,
                       read_indexed_png, read_palette, write_indexed_png, write_palette)
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from tools.data.datajson import DataError, label, load_schema, validate  # noqa: E402
+from tools.paperwhite2 import mcss_rig  # noqa: E402
+
 
 ROOT = Path(__file__).resolve().parents[2]
 # The extracted files of the version being packed, which hold the originals that the sources are compared with.
@@ -41,6 +47,9 @@ SLOT_NAMES = ("front_single", "front_single_female", "front", "front_female",
               "back_cells", "back_animations", "back_multi_cells", "back_multi_animations", "back_info",
               "normal", "shiny")
 CHAR_SLOTS = {0, 1, 2, 3, 9, 10, 11, 12}
+# The members built from a side's rig: its side and the member's kind (mcss_rig.FILES)
+RIG_SLOTS = {slot: (side, kind) for side, first in (("front", 4), ("back", 13))
+             for slot, kind in enumerate(("cells", "animations", "multi_cells", "multi_animations", "info"), first)}
 PALETTE_SLOTS = {18, 19}
 FORM_FOOTPRINTS = (("giratina", 1), ("shaymin", 1), ("kyurem", 1), ("kyurem", 2),
                    ("keldeo", 1), ("tornadus", 1), ("thundurus", 1), ("landorus", 1))
@@ -139,6 +148,37 @@ def battle_group(index, musical):
     return divmod(index, GROUP_FILES)
 
 
+@lru_cache(maxsize=None)
+def rig_files(path):
+    """Returns the five files of a battle sprite's side, built from its rig (<side>_rig.json) after its schema's and
+    mcss_rig's checks."""
+    side = path.name.removesuffix(mcss_rig.RIG_FILE)
+    try:
+        rig = mcss_rig.read_side(path.parent, side)
+        validate(rig, rig_schema(), "")
+    except (mcss_rig.RigError, DataError) as error:
+        raise ValueError(f"{label(path)}: {error}") from None
+    errors = [message for level, message in mcss_rig.check(rig) if level == "error"]
+    if errors:
+        raise ValueError(f"{label(path)}: {'; '.join(errors)}")
+    return mcss_rig.files_from_rig(rig)
+
+
+@lru_cache(maxsize=1)
+def rig_schema():
+    return load_schema(mcss_rig.SCHEMA)
+
+
+def shared_rig_file(path):
+    """Returns the rig that a battle sprite's file of a side (front_cells.ncer in its folder) is built from, as
+    source_file() does, for a musical sprite that shares the file, or None for a file of no rig."""
+    for side in mcss_rig.SIDES:
+        for kind, suffix in mcss_rig.FILES.items():
+            if path.name == side + suffix:
+                return mcss_rig.rig_path(path.parent, side), "rig", {"side": side, "member": kind}
+    return None
+
+
 def battle_file(root, index, musical):
     end = 14240 if musical else SUBSTITUTE_FILES
     if battle_group(index, musical) is None:
@@ -159,7 +199,10 @@ def battle_file(root, index, musical):
             # The musical copy's sheets are single 96 by 96 images, as the musical sprites' are
             return (folder / f"{name}_single.png" if musical else folder / f"{name}.png"), "char", {
                 "single_cell": musical, "linear": not musical}
-        return folder / (name + EXTENSIONS[name.split("_", 1)[1]]), "raw", None
+        side, kind = name.split("_", 1)
+        if musical:
+            return folder / (name + EXTENSIONS[kind]), "raw", None
+        return mcss_rig.rig_path(folder, side), "rig", {"side": side, "member": kind}
     group, slot = battle_group(index, musical)
     folder = group_folder(root, group, "musical" if musical else "battle")
     name = SLOT_NAMES[slot]
@@ -168,6 +211,9 @@ def battle_file(root, index, musical):
             "single_cell": slot in (0, 1, 9, 10), "linear": slot in (2, 3, 11, 12)}
     if slot in PALETTE_SLOTS:
         return folder / f"{name}.pal", "palette", None
+    if slot in RIG_SLOTS and not musical:
+        side, kind = RIG_SLOTS[slot]
+        return mcss_rig.rig_path(folder, side), "rig", {"side": side, "member": kind}
     extension = {4: ".ncer", 5: ".nanr.lz11", 6: ".nmcr", 7: ".nmar",
                  13: ".ncer", 14: ".nanr.lz11", 15: ".nmcr", 16: ".nmar"}.get(slot, ".bin")
     return folder / f"{name}{extension}", "raw", None
@@ -284,12 +330,15 @@ def export(root):
     for archive_name in ARCHIVES:
         path = EXTRACTED / archive_name
         archive = read_narc(path.read_bytes())
+        sides = {}
         for index, blob in enumerate(archive):
             if not blob:
                 continue
             target, kind, options = source_file(root, archive_name, index)
             target.parent.mkdir(parents=True, exist_ok=True)
-            if kind == "raw":
+            if kind == "rig":
+                sides.setdefault((target, options["side"]), {})[options["member"]] = blob
+            elif kind == "raw":
                 target.write_bytes(blob)
             elif kind == "palette":
                 target.write_text(write_palette(palette_colors(blob)))
@@ -300,6 +349,9 @@ def export(root):
                                                           linear=options.get("linear", False) if options else False)
                 target.write_bytes(write_indexed_png(width, height, pixels,
                                                     colors_for(root, archive_name, archive, index, options)))
+        # A side's rig, once its five files are read
+        for (target, side), files in sides.items():
+            target.write_text(mcss_rig.dumps(mcss_rig.rig_from_files(files, side), target.parent))
         print(f"{archive_name}: {len(archive)} entries", flush=True)
     musical = read_narc((EXTRACTED / "a/0/5/1").read_bytes())
     for index, blob in enumerate(musical):
@@ -309,7 +361,9 @@ def export(root):
         if path.parent.name != "musical":
             continue
         shared = path.parent.parent / path.name
-        if shared.is_file() and path.read_bytes() == shared.read_bytes():
+        source = shared_rig_file(shared)
+        if (shared.is_file() and path.read_bytes() == shared.read_bytes() or
+                source and source[0].is_file() and path.read_bytes() == rig_files(source[0])[source[2]["member"]]):
             path.unlink()
 
 
@@ -318,6 +372,8 @@ def pack_file(root, archive_name, archive, index, original, path, kind, options)
     are, palettes and images patched into the original's format."""
     if kind == "raw":
         return path.read_bytes()
+    if kind == "rig":
+        return rig_files(path)[options["member"]]
     if kind == "palette":
         edited_colors = read_palette(path)
         original_colors = palette_colors(original)
@@ -356,7 +412,10 @@ def pack(root, game, output):
             result.append(original)
             continue
         if archive_name == "a/0/5/1" and not path.exists() and path.parent.name == "musical":
+            # The musical sprite's file is the battle sprite's: a palette or a sheet, or a file built from its rig
             path = path.parent.parent / path.name
+            if kind == "raw" and not path.exists() and shared_rig_file(path):
+                path, kind, options = shared_rig_file(path)
         result.append(pack_file(root, archive_name, archive, index, original, path, kind, options))
     # Paper White 2's form groups, after the archive's files: each file made from its source, in the format of its
     # species' own file of the same kind (the male's, the normal palette's), which it is where the two are the same

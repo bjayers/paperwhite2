@@ -1,0 +1,98 @@
+{
+  "$schema": "../battle_sprite_rig.schema.json",
+  "format": 1,
+  "side": "front",
+  "box": { "width": 64, "height": 65, "x": 0, "y": 13 },
+  "stop_flags": 0,
+  "idle_parts": [],
+  "pictures": [
+    {
+      "rectangles": [
+        { "sheet": [ 16, 0 ], "size": [ 64, 64 ], "at": [ -32, 51 ] },
+        { "sheet": [ 0, 40 ], "size": [ 16, 8 ], "at": [ -10, 25 ] }
+      ],
+      "objs": [
+        { "x": -18, "y": -29, "size": [ 16, 8 ], "tile": 160, "attributes": [ 1792, 0, 0 ] },
+        { "x": -64, "y": -83, "size": [ 64, 64 ], "tile": 2, "attributes": [ 768, 0, 0 ] }
+      ],
+      "obj_attribute": 38
+    },
+    {
+      "rectangles": [
+        { "sheet": [ 16, 0 ], "size": [ 64, 64 ], "at": [ -32, 50 ] },
+        { "sheet": [ 0, 40 ], "size": [ 16, 8 ], "at": [ -10, 24 ] }
+      ],
+      "objs": [
+        { "x": -18, "y": -28, "size": [ 16, 8 ], "tile": 160, "attributes": [ 1792, 0, 0 ] },
+        { "x": -64, "y": -82, "size": [ 64, 64 ], "tile": 2, "attributes": [ 768, 0, 0 ] }
+      ],
+      "obj_attribute": 38
+    }
+  ],
+  "tracks": [
+    {
+      "name": "karada01",
+      "key_type": "srt",
+      "play": "loop",
+      "keys": [
+        { "picture": 0, "frames": 8, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 1 ] },
+        { "picture": 0, "frames": 8, "rotation": 546, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 8, "rotation": 1092, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 8, "rotation": 1638, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 8, "rotation": 2184, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 8, "rotation": 2730, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 8, "rotation": 2730, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 8, "rotation": 2184, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 8, "rotation": 1638, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 8, "rotation": 1092, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 8, "rotation": 546, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 0, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 1 ] },
+        { "picture": 0, "frames": 8, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 1 ] },
+        { "picture": 0, "frames": 8, "rotation": 64990, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 8, "rotation": 64444, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 8, "rotation": 63898, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 8, "rotation": 63352, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 8, "rotation": 62806, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 8, "rotation": 62806, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 8, "rotation": 63352, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 8, "rotation": 63898, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 8, "rotation": 64444, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 8, "rotation": 64990, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
+        { "picture": 0, "frames": 0, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 1 ] }
+      ]
+    },
+    {
+      "name": "karada02",
+      "key_type": "plain",
+      "play": "loop",
+      "keys": [
+        { "picture": 1, "frames": 8 },
+        { "picture": 1, "frames": 8 },
+        { "picture": 1, "frames": 8 },
+        { "picture": 1, "frames": 8 },
+        { "picture": 1, "frames": 8 },
+        { "picture": 1, "frames": 8 },
+        { "picture": 1, "frames": 8 },
+        { "picture": 1, "frames": 8 }
+      ]
+    }
+  ],
+  "poses": [
+    { "parts": [ { "track": 0, "pivot": [ 0, -1 ], "play": "restart" } ] },
+    { "parts": [ { "track": 1, "pivot": [ 0, -1 ], "play": "restart" } ] }
+  ],
+  "sequences": [
+    {
+      "name": "Anime01",
+      "key_type": "plain",
+      "play": "loop",
+      "keys": [ { "pose": 0, "frames": 176 }, { "pose": 0, "frames": 176 }, { "pose": 1, "frames": 96 } ]
+    },
+    {
+      "name": "Anime02",
+      "key_type": "plain",
+      "play": "loop",
+      "keys": [ { "pose": 1, "frames": 8 }, { "pose": 0, "frames": 8 }, { "pose": 0, "frames": 8 }, { "pose": 0, "frames": 8 } ]
+    }
+  ]
+}

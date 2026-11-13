@@ -11,8 +11,9 @@ sprite's characters (front, back and their female versions, of every species, fo
 in pixels, the middle of the sprite's visible pixels is; 0 for the archive's other members. The page reads the one byte at its sprite's characters' number (MCSSLoadInfo.character).
 
 The sprite is measured as MCSS draws it on its first frame (src/system/mcss.c, MCSSSys_Draw and MCSS_DrawQuad): the
-multi-cell animation's sequence 0 at frame 0 gives a multi-cell and its SRT; each of that multi-cell's nodes plays its
-cell animation sequence, at frame 0, which gives a cell and its SRT; the cell is drawn as the bin file's quads (each a
+multi-cell animation's sequence 0 at frame 0 (in the files as the build makes them from the side's rig,
+<side>_rig.json, tools/paperwhite2/mcss_rig.py) gives a multi-cell and its SRT; each of that multi-cell's nodes plays
+its cell animation sequence, at frame 0, which gives a cell and its SRT; the cell is drawn as the bin file's quads (each a
 rectangle of the characters' image, at its x and y in sixteenths of the sprite's scale), moved by the node's position
 and the two SRTs. A pixel is visible where its palette index isn't 0. The sprites' own box in the bin file (its
 height and offsetY, which the egg hatching and the evolution centre their sprites by, MCSS_GetHeight) is close for most
@@ -22,14 +23,16 @@ import argparse
 import math
 import struct
 import sys
+from functools import lru_cache
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 # pokemon_graphics imports its siblings by name
 sys.path.insert(1, str(ROOT / "tools" / "data"))
-from tools.data.nitro_2d import decompress, read_indexed_png  # noqa: E402
+from tools.data.nitro_2d import read_indexed_png  # noqa: E402
 from tools.data.pokemon_graphics import ADDED_FORM_FILES, added_form_groups, battle_file  # noqa: E402
+from tools.paperwhite2 import mcss_rig  # noqa: E402
 
 # The battle archive's members before the Substitute's (pokemon_graphics.battle_file), 20 to a group. Paper White 2's
 # form groups follow the Substitute's files and Arceus' palettes, from ADDED_FORM_FILES; the table then runs to their
@@ -94,16 +97,26 @@ def transform(x, y, srt):
     return x * cos - y * sin + move_x, x * sin + y * cos - move_y
 
 
+@lru_cache(maxsize=4)
+def side_files(folder, side):
+    """A side's files from its rig, the NANR uncompressed."""
+    try:
+        return mcss_rig.files_from_rig(mcss_rig.read_side(folder, side), compress=False)
+    except mcss_rig.RigError as error:
+        raise SpriteError(str(error)) from None
+
+
 def visible_box(folder, side, image):
     """The visible pixels' top and bottom on the sprite's first frame, in pixels down from its feet (its origin), or
     None if it shows none."""
-    info = (folder / f"{side}_info.bin").read_bytes()
+    files = side_files(folder, side)
+    info = files["info"]
     count = struct.unpack_from("<I", info, 0)[0]
     quads = [struct.unpack_from("<12i", info, 12 + i * 48) for i in range(count)]
     width, _, pixels, _ = read_indexed_png(image)
-    cell_sequences = animation_bank(decompress((folder / f"{side}_animations.nanr.lz11").read_bytes()))
-    multi_sequences = animation_bank((folder / f"{side}_multi_animations.nmar").read_bytes())
-    multi_cells = multi_cell_bank((folder / f"{side}_multi_cells.nmcr").read_bytes())
+    cell_sequences = animation_bank(files["animations"])
+    multi_sequences = animation_bank(files["multi_animations"])
+    multi_cells = multi_cell_bank(files["multi_cells"])
     multi = multi_sequences[0][0]
     top = bottom = None
     for sequence, node_x, node_y, _ in multi_cells[multi[0]]:

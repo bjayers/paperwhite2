@@ -1,0 +1,32 @@
+{
+  "$schema": "../../battle_sprite_rig.schema.json",
+  "format": 1,
+  "side": "back",
+  "box": { "width": 16, "height": 16, "x": 0, "y": 0 },
+  "stop_flags": 0,
+  "idle_parts": [],
+  "pictures": [
+    {
+      "rectangles": [ { "sheet": [ 0, 0 ], "size": [ 16, 16 ], "at": [ -8, 8 ] } ],
+      "objs": [ { "x": -8, "y": -8, "size": [ 16, 16 ], "tile": 0, "attributes": [ 0, 0, 0 ] } ],
+      "obj_attribute": 3
+    }
+  ],
+  "tracks": [ { "name": "no", "key_type": "plain", "play": "loop", "keys": [ { "picture": 0, "frames": 4 } ] } ],
+  "poses": [ { "parts": [ { "track": 0, "pivot": [ 0, -8 ], "play": "restart" } ] } ],
+  "sequences": [
+    {
+      "name": "CellAnime0",
+      "key_type": "plain",
+      "play": "loop",
+      "keys": [
+        { "pose": 0, "frames": 45 },
+        { "pose": 0, "frames": 45 },
+        { "pose": 0, "frames": 45 },
+        { "pose": 0, "frames": 45 },
+        { "pose": 0, "frames": 45 },
+        { "pose": 0, "frames": 45 }
+      ]
+    }
+  ]
+}

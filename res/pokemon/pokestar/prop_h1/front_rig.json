@@ -1,0 +1,37 @@
+{
+  "$schema": "../../battle_sprite_rig.schema.json",
+  "format": 1,
+  "side": "front",
+  "box": { "width": 64, "height": 64, "x": 2, "y": 2 },
+  "stop_flags": 0,
+  "idle_parts": [],
+  "pictures": [
+    {
+      "rectangles": [ { "sheet": [ 0, 0 ], "size": [ 64, 64 ], "at": [ -32, 36 ] } ],
+      "objs": [ { "x": -32, "y": -36, "size": [ 64, 64 ], "tile": 0, "attributes": [ 0, 0, 0 ] } ],
+      "obj_attribute": 12
+    },
+    {
+      "rectangles": [ { "sheet": [ 64, 0 ], "size": [ 32, 40 ], "at": [ -16, 21 ] } ],
+      "objs": [
+        { "x": -16, "y": -21, "size": [ 32, 32 ], "tile": 8, "attributes": [ 0, 0, 0 ] },
+        { "x": -16, "y": 11, "size": [ 32, 8 ], "tile": 136, "attributes": [ 0, 0, 0 ] }
+      ],
+      "obj_attribute": 7
+    }
+  ],
+  "tracks": [
+    { "name": "body", "key_type": "plain", "play": "loop", "keys": [ { "picture": 0, "frames": 5 } ] },
+    { "name": "atama", "key_type": "plain", "play": "loop", "keys": [ { "picture": 1, "frames": 4 } ] }
+  ],
+  "poses": [
+    {
+      "parts": [
+        { "track": 1, "pivot": [ 0, -30 ], "play": "continue" },
+        { "track": 0, "pivot": [ 2, -26 ], "play": "continue" }
+      ]
+    },
+    { "parts": [ { "track": 0, "pivot": [ 2, -26 ], "play": "continue" } ] }
+  ],
+  "sequences": [ { "name": "CellAnime0", "key_type": "plain", "play": "loop", "keys": [ { "pose": 0, "frames": 45 } ] } ]
+}

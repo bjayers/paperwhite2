@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Paper White 2: read a battle sprite's rig (MCSS: src/system/mcss.c) from its res/pokemon files and draw it as the
-game does, for the battle sprite importer (battle_sprite.py) and, later, the rig editor
-(docs/paperwhite2/design/battle-sprites.md sections 3 and 10).
+"""Paper White 2: read a battle sprite's rig (MCSS: src/system/mcss.c) from res/pokemon and draw it as the game
+does, for the battle sprite importer (battle_sprite.py) and, later, the rig editor
+(docs/paperwhite2/design/battle-sprites.md sections 3, 10 and 16).
 
-    mcss.py dump FOLDER front|back      # the rig as JSON
+    mcss.py dump FOLDER front|back      # the rig as this reads it, as JSON
 
-A side's rig is five files beside its 256 by 128 sheet (front.png or back.png):
+A side's rig is its <side>_rig.json beside its 256 by 128 sheet (front.png or back.png), the source of the five files
+the game reads, which mcss_rig.py makes from it as the build does and this reads as the game does:
 - <side>_info.bin, MCSS's own: each cell's one or two quads (a rectangle of the sheet, s t width height, placed at x
   y from the cell's origin, y up), the sprite's box, the idle nodes and the stop flags;
 - <side>_cells.ncer: the cells as OBJs (not drawn; MCSS uses only the cell numbers) and the parts' names (LABL);
@@ -31,6 +32,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from tools.data.nitro_2d import decompress, read_indexed_png  # noqa: E402
+from tools.paperwhite2 import mcss_rig  # noqa: E402
 
 SIDES = ("front", "back")
 # The sheet MCSS draws from (MCSS_TEX_SIZE, 4bpp)
@@ -155,14 +157,20 @@ def part_names(cell_count: int, animations: dict) -> list[list[str]]:
 
 
 def read_rig(folder: Path, side: str) -> dict:
-    """A side's rig from its folder's five files."""
+    """A side's rig from its folder's <side>_rig.json, through the five files the build makes from it."""
     try:
-        info = info_file((folder / f"{side}_info.bin").read_bytes())
-        animations = animation_bank(decompress((folder / f"{side}_animations.nanr.lz11").read_bytes()))
-        multi_cells = multi_cell_bank((folder / f"{side}_multi_cells.nmcr").read_bytes())
-        multi_animations = animation_bank((folder / f"{side}_multi_animations.nmar").read_bytes())
-    except (OSError, KeyError, struct.error) as error:
+        return rig_of_files(mcss_rig.files_from_rig(mcss_rig.read_side(folder, side), compress=False), side)
+    except (mcss_rig.RigError, KeyError, struct.error) as error:
         raise RigError(f"{folder}: can't read the {side} rig ({error})") from error
+
+
+def rig_of_files(files: dict[str, bytes], side: str) -> dict:
+    """A side's rig from its five files (mcss_rig.FILES's kinds), the NANR compressed or not."""
+    nanr = files["animations"]
+    info = info_file(files["info"])
+    animations = animation_bank(nanr if nanr[:4] == b"RNAN" else decompress(nanr))
+    multi_cells = multi_cell_bank(files["multi_cells"])
+    multi_animations = animation_bank(files["multi_animations"])
     return {"side": side, "cells": info["cells"], "box": info["box"], "idle_nodes": info["idle_nodes"],
             "stop_flags": info["stop_flags"], "parts": part_names(len(info["cells"]), animations),
             "cell_animations": animations["sequences"], "multi_cells": multi_cells,

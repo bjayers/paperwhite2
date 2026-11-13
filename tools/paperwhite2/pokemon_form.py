@@ -68,6 +68,7 @@ from tools.data.gen_constants import parse  # noqa: E402
 from tools.data.narc import read_narc  # noqa: E402
 from tools.data.nitro_2d import (color5, read_indexed_png, read_palette, read_rgba_png, write_indexed_png,  # noqa: E402
                                  write_rgba_png)
+from tools.paperwhite2 import mcss_rig  # noqa: E402
 
 POKEMON = ROOT / "res/pokemon"
 FORMS = POKEMON / "forms.json"
@@ -79,11 +80,11 @@ ICON_PALETTES = POKEMON / "shared/icon_palettes.pal"
 FORM_MAX = 32
 # What only a species' record has (docs/paperwhite2/design/forms-and-species.md section 11.5)
 SPECIES_ONLY = ("name", "name_article", "pokedex", "baby_species", "regional_dex_number", "cry_volume")
-# The files of a form's art: the battle sprite group's sources (pokemon_graphics.SLOT_NAMES) and the icons
+# The files of a form's art: the battle sprite group's sources (pokemon_graphics.SLOT_NAMES, a side's five MCSS files
+# from its rig, mcss_rig.py) and the icons
 ART_FILES = tuple(f"{side}{kind}" for side in ("front", "back") for kind in (
-    "_single.png", "_single_female.png", ".png", "_female.png", "_cells.ncer", "_animations.nanr.lz11",
-    "_multi_cells.nmcr", "_multi_animations.nmar", "_info.bin")) + ("normal.pal", "shiny.pal", "icon.png",
-                                                                    "icon_female.png")
+    "_single.png", "_single_female.png", ".png", "_female.png", mcss_rig.RIG_FILE)) + ("normal.pal", "shiny.pal",
+                                                                                         "icon.png", "icon_female.png")
 # The follower variants of a form, in the order their codes take (as the Spiky-eared Pichu's)
 FOLLOWER_SUFFIXES = ("", "_shiny", "_female", "_female_shiny")
 # The pokedex object's keys in the schema's order, where form_name goes
@@ -277,7 +278,13 @@ def add(name: str, template_form: int, form_name: str | None, record: bool, chec
     # The form's art
     for art in ART_FILES:
         if (source / art).is_file():
-            changes.copy(source / art, POKEMON / folder / f"form_{form}" / art)
+            target = POKEMON / folder / f"form_{form}"
+            if art.endswith(mcss_rig.RIG_FILE):
+                # A rig names its schema relative to its folder
+                side = art.removesuffix(mcss_rig.RIG_FILE)
+                changes.text(target / art, mcss_rig.dumps(mcss_rig.read_side(source, side), target))
+            else:
+                changes.copy(source / art, target / art)
     # The species' data
     pokedex = data["pokedex"]
     template_dex = pokedex["forms"][template_form - 1] if template_form else pokedex
@@ -593,7 +600,7 @@ def main():
             result = import_icon(args.species, args.form, args.png, args.female, args.write)
         else:
             result = import_still(args.species, args.form, args.side, args.png, args.write)
-    except (FormError, FormGroupsError, ValueError) as error:
+    except (FormError, FormGroupsError, mcss_rig.RigError, ValueError) as error:
         print(json.dumps({"ok": False, "message": str(error)}))
         sys.exit(1)
     print(json.dumps(result, ensure_ascii=False))
