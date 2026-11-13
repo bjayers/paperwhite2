@@ -8,6 +8,10 @@
     "properties": {
         "$schema": { "type": "string", "description": "This schema, for editors" },
         "name": { "type": "string", "description": "The ability's name" },
-        "description": { "type": "string", "description": "The ability's description, with its line breaks" }
+        "description": { "type": "string", "description": "The ability's description, with its line breaks" },
+        "handlers_like": {
+            "type": "string", "x-constant": "ABILITY_",
+            "description": "Paper White 2, an added ability's only: the original ability whose battle handlers it takes, registered with its own ID, so its popup shows its own name (tools/data/ability_list.py)"
+        }
     }
 }

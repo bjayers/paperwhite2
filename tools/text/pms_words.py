@@ -8,7 +8,8 @@ sCategoryMsgFiles, which CATEGORIES gives too. The header gives each category it
 (PMS_WORD_CATEGORY_GREETINGS, PMS_WORD_FIRST_GREETINGS, PMS_WORD_COUNT_GREETINGS), a word of a species, move, type or
 ability by its constant (PMS_WORD_SPECIES(SPECIES_PIKACHU)), and every other word by its category and message ID
 (PMS_WORD_GREETINGS_HELLO for PmsWordsGreetings_Text_Hello). Adding a word to a category's file renumbers the words
-after it, as the game numbers them.
+after it, as the game numbers them. Paper White 2's added species, moves and abilities are no words: their names come
+after the original ones' in their files, and the categories end at the original ones (LAST_WORDS, WORD_COUNTS).
 """
 import argparse
 import re
@@ -16,6 +17,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from tools.data import ability_list, move_list  # noqa: E402
 from tools.data.datajson import DataError  # noqa: E402
 from tools.text.text_data import FROM, split_message  # noqa: E402
 from tools.text.text_ids import message_count, message_numbers  # noqa: E402
@@ -25,6 +27,9 @@ ROOT = Path(__file__).parents[2]
 TEXT = ROOT / "res/text/system"
 # The last word of a category whose file goes on past its words, with padding
 LAST_WORDS = {"SPECIES": "SpeciesNamesUpper_Text_BadEgg"}
+# The words of a category whose file Paper White 2's added constants extend: the original moves and abilities alone,
+# so that the words after them keep their numbers in saves and in the plain build (the added ones are no words)
+WORD_COUNTS = {"MOVES": move_list.FIRST_ADDED, "ABILITIES": ability_list.FIRST_ADDED}
 # The categories in word order: their name, their message file, and for one whose words are another constant's, the
 # macro that turns one into its word
 CATEGORIES = [
@@ -73,6 +78,10 @@ def header() -> str:
         count = message_count(path)
         if category in LAST_WORDS:
             count = dict(message_numbers(path))[LAST_WORDS[category]] + 1
+        if category in WORD_COUNTS:
+            if count < WORD_COUNTS[category]:
+                raise ValueError(f"{path.name} has {count} messages, fewer than the {WORD_COUNTS[category]} words")
+            count = WORD_COUNTS[category]
         lines += [f"#define PMS_WORD_CATEGORY_{category} {index}", f"#define PMS_WORD_FIRST_{category} {first}",
                   f"#define PMS_WORD_COUNT_{category} {count}"]
         named = message_numbers(path)

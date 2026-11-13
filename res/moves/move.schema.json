@@ -87,6 +87,14 @@
                 "description": "A MOVE_FLAG_* constant, or the value of a flag that has none"
             },
             "description": "The move's flags"
+        },
+        "animation": {
+            "type": "string", "x-constant": "MOVE_",
+            "description": "Paper White 2, an added move's only (and required there): the original move whose animation it plays, since the battle view takes a move ID past 560 for one of its own effects (tools/data/move_list.py). move_data.py doesn't pack it"
+        },
+        "handlers_like": {
+            "type": "string", "x-constant": "MOVE_",
+            "description": "Paper White 2, an added move's only: the original move whose battle handlers it takes, registered with its own ID (tools/data/move_list.py). Not one whose handlers compare a literal move, such as the pledges. move_data.py doesn't pack it"
         }
     },
     "$defs": {

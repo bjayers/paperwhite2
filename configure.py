@@ -1164,7 +1164,7 @@ def main():
     n.rule("pms_words", "$python tools/text/pms_words.py $out", "Generating $out", restat="1")
     pms_words_header = Path(GENERATED_INCLUDE_DIR) / "constants" / "pms_words.h"
     n.build([pms_words_header], "pms_words", [f"res/text/system/{file}.txt" for _, file, _ in PMS_WORD_CATEGORIES],
-            implicit=["tools/text/pms_words.py", *text_tools, *from_data])
+            implicit=["tools/text/pms_words.py", *script_imports("tools/text/pms_words.py"), *text_tools, *from_data])
     constant_headers.append(pms_words_header)
     # The embedded binaries, from the first version's extracted ROM
     n.rule("rom_blob", "$python tools/build/rom_blob.py array $module $in $name $out", "Generating $out", restat="1")
@@ -1230,6 +1230,17 @@ def main():
                 implicit=[forms_tool, *script_imports(forms_tool), "res/pokemon/shared/icon_palettes.pal",
                           "generated/species.txt", "generated/obj_codes.txt"])
         constant_headers.append(output)
+        # Paper White 2: the added moves' and abilities' counts and tables (their animations and whose handlers they
+        # take), from generated/ and res/ (include/paperwhite2/moves.h, include/paperwhite2/abilities.h)
+        for tool, source, data, config in (
+                ("moves", "generated/moves.txt", "res/moves/*/data.json", "moves_config.h"),
+                ("abilities", "generated/abilities.txt", "res/abilities/*.json", "abilities_config.h")):
+            n.rule(f"{tool}_header", f"$python tools/paperwhite2/{tool}.py header $out", "Generating $out",
+                   restat="1")
+            output = Path(GENERATED_INCLUDE_DIR) / "paperwhite2" / config
+            n.build([output], f"{tool}_header", [source, *sorted(str(path) for path in Path(".").glob(data))],
+                    implicit=[f"tools/paperwhite2/{tool}.py", *script_imports(f"tools/paperwhite2/{tool}.py")])
+            constant_headers.append(output)
         # Paper White 2: the conditions' generated headers, the terrain groups, the level scaling and CheckCondition's
         # IDs (tools/paperwhite2/conditions.py, docs/paperwhite2/plugins.md's Conditions)
         n.rule("conditions_header", "$python tools/paperwhite2/conditions.py $kind $out", "Generating $out",
