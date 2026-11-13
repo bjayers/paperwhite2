@@ -2,6 +2,28 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-13: new moves and abilities, steps 2 and 3: Apple Acid, Grav Apple, Bulletproof (ROM session, on a branch)
+
+design/moves-and-abilities.md section 13 has the details.
+
+- **Apple Acid** (move 560, data only: Grass special 80, Sp. Def -1, Energy Ball's animation), **Grav Apple** (561:
+  physical, Defense -1, Seed Bomb's animation, ×1.5 power under Gravity in `paperwhite2_battle.c`), **Bulletproof**
+  (ability 165: no effect from ball and bomb moves, popup and "It doesn't affect…"; Mold Breaker ignores it; the AI's
+  `basic.s` avoids the moves; the Move Effectiveness Preview shows them immune).
+- **`MOVE_FLAG_BALLISTIC`** (bit 14) on the 22 Gen 5 ball and bomb moves, as data; the editor offers it.
+- **Bank 16's "X used Y!"** had no lines past Fusion Bolt: `\from{added_moves.used}` writes them for every added move.
+- Handler commands and message kinds named in `btl_handler.h` (`BATTLE_HANDLER_*`).
+- The Applin line: Flapple's Grav Apple, Appletun's Apple Acid and Applin's hidden Bulletproof replace their stand-ins
+  (new-species.md 18.2).
+- **Proof** (py-desmume, `moves2/shots/`): Apple Acid 16 damage and "Special Defense fell!"; Grav Apple 33 without
+  Gravity and 48 with it (power ratio ×0x1800 logged, max damage roll forced), "Defense fell!"; Bulletproof blocked
+  Shadow Ball, Seed Bomb and Energy Ball with its popup, Tackle hit, Mold Breaker's Shadow Ball hit; the preview grey for
+  the three; Metronome forced to 560 and 561 ran both; the summary's names, data and descriptions. ROM `d87b0aca…`,
+  `verify_dsi_rom.py` intact, plain modules match. Without the three entries and the flags the ROM is main's
+  `ff789030…`; with the flags kept only the 22 flag bytes (and the DSi digests over them) differ.
+
+Next: step 4, Add move and Add ability in the editor (section 13.5 lists what it needs).
+
 ## 2026-11-13: new moves and abilities, steps 0 and 1, the foundation (ROM session, on a branch)
 
 design/moves-and-abilities.md section 12 has the details.

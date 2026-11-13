@@ -2554,7 +2554,20 @@ New moves appended to `generated/moves.txt` from 560 and abilities to `generated
   - Metronome picks from every move, the added ones too (`METRONOME_MOVE_COUNT`, `btl_calc.c`); Assist, Sleep Talk
     and Copycat have no bound;
   - `GetConditionByIndex` runs over the whole condition list (the original's 35), for a condition the hack adds;
-  - the Move Effectiveness Preview leaves a move white against an added ability.
+  - the Move Effectiveness Preview leaves a move white against an added ability past the last it knows
+    (`MOVE_PREVIEW_LAST_ABILITY`, Bulletproof now).
+- **Added so far** (section 13): Apple Acid 560 (data only), Grav Apple 561 and Bulletproof 165. A move or ability
+  whose rule is new has its handlers in `src/paperwhite2/ov167/paperwhite2_battle.c` under `#ifdef` of its constant,
+  declared in `include/paperwhite2/battle_handlers.h`, with its row at the end of `sMoveEventAddTable` or
+  `sAbilityEventAddTable` under `#if defined(PAPERWHITE2) && defined(<constant>)` (the plain build has the constants
+  too). Without the constants every hook is the original code. New handlers spell the handler commands and message
+  kinds by name (`BATTLE_HANDLER_*`, `include/battle/btl_handler.h`).
+- **Every added move needs** an `"animation"`, an AI `effect`, and its three "used" lines in bank 16, which
+  `\from{added_moves.used}` writes from its name. Without those lines the battle shows no "X used Y!" message.
+- **Move flags:** `MOVE_FLAG_BALLISTIC` (bit 14) marks the ball and bomb moves for Bulletproof; bits 15-31 are free. A
+  flag is data (`flags` in `data.json`); the code reads it with `getMoveFlag(move, bit)`.
+- **An ability Mold Breaker ignores** goes in `sMoldBreakerIgnoredAddedAbilities` (`btl_tables.c`); one the AI should
+  respect needs lines in `res/trainers/ai/basic.s` (Bulletproof's beside Soundproof's).
 
 ## Adding global scripts
 

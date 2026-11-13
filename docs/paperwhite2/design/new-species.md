@@ -902,7 +902,7 @@ the followers' sprites.
 
 | ID | Constant | No. | Types | Abilities (slot 1 / slot 2 / hidden) | Evolves |
 | --- | --- | --- | --- | --- | --- |
-| 687 | `SPECIES_APPLIN` | 840 | Grass/Dragon | Harvest\* / Gluttony / Soundproof\* | Tart Apple → Flapple, Sweet Apple → Appletun, Syrupy Apple → Dipplin (`EVO_METHOD_ITEM`) |
+| 687 | `SPECIES_APPLIN` | 840 | Grass/Dragon | Harvest\* / Gluttony / Bulletproof | Tart Apple → Flapple, Sweet Apple → Appletun, Syrupy Apple → Dipplin (`EVO_METHOD_ITEM`) |
 | 688 | `SPECIES_FLAPPLE` | 841 | Grass/Dragon | Harvest\* / Gluttony / Hustle | |
 | 689 | `SPECIES_APPLETUN` | 842 | Grass/Dragon | Harvest\* / Gluttony / Thick Fat | |
 | 690 | `SPECIES_DIPPLIN` | 1011 | Grass/Dragon | Illuminate\* / Gluttony / Sticky Hold | → Hydrapple: level up knowing Focus Energy\* (`EVO_METHOD_KNOWS_MOVE`) |
@@ -955,15 +955,15 @@ the followers' sprites.
 
 Gen 5 has none of the line's own moves and abilities (section 9). Each stand-in is the nearest Gen 5 thing; replace it
 when the real one exists. All are in the species' `data.json` (`abilities`, `hidden_ability`, `learnset.by_level`,
-`evolutions`).
+`evolutions`). **Replaced** rows have the real one now (design/moves-and-abilities.md section 13).
 
 | Real (Gen 8/9) | Who | Stand-in (Gen 5) | Why this one |
 | --- | --- | --- | --- |
 | Ripen (ability: doubles a Berry's effect) | Applin, Flapple, Appletun, slot 1 | Harvest | Gen 5's other Berry ability (may restore a used Berry): the nearest Berry effect |
-| Bulletproof (ability, Gen 6: immune to ball and bomb moves) | Applin, hidden | Soundproof | the same kind of effect, immunity to one class of moves |
+| Bulletproof (ability, Gen 6: immune to ball and bomb moves) | Applin, hidden | **Replaced** (was Soundproof) | ability 165, 2026-11-13 |
 | Supersweet Syrup (ability: lowers the foes' evasion on entering, once a battle) | Dipplin, Hydrapple, slot 1 | Illuminate | no Gen 5 entry ability lowers evasion, and Intimidate would be far stronger; Illuminate does nothing in battle and raises wild encounters in the field, as Sweet Scent does, which the syrup echoes |
-| Grav Apple (Grass, physical 80, lowers Defense) | Flapple, level 32 | Seed Bomb | Grass, physical, 80 |
-| Apple Acid (Grass, special 80, lowers Sp. Def) | Appletun, level 28 | Energy Ball | Grass, special, 90, may lower Sp. Def |
+| Grav Apple (Grass, physical 80, lowers Defense) | Flapple, level 32 | **Replaced** (was Seed Bomb) | move 561, 2026-11-13 |
+| Apple Acid (Grass, special 80, lowers Sp. Def) | Appletun, level 28 | **Replaced** (was Energy Ball) | move 560, 2026-11-13 |
 | Body Press (Fighting, physical 80, uses Defense) | Appletun 24, Hydrapple 36 | Body Slam (Appletun), Heavy Slam (Hydrapple) | no Gen 5 move uses Defense; a bulky physical move at the same level |
 | Syrup Bomb (Grass, special 60, lowers Speed for 3 turns) | Dipplin, Hydrapple, level 24 | Magical Leaf | Grass, special, 60, without the Speed drop |
 | Dragon Cheer (Dragon status: raises the allies' critical-hit ratio) | Dipplin, Hydrapple, level 1 (Move Reminder) | Focus Energy | the same effect on itself, Gen 5's critical-hit move |

@@ -45,8 +45,8 @@ What is inferred and not traced is marked *(inferred)*. Line numbers are from co
 - **Build order** (§9):
   0. name the battle events;
   1. appending packers and caps, byte-identical with nothing added;
-  2. a data-only move in battle (Apple Acid) and the animation map;
-  3. an ability with handlers (Bulletproof);
+  2. a data-only move in battle (Apple Acid) and the animation map (built, §13);
+  3. an ability with handlers (Bulletproof) (built, §13);
   4. Add move and Add ability in the editor;
   5. the Applin line's real moves and abilities, replacing the stand-ins;
   6. later: blocks as needed, custom animations, Fairy.
@@ -268,7 +268,7 @@ and recomputed only when it evolves or changes form *(inferred from the setters)
 
 | Ability | C |
 | --- | --- |
-| **Bulletproof** (immune to ball and bomb moves) | a **new move flag** `MOVE_FLAG_BALLISTIC` (bit 14), set in `data.json` on the 21 Gen 5 ball and bomb moves (Acid Spray, Aura Sphere, Barrage, Bullet Seed, Egg Bomb, Electro Ball, Energy Ball, Focus Blast, Gyro Ball, Ice Ball, Magnet Bomb, Mist Ball, Mud Bomb, Octazooka, Rock Blast, Rock Wrecker, Seed Bomb, Shadow Ball, Sludge Bomb, Weather Ball, Zap Cannon) and Syrup Bomb. A handler copied from Soundproof's (`ability_handlers.c:2825`, event 0x2d, `getMoveFlag(move, 14)`) with its own message. An entry in `sMoldBreakerIgnoredAbilities` (it is breakable). A line in the AI's `basic.s` beside Soundproof's. The Move Effectiveness Preview's immunity |
+| **Bulletproof** (immune to ball and bomb moves) | a **new move flag** `MOVE_FLAG_BALLISTIC` (bit 14), set in `data.json` on the 22 Gen 5 ball and bomb moves (Acid Spray, Aura Sphere, Barrage, Bullet Seed, Egg Bomb, Electro Ball, Energy Ball, Focus Blast, Gyro Ball, Ice Ball, Magnet Bomb, Mist Ball, Mud Bomb, Octazooka, Rock Blast, Rock Wrecker, Searing Shot, Seed Bomb, Shadow Ball, Sludge Bomb, Weather Ball, Zap Cannon) and Syrup Bomb. A handler copied from Soundproof's (`ability_handlers.c:2825`, event 0x2d, `getMoveFlag(move, 14)`) with its own message. An entry in `sMoldBreakerIgnoredAbilities` (it is breakable). A line in the AI's `basic.s` beside Soundproof's. The Move Effectiveness Preview's immunity |
 | **Supersweet Syrup** (on entering, once a battle: the foes' evasion -1) | Intimidate's handler (`ability_handlers.c:306`, events 0x55/0x8a) with stat `BATTLEMON_EVASION_STAGE`, a message, and **a once-a-battle bit per Pokémon**. Nothing in `BattleMon` survives a switch for this, so the bit is a static in the hack's battle file, cleared when the server starts. Optionally, Illuminate's field effect (more wild encounters) as a `case` in `enc_pokeset.c:475` (open decision 4) |
 | **Ripen** (a Berry's effect doubled) | the most spread out. The berries read their amounts through `CommonGetItemParam` (`item_handlers.c:709`, 25 callers): one hook that doubles the amount parameter when the holder has Ripen, with each caller checked, because some read thresholds, not amounts. Plus the damage-halving berries' ratio (`ItemAttackValueToRatio`) and the stat berries' stages. A popup on use. Medium; it needs a test per berry kind |
 
@@ -657,3 +657,107 @@ itself), the bounds are the same numbers, and the two new files are empty. One t
 - **Not mapped:** an added ability with `handlers_like` isn't in `sMoldBreakerIgnoredAbilities` or the Role Play and
   Skill Swap lists, which compare IDs; the generator's rows for them are step 3's (or step 4's flags).
 - **Free move flags:** bits 14-31 (Bulletproof's `MOVE_FLAG_BALLISTIC` in step 3).
+
+## 13. Built: steps 2 and 3 (2026-11-13)
+
+Apple Acid (560), Grav Apple (561) and Bulletproof (165), and the Applin line's three stand-ins replaced by them.
+
+### 13.1 The data
+
+| What | Where |
+| --- | --- |
+| The lists | `MOVE_APPLE_ACID`, `MOVE_GRAV_APPLE` appended to `generated/moves.txt`, `ABILITY_BULLETPROOF` to `generated/abilities.txt` |
+| Apple Acid | `res/moves/apple_acid/data.json`: Grass, special, 80, 100, 10 PP, quality `DAMAGE_LOWER_TARGET_STATS`, Sp. Def -1 at 100%, Protect and Mirror Move, AI effect `LOWER_SP_DEF_HIT`, `"animation": "MOVE_ENERGY_BALL"`. Data only |
+| Grav Apple | `res/moves/grav_apple/data.json`: the same with physical and Defense -1, AI effect `LOWER_DEFENSE_HIT`, `"animation": "MOVE_SEED_BOMB"`. Not ballistic (it isn't in Gen 8) |
+| Bulletproof | `res/abilities/bulletproof.json`, "Shields the Pokémon from / ball and bomb moves." |
+| The ballistic flag | `MOVE_FLAG_BALLISTIC` (`1 << 14`, `include/constants/battle.h`), in the `flags` of the 22 Gen 5 moves that Bulletproof blocks from Gen 6 on (§4's list; the design's 21 missed Searing Shot). `move.schema.json`'s `flags` were already constants or numbers, so `move_data.py` packs it with no change and the editor's schema form offers it (its constants are the build's own, `editor/server/python/constants.py`) |
+| The "used" messages | bank 16 (`res/text/system/0016.txt`) has three written lines per move ("X used Pound!", wild, foe's), message `3 * move + whose`, and ended at Fusion Bolt: an added move showed no message at all. `\from{added_moves.used}` (`tools/text/text_sources.py`) appends the added moves' three lines from their names. **Every added move needs them**; the source follows the list |
+| The Applin line | Flapple learns Grav Apple at 32 (was Seed Bomb), Appletun Apple Acid at 28 (was Energy Ball), Applin's hidden ability is Bulletproof (was Soundproof). Neither move is a TM, tutor or egg move in the real games, so only the level-up lists have them |
+
+Names and descriptions are our own words (12 characters at most for the names). The summary shows them in full
+(`summary_moves_*`).
+
+### 13.2 The C
+
+| Where | What |
+| --- | --- |
+| `src/paperwhite2/ov167/paperwhite2_battle.c` | `HandlerGravApple` on `BATTLE_EVENT_MOVE_POWER_RATIO`: the attacker's, under `IsFieldEffectActive(FIELD_CONDITION_GRAVITY)` the power ratio ×`FX32_CONST(1.5)` (Venoshock's shape). `HandlerBulletproof` on `BATTLE_EVENT_CHECK_NO_EFFECT_AFTER_PROTECT`: Soundproof's handler with `getMoveFlag(move, 14)`, the popup and set message 0xd2 "It doesn't affect…" (Gen 6's message). Each is built under `#ifdef MOVE_GRAV_APPLE` / `#ifdef ABILITY_BULLETPROOF` |
+| `include/paperwhite2/battle_handlers.h` | their `PaperWhite2_EventAdd*` declarations, for the tables |
+| `move_handlers.c`, `ability_handlers.c` | a row each at the end of `sMoveEventAddTable` / `sAbilityEventAddTable`, under `#if defined(PAPERWHITE2) && defined(MOVE_GRAV_APPLE)` (and `ABILITY_BULLETPROOF`): the plain build has the constants too, since the lists are shared |
+| `btl_tables.c` | `IsMoldBreakerIgnoredAbility` also checks `sMoldBreakerIgnoredAddedAbilities` (Bulletproof) first, the original list and its 55 untouched (a trailing entry made clang-format relayout the table) |
+| `paperwhite2_move_preview.c` | Bulletproof and a ballistic move show as immune (grey); the preview's last known ability is `MOVE_PREVIEW_LAST_ABILITY` (Bulletproof, Teravolt without it), and abilities past it are still "unknown" (white) |
+| `res/trainers/ai/basic.s` | Basic's Soundproof check goes on to `Basic_CheckBulletproof` (under `PAPERWHITE2` and the constant): -10 for each of the 22 moves into a Bulletproof target, unless the attacker has Mold Breaker. The AI has no command that reads a move flag, so the moves are listed, as Soundproof's are |
+| `include/battle/btl_handler.h` | names for the handler commands (`BATTLE_HANDLER_*`, 0-59 from `BattleHandler_Execute`'s switch) and the message kinds (`BATTLE_HANDLER_STR_STANDARD`, `_SET`), so the hack's handlers spell no numbers; the original code still does |
+
+Not changed: Role Play, Skill Swap, Trace and Entrainment can copy Bulletproof, as in Gen 6 (their lists name the
+exceptions). Metronome reaches both moves through step 1's bound.
+
+**Tools:** `moves.py info` and `abilities.py info` say when an added one has its own handlers in the battle file
+(`has_own_handlers`: an `#ifdef` of its constant there), and an ability without any "does nothing in battle".
+`test_moves_abilities` runs its list tests on the original lists (the repository's added entries taken out) and checks
+the repository's own: the added tables, the flag on 22 moves packed as bit 14, bank 16's lines, the own-handlers check
+(15 tests).
+
+### 13.3 Proof (py-desmume, a copy of the user's save; scratchpad `moves2/`, shots in `moves2/shots/`)
+
+Battles on Route 6 (warped with the debug menu), the wild Pokémon forced at `PokeParty_CreatePkm`, the lead's species,
+moves and ability written into the party; with "max roll" the damage roll is forced to 100% and critical hits off
+(`BattleRandom` hooked by caller). Logged: the handlers, `HPSub`, the messages, the popups, the animations started.
+
+- **Apple Acid** (Appletun Lv. 24 vs wild Snorlax Lv. 30): "Oinkums used Apple Acid!", Energy Ball's animation
+  (effect VM started with 412 for move 560), 16 damage, "The wild Snorlax's Special Defense fell!" (`aa_*`).
+- **Grav Apple** (Flapple vs Snorlax, max roll): without Gravity 33 damage, the handler ran with no multiplier; after
+  "Oinkums used Gravity!" the handler multiplied the power ratio by 0x1800 (1.5) and the damage was **48**; Seed Bomb's
+  animation (402 for 561), "The wild Snorlax's Defense fell!" (`gn_*`, `gg_*`).
+- **Bulletproof** (wild Applin with ability 165): Shadow Ball, Seed Bomb and Energy Ball each "Applin's Bulletproof"
+  popup and "It doesn't affect the wild Applin.", no damage; Tackle hit for 11 (`bp_*`). With the attacker's ability
+  Mold Breaker, Shadow Ball hit for 25 and the handler didn't block it (`mb_*`).
+- **Move Effectiveness Preview:** against the Bulletproof Applin, Shadow Ball, Seed Bomb and Energy Ball are grey
+  (immune) and Tackle white (`bp_moves`); with Mold Breaker, Shadow Ball white and the Grass moves resisted
+  (`mb_moves`).
+- **Metronome** (the pick forced at `BtlCalc_PickRandomMove`'s return): "Waggling a finger let it use…", then Grav
+  Apple ran (its handler, Seed Bomb's animation, 30 damage) and, in the other run, Apple Acid (Energy Ball's, 16)
+  (`m1_*`, `m0_*`).
+- **Summary:** Applin with Bulletproof and its description; Apple Acid (special, 80, 100) and Grav Apple (physical, 80,
+  100) with their descriptions (`sum_*`).
+
+Not run: a trainer's AI choosing around Bulletproof, Skill Swap, PP Ups, the Move Reminder, the Pokédex Info move list,
+a double battle, a foe's ball move into the player's Bulletproof Pokémon (the handler is the defender's, whichever
+side).
+
+ROM `d87b0aca8f374e14c4e96e27c6035c8faee9eb0b`, `verify_dsi_rom.py` intact; the plain `w2_us` build's modules match
+(its archive and ROM checks fail as before); editor `typecheck`, `test` (113) and `vite build` pass.
+
+### 13.4 Byte identity
+
+With the three entries taken out of the working tree (the list lines, the two move folders, `bulletproof.json`, and the
+Applin line's stand-ins back), not committed:
+
+- **and the ballistic flags back too:** the ROM is `ff789030223a1c4777c070fc539f03604e0c415b`, main's. So every hook,
+  the AI script, bank 16's `\from` and the new header names compile or assemble to the original without the constants.
+- **with the flags kept:** `25865e82…`; of the built files only `a/0/2/1` differs, and of the ROM's bytes only the 22
+  flag bytes (byte 1 of each ball or bomb move's flags gains 0x40, bit 14; Aura Sphere's 0x08 becomes 0x48) and the
+  DSi digests that cover them (the header's at 0x328, six runs of the sector hash table, one entry of the block hash
+  table). The flag is data the original moves carry, so this difference is expected.
+
+### 13.5 For step 4 (Add move, Add ability) and step 5
+
+- **What an added move needs, all data now:** the list line, the folder with `"animation"`, an AI `effect`, its flags
+  (the schema form offers `MOVE_FLAG_BALLISTIC`; Syrup Bomb sets it). Bank 16's "used" lines follow the list.
+- **Removing a folder needs `configure.py` again:** `build.ninja` depends on each `res/moves/<move>` directory, so
+  ninja stops ("missing and no known rule") until the hack's configure runs. The editor's Remove must run it.
+- **What C an added one may have**, which the tool can't write: handlers in `paperwhite2_battle.c` under `#ifdef` of
+  its constant, a declaration in `battle_handlers.h`, a table row under `#if defined(PAPERWHITE2) && defined(...)`.
+  `move_list.has_own_handlers` and `ability_list.has_own_handlers` find them, so the Moves and Abilities pages can say
+  "handlers: C" or warn "does nothing in battle".
+- **Mold Breaker:** `sMoldBreakerIgnoredAddedAbilities` is hand-written; a `"mold_breaker_ignores"` flag in the
+  ability's JSON could generate it into `abilities_config.h` (step 4's flags).
+- **The AI** reads no move flags: an ability like Bulletproof needs its moves listed in `basic.s`.
+- **The preview** knows abilities up to `MOVE_PREVIEW_LAST_ABILITY`. Raise it in step 5 when Ripen and Sweet Syrup
+  come (they don't change matchups), or a Pokémon with them makes every move white.
+- **Step 5's Bulletproof stand-in** is gone, so Applins already caught keep Soundproof (§11.6: no fix on load).
+- **Testing:** a savestate from before a text archive changes shows garbled names in battle (the archive's offsets are
+  cached); boot the save again. Wild Pokémon get their default moves after `PokeParty_CreatePkm`
+  (`FieldEncount_CreateWildPkm`'s `PokeParty_SetDefaultMoves`), so set a forced wild's ability at its
+  `PokeParty_RecalcStats`. Battle overlays share addresses with the field's: register exec hooks on ov167 only once
+  the battle is up (scratchpad `moves2/bt.py`).
