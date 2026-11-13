@@ -177,6 +177,9 @@
 #define WONDER_TRADE_CHECK_ITEM 4
 // The party's last Pokémon that can battle
 #define WONDER_TRADE_CHECK_LAST_BATTLER 5
+// A form the attendant never sends, services.json's wonder_trade.never_tradeable (the Spiky-eared Pichu), refused
+// before an excluded species or a held item with her own words
+#define WONDER_TRADE_CHECK_NEVER_TRADEABLE 6
 
 // The attendant the player talked to (0x8011) turns to the tube behind the counter, steps up to it, waits while it
 // runs with its sound, and steps back facing the player; called with RTCallGlobal for each transfer. global_2100.s's

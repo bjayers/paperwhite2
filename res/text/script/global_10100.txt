@@ -43,3 +43,4 @@ Global10100_Text_WonderTradeDone = {0102:1} came from {0100:3}!\nPlease take goo
 Global10100_Text_WonderTradeSpecialDone = {0102:1}... No Trainer sent it.{be01}\nIt seems to want to stay with you!{be01}
 Global10100_Text_WonderTradeAgain = Would you like to trade\nanother Pokémon?
 Global10100_Text_WonderTradeDiscount = Oh, if it isn't our Champion!\nTrades are {0201:4}% off for you!{be01}
+Global10100_Text_WonderTradeNeverTradeable = Oh! Isn't this {0102:0}? It came\nthrough the tube that strange day!{be01}\nI've looked into it since. It seems\nthe tube reached into another time,{be00}\nand {0102:0} slipped through it.\nThat must be why its ear is spiky!{be01}\nSending it through the tube again\ncould be dangerous. Who knows where{be00}\nor when it might end up?{be01}\nI think {0102:0} is meant to stay\nwith you. Please look after it well!{be01}

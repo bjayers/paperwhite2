@@ -11,7 +11,7 @@ header has the fees that the script command PokemonCenter reads
 POKEMON_CENTER_FEE_* IDs, which this checks, Training Services' other values (the Move Relearner's item, Hyper
 Training's requirements and the grooming courses' friendship), the Champion's discount, the Day Care attendant's Gym
 Badges, and the Wonder Trade's generator (src/paperwhite2/ov012/paperwhite2_wonder_trade.c): its rates, languages,
-balls, item tiers and forms, the excluded species as bits, and for every species its pre-evolution and least level,
+balls, item tiers and forms, the excluded species as bits, the forms never sent (never_tradeable), and for every species its pre-evolution and least level,
 worked out from res/pokemon/*/data.json's evolutions.
 The forms the hack adds to a species (past the original game's forms.count, tools/data/form_groups.py's
 original_form_counts) are received without being listed: a species with such forms and no wonder_trade.forms entry
@@ -80,6 +80,10 @@ PRE_EVOLUTION_FORM_SHIFT = 11
 STATS = ("hp", "attack", "defense", "speed", "special_attack", "special_defense")
 # The seasons, each a form of Deerling and Sawsbuck (season_form.c)
 SEASON_COUNT = 4
+# The special reward's gender and the sex PML_GenPID gives it (constants/pokemon.h; GENDER_UNKNOWN is the ratio's)
+GENDERS = {"male": "GENDER_MALE", "female": "GENDER_FEMALE", "random": "GENDER_UNKNOWN"}
+# The gender ratios of a species that is always male, always female or genderless (personal data's sex ratio)
+FIXED_RATIOS = {0: "male", 254: "female", 255: None}
 
 
 class DataError(Exception):
@@ -103,6 +107,8 @@ def load(path: Path = SOURCE) -> dict:
         raise DataError(f"{datajson.label(path)}: wonder_trade.balls' weights are all 0")
     check_forms(path, data["wonder_trade"])
     check_excluded_forms(path, data["wonder_trade"])
+    check_never_tradeable(path, data["wonder_trade"])
+    check_special_gender(path, data["wonder_trade"]["special_reward"])
     for entry in data["wonder_trade"]["languages"]:
         for key, length in NAME_LENGTH.items():
             if entry["language"] in SHORT_LANGUAGES:
@@ -155,6 +161,28 @@ def check_excluded_forms(path: Path, trade: dict):
         seen.add(key)
         if entry["form"] >= form_count(entry["species"]):
             raise DataError(f"{where} isn't a form of the species' {form_count(entry['species'])}")
+
+
+def check_never_tradeable(path: Path, trade: dict):
+    """wonder_trade.never_tradeable: each a form of its species, once."""
+    seen = set()
+    for entry in trade["never_tradeable"]:
+        key = (entry["species"], entry["form"])
+        where = f"{datajson.label(path)}: wonder_trade.never_tradeable's {entry['species']} form {entry['form']}"
+        if key in seen:
+            raise DataError(f"{where} is listed twice")
+        seen.add(key)
+        if entry["form"] >= form_count(entry["species"]):
+            raise DataError(f"{where} isn't a form of the species' {form_count(entry['species'])}")
+
+
+def check_special_gender(path: Path, special: dict):
+    """special_reward.gender: not the other sex of a species that is always one sex or none."""
+    data = ROOT / "res" / "pokemon" / special["species"].removeprefix("SPECIES_").lower() / "data.json"
+    ratio = json.loads(data.read_text()).get("gender_ratio")
+    if special["gender"] != "random" and ratio in FIXED_RATIOS and FIXED_RATIOS[ratio] != special["gender"]:
+        raise DataError(f"{datajson.label(path)}: wonder_trade.special_reward's {special['species']} can't be "
+                        f"{special['gender']} (its gender ratio is {ratio})")
 
 
 def form_entries(trade: dict) -> list[tuple[str, bool, list[int]]]:
@@ -338,6 +366,10 @@ def wonder_trade_lines(data: dict) -> list[str]:
     if not form_rows:
         # C has no empty arrays: a row for species 0, never received
         form_rows.append("    { 0, 0, 0, 0 }, \\")
+    never = [f"    {{ {entry['species']}, {entry['form']} }}, \\" for entry in trade["never_tradeable"]]
+    if not never:
+        # C has no empty arrays: species 0, no Pokémon
+        never.append("    { 0, 0 }, \\")
     special = trade["special_reward"]
     ivs = ", ".join(str(special["ivs"][stat]) for stat in STATS)
     moves = special["moves"] + ["MOVE_NONE"] * (4 - len(special["moves"]))
@@ -379,6 +411,9 @@ def wonder_trade_lines(data: dict) -> list[str]:
         "#define WONDER_TRADE_ITEM_TIERS \\", *tiers, "",
         f"#define WONDER_TRADE_ITEM_COUNT {len(items)}",
         "#define WONDER_TRADE_ITEMS \\", *(f"    {{ {item}, {weight} }}, \\" for item, weight in items), "",
+        "// The forms never sent, { species, form }, which the attendant keeps back with her own words",
+        f"#define WONDER_TRADE_NEVER_TRADEABLE_COUNT {len(never)}",
+        "#define WONDER_TRADE_NEVER_TRADEABLE \\", *never, "",
         "// The special reward, once, at a percent a trade until the trade WONDER_TRADE_SPECIAL_GUARANTEED_AT",
         f"#define WONDER_TRADE_SPECIAL_ENABLED {1 if special['enabled'] else 0}",
         f"#define WONDER_TRADE_SPECIAL_PERCENT {special['percent']}",
@@ -393,6 +428,7 @@ def wonder_trade_lines(data: dict) -> list[str]:
         f"#define WONDER_TRADE_SPECIAL_ABILITY_SLOT {special['ability_slot']}",
         f"#define WONDER_TRADE_SPECIAL_BALL {special['ball']}",
         f"#define WONDER_TRADE_SPECIAL_ITEM {special['held_item']}",
+        f"#define WONDER_TRADE_SPECIAL_SEX {GENDERS[special['gender']]}",
     ]
 
 

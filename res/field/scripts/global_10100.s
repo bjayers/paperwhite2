@@ -122,7 +122,14 @@ L_WonderTradeOffer:
     ActorMsg MSGFILE_SCRIPT, Global10100_Text_WonderTradeEgg, 0x8011, 4, 0
     VMReturn
 
+// The Spiky-eared Pichu (wonder_trade.never_tradeable) came from another time, and stays with the player
 L_WonderTradeNotEgg:
+    WorkCmpConst 0x8024, WONDER_TRADE_CHECK_NEVER_TRADEABLE
+    VMJumpIf CMP_NE, L_WonderTradeNotNeverTradeable
+    ActorMsg MSGFILE_SCRIPT, Global10100_Text_WonderTradeNeverTradeable, 0x8011, 4, 0
+    VMReturn
+
+L_WonderTradeNotNeverTradeable:
     WorkCmpConst 0x8024, WONDER_TRADE_CHECK_EXCLUDED
     VMJumpIf CMP_NE, L_WonderTradeNotExcluded
     ActorMsg MSGFILE_SCRIPT, Global10100_Text_WonderTradeExcluded, 0x8011, 4, 0

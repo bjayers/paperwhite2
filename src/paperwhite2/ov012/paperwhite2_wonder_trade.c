@@ -91,6 +91,12 @@ typedef struct {
     u16 count;
 } ItemTier;
 
+// A form never sent
+typedef struct {
+    u16 species;
+    u16 form;
+} SpeciesForm;
+
 // A species received in other forms than its first: its form the season's, or one by the weights from first
 typedef struct {
     u16 species;
@@ -108,6 +114,7 @@ static const ItemTier sItemTiers[WONDER_TRADE_ITEM_TIER_COUNT] = { WONDER_TRADE_
 static const WeightedItem sItems[WONDER_TRADE_ITEM_COUNT] = { WONDER_TRADE_ITEMS };
 static const FormSpecies sFormSpecies[WONDER_TRADE_FORM_SPECIES_COUNT] = { WONDER_TRADE_FORM_SPECIES };
 static const u16 sFormWeights[WONDER_TRADE_FORM_WEIGHT_COUNT] = { WONDER_TRADE_FORM_WEIGHTS };
+static const SpeciesForm sNeverTradeable[WONDER_TRADE_NEVER_TRADEABLE_COUNT] = { WONDER_TRADE_NEVER_TRADEABLE };
 static const u16 sSpecialMoves[MOVE_COUNT] = { WONDER_TRADE_SPECIAL_MOVES };
 // In the order of PKM_PARAM_IV_HP's fields
 static const u8 sSpecialIVs[STAT_COUNT] = { WONDER_TRADE_SPECIAL_IVS };
@@ -402,14 +409,14 @@ static void MakePkm(PartyPkm *pkm, PlayerInfo *trainer, const WonderTradePlan *p
     PokeParty_RecalcStats(pkm);
 }
 
-// Makes the special reward: services.json's fixed Pokémon, never shiny, with the player as its trainer, met where the
-// player is; the trade's partner is the player too
+// Makes the special reward: services.json's fixed Pokémon, never shiny, of its gender (the PID's, PML_GenPID's sex),
+// holding its item, with the player as its trainer, met where the player is; the trade's partner is the player too
 static void MakeSpecialPkm(PartyPkm *pkm, PlayerInfo *trainer, GameData *gameData, HeapID heapId) {
     PlayerInfo *player = GetGameDataPlayerInfo(gameData);
     u32 trainerId = getIDAsUInt(player);
     u32 ability = WONDER_TRADE_SPECIAL_ABILITY_SLOT == ABILITY_SLOT_HIDDEN ? 0 : WONDER_TRADE_SPECIAL_ABILITY_SLOT;
-    u32 pid = PML_GenPID(trainerId, WONDER_TRADE_SPECIAL_SPECIES, WONDER_TRADE_SPECIAL_FORM, GENDER_UNKNOWN, ability,
-                         PID_RARE_NEVER);
+    u32 pid = PML_GenPID(trainerId, WONDER_TRADE_SPECIAL_SPECIES, WONDER_TRADE_SPECIAL_FORM, WONDER_TRADE_SPECIAL_SEX,
+                         ability, PID_RARE_NEVER);
     u16 zoneId = PlayerState_GetZoneID(GameData_GetPlayerState(gameData));
     u32 i;
 
@@ -444,6 +451,18 @@ static BoxPkm *GetBoxPkm(GameData *gameData, u32 index) {
     return BoxSaveAccessor_GetPkm(boxes, tray, position);
 }
 
+// Whether the attendant never sends the species' form (wonder_trade.never_tradeable)
+static BOOL IsNeverTradeable(u32 species, u32 form) {
+    u32 i;
+
+    for (i = 0; i < WONDER_TRADE_NEVER_TRADEABLE_COUNT; i++) {
+        if (sNeverTradeable[i].species == species && sNeverTradeable[i].form == form) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 u32 WonderTrade_Check(FieldScriptEnv *env, u32 source, u32 index) {
     GameData *gameData = FieldScriptEnv_GetGameData(env);
     WordSet *wordSet = ScriptWork_GetWordSet(FieldScriptEnv_GetScriptWork(env));
@@ -466,6 +485,11 @@ u32 WonderTrade_Check(FieldScriptEnv *env, u32 source, u32 index) {
     loadBoxPokemonNameToStrbuf(wordSet, 0, boxPkm);
     if (PML_PkmGetParam(boxPkm, PKM_PARAM_IS_EGG, NULL)) {
         return WONDER_TRADE_CHECK_EGG;
+    }
+    // Before the held item's refusal, so the Spiky-eared Pichu holding its plate gets the time-travel words
+    if (IsNeverTradeable(PML_PkmGetParam(boxPkm, PKM_PARAM_SPECIES, NULL),
+                         PML_PkmGetParam(boxPkm, PKM_PARAM_FORM, NULL))) {
+        return WONDER_TRADE_CHECK_NEVER_TRADEABLE;
     }
     if (WonderTrade_IsExcluded(PML_PkmGetParam(boxPkm, PKM_PARAM_SPECIES, NULL))) {
         return WONDER_TRADE_CHECK_EXCLUDED;
