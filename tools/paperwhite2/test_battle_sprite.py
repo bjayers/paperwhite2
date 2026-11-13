@@ -204,6 +204,66 @@ class Edits(unittest.TestCase):
             self.assertEqual([p.rsplit("/", 1)[-1] for p in result["changed"]], ["front_single.png"])
 
 
+class IconAndFollower(unittest.TestCase):
+    """The zip also carries the party icon (imported back, checked as pokemon_form.py's icon import checks it) and the
+    follower's walking sprite sheets (export only)."""
+
+    def test_export_has_the_icon_and_the_follower_sheets(self):
+        files = exported(POKEMON / "pichu/form_1")
+        self.assertEqual(files["icon.png"], (POKEMON / "pichu/form_1/icon.png").read_bytes())
+        for name in ("icon_palette.pal", "preview/icon.png", "preview/follower_pokemon_pichu_form_1.png"):
+            self.assertIn(name, files)
+        walking = battle_sprite.ACTORS / "pokemon/pichu_form_1"
+        self.assertEqual(files["follower/pokemon_pichu_form_1.png"], (walking / "sprite.png").read_bytes())
+        self.assertEqual(files["follower/pokemon_pichu_form_1.pal"], (walking / "sprite.pal").read_bytes())
+        readme = files["README.txt"].decode()
+        for row in ("pichu_form_1 ", "pichu_form_1_shiny", "pichu_form_1_female ", "pichu_form_1_female_shiny"):
+            self.assertIn(row, readme)
+        self.assertIn("doesn't take them back", readme)
+        # A sheet a follower has of its own (no "sprite") is exported under its own code
+        own = exported(POKEMON / "accelgor")
+        self.assertIn("follower/follower_accelgor.png", own)
+        self.assertIn("follower/follower_accelgor_shiny.png", own)
+
+    def test_an_original_icon_keeps_its_bank(self):
+        """Pichu's icon is in the game's bank for it; a colour of another bank only is refused, as for its form any
+        bank that has every colour works."""
+        palette = read_palette(battle_sprite.pokemon_form.ICON_PALETTES)
+        bank = battle_sprite.pokemon_form.original_icon_banks()[(POKEMON / "pichu/icon.png").resolve()]
+        other = next(palette[i] for i in range(len(palette)) if i // 16 != bank and i % 16
+                     and color5(palette[i]) not in [color5(x) for x in palette[bank * 16:bank * 16 + 16]])
+        pixels = [None, tuple(color5(other))] * (32 * 32)
+        with self.assertRaises(battle_sprite.pokemon_form.FormError):
+            battle_sprite.pokemon_form.fit_icon(pixels, bank)
+        found, _, _ = battle_sprite.pokemon_form.fit_icon(pixels)
+        self.assertNotEqual(found, bank)
+        self.assertNotIn((POKEMON / "pichu/form_1/icon.png").resolve(), battle_sprite.pokemon_form.original_icon_banks())
+
+    def test_an_edited_icon_is_written_and_follower_sheets_are_ignored(self):
+        with Workspace("pichu/form_1") as work:
+            width, height, pixels, colours = read_indexed_png(work.folder / "icon.png")
+            mirrored = bytes(pixels[y * width + width - 1 - x] for y in range(height) for x in range(width))
+            sheet = (battle_sprite.ACTORS / "pokemon/pichu_form_1/sprite.png").read_bytes()
+            result = battle_sprite.check(work.folder, [work.file("icon.png", write_indexed_png(width, height, mirrored,
+                                                                                               colours)),
+                                                       work.file("pokemon_pichu_form_1.png", sheet)], False, True)
+            self.assertTrue(result["ok"], result["errors"])
+            self.assertEqual([p.rsplit("/", 1)[-1] for p in result["changed"]], ["icon.png"])
+            self.assertTrue(result["preview"]["icons"]["icon"]["changed"])
+            self.assertTrue(any("follower sheet" in n for n in result["notes"]))
+            self.assertEqual(read_indexed_png(work.folder / "icon.png")[2], mirrored)
+
+    def test_a_wrong_icon_is_refused(self):
+        with Workspace("pichu/form_1") as work:
+            result = battle_sprite.check(work.folder, [work.file("icon.png", write_rgba_png(32, 32, bytes(32 * 32 * 4)))],
+                                         False, False, preview=False)
+            self.assertFalse(result["ok"])
+            self.assertIn("not 32 by 64", result["errors"][0])
+            result = battle_sprite.check(work.folder, [work.file("icon_female.png", (work.folder / "icon.png").read_bytes())],
+                                         False, False, preview=False)
+            self.assertFalse(result["ok"])
+
+
 class Rig(unittest.TestCase):
     def test_pichu(self):
         rig = mcss.read_rig(POKEMON / "pichu", "front")

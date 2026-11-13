@@ -48,7 +48,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from tools.data.nitro_2d import (color5, read_indexed_png, read_palette, unfilter_png, write_indexed_png,  # noqa: E402
                                  write_palette, write_rgba_png)
-from tools.paperwhite2 import mcss, mcss_rig  # noqa: E402
+from tools.paperwhite2 import mcss, mcss_rig, pokemon_form  # noqa: E402
 
 POKEMON = ROOT / "res" / "pokemon"
 SHEETS = ("front", "back", "front_female", "back_female")
@@ -81,7 +81,11 @@ normal.pal, shiny.pal     the palettes (JASC, which Aseprite's Load Palette and 
 *_shiny.png               the same pictures in the shiny colours
 guide/*.png               each sheet 3x with every piece's rectangle outlined and numbered,
                           and a list of the pieces (the parts they belong to): not imported
-preview/*.png             the assembled sprite (first frame), normal and shiny: not imported
+preview/*.png             the assembled sprite (first frame), normal and shiny, the icon 2x and
+                          the follower sheets 3x: not imported
+icon.png, icon_palette.pal  the party and box icon and its bank's colours (see below)
+follower/*.png, *.pal     the follower's walking sprite sheets, when it has followers (see
+                          below): for reference, not imported
 
 How the sprite is built
 -----------------------
@@ -410,6 +414,232 @@ def b64(data: bytes) -> str:
     return base64.b64encode(data).decode()
 
 
+def scaled(width, height, pixels, scale) -> tuple[int, int, bytes]:
+    """Indices with each pixel made a square of scale by scale."""
+    out = bytearray()
+    for y in range(height):
+        row = bytes(pixels[y * width + x] for x in range(width) for _ in range(scale))
+        out += row * scale
+    return width * scale, height * scale, bytes(out)
+
+
+# --- the icon and the followers, which the zip carries too ---------------------------------------------------------
+
+ICONS = ("icon", "icon_female")
+ACTORS = ROOT / "res" / "field" / "actors"
+FOLLOWERS = ACTORS / "followers"
+# The groups of object codes that have a directory of their own (field_actor_data.directory)
+ACTOR_GROUPS = (("POKEMON_", "pokemon"), ("MODEL_", "models"), ("FOLLOWER_", "followers"))
+
+
+def identity(folder: Path) -> tuple[str, int]:
+    """A group's species directory and form: from its place in res/pokemon (pichu/form_1), or from a copy's name
+    (pichu_form_1)."""
+    try:
+        parts = folder.resolve().relative_to(POKEMON.resolve()).parts
+    except ValueError:
+        parts = tuple(folder.name.rsplit("_form_", 1)) if "_form_" in folder.name else (folder.name,)
+        return (parts[0], int(parts[1])) if len(parts) == 2 else (parts[0], 0)
+    return (parts[0], int(parts[1][5:])) if len(parts) == 2 and parts[1].startswith("form_") else (parts[0], 0)
+
+
+def actor_directory(code: str) -> Path:
+    """An object code's directory in res/field/actors (tools/data/field_actor_data.py's directory)."""
+    name = code.removeprefix("OBJ_CODE_")
+    for prefix, group in ACTOR_GROUPS:
+        if name.startswith(prefix):
+            return ACTORS / group / name.removeprefix(prefix).lower()
+    return ACTORS / name.lower()
+
+
+def followers_of(species: str, form: int) -> list[dict]:
+    """The follower rows of a species' form (res/field/actors/followers/*/data.json), each with the object code
+    whose sprite.png it shows: its own (OBJ_CODE_FOLLOWER_<row>) or the one its "sprite" names."""
+    constant = f"SPECIES_{species.upper()}"
+    rows = []
+    for path in sorted(FOLLOWERS.glob("*/data.json")):
+        try:
+            data = json.loads(path.read_text())
+        except (OSError, ValueError):
+            continue
+        follower = data.get("follower") or {}
+        if follower.get("species") != constant or follower.get("form", 0) != form:
+            continue
+        code = data.get("sprite") or f"OBJ_CODE_FOLLOWER_{path.parent.name.upper()}"
+        rows.append({"row": path.parent.name, "sex": follower.get("sex"), "shiny": bool(follower.get("shiny")),
+                     "placeholder": bool(follower.get("placeholder")),
+                     "profile": follower.get("animation_profile"), "code": code})
+    return rows
+
+
+def follower_stem(code: str) -> str:
+    """The zip's name of a follower sheet: its object code without OBJ_CODE_, in lower case (pokemon_pichu_form_1)."""
+    return code.removeprefix("OBJ_CODE_").lower()
+
+
+def is_follower_file(name: str) -> bool:
+    lower = name.lower()
+    return lower.endswith((".png", ".pal")) and lower.startswith(("pokemon_", "follower_"))
+
+
+ICON_TEXT = """
+The party and box icon
+----------------------
+icon.png{female_icon} is the 32x64 icon the party, the PC boxes and other menus show: two 32x32
+frames, one above the other, that it swaps between (preview/icon.png is it twice its size).
+It has 16 colours (index 0 transparent) from ONE bank of res/pokemon/shared/icon_palettes.pal, the
+icon palettes every Pokemon shares: change a colour there and every icon of that bank changes, so
+an icon can only use the colours of a bank, not new ones. icon_palette.pal is its bank's 16
+colours, to draw with (not imported).
+{icon_bank}
+Import icon.png{female_icon} back with the rest; the importer checks it is 32x64 and in {bank_rule}.
+"""
+
+FOLLOWER_TEXT = """
+The follower (walking) sprite
+-----------------------------
+The overworld sprite that follows the player when {name} leads the party, as its follower rows
+(res/field/actors/followers/) give it:
+{rows}
+follower/<code>.png is each sheet as it is in res/ (res/field/actors/.../sprite.png), and
+follower/<code>.pal its 16 colours (JASC; index 0 transparent): its own palette, not the battle
+sprite's. A sheet is one row of square frames, 32x32 (or 64x64 for a large Pokemon): up, up step,
+down, down step, left, left step, and for an 8-frame sheet right, right step (6 frames: the game
+mirrors the left ones to face right). preview/follower_<code>.png is it three times its size.
+A walking sprite (POKEMON_...) is also what the field shows when a map puts that Pokemon there.
+Shiny rows marked "placeholder" show the normal colours for now (docs/paperwhite2/design/
+shiny-palettes.md).
+
+These are for reference and editing only: the importer doesn't take them back yet (there is no
+checked import for overworld sprites). To use an edited sheet, keep its size, frame count and 16
+colours and put it in place of that sprite.png by hand; which sheet each row shows is set on the
+Pokemon page's Follower card or in the Follower Editor.
+"""
+
+
+def icon_files(folder: Path) -> dict[str, bytes]:
+    """The icon's files of the zip: icon.png (and icon_female.png) as they are, a 2x preview and its bank's colours."""
+    files = {}
+    banks = pokemon_form.original_icon_banks()
+    for name in ICONS:
+        path = folder / f"{name}.png"
+        if not path.is_file():
+            continue
+        data = path.read_bytes()
+        files[f"{name}.png"] = data
+        width, height, pixels, colours = read_indexed_png(path)
+        big = scaled(width, height, pixels, 2)
+        files[f"preview/{name}.png"] = colourise(*big, [color5(c) for c in colours[:COLOURS]])
+        if name == "icon":
+            bank = banks.get(path.resolve())
+            if bank is None:
+                bank = icon_bank_of(path)
+            palette = read_palette(pokemon_form.ICON_PALETTES)
+            files["icon_palette.pal"] = write_palette(palette[bank * COLOURS:(bank + 1) * COLOURS]).encode()
+    return files
+
+
+def icon_bank_of(path: Path) -> int:
+    """The bank of shared/icon_palettes.pal an icon's PNG is drawn in (pokemon_graphics.icon_bank's rule)."""
+    _, _, pixels, colours = read_indexed_png(path)
+    palette = read_palette(pokemon_form.ICON_PALETTES)
+    used = sorted(set(pixels) - {0})
+    for bank in range(len(palette) // COLOURS):
+        if all(i < len(colours) and i < COLOURS and color5(colours[i]) == color5(palette[bank * COLOURS + i])
+               for i in used):
+            return bank
+    return 0
+
+
+def icon_readme(folder: Path) -> str:
+    path = folder / "icon.png"
+    if not path.is_file():
+        return ""
+    fixed = pokemon_form.original_icon_banks().get(path.resolve())
+    bank = fixed if fixed is not None else icon_bank_of(path)
+    if fixed is not None:
+        text = (f"This icon is in bank {bank}, which the game's own table gives it (an original Pokemon's\n"
+                f"icon keeps its bank): use bank {bank}'s colours only.\n")
+        rule = f"bank {bank}'s colours"
+    else:
+        text = (f"This icon is in bank {bank}. The build gives this Paper White 2 form or species the bank its\n"
+                "icon's colours are in, so another bank works too, as long as every colour is from that one.\n")
+        rule = "one bank's colours"
+    female = " (and icon_female.png)" if (folder / "icon_female.png").is_file() else ""
+    return ICON_TEXT.format(female_icon=female, icon_bank=text, bank_rule=rule)
+
+
+def follower_files(folder: Path) -> tuple[dict[str, bytes], str]:
+    """The follower sheets of the zip (each sheet the group's follower rows show, once) and the README's part."""
+    species, form = identity(folder)
+    rows = followers_of(species, form)
+    if not rows:
+        return {}, ""
+    files, lines = {}, []
+    for row in rows:
+        directory = actor_directory(row["code"])
+        stem = follower_stem(row["code"])
+        sheet = directory / "sprite.png"
+        kind = ", ".join(filter(None, ["female" if row["sex"] == "GENDER_FEMALE" else "",
+                                       "shiny" if row["shiny"] else ""])) or "normal"
+        if not sheet.is_file():
+            lines.append(f"  {row['row']:28} ({kind}): {row['code']}, which has no sheet of its own")
+            continue
+        width, height, pixels, colours = read_indexed_png(sheet)
+        lines.append(f"  {row['row']:28} ({kind}{', placeholder' if row['placeholder'] else ''}): "
+                     f"follower/{stem}.png, {width // height} frames of {height}x{height}")
+        if f"follower/{stem}.png" in files:
+            continue
+        files[f"follower/{stem}.png"] = sheet.read_bytes()
+        if (directory / "sprite.pal").is_file():
+            files[f"follower/{stem}.pal"] = (directory / "sprite.pal").read_bytes()
+            colours = read_palette(directory / "sprite.pal")
+        big = scaled(width, height, pixels, 3)
+        files[f"preview/follower_{stem}.png"] = colourise(*big, [color5(c) for c in colours[:COLOURS]],
+                                                          (255, 255, 255, 255))
+    return files, FOLLOWER_TEXT.format(name=display_name(folder), rows="\n".join(lines))
+
+
+def resolve_icons(folder: Path, uploads: list[tuple[str, bytes]]):
+    """The icons among the uploads checked as pokemon_form.py's icon import checks them: 32x64, in one bank of the
+    icon palettes (an original Pokémon's in the bank the game gives it). The files to write, the errors and notes,
+    and a preview of each."""
+    writes, errors, notes, previews = {}, [], [], {}
+    for name, data in uploads:
+        stem = name.lower().removesuffix(".png")
+        target = folder / f"{stem}.png"
+        if not target.is_file():
+            errors.append(f"{name}: {rel(folder)} has no {stem.replace('_', ' ')} (the game has no slot to add one "
+                          "here)")
+            continue
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "icon.png"
+            path.write_bytes(data)
+            try:
+                width, height, pixels = pokemon_form.image_colors(path)
+            except (ValueError, IndexError, KeyError, zlib.error) as error:
+                errors.append(f"{name}: not a PNG this can read ({error})")
+                continue
+        if (width, height) != pokemon_form.ICON_SIZE:
+            errors.append(f"{name}: {width} by {height} pixels, not 32 by 64 (its two frames, one above the other)")
+            continue
+        try:
+            bank, indices, colours = pokemon_form.fit_icon(pixels, pokemon_form.original_icon_banks().get(
+                target.resolve()))
+        except pokemon_form.FormError as error:
+            errors.append(f"{name}: {error}")
+            continue
+        _, _, current, current_colours = read_indexed_png(target)
+        same = list(current) == indices and icon_bank_of(target) == bank
+        if not same:
+            writes[target] = write_indexed_png(width, height, bytes(indices), colours)
+            notes.append(f"{name}: in palette bank {bank} of shared/icon_palettes.pal")
+        previews[stem] = {"image": b64(colourise(*scaled(width, height, indices, 2),
+                                                 [color5(c) for c in colours])),
+                          "changed": not same, "bank": bank}
+    return writes, errors, notes, previews
+
+
 def animation_preview(rig: dict, sheets: dict[str, bytes], normal: list, shiny: list, current: dict[str, bytes],
                       current_normal: list) -> dict:
     """A side's animation (the "stay" sequence, a frame every 4 game frames) in each of its sheets, as strips of
@@ -540,8 +770,15 @@ def export(folder: Path, out: Path) -> dict:
               "  same rectangles.\n") if "front_female" in group.images else ""
     spinda = ("- Spinda: the game paints its spots onto the front sheet's head at fixed pixels, so keep the\n"
               "  head where it is.\n") if folder.name == "spinda" else ""
-    files["README.txt"] = README.format(name=name, files=listing, female=female, spinda=spinda,
-                                        sheet_w=mcss.SHEET_SIZE[0], sheet_h=mcss.SHEET_SIZE[1]).encode()
+    files.update(icon_files(folder))
+    followers, follower_text = follower_files(folder)
+    files.update(followers)
+    if not followers:
+        follower_text = (f"\nThe follower (walking) sprite\n-----------------------------\n{name} has no follower rows "
+                         "(res/field/actors/followers/): while it leads, the\nnext party member follows.\n")
+    files["README.txt"] = (README.format(name=name, files=listing, female=female, spinda=spinda,
+                                         sheet_w=mcss.SHEET_SIZE[0], sheet_h=mcss.SHEET_SIZE[1])
+                           + icon_readme(folder) + follower_text).encode()
     out.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as archive:
         for path, data in files.items():
@@ -566,7 +803,8 @@ def gather(paths: list[Path]) -> tuple[list[tuple[str, bytes]], list[str]]:
                         if member.is_dir():
                             continue
                         parts = member.filename.replace("\\", "/").split("/")
-                        if any(p in ("guide", "preview", "__MACOSX") for p in parts[:-1]) or parts[-1].startswith("."):
+                        if any(p in ("guide", "preview", "follower", "__MACOSX") for p in parts[:-1]) \
+                                or parts[-1].startswith("."):
                             ignored.append(member.filename)
                             continue
                         out.append((parts[-1], archive.read(member)))
@@ -849,11 +1087,27 @@ def sheet_preview(rig: dict, before: bytes, after: bytes, palette: list) -> byte
 def check(folder: Path, paths: list[Path], stills_from_sheets: bool, write: bool, preview: bool = True) -> dict:
     group = Group(folder)
     uploads, ignored = gather(paths)
+    # The icons are checked apart (they are in the icon palettes' colours, not the sprite's); the follower sheets
+    # and the icon's bank colours are the export's for reference only
+    icons = [(n, d) for n, d in uploads if n.lower().removesuffix(".png") in ICONS and n.lower().endswith(".png")]
+    followers = [n for n, _ in uploads if is_follower_file(n)]
+    uploads = [(n, d) for n, d in uploads if (n, d) not in icons and n not in followers
+               and n.lower() != "icon_palette.pal"]
     resolved, normal, shiny, new_indices, errors, warnings, notes = resolve(group, uploads, stills_from_sheets)
+    icon_writes, icon_errors, icon_notes, icon_previews = resolve_icons(folder, icons)
+    errors += icon_errors
+    notes += icon_notes
     if ignored:
-        notes.append(f"Ignored {len(ignored)} files of guide/ and preview/ (they're for reading, not importing)")
+        follower_count = sum("follower" in n.replace("\\", "/").split("/")[:-1] for n in ignored)
+        if len(ignored) > follower_count:
+            notes.append(f"Ignored {len(ignored) - follower_count} files of guide/ and preview/ (they're for reading, "
+                         "not importing)")
+        followers += ["follower/"] * follower_count
+    if followers:
+        notes.append(f"Ignored {len(followers)} follower sheet files: the follower's walking sprite is exported for "
+                     "reference, and isn't imported here (there is no checked import for overworld sprites yet)")
     given = sorted({role(n)[1] + ("_shiny" if role(n)[0] == "shiny" else "") if role(n) and role(n)[0] != "pal"
-                    else n.lower() for n, _ in uploads if role(n)})
+                    else n.lower() for n, _ in uploads if role(n)} | {n.lower().removesuffix(".png") for n, _ in icons})
     for sheet in group.sides():
         count, box = outside_pixels(group.rigs[side_of(sheet)], group.images[sheet], resolved[sheet])
         if count:
@@ -880,7 +1134,7 @@ def check(folder: Path, paths: list[Path], stills_from_sheets: bool, write: bool
     if folder.name == "spinda" and resolved["front"] != group.images["front"]:
         warnings.append("Spinda: the game paints its spots onto the front sheet at fixed pixels (mcss_tool.c), so "
                         "keep its head where it is")
-    writes = {} if errors else changes(group, resolved, normal, shiny)
+    writes = {} if errors else {**changes(group, resolved, normal, shiny), **icon_writes}
     if write and not errors:
         for path, data in writes.items():
             with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as temporary:
@@ -914,6 +1168,7 @@ def check(folder: Path, paths: list[Path], stills_from_sheets: bool, write: bool
                        for name in group.sides()},
             "palettes": {"normal": [colour_text(c) for c in palette_normal],
                          "shiny": [colour_text(c) for c in palette_shiny]},
+            "icons": icon_previews,
         }
     return result
 

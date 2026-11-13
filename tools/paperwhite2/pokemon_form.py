@@ -45,7 +45,7 @@ every form record of the species, if the original game has none for it.
 icon checks a PNG (32 by 64, the icon's two frames; indexed or RGB(A), colors rounded to the DS's) against
 res/pokemon/shared/icon_palettes.pal's banks and, with --write, writes it as form_<N>/icon.png (icon_female.png with
 --female) in the first bank that has all its colors: the bank the build then gives the form (pokemon_graphics.icon_bank,
-pokemon_forms.py). still writes a 96 by 96 front_single.png or back_single.png in the form's normal.pal. Both print a
+pokemon_forms.py); an original game's form (Unown's, Rotom's) keeps the bank the game's table gives it. still writes a 96 by 96 front_single.png or back_single.png in the form's normal.pal. Both print a
 preview (an RGBA PNG in base64). The animated battle sprite (front.png, back.png and their cells and animations) of a
 new form is a copy of its template's; its art is exported and imported on that rig by battle_sprite.py
 (docs/paperwhite2/design/battle-sprites.md section 14).
@@ -56,6 +56,7 @@ import json
 import shutil
 import struct
 import sys
+from functools import lru_cache
 import tempfile
 from pathlib import Path
 
@@ -502,31 +503,65 @@ def art_target(name: str, form: int) -> tuple[str, Path, dict]:
     return folder, target, data
 
 
+@lru_cache(maxsize=1)
+def original_icon_banks() -> dict[Path, int]:
+    """The bank of shared/icon_palettes.pal the game gives each icon of the original game's sprite groups (its
+    sPokeIconPalettes table, which the build keeps for them), by the icon's PNG; the hack's form groups and added
+    species take theirs from their PNG's colors instead (pokemon_graphics.icon_bank)."""
+    if str(ROOT / "tools/data") not in sys.path:
+        # pokemon_graphics imports its siblings by name
+        sys.path.insert(1, str(ROOT / "tools/data"))
+    from tools.data import pokemon_graphics
+    banks = {}
+    first = len(pokemon_graphics.ICON_FILES)
+    for group in range(pokemon_graphics.GROUPS["icons"][1] + ORIGINAL_FORM_GROUPS):
+        for female in (0, 1):
+            try:
+                path, _, options = pokemon_graphics.icon_file(POKEMON, first + 2 * group + female)
+            except ValueError:
+                continue
+            banks[path.resolve()] = options["palette_bank"]
+    return banks
+
+
+def fit_icon(pixels: list, bank: int | None = None) -> tuple[int, list[int], list]:
+    """An icon's pixels (DS colors, None transparent) in the first bank of shared/icon_palettes.pal that has all its
+    colors, or in the bank given: the bank, the pixels' indices and the bank's 16 colors."""
+    palette = read_palette(ICON_PALETTES)
+    used = sorted(set(p for p in pixels if p is not None))
+    banks = list(range(len(palette) // 16)) if bank is None else [bank]
+    for candidate in banks:
+        colors = [quantized(c) for c in palette[candidate * 16:candidate * 16 + 16]]
+        if all(c in colors[1:] for c in used):
+            indices = [0 if p is None else colors.index(p, 1) for p in pixels]
+            return candidate, indices, palette[candidate * 16:candidate * 16 + 16]
+    best = min(banks, key=lambda b: sum(c not in [quantized(x) for x in palette[b * 16 + 1:b * 16 + 16]] for c in used))
+    missing = [c for c in used if c not in [quantized(x) for x in palette[best * 16 + 1:best * 16 + 16]]]
+    if bank is not None:
+        raise FormError(f"The icon's colors aren't all in palette bank {bank} of shared/icon_palettes.pal, the one the "
+                        f"game gives this Pokémon's icon: it lacks {len(missing)} (as 5-bit RGB: "
+                        f"{', '.join(str(c) for c in missing[:6])}). Draw it in that bank's colors (an exported "
+                        "icon.png and icon_palette.pal have them)")
+    raise FormError(f"The icon's colors aren't all in one of the {len(palette) // 16} icon palettes: the closest, bank "
+                    f"{best}, lacks {len(missing)} (as 5-bit RGB: {', '.join(str(c) for c in missing[:6])}). Draw it "
+                    "in one bank's colors (an exported icon.png has them)")
+
+
 def import_icon(name: str, form: int, png: Path, female: bool, write: bool) -> dict:
     _, target, _ = art_target(name, form)
     width, height, pixels = image_colors(png)
     if (width, height) != ICON_SIZE:
         raise FormError(f"The icon must be {ICON_SIZE[0]} by {ICON_SIZE[1]} pixels (its two frames, one above the "
                         f"other), not {width} by {height}")
-    palette = read_palette(ICON_PALETTES)
-    used = sorted(set(p for p in pixels if p is not None))
-    for bank in range(len(palette) // 16):
-        colors = [quantized(c) for c in palette[bank * 16:bank * 16 + 16]]
-        if all(c in colors[1:] for c in used):
-            indices = [0 if p is None else colors.index(p, 1) for p in pixels]
-            changes = Changes()
-            out = target / ("icon_female.png" if female else "icon.png")
-            changes.writes[out] = write_indexed_png(width, height, bytes(indices), palette[bank * 16:bank * 16 + 16])
-            if write:
-                changes.apply()
-            return changes.report(f"The icon fits palette bank {bank} of shared/icon_palettes.pal", not write,
-                                  bank=bank, preview=preview(width, height, indices, palette[bank * 16:bank * 16 + 16]))
-    best = min(range(len(palette) // 16), key=lambda bank: sum(
-        c not in [quantized(x) for x in palette[bank * 16 + 1:bank * 16 + 16]] for c in used))
-    missing = [c for c in used if c not in [quantized(x) for x in palette[best * 16 + 1:best * 16 + 16]]]
-    raise FormError(f"The icon's colors aren't all in one of the {len(palette) // 16} icon palettes: the closest, bank "
-                    f"{best}, lacks {len(missing)} (as 5-bit RGB: {', '.join(str(c) for c in missing[:6])}). Draw it "
-                    "in one bank's colors (an exported icon.png has them)")
+    out = target / ("icon_female.png" if female else "icon.png")
+    # An original form's icon (Unown's, Rotom's) keeps the bank the game's table gives it
+    bank, indices, colors = fit_icon(pixels, original_icon_banks().get(out.resolve()))
+    changes = Changes()
+    changes.writes[out] = write_indexed_png(width, height, bytes(indices), colors)
+    if write:
+        changes.apply()
+    return changes.report(f"The icon fits palette bank {bank} of shared/icon_palettes.pal", not write,
+                          bank=bank, preview=preview(width, height, indices, colors))
 
 
 def import_still(name: str, form: int, side: str, png: Path, write: bool) -> dict:
