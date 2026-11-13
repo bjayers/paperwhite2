@@ -567,3 +567,90 @@ edit, and nothing is a patched literal.
 The build runs on the branch `new-species` (not main) in the steps of section 10, each proven before the next; the
 Applin line (Applin 840, Flapple 841, Appletun 842, Dipplin 1011, Hydrapple 1019) is the test case, with placeholder
 art until the user draws it.
+
+## 14. Built: steps 1 and 2 (2026-11-13)
+
+### 14.1 The shared species list (step 1)
+
+`tools/data/species_list.py` is the one definition: `constants()` (generated/species.txt by ID, checked to have
+`SPECIES_PAPERWHITE2_RESERVED_685`/`_686` before any added species), `directory()` (the reserved IDs read `egg/`, so their
+records are the egg's without folders of their own), `national_count()`, `real_species()` (1-649 and 687..last),
+`pokedex_species()` (less `"pokedex": false`), `added_species()`, `hidden_species()`, `last_real_species()`,
+`last_pokedex_species()` and `NAME_LENGTH` (10). Its users:
+
+| Tool | Change |
+| --- | --- |
+| `species_data.py` | `directory` is species_list's; the moved sprite offset and egg moves for added species too; egg-move entries pad the IDs between with empty ones |
+| `form_groups.py` | `data_species()` (NONE, 1-649, added): an added species' forms are hack groups from 66 like any species without original groups |
+| `pokemon_graphics.py` | `added_species()`, `template_species()` (`data.json`'s new optional `"art_template"`, else Bulbasaur): the added species' battle groups and icons after the hack's form groups; footprints padded to the last species with `none/`'s |
+| `pokemon_cries.py`, `sound_data.py` | `cry_ids()`: added species' cries from 691 (`ADDED_CRY_FIRST`), named `WAVE_ARC_PAPERWHITE2_CRY_<SPECIES>` in the archive's empty slots by the packer (no list edit); volumes at their IDs, the reserved ones the egg's |
+| `pokedex_data.py` | `pokedex_rows()`: files 0 and 2 indexed by ID with zero rows for 650-686 and hidden species; file 1 (initials) now generated from the names (proven equal to the original); files 3-5 still copied (step 3) |
+| `text_sources.py` | `\from{added_species.name|name_upper|name_with_article}` (new last lines of the three name banks; names over 10 characters stop the build); the Pokédex banks' `\from{species.pokedex.*}` emit 650-686 and hidden species as empty lines, so the form slots follow at `last + 2` |
+| `pms_words.py` | Easy Chat's species words end at the first `\from` (the added names come after Bad Egg) |
+| `pokemon_forms.py` | the bases below; `no_evolution` and the form directory over real/Pokédex species; `POKEDEX_SPECIES_MAX` = the last Pokédex species |
+| `pokemon_center.py` | the Wonder Trade's tables to the last real species; 650-686 and hidden species always excluded; schema `excluded_species` up to 1023 |
+| `pokedex_evo.py`, `encounters.py` (Area), `pokedex_templates.py`, `pokemon_form.py`, `pokedex_sprites.py` | to the last real species / including the added groups |
+| `following_data.py` | a follower row whose species isn't real stops the build (the game would drop the whole registry) |
+| editor `shared/species.ts` | `isRealSpecies`, `inPokedex`: the Encounter editor's species and the Pokémon list's order (added species after Genesect) |
+
+`"pokedex": false` is the schema's second form of `pokedex` (`$defs/pokedex_text` or `false`).
+
+### 14.2 The generated bases and the C (step 1)
+
+`paperwhite2/pokemon_forms_config.h` adds `PAPERWHITE2_SPECIES_FIRST_ADDED` (687), `_ADDED_COUNT`, `_LAST` (the last real
+species: 649 without added ones), `_SPRITE_FILES` (15,065 + 20 × hack form groups), `_ICON_FILES`, `_CRY_FIRST` (691),
+`_ICON_PALETTES` and `_NOT_IN_POKEDEX`. `include/paperwhite2/species.h` (included by `pokemon_forms.h`):
+`PaperWhite2_IsAddedSpecies` (inline, `species - 687 < count`), and as macros `PML_IsRealSpecies`,
+`PaperWhite2_IsPokedexSpecies`, `PaperWhite2_IsSkippedPokedexSpecies`; `PaperWhite2_IsHiddenSpecies` and
+`PaperWhite2_GetSpeciesIconPalette` in `paperwhite2_pokemon_forms.c`, compiled only with added species.
+
+The hooks: `GetPokemonDataIDBase` (pokegra.c), `PokeParty_GetIconIndex`/`PokeIcon_GetPalette` (poke_icon.c),
+`getResIDFunc`/`getWaveInfoFunc` (pm_voice.c), `PML_PkmIsBadMonsNo` and Fill Pokédex (pokedex_savedata.c), the Day
+Care's egg TMs and babies (day_care.c), the party scripts (scrcmd_pokemon.c), the bad-egg trap (scrcmd_leaves.c), the
+regulation's banned bits (never banned, no over-read) and required species (regulation.c), `FOLLOWING_MAX_SPECIES`, the
+Info page's family table, the debug pickers. The Wonder Trade needed no C: its count and flags follow the generated
+last species.
+
+**Byte identity without species.** Each check is the original when the count is 0: `species - 687 < 0u` folds away.
+Two traps found: an inline function returning `a || b` makes MWCC put the value in a register before branching (so the
+compound checks are macros), and a line added before a `__LINE__` allocation changes the code (the Info page's include
+went into `pokemon_forms.h` instead).
+
+**Proof:** the `--hack` ROM is `57cd9af0dfab0e720e9d82e3e12298a1c1cd904d` before and after (every packed file identical);
+`verify_dsi_rom.py` intact; the plain `configure.py w2_us` build passes every module check (its archive checks fail as
+before; a/0/9/7 among them since the Spiky-eared Pichu, not "matches today" as section 7 says).
+
+### 14.3 The test species (step 2)
+
+Made by hand (scratchpad `newsp/testmon.py add|remove`): `SPECIES_TESTMON` (687, Bulbasaur with red and blue swapped,
+mirrored icon, Pikachu's cry, evolves at 16) and `SPECIES_TESTEVO` (688, Ivysaur with green and blue swapped, Meowth's
+cry). Tested in py-desmume on a copy of the user's save (shots in the scratchpad's `newsp/shots/`):
+
+- party icons (mirrored), summary (Testmon, Grass/Poison, the tinted sprite; Dex No. shows 687 until step 3);
+- a forced wild battle (Route 6's double grass): tinted fronts and backs, cries asked as wave archives 691 and 692 and
+  691 loaded (`PokeVoice_LoadWaveArc`), volumes read at 687/688; caught (party full: to Box 1, its PC entry No. 687 with
+  sprite and icon); the hack's Pokédex area's caught and seen bits at 686 (species 687);
+- a level-up in battle to 25: "Testmon is evolving!" into Testevo; 688's bits set;
+- the Centers' Day Care: Testevo (female) and Testmon sent, the egg a Testmon (687), hatched ("Testmon hatched from the
+  Egg!");
+- no follower for Testmon and the boot's Pignite follower as before (the registry with `FOLLOWING_MAX_SPECIES` 688);
+- the Pokédex Info page of Testmon (#687, "Test Pokémon", its entry, height, weight, sprite, footprint) and of Keldeo's
+  Resolute Form (the moved form slots); every form's name, entry, height, weight and shape found through a/0/9/7's
+  chain equal to the baseline's (83 forms), and every original and hack form group of a/0/0/4 and a/0/0/7 byte for
+  byte;
+- saved: `pokedex_save.py verify` every CRC right, the area seen 62/caught 15 (highest 687), the original block its
+  mirror (61/14); reloaded with the party intact.
+
+Removed: the ROM is `57cd9af0...` again.
+
+### 14.4 Found on the way (for the next steps)
+
+- The vanilla Area page (`pokedex_detail_map.c`, `species - 1` into a/1/7/6, copied from the ROM) would read past the
+  archive for an added species; the hack's own Area panel is used, but the vanilla page isn't guarded.
+- The musical (`MusicalMcss_GetDataIDBase`) has no hook yet: an added species reads BW1's layout (step 5).
+- Debug pickers now run to the last species, the IDs 650-686 included (debug only).
+- Step 3 must give the summary and Info page the display number (both show the ID today), and decide a/0/9/7 files
+  3-5 and `box_search.c`'s tables.
+- Step 4: Add Pokémon writes generated/species.txt (the reserved pair first), the folder with `"art_template"`, and
+  nothing for cries (the packer names the slots); `pokemon_species.py remove` reverts both lists. Ninja picked up the
+  header change in one build here (configure re-ran because species.txt changed).

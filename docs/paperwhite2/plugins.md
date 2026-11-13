@@ -2476,6 +2476,29 @@ block's place changes**, so the save's layout is the original's and every old sa
 Never change a block's size: a block whose size differs from the card's fails its CRC in both copies, and the game
 then loses the whole save (design doc section 2.4).
 
+### New species
+
+Whole new species, appended to `generated/species.txt` from 687 after `SPECIES_PAPERWHITE2_RESERVED_685`/`_686`
+(`docs/paperwhite2/design/new-species.md`, section 14 for what is built; `include/paperwhite2/species.h`,
+`tools/data/species_list.py`):
+
+- **One definition.** `tools/data/species_list.py` for the tools (real species 1-649 and 687 on, the Pokédex's less
+  `"pokedex": false`), `editor/shared/species.ts` for the editor, and in C `PaperWhite2_IsAddedSpecies`,
+  `PML_IsRealSpecies`, `PaperWhite2_IsPokedexSpecies` from the generated `PAPERWHITE2_SPECIES_*` counts. Loops never
+  run "up to the last species" without them: 650-686 are the egg's, the Pokéstar Studios' and the reserved IDs.
+- **Data from `res/pokemon/<name>/` alone.** Records, egg moves, cry volumes and text lines at the species' IDs; battle
+  sprite and icon groups after the hack's form groups (made in the format of `"art_template"`'s files, Bulbasaur's by
+  default); cries from wave archive 691; footprints at `species + 5`; the Pokédex's form slots after the last species.
+  Nothing is a hand-kept index, and the C reads the generated bases (`GetPokemonDataIDBase`, `PokeParty_GetIconIndex`,
+  `PokeIcon_GetPalette`, `getResIDFunc`).
+- **The checks that took Genesect as the last species** take the added ones: the Pokédex's bad species, the Day Care,
+  the party scripts, the Leaves' bad-egg trap, the regulation (an added species is never banned), the follower bound,
+  the Wonder Trade's tables, the Info page's family table, the debug pickers.
+- **Without added species the ROM is the one before** (each check folds to the original; see the design doc for the
+  two compiler traps: macros for compound checks, no lines before a `__LINE__` allocation).
+- **Not yet:** the display number (step 3; the summary and Info page show the ID), Add Pokémon in the editor (step 4),
+  the musical and the vanilla Area page (step 5).
+
 ## Adding global scripts
 
 A global script file's IDs are limited by its row in `GLOBAL_SCRIPT_TABLE` (`src/ov012/script_sys.c`), e.g.

@@ -2,6 +2,23 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-13: new species, steps 1 and 2 (ROM session, on a branch from `new-species`)
+
+design/new-species.md section 14 has the details.
+
+- **Step 1:** `tools/data/species_list.py`, the one definition of the species (1-649 and 687 on, 685/686 reserved,
+  `"pokedex": false` out of the Pokédex), used by every packer and generator that said "before SPECIES_EGG" or "up to
+  Genesect", and `editor/shared/species.ts`. The packers lay added species' records, text, sprite and icon groups,
+  footprints, cries and volumes at their IDs or after the hack's form groups; `pokemon_forms.py` generates the bases;
+  `include/paperwhite2/species.h` and about 15 `#ifdef PAPERWHITE2` hooks use them. The `--hack` ROM is byte for byte
+  the one before (`57cd9af0...`), and the plain build's modules match.
+- **Step 2:** Testmon (687) and Testevo (688) by hand, tested in py-desmume on a copy of the user's save: icons,
+  summary, box, a wild battle (sprites, cries 691/692 loaded), the catch and the Pokédex bits, evolution, the Day Care's
+  egg and hatching, no follower without breaking others, Keldeo's form text from the moved slots, save and reload with
+  `pokedex_save.py verify`. Removed: the ROM is `57cd9af0...` again.
+
+Next: step 3, the Pokédex numbering (display numbers, the list's added rows, a/0/9/7 files 3-5, `box_search.c`).
+
 ## 2026-11-12: battle sprites, the armature and curves (ROM session, on a branch)
 
 The rig editor plan's step 3 (design/battle-sprites.md section 19; editor/README.md, The armature):

@@ -159,6 +159,10 @@
         "baby_species": {
             "$ref": "#/$defs/species",
             "description": "The species that hatches from an egg this one lays, its first evolution stage. Forms have none"
+        },
+        "art_template": {
+            "$ref": "#/$defs/species",
+            "description": "An added species only: the original species whose battle sprite and icon files its own are made in the format of (tools/data/pokemon_graphics.py); Bulbasaur when left out"
         }
     },
     "$defs": {
