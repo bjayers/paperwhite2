@@ -82,11 +82,12 @@ BOOL PaperWhite2_FormCanEvolve(ArcTool *evolutionFile, u16 species, u16 form) {
 }
 
 #if PAPERWHITE2_SPECIES_ADDED_COUNT != 0
-// The added species' tables (include/paperwhite2/species.h): their icons' palettes, as sFormIconPalettes, and those
-// that never enter the Pokédex, a bit each from the first. Without added species nothing calls these, so they aren't
-// built and the ROM is the one before them
+// The added species' tables (include/paperwhite2/species.h): their icons' palettes, as sFormIconPalettes, those that
+// never enter the Pokédex, a bit each from the first, and the species whose musical sprites they show. Without added
+// species nothing calls these, so they aren't built and the ROM is the one before them
 static const u8 sSpeciesIconPalettes[PAPERWHITE2_SPECIES_ADDED_COUNT + 1] = { PAPERWHITE2_SPECIES_ICON_PALETTES };
 static const u8 sHiddenSpecies[PAPERWHITE2_SPECIES_ADDED_COUNT / 8 + 1] = { PAPERWHITE2_SPECIES_NOT_IN_POKEDEX };
+static const u16 sMusicalSpecies[PAPERWHITE2_SPECIES_ADDED_COUNT + 1] = { PAPERWHITE2_SPECIES_MUSICAL_SPECIES };
 
 BOOL PaperWhite2_IsHiddenSpecies(u32 species) {
     u32 index = species - PAPERWHITE2_SPECIES_FIRST_ADDED;
@@ -105,5 +106,12 @@ u8 PaperWhite2_GetSpeciesIconPalette(u32 species, BOOL female) {
     }
     palettes = sSpeciesIconPalettes[species - PAPERWHITE2_SPECIES_FIRST_ADDED];
     return female ? palettes >> 4 : palettes & 0xf;
+}
+
+u16 PaperWhite2_GetMusicalSpecies(u32 species) {
+    if (!PaperWhite2_IsAddedSpecies(species)) {
+        return species;
+    }
+    return sMusicalSpecies[species - PAPERWHITE2_SPECIES_FIRST_ADDED];
 }
 #endif

@@ -31,6 +31,7 @@
 
 #ifdef PAPERWHITE2
 #include "paperwhite2/exp_share.h"
+#include "paperwhite2/species.h"
 #endif
 
 static u8 CollectTargetsSingle(BtlServerFlow *flow, BattleMon *mon, u8 target, BtlFlowMoveParam *param, u8 redirect,
@@ -908,6 +909,13 @@ static BOOL ThrowBall(BtlServerFlow *flow, BattleMon *mon, u16 item) {
                 flow->unk14 = 6;
                 flow->unk784 = targetPos;
                 isNew = !IsMonCaught(flow->mainModule, target) ? TRUE : FALSE;
+#ifdef PAPERWHITE2
+                // Paper White 2: a species that never enters the Pokédex ("pokedex": false) is never added to it, so
+                // no "data was added to the Pokédex" (paperwhite2/species.h)
+                if (PaperWhite2_IsNotInPokedex(GetBattleMonSpecies(target))) {
+                    isNew = FALSE;
+                }
+#endif
                 BattleMon_SetCaughtBall(target, item);
             } else {
                 isNew = FALSE;

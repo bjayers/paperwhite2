@@ -16,6 +16,10 @@
 #include "pml/poke_graphic.h"
 #include "system/mcss.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/species.h"
+#endif
+
 // Overlay 209's musical_mcss.c: the musical's copy of MCSS. Each sprite is a multi-cell animation whose cells are drawn
 // as textured quads of one image in texture VRAM, described by the sprite's bin file: for each cell, one or two quads
 // and the marker cells that it carries. A marker cell is not drawn but reported to the draw callback, which places the
@@ -727,6 +731,15 @@ static void MusicalMcss_GetDataIDBase(u32 arcId, int species, int form, u32 sex,
     } else {
         charsFile = dir == POKEGRA_DIR_FRONT ? POKEGRA_FILE_CHARS : POKEGRA_FILE_BACK + POKEGRA_FILE_CHARS;
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: an added species has no group in this archive, which keeps Black and White's (and no record in
+    // their personal data, which a form's offsets come from): it shows its art template's musical sprite, whose bin
+    // file places the props (include/paperwhite2/species.h)
+    if (PaperWhite2_IsAddedSpecies(species)) {
+        species = PaperWhite2_GetMusicalSpecies(species);
+        file = species * POKEGRA_FILE_COUNT;
+    }
+#endif
 
     if (egg) {
         file = (MUSICAL_POKEGRA_EGG + (species == SPECIES_MANAPHY)) * POKEGRA_FILE_COUNT;

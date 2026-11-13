@@ -22,8 +22,9 @@ The header has, for src/paperwhite2/main/paperwhite2_pokemon_forms.c (include/pa
   added after the others need no change to the C;
 - the added species (tools/data/species_list.py, include/paperwhite2/species.h): their first ID, count and the last
   real species, where their battle sprite groups and icons start (after the hack's form groups,
-  tools/data/pokemon_graphics.py) and their first cry (tools/data/pokemon_cries.py), their icons' palettes, and which
-  of them never enter the Pokédex, a bit each from the first;
+  tools/data/pokemon_graphics.py) and their first cry (tools/data/pokemon_cries.py), their icons' palettes, which
+  of them never enter the Pokédex, a bit each from the first, and the species whose musical sprite each shows (its
+  "art_template", pokemon_graphics.template_species: the musical's archive has Black and White's groups only);
 - the Pokédex's numbering (docs/paperwhite2/design/new-species.md section 5): how many added species the Pokédex has
   and the National list's length, their order after Genesect (species_list.pokedex_order()), each added species'
   display number, and where each first letter's species start and end in the A to Z order (a/0/9/7 file 5,
@@ -41,7 +42,8 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(1, str(ROOT / "tools" / "data"))
 from tools.data.gen_constants import load as load_list  # noqa: E402
 from tools.data.pokemon_graphics import (ADDED_FORM_FILES, GROUP_FILES, GROUPS, ICON_FILES,  # noqa: E402
-                                         ORIGINAL_FORM_GROUPS, added_form_groups, form_names, icon_bank, species_names)
+                                         ORIGINAL_FORM_GROUPS, added_form_groups, form_names, icon_bank, species_names,
+                                         template_species)
 from tools.data.pokemon_cries import ADDED_CRY_FIRST  # noqa: E402
 from tools.data.pokedex_data import PokedexDataError, initial_groups  # noqa: E402
 from tools.data import species_list  # noqa: E402
@@ -159,6 +161,9 @@ def species_lines() -> list[str]:
         "#define PAPERWHITE2_SPECIES_ICON_PALETTES " + ", ".join(f"0x{v:02x}" for v in [*species_icon_palettes(), 0]),
         "// Those that never enter the Pokédex (\"pokedex\": false), a bit each from the first",
         "#define PAPERWHITE2_SPECIES_NOT_IN_POKEDEX " + ", ".join(f"0x{v:02x}" for v in hidden),
+        "// The species whose musical sprite each shows, its art template, then an unused 0",
+        "#define PAPERWHITE2_SPECIES_MUSICAL_SPECIES " + ", ".join(
+            str(number) for number in [*(template_species(first + i) for i in range(len(added))), 0]),
     ]
 
 

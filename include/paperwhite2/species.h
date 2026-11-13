@@ -54,6 +54,11 @@ BOOL PaperWhite2_IsHiddenSpecies(u32 species);
 // The palette of an added species' icon, the female's with female, as sPokeIconPalettes gives the others'
 u8 PaperWhite2_GetSpeciesIconPalette(u32 species, BOOL female);
 
+// The species whose musical sprite an added species shows (PAPERWHITE2_SPECIES_MUSICAL_SPECIES, its art template). The
+// musical's archive (ARCID_MUSICAL_POKEGRA) has Black and White's groups only, and its bin files place the props in a
+// format of their own, so a battle sprite's files can't stand in for them
+u16 PaperWhite2_GetMusicalSpecies(u32 species);
+
 // The Pokédex's numbering (docs/paperwhite2/design/new-species.md section 5). tools/paperwhite2/pokemon_forms.py
 // generates, from res/pokemon and tools/data/species_list.py:
 // - PAPERWHITE2_POKEDEX_ADDED_COUNT, the added species that the Pokédex has, and PAPERWHITE2_POKEDEX_LIST_COUNT, the
