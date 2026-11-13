@@ -6,7 +6,7 @@ docs/paperwhite2/design/forms-and-species.md section 11.5).
     pokemon_form.py add SPECIES [--from FORM] [--name NAME] [--record] [--check]
     pokemon_form.py remove SPECIES FORM [--check]           # only a form the hack added, the last one
     pokemon_form.py record SPECIES FORM on|off [--check]    # whether the form has a data record of its own
-    pokemon_form.py icon SPECIES FORM PNG [--female] [--write]
+    pokemon_form.py icon SPECIES FORM PNG [--female] [--write]     # FORM 0: an added species' own
     pokemon_form.py still SPECIES FORM front|back PNG [--write]
 
 SPECIES is a species' directory in res/pokemon (vulpix) or its constant (SPECIES_VULPIX). Every command but info
@@ -490,6 +490,10 @@ def preview(width: int, height: int, indices: list[int], colors: list) -> str:
 def art_target(name: str, form: int) -> tuple[str, Path, dict]:
     folder = species_dir(name)
     data = read(POKEMON / folder / "data.json")
+    if form == 0 and species_names().index(folder) >= national_species():
+        # An added species' own art (tools/paperwhite2/pokemon_species.py), whose icon's bank the build takes from the
+        # PNG as a hack form's; an original species' bank is the original game's table
+        return folder, POKEMON / folder, data
     if not 0 < form < data["forms"]["count"]:
         raise FormError(f"{folder} has no form {form}")
     target = POKEMON / folder / f"form_{form}"

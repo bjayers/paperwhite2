@@ -163,6 +163,10 @@
         "art_template": {
             "$ref": "#/$defs/species",
             "description": "An added species only: the original species whose battle sprite and icon files its own are made in the format of (tools/data/pokemon_graphics.py); Bulbasaur when left out"
+        },
+        "retired": {
+            "type": "boolean",
+            "description": "Paper White 2, an added species only: hidden but keeping its ID, so Pokémon of it in saves stay valid. Out of the Pokédex (as \"pokedex\": false), the Wonder Trade and the editor's encounter pickers; a retired species' ID can later be reused for a new species (tools/paperwhite2/pokemon_species.py)"
         }
     },
     "$defs": {

@@ -12,7 +12,7 @@ tables, and their records are copies of the egg's (directory() gives them egg/).
 
 - real_species(): the species a Pokémon can be, 1-649 and the added ones;
 - pokedex_species(): those of them the Pokédex has, all but the added species whose data.json has "pokedex": false
-  (creatures that never enter it, as the Pokéstar species);
+  (creatures that never enter it, as the Pokéstar species) or "retired": true (hidden, keeping their IDs);
 - added_species(): the added ones' constants, from FIRST_ADDED, in ID order;
 - display_number(): the number the Pokédex shows for a species, its ID for 1-649 and an added one's
   pokedex.display_number (None, shown as "???", where it has none), and pokedex_order(), the National list's species:
@@ -32,6 +32,8 @@ SPECIES_LIST = ROOT / "generated" / "species.txt"
 # The first added species, and the two IDs before it that only the egg's tables use
 FIRST_ADDED = 687
 RESERVED = ("SPECIES_PAPERWHITE2_RESERVED_685", "SPECIES_PAPERWHITE2_RESERVED_686")
+# The last ID a species can have: the Pokédex's search and its orders keep species in 10 bits (new-species.md 2.3)
+SPECIES_MAX = 1023
 # The longest name a Pokémon's nickname field holds
 NAME_LENGTH = 10
 # The display numbers an added species can have: past the original species' 1-649, up to four digits, but 999, which
@@ -134,18 +136,20 @@ def species_data(number: int, root: Path = POKEMON) -> dict:
 
 
 def in_pokedex(data: dict) -> bool:
-    """Whether a species' data puts it in the Pokédex: all but those with "pokedex": false."""
-    return data.get("pokedex") is not False
+    """Whether a species' data puts it in the Pokédex: all but those with "pokedex": false and the retired ones
+    ("retired": true, hidden but keeping their IDs, tools/paperwhite2/pokemon_species.py)."""
+    return data.get("pokedex") is not False and data.get("retired") is not True
 
 
 def pokedex_species(root: Path = POKEMON) -> list[int]:
-    """The species the Pokédex has, in ID order: 1 to Genesect, then the added ones but those with "pokedex": false."""
+    """The species the Pokédex has, in ID order: 1 to Genesect, then the added ones but those with "pokedex": false
+    or retired."""
     return [*range(1, national_count()),
             *(number for number in range(FIRST_ADDED, last_species() + 1) if in_pokedex(species_data(number, root)))]
 
 
 def hidden_species(root: Path = POKEMON) -> list[int]:
-    """The added species that never enter the Pokédex ("pokedex": false)."""
+    """The added species that never enter the Pokédex ("pokedex": false, or retired)."""
     return [number for number in range(FIRST_ADDED, last_species() + 1) if not in_pokedex(species_data(number, root))]
 
 
