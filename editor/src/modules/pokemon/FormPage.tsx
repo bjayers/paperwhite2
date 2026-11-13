@@ -12,6 +12,7 @@ import type { JsonValue } from "../../../shared/json.ts";
 import type { Constants } from "../../../shared/schema.ts";
 import { DocForm, useHeld } from "../followers/DocForm.tsx";
 import { readIndexedPng, type IndexedImage } from "../palettes/png.ts";
+import { BattleSpriteArt } from "./BattleSpriteArt.tsx";
 import { SpeciesIcon } from "./SpeciesIcon.tsx";
 import { isOriginalForm, type Listed } from "./forms.ts";
 
@@ -345,27 +346,33 @@ function bytesEqual(a: ArrayBuffer, b: ArrayBuffer) {
   return x.every((v, i) => v === y[i]);
 }
 
-/** A form's art: its battle sprite's state, and the icon and stills it can import as PNGs. */
+/** A form's art: its battle sprite (exported and imported on its rig, BattleSpriteArt), and the icon and stills it can
+ * import as PNGs. */
 function FormArt({ entry, speciesName, onWritten, epoch }: { entry: Listed; speciesName: string; onWritten(): void; epoch: number }) {
   const [copy, setCopy] = useState<boolean | null>(null);
   useEffect(() => {
     let live = true;
-    Promise.all([api.asset(`res/pokemon/${entry.folder}/form_${entry.form}/front.png`), api.asset(`res/pokemon/${entry.folder}/front.png`)])
-      .then(([a, b]) => live && setCopy(bytesEqual(a, b)), () => live && setCopy(null));
+    const sheet = (folder: string, side: string) => api.asset(`res/pokemon/${folder}/${side}.png`);
+    Promise.all(["front", "back"].flatMap((side) => [sheet(`${entry.folder}/form_${entry.form}`, side), sheet(entry.folder, side)]))
+      .then(([a, b, c, d]) => live && setCopy(bytesEqual(a, b) && bytesEqual(c, d)), () => live && setCopy(null));
     return () => { live = false; };
   }, [entry.folder, entry.form, epoch]);
   return (
-    <section className="pkm-card">
-      <h3>Art</h3>
-      <p className="pkm-note"><b>Battle sprite:</b> {copy ? `copy of ${speciesName}'s` : copy === false ? "its own" : "…"} (form_{entry.form}/front.png,
-        back.png, their cells and animations, normal.pal and shiny.pal; the colors are edited on the Palettes and Shinies pages).
-        <span className="muted"> The rig importer, for the animated sprite, comes later.</span></p>
-      <div className="pkm-art-grid">
-        <ArtImport entry={entry} kind="icon" label="Icon" hint="32×64, its two frames; drawn in one of the icon palettes' banks, chosen from its colors" onWritten={onWritten} epoch={epoch} />
-        <ArtImport entry={entry} kind="front" label="Front still" hint="96×96 front_single.png, in the form's normal.pal colors" onWritten={onWritten} epoch={epoch} />
-        <ArtImport entry={entry} kind="back" label="Back still" hint="96×96 back_single.png, in the form's normal.pal colors" onWritten={onWritten} epoch={epoch} />
-      </div>
-    </section>
+    <>
+      <BattleSpriteArt species={entry.species} form={entry.form} folder={`${entry.folder}/form_${entry.form}`} speciesName={speciesName}
+        onWritten={onWritten} />
+      <section className="pkm-card">
+        <h3>Art</h3>
+        <p className="pkm-note"><b>Battle sprite:</b> {copy ? `a copy of ${speciesName}'s (its sheets are ${speciesName}'s); export and import its art above`
+          : copy === false ? `its own (form_${entry.form}/'s sheets differ from ${speciesName}'s), on ${speciesName}'s rig` : "…"}.
+          <span className="muted"> The rig (its parts, poses and animations) is edited in the rig editor, later; colours also on the Palettes and Shinies pages.</span></p>
+        <div className="pkm-art-grid">
+          <ArtImport entry={entry} kind="icon" label="Icon" hint="32×64, its two frames; drawn in one of the icon palettes' banks, chosen from its colors" onWritten={onWritten} epoch={epoch} />
+          <ArtImport entry={entry} kind="front" label="Front still" hint="96×96 front_single.png, in the form's normal.pal colors" onWritten={onWritten} epoch={epoch} />
+          <ArtImport entry={entry} kind="back" label="Back still" hint="96×96 back_single.png, in the form's normal.pal colors" onWritten={onWritten} epoch={epoch} />
+        </div>
+      </section>
+    </>
   );
 }
 

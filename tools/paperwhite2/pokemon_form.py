@@ -44,8 +44,9 @@ icon checks a PNG (32 by 64, the icon's two frames; indexed or RGB(A), colors ro
 res/pokemon/shared/icon_palettes.pal's banks and, with --write, writes it as form_<N>/icon.png (icon_female.png with
 --female) in the first bank that has all its colors: the bank the build then gives the form (pokemon_graphics.icon_bank,
 pokemon_forms.py). still writes a 96 by 96 front_single.png or back_single.png in the form's normal.pal. Both print a
-preview (an RGBA PNG in base64). The animated battle sprite (front.png, back.png and their cells and animations) waits
-for the rig importer (docs/paperwhite2/design/battle-sprites.md); a new form's are copies of its template's.
+preview (an RGBA PNG in base64). The animated battle sprite (front.png, back.png and their cells and animations) of a
+new form is a copy of its template's; its art is exported and imported on that rig by battle_sprite.py
+(docs/paperwhite2/design/battle-sprites.md section 14).
 """
 import argparse
 import base64

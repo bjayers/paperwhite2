@@ -2,6 +2,31 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-12: battle sprite art, export and import (ROM session, which owns `editor/` for now)
+
+The user asked for a sprite importer and buttons to export the current sprite to edit and re-import; the rig editor
+comes later. Built (design/battle-sprites.md section 14):
+
+- **Battle sprite card** on every species' page and every form with its own art (the Spiky-eared Pichu too): the
+  sprite animated as the battle draws it, **Export art (.zip)** (sheets, stills, palettes, shiny copies, a numbered
+  guide of the pieces per sheet, README), **Import art…** (any of those files or the zip: checked, previewed on the
+  rig, normal and shiny, front and back, then **Apply**), **Make stills from the sheets**.
+- `tools/paperwhite2/mcss.py` reads a rig and draws any frame (the research decoder made a tested module);
+  `tools/paperwhite2/battle_sprite.py export|check|import` (stdlib only) writes only the res/ sources that change.
+- The form page's note says "its own" once a form's sheets differ from its species'.
+- The originals' 96x96 stills: the first frame centred, 860 of 1,667 pixel for pixel, most of the rest with a few
+  pixels touched up.
+
+Proven: all 752 groups export and import unchanged (nothing to write); six (Pichu, Charizard, Abomasnow, Spinda, Unown
+form 1, Spiky-eared Pichu) through the CLI's write mode leave res/ and the `--hack` ROM byte for byte (`e3f841fb...`).
+An edit in the editor (the Spiky-eared Pichu's ears red, the shiny red made green) showed in py-desmume in the summary,
+a battle's back sprites and the Info page, normal and shiny; reverted. Tests: `python3 -m unittest
+tools.paperwhite2.test_battle_sprite` (12), editor typecheck, 78 tests (3 new), build. Screenshots: the session scratchpad's
+`spriteio/shots/`.
+
+Next (the rig editor): write the rig files back from `mcss.read_rig`'s shape byte for byte, then pieces that move and
+resize, keyframes, the checks of section 11.
+
 ## 2026-11-12: Add form in the editor (ROM session, which owns `editor/` for now)
 
 Built as design/forms-and-species.md section 11.5 planned it (now sections 11.5 to 11.9):

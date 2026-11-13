@@ -610,8 +610,9 @@ editor), leaves `res/` and `generated/` as they were, and the `--hack` ROM byte 
   (the hack's last form, with a confirm listing what goes), Data ("Own stats, types, abilities and moves": on runs
   `record on`; off, with a confirm, `record off`), Evolution ("Can't evolve", `forms.no_evolution`) and Wonder Trade
   ("In the random pool", `excluded_forms`; an original form shows its `wonder_trade.forms` weight); its Pokédex entry
-  (name, entry, height, weight, shape); its Art (the battle sprite says "copy of <species>'s" while its `front.png` is
-  the species' file, "the rig importer, for the animated sprite, comes later"; the icon and the 96x96 front and back
+  (name, entry, height, weight, shape); its Art (the battle sprite says "a copy of <species>'s" while its sheets are the species'
+  files, "its own" once they differ; its art is exported and imported on its rig by the Battle sprite card,
+  battle-sprites.md section 14; the icon and the 96x96 front and back
   stills import as PNGs, checked and previewed first: an icon must be 32x64 in one bank of
   `shared/icon_palettes.pal`'s colours, which picks its bank as the build does, a still in the form's `normal.pal`
   colours); and with a record the species page's sections on `form_n.json` (types, stats, abilities and the rest,

@@ -384,9 +384,21 @@ Forms (`FormPage.tsx`, docs/paperwhite2/design/forms-and-species.md section 11.6
   or out of the random pool (`excluded_species`).
 - A **form's page** has its sprite and icon, a Form section (Data: its own record on or off; Evolution: Can't evolve,
   `forms.no_evolution`; Wonder Trade: in the random pool or not, `excluded_forms`; **Remove form** for the hack's last
-  form), its Pokédex entry, its Art (the icon and the 96x96 stills imported as PNGs, checked and previewed, the icon's
-  palette bank picked from its colours; the animated battle sprite waits for the rig importer) and, with a record, the
-  same data sections as a species.
+  form), its Pokédex entry, its Battle sprite (below), its Art (whether its battle sprite is a copy of its species'
+  or its own; the icon and the 96x96 stills imported as PNGs, checked and previewed, the icon's palette bank picked
+  from its colours) and, with a record, the same data sections as a species.
+- **Battle sprite** (`BattleSpriteArt.tsx`, on every species' page and every form with art of its own;
+  docs/paperwhite2/design/battle-sprites.md section 14): the sprite as the battle draws it, its "stay" animation played
+  from the sheets on its rig, front and back, female, normal or shiny. **Export art (.zip)** gives the sheets, stills,
+  palettes, a shiny-coloured copy of each picture, a guide per sheet (each piece's rectangle numbered, with the parts it
+  belongs to) and a README of the rules. **Import art…** takes any of them back (PNGs, .pal files or the zip): the
+  errors, warnings (pixels outside the pieces, colours changed in one palette only) and the files it changes, and a
+  preview of the new art animated on the rig, normal and shiny, with the stills, the sheets (changed pixels outside the
+  pieces in red) and the palettes; **Apply** writes the res/ files. **Make stills from the sheets** draws the 96x96
+  stills from the first frame. The rig itself stays; editing it is the rig editor's, later.
+  `tools/paperwhite2/battle_sprite.py` (`export`, `check`, `import`) does the work, through `GET /api/battle-sprite/export`
+  and `POST /api/battle-sprite/check` (with `write` to import); it writes res/ itself, so the card refuses while the
+  group's files have unsaved edits.
 - Adding, removing and records run `tools/paperwhite2/pokemon_form.py` on the server (`/api/pokemon-forms`, `/add`,
   `/remove`, `/record`, `/art`), which writes `res/` itself (art and follower folders, `obj_codes.txt`, other species'
   offsets): the editor refuses while those files have unsaved edits, and reads the changed files again after.

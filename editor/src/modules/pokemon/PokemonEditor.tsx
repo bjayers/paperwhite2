@@ -20,6 +20,7 @@ import { DocForm, useHeld } from "../followers/DocForm.tsx";
 import { SpeciesIcon, speciesFolder } from "./SpeciesIcon.tsx";
 import { useToolActive } from "../active.ts";
 import { FormIcon, FormPage, FormsCard, SERVICES, WonderTradeRow } from "./FormPage.tsx";
+import { BattleSpriteArt } from "./BattleSpriteArt.tsx";
 import { isOriginalForm, listSpecies, type Listed } from "./forms.ts";
 
 const SCHEMA = "res/pokemon/species.schema.json";
@@ -240,13 +241,14 @@ function SpeciesPage({ entry, list, info, constants, onOpen, onSelect, onChanged
   onOpen(species: string): void; onSelect(key: string): void; onChanged(select?: string): void;
 }) {
   const { data, error } = useHeld(entry.speciesPath);
+  const [spriteEpoch, setSpriteEpoch] = useState(0);
   if (error) return <p className="pkm-error">{error}</p>;
   if (!(data instanceof Map)) return <p className="muted pkm-empty">Reading…</p>;
   const forms = list.filter((l) => l.folder === entry.folder && l.form > 0);
   return (
     <div className="pkm-page">
       <div className="pkm-top">
-        <Sprite folder={entry.folder} />
+        <Sprite key={spriteEpoch} folder={entry.folder} />
         <div>
           <h2><span className="muted">#{entry.number}</span> {String(data.get("name") ?? entry.name)}</h2>
           <p className="muted pkm-note">{entry.speciesPath}</p>
@@ -262,6 +264,8 @@ function SpeciesPage({ entry, list, info, constants, onOpen, onSelect, onChanged
         </div>
       </div>
       {entry.number > 0 && <FormsCard entry={entry} forms={forms} info={info} onOpen={onSelect} onChanged={onChanged} />}
+      {entry.number > 0 && <BattleSpriteArt species={entry.species} form={0} folder={entry.folder} speciesName={String(data.get("name") ?? entry.name)}
+        onWritten={() => { setSpriteEpoch((n) => n + 1); onChanged(entry.key); }} />}
       <RecordSections path={entry.speciesPath} entry={entry} list={list} constants={constants} onOpen={onOpen} />
       {data.has("pokedex") && (
         <section className="pkm-card">
